@@ -16,28 +16,37 @@ def create_symlink(ctx, lib, suffix=""):
     target = "{0}/lib/lib{1}/lib{2}{3}{4}".format(ctx.ROOT, ctx.env.INT_WIDTH, lib, ctx.env.LIBEXT, suffix)
 
     if not os.path.isfile(link) or os.path.realpath(link) != target:
+        if len(suffix):
+            cmd = "ln -fs {0} {1}; ln -fs {0} {1}{2}".format(target, link, suffix)
+        else:
+            cmd = "ln -fs {0} {1}".format(target, link)
+
         ctx(
-            rule   = "ln -fs {0} {1}; ln -fs {0} {1}{2}".format(target, link, suffix),
+            rule   = cmd,
             always = True,
             name   = "create symlink to {0}".format(lib)
         )
 
 
 def build_metis(ctx):
-    create_symlink(ctx, "metis")
+    create_symlink(ctx, "parmetis")
+    if ctx.env.LIBTYPE == "SHARED":
+        create_symlink(ctx, "metis")
+        if check_libraries(ctx, [ "metis", "parmetis" ]):
+            return
 
-    if check_libraries(ctx, [ "metis" ]):
+    if check_libraries(ctx, [ "metis", "parmetis" ]):
         return
 
-    path = ctx.ROOT + "/tools/metis-5.1.0/"
-    params = "cc={0} prefix={1}".format(ctx.env.CC[0], ctx.ROOT)
+    path = ctx.ROOT + "/tools/parmetis-4.0.3/"
+    params = "cc={0} cxx={1} prefix={2}".format(ctx.env.CC[0], ctx.env.CXX[0], ctx.ROOT)
     if ctx.env.LIBTYPE == "SHARED":
         params += " shared=1"
 
     ctx(
         rule    = "cd {0}; make config idx_width={1} {2}; make install".format(path, ctx.env.INT_WIDTH, params),
         always  = True,
-        name    = "build METIS library with {0}b integers".format(ctx.env.INT_WIDTH)
+        name    = "build METIS/ParMETIS library with {0}b integers".format(ctx.env.INT_WIDTH)
     )
 
 def build_scotch(ctx):
