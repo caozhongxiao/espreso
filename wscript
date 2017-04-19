@@ -101,8 +101,9 @@ def configure(ctx):
         ctx.check_header(header)
 
     # recurse to basic parts
-    ctx.recurse("src/config")
     ctx.recurse("src/basis")
+    ctx.recurse("src/config")
+    ctx.recurse("src/wrappers")
 
     # recurse to ESPRESO solver
     ctx.setenv("solver", ctx.env.derive());
@@ -153,6 +154,7 @@ def build(ctx):
 
     ctx.recurse("src/basis")
     ctx.recurse("src/config")
+    ctx.recurse("src/wrappers")
 
     ctx.env = ctx.all_envs["solver"]
     ctx.recurse("src/mesh")
