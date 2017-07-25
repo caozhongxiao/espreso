@@ -1,20 +1,24 @@
 #include "mainwindow.h"
 #include <QApplication>
 
+#ifdef ESPRESOGUIPROJECTBUILD
 #include "../config/ecf/environment.h"
+#endif
 
 int main(int argc, char *argv[])
 {
-	MPI_Init(&argc, &argv);
+#ifdef ESPRESOGUIPROJECTBUILD
+    MPI_Init(&argc, &argv);
+#endif
+    QApplication a(argc, argv);
+    MainWindow w;
+    w.show();
 
-	QApplication a(argc, argv);
-	MainWindow w(&argc, &argv);
-	w.show();
+    a.exec();
+#ifdef ESPRESOGUIPROJECTBUILD
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Finalize();
+#endif
 
-	a.exec();
-
-	MPI_Barrier(MPI_COMM_WORLD);
-	MPI_Finalize();
-
-	return 0;
+    return 0;
 }
