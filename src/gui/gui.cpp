@@ -1,4 +1,6 @@
-#include "mainwindow.h"
+#include "modelwidget.h"
+#include "workflowwidget.h"
+#include "datawidget.h"
 #include <QApplication>
 
 #ifdef ESPRESOGUIPROJECTBUILD
@@ -11,8 +13,12 @@ int main(int argc, char *argv[])
     MPI_Init(&argc, &argv);
 #endif
     QApplication a(argc, argv);
-    MainWindow w;
-    w.show();
+    ModelWidget model;
+    model.show();
+    WorkflowWidget workflow;
+    workflow.show();
+    DataWidget data;
+    data.show();
 
     a.exec();
 #ifdef ESPRESOGUIPROJECTBUILD
