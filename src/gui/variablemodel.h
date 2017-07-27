@@ -18,6 +18,8 @@ public:
 
     Variable(QString name, DataType* data);
 
+    QString getName() const;
+    const DataType* getData() const;
     QString toString() const;
 };
 Q_DECLARE_METATYPE(Variable);

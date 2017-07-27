@@ -28,6 +28,16 @@ QString Variable::toString() const
     return QString("%1 (%2)").arg(this->name).arg(this->data->toString());
 }
 
+QString Variable::getName() const
+{
+    return this->name;
+}
+
+const DataType* Variable::getData() const
+{
+    return this->data;
+}
+
 int VariableListModel::rowCount(const QModelIndex &parent) const
 {
     return this->vars.size();
@@ -41,8 +51,17 @@ QVariant VariableListModel::data(const QModelIndex &index, int role) const
     if (index.row() >= this->rowCount(index))
         return QVariant();
 
-    if (role == Qt::DisplayRole || role == Qt::EditRole)
+    if (role == Qt::DisplayRole)
+    {
         return this->vars[index.row()].toString();
+    }
+    else if (role ==  Qt::EditRole)
+    {
+        Variable var = this->vars[index.row()];
+        QVariant result;
+        result.setValue(var);
+        return result;
+    }
     else
         return QVariant();
 }

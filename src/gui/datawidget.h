@@ -18,6 +18,10 @@ public:
 private slots:
     void on_btnVarAdd_pressed();
 
+    void on_btnVarDel_pressed();
+
+    void on_listVariables_doubleClicked(const QModelIndex &index);
+
 private:
     Ui::DataWidget *ui;
 };
