@@ -53,3 +53,20 @@ void DataWidget::on_listVariables_doubleClicked(const QModelIndex &index)
         ui->listVariables->model()->setData(index, result);
     }
 }
+
+void DataWidget::on_chbVariables_stateChanged(int arg1)
+{
+    if (ui->chbVariables->isChecked())
+    {
+        ui->listVariables->hide();
+        ui->btnVarAdd->hide();
+        ui->btnVarDel->hide();
+    }
+    else
+    {
+        ui->listVariables->show();
+        ui->btnVarAdd->show();
+        ui->btnVarDel->show();
+    }
+
+}

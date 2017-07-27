@@ -22,6 +22,8 @@ private slots:
 
     void on_listVariables_doubleClicked(const QModelIndex &index);
 
+    void on_chbVariables_stateChanged(int arg1);
+
 private:
     Ui::DataWidget *ui;
 };
