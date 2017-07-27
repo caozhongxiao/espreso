@@ -11,7 +11,11 @@ VariableDialog::VariableDialog(QWidget *parent) :
 VariableDialog::VariableDialog(QVariant data, QWidget *parent) :
     VariableDialog(parent)
 {
-    if (!data.canConvert<Variable>()) return;
+    if (!data.canConvert<Variable>())
+    {
+        qWarning("%s", tr("VariableDialog: No data provided for the dialog!").toStdString().c_str());
+        return;
+    }
     Variable var = data.value<Variable>();
     ui->editName->setText(var.getName());
     ui->editData->setText(var.getData()->toString());
