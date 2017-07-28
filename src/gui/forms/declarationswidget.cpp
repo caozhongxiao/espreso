@@ -27,26 +27,14 @@ void DeclarationsWidget::setupTree()
 {
     this->treeModel = new QStandardItemModel();
     QStandardItem* parent = this->treeModel->invisibleRootItem();
-    treeVars = new QStandardItem("Variables");
-    QStandardItem* cs = new QStandardItem("Coordinate Systems");
-    QStandardItem* mats = new QStandardItem("Materials");
-    parent->appendRow(treeVars);
-    parent->appendRow(cs);
-    parent->appendRow(mats);
+    this->treeNodeVars = new QStandardItem("Variables");
+    this->treeNodeCS = new QStandardItem("Coordinate Systems");
+    this->treeNodeMats = new QStandardItem("Materials");
+    parent->appendRow(treeNodeVars);
+    parent->appendRow(treeNodeCS);
+    parent->appendRow(treeNodeMats);
     ui->DeclarationTree->setModel(this->treeModel);
     ui->DeclarationTree->setEditTriggers(QAbstractItemView::NoEditTriggers);
-
-//    QAbstractItemModel* model = ui->DeclarationTree->model();
-//    model->insertRows(0, 3);
-//    QVariant vars(tr("Variables"));
-//    QVariant csystems(tr("Coordinate Systems"));
-//    QVariant mats(tr("Materials"));
-//    QModelIndex varIndex = model->index(0, 0);
-//    QModelIndex csIndex = model->index(1, 0);
-//    QModelIndex matsIndex = model->index(2, 0);
-//    model->setData(varIndex, vars);
-//    model->setData(csIndex, csystems);
-//    model->setData(matsIndex, mats);
 }
 
 
@@ -79,24 +67,8 @@ void DeclarationsWidget::treeNewItem()
     if (dialog->exec() == QDialog::Accepted)
     {
         QStandardItem* item = new QStandardItem("Test");
-        treeVars->appendRow(item);
+        treeNodeVars->appendRow(item);
     }
-
-//    QVariant data = index.data();
-//    if (data.canConvert<Variable>())
-//    {
-//        VariableDialog* dialog = new VariableDialog(this);
-//        if (dialog->exec() == QDialog::Accepted)
-//        {
-//            QAbstractItemModel* model = ui->DeclarationTree->model();
-//            int row = ++this->varCount;
-//            QModelIndex parent = model->index(0, 0);
-//            model->insertRows(row, 1, parent);
-//            QModelIndex index = model->index(row, 0);
-//            QVariant data = dialog->data();
-//            model->setData(index, data);
-//        }
-//    }
 }
 
 void DeclarationsWidget::treeEditItem()

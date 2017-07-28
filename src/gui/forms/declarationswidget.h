@@ -30,12 +30,10 @@ private:
     QAction* editItem;
     QAction* delItem;
 
-    qint32 varCount = 0;
-    qint32 csCount = 0;
-    qint32 matCount = 0;
-
     QStandardItemModel* treeModel;
-    QStandardItem* treeVars;
+    QStandardItem* treeNodeVars;
+    QStandardItem* treeNodeCS;
+    QStandardItem* treeNodeMats;
 
     void setupTree();
     void createActions();
