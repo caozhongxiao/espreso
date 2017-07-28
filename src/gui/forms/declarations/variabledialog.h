@@ -3,7 +3,7 @@
 
 #include <QDialog>
 
-#include "variablemodel.h"
+#include "../data/variable.h"
 
 namespace Ui {
 class VariableDialog;
@@ -17,7 +17,7 @@ public:
     explicit VariableDialog(QWidget *parent = 0);
     VariableDialog(QVariant data, QWidget *parent = 0);
     ~VariableDialog();
-    QVariant getData();
+    QVariant data();
 
 private:
     Ui::VariableDialog *ui;

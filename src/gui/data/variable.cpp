@@ -2,20 +2,20 @@
 
 Variable::Variable()
 {
-    this->name = "";
-    this->data = new StringType("");
+    this->mName = "";
+    this->mData = new StringType("");
 }
 
 Variable::Variable(const Variable &other)
 {
-    this->data = other.data->copy();
-    this->name = other.name;
+    this->mData = other.mData->copy();
+    this->mName = other.mName;
 }
 
 Variable::Variable(QString name, DataType* data)
 {
-    this->name = name;
-    this->data = data;
+    this->mName = name;
+    this->mData = data;
 }
 
 Variable::~Variable()
@@ -24,15 +24,15 @@ Variable::~Variable()
 
 QString Variable::toString() const
 {
-    return QString("%1 (%2)").arg(this->name).arg(this->data->toString());
+    return QString("%1 (%2)").arg(this->mName).arg(this->mData->toString());
 }
 
 QString Variable::name() const
 {
-    return this->name;
+    return this->mName;
 }
 
 const DataType* Variable::data() const
 {
-    return this->data;
+    return this->mData;
 }

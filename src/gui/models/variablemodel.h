@@ -3,26 +3,8 @@
 
 #include <QAbstractListModel>
 #include <QVector>
-#include "datatype.h"
-
-class Variable
-{
-private:
-    QString name;
-    DataType* data;
-
-public:
-    Variable();
-    Variable(const Variable &other);
-    ~Variable();
-
-    Variable(QString name, DataType* data);
-
-    QString getName() const;
-    const DataType* getData() const;
-    QString toString() const;
-};
-Q_DECLARE_METATYPE(Variable);
+#include "../data/datatype.h"
+#include "../data/variable.h"
 
 class VariableListModel : public QAbstractListModel
 {

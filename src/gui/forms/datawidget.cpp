@@ -1,8 +1,8 @@
 #include "datawidget.h"
 #include "ui_datawidget.h"
 
-#include "variablemodel.h"
-#include "variabledialog.h"
+#include "declarations/variabledialog.h"
+#include "../models/variablemodel.h"
 
 DataWidget::DataWidget(QWidget *parent) :
     QWidget(parent),
@@ -28,7 +28,7 @@ void DataWidget::on_btnVarAdd_pressed()
         int row = model->rowCount();
         model->insertRows(row, 1);
         QModelIndex index = model->index(row, 0);
-        QVariant data = dialog->getData();
+        QVariant data = dialog->data();
         model->setData(index, data);
     }
 }
@@ -49,7 +49,7 @@ void DataWidget::on_listVariables_doubleClicked(const QModelIndex &index)
     VariableDialog* dialog = new VariableDialog(data, this);
     if (dialog->exec() == QDialog::Accepted)
     {
-        QVariant result = dialog->getData();
+        QVariant result = dialog->data();
         ui->listVariables->model()->setData(index, result);
     }
 }

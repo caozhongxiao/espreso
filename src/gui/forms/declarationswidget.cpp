@@ -1,9 +1,9 @@
 #include "declarationswidget.h"
 #include "ui_declarationswidget.h"
 
-#include "treemodel.h"
-#include "variabledialog.h"
-#include "variable.h"
+#include "../models/treemodel.h"
+#include "declarations/variabledialog.h"
+#include "../data/variable.h"
 
 DeclarationsWidget::DeclarationsWidget(QWidget *parent) :
     QWidget(parent),

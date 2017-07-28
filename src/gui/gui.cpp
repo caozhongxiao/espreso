@@ -1,6 +1,7 @@
-#include "modelwidget.h"
-#include "workflowwidget.h"
-#include "datawidget.h"
+#include "forms/modelwidget.h"
+#include "forms/workflowwidget.h"
+#include "forms/datawidget.h"
+#include "forms/declarationswidget.h"
 #include <QApplication>
 
 #ifdef ESPRESOGUIPROJECTBUILD
@@ -17,8 +18,10 @@ int main(int argc, char *argv[])
     model.show();
     WorkflowWidget workflow;
     workflow.show();
-    DataWidget data;
-    data.show();
+//    DataWidget data;
+//    data.show();
+    DeclarationsWidget declarations;
+    declarations.show();
 
     a.exec();
 #ifdef ESPRESOGUIPROJECTBUILD

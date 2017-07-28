@@ -17,8 +17,8 @@ VariableDialog::VariableDialog(QVariant data, QWidget *parent) :
         return;
     }
     Variable var = data.value<Variable>();
-    ui->editName->setText(var.getName());
-    ui->editData->setText(var.getData()->toString());
+    ui->editName->setText(var.name());
+    ui->editData->setText(var.data()->toString());
 }
 
 VariableDialog::~VariableDialog()
@@ -26,7 +26,7 @@ VariableDialog::~VariableDialog()
     delete ui;
 }
 
-QVariant VariableDialog::getData()
+QVariant VariableDialog::data()
 {
     QString name = ui->editName->text();
     StringType* data = new StringType(ui->editData->text());
