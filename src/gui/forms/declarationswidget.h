@@ -2,6 +2,8 @@
 #define DECLARATIONSWIDGET_H
 
 #include <QWidget>
+#include <QMenu>
+#include <QStandardItemModel>
 
 namespace Ui {
 class DeclarationsWidget;
@@ -23,10 +25,17 @@ private slots:
 
 private:
     Ui::DeclarationsWidget *ui;
+
     QAction* newItem;
     QAction* editItem;
     QAction* delItem;
 
+    qint32 varCount = 0;
+    qint32 csCount = 0;
+    qint32 matCount = 0;
+
+    QStandardItemModel* treeModel;
+    QStandardItem* treeVars;
 
     void setupTree();
     void createActions();
