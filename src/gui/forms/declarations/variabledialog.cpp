@@ -58,7 +58,7 @@ Variable VariableDialog::data()
     switch(ui->cmbType->currentIndex())
     {
         case DTLib::CONSTANT:
-            data = new ConstantType(ui->editConstant->text().toDouble());
+            data = new ConstantType(ui->editConstant->text());
             break;
         default:
             qWarning("%s", QString(tr("VariableDialog: Unknown type!")).toStdString().c_str());

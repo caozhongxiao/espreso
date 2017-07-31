@@ -39,10 +39,10 @@ public:
 class ConstantType : public DataType
 {
 private:
-    double data;
+    QString data;
 
 public:
-    ConstantType(double data);
+    ConstantType(const QString& data);
     QString toString() const override;
     DataType* copy() const override;
     int type() const override;

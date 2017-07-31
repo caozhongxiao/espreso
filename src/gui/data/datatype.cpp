@@ -26,14 +26,14 @@ int StringType::type() const
 }
 
 
-ConstantType::ConstantType(double data):DataType()
+ConstantType::ConstantType(const QString& data):DataType()
 {
     this->data = data;
 }
 
 QString ConstantType::toString() const
 {
-    return QVariant(this->data).toString();
+    return this->data;
 }
 
 DataType* ConstantType::copy() const
