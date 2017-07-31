@@ -26,13 +26,10 @@ VariableDialog::~VariableDialog()
     delete ui;
 }
 
-QVariant VariableDialog::data()
+Variable VariableDialog::data()
 {
     QString name = ui->editName->text();
     StringType* data = new StringType(ui->editData->text());
-    Variable v(name, data);
-    QVariant output;
-    output.setValue(v);
 
-    return output;
+    return Variable(name, data);
 }

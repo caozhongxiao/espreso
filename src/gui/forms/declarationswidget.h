@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QMenu>
 #include <QStandardItemModel>
+#include "../data/variable.h"
 
 namespace Ui {
 class DeclarationsWidget;
@@ -34,6 +35,8 @@ private:
     QStandardItem* treeNodeVars;
     QStandardItem* treeNodeCS;
     QStandardItem* treeNodeMats;
+
+    QVector<Variable> variables;
 
     void setupTree();
     void createActions();

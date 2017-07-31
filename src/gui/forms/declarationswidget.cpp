@@ -63,11 +63,35 @@ void DeclarationsWidget::treeNewItem()
     if (!indexList.count())
         return;
 
-    VariableDialog* dialog = new VariableDialog(this);
-    if (dialog->exec() == QDialog::Accepted)
+    QModelIndex clicked = indexList.at(0);
+    QModelIndex parent = clicked.parent();
+
+    if (!parent.isValid())
     {
-        QStandardItem* item = new QStandardItem("Test");
-        treeNodeVars->appendRow(item);
+        parent = clicked;
+    }
+
+    if (parent.row() == 0)
+    {
+        VariableDialog* dialog = new VariableDialog(this);
+        if (dialog->exec() == QDialog::Accepted)
+        {
+            Variable v = dialog->data();
+            this->variables.append(v);
+            QStandardItem* item = new QStandardItem(v.toString());
+            treeNodeVars->appendRow(item);
+        }
+    }
+    else if (parent.row() == 1)
+    {
+
+    }
+    else if (parent.row() == 2)
+    {
+
+    }
+    else {
+        qWarning(QString(tr("Unknown item in declarations!")).toStdString().c_str());
     }
 }
 

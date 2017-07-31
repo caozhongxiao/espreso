@@ -28,7 +28,9 @@ void DataWidget::on_btnVarAdd_pressed()
         int row = model->rowCount();
         model->insertRows(row, 1);
         QModelIndex index = model->index(row, 0);
-        QVariant data = dialog->data();
+        Variable var = dialog->data();
+        QVariant data;
+        data.setValue(var);
         model->setData(index, data);
     }
 }
@@ -49,7 +51,9 @@ void DataWidget::on_listVariables_doubleClicked(const QModelIndex &index)
     VariableDialog* dialog = new VariableDialog(data, this);
     if (dialog->exec() == QDialog::Accepted)
     {
-        QVariant result = dialog->data();
+        Variable var = dialog->data();
+        QVariant result;
+        result.setValue(var);
         ui->listVariables->model()->setData(index, result);
     }
 }

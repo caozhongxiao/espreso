@@ -17,7 +17,7 @@ public:
     explicit VariableDialog(QWidget *parent = 0);
     VariableDialog(QVariant data, QWidget *parent = 0);
     ~VariableDialog();
-    QVariant data();
+    Variable data();
 
 private:
     Ui::VariableDialog *ui;
