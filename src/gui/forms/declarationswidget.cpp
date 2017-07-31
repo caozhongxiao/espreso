@@ -42,6 +42,8 @@ void DeclarationsWidget::on_DeclarationTree_customContextMenuRequested(const QPo
 {
     QMenu treeMenu(this);
     treeMenu.addAction(this->newItem);
+    treeMenu.addAction(this->editItem);
+    treeMenu.addAction(this->delItem);
     treeMenu.exec(ui->DeclarationTree->mapToGlobal(pos));
 }
 
@@ -91,16 +93,73 @@ void DeclarationsWidget::treeNewItem()
 
     }
     else {
-        qWarning(QString(tr("Unknown item in declarations!")).toStdString().c_str());
+        qWarning("%s", QString(tr("Unknown item in declarations!")).toStdString().c_str());
     }
 }
 
 void DeclarationsWidget::treeEditItem()
 {
+    QModelIndexList indexList = ui->DeclarationTree->selectionModel()->selectedIndexes();
+    if (!indexList.count())
+        return;
 
+    QModelIndex clicked = indexList.at(0);
+    QModelIndex parent = clicked.parent();
+
+    if (!parent.isValid())
+        return;
+
+    if (parent.row() == 0)
+    {
+        VariableDialog* dialog = new VariableDialog(this->variables.at(clicked.row()), this);
+        if (dialog->exec() == QDialog::Accepted)
+        {
+            Variable v = dialog->data();
+            this->variables[clicked.row()] = v;
+            QStandardItem* item = new QStandardItem(v.toString());
+            treeNodeVars->insertRow(clicked.row() + 1, item);
+            treeNodeVars->removeRow(clicked.row());
+        }
+    }
+    else if (parent.row() == 1)
+    {
+
+    }
+    else if (parent.row() == 2)
+    {
+
+    }
+    else {
+        qWarning("%s", QString(tr("Unknown item in declarations!")).toStdString().c_str());
+    }
 }
 
 void DeclarationsWidget::treeDelItem()
 {
+    QModelIndexList indexList = ui->DeclarationTree->selectionModel()->selectedIndexes();
+    if (!indexList.count())
+        return;
 
+    QModelIndex clicked = indexList.at(0);
+    QModelIndex parent = clicked.parent();
+
+    if (!parent.isValid())
+        return;
+
+    if (parent.row() == 0)
+    {
+        this->variables.remove(clicked.row());
+        treeNodeVars->removeRow(clicked.row());
+    }
+    else if (parent.row() == 1)
+    {
+
+    }
+    else if (parent.row() == 2)
+    {
+
+    }
+    else {
+        qWarning("%s", QString(tr("Unknown item in declarations!")).toStdString().c_str());
+    }
 }

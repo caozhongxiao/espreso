@@ -8,6 +8,13 @@ VariableDialog::VariableDialog(QWidget *parent) :
     ui->setupUi(this);
 }
 
+VariableDialog::VariableDialog(Variable var, QWidget *parent) :
+    VariableDialog(parent)
+{
+    ui->editName->setText(var.name());
+    ui->editData->setText(var.data()->toString());
+}
+
 VariableDialog::VariableDialog(QVariant data, QWidget *parent) :
     VariableDialog(parent)
 {

@@ -15,6 +15,7 @@ class VariableDialog : public QDialog
 
 public:
     explicit VariableDialog(QWidget *parent = 0);
+    VariableDialog(Variable var, QWidget *parent = 0);
     VariableDialog(QVariant data, QWidget *parent = 0);
     ~VariableDialog();
     Variable data();
