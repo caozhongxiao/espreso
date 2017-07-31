@@ -20,6 +20,9 @@ public:
     ~VariableDialog();
     Variable data();
 
+private slots:
+    void on_cmbType_currentIndexChanged(int index);
+
 private:
     Ui::VariableDialog *ui;
 };

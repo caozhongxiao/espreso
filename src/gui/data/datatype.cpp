@@ -19,3 +19,29 @@ DataType* StringType::copy() const
 {
     return new StringType(this->data);
 }
+
+int StringType::type() const
+{
+    return DTLib::STRING;
+}
+
+
+ConstantType::ConstantType(double data):DataType()
+{
+    this->data = data;
+}
+
+QString ConstantType::toString() const
+{
+    return QVariant(this->data).toString();
+}
+
+DataType* ConstantType::copy() const
+{
+    return new ConstantType(this->data);
+}
+
+int ConstantType::type() const
+{
+    return DTLib::CONSTANT;
+}
