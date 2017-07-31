@@ -37,6 +37,7 @@ private:
     QStandardItem* treeNodeMats;
 
     QVector<Variable> variables;
+    QHash<QString, Variable> varDict;
 
     void setupTree();
     void createActions();

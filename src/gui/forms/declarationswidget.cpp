@@ -75,11 +75,12 @@ void DeclarationsWidget::treeNewItem()
 
     if (parent.row() == 0)
     {
-        VariableDialog* dialog = new VariableDialog(this);
+        VariableDialog* dialog = new VariableDialog(this->varDict, this);
         if (dialog->exec() == QDialog::Accepted)
         {
             Variable v = dialog->data();
             this->variables.append(v);
+            this->varDict.insert(v.name(), v);
             QStandardItem* item = new QStandardItem(v.toString());
             treeNodeVars->appendRow(item);
         }
@@ -111,11 +112,13 @@ void DeclarationsWidget::treeEditItem()
 
     if (parent.row() == 0)
     {
-        VariableDialog* dialog = new VariableDialog(this->variables.at(clicked.row()), this);
+        VariableDialog* dialog = new VariableDialog(this->variables.at(clicked.row()),
+                                                    this->varDict, this);
         if (dialog->exec() == QDialog::Accepted)
         {
             Variable v = dialog->data();
             this->variables[clicked.row()] = v;
+            this->varDict[v.name()] = v;
             QStandardItem* item = new QStandardItem(v.toString());
             treeNodeVars->insertRow(clicked.row() + 1, item);
             treeNodeVars->removeRow(clicked.row());
@@ -148,6 +151,8 @@ void DeclarationsWidget::treeDelItem()
 
     if (parent.row() == 0)
     {
+        Variable v = this->variables.at(clicked.row());
+        this->varDict.remove(v.name());
         this->variables.remove(clicked.row());
         treeNodeVars->removeRow(clicked.row());
     }
