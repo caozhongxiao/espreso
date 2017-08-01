@@ -69,4 +69,18 @@ public:
     QVector<QPair<QString, QString> > data() const;
 };
 
+class PiecewiseFunctionType : public DataType
+{
+protected:
+    QVector<QVector<QString> > mRows;
+
+public:
+    PiecewiseFunctionType(const QVector<QVector<QString> >& data);
+    QString toString() const override;
+    DataType* copy() const override;
+    virtual int type() const override;
+
+    QVector<QVector<QString> > data() const;
+};
+
 #endif // DATATYPE_H

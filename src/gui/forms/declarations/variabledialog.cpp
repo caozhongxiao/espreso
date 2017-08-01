@@ -32,6 +32,12 @@ VariableDialog::VariableDialog(const QHash<QString, Variable>& varDict, QWidget 
     tableHeader << "x" << "f(x)";
     this->tableModel->setHorizontalHeaderLabels(tableHeader);
 
+    this->piecewiseModel = new QStandardItemModel(this);
+    ui->tblPiecewise->setModel(this->piecewiseModel);
+    QStringList piecewiseHeader;
+    piecewiseHeader << tr("lower bound") << tr("upper bound") << tr("function");
+    this->piecewiseModel->setHorizontalHeaderLabels(piecewiseHeader);
+
     this->varDict = varDict;
 }
 
@@ -77,6 +83,9 @@ Variable VariableDialog::data()
         case DTLib::TABLE:
             data = this->collectTableData();
             break;
+        case DTLib::PIECEWISE_FUNCTION:
+            data = this->collectPiecewiseData();
+            break;
         default:
             qWarning("%s", QString(tr("Dialog: Cannot retrieve data from an unknown type!")).toStdString().c_str());
     }
@@ -91,19 +100,30 @@ void VariableDialog::on_cmbType_currentIndexChanged(int index)
         case DTLib::CONSTANT:
             ui->editFunction->hide();
             ui->frameTable->hide();
+            ui->framePiecewise->hide();
             ui->editConstant->clear();
             ui->editConstant->show();
             break;
         case DTLib::FUNCTION:
             ui->editConstant->hide();
             ui->frameTable->hide();
+            ui->framePiecewise->hide();
             ui->editFunction->clear();
             ui->editFunction->show();
             break;
         case DTLib::TABLE:
             ui->editFunction->hide();
             ui->editConstant->hide();
+            ui->framePiecewise->hide();
+            this->tableModel->removeRows(0, tableModel->rowCount());
             ui->frameTable->show();
+            break;
+        case DTLib::PIECEWISE_FUNCTION:
+            ui->editFunction->hide();
+            ui->editConstant->hide();
+            ui->frameTable->hide();
+            this->piecewiseModel->removeRows(0, piecewiseModel->rowCount());
+            ui->framePiecewise->show();
             break;
         default:
             qWarning("%s (%d)", QString(tr("Dialog: Unknown type selected!")).toStdString().c_str(), index);
@@ -153,6 +173,9 @@ void VariableDialog::setData(const Variable &var)
         case DTLib::TABLE:
             this->setupTableData(var);
             break;
+        case DTLib::PIECEWISE_FUNCTION:
+            this->setupPiecewiseData(var);
+            break;
         default:
             qWarning("%s", QString(tr("Dialog: Cannot display data of an unknown type!")).toStdString().c_str());
     }
@@ -185,6 +208,34 @@ DataType* VariableDialog::collectTableData() const
     return new TableType(rowVector);
 }
 
+void VariableDialog::setupPiecewiseData(const Variable& var)
+{
+    PiecewiseFunctionType* table = (PiecewiseFunctionType*)var.data();
+    for (auto it = table->data().cbegin(); it != table->data().cend(); ++it) {
+        QList<QStandardItem*> list;
+        QStandardItem* cell1 = new QStandardItem(it->at(0));
+        QStandardItem* cell2 = new QStandardItem(it->at(1));
+        QStandardItem* cell3 = new QStandardItem(it->at(2));
+        list << cell1 << cell2 << cell3;
+        this->piecewiseModel->appendRow(list);
+    }
+}
+
+DataType* VariableDialog::collectPiecewiseData() const
+{
+    int rowCount = this->tableModel->rowCount();
+    QVector<QVector<QString> > rowVector;
+    for (int row = 0; row < rowCount; ++row)
+    {
+        QVector<QString> triple;
+        triple.append(this->tableModel->item(row, 0)->text());
+        triple.append(this->tableModel->item(row, 1)->text());
+        rowVector.append(triple);
+    }
+
+    return new PiecewiseFunctionType(rowVector);
+}
+
 void VariableDialog::on_btnTableAdd_pressed()
 {
     QList<QStandardItem*> list;
@@ -200,5 +251,24 @@ void VariableDialog::on_btnTableDel_pressed()
 
     foreach (QModelIndex index, indices) {
         this->tableModel->removeRow(index.row());
+    }
+}
+
+void VariableDialog::on_btnPiecewiseAdd_pressed()
+{
+    QList<QStandardItem*> list;
+    QStandardItem* cell1 = new QStandardItem("0");
+    QStandardItem* cell2 = new QStandardItem("1");
+    QStandardItem* cell3 = new QStandardItem("x");
+    list << cell1 << cell2 << cell3;
+    this->piecewiseModel->appendRow(list);
+}
+
+void VariableDialog::on_btnPiecewiseDel_pressed()
+{
+    QModelIndexList indices = ui->tblPiecewise->selectionModel()->selectedIndexes();
+
+    foreach (QModelIndex index, indices) {
+        this->piecewiseModel->removeRow(index.row());
     }
 }

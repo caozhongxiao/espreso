@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>891</width>
-    <height>715</height>
+    <width>328</width>
+    <height>393</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -74,6 +74,33 @@
           </item>
           <item>
            <widget class="QTableView" name="tblTable"/>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="framePiecewise">
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <item>
+             <widget class="QPushButton" name="btnPiecewiseAdd">
+              <property name="text">
+               <string>Add row</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btnPiecewiseDel">
+              <property name="text">
+               <string>Delete row</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QTableView" name="tblPiecewise"/>
           </item>
          </layout>
         </widget>

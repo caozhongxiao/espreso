@@ -73,3 +73,29 @@ QVector<QPair<QString, QString> > TableType::data() const
 {
     return this->mRows;
 }
+
+
+PiecewiseFunctionType::PiecewiseFunctionType(const QVector<QVector<QString> >& data)
+{
+    this->mRows = data;
+}
+
+QString PiecewiseFunctionType::toString() const
+{
+    return QObject::tr("Piecewise function");
+}
+
+DataType* PiecewiseFunctionType::copy() const
+{
+    return new PiecewiseFunctionType(this->mRows);
+}
+
+int PiecewiseFunctionType::type() const
+{
+    return DTLib::PIECEWISE_FUNCTION;
+}
+
+QVector<QVector<QString> > PiecewiseFunctionType::data() const
+{
+    return this->mRows;
+}

@@ -29,14 +29,21 @@ private slots:
 
     void on_btnTableDel_pressed();
 
+    void on_btnPiecewiseAdd_pressed();
+
+    void on_btnPiecewiseDel_pressed();
+
 private:
     Ui::VariableDialog *ui;
     QHash<QString, Variable> varDict;
     QStandardItemModel* tableModel;
+    QStandardItemModel* piecewiseModel;
 
     void setData(const Variable& var);
     DataType* collectTableData() const;
     void setupTableData(const Variable& var);
+    DataType* collectPiecewiseData() const;
+    void setupPiecewiseData(const Variable& var);
 };
 
 #endif // VARIABLEDIALOG_H
