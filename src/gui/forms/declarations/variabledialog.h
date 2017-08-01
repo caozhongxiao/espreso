@@ -27,6 +27,8 @@ private slots:
 private:
     Ui::VariableDialog *ui;
     QHash<QString, Variable> varDict;
+
+    void setData(const Variable& var);
 };
 
 #endif // VARIABLEDIALOG_H
