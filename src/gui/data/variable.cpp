@@ -12,7 +12,7 @@ Variable::Variable(const Variable &other)
     this->mName = other.mName;
 }
 
-Variable::Variable(QString name, DataType* data)
+Variable::Variable(const QString& name, DataType* data)
 {
     this->mName = name;
     this->mData = data;
@@ -32,7 +32,7 @@ QString Variable::name() const
     return this->mName;
 }
 
-const DataType* Variable::data() const
+DataType* Variable::data() const
 {
     return this->mData;
 }

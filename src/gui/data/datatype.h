@@ -26,24 +26,28 @@ public:
 
 class StringType : public DataType
 {
-private:
+protected:
     QString data;
 
 public:
-    StringType(QString data);
+    StringType(const QString& data);
     QString toString() const override;
+    DataType* copy() const override;
+    virtual int type() const override;
+};
+
+class ConstantType : public StringType
+{
+public:
+    ConstantType(const QString& data) : StringType(data) {}
     DataType* copy() const override;
     int type() const override;
 };
 
-class ConstantType : public DataType
+class FunctionType : public StringType
 {
-private:
-    QString data;
-
 public:
-    ConstantType(const QString& data);
-    QString toString() const override;
+    FunctionType(const QString& data) : StringType(data) {}
     DataType* copy() const override;
     int type() const override;
 };

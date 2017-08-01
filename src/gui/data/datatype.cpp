@@ -5,7 +5,7 @@ DataType::DataType()
 
 }
 
-StringType::StringType(QString data):DataType()
+StringType::StringType(const QString& data):DataType()
 {
     this->data = data;
 }
@@ -26,14 +26,9 @@ int StringType::type() const
 }
 
 
-ConstantType::ConstantType(const QString& data):DataType()
+int ConstantType::type() const
 {
-    this->data = data;
-}
-
-QString ConstantType::toString() const
-{
-    return this->data;
+    return DTLib::CONSTANT;
 }
 
 DataType* ConstantType::copy() const
@@ -41,7 +36,13 @@ DataType* ConstantType::copy() const
     return new ConstantType(this->data);
 }
 
-int ConstantType::type() const
+
+int FunctionType::type() const
 {
-    return DTLib::CONSTANT;
+    return DTLib::FUNCTION;
+}
+
+DataType* FunctionType::copy() const
+{
+    return new FunctionType(this->data);
 }
