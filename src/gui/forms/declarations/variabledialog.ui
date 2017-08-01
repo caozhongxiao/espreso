@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>891</width>
+    <height>715</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -50,6 +50,33 @@
        </item>
        <item>
         <widget class="QLineEdit" name="editFunction"/>
+       </item>
+       <item>
+        <widget class="QFrame" name="frameTable">
+         <layout class="QVBoxLayout" name="verticalLayout_3">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout">
+            <item>
+             <widget class="QPushButton" name="btnTableAdd">
+              <property name="text">
+               <string>Add row</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btnTableDel">
+              <property name="text">
+               <string>Delete row</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QTableView" name="tblTable"/>
+          </item>
+         </layout>
+        </widget>
        </item>
       </layout>
      </item>

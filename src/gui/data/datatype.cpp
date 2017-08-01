@@ -5,6 +5,7 @@ DataType::DataType()
 
 }
 
+
 StringType::StringType(const QString& data):DataType()
 {
     this->data = data;
@@ -45,4 +46,30 @@ int FunctionType::type() const
 DataType* FunctionType::copy() const
 {
     return new FunctionType(this->data);
+}
+
+
+TableType::TableType(const QVector<QPair<QString, QString> >& data)
+{
+    this->mRows = data;
+}
+
+QString TableType::toString() const
+{
+    return QObject::tr("Table");
+}
+
+DataType* TableType::copy() const
+{
+    return new TableType(this->mRows);
+}
+
+int TableType::type() const
+{
+    return DTLib::TABLE;
+}
+
+QVector<QPair<QString, QString> > TableType::data() const
+{
+    return this->mRows;
 }

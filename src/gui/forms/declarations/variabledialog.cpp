@@ -4,6 +4,8 @@
 #include "../../data/common.h"
 #include <QMessageBox>
 #include "../../expression.h"
+#include "doubletabledelegate.h"
+#include <QPair>
 
 VariableDialog::VariableDialog(const QHash<QString, Variable>& varDict, QWidget *parent) :
     QDialog(parent),
@@ -22,6 +24,13 @@ VariableDialog::VariableDialog(const QHash<QString, Variable>& varDict, QWidget 
 
     QRegExpValidator* constantValidator = new QRegExpValidator(QRegExp(REGEXPR_DOUBLE), this);
     ui->editConstant->setValidator(constantValidator);
+
+    this->tableModel = new QStandardItemModel(this);
+    ui->tblTable->setModel(this->tableModel);
+    ui->tblTable->setItemDelegate(new DoubleTableDelegate());
+    QStringList tableHeader;
+    tableHeader << "x" << "f(x)";
+    this->tableModel->setHorizontalHeaderLabels(tableHeader);
 
     this->varDict = varDict;
 }
@@ -65,8 +74,11 @@ Variable VariableDialog::data()
         case DTLib::FUNCTION:
             data = new FunctionType(ui->editFunction->text());
             break;
+        case DTLib::TABLE:
+            data = this->collectTableData();
+            break;
         default:
-            qWarning("%s", QString(tr("VariableDialog: Cannot retrieve data from an unknown type!")).toStdString().c_str());
+            qWarning("%s", QString(tr("Dialog: Cannot retrieve data from an unknown type!")).toStdString().c_str());
     }
 
     return Variable(name, data);
@@ -77,17 +89,24 @@ void VariableDialog::on_cmbType_currentIndexChanged(int index)
     switch(index)
     {
         case DTLib::CONSTANT:
+            ui->editFunction->hide();
+            ui->frameTable->hide();
             ui->editConstant->clear();
             ui->editConstant->show();
-            ui->editFunction->hide();
             break;
         case DTLib::FUNCTION:
             ui->editConstant->hide();
+            ui->frameTable->hide();
             ui->editFunction->clear();
             ui->editFunction->show();
             break;
+        case DTLib::TABLE:
+            ui->editFunction->hide();
+            ui->editConstant->hide();
+            ui->frameTable->show();
+            break;
         default:
-            qWarning("%s (%d)", QString(tr("VariableDialog: Unknown type selected!")).toStdString().c_str(), index);
+            qWarning("%s (%d)", QString(tr("Dialog: Unknown type selected!")).toStdString().c_str(), index);
     }
 }
 
@@ -131,7 +150,55 @@ void VariableDialog::setData(const Variable &var)
         case DTLib::FUNCTION:
             ui->editFunction->setText(var.data()->toString());
             break;
+        case DTLib::TABLE:
+            this->setupTableData(var);
+            break;
         default:
-            qWarning("%s", QString(tr("VariableDialog: Cannot display data of an unknown type!")).toStdString().c_str());
+            qWarning("%s", QString(tr("Dialog: Cannot display data of an unknown type!")).toStdString().c_str());
+    }
+}
+
+void VariableDialog::setupTableData(const Variable& var)
+{
+    TableType* table = (TableType*)var.data();
+    for (auto it = table->data().cbegin(); it != table->data().cend(); ++it) {
+        QList<QStandardItem*> list;
+        QStandardItem* cell1 = new QStandardItem(it->first);
+        QStandardItem* cell2 = new QStandardItem(it->second);
+        list << cell1 << cell2;
+        this->tableModel->appendRow(list);
+    }
+}
+
+DataType* VariableDialog::collectTableData() const
+{
+    int rowCount = this->tableModel->rowCount();
+    QVector<QPair<QString, QString> > rowVector;
+    for (int row = 0; row < rowCount; ++row)
+    {
+        QPair<QString, QString> tuple;
+        tuple.first = this->tableModel->item(row, 0)->text();
+        tuple.second = this->tableModel->item(row, 1)->text();
+        rowVector.append(tuple);
+    }
+
+    return new TableType(rowVector);
+}
+
+void VariableDialog::on_btnTableAdd_pressed()
+{
+    QList<QStandardItem*> list;
+    QStandardItem* cell1 = new QStandardItem("0");
+    QStandardItem* cell2 = new QStandardItem("0");
+    list << cell1 << cell2;
+    this->tableModel->appendRow(list);
+}
+
+void VariableDialog::on_btnTableDel_pressed()
+{
+    QModelIndexList indices = ui->tblTable->selectionModel()->selectedIndexes();
+
+    foreach (QModelIndex index, indices) {
+        this->tableModel->removeRow(index.row());
     }
 }

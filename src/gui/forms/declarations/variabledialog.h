@@ -2,6 +2,7 @@
 #define VARIABLEDIALOG_H
 
 #include <QDialog>
+#include <QStandardItemModel>
 
 #include "../data/variable.h"
 
@@ -24,11 +25,18 @@ public:
 private slots:
     void on_cmbType_currentIndexChanged(int index);
 
+    void on_btnTableAdd_pressed();
+
+    void on_btnTableDel_pressed();
+
 private:
     Ui::VariableDialog *ui;
     QHash<QString, Variable> varDict;
+    QStandardItemModel* tableModel;
 
     void setData(const Variable& var);
+    DataType* collectTableData() const;
+    void setupTableData(const Variable& var);
 };
 
 #endif // VARIABLEDIALOG_H

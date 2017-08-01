@@ -3,6 +3,9 @@
 
 #include <QString>
 #include <QVariant>
+#include <QVector>
+#include <QPair>
+#include <QObject>
 
 enum DTLib
 {
@@ -50,6 +53,20 @@ public:
     FunctionType(const QString& data) : StringType(data) {}
     DataType* copy() const override;
     int type() const override;
+};
+
+class TableType : public DataType
+{
+protected:
+    QVector<QPair<QString, QString> > mRows;
+
+public:
+    TableType(const QVector<QPair<QString, QString> >& data);
+    QString toString() const override;
+    DataType* copy() const override;
+    virtual int type() const override;
+
+    QVector<QPair<QString, QString> > data() const;
 };
 
 #endif // DATATYPE_H
