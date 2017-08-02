@@ -13,12 +13,14 @@ VariableDialog::VariableDialog(const QHash<QString, Variable>& varDict, QWidget 
 {
     ui->setupUi(this);
 
+    // SETUP ITEMS
     ui->cmbType->addItem(tr("Constant"));
     ui->cmbType->addItem(tr("Function"));
     ui->cmbType->addItem(tr("Table"));
     ui->cmbType->addItem(tr("Piecewise function"));
     ui->cmbType->setCurrentIndex(0);
 
+    // SETUP GUI ELEMENTS OF INDIVIDUAL DATA TYPES (COMBOBOX CHOICES)
     QRegExpValidator* varNameValidator = new QRegExpValidator(QRegExp(REGEXPR_VARNAME), this);
     ui->editName->setValidator(varNameValidator);
 
@@ -140,6 +142,7 @@ void VariableDialog::on_cmbType_currentIndexChanged(int index)
 
 void VariableDialog::accept()
 {
+    // FINAL CHECK BEFORE FORM SUBMISSION
     if (this->varDict.contains(ui->editName->text()))
     {
         QMessageBox::warning(this, tr("Error"), tr("Chosen variable name is already in use!"));
@@ -178,6 +181,7 @@ void VariableDialog::accept()
 
 void VariableDialog::setData(const Variable &var)
 {
+    // FILL THE DIALOG WITH DATA OF CURRENT ITEM
     switch(ui->cmbType->currentIndex())
     {
         case DTLib::CONSTANT:

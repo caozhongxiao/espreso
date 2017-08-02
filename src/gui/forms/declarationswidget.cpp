@@ -27,9 +27,9 @@ void DeclarationsWidget::setupTree()
 {
     this->treeModel = new QStandardItemModel();
     QStandardItem* parent = this->treeModel->invisibleRootItem();
-    this->treeNodeVars = new QStandardItem("Variables");
-    this->treeNodeCS = new QStandardItem("Coordinate Systems");
-    this->treeNodeMats = new QStandardItem("Materials");
+    this->treeNodeVars = new QStandardItem(tr("Variables"));
+    this->treeNodeCS = new QStandardItem(tr("Coordinate Systems"));
+    this->treeNodeMats = new QStandardItem(tr("Materials"));
     parent->appendRow(treeNodeVars);
     parent->appendRow(treeNodeCS);
     parent->appendRow(treeNodeMats);
