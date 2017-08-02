@@ -3,26 +3,25 @@
 
 #include <QString>
 #include "datatype.h"
-#include <QMetaType>
+#include "namedentity.h"
+//#include <QMetaType>
 
-class Variable
+class Variable : public NamedEntity
 {
 private:
-    QString mName;
     DataType* mData;
 
 public:
     Variable();
-    Variable(const Variable& other);
-    ~Variable();
+//    Variable(const Variable& other);
+//    ~Variable();
 
     Variable(const QString& name, DataType* data);
 
-    QString name() const;
     DataType* data() const;
     QString toString() const;
 };
 
-Q_DECLARE_METATYPE(Variable);
+//Q_DECLARE_METATYPE(Variable);
 
 #endif // VARIABLE_H
