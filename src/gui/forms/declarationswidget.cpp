@@ -105,36 +105,8 @@ void DeclarationsWidget::treeEditItem()
         return;
 
     QModelIndex clicked = indexList.at(0);
-    QModelIndex parent = clicked.parent();
 
-    if (!parent.isValid())
-        return;
-
-    if (parent.row() == 0)
-    {
-        VariableDialog* dialog = new VariableDialog(this->variables.at(clicked.row()),
-                                                    this->varDict, this);
-        if (dialog->exec() == QDialog::Accepted)
-        {
-            Variable v = dialog->data();
-            this->variables[clicked.row()] = v;
-            this->varDict[v.name()] = v;
-            QStandardItem* item = new QStandardItem(v.toString());
-            treeNodeVars->insertRow(clicked.row() + 1, item);
-            treeNodeVars->removeRow(clicked.row());
-        }
-    }
-    else if (parent.row() == 1)
-    {
-
-    }
-    else if (parent.row() == 2)
-    {
-
-    }
-    else {
-        qWarning("%s", QString(tr("Unknown item in declarations!")).toStdString().c_str());
-    }
+    this->createEditDialog(clicked);
 }
 
 void DeclarationsWidget::treeDelItem()
@@ -167,4 +139,43 @@ void DeclarationsWidget::treeDelItem()
     else {
         qWarning("%s", QString(tr("Unknown item in declarations!")).toStdString().c_str());
     }
+}
+
+void DeclarationsWidget::createEditDialog(const QModelIndex& item)
+{
+    QModelIndex parent = item.parent();
+
+    if (!parent.isValid())
+        return;
+
+    if (parent.row() == 0)
+    {
+        VariableDialog* dialog = new VariableDialog(this->variables.at(item.row()),
+                                                    this->varDict, this);
+        if (dialog->exec() == QDialog::Accepted)
+        {
+            Variable v = dialog->data();
+            this->variables[item.row()] = v;
+            this->varDict[v.name()] = v;
+            QStandardItem* editted = new QStandardItem(v.toString());
+            treeNodeVars->insertRow(item.row() + 1, editted);
+            treeNodeVars->removeRow(item.row());
+        }
+    }
+    else if (parent.row() == 1)
+    {
+
+    }
+    else if (parent.row() == 2)
+    {
+
+    }
+    else {
+        qWarning("%s", QString(tr("Unknown item in declarations!")).toStdString().c_str());
+    }
+}
+
+void DeclarationsWidget::on_DeclarationTree_doubleClicked(const QModelIndex &index)
+{
+    this->createEditDialog(index);
 }

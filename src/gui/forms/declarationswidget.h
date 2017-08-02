@@ -24,6 +24,8 @@ private slots:
     void treeEditItem();
     void treeDelItem();
 
+    void on_DeclarationTree_doubleClicked(const QModelIndex &index);
+
 private:
     Ui::DeclarationsWidget *ui;
 
@@ -41,6 +43,7 @@ private:
 
     void setupTree();
     void createActions();
+    void createEditDialog(const QModelIndex& item);
 };
 
 #endif // DECLARATIONSWIDGET_H
