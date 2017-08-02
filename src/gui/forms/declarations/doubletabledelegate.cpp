@@ -19,7 +19,7 @@ QWidget* DoubleTableDelegate::createEditor(QWidget *parent,
 
 void DoubleTableDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
-    QString value =index.model()->data(index, Qt::EditRole).toString();
+    QString value = index.model()->data(index, Qt::EditRole).toString();
     QLineEdit *line = static_cast<QLineEdit*>(editor);
     line->setText(value);
 }

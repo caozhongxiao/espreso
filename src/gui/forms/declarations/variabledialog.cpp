@@ -37,8 +37,16 @@ VariableDialog::VariableDialog(const QHash<QString, Variable>& varDict, QWidget 
     QStringList piecewiseHeader;
     piecewiseHeader << tr("lower bound") << tr("upper bound") << tr("function");
     this->piecewiseModel->setHorizontalHeaderLabels(piecewiseHeader);
+    ui->tblPiecewise->setItemDelegateForColumn(0, new DoubleTableDelegate());
+    ui->tblPiecewise->setItemDelegateForColumn(1, new DoubleTableDelegate());
 
     this->varDict = varDict;
+
+    fnVars.push_back("x");
+    fnVars.push_back("y");
+    fnVars.push_back("z");
+    fnVars.push_back("time");
+    fnVars.push_back("temperature");
 }
 
 VariableDialog::VariableDialog(const Variable& var, const QHash<QString, Variable>& varDict, QWidget *parent) :
@@ -144,16 +152,24 @@ void VariableDialog::accept()
             QMessageBox::warning(this, tr("Error"), tr("Function formula not entered!"));
             return;
         }
-        std::vector<std::string> vars;
-        vars.push_back("x");
-        vars.push_back("y");
-        vars.push_back("z");
-        vars.push_back("time");
-        vars.push_back("temperature");
-        if (!Expression::isValid(ui->editFunction->text().toStdString(), vars))
+
+        if (!Expression::isValid(ui->editFunction->text().toStdString(), this->fnVars))
         {
             QMessageBox::warning(this, tr("Error"), tr("Incorrect format of function formula!"));
             return;
+        }
+    }
+    else if (ui->cmbType->currentIndex() == DTLib::PIECEWISE_FUNCTION)
+    {
+        int rowCount = this->tableModel->rowCount();
+        for (int row = 0; row < rowCount; ++row)
+        {
+            QString fn = this->tableModel->item(row, 2)->text();
+            if (!Expression::isValid(fn.toStdString(), this->fnVars))
+            {
+                QMessageBox::warning(this, tr("Error"), tr("Incorrect format of function formula in table!"));
+                return;
+            }
         }
     }
 
@@ -223,13 +239,14 @@ void VariableDialog::setupPiecewiseData(const Variable& var)
 
 DataType* VariableDialog::collectPiecewiseData() const
 {
-    int rowCount = this->tableModel->rowCount();
+    int rowCount = this->piecewiseModel->rowCount();
     QVector<QVector<QString> > rowVector;
     for (int row = 0; row < rowCount; ++row)
     {
         QVector<QString> triple;
-        triple.append(this->tableModel->item(row, 0)->text());
-        triple.append(this->tableModel->item(row, 1)->text());
+        triple.append(this->piecewiseModel->item(row, 0)->text());
+        triple.append(this->piecewiseModel->item(row, 1)->text());
+        triple.append(this->piecewiseModel->item(row, 2)->text());
         rowVector.append(triple);
     }
 

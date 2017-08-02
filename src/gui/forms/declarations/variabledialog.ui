@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>328</width>
-    <height>393</height>
+    <width>459</width>
+    <height>425</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
@@ -49,7 +55,11 @@
         <widget class="QLineEdit" name="editConstant"/>
        </item>
        <item>
-        <widget class="QLineEdit" name="editFunction"/>
+        <widget class="QLineEdit" name="editFunction">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QFrame" name="frameTable">
@@ -80,6 +90,9 @@
        </item>
        <item>
         <widget class="QFrame" name="framePiecewise">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <layout class="QVBoxLayout" name="verticalLayout_4">
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_2">

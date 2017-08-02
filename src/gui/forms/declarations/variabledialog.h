@@ -38,6 +38,7 @@ private:
     QHash<QString, Variable> varDict;
     QStandardItemModel* tableModel;
     QStandardItemModel* piecewiseModel;
+    std::vector<std::string> fnVars;
 
     void setData(const Variable& var);
     DataType* collectTableData() const;
