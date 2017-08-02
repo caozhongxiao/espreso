@@ -164,10 +164,10 @@ void VariableDialog::accept()
     }
     else if (ui->cmbType->currentIndex() == DTLib::PIECEWISE_FUNCTION)
     {
-        int rowCount = this->tableModel->rowCount();
+        int rowCount = this->piecewiseModel->rowCount();
         for (int row = 0; row < rowCount; ++row)
         {
-            QString fn = this->tableModel->item(row, 2)->text();
+            QString fn = this->piecewiseModel->item(row, 2)->text();
             if (!Expression::isValid(fn.toStdString(), this->fnVars))
             {
                 QMessageBox::warning(this, tr("Error"), tr("Incorrect format of function formula in table!"));
