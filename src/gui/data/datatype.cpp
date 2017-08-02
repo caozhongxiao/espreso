@@ -1,11 +1,5 @@
 #include "datatype.h"
 
-DataType::DataType()
-{
-
-}
-
-
 StringType::StringType(const QString& data):DataType()
 {
     this->data = data;
@@ -16,36 +10,37 @@ QString StringType::toString() const
     return this->data;
 }
 
-DataType* StringType::copy() const
-{
-    return new StringType(this->data);
-}
-
-int StringType::type() const
-{
-    return DTLib::STRING;
-}
-
-
-int ConstantType::type() const
-{
-    return DTLib::CONSTANT;
-}
 
 DataType* ConstantType::copy() const
 {
     return new ConstantType(this->data);
 }
 
-
-int FunctionType::type() const
+void ConstantType::accept(DataTypeVisitor* visitor) const
 {
-    return DTLib::FUNCTION;
+    visitor->visit(*this);
 }
+
 
 DataType* FunctionType::copy() const
 {
     return new FunctionType(this->data);
+}
+
+void FunctionType::accept(DataTypeVisitor* visitor) const
+{
+    visitor->visit(*this);
+}
+
+
+DataType* VariableLinkType::copy() const
+{
+    return new VariableLinkType(this->data);
+}
+
+void VariableLinkType::accept(DataTypeVisitor* visitor) const
+{
+    visitor->visit(*this);
 }
 
 
@@ -64,9 +59,9 @@ DataType* TableType::copy() const
     return new TableType(this->mRows);
 }
 
-int TableType::type() const
+void TableType::accept(DataTypeVisitor* visitor) const
 {
-    return DTLib::TABLE;
+    visitor->visit(*this);
 }
 
 QVector<QPair<QString, QString> > TableType::data() const
@@ -90,9 +85,9 @@ DataType* PiecewiseFunctionType::copy() const
     return new PiecewiseFunctionType(this->mRows);
 }
 
-int PiecewiseFunctionType::type() const
+void PiecewiseFunctionType::accept(DataTypeVisitor* visitor) const
 {
-    return DTLib::PIECEWISE_FUNCTION;
+    visitor->visit(*this);
 }
 
 QVector<QVector<QString> > PiecewiseFunctionType::data() const

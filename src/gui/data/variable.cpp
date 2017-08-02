@@ -3,7 +3,7 @@
 Variable::Variable()
 {
     this->mName = "";
-    this->mData = new StringType("");
+    this->mData = new ConstantType("");
 }
 
 Variable::Variable(const Variable &other)

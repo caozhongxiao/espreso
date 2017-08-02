@@ -5,12 +5,13 @@
 #include <QStandardItemModel>
 
 #include "../data/variable.h"
+#include "../data/datatype.h"
 
 namespace Ui {
 class VariableDialog;
 }
 
-class VariableDialog : public QDialog
+class VariableDialog : public QDialog, public DataTypeVisitor
 {
     Q_OBJECT
 
@@ -45,6 +46,12 @@ private:
     void setupTableData(const Variable& var);
     DataType* collectPiecewiseData() const;
     void setupPiecewiseData(const Variable& var);
+
+    void visit(const ConstantType& type) override;
+    void visit(const FunctionType& type) override;
+    void visit(const TableType& type) override;
+    void visit(const PiecewiseFunctionType& type) override;
+    void visit(const VariableLinkType& type) override;
 };
 
 #endif // VARIABLEDIALOG_H

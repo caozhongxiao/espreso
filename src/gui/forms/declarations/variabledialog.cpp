@@ -56,7 +56,7 @@ VariableDialog::VariableDialog(const Variable& var, const QHash<QString, Variabl
 {
     this->varDict.remove(var.name());
     ui->editName->setText(var.name());
-    ui->cmbType->setCurrentIndex(var.data()->type());
+    var.data()->accept(this);
     this->setData(var);
 }
 
@@ -84,16 +84,16 @@ Variable VariableDialog::data()
     DataType* data;
     switch(ui->cmbType->currentIndex())
     {
-        case DTLib::CONSTANT:
+        case 0:
             data = new ConstantType(ui->editConstant->text());
             break;
-        case DTLib::FUNCTION:
+        case 1:
             data = new FunctionType(ui->editFunction->text());
             break;
-        case DTLib::TABLE:
+        case 2:
             data = this->collectTableData();
             break;
-        case DTLib::PIECEWISE_FUNCTION:
+        case 3:
             data = this->collectPiecewiseData();
             break;
         default:
@@ -107,28 +107,28 @@ void VariableDialog::on_cmbType_currentIndexChanged(int index)
 {
     switch(index)
     {
-        case DTLib::CONSTANT:
+        case 0:
             ui->editFunction->hide();
             ui->frameTable->hide();
             ui->framePiecewise->hide();
             ui->editConstant->clear();
             ui->editConstant->show();
             break;
-        case DTLib::FUNCTION:
+        case 1:
             ui->editConstant->hide();
             ui->frameTable->hide();
             ui->framePiecewise->hide();
             ui->editFunction->clear();
             ui->editFunction->show();
             break;
-        case DTLib::TABLE:
+        case 2:
             ui->editFunction->hide();
             ui->editConstant->hide();
             ui->framePiecewise->hide();
             this->tableModel->removeRows(0, tableModel->rowCount());
             ui->frameTable->show();
             break;
-        case DTLib::PIECEWISE_FUNCTION:
+        case 3:
             ui->editFunction->hide();
             ui->editConstant->hide();
             ui->frameTable->hide();
@@ -148,7 +148,7 @@ void VariableDialog::accept()
         QMessageBox::warning(this, tr("Error"), tr("Chosen variable name is already in use!"));
         return;
     }
-    else if (ui->cmbType->currentIndex() == DTLib::FUNCTION)
+    else if (ui->cmbType->currentIndex() == 1)
     {
         if (ui->editFunction->text().isEmpty())
         {
@@ -162,7 +162,7 @@ void VariableDialog::accept()
             return;
         }
     }
-    else if (ui->cmbType->currentIndex() == DTLib::PIECEWISE_FUNCTION)
+    else if (ui->cmbType->currentIndex() == 3)
     {
         int rowCount = this->piecewiseModel->rowCount();
         for (int row = 0; row < rowCount; ++row)
@@ -184,16 +184,16 @@ void VariableDialog::setData(const Variable &var)
     // FILL THE DIALOG WITH DATA OF CURRENT ITEM
     switch(ui->cmbType->currentIndex())
     {
-        case DTLib::CONSTANT:
+        case 0:
             ui->editConstant->setText(var.data()->toString());
             break;
-        case DTLib::FUNCTION:
+        case 1:
             ui->editFunction->setText(var.data()->toString());
             break;
-        case DTLib::TABLE:
+        case 2:
             this->setupTableData(var);
             break;
-        case DTLib::PIECEWISE_FUNCTION:
+        case 3:
             this->setupPiecewiseData(var);
             break;
         default:
@@ -292,4 +292,28 @@ void VariableDialog::on_btnPiecewiseDel_pressed()
     foreach (QModelIndex index, indices) {
         this->piecewiseModel->removeRow(index.row());
     }
+}
+
+void VariableDialog::visit(const ConstantType& type)
+{
+    this->ui->cmbType->setCurrentIndex(0);
+}
+
+void VariableDialog::visit(const FunctionType& type)
+{
+    this->ui->cmbType->setCurrentIndex(1);
+}
+
+void VariableDialog::visit(const TableType& type)
+{
+    this->ui->cmbType->setCurrentIndex(2);
+}
+
+void VariableDialog::visit(const PiecewiseFunctionType& type)
+{
+    this->ui->cmbType->setCurrentIndex(3);
+}
+
+void VariableDialog::visit(const VariableLinkType& type)
+{
 }
