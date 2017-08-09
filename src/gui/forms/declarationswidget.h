@@ -4,7 +4,9 @@
 #include <QWidget>
 #include <QMenu>
 #include <QStandardItemModel>
+#include <QString>
 #include "../data/variable.h"
+#include "../data/material.h"
 
 namespace Ui {
 class DeclarationsWidget;
@@ -40,6 +42,9 @@ private:
 
     QVector<Variable> variables;
     QHash<QString, Variable> varDict;
+
+    QVector<Material> materials;
+    QHash<QString, Material> matDict;
 
     void setupTree();
     void createActions();

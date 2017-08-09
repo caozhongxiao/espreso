@@ -48,6 +48,9 @@ struct AnisotropicMatrix final : MaterialPropertyMatrix
 };
 
 
+class MaterialPropertyVisitor;
+
+
 class MaterialProperty : public NamedEntity
 {
 protected:
@@ -62,6 +65,7 @@ public:
     const QString& name() const;
     const QString& unit() const;
     MaterialPropertyMatrix* value() const;
+    virtual void accept(MaterialPropertyVisitor* visitor) const = 0;
 };
 
 class BasicProperty final : public MaterialProperty
@@ -69,6 +73,7 @@ class BasicProperty final : public MaterialProperty
 public:
     BasicProperty();
     BasicProperty(const QString& name, const QString& unit, BasicMatrix* const value);
+    void accept(MaterialPropertyVisitor* visitor) const override;
 };
 
 class IsotropicProperty final : public MaterialProperty
@@ -76,6 +81,7 @@ class IsotropicProperty final : public MaterialProperty
 public:
     IsotropicProperty();
     IsotropicProperty(const QString& name, const QString& unit, IsotropicMatrix* const value);
+    void accept(MaterialPropertyVisitor* visitor) const override;
 };
 
 class DiagonalProperty final : public MaterialProperty
@@ -83,6 +89,7 @@ class DiagonalProperty final : public MaterialProperty
 public:
     DiagonalProperty();
     DiagonalProperty(const QString& name, const QString& unit, DiagonalMatrix* const value);
+    void accept(MaterialPropertyVisitor* visitor) const override;
 };
 
 class SymmetricProperty final : public MaterialProperty
@@ -90,6 +97,7 @@ class SymmetricProperty final : public MaterialProperty
 public:
     SymmetricProperty();
     SymmetricProperty(const QString& name, const QString& unit, SymmetricMatrix* const value);
+    void accept(MaterialPropertyVisitor* visitor) const override;
 };
 
 class AnisotropicProperty final : public MaterialProperty
@@ -97,6 +105,17 @@ class AnisotropicProperty final : public MaterialProperty
 public:
     AnisotropicProperty();
     AnisotropicProperty(const QString& name, const QString& unit, AnisotropicMatrix* const value);
+    void accept(MaterialPropertyVisitor* visitor) const override;
+};
+
+class MaterialPropertyVisitor
+{
+public:
+    virtual void visit(const BasicProperty& property) = 0;
+    virtual void visit(const IsotropicProperty& property) = 0;
+    virtual void visit(const DiagonalProperty& property) = 0;
+    virtual void visit(const SymmetricProperty& property) = 0;
+    virtual void visit(const AnisotropicProperty& property) = 0;
 };
 
 
@@ -113,6 +132,7 @@ public:
 
     QString description() const;
     QString name() const;
+    QString toString() const;
     void appendProperty(MaterialProperty* const property);
     void removeProperty(int index);
     int modifyProperty(int index, MaterialProperty* const property);

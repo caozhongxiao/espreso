@@ -23,6 +23,12 @@ public:
     Variable data();
     void accept() override;
 
+    void visit(const ConstantType& type) override;
+    void visit(const FunctionType& type) override;
+    void visit(const TableType& type) override;
+    void visit(const PiecewiseFunctionType& type) override;
+    void visit(const VariableLinkType& type) override;
+
 private slots:
     void on_cmbType_currentIndexChanged(int index);
 
@@ -46,12 +52,6 @@ private:
     void setupTableData(const Variable& var);
     DataType* collectPiecewiseData() const;
     void setupPiecewiseData(const Variable& var);
-
-    void visit(const ConstantType& type) override;
-    void visit(const FunctionType& type) override;
-    void visit(const TableType& type) override;
-    void visit(const PiecewiseFunctionType& type) override;
-    void visit(const VariableLinkType& type) override;
 };
 
 #endif // VARIABLEDIALOG_H

@@ -36,11 +36,21 @@ BasicProperty::BasicProperty() : MaterialProperty() {}
 BasicProperty::BasicProperty(const QString& name, const QString& unit, BasicMatrix* const value) :
     MaterialProperty(name, unit, value) {}
 
+void BasicProperty::accept(MaterialPropertyVisitor* visitor) const
+{
+    visitor->visit(*this);
+}
+
 
 IsotropicProperty::IsotropicProperty() : MaterialProperty() {}
 
 IsotropicProperty::IsotropicProperty(const QString& name, const QString& unit, IsotropicMatrix* const value) :
     MaterialProperty(name, unit, value) {}
+
+void IsotropicProperty::accept(MaterialPropertyVisitor* visitor) const
+{
+    visitor->visit(*this);
+}
 
 
 DiagonalProperty::DiagonalProperty() : MaterialProperty() {}
@@ -48,17 +58,32 @@ DiagonalProperty::DiagonalProperty() : MaterialProperty() {}
 DiagonalProperty::DiagonalProperty(const QString& name, const QString& unit, DiagonalMatrix* const value) :
     MaterialProperty(name, unit, value) {}
 
+void DiagonalProperty::accept(MaterialPropertyVisitor* visitor) const
+{
+    visitor->visit(*this);
+}
+
 
 SymmetricProperty::SymmetricProperty() : MaterialProperty() {}
 
 SymmetricProperty::SymmetricProperty(const QString& name, const QString& unit, SymmetricMatrix* const value) :
     MaterialProperty(name, unit, value) {}
 
+void SymmetricProperty::accept(MaterialPropertyVisitor* visitor) const
+{
+    visitor->visit(*this);
+}
+
 
 AnisotropicProperty::AnisotropicProperty() : MaterialProperty() {}
 
 AnisotropicProperty::AnisotropicProperty(const QString& name, const QString& unit, AnisotropicMatrix* const value) :
     MaterialProperty(name, unit, value) {}
+
+void AnisotropicProperty::accept(MaterialPropertyVisitor* visitor) const
+{
+    visitor->visit(*this);
+}
 
 
 Material::Material()
@@ -107,4 +132,9 @@ MaterialProperty* Material::property(int index) const
     if (index >= this->mProperties.count())
         return nullptr;
     return this->mProperties.at(index);
+}
+
+QString Material::toString() const
+{
+    return this->name();
 }
