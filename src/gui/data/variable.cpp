@@ -5,20 +5,20 @@ Variable::Variable()
     this->mData = new ConstantType("");
 }
 
-//Variable::Variable(const Variable& other)
-//{
-//    this->mData = other.mData->copy();
-//    this->mName = other.mName;
-//}
-
-Variable::Variable(const QString& name, DataType* data) : NamedEntity(name)
+Variable::Variable(const Variable& other) : NamedEntity(other)
 {
-    this->mData = data;
+    this->mData = other.mData->copy();
 }
 
-//Variable::~Variable()
-//{
-//}
+Variable::Variable(const QString& name, const DataType* data) : NamedEntity(name)
+{
+    this->mData = data->copy();
+}
+
+Variable::~Variable()
+{
+    delete this->mData;
+}
 
 QString Variable::toString() const
 {

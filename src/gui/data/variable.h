@@ -13,10 +13,9 @@ private:
 
 public:
     Variable();
-//    Variable(const Variable& other);
-//    ~Variable();
-
     Variable(const QString& name, DataType* data);
+    Variable(const Variable&);
+    ~Variable();
 
     DataType* data() const;
     QString toString() const;
