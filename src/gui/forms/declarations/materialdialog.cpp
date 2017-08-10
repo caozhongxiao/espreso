@@ -19,7 +19,8 @@ MaterialDialog::MaterialDialog(const QHash<QString, Material>& matDict, const QH
 
     this->setupProperties();
 
-    DataTypeWidget* pd = new DataTypeWidget(this->varDict, ui->frProperty);
+    ui->frProperty->layout()->addWidget(new DataTypeWidget(this->varDict, ui->frProperty));
+
 }
 
 MaterialDialog::MaterialDialog(const Material& material, const QHash<QString, Material>& matDict, const QHash<QString, Variable>& varDict, QWidget *parent) :
