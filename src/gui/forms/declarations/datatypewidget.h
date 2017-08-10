@@ -18,9 +18,12 @@ class DataTypeWidget : public QWidget, public DataTypeVisitor
 
 public:
     explicit DataTypeWidget(const QHash<QString, Variable>& varDict, QWidget *parent = 0);
+    DataTypeWidget(const DataType* data, const QHash<QString, Variable>& varDict, QWidget *parent = 0);
     ~DataTypeWidget();
     DataType* data() const;
     int check();
+    DataType* checkedData();
+    void setDataType(const DataType*);
 
     virtual void visit(const ConstantType& type) override;
     virtual void visit(const FunctionType& type) override;

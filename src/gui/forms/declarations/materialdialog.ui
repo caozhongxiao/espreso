@@ -102,6 +102,17 @@
          <layout class="QVBoxLayout" name="verticalLayout_5"/>
         </widget>
        </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <item>
+          <widget class="QPushButton" name="btnPropSave">
+           <property name="text">
+            <string>Save changes</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
       </layout>
      </item>
     </layout>

@@ -10,7 +10,12 @@ NamedEntity::NamedEntity(const QString& name)
     this->mName = name;
 }
 
-QString NamedEntity::name() const
+NamedEntity::NamedEntity(const NamedEntity& ne)
+{
+    this->mName = ne.mName;
+}
+
+const QString& NamedEntity::name() const
 {
     return this->mName;
 }

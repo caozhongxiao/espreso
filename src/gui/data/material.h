@@ -10,20 +10,26 @@
 struct MaterialPropertyMatrix
 {
     DataType* kxx;
+    virtual ~MaterialPropertyMatrix();
+    virtual MaterialPropertyMatrix* copy() const = 0;
 };
 
 struct BasicMatrix final : MaterialPropertyMatrix
 {
+    virtual MaterialPropertyMatrix* copy() const override;
 };
 
 struct IsotropicMatrix final : MaterialPropertyMatrix
 {
+    virtual MaterialPropertyMatrix* copy() const override;
 };
 
 struct DiagonalMatrix final : MaterialPropertyMatrix
 {
     DataType* kyy;
     DataType* kzz;
+    ~DiagonalMatrix();
+    virtual MaterialPropertyMatrix* copy() const override;
 };
 
 struct SymmetricMatrix final : MaterialPropertyMatrix
@@ -33,6 +39,8 @@ struct SymmetricMatrix final : MaterialPropertyMatrix
     DataType* kxy;
     DataType* kxz;
     DataType* kyz;
+    ~SymmetricMatrix();
+    virtual MaterialPropertyMatrix* copy() const override;
 };
 
 struct AnisotropicMatrix final : MaterialPropertyMatrix
@@ -45,6 +53,8 @@ struct AnisotropicMatrix final : MaterialPropertyMatrix
     DataType* kyx;
     DataType* kzx;
     DataType* kzy;
+    ~AnisotropicMatrix();
+    virtual MaterialPropertyMatrix* copy() const override;
 };
 
 
@@ -54,58 +64,69 @@ class MaterialPropertyVisitor;
 class MaterialProperty : public NamedEntity
 {
 protected:
-    QString mName;
     QString mUnit;
     MaterialPropertyMatrix* mValue;
 
     MaterialProperty();
-    MaterialProperty(const QString& name, const QString& unit, MaterialPropertyMatrix* const value);
+    MaterialProperty(const QString& name, const QString& unit, const MaterialPropertyMatrix* value);
+    MaterialProperty(const MaterialProperty&);
 
 public:
-    const QString& name() const;
+    virtual ~MaterialProperty();
     const QString& unit() const;
-    MaterialPropertyMatrix* value() const;
+    const MaterialPropertyMatrix* value() const;
     virtual void accept(MaterialPropertyVisitor* visitor) const = 0;
+    virtual MaterialProperty* copy() const = 0;
 };
 
 class BasicProperty final : public MaterialProperty
 {
 public:
     BasicProperty();
-    BasicProperty(const QString& name, const QString& unit, BasicMatrix* const value);
+    BasicProperty(const QString& name, const QString& unit, const BasicMatrix* value);
+    BasicProperty(const BasicProperty&);
     void accept(MaterialPropertyVisitor* visitor) const override;
+    virtual MaterialProperty* copy() const override;
 };
 
 class IsotropicProperty final : public MaterialProperty
 {
 public:
     IsotropicProperty();
-    IsotropicProperty(const QString& name, const QString& unit, IsotropicMatrix* const value);
+    IsotropicProperty(const QString& name, const QString& unit, const IsotropicMatrix* value);
+    IsotropicProperty(const IsotropicProperty&);
     void accept(MaterialPropertyVisitor* visitor) const override;
+    virtual MaterialProperty* copy() const override;
 };
 
 class DiagonalProperty final : public MaterialProperty
 {
 public:
     DiagonalProperty();
-    DiagonalProperty(const QString& name, const QString& unit, DiagonalMatrix* const value);
+    DiagonalProperty(const QString& name, const QString& unit, const DiagonalMatrix* value);
+    DiagonalProperty(const DiagonalProperty&);
     void accept(MaterialPropertyVisitor* visitor) const override;
+    virtual MaterialProperty* copy() const override;
 };
 
 class SymmetricProperty final : public MaterialProperty
 {
 public:
     SymmetricProperty();
-    SymmetricProperty(const QString& name, const QString& unit, SymmetricMatrix* const value);
+    SymmetricProperty(const QString& name, const QString& unit, const SymmetricMatrix* value);
+    SymmetricProperty(const SymmetricProperty&);
     void accept(MaterialPropertyVisitor* visitor) const override;
+    virtual MaterialProperty* copy() const override;
 };
 
 class AnisotropicProperty final : public MaterialProperty
 {
 public:
     AnisotropicProperty();
-    AnisotropicProperty(const QString& name, const QString& unit, AnisotropicMatrix* const value);
+    AnisotropicProperty(const QString& name, const QString& unit, const AnisotropicMatrix* value);
+    AnisotropicProperty(const AnisotropicProperty&);
     void accept(MaterialPropertyVisitor* visitor) const override;
+    virtual MaterialProperty* copy() const override;
 };
 
 class MaterialPropertyVisitor
@@ -122,21 +143,21 @@ public:
 class Material : public NamedEntity
 {
 private:
-    QString mName;
     QString mDescription;
     QVector<MaterialProperty*> mProperties;
 
 public:
     Material();
     Material(const QString& name, const QString& description);
+    Material(const Material&);
+    ~Material();
 
     QString description() const;
-    QString name() const;
     QString toString() const;
     void appendProperty(MaterialProperty* const property);
     void removeProperty(int index);
     int modifyProperty(int index, MaterialProperty* const property);
-    MaterialProperty* property(int index) const;
+    const MaterialProperty* property(int index) const;
 };
 
 #endif // MATERIAL_H

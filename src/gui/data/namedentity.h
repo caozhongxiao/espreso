@@ -10,9 +10,10 @@ protected:
 
     NamedEntity();
     NamedEntity(const QString&);
+    NamedEntity(const NamedEntity&);
 
 public:
-    QString name() const;
+    const QString& name() const;
 };
 
 #endif // NAMEDENTITY_H

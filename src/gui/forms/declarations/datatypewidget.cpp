@@ -42,6 +42,13 @@ DataTypeWidget::DataTypeWidget(const QHash<QString, Variable>& varDict, QWidget 
         ui->cmbVariable->setCurrentIndex(0);
 }
 
+DataTypeWidget::DataTypeWidget(const DataType* data, const QHash<QString, Variable>& varDict, QWidget *parent) :
+    DataTypeWidget(varDict, parent)
+{
+    data->accept(this);
+    this->setData(data);
+}
+
 DataTypeWidget::~DataTypeWidget()
 {
     delete ui;
@@ -56,6 +63,12 @@ void DataTypeWidget::setupCheckbox()
     if (!this->varDict.isEmpty())
         ui->cmbType->addItem(tr("Variable"));
     ui->cmbType->setCurrentIndex(0);
+}
+
+void DataTypeWidget::setDataType(const DataType* dataType)
+{
+    dataType->accept(this);
+    this->setData(dataType);
 }
 
 DataType* DataTypeWidget::data() const
@@ -83,6 +96,13 @@ DataType* DataTypeWidget::data() const
     }
 
     return data;
+}
+
+DataType* DataTypeWidget::checkedData()
+{
+    if (this->check() == -1)
+        return nullptr;
+    return this->data();
 }
 
 void DataTypeWidget::on_cmbType_currentIndexChanged(int index)

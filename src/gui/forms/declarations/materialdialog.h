@@ -5,6 +5,7 @@
 #include <QStandardItemModel>
 #include "../data/material.h"
 #include "../data/variable.h"
+#include "datatypewidget.h"
 
 namespace Ui {
 class MaterialDialog;
@@ -32,6 +33,8 @@ private slots:
 
     void on_btnPropDel_pressed();
 
+    void on_btnPropSave_pressed();
+
 private:
     Ui::MaterialDialog *ui;
 
@@ -41,9 +44,16 @@ private:
     QVector<MaterialProperty*> properties;
     QHash<int, int> deletedProperties;
 
+    int activeProperty = 0;
+    int activePropertyWidget = 0;
+    void serveBasicPropertyWidget();
+    void serveMatrixPropertyWidget();
+
     QStandardItemModel* tableModel;
     void setupProperties();
     void tableBtnPressed(int row);
+
+    DataTypeWidget* basicPropertyWidget;
 };
 
 #endif // MATERIALDIALOG_H

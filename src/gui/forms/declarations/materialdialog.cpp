@@ -2,7 +2,6 @@
 #include "ui_materialdialog.h"
 
 #include "../../data/common.h"
-#include "datatypewidget.h"
 #include <QStringList>
 
 MaterialDialog::MaterialDialog(const QHash<QString, Material>& matDict, const QHash<QString, Variable>& varDict, QWidget *parent) :
@@ -19,8 +18,9 @@ MaterialDialog::MaterialDialog(const QHash<QString, Material>& matDict, const QH
 
     this->setupProperties();
 
+    this->basicPropertyWidget = new DataTypeWidget(this->varDict, ui->frProperty);
     ui->frProperty->layout()->addWidget(new DataTypeWidget(this->varDict, ui->frProperty));
-
+    this->basicPropertyWidget->hide();
 }
 
 MaterialDialog::MaterialDialog(const Material& material, const QHash<QString, Material>& matDict, const QHash<QString, Variable>& varDict, QWidget *parent) :
@@ -100,12 +100,15 @@ void MaterialDialog::setupProperties()
 void MaterialDialog::tableBtnPressed(int row)
 {
     MaterialProperty* p = this->properties.at(row);
+    this->activeProperty = row;
+    this->activePropertyWidget = 0;
     p->accept(this);
 }
 
 void MaterialDialog::visit(const BasicProperty& property)
 {
-
+    this->basicPropertyWidget->setDataType(property.value()->kxx);
+    this->basicPropertyWidget->show();
 }
 
 void MaterialDialog::visit(const IsotropicProperty& property)
@@ -124,6 +127,32 @@ void MaterialDialog::visit(const SymmetricProperty& property)
 }
 
 void MaterialDialog::visit(const AnisotropicProperty& property)
+{
+
+}
+
+void MaterialDialog::on_btnPropSave_pressed()
+{
+    switch(activePropertyWidget)
+    {
+        case 0:
+            this->serveBasicPropertyWidget();
+            break;
+        case 1:
+            this->serveMatrixPropertyWidget();
+            break;
+        default:
+            qWarning("%s", QString(tr("Property detail: Unknown property widget!")).toStdString().c_str());
+    }
+}
+
+void MaterialDialog::serveBasicPropertyWidget()
+{
+    DataType* result = this->basicPropertyWidget->data();
+//    this->properties.at(this->activeProperty)->value()->kxx = result;
+}
+
+void MaterialDialog::serveMatrixPropertyWidget()
 {
 
 }
