@@ -10,9 +10,9 @@ Variable::Variable(const Variable& other) : NamedEntity(other)
     this->mData = other.mData->copy();
 }
 
-Variable::Variable(const QString& name, const DataType* data) : NamedEntity(name)
+Variable::Variable(const QString& name, DataType* data) : NamedEntity(name)
 {
-    this->mData = data->copy();
+    this->mData = data;
 }
 
 Variable::~Variable()

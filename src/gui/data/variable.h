@@ -13,7 +13,7 @@ private:
 
 public:
     Variable();
-    Variable(const QString& name, const DataType* data);
+    Variable(const QString& name, DataType* data);
     Variable(const Variable&);
     ~Variable();
 

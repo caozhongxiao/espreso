@@ -73,18 +73,22 @@ void MaterialDialog::setupProperties()
 
     ui->tableProperties->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-    IsotropicProperty* thermal = new IsotropicProperty("Thermal Conductivity", "W*m^-1*K^-1", new IsotropicMatrix());
-    BasicProperty* density = new BasicProperty("Density", "kg*m^-3", new BasicMatrix());
-    BasicProperty* cp = new BasicProperty("Specific Heat", "J*kg^-1*K^-1", new BasicMatrix());
-
+    IsotropicModel* im = new IsotropicModel();
+    im->kxx = new ConstantType("0");
+    BasicModel* bm = new BasicModel();
+    bm->kxx = new ConstantType("0");
+    BasicModel* bm1 = (BasicModel*)bm->copy();
+    MaterialProperty thermal("Thermal Conductivity", "W*m^-1*K^-1", im);
+    MaterialProperty density("Density", "kg*m^-3", bm);
+    MaterialProperty cp("Specific Heat", "J*kg^-1*K^-1", bm1);
     this->properties.append(thermal);
     this->properties.append(density);
     this->properties.append(cp);
 
-    foreach (MaterialProperty* mp, this->properties) {
+    foreach (MaterialProperty mp, this->properties) {
         QList<QStandardItem*> list;
-        QStandardItem* cell1 = new QStandardItem(mp->name());
-        QStandardItem* cell2 = new QStandardItem(mp->unit());
+        QStandardItem* cell1 = new QStandardItem(mp.name());
+        QStandardItem* cell2 = new QStandardItem(mp.unit());
         QStandardItem* cell3 = new QStandardItem("Model");
         list << cell1 << cell2 << cell3;
         this->tableModel->appendRow(list);
@@ -99,34 +103,34 @@ void MaterialDialog::setupProperties()
 
 void MaterialDialog::tableBtnPressed(int row)
 {
-    MaterialProperty* p = this->properties.at(row);
+    MaterialProperty p = this->properties.at(row);
     this->activeProperty = row;
     this->activePropertyWidget = 0;
-    p->accept(this);
+    p.model()->accept(this);
 }
 
-void MaterialDialog::visit(const BasicProperty& property)
+void MaterialDialog::visit(const BasicModel& model)
 {
-    this->basicPropertyWidget->setDataType(property.value()->kxx);
+    this->basicPropertyWidget->setDataType(model.kxx);
     this->basicPropertyWidget->show();
 }
 
-void MaterialDialog::visit(const IsotropicProperty& property)
+void MaterialDialog::visit(const IsotropicModel& model)
 {
 
 }
 
-void MaterialDialog::visit(const DiagonalProperty& property)
+void MaterialDialog::visit(const DiagonalModel& model)
 {
 
 }
 
-void MaterialDialog::visit(const SymmetricProperty& property)
+void MaterialDialog::visit(const SymmetricModel& model)
 {
 
 }
 
-void MaterialDialog::visit(const AnisotropicProperty& property)
+void MaterialDialog::visit(const AnisotropicModel& model)
 {
 
 }
@@ -149,7 +153,8 @@ void MaterialDialog::on_btnPropSave_pressed()
 void MaterialDialog::serveBasicPropertyWidget()
 {
     DataType* result = this->basicPropertyWidget->data();
-//    this->properties.at(this->activeProperty)->value()->kxx = result;
+    MaterialProperty mp = this->properties.at(this->activeProperty);
+    mp.model()->kxx = result;
 }
 
 void MaterialDialog::serveMatrixPropertyWidget()
