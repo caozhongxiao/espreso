@@ -1,136 +1,20 @@
 #include "material.h"
 
-MaterialPropertyModel::~MaterialPropertyModel()
-{
-    delete this->kxx;
-}
-
-MaterialPropertyModel* BasicModel::copy() const
-{
-    BasicModel* Model = new BasicModel();
-    Model->kxx = this->kxx->copy();
-    return Model;
-}
-
-void BasicModel::accept(MaterialPropertyModelVisitor *visitor) const
-{
-    visitor->visit(*this);
-}
-
-MaterialPropertyModel* IsotropicModel::copy() const
-{
-    IsotropicModel* Model = new IsotropicModel();
-    Model->kxx = this->kxx->copy();
-    return Model;
-}
-
-void IsotropicModel::accept(MaterialPropertyModelVisitor *visitor) const
-{
-    visitor->visit(*this);
-}
-
-DiagonalModel::~DiagonalModel()
-{
-    delete this->kyy;
-    delete this->kzz;
-}
-
-MaterialPropertyModel* DiagonalModel::copy() const
-{
-    DiagonalModel* Model = new DiagonalModel();
-    Model->kxx = this->kxx->copy();
-    Model->kyy = this->kyy->copy();
-    Model->kzz = this->kzz->copy();
-    return Model;
-}
-
-void DiagonalModel::accept(MaterialPropertyModelVisitor *visitor) const
-{
-    visitor->visit(*this);
-}
-
-SymmetricModel::~SymmetricModel()
-{
-    delete this->kyy;
-    delete this->kzz;
-    delete this->kxy;
-    delete this->kxz;
-    delete this->kyz;
-}
-
-MaterialPropertyModel* SymmetricModel::copy() const
-{
-    SymmetricModel* Model = new SymmetricModel();
-    Model->kxx = this->kxx->copy();
-    Model->kyy = this->kyy->copy();
-    Model->kzz = this->kzz->copy();
-    Model->kxy = this->kxy->copy();
-    Model->kxz = this->kxz->copy();
-    Model->kyz = this->kyz->copy();
-    return Model;
-}
-
-void SymmetricModel::accept(MaterialPropertyModelVisitor *visitor) const
-{
-    visitor->visit(*this);
-}
-
-AnisotropicModel::~AnisotropicModel()
-{
-    delete this->kyy;
-    delete this->kzz;
-    delete this->kxy;
-    delete this->kxz;
-    delete this->kyz;
-    delete this->kyx;
-    delete this->kzx;
-    delete this->kzy;
-}
-
-MaterialPropertyModel* AnisotropicModel::copy() const
-{
-    AnisotropicModel* Model = new AnisotropicModel();
-    Model->kxx = this->kxx->copy();
-    Model->kyy = this->kyy->copy();
-    Model->kzz = this->kzz->copy();
-    Model->kxy = this->kxy->copy();
-    Model->kxz = this->kxz->copy();
-    Model->kyz = this->kyz->copy();
-    Model->kyx = this->kyx->copy();
-    Model->kzx = this->kzx->copy();
-    Model->kzy = this->kzy->copy();
-    return Model;
-}
-
-void AnisotropicModel::accept(MaterialPropertyModelVisitor *visitor) const
-{
-    visitor->visit(*this);
-}
-
-
 MaterialProperty::MaterialProperty() : NamedEntity()
 {
     this->mUnit = "";
-    this->mModel = nullptr;
 }
 
-MaterialProperty::MaterialProperty(const QString& name, const QString& unit, MaterialPropertyModel* const model) :
+MaterialProperty::MaterialProperty(const QString& name, const QString& unit) :
     NamedEntity(name)
 {
     this->mUnit = unit;
-    this->mModel = model;
 }
 
 MaterialProperty::MaterialProperty(const MaterialProperty& mp) :
     NamedEntity(mp)
 {
     this->mUnit = mp.mUnit;
-    this->mModel = mp.mModel->copy();
-}
-
-MaterialProperty::~MaterialProperty()
-{
-    delete this->mModel;
 }
 
 const QString& MaterialProperty::unit() const
@@ -139,9 +23,252 @@ const QString& MaterialProperty::unit() const
 }
 
 
-MaterialPropertyModel* MaterialProperty::model() const
+BasicProperty::BasicProperty() : MaterialProperty() {}
+
+BasicProperty::BasicProperty(const QString& name, const QString& unit, const BasicModel& model) :
+    MaterialProperty(name, unit)
+{
+    this->mModel = model;
+}
+
+BasicProperty::BasicProperty(const BasicProperty& bp) : MaterialProperty(bp)
+{
+    this->mModel = bp.mModel;
+}
+
+BasicModel& BasicProperty::model()
 {
     return this->mModel;
+}
+
+void BasicProperty::setModel(const BasicModel& model)
+{
+    this->mModel = model;
+}
+
+QVector<DataType*> BasicProperty::modelData()
+{
+    QVector<DataType*> model;
+    model.append(this->mModel.kxx);
+    return model;
+}
+
+int BasicProperty::setModelData(const QVector<DataType*>& data)
+{
+    if (data.size() != 1)
+        return -1;
+    mModel.kxx = data.at(0);
+    return 1;
+}
+
+void BasicProperty::accept(MaterialPropertyVisitor* visitor)
+{
+    visitor->visit(*this);
+}
+
+
+IsotropicProperty::IsotropicProperty() : MaterialProperty() {}
+
+IsotropicProperty::IsotropicProperty(const QString& name, const QString& unit, const IsotropicModel& model) :
+    MaterialProperty(name, unit)
+{
+    this->mModel = model;
+}
+
+IsotropicProperty::IsotropicProperty(const IsotropicProperty& p) : MaterialProperty(p)
+{
+    this->mModel = p.mModel;
+}
+
+IsotropicModel& IsotropicProperty::model()
+{
+    return this->mModel;
+}
+
+void IsotropicProperty::setModel(const IsotropicModel& model)
+{
+    this->mModel = model;
+}
+
+QVector<DataType*> IsotropicProperty::modelData()
+{
+    QVector<DataType*> model;
+    model.append(this->mModel.kxx);
+    return model;
+}
+
+int IsotropicProperty::setModelData(const QVector<DataType*>& data)
+{
+    if (data.size() != 1)
+        return -1;
+    mModel.kxx = data.at(0);
+    return 1;
+}
+
+void IsotropicProperty::accept(MaterialPropertyVisitor* visitor)
+{
+    visitor->visit(*this);
+}
+
+DiagonalProperty::DiagonalProperty() : MaterialProperty() {}
+
+DiagonalProperty::DiagonalProperty(const QString& name, const QString& unit, const DiagonalModel& model) :
+    MaterialProperty(name, unit)
+{
+    this->mModel = model;
+}
+
+DiagonalProperty::DiagonalProperty(const DiagonalProperty& p) : MaterialProperty(p)
+{
+    this->mModel = p.mModel;
+}
+
+DiagonalModel& DiagonalProperty::model()
+{
+    return this->mModel;
+}
+
+void DiagonalProperty::setModel(const DiagonalModel& model)
+{
+    this->mModel = model;
+}
+
+QVector<DataType*> DiagonalProperty::modelData()
+{
+    QVector<DataType*> model;
+    model.append(this->mModel.kxx);
+    model.append(this->mModel.kyy);
+    model.append(this->mModel.kzz);
+    return model;
+}
+
+int DiagonalProperty::setModelData(const QVector<DataType*>& data)
+{
+    if (data.size() != 3)
+        return -1;
+    mModel.kxx = data.at(0);
+    mModel.kyy = data.at(1);
+    mModel.kzz = data.at(2);
+    return 3;
+}
+
+void DiagonalProperty::accept(MaterialPropertyVisitor* visitor)
+{
+    visitor->visit(*this);
+}
+
+
+SymmetricProperty::SymmetricProperty() : MaterialProperty() {}
+
+SymmetricProperty::SymmetricProperty(const QString& name, const QString& unit, const SymmetricModel& model) :
+    MaterialProperty(name, unit)
+{
+    this->mModel = model;
+}
+
+SymmetricProperty::SymmetricProperty(const SymmetricProperty& p) : MaterialProperty(p)
+{
+    this->mModel = p.mModel;
+}
+
+SymmetricModel& SymmetricProperty::model()
+{
+    return this->mModel;
+}
+
+void SymmetricProperty::setModel(const SymmetricModel& model)
+{
+    this->mModel = model;
+}
+
+QVector<DataType*> SymmetricProperty::modelData()
+{
+    QVector<DataType*> model;
+    model.append(this->mModel.kxx);
+    model.append(this->mModel.kyy);
+    model.append(this->mModel.kzz);
+    model.append(this->mModel.kxy);
+    model.append(this->mModel.kxz);
+    model.append(this->mModel.kyz);
+    return model;
+}
+
+int SymmetricProperty::setModelData(const QVector<DataType*>& data)
+{
+    if (data.size() != 6)
+        return -1;
+    mModel.kxx = data.at(0);
+    mModel.kyy = data.at(1);
+    mModel.kzz = data.at(2);
+    mModel.kxy = data.at(3);
+    mModel.kxz = data.at(4);
+    mModel.kyz = data.at(5);
+    return 6;
+}
+
+void SymmetricProperty::accept(MaterialPropertyVisitor* visitor)
+{
+    visitor->visit(*this);
+}
+
+
+AnisotropicProperty::AnisotropicProperty() : MaterialProperty() {}
+
+AnisotropicProperty::AnisotropicProperty(const QString& name, const QString& unit, const AnisotropicModel& model) :
+    MaterialProperty(name, unit)
+{
+    this->mModel = model;
+}
+
+AnisotropicProperty::AnisotropicProperty(const AnisotropicProperty& p) : MaterialProperty(p)
+{
+    this->mModel = p.mModel;
+}
+
+AnisotropicModel& AnisotropicProperty::model()
+{
+    return this->mModel;
+}
+
+void AnisotropicProperty::setModel(const AnisotropicModel& model)
+{
+    this->mModel = model;
+}
+
+QVector<DataType*> AnisotropicProperty::modelData()
+{
+    QVector<DataType*> model;
+    model.append(this->mModel.kxx);
+    model.append(this->mModel.kyy);
+    model.append(this->mModel.kzz);
+    model.append(this->mModel.kxy);
+    model.append(this->mModel.kxz);
+    model.append(this->mModel.kyz);
+    model.append(this->mModel.kyx);
+    model.append(this->mModel.kzx);
+    model.append(this->mModel.kzy);
+    return model;
+}
+
+int AnisotropicProperty::setModelData(const QVector<DataType*>& data)
+{
+    if (data.size() != 9)
+        return -1;
+    mModel.kxx = data.at(0);
+    mModel.kyy = data.at(1);
+    mModel.kzz = data.at(2);
+    mModel.kxy = data.at(3);
+    mModel.kxz = data.at(4);
+    mModel.kyz = data.at(5);
+    mModel.kyx = data.at(6);
+    mModel.kzx = data.at(7);
+    mModel.kzy = data.at(8);
+    return 9;
+}
+
+void AnisotropicProperty::accept(MaterialPropertyVisitor* visitor)
+{
+    visitor->visit(*this);
 }
 
 
@@ -159,14 +286,7 @@ Material::Material(const QString& name, const QString& description) : NamedEntit
 Material::Material(const Material& m) : NamedEntity(m)
 {
     this->mDescription = m.mDescription;
-    foreach (MaterialProperty mp, m.mProperties) {
-        this->mProperties.append(MaterialProperty(mp));
-    }
-}
-
-Material::~Material()
-{
-    this->mProperties.clear();
+    this->mProperties = m.mProperties;
 }
 
 QString Material::description() const
@@ -174,7 +294,7 @@ QString Material::description() const
     return this->mDescription;
 }
 
-void Material::appendProperty(const MaterialProperty& property)
+void Material::appendProperty(MaterialProperty* property)
 {
     this->mProperties.append(property);
 }
@@ -182,21 +302,25 @@ void Material::appendProperty(const MaterialProperty& property)
 
 void Material::removeProperty(int index)
 {
+    MaterialProperty* tmp = this->mProperties.at(index);
     this->mProperties.remove(index);
+    delete tmp;
 }
 
-int Material::modifyProperty(int index, const MaterialProperty& property)
+int Material::modifyProperty(int index, MaterialProperty* property)
 {
     if (this->mProperties.count() <= index)
         return -1;
+    MaterialProperty* tmp = this->mProperties.at(index);
     this->mProperties.replace(index, property);
+    delete tmp;
     return 1;
 }
 
-const MaterialProperty& Material::property(int index) const
+MaterialProperty* Material::property(int index) const
 {
     if (index >= this->mProperties.count())
-        return MaterialProperty();
+        return nullptr;
     return this->mProperties.at(index);
 }
 

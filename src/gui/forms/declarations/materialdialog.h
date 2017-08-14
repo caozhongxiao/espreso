@@ -11,7 +11,7 @@ namespace Ui {
 class MaterialDialog;
 }
 
-class MaterialDialog : public QDialog, public MaterialPropertyModelVisitor
+class MaterialDialog : public QDialog, public MaterialPropertyVisitor
 {
     Q_OBJECT
 
@@ -22,11 +22,11 @@ public:
 
     Material data() const;
 
-    void visit(const BasicModel& model) override;
-    void visit(const IsotropicModel& model) override;
-    void visit(const DiagonalModel& model) override;
-    void visit(const SymmetricModel& model) override;
-    void visit(const AnisotropicModel& model) override;
+    void visit(const BasicProperty& p) override;
+    void visit(const IsotropicProperty& p) override;
+    void visit(const DiagonalProperty& p) override;
+    void visit(const SymmetricProperty& p) override;
+    void visit(const AnisotropicProperty& p) override;
 
 private slots:
     void on_btnPropAdd_pressed();
@@ -41,7 +41,7 @@ private:
     QHash<QString, Material> matDict;
     QHash<QString, Variable> varDict;
 
-    QVector<MaterialProperty> properties;
+    QVector<MaterialProperty*> properties;
     QHash<int, int> deletedProperties;
 
     int activeProperty = 0;
