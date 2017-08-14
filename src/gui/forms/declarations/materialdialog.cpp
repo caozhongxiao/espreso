@@ -108,12 +108,6 @@ void MaterialDialog::tableBtnPressed(int row)
     p->accept(this);
 }
 
-//void MaterialDialog::visit(const BasicModel& model)
-//{
-//    this->basicPropertyWidget->setDataType(model.kxx);
-//    ui->frProperty->show();
-//}
-
 void MaterialDialog::visit(const BasicProperty& p)
 {
     BasicProperty mp = p;
@@ -128,30 +122,35 @@ void MaterialDialog::visit(const AnisotropicProperty& p) {}
 
 void MaterialDialog::on_btnPropSave_pressed()
 {
+    int ret = 1;
     switch(activePropertyWidget)
     {
         case 0:
-            this->serveBasicPropertyWidget();
+            ret = this->serveBasicPropertyWidget();
             break;
         case 1:
-            this->serveMatrixPropertyWidget();
+            ret = this->serveMatrixPropertyWidget();
             break;
         default:
             qWarning("%s", QString(tr("Property detail: Unknown property widget!")).toStdString().c_str());
     }
-    ui->frProperty->hide();
+    if (ret)
+        ui->frProperty->hide();
 }
 
-void MaterialDialog::serveBasicPropertyWidget()
+int MaterialDialog::serveBasicPropertyWidget()
 {
+    if (this->basicPropertyWidget->check() == -1)
+        return 0;
     DataType* result = this->basicPropertyWidget->data();
     MaterialProperty* p = this->properties.at(this->activeProperty);
     QVector<DataType*> data;
     data.append(result);
     p->setModelData(data);
+    return 1;
 }
 
-void MaterialDialog::serveMatrixPropertyWidget()
+int MaterialDialog::serveMatrixPropertyWidget()
 {
-
+    return 1;
 }

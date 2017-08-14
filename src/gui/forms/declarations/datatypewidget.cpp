@@ -184,7 +184,7 @@ int DataTypeWidget::check()
         }
     }
 
-    return 0;
+    return 1;
 }
 
 void DataTypeWidget::setData(const DataType* data)
@@ -214,6 +214,7 @@ void DataTypeWidget::setData(const DataType* data)
 
 void DataTypeWidget::setupTableData(const DataType* data)
 {
+    this->tableModel->clear();
     const TableType* table = (const TableType*)data;
     for (auto it = table->data().cbegin(); it != table->data().cend(); ++it) {
         QList<QStandardItem*> list;
@@ -241,6 +242,7 @@ DataType* DataTypeWidget::collectTableData() const
 
 void DataTypeWidget::setupPiecewiseData(const DataType* data)
 {
+    this->piecewiseModel->clear();
     const PiecewiseFunctionType* table = (const PiecewiseFunctionType*)data;
     for (auto it = table->data().cbegin(); it != table->data().cend(); ++it) {
         QList<QStandardItem*> list;

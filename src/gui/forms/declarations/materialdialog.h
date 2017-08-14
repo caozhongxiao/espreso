@@ -46,8 +46,8 @@ private:
 
     int activeProperty = 0;
     int activePropertyWidget = 0;
-    void serveBasicPropertyWidget();
-    void serveMatrixPropertyWidget();
+    int serveBasicPropertyWidget();
+    int serveMatrixPropertyWidget();
 
     QStandardItemModel* tableModel;
     void setupProperties();
