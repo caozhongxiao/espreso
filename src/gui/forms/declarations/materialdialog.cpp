@@ -43,6 +43,10 @@ Material MaterialDialog::data() const
 {
     Material m(ui->editMatName->text(), ui->editMatDesc->toPlainText());
 
+    foreach (MaterialProperty* mp, this->properties) {
+        m.appendProperty(mp);
+    }
+
     return m;
 }
 
