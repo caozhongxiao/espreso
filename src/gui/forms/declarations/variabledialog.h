@@ -6,12 +6,13 @@
 
 #include "../data/variable.h"
 #include "../data/datatype.h"
+#include "datatypewidget.h"
 
 namespace Ui {
 class VariableDialog;
 }
 
-class VariableDialog : public QDialog, public DataTypeVisitor
+class VariableDialog : public QDialog
 {
     Q_OBJECT
 
@@ -23,35 +24,13 @@ public:
     Variable data();
     void accept() override;
 
-    void visit(ConstantType& type) override;
-    void visit(FunctionType& type) override;
-    void visit(TableType& type) override;
-    void visit(PiecewiseFunctionType& type) override;
-    void visit(VariableLinkType& type) override;
-
-private slots:
-    void on_cmbType_currentIndexChanged(int index);
-
-    void on_btnTableAdd_pressed();
-
-    void on_btnTableDel_pressed();
-
-    void on_btnPiecewiseAdd_pressed();
-
-    void on_btnPiecewiseDel_pressed();
-
 private:
     Ui::VariableDialog *ui;
     QHash<QString, Variable> varDict;
-    QStandardItemModel* tableModel;
-    QStandardItemModel* piecewiseModel;
-    std::vector<std::string> fnVars;
+
+    DataTypeWidget* dataWidget;
 
     void setData(const Variable& var);
-    DataType* collectTableData() const;
-    void setupTableData(const Variable& var);
-    DataType* collectPiecewiseData() const;
-    void setupPiecewiseData(const Variable& var);
 };
 
 #endif // VARIABLEDIALOG_H
