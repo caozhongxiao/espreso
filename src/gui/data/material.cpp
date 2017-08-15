@@ -209,11 +209,11 @@ int SymmetricProperty::setModelData(const QVector<DataType*>& data)
     if (data.size() != 6)
         return -1;
     mModel.kxx = data.at(0);
-    mModel.kyy = data.at(1);
-    mModel.kzz = data.at(2);
-    mModel.kxy = data.at(3);
-    mModel.kxz = data.at(4);
-    mModel.kyz = data.at(5);
+    mModel.kxy = data.at(1);
+    mModel.kxz = data.at(2);
+    mModel.kyy = data.at(3);
+    mModel.kyz = data.at(4);
+    mModel.kzz = data.at(5);
     return 6;
 }
 
@@ -266,14 +266,14 @@ int AnisotropicProperty::setModelData(const QVector<DataType*>& data)
     if (data.size() != 9)
         return -1;
     mModel.kxx = data.at(0);
-    mModel.kyy = data.at(1);
-    mModel.kzz = data.at(2);
-    mModel.kxy = data.at(3);
-    mModel.kxz = data.at(4);
+    mModel.kxy = data.at(1);
+    mModel.kxz = data.at(2);
+    mModel.kyx = data.at(3);
+    mModel.kyy = data.at(4);
     mModel.kyz = data.at(5);
-    mModel.kyx = data.at(6);
-    mModel.kzx = data.at(7);
-    mModel.kzy = data.at(8);
+    mModel.kzx = data.at(6);
+    mModel.kzy = data.at(7);
+    mModel.kzz = data.at(8);
     return 9;
 }
 
