@@ -46,6 +46,7 @@ MatrixPropertyWidget::~MatrixPropertyWidget()
 
 void MatrixPropertyWidget::setData(MaterialProperty* property)
 {
+    ui->frDetail->hide();
     this->mProperty = property;
     this->matrixModel->setRowCount(0);
     this->matrixModel->setRowCount(3);
@@ -95,27 +96,22 @@ void MatrixPropertyWidget::visit(DiagonalProperty& p)
 void MatrixPropertyWidget::visit(SymmetricProperty& p)
 {
     this->propertyType = 3;
-    QVector<QVector<int> > items;
-    QVector<int> r1;
-    r1.append(0);
-    r1.append(1);
-    r1.append(2);
-    QVector<int> r2;
-    r1.append(1);
-    r1.append(2);
-    QVector<int> r3;
-    r1.append(2);
-    items.append(r1);
-    items.append(r2);
-    items.append(r3);
-    for (int i = 0; i < 3; ++i)
+    QVector<QVector<int> > items(3);
+    items[0].append(0);
+    items[0].append(1);
+    items[0].append(2);
+    items[1].append(1);
+    items[1].append(2);
+    items[2].append(2);
+    for (int i = 0; i < 3; i++)
     {
         QVector<int> row = items.at(i);
         for (auto j = row.cbegin(); j != row.cend(); ++j)
         {
             QPushButton* btn = new QPushButton(tr("Edit"), ui->tblMatrix);
+            int col = *j;
             connect(btn, &QPushButton::pressed,
-                    [=] () { matrixBtnPressed(i, *j); });
+                    [=] () { matrixBtnPressed(i, col); });
             QModelIndex index = this->matrixModel->index(i, *j);
             ui->tblMatrix->setIndexWidget(index, btn);
             this->matrix[i][*j] = p.modelData().at( i * 3 + (*j) );

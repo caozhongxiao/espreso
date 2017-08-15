@@ -85,12 +85,33 @@ void MaterialDialog::setupProperties()
     dm.kxx = new ConstantType("0");
     dm.kyy = new ConstantType("0");
     dm.kzz = new ConstantType("0");
+    SymmetricModel sm;
+    sm.kxx = new ConstantType("0");
+    sm.kyy = new ConstantType("4");
+    sm.kzz = new ConstantType("8");
+    sm.kxy = new ConstantType("1");
+    sm.kxz = new ConstantType("2");
+    sm.kyz = new ConstantType("5");
+    AnisotropicModel am;
+    am.kxx = new ConstantType("0");
+    am.kyy = new ConstantType("4");
+    am.kzz = new ConstantType("8");
+    am.kxy = new ConstantType("1");
+    am.kxz = new ConstantType("2");
+    am.kyz = new ConstantType("5");
+    am.kyx = new ConstantType("3");
+    am.kzx = new ConstantType("6");
+    am.kzy = new ConstantType("7");
     MaterialProperty* thermal = new IsotropicProperty("Thermal Conductivity", "W*m^-1*K^-1", im);
     MaterialProperty* thermal2 = new DiagonalProperty("Thermal Conductivity 2", "W*m^-1*K^-1", dm);
+    MaterialProperty* thermal3 = new SymmetricProperty("Thermal Conductivity 3", "W*m^-1*K^-1", sm);
+    MaterialProperty* thermal4 = new AnisotropicProperty("Thermal Conductivity 4", "W*m^-1*K^-1", am);
     MaterialProperty* density = new BasicProperty("Density", "kg*m^-3", bm);
     MaterialProperty* cp = new BasicProperty("Specific Heat", "J*kg^-1*K^-1", bm);
     this->properties.append(thermal);
     this->properties.append(thermal2);
+    this->properties.append(thermal3);
+    this->properties.append(thermal4);
     this->properties.append(density);
     this->properties.append(cp);
 
@@ -189,6 +210,5 @@ int MaterialDialog::serveMatrixPropertyWidget()
 {
     MaterialProperty* result = this->matrixPropertyWidget->data();
     this->properties[this->activeProperty] = result;
-    qInfo("%s", result->name().toStdString().c_str());
     return 1;
 }
