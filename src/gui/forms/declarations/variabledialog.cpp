@@ -294,26 +294,26 @@ void VariableDialog::on_btnPiecewiseDel_pressed()
     }
 }
 
-void VariableDialog::visit(const ConstantType& type)
+void VariableDialog::visit(ConstantType& type)
 {
     this->ui->cmbType->setCurrentIndex(0);
 }
 
-void VariableDialog::visit(const FunctionType& type)
+void VariableDialog::visit(FunctionType& type)
 {
     this->ui->cmbType->setCurrentIndex(1);
 }
 
-void VariableDialog::visit(const TableType& type)
+void VariableDialog::visit(TableType& type)
 {
     this->ui->cmbType->setCurrentIndex(2);
 }
 
-void VariableDialog::visit(const PiecewiseFunctionType& type)
+void VariableDialog::visit(PiecewiseFunctionType& type)
 {
     this->ui->cmbType->setCurrentIndex(3);
 }
 
-void VariableDialog::visit(const VariableLinkType& type)
+void VariableDialog::visit(VariableLinkType& type)
 {
 }

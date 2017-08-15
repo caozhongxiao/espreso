@@ -19,8 +19,12 @@ MaterialDialog::MaterialDialog(const QHash<QString, Material>& matDict, const QH
     this->setupProperties();
 
     this->basicPropertyWidget = new DataTypeWidget(this->varDict, ui->frPropertyDetail);
+    this->matrixPropertyWidget = new MatrixPropertyWidget(this->varDict, ui->frPropertyDetail);
     ui->frPropertyDetail->layout()->addWidget(this->basicPropertyWidget);
+    ui->frPropertyDetail->layout()->addWidget(this->matrixPropertyWidget);
     ui->frProperty->hide();
+    this->basicPropertyWidget->hide();
+    this->matrixPropertyWidget->hide();
 }
 
 MaterialDialog::MaterialDialog(const Material& material, const QHash<QString, Material>& matDict, const QHash<QString, Variable>& varDict, QWidget *parent) :
@@ -77,10 +81,16 @@ void MaterialDialog::setupProperties()
     im.kxx = new ConstantType("0");
     BasicModel bm;
     bm.kxx = new ConstantType("0");
+    DiagonalModel dm;
+    dm.kxx = new ConstantType("0");
+    dm.kyy = new ConstantType("0");
+    dm.kzz = new ConstantType("0");
     MaterialProperty* thermal = new IsotropicProperty("Thermal Conductivity", "W*m^-1*K^-1", im);
+    MaterialProperty* thermal2 = new DiagonalProperty("Thermal Conductivity 2", "W*m^-1*K^-1", dm);
     MaterialProperty* density = new BasicProperty("Density", "kg*m^-3", bm);
     MaterialProperty* cp = new BasicProperty("Specific Heat", "J*kg^-1*K^-1", bm);
     this->properties.append(thermal);
+    this->properties.append(thermal2);
     this->properties.append(density);
     this->properties.append(cp);
 
@@ -108,17 +118,42 @@ void MaterialDialog::tableBtnPressed(int row)
     p->accept(this);
 }
 
-void MaterialDialog::visit(const BasicProperty& p)
+void MaterialDialog::visit(BasicProperty& p)
 {
-    BasicProperty mp = p;
-    this->basicPropertyWidget->setDataType(mp.model().kxx);
+    this->basicPropertyWidget->setDataType(p.model().kxx);
+    this->matrixPropertyWidget->hide();
     ui->frProperty->show();
+    this->basicPropertyWidget->show();
 }
 
-void MaterialDialog::visit(const IsotropicProperty& p) {}
-void MaterialDialog::visit(const DiagonalProperty& p) {}
-void MaterialDialog::visit(const SymmetricProperty& p) {}
-void MaterialDialog::visit(const AnisotropicProperty& p) {}
+void MaterialDialog::visit(IsotropicProperty& p)
+{
+    this->matrixPropertyDetail(&p);
+}
+
+void MaterialDialog::visit(DiagonalProperty& p)
+{
+    this->matrixPropertyDetail(&p);
+}
+
+void MaterialDialog::visit(SymmetricProperty& p)
+{
+    this->matrixPropertyDetail(&p);
+}
+
+void MaterialDialog::visit(AnisotropicProperty& p)
+{
+    this->matrixPropertyDetail(&p);
+}
+
+void MaterialDialog::matrixPropertyDetail(MaterialProperty *p)
+{
+    this->activePropertyWidget = 1;
+    this->basicPropertyWidget->hide();
+    this->matrixPropertyWidget->setData(p);
+    this->matrixPropertyWidget->show();
+    ui->frProperty->show();
+}
 
 void MaterialDialog::on_btnPropSave_pressed()
 {
@@ -152,5 +187,8 @@ int MaterialDialog::serveBasicPropertyWidget()
 
 int MaterialDialog::serveMatrixPropertyWidget()
 {
+    MaterialProperty* result = this->matrixPropertyWidget->data();
+    this->properties[this->activeProperty] = result;
+    qInfo("%s", result->name().toStdString().c_str());
     return 1;
 }

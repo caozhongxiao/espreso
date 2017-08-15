@@ -23,11 +23,11 @@ public:
     Variable data();
     void accept() override;
 
-    void visit(const ConstantType& type) override;
-    void visit(const FunctionType& type) override;
-    void visit(const TableType& type) override;
-    void visit(const PiecewiseFunctionType& type) override;
-    void visit(const VariableLinkType& type) override;
+    void visit(ConstantType& type) override;
+    void visit(FunctionType& type) override;
+    void visit(TableType& type) override;
+    void visit(PiecewiseFunctionType& type) override;
+    void visit(VariableLinkType& type) override;
 
 private slots:
     void on_cmbType_currentIndexChanged(int index);

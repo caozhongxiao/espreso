@@ -50,6 +50,8 @@ QVector<DataType*> BasicProperty::modelData()
 {
     QVector<DataType*> model;
     model.append(this->mModel.kxx);
+    for (int i = 0; i < 8; ++i)
+        model.append(new DummyType());
     return model;
 }
 
@@ -94,6 +96,8 @@ QVector<DataType*> IsotropicProperty::modelData()
 {
     QVector<DataType*> model;
     model.append(this->mModel.kxx);
+    for (int i = 0; i < 8; ++i)
+        model.append(new DummyType());
     return model;
 }
 
@@ -137,7 +141,11 @@ QVector<DataType*> DiagonalProperty::modelData()
 {
     QVector<DataType*> model;
     model.append(this->mModel.kxx);
+    for (int i = 0; i < 3; ++i)
+        model.append(new DummyType());
     model.append(this->mModel.kyy);
+    for (int i = 0; i < 3; ++i)
+        model.append(new DummyType());
     model.append(this->mModel.kzz);
     return model;
 }
@@ -185,11 +193,14 @@ QVector<DataType*> SymmetricProperty::modelData()
 {
     QVector<DataType*> model;
     model.append(this->mModel.kxx);
-    model.append(this->mModel.kyy);
-    model.append(this->mModel.kzz);
     model.append(this->mModel.kxy);
     model.append(this->mModel.kxz);
+    model.append(new DummyType());
+    model.append(this->mModel.kyy);
     model.append(this->mModel.kyz);
+    for (int i = 0; i < 2; ++i)
+        model.append(new DummyType());
+    model.append(this->mModel.kzz);
     return model;
 }
 
@@ -239,14 +250,14 @@ QVector<DataType*> AnisotropicProperty::modelData()
 {
     QVector<DataType*> model;
     model.append(this->mModel.kxx);
-    model.append(this->mModel.kyy);
-    model.append(this->mModel.kzz);
     model.append(this->mModel.kxy);
     model.append(this->mModel.kxz);
-    model.append(this->mModel.kyz);
     model.append(this->mModel.kyx);
+    model.append(this->mModel.kyy);
+    model.append(this->mModel.kyz);
     model.append(this->mModel.kzx);
     model.append(this->mModel.kzy);
+    model.append(this->mModel.kzz);
     return model;
 }
 

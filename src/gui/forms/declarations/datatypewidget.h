@@ -18,18 +18,18 @@ class DataTypeWidget : public QWidget, public DataTypeVisitor
 
 public:
     explicit DataTypeWidget(const QHash<QString, Variable>& varDict, QWidget *parent = 0);
-    DataTypeWidget(const DataType* data, const QHash<QString, Variable>& varDict, QWidget *parent = 0);
+    DataTypeWidget(DataType* data, const QHash<QString, Variable>& varDict, QWidget *parent = 0);
     ~DataTypeWidget();
     DataType* data() const;
     int check();
     DataType* checkedData();
-    void setDataType(const DataType*);
+    void setDataType(DataType*);
 
-    virtual void visit(const ConstantType& type) override;
-    virtual void visit(const FunctionType& type) override;
-    virtual void visit(const TableType& type) override;
-    virtual void visit(const PiecewiseFunctionType& type) override;
-    virtual void visit(const VariableLinkType& type) override;
+    virtual void visit(ConstantType& type) override;
+    virtual void visit(FunctionType& type) override;
+    virtual void visit(TableType& type) override;
+    virtual void visit(PiecewiseFunctionType& type) override;
+    virtual void visit(VariableLinkType& type) override;
 
 private slots:
     void on_cmbType_currentIndexChanged(int index);
@@ -49,12 +49,12 @@ private:
     QStandardItemModel* tableModel;
     QStandardItemModel* piecewiseModel;
 
-    void setData(const DataType* data);
+    void setData(DataType* data);
     DataType* collectTableData() const;
-    void setupTableData(const DataType* data);
+    void setupTableData(DataType* data);
     DataType* collectPiecewiseData() const;
-    void setupPiecewiseData(const DataType* data);
-    void setupVariableLinkData(const DataType* data);
+    void setupPiecewiseData(DataType* data);
+    void setupVariableLinkData(DataType* data);
 
 protected:
     virtual void setupCheckbox();

@@ -6,6 +6,7 @@
 #include "../data/material.h"
 #include "../data/variable.h"
 #include "datatypewidget.h"
+#include "matrixpropertywidget.h"
 
 namespace Ui {
 class MaterialDialog;
@@ -22,11 +23,11 @@ public:
 
     Material data() const;
 
-    void visit(const BasicProperty& p) override;
-    void visit(const IsotropicProperty& p) override;
-    void visit(const DiagonalProperty& p) override;
-    void visit(const SymmetricProperty& p) override;
-    void visit(const AnisotropicProperty& p) override;
+    void visit(BasicProperty& p) override;
+    void visit(IsotropicProperty& p) override;
+    void visit(DiagonalProperty& p) override;
+    void visit(SymmetricProperty& p) override;
+    void visit(AnisotropicProperty& p) override;
 
 private slots:
     void on_btnPropAdd_pressed();
@@ -54,6 +55,8 @@ private:
     void tableBtnPressed(int row);
 
     DataTypeWidget* basicPropertyWidget;
+    MatrixPropertyWidget* matrixPropertyWidget;
+    void matrixPropertyDetail(MaterialProperty* p);
 };
 
 #endif // MATERIALDIALOG_H

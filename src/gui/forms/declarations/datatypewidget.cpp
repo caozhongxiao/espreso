@@ -42,7 +42,7 @@ DataTypeWidget::DataTypeWidget(const QHash<QString, Variable>& varDict, QWidget 
         ui->cmbVariable->setCurrentIndex(0);
 }
 
-DataTypeWidget::DataTypeWidget(const DataType* data, const QHash<QString, Variable>& varDict, QWidget *parent) :
+DataTypeWidget::DataTypeWidget(DataType* data, const QHash<QString, Variable>& varDict, QWidget *parent) :
     DataTypeWidget(varDict, parent)
 {
     data->accept(this);
@@ -65,7 +65,7 @@ void DataTypeWidget::setupCheckbox()
     ui->cmbType->setCurrentIndex(0);
 }
 
-void DataTypeWidget::setDataType(const DataType* dataType)
+void DataTypeWidget::setDataType(DataType* dataType)
 {
     dataType->accept(this);
     this->setData(dataType);
@@ -187,7 +187,7 @@ int DataTypeWidget::check()
     return 1;
 }
 
-void DataTypeWidget::setData(const DataType* data)
+void DataTypeWidget::setData(DataType* data)
 {
     // FILL THE DIALOG WITH DATA OF CURRENT ITEM
     switch(ui->cmbType->currentIndex())
@@ -212,10 +212,10 @@ void DataTypeWidget::setData(const DataType* data)
     }
 }
 
-void DataTypeWidget::setupTableData(const DataType* data)
+void DataTypeWidget::setupTableData(DataType* data)
 {
     this->tableModel->clear();
-    const TableType* table = (const TableType*)data;
+    TableType* table = (TableType*)data;
     for (auto it = table->data().cbegin(); it != table->data().cend(); ++it) {
         QList<QStandardItem*> list;
         QStandardItem* cell1 = new QStandardItem(it->first);
@@ -240,10 +240,10 @@ DataType* DataTypeWidget::collectTableData() const
     return new TableType(rowVector);
 }
 
-void DataTypeWidget::setupPiecewiseData(const DataType* data)
+void DataTypeWidget::setupPiecewiseData(DataType* data)
 {
     this->piecewiseModel->clear();
-    const PiecewiseFunctionType* table = (const PiecewiseFunctionType*)data;
+    PiecewiseFunctionType* table = (PiecewiseFunctionType*)data;
     for (auto it = table->data().cbegin(); it != table->data().cend(); ++it) {
         QList<QStandardItem*> list;
         QStandardItem* cell1 = new QStandardItem(it->at(0));
@@ -270,9 +270,9 @@ DataType* DataTypeWidget::collectPiecewiseData() const
     return new PiecewiseFunctionType(rowVector);
 }
 
-void DataTypeWidget::setupVariableLinkData(const DataType* data)
+void DataTypeWidget::setupVariableLinkData(DataType* data)
 {
-    const VariableLinkType* varLink = (const VariableLinkType*)data;
+    VariableLinkType* varLink = (VariableLinkType*)data;
     QList<QString> keys = this->varDict.keys();
     ui->cmbVariable->setCurrentIndex(keys.indexOf(varLink->toString()));
 }
@@ -314,27 +314,27 @@ void DataTypeWidget::on_btnPiecewiseDel_pressed()
     }
 }
 
-void DataTypeWidget::visit(const ConstantType& type)
+void DataTypeWidget::visit(ConstantType& type)
 {
     this->ui->cmbType->setCurrentIndex(0);
 }
 
-void DataTypeWidget::visit(const FunctionType& type)
+void DataTypeWidget::visit(FunctionType& type)
 {
     this->ui->cmbType->setCurrentIndex(1);
 }
 
-void DataTypeWidget::visit(const TableType& type)
+void DataTypeWidget::visit(TableType& type)
 {
     this->ui->cmbType->setCurrentIndex(2);
 }
 
-void DataTypeWidget::visit(const PiecewiseFunctionType& type)
+void DataTypeWidget::visit(PiecewiseFunctionType& type)
 {
     this->ui->cmbType->setCurrentIndex(3);
 }
 
-void DataTypeWidget::visit(const VariableLinkType& type)
+void DataTypeWidget::visit(VariableLinkType& type)
 {
     this->ui->cmbType->setCurrentIndex(4);
 }

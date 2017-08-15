@@ -27,7 +27,7 @@ public:
     virtual ~DataType() {}
     virtual QString toString() const = 0;
     virtual DataType* copy() const = 0;
-    virtual void accept(DataTypeVisitor* visitor) const = 0;
+    virtual void accept(DataTypeVisitor* visitor) = 0;
 };
 
 class StringType : public DataType
@@ -39,7 +39,16 @@ protected:
 public:
     QString toString() const override;
     virtual DataType* copy() const = 0;
-    virtual void accept(DataTypeVisitor* visitor) const = 0;
+    virtual void accept(DataTypeVisitor* visitor) = 0;
+};
+
+class DummyType : public DataType
+{
+public:
+    DummyType() {}
+    QString toString() const override;
+    DataType* copy() const override;
+    void accept(DataTypeVisitor *visitor) override;
 };
 
 class ConstantType : public StringType
@@ -47,7 +56,7 @@ class ConstantType : public StringType
 public:
     ConstantType(const QString& data) : StringType(data) {}
     DataType* copy() const override;
-    void accept(DataTypeVisitor* visitor) const;
+    void accept(DataTypeVisitor* visitor) override;
 };
 
 class FunctionType : public StringType
@@ -55,7 +64,7 @@ class FunctionType : public StringType
 public:
     FunctionType(const QString& data) : StringType(data) {}
     DataType* copy() const override;
-    void accept(DataTypeVisitor* visitor) const;
+    void accept(DataTypeVisitor* visitor) override;
 };
 
 class VariableLinkType : public StringType
@@ -63,7 +72,7 @@ class VariableLinkType : public StringType
 public:
     VariableLinkType(const QString& data) : StringType(data) {}
     DataType* copy() const override;
-    void accept(DataTypeVisitor* visitor) const;
+    void accept(DataTypeVisitor* visitor) override;
 };
 
 class TableType : public DataType
@@ -75,7 +84,7 @@ public:
     TableType(const QVector<QPair<QString, QString> >& data);
     QString toString() const override;
     DataType* copy() const override;
-    void accept(DataTypeVisitor* visitor) const;
+    void accept(DataTypeVisitor* visitor) override;
 
     QVector<QPair<QString, QString> > data() const;
 };
@@ -89,7 +98,7 @@ public:
     PiecewiseFunctionType(const QVector<QVector<QString> >& data);
     QString toString() const override;
     DataType* copy() const override;
-    void accept(DataTypeVisitor* visitor) const;
+    void accept(DataTypeVisitor* visitor) override;
 
     QVector<QVector<QString> > data() const;
 };
@@ -98,11 +107,11 @@ public:
 class DataTypeVisitor
 {
 public:
-    virtual void visit(const ConstantType& type) = 0;
-    virtual void visit(const FunctionType& type) = 0;
-    virtual void visit(const TableType& type) = 0;
-    virtual void visit(const PiecewiseFunctionType& type) = 0;
-    virtual void visit(const VariableLinkType& type) = 0;
+    virtual void visit(ConstantType& type) = 0;
+    virtual void visit(FunctionType& type) = 0;
+    virtual void visit(TableType& type) = 0;
+    virtual void visit(PiecewiseFunctionType& type) = 0;
+    virtual void visit(VariableLinkType& type) = 0;
 };
 
 #endif // DATATYPE_H

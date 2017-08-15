@@ -6,16 +6,16 @@
 #include "datatype.h"
 #include "namedentity.h"
 
-//MATRIX CELL ODRDER
+//MATRIX CELL ODRDER - ALPHABETICAL
 //DataType* kxx;
-//DataType* kyy;
-//DataType* kzz;
 //DataType* kxy;
 //DataType* kxz;
-//DataType* kyz;
 //DataType* kyx;
+//DataType* kyy;
+//DataType* kyz;
 //DataType* kzx;
 //DataType* kzy;
+//DataType* kzz;
 
 class MaterialPropertyVisitor;
 
@@ -171,11 +171,11 @@ public:
 class MaterialPropertyVisitor
 {
 public:
-    virtual void visit(const BasicProperty& p) = 0;
-    virtual void visit(const IsotropicProperty& p) = 0;
-    virtual void visit(const DiagonalProperty& p) = 0;
-    virtual void visit(const SymmetricProperty& p) = 0;
-    virtual void visit(const AnisotropicProperty& p) = 0;
+    virtual void visit(BasicProperty& p) = 0;
+    virtual void visit(IsotropicProperty& p) = 0;
+    virtual void visit(DiagonalProperty& p) = 0;
+    virtual void visit(SymmetricProperty& p) = 0;
+    virtual void visit(AnisotropicProperty& p) = 0;
 };
 
 
