@@ -2,6 +2,7 @@
 #include "forms/workflowwidget.h"
 #include "forms/datawidget.h"
 #include "forms/declarationswidget.h"
+#include "forms/plot/plot.h"
 #include <QApplication>
 
 #ifdef ESPRESOGUIPROJECTBUILD
@@ -22,6 +23,9 @@ int main(int argc, char *argv[])
 //    data.show();
     DeclarationsWidget declarations;
     declarations.show();
+
+    Plot plot;
+    plot.show();
 
     a.exec();
 #ifdef ESPRESOGUIPROJECTBUILD
