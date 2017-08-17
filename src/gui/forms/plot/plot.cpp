@@ -24,7 +24,20 @@ Plot::Plot(QWidget *parent) :
     sceneFnXRatio = this->width() / fnXAxisLen;
     sceneFnYRatio = this->height() / fnYAxisLen;
     qreal fnXAxisPointNum = 10;
-    qreal fnYAxisPointNum = 5;
+    qreal fnYAxisPointNum = 10;
+
+    this->font = QFont();
+    this->fontSize = 0;
+    if (font.pixelSize() != -1)
+        this->fontSize = font.pixelSize();
+    else if (font.pointSize() != -1)
+        this->fontSize = font.pointSize();
+    else if (font.pointSizeF() != -1)
+        this->fontSize = font.pixelSize();
+    else
+        qWarning("%s", tr("Plot: Cannot retrieve the font size!").toStdString().c_str());
+
+    this->fontSizeHalf = this->fontSize / 2;
 
     // Axises
     scene->addLine(this->width() / 2, 0, this->width() / 2, this->height());
@@ -64,7 +77,8 @@ qreal Plot::fn(qreal x)
 {
     //return x;
     //return qPow(x, 2);
-    return qSin(x) / x;
+    return qSin(x);
+    //return qSin(x) / x;
     //return qLn(x);
 }
 
@@ -78,30 +92,40 @@ void Plot::drawPoint(QPointF p)
     this->scene->addRect(p.rx(), p.ry(), 0.5, 0.5, QPen(Qt::blue));
 }
 
-void Plot::drawXAxisLabels(int labelsCount, int labelPointLength, const QFont& font)
+void Plot::drawXAxisLabels(int labelsCount, int labelPointLength)
 {
     qreal labelPointRadius = labelPointLength / 2;
     qreal shift = this->fnXAxisLen / labelsCount;
     qreal y0 = this->fnYToScene(0);
+    qreal y0Shifted = y0 + this->fontSizeHalf / 2;
     for (qreal x = this->fnXLeftBoundary + shift; x < this->fnXRightBoundary; x += shift)
     {
-        QGraphicsTextItem* text = scene->addText(QString::number(x), font);
+        qreal rounded = qRound(x * 1000) / 1000.0;
+        if (rounded == 0) continue;
+        QString content = QString::number(rounded);
+        QGraphicsTextItem* text = scene->addText(content, this->font);
         qreal sceneX = this->fnXToScene(x);
-        text->setPos(sceneX, y0);
+        qreal textShift = content.length() * this->fontSizeHalf;
+        text->setPos(sceneX - textShift, y0Shifted);
         scene->addLine(sceneX, y0 - labelPointRadius, sceneX, y0 + labelPointRadius);
     }
 }
 
-void Plot::drawYAxisLabels(int labelsCount, int labelPointLength, const QFont& font)
+void Plot::drawYAxisLabels(int labelsCount, int labelPointLength)
 {
     qreal labelPointRadius = labelPointLength / 2;
     qreal shift = this->fnYAxisLen / labelsCount;
     qreal x0 = this->fnXToScene(0);
     for (qreal y = this->fnYBottomBoundary + shift; y < this->fnYTopBoundary; y += shift)
     {
-        QGraphicsTextItem* text = scene->addText(QString::number(y), font);
+        qreal rounded = qRound(y * 1000) / 1000.0;
+        if (rounded == 0) continue;
+        QString content = QString::number(rounded);
+        QGraphicsTextItem* text = scene->addText(content, this->font);
         qreal sceneY = this->fnYToScene(y);
-        text->setPos(x0, sceneY);
+        qreal len = content.length();
+        if (content.at(0) == '-') len -= 0.5;
+        text->setPos(x0 - len * this->fontSize, sceneY - this->fontSize);
         scene->addLine(x0 - labelPointRadius, sceneY, x0 + labelPointRadius, sceneY);
     }
 }

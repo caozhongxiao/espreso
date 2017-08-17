@@ -21,6 +21,10 @@ private:
 
     QGraphicsScene* scene;
 
+    QFont font;
+    qreal fontSize;
+    qreal fontSizeHalf;
+
     qreal fnXLeftBoundary;
     qreal fnXRightBoundary;
     qreal fnYTopBoundary;
@@ -36,8 +40,8 @@ private:
     qreal fn(qreal x);
 
     void drawPoint(QPointF p);
-    void drawXAxisLabels(int labelsCount, int labelPointLength = 10, const QFont& font = QFont());
-    void drawYAxisLabels(int labelsCount, int labelPointLength = 10, const QFont& font = QFont());
+    void drawXAxisLabels(int labelsCount, int labelPointLength = 10);
+    void drawYAxisLabels(int labelsCount, int labelPointLength = 10);
 };
 
 #endif // PLOT_H
