@@ -20,12 +20,24 @@ private:
     Ui::Plot *ui;
 
     QGraphicsScene* scene;
-    qreal ratio;
 
-    qreal coordinateToX(qreal coordinate);
-    qreal yToCoordinate(qreal y);
+    qreal fnXLeftBoundary;
+    qreal fnXRightBoundary;
+    qreal fnYTopBoundary;
+    qreal fnYBottomBoundary;
+    qreal fnXAxisLen;
+    qreal fnYAxisLen;
+    qreal sceneFnXRatio;
+    qreal sceneFnYRatio;
+
+    qreal fnXToScene(qreal x);
+    qreal fnYToScene(qreal y);
+
     qreal fn(qreal x);
+
     void drawPoint(QPointF p);
+    void drawXAxisLabels(int labelsCount, int labelPointLength = 10, const QFont& font = QFont());
+    void drawYAxisLabels(int labelsCount, int labelPointLength = 10, const QFont& font = QFont());
 };
 
 #endif // PLOT_H
