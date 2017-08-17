@@ -3,6 +3,7 @@
 #include <QtMath>
 #include <QGLFormat>
 #include <QGraphicsTextItem>
+#include <cmath>
 
 Plot::Plot(QWidget *parent) :
     QWidget(parent),
@@ -16,15 +17,18 @@ Plot::Plot(QWidget *parent) :
     //ui->view->setViewport(new QGLWidget(QGLFormat(QGL::SampleBuffers)));
 
     fnXLeftBoundary = -20;
-    fnXRightBoundary = 20;
+    fnXRightBoundary = -19;
     fnYTopBoundary = 1.5;
     fnYBottomBoundary = -1.5;
     fnXAxisLen = qAbs(fnXRightBoundary - fnXLeftBoundary);
     fnYAxisLen = qAbs(fnYTopBoundary - fnYBottomBoundary);
     sceneFnXRatio = this->width() / fnXAxisLen;
     sceneFnYRatio = this->height() / fnYAxisLen;
-    qreal fnXAxisPointNum = 10;
+    qreal fnXAxisPointNum = 9;
     qreal fnYAxisPointNum = 10;
+
+    this->xAxisPrecision = this->computePrecision(fnXAxisLen);
+    this->yAxisPrecision = this->computePrecision(fnYAxisLen);
 
     this->font = QFont();
     this->fontSize = 0;
@@ -100,7 +104,7 @@ void Plot::drawXAxisLabels(int labelsCount, int labelPointLength)
     qreal y0Shifted = y0 + this->fontSizeHalf / 2;
     for (qreal x = this->fnXLeftBoundary + shift; x < this->fnXRightBoundary; x += shift)
     {
-        qreal rounded = qRound(x * 1000) / 1000.0;
+        qreal rounded = qRound(x * xAxisPrecision) / xAxisPrecision;
         if (rounded == 0) continue;
         QString content = QString::number(rounded);
         QGraphicsTextItem* text = scene->addText(content, this->font);
@@ -118,7 +122,7 @@ void Plot::drawYAxisLabels(int labelsCount, int labelPointLength)
     qreal x0 = this->fnXToScene(0);
     for (qreal y = this->fnYBottomBoundary + shift; y < this->fnYTopBoundary; y += shift)
     {
-        qreal rounded = qRound(y * 1000) / 1000.0;
+        qreal rounded = qRound(y * yAxisPrecision) / yAxisPrecision;
         if (rounded == 0) continue;
         QString content = QString::number(rounded);
         QGraphicsTextItem* text = scene->addText(content, this->font);
@@ -128,4 +132,23 @@ void Plot::drawYAxisLabels(int labelsCount, int labelPointLength)
         text->setPos(x0 - len * this->fontSize, sceneY - this->fontSize);
         scene->addLine(x0 - labelPointRadius, sceneY, x0 + labelPointRadius, sceneY);
     }
+}
+
+qreal Plot::computePrecision(qreal intervalLength)
+{
+    if (intervalLength >= 10)
+        return 1;
+    if (intervalLength < 10 && intervalLength >= 1)
+        return 10;
+    qreal ret = 10;
+    QString number = QString::number(intervalLength);
+    QChar prev('0');
+    foreach (QChar ch, number) {
+        if (prev != '0' || prev != '.')
+            break;
+        if (ch == '0')
+            ret *= 10;
+        prev = ch;
+    }
+    return ret;
 }

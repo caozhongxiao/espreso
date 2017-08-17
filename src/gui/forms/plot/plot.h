@@ -34,6 +34,10 @@ private:
     qreal sceneFnXRatio;
     qreal sceneFnYRatio;
 
+    qreal xAxisPrecision;
+    qreal yAxisPrecision;
+    qreal computePrecision(qreal intervalLength);
+
     qreal fnXToScene(qreal x);
     qreal fnYToScene(qreal y);
 
