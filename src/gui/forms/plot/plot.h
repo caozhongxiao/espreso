@@ -8,6 +8,14 @@ namespace Ui {
 class Plot;
 }
 
+struct PlotLabel
+{
+    QString text;
+    qreal width;
+    qreal x;
+    qreal y;
+};
+
 class Plot : public QWidget
 {
     Q_OBJECT
@@ -31,21 +39,37 @@ private:
     qreal fnYBottomBoundary;
     qreal fnXAxisLen;
     qreal fnYAxisLen;
-    qreal sceneFnXRatio;
-    qreal sceneFnYRatio;
+    qreal rectFnXRatio;
+    qreal rectFnYRatio;
+
+    QGraphicsRectItem* rect;
+    qreal rectX;
+    qreal rectY;
+    qreal rectWidth;
+    qreal rectHeight;
+    qreal plotXMiddle;
+    qreal plotYMiddle;
+    qreal mainRectX();
 
     qreal xAxisPrecision;
     qreal yAxisPrecision;
     qreal computePrecision(qreal intervalLength);
 
-    qreal fnXToScene(qreal x);
-    qreal fnYToScene(qreal y);
+    QVector<PlotLabel> yLabels;
+    QVector<PlotLabel> xLabels;
+
+    qreal fnXToRect(qreal x);
+    qreal fnYToRect(qreal y);
+    qreal rectXToFn(qreal x);
+    qreal rectYToFn(qreal y);
 
     qreal fn(qreal x);
 
     void drawPoint(QPointF p);
-    void drawXAxisLabels(int labelsCount, int labelPointLength = 10);
-    void drawYAxisLabels(int labelsCount, int labelPointLength = 10);
+    void drawAxises();
+    void drawFn();
+    void drawXLabels(int labelPointLength = 10);
+    void drawYLabels(int labelPointLength = 10);
 };
 
 #endif // PLOT_H
