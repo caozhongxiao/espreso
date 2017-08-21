@@ -10,10 +10,8 @@ class Plot;
 
 struct PlotLabel
 {
+    qreal val;
     QString text;
-    qreal width;
-    qreal x;
-    qreal y;
 };
 
 class Plot : public QWidget
@@ -49,14 +47,8 @@ private:
     qreal rectHeight;
     qreal plotXMiddle;
     qreal plotYMiddle;
-    qreal mainRectX();
 
-    qreal xAxisPrecision;
-    qreal yAxisPrecision;
     qreal computePrecision(qreal intervalLength);
-
-    QVector<PlotLabel> yLabels;
-    QVector<PlotLabel> xLabels;
 
     qreal fnXToRect(qreal x);
     qreal fnYToRect(qreal y);
@@ -65,11 +57,16 @@ private:
 
     qreal fn(qreal x);
 
+    QVector<PlotLabel> axisLabels(qreal leftBound, qreal rightBound, int limit);
+    void generateAxisLabels(qreal leftBound, qreal rightBound, int limit,
+                            QVector<PlotLabel>& labels, qreal offset);
+    qreal maxLabelLength(QVector<PlotLabel>& labels);
+
     void drawPoint(QPointF p);
     void drawAxises();
     void drawFn();
-    void drawXLabels(int labelPointLength = 10);
-    void drawYLabels(int labelPointLength = 10);
+    void drawXLabels(QVector<PlotLabel>& labels, int labelPointLength = 10);
+    void drawYLabels(QVector<PlotLabel>& labels, int labelPointLength = 10);
 };
 
 #endif // PLOT_H

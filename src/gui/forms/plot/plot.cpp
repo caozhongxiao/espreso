@@ -16,15 +16,15 @@ Plot::Plot(QWidget *parent) :
     ui->view->setScene(scene);
     //ui->view->setViewport(new QGLWidget(QGLFormat(QGL::SampleBuffers)));
 
-    this->fnXLeftBoundary = -5;
-    this->fnXRightBoundary = 7;
+    this->fnXLeftBoundary = -0.5;
+    this->fnXRightBoundary = 0.5;
     this->fnYTopBoundary = 5;
     this->fnYBottomBoundary = -3;
     this->fnXAxisLen = qAbs(this->fnXRightBoundary - this->fnXLeftBoundary);
     this->fnYAxisLen = qAbs(this->fnYTopBoundary - this->fnYBottomBoundary);
 
-    this->xAxisPrecision = this->computePrecision(fnXAxisLen);
-    this->yAxisPrecision = this->computePrecision(fnYAxisLen);
+    QVector<PlotLabel> xLbls = this->axisLabels(fnXLeftBoundary, fnXRightBoundary, 5);
+    QVector<PlotLabel> yLbls = this->axisLabels(fnYBottomBoundary, fnYTopBoundary, 5);
 
     this->font = QFont();
     this->fontSize = 0;
@@ -41,15 +41,15 @@ Plot::Plot(QWidget *parent) :
 
     this->rectY = this->fontSize * 3;
     this->rectHeight = this->height() - this->rectY - this->fontSize * 3;
-    this->rectX = this->mainRectX() + this->fontSizeHalf;
+    this->rectX = this->maxLabelLength(yLbls) + this->fontSizeHalf;
     this->rectWidth = this->width() - 2 * this->rectX;
     this->rect = this->scene->addRect(rectX, rectY, rectWidth, rectHeight);
     this->rectFnXRatio = this->rectWidth / this->fnXAxisLen;
     this->rectFnYRatio = this->rectHeight / this->fnYAxisLen;
 
     // Labels
-    this->drawXLabels();
-    this->drawYLabels();
+    this->drawXLabels(xLbls);
+    this->drawYLabels(yLbls);
 
     this->drawAxises();
     this->drawFn();
@@ -135,73 +135,89 @@ void Plot::drawPoint(QPointF p)
     this->scene->addRect(p.rx(), p.ry(), 0.5, 0.5, QPen(Qt::blue));
 }
 
-qreal Plot::mainRectX()
+qreal Plot::maxLabelLength(QVector<PlotLabel>& labels)
 {
-    qreal labelCount = floor(this->rectHeight / (this->fontSize * 2));
-    qreal shift = this->fnYAxisLen / labelCount;
     qreal max = 0;
-    for (qreal y = this->fnYBottomBoundary; y < this->fnYTopBoundary; y += shift)
-    {
-        qreal rounded = floor(y * yAxisPrecision) / yAxisPrecision;
-
-        QString content = QString::number(rounded);
-
-        qreal len = content.length();
-
-        if (content.at(0) == '-' && len > 2) len -= 0.5;
-        if (len <= 2) len = 2.5;
-
-        len *= this->fontSize;
-
-        if (len > max) max = len;
-
-        PlotLabel lbl;
-        lbl.text = content;
-        lbl.width = len;
-        lbl.y = rounded;
-        lbl.x = this->rectX;
-        this->yLabels.append(lbl);
+    foreach (PlotLabel label, labels) {
+        QString lbl = label.text;
+        qreal len = lbl.length();
+        if (len > max)
+            max = len;
     }
-    return max;
+    return max * this->fontSize;
 }
 
-void Plot::drawXLabels(int labelPointLength)
+void Plot::drawXLabels(QVector<PlotLabel>& labels, int labelPointLength)
 {
     qreal labelPointRadius = labelPointLength / 2;
-
-    qreal labelCount = log10(xAxisPrecision) +
-            ceil( fmax( log10(qAbs(fnXLeftBoundary)),
-                         log10(qAbs(fnXRightBoundary)) ) );
-
-    qreal shift = this->fnXAxisLen / (labelCount * this->fontSize);
-
     qreal y0 = this->rectY + this->rectHeight;
-    for (qreal x = this->fnXLeftBoundary; x <= this->fnXRightBoundary; x += shift)
+
+    foreach (PlotLabel lbl, labels)
     {
-        qreal rounded = floor(x * xAxisPrecision) / xAxisPrecision;
+        QGraphicsTextItem* text = scene->addText(lbl.text, this->font);
 
-        QString content = QString::number(rounded);
-        QGraphicsTextItem* text = scene->addText(content, this->font);
-
-        qreal sceneX = this->fnXToRect(rounded);
-        qreal textShift = content.length() * this->fontSizeHalf;
+        qreal sceneX = this->fnXToRect(lbl.val);
+        qreal textShift = lbl.text.length() * this->fontSizeHalf;
         text->setPos(sceneX - textShift, y0 + this->fontSizeHalf);
 
         scene->addLine(sceneX, y0 - labelPointRadius, sceneX, y0 + labelPointRadius);
     }
 }
 
-void Plot::drawYLabels(int labelPointLength)
+void Plot::drawYLabels(QVector<PlotLabel>& labels, int labelPointLength)
 {
     qreal labelPointRadius = labelPointLength / 2;
     qreal x0 = this->rectX;
-    foreach (PlotLabel pl, this->yLabels)
+
+    foreach (PlotLabel pl, labels)
     {
         QGraphicsTextItem* text = this->scene->addText(pl.text, this->font);
-        qreal sceneY = this->fnYToRect(pl.y);
-        text->setPos(x0 - pl.width, sceneY - this->fontSize);
+        qreal sceneY = this->fnYToRect(pl.val);
+
+        qreal len = pl.text.length();
+        if (pl.text.at(0) == '-' && len > 2) len -= 0.5;
+        if (len <= 2) len = 2.5;
+        len *= this->fontSize;
+
+
+        text->setPos(x0 - len, sceneY - this->fontSize);
         scene->addLine(x0 - labelPointRadius, sceneY, x0 + labelPointRadius, sceneY);
     }
+}
+
+QVector<PlotLabel> Plot::axisLabels(qreal leftBound, qreal rightBound, int limit)
+{
+    qreal offset = 0;
+    if (leftBound < 0)
+    {
+        offset = (-1) * leftBound;
+    }
+
+    QVector<PlotLabel> labels;
+    PlotLabel first = {leftBound, QString::number(leftBound)};
+    labels.append(first);
+    this->generateAxisLabels(leftBound + offset, rightBound + offset, limit - 2, labels, offset);
+    PlotLabel last = {rightBound, QString::number(rightBound)};
+    labels.append(last);
+
+    return labels;
+}
+
+void Plot::generateAxisLabels(qreal leftBound, qreal rightBound, int limit, QVector<PlotLabel>& labels, qreal offset)
+{
+    if (limit == 0 || leftBound == rightBound)
+        return;
+
+    qreal center = leftBound + qAbs(rightBound - leftBound) / 2;
+    int newLimit = limit / 2;
+
+    this->generateAxisLabels(leftBound, center, newLimit, labels, offset);
+
+    qreal value = center - offset;
+    PlotLabel pl = { value, QString::number(value) };
+    labels.append(pl);
+
+    this->generateAxisLabels(center, rightBound, newLimit, labels, offset);
 }
 
 qreal Plot::computePrecision(qreal intervalLength)
