@@ -218,8 +218,8 @@ void DataTypeWidget::setupTableData(DataType* data)
     TableType* table = (TableType*)data;
     for (auto it = table->data().cbegin(); it != table->data().cend(); ++it) {
         QList<QStandardItem*> list;
-        QStandardItem* cell1 = new QStandardItem(it->first);
-        QStandardItem* cell2 = new QStandardItem(it->second);
+        QStandardItem* cell1 = new QStandardItem(it->at(0));
+        QStandardItem* cell2 = new QStandardItem(it->at(1));
         list << cell1 << cell2;
         this->tableModel->appendRow(list);
     }
@@ -228,13 +228,13 @@ void DataTypeWidget::setupTableData(DataType* data)
 DataType* DataTypeWidget::collectTableData() const
 {
     int rowCount = this->tableModel->rowCount();
-    QVector<QPair<QString, QString> > rowVector;
+    QList<QList<QString> > rowVector;
     for (int row = 0; row < rowCount; ++row)
     {
-        QPair<QString, QString> tuple;
-        tuple.first = this->tableModel->item(row, 0)->text();
-        tuple.second = this->tableModel->item(row, 1)->text();
-        rowVector.append(tuple);
+        QList<QString> list;
+        list << this->tableModel->item(row, 0)->text();
+        list << this->tableModel->item(row, 1)->text();
+        rowVector.append(list);
     }
 
     return new TableType(rowVector);
@@ -257,10 +257,10 @@ void DataTypeWidget::setupPiecewiseData(DataType* data)
 DataType* DataTypeWidget::collectPiecewiseData() const
 {
     int rowCount = this->piecewiseModel->rowCount();
-    QVector<QVector<QString> > rowVector;
+    QList<QList<QString> > rowVector;
     for (int row = 0; row < rowCount; ++row)
     {
-        QVector<QString> triple;
+        QList<QString> triple;
         triple.append(this->piecewiseModel->item(row, 0)->text());
         triple.append(this->piecewiseModel->item(row, 1)->text());
         triple.append(this->piecewiseModel->item(row, 2)->text());

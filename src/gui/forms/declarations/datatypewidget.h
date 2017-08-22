@@ -27,6 +27,7 @@ public:
 
     virtual void visit(ConstantType& type) override;
     virtual void visit(FunctionType& type) override;
+    virtual void visit(ExpressionType& type) override {}
     virtual void visit(TableType& type) override;
     virtual void visit(PiecewiseFunctionType& type) override;
     virtual void visit(VariableLinkType& type) override;

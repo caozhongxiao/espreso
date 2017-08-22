@@ -15,6 +15,7 @@ private:
 
 public:
     static std::vector<std::string> fnVariables();
+    static std::vector<std::string> fnVariablesParts();
 };
 
 #endif // COMMON_H

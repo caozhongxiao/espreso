@@ -4,7 +4,6 @@
 #include "../models/treemodel.h"
 #include "declarations/variabledialog.h"
 #include "../data/variable.h"
-#include "declarations/materialdialog.h"
 
 #include <QStandardItemModel>
 
@@ -92,15 +91,15 @@ void DeclarationsWidget::treeNewItem()
     }
     else if (parent.row() == 2)
     {
-        MaterialDialog* dialog = new MaterialDialog(this->matDict, this->varDict, this);
-        if (dialog->exec() == QDialog::Accepted)
-        {
-            Material m = dialog->data();
-            this->materials.append(m);
-            this->matDict.insert(m.name(), m);
-            QStandardItem* item = new QStandardItem(m.toString());
-            treeNodeMats->appendRow(item);
-        }
+//        MaterialDialog* dialog = new MaterialDialog(this->matDict, this->varDict, this);
+//        if (dialog->exec() == QDialog::Accepted)
+//        {
+//            Material m = dialog->data();
+//            this->materials.append(m);
+//            this->matDict.insert(m.name(), m);
+//            QStandardItem* item = new QStandardItem(m.toString());
+//            treeNodeMats->appendRow(item);
+//        }
     }
     else {
         qWarning("%s", QString(tr("Unknown item in declarations!")).toStdString().c_str());
@@ -177,17 +176,17 @@ void DeclarationsWidget::createEditDialog(const QModelIndex& item)
     }
     else if (parent.row() == 2)
     {
-        MaterialDialog* dialog = new MaterialDialog(this->materials.at(item.row()),
-                                                    this->matDict, this->varDict, this);
-        if (dialog->exec() == QDialog::Accepted)
-        {
-            Material m = dialog->data();
-            this->materials[item.row()] = m;
-            this->matDict[m.name()] = m;
-            QStandardItem* editted = new QStandardItem(m.toString());
-            treeNodeMats->insertRow(item.row() + 1, editted);
-            treeNodeMats->removeRow(item.row());
-        }
+//        MaterialDialog* dialog = new MaterialDialog(this->materials.at(item.row()),
+//                                                    this->matDict, this->varDict, this);
+//        if (dialog->exec() == QDialog::Accepted)
+//        {
+//            Material m = dialog->data();
+//            this->materials[item.row()] = m;
+//            this->matDict[m.name()] = m;
+//            QStandardItem* editted = new QStandardItem(m.toString());
+//            treeNodeMats->insertRow(item.row() + 1, editted);
+//            treeNodeMats->removeRow(item.row());
+//        }
     }
     else {
         qWarning("%s", QString(tr("Unknown item in declarations!")).toStdString().c_str());
