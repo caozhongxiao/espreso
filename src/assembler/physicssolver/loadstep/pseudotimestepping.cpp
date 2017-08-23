@@ -5,12 +5,12 @@
 #include "../timestep/timestepsolver.h"
 #include "../../step.h"
 #include "../../instance.h"
-#include "../../../configuration/physics/nonlinearsolver.h"
+#include "../../../config/ecf/physics/nonlinearsolver.h"
 
 
 using namespace espreso;
 
-PseudoTimeStepping::PseudoTimeStepping(TimeStepSolver &timeStepSolver, const NonLinearSolverBase &configuration, double duration)
+PseudoTimeStepping::PseudoTimeStepping(TimeStepSolver &timeStepSolver, const NonLinearSolverConfiguration &configuration, double duration)
 : LoadStepSolver("PSEUDO TIME STEPS", timeStepSolver, duration), _configuration(configuration)
 {
 	_assembler.setRegularizationCallback();

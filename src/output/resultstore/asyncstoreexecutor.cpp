@@ -6,7 +6,8 @@
 #include "vtklegacy.h"
 #include "vtkxmlascii.h"
 #include "vtkxmlbinary.h"
-#include "../../configuration/output.h"
+#include "../../config/ecf/output.h"
+#include "../../basis/utilities/parser.h"
 
 using namespace espreso;
 
@@ -15,13 +16,13 @@ void AsyncStoreExecutor::execInit(const async::ExecInfo &info, const OutputConfi
 	assert(config.solution || config.settings);
 
 	switch (config.format) {
-	case espreso::OUTPUT_FORMAT::VTK_LEGACY:
+	case OutputConfiguration::FORMAT::VTK_LEGACY:
 		_store = new VTKLegacy(config, 0L);
 		break;
-	case espreso::OUTPUT_FORMAT::VTK_XML_ASCII:
+	case OutputConfiguration::FORMAT::VTK_XML_ASCII:
 		_store = new VTKXMLASCII(config, 0L);
 		break;
-	case espreso::OUTPUT_FORMAT::VTK_XML_BINARY:
+	case OutputConfiguration::FORMAT::VTK_XML_BINARY:
 		_store = new VTKXMLBinary(config, 0L);
 		break;
 	default:

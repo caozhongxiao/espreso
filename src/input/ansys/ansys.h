@@ -13,17 +13,17 @@
 
 namespace espreso {
 
-struct ESPRESOInput;
+struct InputConfiguration;
 
 namespace input {
 
 class AnsysWorkbench: public Loader {
 
 public:
-	static void load(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size);
+	static void load(const InputConfiguration &configuration, Mesh &mesh, int rank, int size);
 
 protected:
-	AnsysWorkbench(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size)
+	AnsysWorkbench(const InputConfiguration &configuration, Mesh &mesh, int rank, int size)
 	: Loader(mesh), _workbench(configuration), _parser(mesh) { };
 
 	void points(Coordinates &coordinates);
@@ -43,7 +43,7 @@ protected:
 	void close();
 
 private:
-	const ESPRESOInput &_workbench;
+	const InputConfiguration &_workbench;
 	WorkbenchParser _parser;
 };
 

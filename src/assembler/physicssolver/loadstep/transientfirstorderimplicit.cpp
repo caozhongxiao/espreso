@@ -7,14 +7,15 @@
 #include "../../instance.h"
 #include "../../solution.h"
 #include "../../../mesh/structures/elementtypes.h"
-#include "../../../configuration/physics/transientsolver.h"
+#include "../../../basis/logging/logging.h"
+#include "../../../config/ecf/physics/transientsolver.h"
 
 using namespace espreso;
 
 size_t TransientFirstOrderImplicit::loadStep = 0;
 std::vector<Solution*> TransientFirstOrderImplicit::solutions;
 
-TransientFirstOrderImplicit::TransientFirstOrderImplicit(TimeStepSolver &timeStepSolver, const TransientSolver &configuration, double duration)
+TransientFirstOrderImplicit::TransientFirstOrderImplicit(TimeStepSolver &timeStepSolver, const TransientSolverConfiguration &configuration, double duration)
 : LoadStepSolver("TRANSIENT", timeStepSolver, duration), _configuration(configuration), _alpha(0)
 {
 	if (configuration.time_step < 1e-7) {
@@ -72,16 +73,16 @@ void TransientFirstOrderImplicit::initLoadStep(Step &step)
 	_assembler.setB0Callback();
 
 	switch (_configuration.method) {
-	case TransientSolver::METHOD::CRANK_NICOLSON:
+	case TransientSolverConfiguration::METHOD::CRANK_NICOLSON:
 		_alpha = 0.5;
 		break;
-	case TransientSolver::METHOD::GALERKIN:
+	case TransientSolverConfiguration::METHOD::GALERKIN:
 		_alpha = 2 / 3;
 		break;
-	case TransientSolver::METHOD::BACKWARD_DIFF:
+	case TransientSolverConfiguration::METHOD::BACKWARD_DIFF:
 		_alpha = 1;
 		break;
-	case TransientSolver::METHOD::USER:
+	case TransientSolverConfiguration::METHOD::USER:
 		_alpha = _configuration.alpha;
 		if (_alpha <= 0 || _alpha > 1) {
 			ESINFO(GLOBAL_ERROR) << "Alpha has to be from interval (0, 1>.";

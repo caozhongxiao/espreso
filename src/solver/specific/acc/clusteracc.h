@@ -14,10 +14,10 @@ class ClusterAcc: public ClusterBase
 {
 
 public:
-	ClusterAcc(const ESPRESOSolver &configuration, Instance *instance_in): ClusterBase(configuration, instance_in)
+	ClusterAcc(const FETISolverConfiguration &configuration, Instance *instance_in): ClusterBase(configuration, instance_in)
 	{
 			this->deleteMatrices = false;
-			this->NUM_MICS = configuration.N_MICS;
+			this->NUM_MICS = configuration.n_mics;
 			SetAcceleratorAffinity();
 			ESINFO( DETAILS ) << "MICS: " << this->NUM_MICS;
 	}

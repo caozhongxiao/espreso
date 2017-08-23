@@ -1,4 +1,5 @@
-#include "../generic/Domain.h"
+#include "Domain.h"
+#include "../../basis/logging/logging.h"
 
 #include <cmath>
 
@@ -34,7 +35,7 @@ void storeData(vector<double> vectors, const std::string &name, const std::strin
 	}
 }
 
-Domain::Domain(const ESPRESOSolver &configuration, Instance *instance_in, eslocal domain_index_in, eslocal USE_HTFETI_in):
+Domain::Domain(const FETISolverConfiguration &configuration, Instance *instance_in, eslocal domain_index_in, eslocal USE_HTFETI_in):
 		configuration(configuration),
 		instance(instance_in),
 
@@ -61,8 +62,8 @@ void Domain::SetDomain() {
 
 #if defined(SOLVER_DISSECTION)
 
-	if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
-		instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index, configuration.method == ESPRESO_METHOD::HYBRID_FETI);
+	if ( configuration.regularization == FETI_REGULARIZATION::ANALYTIC ) {
+		instance->computeKernel(configuration.regularization, configuration.sc_size, domain_global_index, configuration.method == FETI_METHOD::HYBRID_FETI);
 		Kplus.ImportMatrix_wo_Copy(K);
 		Kplus.Factorization ("K matrix");
 	} else {
@@ -79,7 +80,7 @@ void Domain::SetDomain() {
 //
 //	Kplus_R.Clear();
 //
-//	instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index, configuration.method == ESPRESO_METHOD::HYBRID_FETI);
+//	instance->computeKernel(configuration.regularization, configuration.sc_size, domain_global_index, configuration.method == FETI_METHOD::HYBRID_FETI);
 //
 //	Kplus.ImportMatrix(K); //_wo_Copy(K);
 //	Kplus.Factorization ("K matrix");
@@ -92,8 +93,8 @@ void Domain::SetDomain() {
 
 #else
 
-	if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
-		instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index, configuration.method == ESPRESO_METHOD::HYBRID_FETI);
+	if ( configuration.regularization == FETI_REGULARIZATION::ANALYTIC ) {
+		instance->computeKernel(configuration.regularization, configuration.sc_size, domain_global_index, configuration.method == FETI_METHOD::HYBRID_FETI);
 		Kplus.ImportMatrix_wo_Copy(K);
 		Kplus.Factorization ("K matrix");
 	} else {
@@ -104,7 +105,7 @@ void Domain::SetDomain() {
 		//Kplus.GetKernel(Kplus_R); // TODO: Kplus.GetKernels(Kplus_R, Kplus_R2) - upravit na tuto funkci - v sym. pripade bude Kplus_R2 prazdna
 
 		// TODO: Temporary solution before MKL solver is updated
-		instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index, configuration.method == ESPRESO_METHOD::HYBRID_FETI);
+		instance->computeKernel(configuration.regularization, configuration.sc_size, domain_global_index, configuration.method == FETI_METHOD::HYBRID_FETI);
 		Kplus.ImportMatrix_wo_Copy(K);
 		Kplus.Factorization ("K matrix");
 	}
@@ -255,16 +256,16 @@ void Domain::multKplusLocalCore(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> 
 
 
 	switch (configuration.Ksolver) {
-	case ESPRESO_KSOLVER::DIRECT_DP:
+	case FETI_KSOLVER::DIRECT_DP:
 		Kplus.Solve(x_in, y_out, 0, 0);
 		break;
-	case ESPRESO_KSOLVER::ITERATIVE:
+	case FETI_KSOLVER::ITERATIVE:
 		Kplus.SolveCG(K, x_in, y_out);
 		break;
-	case ESPRESO_KSOLVER::DIRECT_SP:
+	case FETI_KSOLVER::DIRECT_SP:
 		Kplus.Solve(x_in, y_out, 0, 0);
 		break;
-	case ESPRESO_KSOLVER::DIRECT_MP: {
+	case FETI_KSOLVER::DIRECT_MP: {
 
 		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
 		SEQ_VECTOR<double> r (Kplus.m_Kplus_size, 0.0);
@@ -274,7 +275,7 @@ void Domain::multKplusLocalCore(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> 
 
 		Kplus.Solve(x_in, x, 0, 0);
 		if (enable_SP_refinement) {
-			for (size_t step = 0; step <= configuration.Ksolver_iterations; step++) {
+			for (size_t step = 0; step <= configuration.Ksolver_max_iterations; step++) {
 				K.MatVec(x,r,'N');
 				for (size_t i = 0; i < r.size(); i++) {
 					r[i] = x_in[i] - r[i];
@@ -292,7 +293,7 @@ void Domain::multKplusLocalCore(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> 
 
 				norm = sqrt(norm);
 
-				if (norm < configuration.Ksolver_epsilon) {
+				if (norm < configuration.Ksolver_precision) {
 					ESINFO(PROGRESS3) << " " << step;
 					success = true;
 					break;
@@ -323,13 +324,13 @@ void Domain::multKplusLocalCore(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> 
 void Domain::multKplusLocalCore(SEQ_VECTOR <double> & x_in_y_out) {
 
 	switch (configuration.Ksolver) {
-	case ESPRESO_KSOLVER::DIRECT_DP:
+	case FETI_KSOLVER::DIRECT_DP:
 		Kplus.Solve(x_in_y_out);
 		break;
-	case ESPRESO_KSOLVER::DIRECT_SP:
+	case FETI_KSOLVER::DIRECT_SP:
 		Kplus.Solve(x_in_y_out);
 		break;
-	case ESPRESO_KSOLVER::DIRECT_MP: {
+	case FETI_KSOLVER::DIRECT_MP: {
 		bool success = false;
 
 		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
@@ -339,7 +340,7 @@ void Domain::multKplusLocalCore(SEQ_VECTOR <double> & x_in_y_out) {
 		Kplus.Solve(x_in_y_out, x, 0, 0);
 
 		if (enable_SP_refinement) {
-			for (size_t step = 0; step <= configuration.Ksolver_iterations; step++) {
+			for (size_t step = 0; step <= configuration.Ksolver_max_iterations; step++) {
 				K.MatVec(x,r,'N');
 				for (size_t i = 0; i < r.size(); i++) {
 					r[i] = x_in_y_out[i] - r[i];
@@ -356,7 +357,7 @@ void Domain::multKplusLocalCore(SEQ_VECTOR <double> & x_in_y_out) {
 
 				norm = sqrt(norm);
 
-				if (norm < configuration.Ksolver_epsilon) {
+				if (norm < configuration.Ksolver_precision) {
 					ESINFO(PROGRESS3) << " " << step;
 					break;
 				}
@@ -387,7 +388,7 @@ void Domain::multKplusLocalCore(SEQ_VECTOR <double> & x_in_y_out) {
 //
 //		break;
 //	}
-	case ESPRESO_KSOLVER::ITERATIVE:
+	case FETI_KSOLVER::ITERATIVE:
 		Kplus.SolveCG(K, x_in_y_out);
 		break;
 	default:
@@ -407,10 +408,10 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 	ESINFO(GLOBAL_ERROR) << "MultKplus-local with 4 parameters - currently dissabled";
 
 	switch (configuration.Ksolver) {
-	case ESPRESO_KSOLVER::DIRECT_DP:
+	case FETI_KSOLVER::DIRECT_DP:
 		Kplus.Solve(x_in, y_out, x_in_vector_start_index, y_out_vector_start_index);
 		break;
-	case ESPRESO_KSOLVER::DIRECT_SP:
+	case FETI_KSOLVER::DIRECT_SP:
 		Kplus.Solve(x_in, y_out, x_in_vector_start_index, y_out_vector_start_index);
 		break;
 	default:
@@ -438,10 +439,10 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 
 //void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, eslocal x_in_vector_start_index, eslocal y_out_vector_start_index) {
 //	switch (configuration.Ksolver) {
-//	case ESPRESO_KSOLVER::DIRECT_DP:
+//	case FETI_KSOLVER::DIRECT_DP:
 //		Kplus.Solve(x_in, y_out, x_in_vector_start_index, y_out_vector_start_index);
 //		break;
-//	case ESPRESO_KSOLVER::DIRECT_SP:
+//	case FETI_KSOLVER::DIRECT_SP:
 //		Kplus.Solve(x_in, y_out, x_in_vector_start_index, y_out_vector_start_index);
 //		break;
 //	default:
@@ -491,16 +492,16 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 //
 //void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out) {
 //	switch (configuration.Ksolver) {
-//	case ESPRESO_KSOLVER::DIRECT_DP:
+//	case FETI_KSOLVER::DIRECT_DP:
 //		Kplus.Solve(x_in, y_out, 0, 0);
 //		break;
-//	case ESPRESO_KSOLVER::ITERATIVE:
+//	case FETI_KSOLVER::ITERATIVE:
 //		Kplus.SolveCG(K, x_in, y_out);
 //		break;
-//	case ESPRESO_KSOLVER::DIRECT_SP:
+//	case FETI_KSOLVER::DIRECT_SP:
 //		Kplus.Solve(x_in, y_out, 0, 0);
 //		break;
-//	case ESPRESO_KSOLVER::DIRECT_MP: {
+//	case FETI_KSOLVER::DIRECT_MP: {
 //
 //		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
 //		SEQ_VECTOR<double> r (Kplus.m_Kplus_size, 0.0);
@@ -510,7 +511,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 //
 //		Kplus.Solve(x_in, x, 0, 0);
 //		if (enable_SP_refinement) {
-//			for (size_t step = 0; step <= configuration.Ksolver_iterations; step++) {
+//			for (size_t step = 0; step <= configuration.Ksolver_max_iterations; step++) {
 //				K.MatVec(x,r,'N');
 //				for (size_t i = 0; i < r.size(); i++) {
 //					r[i] = x_in[i] - r[i];
@@ -528,7 +529,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 //
 //				norm = sqrt(norm);
 //
-//				if (norm < configuration.Ksolver_epsilon) {
+//				if (norm < configuration.Ksolver_precision) {
 //					ESINFO(PROGRESS3) << " " << step;
 //					success = true;
 //					break;
@@ -558,13 +559,13 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 //
 //void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 //	switch (configuration.Ksolver) {
-//	case ESPRESO_KSOLVER::DIRECT_DP:
+//	case FETI_KSOLVER::DIRECT_DP:
 //		Kplus.Solve(x_in_y_out);
 //		break;
-//	case ESPRESO_KSOLVER::DIRECT_SP:
+//	case FETI_KSOLVER::DIRECT_SP:
 //		Kplus.Solve(x_in_y_out);
 //		break;
-//	case ESPRESO_KSOLVER::DIRECT_MP: {
+//	case FETI_KSOLVER::DIRECT_MP: {
 //		bool success = false;
 //
 //		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
@@ -574,7 +575,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 //		Kplus.Solve(x_in_y_out, x, 0, 0);
 //
 //		if (enable_SP_refinement) {
-//			for (size_t step = 0; step <= configuration.Ksolver_iterations; step++) {
+//			for (size_t step = 0; step <= configuration.Ksolver_max_iterations; step++) {
 //				K.MatVec(x,r,'N');
 //				for (size_t i = 0; i < r.size(); i++) {
 //					r[i] = x_in_y_out[i] - r[i];
@@ -591,7 +592,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 //
 //				norm = sqrt(norm);
 //
-//				if (norm < configuration.Ksolver_epsilon) {
+//				if (norm < configuration.Ksolver_precision) {
 //					ESINFO(PROGRESS3) << " " << step;
 //					break;
 //				}
@@ -622,7 +623,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 ////
 ////		break;
 ////	}
-//	case ESPRESO_KSOLVER::ITERATIVE:
+//	case FETI_KSOLVER::ITERATIVE:
 //		Kplus.SolveCG(K, x_in_y_out);
 //		break;
 //	default:

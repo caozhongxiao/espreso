@@ -2,7 +2,7 @@
 #include "distributedinfo.h"
 
 #include "../basis/utilities/utils.h"
-#include "../configuration/environment.h"
+#include "../config/ecf/environment.h"
 
 #include "../basis/point/point.h"
 #include "../mesh/elements/element.h"

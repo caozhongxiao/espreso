@@ -137,7 +137,7 @@ void Precomputed::assembleB0FromCorners()
 
 void Precomputed::analyticRegularization(size_t domain, bool ortogonalCluster)
 {
-	ESINFO(ERROR) << "Cannot compute analytic regularization of not PRECOMPUTED physics. Set REGULARIZATION = NULL_PIVOTS";
+	ESINFO(ERROR) << "Cannot compute analytic regularization of not PRECOMPUTED physics. Set FETI_REGULARIZATION = NULL_PIVOTS";
 }
 
 void Precomputed::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const

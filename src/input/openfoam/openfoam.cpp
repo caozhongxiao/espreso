@@ -10,22 +10,22 @@
 #include "../../mesh/structures/region.h"
 
 #include "../../basis/logging/logging.h"
-#include "../../configuration/input/input.h"
+#include "../../config/ecf/input/input.h"
 
 using namespace espreso::input;
 
 
-void OpenFOAM::load(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size)
+void OpenFOAM::load(const InputConfiguration &configuration, Mesh &mesh, int rank, int size)
 {
 	ESINFO(OVERVIEW) << "Load mesh from OpenFOAM format from directory " << configuration.path;
 	OpenFOAM openfoam(configuration, mesh, rank, size);
 	openfoam.fill();
 }
 
-OpenFOAM::OpenFOAM(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size) :
-		Loader(mesh), _openfoam(configuration)
+OpenFOAM::OpenFOAM(const InputConfiguration &configuration, Mesh &mesh, int rank, int size) :
+		Loader(mesh), _configuration(configuration)
 {
-	_projectPath = _openfoam.path;
+	_projectPath = _configuration.path;
 	solveParseError(computePolyMeshPath(rank, size));
 	_rank = rank;
 	_size = size;
@@ -242,7 +242,7 @@ void OpenFOAM::regions(
 
 bool OpenFOAM::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
 {
-	mesh.partitiate(_openfoam.domains);
+	mesh.partitiate(_configuration.domains);
 	return true;
 }
 

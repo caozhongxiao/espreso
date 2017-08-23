@@ -163,7 +163,7 @@ namespace std {
   template <>
   class numeric_limits<dd_real> : public numeric_limits<double> {
   public:
-    inline static double epsilon() { return dd_real::_eps; }
+    inline static double precision() { return dd_real::_eps; }
     inline static dd_real max() { return dd_real::_max; }
     inline static dd_real safe_max() { return dd_real::_safe_max; }
     inline static double min() { return dd_real::_min_normalized; }

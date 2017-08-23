@@ -4,7 +4,7 @@
 
 namespace espreso {
 
-    DenseMatrixPack::DenseMatrixPack(const ESPRESOSolver &configuration)
+    DenseMatrixPack::DenseMatrixPack(const FETISolverConfiguration &configuration)
         : configuration(configuration) {
 
             this->device = 0;
@@ -40,7 +40,7 @@ namespace espreso {
         }
 
     DenseMatrixPack::DenseMatrixPack(
-            const ESPRESOSolver &configuration,
+            const FETISolverConfiguration &configuration,
             long maxNMatrices,
             long preallocSize,
             int device, 

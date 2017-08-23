@@ -2,7 +2,7 @@
 #include "mpi.h"
 
 #include "communication.h"
-#include "../../configuration/environment.h"
+#include "../../config/ecf/environment.h"
 
 namespace espreso {
 

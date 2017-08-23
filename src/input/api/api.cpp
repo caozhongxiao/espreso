@@ -17,13 +17,13 @@
 
 #include "../../basis/logging/logging.hpp"
 #include "../../basis/utilities/utils.h"
-#include "../../configuration/environment.h"
-#include "../../configuration/input/input.h"
+#include "../../config/ecf/environment.h"
+#include "../../config/ecf/input/input.h"
 
 using namespace espreso::input;
 
 void API::load(
-		const ESPRESOInput &configuration,
+		const InputConfiguration &configuration,
 		APIMesh &mesh,
 		eslocal indexBase,
 		const std::vector<eslocal> &eType,

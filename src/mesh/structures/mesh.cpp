@@ -31,8 +31,9 @@
 #include "elementtypes.h"
 
 #include "metis.h"
-#include "../../configuration/environment.h"
-#include "../../configuration/material/coordinatesystem.h"
+#include "../../config/ecf/environment.h"
+#include "../../config/ecf/material/coordinatesystem.h"
+#include "../../basis/utilities/parser.h"
 
 namespace espreso {
 
@@ -1104,13 +1105,14 @@ void Mesh::materialNotFound(const std::string &name)
 
 void Mesh::loadMaterial(Region *region, size_t index, const std::string &name, const Configuration &configuration)
 {
-	#pragma omp parallel for
-	for (size_t e = 0; e < region->elements().size(); e++) {
-		region->elements()[e]->setParam(Element::MATERIAL, index);
-	}
-	const Configuration* coordinateSystem = configuration.subconfigurations.find("COORDINATE_SYSTEM")->second;
-	_materials.push_back(new Material(*_coordinates, configuration, dynamic_cast<const CoordinateSystem&>(*coordinateSystem)));
-	ESINFO(OVERVIEW) << "Set material '" << name << "' for region '" << region->name << "'";
+	// TODO: implement
+//	#pragma omp parallel for
+//	for (size_t e = 0; e < region->elements().size(); e++) {
+//		region->elements()[e]->setParam(Element::MATERIAL, index);
+//	}
+//	const Configuration* coordinateSystem = configuration.subconfigurations.find("COORDINATE_SYSTEM")->second;
+//	_materials.push_back(new Material(*_coordinates, configuration, dynamic_cast<const CoordinateSystem&>(*coordinateSystem)));
+//	ESINFO(OVERVIEW) << "Set material '" << name << "' for region '" << region->name << "'";
 }
 
 void Mesh::checkMaterials()

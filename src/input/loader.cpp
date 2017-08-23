@@ -14,25 +14,25 @@
 #include "../basis/logging/timeeval.h"
 #include "../basis/logging/logging.hpp"
 #include "../basis/utilities/utils.h"
-#include "../configuration/globalconfiguration.h"
+#include "../config/ecf/ecf.h"
 #include "espreso/espresobinaryformat.h"
 
 using namespace espreso::input;
 
 
-void Loader::load(const GlobalConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
+void Loader::load(const ECFConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
 {
 	switch (configuration.input) {
-	case INPUT::WORKBENCH:
+	case INPUT_FORMAT::WORKBENCH:
 		AnsysWorkbench::load(configuration.workbench, mesh, index, size);
 		break;
-	case INPUT::OPENFOAM:
+	case INPUT_FORMAT::OPENFOAM:
 		OpenFOAM::load(configuration.openfoam, mesh, index, size);
 		break;
-	case INPUT::ESDATA:
+	case INPUT_FORMAT::ESDATA:
 		ESPRESOBinaryFormat::load(configuration.esdata, mesh, index, size);
 		break;
-	case INPUT::GENERATOR:
+	case INPUT_FORMAT::GENERATOR:
 		Generator::generate(configuration.generator, mesh, index, size);
 		break;
 	}

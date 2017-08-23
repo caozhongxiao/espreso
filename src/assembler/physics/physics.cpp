@@ -17,7 +17,7 @@
 #include "../../basis/matrices/sparseVVPMatrix.h"
 #include "../../basis/matrices/denseMatrix.h"
 #include "../../basis/matrices/sparseCSRMatrix.h"
-#include "../../configuration/solver/espresooptions.h"
+#include "../../config/ecf/solver/feti.h"
 
 
 using namespace espreso;
@@ -223,7 +223,7 @@ void Physics::insertElementToDomain(
 	}
 }
 
-void Physics::makeStiffnessMatricesRegular(REGULARIZATION regularization, size_t scSize, bool ortogonalCluster)
+void Physics::makeStiffnessMatricesRegular(FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster)
 {
 	#pragma omp parallel for
 	for (size_t d = 0; d < _instance->domains; d++) {
@@ -233,18 +233,18 @@ void Physics::makeStiffnessMatricesRegular(REGULARIZATION regularization, size_t
 	ESINFO(PROGRESS3);
 }
 
-void Physics::makeStiffnessMatrixRegular(REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster)
+void Physics::makeStiffnessMatrixRegular(FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster)
 {
 	switch (regularization) {
 
-	case REGULARIZATION::FIX_POINTS:
+	case FETI_REGULARIZATION::ANALYTIC:
 		analyticRegularization(domain, ortogonalCluster);
 		_instance->RegMat[domain].RemoveLower();
 		_instance->K[domain].MatAddInPlace(_instance->RegMat[domain], 'N', 1);
 		_instance->RegMat[domain].ConvertToCOO(1);
 		break;
 
-	case REGULARIZATION::NULL_PIVOTS:
+	case FETI_REGULARIZATION::ALGEBRAIC:
 		switch (_instance->K[domain].mtype) {
 			double norm;
 			eslocal defect;

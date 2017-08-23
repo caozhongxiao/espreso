@@ -2,8 +2,8 @@
 #include <iostream>
 
 #include "../../basis/logging/logging.h"
-#include "../../configuration/output.h"
-#include "../../configuration/environment.h"
+#include "../../config/ecf/output.h"
+#include "../../config/ecf/environment.h"
 #include "../basis/utilities/utils.h"
 
 #include "vtklegacy.h"
@@ -24,13 +24,13 @@ void AsyncStore::init(const Mesh *mesh)
 	callInit(configuration());
 
 	switch (configuration().format) {
-	case espreso::OUTPUT_FORMAT::VTK_LEGACY:
+	case OutputConfiguration::FORMAT::VTK_LEGACY:
 		_headerStore = new VTKLegacy(configuration(), 0L);
 		break;
-	case espreso::OUTPUT_FORMAT::VTK_XML_ASCII:
+	case OutputConfiguration::FORMAT::VTK_XML_ASCII:
 		_headerStore = new VTKXMLASCII(configuration(), 0L);
 		break;
-	case espreso::OUTPUT_FORMAT::VTK_XML_BINARY:
+	case OutputConfiguration::FORMAT::VTK_XML_BINARY:
 		_headerStore = new VTKXMLBinary(configuration(), 0L);
 		break;
 	default:

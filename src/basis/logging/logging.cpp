@@ -9,7 +9,7 @@
 
 #include "logging.h"
 
-#include "../../configuration/environment.h"
+#include "../../config/ecf/environment.h"
 #include "../../assembler/step.h"
 
 namespace espreso {

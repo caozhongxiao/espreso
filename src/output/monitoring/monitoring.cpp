@@ -1,14 +1,16 @@
 
 #include "monitoring.h"
 
-#include "../../configuration/output.h"
+#include "../../config/ecf/output.h"
 #include "../../mesh/settings/property.h"
 #include "../../mesh/structures/mesh.h"
 #include "../../mesh/structures/region.h"
 #include "../../assembler/step.h"
 #include "../../assembler/solution.h"
 
-#include "../../configuration/environment.h"
+#include "../../config/ecf/environment.h"
+#include "../../basis/logging/logging.h"
+#include "../../basis/utilities/parser.h"
 
 using namespace espreso;
 
@@ -72,19 +74,19 @@ std::vector<espreso::Property> Monitoring::getProperties(const std::string &name
 Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
 : Store(output), _mesh(mesh)
 {
-	_monitors.reserve(_configuration.monitoring.size());
-	for (auto it = _configuration.monitoring.begin(); it != _configuration.monitoring.end(); ++it) {
-		_monitors.push_back(Monitor());
-		_monitors.back().region = _mesh->region(it->first);
-		_mesh->addMonitoredRegion(_monitors.back().region);
-		std::vector<std::string> args = Parser::split(it->second, " ");
-		if (args.size() != 2) {
-			ESINFO(GLOBAL_ERROR) << "Invalid monitoring format: use <REGION> <OPERATION> <VALUE>.";
-		}
-		_monitors.back().statistics = getStatistics(args[0]);
-		_monitors.back().properties = getProperties(args[1]);
-		_monitors.back().printSize = std::max(std::max((size_t)10, it->first.size()), std::max(args[0].size(), args[1].size()) + 2) + 4;
-	}
+//	_monitors.reserve(_configuration.monitoring.size());
+//	for (auto it = _configuration.monitoring.begin(); it != _configuration.monitoring.end(); ++it) {
+//		_monitors.push_back(Monitor());
+//		_monitors.back().region = _mesh->region(it->first);
+//		_mesh->addMonitoredRegion(_monitors.back().region);
+//		std::vector<std::string> args = Parser::split(it->second, " ");
+//		if (args.size() != 2) {
+//			ESINFO(GLOBAL_ERROR) << "Invalid monitoring format: use <REGION> <OPERATION> <VALUE>.";
+//		}
+//		_monitors.back().statistics = getStatistics(args[0]);
+//		_monitors.back().properties = getProperties(args[1]);
+//		_monitors.back().printSize = std::max(std::max((size_t)10, it->first.size()), std::max(args[0].size(), args[1].size()) + 2) + 4;
+//	}
 
 	if (environment->MPIrank) {
 		return;

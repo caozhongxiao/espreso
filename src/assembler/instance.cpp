@@ -4,6 +4,7 @@
 #include "../mesh/structures/mesh.h"
 #include "../solver/generic/SparseMatrix.h"
 #include "solution.h"
+#include "../basis/logging/logging.h"
 
 using namespace espreso;
 
@@ -62,15 +63,15 @@ Instance::Instance(const Mesh &mesh)
 		B1[d].type = 'G';
 	}
 
-	computeKernelCallback = [] (REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster) {
+	computeKernelCallback = [] (FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernel is empty function. Fill it in assembler.";
 	};
 
-	computeKernelsCallback = [] (REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
+	computeKernelsCallback = [] (FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernels is empty function. Fill it in assembler.";
 	};
 
-	assembleB0Callback = [] (B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
+	assembleB0Callback = [] (FETI_B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: assembleB0 is empty function. Fill it in assembler.";
 	};
 }
@@ -161,15 +162,15 @@ Instance::Instance(Instance &other, Matrices &share)
 		B1duplicity.resize(domains);
 	}
 
-	computeKernelCallback = [] (REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster) {
+	computeKernelCallback = [] (FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernel is empty function. Fill it in assembler.";
 	};
 
-	computeKernelsCallback = [] (REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
+	computeKernelsCallback = [] (FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernels is empty function. Fill it in assembler.";
 	};
 
-	assembleB0Callback = [] (B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
+	assembleB0Callback = [] (FETI_B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: assembleB0 is empty function. Fill it in assembler.";
 	};
 }

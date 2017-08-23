@@ -7,7 +7,7 @@
 #include "mpi.h"
 #include "omp.h"
 
-#include "../../configuration/environment.h"
+#include "../../config/ecf/environment.h"
 #include "logging.h"
 
 using namespace espreso;

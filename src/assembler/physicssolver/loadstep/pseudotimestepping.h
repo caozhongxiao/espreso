@@ -6,12 +6,12 @@
 
 namespace espreso {
 
-class NonLinearSolverBase;
+class NonLinearSolverConfiguration;
 
 class PseudoTimeStepping: public LoadStepSolver {
 
 public:
-	PseudoTimeStepping(TimeStepSolver &timeStepSolver, const NonLinearSolverBase &configuration, double duration);
+	PseudoTimeStepping(TimeStepSolver &timeStepSolver, const NonLinearSolverConfiguration &configuration, double duration);
 
 	Matrices updateStructuralMatrices(Step &step, Matrices matrices);
 	Matrices reassembleStructuralMatrices(Step &step, Matrices matrices);
@@ -20,7 +20,7 @@ protected:
 	void runNextTimeStep(Step &step);
 	void processTimeStep(Step &step);
 
-	const NonLinearSolverBase &_configuration;
+	const NonLinearSolverConfiguration &_configuration;
 };
 
 }

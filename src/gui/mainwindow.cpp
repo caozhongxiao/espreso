@@ -1,35 +1,71 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include "../configuration/globalconfiguration.h"
-
 #include <QStandardItemModel>
 
-static QStandardItem* addConfiguration(const espreso::Configuration &configuration, QStandardItem *item)
-{
-	for (size_t i = 0; i < configuration.orderedParameters.size(); i++) {
-		item->appendRow(new QStandardItem(configuration.orderedParameters[i]->name.c_str()));
-	}
+#include "../config/ecf/ecf.h"
+#include <iostream>
 
-	for (size_t i = 0; i < configuration.orderedSubconfiguration.size(); i++) {
-		item->appendRow(addConfiguration(
-				*configuration.orderedSubconfiguration[i],
-				new QStandardItem(configuration.orderedSubconfiguration[i]->name.c_str())
-		));
+using namespace espreso;
+
+template <typename Ttype>
+std::ostream& operator<<(std::ostream& os, const std::vector<Ttype> &v)
+{
+	for (size_t i = 0; i < v.size(); i++) {
+		os << v[i] << " ";
 	}
-	return item;
+	os << "\n";
+	return os;
 }
+
+static void printECF(const ECFObject &object, size_t indent)
+{
+	auto printindent = [&] () {
+		for (size_t j = 0; j < indent; j++) {
+			std::cout << " ";
+		}
+	};
+
+	auto printparameter = [&] (const ECFParameter *parameter) {
+		if (parameter == NULL || !parameter->metadata.isallowed()) {
+			return;
+		}
+		printindent();
+		std::cout << parameter->name << " ";
+		if (parameter->isValue()) {
+			std::cout << " = " << parameter->getValue() << ";\n";
+			if (parameter->metadata.datatype.front() == ECFDataType::EXPRESSION) {
+				printindent();
+				std::cout << "EXPRESSION: " << parameter->metadata.variables;
+			}
+			if (parameter->metadata.tensor != NULL) {
+				printindent();
+				std::cout << "TENSOR: " << parameter->metadata.tensor->size << "x" << parameter->metadata.tensor->size << "\n";
+			}
+		} else if (parameter->isObject()) {
+			std::cout << "{\n";
+			printECF(*dynamic_cast<const ECFObject*>(parameter), indent + 2);
+			printindent();
+			std::cout << "}\n";
+		} else {
+			// Separators etc..
+			std::cout << "\n";
+		}
+
+	};
+
+	for (size_t i = 0; i < object.parameters.size(); i++) {
+		printparameter(object.parameters[i]);
+	}
+};
 
 MainWindow::MainWindow(int *argc, char ***argv)
 : QMainWindow(0), ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
 
-	espreso::GlobalConfiguration configuration(argc, argv);
-	QStandardItemModel *model = new QStandardItemModel();
-
-	model->appendRow(addConfiguration(configuration, new QStandardItem("ESPRESO")));
-	ui->treeView->setModel(model);
+	espreso::ECFConfiguration ecf(argc, argv);
+	printECF(ecf, 0);
 }
 
 MainWindow::~MainWindow()

@@ -73,7 +73,7 @@ public:
 	bool isAnyPropertyTemperatureDependent(const std::vector<Property> &properties, size_t loadStep) const;
 
 	template<typename TMaterial>
-	void loadMaterials(const std::map<std::string, TMaterial*> &materials, const std::map<std::string, std::string> &sets)
+	void loadMaterials(const std::map<std::string, TMaterial> &materials, const std::map<std::string, std::string> &sets)
 	{
 		size_t index = 0;
 		for (auto it = sets.begin(); it != sets.end(); ++it, index++) {

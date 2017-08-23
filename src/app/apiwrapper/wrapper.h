@@ -17,7 +17,7 @@ class LoadStepSolver;
 class Assembler;
 class APIMesh;
 class OutputConfiguration;
-class ESPRESOSolver;
+class FETISolverConfiguration;
 class FETISolver;
 class ResultStoreList;
 }
@@ -48,7 +48,7 @@ struct FETI4IStructInstance {
 
 	espreso::APIMesh *mesh;
 	espreso::OutputConfiguration *output;
-	espreso::ESPRESOSolver *configuration;
+	espreso::FETISolverConfiguration *configuration;
 };
 
 namespace espreso {

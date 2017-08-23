@@ -140,7 +140,7 @@ namespace std {
   template <>
   class numeric_limits<qd_real> : public numeric_limits<double> {
   public:
-    inline static double epsilon() { return qd_real::_eps; }
+    inline static double precision() { return qd_real::_eps; }
     inline static double min() { return qd_real::_min_normalized; }
     inline static qd_real max() { return qd_real::_max; }
     inline static qd_real safe_max() { return qd_real::_safe_max; }

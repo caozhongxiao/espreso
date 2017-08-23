@@ -7,7 +7,7 @@
 namespace espreso {
 
 struct AdvectionDiffusionConfiguration;
-struct AdvectionDiffusionConvection;
+struct ConvectionConfiguration;
 
 struct AdvectionDiffusion: public virtual Physics
 {
@@ -64,11 +64,11 @@ protected:
 	void computeInitialTemperature(const Step &step, std::vector<std::vector<double> > &data);
 
 	double computeHTC(
-			const AdvectionDiffusionConvection &convection, const Element *e, size_t node, Step step,
+			const ConvectionConfiguration &convection, const Element *e, size_t node, Step step,
 			double temp) const;
 
 	void convectionMatParameters(
-			const AdvectionDiffusionConvection &convection, const Element *e, size_t node, Step step,
+			const ConvectionConfiguration &convection, const Element *e, size_t node, Step step,
 			double temp, double T_EXT,
 			double &rho, double &dynamic_viscosity, double &dynamic_viscosity_T, double &heat_capacity, double &thermal_conductivity) const;
 

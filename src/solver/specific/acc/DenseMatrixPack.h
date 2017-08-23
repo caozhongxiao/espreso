@@ -17,11 +17,11 @@ namespace espreso {
         public:
 
         // Default constructor
-        DenseMatrixPack( const ESPRESOSolver &configuration);
+        DenseMatrixPack( const FETISolverConfiguration &configuration);
 
         // Constructor
         DenseMatrixPack( 
-            const ESPRESOSolver &configuration, 
+            const FETISolverConfiguration &configuration, 
             long maxNMatrices, 
             long preallocSize, 
             int device = 0,
@@ -196,7 +196,7 @@ namespace espreso {
 
         private:
 
-        ESPRESOSolver configuration;
+        FETISolverConfiguration configuration;
 
         // MIC number
         int device;

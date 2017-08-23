@@ -1,5 +1,5 @@
 
-#include "../../configuration/physics/advectiondiffusion2d.h"
+#include "../../config/ecf/physics/advectiondiffusion.h"
 #include "advectiondiffusion2d.h"
 
 #include "../step.h"
@@ -30,9 +30,9 @@ AdvectionDiffusion2D::AdvectionDiffusion2D(Mesh *mesh, Instance *instance, const
 
 void AdvectionDiffusion2D::prepare()
 {
-	_mesh->loadNodeProperty(_configuration.thickness      , { }         , { Property::THICKNESS });
-	_mesh->loadProperty(_configuration.translation_motions, { "X", "Y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
-	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
+	_mesh->loadNodeProperty(_configuration.thickness     , { }         , { Property::THICKNESS });
+	_mesh->loadProperty(_configuration.translation_motion, { "X", "Y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
+	// _mesh->loadMaterials(_configuration.materials, _configuration.material_set);
 
 	_mesh->addPropertyGroup({ Property::FLUX_X, Property::FLUX_Y });
 	_mesh->addPropertyGroup({ Property::GRADIENT_X, Property::GRADIENT_Y });
@@ -67,22 +67,22 @@ void AdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Elemen
 	};
 
 	double cos, sin;
-	switch (material->coordination().type) {
-	case MaterialCoordination::Type::CARTESIAN:
-		cos = std::cos(d2r(material->coordination().rotation[2]->evaluate(e->node(node))));
-		sin = std::sin(d2r(material->coordination().rotation[2]->evaluate(e->node(node))));
-		break;
-	case MaterialCoordination::Type::CYLINDRICAL: {
-		Point origin(material->coordination().center[0]->evaluate(e->node(node)), material->coordination().center[1]->evaluate(e->node(node)), 0);
-		const Point &p = _mesh->coordinates()[e->node(node)];
-		double rotation = std::atan2((p.y - origin.y), (p.x - origin.x));
-		cos = std::cos(rotation);
-		sin = std::sin(rotation);
-		break;
-	}
-	default:
-		ESINFO(ERROR) << "Invalid material type (SPHERICAL for 2D).";
-	}
+//	switch (material->coordination().type) {
+//	case MaterialCoordination::Type::CARTESIAN:
+//		cos = std::cos(d2r(material->coordination().rotation[2]->evaluate(e->node(node))));
+//		sin = std::sin(d2r(material->coordination().rotation[2]->evaluate(e->node(node))));
+//		break;
+//	case MaterialCoordination::Type::CYLINDRICAL: {
+//		Point origin(material->coordination().center[0]->evaluate(e->node(node)), material->coordination().center[1]->evaluate(e->node(node)), 0);
+//		const Point &p = _mesh->coordinates()[e->node(node)];
+//		double rotation = std::atan2((p.y - origin.y), (p.x - origin.x));
+//		cos = std::cos(rotation);
+//		sin = std::sin(rotation);
+//		break;
+//	}
+//	default:
+//		ESINFO(ERROR) << "Invalid material type (SPHERICAL for 2D).";
+//	}
 
 	DenseMatrix TCT(2, 2), T(2, 2), C(2, 2), _CD, TCDT;
 	T(0, 0) =  cos; T(0, 1) = sin;
@@ -93,57 +93,57 @@ void AdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Elemen
 		TCDT.resize(2, 2);
 	}
 
-	auto derivation = [&] (MATERIAL_PARAMETER p, double h) {
-		return (
-				material->get(p)->evaluate(e->node(node), step.currentTime, temp + h) -
-				material->get(p)->evaluate(e->node(node), step.currentTime, temp - h)
-				) / (2 * h);
-	};
-
-	switch (material->getModel(PHYSICS::ADVECTION_DIFFUSION_2D)) {
-	case MATERIAL_MODEL::ISOTROPIC:
-		C(0, 0) = C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.currentTime, temp);
-		C(0, 1) = C(1, 0) = 0;
-		if (tangentCorrection) {
-			_CD(0, 0) = _CD(1, 1) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX, temp / 1e4);
-			_CD(0, 1) = _CD(1, 0) = 0;
-		}
-		break;
-	case MATERIAL_MODEL::DIAGONAL:
-		C(0, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.currentTime, temp);
-		C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.currentTime, temp);
-		C(0, 1) = C(1, 0) = 0;
-		if (tangentCorrection) {
-			_CD(0, 0) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX, temp / 1e4);
-			_CD(1, 1) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY, temp / 1e4);
-			_CD(0, 1) = _CD(1, 0) = 0;
-		}
-		break;
-	case MATERIAL_MODEL::SYMMETRIC:
-		C(0, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.currentTime, temp);
-		C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.currentTime, temp);
-		C(1, 0) = C(0, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(node), step.currentTime, temp);
-		if (tangentCorrection) {
-			_CD(0, 0) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX, temp / 1e4);
-			_CD(1, 1) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY, temp / 1e4);
-			_CD(0, 1) = _CD(1, 0) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY, temp / 1e4);
-		}
-		break;
-	case MATERIAL_MODEL::ANISOTROPIC:
-		C(0, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.currentTime, temp);
-		C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.currentTime, temp);
-		C(0, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(node), step.currentTime, temp);
-		C(1, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX)->evaluate(e->node(node), step.currentTime, temp);
-		if (tangentCorrection) {
-			_CD(0, 0) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX, temp / 1e4);
-			_CD(1, 1) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY, temp / 1e4);
-			_CD(0, 1) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY, temp / 1e4);
-			_CD(1, 0) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX, temp / 1e4);
-		}
-		break;
-	default:
-		ESINFO(ERROR) << "Advection diffusion 2D not supports set material model";
-	}
+//	auto derivation = [&] (MATERIAL_PARAMETER p, double h) {
+//		return (
+//				material->get(p)->evaluate(e->node(node), step.currentTime, temp + h) -
+//				material->get(p)->evaluate(e->node(node), step.currentTime, temp - h)
+//				) / (2 * h);
+//	};
+//
+//	switch (material->getModel(PHYSICS::ADVECTION_DIFFUSION_2D)) {
+//	case MATERIAL_MODEL::ISOTROPIC:
+//		C(0, 0) = C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.currentTime, temp);
+//		C(0, 1) = C(1, 0) = 0;
+//		if (tangentCorrection) {
+//			_CD(0, 0) = _CD(1, 1) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX, temp / 1e4);
+//			_CD(0, 1) = _CD(1, 0) = 0;
+//		}
+//		break;
+//	case MATERIAL_MODEL::DIAGONAL:
+//		C(0, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.currentTime, temp);
+//		C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.currentTime, temp);
+//		C(0, 1) = C(1, 0) = 0;
+//		if (tangentCorrection) {
+//			_CD(0, 0) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX, temp / 1e4);
+//			_CD(1, 1) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY, temp / 1e4);
+//			_CD(0, 1) = _CD(1, 0) = 0;
+//		}
+//		break;
+//	case MATERIAL_MODEL::SYMMETRIC:
+//		C(0, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.currentTime, temp);
+//		C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.currentTime, temp);
+//		C(1, 0) = C(0, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(node), step.currentTime, temp);
+//		if (tangentCorrection) {
+//			_CD(0, 0) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX, temp / 1e4);
+//			_CD(1, 1) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY, temp / 1e4);
+//			_CD(0, 1) = _CD(1, 0) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY, temp / 1e4);
+//		}
+//		break;
+//	case MATERIAL_MODEL::ANISOTROPIC:
+//		C(0, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.currentTime, temp);
+//		C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.currentTime, temp);
+//		C(0, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(node), step.currentTime, temp);
+//		C(1, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX)->evaluate(e->node(node), step.currentTime, temp);
+//		if (tangentCorrection) {
+//			_CD(0, 0) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX, temp / 1e4);
+//			_CD(1, 1) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY, temp / 1e4);
+//			_CD(0, 1) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY, temp / 1e4);
+//			_CD(1, 0) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX, temp / 1e4);
+//		}
+//		break;
+//	default:
+//		ESINFO(ERROR) << "Advection diffusion 2D not supports set material model";
+//	}
 
 	TCT.multiply(T, C * T, 1, 0, true, false);
 	if (tangentCorrection) {
@@ -189,8 +189,8 @@ void AdvectionDiffusion2D::processElement(const Step &step, Matrices matrices, c
 		coordinates(i, 1) = _mesh->coordinates()[e->node(i)].y;
 		thickness(i, 0) = e->getProperty(Property::THICKNESS, i, step.step, step.currentTime, temp, 1);
 		m(i, 0) =
-				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(e->node(i), step.currentTime, temp) *
-				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(e->node(i), step.currentTime, temp) *
+//				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(e->node(i), step.currentTime, temp) *
+//				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(e->node(i), step.currentTime, temp) *
 				thickness(i, 0);
 
 		U(i, 0) = e->getProperty(Property::TRANSLATION_MOTION_X, i, step.step, step.currentTime, temp, 0) * m(i, 0);
@@ -411,13 +411,13 @@ void AdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, cons
 	const std::vector<double> &weighFactor = e->weighFactor();
 
 
-	AdvectionDiffusionConvection *convection = NULL;
+	const ConvectionConfiguration *convection = NULL;
 	auto stepitc = _configuration.convection.find(step.step + 1);
 	if (stepitc != _configuration.convection.end()) {
 		for (size_t r = 0; convection == NULL && r < e->regions().size(); r++) {
 			auto regionit = stepitc->second.find(e->regions()[r]->name);
 			if (regionit != stepitc->second.end()) {
-				convection = regionit->second;
+				convection = &regionit->second;
 			}
 		}
 	}
@@ -488,9 +488,9 @@ void AdvectionDiffusion2D::postProcessElement(const Step &step, const Element *e
 		temp(i, 0) = solution[offset + SolutionIndex::TEMPERATURE]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(i), e->domains().front()));
 		coordinates(i, 0) = _mesh->coordinates()[e->node(i)].x;
 		coordinates(i, 1) = _mesh->coordinates()[e->node(i)].y;
-		m =
-			material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(e->node(i), step.currentTime, temp(i, 0)) *
-			material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(e->node(i), step.currentTime, temp(i, 0));
+//		m =
+//			material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(e->node(i), step.currentTime, temp(i, 0)) *
+//			material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(e->node(i), step.currentTime, temp(i, 0));
 
 		U(i, 0) = e->getProperty(Property::TRANSLATION_MOTION_X, i, step.step, step.currentTime, temp(i, 0), 0) * m;
 		U(i, 1) = e->getProperty(Property::TRANSLATION_MOTION_Y, i, step.step, step.currentTime, temp(i, 0), 0) * m;

@@ -13,8 +13,8 @@ enum class Property;
 class SparseMatrix;
 class Solution;
 class Mesh;
-enum class REGULARIZATION;
-enum class B0_TYPE;
+enum class FETI_REGULARIZATION;
+enum class FETI_B0_TYPE;
 
 enum Matrices : int {
 	NONE        = 0,
@@ -37,9 +37,9 @@ struct Instance {
 	Instance(Instance &other, Matrices &share);
 	~Instance();
 
-	void computeKernel(REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster = false) { computeKernelCallback(regularization, scSize, domain, ortogonalCluster); }
-	void computeKernels(REGULARIZATION regularization, size_t scSize, bool ortogonalCluster = false) { computeKernelsCallback(regularization, scSize, ortogonalCluster); }
-	void assembleB0(B0_TYPE type, const std::vector<SparseMatrix> &kernels) { assembleB0Callback(type, kernels); }
+	void computeKernel(FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster = false) { computeKernelCallback(regularization, scSize, domain, ortogonalCluster); }
+	void computeKernels(FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster = false) { computeKernelsCallback(regularization, scSize, ortogonalCluster); }
+	void assembleB0(FETI_B0_TYPE type, const std::vector<SparseMatrix> &kernels) { assembleB0Callback(type, kernels); }
 
 	void clear();
 
@@ -83,9 +83,9 @@ struct Instance {
 
 	std::vector<Solution*> solutions;
 
-	std::function<void(REGULARIZATION regularization, size_t scSize, bool ortogonalCluster)> computeKernelsCallback;
-	std::function<void(REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster)> computeKernelCallback;
-	std::function<void(B0_TYPE type, const std::vector<SparseMatrix> &kernels)> assembleB0Callback;
+	std::function<void(FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster)> computeKernelsCallback;
+	std::function<void(FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster)> computeKernelCallback;
+	std::function<void(FETI_B0_TYPE type, const std::vector<SparseMatrix> &kernels)> assembleB0Callback;
 private:
 
 	std::vector<SparseMatrix> _K, _M, _N1, _N2, _RegMat;

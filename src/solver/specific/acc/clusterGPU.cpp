@@ -627,17 +627,17 @@ for (eslocal d = 0; d < domains.size(); d++) {
 
 		// Import of Regularized matrix K into Kplus (Sparse Solver)
 		switch (configuration.Ksolver) {
-		case ESPRESO_KSOLVER::DIRECT_DP:
+		case FETI_KSOLVER::DIRECT_DP:
 			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
 			break;
-		case ESPRESO_KSOLVER::ITERATIVE:
+		case FETI_KSOLVER::ITERATIVE:
 			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
 			break;
-		case ESPRESO_KSOLVER::DIRECT_SP:
+		case FETI_KSOLVER::DIRECT_SP:
 			domains[d].Kplus.ImportMatrix_wo_Copy_fl(domains[d].K);
 			//domains[d].Kplus.ImportMatrix_fl(domains[d].K);
 			break;
-		case ESPRESO_KSOLVER::DIRECT_MP:
+		case FETI_KSOLVER::DIRECT_MP:
 			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
 			break;
 //		case 4:
@@ -654,7 +654,7 @@ for (eslocal d = 0; d < domains.size(); d++) {
 				std::stringstream ss;
 				ss << "init -> rank: " << environment->MPIrank << ", subdomain: " << d;
 				domains[d].Kplus.keep_factors = true;
-				if (configuration.Ksolver != ESPRESO_KSOLVER::ITERATIVE) {
+				if (configuration.Ksolver != FETI_KSOLVER::ITERATIVE) {
 					domains[d].Kplus.Factorization (ss.str());
 				}
 			} else {
@@ -662,7 +662,7 @@ for (eslocal d = 0; d < domains.size(); d++) {
 					std::stringstream ss;
 					ss << "init -> rank: " << environment->MPIrank << ", subdomain: " << d;
 					domains[d].Kplus.keep_factors = true;
-					if (configuration.Ksolver != ESPRESO_KSOLVER::ITERATIVE) {
+					if (configuration.Ksolver != FETI_KSOLVER::ITERATIVE) {
 						domains[d].Kplus.Factorization (ss.str());
 					}
 				}
@@ -760,16 +760,16 @@ for (eslocal i = 0; i < vec_e0.size(); i++)
 ////	Sa_dense.Solve(tm2[0], vec_alfa, nrhs);
 ////#endif
 
-	 if (configuration.SAsolver == ESPRESO_SASOLVER::CPU_SPARSE) {
+	 if (configuration.SAsolver == FETI_SASOLVER::CPU_SPARSE) {
 		 Sa.Solve(tm2[0], vec_alfa,0,0);
 	 }
 
-	 if (configuration.SAsolver == ESPRESO_SASOLVER::CPU_DENSE) {
+	 if (configuration.SAsolver == FETI_SASOLVER::CPU_DENSE) {
 			eslocal nrhs = 1;
 			Sa_dense_cpu.Solve(tm2[0], vec_alfa, nrhs);
 	 }
 
-	 if (configuration.SAsolver == ESPRESO_SASOLVER::ACC_DENSE) {
+	 if (configuration.SAsolver == FETI_SASOLVER::ACC_DENSE) {
 			eslocal nrhs = 1;
 			Sa_dense_acc.Solve(tm2[0], vec_alfa, nrhs);
 	 }
@@ -957,16 +957,16 @@ for (eslocal i = 0; i < vec_e0.size(); i++)
 
 
 	 clus_Sa_time.start();
-	if (configuration.SAsolver == ESPRESO_SASOLVER::CPU_SPARSE) {
+	if (configuration.SAsolver == FETI_SASOLVER::CPU_SPARSE) {
 		Sa.Solve(tm2[0], vec_alfa,0,0);
 	}
 
-	if (configuration.SAsolver == ESPRESO_SASOLVER::CPU_DENSE) {
+	if (configuration.SAsolver == FETI_SASOLVER::CPU_DENSE) {
 		eslocal nrhs = 1;
 		Sa_dense_cpu.Solve(tm2[0], vec_alfa, nrhs);
 	}
 
-	if (configuration.SAsolver == ESPRESO_SASOLVER::ACC_DENSE) {
+	if (configuration.SAsolver == FETI_SASOLVER::ACC_DENSE) {
 		eslocal nrhs = 1;
 		Sa_dense_acc.Solve(tm2[0], vec_alfa, nrhs);// lambda
 	}

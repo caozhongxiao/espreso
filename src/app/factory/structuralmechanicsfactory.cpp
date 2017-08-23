@@ -1,8 +1,7 @@
 
 #include "structuralmechanicsfactory.h"
 
-#include "../../configuration/physics/structuralmechanics2d.h"
-#include "../../configuration/physics/structuralmechanics3d.h"
+#include "../../config/ecf/physics/structuralmechanics.h"
 
 #include "../../assembler/physics/structuralmechanics2d.h"
 #include "../../assembler/physics/structuralmechanics3d.h"
@@ -51,22 +50,22 @@ size_t StructuralMechanicsFactory::loadSteps() const
 
 LoadStepSolver* StructuralMechanicsFactory::getLoadStepSolver(size_t step, Mesh *mesh, Store *store)
 {
-	const LoadStepSettings<StructuralMechanicsNonLinearConvergence> &settings = getLoadStepsSettings(step, _configuration.physics_solver.load_steps_settings);
+	const StructuralMechanicsLoadStepsConfiguration &settings = getLoadStepsSettings(step, _configuration.physics_solver.load_steps_settings);
 
 	_linearSolvers.push_back(getLinearSolver(settings, _instances.front()));
 	_assemblers.push_back(new Assembler(*_instances.front(), *_physics.front(), *mesh, *store, *_linearSolvers.back()));
 
 	switch (settings.mode) {
-	case LoadStepSettingsBase::MODE::LINEAR:
+	case LoadStepsConfiguration::MODE::LINEAR:
 		_timeStepSolvers.push_back(new LinearTimeStep(*_assemblers.back()));
 		break;
-	case LoadStepSettingsBase::MODE::NONLINEAR:
+	case LoadStepsConfiguration::MODE::NONLINEAR:
 		if (_bem) {
 			ESINFO(GLOBAL_ERROR) << "BEM discretization support only LINEAR STEADY STATE physics solver.";
 		}
 		switch (settings.nonlinear_solver.method) {
-		case NonLinearSolverBase::METHOD::NEWTON_RHAPSON:
-		case NonLinearSolverBase::METHOD::MODIFIED_NEWTON_RHAPSON:
+		case NonLinearSolverConfiguration::METHOD::NEWTON_RHAPSON:
+		case NonLinearSolverConfiguration::METHOD::MODIFIED_NEWTON_RHAPSON:
 			_timeStepSolvers.push_back(new NewtonRhapson(*_assemblers.back(), settings.nonlinear_solver));
 			break;
 		default:
@@ -79,10 +78,10 @@ LoadStepSolver* StructuralMechanicsFactory::getLoadStepSolver(size_t step, Mesh 
 	}
 
 	switch (settings.type) {
-	case LoadStepSettingsBase::TYPE::STEADY_STATE:
+	case LoadStepsConfiguration::TYPE::STEADY_STATE:
 		_loadStepSolvers.push_back(new SteadyStateSolver(*_timeStepSolvers.back(), settings.duration_time));
 		break;
-	case LoadStepSettingsBase::TYPE::TRANSIENT:
+	case LoadStepsConfiguration::TYPE::TRANSIENT:
 	default:
 		ESINFO(GLOBAL_ERROR) << "Not implemented LOAD STEP solver TYPE for LOAD STEP=" << step;
 	}

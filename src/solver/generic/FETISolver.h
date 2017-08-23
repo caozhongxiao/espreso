@@ -22,7 +22,7 @@ struct Instance;
 class FETISolver: public LinearSolver {
 public:
 
-	FETISolver(Instance *instance, const ESPRESOSolver &configuration);
+	FETISolver(Instance *instance, const FETISolverConfiguration &configuration);
 
 	void init();
 
@@ -33,7 +33,7 @@ public:
 	bool applyB1Scaling() const { return configuration.scaling; }
 	bool applyB1LagrangeRedundancy() const { return configuration.redundant_lagrange; }
 
-	double& precision() { return configuration.epsilon; }
+	double& precision() { return configuration.precision; }
 
 	virtual ~FETISolver();
 
@@ -55,7 +55,7 @@ public:
 	void createCMat();
 
 	Instance *instance;
-	ESPRESOSolver configuration;
+	FETISolverConfiguration configuration;
 
 	TimeEval timeEvalMain;
 

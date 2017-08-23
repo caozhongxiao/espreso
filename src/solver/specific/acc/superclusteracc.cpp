@@ -6,7 +6,7 @@ using namespace espreso;
 
 SuperClusterAcc::~SuperClusterAcc() {
     if (this->deleteMatrices) {
-        for (eslocal i = 0; i < configuration.N_MICS; i++) {
+        for (eslocal i = 0; i < configuration.n_mics; i++) {
             if (matricesPerAcc[i]) {
                 //delete [] matricesPerAcc[i];
             }
@@ -89,7 +89,7 @@ void SuperClusterAcc::SetAcceleratorAffinity() {
     // END - detect how many MPI processes is running per node
     ESINFO(PROGRESS2) << "MPI ranks per node: " << _MPInodeSize;
 
-    int nMICs = configuration.N_MICS;
+    int nMICs = configuration.n_mics;
 
     if ( _MPInodeSize > nMICs && nMICs % 2 == 0 && _MPInodeSize % nMICs == 0 ) {
         // the case when there is more MPInodeSize = 2*k*nMICs
@@ -322,16 +322,16 @@ void SuperClusterAcc::SetupKsolvers ( ) {
 
         // Import of Regularized matrix K into Kplus (Sparse Solver)
         switch (configuration.Ksolver) {
-            case ESPRESO_KSOLVER::DIRECT_DP:
+            case FETI_KSOLVER::DIRECT_DP:
                 domains[d]->Kplus.ImportMatrix_wo_Copy (domains[d]->K);
                 break;
-            case ESPRESO_KSOLVER::ITERATIVE:
+            case FETI_KSOLVER::ITERATIVE:
                 domains[d]->Kplus.ImportMatrix_wo_Copy (domains[d]->K);
                 break;
-            case ESPRESO_KSOLVER::DIRECT_SP:
+            case FETI_KSOLVER::DIRECT_SP:
                 domains[d]->Kplus.ImportMatrix_fl(domains[d]->K);
                 break;
-            case ESPRESO_KSOLVER::DIRECT_MP:
+            case FETI_KSOLVER::DIRECT_MP:
                 domains[d]->Kplus.ImportMatrix_fl(domains[d]->K);
                 break;
                 //		case 4:
@@ -346,7 +346,7 @@ void SuperClusterAcc::SetupKsolvers ( ) {
             std::stringstream ss;
             ss << "init -> rank: " << environment->MPIrank << ", subdomain: " << d;
             domains[d]->Kplus.keep_factors = true;
-            if (configuration.Ksolver != ESPRESO_KSOLVER::ITERATIVE) {
+            if (configuration.Ksolver != FETI_KSOLVER::ITERATIVE) {
                 domains[d]->Kplus.Factorization (ss.str());
             }
         } else {
@@ -383,7 +383,7 @@ void SuperClusterAcc::SetupKsolvers ( ) {
         }
 
         eslocal offset = 0; 
-        bool use_float = (configuration.Ksolver == ESPRESO_KSOLVER::DIRECT_SP);
+        bool use_float = (configuration.Ksolver == FETI_KSOLVER::DIRECT_SP);
 
         this->SparseKPack.resize( this->acc_per_MPI, SparseMatrixPack(configuration, use_float) );
         this->accDomains.resize( this->acc_per_MPI );
@@ -423,7 +423,7 @@ void SuperClusterAcc::SetupKsolvers ( ) {
 
 void SuperClusterAcc::SetupPreconditioner() {
 
-    if ( configuration.preconditioner != ESPRESO_PRECONDITIONER::DIRICHLET ) {
+    if ( configuration.preconditioner != FETI_PRECONDITIONER::DIRICHLET ) {
         for ( eslocal c = 0; c < clusters.size(); ++c ) {
             clusters[ c ].SetupPreconditioner();
         }
@@ -435,8 +435,8 @@ void SuperClusterAcc::SetupPreconditioner() {
 
 void SuperClusterAcc::CreateDirichletPrec( Instance *instance ) {
 
-    bool USE_FLOAT = ( configuration.schur_precision == FLOAT_PRECISION::SINGLE ||
-            configuration.Ksolver == ESPRESO_KSOLVER::DIRECT_SP );
+    bool USE_FLOAT = ( configuration.schur_precision == FETI_FLOAT_PRECISION::SINGLE ||
+            configuration.Ksolver == FETI_KSOLVER::DIRECT_SP );
 
     // Ratio of work done on MIC
     double MICr = 1.0;
@@ -603,7 +603,7 @@ void SuperClusterAcc::CreateDirichletPrec( Instance *instance ) {
 
 
             // ------------------------------------------------------------------------------------------------------------------
-            bool diagonalized_K_rr = configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET;
+            bool diagonalized_K_rr = configuration.preconditioner == FETI_PRECONDITIONER::SUPER_DIRICHLET;
             //        PRECONDITIONER==NONE              - 0
             //        PRECONDITIONER==LUMPED            - 1
             //        PRECONDITIONER==WEIGHT_FUNCTION   - 2
@@ -622,8 +622,8 @@ void SuperClusterAcc::CreateDirichletPrec( Instance *instance ) {
                 // if physics.K[d] does not contain inner DOF
             } else {
 
-                if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET || 
-                        configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET ) {
+                if (configuration.preconditioner == FETI_PRECONDITIONER::DIRICHLET || 
+                        configuration.preconditioner == FETI_PRECONDITIONER::SUPER_DIRICHLET ) {
                     SparseSolverCPU createSchur;
                     //          createSchur.msglvl=1;
                     eslocal sc_size = perm_vec.size();
@@ -691,8 +691,8 @@ void SuperClusterAcc::CreateDirichletPrec( Instance *instance ) {
             if (environment->print_matrices) {
                 std::ofstream osS(Logging::prepareFile(d, "S"));
                 SparseMatrix SC =  domains[d]->Prec;
-                if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET || 
-                        configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET ){
+                if (configuration.preconditioner == FETI_PRECONDITIONER::DIRICHLET || 
+                        configuration.preconditioner == FETI_PRECONDITIONER::SUPER_DIRICHLET ){
                     SC.ConvertDenseToCSR(1);
                 }
                 osS << SC;
@@ -792,7 +792,7 @@ void SuperClusterAcc::CreateDirichletPrec( Instance *instance ) {
 
 
         // ------------------------------------------------------------------------------------------------------------------
-        bool diagonalized_K_rr = configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET;
+        bool diagonalized_K_rr = configuration.preconditioner == FETI_PRECONDITIONER::SUPER_DIRICHLET;
         //        PRECONDITIONER==NONE              - 0
         //        PRECONDITIONER==LUMPED            - 1
         //        PRECONDITIONER==WEIGHT_FUNCTION   - 2
@@ -811,7 +811,7 @@ void SuperClusterAcc::CreateDirichletPrec( Instance *instance ) {
             // if physics.K[d] does not contain inner DOF
         } else {
 
-            if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET) {
+            if (configuration.preconditioner == FETI_PRECONDITIONER::DIRICHLET) {
                 SparseSolverCPU createSchur;
                 //          createSchur.msglvl=1;
                 eslocal sc_size = perm_vec.size();
@@ -879,7 +879,7 @@ void SuperClusterAcc::CreateDirichletPrec( Instance *instance ) {
         if (environment->print_matrices) {
             std::ofstream osS(Logging::prepareFile(d, "S"));
             SparseMatrix SC =  domains[d]->Prec;
-            if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET){
+            if (configuration.preconditioner == FETI_PRECONDITIONER::DIRICHLET){
                 SC.ConvertDenseToCSR(1);
             }
             osS << SC;

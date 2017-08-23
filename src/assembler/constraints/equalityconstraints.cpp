@@ -14,8 +14,7 @@
 #include "../../mesh/structures/region.h"
 #include "../../mesh/settings/property.h"
 
-#include "../../configuration/configuration.h"
-#include "../../configuration/environment.h"
+#include "../../config/ecf/environment.h"
 
 #include <numeric>
 

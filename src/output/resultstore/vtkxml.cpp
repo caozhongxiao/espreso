@@ -3,8 +3,9 @@
 
 #include <fstream>
 
-#include "../../configuration/environment.h"
-#include "../../configuration/output.h"
+#include "../../config/ecf/environment.h"
+#include "../../config/ecf/output.h"
+#include "../../basis/logging/logging.h"
 #include "../../assembler/solution.h"
 #include "../../mesh/structures/elementtypes.h"
 #include "../regiondata.h"

@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include <QApplication>
 
-#include "../configuration/environment.h"
+#include "../config/ecf/environment.h"
 
 int main(int argc, char *argv[])
 {

@@ -3,7 +3,7 @@
 
 #include <fstream>
 
-#include "../../configuration/environment.h"
+#include "../../config/ecf/environment.h"
 #include "../../mesh/structures/mesh.h"
 #include "../../mesh/structures/material.h"
 #include "../../mesh/structures/coordinates.h"
@@ -124,7 +124,7 @@ void ESPRESOBinaryFormat::materials()
 		eslocal size = _mesh.materials().size();
 		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
 		for (size_t i = 0; i < _mesh.materials().size(); i++) {
-			_mesh.materials()[i]->store(os);
+//			_mesh.materials()[i]->store(os);
 		}
 		os.close();
 	}

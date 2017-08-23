@@ -10,13 +10,13 @@ class SuperClusterCPU : public SuperClusterBase
 {
     public:
 
-    SuperClusterCPU( const ESPRESOSolver & configuration, Instance *instance_in ):
+    SuperClusterCPU( const FETISolverConfiguration & configuration, Instance *instance_in ):
         SuperClusterBase( configuration, instance_in ) { }
 
 	void Create_SC_perDomain(bool USE_FLOAT) {
 		//bool
 		USE_FLOAT = false;
-		if (configuration.schur_precision == FLOAT_PRECISION::SINGLE) {
+		if (configuration.schur_precision == FETI_FLOAT_PRECISION::SINGLE) {
 			USE_FLOAT = true;
 		}
 

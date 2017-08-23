@@ -9,12 +9,12 @@
 namespace espreso {
 
 class Solution;
-class TransientSolver;
+class TransientSolverConfiguration;
 
 class TransientFirstOrderImplicit: public LoadStepSolver {
 
 public:
-	TransientFirstOrderImplicit(TimeStepSolver &timeStepSolver, const TransientSolver &configuration, double duration);
+	TransientFirstOrderImplicit(TimeStepSolver &timeStepSolver, const TransientSolverConfiguration &configuration, double duration);
 
 	Matrices updateStructuralMatrices(Step &step, Matrices matrices);
 	Matrices reassembleStructuralMatrices(Step &step, Matrices matrices);
@@ -24,7 +24,7 @@ protected:
 	void runNextTimeStep(Step &step);
 	void processTimeStep(Step &step);
 
-	const TransientSolver &_configuration;
+	const TransientSolverConfiguration &_configuration;
 	double _alpha;
 
 	static size_t loadStep;

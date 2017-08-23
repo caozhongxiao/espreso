@@ -18,10 +18,10 @@ namespace espreso {
         public:
 
         // Default constructor
-        SparseMatrixPack( const ESPRESOSolver &configuration, bool USE_FLOAT = false);
+        SparseMatrixPack( const FETISolverConfiguration &configuration, bool USE_FLOAT = false);
 
         // Constructor
-        SparseMatrixPack( const ESPRESOSolver &configuration, long maxNMatrices, int device = 0 );
+        SparseMatrixPack( const FETISolverConfiguration &configuration, long maxNMatrices, int device = 0 );
 
         // Copy constructor
         SparseMatrixPack( const SparseMatrixPack& orig );
@@ -131,7 +131,7 @@ namespace espreso {
 
 #pragma offload_attribute(push,target(mic))
 
-        ESPRESOSolver configuration;
+        FETISolverConfiguration configuration;
 
         // MIC number
         int device;

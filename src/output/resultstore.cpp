@@ -6,7 +6,7 @@
 
 #include <numeric>
 
-#include "../configuration/output.h"
+#include "../config/ecf/output.h"
 
 #include "../basis/point/point.h"
 #include "../mesh/elements/element.h"

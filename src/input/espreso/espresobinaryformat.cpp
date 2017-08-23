@@ -26,12 +26,12 @@
 #include "../../mesh/settings/evaluator.h"
 
 #include "espresobinaryformat.h"
-#include "../../configuration/environment.h"
-#include "../../configuration/input/input.h"
+#include "../../config/ecf/environment.h"
+#include "../../config/ecf/input/input.h"
 
 using namespace espreso::input;
 
-void ESPRESOBinaryFormat::load(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size)
+void ESPRESOBinaryFormat::load(const InputConfiguration &configuration, Mesh &mesh, int rank, int size)
 {
 	auto checkFile = [&] (int cluster, const std::string &file) {
 		std::stringstream ss;
@@ -70,7 +70,7 @@ void ESPRESOBinaryFormat::load(const ESPRESOInput &configuration, Mesh &mesh, in
 void ESPRESOBinaryFormat::points(Coordinates &coordinates)
 {
 	std::stringstream fileName;
-	fileName << _esdata.path << "/" << _rank << "/coordinates.dat";
+	fileName << _configuration.path << "/" << _rank << "/coordinates.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 
 	eslocal size;
@@ -141,7 +141,7 @@ static void addElements(std::ifstream &is, std::vector<espreso::Element*> &eleme
 void ESPRESOBinaryFormat::elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
 {
 	std::stringstream fileName;
-	fileName << _esdata.path << "/" << _rank << "/elements.dat";
+	fileName << _configuration.path << "/" << _rank << "/elements.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 	eslocal size;
 
@@ -156,14 +156,14 @@ void ESPRESOBinaryFormat::elements(std::vector<size_t> &bodies, std::vector<Elem
 void ESPRESOBinaryFormat::materials(std::vector<Material*> &materials)
 {
 	std::stringstream fileName;
-	fileName << _esdata.path << "/" << _rank << "/materials.dat";
+	fileName << _configuration.path << "/" << _rank << "/materials.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 
 	eslocal size;
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	for (eslocal i = 0; i < size; i++) {
-		materials.push_back(new Material(mesh.coordinates()));
-		materials.back()->load(is);
+//		materials.push_back(new Material(mesh.coordinates()));
+//		materials.back()->load(is);
 	}
 	is.close();
 }
@@ -177,7 +177,7 @@ void ESPRESOBinaryFormat::regions(
 		std::vector<Element*> &nodes)
 {
 	std::stringstream fileName;
-	fileName << _esdata.path << "/" << _rank << "/regions.dat";
+	fileName << _configuration.path << "/" << _rank << "/regions.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 
 	eslocal size;
@@ -273,14 +273,14 @@ void ESPRESOBinaryFormat::regions(
 
 bool ESPRESOBinaryFormat::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
 {
-	mesh.partitiate(_esdata.domains);
+	mesh.partitiate(_configuration.domains);
 	return true;
 }
 
 void ESPRESOBinaryFormat::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges)
 {
 	std::stringstream fileName;
-	fileName << _esdata.path << "/" << _rank << "/boundaries.dat";
+	fileName << _configuration.path << "/" << _rank << "/boundaries.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 
 	std::set<int> neighs;

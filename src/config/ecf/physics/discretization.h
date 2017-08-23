@@ -1,0 +1,14 @@
+
+#ifndef SRC_CONFIG_ECF_PHYSICS_DISCRETIZATION_H_
+#define SRC_CONFIG_ECF_PHYSICS_DISCRETIZATION_H_
+
+namespace espreso {
+
+enum class DISCRETIZATION {
+		FEM,
+		BEM
+};
+
+}
+
+#endif /* SRC_CONFIG_ECF_PHYSICS_DISCRETIZATION_H_ */

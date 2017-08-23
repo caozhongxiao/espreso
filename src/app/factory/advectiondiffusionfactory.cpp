@@ -1,8 +1,7 @@
 
 #include "advectiondiffusionfactory.h"
 
-#include "../../configuration/physics/advectiondiffusion2d.h"
-#include "../../configuration/physics/advectiondiffusion3d.h"
+#include "../../config/ecf/physics/advectiondiffusion.h"
 
 #include "../../assembler/physics/advectiondiffusion2d.h"
 #include "../../assembler/physics/advectiondiffusion3d.h"
@@ -53,22 +52,22 @@ size_t AdvectionDiffusionFactory::loadSteps() const
 
 LoadStepSolver* AdvectionDiffusionFactory::getLoadStepSolver(size_t step, Mesh *mesh, Store *store)
 {
-	const LoadStepSettings<AdvectionDiffusionNonLinearConvergence> &settings = getLoadStepsSettings(step, _configuration.physics_solver.load_steps_settings);
+	const AdvectionDiffusionLoadStepsConfiguration &settings = getLoadStepsSettings(step, _configuration.physics_solver.load_steps_settings);
 
 	_linearSolvers.push_back(getLinearSolver(settings, _instances.front()));
 	_assemblers.push_back(new Assembler(*_instances.front(), *_physics.front(), *mesh, *store, *_linearSolvers.back()));
 
 	switch (settings.mode) {
-	case LoadStepSettingsBase::MODE::LINEAR:
+	case LoadStepsConfiguration::MODE::LINEAR:
 		_timeStepSolvers.push_back(new LinearTimeStep(*_assemblers.back()));
 		break;
-	case LoadStepSettingsBase::MODE::NONLINEAR:
+	case LoadStepsConfiguration::MODE::NONLINEAR:
 		if (_bem) {
 			ESINFO(GLOBAL_ERROR) << "BEM discretization support only LINEAR STEADY STATE physics solver.";
 		}
 		switch (settings.nonlinear_solver.method) {
-		case NonLinearSolverBase::METHOD::NEWTON_RHAPSON:
-		case NonLinearSolverBase::METHOD::MODIFIED_NEWTON_RHAPSON:
+		case NonLinearSolverConfiguration::METHOD::NEWTON_RHAPSON:
+		case NonLinearSolverConfiguration::METHOD::MODIFIED_NEWTON_RHAPSON:
 			_timeStepSolvers.push_back(new NewtonRhapson(*_assemblers.back(), settings.nonlinear_solver));
 			break;
 		default:
@@ -81,14 +80,14 @@ LoadStepSolver* AdvectionDiffusionFactory::getLoadStepSolver(size_t step, Mesh *
 	}
 
 	switch (settings.type) {
-	case LoadStepSettingsBase::TYPE::STEADY_STATE:
-		if (settings.mode == LoadStepSettingsBase::MODE::NONLINEAR) {
+	case LoadStepsConfiguration::TYPE::STEADY_STATE:
+		if (settings.mode == LoadStepsConfiguration::MODE::NONLINEAR) {
 			_loadStepSolvers.push_back(new PseudoTimeStepping(*_timeStepSolvers.back(), settings.nonlinear_solver, settings.duration_time));
 		} else {
 			_loadStepSolvers.push_back(new SteadyStateSolver(*_timeStepSolvers.back(), settings.duration_time));
 		}
 		break;
-	case LoadStepSettingsBase::TYPE::TRANSIENT:
+	case LoadStepsConfiguration::TYPE::TRANSIENT:
 		_loadStepSolvers.push_back(new TransientFirstOrderImplicit(*_timeStepSolvers.back(), settings.transient_solver, settings.duration_time));
 		break;
 	default:

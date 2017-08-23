@@ -10,7 +10,7 @@ class SuperClusterAcc : public SuperClusterBase
 {
     public: 
 
-    SuperClusterAcc( const ESPRESOSolver & configuration, Instance *instance_in ):
+    SuperClusterAcc( const FETISolverConfiguration & configuration, Instance *instance_in ):
         SuperClusterBase( configuration, instance_in ), 
        		cluster_time	("Cluster Timing "),
 
@@ -31,7 +31,7 @@ class SuperClusterAcc : public SuperClusterBase
             init();
         }
 	    this->deleteMatrices = false;
-		this->NUM_MICS = configuration.N_MICS;
+		this->NUM_MICS = configuration.n_mics;
 		SetAcceleratorAffinity();
 		ESINFO( DETAILS ) << "Number of Xeon Phi coprocessors: " << this->NUM_MICS;
     }

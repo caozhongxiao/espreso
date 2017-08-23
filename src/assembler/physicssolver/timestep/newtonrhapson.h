@@ -8,17 +8,17 @@
 
 namespace espreso {
 
-class NonLinearSolverBase;
+class NonLinearSolverConfiguration;
 
 class NewtonRhapson: public TimeStepSolver {
 
 public:
-	NewtonRhapson(Assembler &assembler, const NonLinearSolverBase &configuration);
+	NewtonRhapson(Assembler &assembler, const NonLinearSolverConfiguration &configuration);
 
 	void solve(Step &step, LoadStepSolver &loadStepSolver);
 
 protected:
-	const NonLinearSolverBase &_configuration;
+	const NonLinearSolverConfiguration &_configuration;
 
 	std::vector<std::vector<double> > _solution;
 	std::vector<std::vector<double> > _f_ext;

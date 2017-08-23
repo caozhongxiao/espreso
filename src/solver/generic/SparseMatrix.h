@@ -1,8 +1,8 @@
 
 #include "../generic/utils.h"
 #include "../../basis/matrices/matrixtype.h"
-#include "../../configuration/environment.h"
-#include "../../configuration/solver/espreso.h"
+#include "../../config/ecf/environment.h"
+#include "../../config/ecf/solver/feti.h"
 
 //class SparseSolverCPU;
 
@@ -248,8 +248,8 @@ private:
   //
   bool DIAGONALSCALING                                  = true;
   eslocal PERMUTVECTORACTIVE                            = 1;
-  bool USE_NULL_PIVOTS_OR_S_SET                         = true;
-  bool DIAGONALREGULARIZATION                           = true;
+  bool USE_ALGEBRAIC_OR_S_SET                         = true;
+  bool DIAGONALFETI_REGULARIZATION                           = true;
   eslocal GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K = 0;
   eslocal GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S = 0;
   eslocal PLOT_N_FIRST_N_LAST_EIGENVALUES               = 0;
@@ -258,7 +258,7 @@ private:
   double COND_NUMB_FOR_SINGULAR_MATRIX                  = 1e13;
   eslocal CHECK_NONSING                                 = 0;
   eslocal MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS          = 2500;
-  eslocal SC_SIZE                                       = 200;
+  eslocal sc_size                                       = 200;
   eslocal TWENTY                                        = 20;
   double JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY       = 1.0e-5;
 

@@ -18,9 +18,9 @@ class Store;
 class AsyncStore;
 class ResultStoreList;
 
-struct GlobalConfiguration;
+struct ECFConfiguration;
 struct OutputConfiguration;
-struct LoadStepSettingsBase;
+struct LoadStepsConfiguration;
 
 class FactoryLoader {
 
@@ -33,15 +33,15 @@ public:
 	virtual LoadStepSolver* getLoadStepSolver(size_t step, Mesh *mesh, Store *store) =0;
 
 	template<class TLoadStepSettings>
-	const TLoadStepSettings& getLoadStepsSettings(size_t step, const std::map<size_t, TLoadStepSettings*> &setting) const
+	const TLoadStepSettings& getLoadStepsSettings(size_t step, const std::map<size_t, TLoadStepSettings> &setting) const
 	{
 		if (setting.find(step + 1) == setting.end()) {
 			printError("Missing setting for LOAD STEP " + std::to_string(step + 1));
 		}
-		return *setting.find(step + 1)->second;
+		return setting.find(step + 1)->second;
 	}
 
-	LinearSolver* getLinearSolver(const LoadStepSettingsBase &settings, Instance *instance) const;
+	LinearSolver* getLinearSolver(const LoadStepsConfiguration &settings, Instance *instance) const;
 
 protected:
 	void printError(const std::string &error) const;
@@ -58,7 +58,7 @@ protected:
 class Factory {
 
 public:
-	Factory(const GlobalConfiguration &configuration);
+	Factory(const ECFConfiguration &configuration);
 	~Factory();
 
 	void solve();
@@ -66,10 +66,10 @@ public:
 
 protected:
 	void initAsync(const OutputConfiguration &configuration);
-	void loadPhysics(const GlobalConfiguration &configuration);
+	void loadPhysics(const ECFConfiguration &configuration);
 	void setOutput(const OutputConfiguration &configuration);
 
-	FactoryLoader* createFactoryLoader(const GlobalConfiguration &configuration);
+	FactoryLoader* createFactoryLoader(const ECFConfiguration &configuration);
 
 	Mesh *_mesh;
 	ResultStoreList* _storeList;

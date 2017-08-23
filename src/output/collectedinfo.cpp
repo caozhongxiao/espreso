@@ -1,7 +1,7 @@
 
 #include "collectedinfo.h"
 
-#include "../configuration/environment.h"
+#include "../config/ecf/environment.h"
 
 #include "../basis/utilities/utils.h"
 #include "../basis/utilities/communication.h"

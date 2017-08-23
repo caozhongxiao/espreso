@@ -1,5 +1,5 @@
 
-#include "../../configuration/physics/structuralmechanics.h"
+#include "../../config/ecf/physics/structuralmechanics.h"
 #include "structuralmechanics.h"
 
 #include "../../basis/matrices/denseMatrix.h"
@@ -78,7 +78,7 @@ void StructuralMechanics::prepare()
 	_mesh->loadNodeProperty(_configuration.temperature     , { }, { Property::TEMPERATURE });
 	_mesh->loadNodeProperty(_configuration.obstacle        , { }, { Property::OBSTACLE });
 	_mesh->loadNodeProperty(_configuration.normal_direction, { }, { Property::NORMAL_DIRECTION });
-	_mesh->loadProperty(_configuration.normal_presure      , { }, { Property::PRESSURE });
+	_mesh->loadProperty(_configuration.normal_pressure     , { }, { Property::PRESSURE });
 	_mesh->loadProperty(_configuration.initial_temperature , { }, { Property::INITIAL_TEMPERATURE });
 
 	_mesh->removeDuplicateRegions();

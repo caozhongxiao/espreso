@@ -3,7 +3,8 @@
 
 #include "evaluator.h"
 #include <numeric>
-#include "../../configuration/environment.h"
+#include "../../config/ecf/environment.h"
+#include "../../basis/utilities/parser.h"
 
 using namespace espreso;
 

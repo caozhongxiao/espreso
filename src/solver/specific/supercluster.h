@@ -26,6 +26,7 @@ using std::vector;
 using std::map;
 using std::make_pair;
 
+#include "../../basis/logging/logging.h"
 #include "../generic/SparseMatrix.h"
 #include "sparsesolvers.h"
 #include "clusters.h"
@@ -36,7 +37,7 @@ namespace espreso {
 class SuperClusterBase
 {
 public:
-	SuperClusterBase(const ESPRESOSolver &configuration, Instance *instance_in):
+	SuperClusterBase(const FETISolverConfiguration &configuration, Instance *instance_in):
     	configuration(configuration),
 		instance(instance_in)
 	{
@@ -53,7 +54,7 @@ public:
 		x_prim_cluster3.clear();
 	}
 
-	const ESPRESOSolver 	&configuration;
+	const FETISolverConfiguration 	&configuration;
 	Instance 				*instance;
 	SEQ_VECTOR <Cluster> 	clusters;
 
@@ -89,10 +90,10 @@ public:
 		}
 
 		switch (configuration.method) {
-		case ESPRESO_METHOD::TOTAL_FETI:
+		case FETI_METHOD::TOTAL_FETI:
 			USE_HFETI = false;
 			break;
-		case ESPRESO_METHOD::HYBRID_FETI:
+		case FETI_METHOD::HYBRID_FETI:
 			USE_HFETI = true;
 			break;
 		default:
@@ -140,7 +141,7 @@ public:
 		int glob_clust_index = 0;
 		MPI_Exscan(&numClusters, &glob_clust_index, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
 
-		//instance->computeKernels(configuration.regularization, configuration.SC_SIZE);
+		//instance->computeKernels(configuration.regularization, configuration.sc_size);
 
 		for (eslocal c = 0; c < numClusters; c++) {
 
@@ -217,7 +218,7 @@ public:
 
 		 TimeEvent B0_time("Create and Compress B0 per cluster"); B0_time.start();
 
-//		 instance->computeKernels(configuration.regularization, configuration.SC_SIZE);
+//		 instance->computeKernels(configuration.regularization, configuration.sc_size);
 
 		 instance->assembleB0(configuration.B0_type, instance->N1);
 

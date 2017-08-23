@@ -1,6 +1,6 @@
 
 #include "lamesteklovpoincare3d.h"
-#include "../../configuration/physics/structuralmechanics3d.h"
+#include "../../config/ecf/physics/structuralmechanics.h"
 
 #include "../../basis/logging/logging.h"
 #include "../../basis/matrices/sparseVVPMatrix.h"
