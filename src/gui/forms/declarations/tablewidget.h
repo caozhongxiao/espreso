@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QStandardItemModel>
 #include <QStringList>
+#include <QTableView>
 #include "../validators/validatorfactory.h"
 
 namespace Ui {
@@ -15,16 +16,17 @@ class TableWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit TableWidget(int columns, const QStringList& headlines,
-                         const QVector<ValidatorFactory*>& validators, QWidget *parent = 0);
-    ~TableWidget();
+    explicit TableWidget(int columns, const QStringList& headlines, QWidget *parent = 0);
+    virtual ~TableWidget();
 
-    void addRow(const QList<QString>& rowData);
-    void addData(const QList<QList<QString> >& data);
+    virtual void addRow(const QList<QString>& rowData);
+    virtual void addData(const QList<QList<QString> >& data);
 
 private:
     Ui::TableWidget *ui;
 
+protected:
+    QTableView* mTable;
     QStandardItemModel* mModel;
 };
 

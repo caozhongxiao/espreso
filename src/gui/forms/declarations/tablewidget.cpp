@@ -1,25 +1,18 @@
 #include "tablewidget.h"
 #include "ui_tablewidget.h"
 
-#include "../validators/validatordelegate.h"
-
-TableWidget::TableWidget(int columns, const QStringList& headlines,
-                         const QVector<ValidatorFactory*>& validators, QWidget *parent) :
+TableWidget::TableWidget(int columns, const QStringList& headlines, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::TableWidget)
 {
     ui->setupUi(this);
 
+    this->mTable = this->ui->table;
+
     this->mModel = new QStandardItemModel(this);
     ui->table->setModel(mModel);
 
     this->mModel->setColumnCount(columns);
-
-    int col = 0;
-    foreach (ValidatorFactory* vf, validators) {
-        ui->table->setItemDelegateForColumn(col, new ValidatorDelegate(vf, ui->table));
-        col++;
-    }
 
     this->mModel->setHorizontalHeaderLabels(headlines);
 }

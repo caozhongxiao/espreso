@@ -3,22 +3,22 @@
 ScalarProperty::ScalarProperty() : NamedEntity()
 {
     this->mUnit = "";
-    this->mAbbreviation = "";
+    this->mSymbol = "";
 }
 
-ScalarProperty::ScalarProperty(const QString& name, const QString& unit, const QString& abbreviation,
+ScalarProperty::ScalarProperty(const QString& name, const QString& unit, const QString& symbol,
                                DataType* data) :
     NamedEntity(name)
 {
     this->mUnit = unit;
-    this->mAbbreviation = abbreviation;
+    this->mSymbol = symbol;
     this->mData = data;
 }
 
 ScalarProperty::ScalarProperty(const ScalarProperty& sp) : NamedEntity(sp)
 {
     this->mUnit = sp.mUnit;
-    this->mAbbreviation = sp.mAbbreviation;
+    this->mSymbol = sp.mSymbol;
     this->mData = sp.mData;
 }
 
@@ -37,7 +37,7 @@ QString ScalarProperty::unit() const
     return this->mUnit;
 }
 
-QString ScalarProperty::abbreviation() const
+QString ScalarProperty::symbol() const
 {
-    return this->mAbbreviation;
+    return this->mSymbol;
 }

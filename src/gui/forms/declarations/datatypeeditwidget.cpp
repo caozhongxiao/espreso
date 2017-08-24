@@ -2,7 +2,7 @@
 #include "ui_datatypeeditwidget.h"
 
 #include "../validators/validatordelegate.h"
-#include "../validators/expressionvalidator.h"
+#include "../elements/expressionedit.h"
 #include <QPair>
 
 DataTypeEditWidget::DataTypeEditWidget(QWidget *parent) :
@@ -51,23 +51,17 @@ DataTypeEditWidget::~DataTypeEditWidget()
 
 void DataTypeEditWidget::createUi()
 {
-    QLineEdit* function = new QLineEdit(this);
-    function->setValidator(new ExpressionValidator(this));
+    ExpressionEdit* function = new ExpressionEdit(this);
+    connect(function, &ExpressionEdit::validStateChanged, this,
+            &DataTypeEditWidget::changeValidState);
     function->hide();
 
-    QVector<ValidatorFactory*> tableValidators;
-    tableValidators << new ExpressionValidatorFactory()
-                    << new ExpressionValidatorFactory();
-    TableWidget* table = new TableWidget(2, TableType::headlines(),
-                                         tableValidators, this);
+    TableTypeWidget* table = new TableTypeWidget(this);
     table->hide();
 
-    QVector<ValidatorFactory*> piecewiseValidators;
-    piecewiseValidators << new ExpressionValidatorFactory()
-                        << new ExpressionValidatorFactory()
-                        << new NumberValidatorFactory();
-    TableWidget* piecewise = new TableWidget(3, PiecewiseFunctionType::headlines(),
-                                             piecewiseValidators, this);
+    PiecewiseTypeWidget* piecewise = new PiecewiseTypeWidget(this);
+    connect(piecewise, &PiecewiseTypeWidget::validStateChanged, this,
+            &DataTypeEditWidget::changeValidState);
     piecewise->hide();
 
     this->uiExpression = function;
@@ -104,12 +98,12 @@ QComboBox* DataTypeEditWidget::createComboBox(QWidget *parent)
     box->setCurrentIndex(this->activeType);
 
     connect(box, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &DataTypeEditWidget::typeChanged);
+            this, &DataTypeEditWidget::changeType);
 
     return box;
 }
 
-void DataTypeEditWidget::typeChanged(int index)
+void DataTypeEditWidget::changeType(int index)
 {
     switch (index)
     {
@@ -136,4 +130,9 @@ void DataTypeEditWidget::typeChanged(int index)
     }
 
     this->activeType = index;
+}
+
+void DataTypeEditWidget::changeValidState(bool valid)
+{
+    emit validStateChanged(valid);
 }

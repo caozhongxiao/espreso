@@ -5,7 +5,8 @@
 
 #include <QLineEdit>
 #include <QComboBox>
-#include "tablewidget.h"
+#include "tabletypewidget.h"
+#include "piecewisetypewidget.h"
 #include "../../data/datatype.h"
 
 namespace Ui {
@@ -23,15 +24,19 @@ public:
 
     QComboBox* createComboBox(QWidget* parent = nullptr);
 
+signals:
+    void validStateChanged(bool valid);
+
 private slots:
-    void typeChanged(int index);
+    void changeType(int index);
+    void changeValidState(bool valid);
 
 private:
     Ui::DataTypeEditWidget *ui;
 
     QLineEdit* uiExpression;
-    TableWidget* uiTable;
-    TableWidget* uiPiecewise;
+    TableTypeWidget* uiTable;
+    PiecewiseTypeWidget* uiPiecewise;
 
     int activeType;
 

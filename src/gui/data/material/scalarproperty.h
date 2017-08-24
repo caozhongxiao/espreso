@@ -8,12 +8,12 @@ class ScalarProperty : public NamedEntity
 {
 private:
     QString mUnit;
-    QString mAbbreviation;
+    QString mSymbol;
     DataType* mData;
 
 public:
     ScalarProperty();
-    ScalarProperty(const QString& name, const QString& unit, const QString& abbreviation,
+    ScalarProperty(const QString& name, const QString& unit, const QString& symbol,
                    DataType* data);
     ScalarProperty(const ScalarProperty& sp);
 
@@ -21,7 +21,7 @@ public:
     DataType* data() const;
 
     QString unit() const;
-    QString abbreviation() const;
+    QString symbol() const;
 };
 
 #endif // SCALARPROPERTIES_H
