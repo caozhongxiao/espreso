@@ -12,8 +12,9 @@ public:
     ExpressionEdit(QWidget* parent = nullptr);
     ExpressionEdit(const QString& contents, QWidget* parent = nullptr);
 
-signals:
-    void validStateChanged(bool isValid);
+    bool isValid();
+
+    static bool validate(const QString& expr);
 
 protected:
     virtual void focusOutEvent(QFocusEvent* e) override;

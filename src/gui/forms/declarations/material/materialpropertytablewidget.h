@@ -18,12 +18,6 @@ public:
 
     void addRow(const QString& name, DataType* data, const QString& unit, const QString& abbrev);
 
-signals:
-    void validStateChanged(bool valid);
-
-private slots:
-    void changeValidState(bool valid);
-
 private:
     Ui::MaterialPropertyTableWidget *ui;
 

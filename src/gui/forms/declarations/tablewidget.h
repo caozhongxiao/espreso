@@ -22,12 +22,14 @@ public:
     virtual void addRow(const QList<QString>& rowData);
     virtual void addData(const QList<QList<QString> >& data);
 
-private:
-    Ui::TableWidget *ui;
-
 protected:
     QTableView* mTable;
     QStandardItemModel* mModel;
+
+private:
+    Ui::TableWidget *ui;
+
+    void addCleanRow();
 };
 
 #endif // TABLEWIDGET_H

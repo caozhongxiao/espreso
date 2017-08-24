@@ -49,8 +49,6 @@ void MaterialPropertyTableWidget::addRow(const QString& name, DataType* data,
     QLabel* lblSymbol = new QLabel(symbol, this);
 
     DataTypeEditWidget* dataWidget = new DataTypeEditWidget(data, this);
-    connect(dataWidget, &DataTypeEditWidget::validStateChanged,
-            this, &MaterialPropertyTableWidget::changeValidState);
     QComboBox* cmbBox = dataWidget->createComboBox(this);
     //TODO: Variables
 
@@ -60,9 +58,4 @@ void MaterialPropertyTableWidget::addRow(const QString& name, DataType* data,
     ui->grid->addWidget(dataWidget, row, 2);
     ui->grid->addWidget(lblUnit, row, 3, alignment);
     ui->grid->addWidget(lblSymbol, row, 4, alignment);
-}
-
-void MaterialPropertyTableWidget::changeValidState(bool valid)
-{
-    emit validStateChanged(valid);
 }

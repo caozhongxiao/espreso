@@ -8,9 +8,7 @@ QWidget* ExpressionEditDelegate::createEditor(QWidget *parent,
                                     const QStyleOptionViewItem &option,
                                     const QModelIndex &index) const
 {
-    ExpressionEdit *editor = new ExpressionEdit(parent);
-
-    connect(editor, &ExpressionEdit::validStateChanged, this, &ExpressionEditDelegate::changeValidState);
+    QLineEdit *editor = new QLineEdit(parent);
 
     return editor;
 }
@@ -19,14 +17,14 @@ QWidget* ExpressionEditDelegate::createEditor(QWidget *parent,
 void ExpressionEditDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
     QString value = index.model()->data(index, Qt::EditRole).toString();
-    ExpressionEdit *line = static_cast<ExpressionEdit*>(editor);
+    QLineEdit *line = static_cast<QLineEdit*>(editor);
     line->setText(value);
 }
 
 
 void ExpressionEditDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
 {
-    ExpressionEdit *line = static_cast<ExpressionEdit*>(editor);
+    QLineEdit *line = static_cast<QLineEdit*>(editor);
     QString value = line->text();
     model->setData(index, value);
 }
@@ -37,7 +35,16 @@ void ExpressionEditDelegate::updateEditorGeometry(QWidget *editor, const QStyleO
     editor->setGeometry(option.rect);
 }
 
-void ExpressionEditDelegate::changeValidState(bool valid)
+void ExpressionEditDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-    emit validStateChanged(valid);
+    QVariant data = index.data();
+    QString text = data.toString();
+    QStyleOptionViewItem newOption(option);
+    if (!ExpressionEdit::validate(text))
+    {
+        newOption.font.setBold(true);
+        newOption.palette.setColor(QPalette::Text, Qt::red);
+    }
+
+    QItemDelegate::paint(painter, newOption, index);
 }

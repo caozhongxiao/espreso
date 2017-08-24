@@ -2,8 +2,8 @@
 #include "ui_datatypeeditwidget.h"
 
 #include "../validators/validatordelegate.h"
-#include "../elements/expressionedit.h"
 #include <QPair>
+#include <QDebug>
 
 DataTypeEditWidget::DataTypeEditWidget(QWidget *parent) :
     QWidget(parent),
@@ -52,16 +52,12 @@ DataTypeEditWidget::~DataTypeEditWidget()
 void DataTypeEditWidget::createUi()
 {
     ExpressionEdit* function = new ExpressionEdit(this);
-    connect(function, &ExpressionEdit::validStateChanged, this,
-            &DataTypeEditWidget::changeValidState);
     function->hide();
 
     TableTypeWidget* table = new TableTypeWidget(this);
     table->hide();
 
     PiecewiseTypeWidget* piecewise = new PiecewiseTypeWidget(this);
-    connect(piecewise, &PiecewiseTypeWidget::validStateChanged, this,
-            &DataTypeEditWidget::changeValidState);
     piecewise->hide();
 
     this->uiExpression = function;
@@ -103,6 +99,22 @@ QComboBox* DataTypeEditWidget::createComboBox(QWidget *parent)
     return box;
 }
 
+bool DataTypeEditWidget::isValid()
+{
+    switch (this->activeType)
+    {
+        case 0:
+            return this->uiExpression->isValid();
+        case 1:
+            return true;
+        case 2:
+            return this->uiPiecewise->isValid();
+        default:
+            qCritical() << "DataTypeEditWidget: Unknown DataType ID" << this->activeType;
+            return false;
+    }
+}
+
 void DataTypeEditWidget::changeType(int index)
 {
     switch (index)
@@ -123,16 +135,10 @@ void DataTypeEditWidget::changeType(int index)
             this->uiPiecewise->show();
             break;
         default:
-            qWarning("%s: %d!",
-                     tr("DataTypeEditWidget: Unknown DataType ID").toStdString().c_str(),
-                     index);
+            qCritical() << "DataTypeEditWidget: Unknown DataType ID"
+                      << index;
             return;
     }
 
     this->activeType = index;
-}
-
-void DataTypeEditWidget::changeValidState(bool valid)
-{
-    emit validStateChanged(valid);
 }

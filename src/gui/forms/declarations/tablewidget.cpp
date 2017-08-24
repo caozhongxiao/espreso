@@ -15,11 +15,23 @@ TableWidget::TableWidget(int columns, const QStringList& headlines, QWidget *par
     this->mModel->setColumnCount(columns);
 
     this->mModel->setHorizontalHeaderLabels(headlines);
+
+    this->addCleanRow();
 }
 
 TableWidget::~TableWidget()
 {
     delete ui;
+}
+
+void TableWidget::addCleanRow()
+{
+    QList<QStandardItem*> row;
+    for (int i = 0; i < mModel->rowCount(); ++i)
+    {
+        row << new QStandardItem();
+    }
+    this->mModel->appendRow(row);
 }
 
 void TableWidget::addRow(const QList<QString>& rowData)
@@ -28,7 +40,7 @@ void TableWidget::addRow(const QList<QString>& rowData)
     foreach (QString data, rowData) {
         row.append(new QStandardItem(data));
     }
-    this->mModel->appendRow(row);
+    this->mModel->insertRow(mModel->rowCount() - 1, row);
 }
 
 void TableWidget::addData(const QList<QList<QString> >& data)

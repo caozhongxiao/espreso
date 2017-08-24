@@ -12,28 +12,34 @@ ExpressionEdit::ExpressionEdit(QWidget* parent) : QLineEdit(parent)
 ExpressionEdit::ExpressionEdit(const QString& contents, QWidget* parent) :
     QLineEdit(contents, parent)
 {
+    this->setText("0");
     this->mValidState = true;
+}
+
+bool ExpressionEdit::validate(const QString& expr)
+{
+    return Expression::isValid(expr.toStdString(), Common::fnVariables());
+}
+
+bool ExpressionEdit::isValid()
+{
+    return this->mValidState;
 }
 
 void ExpressionEdit::focusOutEvent(QFocusEvent* e)
 {
-    bool valid = Expression::isValid(this->text().toStdString(), Common::fnVariables());
+    bool valid = ExpressionEdit::validate(this->text());
 
     if (valid)
     {
-        this->setStyleSheet("color: black;");
+        this->setStyleSheet("ExpressionEdit{color: black;}");
     }
     else
     {
-        this->setStyleSheet("color: red; font-weight: bold;");
+        this->setStyleSheet("ExpressionEdit{color: red; font-weight: bold;}");
     }
 
-    if ((mValidState == true && valid == false)
-            || (mValidState == false && valid == true))
-    {
-        emit validStateChanged(valid);
-        this->mValidState = valid;
-    }
+    this->mValidState = valid;
 
     QLineEdit::focusOutEvent(e);
 }
