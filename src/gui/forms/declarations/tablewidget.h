@@ -26,6 +26,9 @@ protected:
     QTableView* mTable;
     QStandardItemModel* mModel;
 
+private slots:
+    void onItemDoubleClick(const QModelIndex& index);
+
 private:
     Ui::TableWidget *ui;
 

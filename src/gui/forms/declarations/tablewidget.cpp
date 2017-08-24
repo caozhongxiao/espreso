@@ -17,6 +17,9 @@ TableWidget::TableWidget(int columns, const QStringList& headlines, QWidget *par
     this->mModel->setHorizontalHeaderLabels(headlines);
 
     this->addCleanRow();
+
+    connect(mTable, &QTableView::doubleClicked,
+            this, &TableWidget::onItemDoubleClick);
 }
 
 TableWidget::~TableWidget()
@@ -27,7 +30,7 @@ TableWidget::~TableWidget()
 void TableWidget::addCleanRow()
 {
     QList<QStandardItem*> row;
-    for (int i = 0; i < mModel->rowCount(); ++i)
+    for (int i = 0; i < mModel->columnCount(); ++i)
     {
         row << new QStandardItem();
     }
@@ -48,4 +51,12 @@ void TableWidget::addData(const QList<QList<QString> >& data)
     foreach (QList<QString> row, data) {
         this->addRow(row);
     }
+}
+
+void TableWidget::onItemDoubleClick(const QModelIndex &index)
+{
+    if (index.row() != this->mModel->rowCount() - 1)
+        return;
+
+    this->addCleanRow();
 }
