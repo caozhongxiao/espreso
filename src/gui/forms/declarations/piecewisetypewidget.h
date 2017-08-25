@@ -10,7 +10,7 @@ class PiecewiseTypeWidget : public TableWidget
 
 public:
     PiecewiseTypeWidget(QWidget* parent = 0);
-    bool isValid();
+    bool isValid() override;
 };
 
 #endif // PIECEWISETYPEWIDGET_H

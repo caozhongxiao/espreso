@@ -22,5 +22,5 @@ bool PiecewiseTypeWidget::isValid()
             return false;
     }
 
-    return true;
+    return TableWidget::isValid();
 }

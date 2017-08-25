@@ -6,6 +6,8 @@
 #include <QStringList>
 #include <QTableView>
 #include "../validators/validatorfactory.h"
+#include <QAction>
+#include <QMenu>
 
 namespace Ui {
 class TableWidget;
@@ -28,9 +30,14 @@ protected:
 
 private slots:
     void onItemDoubleClick(const QModelIndex& index);
+    void onContextMenu(const QPoint& point);
+    void deleteItem();
 
 private:
     Ui::TableWidget *ui;
+
+    QModelIndex toDelete;
+    QAction* mActionDelete;
 
     void addCleanRow();
 };

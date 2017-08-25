@@ -106,7 +106,7 @@ bool DataTypeEditWidget::isValid()
         case 0:
             return this->uiExpression->isValid();
         case 1:
-            return true;
+            return this->uiTable->isValid();
         case 2:
             return this->uiPiecewise->isValid();
         default:
