@@ -10,13 +10,13 @@
 #include "../tablewidget.h"
 #include "../datatypeeditwidget.h"
 
-MaterialPropertyTableWidget::MaterialPropertyTableWidget(QWidget *parent) :
+MaterialPropertyTableWidget::MaterialPropertyTableWidget(bool withHeader, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::MaterialPropertyTableWidget)
 {
     ui->setupUi(this);
 
-    this->createHeader();
+    if (withHeader) this->createHeader();
 }
 
 MaterialPropertyTableWidget::~MaterialPropertyTableWidget()

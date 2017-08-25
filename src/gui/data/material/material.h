@@ -23,8 +23,8 @@ public:
     int append(const TensorProperty& property);
     void removeScalar(int index);
     void removeTensor(int index);
-    ScalarProperty& scalar(int index) const;
-    TensorProperty& tensor(int index) const;
+    const ScalarProperty& scalar(int index) const;
+    const TensorProperty& tensor(int index) const;
 };
 
 #endif // MATERIAL_H

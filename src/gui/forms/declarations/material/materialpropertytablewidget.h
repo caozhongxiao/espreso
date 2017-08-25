@@ -13,7 +13,7 @@ class MaterialPropertyTableWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit MaterialPropertyTableWidget(QWidget *parent = 0);
+    explicit MaterialPropertyTableWidget(bool withHeader = true, QWidget *parent = 0);
     ~MaterialPropertyTableWidget();
 
     void addRow(const QString& name, DataType* data, const QString& unit, const QString& abbrev);

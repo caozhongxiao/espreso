@@ -23,6 +23,7 @@ public:
 
     virtual void addRow(const QList<QString>& rowData);
     virtual void addData(const QList<QList<QString> >& data);
+    virtual bool isValid();
 
 protected:
     QTableView* mTable;

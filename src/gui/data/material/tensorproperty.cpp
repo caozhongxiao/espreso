@@ -20,6 +20,16 @@ TensorProperty::TensorProperty(const TensorProperty &tp) : NamedEntity(tp)
     this->mAM = tp.mAM;
 }
 
+int TensorProperty::activeModel()
+{
+    return this->mActiveModel;
+}
+
+void TensorProperty::setActiveModel(int model)
+{
+    this->mActiveModel = model;
+}
+
 void TensorProperty::setIsotropicModel(const IsotropicModel& im)
 {
     this->mIM = im;

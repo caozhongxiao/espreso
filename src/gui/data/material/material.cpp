@@ -45,12 +45,12 @@ void Material::removeTensor(int index)
     this->mTensors.remove(index);
 }
 
-ScalarProperty& Material::scalar(int index) const
+const ScalarProperty& Material::scalar(int index) const
 {
-    this->mScalars.at(index);
+    return this->mScalars.at(index);
 }
 
-TensorProperty& Material::tensor(int index) const
+const TensorProperty& Material::tensor(int index) const
 {
-    this->mTensors.at(index);
+    return this->mTensors.at(index);
 }
