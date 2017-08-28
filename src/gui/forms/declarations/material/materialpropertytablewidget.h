@@ -2,7 +2,9 @@
 #define MATERIALPROPERTYTABLEWIDGET_H
 
 #include <QWidget>
+#include <QVector>
 #include "../../../data/datatype.h"
+#include "../../../data/material/materialproperty.h"
 
 namespace Ui {
 class MaterialPropertyTableWidget;
@@ -13,13 +15,16 @@ class MaterialPropertyTableWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit MaterialPropertyTableWidget(bool withHeader = true, QWidget *parent = 0);
+    explicit MaterialPropertyTableWidget(QWidget *parent = 0, bool withHeader = true);
     ~MaterialPropertyTableWidget();
 
-    void addRow(const QString& name, DataType* data, const QString& unit, const QString& abbrev);
+    void addProperty(MaterialProperty* property);
+    void addRow(const QString& name, DataType* data, const QString& unit, const QString& symbol);
 
 private:
     Ui::MaterialPropertyTableWidget *ui;
+
+    QVector<MaterialProperty*> mItems;
 
     void createHeader();
 };

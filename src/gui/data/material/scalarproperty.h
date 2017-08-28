@@ -1,27 +1,16 @@
 #ifndef SCALARPROPERTIES_H
 #define SCALARPROPERTIES_H
 
-#include "../namedentity.h"
-#include "../datatype.h"
+#include "materialproperty.h"
 
-class ScalarProperty : public NamedEntity
+class ScalarProperty : public MaterialProperty
 {
-private:
-    QString mUnit;
-    QString mSymbol;
-    DataType* mData;
-
 public:
-    ScalarProperty();
+    ScalarProperty() : MaterialProperty() {}
     ScalarProperty(const QString& name, const QString& unit, const QString& symbol,
-                   DataType* data);
-    ScalarProperty(const ScalarProperty& sp);
-
-    void setData(DataType* data);
-    DataType* data() const;
-
-    QString unit() const;
-    QString symbol() const;
+                   DataType* data) :
+        MaterialProperty(name, unit, symbol, data) {}
+    ScalarProperty(const ScalarProperty& sp) : MaterialProperty(sp) {}
 };
 
 #endif // SCALARPROPERTIES_H

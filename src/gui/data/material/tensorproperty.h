@@ -14,7 +14,7 @@ class TensorProperty : public NamedEntity
 
 public:
     TensorProperty();
-    TensorProperty(const QString& name, const QString& unit);
+    TensorProperty(const QString& name);
     TensorProperty(const TensorProperty& tp);
 
     int activeModel();
@@ -23,13 +23,10 @@ public:
     void appendModel(const TensorPropertyModel& model);
     const TensorPropertyModel& model(int index) const;
 
-    auto modelBegin();
-    auto modelEnd();
-
-    QString unit() const;\
+    QVector<TensorPropertyModel>::Iterator modelBegin();
+    QVector<TensorPropertyModel>::Iterator modelEnd();
 
 private:
-    QString mUnit;
     int mActiveModel;
     QVector<TensorPropertyModel> mModels;
 

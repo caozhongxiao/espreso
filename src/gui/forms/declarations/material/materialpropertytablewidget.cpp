@@ -10,7 +10,7 @@
 #include "../tablewidget.h"
 #include "../datatypeeditwidget.h"
 
-MaterialPropertyTableWidget::MaterialPropertyTableWidget(bool withHeader, QWidget *parent) :
+MaterialPropertyTableWidget::MaterialPropertyTableWidget(QWidget *parent, bool withHeader) :
     QWidget(parent),
     ui(new Ui::MaterialPropertyTableWidget)
 {
@@ -37,6 +37,15 @@ void MaterialPropertyTableWidget::createHeader()
     ui->grid->addWidget(lblCol3, 0, 2);
     ui->grid->addWidget(lblCol4, 0, 3);
     ui->grid->addWidget(lblCol5, 0, 4);
+}
+
+void MaterialPropertyTableWidget::addProperty(MaterialProperty* property)
+{
+    this->mItems.append(property);
+    this->addRow(property->name(),
+                 property->data(),
+                 property->unit(),
+                 property->symbol());
 }
 
 void MaterialPropertyTableWidget::addRow(const QString& name, DataType* data,

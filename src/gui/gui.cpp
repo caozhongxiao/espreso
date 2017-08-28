@@ -3,7 +3,7 @@
 #include "forms/datawidget.h"
 #include "forms/declarationswidget.h"
 #include "forms/plot/plot.h"
-#include "forms/declarations/material/materialpropertytablewidget.h"
+#include "forms/declarations/material/tensorpropertywidget.h"
 #include "data/datatype.h"
 #include <QApplication>
 
@@ -24,19 +24,20 @@ int main(int argc, char *argv[])
 //    DeclarationsWidget declarations;
 //    declarations.show();
 
-    MaterialPropertyTableWidget mptw;
-    mptw.show();
-    mptw.addRow("Test", new ExpressionType("1e-12"), "unit", "T");
-    QList<QList<QString> > ttData;
-    QList<QString> row;
-    row << "10" << "20";
-    ttData << row;
-    mptw.addRow("Test", new TableType(ttData), "unit", "T");
-    QList<QList<QString> > ptData;
-    QList<QString> r1;
-    r1 << "10" << "20" << "x^2";
-    ptData << r1;
-    mptw.addRow("Test", new PiecewiseFunctionType(ptData), "unit", "t");
+    TensorProperty p("Thermal Conductivity");
+    QList<TensorPropertyModelItem> model1Items;
+    model1Items << TensorPropertyModelItem("X component", "kg", "KXX", new ExpressionType("10"));
+    TensorPropertyModel model1(1, "Isotropic", model1Items);
+    QList<TensorPropertyModelItem> model2Items;
+    model2Items << TensorPropertyModelItem("X component", "kg", "KXX", new ExpressionType("10"))
+                << TensorPropertyModelItem("Y component", "kg", "KYY", new ExpressionType("10"))
+                << TensorPropertyModelItem("Z component", "kg", "KZZ", new ExpressionType("10"));
+    TensorPropertyModel model2(3, "Diagonal", model2Items);
+    p.appendModel(model1);
+    p.appendModel(model2);
+
+    TensorPropertyWidget w(p);
+    w.show();
 
 //    Plot plot;
 //    plot.show();

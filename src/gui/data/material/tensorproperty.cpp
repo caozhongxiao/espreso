@@ -2,18 +2,17 @@
 
 TensorProperty::TensorProperty() : NamedEntity()
 {
-    this->mUnit = "";
+    this->mActiveModel = 0;
 }
 
-TensorProperty::TensorProperty(const QString &name, const QString &unit) :
+TensorProperty::TensorProperty(const QString &name) :
     NamedEntity(name)
 {
-    this->mUnit = unit;
+    this->mActiveModel = 0;
 }
 
 TensorProperty::TensorProperty(const TensorProperty &tp) : NamedEntity(tp)
 {
-    this->mUnit = tp.mUnit;
     this->mModels = tp.mModels;
     this->mActiveModel = tp.mActiveModel;
 }
@@ -23,9 +22,9 @@ int TensorProperty::activeModel()
     return this->mActiveModel;
 }
 
-QString TensorProperty::unit() const
+void TensorProperty::setActiveModel(int model)
 {
-    return this->mUnit;
+    this->mActiveModel = model;
 }
 
 void TensorProperty::appendModel(const TensorPropertyModel& model)
@@ -38,12 +37,12 @@ const TensorPropertyModel& TensorProperty::model(int index) const
     return this->mModels.at(index);
 }
 
-auto TensorProperty::modelBegin()
+QVector<TensorPropertyModel>::Iterator TensorProperty::modelBegin()
 {
     return this->mModels.begin();
 }
 
-auto TensorProperty::modelEnd()
+QVector<TensorPropertyModel>::Iterator TensorProperty::modelEnd()
 {
     return this->mModels.end();
 }

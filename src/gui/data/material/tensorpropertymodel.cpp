@@ -4,29 +4,20 @@ TensorPropertyModel::TensorPropertyModel() :
     NamedEntity()
 {
     this->mSize = 1;
-    this->mMatrix.append(new DummyType());
+    this->mMatrix.append(TensorPropertyModelItem());
 }
 
-TensorPropertyModel::TensorPropertyModel(int size, const QString& name) :
+TensorPropertyModel::TensorPropertyModel(int size, const QString& name,
+                                         const QList<TensorPropertyModelItem>& values) :
     NamedEntity(name)
 {
-    this->mSize = size;
-    for (int i = 0; i < size * size; ++i)
-    {
-        this->mMatrix.append(new DummyType());
-    }
-}
+//    if (values.size() != size*size)
+//    {
+//        qWarning("TensorPropertyModel: Size does not match the number of values in matrix!");
+//        return;
+//    }
 
-TensorPropertyModel::TensorPropertyModel(int size, const QString& name, const QList<DataType*>& values)
-    : TensorPropertyModel(size, name)
-{
-    if (values.size() != size*size)
-    {
-        qWarning("TensorPropertyModel: Size does not match the number of values in matrix!");
-        return;
-    }
-
-    foreach (DataType* val, values) {
+    foreach (TensorPropertyModelItem val, values) {
         this->mMatrix << val;
     }
 }
@@ -35,73 +26,55 @@ TensorPropertyModel::TensorPropertyModel(const TensorPropertyModel& other) :
     NamedEntity(other)
 {
     this->mSize = other.mSize;
-    QVector<DataType*> tmp;
-    foreach (DataType* data, other.mMatrix) {
-        tmp << data->copy();
-    }
-    this->mMatrix = tmp;
+    this->mMatrix = other.mMatrix;
 }
 
 TensorPropertyModel::~TensorPropertyModel()
 {
-    foreach (DataType* val, this->mMatrix) {
-        delete val;
-    }
     this->mMatrix.clear();
 }
 
-QVector<DataType*> TensorPropertyModel::matrix() const
+const QVector<TensorPropertyModelItem>& TensorPropertyModel::items() const
 {
     return this->mMatrix;
 }
 
-void TensorPropertyModel::clearMatrix()
+//void TensorPropertyModel::setMatrix(const QList<TensorPropertyModelItem>& values)
+//{
+//    if (values.size() != mSize * mSize)
+//    {
+//        qWarning("TensorPropertyModel: List size does not match the property size!");
+//        return;
+//    }
+
+//    this->mMatrix.clear();
+
+//    foreach (TensorPropertyModelItem val, values) {
+//        this->mMatrix << val;
+//    }
+//}
+
+void TensorPropertyModel::setCellValue(int row, int column, TensorPropertyModelItem value)
 {
-    foreach (DataType* val, this->mMatrix) {
-        delete val;
-    }
-    this->mMatrix.clear();
+//    int index = row * mSize + column;
+//    if (index >= mSize * mSize)
+//    {
+//        qWarning("TensorPropertyModel: Index [%d][%d] out of range!", row, column);
+//        return;
+//    }
+
+//    this->mMatrix[index] = value;
 }
 
-void TensorPropertyModel::setMatrix(const QList<DataType*>& values)
+const TensorPropertyModelItem& TensorPropertyModel::cellValue(int row, int column) const
 {
-    if (values.size() != mSize * mSize)
-    {
-        qWarning("TensorPropertyModel: List size does not match the property size!");
-        return;
-    }
+//    int index = row * mSize + column;
+//    if (index >= mSize * mSize)
+//    {
+//        qCritical("TensorPropertyModel: Index [%d][%d] out of range!", row, column);
+//    }
 
-    this->clearMatrix();
-
-    foreach (DataType* val, values) {
-        this->mMatrix << val;
-    }
-}
-
-void TensorPropertyModel::setCellValue(int row, int column, DataType* value)
-{
-    int index = row * mSize + column;
-    if (index >= mSize * mSize)
-    {
-        qWarning("TensorPropertyModel: Index [%d][%d] out of range!", row, column);
-        return;
-    }
-
-    DataType* tmp = this->mMatrix.at(index);
-    this->mMatrix[index] = value;
-    delete tmp;
-}
-
-DataType* TensorPropertyModel::cellValue(int row, int column) const
-{
-    int index = row * mSize + column;
-    if (index >= mSize * mSize)
-    {
-        qWarning("TensorPropertyModel: Index [%d][%d] out of range!", row, column);
-        return nullptr;
-    }
-
-    return this->mMatrix.at(index);
+//    return this->mMatrix.at(index);
 }
 
 int TensorPropertyModel::size() const
