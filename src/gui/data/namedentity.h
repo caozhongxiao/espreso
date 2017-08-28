@@ -13,6 +13,7 @@ protected:
     NamedEntity(const NamedEntity&);
 
 public:
+    virtual ~NamedEntity() {}
     const QString& name() const;
 };
 

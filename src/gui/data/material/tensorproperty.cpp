@@ -14,10 +14,8 @@ TensorProperty::TensorProperty(const QString &name, const QString &unit) :
 TensorProperty::TensorProperty(const TensorProperty &tp) : NamedEntity(tp)
 {
     this->mUnit = tp.mUnit;
-    this->mIM = tp.mIM;
-    this->mDM = tp.mDM;
-    this->mSM = tp.mSM;
-    this->mAM = tp.mAM;
+    this->mModels = tp.mModels;
+    this->mActiveModel = tp.mActiveModel;
 }
 
 int TensorProperty::activeModel()
@@ -25,52 +23,27 @@ int TensorProperty::activeModel()
     return this->mActiveModel;
 }
 
-void TensorProperty::setActiveModel(int model)
-{
-    this->mActiveModel = model;
-}
-
-void TensorProperty::setIsotropicModel(const IsotropicModel& im)
-{
-    this->mIM = im;
-}
-
-void TensorProperty::setDiagonalModel(const DiagonalModel& dm)
-{
-    this->mDM = dm;
-}
-
-void TensorProperty::setSymmetricModel(const SymmetricModel& sm)
-{
-    this->mSM = sm;
-}
-
-void TensorProperty::setAnisotropicModel(const AnisotropicModel& am)
-{
-    this->mAM = am;
-}
-
 QString TensorProperty::unit() const
 {
     return this->mUnit;
 }
 
-IsotropicModel TensorProperty::isotropicModel() const
+void TensorProperty::appendModel(const TensorPropertyModel& model)
 {
-    return this->mIM;
+    this->mModels.append(model);
 }
 
-DiagonalModel TensorProperty::diagonalModel() const
+const TensorPropertyModel& TensorProperty::model(int index) const
 {
-    return this->mDM;
+    return this->mModels.at(index);
 }
 
-SymmetricModel TensorProperty::symmetricModel() const
+auto TensorProperty::modelBegin()
 {
-    return this->mSM;
+    return this->mModels.begin();
 }
 
-AnisotropicModel TensorProperty::anisotropicModel() const
+auto TensorProperty::modelEnd()
 {
-    return this->mAM;
+    return this->mModels.end();
 }
