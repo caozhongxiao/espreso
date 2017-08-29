@@ -27,7 +27,6 @@ private:
 
     QVector<TensorPropertyWidget*> tensorWidgets;
     MaterialPropertyTableWidget* scalarWidget;
-    QVector<ScalarProperty> scalars;
 
 };
 

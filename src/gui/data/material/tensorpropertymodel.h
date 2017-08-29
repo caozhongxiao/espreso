@@ -10,9 +10,11 @@ class TensorPropertyModelItem : public MaterialProperty
 {
 public:
     TensorPropertyModelItem() : MaterialProperty() {}
+
     TensorPropertyModelItem(const QString& name, const QString& unit, const QString& symbol,
                    DataType* data) :
         MaterialProperty(name, unit, symbol, data) {}
+
     TensorPropertyModelItem(const TensorPropertyModelItem& sp) : MaterialProperty(sp) {}
 };
 

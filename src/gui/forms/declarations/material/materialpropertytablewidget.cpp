@@ -39,9 +39,8 @@ void MaterialPropertyTableWidget::createHeader()
     ui->grid->addWidget(lblCol5, 0, 4);
 }
 
-void MaterialPropertyTableWidget::addProperty(MaterialProperty* property)
+void MaterialPropertyTableWidget::addProperty(const MaterialProperty* property)
 {
-    this->mItems.append(property);
     this->addRow(property->name(),
                  property->data(),
                  property->unit(),

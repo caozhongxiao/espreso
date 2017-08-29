@@ -18,13 +18,11 @@ public:
     explicit MaterialPropertyTableWidget(QWidget *parent = 0, bool withHeader = true);
     ~MaterialPropertyTableWidget();
 
-    void addProperty(MaterialProperty* property);
+    void addProperty(const MaterialProperty* property);
     void addRow(const QString& name, DataType* data, const QString& unit, const QString& symbol);
 
 private:
     Ui::MaterialPropertyTableWidget *ui;
-
-    QVector<MaterialProperty*> mItems;
 
     void createHeader();
 };

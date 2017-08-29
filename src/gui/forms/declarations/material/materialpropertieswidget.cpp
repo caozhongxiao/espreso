@@ -18,8 +18,7 @@ MaterialPropertiesWidget::MaterialPropertiesWidget(const QVector<TensorProperty>
 
     // SCALARS
     this->scalarWidget = new MaterialPropertyTableWidget(this);
-    this->scalars = scalars;
-    foreach (ScalarProperty sp, this->scalars) {
+    foreach (ScalarProperty sp, scalars) {
         scalarWidget->addProperty(&sp);
     }
     ui->layoutScalar->addWidget(scalarWidget);
