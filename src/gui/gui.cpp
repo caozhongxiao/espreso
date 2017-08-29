@@ -3,7 +3,7 @@
 #include "forms/datawidget.h"
 #include "forms/declarationswidget.h"
 #include "forms/plot/plot.h"
-#include "forms/declarations/material/tensorpropertywidget.h"
+#include "forms/declarations/material/materialpropertieswidget.h"
 #include "data/datatype.h"
 #include <QApplication>
 
@@ -36,8 +36,16 @@ int main(int argc, char *argv[])
     p.appendModel(model1);
     p.appendModel(model2);
 
-    TensorPropertyWidget w(p);
+    ScalarProperty sp("Density", "kJ", "DENS", new ExpressionType("0"));
+
+
+    QVector<TensorProperty> tensors;
+    tensors << p;
+    QVector<ScalarProperty> scalars;
+    scalars << sp;
+    MaterialPropertiesWidget w(tensors, scalars);
     w.show();
+
 
 //    Plot plot;
 //    plot.show();
