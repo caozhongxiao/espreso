@@ -98,14 +98,14 @@ espreso::FETISolverConfiguration::FETISolverConfiguration()
 			.setdatatype({ ECFDataType::BOOL }));
 
 	schur_precision = FETI_FLOAT_PRECISION::DOUBLE;
-	REGISTER(use_schur_complement, ECFMetaData()
+	REGISTER(schur_precision, ECFMetaData()
 			.setdescription({ "Precision of Schur complement." })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("DOUBLE").setdescription("Double precision."))
 			.addoption(ECFOption().setname("SINGLE").setdescription("Single precision.")));
 
 	Ksolver = FETI_KSOLVER::DIRECT_DP;
-	REGISTER(use_schur_complement, ECFMetaData()
+	REGISTER(Ksolver, ECFMetaData()
 			.setdescription({ "K solver type." })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("DIRECT_DP").setdescription("Directly with double precision."))

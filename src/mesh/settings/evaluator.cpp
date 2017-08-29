@@ -8,56 +8,36 @@
 
 using namespace espreso;
 
-Evaluator::Evaluator(Property property)
-: _name(""), _property(property)
-{
 
-}
-
-
-Evaluator::Evaluator(const std::string &name, Property property)
-: _name(name), _property(property)
-{
-
-}
-
-Evaluator* Evaluator::create(std::ifstream &is, const Coordinates &coordinates)
+Evaluator* Evaluator::create(std::ifstream &is)
 {
 	Evaluator::Type type;
 	is.read(reinterpret_cast<char *>(&type), sizeof(Evaluator::Type));
-	Property property;
-	is.read(reinterpret_cast<char *>(&property), sizeof(Property));
 
 	switch (type) {
-	case Type::DEFAULT: return new Evaluator(property);
-	case Type::CONST: return new ConstEvaluator(is, property);
-	case Type::COORDINATE: return new CoordinatesEvaluator(is, coordinates, property);
-	case Type::TABLE: return new TableEvaluator(is, property);
-	case Type::TABLE_INTERPOLATION: return new TableInterpolationEvaluator(is, property);
+	case Type::DEFAULT: return new Evaluator();
+	case Type::CONST: return new ConstEvaluator(is);
+	case Type::EXPRESSION: return new ExpressionEvaluator(is);
+	case Type::TABLE: return new TableEvaluator(is);
+	case Type::TABLE_INTERPOLATION: return new TableInterpolationEvaluator(is);
 	case Type::ARRAY: ESINFO(GLOBAL_ERROR) << "Implement loading of Array evaluator"; return NULL;
 	default: ESINFO(GLOBAL_ERROR) << "Unknown evaluator type"; return NULL;
 	}
 }
 
-
-
 void Evaluator::store(std::ofstream& os)
 {
 	Type type = Type::DEFAULT;
 	os.write(reinterpret_cast<const char *>(&type), sizeof(Evaluator::Type));
-	os.write(reinterpret_cast<const char *>(&_property), sizeof(Property));
 }
 
-
-
-ConstEvaluator::ConstEvaluator(double value, Property property)
-: Evaluator(property), _value(value)
+ConstEvaluator::ConstEvaluator(double value)
+: _value(value)
 {
 
 }
 
-ConstEvaluator::ConstEvaluator(std::ifstream &is, Property property)
-: Evaluator(property)
+ConstEvaluator::ConstEvaluator(std::ifstream &is)
 {
 	is.read(reinterpret_cast<char *>(&_value), sizeof(double));
 }
@@ -66,22 +46,24 @@ void ConstEvaluator::store(std::ofstream& os)
 {
 	Type type = Type::CONST;
 	os.write(reinterpret_cast<const char *>(&type), sizeof(Evaluator::Type));
-	os.write(reinterpret_cast<const char *>(&_property), sizeof(Property));
 	os.write(reinterpret_cast<const char *>(&_value), sizeof(double));
 }
 
-
-
-ExpressionEvaluator::ExpressionEvaluator(const std::string &expression, std::vector<std::string> variables, Property property)
-: Evaluator(property),
- _expression(environment->OMP_NUM_THREADS, Expression(expression, variables)),
- _values(environment->OMP_NUM_THREADS, std::vector<double>(variables.size()))
+ExpressionEvaluator::ExpressionEvaluator(const std::string &expression, const std::vector<std::string> &variables)
+: _variables({ "X", "Y", "Z", "TIME", "TEMPERATURE", "PRESSURE", "VELOCITY" })
 {
-
+	for (size_t i = 0; i < variables.size(); i++) {
+		if (std::find(_variables.begin(), _variables.end(), variables[i]) == _variables.end()) {
+			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: ExpressionEvaluator not supports variable: '" << variables[i] << "'.";
+		}
+	}
+	_expression.resize(environment->OMP_NUM_THREADS, Expression(expression, _variables));
+	_values.resize(environment->OMP_NUM_THREADS, std::vector<double>(_variables.size()));
+	_timeDependency = StringCompare::contains(expression, { "TIME" });
+	_temperatureDependency = StringCompare::contains(expression, { "TEMPERATURE" });
 }
 
-ExpressionEvaluator::ExpressionEvaluator(std::ifstream &is, std::vector<std::string> variables, Property property)
-: Evaluator(property)
+ExpressionEvaluator::ExpressionEvaluator(std::ifstream &is)
 {
 	eslocal size;
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
@@ -89,48 +71,48 @@ ExpressionEvaluator::ExpressionEvaluator(std::ifstream &is, std::vector<std::str
 	is.read(buffer, size);
 	std::string expression(buffer, size);
 	delete buffer;
-	_expression.resize(environment->OMP_NUM_THREADS, Expression(expression, variables));
-	_values.resize(environment->OMP_NUM_THREADS, std::vector<double>(variables.size()));
-}
-
-CoordinatesEvaluator::CoordinatesEvaluator(const std::string &expression, const Coordinates &coordinates, Property property)
-: ExpressionEvaluator(expression, { "x", "y", "z", "TEMPERATURE", "TIME" }, property), _coordinates(coordinates)
-{
-	_timeDependency = StringCompare::contains(expression, { "TIME" });
-	_temperatureDependency = StringCompare::contains(expression, { "TEMPERATURE" });
-}
-
-CoordinatesEvaluator::CoordinatesEvaluator(std::ifstream &is, const Coordinates &coordinates, Property property)
-: ExpressionEvaluator(is, { "x", "y", "z", "TEMPERATURE", "TIME" }, property), _coordinates(coordinates)
-{
+	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+	for (eslocal i = 0; i < size; i++) {
+		eslocal vsize;
+		is.read(reinterpret_cast<char *>(&vsize), sizeof(eslocal));
+		buffer = new char[vsize];
+		is.read(buffer, size);
+		_variables.push_back(std::string(buffer, vsize));
+		delete buffer;
+	}
+	_expression.resize(environment->OMP_NUM_THREADS, Expression(expression, _variables));
+	_values.resize(environment->OMP_NUM_THREADS, std::vector<double>(_variables.size()));
 	_timeDependency = StringCompare::contains(_expression[0].expression(), { "TIME" });
 	_temperatureDependency = StringCompare::contains(_expression[0].expression(), { "TEMPERATURE" });
 }
 
-void CoordinatesEvaluator::store(std::ofstream& os)
+void ExpressionEvaluator::store(std::ofstream& os)
 {
-	Type type = Type::COORDINATE;
+	Type type = Type::EXPRESSION;
 	os.write(reinterpret_cast<const char *>(&type), sizeof(Evaluator::Type));
-	os.write(reinterpret_cast<const char *>(&_property), sizeof(Property));
 	eslocal size = _expression[0].expression().size();
 	os.write(reinterpret_cast<const char *>(&size), sizeof(eslocal));
 	os.write(_expression[0].expression().c_str(), _expression[0].expression().size());
+	size = _variables.size();
+	os.write(reinterpret_cast<const char *>(&size), sizeof(eslocal));
+	for (size_t i = 0; i < _variables.size(); i++) {
+		size = _variables[i].size();
+		os.write(reinterpret_cast<const char *>(&size), sizeof(eslocal));
+		os.write(_variables[i].c_str(), _variables[i].size());
+	}
 }
 
 
 TableEvaluator::TableEvaluator(
-			const std::string &name,
 			const std::vector<std::vector<std::vector<double> > > &table,
 			const std::vector<TableProperty> &properties,
-			const std::vector<std::vector<double> > &axis,
-			Property property)
-: Evaluator(name, property), _dimension(properties.size()), _table(table), _properties(properties), _axis(axis)
+			const std::vector<std::vector<double> > &axis)
+: _dimension(properties.size()), _table(table), _properties(properties), _axis(axis)
 {
 
 }
 
-TableEvaluator::TableEvaluator(std::ifstream &is, Property property)
-: Evaluator(property)
+TableEvaluator::TableEvaluator(std::ifstream &is)
 {
 	is.read(reinterpret_cast<char *>(&_dimension), sizeof(size_t));
 
@@ -172,7 +154,6 @@ void TableEvaluator::store(std::ofstream& os)
 {
 	Type type = Type::TABLE;
 	os.write(reinterpret_cast<const char *>(&type), sizeof(Evaluator::Type));
-	os.write(reinterpret_cast<const char *>(&_property), sizeof(Property));
 	size_t size = _dimension;
 	os.write(reinterpret_cast<const char *>(&size), sizeof(size_t));
 
@@ -209,17 +190,15 @@ void TableEvaluator::store(std::ofstream& os)
 
 TableInterpolationEvaluator::TableInterpolationEvaluator(
 		const std::string &name,
-		const std::vector<std::pair<double, double> > &table,
-		Property property)
-: Evaluator(name, property), _table(table)
+		const std::vector<std::pair<double, double> > &table)
+: _table(table)
 {
 	if (!_table.size()) {
 		ESINFO(GLOBAL_ERROR) << "Interpolation table with zero size.";
 	}
 }
 
-TableInterpolationEvaluator::TableInterpolationEvaluator(std::ifstream &is, Property property)
-: Evaluator(property)
+TableInterpolationEvaluator::TableInterpolationEvaluator(std::ifstream &is)
 {
 	size_t size;
 	is.read(reinterpret_cast<char *>(&size), sizeof(size_t));
@@ -231,15 +210,13 @@ void TableInterpolationEvaluator::store(std::ofstream& os)
 {
 	Type type = Type::TABLE_INTERPOLATION;
 	os.write(reinterpret_cast<const char *>(&type), sizeof(Evaluator::Type));
-	os.write(reinterpret_cast<const char *>(&_property), sizeof(Property));
 
 	size_t size = _table.size();
 	os.write(reinterpret_cast<const char *>(&size), sizeof(size_t));
 	os.write(reinterpret_cast<const char *>(_table.data()), 2 * sizeof(double) * _table.size());
 }
 
-ArrayEvaluator::ArrayEvaluator(const std::string &name, std::vector<eslocal> &indices, std::vector<double> &values, eslocal offset, Property property)
-: Evaluator(name, property)
+ArrayEvaluator::ArrayEvaluator(std::vector<eslocal> &indices, std::vector<double> &values, eslocal offset)
 {
 	std::vector<eslocal> permutation(indices.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
@@ -252,8 +229,7 @@ ArrayEvaluator::ArrayEvaluator(const std::string &name, std::vector<eslocal> &in
 	}
 }
 
-ArrayEvaluator::ArrayEvaluator(const std::string &name, eslocal size, eslocal *indices, double *values, eslocal offset, Property property)
-: Evaluator(name, property)
+ArrayEvaluator::ArrayEvaluator(eslocal size, eslocal *indices, double *values, eslocal offset)
 {
 	std::vector<eslocal> permutation(size);
 	std::iota(permutation.begin(), permutation.end(), 0);
@@ -279,6 +255,22 @@ void ArrayEvaluator::store(std::ofstream& os)
 	ESINFO(GLOBAL_ERROR) << "Implement store ArrayEvaluator.";
 }
 
+double inline ArrayEvaluator::evaluate(const Point &p, double time, double temperature, double pressure, double velocity) const
+{
+	ESINFO(ERROR) << "Invalid calling of ArrayEvaluator.";
+	return 0;
+}
+
+double inline ArrayEvaluator::evaluate(eslocal index) const
+{
+	auto it = std::lower_bound(_indices.begin(), _indices.end(), index);
+	if (it != _indices.end() && *it == index) {
+		return _values[it - _indices.begin()];
+	} else {
+		ESINFO(ERROR) << "Array evaluator has no specified value for index '" << index << "'";
+		return 0;
+	}
+}
 
 
 

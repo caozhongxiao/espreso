@@ -1,12 +1,36 @@
 
 #include "configuration.h"
 
-#include "../basis/utilities/parser.h"
-#include <iostream>
 #include "../basis/logging/logging.h"
+#include "../basis/utilities/parser.h"
+#include "../mesh/settings/evaluator.h"
+
+#include <iostream>
 #include <algorithm>
 
 using namespace espreso;
+
+ECFExpression::ECFExpression()
+: evaluator(NULL)
+{
+
+}
+
+ECFExpression::~ECFExpression()
+{
+	if (evaluator) {
+		delete evaluator;
+	}
+}
+
+double ECFExpression::evaluate(const Point &p, double time, double temperature, double pressure, double velocity) const
+{
+	if (evaluator) {
+		return evaluator->evaluate(p, time, temperature, pressure, velocity);
+	}
+	ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not created ECFExpression evaluator.";
+	return 0;
+}
 
 void ECFMetaData::checkdescription(const std::string &name, size_t size) const
 {
@@ -89,7 +113,12 @@ void ECFObject::dropParameter(ECFParameter *parameter)
 
 void ECFObject::addSeparator()
 {
-	registerParameter("", new ECFSeparator(), ECFMetaData().setdatatype({ ECFDataType::SPACE }));
+	registerParameter("SEPARATOR", new ECFSeparator(), ECFMetaData().setdatatype({ ECFDataType::SEPARATOR }));
+}
+
+void ECFObject::addSpace()
+{
+	registerParameter("SPACE", new ECFSeparator(), ECFMetaData().setdatatype({ ECFDataType::SPACE }));
 }
 
 void ECFObject::moveLastBefore(const std::string &name)
@@ -102,6 +131,7 @@ void ECFObject::moveLastBefore(const std::string &name)
 
 ECFParameter* ECFObject::registerParameter(const std::string &name, ECFParameter *parameter, const ECFMetaData &metadata)
 {
+	registeredParameters.push_back(parameter);
 	parameters.push_back(parameter);
 	parameters.back()->name = name;
 	parameters.back()->metadata = metadata;
@@ -110,9 +140,46 @@ ECFParameter* ECFObject::registerParameter(const std::string &name, ECFParameter
 
 ECFParameter* ECFObject::registerPatternParameter(ECFParameter *parameter) const
 {
+	registeredParameters.push_back(parameter);
 	parameter->name = metadata.pattern.front();
 	parameter->metadata = metadata.suffix(1);
 	return parameter;
 }
 
+void ECFObject::forEachParameters(std::function<void(const ECFParameter*)> fnc, bool onlyAllowed) const
+{
+	for (size_t i = 0; i < parameters.size(); i++) {
+		if (onlyAllowed && !parameters[i]->metadata.isallowed()) {
+			continue;
+		}
+		if (parameters[i]->isObject()) {
+			dynamic_cast<const ECFObject*>(parameters[i])->forEachParameters(fnc, onlyAllowed);
+		}
+		if (parameters[i]->isValue()) {
+			fnc(parameters[i]);
+		}
+	}
+}
+
+void ECFObject::forEachParameters(std::function<void(ECFParameter*)> fnc, bool onlyAllowed)
+{
+	for (size_t i = 0; i < parameters.size(); i++) {
+		if (onlyAllowed && !parameters[i]->metadata.isallowed()) {
+			continue;
+		}
+		if (parameters[i]->isObject()) {
+			dynamic_cast<ECFObject*>(parameters[i])->forEachParameters(fnc, onlyAllowed);
+		}
+		if (parameters[i]->isValue()) {
+			fnc(parameters[i]);
+		}
+	}
+}
+
+ECFObject::~ECFObject()
+{
+	for (size_t i = 0; i < registeredParameters.size(); i++) {
+		delete registeredParameters[i];
+	}
+}
 

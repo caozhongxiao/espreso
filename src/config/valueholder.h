@@ -4,7 +4,9 @@
 
 #include "configuration.h"
 #include "../basis/utilities/parser.h"
+#include "../basis/logging/logging.h"
 #include <sstream>
+#include <cmath>
 
 namespace espreso {
 
@@ -51,7 +53,7 @@ inline bool ECFValueHolder<std::string>::setValue(const std::string &value)
 template <>
 inline bool ECFValueHolder<ECFExpression>::setValue(const std::string &value)
 {
-	this->value.value = value;
+	this->value.value = Parser::uppercase(value);
 	return true;
 }
 
@@ -76,27 +78,67 @@ inline bool ECFValueHolder<bool>::setValue(const std::string &value)
 	}
 }
 
+template <>
+inline std::string ECFValueHolder<bool>::getValue() const
+{
+	if (value) {
+		return "TRUE";
+	} else {
+		return "FALSE";
+	}
+}
+
 template <typename Ttype>
 struct ECFEnumHolder: public ECFValue {
 	Ttype &value;
 
 	ECFEnumHolder(Ttype &value): value(value) {}
 
-	std::string getValue() const { return metadata.options[static_cast<int>(value)].name; }
+	std::string getValue() const {
+		if (metadata.datatype.front() == ECFDataType::OPTION) {
+			return metadata.options[static_cast<int>(value)].name;
+		}
+		if (metadata.datatype.front() == ECFDataType::ENUM_FLAGS) {
+			std::string flags;
+			for (size_t i = 0; i < metadata.options.size(); i++) {
+				if (static_cast<int>(value) & static_cast<int>(std::pow(2, i))) {
+					if (flags.size()) {
+						flags += " & ";
+					}
+					flags += metadata.options[i].name;
+				}
+			}
+			return flags;
+		}
+		ESINFO(ERROR) << "ESPRESO internal error: get value from ECFEnumHolder.";
+		return "";
+	}
 
 	bool setValue(const std::string &value)
 	{
+		size_t index = -1;
 		for (size_t i = 0; i < metadata.options.size(); i++) {
 			if (StringCompare::caseInsensitiveEq(value, metadata.options[i].name)) {
-				this->value = static_cast<Ttype>(i);
-				return true;
+				index = i;
+				break;
 			}
 		}
-		size_t index;
-		if (ECFValueHolder<size_t>(index).setValue(value)) {
+
+		if (index == -1) {
+			if (!ECFValueHolder<size_t>(index).setValue(value)) {
+				return false;
+			}
+		}
+
+		if (metadata.datatype.front() == ECFDataType::OPTION) {
 			this->value = static_cast<Ttype>(index);
 			return true;
 		}
+		if (metadata.datatype.front() == ECFDataType::ENUM_FLAGS) {
+			this->value = static_cast<Ttype>(std::pow(2, index));
+			return true;
+		}
+		ESINFO(ERROR) << "ESPRESO internal error: set value to ECFEnumHolder.";
 		return false;
 	}
 

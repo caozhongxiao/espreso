@@ -25,8 +25,8 @@ struct NonLinearSolverConfiguration: public ECFObject {
 	size_t max_iterations, substeps;
 	bool line_search, tangent_matrix_correction, adaptive_precision;
 
-	bool check_solution, check_residual;
-	double requested_solution, requested_residual;
+	bool check_first_residual, check_second_residual;
+	double requested_first_residual, requested_second_residual;
 
 	double r_tol, c_fact;
 
@@ -41,7 +41,7 @@ struct AdvectionDiffusionNonLinearSolverConfiguration: public NonLinearSolverCon
 
 struct StructuralMechanicsNonLinearSolverConfiguration: public NonLinearSolverConfiguration {
 
-	StructuralMechanicsNonLinearSolverConfiguration(): NonLinearSolverConfiguration("displacement", "UNKNOWN") {}
+	StructuralMechanicsNonLinearSolverConfiguration(): NonLinearSolverConfiguration("displacement", "forces") {}
 };
 
 }

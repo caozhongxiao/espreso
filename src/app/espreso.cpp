@@ -6,6 +6,7 @@
 
 #include "factory/factory.h"
 #include "../config/ecf/ecf.h"
+#include "../config/reader/reader.h"
 #include "../basis/logging/logging.h"
 
 using namespace espreso;

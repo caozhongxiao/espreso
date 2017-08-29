@@ -40,20 +40,20 @@ espreso::NonLinearSolverConfiguration::NonLinearSolverConfiguration(const std::s
 			.setdescription({ "Adaptive precision of a linear solver." })
 			.setdatatype({ ECFDataType::BOOL }));
 
-	check_solution = true;
-	check_residual = false;
-	registerParameter("check_" + solution_name, check_solution, ECFMetaData()
+	check_first_residual = true;
+	check_second_residual = false;
+	registerParameter("check_" + solution_name, check_first_residual, ECFMetaData()
 			.setdescription({ "Stopping criteria based on solution." })
 			.setdatatype({ ECFDataType::FLOAT }));
-	registerParameter("check_" + residual_name, check_residual, ECFMetaData()
+	registerParameter("check_" + residual_name, check_second_residual, ECFMetaData()
 			.setdescription({ "Stopping criteria based on residual." })
 			.setdatatype({ ECFDataType::FLOAT }));
 
-	requested_solution = requested_residual = 1e-3;
-	registerParameter("requested_" + solution_name, requested_solution, ECFMetaData()
+	requested_first_residual = requested_second_residual = 1e-3;
+	registerParameter("requested_" + solution_name, requested_first_residual, ECFMetaData()
 			.setdescription({ "Requested solution precision." })
 			.setdatatype({ ECFDataType::FLOAT }));
-	registerParameter("requested_" + residual_name, requested_residual, ECFMetaData()
+	registerParameter("requested_" + residual_name, requested_second_residual, ECFMetaData()
 			.setdescription({ "Requested residual precision." })
 			.setdatatype({ ECFDataType::FLOAT }));
 

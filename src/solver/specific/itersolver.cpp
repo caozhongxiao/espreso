@@ -10,7 +10,6 @@
 using namespace espreso;
 
 IterSolverBase::IterSolverBase(const FETISolverConfiguration &configuration):
-	configuration(configuration),
 	timing			("Main CG loop timing "),
 	preproc_timing	("Preprocessing timing "),
 	postproc_timing	("Postprocessing timing"),
@@ -40,7 +39,7 @@ IterSolverBase::IterSolverBase(const FETISolverConfiguration &configuration):
 	ddot_alpha		("2x ddot for Alpha "),
 	ddot_beta		("2x ddot for Beta ")
 {
-
+	this->configuration = configuration;
 	// Timing objects
 	// Main timing object for main CG loop
 	timeEvalAppa.addEvent(apa_B1t);
@@ -1497,7 +1496,7 @@ void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 
 
 
-	int precision = ceil(log(1 / precision) / log(10)) + 1;
+	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
 	std::string indent = "   ";
 
@@ -1515,9 +1514,9 @@ void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 //	} else {
 		ESINFO(CONVERGENCE)
 			<< spaces(indent.size() + iterationWidth - 4) << "iter"
-			<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+			<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 			<< spaces(indent.size() + 4) << "r" << spaces(4)
-			<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+			<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
 			<< spaces(indent.size()) << "time[s]";
 //	}
 
@@ -1662,9 +1661,9 @@ for (size_t i = 0; i < p_l.size(); i++)
 
 		ESINFO(CONVERGENCE)
 			<< indent << std::setw(iterationWidth) << iter + 1
-			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * precision
+			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << std::fixed << std::setprecision(precision - 1) << precision
+			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
 			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 		// *** Stop condition ******************************************************************
@@ -1793,7 +1792,7 @@ for (size_t i = 0; i < g_l.size(); i++){
 	// *** Calculate the stop condition *******************************************
 	tol = precision * parallel_norm_compressed(cluster, Pg_l);
 
-	int precision = ceil(log(1 / precision) / log(10)) + 1;
+	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
 	std::string indent = "   ";
 
@@ -1807,9 +1806,9 @@ for (size_t i = 0; i < g_l.size(); i++){
 
 	ESINFO(CONVERGENCE)
 		<< spaces(indent.size() + iterationWidth - 4) << "iter"
-		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
 		<< spaces(indent.size()) << "time[s]";
 
 	// *** Start the CG iteration loop ********************************************
@@ -1905,9 +1904,9 @@ for (size_t i = 0; i < w_l.size(); i++){
 
 		ESINFO(CONVERGENCE)
 			<< indent << std::setw(iterationWidth) << iter + 1
-			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * precision
+			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << std::fixed << std::setprecision(precision - 1) << precision
+			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
 			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 		// *** Stop condition ******************************************************************
@@ -2059,7 +2058,7 @@ for (size_t i = 0; i < g_l.size(); i++){
 	// *** Calculate the stop condition *******************************************
 	tol = precision * parallel_norm_compressed(cluster, Pg_l);
 
-	int precision = ceil(log(1 / precision) / log(10)) + 1;
+	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
 	std::string indent = "   ";
 
@@ -2073,9 +2072,9 @@ for (size_t i = 0; i < g_l.size(); i++){
 
 	ESINFO(CONVERGENCE)
 		<< spaces(indent.size() + iterationWidth - 4) << "iter"
-		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
 		<< spaces(indent.size()) << "time[s]";
 
 	// *** Start the CG iteration loop ********************************************
@@ -2209,9 +2208,9 @@ for (size_t i = 0; i < w_l.size(); i++){
 
 		ESINFO(CONVERGENCE)
 			<< indent << std::setw(iterationWidth) << iter + 1
-			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * precision
+			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << std::fixed << std::setprecision(precision - 1) << precision
+			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
 			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 		// *** Stop condition ******************************************************************
@@ -2440,7 +2439,7 @@ for (size_t i = 0; i < g_l.size(); i++){
   norm_l = parallel_norm_compressed(cluster, z_l);
 	tol = precision * norm_l;
 
-	int precision = ceil(log(1 / precision) / log(10)) + 1;
+	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
 	std::string indent = "   ";
 
@@ -2454,9 +2453,9 @@ for (size_t i = 0; i < g_l.size(); i++){
 
 	ESINFO(CONVERGENCE)
 		<< spaces(indent.size() + iterationWidth - 4) << "iter"
-		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
 		<< spaces(indent.size()) << "time[s]";
 
 
@@ -2465,9 +2464,9 @@ for (size_t i = 0; i < g_l.size(); i++){
 
   ESINFO(CONVERGENCE)
   	<< indent << std::setw(iterationWidth) << 1
-  	<< indent << std::fixed << std::setprecision(precision) <<  1.0000000
+  	<< indent << std::fixed << std::setprecision(precisionWidth) <<  1.0000000
   	<< indent << std::scientific << std::setprecision(3) << norm_l
-  	<< indent << std::fixed << std::setprecision(precision - 1) << precision
+  	<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
   	<< indent << std::fixed << std::setprecision(5) ;
 
 
@@ -2633,9 +2632,9 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
 
 		ESINFO(CONVERGENCE)
 			<< indent << std::setw(iterationWidth) << iter + 2
-			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * precision
+			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << std::fixed << std::setprecision(precision - 1) << precision
+			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
 			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 
@@ -2855,7 +2854,7 @@ for (size_t i = 0; i < g_l.size(); i++){
 
 	tol = precision * norm_l;
 
-	int precision = ceil(log(1 / precision) / log(10)) + 1;
+	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
 	std::string indent = "   ";
 
@@ -2869,9 +2868,9 @@ for (size_t i = 0; i < g_l.size(); i++){
 
 	ESINFO(CONVERGENCE)
 		<< spaces(indent.size() + iterationWidth - 4) << "iter"
-		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
 		<< spaces(indent.size()) << "time[s]";
 
 
@@ -2880,9 +2879,9 @@ for (size_t i = 0; i < g_l.size(); i++){
 
   ESINFO(CONVERGENCE)
   	<< indent << std::setw(iterationWidth) << 1
-  	<< indent << std::fixed << std::setprecision(precision) <<  1.0000000
+  	<< indent << std::fixed << std::setprecision(precisionWidth) <<  1.0000000
   	<< indent << std::scientific << std::setprecision(3) << norm_l
-  	<< indent << std::fixed << std::setprecision(precision - 1) << precision
+  	<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
   	<< indent << std::fixed << std::setprecision(5) ;
 
   ztld_l = z_l;
@@ -3045,9 +3044,9 @@ for (size_t i = 0; i < x_l.size(); i++) {
 
 		ESINFO(CONVERGENCE)
 			<< indent << std::setw(iterationWidth) << iter + 2
-			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * precision
+			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << std::fixed << std::setprecision(precision - 1) << precision
+			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
 			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 
@@ -3262,7 +3261,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 	}
 
 
-	int precision = ceil(log(1 / precision) / log(10)) + 1;
+	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
 	std::string indent = "   ";
 
@@ -3276,9 +3275,9 @@ for (size_t i = 0; i < r_l.size(); i++) {
 
 	ESINFO(CONVERGENCE)
 		<< spaces(indent.size() + iterationWidth - 4) << "iter"
-		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
 		<< spaces(indent.size()) << "time[s]";
 
 	// *** Start the CG iteration loop ********************************************
@@ -3364,9 +3363,9 @@ for (size_t i = 0; i < r_l.size(); i++) {
 			timing.totalTime.end();
 			ESINFO(CONVERGENCE)
 				<< indent << std::setw(iterationWidth) << iter + 1
-				<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * precision
+				<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 				<< indent << std::scientific << std::setprecision(3) << norm_l
-				<< indent << std::fixed << std::setprecision(precision - 1) << precision
+				<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
 				<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 			break;
 		}
@@ -4028,7 +4027,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 	else
 		tol = tol2;
 
-	int precision      = ceil(log(1 / precision) / log(10)) + 1;
+	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
 	std::string indent = "   ";
 
@@ -4042,9 +4041,9 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 
 	ESINFO(CONVERGENCE)
 		<< spaces(indent.size() + iterationWidth - 4) << "iter"
-		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
 		<< spaces(indent.size()) << "time[s]";
 
 	// *** END - Calculate the stop condition *******************************************
@@ -4264,9 +4263,9 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 
 		ESINFO(CONVERGENCE)
 		<< indent << std::setw(iterationWidth) << iter
-		<< indent << std::fixed << std::setprecision(precision) 	<< norm_l / tol * precision
+		<< indent << std::fixed << std::setprecision(precisionWidth) 	<< norm_l / tol * precision
 		<< indent << std::scientific << std::setprecision(3) 		<< norm_l
-		<< indent << std::fixed << std::setprecision(precision - 1) << precision
+		<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
 		<< indent << std::fixed << std::setprecision(5) 			<< timing.totalTime.getLastStat();
 
 		// *** Stop condition ******************************************************************

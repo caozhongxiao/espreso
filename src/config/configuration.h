@@ -9,6 +9,7 @@
 
 namespace espreso {
 
+struct Point;
 class Evaluator;
 struct TensorConfiguration;
 
@@ -19,6 +20,7 @@ enum class ECFDataType {
 	POSITIVE_INTEGER,
 	NONNEGATIVE_INTEGER,
 	FLOAT,
+	ENUM_FLAGS,
 	OPTION,
 	REGION,
 	MATERIAL,
@@ -26,7 +28,8 @@ enum class ECFDataType {
 	EXPRESSION,
 	TENSOR,
 	INTERVAL,
-	SPACE
+	SPACE,
+	SEPARATOR
 };
 
 struct ECFOption {
@@ -43,7 +46,11 @@ struct ECFOption {
 
 struct ECFExpression {
 	std::string value;
-	Evaluator *expression;
+	Evaluator *evaluator;
+
+	double evaluate(const Point &p, double time = 0, double temperature = 0, double pressure = 0, double velocity = 0) const;
+	ECFExpression();
+	~ECFExpression();
 };
 
 struct ECFMetaData {
@@ -130,9 +137,25 @@ struct ECFObject: public ECFParameter {
 
 	virtual const ECFParameter* getPattern() const { return NULL; }
 
+	void forEachParameters(std::function<void(ECFParameter*)> fnc, bool onlyAllowed = true);
+	void forEachParameters(std::function<void(const ECFParameter*)> fnc, bool onlyAllowed = true) const;
+
+	ECFObject() {}
+	// Assigning of parameters invalidates set/get methods -> skip it
+	ECFObject& operator=(ECFObject &other) { return *this; }
+	ECFObject& operator=(const ECFObject &other) { return *this; }
+
+	// Copy constructor skip default constructor -> disable it
+	ECFObject(ECFObject &other) = delete;
+	ECFObject(const ECFObject &other) = delete;
+
+
+	virtual ~ECFObject();
+
 protected:
 	void dropParameter(ECFParameter *parameter);
 	void addSeparator();
+	void addSpace();
 
 	/////////// PARAMETER ///////////
 	/////////////////////////////////
@@ -186,6 +209,9 @@ protected:
 	void moveLastBefore(const std::string &name);
 	ECFParameter* registerParameter(const std::string &name, ECFParameter *parameter, const ECFMetaData &metadata);
 	ECFParameter* registerPatternParameter(ECFParameter *parameter) const;
+
+private:
+	mutable std::vector<ECFParameter*> registeredParameters;
 };
 
 }

@@ -15,6 +15,7 @@ struct CoordinateSystemConfiguration: public ECFObject {
 	};
 
 	TYPE type;
+	bool is3D;
 
 	ECFExpression rotation_x, rotation_y, rotation_z;
 	ECFExpression center_x, center_y, center_z;

@@ -3,10 +3,10 @@
 #include "../../mesh/structures/elementtypes.h"
 #include "../../mesh/structures/mesh.h"
 #include "../../mesh/structures/coordinates.h"
-#include "../../mesh/structures/material.h"
 #include "../../mesh/structures/region.h"
 #include "../../mesh/settings/evaluator.h"
 #include "../../mesh/elements/element.h"
+#include "../../config/ecf/material/material.h"
 
 #include "../../basis/logging/logging.h"
 
@@ -286,7 +286,7 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements, std::vector<Region
 	bodyCounter++;
 }
 
-void WorkbenchParser::mp(std::vector<Material*> &materials, Evaluator *evaluator)
+void WorkbenchParser::mp(std::vector<MaterialConfiguration*> &materials, Evaluator *evaluator)
 {
 	std::vector<std::string> params = divide(_line);
 
@@ -375,7 +375,7 @@ void WorkbenchParser::mp(std::vector<Material*> &materials, Evaluator *evaluator
 //	}
 }
 
-void WorkbenchParser::mptemp(std::vector<Material*> &materials)
+void WorkbenchParser::mptemp(std::vector<MaterialConfiguration*> &materials)
 {
 	std::vector<std::pair<double, double> > table;
 	while (true) {
@@ -451,10 +451,11 @@ void WorkbenchParser::cmblock(std::vector<Element*> &elements, std::vector<Regio
 static void pushTableEvaluator(std::vector<espreso::Evaluator*> &evaluators, const std::string &name, const std::vector<espreso::TableEvaluator*> &tables)
 {
 	for (size_t t = 0; t < tables.size(); t++) {
-		if (!name.compare(1, tables[t]->name().size(), tables[t]->name())) {
-			evaluators.push_back(tables[t]->copy());
-			return;
-		}
+		// TODO: make table map
+//		if (!name.compare(1, tables[t]->name().size(), tables[t]->name())) {
+//			evaluators.push_back(tables[t]->copy());
+//			return;
+//		}
 	}
 	ESINFO(espreso::GLOBAL_ERROR) << "Unknown table '" << name << "'";
 }
@@ -464,7 +465,7 @@ static void pushEvaluator(std::vector<espreso::Evaluator*> &evaluators, const st
 		espreso::Expression expr(value, {});
 		evaluators.push_back(new espreso::ConstEvaluator(expr.evaluate({})));
 	} else {
-		evaluators.push_back(new espreso::CoordinatesEvaluator(value, coordinates));
+		evaluators.push_back(new espreso::ExpressionEvaluator(value));
 	}
 };
 
@@ -472,12 +473,11 @@ bool WorkbenchParser::setProperty(const std::string &parameter, const std::strin
 	if (!parameter.compare(0, name.size(), name)) {
 		if (!value.compare(0, 1, "%") && !value.compare(value.size() - 1, value.size(), "%")) {
 			pushTableEvaluator(evaluators, value, _tables);
-			ESINFO(espreso::DETAILS) << "WB: SET " << property << " to region " << region->name << " to table " << evaluators.back()->name();
+			ESINFO(espreso::DETAILS) << "WB: SET " << property << " to region " << region->name << " to table.";
 		} else {
 			pushEvaluator(evaluators, value, _mesh.coordinates());
 			ESINFO(espreso::DETAILS) << "WB: SET " << property << " to region " << region->name << " to " << value;
 		}
-		evaluators.back()->property() = property;
 		region->settings.resize(loadStep + 1);
 		region->settings[loadStep][property].push_back(evaluators.back());
 		return true;
@@ -495,7 +495,7 @@ void WorkbenchParser::dirichlet(std::vector<Evaluator*> &evaluators, std::vector
 		Region *region = regions[getRegionIndex(regions, _selectedRegion.size() ? _selectedRegion : "ALL_NODES")];
 		region->settings.resize(loadStep + 1);
 		if (!params[2].compare(0, 3, "all")) {
-			evaluators.push_back(new ConstEvaluator(0, Property::DISPLACEMENT_X));
+			evaluators.push_back(new ConstEvaluator(0));
 			region->settings[loadStep][Property::DISPLACEMENT_X].push_back(evaluators.back());
 			region->settings[loadStep][Property::DISPLACEMENT_Y].push_back(evaluators.back());
 			region->settings[loadStep][Property::DISPLACEMENT_Z].push_back(evaluators.back());
@@ -610,8 +610,8 @@ void WorkbenchParser::obstacle(std::vector<Evaluator*> &evaluators, std::vector<
 	size_t loadStep = 0;
 	Region *region = regions[getRegionIndex(regions, _selectedRegion.size() ? _selectedRegion : "ALL_NODES")];
 	region->settings.resize(loadStep + 1);
-	evaluators.push_back(new CoordinatesEvaluator(params[1], _mesh.coordinates(), Property::OBSTACLE));
-	evaluators.push_back(new CoordinatesEvaluator(params[2], _mesh.coordinates(), Property::NORMAL_DIRECTION));
+	evaluators.push_back(new ExpressionEvaluator(params[1]));
+	evaluators.push_back(new ExpressionEvaluator(params[2]));
 
 	ESINFO(DETAILS) << "WB: SET obstacle to region " << _selectedRegion << " to " << params[1] << ", direction: " << params[2];
 
@@ -689,7 +689,7 @@ void WorkbenchParser::dim()
 			}
 		}
 
-		_tables.push_back(new TableEvaluator(params[1], table, properties, axis));
+		_tables.push_back(new TableEvaluator(table, properties, axis));
 		return;
 	}
 

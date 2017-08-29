@@ -5,7 +5,7 @@
 #include "../mesh/structures/mesh.h"
 #include "../mesh/structures/coordinates.h"
 #include "../input/loader.h"
-#include "../basis/logging/logging.h"
+#include "../basis/logging/logging.hpp"
 #include "../output/datastore/espresobinaryformat.h"
 
  using namespace espreso;

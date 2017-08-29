@@ -151,7 +151,8 @@ espreso::AdvectionDiffusionConfiguration::AdvectionDiffusionConfiguration()
 espreso::AdvectionDiffusion2DMaterialConfiguration::AdvectionDiffusion2DMaterialConfiguration()
 {
 	physical_model = PHYSICAL_MODEL::THERMAL;
-	thermal_properties.is3D = false;
+	coordinationSystem.is3D = false;
+	thermal_conductivity.is3D = false;
 }
 
 espreso::AdvectionDiffusion3DMaterialConfiguration::AdvectionDiffusion3DMaterialConfiguration()

@@ -57,6 +57,13 @@ def build(ctx):
     )
 
     ctx.program(
+        source       = "ecfchecker.cpp",
+        target       = "ecfchecker",
+        use          = "basis config",
+        install_path = ctx.ROOT
+    )
+
+    ctx.program(
         source       = "decomposer.cpp",
         target       = "decomposer",
         use          = "basis config mesh loader generator ansys_in espreso_in openfoam_in datastore",

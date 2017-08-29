@@ -117,7 +117,7 @@ void API::elements(const std::vector<eslocal> &eType, std::vector<std::vector<es
 
 void API::dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dirichletValues)
 {
-	_mesh._evaluators.push_back(new ArrayEvaluator("dirichletAPI", dirichletSize, dirichletIndices, dirichletValues, _offset, Property::UNKNOWN));
+	_mesh._evaluators.push_back(new ArrayEvaluator(dirichletSize, dirichletIndices, dirichletValues, _offset));
 	_mesh._regions.push_back(new Region(ElementType::NODES));
 
 	_mesh._regions.back()->name = "DIRICHLET";
@@ -224,7 +224,7 @@ void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const esl
 			for (size_t c = 0; c < _mesh._DOFs[dirichletDOFs[t][i]]->clusters().size(); c++) {
 				if (_mesh._DOFs[dirichletDOFs[t][i]]->clusters()[c] != environment->MPIrank) {
 					sDirichlet[n2i(_mesh._DOFs[dirichletDOFs[t][i]]->clusters()[c])].push_back(
-							std::make_pair(l2g[dirichletDOFs[t][i]], evaluator->evaluate(dirichletDOFs[t][i], 0, 0, 0, 0)));
+							std::make_pair(l2g[dirichletDOFs[t][i]], evaluator->evaluate(dirichletDOFs[t][i])));
 				}
 			}
 		}

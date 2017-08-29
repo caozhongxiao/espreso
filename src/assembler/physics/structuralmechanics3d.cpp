@@ -10,7 +10,6 @@
 #include "../../mesh/settings/evaluator.h"
 #include "../../mesh/elements/element.h"
 #include "../../mesh/structures/mesh.h"
-#include "../../mesh/structures/material.h"
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/elementtypes.h"
 
@@ -30,7 +29,7 @@ void StructuralMechanics3D::prepare()
 	_mesh->loadProperty(_configuration.displacement    , { "X", "Y", "Z" }     , { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z });
 	_mesh->loadProperty(_configuration.acceleration    , { "X", "Y", "Z" }     , { Property::ACCELERATION_X, Property::ACCELERATION_Y, Property::ACCELERATION_Z });
 
-	// _mesh->loadMaterials(_configuration.materials, _configuration.material_set);
+	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
 
 	for (size_t s = 1; s <= _configuration.physics_solver.load_steps; s++) {
 		if (_configuration.physics_solver.load_steps_settings.find(s) != _configuration.physics_solver.load_steps_settings.end() &&
@@ -183,165 +182,165 @@ std::vector<std::pair<ElementType, Property> > StructuralMechanics3D::properties
 
 void StructuralMechanics3D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K) const
 {
-	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
+	const MaterialConfiguration* material = _mesh->materials()[e->param(Element::MATERIAL)];
 	double Ex, Ey, Ez, miXY, miXZ, miYZ, Gx, Gy, Gz;
 
-//	switch (material->getModel(PHYSICS::STRUCTURAL_MECHANICS_2D)) {
-//
-//	case MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC: {
-//		Ex = Ey = Ez = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_X)->evaluate(e->node(node), step.currentTime, temp);
-//		miXY = miXZ = miYZ = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XY)->evaluate(e->node(node), step.currentTime, temp);
-//
-//		double EE = Ex / ((1 + miXY) * (1 - 2 * miXY));
-//
-//		K(node,  0) = EE * (1.0 - miXY);
-//		K(node,  1) = EE * (1.0 - miXY);
-//		K(node,  2) = EE * (1.0 - miXY);
-//		K(node,  3) = EE * (0.5 - miXY);
-//		K(node,  4) = EE * (0.5 - miXY);
-//		K(node,  5) = EE * (0.5 - miXY);
-//
-//		K(node,  6) = EE * miXY;
-//		K(node,  7) = EE * miXY;
-//		K(node,  8) = 0;
-//		K(node,  9) = 0;
-//		K(node, 10) = 0;
-//		K(node, 11) = EE * miXY;
-//		K(node, 12) = 0;
-//		K(node, 13) = 0;
-//		K(node, 14) = 0;
-//		K(node, 15) = 0;
-//		K(node, 16) = 0;
-//		K(node, 17) = 0;
-//		K(node, 18) = 0;
-//		K(node, 19) = 0;
-//		K(node, 20) = 0;
-//		K(node, 21) = EE * miXY;
-//		K(node, 22) = EE * miXY;
-//		K(node, 23) = EE * miXY;
-//		K(node, 24) = 0;
-//		K(node, 25) = 0;
-//		K(node, 26) = 0;
-//		K(node, 27) = 0;
-//		K(node, 28) = 0;
-//		K(node, 29) = 0;
-//		K(node, 30) = 0;
-//		K(node, 31) = 0;
-//		K(node, 32) = 0;
-//		K(node, 33) = 0;
-//		K(node, 34) = 0;
-//		K(node, 35) = 0;
-//	} break;
-//
-//	case MATERIAL_MODEL::LINEAR_ELASTIC_ANISOTROPIC: {
-//		K(node,  0) = material->get(MATERIAL_PARAMETER::D11)->evaluate(e->node(node), step.currentTime, temp);
-//		K(node,  1) = material->get(MATERIAL_PARAMETER::D22)->evaluate(e->node(node), step.currentTime, temp);
-//		K(node,  2) = material->get(MATERIAL_PARAMETER::D33)->evaluate(e->node(node), step.currentTime, temp);
-//		K(node,  3) = material->get(MATERIAL_PARAMETER::D44)->evaluate(e->node(node), step.currentTime, temp);
-//		K(node,  4) = material->get(MATERIAL_PARAMETER::D55)->evaluate(e->node(node), step.currentTime, temp);
-//		K(node,  5) = material->get(MATERIAL_PARAMETER::D66)->evaluate(e->node(node), step.currentTime, temp);
-//
-//		K(node,  6) = material->get(MATERIAL_PARAMETER::D12)->evaluate(e->node(node), step.currentTime, temp);
-//		K(node,  7) = material->get(MATERIAL_PARAMETER::D13)->evaluate(e->node(node), step.currentTime, temp);
-//		K(node,  8) = material->get(MATERIAL_PARAMETER::D14)->evaluate(e->node(node), step.currentTime, temp);
-//		K(node,  9) = material->get(MATERIAL_PARAMETER::D15)->evaluate(e->node(node), step.currentTime, temp);
-//		K(node, 10) = material->get(MATERIAL_PARAMETER::D16)->evaluate(e->node(node), step.currentTime, temp);
-//		K(node, 11) = material->get(MATERIAL_PARAMETER::D23)->evaluate(e->node(node), step.currentTime, temp);
-//		K(node, 12) = material->get(MATERIAL_PARAMETER::D24)->evaluate(e->node(node), step.currentTime, temp);
-//		K(node, 13) = material->get(MATERIAL_PARAMETER::D25)->evaluate(e->node(node), step.currentTime, temp);
-//		K(node, 14) = material->get(MATERIAL_PARAMETER::D26)->evaluate(e->node(node), step.currentTime, temp);
-//		K(node, 15) = material->get(MATERIAL_PARAMETER::D34)->evaluate(e->node(node), step.currentTime, temp);
-//		K(node, 16) = material->get(MATERIAL_PARAMETER::D35)->evaluate(e->node(node), step.currentTime, temp);
-//		K(node, 17) = material->get(MATERIAL_PARAMETER::D36)->evaluate(e->node(node), step.currentTime, temp);
-//		K(node, 18) = material->get(MATERIAL_PARAMETER::D45)->evaluate(e->node(node), step.currentTime, temp);
-//		K(node, 19) = material->get(MATERIAL_PARAMETER::D46)->evaluate(e->node(node), step.currentTime, temp);
-//		K(node, 20) = material->get(MATERIAL_PARAMETER::D56)->evaluate(e->node(node), step.currentTime, temp);
-//
-//		K(node, 21) = K(node,  6);
-//		K(node, 22) = K(node,  7);
-//		K(node, 23) = K(node, 11);
-//		K(node, 24) = K(node,  8);
-//		K(node, 25) = K(node, 12);
-//		K(node, 26) = K(node, 15);
-//		K(node, 27) = K(node,  9);
-//		K(node, 28) = K(node, 13);
-//		K(node, 29) = K(node, 16);
-//		K(node, 30) = K(node, 18);
-//		K(node, 31) = K(node, 10);
-//		K(node, 32) = K(node, 14);
-//		K(node, 33) = K(node, 17);
-//		K(node, 34) = K(node, 19);
-//		K(node, 35) = K(node, 20);
-//	} break;
-//
-//	case MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC: {
-//		Ex = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_X)->evaluate(e->node(node), step.currentTime, temp);
-//		Ey = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_Y)->evaluate(e->node(node), step.currentTime, temp);
-//		Ez = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_Z)->evaluate(e->node(node), step.currentTime, temp);
-//
-//		miXY = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XY)->evaluate(e->node(node), step.currentTime, temp);
-//		miXZ = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XZ)->evaluate(e->node(node), step.currentTime, temp);
-//		miYZ = material->get(MATERIAL_PARAMETER::POISSON_RATIO_YZ)->evaluate(e->node(node), step.currentTime, temp);
-//
-//		Gx = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_XY)->evaluate(e->node(node), step.currentTime, temp);
-//		Gy = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_XZ)->evaluate(e->node(node), step.currentTime, temp);
-//		Gz = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_YZ)->evaluate(e->node(node), step.currentTime, temp);
-//
-//		double miYX = miXY * Ey / Ex;
-//		double miZY = miYZ * Ez / Ey;
-//		double miZX = miXZ * Ex / Ez;
-//
-//		double ksi = 1 - (miXY * miYX + miYZ * miZY + miXZ * miZX) - (miXY * miYZ * miZX + miYX * miZY * miXZ);
-//
-//		double dxx = Ex * (1 - miYZ * miZY) / ksi;
-//		double dxy = Ey * (miXY + miXZ * miZY) / ksi;
-//		double dxz = Ez * (miXZ + miYZ * miXY)  /ksi;
-//		double dyy = Ey * (1 - miXZ * miZX) / ksi;
-//		double dyz = Ez * (miYZ + miYX * miXZ) / ksi;
-//		double dzz = Ez * (1 - miYX * miXY) / ksi;
-//
-//		K(node,  0) = dxx;
-//		K(node,  1) = dyy;
-//		K(node,  2) = dzz;
-//		K(node,  3) = Gx;
-//		K(node,  4) = Gz;
-//		K(node,  5) = Gy;
-//
-//		K(node,  6) = dxy;
-//		K(node,  7) = dxz;
-//		K(node,  8) = 0;
-//		K(node,  9) = 0;
-//		K(node, 10) = 0;
-//		K(node, 11) = dyz;
-//		K(node, 12) = 0;
-//		K(node, 13) = 0;
-//		K(node, 14) = 0;
-//		K(node, 15) = 0;
-//		K(node, 16) = 0;
-//		K(node, 17) = 0;
-//		K(node, 18) = 0;
-//		K(node, 19) = 0;
-//		K(node, 20) = 0;
-//		K(node, 21) = dxy;
-//		K(node, 22) = dxz;
-//		K(node, 23) = dyz;
-//		K(node, 24) = 0;
-//		K(node, 25) = 0;
-//		K(node, 26) = 0;
-//		K(node, 27) = 0;
-//		K(node, 28) = 0;
-//		K(node, 29) = 0;
-//		K(node, 30) = 0;
-//		K(node, 31) = 0;
-//		K(node, 32) = 0;
-//		K(node, 33) = 0;
-//		K(node, 34) = 0;
-//		K(node, 35) = 0;
-//	} break;
-//
-//	default:
-//		ESINFO(ERROR) << "Structural mechanics 3D not supports set material model";
-//	}
+	switch (material->linear_elastic_properties.model) {
+
+	case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC: {
+		Ex = Ey = Ez = material->linear_elastic_properties.young_modulus.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		miXY = miXZ = miYZ = material->linear_elastic_properties.poisson_ratio.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+
+		double EE = Ex / ((1 + miXY) * (1 - 2 * miXY));
+
+		K(node,  0) = EE * (1.0 - miXY);
+		K(node,  1) = EE * (1.0 - miXY);
+		K(node,  2) = EE * (1.0 - miXY);
+		K(node,  3) = EE * (0.5 - miXY);
+		K(node,  4) = EE * (0.5 - miXY);
+		K(node,  5) = EE * (0.5 - miXY);
+
+		K(node,  6) = EE * miXY;
+		K(node,  7) = EE * miXY;
+		K(node,  8) = 0;
+		K(node,  9) = 0;
+		K(node, 10) = 0;
+		K(node, 11) = EE * miXY;
+		K(node, 12) = 0;
+		K(node, 13) = 0;
+		K(node, 14) = 0;
+		K(node, 15) = 0;
+		K(node, 16) = 0;
+		K(node, 17) = 0;
+		K(node, 18) = 0;
+		K(node, 19) = 0;
+		K(node, 20) = 0;
+		K(node, 21) = EE * miXY;
+		K(node, 22) = EE * miXY;
+		K(node, 23) = EE * miXY;
+		K(node, 24) = 0;
+		K(node, 25) = 0;
+		K(node, 26) = 0;
+		K(node, 27) = 0;
+		K(node, 28) = 0;
+		K(node, 29) = 0;
+		K(node, 30) = 0;
+		K(node, 31) = 0;
+		K(node, 32) = 0;
+		K(node, 33) = 0;
+		K(node, 34) = 0;
+		K(node, 35) = 0;
+	} break;
+
+	case LinearElasticPropertiesConfiguration::MODEL::ANISOTROPIC: {
+		K(node,  0) = material->linear_elastic_properties.anisotropic.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node,  1) = material->linear_elastic_properties.anisotropic.get(1, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node,  2) = material->linear_elastic_properties.anisotropic.get(2, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node,  3) = material->linear_elastic_properties.anisotropic.get(3, 3).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node,  4) = material->linear_elastic_properties.anisotropic.get(4, 4).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node,  5) = material->linear_elastic_properties.anisotropic.get(5, 5).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+
+		K(node,  6) = material->linear_elastic_properties.anisotropic.get(0, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node,  7) = material->linear_elastic_properties.anisotropic.get(0, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node,  8) = material->linear_elastic_properties.anisotropic.get(0, 3).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node,  9) = material->linear_elastic_properties.anisotropic.get(0, 4).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node, 10) = material->linear_elastic_properties.anisotropic.get(0, 5).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node, 11) = material->linear_elastic_properties.anisotropic.get(1, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node, 12) = material->linear_elastic_properties.anisotropic.get(1, 3).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node, 13) = material->linear_elastic_properties.anisotropic.get(1, 4).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node, 14) = material->linear_elastic_properties.anisotropic.get(1, 5).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node, 15) = material->linear_elastic_properties.anisotropic.get(2, 3).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node, 16) = material->linear_elastic_properties.anisotropic.get(2, 4).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node, 17) = material->linear_elastic_properties.anisotropic.get(2, 5).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node, 18) = material->linear_elastic_properties.anisotropic.get(3, 4).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node, 19) = material->linear_elastic_properties.anisotropic.get(3, 5).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node, 20) = material->linear_elastic_properties.anisotropic.get(4, 5).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+
+		K(node, 21) = K(node,  6);
+		K(node, 22) = K(node,  7);
+		K(node, 23) = K(node, 11);
+		K(node, 24) = K(node,  8);
+		K(node, 25) = K(node, 12);
+		K(node, 26) = K(node, 15);
+		K(node, 27) = K(node,  9);
+		K(node, 28) = K(node, 13);
+		K(node, 29) = K(node, 16);
+		K(node, 30) = K(node, 18);
+		K(node, 31) = K(node, 10);
+		K(node, 32) = K(node, 14);
+		K(node, 33) = K(node, 17);
+		K(node, 34) = K(node, 19);
+		K(node, 35) = K(node, 20);
+	} break;
+
+	case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC: {
+		Ex = material->linear_elastic_properties.young_modulus.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		Ey = material->linear_elastic_properties.young_modulus.get(1, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		Ez = material->linear_elastic_properties.young_modulus.get(2, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+
+		miXY = material->linear_elastic_properties.poisson_ratio.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		miXZ = material->linear_elastic_properties.poisson_ratio.get(1, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		miYZ = material->linear_elastic_properties.poisson_ratio.get(2, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+
+		Gx = material->linear_elastic_properties.shear_modulus.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		Gy = material->linear_elastic_properties.shear_modulus.get(1, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		Gz = material->linear_elastic_properties.shear_modulus.get(2, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+
+		double miYX = miXY * Ey / Ex;
+		double miZY = miYZ * Ez / Ey;
+		double miZX = miXZ * Ex / Ez;
+
+		double ksi = 1 - (miXY * miYX + miYZ * miZY + miXZ * miZX) - (miXY * miYZ * miZX + miYX * miZY * miXZ);
+
+		double dxx = Ex * (1 - miYZ * miZY) / ksi;
+		double dxy = Ey * (miXY + miXZ * miZY) / ksi;
+		double dxz = Ez * (miXZ + miYZ * miXY)  /ksi;
+		double dyy = Ey * (1 - miXZ * miZX) / ksi;
+		double dyz = Ez * (miYZ + miYX * miXZ) / ksi;
+		double dzz = Ez * (1 - miYX * miXY) / ksi;
+
+		K(node,  0) = dxx;
+		K(node,  1) = dyy;
+		K(node,  2) = dzz;
+		K(node,  3) = Gx;
+		K(node,  4) = Gz;
+		K(node,  5) = Gy;
+
+		K(node,  6) = dxy;
+		K(node,  7) = dxz;
+		K(node,  8) = 0;
+		K(node,  9) = 0;
+		K(node, 10) = 0;
+		K(node, 11) = dyz;
+		K(node, 12) = 0;
+		K(node, 13) = 0;
+		K(node, 14) = 0;
+		K(node, 15) = 0;
+		K(node, 16) = 0;
+		K(node, 17) = 0;
+		K(node, 18) = 0;
+		K(node, 19) = 0;
+		K(node, 20) = 0;
+		K(node, 21) = dxy;
+		K(node, 22) = dxz;
+		K(node, 23) = dyz;
+		K(node, 24) = 0;
+		K(node, 25) = 0;
+		K(node, 26) = 0;
+		K(node, 27) = 0;
+		K(node, 28) = 0;
+		K(node, 29) = 0;
+		K(node, 30) = 0;
+		K(node, 31) = 0;
+		K(node, 32) = 0;
+		K(node, 33) = 0;
+		K(node, 34) = 0;
+		K(node, 35) = 0;
+	} break;
+
+	default:
+		ESINFO(ERROR) << "Structural mechanics 3D not supports set material model";
+	}
 }
 
 void StructuralMechanics3D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
@@ -351,21 +350,21 @@ void StructuralMechanics3D::processElement(const Step &step, Matrices matrices, 
 	DenseMatrix gpK(e->nodes(), 36), gpTE(1, 3), gpInertia(1, 3), gpDens(1, 1);
 	double detJ, temp, initTemp, CP = 1;
 
-	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
+	const MaterialConfiguration* material = _mesh->materials()[e->param(Element::MATERIAL)];
 
 	for (size_t i = 0; i < e->nodes(); i++) {
-		initTemp = e->getProperty(Property::INITIAL_TEMPERATURE, i, step.step, step.currentTime, 0, 0);
-		temp = e->getProperty(Property::TEMPERATURE, i, step.step, step.currentTime, 0, initTemp);
-		inertia(i, 0) = e->sumProperty(Property::ACCELERATION_X, i, step.step, step.currentTime, temp, 0);
-		inertia(i, 1) = e->sumProperty(Property::ACCELERATION_Y, i, step.step, step.currentTime, temp, 0);
-		inertia(i, 2) = e->sumProperty(Property::ACCELERATION_Z, i, step.step, step.currentTime, temp, 0);
+		initTemp = e->getProperty(Property::INITIAL_TEMPERATURE, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, 0, 0);
+		temp = e->getProperty(Property::TEMPERATURE, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, 0, initTemp);
+		inertia(i, 0) = e->sumProperty(Property::ACCELERATION_X, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp, 0);
+		inertia(i, 1) = e->sumProperty(Property::ACCELERATION_Y, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp, 0);
+		inertia(i, 2) = e->sumProperty(Property::ACCELERATION_Z, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp, 0);
 		coordinates(i, 0) = _mesh->coordinates()[e->node(i)].x;
 		coordinates(i, 1) = _mesh->coordinates()[e->node(i)].y;
 		coordinates(i, 2) = _mesh->coordinates()[e->node(i)].z;
-//		dens(i, 0) = material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(e->node(i), step.currentTime, temp);
-//		TE(i, 0) = (temp - initTemp) * material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_X)->evaluate(e->node(i), step.currentTime, temp);
-//		TE(i, 1) = (temp - initTemp) * material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_Y)->evaluate(e->node(i), step.currentTime, temp);
-//		TE(i, 2) = (temp - initTemp) * material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_Z)->evaluate(e->node(i), step.currentTime, temp);
+		dens(i, 0) = material->density.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
+		TE(i, 0) = (temp - initTemp) * material->linear_elastic_properties.thermal_expansion.get(0, 0).evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
+		TE(i, 1) = (temp - initTemp) * material->linear_elastic_properties.thermal_expansion.get(1, 1).evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
+		TE(i, 2) = (temp - initTemp) * material->linear_elastic_properties.thermal_expansion.get(2, 2).evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
 		assembleMaterialMatrix(step, e, i, temp, K);
 	}
 
@@ -484,7 +483,7 @@ void StructuralMechanics3D::processFace(const Step &step, Matrices matrices, con
 		coordinates(n, 0) = _mesh->coordinates()[e->node(n)].x;
 		coordinates(n, 1) = _mesh->coordinates()[e->node(n)].y;
 		coordinates(n, 2) = _mesh->coordinates()[e->node(n)].z;
-		P(n, 0) = e->getProperty(Property::PRESSURE, n, step.step, step.currentTime, 0, 0);
+		P(n, 0) = e->getProperty(Property::PRESSURE, step.step, _mesh->coordinates()[e->node(n)], step.currentTime, 0, 0);
 	}
 
 	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
@@ -527,9 +526,9 @@ void StructuralMechanics3D::processNode(const Step &step, Matrices matrices, con
 		Re.resize(0, 0);
 		fe.resize(pointDOFs().size(), 0);
 
-		fe(0, 0) = e->sumProperty(Property::FORCE_X, 0, step.step, step.currentTime, 0, 0);
-		fe(1, 0) = e->sumProperty(Property::FORCE_Y, 0, step.step, step.currentTime, 0, 0);
-		fe(2, 0) = e->sumProperty(Property::FORCE_Z, 0, step.step, step.currentTime, 0, 0);
+		fe(0, 0) = e->sumProperty(Property::FORCE_X, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
+		fe(1, 0) = e->sumProperty(Property::FORCE_Y, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
+		fe(2, 0) = e->sumProperty(Property::FORCE_Z, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
 		return;
 	}
 	Ke.resize(0, 0);

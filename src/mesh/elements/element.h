@@ -213,8 +213,8 @@ public:
 	void rotateOutside(const Element* parent, const Coordinates &coordinates, Point &normal) const;
 
 	bool hasProperty(Property property, size_t step) const;
-	double sumProperty(Property property, eslocal node, size_t step, double time, double temperature, double defaultValue) const;
-	double getProperty(Property property, eslocal node, size_t step, double time, double temperature, double defaultValue) const;
+	double sumProperty(Property property, size_t step, const Point &p, double time, double temperature, double defaultValue) const;
+	double getProperty(Property property, size_t step, const Point &p, double time, double temperature, double defaultValue) const;
 
 protected:
 	virtual Element* copy() const =0;

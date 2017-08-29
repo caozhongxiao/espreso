@@ -4,7 +4,7 @@
 
 #include "coordinatesystem.h"
 #include "linearelasticproperties.h"
-#include "thermalproperties.h"
+#include "thermalconductivity.h"
 
 namespace espreso {
 
@@ -15,12 +15,14 @@ struct MaterialConfiguration: public ECFObject {
 		LINEAR_ELASTIC = 1 << 1
 	};
 
+	CoordinateSystemConfiguration coordinationSystem;
+
 	PHYSICAL_MODEL physical_model;
 
 	ECFExpression density;
 	ECFExpression heat_capacity;
 	LinearElasticPropertiesConfiguration linear_elastic_properties;
-	ThermalPropertiesConfiguration thermal_properties;
+	ThermalConductivityConfiguration thermal_conductivity;
 
 	MaterialConfiguration();
 };

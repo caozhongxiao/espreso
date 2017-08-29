@@ -12,7 +12,6 @@
 
 #include "../settings/evaluator.h"
 #include "coordinates.h"
-#include "material.h"
 #include "region.h"
 
 #include "../elements/point/node.h"
@@ -31,8 +30,9 @@
 #include "elementtypes.h"
 
 #include "metis.h"
+#include "../../config/valueholder.h"
 #include "../../config/ecf/environment.h"
-#include "../../config/ecf/material/coordinatesystem.h"
+#include "../../config/ecf/material/material.h"
 #include "../../basis/utilities/parser.h"
 
 namespace espreso {
@@ -885,9 +885,9 @@ void Mesh::loadProperty(
 
 			if (!StringCompare::contains(value, { "x", "y", "z", "TEMPERATURE", "TIME" })) {
 				Expression expr(value, {});
-				_evaluators.push_back(new ConstEvaluator(expr.evaluate({}), properties[p]));
+				_evaluators.push_back(new ConstEvaluator(expr.evaluate({})));
 			} else {
-				_evaluators.push_back(new CoordinatesEvaluator(value, *_coordinates, properties[p]));
+				_evaluators.push_back(new ExpressionEvaluator(value));
 			}
 
 			std::vector<std::vector<esglobal> > boundaryNodes(_neighbours.size());
@@ -1103,16 +1103,26 @@ void Mesh::materialNotFound(const std::string &name)
 	ESINFO(GLOBAL_ERROR) << "Invalid .ecf file: material " << name << " is not set.";
 }
 
-void Mesh::loadMaterial(Region *region, size_t index, const std::string &name, const Configuration &configuration)
+void Mesh::loadMaterial(Region *region, size_t index, const std::string &name, const MaterialConfiguration &material)
 {
-	// TODO: implement
-//	#pragma omp parallel for
-//	for (size_t e = 0; e < region->elements().size(); e++) {
-//		region->elements()[e]->setParam(Element::MATERIAL, index);
-//	}
-//	const Configuration* coordinateSystem = configuration.subconfigurations.find("COORDINATE_SYSTEM")->second;
-//	_materials.push_back(new Material(*_coordinates, configuration, dynamic_cast<const CoordinateSystem&>(*coordinateSystem)));
-//	ESINFO(OVERVIEW) << "Set material '" << name << "' for region '" << region->name << "'";
+	#pragma omp parallel for
+	for (size_t e = 0; e < region->elements().size(); e++) {
+		region->elements()[e]->setParam(Element::MATERIAL, index);
+	}
+	_materials.push_back(new MaterialConfiguration());
+	*_materials.back() = material;
+	_materials.back()->forEachParameters([] (ECFParameter *parameter) {
+		if (parameter->metadata.datatype.front() == ECFDataType::EXPRESSION) {
+			if (Expression::isValid(parameter->getValue(), parameter->metadata.variables)) {
+				dynamic_cast<ECFValueHolder<ECFExpression>*>(parameter)->value.evaluator = new ExpressionEvaluator(
+						parameter->getValue(),
+						parameter->metadata.variables);
+			} else {
+				ESINFO(GLOBAL_ERROR) << "Material parameter '" << Parser::uppercase(parameter->name) << "' cannot be set to '" << parameter->getValue() << "'";
+			}
+		}
+	});
+	ESINFO(OVERVIEW) << "Set material '" << name << "' for region '" << region->name << "'";
 }
 
 void Mesh::checkMaterials()

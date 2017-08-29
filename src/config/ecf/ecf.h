@@ -19,6 +19,9 @@ namespace espreso {
 
 struct ECFConfiguration: public ECFObject {
 
+	// Environment has to be created first!
+	Environment environment;
+
 	std::map<size_t, std::string> default_args;
 	std::map<std::string, std::string> variables;
 
@@ -33,18 +36,14 @@ struct ECFConfiguration: public ECFObject {
 	StructuralMechanics2DConfiguration structural_mechanics_2d;
 	StructuralMechanics3DConfiguration structural_mechanics_3d;
 
-	Environment environment;
 	OutputConfiguration output;
 
 	DecomposerConfiguration decomposer;
 
 	void init();
-
+	ECFConfiguration() { init(); }
 	ECFConfiguration(const std::string &file);
 	ECFConfiguration(int *argc, char ***argv);
-
-	void print() { Reader::print(*this); }
-	void store() { Reader::store(*this, { ".*" }); }
 };
 
 }

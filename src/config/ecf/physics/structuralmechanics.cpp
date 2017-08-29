@@ -51,6 +51,7 @@ espreso::StructuralMechanicsConfiguration::StructuralMechanicsConfiguration()
 espreso::StructuralMechanics2DMaterialConfiguration::StructuralMechanics2DMaterialConfiguration()
 {
 	physical_model = PHYSICAL_MODEL::LINEAR_ELASTIC;
+	coordinationSystem.is3D = false;
 	linear_elastic_properties.is3D = false;
 }
 

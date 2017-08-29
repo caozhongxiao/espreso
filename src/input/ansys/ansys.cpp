@@ -67,7 +67,7 @@ void AnsysWorkbench::elements(std::vector<size_t> &bodies, std::vector<Element*>
 	}
 }
 
-void AnsysWorkbench::materials(std::vector<Material*> &materials)
+void AnsysWorkbench::materials(std::vector<MaterialConfiguration*> &materials)
 {
 	while (true) {
 		switch (_parser.process()) {

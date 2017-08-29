@@ -17,7 +17,7 @@ namespace espreso {
 /////////// PARAMETER ///////////
 /////////////////////////////////
 
-// CLASS - STD::STRING (has to inherit from ECFObject)
+// CLASS - STD::STRING - ECFExpression (has to inherit from ECFObject)
 template <typename Ttype>
 typename std::enable_if<std::is_class<Ttype>::value && !std::is_same<Ttype, std::string>::value && !std::is_same<Ttype, ECFExpression>::value>::type
 ECFObject::registerParameter(const std::string &name, Ttype &parameter, const ECFMetaData &metadata)

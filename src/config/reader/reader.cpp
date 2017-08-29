@@ -17,7 +17,7 @@
 
 using namespace espreso;
 
-std::string Reader::configurationFile = "espreso.ecf";
+std::string ECFReader::configurationFile = "espreso.ecf";
 
 static struct option long_options[] = {
 		{"config",  required_argument, 0, 'c'},
@@ -26,15 +26,7 @@ static struct option long_options[] = {
 		{0, 0, 0, 0}
 };
 
-static std::string spaces(size_t size) {
-	std::stringstream _indent;
-	for (size_t i = 0; i < size; i++) {
-		_indent << " ";
-	}
-	return _indent.str();
-};
-
-void Reader::_read(
+ECFRedParameters ECFReader::_read(
 		ECFObject &configuration,
 		int* argc,
 		char ***argv,
@@ -87,7 +79,6 @@ void Reader::_read(
 		confFile = "decomposer.ecf";
 	}
 
-	std::vector<std::string> subConfigurations;
 	while ((option = getopt_long(*argc, *argv, "c:d::hvtm", opts.data(), &option_index)) != -1) {
 		switch (option) {
 		case 'p':
@@ -96,13 +87,11 @@ void Reader::_read(
 		case 'h':
 			helpVerboseLevel++;
 			break;
-		case 'd':
-			if (optarg == NULL) {
-				subConfigurations.push_back(".*");
-			} else {
-				subConfigurations.push_back(std::string(optarg));
-			}
-			break;
+		case 'd': {
+			std::ofstream os("espreso.ecf.default");
+			store(configuration, os);
+			exit(EXIT_SUCCESS);
+		} break;
 		case 'c':
 			confFile = optarg;
 			break;
@@ -110,11 +99,6 @@ void Reader::_read(
 			exit(EXIT_FAILURE);
 			break;
 		}
-	}
-
-	if (subConfigurations.size()) {
-		store(configuration, subConfigurations);
-		exit(EXIT_SUCCESS);
 	}
 
 	if (helpVerboseLevel) {
@@ -152,7 +136,7 @@ void Reader::_read(
 	Logging::name = confFile.substr(start, end - start);
 	configurationFile = confFile;
 
-	_read(configuration, confFile, nameless, defaultArgs, variables);
+	ECFRedParameters redParameters = _read(configuration, confFile, nameless, defaultArgs, variables);
 
 	optind = 0;
 	while ((option = getopt_long(*argc, *argv, "c:dhvtm", opts.data(), &option_index)) != -1) {
@@ -173,9 +157,11 @@ void Reader::_read(
 			break;
 		}
 	}
+
+	return redParameters;
 }
 
-void Reader::copyInputData()
+void ECFReader::copyInputData()
 {
 	if (environment->MPIrank) {
 		MPI_Barrier(environment->MPICommunicator);
@@ -205,13 +191,15 @@ void Reader::copyInputData()
 	dst << src.rdbuf();
 }
 
-void Reader::_read(
+ECFRedParameters ECFReader::_read(
 		ECFObject &configuration,
 		const std::string &file,
 		const std::vector<std::string> &args,
 		const std::map<size_t, std::string> &defaultArgs,
 		const std::map<std::string, std::string> &variables)
 {
+	ECFRedParameters redParameters;
+
 	std::vector<std::string> prefix;
 	std::vector<std::string> values;
 	std::stack<ECFObject*> confStack;
@@ -220,6 +208,7 @@ void Reader::_read(
 	bool correctlyLoaded = true;
 	std::map<size_t, std::vector<std::string> > arguments;
 
+	std::string link;
 	confStack.push(&configuration);
 	tokenStack.push(new Tokenizer(file));
 	while (tokenStack.size()) {
@@ -234,6 +223,7 @@ void Reader::_read(
 		case Tokenizer::Token::LINK:
 		{
 			std::string value = tokenStack.top()->value();
+			link = "[" + value + "]";
 			for (auto it = variables.begin(); it != variables.end(); ++it) {
 				if (StringCompare::caseInsensitiveEq(it->first, value)) {
 					value = it->second;
@@ -309,6 +299,7 @@ void Reader::_read(
 			if (confStack.top()->getParameter(values[0]) == NULL) {
 				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Unexpected parameter '" << values[0] << "'\n" << tokenStack.top()->lastLines(2);
 			}
+			redParameters.parameters.push_back(confStack.top()->getParameter(values[0]));
 			confStack.push(dynamic_cast<ECFObject*>(confStack.top()->getParameter(values[0])));
 			values.clear();
 			break;
@@ -344,7 +335,11 @@ void Reader::_read(
 			if (!confStack.top()->getParameter(values[0])->setValue(ss.str())) {
 				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Parameter '" << values[0] << "' has wrong value '" << ss.str() << "'";
 			}
-
+			redParameters.parameters.push_back(confStack.top()->getParameter(values[0]));
+			if (link.size()) {
+				redParameters.defaulted[redParameters.parameters.back()] = link;
+				link = "";
+			}
 			values.clear();
 			break;
 		}
@@ -381,9 +376,10 @@ void Reader::_read(
 		}
 		ESINFO(GLOBAL_ERROR) << error;
 	}
+	return redParameters;
 }
 
-void Reader::set(const Environment &env, const OutputConfiguration &output)
+void ECFReader::set(const Environment &env, const OutputConfiguration &output)
 {
 	Test::setLevel(env.testing_level);
 	Info::setLevel(env.verbose_level, env.testing_level);
@@ -394,73 +390,91 @@ void Reader::set(const Environment &env, const OutputConfiguration &output)
 	copyInputData();
 }
 
-static void printConfiguration(const ECFObject &configuration, size_t indent)
+static void printECF(const ECFObject &configuration, std::ostream &os, size_t indent, bool onlyAllowed, bool printPatterns, bool pattern, const ECFRedParameters &parameters)
 {
-//	for (size_t i = 0; i < configuration.orderedParameters.size(); i++) {
-//		ECFParameter *parameter = configuration.orderedParameters[i];
-//		ESINFO(ALWAYS) << spaces(indent) << Parser::uppercase(parameter->name) << " = " << parameter->get();
-//	}
-//
-//	for (size_t i = 0; i < configuration.orderedSubconfiguration.size(); i++) {
-//		ESINFO(ALWAYS) << spaces(indent) << Parser::uppercase(configuration.orderedSubconfiguration[i]->name) << " {";
-//		printConfiguration(*configuration.orderedSubconfiguration[i], indent + 2);
-//		ESINFO(ALWAYS) << spaces(indent) << "}";
-//	}
-}
+	auto printindent = [&] (size_t indent) {
+		for (size_t j = 0; j < indent; j++) {
+			os << " ";
+		}
+	};
 
+	size_t maxSize = 0;
+	for (size_t i = 0; i < configuration.parameters.size(); i++) {
+		if (parameters.parameters.size() && std::find(parameters.parameters.begin(), parameters.parameters.end(), configuration.parameters[i]) == parameters.parameters.end()) {
+			continue;
+		}
+		if ((configuration.parameters[i]->metadata.isallowed() || !onlyAllowed) && configuration.parameters[i]->isValue()) {
+			std::string value = configuration.parameters[i]->getValue();
+			if (parameters.defaulted.find(configuration.parameters[i]) != parameters.defaulted.end()) {
+				value = parameters.defaulted.find(configuration.parameters[i])->second;
+			}
+			if (maxSize < configuration.parameters[i]->name.size() + value.size()) {
+				maxSize = configuration.parameters[i]->name.size() + value.size();
+			}
+		}
+	}
 
-static void storeConfiguration(std::ofstream &os, const ECFObject &configuration, size_t indent, std::vector<std::regex> &patterns)
+	bool printSpace = true;
+
+	auto printparameter = [&] (const ECFParameter *parameter) {
+		if (onlyAllowed && !parameter->metadata.isallowed()) {
+			return;
+		}
+		if (parameters.parameters.size() && std::find(parameters.parameters.begin(), parameters.parameters.end(), parameter) == parameters.parameters.end()) {
+			if (!printSpace || parameter->isValue() || parameter->isObject())
+			return;
+		}
+
+		if (parameter->isValue()) {
+			std::string value = parameter->getValue();
+			if (parameters.defaulted.find(parameter) != parameters.defaulted.end()) {
+				value = parameters.defaulted.find(parameter)->second;
+			}
+			size_t space = maxSize ? maxSize - parameter->name.size() - value.size() : 3;
+			printindent(indent);
+			os << Parser::uppercase(parameter->name);
+			printindent(space + 3);
+			if (parameter->metadata.datatype.front() == ECFDataType::STRING) {
+				os << value << ";\n";
+			} else {
+				os << Parser::uppercase(value) << ";\n";
+			}
+		} else if (parameter->isObject()) {
+			if (printSpace) {
+				os << "\n";
+			}
+			printindent(indent);
+			os << Parser::uppercase(parameter->name) << " {\n";
+			printECF(*dynamic_cast<const ECFObject*>(parameter), os, indent + 2, onlyAllowed, printPatterns, pattern, parameters);
+			printindent(indent);
+			os << "}\n";
+		} else {
+			printSpace = false;
+			// Separators etc..
+			os << "\n";
+			return;
+		}
+		printSpace = true;
+	};
+
+	for (size_t i = 0; i < configuration.parameters.size(); i++) {
+		printparameter(configuration.parameters[i]);
+	}
+	if (printPatterns && configuration.getPattern()) {
+		if (pattern == false) {
+			pattern = true;
+			printindent(indent);
+			os << "/*\n";
+			printparameter(configuration.getPattern());
+			printindent(indent);
+			os << "*/\n";
+		} else {
+			printparameter(configuration.getPattern());
+		}
+	}
+};
+
+void ECFReader::store(const ECFObject &configuration, std::ostream &os, bool onlyAllowed, bool printPatterns, const ECFRedParameters &parameters)
 {
-//	for (size_t i = 0; i < configuration.storeParameters().size(); i++) {
-//		Parameter *parameter = configuration.storeParameters()[i];
-//		os << "\n" << spaces(indent) << "# " << parameter->description << " [" << parameter->allowedValue << "]\n";
-//		os << spaces(indent) << Parser::uppercase(parameter->name) << " " << parameter->get() << ";\n";
-//	}
-//
-//	for (size_t i = 0; i < configuration.storeConfigurations().size(); i++) {
-//		if (std::any_of(patterns.begin(), patterns.end(), [&] (const std::regex &regex) {
-//			std::smatch sm;
-//			std::regex_match(configuration.storeConfigurations()[i]->name, sm, regex);
-//			return sm.size();
-//		})) {
-//
-//			os << "\n" << spaces(indent) << Parser::uppercase(configuration.storeConfigurations()[i]->name) << " { ";
-//			os << "# " << configuration.storeConfigurations()[i]->description << "\n";
-//			std::vector<std::regex> all = { std::regex(".*") };
-//			storeConfiguration(os, *configuration.storeConfigurations()[i], indent + 2, all);
-//			os << spaces(indent) << "}\n\n";
-//		}
-//	}
-}
-
-void Reader::print(const ECFObject &configuration)
-{
-	ESINFO(ALWAYS) << "ESPRESO configuration:";
-	printConfiguration(configuration, 4);
-}
-
-void Reader::store(const ECFObject &configuration, const std::vector<std::string> &subConfigurations)
-{
-	std::ofstream os("espreso.ecf.default");
-
-	os << "|*****************************************************************************|\n";
-	os << "|-----------------------------------------------------------------------------|\n";
-	os << "|                                      |                                      |\n";
-	os << "|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |\n";
-	os << "|                                      |   http://espreso.it4i.cz             |\n";
-	os << "|-----------------------------------------------------------------------------|\n";
-	os << "|  Case Description:    Default ESPRESO configuration                         |\n";
-	os << "|                                                                             |\n";
-	os << "|-----------------------------------------------------------------------------|\n";
-	os << "|*****************************************************************************|\n";
-	os << "                                                                               \n";
-	os << "                                                                               \n";
-	os << "|*****************************************************************************|\n";
-	os << "|-------------------------  INPUT/OUTPUT DEFINITION --------------------------|\n\n";
-
-	std::vector<std::regex> patterns;
-	std::for_each(subConfigurations.begin(), subConfigurations.end(), [&] (const std::string &s) { patterns.push_back(std::regex(s)); });
-
-	storeConfiguration(os, configuration, 0, patterns);
-	ESINFO(ALWAYS) << "configuration stored to 'espreso.ecf.default'";
+	printECF(configuration, os, 0, onlyAllowed, printPatterns, false, parameters);
 }

@@ -1,7 +1,7 @@
 
 #include "environment.h"
 #include "../configuration.hpp"
-// #include "../basis/utilities/utils.h"
+#include "../basis/utilities/utils.h"
 
 namespace espreso {
 
@@ -20,16 +20,16 @@ Environment::Environment(): executable("espreso")
 
 	char *var = getenv("_");
 	if (var != NULL) {
-		// executable = Esutils::getEnv<std::string>("_");
+		executable = Esutils::getEnv<std::string>("_");
 	} else {
 		executable = "espreso";
 	}
 
-//	MKL_NUM_THREADS    = Esutils::getEnv<size_t>("MKL_NUM_THREADS");
-//	OMP_NUM_THREADS    = Esutils::getEnv<size_t>("OMP_NUM_THREADS");
-//	SOLVER_NUM_THREADS = Esutils::getEnv<size_t>("SOLVER_NUM_THREADS");
-//	PAR_NUM_THREADS    = Esutils::getEnv<size_t>("PAR_NUM_THREADS");
-//	CILK_NWORKERS      = Esutils::getEnv<size_t>("CILK_NWORKERS");
+	MKL_NUM_THREADS    = Esutils::getEnv<size_t>("MKL_NUM_THREADS");
+	OMP_NUM_THREADS    = Esutils::getEnv<size_t>("OMP_NUM_THREADS");
+	SOLVER_NUM_THREADS = Esutils::getEnv<size_t>("SOLVER_NUM_THREADS");
+	PAR_NUM_THREADS    = Esutils::getEnv<size_t>("PAR_NUM_THREADS");
+	CILK_NWORKERS      = Esutils::getEnv<size_t>("CILK_NWORKERS");
 
 	log_dir = "debug";
 	REGISTER(log_dir, ECFMetaData()

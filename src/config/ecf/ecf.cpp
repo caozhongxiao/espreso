@@ -5,6 +5,8 @@
 
 void espreso::ECFConfiguration::init()
 {
+	name = "root";
+
 	REGISTER(default_args, ECFMetaData()
 		.setdescription({ "The index of the argument.", "The argument value." })
 		.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER, ECFDataType::STRING })
@@ -14,6 +16,8 @@ void espreso::ECFConfiguration::init()
 			.setdescription({ "A name of variable usable in *.ecf file.", "A value of the variable." })
 			.setdatatype({ ECFDataType::STRING, ECFDataType::STRING })
 			.setpattern({ "MY_VARIABLE", "VALUE" }));
+
+	addSpace();
 
 	input = INPUT_FORMAT::GENERATOR;
 
@@ -57,7 +61,7 @@ void espreso::ECFConfiguration::init()
 			.setdescription({ "Structural mechanics 3D settings." })
 			.allowonly([&] () { return physics == PHYSICS::STRUCTURAL_MECHANICS_3D; }));
 
-	REGISTER(environment, ECFMetaData()
+	registerParameter("env", environment, ECFMetaData()
 			.setdescription({ "Environment related settings." }));
 
 	REGISTER(output, ECFMetaData()
@@ -71,15 +75,15 @@ void espreso::ECFConfiguration::init()
 espreso::ECFConfiguration::ECFConfiguration(const std::string &file)
 {
 	init();
-	Reader::read(*this, file, this->default_args, this->variables);
-	Reader::set(this->environment, this->output);
+	ECFReader::read(*this, file, this->default_args, this->variables);
+	ECFReader::set(this->environment, this->output);
 }
 
 espreso::ECFConfiguration::ECFConfiguration(int *argc, char ***argv)
 {
 	init();
-	Reader::read(*this, argc, argv, this->default_args, this->variables);
-	Reader::set(this->environment, this->output);
+	ECFReader::read(*this, argc, argv, this->default_args, this->variables);
+	ECFReader::set(this->environment, this->output);
 }
 
 

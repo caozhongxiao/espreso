@@ -10,7 +10,6 @@
 #include "../../mesh/settings/evaluator.h"
 #include "../../mesh/elements/element.h"
 #include "../../mesh/structures/mesh.h"
-#include "../../mesh/structures/material.h"
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/elementtypes.h"
 
@@ -32,7 +31,7 @@ void StructuralMechanics2D::prepare()
 	_mesh->loadProperty(_configuration.acceleration    , { "X", "Y" }     , { Property::ACCELERATION_X, Property::ACCELERATION_Y });
 	_mesh->loadProperty(_configuration.angular_velocity, { "X", "Y", "Z" }, { Property::ANGULAR_VELOCITY_X, Property::ANGULAR_VELOCITY_Y, Property::ANGULAR_VELOCITY_Z });
 
-	// _mesh->loadMaterials(_configuration.materials, _configuration.material_set);
+	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
 
 	for (size_t s = 1; s <= _configuration.physics_solver.load_steps; s++) {
 		if (_configuration.physics_solver.load_steps_settings.find(s) != _configuration.physics_solver.load_steps_settings.end() &&
@@ -151,111 +150,111 @@ std::vector<std::pair<ElementType, Property> > StructuralMechanics2D::properties
 
 void StructuralMechanics2D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K) const
 {
-	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
+	const MaterialConfiguration* material = _mesh->materials()[e->param(Element::MATERIAL)];
 	double Ex, Ey, mi;
 
-//	switch (material->getModel(PHYSICS::STRUCTURAL_MECHANICS_2D)) {
-//
-//	case MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC:
-//		Ex = Ey = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_X)->evaluate(e->node(node), step.currentTime, temp);
-//		mi = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XY)->evaluate(e->node(node), step.currentTime, temp);
-//		break;
-//
-//	case MATERIAL_MODEL::LINEAR_ELASTIC_ANISOTROPIC:
-//		ESINFO(ERROR) << "Implement ANISOTROPIC MATERIAL";
-//		break;
-//
-//	case MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC:
-//		Ex = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_X)->evaluate(e->node(node), step.currentTime, temp);
-//		Ey = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_Y)->evaluate(e->node(node), step.currentTime, temp);
-//		mi = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XY)->evaluate(e->node(node), step.currentTime, temp);
-//		break;
-//
-//	default:
-//		ESINFO(ERROR) << "Linear elasticity 2D not supports set material model";
-//	}
+	switch (material->linear_elastic_properties.model) {
 
-//	switch (material->getModel(PHYSICS::STRUCTURAL_MECHANICS_2D)) {
-//
-//	case MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC:
-//	{
-//
-//		switch (_configuration.element_behaviour) {
-//
-//		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
-//		{
-//			double k = Ex * (1 - mi) / ((1 + mi) * (1 - 2 * mi));
-//			K(node, 0) = k * 1;
-//			K(node, 1) = k * 1;
-//			K(node, 2) = k * ((1 - 2 * mi) / (2 * (1 - mi)));
-//			K(node, 3) = k * (mi / (1 - mi));
-//			K(node, 4) = 0;
-//			K(node, 5) = 0;
-//			K(node, 6) = k * (mi / (1 - mi));
-//			K(node, 7) = 0;
-//			K(node, 8) = 0;
-//			return;
-//		}
-//
-//		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
-//		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
-//		{
-//			double k = Ex / (1 - mi * mi);
-//			K(node, 0) = k * 1;
-//			K(node, 1) = k * 1;
-//			K(node, 2) = k * ((1 -  mi) / 2);
-//			K(node, 3) = k * mi;
-//			K(node, 4) = 0;
-//			K(node, 5) = 0;
-//			K(node, 6) = k * mi;
-//			K(node, 7) = 0;
-//			K(node, 8) = 0;
-//			return;
-//		}
-//
-//		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
-//		{
-//			K.resize(e->nodes(), 16);
-//			double k = Ex * (1 - mi) / ((1 + mi) * (1 - 2 * mi));
-//			K(node,  0) = k * 1;
-//			K(node,  1) = k * 1;
-//			K(node,  2) = k * ((1 - 2 * mi) / (2 * (1 - mi)));
-//			K(node,  3) = k * 1;
-//
-//			K(node,  4) = k * (mi / (1 - mi));
-//			K(node,  5) = 0;
-//			K(node,  6) = k * (mi / (1 - mi));
-//			K(node,  7) = 0;
-//			K(node,  8) = k * (mi / (1 - mi));
-//			K(node,  9) = 0;
-//
-//			K(node, 10) = k * (mi / (1 - mi));
-//			K(node, 11) = 0;
-//			K(node, 12) = 0;
-//			K(node, 13) = k * (mi / (1 - mi));
-//			K(node, 14) = k * (mi / (1 - mi));
-//			K(node, 15) = 0;
-//			return;
-//		}
-//		}
-//		break;
-//	}
-//
-//	case MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC:
-//	{
-//		ESINFO(ERROR) << "IMPLEMENT: MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC";
-//		return;
-//	}
-//
-//	case MATERIAL_MODEL::LINEAR_ELASTIC_ANISOTROPIC:
-//	{
-//		ESINFO(ERROR) << "IMPLEMENT: MATERIAL_MODEL::LINEAR_ELASTIC_ANISOTROPIC";
-//		return;
-//	}
-//
-//	default:
-//		ESINFO(ERROR) << "Structural mechanics 2D not supports set material model";
-//	}
+	case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
+		Ex = Ey = material->linear_elastic_properties.young_modulus.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		mi = material->linear_elastic_properties.poisson_ratio.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		break;
+
+	case LinearElasticPropertiesConfiguration::MODEL::ANISOTROPIC:
+		ESINFO(ERROR) << "Implement ANISOTROPIC MATERIAL";
+		break;
+
+	case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC:
+		Ex = material->linear_elastic_properties.young_modulus.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		Ey = material->linear_elastic_properties.young_modulus.get(1, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		mi = material->linear_elastic_properties.poisson_ratio.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		break;
+
+	default:
+		ESINFO(ERROR) << "Linear elasticity 2D not supports set material model";
+	}
+
+	switch (material->linear_elastic_properties.model) {
+
+	case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
+	{
+
+		switch (_configuration.element_behaviour) {
+
+		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
+		{
+			double k = Ex * (1 - mi) / ((1 + mi) * (1 - 2 * mi));
+			K(node, 0) = k * 1;
+			K(node, 1) = k * 1;
+			K(node, 2) = k * ((1 - 2 * mi) / (2 * (1 - mi)));
+			K(node, 3) = k * (mi / (1 - mi));
+			K(node, 4) = 0;
+			K(node, 5) = 0;
+			K(node, 6) = k * (mi / (1 - mi));
+			K(node, 7) = 0;
+			K(node, 8) = 0;
+			return;
+		}
+
+		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
+		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
+		{
+			double k = Ex / (1 - mi * mi);
+			K(node, 0) = k * 1;
+			K(node, 1) = k * 1;
+			K(node, 2) = k * ((1 -  mi) / 2);
+			K(node, 3) = k * mi;
+			K(node, 4) = 0;
+			K(node, 5) = 0;
+			K(node, 6) = k * mi;
+			K(node, 7) = 0;
+			K(node, 8) = 0;
+			return;
+		}
+
+		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
+		{
+			K.resize(e->nodes(), 16);
+			double k = Ex * (1 - mi) / ((1 + mi) * (1 - 2 * mi));
+			K(node,  0) = k * 1;
+			K(node,  1) = k * 1;
+			K(node,  2) = k * ((1 - 2 * mi) / (2 * (1 - mi)));
+			K(node,  3) = k * 1;
+
+			K(node,  4) = k * (mi / (1 - mi));
+			K(node,  5) = 0;
+			K(node,  6) = k * (mi / (1 - mi));
+			K(node,  7) = 0;
+			K(node,  8) = k * (mi / (1 - mi));
+			K(node,  9) = 0;
+
+			K(node, 10) = k * (mi / (1 - mi));
+			K(node, 11) = 0;
+			K(node, 12) = 0;
+			K(node, 13) = k * (mi / (1 - mi));
+			K(node, 14) = k * (mi / (1 - mi));
+			K(node, 15) = 0;
+			return;
+		}
+		}
+		break;
+	}
+
+	case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC:
+	{
+		ESINFO(ERROR) << "IMPLEMENT: MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC";
+		return;
+	}
+
+	case LinearElasticPropertiesConfiguration::MODEL::ANISOTROPIC:
+	{
+		ESINFO(ERROR) << "IMPLEMENT: MATERIAL_MODEL::LINEAR_ELASTIC_ANISOTROPIC";
+		return;
+	}
+
+	default:
+		ESINFO(ERROR) << "Structural mechanics 2D not supports set material model";
+	}
 }
 
 void StructuralMechanics2D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
@@ -264,22 +263,25 @@ void StructuralMechanics2D::processElement(const Step &step, Matrices matrices, 
 	DenseMatrix K(e->nodes(), 9), TE(e->nodes(), 2), thickness(e->nodes(), 1), inertia(e->nodes(), 2), dens(e->nodes(), 1);
 	DenseMatrix gpK(e->nodes(), 9), gpTE(1, 2), gpThickness(1, 1), gpInertia(1, 2), gpDens(1, 1);
 	double detJ, temp, initTemp, CP = 1;
+	Point center;
 
-	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
+	const MaterialConfiguration* material = _mesh->materials()[e->param(Element::MATERIAL)];
 
 	for (size_t i = 0; i < e->nodes(); i++) {
-		initTemp = e->getProperty(Property::INITIAL_TEMPERATURE, i, step.step, step.currentTime, 0, 0);
-		temp = e->getProperty(Property::TEMPERATURE, i, step.step, step.currentTime, 0, initTemp);
-		inertia(i, 0) = e->sumProperty(Property::ACCELERATION_X, i, step.step, step.currentTime, temp, 0);
-		inertia(i, 1) = e->sumProperty(Property::ACCELERATION_Y, i, step.step, step.currentTime, temp, 0);
-		thickness(i, 0) = e->getProperty(Property::THICKNESS, i, step.step, step.currentTime, temp, 1);
+		initTemp = e->getProperty(Property::INITIAL_TEMPERATURE, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, 0, 0);
+		temp = e->getProperty(Property::TEMPERATURE, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, 0, initTemp);
+		inertia(i, 0) = e->sumProperty(Property::ACCELERATION_X, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp, 0);
+		inertia(i, 1) = e->sumProperty(Property::ACCELERATION_Y, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp, 0);
+		thickness(i, 0) = e->getProperty(Property::THICKNESS, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp, 1);
 		coordinates(i, 0) = _mesh->coordinates()[e->node(i)].x;
 		coordinates(i, 1) = _mesh->coordinates()[e->node(i)].y;
-//		dens(i, 0) = material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(e->node(i), step.currentTime, temp);
-//		TE(i, 0) = (temp - initTemp) * material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_X)->evaluate(e->node(i), step.currentTime, temp);
-//		TE(i, 1) = (temp - initTemp) * material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_Y)->evaluate(e->node(i), step.currentTime, temp);
+		center += _mesh->coordinates()[e->node(i)];
+		dens(i, 0) = material->density.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
+		TE(i, 0) = (temp - initTemp) * material->linear_elastic_properties.thermal_expansion.get(0, 0).evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
+		TE(i, 1) = (temp - initTemp) * material->linear_elastic_properties.thermal_expansion.get(1, 1).evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
 		assembleMaterialMatrix(step, e, i, temp, K);
 	}
+	center /= e->nodes();
 
 	eslocal Ksize = pointDOFs().size() * e->nodes();
 
@@ -357,7 +359,7 @@ void StructuralMechanics2D::processElement(const Step &step, Matrices matrices, 
 				rhsT.multiply(B, Ce * precision, detJ * e->weighFactor()[gp] * gpThickness(0, 0), 0, true, false);
 				for (eslocal i = 0; i < Ksize; i++) {
 					fe(i, 0) += gpDens(0, 0) * detJ * e->weighFactor()[gp] * gpThickness(0, 0) * e->N()[gp](0, i % e->nodes()) * gpInertia(0, i / e->nodes());
-					fe(i, 0) += gpDens(0, 0) * detJ * e->weighFactor()[gp] * gpThickness(0, 0) * e->N()[gp](0, i % e->nodes()) * XY(0, i / e->nodes()) * pow(e->getProperty(Property::ANGULAR_VELOCITY_Z, 0, step.step, step.currentTime, 0, 0), 2);
+					fe(i, 0) += gpDens(0, 0) * detJ * e->weighFactor()[gp] * gpThickness(0, 0) * e->N()[gp](0, i % e->nodes()) * XY(0, i / e->nodes()) * pow(e->getProperty(Property::ANGULAR_VELOCITY_Z, step.step, center, step.currentTime, 0, 0), 2);
 					fe(i, 0) += rhsT(i, 0);
 				}
 			}
@@ -404,8 +406,8 @@ void StructuralMechanics2D::processElement(const Step &step, Matrices matrices, 
 					fe(i, 0) += rhsT(i, 0);
 				}
 				for (eslocal i = 0; i < Ksize / 2; i++) {
-					fe(i, 0) += gpDens(0, 0) * detJ * e->weighFactor()[gp] * 2 * M_PI * XY(0, 0) * e->N()[gp](0, i % e->nodes()) * XY(0, 0) * pow(e->getProperty(Property::ANGULAR_VELOCITY_Y, 0, step.step, step.currentTime, 0, 0), 2);
-					fe(Ksize / 2 + i, 0) += gpDens(0, 0) * detJ * e->weighFactor()[gp] * 2 * M_PI * XY(0, 0) * e->N()[gp](0, i % e->nodes()) * XY(0, 1) * pow(e->getProperty(Property::ANGULAR_VELOCITY_X, 0, step.step, step.currentTime, 0, 0), 2);
+					fe(i, 0) += gpDens(0, 0) * detJ * e->weighFactor()[gp] * 2 * M_PI * XY(0, 0) * e->N()[gp](0, i % e->nodes()) * XY(0, 0) * pow(e->getProperty(Property::ANGULAR_VELOCITY_Y, step.step, center, step.currentTime, 0, 0), 2);
+					fe(Ksize / 2 + i, 0) += gpDens(0, 0) * detJ * e->weighFactor()[gp] * 2 * M_PI * XY(0, 0) * e->N()[gp](0, i % e->nodes()) * XY(0, 1) * pow(e->getProperty(Property::ANGULAR_VELOCITY_X, step.step, center, step.currentTime, 0, 0), 2);
 				}
 			}
 			break;
@@ -452,8 +454,8 @@ void StructuralMechanics2D::processEdge(const Step &step, Matrices matrices, con
 	for (size_t n = 0; n < e->nodes(); n++) {
 		coordinates(n, 0) = _mesh->coordinates()[e->node(n)].x;
 		coordinates(n, 1) = _mesh->coordinates()[e->node(n)].y;
-		P(n, 0) = e->getProperty(Property::PRESSURE, n, step.step, step.currentTime, 0, 0);
-		matThickness(n, 0) = e->getProperty(Property::THICKNESS, n, step.step, step.currentTime, 0, 1);
+		P(n, 0) = e->getProperty(Property::PRESSURE, step.step, _mesh->coordinates()[e->node(n)], step.currentTime, 0, 0);
+		matThickness(n, 0) = e->getProperty(Property::THICKNESS, step.step, _mesh->coordinates()[e->node(n)], step.currentTime, 0, 1);
 	}
 
 	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
@@ -499,8 +501,8 @@ void StructuralMechanics2D::processNode(const Step &step, Matrices matrices, con
 		Re.resize(0, 0);
 		fe.resize(pointDOFs().size(), 0);
 
-		fe(0, 0) = e->sumProperty(Property::FORCE_X, 0, step.step, step.currentTime, 0, 0);
-		fe(1, 0) = e->sumProperty(Property::FORCE_Y, 0, step.step, step.currentTime, 0, 0);
+		fe(0, 0) = e->sumProperty(Property::FORCE_X, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
+		fe(1, 0) = e->sumProperty(Property::FORCE_Y, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
 		return;
 	}
 	Ke.resize(0, 0);

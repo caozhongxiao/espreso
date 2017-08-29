@@ -6,14 +6,18 @@
 
 namespace espreso {
 
-struct TensorConfiguration: public ECFObject {
+struct TensorConfiguration {
 
 	size_t size;
 	std::vector<ECFExpression> values;
 
 	TensorConfiguration(size_t size);
 
-	ECFExpression& value(size_t row, size_t column);
+	ECFExpression& get(size_t row, size_t column);
+	const ECFExpression& get(size_t row, size_t column) const;
+
+private:
+	size_t _get(size_t row, size_t column) const;
 };
 
 }

@@ -5,46 +5,58 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <ostream>
 
 namespace espreso {
 
+struct ECFParameter;
 struct ECFObject;
 struct Environment;
 struct OutputConfiguration;
 
-class Reader {
+struct ECFRedParameters {
+	std::vector<ECFParameter*> parameters;
+	std::map<const ECFParameter*, std::string> defaulted;
+};
+
+class ECFReader {
 
 public:
-	static void read(
+	static ECFRedParameters read(
 			ECFObject &configuration,
 			const std::string &file,
 			const std::map<size_t, std::string> &defaultArgs = {},
-			const std::map<std::string, std::string> &variables = {}) { _read(configuration, file, {}, defaultArgs, variables); }
+			const std::map<std::string, std::string> &variables = {})
+	{
+		return _read(configuration, file, {}, defaultArgs, variables);
+	}
 
-	static void read(
+	static ECFRedParameters read(
 			ECFObject &configuration,
 			int* argc,
 			char ***argv,
 			const std::map<size_t, std::string> &defaultArgs = {},
-			const std::map<std::string, std::string> &variables = {}) { _read(configuration, argc, argv, defaultArgs, variables); }
+			const std::map<std::string, std::string> &variables = {})
+	{
+		return _read(configuration, argc, argv, defaultArgs, variables);
+	}
 
 	static void set(const Environment &env, const OutputConfiguration &output);
 
-	static void print(const ECFObject &configuration);
-	static void store(const ECFObject &configuration, const std::vector<std::string> &subConfigurations);
-	static void copyInputData();
+	static void store(const ECFObject &configuration, std::ostream &os, bool onlyAllowed = true, bool printPatterns = false, const ECFRedParameters &parameters = {});
 
-private:
 	static std::string configurationFile;
 
-	static void _read(
+private:
+	static void copyInputData();
+	static ECFRedParameters _read(
 			ECFObject &configuration,
 			const std::string &file,
 			const std::vector<std::string> &args,
 			const std::map<size_t, std::string> &defaultArgs,
 			const std::map<std::string, std::string> &variables);
 
-	static void _read(
+	static ECFRedParameters _read(
 			ECFObject &configuration,
 			int* argc,
 			char ***argv,

@@ -143,7 +143,7 @@ static void FETI4ISetIntegerOptions(espreso::InputConfiguration &input, espreso:
 
 	solver.regularization = FETI_REGULARIZATION::ALGEBRAIC;
 	OutputConfiguration output;
-	Reader::set(*environment, output);
+	ECFReader::set(*environment, output);
 }
 
 static void FETI4ISetRealOptions(espreso::FETISolverConfiguration &solver, FETI4IReal* options)
@@ -159,7 +159,7 @@ void FETI4ICreateStiffnessMatrix(
 	MPI_Comm_rank(environment->MPICommunicator, &environment->MPIrank);
 	MPI_Comm_size(environment->MPICommunicator, &environment->MPIsize);
 	OutputConfiguration output;
-	Reader::set(*environment, output);
+	ECFReader::set(*environment, output);
 
 	DataHolder::timeStatistics.totalTime.startWithBarrier();
 	TimeEvent event("Add element");

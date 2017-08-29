@@ -21,7 +21,6 @@
 #include "../../mesh/structures/mesh.h"
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
-#include "../../mesh/structures/material.h"
 #include "../../mesh/structures/elementtypes.h"
 #include "../../mesh/settings/evaluator.h"
 
@@ -153,7 +152,7 @@ void ESPRESOBinaryFormat::elements(std::vector<size_t> &bodies, std::vector<Elem
 	bodies = { 0, elements.size() };
 }
 
-void ESPRESOBinaryFormat::materials(std::vector<Material*> &materials)
+void ESPRESOBinaryFormat::materials(std::vector<MaterialConfiguration*> &materials)
 {
 	std::stringstream fileName;
 	fileName << _configuration.path << "/" << _rank << "/materials.dat";
@@ -193,7 +192,7 @@ void ESPRESOBinaryFormat::regions(
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	for (eslocal i = 0; i < size; i++) {
-		evaluators.push_back(Evaluator::create(is, mesh.coordinates()));
+		evaluators.push_back(Evaluator::create(is));
 	}
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));

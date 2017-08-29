@@ -11,6 +11,7 @@
 
 #include "../../mesh/elements/element.h"
 #include "../../mesh/structures/mesh.h"
+#include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
 #include "../../mesh/settings/property.h"
 
@@ -58,7 +59,8 @@ void EqualityConstraints::goThroughDirichlet(
 					if (!withRedundantMultiplier && _gluedElements[i]->clusters()[0] != environment->MPIrank) {
 						continue;
 					}
-					double value = step.internalForceReduction * _gluedElements[i]->getProperty(_gluedDOFs[dof], 0, step.step, step.currentTime, temp, 0);
+					// TODO: works only for gluing of NODES!!
+					double value = step.internalForceReduction * _gluedElements[i]->getProperty(_gluedDOFs[dof], step.step, _mesh.coordinates()[_gluedElements[i]->node(0)], step.currentTime, temp, 0);
 					for(size_t d = 0; d < _gluedElements[i]->domains().size(); d++) {
 						if (_gluedElements[i]->DOFIndex(_gluedElements[i]->domains()[d], _gluedDOFsMeshOffsets[dof]) != -1) {
 							addFnc(t, _gluedElements[i]->domains()[d], _gluedElements[i]->DOFIndex(_gluedElements[i]->domains()[d], _gluedDOFsMeshOffsets[dof]), value);

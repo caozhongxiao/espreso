@@ -7,8 +7,6 @@ espreso::GridTowerGeneratorConfiguration::GridTowerGeneratorConfiguration()
 {
 	direction = DIRECTION::X;
 
-	grids[0] = GridGeneratorConfiguration();
-
 	REGISTER(direction, ECFMetaData()
 			.setdescription({ "Direction of generated tower." })
 			.setdatatype({ ECFDataType::OPTION })

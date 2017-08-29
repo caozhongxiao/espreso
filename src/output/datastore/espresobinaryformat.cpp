@@ -4,8 +4,8 @@
 #include <fstream>
 
 #include "../../config/ecf/environment.h"
+#include "../../config/ecf/material/material.h"
 #include "../../mesh/structures/mesh.h"
-#include "../../mesh/structures/material.h"
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
 #include "../../mesh/structures/elementtypes.h"

@@ -10,12 +10,10 @@
 
 namespace espreso {
 
-struct Configuration;
-
+struct MaterialConfiguration;
 struct G2L;
 class Coordinates;
 class Evaluator;
-class Material;
 class Region;
 class Element;
 enum class Property;
@@ -80,12 +78,12 @@ public:
 			if (materials.find(it->second) == materials.end()) {
 				materialNotFound(it->second);
 			} else {
-				loadMaterial(this->region(it->first), index, it->second, *materials.find(it->second)->second);
+				loadMaterial(this->region(it->first), index, it->second, materials.find(it->second)->second);
 			}
 		}
 		checkMaterials();
 	}
-	void loadMaterial(Region* region, size_t index, const std::string &name, const Configuration &configuration);
+	void loadMaterial(Region* region, size_t index, const std::string &name, const MaterialConfiguration &material);
 	void checkMaterials();
 
 	const Coordinates& coordinates() const { return *_coordinates; }
@@ -116,7 +114,7 @@ public:
 	const std::vector<int>& neighbours() const { return _neighbours; }
 	const std::vector<Region*>& regions() const { return _regions; }
 	const std::vector<Region*>& monitoredRegions() const { return _monitoredRegions; }
-	const std::vector<Material*>& materials() const { return _materials; }
+	const std::vector<MaterialConfiguration*>& materials() const { return _materials; }
 	const std::vector<Evaluator*>& evaluators() const { return _evaluators; }
 
 	std::vector<size_t> assignVariousDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets);
@@ -222,7 +220,7 @@ protected:
 	std::vector<int> _neighbours;
 
 	/** @brief list of materials in the mesh*/
-	std::vector<Material*> _materials;
+	std::vector<MaterialConfiguration*> _materials;
 
 	/** @brief list of mesh regions*/
 	std::vector<Region*> _regions;

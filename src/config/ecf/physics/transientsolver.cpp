@@ -35,6 +35,9 @@ espreso::TransientSolverConfiguration::TransientSolverConfiguration()
 			.addoption(ECFOption().setname("BACKWARD_DIFF").setdescription("Alpha = 1."))
 			.addoption(ECFOption().setname("USER").setdescription("User defined Alpha from interval <0, 1).")));
 
+	REGISTER(auto_time_stepping, ECFMetaData()
+			.setdescription({ "Auto time stepping." }));
+
 	alpha = 0.5;
 	time_step = 0.1;
 	REGISTER(alpha, ECFMetaData()
