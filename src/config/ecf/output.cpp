@@ -72,6 +72,11 @@ espreso::OutputConfiguration::OutputConfiguration()
 	REGISTER(cluster_shrink_ratio, ECFMetaData()
 			.setdescription({ "Cluster shrink ratio." })
 			.setdatatype({ ECFDataType::FLOAT }));
+
+	REGISTER(monitoring, ECFMetaData()
+			.setdescription({ "Monitored region.", "STAT={AVG, MIN, MAX} PROPERTY"})
+			.setdatatype({ ECFDataType::STRING, ECFDataType::STRING })
+			.setpattern({ "REGION", "AVG TEMPERATURE" }));
 }
 
 

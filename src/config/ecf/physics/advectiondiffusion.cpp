@@ -114,7 +114,7 @@ espreso::AdvectionDiffusionConfiguration::AdvectionDiffusionConfiguration()
 			.setdescription({ "Load step index.", "The name of a region.", "Heat source of a given region." })
 			.setdatatype({ ECFDataType::LOAD_STEP, ECFDataType::REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "1", "MY_REGION", "273.15" }));
-	REGISTER(translation_motion, ECFMetaData()
+	REGISTER(translation_motions, ECFMetaData()
 			.setdescription({ "Load step index.", "The name of a region.", "Translation motion of a given region." })
 			.setdatatype({ ECFDataType::LOAD_STEP, ECFDataType::REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "1", "MY_REGION", "X 0, Y 0, Z 0" }));
@@ -131,7 +131,7 @@ espreso::AdvectionDiffusionConfiguration::AdvectionDiffusionConfiguration()
 			.setdescription({ "Load step index.", "The name of a region.", "Convection on a given region." })
 			.setdatatype({ ECFDataType::LOAD_STEP, ECFDataType::REGION })
 			.setpattern({ "1", "MY_REGION" }));
-	REGISTER(radiation, ECFMetaData()
+	REGISTER(diffuse_radiation, ECFMetaData()
 			.setdescription({ "Load step index.", "The name of a region.", "Radiation on a given region." })
 			.setdatatype({ ECFDataType::LOAD_STEP, ECFDataType::REGION })
 			.setpattern({ "1", "MY_REGION" }));
@@ -141,7 +141,7 @@ espreso::AdvectionDiffusionConfiguration::AdvectionDiffusionConfiguration()
 			.setdatatype({ ECFDataType::REGION, ECFDataType::MATERIAL })
 			.setpattern({ "MY_REGION", "MY_MATERIAL" }));
 
-	post_process = false;
+	post_process = true;
 	REGISTER(post_process, ECFMetaData()
 			.setdescription({ "Turn on/off post-process." })
 			.setdatatype({ ECFDataType::BOOL}));
@@ -151,7 +151,7 @@ espreso::AdvectionDiffusionConfiguration::AdvectionDiffusionConfiguration()
 espreso::AdvectionDiffusion2DMaterialConfiguration::AdvectionDiffusion2DMaterialConfiguration()
 {
 	physical_model = PHYSICAL_MODEL::THERMAL;
-	coordinationSystem.is3D = false;
+	coordinate_system.is3D = false;
 	thermal_conductivity.is3D = false;
 }
 
@@ -162,7 +162,7 @@ espreso::AdvectionDiffusion3DMaterialConfiguration::AdvectionDiffusion3DMaterial
 
 espreso::AdvectionDiffusion2DConfiguration::AdvectionDiffusion2DConfiguration()
 {
-	getWithError(PNAME(translation_motion))->metadata.pattern[2] = "X 0, Y 0";
+	getWithError(PNAME(translation_motions))->metadata.pattern[2] = "X 0, Y 0";
 	REGISTER(thickness, ECFMetaData()
 			.setdescription({ "Load step index.", "The name of a region.", "Thickness of a given region." })
 			.setdatatype({ ECFDataType::LOAD_STEP, ECFDataType::REGION, ECFDataType::EXPRESSION })

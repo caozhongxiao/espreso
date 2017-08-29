@@ -80,7 +80,7 @@ struct ECFMetaData {
 
 	void checkdescription(const std::string &name, size_t size) const;
 	void checkdatatype(const std::string &name, size_t size) const;
-	void checkdefaultvalue(const std::string &name, size_t size) const;
+	void checkpattern(const std::string &name, size_t size) const;
 
 	ECFMetaData suffix(size_t start) const;
 
@@ -154,8 +154,8 @@ struct ECFObject: public ECFParameter {
 
 protected:
 	void dropParameter(ECFParameter *parameter);
-	void addSeparator();
-	void addSpace();
+	ECFParameter* addSeparator();
+	ECFParameter* addSpace();
 
 	/////////// PARAMETER ///////////
 	/////////////////////////////////
@@ -189,6 +189,9 @@ protected:
 	typename std::enable_if<!std::is_class<Ttype2>::value || std::is_same<Ttype2, std::string>::value>::type
 	registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata);
 
+	template<typename Ttype1, typename Ttype2>
+	void
+	registerParameter(const std::string &name, std::multimap<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata);
 
 	//////////// MAP MAP ////////////
 	/////////////////////////////////

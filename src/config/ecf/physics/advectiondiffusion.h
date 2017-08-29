@@ -68,9 +68,9 @@ struct AdvectionDiffusionConfiguration: public ECFObject {
 	AdvectionDiffusionPhysicsSolverConfiguration physics_solver;
 
 	std::map<std::string, std::string> material_set, initial_temperature;
-	std::map<size_t, std::map<std::string, std::string> > temperature, heat_source, translation_motion, heat_flux, heat_flow;
+	std::map<size_t, std::map<std::string, std::string> > temperature, heat_source, translation_motions, heat_flux, heat_flow;
 	std::map<size_t, std::map<std::string, ConvectionConfiguration> > convection;
-	std::map<size_t, std::map<std::string, RadiationConfiguration> > radiation;
+	std::map<size_t, std::map<std::string, RadiationConfiguration> > diffuse_radiation;
 
 	bool post_process;
 

@@ -151,7 +151,7 @@ protected:
 class TableInterpolationEvaluator: public Evaluator {
 
 public:
-	TableInterpolationEvaluator(const std::string &name, const std::vector<std::pair<double, double> > &table);
+	TableInterpolationEvaluator(const std::vector<std::pair<double, double> > &table);
 	TableInterpolationEvaluator(std::ifstream &is);
 
 	virtual Evaluator* copy() const { return new TableInterpolationEvaluator(*this); }
@@ -159,17 +159,17 @@ public:
 	virtual Type type() { return Type::TABLE_INTERPOLATION; }
 	virtual double inline evaluate(const Point &p, double time = 0, double temperature = 0, double pressure = 0, double velocity = 0) const
 	{
-		if (temperature < _table[0].first) {
-			return _table[0].second;
+		if (temperature < table[0].first) {
+			return table[0].second;
 		}
-		for (size_t i = 0; i < _table.size() - 1; i++) {
-			if (_table[i].first < temperature && temperature < _table[i + 1].first) {
-				double a = _table[i].first  , b = _table[i + 1].first;
-				double va = _table[i].second, vb = _table[i + 1].second;
+		for (size_t i = 0; i < table.size() - 1; i++) {
+			if (table[i].first < temperature && temperature < table[i + 1].first) {
+				double a = table[i].first  , b = table[i + 1].first;
+				double va = table[i].second, vb = table[i + 1].second;
 				return va + (vb - va) * (temperature - a) / (b - a);
 			}
 		}
-		return _table.back().second;
+		return table.back().second;
 	}
 
 	bool isTimeDependent() const { return false; }
@@ -177,8 +177,7 @@ public:
 
 	virtual void store(std::ofstream& os);
 
-protected:
-	std::vector<std::pair<double, double> > _table;
+	std::vector<std::pair<double, double> > table;
 };
 
 namespace input { class API; }

@@ -48,7 +48,7 @@ void StructuralMechanics2D::prepare()
 void StructuralMechanics2D::analyticRegularization(size_t domain, bool ortogonalCluster)
 {
 	if (_instance->K[domain].mtype != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
-		ESINFO(ERROR) << "Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set FETI_REGULARIZATION = NULL_PIVOTS";
+		ESINFO(ERROR) << "Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set FETI_REGULARIZATION = ALGEBRAIC";
 	}
 
 	ESTEST(MANDATORY) << "Too few FIX POINTS: " << _mesh->fixPoints(domain).size() << (_mesh->fixPoints(domain).size() > 3 ? TEST_PASSED : TEST_FAILED);
@@ -277,8 +277,17 @@ void StructuralMechanics2D::processElement(const Step &step, Matrices matrices, 
 		coordinates(i, 1) = _mesh->coordinates()[e->node(i)].y;
 		center += _mesh->coordinates()[e->node(i)];
 		dens(i, 0) = material->density.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
-		TE(i, 0) = (temp - initTemp) * material->linear_elastic_properties.thermal_expansion.get(0, 0).evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
-		TE(i, 1) = (temp - initTemp) * material->linear_elastic_properties.thermal_expansion.get(1, 1).evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
+		switch (material->linear_elastic_properties.model) {
+		case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
+			TE(i, 0) = TE(i, 1) = (temp - initTemp) * material->linear_elastic_properties.thermal_expansion.get(0, 0).evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
+			break;
+		case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC:
+			TE(i, 0) = (temp - initTemp) * material->linear_elastic_properties.thermal_expansion.get(0, 0).evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
+			TE(i, 1) = (temp - initTemp) * material->linear_elastic_properties.thermal_expansion.get(1, 1).evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
+			break;
+		default:
+			ESINFO(GLOBAL_ERROR) << "Invalid LINEAR ELASTIC model.";
+		}
 		assembleMaterialMatrix(step, e, i, temp, K);
 	}
 	center /= e->nodes();

@@ -24,7 +24,7 @@ ECFObject::registerParameter(const std::string &name, Ttype &parameter, const EC
 {
 	metadata.checkdescription(name, 1);
 	metadata.checkdatatype(name, 0);
-	metadata.checkdefaultvalue(name, 0);
+	metadata.checkpattern(name, 0);
 
 	parameters.push_back(&parameter);
 	parameters.back()->name = name;
@@ -38,7 +38,7 @@ ECFObject::registerParameter(const std::string &name, Ttype &parameter, const EC
 {
 	metadata.checkdescription(name, 1);
 	metadata.checkdatatype(name, 1);
-	metadata.checkdefaultvalue(name, 0);
+	metadata.checkpattern(name, 0);
 
 	registerParameter(name, new ECFEnumHolder<Ttype>(parameter), metadata);
 }
@@ -50,7 +50,7 @@ ECFObject::registerParameter(const std::string &name, Ttype &parameter, const EC
 {
 	metadata.checkdescription(name, 1);
 	metadata.checkdatatype(name, 1);
-	metadata.checkdefaultvalue(name, 0);
+	metadata.checkpattern(name, 0);
 
 	registerParameter(name, new ECFValueHolder<Ttype>(parameter), metadata);
 }
@@ -65,7 +65,7 @@ ECFObject::registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &
 {
 	metadata.checkdescription(name, 2);
 	metadata.checkdatatype(name, 1);
-	metadata.checkdefaultvalue(name, 1);
+	metadata.checkpattern(name, 1);
 
 	registerParameter(name, new ECFObjectMap<Ttype1, Ttype2>(parameter), metadata);
 }
@@ -77,9 +77,20 @@ ECFObject::registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &
 {
 	metadata.checkdescription(name, 2);
 	metadata.checkdatatype(name, 2);
-	metadata.checkdefaultvalue(name, 2);
+	metadata.checkpattern(name, 2);
 
 	registerParameter(name, new ECFValueMap<Ttype1, Ttype2>(parameter), metadata);
+}
+
+template<typename Ttype1, typename Ttype2>
+void
+ECFObject::registerParameter(const std::string &name, std::multimap<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata)
+{
+	metadata.checkdescription(name, 2);
+	metadata.checkdatatype(name, 2);
+	metadata.checkpattern(name, 2);
+
+	registerParameter(name, new ECFValueMultiMap<Ttype1, Ttype2>(parameter), metadata);
 }
 
 //////////// MAP MAP ////////////
@@ -92,7 +103,7 @@ ECFObject::registerParameter(const std::string &name, std::map<Ttype1, std::map<
 {
 	metadata.checkdescription(name, 3);
 	metadata.checkdatatype(name, 2);
-	metadata.checkdefaultvalue(name, 2);
+	metadata.checkpattern(name, 2);
 
 	registerParameter(name, new ECFObjectMapMap<Ttype1, Ttype2, Ttype3>(parameter), metadata);
 }
@@ -104,7 +115,7 @@ ECFObject::registerParameter(const std::string &name, std::map<Ttype1, std::map<
 {
 	metadata.checkdescription(name, 3);
 	metadata.checkdatatype(name, 3);
-	metadata.checkdefaultvalue(name, 3);
+	metadata.checkpattern(name, 3);
 
 	registerParameter(name, new ECFValueMapMap<Ttype1, Ttype2, Ttype3>(parameter), metadata);
 }

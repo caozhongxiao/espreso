@@ -34,7 +34,7 @@ struct OutputConfiguration: public ECFObject {
 	bool collected, separate_bodies, separate_materials;
 	double domain_shrink_ratio, cluster_shrink_ratio;
 
-	// SUBMULTIMAP(std::string, std::string, monitoring, "Results statistics in some regions. OPERATION = { AVERAGE, MIN, MAX }", "REGION", "<OPERATION> <VARIABLE>");
+	std::multimap<std::string, std::string> monitoring;
 
 	OutputConfiguration();
 };

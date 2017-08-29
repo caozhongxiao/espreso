@@ -58,7 +58,7 @@ void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 
 		options[FETI4I_SUBDOMAINS] = configuration.esdata.domains;
 
-		options[FETI4I_ITERATIONS] = configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.max_iterations;
+		options[FETI4I_MAX_ITERATIONS] = configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.max_iterations;
 		options[FETI4I_FETI_METHOD] = static_cast<int>(configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.method);
 		options[FETI4I_PRECONDITIONER] = static_cast<int>(configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.preconditioner);
 		options[FETI4I_CGSOLVER] = static_cast<int>(configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.solver);
@@ -75,7 +75,7 @@ void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 		FETISolverConfiguration solver;
 		options[FETI4I_SUBDOMAINS] = input.domains;
 
-		options[FETI4I_ITERATIONS] = solver.max_iterations;
+		options[FETI4I_MAX_ITERATIONS] = solver.max_iterations;
 		options[FETI4I_FETI_METHOD] = static_cast<int>(solver.method);
 		options[FETI4I_PRECONDITIONER] = static_cast<int>(solver.preconditioner);
 		options[FETI4I_CGSOLVER] = static_cast<int>(solver.solver);
@@ -96,12 +96,12 @@ void FETI4ISetDefaultRealOptions(FETI4IReal* options)
 	if (is.good()) {
 		espreso::ECFConfiguration configuration("espreso.ecf");
 
-		options[FETI4I_EPSILON] = configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.precision;
+		options[FETI4I_PRECISION] = configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.precision;
 		environment = &DataHolder::environment;
 	} else {
 		FETISolverConfiguration solver;
 
-		options[FETI4I_EPSILON] = solver.precision;
+		options[FETI4I_PRECISION] = solver.precision;
 	}
 }
 
@@ -110,8 +110,8 @@ static void FETI4ISetIntegerOptions(espreso::InputConfiguration &input, espreso:
 	if (!input.getParameter("domains")->setValue(std::to_string(options[FETI4I_SUBDOMAINS]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'SUBDOMAINS' to " << options[FETI4I_SUBDOMAINS];
 	}
-	if (!solver.getParameter("iterations")->setValue(std::to_string(options[FETI4I_ITERATIONS]))) {
-		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'ITERATIONS' to " << options[FETI4I_ITERATIONS];
+	if (!solver.getParameter("iterations")->setValue(std::to_string(options[FETI4I_MAX_ITERATIONS]))) {
+		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'MAX_ITERATIONS' to " << options[FETI4I_MAX_ITERATIONS];
 	}
 	if (!solver.getParameter("method")->setValue(std::to_string(options[FETI4I_FETI_METHOD]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'FETI_METHOD' to " << options[FETI4I_FETI_METHOD];
@@ -148,7 +148,7 @@ static void FETI4ISetIntegerOptions(espreso::InputConfiguration &input, espreso:
 
 static void FETI4ISetRealOptions(espreso::FETISolverConfiguration &solver, FETI4IReal* options)
 {
-	solver.precision = options[FETI4I_EPSILON];
+	solver.precision = options[FETI4I_PRECISION];
 }
 
 void FETI4ICreateStiffnessMatrix(

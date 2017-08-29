@@ -91,13 +91,13 @@ int main(int argc, char** argv)
 	iopts[FETI4I_FETI_METHOD] = static_cast<int>(configuration.linear_elasticity_2D.espreso.method);
 	iopts[FETI4I_CGSOLVER] = static_cast<int>(configuration.linear_elasticity_3D.espreso.solver);
 	iopts[FETI4I_SUBDOMAINS] = configuration.esdata.domains;
-	iopts[FETI4I_ITERATIONS] = configuration.linear_elasticity_3D.espreso.iterations;
+	iopts[FETI4I_MAX_ITERATIONS] = configuration.linear_elasticity_3D.espreso.iterations;
 	iopts[FETI4I_PRECONDITIONER] = static_cast<int>(configuration.linear_elasticity_3D.espreso.preconditioner);
 	iopts[FETI4I_VERBOSE_LEVEL] = configuration.env.verbose_level;
 	iopts[FETI4I_TESTING_LEVEL] = configuration.env.testing_level;
 	iopts[FETI4I_MEASURE_LEVEL] = configuration.env.measure_level;
 	iopts[FETI4I_PRINT_MATRICES] = configuration.env.print_matrices;
-	ropts[FETI4I_EPSILON] = configuration.linear_elasticity_3D.espreso.epsilon;
+	ropts[FETI4I_PRECISION] = configuration.linear_elasticity_3D.espreso.epsilon;
 
 
 	// Create instance of a problem

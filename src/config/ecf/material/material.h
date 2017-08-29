@@ -15,7 +15,7 @@ struct MaterialConfiguration: public ECFObject {
 		LINEAR_ELASTIC = 1 << 1
 	};
 
-	CoordinateSystemConfiguration coordinationSystem;
+	CoordinateSystemConfiguration coordinate_system;
 
 	PHYSICAL_MODEL physical_model;
 

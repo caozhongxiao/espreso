@@ -46,7 +46,7 @@ void ECFMetaData::checkdatatype(const std::string &name, size_t size) const
 	}
 }
 
-void ECFMetaData::checkdefaultvalue(const std::string &name, size_t size) const
+void ECFMetaData::checkpattern(const std::string &name, size_t size) const
 {
 	if (pattern.size() != size) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: " << name << " has incorrect number of pattern values.";
@@ -111,14 +111,16 @@ void ECFObject::dropParameter(ECFParameter *parameter)
 	ESINFO(GLOBAL_ERROR) << "ECF ERROR: Object cannot drop parameter '" << parameter->name << "'";
 }
 
-void ECFObject::addSeparator()
+ECFParameter* ECFObject::addSeparator()
 {
 	registerParameter("SEPARATOR", new ECFSeparator(), ECFMetaData().setdatatype({ ECFDataType::SEPARATOR }));
+	return parameters.back();
 }
 
-void ECFObject::addSpace()
+ECFParameter* ECFObject::addSpace()
 {
 	registerParameter("SPACE", new ECFSeparator(), ECFMetaData().setdatatype({ ECFDataType::SPACE }));
+	return parameters.back();
 }
 
 void ECFObject::moveLastBefore(const std::string &name)

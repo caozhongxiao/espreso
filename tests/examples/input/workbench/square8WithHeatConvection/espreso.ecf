@@ -26,13 +26,13 @@ ADVECTION_DIFFUSION_2D {
       1 {
         TYPE        STEADY_STATE;
         MODE              LINEAR;
-        SOLVER_LIBRARY   ESPRESO;
+        SOLVER FETI;
 
-        ESPRESO {
+        FETI {
           METHOD           TOTAL_FETI;
           SOLVER                  PCG;
           PRECONDITIONER    DIRICHLET;
-          REGULARIZATION  NULL_PIVOTS;
+          REGULARIZATION  ALGEBRAIC;
         }
       }
     }

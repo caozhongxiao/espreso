@@ -188,11 +188,11 @@ in the **ansys_run.conf** file. These are: ::
 To provide complete description of the setup, following solver configuration **ansys.config** has been used: ::
 
   SUBDOMAINS = 32          # each cluster is decomposed into 32 subdomains 
-  EPSILON = 1e-2           # stopping criteria in dual  
+  PRECISION = 1e-2           # stopping criteria in dual  
   FETI_METHOD = 1          # Hybrid Total FETI is used 
   B0_type = 1              # HTFETI corner matrix is composed of face kernels - transformation of basis / averaging is used  
   PRECONDITIONER = 3       # Dirichlet preconditioner 
-  ITERATIONS = 10000       # maximum number of iteration 
+  MAX_ITERATIONS = 10000       # maximum number of iteration 
 
 Now to execute the solver through PBS run: ::
 

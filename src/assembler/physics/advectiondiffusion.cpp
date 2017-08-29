@@ -202,7 +202,7 @@ void AdvectionDiffusion::prepare()
 		}
 	}
 
-	for (auto it = _configuration.radiation.begin(); it != _configuration.radiation.end(); ++it) {
+	for (auto it = _configuration.diffuse_radiation.begin(); it != _configuration.diffuse_radiation.end(); ++it) {
 		size_t loadStep = it->first - 1;
 		for (auto regions = it->second.begin(); regions != it->second.end(); ++regions) {
 			std::map<std::string, std::string> values;
@@ -229,7 +229,7 @@ void AdvectionDiffusion::prepare()
 void AdvectionDiffusion::analyticRegularization(size_t domain, bool ortogonalCluster)
 {
 	if (_instance->K[domain].mtype != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
-		ESINFO(ERROR) << "Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set FETI_REGULARIZATION = NULL_PIVOTS";
+		ESINFO(ERROR) << "Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set FETI_REGULARIZATION = ALGEBRAIC";
 	}
 
 	if (_mesh->hasProperty(domain, Property::EXTERNAL_TEMPERATURE, 0)) {

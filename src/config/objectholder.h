@@ -37,6 +37,34 @@ private:
 	mutable TValue _patternValue;
 };
 
+template <typename TParameter, typename TValue>
+struct ECFValueMultiMap: public ECFObject {
+	std::multimap<TParameter, TValue> &value;
+
+	ECFValueMultiMap(std::multimap<TParameter, TValue> &value): value(value) {}
+
+	virtual ECFParameter* getParameter(const std::string &name)
+	{
+		// TODO: this assume that getParameter always set a correct value
+		TParameter key;
+		if (ECFValueHolder<TParameter>(key).setValue(name)) {
+			auto it = value.insert(std::make_pair(key, TValue{}));
+			return registerParameter(name, new ECFValueHolder<TValue>(it->second), metadata.suffix(1));
+		} else {
+			return NULL;
+		}
+	}
+
+	virtual const ECFParameter* getPattern() const
+	{
+		ECFParameter *parameter = new ECFValueHolder<TValue>(_patternValue);
+		parameter->setValue(metadata.pattern[1]);
+		return registerPatternParameter(parameter);
+	}
+
+private:
+	mutable TValue _patternValue;
+};
 
 template <typename TParameter, typename TObject>
 struct ECFObjectMap: public ECFObject {

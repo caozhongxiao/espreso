@@ -17,6 +17,7 @@ class Mesh;
 class Coordinates;
 class Region;
 class Evaluator;
+class TableInterpolationEvaluator;
 class TableEvaluator;
 
 namespace input {
@@ -66,7 +67,7 @@ public:
 	bool workbench(const std::string type, const std::string status);
 	void nblock(Coordinates &coordinates);
 	void eblock(std::vector<Element*> &elements, std::vector<Region*> &regions, std::vector<Element*> &faces, std::vector<Element*> &edges);
-	void mp(std::vector<MaterialConfiguration*> &materials, Evaluator *evaluator = NULL);
+	void mp(std::vector<MaterialConfiguration*> &materials, TableInterpolationEvaluator *evaluator = NULL);
 	void mptemp(std::vector<MaterialConfiguration*> &materials);
 	void cmblock(std::vector<Element*> &elements, std::vector<Region*> &regions, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
 	void dirichlet(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
@@ -102,7 +103,7 @@ protected:
 	Mesh &_mesh;
 
 	std::string _selectedRegion;
-	std::vector<TableEvaluator*> _tables;
+	std::map<std::string, TableEvaluator*> _tables;
 };
 
 }

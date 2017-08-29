@@ -329,8 +329,8 @@ class Espreso:
                 compare(value1, value2)
 
     def run_program(self, program, cwd="", config={}, args=[]):
-        config["ENV::REMOVE_OLD_RESULTS"] = "1"
         program += [ str(x) for x in args ]
+        config["ENV::REMOVE_OLD_RESULTS"] = "1"
         for key, value in config.items():
             program += [ "--{0}={1}".format(key, value) ]
 
@@ -385,6 +385,15 @@ class Espreso:
         if error != "":
             raise EspresoError(error)
         return output
+
+    def ecfchecker(self, *args, **kwargs):
+        program = [ os.path.join(self.path, "ecfchecker") ]
+
+        output, error = self.run_program(program, *args, **kwargs)
+        if error != "":
+            raise EspresoError(error)
+        if output != "ECF is correct.\n":
+            raise EspresoError(output)
 
     def output(self, processes, *args, **kwargs):
         program = self.mpirun + [ "-n", str(processes), os.path.join(self.path, "espreso")]

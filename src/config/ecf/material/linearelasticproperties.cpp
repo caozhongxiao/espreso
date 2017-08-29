@@ -39,7 +39,7 @@ espreso::LinearElasticPropertiesConfiguration::LinearElasticPropertiesConfigurat
 			.settensor(poisson_ratio)
 			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && is3D; }));
 
-	addSeparator();
+	addSeparator()->metadata.allowonly([&] () { return model != MODEL::ISOTROPIC; });
 
 	registerParameter("EX", young_modulus.get(0, 0), ECFMetaData()
 			.setdescription({ "Young modulus X." })
@@ -60,7 +60,7 @@ espreso::LinearElasticPropertiesConfiguration::LinearElasticPropertiesConfigurat
 			.settensor(young_modulus)
 			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && is3D; }));
 
-	addSeparator();
+	addSeparator()->metadata.allowonly([&] () { return model != MODEL::ISOTROPIC; });
 
 	registerParameter("TEX", thermal_expansion.get(0, 0), ECFMetaData()
 			.setdescription({ "Thermal expansion X." })
@@ -81,7 +81,7 @@ espreso::LinearElasticPropertiesConfiguration::LinearElasticPropertiesConfigurat
 			.settensor(thermal_expansion)
 			.allowonly([&] () { return model != MODEL::ISOTROPIC && is3D; }));
 
-	addSeparator();
+	addSeparator()->metadata.allowonly([&] () { return model != MODEL::ISOTROPIC; });
 
 	registerParameter("GXY", shear_modulus.get(0, 0), ECFMetaData()
 			.setdescription({ "Shear modulus XY." })
@@ -101,8 +101,6 @@ espreso::LinearElasticPropertiesConfiguration::LinearElasticPropertiesConfigurat
 			.setmaterialvariables()
 			.settensor(shear_modulus)
 			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && is3D; }));
-
-	addSeparator();
 
 	// anisotropic is allowed only in 3D
 	registerParameter("D11", anisotropic.get(0, 0), ECFMetaData()

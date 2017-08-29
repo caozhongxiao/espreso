@@ -33,7 +33,10 @@ void espreso::ECFConfiguration::init()
 	REGISTER(physics, ECFMetaData()
 			.setdescription({ "A selected physics." })
 			.setdatatype({ ECFDataType::OPTION })
-			.addoption(ECFOption().setname("ADVECTION_DIFFUSION_2D").setdescription("Advection diffusion 2D.")));
+			.addoption(ECFOption().setname("ADVECTION_DIFFUSION_2D").setdescription("Advection diffusion 2D."))
+			.addoption(ECFOption().setname("ADVECTION_DIFFUSION_3D").setdescription("Advection diffusion 3D."))
+			.addoption(ECFOption().setname("STRUCTURAL_MECHANICS_2D").setdescription("Structural mechanics 2D."))
+			.addoption(ECFOption().setname("STRUCTURAL_MECHANICS_3D").setdescription("Structural mechanics 3D.")));
 
 	REGISTER(workbench, ECFMetaData()
 			.setdescription({ "Description of Ansys WorkBench format." })

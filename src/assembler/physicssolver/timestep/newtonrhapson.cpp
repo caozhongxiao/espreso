@@ -119,7 +119,7 @@ void NewtonRhapson::solve(Step &step, LoadStepSolver &loadStepSolver)
 		}
 
 		_assembler.solve(step, updatedMatrices);
-		ESINFO(CONVERGENCE) <<  "    LINEAR_SOLVER_OUTPUT: SOLVER = " << "PCG" <<   " N_ITERATIONS = " << "1" << "  " ;
+		ESINFO(CONVERGENCE) <<  "    LINEAR_SOLVER_OUTPUT: SOLVER = " << "PCG" <<   " N_MAX_ITERATIONS = " << "1" << "  " ;
 
 		if (_configuration.line_search) {
 			maxSolutionValue =_assembler.maxAbsValue(_assembler.instance.primalSolution, "max = |solution|");

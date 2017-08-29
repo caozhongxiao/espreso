@@ -23,6 +23,16 @@ espreso::SphereGeneratorConfiguration::SphereGeneratorConfiguration()
 
 	addSeparator();
 
+	REGISTER(inner_radius, ECFMetaData()
+				.setdescription({ "Inner radius of generater sphere." })
+				.setdatatype({ ECFDataType::FLOAT }));
+
+	REGISTER(outer_radius, ECFMetaData()
+				.setdescription({ "Outer radius of generater sphere." })
+				.setdatatype({ ECFDataType::FLOAT }));
+
+	addSeparator();
+
 	REGISTER(nodes, ECFMetaData()
 			.setdescription({ "The name of generated region.", "A specification of a region." })
 			.setdatatype({ ECFDataType::STRING, ECFDataType::INTERVAL })

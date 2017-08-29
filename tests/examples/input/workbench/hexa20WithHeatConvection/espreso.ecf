@@ -26,13 +26,13 @@ ADVECTION_DIFFUSION_3D {
       1 {
         TYPE        STEADY_STATE;
         MODE              LINEAR;
-        SOLVER_LIBRARY   ESPRESO;
+        SOLVER FETI;
 
-        ESPRESO {
+        FETI {
           METHOD          HYBRID_FETI;
           SOLVER                  PCG;
           PRECONDITIONER       LUMPED;
-          REGULARIZATION  NULL_PIVOTS;
+          REGULARIZATION  ALGEBRAIC;
         }
       }
     }

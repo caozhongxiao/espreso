@@ -17,6 +17,18 @@
 
 using namespace espreso;
 
+template<typename T>
+std::ostream& operator<< (std::ostream& os, const std::vector<T> &v)
+{
+	if (v.size()) {
+		os << v[0];
+	}
+	for(size_t i = 1; i < v.size(); ++i) {
+		os << "::" << v[i];
+	}
+	return os;
+}
+
 std::string ECFReader::configurationFile = "espreso.ecf";
 
 static struct option long_options[] = {
@@ -209,6 +221,7 @@ ECFRedParameters ECFReader::_read(
 	std::map<size_t, std::vector<std::string> > arguments;
 
 	std::string link;
+	ECFParameter *parameter;
 	confStack.push(&configuration);
 	tokenStack.push(new Tokenizer(file));
 	while (tokenStack.size()) {
@@ -285,7 +298,11 @@ ECFRedParameters ECFReader::_read(
 				}
 				break;
 			}
-			values.push_back(value);
+			if (StringCompare::caseInsensitiveEq(values.back(), "TABULAR")) {
+				values.push_back("[" + value + "]");
+			} else {
+				values.push_back(value);
+			}
 			break;
 		}
 		case Tokenizer::Token::OBJECT_OPEN:
@@ -296,11 +313,12 @@ ECFRedParameters ECFReader::_read(
 				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Multiple names for a region are not allowed.\n" << tokenStack.top()->lastLines(2);
 			}
 			prefix.push_back(values[0]);
-			if (confStack.top()->getParameter(values[0]) == NULL) {
-				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Unexpected parameter '" << values[0] << "'\n" << tokenStack.top()->lastLines(2);
+			parameter = confStack.top()->getParameter(values[0]);
+			if (parameter == NULL) {
+				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Unexpected parameter '" << prefix << "'\n" << tokenStack.top()->lastLines(2);
 			}
-			redParameters.parameters.push_back(confStack.top()->getParameter(values[0]));
-			confStack.push(dynamic_cast<ECFObject*>(confStack.top()->getParameter(values[0])));
+			redParameters.parameters.push_back(parameter);
+			confStack.push(dynamic_cast<ECFObject*>(parameter));
 			values.clear();
 			break;
 		case Tokenizer::Token::OBJECT_CLOSE:
@@ -329,13 +347,15 @@ ECFRedParameters ECFReader::_read(
 			for (size_t i = 2; i < values.size(); i++) {
 				ss << " " << values[i];
 			}
-			if (confStack.top()->getParameter(values[0]) == NULL) {
-				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Unexpected parameter '" << values[0] << "'\n" << tokenStack.top()->lastLines(2);
+			parameter = confStack.top()->getParameter(values[0]);
+			if (parameter == NULL) {
+				prefix.push_back(values[0]);
+				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Unexpected parameter '" << prefix << "'\n" << tokenStack.top()->lastLines(2);
 			}
-			if (!confStack.top()->getParameter(values[0])->setValue(ss.str())) {
+			if (!parameter->setValue(ss.str())) {
 				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Parameter '" << values[0] << "' has wrong value '" << ss.str() << "'";
 			}
-			redParameters.parameters.push_back(confStack.top()->getParameter(values[0]));
+			redParameters.parameters.push_back(parameter);
 			if (link.size()) {
 				redParameters.defaulted[redParameters.parameters.back()] = link;
 				link = "";
@@ -390,7 +410,7 @@ void ECFReader::set(const Environment &env, const OutputConfiguration &output)
 	copyInputData();
 }
 
-static void printECF(const ECFObject &configuration, std::ostream &os, size_t indent, bool onlyAllowed, bool printPatterns, bool pattern, const ECFRedParameters &parameters)
+static void printECF(const ECFObject &configuration, std::ostream &os, size_t indent, bool hasDataType, bool onlyAllowed, bool printPatterns, bool pattern, const ECFRedParameters &parameters)
 {
 	auto printindent = [&] (size_t indent) {
 		for (size_t j = 0; j < indent; j++) {
@@ -414,50 +434,71 @@ static void printECF(const ECFObject &configuration, std::ostream &os, size_t in
 		}
 	}
 
-	bool printSpace = true;
+	bool printSpace = false;
+	bool firstParameter = true;
 
 	auto printparameter = [&] (const ECFParameter *parameter) {
 		if (onlyAllowed && !parameter->metadata.isallowed()) {
 			return;
 		}
 		if (parameters.parameters.size() && std::find(parameters.parameters.begin(), parameters.parameters.end(), parameter) == parameters.parameters.end()) {
-			if (!printSpace || parameter->isValue() || parameter->isObject())
-			return;
+			// Empty spaces are never red. Hence, they cannot be skipped
+			if (parameter->isObject() || parameter->isValue()) {
+				return;
+			}
 		}
 
 		if (parameter->isValue()) {
+			if (printSpace) {
+				os << "\n";
+				printSpace = false;
+			}
 			std::string value = parameter->getValue();
 			if (parameters.defaulted.find(parameter) != parameters.defaulted.end()) {
 				value = parameters.defaulted.find(parameter)->second;
 			}
 			size_t space = maxSize ? maxSize - parameter->name.size() - value.size() : 3;
 			printindent(indent);
-			os << Parser::uppercase(parameter->name);
+			if (hasDataType) {
+				os << parameter->name;
+			} else {
+				os << Parser::uppercase(parameter->name);
+			}
 			printindent(space + 3);
-			if (parameter->metadata.datatype.front() == ECFDataType::STRING) {
+			if (
+					parameter->metadata.datatype.front() == ECFDataType::STRING ||
+					parameter->metadata.datatype.front() == ECFDataType::REGION ||
+					parameter->metadata.datatype.front() == ECFDataType::MATERIAL) {
 				os << value << ";\n";
 			} else {
 				os << Parser::uppercase(value) << ";\n";
 			}
 		} else if (parameter->isObject()) {
-			if (printSpace) {
+			if (!firstParameter) {
 				os << "\n";
 			}
+			printSpace = false;
 			printindent(indent);
-			os << Parser::uppercase(parameter->name) << " {\n";
-			printECF(*dynamic_cast<const ECFObject*>(parameter), os, indent + 2, onlyAllowed, printPatterns, pattern, parameters);
+			if (hasDataType) {
+				os << parameter->name << " {\n";
+			} else {
+				os << Parser::uppercase(parameter->name) << " {\n";
+			}
+			printECF(*dynamic_cast<const ECFObject*>(parameter), os, indent + 2, parameter->metadata.datatype.size(), onlyAllowed, printPatterns, pattern, parameters);
 			printindent(indent);
 			os << "}\n";
 		} else {
-			printSpace = false;
+			printSpace = true;
 			// Separators etc..
-			os << "\n";
 			return;
 		}
-		printSpace = true;
+		firstParameter = false;
 	};
 
 	for (size_t i = 0; i < configuration.parameters.size(); i++) {
+		if (i && configuration.parameters[i - 1]->isObject() && configuration.parameters[i]->isValue()) {
+			os << "\n";
+		}
 		printparameter(configuration.parameters[i]);
 	}
 	if (printPatterns && configuration.getPattern()) {
@@ -476,5 +517,6 @@ static void printECF(const ECFObject &configuration, std::ostream &os, size_t in
 
 void ECFReader::store(const ECFObject &configuration, std::ostream &os, bool onlyAllowed, bool printPatterns, const ECFRedParameters &parameters)
 {
-	printECF(configuration, os, 0, onlyAllowed, printPatterns, false, parameters);
+	os << "# ESPRESO Configuration File\n\n";
+	printECF(configuration, os, 0, false, onlyAllowed, printPatterns, false, parameters);
 }

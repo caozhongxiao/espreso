@@ -50,10 +50,10 @@ espreso::NonLinearSolverConfiguration::NonLinearSolverConfiguration(const std::s
 			.setdatatype({ ECFDataType::FLOAT }));
 
 	requested_first_residual = requested_second_residual = 1e-3;
-	registerParameter("requested_" + solution_name, requested_first_residual, ECFMetaData()
+	registerParameter("requested_" + solution_name + "_residual", requested_first_residual, ECFMetaData()
 			.setdescription({ "Requested solution precision." })
 			.setdatatype({ ECFDataType::FLOAT }));
-	registerParameter("requested_" + residual_name, requested_second_residual, ECFMetaData()
+	registerParameter("requested_" + residual_name + "_residual", requested_second_residual, ECFMetaData()
 			.setdescription({ "Requested residual precision." })
 			.setdatatype({ ECFDataType::FLOAT }));
 

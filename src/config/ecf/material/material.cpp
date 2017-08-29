@@ -5,7 +5,7 @@
 
 espreso::MaterialConfiguration::MaterialConfiguration()
 {
-	REGISTER(coordinationSystem, ECFMetaData()
+	REGISTER(coordinate_system, ECFMetaData()
 			.setdescription({ "Material coordinate system." }));
 
 	physical_model = static_cast<PHYSICAL_MODEL>(~0);

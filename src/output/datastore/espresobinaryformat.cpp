@@ -3,6 +3,7 @@
 
 #include <fstream>
 
+#include "../../config/reader/reader.h"
 #include "../../config/ecf/environment.h"
 #include "../../config/ecf/material/material.h"
 #include "../../mesh/structures/mesh.h"
@@ -50,6 +51,7 @@ void ESPRESOBinaryFormat::metafile()
 	std::ofstream os;
 	os.open(_path + "/description.txt", std::ofstream::trunc);
 	os << _mesh.parts() * environment->MPIsize << "\n";
+	os << _mesh.materials().size() << "\n";
 	os.close();
 }
 
@@ -113,20 +115,16 @@ void ESPRESOBinaryFormat::materials()
 {
 	#pragma omp parallel for
 	for (size_t p = 0; p < _mesh.parts(); p++) {
-		std::ofstream os;
 		std::stringstream ss;
-		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/materials.dat";
-		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
-		if (!os.is_open()) {
-			ESINFO(ERROR) << "Cannot open file '" << ss.str() << "'";
-		}
-
-		eslocal size = _mesh.materials().size();
-		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank;
 		for (size_t i = 0; i < _mesh.materials().size(); i++) {
-//			_mesh.materials()[i]->store(os);
+			std::ofstream os;
+			os.open(ss.str() + "/mat" + std::to_string(i) + ".mat", std::ofstream::binary | std::ofstream::trunc);
+			if (!os.is_open()) {
+				ESINFO(ERROR) << "Cannot open file '" << ss.str() << "'";
+			}
+			ECFReader::store(*_mesh.materials()[i], os);
 		}
-		os.close();
 	}
 }
 

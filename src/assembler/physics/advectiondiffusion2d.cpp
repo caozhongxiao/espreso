@@ -30,7 +30,7 @@ AdvectionDiffusion2D::AdvectionDiffusion2D(Mesh *mesh, Instance *instance, const
 void AdvectionDiffusion2D::prepare()
 {
 	_mesh->loadNodeProperty(_configuration.thickness     , { }         , { Property::THICKNESS });
-	_mesh->loadProperty(_configuration.translation_motion, { "X", "Y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
+	_mesh->loadProperty(_configuration.translation_motions, { "X", "Y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
 	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
 
 	_mesh->addPropertyGroup({ Property::FLUX_X, Property::FLUX_Y });
@@ -66,15 +66,15 @@ void AdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Elemen
 	};
 
 	double cos, sin;
-	switch (material->coordinationSystem.type) {
+	switch (material->coordinate_system.type) {
 	case CoordinateSystemConfiguration::TYPE::CARTESIAN:
-		cos = std::cos(d2r(material->coordinationSystem.rotation_z.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp)));
-		sin = std::sin(d2r(material->coordinationSystem.rotation_z.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp)));
+		cos = std::cos(d2r(material->coordinate_system.rotation_z.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp)));
+		sin = std::sin(d2r(material->coordinate_system.rotation_z.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp)));
 		break;
 	case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: {
 		Point origin(
-				material->coordinationSystem.center_x.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp),
-				material->coordinationSystem.center_y.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp),
+				material->coordinate_system.center_x.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp),
+				material->coordinate_system.center_y.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp),
 				0);
 		const Point &p = _mesh->coordinates()[e->node(node)];
 		double rotation = std::atan2((p.y - origin.y), (p.x - origin.x));

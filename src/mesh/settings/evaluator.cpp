@@ -188,12 +188,10 @@ void TableEvaluator::store(std::ofstream& os)
 	}
 }
 
-TableInterpolationEvaluator::TableInterpolationEvaluator(
-		const std::string &name,
-		const std::vector<std::pair<double, double> > &table)
-: _table(table)
+TableInterpolationEvaluator::TableInterpolationEvaluator(const std::vector<std::pair<double, double> > &table)
+: table(table)
 {
-	if (!_table.size()) {
+	if (!table.size()) {
 		ESINFO(GLOBAL_ERROR) << "Interpolation table with zero size.";
 	}
 }
@@ -202,8 +200,8 @@ TableInterpolationEvaluator::TableInterpolationEvaluator(std::ifstream &is)
 {
 	size_t size;
 	is.read(reinterpret_cast<char *>(&size), sizeof(size_t));
-	_table.resize(size);
-	is.read(reinterpret_cast<char *>(_table.data()), 2 * sizeof(size_t) * _table.size());
+	table.resize(size);
+	is.read(reinterpret_cast<char *>(table.data()), 2 * sizeof(size_t) * table.size());
 }
 
 void TableInterpolationEvaluator::store(std::ofstream& os)
@@ -211,9 +209,9 @@ void TableInterpolationEvaluator::store(std::ofstream& os)
 	Type type = Type::TABLE_INTERPOLATION;
 	os.write(reinterpret_cast<const char *>(&type), sizeof(Evaluator::Type));
 
-	size_t size = _table.size();
+	size_t size = table.size();
 	os.write(reinterpret_cast<const char *>(&size), sizeof(size_t));
-	os.write(reinterpret_cast<const char *>(_table.data()), 2 * sizeof(double) * _table.size());
+	os.write(reinterpret_cast<const char *>(table.data()), 2 * sizeof(double) * table.size());
 }
 
 ArrayEvaluator::ArrayEvaluator(std::vector<eslocal> &indices, std::vector<double> &values, eslocal offset)

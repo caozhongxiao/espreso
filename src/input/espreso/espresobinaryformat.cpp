@@ -25,8 +25,10 @@
 #include "../../mesh/settings/evaluator.h"
 
 #include "espresobinaryformat.h"
+#include "../../config/reader/reader.h"
 #include "../../config/ecf/environment.h"
 #include "../../config/ecf/input/input.h"
+#include "../../config/ecf/material/material.h"
 
 using namespace espreso::input;
 
@@ -47,8 +49,8 @@ void ESPRESOBinaryFormat::load(const InputConfiguration &configuration, Mesh &me
 	if (!is.good()) {
 		ESINFO(GLOBAL_ERROR) << "Old ESPRESO binary format. File '" << configuration.path << "/description.txt' is missing.";
 	}
-	int clusters;
-	is >> clusters;
+	int clusters, materials;
+	is >> clusters >> materials;
 	if (clusters != environment->MPIsize) {
 		ESINFO(GLOBAL_ERROR) << "Incorrect number of MPI processes (" << environment->MPIsize << "). Should be " << clusters;
 	}
@@ -58,9 +60,11 @@ void ESPRESOBinaryFormat::load(const InputConfiguration &configuration, Mesh &me
 	for (int cluster = 0; cluster < clusters; cluster++) {
 		checkFile(cluster, "coordinates.dat");
 		checkFile(cluster, "elements.dat");
-		checkFile(cluster, "materials.dat");
 		checkFile(cluster, "regions.dat");
 		checkFile(cluster, "boundaries.dat");
+		for (int material = 0; material < materials; material++) {
+			checkFile(cluster, "mat" + std::to_string(material) + ".mat");
+		}
 	}
 
 	esdata.fill();
@@ -155,14 +159,15 @@ void ESPRESOBinaryFormat::elements(std::vector<size_t> &bodies, std::vector<Elem
 void ESPRESOBinaryFormat::materials(std::vector<MaterialConfiguration*> &materials)
 {
 	std::stringstream fileName;
-	fileName << _configuration.path << "/" << _rank << "/materials.dat";
+	fileName << _configuration.path << "/" << "/description.txt";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
+	int mats;
+	is >> mats >> mats;
 
-	eslocal size;
-	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-	for (eslocal i = 0; i < size; i++) {
-//		materials.push_back(new Material(mesh.coordinates()));
-//		materials.back()->load(is);
+	for (eslocal i = 0; i < mats; i++) {
+		materials.push_back(new MaterialConfiguration());
+		ECFReader::read(*materials.back(), _configuration.path + "/" + std::to_string(_rank) + "/mat" + std::to_string(i) + ".mat");
+		mesh.evaluateMaterial(*materials.back());
 	}
 	is.close();
 }

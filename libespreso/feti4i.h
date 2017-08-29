@@ -220,7 +220,7 @@ void FETI4IDestroy(
 typedef enum {
 	FETI4I_SUBDOMAINS,
 
-	FETI4I_ITERATIONS,
+	FETI4I_MAX_ITERATIONS,
 	FETI4I_FETI_METHOD,
 	FETI4I_PRECONDITIONER,
 	FETI4I_CGSOLVER,
@@ -243,7 +243,7 @@ typedef enum {
  * See ESPRESO documentation for detailed description of each parameter.
  */
 typedef enum {
-	FETI4I_EPSILON,
+	FETI4I_PRECISION,
 
 	FETI4I_REAL_OPTIONS_SIZE
 } FETI4IRealOptions;

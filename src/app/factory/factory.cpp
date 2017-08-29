@@ -125,9 +125,9 @@ void Factory::setOutput(const OutputConfiguration &configuration)
 			}
 		}
 	}
-//	if (configuration.monitoring.size()) {
-//		_storeList->add(new Monitoring(configuration, _mesh));
-//	}
+	if (configuration.monitoring.size()) {
+		_storeList->add(new Monitoring(configuration, _mesh));
+	}
 
 	if (configuration.settings) {
 		Step step;
@@ -179,7 +179,7 @@ LinearSolver* FactoryLoader::getLinearSolver(const LoadStepsConfiguration &setti
 	case LoadStepsConfiguration::SOLVER::FETI:
 		return new FETISolver(instance, settings.feti);
 	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER_LIBRARY.";
+		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
 		return NULL;
 	}
 }

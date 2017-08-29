@@ -30,9 +30,7 @@ int main(int argc, char **argv)
 	std::signal(SIGSEGV, signalHandler);
 
 	MPI_Init(&argc, &argv);
-
 	ECFConfiguration ecf(&argc, &argv);
-	exit(0);
 
 	ESINFO(OVERVIEW) << "Run ESPRESO on " << environment->MPIsize << " process(es).";
 

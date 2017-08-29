@@ -1,73 +1,69 @@
-|*****************************************************************************|
-|-----------------------------------------------------------------------------|
-|                                      |                                      |
-|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
-|                                      |   http://espreso.it4i.cz             |
-|-----------------------------------------------------------------------------|
-|  Case Description: Simple example for test OpenFOAM input file              |
-|                                                                             |
-|-----------------------------------------------------------------------------|
-|*****************************************************************************|
+# ESPRESO Configuration File
 
-INPUT OPENFOAM;
-PHYSICS STRUCTURAL_MECHANICS_3D;
+
+INPUT                    OPENFOAM;
+PHYSICS   STRUCTURAL_MECHANICS_3D;
 
 OPENFOAM {
-  PATH    .;
-  DOMAINS 2;
+  PATH      .;
+  DOMAINS   2;
 }
 
 STRUCTURAL_MECHANICS_3D {
-
   PHYSICS_SOLVER {
-    LOAD_STEPS          1;
+    LOAD_STEPS   1;
 
     LOAD_STEPS_SETTINGS {
       1 {
-        TYPE        STEADY_STATE;
-        MODE              LINEAR;
-        SOLVER_LIBRARY   ESPRESO;
+        TYPE   STEADY_STATE;
+        MODE         LINEAR;
+        SOLVER         FETI;
 
-        ESPRESO {
-          METHOD        HYBRID_FETI;
-          SOLVER                PCG;
-          PRECONDITIONER     LUMPED;
+        FETI {
+          METHOD      HYBRID_FETI;
+          PRECONDITIONER   LUMPED;
+          SOLVER              PCG;
         }
       }
     }
   }
 
-  DISPLACEMENT {
-    1 {
-      fixedWalls X 0, Y 0, Z 0;
-    }
-  }
-
-  NORMAL_PRESURE {
-    1 {
-      movingWall 100;
-    }
-  }
-
   TEMPERATURE {
     1 {
-      frontAndBack 30;
+      frontAndBack   30;
     }
   }
-  
-  MATERIALS {
 
+  DISPLACEMENT {
+    1 {
+      fixedWalls   X 0 , Y 0 , Z 0;
+    }
+  }
+
+  NORMAL_PRESSURE {
+    1 {
+      movingWall   100;
+    }
+  }
+
+  MATERIALS {
     1 {
 
-      DENSITY 7850;
-      MIXY     0.3;
-      EX     2.1e9;
+      DENS   7850;
+      CP        1;
 
-      MODEL LINEAR_ELASTIC_ISOTROPIC;
+      LINEAR_ELASTIC_PROPERTIES {
+        MODEL   ISOTROPIC;
+
+        MIXY          0.3;
+        EX          2.1E9;
+        TEX             0;
+      }
     }
   }
 
   MATERIAL_SET {
-    ALL_ELEMENTS 1;
+    ALL_ELEMENTS   1;
   }
+
 }

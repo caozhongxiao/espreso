@@ -84,6 +84,7 @@ public:
 		checkMaterials();
 	}
 	void loadMaterial(Region* region, size_t index, const std::string &name, const MaterialConfiguration &material);
+	void evaluateMaterial(MaterialConfiguration &material);
 	void checkMaterials();
 
 	const Coordinates& coordinates() const { return *_coordinates; }

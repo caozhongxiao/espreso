@@ -1,44 +1,34 @@
-|*****************************************************************************|
-|-----------------------------------------------------------------------------|
-|                                      |                                      |
-|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
-|                                      |   http://espreso.it4i.cz             |
-|-----------------------------------------------------------------------------|
-|  Case Description: Simple example for test Workbench input file             |
-|                                                                             |
-|-----------------------------------------------------------------------------|
-|*****************************************************************************|
+# ESPRESO Configuration File
 
-INPUT ESDATA;
-PHYSICS STRUCTURAL_MECHANICS_3D;
-
-WORKBENCH {
-  PATH    workbench.dat;
-  DOMAINS             2;
+DEFAULT_ARGS {
+  0   ESDATA;
 }
 
+INPUT                      ESDATA;
+PHYSICS   STRUCTURAL_MECHANICS_3D;
+
 ESDATA {
-  PATH      [ARG0];
-  DOMAINS        2;
+  PATH   [ARG0];
+  DOMAINS     2;
 }
 
 STRUCTURAL_MECHANICS_3D {
-
   PHYSICS_SOLVER {
-    LOAD_STEPS          1;
+    LOAD_STEPS   1;
 
     LOAD_STEPS_SETTINGS {
       1 {
-        TYPE        STEADY_STATE;
-        MODE              LINEAR;
-        SOLVER_LIBRARY   ESPRESO;
+        TYPE   STEADY_STATE;
+        MODE         LINEAR;
+        SOLVER         FETI;
 
-        ESPRESO {
-          METHOD        HYBRID_FETI;
-          SOLVER                PCG;
-          PRECONDITIONER     LUMPED;
+        FETI {
+          METHOD      HYBRID_FETI;
+          PRECONDITIONER   LUMPED;
+          SOLVER              PCG;
         }
       }
     }
   }
+
 }

@@ -32,7 +32,7 @@ LaplaceSteklovPoincare3D::LaplaceSteklovPoincare3D(Mesh *mesh, Instance *instanc
 	ESINFO(GLOBAL_ERROR) << "BEM4I is not linked!. Copy BEM4I library to tools/bem4i and re-configure ESPRESO.";
 #endif
 
-	if (configuration.convection.size() || configuration.radiation.size()) {
+	if (configuration.convection.size() || configuration.diffuse_radiation.size()) {
 		ESINFO(GLOBAL_ERROR) << "BEM discretization not supports CONVECTION or RADIATION boundary condition.";
 	}
 }

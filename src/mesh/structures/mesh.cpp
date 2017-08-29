@@ -1103,16 +1103,29 @@ void Mesh::materialNotFound(const std::string &name)
 	ESINFO(GLOBAL_ERROR) << "Invalid .ecf file: material " << name << " is not set.";
 }
 
-void Mesh::loadMaterial(Region *region, size_t index, const std::string &name, const MaterialConfiguration &material)
+void Mesh::evaluateMaterial(MaterialConfiguration &material)
 {
-	#pragma omp parallel for
-	for (size_t e = 0; e < region->elements().size(); e++) {
-		region->elements()[e]->setParam(Element::MATERIAL, index);
-	}
-	_materials.push_back(new MaterialConfiguration());
-	*_materials.back() = material;
-	_materials.back()->forEachParameters([] (ECFParameter *parameter) {
+	material.forEachParameters([] (ECFParameter *parameter) {
 		if (parameter->metadata.datatype.front() == ECFDataType::EXPRESSION) {
+			if (StringCompare::contains(parameter->getValue(), { "TABULAR" })) {
+				std::string value = Parser::strip(parameter->getValue().substr(parameter->getValue().find_first_of("[")));
+				value = value.substr(1, value.size() - 3);
+				std::vector<std::string> lines = Parser::split(value, ";");
+				std::vector<std::pair<double, double> > table;
+
+				for (size_t i = 0; i < lines.size(); i++) {
+					if (lines[i].size() == 0) {
+						continue;
+					}
+					std::vector<std::string> line = Parser::split(lines[i], ",");
+					if (line.size() != 2) {
+						ESINFO(GLOBAL_ERROR) << "Invalid TABULAR data: " << parameter->getValue();
+					}
+					table.push_back(std::make_pair(std::stod(line[0]), std::stod(line[1])));
+				}
+				dynamic_cast<ECFValueHolder<ECFExpression>*>(parameter)->value.evaluator = new TableInterpolationEvaluator(table);
+				return;
+			}
 			if (Expression::isValid(parameter->getValue(), parameter->metadata.variables)) {
 				dynamic_cast<ECFValueHolder<ECFExpression>*>(parameter)->value.evaluator = new ExpressionEvaluator(
 						parameter->getValue(),
@@ -1122,6 +1135,17 @@ void Mesh::loadMaterial(Region *region, size_t index, const std::string &name, c
 			}
 		}
 	});
+}
+
+void Mesh::loadMaterial(Region *region, size_t index, const std::string &name, const MaterialConfiguration &material)
+{
+	#pragma omp parallel for
+	for (size_t e = 0; e < region->elements().size(); e++) {
+		region->elements()[e]->setParam(Element::MATERIAL, index);
+	}
+	_materials.push_back(new MaterialConfiguration());
+	*_materials.back() = material;
+	evaluateMaterial(*_materials.back());
 	ESINFO(OVERVIEW) << "Set material '" << name << "' for region '" << region->name << "'";
 }
 
