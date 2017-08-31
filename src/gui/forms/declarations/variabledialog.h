@@ -4,8 +4,8 @@
 #include <QDialog>
 #include <QStandardItemModel>
 
-#include "../data/variable.h"
-#include "../data/datatype.h"
+#include "../../data/datatype.h"
+#include "../../data/datatype.h"
 #include "datatypewidget.h"
 
 namespace Ui {

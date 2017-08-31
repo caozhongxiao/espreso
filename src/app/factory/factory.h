@@ -3,6 +3,7 @@
 #define APP_FACTORY_FACTORY_H_
 
 #include <vector>
+#include <map>
 #include "async/Dispatcher.h"
 
 namespace espreso {

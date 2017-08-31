@@ -3,7 +3,6 @@
 
 #include "../../data/common.h"
 #include <QMessageBox>
-#include "../../expression.h"
 #include "doubletabledelegate.h"
 #include <QPair>
 

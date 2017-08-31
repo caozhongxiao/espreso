@@ -3,7 +3,6 @@
 #include "doubletabledelegate.h"
 
 #include <QMessageBox>
-#include "../../expression.h"
 
 
 DataTypeWidget::DataTypeWidget(const QHash<QString, Variable>& varDict, QWidget *parent) :
@@ -164,23 +163,14 @@ int DataTypeWidget::check()
             return -1;
         }
 
-        if (!Expression::isValid(ui->editFunction->text().toStdString(), Common::fnVariables()))
-        {
-            QMessageBox::warning(this, tr("Error"), tr("Incorrect format of function formula!"));
-            return -1;
-        }
+        //TODO Expression validation
     }
     else if (ui->cmbType->currentIndex() == 3)
     {
         int rowCount = this->piecewiseModel->rowCount();
         for (int row = 0; row < rowCount; ++row)
         {
-            QString fn = this->piecewiseModel->item(row, 2)->text();
-            if (!Expression::isValid(fn.toStdString(), Common::fnVariables()))
-            {
-                QMessageBox::warning(this, tr("Error"), tr("Incorrect format of function formula in table!"));
-                return -1;
-            }
+            //TODO Expression validation
         }
     }
 

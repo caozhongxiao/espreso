@@ -1,6 +1,6 @@
 #include "expressionedit.h"
 
-#include "../../expression.h"
+#include "../../../basis/expression/expression.h"
 #include "../../data/common.h"
 
 ExpressionEdit::ExpressionEdit(QWidget* parent) : QLineEdit(parent)
@@ -18,7 +18,7 @@ ExpressionEdit::ExpressionEdit(const QString& contents, QWidget* parent) :
 
 bool ExpressionEdit::validate(const QString& expr)
 {
-    return Expression::isValid(expr.toStdString(), Common::fnVariables());
+    return espreso::Expression::isValid(expr.toStdString(), Common::fnVariables());
 }
 
 bool ExpressionEdit::isValid()

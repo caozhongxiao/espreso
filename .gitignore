@@ -15,6 +15,6 @@ libespreso/apitest
 libs*/*
 tools/*
 *results*
-src/gui/*.pro
-src/gui/*.pro.user
-src/gui/build-espreso-gui-Desktop_Qt_5_9_1_GCC_64bit-Debug
+src/*.pro
+src/*.pro.user
+build-espreso-gui-Desktop_Qt_5_9_1_GCC_64bit-Debug/
