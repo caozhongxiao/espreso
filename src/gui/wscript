@@ -1,7 +1,8 @@
 
 def configure(ctx):
     try:
-        ctx.load("compiler_cxx qt5")
+        ctx.env["COMPILER_CXX"] = ctx.env["CXX"]
+        ctx.load("qt5")
         ctx.env.QT = True
     except ctx.errors.ConfigurationError:
         ctx.env.QT = False
