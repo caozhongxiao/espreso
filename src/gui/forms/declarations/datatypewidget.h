@@ -31,6 +31,7 @@ public:
     virtual void visit(TableType& type) override;
     virtual void visit(PiecewiseFunctionType& type) override;
     virtual void visit(VariableLinkType& type) override;
+    virtual void visit(DummyType& type) override {}
 
 private slots:
     void on_cmbType_currentIndexChanged(int index);

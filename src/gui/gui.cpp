@@ -11,6 +11,7 @@
 #include "../config/ecf/ecf.h"
 #include "../config/valueholder.h"
 #include "../config/ecf/physics/physics.h"
+#include "../basis/expression/expression.h"
 
 using namespace espreso;
 
@@ -72,6 +73,8 @@ int main(int argc, char *argv[])
     MPI_Init(&argc, &argv);
 
     QApplication a(argc, argv);
+
+
 //    ModelWidget model;
 //    model.show();
 //    WorkflowWidget workflow;
@@ -111,11 +114,41 @@ int main(int argc, char *argv[])
 //    DataTypeEditWidget w(expr);
 //    w.show();
 
-    ECFConfiguration ecf(&argc, &argv);
-    printECF(ecf, 0);
+//    std::string exp{"switch {"
+//                    "case x < 0 : x;"
+//                    "case x >= 0 : x;"
+//                    "default : 0;"
+//                    "}"};
+//    std::string exp1{"if (x > 0 and x < 4) -1;"};
+//    std::vector<std::string> vars;
+//    vars.push_back("x");
+//    Expression e(exp1, vars);
+//    for (int i = 0; i < 5; ++i)
+//    {
+//        std::vector<double> neg{-i};
+//        std::vector<double> pos{i};
+//        double negV = e.evaluate(neg);
+//        double posV = e.evaluate(pos);
+//        std::cout << negV << " " << posV << std::endl;
+//    }
 
+//    ECFConfiguration ecf(&argc, &argv);
+//    printECF(ecf, 0);
 
-    a.exec();
+    //a.exec();
+    std::string ifst = "if (x > 0 and x < 4) -1;";
+    ECFValueHolder<std::string> expr(ifst);
+    DataTypeEditWidget w(expr);
+    std::string switchst = "switch {"
+                           "case x < 0 : x;"
+                           "case x >= 0 : x;"
+                           "default : 0;"
+                           "}";
+    ECFValueHolder<std::string> expr2(switchst);
+    DataTypeEditWidget w1(expr2);
+    std::string expSt = "x^2";
+    ECFValueHolder<std::string> expr3(expSt);
+    DataTypeEditWidget w2(expr3);
 
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Finalize();

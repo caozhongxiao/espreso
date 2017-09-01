@@ -17,12 +17,12 @@ QString DummyType::toString() const
 
 DataType* DummyType::copy() const
 {
-    new DummyType();
+    return new DummyType();
 }
 
 void DummyType::accept(DataTypeVisitor *visitor)
 {
-
+    visitor->visit(*this);
 }
 
 

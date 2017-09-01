@@ -4,6 +4,7 @@
 #include "../validators/validatordelegate.h"
 #include <QPair>
 #include <QDebug>
+#include <QRegularExpression>
 
 DataTypeEditWidget::DataTypeEditWidget(QWidget *parent) :
     QWidget(parent),
@@ -20,27 +21,26 @@ DataTypeEditWidget::DataTypeEditWidget(QWidget *parent) :
 DataTypeEditWidget::DataTypeEditWidget(const ECFValue& data, QWidget *parent) :
     DataTypeEditWidget(parent)
 {
-    this->uiExpression->hide();\
+    this->uiExpression->hide();
 
-    if (data.metadata.datatype.front() == ECFDataType::EXPRESSION)
+    QString content = QString::fromStdString(data.getValue());
+    QRegularExpression tableregex("^switch");
+    QRegularExpression piecewiseregex("^if");
+
+    if (tableregex.match(content).hasMatch())
+    {
+        this->initTable(data);
+        this->activeType = 1;
+    }
+    else if (piecewiseregex.match(content).hasMatch())
+    {
+        this->initPiecewise(data);
+        this->activeType = 2;
+    }
+    else
     {
         this->initExpression(data);
         this->activeType = 0;
-    }
-//    else if (const TableType* t = dynamic_cast<const TableType*>(data))
-//    {
-//        this->initTable(t);
-//        this->activeType = 1;
-//    }
-//    else if (const PiecewiseFunctionType* t =
-//             dynamic_cast<const PiecewiseFunctionType*>(data))
-//    {
-//        this->initPiecewise(t);
-//        this->activeType = 2;
-//    }
-    else
-    {
-        qWarning("%s", tr("DataTypeEdit: Unknown DataType subclass!").toStdString().c_str());
     }
 }
 

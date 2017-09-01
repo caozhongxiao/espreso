@@ -124,6 +124,7 @@ public:
     virtual void visit(TableType& type) = 0;
     virtual void visit(PiecewiseFunctionType& type) = 0;
     virtual void visit(VariableLinkType& type) = 0;
+    virtual void visit(DummyType& type) = 0;
 
     static QStringList types();
 };
