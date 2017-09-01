@@ -41,13 +41,13 @@ void MaterialPropertyTableWidget::createHeader()
 
 void MaterialPropertyTableWidget::addProperty(const MaterialProperty* property)
 {
-    this->addRow(property->name(),
-                 property->data(),
-                 property->unit(),
-                 property->symbol());
+//    this->addRow(property->name(),
+//                 property->data(),
+//                 property->unit(),
+//                 property->symbol());
 }
 
-void MaterialPropertyTableWidget::addRow(const QString& name, DataType* data,
+void MaterialPropertyTableWidget::addRow(const QString& name, const ECFValue& data,
                                          const QString& unit, const QString& symbol)
 {
     int row = ui->grid->rowCount();

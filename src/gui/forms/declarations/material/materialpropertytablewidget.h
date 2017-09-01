@@ -5,6 +5,9 @@
 #include <QVector>
 #include "../../../data/datatype.h"
 #include "../../../data/material/materialproperty.h"
+#include "../../../../config/configuration.h"
+
+using namespace espreso;
 
 namespace Ui {
 class MaterialPropertyTableWidget;
@@ -19,7 +22,7 @@ public:
     ~MaterialPropertyTableWidget();
 
     void addProperty(const MaterialProperty* property);
-    void addRow(const QString& name, DataType* data, const QString& unit, const QString& symbol);
+    void addRow(const QString& name, const ECFValue& data, const QString& unit, const QString& symbol);
 
 private:
     Ui::MaterialPropertyTableWidget *ui;

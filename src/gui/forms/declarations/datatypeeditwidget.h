@@ -7,8 +7,10 @@
 #include <QComboBox>
 #include "tabletypewidget.h"
 #include "piecewisetypewidget.h"
-#include "../../data/datatype.h"
+#include "../../../config/configuration.h"
 #include "../elements/expressionedit.h"
+
+using namespace espreso;
 
 namespace Ui {
 class DataTypeEditWidget;
@@ -20,7 +22,7 @@ class DataTypeEditWidget : public QWidget
 
 public:
     explicit DataTypeEditWidget(QWidget *parent = 0);
-    DataTypeEditWidget(const DataType* data, QWidget* parent = 0);
+    DataTypeEditWidget(const ECFValue& data, QWidget* parent = 0);
     ~DataTypeEditWidget();
 
     QComboBox* createComboBox(QWidget* parent = nullptr);
@@ -39,9 +41,9 @@ private:
     int activeType;
 
     void createUi();
-    void initExpression(const ExpressionType*);
-    void initTable(const TableType*);
-    void initPiecewise(const PiecewiseFunctionType*);
+    void initExpression(const ECFValue&);
+    void initTable(const ECFValue&);
+    void initPiecewise(const ECFValue&);
 };
 
 #endif // DATATYPEEDITWIDGET_H
