@@ -1,6 +1,5 @@
 #include "forms/modelwidget.h"
 #include "forms/workflowwidget.h"
-#include "forms/datawidget.h"
 #include "forms/declarationswidget.h"
 #include "forms/plot/plot.h"
 #include "forms/declarations/material/materialpropertieswidget.h"

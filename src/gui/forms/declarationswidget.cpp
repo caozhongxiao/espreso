@@ -1,7 +1,6 @@
 #include "declarationswidget.h"
 #include "ui_declarationswidget.h"
 
-#include "../models/treemodel.h"
 #include "declarations/variabledialog.h"
 #include "../data/variable.h"
 
