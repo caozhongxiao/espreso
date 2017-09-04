@@ -24,8 +24,8 @@ DataTypeEditWidget::DataTypeEditWidget(const ECFValue& data, QWidget *parent) :
     this->uiExpression->hide();
 
     QString content = QString::fromStdString(data.getValue());
-    QRegularExpression tableregex("^switch");
-    QRegularExpression piecewiseregex("^if");
+    QRegularExpression tableregex("switch");
+    QRegularExpression piecewiseregex("if");
 
     if (tableregex.match(content).hasMatch())
     {
@@ -77,20 +77,20 @@ void DataTypeEditWidget::initExpression(const ECFValue& et)
 
 void DataTypeEditWidget::initTable(const ECFValue& tt)
 {
-    //this->uiTable->addData(tt->data());
+    this->uiTable->addData(QString::fromStdString(tt.getValue()));
     this->uiTable->show();
 }
 
 void DataTypeEditWidget::initPiecewise(const ECFValue& pft)
 {
-    //this->uiPiecewise->addData(pft->data());
+    this->uiPiecewise->addData(QString::fromStdString(pft.getValue()));
     this->uiPiecewise->show();
 }
 
 QComboBox* DataTypeEditWidget::createComboBox(QWidget *parent)
 {
     QComboBox* box = new QComboBox(parent);
-    box->addItems(DataTypeVisitor::types());
+    box->addItems(DataTypeEditWidget::typeNames());
     box->setCurrentIndex(this->activeType);
 
     connect(box, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
@@ -141,4 +141,14 @@ void DataTypeEditWidget::changeType(int index)
     }
 
     this->activeType = index;
+}
+
+QStringList DataTypeEditWidget::typeNames()
+{
+    QStringList result;
+    result << QObject::tr("Expression")
+           << QObject::tr("Table")
+           << QObject::tr("Piecewise function");
+
+    return result;
 }

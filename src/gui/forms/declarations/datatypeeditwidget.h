@@ -21,6 +21,8 @@ class DataTypeEditWidget : public QWidget
     Q_OBJECT
 
 public:
+    static QStringList typeNames();
+
     explicit DataTypeEditWidget(QWidget *parent = 0);
     DataTypeEditWidget(const ECFValue& data, QWidget* parent = 0);
     ~DataTypeEditWidget();

@@ -41,12 +41,13 @@ void TableWidget::addCleanRow()
     QList<QStandardItem*> row;
     for (int i = 0; i < mModel->columnCount(); ++i)
     {
+        //row << new QStandardItem(columnDefaultValue(i));
         row << new QStandardItem();
     }
     this->mModel->appendRow(row);
 }
 
-void TableWidget::addRow(const QList<QString>& rowData)
+void TableWidget::addRow(const QVector<QString>& rowData)
 {
     QList<QStandardItem*> row;
     foreach (QString data, rowData) {
@@ -55,9 +56,9 @@ void TableWidget::addRow(const QList<QString>& rowData)
     this->mModel->insertRow(mModel->rowCount() - 1, row);
 }
 
-void TableWidget::addData(const QList<QList<QString> >& data)
+void TableWidget::addData(const QVector<QVector<QString> >& data)
 {
-    foreach (QList<QString> row, data) {
+    foreach (QVector<QString> row, data) {
         this->addRow(row);
     }
 }

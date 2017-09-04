@@ -5,6 +5,7 @@
 #include "forms/declarations/material/materialpropertieswidget.h"
 #include "forms/declarations/datatypeeditwidget.h"
 #include "data/datatype.h"
+#include <QDebug>
 #include <QApplication>
 
 #include "../config/ecf/environment.h"
@@ -135,20 +136,24 @@ int main(int argc, char *argv[])
 //    ECFConfiguration ecf(&argc, &argv);
 //    printECF(ecf, 0);
 
-    //a.exec();
     std::string ifst = "if (x > 0 and x < 4) -1;";
     ECFValueHolder<std::string> expr(ifst);
     DataTypeEditWidget w(expr);
+    w.show();
     std::string switchst = "switch {"
-                           "case x < 0 : x;"
-                           "case x >= 0 : x;"
+                           "case x == 1 : 2;"
+                           "case x == 2 : 3;"
                            "default : 0;"
                            "}";
     ECFValueHolder<std::string> expr2(switchst);
     DataTypeEditWidget w1(expr2);
+    w1.show();
     std::string expSt = "x^2";
     ECFValueHolder<std::string> expr3(expSt);
     DataTypeEditWidget w2(expr3);
+    w2.show();
+
+    a.exec();
 
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Finalize();

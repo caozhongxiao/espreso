@@ -18,16 +18,20 @@ class TableWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit TableWidget(int columns, const QStringList& headlines, QWidget *parent = 0);
     virtual ~TableWidget();
 
-    virtual void addRow(const QList<QString>& rowData);
-    virtual void addData(const QList<QList<QString> >& data);
+    virtual void addRow(const QVector<QString>& rowData);
+    virtual void addData(const QVector<QVector<QString> >& data);
+    virtual void addData(const QString& data) = 0;
     virtual bool isValid();
 
 protected:
     QTableView* mTable;
     QStandardItemModel* mModel;
+
+    explicit TableWidget(int columns, const QStringList& headlines, QWidget *parent = 0);
+
+    virtual QString columnDefaultValue(int) const { return ""; }
 
 private slots:
     void onItemDoubleClick(const QModelIndex& index);
