@@ -13,6 +13,7 @@ Instance::Instance(const Mesh &mesh)
   properties(_properties),
   neighbours(mesh.neighbours()),
   clustersMap(mesh.getContinuityPartition()),
+  origK(_origK), origKN1(_origKN1), origKN2(_origKN2), origRegMat(_origRegMat),
   K(_K), N1(_N1), N2(_N2), RegMat(_RegMat),
   M(_M),
   R(_R), f(_f),
@@ -66,6 +67,10 @@ Instance::Instance(const Mesh &mesh)
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernel is empty function. Fill it in assembler.";
 	};
 
+	getKernelsFromOrigKCallback = [] (REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: getKernelFromOrigK is empty function. Fill it in assembler.";
+	};
+
 	computeKernelsCallback = [] (REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernels is empty function. Fill it in assembler.";
 	};
@@ -83,6 +88,10 @@ Instance::Instance(Instance &other, Matrices &share)
   clustersMap(other.clustersMap),
 
   // shared K -> also share kernels and regularization matrix
+  origK(share & Matrices::K ? other.origK : _origK),
+  origKN1(share & Matrices::K ? other.origKN1 : _origKN1),
+  origKN2(share & Matrices::K ? other.origKN2 : _origKN2),
+  origRegMat(share & Matrices::K ? other.origRegMat : _origRegMat),
   K(share & Matrices::K ? other.K : _K),
   N1(share & Matrices::K ? other.N1 : _N1),
   N2(share & Matrices::K ? other.N2 : _N2),
@@ -163,6 +172,10 @@ Instance::Instance(Instance &other, Matrices &share)
 
 	computeKernelCallback = [] (REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernel is empty function. Fill it in assembler.";
+	};
+
+	getKernelsFromOrigKCallback = [] (REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: getKernelFromOrigK is empty function. Fill it in assembler.";
 	};
 
 	computeKernelsCallback = [] (REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {

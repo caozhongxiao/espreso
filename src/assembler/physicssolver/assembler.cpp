@@ -176,6 +176,16 @@ Solution* Assembler::addSolution(const std::string &name, ElementType eType)
 	return instance.solutions.back();
 }
 
+void Assembler::keepK(const Step &step)
+{
+	timeWrapper("copy K to origK", [&] () {
+		#pragma omp parallel for
+		for (size_t d = 0; d < instance.domains; d++) {
+			instance.origK[d] = instance.K[d];
+		}
+	});
+}
+
 void Assembler::sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::string &description)
 {
 	std::vector<size_t> prefix(x.size());
@@ -355,6 +365,26 @@ void Assembler::setRegularizationCallback()
 		physics.makeStiffnessMatrixRegular(regularization, scSize, domain, ortogonalCluster);
 
 		storeWrapper(mNames(Matrices::N) + "[domain " + std::to_string(domain) + "]", Matrices::N, domain);
+	};
+}
+
+void Assembler::setRegularizationFromOrigKCallback()
+{
+	instance.computeKernelsCallback = [&] (REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
+
+		instance.K.swap(instance.origK);
+		instance.N1.swap(instance.origKN1);
+		instance.N2.swap(instance.origKN2);
+		instance.RegMat.swap(instance.origRegMat);
+		timeWrapper("regularize orig" + mNames(Matrices::K), [&] () {
+			physics.makeStiffnessMatricesRegular(regularization, scSize, ortogonalCluster);
+		});
+
+		storeWrapper("orig" + mNames(Matrices::N), Matrices::N);
+		instance.K.swap(instance.origK);
+		instance.N1.swap(instance.origKN1);
+		instance.N2.swap(instance.origKN2);
+		instance.RegMat.swap(instance.origRegMat);
 	};
 }
 

@@ -34,6 +34,7 @@ public:
 	void processSolution(const Step &step);
 
 	void setRegularizationCallback();
+	void setRegularizationFromOrigKCallback();
 	void setEmptyRegularizationCallback();
 	void setB0Callback();
 
@@ -60,6 +61,7 @@ public:
 	void addToDirichletInB1(double a, const std::vector<std::vector<double> > &x);
 	double maxAbsValue(const std::vector<std::vector<double> > &v, const std::string &description);
 	double lineSearch(const Step &step, const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext);
+	void keepK(const Step &step);
 
 	Instance &instance;
 	Physics &physics;

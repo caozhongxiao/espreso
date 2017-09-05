@@ -37,6 +37,7 @@ Matrices TransientFirstOrderImplicit::reassembleStructuralMatrices(Step &step, M
 {
 	_assembler.updateMatrices(step, matrices);
 	if (matrices & (Matrices::K | Matrices::M)) {
+		_assembler.keepK(step);
 		_assembler.sum(
 				_assembler.instance.K,
 				1 / (_alpha * step.timeStep), _assembler.instance.M,
@@ -69,6 +70,7 @@ void TransientFirstOrderImplicit::initLoadStep(Step &step)
 	LoadStepSolver::initLoadStep(step);
 
 	_assembler.setEmptyRegularizationCallback();
+	_assembler.setRegularizationFromOrigKCallback();
 	_assembler.setB0Callback();
 
 	switch (_configuration.method) {

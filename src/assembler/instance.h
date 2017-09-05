@@ -38,6 +38,7 @@ struct Instance {
 	~Instance();
 
 	void computeKernel(REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster = false) { computeKernelCallback(regularization, scSize, domain, ortogonalCluster); }
+	void getKernelsFromOrigK(REGULARIZATION regularization, size_t scSize, bool ortogonalCluster = false) { getKernelsFromOrigKCallback(regularization, scSize, ortogonalCluster); }
 	void computeKernels(REGULARIZATION regularization, size_t scSize, bool ortogonalCluster = false) { computeKernelsCallback(regularization, scSize, ortogonalCluster); }
 	void assembleB0(B0_TYPE type, const std::vector<SparseMatrix> &kernels) { assembleB0Callback(type, kernels); }
 
@@ -50,7 +51,7 @@ struct Instance {
 
 	std::vector<eslocal> clustersMap;
 
-	std::vector<SparseMatrix> &K, &N1, &N2, &RegMat;
+	std::vector<SparseMatrix> &origK, &K, &origKN1, &origKN2, &origRegMat, &N1, &N2, &RegMat;
 	std::vector<SparseMatrix> &M;
 	std::vector<std::vector<double> > &R, &f;
 
@@ -84,11 +85,12 @@ struct Instance {
 	std::vector<Solution*> solutions;
 
 	std::function<void(REGULARIZATION regularization, size_t scSize, bool ortogonalCluster)> computeKernelsCallback;
+	std::function<void(REGULARIZATION regularization, size_t scSize, bool ortogonalCluster)> getKernelsFromOrigKCallback;
 	std::function<void(REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster)> computeKernelCallback;
 	std::function<void(B0_TYPE type, const std::vector<SparseMatrix> &kernels)> assembleB0Callback;
 private:
 
-	std::vector<SparseMatrix> _K, _M, _N1, _N2, _RegMat;
+	std::vector<SparseMatrix> _origK, _K, _M, _origKN1, _origKN2, _origRegMat, _N1, _N2, _RegMat;
 	std::vector<std::vector<double> > _R, _f;
 
 	std::vector<SparseMatrix> _B0, _B1, _inequality;
