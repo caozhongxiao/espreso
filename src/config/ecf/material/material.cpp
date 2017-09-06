@@ -16,18 +16,20 @@ espreso::MaterialConfiguration::MaterialConfiguration()
 	registerParameter("dens", density, ECFMetaData()
 			.setdescription({ "Density" })
 			.setdatatype({ ECFDataType::EXPRESSION })
+            .setunit("kg/m^3")
 			.setmaterialvariables());
 
 	registerParameter("CP", heat_capacity, ECFMetaData()
-			.setdescription({ "Heat capacity." })
+            .setdescription({ "Heat capacity" })
 			.setdatatype({ ECFDataType::EXPRESSION })
+            .setunit("J / (kg * K)")
 			.setmaterialvariables());
 
 	REGISTER(thermal_properties, ECFMetaData()
-			.setdescription({ "Thermal properties." })
+            .setdescription({ "Thermal properties" })
 			.allowonly([&] () {  return physical_model & PHYSICAL_MODEL::THERMAL; }));
 	REGISTER(linear_elastic_properties, ECFMetaData()
-			.setdescription({ "Linear elastic properties." })
+            .setdescription({ "Linear elastic properties" })
 			.allowonly([&] () {  return physical_model & PHYSICAL_MODEL::LINEAR_ELASTIC; }));
 }
 

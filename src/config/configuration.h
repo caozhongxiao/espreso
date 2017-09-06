@@ -37,6 +37,8 @@ struct ECFOption {
 	ECFOption& setname(const std::string &name) { this->name = name; return *this; }
 	ECFOption& setdescription(const std::string &description) { this->description = description; return *this; }
 	ECFOption& allowonly(std::function<bool(void)> isallowed) { this->isallowed = isallowed; return *this; }
+
+    ECFOption() { isallowed = [] () { return true; }; }
 };
 
 struct ECFExpression {
@@ -51,6 +53,7 @@ struct ECFMetaData {
 	std::vector<ECFOption> options;
 	std::vector<std::string> variables;
 	TensorConfiguration *tensor;
+    std::string unit;
 
 	std::function<bool(void)> isallowed;
 
@@ -59,6 +62,7 @@ struct ECFMetaData {
 	ECFMetaData& setpattern(const std::vector<std::string> &pattern) { this->pattern = pattern; return *this; }
 	ECFMetaData& setvariables(const std::vector<std::string> &variables) { this->variables = variables; return *this; }
 	ECFMetaData& settensor(TensorConfiguration &tensor) { this->tensor = &tensor; return *this; }
+    ECFMetaData& setunit(const std::string &unit) { this->unit = unit; return *this; }
 	ECFMetaData& allowonly(std::function<bool(void)> isallowed) { this->isallowed = isallowed; return *this; }
 
 	ECFMetaData& addoption(const ECFOption &option) { options.push_back(option); return *this; }

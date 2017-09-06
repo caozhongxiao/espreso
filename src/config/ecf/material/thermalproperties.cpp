@@ -12,7 +12,7 @@ espreso::ThermalPropertiesConfiguration::ThermalPropertiesConfiguration()
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("ISOTROPIC").setdescription("Isotropic model."))
 			.addoption(ECFOption().setname("DIAGONAL").setdescription("Orthotropic model."))
-			.addoption(ECFOption().setname("SYMMETRIC").setdescription("Anisotropic model."))
+            .addoption(ECFOption().setname("SYMMETRIC").setdescription("Symmetric model."))
 			.addoption(ECFOption().setname("ANISOTROPIC").setdescription("Anisotropic model.").allowonly([&] () { return is3D; })));
 
 	addSeparator();
