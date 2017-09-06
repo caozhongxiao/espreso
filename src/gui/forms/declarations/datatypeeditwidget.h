@@ -24,7 +24,7 @@ public:
     static QStringList typeNames();
 
     explicit DataTypeEditWidget(QWidget *parent = 0);
-    DataTypeEditWidget(const ECFValue& data, QWidget* parent = 0);
+    DataTypeEditWidget(const ECFParameter& data, QWidget* parent = 0);
     ~DataTypeEditWidget();
 
     QComboBox* createComboBox(QWidget* parent = nullptr);
@@ -43,9 +43,9 @@ private:
     int activeType;
 
     void createUi();
-    void initExpression(const ECFValue&);
-    void initTable(const ECFValue&);
-    void initPiecewise(const ECFValue&);
+    void initExpression(const ECFParameter&);
+    void initTable(const ECFParameter&);
+    void initPiecewise(const ECFParameter&);
 };
 
 #endif // DATATYPEEDITWIDGET_H

@@ -18,7 +18,7 @@ DataTypeEditWidget::DataTypeEditWidget(QWidget *parent) :
     this->uiExpression->show();
 }
 
-DataTypeEditWidget::DataTypeEditWidget(const ECFValue& data, QWidget *parent) :
+DataTypeEditWidget::DataTypeEditWidget(const ECFParameter& data, QWidget *parent) :
     DataTypeEditWidget(parent)
 {
     this->uiExpression->hide();
@@ -69,19 +69,19 @@ void DataTypeEditWidget::createUi()
     ui->layout->addWidget(uiPiecewise);
 }
 
-void DataTypeEditWidget::initExpression(const ECFValue& et)
+void DataTypeEditWidget::initExpression(const ECFParameter& et)
 {
     this->uiExpression->setText(QString::fromStdString(et.getValue()));
     this->uiExpression->show();
 }
 
-void DataTypeEditWidget::initTable(const ECFValue& tt)
+void DataTypeEditWidget::initTable(const ECFParameter& tt)
 {
     this->uiTable->addData(QString::fromStdString(tt.getValue()));
     this->uiTable->show();
 }
 
-void DataTypeEditWidget::initPiecewise(const ECFValue& pft)
+void DataTypeEditWidget::initPiecewise(const ECFParameter& pft)
 {
     this->uiPiecewise->addData(QString::fromStdString(pft.getValue()));
     this->uiPiecewise->show();
@@ -136,7 +136,7 @@ void DataTypeEditWidget::changeType(int index)
             break;
         default:
             qCritical() << "DataTypeEditWidget: Unknown DataType ID"
-                      << index;
+                        << index;
             return;
     }
 

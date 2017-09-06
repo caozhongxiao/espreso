@@ -2,9 +2,8 @@
 #define TENSORPROPERTYWIDGET_H
 
 #include <QWidget>
-#include "../../../data/material/tensorproperty.h"
-#include "../../../data/material/tensorpropertymodel.h"
 #include "materialpropertytablewidget.h"
+#include "../../../../config/configuration.h"
 
 namespace Ui {
 class TensorPropertyWidget;
@@ -15,7 +14,7 @@ class TensorPropertyWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit TensorPropertyWidget(const TensorProperty& property, QWidget *parent = 0);
+    explicit TensorPropertyWidget(ECFObject* property, QWidget *parent = 0);
     ~TensorPropertyWidget();
 
 private slots:
@@ -24,8 +23,10 @@ private slots:
 private:
     Ui::TensorPropertyWidget *ui;
 
-    TensorProperty mProperty;
-    QVector<MaterialPropertyTableWidget*> mWidgets;
+    MaterialPropertyTableWidget* mWidget;
+    QVector<std::string> mOptions;
+    ECFObject* mProperty;
+    ECFParameter* mModel;
 };
 
 #endif // TENSORPROPERTYWIDGET_H

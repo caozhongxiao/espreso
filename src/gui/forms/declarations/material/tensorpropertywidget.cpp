@@ -1,50 +1,76 @@
 #include "tensorpropertywidget.h"
 #include "ui_tensorpropertywidget.h"
 
-TensorPropertyWidget::TensorPropertyWidget(const TensorProperty& property, QWidget *parent) :
+TensorPropertyWidget::TensorPropertyWidget(ECFObject* property, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::TensorPropertyWidget)
 {
     ui->setupUi(this);
 
     this->mProperty = property;
-    ui->lblName->setText(mProperty.name());
-    int index = 0;
-    for (auto model = mProperty.modelBegin(); model != mProperty.modelEnd(); ++model)
-    {
-        ui->cmbModel->addItem(model->name());
 
-        MaterialPropertyTableWidget* w = new MaterialPropertyTableWidget(this);
-
-        foreach (TensorPropertyModelItem item, model->items()) {
-            w->addProperty(&item);
-        }
-
-        if (mProperty.activeModel() != index)
-            w->hide();
-
-        ui->layout->addWidget(w);
-
-        this->mWidgets.append(w);
-
-        index++;
-    }
-
-    ui->cmbModel->setCurrentIndex(mProperty.activeModel());
     connect(ui->cmbModel, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &TensorPropertyWidget::onIndexChanged);
+
+    ui->lblName->setText(QString::fromStdString(property->metadata.description.at(0)));
+
+    this->mWidget = new MaterialPropertyTableWidget(this);
+    ui->layout->addWidget(mWidget);
+
+    for (auto parameter = property->parameters.cbegin();
+         parameter != property->parameters.cend()
+         && (*parameter)->metadata.isallowed();
+         ++parameter)
+    {
+        if ((*parameter)->metadata.datatype.at(0) == ECFDataType::OPTION)
+        {
+            this->mModel = (*parameter);
+            for (auto option = (*parameter)->metadata.options.cbegin();
+                 option != (*parameter)->metadata.options.cend()
+                 && option->isallowed();
+                 ++option)
+            {
+                ui->cmbModel->addItem(QString::fromStdString(option->name));
+                this->mOptions.append(option->name);
+
+                if ((*parameter)->getValue().compare(option->name) == 0)
+                    this->onIndexChanged(0);
+            }
+
+            break;
+        }
+    }
+
 }
 
 TensorPropertyWidget::~TensorPropertyWidget()
 {
-    this->mWidgets.clear();
     delete ui;
 }
 
 void TensorPropertyWidget::onIndexChanged(int index)
 {
-    foreach (MaterialPropertyTableWidget* w, mWidgets) {
-        w->hide();
+    if (index >= mOptions.size())
+        return;
+
+    MaterialPropertyTableWidget* w = this->mWidget;
+    ui->layout->removeWidget(w);
+    w->setParent(nullptr);
+    delete w;
+
+    this->mWidget = new MaterialPropertyTableWidget(this);
+    ui->layout->addWidget(mWidget);
+
+    this->mModel->setValue(mOptions.at(index));
+
+    for (auto parameter = mProperty->parameters.cbegin();
+         parameter != mProperty->parameters.cend()
+         && (*parameter)->metadata.isallowed();
+         ++parameter)
+    {
+        if ((*parameter)->metadata.datatype.at(0) == ECFDataType::EXPRESSION)
+        {
+            this->mWidget->addProperty( *(*parameter) );
+        }
     }
-    this->mWidgets.at(index)->show();
 }

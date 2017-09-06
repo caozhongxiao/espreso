@@ -5,6 +5,8 @@
 #include "../validators/validatordelegate.h"
 #include "../elements/comboboxdelegate.h"
 
+#include <QDebug>
+
 QStringList PiecewiseTypeWidget::headlines()
 {
     QStringList result;
@@ -65,6 +67,9 @@ void PiecewiseTypeWidget::addData(const QString& data)
         QString leftBound = bounds.at(0);
         QString rightBound = bounds.at(1);
 
+        qDebug() << leftBound;
+        qDebug() << rightBound;
+
         QString left;
         if (leftBound.contains(">="))
         {
@@ -76,20 +81,19 @@ void PiecewiseTypeWidget::addData(const QString& data)
             left = leftBound.split(">", QString::SkipEmptyParts).at(1);
             row.append("(");
         }
-        left = left.trimmed();
-        row.append(left);
+        row.append(left.trimmed());
 
         QString right;
-        right = right.trimmed();
-        row.append(right);
         if (rightBound.contains("<="))
         {
             right = rightBound.split("<=", QString::SkipEmptyParts).at(1);
+            row.append(right.trimmed());
             row.append(">");
         }
         else if (rightBound.contains('<'))
         {
             right = rightBound.split('<', QString::SkipEmptyParts).at(1);
+            row.append(right.trimmed());
             row.append(")");
         }
 

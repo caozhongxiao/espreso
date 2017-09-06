@@ -3,8 +3,6 @@
 
 #include <QWidget>
 #include <QVector>
-#include "../../../data/datatype.h"
-#include "../../../data/material/materialproperty.h"
 #include "../../../../config/configuration.h"
 
 using namespace espreso;
@@ -21,8 +19,8 @@ public:
     explicit MaterialPropertyTableWidget(QWidget *parent = 0, bool withHeader = true);
     ~MaterialPropertyTableWidget();
 
-    void addProperty(const MaterialProperty* property);
-    void addRow(const QString& name, const ECFValue& data, const QString& unit, const QString& symbol);
+    void addProperty(const ECFParameter& property);
+    void addRow(const QString& name, const ECFParameter& data, const QString& unit, const QString& symbol);
 
 private:
     Ui::MaterialPropertyTableWidget *ui;

@@ -11,15 +11,15 @@ MaterialPropertiesWidget::MaterialPropertiesWidget(const QVector<TensorProperty>
 
     // TENSORS
     foreach (TensorProperty tp, tensors) {
-        TensorPropertyWidget* w = new TensorPropertyWidget(tp, this);
-        this->tensorWidgets.append(w);
-        ui->layoutTensor->addWidget(w);
+//        TensorPropertyWidget* w = new TensorPropertyWidget(tp, this);
+//        this->tensorWidgets.append(w);
+//        ui->layoutTensor->addWidget(w);
     }
 
     // SCALARS
     this->scalarWidget = new MaterialPropertyTableWidget(this);
     foreach (ScalarProperty sp, scalars) {
-        scalarWidget->addProperty(&sp);
+        //scalarWidget->addProperty(&sp);
     }
     ui->layoutScalar->addWidget(scalarWidget);
 }

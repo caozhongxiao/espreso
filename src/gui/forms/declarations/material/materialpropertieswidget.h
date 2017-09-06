@@ -7,6 +7,7 @@
 #include "tensorpropertywidget.h"
 #include "materialpropertytablewidget.h"
 #include "../../../data/material/scalarproperty.h"
+#include "../../../data/material/tensorproperty.h"
 
 namespace Ui {
 class MaterialPropertiesWidget;

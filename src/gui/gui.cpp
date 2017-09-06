@@ -133,25 +133,44 @@ int main(int argc, char *argv[])
 //        std::cout << negV << " " << posV << std::endl;
 //    }
 
-//    ECFConfiguration ecf(&argc, &argv);
+//    ECFConfiguration ecf;
 //    printECF(ecf, 0);
 
-    std::string ifst = "if (x > 0 and x < 4) -1;";
-    ECFValueHolder<std::string> expr(ifst);
-    DataTypeEditWidget w(expr);
-    w.show();
-    std::string switchst = "switch {"
-                           "case x == 1 : 2;"
-                           "case x == 2 : 3;"
-                           "default : 0;"
-                           "}";
-    ECFValueHolder<std::string> expr2(switchst);
-    DataTypeEditWidget w1(expr2);
-    w1.show();
-    std::string expSt = "x^2";
-    ECFValueHolder<std::string> expr3(expSt);
-    DataTypeEditWidget w2(expr3);
-    w2.show();
+    MaterialConfiguration mat;
+//    for (auto p = mat.thermal_properties.parameters.begin(); p != mat.thermal_properties.parameters.end(); ++p)
+//    {
+//        std::cout << (*p)->name << std::endl;
+//    }
+    TensorPropertyWidget tpw(&mat.thermal_properties);
+    tpw.show();
+
+//    std::string val = "if (x > 0 and x < 4) -1;";
+//    ECFValueHolder<std::string> par(val);
+//    par.name = "dens";
+//    par.metadata.description.push_back("Density");
+//    par.metadata.unit = "kg/m^3";
+
+
+//    MaterialPropertyTableWidget mptw;
+//    mptw.addProperty(par);
+//    mptw.show();
+
+//    std::string ifst = "if (x > 0 and x < 4) -1;";
+//    ECFValueHolder<std::string> expr(ifst);
+//    DataTypeEditWidget w(expr);
+//    w.show();
+//    std::string switchst = "switch {"
+//                           "case x == 1 : 2;"
+//                           "case x == 2 : 3;"
+//                           "default : 0;"
+//                           "}";
+//    ECFValueHolder<std::string> expr2(switchst);
+//    DataTypeEditWidget w1(expr2);
+//    w1.show();
+//    std::string expSt = "x^2";
+//    ECFValueHolder<std::string> expr3(expSt);
+//    DataTypeEditWidget w2(expr3);
+//    w2.show();
 
     a.exec();
 

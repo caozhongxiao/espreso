@@ -39,15 +39,15 @@ void MaterialPropertyTableWidget::createHeader()
     ui->grid->addWidget(lblCol5, 0, 4);
 }
 
-void MaterialPropertyTableWidget::addProperty(const MaterialProperty* property)
+void MaterialPropertyTableWidget::addProperty(const ECFParameter& property)
 {
-//    this->addRow(property->name(),
-//                 property->data(),
-//                 property->unit(),
-//                 property->symbol());
+    this->addRow(QString::fromStdString(property.metadata.description.at(0)),
+                 property,
+                 QString::fromStdString(property.metadata.unit),
+                 QString::fromStdString(property.name));
 }
 
-void MaterialPropertyTableWidget::addRow(const QString& name, const ECFValue& data,
+void MaterialPropertyTableWidget::addRow(const QString& name, const ECFParameter& data,
                                          const QString& unit, const QString& symbol)
 {
     int row = ui->grid->rowCount();
