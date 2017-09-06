@@ -37,10 +37,11 @@ struct Instance {
 	Instance(Instance &other, Matrices &share);
 	~Instance();
 
-	void computeKernel(FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster = false) { computeKernelCallback(regularization, scSize, domain, ortogonalCluster); }
-	void getKernelsFromOrigK(FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster = false) { getKernelsFromOrigKCallback(regularization, scSize, ortogonalCluster); }
-	void computeKernels(FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster = false) { computeKernelsCallback(regularization, scSize, ortogonalCluster); }
-	void assembleB0(FETI_B0_TYPE type, const std::vector<SparseMatrix> &kernels) { assembleB0Callback(type, kernels); }
+	void computeKernel(REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster = false) { computeKernelCallback(regularization, scSize, domain, ortogonalCluster); }
+	void computeKernelFromOrigK(REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster = false) { computeKernelFromOrigKCallback(regularization, scSize, domain, ortogonalCluster); }
+	void computeKernelsFromOrigK(REGULARIZATION regularization, size_t scSize, bool ortogonalCluster = false) { computeKernelsFromOrigKCallback(regularization, scSize, ortogonalCluster); }
+	void computeKernels(REGULARIZATION regularization, size_t scSize, bool ortogonalCluster = false) { computeKernelsCallback(regularization, scSize, ortogonalCluster); }
+	void assembleB0(B0_TYPE type, const std::vector<SparseMatrix> &kernels) { assembleB0Callback(type, kernels); }
 
 	void clear();
 
@@ -84,10 +85,11 @@ struct Instance {
 
 	std::vector<Solution*> solutions;
 
-	std::function<void(FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster)> computeKernelsCallback;
-	std::function<void(FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster)> getKernelsFromOrigKCallback;
-	std::function<void(FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster)> computeKernelCallback;
-	std::function<void(FETI_B0_TYPE type, const std::vector<SparseMatrix> &kernels)> assembleB0Callback;
+	std::function<void(REGULARIZATION regularization, size_t scSize, bool ortogonalCluster)> computeKernelsCallback;
+	std::function<void(REGULARIZATION regularization, size_t scSize, bool ortogonalCluster)> computeKernelsFromOrigKCallback;
+	std::function<void(REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster)> computeKernelCallback;
+	std::function<void(REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster)> computeKernelFromOrigKCallback;
+	std::function<void(B0_TYPE type, const std::vector<SparseMatrix> &kernels)> assembleB0Callback;
 private:
 
 	std::vector<SparseMatrix> _origK, _K, _M, _origKN1, _origKN2, _origRegMat, _N1, _N2, _RegMat;

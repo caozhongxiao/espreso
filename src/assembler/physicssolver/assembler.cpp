@@ -370,8 +370,7 @@ void Assembler::setRegularizationCallback()
 
 void Assembler::setRegularizationFromOrigKCallback()
 {
-	instance.computeKernelsCallback = [&] (FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
-
+	instance.computeKernelsFromOrigKCallback = [&] (REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
 		instance.K.swap(instance.origK);
 		instance.N1.swap(instance.origKN1);
 		instance.N2.swap(instance.origKN2);
@@ -385,6 +384,20 @@ void Assembler::setRegularizationFromOrigKCallback()
 		instance.N1.swap(instance.origKN1);
 		instance.N2.swap(instance.origKN2);
 		instance.RegMat.swap(instance.origRegMat);
+	};
+
+	instance.computeKernelFromOrigKCallback = [&] (REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster) {
+		instance.K[domain].swap(instance.origK[domain]);
+		instance.N1[domain].swap(instance.origKN1[domain]);
+		instance.N2[domain].swap(instance.origKN2[domain]);
+		instance.RegMat[domain].swap(instance.origRegMat[domain]);
+		physics.makeStiffnessMatrixRegular(regularization, scSize, domain, ortogonalCluster);
+
+		storeWrapper("orig" + mNames(Matrices::N) + "[domain " + std::to_string(domain) + "]", Matrices::N, domain);
+		instance.K[domain].swap(instance.origK[domain]);
+		instance.N1[domain].swap(instance.origKN1[domain]);
+		instance.N2[domain].swap(instance.origKN2[domain]);
+		instance.RegMat[domain].swap(instance.origRegMat[domain]);
 	};
 }
 

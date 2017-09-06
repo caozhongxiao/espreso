@@ -74,7 +74,11 @@ Instance::Instance(const Mesh &mesh)
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernel is empty function. Fill it in assembler.";
 	};
 
-	getKernelsFromOrigKCallback = [] (FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
+	computeKernelFromOrigKCallback = [] (REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernel is empty function. Fill it in assembler.";
+	};
+
+	computeKernelsFromOrigKCallback = [] (REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: getKernelFromOrigK is empty function. Fill it in assembler.";
 	};
 
@@ -187,7 +191,11 @@ Instance::Instance(Instance &other, Matrices &share)
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernel is empty function. Fill it in assembler.";
 	};
 
-	getKernelsFromOrigKCallback = [] (FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
+	computeKernelFromOrigKCallback = [] (REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernel is empty function. Fill it in assembler.";
+	};
+
+	computeKernelsFromOrigKCallback = [] (REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: getKernelFromOrigK is empty function. Fill it in assembler.";
 	};
 

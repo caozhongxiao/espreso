@@ -49,7 +49,11 @@ Domain::Domain(const FETISolverConfiguration &configuration, Instance *instance_
 
 		B0(instance_in->B0[domain_index_in]),
 		vec_c(instance_in->B1c[domain_index_in]),
-		vec_lb(instance_in->LB[domain_index_in])
+		vec_lb(instance_in->LB[domain_index_in]),
+
+		Kplus_origR(instance_in->origKN1[domain_index_in]),
+		Kplus_origR2(instance_in->origKN2[domain_index_in])
+
 
 {
 		domain_prim_size 	= K.cols;
@@ -97,6 +101,9 @@ void Domain::SetDomain() {
 		instance->computeKernel(configuration.regularization, configuration.sc_size, domain_global_index, configuration.method == FETI_METHOD::HYBRID_FETI);
 		Kplus.ImportMatrix_wo_Copy(K);
 		Kplus.Factorization ("K matrix");
+
+		instance->computeKernelFromOrigK(configuration.regularization, configuration.SC_SIZE, domain_global_index, configuration.method == ESPRESO_METHOD::HYBRID_FETI);
+
 	} else {
 
 		// TODO: Change MKL solver so that it can extract kernels inside the object
@@ -108,6 +115,9 @@ void Domain::SetDomain() {
 		instance->computeKernel(configuration.regularization, configuration.sc_size, domain_global_index, configuration.method == FETI_METHOD::HYBRID_FETI);
 		Kplus.ImportMatrix_wo_Copy(K);
 		Kplus.Factorization ("K matrix");
+
+		instance->computeKernelFromOrigK(configuration.regularization, configuration.SC_SIZE, domain_global_index, configuration.method == ESPRESO_METHOD::HYBRID_FETI);
+
 	}
 
 

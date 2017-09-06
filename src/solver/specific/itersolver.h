@@ -150,6 +150,8 @@ public:
 	// *** Projectors
 	void Projector    ( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 ); // int mpi_rank, SparseSolverCPU & GGt,
 	void Projector_Inv( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
+	void Projector_Inv2( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
+	void Projector_Inv3( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
 	void Projector_Inv_old( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
 
 
@@ -164,7 +166,7 @@ public:
 	// *** Apply A embers - moved to children
 	virtual void apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) =0;
 
-	void apply_A_l_Mat( TimeEval & time_eval, Cluster & cluster, SparseMatrix       & X_in, SparseMatrix       & Y_out) ;
+	void apply_A_l_Mat( TimeEval & time_eval, SuperCluster & cluster, SparseMatrix       & X_in, SparseMatrix       & Y_out) ;
 
 
 	// *** Apply preconditioner

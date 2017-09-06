@@ -57,6 +57,9 @@ public:
 	SparseMatrix Kplus_Rb;
 	SparseMatrix Kplus_Rb2;
 
+	SparseMatrix &Kplus_origR;
+	SparseMatrix &Kplus_origR2;
+
 	SparseMatrix &_RegMat;
 
 	SEQ_VECTOR <double> &f;

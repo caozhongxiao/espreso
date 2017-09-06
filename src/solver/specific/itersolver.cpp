@@ -1429,8 +1429,12 @@ void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 	// t1 = Uc\(Lc\d);
 	// x = Ct * t1;
 
+	// *** Combine vectors b from all clusters ************************************
+	All_Reduce_lambdas_compB(cluster, cluster.vec_b_compressed, b_l);
+
 	if (USE_GGtINV == 1) {
-		Projector_Inv( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
+		//Projector_Inv( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
+		Projector_Inv3( timeEvalProj, cluster, b_l, x_l, 0 );
 	} else {
 		Projector	 ( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
 	}
@@ -1440,8 +1444,6 @@ void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 	//x_norm_l = parallel_norm_compressed(cluster, x_l);
 	//printf (       "Test probe 1: norm = %1.30f \n", x_norm_l );
 
-	// *** Combine vectors b from all clusters ************************************
-	All_Reduce_lambdas_compB(cluster, cluster.vec_b_compressed, b_l);
 
 	// *** Ax = apply_A(CLUSTER,Bt,x); ********************************************
 	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
@@ -1540,7 +1542,7 @@ void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 		case FETI_PRECONDITIONER::MAGIC:
 			proj1_time.start();
 			if (USE_GGtINV == 1) {
-				Projector_Inv( timeEvalProj, cluster, r_l, w_l, 0 );
+				Projector_Inv2( timeEvalProj, cluster, r_l, w_l, 0 );
 			} else {
 				Projector		  ( timeEvalProj, cluster, r_l, w_l, 0 );
 			}
@@ -1654,7 +1656,7 @@ for (size_t i = 0; i < p_l.size(); i++)
 		}
 
 		 norm_time.start();
-		norm_l = parallel_norm_compressed(cluster, w_l);
+		norm_l = parallel_norm_compressed(cluster, r_l);
 		 norm_time.end();
 
 		 timing.totalTime.end();
@@ -4520,7 +4522,17 @@ void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 
 	 TimeEvent Gt_l_trans("Local G1 matrix transpose to create Gt "); Gt_l_trans.start();
 	if (cluster.USE_HFETI == 0) {
-		cluster.G1.MatTranspose(G1t_l);
+
+		//cluster.G1.MatTranspose(G1t_l);
+
+		SparseMatrix G1_tmp;
+		G1_tmp = cluster.G1;
+		G1_tmp.MatTranspose();
+		G1_tmp.ConvertCSRToDense(0);
+		apply_A_l_Mat( timeEvalAppa, cluster, G1_tmp, G1t_l);
+		G1t_l.ConvertDenseToCSR(0);
+		G1_tmp.Clear();
+
 	}
 	 Gt_l_trans.end(); Gt_l_trans.printStatMPI(); preproc_timing.addEvent(Gt_l_trans);
 
@@ -4780,8 +4792,8 @@ void IterSolverBase::Projector_l_inv_compG ( TimeEval & time_eval, Cluster & clu
 
 }
 
-
-void IterSolverBase::apply_A_l_Mat( TimeEval & time_eval, Cluster & cluster, SparseMatrix       & X_in, SparseMatrix       & Y_out) {
+*/
+void IterSolverBase::apply_A_l_Mat( TimeEval & time_eval, SuperCluster & cluster, SparseMatrix       & X_in, SparseMatrix       & Y_out) {
 
 
 	Y_out.Clear();
@@ -4803,7 +4815,7 @@ void IterSolverBase::apply_A_l_Mat( TimeEval & time_eval, Cluster & cluster, Spa
 
 
 }
-*/
+
 
 void IterSolverBase::Projector_Inv (TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
 {
@@ -4822,7 +4834,12 @@ void IterSolverBase::Projector_Inv (TimeEval & time_eval, SuperCluster & cluster
 	} else {
 		if (cluster.SYMMETRIC_SYSTEM) {
 			if (cluster.G1_comp.nnz > 0) {
-				cluster.G1_comp.MatVec(x_in, d_local, 'N');
+
+				SEQ_VECTOR<double> x_in_tmpx;
+				apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_in, x_in_tmpx);
+				cluster.G1_comp.MatVec(x_in_tmpx, d_local, 'N');
+
+				//cluster.G1_comp.MatVec(x_in, d_local, 'N');
 			}
 		} else {
 			if (cluster.G2_comp.nnz > 0) {
@@ -4888,6 +4905,174 @@ void IterSolverBase::Projector_Inv (TimeEval & time_eval, SuperCluster & cluster
 
 	time_eval.totalTime.end();
 }
+
+
+void IterSolverBase::Projector_Inv2 (TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
+{
+
+	 time_eval.totalTime.start();
+	eslocal d_local_size = cluster.G1_comp.rows;
+	SEQ_VECTOR<double> d_local( d_local_size );
+	SEQ_VECTOR<double> d_mpi  ( GGtsize );
+	 time_eval.timeEvents[0].start();
+
+	if (   output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 1
+			||
+		   output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 3)
+	{
+		d_local = x_in;
+	} else {
+		if (cluster.SYMMETRIC_SYSTEM) {
+			if (cluster.G1_comp.nnz > 0) {
+				cluster.G1_comp.MatVec(x_in, d_local, 'N');
+			}
+		} else {
+			if (cluster.G2_comp.nnz > 0) {
+				cluster.G2_comp.MatVec(x_in, d_local, 'N');
+			}
+		}
+	}
+
+	 time_eval.timeEvents[0].end();
+
+	//TODO: Udelat poradne
+	 time_eval.timeEvents[1].start();
+	SEQ_VECTOR<int> ker_size_per_clusters(environment->MPIsize,0);
+	MPI_Allgather(&d_local_size, 1, MPI_INT, &ker_size_per_clusters[0], 1, MPI_INT, environment->MPICommunicator );
+
+	SEQ_VECTOR<int> displs (environment->MPIsize,0);
+	displs[0] = 0;
+
+	for (size_t i=1; i<displs.size(); ++i) {
+		displs[i] = displs[i-1] + ker_size_per_clusters[i-1];
+	}
+	MPI_Allgatherv(&d_local[0], d_local_size, MPI_DOUBLE, &d_mpi[0], &ker_size_per_clusters[0], &displs[0], MPI_DOUBLE, environment->MPICommunicator);
+	// TODO: END
+
+	time_eval.timeEvents[1].end();
+	// TODO: END
+
+	 time_eval.timeEvents[2].start();
+
+	if (cluster.GGtinvM.cols != 0) {
+		cluster.GGtinvM.DenseMatVec(d_mpi, d_local, 'T');
+	}
+	 time_eval.timeEvents[2].end();
+
+	 time_eval.timeEvents[3].start();
+	//MPI_Scatter( &d_mpi[0],      d_local_size, MPI_DOUBLE, &d_local[0], d_local_size, MPI_DOUBLE, mpi_root, environment->MPICommunicator);
+	 time_eval.timeEvents[3].end();
+
+	if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 2
+		 ||
+		output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 3)
+	{
+		y_out = d_local; // for RBM amplitudes calculation
+	} else {
+		 time_eval.timeEvents[4].start();
+		if (cluster.G1_comp.nnz > 0) {
+
+			//cluster.G1_comp.MatVec(d_local, cluster.compressed_tmp, 'T');
+
+			SEQ_VECTOR<double> x_in_tmpx (cluster.compressed_tmp.size(), 0.0);
+			cluster.G1_comp.MatVec(d_local, x_in_tmpx, 'T');
+			apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_in_tmpx, cluster.compressed_tmp);
+
+			//apply_A_l_comp_dom_B(timeEvalAppa, cluster, d_local, x_in_tmpx);
+			//cluster.G1_comp.MatVec(x_in_tmpx, cluster.compressed_tmp, 'T');
+		}
+
+		else
+			std::fill (cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
+		 time_eval.timeEvents[4].end();
+
+		 time_eval.timeEvents[5].start();
+		All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, y_out);
+		 time_eval.timeEvents[5].end();
+
+		if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 0) {
+			#pragma omp parallel for
+			for (size_t i = 0; i < y_out.size(); i++)
+				y_out[i] = x_in[i] - y_out[i];
+		}
+
+	}
+
+	time_eval.totalTime.end();
+}
+
+
+void IterSolverBase::Projector_Inv3 (TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
+{
+
+	 time_eval.totalTime.start();
+	eslocal d_local_size = cluster.G1_comp.rows;
+	SEQ_VECTOR<double> d_local( d_local_size );
+	SEQ_VECTOR<double> d_mpi  ( GGtsize );
+	 time_eval.timeEvents[0].start();
+
+		if (cluster.SYMMETRIC_SYSTEM) {
+			if (cluster.G1_comp.nnz > 0) {
+				cluster.G1_comp.MatVec(x_in, d_local, 'N');
+			}
+		} else {
+			if (cluster.G2_comp.nnz > 0) {
+				cluster.G2_comp.MatVec(x_in, d_local, 'N');
+			}
+		}
+
+	 time_eval.timeEvents[0].end();
+
+	//TODO: Udelat poradne
+	 time_eval.timeEvents[1].start();
+	SEQ_VECTOR<int> ker_size_per_clusters(environment->MPIsize,0);
+	MPI_Allgather(&d_local_size, 1, MPI_INT, &ker_size_per_clusters[0], 1, MPI_INT, environment->MPICommunicator );
+
+	SEQ_VECTOR<int> displs (environment->MPIsize,0);
+	displs[0] = 0;
+
+	for (size_t i=1; i<displs.size(); ++i) {
+		displs[i] = displs[i-1] + ker_size_per_clusters[i-1];
+	}
+	MPI_Allgatherv(&d_local[0], d_local_size, MPI_DOUBLE, &d_mpi[0], &ker_size_per_clusters[0], &displs[0], MPI_DOUBLE, environment->MPICommunicator);
+	// TODO: END
+
+	time_eval.timeEvents[1].end();
+	// TODO: END
+
+	 time_eval.timeEvents[2].start();
+
+	if (cluster.GGtinvM.cols != 0) {
+		cluster.GGtinvM.DenseMatVec(d_mpi, d_local, 'T');
+	}
+	 time_eval.timeEvents[2].end();
+
+	 time_eval.timeEvents[3].start();
+	//MPI_Scatter( &d_mpi[0],      d_local_size, MPI_DOUBLE, &d_local[0], d_local_size, MPI_DOUBLE, mpi_root, environment->MPICommunicator);
+	 time_eval.timeEvents[3].end();
+
+		 time_eval.timeEvents[4].start();
+		if (cluster.G1_comp.nnz > 0)
+			cluster.G1_comp.MatVec(d_local, cluster.compressed_tmp, 'T');
+		else
+			std::fill (cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
+		 time_eval.timeEvents[4].end();
+
+		 time_eval.timeEvents[5].start();
+		All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, y_out);
+		 time_eval.timeEvents[5].end();
+
+		if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 0) {
+			#pragma omp parallel for
+			for (size_t i = 0; i < y_out.size(); i++)
+				y_out[i] = y_out[i];
+		}
+
+
+
+	time_eval.totalTime.end();
+}
+
 
 void IterSolverBase::Projector_Inv_old (TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
 {
