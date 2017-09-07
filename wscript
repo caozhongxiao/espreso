@@ -81,11 +81,11 @@ def configure(ctx):
 
     ctx.ROOT = ctx.path.abspath()
 
-    if not os.path.exists(ctx.ROOT + "/libs"):
-        os.makedirs(ctx.ROOT + "/libs")
+    if not os.path.exists(ctx.ROOT + "/lib"):
+        os.makedirs(ctx.ROOT + "/lib")
 
-    ctx.env.append_unique("LIBPATH", [ ctx.ROOT + "/libs" ])
-    ctx.env.append_unique("STLIBPATH", [ ctx.ROOT + "/libs" ])
+    ctx.env.append_unique("LIBPATH", [ ctx.ROOT + "/lib" ])
+    ctx.env.append_unique("STLIBPATH", [ ctx.ROOT + "/lib" ])
 
     # Waf INCLUDES policy is strange -> use export includes
     ctx.env.append_unique("CXXFLAGS", [ "-I" + include for include in ctx.env.INCLUDES ])

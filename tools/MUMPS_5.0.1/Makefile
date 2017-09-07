@@ -2,7 +2,7 @@
 #  This file is part of MUMPS 5.0.1, released
 #  on Thu Jul 23 17:08:29 UTC 2015
 #
-installdir = $(prefix)/libs
+installdir = $(prefix)/lib
 topdir = .
 libdir = $(topdir)/lib
 
