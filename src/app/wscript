@@ -53,21 +53,21 @@ def build(ctx):
         source       = "espreso.cpp",
         target       = "espreso",
         use          = "basis config mesh loader generator ansys_in espreso_in openfoam_in resultstore bem assembler factory solver",
-        install_path = ctx.ROOT
+        install_path = ctx.ROOT + "/bin"
     )
 
     ctx.program(
         source       = "ecfchecker.cpp",
         target       = "ecfchecker",
         use          = "basis config",
-        install_path = ctx.ROOT
+        install_path = ctx.ROOT + "/bin"
     )
 
     ctx.program(
         source       = "decomposer.cpp",
         target       = "decomposer",
         use          = "basis config mesh loader generator ansys_in espreso_in openfoam_in datastore",
-        install_path = ctx.ROOT
+        install_path = ctx.ROOT + "/bin"
     )
 
     ctx.env = ctx.all_envs["solver"];

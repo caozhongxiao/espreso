@@ -36,5 +36,5 @@ def build(ctx):
         includes = ".",
 
         target   = "espresogui",
-        install_path = ctx.ROOT
+        install_path = ctx.ROOT + "/bin"
     )

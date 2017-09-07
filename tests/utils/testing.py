@@ -346,7 +346,7 @@ class Espreso:
 
 
     def run(self, processes, *args, **kwargs):
-        program = self.mpirun + [ "-n", str(processes),"--map-by", "core", os.path.join(self.path, "espreso")]
+        program = self.mpirun + [ "-n", str(processes),"--map-by", "core", os.path.join(self.path, "bin", "espreso")]
 
         output, error = self.run_program(program, *args, **kwargs)
         if error != "":
@@ -355,7 +355,7 @@ class Espreso:
             raise EspresoError(output)
 
     def valgrind(self, processes, *args, **kwargs):
-        program = self.mpirun + [ "-n", str(processes), "valgrind", "-q", "--leak-check=full", "--suppressions={0}/espreso.supp".format(self.path), os.path.join(self.path, "espreso")]
+        program = self.mpirun + [ "-n", str(processes), "valgrind", "-q", "--leak-check=full", "--suppressions={0}/espreso.supp".format(self.path), os.path.join(self.path, "bin", "espreso")]
 
         output, error = self.run_program(program, *args, **kwargs)
         if error != "":
@@ -379,7 +379,7 @@ class Espreso:
             raise EspresoError(output)
 
     def decompose(self, *args, **kwargs):
-        program = [ os.path.join(self.path, "decomposer") ]
+        program = [ os.path.join(self.path, "bin", "decomposer") ]
 
         output, error = self.run_program(program, *args, **kwargs)
         if error != "":
@@ -387,7 +387,7 @@ class Espreso:
         return output
 
     def ecfchecker(self, *args, **kwargs):
-        program = [ os.path.join(self.path, "ecfchecker") ]
+        program = [ os.path.join(self.path, "bin", "ecfchecker") ]
 
         output, error = self.run_program(program, *args, **kwargs)
         if error != "":
@@ -396,7 +396,7 @@ class Espreso:
             raise EspresoError(output)
 
     def output(self, processes, *args, **kwargs):
-        program = self.mpirun + [ "-n", str(processes), os.path.join(self.path, "espreso")]
+        program = self.mpirun + [ "-n", str(processes), os.path.join(self.path, "bin", "espreso")]
 
         output, error = self.run_program(program, *args, **kwargs)
         if error != "":
@@ -405,7 +405,7 @@ class Espreso:
         return output
 
     def fail(self, processes, *args, **kwargs):
-        program = self.mpirun + [ "-n", str(processes), os.path.join(self.path, "espreso")]
+        program = self.mpirun + [ "-n", str(processes), os.path.join(self.path, "bin", "espreso")]
 
         output, error = self.run_program(program, *args, **kwargs)
         if error == "":

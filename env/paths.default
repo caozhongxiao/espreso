@@ -13,5 +13,5 @@ echo "LD_LIBRARY_PATH +=" $ROOT/libs
 export LD_LIBRARY_PATH=$ROOT/libespreso/:$LD_LIBRARY_PATH
 echo "LD_LIBRARY_PATH +=" $ROOT/libespreso
 
-export PATH=$ROOT/:$PATH
-echo "PATH +=" $ROOT
+export PATH=$ROOT/bin/:$PATH
+echo "PATH +=" $ROOT/bin
