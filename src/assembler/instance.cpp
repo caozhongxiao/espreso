@@ -28,6 +28,11 @@ Instance::Instance(const Mesh &mesh)
 {
 	domainDOFCount.resize(domains);
 
+	origK.resize(domains);
+	origKN1.resize(domains);
+	origKN2.resize(domains);
+	origRegMat.resize(domains);
+
 	K.resize(domains);
 	N1.resize(domains);
 	N2.resize(domains);
@@ -115,6 +120,11 @@ Instance::Instance(Instance &other, Matrices &share)
   block(share & Matrices::B1 ? other.block : _block)
 {
 	if (!(share & Matrices::K)) {
+		origK.resize(domains);
+		origKN1.resize(domains);
+		origKN2.resize(domains);
+		origRegMat.resize(domains);
+
 		domainDOFCount.resize(domains);
 		K.resize(domains);
 		N1.resize(domains);
