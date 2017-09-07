@@ -3404,9 +3404,9 @@ for (size_t i = 0; i < r_l.size(); i++) {
 
 		ESINFO(CONVERGENCE)
 			<< indent << std::setw(iterationWidth) << iter + 1
-			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * precision
+			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << std::fixed << std::setprecision(precision - 1) << precision
+			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
 			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 	} // END of CG loop
