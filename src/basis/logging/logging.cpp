@@ -85,7 +85,7 @@ static std::string printStack()
 	char** functions = backtrace_symbols(stack.data(), size);
 
 	std::stringstream command;
-	command << "addr2line -sipfC -e " << environment->executable;
+	command << "addr2line -sipfC -e $(which " << environment->executable << ")";
 	for (size_t i = 0; i < size; i++) {
 		std::string function(functions[i]);
 		size_t begin = function.find_last_of('[') + 1;
