@@ -13,9 +13,10 @@ espreso::MaterialConfiguration::MaterialConfiguration()
 	REGISTER(physical_model, ECFMetaData()
 			.setdescription({ "Select used physical model." })
 			.setdatatype({ ECFDataType::ENUM_FLAGS })
-			.allowonly([] () { return false; }) // physical model is never printed -> model is set by physics
-			.addoption(ECFOption().setname("THERMAL").setdescription("Model used by ADVECTION DIFFUSION."))
-			.addoption(ECFOption().setname("LINEAR_ELASTIC").setdescription("One of models used by STRUCTURAL MECHANICS.")));
+			.addoption(ECFOption().setname("THERMAL").setdescription("Model used by ADVECTION DIFFUSION.")
+					.allowonly([&] () { return _allowed_physical_models & PHYSICAL_MODEL::THERMAL; }))
+			.addoption(ECFOption().setname("LINEAR_ELASTIC").setdescription("One of models used by STRUCTURAL MECHANICS.")
+					.allowonly([&] () { return _allowed_physical_models & PHYSICAL_MODEL::LINEAR_ELASTIC; })));
 
 	registerParameter("dens", density, ECFMetaData()
 			.setdescription({ "Density" })
@@ -31,11 +32,11 @@ espreso::MaterialConfiguration::MaterialConfiguration()
 
 	REGISTER(thermal_conductivity, ECFMetaData()
 			.setdescription({ "Thermal conductivity." })
-			.allowonly([&] () {  return _allowed_physical_models & PHYSICAL_MODEL::THERMAL; }));
+			.allowonly([&] () {  return physical_model & PHYSICAL_MODEL::THERMAL; }));
 
 	REGISTER(linear_elastic_properties, ECFMetaData()
 			.setdescription({ "Linear elastic properties." })
-			.allowonly([&] () {  return _allowed_physical_models & PHYSICAL_MODEL::LINEAR_ELASTIC; }));
+			.allowonly([&] () {  return physical_model & PHYSICAL_MODEL::LINEAR_ELASTIC; }));
 }
 
 espreso::MaterialConfiguration::MaterialConfiguration(PHYSICAL_MODEL allowedPhysicalModels, bool is3D)
