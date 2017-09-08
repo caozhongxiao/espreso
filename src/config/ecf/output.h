@@ -3,8 +3,33 @@
 #define SRC_CONFIG_ECF_OUTPUT_H_
 
 #include "../configuration.h"
+#include "physics/physics.h"
+
+#include <iostream>
 
 namespace espreso {
+
+struct ECFConfiguration;
+
+struct MonitorConfiguration: public ECFObject {
+
+	static ECFConfiguration *ecf;
+
+	enum class STATISTICS {
+		MIN,
+		MAX,
+		AVG,
+		NORM
+	};
+
+	std::string region;
+	STATISTICS statistics;
+	std::string property;
+
+	MonitorConfiguration(const PHYSICS &physics);
+protected:
+	const PHYSICS &_physics;
+};
 
 struct OutputConfiguration: public ECFObject {
 
@@ -34,9 +59,12 @@ struct OutputConfiguration: public ECFObject {
 	bool collected, separate_bodies, separate_materials;
 	double domain_shrink_ratio, cluster_shrink_ratio;
 
-	std::multimap<std::string, std::string> monitoring;
+	std::map<size_t, MonitorConfiguration> monitoring;
 
-	OutputConfiguration();
+	OutputConfiguration(const PHYSICS &physics);
+
+protected:
+	const PHYSICS &_physics;
 };
 
 }

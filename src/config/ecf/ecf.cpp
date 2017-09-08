@@ -75,7 +75,14 @@ void espreso::ECFConfiguration::init()
 			.setdescription({ "Configuration of ESPRESO decomposer." }));
 }
 
+espreso::ECFConfiguration::ECFConfiguration()
+: output(physics)
+{
+	init();
+}
+
 espreso::ECFConfiguration::ECFConfiguration(const std::string &file)
+: output(physics)
 {
 	init();
 	ECFReader::read(*this, file, this->default_args, this->variables);
@@ -83,6 +90,7 @@ espreso::ECFConfiguration::ECFConfiguration(const std::string &file)
 }
 
 espreso::ECFConfiguration::ECFConfiguration(int *argc, char ***argv)
+: output(physics)
 {
 	init();
 	ECFReader::read(*this, argc, argv, this->default_args, this->variables);

@@ -127,9 +127,28 @@ ADVECTION_DIFFUSION_2D {
 
 OUTPUT {
   MONITORING {
-    ALL_NODES    MAX TEMPERATURE;
-    ALL_NODES    MIN TEMPERATURE;
-    ALL_NODES    AVG TEMPERATURE;
-    ALL_NODES   NORM TEMPERATURE;
+    1 {
+      REGION       ALL_NODES;
+      STATISTICS         MAX;
+      PROPERTY   TEMPERATURE;
+    }
+
+    2 {
+      REGION       ALL_NODES;
+      STATISTICS         MIN;
+      PROPERTY   TEMPERATURE;
+    }
+
+    3 {
+      REGION       ALL_NODES;
+      STATISTICS         AVG;
+      PROPERTY   TEMPERATURE;
+    }
+
+    4 {
+      REGION       ALL_NODES;
+      STATISTICS        NORM;
+      PROPERTY   TEMPERATURE;
+    }
   }
 }

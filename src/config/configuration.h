@@ -180,26 +180,22 @@ protected:
 	/////////////////////////////////
 
 	// TYPE2 = CLASS - STD::STRING (has to inherit from ECFObject)
-	template<typename Ttype1, typename Ttype2>
+	template<typename Ttype1, typename Ttype2, typename... TArgs>
 	typename std::enable_if<std::is_class<Ttype2>::value && !std::is_same<Ttype2, std::string>::value>::type
-	registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata);
+	registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata, TArgs... args);
 
 	// TYPE2 = REST
 	template<typename Ttype1, typename Ttype2>
 	typename std::enable_if<!std::is_class<Ttype2>::value || std::is_same<Ttype2, std::string>::value>::type
 	registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata);
 
-	template<typename Ttype1, typename Ttype2>
-	void
-	registerParameter(const std::string &name, std::multimap<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata);
-
 	//////////// MAP MAP ////////////
 	/////////////////////////////////
 
 	// TYPE3 = CLASS - STD::STRING (has to inherit from ECFObject)
-	template<typename Ttype1, typename Ttype2, typename Ttype3>
+	template<typename Ttype1, typename Ttype2, typename Ttype3, typename... TArgs>
 	typename std::enable_if<std::is_class<Ttype3>::value && !std::is_same<Ttype3, std::string>::value>::type
-	registerParameter(const std::string &name, std::map<Ttype1, std::map<Ttype2, Ttype3> > &parameter, const ECFMetaData &metadata);
+	registerParameter(const std::string &name, std::map<Ttype1, std::map<Ttype2, Ttype3> > &parameter, const ECFMetaData &metadata, TArgs... args);
 
 	// TYPE3 = REST
 	template<typename Ttype1, typename Ttype2, typename Ttype3>

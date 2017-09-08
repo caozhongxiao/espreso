@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "../../basis/logging/timeeval.h"
+#include "../../config/ecf/ecf.h"
 
 namespace espreso {
 struct Environment;
@@ -16,8 +17,7 @@ class TimeStepSolver;
 class LoadStepSolver;
 class Assembler;
 class APIMesh;
-class OutputConfiguration;
-class FETISolverConfiguration;
+class ECFConfiguration;
 class FETISolver;
 class ResultStoreList;
 }
@@ -47,14 +47,12 @@ struct FETI4IStructInstance {
 	espreso::LoadStepSolver *loadStepSolver;
 
 	espreso::APIMesh *mesh;
-	espreso::OutputConfiguration *output;
-	espreso::FETISolverConfiguration *configuration;
+	espreso::ECFConfiguration configuration;
 };
 
 namespace espreso {
 
 struct DataHolder {
-	static Environment environment;
 	static std::list<FETI4IStructMatrix*> matrices;
 	static std::list<FETI4IStructInstance*> instances;
 	static TimeEval timeStatistics;

@@ -1,8 +1,65 @@
 
 #include "output.h"
 #include "../configuration.hpp"
+#include "ecf.h"
 
-espreso::OutputConfiguration::OutputConfiguration()
+espreso::ECFConfiguration* espreso::MonitorConfiguration::ecf = NULL;
+
+espreso::MonitorConfiguration::MonitorConfiguration(const PHYSICS &physics)
+: _physics(physics)
+{
+	REGISTER(region, ECFMetaData()
+			.setdescription({ "Monitored region." })
+			.setdatatype({ ECFDataType::REGION }));
+
+	REGISTER(statistics, ECFMetaData()
+			.setdescription({ "Requested statistics." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("MIN").setdescription("Minimum."))
+			.addoption(ECFOption().setname("MAX").setdescription("Maximum."))
+			.addoption(ECFOption().setname("AVG").setdescription("Average."))
+			.addoption(ECFOption().setname("NORM").setdescription("Norm (for testing purposes).").allowonly([] () { return false; })));
+
+	auto temperature = [&] () {
+		return _physics == PHYSICS::ADVECTION_DIFFUSION_2D || _physics == PHYSICS::ADVECTION_DIFFUSION_3D;
+	};
+
+	auto temperature3D = [&] () {
+		return _physics == PHYSICS::ADVECTION_DIFFUSION_3D;
+	};
+
+	auto structuralMechanics = [&] () {
+		return _physics == PHYSICS::STRUCTURAL_MECHANICS_2D || _physics == PHYSICS::STRUCTURAL_MECHANICS_3D;
+	};
+
+	auto structuralMechanics3D = [&] () {
+		return _physics == PHYSICS::STRUCTURAL_MECHANICS_3D;
+	};
+
+	REGISTER(property, ECFMetaData()
+			.setdescription({ "Requested property." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("TEMPERATURE").setdescription("Minimum.").allowonly(temperature))
+
+			.addoption(ECFOption().setname("FLUX").setdescription("Heat flux magnitude.").allowonly(temperature))
+			.addoption(ECFOption().setname("FLUX_X").setdescription("Heat flux in x-direction.").allowonly(temperature))
+			.addoption(ECFOption().setname("FLUX_Y").setdescription("Heat flux in y-direction.").allowonly(temperature))
+			.addoption(ECFOption().setname("FLUX_Z").setdescription("Heat flux in z-direction.").allowonly(temperature3D))
+
+			.addoption(ECFOption().setname("GRADIENT").setdescription("Heat gradient magnitude.").allowonly(temperature))
+			.addoption(ECFOption().setname("GRADIENT_X").setdescription("Heat gradient in x-direction.").allowonly(temperature))
+			.addoption(ECFOption().setname("GRADIENT_Y").setdescription("Heat gradient in y-direction.").allowonly(temperature))
+			.addoption(ECFOption().setname("GRADIENT_Z").setdescription("Heat gradient in z-direction.").allowonly(temperature3D))
+
+			.addoption(ECFOption().setname("DISPLACEMENT").setdescription("Displacement magnitude.").allowonly(structuralMechanics))
+			.addoption(ECFOption().setname("DISPLACEMENT_X").setdescription("Displacement in x-direction.").allowonly(structuralMechanics))
+			.addoption(ECFOption().setname("DISPLACEMENT_Y").setdescription("Displacement in y-direction.").allowonly(structuralMechanics))
+			.addoption(ECFOption().setname("DISPLACEMENT_Z").setdescription("Displacement in z-direction.").allowonly(structuralMechanics3D))
+	);
+}
+
+espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
+: _physics(physics)
 {
 	path = "results";
 	REGISTER(path, ECFMetaData()
@@ -73,10 +130,13 @@ espreso::OutputConfiguration::OutputConfiguration()
 			.setdescription({ "Cluster shrink ratio." })
 			.setdatatype({ ECFDataType::FLOAT }));
 
-	REGISTER(monitoring, ECFMetaData()
-			.setdescription({ "Monitored region.", "STAT={AVG, MIN, MAX} PROPERTY"})
-			.setdatatype({ ECFDataType::STRING, ECFDataType::STRING })
-			.setpattern({ "REGION", "AVG TEMPERATURE" }));
+	REGISTER(
+			monitoring,
+			ECFMetaData()
+				.setdescription({ "List of monitored data.", "Column index of *.emr file." })
+				.setdatatype({ ECFDataType::POSITIVE_INTEGER })
+				.setpattern({ "1" }),
+			_physics);
 }
 
 

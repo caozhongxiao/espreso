@@ -37,40 +37,13 @@ private:
 	mutable TValue _patternValue;
 };
 
-template <typename TParameter, typename TValue>
-struct ECFValueMultiMap: public ECFObject {
-	std::multimap<TParameter, TValue> &value;
-
-	ECFValueMultiMap(std::multimap<TParameter, TValue> &value): value(value) {}
-
-	virtual ECFParameter* getParameter(const std::string &name)
-	{
-		// TODO: this assume that getParameter always set a correct value
-		TParameter key;
-		if (ECFValueHolder<TParameter>(key).setValue(name)) {
-			auto it = value.insert(std::make_pair(key, TValue{}));
-			return registerParameter(name, new ECFValueHolder<TValue>(it->second), metadata.suffix(1));
-		} else {
-			return NULL;
-		}
-	}
-
-	virtual const ECFParameter* getPattern() const
-	{
-		ECFParameter *parameter = new ECFValueHolder<TValue>(_patternValue);
-		parameter->setValue(metadata.pattern[1]);
-		return registerPatternParameter(parameter);
-	}
-
-private:
-	mutable TValue _patternValue;
-};
-
-template <typename TParameter, typename TObject>
+template <typename TParameter, typename TObject, typename... TArgs>
 struct ECFObjectMap: public ECFObject {
 	std::map<TParameter, TObject> &value;
+	std::tuple<TArgs...> args;
 
-	ECFObjectMap(std::map<TParameter, TObject> &value): value(value) {}
+	ECFObjectMap(std::map<TParameter, TObject> &value, TArgs... args): value(value), args(args...) {}
+	ECFObjectMap(std::map<TParameter, TObject> &value, std::tuple<TArgs...> &args): value(value), args(args) {}
 
 	virtual ECFParameter* getParameter(const std::string &name)
 	{
@@ -79,7 +52,8 @@ struct ECFObjectMap: public ECFObject {
 		}
 		TParameter key;
 		if (ECFValueHolder<TParameter>(key).setValue(name)) {
-			parameters.push_back(&value[key]);
+			auto it = value.emplace(std::piecewise_construct, std::forward_as_tuple(key), args);
+			parameters.push_back(&it.first->second);
 			parameters.back()->name = name;
 			parameters.back()->metadata = metadata.suffix(1);
 			return parameters.back();
@@ -90,7 +64,9 @@ struct ECFObjectMap: public ECFObject {
 
 	virtual const ECFParameter* getPattern() const
 	{
-		return registerPatternParameter(new TObject());
+		std::map<TParameter, TObject*> dummy;
+		auto it = value.emplace(std::piecewise_construct, std::forward_as_tuple(TParameter{}), args);
+		return registerPatternParameter(&it.first->second);
 	}
 };
 
@@ -123,11 +99,12 @@ private:
 };
 
 
-template <typename TParameter1, typename TParameter2, typename TObject>
+template <typename TParameter1, typename TParameter2, typename TObject, typename... TArgs>
 struct ECFObjectMapMap: public ECFObject {
 	std::map<TParameter1, std::map<TParameter2, TObject> > &value;
+	std::tuple<TArgs...> args;
 
-	ECFObjectMapMap(std::map<TParameter1, std::map<TParameter2, TObject> > &value): value(value) {}
+	ECFObjectMapMap(std::map<TParameter1, std::map<TParameter2, TObject> > &value, TArgs... args): value(value), args(args...) {}
 
 	virtual ECFParameter* getParameter(const std::string &name)
 	{
@@ -136,7 +113,7 @@ struct ECFObjectMapMap: public ECFObject {
 		}
 		TParameter1 key;
 		if (ECFValueHolder<TParameter1>(key).setValue(name)) {
-			return registerParameter(name, new ECFObjectMap<TParameter2, TObject>(value[key]), metadata.suffix(1));
+			return registerParameter(name, new ECFObjectMap<TParameter2, TObject, TArgs...>(value[key], args), metadata.suffix(1));
 		} else {
 			return NULL;
 		}

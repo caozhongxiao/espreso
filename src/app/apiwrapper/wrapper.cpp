@@ -19,7 +19,6 @@
 #include "../../mesh/structures/mesh.h"
 #include "../../solver/generic/FETISolver.h"
 
-espreso::Environment espreso::DataHolder::environment;
 std::list<FETI4IStructMatrix*> espreso::DataHolder::matrices;
 std::list<FETI4IStructInstance*> espreso::DataHolder::instances;
 espreso::TimeEval espreso::DataHolder::timeStatistics("API total time");
@@ -29,10 +28,13 @@ using namespace espreso;
 FETI4IStructInstance::FETI4IStructInstance(FETI4IStructMatrix &matrix, eslocal *l2g, size_t size)
 : instance(NULL), physics(NULL), linearSolver(NULL), assembler(NULL), timeStepSolver(NULL), loadStepSolver(NULL)
 {
-	output = new OutputConfiguration;
-	store = new ResultStoreList(*output);
+	std::ifstream is("espreso.ecf");
+	if (is.good()) {
+		ECFReader::read(configuration, "espreso.ecf", configuration.default_args, configuration.variables);
+		ECFReader::set(configuration.environment, configuration.output);
+	}
+	store = new ResultStoreList(configuration.output);
 	mesh = new APIMesh(l2g, size);
-	configuration = new FETISolverConfiguration();
 }
 
 FETI4IStructInstance::~FETI4IStructInstance()
@@ -45,110 +47,73 @@ FETI4IStructInstance::~FETI4IStructInstance()
 	if (loadStepSolver != NULL) { delete loadStepSolver; }
 
 	delete store;
-	delete output;
 	delete mesh;
-	delete configuration;
 }
 
-void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
+void FETI4ISetDefaultIntegerOptions(ECFConfiguration &configuration, FETI4IInt* options)
 {
-	std::ifstream is("espreso.ecf");
-	if (is.good()) {
-		espreso::ECFConfiguration configuration("espreso.ecf");
+	options[FETI4I_SUBDOMAINS] = configuration.esdata.domains;
 
-		options[FETI4I_SUBDOMAINS] = configuration.esdata.domains;
+	options[FETI4I_MAX_ITERATIONS] = configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.max_iterations;
+	options[FETI4I_FETI_METHOD] = static_cast<int>(configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.method);
+	options[FETI4I_PRECONDITIONER] = static_cast<int>(configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.preconditioner);
+	options[FETI4I_CGSOLVER] = static_cast<int>(configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.solver);
+	options[FETI4I_N_MICS] = configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.n_mics;
+	options[FETI4I_SC_SIZE] = configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.sc_size;
 
-		options[FETI4I_MAX_ITERATIONS] = configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.max_iterations;
-		options[FETI4I_FETI_METHOD] = static_cast<int>(configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.method);
-		options[FETI4I_PRECONDITIONER] = static_cast<int>(configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.preconditioner);
-		options[FETI4I_CGSOLVER] = static_cast<int>(configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.solver);
-		options[FETI4I_N_MICS] = configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.n_mics;
-		options[FETI4I_SC_SIZE] = configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.sc_size;
-
-		options[FETI4I_VERBOSE_LEVEL] = environment->verbose_level;
-		options[FETI4I_TESTING_LEVEL] = environment->testing_level;
-		options[FETI4I_MEASURE_LEVEL] = environment->measure_level;
-		options[FETI4I_PRINT_MATRICES] = environment->print_matrices;
-		environment = &DataHolder::environment;
-	} else {
-		InputConfiguration input;
-		FETISolverConfiguration solver;
-		options[FETI4I_SUBDOMAINS] = input.domains;
-
-		options[FETI4I_MAX_ITERATIONS] = solver.max_iterations;
-		options[FETI4I_FETI_METHOD] = static_cast<int>(solver.method);
-		options[FETI4I_PRECONDITIONER] = static_cast<int>(solver.preconditioner);
-		options[FETI4I_CGSOLVER] = static_cast<int>(solver.solver);
-		options[FETI4I_N_MICS] = solver.n_mics;
-
-		options[FETI4I_VERBOSE_LEVEL] = environment->verbose_level;
-		options[FETI4I_TESTING_LEVEL] = environment->testing_level;
-		options[FETI4I_MEASURE_LEVEL] = environment->measure_level;
-		options[FETI4I_PRINT_MATRICES] = environment->print_matrices;
-
-		options[FETI4I_SC_SIZE] = solver.sc_size;
-	}
+	options[FETI4I_VERBOSE_LEVEL] = configuration.environment.verbose_level;
+	options[FETI4I_TESTING_LEVEL] = configuration.environment.testing_level;
+	options[FETI4I_MEASURE_LEVEL] = configuration.environment.measure_level;
+	options[FETI4I_PRINT_MATRICES] = configuration.environment.print_matrices;
 }
 
-void FETI4ISetDefaultRealOptions(FETI4IReal* options)
+void FETI4ISetDefaultRealOptions(ECFConfiguration &configuration, FETI4IReal* options)
 {
-	std::ifstream is("espreso.ecf");
-	if (is.good()) {
-		espreso::ECFConfiguration configuration("espreso.ecf");
-
-		options[FETI4I_PRECISION] = configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.precision;
-		environment = &DataHolder::environment;
-	} else {
-		FETISolverConfiguration solver;
-
-		options[FETI4I_PRECISION] = solver.precision;
-	}
+	options[FETI4I_PRECISION] = configuration.structural_mechanics_3d.physics_solver.load_steps_settings.at(1).feti.precision;
 }
 
-static void FETI4ISetIntegerOptions(espreso::InputConfiguration &input, espreso::FETISolverConfiguration &solver, FETI4IInt* options)
+static void FETI4ISetIntegerOptions(ECFConfiguration &configuration, FETI4IInt* options)
 {
-	if (!input.getParameter("domains")->setValue(std::to_string(options[FETI4I_SUBDOMAINS]))) {
+	if (!configuration.esdata.getParameter("domains")->setValue(std::to_string(options[FETI4I_SUBDOMAINS]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'SUBDOMAINS' to " << options[FETI4I_SUBDOMAINS];
 	}
-	if (!solver.getParameter("iterations")->setValue(std::to_string(options[FETI4I_MAX_ITERATIONS]))) {
+	if (!configuration.structural_mechanics_3d.physics_solver.load_steps_settings[1].feti.getParameter("iterations")->setValue(std::to_string(options[FETI4I_MAX_ITERATIONS]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'MAX_ITERATIONS' to " << options[FETI4I_MAX_ITERATIONS];
 	}
-	if (!solver.getParameter("method")->setValue(std::to_string(options[FETI4I_FETI_METHOD]))) {
+	if (!configuration.structural_mechanics_3d.physics_solver.load_steps_settings[1].feti.getParameter("method")->setValue(std::to_string(options[FETI4I_FETI_METHOD]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'FETI_METHOD' to " << options[FETI4I_FETI_METHOD];
 	}
-	if (!solver.getParameter("preconditioner")->setValue(std::to_string(options[FETI4I_PRECONDITIONER]))) {
+	if (!configuration.structural_mechanics_3d.physics_solver.load_steps_settings[1].feti.getParameter("preconditioner")->setValue(std::to_string(options[FETI4I_PRECONDITIONER]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'PRECONDITIONER' to " << options[FETI4I_PRECONDITIONER];
 	}
-	if (!solver.getParameter("solver")->setValue(std::to_string(options[FETI4I_CGSOLVER]))) {
+	if (!configuration.structural_mechanics_3d.physics_solver.load_steps_settings[1].feti.getParameter("solver")->setValue(std::to_string(options[FETI4I_CGSOLVER]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'CGSOLVER' to " << options[FETI4I_CGSOLVER];
 	}
-	if (!solver.getParameter("n_mics")->setValue(std::to_string(options[FETI4I_N_MICS]))) {
+	if (!configuration.structural_mechanics_3d.physics_solver.load_steps_settings[1].feti.getParameter("n_mics")->setValue(std::to_string(options[FETI4I_N_MICS]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'n_mics' to " << options[FETI4I_N_MICS];
 	}
-	if (!solver.getParameter("sc_size")->setValue(std::to_string(options[FETI4I_SC_SIZE]))) {
+	if (!configuration.structural_mechanics_3d.physics_solver.load_steps_settings[1].feti.getParameter("sc_size")->setValue(std::to_string(options[FETI4I_SC_SIZE]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'sc_size' to " << options[FETI4I_SC_SIZE];
 	}
-	if (!environment->getParameter("verbose_level")->setValue(std::to_string(options[FETI4I_VERBOSE_LEVEL]))) {
+	if (!configuration.environment.getParameter("verbose_level")->setValue(std::to_string(options[FETI4I_VERBOSE_LEVEL]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'VERBOSE_LEVEL' to " << options[FETI4I_VERBOSE_LEVEL];
 	}
-	if (!environment->getParameter("testing_level")->setValue(std::to_string(options[FETI4I_TESTING_LEVEL]))) {
+	if (!configuration.environment.getParameter("testing_level")->setValue(std::to_string(options[FETI4I_TESTING_LEVEL]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'TESTING_LEVEL' to " << options[FETI4I_TESTING_LEVEL];
 	}
-	if (!environment->getParameter("measure_level")->setValue(std::to_string(options[FETI4I_MEASURE_LEVEL]))) {
+	if (!configuration.environment.getParameter("measure_level")->setValue(std::to_string(options[FETI4I_MEASURE_LEVEL]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'MEASURE_LEVEL' to " << options[FETI4I_MEASURE_LEVEL];
 	}
-	if (!environment->getParameter("print_matrices")->setValue(std::to_string(options[FETI4I_PRINT_MATRICES]))) {
+	if (!configuration.environment.getParameter("print_matrices")->setValue(std::to_string(options[FETI4I_PRINT_MATRICES]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'PRINT_MATRICES' to " << options[FETI4I_PRINT_MATRICES];
 	}
 
-	solver.regularization = FETI_REGULARIZATION::ALGEBRAIC;
-	OutputConfiguration output;
-	ECFReader::set(*environment, output);
+	configuration.structural_mechanics_3d.physics_solver.load_steps_settings[1].feti.regularization = FETI_REGULARIZATION::ALGEBRAIC;
 }
 
-static void FETI4ISetRealOptions(espreso::FETISolverConfiguration &solver, FETI4IReal* options)
+static void FETI4ISetRealOptions(espreso::ECFConfiguration &configuration, FETI4IReal* options)
 {
-	solver.precision = options[FETI4I_PRECISION];
+	configuration.structural_mechanics_3d.physics_solver.load_steps_settings[1].feti.precision = options[FETI4I_PRECISION];
 }
 
 void FETI4ICreateStiffnessMatrix(
@@ -158,8 +123,6 @@ void FETI4ICreateStiffnessMatrix(
 {
 	MPI_Comm_rank(environment->MPICommunicator, &environment->MPIrank);
 	MPI_Comm_size(environment->MPICommunicator, &environment->MPIsize);
-	OutputConfiguration output;
-	ECFReader::set(*environment, output);
 
 	DataHolder::timeStatistics.totalTime.startWithBarrier();
 	TimeEvent event("Add element");
@@ -213,8 +176,8 @@ void FETI4ICreateInstance(
 	DataHolder::instances.push_back(new FETI4IStructInstance(*matrix, l2g, size));
 
 	InputConfiguration input;
-	FETI4ISetIntegerOptions(input, *DataHolder::instances.back()->configuration, integer_options);
-	FETI4ISetRealOptions(*DataHolder::instances.back()->configuration, real_options);
+	FETI4ISetIntegerOptions(DataHolder::instances.back()->configuration, integer_options);
+	FETI4ISetRealOptions(DataHolder::instances.back()->configuration, real_options);
 
 	TimeEvent event("Create FETI4I instance"); event.startWithBarrier();
 
@@ -234,7 +197,7 @@ void FETI4ICreateInstance(
 
 	DataHolder::instances.back()->instance = new Instance(*DataHolder::instances.back()->mesh);
 	DataHolder::instances.back()->physics = new Precomputed(DataHolder::instances.back()->mesh, DataHolder::instances.back()->instance, (espreso::MatrixType)matrix->type, rhs, size);
-	DataHolder::instances.back()->linearSolver = new FETISolver(DataHolder::instances.back()->instance, *DataHolder::instances.back()->configuration);
+	DataHolder::instances.back()->linearSolver = new FETISolver(DataHolder::instances.back()->instance, DataHolder::instances.back()->configuration.structural_mechanics_3d.physics_solver.load_steps_settings[1].feti);
 	DataHolder::instances.back()->assembler = new Assembler(
 			*DataHolder::instances.back()->instance,
 			*DataHolder::instances.back()->physics,
@@ -244,7 +207,7 @@ void FETI4ICreateInstance(
 	DataHolder::instances.back()->timeStepSolver = new LinearTimeStep(*DataHolder::instances.back()->assembler);
 	DataHolder::instances.back()->loadStepSolver = new SteadyStateSolver(*DataHolder::instances.back()->timeStepSolver, 1);
 
-	switch (DataHolder::instances.back()->configuration->method) {
+	switch (DataHolder::instances.back()->configuration.structural_mechanics_3d.physics_solver.load_steps_settings[1].feti.method) {
 	case FETI_METHOD::TOTAL_FETI:
 		DataHolder::instances.back()->physics->prepare();
 		break;

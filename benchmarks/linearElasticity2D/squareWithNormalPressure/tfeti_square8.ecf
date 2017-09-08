@@ -112,17 +112,76 @@ STRUCTURAL_MECHANICS_2D {
 
 OUTPUT {
   MONITORING {
-    ALL_NODES      MIN DISPLACEMENT;
-    ALL_NODES      MAX DISPLACEMENT;
-    ALL_NODES      AVG DISPLACEMENT;
-    ALL_NODES     NORM DISPLACEMENT;
-    ALL_NODES    MIN DISPLACEMENT_X;
-    ALL_NODES    MAX DISPLACEMENT_X;
-    ALL_NODES    AVG DISPLACEMENT_X;
-    ALL_NODES   NORM DISPLACEMENT_X;
-    ALL_NODES    MIN DISPLACEMENT_Y;
-    ALL_NODES    MAX DISPLACEMENT_Y;
-    ALL_NODES    AVG DISPLACEMENT_Y;
-    ALL_NODES   NORM DISPLACEMENT_Y;
+    1 {
+      REGION        ALL_NODES;
+      STATISTICS          MIN;
+      PROPERTY   DISPLACEMENT;
+    }
+
+    2 {
+      REGION        ALL_NODES;
+      STATISTICS          MAX;
+      PROPERTY   DISPLACEMENT;
+    }
+
+    3 {
+      REGION        ALL_NODES;
+      STATISTICS          AVG;
+      PROPERTY   DISPLACEMENT;
+    }
+
+    4 {
+      REGION        ALL_NODES;
+      STATISTICS         NORM;
+      PROPERTY   DISPLACEMENT;
+    }
+
+    5 {
+      REGION          ALL_NODES;
+      STATISTICS            MIN;
+      PROPERTY   DISPLACEMENT_X;
+    }
+
+    6 {
+      REGION          ALL_NODES;
+      STATISTICS            MAX;
+      PROPERTY   DISPLACEMENT_X;
+    }
+
+    7 {
+      REGION          ALL_NODES;
+      STATISTICS            AVG;
+      PROPERTY   DISPLACEMENT_X;
+    }
+
+    8 {
+      REGION          ALL_NODES;
+      STATISTICS           NORM;
+      PROPERTY   DISPLACEMENT_X;
+    }
+
+    9 {
+      REGION          ALL_NODES;
+      STATISTICS            MIN;
+      PROPERTY   DISPLACEMENT_Y;
+    }
+
+    10 {
+      REGION          ALL_NODES;
+      STATISTICS            MAX;
+      PROPERTY   DISPLACEMENT_Y;
+    }
+
+    11 {
+      REGION          ALL_NODES;
+      STATISTICS            AVG;
+      PROPERTY   DISPLACEMENT_Y;
+    }
+
+    12 {
+      REGION          ALL_NODES;
+      STATISTICS           NORM;
+      PROPERTY   DISPLACEMENT_Y;
+    }
   }
 }
