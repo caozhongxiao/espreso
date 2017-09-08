@@ -12,6 +12,7 @@ espreso::MonitorConfiguration::MonitorConfiguration(const PHYSICS &physics)
 			.setdescription({ "Monitored region." })
 			.setdatatype({ ECFDataType::REGION }));
 
+	statistics = STATISTICS::AVG;
 	REGISTER(statistics, ECFMetaData()
 			.setdescription({ "Requested statistics." })
 			.setdatatype({ ECFDataType::OPTION })
@@ -21,11 +22,11 @@ espreso::MonitorConfiguration::MonitorConfiguration(const PHYSICS &physics)
 			.addoption(ECFOption().setname("NORM").setdescription("Norm (for testing purposes).").allowonly([] () { return false; })));
 
 	auto temperature = [&] () {
-		return _physics == PHYSICS::ADVECTION_DIFFUSION_2D || _physics == PHYSICS::ADVECTION_DIFFUSION_3D;
+		return _physics == PHYSICS::HEAT_TRANSFER_2D || _physics == PHYSICS::HEAT_TRANSFER_3D;
 	};
 
 	auto temperature3D = [&] () {
-		return _physics == PHYSICS::ADVECTION_DIFFUSION_3D;
+		return _physics == PHYSICS::HEAT_TRANSFER_3D;
 	};
 
 	auto structuralMechanics = [&] () {

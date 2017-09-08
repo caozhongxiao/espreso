@@ -10,8 +10,8 @@ DEFAULT_ARGS {
   6          30;
 }
 
-INPUT                  GENERATOR;
-PHYSICS   ADVECTION_DIFFUSION_2D;
+INPUT            GENERATOR;
+PHYSICS   HEAT_TRANSFER_2D;
 
 GENERATOR {
   SHAPE   GRID;
@@ -53,68 +53,8 @@ GENERATOR {
   }
 }
 
-ADVECTION_DIFFUSION_2D {
-  STABILIZATION   CAU;
-  SIGMA             0;
-
-  PHYSICS_SOLVER {
-    LOAD_STEPS   1;
-
-    LOAD_STEPS_SETTINGS {
-      1 {
-        TYPE   STEADY_STATE;
-        MODE      NONLINEAR;
-        SOLVER         FETI;
-
-        NONLINEAR_SOLVER {
-          METHOD                  NEWTON_RHAPSON;
-          STEPPING                         FALSE;
-          SUBSTEPS                             1;
-          LINE_SEARCH                      FALSE;
-          CHECK_TEMPERATURE                 TRUE;
-          CHECK_HEAT                       FALSE;
-          REQUESTED_TEMPERATURE_RESIDUAL   0.001;
-          REQUESTED_HEAT_RESIDUAL          0.001;
-        }
-
-        FETI {
-          METHOD          TOTAL_FETI;
-          PRECONDITIONER   DIRICHLET;
-          PRECISION            1E-08;
-          SOLVER                 PCG;
-          REGULARIZATION    ANALYTIC;
-        }
-      }
-    }
-  }
-
-  INITIAL_TEMPERATURE {
-    ALL_ELEMENTS   300;
-  }
-
-  TEMPERATURE {
-    1 {
-      LEFT   400;
-    }
-  }
-
-  CONVECTION {
-    1 {
-      RIGHT {
-        HEAT_TRANSFER_COEFFICIENT   10;
-        EXTERNAL_TEMPERATURE       500;
-      }
-    }
-  }
-
-  DIFFUSE_RADIATION {
-    1 {
-      RIGHT {
-        EMISSIVITY               1;
-        EXTERNAL_TEMPERATURE   500;
-      }
-    }
-  }
+HEAT_TRANSFER_2D {
+  LOAD_STEPS        1;
 
   MATERIALS {
     1 {
@@ -134,6 +74,60 @@ ADVECTION_DIFFUSION_2D {
     ALL_ELEMENTS   1;
   }
 
+  INITIAL_TEMPERATURE {
+    ALL_ELEMENTS   300;
+  }
+
+  STABILIZATION   CAU;
+  SIGMA             0;
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      TYPE   STEADY_STATE;
+      MODE      NONLINEAR;
+      SOLVER         FETI;
+
+      NONLINEAR_SOLVER {
+        METHOD                  NEWTON_RAPHSON;
+
+        CHECK_TEMPERATURE                 TRUE;
+        CHECK_HEAT                       FALSE;
+        REQUESTED_TEMPERATURE_RESIDUAL   0.001;
+        REQUESTED_HEAT_RESIDUAL          0.001;
+
+        STEPPING                         FALSE;
+        SUBSTEPS                             1;
+
+        LINE_SEARCH                      FALSE;
+      }
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER   DIRICHLET;
+        PRECISION            1E-08;
+        SOLVER                 PCG;
+        REGULARIZATION    ANALYTIC;
+      }
+
+      TEMPERATURE {
+        LEFT   400;
+      }
+
+      CONVECTION {
+        RIGHT {
+          HEAT_TRANSFER_COEFFICIENT   10;
+          EXTERNAL_TEMPERATURE       500;
+        }
+      }
+
+      DIFFUSE_RADIATION {
+        RIGHT {
+          EMISSIVITY               1;
+          EXTERNAL_TEMPERATURE   500;
+        }
+      }
+    }
+  }
 }
 
 OUTPUT {

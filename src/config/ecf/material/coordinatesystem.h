@@ -6,6 +6,11 @@
 
 namespace espreso {
 
+enum class DIMENSION {
+	D2,
+	D3
+};
+
 struct CoordinateSystemConfiguration: public ECFObject {
 
 	enum class TYPE {
@@ -15,7 +20,7 @@ struct CoordinateSystemConfiguration: public ECFObject {
 	};
 
 	TYPE type;
-	bool is3D;
+	DIMENSION dimension;
 
 	ECFExpression rotation_x, rotation_y, rotation_z;
 	ECFExpression center_x, center_y, center_z;

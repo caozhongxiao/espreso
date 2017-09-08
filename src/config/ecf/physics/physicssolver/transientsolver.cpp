@@ -1,6 +1,6 @@
 
 #include "transientsolver.h"
-#include "../../configuration.hpp"
+#include "../../../configuration.hpp"
 
 espreso::AutoTimeSteppingConfiguration::AutoTimeSteppingConfiguration()
 {
@@ -35,17 +35,23 @@ espreso::TransientSolverConfiguration::TransientSolverConfiguration()
 			.addoption(ECFOption().setname("BACKWARD_DIFF").setdescription("Alpha = 1."))
 			.addoption(ECFOption().setname("USER").setdescription("User defined Alpha from interval <0, 1).")));
 
+	alpha = 0.5;
+	REGISTER(alpha, ECFMetaData()
+			.setdescription({ "User defined Alpha." })
+			.setdatatype({ ECFDataType::FLOAT })
+			.allowonly([&] () { return method == METHOD::USER; }));
+
+	addSpace();
+
+	time_step = 0.1;
+	REGISTER(time_step, ECFMetaData()
+				.setdescription({ "Duration of a time step." })
+				.setdatatype({ ECFDataType::FLOAT }));
+
 	REGISTER(auto_time_stepping, ECFMetaData()
 			.setdescription({ "Auto time stepping." }));
 
-	alpha = 0.5;
-	time_step = 0.1;
-	REGISTER(alpha, ECFMetaData()
-			.setdescription({ "User defined Alpha." })
-			.setdatatype({ ECFDataType::FLOAT }));
-	REGISTER(time_step, ECFMetaData()
-			.setdescription({ "Duration of a time step." })
-			.setdatatype({ ECFDataType::FLOAT }));
+
 }
 
 

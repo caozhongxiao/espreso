@@ -10,22 +10,19 @@ WORKBENCH {
 }
 
 STRUCTURAL_MECHANICS_3D {
-  PHYSICS_SOLVER {
-    LOAD_STEPS   1;
+  LOAD_STEPS   1;
 
-    LOAD_STEPS_SETTINGS {
-      1 {
-        TYPE   STEADY_STATE;
-        MODE         LINEAR;
-        SOLVER         FETI;
+  LOAD_STEPS_SETTINGS {
+    1 {
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
 
-        FETI {
-          METHOD      HYBRID_FETI;
-          PRECONDITIONER   LUMPED;
-          SOLVER              PCG;
-        }
+      FETI {
+        METHOD      HYBRID_FETI;
+        PRECONDITIONER   LUMPED;
+        SOLVER              PCG;
       }
     }
   }
-
 }

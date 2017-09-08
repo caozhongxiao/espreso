@@ -101,7 +101,8 @@ ECFRedParameters ECFReader::_read(
 			break;
 		case 'd': {
 			std::ofstream os("espreso.ecf.default");
-			store(configuration, os);
+			store(configuration, os, false, true);
+			os.close();
 			exit(EXIT_SUCCESS);
 		} break;
 		case 'c':
@@ -317,6 +318,9 @@ ECFRedParameters ECFReader::_read(
 			if (parameter == NULL) {
 				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Unexpected parameter '" << prefix << "'\n" << tokenStack.top()->lastLines(2);
 			}
+			if (!parameter->isObject()) {
+				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Expected parameter instead of object '" << prefix << "'\n" << tokenStack.top()->lastLines(2);
+			}
 			redParameters.parameters.push_back(parameter);
 			confStack.push(dynamic_cast<ECFObject*>(parameter));
 			values.clear();
@@ -458,6 +462,17 @@ static void printECF(const ECFObject &configuration, std::ostream &os, size_t in
 				value = parameters.defaulted.find(parameter)->second;
 			}
 			size_t space = maxSize ? maxSize - parameter->name.size() - value.size() : 3;
+			if (printPatterns && parameter->metadata.datatype.front() == ECFDataType::OPTION) {
+				printindent(indent);
+				os << "#[";
+				for (size_t i = 0; i < parameter->metadata.options.size(); i++) {
+					if (i) {
+						os << ",";
+					}
+					os << Parser::uppercase(parameter->metadata.options[i].name);
+				}
+				os << "]\n";
+			}
 			printindent(indent);
 			if (hasDataType) {
 				os << parameter->name;

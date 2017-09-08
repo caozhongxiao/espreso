@@ -10,10 +10,10 @@
 #include "input/generator.h"
 
 #include "physics/physics.h"
-#include "physics/advectiondiffusion.h"
 #include "physics/structuralmechanics.h"
 
 #include "../reader/reader.h"
+#include "physics/heattransfer.h"
 
 namespace espreso {
 
@@ -31,10 +31,10 @@ struct ECFConfiguration: public ECFObject {
 	InputConfiguration workbench, openfoam, esdata;
 	InputGeneratorConfiguration generator;
 
-	AdvectionDiffusion2DConfiguration advection_diffusion_2d;
-	AdvectionDiffusion3DConfiguration advection_diffusion_3d;
-	StructuralMechanics2DConfiguration structural_mechanics_2d;
-	StructuralMechanics3DConfiguration structural_mechanics_3d;
+	HeatTransferConfiguration heat_transfer_2d;
+	HeatTransferConfiguration heat_transfer_3d;
+	StructuralMechanicsConfiguration structural_mechanics_2d;
+	StructuralMechanicsConfiguration structural_mechanics_3d;
 
 	OutputConfiguration output;
 

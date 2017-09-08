@@ -73,7 +73,7 @@ static bool isStringEnd(int c)
 
 static bool isSingleCommentChar(int c)
 {
-	return c == '#' || c == '|';
+	return c == '#';
 }
 
 static bool isLineComment(int last, int currect)

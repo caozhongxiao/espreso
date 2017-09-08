@@ -12,8 +12,8 @@ DEFAULT_ARGS {
   8   5;
 }
 
-INPUT                  GENERATOR;
-PHYSICS   ADVECTION_DIFFUSION_3D;
+INPUT            GENERATOR;
+PHYSICS   HEAT_TRANSFER_3D;
 
 GENERATOR {
   SHAPE   GRID;
@@ -58,50 +58,8 @@ GENERATOR {
   }
 }
 
-ADVECTION_DIFFUSION_3D {
-  STABILIZATION   CAU;
-  SIGMA             0;
-
-  PHYSICS_SOLVER {
-    LOAD_STEPS   1;
-
-    LOAD_STEPS_SETTINGS {
-      1 {
-        TYPE   STEADY_STATE;
-        MODE         LINEAR;
-        SOLVER         FETI;
-
-        FETI {
-          METHOD          TOTAL_FETI;
-          PRECONDITIONER      LUMPED;
-          PRECISION            1E-08;
-          MAX_ITERATIONS        1000;
-          SOLVER               GMRES;
-          REGULARIZATION   ALGEBRAIC;
-        }
-      }
-    }
-  }
-
-  TEMPERATURE {
-    1 {
-      X0   300;
-      Y0   300;
-      Z0   300;
-    }
-  }
-
-  HEAT_SOURCE {
-    1 {
-      ALL_ELEMENTS   1E8;
-    }
-  }
-
-  TRANSLATION_MOTIONS {
-    1 {
-      ALL_ELEMENTS   X 50 , Y 50 , Z 50;
-    }
-  }
+HEAT_TRANSFER_3D {
+  LOAD_STEPS        1;
 
   MATERIALS {
     1 {
@@ -134,6 +92,40 @@ ADVECTION_DIFFUSION_3D {
     BLACK   2;
   }
 
+
+  STABILIZATION   CAU;
+  SIGMA             0;
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER      LUMPED;
+        PRECISION            1E-08;
+        MAX_ITERATIONS        1000;
+        SOLVER               GMRES;
+        REGULARIZATION   ALGEBRAIC;
+      }
+
+      TEMPERATURE {
+        X0   300;
+        Y0   300;
+        Z0   300;
+      }
+
+      HEAT_SOURCE {
+        ALL_ELEMENTS   1E8;
+      }
+
+      TRANSLATION_MOTIONS {
+        ALL_ELEMENTS   X 50 , Y 50 , Z 50;
+      }
+    }
+  }
 }
 
 OUTPUT {

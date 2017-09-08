@@ -8,8 +8,8 @@ DEFAULT_ARGS {
   4      KERNELS;
 }
 
-INPUT                  GENERATOR;
-PHYSICS   ADVECTION_DIFFUSION_2D;
+INPUT            GENERATOR;
+PHYSICS   HEAT_TRANSFER_2D;
 
 GENERATOR {
   SHAPE   GRID;
@@ -51,64 +51,8 @@ GENERATOR {
   }
 }
 
-ADVECTION_DIFFUSION_2D {
-  STABILIZATION   CAU;
-  SIGMA             0;
-
-  PHYSICS_SOLVER {
-    LOAD_STEPS   1;
-
-    LOAD_STEPS_SETTINGS {
-      1 {
-        TYPE   STEADY_STATE;
-        MODE         LINEAR;
-        SOLVER         FETI;
-
-        FETI {
-          METHOD              [ARG0];
-          PRECONDITIONER      [ARG2];
-          PRECISION            0.001;
-          MAX_ITERATIONS          50;
-          SOLVER              [ARG1];
-          REGULARIZATION      [ARG3];
-          REDUNDANT_LAGRANGE   FALSE;
-          SCALING              FALSE;
-          B0_TYPE             [ARG4];
-        }
-      }
-    }
-  }
-
-  TEMPERATURE {
-    1 {
-      TOP   1;
-    }
-  }
-
-  TRANSLATION_MOTIONS {
-    1 {
-      ALL_ELEMENTS   X 10 - 20 * X , Y 10 - 20 * Y;
-    }
-  }
-
-  CONVECTION {
-    1 {
-      BOTTOM {
-        HEAT_TRANSFER_COEFFICIENT   10;
-        EXTERNAL_TEMPERATURE        50;
-      }
-
-      LEFT {
-        HEAT_TRANSFER_COEFFICIENT   10;
-        EXTERNAL_TEMPERATURE        50;
-      }
-
-      RIGHT {
-        HEAT_TRANSFER_COEFFICIENT   10;
-        EXTERNAL_TEMPERATURE        50;
-      }
-    }
-  }
+HEAT_TRANSFER_2D {
+  LOAD_STEPS        1;
 
   MATERIALS {
     1 {
@@ -128,4 +72,52 @@ ADVECTION_DIFFUSION_2D {
     ALL_ELEMENTS   1;
   }
 
+
+  STABILIZATION   CAU;
+  SIGMA             0;
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD              [ARG0];
+        PRECONDITIONER      [ARG2];
+        PRECISION            0.001;
+        MAX_ITERATIONS          50;
+        SOLVER              [ARG1];
+        REGULARIZATION      [ARG3];
+        REDUNDANT_LAGRANGE   FALSE;
+        SCALING              FALSE;
+        B0_TYPE             [ARG4];
+      }
+
+      TEMPERATURE {
+        TOP   1;
+      }
+
+      TRANSLATION_MOTIONS {
+        ALL_ELEMENTS   X 10 - 20 * X , Y 10 - 20 * Y;
+      }
+
+      CONVECTION {
+        BOTTOM {
+          HEAT_TRANSFER_COEFFICIENT   10;
+          EXTERNAL_TEMPERATURE        50;
+        }
+
+        LEFT {
+          HEAT_TRANSFER_COEFFICIENT   10;
+          EXTERNAL_TEMPERATURE        50;
+        }
+
+        RIGHT {
+          HEAT_TRANSFER_COEFFICIENT   10;
+          EXTERNAL_TEMPERATURE        50;
+        }
+      }
+    }
+  }
 }

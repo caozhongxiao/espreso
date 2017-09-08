@@ -2,14 +2,14 @@
 #ifndef SRC_ASSEMBLER_PHYSICS_LAPLACESTEKLOVPOINCARE3D_H_
 #define SRC_ASSEMBLER_PHYSICS_LAPLACESTEKLOVPOINCARE3D_H_
 
-#include "advectiondiffusion3d.h"
 #include "boundarybased3d.h"
+#include "heattransfer3d.h"
 
 namespace espreso {
 
-struct LaplaceSteklovPoincare3D: public BoundaryBased3D, public AdvectionDiffusion3D
+struct LaplaceSteklovPoincare3D: public BoundaryBased3D, public HeatTransfer3D
 {
-	LaplaceSteklovPoincare3D(Mesh *mesh, Instance *instance, const AdvectionDiffusion3DConfiguration &configuration);
+	LaplaceSteklovPoincare3D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration);
 
 	void prepare();
 	void prepareHybridTotalFETIWithKernels();

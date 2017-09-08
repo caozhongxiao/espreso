@@ -10,35 +10,7 @@ OPENFOAM {
 }
 
 STRUCTURAL_MECHANICS_3D {
-  PHYSICS_SOLVER {
-    LOAD_STEPS   1;
-
-    LOAD_STEPS_SETTINGS {
-      1 {
-        TYPE   STEADY_STATE;
-        MODE         LINEAR;
-        SOLVER         FETI;
-
-        FETI {
-          METHOD      HYBRID_FETI;
-          PRECONDITIONER   LUMPED;
-          SOLVER              PCG;
-        }
-      }
-    }
-  }
-
-  DISPLACEMENT {
-    1 {
-      inner_convection   X 0 , Y 0 , Z 0;
-    }
-  }
-
-  NORMAL_PRESSURE {
-    1 {
-      outer_convection   10000;
-    }
-  }
+  LOAD_STEPS   1;
 
   MATERIALS {
     1 {
@@ -60,4 +32,25 @@ STRUCTURAL_MECHANICS_3D {
     ALL_ELEMENTS   1;
   }
 
+  LOAD_STEPS_SETTINGS {
+    1 {
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD      HYBRID_FETI;
+        PRECONDITIONER   LUMPED;
+        SOLVER              PCG;
+      }
+
+      DISPLACEMENT {
+        inner_convection   X 0 , Y 0 , Z 0;
+      }
+
+      NORMAL_PRESSURE {
+        outer_convection   10000;
+      }
+    }
+  }
 }

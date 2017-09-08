@@ -60,7 +60,7 @@ GENERATOR {
 
 STRUCTURAL_MECHANICS_3D {
 
-  PHYSICS_SOLVER {
+  
     LOAD_STEPS          1;
 
     LOAD_STEPS_SETTINGS {
@@ -80,10 +80,23 @@ STRUCTURAL_MECHANICS_3D {
           SCALING              1;
           PRECISION           1e-3;
           MAX_ITERATIONS          50;
-        }
-      }
-    }
+     
+     
+     
   }
+  
+    DISPLACEMENT {
+    
+      BOTTOM X 0, Y 0, Z 0;
+    
+  }
+
+  ACCELERATION {
+    
+      ALL_ELEMENTS Z 9.8066;
+    }}
+  }
+  
 
   MATERIALS { # Vector of materials (counterd from 1).
 
@@ -105,17 +118,7 @@ STRUCTURAL_MECHANICS_3D {
     ALL_ELEMENTS 1;
   }
 
-  DISPLACEMENT {
-    1 {
-      BOTTOM X 0, Y 0, Z 0;
-    }
-  }
 
-  ACCELERATION {
-    1 {
-      ALL_ELEMENTS Z 9.8066;
-    }
-  }
 }
 
 

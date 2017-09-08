@@ -1,10 +1,6 @@
 
-#include "advectiondiffusionfactory.h"
+#include "../../config/ecf/physics/heattransfer.h"
 
-#include "../../config/ecf/physics/advectiondiffusion.h"
-
-#include "../../assembler/physics/advectiondiffusion2d.h"
-#include "../../assembler/physics/advectiondiffusion3d.h"
 #include "../../assembler/physics/laplacesteklovpoincare3d.h"
 
 #include "../../assembler/physicssolver/assembler.h"
@@ -15,53 +11,63 @@
 #include "../../assembler/physicssolver/loadstep/transientfirstorderimplicit.h"
 
 #include "../../assembler/instance.h"
+#include "../../assembler/physics/heattransfer2d.h"
+#include "../../assembler/physics/heattransfer3d.h"
 #include "../../mesh/structures/mesh.h"
 #include "../../basis/logging/logging.h"
+#include "heattransferfactory.h"
 
 using namespace espreso;
 
-AdvectionDiffusionFactory::AdvectionDiffusionFactory(const AdvectionDiffusion2DConfiguration &configuration, Mesh *mesh)
-: _configuration(configuration), _bem(false)
-{
-	_instances.push_back(new Instance(*mesh));
-	_physics.push_back(new AdvectionDiffusion2D(mesh, _instances.front(), configuration));
-}
-
-AdvectionDiffusionFactory::AdvectionDiffusionFactory(const AdvectionDiffusion3DConfiguration &configuration, Mesh *mesh)
+HeatTransferFactory::HeatTransferFactory(const HeatTransferConfiguration &configuration, Mesh *mesh)
 : _configuration(configuration), _bem(false)
 {
 	_instances.push_back(new Instance(*mesh));
 
 	switch (configuration.discretization) {
 	case DISCRETIZATION::FEM:
-		_physics.push_back(new AdvectionDiffusion3D(mesh, _instances.front(), configuration));
+		switch (configuration.dimension) {
+		case DIMENSION::D2:
+			_physics.push_back(new HeatTransfer2D(mesh, _instances.front(), configuration));
+			break;
+		case DIMENSION::D3:
+			_physics.push_back(new HeatTransfer3D(mesh, _instances.front(), configuration));
+			break;
+		}
 		break;
 	case DISCRETIZATION::BEM:
 		_bem = true;
-		_physics.push_back(new LaplaceSteklovPoincare3D(mesh, _instances.front(), configuration));
+		switch (configuration.dimension) {
+		case DIMENSION::D2:
+			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: cannot solve HEAT TRANSFER 2D with BEM discretization.";
+			break;
+		case DIMENSION::D3:
+			_physics.push_back(new LaplaceSteklovPoincare3D(mesh, _instances.front(), configuration));
+			break;
+		}
 		break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Unknown DISCRETIZATION for AdvectionDiffusion3D";
+		ESINFO(GLOBAL_ERROR) << "Unknown DISCRETIZATION for HeatTransfer3D";
 	}
 }
 
-size_t AdvectionDiffusionFactory::loadSteps() const
+size_t HeatTransferFactory::loadSteps() const
 {
-	return _configuration.physics_solver.load_steps;
+	return _configuration.load_steps;
 }
 
-LoadStepSolver* AdvectionDiffusionFactory::getLoadStepSolver(size_t step, Mesh *mesh, Store *store)
+LoadStepSolver* HeatTransferFactory::getLoadStepSolver(size_t step, Mesh *mesh, Store *store)
 {
-	const AdvectionDiffusionLoadStepsConfiguration &settings = getLoadStepsSettings(step, _configuration.physics_solver.load_steps_settings);
+	const HeatTransferLoadStepConfiguration &settings = getLoadStepsSettings(step, _configuration.load_steps_settings);
 
 	_linearSolvers.push_back(getLinearSolver(settings, _instances.front()));
 	_assemblers.push_back(new Assembler(*_instances.front(), *_physics.front(), *mesh, *store, *_linearSolvers.back()));
 
 	switch (settings.mode) {
-	case LoadStepsConfiguration::MODE::LINEAR:
+	case LoadStepConfiguration::MODE::LINEAR:
 		_timeStepSolvers.push_back(new LinearTimeStep(*_assemblers.back()));
 		break;
-	case LoadStepsConfiguration::MODE::NONLINEAR:
+	case LoadStepConfiguration::MODE::NONLINEAR:
 		if (_bem) {
 			ESINFO(GLOBAL_ERROR) << "BEM discretization support only LINEAR STEADY STATE physics solver.";
 		}
@@ -80,14 +86,14 @@ LoadStepSolver* AdvectionDiffusionFactory::getLoadStepSolver(size_t step, Mesh *
 	}
 
 	switch (settings.type) {
-	case LoadStepsConfiguration::TYPE::STEADY_STATE:
-		if (settings.mode == LoadStepsConfiguration::MODE::NONLINEAR) {
+	case LoadStepConfiguration::TYPE::STEADY_STATE:
+		if (settings.mode == LoadStepConfiguration::MODE::NONLINEAR) {
 			_loadStepSolvers.push_back(new PseudoTimeStepping(*_timeStepSolvers.back(), settings.nonlinear_solver, settings.duration_time));
 		} else {
 			_loadStepSolvers.push_back(new SteadyStateSolver(*_timeStepSolvers.back(), settings.duration_time));
 		}
 		break;
-	case LoadStepsConfiguration::TYPE::TRANSIENT:
+	case LoadStepConfiguration::TYPE::TRANSIENT:
 		_loadStepSolvers.push_back(new TransientFirstOrderImplicit(*_timeStepSolvers.back(), settings.transient_solver, settings.duration_time));
 		break;
 	default:

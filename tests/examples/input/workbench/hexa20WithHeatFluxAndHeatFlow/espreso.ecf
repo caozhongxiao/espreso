@@ -1,32 +1,30 @@
 # ESPRESO Configuration File
 
 
-INPUT                  WORKBENCH;
-PHYSICS   ADVECTION_DIFFUSION_3D;
+INPUT            WORKBENCH;
+PHYSICS   HEAT_TRANSFER_3D;
 
 WORKBENCH {
   PATH   workbench.dat;
   DOMAINS            2;
 }
 
-ADVECTION_DIFFUSION_3D {
-  PHYSICS_SOLVER {
-    LOAD_STEPS   1;
+HEAT_TRANSFER_3D {
+  LOAD_STEPS   1;
 
-    LOAD_STEPS_SETTINGS {
-      1 {
-        TYPE   STEADY_STATE;
-        MODE         LINEAR;
-        SOLVER         FETI;
 
-        FETI {
-          METHOD         HYBRID_FETI;
-          PRECONDITIONER      LUMPED;
-          SOLVER                 PCG;
-          REGULARIZATION   ALGEBRAIC;
-        }
+  LOAD_STEPS_SETTINGS {
+    1 {
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD         HYBRID_FETI;
+        PRECONDITIONER      LUMPED;
+        SOLVER                 PCG;
+        REGULARIZATION   ALGEBRAIC;
       }
     }
   }
-
 }

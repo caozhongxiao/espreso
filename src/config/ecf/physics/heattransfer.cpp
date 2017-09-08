@@ -1,6 +1,6 @@
 
-#include "advectiondiffusion.h"
 #include "../../configuration.hpp"
+#include "heattransfer.h"
 
 espreso::ConvectionConfiguration::ConvectionConfiguration()
 {
@@ -84,8 +84,52 @@ espreso::RadiationConfiguration::RadiationConfiguration()
 			.setdatatype({ ECFDataType::EXPRESSION }));
 }
 
-espreso::AdvectionDiffusionConfiguration::AdvectionDiffusionConfiguration()
+espreso::HeatTransferLoadStepConfiguration::HeatTransferLoadStepConfiguration(DIMENSION dimension)
+: LoadStepConfiguration("temperature", "heat")
 {
+	REGISTER(temperature, ECFMetaData()
+			.setdescription({ "The name of a region.", "Temperature of a given region." })
+			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
+			.setpattern({ "MY_REGION", "273.15" }));
+	REGISTER(heat_source, ECFMetaData()
+			.setdescription({ "The name of a region.", "Heat source of a given region." })
+			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
+			.setpattern({ "MY_REGION", "273.15" }));
+	REGISTER(translation_motions, ECFMetaData()
+			.setdescription({ "The name of a region.", "Translation motion of a given region." })
+			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
+			.setpattern({ "MY_REGION", dimension == DIMENSION::D2 ? "X 0, Y 0" : "X 0, Y 0, Z 0" }));
+	REGISTER(heat_flux, ECFMetaData()
+			.setdescription({ "The name of a region.", "Heat flux on a given region." })
+			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
+			.setpattern({ "MY_REGION", "500" }));
+	REGISTER(heat_flow, ECFMetaData()
+			.setdescription({ "The name of a region.", "Heat flow on a given region." })
+			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
+			.setpattern({ "MY_REGION", "500" }));
+
+	REGISTER(convection, ECFMetaData()
+			.setdescription({ "The name of a region.", "Convection on a given region." })
+			.setdatatype({ ECFDataType::REGION })
+			.setpattern({ "MY_REGION" }));
+	REGISTER(diffuse_radiation, ECFMetaData()
+			.setdescription({ "The name of a region.", "Radiation on a given region." })
+			.setdatatype({ ECFDataType::REGION })
+			.setpattern({ "MY_REGION" }));
+}
+
+espreso::HeatTransferConfiguration::HeatTransferConfiguration(DIMENSION dimension)
+: PhysicsConfiguration(dimension)
+{
+	REGISTER(
+			materials,
+			ECFMetaData()
+				.setdescription({ "The name of a material.", "Material description." })
+				.setdatatype({ ECFDataType::STRING })
+				.setpattern({ "MY_MATERIAL" }),
+			dimension, MaterialConfiguration::PHYSICAL_MODEL::THERMAL);
+	moveLastBefore(PNAME(material_set));
+
 	stabilization = STABILIZATION::SUPG;
 	REGISTER(stabilization, ECFMetaData()
 			.setdescription({ "Stabilization." })
@@ -98,91 +142,13 @@ espreso::AdvectionDiffusionConfiguration::AdvectionDiffusionConfiguration()
 			.setdescription({ "Inconsistent stabilization parameter." })
 			.setdatatype({ ECFDataType::FLOAT }));
 
-	REGISTER(physics_solver, ECFMetaData()
-			.setdescription({ "Physics solver settings." }));
-
-	REGISTER(initial_temperature, ECFMetaData()
-			.setdescription({ "The name of a region.", "Initial temperature of a given region." })
-			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "MY_REGION", "273.15" }));
-
-	REGISTER(temperature, ECFMetaData()
-			.setdescription({ "Load step index.", "The name of a region.", "Temperature of a given region." })
-			.setdatatype({ ECFDataType::LOAD_STEP, ECFDataType::REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "1", "MY_REGION", "273.15" }));
-	REGISTER(heat_source, ECFMetaData()
-			.setdescription({ "Load step index.", "The name of a region.", "Heat source of a given region." })
-			.setdatatype({ ECFDataType::LOAD_STEP, ECFDataType::REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "1", "MY_REGION", "273.15" }));
-	REGISTER(translation_motions, ECFMetaData()
-			.setdescription({ "Load step index.", "The name of a region.", "Translation motion of a given region." })
-			.setdatatype({ ECFDataType::LOAD_STEP, ECFDataType::REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "1", "MY_REGION", "X 0, Y 0, Z 0" }));
-	REGISTER(heat_flux, ECFMetaData()
-			.setdescription({ "Load step index.", "The name of a region.", "Heat flux on a given region." })
-			.setdatatype({ ECFDataType::LOAD_STEP, ECFDataType::REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "1", "MY_REGION", "500" }));
-	REGISTER(heat_flow, ECFMetaData()
-			.setdescription({ "Load step index.", "The name of a region.", "Heat flow on a given region." })
-			.setdatatype({ ECFDataType::LOAD_STEP, ECFDataType::REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "1", "MY_REGION", "500" }));
-
-	REGISTER(convection, ECFMetaData()
-			.setdescription({ "Load step index.", "The name of a region.", "Convection on a given region." })
-			.setdatatype({ ECFDataType::LOAD_STEP, ECFDataType::REGION })
-			.setpattern({ "1", "MY_REGION" }));
-	REGISTER(diffuse_radiation, ECFMetaData()
-			.setdescription({ "Load step index.", "The name of a region.", "Radiation on a given region." })
-			.setdatatype({ ECFDataType::LOAD_STEP, ECFDataType::REGION })
-			.setpattern({ "1", "MY_REGION" }));
-
-	REGISTER(material_set, ECFMetaData()
-			.setdescription({ "The name of a region.", "The name of a material." })
-			.setdatatype({ ECFDataType::REGION, ECFDataType::MATERIAL })
-			.setpattern({ "MY_REGION", "MY_MATERIAL" }));
-
-	post_process = true;
-	REGISTER(post_process, ECFMetaData()
-			.setdescription({ "Turn on/off post-process." })
-			.setdatatype({ ECFDataType::BOOL}));
-}
-
-espreso::AdvectionDiffusion2DConfiguration::AdvectionDiffusion2DConfiguration()
-{
-	getWithError(PNAME(translation_motions))->metadata.pattern[2] = "X 0, Y 0";
-	REGISTER(thickness, ECFMetaData()
-			.setdescription({ "Load step index.", "The name of a region.", "Thickness of a given region." })
-			.setdatatype({ ECFDataType::LOAD_STEP, ECFDataType::REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "1", "MY_REGION", "1" }));
-	moveLastBefore(PNAME(initial_temperature));
-
 	REGISTER(
-			materials,
+			load_steps_settings,
 			ECFMetaData()
-				.setdescription({ "The name of a material.", "Material description." })
-				.setdatatype({ ECFDataType::STRING })
-				.setpattern({ "MY_MATERIAL" }),
-			MaterialConfiguration::PHYSICAL_MODEL::THERMAL, false);
-	moveLastBefore(PNAME(material_set));
-}
-
-espreso::AdvectionDiffusion3DConfiguration::AdvectionDiffusion3DConfiguration()
-{
-	REGISTER(
-			materials,
-			ECFMetaData()
-				.setdescription({ "The name of a material.", "Material description." })
-				.setdatatype({ ECFDataType::STRING })
-				.setpattern({ "MY_MATERIAL" }),
-			MaterialConfiguration::PHYSICAL_MODEL::THERMAL, true);
-	moveLastBefore(PNAME(material_set));
-
-	discretization = DISCRETIZATION::FEM;
-	REGISTER(discretization, ECFMetaData()
-			.setdescription({ "Discretization of stiffness matrices." })
-			.setdatatype({ ECFDataType::OPTION })
-			.addoption(ECFOption().setname("FEM").setdescription("Finite elements."))
-			.addoption(ECFOption().setname("BEM").setdescription("Boundary elements.")));
+				.setdescription({ "Settings for each load step.", "Load step index." })
+				.setdatatype({ ECFDataType::LOAD_STEP })
+				.setpattern({ "1" }),
+			dimension);
 }
 
 

@@ -5,7 +5,7 @@
 #include "../timestep/timestepsolver.h"
 #include "../../step.h"
 #include "../../instance.h"
-#include "../../../config/ecf/physics/nonlinearsolver.h"
+#include "../../../config/ecf/physics/physicssolver/nonlinearsolver.h"
 
 
 using namespace espreso;

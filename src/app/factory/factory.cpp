@@ -1,7 +1,6 @@
 
 #include "factory.h"
 
-#include "advectiondiffusionfactory.h"
 #include "structuralmechanicsfactory.h"
 
 #include "../../assembler/physicssolver/timestep/timestepsolver.h"
@@ -24,6 +23,7 @@
 #include "../../output/monitoring/monitoring.h"
 
 #include "../../solver/generic/FETISolver.h"
+#include "heattransferfactory.h"
 
 
 namespace espreso {
@@ -141,10 +141,10 @@ void Factory::setOutput(const OutputConfiguration &configuration)
 FactoryLoader* Factory::createFactoryLoader(const ECFConfiguration &configuration)
 {
 	switch (configuration.physics) {
-	case PHYSICS::ADVECTION_DIFFUSION_2D:
-		return new AdvectionDiffusionFactory(configuration.advection_diffusion_2d, _mesh);
-	case PHYSICS::ADVECTION_DIFFUSION_3D:
-		return new AdvectionDiffusionFactory(configuration.advection_diffusion_3d, _mesh);
+	case PHYSICS::HEAT_TRANSFER_2D:
+		return new HeatTransferFactory(configuration.heat_transfer_2d, _mesh);
+	case PHYSICS::HEAT_TRANSFER_3D:
+		return new HeatTransferFactory(configuration.heat_transfer_3d, _mesh);
 	case PHYSICS::STRUCTURAL_MECHANICS_2D:
 		return new StructuralMechanicsFactory(configuration.structural_mechanics_2d, _mesh);
 	case PHYSICS::STRUCTURAL_MECHANICS_3D:
@@ -173,10 +173,10 @@ FactoryLoader::~FactoryLoader()
 	clear(_loadStepSolvers);
 }
 
-LinearSolver* FactoryLoader::getLinearSolver(const LoadStepsConfiguration &settings, Instance *instance) const
+LinearSolver* FactoryLoader::getLinearSolver(const LoadStepConfiguration &settings, Instance *instance) const
 {
 	switch (settings.solver) {
-	case LoadStepsConfiguration::SOLVER::FETI:
+	case LoadStepConfiguration::SOLVER::FETI:
 		return new FETISolver(instance, settings.feti);
 	default:
 		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";

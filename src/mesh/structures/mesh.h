@@ -53,13 +53,9 @@ public:
 	void computeCornersOnEdges(size_t number, bool onVertices, bool onEdges);
 	void computeCornersOnFaces(size_t number, bool onVertices, bool onEdges, bool onFaces);
 
-	void loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep = 0);
-	void loadNodeProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep = 0);
-	void loadFaceProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep = 0);
-
-	void loadProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
-	void loadNodeProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
-	void loadFaceProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
+	void loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep);
+	void loadNodeProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep);
+	void loadFaceProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep);
 
 	void removeDuplicateRegions();
 	void fillDomainsSettings();

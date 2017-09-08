@@ -21,7 +21,7 @@ class ResultStoreList;
 
 struct ECFConfiguration;
 struct OutputConfiguration;
-struct LoadStepsConfiguration;
+struct LoadStepConfiguration;
 
 class FactoryLoader {
 
@@ -42,7 +42,7 @@ public:
 		return setting.find(step + 1)->second;
 	}
 
-	LinearSolver* getLinearSolver(const LoadStepsConfiguration &settings, Instance *instance) const;
+	LinearSolver* getLinearSolver(const LoadStepConfiguration &settings, Instance *instance) const;
 
 protected:
 	void printError(const std::string &error) const;

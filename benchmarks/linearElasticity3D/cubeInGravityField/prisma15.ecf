@@ -55,37 +55,7 @@ GENERATOR {
 }
 
 STRUCTURAL_MECHANICS_3D {
-  PHYSICS_SOLVER {
-    LOAD_STEPS   1;
-
-    LOAD_STEPS_SETTINGS {
-      1 {
-        TYPE   STEADY_STATE;
-        MODE         LINEAR;
-        SOLVER         FETI;
-
-        FETI {
-          METHOD         HYBRID_FETI;
-          PRECONDITIONER   DIRICHLET;
-          SOLVER                 PCG;
-          REGULARIZATION    ANALYTIC;
-          B0_TYPE            KERNELS;
-        }
-      }
-    }
-  }
-
-  DISPLACEMENT {
-    1 {
-      Z0   X 0 , Y 0 , Z 0;
-    }
-  }
-
-  ACCELERATION {
-    1 {
-      E_ALL   Z 9.8066;
-    }
-  }
+  LOAD_STEPS   1;
 
   MATERIALS {
     1 {
@@ -107,6 +77,29 @@ STRUCTURAL_MECHANICS_3D {
     E_ALL   1;
   }
 
+  LOAD_STEPS_SETTINGS {
+    1 {
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD         HYBRID_FETI;
+        PRECONDITIONER   DIRICHLET;
+        SOLVER                 PCG;
+        REGULARIZATION    ANALYTIC;
+        B0_TYPE            KERNELS;
+      }
+
+      DISPLACEMENT {
+        Z0   X 0 , Y 0 , Z 0;
+      }
+
+      ACCELERATION {
+        E_ALL   Z 9.8066;
+      }
+    }
+  }
 }
 
 OUTPUT {

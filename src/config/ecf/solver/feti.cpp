@@ -73,7 +73,7 @@ espreso::FETISolverConfiguration::FETISolverConfiguration()
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
 	orthogonal_K_kernels = false;
-	REGISTER(num_restart, ECFMetaData()
+	REGISTER(orthogonal_K_kernels, ECFMetaData()
 			.setdescription({ "Kernel of K are orthogonalized (obsolete)." })
 			.setdatatype({ ECFDataType::BOOL }));
 

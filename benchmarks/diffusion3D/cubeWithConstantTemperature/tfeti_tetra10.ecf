@@ -13,8 +13,8 @@ DEFAULT_ARGS {
   9         4;
 }
 
-INPUT                  GENERATOR;
-PHYSICS   ADVECTION_DIFFUSION_3D;
+INPUT            GENERATOR;
+PHYSICS   HEAT_TRANSFER_3D;
 
 GENERATOR {
   SHAPE   GRID;
@@ -51,37 +51,8 @@ GENERATOR {
   }
 }
 
-ADVECTION_DIFFUSION_3D {
-  STABILIZATION   CAU;
-  SIGMA             0;
-
-  PHYSICS_SOLVER {
-    LOAD_STEPS   1;
-
-    LOAD_STEPS_SETTINGS {
-      1 {
-        TYPE   STEADY_STATE;
-        MODE         LINEAR;
-        SOLVER         FETI;
-
-        FETI {
-          METHOD          TOTAL_FETI;
-          PRECONDITIONER   DIRICHLET;
-          PRECISION            1E-08;
-          SOLVER                 PCG;
-          REGULARIZATION    ANALYTIC;
-          B0_TYPE            CORNERS;
-        }
-      }
-    }
-  }
-
-  TEMPERATURE {
-    1 {
-      Z0   300;
-      Z1   400;
-    }
-  }
+HEAT_TRANSFER_3D {
+  LOAD_STEPS        1;
 
   MATERIALS {
     1 {
@@ -101,6 +72,31 @@ ADVECTION_DIFFUSION_3D {
     ALL_ELEMENTS   1;
   }
 
+
+  STABILIZATION   CAU;
+  SIGMA             0;
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER   DIRICHLET;
+        PRECISION            1E-08;
+        SOLVER                 PCG;
+        REGULARIZATION    ANALYTIC;
+        B0_TYPE            CORNERS;
+      }
+
+      TEMPERATURE {
+        Z0   300;
+        Z1   400;
+      }
+    }
+  }
 }
 
 OUTPUT {

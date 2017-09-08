@@ -10,16 +10,16 @@
 |*****************************************************************************|
 
 INPUT WORKBENCH;
-PHYSICS ADVECTION_DIFFUSION_2D;
+PHYSICS HEAT_TRANSFER_2D;
 
 WORKBENCH {
   PATH    workbench.dat;
   DOMAINS 4;
 }
 
-ADVECTION_DIFFUSION_2D {
+HEAT_TRANSFER_2D {
 
-  PHYSICS_SOLVER {
+  
     LOAD_STEPS          1;
 
     LOAD_STEPS_SETTINGS {
@@ -34,7 +34,7 @@ ADVECTION_DIFFUSION_2D {
           PRECONDITIONER    DIRICHLET;
           REGULARIZATION  ALGEBRAIC;
         }
-      }
+      
     }
   }
 

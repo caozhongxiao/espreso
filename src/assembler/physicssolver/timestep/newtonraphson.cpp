@@ -7,7 +7,7 @@
 #include "../../instance.h"
 #include "../../step.h"
 
-#include "../../../config/ecf/physics/nonlinearsolver.h"
+#include "../../../config/ecf/physics/physicssolver/nonlinearsolver.h"
 #include "../../../basis/logging/logging.h"
 #include "../../../linearsolver/linearsolver.h"
 

@@ -18,25 +18,32 @@
 
 using namespace espreso;
 
-StructuralMechanicsFactory::StructuralMechanicsFactory(const StructuralMechanics2DConfiguration &configuration, Mesh *mesh)
-: _configuration(configuration), _bem(false)
-{
-	_instances.push_back(new Instance(*mesh));
-	_physics.push_back(new StructuralMechanics2D(mesh, _instances.front(), configuration));
-}
-
-StructuralMechanicsFactory::StructuralMechanicsFactory(const StructuralMechanics3DConfiguration &configuration, Mesh *mesh)
+StructuralMechanicsFactory::StructuralMechanicsFactory(const StructuralMechanicsConfiguration &configuration, Mesh *mesh)
 : _configuration(configuration), _bem(false)
 {
 	_instances.push_back(new Instance(*mesh));
 
 	switch (configuration.discretization) {
 	case DISCRETIZATION::FEM:
-		_physics.push_back(new StructuralMechanics3D(mesh, _instances.front(), configuration));
+		switch (configuration.dimension) {
+		case DIMENSION::D2:
+			_physics.push_back(new StructuralMechanics2D(mesh, _instances.front(), configuration));
+			break;
+		case DIMENSION::D3:
+			_physics.push_back(new StructuralMechanics3D(mesh, _instances.front(), configuration));
+			break;
+		}
 		break;
 	case DISCRETIZATION::BEM:
 		_bem = true;
-		_physics.push_back(new LameSteklovPoincare3D(mesh, _instances.front(), configuration));
+		switch (configuration.dimension) {
+		case DIMENSION::D2:
+			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: cannot solve STRUCTURAL MECHANICS 2D with BEM discretization.";
+			break;
+		case DIMENSION::D3:
+			_physics.push_back(new LameSteklovPoincare3D(mesh, _instances.front(), configuration));
+			break;
+		}
 		break;
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown DISCRETIZATION for StructuralMechanics3D";
@@ -45,21 +52,21 @@ StructuralMechanicsFactory::StructuralMechanicsFactory(const StructuralMechanics
 
 size_t StructuralMechanicsFactory::loadSteps() const
 {
-	return _configuration.physics_solver.load_steps;
+	return _configuration.load_steps;
 }
 
 LoadStepSolver* StructuralMechanicsFactory::getLoadStepSolver(size_t step, Mesh *mesh, Store *store)
 {
-	const StructuralMechanicsLoadStepsConfiguration &settings = getLoadStepsSettings(step, _configuration.physics_solver.load_steps_settings);
+	const StructuralMechanicsLoadStepConfiguration &settings = getLoadStepsSettings(step, _configuration.load_steps_settings);
 
 	_linearSolvers.push_back(getLinearSolver(settings, _instances.front()));
 	_assemblers.push_back(new Assembler(*_instances.front(), *_physics.front(), *mesh, *store, *_linearSolvers.back()));
 
 	switch (settings.mode) {
-	case LoadStepsConfiguration::MODE::LINEAR:
+	case LoadStepConfiguration::MODE::LINEAR:
 		_timeStepSolvers.push_back(new LinearTimeStep(*_assemblers.back()));
 		break;
-	case LoadStepsConfiguration::MODE::NONLINEAR:
+	case LoadStepConfiguration::MODE::NONLINEAR:
 		if (_bem) {
 			ESINFO(GLOBAL_ERROR) << "BEM discretization support only LINEAR STEADY STATE physics solver.";
 		}
@@ -78,10 +85,10 @@ LoadStepSolver* StructuralMechanicsFactory::getLoadStepSolver(size_t step, Mesh 
 	}
 
 	switch (settings.type) {
-	case LoadStepsConfiguration::TYPE::STEADY_STATE:
+	case LoadStepConfiguration::TYPE::STEADY_STATE:
 		_loadStepSolvers.push_back(new SteadyStateSolver(*_timeStepSolvers.back(), settings.duration_time));
 		break;
-	case LoadStepsConfiguration::TYPE::TRANSIENT:
+	case LoadStepConfiguration::TYPE::TRANSIENT:
 	default:
 		ESINFO(GLOBAL_ERROR) << "Not implemented LOAD STEP solver TYPE for LOAD STEP=" << step;
 	}

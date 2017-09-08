@@ -1,8 +1,8 @@
 
-#ifndef SRC_CONFIG_ECF_PHYSICS_TRANSIENTSOLVER_H_
-#define SRC_CONFIG_ECF_PHYSICS_TRANSIENTSOLVER_H_
+#ifndef SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_TRANSIENTSOLVER_H_
+#define SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_TRANSIENTSOLVER_H_
 
-#include "../../configuration.h"
+#include "../../../configuration.h"
 
 namespace espreso {
 
@@ -36,4 +36,5 @@ struct TransientSolverConfiguration: public ECFObject {
 }
 
 
-#endif /* SRC_CONFIG_ECF_PHYSICS_TRANSIENTSOLVER_H_ */
+
+#endif /* SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_TRANSIENTSOLVER_H_ */

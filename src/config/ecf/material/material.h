@@ -25,7 +25,7 @@ struct MaterialConfiguration: public ECFObject {
 	ThermalConductivityConfiguration thermal_conductivity;
 
 	MaterialConfiguration();
-	MaterialConfiguration(PHYSICAL_MODEL allowedPhysicalModels, bool is3D);
+	MaterialConfiguration(DIMENSION dimension, PHYSICAL_MODEL allowedPhysicalModels);
 
 protected:
 	PHYSICAL_MODEL _allowed_physical_models;

@@ -9,7 +9,7 @@ namespace espreso {
 
 struct LameSteklovPoincare3D: public BoundaryBased3D, public StructuralMechanics3D
 {
-	LameSteklovPoincare3D(Mesh *mesh, Instance *instance, const StructuralMechanics3DConfiguration &configuration);
+	LameSteklovPoincare3D(Mesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration);
 
 	void prepare();
 	void prepareHybridTotalFETIWithKernels();

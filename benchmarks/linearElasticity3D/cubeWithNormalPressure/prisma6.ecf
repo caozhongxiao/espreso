@@ -63,41 +63,7 @@ GENERATOR {
 }
 
 STRUCTURAL_MECHANICS_3D {
-  PHYSICS_SOLVER {
-    LOAD_STEPS   1;
-
-    LOAD_STEPS_SETTINGS {
-      1 {
-        TYPE   STEADY_STATE;
-        MODE         LINEAR;
-        SOLVER         FETI;
-
-        FETI {
-          METHOD          TOTAL_FETI;
-          PRECONDITIONER      LUMPED;
-          PRECISION            1E-08;
-          SOLVER                 PCG;
-          REGULARIZATION   ALGEBRAIC;
-        }
-      }
-    }
-  }
-
-  DISPLACEMENT {
-    1 {
-      Z0   Z 0;
-      Y0   Y 0;
-      X0   X 0;
-    }
-  }
-
-  NORMAL_PRESSURE {
-    1 {
-      Z1           70 * 2.1E11 / 5200;
-      Y1   3 * 70 * 2.1E11 / 5200 / 7;
-      X1   3 * 70 * 2.1E11 / 5200 / 7;
-    }
-  }
+  LOAD_STEPS   1;
 
   MATERIALS {
     1 {
@@ -119,6 +85,33 @@ STRUCTURAL_MECHANICS_3D {
     E_ALL   1;
   }
 
+  LOAD_STEPS_SETTINGS {
+    1 {
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER      LUMPED;
+        PRECISION            1E-08;
+        SOLVER                 PCG;
+        REGULARIZATION   ALGEBRAIC;
+      }
+
+      DISPLACEMENT {
+        Z0   Z 0;
+        Y0   Y 0;
+        X0   X 0;
+      }
+
+      NORMAL_PRESSURE {
+        Z1           70 * 2.1E11 / 5200;
+        Y1   3 * 70 * 2.1E11 / 5200 / 7;
+        X1   3 * 70 * 2.1E11 / 5200 / 7;
+      }
+    }
+  }
 }
 
 OUTPUT {

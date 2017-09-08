@@ -4,7 +4,7 @@
 
 espreso::LinearElasticPropertiesConfiguration::LinearElasticPropertiesConfiguration()
 : model(MODEL::ISOTROPIC),
-  is3D(true),
+  dimension(DIMENSION::D3),
   poisson_ratio(3),
   young_modulus(3),
   thermal_expansion(3),
@@ -16,7 +16,7 @@ espreso::LinearElasticPropertiesConfiguration::LinearElasticPropertiesConfigurat
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("ISOTROPIC").setdescription("Isotropic model."))
 			.addoption(ECFOption().setname("ORTHOTROPIC").setdescription("Orthotropic model."))
-			.addoption(ECFOption().setname("ANISOTROPIC").setdescription("Anisotropic model.").allowonly([&] () { return is3D; })));
+			.addoption(ECFOption().setname("ANISOTROPIC").setdescription("Anisotropic model.").allowonly([&] () { return dimension == DIMENSION::D3; })));
 
 	addSeparator();
 
@@ -31,13 +31,13 @@ espreso::LinearElasticPropertiesConfiguration::LinearElasticPropertiesConfigurat
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.setmaterialvariables()
 			.settensor(poisson_ratio)
-			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && is3D; }));
+			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && dimension == DIMENSION::D3; }));
 	registerParameter("MIYZ", poisson_ratio.get(2, 2), ECFMetaData()
 			.setdescription({ "Poisson ratio YZ." })
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.setmaterialvariables()
 			.settensor(poisson_ratio)
-			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && is3D; }));
+			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && dimension == DIMENSION::D3; }));
 
 	addSeparator()->metadata.allowonly([&] () { return model != MODEL::ISOTROPIC; });
 
@@ -58,7 +58,7 @@ espreso::LinearElasticPropertiesConfiguration::LinearElasticPropertiesConfigurat
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.setmaterialvariables()
 			.settensor(young_modulus)
-			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && is3D; }));
+			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && dimension == DIMENSION::D3; }));
 
 	addSeparator()->metadata.allowonly([&] () { return model != MODEL::ISOTROPIC; });
 
@@ -79,7 +79,7 @@ espreso::LinearElasticPropertiesConfiguration::LinearElasticPropertiesConfigurat
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.setmaterialvariables()
 			.settensor(thermal_expansion)
-			.allowonly([&] () { return model != MODEL::ISOTROPIC && is3D; }));
+			.allowonly([&] () { return model != MODEL::ISOTROPIC && dimension == DIMENSION::D3; }));
 
 	addSeparator()->metadata.allowonly([&] () { return model != MODEL::ISOTROPIC; });
 
@@ -88,19 +88,19 @@ espreso::LinearElasticPropertiesConfiguration::LinearElasticPropertiesConfigurat
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.setmaterialvariables()
 			.settensor(shear_modulus)
-			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && is3D; }));
+			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && dimension == DIMENSION::D3; }));
 	registerParameter("GXZ", shear_modulus.get(1, 1), ECFMetaData()
 			.setdescription({ "Shear modulus XZ." })
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.setmaterialvariables()
 			.settensor(shear_modulus)
-			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && is3D; }));
+			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && dimension == DIMENSION::D3; }));
 	registerParameter("GYZ", shear_modulus.get(2, 2), ECFMetaData()
 			.setdescription({ "Shear modulus YZ." })
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.setmaterialvariables()
 			.settensor(shear_modulus)
-			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && is3D; }));
+			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && dimension == DIMENSION::D3; }));
 
 	// anisotropic is allowed only in 3D
 	registerParameter("D11", anisotropic.get(0, 0), ECFMetaData()

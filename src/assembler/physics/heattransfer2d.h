@@ -1,18 +1,17 @@
 
-#ifndef SRC_ASSEMBLER_PHYSICS_ADVECTIONDIFFUSION2D_H_
-#define SRC_ASSEMBLER_PHYSICS_ADVECTIONDIFFUSION2D_H_
+#ifndef SRC_ASSEMBLER_PHYSICS_HEATTRANSFER2D_H_
+#define SRC_ASSEMBLER_PHYSICS_HEATTRANSFER2D_H_
 
+#include "heattransfer.h"
 #include "physics2d.h"
-#include "advectiondiffusion.h"
 
 namespace espreso {
 
 enum class Property;
-struct AdvectionDiffusion2DConfiguration;
 
-struct AdvectionDiffusion2D: public AdvectionDiffusion, public Physics2D
+struct HeatTransfer2D: public HeatTransfer, public Physics2D
 {
-	AdvectionDiffusion2D(Mesh *mesh, Instance *instance, const AdvectionDiffusion2DConfiguration &configuration);
+	HeatTransfer2D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration);
 
 	void prepare();
 
@@ -27,12 +26,10 @@ struct AdvectionDiffusion2D: public AdvectionDiffusion, public Physics2D
 protected:
 	void assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const;
 	void postProcessElement(const Step &step, const Element *e, std::vector<Solution*> &solution);
-
-	const AdvectionDiffusion2DConfiguration &_configuration;
 };
 
 }
 
 
 
-#endif /* SRC_ASSEMBLER_PHYSICS_ADVECTIONDIFFUSION2D_H_ */
+#endif /* SRC_ASSEMBLER_PHYSICS_HEATTRANSFER2D_H_ */

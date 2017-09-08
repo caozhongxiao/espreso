@@ -8,7 +8,7 @@
 #include "../../solution.h"
 #include "../../../mesh/structures/elementtypes.h"
 #include "../../../basis/logging/logging.h"
-#include "../../../config/ecf/physics/transientsolver.h"
+#include "../../../config/ecf/physics/physicssolver/transientsolver.h"
 
 using namespace espreso;
 

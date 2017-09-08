@@ -18,24 +18,25 @@
 
 using namespace espreso;
 
-StructuralMechanics3D::StructuralMechanics3D(Mesh *mesh, Instance *instance, const StructuralMechanics3DConfiguration &configuration)
-: Physics("STRUCTURAL MECHANICS 3D", mesh, instance), StructuralMechanics(configuration), _configuration(configuration)
+StructuralMechanics3D::StructuralMechanics3D(Mesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration)
+: Physics("STRUCTURAL MECHANICS 3D", mesh, instance), StructuralMechanics(configuration)
 {
 	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, _mesh->nodes(), _mesh->faces(), pointDOFs(), pointDOFsOffsets());
 }
 
 void StructuralMechanics3D::prepare()
 {
-	_mesh->loadProperty(_configuration.displacement    , { "X", "Y", "Z" }     , { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z });
-	_mesh->loadProperty(_configuration.acceleration    , { "X", "Y", "Z" }     , { Property::ACCELERATION_X, Property::ACCELERATION_Y, Property::ACCELERATION_Z });
+	for (size_t loadStep = 0; loadStep < _configuration.load_steps; loadStep++) {
+		_mesh->loadProperty(_configuration.load_steps_settings.at(loadStep + 1).displacement, { "X", "Y", "Z" }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z }, loadStep);
+		_mesh->loadProperty(_configuration.load_steps_settings.at(loadStep + 1).acceleration, { "X", "Y", "Z" }, { Property::ACCELERATION_X, Property::ACCELERATION_Y, Property::ACCELERATION_Z }, loadStep);
+	}
 
-	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
+	for (size_t loadStep = 0; loadStep < _configuration.load_steps; loadStep++) {
+		if (_configuration.load_steps_settings.at(loadStep + 1).solver == LoadStepConfiguration::SOLVER::FETI &&
+			_configuration.load_steps_settings.at(loadStep + 1).feti.regularization == FETI_REGULARIZATION::ANALYTIC) {
 
-	for (size_t s = 1; s <= _configuration.physics_solver.load_steps; s++) {
-		if (_configuration.physics_solver.load_steps_settings.find(s) != _configuration.physics_solver.load_steps_settings.end() &&
-			_configuration.physics_solver.load_steps_settings.find(s)->second.feti.regularization == FETI_REGULARIZATION::ANALYTIC) {
-			_mesh->computeFixPoints(8);
-			break;
+				_mesh->computeFixPoints(8);
+				break;
 		}
 	}
 
@@ -554,9 +555,6 @@ void StructuralMechanics3D::postProcessElement(const Step &step, const Element *
 
 void StructuralMechanics3D::processSolution(const Step &step)
 {
-	if (!_configuration.post_process) {
-		return;
-	}
 }
 
 

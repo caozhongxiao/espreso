@@ -1,7 +1,5 @@
 
-#include "../../config/ecf/physics/advectiondiffusion.h"
-#include "advectiondiffusion2d.h"
-
+#include "../../config/ecf/physics/heattransfer.h"
 #include "../step.h"
 #include "../instance.h"
 #include "../solution.h"
@@ -18,28 +16,29 @@
 
 #include "../../basis/matrices/denseMatrix.h"
 #include "../../solver/generic/SparseMatrix.h"
+#include "heattransfer2d.h"
 
 using namespace espreso;
 
-AdvectionDiffusion2D::AdvectionDiffusion2D(Mesh *mesh, Instance *instance, const AdvectionDiffusion2DConfiguration &configuration)
-: Physics("ADVECTION DIFFUSION 2D", mesh, instance), AdvectionDiffusion(configuration), _configuration(configuration)
+HeatTransfer2D::HeatTransfer2D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration)
+: Physics("HEAT TRANSFER 2D", mesh, instance), HeatTransfer(configuration)
 {
 	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, _mesh->nodes(), _mesh->edges(), pointDOFs(), pointDOFsOffsets());
 }
 
-void AdvectionDiffusion2D::prepare()
+void HeatTransfer2D::prepare()
 {
-	_mesh->loadNodeProperty(_configuration.thickness     , { }         , { Property::THICKNESS });
-	_mesh->loadProperty(_configuration.translation_motions, { "X", "Y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
-	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
-
+	_mesh->loadNodeProperty(_configuration.thickness, { }, { Property::THICKNESS }, 0);
+	for (size_t loadStep = 0; loadStep < _configuration.load_steps; loadStep++) {
+		_mesh->loadProperty(_configuration.load_steps_settings.at(loadStep + 1).translation_motions, { "X", "Y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y }, loadStep);
+	}
 	_mesh->addPropertyGroup({ Property::FLUX_X, Property::FLUX_Y });
 	_mesh->addPropertyGroup({ Property::GRADIENT_X, Property::GRADIENT_Y });
 
-	AdvectionDiffusion::prepare();
+	HeatTransfer::prepare();
 }
 
-std::vector<std::pair<ElementType, Property> > AdvectionDiffusion2D::propertiesToStore() const
+std::vector<std::pair<ElementType, Property> > HeatTransfer2D::propertiesToStore() const
 {
 	for (size_t s = 0; s < _mesh->steps(); s++) {
 		if (
@@ -57,7 +56,7 @@ std::vector<std::pair<ElementType, Property> > AdvectionDiffusion2D::propertiesT
 }
 
 
-void AdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
+void HeatTransfer2D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
 {
 	const MaterialConfiguration* material = _mesh->materials()[e->param(Element::MATERIAL)];
 
@@ -162,9 +161,9 @@ void AdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Elemen
 	K(node, 3) = TCT(1, 0);
 }
 
-void AdvectionDiffusion2D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer2D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
-	bool CAU = _configuration.stabilization == AdvectionDiffusion2DConfiguration::STABILIZATION::CAU;
+	bool CAU = _configuration.stabilization == HeatTransferConfiguration::STABILIZATION::CAU;
 	bool tangentCorrection = (matrices & Matrices::K) && step.tangentMatrixCorrection;
 
 	DenseMatrix Ce(2, 2), coordinates(e->nodes(), 2), J(2, 2), invJ(2, 2), dND;
@@ -356,13 +355,13 @@ void AdvectionDiffusion2D::processElement(const Step &step, Matrices matrices, c
 	}
 }
 
-void AdvectionDiffusion2D::processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer2D::processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	ESINFO(ERROR) << "Advection diffusion 2D cannot process face";
 }
 
 
-void AdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer2D::processEdge(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step) ||
 		e->hasProperty(Property::HEAT_FLOW, step.step) ||
@@ -414,13 +413,10 @@ void AdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, cons
 
 
 	const ConvectionConfiguration *convection = NULL;
-	auto stepitc = _configuration.convection.find(step.step + 1);
-	if (stepitc != _configuration.convection.end()) {
-		for (size_t r = 0; convection == NULL && r < e->regions().size(); r++) {
-			auto regionit = stepitc->second.find(e->regions()[r]->name);
-			if (regionit != stepitc->second.end()) {
-				convection = &regionit->second;
-			}
+	for (size_t r = 0; convection == NULL && r < e->regions().size(); r++) {
+		auto regionit = _configuration.load_steps_settings.at(step.step + 1).convection.find(e->regions()[r]->name);
+		if (regionit != _configuration.load_steps_settings.at(step.step + 1).convection.end()) {
+			convection = &regionit->second;
 		}
 	}
 
@@ -467,7 +463,7 @@ void AdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, cons
 	}
 }
 
-void AdvectionDiffusion2D::processNode(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer2D::processNode(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
@@ -475,7 +471,7 @@ void AdvectionDiffusion2D::processNode(const Step &step, Matrices matrices, cons
 	fe.resize(0, 0);
 }
 
-void AdvectionDiffusion2D::postProcessElement(const Step &step, const Element *e, std::vector<Solution*> &solution)
+void HeatTransfer2D::postProcessElement(const Step &step, const Element *e, std::vector<Solution*> &solution)
 {
 	DenseMatrix Ce(2, 2), coordinates, J(2, 2), invJ(2, 2), dND, temp(e->nodes(), 1);
 	double detJ, m, norm_u_e, h_e;
@@ -539,12 +535,8 @@ void AdvectionDiffusion2D::postProcessElement(const Step &step, const Element *e
 	solution[offset + SolutionIndex::FLUX]->data[e->domains().front()].push_back(matFlux(1, 0) / e->gaussePoints());
 }
 
-void AdvectionDiffusion2D::processSolution(const Step &step)
+void HeatTransfer2D::processSolution(const Step &step)
 {
-	if (!_configuration.post_process) {
-		return;
-	}
-
 	if (_instance->solutions[offset + SolutionIndex::GRADIENT] == NULL) {
 		_instance->solutions[offset + SolutionIndex::GRADIENT] = new Solution(*_mesh, "gradient", ElementType::ELEMENTS, { Property::GRADIENT_X, Property::GRADIENT_Y });
 	}

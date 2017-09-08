@@ -3,6 +3,7 @@
 #define SRC_CONFIG_ECF_MATERIAL_THERMALCONDUCTIVITY_H_
 
 #include "tensor.h"
+#include "coordinatesystem.h" // DIMENSION
 
 namespace espreso {
 
@@ -16,7 +17,7 @@ struct ThermalConductivityConfiguration: public ECFObject {
 	};
 
 	MODEL model;
-	bool is3D;
+	DIMENSION dimension;
 
 	TensorConfiguration values;
 

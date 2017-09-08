@@ -1,7 +1,5 @@
 
-#include "../../config/ecf/physics/advectiondiffusion.h"
-#include "advectiondiffusion.h"
-
+#include "../../config/ecf/physics/heattransfer.h"
 #include "../../basis/matrices/denseMatrix.h"
 #include "../../solver/generic/SparseMatrix.h"
 
@@ -15,19 +13,20 @@
 #include "../instance.h"
 #include "../solution.h"
 #include "../step.h"
+#include "heattransfer.h"
 
 using namespace espreso;
 
-size_t AdvectionDiffusion::offset = -1;
+size_t HeatTransfer::offset = -1;
 
-AdvectionDiffusion::AdvectionDiffusion(const AdvectionDiffusionConfiguration &configuration)
+HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration)
 : Physics("", NULL, NULL), // skipped because Physics is inherited virtually
   _configuration(configuration)
 {
 
 }
 
-MatrixType AdvectionDiffusion::getMatrixType(const Step &step, size_t domain) const
+MatrixType HeatTransfer::getMatrixType(const Step &step, size_t domain) const
 {
 	if (step.tangentMatrixCorrection) {
 		return MatrixType::REAL_UNSYMMETRIC;
@@ -43,7 +42,7 @@ MatrixType AdvectionDiffusion::getMatrixType(const Step &step, size_t domain) co
 	}
 }
 
-bool AdvectionDiffusion::isMatrixTimeDependent(const Step &step) const
+bool HeatTransfer::isMatrixTimeDependent(const Step &step) const
 {
 	return _mesh->isAnyPropertyTimeDependent({
 		Property::TEMPERATURE,
@@ -64,83 +63,79 @@ bool AdvectionDiffusion::isMatrixTimeDependent(const Step &step) const
 	}, step.step);
 }
 
-bool AdvectionDiffusion::isMatrixTemperatureDependent(const Step &step) const
+bool HeatTransfer::isMatrixTemperatureDependent(const Step &step) const
 {
 	return true;
 }
 
-void AdvectionDiffusion::prepare()
+void HeatTransfer::prepare()
 {
-	for (size_t s = 1; s <= _configuration.physics_solver.load_steps; s++) {
-		if (
-				_configuration.temperature.find(s) == _configuration.temperature.end() &&
-				_configuration.convection.find(s) == _configuration.convection.end() &&
-				!_mesh->hasProperty(Property::TEMPERATURE, s - 1) &&
-				!_mesh->hasProperty(Property::EXTERNAL_TEMPERATURE, s - 1)) {
-
-			ESINFO(GLOBAL_ERROR) << "Invalid boundary conditions for ADVECTION DIFFUSION - missing temperature or convection for LOAD_STEP=" << s;
-		}
-	}
-
 	_instance->domainDOFCount = _mesh->assignUniformDOFsIndicesToNodes(_instance->domainDOFCount, pointDOFs(), _nodesDOFsOffsets);
 	_instance->properties = pointDOFs();
 	_mesh->computeNodesDOFsCounters(pointDOFs());
 
-	_mesh->loadProperty(_configuration.initial_temperature, { }, { Property::INITIAL_TEMPERATURE });
+	_mesh->loadProperty(_configuration.initial_temperature, { }, { Property::INITIAL_TEMPERATURE }, 0);
 
-	_mesh->loadNodeProperty(_configuration.temperature    , { }, { Property::TEMPERATURE });
+	for (size_t loadStep = 0; loadStep < _configuration.load_steps; loadStep++) {
+		const HeatTransferLoadStepConfiguration &loadStepConfiguration = _configuration.load_steps_settings.at(loadStep + 1);
 
-	_mesh->loadProperty(_configuration.heat_source        , { }, { Property::HEAT_SOURCE });
-	_mesh->loadProperty(_configuration.heat_flux          , { }, { Property::HEAT_FLUX });
-	_mesh->loadProperty(_configuration.heat_flow          , { }, { Property::HEAT_FLOW });
+		if (
+			!loadStepConfiguration.temperature.size() && !loadStepConfiguration.convection.size() &&
+			!_mesh->hasProperty(Property::TEMPERATURE, loadStep) && !_mesh->hasProperty(Property::EXTERNAL_TEMPERATURE, loadStep)) {
 
-	for (auto it = _configuration.convection.begin(); it != _configuration.convection.end(); ++it) {
-		size_t loadStep = it->first - 1;
-		for (auto regions = it->second.begin(); regions != it->second.end(); ++regions) {
+			ESINFO(GLOBAL_ERROR) << "Invalid boundary conditions for HEAT TRANSFER - missing temperature or convection for LOAD_STEP=" << loadStep + 1;
+		}
+
+		_mesh->loadNodeProperty(loadStepConfiguration.temperature, { }, { Property::TEMPERATURE }, loadStep);
+		_mesh->loadProperty(loadStepConfiguration.heat_source    , { }, { Property::HEAT_SOURCE }, loadStep);
+		_mesh->loadProperty(loadStepConfiguration.heat_flux      , { }, { Property::HEAT_FLUX }  , loadStep);
+		_mesh->loadProperty(loadStepConfiguration.heat_flow      , { }, { Property::HEAT_FLOW }  , loadStep);
+
+		for (auto it = loadStepConfiguration.convection.begin(); it != loadStepConfiguration.convection.end(); ++it) {
 			std::map<std::string, std::string> values;
 
-			values[regions->first] = regions->second.external_temperature;
+			values[it->first] = it->second.external_temperature;
 			_mesh->loadProperty(values, { }, { Property::EXTERNAL_TEMPERATURE }, loadStep);
 
-			switch (regions->second.type) {
+			switch (it->second.type) {
 			case ConvectionConfiguration::TYPE::USER:
-				values[regions->first] = regions->second.heat_transfer_coefficient;
+				values[it->first] = it->second.heat_transfer_coefficient;
 				_mesh->loadProperty(values, { }, { Property::HEAT_TRANSFER_COEFFICIENT }, loadStep);
 				break;
 			case ConvectionConfiguration::TYPE::EXTERNAL_NATURAL:
 
-				switch (regions->second.variant) {
+				switch (it->second.variant) {
 				case ConvectionConfiguration::VARIANT::VERTICAL_WALL:
-					values[regions->first] = regions->second.wall_height;
+					values[it->first] = it->second.wall_height;
 					_mesh->loadProperty(values, { }, { Property::WALL_HEIGHT }, loadStep);
-					values[regions->first] = regions->second.absolute_pressure;
+					values[it->first] = it->second.absolute_pressure;
 					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
 					break;
 				case ConvectionConfiguration::VARIANT::INCLINED_WALL:
-					values[regions->first] = regions->second.wall_height;
+					values[it->first] = it->second.wall_height;
 					_mesh->loadProperty(values, { }, { Property::WALL_HEIGHT }, loadStep);
-					values[regions->first] = regions->second.tilt_angle;
+					values[it->first] = it->second.tilt_angle;
 					_mesh->loadProperty(values, { }, { Property::TILT_ANGLE }, loadStep);
-					values[regions->first] = regions->second.absolute_pressure;
+					values[it->first] = it->second.absolute_pressure;
 					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
 					break;
 				case ConvectionConfiguration::VARIANT::HORIZONTAL_CYLINDER:
-					values[regions->first] = regions->second.diameter;
+					values[it->first] = it->second.diameter;
 					_mesh->loadProperty(values, { }, { Property::DIAMETER }, loadStep);
-					values[regions->first] = regions->second.absolute_pressure;
+					values[it->first] = it->second.absolute_pressure;
 					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
 					break;
 				case ConvectionConfiguration::VARIANT::SPHERE:
-					values[regions->first] = regions->second.diameter;
+					values[it->first] = it->second.diameter;
 					_mesh->loadProperty(values, { }, { Property::DIAMETER }, loadStep);
-					values[regions->first] = regions->second.absolute_pressure;
+					values[it->first] = it->second.absolute_pressure;
 					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
 					break;
 				case ConvectionConfiguration::VARIANT::HORIZONTAL_PLATE_UP:
 				case ConvectionConfiguration::VARIANT::HORIZONTAL_PLATE_DOWN:
-					values[regions->first] = regions->second.length;
+					values[it->first] = it->second.length;
 					_mesh->loadProperty(values, { }, { Property::LENGTH }, loadStep);
-					values[regions->first] = regions->second.absolute_pressure;
+					values[it->first] = it->second.absolute_pressure;
 					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
 					break;
 				default:
@@ -150,13 +145,13 @@ void AdvectionDiffusion::prepare()
 				break;
 			case ConvectionConfiguration::TYPE::EXTERNAL_FORCED:
 
-				switch (regions->second.variant) {
+				switch (it->second.variant) {
 				case ConvectionConfiguration::VARIANT::AVERAGE_PLATE:
-					values[regions->first] = regions->second.length;
+					values[it->first] = it->second.length;
 					_mesh->loadProperty(values, { }, { Property::LENGTH }, loadStep);
-					values[regions->first] = regions->second.fluid_velocity;
+					values[it->first] = it->second.fluid_velocity;
 					_mesh->loadProperty(values, { }, { Property::FLUID_VELOCITY }, loadStep);
-					values[regions->first] = regions->second.absolute_pressure;
+					values[it->first] = it->second.absolute_pressure;
 					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
 					break;
 				default:
@@ -166,13 +161,13 @@ void AdvectionDiffusion::prepare()
 				break;
 			case ConvectionConfiguration::TYPE::INTERNAL_NATURAL:
 
-				switch (regions->second.variant) {
+				switch (it->second.variant) {
 				case ConvectionConfiguration::VARIANT::CIRCULAR_TUBE:
-					values[regions->first] = regions->second.diameter;
+					values[it->first] = it->second.diameter;
 					_mesh->loadProperty(values, { }, { Property::DIAMETER }, loadStep);
-					values[regions->first] = regions->second.wall_height;
+					values[it->first] = it->second.wall_height;
 					_mesh->loadProperty(values, { }, { Property::WALL_HEIGHT }, loadStep);
-					values[regions->first] = regions->second.absolute_pressure;
+					values[it->first] = it->second.absolute_pressure;
 					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
 					break;
 				default:
@@ -182,13 +177,13 @@ void AdvectionDiffusion::prepare()
 				break;
 			case ConvectionConfiguration::TYPE::INTERNAL_FORCED:
 
-				switch (regions->second.variant) {
+				switch (it->second.variant) {
 				case ConvectionConfiguration::VARIANT::TUBE:
-					values[regions->first] = regions->second.diameter;
+					values[it->first] = it->second.diameter;
 					_mesh->loadProperty(values, { }, { Property::DIAMETER }, loadStep);
-					values[regions->first] = regions->second.fluid_velocity;
+					values[it->first] = it->second.fluid_velocity;
 					_mesh->loadProperty(values, { }, { Property::FLUID_VELOCITY }, loadStep);
-					values[regions->first] = regions->second.absolute_pressure;
+					values[it->first] = it->second.absolute_pressure;
 					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
 					break;
 				default:
@@ -196,21 +191,17 @@ void AdvectionDiffusion::prepare()
 				}
 
 				break;
-
 			}
-
 		}
-	}
 
-	for (auto it = _configuration.diffuse_radiation.begin(); it != _configuration.diffuse_radiation.end(); ++it) {
-		size_t loadStep = it->first - 1;
-		for (auto regions = it->second.begin(); regions != it->second.end(); ++regions) {
+		for (auto it = loadStepConfiguration.diffuse_radiation.begin(); it != loadStepConfiguration.diffuse_radiation.end(); ++it) {
 			std::map<std::string, std::string> values;
-			values[regions->first] = regions->second.external_temperature;
+			values[it->first] = it->second.external_temperature;
 			_mesh->loadProperty(values, { }, { Property::EXTERNAL_TEMPERATURE }, loadStep);
-			values[regions->first] = regions->second.emissivity;
+			values[it->first] = it->second.emissivity;
 			_mesh->loadProperty(values, { }, { Property::EMISSIVITY }, loadStep);
 		}
+
 	}
 
 	for (size_t r = 0; r < _mesh->regions().size(); r++) {
@@ -222,11 +213,13 @@ void AdvectionDiffusion::prepare()
 		}
 	}
 
+	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
+
 	_mesh->removeDuplicateRegions();
 	_mesh->fillDomainsSettings();
 }
 
-void AdvectionDiffusion::analyticRegularization(size_t domain, bool ortogonalCluster)
+void HeatTransfer::analyticRegularization(size_t domain, bool ortogonalCluster)
 {
 	if (_instance->K[domain].mtype != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
 		ESINFO(ERROR) << "Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set FETI_REGULARIZATION = ALGEBRAIC";
@@ -267,7 +260,7 @@ void AdvectionDiffusion::analyticRegularization(size_t domain, bool ortogonalClu
 	_instance->RegMat[domain].ConvertToCSR(1);
 }
 
-void AdvectionDiffusion::computeInitialTemperature(const Step &step, std::vector<std::vector<double> > &data)
+void HeatTransfer::computeInitialTemperature(const Step &step, std::vector<std::vector<double> > &data)
 {
 	data.resize(_mesh->parts());
 
@@ -280,7 +273,7 @@ void AdvectionDiffusion::computeInitialTemperature(const Step &step, std::vector
 	}
 }
 
-void AdvectionDiffusion::preprocessData(const Step &step)
+void HeatTransfer::preprocessData(const Step &step)
 {
 	if (offset != (size_t)-1) {
 		return;
@@ -292,7 +285,7 @@ void AdvectionDiffusion::preprocessData(const Step &step)
 	_instance->solutions[offset + SolutionIndex::TEMPERATURE] = new Solution(*_mesh, "temperature", ElementType::NODES, pointDOFs(), _instance->primalSolution);
 }
 
-std::vector<size_t> AdvectionDiffusion::solutionsIndicesToStore() const
+std::vector<size_t> HeatTransfer::solutionsIndicesToStore() const
 {
 	std::vector<size_t> results = { offset + SolutionIndex::TEMPERATURE };
 	if (_instance->solutions[offset + SolutionIndex::GRADIENT] != NULL) {
@@ -304,7 +297,7 @@ std::vector<size_t> AdvectionDiffusion::solutionsIndicesToStore() const
 	return results;
 }
 
-void AdvectionDiffusion::convectionMatParameters(
+void HeatTransfer::convectionMatParameters(
 		const ConvectionConfiguration &convection, const Element *e, const Point &p, Step step,
 		double temp, double T_EXT,
 		double &rho, double &dynamic_viscosity, double &dynamic_viscosity_T, double &heat_capacity, double &thermal_conductivity) const
@@ -523,7 +516,7 @@ void AdvectionDiffusion::convectionMatParameters(
 }
 
 
-double AdvectionDiffusion::computeHTC(
+double HeatTransfer::computeHTC(
 		const ConvectionConfiguration &convection, const Element *e, const Point &p, Step step,
 		double temp) const
 {

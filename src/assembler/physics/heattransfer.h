@@ -1,18 +1,18 @@
 
-#ifndef SRC_ASSEMBLER_PHYSICS_ADVECTIONDIFFUSION_H_
-#define SRC_ASSEMBLER_PHYSICS_ADVECTIONDIFFUSION_H_
+#ifndef SRC_ASSEMBLER_PHYSICS_HEATTRANSFER_H_
+#define SRC_ASSEMBLER_PHYSICS_HEATTRANSFER_H_
 
 #include "physics.h"
 
 namespace espreso {
 
-struct AdvectionDiffusionConfiguration;
+struct HeatTransferConfiguration;
 struct ConvectionConfiguration;
 struct Point;
 
-struct AdvectionDiffusion: public virtual Physics
+struct HeatTransfer: public virtual Physics
 {
-	AdvectionDiffusion(const AdvectionDiffusionConfiguration &configuration);
+	HeatTransfer(const HeatTransferConfiguration &configuration);
 
 	virtual std::vector<size_t> solutionsIndicesToStore() const;
 
@@ -49,7 +49,7 @@ struct AdvectionDiffusion: public virtual Physics
 		return elementDOFs;
 	}
 
-	virtual ~AdvectionDiffusion() {}
+	virtual ~HeatTransfer() {}
 
 protected:
 	enum SolutionIndex: size_t {
@@ -73,11 +73,11 @@ protected:
 			double temp, double T_EXT,
 			double &rho, double &dynamic_viscosity, double &dynamic_viscosity_T, double &heat_capacity, double &thermal_conductivity) const;
 
-	const AdvectionDiffusionConfiguration &_configuration;
+	const HeatTransferConfiguration &_configuration;
 };
 
 }
 
 
 
-#endif /* SRC_ASSEMBLER_PHYSICS_ADVECTIONDIFFUSION_H_ */
+#endif /* SRC_ASSEMBLER_PHYSICS_HEATTRANSFER_H_ */

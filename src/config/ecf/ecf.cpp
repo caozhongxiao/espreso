@@ -29,12 +29,12 @@ void espreso::ECFConfiguration::init()
 			.addoption(ECFOption().setname("ESDATA").setdescription("ESPRESO internal binary format."))
 			.addoption(ECFOption().setname("GENERATOR").setdescription("ESPRESO internal generator.")));
 
-	physics = PHYSICS::ADVECTION_DIFFUSION_2D;
+	physics = PHYSICS::HEAT_TRANSFER_2D;
 	REGISTER(physics, ECFMetaData()
 			.setdescription({ "A selected physics." })
 			.setdatatype({ ECFDataType::OPTION })
-			.addoption(ECFOption().setname("ADVECTION_DIFFUSION_2D").setdescription("Advection diffusion 2D."))
-			.addoption(ECFOption().setname("ADVECTION_DIFFUSION_3D").setdescription("Advection diffusion 3D."))
+			.addoption(ECFOption().setname("HEAT_TRANSFER_2D").setdescription("Heat transfer 2D."))
+			.addoption(ECFOption().setname("HEAT_TRANSFER_3D").setdescription("Heat transfer 3D."))
 			.addoption(ECFOption().setname("STRUCTURAL_MECHANICS_2D").setdescription("Structural mechanics 2D."))
 			.addoption(ECFOption().setname("STRUCTURAL_MECHANICS_3D").setdescription("Structural mechanics 3D.")));
 
@@ -51,12 +51,12 @@ void espreso::ECFConfiguration::init()
 			.setdescription({ "Description of ESPRESO generator." })
 			.allowonly([&] () { return input == INPUT_FORMAT::GENERATOR; }));
 
-	REGISTER(advection_diffusion_2d, ECFMetaData()
+	REGISTER(heat_transfer_2d, ECFMetaData()
 			.setdescription({ "Advection diffusion 2D settings." })
-			.allowonly([&] () { return physics == PHYSICS::ADVECTION_DIFFUSION_2D; }));
-	REGISTER(advection_diffusion_3d, ECFMetaData()
+			.allowonly([&] () { return physics == PHYSICS::HEAT_TRANSFER_2D; }));
+	REGISTER(heat_transfer_3d, ECFMetaData()
 			.setdescription({ "Advection diffusion 3D settings." })
-			.allowonly([&] () { return physics == PHYSICS::ADVECTION_DIFFUSION_3D; }));
+			.allowonly([&] () { return physics == PHYSICS::HEAT_TRANSFER_3D; }));
 	REGISTER(structural_mechanics_2d, ECFMetaData()
 			.setdescription({ "Structural mechanics 2D settings." })
 			.allowonly([&] () { return physics == PHYSICS::STRUCTURAL_MECHANICS_2D; }));
@@ -76,23 +76,25 @@ void espreso::ECFConfiguration::init()
 }
 
 espreso::ECFConfiguration::ECFConfiguration()
-: output(physics)
+: output(physics),
+  heat_transfer_2d(DIMENSION::D2),
+  heat_transfer_3d(DIMENSION::D3),
+  structural_mechanics_2d(DIMENSION::D2),
+  structural_mechanics_3d(DIMENSION::D3)
 {
 	init();
 }
 
 espreso::ECFConfiguration::ECFConfiguration(const std::string &file)
-: output(physics)
+: espreso::ECFConfiguration()
 {
-	init();
 	ECFReader::read(*this, file, this->default_args, this->variables);
 	ECFReader::set(this->environment, this->output);
 }
 
 espreso::ECFConfiguration::ECFConfiguration(int *argc, char ***argv)
-: output(physics)
+: espreso::ECFConfiguration()
 {
-	init();
 	ECFReader::read(*this, argc, argv, this->default_args, this->variables);
 	ECFReader::set(this->environment, this->output);
 }

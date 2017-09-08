@@ -10,41 +10,7 @@ OPENFOAM {
 }
 
 STRUCTURAL_MECHANICS_3D {
-  PHYSICS_SOLVER {
-    LOAD_STEPS   1;
-
-    LOAD_STEPS_SETTINGS {
-      1 {
-        TYPE   STEADY_STATE;
-        MODE         LINEAR;
-        SOLVER         FETI;
-
-        FETI {
-          METHOD      HYBRID_FETI;
-          PRECONDITIONER   LUMPED;
-          SOLVER              PCG;
-        }
-      }
-    }
-  }
-
-  TEMPERATURE {
-    1 {
-      frontAndBack   30;
-    }
-  }
-
-  DISPLACEMENT {
-    1 {
-      fixedWalls   X 0 , Y 0 , Z 0;
-    }
-  }
-
-  NORMAL_PRESSURE {
-    1 {
-      movingWall   100;
-    }
-  }
+  LOAD_STEPS   1;
 
   MATERIALS {
     1 {
@@ -66,4 +32,29 @@ STRUCTURAL_MECHANICS_3D {
     ALL_ELEMENTS   1;
   }
 
+  LOAD_STEPS_SETTINGS {
+    1 {
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD      HYBRID_FETI;
+        PRECONDITIONER   LUMPED;
+        SOLVER              PCG;
+      }
+
+      TEMPERATURE {
+        frontAndBack   30;
+      }
+
+      DISPLACEMENT {
+        fixedWalls   X 0 , Y 0 , Z 0;
+      }
+
+      NORMAL_PRESSURE {
+        movingWall   100;
+      }
+    }
+  }
 }

@@ -6,7 +6,6 @@
 #include "../basis/utilities/parser.h"
 #include "../basis/logging/logging.h"
 #include <sstream>
-#include <cmath>
 
 namespace espreso {
 
@@ -101,9 +100,9 @@ struct ECFEnumHolder: public ECFValue {
 		if (metadata.datatype.front() == ECFDataType::ENUM_FLAGS) {
 			std::string flags;
 			for (size_t i = 0; i < metadata.options.size(); i++) {
-				if (static_cast<int>(value) & static_cast<int>(std::pow(2, i))) {
+				if (static_cast<int>(value) & static_cast<int>(1 << i)) {
 					if (flags.size()) {
-						flags += " & ";
+						flags += " | ";
 					}
 					flags += metadata.options[i].name;
 				}
@@ -116,6 +115,26 @@ struct ECFEnumHolder: public ECFValue {
 
 	bool setValue(const std::string &value)
 	{
+		if (metadata.datatype.front() == ECFDataType::ENUM_FLAGS) {
+			std::vector<std::string> values = Parser::split(value, "|");
+			if (values.size()) {
+				this->value = static_cast<Ttype>(0);
+				for (size_t i = 0; i < values.size(); i++) {
+					values[i] = Parser::strip(values[i]);
+					Ttype prev = this->value;
+					for (size_t j = 0; j < metadata.options.size(); j++) {
+						if (StringCompare::caseInsensitiveEq(values[i], metadata.options[j].name)) {
+							this->value = static_cast<Ttype>(static_cast<int>(this->value) | (int)(1 << j));
+							break;
+						}
+					}
+					if (this->value == prev) {
+						return false;
+					}
+				}
+				return true;
+			}
+		}
 		size_t index = -1;
 		for (size_t i = 0; i < metadata.options.size(); i++) {
 			if (StringCompare::caseInsensitiveEq(value, metadata.options[i].name)) {
@@ -135,7 +154,7 @@ struct ECFEnumHolder: public ECFValue {
 			return true;
 		}
 		if (metadata.datatype.front() == ECFDataType::ENUM_FLAGS) {
-			this->value = static_cast<Ttype>(std::pow(2, index));
+			this->value = static_cast<Ttype>(1 << index);
 			return true;
 		}
 		ESINFO(ERROR) << "ESPRESO internal error: set value to ECFEnumHolder.";

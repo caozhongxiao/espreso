@@ -194,8 +194,8 @@ public:
 	virtual Evaluator* copy() const { return new ArrayEvaluator(*this); }
 
 	virtual Type type() { return Type::ARRAY; }
-	virtual double inline evaluate(const Point &p, double time = 0, double temperature = 0, double pressure = 0, double velocity = 0) const;
-	virtual double inline evaluate(eslocal index) const;
+	virtual double evaluate(const Point &p, double time = 0, double temperature = 0, double pressure = 0, double velocity = 0) const;
+	virtual double evaluate(eslocal index) const;
 
 	virtual void store(std::ofstream& os);
 

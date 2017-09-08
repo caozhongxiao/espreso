@@ -4,16 +4,15 @@
 #include "../../configuration.hpp"
 
 espreso::MaterialConfiguration::MaterialConfiguration()
-: _allowed_physical_models(static_cast<PHYSICAL_MODEL>(~0))
+: _allowed_physical_models(static_cast<PHYSICAL_MODEL>(~0)), physical_model(static_cast<PHYSICAL_MODEL>(~0))
 {
 	REGISTER(coordinate_system, ECFMetaData()
 			.setdescription({ "Material coordinate system." }));
 
-	physical_model = PHYSICAL_MODEL::THERMAL;
 	REGISTER(physical_model, ECFMetaData()
 			.setdescription({ "Select used physical model." })
 			.setdatatype({ ECFDataType::ENUM_FLAGS })
-			.addoption(ECFOption().setname("THERMAL").setdescription("Model used by ADVECTION DIFFUSION.")
+			.addoption(ECFOption().setname("THERMAL").setdescription("Model used by HEAT TRANSFER.")
 					.allowonly([&] () { return _allowed_physical_models & PHYSICAL_MODEL::THERMAL; }))
 			.addoption(ECFOption().setname("LINEAR_ELASTIC").setdescription("One of models used by STRUCTURAL MECHANICS.")
 					.allowonly([&] () { return _allowed_physical_models & PHYSICAL_MODEL::LINEAR_ELASTIC; })));
@@ -39,11 +38,31 @@ espreso::MaterialConfiguration::MaterialConfiguration()
 			.allowonly([&] () {  return physical_model & PHYSICAL_MODEL::LINEAR_ELASTIC; }));
 }
 
-espreso::MaterialConfiguration::MaterialConfiguration(PHYSICAL_MODEL allowedPhysicalModels, bool is3D)
+espreso::MaterialConfiguration::MaterialConfiguration(DIMENSION dimension, PHYSICAL_MODEL allowedPhysicalModels)
 : espreso::MaterialConfiguration()
 {
 	_allowed_physical_models = allowedPhysicalModels;
-	coordinate_system.is3D = is3D;
-	thermal_conductivity.is3D = is3D;
-	linear_elastic_properties.is3D = is3D;
+	coordinate_system.dimension = dimension;
+	thermal_conductivity.dimension = dimension;
+	linear_elastic_properties.dimension = dimension;
+
+	// Material has special behavior.
+	// GUI can edit materials for all physics.
+	// Default physics should print only subset of parameters.
+
+	// DROP not allowed parameters.
+	physical_model = allowedPhysicalModels;
+	for (size_t i = 0; i < parameters.size(); i++) {
+		if (!parameters[i]->metadata.isallowed()) {
+			dropParameter(parameters[i]);
+		}
+	}
+
+	// 2. Set physical_model to the first allowed.
+	for (int i = 0; i < 64; i++) {
+		if ((1 << i) >= static_cast<int>(allowedPhysicalModels)) {
+			physical_model = static_cast<PHYSICAL_MODEL>(1 << i);
+			break;
+		}
+	}
 }

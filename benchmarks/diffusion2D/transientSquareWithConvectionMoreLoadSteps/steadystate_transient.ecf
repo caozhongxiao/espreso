@@ -9,8 +9,8 @@ DEFAULT_ARGS {
   5   30;
 }
 
-INPUT                  GENERATOR;
-PHYSICS   ADVECTION_DIFFUSION_2D;
+INPUT            GENERATOR;
+PHYSICS   HEAT_TRANSFER_2D;
 
 GENERATOR {
   SHAPE   GRID;
@@ -51,88 +51,8 @@ GENERATOR {
   }
 }
 
-ADVECTION_DIFFUSION_2D {
-  PHYSICS_SOLVER {
-    LOAD_STEPS   2;
-
-    LOAD_STEPS_SETTINGS {
-      1 {
-        DURATION_TIME     1;
-        TYPE   STEADY_STATE;
-        MODE         LINEAR;
-        SOLVER         FETI;
-
-        FETI {
-          METHOD          TOTAL_FETI;
-          PRECONDITIONER   DIRICHLET;
-          PRECISION            1E-08;
-          MAX_ITERATIONS         100;
-          SOLVER                 PCG;
-          REGULARIZATION   ALGEBRAIC;
-        }
-      }
-
-      2 {
-        DURATION_TIME   0.1;
-        TYPE      TRANSIENT;
-        MODE         LINEAR;
-        SOLVER         FETI;
-
-        TRANSIENT_SOLVER {
-          METHOD   CRANK_NICOLSON;
-
-          TIME_STEP         0.005;
-        }
-
-        FETI {
-          METHOD          TOTAL_FETI;
-          PRECONDITIONER   DIRICHLET;
-          PRECISION            1E-08;
-          MAX_ITERATIONS         100;
-          SOLVER                 PCG;
-        }
-      }
-    }
-  }
-
-  THICKNESS {
-    1 {
-      ALL_NODES   1;
-    }
-  }
-
-  INITIAL_TEMPERATURE {
-    ALL_ELEMENTS   293.15;
-  }
-
-  TEMPERATURE {
-    1 {
-      LEFT   280;
-      TOP    530;
-    }
-
-    2 {
-      LEFT   280;
-    }
-  }
-
-  CONVECTION {
-    1 {
-      RIGHT {
-        TYPE                      USER;
-        HEAT_TRANSFER_COEFFICIENT   12;
-        EXTERNAL_TEMPERATURE       500;
-      }
-    }
-
-    2 {
-      RIGHT {
-        TYPE                      USER;
-        HEAT_TRANSFER_COEFFICIENT   12;
-        EXTERNAL_TEMPERATURE      1200;
-      }
-    }
-  }
+HEAT_TRANSFER_2D {
+  LOAD_STEPS   2;
 
   MATERIALS {
     MAT_01 {
@@ -152,7 +72,78 @@ ADVECTION_DIFFUSION_2D {
     ALL_ELEMENTS   MAT_01;
   }
 
-  POST_PROCESS   FALSE;
+  INITIAL_TEMPERATURE {
+    ALL_ELEMENTS   293.15;
+  }
+
+  THICKNESS {
+    ALL_NODES   1;
+  }
+
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME     1;
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER   DIRICHLET;
+        PRECISION            1E-08;
+        MAX_ITERATIONS         100;
+        SOLVER                 PCG;
+        REGULARIZATION   ALGEBRAIC;
+      }
+
+      TEMPERATURE {
+        LEFT   280;
+        TOP    530;
+      }
+
+      CONVECTION {
+        RIGHT {
+          TYPE                      USER;
+          HEAT_TRANSFER_COEFFICIENT   12;
+          EXTERNAL_TEMPERATURE       500;
+        }
+      }
+    }
+
+    2 {
+      DURATION_TIME   0.1;
+      TYPE      TRANSIENT;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      TRANSIENT_SOLVER {
+        METHOD   CRANK_NICOLSON;
+
+        TIME_STEP         0.005;
+      }
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER   DIRICHLET;
+        PRECISION            1E-08;
+        MAX_ITERATIONS         100;
+        SOLVER                 PCG;
+      }
+
+      TEMPERATURE {
+        LEFT   280;
+      }
+
+      CONVECTION {
+        RIGHT {
+          TYPE                      USER;
+          HEAT_TRANSFER_COEFFICIENT   12;
+          EXTERNAL_TEMPERATURE      1200;
+        }
+      }
+    }
+  }
 }
 
 OUTPUT {

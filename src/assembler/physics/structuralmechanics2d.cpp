@@ -18,26 +18,27 @@
 
 using namespace espreso;
 
-StructuralMechanics2D::StructuralMechanics2D(Mesh *mesh, Instance *instance, const StructuralMechanics2DConfiguration &configuration)
-: Physics("STRUCTURAL MECHANICS 2D", mesh, instance), StructuralMechanics(configuration), _configuration(configuration)
+StructuralMechanics2D::StructuralMechanics2D(Mesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration)
+: Physics("STRUCTURAL MECHANICS 2D", mesh, instance), StructuralMechanics(configuration)
 {
 	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, _mesh->nodes(), _mesh->edges(), pointDOFs(), pointDOFsOffsets());
 }
 
 void StructuralMechanics2D::prepare()
 {
-	_mesh->loadNodeProperty(_configuration.thickness   , { }              , { Property::THICKNESS });
-	_mesh->loadProperty(_configuration.displacement    , { "X", "Y" }     , { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
-	_mesh->loadProperty(_configuration.acceleration    , { "X", "Y" }     , { Property::ACCELERATION_X, Property::ACCELERATION_Y });
-	_mesh->loadProperty(_configuration.angular_velocity, { "X", "Y", "Z" }, { Property::ANGULAR_VELOCITY_X, Property::ANGULAR_VELOCITY_Y, Property::ANGULAR_VELOCITY_Z });
+	_mesh->loadNodeProperty(_configuration.thickness, { }, { Property::THICKNESS }, 0);
+	for (size_t loadStep = 0; loadStep < _configuration.load_steps; loadStep++) {
+		_mesh->loadNodeProperty(_configuration.load_steps_settings.at(loadStep + 1).displacement, { "X", "Y" }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y }, loadStep);
+		_mesh->loadProperty(_configuration.load_steps_settings.at(loadStep + 1).acceleration    , { "X", "Y" }, { Property::ACCELERATION_X, Property::ACCELERATION_Y }, loadStep);
+		_mesh->loadProperty(_configuration.load_steps_settings.at(loadStep + 1).angular_velocity, { "X", "Y" }, { Property::ANGULAR_VELOCITY_X, Property::ANGULAR_VELOCITY_Y }, loadStep);
+	}
 
-	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
+	for (size_t loadStep = 0; loadStep < _configuration.load_steps; loadStep++) {
+		if (_configuration.load_steps_settings.at(loadStep + 1).solver == LoadStepConfiguration::SOLVER::FETI &&
+			_configuration.load_steps_settings.at(loadStep + 1).feti.regularization == FETI_REGULARIZATION::ANALYTIC) {
 
-	for (size_t s = 1; s <= _configuration.physics_solver.load_steps; s++) {
-		if (_configuration.physics_solver.load_steps_settings.find(s) != _configuration.physics_solver.load_steps_settings.end() &&
-			_configuration.physics_solver.load_steps_settings.find(s)->second.feti.regularization == FETI_REGULARIZATION::ANALYTIC) {
-			_mesh->computeFixPoints(4);
-			break;
+				_mesh->computeFixPoints(4);
+				break;
 		}
 	}
 
@@ -181,7 +182,7 @@ void StructuralMechanics2D::assembleMaterialMatrix(const Step &step, const Eleme
 
 		switch (_configuration.element_behaviour) {
 
-		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
+		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
 		{
 			double k = Ex * (1 - mi) / ((1 + mi) * (1 - 2 * mi));
 			K(node, 0) = k * 1;
@@ -196,8 +197,8 @@ void StructuralMechanics2D::assembleMaterialMatrix(const Step &step, const Eleme
 			return;
 		}
 
-		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
-		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
+		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
+		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
 		{
 			double k = Ex / (1 - mi * mi);
 			K(node, 0) = k * 1;
@@ -212,7 +213,7 @@ void StructuralMechanics2D::assembleMaterialMatrix(const Step &step, const Eleme
 			return;
 		}
 
-		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
+		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
 		{
 			K.resize(e->nodes(), 16);
 			double k = Ex * (1 - mi) / ((1 + mi) * (1 - 2 * mi));
@@ -337,10 +338,10 @@ void StructuralMechanics2D::processElement(const Step &step, Matrices matrices, 
 
 		switch (_configuration.element_behaviour) {
 
-		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
-		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
+		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
+		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
 			gpThickness(0, 0) = 1;
-		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
+		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
 
 			Ce.resize(3, 3);
 			Ce(0, 0) = gpK(0, 0);
@@ -374,7 +375,7 @@ void StructuralMechanics2D::processElement(const Step &step, Matrices matrices, 
 			}
 			break;
 
-		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
+		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
 
 			Ce.resize(4, 4);
 			Ce(0, 0) = gpK(0,  0);
@@ -480,16 +481,16 @@ void StructuralMechanics2D::processEdge(const Step &step, Matrices matrices, con
 
 		switch (_configuration.element_behaviour) {
 
-		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
-		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
+		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
+		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
 			gpThickness(0, 0) = 1;
-		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
+		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
 			for (eslocal i = 0; i < Ksize; i++) {
 				fe(i, 0) += gpThickness(0, 0) * J * e->weighFactor()[gp] * e->N()[gp](0, i % e->nodes()) * gpQ(0, i / e->nodes());
 			}
 			break;
 
-		case StructuralMechanics2DConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
+		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
 			XY.multiply(e->N()[gp], coordinates);
 			for (eslocal i = 0; i < Ksize; i++) {
 				fe(i, 0) += gpThickness(0, 0) * J * e->weighFactor()[gp] * 2 * M_PI * XY(0, 0) * e->N()[gp](0, i % e->nodes()) * gpQ(0, i / e->nodes());
@@ -527,9 +528,6 @@ void StructuralMechanics2D::postProcessElement(const Step &step, const Element *
 
 void StructuralMechanics2D::processSolution(const Step &step)
 {
-	if (!_configuration.post_process) {
-		return;
-	}
 }
 
 

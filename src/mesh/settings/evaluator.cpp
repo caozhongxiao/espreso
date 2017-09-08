@@ -253,13 +253,13 @@ void ArrayEvaluator::store(std::ofstream& os)
 	ESINFO(GLOBAL_ERROR) << "Implement store ArrayEvaluator.";
 }
 
-double inline ArrayEvaluator::evaluate(const Point &p, double time, double temperature, double pressure, double velocity) const
+double ArrayEvaluator::evaluate(const Point &p, double time, double temperature, double pressure, double velocity) const
 {
 	ESINFO(ERROR) << "Invalid calling of ArrayEvaluator.";
 	return 0;
 }
 
-double inline ArrayEvaluator::evaluate(eslocal index) const
+double ArrayEvaluator::evaluate(eslocal index) const
 {
 	auto it = std::lower_bound(_indices.begin(), _indices.end(), index);
 	if (it != _indices.end() && *it == index) {

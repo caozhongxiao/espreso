@@ -3,6 +3,7 @@
 #define SRC_CONFIG_ECF_MATERIAL_LINEARELASTICPROPERTIES_H_
 
 #include "tensor.h"
+#include "coordinatesystem.h" // DIMENSION
 
 namespace espreso {
 
@@ -15,7 +16,7 @@ struct LinearElasticPropertiesConfiguration: public ECFObject {
 	};
 
 	MODEL model;
-	bool is3D;
+	DIMENSION dimension;
 
 	TensorConfiguration poisson_ratio;
 	TensorConfiguration young_modulus;

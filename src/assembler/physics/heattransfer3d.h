@@ -1,17 +1,15 @@
 
-#ifndef SRC_ASSEMBLER_PHYSICS_ADVECTIONDIFFUSION3D_H_
-#define SRC_ASSEMBLER_PHYSICS_ADVECTIONDIFFUSION3D_H_
+#ifndef SRC_ASSEMBLER_PHYSICS_HEATTRANSFER3D_H_
+#define SRC_ASSEMBLER_PHYSICS_HEATTRANSFER3D_H_
 
+#include "heattransfer.h"
 #include "physics3d.h"
-#include "advectiondiffusion.h"
 
 namespace espreso {
 
-struct AdvectionDiffusion3DConfiguration;
-
-struct AdvectionDiffusion3D: public AdvectionDiffusion, public Physics3D
+struct HeatTransfer3D: public HeatTransfer, public Physics3D
 {
-	AdvectionDiffusion3D(Mesh *mesh, Instance *instance, const AdvectionDiffusion3DConfiguration &configuration);
+	HeatTransfer3D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration);
 
 	virtual void prepare();
 
@@ -26,11 +24,9 @@ struct AdvectionDiffusion3D: public AdvectionDiffusion, public Physics3D
 protected:
 	void assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const;
 	void postProcessElement(const Step &step, const Element *e, std::vector<Solution*> &solution);
-
-	const AdvectionDiffusion3DConfiguration &_configuration;
 };
 
 }
 
 
-#endif /* SRC_ASSEMBLER_PHYSICS_ADVECTIONDIFFUSION3D_H_ */
+#endif /* SRC_ASSEMBLER_PHYSICS_HEATTRANSFER3D_H_ */
