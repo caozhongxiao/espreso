@@ -77,20 +77,10 @@ struct AdvectionDiffusionConfiguration: public ECFObject {
 	AdvectionDiffusionConfiguration();
 };
 
-struct AdvectionDiffusion2DMaterialConfiguration: public MaterialConfiguration {
-
-	AdvectionDiffusion2DMaterialConfiguration();
-};
-
-struct AdvectionDiffusion3DMaterialConfiguration: public MaterialConfiguration {
-
-	AdvectionDiffusion3DMaterialConfiguration();
-};
-
 struct AdvectionDiffusion2DConfiguration: public AdvectionDiffusionConfiguration {
 
 	std::map<size_t, std::map<std::string, std::string> > thickness;
-	std::map<std::string, AdvectionDiffusion2DMaterialConfiguration> materials;
+	std::map<std::string, MaterialConfiguration> materials;
 
 	AdvectionDiffusion2DConfiguration();
 };
@@ -98,7 +88,7 @@ struct AdvectionDiffusion2DConfiguration: public AdvectionDiffusionConfiguration
 struct AdvectionDiffusion3DConfiguration: public AdvectionDiffusionConfiguration {
 
 	DISCRETIZATION discretization;
-	std::map<std::string, AdvectionDiffusion3DMaterialConfiguration> materials;
+	std::map<std::string, MaterialConfiguration> materials;
 
 	AdvectionDiffusion3DConfiguration();
 };

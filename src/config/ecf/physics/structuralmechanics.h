@@ -20,16 +20,6 @@ struct StructuralMechanicsConfiguration: public ECFObject {
 	StructuralMechanicsConfiguration();
 };
 
-struct StructuralMechanics2DMaterialConfiguration: public MaterialConfiguration {
-
-	StructuralMechanics2DMaterialConfiguration();
-};
-
-struct StructuralMechanics3DMaterialConfiguration: public MaterialConfiguration {
-
-	StructuralMechanics3DMaterialConfiguration();
-};
-
 struct StructuralMechanics2DConfiguration: public StructuralMechanicsConfiguration {
 
 	enum class ELEMENT_BEHAVIOUR {
@@ -42,7 +32,7 @@ struct StructuralMechanics2DConfiguration: public StructuralMechanicsConfigurati
 	ELEMENT_BEHAVIOUR element_behaviour;
 
 	std::map<size_t, std::map<std::string, std::string> > thickness, angular_velocity;
-	std::map<std::string, StructuralMechanics2DMaterialConfiguration> materials;
+	std::map<std::string, MaterialConfiguration> materials;
 
 	StructuralMechanics2DConfiguration();
 };
@@ -50,7 +40,7 @@ struct StructuralMechanics2DConfiguration: public StructuralMechanicsConfigurati
 struct StructuralMechanics3DConfiguration: public StructuralMechanicsConfiguration {
 
 	DISCRETIZATION discretization;
-	std::map<std::string, StructuralMechanics3DMaterialConfiguration> materials;
+	std::map<std::string, MaterialConfiguration> materials;
 
 	StructuralMechanics3DConfiguration();
 };

@@ -147,19 +147,6 @@ espreso::AdvectionDiffusionConfiguration::AdvectionDiffusionConfiguration()
 			.setdatatype({ ECFDataType::BOOL}));
 }
 
-
-espreso::AdvectionDiffusion2DMaterialConfiguration::AdvectionDiffusion2DMaterialConfiguration()
-{
-	physical_model = PHYSICAL_MODEL::THERMAL;
-	coordinate_system.is3D = false;
-	thermal_conductivity.is3D = false;
-}
-
-espreso::AdvectionDiffusion3DMaterialConfiguration::AdvectionDiffusion3DMaterialConfiguration()
-{
-	physical_model = PHYSICAL_MODEL::THERMAL;
-}
-
 espreso::AdvectionDiffusion2DConfiguration::AdvectionDiffusion2DConfiguration()
 {
 	getWithError(PNAME(translation_motions))->metadata.pattern[2] = "X 0, Y 0";
@@ -169,19 +156,25 @@ espreso::AdvectionDiffusion2DConfiguration::AdvectionDiffusion2DConfiguration()
 			.setpattern({ "1", "MY_REGION", "1" }));
 	moveLastBefore(PNAME(initial_temperature));
 
-	REGISTER(materials, ECFMetaData()
-			.setdescription({ "The name of a material.", "Material description." })
-			.setdatatype({ ECFDataType::STRING })
-			.setpattern({ "MY_MATERIAL" }));
+	REGISTER(
+			materials,
+			ECFMetaData()
+				.setdescription({ "The name of a material.", "Material description." })
+				.setdatatype({ ECFDataType::STRING })
+				.setpattern({ "MY_MATERIAL" }),
+			MaterialConfiguration::PHYSICAL_MODEL::THERMAL, false);
 	moveLastBefore(PNAME(material_set));
 }
 
 espreso::AdvectionDiffusion3DConfiguration::AdvectionDiffusion3DConfiguration()
 {
-	REGISTER(materials, ECFMetaData()
-			.setdescription({ "The name of a material.", "Material description." })
-			.setdatatype({ ECFDataType::STRING })
-			.setpattern({ "MY_MATERIAL" }));
+	REGISTER(
+			materials,
+			ECFMetaData()
+				.setdescription({ "The name of a material.", "Material description." })
+				.setdatatype({ ECFDataType::STRING })
+				.setpattern({ "MY_MATERIAL" }),
+			MaterialConfiguration::PHYSICAL_MODEL::THERMAL, true);
 	moveLastBefore(PNAME(material_set));
 
 	discretization = DISCRETIZATION::FEM;

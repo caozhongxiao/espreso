@@ -48,18 +48,6 @@ espreso::StructuralMechanicsConfiguration::StructuralMechanicsConfiguration()
 			.setdatatype({ ECFDataType::BOOL}));
 }
 
-espreso::StructuralMechanics2DMaterialConfiguration::StructuralMechanics2DMaterialConfiguration()
-{
-	physical_model = PHYSICAL_MODEL::LINEAR_ELASTIC;
-	coordinate_system.is3D = false;
-	linear_elastic_properties.is3D = false;
-}
-
-espreso::StructuralMechanics3DMaterialConfiguration::StructuralMechanics3DMaterialConfiguration()
-{
-	physical_model = PHYSICAL_MODEL::LINEAR_ELASTIC;
-}
-
 espreso::StructuralMechanics2DConfiguration::StructuralMechanics2DConfiguration()
 {
 	getWithError(PNAME(displacement))->metadata.pattern[2] = "X 0, Y 0";
@@ -70,10 +58,13 @@ espreso::StructuralMechanics2DConfiguration::StructuralMechanics2DConfiguration(
 			.setpattern({ "1", "MY_REGION", "1" }));
 	moveLastBefore(PNAME(initial_temperature));
 
-	REGISTER(materials, ECFMetaData()
-			.setdescription({ "The name of a material.", "Material description." })
-			.setdatatype({ ECFDataType::STRING })
-			.setpattern({ "MY_MATERIAL" }));
+	REGISTER(
+			materials,
+			ECFMetaData()
+				.setdescription({ "The name of a material.", "Material description." })
+				.setdatatype({ ECFDataType::STRING })
+				.setpattern({ "MY_MATERIAL" }),
+			MaterialConfiguration::PHYSICAL_MODEL::LINEAR_ELASTIC, false);
 	moveLastBefore(PNAME(material_set));
 
 	element_behaviour = ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS;
@@ -89,10 +80,13 @@ espreso::StructuralMechanics2DConfiguration::StructuralMechanics2DConfiguration(
 
 espreso::StructuralMechanics3DConfiguration::StructuralMechanics3DConfiguration()
 {
-	REGISTER(materials, ECFMetaData()
-			.setdescription({ "The name of a material.", "Material description." })
-			.setdatatype({ ECFDataType::STRING })
-			.setpattern({ "MY_MATERIAL" }));
+	REGISTER(
+			materials,
+			ECFMetaData()
+				.setdescription({ "The name of a material.", "Material description." })
+				.setdatatype({ ECFDataType::STRING })
+				.setpattern({ "MY_MATERIAL" }),
+			MaterialConfiguration::PHYSICAL_MODEL::LINEAR_ELASTIC, true);
 	moveLastBefore(PNAME(material_set));
 
 	discretization = DISCRETIZATION::FEM;

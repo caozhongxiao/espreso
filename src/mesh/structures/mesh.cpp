@@ -1098,11 +1098,6 @@ bool Mesh::commonRegion(const std::vector<Region*> &v1, const std::vector<Region
 	return false;
 }
 
-void Mesh::materialNotFound(const std::string &name)
-{
-	ESINFO(GLOBAL_ERROR) << "Invalid .ecf file: material " << name << " is not set.";
-}
-
 void Mesh::evaluateMaterial(MaterialConfiguration &material)
 {
 	material.forEachParameters([] (ECFParameter *parameter) {
@@ -1137,20 +1132,24 @@ void Mesh::evaluateMaterial(MaterialConfiguration &material)
 	});
 }
 
-void Mesh::loadMaterial(Region *region, size_t index, const std::string &name, const MaterialConfiguration &material)
+void Mesh::loadMaterials(const std::map<std::string, MaterialConfiguration> &materials, const std::map<std::string, std::string> &sets)
 {
-	#pragma omp parallel for
-	for (size_t e = 0; e < region->elements().size(); e++) {
-		region->elements()[e]->setParam(Element::MATERIAL, index);
+	size_t index = 0;
+	for (auto it = sets.begin(); it != sets.end(); ++it, index++) {
+		if (materials.find(it->second) == materials.end()) {
+			ESINFO(GLOBAL_ERROR) << "Invalid .ecf file: material " << it->second << " is not set.";
+		} else {
+			Region *r = this->region(it->first);
+			#pragma omp parallel for
+			for (size_t e = 0; e < r->elements().size(); e++) {
+				r->elements()[e]->setParam(Element::MATERIAL, index);
+			}
+			_materials.push_back(new MaterialConfiguration());
+			*_materials.back() = materials.find(it->second)->second;
+			evaluateMaterial(*_materials.back());
+			ESINFO(OVERVIEW) << "Set material '" << it->second << "' for region '" << r->name << "'";
+		}
 	}
-	_materials.push_back(new MaterialConfiguration());
-	*_materials.back() = material;
-	evaluateMaterial(*_materials.back());
-	ESINFO(OVERVIEW) << "Set material '" << name << "' for region '" << region->name << "'";
-}
-
-void Mesh::checkMaterials()
-{
 	if (!_materials.size()) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO needs at least one material.";
 	}
