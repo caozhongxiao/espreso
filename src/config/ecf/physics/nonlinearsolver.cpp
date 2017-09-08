@@ -4,12 +4,12 @@
 
 espreso::NonLinearSolverConfiguration::NonLinearSolverConfiguration(const std::string &solution_name, const std::string &residual_name)
 {
-	method = METHOD::NEWTON_RHAPSON;
+	method = METHOD::NEWTON_RAPHSON;
 	REGISTER(method, ECFMetaData()
 			.setdescription({ "Non-linear method." })
 			.setdatatype({ ECFDataType::OPTION })
-			.addoption(ECFOption().setname("NEWTON_RHAPSON").setdescription("Newton-Rhapson."))
-			.addoption(ECFOption().setname("MODIFIED_NEWTON_RHAPSON").setdescription("Newton-Rhapson without re-assembling of stiffness matrices.")));
+			.addoption(ECFOption().setname("NEWTON_RAPHSON").setdescription("Newton-Raphson."))
+			.addoption(ECFOption().setname("MODIFIED_NEWTON_RAPHSON").setdescription("Newton-Raphson without re-assembling of stiffness matrices.")));
 
 	stepping = STEPPINGG::FALSE;
 	REGISTER(stepping, ECFMetaData()

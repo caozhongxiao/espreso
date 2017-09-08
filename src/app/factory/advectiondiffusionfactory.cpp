@@ -9,7 +9,7 @@
 
 #include "../../assembler/physicssolver/assembler.h"
 #include "../../assembler/physicssolver/timestep/linear.h"
-#include "../../assembler/physicssolver/timestep/newtonrhapson.h"
+#include "../../assembler/physicssolver/timestep/newtonraphson.h"
 #include "../../assembler/physicssolver/loadstep/steadystate.h"
 #include "../../assembler/physicssolver/loadstep/pseudotimestepping.h"
 #include "../../assembler/physicssolver/loadstep/transientfirstorderimplicit.h"
@@ -66,9 +66,9 @@ LoadStepSolver* AdvectionDiffusionFactory::getLoadStepSolver(size_t step, Mesh *
 			ESINFO(GLOBAL_ERROR) << "BEM discretization support only LINEAR STEADY STATE physics solver.";
 		}
 		switch (settings.nonlinear_solver.method) {
-		case NonLinearSolverConfiguration::METHOD::NEWTON_RHAPSON:
-		case NonLinearSolverConfiguration::METHOD::MODIFIED_NEWTON_RHAPSON:
-			_timeStepSolvers.push_back(new NewtonRhapson(*_assemblers.back(), settings.nonlinear_solver));
+		case NonLinearSolverConfiguration::METHOD::NEWTON_RAPHSON:
+		case NonLinearSolverConfiguration::METHOD::MODIFIED_NEWTON_RAPHSON:
+			_timeStepSolvers.push_back(new NewtonRaphson(*_assemblers.back(), settings.nonlinear_solver));
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented NONLINEAR SOLVER METHOD for LOAD STEP=" << step;

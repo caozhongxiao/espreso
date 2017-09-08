@@ -1,5 +1,5 @@
 
-#include "newtonrhapson.h"
+#include "newtonraphson.h"
 
 #include "../assembler.h"
 #include "../loadstep/loadstepsolver.h"
@@ -15,13 +15,13 @@
 
 using namespace espreso;
 
-NewtonRhapson::NewtonRhapson(Assembler &assembler, const NonLinearSolverConfiguration &configuration)
-: TimeStepSolver("Newton Rhapson", assembler), _configuration(configuration)
+NewtonRaphson::NewtonRaphson(Assembler &assembler, const NonLinearSolverConfiguration &configuration)
+: TimeStepSolver("Newton Raphson", assembler), _configuration(configuration)
 {
 
 }
 
-void NewtonRhapson::solve(Step &step, LoadStepSolver &loadStepSolver)
+void NewtonRaphson::solve(Step &step, LoadStepSolver &loadStepSolver)
 {
 	if (!_configuration.check_first_residual && !_configuration.check_second_residual) {
 		ESINFO(GLOBAL_ERROR) << "Turn on at least one convergence parameter for NONLINEAR solver.";
@@ -55,7 +55,7 @@ void NewtonRhapson::solve(Step &step, LoadStepSolver &loadStepSolver)
 		}
 
 		_solution = _assembler.instance.primalSolution;
-		if (_configuration.method == NonLinearSolverConfiguration::METHOD::NEWTON_RHAPSON) {
+		if (_configuration.method == NonLinearSolverConfiguration::METHOD::NEWTON_RAPHSON) {
 			updatedMatrices = loadStepSolver.updateStructuralMatrices(step, Matrices::K | Matrices::M | Matrices::f | Matrices::R);
 		} else {
 			updatedMatrices = loadStepSolver.updateStructuralMatrices(step, Matrices::f | Matrices::R);

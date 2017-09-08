@@ -1,6 +1,6 @@
 
-#ifndef SRC_ASSEMBLER_PHYSICSSOLVER_TIMESTEP_NEWTONRHAPSON_H_
-#define SRC_ASSEMBLER_PHYSICSSOLVER_TIMESTEP_NEWTONRHAPSON_H_
+#ifndef SRC_ASSEMBLER_PHYSICSSOLVER_TIMESTEP_NEWTONRAPHSON_H_
+#define SRC_ASSEMBLER_PHYSICSSOLVER_TIMESTEP_NEWTONRAPHSON_H_
 
 #include "timestepsolver.h"
 
@@ -10,10 +10,10 @@ namespace espreso {
 
 class NonLinearSolverConfiguration;
 
-class NewtonRhapson: public TimeStepSolver {
+class NewtonRaphson: public TimeStepSolver {
 
 public:
-	NewtonRhapson(Assembler &assembler, const NonLinearSolverConfiguration &configuration);
+	NewtonRaphson(Assembler &assembler, const NonLinearSolverConfiguration &configuration);
 
 	void solve(Step &step, LoadStepSolver &loadStepSolver);
 
@@ -29,4 +29,4 @@ protected:
 
 
 
-#endif /* SRC_ASSEMBLER_PHYSICSSOLVER_TIMESTEP_NEWTONRHAPSON_H_ */
+#endif /* SRC_ASSEMBLER_PHYSICSSOLVER_TIMESTEP_NEWTONRAPHSON_H_ */

@@ -9,8 +9,8 @@ namespace espreso {
 struct NonLinearSolverConfiguration: public ECFObject {
 
 	enum class METHOD {
-		NEWTON_RHAPSON,
-		MODIFIED_NEWTON_RHAPSON
+		NEWTON_RAPHSON,
+		MODIFIED_NEWTON_RAPHSON
 	};
 
 	enum class STEPPINGG {
