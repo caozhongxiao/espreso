@@ -6,16 +6,16 @@
 espreso::MaterialConfiguration::MaterialConfiguration()
 : physical_model(static_cast<PHYSICAL_MODEL>(~0)), _allowed_physical_models(static_cast<PHYSICAL_MODEL>(~0))
 {
-	REGISTER(coordinate_system, ECFMetaData()
-			.setdescription({ "Material coordinate system." }));
+	REGISTER(name, ECFMetaData()
+			 .setdescription({ "Name" })
+			 .setdatatype( { ECFDataType::STRING } ));
 
-	REGISTER(physical_model, ECFMetaData()
-			.setdescription({ "Select used physical model." })
-			.setdatatype({ ECFDataType::ENUM_FLAGS })
-			.addoption(ECFOption().setname("THERMAL").setdescription("Model used by HEAT TRANSFER.")
-					.allowonly([&] () { return _allowed_physical_models & PHYSICAL_MODEL::THERMAL; }))
-			.addoption(ECFOption().setname("LINEAR_ELASTIC").setdescription("One of models used by STRUCTURAL MECHANICS.")
-					.allowonly([&] () { return _allowed_physical_models & PHYSICAL_MODEL::LINEAR_ELASTIC; })));
+	REGISTER(description, ECFMetaData()
+			 .setdescription({ "Description" })
+			 .setdatatype( { ECFDataType::STRING } ));
+
+	REGISTER(coordinate_system, ECFMetaData()
+			.setdescription({ "Coordinate system" }));
 
 	density.value = heat_capacity.value = "0";
 	registerParameter("dens", density, ECFMetaData()
@@ -30,12 +30,21 @@ espreso::MaterialConfiguration::MaterialConfiguration()
 			.setunit("J / (kg * K)")
 			.setmaterialvariables());
 
+	physical_model = PHYSICAL_MODEL::THERMAL;
+	REGISTER(physical_model, ECFMetaData()
+			.setdescription({ "Physical model" })
+			.setdatatype({ ECFDataType::ENUM_FLAGS })
+			.addoption(ECFOption().setname("THERMAL").setdescription("Model used by HEAT TRANSFER.")
+					.allowonly([&] () { return _allowed_physical_models & PHYSICAL_MODEL::THERMAL; }))
+			.addoption(ECFOption().setname("LINEAR_ELASTIC").setdescription("One of models used by STRUCTURAL MECHANICS.")
+					.allowonly([&] () { return _allowed_physical_models & PHYSICAL_MODEL::LINEAR_ELASTIC; })));
+
 	REGISTER(thermal_conductivity, ECFMetaData()
-			.setdescription({ "Thermal conductivity." })
+			.setdescription({ "Thermal conductivity" })
 			.allowonly([&] () {  return physical_model & PHYSICAL_MODEL::THERMAL; }));
 
 	REGISTER(linear_elastic_properties, ECFMetaData()
-			.setdescription({ "Linear elastic properties." })
+			.setdescription({ "Linear elasticity" })
 			.allowonly([&] () {  return physical_model & PHYSICAL_MODEL::LINEAR_ELASTIC; }));
 }
 

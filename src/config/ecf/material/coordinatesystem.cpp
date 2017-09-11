@@ -10,7 +10,7 @@ espreso::CoordinateSystemConfiguration::CoordinateSystemConfiguration()
 	rotation_x.value = rotation_y.value = rotation_z.value = center_x.value = center_y.value = center_z.value = "0";
 
 	REGISTER(type, ECFMetaData()
-			.setdescription({ "Type of coordination system." })
+			.setdescription({ "Type" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("CARTESIAN").setdescription("Cartesian system."))
 			.addoption(ECFOption().setname("CYLINDRICAL").setdescription("Cylindrical system."))

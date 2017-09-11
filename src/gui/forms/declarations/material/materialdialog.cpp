@@ -2,7 +2,9 @@
 #include "ui_materialdialog.h"
 
 #include <QComboBox>
+#include <QLabel>
 #include "../../elements/optionhandler.h"
+#include "../../elements/formwidget.h"
 #include "materialpropertytablewidget.h"
 
 using namespace espreso;
@@ -30,19 +32,38 @@ void MaterialDialog::drawMe()
 
     ui->frameLayout->addWidget(m_frame);
 
-    this->iterateObject(m_material);
+	this->iterateObject(m_material, this->m_frame);
 }
 
-void MaterialDialog::iterateObject(ECFObject* obj)
+void MaterialDialog::iterateObject(ECFObject* obj, QWidget* parent)
 {
-    QFrame* frame = new QFrame(this->m_frame);
-    frame->setFrameShape(QFrame::StyledPanel);
-    QVBoxLayout* layout = new QVBoxLayout;
-    frame->setLayout(layout);
-    this->m_frameLayout->addWidget(frame);
+	QWidget* widget;
+	if (parent == nullptr)
+	{
+		QFrame* frame = new QFrame(this->m_frame);
+		frame->setFrameShape(QFrame::StyledPanel);
+		QVBoxLayout* layout = new QVBoxLayout;
+		frame->setLayout(layout);
+		widget = frame;
+	}
+	else
+	{
+		widget = parent;
+	}
+
+
+	if (obj->metadata.description.size())
+	{
+		QString lblNameText = QString::fromStdString(obj->metadata.description.at(0));
+		QLabel* lblName = new QLabel(lblNameText,
+									 widget);
+		widget->layout()->addWidget(lblName);
+	}
 
     MaterialPropertyTableWidget* propertyTable;
     bool propertyTableNotInserted = true;
+	FormWidget* formWidget = new FormWidget(widget);
+	widget->layout()->addWidget(formWidget);
 
     for (auto parameter = obj->parameters.cbegin();
          parameter != obj->parameters.cend();
@@ -51,28 +72,38 @@ void MaterialDialog::iterateObject(ECFObject* obj)
         if (!(*parameter)->metadata.isallowed())
             continue;
 
-        if ((*parameter)->metadata.datatype.size())
+		if ( (*parameter)->isObject() )
         {
-            ECFDataType type = (*parameter)->metadata.datatype.at(0);
-            if ( type == ECFDataType::OPTION )
-            {
-                this->drawOption(*parameter, frame);
-            }
-            else if ( type == ECFDataType::EXPRESSION )
-            {
-                if (propertyTableNotInserted)
-                {
-                    propertyTable = new MaterialPropertyTableWidget(frame);
-                    layout->addWidget(propertyTable);
-                    propertyTableNotInserted = false;
-                }
-                propertyTable->addProperty(*(*parameter));
-            }
+			this->iterateObject(static_cast<ECFObject*>(*parameter));
         }
-        else if ( (*parameter)->isObject() )
-        {
-            this->iterateObject(static_cast<ECFObject*>(*parameter));
-        }
+		else if ((*parameter)->metadata.datatype.size())
+		{
+			if (parent == nullptr) this->m_frameLayout->addWidget(widget);
+
+			ECFDataType type = (*parameter)->metadata.datatype.at(0);
+
+			if ( type == ECFDataType::OPTION
+				 || type == ECFDataType::ENUM_FLAGS )
+			{
+				this->drawOption(*parameter, widget);
+			}
+			else if ( type == ECFDataType::EXPRESSION )
+			{
+
+				if (propertyTableNotInserted)
+				{
+					propertyTable = new MaterialPropertyTableWidget(widget);
+					widget->layout()->addWidget(propertyTable);
+					propertyTableNotInserted = false;
+				}
+				propertyTable->addProperty(*(*parameter));
+
+			}
+			else if (type == ECFDataType::STRING)
+			{
+				formWidget->appendString(*parameter);
+			}
+		}
     }
 }
 

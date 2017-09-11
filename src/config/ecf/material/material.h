@@ -5,6 +5,9 @@
 #include "coordinatesystem.h"
 #include "linearelasticproperties.h"
 #include "thermalconductivity.h"
+#include "../../valueholder.h"
+
+#include <string>
 
 namespace espreso {
 
@@ -14,6 +17,9 @@ struct MaterialConfiguration: public ECFObject {
 		THERMAL        = 1 << 0,
 		LINEAR_ELASTIC = 1 << 1
 	};
+
+	std::string name;
+	std::string description;
 
 	CoordinateSystemConfiguration coordinate_system;
 

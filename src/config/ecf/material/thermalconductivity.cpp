@@ -8,7 +8,7 @@ espreso::ThermalConductivityConfiguration::ThermalConductivityConfiguration()
   values(3)
 {
 	REGISTER(model, ECFMetaData()
-			.setdescription({ "Tensors model." })
+			.setdescription({ "Model" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("ISOTROPIC").setdescription("Isotropic model."))
 			.addoption(ECFOption().setname("DIAGONAL").setdescription("Orthotropic model."))

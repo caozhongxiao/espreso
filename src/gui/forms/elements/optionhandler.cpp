@@ -2,16 +2,24 @@
 
 using namespace espreso;
 
-#include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QComboBox>
+#include <QLabel>
 
 OptionHandler::OptionHandler(ECFParameter* option, QWidget* parent) :
     QWidget(parent)
 {
     this->m_option = option;
 
-    QVBoxLayout* layout = new QVBoxLayout;
+	QHBoxLayout* layout = new QHBoxLayout;
     this->setLayout(layout);
+
+	if (option->metadata.description.size())
+	{
+		QString text = QString::fromStdString(option->metadata.description.at(0));
+		QLabel* lbl = new QLabel(text, this);
+		layout->addWidget(lbl);
+	}
 
     QComboBox* cmb = new QComboBox(this);
     layout->addWidget(cmb);

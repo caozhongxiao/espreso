@@ -33,7 +33,7 @@ namespace espreso
         QVBoxLayout* m_frameLayout;
 
         void drawMe();
-        void iterateObject(ECFObject*);
+		void iterateObject(ECFObject*, QWidget* = nullptr);
         void drawOption(ECFParameter*, QWidget*);
     };
 
