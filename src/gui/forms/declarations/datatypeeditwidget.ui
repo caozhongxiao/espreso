@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>DataTypeEditWidget</class>
- <widget class="QWidget" name="DataTypeEditWidget">
+ <class>espreso::DataTypeEditWidget</class>
+ <widget class="QWidget" name="espreso::DataTypeEditWidget">
   <property name="geometry">
    <rect>
     <x>0</x>

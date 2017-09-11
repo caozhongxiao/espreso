@@ -10,6 +10,8 @@
 #include "../tablewidget.h"
 #include "../datatypeeditwidget.h"
 
+using namespace espreso;
+
 MaterialPropertyTableWidget::MaterialPropertyTableWidget(QWidget *parent, bool withHeader) :
     QWidget(parent),
     ui(new Ui::MaterialPropertyTableWidget)

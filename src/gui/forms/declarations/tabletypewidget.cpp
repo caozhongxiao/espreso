@@ -8,6 +8,8 @@
 #include <QStringList>
 #include <QDebug>
 
+using namespace espreso;
+
 QStringList TableTypeWidget::headlines()
 {
     QStringList result;

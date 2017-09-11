@@ -6,6 +6,8 @@
 #include <QDebug>
 #include <QRegularExpression>
 
+using namespace espreso;
+
 DataTypeEditWidget::DataTypeEditWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::DataTypeEditWidget)

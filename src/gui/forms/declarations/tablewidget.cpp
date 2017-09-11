@@ -3,6 +3,8 @@
 
 #include <QtDebug>
 
+using namespace espreso;
+
 TableWidget::TableWidget(int columns, const QStringList& headlines, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::TableWidget)

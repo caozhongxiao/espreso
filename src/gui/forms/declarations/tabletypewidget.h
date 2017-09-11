@@ -4,22 +4,25 @@
 #include "tablewidget.h"
 #include "../../data/datatype.h"
 
-class TableTypeWidget : public TableWidget
+namespace espreso
 {
-    Q_OBJECT
+    class TableTypeWidget : public TableWidget
+    {
+        Q_OBJECT
 
-public:
-    static QStringList headlines();
+    public:
+        static QStringList headlines();
 
-    TableTypeWidget(QWidget *parent = 0);
+        TableTypeWidget(QWidget *parent = 0);
 
-    virtual void addData(const QString& data) override;
+        virtual void addData(const QString& data) override;
 
-protected:
-    virtual QString columnDefaultValue(int column) const override;
+    protected:
+        virtual QString columnDefaultValue(int column) const override;
 
-private:
-    QVector<QString> defaultValues;
-};
+    private:
+        QVector<QString> defaultValues;
+    };
+}
 
 #endif // TABLETYPEWIDGET_H

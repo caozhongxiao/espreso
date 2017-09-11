@@ -10,42 +10,45 @@
 #include "../../../config/configuration.h"
 #include "../elements/expressionedit.h"
 
-using namespace espreso;
-
-namespace Ui {
-class DataTypeEditWidget;
-}
-
-class DataTypeEditWidget : public QWidget
+namespace espreso
 {
-    Q_OBJECT
 
-public:
-    static QStringList typeNames();
+    namespace Ui {
+    class DataTypeEditWidget;
+    }
 
-    explicit DataTypeEditWidget(QWidget *parent = 0);
-    DataTypeEditWidget(const ECFParameter& data, QWidget* parent = 0);
-    ~DataTypeEditWidget();
+    class DataTypeEditWidget : public QWidget
+    {
+        Q_OBJECT
 
-    QComboBox* createComboBox(QWidget* parent = nullptr);
-    bool isValid();
+    public:
+        static QStringList typeNames();
 
-private slots:
-    void changeType(int index);
+        explicit DataTypeEditWidget(QWidget *parent = 0);
+        DataTypeEditWidget(const ECFParameter& data, QWidget* parent = 0);
+        ~DataTypeEditWidget();
 
-private:
-    Ui::DataTypeEditWidget *ui;
+        QComboBox* createComboBox(QWidget* parent = nullptr);
+        bool isValid();
 
-    ExpressionEdit* uiExpression;
-    TableTypeWidget* uiTable;
-    PiecewiseTypeWidget* uiPiecewise;
+    private slots:
+        void changeType(int index);
 
-    int activeType;
+    private:
+        Ui::DataTypeEditWidget *ui;
 
-    void createUi();
-    void initExpression(const ECFParameter&);
-    void initTable(const ECFParameter&);
-    void initPiecewise(const ECFParameter&);
-};
+        ExpressionEdit* uiExpression;
+        TableTypeWidget* uiTable;
+        PiecewiseTypeWidget* uiPiecewise;
+
+        int activeType;
+
+        void createUi();
+        void initExpression(const ECFParameter&);
+        void initTable(const ECFParameter&);
+        void initPiecewise(const ECFParameter&);
+    };
+
+}
 
 #endif // DATATYPEEDITWIDGET_H

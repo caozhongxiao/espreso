@@ -1,6 +1,8 @@
 #include "tensorpropertywidget.h"
 #include "ui_tensorpropertywidget.h"
 
+using namespace espreso;
+
 TensorPropertyWidget::TensorPropertyWidget(ECFObject* property, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::TensorPropertyWidget)

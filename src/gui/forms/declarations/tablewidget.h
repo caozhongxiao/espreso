@@ -9,42 +9,45 @@
 #include <QAction>
 #include <QMenu>
 
-namespace Ui {
-class TableWidget;
-}
-
-class TableWidget : public QWidget
+namespace espreso
 {
-    Q_OBJECT
 
-public:
-    virtual ~TableWidget();
+    namespace Ui {
+    class TableWidget;
+    }
 
-    virtual void addRow(const QVector<QString>& rowData);
-    virtual void addData(const QVector<QVector<QString> >& data);
-    virtual void addData(const QString& data) = 0;
-    virtual bool isValid();
+    class TableWidget : public QWidget
+    {
+        Q_OBJECT
 
-protected:
-    QTableView* mTable;
-    QStandardItemModel* mModel;
+    public:
+        virtual ~TableWidget();
 
-    explicit TableWidget(int columns, const QStringList& headlines, QWidget *parent = 0);
+        virtual void addRow(const QVector<QString>& rowData);
+        virtual void addData(const QVector<QVector<QString> >& data);
+        virtual void addData(const QString& data) = 0;
+        virtual bool isValid();
 
-    virtual QString columnDefaultValue(int) const { return ""; }
+    protected:
+        QTableView* mTable;
+        QStandardItemModel* mModel;
 
-private slots:
-    void onItemDoubleClick(const QModelIndex& index);
-    void onContextMenu(const QPoint& point);
-    void deleteItem();
+        explicit TableWidget(int columns, const QStringList& headlines, QWidget *parent = 0);
 
-private:
-    Ui::TableWidget *ui;
+        virtual QString columnDefaultValue(int) const { return ""; }
 
-    QModelIndex toDelete;
-    QAction* mActionDelete;
+    private slots:
+        void onItemDoubleClick(const QModelIndex& index);
+        void onContextMenu(const QPoint& point);
+        void deleteItem();
 
-    void addCleanRow();
-};
+    private:
+        Ui::TableWidget *ui;
 
+        QModelIndex toDelete;
+        QAction* mActionDelete;
+
+        void addCleanRow();
+    };
+}
 #endif // TABLEWIDGET_H

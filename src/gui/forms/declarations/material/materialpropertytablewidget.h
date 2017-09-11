@@ -5,27 +5,29 @@
 #include <QVector>
 #include "../../../../config/configuration.h"
 
-using namespace espreso;
-
-namespace Ui {
-class MaterialPropertyTableWidget;
-}
-
-class MaterialPropertyTableWidget : public QWidget
+namespace espreso
 {
-    Q_OBJECT
 
-public:
-    explicit MaterialPropertyTableWidget(QWidget *parent = 0, bool withHeader = true);
-    ~MaterialPropertyTableWidget();
+    namespace Ui {
+    class MaterialPropertyTableWidget;
+    }
 
-    void addProperty(const ECFParameter& property);
-    void addRow(const QString& name, const ECFParameter& data, const QString& unit, const QString& symbol);
+    class MaterialPropertyTableWidget : public QWidget
+    {
+        Q_OBJECT
 
-private:
-    Ui::MaterialPropertyTableWidget *ui;
+    public:
+        explicit MaterialPropertyTableWidget(QWidget *parent = 0, bool withHeader = true);
+        ~MaterialPropertyTableWidget();
 
-    void createHeader();
-};
+        void addProperty(const ECFParameter& property);
+        void addRow(const QString& name, const ECFParameter& data, const QString& unit, const QString& symbol);
 
+    private:
+        Ui::MaterialPropertyTableWidget *ui;
+
+        void createHeader();
+    };
+
+}
 #endif // MATERIALPROPERTYTABLEWIDGET_H

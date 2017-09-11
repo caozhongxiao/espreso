@@ -1,6 +1,8 @@
 #include "materialpropertieswidget.h"
 #include "ui_materialpropertieswidget.h"
 
+using namespace espreso;
+
 MaterialPropertiesWidget::MaterialPropertiesWidget(const QVector<TensorProperty>& tensors,
                                                    const QVector<ScalarProperty>& scalars,
                                                    QWidget *parent) :

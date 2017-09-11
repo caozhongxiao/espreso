@@ -4,23 +4,28 @@
 #include "tablewidget.h"
 #include "../../data/datatype.h"
 
-class PiecewiseTypeWidget : public TableWidget
+namespace espreso
 {
-    Q_OBJECT
 
-public:
-    static QStringList headlines();
+    class PiecewiseTypeWidget : public TableWidget
+    {
+        Q_OBJECT
 
-    PiecewiseTypeWidget(QWidget* parent = 0);
-    bool isValid() override;
+    public:
+        static QStringList headlines();
 
-    virtual void addData(const QString&) override;
+        PiecewiseTypeWidget(QWidget* parent = 0);
+        bool isValid() override;
 
-protected:
-    virtual QString columnDefaultValue(int column) const override;
+        virtual void addData(const QString&) override;
 
-private:
-    QVector<QString> defaultValues;
-};
+    protected:
+        virtual QString columnDefaultValue(int column) const override;
+
+    private:
+        QVector<QString> defaultValues;
+    };
+
+}
 
 #endif // PIECEWISETYPEWIDGET_H

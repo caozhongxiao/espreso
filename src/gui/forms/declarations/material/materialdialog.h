@@ -2,21 +2,41 @@
 #define MATERIALDIALOG_H
 
 #include <QDialog>
+#include <QFrame>
+#include <QVBoxLayout>
+#include "../../../../config/configuration.h"
 
-namespace Ui {
-class MaterialDialog;
-}
-
-class MaterialDialog : public QDialog
+namespace espreso
 {
-    Q_OBJECT
 
-public:
-    explicit MaterialDialog(QWidget *parent = 0);
-    ~MaterialDialog();
+    namespace Ui {
+    class MaterialDialog;
+    }
 
-private:
-    Ui::MaterialDialog *ui;
-};
+    class MaterialDialog : public QDialog
+    {
+        Q_OBJECT
+
+    public:
+        explicit MaterialDialog(ECFObject* material, QWidget *parent = 0);
+        ~MaterialDialog();
+
+    private slots:
+        void redraw();
+
+    private:
+        Ui::MaterialDialog *ui;
+
+        ECFObject* m_material;
+
+        QFrame* m_frame;
+        QVBoxLayout* m_frameLayout;
+
+        void drawMe();
+        void iterateObject(ECFObject*);
+        void drawOption(ECFParameter*, QWidget*);
+    };
+
+}
 
 #endif // MATERIALDIALOG_H

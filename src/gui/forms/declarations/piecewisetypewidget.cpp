@@ -7,6 +7,8 @@
 
 #include <QDebug>
 
+using namespace espreso;
+
 QStringList PiecewiseTypeWidget::headlines()
 {
     QStringList result;

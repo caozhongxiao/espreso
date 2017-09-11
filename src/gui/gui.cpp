@@ -4,6 +4,7 @@
 #include "forms/plot/plot.h"
 #include "forms/declarations/material/materialpropertieswidget.h"
 #include "forms/declarations/datatypeeditwidget.h"
+#include "forms/declarations/material/materialdialog.h"
 #include "data/datatype.h"
 #include <QDebug>
 #include <QApplication>
@@ -141,8 +142,12 @@ int main(int argc, char *argv[])
 //    {
 //        std::cout << (*p)->name << std::endl;
 //    }
-    TensorPropertyWidget tpw(&mat.thermal_properties);
-    tpw.show();
+//    TensorPropertyWidget tpw(&mat.thermal_properties);
+//    tpw.show();
+
+    MaterialDialog md(&mat);
+    md.show();
+
 
 //    std::string val = "if (x > 0 and x < 4) -1;";
 //    ECFValueHolder<std::string> par(val);

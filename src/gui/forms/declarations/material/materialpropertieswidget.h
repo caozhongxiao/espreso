@@ -9,26 +9,29 @@
 #include "../../../data/material/scalarproperty.h"
 #include "../../../data/material/tensorproperty.h"
 
-namespace Ui {
-class MaterialPropertiesWidget;
-}
-
-class MaterialPropertiesWidget : public QWidget
+namespace espreso
 {
-    Q_OBJECT
+    namespace Ui {
+    class MaterialPropertiesWidget;
+    }
 
-public:
-    explicit MaterialPropertiesWidget(const QVector<TensorProperty>& tensors,
-                                      const QVector<ScalarProperty>& scalars,
-                                      QWidget *parent = 0);
-    ~MaterialPropertiesWidget();
+    class MaterialPropertiesWidget : public QWidget
+    {
+        Q_OBJECT
 
-private:
-    Ui::MaterialPropertiesWidget *ui;
+    public:
+        explicit MaterialPropertiesWidget(const QVector<TensorProperty>& tensors,
+                                          const QVector<ScalarProperty>& scalars,
+                                          QWidget *parent = 0);
+        ~MaterialPropertiesWidget();
 
-    QVector<TensorPropertyWidget*> tensorWidgets;
-    MaterialPropertyTableWidget* scalarWidget;
+    private:
+        Ui::MaterialPropertiesWidget *ui;
 
-};
+        QVector<TensorPropertyWidget*> tensorWidgets;
+        MaterialPropertyTableWidget* scalarWidget;
+
+    };
+}
 
 #endif // MATERIALPROPERTIESWIDGET_H
