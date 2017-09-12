@@ -54,7 +54,7 @@ APIMesh::APIMesh(eslocal *l2g, size_t size)
 : _l2g(l2g, l2g + size)
 {
 	_g2l = new std::vector<G2L>();
-};
+}
 
 void Mesh::computeFixPoints(size_t number)
 {
@@ -601,6 +601,14 @@ Mesh::~Mesh()
 		delete _materials[i];
 	}
 	delete _coordinates;
+}
+
+APIMesh::~APIMesh()
+{
+	delete _g2l;
+	for (size_t i = 0; i < _DOFs.size(); i++) {
+		delete _DOFs[i];
+	}
 }
 
 //static bool isOuterFace(

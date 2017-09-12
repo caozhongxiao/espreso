@@ -246,6 +246,7 @@ class APIMesh: public Mesh
 	friend class input::API;
 public:
 	APIMesh(eslocal *l2g, size_t size);
+	~APIMesh();
 
 	void partitiate(size_t parts);
 
