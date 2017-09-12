@@ -92,6 +92,16 @@ ECFParameter* ECFObject::getParameter(const std::string &name)
 	return NULL;
 }
 
+ECFParameter* ECFObject::getParameter(const void* data)
+{
+	for (size_t i = 0; i < parameters.size(); i++) {
+		if (data == parameters[i]->data()) {
+			return parameters[i];
+		}
+	}
+	return NULL;
+}
+
 ECFParameter* ECFObject::getWithError(const std::string &name)
 {
 	if (getParameter(name) == NULL) {

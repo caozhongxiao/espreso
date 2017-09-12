@@ -53,6 +53,7 @@ struct FETI4IStructInstance {
 namespace espreso {
 
 struct DataHolder {
+	static ECFConfiguration *configuration;
 	static std::list<FETI4IStructMatrix*> matrices;
 	static std::list<FETI4IStructInstance*> instances;
 	static TimeEval timeStatistics;

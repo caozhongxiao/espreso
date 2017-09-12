@@ -5,7 +5,7 @@
 
 namespace espreso {
 
-Environment *environment;
+Environment *environment = NULL;
 
 Environment::Environment(): executable("espreso")
 {
@@ -59,7 +59,9 @@ Environment::Environment(): executable("espreso")
 			.setdescription({ "Keep results of only the last ESPRESO run." })
 			.setdatatype({ ECFDataType::BOOL }));
 
-	environment = this;
+	if (environment == NULL) {
+		environment = this;
+	}
 }
 
 }

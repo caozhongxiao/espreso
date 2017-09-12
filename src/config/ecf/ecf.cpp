@@ -51,6 +51,9 @@ void espreso::ECFConfiguration::init()
 			.setdescription({ "Description of ESPRESO generator." })
 			.allowonly([&] () { return input == INPUT_FORMAT::GENERATOR; }));
 
+	REGISTER(feti4ilibrary, ECFMetaData()
+			.setdescription({ "Settings for FETI4I library." }));
+
 	REGISTER(heat_transfer_2d, ECFMetaData()
 			.setdescription({ "Advection diffusion 2D settings." })
 			.allowonly([&] () { return physics == PHYSICS::HEAT_TRANSFER_2D; }));

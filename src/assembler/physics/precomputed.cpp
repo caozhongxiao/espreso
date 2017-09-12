@@ -20,7 +20,7 @@ using namespace espreso;
 Precomputed::Precomputed(Mesh *mesh, Instance *instance, MatrixType type, double *rhs, size_t rhsSize)
 : Physics("API", mesh, instance), _mtype(type), _rhs(rhs), _rhsSize(rhsSize)
 {
-	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, dynamic_cast<APIMesh*>(_mesh)->DOFs(), _mesh->faces(), pointDOFs(), pointDOFsOffsets(), true);
+	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, dynamic_cast<APIMesh*>(_mesh)->DOFs(), _mesh->faces(), pointDOFs(), pointDOFsOffsets(), true, true);
 }
 
 std::vector<size_t> Precomputed::solutionsIndicesToStore() const
@@ -52,6 +52,7 @@ void Precomputed::prepare()
 {
 	_instance->domainDOFCount = dynamic_cast<APIMesh*>(_mesh)->distributeDOFsToDomains(_instance->domainDOFCount);
 	dynamic_cast<APIMesh*>(_mesh)->computeDOFsDOFsCounters();
+	_nodesDOFsOffsets = { 0 };
 }
 
 void Precomputed::prepareHybridTotalFETIWithKernels()

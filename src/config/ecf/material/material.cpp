@@ -52,9 +52,11 @@ espreso::MaterialConfiguration::MaterialConfiguration(DIMENSION dimension, PHYSI
 
 	// DROP not allowed parameters.
 	physical_model = allowedPhysicalModels;
-	for (size_t i = 0; i < parameters.size(); i++) {
+	for (size_t i = 0; i < parameters.size();) {
 		if (!parameters[i]->metadata.isallowed()) {
 			dropParameter(parameters[i]);
+		} else {
+			i++;
 		}
 	}
 

@@ -8,7 +8,6 @@
 namespace espreso {
 
 class APIMesh;
-struct InputConfiguration;
 
 namespace input {
 
@@ -16,9 +15,9 @@ class API {
 
 public:
 	static void load(
-			const InputConfiguration &configuration,
 			APIMesh &mesh,
 			eslocal indexBase,
+			size_t domains,
 			const std::vector<eslocal> &eType,
 			std::vector<std::vector<eslocal> > &eNodes,
 			std::vector<std::vector<eslocal> > &eDOFs,
@@ -30,16 +29,16 @@ public:
 			size_t size, const eslocal *l2g);
 
 protected:
-	API(const InputConfiguration &configuration, APIMesh &mesh, eslocal offset): _configuration(configuration), _mesh(mesh), _offset(offset) {};
+	API(APIMesh &mesh, eslocal offset, size_t domains): _mesh(mesh), _offset(offset), _domains(domains) {};
 
 	void points(const std::vector<std::vector<eslocal> > &eNodes, size_t DOFsSize);
 	void elements(const std::vector<eslocal> &eType, std::vector<std::vector<eslocal> > &eNodes, std::vector<std::vector<eslocal> > &eDOFs, std::vector<std::vector<double> > &eMatrices);
 	void dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dirichletValues);
 	void clusterBoundaries(std::vector<int> &neighbours, size_t size, const eslocal *l2g);
 
-	const InputConfiguration &_configuration;
 	APIMesh &_mesh;
 	eslocal _offset;
+	size_t _domains;
 };
 
 }

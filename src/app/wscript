@@ -70,13 +70,20 @@ def build(ctx):
         install_path = ctx.ROOT + "/bin"
     )
 
+    ctx.program(
+        source       = "apitest.cpp",
+        target       = "apitest",
+        use          = "feti4i factory loader generator ansys_in espreso_in openfoam_in",
+        install_path = ctx.ROOT + "/bin"
+    )
+
     ctx.env = ctx.all_envs["solver"];
     ctx.lib = (ctx.stlib, ctx.shlib)[ctx.env.LIBTYPE == "SHARED"]
     ctx.lib(
         source       = "apiwrapper/wrapper.cpp",
         target       = "feti4i",
         use          = "basis config mesh api_in solver assembler resultstore",
-        install_path = ctx.ROOT + "/libespreso"
+        install_path = ctx.ROOT + "/lib"
     )
 
 

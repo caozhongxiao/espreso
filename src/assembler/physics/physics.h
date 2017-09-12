@@ -37,6 +37,7 @@ enum class SumRestriction {
 };
 
 struct Physics {
+	friend class APITestESPRESODataProvider;
 
 	Physics(const std::string &name, Mesh *mesh, Instance *instance);
 	const std::string& name() const { return _name; }

@@ -23,9 +23,9 @@
 using namespace espreso::input;
 
 void API::load(
-		const InputConfiguration &configuration,
 		APIMesh &mesh,
 		eslocal indexBase,
+		size_t domains,
 		const std::vector<eslocal> &eType,
 		std::vector<std::vector<eslocal> > &eNodes,
 		std::vector<std::vector<eslocal> > &eDOFs,
@@ -37,7 +37,7 @@ void API::load(
 		size_t size, const eslocal *l2g)
 {
 	ESINFO(OVERVIEW) << "Set mesh through API";
-	API api(configuration, mesh, indexBase);
+	API api(mesh, indexBase, domains);
 
 	api.points(eNodes, size);
 	api.elements(eType, eNodes, eDOFs, eMatrices);
@@ -101,7 +101,7 @@ void API::elements(const std::vector<eslocal> &eType, std::vector<std::vector<es
 	_mesh.fillParentElementsToDOFs(eDOFs);
 
 	ESINFO(OVERVIEW) << "Number of loaded elements: " << Info::sumValue(_mesh._elements.size());
-	_mesh.partitiate(_configuration.domains);
+	_mesh.partitiate(_domains);
 
 	auto intervalStats = [] (const std::vector<eslocal> &data) {
 		std::vector<size_t> sizes(data.size() - 1);

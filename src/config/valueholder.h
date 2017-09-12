@@ -28,6 +28,8 @@ struct ECFValueHolder: public ECFValue {
 		ss >> this->value;
 		return ss.eof() && !ss.fail();
 	}
+
+	virtual const void* data() const { return &value; }
 };
 
 template <>
@@ -160,6 +162,8 @@ struct ECFEnumHolder: public ECFValue {
 		ESINFO(ERROR) << "ESPRESO internal error: set value to ECFEnumHolder.";
 		return false;
 	}
+
+	virtual const void* data() const { return &value; }
 
 };
 

@@ -33,6 +33,8 @@ struct ECFValueMap: public ECFObject {
 		return registerPatternParameter(parameter);
 	}
 
+	virtual const void* data() const { return &value; }
+
 private:
 	mutable TValue _patternValue;
 };
@@ -68,6 +70,8 @@ struct ECFObjectMap: public ECFObject {
 		auto it = value.emplace(std::piecewise_construct, std::forward_as_tuple(TParameter{}), args);
 		return registerPatternParameter(&it.first->second);
 	}
+
+	virtual const void* data() const { return &value; }
 };
 
 template <typename TParameter1, typename TParameter2, typename TValue>
@@ -93,6 +97,8 @@ struct ECFValueMapMap: public ECFObject {
 	{
 		return registerPatternParameter(new ECFValueMap<TParameter2, TValue>(_patternValue));
 	}
+
+	virtual const void* data() const { return &value; }
 
 private:
 	mutable std::map<TParameter2, TValue> _patternValue;
@@ -123,6 +129,8 @@ struct ECFObjectMapMap: public ECFObject {
 	{
 		return registerPatternParameter(new ECFObjectMap<TParameter2, TObject>(_patternValue));
 	}
+
+	virtual const void* data() const { return &value; }
 
 private:
 	mutable std::map<TParameter2, TObject> _patternValue;

@@ -41,7 +41,7 @@ struct ECFOption {
 	ECFOption& setdescription(const std::string &description) { this->description = description; return *this; }
 	ECFOption& allowonly(std::function<bool(void)> isallowed) { this->isallowed = isallowed; return *this; }
 
-    ECFOption() { isallowed = [] () { return true; }; }
+	ECFOption() { isallowed = [] () { return true; }; }
 };
 
 struct ECFExpression {
@@ -60,7 +60,7 @@ struct ECFMetaData {
 	std::vector<ECFOption> options;
 	std::vector<std::string> variables;
 	TensorConfiguration *tensor;
-    std::string unit;
+	std::string unit;
 
 	std::function<bool(void)> isallowed;
 
@@ -69,7 +69,7 @@ struct ECFMetaData {
 	ECFMetaData& setpattern(const std::vector<std::string> &pattern) { this->pattern = pattern; return *this; }
 	ECFMetaData& setvariables(const std::vector<std::string> &variables) { this->variables = variables; return *this; }
 	ECFMetaData& settensor(TensorConfiguration &tensor) { this->tensor = &tensor; return *this; }
-    ECFMetaData& setunit(const std::string &unit) { this->unit = unit; return *this; }
+	ECFMetaData& setunit(const std::string &unit) { this->unit = unit; return *this; }
 	ECFMetaData& allowonly(std::function<bool(void)> isallowed) { this->isallowed = isallowed; return *this; }
 
 	ECFMetaData& addoption(const ECFOption &option) { options.push_back(option); return *this; }
@@ -97,8 +97,10 @@ struct ECFParameter {
 	virtual bool setValue(const std::string &value) =0;
 	virtual std::string getValue() const =0;
 	virtual ECFParameter* getParameter(const std::string &name) =0;
+	virtual ECFParameter* getParameter(const void* data) =0;
 
 	virtual const ECFParameter* getPattern() const =0;
+	virtual const void* data() const =0;
 
 	virtual ~ECFParameter() {};
 };
@@ -111,13 +113,16 @@ struct ECFSeparator: public ECFParameter {
 	bool setValue(const std::string &value) { return false; }
 	std::string getValue() const { return ""; }
 	ECFParameter* getParameter(const std::string &name) { return NULL; }
+	ECFParameter* getParameter(const void* data) { return NULL; }
 
 	virtual const ECFParameter* getPattern() const { return NULL; }
+	virtual const void* data() const { return NULL; }
 };
 
 struct ECFValue: public ECFParameter {
 
 	virtual ECFParameter* getParameter(const std::string &name) { return NULL; }
+	virtual ECFParameter* getParameter(const void* data) { return NULL; }
 
 	bool isValue() const { return true; }
 	bool isObject() const { return false; }
@@ -134,8 +139,10 @@ struct ECFObject: public ECFParameter {
 	virtual bool setValue(const std::string &value);
 	virtual std::string getValue() const;
 	virtual ECFParameter* getParameter(const std::string &name);
+	virtual ECFParameter* getParameter(const void* data);
 
 	virtual const ECFParameter* getPattern() const { return NULL; }
+	virtual const void* data() const { return this; }
 
 	void forEachParameters(std::function<void(ECFParameter*)> fnc, bool onlyAllowed = true);
 	void forEachParameters(std::function<void(const ECFParameter*)> fnc, bool onlyAllowed = true) const;
@@ -152,8 +159,8 @@ struct ECFObject: public ECFParameter {
 
 	virtual ~ECFObject();
 
-protected:
 	void dropParameter(ECFParameter *parameter);
+protected:
 	ECFParameter* addSeparator();
 	ECFParameter* addSpace();
 

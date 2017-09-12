@@ -14,6 +14,7 @@
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
 #include "../../mesh/settings/property.h"
+#include "../../mesh/settings/evaluator.h"
 
 #include "../../config/ecf/environment.h"
 
@@ -28,14 +29,16 @@ EqualityConstraints::EqualityConstraints(
 		const std::vector<Element*> &gluedInterfaceElements,
 		const std::vector<Property> &gluedDOFs,
 		const std::vector<size_t> &gluedDOFsMeshOffsets,
-		bool interfaceElementContainsGluedDOFs)
+		bool interfaceElementContainsGluedDOFs,
+		bool dirichletSetByArrayEvaluator)
 : _instance(instance),
   _mesh(mesh),
   _gluedElements(gluedElements),
   _gluedInterfaceElements(gluedInterfaceElements),
   _gluedDOFs(gluedDOFs),
   _gluedDOFsMeshOffsets(gluedDOFsMeshOffsets),
-  _interfaceElementContainsGluedDOFs(interfaceElementContainsGluedDOFs)
+  _interfaceElementContainsGluedDOFs(interfaceElementContainsGluedDOFs),
+  _dirichletSetByArrayEvaluator(dirichletSetByArrayEvaluator)
 {
 
 }
@@ -60,7 +63,12 @@ void EqualityConstraints::goThroughDirichlet(
 						continue;
 					}
 					// TODO: works only for gluing of NODES!!
-					double value = step.internalForceReduction * _gluedElements[i]->getProperty(_gluedDOFs[dof], step.step, _mesh.coordinates()[_gluedElements[i]->node(0)], step.currentTime, temp, 0);
+					double value;
+					if (_dirichletSetByArrayEvaluator) {
+						value = step.internalForceReduction * dynamic_cast<ArrayEvaluator*>(_gluedElements[i]->regions().front()->settings[0][Property::UNKNOWN].front())->evaluate(_gluedElements[i]->node(0));
+					} else {
+						value = step.internalForceReduction * _gluedElements[i]->getProperty(_gluedDOFs[dof], step.step, _mesh.coordinates()[_gluedElements[i]->node(0)], step.currentTime, temp, 0);
+					}
 					for(size_t d = 0; d < _gluedElements[i]->domains().size(); d++) {
 						if (_gluedElements[i]->DOFIndex(_gluedElements[i]->domains()[d], _gluedDOFsMeshOffsets[dof]) != -1) {
 							addFnc(t, _gluedElements[i]->domains()[d], _gluedElements[i]->DOFIndex(_gluedElements[i]->domains()[d], _gluedDOFsMeshOffsets[dof]), value);

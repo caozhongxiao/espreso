@@ -8,6 +8,7 @@
 
 #include "input/input.h"
 #include "input/generator.h"
+#include "input/feti4ilibrary.h"
 
 #include "physics/physics.h"
 #include "physics/structuralmechanics.h"
@@ -30,6 +31,7 @@ struct ECFConfiguration: public ECFObject {
 
 	InputConfiguration workbench, openfoam, esdata;
 	InputGeneratorConfiguration generator;
+	FETI4ILibraryConfiguration feti4ilibrary;
 
 	HeatTransferConfiguration heat_transfer_2d;
 	HeatTransferConfiguration heat_transfer_3d;

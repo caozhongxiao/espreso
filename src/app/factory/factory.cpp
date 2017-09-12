@@ -28,7 +28,7 @@
 
 namespace espreso {
 
-Factory::Factory(const ECFConfiguration &configuration)
+Factory::Factory(const ECFConfiguration &configuration, size_t domains)
 : _mesh(new Mesh()), _storeList(new ResultStoreList(configuration.output)), _loader(NULL)
 {
 	initAsync(configuration.output);
@@ -44,8 +44,18 @@ Factory::Factory(const ECFConfiguration &configuration)
 
 	input::Loader::load(configuration, *_mesh, configuration.environment.MPIrank, configuration.environment.MPIsize);
 
+	if (domains) {
+		_mesh->partitiate(domains);
+	}
+
 	loadPhysics(configuration);
 	setOutput(configuration.output);
+}
+
+Factory::Factory(const ECFConfiguration &configuration)
+: Factory(configuration, 0)
+{
+
 }
 
 void Factory::solve()

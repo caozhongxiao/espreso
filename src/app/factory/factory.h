@@ -25,6 +25,7 @@ struct LoadStepConfiguration;
 
 class FactoryLoader {
 
+	friend class APITestESPRESODataProvider;
 public:
 	virtual ~FactoryLoader();
 
@@ -58,6 +59,7 @@ protected:
 
 class Factory {
 
+	friend class APITestESPRESODataProvider;
 public:
 	Factory(const ECFConfiguration &configuration);
 	~Factory();
@@ -66,6 +68,8 @@ public:
 	void finalize();
 
 protected:
+	Factory(const ECFConfiguration &configuration, size_t domains);
+
 	void initAsync(const OutputConfiguration &configuration);
 	void loadPhysics(const ECFConfiguration &configuration);
 	void setOutput(const OutputConfiguration &configuration);

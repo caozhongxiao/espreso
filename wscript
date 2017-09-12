@@ -118,9 +118,6 @@ def configure(ctx):
 
     check_environment(ctx)
 
-    ctx.setenv("api", ctx.all_envs["espreso"].derive());
-    ctx.recurse("libespreso")
-
     ctx.setenv("gui", ctx.all_envs["espreso"].derive());
     ctx.recurse("src/gui")
 
@@ -165,9 +162,6 @@ def build(ctx):
     ctx.env = ctx.all_envs["espreso"]
     ctx.recurse("src/output")
     ctx.recurse("src/app")
-
-    ctx.env = ctx.all_envs["api"]
-    ctx.recurse("libespreso")
 
     ctx.env = ctx.all_envs["gui"]
     ctx.recurse("src/gui")

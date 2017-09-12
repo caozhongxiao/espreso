@@ -12,6 +12,7 @@ espreso
 espresogui
 ecfchecker
 decomposer
+apitest
 libespreso/apitest
 libs*/*
 tools/*
