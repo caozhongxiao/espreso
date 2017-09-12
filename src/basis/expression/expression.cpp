@@ -65,6 +65,8 @@ Expression& Expression::operator=(const Expression &other)
 	if (this != &other) {
 		_str = other._str;
 		_variables = other._variables;
+		delete _symbol_table;
+		delete _expression;
 		_symbol_table = new exprtk::symbol_table<double>();
 		_expression = new exprtk::expression<double>();
 		parse();
