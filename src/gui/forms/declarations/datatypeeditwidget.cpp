@@ -53,13 +53,13 @@ DataTypeEditWidget::~DataTypeEditWidget()
 
 void DataTypeEditWidget::createUi()
 {
-    ExpressionEdit* function = new ExpressionEdit(this);
+	ExpressionEdit* function = new ExpressionEdit(this);
     function->hide();
 
-    TableTypeWidget* table = new TableTypeWidget(this);
+	TableTypeWidget* table = new TableTypeWidget(this);
     table->hide();
 
-    PiecewiseTypeWidget* piecewise = new PiecewiseTypeWidget(this);
+	PiecewiseTypeWidget* piecewise = new PiecewiseTypeWidget(this);
     piecewise->hide();
 
     this->uiExpression = function;

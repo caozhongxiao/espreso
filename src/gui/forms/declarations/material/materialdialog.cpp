@@ -3,6 +3,9 @@
 
 #include <QComboBox>
 #include <QLabel>
+#include <QScrollArea>
+#include <QLineEdit>
+#include <QDebug>
 #include "../../elements/optionhandler.h"
 #include "../../elements/formwidget.h"
 #include "materialpropertytablewidget.h"
@@ -37,21 +40,23 @@ void MaterialDialog::drawMe()
 
 void MaterialDialog::iterateObject(ECFObject* obj, QWidget* parent)
 {
+	// Parent widget determination
 	QWidget* widget;
+	QScrollArea* area = nullptr;
 	if (parent == nullptr)
 	{
-		QFrame* frame = new QFrame(this->m_frame);
-		frame->setFrameShape(QFrame::StyledPanel);
+		area = new QScrollArea(m_frame);
+		QWidget* scrollWidget = new QWidget;
 		QVBoxLayout* layout = new QVBoxLayout;
-		frame->setLayout(layout);
-		widget = frame;
+		scrollWidget->setLayout(layout);
+		widget = scrollWidget;
 	}
 	else
 	{
 		widget = parent;
 	}
 
-
+	// Object name label
 	if (obj->metadata.description.size())
 	{
 		QString lblNameText = QString::fromStdString(obj->metadata.description.at(0));
@@ -60,11 +65,13 @@ void MaterialDialog::iterateObject(ECFObject* obj, QWidget* parent)
 		widget->layout()->addWidget(lblName);
 	}
 
+	// Scalar properties and object details (name, desc,...)
     MaterialPropertyTableWidget* propertyTable;
     bool propertyTableNotInserted = true;
-	FormWidget* formWidget = new FormWidget(widget);
-	widget->layout()->addWidget(formWidget);
+	FormWidget* formWidget;
+	bool formWidgetNotInserted = true;
 
+	// Iterating over material parameters and creating proper UI widgets
     for (auto parameter = obj->parameters.cbegin();
          parameter != obj->parameters.cend();
          ++parameter)
@@ -78,7 +85,6 @@ void MaterialDialog::iterateObject(ECFObject* obj, QWidget* parent)
         }
 		else if ((*parameter)->metadata.datatype.size())
 		{
-			if (parent == nullptr) this->m_frameLayout->addWidget(widget);
 
 			ECFDataType type = (*parameter)->metadata.datatype.at(0);
 
@@ -101,10 +107,24 @@ void MaterialDialog::iterateObject(ECFObject* obj, QWidget* parent)
 			}
 			else if (type == ECFDataType::STRING)
 			{
+				if (formWidgetNotInserted)
+				{
+					formWidget = new FormWidget(widget);
+					widget->layout()->addWidget(formWidget);
+					formWidgetNotInserted = false;
+				}
 				formWidget->appendString(*parameter);
 			}
 		}
     }
+
+	// ScrollArea should be drawn after its content is complete (according to Qt API)
+	if (area != nullptr)
+	{
+		area->setWidgetResizable(true);
+		area->setWidget(widget);
+		this->m_frameLayout->addWidget(area);
+	}
 }
 
 void MaterialDialog::drawOption(ECFParameter* option, QWidget* widget)
