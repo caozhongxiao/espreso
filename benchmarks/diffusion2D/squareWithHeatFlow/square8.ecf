@@ -90,12 +90,12 @@ HEAT_TRANSFER_2D {
       SOLVER         FETI;
 
       FETI {
-        METHOD         HYBRID_FETI;
-        PRECONDITIONER   DIRICHLET;
-        PRECISION            1E-08;
-        SOLVER            BICGSTAB;
-        REGULARIZATION    ANALYTIC;
-        B0_TYPE            KERNELS;
+        METHOD          HYBRID_FETI;
+        PRECONDITIONER    DIRICHLET;
+        PRECISION             1E-08;
+        ITERATIVE_SOLVER   BICGSTAB;
+        REGULARIZATION     ANALYTIC;
+        B0_TYPE             KERNELS;
       }
 
       TEMPERATURE {

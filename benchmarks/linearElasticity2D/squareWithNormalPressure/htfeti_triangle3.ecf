@@ -86,7 +86,7 @@ STRUCTURAL_MECHANICS_2D {
         METHOD        HYBRID_FETI;
         PRECONDITIONER     LUMPED;
         PRECISION           1E-08;
-        SOLVER                PCG;
+        ITERATIVE_SOLVER      PCG;
         REGULARIZATION   ANALYTIC;
       }
 

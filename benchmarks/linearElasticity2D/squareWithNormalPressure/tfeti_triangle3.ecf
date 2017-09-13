@@ -85,7 +85,7 @@ STRUCTURAL_MECHANICS_2D {
       FETI {
         METHOD          TOTAL_FETI;
         PRECONDITIONER      LUMPED;
-        SOLVER                 PCG;
+        ITERATIVE_SOLVER       PCG;
         REGULARIZATION   ALGEBRAIC;
       }
 

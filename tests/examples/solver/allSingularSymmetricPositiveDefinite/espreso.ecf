@@ -84,7 +84,7 @@ HEAT_TRANSFER_2D {
         PRECONDITIONER      [ARG2];
         PRECISION            0.001;
         MAX_ITERATIONS          50;
-        SOLVER              [ARG1];
+        ITERATIVE_SOLVER    [ARG1];
         REGULARIZATION      [ARG3];
         REDUNDANT_LAGRANGE   FALSE;
         SCALING              FALSE;

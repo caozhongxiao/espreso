@@ -89,7 +89,7 @@ HEAT_TRANSFER_2D {
       FETI {
         METHOD          TOTAL_FETI;
         PRECONDITIONER   DIRICHLET;
-        SOLVER                 PCG;
+        ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
         B0_TYPE            CORNERS;
       }

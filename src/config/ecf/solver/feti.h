@@ -115,7 +115,7 @@ struct FETISolverConfiguration: public ECFObject {
 	size_t max_iterations;
 
 	FETI_METHOD method;
-	FETI_ITERATIVE_SOLVER solver;
+	FETI_ITERATIVE_SOLVER iterative_solver;
 	FETI_PRECONDITIONER preconditioner;
 	FETI_REGULARIZATION regularization;
 	FETI_CONJ_PROJECTOR conjugate_projector;

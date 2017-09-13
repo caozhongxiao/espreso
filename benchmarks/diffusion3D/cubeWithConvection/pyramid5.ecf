@@ -93,7 +93,7 @@ HEAT_TRANSFER_3D {
         METHOD                TOTAL_FETI;
         PRECONDITIONER   WEIGHT_FUNCTION;
         PRECISION                  1E-08;
-        SOLVER                       PCG;
+        ITERATIVE_SOLVER             PCG;
         REGULARIZATION         ALGEBRAIC;
       }
 

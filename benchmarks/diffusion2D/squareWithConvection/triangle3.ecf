@@ -92,7 +92,7 @@ HEAT_TRANSFER_2D {
         METHOD         HYBRID_FETI;
         PRECONDITIONER        NONE;
         PRECISION            1E-10;
-        SOLVER             PIPEPCG;
+        ITERATIVE_SOLVER   PIPEPCG;
         REGULARIZATION   ALGEBRAIC;
       }
 

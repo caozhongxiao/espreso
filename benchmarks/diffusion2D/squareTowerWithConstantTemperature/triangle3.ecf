@@ -119,7 +119,7 @@ HEAT_TRANSFER_2D {
         METHOD          TOTAL_FETI;
         PRECONDITIONER   DIRICHLET;
         PRECISION            1E-08;
-        SOLVER                 PCG;
+        ITERATIVE_SOLVER       PCG;
         REGULARIZATION   ALGEBRAIC;
         B0_TYPE            CORNERS;
       }

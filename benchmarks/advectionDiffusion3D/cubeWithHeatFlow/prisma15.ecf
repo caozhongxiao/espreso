@@ -93,7 +93,7 @@ HEAT_TRANSFER_3D {
         METHOD          TOTAL_FETI;
         PRECONDITIONER   DIRICHLET;
         PRECISION            1E-09;
-        SOLVER               GMRES;
+        ITERATIVE_SOLVER     GMRES;
         REGULARIZATION   ALGEBRAIC;
       }
 

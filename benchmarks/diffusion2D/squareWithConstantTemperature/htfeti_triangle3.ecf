@@ -84,7 +84,7 @@ HEAT_TRANSFER_2D {
         METHOD         HYBRID_FETI;
         PRECONDITIONER   DIRICHLET;
         PRECISION            1E-08;
-        SOLVER             PIPEPCG;
+        ITERATIVE_SOLVER   PIPEPCG;
         REGULARIZATION   ALGEBRAIC;
         B0_TYPE            CORNERS;
       }

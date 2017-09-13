@@ -90,12 +90,12 @@ HEAT_TRANSFER_3D {
       SOLVER         FETI;
 
       FETI {
-        METHOD          TOTAL_FETI;
-        PRECONDITIONER   DIRICHLET;
-        PRECISION            1E-09;
-        SOLVER            BICGSTAB;
-        REGULARIZATION   ALGEBRAIC;
-        B0_TYPE            KERNELS;
+        METHOD           TOTAL_FETI;
+        PRECONDITIONER    DIRICHLET;
+        PRECISION             1E-09;
+        ITERATIVE_SOLVER   BICGSTAB;
+        REGULARIZATION    ALGEBRAIC;
+        B0_TYPE             KERNELS;
       }
 
       TEMPERATURE {

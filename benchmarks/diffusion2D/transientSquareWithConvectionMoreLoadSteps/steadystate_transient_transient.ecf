@@ -90,7 +90,7 @@ HEAT_TRANSFER_2D {
         PRECONDITIONER   DIRICHLET;
         PRECISION            1E-08;
         MAX_ITERATIONS         100;
-        SOLVER                 PCG;
+        ITERATIVE_SOLVER       PCG;
         REGULARIZATION   ALGEBRAIC;
       }
 
@@ -117,7 +117,7 @@ HEAT_TRANSFER_2D {
         PRECONDITIONER   DIRICHLET;
         PRECISION            1E-08;
         MAX_ITERATIONS         100;
-        SOLVER                 PCG;
+        ITERATIVE_SOLVER       PCG;
       }
 
       TEMPERATURE {
@@ -151,7 +151,7 @@ HEAT_TRANSFER_2D {
         PRECONDITIONER   DIRICHLET;
         PRECISION            1E-08;
         MAX_ITERATIONS         100;
-        SOLVER                 PCG;
+        ITERATIVE_SOLVER       PCG;
       }
 
       TEMPERATURE {

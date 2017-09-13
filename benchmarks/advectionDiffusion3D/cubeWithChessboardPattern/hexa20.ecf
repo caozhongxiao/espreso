@@ -107,7 +107,7 @@ HEAT_TRANSFER_3D {
         PRECONDITIONER   DIRICHLET;
         PRECISION            1E-08;
         MAX_ITERATIONS        1000;
-        SOLVER               GMRES;
+        ITERATIVE_SOLVER     GMRES;
         REGULARIZATION   ALGEBRAIC;
       }
 

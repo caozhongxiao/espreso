@@ -120,8 +120,8 @@ void FETISolver::solve()
 {
 	if (
 			std::any_of(instance->K.begin(), instance->K.end(), [] (const SparseMatrix &K) { return K.mtype == MatrixType::REAL_UNSYMMETRIC; }) &&
-			configuration.solver != FETI_ITERATIVE_SOLVER::GMRES &&
-			configuration.solver != FETI_ITERATIVE_SOLVER::BICGSTAB) {
+			configuration.iterative_solver != FETI_ITERATIVE_SOLVER::GMRES &&
+			configuration.iterative_solver != FETI_ITERATIVE_SOLVER::BICGSTAB) {
 
 		ESINFO(ERROR) << "Invalid Linear Solver configuration: Only GMRES and BICGSTAB can solve unsymmetric system.";
 	}

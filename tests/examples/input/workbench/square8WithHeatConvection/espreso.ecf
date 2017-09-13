@@ -30,7 +30,7 @@ HEAT_TRANSFER_2D {
 
         FETI {
           METHOD           TOTAL_FETI;
-          SOLVER                  PCG;
+          ITERATIVE_SOLVER PCG;
           PRECONDITIONER    DIRICHLET;
           REGULARIZATION  ALGEBRAIC;
         }

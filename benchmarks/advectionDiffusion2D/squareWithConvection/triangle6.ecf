@@ -92,7 +92,7 @@ HEAT_TRANSFER_2D {
         METHOD         HYBRID_FETI;
         PRECONDITIONER   DIRICHLET;
         PRECISION            1E-10;
-        SOLVER               GMRES;
+        ITERATIVE_SOLVER     GMRES;
         REGULARIZATION   ALGEBRAIC;
         B0_TYPE            CORNERS;
       }

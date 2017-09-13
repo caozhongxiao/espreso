@@ -17,7 +17,7 @@ espreso::FETI4ILibraryConfiguration::FETI4ILibraryConfiguration()
 				solver.parameters[i]->data() == &solver.max_iterations ||
 				solver.parameters[i]->data() == &solver.method ||
 				solver.parameters[i]->data() == &solver.preconditioner ||
-				solver.parameters[i]->data() == &solver.solver ||
+				solver.parameters[i]->data() == &solver.iterative_solver ||
 				solver.parameters[i]->data() == &solver.precision ||
 				solver.parameters[i]->data() == &solver.n_mics ||
 				solver.parameters[i]->data() == &solver.sc_size) {

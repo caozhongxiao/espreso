@@ -41,7 +41,7 @@ STRUCTURAL_MECHANICS_3D {
       FETI {
         METHOD      HYBRID_FETI;
         PRECONDITIONER   LUMPED;
-        SOLVER              PCG;
+        ITERATIVE_SOLVER    PCG;
       }
 
       TEMPERATURE {

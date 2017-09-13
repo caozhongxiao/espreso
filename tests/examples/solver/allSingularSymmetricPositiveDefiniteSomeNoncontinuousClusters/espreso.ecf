@@ -71,7 +71,7 @@ STRUCTURAL_MECHANICS_3D {
 
         FETI {
           METHOD             [ARG0];
-          SOLVER                PCG;
+          ITERATIVE_SOLVER PCG;
           PRECONDITIONER  DIRICHLET;
           REGULARIZATION     [ARG1];
           B0_TYPE            [ARG2];

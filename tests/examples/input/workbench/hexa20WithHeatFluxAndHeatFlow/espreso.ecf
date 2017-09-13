@@ -22,7 +22,7 @@ HEAT_TRANSFER_3D {
       FETI {
         METHOD         HYBRID_FETI;
         PRECONDITIONER      LUMPED;
-        SOLVER                 PCG;
+        ITERATIVE_SOLVER       PCG;
         REGULARIZATION   ALGEBRAIC;
       }
     }

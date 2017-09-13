@@ -85,7 +85,7 @@ HEAT_TRANSFER_3D {
       FETI {
         METHOD          TOTAL_FETI;
         PRECONDITIONER      LUMPED;
-        SOLVER               GMRES;
+        ITERATIVE_SOLVER     GMRES;
         REGULARIZATION   ALGEBRAIC;
       }
 

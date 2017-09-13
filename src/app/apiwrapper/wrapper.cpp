@@ -67,7 +67,7 @@ void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 	options[FETI4I_MAX_ITERATIONS] = ecf.feti4ilibrary.solver.max_iterations;
 	options[FETI4I_FETI_METHOD] = static_cast<int>(ecf.feti4ilibrary.solver.method);
 	options[FETI4I_PRECONDITIONER] = static_cast<int>(ecf.feti4ilibrary.solver.preconditioner);
-	options[FETI4I_CGSOLVER] = static_cast<int>(ecf.feti4ilibrary.solver.solver);
+	options[FETI4I_CGSOLVER] = static_cast<int>(ecf.feti4ilibrary.solver.iterative_solver);
 	options[FETI4I_N_MICS] = ecf.feti4ilibrary.solver.n_mics;
 	options[FETI4I_SC_SIZE] = ecf.feti4ilibrary.solver.sc_size;
 
@@ -97,7 +97,7 @@ static void FETI4ISetIntegerOptions(ECFConfiguration &configuration, FETI4IInt* 
 	if (!configuration.feti4ilibrary.solver.getParameter(&configuration.feti4ilibrary.solver.preconditioner)->setValue(std::to_string(options[FETI4I_PRECONDITIONER]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'PRECONDITIONER' to " << options[FETI4I_PRECONDITIONER];
 	}
-	if (!configuration.feti4ilibrary.solver.getParameter(&configuration.feti4ilibrary.solver.solver)->setValue(std::to_string(options[FETI4I_CGSOLVER]))) {
+	if (!configuration.feti4ilibrary.solver.getParameter(&configuration.feti4ilibrary.solver.iterative_solver)->setValue(std::to_string(options[FETI4I_CGSOLVER]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'CGSOLVER' to " << options[FETI4I_CGSOLVER];
 	}
 	if (!configuration.feti4ilibrary.solver.getParameter(&configuration.feti4ilibrary.solver.n_mics)->setValue(std::to_string(options[FETI4I_N_MICS]))) {

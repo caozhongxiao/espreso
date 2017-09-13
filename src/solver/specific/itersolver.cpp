@@ -96,7 +96,7 @@ void IterSolverBase::Solve ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_dual_solution_parallel)
 {
 
-	switch (configuration.solver) {
+	switch (configuration.iterative_solver) {
 	case FETI_ITERATIVE_SOLVER::PCG:
 		Solve_RegCG ( cluster, in_right_hand_side_primal );
 		break;

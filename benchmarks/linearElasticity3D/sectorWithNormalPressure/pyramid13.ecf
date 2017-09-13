@@ -100,7 +100,7 @@ STRUCTURAL_MECHANICS_3D {
         PRECONDITIONER   LUMPED;
         PRECISION         1E-08;
         MAX_ITERATIONS      200;
-        SOLVER              PCG;
+        ITERATIVE_SOLVER    PCG;
       }
 
       DISPLACEMENT {

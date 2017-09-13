@@ -86,7 +86,7 @@ STRUCTURAL_MECHANICS_3D {
       FETI {
         METHOD         HYBRID_FETI;
         PRECONDITIONER   DIRICHLET;
-        SOLVER                 PCG;
+        ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
         B0_TYPE            KERNELS;
       }

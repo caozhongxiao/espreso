@@ -31,8 +31,8 @@ espreso::FETISolverConfiguration::FETISolverConfiguration()
 			.setdescription({ "Maximal number of iterations." })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
-	solver = FETI_ITERATIVE_SOLVER::PCG;
-	REGISTER(solver, ECFMetaData()
+	iterative_solver = FETI_ITERATIVE_SOLVER::PCG;
+	REGISTER(iterative_solver, ECFMetaData()
 			.setdescription({ "Preconditioner." })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("PCG").setdescription("Projected conjugate gradients."))
