@@ -22,7 +22,7 @@ struct ECFValueHolder: public ECFValue {
 		return ss.str();
 	}
 
-	bool setValue(const std::string &value)
+	bool _setValue(const std::string &value)
 	{
 		std::stringstream ss(value);
 		ss >> this->value;
@@ -45,21 +45,21 @@ inline std::string ECFValueHolder<ECFExpression>::getValue() const
 }
 
 template <>
-inline bool ECFValueHolder<std::string>::setValue(const std::string &value)
+inline bool ECFValueHolder<std::string>::_setValue(const std::string &value)
 {
 	this->value = value;
 	return true;
 }
 
 template <>
-inline bool ECFValueHolder<ECFExpression>::setValue(const std::string &value)
+inline bool ECFValueHolder<ECFExpression>::_setValue(const std::string &value)
 {
 	this->value.value = Parser::uppercase(value);
 	return true;
 }
 
 template <>
-inline bool ECFValueHolder<bool>::setValue(const std::string &value)
+inline bool ECFValueHolder<bool>::_setValue(const std::string &value)
 {
 	if (value.size() == 0) {
 		this->value = true;
@@ -115,7 +115,7 @@ struct ECFEnumHolder: public ECFValue {
 		return "";
 	}
 
-	bool setValue(const std::string &value)
+	bool _setValue(const std::string &value)
 	{
 		if (metadata.datatype.front() == ECFDataType::ENUM_FLAGS) {
 			std::vector<std::string> values = Parser::split(value, "|");
@@ -146,7 +146,7 @@ struct ECFEnumHolder: public ECFValue {
 		}
 
 		if (index == -1) {
-			if (!ECFValueHolder<size_t>(index).setValue(value)) {
+			if (!ECFValueHolder<size_t>(index)._setValue(value)) {
 				return false;
 			}
 		}

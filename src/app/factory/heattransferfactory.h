@@ -7,17 +7,19 @@
 namespace espreso {
 
 struct HeatTransferConfiguration;
+struct ResultsSelectionConfiguration;
 
 class HeatTransferFactory: public FactoryLoader {
 
 public:
-	HeatTransferFactory(const HeatTransferConfiguration &configuration, Mesh *mesh);
+	HeatTransferFactory(const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh);
 
 	size_t loadSteps() const;
 	LoadStepSolver* getLoadStepSolver(size_t step, Mesh *mesh, Store *store);
 
 protected:
 	const HeatTransferConfiguration &_configuration;
+	const ResultsSelectionConfiguration &_propertiesConfiguration;
 	bool _bem;
 
 };

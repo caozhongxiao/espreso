@@ -68,6 +68,7 @@ void Factory::solve()
 	Logging::step = &step;
 
 	for (step.step = 0; step.step < _loadSteps.size(); step.step++) {
+		step.finalTime = step.currentTime + _loadSteps[step.step]->duration();
 		_loadSteps[step.step]->run(step);
 	}
 	_storeList->finalize();
@@ -77,7 +78,7 @@ void Factory::initAsync(const OutputConfiguration &configuration)
 {
 	_asyncStore = NULL;
 	async::Config::setMode(async::SYNC);
-	if (configuration.solution || configuration.settings) {
+	if (configuration.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER || configuration.settings) {
 		if (configuration.mode != OutputConfiguration::MODE::SYNC && (configuration.settings || configuration.FETI_data)) {
 			ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Storing of SETTINGS or FETI_DATA is implemented only for OUTPUT::MODE==SYNC. Hence, output is synchronized!";
 		} else if (configuration.collected) {
@@ -115,7 +116,7 @@ void Factory::setOutput(const OutputConfiguration &configuration)
 	if (configuration.catalyst) {
 		_storeList->add(new Catalyst(configuration, _mesh));
 	}
-	if (configuration.solution || configuration.settings) {
+	if (configuration.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER || configuration.settings) {
 		if (_asyncStore != NULL) {
 			_asyncStore->init(_mesh);
 			_storeList->add(_asyncStore);
@@ -135,7 +136,7 @@ void Factory::setOutput(const OutputConfiguration &configuration)
 			}
 		}
 	}
-	if (configuration.monitoring.size()) {
+	if (configuration.monitoring.size() && configuration.monitors_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
 		_storeList->add(new Monitoring(configuration, _mesh));
 	}
 
@@ -152,13 +153,13 @@ FactoryLoader* Factory::createFactoryLoader(const ECFConfiguration &configuratio
 {
 	switch (configuration.physics) {
 	case PHYSICS::HEAT_TRANSFER_2D:
-		return new HeatTransferFactory(configuration.heat_transfer_2d, _mesh);
+		return new HeatTransferFactory(configuration.heat_transfer_2d, configuration.output.results_selection, _mesh);
 	case PHYSICS::HEAT_TRANSFER_3D:
-		return new HeatTransferFactory(configuration.heat_transfer_3d, _mesh);
+		return new HeatTransferFactory(configuration.heat_transfer_3d, configuration.output.results_selection, _mesh);
 	case PHYSICS::STRUCTURAL_MECHANICS_2D:
-		return new StructuralMechanicsFactory(configuration.structural_mechanics_2d, _mesh);
+		return new StructuralMechanicsFactory(configuration.structural_mechanics_2d, configuration.output.results_selection, _mesh);
 	case PHYSICS::STRUCTURAL_MECHANICS_3D:
-		return new StructuralMechanicsFactory(configuration.structural_mechanics_3d, _mesh);
+		return new StructuralMechanicsFactory(configuration.structural_mechanics_3d, configuration.output.results_selection, _mesh);
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown PHYSICS in configuration file";
 		return NULL;

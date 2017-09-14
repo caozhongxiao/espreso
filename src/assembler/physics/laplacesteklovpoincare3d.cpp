@@ -25,8 +25,8 @@ using namespace espreso;
 
 size_t LaplaceSteklovPoincare3D::BEMOffset = -1;
 
-LaplaceSteklovPoincare3D::LaplaceSteklovPoincare3D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration)
-: Physics("LAPLACE STEKLOV POINCARE 3D", mesh, instance), HeatTransfer3D(mesh, instance, configuration)
+LaplaceSteklovPoincare3D::LaplaceSteklovPoincare3D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
+: Physics("LAPLACE STEKLOV POINCARE 3D", mesh, instance), HeatTransfer3D(mesh, instance, configuration, propertiesConfiguration)
 {
 #ifndef BEM4I
 	ESINFO(GLOBAL_ERROR) << "BEM4I is not linked!. Copy BEM4I library to tools/bem4i and re-configure ESPRESO.";

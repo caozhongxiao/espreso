@@ -19,9 +19,9 @@ using namespace espreso;
 
 size_t HeatTransfer::offset = -1;
 
-HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration)
+HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
 : Physics("", NULL, NULL), // skipped because Physics is inherited virtually
-  _configuration(configuration)
+  _configuration(configuration), _propertiesConfiguration(propertiesConfiguration)
 {
 
 }

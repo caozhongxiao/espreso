@@ -1,5 +1,6 @@
 
 #include "../../config/ecf/physics/heattransfer.h"
+#include "../../config/ecf/output.h"
 #include "../step.h"
 #include "../instance.h"
 #include "../solution.h"
@@ -20,8 +21,8 @@
 
 using namespace espreso;
 
-HeatTransfer2D::HeatTransfer2D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration)
-: Physics("HEAT TRANSFER 2D", mesh, instance), HeatTransfer(configuration)
+HeatTransfer2D::HeatTransfer2D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
+: Physics("HEAT TRANSFER 2D", mesh, instance), HeatTransfer(configuration, propertiesConfiguration)
 {
 	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, _mesh->nodes(), _mesh->edges(), pointDOFs(), pointDOFsOffsets());
 }
@@ -524,29 +525,42 @@ void HeatTransfer2D::postProcessElement(const Step &step, const Element *e, std:
 		Ce(0, 0) += _configuration.sigma * h_e * norm_u_e;
 		Ce(1, 1) += _configuration.sigma * h_e * norm_u_e;
 
-		matGradient.multiply(dND, temp, 1, 1);
-		matFlux.multiply(Ce, dND * temp, 1, 1);
+		if (_propertiesConfiguration.gradient) {
+			matGradient.multiply(dND, temp, 1, 1);
+		}
+		if (_propertiesConfiguration.flux) {
+			matFlux.multiply(Ce, dND * temp, 1, 1);
+		}
 	}
 
-	solution[offset + SolutionIndex::GRADIENT]->data[e->domains().front()].push_back(matGradient(0, 0) / e->gaussePoints());
-	solution[offset + SolutionIndex::GRADIENT]->data[e->domains().front()].push_back(matGradient(1, 0) / e->gaussePoints());
+	if (_propertiesConfiguration.gradient) {
+		solution[offset + SolutionIndex::GRADIENT]->data[e->domains().front()].push_back(matGradient(0, 0) / e->gaussePoints());
+		solution[offset + SolutionIndex::GRADIENT]->data[e->domains().front()].push_back(matGradient(1, 0) / e->gaussePoints());
+	}
 
-	solution[offset + SolutionIndex::FLUX]->data[e->domains().front()].push_back(matFlux(0, 0) / e->gaussePoints());
-	solution[offset + SolutionIndex::FLUX]->data[e->domains().front()].push_back(matFlux(1, 0) / e->gaussePoints());
+	if (_propertiesConfiguration.flux) {
+		solution[offset + SolutionIndex::FLUX]->data[e->domains().front()].push_back(matFlux(0, 0) / e->gaussePoints());
+		solution[offset + SolutionIndex::FLUX]->data[e->domains().front()].push_back(matFlux(1, 0) / e->gaussePoints());
+	}
 }
 
 void HeatTransfer2D::processSolution(const Step &step)
 {
-	if (_instance->solutions[offset + SolutionIndex::GRADIENT] == NULL) {
-		_instance->solutions[offset + SolutionIndex::GRADIENT] = new Solution(*_mesh, "gradient", ElementType::ELEMENTS, { Property::GRADIENT_X, Property::GRADIENT_Y });
+	if (_propertiesConfiguration.gradient) {
+		if (_instance->solutions[offset + SolutionIndex::GRADIENT] == NULL) {
+			_instance->solutions[offset + SolutionIndex::GRADIENT] = new Solution(*_mesh, "gradient", ElementType::ELEMENTS, { Property::GRADIENT_X, Property::GRADIENT_Y });
+		}
+		for (size_t p = 0; p < _mesh->parts(); p++) {
+			_instance->solutions[offset + SolutionIndex::GRADIENT]->data[p].clear();
+		}
 	}
-	if (_instance->solutions[offset + SolutionIndex::FLUX] == NULL) {
-		_instance->solutions[offset + SolutionIndex::FLUX] = new Solution(*_mesh, "flux", ElementType::ELEMENTS, { Property::FLUX_X, Property::FLUX_Y });
-	}
-
-	for (size_t p = 0; p < _mesh->parts(); p++) {
-		_instance->solutions[offset + SolutionIndex::GRADIENT]->data[p].clear();
-		_instance->solutions[offset + SolutionIndex::FLUX]->data[p].clear();
+	if (_propertiesConfiguration.flux) {
+		if (_instance->solutions[offset + SolutionIndex::FLUX] == NULL) {
+			_instance->solutions[offset + SolutionIndex::FLUX] = new Solution(*_mesh, "flux", ElementType::ELEMENTS, { Property::FLUX_X, Property::FLUX_Y });
+		}
+		for (size_t p = 0; p < _mesh->parts(); p++) {
+			_instance->solutions[offset + SolutionIndex::FLUX]->data[p].clear();
+		}
 	}
 
 	#pragma omp parallel for

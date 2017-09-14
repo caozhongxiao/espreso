@@ -3,8 +3,6 @@
 #include "../configuration.hpp"
 #include "ecf.h"
 
-espreso::ECFConfiguration* espreso::MonitorConfiguration::ecf = NULL;
-
 espreso::MonitorConfiguration::MonitorConfiguration(const PHYSICS &physics)
 : _physics(physics)
 {
@@ -59,8 +57,53 @@ espreso::MonitorConfiguration::MonitorConfiguration(const PHYSICS &physics)
 	);
 }
 
-espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
+espreso::ResultsSelectionConfiguration::ResultsSelectionConfiguration(const PHYSICS &physics)
 : _physics(physics)
+{
+	basic();
+
+	auto thermal = [&] () {
+		return _physics == PHYSICS::HEAT_TRANSFER_2D || _physics == PHYSICS::HEAT_TRANSFER_3D;
+	};
+
+	auto structuralMechanics = [&] () {
+		return _physics == PHYSICS::STRUCTURAL_MECHANICS_2D || _physics == PHYSICS::STRUCTURAL_MECHANICS_3D;
+	};
+
+	REGISTER(temperature, ECFMetaData()
+			.setdescription({ "Temperature." })
+			.setdatatype({ ECFDataType::BOOL })
+			.allowonly(thermal));
+	REGISTER(gradient, ECFMetaData()
+			.setdescription({ "Temperature gradient." })
+			.setdatatype({ ECFDataType::BOOL })
+			.allowonly(thermal));
+	REGISTER(flux, ECFMetaData()
+			.setdescription({ "Temperature flux." })
+			.setdatatype({ ECFDataType::BOOL })
+			.allowonly(thermal));
+
+	REGISTER(displacement, ECFMetaData()
+			.setdescription({ "Displacement." })
+			.setdatatype({ ECFDataType::BOOL })
+			.allowonly(structuralMechanics));
+}
+
+void espreso::ResultsSelectionConfiguration::basic()
+{
+	temperature = true;
+	gradient = flux = false;
+	displacement = true;
+}
+
+void espreso::ResultsSelectionConfiguration::all()
+{
+	temperature = gradient = flux = true;
+	displacement = true;
+}
+
+espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
+: _physics(physics), results_selection(physics)
 {
 	path = "results";
 	REGISTER(path, ECFMetaData()
@@ -89,15 +132,65 @@ espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
 			.setdescription({ "Number of MPI processes that send output data to the same storing node." })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
-	solution = true;
-	subsolution = settings = FETI_data = catalyst = false;
+	addSeparator();
+
+	results_store_frequency = monitors_store_frequency = STORE_FREQUENCY::EVERY_TIMESTEP;
+	results_nth_stepping = monitors_nth_stepping = 10;
+	REGISTER(results_store_frequency, ECFMetaData()
+			.setdescription({ "How often are stored results." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("NEVER").setdescription("Storing is turned off."))
+			.addoption(ECFOption().setname("EVERY_TIMESTEP").setdescription("Results are stored after each time step."))
+			.addoption(ECFOption().setname("EVERY_NTH_TIMESTEP").setdescription("Results are stored after each nth time step."))
+			.addoption(ECFOption().setname("LAST_TIMESTEP").setdescription("Only last results are stored."))
+			.addoption(ECFOption().setname("DEBUG").setdescription("Storing also iteration results.")));
+	REGISTER(monitors_store_frequency, ECFMetaData()
+			.setdescription({ "How often are stored monitors." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("NEVER").setdescription("Storing is turned off."))
+			.addoption(ECFOption().setname("EVERY_TIMESTEP").setdescription("Monitors are stored after each time step."))
+			.addoption(ECFOption().setname("EVERY_NTH_TIMESTEP").setdescription("Monitors are stored after each nth time step."))
+			.addoption(ECFOption().setname("LAST_TIMESTEP").setdescription("Only last monitors are stored.")));
+
+	REGISTER(results_nth_stepping, ECFMetaData()
+			.setdescription({ "Results store stepping." })
+			.setdatatype({ ECFDataType::POSITIVE_INTEGER })
+			.allowonly([&] () { return results_store_frequency == STORE_FREQUENCY::EVERY_NTH_TIMESTEP; }));
+	REGISTER(monitors_nth_stepping, ECFMetaData()
+			.setdescription({ "Monitors store stepping." })
+			.setdatatype({ ECFDataType::POSITIVE_INTEGER})
+			.allowonly([&] () { return monitors_store_frequency == STORE_FREQUENCY::EVERY_NTH_TIMESTEP; }));
+
+	addSpace();
+
+	store_results = STORE_RESULTS::BASIC;
+	REGISTER(store_results, ECFMetaData()
+			.setdescription({ "Stored properties." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("BASIC").setdescription("Basic properties."))
+			.addoption(ECFOption().setname("ALL").setdescription("All properties."))
+			.addoption(ECFOption().setname("USER").setdescription("User defined properties.")))
+	->addListener(ECFParameter::Event::VALUE_SET, [&] () {
+		switch (store_results) {
+		case STORE_RESULTS::BASIC:
+			results_selection.basic();
+			break;
+		case STORE_RESULTS::ALL:
+			results_selection.all();
+			break;
+		case STORE_RESULTS::USER:
+			break;
+		}
+	});
+
+	REGISTER(results_selection, ECFMetaData()
+			.setdescription({ "Properties selection." })
+			.allowonly([&] () { return store_results == STORE_RESULTS::USER; }));
+
+	addSeparator();
+
+	settings = FETI_data = catalyst = false;
 	catalyst_sleep_time = 0;
-	REGISTER(solution, ECFMetaData()
-			.setdescription({ "Store solution." })
-			.setdatatype({ ECFDataType::BOOL }));
-	REGISTER(subsolution, ECFMetaData()
-			.setdescription({ "Store subsolution of non-linear solvers." })
-			.setdatatype({ ECFDataType::BOOL }));
 	REGISTER(settings, ECFMetaData()
 			.setdescription({ "Store settings." })
 			.setdatatype({ ECFDataType::BOOL }));
@@ -111,6 +204,8 @@ espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
 			.setdescription({ "The sleep time between each time steps when catalyst is used." })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
 
+	addSpace();
+
 	collected = separate_bodies = separate_materials = false;
 	REGISTER(collected, ECFMetaData()
 			.setdescription({ "Collect the results to one file." })
@@ -121,6 +216,8 @@ espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
 	REGISTER(separate_materials, ECFMetaData()
 			.setdescription({ "Separate materials to regions." })
 			.setdatatype({ ECFDataType::BOOL }));
+
+	addSpace();
 
 	domain_shrink_ratio = .95;
 	cluster_shrink_ratio = .9;

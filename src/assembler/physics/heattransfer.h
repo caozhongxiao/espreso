@@ -8,11 +8,12 @@ namespace espreso {
 
 struct HeatTransferConfiguration;
 struct ConvectionConfiguration;
+struct ResultsSelectionConfiguration;
 struct Point;
 
 struct HeatTransfer: public virtual Physics
 {
-	HeatTransfer(const HeatTransferConfiguration &configuration);
+	HeatTransfer(const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
 
 	virtual std::vector<size_t> solutionsIndicesToStore() const;
 
@@ -74,6 +75,7 @@ protected:
 			double &rho, double &dynamic_viscosity, double &dynamic_viscosity_T, double &heat_capacity, double &thermal_conductivity) const;
 
 	const HeatTransferConfiguration &_configuration;
+	const ResultsSelectionConfiguration &_propertiesConfiguration;
 };
 
 }

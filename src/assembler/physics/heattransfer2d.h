@@ -11,7 +11,7 @@ enum class Property;
 
 struct HeatTransfer2D: public HeatTransfer, public Physics2D
 {
-	HeatTransfer2D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration);
+	HeatTransfer2D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
 
 	void prepare();
 

@@ -13,8 +13,6 @@ struct ECFConfiguration;
 
 struct MonitorConfiguration: public ECFObject {
 
-	static ECFConfiguration *ecf;
-
 	enum class STATISTICS {
 		MIN,
 		MAX,
@@ -27,6 +25,19 @@ struct MonitorConfiguration: public ECFObject {
 	std::string property;
 
 	MonitorConfiguration(const PHYSICS &physics);
+protected:
+	const PHYSICS &_physics;
+};
+
+struct ResultsSelectionConfiguration: public ECFObject {
+
+	bool temperature, gradient, flux;
+	bool displacement;
+
+	void basic();
+	void all();
+
+	ResultsSelectionConfiguration(const PHYSICS &physics);
 protected:
 	const PHYSICS &_physics;
 };
@@ -46,6 +57,20 @@ struct OutputConfiguration: public ECFObject {
 		MPI,
 	};
 
+	enum class STORE_FREQUENCY {
+		NEVER,
+		EVERY_TIMESTEP,
+		EVERY_NTH_TIMESTEP,
+		LAST_TIMESTEP,
+		DEBUG
+	};
+
+	enum class STORE_RESULTS {
+		BASIC,
+		ALL,
+		USER
+	};
+
 	FORMAT format;
 	MODE mode;
 
@@ -53,7 +78,13 @@ struct OutputConfiguration: public ECFObject {
 
 	std::string path;
 
-	bool solution, subsolution, settings, FETI_data, catalyst;
+	STORE_FREQUENCY results_store_frequency, monitors_store_frequency;
+	size_t results_nth_stepping, monitors_nth_stepping;
+
+	STORE_RESULTS store_results;
+	ResultsSelectionConfiguration results_selection;
+
+	bool settings, FETI_data, catalyst;
 	size_t catalyst_sleep_time;
 
 	bool collected, separate_bodies, separate_materials;

@@ -9,7 +9,7 @@ namespace espreso {
 
 struct LaplaceSteklovPoincare3D: public BoundaryBased3D, public HeatTransfer3D
 {
-	LaplaceSteklovPoincare3D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration);
+	LaplaceSteklovPoincare3D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
 
 	void prepare();
 	void prepareHybridTotalFETIWithKernels();

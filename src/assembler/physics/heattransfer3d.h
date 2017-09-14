@@ -9,7 +9,7 @@ namespace espreso {
 
 struct HeatTransfer3D: public HeatTransfer, public Physics3D
 {
-	HeatTransfer3D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration);
+	HeatTransfer3D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
 
 	virtual void prepare();
 

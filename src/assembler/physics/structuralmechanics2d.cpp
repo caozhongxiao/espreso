@@ -18,8 +18,8 @@
 
 using namespace espreso;
 
-StructuralMechanics2D::StructuralMechanics2D(Mesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration)
-: Physics("STRUCTURAL MECHANICS 2D", mesh, instance), StructuralMechanics(configuration)
+StructuralMechanics2D::StructuralMechanics2D(Mesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
+: Physics("STRUCTURAL MECHANICS 2D", mesh, instance), StructuralMechanics(configuration, propertiesConfiguration)
 {
 	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, _mesh->nodes(), _mesh->edges(), pointDOFs(), pointDOFsOffsets());
 }

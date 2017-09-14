@@ -19,8 +19,8 @@
 
 using namespace espreso;
 
-HeatTransferFactory::HeatTransferFactory(const HeatTransferConfiguration &configuration, Mesh *mesh)
-: _configuration(configuration), _bem(false)
+HeatTransferFactory::HeatTransferFactory(const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh)
+: _configuration(configuration), _propertiesConfiguration(propertiesConfiguration), _bem(false)
 {
 	_instances.push_back(new Instance(*mesh));
 
@@ -28,10 +28,10 @@ HeatTransferFactory::HeatTransferFactory(const HeatTransferConfiguration &config
 	case DISCRETIZATION::FEM:
 		switch (configuration.dimension) {
 		case DIMENSION::D2:
-			_physics.push_back(new HeatTransfer2D(mesh, _instances.front(), configuration));
+			_physics.push_back(new HeatTransfer2D(mesh, _instances.front(), configuration, propertiesConfiguration));
 			break;
 		case DIMENSION::D3:
-			_physics.push_back(new HeatTransfer3D(mesh, _instances.front(), configuration));
+			_physics.push_back(new HeatTransfer3D(mesh, _instances.front(), configuration, propertiesConfiguration));
 			break;
 		}
 		break;
@@ -42,7 +42,7 @@ HeatTransferFactory::HeatTransferFactory(const HeatTransferConfiguration &config
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: cannot solve HEAT TRANSFER 2D with BEM discretization.";
 			break;
 		case DIMENSION::D3:
-			_physics.push_back(new LaplaceSteklovPoincare3D(mesh, _instances.front(), configuration));
+			_physics.push_back(new LaplaceSteklovPoincare3D(mesh, _instances.front(), configuration, propertiesConfiguration));
 			break;
 		}
 		break;

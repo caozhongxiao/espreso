@@ -13,7 +13,7 @@ using namespace espreso;
 
 void AsyncStoreExecutor::execInit(const async::ExecInfo &info, const OutputConfiguration &config)
 {
-	assert(config.solution || config.settings);
+	assert(config.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER || config.settings);
 
 	switch (config.format) {
 	case OutputConfiguration::FORMAT::VTK_LEGACY:

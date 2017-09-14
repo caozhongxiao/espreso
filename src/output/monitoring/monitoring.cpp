@@ -124,6 +124,25 @@ Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
 
 void Monitoring::storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties)
 {
+	switch (_configuration.monitors_store_frequency) {
+	case OutputConfiguration::STORE_FREQUENCY::NEVER:
+		return;
+
+	case OutputConfiguration::STORE_FREQUENCY::EVERY_NTH_TIMESTEP:
+		if ((step.substep + 1) % _configuration.monitors_nth_stepping != 0) {
+			return;
+		}
+		break;
+	case OutputConfiguration::STORE_FREQUENCY::LAST_TIMESTEP:
+		if (!step.isLast()) {
+			return;
+		}
+		break;
+	case OutputConfiguration::STORE_FREQUENCY::EVERY_TIMESTEP:
+	case OutputConfiguration::STORE_FREQUENCY::DEBUG:
+		break;
+	}
+
 	for (size_t i = 0; i < _monitors.size(); i++) {
 		if (_monitors[i].statistics == StatisticalData::EMPTY) {
 			continue;

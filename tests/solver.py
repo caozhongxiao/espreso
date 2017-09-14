@@ -14,7 +14,7 @@ class ESPRESOSolver(unittest.TestCase):
     espreso = Espreso()
 
     def solver(self, path, file, args):
-        config = { "ENV::VERBOSE_LEVEL": 0, "ENV::MEASURE_LEVEL": 0, "OUTPUT::SOLUTION": 0 }
+        config = { "ENV::VERBOSE_LEVEL": 0, "ENV::MEASURE_LEVEL": 0, "OUTPUT::RESULTS_STORE_FREQUENCY": "NEVER" }
 
         procs = 1
         for line in open(os.path.join(path, "espreso.ecf")):

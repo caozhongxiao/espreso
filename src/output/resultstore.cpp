@@ -65,7 +65,7 @@ void ResultStore::prepare()
 std::vector<std::string> ResultStore::store(const std::string &name, const Step &step, const MeshInfo *meshInfo)
 {
 	std::string root;
-	if (_configuration.subsolution) {
+	if (_configuration.results_store_frequency == OutputConfiguration::STORE_FREQUENCY::DEBUG) {
 		root = Esutils::createDirectory({ Logging::outputRoot(), "PRE_POST_DATA", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), "iteration" + std::to_string(step.iteration)});
 	} else {
 		root = Esutils::createDirectory({ Logging::outputRoot(), "PRE_POST_DATA", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep) });
@@ -74,7 +74,7 @@ std::vector<std::string> ResultStore::store(const std::string &name, const Step 
 
 	if (meshInfo->distributed()) {
 		std::string prefix;
-		if (_configuration.subsolution) {
+		if (_configuration.results_store_frequency == OutputConfiguration::STORE_FREQUENCY::DEBUG) {
 			prefix = Esutils::createDirectory({ Logging::outputRoot(), "PRE_POST_DATA", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), "iteration" + std::to_string(step.iteration), std::to_string(environment->MPIrank) });
 		} else {
 			prefix = Esutils::createDirectory({ Logging::outputRoot(), "PRE_POST_DATA", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), std::to_string(environment->MPIrank) });
@@ -126,15 +126,30 @@ void ResultStore::storeSettings(const Step &step)
 
 void ResultStore::storeSubSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties)
 {
-	if (_configuration.subsolution) {
+	if (_configuration.results_store_frequency == OutputConfiguration::STORE_FREQUENCY::DEBUG) {
 		storeSolution(step, solution, properties);
 	}
 }
 
 void ResultStore::storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties)
 {
-	if (!_configuration.solution) {
+	switch (_configuration.results_store_frequency) {
+	case OutputConfiguration::STORE_FREQUENCY::NEVER:
 		return;
+
+	case OutputConfiguration::STORE_FREQUENCY::EVERY_NTH_TIMESTEP:
+		if ((step.substep + 1) % _configuration.results_nth_stepping != 0) {
+			return;
+		}
+		break;
+	case OutputConfiguration::STORE_FREQUENCY::LAST_TIMESTEP:
+		if (!step.isLast()) {
+			return;
+		}
+		break;
+	case OutputConfiguration::STORE_FREQUENCY::EVERY_TIMESTEP:
+	case OutputConfiguration::STORE_FREQUENCY::DEBUG:
+		break;
 	}
 
 	prepare();

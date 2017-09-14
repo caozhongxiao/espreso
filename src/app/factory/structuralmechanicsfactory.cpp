@@ -18,8 +18,8 @@
 
 using namespace espreso;
 
-StructuralMechanicsFactory::StructuralMechanicsFactory(const StructuralMechanicsConfiguration &configuration, Mesh *mesh)
-: _configuration(configuration), _bem(false)
+StructuralMechanicsFactory::StructuralMechanicsFactory(const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh)
+: _configuration(configuration), _propertiesConfiguration(propertiesConfiguration), _bem(false)
 {
 	_instances.push_back(new Instance(*mesh));
 
@@ -27,10 +27,10 @@ StructuralMechanicsFactory::StructuralMechanicsFactory(const StructuralMechanics
 	case DISCRETIZATION::FEM:
 		switch (configuration.dimension) {
 		case DIMENSION::D2:
-			_physics.push_back(new StructuralMechanics2D(mesh, _instances.front(), configuration));
+			_physics.push_back(new StructuralMechanics2D(mesh, _instances.front(), configuration, propertiesConfiguration));
 			break;
 		case DIMENSION::D3:
-			_physics.push_back(new StructuralMechanics3D(mesh, _instances.front(), configuration));
+			_physics.push_back(new StructuralMechanics3D(mesh, _instances.front(), configuration, propertiesConfiguration));
 			break;
 		}
 		break;
@@ -41,7 +41,7 @@ StructuralMechanicsFactory::StructuralMechanicsFactory(const StructuralMechanics
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: cannot solve STRUCTURAL MECHANICS 2D with BEM discretization.";
 			break;
 		case DIMENSION::D3:
-			_physics.push_back(new LameSteklovPoincare3D(mesh, _instances.front(), configuration));
+			_physics.push_back(new LameSteklovPoincare3D(mesh, _instances.front(), configuration, propertiesConfiguration));
 			break;
 		}
 		break;
