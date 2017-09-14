@@ -4,7 +4,10 @@
 #include <QDialog>
 #include <QFrame>
 #include <QVBoxLayout>
+#include <QVector>
 #include "../../../../config/configuration.h"
+#include "../../elements/isavableobject.h"
+#include "../../elements/ivalidatableobject.h"
 
 namespace espreso
 {
@@ -31,6 +34,9 @@ namespace espreso
 
         QFrame* m_frame;
         QVBoxLayout* m_frameLayout;
+
+        QVector<ISavableObject*> m_save;
+        QVector<IValidatableObject*> m_valid;
 
         void drawMe();
 		void iterateObject(ECFObject*, QWidget* = nullptr);

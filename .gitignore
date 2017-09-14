@@ -25,3 +25,9 @@ tools/*
 
 # ignore *.ecf files in root directory
 /*.ecf
+
+# ignore Qt
+src/*.pro
+src/*.pro.user
+src/*.pro.user.*
+build-espreso-gui-Desktop_Qt_5_9_1_GCC_64bit-Debug/

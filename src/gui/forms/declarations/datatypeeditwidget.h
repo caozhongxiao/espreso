@@ -9,6 +9,8 @@
 #include "piecewisetypewidget.h"
 #include "../../../config/configuration.h"
 #include "../elements/expressionedit.h"
+#include "../elements/ivalidatableobject.h"
+#include "../elements/isavableobject.h"
 
 namespace espreso
 {
@@ -17,7 +19,8 @@ namespace espreso
     class DataTypeEditWidget;
     }
 
-    class DataTypeEditWidget : public QWidget
+    class DataTypeEditWidget : public QWidget, public IValidatableObject,
+            public ISavableObject
     {
         Q_OBJECT
 
@@ -25,17 +28,20 @@ namespace espreso
         static QStringList typeNames();
 
         explicit DataTypeEditWidget(QWidget *parent = 0);
-        DataTypeEditWidget(const ECFParameter& data, QWidget* parent = 0);
+        DataTypeEditWidget(ECFParameter* data, QWidget* parent = 0);
         ~DataTypeEditWidget();
 
         QComboBox* createComboBox(QWidget* parent = nullptr);
-        bool isValid();
+        bool isValid() override;
+        void save() override;
 
     private slots:
         void changeType(int index);
 
     private:
         Ui::DataTypeEditWidget *ui;
+
+        ECFParameter* m_param;
 
         ExpressionEdit* uiExpression;
         TableTypeWidget* uiTable;
@@ -44,9 +50,9 @@ namespace espreso
         int activeType;
 
         void createUi();
-        void initExpression(const ECFParameter&);
-        void initTable(const ECFParameter&);
-        void initPiecewise(const ECFParameter&);
+        void initExpression();
+        void initTable();
+        void initPiecewise();
     };
 
 }

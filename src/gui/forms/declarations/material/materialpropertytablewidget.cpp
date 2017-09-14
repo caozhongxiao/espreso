@@ -8,7 +8,6 @@
 #include "../../../data/common.h"
 #include "../../validators/validatorfactory.h"
 #include "../tablewidget.h"
-#include "../datatypeeditwidget.h"
 
 using namespace espreso;
 
@@ -41,15 +40,15 @@ void MaterialPropertyTableWidget::createHeader()
     ui->grid->addWidget(lblCol5, 0, 4);
 }
 
-void MaterialPropertyTableWidget::addProperty(const ECFParameter& property)
+void MaterialPropertyTableWidget::addProperty(ECFParameter* property)
 {
-    this->addRow(QString::fromStdString(property.metadata.description.at(0)),
+    this->addRow(QString::fromStdString(property->metadata.description.at(0)),
                  property,
-                 QString::fromStdString(property.metadata.unit),
-                 QString::fromStdString(property.name));
+                 QString::fromStdString(property->metadata.unit),
+                 QString::fromStdString(property->name));
 }
 
-void MaterialPropertyTableWidget::addRow(const QString& name, const ECFParameter& data,
+void MaterialPropertyTableWidget::addRow(const QString& name, ECFParameter* data,
                                          const QString& unit, const QString& symbol)
 {
     int row = ui->grid->rowCount();
@@ -68,4 +67,13 @@ void MaterialPropertyTableWidget::addRow(const QString& name, const ECFParameter
     ui->grid->addWidget(dataWidget, row, 2);
     ui->grid->addWidget(lblUnit, row, 3, alignment);
     ui->grid->addWidget(lblSymbol, row, 4, alignment);
+
+    this->m_rowWidgets.append(dataWidget);
+}
+
+void MaterialPropertyTableWidget::save()
+{
+    foreach (DataTypeEditWidget* w, m_rowWidgets) {
+        w->save();
+    }
 }

@@ -29,7 +29,7 @@ TableTypeWidget::TableTypeWidget(QWidget* parent) :
 
 void TableTypeWidget::addData(const QString& data)
 {
-    QRegExp rxCase("case");
+    QRegExp rxCase("CASE");
     QStringList cases = data.split(rxCase, QString::SkipEmptyParts);
     cases.removeFirst();
 
@@ -59,4 +59,32 @@ void TableTypeWidget::addData(const QString& data)
 QString TableTypeWidget::columnDefaultValue(int column) const
 {
     return this->defaultValues.at(column);
+}
+
+bool TableTypeWidget::isValid()
+{
+    if (this->mModel->rowCount() == 1)
+        return false;
+
+    return true;
+}
+
+QString TableTypeWidget::data()
+{
+    QLatin1String start("SWITCH {");
+    QLatin1String end("DEFAULT: 0;}");
+
+    QStringList cases;
+    for (int i = 0; i < mModel->rowCount() - 1; ++i)
+    {
+        QLatin1String _case("CASE X == ");
+        QModelIndex indexX = mModel->index(i, 0);
+        QString _x = mModel->data(indexX).toString();
+        QModelIndex indexY = mModel->index(i, 1);
+        QString _y = mModel->data(indexY).toString();
+        QString line = _case + _x + QLatin1String(" : ") + _y + QLatin1String("; ");
+        cases << line;
+    }
+
+    return start + cases.join(QLatin1String(" ")) + end;
 }

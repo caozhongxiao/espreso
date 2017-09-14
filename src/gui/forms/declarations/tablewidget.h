@@ -8,6 +8,7 @@
 #include "../validators/validatorfactory.h"
 #include <QAction>
 #include <QMenu>
+#include "../elements/ivalidatableobject.h"
 
 namespace espreso
 {
@@ -16,7 +17,7 @@ namespace espreso
     class TableWidget;
     }
 
-    class TableWidget : public QWidget
+    class TableWidget : public QWidget, public IValidatableObject
     {
         Q_OBJECT
 
@@ -26,7 +27,8 @@ namespace espreso
         virtual void addRow(const QVector<QString>& rowData);
         virtual void addData(const QVector<QVector<QString> >& data);
         virtual void addData(const QString& data) = 0;
-        virtual bool isValid();
+        virtual bool isValid() override;
+        virtual QString data() = 0;
 
     protected:
         QTableView* mTable;

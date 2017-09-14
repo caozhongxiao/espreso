@@ -17,6 +17,9 @@ namespace espreso
 
         virtual void addData(const QString& data) override;
 
+        bool isValid() override;
+        QString data() override;
+
     protected:
         virtual QString columnDefaultValue(int column) const override;
 

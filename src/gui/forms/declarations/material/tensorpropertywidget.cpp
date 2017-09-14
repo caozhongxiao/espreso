@@ -72,7 +72,7 @@ void TensorPropertyWidget::onIndexChanged(int index)
     {
         if ((*parameter)->metadata.datatype.at(0) == ECFDataType::EXPRESSION)
         {
-            this->mWidget->addProperty( *(*parameter) );
+            this->mWidget->addProperty( *parameter );
         }
     }
 }

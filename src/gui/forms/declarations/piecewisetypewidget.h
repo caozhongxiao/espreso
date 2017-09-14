@@ -16,6 +16,7 @@ namespace espreso
 
         PiecewiseTypeWidget(QWidget* parent = 0);
         bool isValid() override;
+        QString data() override;
 
         virtual void addData(const QString&) override;
 

@@ -20,28 +20,30 @@ DataTypeEditWidget::DataTypeEditWidget(QWidget *parent) :
     this->uiExpression->show();
 }
 
-DataTypeEditWidget::DataTypeEditWidget(const ECFParameter& data, QWidget *parent) :
+DataTypeEditWidget::DataTypeEditWidget(ECFParameter* data, QWidget *parent) :
     DataTypeEditWidget(parent)
 {
     this->uiExpression->hide();
 
-    QString content = QString::fromStdString(data.getValue());
-    QRegularExpression tableregex("switch");
-    QRegularExpression piecewiseregex("if");
+    this->m_param = data;
+
+    QString content = QString::fromStdString(data->getValue());
+    QRegularExpression tableregex("switch|SWITCH");
+    QRegularExpression piecewiseregex("if|IF");
 
     if (tableregex.match(content).hasMatch())
     {
-        this->initTable(data);
+        this->initTable();
         this->activeType = 1;
     }
     else if (piecewiseregex.match(content).hasMatch())
     {
-        this->initPiecewise(data);
+        this->initPiecewise();
         this->activeType = 2;
     }
     else
     {
-        this->initExpression(data);
+        this->initExpression();
         this->activeType = 0;
     }
 }
@@ -71,21 +73,21 @@ void DataTypeEditWidget::createUi()
     ui->layout->addWidget(uiPiecewise);
 }
 
-void DataTypeEditWidget::initExpression(const ECFParameter& et)
+void DataTypeEditWidget::initExpression()
 {
-    this->uiExpression->setText(QString::fromStdString(et.getValue()));
+    this->uiExpression->setText(QString::fromStdString(m_param->getValue()));
     this->uiExpression->show();
 }
 
-void DataTypeEditWidget::initTable(const ECFParameter& tt)
+void DataTypeEditWidget::initTable()
 {
-    this->uiTable->addData(QString::fromStdString(tt.getValue()));
+    this->uiTable->addData(QString::fromStdString(m_param->getValue()));
     this->uiTable->show();
 }
 
-void DataTypeEditWidget::initPiecewise(const ECFParameter& pft)
+void DataTypeEditWidget::initPiecewise()
 {
-    this->uiPiecewise->addData(QString::fromStdString(pft.getValue()));
+    this->uiPiecewise->addData(QString::fromStdString(m_param->getValue()));
     this->uiPiecewise->show();
 }
 
@@ -114,6 +116,22 @@ bool DataTypeEditWidget::isValid()
         default:
             qCritical() << "DataTypeEditWidget: Unknown DataType ID" << this->activeType;
             return false;
+    }
+}
+
+void DataTypeEditWidget::save()
+{
+    if (this->activeType == 0)
+    {
+        this->m_param->setValue(uiExpression->text().toStdString());
+    }
+    else if (this->activeType == 1)
+    {
+        this->m_param->setValue(uiTable->data().toStdString());
+    }
+    else if (this->activeType == 2)
+    {
+        this->m_param->setValue(uiPiecewise->data().toStdString());
     }
 }
 

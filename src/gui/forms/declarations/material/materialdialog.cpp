@@ -99,10 +99,12 @@ void MaterialDialog::iterateObject(ECFObject* obj, QWidget* parent)
 				if (propertyTableNotInserted)
 				{
 					propertyTable = new MaterialPropertyTableWidget(widget);
+                    this->m_save.append(propertyTable);
+                    //this->m_valid.append(propertyTable);
 					widget->layout()->addWidget(propertyTable);
 					propertyTableNotInserted = false;
 				}
-				propertyTable->addProperty(*(*parameter));
+                propertyTable->addProperty(*parameter);
 
 			}
 			else if (type == ECFDataType::STRING)
@@ -110,6 +112,8 @@ void MaterialDialog::iterateObject(ECFObject* obj, QWidget* parent)
 				if (formWidgetNotInserted)
 				{
 					formWidget = new FormWidget(widget);
+                    this->m_save.append(formWidget);
+                    //this->m_valid.append(formWidget);
 					widget->layout()->addWidget(formWidget);
 					formWidgetNotInserted = false;
 				}
@@ -136,6 +140,9 @@ void MaterialDialog::drawOption(ECFParameter* option, QWidget* widget)
 
 void MaterialDialog::redraw()
 {
+    foreach (ISavableObject* obj, m_save) {
+        obj->save();
+    }
     QFrame* tmp = this->m_frame;
     this->m_frame = nullptr;
     this->m_frameLayout = nullptr;

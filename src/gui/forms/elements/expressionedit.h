@@ -3,24 +3,30 @@
 
 #include <QLineEdit>
 #include <QFocusEvent>
+#include "ivalidatableobject.h"
 
-class ExpressionEdit : public QLineEdit
+namespace espreso
 {
-    Q_OBJECT
 
-public:
-    ExpressionEdit(QWidget* parent = nullptr);
-    ExpressionEdit(const QString& contents, QWidget* parent = nullptr);
+    class ExpressionEdit : public QLineEdit, public IValidatableObject
+    {
+        Q_OBJECT
 
-    bool isValid();
+    public:
+        ExpressionEdit(QWidget* parent = nullptr);
+        ExpressionEdit(const QString& contents, QWidget* parent = nullptr);
 
-    static bool validate(const QString& expr);
+        bool isValid() override;
 
-protected:
-    virtual void focusOutEvent(QFocusEvent* e) override;
+        static bool validate(const QString& expr);
 
-private:
-    bool mValidState;
-};
+    protected:
+        virtual void focusOutEvent(QFocusEvent* e) override;
+
+    private:
+        bool mValidState;
+    };
+
+}
 
 #endif // EXPRESSIONEDIT_H

@@ -4,6 +4,8 @@
 #include <QWidget>
 #include <QVector>
 #include "../../../../config/configuration.h"
+#include "../../elements/isavableobject.h"
+#include "../datatypeeditwidget.h"
 
 namespace espreso
 {
@@ -12,7 +14,7 @@ namespace espreso
     class MaterialPropertyTableWidget;
     }
 
-    class MaterialPropertyTableWidget : public QWidget
+    class MaterialPropertyTableWidget : public QWidget, public ISavableObject
     {
         Q_OBJECT
 
@@ -20,11 +22,15 @@ namespace espreso
         explicit MaterialPropertyTableWidget(QWidget *parent = 0, bool withHeader = true);
         ~MaterialPropertyTableWidget();
 
-        void addProperty(const ECFParameter& property);
-        void addRow(const QString& name, const ECFParameter& data, const QString& unit, const QString& symbol);
+        void addProperty(ECFParameter* property);
+        void addRow(const QString& name, ECFParameter* data, const QString& unit, const QString& symbol);
+
+        void save() override;
 
     private:
         Ui::MaterialPropertyTableWidget *ui;
+
+        QVector<DataTypeEditWidget*> m_rowWidgets;
 
         void createHeader();
     };

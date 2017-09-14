@@ -3,12 +3,15 @@
 
 #include <QWidget>
 #include <QFormLayout>
+#include <QLineEdit>
 #include "../../../config/configuration.h"
+#include "isavableobject.h"
+#include "ivalidatableobject.h"
 
 namespace espreso
 {
 
-	class FormWidget : public QWidget
+    class FormWidget : public QWidget, public ISavableObject
 	{
 		Q_OBJECT
 
@@ -17,9 +20,12 @@ namespace espreso
 
 		void appendString(ECFParameter*);
 
+        void save() override;
+
 	private:
 		QFormLayout* m_layout;
 
+        QVector<QPair<ECFParameter*, QLineEdit*> > m_strings;
 	};
 
 }

@@ -1,5 +1,7 @@
 #include "expressioneditdelegate.h"
 
+using namespace espreso;
+
 ExpressionEditDelegate::ExpressionEditDelegate(QObject *parent) : QItemDelegate(parent)
 {
 }

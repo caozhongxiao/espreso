@@ -3,6 +3,9 @@
 #include "../../../basis/expression/expression.h"
 #include "../../data/common.h"
 
+using namespace espreso;
+
+
 ExpressionEdit::ExpressionEdit(QWidget* parent) : QLineEdit(parent)
 {
     this->setText("0");
