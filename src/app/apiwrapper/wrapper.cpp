@@ -129,6 +129,7 @@ void FETI4ICreateStiffnessMatrix(
 		FETI4IInt		type,
 		FETI4IInt		indexBase)
 {
+	checkConfiguration();
 	DataHolder::timeStatistics.totalTime.startWithBarrier();
 	TimeEvent event("Add element");
 	DataHolder::timeStatistics.addEvent(event);
@@ -178,6 +179,7 @@ void FETI4ICreateInstance(
 		FETI4IInt* 		integer_options,
 		FETI4IReal*		real_options)
 {
+	checkConfiguration();
 	DataHolder::instances.push_back(new FETI4IStructInstance(*matrix, l2g, size));
 
 	FETI4ISetIntegerOptions(DataHolder::instances.back()->configuration, integer_options);
@@ -229,6 +231,7 @@ void FETI4ISolve(
 		FETI4IInt 		solution_size,
 		FETI4IReal*		solution)
 {
+	checkConfiguration();
 	TimeEvent event("Solve FETI4I instance"); event.startWithBarrier();
 
 	Step step;
