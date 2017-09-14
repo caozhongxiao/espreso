@@ -133,7 +133,7 @@ def configure(ctx):
 
     if not all(lib[0] for lib in optional_libraries):
         ctx.msg("", "")
-        ctx.msg("Not found optional libraries", "ESPRESO not supports", color="RED")
+        ctx.msg("NOT FOUND OPTIONAL LIBRARIES", "ESPRESO does not support", color="RED")
         for status, lib, purpose in not_found:
             ctx.msg("  " + lib, purpose, color="NORMAL")
 
