@@ -88,13 +88,17 @@ struct ECFMetaData {
 };
 
 struct ECFParameter {
+	enum class Event {
+		VALUE_SET
+	};
+
 	std::string name;
 	ECFMetaData metadata;
 
 	virtual bool isValue() const =0;
 	virtual bool isObject() const =0;
 
-	virtual bool setValue(const std::string &value) =0;
+	virtual bool setValue(const std::string &value);
 	virtual std::string getValue() const =0;
 	virtual ECFParameter* getParameter(const std::string &name) =0;
 	virtual ECFParameter* getParameter(const void* data) =0;
@@ -102,7 +106,12 @@ struct ECFParameter {
 	virtual const ECFParameter* getPattern() const =0;
 	virtual const void* data() const =0;
 
+	virtual void addListener(Event event, std::function<void()> listener);
+
 	virtual ~ECFParameter() {};
+protected:
+	virtual bool _setValue(const std::string &value) =0;
+	std::vector<std::function<void()> > _setValueListeners;
 };
 
 struct ECFSeparator: public ECFParameter {
@@ -110,7 +119,7 @@ struct ECFSeparator: public ECFParameter {
 	bool isValue() const { return false; }
 	bool isObject() const { return false; }
 
-	bool setValue(const std::string &value) { return false; }
+	bool _setValue(const std::string &value) { return false; }
 	std::string getValue() const { return ""; }
 	ECFParameter* getParameter(const std::string &name) { return NULL; }
 	ECFParameter* getParameter(const void* data) { return NULL; }
@@ -136,7 +145,7 @@ struct ECFObject: public ECFParameter {
 	bool isValue() const { return false; }
 	bool isObject() const { return true; }
 
-	virtual bool setValue(const std::string &value);
+	virtual bool _setValue(const std::string &value);
 	virtual std::string getValue() const;
 	virtual ECFParameter* getParameter(const std::string &name);
 	virtual ECFParameter* getParameter(const void* data);
@@ -169,17 +178,17 @@ protected:
 
 	// CLASS - STD::STRING - ECFExpression (has to inherit from ECFObject)
 	template<typename Ttype>
-	typename std::enable_if<std::is_class<Ttype>::value && !std::is_same<Ttype, std::string>::value && !std::is_same<Ttype, ECFExpression>::value>::type
+	typename std::enable_if<std::is_class<Ttype>::value && !std::is_same<Ttype, std::string>::value && !std::is_same<Ttype, ECFExpression>::value, ECFParameter*>::type
 	registerParameter(const std::string &name, Ttype &parameter, const ECFMetaData &metadata);
 
 	// ENUM
 	template<typename Ttype>
-	typename std::enable_if<std::is_enum<Ttype>::value>::type
+	typename std::enable_if<std::is_enum<Ttype>::value, ECFParameter*>::type
 	registerParameter(const std::string &name, Ttype &parameter, const ECFMetaData &metadata);
 
 	// REST
 	template<typename Ttype>
-	typename std::enable_if<(!std::is_class<Ttype>::value && !std::is_enum<Ttype>::value) || std::is_same<Ttype, std::string>::value || std::is_same<Ttype, ECFExpression>::value>::type
+	typename std::enable_if<(!std::is_class<Ttype>::value && !std::is_enum<Ttype>::value) || std::is_same<Ttype, std::string>::value || std::is_same<Ttype, ECFExpression>::value, ECFParameter*>::type
 	registerParameter(const std::string &name, Ttype &parameter, const ECFMetaData &metadata);
 
 
@@ -188,12 +197,12 @@ protected:
 
 	// TYPE2 = CLASS - STD::STRING (has to inherit from ECFObject)
 	template<typename Ttype1, typename Ttype2, typename... TArgs>
-	typename std::enable_if<std::is_class<Ttype2>::value && !std::is_same<Ttype2, std::string>::value>::type
+	typename std::enable_if<std::is_class<Ttype2>::value && !std::is_same<Ttype2, std::string>::value, ECFParameter*>::type
 	registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata, TArgs... args);
 
 	// TYPE2 = REST
 	template<typename Ttype1, typename Ttype2>
-	typename std::enable_if<!std::is_class<Ttype2>::value || std::is_same<Ttype2, std::string>::value>::type
+	typename std::enable_if<!std::is_class<Ttype2>::value || std::is_same<Ttype2, std::string>::value, ECFParameter*>::type
 	registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata);
 
 	//////////// MAP MAP ////////////
@@ -201,12 +210,12 @@ protected:
 
 	// TYPE3 = CLASS - STD::STRING (has to inherit from ECFObject)
 	template<typename Ttype1, typename Ttype2, typename Ttype3, typename... TArgs>
-	typename std::enable_if<std::is_class<Ttype3>::value && !std::is_same<Ttype3, std::string>::value>::type
+	typename std::enable_if<std::is_class<Ttype3>::value && !std::is_same<Ttype3, std::string>::value, ECFParameter*>::type
 	registerParameter(const std::string &name, std::map<Ttype1, std::map<Ttype2, Ttype3> > &parameter, const ECFMetaData &metadata, TArgs... args);
 
 	// TYPE3 = REST
 	template<typename Ttype1, typename Ttype2, typename Ttype3>
-	typename std::enable_if<!std::is_class<Ttype3>::value || std::is_same<Ttype3, std::string>::value>::type
+	typename std::enable_if<!std::is_class<Ttype3>::value || std::is_same<Ttype3, std::string>::value, ECFParameter*>::type
 	registerParameter(const std::string &name, std::map<Ttype1, std::map<Ttype2, Ttype3> > &parameter, const ECFMetaData &metadata);
 
 

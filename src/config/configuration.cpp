@@ -70,13 +70,33 @@ ECFMetaData ECFMetaData::suffix(size_t start) const
 			.setpattern(getsuffix(start, pattern));
 }
 
+bool ECFParameter::setValue(const std::string &value)
+{
+	if (_setValue(value)) {
+		for (size_t i = 0; i < _setValueListeners.size(); i++) {
+			_setValueListeners[i]();
+		}
+		return true;
+	}
+	return false;
+}
+
+void ECFParameter::addListener(Event event, std::function<void()> listener)
+{
+	switch (event) {
+	case Event::VALUE_SET:
+		_setValueListeners.push_back(listener);
+		break;
+	}
+}
+
 std::string ECFObject::getValue() const
 {
 	ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: calling 'get' on ECFObject.";
 	return "";
 }
 
-bool ECFObject::setValue(const std::string &value)
+bool ECFObject::_setValue(const std::string &value)
 {
 	ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: calling 'set' on ECFObject.";
 	return false;
