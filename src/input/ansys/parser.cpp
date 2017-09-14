@@ -3,10 +3,10 @@
 #include "../../mesh/structures/elementtypes.h"
 #include "../../mesh/structures/mesh.h"
 #include "../../mesh/structures/coordinates.h"
-#include "../../mesh/structures/material.h"
 #include "../../mesh/structures/region.h"
 #include "../../mesh/settings/evaluator.h"
 #include "../../mesh/elements/element.h"
+#include "../../config/ecf/material/material.h"
 
 #include "../../basis/logging/logging.h"
 
@@ -37,8 +37,8 @@ WorkbenchParser::WorkbenchParser(Mesh &mesh): bodyCounter(0), _mesh(mesh)
 
 WorkbenchParser::~WorkbenchParser()
 {
-	for (size_t t = 0; t < _tables.size(); t++) {
-		delete _tables[t];
+	for (auto it = _tables.begin(); it != _tables.end(); ++it) {
+		delete it->second;
 	}
 }
 
@@ -286,48 +286,35 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements, std::vector<Region
 	bodyCounter++;
 }
 
-void WorkbenchParser::mp(std::vector<Material*> &materials, Evaluator *evaluator)
+void WorkbenchParser::mp(std::vector<MaterialConfiguration*> &materials, TableInterpolationEvaluator *evaluator)
 {
 	std::vector<std::string> params = divide(_line);
 
 	size_t mNumber = std::stoi(params[2]);
 	for (size_t i = materials.size(); i < mNumber; i++) {
-		materials.push_back(new Material(_mesh.coordinates()));
-		materials.back()->setModel(PHYSICS::ADVECTION_DIFFUSION_2D, MATERIAL_MODEL::ISOTROPIC);
-		materials.back()->setModel(PHYSICS::ADVECTION_DIFFUSION_3D, MATERIAL_MODEL::ISOTROPIC);
-		materials.back()->setModel(PHYSICS::STRUCTURAL_MECHANICS_2D, MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC);
-		materials.back()->setModel(PHYSICS::STRUCTURAL_MECHANICS_3D, MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC);
+		materials.push_back(new MaterialConfiguration());
 	}
 	mNumber--;
 
 	bool match = false;
-	auto set = [&] (MATERIAL_PARAMETER parameter, const std::string &name) {
+
+	auto set = [&] (const std::string &name, ECFExpression &expression) {
 		if (StringCompare::caseInsensitiveEq(params[1], name)) {
 			if (evaluator == NULL) {
-				materials[mNumber]->set(parameter, params[3]);
+				expression.value = params[3];
+				expression.evaluator = new ExpressionEvaluator(params[3]);
 			} else {
-				materials[mNumber]->set(parameter, evaluator);
+				expression.value = "TABULAR [";
+				for (size_t i = 0; i < evaluator->table.size(); i++) {
+					expression.value += std::to_string(evaluator->table[i].first) + "," + std::to_string(evaluator->table[i].second) + ";";
+				}
+				expression.value += "]";
+				expression.evaluator = evaluator;
 			}
 			match = true;
 			return true;
 		}
 		return false;
-	};
-
-	auto setWithModel = [&] (MATERIAL_PARAMETER parameter, const std::string &name, std::function<void(void)> setModel) {
-		if (set(parameter, name)) {
-			setModel();
-		}
-	};
-
-	auto setModelAD = [&] (MATERIAL_MODEL model) {
-		materials[mNumber]->setModel(PHYSICS::ADVECTION_DIFFUSION_2D, model);
-		materials[mNumber]->setModel(PHYSICS::ADVECTION_DIFFUSION_3D, model);
-	};
-
-	auto setModelLE = [&] (MATERIAL_MODEL model) {
-		materials[mNumber]->setModel(PHYSICS::STRUCTURAL_MECHANICS_2D, model);
-		materials[mNumber]->setModel(PHYSICS::STRUCTURAL_MECHANICS_3D, model);
 	};
 
 	auto skip = [&] (const std::string &name) {
@@ -336,32 +323,59 @@ void WorkbenchParser::mp(std::vector<Material*> &materials, Evaluator *evaluator
 		}
 	};
 
-	set(MATERIAL_PARAMETER::DENSITY                , "DENS");
-	set(MATERIAL_PARAMETER::HEAT_CAPACITY          , "C");
+	set("DENS", materials[mNumber]->density);
+	set("C"   , materials[mNumber]->heat_capacity);
+	set("KXX" , materials[mNumber]->thermal_conductivity.values.get(0, 0));
+	if (set("KYY" , materials[mNumber]->thermal_conductivity.values.get(1, 1))) {
+		materials[mNumber]->thermal_conductivity.model = ThermalConductivityConfiguration::MODEL::DIAGONAL;
+	}
+	if (set("KZZ" , materials[mNumber]->thermal_conductivity.values.get(2, 2))) {
+		materials[mNumber]->thermal_conductivity.model = ThermalConductivityConfiguration::MODEL::DIAGONAL;
+	}
 
-	setWithModel(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX, "KXX", [&] () { setModelAD(MATERIAL_MODEL::ISOTROPIC); });
-	setWithModel(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY, "KYY", [&] () { setModelAD(MATERIAL_MODEL::DIAGONAL); });
-	setWithModel(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_ZZ, "KZZ", [&] () { setModelAD(MATERIAL_MODEL::DIAGONAL); });
+	if (set("KXY" , materials[mNumber]->thermal_conductivity.values.get(0, 1))) {
+		materials[mNumber]->thermal_conductivity.model = ThermalConductivityConfiguration::MODEL::SYMMETRIC;
+	}
+	if (set("KXZ" , materials[mNumber]->thermal_conductivity.values.get(0, 2))) {
+		materials[mNumber]->thermal_conductivity.model = ThermalConductivityConfiguration::MODEL::SYMMETRIC;
+	}
+	if (set("KYZ" , materials[mNumber]->thermal_conductivity.values.get(1, 2))) {
+		materials[mNumber]->thermal_conductivity.model = ThermalConductivityConfiguration::MODEL::SYMMETRIC;
+	}
 
-	setWithModel(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY, "KXY", [&] () { setModelAD(MATERIAL_MODEL::SYMMETRIC); });
-	setWithModel(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XZ, "KXZ", [&] () { setModelAD(MATERIAL_MODEL::SYMMETRIC); });
-	setWithModel(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YZ, "KYZ", [&] () { setModelAD(MATERIAL_MODEL::SYMMETRIC); });
+	if (set("KYX" , materials[mNumber]->thermal_conductivity.values.get(1, 0))) {
+		materials[mNumber]->thermal_conductivity.model = ThermalConductivityConfiguration::MODEL::ANISOTROPIC;
+	}
+	if (set("KZX" , materials[mNumber]->thermal_conductivity.values.get(2, 0))) {
+		materials[mNumber]->thermal_conductivity.model = ThermalConductivityConfiguration::MODEL::ANISOTROPIC;
+	}
+	if (set("KZY" , materials[mNumber]->thermal_conductivity.values.get(2, 1))) {
+		materials[mNumber]->thermal_conductivity.model = ThermalConductivityConfiguration::MODEL::ANISOTROPIC;
+	}
 
-	setWithModel(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX, "KYX", [&] () { setModelAD(MATERIAL_MODEL::ANISOTROPIC); });
-	setWithModel(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_ZX, "KZX", [&] () { setModelAD(MATERIAL_MODEL::ANISOTROPIC); });
-	setWithModel(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_ZY, "KZY", [&] () { setModelAD(MATERIAL_MODEL::ANISOTROPIC); });
+	set("EX"  , materials[mNumber]->linear_elastic_properties.young_modulus.get(0, 0));
+	if (set("EY"  , materials[mNumber]->linear_elastic_properties.young_modulus.get(1, 1))) {
+		materials[mNumber]->linear_elastic_properties.model = LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC;
+	}
+	if (set("EZ"  , materials[mNumber]->linear_elastic_properties.young_modulus.get(2, 2))) {
+		materials[mNumber]->linear_elastic_properties.model = LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC;
+	}
 
+	set("NUXY", materials[mNumber]->linear_elastic_properties.poisson_ratio.get(0, 0));
+	if (set("NUXZ", materials[mNumber]->linear_elastic_properties.poisson_ratio.get(1, 1))) {
+		materials[mNumber]->linear_elastic_properties.model = LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC;
+	}
+	if (set("NUYZ", materials[mNumber]->linear_elastic_properties.poisson_ratio.get(2, 2))) {
+		materials[mNumber]->linear_elastic_properties.model = LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC;
+	}
 
-	setWithModel(MATERIAL_PARAMETER::YOUNG_MODULUS_X        , "EX"  , [&] () { setModelLE(MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC); });
-	setWithModel(MATERIAL_PARAMETER::POISSON_RATIO_XY       , "NUXY", [&] () { setModelLE(MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC); });
-	setWithModel(MATERIAL_PARAMETER::THERMAL_EXPANSION_X    , "ALPX", [&] () { setModelLE(MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC); });
-
-	setWithModel(MATERIAL_PARAMETER::YOUNG_MODULUS_Y        , "EY"  , [&] () { setModelLE(MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC); });
-	setWithModel(MATERIAL_PARAMETER::YOUNG_MODULUS_Z        , "EZ"  , [&] () { setModelLE(MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC); });
-	setWithModel(MATERIAL_PARAMETER::POISSON_RATIO_XZ       , "NUXZ", [&] () { setModelLE(MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC); });
-	setWithModel(MATERIAL_PARAMETER::POISSON_RATIO_YZ       , "NUYZ", [&] () { setModelLE(MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC); });
-	setWithModel(MATERIAL_PARAMETER::THERMAL_EXPANSION_Y    , "ALPY", [&] () { setModelLE(MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC); });
-	setWithModel(MATERIAL_PARAMETER::THERMAL_EXPANSION_Z    , "ALPZ", [&] () { setModelLE(MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC); });
+	set("ALPX", materials[mNumber]->linear_elastic_properties.thermal_expansion.get(0, 0));
+	if (set("ALPY", materials[mNumber]->linear_elastic_properties.thermal_expansion.get(1, 1))) {
+		materials[mNumber]->linear_elastic_properties.model = LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC;
+	}
+	if (set("ALPZ", materials[mNumber]->linear_elastic_properties.thermal_expansion.get(2, 2))) {
+		materials[mNumber]->linear_elastic_properties.model = LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC;
+	}
 
 	skip("RSVX");
 	skip("RSVY");
@@ -375,7 +389,7 @@ void WorkbenchParser::mp(std::vector<Material*> &materials, Evaluator *evaluator
 	}
 }
 
-void WorkbenchParser::mptemp(std::vector<Material*> &materials)
+void WorkbenchParser::mptemp(std::vector<MaterialConfiguration*> &materials)
 {
 	std::vector<std::pair<double, double> > table;
 	while (true) {
@@ -391,7 +405,7 @@ void WorkbenchParser::mptemp(std::vector<Material*> &materials)
 					table[loaded++].second = std::stod(params[i + 4]);
 				}
 			}
-			mp(materials, new TableInterpolationEvaluator("TEMP" + params[2], table));
+			mp(materials, new TableInterpolationEvaluator(table));
 		} else {
 			if (!params[1].size()) {
 				break;
@@ -448,36 +462,27 @@ void WorkbenchParser::cmblock(std::vector<Element*> &elements, std::vector<Regio
 	}
 }
 
-static void pushTableEvaluator(std::vector<espreso::Evaluator*> &evaluators, const std::string &name, const std::vector<espreso::TableEvaluator*> &tables)
-{
-	for (size_t t = 0; t < tables.size(); t++) {
-		if (!name.compare(1, tables[t]->name().size(), tables[t]->name())) {
-			evaluators.push_back(tables[t]->copy());
-			return;
-		}
-	}
-	ESINFO(espreso::GLOBAL_ERROR) << "Unknown table '" << name << "'";
-}
-
 static void pushEvaluator(std::vector<espreso::Evaluator*> &evaluators, const std::string &value, const espreso::Coordinates &coordinates) {
 	if (value.find("x") == std::string::npos && value.find("y") == std::string::npos && value.find("z") == std::string::npos) {
 		espreso::Expression expr(value, {});
 		evaluators.push_back(new espreso::ConstEvaluator(expr.evaluate({})));
 	} else {
-		evaluators.push_back(new espreso::CoordinatesEvaluator(value, coordinates));
+		evaluators.push_back(new espreso::ExpressionEvaluator(value));
 	}
 };
 
 bool WorkbenchParser::setProperty(const std::string &parameter, const std::string &value, const std::string &name, espreso::Property property, size_t loadStep, espreso::Region *region, std::vector<Evaluator*> &evaluators) {
 	if (!parameter.compare(0, name.size(), name)) {
 		if (!value.compare(0, 1, "%") && !value.compare(value.size() - 1, value.size(), "%")) {
-			pushTableEvaluator(evaluators, value, _tables);
-			ESINFO(espreso::DETAILS) << "WB: SET " << property << " to region " << region->name << " to table " << evaluators.back()->name();
+			if (_tables.find(value.substr(1, value.size() - 2)) == _tables.end()) {
+				ESINFO(espreso::GLOBAL_ERROR) << "Unknown table '" << value << "'";
+			}
+			evaluators.push_back(_tables[value.substr(1, value.size() - 2)]->copy());
+			ESINFO(espreso::DETAILS) << "WB: SET " << property << " to region " << region->name << " to table " << value.substr(1, value.size() - 2) << "\n";
 		} else {
 			pushEvaluator(evaluators, value, _mesh.coordinates());
 			ESINFO(espreso::DETAILS) << "WB: SET " << property << " to region " << region->name << " to " << value;
 		}
-		evaluators.back()->property() = property;
 		region->settings.resize(loadStep + 1);
 		region->settings[loadStep][property].push_back(evaluators.back());
 		return true;
@@ -495,7 +500,7 @@ void WorkbenchParser::dirichlet(std::vector<Evaluator*> &evaluators, std::vector
 		Region *region = regions[getRegionIndex(regions, _selectedRegion.size() ? _selectedRegion : "ALL_NODES")];
 		region->settings.resize(loadStep + 1);
 		if (!params[2].compare(0, 3, "all")) {
-			evaluators.push_back(new ConstEvaluator(0, Property::DISPLACEMENT_X));
+			evaluators.push_back(new ConstEvaluator(0));
 			region->settings[loadStep][Property::DISPLACEMENT_X].push_back(evaluators.back());
 			region->settings[loadStep][Property::DISPLACEMENT_Y].push_back(evaluators.back());
 			region->settings[loadStep][Property::DISPLACEMENT_Z].push_back(evaluators.back());
@@ -610,8 +615,8 @@ void WorkbenchParser::obstacle(std::vector<Evaluator*> &evaluators, std::vector<
 	size_t loadStep = 0;
 	Region *region = regions[getRegionIndex(regions, _selectedRegion.size() ? _selectedRegion : "ALL_NODES")];
 	region->settings.resize(loadStep + 1);
-	evaluators.push_back(new CoordinatesEvaluator(params[1], _mesh.coordinates(), Property::OBSTACLE));
-	evaluators.push_back(new CoordinatesEvaluator(params[2], _mesh.coordinates(), Property::NORMAL_DIRECTION));
+	evaluators.push_back(new ExpressionEvaluator(params[1]));
+	evaluators.push_back(new ExpressionEvaluator(params[2]));
 
 	ESINFO(DETAILS) << "WB: SET obstacle to region " << _selectedRegion << " to " << params[1] << ", direction: " << params[2];
 
@@ -689,7 +694,7 @@ void WorkbenchParser::dim()
 			}
 		}
 
-		_tables.push_back(new TableEvaluator(params[1], table, properties, axis));
+		_tables[params[1]] = new TableEvaluator(table, properties, axis);
 		return;
 	}
 

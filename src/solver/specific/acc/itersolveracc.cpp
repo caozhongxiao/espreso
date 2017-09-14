@@ -9,7 +9,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
     time_eval.totalTime.start();
 
     // number of Xeon Phi devices 
-    eslocal numDevices = configuration.N_MICS;
+    eslocal numDevices = configuration.n_mics;
 
     double CPUtime;
     int maxThreads = omp_get_max_threads();
@@ -521,28 +521,28 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
                 x_in_tmp[i] = x_in[ cluster.domains[d]->lambda_map_sub_local[i]] * cluster.domains[d]->B1_scale_vec[i]; // includes B1 scaling
 
             switch (USE_PREC) {
-                case ESPRESO_PRECONDITIONER::LUMPED:
+                case FETI_PRECONDITIONER::LUMPED:
                     cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'T');
                     cluster.domains[d]->K.MatVec( *cluster.x_prim_cluster1[d], *cluster.x_prim_cluster2[d],'N');
                     cluster.domains[d]->_RegMat.MatVecCOO( *cluster.x_prim_cluster1[d], *cluster.x_prim_cluster2[d],'N', -1.0);
                     break;
-                case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+                case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
                     cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster2[d], 'T');
                     break;
-                case ESPRESO_PRECONDITIONER::DIRICHLET:
+                case FETI_PRECONDITIONER::DIRICHLET:
                     cluster.domains[d]->B1t_DirPr.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'N');
                     //cluster.domains[d]->Prec.MatVec( *cluster.x_prim_cluster1[d], *cluster.x_prim_cluster2[d],'N');
                     //cluster.domains[d]->Prec.DenseMatVec( *cluster.x_prim_cluster1[d], *cluster.x_prim_cluster2[d],'N');
                     break;
-                case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+                case FETI_PRECONDITIONER::SUPER_DIRICHLET:
                     cluster.domains[d]->B1t_DirPr.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'N');
                     //         cluster.domains[d]->Prec.MatVec( *cluster.x_prim_cluster1[d], *cluster.x_prim_cluster2[d],'N');
                     break;
-                case ESPRESO_PRECONDITIONER::MAGIC:
+                case FETI_PRECONDITIONER::MAGIC:
                     cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'T');
                     cluster.domains[d]->Prec.MatVec( *cluster.x_prim_cluster1[d], *cluster.x_prim_cluster2[d],'N');
                     break;
-                case ESPRESO_PRECONDITIONER::NONE:
+                case FETI_PRECONDITIONER::NONE:
                     break;
                 default:
                     ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
@@ -550,9 +550,9 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
 
         }
 
-        if ( USE_PREC == ESPRESO_PRECONDITIONER::DIRICHLET || 
-                USE_PREC == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET ) {
-            //for ( eslocal mic = 0 ; mic < config::solver::N_MICS ; ++mic ) {
+        if ( USE_PREC == FETI_PRECONDITIONER::DIRICHLET || 
+                USE_PREC == FETI_PRECONDITIONER::SUPER_DIRICHLET ) {
+            //for ( eslocal mic = 0 ; mic < config::solver::n_mics ; ++mic ) {
             for ( eslocal mic = 0 ; mic < cluster.acc_per_MPI ; ++mic ) {
 #pragma omp parallel for
                 for ( eslocal d = 0; d < cluster.accPreconditioners[mic].size(); ++d) {
@@ -646,19 +646,19 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
 
 
             switch (USE_PREC) {
-                case ESPRESO_PRECONDITIONER::LUMPED:
-                case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-                case ESPRESO_PRECONDITIONER::MAGIC:
+                case FETI_PRECONDITIONER::LUMPED:
+                case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+                case FETI_PRECONDITIONER::MAGIC:
                     cluster.domains[d]->B1_comp_dom.MatVec (*cluster.x_prim_cluster2[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
                     break;
                     //TODO  check if MatVec is correct (DenseMatVec!!!) 
-                case ESPRESO_PRECONDITIONER::DIRICHLET:
+                case FETI_PRECONDITIONER::DIRICHLET:
                     cluster.domains[d]->B1t_DirPr.MatVec (*cluster.x_prim_cluster2[d], y_out_tmp, 'T', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
                     break;
-                case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+                case FETI_PRECONDITIONER::SUPER_DIRICHLET:
                     cluster.domains[d]->B1t_DirPr.MatVec (*cluster.x_prim_cluster2[d], y_out_tmp, 'T', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
                     break;
-                case ESPRESO_PRECONDITIONER::NONE:
+                case FETI_PRECONDITIONER::NONE:
                     break;
                 default:
                     ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";

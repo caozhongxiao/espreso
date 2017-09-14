@@ -4,7 +4,7 @@
 
 #include "../../regiondata.h"
 
-#include "../../../configuration/environment.h"
+#include "../../../config/ecf/environment.h"
 #include "../../../assembler/solution.h"
 #include "../../../mesh/structures/elementtypes.h"
 

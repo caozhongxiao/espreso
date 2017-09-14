@@ -7,7 +7,7 @@
 #include "../../output/store.h"
 #include "../../linearsolver/linearsolver.h"
 
-#include "../../configuration/environment.h"
+#include "../../config/ecf/environment.h"
 #include "../../solver/generic/SparseMatrix.h"
 #include "../../basis/logging/timeeval.h"
 #include "../../basis/logging/logging.h"
@@ -352,7 +352,7 @@ double Assembler::lineSearch(const Step &step, const std::vector<std::vector<dou
 
 void Assembler::setRegularizationCallback()
 {
-	instance.computeKernelsCallback = [&] (REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
+	instance.computeKernelsCallback = [&] (FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
 
 		timeWrapper("regularize " + mNames(Matrices::K), [&] () {
 			physics.makeStiffnessMatricesRegular(regularization, scSize, ortogonalCluster);
@@ -361,7 +361,7 @@ void Assembler::setRegularizationCallback()
 		storeWrapper(mNames(Matrices::N), Matrices::N);
 	};
 
-	instance.computeKernelCallback = [&] (REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster) {
+	instance.computeKernelCallback = [&] (FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster) {
 		physics.makeStiffnessMatrixRegular(regularization, scSize, domain, ortogonalCluster);
 
 		storeWrapper(mNames(Matrices::N) + "[domain " + std::to_string(domain) + "]", Matrices::N, domain);
@@ -370,7 +370,7 @@ void Assembler::setRegularizationCallback()
 
 void Assembler::setRegularizationFromOrigKCallback()
 {
-	instance.computeKernelsCallback = [&] (REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
+	instance.computeKernelsCallback = [&] (FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
 
 		instance.K.swap(instance.origK);
 		instance.N1.swap(instance.origKN1);
@@ -398,18 +398,18 @@ void Assembler::setEmptyRegularizationCallback()
 	instance.N2.resize(instance.domains);
 	instance.RegMat.resize(instance.domains);
 
-	instance.computeKernelsCallback = [&] (REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
+	instance.computeKernelsCallback = [&] (FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
 		storeWrapper(mNames(Matrices::N), Matrices::N);
 	};
 
-	instance.computeKernelCallback = [&] (REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster) {
+	instance.computeKernelCallback = [&] (FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster) {
 		storeWrapper(mNames(Matrices::N) + "[domain " + std::to_string(domain) + "]", Matrices::N, domain);
 	};
 }
 
 void Assembler::setB0Callback()
 {
-	instance.assembleB0Callback = [&] (B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
+	instance.assembleB0Callback = [&] (FETI_B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
 		timeWrapper("compute B0", [&] () {
 			instance.B0.clear();
 			instance.B0.resize(instance.domains);
@@ -418,10 +418,10 @@ void Assembler::setB0Callback()
 				instance.B0subdomainsMap[d].clear();
 			}
 			switch (type) {
-			case B0_TYPE::CORNERS:
+			case FETI_B0_TYPE::CORNERS:
 				physics.assembleB0FromCorners();
 				break;
-			case B0_TYPE::KERNELS:
+			case FETI_B0_TYPE::KERNELS:
 				physics.assembleB0FromKernels(kernels);
 				break;
 			default:

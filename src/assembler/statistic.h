@@ -15,6 +15,7 @@ enum class ElementType;
 enum class Property;
 
 enum StatisticalData: int {
+	EMPTY   = 0,
 	MIN     = 1 << 0,
 	MAX     = 1 << 1,
 	AVERAGE = 1 << 2,

@@ -4,8 +4,10 @@
 
 #include "mpi.h"
 
-#include "../configuration/globalconfiguration.h"
 #include "factory/factory.h"
+#include "../config/ecf/ecf.h"
+#include "../config/reader/reader.h"
+#include "../basis/logging/logging.h"
 
 using namespace espreso;
 
@@ -28,12 +30,11 @@ int main(int argc, char **argv)
 	std::signal(SIGSEGV, signalHandler);
 
 	MPI_Init(&argc, &argv);
-
-	GlobalConfiguration configuration(&argc, &argv);
+	ECFConfiguration ecf(&argc, &argv);
 
 	ESINFO(OVERVIEW) << "Run ESPRESO on " << environment->MPIsize << " process(es).";
 
-	Factory factory(configuration);
+	Factory factory(ecf);
 
 	factory.solve();
 	factory.finalize();

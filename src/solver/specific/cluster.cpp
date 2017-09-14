@@ -189,8 +189,8 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
 		domains[d].B1_comp_dom.rows = domains[d].lambda_map_sub.size();
 		domains[d].B1_comp_dom.ConvertToCSRwithSort( 1 );
 
-		if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET ||
-        configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET) {
+		if (configuration.preconditioner == FETI_PRECONDITIONER::DIRICHLET ||
+        configuration.preconditioner == FETI_PRECONDITIONER::SUPER_DIRICHLET) {
 
 			domains[d].B1_comp_dom.MatTranspose(domains[d].B1t_DirPr);
 			Esutils::removeDuplicity(domains[d].B1t_DirPr.CSR_I_row_indices);
@@ -202,7 +202,7 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
 
 		}
 
-//		if (configuration.regularization == REGULARIZATION::FIX_POINTS) {
+//		if (configuration.regularization == FETI_REGULARIZATION::ANALYTIC) {
 //			domains[i].B1.Clear();
 //		}
 
@@ -361,8 +361,8 @@ void ClusterBase::SetClusterPC( ) {
 //		domains[i].B1_comp_dom.rows = domains[i].lambda_map_sub.size();
 //		domains[i].B1_comp_dom.ConvertToCSRwithSort( 1 );
 //
-//		if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET ||
-//        configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET) {
+//		if (configuration.preconditioner == FETI_PRECONDITIONER::DIRICHLET ||
+//        configuration.preconditioner == FETI_PRECONDITIONER::SUPER_DIRICHLET) {
 //			domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_DirPr);
 //			Esutils::removeDuplicity(domains[i].B1t_DirPr.CSR_I_row_indices);
 ////			auto last = std::unique(domains[i].B1t_DirPr.CSR_I_row_indices.begin(), domains[i].B1t_DirPr.CSR_I_row_indices.end());
@@ -376,7 +376,7 @@ void ClusterBase::SetClusterPC( ) {
 ////			domains[i].B1t_Dir_perm_vec.erase(last, domains[i].B1t_Dir_perm_vec.end() );
 //		}
 //
-////		if (configuration.regularization == REGULARIZATION::FIX_POINTS) {
+////		if (configuration.regularization == FETI_REGULARIZATION::ANALYTIC) {
 ////			domains[i].B1.Clear();
 ////		}
 //
@@ -396,22 +396,22 @@ void ClusterBase::SetClusterPC( ) {
 void ClusterBase::SetupPreconditioner ( ) {
 
 	switch (configuration.preconditioner) {
-	case ESPRESO_PRECONDITIONER::LUMPED:
+	case FETI_PRECONDITIONER::LUMPED:
 		// nothing needs to be done
 #ifdef BEM4I_TO_BE_REMOVED
 		ESINFO(GLOBAL_ERROR) << "Memory efficient Lumped not possible for BEM, used fast Lumped --> MAGIC (or 5)";
 #endif
 		break;
-	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+	case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
 		// nothing needs to be done
 		break;
-	case ESPRESO_PRECONDITIONER::DIRICHLET:
+	case FETI_PRECONDITIONER::DIRICHLET:
 		CreateDirichletPrec(instance);
 		break;
-	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+	case FETI_PRECONDITIONER::SUPER_DIRICHLET:
 		CreateDirichletPrec(instance);
 		break;
-	case ESPRESO_PRECONDITIONER::MAGIC: // Fast Lumped
+	case FETI_PRECONDITIONER::MAGIC: // Fast Lumped
 		#pragma omp parallel for
 		for (size_t d = 0; d < domains.size(); d++) {
 			if (domains[d]._RegMat.nnz > 0) {
@@ -434,7 +434,7 @@ void ClusterBase::SetupPreconditioner ( ) {
 			}
 		}
 		break;
-	case ESPRESO_PRECONDITIONER::NONE:
+	case FETI_PRECONDITIONER::NONE:
 		break;
 	default:
 		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
@@ -712,13 +712,13 @@ void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 //#endif
 
 	switch (configuration.SAsolver) {
-	case ESPRESO_SASOLVER::CPU_SPARSE:
+	case FETI_SASOLVER::CPU_SPARSE:
 		Sa.Solve(tm2[0], vec_alfa, 0, 0);
 		break;
-	case ESPRESO_SASOLVER::CPU_DENSE:
+	case FETI_SASOLVER::CPU_DENSE:
 		Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
 		break;
-	case ESPRESO_SASOLVER::ACC_DENSE:
+	case FETI_SASOLVER::ACC_DENSE:
 		Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
 		break;
 	default:
@@ -857,13 +857,13 @@ void ClusterBase::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in )
 // #endif
 
 	switch (configuration.SAsolver) {
-	case ESPRESO_SASOLVER::CPU_SPARSE:
+	case FETI_SASOLVER::CPU_SPARSE:
 		Sa.Solve(tm2[0], vec_alfa, 0, 0);
 		break;
-	case ESPRESO_SASOLVER::CPU_DENSE:
+	case FETI_SASOLVER::CPU_DENSE:
 		Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
 		break;
-	case ESPRESO_SASOLVER::ACC_DENSE:
+	case FETI_SASOLVER::ACC_DENSE:
 		Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
 		break;
 	default:
@@ -975,13 +975,13 @@ void ClusterBase::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in
 //	Sa.Solve(tm2[0], vec_alfa,0,0);
 
 	switch (configuration.SAsolver) {
-	case ESPRESO_SASOLVER::CPU_SPARSE:
+	case FETI_SASOLVER::CPU_SPARSE:
 		Sa.Solve(tm2[0], vec_alfa, 0, 0);
 		break;
-	case ESPRESO_SASOLVER::CPU_DENSE:
+	case FETI_SASOLVER::CPU_DENSE:
 		Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
 		break;
-	case ESPRESO_SASOLVER::ACC_DENSE:
+	case FETI_SASOLVER::ACC_DENSE:
 		Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
 		break;
 	default:
@@ -1316,9 +1316,9 @@ void ClusterBase::CreateF0() {
 
 		// FO solve in double in case K is in single
 		if (
-				configuration.F0_precision == ESPRESO_F0SOLVER_PRECISION::DOUBLE
-				&& (configuration.Ksolver == ESPRESO_KSOLVER::DIRECT_SP
-				|| configuration.Ksolver == ESPRESO_KSOLVER::DIRECT_MP )
+				configuration.F0_precision == FETI_F0SOLVER_PRECISION::DOUBLE
+				&& (configuration.Ksolver == FETI_KSOLVER::DIRECT_SP
+				|| configuration.Ksolver == FETI_KSOLVER::DIRECT_MP )
 			) {
 			SparseSolverMKL Ktmp;
 			Ktmp.ImportMatrix_wo_Copy(domains[d].K);
@@ -1482,7 +1482,7 @@ void ClusterBase::CreateSa() {
 	 TimeEval Sa_timing (" HFETI - Salfa preprocessing timing"); if (Measure::report(CLUSTER)) { Sa_timing.totalTime.start(); }
 
 //	bool PARDISO_SC = true;
-	bool get_kernel_from_mesh = configuration.regularization == REGULARIZATION::FIX_POINTS;
+	bool get_kernel_from_mesh = configuration.regularization == FETI_REGULARIZATION::ANALYTIC;
 	int  MPIrank = environment->MPIrank;
 
 	MKL_Set_Num_Threads(PAR_NUM_THREADS);
@@ -1538,7 +1538,7 @@ void ClusterBase::CreateSa() {
 //	}
 
 	// *** Regularization of Sa from NULL PIVOTS
-	if ( configuration.regularization == REGULARIZATION::NULL_PIVOTS ) {
+	if ( configuration.regularization == FETI_REGULARIZATION::ALGEBRAIC ) {
 
 		SparseMatrix Kernel_Sa;
 		SparseMatrix Kernel_Sa2;
@@ -1554,26 +1554,26 @@ void ClusterBase::CreateSa() {
 
 			switch (regularization_type) { //(configuration.SAsolver) {
 
-				case 0: { //ESPRESO_SASOLVER::CPU_DENSE: {
+				case 0: { //FETI_SASOLVER::CPU_DENSE: {
 					// *** Get kernel from GGt - faster as GGt is very sparse matrix - works only for symmetric systems
 					//  - kernel G0*G0t is used as regularization matrix for Salfa - needs to be scaled as values of G0*G0t are 10^10 smaller than values of Salfa
 					SparseMatrix GGt;
 					GGt.MatMat(G0,'N',G0t);
 					GGt.RemoveLower();
-					GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, 1000000, configuration.SC_SIZE);
+					GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, 1000000, configuration.sc_size);
 					_tmpSparseMat.ConvertToCSR(1);
 					// *** END - Get kernel from GGt - faster as GGt is very sparse matrix - works only for symmetric systems
 					break;
 				}
 
-				case 1: { //ESPRESO_SASOLVER::CPU_SPARSE: {
+				case 1: { //FETI_SASOLVER::CPU_SPARSE: {
 					// *** Get kernel from Salfa - slower as Salfa is dense and takes more resources to find kernel
-					Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
+					Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.sc_size);
 					// *** END - Get kernel from Salfa
 					break;
 				}
 
-				case 2: { //ESPRESO_SASOLVER::ACC_DENSE: {
+				case 2: { //FETI_SASOLVER::ACC_DENSE: {
 					//TODO: Musi se zkonzultovat s Alexem - nefunguje na 100%
 
 					// *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
@@ -1590,7 +1590,7 @@ void ClusterBase::CreateSa() {
 //					GGt_solver.Factorization ("G0G0t matrix");
 //					GGt_solver.GetKernel(Kernel_Sa); // TODO: Kplus.GetKernels(Kernel_Sa, Kernel_Sa2) - upravit na tuto funkci - v sym. pripade bude Kernel_Sa2 prazdna
 //#else
-					GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
+					GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.sc_size);
 //#endif
 
 					SparseMatrix Kernel_Sat;
@@ -1601,7 +1601,7 @@ void ClusterBase::CreateSa() {
 					break;
 				}
 
-				case 3: { //ESPRESO_SASOLVER::ACC_DENSE: {
+				case 3: { //FETI_SASOLVER::ACC_DENSE: {
 					//TODO: Musi se zkonzultovat s Alexem - nefunguje na 100%
 
 					// *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
@@ -1614,7 +1614,7 @@ void ClusterBase::CreateSa() {
 //					GGt_solver.Factorization ("Salfa matrix");
 //					GGt_solver.GetKernel(Kernel_Sa); // TODO: Kplus.GetKernels(Kernel_Sa, Kernel_Sa2) - upravit na tuto funkci - v sym. pripade bude Kernel_Sa2 prazdna
 //#else
-					Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
+					Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.sc_size);
 //#endif
 
 					SparseMatrix Kernel_Sat;
@@ -1644,12 +1644,12 @@ void ClusterBase::CreateSa() {
 //				SparseMatrix GGt;
 //				GGt.MatMat(G0,'N',G0t);
 //				GGt.RemoveLower();
-//				GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, 1000000, configuration.SC_SIZE);
+//				GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, 1000000, configuration.sc_size);
 //				_tmpSparseMat.ConvertToCSR(1);
 //				// *** END - Get kernel from GGt - faster as GGt is very sparse matrix - works only for symmetric systems
 //			} else {
 //				// *** Get kernel from Salfa - slower as Salfa is dense and takes more resources to find kernel
-//				Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
+//				Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.sc_size);
 //				// *** END - Get kernel from Salfa
 //			}
 //
@@ -1679,7 +1679,7 @@ void ClusterBase::CreateSa() {
 
 			switch (regularization_type) { //(configuration.SAsolver) {
 
-				case 0: { //ESPRESO_SASOLVER::CPU_DENSE: {
+				case 0: { //FETI_SASOLVER::CPU_DENSE: {
 					ESINFO(GLOBAL_ERROR) << "For non-symmetric systems G0*G0t cannot be used for regularization of Salfa - use direct regularization of Salfa";
 
 					// TODO: Alex prozatim nevi jak spocist regularizacni matici pro nesym. system z GGt
@@ -1687,19 +1687,19 @@ void ClusterBase::CreateSa() {
 					//			SparseMatrix GGt;
 					//			GGt.MatMat(G0,'N',G0t);
 					//			GGt.RemoveLower();
-					//			GGt.get_kernels_from_nonsym_K(GGt, _tmpSparseMat, Kernel_Sa, Kernel_Sa2, tmp_double, tmp_int, -1, configuration.SC_SIZE);
+					//			GGt.get_kernels_from_nonsym_K(GGt, _tmpSparseMat, Kernel_Sa, Kernel_Sa2, tmp_double, tmp_int, -1, configuration.sc_size);
 
 					break;
 				}
 
-				case 1: { //ESPRESO_SASOLVER::CPU_SPARSE: {
+				case 1: { //FETI_SASOLVER::CPU_SPARSE: {
 					// *** Get kernel from Salfa - slower as Salfa is dense and takes more resources to find kernel
-					Salfa.get_kernels_from_nonsym_K(Salfa, _tmpSparseMat, Kernel_Sa, Kernel_Sa2, tmp_double, tmp_int, -1, configuration.SC_SIZE);
+					Salfa.get_kernels_from_nonsym_K(Salfa, _tmpSparseMat, Kernel_Sa, Kernel_Sa2, tmp_double, tmp_int, -1, configuration.sc_size);
 					// *** END - Get kernel from Salfa
 					break;
 				}
 
-				case 2: { //ESPRESO_SASOLVER::ACC_DENSE: {
+				case 2: { //FETI_SASOLVER::ACC_DENSE: {
 					// *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
 					ESINFO(GLOBAL_ERROR) << "This type of Salfa regularization for nonsymmetric systems is not implemented yet";
 
@@ -1715,7 +1715,7 @@ void ClusterBase::CreateSa() {
 ////					GGt_solver.Factorization ("G0G0t matrix");
 ////					GGt_solver.GetKernel(Kernel_Sa); // TODO: Kplus.GetKernels(Kernel_Sa, Kernel_Sa2) - upravit na tuto funkci - v sym. pripade bude Kernel_Sa2 prazdna
 ////#else
-//					GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
+//					GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.sc_size);
 ////#endif
 //
 //					SparseMatrix Kernel_Sat;
@@ -1727,7 +1727,7 @@ void ClusterBase::CreateSa() {
 					break;
 				}
 
-				case 3: {//ESPRESO_SASOLVER::ACC_DENSE: {
+				case 3: {//FETI_SASOLVER::ACC_DENSE: {
 					// *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
 					ESINFO(GLOBAL_ERROR) << "This type of Salfa regularization for nonsymmetric systems is not implemented yet";
 
@@ -1741,7 +1741,7 @@ void ClusterBase::CreateSa() {
 ////					GGt_solver.Factorization ("Salfa matrix");
 ////					GGt_solver.GetKernel(Kernel_Sa); // TODO: Kplus.GetKernels(Kernel_Sa, Kernel_Sa2) - upravit na tuto funkci - v sym. pripade bude Kernel_Sa2 prazdna
 ////#else
-//					Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
+//					Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.sc_size);
 ////#endif
 //
 //					SparseMatrix Kernel_Sat;
@@ -1904,7 +1904,7 @@ void ClusterBase::CreateSa() {
 	// *** END - Regularization of Sa from NULL PIVOTS
 
 
-	if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
+	if ( configuration.regularization == FETI_REGULARIZATION::ANALYTIC ) {
 
 		// *** Regularization of Salfa from FIX points
 
@@ -1949,7 +1949,7 @@ void ClusterBase::CreateSa() {
 	switch (configuration.SAsolver) {
 
 		// Default settings and fastest for CPU
-		case ESPRESO_SASOLVER::CPU_DENSE: {
+		case FETI_SASOLVER::CPU_DENSE: {
 			TimeEvent factd_Sa_time("Salfa factorization - dense ");
 			if (Measure::report(CLUSTER)) { factd_Sa_time.start(); }
 
@@ -1963,7 +1963,7 @@ void ClusterBase::CreateSa() {
 			break;
 		}
 
-		case ESPRESO_SASOLVER::CPU_SPARSE: {
+		case FETI_SASOLVER::CPU_SPARSE: {
 			TimeEvent fact_Sa_time("Salfa factorization ");
 			if (Measure::report(CLUSTER)) { fact_Sa_time.start(); }
 
@@ -1980,7 +1980,7 @@ void ClusterBase::CreateSa() {
 			break;
 		}
 
-		case ESPRESO_SASOLVER::ACC_DENSE: {
+		case FETI_SASOLVER::ACC_DENSE: {
 			TimeEvent factd_Sa_time("Salfa factorization - dense ");
 			if (Measure::report(CLUSTER)) {factd_Sa_time.start();}
 
@@ -2043,7 +2043,7 @@ void ClusterBase::Create_G_perCluster() {
 			B = domains[j].B1;
 
 			switch (configuration.regularization) {
-			case REGULARIZATION::FIX_POINTS:
+			case FETI_REGULARIZATION::ANALYTIC:
 				Rt = domains[j].Kplus_R;
 				Rt.ConvertDenseToCSR(1);
 				Rt.MatTranspose();
@@ -2055,7 +2055,7 @@ void ClusterBase::Create_G_perCluster() {
 				}
 
 				break;
-			case REGULARIZATION::NULL_PIVOTS:
+			case FETI_REGULARIZATION::ALGEBRAIC:
 				Rt = domains[j].Kplus_Rb;
 				Rt.ConvertDenseToCSR(1);
 				Rt.MatTranspose();
@@ -2355,13 +2355,13 @@ void ClusterBase::Create_G_perSubdomain (SparseMatrix &R_in, SparseMatrix &B_in,
 //				SparseMatrix B;
 //
 //				switch (configuration.regularization) {
-//				case REGULARIZATION::FIX_POINTS:
+//				case FETI_REGULARIZATION::ANALYTIC:
 //					Rt = domains[j].Kplus_R;
 //					Rt.ConvertDenseToCSR(1);
 //					Rt.MatTranspose();
 //					//domains[j].Kplus_R.MatTranspose(Rt);
 //					break;
-//				case REGULARIZATION::NULL_PIVOTS:
+//				case FETI_REGULARIZATION::ALGEBRAIC:
 //					Rt = domains[j].Kplus_Rb;
 //					Rt.ConvertDenseToCSR(1);
 //					Rt.MatTranspose();
@@ -2430,7 +2430,7 @@ void ClusterBase::Create_G_perSubdomain (SparseMatrix &R_in, SparseMatrix &B_in,
 //
 //			} else {
 //				Gcoo.cols = domains[j].B1.rows;
-//				if (configuration.regularization == REGULARIZATION::FIX_POINTS) {
+//				if (configuration.regularization == FETI_REGULARIZATION::ANALYTIC) {
 //					Gcoo.rows = domains[j].Kplus_R.rows;
 //				} else {
 //					Gcoo.rows = domains[j].Kplus_Rb.rows;
@@ -2507,13 +2507,13 @@ void ClusterBase::Create_G_perSubdomain (SparseMatrix &R_in, SparseMatrix &B_in,
 //			SparseMatrix B;
 //
 //			switch (configuration.regularization) {
-//			case REGULARIZATION::FIX_POINTS:
+//			case FETI_REGULARIZATION::ANALYTIC:
 //				Rt = domains[j].Kplus_R;
 //				Rt.ConvertDenseToCSR(1);
 //				Rt.MatTranspose();
 //				//domains[j].Kplus_R.MatTranspose(Rt);
 //				break;
-//			case REGULARIZATION::NULL_PIVOTS:
+//			case FETI_REGULARIZATION::ALGEBRAIC:
 //				Rt = domains[j].Kplus_Rb;
 //				Rt.ConvertDenseToCSR(1);
 //				Rt.MatTranspose();
@@ -2677,7 +2677,7 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 
 		if ( USE_HFETI == 1) {
 			for (size_t d = 0; d < domains.size(); d++) {
-				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
+				if ( configuration.regularization == FETI_REGULARIZATION::ANALYTIC ) {
 					domains[d].Kplus_R .DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
 				} else {
 					domains[d].Kplus_Rb.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
@@ -2685,7 +2685,7 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 			}
 		} else {
 			for (size_t d = 0; d < domains.size(); d++) {											// MFETI
-				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
+				if ( configuration.regularization == FETI_REGULARIZATION::ANALYTIC ) {
 					domains[d].Kplus_R. DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
 				} else {
 					domains[d].Kplus_Rb.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
@@ -2697,7 +2697,7 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 		// NON-SYMMETRIC SYSTEM
 		if ( USE_HFETI == 1) {
 			for (size_t d = 0; d < domains.size(); d++) {
-				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
+				if ( configuration.regularization == FETI_REGULARIZATION::ANALYTIC ) {
 					domains[d].Kplus_R2 .DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
 				} else {
 					domains[d].Kplus_Rb2.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
@@ -2705,7 +2705,7 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 			}
 		} else {
 			for (size_t d = 0; d < domains.size(); d++) {											// MFETI
-				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
+				if ( configuration.regularization == FETI_REGULARIZATION::ANALYTIC ) {
 					domains[d].Kplus_R2. DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
 				} else {
 					domains[d].Kplus_Rb2.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
@@ -2916,7 +2916,7 @@ void ClusterBase::CreateDirichletPrec(Instance *instance)
 		}
 
 		// ------------------------------------------------------------------------------------------------------------------
-		bool diagonalized_K_rr = configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET;
+		bool diagonalized_K_rr = configuration.preconditioner == FETI_PRECONDITIONER::SUPER_DIRICHLET;
 		//        PRECONDITIONER==NONE              - 0
 		//        PRECONDITIONER==LUMPED            - 1
 		//        PRECONDITIONER==WEIGHT_FUNCTION   - 2
@@ -2935,7 +2935,7 @@ void ClusterBase::CreateDirichletPrec(Instance *instance)
 			// if physics.K[d] does not contain inner DOF
 		} else {
 
-			if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET) {
+			if (configuration.preconditioner == FETI_PRECONDITIONER::DIRICHLET) {
 				SparseSolverCPU createSchur;
 //          createSchur.msglvl=1;
 				eslocal sc_size = perm_vec.size();
@@ -3058,7 +3058,7 @@ void ClusterBase::CreateDirichletPrec(Instance *instance)
 //		}
 //
 //		// ------------------------------------------------------------------------------------------------------------------
-//		bool diagonalized_K_rr = configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET;
+//		bool diagonalized_K_rr = configuration.preconditioner == FETI_PRECONDITIONER::SUPER_DIRICHLET;
 //		//        PRECONDITIONER==NONE              - 0
 //		//        PRECONDITIONER==LUMPED            - 1
 //		//        PRECONDITIONER==WEIGHT_FUNCTION   - 2
@@ -3077,7 +3077,7 @@ void ClusterBase::CreateDirichletPrec(Instance *instance)
 //			// if physics.K[d] does not contain inner DOF
 //		} else {
 //
-//			if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET) {
+//			if (configuration.preconditioner == FETI_PRECONDITIONER::DIRICHLET) {
 //				SparseSolverCPU createSchur;
 ////          createSchur.msglvl=1;
 //				eslocal sc_size = perm_vec.size();
@@ -3139,7 +3139,7 @@ void ClusterBase::CreateDirichletPrec(Instance *instance)
 //		if (environment->print_matrices) {
 //			std::ofstream osS(Logging::prepareFile(d, "S"));
 //			SparseMatrix SC = domains[d].Prec;
-//			if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET) {
+//			if (configuration.preconditioner == FETI_PRECONDITIONER::DIRICHLET) {
 //				SC.ConvertDenseToCSR(1);
 //			}
 //			osS << SC;

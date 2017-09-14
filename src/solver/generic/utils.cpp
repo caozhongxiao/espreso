@@ -1,6 +1,6 @@
 #include "../generic/utils.h"
 
-#include "../../configuration/environment.h"
+#include "../../config/ecf/environment.h"
 #include "../../basis/utilities/utils.h"
 
 using std::endl; 

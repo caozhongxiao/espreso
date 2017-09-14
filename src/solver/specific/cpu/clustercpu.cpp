@@ -4,6 +4,7 @@
 #include "clustercpu.h"
 
 #include "../../../assembler/instance.h"
+#include "../../../basis/logging/logging.h"
 
 using namespace espreso;
 
@@ -99,16 +100,16 @@ void ClusterCPU::SetupKsolvers ( ) {
 //#endif
 //        // Import of Regularized matrix K into Kplus (Sparse Solver)
 //    	switch (configuration.Ksolver) {
-//		case ESPRESO_KSOLVER::DIRECT_DP:
+//		case FETI_KSOLVER::DIRECT_DP:
 //			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
 //			break;
-//		case ESPRESO_KSOLVER::ITERATIVE:
+//		case FETI_KSOLVER::ITERATIVE:
 //			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
 //			break;
-//		case ESPRESO_KSOLVER::DIRECT_SP:
+//		case FETI_KSOLVER::DIRECT_SP:
 //			domains[d].Kplus.ImportMatrix_wo_Copy_fl(domains[d].K);
 //			break;
-//		case ESPRESO_KSOLVER::DIRECT_MP:
+//		case FETI_KSOLVER::DIRECT_MP:
 //			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
 //			break;
 ////		case 4:
@@ -124,7 +125,7 @@ void ClusterCPU::SetupKsolvers ( ) {
 //            std::stringstream ss;
 //            ss << "init -> rank: " << environment->MPIrank << ", subdomain: " << d;
 //            domains[d].Kplus.keep_factors = true;
-//            if (configuration.Ksolver != ESPRESO_KSOLVER::ITERATIVE) {
+//            if (configuration.Ksolver != FETI_KSOLVER::ITERATIVE) {
 //                domains[d].Kplus.Factorization (ss.str());
 //            }
 //        } else {
@@ -239,7 +240,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 	}
 
 	// ------------------------------------------------------------------------------------------------------------------
-	bool diagonalized_K_rr = configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET;
+	bool diagonalized_K_rr = configuration.preconditioner == FETI_PRECONDITIONER::SUPER_DIRICHLET;
 	//        PRECONDITIONER==NONE              - 0
 	//        PRECONDITIONER==LUMPED            - 1
 	//        PRECONDITIONER==WEIGHT_FUNCTION   - 2
@@ -258,7 +259,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 		// if physics.K[d] does not contain inner DOF
 	} else {
 
-		if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET) {
+		if (configuration.preconditioner == FETI_PRECONDITIONER::DIRICHLET) {
 			SparseSolverMKL createSchur;
 //          createSchur.msglvl=1;
 			eslocal sc_size = perm_vec.size();
@@ -320,7 +321,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 	if (environment->print_matrices) {
 		std::ofstream osS(Logging::prepareFile(d, "S"));
 		SparseMatrix SC = domains[d].Prec;
-		if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET) {
+		if (configuration.preconditioner == FETI_PRECONDITIONER::DIRICHLET) {
 			SC.ConvertDenseToCSR(1);
 		}
 		osS << SC;

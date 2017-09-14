@@ -4,8 +4,9 @@
 #include "../basis/logging/logging.h"
 #include "../basis/utilities/utils.h"
 #include "../basis/utilities/communication.h"
+#include "../basis/utilities/parser.h"
 
-#include "../configuration/environment.h"
+#include "../config/ecf/environment.h"
 
 #include "../mesh/structures/coordinates.h"
 #include "../mesh/structures/mesh.h"

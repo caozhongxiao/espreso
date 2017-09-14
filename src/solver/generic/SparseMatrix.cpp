@@ -3662,7 +3662,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
       SparseMatrix &Kplus_R,double &norm_KR_d_pow_2_approx, eslocal &defect_d,eslocal d_sub, size_t scSize){
 
 	ESTEST(SIMPLE) << "Get kernel needs upper triangular matrix" << testUpperTriangle(K);
-	SC_SIZE = scSize;
+	sc_size = scSize;
 //
 // Routine calculates kernel Kplus_R of K satisfied euqality K * Kplus_R = O,
 // where O is zero matrix, and it makes the matrix K non-singular (K_reg)
@@ -3689,14 +3689,14 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 
 //    3) use_null_pivots_or_s_set
   // NtN_Mat from null pivots or fixing DOFs
-//BOOL USE_NULL_PIVOTS_OR_S_SET                         = TRUE;
+//BOOL USE_ALGEBRAIC_OR_S_SET                         = TRUE;
   bool use_null_pivots_or_s_set                         = true;
 
 //    4) diagonalRegularization
 //  regularization only on diagonal elements (big advantage: patern of K and K_regular is the same !!!)
 //  size of set 's' = defect(K)
 //  It's is active, only if and only if 'use_null_pivots_or_s_set = true'
-//BOOL DIAGONALREGULARIZATION                           = TRUE;
+//BOOL DIAGONALFETI_REGULARIZATION                           = TRUE;
   bool diagonalRegularization                           = true;
 
 //    5) get_n_first_and_n_last_eigenvals_from_dense_K
@@ -3746,7 +3746,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 //    4) sc_size
 // specification of size of Schur complement used for detection of zero eigenvalues.
 //eslocal  sc_size >= expected defect 'd' (e.g. in elasticity d=6).
-//ESLOCAL SC_SIZE                                       = 50;
+//ESLOCAL sc_size                                       = 50;
   eslocal sc_size                                       = 50;
 
 //    5) twenty
@@ -3777,8 +3777,8 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 #if VERBOSE_KERNEL < 4
     diagonalScaling                               = DIAGONALSCALING;
     permutVectorActive                            = PERMUTVECTORACTIVE;
-    use_null_pivots_or_s_set                      = USE_NULL_PIVOTS_OR_S_SET;
-    diagonalRegularization                        = DIAGONALREGULARIZATION;
+    use_null_pivots_or_s_set                      = USE_ALGEBRAIC_OR_S_SET;
+    diagonalRegularization                        = DIAGONALFETI_REGULARIZATION;
     get_n_first_and_n_last_eigenvals_from_dense_K = GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K;
     plot_n_first_n_last_eigenvalues               = PLOT_N_FIRST_N_LAST_EIGENVALUES;
     fixing_nodes_or_dof                           = FIXING_NODES_OR_DOF;
@@ -3786,7 +3786,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
     cond_numb_for_singular_matrix                 = COND_NUMB_FOR_SINGULAR_MATRIX;
     check_nonsing                                 = CHECK_NONSING;
     max_size_of_dense_matrix_to_get_eigs          = MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS;
-    sc_size                                       = SC_SIZE;
+    sc_size                                       = sc_size;
     twenty                                        = TWENTY;
     jump_in_eigenvalues_alerting_singularity      = JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY;
 #endif
@@ -4619,7 +4619,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       SparseMatrix &Kplus_R,SparseMatrix &Kplus_Rl,
       double &norm_KR_d_pow_2_approx, eslocal &defect_d,eslocal d_sub, size_t scSize){
 
-	SC_SIZE = scSize;
+	sc_size = scSize;
 //
 // Routine calculates kernel Kplus_R of K satisfied euqality K * Kplus_R = O,
 // where O is zero matrix, and it makes the matrix K non-singular (K_reg)
@@ -4647,14 +4647,14 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 //    3) use_null_pivots_or_s_set
   // NtN_Mat from null pivots or fixing DOFs
-//BOOL USE_NULL_PIVOTS_OR_S_SET                         = TRUE;
+//BOOL USE_ALGEBRAIC_OR_S_SET                         = TRUE;
   bool use_null_pivots_or_s_set                         = false;
 
 //    4) diagonalRegularization
 //  regularization only on diagonal elements (big advantage: patern of K and K_regular is the same !!!)
 //  size of set 's' = defect(K)
 //  It's is active, only if and only if 'use_null_pivots_or_s_set = true'
-//BOOL DIAGONALREGULARIZATION                           = TRUE;
+//BOOL DIAGONALFETI_REGULARIZATION                           = TRUE;
   bool diagonalRegularization                           = false;
 
 //    5) get_n_first_and_n_last_eigenvals_from_dense_K
@@ -4706,7 +4706,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //    4) sc_size
 // specification of size of Schur complement used for detection of zero eigenvalues.
 //eslocal  sc_size >= expected defect 'd' (e.g. in elasticity d=6).
-//ESLOCAL SC_SIZE                                       = 50;
+//ESLOCAL sc_size                                       = 50;
   eslocal sc_size                                       = 50;
 
 //    5) twenty
@@ -4744,15 +4744,15 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 #if VERBOSE_KERNEL < 4
     diagonalScaling                               = DIAGONALSCALING;
     permutVectorActive                            = PERMUTVECTORACTIVE;
-    use_null_pivots_or_s_set                      = USE_NULL_PIVOTS_OR_S_SET;
-    diagonalRegularization                        = DIAGONALREGULARIZATION;
+    use_null_pivots_or_s_set                      = USE_ALGEBRAIC_OR_S_SET;
+    diagonalRegularization                        = DIAGONALFETI_REGULARIZATION;
     get_n_first_and_n_last_eigenvals_from_dense_K = GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K;
     fixing_nodes_or_dof                           = FIXING_NODES_OR_DOF;
     dofPerNode                                    = DOFPERNODE;
     cond_numb_for_singular_matrix                 = COND_NUMB_FOR_SINGULAR_MATRIX;
     check_nonsing                                 = CHECK_NONSING;
     max_size_of_dense_matrix_to_get_eigs          = MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS;
-    sc_size                                       = SC_SIZE;
+    sc_size                                       = sc_size;
     twenty                                        = TWENTY;
     jump_in_eigenvalues_alerting_singularity      = JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY;
 #endif

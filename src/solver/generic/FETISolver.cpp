@@ -13,13 +13,13 @@
 
 using namespace espreso;
 
-FETISolver::FETISolver(Instance *instance, const ESPRESOSolver &configuration)
+FETISolver::FETISolver(Instance *instance, const FETISolverConfiguration &configuration)
 : instance(instance),
-  configuration(configuration),
   timeEvalMain("ESPRESO Solver Overal Timing"),
   cluster(NULL),
   solver(NULL)
 {
+	this->configuration = configuration;
 }
 
 FETISolver::~FETISolver() {
@@ -45,8 +45,8 @@ void FETISolver::init()
 		delete solver;
 	}
 
-	//instance->computeKernels(configuration.regularization, configuration.SC_SIZE);
-	if (configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
+	//instance->computeKernels(configuration.regularization, configuration.sc_size);
+	if (configuration.method == FETI_METHOD::HYBRID_FETI) {
 		instance->assembleB0(configuration.B0_type, instance->N1);
 	}
 	solver  = new IterSolver	(configuration);
@@ -66,7 +66,7 @@ void FETISolver::update(Matrices matrices)
 		delete cluster;
 		delete solver;
 
-		//instance->computeKernels(configuration.regularization, configuration.SC_SIZE);
+		//instance->computeKernels(configuration.regularization, configuration.sc_size);
 		cluster = new SuperCluster(configuration, instance);
 		solver  = new IterSolver(configuration);
 
@@ -90,7 +90,7 @@ void FETISolver::update(Matrices matrices)
 
 		if (matrices & Matrices::B0) {
 			// HFETI preprocessing
-			if (configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
+			if (configuration.method == FETI_METHOD::HYBRID_FETI) {
 				instance->assembleB0(configuration.B0_type, instance->N1);
 			}
 			setup_HTFETI();
@@ -120,8 +120,8 @@ void FETISolver::solve()
 {
 	if (
 			std::any_of(instance->K.begin(), instance->K.end(), [] (const SparseMatrix &K) { return K.mtype == MatrixType::REAL_UNSYMMETRIC; }) &&
-			configuration.solver != ESPRESO_ITERATIVE_SOLVER::GMRES &&
-			configuration.solver != ESPRESO_ITERATIVE_SOLVER::BICGSTAB) {
+			configuration.iterative_solver != FETI_ITERATIVE_SOLVER::GMRES &&
+			configuration.iterative_solver != FETI_ITERATIVE_SOLVER::BICGSTAB) {
 
 		ESINFO(ERROR) << "Invalid Linear Solver configuration: Only GMRES and BICGSTAB can solve unsymmetric system.";
 	}
@@ -155,7 +155,7 @@ void FETISolver::setup_LocalSchurComplement() {
 		 TimeEvent KSCMem(string("Solver - SC asm. w PARDISO-SC mem [MB]")); KSCMem.startWithoutBarrier(GetProcessMemory_u());
 		 TimeEvent timeSolSC2(string("Solver - Schur Complement asm. - using PARDISO-SC"));timeSolSC2.start();
 		bool USE_FLOAT = false;
-		if (configuration.schur_precision == FLOAT_PRECISION::SINGLE) {
+		if (configuration.schur_precision == FETI_FLOAT_PRECISION::SINGLE) {
 			USE_FLOAT = true;
 		}
 		cluster->Create_SC_perDomain(USE_FLOAT);
@@ -622,9 +622,9 @@ void FETISolver::setup_InitClusterAndSolver( )
 
 
 	// *** Iter Solver Set-up ***************************************************************************************************************************
-	solver->CG_max_iter 		= configuration.iterations;
+	solver->CG_max_iter 		= configuration.max_iterations;
 	solver->USE_GGtINV  		= 1;
-	solver->epsilon 			= configuration.epsilon;
+	solver->precision 			= configuration.precision;
 	solver->USE_PREC 			= configuration.preconditioner;
 
 	solver->USE_KINV 			= configuration.use_schur_complement ? 1 : 0;
@@ -632,10 +632,10 @@ void FETISolver::setup_InitClusterAndSolver( )
 	solver->SOLVER_NUM_THREADS  = environment->SOLVER_NUM_THREADS;
 
 	switch (configuration.method) {
-	case ESPRESO_METHOD::TOTAL_FETI:
+	case FETI_METHOD::TOTAL_FETI:
 		solver->USE_HFETI = false;
 		break;
-	case ESPRESO_METHOD::HYBRID_FETI:
+	case FETI_METHOD::HYBRID_FETI:
 		solver->USE_HFETI = true;
 		break;
 	default:
@@ -674,7 +674,7 @@ void FETISolver::init(const std::vector<int> &neighbours)
 	// setup_SetDirichletBoundaryConditions();
 
 	// *** if TFETI is used or if HTFETI and analytical kernel are used we can compute GGt here - between solution in terms of peak memory
-	if (  !(cluster->USE_HFETI == 1 && configuration.regularization == REGULARIZATION::NULL_PIVOTS)  ) {
+	if (  !(cluster->USE_HFETI == 1 && configuration.regularization == FETI_REGULARIZATION::ALGEBRAIC)  ) {
 		setup_CreateG_GGt_CompressG();
 	}
 
@@ -691,13 +691,13 @@ void FETISolver::init(const std::vector<int> &neighbours)
 	setup_HTFETI();
 
 	// *** For algebraic kernels, GGt needs to be computed after HTFETI preprocessing
-	if (cluster->USE_HFETI == 1 && configuration.regularization == REGULARIZATION::NULL_PIVOTS) {
+	if (cluster->USE_HFETI == 1 && configuration.regularization == FETI_REGULARIZATION::ALGEBRAIC) {
 		setup_CreateG_GGt_CompressG();
 	}
 
 	// Setup Conj Projector
 
-	if ( configuration.conj_projector == CONJ_PROJECTOR::GENEO ) {
+	if ( configuration.conjugate_projector == FETI_CONJ_PROJECTOR::GENEO ) {
 		// solver->CreateConjProjector(*cluster);
 	}
 
@@ -750,7 +750,7 @@ void FETISolver::finalize() {
 	solver->timeEvalAppa.printStatsMPI();
 	solver->timeEvalProj.printStatsMPI();
 
-	if ( solver->USE_PREC != ESPRESO_PRECONDITIONER::NONE ) solver->timeEvalPrec.printStatsMPI();
+	if ( solver->USE_PREC != FETI_PRECONDITIONER::NONE ) solver->timeEvalPrec.printStatsMPI();
 
 	//TODO: Fix timing:  if ( cluster->USE_HFETI == 1 ) cluster->ShowTiming();
 

@@ -2,8 +2,8 @@
 #include <iostream>
 
 #include "../../basis/logging/logging.h"
-#include "../../configuration/output.h"
-#include "../../configuration/environment.h"
+#include "../../config/ecf/output.h"
+#include "../../config/ecf/environment.h"
 #include "../basis/utilities/utils.h"
 
 #include "vtklegacy.h"
@@ -24,13 +24,13 @@ void AsyncStore::init(const Mesh *mesh)
 	callInit(configuration());
 
 	switch (configuration().format) {
-	case espreso::OUTPUT_FORMAT::VTK_LEGACY:
+	case OutputConfiguration::FORMAT::VTK_LEGACY:
 		_headerStore = new VTKLegacy(configuration(), 0L);
 		break;
-	case espreso::OUTPUT_FORMAT::VTK_XML_ASCII:
+	case OutputConfiguration::FORMAT::VTK_XML_ASCII:
 		_headerStore = new VTKXMLASCII(configuration(), 0L);
 		break;
-	case espreso::OUTPUT_FORMAT::VTK_XML_BINARY:
+	case OutputConfiguration::FORMAT::VTK_XML_BINARY:
 		_headerStore = new VTKXMLBinary(configuration(), 0L);
 		break;
 	default:
@@ -41,7 +41,7 @@ void AsyncStore::init(const Mesh *mesh)
 std::vector<std::string> AsyncStore::store(const std::string &name, const Step &step, const MeshInfo *meshInfo)
 {
 	std::string root;
-	if (_configuration.subsolution) {
+	if (_configuration.results_store_frequency == OutputConfiguration::STORE_FREQUENCY::DEBUG) {
 		root = Esutils::createDirectory({ Logging::outputRoot(), "PRE_POST_DATA", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), "iteration" + std::to_string(step.iteration)});
 	} else {
 		root = Esutils::createDirectory({ Logging::outputRoot(), "PRE_POST_DATA", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep) });
@@ -50,7 +50,7 @@ std::vector<std::string> AsyncStore::store(const std::string &name, const Step &
 
 	if (meshInfo->distributed()) {
 		std::string prefix;
-		if (_configuration.subsolution) {
+		if (_configuration.results_store_frequency == OutputConfiguration::STORE_FREQUENCY::DEBUG) {
 			prefix = Esutils::createDirectory({ Logging::outputRoot(), "PRE_POST_DATA", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), "iteration" + std::to_string(step.iteration), std::to_string(environment->MPIrank) });
 		} else {
 			prefix = Esutils::createDirectory({ Logging::outputRoot(), "PRE_POST_DATA", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), std::to_string(environment->MPIrank) });

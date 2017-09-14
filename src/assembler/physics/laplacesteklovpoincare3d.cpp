@@ -1,6 +1,6 @@
 
 #include "laplacesteklovpoincare3d.h"
-#include "../../configuration/physics/advectiondiffusion3d.h"
+#include "../../config/ecf/physics/heattransfer.h"
 
 #include "../../basis/logging/logging.h"
 #include "../../basis/matrices/sparseVVPMatrix.h"
@@ -25,21 +25,23 @@ using namespace espreso;
 
 size_t LaplaceSteklovPoincare3D::BEMOffset = -1;
 
-LaplaceSteklovPoincare3D::LaplaceSteklovPoincare3D(Mesh *mesh, Instance *instance, const AdvectionDiffusion3DConfiguration &configuration)
-: Physics("LAPLACE STEKLOV POINCARE 3D", mesh, instance), AdvectionDiffusion3D(mesh, instance, configuration)
+LaplaceSteklovPoincare3D::LaplaceSteklovPoincare3D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
+: Physics("LAPLACE STEKLOV POINCARE 3D", mesh, instance), HeatTransfer3D(mesh, instance, configuration, propertiesConfiguration)
 {
 #ifndef BEM4I
 	ESINFO(GLOBAL_ERROR) << "BEM4I is not linked!. Copy BEM4I library to tools/bem4i and re-configure ESPRESO.";
 #endif
 
-	if (configuration.convection.size() || configuration.diffuse_radiation.size()) {
-		ESINFO(GLOBAL_ERROR) << "BEM discretization not supports CONVECTION or RADIATION boundary condition.";
+	for (size_t loadStep = 0; loadStep < configuration.load_steps; loadStep++) {
+		if (configuration.load_steps_settings.at(loadStep + 1).convection.size() || configuration.load_steps_settings.at(loadStep + 1).diffuse_radiation.size()) {
+			ESINFO(GLOBAL_ERROR) << "BEM discretization not supports CONVECTION or RADIATION boundary condition.";
+		}
 	}
 }
 
 void LaplaceSteklovPoincare3D::prepare()
 {
-	AdvectionDiffusion3D::prepare();
+	HeatTransfer3D::prepare();
 	extractBoundaryNodes();
 }
 

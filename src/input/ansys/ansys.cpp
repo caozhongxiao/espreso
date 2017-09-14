@@ -5,11 +5,11 @@
 #include "../../mesh/structures/coordinates.h"
 
 #include "../../basis/logging/logging.h"
-#include "../../configuration/input/input.h"
+#include "../../config/ecf/input/input.h"
 
 using namespace espreso::input;
 
-void AnsysWorkbench::load(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size)
+void AnsysWorkbench::load(const InputConfiguration &configuration, Mesh &mesh, int rank, int size)
 {
 	ESINFO(OVERVIEW) << "Load mesh from Ansys/Workbench format from file " << configuration.path;
 	AnsysWorkbench workbench(configuration, mesh, rank, size);
@@ -67,12 +67,19 @@ void AnsysWorkbench::elements(std::vector<size_t> &bodies, std::vector<Element*>
 	}
 }
 
-void AnsysWorkbench::materials(std::vector<Material*> &materials)
+void AnsysWorkbench::materials(std::vector<MaterialConfiguration*> &materials)
 {
+	auto evaluate = [&] () {
+		for (size_t i = 0; i < materials.size(); i++) {
+			mesh.evaluateMaterial(*materials[i]);
+		}
+	};
+
 	while (true) {
 		switch (_parser.process()) {
 		case WorkbenchCommands::WB:
 			if (_parser.workbench("mat", "end")) {
+				evaluate();
 				return;
 			}
 			break;
@@ -85,6 +92,7 @@ void AnsysWorkbench::materials(std::vector<Material*> &materials)
 			break;
 		}
 		case WorkbenchCommands::END:
+			evaluate();
 			return;
 		default:
 			break;

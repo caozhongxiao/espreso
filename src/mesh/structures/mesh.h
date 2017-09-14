@@ -10,12 +10,10 @@
 
 namespace espreso {
 
-struct Configuration;
-
+struct MaterialConfiguration;
 struct G2L;
 class Coordinates;
 class Evaluator;
-class Material;
 class Region;
 class Element;
 enum class Property;
@@ -55,13 +53,9 @@ public:
 	void computeCornersOnEdges(size_t number, bool onVertices, bool onEdges);
 	void computeCornersOnFaces(size_t number, bool onVertices, bool onEdges, bool onFaces);
 
-	void loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep = 0);
-	void loadNodeProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep = 0);
-	void loadFaceProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep = 0);
-
-	void loadProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
-	void loadNodeProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
-	void loadFaceProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
+	void loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep);
+	void loadNodeProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep);
+	void loadFaceProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep);
 
 	void removeDuplicateRegions();
 	void fillDomainsSettings();
@@ -72,21 +66,8 @@ public:
 	bool isPropertyTemperatureDependent(Property property, size_t loadStep) const;
 	bool isAnyPropertyTemperatureDependent(const std::vector<Property> &properties, size_t loadStep) const;
 
-	template<typename TMaterial>
-	void loadMaterials(const std::map<std::string, TMaterial*> &materials, const std::map<std::string, std::string> &sets)
-	{
-		size_t index = 0;
-		for (auto it = sets.begin(); it != sets.end(); ++it, index++) {
-			if (materials.find(it->second) == materials.end()) {
-				materialNotFound(it->second);
-			} else {
-				loadMaterial(this->region(it->first), index, it->second, *materials.find(it->second)->second);
-			}
-		}
-		checkMaterials();
-	}
-	void loadMaterial(Region* region, size_t index, const std::string &name, const Configuration &configuration);
-	void checkMaterials();
+	void loadMaterials(const std::map<std::string, MaterialConfiguration> &materials, const std::map<std::string, std::string> &sets);
+	void evaluateMaterial(MaterialConfiguration &material);
 
 	const Coordinates& coordinates() const { return *_coordinates; }
 	const std::vector<Element*>& elements() const { return _elements; };
@@ -116,7 +97,7 @@ public:
 	const std::vector<int>& neighbours() const { return _neighbours; }
 	const std::vector<Region*>& regions() const { return _regions; }
 	const std::vector<Region*>& monitoredRegions() const { return _monitoredRegions; }
-	const std::vector<Material*>& materials() const { return _materials; }
+	const std::vector<MaterialConfiguration*>& materials() const { return _materials; }
 	const std::vector<Evaluator*>& evaluators() const { return _evaluators; }
 
 	std::vector<size_t> assignVariousDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets);
@@ -169,7 +150,6 @@ protected:
 	void mapEdgesToDomains();
 	void mapNodesToDomains();
 
-	void materialNotFound(const std::string &name);
 	void loadProperty(
 			size_t loadStep,
 			const std::map<std::string, std::string> &regions,
@@ -222,7 +202,7 @@ protected:
 	std::vector<int> _neighbours;
 
 	/** @brief list of materials in the mesh*/
-	std::vector<Material*> _materials;
+	std::vector<MaterialConfiguration*> _materials;
 
 	/** @brief list of mesh regions*/
 	std::vector<Region*> _regions;
@@ -266,6 +246,7 @@ class APIMesh: public Mesh
 	friend class input::API;
 public:
 	APIMesh(eslocal *l2g, size_t size);
+	~APIMesh();
 
 	void partitiate(size_t parts);
 

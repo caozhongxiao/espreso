@@ -52,14 +52,14 @@ GENERATOR {
 
 SHALLOW_WATER_2D {
 
-  SOLVER_LIBRARY   ESPRESO;
+  SOLVER FETI;
 
-  ESPRESO {
+  FETI {
 
     METHOD           TOTAL_FETI;
-    SOLVER                  PCG;
+    ITERATIVE_SOLVER PCG;
     PRECONDITIONER    DIRICHLET;
-    REGULARIZATION  NULL_PIVOTS;
+    REGULARIZATION  ALGEBRAIC;
     B0_TYPE             CORNERS;
   }
 
@@ -108,7 +108,7 @@ SHALLOW_WATER_2D {
     1 {
       MODEL ISOTROPIC;
 
-      DENSITY 1;
+      DENS 1;
       KXX  1e-5;
       KXY  1e-5;
       Cp      1;

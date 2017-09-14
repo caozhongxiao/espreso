@@ -14,7 +14,7 @@ enum Matrices: int;
 class LoadStepSolver {
 
 	friend class LinearTimeStep;
-	friend class NewtonRhapson;
+	friend class NewtonRaphson;
 
 public:
 	LoadStepSolver(const std::string &description, TimeStepSolver &timeStepSolver, double duration);

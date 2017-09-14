@@ -2,7 +2,7 @@
 
 namespace espreso {
 
-    SparseMatrixPack::SparseMatrixPack(const ESPRESOSolver &configuration, bool USE_FLOAT)
+    SparseMatrixPack::SparseMatrixPack(const FETISolverConfiguration &configuration, bool USE_FLOAT)
         : configuration(configuration) {
 
             this->device = 0;
@@ -42,7 +42,7 @@ namespace espreso {
         }
 
     SparseMatrixPack::SparseMatrixPack(
-            const ESPRESOSolver &configuration,
+            const FETISolverConfiguration &configuration,
             long maxNMatrices,
             int device
             ): configuration(configuration) {

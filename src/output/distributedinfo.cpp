@@ -2,7 +2,7 @@
 #include "distributedinfo.h"
 
 #include "../basis/utilities/utils.h"
-#include "../configuration/environment.h"
+#include "../config/ecf/environment.h"
 
 #include "../basis/point/point.h"
 #include "../mesh/elements/element.h"
@@ -350,7 +350,7 @@ void DistributedInfo::addSettings(const Step &step)
 			for (auto p = pGroup.begin(); p != pGroup.end(); ++p) {
 				value = 0;
 				for (size_t n = 0; n < region->elements()[e]->nodes(); n++) {
-					value += region->elements()[e]->sumProperty(*p, n, step.step, step.currentTime, 0, 0);
+					value += region->elements()[e]->sumProperty(*p, step.step, _mesh->coordinates()[region->elements()[e]->node(n)], step.currentTime, 0, 0);
 				}
 				value /= region->elements()[e]->nodes();
 
@@ -384,8 +384,14 @@ void DistributedInfo::addProperty(const Step &step, ElementType eType, Property 
 			#pragma omp parallel for
 			for (size_t d = 0; d < _mesh->parts(); d++) {
 				for (size_t i = 0; i < _cElements[r][d].size(); i++) {
+
+					Point center;
+					for (size_t n = 0; n < _mesh->elements()[_cElements[r][d][i]]->nodes(); n++) {
+						center += _mesh->coordinates()[_mesh->elements()[_cElements[r][d][i]]->node(n)];
+					}
+					center /= _mesh->elements()[_cElements[r][d][i]]->nodes();
 					for (size_t p = 0; p < pGroup.size(); p++) {
-						(*rData)[pGroup.size() * (i + _cEOffset[r][d]) + p] = _mesh->elements()[_cElements[r][d][i]]->sumProperty(pGroup[p], 0, step.step, step.currentTime, 0, 0);
+						(*rData)[pGroup.size() * (i + _cEOffset[r][d]) + p] = _mesh->elements()[_cElements[r][d][i]]->sumProperty(pGroup[p], step.step, center, step.currentTime, 0, 0);
 					}
 				}
 			}
@@ -401,7 +407,7 @@ void DistributedInfo::addProperty(const Step &step, ElementType eType, Property 
 			for (size_t d = 0; d < _mesh->parts(); d++) {
 				for (size_t i = 0; i < _cIndices[r][d].size(); i++) {
 					for (size_t p = 0; p < pGroup.size(); p++) {
-						(*rData)[pGroup.size() * (i + _cIOffset[r][d]) + p] = _mesh->nodes()[_cIndices[r][d][i]]->sumProperty(pGroup[p], 0, step.step, step.currentTime, 0, 0);
+						(*rData)[pGroup.size() * (i + _cIOffset[r][d]) + p] = _mesh->nodes()[_cIndices[r][d][i]]->sumProperty(pGroup[p], step.step, _mesh->coordinates()[_mesh->nodes()[_cIndices[r][d][i]]->node(0)], step.currentTime, 0, 0);
 					}
 				}
 			}

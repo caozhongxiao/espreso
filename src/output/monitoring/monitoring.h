@@ -18,6 +18,8 @@ struct Monitor {
 	Region* region;
 	std::vector<Property> properties;
 	StatisticalData statistics;
+
+	Monitor();
 };
 
 class Monitoring: public Store {

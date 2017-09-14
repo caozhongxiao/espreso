@@ -39,7 +39,7 @@ public:
 
 	// *** Variables *************
 
-	ESPRESOSolver configuration;
+	FETISolverConfiguration configuration;
 
 	// MPI variables
 	int  mpi_rank;
@@ -68,14 +68,14 @@ public:
 	eslocal  USE_GGtINV;
 	eslocal  USE_HFETI;
 
-	ESPRESO_PRECONDITIONER  USE_PREC;
+	FETI_PRECONDITIONER  USE_PREC;
 
 	eslocal  CG_max_iter;
 
 	eslocal PAR_NUM_THREADS;
 	eslocal SOLVER_NUM_THREADS;
 
-	double epsilon; // stop condition
+	double precision; // stop condition
 
 
 	// Timing objects
@@ -137,7 +137,7 @@ public:
 	// *** Members ***************
 
 	//Constructor
-	IterSolverBase(const ESPRESOSolver &configuration);
+	IterSolverBase(const FETISolverConfiguration &configuration);
 
 	//Destructor
 	virtual ~IterSolverBase() {};

@@ -3,7 +3,7 @@ INT_WIDTH = 32 # Dissection does not support 64b int
 
 SRC      = $(ROOT)/tools/dissection/src
 INCLUDES = $(ROOT)/src/include
-LIBS     = $(ROOT)/libs
+LIBS     = $(ROOT)/lib
 
 CXX     = icpc
 

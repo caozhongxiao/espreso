@@ -5,7 +5,7 @@
 #include "../elements/element.h"
 #include "../structures/coordinates.h"
 #include "../../basis/matrices/denseMatrix.h"
-#include "../../configuration/environment.h"
+#include "../../config/ecf/environment.h"
 
 using namespace espreso;
 

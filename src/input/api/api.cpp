@@ -17,15 +17,15 @@
 
 #include "../../basis/logging/logging.hpp"
 #include "../../basis/utilities/utils.h"
-#include "../../configuration/environment.h"
-#include "../../configuration/input/input.h"
+#include "../../config/ecf/environment.h"
+#include "../../config/ecf/input/input.h"
 
 using namespace espreso::input;
 
 void API::load(
-		const ESPRESOInput &configuration,
 		APIMesh &mesh,
 		eslocal indexBase,
+		size_t domains,
 		const std::vector<eslocal> &eType,
 		std::vector<std::vector<eslocal> > &eNodes,
 		std::vector<std::vector<eslocal> > &eDOFs,
@@ -37,7 +37,7 @@ void API::load(
 		size_t size, const eslocal *l2g)
 {
 	ESINFO(OVERVIEW) << "Set mesh through API";
-	API api(configuration, mesh, indexBase);
+	API api(mesh, indexBase, domains);
 
 	api.points(eNodes, size);
 	api.elements(eType, eNodes, eDOFs, eMatrices);
@@ -101,7 +101,7 @@ void API::elements(const std::vector<eslocal> &eType, std::vector<std::vector<es
 	_mesh.fillParentElementsToDOFs(eDOFs);
 
 	ESINFO(OVERVIEW) << "Number of loaded elements: " << Info::sumValue(_mesh._elements.size());
-	_mesh.partitiate(_configuration.domains);
+	_mesh.partitiate(_domains);
 
 	auto intervalStats = [] (const std::vector<eslocal> &data) {
 		std::vector<size_t> sizes(data.size() - 1);
@@ -117,7 +117,7 @@ void API::elements(const std::vector<eslocal> &eType, std::vector<std::vector<es
 
 void API::dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dirichletValues)
 {
-	_mesh._evaluators.push_back(new ArrayEvaluator("dirichletAPI", dirichletSize, dirichletIndices, dirichletValues, _offset, Property::UNKNOWN));
+	_mesh._evaluators.push_back(new ArrayEvaluator(dirichletSize, dirichletIndices, dirichletValues, _offset));
 	_mesh._regions.push_back(new Region(ElementType::NODES));
 
 	_mesh._regions.back()->name = "DIRICHLET";
@@ -224,7 +224,7 @@ void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const esl
 			for (size_t c = 0; c < _mesh._DOFs[dirichletDOFs[t][i]]->clusters().size(); c++) {
 				if (_mesh._DOFs[dirichletDOFs[t][i]]->clusters()[c] != environment->MPIrank) {
 					sDirichlet[n2i(_mesh._DOFs[dirichletDOFs[t][i]]->clusters()[c])].push_back(
-							std::make_pair(l2g[dirichletDOFs[t][i]], evaluator->evaluate(dirichletDOFs[t][i], 0, 0, 0, 0)));
+							std::make_pair(l2g[dirichletDOFs[t][i]], evaluator->evaluate(dirichletDOFs[t][i])));
 				}
 			}
 		}

@@ -1,37 +1,22 @@
 
 #include "monitoring.h"
 
-#include "../../configuration/output.h"
+#include "../../config/ecf/output.h"
 #include "../../mesh/settings/property.h"
 #include "../../mesh/structures/mesh.h"
 #include "../../mesh/structures/region.h"
 #include "../../assembler/step.h"
 #include "../../assembler/solution.h"
 
-#include "../../configuration/environment.h"
+#include "../../config/ecf/environment.h"
+#include "../../basis/logging/logging.h"
+#include "../../basis/utilities/parser.h"
+
+#include <cmath>
 
 using namespace espreso;
 
 char Monitoring::delimiter = ';';
-
-static espreso::StatisticalData getStatistics(const std::string &name)
-{
-	if (espreso::StringCompare::caseInsensitiveEq(name, "AVG")) {
-		return espreso::StatisticalData::AVERAGE;
-	}
-	if (espreso::StringCompare::caseInsensitiveEq(name, "MIN")) {
-		return espreso::StatisticalData::MIN;
-	}
-	if (espreso::StringCompare::caseInsensitiveEq(name, "MAX")) {
-		return espreso::StatisticalData::MAX;
-	}
-	if (espreso::StringCompare::caseInsensitiveEq(name, "NORM")) {
-		return espreso::StatisticalData::NORM;
-	}
-
-	ESINFO(espreso::GLOBAL_ERROR) << "Unknown operation " << name << "\n";
-	return espreso::StatisticalData::AVERAGE;
-}
 
 std::string center(const std::string &value, size_t size)
 {
@@ -69,21 +54,23 @@ std::vector<espreso::Property> Monitoring::getProperties(const std::string &name
 	return { property };
 }
 
+Monitor::Monitor()
+: printSize(10), region(NULL), statistics(StatisticalData::EMPTY)
+{
+
+}
+
 Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
 : Store(output), _mesh(mesh)
 {
 	_monitors.reserve(_configuration.monitoring.size());
 	for (auto it = _configuration.monitoring.begin(); it != _configuration.monitoring.end(); ++it) {
-		_monitors.push_back(Monitor());
-		_monitors.back().region = _mesh->region(it->first);
+		_monitors.resize(it->first);
+		_monitors.back().region = _mesh->region(it->second.region);
 		_mesh->addMonitoredRegion(_monitors.back().region);
-		std::vector<std::string> args = Parser::split(it->second, " ");
-		if (args.size() != 2) {
-			ESINFO(GLOBAL_ERROR) << "Invalid monitoring format: use <REGION> <OPERATION> <VALUE>.";
-		}
-		_monitors.back().statistics = getStatistics(args[0]);
-		_monitors.back().properties = getProperties(args[1]);
-		_monitors.back().printSize = std::max(std::max((size_t)10, it->first.size()), std::max(args[0].size(), args[1].size()) + 2) + 4;
+		_monitors.back().statistics = static_cast<StatisticalData>(std::pow(2, static_cast<int>(it->second.statistics)));
+		_monitors.back().properties = getProperties(it->second.property);
+		_monitors.back().printSize = std::max(std::max((size_t)10, it->second.region.size()), it->second.property.size()) + 4;
 	}
 
 	if (environment->MPIrank) {
@@ -98,14 +85,20 @@ Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
 	_os << "\n";
 	_os << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter;
 	for (size_t i = 0; i < _monitors.size(); i++) {
-		_os << center(_monitors[i].region->name, _monitors[i].printSize) << delimiter;
+		if (_monitors[i].region == NULL) {
+			_os << center("---", _monitors[i].printSize) << delimiter;
+		} else {
+			_os << center(_monitors[i].region->name, _monitors[i].printSize) << delimiter;
+		}
 	}
 	_os << "\n";
 
 	_os << right("step", 9) << delimiter << right("substep", 9) << delimiter;
 	for (size_t i = 0; i < _monitors.size(); i++) {
 		std::stringstream ss;
-		if (_monitors[i].properties.size() > 1) {
+		if (_monitors[i].properties.size() == 0) {
+			ss << "-";
+		} else if (_monitors[i].properties.size() > 1) {
 			std::stringstream ssp; ssp << _monitors[i].properties[0];
 			ss << ssp.str().substr(0, ssp.str().find_last_of("_"));
 		} else {
@@ -118,6 +111,7 @@ Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
 	_os << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter;
 	for (size_t i = 0; i < _monitors.size(); i++) {
 		switch (_monitors[i].statistics) {
+		case StatisticalData::EMPTY:   _os << center("<--->"    , _monitors[i].printSize) << delimiter; break;
 		case StatisticalData::AVERAGE: _os << center("<AVERAGE>", _monitors[i].printSize) << delimiter; break;
 		case StatisticalData::MIN:     _os << center("<MIN>"    , _monitors[i].printSize) << delimiter; break;
 		case StatisticalData::MAX:     _os << center("<MAX>"    , _monitors[i].printSize) << delimiter; break;
@@ -130,7 +124,29 @@ Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
 
 void Monitoring::storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties)
 {
+	switch (_configuration.monitors_store_frequency) {
+	case OutputConfiguration::STORE_FREQUENCY::NEVER:
+		return;
+
+	case OutputConfiguration::STORE_FREQUENCY::EVERY_NTH_TIMESTEP:
+		if ((step.substep + 1) % _configuration.monitors_nth_stepping != 0) {
+			return;
+		}
+		break;
+	case OutputConfiguration::STORE_FREQUENCY::LAST_TIMESTEP:
+		if (!step.isLast()) {
+			return;
+		}
+		break;
+	case OutputConfiguration::STORE_FREQUENCY::EVERY_TIMESTEP:
+	case OutputConfiguration::STORE_FREQUENCY::DEBUG:
+		break;
+	}
+
 	for (size_t i = 0; i < _monitors.size(); i++) {
+		if (_monitors[i].statistics == StatisticalData::EMPTY) {
+			continue;
+		}
 		for (size_t s = 0; s < solution.size(); s++) {
 			if (solution[s]->hasProperty(_monitors[i].properties[0])) {
 				solution[s]->computeStatisticalData(step);
@@ -145,6 +161,10 @@ void Monitoring::storeSolution(const Step &step, const std::vector<Solution*> &s
 	_os << right(std::to_string(step.substep + 1), 8) << " " << delimiter;
 
 	for (size_t i = 0; i < _monitors.size(); i++) {
+		if (_monitors[i].statistics == StatisticalData::EMPTY) {
+			_os << center("|", _monitors[i].printSize) << delimiter;
+			continue;
+		}
 		double value;
 		bool found = false;
 		for (size_t s = 0; s < solution.size(); s++) {

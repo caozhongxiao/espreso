@@ -1,161 +1,216 @@
-|*****************************************************************************|
-|-----------------------------------------------------------------------------|
-|                                      |                                      |
-|     EPRESO CONFIGURATION FILE        |   ESPRESO Version:   1.0             |
-|                                      |   http://espreso.it4i.cz             |
-|-----------------------------------------------------------------------------|
-|  Case Description: ESPRESO GENERATOR - CUBE with displacement-z equal to 1  |
-|                                                                             |
-|-----------------------------------------------------------------------------|
-|*****************************************************************************|
-                                                                               
-                                                                               
-|*****************************************************************************|
-|-------------------------  INPUT/OUTPUT DEFINITION --------------------------|
-
-INPUT GENERATOR;
-PHYSICS STRUCTURAL_MECHANICS_3D;
+# ESPRESO Configuration File
 
 DEFAULT_ARGS {
   0   HEXA20;
-
-  1   2;
-  2   2;
-  3   1;
-
-  4   3;
-  5   1;
-  6   2;
-
-  7   2;
-  8   6;
-  9   6;
+  1        2;
+  2        2;
+  3        1;
+  4        3;
+  5        1;
+  6        2;
+  7        2;
+  8        6;
+  9        6;
 }
-GENERATOR { # ESPRESO internal mesh generator.
 
-  SHAPE GRID;
+INPUT                   GENERATOR;
+PHYSICS   STRUCTURAL_MECHANICS_3D;
 
-  GRID { # Detailed specification of grid shape.
+GENERATOR {
+  SHAPE   GRID;
 
-    UNIFORM_DECOMPOSITION 0;
+  GRID {
+    UNIFORM_DECOMPOSITION   FALSE;
 
-    ELEMENT_TYPE [ARG0];
+    START_X                     0;
+    START_Y                     0;
+    START_Z                     0;
 
-    START_X 0;
-    START_Y 0;
-    START_Z 0;
-    LENGTH_X 100;
-    LENGTH_Y 100;
-    LENGTH_Z 100;
+    LENGTH_X                  100;
+    LENGTH_Y                  100;
+    LENGTH_Z                  100;
 
-    CLUSTERS_X [ARG1];
-    CLUSTERS_Y [ARG2];
-    CLUSTERS_Z [ARG3];
-
-    DOMAINS_X [ARG4];
-    DOMAINS_Y [ARG5];
-    DOMAINS_Z [ARG6];
-
-    ELEMENTS_X [ARG7];
-    ELEMENTS_Y [ARG8];
-    ELEMENTS_Z [ARG9];
-
-    NODES { # List of nodes regions.
-      Z0 "<0, 100> <0, 100> <0, 0>";
-      Y0 "<0, 100> <0, 0> <0, 100>";
-      X0 "<0, 0> <0, 100> <0, 100>";
+    NODES {
+      Z0   <0 , 100> <0 , 100> <0 , 0>;
+      Y0   <0 , 100> <0 , 0> <0 , 100>;
+      X0   <0 , 0> <0 , 100> <0 , 100>;
     }
 
-    FACES { # List of faces regions.
-      Z1 "<0, 100> <0, 100> <100, 100>";
-      Y1 "<0, 100> <100, 100> <0, 100>";
-      X1 "<100, 100> <0, 100> <0, 100>";
+    FACES {
+      Z1   <0 , 100> <0 , 100> <100 , 100>;
+      Y1   <0 , 100> <100 , 100> <0 , 100>;
+      X1   <100 , 100> <0 , 100> <0 , 100>;
     }
 
     ELEMENTS {
-      E_ALL ALL;
+      E_ALL   ALL;
     }
+
+    ELEMENT_TYPE           [ARG0];
+
+    CLUSTERS_X             [ARG1];
+    CLUSTERS_Y             [ARG2];
+    CLUSTERS_Z             [ARG3];
+
+    DOMAINS_X              [ARG4];
+    DOMAINS_Y              [ARG5];
+    DOMAINS_Z              [ARG6];
+
+    ELEMENTS_X             [ARG7];
+    ELEMENTS_Y             [ARG8];
+    ELEMENTS_Z             [ARG9];
   }
 }
 
 STRUCTURAL_MECHANICS_3D {
+  LOAD_STEPS   1;
 
-  PHYSICS_SOLVER {
-    LOAD_STEPS          1;
+  MATERIALS {
+    1 {
 
-    LOAD_STEPS_SETTINGS {
-      1 {
-        TYPE        STEADY_STATE;
-        MODE              LINEAR;
-        SOLVER_LIBRARY   ESPRESO;
+      DENS   7850;
+      CP        1;
 
-        ESPRESO {
+      LINEAR_ELASTIC_PROPERTIES {
+        MODEL   ISOTROPIC;
 
-          METHOD          TOTAL_FETI;
-          SOLVER                 PCG;
-          PRECONDITIONER      LUMPED;
-          REGULARIZATION NULL_PIVOTS;
-          EPSILON               1e-8;
-          ITERATIONS             150;
-        }
+        MIXY          0.3;
+        EX         2.1E11;
+        TEX             0;
       }
     }
   }
 
-  MATERIALS { # Vector of materials (counterd from 1).
-
-    1 { # First configuration settings.
-
-      DENSITY 7850;
-      MIXY     0.3;
-      EX    2.1e11;
-
-      MODEL LINEAR_ELASTIC_ISOTROPIC;
-    }
-  }
-
   MATERIAL_SET {
-    E_ALL 1;
+    E_ALL   1;
   }
 
-  DISPLACEMENT {
+  LOAD_STEPS_SETTINGS {
     1 {
-      Z0 Z 0;
-      Y0 Y 0;
-      X0 X 0;
-    }
-  }
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
 
-  NORMAL_PRESURE {
-    1 {
-      Z1     "70 * 2.1e11 / 5200";
-      Y1 "3 * 70 * 2.1e11 / 5200 / 7";
-      X1 "3 * 70 * 2.1e11 / 5200 / 7";
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER      LUMPED;
+        PRECISION            1E-08;
+        MAX_ITERATIONS         150;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION   ALGEBRAIC;
+      }
+
+      DISPLACEMENT {
+        Z0   Z 0;
+        Y0   Y 0;
+        X0   X 0;
+      }
+
+      NORMAL_PRESSURE {
+        Z1           70 * 2.1E11 / 5200;
+        Y1   3 * 70 * 2.1E11 / 5200 / 7;
+        X1   3 * 70 * 2.1E11 / 5200 / 7;
+      }
     }
   }
 }
 
 OUTPUT {
   MONITORING {
-    ALL_NODES MIN   DISPLACEMENT;
-    ALL_NODES MAX   DISPLACEMENT;
-    ALL_NODES AVG   DISPLACEMENT;
-    ALL_NODES NORM  DISPLACEMENT;
+    1 {
+      REGION        ALL_NODES;
+      STATISTICS          MIN;
+      PROPERTY   DISPLACEMENT;
+    }
 
-    ALL_NODES MIN   DISPLACEMENT_X;
-    ALL_NODES MAX   DISPLACEMENT_X;
-    ALL_NODES AVG   DISPLACEMENT_X;
-    ALL_NODES NORM  DISPLACEMENT_X;
+    2 {
+      REGION        ALL_NODES;
+      STATISTICS          MAX;
+      PROPERTY   DISPLACEMENT;
+    }
 
-    ALL_NODES MIN   DISPLACEMENT_Y;
-    ALL_NODES MAX   DISPLACEMENT_Y;
-    ALL_NODES AVG   DISPLACEMENT_Y;
-    ALL_NODES NORM  DISPLACEMENT_Y;
+    3 {
+      REGION        ALL_NODES;
+      STATISTICS          AVG;
+      PROPERTY   DISPLACEMENT;
+    }
 
-    ALL_NODES MIN   DISPLACEMENT_Z;
-    ALL_NODES MAX   DISPLACEMENT_Z;
-    ALL_NODES AVG   DISPLACEMENT_Z;
-    ALL_NODES NORM  DISPLACEMENT_Z;
+    4 {
+      REGION        ALL_NODES;
+      STATISTICS         NORM;
+      PROPERTY   DISPLACEMENT;
+    }
+
+    5 {
+      REGION          ALL_NODES;
+      STATISTICS            MIN;
+      PROPERTY   DISPLACEMENT_X;
+    }
+
+    6 {
+      REGION          ALL_NODES;
+      STATISTICS            MAX;
+      PROPERTY   DISPLACEMENT_X;
+    }
+
+    7 {
+      REGION          ALL_NODES;
+      STATISTICS            AVG;
+      PROPERTY   DISPLACEMENT_X;
+    }
+
+    8 {
+      REGION          ALL_NODES;
+      STATISTICS           NORM;
+      PROPERTY   DISPLACEMENT_X;
+    }
+
+    9 {
+      REGION          ALL_NODES;
+      STATISTICS            MIN;
+      PROPERTY   DISPLACEMENT_Y;
+    }
+
+    10 {
+      REGION          ALL_NODES;
+      STATISTICS            MAX;
+      PROPERTY   DISPLACEMENT_Y;
+    }
+
+    11 {
+      REGION          ALL_NODES;
+      STATISTICS            AVG;
+      PROPERTY   DISPLACEMENT_Y;
+    }
+
+    12 {
+      REGION          ALL_NODES;
+      STATISTICS           NORM;
+      PROPERTY   DISPLACEMENT_Y;
+    }
+
+    13 {
+      REGION          ALL_NODES;
+      STATISTICS            MIN;
+      PROPERTY   DISPLACEMENT_Z;
+    }
+
+    14 {
+      REGION          ALL_NODES;
+      STATISTICS            MAX;
+      PROPERTY   DISPLACEMENT_Z;
+    }
+
+    15 {
+      REGION          ALL_NODES;
+      STATISTICS            AVG;
+      PROPERTY   DISPLACEMENT_Z;
+    }
+
+    16 {
+      REGION          ALL_NODES;
+      STATISTICS           NORM;
+      PROPERTY   DISPLACEMENT_Z;
+    }
   }
 }
-

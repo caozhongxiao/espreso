@@ -1,124 +1,131 @@
-|*****************************************************************************|
-|-----------------------------------------------------------------------------|
-|                                      |                                      |
-|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
-|                                      |   http://espreso.it4i.cz             |
-|-----------------------------------------------------------------------------|
-|  Case Description: homogenous problem with constant temperature             |
-|                                                                             |
-|-----------------------------------------------------------------------------|
-|*****************************************************************************|
-
-INPUT GENERATOR;
-PHYSICS ADVECTION_DIFFUSION_2D;
+# ESPRESO Configuration File
 
 DEFAULT_ARGS {
   0   TRIANGLE3;
-
-  1   2;
-  2   2;
-  3   3;
-  4   2;
-  5  20;
-  6  30;
+  1           2;
+  2           2;
+  3           3;
+  4           2;
+  5          20;
+  6          30;
 }
 
-GENERATOR {
+INPUT            GENERATOR;
+PHYSICS   HEAT_TRANSFER_2D;
 
-  SHAPE GRID;
+GENERATOR {
+  SHAPE   GRID;
 
   GRID {
-    UNIFORM_DECOMPOSITION 0;
+    UNIFORM_DECOMPOSITION   FALSE;
 
-    ELEMENT_TYPE   [ARG0];
-
-    LENGTH_X            1;
-    LENGTH_Y            1;
-    LENGTH_Z            1;
-
-    BLOCKS_X            1;
-    BLOCKS_Y            1;
-    BLOCKS_Z            1;
-
-    CLUSTERS_X     [ARG1];
-    CLUSTERS_Y     [ARG2];
-    CLUSTERS_Z          1;
-
-    DOMAINS_X      [ARG3];
-    DOMAINS_Y      [ARG4];
-    DOMAINS_Z           1;
-
-    ELEMENTS_X     [ARG5];
-    ELEMENTS_Y     [ARG6];
-    ELEMENTS_Z          1;
+    LENGTH_X                    1;
+    LENGTH_Y                    1;
+    LENGTH_Z                    1;
 
     NODES {
-        LEFT   "<0, 1> <0, 0> <0, 0>";
-        RIGHT  "<0, 1> <1, 1> <0, 0>";
+      LEFT    <0 , 1> <0 , 0> <0 , 0>;
+      RIGHT   <0 , 1> <1 , 1> <0 , 0>;
     }
+
+    ELEMENT_TYPE           [ARG0];
+
+    BLOCKS_X                    1;
+    BLOCKS_Y                    1;
+    BLOCKS_Z                    1;
+
+    CLUSTERS_X             [ARG1];
+    CLUSTERS_Y             [ARG2];
+    CLUSTERS_Z                  1;
+
+    DOMAINS_X              [ARG3];
+    DOMAINS_Y              [ARG4];
+    DOMAINS_Z                   1;
+
+    ELEMENTS_X             [ARG5];
+    ELEMENTS_Y             [ARG6];
+    ELEMENTS_Z                  1;
   }
 }
 
-ADVECTION_DIFFUSION_2D {
+HEAT_TRANSFER_2D {
+  LOAD_STEPS        1;
 
-  PHYSICS_SOLVER {
-    LOAD_STEPS          1;
-    INTERPOLATION  LINEAR;
-    LOAD_STEPS_SETTINGS {
-      1 {
-        TYPE           TRANSIENT;
-        MODE              LINEAR;
-        DURATION_TIME          1;
-        SOLVER_LIBRARY   ESPRESO;
+  MATERIALS {
+    1 {
 
-        ESPRESO {
-          METHOD           TOTAL_FETI;
-          SOLVER                  PCG;
-          PRECONDITIONER    DIRICHLET;
-          REGULARIZATION   FIX_POINTS;
-          B0_TYPE             CORNERS;
-        }
+      DENS   1;
+      CP     1;
 
-        TRANSIENT_SOLVER {
-          METHOD       CRANK_NICOLSON;
-          TIME_STEP               .02;
-        }
+      THERMAL_CONDUCTIVITY {
+        MODEL   ISOTROPIC;
+
+        KXX           0.1;
       }
     }
   }
 
-  STABILIZATION CAU;
-  SIGMA           0;
-
-  TEMPERATURE {
-    1 {
-      LEFT   300;
-      RIGHT  500 + 100 * TIME;
-    }
-  }
-
-  MATERIALS {
-    1 {
-      MODEL ISOTROPIC;
-
-      DENSITY   1;
-      KXX     0.1;
-      Cp        1;
-    }
-  }
-
   MATERIAL_SET {
-    ALL_ELEMENTS 1;
+    ALL_ELEMENTS   1;
+  }
+
+
+  STABILIZATION   CAU;
+  SIGMA             0;
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME   1;
+      TYPE    TRANSIENT;
+      MODE       LINEAR;
+      SOLVER       FETI;
+
+      TRANSIENT_SOLVER {
+        METHOD   CRANK_NICOLSON;
+
+        TIME_STEP          0.02;
+      }
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER   DIRICHLET;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION    ANALYTIC;
+        B0_TYPE            CORNERS;
+      }
+
+      TEMPERATURE {
+        LEFT                 300;
+        RIGHT   500 + 100 * TIME;
+      }
+    }
   }
 }
 
 OUTPUT {
   MONITORING {
-    ALL_NODES MAX  TEMPERATURE;
-    ALL_NODES MIN  TEMPERATURE;
-    ALL_NODES AVG  TEMPERATURE;
-    ALL_NODES NORM TEMPERATURE;
+    1 {
+      REGION       ALL_NODES;
+      STATISTICS         MAX;
+      PROPERTY   TEMPERATURE;
+    }
+
+    2 {
+      REGION       ALL_NODES;
+      STATISTICS         MIN;
+      PROPERTY   TEMPERATURE;
+    }
+
+    3 {
+      REGION       ALL_NODES;
+      STATISTICS         AVG;
+      PROPERTY   TEMPERATURE;
+    }
+
+    4 {
+      REGION       ALL_NODES;
+      STATISTICS        NORM;
+      PROPERTY   TEMPERATURE;
+    }
   }
 }
-
-

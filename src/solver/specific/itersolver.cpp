@@ -5,11 +5,11 @@
 #include "itersolver.h"
 
 #include "../../basis/utilities/utils.h"
+#include "../../basis/logging/logging.h"
 
 using namespace espreso;
 
-IterSolverBase::IterSolverBase(const ESPRESOSolver &configuration):
-	configuration(configuration),
+IterSolverBase::IterSolverBase(const FETISolverConfiguration &configuration):
 	timing			("Main CG loop timing "),
 	preproc_timing	("Preprocessing timing "),
 	postproc_timing	("Postprocessing timing"),
@@ -39,7 +39,7 @@ IterSolverBase::IterSolverBase(const ESPRESOSolver &configuration):
 	ddot_alpha		("2x ddot for Alpha "),
 	ddot_beta		("2x ddot for Beta ")
 {
-
+	this->configuration = configuration;
 	// Timing objects
 	// Main timing object for main CG loop
 	timeEvalAppa.addEvent(apa_B1t);
@@ -96,29 +96,29 @@ void IterSolverBase::Solve ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_dual_solution_parallel)
 {
 
-	switch (configuration.solver) {
-	case ESPRESO_ITERATIVE_SOLVER::PCG:
+	switch (configuration.iterative_solver) {
+	case FETI_ITERATIVE_SOLVER::PCG:
 		Solve_RegCG ( cluster, in_right_hand_side_primal );
 		break;
-	case ESPRESO_ITERATIVE_SOLVER::pipePCG:
+	case FETI_ITERATIVE_SOLVER::pipePCG:
 		Solve_PipeCG_singular_dom( cluster, in_right_hand_side_primal );
 		break;
-	case ESPRESO_ITERATIVE_SOLVER::orthogonalPCG:
+	case FETI_ITERATIVE_SOLVER::orthogonalPCG:
 		Solve_full_ortho_CG_singular_dom (cluster, in_right_hand_side_primal );
 		break;
-	case ESPRESO_ITERATIVE_SOLVER::GMRES:
+	case FETI_ITERATIVE_SOLVER::GMRES:
 		Solve_GMRES_singular_dom (cluster, in_right_hand_side_primal );
 		break;
-	case ESPRESO_ITERATIVE_SOLVER::BICGSTAB:
+	case FETI_ITERATIVE_SOLVER::BICGSTAB:
 		Solve_BICGSTAB_singular_dom(cluster, in_right_hand_side_primal );
 		break;
-	case ESPRESO_ITERATIVE_SOLVER::QPCE:
+	case FETI_ITERATIVE_SOLVER::QPCE:
 		Solve_QPCE_singular_dom(cluster, in_right_hand_side_primal );
 		break;
-	case ESPRESO_ITERATIVE_SOLVER::orthogonalPCG_CP:
+	case FETI_ITERATIVE_SOLVER::orthogonalPCG_CP:
 		Solve_full_ortho_CG_singular_dom_geneo(cluster, in_right_hand_side_primal);
 		break;
-	case ESPRESO_ITERATIVE_SOLVER::PCG_CP:
+	case FETI_ITERATIVE_SOLVER::PCG_CP:
 		ESINFO(GLOBAL_ERROR) << "Regular CG with conjugate projector not implemented yet";
 		break;
 
@@ -348,7 +348,7 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( SuperCluster & clus
 		ESINFO(CONVERGENCE) << " Check norm of Normal Multipliers: norm((Be*u - ce)*Lambda_N) =			" << std::setw(6) << norm_Bn_lLambda / ( norm_cn * lambda_n_max_g );
 
 //		switch (configuration.solver) {
-//		case ESPRESO_ITERATIVE_SOLVER::QPCE:
+//		case FETI_ITERATIVE_SOLVER::QPCE:
 //			Solve_QPCE_singular_dom(cluster, in_right_hand_side_primal );
 //			break;
 //		default:
@@ -377,7 +377,7 @@ void IterSolverBase::MakeSolution_Primal_singular_parallel (
 			SEQ_VECTOR <double > tmp (cluster.clusters[c].domains[d].domain_prim_size);
 
 			if (USE_HFETI == 1) {
-				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
+				if ( configuration.regularization == FETI_REGULARIZATION::ANALYTIC ) {
 					cluster.clusters[c].domains[d].Kplus_R .DenseMatVec(amplitudes, tmp, 'N', amp_offset, 0);
 				} else {
 					cluster.clusters[c].domains[d].Kplus_Rb.DenseMatVec(amplitudes, tmp, 'N', amp_offset, 0);
@@ -609,7 +609,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 
-	double _epsilon = 1e-4;
+	double _precision = 1e-4;
 	eslocal _maxit = 100;
 	eslocal _maxit_in = 200;
 	double _Gamma = 1;
@@ -619,7 +619,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 	double _beta = 0.8;
 	double _alpham = 2;
 	double _precQ = 1e-12;
-	double _epsilon_power = 1e-8;
+	double _precision_power = 1e-8;
 	eslocal _maxit_power = 55;
 	eslocal _method = 0;
 	eslocal halfStep = 0;
@@ -694,13 +694,13 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 	double lag0 = -INFINITY;
 	double lag1 = 0;
 
-	double maxeig = Solve_power_method ( cluster, _epsilon_power, _maxit_power, _method);
+	double maxeig = Solve_power_method ( cluster, _precision_power, _maxit_power, _method);
 
 //	double maxeig_old = 0.0;
 //
 //	for (eslocal i = 0; i < 10; i++){
 //
-//		maxeig = Solve_power_method ( cluster, _epsilon_power, _maxit_power, maxeig_old);
+//		maxeig = Solve_power_method ( cluster, _precision_power, _maxit_power, maxeig_old);
 //
 //		if ( std::fabs( maxeig-maxeig_old ) < 1e-8){
 //
@@ -767,7 +767,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 
 
 	//double norm_b = parallel_norm_compressed(cluster, b_l);
-	//double tol = _epsilon * norm_b;
+	//double tol = _precision * norm_b;
 	// END*** Homogenization of the equality constraints and initialization
 
     /// BEGIN*** Hessian PAP+rho*Ct*inv(C*Ct)*C
@@ -840,11 +840,11 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 
 
 	switch (USE_PREC) {
-			case ESPRESO_PRECONDITIONER::LUMPED:
-			case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-			case ESPRESO_PRECONDITIONER::DIRICHLET:
-			case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-			case ESPRESO_PRECONDITIONER::MAGIC:
+			case FETI_PRECONDITIONER::LUMPED:
+			case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+			case FETI_PRECONDITIONER::DIRICHLET:
+			case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+			case FETI_PRECONDITIONER::MAGIC:
 
 				if (USE_GGtINV == 1) {
 					Projector_Inv( timeEvalProj, cluster, p_l, w_l, 0 );
@@ -866,7 +866,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 				}
 
 				break;
-			case ESPRESO_PRECONDITIONER::NONE:
+			case FETI_PRECONDITIONER::NONE:
 
 
 				break;
@@ -900,7 +900,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 	}
 
 	double norm_b = parallel_norm_compressed(cluster, b_l);
-	double tol = _epsilon * norm_b;
+	double tol = _precision * norm_b;
 	norm_test_vec = parallel_norm_compressed(cluster, g_til);
 
 	double mchange = 0.0;
@@ -910,7 +910,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 	ESINFO(CONVERGENCE) << "	QUADRATIC PROGRAMMING WITH SIMPLE BOUNDS AND EQUALITY CONSTRAINTS (QPCE)";
 	ESINFO(CONVERGENCE) << "===================================================================================================";
 	//ESINFO(CONVERGENCE) << "'Variables/equality constraints: n/m = %d/%d\n',n,m);
-	ESINFO(CONVERGENCE) << "	Terminating tolerance: epsilon = "<< tol*maxeig ;
+	ESINFO(CONVERGENCE) << "	Terminating tolerance: precision = "<< tol*maxeig ;
 	//ESINFO(CONVERGENCE) << "Parameter settings:\n'); disp(options);
 	ESINFO(CONVERGENCE) << "---------------------------------------------------------------------------------------------------";
 	ESINFO(CONVERGENCE) << "Out_it   L(x,mu,rho)   ||~g(x)||       ||Cx||       Exp  Prop  Cgm   No_A      rho              M";
@@ -928,7 +928,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 		output_n_hess= 0;
 
 
-		while ( (norm_test_vec > (std::min(_M * normCx ,_eta * norm_b)))  && (output_n_it_in < _maxit_in ) && (!((norm_test_vec <= tol) && (normCx <= _epsilon * normx_l))) ) {
+		while ( (norm_test_vec > (std::min(_M * normCx ,_eta * norm_b)))  && (output_n_it_in < _maxit_in ) && (!((norm_test_vec <= tol) && (normCx <= _precision * normx_l))) ) {
 
 			beta_til_g_l = parallel_ddot_compressed(cluster, beta_til, g_l);
 			fi_til_g_l = parallel_ddot_compressed(cluster, fi_til, g_l);
@@ -1015,11 +1015,11 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 
 
 					switch (USE_PREC) {
-							case ESPRESO_PRECONDITIONER::LUMPED:
-							case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-							case ESPRESO_PRECONDITIONER::DIRICHLET:
-							case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-							case ESPRESO_PRECONDITIONER::MAGIC:
+							case FETI_PRECONDITIONER::LUMPED:
+							case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+							case FETI_PRECONDITIONER::DIRICHLET:
+							case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+							case FETI_PRECONDITIONER::MAGIC:
 
 								if (USE_GGtINV == 1) {
 									Projector_Inv( timeEvalProj, cluster, tmp, w_l, 0 );
@@ -1043,7 +1043,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 
 
 								break;
-							case ESPRESO_PRECONDITIONER::NONE:
+							case FETI_PRECONDITIONER::NONE:
 
 
 								break;
@@ -1276,7 +1276,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 			bCtmu_prev[k] = bCtmu[k];
 		}
 
-		if ( ((norm_test_vec <= tol)  && (normCx <= _epsilon * normx_l)) || ( _maxit == output_n_it )) {
+		if ( ((norm_test_vec <= tol)  && (normCx <= _precision * normx_l)) || ( _maxit == output_n_it )) {
 			stop = 1;
 		} else {
 
@@ -1482,10 +1482,10 @@ void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 	}
 
 	// *** Calculate the stop condition *******************************************
-	//tol = epsilon * parallel_norm_compressed(cluster, u_l);
+	//tol = precision * parallel_norm_compressed(cluster, u_l);
 
-	double tol1 = epsilon * parallel_norm_compressed(cluster, u_l);
-	double tol2 = epsilon * parallel_norm_compressed(cluster, b_l);
+	double tol1 = precision * parallel_norm_compressed(cluster, u_l);
+	double tol2 = precision * parallel_norm_compressed(cluster, b_l);
 
 	if (tol1 < tol2 )
 		tol = tol1;
@@ -1496,7 +1496,7 @@ void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 
 
 
-	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
 	std::string indent = "   ";
 
@@ -1514,9 +1514,9 @@ void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 //	} else {
 		ESINFO(CONVERGENCE)
 			<< spaces(indent.size() + iterationWidth - 4) << "iter"
-			<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+			<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 			<< spaces(indent.size() + 4) << "r" << spaces(4)
-			<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+			<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
 			<< spaces(indent.size()) << "time[s]";
 //	}
 
@@ -1533,11 +1533,11 @@ void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 		}
 
 		switch (USE_PREC) {
-		case ESPRESO_PRECONDITIONER::LUMPED:
-		case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-		case ESPRESO_PRECONDITIONER::DIRICHLET:
-		case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-		case ESPRESO_PRECONDITIONER::MAGIC:
+		case FETI_PRECONDITIONER::LUMPED:
+		case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+		case FETI_PRECONDITIONER::DIRICHLET:
+		case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+		case FETI_PRECONDITIONER::MAGIC:
 			proj1_time.start();
 			if (USE_GGtINV == 1) {
 				Projector_Inv( timeEvalProj, cluster, r_l, w_l, 0 );
@@ -1560,7 +1560,7 @@ void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 			}
 			proj2_time.end();
 			break;
-		case ESPRESO_PRECONDITIONER::NONE:
+		case FETI_PRECONDITIONER::NONE:
 			proj_time.start();
 			if (USE_GGtINV == 1) {
 				Projector_Inv( timeEvalProj, cluster, r_l, w_l, 0 );
@@ -1661,9 +1661,9 @@ for (size_t i = 0; i < p_l.size(); i++)
 
 		ESINFO(CONVERGENCE)
 			<< indent << std::setw(iterationWidth) << iter + 1
-			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * epsilon
+			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
 			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 		// *** Stop condition ******************************************************************
@@ -1688,16 +1688,16 @@ for (size_t i = 0; i < p_l.size(); i++)
 	// *** Preslocal out the timing for the iteration loop ***************************************
 
 	switch (USE_PREC) {
-	case ESPRESO_PRECONDITIONER::LUMPED:
-	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-	case ESPRESO_PRECONDITIONER::DIRICHLET:
-	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-	case ESPRESO_PRECONDITIONER::MAGIC:
+	case FETI_PRECONDITIONER::LUMPED:
+	case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+	case FETI_PRECONDITIONER::DIRICHLET:
+	case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+	case FETI_PRECONDITIONER::MAGIC:
 		timing.addEvent(proj1_time);
 		timing.addEvent(prec_time );
 		timing.addEvent(proj2_time);
 		break;
-	case ESPRESO_PRECONDITIONER::NONE:
+	case FETI_PRECONDITIONER::NONE:
 		timing.addEvent(proj_time);
 		break;
 	default:
@@ -1790,9 +1790,9 @@ for (size_t i = 0; i < g_l.size(); i++){
 		Projector    ( timeEvalProj, cluster, g_l, Pg_l , 0);
 	}
 	// *** Calculate the stop condition *******************************************
-	tol = epsilon * parallel_norm_compressed(cluster, Pg_l);
+	tol = precision * parallel_norm_compressed(cluster, Pg_l);
 
-	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
 	std::string indent = "   ";
 
@@ -1806,9 +1806,9 @@ for (size_t i = 0; i < g_l.size(); i++){
 
 	ESINFO(CONVERGENCE)
 		<< spaces(indent.size() + iterationWidth - 4) << "iter"
-		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
 		<< spaces(indent.size()) << "time[s]";
 
 	// *** Start the CG iteration loop ********************************************
@@ -1840,11 +1840,11 @@ for (size_t i = 0; i < x_l.size(); i++) {
       ztg_prew = ztg;
     }
     switch (USE_PREC) {
-    case ESPRESO_PRECONDITIONER::LUMPED:
-    case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-    case ESPRESO_PRECONDITIONER::DIRICHLET:
-	  case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-    case ESPRESO_PRECONDITIONER::MAGIC:
+    case FETI_PRECONDITIONER::LUMPED:
+    case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+    case FETI_PRECONDITIONER::DIRICHLET:
+	  case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+    case FETI_PRECONDITIONER::MAGIC:
       proj1_time.start();
       if (USE_GGtINV == 1) {
         Projector_Inv( timeEvalProj, cluster, g_l, Pg_l, 0 );
@@ -1867,7 +1867,7 @@ for (size_t i = 0; i < x_l.size(); i++) {
       }
       proj2_time.end();
       break;
-    case ESPRESO_PRECONDITIONER::NONE:
+    case FETI_PRECONDITIONER::NONE:
       proj_time.start();
       if (USE_GGtINV == 1) {
         Projector_Inv( timeEvalProj, cluster, g_l, z_l, 0 );
@@ -1904,9 +1904,9 @@ for (size_t i = 0; i < w_l.size(); i++){
 
 		ESINFO(CONVERGENCE)
 			<< indent << std::setw(iterationWidth) << iter + 1
-			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * epsilon
+			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
 			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 		// *** Stop condition ******************************************************************
@@ -1942,16 +1942,16 @@ for (size_t i = 0; i < x_l.size(); i++) {
 	// *** Preslocal out the timing for the iteration loop ***************************************
 
 	switch (USE_PREC) {
-	case ESPRESO_PRECONDITIONER::LUMPED:
-	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-	case ESPRESO_PRECONDITIONER::DIRICHLET:
-	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-	case ESPRESO_PRECONDITIONER::MAGIC:
+	case FETI_PRECONDITIONER::LUMPED:
+	case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+	case FETI_PRECONDITIONER::DIRICHLET:
+	case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+	case FETI_PRECONDITIONER::MAGIC:
 		timing.addEvent(proj1_time);
 		timing.addEvent(prec_time );
 		timing.addEvent(proj2_time);
 		break;
-	case ESPRESO_PRECONDITIONER::NONE:
+	case FETI_PRECONDITIONER::NONE:
 		timing.addEvent(proj_time);
 		break;
 	default:
@@ -2056,9 +2056,9 @@ for (size_t i = 0; i < g_l.size(); i++){
 		Projector    ( timeEvalProj, cluster, g_l, Pg_l , 0);
 	}
 	// *** Calculate the stop condition *******************************************
-	tol = epsilon * parallel_norm_compressed(cluster, Pg_l);
+	tol = precision * parallel_norm_compressed(cluster, Pg_l);
 
-	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
 	std::string indent = "   ";
 
@@ -2072,9 +2072,9 @@ for (size_t i = 0; i < g_l.size(); i++){
 
 	ESINFO(CONVERGENCE)
 		<< spaces(indent.size() + iterationWidth - 4) << "iter"
-		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
 		<< spaces(indent.size()) << "time[s]";
 
 	// *** Start the CG iteration loop ********************************************
@@ -2128,11 +2128,11 @@ for (size_t i = 0; i < x_l.size(); i++) {
       //ztg_prew = ztg;
     }
     switch (USE_PREC) {
-    case ESPRESO_PRECONDITIONER::LUMPED:
-    case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-    case ESPRESO_PRECONDITIONER::DIRICHLET:
-	  case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-    case ESPRESO_PRECONDITIONER::MAGIC:
+    case FETI_PRECONDITIONER::LUMPED:
+    case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+    case FETI_PRECONDITIONER::DIRICHLET:
+	  case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+    case FETI_PRECONDITIONER::MAGIC:
       proj1_time.start();
       if (USE_GGtINV == 1) {
         Projector_Inv( timeEvalProj, cluster, g_l, Pg_l, 0 );
@@ -2155,7 +2155,7 @@ for (size_t i = 0; i < x_l.size(); i++) {
       }
       proj2_time.end();
       break;
-    case ESPRESO_PRECONDITIONER::NONE:
+    case FETI_PRECONDITIONER::NONE:
       proj_time.start();
       if (USE_GGtINV == 1) {
         Projector_Inv( timeEvalProj, cluster, g_l, z_l, 0 );
@@ -2208,9 +2208,9 @@ for (size_t i = 0; i < w_l.size(); i++){
 
 		ESINFO(CONVERGENCE)
 			<< indent << std::setw(iterationWidth) << iter + 1
-			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * epsilon
+			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
 			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 		// *** Stop condition ******************************************************************
@@ -2260,16 +2260,16 @@ for (size_t i = 0; i < x_l.size(); i++) {
 	// *** Preslocal out the timing for the iteration loop ***************************************
 
 	switch (USE_PREC) {
-	case ESPRESO_PRECONDITIONER::LUMPED:
-	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-	case ESPRESO_PRECONDITIONER::DIRICHLET:
-	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-	case ESPRESO_PRECONDITIONER::MAGIC:
+	case FETI_PRECONDITIONER::LUMPED:
+	case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+	case FETI_PRECONDITIONER::DIRICHLET:
+	case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+	case FETI_PRECONDITIONER::MAGIC:
 		timing.addEvent(proj1_time);
 		timing.addEvent(prec_time );
 		timing.addEvent(proj2_time);
 		break;
-	case ESPRESO_PRECONDITIONER::NONE:
+	case FETI_PRECONDITIONER::NONE:
 		timing.addEvent(proj_time);
 		break;
 	default:
@@ -2391,11 +2391,11 @@ for (size_t i = 0; i < g_l.size(); i++){
   }
 
   switch (USE_PREC) {
-  case ESPRESO_PRECONDITIONER::LUMPED:
-  case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-  case ESPRESO_PRECONDITIONER::DIRICHLET:
-	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-  case ESPRESO_PRECONDITIONER::MAGIC:
+  case FETI_PRECONDITIONER::LUMPED:
+  case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+  case FETI_PRECONDITIONER::DIRICHLET:
+	case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+  case FETI_PRECONDITIONER::MAGIC:
     proj1_time.start();
     if (USE_GGtINV == 1) {
       Projector_Inv( timeEvalProj, cluster, g_l, Pg_l, 0 );
@@ -2418,7 +2418,7 @@ for (size_t i = 0; i < g_l.size(); i++){
     }
     proj2_time.end();
     break;
-  case ESPRESO_PRECONDITIONER::NONE:
+  case FETI_PRECONDITIONER::NONE:
     proj_time.start();
     if (USE_GGtINV == 1) {
       Projector_Inv( timeEvalProj, cluster, g_l, z_l, 0 );
@@ -2434,12 +2434,12 @@ for (size_t i = 0; i < g_l.size(); i++){
 
 
 	// *** Calculate the stop condition *******************************************
-	//tol = epsilon * parallel_norm_compressed(cluster, Pg_l);
+	//tol = precision * parallel_norm_compressed(cluster, Pg_l);
 
   norm_l = parallel_norm_compressed(cluster, z_l);
-	tol = epsilon * norm_l;
+	tol = precision * norm_l;
 
-	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
 	std::string indent = "   ";
 
@@ -2453,9 +2453,9 @@ for (size_t i = 0; i < g_l.size(); i++){
 
 	ESINFO(CONVERGENCE)
 		<< spaces(indent.size() + iterationWidth - 4) << "iter"
-		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
 		<< spaces(indent.size()) << "time[s]";
 
 
@@ -2464,9 +2464,9 @@ for (size_t i = 0; i < g_l.size(); i++){
 
   ESINFO(CONVERGENCE)
   	<< indent << std::setw(iterationWidth) << 1
-  	<< indent << std::fixed << std::setprecision(precision) <<  1.0000000
+  	<< indent << std::fixed << std::setprecision(precisionWidth) <<  1.0000000
   	<< indent << std::scientific << std::setprecision(3) << norm_l
-  	<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+  	<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
   	<< indent << std::fixed << std::setprecision(5) ;
 
 
@@ -2505,11 +2505,11 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
     appA_time.end();
 
     switch (USE_PREC) {
-    case ESPRESO_PRECONDITIONER::LUMPED:
-    case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-    case ESPRESO_PRECONDITIONER::DIRICHLET:
-	  case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-    case ESPRESO_PRECONDITIONER::MAGIC:
+    case FETI_PRECONDITIONER::LUMPED:
+    case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+    case FETI_PRECONDITIONER::DIRICHLET:
+	  case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+    case FETI_PRECONDITIONER::MAGIC:
       proj1_time.start();
       if (USE_GGtINV == 1) {
         Projector_Inv( timeEvalProj, cluster, w_l, Pw_l, 0 );
@@ -2532,7 +2532,7 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
       }
       proj2_time.end();
       break;
-    case ESPRESO_PRECONDITIONER::NONE:
+    case FETI_PRECONDITIONER::NONE:
       proj_time.start();
       if (USE_GGtINV == 1) {
         Projector_Inv( timeEvalProj, cluster, w_l, z_l, 0 );
@@ -2632,9 +2632,9 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
 
 		ESINFO(CONVERGENCE)
 			<< indent << std::setw(iterationWidth) << iter + 2
-			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * epsilon
+			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
 			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 
@@ -2710,16 +2710,16 @@ for (size_t i = 0; i < g_l.size(); i++){
 	// *** Preslocal out the timing for the iteration loop ***************************************
 
 	switch (USE_PREC) {
-	case ESPRESO_PRECONDITIONER::LUMPED:
-	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-	case ESPRESO_PRECONDITIONER::DIRICHLET:
-	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-	case ESPRESO_PRECONDITIONER::MAGIC:
+	case FETI_PRECONDITIONER::LUMPED:
+	case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+	case FETI_PRECONDITIONER::DIRICHLET:
+	case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+	case FETI_PRECONDITIONER::MAGIC:
 		timing.addEvent(proj1_time);
 		timing.addEvent(prec_time );
 		timing.addEvent(proj2_time);
 		break;
-	case ESPRESO_PRECONDITIONER::NONE:
+	case FETI_PRECONDITIONER::NONE:
 		timing.addEvent(proj_time);
 		break;
 	default:
@@ -2804,11 +2804,11 @@ for (size_t i = 0; i < g_l.size(); i++){
   }
 
   switch (USE_PREC) {
-  case ESPRESO_PRECONDITIONER::LUMPED:
-  case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-  case ESPRESO_PRECONDITIONER::DIRICHLET:
-	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-  case ESPRESO_PRECONDITIONER::MAGIC:
+  case FETI_PRECONDITIONER::LUMPED:
+  case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+  case FETI_PRECONDITIONER::DIRICHLET:
+	case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+  case FETI_PRECONDITIONER::MAGIC:
     proj1_time.start();
     if (USE_GGtINV == 1) {
       Projector_Inv( timeEvalProj, cluster, g_l, tmp1_l, 0 );
@@ -2831,7 +2831,7 @@ for (size_t i = 0; i < g_l.size(); i++){
     }
     proj2_time.end();
     break;
-  case ESPRESO_PRECONDITIONER::NONE:
+  case FETI_PRECONDITIONER::NONE:
     proj_time.start();
     if (USE_GGtINV == 1) {
       Projector_Inv( timeEvalProj, cluster, g_l, z_l, 0 );
@@ -2847,14 +2847,14 @@ for (size_t i = 0; i < g_l.size(); i++){
 
 
 	// *** Calculate the stop condition *******************************************
-	//tol = epsilon * parallel_norm_compressed(cluster, Pg_l);
+	//tol = precision * parallel_norm_compressed(cluster, Pg_l);
 
   // norm_l = || b_bar ||
   norm_l = parallel_norm_compressed(cluster, z_l);
 
-	tol = epsilon * norm_l;
+	tol = precision * norm_l;
 
-	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
 	std::string indent = "   ";
 
@@ -2868,9 +2868,9 @@ for (size_t i = 0; i < g_l.size(); i++){
 
 	ESINFO(CONVERGENCE)
 		<< spaces(indent.size() + iterationWidth - 4) << "iter"
-		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
 		<< spaces(indent.size()) << "time[s]";
 
 
@@ -2879,9 +2879,9 @@ for (size_t i = 0; i < g_l.size(); i++){
 
   ESINFO(CONVERGENCE)
   	<< indent << std::setw(iterationWidth) << 1
-  	<< indent << std::fixed << std::setprecision(precision) <<  1.0000000
+  	<< indent << std::fixed << std::setprecision(precisionWidth) <<  1.0000000
   	<< indent << std::scientific << std::setprecision(3) << norm_l
-  	<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+  	<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
   	<< indent << std::fixed << std::setprecision(5) ;
 
   ztld_l = z_l;
@@ -2895,7 +2895,7 @@ for (size_t i = 0; i < g_l.size(); i++){
 		timing.totalTime.start();
     delta = parallel_ddot_compressed(cluster, z_l, ztld_l);
 
-//    if (delta < 0.0001*epsilon){
+//    if (delta < 0.0001*precision){
     if (fabs(delta) == 1e-14){
       FLAG_SOLUTION=-1;
       break;
@@ -2918,11 +2918,11 @@ for (size_t i = 0; i < w_l.size(); i++) {
     appA_time.end();
 
     switch (USE_PREC) {
-    case ESPRESO_PRECONDITIONER::LUMPED:
-    case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-    case ESPRESO_PRECONDITIONER::DIRICHLET:
-	  case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-    case ESPRESO_PRECONDITIONER::MAGIC:
+    case FETI_PRECONDITIONER::LUMPED:
+    case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+    case FETI_PRECONDITIONER::DIRICHLET:
+	  case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+    case FETI_PRECONDITIONER::MAGIC:
       proj1_time.start();
       if (USE_GGtINV == 1) {
         Projector_Inv( timeEvalProj, cluster, Ay_l, v_l, 0 );
@@ -2945,7 +2945,7 @@ for (size_t i = 0; i < w_l.size(); i++) {
       }
       proj2_time.end();
       break;
-    case ESPRESO_PRECONDITIONER::NONE:
+    case FETI_PRECONDITIONER::NONE:
       proj_time.start();
       if (USE_GGtINV == 1) {
         Projector_Inv( timeEvalProj, cluster, Ay_l, v_l, 0 );
@@ -2971,7 +2971,7 @@ for (size_t i = 0; i < s_l.size(); i++) {
 
     norm_l = parallel_norm_compressed(cluster, s_l);
     
-//  norm_l / tol * epsilon
+//  norm_l / tol * precision
 
     if (norm_l < tol){
       #pragma omp parallel for
@@ -2988,11 +2988,11 @@ for (size_t i = 0; i < x_l.size(); i++) {
     appA_time.end();
     
     switch (USE_PREC) {
-    case ESPRESO_PRECONDITIONER::LUMPED:
-    case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-    case ESPRESO_PRECONDITIONER::DIRICHLET:
-	  case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-    case ESPRESO_PRECONDITIONER::MAGIC:
+    case FETI_PRECONDITIONER::LUMPED:
+    case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+    case FETI_PRECONDITIONER::DIRICHLET:
+	  case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+    case FETI_PRECONDITIONER::MAGIC:
       proj1_time.start();
       if (USE_GGtINV == 1) {
         Projector_Inv( timeEvalProj, cluster, Ay_l, t_l, 0 );
@@ -3015,7 +3015,7 @@ for (size_t i = 0; i < x_l.size(); i++) {
       }
       proj2_time.end();
       break;
-    case ESPRESO_PRECONDITIONER::NONE:
+    case FETI_PRECONDITIONER::NONE:
       proj_time.start();
       if (USE_GGtINV == 1) {
         Projector_Inv( timeEvalProj, cluster, Ay_l, t_l, 0 );
@@ -3044,9 +3044,9 @@ for (size_t i = 0; i < x_l.size(); i++) {
 
 		ESINFO(CONVERGENCE)
 			<< indent << std::setw(iterationWidth) << iter + 2
-			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * epsilon
+			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
 			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 
@@ -3110,16 +3110,16 @@ for (size_t i = 0; i < g_l.size(); i++){
 	// *** Preslocal out the timing for the iteration loop ***************************************
 
 	switch (USE_PREC) {
-	case ESPRESO_PRECONDITIONER::LUMPED:
-	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-	case ESPRESO_PRECONDITIONER::DIRICHLET:
-	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-	case ESPRESO_PRECONDITIONER::MAGIC:
+	case FETI_PRECONDITIONER::LUMPED:
+	case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+	case FETI_PRECONDITIONER::DIRICHLET:
+	case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+	case FETI_PRECONDITIONER::MAGIC:
 		timing.addEvent(proj1_time);
 		timing.addEvent(prec_time );
 		timing.addEvent(proj2_time);
 		break;
-	case ESPRESO_PRECONDITIONER::NONE:
+	case FETI_PRECONDITIONER::NONE:
 		timing.addEvent(proj_time);
 		break;
 	default:
@@ -3207,11 +3207,11 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( SuperCluster & cluster,
 
 	// *** r = b - Ax; ************************************************************
 	switch (USE_PREC) {
-	case ESPRESO_PRECONDITIONER::LUMPED:
-	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-	case ESPRESO_PRECONDITIONER::DIRICHLET:
-	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-	case ESPRESO_PRECONDITIONER::MAGIC:
+	case FETI_PRECONDITIONER::LUMPED:
+	case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+	case FETI_PRECONDITIONER::DIRICHLET:
+	case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+	case FETI_PRECONDITIONER::MAGIC:
 
 		#pragma omp parallel for
 for (size_t i = 0; i < r_l.size(); i++) {
@@ -3224,7 +3224,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 			Projector    ( timeEvalProj, cluster, tmp_l, r_l, 0 );
 		}
 
-		tol = epsilon * parallel_norm_compressed(cluster, r_l);
+		tol = precision * parallel_norm_compressed(cluster, r_l);
 
 		Apply_Prec(timeEvalPrec, cluster, r_l, tmp_l);
 		if (USE_GGtINV == 1) {
@@ -3241,7 +3241,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 		}
 
 		break;
-	case ESPRESO_PRECONDITIONER::NONE:
+	case FETI_PRECONDITIONER::NONE:
 		#pragma omp parallel for
 		for (size_t i = 0; i < r_l.size(); i++) {
 			r_l[i] = b_l[i] - Ax_l[i];
@@ -3252,7 +3252,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 		} else {
 			Projector    ( timeEvalProj, cluster, r_l, u_l, 0 );
 		}
-		tol = epsilon * parallel_norm_compressed(cluster, u_l);
+		tol = precision * parallel_norm_compressed(cluster, u_l);
 
 		apply_A_l_comp_dom_B(timeEvalAppa, cluster, u_l, w_l); 	//apply_A_l_compB(timeEvalAppa, cluster, u_l, w_l);
 		break;
@@ -3261,7 +3261,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 	}
 
 
-	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
 	std::string indent = "   ";
 
@@ -3275,9 +3275,9 @@ for (size_t i = 0; i < r_l.size(); i++) {
 
 	ESINFO(CONVERGENCE)
 		<< spaces(indent.size() + iterationWidth - 4) << "iter"
-		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
 		<< spaces(indent.size()) << "time[s]";
 
 	// *** Start the CG iteration loop ********************************************
@@ -3296,11 +3296,11 @@ for (size_t i = 0; i < r_l.size(); i++) {
 		SEQ_VECTOR <double> send_buf      (3,0);
 
 		switch (USE_PREC) {
-		case ESPRESO_PRECONDITIONER::LUMPED:
-		case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-		case ESPRESO_PRECONDITIONER::DIRICHLET:
-	  case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-		case ESPRESO_PRECONDITIONER::MAGIC:
+		case FETI_PRECONDITIONER::LUMPED:
+		case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+		case FETI_PRECONDITIONER::DIRICHLET:
+	  case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+		case FETI_PRECONDITIONER::MAGIC:
 			parallel_ddot_compressed_non_blocking(cluster, r_l, u_l, w_l, u_l, r_l, &mpi_req, reduction_tmp, send_buf); // norm_l = parallel_norm_compressed(cluster, r_l);
 			ddot_time.end();
 
@@ -3329,7 +3329,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 			proj_time.end();
 
 			break;
-		case ESPRESO_PRECONDITIONER::NONE:
+		case FETI_PRECONDITIONER::NONE:
 			parallel_ddot_compressed_non_blocking(cluster, r_l, u_l, w_l, u_l, u_l, &mpi_req, reduction_tmp, send_buf); // norm_l = parallel_norm_compressed(cluster, u_l);
 			ddot_time.end();
 
@@ -3363,9 +3363,9 @@ for (size_t i = 0; i < r_l.size(); i++) {
 			timing.totalTime.end();
 			ESINFO(CONVERGENCE)
 				<< indent << std::setw(iterationWidth) << iter + 1
-				<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * epsilon
+				<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 				<< indent << std::scientific << std::setprecision(3) << norm_l
-				<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+				<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
 				<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 			break;
 		}
@@ -3404,9 +3404,9 @@ for (size_t i = 0; i < r_l.size(); i++) {
 
 		ESINFO(CONVERGENCE)
 			<< indent << std::setw(iterationWidth) << iter + 1
-			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * epsilon
+			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
 			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 	} // END of CG loop
@@ -3436,17 +3436,17 @@ for (size_t i = 0; i < r_l.size(); i++) {
 	// *** Preslocal out the timing for the iteration loop ***************************************
 
 	switch (USE_PREC) {
-	case ESPRESO_PRECONDITIONER::LUMPED:
-	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-	case ESPRESO_PRECONDITIONER::DIRICHLET:
-	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-	case ESPRESO_PRECONDITIONER::MAGIC:
+	case FETI_PRECONDITIONER::LUMPED:
+	case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+	case FETI_PRECONDITIONER::DIRICHLET:
+	case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+	case FETI_PRECONDITIONER::MAGIC:
 		//timing.addEvent(proj1_time);
 		timing.addEvent(proj_time);
 		timing.addEvent(prec_time );
 		//timing.addEvent(proj2_time);
 		break;
-	case ESPRESO_PRECONDITIONER::NONE:
+	case FETI_PRECONDITIONER::NONE:
 		timing.addEvent(proj_time);
 		break;
 	default:
@@ -3876,7 +3876,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 
 	std::cout << "\n\n Full orthogonal with restart and conjugate projector \n";
 
-	if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
+	if (configuration.conjugate_projector == FETI_CONJ_PROJECTOR::GENEO) {
 		std::cout << " - using GENEO \n";
 	}
 
@@ -3954,7 +3954,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 		r_0[i] =  b_l[i] - Ax_0[i];
 	}
 
-//	if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
+//	if (configuration.conjugate_projector == FETI_CONJ_PROJECTOR::GENEO) {
 //		ConjProj_lambda0(cluster, r_0, x_1);
 //		ConjProj_t(cluster, r_0, r_0);
 //	}
@@ -3975,7 +3975,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 	SEQ_VECTOR <double> WtAW_l	 	(CG_max_iter, 0);
 
 	switch (USE_PREC) {
-	case ESPRESO_PRECONDITIONER::DIRICHLET:
+	case FETI_PRECONDITIONER::DIRICHLET:
 
 		proj1_time.start();
 		if (USE_GGtINV == 1) {
@@ -4012,22 +4012,22 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 	// *** Calculate the stop condition *******************************************
 
 	double tol1;
-//	if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
+//	if (configuration.conjugate_projector == FETI_CONJ_PROJECTOR::GENEO) {
 //		ConjProj(cluster, r_l, r_tmp );
-//		tol1 = epsilon * parallel_norm_compressed(cluster, r_tmp);
+//		tol1 = precision * parallel_norm_compressed(cluster, r_tmp);
 //	}
 //	else{
-		tol1 = epsilon * parallel_norm_compressed(cluster, r_l);
+		tol1 = precision * parallel_norm_compressed(cluster, r_l);
 //	}
 
-	double tol2 = epsilon * parallel_norm_compressed(cluster, b_l);
+	double tol2 = precision * parallel_norm_compressed(cluster, b_l);
 
 	if (tol1 < tol2 )
 		tol = tol1;
 	else
 		tol = tol2;
 
-	int precision      = ceil(log(1 / epsilon) / log(10)) + 1;
+	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
 	std::string indent = "   ";
 
@@ -4041,9 +4041,9 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 
 	ESINFO(CONVERGENCE)
 		<< spaces(indent.size() + iterationWidth - 4) << "iter"
-		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
 		<< spaces(indent.size()) << "time[s]";
 
 	// *** END - Calculate the stop condition *******************************************
@@ -4067,7 +4067,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 		apply_A_l_comp_dom_B(timeEvalAppa, cluster, w_l, Aw_l);
 		appA_time.end();
 
-//		if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
+//		if (configuration.conjugate_projector == FETI_CONJ_PROJECTOR::GENEO) {
 //			ConjProj_t(cluster, Aw_l, Aw_l);
 //		}
 
@@ -4092,7 +4092,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 
 
 		switch (USE_PREC) {
-		case ESPRESO_PRECONDITIONER::DIRICHLET:
+		case FETI_PRECONDITIONER::DIRICHLET:
 
 			// Scale
 
@@ -4131,10 +4131,10 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 //		std::cout << std::endl;
 
 		update = true;
-		if ( iter > configuration.RESTART_ITER) {
+		if ( iter > configuration.restart_iteration) {
 
 			double fi_last = fabs( fi_l[iter - 1] );
-			if (restart_num < configuration.NUM_RESTARTS){
+			if (restart_num < configuration.num_restart){
 				for (eslocal i = 0; i < iter - 1; i++) {
 
 					if (!norm_decrease){
@@ -4201,13 +4201,13 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 				r_0[i] =  b_l[i] - Ax_0[i];
 			}
 
-//			if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
+//			if (configuration.conjugate_projector == FETI_CONJ_PROJECTOR::GENEO) {
 //				ConjProj_lambda0(cluster, r_0, x_l);
 //				ConjProj_t(cluster, r_0, r_0);
 //			}
 
 			switch (USE_PREC) {
-			case ESPRESO_PRECONDITIONER::DIRICHLET:
+			case FETI_PRECONDITIONER::DIRICHLET:
 
 				proj1_time.start();
 				if (USE_GGtINV == 1) {
@@ -4263,9 +4263,9 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 
 		ESINFO(CONVERGENCE)
 		<< indent << std::setw(iterationWidth) << iter
-		<< indent << std::fixed << std::setprecision(precision) 	<< norm_l / tol * epsilon
+		<< indent << std::fixed << std::setprecision(precisionWidth) 	<< norm_l / tol * precision
 		<< indent << std::scientific << std::setprecision(3) 		<< norm_l
-		<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+		<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
 		<< indent << std::fixed << std::setprecision(5) 			<< timing.totalTime.getLastStat();
 
 		// *** Stop condition ******************************************************************
@@ -4277,7 +4277,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 	ESINFO(CONVERGENCE) << "FULL CG Stop after " << N_ITER << " Ïterations";
 	// *** save solution - in dual and amplitudes *********************************************
 
-//	if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
+//	if (configuration.conjugate_projector == FETI_CONJ_PROJECTOR::GENEO) {
 //		ConjProj(cluster, x_l, x_l);
 //	}
 
@@ -4309,16 +4309,16 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 	// *** Preslocal out the timing for the iteration loop ***************************************
 
 	switch (USE_PREC) {
-	case ESPRESO_PRECONDITIONER::LUMPED:
-	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-	case ESPRESO_PRECONDITIONER::DIRICHLET:
-	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-	case ESPRESO_PRECONDITIONER::MAGIC:
+	case FETI_PRECONDITIONER::LUMPED:
+	case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+	case FETI_PRECONDITIONER::DIRICHLET:
+	case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+	case FETI_PRECONDITIONER::MAGIC:
 		timing.addEvent(proj1_time);
 		timing.addEvent(prec_time );
 		timing.addEvent(proj2_time);
 		break;
-	case ESPRESO_PRECONDITIONER::NONE:
+	case FETI_PRECONDITIONER::NONE:
 		timing.addEvent(proj_time);
 		break;
 	default:

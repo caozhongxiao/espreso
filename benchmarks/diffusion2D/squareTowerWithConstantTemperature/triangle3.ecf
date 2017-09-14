@@ -1,172 +1,233 @@
-|*****************************************************************************|
-|-----------------------------------------------------------------------------|
-|                                      |                                      |
-|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
-|                                      |   http://espreso.it4i.cz             |
-|-----------------------------------------------------------------------------|
-|  Case Description: homogenous problem with constant temperature             |
-|                                                                             |
-|-----------------------------------------------------------------------------|
-|*****************************************************************************|
-
-INPUT GENERATOR;
-PHYSICS ADVECTION_DIFFUSION_2D;
+# ESPRESO Configuration File
 
 DEFAULT_ARGS {
   0   TRIANGLE3;
-
-  1   2;
-  2   2;
-  3   3;
-  4   2;
-  5  20;
-  6  30;
+  1           2;
+  2           2;
+  3           3;
+  4           2;
+  5          20;
+  6          30;
 }
 
-GENERATOR {
+INPUT            GENERATOR;
+PHYSICS   HEAT_TRANSFER_2D;
 
-  SHAPE GRID_TOWER;
+GENERATOR {
+  SHAPE   GRID_TOWER;
 
   GRID_TOWER {
-
-    DIRECTION    X;
+    DIRECTION   X;
 
     GRIDS {
       0 {
-        UNIFORM_DECOMPOSITION 1;
+        UNIFORM_DECOMPOSITION   TRUE;
 
-        ELEMENT_TYPE   [ARG0];
-
-        LENGTH_X            1;
-        LENGTH_Y            1;
-        LENGTH_Z            1;
-
-        BLOCKS_X            1;
-        BLOCKS_Y            1;
-        BLOCKS_Z            1;
-
-        CLUSTERS_X     [ARG1];
-        CLUSTERS_Y     [ARG2];
-        CLUSTERS_Z          1;
-
-        DOMAINS_X      [ARG3];
-        DOMAINS_Y      [ARG4];
-        DOMAINS_Z           1;
-
-        ELEMENTS_X     [ARG5];
-        ELEMENTS_Y     [ARG6];
-        ELEMENTS_Z          1;
+        LENGTH_X                   1;
+        LENGTH_Y                   1;
+        LENGTH_Z                   1;
 
         NODES {
-          LEFT   "<0, 0> <0, 1> <0, 0>";
+          LEFT   <0 , 0> <0 , 1> <0 , 0>;
         }
+
+        ELEMENT_TYPE          [ARG0];
+
+        BLOCKS_X                   1;
+        BLOCKS_Y                   1;
+        BLOCKS_Z                   1;
+
+        CLUSTERS_X            [ARG1];
+        CLUSTERS_Y            [ARG2];
+        CLUSTERS_Z                 1;
+
+        DOMAINS_X             [ARG3];
+        DOMAINS_Y             [ARG4];
+        DOMAINS_Z                  1;
+
+        ELEMENTS_X            [ARG5];
+        ELEMENTS_Y            [ARG6];
+        ELEMENTS_Z                 1;
       }
 
       1 {
-        UNIFORM_DECOMPOSITION 1;
+        UNIFORM_DECOMPOSITION   TRUE;
 
-        ELEMENT_TYPE   [ARG0];
+        LENGTH_X                   1;
+        LENGTH_Y                   1;
+        LENGTH_Z                   1;
 
-        LENGTH_X            1;
-        LENGTH_Y            1;
-        LENGTH_Z            1;
-
-        BLOCKS_X            1;
-        BLOCKS_Y            1;
-        BLOCKS_Z            1;
-
-        CLUSTERS_X     [ARG1];
-        CLUSTERS_Y     [ARG2];
-        CLUSTERS_Z          1;
-    
-        DOMAINS_X      [ARG3];
-        DOMAINS_Y      [ARG4];
-        DOMAINS_Z           1;
-    
-        ELEMENTS_X     [ARG5];
-        ELEMENTS_Y     [ARG6];
-        ELEMENTS_Z          1;
-    
         NODES {
-          RIGHT  "<1, 1> <0, 1> <0, 0>";
+          RIGHT   <1 , 1> <0 , 1> <0 , 0>;
         }
+
+        ELEMENT_TYPE          [ARG0];
+
+        BLOCKS_X                   1;
+        BLOCKS_Y                   1;
+        BLOCKS_Z                   1;
+
+        CLUSTERS_X            [ARG1];
+        CLUSTERS_Y            [ARG2];
+        CLUSTERS_Z                 1;
+
+        DOMAINS_X             [ARG3];
+        DOMAINS_Y             [ARG4];
+        DOMAINS_Z                  1;
+
+        ELEMENTS_X            [ARG5];
+        ELEMENTS_Y            [ARG6];
+        ELEMENTS_Z                 1;
       }
     }
   }
 }
 
-ADVECTION_DIFFUSION_2D {
-
-  PHYSICS_SOLVER {
-    LOAD_STEPS          1;
-
-    LOAD_STEPS_SETTINGS {
-      1 {
-        TYPE        STEADY_STATE;
-        MODE              LINEAR;
-        SOLVER_LIBRARY   ESPRESO;
-
-        ESPRESO {
-          METHOD           TOTAL_FETI;
-          SOLVER                  PCG;
-          PRECONDITIONER    DIRICHLET;
-          REGULARIZATION  NULL_PIVOTS;
-          B0_TYPE             CORNERS;
-          EPSILON                1e-8;
-        }
-      }
-    }
-  }
-
-  STABILIZATION CAU;
-  SIGMA           0;
-
-  TEMPERATURE {
-    1 {
-      LEFT   100;
-      RIGHT  300;
-    }
-  }
+HEAT_TRANSFER_2D {
+  LOAD_STEPS        1;
 
   MATERIALS {
-
     1 {
-      MODEL DIAGONAL;
 
-      DENSITY 1;
-      KXX  1e-5;
-      KYY  1e-3;
-      Cp      1;
+      DENS   1;
+      CP     1;
+
+      THERMAL_CONDUCTIVITY {
+        MODEL   DIAGONAL;
+
+        KXX         1E-5;
+        KYY         1E-3;
+      }
     }
   }
 
   MATERIAL_SET {
-    ALL_ELEMENTS 1;
+    ALL_ELEMENTS   1;
+  }
+
+
+  STABILIZATION   CAU;
+  SIGMA             0;
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER   DIRICHLET;
+        PRECISION            1E-08;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION   ALGEBRAIC;
+        B0_TYPE            CORNERS;
+      }
+
+      TEMPERATURE {
+        LEFT    100;
+        RIGHT   300;
+      }
+    }
   }
 }
 
 OUTPUT {
   MONITORING {
-    ALL_NODES MAX  TEMPERATURE;
-    ALL_NODES MIN  TEMPERATURE;
-    ALL_NODES AVG  TEMPERATURE;
-    ALL_NODES NORM TEMPERATURE;
+    1 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        MAX;
+      PROPERTY         FLUX;
+    }
 
-    ALL_ELEMENTS MAX FLUX;
-    ALL_ELEMENTS MAX FLUX_X;
-    ALL_ELEMENTS MAX FLUX_Y;
+    2 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        MAX;
+      PROPERTY       FLUX_X;
+    }
 
-    ALL_ELEMENTS MIN FLUX;
-    ALL_ELEMENTS MIN FLUX_X;
-    ALL_ELEMENTS MIN FLUX_Y;
+    3 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        MAX;
+      PROPERTY       FLUX_Y;
+    }
 
-    ALL_ELEMENTS MAX GRADIENT;
-    ALL_ELEMENTS MAX GRADIENT_X;
-    ALL_ELEMENTS MAX GRADIENT_Y;
+    4 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        MIN;
+      PROPERTY         FLUX;
+    }
 
-    ALL_ELEMENTS MIN GRADIENT;
-    ALL_ELEMENTS MIN GRADIENT_X;
-    ALL_ELEMENTS MIN GRADIENT_Y;
+    5 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        MIN;
+      PROPERTY       FLUX_X;
+    }
+
+    6 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        MIN;
+      PROPERTY       FLUX_Y;
+    }
+
+    7 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        MAX;
+      PROPERTY     GRADIENT;
+    }
+
+    8 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        MAX;
+      PROPERTY   GRADIENT_X;
+    }
+
+    9 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        MAX;
+      PROPERTY   GRADIENT_Y;
+    }
+
+    10 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        MIN;
+      PROPERTY     GRADIENT;
+    }
+
+    11 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        MIN;
+      PROPERTY   GRADIENT_X;
+    }
+
+    12 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        MIN;
+      PROPERTY   GRADIENT_Y;
+    }
+
+    13 {
+      REGION       ALL_NODES;
+      STATISTICS         MAX;
+      PROPERTY   TEMPERATURE;
+    }
+
+    14 {
+      REGION       ALL_NODES;
+      STATISTICS         MIN;
+      PROPERTY   TEMPERATURE;
+    }
+
+    15 {
+      REGION       ALL_NODES;
+      STATISTICS         AVG;
+      PROPERTY   TEMPERATURE;
+    }
+
+    16 {
+      REGION       ALL_NODES;
+      STATISTICS        NORM;
+      PROPERTY   TEMPERATURE;
+    }
   }
 }
-

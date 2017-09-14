@@ -21,17 +21,18 @@
 #include "../../mesh/structures/mesh.h"
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
-#include "../../mesh/structures/material.h"
 #include "../../mesh/structures/elementtypes.h"
 #include "../../mesh/settings/evaluator.h"
 
 #include "espresobinaryformat.h"
-#include "../../configuration/environment.h"
-#include "../../configuration/input/input.h"
+#include "../../config/reader/reader.h"
+#include "../../config/ecf/environment.h"
+#include "../../config/ecf/input/input.h"
+#include "../../config/ecf/material/material.h"
 
 using namespace espreso::input;
 
-void ESPRESOBinaryFormat::load(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size)
+void ESPRESOBinaryFormat::load(const InputConfiguration &configuration, Mesh &mesh, int rank, int size)
 {
 	auto checkFile = [&] (int cluster, const std::string &file) {
 		std::stringstream ss;
@@ -48,8 +49,8 @@ void ESPRESOBinaryFormat::load(const ESPRESOInput &configuration, Mesh &mesh, in
 	if (!is.good()) {
 		ESINFO(GLOBAL_ERROR) << "Old ESPRESO binary format. File '" << configuration.path << "/description.txt' is missing.";
 	}
-	int clusters;
-	is >> clusters;
+	int clusters, materials;
+	is >> clusters >> materials;
 	if (clusters != environment->MPIsize) {
 		ESINFO(GLOBAL_ERROR) << "Incorrect number of MPI processes (" << environment->MPIsize << "). Should be " << clusters;
 	}
@@ -59,9 +60,11 @@ void ESPRESOBinaryFormat::load(const ESPRESOInput &configuration, Mesh &mesh, in
 	for (int cluster = 0; cluster < clusters; cluster++) {
 		checkFile(cluster, "coordinates.dat");
 		checkFile(cluster, "elements.dat");
-		checkFile(cluster, "materials.dat");
 		checkFile(cluster, "regions.dat");
 		checkFile(cluster, "boundaries.dat");
+		for (int material = 0; material < materials; material++) {
+			checkFile(cluster, "mat" + std::to_string(material) + ".mat");
+		}
 	}
 
 	esdata.fill();
@@ -70,7 +73,7 @@ void ESPRESOBinaryFormat::load(const ESPRESOInput &configuration, Mesh &mesh, in
 void ESPRESOBinaryFormat::points(Coordinates &coordinates)
 {
 	std::stringstream fileName;
-	fileName << _esdata.path << "/" << _rank << "/coordinates.dat";
+	fileName << _configuration.path << "/" << _rank << "/coordinates.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 
 	eslocal size;
@@ -141,7 +144,7 @@ static void addElements(std::ifstream &is, std::vector<espreso::Element*> &eleme
 void ESPRESOBinaryFormat::elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
 {
 	std::stringstream fileName;
-	fileName << _esdata.path << "/" << _rank << "/elements.dat";
+	fileName << _configuration.path << "/" << _rank << "/elements.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 	eslocal size;
 
@@ -153,17 +156,18 @@ void ESPRESOBinaryFormat::elements(std::vector<size_t> &bodies, std::vector<Elem
 	bodies = { 0, elements.size() };
 }
 
-void ESPRESOBinaryFormat::materials(std::vector<Material*> &materials)
+void ESPRESOBinaryFormat::materials(std::vector<MaterialConfiguration*> &materials)
 {
 	std::stringstream fileName;
-	fileName << _esdata.path << "/" << _rank << "/materials.dat";
+	fileName << _configuration.path << "/" << "/description.txt";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
+	int mats;
+	is >> mats >> mats;
 
-	eslocal size;
-	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-	for (eslocal i = 0; i < size; i++) {
-		materials.push_back(new Material(mesh.coordinates()));
-		materials.back()->load(is);
+	for (eslocal i = 0; i < mats; i++) {
+		materials.push_back(new MaterialConfiguration());
+		ECFReader::read(*materials.back(), _configuration.path + "/" + std::to_string(_rank) + "/mat" + std::to_string(i) + ".mat");
+		mesh.evaluateMaterial(*materials.back());
 	}
 	is.close();
 }
@@ -177,7 +181,7 @@ void ESPRESOBinaryFormat::regions(
 		std::vector<Element*> &nodes)
 {
 	std::stringstream fileName;
-	fileName << _esdata.path << "/" << _rank << "/regions.dat";
+	fileName << _configuration.path << "/" << _rank << "/regions.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 
 	eslocal size;
@@ -193,7 +197,7 @@ void ESPRESOBinaryFormat::regions(
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	for (eslocal i = 0; i < size; i++) {
-		evaluators.push_back(Evaluator::create(is, mesh.coordinates()));
+		evaluators.push_back(Evaluator::create(is));
 	}
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
@@ -273,14 +277,14 @@ void ESPRESOBinaryFormat::regions(
 
 bool ESPRESOBinaryFormat::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
 {
-	mesh.partitiate(_esdata.domains);
+	mesh.partitiate(_configuration.domains);
 	return true;
 }
 
 void ESPRESOBinaryFormat::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges)
 {
 	std::stringstream fileName;
-	fileName << _esdata.path << "/" << _rank << "/boundaries.dat";
+	fileName << _configuration.path << "/" << _rank << "/boundaries.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 
 	std::set<int> neighs;

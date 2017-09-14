@@ -12,6 +12,12 @@
 INPUT GENERATOR;
 PHYSICS STRUCTURAL_MECHANICS_3D;
 
+DEFAULT_ARGS {
+  0 TOTAL_FETI;
+  1 ANALYTIC;
+  2 KERNELS;
+}
+
 GENERATOR {
 
   SHAPE GRID;
@@ -54,40 +60,57 @@ GENERATOR {
 
 STRUCTURAL_MECHANICS_3D {
 
-  PHYSICS_SOLVER {
+  
     LOAD_STEPS          1;
 
     LOAD_STEPS_SETTINGS {
       1 {
         TYPE        STEADY_STATE;
         MODE              LINEAR;
-        SOLVER_LIBRARY   ESPRESO;
+        SOLVER FETI;
 
-        ESPRESO {
+        FETI {
           METHOD             [ARG0];
-          SOLVER                PCG;
+          ITERATIVE_SOLVER PCG;
           PRECONDITIONER  DIRICHLET;
           REGULARIZATION     [ARG1];
           B0_TYPE            [ARG2];
 
           REDUNDANT_LAGRANGE   1;
           SCALING              1;
-          EPSILON           1e-3;
-          ITERATIONS          50;
-        }
-      }
-    }
+          PRECISION           1e-3;
+          MAX_ITERATIONS          50;
+     
+     
+     
   }
+  
+    DISPLACEMENT {
+    
+      BOTTOM X 0, Y 0, Z 0;
+    
+  }
+
+  ACCELERATION {
+    
+      ALL_ELEMENTS Z 9.8066;
+    }}
+  }
+  
 
   MATERIALS { # Vector of materials (counterd from 1).
 
     1 { # First configuration settings.
 
-      DENSITY 7850;
+      DENS 7850;
+      CP  1;
+      
+      LINEAR_ELASTIC_PROPERTIES {
       MIXY     0.3;
       EX     2.1e9;
 
-      MODEL LINEAR_ELASTIC_ISOTROPIC;
+      MODEL ISOTROPIC;
+      }
     }
   }
 
@@ -95,17 +118,7 @@ STRUCTURAL_MECHANICS_3D {
     ALL_ELEMENTS 1;
   }
 
-  DISPLACEMENT {
-    1 {
-      BOTTOM X 0, Y 0, Z 0;
-    }
-  }
 
-  ACCELERATION {
-    1 {
-      ALL_ELEMENTS Z 9.8066;
-    }
-  }
 }
 
 

@@ -1,5 +1,5 @@
 
-#include "../../configuration/physics/structuralmechanics.h"
+#include "../../config/ecf/physics/structuralmechanics.h"
 #include "structuralmechanics.h"
 
 #include "../../basis/matrices/denseMatrix.h"
@@ -20,9 +20,9 @@ using namespace espreso;
 
 size_t StructuralMechanics::offset = -1;
 
-StructuralMechanics::StructuralMechanics(const StructuralMechanicsConfiguration &configuration)
+StructuralMechanics::StructuralMechanics(const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
 : Physics("", NULL, NULL), // skipped because Physics is inherited virtually
-  _configuration(configuration)
+  _configuration(configuration), _propertiesConfiguration(propertiesConfiguration)
 {
 
 }
@@ -60,30 +60,34 @@ bool StructuralMechanics::isMatrixTemperatureDependent(const Step &step) const
 
 void StructuralMechanics::prepare()
 {
-	for (size_t s = 1; s <= _configuration.physics_solver.load_steps; s++) {
-		if (
-				_configuration.displacement.find(s) == _configuration.displacement.end() &&
-				!_mesh->hasProperty(Property::DISPLACEMENT_X, s - 1) &&
-				!_mesh->hasProperty(Property::DISPLACEMENT_Y, s - 1) &&
-				!_mesh->hasProperty(Property::DISPLACEMENT_Z, s - 1)) {
-
-			ESINFO(GLOBAL_ERROR) << "Invalid boundary conditions for Structural mechanics - missing displacement for LOAD_STEP=" << s;
-		}
-	}
-
 	_instance->domainDOFCount = _mesh->assignUniformDOFsIndicesToNodes(_instance->domainDOFCount, pointDOFs(), _nodesDOFsOffsets);
 	_instance->properties = pointDOFs();
 	_mesh->computeNodesDOFsCounters(pointDOFs());
 
-	_mesh->loadNodeProperty(_configuration.temperature     , { }, { Property::TEMPERATURE });
-	_mesh->loadNodeProperty(_configuration.obstacle        , { }, { Property::OBSTACLE });
-	_mesh->loadNodeProperty(_configuration.normal_direction, { }, { Property::NORMAL_DIRECTION });
-	_mesh->loadProperty(_configuration.normal_presure      , { }, { Property::PRESSURE });
-	_mesh->loadProperty(_configuration.initial_temperature , { }, { Property::INITIAL_TEMPERATURE });
+	_mesh->loadProperty(_configuration.initial_temperature, { }, { Property::INITIAL_TEMPERATURE }, 0);
+
+	for (size_t loadStep = 0; loadStep < _configuration.load_steps; loadStep++) {
+		const StructuralMechanicsLoadStepConfiguration &loadStepConfiguration = _configuration.load_steps_settings.at(loadStep + 1);
+
+		if (
+			!loadStepConfiguration.displacement.size() &&
+			!_mesh->hasProperty(Property::DISPLACEMENT_X, loadStep) &&
+			!_mesh->hasProperty(Property::DISPLACEMENT_Y, loadStep) &&
+			!_mesh->hasProperty(Property::DISPLACEMENT_Z, loadStep)) {
+
+			ESINFO(GLOBAL_ERROR) << "Invalid boundary conditions for STRUCTURAL MECHANICS - missing temperature or convection for LOAD_STEP=" << loadStep + 1;
+		}
+
+		_mesh->loadNodeProperty(loadStepConfiguration.temperature     , { }, { Property::TEMPERATURE }, loadStep);
+		_mesh->loadNodeProperty(loadStepConfiguration.obstacle        , { }, { Property::OBSTACLE }, loadStep);
+		_mesh->loadNodeProperty(loadStepConfiguration.normal_direction, { }, { Property::NORMAL_DIRECTION }, loadStep);
+		_mesh->loadProperty(loadStepConfiguration.normal_pressure     , { }, { Property::PRESSURE }, loadStep);
+	}
+
+	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
 
 	_mesh->removeDuplicateRegions();
 	_mesh->fillDomainsSettings();
-
 
 	size_t clusters = *std::max_element(_mesh->getContinuityPartition().begin(), _mesh->getContinuityPartition().end()) + 1;
 

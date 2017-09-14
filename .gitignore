@@ -10,8 +10,12 @@ doc/html/*
 doc/xml/*
 espreso
 espresogui
+ecfchecker
 decomposer
+apitest
 libespreso/apitest
 libs*/*
 tools/*
 *results*
+*.pro
+*.pro.*

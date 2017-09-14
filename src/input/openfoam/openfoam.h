@@ -13,22 +13,22 @@
 
 namespace espreso {
 
-struct ESPRESOInput;
+struct InputConfiguration;
 
 namespace input {
 
 class OpenFOAM: public Loader {
 
 public:
-	static void load(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size);
+	static void load(const InputConfiguration &configuration, Mesh &mesh, int rank, int size);
 	bool faceBased() const { return true; }
 
 protected:
-	OpenFOAM(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size);
+	OpenFOAM(const InputConfiguration &configuration, Mesh &mesh, int rank, int size);
 
 	void points(Coordinates &coordinates);
 	void elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
-	void materials(std::vector<Material> &materials) {};
+	void materials(std::vector<MaterialConfiguration*> &materials) {};
 	void regions(
 				std::vector<Evaluator*> &evaluators,
 				std::vector<Region*> &regions,
@@ -44,7 +44,7 @@ private:
 	ParseError* computePolyMeshPath(int rank, int size);
 	void solveParseError(ParseError *error);
 
-	const ESPRESOInput &_openfoam;
+	const InputConfiguration &_configuration;
 
 	/** @brief Project path. */
 	std::string _projectPath;

@@ -1,6 +1,6 @@
 
 #include "lamesteklovpoincare3d.h"
-#include "../../configuration/physics/structuralmechanics3d.h"
+#include "../../config/ecf/physics/structuralmechanics.h"
 
 #include "../../basis/logging/logging.h"
 #include "../../basis/matrices/sparseVVPMatrix.h"
@@ -26,8 +26,8 @@ using namespace espreso;
 
 size_t LameSteklovPoincare3D::BEMOffset = -1;
 
-LameSteklovPoincare3D::LameSteklovPoincare3D(Mesh *mesh, Instance *instance, const StructuralMechanics3DConfiguration &configuration)
-: Physics("LAME STEKLOV POINCARE 3D", mesh, instance), StructuralMechanics3D(mesh, instance, configuration)
+LameSteklovPoincare3D::LameSteklovPoincare3D(Mesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
+: Physics("LAME STEKLOV POINCARE 3D", mesh, instance), StructuralMechanics3D(mesh, instance, configuration, propertiesConfiguration)
 {
 #ifndef BEM4I
 	ESINFO(GLOBAL_ERROR) << "BEM4I is not linked!. Copy BEM4I library to tools/bem4i and re-configure ESPRESO.";

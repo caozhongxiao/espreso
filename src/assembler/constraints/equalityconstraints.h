@@ -25,7 +25,8 @@ struct EqualityConstraints
 			const std::vector<Element*> &gluedInterfaceElements,
 			const std::vector<Property> &gluedDOFs,
 			const std::vector<size_t> &gluedDOFsMeshOffsets,
-			bool interfaceElementContainsGluedDOFs = false);
+			bool interfaceElementContainsGluedDOFs = false,
+			bool dirichletSetByArrayEvaluator = false);
 
 	void insertDirichletToB1(const Step &step, bool withRedundantMultiplier);
 	void updateDirichletValuesInB1(const Step &step, bool withRedundantMultiplier);
@@ -48,6 +49,7 @@ protected:
 	const std::vector<Property> &_gluedDOFs;
 	const std::vector<size_t> &_gluedDOFsMeshOffsets;
 	bool _interfaceElementContainsGluedDOFs;
+	bool _dirichletSetByArrayEvaluator;
 };
 
 }

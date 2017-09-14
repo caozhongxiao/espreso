@@ -41,7 +41,7 @@ using std::make_pair;
 
     public:
         // Constructor
-//        ClusterBase(const ESPRESOSolver &configuration, eslocal cluster_index):
+//        ClusterBase(const FETISolverConfiguration &configuration, eslocal cluster_index):
 //        	configuration(configuration),
 //            cluster_time("Cluster Timing "),
 //            vec_fill_time("Reseting vec_g0 and vec_e0"),
@@ -59,7 +59,7 @@ using std::make_pair;
 //            iter_cnt_comm = 0;
 //        };
 
-//        ClusterBase(const ESPRESOSolver &configuration):
+//        ClusterBase(const FETISolverConfiguration &configuration):
 //        	configuration(configuration),
 //            cluster_time("Cluster Timing "),
 //
@@ -80,7 +80,7 @@ using std::make_pair;
 //        }
 
 
-        ClusterBase(const ESPRESOSolver &configuration, Instance *instance_in):
+        ClusterBase(const FETISolverConfiguration &configuration, Instance *instance_in):
         	configuration(configuration),
 			instance(instance_in),
 
@@ -127,7 +127,7 @@ using std::make_pair;
         }
 
 
-        const ESPRESOSolver &configuration;
+        const FETISolverConfiguration &configuration;
         Instance *instance;
 
         // Cluster specific variables

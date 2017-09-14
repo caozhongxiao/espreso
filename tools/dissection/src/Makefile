@@ -34,7 +34,7 @@ all:
 	Splitters/*.o \
 	Compiler/*.o \
 	Interfaces/*.o
-	mv libDissection.$(EXTLIB) $(ROOT)/libs32/
+	mv libDissection.$(EXTLIB) $(ROOT)/lib/lib32
 
 clean:
 	@(cd Compiler;        make clean)

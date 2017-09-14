@@ -8,10 +8,11 @@
 namespace espreso {
 
 struct StructuralMechanicsConfiguration;
+struct ResultsSelectionConfiguration;
 
 struct StructuralMechanics: public virtual Physics
 {
-	StructuralMechanics(const StructuralMechanicsConfiguration &configuration);
+	StructuralMechanics(const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
 
 	virtual std::vector<size_t> solutionsIndicesToStore() const;
 
@@ -47,6 +48,7 @@ protected:
 	static size_t offset;
 
 	const StructuralMechanicsConfiguration &_configuration;
+	const ResultsSelectionConfiguration &_propertiesConfiguration;
 
 	// to handle with non-continuous partition
 	std::vector<Point> _cCenter, _cNorm;

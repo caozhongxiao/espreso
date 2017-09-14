@@ -1,6 +1,6 @@
 
 #include "wrapper.h"
-#include "../../../libespreso/feti4i.h"
+#include "../../../include/feti4i.h"
 
 #include "../../assembler/physics/precomputed.h"
 #include "../../assembler/physicssolver/assembler.h"
@@ -11,15 +11,14 @@
 
 #include "../../output/resultstorelist.h"
 
-#include "../../configuration/input/input.h"
-#include "../../configuration/globalconfiguration.h"
-#include "../../configuration/output.h"
+#include "../../config/ecf/ecf.h"
 #include "../../input/api/api.h"
 
 #include "../../mesh/structures/mesh.h"
 #include "../../solver/generic/FETISolver.h"
 
-espreso::Environment espreso::DataHolder::environment;
+
+espreso::ECFConfiguration* espreso::DataHolder::configuration = NULL;
 std::list<FETI4IStructMatrix*> espreso::DataHolder::matrices;
 std::list<FETI4IStructInstance*> espreso::DataHolder::instances;
 espreso::TimeEval espreso::DataHolder::timeStatistics("API total time");
@@ -29,10 +28,8 @@ using namespace espreso;
 FETI4IStructInstance::FETI4IStructInstance(FETI4IStructMatrix &matrix, eslocal *l2g, size_t size)
 : instance(NULL), physics(NULL), linearSolver(NULL), assembler(NULL), timeStepSolver(NULL), loadStepSolver(NULL)
 {
-	output = new OutputConfiguration;
-	store = new ResultStoreList(*output);
+	store = new ResultStoreList(configuration.output);
 	mesh = new APIMesh(l2g, size);
-	configuration = new ESPRESOSolver();
 }
 
 FETI4IStructInstance::~FETI4IStructInstance()
@@ -45,110 +42,86 @@ FETI4IStructInstance::~FETI4IStructInstance()
 	if (loadStepSolver != NULL) { delete loadStepSolver; }
 
 	delete store;
-	delete output;
 	delete mesh;
-	delete configuration;
+}
+
+static void checkConfiguration()
+{
+	if (espreso::DataHolder::configuration == NULL) {
+		espreso::DataHolder::configuration = new ECFConfiguration();
+		std::ifstream is("espreso.ecf");
+		if (is.good()) {
+			espreso::ECFReader::read(*espreso::DataHolder::configuration, "espreso.ecf", espreso::DataHolder::configuration->default_args, espreso::DataHolder::configuration->variables);
+			espreso::ECFReader::set(espreso::DataHolder::configuration->environment, espreso::DataHolder::configuration->output);
+		}
+	}
 }
 
 void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 {
-	std::ifstream is("espreso.ecf");
-	if (is.good()) {
-		espreso::GlobalConfiguration configuration("espreso.ecf");
+	checkConfiguration();
+	ECFConfiguration &ecf = *espreso::DataHolder::configuration;
 
-		options[FETI4I_SUBDOMAINS] = configuration.esdata.domains;
+	options[FETI4I_SUBDOMAINS] = ecf.feti4ilibrary.domains;
 
-		options[FETI4I_ITERATIONS] = configuration.structural_mechanics_3D.physics_solver.load_steps_settings.at(1)->espreso.iterations;
-		options[FETI4I_FETI_METHOD] = static_cast<int>(configuration.structural_mechanics_3D.physics_solver.load_steps_settings.at(1)->espreso.method);
-		options[FETI4I_PRECONDITIONER] = static_cast<int>(configuration.structural_mechanics_3D.physics_solver.load_steps_settings.at(1)->espreso.preconditioner);
-		options[FETI4I_CGSOLVER] = static_cast<int>(configuration.structural_mechanics_3D.physics_solver.load_steps_settings.at(1)->espreso.solver);
-		options[FETI4I_N_MICS] = configuration.structural_mechanics_3D.physics_solver.load_steps_settings.at(1)->espreso.N_MICS;
-		options[FETI4I_SC_SIZE] = configuration.structural_mechanics_3D.physics_solver.load_steps_settings.at(1)->espreso.SC_SIZE;
+	options[FETI4I_MAX_ITERATIONS] = ecf.feti4ilibrary.solver.max_iterations;
+	options[FETI4I_FETI_METHOD] = static_cast<int>(ecf.feti4ilibrary.solver.method);
+	options[FETI4I_PRECONDITIONER] = static_cast<int>(ecf.feti4ilibrary.solver.preconditioner);
+	options[FETI4I_CGSOLVER] = static_cast<int>(ecf.feti4ilibrary.solver.iterative_solver);
+	options[FETI4I_N_MICS] = ecf.feti4ilibrary.solver.n_mics;
+	options[FETI4I_SC_SIZE] = ecf.feti4ilibrary.solver.sc_size;
 
-		options[FETI4I_VERBOSE_LEVEL] = environment->verbose_level;
-		options[FETI4I_TESTING_LEVEL] = environment->testing_level;
-		options[FETI4I_MEASURE_LEVEL] = environment->measure_level;
-		options[FETI4I_PRINT_MATRICES] = environment->print_matrices;
-		environment = &DataHolder::environment;
-	} else {
-		ESPRESOInput input;
-		ESPRESOSolver solver;
-		options[FETI4I_SUBDOMAINS] = input.domains;
-
-		options[FETI4I_ITERATIONS] = solver.iterations;
-		options[FETI4I_FETI_METHOD] = static_cast<int>(solver.method);
-		options[FETI4I_PRECONDITIONER] = static_cast<int>(solver.preconditioner);
-		options[FETI4I_CGSOLVER] = static_cast<int>(solver.solver);
-		options[FETI4I_N_MICS] = solver.N_MICS;
-
-		options[FETI4I_VERBOSE_LEVEL] = environment->verbose_level;
-		options[FETI4I_TESTING_LEVEL] = environment->testing_level;
-		options[FETI4I_MEASURE_LEVEL] = environment->measure_level;
-		options[FETI4I_PRINT_MATRICES] = environment->print_matrices;
-
-		options[FETI4I_SC_SIZE] = solver.SC_SIZE;
-	}
+	options[FETI4I_VERBOSE_LEVEL] = ecf.environment.verbose_level;
+	options[FETI4I_MEASURE_LEVEL] = ecf.environment.measure_level;
+	options[FETI4I_PRINT_MATRICES] = ecf.environment.print_matrices;
 }
 
 void FETI4ISetDefaultRealOptions(FETI4IReal* options)
 {
-	std::ifstream is("espreso.ecf");
-	if (is.good()) {
-		espreso::GlobalConfiguration configuration("espreso.ecf");
-
-		options[FETI4I_EPSILON] = configuration.structural_mechanics_3D.physics_solver.load_steps_settings.at(1)->espreso.epsilon;
-		environment = &DataHolder::environment;
-	} else {
-		ESPRESOSolver solver;
-
-		options[FETI4I_EPSILON] = solver.epsilon;
-	}
+	checkConfiguration();
+	ECFConfiguration &ecf = *espreso::DataHolder::configuration;
+	options[FETI4I_PRECISION] = ecf.feti4ilibrary.solver.precision;
 }
 
-static void FETI4ISetIntegerOptions(espreso::ESPRESOInput &input, espreso::ESPRESOSolver &solver, FETI4IInt* options)
+static void FETI4ISetIntegerOptions(ECFConfiguration &configuration, FETI4IInt* options)
 {
-	if (!input.parameters["domains"]->set(std::to_string(options[FETI4I_SUBDOMAINS]))) {
+	if (!configuration.feti4ilibrary.getParameter(&configuration.feti4ilibrary.domains)->setValue(std::to_string(options[FETI4I_SUBDOMAINS]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'SUBDOMAINS' to " << options[FETI4I_SUBDOMAINS];
 	}
-	if (!solver.parameters["iterations"]->set(std::to_string(options[FETI4I_ITERATIONS]))) {
-		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'ITERATIONS' to " << options[FETI4I_ITERATIONS];
+	if (!configuration.feti4ilibrary.solver.getParameter(&configuration.feti4ilibrary.solver.max_iterations)->setValue(std::to_string(options[FETI4I_MAX_ITERATIONS]))) {
+		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'MAX_ITERATIONS' to " << options[FETI4I_MAX_ITERATIONS];
 	}
-	if (!solver.parameters["method"]->set(std::to_string(options[FETI4I_FETI_METHOD]))) {
+	if (!configuration.feti4ilibrary.solver.getParameter(&configuration.feti4ilibrary.solver.method)->setValue(std::to_string(options[FETI4I_FETI_METHOD]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'FETI_METHOD' to " << options[FETI4I_FETI_METHOD];
 	}
-	if (!solver.parameters["preconditioner"]->set(std::to_string(options[FETI4I_PRECONDITIONER]))) {
+	if (!configuration.feti4ilibrary.solver.getParameter(&configuration.feti4ilibrary.solver.preconditioner)->setValue(std::to_string(options[FETI4I_PRECONDITIONER]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'PRECONDITIONER' to " << options[FETI4I_PRECONDITIONER];
 	}
-	if (!solver.parameters["solver"]->set(std::to_string(options[FETI4I_CGSOLVER]))) {
+	if (!configuration.feti4ilibrary.solver.getParameter(&configuration.feti4ilibrary.solver.iterative_solver)->setValue(std::to_string(options[FETI4I_CGSOLVER]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'CGSOLVER' to " << options[FETI4I_CGSOLVER];
 	}
-	if (!solver.parameters["N_MICS"]->set(std::to_string(options[FETI4I_N_MICS]))) {
-		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'N_MICS' to " << options[FETI4I_N_MICS];
+	if (!configuration.feti4ilibrary.solver.getParameter(&configuration.feti4ilibrary.solver.n_mics)->setValue(std::to_string(options[FETI4I_N_MICS]))) {
+		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'n_mics' to " << options[FETI4I_N_MICS];
 	}
-	if (!solver.parameters["sc_size"]->set(std::to_string(options[FETI4I_SC_SIZE]))) {
-		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'SC_SIZE' to " << options[FETI4I_SC_SIZE];
+	if (!configuration.feti4ilibrary.solver.getParameter(&configuration.feti4ilibrary.solver.sc_size)->setValue(std::to_string(options[FETI4I_SC_SIZE]))) {
+		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'sc_size' to " << options[FETI4I_SC_SIZE];
 	}
-	if (!environment->parameters["verbose_level"]->set(std::to_string(options[FETI4I_VERBOSE_LEVEL]))) {
+	if (!configuration.environment.getParameter(&configuration.environment.verbose_level)->setValue(std::to_string(options[FETI4I_VERBOSE_LEVEL]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'VERBOSE_LEVEL' to " << options[FETI4I_VERBOSE_LEVEL];
 	}
-	if (!environment->parameters["testing_level"]->set(std::to_string(options[FETI4I_TESTING_LEVEL]))) {
-		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'TESTING_LEVEL' to " << options[FETI4I_TESTING_LEVEL];
-	}
-	if (!environment->parameters["measure_level"]->set(std::to_string(options[FETI4I_MEASURE_LEVEL]))) {
+	if (!configuration.environment.getParameter(&configuration.environment.measure_level)->setValue(std::to_string(options[FETI4I_MEASURE_LEVEL]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'MEASURE_LEVEL' to " << options[FETI4I_MEASURE_LEVEL];
 	}
-	if (!environment->parameters["print_matrices"]->set(std::to_string(options[FETI4I_PRINT_MATRICES]))) {
+	if (!configuration.environment.getParameter(&configuration.environment.print_matrices)->setValue(std::to_string(options[FETI4I_PRINT_MATRICES]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'PRINT_MATRICES' to " << options[FETI4I_PRINT_MATRICES];
 	}
 
-	solver.regularization = REGULARIZATION::NULL_PIVOTS;
-	OutputConfiguration output;
-	Reader::set(*environment, output);
+	configuration.feti4ilibrary.solver.regularization = FETI_REGULARIZATION::ALGEBRAIC;
 }
 
-static void FETI4ISetRealOptions(espreso::ESPRESOSolver &solver, FETI4IReal* options)
+static void FETI4ISetRealOptions(espreso::ECFConfiguration &configuration, FETI4IReal* options)
 {
-	solver.epsilon = options[FETI4I_EPSILON];
+	configuration.feti4ilibrary.solver.precision = options[FETI4I_PRECISION];
 }
 
 void FETI4ICreateStiffnessMatrix(
@@ -156,11 +129,7 @@ void FETI4ICreateStiffnessMatrix(
 		FETI4IInt		type,
 		FETI4IInt		indexBase)
 {
-	MPI_Comm_rank(environment->MPICommunicator, &environment->MPIrank);
-	MPI_Comm_size(environment->MPICommunicator, &environment->MPIsize);
-	OutputConfiguration output;
-	Reader::set(*environment, output);
-
+	checkConfiguration();
 	DataHolder::timeStatistics.totalTime.startWithBarrier();
 	TimeEvent event("Add element");
 	DataHolder::timeStatistics.addEvent(event);
@@ -210,11 +179,11 @@ void FETI4ICreateInstance(
 		FETI4IInt* 		integer_options,
 		FETI4IReal*		real_options)
 {
+	checkConfiguration();
 	DataHolder::instances.push_back(new FETI4IStructInstance(*matrix, l2g, size));
 
-	ESPRESOInput input;
-	FETI4ISetIntegerOptions(input, *DataHolder::instances.back()->configuration, integer_options);
-	FETI4ISetRealOptions(*DataHolder::instances.back()->configuration, real_options);
+	FETI4ISetIntegerOptions(DataHolder::instances.back()->configuration, integer_options);
+	FETI4ISetRealOptions(DataHolder::instances.back()->configuration, real_options);
 
 	TimeEvent event("Create FETI4I instance"); event.startWithBarrier();
 
@@ -223,8 +192,7 @@ void FETI4ICreateInstance(
 	std::vector<int> neighClusters = std::vector<int>(neighbours, neighbours + neighbours_size);
 
 	input::API::load(
-			input,
-			*DataHolder::instances.back()->mesh, matrix->offset,
+			*DataHolder::instances.back()->mesh, matrix->offset, DataHolder::instances.back()->configuration.feti4ilibrary.domains,
 			matrix->eType, matrix->eNodes, matrix->eDOFs, matrix->eMatrices,
 			dirichlet_size, dirichlet_indices, dirichlet_values,
 			neighClusters,
@@ -234,7 +202,7 @@ void FETI4ICreateInstance(
 
 	DataHolder::instances.back()->instance = new Instance(*DataHolder::instances.back()->mesh);
 	DataHolder::instances.back()->physics = new Precomputed(DataHolder::instances.back()->mesh, DataHolder::instances.back()->instance, (espreso::MatrixType)matrix->type, rhs, size);
-	DataHolder::instances.back()->linearSolver = new FETISolver(DataHolder::instances.back()->instance, *DataHolder::instances.back()->configuration);
+	DataHolder::instances.back()->linearSolver = new FETISolver(DataHolder::instances.back()->instance, DataHolder::instances.back()->configuration.feti4ilibrary.solver);
 	DataHolder::instances.back()->assembler = new Assembler(
 			*DataHolder::instances.back()->instance,
 			*DataHolder::instances.back()->physics,
@@ -244,11 +212,11 @@ void FETI4ICreateInstance(
 	DataHolder::instances.back()->timeStepSolver = new LinearTimeStep(*DataHolder::instances.back()->assembler);
 	DataHolder::instances.back()->loadStepSolver = new SteadyStateSolver(*DataHolder::instances.back()->timeStepSolver, 1);
 
-	switch (DataHolder::instances.back()->configuration->method) {
-	case ESPRESO_METHOD::TOTAL_FETI:
+	switch (DataHolder::instances.back()->configuration.feti4ilibrary.solver.method) {
+	case FETI_METHOD::TOTAL_FETI:
 		DataHolder::instances.back()->physics->prepare();
 		break;
-	case ESPRESO_METHOD::HYBRID_FETI:
+	case FETI_METHOD::HYBRID_FETI:
 		DataHolder::instances.back()->physics->prepareHybridTotalFETIWithKernels();
 		break;
 	default:
@@ -263,6 +231,7 @@ void FETI4ISolve(
 		FETI4IInt 		solution_size,
 		FETI4IReal*		solution)
 {
+	checkConfiguration();
 	TimeEvent event("Solve FETI4I instance"); event.startWithBarrier();
 
 	Step step;
@@ -292,5 +261,12 @@ void FETI4IDestroy(void *data)
 {
 	destroy(DataHolder::matrices, data);
 	destroy(DataHolder::instances, data);
+	if (DataHolder::instances.size() == 0 && DataHolder::matrices.size() == 0) {
+		if (&DataHolder::configuration->environment == environment) {
+			environment = NULL;
+		}
+		delete DataHolder::configuration;
+		DataHolder::configuration = NULL;
+	}
 }
 

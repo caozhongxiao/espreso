@@ -81,11 +81,11 @@ def configure(ctx):
 
     ctx.ROOT = ctx.path.abspath()
 
-    if not os.path.exists(ctx.ROOT + "/libs"):
-        os.makedirs(ctx.ROOT + "/libs")
+    if not os.path.exists(ctx.ROOT + "/lib"):
+        os.makedirs(ctx.ROOT + "/lib")
 
-    ctx.env.append_unique("LIBPATH", [ ctx.ROOT + "/libs" ])
-    ctx.env.append_unique("STLIBPATH", [ ctx.ROOT + "/libs" ])
+    ctx.env.append_unique("LIBPATH", [ ctx.ROOT + "/lib" ])
+    ctx.env.append_unique("STLIBPATH", [ ctx.ROOT + "/lib" ])
 
     # Waf INCLUDES policy is strange -> use export includes
     ctx.env.append_unique("CXXFLAGS", [ "-I" + include for include in ctx.env.INCLUDES ])
@@ -101,7 +101,7 @@ def configure(ctx):
         ctx.check_header(header)
 
     # recurse to basic parts
-    ctx.recurse("src/configuration")
+    ctx.recurse("src/config")
     ctx.recurse("src/basis")
 
     # recurse to ESPRESO solver
@@ -118,9 +118,6 @@ def configure(ctx):
 
     check_environment(ctx)
 
-    ctx.setenv("api", ctx.all_envs["espreso"].derive());
-    ctx.recurse("libespreso")
-
     ctx.setenv("gui", ctx.all_envs["espreso"].derive());
     ctx.recurse("src/gui")
 
@@ -136,7 +133,7 @@ def configure(ctx):
 
     if not all(lib[0] for lib in optional_libraries):
         ctx.msg("", "")
-        ctx.msg("Not found optional libraries", "ESPRESO not supports", color="RED")
+        ctx.msg("NOT FOUND OPTIONAL LIBRARIES", "ESPRESO does not support", color="RED")
         for status, lib, purpose in not_found:
             ctx.msg("  " + lib, purpose, color="NORMAL")
 
@@ -154,7 +151,7 @@ def build(ctx):
     ctx.add_group()
 
     ctx.recurse("src/basis")
-    ctx.recurse("src/configuration")
+    ctx.recurse("src/config")
 
     ctx.env = ctx.all_envs["solver"]
     ctx.recurse("src/mesh")
@@ -165,9 +162,6 @@ def build(ctx):
     ctx.env = ctx.all_envs["espreso"]
     ctx.recurse("src/output")
     ctx.recurse("src/app")
-
-    ctx.env = ctx.all_envs["api"]
-    ctx.recurse("libespreso")
 
     ctx.env = ctx.all_envs["gui"]
     ctx.recurse("src/gui")

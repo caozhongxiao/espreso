@@ -12,7 +12,6 @@
 
 #include "../settings/evaluator.h"
 #include "coordinates.h"
-#include "material.h"
 #include "region.h"
 
 #include "../elements/point/node.h"
@@ -31,8 +30,10 @@
 #include "elementtypes.h"
 
 #include "metis.h"
-#include "../../configuration/environment.h"
-#include "../../configuration/material/coordinatesystem.h"
+#include "../../config/valueholder.h"
+#include "../../config/ecf/environment.h"
+#include "../../config/ecf/material/material.h"
+#include "../../basis/utilities/parser.h"
 
 namespace espreso {
 
@@ -53,7 +54,7 @@ APIMesh::APIMesh(eslocal *l2g, size_t size)
 : _l2g(l2g, l2g + size)
 {
 	_g2l = new std::vector<G2L>();
-};
+}
 
 void Mesh::computeFixPoints(size_t number)
 {
@@ -602,6 +603,14 @@ Mesh::~Mesh()
 	delete _coordinates;
 }
 
+APIMesh::~APIMesh()
+{
+	delete _g2l;
+	for (size_t i = 0; i < _DOFs.size(); i++) {
+		delete _DOFs[i];
+	}
+}
+
 //static bool isOuterFace(
 //		std::vector<std::vector<eslocal> > &nodesElements,
 //		std::vector<eslocal> &face)
@@ -884,9 +893,9 @@ void Mesh::loadProperty(
 
 			if (!StringCompare::contains(value, { "x", "y", "z", "TEMPERATURE", "TIME" })) {
 				Expression expr(value, {});
-				_evaluators.push_back(new ConstEvaluator(expr.evaluate({}), properties[p]));
+				_evaluators.push_back(new ConstEvaluator(expr.evaluate({})));
 			} else {
-				_evaluators.push_back(new CoordinatesEvaluator(value, *_coordinates, properties[p]));
+				_evaluators.push_back(new ExpressionEvaluator(value));
 			}
 
 			std::vector<std::vector<esglobal> > boundaryNodes(_neighbours.size());
@@ -1001,47 +1010,27 @@ void Mesh::loadProperty(
 void Mesh::loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep)
 {
 	loadProperty(loadStep, regions, parameters, properties, ElementType::ELEMENTS);
+	for (size_t i = 0; i < properties.size(); i++) {
+		_propertyGroups[properties[i]] = properties;
+	}
 }
 
 void Mesh::loadNodeProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep)
 {
 	loadProperty(loadStep, regions, parameters, properties, ElementType::NODES);
+	for (size_t i = 0; i < properties.size(); i++) {
+		_propertyGroups[properties[i]] = properties;
+	}
 }
 
 void Mesh::loadFaceProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep)
 {
 	loadProperty(loadStep, regions, parameters, properties, ElementType::FACES);
-}
-
-void Mesh::loadProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties)
-{
-	for (auto it = property.begin(); it != property.end(); ++it) {
-		loadProperty(it->first - 1, it->second, parameters, properties, ElementType::ELEMENTS);
-	}
 	for (size_t i = 0; i < properties.size(); i++) {
 		_propertyGroups[properties[i]] = properties;
 	}
 }
 
-void Mesh::loadNodeProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties)
-{
-	for (auto it = property.begin(); it != property.end(); ++it) {
-		loadProperty(it->first - 1, it->second, parameters, properties, ElementType::NODES);
-	}
-	for (size_t i = 0; i < properties.size(); i++) {
-		_propertyGroups[properties[i]] = properties;
-	}
-}
-
-void Mesh::loadFaceProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties)
-{
-	for (auto it = property.begin(); it != property.end(); ++it) {
-		loadProperty(it->first - 1, it->second, parameters, properties, ElementType::FACES);
-	}
-	for (size_t i = 0; i < properties.size(); i++) {
-		_propertyGroups[properties[i]] = properties;
-	}
-}
 
 Region* Mesh::region(const std::string &name) const
 {
@@ -1097,24 +1086,58 @@ bool Mesh::commonRegion(const std::vector<Region*> &v1, const std::vector<Region
 	return false;
 }
 
-void Mesh::materialNotFound(const std::string &name)
+void Mesh::evaluateMaterial(MaterialConfiguration &material)
 {
-	ESINFO(GLOBAL_ERROR) << "Invalid .ecf file: material " << name << " is not set.";
+	material.forEachParameters([] (ECFParameter *parameter) {
+		if (parameter->metadata.datatype.front() == ECFDataType::EXPRESSION) {
+			if (StringCompare::contains(parameter->getValue(), { "TABULAR" })) {
+				std::string value = Parser::strip(parameter->getValue().substr(parameter->getValue().find_first_of("[")));
+				value = value.substr(1, value.size() - 3);
+				std::vector<std::string> lines = Parser::split(value, ";");
+				std::vector<std::pair<double, double> > table;
+
+				for (size_t i = 0; i < lines.size(); i++) {
+					if (lines[i].size() == 0) {
+						continue;
+					}
+					std::vector<std::string> line = Parser::split(lines[i], ",");
+					if (line.size() != 2) {
+						ESINFO(GLOBAL_ERROR) << "Invalid TABULAR data: " << parameter->getValue();
+					}
+					table.push_back(std::make_pair(std::stod(line[0]), std::stod(line[1])));
+				}
+				dynamic_cast<ECFValueHolder<ECFExpression>*>(parameter)->value.evaluator = new TableInterpolationEvaluator(table);
+				return;
+			}
+			if (Expression::isValid(parameter->getValue(), parameter->metadata.variables)) {
+				dynamic_cast<ECFValueHolder<ECFExpression>*>(parameter)->value.evaluator = new ExpressionEvaluator(
+						parameter->getValue(),
+						parameter->metadata.variables);
+			} else {
+				ESINFO(GLOBAL_ERROR) << "Material parameter '" << Parser::uppercase(parameter->name) << "' cannot be set to '" << parameter->getValue() << "'";
+			}
+		}
+	});
 }
 
-void Mesh::loadMaterial(Region *region, size_t index, const std::string &name, const Configuration &configuration)
+void Mesh::loadMaterials(const std::map<std::string, MaterialConfiguration> &materials, const std::map<std::string, std::string> &sets)
 {
-	#pragma omp parallel for
-	for (size_t e = 0; e < region->elements().size(); e++) {
-		region->elements()[e]->setParam(Element::MATERIAL, index);
+	size_t index = 0;
+	for (auto it = sets.begin(); it != sets.end(); ++it, index++) {
+		if (materials.find(it->second) == materials.end()) {
+			ESINFO(GLOBAL_ERROR) << "Invalid .ecf file: material " << it->second << " is not set.";
+		} else {
+			Region *r = this->region(it->first);
+			#pragma omp parallel for
+			for (size_t e = 0; e < r->elements().size(); e++) {
+				r->elements()[e]->setParam(Element::MATERIAL, index);
+			}
+			_materials.push_back(new MaterialConfiguration());
+			*_materials.back() = materials.find(it->second)->second;
+			evaluateMaterial(*_materials.back());
+			ESINFO(OVERVIEW) << "Set material '" << it->second << "' for region '" << r->name << "'";
+		}
 	}
-	const Configuration* coordinateSystem = configuration.subconfigurations.find("COORDINATE_SYSTEM")->second;
-	_materials.push_back(new Material(*_coordinates, configuration, dynamic_cast<const CoordinateSystem&>(*coordinateSystem)));
-	ESINFO(OVERVIEW) << "Set material '" << name << "' for region '" << region->name << "'";
-}
-
-void Mesh::checkMaterials()
-{
 	if (!_materials.size()) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO needs at least one material.";
 	}

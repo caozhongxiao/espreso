@@ -7,11 +7,9 @@
 
 namespace espreso {
 
-struct StructuralMechanics3DConfiguration;
-
 struct StructuralMechanics3D: public StructuralMechanics, public Physics3D
 {
-	StructuralMechanics3D(Mesh *mesh, Instance *instance, const StructuralMechanics3DConfiguration &configuration);
+	StructuralMechanics3D(Mesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
 
 	virtual std::vector<std::pair<ElementType, Property> > propertiesToStore() const;
 
@@ -38,8 +36,6 @@ struct StructuralMechanics3D: public StructuralMechanics, public Physics3D
 protected:
 	void assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K) const;
 	void postProcessElement(const Step &step, const Element *e, std::vector<Solution*> &solution);
-
-	const StructuralMechanics3DConfiguration &_configuration;
 };
 
 }

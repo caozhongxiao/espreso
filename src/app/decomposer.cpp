@@ -1,34 +1,34 @@
 
 #include "mpi.h"
 
-#include "../configuration/globalconfiguration.h"
+#include "../config/ecf/ecf.h"
 #include "../mesh/structures/mesh.h"
 #include "../mesh/structures/coordinates.h"
 #include "../input/loader.h"
 #include "../basis/logging/logging.hpp"
 #include "../output/datastore/espresobinaryformat.h"
 
-using namespace espreso;
+ using namespace espreso;
 
 int main(int argc, char** argv)
 {
 	MPI_Init(&argc, &argv);
-	GlobalConfiguration configuration(&argc, &argv);
+	ECFConfiguration ecf(&argc, &argv);
 
 	size_t parts;
-	std::stringstream directoryTree(configuration.decomposer.parts);
+	std::stringstream directoryTree(ecf.decomposer.parts);
 	while (directoryTree >> parts) {
 		std::stringstream path;
-		path << configuration.decomposer.prefix << parts * environment->MPIsize;
+		path << ecf.decomposer.prefix << parts * environment->MPIsize;
 		ESPRESOBinaryFormat::prepareDirectories(path.str(), parts);
 	}
 
 	Mesh mesh;
-	input::Loader::load(configuration, mesh, configuration.env.MPIrank, configuration.env.MPIsize);
-	std::stringstream decomposition(configuration.decomposer.parts);
+	input::Loader::load(ecf, mesh, ecf.environment.MPIrank, ecf.environment.MPIsize);
+	std::stringstream decomposition(ecf.decomposer.parts);
 	while (decomposition >> parts) {
 		std::stringstream path;
-		path << configuration.decomposer.prefix << parts * environment->MPIsize;
+		path << ecf.decomposer.prefix << parts * environment->MPIsize;
 
 		mesh.partitiate(parts);
 		ESINFO(ALWAYS) << "Mesh partitiated to " << parts * environment->MPIsize << " parts";

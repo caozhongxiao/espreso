@@ -10,8 +10,7 @@
 #include "../../mesh/structures/region.h"
 #include "../../mesh/settings/evaluator.h"
 
-#include "../../configuration/configuration.h"
-#include "../../configuration/environment.h"
+#include "../../config/ecf/environment.h"
 
 #include <numeric>
 

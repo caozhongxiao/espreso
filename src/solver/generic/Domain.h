@@ -35,7 +35,7 @@ class Domain {
 public:
 
 	// Constructor
-	Domain(const ESPRESOSolver &configuration, Instance *instance_in, eslocal domain_index, eslocal USE_HTFETI_in);
+	Domain(const FETISolverConfiguration &configuration, Instance *instance_in, eslocal domain_index, eslocal USE_HTFETI_in);
 
 	// Methods of the class
 	void SetDomain();
@@ -47,7 +47,7 @@ public:
 	void multKplusLocalCore( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out );
 	void multKplusLocalCore( SEQ_VECTOR <double> & x_in_y_out);
 
-    const ESPRESOSolver &configuration;
+    const FETISolverConfiguration &configuration;
 	Instance 		    *instance;
 
 	SparseMatrix &K;

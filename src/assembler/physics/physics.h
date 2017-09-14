@@ -23,7 +23,7 @@ class Solution;
 class SparseMatrix;
 namespace store { class ResultStore; }
 
-enum class REGULARIZATION;
+enum class FETI_REGULARIZATION;
 
 enum class SumOperation {
 	SUM,
@@ -37,6 +37,7 @@ enum class SumRestriction {
 };
 
 struct Physics {
+	friend class APITestESPRESODataProvider;
 
 	Physics(const std::string &name, Mesh *mesh, Instance *instance);
 	const std::string& name() const { return _name; }
@@ -64,8 +65,8 @@ struct Physics {
 	virtual void processNode(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const =0;
 	virtual void processSolution(const Step &step) =0;
 
-	virtual void makeStiffnessMatricesRegular(REGULARIZATION regularization, size_t scSize, bool ortogonalCluster);
-	virtual void makeStiffnessMatrixRegular(REGULARIZATION regularization, size_t scSize, size_t domains, bool ortogonalCluster);
+	virtual void makeStiffnessMatricesRegular(FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster);
+	virtual void makeStiffnessMatrixRegular(FETI_REGULARIZATION regularization, size_t scSize, size_t domains, bool ortogonalCluster);
 	virtual void analyticRegularization(size_t domain, bool ortogonalCluster) =0;
 
 	virtual void assembleB1(const Step &step, bool withRedundantMultipliers, bool withGluing, bool withScaling);

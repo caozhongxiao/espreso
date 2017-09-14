@@ -10,31 +10,31 @@
 |*****************************************************************************|
 
 INPUT WORKBENCH;
-PHYSICS ADVECTION_DIFFUSION_3D;
+PHYSICS HEAT_TRANSFER_3D;
 
 WORKBENCH {
   PATH    workbench.dat;
   DOMAINS 2;
 }
 
-ADVECTION_DIFFUSION_3D {
+HEAT_TRANSFER_3D {
 
-  PHYSICS_SOLVER {
+
     LOAD_STEPS          1;
 
     LOAD_STEPS_SETTINGS {
       1 {
         TYPE        STEADY_STATE;
         MODE              LINEAR;
-        SOLVER_LIBRARY   ESPRESO;
+        SOLVER FETI;
 
-        ESPRESO {
+        FETI {
           METHOD          HYBRID_FETI;
-          SOLVER                  PCG;
+          ITERATIVE_SOLVER PCG;
           PRECONDITIONER       LUMPED;
-          REGULARIZATION  NULL_PIVOTS;
+          REGULARIZATION  ALGEBRAIC;
         }
       }
     }
-  }
+
 }

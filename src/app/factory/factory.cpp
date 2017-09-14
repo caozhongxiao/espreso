@@ -1,7 +1,6 @@
 
 #include "factory.h"
 
-#include "advectiondiffusionfactory.h"
 #include "structuralmechanicsfactory.h"
 
 #include "../../assembler/physicssolver/timestep/timestepsolver.h"
@@ -12,7 +11,7 @@
 #include "../../assembler/instance.h"
 #include "../../input/loader.h"
 
-#include "../../configuration/globalconfiguration.h"
+#include "../../config/ecf/ecf.h"
 #include "../../mesh/structures/mesh.h"
 
 #include "../../output/resultstorelist.h"
@@ -24,11 +23,12 @@
 #include "../../output/monitoring/monitoring.h"
 
 #include "../../solver/generic/FETISolver.h"
+#include "heattransferfactory.h"
 
 
 namespace espreso {
 
-Factory::Factory(const GlobalConfiguration &configuration)
+Factory::Factory(const ECFConfiguration &configuration, size_t domains)
 : _mesh(new Mesh()), _storeList(new ResultStoreList(configuration.output)), _loader(NULL)
 {
 	initAsync(configuration.output);
@@ -42,10 +42,20 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		return;
 	}
 
-	input::Loader::load(configuration, *_mesh, configuration.env.MPIrank, configuration.env.MPIsize);
+	input::Loader::load(configuration, *_mesh, configuration.environment.MPIrank, configuration.environment.MPIsize);
+
+	if (domains) {
+		_mesh->partitiate(domains);
+	}
 
 	loadPhysics(configuration);
 	setOutput(configuration.output);
+}
+
+Factory::Factory(const ECFConfiguration &configuration)
+: Factory(configuration, 0)
+{
+
 }
 
 void Factory::solve()
@@ -58,6 +68,7 @@ void Factory::solve()
 	Logging::step = &step;
 
 	for (step.step = 0; step.step < _loadSteps.size(); step.step++) {
+		step.finalTime = step.currentTime + _loadSteps[step.step]->duration();
 		_loadSteps[step.step]->run(step);
 	}
 	_storeList->finalize();
@@ -67,21 +78,21 @@ void Factory::initAsync(const OutputConfiguration &configuration)
 {
 	_asyncStore = NULL;
 	async::Config::setMode(async::SYNC);
-	if (configuration.solution || configuration.settings) {
-		if (configuration.mode != OUTPUT_MODE::SYNC && (configuration.settings || configuration.FETI_data)) {
+	if (configuration.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER || configuration.settings) {
+		if (configuration.mode != OutputConfiguration::MODE::SYNC && (configuration.settings || configuration.FETI_data)) {
 			ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Storing of SETTINGS or FETI_DATA is implemented only for OUTPUT::MODE==SYNC. Hence, output is synchronized!";
 		} else if (configuration.collected) {
 			ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Storing COLLECTED output is implemented only for OUTPUT::MODE==SYNC. Hence, output is synchronized!";
 		} else {
 			// Configure the asynchronous library
 			switch (configuration.mode) {
-			case OUTPUT_MODE::SYNC:
+			case OutputConfiguration::MODE::SYNC:
 				async::Config::setMode(async::SYNC);
 				break;
-			case OUTPUT_MODE::THREAD:
+			case OutputConfiguration::MODE::THREAD:
 				async::Config::setMode(async::THREAD);
 				break;
-			case OUTPUT_MODE::MPI:
+			case OutputConfiguration::MODE::MPI:
 				if (environment->MPIsize == 1) {
 					ESINFO(GLOBAL_ERROR) << "Invalid number of MPI processes. OUTPUT::MODE==MPI required at least two MPI processes.";
 				}
@@ -105,19 +116,19 @@ void Factory::setOutput(const OutputConfiguration &configuration)
 	if (configuration.catalyst) {
 		_storeList->add(new Catalyst(configuration, _mesh));
 	}
-	if (configuration.solution || configuration.settings) {
+	if (configuration.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER || configuration.settings) {
 		if (_asyncStore != NULL) {
 			_asyncStore->init(_mesh);
 			_storeList->add(_asyncStore);
 		} else {
 			switch (configuration.format) {
-			case OUTPUT_FORMAT::VTK_LEGACY:
+			case OutputConfiguration::FORMAT::VTK_LEGACY:
 				_storeList->add(new VTKLegacy(configuration, _mesh));
 				break;
-			case OUTPUT_FORMAT::VTK_XML_ASCII:
+			case OutputConfiguration::FORMAT::VTK_XML_ASCII:
 				_storeList->add(new VTKXMLASCII(configuration, _mesh));
 				break;
-			case OUTPUT_FORMAT::VTK_XML_BINARY:
+			case OutputConfiguration::FORMAT::VTK_XML_BINARY:
 				_storeList->add(new VTKXMLBinary(configuration, _mesh));
 				break;
 			default:
@@ -125,7 +136,7 @@ void Factory::setOutput(const OutputConfiguration &configuration)
 			}
 		}
 	}
-	if (configuration.monitoring.size()) {
+	if (configuration.monitoring.size() && configuration.monitors_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
 		_storeList->add(new Monitoring(configuration, _mesh));
 	}
 
@@ -138,17 +149,17 @@ void Factory::setOutput(const OutputConfiguration &configuration)
 	}
 }
 
-FactoryLoader* Factory::createFactoryLoader(const GlobalConfiguration &configuration)
+FactoryLoader* Factory::createFactoryLoader(const ECFConfiguration &configuration)
 {
 	switch (configuration.physics) {
-	case PHYSICS::ADVECTION_DIFFUSION_2D:
-		return new AdvectionDiffusionFactory(configuration.advection_diffusion_2D, _mesh);
-	case PHYSICS::ADVECTION_DIFFUSION_3D:
-		return new AdvectionDiffusionFactory(configuration.advection_diffusion_3D, _mesh);
+	case PHYSICS::HEAT_TRANSFER_2D:
+		return new HeatTransferFactory(configuration.heat_transfer_2d, configuration.output.results_selection, _mesh);
+	case PHYSICS::HEAT_TRANSFER_3D:
+		return new HeatTransferFactory(configuration.heat_transfer_3d, configuration.output.results_selection, _mesh);
 	case PHYSICS::STRUCTURAL_MECHANICS_2D:
-		return new StructuralMechanicsFactory(configuration.structural_mechanics_2D, _mesh);
+		return new StructuralMechanicsFactory(configuration.structural_mechanics_2d, configuration.output.results_selection, _mesh);
 	case PHYSICS::STRUCTURAL_MECHANICS_3D:
-		return new StructuralMechanicsFactory(configuration.structural_mechanics_3D, _mesh);
+		return new StructuralMechanicsFactory(configuration.structural_mechanics_3d, configuration.output.results_selection, _mesh);
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown PHYSICS in configuration file";
 		return NULL;
@@ -173,18 +184,18 @@ FactoryLoader::~FactoryLoader()
 	clear(_loadStepSolvers);
 }
 
-LinearSolver* FactoryLoader::getLinearSolver(const LoadStepSettingsBase &settings, Instance *instance) const
+LinearSolver* FactoryLoader::getLinearSolver(const LoadStepConfiguration &settings, Instance *instance) const
 {
-	switch (settings.solver_library) {
-	case SOLVER_LIBRARY::ESPRESO:
-		return new FETISolver(instance, settings.espreso);
+	switch (settings.solver) {
+	case LoadStepConfiguration::SOLVER::FETI:
+		return new FETISolver(instance, settings.feti);
 	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER_LIBRARY.";
+		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
 		return NULL;
 	}
 }
 
-void Factory::loadPhysics(const GlobalConfiguration &configuration)
+void Factory::loadPhysics(const ECFConfiguration &configuration)
 {
 	_loader = createFactoryLoader(configuration);
 
@@ -202,15 +213,15 @@ void FactoryLoader::preprocessMesh()
 	for (size_t i = 0; i < _physics.size(); i++) {
 
 		switch (dynamic_cast<FETISolver*>(_linearSolvers.front())->configuration.method) {
-		case ESPRESO_METHOD::TOTAL_FETI:
+		case FETI_METHOD::TOTAL_FETI:
 			_physics[i]->prepare();
 			break;
-		case ESPRESO_METHOD::HYBRID_FETI:
+		case FETI_METHOD::HYBRID_FETI:
 			switch (dynamic_cast<FETISolver*>(_linearSolvers.front())->configuration.B0_type) {
-			case B0_TYPE::CORNERS:
+			case FETI_B0_TYPE::CORNERS:
 				_physics[i]->prepareHybridTotalFETIWithCorners();
 				break;
-			case B0_TYPE::KERNELS:
+			case FETI_B0_TYPE::KERNELS:
 				_physics[i]->prepareHybridTotalFETIWithKernels();
 				break;
 			default:

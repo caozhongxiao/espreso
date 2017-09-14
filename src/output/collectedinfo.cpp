@@ -1,7 +1,7 @@
 
 #include "collectedinfo.h"
 
-#include "../configuration/environment.h"
+#include "../config/ecf/environment.h"
 
 #include "../basis/utilities/utils.h"
 #include "../basis/utilities/communication.h"
@@ -349,7 +349,7 @@ void CollectedInfo::addSettings(const Step &step)
 			for (auto p = pGroup.begin(); p != pGroup.end(); ++p) {
 				sValues[regionOffset].push_back(0);
 				for (size_t n = 0; n < region->elements()[e]->nodes(); n++) {
-					sValues[regionOffset].back() += region->elements()[e]->sumProperty(*p, n, step.step, step.currentTime, 0, 0);
+					sValues[regionOffset].back() += region->elements()[e]->sumProperty(*p, step.step, _mesh->coordinates()[region->elements()[e]->node(n)], step.currentTime, 0, 0);
 				}
 				sValues[regionOffset].back() /= region->elements()[e]->nodes();
 			}
@@ -403,10 +403,15 @@ void CollectedInfo::addProperty(const Step &step, ElementType eType, Property pr
 				if ((_mode & InfoMode::SEPARATE_MATERIALS) && _mesh->elements()[e]->params()) {
 					regionOffset += _mesh->elements()[e]->param(Element::Params::MATERIAL);
 				}
+				Point center;
+				for (size_t n = 0; n < _mesh->elements()[e]->nodes(); n++) {
+					center += _mesh->coordinates()[_mesh->elements()[e]->node(n)];
+				}
+				center /= _mesh->elements()[e]->nodes();
 
 				eslocal d = std::lower_bound(_mesh->getPartition().begin(), _mesh->getPartition().end(), e + 1) - _mesh->getPartition().begin() - 1;
 				for (size_t p = 0; p < pGroup.size(); p++) {
-					rData[regionOffset][t].push_back(_mesh->elements()[e]->sumProperty(pGroup[p], 0, step.step, step.currentTime, 0, 0));
+					rData[regionOffset][t].push_back(_mesh->elements()[e]->sumProperty(pGroup[p], step.step, center, step.currentTime, 0, 0));
 				}
 
 			}
@@ -433,7 +438,7 @@ void CollectedInfo::addProperty(const Step &step, ElementType eType, Property pr
 
 				for (auto d = _mesh->nodes()[n]->domains().begin(); d != _mesh->nodes()[n]->domains().end(); ++d) {
 					for (size_t p = 0; p < pGroup.size(); p++) {
-						sData[n * pGroup.size() + p] += _mesh->nodes()[n]->sumProperty(pGroup[p], 0, step.step, step.currentTime, 0, 0);
+						sData[n * pGroup.size() + p] += _mesh->nodes()[n]->sumProperty(pGroup[p], step.step, _mesh->coordinates()[_mesh->nodes()[n]->node(0)], step.currentTime, 0, 0);
 					}
 				}
 			}
