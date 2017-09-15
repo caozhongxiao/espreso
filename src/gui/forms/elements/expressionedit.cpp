@@ -6,43 +6,32 @@
 using namespace espreso;
 
 
-ExpressionEdit::ExpressionEdit(QWidget* parent) : QLineEdit(parent)
-{
-    this->setText("0");
-    this->mValidState = true;
-}
-
-ExpressionEdit::ExpressionEdit(const QString& contents, QWidget* parent) :
+ExpressionEdit::ExpressionEdit(const QString& contents,
+                               const std::vector<std::string>& variables,
+                               QWidget* parent) :
     QLineEdit(contents, parent)
 {
-    this->setText("0");
-    this->mValidState = true;
-}
+    this->m_variables = variables;
 
-bool ExpressionEdit::validate(const QString& expr)
-{
-    return espreso::Expression::isValid(expr.toStdString(), Common::fnVariables());
+    connect(this, &ExpressionEdit::textChanged,
+            this, &ExpressionEdit::onTextChanged);
+
+    this->m_isValid = Expression::isValid(contents.toStdString(), m_variables);
 }
 
 bool ExpressionEdit::isValid()
 {
-    return this->mValidState;
+    return this->m_isValid;
 }
 
-void ExpressionEdit::focusOutEvent(QFocusEvent* e)
+QString ExpressionEdit::errorMessage()
 {
-    bool valid = ExpressionEdit::validate(this->text());
+    if (this->text().isEmpty())
+        return tr("Empty expression");
+    return tr("Invalid expression");
+}
 
-    if (valid)
-    {
-        this->setStyleSheet("ExpressionEdit{color: black;}");
-    }
-    else
-    {
-        this->setStyleSheet("ExpressionEdit{color: red; font-weight: bold;}");
-    }
-
-    this->mValidState = valid;
-
-    QLineEdit::focusOutEvent(e);
+void ExpressionEdit::onTextChanged(const QString& text)
+{
+    this->m_isValid = Expression::isValid(text.toStdString(), m_variables);
 }

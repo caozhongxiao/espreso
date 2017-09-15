@@ -61,14 +61,6 @@ QString TableTypeWidget::columnDefaultValue(int column) const
     return this->defaultValues.at(column);
 }
 
-bool TableTypeWidget::isValid()
-{
-    if (this->mModel->rowCount() == 1)
-        return false;
-
-    return true;
-}
-
 QString TableTypeWidget::data()
 {
     QLatin1String start("SWITCH {");

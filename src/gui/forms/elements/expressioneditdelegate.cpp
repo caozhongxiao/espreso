@@ -1,9 +1,14 @@
 #include "expressioneditdelegate.h"
 
+#include "../../../basis/expression/expression.h"
+
 using namespace espreso;
 
-ExpressionEditDelegate::ExpressionEditDelegate(QObject *parent) : QItemDelegate(parent)
+ExpressionEditDelegate::ExpressionEditDelegate(const std::vector<std::string>& variables,
+                                               QObject *parent)
+    : QItemDelegate(parent)
 {
+    this->m_variables = variables;
 }
 
 QWidget* ExpressionEditDelegate::createEditor(QWidget *parent,
@@ -42,7 +47,7 @@ void ExpressionEditDelegate::paint(QPainter *painter, const QStyleOptionViewItem
     QVariant data = index.data();
     QString text = data.toString();
     QStyleOptionViewItem newOption(option);
-    if (!ExpressionEdit::validate(text))
+    if (!Expression::isValid(text.toStdString(), m_variables))
     {
         newOption.font.setBold(true);
         newOption.palette.setColor(QPalette::Text, Qt::red);

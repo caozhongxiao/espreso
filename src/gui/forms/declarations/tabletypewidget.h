@@ -17,7 +17,6 @@ namespace espreso
 
         virtual void addData(const QString& data) override;
 
-        bool isValid() override;
         QString data() override;
 
     protected:

@@ -24,6 +24,8 @@ namespace espreso
         explicit MaterialDialog(ECFObject* material, QWidget *parent = 0);
         ~MaterialDialog();
 
+        void accept() override;
+
     private slots:
         void redraw();
 

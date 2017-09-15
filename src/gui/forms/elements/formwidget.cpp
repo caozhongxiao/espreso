@@ -34,3 +34,32 @@ void FormWidget::save()
         pair->first->setValue(pair->second->text().toStdString());
     }
 }
+
+bool FormWidget::isValid()
+{
+    int index = 0;
+    for (auto pair = m_strings.cbegin();
+         pair != m_strings.cend();
+         ++pair)
+    {
+        if (pair->second->text().isEmpty())
+        {
+            this->m_invalidIndex = index;
+            return false;
+        }
+        index++;
+    }
+    return true;
+}
+
+QString FormWidget::errorMessage()
+{
+    return tr("Empty %1 field")
+            .arg(QString::fromStdString(
+                     m_strings
+                        .at(m_invalidIndex)
+                        .first->metadata
+                            .description
+                            .at(0)
+                     ));
+}

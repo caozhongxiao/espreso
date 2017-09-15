@@ -93,6 +93,12 @@ void TableWidget::deleteItem()
 
 bool TableWidget::isValid()
 {
+    if (mModel->rowCount() <= 1)
+    {
+        this->m_empty = true;
+        return false;
+    }
+
     for (int row = 0; row < mModel->rowCount() - 1; ++row)
     {
         for (int col = 0; col < mModel->columnCount(); ++col)
@@ -100,9 +106,24 @@ bool TableWidget::isValid()
             QModelIndex index = this->mModel->index(row, col);
             QString val = index.data().toString();
             if (val.isEmpty())
+            {
+                this->m_invalidRow = row + 1;
+                this->m_invalidCol = col + 1;
+                this->m_empty = false;
                 return false;
+            }
         }
     }
 
     return true;
+}
+
+QString TableWidget::errorMessage()
+{
+    if (m_empty)
+        return tr("Empty table");
+    else
+        return tr("Empty cell at row %1 and column %2")
+                .arg(m_invalidRow)
+                .arg(m_invalidCol);
 }

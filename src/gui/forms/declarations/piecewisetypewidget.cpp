@@ -4,6 +4,7 @@
 #include "../elements/expressionedit.h"
 #include "../validators/validatordelegate.h"
 #include "../elements/comboboxdelegate.h"
+#include "../../../basis/expression/expression.h"
 
 #include <QDebug>
 
@@ -21,9 +22,11 @@ QStringList PiecewiseTypeWidget::headlines()
     return result;
 }
 
-PiecewiseTypeWidget::PiecewiseTypeWidget(QWidget* parent) :
+PiecewiseTypeWidget::PiecewiseTypeWidget(const std::vector<std::string>& variables,
+                                         QWidget* parent) :
     TableWidget(5, PiecewiseTypeWidget::headlines(), parent)
 {
+    this->m_variables = variables;
     QStringList leftCmbOptions;
     leftCmbOptions << "<" << "(";
     QStringList rightCmbOptions;
@@ -32,7 +35,7 @@ PiecewiseTypeWidget::PiecewiseTypeWidget(QWidget* parent) :
     this->mTable->setItemDelegateForColumn(1, new ValidatorDelegate(new NumberValidatorFactory(), this));
     this->mTable->setItemDelegateForColumn(2, new ValidatorDelegate(new NumberValidatorFactory(), this));
     this->mTable->setItemDelegateForColumn(3, new ComboBoxDelegate(rightCmbOptions, this));
-    this->mTable->setItemDelegateForColumn(4, new ExpressionEditDelegate(this));
+    this->mTable->setItemDelegateForColumn(4, new ExpressionEditDelegate(variables, this));
 
     this->defaultValues << "<" << "" << "" << ")" << "";
 }
@@ -43,11 +46,26 @@ bool PiecewiseTypeWidget::isValid()
     {
         QModelIndex index = this->mModel->index(row, 4);
         QString expression = index.data().toString();
-        if (!ExpressionEdit::validate(expression))
+        if (!Expression::isValid(expression.toStdString(), m_variables))
+        {
+            this->m_invalidRow = row + 1;
+            this->m_isValid = false;
             return false;
+        }
     }
 
+    this->m_isValid = true;
+
     return TableWidget::isValid();
+}
+
+QString PiecewiseTypeWidget::errorMessage()
+{
+    if (m_isValid)
+        return TableWidget::errorMessage();
+    else
+        return tr("Invalid f(x) formula at row %1")
+                .arg(m_invalidRow);
 }
 
 

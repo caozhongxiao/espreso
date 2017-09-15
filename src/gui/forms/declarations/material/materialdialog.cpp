@@ -2,6 +2,7 @@
 #include "ui_materialdialog.h"
 
 #include <QComboBox>
+#include <QMessageBox>
 #include <QLabel>
 #include <QScrollArea>
 #include <QLineEdit>
@@ -100,7 +101,7 @@ void MaterialDialog::iterateObject(ECFObject* obj, QWidget* parent)
 				{
 					propertyTable = new MaterialPropertyTableWidget(widget);
                     this->m_save.append(propertyTable);
-                    //this->m_valid.append(propertyTable);
+                    this->m_valid.append(propertyTable);
 					widget->layout()->addWidget(propertyTable);
 					propertyTableNotInserted = false;
 				}
@@ -113,7 +114,7 @@ void MaterialDialog::iterateObject(ECFObject* obj, QWidget* parent)
 				{
 					formWidget = new FormWidget(widget);
                     this->m_save.append(formWidget);
-                    //this->m_valid.append(formWidget);
+                    this->m_valid.append(formWidget);
 					widget->layout()->addWidget(formWidget);
 					formWidgetNotInserted = false;
 				}
@@ -149,4 +150,24 @@ void MaterialDialog::redraw()
     ui->frameLayout->removeWidget(tmp);
     tmp->setParent(nullptr);
     this->drawMe();
+}
+
+void MaterialDialog::accept()
+{
+    foreach (IValidatableObject* obj, m_valid) {
+        if (!obj->isValid())
+        {
+            QMessageBox msg;
+            msg.setWindowTitle(tr("Error"));
+            msg.setText(obj->errorMessage());
+            msg.exec();
+            return;
+        }
+    }
+
+    foreach (ISavableObject* obj, m_save) {
+        obj->save();
+    }
+
+    QDialog::accept();
 }

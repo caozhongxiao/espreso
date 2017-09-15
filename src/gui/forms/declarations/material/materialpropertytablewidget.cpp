@@ -42,10 +42,12 @@ void MaterialPropertyTableWidget::createHeader()
 
 void MaterialPropertyTableWidget::addProperty(ECFParameter* property)
 {
-    this->addRow(QString::fromStdString(property->metadata.description.at(0)),
-                 property,
-                 QString::fromStdString(property->metadata.unit),
-                 QString::fromStdString(property->name));
+    this->addRow(
+                QString::fromStdString(property->metadata.description.at(0)),
+                property,
+                QString::fromStdString(property->metadata.unit),
+                QString::fromStdString(property->name)
+                );
 }
 
 void MaterialPropertyTableWidget::addRow(const QString& name, ECFParameter* data,
@@ -68,6 +70,7 @@ void MaterialPropertyTableWidget::addRow(const QString& name, ECFParameter* data
     ui->grid->addWidget(lblUnit, row, 3, alignment);
     ui->grid->addWidget(lblSymbol, row, 4, alignment);
 
+    this->m_properties.append(data);
     this->m_rowWidgets.append(dataWidget);
 }
 
@@ -75,5 +78,35 @@ void MaterialPropertyTableWidget::save()
 {
     foreach (DataTypeEditWidget* w, m_rowWidgets) {
         w->save();
+    }
+}
+
+bool MaterialPropertyTableWidget::isValid()
+{
+    int index = 0;
+    foreach (DataTypeEditWidget* w, m_rowWidgets) {
+        if (!w->isValid())
+        {
+            this->m_invalidRow = index;
+            return false;
+        }
+        index++;
+    }
+
+    return true;
+}
+
+QString MaterialPropertyTableWidget::errorMessage()
+{
+    if (m_rowWidgets.size() > 0)
+    {
+        return QString::fromStdString(m_properties.at(m_invalidRow)->metadata.description.at(0))
+                + QLatin1String(": ")
+                + m_rowWidgets.at(m_invalidRow)->errorMessage()
+                + QLatin1String(".");
+    }
+    else
+    {
+        return QLatin1String("");
     }
 }

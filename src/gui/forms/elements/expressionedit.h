@@ -3,6 +3,8 @@
 
 #include <QLineEdit>
 #include <QFocusEvent>
+#include <vector>
+#include <string>
 #include "ivalidatableobject.h"
 
 namespace espreso
@@ -13,18 +15,19 @@ namespace espreso
         Q_OBJECT
 
     public:
-        ExpressionEdit(QWidget* parent = nullptr);
-        ExpressionEdit(const QString& contents, QWidget* parent = nullptr);
+        ExpressionEdit(const QString& contents,
+                       const std::vector<std::string>& variables,
+                       QWidget* parent = nullptr);
 
         bool isValid() override;
+        QString errorMessage() override;
 
-        static bool validate(const QString& expr);
-
-    protected:
-        virtual void focusOutEvent(QFocusEvent* e) override;
+    private slots:
+        void onTextChanged(const QString& text);
 
     private:
-        bool mValidState;
+        bool m_isValid;
+        std::vector<std::string> m_variables;
     };
 
 }

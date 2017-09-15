@@ -13,7 +13,7 @@ namespace espreso
         Q_OBJECT
 
     public:
-        ExpressionEditDelegate(QObject* parent = nullptr);
+        ExpressionEditDelegate(const std::vector<std::string>& variables, QObject* parent = nullptr);
 
     signals:
         void validStateChanged(bool valid);
@@ -24,6 +24,9 @@ namespace espreso
         void setModelData(QWidget * editor, QAbstractItemModel * model, const QModelIndex & index) const override;
         void updateEditorGeometry(QWidget * editor, const QStyleOptionViewItem & option, const QModelIndex & index) const override;
         void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+
+    private:
+        std::vector<std::string> m_variables;
     };
 }
 

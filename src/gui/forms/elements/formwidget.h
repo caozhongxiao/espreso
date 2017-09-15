@@ -11,7 +11,8 @@
 namespace espreso
 {
 
-    class FormWidget : public QWidget, public ISavableObject
+    class FormWidget : public QWidget, public ISavableObject,
+            public IValidatableObject
 	{
 		Q_OBJECT
 
@@ -22,10 +23,14 @@ namespace espreso
 
         void save() override;
 
+        bool isValid() override;
+        QString errorMessage() override;
+
 	private:
 		QFormLayout* m_layout;
 
         QVector<QPair<ECFParameter*, QLineEdit*> > m_strings;
+        int m_invalidIndex = 0;
 	};
 
 }

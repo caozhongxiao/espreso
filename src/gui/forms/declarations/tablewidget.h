@@ -28,6 +28,7 @@ namespace espreso
         virtual void addData(const QVector<QVector<QString> >& data);
         virtual void addData(const QString& data) = 0;
         virtual bool isValid() override;
+        virtual QString errorMessage() override;
         virtual QString data() = 0;
 
     protected:
@@ -48,6 +49,10 @@ namespace espreso
 
         QModelIndex toDelete;
         QAction* mActionDelete;
+
+        int m_invalidRow = 0;
+        int m_invalidCol = 0;
+        bool m_empty = true;
 
         void addCleanRow();
     };

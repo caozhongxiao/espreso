@@ -13,19 +13,13 @@ DataTypeEditWidget::DataTypeEditWidget(QWidget *parent) :
     ui(new Ui::DataTypeEditWidget)
 {
     ui->setupUi(this);
-
-    this->createUi();
-
-    this->activeType = 0;
-    this->uiExpression->show();
 }
 
 DataTypeEditWidget::DataTypeEditWidget(ECFParameter* data, QWidget *parent) :
     DataTypeEditWidget(parent)
 {
-    this->uiExpression->hide();
-
     this->m_param = data;
+    this->createUi();
 
     QString content = QString::fromStdString(data->getValue());
     QRegularExpression tableregex("switch|SWITCH");
@@ -55,13 +49,18 @@ DataTypeEditWidget::~DataTypeEditWidget()
 
 void DataTypeEditWidget::createUi()
 {
-	ExpressionEdit* function = new ExpressionEdit(this);
+    ExpressionEdit* function = new ExpressionEdit(
+                QString::fromStdString(m_param->getValue()),
+                m_param->metadata.variables,
+                this);
     function->hide();
 
 	TableTypeWidget* table = new TableTypeWidget(this);
     table->hide();
 
-	PiecewiseTypeWidget* piecewise = new PiecewiseTypeWidget(this);
+    PiecewiseTypeWidget* piecewise = new PiecewiseTypeWidget(
+                m_param->metadata.variables,
+                this);
     piecewise->hide();
 
     this->uiExpression = function;
@@ -75,7 +74,7 @@ void DataTypeEditWidget::createUi()
 
 void DataTypeEditWidget::initExpression()
 {
-    this->uiExpression->setText(QString::fromStdString(m_param->getValue()));
+    //this->uiExpression->setText(QString::fromStdString(m_param->getValue()));
     this->uiExpression->show();
 }
 
@@ -116,6 +115,22 @@ bool DataTypeEditWidget::isValid()
         default:
             qCritical() << "DataTypeEditWidget: Unknown DataType ID" << this->activeType;
             return false;
+    }
+}
+
+QString DataTypeEditWidget::errorMessage()
+{
+    switch (this->activeType)
+    {
+        case 0:
+            return this->uiExpression->errorMessage();
+        case 1:
+            return this->uiTable->errorMessage();
+        case 2:
+            return this->uiPiecewise->errorMessage();
+        default:
+            qCritical() << "DataTypeEditWidget: Unknown DataType ID" << this->activeType;
+            return QLatin1String("");
     }
 }
 

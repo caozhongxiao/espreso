@@ -27,18 +27,20 @@ namespace espreso
     public:
         static QStringList typeNames();
 
-        explicit DataTypeEditWidget(QWidget *parent = 0);
-        DataTypeEditWidget(ECFParameter* data, QWidget* parent = 0);
+        explicit DataTypeEditWidget(ECFParameter* data, QWidget* parent = 0);
         ~DataTypeEditWidget();
 
         QComboBox* createComboBox(QWidget* parent = nullptr);
         bool isValid() override;
+        QString errorMessage() override;
         void save() override;
 
     private slots:
         void changeType(int index);
 
     private:
+        DataTypeEditWidget(QWidget *parent = 0);
+
         Ui::DataTypeEditWidget *ui;
 
         ECFParameter* m_param;

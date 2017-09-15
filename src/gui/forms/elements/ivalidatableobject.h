@@ -10,6 +10,7 @@ namespace espreso
         virtual ~IValidatableObject() {}
 
         virtual bool isValid() = 0;
+        virtual QString errorMessage() = 0;
     };
 
 }
