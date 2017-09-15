@@ -39,22 +39,6 @@ MKL64:
     - python tests/input.py
     - python tests/solver.py
 
-CUDA32:
-  stage: tests
-  only:
-    - triggers
-  script:
-    - ./waf configure --SOLVER=CUDA --INT_WIDTH=32
-    - ./waf install -j8
-
-CUDA64:
-  stage: tests
-  only:
-    - triggers
-  script:
-    - ./waf configure --SOLVER=CUDA --INT_WIDTH=64
-    - ./waf install -j8
-
 DISSECTION32:
   stage: tests
   only:
