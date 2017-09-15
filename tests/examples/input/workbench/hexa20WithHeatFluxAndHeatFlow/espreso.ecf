@@ -10,11 +10,15 @@ WORKBENCH {
 }
 
 HEAT_TRANSFER_3D {
-  LOAD_STEPS   1;
+  LOAD_STEPS         1;
 
+
+  STABILIZATION   SUPG;
+  SIGMA              0;
 
   LOAD_STEPS_SETTINGS {
     1 {
+      DURATION_TIME     1;
       TYPE   STEADY_STATE;
       MODE         LINEAR;
       SOLVER         FETI;

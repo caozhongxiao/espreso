@@ -91,6 +91,7 @@ STRUCTURAL_MECHANICS_3D {
 
   LOAD_STEPS_SETTINGS {
     1 {
+      DURATION_TIME     1;
       TYPE   STEADY_STATE;
       MODE         LINEAR;
       SOLVER         FETI;
@@ -119,8 +120,20 @@ STRUCTURAL_MECHANICS_3D {
 }
 
 OUTPUT {
+  PATH                              results;
+  FORMAT                      VTK_XML_ASCII;
 
-  STORE_RESULTS   ALL;
+  RESULTS_STORE_FREQUENCY    EVERY_TIMESTEP;
+  MONITORS_STORE_FREQUENCY   EVERY_TIMESTEP;
+
+  STORE_RESULTS                         ALL;
+
+  COLLECTED                           FALSE;
+  SEPARATE_BODIES                     FALSE;
+  SEPARATE_MATERIALS                  FALSE;
+
+  DOMAIN_SHRINK_RATIO                  0.95;
+  CLUSTER_SHRINK_RATIO                  0.9;
 
   MONITORING {
     1 {

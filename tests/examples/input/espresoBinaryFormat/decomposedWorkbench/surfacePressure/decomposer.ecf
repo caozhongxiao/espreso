@@ -1,7 +1,8 @@
 # ESPRESO Configuration File
 
 
-INPUT   WORKBENCH;
+INPUT            WORKBENCH;
+PHYSICS   HEAT_TRANSFER_2D;
 
 WORKBENCH {
   PATH   workbench.dat;

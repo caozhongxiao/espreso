@@ -32,9 +32,11 @@ espreso::LoadStepConfiguration::LoadStepConfiguration(const std::string &firstRe
 			.addoption(ECFOption().setname("MULTIGRID").setdescription("Use hypre library as MULTIGRID solver.")));
 
 	REGISTER(nonlinear_solver, ECFMetaData()
-				.setdescription({ "Non-linear physics solver settings." }));
+				.setdescription({ "Non-linear physics solver settings." })
+				.allowonly([&] () { return mode == MODE::NONLINEAR; }));
 	REGISTER(transient_solver, ECFMetaData()
-			.setdescription({ "Transient physics solver settings." }));
+			.setdescription({ "Transient physics solver settings." })
+			.allowonly([&] () { return type == TYPE::TRANSIENT; }));
 
 	REGISTER(feti, ECFMetaData()
 			.setdescription({ "ESPRESO FETI solver settings." }));

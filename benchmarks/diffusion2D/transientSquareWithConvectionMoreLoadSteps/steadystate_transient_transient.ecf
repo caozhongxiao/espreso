@@ -53,7 +53,7 @@ GENERATOR {
 }
 
 HEAT_TRANSFER_2D {
-  LOAD_STEPS   3;
+  LOAD_STEPS         3;
 
   MATERIALS {
     MAT_01 {
@@ -77,6 +77,8 @@ HEAT_TRANSFER_2D {
     ALL_ELEMENTS   293.15;
   }
 
+  STABILIZATION   SUPG;
+  SIGMA              0;
 
   LOAD_STEPS_SETTINGS {
     1 {
@@ -171,8 +173,20 @@ HEAT_TRANSFER_2D {
 }
 
 OUTPUT {
+  PATH                              results;
+  FORMAT                      VTK_XML_ASCII;
 
-  STORE_RESULTS   ALL;
+  RESULTS_STORE_FREQUENCY    EVERY_TIMESTEP;
+  MONITORS_STORE_FREQUENCY   EVERY_TIMESTEP;
+
+  STORE_RESULTS                         ALL;
+
+  COLLECTED                           FALSE;
+  SEPARATE_BODIES                     FALSE;
+  SEPARATE_MATERIALS                  FALSE;
+
+  DOMAIN_SHRINK_RATIO                  0.95;
+  CLUSTER_SHRINK_RATIO                  0.9;
 
   MONITORING {
     1 {

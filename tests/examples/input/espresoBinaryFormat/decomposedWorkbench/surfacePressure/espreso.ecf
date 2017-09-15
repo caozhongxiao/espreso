@@ -17,6 +17,7 @@ STRUCTURAL_MECHANICS_3D {
 
   LOAD_STEPS_SETTINGS {
     1 {
+      DURATION_TIME     1;
       TYPE   STEADY_STATE;
       MODE         LINEAR;
       SOLVER         FETI;

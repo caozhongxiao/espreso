@@ -103,10 +103,20 @@ HEAT_TRANSFER_2D {
 }
 
 OUTPUT {
+  PATH                             results;
+  FORMAT                     VTK_XML_ASCII;
 
+  RESULTS_STORE_FREQUENCY   EVERY_TIMESTEP;
   MONITORS_STORE_FREQUENCY   LAST_TIMESTEP;
 
   STORE_RESULTS                        ALL;
+
+  COLLECTED                          FALSE;
+  SEPARATE_BODIES                    FALSE;
+  SEPARATE_MATERIALS                 FALSE;
+
+  DOMAIN_SHRINK_RATIO                 0.95;
+  CLUSTER_SHRINK_RATIO                 0.9;
 
   MONITORING {
     1 {
