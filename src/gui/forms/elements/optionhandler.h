@@ -2,10 +2,13 @@
 #define OPTIONHANDLER_H
 
 #include <QWidget>
+
 #include "../../../config/configuration.h"
 
-namespace espreso
-{
+namespace espreso {
+    namespace Ui {
+        class OptionHandler;
+    }
 
     class OptionHandler : public QWidget
     {
@@ -13,6 +16,7 @@ namespace espreso
 
     public:
         explicit OptionHandler(ECFParameter*, QWidget*);
+        ~OptionHandler();
 
     signals:
         void optionChanged();
@@ -21,11 +25,10 @@ namespace espreso
         void onIndexChanged(int index);
 
     private:
+        Ui::OptionHandler *ui;
         ECFParameter* m_option;
         bool optionsAdded = false;
-
     };
-
 }
 
 #endif // OPTIONHANDLER_H

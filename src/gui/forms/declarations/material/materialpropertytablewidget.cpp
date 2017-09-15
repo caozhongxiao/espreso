@@ -63,12 +63,11 @@ void MaterialPropertyTableWidget::addRow(const QString& name, ECFParameter* data
     QComboBox* cmbBox = dataWidget->createComboBox(this);
     //TODO: Variables
 
-    Qt::Alignment alignment = Qt::AlignHCenter | Qt::AlignTop;
-    ui->grid->addWidget(lblName, row, 0, alignment);
-    ui->grid->addWidget(cmbBox, row, 1, alignment);
-    ui->grid->addWidget(dataWidget, row, 2);
-    ui->grid->addWidget(lblUnit, row, 3, alignment);
-    ui->grid->addWidget(lblSymbol, row, 4, alignment);
+    ui->grid->addWidget(lblName, row, 0, Qt::AlignLeft| Qt::AlignTop);
+    ui->grid->addWidget(cmbBox, row, 1, Qt::AlignTop);
+    ui->grid->addWidget(dataWidget, row, 2, Qt::AlignTop);
+    ui->grid->addWidget(lblUnit, row, 3, Qt::AlignLeft| Qt::AlignTop);
+    ui->grid->addWidget(lblSymbol, row, 4, Qt::AlignLeft| Qt::AlignTop);
 
     this->m_properties.append(data);
     this->m_rowWidgets.append(dataWidget);

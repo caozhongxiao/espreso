@@ -123,6 +123,9 @@ void MaterialDialog::iterateObject(ECFObject* obj, QWidget* parent)
 		}
     }
 
+    QSpacerItem* verticalSpacer = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+    widget->layout()->addItem(verticalSpacer);
+
 	// ScrollArea should be drawn after its content is complete (according to Qt API)
 	if (area != nullptr)
 	{
