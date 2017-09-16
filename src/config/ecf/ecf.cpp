@@ -79,11 +79,11 @@ void espreso::ECFConfiguration::init()
 }
 
 espreso::ECFConfiguration::ECFConfiguration()
-: output(physics),
-  heat_transfer_2d(DIMENSION::D2),
+: heat_transfer_2d(DIMENSION::D2),
   heat_transfer_3d(DIMENSION::D3),
   structural_mechanics_2d(DIMENSION::D2),
-  structural_mechanics_3d(DIMENSION::D3)
+  structural_mechanics_3d(DIMENSION::D3),
+  output(physics)
 {
 	init();
 }

@@ -48,13 +48,13 @@ void LameSteklovPoincare3D::prepareHybridTotalFETIWithKernels()
 
 void LameSteklovPoincare3D::preprocessData(const Step &step)
 {
-	if (offset == -1) {
+	if (offset == (size_t)-1) {
 		offset = _instance->solutions.size();
 		_instance->solutions.resize(offset + SolutionIndex::SIZE, NULL);
 		_instance->solutions[offset + SolutionIndex::DISPLACEMENT] = new Solution(*_mesh, "displacement", ElementType::NODES, pointDOFs());
 	}
 
-	if (BEMOffset == -1) {
+	if (BEMOffset == (size_t)-1) {
 		BEMOffset = _instance->solutions.size();
 		_instance->solutions.resize(BEMOffset + BEMSolutionIndex::SIZE, NULL);
 		_instance->solutions[BEMOffset + BEMSolutionIndex::BOUNDARY] = new Solution(*_mesh, "temperatureOnBoundary", ElementType::NODES, pointDOFs(), _instance->primalSolution);

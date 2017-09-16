@@ -372,7 +372,7 @@ void IterSolverBase::MakeSolution_Primal_singular_parallel (
 	int amp_offset = 0;
 	R_mu_prim_cluster.resize(cluster.domains.size());
 
-	for (int c = 0; c < cluster.clusters.size(); c++) {
+	for (size_t c = 0; c < cluster.clusters.size(); c++) {
 		for (size_t d = 0; d < cluster.clusters[c].domains.size(); d++) {
 			SEQ_VECTOR <double > tmp (cluster.clusters[c].domains[d].domain_prim_size);
 
@@ -3909,18 +3909,18 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 //	SEQ_VECTOR <double> d_H(CG_max_iter, 0);
 //	SEQ_VECTOR <double> e_H(CG_max_iter, 0);
 
-	double rho_l;
-	double rho_l_prew = 1;
+//	double rho_l;
+//	double rho_l_prew = 1;
 	double norm_l = 1e33;
 	double norm_l_new;
 	bool norm_decrease = true;
 	double tol;
-	double ztg;
-	double wtAw;
+//	double ztg;
+//	double wtAw;
 	int N_ITER=0 ;
 
 
-	double delta, gamma, fi;
+	double delta, gamma;//, fi;
 	SEQ_VECTOR <double> delta_l	 	(CG_max_iter, 0);
 //	SEQ_VECTOR <double> gamma_l	 	(CG_max_iter, 0);
 	SEQ_VECTOR <double> fi_l	 	(CG_max_iter, 0);
@@ -3928,11 +3928,11 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 
 	bool update = true;
 
-	int cnt_iter=0;
+//	int cnt_iter=0;
 
-	int restart_num = 0;
+	size_t restart_num = 0;
 
-	eslocal restart_iter = 0;
+//	eslocal restart_iter = 0;
 
 
 	cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );	// prava strana dualu
@@ -4054,7 +4054,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 	W_l.nnz += w_l.size();
 	W_l.cols++;
 
-	eslocal iter = 0;
+	size_t iter = 0;
 
 	// *** Start the CG iteration loop ********************************************
 	for (int t_iter = 0; t_iter < CG_max_iter; t_iter++) {
@@ -4135,7 +4135,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 
 			double fi_last = fabs( fi_l[iter - 1] );
 			if (restart_num < configuration.num_restart){
-				for (eslocal i = 0; i < iter - 1; i++) {
+				for (size_t i = 0; i + 1< iter; i++) {
 
 					if (!norm_decrease){
 						if ( fabs (fi_l[i]) < fi_last ) {
@@ -4150,7 +4150,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 		if (update) {
 
 			#pragma omp parallel for
-			for (eslocal i = 0; i <= iter; i++) {
+			for (size_t i = 0; i <= iter; i++) {
 				fi_g[i] = fi_l[i] / delta_l[i];
 			}
 

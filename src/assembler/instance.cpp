@@ -14,8 +14,9 @@ Instance::Instance(const Mesh &mesh)
   properties(_properties),
   neighbours(mesh.neighbours()),
   clustersMap(mesh.getContinuityPartition()),
-  origK(_origK), origKN1(_origKN1), origKN2(_origKN2), origRegMat(_origRegMat),
-  K(_K), N1(_N1), N2(_N2), RegMat(_RegMat),
+  origK(_origK), K(_K),
+  origKN1(_origKN1), origKN2(_origKN2), origRegMat(_origRegMat),
+  N1(_N1), N2(_N2), RegMat(_RegMat),
   M(_M),
   R(_R), f(_f),
   B0(_B0),
@@ -95,10 +96,11 @@ Instance::Instance(Instance &other, Matrices &share)
 
   // shared K -> also share kernels and regularization matrix
   origK(share & Matrices::K ? other.origK : _origK),
+  K(share & Matrices::K ? other.K : _K),
+
   origKN1(share & Matrices::K ? other.origKN1 : _origKN1),
   origKN2(share & Matrices::K ? other.origKN2 : _origKN2),
   origRegMat(share & Matrices::K ? other.origRegMat : _origRegMat),
-  K(share & Matrices::K ? other.K : _K),
   N1(share & Matrices::K ? other.N1 : _N1),
   N2(share & Matrices::K ? other.N2 : _N2),
   RegMat(share & Matrices::K ? other.RegMat : _RegMat),

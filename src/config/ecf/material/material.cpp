@@ -4,7 +4,7 @@
 #include "../../configuration.hpp"
 
 espreso::MaterialConfiguration::MaterialConfiguration()
-: _allowed_physical_models(static_cast<PHYSICAL_MODEL>(~0)), physical_model(static_cast<PHYSICAL_MODEL>(~0))
+: physical_model(static_cast<PHYSICAL_MODEL>(~0)), _allowed_physical_models(static_cast<PHYSICAL_MODEL>(~0))
 {
 	REGISTER(coordinate_system, ECFMetaData()
 			.setdescription({ "Material coordinate system." }));

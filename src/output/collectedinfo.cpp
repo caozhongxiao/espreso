@@ -409,7 +409,6 @@ void CollectedInfo::addProperty(const Step &step, ElementType eType, Property pr
 				}
 				center /= _mesh->elements()[e]->nodes();
 
-				eslocal d = std::lower_bound(_mesh->getPartition().begin(), _mesh->getPartition().end(), e + 1) - _mesh->getPartition().begin() - 1;
 				for (size_t p = 0; p < pGroup.size(); p++) {
 					rData[regionOffset][t].push_back(_mesh->elements()[e]->sumProperty(pGroup[p], step.step, center, step.currentTime, 0, 0));
 				}

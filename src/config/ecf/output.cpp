@@ -103,7 +103,7 @@ void espreso::ResultsSelectionConfiguration::all()
 }
 
 espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
-: _physics(physics), results_selection(physics)
+: results_selection(physics), _physics(physics)
 {
 	path = "results";
 	REGISTER(path, ECFMetaData()

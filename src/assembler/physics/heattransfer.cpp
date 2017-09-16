@@ -677,10 +677,9 @@ double HeatTransfer::computeHTC(
 			switch (convection.variant) {
 			case ConvectionConfiguration::VARIANT::AVERAGE_PLATE: {
 
-				double T_AVG, g, rho, dynamic_viscosity, heat_capacity, thermal_conductivity,dynamic_viscosity_T;
+				double T_AVG, rho, dynamic_viscosity, heat_capacity, thermal_conductivity,dynamic_viscosity_T;
 
 				T_AVG = (e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, p, step.currentTime, temp, 0) + temp) / 2.0;
-				g = 9.81;
 
 				convectionMatParameters(convection, e, p, step, temp, T_AVG, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
 

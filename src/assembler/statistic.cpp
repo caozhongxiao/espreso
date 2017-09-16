@@ -325,7 +325,7 @@ void Statistic::computeElements()
 	for (size_t p = 0; p < _mesh.parts(); p++) {
 		std::vector<double> value(_dataSize + 1);
 
-		for (size_t e = _mesh.getPartition()[p]; e < _mesh.getPartition()[p + 1]; e++) {
+		for (eslocal e = _mesh.getPartition()[p]; e < _mesh.getPartition()[p + 1]; e++) {
 
 			std::fill(value.begin(), value.end(), 0);
 			for (size_t i = 0; i < _dataSize; i++) {

@@ -50,7 +50,7 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
 
 
 	#pragma omp parallel for
-	for (eslocal d = 0; d < domains.size(); d++ ) {
+	for (size_t d = 0; d < domains.size(); d++ ) {
 		domains_in_global_index[d] = subdomains_global_indices[d];
 		domains[d].SetDomain();
 	}
@@ -223,7 +223,7 @@ void ClusterBase::SetClusterPC( ) {
 
 	SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub = instance->B1clustersMap;
 
-	int MPIrank = environment->MPIrank;
+//	int MPIrank = environment->MPIrank;
 
 	//// *** Detection of affinity of lag. multipliers to specific subdomains **************
 	//// *** - will be used to compress vectors and matrices for higher efficiency
@@ -1482,8 +1482,7 @@ void ClusterBase::CreateSa() {
 	 TimeEval Sa_timing (" HFETI - Salfa preprocessing timing"); if (Measure::report(CLUSTER)) { Sa_timing.totalTime.start(); }
 
 //	bool PARDISO_SC = true;
-	bool get_kernel_from_mesh = configuration.regularization == FETI_REGULARIZATION::ANALYTIC;
-	int  MPIrank = environment->MPIrank;
+//	bool get_kernel_from_mesh = configuration.regularization == FETI_REGULARIZATION::ANALYTIC;
 
 	MKL_Set_Num_Threads(PAR_NUM_THREADS);
 
@@ -1503,7 +1502,7 @@ void ClusterBase::CreateSa() {
 
 	 TimeEvent G0solve_Sa_time("SolveMatF with G0t as InitialCondition"); if (Measure::report(CLUSTER)) { G0solve_Sa_time.start(); }
 	SparseSolverMKL Salfa_SC_solver;
-	if (MPIrank == 0) Salfa_SC_solver.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+	if (environment->MPIrank == 0) Salfa_SC_solver.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 	if (SYMMETRIC_SYSTEM) {
 		Salfa_SC_solver.Create_SC_w_Mat( F0_Mat, G0t, Salfa, true, 0 );
 		Salfa.ConvertDenseToCSR(1);
@@ -1967,12 +1966,12 @@ void ClusterBase::CreateSa() {
 			TimeEvent fact_Sa_time("Salfa factorization ");
 			if (Measure::report(CLUSTER)) { fact_Sa_time.start(); }
 
-			if (MPIrank == 0)  {
+			if (environment->MPIrank == 0)  {
 				Sa.msglvl = 1;
 			}
 			Sa.ImportMatrix(Salfa);
 			Sa.Factorization("salfa");
-			if (MPIrank == 0) {
+			if (environment->MPIrank == 0) {
 				Sa.msglvl = 0;
 			}
 			if (Measure::report(CLUSTER)) { fact_Sa_time.end(); } //fact_Sa_time.printStatMPI(); }

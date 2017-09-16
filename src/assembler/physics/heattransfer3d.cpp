@@ -738,7 +738,7 @@ void HeatTransfer3D::processSolution(const Step &step)
 
 	#pragma omp parallel for
 	for (size_t p = 0; p < _mesh->parts(); p++) {
-		for (size_t e = _mesh->getPartition()[p]; e < _mesh->getPartition()[p + 1]; e++) {
+		for (eslocal e = _mesh->getPartition()[p]; e < _mesh->getPartition()[p + 1]; e++) {
 			postProcessElement(step, _mesh->elements()[e], _instance->solutions);
 		}
 	}

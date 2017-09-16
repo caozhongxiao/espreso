@@ -145,7 +145,7 @@ struct ECFEnumHolder: public ECFValue {
 			}
 		}
 
-		if (index == -1) {
+		if (index == (size_t)-1) {
 			if (!ECFValueHolder<size_t>(index)._setValue(value)) {
 				return false;
 			}

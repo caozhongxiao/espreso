@@ -105,7 +105,7 @@ void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPM
 	std::vector<eslocal> DOFs;
 
 	for (size_t i = 0; i < _mesh->faces().size(); i++) {
-		if (_mesh->faces()[i]->domains().front() == domain && _mesh->faces()[i]->clusters().front() == environment->MPIrank) {
+		if (_mesh->faces()[i]->domains().front() == (eslocal)domain && _mesh->faces()[i]->clusters().front() == environment->MPIrank) {
 			processFace(step, matrices, _mesh->faces()[i], Ke, Me, Re, fe, solution);
 			fillDOFsIndices(_mesh->faces()[i], domain, DOFs);
 			insertElementToDomain(K, M, DOFs, Ke, Me, Re, fe, step, domain, true);
@@ -113,7 +113,7 @@ void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPM
 	}
 
 	for (size_t i = 0; i < _mesh->edges().size(); i++) {
-		if (_mesh->edges()[i]->domains().front() == domain && _mesh->edges()[i]->clusters().front() == environment->MPIrank) {
+		if (_mesh->edges()[i]->domains().front() == (eslocal)domain && _mesh->edges()[i]->clusters().front() == environment->MPIrank) {
 			processEdge(step, matrices, _mesh->edges()[i], Ke, Me, Re, fe, solution);
 			fillDOFsIndices(_mesh->edges()[i], domain, DOFs);
 			insertElementToDomain(K, M, DOFs, Ke, Me, Re, fe, step, domain, true);

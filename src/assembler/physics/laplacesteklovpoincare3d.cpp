@@ -53,7 +53,7 @@ void LaplaceSteklovPoincare3D::prepareHybridTotalFETIWithKernels()
 
 void LaplaceSteklovPoincare3D::preprocessData(const Step &step)
 {
-	if (offset == -1) {
+	if (offset == (size_t)-1) {
 		offset = _instance->solutions.size();
 		_instance->solutions.resize(offset + SolutionIndex::SIZE, NULL);
 
@@ -61,7 +61,7 @@ void LaplaceSteklovPoincare3D::preprocessData(const Step &step)
 		computeInitialTemperature(step, _instance->solutions[offset + SolutionIndex::TEMPERATURE]->data);
 	}
 
-	if (BEMOffset == -1) {
+	if (BEMOffset == (size_t)-1) {
 		BEMOffset = _instance->solutions.size();
 		_instance->solutions.resize(BEMOffset + BEMSolutionIndex::SIZE, NULL);
 		_instance->solutions[BEMOffset + BEMSolutionIndex::BOUNDARY] = new Solution(*_mesh, "temperatureOnBoundary", ElementType::NODES, pointDOFs(), _instance->primalSolution);

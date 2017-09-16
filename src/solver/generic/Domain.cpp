@@ -27,7 +27,7 @@ void storeData(vector<double> vectors, const std::string &name, const std::strin
 		ESINFO(ALWAYS) << Info::TextColor::BLUE << "Storing " << description;
 		//for (size_t d = 0; d < vectors.size(); d++) {
 			std::ofstream os(Logging::prepareFile(d, name));
-			for (int i = 0; i < vectors.size(); i++) {
+			for (size_t i = 0; i < vectors.size(); i++) {
 				os << vectors[i] << std::endl;
 			}
 			os.close();
@@ -45,9 +45,9 @@ Domain::Domain(const FETISolverConfiguration &configuration, Instance *instance_
 		Kplus_R2(instance_in->N2[domain_index_in]),
 		_RegMat(instance_in->RegMat[domain_index_in]),
 
-		B0(instance_in->B0[domain_index_in]),
-
 		f(instance_in->f[domain_index_in]),
+
+		B0(instance_in->B0[domain_index_in]),
 		vec_c(instance_in->B1c[domain_index_in]),
 		vec_lb(instance_in->LB[domain_index_in])
 

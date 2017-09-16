@@ -57,7 +57,7 @@ void BoundaryBased3D::boundaryTriangularization(std::vector<eslocal> &elements, 
 		if (std::find(_mesh->faces()[i]->domains().begin(), _mesh->faces()[i]->domains().end(), domain) != _mesh->faces()[i]->domains().end()) {
 
 			for (size_t p = 0; p < _mesh->faces()[i]->parentElements().size(); p++) {
-				if (_mesh->faces()[i]->parentElements()[p]->domains().front() == domain) {
+				if (_mesh->faces()[i]->parentElements()[p]->domains().front() == (eslocal)domain) {
 					swap = _mesh->faces()[i]->parentElements()[p]->isFaceSwapped(_mesh->faces()[i]);
 					break;
 				}
