@@ -91,6 +91,7 @@ ECFRedParameters ECFReader::_read(
 		confFile = "decomposer.ecf";
 	}
 
+	optind = 0;
 	while ((option = getopt_long(*argc, *argv, "c:d::hvtm", opts.data(), &option_index)) != -1) {
 		switch (option) {
 		case 'p':
