@@ -82,7 +82,7 @@ def build(ctx):
     ctx.lib(
         source       = "apiwrapper/wrapper.cpp",
         target       = "feti4i",
-        use          = "basis config mesh api_in solver assembler resultstore",
+        use          = "basis config mesh api_in solver assembler resultstore bem",
         install_path = ctx.ROOT + "/lib"
     )
 
