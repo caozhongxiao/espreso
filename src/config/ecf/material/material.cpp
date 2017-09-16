@@ -17,6 +17,7 @@ espreso::MaterialConfiguration::MaterialConfiguration()
 			.addoption(ECFOption().setname("LINEAR_ELASTIC").setdescription("One of models used by STRUCTURAL MECHANICS.")
 					.allowonly([&] () { return _allowed_physical_models & PHYSICAL_MODEL::LINEAR_ELASTIC; })));
 
+	density.value = heat_capacity.value = "0";
 	registerParameter("dens", density, ECFMetaData()
 			.setdescription({ "Density" })
 			.setdatatype({ ECFDataType::EXPRESSION })

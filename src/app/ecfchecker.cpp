@@ -14,7 +14,7 @@ int main(int argc, char **argv)
 {
 	MPI_Init(&argc, &argv);
 	ECFConfiguration ecf(&argc, &argv);
-	ECFRedParameters redParameters = ECFReader::read(ecf, ECFReader::configurationFile, ecf.default_args, ecf.variables);
+	ECFRedParameters redParameters = ECFReader::read(ecf, &argc, &argv, ecf.default_args, ecf.variables);
 
 	// add parameters that will be always printed
 	redParameters.parameters.push_back(ecf.getParameter(&ecf.input));
@@ -46,15 +46,23 @@ int main(int argc, char **argv)
 		eachProperties(loadstep.transient_solver);
 	};
 
-	auto materialProperties = [&] (std::map<std::string, MaterialConfiguration> &materials) {
+	auto materialProperties = [&] (std::map<std::string, MaterialConfiguration> &materials, bool withDens, bool withCP) {
 		for (auto mat = materials.begin(); mat != materials.end(); ++mat) {
 			mat->second.forEachParameters([&] (ECFParameter* parameter) {
 				if (
 						parameter->data() != &mat->second.coordinate_system &&
-						parameter->data() != &mat->second.physical_model) {
+						parameter->data() != &mat->second.physical_model &&
+						parameter->data() != &mat->second.density &&
+						parameter->data() != &mat->second.heat_capacity) {
 					redParameters.parameters.push_back(parameter);
 				}
 			});
+			if (withDens) {
+				redParameters.parameters.push_back(mat->second.getParameter(&mat->second.density));
+			}
+			if (withCP) {
+				redParameters.parameters.push_back(mat->second.getParameter(&mat->second.heat_capacity));
+			}
 		}
 	};
 
@@ -62,18 +70,31 @@ int main(int argc, char **argv)
 		redParameters.parameters.push_back(configuration.getParameter(&configuration.load_steps));
 		redParameters.parameters.push_back(configuration.getParameter(&configuration.stabilization));
 		redParameters.parameters.push_back(configuration.getParameter(&configuration.sigma));
+
+		bool withDensity = false, withCP = false;
 		for (auto step = configuration.load_steps_settings.begin(); step != configuration.load_steps_settings.end(); ++step) {
 			loadStepProperties(step->second);
+			if (step->second.translation_motions.size()) {
+				withDensity = withCP = true;
+			}
+			if (step->second.type == LoadStepConfiguration::TYPE::TRANSIENT) {
+				withDensity = withCP = true;
+			}
 		}
-		materialProperties(configuration.materials);
+		materialProperties(configuration.materials, withDensity, withCP);
 	};
 
 	auto structuralMechanicsProperties = [&] (StructuralMechanicsConfiguration &configuration) {
 		redParameters.parameters.push_back(configuration.getParameter(&configuration.load_steps));
+
+		bool withDensity = false, withCP = false;
 		for (auto step = configuration.load_steps_settings.begin(); step != configuration.load_steps_settings.end(); ++step) {
 			loadStepProperties(step->second);
+			if (step->second.type == LoadStepConfiguration::TYPE::TRANSIENT) {
+				withDensity = withCP = true;
+			}
 		}
-		materialProperties(configuration.materials);
+		materialProperties(configuration.materials, withDensity, withCP);
 	};
 
 	eachProperties(ecf.workbench);
@@ -102,6 +123,8 @@ int main(int argc, char **argv)
 
 	std::ofstream os(ECFReader::configurationFile);
 	ECFReader::store(ecf, os, true, false, redParameters);
+	os.close();
+	ECFReader::read(ecf, &argc, &argv, ecf.default_args, ecf.variables);
 
 	ESINFO(OVERVIEW) << "ECF is correct.";
 
