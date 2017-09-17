@@ -192,14 +192,11 @@ Measure::~Measure()
 //		return;
 //	}
 
-	os << std::endl;
-
 	if (environment->MPIrank != 0) {
 		return; // only first process print results
 	}
 
-	fprintf(stdout, "%s", os.str().c_str());
-	fflush(stdout);
+	ESINFO(ALWAYS) << os.str();
 }
 
 double Measure::processMemory()
