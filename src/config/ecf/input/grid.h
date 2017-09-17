@@ -30,6 +30,7 @@ struct GridGeneratorConfiguration: public ECFObject {
 	std::map<std::string, std::string> nodes, edges, faces, elements;
 
 	size_t chessboard_size;
+	size_t nonuniform_nparts;
 
 	GridGeneratorConfiguration();
 };

@@ -229,7 +229,11 @@ bool GridGenerator::partitiate(const std::vector<Element*> &nodes, std::vector<e
 		if (_configuration.noncontinuous.find(_clusterIndex) != _configuration.noncontinuous.end()) {
 			mesh.partitiateNoncontinuously(parts, _configuration.noncontinuous.find(_clusterIndex)->second);
 		} else {
-			mesh.partitiate(parts);
+			if (_configuration.nonuniform_nparts) {
+				mesh.partitiate(_configuration.nonuniform_nparts);
+			} else {
+				mesh.partitiate(parts);
+			}
 		}
 		return false;
 	}
