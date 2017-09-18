@@ -13,10 +13,10 @@ using namespace espreso;
 QStringList PiecewiseTypeWidget::headlines()
 {
     QStringList result;
-    result << QString("")
+    result << QString("O/C")
            << QObject::tr("Lower bound")
            << QObject::tr("Upper bound")
-           << QString("")
+           << QString("O/C")
            << QObject::tr("f(x)");
 
     return result;

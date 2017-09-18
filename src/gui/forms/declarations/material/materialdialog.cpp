@@ -50,6 +50,12 @@ void MaterialDialog::iterateObject(ECFObject* obj)
 
     this->processParamaters(obj, scrollWidget);
 
+    QSpacerItem* verticalSpacer = new QSpacerItem(0,
+                                                  0,
+                                                  QSizePolicy::Minimum,
+                                                  QSizePolicy::Expanding);
+    layout->addItem(verticalSpacer);
+
     area->setWidgetResizable(true);
     area->setWidget(scrollWidget);
     this->m_frameLayout->addWidget(area);
@@ -125,12 +131,6 @@ void MaterialDialog::processParamaters(ECFObject* obj, QWidget* widget)
             }
         }
     }
-
-    QSpacerItem* verticalSpacer = new QSpacerItem(0,
-                                                  0,
-                                                  QSizePolicy::Minimum,
-                                                  QSizePolicy::Expanding);
-    widget->layout()->addItem(verticalSpacer);
 }
 
 void MaterialDialog::drawHeadline(ECFObject* obj, QWidget* widget)
