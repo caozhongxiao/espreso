@@ -3,8 +3,12 @@
 
 #include "declarations/variabledialog.h"
 #include "../data/variable.h"
+#include "declarations/material/materialdialog.h"
+#include "../config/ecf/material/material.h"
 
 #include <QStandardItemModel>
+
+using namespace espreso;
 
 DeclarationsWidget::DeclarationsWidget(QWidget *parent) :
     QWidget(parent),
@@ -12,7 +16,6 @@ DeclarationsWidget::DeclarationsWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-//    ui->DeclarationTree->setModel(new TreeModel(tr("Declarations")));
     this->setupTree();
     this->createActions();
 }
@@ -24,15 +27,20 @@ DeclarationsWidget::~DeclarationsWidget()
 
 void DeclarationsWidget::setupTree()
 {
-    this->treeModel = new QStandardItemModel();
-    QStandardItem* parent = this->treeModel->invisibleRootItem();
-    this->treeNodeVars = new QStandardItem(tr("Variables"));
-    this->treeNodeCS = new QStandardItem(tr("Coordinate Systems"));
-    this->treeNodeMats = new QStandardItem(tr("Materials"));
-    parent->appendRow(treeNodeVars);
-    parent->appendRow(treeNodeCS);
-    parent->appendRow(treeNodeMats);
-    ui->DeclarationTree->setModel(this->treeModel);
+    this->m_treeModel = new QStandardItemModel();
+    QStandardItem* parent = this->m_treeModel->invisibleRootItem();
+    //this->m_treeNodeVars = new QStandardItem(tr("Variables"));
+    //this->m_treeNodeCS = new QStandardItem(tr("Coordinate Systems"));
+    this->m_treeNodeMats = new QStandardItem(tr("Materials"));
+
+//    parent->appendRow(m_treeNodeVars);
+//    this->m_varRow = m_treeModel->rowCount() - 1;
+//    parent->appendRow(m_treeNodeCS);
+//    this->m_csRow = m_treeModel->rowCount() - 1;
+    parent->appendRow(m_treeNodeMats);
+    this->m_matRow = m_treeModel->rowCount() - 1;
+
+    ui->DeclarationTree->setModel(this->m_treeModel);
     ui->DeclarationTree->setEditTriggers(QAbstractItemView::NoEditTriggers);
 }
 
@@ -40,22 +48,22 @@ void DeclarationsWidget::setupTree()
 void DeclarationsWidget::on_DeclarationTree_customContextMenuRequested(const QPoint &pos)
 {
     QMenu treeMenu(this);
-    treeMenu.addAction(this->newItem);
-    treeMenu.addAction(this->editItem);
-    treeMenu.addAction(this->delItem);
+    treeMenu.addAction(this->m_newItem);
+    treeMenu.addAction(this->m_editItem);
+    treeMenu.addAction(this->m_delItem);
     treeMenu.exec(ui->DeclarationTree->mapToGlobal(pos));
 }
 
 void DeclarationsWidget::createActions()
 {
-    this->newItem = new QAction(tr("&New"), this);
-    connect(this->newItem, &QAction::triggered, this, &DeclarationsWidget::treeNewItem);
+    this->m_newItem = new QAction(tr("&New"), this);
+    connect(this->m_newItem, &QAction::triggered, this, &DeclarationsWidget::treeNewItem);
 
-    this->editItem = new QAction(tr("&Edit"), this);
-    connect(this->editItem, &QAction::triggered, this, &DeclarationsWidget::treeEditItem);
+    this->m_editItem = new QAction(tr("&Edit"), this);
+    connect(this->m_editItem, &QAction::triggered, this, &DeclarationsWidget::treeEditItem);
 
-    this->delItem = new QAction(tr("&Delete"), this);
-    connect(this->delItem, &QAction::triggered, this, &DeclarationsWidget::treeDelItem);
+    this->m_delItem = new QAction(tr("&Delete"), this);
+    connect(this->m_delItem, &QAction::triggered, this, &DeclarationsWidget::treeDelItem);
 }
 
 void DeclarationsWidget::treeNewItem()
@@ -72,33 +80,33 @@ void DeclarationsWidget::treeNewItem()
         parent = clicked;
     }
 
-    if (parent.row() == 0)
+    if (parent.row() == m_varRow)
     {
-        VariableDialog* dialog = new VariableDialog(this->varDict, this);
+        VariableDialog* dialog = new VariableDialog(this->m_varDict, this);
         if (dialog->exec() == QDialog::Accepted)
         {
             Variable v = dialog->data();
-            this->variables.append(v);
-            this->varDict.insert(v.name(), v);
+            this->m_variables.append(v);
+            this->m_varDict.insert(v.name(), v);
             QStandardItem* item = new QStandardItem(v.toString());
-            treeNodeVars->appendRow(item);
+            m_treeNodeVars->appendRow(item);
         }
     }
-    else if (parent.row() == 1)
+    else if (parent.row() == m_csRow)
     {
 
     }
-    else if (parent.row() == 2)
+    else if (parent.row() == m_matRow)
     {
-//        MaterialDialog* dialog = new MaterialDialog(this->matDict, this->varDict, this);
-//        if (dialog->exec() == QDialog::Accepted)
-//        {
-//            Material m = dialog->data();
-//            this->materials.append(m);
-//            this->matDict.insert(m.name(), m);
-//            QStandardItem* item = new QStandardItem(m.toString());
-//            treeNodeMats->appendRow(item);
-//        }
+        MaterialConfiguration material;
+        MaterialDialog* dialog = new MaterialDialog(&material, this);
+        if (dialog->exec() == QDialog::Accepted)
+        {
+            QStandardItem* item = new QStandardItem(
+                        QString::fromStdString(material.getParameter("name")->getValue())
+                        );
+            m_treeNodeMats->appendRow(item);
+        }
     }
     else {
         qWarning("%s", QString(tr("Unknown item in declarations!")).toStdString().c_str());
@@ -128,18 +136,18 @@ void DeclarationsWidget::treeDelItem()
     if (!parent.isValid())
         return;
 
-    if (parent.row() == 0)
+    if (parent.row() == m_varRow)
     {
-        Variable v = this->variables.at(clicked.row());
-        this->varDict.remove(v.name());
-        this->variables.remove(clicked.row());
-        treeNodeVars->removeRow(clicked.row());
+        Variable v = this->m_variables.at(clicked.row());
+        this->m_varDict.remove(v.name());
+        this->m_variables.remove(clicked.row());
+        m_treeNodeVars->removeRow(clicked.row());
     }
-    else if (parent.row() == 1)
+    else if (parent.row() == m_csRow)
     {
 
     }
-    else if (parent.row() == 2)
+    else if (parent.row() == m_matRow)
     {
 
     }
@@ -155,25 +163,25 @@ void DeclarationsWidget::createEditDialog(const QModelIndex& item)
     if (!parent.isValid())
         return;
 
-    if (parent.row() == 0)
+    if (parent.row() == m_varRow)
     {
-        VariableDialog* dialog = new VariableDialog(this->variables.at(item.row()),
-                                                    this->varDict, this);
+        VariableDialog* dialog = new VariableDialog(this->m_variables.at(item.row()),
+                                                    this->m_varDict, this);
         if (dialog->exec() == QDialog::Accepted)
         {
             Variable v = dialog->data();
-            this->variables[item.row()] = v;
-            this->varDict[v.name()] = v;
+            this->m_variables[item.row()] = v;
+            this->m_varDict[v.name()] = v;
             QStandardItem* editted = new QStandardItem(v.toString());
-            treeNodeVars->insertRow(item.row() + 1, editted);
-            treeNodeVars->removeRow(item.row());
+            m_treeNodeVars->insertRow(item.row() + 1, editted);
+            m_treeNodeVars->removeRow(item.row());
         }
     }
-    else if (parent.row() == 1)
+    else if (parent.row() == m_csRow)
     {
 
     }
-    else if (parent.row() == 2)
+    else if (parent.row() == m_matRow)
     {
 //        MaterialDialog* dialog = new MaterialDialog(this->materials.at(item.row()),
 //                                                    this->matDict, this->varDict, this);

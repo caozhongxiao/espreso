@@ -48,7 +48,7 @@ void MaterialDialog::iterateObject(ECFObject* obj)
 
     this->drawHeadline(obj, scrollWidget);
 
-    this->processParamaters(obj, scrollWidget);
+    this->processParameters(obj, scrollWidget);
 
     QSpacerItem* verticalSpacer = new QSpacerItem(0,
                                                   0,
@@ -68,10 +68,10 @@ void MaterialDialog::iterateObject(ECFObject* obj, QWidget* parent)
 
     this->drawHeadline(obj, widget);
 
-    this->processParamaters(obj, widget);
+    this->processParameters(obj, widget);
 }
 
-void MaterialDialog::processParamaters(ECFObject* obj, QWidget* widget)
+void MaterialDialog::processParameters(ECFObject* obj, QWidget* widget)
 {
     // Scalar properties
     MaterialPropertyTableWidget* propertyTable;

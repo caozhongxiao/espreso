@@ -43,7 +43,7 @@ namespace espreso
         void drawMe();
         void iterateObject(ECFObject*, QWidget*);
         void iterateObject(ECFObject*);
-        void processParamaters(ECFObject*, QWidget*);
+        void processParameters(ECFObject*, QWidget*);
         void drawHeadline(ECFObject*, QWidget*);
         void drawOption(ECFParameter*, QWidget*);
     };

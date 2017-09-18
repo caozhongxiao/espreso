@@ -7,44 +7,50 @@
 #include <QString>
 #include "../data/variable.h"
 
-namespace Ui {
-class DeclarationsWidget;
-}
-
-class DeclarationsWidget : public QWidget
+namespace espreso
 {
-    Q_OBJECT
+    namespace Ui {
+    class DeclarationsWidget;
+    }
 
-public:
-    explicit DeclarationsWidget(QWidget *parent = 0);
-    ~DeclarationsWidget();
+    class DeclarationsWidget : public QWidget
+    {
+        Q_OBJECT
 
-private slots:
-    void on_DeclarationTree_customContextMenuRequested(const QPoint &pos);
-    void treeNewItem();
-    void treeEditItem();
-    void treeDelItem();
+    public:
+        explicit DeclarationsWidget(QWidget *parent = 0);
+        ~DeclarationsWidget();
 
-    void on_DeclarationTree_doubleClicked(const QModelIndex &index);
+    private slots:
+        void on_DeclarationTree_customContextMenuRequested(const QPoint &pos);
+        void treeNewItem();
+        void treeEditItem();
+        void treeDelItem();
 
-private:
-    Ui::DeclarationsWidget *ui;
+        void on_DeclarationTree_doubleClicked(const QModelIndex &index);
 
-    QAction* newItem;
-    QAction* editItem;
-    QAction* delItem;
+    private:
+        Ui::DeclarationsWidget *ui;
 
-    QStandardItemModel* treeModel;
-    QStandardItem* treeNodeVars;
-    QStandardItem* treeNodeCS;
-    QStandardItem* treeNodeMats;
+        QAction* m_newItem;
+        QAction* m_editItem;
+        QAction* m_delItem;
 
-    QVector<Variable> variables;
-    QHash<QString, Variable> varDict;
+        int m_varRow = -1;
+        int m_csRow = -1;
+        int m_matRow = -1;
 
-    void setupTree();
-    void createActions();
-    void createEditDialog(const QModelIndex& item);
-};
+        QStandardItemModel* m_treeModel;
+        QStandardItem* m_treeNodeVars;
+        QStandardItem* m_treeNodeCS;
+        QStandardItem* m_treeNodeMats;
 
+        QVector<Variable> m_variables;
+        QHash<QString, Variable> m_varDict;
+
+        void setupTree();
+        void createActions();
+        void createEditDialog(const QModelIndex& item);
+    };
+}
 #endif // DECLARATIONSWIDGET_H

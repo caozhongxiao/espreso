@@ -2,7 +2,6 @@
 #include "forms/workflowwidget.h"
 #include "forms/declarationswidget.h"
 #include "forms/plot/plot.h"
-#include "forms/declarations/material/materialpropertieswidget.h"
 #include "forms/declarations/datatypeeditwidget.h"
 #include "forms/declarations/material/materialdialog.h"
 #include "data/datatype.h"
@@ -137,16 +136,11 @@ int main(int argc, char *argv[])
 //    ECFConfiguration ecf;
 //    printECF(ecf, 0);
 
-    MaterialConfiguration mat;
-//    for (auto p = mat.thermal_properties.parameters.begin(); p != mat.thermal_properties.parameters.end(); ++p)
-//    {
-//        std::cout << (*p)->name << std::endl;
-//    }
-//    TensorPropertyWidget tpw(&mat.thermal_properties);
-//    tpw.show();
-
-    MaterialDialog md(&mat);
-    md.show();
+//    MaterialConfiguration mat;
+//    MaterialDialog md(&mat);
+//    md.show();
+    DeclarationsWidget dw;
+    dw.show();
 
 
 //    std::string val = "if (x > 0 and x < 4) -1;";
