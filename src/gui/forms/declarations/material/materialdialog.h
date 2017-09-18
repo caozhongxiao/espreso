@@ -41,7 +41,10 @@ namespace espreso
         QVector<IValidatableObject*> m_valid;
 
         void drawMe();
-		void iterateObject(ECFObject*, QWidget* = nullptr);
+        void iterateObject(ECFObject*, QWidget*);
+        void iterateObject(ECFObject*);
+        void processParamaters(ECFObject*, QWidget*);
+        void drawHeadline(ECFObject*, QWidget*);
         void drawOption(ECFParameter*, QWidget*);
     };
 
