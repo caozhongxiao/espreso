@@ -2,8 +2,8 @@
 #include "physics.h"
 #include "../../configuration.hpp"
 
-espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension)
-: dimension(dimension)
+espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension, MaterialConfiguration::PHYSICAL_MODEL physicalModel)
+: dimension(dimension), physical_model(physicalModel)
 {
 	load_steps = 1;
 	REGISTER(load_steps, ECFMetaData()

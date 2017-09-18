@@ -31,13 +31,14 @@ struct PhysicsConfiguration: public ECFObject {
 	INTERPOLATION interpolation;
 	DISCRETIZATION discretization;
 	DIMENSION dimension;
+	MaterialConfiguration::PHYSICAL_MODEL physical_model;
 
 	std::map<std::string, MaterialConfiguration> materials;
 	std::map<std::string, std::string> material_set;
 
 	std::map<std::string, std::string> initial_temperature, thickness;
 
-	PhysicsConfiguration(DIMENSION dimension);
+	PhysicsConfiguration(DIMENSION dimension, MaterialConfiguration::PHYSICAL_MODEL physicalModel);
 };
 
 }

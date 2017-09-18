@@ -119,7 +119,7 @@ espreso::HeatTransferLoadStepConfiguration::HeatTransferLoadStepConfiguration(DI
 }
 
 espreso::HeatTransferConfiguration::HeatTransferConfiguration(DIMENSION dimension)
-: PhysicsConfiguration(dimension)
+: PhysicsConfiguration(dimension, MaterialConfiguration::PHYSICAL_MODEL::THERMAL)
 {
 	REGISTER(
 			materials,

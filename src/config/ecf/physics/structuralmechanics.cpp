@@ -32,7 +32,7 @@ espreso::StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepCo
 }
 
 espreso::StructuralMechanicsConfiguration::StructuralMechanicsConfiguration(DIMENSION dimension)
-: PhysicsConfiguration(dimension), element_behaviour(ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS)
+: PhysicsConfiguration(dimension, MaterialConfiguration::PHYSICAL_MODEL::LINEAR_ELASTIC), element_behaviour(ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS)
 {
 	REGISTER(
 			materials,
