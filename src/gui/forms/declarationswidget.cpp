@@ -20,9 +20,22 @@ DeclarationsWidget::DeclarationsWidget(QWidget *parent) :
     this->createActions();
 }
 
+DeclarationsWidget::DeclarationsWidget(PhysicsConfiguration *physics, QWidget *parent)
+    : DeclarationsWidget(parent)
+{
+    this->m_physics = physics;
+    this->m_materials = &m_physics->materials;
+}
+
 DeclarationsWidget::~DeclarationsWidget()
 {
     delete ui;
+}
+
+void DeclarationsWidget::setPhysics(PhysicsConfiguration *physics)
+{
+    this->m_physics = physics;
+    this->m_materials = &m_physics->materials;
 }
 
 void DeclarationsWidget::setupTree()

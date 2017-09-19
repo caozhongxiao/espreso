@@ -5,7 +5,9 @@
 #include <QMenu>
 #include <QStandardItemModel>
 #include <QString>
+#include <map>
 #include "../data/variable.h"
+#include "../../config/ecf/physics/physics.h"
 
 namespace espreso
 {
@@ -19,7 +21,10 @@ namespace espreso
 
     public:
         explicit DeclarationsWidget(QWidget *parent = 0);
+        DeclarationsWidget(PhysicsConfiguration* physics, QWidget *parent = 0);
         ~DeclarationsWidget();
+
+        void setPhysics(PhysicsConfiguration* physics);
 
     private slots:
         void on_DeclarationTree_customContextMenuRequested(const QPoint &pos);
@@ -47,6 +52,11 @@ namespace espreso
 
         QVector<Variable> m_variables;
         QHash<QString, Variable> m_varDict;
+
+        std::map<std::string, MaterialConfiguration> m_localMaterials;
+        std::map<std::string, MaterialConfiguration>* m_materials = &m_localMaterials;
+
+        PhysicsConfiguration* m_physics;
 
         void setupTree();
         void createActions();
