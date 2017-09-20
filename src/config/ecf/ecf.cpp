@@ -7,6 +7,9 @@ void espreso::ECFConfiguration::init()
 {
 	name = "root";
 
+	REGISTER(python_test_generator, ECFMetaData()
+			.setdescription({ "Description of Python test generator (run python tests/generate.py PATH)." }));
+
 	REGISTER(default_args, ECFMetaData()
 		.setdescription({ "The index of the argument.", "The argument value." })
 		.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER, ECFDataType::STRING })

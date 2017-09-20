@@ -6,6 +6,8 @@
 #include "output.h"
 #include "decomposer.h"
 
+#include "pythontestgenerator.h"
+
 #include "input/input.h"
 #include "input/generator.h"
 #include "input/feti4ilibrary.h"
@@ -22,6 +24,8 @@ struct ECFConfiguration: public ECFObject {
 
 	// Environment has to be created first!
 	Environment environment;
+
+	PythonTestGenerator python_test_generator;
 
 	std::map<size_t, std::string> default_args;
 	std::map<std::string, std::string> variables;
