@@ -43,7 +43,7 @@ public:
 
 	static void set(const Environment &env, const OutputConfiguration &output);
 
-	static void store(const ECFObject &configuration, std::ostream &os, bool onlyAllowed = true, bool printPatterns = false, const ECFRedParameters &parameters = {});
+	static void store(const ECFObject &configuration, std::ostream &os, bool onlyAllowed = true, bool printPatterns = false, const ECFRedParameters &parameters = ECFRedParameters());
 
 	static std::string configurationFile;
 
