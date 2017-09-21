@@ -5,9 +5,6 @@
 #include "coordinatesystem.h"
 #include "linearelasticproperties.h"
 #include "thermalconductivity.h"
-#include "../../valueholder.h"
-
-#include <string>
 
 namespace espreso {
 

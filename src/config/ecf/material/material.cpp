@@ -6,10 +6,12 @@
 espreso::MaterialConfiguration::MaterialConfiguration()
 : physical_model(static_cast<PHYSICAL_MODEL>(~0)), _allowed_physical_models(static_cast<PHYSICAL_MODEL>(~0))
 {
+	name = "MATERIAL_NAME";
 	REGISTER(name, ECFMetaData()
 			 .setdescription({ "Name" })
 			 .setdatatype( { ECFDataType::STRING } ));
 
+	description = "MATERIAL_DESCRIPTION";
 	REGISTER(description, ECFMetaData()
 			 .setdescription({ "Description" })
 			 .setdatatype( { ECFDataType::STRING } ));
@@ -30,7 +32,6 @@ espreso::MaterialConfiguration::MaterialConfiguration()
 			.setunit("J / (kg * K)")
 			.setmaterialvariables());
 
-	physical_model = PHYSICAL_MODEL::THERMAL;
 	REGISTER(physical_model, ECFMetaData()
 			.setdescription({ "Physical model" })
 			.setdatatype({ ECFDataType::ENUM_FLAGS })
