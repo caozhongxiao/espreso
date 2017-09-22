@@ -50,6 +50,8 @@ struct ECFExpression {
 
 	double evaluate(const Point &p, double time = 0, double temperature = 0, double pressure = 0, double velocity = 0) const;
 	ECFExpression();
+	ECFExpression(const ECFExpression &other);
+	ECFExpression& operator=(const ECFExpression &other);
 	~ECFExpression();
 };
 
@@ -101,6 +103,7 @@ struct ECFParameter {
 	virtual bool setValue(const std::string &value);
 	virtual std::string getValue() const =0;
 	virtual ECFParameter* getParameter(const std::string &name) =0;
+	virtual ECFParameter* getParameter(const char* name) =0;
 	virtual ECFParameter* getParameter(const void* data) =0;
 
 	virtual const ECFParameter* getPattern() const =0;
@@ -122,6 +125,7 @@ struct ECFSeparator: public ECFParameter {
 	bool _setValue(const std::string &value) { return false; }
 	std::string getValue() const { return ""; }
 	ECFParameter* getParameter(const std::string &name) { return NULL; }
+	ECFParameter* getParameter(const char* name) { return NULL; };
 	ECFParameter* getParameter(const void* data) { return NULL; }
 
 	virtual const ECFParameter* getPattern() const { return NULL; }
@@ -131,6 +135,7 @@ struct ECFSeparator: public ECFParameter {
 struct ECFValue: public ECFParameter {
 
 	virtual ECFParameter* getParameter(const std::string &name) { return NULL; }
+	virtual ECFParameter* getParameter(const char* data) { return NULL; }
 	virtual ECFParameter* getParameter(const void* data) { return NULL; }
 
 	bool isValue() const { return true; }
@@ -148,6 +153,7 @@ struct ECFObject: public ECFParameter {
 	virtual bool _setValue(const std::string &value);
 	virtual std::string getValue() const;
 	virtual ECFParameter* getParameter(const std::string &name);
+	virtual ECFParameter* getParameter(const char* data);
 	virtual ECFParameter* getParameter(const void* data);
 
 	virtual const ECFParameter* getPattern() const { return NULL; }
@@ -157,6 +163,7 @@ struct ECFObject: public ECFParameter {
 	void forEachParameters(std::function<void(const ECFParameter*)> fnc, bool onlyAllowed = true) const;
 
 	ECFObject() {}
+
 	// Assigning of parameters invalidates set/get methods -> skip it
 	ECFObject& operator=(ECFObject &other) { return *this; }
 	ECFObject& operator=(const ECFObject &other) { return *this; }
@@ -165,6 +172,11 @@ struct ECFObject: public ECFParameter {
 	ECFObject(ECFObject &other) = delete;
 	ECFObject(const ECFObject &other) = delete;
 
+	// Never use move constructors
+	ECFObject& operator=(ECFObject &&other) = delete;
+	ECFObject& operator=(const ECFObject &&other) = delete;
+	ECFObject(ECFObject &&other) = delete;
+	ECFObject(const ECFObject &&other) = delete;
 
 	virtual ~ECFObject();
 

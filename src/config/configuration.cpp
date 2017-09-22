@@ -23,6 +23,29 @@ ECFExpression::~ECFExpression()
 	}
 }
 
+ECFExpression::ECFExpression(const ECFExpression &other)
+{
+	value = other.value;
+	if (other.evaluator != NULL) {
+		evaluator = other.evaluator->copy();
+	}
+}
+
+ECFExpression& ECFExpression::operator=(const ECFExpression &other)
+{
+	if (this != &other) {
+		value = other.value;
+		if (evaluator != NULL) {
+			delete evaluator;
+			evaluator = NULL;
+		}
+		if (other.evaluator != NULL) {
+			evaluator = other.evaluator->copy();
+		}
+	}
+	return *this;
+}
+
 double ECFExpression::evaluate(const Point &p, double time, double temperature, double pressure, double velocity) const
 {
 	if (evaluator) {
@@ -110,6 +133,11 @@ ECFParameter* ECFObject::getParameter(const std::string &name)
 		}
 	}
 	return NULL;
+}
+
+ECFParameter* ECFObject::getParameter(const char* name)
+{
+	return getParameter(std::string(name));
 }
 
 ECFParameter* ECFObject::getParameter(const void* data)
