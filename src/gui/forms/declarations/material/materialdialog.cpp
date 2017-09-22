@@ -33,6 +33,9 @@ MaterialDialog::~MaterialDialog()
 
 void MaterialDialog::drawMe()
 {
+    this->m_save.clear();
+    this->m_valid.clear();
+
     this->m_frame = new QFrame(ui->frame);
     this->m_frameLayout = new QVBoxLayout;
     this->m_frame->setLayout(m_frameLayout);
