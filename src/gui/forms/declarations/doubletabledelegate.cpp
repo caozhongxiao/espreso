@@ -11,7 +11,7 @@ QWidget* DoubleTableDelegate::createEditor(QWidget *parent,
                                     const QModelIndex &index) const
 {
     QLineEdit *editor = new QLineEdit(parent);
-    QRegExpValidator* validator = new QRegExpValidator(QRegExp(REGEXPR_DOUBLE), parent);
+    QRegExpValidator* validator = new QRegExpValidator(QRegExp(GUI_REGEXPR_DOUBLE), parent);
     editor->setValidator(validator);
     return editor;
 }

@@ -12,6 +12,7 @@
 #include "../config/ecf/ecf.h"
 #include "../config/valueholder.h"
 #include "../config/ecf/physics/physics.h"
+#include "../config/ecf/physics/heattransfer.h"
 #include "../basis/expression/expression.h"
 
 using namespace espreso;
@@ -136,9 +137,7 @@ int main(int argc, char *argv[])
 //    ECFConfiguration ecf;
 //    printECF(ecf, 0);
 
-//    MaterialConfiguration mat;
-//    MaterialDialog md(&mat);
-//    md.show();
+    MaterialConfiguration mat;
     DeclarationsWidget dw;
     dw.show();
 

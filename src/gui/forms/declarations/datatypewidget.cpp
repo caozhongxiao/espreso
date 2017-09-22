@@ -16,7 +16,7 @@ DataTypeWidget::DataTypeWidget(const QHash<QString, Variable>& varDict, QWidget 
     this->setupCheckbox();
 
     // SETUP GUI ELEMENTS OF INDIVIDUAL DATA TYPES (COMBOBOX CHOICES)
-    QRegExpValidator* constantValidator = new QRegExpValidator(QRegExp(REGEXPR_DOUBLE), this);
+    QRegExpValidator* constantValidator = new QRegExpValidator(QRegExp(GUI_REGEXPR_DOUBLE), this);
     ui->editConstant->setValidator(constantValidator);
 
     this->tableModel = new QStandardItemModel(this);

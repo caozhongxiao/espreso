@@ -55,12 +55,19 @@ namespace espreso
 
         std::map<std::string, MaterialConfiguration> m_localMaterials;
         std::map<std::string, MaterialConfiguration>* m_materials = &m_localMaterials;
+        QVector<std::string> m_materialIDs;
+        QVector<std::string> m_materialNames;
+        int m_materialID = 1;
 
-        PhysicsConfiguration* m_physics;
+        PhysicsConfiguration* m_physics = nullptr;
 
         void setupTree();
         void createActions();
         void createEditDialog(const QModelIndex& item);
+
+        MaterialConfiguration* createMaterial();
+        std::string createMaterialId();
+        void removeMaterial(int);
     };
 }
 #endif // DECLARATIONSWIDGET_H

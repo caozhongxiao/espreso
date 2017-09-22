@@ -4,5 +4,5 @@
 
 QValidator* NumberValidatorFactory::create(QObject *parent)
 {
-    return new QRegExpValidator(QRegExp(REGEXPR_DOUBLE), parent);
+    return new QRegExpValidator(QRegExp(GUI_REGEXPR_DOUBLE), parent);
 }

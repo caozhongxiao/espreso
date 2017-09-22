@@ -22,6 +22,8 @@ namespace espreso
 		void appendString(ECFParameter*);
 
         void save() override;
+        void saveState() override;
+        void restoreState() override;
 
         bool isValid() override;
         QString errorMessage() override;
@@ -31,6 +33,9 @@ namespace espreso
 
         QVector<QPair<ECFParameter*, QLineEdit*> > m_strings;
         int m_invalidIndex = 0;
+
+        QVector<std::string> m_state_strings;
+        bool m_stateStored = false;
 	};
 
 }

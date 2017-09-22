@@ -6,9 +6,11 @@ namespace espreso {
     class ISavableObject
     {
     public:
-        virtual ~ISavableObject() {};
+        virtual ~ISavableObject() {}
 
         virtual void save() = 0;
+        virtual void saveState() {}
+        virtual void restoreState() {}
     };
 
 }

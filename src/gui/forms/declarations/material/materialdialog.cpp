@@ -13,12 +13,15 @@
 
 using namespace espreso;
 
-MaterialDialog::MaterialDialog(ECFObject* material, QWidget *parent) :
+MaterialDialog::MaterialDialog(MaterialConfiguration* material,
+                               const QVector<std::string>& materialNames,
+                               QWidget *parent) :
     QDialog(parent),
     ui(new Ui::MaterialDialog)
 {
     ui->setupUi(this);
 
+    this->m_names = materialNames;
     this->m_material = material;
     this->drawMe();
 }
@@ -175,6 +178,24 @@ void MaterialDialog::accept()
             msg.exec();
             return;
         }
+    }
+
+
+    ISavableObject* info = m_save.first();
+    info->saveState();
+    info->save();
+
+    std::string newName = m_material->getParameter(std::string("name"))->getValue();
+    if (m_names.indexOf(newName) != -1)
+    {
+        QMessageBox msg;
+        msg.setWindowTitle(tr("Error"));
+        msg.setText(tr("Material with same name already exists!"));
+        msg.exec();
+
+        info->restoreState();
+
+        return;
     }
 
     foreach (ISavableObject* obj, m_save) {

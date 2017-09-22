@@ -12,7 +12,7 @@ VariableDialog::VariableDialog(const QHash<QString, Variable>& varDict, QWidget 
 {
     ui->setupUi(this);
 
-    QRegExpValidator* varNameValidator = new QRegExpValidator(QRegExp(REGEXPR_VARNAME), this);
+    QRegExpValidator* varNameValidator = new QRegExpValidator(QRegExp(GUI_REGEXPR_VARNAME), this);
     ui->editName->setValidator(varNameValidator);
 
     this->varDict = varDict;

@@ -50,7 +50,7 @@ DataTypeEditWidget::~DataTypeEditWidget()
 void DataTypeEditWidget::createUi()
 {
     ExpressionEdit* function = new ExpressionEdit(
-                QString::fromStdString(m_param->getValue()),
+                "",
                 m_param->metadata.variables,
                 this);
     function->hide();
@@ -74,7 +74,7 @@ void DataTypeEditWidget::createUi()
 
 void DataTypeEditWidget::initExpression()
 {
-    //this->uiExpression->setText(QString::fromStdString(m_param->getValue()));
+    this->uiExpression->setText(QString::fromStdString(m_param->getValue()));
     this->uiExpression->show();
 }
 

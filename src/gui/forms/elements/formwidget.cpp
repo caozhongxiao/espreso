@@ -63,3 +63,36 @@ QString FormWidget::errorMessage()
                             .at(0)
                      ));
 }
+
+void FormWidget::saveState()
+{
+    this->m_state_strings.clear();
+
+    for (auto pair = m_strings.cbegin();
+         pair != m_strings.cend();
+         ++pair)
+    {
+        m_state_strings.append(
+                    pair->first->getValue()
+                    );
+    }
+
+    this->m_stateStored = true;
+}
+
+void FormWidget::restoreState()
+{
+    if (!this->m_stateStored)
+        return;
+
+    int index = 0;
+    for (auto pair = m_strings.cbegin();
+         pair != m_strings.cend();
+         ++pair)
+    {
+        pair->first->setValue(
+                    m_state_strings.at(index)
+                    );
+        index++;
+    }
+}

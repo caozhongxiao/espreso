@@ -111,14 +111,23 @@ void DeclarationsWidget::treeNewItem()
     }
     else if (parent.row() == m_matRow)
     {
-        MaterialConfiguration material;
-        MaterialDialog* dialog = new MaterialDialog(&material, this);
+        MaterialConfiguration* material = this->createMaterial();
+        MaterialDialog* dialog = new MaterialDialog(material, m_materialNames, this);
         if (dialog->exec() == QDialog::Accepted)
         {
             QStandardItem* item = new QStandardItem(
-                        QString::fromStdString(material.getParameter("name")->getValue())
+                        QString::fromStdString(
+                            material->getParameter(std::string("name"))->getValue()
+                            )
                         );
             m_treeNodeMats->appendRow(item);
+            this->m_materialNames.append(
+                        material->getParameter(std::string("name"))->getValue()
+                        );
+        }
+        else
+        {
+            this->removeMaterial(m_materialIDs.size() - 1);
         }
     }
     else {
@@ -162,7 +171,8 @@ void DeclarationsWidget::treeDelItem()
     }
     else if (parent.row() == m_matRow)
     {
-
+        this->removeMaterial(clicked.row());
+        m_treeNodeMats->removeRow(clicked.row());
     }
     else {
         qWarning("%s", QString(tr("Unknown item in declarations!")).toStdString().c_str());
@@ -196,17 +206,22 @@ void DeclarationsWidget::createEditDialog(const QModelIndex& item)
     }
     else if (parent.row() == m_matRow)
     {
-//        MaterialDialog* dialog = new MaterialDialog(this->materials.at(item.row()),
-//                                                    this->matDict, this->varDict, this);
-//        if (dialog->exec() == QDialog::Accepted)
-//        {
-//            Material m = dialog->data();
-//            this->materials[item.row()] = m;
-//            this->matDict[m.name()] = m;
-//            QStandardItem* editted = new QStandardItem(m.toString());
-//            treeNodeMats->insertRow(item.row() + 1, editted);
-//            treeNodeMats->removeRow(item.row());
-//        }
+        std::string mID = m_materialIDs.at(item.row());
+        m_materialNames.remove(item.row());
+        MaterialConfiguration* material = &(*m_materials)[mID];
+        MaterialDialog* dialog = new MaterialDialog(material, m_materialNames, this);
+        if (dialog->exec() == QDialog::Accepted)
+        {
+            QStandardItem* editted = new QStandardItem(
+                        QString::fromStdString(
+                            material->getParameter(std::string("name"))->getValue()
+                            )
+                        );
+            m_treeNodeMats->insertRow(item.row() + 1, editted);
+            m_treeNodeMats->removeRow(item.row());
+        }
+        m_materialNames.insert(item.row(),
+                               material->getParameter(std::string("name"))->getValue());
     }
     else {
         qWarning("%s", QString(tr("Unknown item in declarations!")).toStdString().c_str());
@@ -216,4 +231,36 @@ void DeclarationsWidget::createEditDialog(const QModelIndex& item)
 void DeclarationsWidget::on_DeclarationTree_doubleClicked(const QModelIndex &index)
 {
     this->createEditDialog(index);
+}
+
+MaterialConfiguration* DeclarationsWidget::createMaterial()
+{
+    std::string mID = this->createMaterialId();
+    if (this->m_physics == nullptr)
+    {
+        (*this->m_materials)[mID];// = MaterialConfiguration();
+    }
+    else
+    {
+        qCritical("NOT SUPPORTED YET!");
+//        (*this->m_materials)[mID] = MaterialConfiguration(
+//                    this->m_physics->dimension,
+//                    this->m_physics->physical_model
+//                    );
+    }
+    this->m_materialIDs.append(mID);
+
+    return &(*this->m_materials)[mID];
+}
+
+std::string DeclarationsWidget::createMaterialId()
+{
+    return "material_" + std::to_string(m_materialID++);
+}
+
+void DeclarationsWidget::removeMaterial(int index)
+{
+    std::string key = this->m_materialIDs.at(index);
+    this->m_materials->erase(key);
+    this->m_materialIDs.remove(index);
 }

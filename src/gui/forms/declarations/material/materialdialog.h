@@ -5,7 +5,7 @@
 #include <QFrame>
 #include <QVBoxLayout>
 #include <QVector>
-#include "../../../../config/configuration.h"
+#include "../../../../config/ecf/material/material.h"
 #include "../../elements/isavableobject.h"
 #include "../../elements/ivalidatableobject.h"
 
@@ -21,7 +21,9 @@ namespace espreso
         Q_OBJECT
 
     public:
-        explicit MaterialDialog(ECFObject* material, QWidget *parent = 0);
+        explicit MaterialDialog(MaterialConfiguration* material,
+                                const QVector<std::string>& materialNames,
+                                QWidget *parent = 0);
         ~MaterialDialog();
 
         void accept() override;
@@ -33,6 +35,7 @@ namespace espreso
         Ui::MaterialDialog *ui;
 
         ECFObject* m_material;
+        QVector<std::string> m_names;
 
         QFrame* m_frame;
         QVBoxLayout* m_frameLayout;
