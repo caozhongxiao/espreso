@@ -4,8 +4,6 @@
 #include "../../configuration.hpp"
 
 using namespace espreso;
-
-MaterialBaseConfiguration::MaterialBaseConfiguration()
 : _phase_change(NULL), _physical_model(NULL)
 {
 	REGISTER(coordinate_system, ECFMetaData()
@@ -81,6 +79,7 @@ MaterialConfiguration::MaterialConfiguration()
 
 	addSpace();
 
+    physical_model = PHYSICAL_MODEL::THERMAL;
 	REGISTER(physical_model, ECFMetaData()
 			.setdescription({ "Physical model" })
 			.setdatatype({ ECFDataType::ENUM_FLAGS })
