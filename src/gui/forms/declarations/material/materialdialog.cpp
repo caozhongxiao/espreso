@@ -185,7 +185,13 @@ void MaterialDialog::accept()
     info->saveState();
     info->save();
 
-    std::string newName = m_material->getParameter(std::string("name"))->getValue();
+    std::string newName =
+            QString::fromStdString(
+                m_material->getParameter(std::string("name"))->getValue()
+                )
+                .toUpper()
+                .toStdString();
+
     if (m_names.indexOf(newName) != -1)
     {
         QMessageBox msg;

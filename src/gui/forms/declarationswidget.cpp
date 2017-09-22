@@ -122,7 +122,9 @@ void DeclarationsWidget::treeNewItem()
                         );
             m_treeNodeMats->appendRow(item);
             this->m_materialNames.append(
-                        material->getParameter(std::string("name"))->getValue()
+                        this->toUpper(
+                            material->getParameter(std::string("name"))->getValue()
+                            )
                         );
         }
         else
@@ -220,8 +222,12 @@ void DeclarationsWidget::createEditDialog(const QModelIndex& item)
             m_treeNodeMats->insertRow(item.row() + 1, editted);
             m_treeNodeMats->removeRow(item.row());
         }
-        m_materialNames.insert(item.row(),
-                               material->getParameter(std::string("name"))->getValue());
+
+        m_materialNames.insert(
+                    item.row(),
+                    this->toUpper(
+                        material->getParameter(std::string("name"))->getValue()
+                        ));
     }
     else {
         qWarning("%s", QString(tr("Unknown item in declarations!")).toStdString().c_str());
@@ -263,4 +269,11 @@ void DeclarationsWidget::removeMaterial(int index)
     std::string key = this->m_materialIDs.at(index);
     this->m_materials->erase(key);
     this->m_materialIDs.remove(index);
+}
+
+std::string DeclarationsWidget::toUpper(const std::string& text)
+{
+    return QString::fromStdString(text)
+            .toUpper()
+            .toStdString();
 }

@@ -68,6 +68,7 @@ namespace espreso
         MaterialConfiguration* createMaterial();
         std::string createMaterialId();
         void removeMaterial(int);
+        std::string toUpper(const std::string&);
     };
 }
 #endif // DECLARATIONSWIDGET_H
