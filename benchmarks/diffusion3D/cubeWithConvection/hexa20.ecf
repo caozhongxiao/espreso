@@ -22,6 +22,7 @@ GENERATOR {
   GRID {
     UNIFORM_DECOMPOSITION   TRUE;
 
+
     LENGTH_X                   1;
     LENGTH_Y                   1;
     LENGTH_Z                   1;
@@ -63,9 +64,11 @@ HEAT_TRANSFER_3D {
 
   MATERIALS {
     1 {
+      NAME          ;
+      DESCRIPTION   ;
 
-      DENS   1;
-      CP     1;
+      DENS         1;
+      CP           1;
 
       THERMAL_CONDUCTIVITY {
         MODEL   ISOTROPIC;

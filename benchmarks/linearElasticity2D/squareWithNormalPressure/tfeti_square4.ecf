@@ -19,6 +19,7 @@ GENERATOR {
   GRID {
     UNIFORM_DECOMPOSITION   FALSE;
 
+
     START_X                     0;
     START_Y                     0;
     START_Z                     0;
@@ -58,9 +59,11 @@ STRUCTURAL_MECHANICS_2D {
 
   MATERIALS {
     1 {
+      NAME          ;
+      DESCRIPTION   ;
 
-      DENS   7850;
-      CP        1;
+      DENS      7850;
+      CP           1;
 
       LINEAR_ELASTIC_PROPERTIES {
         MODEL   ISOTROPIC;
