@@ -116,7 +116,7 @@ ECFRedParameters ECFReader::_read(
 	}
 
 	if (helpVerboseLevel) {
-		std::cout << "\nusage: ./espreso [options] [ARGS]\n\n";
+		std::cout << "\nusage: espreso [options] [ARGS]\n\n";
 
 		std::cout << " [options] are the following:\n";
 		std::cout << "\t -h, --help            print this message\n";
@@ -344,6 +344,10 @@ ECFRedParameters ECFReader::_read(
 				values.clear();
 				break;
 			}
+			if (values.size() == 1) {
+				// allow to read an empty value
+				values.push_back("");
+			}
 			if (values.size() < 2) {
 				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Incorrect assignment format on line " << tokenStack.top()->line() << ". Use 'PARAMETER' 'VALUE';\n" << tokenStack.top()->lastLines(2);
 			}
@@ -382,7 +386,7 @@ ECFRedParameters ECFReader::_read(
 	}
 
 	if (!correctlyLoaded) {
-		std::string error = "Configuration file is not correctly loaded.\nUse ./espreso ";
+		std::string error = "Configuration file is not correctly loaded.\nUse espreso ";
 		size_t i = 0;
 		for (auto it = arguments.begin(); it != arguments.end(); ++it) {
 			error += "[ARG" + std::to_string(i++) + "] ";

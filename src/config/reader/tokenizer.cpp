@@ -216,9 +216,7 @@ Tokenizer::Token Tokenizer::_next()
 			} else {
 				_file.get();
 			}
-			if (_buffer.size()) {
-				return Token::STRING;
-			}
+			return Token::STRING;
 		}
 		_buffer.push_back(_file.get());
 	}
