@@ -105,7 +105,7 @@ class ESPRESOTestGenerator:
         return dir
 
     def create_file(self, path, levels, extension):
-        return open(os.path.join(path, "_".join([name for value, name in levels]) + extension), "w")
+        return open(os.path.join(path, ".".join([name for value, name in levels]) + extension), "w")
 
     def evaluate(self, expr, variables, path):
         mathfnc = dict((name, fnc) for name, fnc in math.__dict__.iteritems() if callable(fnc))
@@ -162,7 +162,7 @@ class ESPRESOTestGenerator:
 
         repetitions = []
         for i in range(0, n):
-            example = self.create_file(run, levels, (".ecf", "_{0}.ecf".format(i))[n > 1])
+            example = self.create_file(run, levels, (".ecf", ".{0}.ecf".format(i))[n > 1])
             repetitions.append(example)
             example.write("# Automatically generated test\n\n")
 
@@ -250,10 +250,9 @@ class ESPRESOTestGenerator:
             values = []
             for (value, name) in self.evaluate(ecf["LEVELS"][level], {}, ""): # error is irelevant, was evaluated before
                 values.append("'{0}'".format(name))
-            variables["L" + level] = ", ".join(values)
+            variables["L" + level] = "[{0}]".format(", ".join(values))
 
         evaluate_file = self.create_file(os.path.join(ROOT, "generatedtests", ecf["OUTPUT"]), [], "evaluate.py")
-        os.chmod(evaluate_file.name, 0o777)
 
         evaluate_file.write("import os\n")
         evaluate_file.write("import sys\n\n")
@@ -264,8 +263,15 @@ class ESPRESOTestGenerator:
         for table in ecf["TABLES"]:
             rows = self.evaluate(ecf["TABLES"][table]["ROWS"], variables, "TABLES::{0}::ROWS".format(table))
             columns = self.evaluate(ecf["TABLES"][table]["COLUMNS"], variables, "TABLES::{0}::COLUMNS".format(table))
-            value = self.evaluate(ecf["TABLES"][table]["VALUE"], variables, "TABLES::{0}::VALUE".format(table))
-            evaluate_file.write("    evaluator.evaluate(name='{0}', rows=[{1}], columns=[{2}], value='{3}')\n".format(table, rows, columns, value))
+            value = ""
+            if "VALUE" in ecf["TABLES"][table]:
+                value = self.evaluate(ecf["TABLES"][table]["VALUE"], variables, "TABLES::{0}::VALUE".format(table))
+            evaluate_file.write("    evaluator.evaluate(\n")
+            evaluate_file.write("        root='{0}',\n".format(os.path.dirname(evaluate_file.name)))
+            evaluate_file.write("        tablename='{0}',\n".format(table))
+            evaluate_file.write("        rows={0},\n".format(rows))
+            evaluate_file.write("        columns={0},\n".format(columns))
+            evaluate_file.write("        value='{0}')\n\n".format(value))
 
     def process_file(self, file):
         parser = ECFParser()
