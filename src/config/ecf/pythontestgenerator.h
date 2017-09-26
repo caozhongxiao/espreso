@@ -6,13 +6,6 @@
 
 namespace espreso {
 
-struct PythonTestGeneratorTable: public ECFObject {
-
-	std::string columns, rows, value;
-
-	PythonTestGeneratorTable();
-};
-
 struct PythonTestGenerator: public ECFObject {
 
 	std::string output, env, warmup, run, exe;
@@ -21,7 +14,7 @@ struct PythonTestGenerator: public ECFObject {
 	std::map<size_t, std::string> levels, args;
 	std::map<std::string, std::string> variables;
 
-	std::map<std::string, PythonTestGeneratorTable> tables;
+	std::map<std::string, std::map<std::string, std::string> > tables;
 
 	PythonTestGenerator();
 };

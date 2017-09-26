@@ -2,109 +2,165 @@
 import os
 import sys
 
+ESPRESO_TESTS = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(ESPRESO_TESTS, "utils"))
+
+from testing import *
+
 class ESPRESOTestEvaluator:
 
-    def evaluate(self, root, tablename, rows, columns, value):
-        rows = set(rows)
-        columns = set(columns)
-        table = {}
+    def __init__(self, root):
+        self.ROOT = root
+        self.repetition = 0
+        self.levels = []
+        self.table = {}
+        self.load()
 
-        for row in rows:
-            table[row] = {}
-            for column in columns:
-                table[row][column] = []
+    def get_values(self, table, position):
+        if len(position):
+            return self.get_values(table[position[0]], position[1:])
+        else:
+            return table
 
-        run   = os.path.join(root, "run")
-        log   = os.path.join(root, "log")
-        stats = os.path.join(root, "stats")
+    def load(self):
+        def fill_values(table, levels):
+            if len(levels):
+                for value in levels[0]:
+                    table[value] = {}
+                    fill_values(table[value], levels[1:])
 
-        levels = []
+        run = os.path.join(self.ROOT, "run")
+        log = os.path.join(self.ROOT, "log")
+
+        self.levels = []
         for path, dirs, files in os.walk(run):
-            if "results" in dirs:
-                repetitions = len([file for file in files if file.endswith(".ecf")])
+            if any([file.endswith(".ecf") for file in files]):
+                self.repetitions = len([file for file in files if file.endswith(".ecf")])
                 break
             else:
-                levels.append(dirs)
+                self.levels.append(dirs)
 
+        fill_values(self.table, self.levels)
+
+        files = len(os.listdir(log))
         for file in os.listdir(log):
-            names = file.split(".")[:-1] # .log
-            if repetitions > 1:
-                names = names[:-1] # .repetition
+            position = file.split(".")[0:len(self.levels)]
+            data = {}
+            for line in open(os.path.join(log, file), "r"):
+                if "avg.:" in line:
+                    key = line.split("avg.:")[0]
+                    if key in data:
+                        data[key].append(float(" ".join(line.split()).split("avg.: ")[1].split()[0]))
+                    else:
+                        data[key] = [ float(" ".join(line.split()).split("avg.: ")[1].split()[0]) ]
 
-            row = column = None
-            for name in names:
-                if name in rows and name in columns:
-                    print "Invalid table description. '{0}' is in both rows and columns.".format(name)
-                    exit()
-                if name in rows:
-                    row = name
-                if name in columns:
-                    column = name
-
-            if len(value):
-                if row is None and len(rows) == 1:
-                    row = list(rows)[0]
-                if column is None and len(columns) == 1:
-                    column = list(columns)[0]
-                if row is None or column is None:
-                    print "Unrecognized table format. A row or column not found."
-                    exit()
-
-                time = None
-                for line in open(os.path.join(log, file), "r"):
-                    if value in line:
-                        time = float(" ".join(line.split()).split("avg.: ")[1].split()[0])
-                        break
-                if time is None:
-                    print value, "NOT FOUND"
-                    exit()
-
-                table[row][column].append(time)
-
-            else:
-                if row is not None and column is not None:
-                    print "Missing parameter value in table '{0}'".format(tablename)
-                    exit()
-
-                if row is None:
-                    times = [None] * len(rows)
-                if column is None:
-                    times = [None] * len(columns)
-                for line in open(os.path.join(log, file), "r"):
-                    if row is None:
-                        for i, rvalue in enumerate(sorted(rows)):
-                            if rvalue in line:
-                                times[i] = float(" ".join(line.split()).split("avg.: ")[1].split()[0])
-                    if column is None:
-                        for i, cvalue in enumerate(sorted(column)):
-                            if cvalue in line:
-                                times[i] = float(" ".join(line.split()).split("avg.: ")[1].split()[0])
-                if row is None:
-                    for i, rvalue in enumerate(sorted(rows)):
-                        if times[i] is None:
-                            print "Missing parameter '{0}' in table '{1}'".format(rvalue, tablename)
-                        else:
-                            table[rvalue][column].append(times[i])
-                if column is None:
-                    for i, cvalue in enumerate(sorted(column)):
-                        if times[i] is None:
-                            print "Missing parameter '{0}' in table '{1}'".format(cvalue, tablename)
-                        else:
-                            table[row][cvalue].append(times[i])
-
-
-        cwidth = len(max(columns, key=lambda x: len(x)))
-        rwidth = len(max(rows, key=lambda x: len(x)))
-        statistics = open(os.path.join(stats, "{0}.csv".format(tablename)), "w")
-        statistics.write("{0:{width}} ; ".format("", width=rwidth))
-        for column in sorted(columns):
-            statistics.write("{0:^{width}} ; ".format(column, width=cwidth))
-        statistics.write("\n")
-        for row in sorted(rows):
-            statistics.write("{0:<{width}} ; ".format(row, width=rwidth))
-            for column in sorted(columns):
-                if len(table[row][column]):
-                    statistics.write("{0:>{width}.3f} ; ".format(sum(table[row][column]) / len(table[row][column]), width=cwidth))
+            values = self.get_values(self.table, position)
+            for key in data:
+                value = sum(data[key]) / len(data[key])
+                if key in values:
+                    values[key].append(value)
                 else:
-                    statistics.write("{0:>{width}} ; ".format("", width=cwidth))
-            statistics.write("\n")
+                    values[key] = [ value ]
+
+        def average(table, levels):
+            if len(levels):
+                for value in levels[0]:
+                    average(table[value], levels[1:])
+            else:
+                for value in table:
+                    table[value] = sum(table[value]) / len(table[value])
+        average(self.table, self.levels)
+
+    def evaluate(self, tablename, rows, columns, **kwargs):
+        ranges = []
+        for level in range(1, len(self.levels) + 1):
+            ranges.append({"L{0}".format(level): kwargs["L{0}".format(level)]})
+        ranges.append({"VALUES": kwargs["VALUES"]})
+
+        stats = os.path.join(self.ROOT, "stats")
+
+        trows = []
+        tcolumns = []
+        freevars = []
+        isrowvar = []
+        iscolumnvar = []
+        isargfree = []
+        for level in ranges:
+            for k, v in level.iteritems():
+                if k in rows:
+                    trows.append({k: v})
+                    isrowvar.append(True)
+                    iscolumnvar.append(False)
+                    isargfree.append(False)
+                if k in columns:
+                    tcolumns.append({k: v})
+                    isrowvar.append(False)
+                    iscolumnvar.append(True)
+                    isargfree.append(False)
+                if k not in rows and k not in columns:
+                    freevars.append({k: v})
+                    isrowvar.append(False)
+                    iscolumnvar.append(False)
+                    isargfree.append(True)
+
+        tables = {}
+        def create_table(*args):
+            args = [ arg.values()[0].replace(" ", "_") for arg in args ]
+            name = "{0}.{1}".format(tablename, ".".join(args))
+            tables[name] = { "file": open(os.path.join(stats, name + ".csv"), "w") }
+
+        if len(freevars):
+            TestCaseCreator.iterate(create_table, *freevars)
+        else:
+            tables[tablename] = { "file": open(os.path.join(stats, tablename + ".csv"), "w") }
+
+        tablesrows = []
+        tablescolumns = []
+        def add_row(*args):
+            tablesrows.append(".".join([ arg.values()[0].replace(" ", "_") for arg in args ]))
+        def add_column(*args):
+            tablescolumns.append(".".join([ arg.values()[0].replace(" ", "_") for arg in args ]))
+        TestCaseCreator.iterate(add_row, *trows)
+        TestCaseCreator.iterate(add_column, *tcolumns)
+
+        for table in tables:
+            tables[table]["data"] = {}
+            for row in tablesrows:
+                tables[table]["data"][row] = {}
+                for column in tablescolumns:
+                    tables[table]["data"][row][column] = 0;
+
+        def write_value(*args):
+            args = [ arg.values()[0] for arg in args ]
+            values = self.get_values(self.table, args[:-1])
+            value = None
+            for key in values:
+                if args[-1] in key:
+                    value = values[key]
+                    break
+
+            table = ".".join([tablename] + [arg.replace(" ", "_") for i, arg in enumerate(args) if isargfree[i]])
+            row = ".".join([arg.replace(" ", "_") for i, arg in enumerate(args) if isrowvar[i]])
+            column = ".".join([arg.replace(" ", "_") for i, arg in enumerate(args) if iscolumnvar[i]])
+            tables[table]["data"][row][column] = value
+
+        TestCaseCreator.iterate(write_value, *ranges)
+
+
+        cwidth = len(max(tablescolumns, key=lambda x: len(x)))
+        rwidth = len(max(tablesrows, key=lambda x: len(x)))
+        for table in tables:
+            tables[table]["file"].write("{0:{width}} ; ".format("", width=rwidth))
+            for column in sorted(tablescolumns):
+                tables[table]["file"].write("{0:^{width}} ; ".format(column, width=cwidth))
+            tables[table]["file"].write("\n")
+            for row in sorted(tablesrows):
+                tables[table]["file"].write("{0:<{width}} ; ".format(row, width=rwidth))
+                for column in sorted(tablescolumns):
+                    if tables[table]["data"][row][column] is not None:
+                        tables[table]["file"].write("{0:>{width}.3f} ; ".format(tables[table]["data"][row][column], width=cwidth))
+                    else:
+                        tables[table]["file"].write("{0:>{width}} ; ".format("", width=cwidth))
+                tables[table]["file"].write("\n")
+

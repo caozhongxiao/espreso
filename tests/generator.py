@@ -4,6 +4,7 @@ import sys
 import shutil
 import time
 import math
+from compiler.syntax import check
 
 PATH = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(PATH)
@@ -91,6 +92,21 @@ class ECFParser:
         check_parameter(ecf, "RUN", "Set run command")
         check_parameter(ecf, "EXE", "Set execute command")
         check_parameter(ecf, "GATHER_LEVEL", "Set the level for that the various execute files will be generated")
+
+        if "TABLES" not in ecf:
+            return
+
+        levels = len(ecf["LEVELS"])
+        for table in ecf["TABLES"]:
+            check_parameter(ecf["TABLES"][table], "ROWS", "Set ROWS for table '{}'".format(table))
+            check_parameter(ecf["TABLES"][table], "COLUMNS", "Set COLUMNS for table '{}'".format(table))
+            check_parameter(ecf["TABLES"][table], "VALUES", "Set values for table '{}'".format(table))
+            for level in range(1, levels + 1):
+                check_parameter(ecf["TABLES"][table], "L{0}".format(level), "Each table has to set values for all levels")
+
+            for param in ecf["TABLES"][table]:
+                if param not in ["ROWS", "COLUMNS", "VALUES"] + ["L{0}".format(i) for i in range(1, levels + 1)]:
+                    print "Table {0} constains invalid parameter '{1}'".format(table, param)
 
 class ESPRESOTestGenerator:
 
@@ -251,11 +267,12 @@ class ESPRESOTestGenerator:
             "DATE": self.DATE
         }
 
-        for level in ecf["LEVELS"]:
+        levels = len(ecf["LEVELS"])
+        for level in range(1, levels + 1):
             values = []
-            for (value, name) in self.evaluate(ecf["LEVELS"][level], {}, ""): # error is irelevant, was evaluated before
+            for (value, name) in self.evaluate(ecf["LEVELS"][str(level)], {}, ""): # error is irelevant, was evaluated before
                 values.append("'{0}'".format(name))
-            variables["L" + level] = "[{0}]".format(", ".join(values))
+            variables["L{0}".format(level)] = "[{0}]".format(", ".join(values))
 
         evaluate_file = self.create_file(os.path.join(ROOT, "generatedtests", ecf["OUTPUT"]), [], "evaluate.py")
 
@@ -264,19 +281,32 @@ class ESPRESOTestGenerator:
         evaluate_file.write("sys.path.append(os.path.join(\"{0}\", \"tests\"))\n\n".format(self.ROOT))
         evaluate_file.write("from evaluator import *\n\n")
         evaluate_file.write("if __name__ == '__main__':\n")
-        evaluate_file.write("    evaluator = ESPRESOTestEvaluator()\n")
+        evaluate_file.write("    evaluator = ESPRESOTestEvaluator('{0}')\n".format(os.path.dirname(evaluate_file.name)))
+
         for table in ecf["TABLES"]:
-            rows = self.evaluate(ecf["TABLES"][table]["ROWS"], variables, "TABLES::{0}::ROWS".format(table))
-            columns = self.evaluate(ecf["TABLES"][table]["COLUMNS"], variables, "TABLES::{0}::COLUMNS".format(table))
-            value = ""
-            if "VALUE" in ecf["TABLES"][table]:
-                value = self.evaluate(ecf["TABLES"][table]["VALUE"], variables, "TABLES::{0}::VALUE".format(table))
+            rows = ecf["TABLES"][table]["ROWS"].split(",")
+            columns = ecf["TABLES"][table]["COLUMNS"].split(",")
+            rows = map(lambda x: x.strip(), rows)
+            columns = map(lambda x: x.strip(), columns)
+            for row in rows:
+                if row not in ["VALUES"] + ["L{0}".format(i) for i in range(1, levels + 1)]:
+                    print "Table {0} contains invalid ROWS value {1}.".format(table, row)
+            for column in columns:
+                if column not in ["VALUES"] + ["L{0}".format(i) for i in range(1, levels + 1)]:
+                    print "Table {0} contains invalid COLUMNS value {1}.".format(table, column)
+
             evaluate_file.write("    evaluator.evaluate(\n")
-            evaluate_file.write("        root='{0}',\n".format(os.path.dirname(evaluate_file.name)))
             evaluate_file.write("        tablename='{0}',\n".format(table))
-            evaluate_file.write("        rows={0},\n".format(rows))
-            evaluate_file.write("        columns={0},\n".format(columns))
-            evaluate_file.write("        value='{0}')\n\n".format(value))
+            evaluate_file.write("        rows=['{0}'],\n".format("', '".join(rows)))
+            evaluate_file.write("        columns=['{0}'],\n".format("', '".join(columns)))
+            for level in range(1, levels + 1):
+                if ecf["TABLES"][table]["L{0}".format(level)] == "ALL":
+                    values = variables["L{0}".format(level)]
+                else:
+                    values = self.evaluate(ecf["TABLES"][table]["L{0}".format(level)], variables, "TABLES::{0}::L{1}".format(table, level))
+                evaluate_file.write("        L{0}={1},\n".format(level, values))
+            values = self.evaluate(ecf["TABLES"][table]["VALUES"], variables, "TABLES::{0}::VALUES".format(table))
+            evaluate_file.write("        VALUES={0})\n".format(values))
 
     def process_file(self, file):
         parser = ECFParser()
