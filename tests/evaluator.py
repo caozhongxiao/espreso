@@ -106,5 +106,5 @@ class ESPRESOTestEvaluator:
                 if len(table[row][column]):
                     statistics.write("{0:>{width}.3f} ; ".format(sum(table[row][column]) / len(table[row][column]), width=cwidth))
                 else:
-                    statistics.write("{0:>{width}.3f} ; ".format(0, width=cwidth))
+                    statistics.write("{0:>{width}} ; ".format("", width=cwidth))
             statistics.write("\n")
