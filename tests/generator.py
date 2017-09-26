@@ -290,5 +290,9 @@ class ESPRESOTestGenerator:
 
 if __name__ == '__main__':
 
+    if len(sys.argv) < 2:
+        print "Provide *.ecf file as the first argument."
+        exit()
+
     generator = ESPRESOTestGenerator();
-    generator.generate("test.ecf")
+    generator.generate(sys.argv[1])
