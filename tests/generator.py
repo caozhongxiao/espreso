@@ -183,6 +183,11 @@ class ESPRESOTestGenerator:
         run_file.write("#!/bin/bash\n\n")
         run_file.write("{0}\n".format(self.evaluate(ecf["ENV"], variables, "ENV")))
         run_file.write("cd {0}\n\n".format(run))
+
+        if "WARMUP" in ecf:
+            run_file.write("# WARM UP\n")
+            run_file.write("{0} -c {1}\n\n".format(self.evaluate(ecf["WARMUP"], variables, "WARMUP"), example.name))
+
         for example in repetitions:
             run_file.write("{0} -c {1}\n".format(self.evaluate(ecf["RUN"], variables, "RUN"), example.name))
             run_file.write("cp {0}/results/last/*.log {1}\n\n".format(run, log))
@@ -233,7 +238,7 @@ class ESPRESOTestGenerator:
             if check_variables(ecf["EXE"], denied):
                 execute_file.write("{0} {1}\n".format(self.evaluate(ecf["EXE"], variables, "EXE"), file))
             else:
-                print "Invalid GATHER_LEVEL: EXE command references variable that vary in sublevels"
+                print "Invalid GATHER_LEVEL: EXE command references variable that vary in sublevels."
                 exit()
 
     def generate_evaluate_file(self, ecf, log, stats):

@@ -46,6 +46,9 @@ PythonTestGenerator::PythonTestGenerator()
 	REGISTER(env, ECFMetaData()
 			.setdescription({ "Environment settings." })
 			.setdatatype({ ECFDataType::STRING }));
+        REGISTER(warmup, ECFMetaData()
+                        .setdescription({ "Run before testing." })
+                        .setdatatype({ ECFDataType::STRING }));
 	REGISTER(run, ECFMetaData()
 			.setdescription({ "Run command." })
 			.setdatatype({ ECFDataType::STRING }));

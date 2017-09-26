@@ -7,20 +7,20 @@ PYTHON_TEST_GENERATOR {
   GATHER_LEVEL                  1;
 
   LEVELS {
-    1 [(x, "CLUSTERS_" + str(x*x*x).zfill(4)) for x in range(1, 11)];
+    1 [(x, "CLUSTERS_" + str(x*x*x).zfill(4)) for x in range(1, 6)];
   }
 
   VARIABLES {
     NPROCS                      L1 * L1 * L1;
-    NODES   int(ceil((L1 * L1 * L1) / 22.0));
+    NODES   int(ceil((L1 * L1 * L1) / 2.0));
 
     MODULES "source {0}/env/modules.salomon".format(ROOT);
     PATHS   "source {0}/env/paths.default {0}".format(ROOT);
-    ENV     "source {0}/env/threading.default 1".format(ROOT);
+    ENV     "source {0}/env/threading.default 11".format(ROOT);
 
     PROJECT              "OPEN-10-15";
     QUEUE                     "qprod";
-    WTIME     "-l walltime=00:30::00";
+    WTIME       "-lwalltime=00:30:00";
 
 /*  The following are automatically available
 
@@ -30,15 +30,17 @@ PYTHON_TEST_GENERATOR {
 */    
   }
 
-  ENV "{0}\n{1}\n".format(PATHS, ENV);
+  # set env and run warm up
+  ENV "{0}\n{1}\n{2}\n".format(PATHS, ENV, MODULES, NPROCS, L1);
+  WARMUP "mpirun -n {0} espreso {1} 1 2".format(NPROCS, L1);
   RUN "mpirun -n {0} espreso".format(NPROCS);
-  EXE "qsub -q {0} -A {1} -l select={2} {3}".format(QUEUE, PROJECT, NODES, WTIME);
+  EXE "qsub -q {0} -A {1} -lselect={2}:ncpus=24:mpiprocs=2:ompthreads=11 {3}".format(QUEUE, PROJECT, NODES, WTIME);
 #  EXE ""; // direct run
 
   ARGS {
     0   L1;
-    1    2;
-    2    5;
+    1    8;
+    2   10;
   }
 
   TABLES {
@@ -46,7 +48,8 @@ PYTHON_TEST_GENERATOR {
       COLUMNS      L1;
       ROWS    [
         "update linear solver",
-        "run linear solver"];
+        "run linear solver"
+      ];
     }
   }
 }

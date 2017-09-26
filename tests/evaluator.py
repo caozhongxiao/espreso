@@ -103,8 +103,8 @@ class ESPRESOTestEvaluator:
         for row in sorted(rows):
             statistics.write("{0:<{width}} ; ".format(row, width=rwidth))
             for column in sorted(columns):
-                if table[row][column][0]:
-                    statistics.write("{:>{width}.3f} ; ".format(sum(table[row][column]) / len(table[row][column]), width=cwidth))
+                if len(table[row][column]):
+                    statistics.write("{0:>{width}.3f} ; ".format(sum(table[row][column]) / len(table[row][column]), width=cwidth))
                 else:
-                    statistics.write("{:>{width}.3f} ; ".format(0, width=cwidth))
+                    statistics.write("{0:>{width}.3f} ; ".format(0, width=cwidth))
             statistics.write("\n")

@@ -15,7 +15,7 @@ struct PythonTestGeneratorTable: public ECFObject {
 
 struct PythonTestGenerator: public ECFObject {
 
-	std::string output, env, run, exe;
+	std::string output, env, warmup, run, exe;
 	size_t measure_repetition, gather_level;
 
 	std::map<size_t, std::string> levels, args;
