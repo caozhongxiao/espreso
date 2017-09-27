@@ -186,7 +186,17 @@ Tokenizer::Token Tokenizer::_next()
 		}
 		if (isLinkStart(_file.peek())) {
 			_file.get();
-			while(!isLinkEnd(_file.peek())) {
+			size_t stacked = 0;
+			while(!isLinkEnd(_file.peek()) || stacked) {
+				if (_file.eof()) {
+					ESINFO(GLOBAL_ERROR) << "Configuration file error: missing link end character ']' for:\n " << std::string(_buffer.begin(), _buffer.begin() + 20);
+				}
+				if (isLinkStart(_file.peek())) {
+					stacked++;
+				}
+				if (isLinkEnd(_file.peek())) {
+					stacked--;
+				}
 				_buffer.push_back(_file.get());
 			}
 			_file.get();
