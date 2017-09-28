@@ -53,7 +53,9 @@ int main(int argc, char **argv)
 						parameter->data() != &mat->second.coordinate_system &&
 						parameter->data() != &mat->second.physical_model &&
 						parameter->data() != &mat->second.density &&
-						parameter->data() != &mat->second.heat_capacity) {
+						parameter->data() != &mat->second.heat_capacity &&
+						parameter->data() != &mat->second.name &&
+						parameter->data() != &mat->second.description) {
 					redParameters.parameters.push_back(parameter);
 				}
 			});

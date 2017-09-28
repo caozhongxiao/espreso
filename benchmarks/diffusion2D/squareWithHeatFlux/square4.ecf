@@ -59,17 +59,14 @@ HEAT_TRANSFER_2D {
 
   MATERIALS {
     1 {
-      NAME          ;
-      DESCRIPTION   ;
-
       COORDINATE_SYSTEM {
         TYPE   CYLINDRICAL;
         CENTER_X       0.5;
         CENTER_Y         1;
       }
 
-      DENS         1;
-      CP           1;
+      DENS   1;
+      CP     1;
 
       THERMAL_CONDUCTIVITY {
         MODEL   DIAGONAL;

@@ -64,11 +64,9 @@ HEAT_TRANSFER_3D {
 
   MATERIALS {
     1 {
-      NAME          ;
-      DESCRIPTION   ;
 
-      DENS      7850;
-      CP          15;
+      DENS   7850;
+      CP       15;
 
       THERMAL_CONDUCTIVITY {
         MODEL   ISOTROPIC;
@@ -78,11 +76,9 @@ HEAT_TRANSFER_3D {
     }
 
     2 {
-      NAME          ;
-      DESCRIPTION   ;
 
-      DENS      7850;
-      CP          20;
+      DENS   7850;
+      CP       20;
 
       THERMAL_CONDUCTIVITY {
         MODEL   ISOTROPIC;

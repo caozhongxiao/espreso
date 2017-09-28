@@ -59,16 +59,13 @@ HEAT_TRANSFER_2D {
 
   MATERIALS {
     1 {
-      NAME          ;
-      DESCRIPTION   ;
-
       COORDINATE_SYSTEM {
         TYPE   CARTESIAN;
         ROTATION_Z    45;
       }
 
-      DENS         1;
-      CP           1;
+      DENS   1;
+      CP     1;
 
       THERMAL_CONDUCTIVITY {
         MODEL   DIAGONAL;
