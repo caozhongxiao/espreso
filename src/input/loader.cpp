@@ -19,6 +19,8 @@
 #include "../config/ecf/ecf.h"
 #include "espreso/espresobinaryformat.h"
 
+#include "../newmesh/newmesh.h"
+
 using namespace espreso::input;
 
 
@@ -149,6 +151,8 @@ void Loader::fill()
 			<< " parts. There is " << intervalStats(mesh._partPtrs) << " elements in subdomain.";
 
 	measurement.totalTime.endWithBarrier(); measurement.printStatsMPI();
+
+	NewMesh improvedMesh(mesh);
 }
 
 
