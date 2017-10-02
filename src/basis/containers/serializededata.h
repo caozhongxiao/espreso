@@ -3,7 +3,6 @@
 #define SRC_BASIS_CONTAINERS_SERIALIZEDEDATA_H_
 
 #include <vector>
-#include <iostream>
 
 #include "edata.h"
 #include "tarray.h"
@@ -101,9 +100,11 @@ public:
 		: iterator_base<const_iterator, const TEData>(edatasize, edata) { }
 	};
 
+	// data are uniform
 	serializededata(size_t edatasize, tarray<TEData> &&edata)
 	: _eboundaries(0, 0), _edata(std::move(edata)) { inititerators(edatasize); }
 
+	// data are non-uniform
 	serializededata(tarray<TEBoundaries> &&eboundaries, tarray<TEData> &&edata)
 	: _eboundaries(std::move(eboundaries)), _edata(std::move(edata)) { inititerators(); }
 
@@ -155,8 +156,8 @@ public:
 	const_iterator end   (size_t thread) const { return _constiterator[thread + 1]; }
 	const_iterator cend  (size_t thread) const { return _constiterator[thread + 1]; }
 
-	tarray<TEData>&       edata()       { return _edata; }
-	const tarray<TEData>& edata() const { return _edata; }
+	tarray<TEData>&       data()       { return _edata; }
+	const tarray<TEData>& data() const { return _edata; }
 
 	~serializededata();
 

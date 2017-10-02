@@ -4,7 +4,6 @@
 #include "../../basis/containers/serializededata.h"
 #include "elementstore.h"
 
-
 using namespace espreso;
 
 edata<eslocal> NewElement::indices()

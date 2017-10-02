@@ -3,7 +3,6 @@
 #define SRC_BASIS_CONTAINERS_EDATA_H_
 
 #include <cstddef>
-#include <type_traits>
 
 namespace espreso {
 

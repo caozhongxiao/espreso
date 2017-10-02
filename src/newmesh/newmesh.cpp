@@ -84,7 +84,6 @@ NewMesh::NewMesh(Mesh &mesh)
 		for (auto it = pindices->begin(t); it != pindices->end(t); ++it) {
 			std::cout << i++ << ": ";
 			for (size_t n = 0; n != it->size(); n++) {
-				(*it)[n] = 1;
 				std::cout << (*it)[n] << " ";
 			}
 			std::cout << "\n";
