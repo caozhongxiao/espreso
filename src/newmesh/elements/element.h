@@ -14,8 +14,8 @@ class NewElement {
 public:
 	NewElement(size_t index, ElementStore *store): _index(index), _store(store) {}
 
-	edata<eslocal> indices();
-	edata<const eslocal> indices() const;
+	edata<eslocal> nodes();
+	edata<const eslocal> nodes() const;
 
 protected:
 	size_t _index;

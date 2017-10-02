@@ -34,13 +34,13 @@ private:
 		template <typename TType> TIterator& operator-=(TType n) { return move(-n); }
 
 	protected:
-		iterator_base(const TEBoundaries *begin, const TEBoundaries *element, const TEBoundaries *end, TEData *edata)
+		iterator_base(const TEBoundaries *begin, const TEBoundaries *element, const TEBoundaries *end, TIteratorEData *edata)
 		: _element(begin), _end(end), _edata(edata, edata)
 		{
 			move(element - begin);
 		}
 
-		iterator_base(size_t edatasize, TEData *edata)
+		iterator_base(size_t edatasize, TIteratorEData *edata)
 		: _element(NULL), _end(NULL), _edata(edata, edata)
 		{
 			_edata._end += edatasize;
@@ -158,8 +158,6 @@ public:
 
 	tarray<TEData>&       data()       { return _edata; }
 	const tarray<TEData>& data() const { return _edata; }
-
-	~serializededata();
 
 private:
 	void inititerators()

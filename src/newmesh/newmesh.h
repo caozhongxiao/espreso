@@ -5,7 +5,6 @@
 namespace espreso {
 
 class Mesh;
-
 struct ElementStore;
 
 class NewMesh {
@@ -14,7 +13,7 @@ public:
 	NewMesh(Mesh &mesh);
 
 protected:
-	ElementStore* _elements;
+	ElementStore *_nodes, *_edges, *_faces, *_elems;
 };
 
 }

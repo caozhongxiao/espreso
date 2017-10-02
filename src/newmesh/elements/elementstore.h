@@ -5,10 +5,24 @@
 namespace espreso {
 
 template <typename TEBoundaries, typename TEData> class serializededata;
+struct Point;
 
 struct ElementStore {
 
-	serializededata<eslocal, eslocal>* indices;
+	serializededata<eslocal, esglobal>* IDs;
+
+	serializededata<eslocal, eslocal>* elems;
+	serializededata<eslocal, eslocal>* faces;
+	serializededata<eslocal, eslocal>* edges;
+	serializededata<eslocal, eslocal>* nodes;
+
+	serializededata<eslocal, Point>* coordinates;
+
+	serializededata<eslocal, esglobal>* globalDual;
+	serializededata<eslocal, eslocal>* localDual;
+
+	ElementStore();
+	~ElementStore();
 };
 
 }

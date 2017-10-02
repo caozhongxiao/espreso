@@ -6,14 +6,14 @@
 
 using namespace espreso;
 
-edata<eslocal> NewElement::indices()
+edata<eslocal> NewElement::nodes()
 {
-	return *(_store->indices->begin() + _index);
+	return *(_store->nodes->begin() + _index);
 }
 
-edata<const eslocal> NewElement::indices() const
+edata<const eslocal> NewElement::nodes() const
 {
-	return *(_store->indices->cbegin() + _index);
+	return *(_store->nodes->cbegin() + _index);
 }
 
 
