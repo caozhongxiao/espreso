@@ -467,7 +467,7 @@ bool Assembler::checkForStore(const std::string &name)
 {
 	if (environment->print_matrices) {
 		std::string fulldesc(physics.name() + ": store " + name);
-		ESINFO(ALWAYS) << Info::TextColor::BLUE << fulldesc;
+		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << fulldesc;
 	}
 	return environment->print_matrices;
 }

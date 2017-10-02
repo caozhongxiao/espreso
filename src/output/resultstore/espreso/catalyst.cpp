@@ -8,7 +8,7 @@ using namespace espreso;
 Catalyst::Catalyst(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode)
 : VTKXMLASCII(output, mesh, mode & ~MeshInfo::PREPARE), _processor(NULL), _dataDescription(NULL), _fieldData(NULL)
 {
-	ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Link VTK library to support Paraview Catalyst.";
+	ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW << "Link VTK library to support Paraview Catalyst.";
 }
 
 Catalyst::~Catalyst()

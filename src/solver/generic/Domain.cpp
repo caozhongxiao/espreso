@@ -12,7 +12,7 @@ using namespace espreso;
 void storeData(SparseMatrix matrices, const std::string &name, const std::string &description, int d)
 {
 	if (environment->print_matrices) {
-		ESINFO(ALWAYS) << Info::TextColor::BLUE << "Storing " << description;
+		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "Storing " << description;
 		//for (size_t d = 0; d < matrices.size(); d++) {
 			std::ofstream os(Logging::prepareFile(d, name));
 			os << matrices;
@@ -24,7 +24,7 @@ void storeData(SparseMatrix matrices, const std::string &name, const std::string
 void storeData(vector<double> vectors, const std::string &name, const std::string &description, int d)
 {
 	if (environment->print_matrices) {
-		ESINFO(ALWAYS) << Info::TextColor::BLUE << "Storing " << description;
+		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "Storing " << description;
 		//for (size_t d = 0; d < vectors.size(); d++) {
 			std::ofstream os(Logging::prepareFile(d, name));
 			for (size_t i = 0; i < vectors.size(); i++) {

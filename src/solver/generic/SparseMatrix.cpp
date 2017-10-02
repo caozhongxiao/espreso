@@ -854,10 +854,10 @@ void SparseMatrix::PrintMatSize( string Matname ) {
 	eslocal CSR_size   = CSR_I_row_indices.size() * sizeof(eslocal) + CSR_J_col_indices.size() * sizeof(eslocal) + CSR_V_values.size() * sizeof(double);
 	eslocal IJV_size   = I_row_indices.size() * sizeof(eslocal) 	+ J_col_indices.size() * sizeof(eslocal) 	  + V_values.size() * sizeof(double);
 
-	ESINFO(ALWAYS) << "Matrix " << Matname << " sizes:";
-	ESINFO(ALWAYS) << "DNS size: " << dense_size << " B";
-	ESINFO(ALWAYS) << "CSR size: " << CSR_size << " B";
-	ESINFO(ALWAYS) << "IJV size: " << IJV_size << " B";
+	ESINFO(ALWAYS_ON_ROOT) << "Matrix " << Matname << " sizes:";
+	ESINFO(ALWAYS_ON_ROOT) << "DNS size: " << dense_size << " B";
+	ESINFO(ALWAYS_ON_ROOT) << "CSR size: " << CSR_size << " B";
+	ESINFO(ALWAYS_ON_ROOT) << "IJV size: " << IJV_size << " B";
 }
 
 
@@ -2558,16 +2558,16 @@ void SparseMatrix::getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_o
 
 void SparseMatrix::printMatCSR(char *str0){
 	eslocal offset = CSR_I_row_indices[0] ? 1 : 0;
-	ESINFO(ALWAYS) << str0 << " = [ ...";
+	ESINFO(ALWAYS_ON_ROOT) << str0 << " = [ ...";
 
 	for (eslocal i = 0; i < rows; i++) {
 		for (eslocal j = CSR_I_row_indices[i]; j < CSR_I_row_indices[i + 1]; j++) {
-			ESINFO(ALWAYS) << i + 1 << " " << CSR_J_col_indices[j - offset] << " " << CSR_V_values[j - offset];
+			ESINFO(ALWAYS_ON_ROOT) << i + 1 << " " << CSR_J_col_indices[j - offset] << " " << CSR_V_values[j - offset];
 		}
 	}
-	ESINFO(ALWAYS) << "];" << str0 << " = full(sparse(" << str0 << "(:,1)," << str0 << "(:,2)," << str0 << "(:,3)," << rows << "," << cols << "));";
+	ESINFO(ALWAYS_ON_ROOT) << "];" << str0 << " = full(sparse(" << str0 << "(:,1)," << str0 << "(:,2)," << str0 << "(:,3)," << rows << "," << cols << "));";
 	if (type=='S'){
-		ESINFO(ALWAYS) << str0 << "=" << str0 << "+" << str0 << "'-diag(diag(" << str0 << "));";
+		ESINFO(ALWAYS_ON_ROOT) << str0 << "=" << str0 << "+" << str0 << "'-diag(diag(" << str0 << "));";
 	}
 }
 
@@ -4763,7 +4763,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 
 
-// FOR UNSYMMETRIC MATRIX HAS TO BE SET-UP FOLLOWING PARAMETERS - ALWAYS
+// FOR UNSYMMETRIC MATRIX HAS TO BE SET-UP FOLLOWING PARAMETERS - ALWAYS_ON_ROOT
   use_null_pivots_or_s_set          = false;
   fixing_nodes_or_dof               = 0;
   dofPerNode                        = 1;

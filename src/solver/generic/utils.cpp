@@ -196,9 +196,9 @@ void PrintVec(SEQ_VECTOR <T> vec, string name) {
 #pragma omp critical 
 #endif
 	{
-		ESINFO(ALWAYS) << "Thread " << omp_get_thread_num() << " - Printing vector : " << name;
+		ESINFO(ALWAYS_ON_ROOT) << "Thread " << omp_get_thread_num() << " - Printing vector : " << name;
 		for (eslocal i = 0; i < vec.size(); i++) {
-			ESINFO(ALWAYS) << vec[i];
+			ESINFO(ALWAYS_ON_ROOT) << vec[i];
 		}
 	}
 #endif // DEBUG
@@ -210,9 +210,9 @@ void PrintVecND(SEQ_VECTOR <T> vec, string name) {
 #pragma omp critical 
 #endif
 	{
-		ESINFO(ALWAYS) << "Thread " << omp_get_thread_num() << " - Printing vector : " << name;
+		ESINFO(ALWAYS_ON_ROOT) << "Thread " << omp_get_thread_num() << " - Printing vector : " << name;
 		for (eslocal i = 0; i < vec.size(); i++) {
-			ESINFO(ALWAYS) << vec[i];
+			ESINFO(ALWAYS_ON_ROOT) << vec[i];
 		}
 	}
 }

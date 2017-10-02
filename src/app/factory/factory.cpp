@@ -80,9 +80,9 @@ void Factory::initAsync(const OutputConfiguration &configuration)
 	async::Config::setMode(async::SYNC);
 	if (configuration.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER || configuration.settings) {
 		if (configuration.mode != OutputConfiguration::MODE::SYNC && (configuration.settings || configuration.FETI_data)) {
-			ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Storing of SETTINGS or FETI_DATA is implemented only for OUTPUT::MODE==SYNC. Hence, output is synchronized!";
+			ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW << "Storing of SETTINGS or FETI_DATA is implemented only for OUTPUT::MODE==SYNC. Hence, output is synchronized!";
 		} else if (configuration.collected) {
-			ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Storing COLLECTED output is implemented only for OUTPUT::MODE==SYNC. Hence, output is synchronized!";
+			ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW << "Storing COLLECTED output is implemented only for OUTPUT::MODE==SYNC. Hence, output is synchronized!";
 		} else {
 			// Configure the asynchronous library
 			switch (configuration.mode) {

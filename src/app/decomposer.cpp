@@ -31,14 +31,14 @@ int main(int argc, char** argv)
 		path << ecf.decomposer.prefix << parts * environment->MPIsize;
 
 		mesh.partitiate(parts);
-		ESINFO(ALWAYS) << "Mesh partitiated to " << parts * environment->MPIsize << " parts";
+		ESINFO(ALWAYS_ON_ROOT) << "Mesh partitiated to " << parts * environment->MPIsize << " parts";
 		std::vector<size_t> sizes(mesh.parts());
 		for (size_t p = 0; p < mesh.parts(); p++) {
 			sizes[p] = mesh.coordinates().localSize(p);
 		}
-		ESINFO(ALWAYS) << "Nodes in domains: " << Info::averageValues(sizes);
+		ESINFO(ALWAYS_ON_ROOT) << "Nodes in domains: " << Info::averageValues(sizes);
 		ESPRESOBinaryFormat::store(mesh, path.str());
-		ESINFO(ALWAYS) << "Mesh partitiated to " << parts * environment->MPIsize << " parts saved";
+		ESINFO(ALWAYS_ON_ROOT) << "Mesh partitiated to " << parts * environment->MPIsize << " parts saved";
 	}
 
 	MPI_Finalize();

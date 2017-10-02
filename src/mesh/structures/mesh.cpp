@@ -231,7 +231,7 @@ void Mesh::partitiateNoncontinuously(size_t parts, size_t noncontinuousParts)
 		if (blocks.size() == 2) {
 			ePartition = getPartition(0, _elements.size(), parts);
 		} else {
-			ESINFO(ALWAYS) << "NONCONTINUITY" << environment->MPIrank << " (" << blocks.size() - 1 << ").";
+			ESINFO(ALWAYS) << "NONCONTINUITY (" << blocks.size() - 1 << " parts) on process " << environment->MPIrank << ".";
 			_continuous = false;
 			_continuousPartId.clear();
 			double averageDomainSize = _elements.size() / (double)parts;
@@ -305,7 +305,7 @@ void Mesh::partitiate(size_t parts)
 		if (blocks.size() == 2) {
 			ePartition = getPartition(0, _elements.size(), parts);
 		} else {
-			ESINFO(ALWAYS) << "NONCONTINUITY" << environment->MPIrank << " (" << blocks.size() - 1 << ").";
+			ESINFO(ALWAYS) << "NONCONTINUITY (" << blocks.size() - 1 << " parts) on process " << environment->MPIrank << ".";
 			_continuous = false;
 			_continuousPartId.clear();
 			double averageDomainSize = _elements.size() / (double)parts;
@@ -370,7 +370,7 @@ void APIMesh::partitiate(size_t parts)
 	ESTEST(MANDATORY) << "Number of domains cannot be " << parts << (parts == 0 ? TEST_FAILED : TEST_PASSED);
 	if (_elements.size() / parts < parts / 10.0) {
 		parts = _elements.size() / 20;
-		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "WARNINK: Too small domains. ESPRESO change DOMAINS=" << parts;
+		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW << "WARNINK: Too small domains. ESPRESO change DOMAINS=" << parts;
 	}
 
 	_continuousPartId.clear();
@@ -384,7 +384,7 @@ void APIMesh::partitiate(size_t parts)
 		if (blocks.size() == 2) {
 			ePartition = getPartition(0, _elements.size(), parts);
 		} else {
-			ESINFO(ALWAYS) << "NONCONTINUITY" << environment->MPIrank << " (" << blocks.size() - 1 << ").";
+			ESINFO(ALWAYS) << "NONCONTINUITY (" << blocks.size() - 1 << " parts) on process " << environment->MPIrank << ".";
 			_continuous = false;
 			_continuousPartId.clear();
 			double averageDomainSize = _elements.size() / (double)parts;
@@ -2528,7 +2528,7 @@ void Mesh::synchronizeRegionOrder()
 
 void Mesh::checkNeighbours()
 {
-	ESINFO(ALWAYS) << Info::TextColor::BLUE << "Checking whether neighbours are correct";
+	ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "Checking whether neighbours are correct";
 	int nSize = _neighbours.size();
 	std::vector<int> neighbours;
 	std::vector<int> counters(environment->MPIsize);
@@ -2592,7 +2592,7 @@ void Mesh::checkNeighbours()
 
 void Mesh::storeNodeData(const std::string &name, std::function<void (std::ofstream &os, const Element* e)> store)
 {
-	ESINFO(ALWAYS) << Info::TextColor::BLUE << "Storing node data: '" << name << "'";
+	ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "Storing node data: '" << name << "'";
 	std::ofstream os(Logging::prepareFile(name));
 	for (size_t n = 0; n < _nodes.size(); n++) {
 		os << _coordinates->globalIndex(n) << " :: ";
@@ -2603,7 +2603,7 @@ void Mesh::storeNodeData(const std::string &name, std::function<void (std::ofstr
 
 void Mesh::storeRegions()
 {
-	ESINFO(ALWAYS) << Info::TextColor::BLUE << "Storing regions";
+	ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "Storing regions";
 	for (size_t r = 0; r < _regions.size(); r++) {
 		std::ofstream os(Logging::prepareFile(std::to_string(r) + "_" + _regions[r]->name));
 		for (size_t e = 0; e < _regions[r]->elements().size(); e++) {
@@ -2621,7 +2621,7 @@ void Mesh::checkRegions(const std::vector<Element*> &elements)
 		os << "\n";
 	});
 	storeRegions();
-	ESINFO(ALWAYS) << Info::TextColor::BLUE << "Checking whether regions are correct";
+	ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "Checking whether regions are correct";
 
 	int rSize = _regions.size();
 	std::vector<int> sizes(environment->MPIsize);

@@ -699,7 +699,7 @@ void WorkbenchParser::dim()
 	}
 
 	if (!params[2].compare(0, 5, "string")) {
-		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Skip *DIM option 'string'";
+		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW << "Skip *DIM option 'string'";
 		return;
 	}
 }

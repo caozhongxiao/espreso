@@ -142,7 +142,7 @@ Info::~Info()
 
 	os << std::endl;
 
-	if (environment->MPIrank != 0) {
+	if (event != ALWAYS && environment->MPIrank != 0) {
 		return; // only first process print results
 	}
 
@@ -196,7 +196,7 @@ Measure::~Measure()
 		return; // only first process print results
 	}
 
-	ESINFO(ALWAYS) << os.str();
+	ESINFO(ALWAYS_ON_ROOT) << os.str();
 }
 
 double Measure::processMemory()

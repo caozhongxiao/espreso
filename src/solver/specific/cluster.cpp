@@ -488,7 +488,7 @@ void ClusterBase::SetClusterHFETI () {
 
 		} else {
 
-			//ESINFO(ALWAYS) << Info::TextColor::YELLOW
+			//ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW
 			std::cout << "Cluster " << cluster_global_index << " on MPI rank " << environment->MPIrank << " has only one domain -> Using TFETI" << std::endl;
 			USE_HFETI = 0;
 
