@@ -216,16 +216,15 @@ public:
 	double sumProperty(Property property, size_t step, const Point &p, double time, double temperature, double defaultValue) const;
 	double getProperty(Property property, size_t step, const Point &p, double time, double temperature, double defaultValue) const;
 
+	virtual size_t fillFaces() = 0;
+	virtual size_t fillEdges() = 0;
+
 protected:
 	virtual Element* copy() const =0;
 	virtual std::vector<eslocal> getNeighbours(size_t nodeIndex) const = 0;
 
 	virtual void setFace(size_t index, Element* face) = 0;
 	virtual void setEdge(size_t index, Element* edge) = 0;
-
-	virtual size_t fillFaces() = 0;
-	virtual size_t fillEdges() = 0;
-
 
 	template <class TEdge>
 	Element* addUniqueEdge(const eslocal *line, size_t filled, size_t coarseSize)

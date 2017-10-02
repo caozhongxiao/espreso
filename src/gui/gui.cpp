@@ -15,6 +15,12 @@
 #include "../config/ecf/physics/heattransfer.h"
 #include "../basis/expression/expression.h"
 
+#include "../mesh/structures/mesh.h"
+#include "../mesh/structures/coordinates.h"
+#include "../mesh/elements/plane/planeelement.h"
+
+#include "../input/loader.h"
+
 using namespace espreso;
 
 template <typename Ttype>
@@ -76,6 +82,32 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
 
+
+    ECFConfiguration ecf(&argc, &argv);
+    Mesh mesh;
+    input::Loader::load(ecf, mesh, environment->MPIrank, environment->MPIsize);
+
+    for (size_t e = 0; e < mesh.elements().size(); e++) {
+        mesh.elements()[e]->fillFaces();
+    }
+    for (size_t e = 0; e < mesh.elements().size(); e++) {
+    	std::cout << "element [" << e << "]:\n";
+    	for (size_t f = 0; f < mesh.elements()[e]->faces(); f++) {
+    		std::cout << "  face [" << f << "]:\n";
+    		std::vector<std::vector<eslocal> > triangles = dynamic_cast<PlaneElement*>(mesh.elements()[e]->face(f))->triangularize();
+    		for (size_t t = 0; t < triangles.size(); t++) {
+    			std::cout << "    t [" << t << "]: ";
+    			for (size_t n = 0; n < triangles[t].size(); n++) {
+    				std::cout << triangles[t][n] << " ";
+    			}
+    			std::cout << "; ";
+				for (size_t n = 0; n < triangles[t].size(); n++) {
+					std::cout << "[" << mesh.coordinates()[triangles[t][n]] << "] ";
+				}
+    			std::cout << "\n";
+    		}
+    	}
+	}
 
 //    ModelWidget model;
 //    model.show();
