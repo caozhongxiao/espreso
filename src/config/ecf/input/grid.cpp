@@ -36,6 +36,7 @@ espreso::GridGeneratorConfiguration::GridGeneratorConfiguration()
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER, ECFDataType::POSITIVE_INTEGER })
 			.setpattern({ "0", "2" }));
 
+	nonuniform_nparts = 0;
 	REGISTER(nonuniform_nparts, ECFMetaData()
 			.setdescription({ "A number of parts when nonuniform decomposition is set (0 for keep the number of parst the same)." })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER })
