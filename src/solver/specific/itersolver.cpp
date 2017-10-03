@@ -4503,7 +4503,7 @@ void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 	// temp variables
 	vector < SparseMatrix > G_neighs   ( cluster.my_neighs.size() );
 	vector < SparseMatrix > GGt_neighs ( cluster.my_neighs.size() );
-	SparseMatrix 			G1t_l;
+	SparseMatrix 			G1_l, G1t_l;
 	SparseMatrix 			GGt_l;
 	SparseMatrix 			GGt_Mat_tmp;
 	SparseSolverMKL 		GGt_tmp;
@@ -4531,6 +4531,8 @@ void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 		G1_tmp.ConvertCSRToDense(0);
 		apply_A_l_Mat( timeEvalAppa, cluster, G1_tmp, G1t_l);
 		G1t_l.ConvertDenseToCSR(0);
+		G1_l = G1t_l;
+		G1_l.MatTranspose();
 		G1_tmp.Clear();
 
 	}
@@ -4577,7 +4579,11 @@ void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 	 TimeEvent GGTNeighTime("G1t_local x G1_neigh MatMat(N-times) "); GGTNeighTime.start();
 	#pragma omp parallel for
 	for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
-		GGt_neighs[neigh_i].MatMatT(G_neighs[neigh_i], cluster.G1);
+		//GGt_neighs[neigh_i].MatMatT(G_neighs[neigh_i], cluster.G1);
+
+		//GGt_neighs[neigh_i].MatMatT(G_neighs[neigh_i], G1_l);
+		GGt_neighs[neigh_i].MatMat(G_neighs[neigh_i], 'N', G1t_l);
+
 		GGt_neighs[neigh_i].MatTranspose();
 		eslocal inc = global_ker_sizes[cluster.my_neighs[neigh_i]];
 		for (size_t i = 0; i < GGt_neighs[neigh_i].CSR_J_col_indices.size(); i++) {
