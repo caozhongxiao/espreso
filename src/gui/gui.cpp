@@ -4,6 +4,7 @@
 #include "forms/plot/plot.h"
 #include "forms/declarations/datatypeeditwidget.h"
 #include "forms/declarations/material/materialdialog.h"
+#include "mesh/meshwidget.h"
 #include "data/datatype.h"
 #include <QDebug>
 #include <QApplication>
@@ -169,9 +170,13 @@ int main(int argc, char *argv[])
 //    ECFConfiguration ecf;
 //    printECF(ecf, 0);
 
-    MaterialConfiguration mat;
-    DeclarationsWidget dw;
-    dw.show();
+//    MaterialConfiguration mat;
+//    DeclarationsWidget dw;
+//    dw.show();
+
+    MeshWidget::initOGL();
+    MeshWidget w;
+    w.show();
 
 
 //    std::string val = "if (x > 0 and x < 4) -1;";
