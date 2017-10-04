@@ -26,10 +26,10 @@ private:
 
 		TIterator& operator++() { return move( 1); }
 		TIterator& operator--() { return move(-1); }
-		TIterator  operator++(int) {TIterator tmp(static_cast<TIterator*>(this)); operator++(); return tmp; }
-		TIterator  operator--(int) {TIterator tmp(static_cast<TIterator*>(this)); operator--(); return tmp; }
-		template <typename TType> TIterator& operator+ (TType n) { return move( n); }
-		template <typename TType> TIterator& operator- (TType n) { return move(-n); }
+		TIterator  operator++(int) {TIterator tmp(*static_cast<TIterator*>(this)); operator++(); return tmp; }
+		TIterator  operator--(int) {TIterator tmp(*static_cast<TIterator*>(this)); operator--(); return tmp; }
+		template <typename TType> TIterator  operator+ (TType n) { return TIterator(*static_cast<TIterator*>(this)).move( n); }
+		template <typename TType> TIterator  operator- (TType n) { return TIterator(*static_cast<TIterator*>(this)).move(-n); }
 		template <typename TType> TIterator& operator+=(TType n) { return move( n); }
 		template <typename TType> TIterator& operator-=(TType n) { return move(-n); }
 

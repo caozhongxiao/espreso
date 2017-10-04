@@ -31,7 +31,7 @@ tarray<TType>::tarray(const tarray<TType> &other)
 	if (_size) {
 		_data = new TType[_size];
 		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
+		for (size_t t = 0; t < threads(); t++) {
 			memcpy(_data + _distribution[t], other._data + _distribution[t], (_distribution[t + 1] - _distribution[t]) * sizeof(TType));
 		}
 	}

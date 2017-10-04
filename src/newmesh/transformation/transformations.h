@@ -15,20 +15,19 @@ class ElementStore;
 
 struct Transformation {
 
-	static void linkElementsFromTo(NewMesh &mesh, TFlags::ELEVEL from, TFlags::ELEVEL to);
+	static void addLinkFromTo(NewMesh &mesh, TFlags::ELEVEL from, TFlags::ELEVEL to);
 
+	static void exchangeHaloElements(NewMesh &mesh);
 
-	static void fillHaloElement(NewMesh &mesh);
-	static void fillParentElements(NewMesh &mesh, TFlags::ELEVEL children, TFlags::ELEVEL parents);
-
-	static void createFullDualGraph(NewMesh &mesh);
-	static void createRestrictedDualGraph(NewMesh &mesh, TFlags::SEPARATE separate);
-
-	static void reclusterize(NewMesh &mesh);
-	static void partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE separate);
+	static void computeDual(NewMesh &mesh);
+	static void computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separate);
 
 	static void computeElementCenters(NewMesh &mesh);
 
+	static void reclusterize(NewMesh &mesh);
+
+
+	static void partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE separate);
 private:
 	static size_t level;
 

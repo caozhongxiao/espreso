@@ -6,7 +6,9 @@
 using namespace espreso;
 
 ElementStore::ElementStore()
-: IDs(NULL),
+: size(0),
+  distribution({0, 0}),
+  IDs(NULL),
 
   elems(NULL),
   faces(NULL),
@@ -14,9 +16,13 @@ ElementStore::ElementStore()
   nodes(NULL),
 
   coordinates(NULL),
+  body(NULL),
+  material(NULL),
+  epointers(NULL),
+  ranks(NULL),
 
-  globalDual(NULL),
-  localDual(NULL)
+  dual(NULL),
+  decomposedDual(NULL)
 {
 
 }
@@ -31,7 +37,11 @@ ElementStore::~ElementStore()
 	if (nodes == NULL) { delete nodes; }
 
 	if (coordinates == NULL) { delete coordinates; }
+	if (body == NULL) { delete body; }
+	if (material == NULL) { delete material; }
+	if (epointers == NULL) { delete epointers; }
+	if (ranks == NULL) { delete ranks; }
 
-	if (globalDual == NULL) { delete globalDual; }
-	if (localDual == NULL) { delete localDual; }
+	if (dual == NULL) { delete dual; }
+	if (decomposedDual == NULL) { delete decomposedDual; }
 }

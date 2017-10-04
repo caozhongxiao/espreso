@@ -1,48 +1,41 @@
 
 #include "transformations.h"
 
-#include "../../config/ecf/environment.h"
-
-#include "../elements/element.h"
+#include "../newmesh.h"
 #include "../elements/elementstore.h"
 
-#include "../newmesh.h"
+#include "../../basis/point/point.h"
+#include "../../basis/containers/serializededata.h"
+#include "../../basis/logging/logging.h"
+
+#include "../../config/ecf/environment.h"
 
 using namespace espreso;
 
 void Transformation::computeElementCenters(NewMesh &mesh)
 {
-//	const parray<Element*> &elements = *mesh.__elements->elements;
-//	size_t threads = environment->OMP_NUM_THREADS;
-//
-//	std::vector<size_t> distribution = mesh.__elements->distribution;
-//	for (size_t i = 0; i < distribution.size(); i++) {
-//		distribution[i] *= mesh.__elements->dimension;
-//	}
-//
-//	mesh.__elements->coordinates = new parray<double>(distribution.size(), distribution.data());
-//
-//	parray<double> &centers = *mesh.__elements->coordinates;
-//	size_t dimension = mesh.__elements->dimension;
-//
-//	#pragma omp parallel for
-//	for (size_t t = 0; t < threads; t++) {
-//		const crsiterator<eslocal> &enodes = mesh.__elements->nodesIndices->iterator(t);
-//
-//		while (enodes.next()) {
-//			Point center;
-//			for (auto n = enodes.begin(); n != enodes.end(); ++n) {
-//				center += mesh.coordinates()[*n];
-//			}
-//			center /= enodes.size();
-//
-//			centers[dimension * enodes.index() + 0] = center.x;
-//			centers[dimension * enodes.index() + 1] = center.y;
-//			if (dimension == 3) {
-//				centers[dimension * enodes.index() + 2] = center.z;
-//			}
-//		}
-//	}
+	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "MESH::computation of elements centers started.";
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	std::vector<std::vector<Point> > centers(threads);
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		Point center;
+		for (auto nodes = mesh._elems->nodes->cbegin(t); nodes != mesh._elems->nodes->cend(t); ++nodes) {
+			center = Point();
+			for (auto n = nodes->begin(); n != nodes->end(); ++n) {
+				center += mesh._nodes->coordinates->data()[*n];
+			}
+			center /= nodes->size();
+			centers[t].push_back(center);
+		}
+	}
+
+	mesh._elems->coordinates = new serializededata<eslocal, Point>(1, centers);
+
+	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "MESH::computation of elements centers finished.";
 }
 
 

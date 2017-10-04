@@ -18,7 +18,7 @@ struct TFlags {
 
 	enum SEPARATE: int {
 		MATERIALS,
-		DEGREES_OF_FREEDOM
+		ETYPES
 	};
 
 	enum class ELEVEL: int {

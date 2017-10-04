@@ -28,6 +28,9 @@ struct Esutils
 	static Ttype sizesToOffsets(std::vector<Ttype> &sizes);
 
 	template<typename Ttype>
+	static void threadDistributionToFullDistribution(std::vector<std::vector<Ttype> > &distribution);
+
+	template<typename Ttype>
 	static void removeDuplicity(std::vector<Ttype> &elements);
 
 	template<typename Ttype>

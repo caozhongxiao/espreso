@@ -67,6 +67,24 @@ Ttype Esutils::sizesToOffsets(std::vector<Ttype> &sizes)
 }
 
 template<typename Ttype>
+void Esutils::threadDistributionToFullDistribution(std::vector<std::vector<Ttype> > &distribution)
+{
+	std::vector<size_t> offsets;
+	for (size_t t = 0; t < distribution.size(); t++) {
+		offsets.push_back(distribution[t].size() ? distribution[t].back() : 0);
+	}
+	Esutils::sizesToOffsets(offsets);
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < distribution.size(); t++) {
+		size_t offset = offsets[t];
+		for (size_t i = 0; i < distribution[t].size(); i++) {
+			distribution[t][i] += offset;
+		}
+	}
+}
+
+template<typename Ttype>
 void Esutils::removeDuplicity(std::vector<Ttype> &elements)
 {
 	if (elements.size() == 0) {

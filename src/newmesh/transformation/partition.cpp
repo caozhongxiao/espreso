@@ -1,35 +1,18 @@
 
-#include <algorithm>
-#include <numeric>
-#include <fstream>
-
 #include "transformations.h"
 
-#include "mpi.h"
+#include "../newmesh.h"
+#include "../elements/elementstore.h"
+
+#include "../../basis/containers/serializededata.h"
+
+#include "../../basis/logging/logging.h"
+#include "../../basis/utilities/utils.h"
+#include "../../basis/utilities/communication.h"
 
 #include "../../wrappers/wmetis.h"
 #include "../../wrappers/wparmetis.h"
 
-//#include "../elements/line/line2.h"
-//#include "../elements/line/line3.h"
-//#include "../elements/plane/square4.h"
-//#include "../elements/plane/square8.h"
-//#include "../elements/plane/triangle3.h"
-//#include "../elements/plane/triangle6.h"
-//#include "../elements/volume/hexahedron8.h"
-//#include "../elements/volume/hexahedron20.h"
-//#include "../elements/volume/tetrahedron4.h"
-//#include "../elements/volume/tetrahedron10.h"
-//#include "../elements/volume/prisma6.h"
-//#include "../elements/volume/prisma15.h"
-//#include "../elements/volume/pyramid5.h"
-//#include "../elements/volume/pyramid13.h"
-
-#include "../elements/elementstore.h"
-#include "../newmesh.h"
-
-#include "../../basis/utilities/utils.h"
-#include "../../basis/utilities/communication.h"
 #include "../../config/ecf/environment.h"
 
 using namespace espreso;
@@ -37,6 +20,138 @@ using namespace espreso;
 
 void Transformation::reclusterize(NewMesh &mesh)
 {
+	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "Transformation::re-distribution of the mesh to processes started.";
+
+	if (mesh._elems->dual == NULL) {
+		Transformation::computeDual(mesh);
+	}
+	if (mesh._elems->coordinates == NULL) {
+		Transformation::computeElementCenters(mesh);
+	}
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	std::vector<esglobal> edistribution(environment->MPIsize + 1);
+
+	esglobal esize = mesh._elems->size;
+	Communication::exscan(esize);
+
+	MPI_Allgather(&esize, sizeof(esglobal), MPI_BYTE, edistribution.data(), sizeof(esglobal), MPI_BYTE, MPI_COMM_WORLD);
+	edistribution.back() = esize + mesh._elems->size;
+	MPI_Bcast(&edistribution.back(), sizeof(esglobal), MPI_BYTE, environment->MPIsize - 1, MPI_COMM_WORLD);
+
+	if (environment->MPIsize == 1) {
+		ESINFO(TVERBOSITY) << "Transformation::re-distribution of the mesh to processes skipped (there is only 1 MPI process).";
+		return;
+	}
+
+
+	std::vector<esglobal> partition(mesh._elems->size), permutation(mesh._elems->size), edgeWeights(mesh._elems->dual->data().size());
+
+	size_t edgeConst = 10000;
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		auto dual = mesh._elems->dual->cbegin(t);
+		int material;
+		NewElement::TYPE type;
+
+		for (size_t e = mesh._elems->distribution[t]; e < mesh._elems->distribution[t + 1]; ++e, ++dual) {
+			for (auto neigh = dual->begin(); neigh != dual->end(); ++neigh) {
+				auto it = std::lower_bound(mesh._elems->IDs->data().cbegin(), mesh._elems->IDs->data().cend(), *neigh);
+				if (it == mesh._elems->IDs->data().cend()) {
+					auto halo = std::lower_bound(mesh._halo->IDs->data().cbegin(), mesh._halo->IDs->data().cend(), *neigh);
+					material = mesh._halo->material->data()[halo - mesh._halo->IDs->data().cbegin()];
+					type = mesh._halo->epointers->data()[halo - mesh._halo->IDs->data().cbegin()]->type;
+				} else {
+					material = mesh._elems->material->data()[it - mesh._elems->IDs->data().cbegin()];
+					type = mesh._elems->epointers->data()[it - mesh._elems->IDs->data().cbegin()]->type;
+				}
+			}
+		}
+
+//		while (dual.next()) {
+//			body1 = (*mesh.__elements->elements)[dual.index()]->param(Element::Params::BODY);
+//			etype1 = (int)(*mesh.__elements->elements)[dual.index()]->type();
+//			material1 = (*mesh.__elements->elements)[dual.index()]->param(Element::Params::MATERIAL);
+//			for (auto n = dual.begin(); n != dual.end(); ++n) {
+//				if (mesh.__elements->elementOffset <= *n && *n < mesh.__elements->elementOffset + mesh.__elements->elements->size()) {
+//					body2 = (*mesh.__elements->elements)[*n - mesh.__elements->elementOffset]->param(Element::Params::BODY);
+//					etype2 = (int)(*mesh.__elements->elements)[*n - mesh.__elements->elementOffset]->type();
+//					material2 = (*mesh.__elements->elements)[*n - mesh.__elements->elementOffset]->param(Element::Params::MATERIAL);
+//				} else {
+//					tmph.id = *n;
+//					he = &*std::lower_bound(mesh.__elements->haloElements->begin(), mesh.__elements->haloElements->end(), tmph);
+//					body2 = he->body;
+//					etype2 = he->type;
+//					material2 = he->material;
+//				}
+//
+//				edgeWeights[edgeIndex] = 6 * edgeConst + 1;
+//				if (body1 != body2) {
+//					edgeWeights[edgeIndex] -= 3 * edgeConst;
+//				}
+//				if (etype1 != etype2) {
+//					edgeWeights[edgeIndex] -= 2 * edgeConst;
+//				}
+//				if (material1 != material2) {
+//					edgeWeights[edgeIndex] -= 1 * edgeConst;
+//				}
+//				edgeIndex++;
+//			}
+//		}
+	}
+
+//	esglobal edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_PartKway,
+//		edistribution.data(),
+//		mesh.__elements->fullDual->crs(), mesh.__elements->fullDual->data(),
+//		mesh.__elements->dimension, mesh.__elements->coordinates->data(),
+//		0, NULL, edgeWeights,
+//		partition
+//	);
+//
+//	ESINFO(TVERBOSITY) << Info::plain() << "Using ParMETIS to improve edge-cuts: " << edgecut;
+//	esglobal prev = 2 * edgecut;
+//	while (1.01 * edgecut < prev) {
+//		prev = edgecut;
+//		edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_AdaptiveRepart,
+//			edistribution.data(),
+//			mesh.__elements->fullDual->crs(), mesh.__elements->fullDual->data(),
+//			mesh.__elements->dimension, mesh.__elements->coordinates->data(),
+//			0, NULL, edgeWeights,
+//			partition
+//		);
+//		ESINFO(TVERBOSITY) << Info::plain() << " -> " << edgecut;
+//	}
+//	ESINFO(TVERBOSITY);
+//	delete[] edgeWeights;
+//
+//	ElementStore *repartition = new ElementStore();
+//
+//	repartition->distribution  = mesh.__elements->distribution;
+//	repartition->dimension     = mesh.__elements->dimension;
+//	repartition->neighbors     = mesh.neighbours();
+//	repartition->elementOffset = mesh.__elements->elementOffset;
+//	repartition->fullDual      = mesh.__elements->fullDual;
+//
+//	_distributeDualGraph(mesh, edistribution, repartition, partition, permutation);
+////	while (!_checkContinuity(mesh)) {
+////		_tryrepartition(mesh, permutation);
+////		_distributeDualGraph(mesh, partition, permutation);
+////	}
+//
+//	_distributeNewMesh(mesh, repartition, permutation);
+//	for (size_t e = 0; e < mesh.__elements->elements->size(); e++) {
+//		delete (*mesh.__elements->elements)[e];
+//	}
+//	delete mesh.__elements;
+//	mesh.__elements = repartition;
+//
+//	delete[] partition;
+//	delete[] permutation;
+
+	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::re-distribution of the mesh to processes finished.";
+
 //	if (mesh.__elements->fullDual == NULL) {
 //		Transformation::createFullDualGraph(mesh);
 //	}
