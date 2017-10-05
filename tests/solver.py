@@ -21,7 +21,7 @@ class ESPRESOSolver(unittest.TestCase):
             if line.strip().startswith("CLUSTER"):
                 procs = procs * int(line.split()[1].strip(" ;"))
 
-        self.espreso.run(procs, path, config, args)
+        self.espreso.output(procs, path, config, args)
 
 if __name__ == '__main__':
 
