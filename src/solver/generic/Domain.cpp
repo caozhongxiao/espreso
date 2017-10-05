@@ -186,14 +186,14 @@ void Domain::SetDomain() {
 
 
 	// *** Constraints and Dirichlet boundary condition
-	B1 = instance->B1[domain_index];
+	B1 = instance->B1[domain_global_index];
 	B1.type = 'G';
 	B1t = B1;
 	B1t.MatTransposeCOO();
 	B1t.ConvertToCSRwithSort(1);
 
-	B1_scale_vec = instance->B1duplicity[domain_index];
-	lambda_map_sub = instance->B1subdomainsMap[domain_index];
+	B1_scale_vec = instance->B1duplicity[domain_global_index];
+	lambda_map_sub = instance->B1subdomainsMap[domain_global_index];
 	// *** END - Constraints and Dirichlet boundary condition
 
 }
