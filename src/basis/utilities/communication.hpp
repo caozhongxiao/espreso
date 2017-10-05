@@ -4,7 +4,32 @@
 #include "communication.h"
 #include "../../config/ecf/environment.h"
 
+#include <algorithm>
+
 namespace espreso {
+
+template <typename Ttype>
+bool Communication::exchangeKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours)
+{
+	auto n2i = [ & ] (size_t neighbour) {
+		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
+	};
+
+	std::vector<MPI_Request> req(2 * neighbours.size());
+	for (size_t n = 0; n < neighbours.size(); n++) {
+		// bullxmpi violate MPI standard (cast away constness)
+		MPI_Isend(const_cast<Ttype*>(sBuffer[n].data()), sizeof(Ttype) * sBuffer[n].size(), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + 2 * n);
+	}
+
+	for (size_t n = 0; n < neighbours.size(); n++) {
+		// bullxmpi violate MPI standard (cast away constness)
+		MPI_Irecv(const_cast<Ttype*>(rBuffer[n].data()), sizeof(Ttype) * rBuffer[n].size(), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + 2 * n + 1);
+	}
+
+	MPI_Waitall(2 * neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
+	return true;
+}
+
 
 template <typename Ttype>
 bool Communication::exchangeUnknownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours)
@@ -176,6 +201,57 @@ Ttype Communication::exscan(Ttype &value)
 	}
 
 	return size;
+}
+
+template <typename Ttype>
+bool Communication::sendVariousTargets(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &targets, std::vector<int> &sources)
+{
+	std::vector<int> smsgcounter(environment->MPIsize);
+	std::vector<int> rmsgcounter(environment->MPIsize);
+	for (size_t n = 0; n < targets.size(); n++) {
+		smsgcounter[targets[n]] = 1;
+	}
+
+	MPI_Allreduce(smsgcounter.data(), rmsgcounter.data(), environment->MPIsize, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+	std::vector<MPI_Request> req(targets.size());
+	for (size_t t = 0; t < targets.size(); t++) {
+		MPI_Isend(const_cast<Ttype*>(sBuffer[t].data()), sizeof(Ttype) * sBuffer[t].size(), MPI_BYTE, targets[t], 0, MPI_COMM_WORLD, req.data() + t);
+	}
+
+	int flag;
+	size_t counter = 0;
+	MPI_Status status;
+	sources.clear();
+	std::vector<std::vector<Ttype> > tmpBuffer;
+	tmpBuffer.reserve(rmsgcounter[environment->MPIrank]);
+	while (counter < rmsgcounter[environment->MPIrank]) {
+		MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);
+		if (flag) {
+			int count;
+			MPI_Get_count(&status, MPI_BYTE, &count);
+			tmpBuffer.push_back(std::vector<Ttype>(count / sizeof(Ttype)));
+			MPI_Recv(tmpBuffer.back().data(), count, MPI_BYTE, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			sources.push_back(status.MPI_SOURCE);
+			counter++;
+		}
+	}
+
+	std::vector<int> permutation(sources.size());
+	for (size_t i = 0; i < sources.size(); i++) {
+		permutation[i] = i;
+	}
+	std::sort(permutation.begin(), permutation.end(), [&] (int i, int j) { return sources[i] < sources[j]; });
+	rBuffer.resize(tmpBuffer.size());
+	for (size_t i = 0; i < permutation.size(); i++) {
+		rBuffer[i].swap(tmpBuffer[permutation[i]]);
+	}
+
+	std::sort(sources.begin(), sources.end());
+
+	MPI_Waitall(targets.size(), req.data(), MPI_STATUSES_IGNORE);
+	MPI_Barrier(MPI_COMM_WORLD); // MPI_Iprobe(ANY_SOURCE) can be problem when calling this function more times
+	return true;
 }
 
 }

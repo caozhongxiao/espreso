@@ -31,7 +31,19 @@ struct Esutils
 	static void threadDistributionToFullDistribution(std::vector<std::vector<Ttype> > &distribution);
 
 	template<typename Ttype>
-	static void removeDuplicity(std::vector<Ttype> &elements);
+	static void removeDuplicity(std::vector<Ttype> &data);
+
+	template<typename Ttype>
+	static void sortAndRemoveDuplicity(std::vector<Ttype> &data);
+
+	template<typename Ttype>
+	static void sortAndRemoveDuplicity(std::vector<std::vector<Ttype> > &data);
+
+	template<typename Ttype>
+	static void mergeThreadedUniqueData(std::vector<std::vector<Ttype> > &data);
+
+	template<typename Ttype>
+	static void mergeThreadedUniqueData(std::vector<std::vector<std::vector<Ttype> > > &data);
 
 	template<typename Ttype>
 	static typename std::vector<Ttype>::const_iterator max_element(const std::vector<Ttype> &elements);

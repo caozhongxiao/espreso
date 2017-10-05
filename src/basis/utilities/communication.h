@@ -7,6 +7,9 @@ namespace espreso {
 struct Communication {
 
 	template <typename Ttype>
+	static bool exchangeKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours);
+
+	template <typename Ttype>
 	static bool exchangeUnknownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours);
 
 	template <typename Ttype>
@@ -29,6 +32,16 @@ struct Communication {
 
 	template <typename Ttype>
 	static Ttype exscan(Ttype &value);
+
+	template <typename Ttype>
+	static bool sendVariousTargets(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &targets)
+	{
+		std::vector<int> sources;
+		return sendVariousTargets(sBuffer, rBuffer, targets, sources);
+	}
+
+	template <typename Ttype>
+	static bool sendVariousTargets(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &targets, std::vector<int> &sources);
 };
 
 

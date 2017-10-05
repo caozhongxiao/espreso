@@ -31,13 +31,7 @@ struct Transformation {
 private:
 	static size_t level;
 
-	static void _distributeDualGraph(NewMesh &mesh, std::vector<esglobal> &edistribution, ElementStore *store, esglobal *partition, esglobal *permutation);
-	static bool _checkContinuity(NewMesh &mesh, ElementStore *store);
-
-	static void _tryrepartition(NewMesh &mesh, esglobal *permutation);
-	static void _distributeNewMesh(NewMesh &mesh, ElementStore *store, esglobal *permutation);
-	static void _permuteNewMesh(NewMesh &mesh, esglobal *permutation);
-
+	static void exchangeElements(NewMesh &mesh, const std::vector<esglobal> &partition);
 };
 
 }

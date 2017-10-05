@@ -26,7 +26,7 @@ void Transformation::computeElementCenters(NewMesh &mesh)
 		for (auto nodes = mesh._elems->nodes->cbegin(t); nodes != mesh._elems->nodes->cend(t); ++nodes) {
 			center = Point();
 			for (auto n = nodes->begin(); n != nodes->end(); ++n) {
-				center += mesh._nodes->coordinates->data()[*n];
+				center += mesh._nodes->coordinates->datatarray()[*n];
 			}
 			center /= nodes->size();
 			centers[t].push_back(center);

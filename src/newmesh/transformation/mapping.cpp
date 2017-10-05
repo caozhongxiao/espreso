@@ -76,9 +76,9 @@ void Transformation::addLinkFromTo(NewMesh &mesh, TFlags::ELEVEL from, TFlags::E
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		auto nodes = storeto->nodes->cbegin(t);
-		auto IDto = storeto->IDs->data();
+		auto IDto = storeto->IDs->datatarray();
 
-		auto IDfrom = storefrom->IDs->data();
+		auto IDfrom = storefrom->IDs->datatarray();
 
 		for (size_t e = storeto->distribution[t]; e < storeto->distribution[t + 1]; ++e, ++nodes) {
 			for (size_t n = 0; n < nodes->size(); ++n) {
@@ -123,7 +123,7 @@ void Transformation::addLinkFromTo(NewMesh &mesh, TFlags::ELEVEL from, TFlags::E
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::pair<esglobal, esglobal> IDpair;
-		auto IDfrom = storefrom->IDs->data();
+		auto IDfrom = storefrom->IDs->datatarray();
 
 		for (size_t n = storefrom->distribution[t]; n < storefrom->distribution[t + 1]; ++n) {
 			IDpair.first = IDfrom[n];
@@ -187,10 +187,10 @@ void Transformation::exchangeHaloElements(NewMesh &mesh)
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto IDs = mesh._elems->IDs->data();
-		auto body = mesh._elems->body->data();
-		auto material = mesh._elems->material->data();
-		auto code = mesh._elems->epointers->data();
+		auto IDs = mesh._elems->IDs->datatarray();
+		auto body = mesh._elems->body->datatarray();
+		auto material = mesh._elems->material->datatarray();
+		auto code = mesh._elems->epointers->datatarray();
 		auto nodes = mesh._elems->nodes->cbegin(t);
 		std::vector<int> neighbors;
 		__haloElement__ haloElement;
@@ -232,18 +232,27 @@ void Transformation::exchangeHaloElements(NewMesh &mesh)
 		ESINFO(ERROR) << "ESPRESO internal error: exchange halo elements.";
 	}
 
-	std::vector<std::vector<esglobal> > hid(1);
-	std::vector<std::vector<int> > hbody(1), hmaterial(1);
-	std::vector<std::vector<NewElement*> > hcode(1);
+	std::vector<std::vector<esglobal> > hid(threads);
+	std::vector<std::vector<int> > hbody(threads), hmaterial(threads);
+	std::vector<std::vector<NewElement*> > hcode(threads);
 
 	for (size_t n = 0; n < rBuffer.size(); ++n) {
-		for (size_t e = 0; e < rBuffer[n].size(); ++e) {
-			hid[0].push_back(rBuffer[n][e].id);
-			hbody[0].push_back(rBuffer[n][e].body);
-			hmaterial[0].push_back(rBuffer[n][e].material);
-			hcode[0].push_back(&mesh._eclasses[0].data()[rBuffer[n][e].code]);
+		std::vector<size_t> distribution = tarray<esglobal>::distribute(threads, rBuffer[n].size());
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			for (size_t e = distribution[t]; e < distribution[t + 1]; ++e) {
+				hid[t].push_back(rBuffer[n][e].id);
+				hbody[t].push_back(rBuffer[n][e].body);
+				hmaterial[t].push_back(rBuffer[n][e].material);
+				hcode[t].push_back(&mesh._eclasses[0].data()[rBuffer[n][e].code]);
+			}
 		}
 	}
+
+	serializededata<eslocal, esglobal>::balance(1, hid);
+	serializededata<eslocal, eslocal>::balance(1, hbody);
+	serializededata<eslocal, eslocal>::balance(1, hmaterial);
+	serializededata<eslocal, NewElement*>::balance(1, hcode);
 
 	mesh._halo->IDs = new serializededata<eslocal, esglobal>(1, hid);
 	mesh._halo->body = new serializededata<eslocal, eslocal>(1, hbody);
@@ -277,7 +286,7 @@ void Transformation::computeDual(NewMesh &mesh)
 	dualDistribution.front().push_back(0);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto IDs = mesh._elems->IDs->data();
+		auto IDs = mesh._elems->IDs->datatarray();
 		auto nodes = mesh._elems->nodes->cbegin(t);
 		std::vector<esglobal> neighElementIDs;
 		int myCommon, neighCommon;
@@ -290,7 +299,7 @@ void Transformation::computeDual(NewMesh &mesh)
 				neighElementIDs.insert(neighElementIDs.end(), elements->begin(), elements->end());
 			}
 			std::sort(neighElementIDs.begin(), neighElementIDs.end());
-			myCommon = mesh._elems->epointers->data()[e]->nCommonFace;
+			myCommon = mesh._elems->epointers->datatarray()[e]->nCommonFace;
 
 			neigh = 0;
 			nCounter = 1;
@@ -303,10 +312,10 @@ void Transformation::computeDual(NewMesh &mesh)
 				if (IDs[e] != neighElementIDs[neigh]) {
 					auto it = std::lower_bound(IDs.begin(), IDs.end(), neighElementIDs[neigh]);
 					if (it != IDs.end()) {
-						neighCommon = mesh._elems->epointers->data()[it - IDs.begin()]->nCommonFace;
+						neighCommon = mesh._elems->epointers->datatarray()[it - IDs.begin()]->nCommonFace;
 					} else {
-						auto it = std::lower_bound(mesh._halo->IDs->data().begin(), mesh._halo->IDs->data().end(), neighElementIDs[neigh]);
-						neighCommon = mesh._halo->epointers->data()[it - mesh._halo->IDs->data().begin()]->nCommonFace;
+						auto it = std::lower_bound(mesh._halo->IDs->datatarray().begin(), mesh._halo->IDs->datatarray().end(), neighElementIDs[neigh]);
+						neighCommon = mesh._halo->epointers->datatarray()[it - mesh._halo->IDs->datatarray().begin()]->nCommonFace;
 					}
 					if (nCounter >= std::min(myCommon, neighCommon)) {
 						++dualDistribution[t].back();
@@ -347,11 +356,11 @@ void Transformation::computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separ
 	if (mesh._elems->dual == NULL) {
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			auto IDs = mesh._elems->IDs->data();
+			auto IDs = mesh._elems->IDs->datatarray();
 			auto nodes = mesh._elems->nodes->cbegin(t);
-			auto body = mesh._elems->body->data();
-			auto material = mesh._elems->body->data();
-			auto epointer = mesh._elems->epointers->data();
+			auto body = mesh._elems->body->datatarray();
+			auto material = mesh._elems->body->datatarray();
+			auto epointer = mesh._elems->epointers->datatarray();
 			std::vector<esglobal> neighElementIDs;
 			int myCommon, neighCommon;
 			size_t neigh, nCounter;
@@ -363,7 +372,7 @@ void Transformation::computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separ
 					neighElementIDs.insert(neighElementIDs.end(), elements->begin(), elements->end());
 				}
 				std::sort(neighElementIDs.begin(), neighElementIDs.end());
-				myCommon = mesh._elems->epointers->data()[e]->nCommonFace;
+				myCommon = mesh._elems->epointers->datatarray()[e]->nCommonFace;
 
 				neigh = 0;
 				nCounter = 1;
@@ -376,7 +385,7 @@ void Transformation::computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separ
 					if (IDs[e] != neighElementIDs[neigh]) {
 						auto it = std::lower_bound(IDs.begin(), IDs.end(), neighElementIDs[neigh]);
 						if (it != IDs.end()) {
-							neighCommon = mesh._elems->epointers->data()[it - IDs.begin()]->nCommonFace;
+							neighCommon = mesh._elems->epointers->datatarray()[it - IDs.begin()]->nCommonFace;
 							if (
 									nCounter >= std::min(myCommon, neighCommon) &&
 									body[e] == body[it - IDs.begin()] &&
@@ -400,11 +409,11 @@ void Transformation::computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separ
 	} else {
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			auto IDs = mesh._elems->IDs->data();
+			auto IDs = mesh._elems->IDs->datatarray();
 			auto dual = mesh._elems->dual->cbegin(t);
-			auto body = mesh._elems->body->data();
-			auto material = mesh._elems->body->data();
-			auto epointer = mesh._elems->epointers->data();
+			auto body = mesh._elems->body->datatarray();
+			auto material = mesh._elems->body->datatarray();
+			auto epointer = mesh._elems->epointers->datatarray();
 
 			for (size_t e = mesh._elems->distribution[t]; e < mesh._elems->distribution[t + 1]; ++e, ++dual) {
 				dualDistribution[t].push_back(0);

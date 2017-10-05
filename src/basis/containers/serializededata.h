@@ -12,6 +12,77 @@ namespace espreso {
 template <typename TEBoundaries, typename TEData>
 class serializededata {
 
+public:
+	static void balance(size_t esize, std::vector<std::vector<TEData> > &data)
+	{
+		size_t size = 0;
+		for (size_t t = 0; t < data.size(); t++) {
+			size += esize * data[t].size();
+		}
+		std::vector<size_t> distribution = tarray<TEBoundaries>::distribute(data.size(), size);
+
+		for (size_t t = 0, tt = 0; t < data.size(); tt = ++t) {
+			while (++tt && data[t].size() < distribution[t + 1] - distribution[t]) {
+				size_t diff = distribution[t + 1] - distribution[t] - data[t].size();
+				if (diff < data[tt].size()) {
+					data[t].insert(data[t].end(), data[tt].begin(), data[tt].begin() + diff);
+					data[tt].erase(data[tt].begin(), data[tt].begin() + diff);
+				} else {
+					data[t].insert(data[t].end(), data[tt].begin(), data[tt].end());
+					data[tt].clear();
+
+				}
+			}
+			if (data[t].size() > distribution[t + 1] - distribution[t]) {
+				size_t diff = data[t].size() - distribution[t + 1] - distribution[t];
+				data[t + 1].insert(data[t + 1].begin(), data[t].end() - diff, data[t].end());
+				data[t].erase(data[t].end() - diff, data[t].end());
+			}
+		}
+	}
+
+	static void balance(std::vector<std::vector<TEBoundaries> > &boundaries, std::vector<std::vector<TEData> > &data)
+	{
+		size_t size = 0;
+		std::vector<size_t> sizes(boundaries.size());
+		for (size_t t = 0; t < boundaries.size(); t++) {
+			sizes[t] = boundaries[t].size();
+			size += boundaries[t].size();
+		}
+		--sizes[0];
+		std::vector<size_t> distribution = tarray<TEBoundaries>::distribute(data.size(), size - 1);
+
+		for (size_t t = 0, tt = 0; t < boundaries.size(); tt = ++t) {
+			while (++tt && sizes[t] < distribution[t + 1] - distribution[t]) {
+				size_t diff = distribution[t + 1] - distribution[t] - sizes[t];
+				if (diff < sizes[tt]) {
+					size_t ediff = *(boundaries[tt].begin() + diff - 1) - boundaries[tt - 1].back();
+					data[t].insert(data[t].end(), data[tt].begin(), data[tt].begin() + ediff);
+					data[tt].erase(data[tt].begin(), data[tt].begin() + ediff);
+
+					boundaries[t].insert(boundaries[t].end(), boundaries[tt].begin(), boundaries[tt].begin() + diff);
+					boundaries[tt].erase(boundaries[tt].begin(), boundaries[tt].begin() + diff);
+				} else {
+					data[t].insert(data[t].end(), data[tt].begin(), data[tt].end());
+					data[tt].clear();
+
+					boundaries[t].insert(boundaries[t].end(), boundaries[tt].begin(), boundaries[tt].end());
+					boundaries[tt].clear();
+
+				}
+			}
+			if (sizes[t] > distribution[t + 1] - distribution[t]) {
+				size_t diff = sizes[t] - distribution[t + 1] - distribution[t];
+				size_t ediff = boundaries[t].back() - *(boundaries[t].end() - diff - 1);
+				data[t + 1].insert(data[t + 1].begin(), data[t].end() - ediff, data[t].end());
+				data[t].erase(data[t].end() - ediff, data[t].end());
+
+				boundaries[t + 1].insert(boundaries[t + 1].begin(), boundaries[t].end() - diff, boundaries[t].end());
+				boundaries[t].erase(boundaries[t].end() - diff, boundaries[t].end());
+			}
+		}
+	}
+
 private:
 	template<class TIterator, typename TIteratorEData>
 	class iterator_base {
@@ -90,6 +161,7 @@ public:
 	{
 		friend class serializededata<TEBoundaries, TEData>;
 	public:
+
 		edata<const TEData>& operator*()  { return  this->_edata; }
 		edata<const TEData>* operator->() { return &this->_edata; }
 
@@ -138,7 +210,8 @@ public:
 		if (_eboundaries.size()) {
 			return _eboundaries.size() - 1;
 		} else {
-			return _edata.size() / _iterator.front()->size();
+			const_iterator it = _constiterator.front();
+			return _edata.size() / it->size();
 		}
 	}
 
@@ -156,8 +229,10 @@ public:
 	const_iterator end   (size_t thread) const { return _constiterator[thread + 1]; }
 	const_iterator cend  (size_t thread) const { return _constiterator[thread + 1]; }
 
-	tarray<TEData>&       data()       { return _edata; }
-	const tarray<TEData>& data() const { return _edata; }
+	tarray<TEBoundaries>&       boundarytaaray()       { return _eboundaries; }
+	const tarray<TEBoundaries>& boundarytaaray() const { return _eboundaries; }
+	tarray<TEData>&             datatarray()           { return _edata; }
+	const tarray<TEData>&       datatarray()     const { return _edata; }
 
 private:
 	void inititerators()
