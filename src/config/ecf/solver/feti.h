@@ -51,7 +51,9 @@ enum class FETI_CONJ_PROJECTOR {
 	/// No conj projector
 	NONE = 0,
 	/// Randomly found null pivots of stiffness matrix
-	GENEO = 1
+	GENEO = 1,
+	/// Conjugate projector for transient problems
+	CONJ = 2
 };
 
 enum class FETI_REGULARIZATION {

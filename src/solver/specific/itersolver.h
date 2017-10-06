@@ -145,14 +145,17 @@ public:
 	// *** Coarse problem related members
 	void CreateGGt    ( SuperCluster & cluster ); //, int mpi_rank, int mpi_root, int mpi_size, SparseSolverCPU & GGt );
 	void CreateGGt_Inv  ( SuperCluster & cluster );
+	void CreateConjGGt_Inv  ( SuperCluster & cluster );
 	void CreateGGt_Inv_old( SuperCluster & cluster );
 
 	// *** Projectors
 	void Projector    ( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 ); // int mpi_rank, SparseSolverCPU & GGt,
 	void Projector_Inv( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
-	void Projector_Inv2( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
-	void Projector_Inv3( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
 	void Projector_Inv_old( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
+
+	void ConjProjector_Inv( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
+	void ConjProjector_Inv2( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
+	void ConjProjector_Inv3( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
 
 
 	void CreateConjProjector(Cluster & cluster);
@@ -194,6 +197,7 @@ public:
 
 	// *** CG solvers
 	void Solve_RegCG  ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	void Solve_RegCG_ConjProj  ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
 	void Solve_full_ortho_CG_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
 	void Solve_GMRES_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
 	void Solve_BICGSTAB_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );

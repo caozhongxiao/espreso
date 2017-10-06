@@ -74,7 +74,10 @@ void IterSolverBase::Preprocessing ( SuperCluster & cluster )
 	 TimeEvent createGGT_time("Time to create GGt");createGGT_time.start();
 
 	if (USE_GGtINV == 1) {
-		CreateGGt_Inv( cluster );
+		if (configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ)
+			CreateConjGGt_Inv( cluster );
+		else
+			CreateGGt_Inv( cluster );
 	} else {
 		ESINFO(GLOBAL_ERROR) << "Only Inverse of GGT is supported for Projector";
 		// CreateGGt    ( cluster );
@@ -98,7 +101,10 @@ void IterSolverBase::Solve ( SuperCluster & cluster,
 
 	switch (configuration.iterative_solver) {
 	case FETI_ITERATIVE_SOLVER::PCG:
-		Solve_RegCG ( cluster, in_right_hand_side_primal );
+		if (configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ)
+			Solve_RegCG_ConjProj( cluster, in_right_hand_side_primal );
+		else
+			Solve_RegCG ( cluster, in_right_hand_side_primal );
 		break;
 	case FETI_ITERATIVE_SOLVER::pipePCG:
 		Solve_PipeCG_singular_dom( cluster, in_right_hand_side_primal );
@@ -1392,6 +1398,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 
 
 
+
 void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
@@ -1429,12 +1436,8 @@ void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 	// t1 = Uc\(Lc\d);
 	// x = Ct * t1;
 
-	// *** Combine vectors b from all clusters ************************************
-	All_Reduce_lambdas_compB(cluster, cluster.vec_b_compressed, b_l);
-
 	if (USE_GGtINV == 1) {
-		//Projector_Inv( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
-		Projector_Inv3( timeEvalProj, cluster, b_l, x_l, 0 );
+		Projector_Inv( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
 	} else {
 		Projector	 ( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
 	}
@@ -1444,6 +1447,8 @@ void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 	//x_norm_l = parallel_norm_compressed(cluster, x_l);
 	//printf (       "Test probe 1: norm = %1.30f \n", x_norm_l );
 
+	// *** Combine vectors b from all clusters ************************************
+	All_Reduce_lambdas_compB(cluster, cluster.vec_b_compressed, b_l);
 
 	// *** Ax = apply_A(CLUSTER,Bt,x); ********************************************
 	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
@@ -1542,7 +1547,7 @@ void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 		case FETI_PRECONDITIONER::MAGIC:
 			proj1_time.start();
 			if (USE_GGtINV == 1) {
-				Projector_Inv2( timeEvalProj, cluster, r_l, w_l, 0 );
+				Projector_Inv( timeEvalProj, cluster, r_l, w_l, 0 );
 			} else {
 				Projector		  ( timeEvalProj, cluster, r_l, w_l, 0 );
 			}
@@ -1566,6 +1571,330 @@ void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 			proj_time.start();
 			if (USE_GGtINV == 1) {
 				Projector_Inv( timeEvalProj, cluster, r_l, w_l, 0 );
+			} else {
+				Projector		  ( timeEvalProj, cluster, r_l, w_l, 0 );
+			}
+			proj_time.end();
+
+			#pragma omp parallel for
+			for (size_t i = 0; i < w_l.size(); i++)
+				y_l[i] = w_l[i];
+
+			break;
+		default:
+			ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+		}
+
+
+		//------------------------------------------
+		if (iter == 0) {									// if outputs.n_it==1;
+
+			#pragma omp parallel for
+for (size_t i = 0; i < y_l.size(); i++)
+				p_l[i] = y_l[i];							// p = y;
+
+		} else {
+
+			ddot_beta.start();
+			beta_l =          parallel_ddot_compressed(cluster, y_l, w_l);
+			beta_l = beta_l / parallel_ddot_compressed(cluster, yp_l, wp_l);
+			ddot_beta.end();
+
+			#pragma omp parallel for
+for (size_t i = 0; i < p_l.size(); i++)
+				p_l[i] = y_l[i] + beta_l * p_l[i];			// p = y + beta * p;
+
+		}
+
+
+
+		//------------------------------------------
+		 appA_time.start();
+		apply_A_l_comp_dom_B(timeEvalAppa, cluster, p_l, Ap_l); // apply_A_l_compB(timeEvalAppa, cluster, p_l, Ap_l);
+		 appA_time.end();
+
+		//------------------------------------------
+		 ddot_alpha.start();
+		alpha_l =           parallel_ddot_compressed(cluster, y_l, w_l);
+		alpha_l = alpha_l / parallel_ddot_compressed(cluster, p_l, Ap_l);
+		 ddot_alpha.end();
+
+		//-----------------------------------------
+		// *** up0 pro ukoncovani v primaru
+
+		//// //cilk_
+		////for (eslocal d = 0; d < cluster.domains.size(); d++) {
+		////	for (eslocal i = 0; i < cluster.domains[d].up0.size(); i++ ) {
+		////		cluster.domains[d].up0[i]        -= alpha_l * cluster.x_prim_cluster1[d][i];
+		////		cluster.domains[d].BtLambda_i[i] += alpha_l * cluster.x_prim_cluster2[d][i];
+		////	}
+		////	cluster.domains[d].norm_vec.resize(cluster.domains[d].up0.size());
+		////	cluster.domains[d].K.MatVec(cluster.domains[d].up0, cluster.domains[d].norm_vec, 'N');
+		////	cluster.domains[d].norm_c = 0.0;
+		////	for (eslocal i = 0; i < cluster.domains[d].up0.size(); i++ ) {
+		////		cluster.domains[d].norm_vec[i] = cluster.domains[d].norm_vec[i]
+		////			                           + cluster.domains[d].BtLambda_i[i]
+		////									   - cluster.domains[d].f[i];
+		////
+		////		cluster.domains[d].norm_c += cluster.domains[d].norm_vec[i] * cluster.domains[d].norm_vec[i];
+		////	}
+		////}
+
+		//double norm_prim_l = 0.0;
+		//double norm_prim_g = 0.0;
+		//for (eslocal d = 0; d < cluster.domains.size(); d++)
+		//	norm_prim_l += cluster.domains[d].norm_c;
+
+		//MPI_Allreduce(&norm_prim_l, &norm_prim_g, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
+		////MPI_Reduce(&norm_prim_l, &norm_prim_g, 1, MPI_DOUBLE, MPI_SUM, 0, environment->MPICommunicator);
+		//norm_prim_g = sqrt(norm_prim_g);
+
+
+
+
+
+		//------------------------------------------
+		#pragma omp parallel for
+		 for (size_t i = 0; i < x_l.size(); i++) {
+			x_l[i] = x_l[i] + alpha_l * p_l[i];
+			r_l[i] = r_l[i] - alpha_l * Ap_l[i];
+		}
+
+		 norm_time.start();
+		norm_l = parallel_norm_compressed(cluster, w_l);
+		 norm_time.end();
+
+		 timing.totalTime.end();
+
+		ESINFO(CONVERGENCE)
+			<< indent << std::setw(iterationWidth) << iter + 1
+			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
+			<< indent << std::scientific << std::setprecision(3) << norm_l
+			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
+			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
+
+		// *** Stop condition ******************************************************************
+		if (norm_l < tol)
+			break;
+
+	} // end of CG iterations
+
+
+	// *** save solution - in dual and amplitudes *********************************************
+	dual_soultion_compressed_parallel   = x_l;
+	dual_residuum_compressed_parallel   = r_l;
+
+	if (USE_GGtINV == 1) {
+		Projector_Inv ( timeEvalProj, cluster, r_l, amplitudes, 2 );
+	} else {
+		Projector	  ( timeEvalProj, cluster, r_l, amplitudes, 2 );
+	}
+	// *** end - save solution - in dual and amplitudes ***************************************
+
+
+	// *** Preslocal out the timing for the iteration loop ***************************************
+
+	switch (USE_PREC) {
+	case FETI_PRECONDITIONER::LUMPED:
+	case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+	case FETI_PRECONDITIONER::DIRICHLET:
+	case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+	case FETI_PRECONDITIONER::MAGIC:
+		timing.addEvent(proj1_time);
+		timing.addEvent(prec_time );
+		timing.addEvent(proj2_time);
+		break;
+	case FETI_PRECONDITIONER::NONE:
+		timing.addEvent(proj_time);
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+	}
+
+	timing.addEvent(appA_time );
+	timing.addEvent(ddot_beta);
+	timing.addEvent(ddot_alpha);
+
+	// *** END - Preslocal out the timing for the iteration loop ***********************************
+
+}
+
+
+
+void IterSolverBase::Solve_RegCG_ConjProj ( SuperCluster & cluster,
+	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
+{
+
+	eslocal dl_size = cluster.my_lamdas_indices.size();
+
+	SEQ_VECTOR <double> x_l (dl_size, 0);
+
+	SEQ_VECTOR <double> Ax_l (dl_size, 0);
+	SEQ_VECTOR <double> Ap_l (dl_size, 0);
+	SEQ_VECTOR <double> r_l  (dl_size, 0);
+
+	SEQ_VECTOR <double> w_l  (dl_size, 0);
+	SEQ_VECTOR <double> wp_l (dl_size, 0);
+
+	SEQ_VECTOR <double> y_l  (dl_size, 0);
+	SEQ_VECTOR <double> yp_l (dl_size, 0);
+	SEQ_VECTOR <double> z_l  (dl_size, 0);
+	SEQ_VECTOR <double> p_l  (dl_size, 0);
+
+	SEQ_VECTOR <double> u_l  (dl_size, 0);
+
+	SEQ_VECTOR <double> b_l  (dl_size, 0);
+
+	double beta_l  = 0;
+	double alpha_l = 0;
+	double norm_l;
+	double tol;
+
+	cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );
+	cluster.CreateVec_d_perCluster ( in_right_hand_side_primal );
+
+	// *** CG start ***************************************************************
+
+	// t1 = Uc\(Lc\d);
+	// x = Ct * t1;
+
+	// *** Combine vectors b from all clusters ************************************
+	All_Reduce_lambdas_compB(cluster, cluster.vec_b_compressed, b_l);
+
+	if (USE_GGtINV == 1) {
+		//Projector_Inv( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
+		ConjProjector_Inv3( timeEvalProj, cluster, b_l, x_l, 0 );
+	} else {
+		Projector	 ( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
+	}
+
+	//double x_norm_l = parallel_norm_compressed(cluster, cluster.vec_d);
+	//printf (       "Test probe 1: norm = %1.30f \n", x_norm_l );
+	//x_norm_l = parallel_norm_compressed(cluster, x_l);
+	//printf (       "Test probe 1: norm = %1.30f \n", x_norm_l );
+
+
+	// *** Ax = apply_A(CLUSTER,Bt,x); ********************************************
+	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
+
+	// *** up0 pro ukoncovani v primaru
+	////cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+	////	cluster.domains[d].BtLambda_i = cluster.x_prim_cluster2[d];
+	////	//cluster.domains[d].BtLambda_i.resize(cluster.domains[d].up0.size(), 0);
+	////	cluster.domains[d].norm_f = 0.0;
+	////	for (eslocal i = 0; i < cluster.domains[d].up0.size(); i++ ) {
+	////		cluster.domains[d].up0[i]     = cluster.domains[d].up0[i] - cluster.x_prim_cluster1[d][i];  // (K+ * f) - (K+ * Bt * lambda)
+	////
+	////		cluster.domains[d].norm_f += cluster.domains[d].f[i] * cluster.domains[d].f[i];
+	////	}
+	////}
+
+	// Get norm of f (right hand side)
+	double norm_prim_fl = 0.0;
+	double norm_prim_fg = 0.0;
+	for (size_t d = 0; d < cluster.domains.size(); d++)
+		norm_prim_fl += cluster.domains[d]->norm_f;
+
+	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
+	//MPI_Reduce   (&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, 0, environment->MPICommunicator);
+	norm_prim_fg = sqrt(norm_prim_fg);
+
+
+
+	// *** r = b - Ax *************************************************************
+	#pragma omp parallel for
+	for (size_t i = 0; i < r_l.size(); i++)
+		r_l[i] = b_l[i] - Ax_l[i];
+
+	if (USE_GGtINV == 1) {
+		ConjProjector_Inv( timeEvalProj, cluster, r_l, u_l , 0);
+	} else {
+		Projector    ( timeEvalProj, cluster, r_l, u_l , 0);
+	}
+
+	// *** Calculate the stop condition *******************************************
+	//tol = precision * parallel_norm_compressed(cluster, u_l);
+
+	double tol1 = precision * parallel_norm_compressed(cluster, u_l);
+	double tol2 = precision * parallel_norm_compressed(cluster, b_l);
+
+	if (tol1 < tol2 )
+		tol = tol1;
+	else
+		tol = tol2;
+
+
+
+
+
+	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
+	int iterationWidth = ceil(log(CG_max_iter) / log(10));
+	std::string indent = "   ";
+
+	auto spaces = [] (int count) {
+		std::stringstream ss;
+		for (int i = 0; i < count; i++) {
+			ss << " ";
+		}
+		return ss.str();
+	};
+
+//	double min_tol = 1e-12;
+//	if (tol < min_tol) {
+//		ESINFO(CONVERGENCE) << Info::TextColor::RED << "The NORM is fulfilled.";
+//	} else {
+		ESINFO(CONVERGENCE)
+			<< spaces(indent.size() + iterationWidth - 4) << "iter"
+			<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
+			<< spaces(indent.size() + 4) << "r" << spaces(4)
+			<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
+			<< spaces(indent.size()) << "time[s]";
+//	}
+
+	// *** Start the CG iteration loop ********************************************
+
+	//for (int iter = 0; tol > min_tol && iter < CG_max_iter; iter++) {
+	for (int iter = 0; iter < CG_max_iter; iter++) {
+		timing.totalTime.start();
+
+		#pragma omp parallel for
+		for (size_t i = 0; i < r_l.size(); i++) {
+			wp_l[i] = w_l[i];				//	wp = w;
+			yp_l[i] = y_l[i];				//	yp = y
+		}
+
+		switch (USE_PREC) {
+		case FETI_PRECONDITIONER::LUMPED:
+		case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+		case FETI_PRECONDITIONER::DIRICHLET:
+		case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+		case FETI_PRECONDITIONER::MAGIC:
+			proj1_time.start();
+			if (USE_GGtINV == 1) {
+				ConjProjector_Inv2( timeEvalProj, cluster, r_l, w_l, 0 );
+			} else {
+				Projector		  ( timeEvalProj, cluster, r_l, w_l, 0 );
+			}
+			proj1_time.end();
+
+			// Scale
+			prec_time.start();
+			Apply_Prec(timeEvalPrec, cluster, w_l, z_l);
+			prec_time.end();
+			// Re-Scale
+
+			proj2_time.start();
+			if (USE_GGtINV == 1) {
+				ConjProjector_Inv( timeEvalProj, cluster, z_l, y_l, 0 );
+			} else {
+				Projector		  ( timeEvalProj, cluster, z_l, y_l, 0 );
+			}
+			proj2_time.end();
+			break;
+		case FETI_PRECONDITIONER::NONE:
+			proj_time.start();
+			if (USE_GGtINV == 1) {
+				ConjProjector_Inv( timeEvalProj, cluster, r_l, w_l, 0 );
 			} else {
 				Projector		  ( timeEvalProj, cluster, r_l, w_l, 0 );
 			}
@@ -1680,7 +2009,7 @@ for (size_t i = 0; i < p_l.size(); i++)
 	dual_residuum_compressed_parallel   = r_l;
 
 	if (USE_GGtINV == 1) {
-		Projector_Inv ( timeEvalProj, cluster, r_l, amplitudes, 2 );
+		ConjProjector_Inv ( timeEvalProj, cluster, r_l, amplitudes, 2 );
 	} else {
 		Projector	  ( timeEvalProj, cluster, r_l, amplitudes, 2 );
 	}
@@ -4500,6 +4829,11 @@ void IterSolverBase::CreateGGt_Inv_old( SuperCluster & cluster )
 void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 {
 
+}
+
+void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
+{
+
 	// temp variables
 	vector < SparseMatrix > G_neighs   ( cluster.my_neighs.size() );
 	vector < SparseMatrix > GGt_neighs ( cluster.my_neighs.size() );
@@ -4921,8 +5255,92 @@ void IterSolverBase::apply_A_l_Mat( TimeEval & time_eval, SuperCluster & cluster
 
 }
 
-
 void IterSolverBase::Projector_Inv (TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
+{
+
+	 time_eval.totalTime.start();
+	eslocal d_local_size = cluster.G1_comp.rows;
+	SEQ_VECTOR<double> d_local( d_local_size );
+	SEQ_VECTOR<double> d_mpi  ( GGtsize );
+	 time_eval.timeEvents[0].start();
+
+	if (   output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 1
+			||
+		   output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 3)
+	{
+		d_local = x_in;
+	} else {
+		if (cluster.SYMMETRIC_SYSTEM) {
+			if (cluster.G1_comp.nnz > 0) {
+				cluster.G1_comp.MatVec(x_in, d_local, 'N');
+			}
+		} else {
+			if (cluster.G2_comp.nnz > 0) {
+				cluster.G2_comp.MatVec(x_in, d_local, 'N');
+			}
+		}
+	}
+
+	 time_eval.timeEvents[0].end();
+
+	//TODO: Udelat poradne
+	 time_eval.timeEvents[1].start();
+	SEQ_VECTOR<int> ker_size_per_clusters(environment->MPIsize,0);
+	MPI_Allgather(&d_local_size, 1, MPI_INT, &ker_size_per_clusters[0], 1, MPI_INT, environment->MPICommunicator );
+
+	SEQ_VECTOR<int> displs (environment->MPIsize,0);
+	displs[0] = 0;
+
+	for (size_t i=1; i<displs.size(); ++i) {
+		displs[i] = displs[i-1] + ker_size_per_clusters[i-1];
+	}
+	MPI_Allgatherv(&d_local[0], d_local_size, MPI_DOUBLE, &d_mpi[0], &ker_size_per_clusters[0], &displs[0], MPI_DOUBLE, environment->MPICommunicator);
+	// TODO: END
+
+	time_eval.timeEvents[1].end();
+	// TODO: END
+
+	 time_eval.timeEvents[2].start();
+
+	if (cluster.GGtinvM.cols != 0) {
+		cluster.GGtinvM.DenseMatVec(d_mpi, d_local, 'T');
+	}
+	 time_eval.timeEvents[2].end();
+
+	 time_eval.timeEvents[3].start();
+	//MPI_Scatter( &d_mpi[0],      d_local_size, MPI_DOUBLE, &d_local[0], d_local_size, MPI_DOUBLE, mpi_root, environment->MPICommunicator);
+	 time_eval.timeEvents[3].end();
+
+	if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 2
+		 ||
+		output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 3)
+	{
+		y_out = d_local; // for RBM amplitudes calculation
+	} else {
+		 time_eval.timeEvents[4].start();
+		if (cluster.G1_comp.nnz > 0)
+			cluster.G1_comp.MatVec(d_local, cluster.compressed_tmp, 'T');
+		else
+			std::fill (cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
+		 time_eval.timeEvents[4].end();
+
+		 time_eval.timeEvents[5].start();
+		All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, y_out);
+		 time_eval.timeEvents[5].end();
+
+		if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 0) {
+			#pragma omp parallel for
+			for (size_t i = 0; i < y_out.size(); i++)
+				y_out[i] = x_in[i] - y_out[i];
+		}
+
+	}
+
+	time_eval.totalTime.end();
+}
+
+
+void IterSolverBase::ConjProjector_Inv (TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
 {
 
 	 time_eval.totalTime.start();
@@ -5012,7 +5430,7 @@ void IterSolverBase::Projector_Inv (TimeEval & time_eval, SuperCluster & cluster
 }
 
 
-void IterSolverBase::Projector_Inv2 (TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
+void IterSolverBase::ConjProjector_Inv2 (TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
 {
 
 	 time_eval.totalTime.start();
@@ -5107,7 +5525,7 @@ void IterSolverBase::Projector_Inv2 (TimeEval & time_eval, SuperCluster & cluste
 }
 
 
-void IterSolverBase::Projector_Inv3 (TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
+void IterSolverBase::ConjProjector_Inv3 (TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
 {
 
 	 time_eval.totalTime.start();

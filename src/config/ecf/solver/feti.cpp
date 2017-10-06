@@ -56,7 +56,8 @@ espreso::FETISolverConfiguration::FETISolverConfiguration()
 			.setdescription({ "FETI conjugate projector." })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("NONE").setdescription("No conjugate projector."))
-			.addoption(ECFOption().setname("GENEO").setdescription("Randomly found null pivots of stiffness matrix.")));
+			.addoption(ECFOption().setname("GENEO").setdescription("Randomly found null pivots of stiffness matrix."))
+			.addoption(ECFOption().setname("CONJ").setdescription("Conjugate projector for transient problems")));
 
 	geneo_size = 6;
 	restart_iteration = 10;

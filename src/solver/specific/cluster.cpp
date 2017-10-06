@@ -2033,7 +2033,8 @@ void ClusterBase::Create_G_perCluster() {
 	#pragma omp parallel for
 	for (size_t j = 0; j < domains.size(); j++) {
 
-		domains[j].Kplus_R.swap(domains[j].Kplus_origR);
+		if (configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ)
+			domains[j].Kplus_R.swap(domains[j].Kplus_origR);
 
 	 	if (domains[j].Kplus_R.nnz != 0) {
 
@@ -2084,7 +2085,8 @@ void ClusterBase::Create_G_perCluster() {
 
 	 	} // END: if
 
-		domains[j].Kplus_R.swap(domains[j].Kplus_origR);
+	 	if (configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ)
+	 		domains[j].Kplus_R.swap(domains[j].Kplus_origR);
 
 	} //end cilk for
 
