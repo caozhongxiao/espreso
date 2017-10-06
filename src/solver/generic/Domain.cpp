@@ -102,7 +102,7 @@ void Domain::SetDomain() {
 		Kplus.ImportMatrix_wo_Copy(K);
 		Kplus.Factorization ("K matrix");
 
-		instance->computeKernelFromOrigK(configuration.regularization, configuration.SC_SIZE, domain_global_index, configuration.method == ESPRESO_METHOD::HYBRID_FETI);
+		instance->computeKernelFromOrigK(configuration.regularization, configuration.sc_size, domain_global_index, configuration.method == FETI_METHOD::HYBRID_FETI);
 
 	} else {
 
@@ -116,7 +116,7 @@ void Domain::SetDomain() {
 		Kplus.ImportMatrix_wo_Copy(K);
 		Kplus.Factorization ("K matrix");
 
-		instance->computeKernelFromOrigK(configuration.regularization, configuration.SC_SIZE, domain_global_index, configuration.method == ESPRESO_METHOD::HYBRID_FETI);
+		instance->computeKernelFromOrigK(configuration.regularization, configuration.sc_size, domain_global_index, configuration.method == FETI_METHOD::HYBRID_FETI);
 
 	}
 

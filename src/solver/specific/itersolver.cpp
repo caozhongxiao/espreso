@@ -4523,42 +4523,137 @@ void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 	 TimeEvent Gt_l_trans("Local G1 matrix transpose to create Gt "); Gt_l_trans.start();
 	if (cluster.USE_HFETI == 0) {
 
-		//cluster.G1.MatTranspose(G1t_l);
+		//cluster.G1.MatTranspose(G1t_l); - original line for orthogonal projector
+
+		SparseMatrix  G1_glb;
+		SparseMatrix G1A_glb;
+
+		 TimeEvent Coll_G1_time("ConjProj - Collecting matrices G1 = MatAppend "); Coll_G1_time.start();
+
+		G1_l = cluster.G1;
+		int count_cv_ly = 0;
+
+		for (eslocal li = 2; li <= 2*mpi_size; li = li * 2 ) {
+			SparseMatrix recv_m_l;
+			if (mpi_rank % li == 0) {
+				if (li == 2) {
+					G1_glb.MatAppend(G1_l);
+				}
+				if ((mpi_rank + li/2) < mpi_size) {
+					SendMatrix(mpi_rank, mpi_rank + li/2, G1_l, mpi_rank,     recv_m_l);
+					G1_glb.MatAppend(recv_m_l);
+				} else {
+					SendMatrix(mpi_rank, mpi_size + 1   , G1_l, mpi_size + 1, recv_m_l);
+				}
+			} else {
+				if ((mpi_rank + li/2) % li == 0) {
+					if (li == 2) {
+						SendMatrix(mpi_rank, mpi_rank       , G1_l      , mpi_rank - li/2, recv_m_l);
+					} else {
+						SendMatrix(mpi_rank, mpi_rank       , G1_glb, mpi_rank - li/2, recv_m_l);
+					}
+				} else {
+					SendMatrix(mpi_rank, mpi_rank+1, G1_l, mpi_rank+1,recv_m_l);
+				}
+			}
+
+			MPI_Barrier(environment->MPICommunicator);
+
+			G1_l.Clear();
+			count_cv_ly += mpi_size/li;
+			ESINFO(PROGRESS3) << "Collecting matrices G1 : " << count_cv_ly <<" of " << mpi_size;
+		}
+		BcastMatrix(mpi_rank, mpi_root, mpi_root, G1_glb);
+
+		Coll_G1_time.end(); Coll_G1_time.printStatMPI(); preproc_timing.addEvent(Coll_G1_time);
+
+		 TimeEvent AppA_G_time("ConjProj - calling ApplyA on full G1 matrix "); AppA_G_time.start();
 
 		SparseMatrix G1_tmp;
-		G1_tmp = cluster.G1;
+		G1_tmp = G1_glb;
 		G1_tmp.MatTranspose();
-		G1_tmp.ConvertCSRToDense(0);
+
+		G1_tmp.ConvertCSRToDense(1);
 		apply_A_l_Mat( timeEvalAppa, cluster, G1_tmp, G1t_l);
-		G1t_l.ConvertDenseToCSR(0);
-		G1_l = G1t_l;
-		G1_l.MatTranspose();
+		G1t_l.ConvertDenseToCSR(1);
 		G1_tmp.Clear();
+
+		 AppA_G_time.end(); AppA_G_time.printStatMPI(); preproc_timing.addEvent(AppA_G_time);
+
+		 TimeEvent Coll_G1A_time("ConjProj - Collecting matrices K+(G1) - MatAdd "); Coll_G1A_time.start();
+
+
+		int count_cv_lx = 0;
+		for (eslocal li = 2; li <= 2*mpi_size; li = li * 2 ) {
+			SparseMatrix recv_m_l;
+			if (mpi_rank % li == 0) {
+				if (li == 2) {
+					G1A_glb.MatAddInPlace(G1t_l,'N',1.0);
+				}
+				if ((mpi_rank + li/2) < mpi_size) {
+					SendMatrix(mpi_rank, mpi_rank + li/2, G1t_l, mpi_rank,     recv_m_l);
+					G1A_glb.MatAddInPlace(recv_m_l,'N',1.0);
+				} else {
+					SendMatrix(mpi_rank, mpi_size + 1   , G1t_l, mpi_size + 1, recv_m_l);
+				}
+			} else {
+				if ((mpi_rank + li/2) % li == 0) {
+					if (li == 2) {
+						SendMatrix(mpi_rank, mpi_rank       , G1t_l      , mpi_rank - li/2, recv_m_l);
+					} else {
+						SendMatrix(mpi_rank, mpi_rank       , G1A_glb, mpi_rank - li/2, recv_m_l);
+					}
+				} else {
+					SendMatrix(mpi_rank, mpi_rank+1, G1t_l, mpi_rank+1,recv_m_l);
+				}
+			}
+
+			MPI_Barrier(environment->MPICommunicator);
+
+			G1t_l.Clear();
+			count_cv_lx += mpi_size/li;
+			ESINFO(PROGRESS3) << "Collecting matrices K+(G1) : " << count_cv_lx <<" of " << mpi_size;
+		}
+		BcastMatrix(mpi_rank, mpi_root, mpi_root, G1A_glb);
+
+		Coll_G1A_time.end(); Coll_G1A_time.printStatMPI(); preproc_timing.addEvent(Coll_G1A_time);
+
+
+		ESINFO(EXHAUSTIVE) << G1_glb.SpyText();
+		ESINFO(EXHAUSTIVE) << G1A_glb.SpyText();
+
+		G1t_l = G1A_glb;
+
+		 TimeEvent GGtA_time("ConjProj - MatMatT - G1_glog * G1A_globT "); GGtA_time.start();
+		GGt_Mat_tmp.MatMat(G1_glb, 'N', G1t_l);
+		GGt_Mat_tmp.RemoveLower();
+		GGtA_time.end(); GGtA_time.printStatMPI(); preproc_timing.addEvent(GGtA_time);
+
 
 	}
 	 Gt_l_trans.end(); Gt_l_trans.printStatMPI(); preproc_timing.addEvent(Gt_l_trans);
 
 
-	 if (cluster.SYMMETRIC_SYSTEM)  {
-		  TimeEvent GxGtMatMat("Local G1 x G1t MatMat "); GxGtMatMat.start();
-		 if (cluster.USE_HFETI == 0) {
-			 GGt_l.MatMat(cluster.G1, 'N', G1t_l);
-		 } else {
-			 GGt_l.MatMatT(cluster.G1, cluster.G1);
-		 }
-		  GxGtMatMat.end(); GxGtMatMat.printStatMPI(); preproc_timing.addEvent(GxGtMatMat);
-	 } else {
-		  TimeEvent GxGtMatMat("Local G2 x G1t MatMat "); GxGtMatMat.start();
-		 if (cluster.USE_HFETI == 0) {
-			 GGt_l.MatMat(cluster.G2, 'N', G1t_l);
-		 } else {
-			 GGt_l.MatMatT(cluster.G2, cluster.G1);
-		 }
-		 GGt_l.MatTranspose();
-		  GxGtMatMat.end(); GxGtMatMat.printStatMPI(); preproc_timing.addEvent(GxGtMatMat);
-	 }
-	 //GxGtMatMat.PrintLastStatMPI_PerNode(0.0);
-
+//	 if (cluster.SYMMETRIC_SYSTEM)  {
+//		  TimeEvent GxGtMatMat("Local G1 x G1t MatMat "); GxGtMatMat.start();
+//		 if (cluster.USE_HFETI == 0) {
+//			 GGt_l.MatMat(cluster.G1, 'N', G1t_l);
+//		 } else {
+//			 GGt_l.MatMatT(cluster.G1, cluster.G1);
+//		 }
+//		  GxGtMatMat.end(); GxGtMatMat.printStatMPI(); preproc_timing.addEvent(GxGtMatMat);
+//	 } else {
+//		  TimeEvent GxGtMatMat("Local G2 x G1t MatMat "); GxGtMatMat.start();
+//		 if (cluster.USE_HFETI == 0) {
+//			 GGt_l.MatMat(cluster.G2, 'N', G1t_l);
+//		 } else {
+//			 GGt_l.MatMatT(cluster.G2, cluster.G1);
+//		 }
+//		 GGt_l.MatTranspose();
+//		  GxGtMatMat.end(); GxGtMatMat.printStatMPI(); preproc_timing.addEvent(GxGtMatMat);
+//	 }
+//	 //GxGtMatMat.PrintLastStatMPI_PerNode(0.0);
+//
 	int local_ker_size  = (int)cluster.G1.rows;
 	int global_ker_size = 0;
 	int global_GGt_size = 0;
@@ -4569,92 +4664,92 @@ void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 	MPI_Exscan(&local_ker_size, &global_ker_size, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
 	MPI_Allgather(&global_ker_size, 1, MPI_INT, &global_ker_sizes[0],1, MPI_INT, environment->MPICommunicator);
 	MPI_Allreduce(&local_ker_size, &global_GGt_size, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
-
-	for (size_t i = 0; i < GGt_l.CSR_J_col_indices.size(); i++) {
-		GGt_l.CSR_J_col_indices[i] += global_ker_size;
-	}
-	GGt_l.cols = global_GGt_size;
-
-
-	 TimeEvent GGTNeighTime("G1t_local x G1_neigh MatMat(N-times) "); GGTNeighTime.start();
-	#pragma omp parallel for
-	for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
-		//GGt_neighs[neigh_i].MatMatT(G_neighs[neigh_i], cluster.G1);
-
-		//GGt_neighs[neigh_i].MatMatT(G_neighs[neigh_i], G1_l);
-		GGt_neighs[neigh_i].MatMat(G_neighs[neigh_i], 'N', G1t_l);
-
-		GGt_neighs[neigh_i].MatTranspose();
-		eslocal inc = global_ker_sizes[cluster.my_neighs[neigh_i]];
-		for (size_t i = 0; i < GGt_neighs[neigh_i].CSR_J_col_indices.size(); i++) {
-			GGt_neighs[neigh_i].CSR_J_col_indices[i] += inc;
-		}
-		GGt_neighs[neigh_i].cols = global_GGt_size;
-		G_neighs[neigh_i].Clear();
-	}
-	 GGTNeighTime.end(); GGTNeighTime.printStatMPI(); preproc_timing.addEvent(GGTNeighTime);
-	 //GGTNeighTime.PrintLastStatMPI_PerNode(0.0);
-
-	 TimeEvent GGtLocAsm("Assembling row of GGt per node - MatAddInPlace "); GGtLocAsm.start();
-	for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
-		GGt_l.MatAddInPlace(GGt_neighs[neigh_i], 'N', 1.0);
-		GGt_neighs[neigh_i].Clear();
-	}
-	 GGtLocAsm.end(); GGtLocAsm.printStatMPI(); preproc_timing.addEvent(GGtLocAsm);
-
-	 // Collecting pieces of GGt from all clusters to master (MPI rank 0) node - using binary tree reduction
-	 TimeEvent collectGGt_time("Collect GGt pieces to master"); 	collectGGt_time.start();
-	int count_cv_l = 0;
-
-	for (eslocal li = 2; li <= 2*mpi_size; li = li * 2 ) {
-		SparseMatrix recv_m_l;
-		if (mpi_rank % li == 0) {
-			if (li == 2) {
-				GGt_Mat_tmp.MatAppend(GGt_l);
-			}
-			if ((mpi_rank + li/2) < mpi_size) {
-				SendMatrix(mpi_rank, mpi_rank + li/2, GGt_l, mpi_rank,     recv_m_l);
-				GGt_Mat_tmp.MatAppend(recv_m_l);
-			} else {
-				SendMatrix(mpi_rank, mpi_size + 1   , GGt_l, mpi_size + 1, recv_m_l);
-			}
-		} else {
-			if ((mpi_rank + li/2) % li == 0) {
-				if (li == 2) {
-					SendMatrix(mpi_rank, mpi_rank       , GGt_l      , mpi_rank - li/2, recv_m_l);
-				} else {
-					SendMatrix(mpi_rank, mpi_rank       , GGt_Mat_tmp, mpi_rank - li/2, recv_m_l);
-				}
-			} else {
-				SendMatrix(mpi_rank, mpi_rank+1, GGt_l, mpi_rank+1,recv_m_l);
-			}
-		}
-
-		MPI_Barrier(environment->MPICommunicator);
-
-		GGt_l.Clear();
-		count_cv_l += mpi_size/li;
-		ESINFO(PROGRESS3) << "Collecting matrices G : " << count_cv_l <<" of " << mpi_size;
-	}
-	 collectGGt_time.end(); collectGGt_time.printStatMPI(); preproc_timing.addEvent(collectGGt_time);
-
-	if (mpi_rank == 0 && cluster.SYMMETRIC_SYSTEM)  {
-		ESINFO(EXHAUSTIVE) << "Creating symmetric Coarse problem (GGt) matrix";
-		GGt_Mat_tmp.RemoveLower();
-	} else {
-		ESINFO(EXHAUSTIVE) << "Creating non-symmetric Coarse problem (GGt) matrix";
-	}
-
-	//Show GGt matrix structure in the solver LOG
+//
+//	for (size_t i = 0; i < GGt_l.CSR_J_col_indices.size(); i++) {
+//		GGt_l.CSR_J_col_indices[i] += global_ker_size;
+//	}
+//	GGt_l.cols = global_GGt_size;
+//
+//
+//	 TimeEvent GGTNeighTime("G1t_local x G1_neigh MatMat(N-times) "); GGTNeighTime.start();
+//	#pragma omp parallel for
+//	for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
+//		//GGt_neighs[neigh_i].MatMatT(G_neighs[neigh_i], cluster.G1);
+//
+//		//GGt_neighs[neigh_i].MatMatT(G_neighs[neigh_i], G1_l);
+//		GGt_neighs[neigh_i].MatMat(G_neighs[neigh_i], 'N', G1t_l);
+//
+//		GGt_neighs[neigh_i].MatTranspose();
+//		eslocal inc = global_ker_sizes[cluster.my_neighs[neigh_i]];
+//		for (size_t i = 0; i < GGt_neighs[neigh_i].CSR_J_col_indices.size(); i++) {
+//			GGt_neighs[neigh_i].CSR_J_col_indices[i] += inc;
+//		}
+//		GGt_neighs[neigh_i].cols = global_GGt_size;
+//		G_neighs[neigh_i].Clear();
+//	}
+//	 GGTNeighTime.end(); GGTNeighTime.printStatMPI(); preproc_timing.addEvent(GGTNeighTime);
+//	 //GGTNeighTime.PrintLastStatMPI_PerNode(0.0);
+//
+//	 TimeEvent GGtLocAsm("Assembling row of GGt per node - MatAddInPlace "); GGtLocAsm.start();
+//	for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
+//		GGt_l.MatAddInPlace(GGt_neighs[neigh_i], 'N', 1.0);
+//		GGt_neighs[neigh_i].Clear();
+//	}
+//	 GGtLocAsm.end(); GGtLocAsm.printStatMPI(); preproc_timing.addEvent(GGtLocAsm);
+//
+//	 // Collecting pieces of GGt from all clusters to master (MPI rank 0) node - using binary tree reduction
+//	 TimeEvent collectGGt_time("Collect GGt pieces to master"); 	collectGGt_time.start();
+//	int count_cv_l = 0;
+//
+//	for (eslocal li = 2; li <= 2*mpi_size; li = li * 2 ) {
+//		SparseMatrix recv_m_l;
+//		if (mpi_rank % li == 0) {
+//			if (li == 2) {
+//				GGt_Mat_tmp.MatAppend(GGt_l);
+//			}
+//			if ((mpi_rank + li/2) < mpi_size) {
+//				SendMatrix(mpi_rank, mpi_rank + li/2, GGt_l, mpi_rank,     recv_m_l);
+//				GGt_Mat_tmp.MatAppend(recv_m_l);
+//			} else {
+//				SendMatrix(mpi_rank, mpi_size + 1   , GGt_l, mpi_size + 1, recv_m_l);
+//			}
+//		} else {
+//			if ((mpi_rank + li/2) % li == 0) {
+//				if (li == 2) {
+//					SendMatrix(mpi_rank, mpi_rank       , GGt_l      , mpi_rank - li/2, recv_m_l);
+//				} else {
+//					SendMatrix(mpi_rank, mpi_rank       , GGt_Mat_tmp, mpi_rank - li/2, recv_m_l);
+//				}
+//			} else {
+//				SendMatrix(mpi_rank, mpi_rank+1, GGt_l, mpi_rank+1,recv_m_l);
+//			}
+//		}
+//
+//		MPI_Barrier(environment->MPICommunicator);
+//
+//		GGt_l.Clear();
+//		count_cv_l += mpi_size/li;
+//		ESINFO(PROGRESS3) << "Collecting matrices G : " << count_cv_l <<" of " << mpi_size;
+//	}
+//	 collectGGt_time.end(); collectGGt_time.printStatMPI(); preproc_timing.addEvent(collectGGt_time);
+//
+//	if (mpi_rank == 0 && cluster.SYMMETRIC_SYSTEM)  {
+//		ESINFO(EXHAUSTIVE) << "Creating symmetric Coarse problem (GGt) matrix";
+//		GGt_Mat_tmp.RemoveLower();
+//	} else {
+//		ESINFO(EXHAUSTIVE) << "Creating non-symmetric Coarse problem (GGt) matrix";
+//	}
+//
+//	//Show GGt matrix structure in the solver LOG
 	ESINFO(EXHAUSTIVE) << GGt_Mat_tmp.SpyText();
-
-	// Entering data parallel region for single, in this case GGt matrix, we want MKL/Solver to run multi-threaded
+//
+//	// Entering data parallel region for single, in this case GGt matrix, we want MKL/Solver to run multi-threaded
 	MKL_Set_Num_Threads(PAR_NUM_THREADS);
-
-	//Broadcasting GGT matrix to all clusters/MPI ranks
-	 TimeEvent GGt_bcast_time("Time to broadcast GGt from master all"); GGt_bcast_time.start();
-	BcastMatrix(mpi_rank, mpi_root, mpi_root, GGt_Mat_tmp);
-	 GGt_bcast_time.end(); GGt_bcast_time.printStatMPI(); preproc_timing.addEvent(GGt_bcast_time);
+//
+//	//Broadcasting GGT matrix to all clusters/MPI ranks
+//	 TimeEvent GGt_bcast_time("Time to broadcast GGt from master all"); GGt_bcast_time.start();
+//	BcastMatrix(mpi_rank, mpi_root, mpi_root, GGt_Mat_tmp);
+//	 GGt_bcast_time.end(); GGt_bcast_time.printStatMPI(); preproc_timing.addEvent(GGt_bcast_time);
 
 	// *** Calculating inverse GGt matrix in distributed fashion ***********************************************************
 	// Create Sparse Direct solver for GGt
@@ -4801,6 +4896,7 @@ void IterSolverBase::Projector_l_inv_compG ( TimeEval & time_eval, Cluster & clu
 */
 void IterSolverBase::apply_A_l_Mat( TimeEval & time_eval, SuperCluster & cluster, SparseMatrix       & X_in, SparseMatrix       & Y_out) {
 
+	ESINFO(PROGRESS3) << "Processing ApplyA on full matrix";
 
 	Y_out.Clear();
 	Y_out.type = 'G';
@@ -4813,12 +4909,15 @@ void IterSolverBase::apply_A_l_Mat( TimeEval & time_eval, SuperCluster & cluster
 		std::vector<double> tmp_pr_in  (X_in.dense_values.begin() + i*X_in.rows,  X_in.dense_values.begin() + (i+1)*X_in.rows);
 		std::vector<double> tmp_pr_out (tmp_pr_in.size(), 0 );
 
-		apply_A_l_comp_dom_B(timeEvalAppa, cluster, tmp_pr_in, tmp_pr_out);
+		apply_A_l_comp_dom_B_P(timeEvalAppa, cluster, tmp_pr_in, tmp_pr_out);
+
+		if (i % 10 == 0)
+			ESINFO(PROGRESS3) << "\r" << i << " out of " << X_in.cols << " columns processed" <<Info::plain();
 
 		Y_out.dense_values.insert(Y_out.dense_values.end(), tmp_pr_out.begin(), tmp_pr_out.end());
 	}
 
-
+	ESINFO(PROGRESS3) << "";
 
 }
 

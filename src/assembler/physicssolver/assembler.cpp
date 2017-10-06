@@ -370,7 +370,7 @@ void Assembler::setRegularizationCallback()
 
 void Assembler::setRegularizationFromOrigKCallback()
 {
-	instance.computeKernelsFromOrigKCallback = [&] (REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
+	instance.computeKernelsFromOrigKCallback = [&] (FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
 		instance.K.swap(instance.origK);
 		instance.N1.swap(instance.origKN1);
 		instance.N2.swap(instance.origKN2);
@@ -386,7 +386,7 @@ void Assembler::setRegularizationFromOrigKCallback()
 		instance.RegMat.swap(instance.origRegMat);
 	};
 
-	instance.computeKernelFromOrigKCallback = [&] (REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster) {
+	instance.computeKernelFromOrigKCallback = [&] (FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster) {
 		instance.K[domain].swap(instance.origK[domain]);
 		instance.N1[domain].swap(instance.origKN1[domain]);
 		instance.N2[domain].swap(instance.origKN2[domain]);
