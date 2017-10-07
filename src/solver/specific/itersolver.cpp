@@ -4829,6 +4829,193 @@ void IterSolverBase::CreateGGt_Inv_old( SuperCluster & cluster )
 void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 {
 
+	// temp variables
+	vector < SparseMatrix > G_neighs   ( cluster.my_neighs.size() );
+	vector < SparseMatrix > GGt_neighs ( cluster.my_neighs.size() );
+	SparseMatrix 			G1t_l;
+	SparseMatrix 			GGt_l;
+	SparseMatrix 			GGt_Mat_tmp;
+	SparseSolverMKL 		GGt_tmp;
+
+    /* Numbers of processors, value of OMP_NUM_THREADS */
+	int num_procs     = environment->PAR_NUM_THREADS;
+	GGt_tmp.iparm[2]  = num_procs;
+
+	 TimeEvent SaRGlocal("Exchange local G1 matrices to neighs. "); SaRGlocal.start();
+	if (cluster.SYMMETRIC_SYSTEM)  {
+		ExchangeMatrices(cluster.G1, G_neighs, cluster.my_neighs);
+	} else {
+		ExchangeMatrices(cluster.G2, G_neighs, cluster.my_neighs);
+	}
+	 SaRGlocal.end(); SaRGlocal.printStatMPI(); preproc_timing.addEvent(SaRGlocal);
+
+	 TimeEvent Gt_l_trans("Local G1 matrix transpose to create Gt "); Gt_l_trans.start();
+	if (cluster.USE_HFETI == 0) {
+		cluster.G1.MatTranspose(G1t_l);
+	}
+	 Gt_l_trans.end(); Gt_l_trans.printStatMPI(); preproc_timing.addEvent(Gt_l_trans);
+
+
+	 if (cluster.SYMMETRIC_SYSTEM)  {
+		  TimeEvent GxGtMatMat("Local G1 x G1t MatMat "); GxGtMatMat.start();
+		 if (cluster.USE_HFETI == 0) {
+			 GGt_l.MatMat(cluster.G1, 'N', G1t_l);
+		 } else {
+			 GGt_l.MatMatT(cluster.G1, cluster.G1);
+		 }
+		  GxGtMatMat.end(); GxGtMatMat.printStatMPI(); preproc_timing.addEvent(GxGtMatMat);
+	 } else {
+		  TimeEvent GxGtMatMat("Local G2 x G1t MatMat "); GxGtMatMat.start();
+		 if (cluster.USE_HFETI == 0) {
+			 GGt_l.MatMat(cluster.G2, 'N', G1t_l);
+		 } else {
+			 GGt_l.MatMatT(cluster.G2, cluster.G1);
+		 }
+		 GGt_l.MatTranspose();
+		  GxGtMatMat.end(); GxGtMatMat.printStatMPI(); preproc_timing.addEvent(GxGtMatMat);
+	 }
+	 //GxGtMatMat.PrintLastStatMPI_PerNode(0.0);
+
+	int local_ker_size  = (int)cluster.G1.rows;
+	int global_ker_size = 0;
+	int global_GGt_size = 0;
+
+	SEQ_VECTOR<int> global_ker_sizes;
+	global_ker_sizes.resize(environment->MPIsize, 0);
+
+	MPI_Exscan(&local_ker_size, &global_ker_size, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
+	MPI_Allgather(&global_ker_size, 1, MPI_INT, &global_ker_sizes[0],1, MPI_INT, environment->MPICommunicator);
+	MPI_Allreduce(&local_ker_size, &global_GGt_size, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
+
+	for (size_t i = 0; i < GGt_l.CSR_J_col_indices.size(); i++) {
+		GGt_l.CSR_J_col_indices[i] += global_ker_size;
+	}
+	GGt_l.cols = global_GGt_size;
+
+
+	 TimeEvent GGTNeighTime("G1t_local x G1_neigh MatMat(N-times) "); GGTNeighTime.start();
+	#pragma omp parallel for
+	for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
+		GGt_neighs[neigh_i].MatMatT(G_neighs[neigh_i], cluster.G1);
+		GGt_neighs[neigh_i].MatTranspose();
+		eslocal inc = global_ker_sizes[cluster.my_neighs[neigh_i]];
+		for (size_t i = 0; i < GGt_neighs[neigh_i].CSR_J_col_indices.size(); i++) {
+			GGt_neighs[neigh_i].CSR_J_col_indices[i] += inc;
+		}
+		GGt_neighs[neigh_i].cols = global_GGt_size;
+		G_neighs[neigh_i].Clear();
+	}
+	 GGTNeighTime.end(); GGTNeighTime.printStatMPI(); preproc_timing.addEvent(GGTNeighTime);
+	 //GGTNeighTime.PrintLastStatMPI_PerNode(0.0);
+
+	 TimeEvent GGtLocAsm("Assembling row of GGt per node - MatAddInPlace "); GGtLocAsm.start();
+	for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
+		GGt_l.MatAddInPlace(GGt_neighs[neigh_i], 'N', 1.0);
+		GGt_neighs[neigh_i].Clear();
+	}
+	 GGtLocAsm.end(); GGtLocAsm.printStatMPI(); preproc_timing.addEvent(GGtLocAsm);
+
+	 // Collecting pieces of GGt from all clusters to master (MPI rank 0) node - using binary tree reduction
+	 TimeEvent collectGGt_time("Collect GGt pieces to master"); 	collectGGt_time.start();
+	int count_cv_l = 0;
+
+	for (eslocal li = 2; li <= 2*mpi_size; li = li * 2 ) {
+		SparseMatrix recv_m_l;
+		if (mpi_rank % li == 0) {
+			if (li == 2) {
+				GGt_Mat_tmp.MatAppend(GGt_l);
+			}
+			if ((mpi_rank + li/2) < mpi_size) {
+				SendMatrix(mpi_rank, mpi_rank + li/2, GGt_l, mpi_rank,     recv_m_l);
+				GGt_Mat_tmp.MatAppend(recv_m_l);
+			} else {
+				SendMatrix(mpi_rank, mpi_size + 1   , GGt_l, mpi_size + 1, recv_m_l);
+			}
+		} else {
+			if ((mpi_rank + li/2) % li == 0) {
+				if (li == 2) {
+					SendMatrix(mpi_rank, mpi_rank       , GGt_l      , mpi_rank - li/2, recv_m_l);
+				} else {
+					SendMatrix(mpi_rank, mpi_rank       , GGt_Mat_tmp, mpi_rank - li/2, recv_m_l);
+				}
+			} else {
+				SendMatrix(mpi_rank, mpi_rank+1, GGt_l, mpi_rank+1,recv_m_l);
+			}
+		}
+
+		MPI_Barrier(environment->MPICommunicator);
+
+		GGt_l.Clear();
+		count_cv_l += mpi_size/li;
+		ESINFO(PROGRESS3) << "Collecting matrices G : " << count_cv_l <<" of " << mpi_size;
+	}
+	 collectGGt_time.end(); collectGGt_time.printStatMPI(); preproc_timing.addEvent(collectGGt_time);
+
+	if (mpi_rank == 0 && cluster.SYMMETRIC_SYSTEM)  {
+		ESINFO(EXHAUSTIVE) << "Creating symmetric Coarse problem (GGt) matrix";
+		GGt_Mat_tmp.RemoveLower();
+	} else {
+		ESINFO(EXHAUSTIVE) << "Creating non-symmetric Coarse problem (GGt) matrix";
+	}
+
+	//Show GGt matrix structure in the solver LOG
+	ESINFO(EXHAUSTIVE) << GGt_Mat_tmp.SpyText();
+
+	// Entering data parallel region for single, in this case GGt matrix, we want MKL/Solver to run multi-threaded
+	MKL_Set_Num_Threads(PAR_NUM_THREADS);
+
+	//Broadcasting GGT matrix to all clusters/MPI ranks
+	 TimeEvent GGt_bcast_time("Time to broadcast GGt from master all"); GGt_bcast_time.start();
+	BcastMatrix(mpi_rank, mpi_root, mpi_root, GGt_Mat_tmp);
+	 GGt_bcast_time.end(); GGt_bcast_time.printStatMPI(); preproc_timing.addEvent(GGt_bcast_time);
+
+	// *** Calculating inverse GGt matrix in distributed fashion ***********************************************************
+	// Create Sparse Direct solver for GGt
+	if (mpi_rank == mpi_root) {
+		GGt_tmp.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+	}
+
+	 TimeEvent importGGt_time("Time to import GGt matrix into solver"); importGGt_time.start();
+	GGt_Mat_tmp.mtype = cluster.mtype;
+	GGt_tmp.ImportMatrix_wo_Copy (GGt_Mat_tmp);
+	 importGGt_time.end(); importGGt_time.printStatMPI(); preproc_timing.addEvent(importGGt_time);
+
+	 TimeEvent GGtFactor_time("GGT Factorization time"); GGtFactor_time.start();
+	GGt_tmp.SetThreaded();
+	std::stringstream ss;
+	ss << "Create GGt_inv_dist-> rank: " << environment->MPIrank;
+	GGt_tmp.Factorization(ss.str());
+	 GGtFactor_time.end(); GGtFactor_time.printStatMPI(); preproc_timing.addEvent(GGtFactor_time);
+
+	 TimeEvent GGT_rhs_time("Time to create InitialCondition for get GGTINV"); GGT_rhs_time.start();
+	SEQ_VECTOR <double> rhs             (cluster.G1.rows * GGt_tmp.rows, 0.0);
+	cluster.GGtinvM.dense_values.resize (cluster.G1.rows * GGt_tmp.rows, 0.0);
+	for (eslocal i = 0; i < cluster.G1.rows; i++) {
+		eslocal index = (GGt_tmp.rows * i) + i + global_ker_size;
+		rhs[index] = 1;
+	}
+	 GGT_rhs_time.end(); GGT_rhs_time.printStatMPI(); preproc_timing.addEvent(GGT_rhs_time);
+
+	 TimeEvent GGt_solve_time("Running solve to get stripe(s) of GGtINV"); GGt_solve_time.start();
+	if (cluster.G1.rows > 0) {
+		GGt_tmp.Solve(rhs, cluster.GGtinvM.dense_values, cluster.G1.rows);
+	}
+
+	cluster.GGtinvM.cols = cluster.G1.rows;
+	cluster.GGtinvM.rows = GGt_tmp.rows;
+    cluster.GGtinvM.type = 'G';
+
+	GGtsize  = GGt_tmp.cols;
+	GGt.cols = GGt_tmp.cols;
+	GGt.rows = GGt_tmp.rows;
+	GGt.nnz  = GGt_tmp.nnz;
+
+	GGt_tmp.msglvl = 0;
+	GGt_tmp.Clear();
+
+	 GGt_solve_time.end(); GGt_solve_time.printStatMPI(); preproc_timing.addEvent(GGt_solve_time);
+
+	MKL_Set_Num_Threads(1);
 }
 
 void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
