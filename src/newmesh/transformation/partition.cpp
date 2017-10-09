@@ -552,6 +552,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 		begin = end;
 	}
 
+	newIDRequest.resize(newID.size());
 	if (!Communication::exchangeUnknownSize(newID, newIDRequest, neighbors)) {
 		ESINFO(ERROR) << "ESPRESO internal error: get new ID requests";
 	}
@@ -566,50 +567,15 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 			auto it = std::lower_bound(permutation.begin(), permutation.end(), newIDRequest[n][i].first, [&] (esglobal i, esglobal val) {
 				return elements->IDs->datatarray().data()[i] < val;
 			});
-			newIDRequest[n][i].second = newIDBoundaries[environment->MPIrank] + it - permutation.begin();
+			newIDRequest[n][i].second = newIDBoundaries[environment->MPIrank] + *it;
 		}
 	}
 
-//	std::vector<int> neighbors;
-//	{
-//		std::vector<std::vector<int> > rNeighbors(rIDsources.size());
-//		#pragma omp parallel for
-//		for (size_t n = 0; n < rIDsources.size(); n++) {
-//			for (size_t i = 0; i < rIDsources[n].size(); i++) {
-//				auto it = std::lower_bound(rNeighbors[n].begin(), rNeighbors[n].end(), rIDsources[n][i].second);
-//				if (it == rNeighbors[n].end() || *it != rIDsources[n][i].second) {
-//					rNeighbors[n].insert(it, rIDsources[n][i].second);
-//				}
-//			}
-//		}
-//		for (size_t n = 0; n < rIDsources.size(); n++) {
-//			neighbors.insert(neighbors.end(), rNeighbors[n].begin(), rNeighbors[n].end());
-//		}
-//	}
-//
-//	std::vector<eslocal> permutation(elements->size);
-//	std::iota(permutation.begin(), permutation.end(), 0);
-//	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return elements->IDs->datatarray().data()[i] < elements->IDs->datatarray().data()[j]; });
-//
-//	#pragma omp parallel for
-//	for (size_t n = 0; n < rIDsources.size(); ++n) {
-//		for (size_t i = 0; i < rIDsources[n].size(); ++i) {
-//			auto it = std::lower_bound(permutation.begin(), permutation.end(), rIDsources[n][i].first, [&] (esglobal i, esglobal val) {
-//				return elements->IDs->datatarray().data()[i] < val;
-//			});
-//			rIDsources[n][i].second = newIDBoundaries[environment->MPIrank] + it - permutation.begin();
-//		}
-//	}
-//
-//	std::vector<int> nnn;
-//	if (!Communication::exchangeKnownSize(rIDsources, sIDsources[0], nnn)) {
-//		ESINFO(ERROR) << "ESPRESO internal error: get new elements IDs.";
-//	}
+	if (!Communication::exchangeKnownSize(newIDRequest, newID, neighbors)) {
+		ESINFO(ERROR) << "ESPRESO internal error: get new elements IDs.";
+	}
 
-	// printVector(partition);
 
-	// printElement(elements);
-	// printNodes(nodes);
 
 	for (int rank = 0; rank < environment->MPIsize; rank++) {
 		if (rank == environment->MPIrank) {
@@ -620,9 +586,9 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 					std::cout << ID[e] << " -> " << newIDBoundaries[environment->MPIrank] + e << "\n";
 				}
 			}
-			for (size_t n = 0; n < newIDTarget.size(); n++) {
-				for (size_t i = 0; i < newIDTarget[n].size(); i++) {
-					std::cout << newIDTarget[n][i].first << " -> ??\n";// << sNewID[0][n][i].second << "\n";
+			for (size_t n = 0; n < newID.size(); n++) {
+				for (size_t i = 0; i < newID[n].size(); i++) {
+					std::cout << newID[n][i].first << " -> " << newID[n][i].second << "\n";
 				}
 			}
 		}
