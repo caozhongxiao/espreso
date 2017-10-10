@@ -31,15 +31,15 @@ static void printElement(ElementStore *store)
 				// std::cout << "T: " << t << "\n";
 				auto nodes = store->nodes->cbegin(t);
 				auto IDs = store->IDs->datatarray().data();
-				auto dual = store->dual->cbegin(t);
-				for (size_t e = store->distribution[t]; e < store->distribution[t + 1]; ++e, ++nodes, ++dual) {
+				// auto dual = store->dual->cbegin(t);
+				for (size_t e = store->distribution[t]; e < store->distribution[t + 1]; ++e, ++nodes) {
 					std::cout << "ID(" << IDs[e] << "): ";
-					for (auto n = dual->begin(); n != dual->end(); ++n) {
-						std::cout << "ID(" << *n << ") ";
-					}
-//					for (size_t n = 0; n < nodes->size(); n++) {
-//						std::cout << (*nodes)[n] << " ";
+//					for (auto n = dual->begin(); n != dual->end(); ++n) {
+//						std::cout << "ID(" << *n << ") ";
 //					}
+					for (size_t n = 0; n < nodes->size(); n++) {
+						std::cout << (*nodes)[n] << " ";
+					}
 					std::cout << "\n";
 				}
 			}
@@ -58,9 +58,14 @@ static void printNodes(ElementStore *store)
 				std::cout << "T: " << t << "\n";
 				auto coordinates = store->coordinates->datatarray().data();
 				auto IDs = store->IDs->datatarray().data();
+				auto elems = store->elems->cbegin(t);
 
-				for (size_t e = store->distribution[t]; e < store->distribution[t + 1]; ++e) {
-					std::cout << IDs[e] << ": " << coordinates[e] << "\n";
+				for (size_t n = store->distribution[t]; n < store->distribution[t + 1]; ++n, ++elems) {
+					std::cout << IDs[n] << ": ";
+					for (auto e = elems->begin(); e != elems->end(); ++e) {
+						std::cout << *e << " ";
+					}
+					std::cout << "\n";
 				}
 			}
 		}
@@ -288,6 +293,8 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 		}
 	}
 
+	printf("step1\n");
+	MPI_Barrier(environment->MPICommunicator);
 	// Step 2: Serialize node data
 
 	nodesElemsDistribution.front().push_back(0);
@@ -331,6 +338,8 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 		}
 	}
 
+	printf("step2\n");
+	MPI_Barrier(environment->MPICommunicator);
 	// Step 3: Send data to target processes
 
 	#pragma omp parallel for
@@ -353,6 +362,8 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 		ESINFO(ERROR) << "ESPRESO internal error: exchange nodes data.";
 	}
 
+	printf("step3\n");
+	MPI_Barrier(environment->MPICommunicator);
 
 	// Step 4: Deserialize element data
 	for (size_t i = 0; i < rElements.size(); i++) {
@@ -422,6 +433,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	elements->IDs = new serializededata<eslocal, esglobal>(1, elemsIDs);
 	elements->body = new serializededata<eslocal, int>(1, elemsBody);
 	elements->material = new serializededata<eslocal, int>(1, elemsMaterial);
+	elements->epointers = new serializededata<eslocal, NewElement*>(1, elemsEpointer);
 	elements->nodes = new serializededata<eslocal, esglobal>(elemsNodesDistribution, elemsNodesData); // global IDs
 
 	elements->size = elements->IDs->structures();
@@ -462,6 +474,9 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	std::vector<std::vector<std::vector<std::pair<esglobal, esglobal> > > > sHaloTarget(threads, std::vector<std::vector<std::pair<esglobal, esglobal> > >(mesh._neighbours.size()));
 	std::vector<std::vector<std::pair<esglobal, esglobal> > > haloTarget(mesh._neighbours.size());
 
+	// halo elements that will be halo after exchange
+	std::vector<std::vector<esglobal> > keptHaloTarget(threads);
+
 	auto n2i = [ & ] (size_t neighbour) {
 		return std::lower_bound(mesh._neighbours.begin(), mesh._neighbours.end(), neighbour) - mesh._neighbours.begin();
 	};
@@ -475,10 +490,20 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 		for (size_t n = mesh._nodes->distribution[t]; n < mesh._nodes->distribution[t + 1]; ++n, ++links, ++ranks) {
 			if (ranks->size() > 1) {
 				buffer.clear();
+				bool keep = false;
+				size_t ksize = keptHaloTarget[t].size();
 				for (auto e = links->begin(); e != links->end(); ++e) {
 					if (oldIDBoundaries[environment->MPIrank] <= *e && *e < oldIDBoundaries[environment->MPIrank + 1]) {
 						buffer.push_back(std::make_pair(*e, partition[*e - oldIDBoundaries[environment->MPIrank]]));
+						if (partition[*e - oldIDBoundaries[environment->MPIrank]] == environment->MPIrank) {
+							keep = true;
+						}
+					} else {
+						keptHaloTarget[t].push_back(*e);
 					}
+				}
+				if (!keep) {
+					keptHaloTarget[t].resize(ksize);
 				}
 				for (auto rank = ranks->begin(); rank != ranks->end(); ++rank) {
 					if (*rank != environment->MPIrank) {
@@ -489,6 +514,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 		}
 
 		Esutils::sortAndRemoveDuplicity(sHaloTarget[t]);
+		Esutils::sortAndRemoveDuplicity(keptHaloTarget[t]);
 	}
 	Esutils::mergeThreadedUniqueData(sHaloTarget);
 
@@ -496,6 +522,9 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 		ESINFO(ERROR) << "ESPRESO internal error: exchange elements new MPI processes.";
 	}
 	Esutils::mergeThreadedUniqueData(haloTarget);
+
+	// haloTarget contains target processes of halo elements
+	// fill newIDTargetSBuffet by target processes of elements that was exchanged
 
 	// thread x neighbor x data(oldID, new MPI process)
 	std::vector<std::vector<std::vector<std::pair<esglobal, esglobal> > > > newIDTargetSBuffet(threads, std::vector<std::vector<std::pair<esglobal, esglobal> > >(targets.size()));
@@ -514,8 +543,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 						if (oldIDBoundaries[environment->MPIrank] <= *ne && *ne < oldIDBoundaries[environment->MPIrank + 1]) {
 							target = partition[*ne - oldIDBoundaries[environment->MPIrank]];
 						} else {
-							std::pair<esglobal, esglobal> tmp(*ne, 0);
-							target = std::lower_bound(haloTarget[0].begin(), haloTarget[0].end(), tmp)->second;
+							target = std::lower_bound(haloTarget[0].begin(), haloTarget[0].end(), std::make_pair(*ne, 0))->second;
 						}
 						if (target != partition[e]) {
 							newIDTargetSBuffet[t][t2i(partition[e])].push_back(std::make_pair(*ne, target));
@@ -532,6 +560,17 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	if (!Communication::sendVariousTargets(newIDTargetSBuffet[0], newIDTarget, targets)) {
 		ESINFO(ERROR) << "ESPRESO internal error: exchange elements new IDs.";
 	}
+	if (newIDTarget.size() < threads) {
+		newIDTarget.resize(threads);
+	}
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (size_t i = 0; i < keptHaloTarget[t].size(); i++) {
+			auto it = std::lower_bound(haloTarget[0].begin(), haloTarget[0].end(), std::make_pair(keptHaloTarget[t][i], 0));
+			newIDTarget[t].push_back(*it);
+		}
+	}
+
 	Esutils::mergeThreadedUniqueData(newIDTarget);
 
 	// Ask targets to new IDs
@@ -546,9 +585,11 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	std::vector<std::vector<std::pair<esglobal, esglobal> > > newID, newIDRequest;
 	auto begin = newIDTarget[0].begin();
 	while (begin != newIDTarget[0].end()) {
-		neighbors.push_back(begin->second);
-		auto end = std::lower_bound(begin, newIDTarget[0].end(), std::make_pair(0, neighbors.back() + 1), [] (std::pair<esglobal, esglobal> &p1, const std::pair<esglobal, esglobal> &p2) { return p1.second < p2.second; });
-		newID.push_back(std::move(std::vector<std::pair<esglobal, esglobal> >(begin, end)));
+		auto end = std::lower_bound(begin, newIDTarget[0].end(), std::make_pair(0, begin->second + 1), [] (std::pair<esglobal, esglobal> &p1, const std::pair<esglobal, esglobal> &p2) { return p1.second < p2.second; });
+		if (begin->second != environment->MPIrank) {
+			neighbors.push_back(begin->second);
+			newID.push_back(std::move(std::vector<std::pair<esglobal, esglobal> >(begin, end)));
+		}
 		begin = end;
 	}
 
@@ -574,27 +615,70 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	if (!Communication::exchangeKnownSize(newIDRequest, newID, neighbors)) {
 		ESINFO(ERROR) << "ESPRESO internal error: get new elements IDs.";
 	}
+	Esutils::mergeThreadedUniqueData(newID);
 
-
-
-	for (int rank = 0; rank < environment->MPIsize; rank++) {
-		if (rank == environment->MPIrank) {
-			std::cout << "RANK: " << rank << "\n";
-			for (size_t t = 0; t < elements->distribution.size() - 1; t++) {
-				auto ID = elements->IDs->datatarray().data();
-				for (size_t e = elements->distribution[t]; e < elements->distribution[t + 1]; ++e) {
-					std::cout << ID[e] << " -> " << newIDBoundaries[environment->MPIrank] + e << "\n";
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (auto elem = nodes->elems->begin(t); elem != nodes->elems->end(t); ++elem) {
+			for (auto e = elem->begin(); e != elem->end(); ++e) {
+				auto it = std::lower_bound(newID[0].begin(), newID[0].end(), std::make_pair(*e, 0));
+				if (it == newID[0].end() || it->first != *e) {
+					*e = newIDBoundaries[environment->MPIrank] + *std::lower_bound(permutation.begin(), permutation.end(), *e, [&] (esglobal i, esglobal val) {
+						return elements->IDs->datatarray().data()[i] < val;
+					});
+				} else {
+					*e = it->second;
 				}
 			}
-			for (size_t n = 0; n < newID.size(); n++) {
-				for (size_t i = 0; i < newID[n].size(); i++) {
-					std::cout << newID[n][i].first << " -> " << newID[n][i].second << "\n";
-				}
+			std::sort(elem->begin(), elem->end());
+		}
+	}
+
+	permutation.resize(nodes->size);
+	std::iota(permutation.begin(), permutation.end(), 0);
+	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return nodes->IDs->datatarray().data()[i] < nodes->IDs->datatarray().data()[j]; });
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (auto n = elements->nodes->begin(t)->begin(); n != elements->nodes->end(t)->end(); ++n) {
+			*n = *std::lower_bound(permutation.begin(), permutation.end(), *n, [&] (esglobal i, esglobal val) {
+				return nodes->IDs->datatarray().data()[i] < val;
+			});
+		}
+	}
+
+	std::vector<std::vector<eslocal> > rankBoundaries(threads);
+	std::vector<std::vector<esglobal> > rankData(threads);
+
+	rankBoundaries.front().push_back(0);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (auto elem = nodes->elems->begin(t); elem != nodes->elems->end(t); ++elem) {
+			for (auto e = elem->begin(); e != elem->end(); ++e) {
+				rankData[t].push_back(std::lower_bound(newIDBoundaries.begin(), newIDBoundaries.end(), *e + 1) - newIDBoundaries.begin() - 1);
+			}
+			rankBoundaries[t].push_back(elem->size());
+			if (rankBoundaries[t].size() > 1) {
+				rankBoundaries[t].back() += *(rankBoundaries[t].end() - 2);
 			}
 		}
-		MPI_Barrier(environment->MPICommunicator);
 	}
-	MPI_Barrier(environment->MPICommunicator);
+
+	Esutils::threadDistributionToFullDistribution(rankBoundaries);
+
+	nodes->ranks = new serializededata<eslocal, esglobal>(rankBoundaries, rankData);
+
+	std::iota(elements->IDs->datatarray().begin(), elements->IDs->datatarray().end(), newIDBoundaries[environment->MPIrank]);
+	std::swap(mesh._elems, elements);
+	std::swap(mesh._nodes, nodes);
+	delete mesh._halo;
+	mesh._halo = new ElementStore();
+	mesh._neighbours = neighbors;
+
+	delete elements;
+	delete nodes;
+
+	Transformation::computeDual(mesh);
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::exchanging elements finished.";
 }
