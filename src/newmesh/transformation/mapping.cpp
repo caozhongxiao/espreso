@@ -244,7 +244,7 @@ void Transformation::exchangeHaloElements(NewMesh &mesh)
 				hid[t].push_back(rBuffer[n][e].id);
 				hbody[t].push_back(rBuffer[n][e].body);
 				hmaterial[t].push_back(rBuffer[n][e].material);
-				hcode[t].push_back(&mesh._eclasses[0].data()[rBuffer[n][e].code]);
+				hcode[t].push_back(mesh._eclasses[0].data() + rBuffer[n][e].code);
 			}
 		}
 	}
@@ -258,6 +258,20 @@ void Transformation::exchangeHaloElements(NewMesh &mesh)
 	mesh._halo->body = new serializededata<eslocal, eslocal>(1, hbody);
 	mesh._halo->material = new serializededata<eslocal, eslocal>(1, hmaterial);
 	mesh._halo->epointers = new serializededata<eslocal, NewElement*>(1, hcode);
+
+	mesh._halo->size = mesh._halo->IDs->datatarray().size();
+	mesh._halo->distribution = mesh._halo->IDs->datatarray().distribution();
+
+	mesh._halo->sort();
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		auto epointer = mesh._halo->epointers->datatarray();
+
+		for (auto e = mesh._halo->distribution[t]; e < mesh._halo->distribution[t + 1]; ++e) {
+			epointer[e] = mesh._eclasses[t].data() + (epointer[e] - mesh._eclasses[0].data());
+		}
+	}
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "MESH::exchanging halo elements finished.";
 }

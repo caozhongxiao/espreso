@@ -2,13 +2,15 @@
 #ifndef SRC_NEWOUTPUT_OUTPUT_H_
 #define SRC_NEWOUTPUT_OUTPUT_H_
 
+#include <string>
+
 namespace espreso {
 
 class ElementStore;
 
-class NewOutput {
+struct NewOutput {
 
-	static void VTKLegacy(ElementStore *elements, ElementStore *nodes);
+	static void VTKLegacy(const std::string &name, ElementStore *elements, ElementStore *nodes);
 };
 
 }

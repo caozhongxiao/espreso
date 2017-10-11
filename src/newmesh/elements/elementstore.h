@@ -13,6 +13,9 @@ struct NewElement;
 
 struct ElementStore {
 
+	void sort();
+	void permute(const std::vector<eslocal> &permutation);
+
 	size_t size;
 	std::vector<size_t> distribution;
 

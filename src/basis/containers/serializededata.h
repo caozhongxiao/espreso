@@ -34,7 +34,7 @@ public:
 				}
 			}
 			if (data[t].size() > distribution[t + 1] - distribution[t]) {
-				size_t diff = data[t].size() - distribution[t + 1] - distribution[t];
+				size_t diff = data[t].size() - (distribution[t + 1] - distribution[t]);
 				data[t + 1].insert(data[t + 1].begin(), data[t].end() - diff, data[t].end());
 				data[t].erase(data[t].end() - diff, data[t].end());
 			}
@@ -70,15 +70,19 @@ public:
 					boundaries[tt].clear();
 
 				}
+				sizes[t]  += diff;
+				sizes[tt] -= diff;
 			}
 			if (sizes[t] > distribution[t + 1] - distribution[t]) {
-				size_t diff = sizes[t] - distribution[t + 1] - distribution[t];
+				size_t diff = sizes[t] - (distribution[t + 1] - distribution[t]);
 				size_t ediff = boundaries[t].back() - *(boundaries[t].end() - diff - 1);
 				data[t + 1].insert(data[t + 1].begin(), data[t].end() - ediff, data[t].end());
 				data[t].erase(data[t].end() - ediff, data[t].end());
 
 				boundaries[t + 1].insert(boundaries[t + 1].begin(), boundaries[t].end() - diff, boundaries[t].end());
 				boundaries[t].erase(boundaries[t].end() - diff, boundaries[t].end());
+				sizes[t]     -= diff;
+				sizes[t + 1] += diff;
 			}
 		}
 	}
