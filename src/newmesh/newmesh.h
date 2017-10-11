@@ -17,7 +17,7 @@ class NewMesh {
 public:
 	NewMesh(Mesh &mesh);
 
-protected:
+// protected:
 	ElementStore *_nodes, *_edges, *_faces, *_elems, *_halo;
 	std::vector<int> _neighbours;
 

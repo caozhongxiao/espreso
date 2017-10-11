@@ -293,6 +293,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 		}
 	}
 
+	MPI_Barrier(environment->MPICommunicator);
 	printf("step1\n");
 	MPI_Barrier(environment->MPICommunicator);
 	// Step 2: Serialize node data
@@ -362,6 +363,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 		ESINFO(ERROR) << "ESPRESO internal error: exchange nodes data.";
 	}
 
+	MPI_Barrier(environment->MPICommunicator);
 	printf("step3\n");
 	MPI_Barrier(environment->MPICommunicator);
 
@@ -388,6 +390,10 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 			}
 		}
 	}
+
+	MPI_Barrier(environment->MPICommunicator);
+	printf("step4.2\n");
+	MPI_Barrier(environment->MPICommunicator);
 
 	// Step 4: Deserialize node data
 	std::vector<esglobal> nodeset;
@@ -416,7 +422,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 					}
 				} else {
 					n += 1 + sizeof(Point) / sizeof(esglobal); // id, Point
-					n += rNodes[i][++n]; // elems
+					n += rNodes[i][n]; // elems
 				}
 			}
 		}
@@ -439,6 +445,9 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	elements->size = elements->IDs->structures();
 	elements->distribution = elements->IDs->datatarray().distribution();
 
+	MPI_Barrier(environment->MPICommunicator);
+	printf("step5\n");
+	MPI_Barrier(environment->MPICommunicator);
 
 	// Step 5: Balance node data to threads
 	serializededata<eslocal, esglobal>::balance(1, nodesIDs);
@@ -451,6 +460,9 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	nodes->size = nodes->IDs->datatarray().size();
 	nodes->distribution = nodes->IDs->datatarray().distribution();
 
+	MPI_Barrier(environment->MPICommunicator);
+	printf("step6\n");
+	MPI_Barrier(environment->MPICommunicator);
 	// Step 6: Re-index elements
 	// Elements IDs are always kept increasing
 
