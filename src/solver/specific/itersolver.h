@@ -167,11 +167,14 @@ public:
 
 
 	// *** Apply A embers - moved to children
-	virtual void apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) =0;
-	virtual void apply_A_l_comp_dom_B_P( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) =0;
+	virtual void apply_A_l_comp_dom_B        ( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) =0;
+	virtual void apply_A_l_comp_dom_B_P      ( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) =0;
+	virtual void apply_A_l_comp_dom_B_P_local( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) =0;
+	virtual void apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<eslocal> & tmp_in_indices, SEQ_VECTOR<double> & tmp_in_values, SEQ_VECTOR<eslocal> & tmp_out_indices, SEQ_VECTOR<double> & tmp_out_values) =0;
 
-
-	void apply_A_l_Mat( TimeEval & time_eval, SuperCluster & cluster, SparseMatrix       & X_in, SparseMatrix       & Y_out) ;
+	void apply_A_l_Mat		 ( TimeEval & time_eval, SuperCluster & cluster, SparseMatrix       & X_in, SparseMatrix       & Y_out) ;
+	void apply_A_l_Mat_local ( TimeEval & time_eval, SuperCluster & cluster, SparseMatrix       & X_in, SparseMatrix       & Y_out) ;
+	void apply_A_l_Mat_local_sparse ( TimeEval & time_eval, SuperCluster & cluster, SparseMatrix       & X_in, SparseMatrix       & Y_out) ;
 
 
 	// *** Apply preconditioner
@@ -231,6 +234,9 @@ void RecvMatrix   ( SparseMatrix & B_out, eslocal  source_rank);
 void SendMatrix   ( SparseMatrix & A_in, eslocal  dest_rank );
 
 void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, SEQ_VECTOR <eslocal> neighbor_ranks );
+void ExchangeMatrices2 (SEQ_VECTOR <SparseMatrix> & A_in, SEQ_VECTOR <SparseMatrix> & B_out, SEQ_VECTOR <eslocal> neighbor_ranks );
+
+void ExchangeVector (SEQ_VECTOR <eslocal> & vec_in, SEQ_VECTOR <SEQ_VECTOR<eslocal>> & vec_out, SEQ_VECTOR <eslocal> neighbor_ranks );
 
 void BcastMatrix(eslocal  rank, eslocal  mpi_root, eslocal  source_rank, SparseMatrix & A);
 
