@@ -11,6 +11,7 @@
 #include "../../basis/utilities/utils.h"
 #include "../../basis/utilities/communication.h"
 
+#include "../../wrappers/wmetis.h"
 #include "../../wrappers/wparmetis.h"
 
 #include "../../config/ecf/environment.h"
@@ -138,6 +139,305 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 	if (mesh._elems->decomposedDual == NULL) {
 		Transformation::computeDecomposedDual(mesh, separate);
 	}
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	auto e2t = [&] (eslocal element) {
+		return std::lower_bound(mesh._elems->distribution.begin(), mesh._elems->distribution.end(), element + 1) - mesh._elems->distribution.begin() - 1;
+	};
+
+	std::vector<std::vector<int> > part(threads);
+	// thread x partID x eID from other part
+	std::vector<std::vector<std::vector<eslocal> > > neighElem(threads);
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		part[t].resize(mesh._elems->distribution[t + 1] - mesh._elems->distribution[t], -1);
+		std::vector<eslocal> stack;
+		eslocal current, target;
+		int partCounter = 0;
+
+		for (size_t i = mesh._elems->distribution[t]; i < mesh._elems->distribution[t + 1]; ++i) {
+			if (part[t][i - mesh._elems->distribution[t]] == -1) {
+				neighElem[t].push_back(std::vector<eslocal>(threads, -1));
+				stack.push_back(i);
+				part[t][i - mesh._elems->distribution[t]] = partCounter;
+				while (stack.size()) {
+					current = stack.back();
+					stack.pop_back();
+					auto neighs = mesh._elems->decomposedDual->cbegin() + current;
+					for (auto e = neighs->begin(); e != neighs->end(); ++e) {
+						target = e2t(*e);
+						if (target == t) {
+							if (part[t][*e - mesh._elems->distribution[t]] == -1) {
+								stack.push_back(*e);
+								part[t][*e - mesh._elems->distribution[t]] = partCounter;
+							}
+						} else {
+							if (neighElem[t][partCounter][target] == -1) {
+								neighElem[t][partCounter][target] = *e;
+							}
+						}
+					}
+				}
+				partCounter++;
+			}
+		}
+	}
+
+	std::vector<std::vector<int> > partID(threads);
+	int nextID = 0;
+	{ // get parts together
+		auto reindexPart = [&] (int oldIndex, int newIndex) {
+			for (size_t t = 0; t < threads; t++) {
+				for (size_t i = 0; i < partID[t].size(); i++) {
+					if (partID[t][i] == oldIndex) {
+						partID[t][i] = newIndex;
+					}
+				}
+			}
+		};
+
+		for (size_t t = 0; t < threads; t++) {
+			partID[t].resize(neighElem[t].size(), -1);
+		}
+		int reindex;
+		std::vector<std::pair<size_t, eslocal> > stack; // thread x link to element
+		std::pair<size_t, eslocal> current;
+		for (size_t t = 0; t < threads; t++) {
+			for (size_t i = 0; i < neighElem[t].size(); i++) {
+				if (partID[t][i] == -1) {
+					reindex = -1;
+					partID[t][i] = nextID;
+					for (size_t n = 0; n < neighElem[t][i].size(); n++) {
+						if (neighElem[t][i][n] != -1) {
+							stack.push_back(std::make_pair(e2t(neighElem[t][i][n]), neighElem[t][i][n]));
+						}
+					}
+					while (stack.size()) {
+						current = stack.back();
+						stack.pop_back();
+						int npart = part[current.first][current.second - mesh._elems->distribution[current.first]];
+						if (partID[current.first][npart] == -1) {
+							partID[current.first][npart] = nextID;
+							for (size_t n = 0; n < neighElem[current.first][npart].size(); n++) {
+								if (neighElem[current.first][npart][n] != -1) {
+									stack.push_back(std::make_pair(e2t(neighElem[current.first][npart][n]), neighElem[current.first][npart][n]));
+								}
+							}
+						}
+						if (partID[current.first][npart] < nextID) {
+							reindex = partID[current.first][npart];
+						}
+					}
+					if (reindex != -1) {
+						reindexPart(nextID, reindex);
+					} else {
+						++nextID;
+					}
+				}
+			}
+		}
+	}
+
+	size_t edgeConst = 10000;
+
+	std::vector<eslocal> partition(mesh._elems->size);
+	if (nextID == 1) {
+
+		std::vector<eslocal> edgeWeights(mesh._elems->decomposedDual->datatarray().size());
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			auto dual = mesh._elems->decomposedDual->cbegin(t);
+			int material;
+			NewElement::TYPE type;
+
+			size_t edgeIndex = mesh._elems->decomposedDual->datatarray().distribution()[t];
+			for (size_t e = mesh._elems->distribution[t]; e < mesh._elems->distribution[t + 1]; ++e, ++dual) {
+				for (auto neigh = dual->begin(); neigh != dual->end(); ++neigh) {
+					auto it = std::lower_bound(mesh._elems->IDs->datatarray().cbegin(), mesh._elems->IDs->datatarray().cend(), *neigh);
+					material = mesh._elems->material->datatarray()[it - mesh._elems->IDs->datatarray().cbegin()];
+					type = mesh._elems->epointers->datatarray()[it - mesh._elems->IDs->datatarray().cbegin()]->type;
+					edgeWeights[edgeIndex] = 6 * edgeConst + 1;
+
+					if (!(separate & TFlags::SEPARATE::ETYPES)) { // dual is already decomposed if separate::ETYPES is true
+						if (mesh._elems->epointers->datatarray()[e]->type != type) {
+							edgeWeights[edgeIndex] -= 4 * edgeConst;
+						}
+					}
+					if (!(separate & TFlags::SEPARATE::MATERIALS)) { // dual is already decomposed if separate::MATERIALS is true
+						if (mesh._elems->material->datatarray()[e] != material) {
+							edgeWeights[edgeIndex] -= 2 * edgeConst;
+						}
+					}
+					edgeIndex++;
+				}
+			}
+		}
+
+		ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "Transformation::METIS::KWay started.";
+		METIS::call(
+				mesh._elems->size,
+				mesh._elems->decomposedDual->boundarytaaray().data(), mesh._elems->decomposedDual->datatarray().data(),
+				0, NULL, edgeWeights.data(),
+				parts, partition.data());
+		ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::METIS::KWay finished.";
+
+	} else { // non-continuous dual graph
+		// thread x part x elements
+		std::vector<std::vector<std::vector<eslocal> > > tdecomposition(threads, std::vector<std::vector<eslocal> >(nextID));
+		std::vector<std::vector<eslocal> > tdualsize(threads, std::vector<eslocal>(nextID));
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			auto dual = mesh._elems->decomposedDual->boundarytaaray();
+			for (size_t i = 0, e = mesh._elems->distribution[t]; e < mesh._elems->distribution[t + 1]; ++e, ++i) {
+				tdecomposition[t][partID[t][part[t][i]]].push_back(e);
+				tdualsize[t][partID[t][part[t][i]]] += dual[e + 1] - dual[e];
+			}
+		}
+		std::vector<std::vector<eslocal> > foffsets(nextID), noffsets(nextID);
+		std::vector<eslocal> partoffset(nextID);
+		#pragma omp parallel for
+		for (size_t p = 0; p < nextID; p++) {
+			foffsets[p].push_back(0);
+			noffsets[p].push_back(0);
+			for (size_t t = 1; t < threads; t++) {
+				foffsets[p].push_back(tdecomposition[0][p].size());
+				noffsets[p].push_back(tdualsize[0][p]);
+				tdecomposition[0][p].insert(tdecomposition[0][p].end(), tdecomposition[t][p].begin(), tdecomposition[t][p].end());
+				tdualsize[0][p] += tdualsize[t][p];
+			}
+		}
+		for (size_t p = 1; p < nextID; p++) {
+			partoffset[p] = partoffset[p - 1] + tdecomposition[0][p - 1].size();
+		}
+
+		std::vector<std::vector<eslocal> > frames(nextID), neighbors(nextID), edgeWeights(nextID);
+		#pragma omp parallel for
+		for (size_t p = 0; p < nextID; p++) {
+			frames[p].resize(1 + tdecomposition[0][p].size());
+			neighbors[p].resize(tdualsize[0][p]);
+			edgeWeights[p].resize(tdualsize[0][p]);
+		}
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			auto dual = mesh._elems->decomposedDual->cbegin(t);
+			size_t partindex;
+			int material;
+			NewElement::TYPE type;
+			std::vector<eslocal> foffset(nextID), noffset(nextID), edgeIndices(nextID);
+			for (size_t p = 0; p < nextID; p++) {
+				foffset[p] = foffsets[p][t];
+				edgeIndices[p] = noffset[p] = noffsets[p][t];
+			}
+
+			for (size_t i = 0, e = mesh._elems->distribution[t]; e < mesh._elems->distribution[t + 1]; ++e, ++i, ++dual) {
+				partindex = partID[t][part[t][i]];
+
+				frames[partindex][++foffset[partindex]] = dual->size();
+				if (i) {
+					frames[partindex][foffset[partindex]] += frames[partindex][foffset[partindex] - 1];
+				} else {
+					frames[partindex][foffset[partindex]] += noffset[partindex];
+				}
+				auto node = dual->begin();
+				for (size_t n = frames[partindex][foffset[partindex]] - dual->size(); n < frames[partindex][foffset[partindex]]; ++n, ++node) {
+					neighbors[partindex][n] = std::lower_bound(tdecomposition[0][partindex].begin(), tdecomposition[0][partindex].end(), *node) - tdecomposition[0][partindex].begin();
+
+					auto it = std::lower_bound(mesh._elems->IDs->datatarray().cbegin(), mesh._elems->IDs->datatarray().cend(), *node);
+
+					material = mesh._elems->material->datatarray()[it - mesh._elems->IDs->datatarray().cbegin()];
+					type = mesh._elems->epointers->datatarray()[it - mesh._elems->IDs->datatarray().cbegin()]->type;
+					edgeWeights[partindex][edgeIndices[partindex]] = 6 * edgeConst + 1;
+
+					if (!(separate & TFlags::SEPARATE::ETYPES)) { // dual is already decomposed if separate::ETYPES is true
+						if (mesh._elems->epointers->datatarray()[e]->type != type) {
+							edgeWeights[partindex][edgeIndices[partindex]] -= 4 * edgeConst;
+						}
+					}
+					if (!(separate & TFlags::SEPARATE::MATERIALS)) { // dual is already decomposed if separate::MATERIALS is true
+						if (mesh._elems->material->datatarray()[e] != material) {
+							edgeWeights[partindex][edgeIndices[partindex]] -= 2 * edgeConst;
+						}
+					}
+
+					edgeIndices[partindex]++;
+				}
+			}
+		}
+
+//		double averageDomainSize = _elements.size() / (double)parts;
+//		std::vector<size_t> bPart(blocks.size() - 1);
+//		size_t bParts = 0;
+//		for (size_t b = 0; b < blocks.size() - 1; b++) {
+//			bPart[b] = std::round((blocks[b + 1] - blocks[b]) / averageDomainSize);
+//			bParts += bPart[b];
+//		}
+//		while (bParts < parts) {
+//			(*std::max_element(bPart.begin(), bPart.end()))++;
+//			bParts++;
+//		}
+//		while (bParts > parts) {
+//			(*std::max_element(bPart.begin(), bPart.end()))--;
+//			bParts--;
+//		}
+//		for (size_t b = 0; b < bPart.size(); b++) {
+//			if (bPart[b] == 0) {
+//				bPart[b]++;
+//			}
+//		}
+//		bParts = 0;
+//		for (size_t b = 0; b < blocks.size() - 1; b++) {
+//			std::vector<eslocal> bPartition = getPartition(blocks[b], blocks[b + 1], bPart[b]);
+//			std::for_each(bPartition.begin(), bPartition.end(), [&] (eslocal &e) { e += bParts; });
+//			ePartition.insert(ePartition.end(), bPartition.begin(), bPartition.end());
+//			bParts += bPart[b];
+//			_continuousPartId.insert(_continuousPartId.end(), bPart[b], b);
+//		}
+//		parts = bParts;
+
+		std::vector<eslocal> pparts(nextID);
+
+		double averageDomainSize = mesh._elems->size / (double)parts;
+		size_t partsCounter = 0;
+		for (size_t p = 0; p < nextID; p++) {
+			partsCounter += pparts[p] = std::round((frames[p].size() - 1) / averageDomainSize);
+		}
+		while (partsCounter < parts) {
+			(*std::max_element(pparts.begin(), pparts.end()))++;
+			partsCounter++;
+		}
+		while (partsCounter > parts) {
+			(*std::max_element(pparts.begin(), pparts.end()))--;
+			partsCounter--;
+		}
+		for (size_t b = 0; b < pparts.size(); b++) {
+			if (pparts[b] == 0) {
+				pparts[b]++;
+			}
+		}
+
+		ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "Transformation::METIS::KWay started.";
+		#pragma omp parallel for
+		for (size_t p = 0; p < nextID; p++) {
+			METIS::call(
+					frames[p].size() - 1,
+					frames[p].data(), neighbors[p].data(),
+					0, NULL, edgeWeights[p].data(),
+					pparts[p], partition.data() + partoffset[p]);
+
+			for (size_t i = 0; i < frames[p].size() - 1; ++i) {
+				partition[partoffset[p] + i] += parts * p;
+			}
+		}
+		ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::METIS::KWay finished.";
+	}
+
+
+
+	// std::cout << "partition: " << partition;
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::decomposition of the mesh finished.";
 }

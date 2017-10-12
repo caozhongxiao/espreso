@@ -48,7 +48,7 @@ esglobal ParMETIS::call(
 					&edgecut, partition,
 					&communication)) {
 
-				ESINFO(ERROR) << "METIS_ERROR while partitiate mesh to MPI processes by KWay utilizing coordinates.";
+				ESINFO(ERROR) << "PARMETIS_ERROR while partitiate mesh to MPI processes by KWay utilizing coordinates.";
 			}
 		} else {
 			if (METIS_OK != ParMETIS_V3_PartKway(
@@ -61,7 +61,7 @@ esglobal ParMETIS::call(
 					&edgecut, partition,
 					&communication)) {
 
-				ESINFO(ERROR) << "METIS_ERROR while partitiate mesh to MPI processes by KWay utilizing coordinates.";
+				ESINFO(ERROR) << "PARMETIS_ERROR while partitiate mesh to MPI processes by KWay utilizing coordinates.";
 			}
 		}
 		break;
@@ -77,7 +77,7 @@ esglobal ParMETIS::call(
 				&edgecut, partition,
 				&communication)) {
 
-			ESINFO(ERROR) << "METIS_ERROR while refine mesh partition to MPI processes by KWay.";
+			ESINFO(ERROR) << "PARMETIS_ERROR while refine mesh partition to MPI processes by KWay.";
 		}
 		break;
 
@@ -92,7 +92,7 @@ esglobal ParMETIS::call(
 				&edgecut, partition,
 				&communication)) {
 
-			ESINFO(ERROR) << "METIS_ERROR while adaptive repartition mesh to MPI processes by KWay.";
+			ESINFO(ERROR) << "PARMETIS_ERROR while adaptive repartition mesh to MPI processes by KWay.";
 		}
 		break;
 

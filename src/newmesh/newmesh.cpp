@@ -244,6 +244,7 @@ NewMesh::NewMesh(Mesh &mesh)
 	Transformation::partitiate(*this, 4, TFlags::SEPARATE::MATERIALS);
 
 	MPI_Barrier(environment->MPICommunicator);
+	MPI_Finalize();
 	exit(0);
 }
 

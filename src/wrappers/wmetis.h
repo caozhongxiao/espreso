@@ -6,11 +6,11 @@ namespace espreso {
 
 struct METIS {
 
-	static esglobal call(
-			esglobal verticesCount,
-			esglobal *eframes, esglobal *eneighbors,
-			esglobal verticesWeightCount, esglobal *verticesWeights, esglobal *edgeWeights,
-			esglobal parts, esglobal *partition);
+	static eslocal call(
+			eslocal verticesCount,
+			eslocal *eframes, eslocal *eneighbors,
+			eslocal verticesWeightCount, eslocal *verticesWeights, eslocal *edgeWeights,
+			eslocal parts, eslocal *partition);
 
 };
 

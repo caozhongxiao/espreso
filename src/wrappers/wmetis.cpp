@@ -6,16 +6,16 @@
 
 using namespace espreso;
 
-esglobal METIS::call(
-		esglobal verticesCount,
-		esglobal *eframes, esglobal *eneighbors,
-		esglobal verticesWeightCount, esglobal *verticesWeights, esglobal *edgeWeights,
-		esglobal parts, esglobal *partition)
+eslocal METIS::call(
+		eslocal verticesCount,
+		eslocal *eframes, eslocal *eneighbors,
+		eslocal verticesWeightCount, eslocal *verticesWeights, eslocal *edgeWeights,
+		eslocal parts, eslocal *partition)
 {
 
 	verticesWeightCount = std::max(1, verticesWeightCount);
 
-	esglobal options[METIS_NOPTIONS];
+	eslocal options[METIS_NOPTIONS];
 	METIS_SetDefaultOptions(options);
 
 	// HEURISTICS
@@ -37,15 +37,18 @@ esglobal METIS::call(
 	// options[METIS_OPTION_NCUTS]     = 1;
 	// options[METIS_OPTION_SEED]      = 0;
 
-	esglobal edgecut = 0;
+	eslocal edgecut = 0;
 
 	if (parts > 1) {
-		METIS_PartGraphKway(
+		if (METIS_OK != METIS_PartGraphKway(
 				&verticesCount, &verticesWeightCount,
 				eframes, eneighbors,
 				verticesWeights, NULL, edgeWeights,
 				&parts, NULL, NULL,
-				options, &edgecut, partition);
+				options, &edgecut, partition)) {
+
+			ESINFO(ERROR) << "METIS_ERROR while KWay decomposition.";
+		}
 	} else {
 		std::fill(partition, partition + verticesCount, 0);
 	}

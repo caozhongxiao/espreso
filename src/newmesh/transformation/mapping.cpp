@@ -407,8 +407,14 @@ void Transformation::computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separ
 									(!(separate & TFlags::SEPARATE::ETYPES) || epointer[e]->type == epointer[it - IDs.begin()]->type)
 								) {
 
-								++dualDistribution[t].back();
-								dualData[t].push_back(neighElementIDs[neigh]);
+
+								if (
+										(e  < mesh._elems->size / 2 && it - IDs.begin()  < mesh._elems->size / 2) ||
+										(e >= mesh._elems->size / 2 && it - IDs.begin() >= mesh._elems->size / 2)) {
+
+									++dualDistribution[t].back();
+									dualData[t].push_back(neighElementIDs[neigh]);
+								}
 							}
 						}
 					}
