@@ -11,15 +11,12 @@
 #include "../../basis/utilities/utils.h"
 #include "../../basis/utilities/communication.h"
 
-#include "../../wrappers/wmetis.h"
 #include "../../wrappers/wparmetis.h"
 
 #include "../../config/ecf/environment.h"
 
-#include <iostream>
 #include <algorithm>
 #include <numeric>
-#include <fstream>
 
 #include "../output.h"
 
@@ -103,14 +100,17 @@ void Transformation::reclusterize(NewMesh &mesh)
 		}
 	}
 
-	esglobal edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_PartKway,
+	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ')<< "Transformation::ParMETIS::KWay started.";
+	ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_PartKway,
 		edistribution.data(),
 		mesh._elems->dual->boundarytaaray().data(), mesh._elems->dual->datatarray().data(),
 		0, NULL, // 3, mesh._elems->coordinates->datatarray(),
 		0, NULL, edgeWeights.data(),
 		partition.data()
 	);
+	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ')<< "Transformation::ParMETIS::KWay finished.";
 
+	// comment out because weird ParMetis behavior
 //	ESINFO(TVERBOSITY) << Info::plain() << "Using ParMETIS to improve edge-cuts: " << edgecut;
 //	esglobal prev = 2 * edgecut;
 //	while (1.01 * edgecut < prev) {
@@ -129,6 +129,17 @@ void Transformation::reclusterize(NewMesh &mesh)
 	Transformation::exchangeElements(mesh, partition);
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::re-distribution of the mesh to processes finished.";
+}
+
+void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE separate)
+{
+	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "Transformation::decomposition of the mesh started.";
+
+	if (mesh._elems->decomposedDual == NULL) {
+		Transformation::computeDecomposedDual(mesh, separate);
+	}
+
+	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::decomposition of the mesh finished.";
 }
 
 void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal> &partition)
@@ -636,16 +647,6 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	delete mesh._halo;
 	mesh._halo = new ElementStore();
 	mesh._neighbours = neighbors;
-
-	std::ofstream ose("elements" + std::to_string(environment->MPIrank) + ".txt");
-	for (auto e = mesh._elems->nodes->cbegin(); e != mesh._elems->nodes->cend(); ++e) {
-		ose << e->size() << ": ";
-		for (auto n = e->begin(); n != e->end(); ++n) {
-			ose << *n << " ";
-		}
-		ose << "\n";
-	}
-	ose.close();
 
 	delete elements;
 	delete nodes;

@@ -25,8 +25,6 @@ struct Transformation {
 	static void computeElementCenters(NewMesh &mesh);
 
 	static void reclusterize(NewMesh &mesh);
-
-
 	static void partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE separate);
 private:
 	static size_t level;

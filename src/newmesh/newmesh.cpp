@@ -241,7 +241,9 @@ NewMesh::NewMesh(Mesh &mesh)
 //	Transformation::computeDecomposedDual(*this, TFlags::SEPARATE::MATERIALS | TFlags::SEPARATE::ETYPES);
 //	Transformation::computeElementCenters(*this);
 	Transformation::reclusterize(*this);
+	Transformation::partitiate(*this, 4, TFlags::SEPARATE::MATERIALS);
 
+	MPI_Barrier(environment->MPICommunicator);
 	exit(0);
 }
 

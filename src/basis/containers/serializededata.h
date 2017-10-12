@@ -56,22 +56,26 @@ public:
 			while (++tt && sizes[t] < distribution[t + 1] - distribution[t]) {
 				size_t diff = distribution[t + 1] - distribution[t] - sizes[t];
 				if (diff < sizes[tt]) {
-					size_t ediff = *(boundaries[tt].begin() + diff - 1) - boundaries[tt - 1].back();
+					size_t ttt = 0;
+					while (boundaries[tt - ++ttt].size() == 0);
+					size_t ediff = *(boundaries[tt].begin() + diff - 1) - boundaries[tt - ttt].back();
 					data[t].insert(data[t].end(), data[tt].begin(), data[tt].begin() + ediff);
 					data[tt].erase(data[tt].begin(), data[tt].begin() + ediff);
 
 					boundaries[t].insert(boundaries[t].end(), boundaries[tt].begin(), boundaries[tt].begin() + diff);
 					boundaries[tt].erase(boundaries[tt].begin(), boundaries[tt].begin() + diff);
+					sizes[t]  += diff;
+					sizes[tt] -= diff;
 				} else {
+					sizes[t]  += boundaries[tt].size();
+					sizes[tt] -= boundaries[tt].size();
+
 					data[t].insert(data[t].end(), data[tt].begin(), data[tt].end());
 					data[tt].clear();
 
 					boundaries[t].insert(boundaries[t].end(), boundaries[tt].begin(), boundaries[tt].end());
 					boundaries[tt].clear();
-
 				}
-				sizes[t]  += diff;
-				sizes[tt] -= diff;
 			}
 			if (sizes[t] > distribution[t + 1] - distribution[t]) {
 				size_t diff = sizes[t] - (distribution[t + 1] - distribution[t]);
@@ -219,6 +223,15 @@ public:
 		}
 	}
 
+	void permute(const std::vector<eslocal> &permutation)
+	{
+		if (_eboundaries.size()) {
+			permuteNonUniformData(permutation);
+		} else {
+			permuteUniformData(permutation);
+		}
+	}
+
 	iterator       begin()        { return _iterator.front(); }
 	const_iterator begin()  const { return _constiterator.front(); }
 	const_iterator cbegin() const { return _constiterator.front(); }
@@ -259,6 +272,61 @@ private:
 			_iterator[t] += _edata.distribution()[t] / edatasize;
 			_constiterator[t] += _edata.distribution()[t] / edatasize;
 		}
+	}
+
+	void permuteUniformData(const std::vector<eslocal> &permutation)
+	{
+		std::vector<std::vector<TEData> > pdata(threads());
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads(); t++) {
+			for (size_t i = _edata.distribution()[t]; i < _edata.distribution()[t + 1]; ++i) {
+				pdata[t].push_back(_edata.data()[permutation[i]]);
+			}
+		}
+		_edata = tarray<TEData>(pdata);
+	}
+
+	void permuteNonUniformData(const std::vector<eslocal> &permutation)
+	{
+		std::vector<std::vector<TEBoundaries> > pboundaries(threads());
+		std::vector<std::vector<TEData> > pdata(threads());
+
+		pboundaries.front().push_back(0);
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads(); t++) {
+			for (size_t e = _eboundaries.distribution()[t]; e < _eboundaries.distribution()[t + 1] - 1; ++e) {
+				pboundaries[t].push_back(_eboundaries.data()[permutation[e] + 1] - _eboundaries.data()[permutation[e]]);
+				for (size_t i = _eboundaries.data()[permutation[e]]; i < _eboundaries.data()[permutation[e] + 1]; ++i) {
+					pdata[t].push_back(_edata.data()[i]);
+				}
+				if (pboundaries[t].size() > 1) {
+					pboundaries[t].back() += *(pboundaries[t].end() - 2);
+				}
+			}
+		}
+
+		std::vector<size_t> offsets;
+		for (size_t t = 0; t < pboundaries.size(); t++) {
+			offsets.push_back(pboundaries[t].size() ? pboundaries[t].back() : 0);
+		}
+
+		TEBoundaries sum = 0;
+		for (size_t i = 0; i < offsets.size(); i++) {
+			TEBoundaries tmp = offsets[i];
+			offsets[i] = sum;
+			sum += tmp;
+		}
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < pboundaries.size(); t++) {
+			size_t offset = offsets[t];
+			for (size_t i = 0; i < pboundaries[t].size(); i++) {
+				pboundaries[t][i] += offset;
+			}
+		}
+
+		_eboundaries = tarray<TEBoundaries>(pboundaries);
+		_edata = tarray<TEData>(pdata);
 	}
 
 	tarray<TEBoundaries> _eboundaries;
