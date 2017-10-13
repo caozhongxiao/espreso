@@ -36,7 +36,13 @@ Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Step &step, Matri
 
 Matrices TransientFirstOrderImplicit::reassembleStructuralMatrices(Step &step, Matrices matrices)
 {
+	if (!step.isInitial()) {
+		matrices &= ~(Matrices::K | Matrices::M | Matrices::B1 | Matrices::B1c | Matrices::B1duplicity);
+	}
+
 	_assembler.updateMatrices(step, matrices);
+
+
 	if (matrices & (Matrices::K | Matrices::M)) {
 		_assembler.keepK(step);
 		_assembler.sum(

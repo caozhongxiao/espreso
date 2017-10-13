@@ -439,6 +439,7 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 
     if (cluster.USE_KINV == 0) {
 //    	 time_eval.timeEvents[0].start();
+    	SEQ_VECTOR <bool> is_empty ( cluster.x_prim_cluster1.size(), true);
  		#pragma omp parallel for
 		for (size_t d = 0; d < cluster.domains.size(); d++) {
 			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d]->B1_comp_dom.rows, 0.0 );
@@ -455,6 +456,7 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 					x_in_tmp[iter_lm] = in_values[iter_in];
 					iter_in++;
 					iter_lm++;
+					is_empty[d] = false;
 				} else {
 					if (cluster.domains[d]->lambda_map_sub[iter_lm] > in_indices[iter_in]) {
 						iter_in++;
@@ -466,13 +468,21 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 
 			} while (iter_lm != cluster.domains[d]->lambda_map_sub.size() && iter_in != in_indices.size() );
 
-			cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'T');
+			if (!is_empty[d])
+				cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'T');
 		}
 //         time_eval.timeEvents[0].end();
 
 //         time_eval.timeEvents[1].start();
         if (cluster.USE_HFETI == 0) {
-        	cluster.multKplusFETI (cluster.x_prim_cluster1);
+        	//cluster.multKplusFETI (cluster.x_prim_cluster1);
+
+			#pragma omp parallel for
+			for (size_t d = 0; d < cluster.domains.size(); d++) {
+				if (!is_empty[d])
+					cluster.domains[d]->multKplusLocal(*cluster.x_prim_cluster1[d]);
+			}
+
 		} else {
     		cluster.multKplusHFETI(cluster.x_prim_cluster1);
         }
@@ -484,11 +494,13 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 
 		SEQ_VECTOR < double > y_out_tmp;
 		for (size_t d = 0; d < cluster.domains.size(); d++) {
-			y_out_tmp.resize( cluster.domains[d]->B1_comp_dom.rows );
-			cluster.domains[d]->B1_comp_dom.MatVec (*cluster.x_prim_cluster1[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+			if (!is_empty[d]) {
+				y_out_tmp.resize( cluster.domains[d]->B1_comp_dom.rows );
+				cluster.domains[d]->B1_comp_dom.MatVec (*cluster.x_prim_cluster1[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
 
-			for (size_t i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++)
-				cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += y_out_tmp[i];
+				for (size_t i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++)
+					cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += y_out_tmp[i];
+			}
 		}
 
 //		time_eval.timeEvents[2].end();

@@ -5547,8 +5547,8 @@ void IterSolverBase::ConjProjector_Inv (TimeEval & time_eval, SuperCluster & clu
 		}
 	}
 	 time_eval.timeEvents[0].end();
-
 	//TODO: Udelat poradne
+
 	 time_eval.timeEvents[1].start();
 	SEQ_VECTOR<int> ker_size_per_clusters(environment->MPIsize,0);
 	MPI_Allgather(&d_local_size, 1, MPI_INT, &ker_size_per_clusters[0], 1, MPI_INT, environment->MPICommunicator );
