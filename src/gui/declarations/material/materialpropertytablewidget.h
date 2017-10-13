@@ -3,7 +3,7 @@
 
 #include <QWidget>
 #include <QVector>
-#include "../../../../config/configuration.h"
+#include "../../../config/configuration.h"
 #include "../../elements/isavableobject.h"
 #include "../../elements/ivalidatableobject.h"
 #include "../datatypeeditwidget.h"

@@ -5,7 +5,7 @@
 #include <QFrame>
 #include <QVBoxLayout>
 #include <QVector>
-#include "../../../../config/ecf/material/material.h"
+#include "../../../config/ecf/material/material.h"
 #include "../../elements/isavableobject.h"
 #include "../../elements/ivalidatableobject.h"
 

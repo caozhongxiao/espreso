@@ -1,7 +1,7 @@
 #include "variabledialog.h"
 #include "ui_variabledialog.h"
 
-#include "../../data/common.h"
+#include "../data/common.h"
 #include <QMessageBox>
 #include "doubletabledelegate.h"
 #include <QPair>

@@ -1,9 +1,9 @@
 #include "declarationswidget.h"
 #include "ui_declarationswidget.h"
 
-#include "declarations/variabledialog.h"
+#include "variabledialog.h"
 #include "../data/variable.h"
-#include "declarations/material/materialdialog.h"
+#include "material/materialdialog.h"
 #include "../config/ecf/material/material.h"
 
 #include <QStandardItemModel>

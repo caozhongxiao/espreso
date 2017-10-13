@@ -4,7 +4,7 @@
 #include "../elements/expressionedit.h"
 #include "../validators/validatordelegate.h"
 #include "../elements/comboboxdelegate.h"
-#include "../../../basis/expression/expression.h"
+#include "../../basis/expression/expression.h"
 
 #include <QDebug>
 

@@ -2,7 +2,7 @@
 #define DOUBLETABLEDELEGATE_H
 
 #include <QItemDelegate>
-#include "../../data/common.h"
+#include "../data/common.h"
 
 class DoubleTableDelegate : public QItemDelegate
 {

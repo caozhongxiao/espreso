@@ -4,7 +4,7 @@
 #include <QWidget>
 #include <QFormLayout>
 #include <QLineEdit>
-#include "../../../config/configuration.h"
+#include "../../config/configuration.h"
 #include "isavableobject.h"
 #include "ivalidatableobject.h"
 

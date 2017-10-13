@@ -2,7 +2,7 @@
 #define PIECEWISETYPEWIDGET_H
 
 #include "tablewidget.h"
-#include "../../data/datatype.h"
+#include "../data/datatype.h"
 
 namespace espreso
 {

@@ -464,11 +464,11 @@ QVector3D MeshWidget::pickColor(float angle)
     float b;
     float g;
 
-    while (theta < 0)
-        theta += 360;
+//    while (theta < 0)
+//        theta += 360;
 
-    while (theta >= 360)
-        theta -= 360;
+//    while (theta >= 360)
+//        theta -= 360;
 
     if (theta < 120) {
         g = theta / 120;

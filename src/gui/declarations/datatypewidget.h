@@ -4,9 +4,9 @@
 #include <QWidget>
 #include <QStandardItemModel>
 
-#include "../../data/datatype.h"
-#include "../../data/variable.h"
-#include "../../data/common.h"
+#include "../data/datatype.h"
+#include "../data/variable.h"
+#include "../data/common.h"
 
 namespace Ui {
 class DataTypeWidget;
