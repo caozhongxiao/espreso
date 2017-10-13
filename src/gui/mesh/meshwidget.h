@@ -52,6 +52,7 @@ namespace espreso {
 
         QList<QString> regions();
         void changeRegionState(const QString&);
+        QVector3D pickColor(float angle);
 
     signals:
         void regionClicked(const QString& region);

@@ -83,8 +83,9 @@ void MeshWidget::gatherRegions()
     }
 
     QMapIterator<QString, QVector<float> > it(regions);
-//    qint32 colorbits = 10;
-    qsrand(environment->MPIrank);
+    float regionsNum = regions.size();
+    float offset = 360.0f / regionsNum;
+    float step = 0.0f;
 
     while (it.hasNext())
     {
@@ -112,15 +113,8 @@ void MeshWidget::gatherRegions()
         if (environment->MPIrank == 0)
         {
             MeshRegion reg;
-//            colorbits += 255;
-//            float red = (colorbits & 0x00FF0000) >> 16;
-//            float green = (colorbits & 0x0000FF00) >> 8;
-//            float blue = (colorbits & 0x000000FF);
-            float red = (qrand() % 256) / 255.0f;
-            float green = qrand() % 256 / 255.0f;
-            float blue = qrand() % 256 / 255.0f;
-            qInfo() << red << green << blue;
-            reg.color = QVector3D(red, green, blue);
+            reg.color = this->pickColor(step);
+            step += offset;
             reg.points = coordinates;
             this->m_regions.insert(it.key(), reg);
         }
@@ -461,4 +455,34 @@ void MeshWidget::changeRegionState(const QString& region)
     this->m_regions[region].isActive = !_isActive;
 
     this->update();
+}
+
+QVector3D MeshWidget::pickColor(float angle)
+{
+    float theta = angle;
+    float r;
+    float b;
+    float g;
+
+    while (theta < 0)
+        theta += 360;
+
+    while (theta >= 360)
+        theta -= 360;
+
+    if (theta < 120) {
+        g = theta / 120;
+        r = 1 - g;
+        b = 0;
+    } else if (theta < 240) {
+        b = (theta - 120) / 120;
+        g = 1 - b;
+        r = 0;
+    } else {
+        r = (theta - 240) / 120;
+        b = 1 - r;
+        g = 0;
+    }
+
+    return QVector3D(r, g, b);
 }
