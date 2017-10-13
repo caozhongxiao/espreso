@@ -242,7 +242,10 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local( TimeEval & time_eval, SuperClu
 
 //	 time_eval.totalTime.start();
 
-//    if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
+    if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
+
+    	ESINFO(GLOBAL_ERROR) << "Hybrid FETI not supported in apply_A_l_comp_dom_B_P_local";
+
 //         time_eval.timeEvents[0].start();
 //        #pragma omp parallel for
 //        for (size_t d = 0; d < cluster.domains.size(); d++) {
@@ -275,10 +278,13 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local( TimeEval & time_eval, SuperClu
 //        }
 //         time_eval.timeEvents[2].end();
 //
-//    }
+    }
 //
 //
-//    if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
+    if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
+
+    	ESINFO(GLOBAL_ERROR) << "Local Schur Complement (LSC) method not supported in apply_A_l_comp_dom_B_P_local";
+
 //         time_eval.timeEvents[0].start();
 //         time_eval.timeEvents[0].end();
 //
@@ -299,7 +305,7 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local( TimeEval & time_eval, SuperClu
 //                cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += cluster.domains[d]->compressed_tmp[i];
 //        }
 //         time_eval.timeEvents[2].end();
-//    }
+    }
 
 
     if (cluster.USE_KINV == 0) {
@@ -365,7 +371,10 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 
 //	 time_eval.totalTime.start();
 
-//    if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
+    if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
+
+    	ESINFO(GLOBAL_ERROR) << "Hybrid FETI not supported in apply_A_l_comp_dom_B_P_local_sparse";
+
 //         time_eval.timeEvents[0].start();
 //        #pragma omp parallel for
 //        for (size_t d = 0; d < cluster.domains.size(); d++) {
@@ -398,10 +407,13 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 //        }
 //         time_eval.timeEvents[2].end();
 //
-//    }
-//
-//
-//    if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
+    }
+
+
+    if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
+
+    	ESINFO(GLOBAL_ERROR) << "Local Schur Complement (LSC) method not supported in apply_A_l_comp_dom_B_P_local_sparse";
+
 //         time_eval.timeEvents[0].start();
 //         time_eval.timeEvents[0].end();
 //
@@ -422,7 +434,7 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 //                cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += cluster.domains[d]->compressed_tmp[i];
 //        }
 //         time_eval.timeEvents[2].end();
-//    }
+    }
 
 
     if (cluster.USE_KINV == 0) {
