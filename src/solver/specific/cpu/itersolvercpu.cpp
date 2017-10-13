@@ -350,9 +350,7 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local( TimeEval & time_eval, SuperClu
 		for (size_t i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++) {
 
 			y_out_tmp [ cluster.domains[d]->lambda_map_sub[i] ]   +=  y_out [ cluster.domains[d]->lambda_map_sub_local[i] ];
-																	  y_out [ cluster.domains[d]->lambda_map_sub_local[i] ] = 0.0;
-
-			//cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += y_out_tmp[i];
+			y_out [ cluster.domains[d]->lambda_map_sub_local[i] ] = 0.0;
 
 		}
 	}
@@ -363,8 +361,6 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local( TimeEval & time_eval, SuperClu
 
 }
 
-
-//void IterSolverCPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
 void IterSolverCPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<eslocal> & in_indices, SEQ_VECTOR<double> & in_values, SEQ_VECTOR<eslocal> & out_indices, SEQ_VECTOR<double> & out_values) {
 
 //	 time_eval.totalTime.start();
@@ -440,24 +436,23 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 
 			eslocal iter_in = 0;
 			eslocal iter_lm = 0;
-			//for (size_t i = 0; i < cluster.domains[d]->lambda_map_sub.size(); i++) {
+
 			do {
-
-				if (cluster.domains[d]->lambda_map_sub[iter_lm] > in_indices[iter_in])
-					iter_in++;
-
-				if (cluster.domains[d]->lambda_map_sub[iter_lm] < in_indices[iter_in])
-					iter_lm++;
-
 
 				if (cluster.domains[d]->lambda_map_sub[iter_lm] == in_indices[iter_in]) {
 					x_in_tmp[iter_lm] = in_values[iter_in];
 					iter_in++;
 					iter_lm++;
+				} else {
+					if (cluster.domains[d]->lambda_map_sub[iter_lm] > in_indices[iter_in]) {
+						iter_in++;
+					} else {
+					//if (cluster.domains[d]->lambda_map_sub[iter_lm] < in_indices[iter_in])
+						iter_lm++;
+					}
 				}
 
-			} while (iter_lm < cluster.domains[d]->lambda_map_sub.size() && iter_in < in_indices.size() );
-
+			} while (iter_lm != cluster.domains[d]->lambda_map_sub.size() && iter_in != in_indices.size() );
 
 			cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'T');
 		}
@@ -487,32 +482,8 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 //		time_eval.timeEvents[2].end();
     }
 
-//     time_eval.timeEvents[3].start();
-    //All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, y_out);
-//     y_out = cluster.compressed_tmp;
-//     time_eval.timeEvents[3].end();
-
-// 	for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++)
-//		y_out[i] = y_out[i] * cluster.my_lamdas_ddot_filter[i];
-
-//	SEQ_VECTOR < double > y_out_tmp (x_in.size(), 0.0);
-//	for (size_t d = 0; d < cluster.domains.size(); d++) {
-//		for (size_t i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++) {
-//
-//			y_out_tmp [ cluster.domains[d]->lambda_map_sub[i] ]   +=  cluster.compressed_tmp [ cluster.domains[d]->lambda_map_sub_local[i] ];
-//
-//			cluster.compressed_tmp [ cluster.domains[d]->lambda_map_sub_local[i] ] = 0.0;
-//
-//			//cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += y_out_tmp[i];
-//
-//		}
-//	}
-//
-//	y_out = y_out_tmp;
-
 	out_indices = cluster.my_lamdas_indices;
 	out_values  = cluster.compressed_tmp;
-
 
 //     time_eval.totalTime.end();
 
