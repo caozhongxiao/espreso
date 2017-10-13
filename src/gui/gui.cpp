@@ -23,6 +23,8 @@
 
 #include "../input/loader.h"
 
+#include "mpi/mpi.h"
+
 using namespace espreso;
 
 template <typename Ttype>
@@ -88,129 +90,98 @@ int main(int argc, char *argv[])
     Mesh mesh;
     input::Loader::load(ecf, mesh, environment->MPIrank, environment->MPIsize);
 
+    if (environment->MPIrank == 0) MeshWidget::initOGL();
+    MeshWidget w(&mesh);
+    RegionPickerWidget rpw(&w);
+
+    if (environment->MPIrank == 0)
+    {
+        w.show();
+        rpw.show();
+    }
+
+
 //    for (size_t e = 0; e < mesh.elements().size(); e++) {
 //        mesh.elements()[e]->fillFaces();
 //    }
+
+//    QMap<QString, QVector<float> > regions;
+
 //    for (size_t e = 0; e < mesh.elements().size(); e++) {
-//    	std::cout << "element [" << e << "]:\n";
-//    	for (size_t f = 0; f < mesh.elements()[e]->faces(); f++) {
-//    		std::cout << "  face [" << f << "]:\n";
-//    		std::vector<std::vector<eslocal> > triangles = dynamic_cast<PlaneElement*>(mesh.elements()[e]->face(f))->triangularize();
-//    		for (size_t t = 0; t < triangles.size(); t++) {
-//    			std::cout << "    t [" << t << "]: ";
-//    			for (size_t n = 0; n < triangles[t].size(); n++) {
-//    				std::cout << triangles[t][n] << " ";
-//    			}
-//    			std::cout << "; ";
-//				for (size_t n = 0; n < triangles[t].size(); n++) {
-//                    std::cout << "[" << mesh.coordinates()[triangles[t][n]] << "] ";
-//				}
-//    			std::cout << "\n";
-//    		}
-//    	}
-//	}
 
-//    ModelWidget model;
-//    model.show();
-//    WorkflowWidget workflow;
-//    workflow.show();
-//    DeclarationsWidget declarations;
-//    declarations.show();
+//        for (size_t f = 0; f < mesh.elements()[e]->faces(); f++) {
+//            QVector<QString> regionNames;
+//            regionNames << QLatin1String("#global");
+//            if (mesh.elements()[e]->face(f)->regions().size())
+//            {
+//                regionNames.clear();
 
-//    TensorProperty p("Thermal Conductivity");
-//    QList<TensorPropertyModelItem> model1Items;
-//    model1Items << TensorPropertyModelItem("X component", "kg", "KXX", new ExpressionType("10"));
-//    TensorPropertyModel model1(1, "Isotropic", model1Items);
-//    QList<TensorPropertyModelItem> model2Items;
-//    model2Items << TensorPropertyModelItem("X component", "kg", "KXX", new ExpressionType("10"))
-//                << TensorPropertyModelItem("Y component", "kg", "KYY", new ExpressionType("10"))
-//                << TensorPropertyModelItem("Z component", "kg", "KZZ", new ExpressionType("10"));
-//    TensorPropertyModel model2(3, "Diagonal", model2Items);
-//    p.appendModel(model1);
-//    p.appendModel(model2);
+//                for (size_t r = 0; r < mesh.elements()[e]->face(f)->regions().size(); r++)
+//                {
+//                    QString regionName = QString::fromStdString(mesh.elements()[e]->face(f)->regions()[0]->name);
+//                    regionNames << regionName;
 
-//    ScalarProperty sp("Density", "kJ", "DENS", new ExpressionType("0"));
+//                    if (!regions.contains(regionName))
+//                    {
+//                        regions.insert(regionName, QVector<float>());
+//                    }
+//                }
+//            }
 
+//            std::vector<std::vector<eslocal> > triangles = dynamic_cast<PlaneElement*>(mesh.elements()[e]->face(f))->triangularize();
 
-//    QVector<TensorProperty> tensors;
-//    tensors << p;
-//    QVector<ScalarProperty> scalars;
-//    scalars << sp;
-//    MaterialPropertiesWidget w(tensors, scalars);
-//    w.show();
+//            for (size_t t = 0; t < triangles.size(); t++) {
 
+//                for (size_t n = 0; n < triangles[t].size(); n++) {
+//                    foreach (QString rn, regionNames)
+//                    {
+//                        regions[rn].push_back(mesh.coordinates()[triangles[t][n]].x);
+//                        regions[rn].push_back(mesh.coordinates()[triangles[t][n]].y);
+//                        regions[rn].push_back(mesh.coordinates()[triangles[t][n]].z);
+//                        regions[rn].push_back(0.0f);
+//                        regions[rn].push_back(1.0f);
+//                        regions[rn].push_back(0.0f);
+//                    }
+//                }
 
-//    Plot plot;
-//    plot.show();
-
-//    std::string val("x^2");
-//    ECFValueHolder<std::string> expr(val);
-//    expr.metadata.datatype.push_back(ECFDataType::EXPRESSION);
-//    DataTypeEditWidget w(expr);
-//    w.show();
-
-//    std::string exp{"switch {"
-//                    "case x < 0 : x;"
-//                    "case x >= 0 : x;"
-//                    "default : 0;"
-//                    "}"};
-//    std::string exp1{"if (x > 0 and x < 4) -1;"};
-//    std::vector<std::string> vars;
-//    vars.push_back("x");
-//    Expression e(exp1, vars);
-//    for (int i = 0; i < 5; ++i)
-//    {
-//        std::vector<double> neg{-i};
-//        std::vector<double> pos{i};
-//        double negV = e.evaluate(neg);
-//        double posV = e.evaluate(pos);
-//        std::cout << negV << " " << posV << std::endl;
+//            }
+//        }
 //    }
 
-//    ECFConfiguration ecf;
-//    printECF(ecf, 0);
+//    QMapIterator<QString, QVector<float> > it(regions);
 
-//    MaterialConfiguration mat;
-//    DeclarationsWidget dw;
-//    dw.show();
+//    QMap<QString, QVector<float> > gatheredRegions;
 
-    MeshWidget::initOGL();
-    MeshWidget w(&mesh);
-    w.show();
+//    while (it.hasNext())
+//    {
+//        it.next();
 
-    RegionPickerWidget rpw(&w);
-    rpw.show();
+//        int num = it.value().size();
+//        int nums[environment->MPIsize];
+//        MPI_Gather(&num, 1, MPI_INT, nums, 1, MPI_INT, 0, environment->MPICommunicator);
 
+//        int numsum = 0;
+//        int displs[environment->MPIsize];
+//        QVector<float> coordinates;
+//        if (environment->MPIrank == 0)
+//        {
+//            for (int i = 0; i < environment->MPIsize; i++)
+//            {
+//                displs[i] = numsum;
+//                numsum += nums[i];
+//            }
+//            coordinates.resize(numsum);
+//        }
 
-//    std::string val = "if (x > 0 and x < 4) -1;";
-//    ECFValueHolder<std::string> par(val);
-//    par.name = "dens";
-//    par.metadata.description.push_back("Density");
-//    par.metadata.unit = "kg/m^3";
+//        MPI_Gatherv(it.value().data(), num, MPI_FLOAT, coordinates.data(), nums, displs, MPI_FLOAT, 0, environment->MPICommunicator);
 
+//        if (environment->MPIrank == 0)
+//        {
+//            gatheredRegions.insert(it.key(), coordinates);
+//        }
+//    }
 
-//    MaterialPropertyTableWidget mptw;
-//    mptw.addProperty(par);
-//    mptw.show();
-
-//    std::string ifst = "if (x > 0 and x < 4) -1;";
-//    ECFValueHolder<std::string> expr(ifst);
-//    DataTypeEditWidget w(expr);
-//    w.show();
-//    std::string switchst = "switch {"
-//                           "case x == 1 : 2;"
-//                           "case x == 2 : 3;"
-//                           "default : 0;"
-//                           "}";
-//    ECFValueHolder<std::string> expr2(switchst);
-//    DataTypeEditWidget w1(expr2);
-//    w1.show();
-//    std::string expSt = "x^2";
-//    ECFValueHolder<std::string> expr3(expSt);
-//    DataTypeEditWidget w2(expr3);
-//    w2.show();
-
-    a.exec();
+    if (environment->MPIrank == 0) a.exec();
 
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Finalize();

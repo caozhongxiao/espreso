@@ -68,6 +68,8 @@ namespace espreso {
     private:
         Mesh* m_mesh;
 
+        void gatherRegions();
+
         float* m_triangles;
         QVector<MeshElement> m_elements;
         QVector<QVector<float> > m_rawelements;

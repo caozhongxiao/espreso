@@ -1,5 +1,8 @@
 #include "meshwidget.h"
 
+#include "../../config/ecf/environment.h"
+#include "mpi/mpi.h"
+
 using namespace espreso;
 
 void MeshWidget::initOGL()
@@ -19,17 +22,109 @@ MeshWidget::MeshWidget(Mesh* mesh, QWidget* parent) :
 {
     this->m_mesh = mesh;
 
-    for (size_t e = 0; e < m_mesh->elements().size(); e++) {
-        m_mesh->elements()[e]->fillFaces();
-    }
+    this->gatherRegions();
 
-    this->computeMesh();
+//    this->computeMesh();
 }
 
 MeshWidget::~MeshWidget()
 {
     delete this->m_basicProgram;
     delete this->m_clickProgram;
+}
+
+void MeshWidget::gatherRegions()
+{
+    for (size_t e = 0; e < m_mesh->elements().size(); e++) {
+        m_mesh->elements()[e]->fillFaces();
+    }
+
+    QMap<QString, QVector<float> > regions;
+
+    for (size_t e = 0; e < m_mesh->elements().size(); e++) {
+
+        for (size_t f = 0; f < m_mesh->elements()[e]->faces(); f++) {
+            QVector<QString> regionNames;
+            regionNames << QLatin1String("#global");
+            if (m_mesh->elements()[e]->face(f)->regions().size())
+            {
+                regionNames.clear();
+
+                for (size_t r = 0; r < m_mesh->elements()[e]->face(f)->regions().size(); r++)
+                {
+                    QString regionName = QString::fromStdString(m_mesh->elements()[e]->face(f)->regions()[0]->name);
+                    regionNames << regionName;
+
+                    if (!regions.contains(regionName))
+                    {
+                        regions.insert(regionName, QVector<float>());
+                    }
+                }
+            }
+
+            std::vector<std::vector<eslocal> > triangles = dynamic_cast<PlaneElement*>(m_mesh->elements()[e]->face(f))->triangularize();
+
+            for (size_t t = 0; t < triangles.size(); t++) {
+
+                for (size_t n = 0; n < triangles[t].size(); n++) {
+                    foreach (QString rn, regionNames)
+                    {
+                        regions[rn].push_back(m_mesh->coordinates()[triangles[t][n]].x);
+                        regions[rn].push_back(m_mesh->coordinates()[triangles[t][n]].y);
+                        regions[rn].push_back(m_mesh->coordinates()[triangles[t][n]].z);
+                        regions[rn].push_back(0.0f);
+                        regions[rn].push_back(1.0f);
+                        regions[rn].push_back(0.0f);
+                    }
+                }
+
+            }
+        }
+    }
+
+    QMapIterator<QString, QVector<float> > it(regions);
+//    qint32 colorbits = 10;
+    qsrand(environment->MPIrank);
+
+    while (it.hasNext())
+    {
+        it.next();
+
+        int num = it.value().size();
+        int nums[environment->MPIsize];
+        MPI_Gather(&num, 1, MPI_INT, nums, 1, MPI_INT, 0, environment->MPICommunicator);
+
+        int numsum = 0;
+        int displs[environment->MPIsize];
+        QVector<float> coordinates;
+        if (environment->MPIrank == 0)
+        {
+            for (int i = 0; i < environment->MPIsize; i++)
+            {
+                displs[i] = numsum;
+                numsum += nums[i];
+            }
+            coordinates.resize(numsum);
+        }
+
+        MPI_Gatherv(it.value().data(), num, MPI_FLOAT, coordinates.data(), nums, displs, MPI_FLOAT, 0, environment->MPICommunicator);
+
+        if (environment->MPIrank == 0)
+        {
+            MeshRegion reg;
+//            colorbits += 255;
+//            float red = (colorbits & 0x00FF0000) >> 16;
+//            float green = (colorbits & 0x0000FF00) >> 8;
+//            float blue = (colorbits & 0x000000FF);
+            float red = (qrand() % 256) / 255.0f;
+            float green = qrand() % 256 / 255.0f;
+            float blue = qrand() % 256 / 255.0f;
+            qInfo() << red << green << blue;
+            reg.color = QVector3D(red, green, blue);
+            reg.points = coordinates;
+            this->m_regions.insert(it.key(), reg);
+        }
+    }
 }
 
 void MeshWidget::computeMesh()
@@ -137,7 +232,7 @@ void MeshWidget::initializeGL()
 
     this->m_basicProgram_objectColor = QVector3D(1.0f, 0.5f, 0.31f);
     this->m_basicProgram_lightColor = QVector3D(1.0f, 1.0f, 1.0f);
-    this->m_basicProgram_lightPos = QVector3D(1.2f, 1.0f, 2.0f);
+    this->m_basicProgram_lightPos = QVector3D(1.2f, 1.0f, -2.0f);
 
     this->m_lastX = width() / 2;
     this->m_lastY = height() / 2;
@@ -154,7 +249,7 @@ void MeshWidget::initializeGL()
 
 void MeshWidget::paintGL()
 {
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     m_basicProgram->bind();
