@@ -13,8 +13,9 @@ using namespace espreso;
 int main(int argc, char **argv)
 {
 	MPI_Init(&argc, &argv);
-	ECFConfiguration ecf(&argc, &argv);
+	ECFConfiguration ecf;
 	ECFRedParameters redParameters = ECFReader::read(ecf, &argc, &argv, ecf.default_args, ecf.variables);
+	ECFReader::set(ecf.environment, ecf.output);
 
 	// add parameters that will be always printed
 	redParameters.parameters.push_back(ecf.getParameter(&ecf.input));

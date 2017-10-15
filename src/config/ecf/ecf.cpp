@@ -3,7 +3,12 @@
 
 #include "../configuration.hpp"
 
-void espreso::ECFConfiguration::init()
+#include "../../basis/logging/logging.h"
+
+using namespace espreso;
+
+
+void ECFConfiguration::init()
 {
 	name = "root";
 
@@ -81,7 +86,7 @@ void espreso::ECFConfiguration::init()
 			.setdescription({ "Configuration of ESPRESO decomposer." }));
 }
 
-espreso::ECFConfiguration::ECFConfiguration()
+ECFConfiguration::ECFConfiguration()
 : heat_transfer_2d(DIMENSION::D2),
   heat_transfer_3d(DIMENSION::D3),
   structural_mechanics_2d(DIMENSION::D2),
@@ -91,18 +96,40 @@ espreso::ECFConfiguration::ECFConfiguration()
 	init();
 }
 
-espreso::ECFConfiguration::ECFConfiguration(const std::string &file)
-: espreso::ECFConfiguration()
+ECFConfiguration::ECFConfiguration(const std::string &file)
+: ECFConfiguration()
 {
-	ECFReader::read(*this, file, this->default_args, this->variables);
-	ECFReader::set(this->environment, this->output);
+	if (!fill(file)) {
+		ESINFO(GLOBAL_ERROR) << "Cannot read ECF file '" << file << "'.";
+	}
 }
 
-espreso::ECFConfiguration::ECFConfiguration(int *argc, char ***argv)
-: espreso::ECFConfiguration()
+ECFConfiguration::ECFConfiguration(int *argc, char ***argv)
+: ECFConfiguration()
 {
-	ECFReader::read(*this, argc, argv, this->default_args, this->variables);
-	ECFReader::set(this->environment, this->output);
+	if (!fill(argc, argv)) {
+		ESINFO(GLOBAL_ERROR)
+				<< "Cannot read ECF file '" << ECFReader::configurationFile << "'.\n"
+				<< "Use default 'espreso.ecf' or set an arbitrary by 'espreso -c $ecfpath'.";
+	}
+}
+
+bool ECFConfiguration::fill(const std::string &file)
+{
+	if (ECFReader::read(*this, file, this->default_args, this->variables).hadValidECF) {
+		ECFReader::set(this->environment, this->output);
+		return true;
+	}
+	return false;
+}
+
+bool ECFConfiguration::fill(int *argc, char ***argv)
+{
+	if (ECFReader::read(*this, argc, argv, this->default_args, this->variables).hadValidECF) {
+		ECFReader::set(this->environment, this->output);
+		return true;
+	}
+	return false;
 }
 
 

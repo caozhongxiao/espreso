@@ -15,6 +15,7 @@ struct Environment;
 struct OutputConfiguration;
 
 struct ECFRedParameters {
+	bool hadValidECF;
 	std::vector<ECFParameter*> parameters;
 	std::map<const ECFParameter*, std::string> defaulted;
 };

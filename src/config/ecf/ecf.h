@@ -46,10 +46,15 @@ struct ECFConfiguration: public ECFObject {
 
 	DecomposerConfiguration decomposer;
 
-	void init();
+
 	ECFConfiguration();
 	ECFConfiguration(const std::string &file);
 	ECFConfiguration(int *argc, char ***argv);
+	bool fill(const std::string &file);
+	bool fill(int *argc, char ***argv);
+
+protected:
+	void init();
 };
 
 }

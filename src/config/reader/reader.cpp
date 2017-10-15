@@ -135,7 +135,7 @@ ECFRedParameters ECFReader::_read(
 		std::cout << "  OBJECT {\n";
 		std::cout << "    PARAMETER VALUE;\n";
 		std::cout << "  }\n\n";
-		std::cout << "Run ./espreso --default to generates the configuration file with default\n";
+		std::cout << "Run espreso --default to generates the configuration file with default\n";
 		std::cout << "parameters.\n\n";
 		exit(0);
 	}
@@ -213,6 +213,11 @@ ECFRedParameters ECFReader::_read(
 		const std::map<std::string, std::string> &variables)
 {
 	ECFRedParameters redParameters;
+	std::ifstream ecffile(file);
+	redParameters.hadValidECF = ecffile.good();
+	if (!redParameters.hadValidECF) {
+		return redParameters;
+	}
 
 	std::vector<std::string> prefix;
 	std::vector<std::string> values;
