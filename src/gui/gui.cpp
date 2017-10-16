@@ -1,14 +1,12 @@
-#include "forms/modelwidget.h"
-#include "forms/workflowwidget.h"
-#include "forms/declarationswidget.h"
-#include "forms/plot/plot.h"
-#include "forms/declarations/datatypeeditwidget.h"
-#include "forms/declarations/material/materialdialog.h"
+#include <QDebug>
+#include <QApplication>
+
 #include "mesh/meshwidget.h"
 #include "mesh/regionpickerwidget.h"
 #include "data/datatype.h"
-#include <QDebug>
-#include <QApplication>
+#include "parallel/mpimanager.h"
+
+#include "workspace/workspacewindow.h"
 
 #include "../config/ecf/environment.h"
 #include "../config/ecf/ecf.h"
@@ -86,19 +84,35 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
 
-    ECFConfiguration ecf(&argc, &argv);
-    Mesh mesh;
-    input::Loader::load(ecf, mesh, environment->MPIrank, environment->MPIsize);
+    ECFConfiguration ecf;
 
-    if (environment->MPIrank == 0) MeshWidget::initOGL();
-    MeshWidget w(&mesh);
-    RegionPickerWidget rpw(&w);
+    MpiManager mpim;
 
-    if (environment->MPIrank == 0)
+    WorkspaceWindow ww;
+
+    if (environment->MPIrank == 0) ww.show();
+
+    if (environment->MPIrank != 0)
     {
-        w.show();
-        rpw.show();
+        while (true)
+        {
+
+        }
     }
+
+//    ECFConfiguration ecf(&argc, &argv);
+//    Mesh mesh;
+//    input::Loader::load(ecf, mesh, environment->MPIrank, environment->MPIsize);
+
+//    if (environment->MPIrank == 0) MeshWidget::initOGL();
+//    MeshWidget w(&mesh);
+//    RegionPickerWidget rpw(&w);
+
+//    if (environment->MPIrank == 0)
+//    {
+//        w.show();
+//        rpw.show();
+//    }
 
 
 //    for (size_t e = 0; e < mesh.elements().size(); e++) {
