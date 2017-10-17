@@ -9,6 +9,8 @@
 #include "../mesh/structures/region.h"
 #include "../mesh/elements/plane/planeelement.h"
 
+#include "../parallel/mpimanager.h"
+
 namespace espreso {
 
     struct MeshPoint3D
@@ -45,7 +47,7 @@ namespace espreso {
 
     public:
         MeshWidget(QWidget* parent = 0);
-        MeshWidget(Mesh* mesh, QWidget* parent = 0);
+        MeshWidget(MpiManager* manager, QWidget* parent = 0);
         ~MeshWidget();
 
         static void initOGL();
@@ -75,6 +77,7 @@ namespace espreso {
         QVector<MeshElement> m_elements;
         QVector<QVector<float> > m_rawelements;
         QMap<QString, MeshRegion> m_regions;
+        MpiManager* m_manager;
         void computeMesh();
 
         QOpenGLShaderProgram* m_basicProgram;

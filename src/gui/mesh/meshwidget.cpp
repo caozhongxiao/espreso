@@ -17,11 +17,10 @@ MeshWidget::MeshWidget(QWidget *parent) : QOpenGLWidget(parent)
 {
 }
 
-MeshWidget::MeshWidget(Mesh* mesh, QWidget* parent) :
+MeshWidget::MeshWidget(MpiManager* manager, QWidget* parent) :
     MeshWidget(parent)
 {
-    this->m_mesh = mesh;
-
+    this->m_manager = manager;
     this->gatherRegions();
 
 //    this->computeMesh();
@@ -35,90 +34,109 @@ MeshWidget::~MeshWidget()
 
 void MeshWidget::gatherRegions()
 {
-    for (size_t e = 0; e < m_mesh->elements().size(); e++) {
-        m_mesh->elements()[e]->fillFaces();
-    }
+    auto regions = this->m_manager->masterGatherMesh();
+    QMapIterator<QString, QVector<float> > it(*regions);
 
-    QMap<QString, QVector<float> > regions;
-
-    for (size_t e = 0; e < m_mesh->elements().size(); e++) {
-
-        for (size_t f = 0; f < m_mesh->elements()[e]->faces(); f++) {
-            QVector<QString> regionNames;
-            regionNames << QLatin1String("#global");
-            if (m_mesh->elements()[e]->face(f)->regions().size())
-            {
-                regionNames.clear();
-
-                for (size_t r = 0; r < m_mesh->elements()[e]->face(f)->regions().size(); r++)
-                {
-                    QString regionName = QString::fromStdString(m_mesh->elements()[e]->face(f)->regions()[0]->name);
-                    regionNames << regionName;
-
-                    if (!regions.contains(regionName))
-                    {
-                        regions.insert(regionName, QVector<float>());
-                    }
-                }
-            }
-
-            std::vector<std::vector<eslocal> > triangles = dynamic_cast<PlaneElement*>(m_mesh->elements()[e]->face(f))->triangularize();
-
-            for (size_t t = 0; t < triangles.size(); t++) {
-
-                for (size_t n = 0; n < triangles[t].size(); n++) {
-                    foreach (QString rn, regionNames)
-                    {
-                        regions[rn].push_back(m_mesh->coordinates()[triangles[t][n]].x);
-                        regions[rn].push_back(m_mesh->coordinates()[triangles[t][n]].y);
-                        regions[rn].push_back(m_mesh->coordinates()[triangles[t][n]].z);
-                        regions[rn].push_back(0.0f);
-                        regions[rn].push_back(1.0f);
-                        regions[rn].push_back(0.0f);
-                    }
-                }
-
-            }
-        }
-    }
-
-    QMapIterator<QString, QVector<float> > it(regions);
-    float regionsNum = regions.size();
+    float regionsNum = regions->size();
     float offset = 360.0f / regionsNum;
     float step = 0.0f;
 
     while (it.hasNext())
     {
         it.next();
-
-        int num = it.value().size();
-        int nums[environment->MPIsize];
-        MPI_Gather(&num, 1, MPI_INT, nums, 1, MPI_INT, 0, environment->MPICommunicator);
-
-        int numsum = 0;
-        int displs[environment->MPIsize];
-        QVector<float> coordinates;
-        if (environment->MPIrank == 0)
-        {
-            for (int i = 0; i < environment->MPIsize; i++)
-            {
-                displs[i] = numsum;
-                numsum += nums[i];
-            }
-            coordinates.resize(numsum);
-        }
-
-        MPI_Gatherv(it.value().data(), num, MPI_FLOAT, coordinates.data(), nums, displs, MPI_FLOAT, 0, environment->MPICommunicator);
-
-        if (environment->MPIrank == 0)
-        {
-            MeshRegion reg;
-            reg.color = this->pickColor(step);
-            step += offset;
-            reg.points = coordinates;
-            this->m_regions.insert(it.key(), reg);
-        }
+        MeshRegion reg;
+        reg.color = this->pickColor(step);
+        step += offset;
+        reg.points = it.value();
+        this->m_regions.insert(it.key(), reg);
     }
+
+    delete regions;
+
+//    for (size_t e = 0; e < m_mesh->elements().size(); e++) {
+//        m_mesh->elements()[e]->fillFaces();
+//    }
+
+//    QMap<QString, QVector<float> > regions;
+
+//    for (size_t e = 0; e < m_mesh->elements().size(); e++) {
+
+//        for (size_t f = 0; f < m_mesh->elements()[e]->faces(); f++) {
+//            QVector<QString> regionNames;
+//            regionNames << QLatin1String("#global");
+//            if (m_mesh->elements()[e]->face(f)->regions().size())
+//            {
+//                regionNames.clear();
+
+//                for (size_t r = 0; r < m_mesh->elements()[e]->face(f)->regions().size(); r++)
+//                {
+//                    QString regionName = QString::fromStdString(m_mesh->elements()[e]->face(f)->regions()[0]->name);
+//                    regionNames << regionName;
+
+//                    if (!regions.contains(regionName))
+//                    {
+//                        regions.insert(regionName, QVector<float>());
+//                    }
+//                }
+//            }
+
+//            std::vector<std::vector<eslocal> > triangles = dynamic_cast<PlaneElement*>(m_mesh->elements()[e]->face(f))->triangularize();
+
+//            for (size_t t = 0; t < triangles.size(); t++) {
+
+//                for (size_t n = 0; n < triangles[t].size(); n++) {
+//                    foreach (QString rn, regionNames)
+//                    {
+//                        regions[rn].push_back(m_mesh->coordinates()[triangles[t][n]].x);
+//                        regions[rn].push_back(m_mesh->coordinates()[triangles[t][n]].y);
+//                        regions[rn].push_back(m_mesh->coordinates()[triangles[t][n]].z);
+//                        regions[rn].push_back(0.0f);
+//                        regions[rn].push_back(1.0f);
+//                        regions[rn].push_back(0.0f);
+//                    }
+//                }
+
+//            }
+//        }
+//    }
+
+//    QMapIterator<QString, QVector<float> > it(regions);
+//    float regionsNum = regions.size();
+//    float offset = 360.0f / regionsNum;
+//    float step = 0.0f;
+
+//    while (it.hasNext())
+//    {
+//        it.next();
+
+//        int num = it.value().size();
+//        int nums[environment->MPIsize];
+//        MPI_Gather(&num, 1, MPI_INT, nums, 1, MPI_INT, 0, environment->MPICommunicator);
+
+//        int numsum = 0;
+//        int displs[environment->MPIsize];
+//        QVector<float> coordinates;
+//        if (environment->MPIrank == 0)
+//        {
+//            for (int i = 0; i < environment->MPIsize; i++)
+//            {
+//                displs[i] = numsum;
+//                numsum += nums[i];
+//            }
+//            coordinates.resize(numsum);
+//        }
+
+//        MPI_Gatherv(it.value().data(), num, MPI_FLOAT, coordinates.data(), nums, displs, MPI_FLOAT, 0, environment->MPICommunicator);
+
+//        if (environment->MPIrank == 0)
+//        {
+//            MeshRegion reg;
+//            reg.color = this->pickColor(step);
+//            step += offset;
+//            reg.points = coordinates;
+//            this->m_regions.insert(it.key(), reg);
+//        }
+//    }
 }
 
 void MeshWidget::computeMesh()

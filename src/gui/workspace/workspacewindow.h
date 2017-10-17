@@ -12,6 +12,8 @@
 #include "../mesh/regionpickerwidget.h"
 #include "workflowwidget.h"
 
+#include "../parallel/mpimanager.h"
+
 namespace espreso
 {
 
@@ -24,8 +26,10 @@ class WorkspaceWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit WorkspaceWindow(QWidget *parent = 0);
+    explicit WorkspaceWindow(MpiManager* manager, QWidget *parent = 0);
     ~WorkspaceWindow();
+
+    void init();
 
 private slots:
     void onFileOpened(const QString& filename);
@@ -33,10 +37,16 @@ private slots:
 private:
     Ui::WorkspaceWindow *ui;
 
-    bool m_ecf_local = false;
+    MpiManager* m_manager;
+
     ECFConfiguration* m_ecf;
 
     WorkflowWidget* m_workflow;
+
+    DeclarationsWidget* m_declarations = nullptr;
+    MeshWidget* m_mesh = nullptr;
+    RegionPickerWidget* m_regions = nullptr;
+
     void initUi();
     void initPanels();
 };
