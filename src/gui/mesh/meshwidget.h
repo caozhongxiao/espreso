@@ -69,16 +69,10 @@ namespace espreso {
         virtual void mousePressEvent(QMouseEvent *event) override;
 
     private:
-        Mesh* m_mesh;
-
-        void gatherRegions();
-
-        float* m_triangles;
-        QVector<MeshElement> m_elements;
-        QVector<QVector<float> > m_rawelements;
-        QMap<QString, MeshRegion> m_regions;
         MpiManager* m_manager;
-        void computeMesh();
+
+        QMap<QString, MeshRegion> m_regions;
+        void gatherRegions();
 
         QOpenGLShaderProgram* m_basicProgram;
         GLuint m_basicProgram_position;
