@@ -447,11 +447,13 @@ void MeshWidget::mousePressEvent(QMouseEvent* event)
     unsigned char res[4];
     GLint viewport[4];
 
-    int x = event->pos().x();
-    int y = event->pos().y();
+    int qtx = event->pos().x();
+    int qty = event->pos().y();
 
     glGetIntegerv(GL_VIEWPORT, viewport);
-    glReadPixels(x, viewport[3] - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &res);
+    int glx = viewport[2] * ((float)qtx / (float)this->width());
+    int gly = viewport[3] * ((float)qty / (float)this->height());
+    glReadPixels(glx, viewport[3] - gly, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &res);
 
     int clickedColor = 0;
     clickedColor |= (res[0] << 16);
