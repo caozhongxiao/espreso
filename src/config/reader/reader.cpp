@@ -76,7 +76,7 @@ ECFRedParameters ECFReader::_read(
 	}
 
 	option_index = 0;
-	while (long_options[option_index].name != '\0') {
+	while (long_options[option_index].name != 0) {
 		opts.push_back(long_options[option_index++]);
 	}
 
