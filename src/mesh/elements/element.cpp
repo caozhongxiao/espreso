@@ -31,6 +31,9 @@ void Element::store(std::ofstream& os, const Coordinates &coordinates, size_t pa
 
 bool Element::isFaceSwapped(const Element* face) const
 {
+	for (size_t i = 0; i < face->_regions.size(); i++) {
+		return false;
+	}
 	size_t matches = 0;
 	for (size_t f = 0; f < this->faces(); f++) {
 		const std::vector<eslocal>& faceNodes = this->faceNodes(f);
