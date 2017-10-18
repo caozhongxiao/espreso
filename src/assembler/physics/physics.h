@@ -21,6 +21,7 @@ class Instance;
 class EqualityConstraints;
 class Solution;
 class SparseMatrix;
+struct PhysicsConfiguration;
 namespace store { class ResultStore; }
 
 enum class FETI_REGULARIZATION;
@@ -39,7 +40,8 @@ enum class SumRestriction {
 struct Physics {
 	friend class APITestESPRESODataProvider;
 
-	Physics(const std::string &name, Mesh *mesh, Instance *instance);
+	Physics();
+	Physics(const std::string &name, Mesh *mesh, Instance *instance, const PhysicsConfiguration *configuration);
 	const std::string& name() const { return _name; }
 
 	virtual std::vector<size_t> solutionsIndicesToStore() const =0;
@@ -123,6 +125,8 @@ protected:
 	Mesh *_mesh;
 	Instance *_instance;
 	EqualityConstraints *_equalityConstraints;
+
+	const PhysicsConfiguration *_configuration;
 
 	std::vector<size_t> _nodesDOFsOffsets;
 	std::vector<size_t> _midNodesDOFsOffsets;

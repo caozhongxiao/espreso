@@ -1038,8 +1038,8 @@ Region* Mesh::region(const std::string &name) const
 	if (it != _regions.end()) {
 		return *it;
 	}
-	ESINFO(GLOBAL_ERROR) << "Unknown region '" << name << "'";
-	exit(EXIT_FAILURE);
+	ESINFO(ERROR) << "Unknown region '" << name << "'";
+	return NULL;
 }
 
 void Mesh::addMonitoredRegion(Region* region) const

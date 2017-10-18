@@ -11,7 +11,6 @@
 using namespace espreso;
 
 BoundaryBased3D::BoundaryBased3D()
-: Physics("", NULL, NULL) // skipped because Physics is inherited virtually
 {
 
 }

@@ -19,6 +19,7 @@
 #include "../../config/ecf/environment.h"
 
 #include <numeric>
+#include <algorithm>
 
 using namespace espreso;
 
@@ -644,13 +645,19 @@ void EqualityConstraints::insertKernelsGluingToB0(const std::vector<SparseMatrix
 	}
 }
 
-#ifdef HAVE_MORTAR
+#ifndef HAVE_MORTAR
+
+void EqualityConstraints::insertMortarGluingToB1(const Step &step, const std::string &master, const std::string &slave)
+{
+	ESINFO(GLOBAL_ERROR) << "Link 'mortarc' library.";
+}
+
+#else
 
 #include "mortar.h"
 
-void EqualityConstraints::insertMortarGluingToB1(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
+void EqualityConstraints::insertMortarGluingToB1(const Step &step, const std::string &master, const std::string &slave)
 {
-	size_t loadStep = 0;
 
 	std::vector<int> rows;
 	std::vector<int> columns;
@@ -662,97 +669,101 @@ void EqualityConstraints::insertMortarGluingToB1(Constraints &constraints, const
 	std::vector<Point_3D> slaveCoordinates;
 	std::vector<int> nodes;
 
-	for (size_t r = 0; r < constraints._mesh.regions().size(); r++) {
-		if (loadStep < constraints._mesh.regions()[r]->settings.size() && constraints._mesh.regions()[r]->settings[loadStep].count(Property::NONMATCHING_ELEMENT)) {
-			for (size_t i = 0; i < elements.size(); i++) {
-					if (environment->MPIrank) {
-						masterElements.push_back(std::vector<int>());
-						for (size_t n = 0; n < elements[i]->nodes(); n++) {
-							masterElements.back().push_back(elements[i]->node(n));
-							nodes.push_back(elements[i]->node(n));
-						}
-					} else {
-						slaveElements.push_back(std::vector<int>());
-						for (size_t n = 0; n < elements[i]->nodes(); n++) {
-							slaveElements.back().push_back(elements[i]->node(n));
-							nodes.push_back(elements[i]->node(n));
-						}
-					}
+	Region *mregion = _mesh.region(master);
+	Region *sregion = _mesh.region(slave);
 
-			}
+	std::vector<eslocal> masterElementsSBuffer, masterElementsRBuffer, slaveElementsSBuffer, slaveElementsRBuffer;
+	std::vector<esglobal> masterCoordinateIndicesSBuffer, slaveCoordinateIndicesSBuffer, masterCoordinateIndicesRBuffer, slaveCoordinateIndicesRBuffer;
+	std::vector<Point_3D> masterCoordinateSBuffer, slaveCoordinateSBuffer, masterCoordinateRBuffer, slaveCoordinateRBuffer;
+
+	for (size_t e = 0; e < mregion->elements().size(); e++) {
+		masterElementsSBuffer.push_back(mregion->elements()[e]->nodes());
+		for (size_t n = 0; n < mregion->elements()[e]->nodes(); n++) {
+			masterElementsSBuffer.push_back(_mesh.coordinates().globalIndex(mregion->elements()[e]->node(n)));
+			nodes.push_back(mregion->elements()[e]->node(n));
 		}
-	}
-
-	if (!masterElements.size() && !slaveElements.size()) {
-		// no MORTAR interface founded
-		return;
 	}
 
 	std::sort(nodes.begin(), nodes.end());
 	Esutils::removeDuplicity(nodes);
 
 	for (size_t n = 0; n < nodes.size(); n++) {
-		if (environment->MPIrank) {
-			masterCoordinates.push_back(Point_3D());
-			masterCoordinates.back().x = constraints._mesh.coordinates()[nodes[n]].x;
-			masterCoordinates.back().y = constraints._mesh.coordinates()[nodes[n]].y;
-			masterCoordinates.back().z = constraints._mesh.coordinates()[nodes[n]].z;
-		} else {
-			slaveCoordinates.push_back(Point_3D());
-			slaveCoordinates.back().x = constraints._mesh.coordinates()[nodes[n]].x;
-			slaveCoordinates.back().y = constraints._mesh.coordinates()[nodes[n]].y;
-			slaveCoordinates.back().z = constraints._mesh.coordinates()[nodes[n]].z;
+		masterCoordinateSBuffer.push_back(Point_3D());
+		masterCoordinateSBuffer.back().x = _mesh.coordinates()[nodes[n]].x;
+		masterCoordinateSBuffer.back().y = _mesh.coordinates()[nodes[n]].y;
+		masterCoordinateSBuffer.back().z = _mesh.coordinates()[nodes[n]].z;
+		masterCoordinateIndicesSBuffer.push_back(_mesh.coordinates().globalIndex(nodes[n]));
+	}
+
+	nodes.clear();
+	for (size_t e = 0; e < sregion->elements().size(); e++) {
+		slaveElementsSBuffer.push_back(sregion->elements()[e]->nodes());
+		for (size_t n = 0; n < sregion->elements()[e]->nodes(); n++) {
+			slaveElementsSBuffer.push_back(_mesh.coordinates().globalIndex(sregion->elements()[e]->node(n)));
+			nodes.push_back(sregion->elements()[e]->node(n));
 		}
 	}
 
-	std::vector<int> buffer;
+	std::sort(nodes.begin(), nodes.end());
+	Esutils::removeDuplicity(nodes);
+
+	for (size_t n = 0; n < nodes.size(); n++) {
+		slaveCoordinateSBuffer.push_back(Point_3D());
+		slaveCoordinateSBuffer.back().x = _mesh.coordinates()[nodes[n]].x;
+		slaveCoordinateSBuffer.back().y = _mesh.coordinates()[nodes[n]].y;
+		slaveCoordinateSBuffer.back().z = _mesh.coordinates()[nodes[n]].z;
+		slaveCoordinateIndicesSBuffer.push_back(_mesh.coordinates().globalIndex(nodes[n]));
+	}
+
+	Communication::gatherUnknownSize(masterElementsSBuffer, masterElementsRBuffer);
+	Communication::gatherUnknownSize(slaveElementsSBuffer, slaveElementsRBuffer);
+	Communication::gatherUnknownSize(masterCoordinateSBuffer, masterCoordinateRBuffer);
+	Communication::gatherUnknownSize(slaveCoordinateSBuffer, slaveCoordinateRBuffer);
+	Communication::gatherUnknownSize(masterCoordinateIndicesSBuffer, masterCoordinateIndicesRBuffer);
+	Communication::gatherUnknownSize(slaveCoordinateIndicesSBuffer, slaveCoordinateIndicesRBuffer);
+
+	for (size_t e = 0; e < masterElementsRBuffer.size(); e += masterElementsRBuffer[e] + 1) {
+		masterElements.push_back(std::vector<int>(masterElementsRBuffer.begin() + e + 1, masterElementsRBuffer.begin() + e + 1 + masterElementsRBuffer[e]));
+	}
+	for (size_t e = 0; e < slaveElementsRBuffer.size(); e += slaveElementsRBuffer[e] + 1) {
+		slaveElements.push_back(std::vector<int>(slaveElementsRBuffer.begin() + e + 1, slaveElementsRBuffer.begin() + e + 1 + slaveElementsRBuffer[e]));
+	}
+
+	std::vector<eslocal> masterPermutation(masterCoordinateIndicesRBuffer.size()), slavePermutation(slaveCoordinateIndicesRBuffer.size()), masterUnique, slaveUnique;
+	std::iota(masterPermutation.begin(), masterPermutation.end(), 0);
+	std::iota(slavePermutation.begin(), slavePermutation.end(), 0);
+	std::sort(masterPermutation.begin(), masterPermutation.end(), [&] (eslocal i, eslocal j) { return masterCoordinateIndicesRBuffer[i] < masterCoordinateIndicesRBuffer[j]; });
+	std::sort(slavePermutation.begin(), slavePermutation.end(), [&] (eslocal i, eslocal j) { return slaveCoordinateIndicesRBuffer[i] < slaveCoordinateIndicesRBuffer[j]; });
+
+	for (size_t i = 0; i < masterPermutation.size(); i++) {
+		if (i == 0 || masterPermutation[i - 1] != masterPermutation[i]) {
+			masterCoordinates.push_back(masterCoordinateRBuffer[masterPermutation[i]]);
+			masterUnique.push_back(masterCoordinateIndicesRBuffer[masterPermutation[i]]);
+		}
+	}
+
+	for (size_t i = 0; i < slavePermutation.size(); i++) {
+		if (i == 0 || slavePermutation[i - 1] != slavePermutation[i]) {
+			slaveCoordinates.push_back(slaveCoordinateRBuffer[slavePermutation[i]]);
+			slaveUnique.push_back(slaveCoordinateIndicesRBuffer[slavePermutation[i]]);
+		}
+	}
 
 	for (size_t e = 0; e < masterElements.size(); e++) {
-		buffer.push_back(masterElements[e].size());
 		for (size_t n = 0; n < masterElements[e].size(); n++) {
-			masterElements[e][n] = std::lower_bound(nodes.begin(), nodes.end(), masterElements[e][n]) - nodes.begin();
-			buffer.push_back(masterElements[e][n]);
+			masterElements[e][n] = std::lower_bound(masterUnique.begin(), masterUnique.end(), masterElements[e][n]) - masterUnique.begin();
 		}
 	}
-
 	for (size_t e = 0; e < slaveElements.size(); e++) {
 		for (size_t n = 0; n < slaveElements[e].size(); n++) {
-			slaveElements[e][n] = std::lower_bound(nodes.begin(), nodes.end(), slaveElements[e][n]) - nodes.begin();
+			slaveElements[e][n] = std::lower_bound(slaveUnique.begin(), slaveUnique.end(), slaveElements[e][n]) - slaveUnique.begin();
 		}
 	}
 
-	if (environment->MPIrank) {
-		MPI_Send(buffer.data(), buffer.size() * sizeof(int), MPI_BYTE, 0, 0, environment->MPICommunicator);
-		MPI_Send(masterCoordinates.data(), masterCoordinates.size() * sizeof(Point_3D), MPI_BYTE, 0, 1, environment->MPICommunicator);
-	} else {
-		MPI_Status status;
-		int size;
-
-		// ELEMENTS
-		MPI_Probe(1, 0, environment->MPICommunicator, &status);
-		MPI_Get_count(&status, MPI_BYTE, &size);
-		buffer.resize(size / sizeof(int));
-		MPI_Recv(buffer.data(), size, MPI_BYTE, status.MPI_SOURCE, status.MPI_TAG, environment->MPICommunicator, MPI_STATUSES_IGNORE);
-
-		// COORDINATES
-		MPI_Probe(1, 1, environment->MPICommunicator, &status);
-		MPI_Get_count(&status, MPI_BYTE, &size);
-		masterCoordinates.resize(size / sizeof(Point_3D));
-		MPI_Recv(masterCoordinates.data(), size, MPI_BYTE, status.MPI_SOURCE, status.MPI_TAG, environment->MPICommunicator, MPI_STATUSES_IGNORE);
-
-		for (size_t i = 0; i < buffer.size(); i++) {
-			masterElements.push_back(std::vector<int>());
-			for (size_t n = 0; n < buffer[i - n]; n++, i++) {
-				masterElements.back().push_back(buffer[i + 1]);
-			}
-		}
-	}
-
-	if (!environment->MPIrank && (masterElements.size() || slaveElements.size())) {
+	if (mregion->elements().size()) {
 		computeMortarEqualityConstraints(rows, columns, values, masterElements, masterCoordinates, slaveElements, slaveCoordinates);
 	}
 }
-
 
 #endif
 

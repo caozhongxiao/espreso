@@ -18,12 +18,19 @@
 #include "../../basis/matrices/denseMatrix.h"
 #include "../../basis/matrices/sparseCSRMatrix.h"
 #include "../../config/ecf/solver/feti.h"
+#include "../../config/ecf/physics/physics.h"
 
 
 using namespace espreso;
 
-Physics::Physics(const std::string &name, Mesh *mesh, Instance *instance)
-: _name(name), _mesh(mesh), _instance(instance), _equalityConstraints(NULL) // initialized in a particular physics
+Physics::Physics()
+: _name(""), _mesh(NULL), _instance(NULL), _equalityConstraints(NULL), _configuration(NULL)
+{
+
+}
+
+Physics::Physics(const std::string &name, Mesh *mesh, Instance *instance, const PhysicsConfiguration *configuration)
+: _name(name), _mesh(mesh), _instance(instance), _equalityConstraints(NULL), _configuration(configuration) // initialized in a particular physics
 {
 
 }
@@ -446,6 +453,9 @@ void Physics::assembleB1(const Step &step, bool withRedundantMultipliers, bool w
 	_equalityConstraints->insertDirichletToB1(step, withRedundantMultipliers);
 	if (withGluing) {
 		_equalityConstraints->insertElementGluingToB1(step, withRedundantMultipliers, withScaling);
+		if (_configuration != NULL && _configuration->mortar.slave.size() && _configuration->mortar.master.size()) {
+			_equalityConstraints->insertMortarGluingToB1(step, _configuration->mortar.master, _configuration->mortar.slave);
+		}
 	}
 }
 

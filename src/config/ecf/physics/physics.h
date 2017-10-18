@@ -19,6 +19,12 @@ enum class DISCRETIZATION {
 		BEM
 };
 
+struct MortarConfiguration: public ECFObject {
+	std::string master, slave;
+
+	MortarConfiguration();
+};
+
 struct PhysicsConfiguration: public ECFObject {
 
 	enum class INTERPOLATION {
@@ -37,6 +43,8 @@ struct PhysicsConfiguration: public ECFObject {
 	std::map<std::string, std::string> material_set;
 
 	std::map<std::string, std::string> initial_temperature, thickness;
+
+	MortarConfiguration mortar;
 
 	PhysicsConfiguration(DIMENSION dimension, MaterialConfiguration::PHYSICAL_MODEL physicalModel);
 };

@@ -22,7 +22,7 @@
 using namespace espreso;
 
 HeatTransfer2D::HeatTransfer2D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
-: Physics("HEAT TRANSFER 2D", mesh, instance), HeatTransfer(configuration, propertiesConfiguration)
+: Physics("HEAT TRANSFER 2D", mesh, instance, &configuration), HeatTransfer(configuration, propertiesConfiguration)
 {
 	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, _mesh->nodes(), _mesh->edges(), pointDOFs(), pointDOFsOffsets());
 }

@@ -32,6 +32,8 @@ struct EqualityConstraints
 	void updateDirichletValuesInB1(const Step &step, bool withRedundantMultiplier);
 	void insertElementGluingToB1(const Step &step, bool withRedundantMultiplier, bool withScaling);
 
+	void insertMortarGluingToB1(const Step &step, const std::string &master, const std::string &slave);
+
 	void insertCornersGluingToB0();
 	void insertKernelsGluingToB0(const std::vector<SparseMatrix> &kernels);
 

@@ -9,7 +9,7 @@ namespace espreso {
 
 struct Physics2D: public virtual Physics {
 
-	Physics2D() : Physics("", NULL, NULL) // skipped because Physics is inherited virtually
+	Physics2D()
 	{
 
 	}

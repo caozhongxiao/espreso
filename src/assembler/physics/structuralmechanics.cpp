@@ -21,8 +21,7 @@ using namespace espreso;
 size_t StructuralMechanics::offset = -1;
 
 StructuralMechanics::StructuralMechanics(const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
-: Physics("", NULL, NULL), // skipped because Physics is inherited virtually
-  _configuration(configuration), _propertiesConfiguration(propertiesConfiguration)
+: _configuration(configuration), _propertiesConfiguration(propertiesConfiguration)
 {
 
 }

@@ -133,30 +133,30 @@ void GridTowerGenerator::neighbours(std::vector<Element*> &nodes, std::vector<in
 
 	if (lower != _configuration.grids.end()) {
 		if (lower->second.blocks_z != middle->second.blocks_z || lower->second.blocks_y != middle->second.blocks_y || lower->second.blocks_x != middle->second.blocks_x) {
-			ESINFO(GLOBAL_ERROR) << "Implement neighbors for grid tower with different number of blocks.";
+			lower = _configuration.grids.end();
 		}
 		if (lower->second.clusters_z != middle->second.clusters_z || lower->second.clusters_y != middle->second.clusters_y || lower->second.clusters_x != middle->second.clusters_x) {
-			ESINFO(GLOBAL_ERROR) << "Implement neighbors for grid tower with different number of clusters.";
+			lower = _configuration.grids.end();
 		}
 		if (lower->second.domains_z != middle->second.domains_z || lower->second.domains_y != middle->second.domains_y || lower->second.domains_x != middle->second.domains_x) {
-			ESINFO(GLOBAL_ERROR) << "Implement neighbors for grid tower with different number of domains.";
+			lower = _configuration.grids.end();
 		}
 		if (lower->second.elements_z != middle->second.elements_z || lower->second.elements_y != middle->second.elements_y || lower->second.elements_x != middle->second.elements_x) {
-			ESINFO(GLOBAL_ERROR) << "Implement neighbors for grid tower with different number of elements.";
+			lower = _configuration.grids.end();
 		}
 	}
 	if (upper != _configuration.grids.end()) {
 		if (upper->second.blocks_z != middle->second.blocks_z || upper->second.blocks_y != middle->second.blocks_y || upper->second.blocks_x != middle->second.blocks_x) {
-			ESINFO(GLOBAL_ERROR) << "Implement neighbors for grid tower with different number of blocks.";
+			upper = _configuration.grids.end();
 		}
 		if (upper->second.clusters_z != middle->second.clusters_z || upper->second.clusters_y != middle->second.clusters_y || upper->second.clusters_x != middle->second.clusters_x) {
-			ESINFO(GLOBAL_ERROR) << "Implement neighbors for grid tower with different number of clusters.";
+			upper = _configuration.grids.end();
 		}
 		if (upper->second.domains_z != middle->second.domains_z || upper->second.domains_y != middle->second.domains_y || upper->second.domains_x != middle->second.domains_x) {
-			ESINFO(GLOBAL_ERROR) << "Implement neighbors for grid tower with different number of domains.";
+			upper = _configuration.grids.end();
 		}
 		if (upper->second.elements_z != middle->second.elements_z || upper->second.elements_y != middle->second.elements_y || upper->second.elements_x != middle->second.elements_x) {
-			ESINFO(GLOBAL_ERROR) << "Implement neighbors for grid tower with different number of elements.";
+			upper = _configuration.grids.end();
 		}
 	}
 
@@ -238,14 +238,22 @@ void GridTowerGenerator::regions(
 {
 	_gridGenerator->regions(evaluators, regions, elements, faces, edges, nodes);
 
-	for (auto it = _configuration.grids.begin(); it != _configuration.grids.end(); ++it) {
-		for (auto r = it->second.nodes.begin(); r != it->second.nodes.end(); ++r) {
+	auto addRegions = [&] (const std::map<std::string, std::string> &interval, ElementType type) {
+		for (auto r = interval.begin(); r != interval.end(); ++r) {
 			auto it = std::find_if(regions.begin(), regions.end(), [&] (const Region *region) { return region->name.compare(r->first) == 0; });
 			if (it == mesh.regions().end()) {
-				regions.push_back(new Region(ElementType::NODES));
+				regions.push_back(new Region(type));
 				regions.back()->name = r->first;
 			}
 		}
+	};
+
+
+	for (auto it = _configuration.grids.begin(); it != _configuration.grids.end(); ++it) {
+		addRegions(it->second.nodes, ElementType::NODES);
+		addRegions(it->second.edges, ElementType::EDGES);
+		addRegions(it->second.faces, ElementType::FACES);
+		addRegions(it->second.elements, ElementType::ELEMENTS);
 	}
 	mesh.synchronizeRegionOrder();
 }
