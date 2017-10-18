@@ -202,7 +202,7 @@ void Tetrahedron10::addFaces(std::vector<Element*> &faces, const eslocal indices
 
 void Tetrahedron10::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeEdge edge)
 {
-	ESINFO(GLOBAL_ERROR) << "Implement pickNodes for an edge for HEXA20";
+	ESINFO(GLOBAL_ERROR) << "Implement pickNodes for an edge for TETRAHEDRON10";
 }
 
 void Tetrahedron10::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFace face)

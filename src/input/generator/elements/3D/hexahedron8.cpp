@@ -78,7 +78,7 @@ void Hexahedron8::addFaces(std::vector<Element*> &faces, const eslocal indices[]
 
 void Hexahedron8::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeEdge edge)
 {
-	ESINFO(GLOBAL_ERROR) << "Implement pickNodes for an edge for HEXA20";
+	ESINFO(GLOBAL_ERROR) << "Implement pickNodes for an edge for HEXA8";
 }
 
 void Hexahedron8::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFace face)
