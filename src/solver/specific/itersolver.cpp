@@ -5173,6 +5173,10 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 	}
 	 collectGGt_time.end(); collectGGt_time.printStatMPI(); preproc_timing.addEvent(collectGGt_time);
 
+	if (mpi_size == 1) {
+		GGt_Mat_tmp.MatMatT(cluster.G1, GA_l);
+	}
+
 	GGt_Mat_tmp.RemoveLower();
 	ESINFO(EXHAUSTIVE) << GGt_Mat_tmp.SpyText();
 
