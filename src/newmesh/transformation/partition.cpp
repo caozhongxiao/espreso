@@ -2,6 +2,7 @@
 #include "transformations.h"
 
 #include "../newmesh.h"
+#include "../elements/newelement.h"
 #include "../elements/elementstore.h"
 
 #include "../../basis/point/point.h"
@@ -19,23 +20,7 @@
 #include <algorithm>
 #include <numeric>
 
-#include "../output.h"
-
 using namespace espreso;
-
-template <typename TType>
-static void printVector(const std::vector<TType> &vector)
-{
-	for (int rank = 0; rank < environment->MPIsize; rank++) {
-		if (rank == environment->MPIrank) {
-			std::cout << "RANK: " << rank << "\n";
-			std::cout << vector;
-		}
-		MPI_Barrier(environment->MPICommunicator);
-	}
-	MPI_Barrier(environment->MPICommunicator);
-}
-
 
 void Transformation::reclusterize(NewMesh &mesh)
 {
@@ -242,7 +227,7 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 
 	size_t edgeConst = 10000;
 
-	std::vector<eslocal> partition(mesh._elems->size);
+	std::vector<eslocal> blocks, partition(mesh._elems->size);
 	if (nextID == 1) {
 
 		std::vector<eslocal> edgeWeights(mesh._elems->decomposedDual->datatarray().size());
@@ -282,6 +267,7 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 				0, NULL, edgeWeights.data(),
 				parts, partition.data());
 		ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::METIS::KWay finished.";
+		blocks = std::vector<eslocal>({ 0, (eslocal)mesh._elems->size });
 
 	} else { // non-continuous dual graph
 		// thread x part x elements
@@ -368,55 +354,12 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 			}
 		}
 
-//		double averageDomainSize = _elements.size() / (double)parts;
-//		std::vector<size_t> bPart(blocks.size() - 1);
-//		size_t bParts = 0;
-//		for (size_t b = 0; b < blocks.size() - 1; b++) {
-//			bPart[b] = std::round((blocks[b + 1] - blocks[b]) / averageDomainSize);
-//			bParts += bPart[b];
-//		}
-//		while (bParts < parts) {
-//			(*std::max_element(bPart.begin(), bPart.end()))++;
-//			bParts++;
-//		}
-//		while (bParts > parts) {
-//			(*std::max_element(bPart.begin(), bPart.end()))--;
-//			bParts--;
-//		}
-//		for (size_t b = 0; b < bPart.size(); b++) {
-//			if (bPart[b] == 0) {
-//				bPart[b]++;
-//			}
-//		}
-//		bParts = 0;
-//		for (size_t b = 0; b < blocks.size() - 1; b++) {
-//			std::vector<eslocal> bPartition = getPartition(blocks[b], blocks[b + 1], bPart[b]);
-//			std::for_each(bPartition.begin(), bPartition.end(), [&] (eslocal &e) { e += bParts; });
-//			ePartition.insert(ePartition.end(), bPartition.begin(), bPartition.end());
-//			bParts += bPart[b];
-//			_continuousPartId.insert(_continuousPartId.end(), bPart[b], b);
-//		}
-//		parts = bParts;
-
 		std::vector<eslocal> pparts(nextID);
 
 		double averageDomainSize = mesh._elems->size / (double)parts;
 		size_t partsCounter = 0;
 		for (size_t p = 0; p < nextID; p++) {
-			partsCounter += pparts[p] = std::round((frames[p].size() - 1) / averageDomainSize);
-		}
-		while (partsCounter < parts) {
-			(*std::max_element(pparts.begin(), pparts.end()))++;
-			partsCounter++;
-		}
-		while (partsCounter > parts) {
-			(*std::max_element(pparts.begin(), pparts.end()))--;
-			partsCounter--;
-		}
-		for (size_t b = 0; b < pparts.size(); b++) {
-			if (pparts[b] == 0) {
-				pparts[b]++;
-			}
+			partsCounter += pparts[p] = std::ceil((frames[p].size() - 1) / averageDomainSize);
 		}
 
 		ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "Transformation::METIS::KWay started.";
@@ -427,19 +370,174 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 					frames[p].data(), neighbors[p].data(),
 					0, NULL, edgeWeights[p].data(),
 					pparts[p], partition.data() + partoffset[p]);
-
-			for (size_t i = 0; i < frames[p].size() - 1; ++i) {
-				partition[partoffset[p] + i] += parts * p;
-			}
 		}
 		ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::METIS::KWay finished.";
+
+		blocks = partoffset;
 	}
 
+	std::vector<eslocal> permutation(partition.size());
+	std::iota(permutation.begin(), permutation.end(), 0);
+	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) {
+		auto it1 = std::lower_bound(blocks.begin(), blocks.end(), i + 1);
+		auto it2 = std::lower_bound(blocks.begin(), blocks.end(), i + 1);
+		if (it1 == it2) {
+			if (partition[i] == partition[j]) {
+				return i < j;
+			}
+			return partition[i] < partition[j];
+		}
+		return it1 < it2;
+	});
 
+	std::vector<eslocal> domainDistribution;
+	std::vector<size_t> tdistribution;
 
-	// std::cout << "partition: " << partition;
+	eslocal partindex = 0;
+	eslocal blockindex = 0;
+	auto begin = permutation.begin();
+	while (begin != permutation.end()) {
+		domainDistribution.push_back(begin - permutation.begin());
+		begin = std::lower_bound(begin, permutation.begin() + blocks[blockindex + 1], ++partindex, [&] (eslocal i, eslocal val) {
+			return partition[i] < val;
+		});
+		if (begin - permutation.begin() == blocks[blockindex + 1]) {
+			++blockindex;
+			partindex = 0;
+		}
+	}
+	domainDistribution.push_back(begin - permutation.begin());
+
+	// TODO: improve domain distribution for more complicated decomposition
+	if (domainDistribution.size() == threads + 1) {
+		tdistribution = std::vector<size_t>(domainDistribution.begin(), domainDistribution.end());
+	} else {
+		if (domainDistribution.size() < threads + 1) {
+			tdistribution = tarray<eslocal>::distribute(threads, permutation.size());
+		} else {
+			double averageThreadSize = mesh._elems->size / (double)threads;
+			tdistribution.push_back(0);
+			for (size_t t = 0; t < threads - 1; t++) {
+				auto more = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution.back() + averageThreadSize);
+				auto less = more - 1;
+				if (std::fabs(*less - averageThreadSize * (t + 1)) < std::fabs(*more - averageThreadSize * (t + 1))) {
+					tdistribution.push_back(*less);
+				} else {
+					tdistribution.push_back(*more);
+				}
+			}
+			tdistribution.push_back(permutation.size());
+		}
+	}
+
+	Transformation::permuteElements(mesh, permutation, tdistribution);
+
+	std::vector<std::vector<eslocal> > decompositionDistribution(threads);
+	std::vector<std::vector<MeshDomain*> > decompositionData(threads);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+
+	}
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::decomposition of the mesh finished.";
+}
+
+void Transformation::permuteElements(NewMesh &mesh, const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution)
+{
+	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "Transformation::permutation of elements started.";
+
+	if (mesh._processesCommonBoundary->elems == NULL) {
+		Transformation::computeProcessesCommonBoundary(mesh);
+	}
+
+	std::vector<eslocal> backpermutation(permutation.size());
+	std::iota(backpermutation.begin(), backpermutation.end(), 0);
+	std::sort(backpermutation.begin(), backpermutation.end(), [&] (eslocal i, eslocal j) { return permutation[i] < permutation[j]; });
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	auto n2i = [ & ] (size_t neighbor) {
+		return std::lower_bound(mesh._neighbours.begin(), mesh._neighbours.end(), neighbor) - mesh._neighbours.begin();
+	};
+
+	std::vector<esglobal> IDBoundaries = mesh._elems->gatherSizes();
+	std::vector<std::vector<std::pair<esglobal, esglobal> > > rHalo(mesh._neighbours.size());
+
+	if (mesh._elems->dual != NULL || mesh._nodes->elems != NULL) {
+		// thread x neighbor x elements(oldID, newID)
+		std::vector<std::vector<std::vector<std::pair<esglobal, esglobal> > > > sHalo(threads, std::vector<std::vector<std::pair<esglobal, esglobal> > >(mesh._neighbours.size()));
+
+		const std::vector<size_t> &distribution = mesh._processesCommonBoundary->elems->datatarray().distribution();
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			auto eIndex = mesh._processesCommonBoundary->elems->datatarray();
+			std::vector<int> neighbors;
+			for (size_t e = distribution[t]; e < distribution[t + 1]; ++e) {
+				auto nodes = mesh._elems->nodes->cbegin() + eIndex[e];
+				neighbors.clear();
+				for (auto n = nodes->begin(); n != nodes->end(); ++n) {
+					neighbors.insert(neighbors.end(), (mesh._nodes->ranks->cbegin() + *n)->begin(), (mesh._nodes->ranks->cbegin() + *n)->end());
+				}
+				Esutils::sortAndRemoveDuplicity(neighbors);
+				for (size_t n = 0; n < neighbors.size(); n++) {
+					if (neighbors[n] != environment->MPIrank) {
+						sHalo[t][n2i(neighbors[n])].push_back(std::make_pair(eIndex[e] + IDBoundaries[environment->MPIrank], backpermutation[eIndex[e]] + IDBoundaries[environment->MPIrank]));
+					}
+				}
+			}
+		}
+
+		Esutils::mergeThreadedUniqueData(sHalo);
+
+		if (!Communication::exchangeUnknownSize(sHalo[0], rHalo, mesh._neighbours)) {
+			ESINFO(ERROR) << "ESPRESO internal error: exchange halo element new IDs while element permutation.";
+		}
+	}
+
+	auto globalremap = [&] (serializededata<eslocal, esglobal>* data) {
+		if (data == NULL) {
+			return;
+		}
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			size_t source;
+			for (auto e = data->begin(t); e != data->end(t); ++e) {
+				for (auto n = e->begin(); n != e->end(); ++n) {
+					source = std::lower_bound(IDBoundaries.begin(), IDBoundaries.end(), *n + 1) - IDBoundaries.begin() - 1;
+					if (source == environment->MPIrank) {
+						*n = IDBoundaries[environment->MPIrank] + backpermutation[*n - IDBoundaries[environment->MPIrank]];
+					} else {
+						*n = std::lower_bound(rHalo[n2i(source)].begin(), rHalo[n2i(source)].end(), std::make_pair(*n, 0))->second;
+					}
+				}
+			}
+		}
+	};
+
+	auto localremap = [&] (serializededata<eslocal, esglobal>* data) {
+		if (data == NULL) {
+			return;
+		}
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			size_t source;
+			for (auto e = data->begin(t); e != data->end(t); ++e) {
+				for (auto n = e->begin(); n != e->end(); ++n) {
+					*n = backpermutation[*n];
+				}
+			}
+		}
+	};
+
+	mesh._elems->permute(permutation, &distribution);
+
+	globalremap(mesh._elems->dual);
+	globalremap(mesh._nodes->elems);
+	localremap(mesh._elems->decomposedDual);
+	localremap(mesh._processesCommonBoundary->elems);
+
+	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::permutation of elements finished.";
 }
 
 void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal> &partition)
@@ -545,7 +643,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 			} else {
 				target = t2i(partition[e]);
 
-				sElements[t][target].insert(sElements[t][target].end(), { IDs[e], body[e], material[e], static_cast<esglobal>(code[e] - mesh._eclasses[t].data()) });
+				sElements[t][target].insert(sElements[t][target].end(), { IDs[e], body[e], material[e], static_cast<esglobal>(code[e] - mesh._eclasses[t]) });
 				sElements[t][target].push_back(enodes->size());
 				sElements[t][target].insert(sElements[t][target].end(), enodes->begin(), enodes->end());
 				for (size_t n = 0; n < enodes->size(); n++) {
@@ -633,7 +731,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 				elemsIDs[t].push_back(rElements[i][++e]);
 				elemsBody[t].push_back(rElements[i][++e]);
 				elemsMaterial[t].push_back(rElements[i][++e]);
-				elemsEpointer[t].push_back(mesh._eclasses[t].data() + rElements[i][++e]);
+				elemsEpointer[t].push_back(mesh._eclasses[t] + rElements[i][++e]);
 				elemsNodesDistribution[t].push_back(rElements[i][++e]);
 				elemsNodesData[t].insert(elemsNodesData[t].end(), rElements[i].begin() + e + 1, rElements[i].begin() + e + 1 + rElements[i][e]);
 				e += elemsNodesDistribution[t].back();
@@ -708,21 +806,8 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	// Step 6: Re-index elements
 	// Elements IDs are always kept increasing
 
-	std::vector<esglobal> oldIDBoundaries(environment->MPIsize + 1);
-	esglobal esize = mesh._elems->size;
-	Communication::exscan(esize);
-
-	MPI_Allgather(&esize, sizeof(esglobal), MPI_BYTE, oldIDBoundaries.data(), sizeof(esglobal), MPI_BYTE, MPI_COMM_WORLD);
-	oldIDBoundaries.back() = esize + mesh._elems->size;
-	MPI_Bcast(&oldIDBoundaries.back(), sizeof(esglobal), MPI_BYTE, environment->MPIsize - 1, MPI_COMM_WORLD);
-
-	std::vector<esglobal> newIDBoundaries(environment->MPIsize + 1);
-	esize = elements->size;
-	Communication::exscan(esize);
-
-	MPI_Allgather(&esize, sizeof(esglobal), MPI_BYTE, newIDBoundaries.data(), sizeof(esglobal), MPI_BYTE, MPI_COMM_WORLD);
-	newIDBoundaries.back() = esize + elements->size;
-	MPI_Bcast(&newIDBoundaries.back(), sizeof(esglobal), MPI_BYTE, environment->MPIsize - 1, MPI_COMM_WORLD);
+	std::vector<esglobal> oldIDBoundaries = mesh._elems->gatherSizes();
+	std::vector<esglobal> newIDBoundaries = elements->gatherSizes();
 
 	// thread x neighbor x data(ID, new rank)
 	std::vector<std::vector<std::vector<std::pair<esglobal, esglobal> > > > sHaloTarget(threads, std::vector<std::vector<std::pair<esglobal, esglobal> > >(mesh._neighbours.size()));
@@ -913,7 +998,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (auto n = elements->nodes->begin(t)->begin(); n != elements->nodes->end(t)->end(); ++n) {
+		for (auto n = elements->nodes->begin(t)->begin(); n != elements->nodes->end(t)->begin(); ++n) {
 			*n = *std::lower_bound(permutation.begin(), permutation.end(), *n, [&] (esglobal i, esglobal val) {
 				return nodes->IDs->datatarray().data()[i] < val;
 			});
@@ -921,16 +1006,23 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	}
 
 	std::vector<std::vector<eslocal> > rankBoundaries(threads);
-	std::vector<std::vector<esglobal> > rankData(threads);
+	std::vector<std::vector<int> > rankData(threads);
 
 	rankBoundaries.front().push_back(0);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
+		int rank, rsize;
 		for (auto elem = nodes->elems->begin(t); elem != nodes->elems->end(t); ++elem) {
-			for (auto e = elem->begin(); e != elem->end(); ++e) {
-				rankData[t].push_back(std::lower_bound(newIDBoundaries.begin(), newIDBoundaries.end(), *e + 1) - newIDBoundaries.begin() - 1);
+			rsize = 1;
+			rankData[t].push_back(std::lower_bound(newIDBoundaries.begin(), newIDBoundaries.end(), *elem->begin() + 1) - newIDBoundaries.begin() - 1);
+			for (auto e = elem->begin() + 1; e != elem->end(); ++e) {
+				rank = std::lower_bound(newIDBoundaries.begin(), newIDBoundaries.end(), *e + 1) - newIDBoundaries.begin() - 1;
+				if (rank != rankData[t].back()) {
+					rankData[t].push_back(rank);
+					++rsize;
+				}
 			}
-			rankBoundaries[t].push_back(elem->size());
+			rankBoundaries[t].push_back(rsize);
 			if (rankBoundaries[t].size() > 1) {
 				rankBoundaries[t].back() += *(rankBoundaries[t].end() - 2);
 			}
@@ -939,7 +1031,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 
 	Esutils::threadDistributionToFullDistribution(rankBoundaries);
 
-	nodes->ranks = new serializededata<eslocal, esglobal>(rankBoundaries, rankData);
+	nodes->ranks = new serializededata<eslocal, int>(rankBoundaries, rankData);
 
 	std::iota(elements->IDs->datatarray().begin(), elements->IDs->datatarray().end(), newIDBoundaries[environment->MPIrank]);
 	std::swap(mesh._elems, elements);

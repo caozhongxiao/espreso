@@ -3,6 +3,7 @@
 #define SRC_NEWMESH_ELEMENTS_ELEMENTSTORE_H_
 
 #include <cstddef>
+#include <string>
 #include <vector>
 
 namespace espreso {
@@ -13,8 +14,12 @@ struct NewElement;
 
 struct ElementStore {
 
+	void store(const std::string &file);
+
 	void sort();
-	void permute(const std::vector<eslocal> &permutation);
+	void permute(const std::vector<eslocal> &permutation, const std::vector<size_t> *distribution = NULL);
+
+	std::vector<esglobal> gatherSizes();
 
 	size_t size;
 	std::vector<size_t> distribution;

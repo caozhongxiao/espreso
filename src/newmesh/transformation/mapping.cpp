@@ -2,6 +2,7 @@
 #include "transformations.h"
 
 #include "../newmesh.h"
+#include "../elements/newelement.h"
 #include "../elements/elementstore.h"
 
 #include "../../basis/containers/serializededata.h"
@@ -30,7 +31,7 @@ void Transformation::addLinkFromTo(NewMesh &mesh, TFlags::ELEVEL from, TFlags::E
 			return "??";
 		}
 	};
-	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "MESH::add links from " << elevel(from) << " to " << elevel(to) << " started.";
+	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "MESH::adding of links from " << elevel(from) << " to " << elevel(to) << " started.";
 
 	ElementStore *storefrom(NULL), *storeto(NULL);
 	switch (from) {
@@ -159,7 +160,7 @@ void Transformation::addLinkFromTo(NewMesh &mesh, TFlags::ELEVEL from, TFlags::E
 		break;
 	}
 
-	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "MESH::add links from " << elevel(from) << " to " << elevel(to) << " finished.";
+	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "MESH::adding of links from " << elevel(from) << " to " << elevel(to) << " finished.";
 }
 
 struct __haloElement__ {
@@ -209,7 +210,7 @@ void Transformation::exchangeHaloElements(NewMesh &mesh)
 				haloElement.id = IDs[e];
 				haloElement.body = body[e];
 				haloElement.material = material[e];
-				haloElement.code = code[e] - mesh._eclasses[t].data();
+				haloElement.code = code[e] - mesh._eclasses[t];
 
 				for (size_t n = 0; n < neighbors.size(); n++) {
 					if (neighbors[n] != environment->MPIrank) {
@@ -244,7 +245,7 @@ void Transformation::exchangeHaloElements(NewMesh &mesh)
 				hid[t].push_back(rBuffer[n][e].id);
 				hbody[t].push_back(rBuffer[n][e].body);
 				hmaterial[t].push_back(rBuffer[n][e].material);
-				hcode[t].push_back(mesh._eclasses[0].data() + rBuffer[n][e].code);
+				hcode[t].push_back(mesh._eclasses[0] + rBuffer[n][e].code);
 			}
 		}
 	}
@@ -269,7 +270,7 @@ void Transformation::exchangeHaloElements(NewMesh &mesh)
 		auto epointer = mesh._halo->epointers->datatarray();
 
 		for (auto e = mesh._halo->distribution[t]; e < mesh._halo->distribution[t + 1]; ++e) {
-			epointer[e] = mesh._eclasses[t].data() + (epointer[e] - mesh._eclasses[0].data());
+			epointer[e] = mesh._eclasses[t] + (epointer[e] - mesh._eclasses[0]);
 		}
 	}
 
@@ -361,6 +362,7 @@ void Transformation::computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separ
 	}
 
 	size_t threads = environment->OMP_NUM_THREADS;
+	std::vector<eslocal> IDBoundaries = mesh._elems->gatherSizes();
 
 	std::vector<std::vector<eslocal> > dualDistribution(threads);
 	std::vector<std::vector<esglobal> > dualData(threads);
@@ -398,7 +400,7 @@ void Transformation::computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separ
 
 					if (IDs[e] != neighElementIDs[neigh]) {
 						auto it = std::lower_bound(IDs.begin(), IDs.end(), neighElementIDs[neigh]);
-						if (it != IDs.end()) {
+						if (it != IDs.end() && *it == neighElementIDs[neigh]) {
 							neighCommon = mesh._elems->epointers->datatarray()[it - IDs.begin()]->nCommonFace;
 							if (
 									nCounter >= std::min(myCommon, neighCommon) &&
@@ -408,13 +410,8 @@ void Transformation::computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separ
 								) {
 
 
-								if (
-										(e  < mesh._elems->size / 2 && it - IDs.begin()  < mesh._elems->size / 2) ||
-										(e >= mesh._elems->size / 2 && it - IDs.begin() >= mesh._elems->size / 2)) {
-
-									++dualDistribution[t].back();
-									dualData[t].push_back(neighElementIDs[neigh]);
-								}
+								++dualDistribution[t].back();
+								dualData[t].push_back(neighElementIDs[neigh] - IDBoundaries[environment->MPIrank]);
 							}
 						}
 					}
@@ -440,14 +437,14 @@ void Transformation::computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separ
 				for (auto neigh = dual->begin(); neigh != dual->end(); ++neigh) {
 					auto it = std::lower_bound(IDs.begin(), IDs.end(), *neigh);
 					if (
-							it != IDs.end() &&
+							it != IDs.end() && *it == *neigh &&
 							body[e] == body[it - IDs.begin()] &&
 							(!(separate & TFlags::SEPARATE::MATERIALS) || material[e] == material[it - IDs.begin()]) &&
 							(!(separate & TFlags::SEPARATE::ETYPES) || epointer[e]->type == epointer[it - IDs.begin()]->type)
 						) {
 
 						++dualDistribution[t].back();
-						dualData[t].push_back(*neigh);
+						dualData[t].push_back(*neigh - IDBoundaries[environment->MPIrank]);
 					}
 				}
 				if (dualDistribution[t].size() > 1) {
@@ -462,6 +459,48 @@ void Transformation::computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separ
 	mesh._elems->decomposedDual = new serializededata<eslocal, esglobal>(dualDistribution, dualData);
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "MESH::computation of the decomposed dual graph of local elements finished.";
+}
+
+void Transformation::computeProcessesCommonBoundary(NewMesh &mesh)
+{
+	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "MESH::computation of processes boundary started.";
+
+	if (mesh._nodes->elems == NULL) {
+		Transformation::addLinkFromTo(mesh, TFlags::ELEVEL::NODE, TFlags::ELEVEL::ELEMENT);
+	}
+
+	size_t threads = environment->OMP_NUM_THREADS;
+	std::vector<std::vector<eslocal> > bnodes(threads);
+	std::vector<std::vector<esglobal> > belements(threads);
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		auto ranks = mesh._nodes->ranks->cbegin(t);
+		auto elems = mesh._nodes->elems->cbegin(t);
+
+		for (size_t n = mesh._nodes->distribution[t]; n < mesh._nodes->distribution[t + 1]; ++n, ++ranks, ++elems) {
+			if (ranks->size() > 1) {
+				bnodes[t].push_back(n);
+				for (auto e = elems->begin(); e != elems->end(); ++e) {
+					if (mesh._elems->IDs->datatarray().front() <= *e && *e <= mesh._elems->IDs->datatarray().back()) {
+						belements[t].push_back(*e - mesh._elems->IDs->datatarray().front());
+					}
+				}
+			}
+		}
+		Esutils::sortAndRemoveDuplicity(belements[t]);
+	}
+	Esutils::mergeThreadedUniqueData(belements);
+	belements.resize(1);
+	belements.resize(threads);
+
+	serializededata<eslocal, esglobal>::balance(1, belements);
+	serializededata<eslocal, eslocal>::balance(1, bnodes);
+
+	mesh._processesCommonBoundary->elems = new serializededata<eslocal, esglobal>(1, belements);
+	mesh._processesCommonBoundary->nodes = new serializededata<eslocal, eslocal>(1, bnodes);
+
+	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "MESH::computation of processes boundary finished.";
 }
 
 

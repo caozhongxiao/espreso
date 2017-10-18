@@ -13,17 +13,23 @@ template <typename TEBoundaries, typename TEData>
 class serializededata {
 
 public:
-	static void balance(size_t esize, std::vector<std::vector<TEData> > &data)
+	static void balance(size_t esize, std::vector<std::vector<TEData> > &data, const std::vector<size_t> *distribution = NULL)
 	{
-		size_t size = 0;
-		for (size_t t = 0; t < data.size(); t++) {
-			size += esize * data[t].size();
+		std::vector<size_t> _distribution;
+		if (distribution == NULL) {
+			size_t size = 0;
+			for (size_t t = 0; t < data.size(); t++) {
+				size += esize * data[t].size();
+			}
+
+			_distribution = tarray<TEBoundaries>::distribute(data.size(), size);
+		} else {
+			_distribution = *distribution;
 		}
-		std::vector<size_t> distribution = tarray<TEBoundaries>::distribute(data.size(), size);
 
 		for (size_t t = 0, tt = 0; t < data.size(); tt = ++t) {
-			while (++tt && data[t].size() < distribution[t + 1] - distribution[t]) {
-				size_t diff = distribution[t + 1] - distribution[t] - data[t].size();
+			while (++tt && data[t].size() < _distribution[t + 1] - _distribution[t]) {
+				size_t diff = _distribution[t + 1] - _distribution[t] - data[t].size();
 				if (diff < data[tt].size()) {
 					data[t].insert(data[t].end(), data[tt].begin(), data[tt].begin() + diff);
 					data[tt].erase(data[tt].begin(), data[tt].begin() + diff);
@@ -33,15 +39,15 @@ public:
 
 				}
 			}
-			if (data[t].size() > distribution[t + 1] - distribution[t]) {
-				size_t diff = data[t].size() - (distribution[t + 1] - distribution[t]);
+			if (data[t].size() > _distribution[t + 1] - _distribution[t]) {
+				size_t diff = data[t].size() - (_distribution[t + 1] - _distribution[t]);
 				data[t + 1].insert(data[t + 1].begin(), data[t].end() - diff, data[t].end());
 				data[t].erase(data[t].end() - diff, data[t].end());
 			}
 		}
 	}
 
-	static void balance(std::vector<std::vector<TEBoundaries> > &boundaries, std::vector<std::vector<TEData> > &data)
+	static void balance(std::vector<std::vector<TEBoundaries> > &boundaries, std::vector<std::vector<TEData> > &data, const std::vector<size_t> *distribution = NULL)
 	{
 		size_t size = 0;
 		std::vector<size_t> sizes(boundaries.size());
@@ -50,11 +56,17 @@ public:
 			size += boundaries[t].size();
 		}
 		--sizes[0];
-		std::vector<size_t> distribution = tarray<TEBoundaries>::distribute(data.size(), size - 1);
+
+		std::vector<size_t> _distribution;
+		if (distribution == NULL) {
+			_distribution = tarray<TEBoundaries>::distribute(data.size(), size - 1);
+		} else {
+			_distribution = *distribution;
+		}
 
 		for (size_t t = 0, tt = 0; t < boundaries.size(); tt = ++t) {
-			while (++tt && sizes[t] < distribution[t + 1] - distribution[t]) {
-				size_t diff = distribution[t + 1] - distribution[t] - sizes[t];
+			while (++tt && sizes[t] < _distribution[t + 1] - _distribution[t]) {
+				size_t diff = _distribution[t + 1] - _distribution[t] - sizes[t];
 				if (diff < sizes[tt]) {
 					size_t ttt = 0;
 					while (boundaries[tt - ++ttt].size() == 0);
@@ -77,8 +89,8 @@ public:
 					boundaries[tt].clear();
 				}
 			}
-			if (sizes[t] > distribution[t + 1] - distribution[t]) {
-				size_t diff = sizes[t] - (distribution[t + 1] - distribution[t]);
+			if (sizes[t] > _distribution[t + 1] - _distribution[t]) {
+				size_t diff = sizes[t] - (_distribution[t + 1] - _distribution[t]);
 				size_t ediff = boundaries[t].back() - *(boundaries[t].end() - diff - 1);
 				data[t + 1].insert(data[t + 1].begin(), data[t].end() - ediff, data[t].end());
 				data[t].erase(data[t].end() - ediff, data[t].end());
@@ -223,12 +235,12 @@ public:
 		}
 	}
 
-	void permute(const std::vector<eslocal> &permutation)
+	void permute(const std::vector<eslocal> &permutation, const std::vector<size_t> *distribution = NULL)
 	{
 		if (_eboundaries.size()) {
-			permuteNonUniformData(permutation);
+			permuteNonUniformData(permutation, distribution);
 		} else {
-			permuteUniformData(permutation);
+			permuteUniformData(permutation, distribution);
 		}
 	}
 
@@ -274,7 +286,7 @@ private:
 		}
 	}
 
-	void permuteUniformData(const std::vector<eslocal> &permutation)
+	void permuteUniformData(const std::vector<eslocal> &permutation, const std::vector<size_t> *distribution = NULL)
 	{
 		std::vector<std::vector<TEData> > pdata(threads());
 		#pragma omp parallel for
@@ -283,10 +295,16 @@ private:
 				pdata[t].push_back(_edata.data()[permutation[i]]);
 			}
 		}
+
+		if (distribution != NULL) {
+			balance(_iterator.front()->end() - _iterator.front()->begin(), pdata);
+		}
+
 		_edata = tarray<TEData>(pdata);
+		inititerators(_iterator.front()->end() - _iterator.front()->begin());
 	}
 
-	void permuteNonUniformData(const std::vector<eslocal> &permutation)
+	void permuteNonUniformData(const std::vector<eslocal> &permutation, const std::vector<size_t> *distribution = NULL)
 	{
 		std::vector<std::vector<TEBoundaries> > pboundaries(threads());
 		std::vector<std::vector<TEData> > pdata(threads());
@@ -294,9 +312,9 @@ private:
 		pboundaries.front().push_back(0);
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads(); t++) {
-			for (size_t e = _eboundaries.distribution()[t]; e < _eboundaries.distribution()[t + 1] - 1; ++e) {
-				pboundaries[t].push_back(_eboundaries.data()[permutation[e] + 1] - _eboundaries.data()[permutation[e]]);
-				for (size_t i = _eboundaries.data()[permutation[e]]; i < _eboundaries.data()[permutation[e] + 1]; ++i) {
+			for (size_t e = t == 0 ? 1 : _eboundaries.distribution()[t]; e < _eboundaries.distribution()[t + 1]; ++e) {
+				pboundaries[t].push_back(_eboundaries.data()[permutation[e - 1] + 1] - _eboundaries.data()[permutation[e - 1]]);
+				for (size_t i = _eboundaries.data()[permutation[e - 1]]; i < _eboundaries.data()[permutation[e - 1] + 1]; ++i) {
 					pdata[t].push_back(_edata.data()[i]);
 				}
 				if (pboundaries[t].size() > 1) {
@@ -325,8 +343,12 @@ private:
 			}
 		}
 
+		if (distribution != NULL) {
+			balance(pboundaries, pdata);
+		}
 		_eboundaries = tarray<TEBoundaries>(pboundaries);
 		_edata = tarray<TEData>(pdata);
+		inititerators();
 	}
 
 	tarray<TEBoundaries> _eboundaries;
@@ -334,6 +356,11 @@ private:
 
 	std::vector<iterator> _iterator;
 	std::vector<const_iterator> _constiterator;
+};
+
+template <typename TEBoundaries, typename TEData>
+struct serializededatainterval {
+	typename serializededata<TEBoundaries, TEData>::const_iterator begin, end;
 };
 
 }

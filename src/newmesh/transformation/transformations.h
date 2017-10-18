@@ -22,6 +22,8 @@ struct Transformation {
 	static void computeDual(NewMesh &mesh);
 	static void computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separate);
 
+	static void computeProcessesCommonBoundary(NewMesh &mesh);
+
 	static void computeElementCenters(NewMesh &mesh);
 
 	static void reclusterize(NewMesh &mesh);
@@ -30,6 +32,7 @@ private:
 	static size_t level;
 
 	static void exchangeElements(NewMesh &mesh, const std::vector<esglobal> &partition);
+	static void permuteElements(NewMesh &mesh, const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
 };
 
 }

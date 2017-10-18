@@ -3,6 +3,9 @@
 #include "metis.h"
 
 #include "../basis/logging/logging.h"
+#include "../config/ecf/environment.h"
+
+#include <fstream>
 
 using namespace espreso;
 

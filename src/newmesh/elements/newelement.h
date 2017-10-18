@@ -51,8 +51,12 @@ struct NewElement {
 	int nCommonEdge;
 	// add base functions
 
+
 	NewElement(TYPE type, CODE code, int coarseNodes, int nCommonFace, int nCommonEdge)
 	: type(type), code(code), coarseNodes(coarseNodes), nCommonFace(nCommonFace), nCommonEdge(nCommonEdge) {}
+
+	NewElement()
+	: type(TYPE::POINT), code(CODE::POINT1), coarseNodes(1), nCommonFace(1), nCommonEdge(1) {}
 };
 
 }
