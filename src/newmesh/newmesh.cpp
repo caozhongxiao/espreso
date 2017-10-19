@@ -46,36 +46,37 @@ using namespace espreso;
 
 NewMesh::NewMesh(Mesh &mesh)
 : _nodes(new ElementStore()), _edges(new ElementStore()), _faces(new ElementStore()), _elems(new ElementStore()), _halo(new ElementStore()),
+  _domains(NULL), _domainsBoundaries(NULL),
   _processesCommonBoundary(new ElementStore()),
   _eclasses(environment->OMP_NUM_THREADS)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<NewElement> eclasses;
-
-	eclasses.push_back(Point1::create());
-
-	eclasses.push_back(Line2::create());
-	eclasses.push_back(Line3::create());
-
-	eclasses.push_back(Triangle3::create());
-	eclasses.push_back(Triangle6::create());
-	eclasses.push_back(Square4::create());
-	eclasses.push_back(Square8::create());
-
-	eclasses.push_back(Tetrahedron4::create());
-	eclasses.push_back(Tetrahedron10::create());
-	eclasses.push_back(Pyramid5::create());
-	eclasses.push_back(Pyramid13::create());
-	eclasses.push_back(Prisma6::create());
-	eclasses.push_back(Prisma15::create());
-	eclasses.push_back(Hexahedron8::create());
-	eclasses.push_back(Hexahedron20::create());
-
-	std::sort(eclasses.begin(), eclasses.end(), [] (const NewElement &e1, const NewElement &e2) { return static_cast<int>(e1.code) < static_cast<int>(e2.code); });
-
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
+		std::vector<NewElement> eclasses;
+
+		eclasses.push_back(Point1::create());
+
+		eclasses.push_back(Line2::create());
+		eclasses.push_back(Line3::create());
+
+		eclasses.push_back(Triangle3::create());
+		eclasses.push_back(Triangle6::create());
+		eclasses.push_back(Square4::create());
+		eclasses.push_back(Square8::create());
+
+		eclasses.push_back(Tetrahedron4::create());
+		eclasses.push_back(Tetrahedron10::create());
+		eclasses.push_back(Pyramid5::create());
+		eclasses.push_back(Pyramid13::create());
+		eclasses.push_back(Prisma6::create());
+		eclasses.push_back(Prisma15::create());
+		eclasses.push_back(Hexahedron8::create(t));
+		eclasses.push_back(Hexahedron20::create());
+
+		std::sort(eclasses.begin(), eclasses.end(), [] (const NewElement &e1, const NewElement &e2) { return static_cast<int>(e1.code) < static_cast<int>(e2.code); });
+
 		_eclasses[t] = new NewElement[eclasses.size()];
 		memcpy(_eclasses[t], eclasses.data(), eclasses.size() * sizeof(NewElement));
 	}
@@ -246,9 +247,10 @@ NewMesh::NewMesh(Mesh &mesh)
 //	Transformation::computeDecomposedDual(*this, TFlags::SEPARATE::MATERIALS | TFlags::SEPARATE::ETYPES);
 //	Transformation::computeElementCenters(*this);
 	Transformation::reclusterize(*this);
-	Transformation::partitiate(*this, 8, TFlags::SEPARATE::MATERIALS);
+	Transformation::partitiate(*this, 4, TFlags::SEPARATE::MATERIALS | TFlags::SEPARATE::ETYPES);
+	Transformation::computeDomainsBoundaries(*this); //, TFlags::ELEVEL::FACE | TFlags::ELEVEL::NODE);
 
-	// NewOutput::VTKLegacy("test", _elems, _nodes);
+	NewOutput::VTKLegacy("test", _elems, _nodes);
 
 	MPI_Barrier(environment->MPICommunicator);
 	MPI_Finalize();

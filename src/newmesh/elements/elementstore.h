@@ -35,6 +35,7 @@ struct ElementStore {
 	serializededata<eslocal, int>* body;
 	serializededata<eslocal, int>* material;
 	serializededata<eslocal, NewElement*>* epointers;
+	serializededata<eslocal, eslocal>* domains;
 	serializededata<eslocal, int>* ranks;
 
 	serializededata<eslocal, esglobal>* dual;

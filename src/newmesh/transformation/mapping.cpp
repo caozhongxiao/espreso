@@ -12,6 +12,7 @@
 #include "../../config/ecf/environment.h"
 
 #include <algorithm>
+#include <iostream>
 
 using namespace espreso;
 
@@ -461,47 +462,78 @@ void Transformation::computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separ
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "MESH::computation of the decomposed dual graph of local elements finished.";
 }
 
-void Transformation::computeProcessesCommonBoundary(NewMesh &mesh)
+void Transformation::assignDomainsToNodes(NewMesh &mesh)
 {
-	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "MESH::computation of processes boundary started.";
+	if (mesh._domains == NULL) {
+		ESINFO(TVERBOSITY) << std::string(2 * (level + 1), ' ') << "Transformation::assign domains to nodes skipped.";
+		return;
+	}
+
+	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "Transformation::assign domains to nodes started.";
 
 	if (mesh._nodes->elems == NULL) {
 		Transformation::addLinkFromTo(mesh, TFlags::ELEVEL::NODE, TFlags::ELEVEL::ELEMENT);
 	}
 
 	size_t threads = environment->OMP_NUM_THREADS;
-	std::vector<std::vector<eslocal> > bnodes(threads);
-	std::vector<std::vector<esglobal> > belements(threads);
+
+	std::vector<esglobal> sIDDomainBoundaries, IDRankBoundaries = mesh._elems->gatherSizes();
+	for (size_t d = 0; d < mesh._domains->structures(); d++) {
+		sIDDomainBoundaries.push_back(mesh._domains->datatarray()[d]->eoffset + IDRankBoundaries[environment->MPIrank]);
+	}
+	sIDDomainBoundaries.push_back(IDRankBoundaries[environment->MPIrank + 1]);
+
+	std::vector<std::vector<esglobal> > rIDDomainBoundaries(mesh._neighbours.size());
+	if (!Communication::exchangeUnknownSize(sIDDomainBoundaries, rIDDomainBoundaries, mesh._neighbours)) {
+		ESINFO(ERROR) << "ESPRESO internal error while exchanging IDDomainBoundaries.";
+	}
+
+	std::vector<esglobal> IDDomainBoundaries;
+	for (size_t n = 0; n < mesh._neighbours.size(); n++) {
+		if (environment->MPIrank < mesh._neighbours[n]) {
+			IDDomainBoundaries.insert(IDDomainBoundaries.end(), sIDDomainBoundaries.begin(), sIDDomainBoundaries.end());
+		}
+		IDDomainBoundaries.insert(IDDomainBoundaries.end(), rIDDomainBoundaries[n].begin(), rIDDomainBoundaries[n].end());
+	}
+	if (mesh._neighbours.size() == 0 || mesh._neighbours.back() < environment->MPIrank) {
+		IDDomainBoundaries.insert(IDDomainBoundaries.end(), sIDDomainBoundaries.begin(), sIDDomainBoundaries.end());
+	}
+	Esutils::removeDuplicity(IDDomainBoundaries);
+
+	std::vector<std::vector<eslocal> > domainsDistribution(threads), domainsData(threads);
+	domainsDistribution.front().push_back(0);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto ranks = mesh._nodes->ranks->cbegin(t);
 		auto elems = mesh._nodes->elems->cbegin(t);
+		std::vector<int> domains;
+		int min = std::lower_bound(IDDomainBoundaries.begin(), IDDomainBoundaries.end(), IDRankBoundaries[environment->MPIrank]) - IDDomainBoundaries.begin();
+		int max = std::lower_bound(IDDomainBoundaries.begin(), IDDomainBoundaries.end(), IDRankBoundaries[environment->MPIrank + 1]) - IDDomainBoundaries.begin();
 
-		for (size_t n = mesh._nodes->distribution[t]; n < mesh._nodes->distribution[t + 1]; ++n, ++ranks, ++elems) {
-			if (ranks->size() > 1) {
-				bnodes[t].push_back(n);
-				for (auto e = elems->begin(); e != elems->end(); ++e) {
-					if (mesh._elems->IDs->datatarray().front() <= *e && *e <= mesh._elems->IDs->datatarray().back()) {
-						belements[t].push_back(*e - mesh._elems->IDs->datatarray().front());
-					}
+		for (auto n = mesh._nodes->distribution[t]; n < mesh._nodes->distribution[t + 1]; ++n, ++elems) {
+			domains.clear();
+			for (auto e = elems->begin(); e != elems->end(); ++e) {
+				domains.push_back(std::lower_bound(IDDomainBoundaries.begin(), IDDomainBoundaries.end(), *e) - IDDomainBoundaries.begin());
+			}
+			Esutils::sortAndRemoveDuplicity(domains);
+			domainsDistribution[t].push_back(domains.size());
+			for (size_t d = 0; d < domains.size(); ++d) {
+				domainsData[t].push_back(domains[d] - min);
+				if (domains[d] >= max) {
+					domainsData[t].back() = -1;
 				}
 			}
+			if (domainsDistribution[t].size() > 1) {
+				domainsDistribution[t].back() += *(domainsDistribution[t].end() - 2);
+			}
 		}
-		Esutils::sortAndRemoveDuplicity(belements[t]);
 	}
-	Esutils::mergeThreadedUniqueData(belements);
-	belements.resize(1);
-	belements.resize(threads);
 
-	serializededata<eslocal, esglobal>::balance(1, belements);
-	serializededata<eslocal, eslocal>::balance(1, bnodes);
+	Esutils::threadDistributionToFullDistribution(domainsDistribution);
 
-	mesh._processesCommonBoundary->elems = new serializededata<eslocal, esglobal>(1, belements);
-	mesh._processesCommonBoundary->nodes = new serializededata<eslocal, eslocal>(1, bnodes);
+	mesh._nodes->domains = new serializededata<eslocal, eslocal>(domainsDistribution, domainsData);
 
-	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "MESH::computation of processes boundary finished.";
+	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::assign domains to nodes finished.";
 }
-
 
 

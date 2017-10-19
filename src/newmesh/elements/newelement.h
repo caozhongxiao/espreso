@@ -3,10 +3,11 @@
 #define SRC_NEWMESH_ELEMENTS_NEWELEMENT_H_
 
 #include <cstddef>
+#include <vector>
 
 namespace espreso {
 
-template <typename TEData> class edata;
+template <typename TEBoundaries, typename TEData> class serializededata;
 class ElementStore;
 
 struct NewElement {
@@ -51,12 +52,16 @@ struct NewElement {
 	int nCommonEdge;
 	// add base functions
 
+	serializededata<int, int> *faces;
+	serializededata<int, int> *edges;
 
 	NewElement(TYPE type, CODE code, int coarseNodes, int nCommonFace, int nCommonEdge)
-	: type(type), code(code), coarseNodes(coarseNodes), nCommonFace(nCommonFace), nCommonEdge(nCommonEdge) {}
+	: type(type), code(code), coarseNodes(coarseNodes), nCommonFace(nCommonFace), nCommonEdge(nCommonEdge),
+	  faces(NULL), edges(NULL) {}
 
 	NewElement()
-	: type(TYPE::POINT), code(CODE::POINT1), coarseNodes(1), nCommonFace(1), nCommonEdge(1) {}
+	: type(TYPE::POINT), code(CODE::POINT1), coarseNodes(1), nCommonFace(1), nCommonEdge(1),
+	  faces(NULL), edges(NULL) {}
 };
 
 }

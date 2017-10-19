@@ -26,6 +26,7 @@ ElementStore::ElementStore()
   body(NULL),
   material(NULL),
   epointers(NULL),
+  domains(NULL),
   ranks(NULL),
 
   dual(NULL),
@@ -47,6 +48,7 @@ ElementStore::~ElementStore()
 	if (body == NULL) { delete body; }
 	if (material == NULL) { delete material; }
 	if (epointers == NULL) { delete epointers; }
+	if (domains == NULL) { delete domains; }
 	if (ranks == NULL) { delete ranks; }
 
 	if (dual == NULL) { delete dual; }
@@ -85,6 +87,7 @@ void ElementStore::store(const std::string &file)
 	storedata(os, "coordinates", coordinates);
 	storedata(os, "body", body);
 	storedata(os, "material", material);
+	storedata(os, "domains", domains);
 	storedata(os, "ranks", ranks);
 
 	storedata(os, "dual", dual);
@@ -120,6 +123,7 @@ void ElementStore::permute(const std::vector<eslocal> &permutation, const std::v
 	if (body != NULL) { body->permute(permutation, distribution); }
 	if (material != NULL) { material->permute(permutation, distribution); }
 	if (epointers != NULL) { epointers->permute(permutation, distribution); }
+	if (domains != NULL) { domains->permute(permutation, distribution); }
 	if (ranks != NULL) { ranks->permute(permutation, distribution); }
 
 	if (dual != NULL) { dual->permute(permutation, distribution); }

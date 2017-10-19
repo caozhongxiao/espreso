@@ -432,11 +432,45 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 
 	Transformation::permuteElements(mesh, permutation, tdistribution);
 
-	std::vector<std::vector<eslocal> > decompositionDistribution(threads);
 	std::vector<std::vector<MeshDomain*> > decompositionData(threads);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
+		if (domainDistribution.size() < threads + 1) {
+			if (t < domainDistribution.size() - 1) {
+				decompositionData[t].push_back(new MeshDomain());
+			}
+		} else {
+			auto begin = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution[t]);
+			auto end   = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution[t + 1]);
+			for (auto it = begin; it != end; ++it) {
+				decompositionData[t].push_back(new MeshDomain());
+			}
+		}
+	}
 
+	mesh._domains = new serializededata<eslocal, MeshDomain*>(1, decompositionData);
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		if (domainDistribution.size() < threads + 1) {
+			if (t < domainDistribution.size() - 1) {
+				decompositionData[t].front()->eoffset = domainDistribution[t];
+				decompositionData[t].front()->esize = domainDistribution[t + 1] - domainDistribution[t];
+				decompositionData[t].front()->elements = new serializededatainterval<eslocal, eslocal>(
+						mesh._elems->nodes->cbegin() + t,
+						mesh._elems->nodes->cbegin() + t + 1);
+			}
+		} else {
+			auto begin = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution[t]);
+			auto end   = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution[t + 1]);
+			for (auto it = begin; it != end; ++it) {
+				decompositionData[t][it - begin]->eoffset = *it;
+				decompositionData[t][it - begin]->esize = *(it + 1) - *it;
+				decompositionData[t][it - begin]->elements = new serializededatainterval<eslocal, eslocal>(
+						mesh._elems->nodes->cbegin() + (it - domainDistribution.begin()),
+						mesh._elems->nodes->cbegin() + (it - domainDistribution.begin() + 1));
+			}
+		}
 	}
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::decomposition of the mesh finished.";
@@ -530,7 +564,9 @@ void Transformation::permuteElements(NewMesh &mesh, const std::vector<eslocal> &
 		}
 	};
 
+	esglobal firstID = mesh._elems->IDs->datatarray().front();
 	mesh._elems->permute(permutation, &distribution);
+	std::iota(mesh._elems->IDs->datatarray().begin(), mesh._elems->IDs->datatarray().end(), firstID);
 
 	globalremap(mesh._elems->dual);
 	globalremap(mesh._nodes->elems);
@@ -538,6 +574,13 @@ void Transformation::permuteElements(NewMesh &mesh, const std::vector<eslocal> &
 	localremap(mesh._processesCommonBoundary->elems);
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::permutation of elements finished.";
+}
+
+void Transformation::permuteNodes(NewMesh &mesh, const std::vector<eslocal> &permutation)
+{
+	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "Transformation::permutation of nodes started.";
+
+	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::permutation of nodes finished.";
 }
 
 void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal> &partition)

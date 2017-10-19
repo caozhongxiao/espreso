@@ -64,6 +64,38 @@ bool Communication::exchangeUnknownSize(const std::vector<std::vector<Ttype> > &
 }
 
 template <typename Ttype>
+bool Communication::exchangeUnknownSize(const std::vector<Ttype> &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours)
+{
+	auto n2i = [ & ] (size_t neighbour) {
+		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
+	};
+
+	std::vector<MPI_Request> req(neighbours.size());
+	for (size_t n = 0; n < neighbours.size(); n++) {
+		// bullxmpi violate MPI standard (cast away constness)
+		MPI_Isend(const_cast<Ttype*>(sBuffer.data()), sizeof(Ttype) * sBuffer.size(), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + n);
+	}
+
+	int flag;
+	size_t counter = 0;
+	MPI_Status status;
+	while (counter < neighbours.size()) {
+		MPI_Iprobe(MPI_ANY_SOURCE, 0, environment->MPICommunicator, &flag, &status);
+		if (flag) {
+			int count;
+			MPI_Get_count(&status, MPI_BYTE, &count);
+			rBuffer[n2i(status.MPI_SOURCE)].resize(count / sizeof(Ttype));
+			MPI_Recv(rBuffer[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
+			counter++;
+		}
+	}
+
+	MPI_Waitall(neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
+	MPI_Barrier(environment->MPICommunicator); // MPI_Iprobe(ANY_SOURCE) can be problem when calling this function more times
+	return true;
+}
+
+template <typename Ttype>
 bool Communication::receiveLowerKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours)
 {
 	std::vector<MPI_Request> req(neighbours.size());

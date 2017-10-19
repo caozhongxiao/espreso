@@ -360,7 +360,13 @@ private:
 
 template <typename TEBoundaries, typename TEData>
 struct serializededatainterval {
-	typename serializededata<TEBoundaries, TEData>::const_iterator begin, end;
+	serializededatainterval(typename serializededata<TEBoundaries, TEData>::const_iterator begin, typename serializededata<TEBoundaries, TEData>::const_iterator end)
+	: _begin(begin), _end(end) {}
+
+	typename serializededata<TEBoundaries, TEData>::const_iterator& begin() { return _begin; }
+	typename serializededata<TEBoundaries, TEData>::const_iterator& end() { return _end; }
+
+	typename serializededata<TEBoundaries, TEData>::const_iterator _begin, _end;
 };
 
 }
