@@ -440,7 +440,7 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
     if (cluster.USE_KINV == 0) {
 //    	 time_eval.timeEvents[0].start();
     	SEQ_VECTOR <bool> is_empty ( cluster.x_prim_cluster1.size(), true);
- 		#pragma omp parallel for
+ 		//#pragma omp parallel for
 		for (size_t d = 0; d < cluster.domains.size(); d++) {
 			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d]->B1_comp_dom.rows, 0.0 );
 
