@@ -4,6 +4,7 @@
 #include "../newmesh.h"
 #include "../elements/newelement.h"
 #include "../elements/elementstore.h"
+#include "../store/domainstore.h"
 
 #include "../../basis/point/point.h"
 #include "../../basis/containers/serializededata.h"
@@ -268,6 +269,7 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 				parts, partition.data());
 		ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::METIS::KWay finished.";
 		blocks = std::vector<eslocal>({ 0, (eslocal)mesh._elems->size });
+		mesh._domains->clusters.resize(parts, 0);
 
 	} else { // non-continuous dual graph
 		// thread x part x elements
@@ -360,6 +362,7 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 		size_t partsCounter = 0;
 		for (size_t p = 0; p < nextID; p++) {
 			partsCounter += pparts[p] = std::ceil((frames[p].size() - 1) / averageDomainSize);
+			mesh._domains->clusters.resize(partsCounter, p);
 		}
 
 		ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "Transformation::METIS::KWay started.";
@@ -432,46 +435,41 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 
 	Transformation::permuteElements(mesh, permutation, tdistribution);
 
-	std::vector<std::vector<MeshDomain*> > decompositionData(threads);
-	#pragma omp parallel for
+	std::vector<size_t> domainCounter(threads);
 	for (size_t t = 0; t < threads; t++) {
 		if (domainDistribution.size() < threads + 1) {
 			if (t < domainDistribution.size() - 1) {
-				decompositionData[t].push_back(new MeshDomain());
+				++domainCounter[t];
 			}
 		} else {
 			auto begin = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution[t]);
 			auto end   = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution[t + 1]);
 			for (auto it = begin; it != end; ++it) {
-				decompositionData[t].push_back(new MeshDomain());
+				++domainCounter[t];
 			}
 		}
 	}
 
-	mesh._domains = new serializededata<eslocal, MeshDomain*>(1, decompositionData);
+	domainCounter.push_back(Esutils::sizesToOffsets(domainCounter));
+	mesh._domains->domainDistribution = domainCounter;
 
-	#pragma omp parallel for
+	mesh._domains->domainBoundaries.push_back(0);
 	for (size_t t = 0; t < threads; t++) {
 		if (domainDistribution.size() < threads + 1) {
 			if (t < domainDistribution.size() - 1) {
-				decompositionData[t].front()->eoffset = domainDistribution[t];
-				decompositionData[t].front()->esize = domainDistribution[t + 1] - domainDistribution[t];
-				decompositionData[t].front()->elements = new serializededatainterval<eslocal, eslocal>(
-						mesh._elems->nodes->cbegin() + domainDistribution[t],
-						mesh._elems->nodes->cbegin() + domainDistribution[t + 1]);
+				mesh._domains->domainBoundaries.push_back(domainDistribution[t + 1]);
 			}
 		} else {
 			auto begin = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution[t]);
 			auto end   = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution[t + 1]);
 			for (auto it = begin; it != end; ++it) {
-				decompositionData[t][it - begin]->eoffset = *it;
-				decompositionData[t][it - begin]->esize = *(it + 1) - *it;
-				decompositionData[t][it - begin]->elements = new serializededatainterval<eslocal, eslocal>(
-						mesh._elems->nodes->cbegin() + *it,
-						mesh._elems->nodes->cbegin() + *(it + 1));
+				mesh._domains->domainBoundaries.push_back(*(it + 1));
 			}
 		}
 	}
+
+	std::cout << "distribution: " << mesh._domains->domainDistribution;
+	std::cout << "boundaries: " << mesh._domains->domainBoundaries;
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::decomposition of the mesh finished.";
 }

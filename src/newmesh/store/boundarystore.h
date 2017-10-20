@@ -3,8 +3,6 @@
 #define SRC_NEWMESH_STORE_BOUNDARYSTORE_H_
 
 #include <cstddef>
-#include <string>
-#include <vector>
 
 namespace espreso {
 

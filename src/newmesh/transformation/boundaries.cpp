@@ -4,6 +4,7 @@
 #include "../newmesh.h"
 #include "../elements/newelement.h"
 #include "../elements/elementstore.h"
+#include "../store/domainstore.h"
 #include "../store/boundarystore.h"
 
 #include "../../basis/containers/serializededata.h"
@@ -75,10 +76,6 @@ void Transformation::computeDomainsBoundaries(NewMesh &mesh)
 		Transformation::computeDecomposedDual(mesh, TFlags::SEPARATE::ETYPES);
 	}
 
-	if (mesh._nodes->domains == NULL) {
-		Transformation::assignDomainsToNodes(mesh);
-	}
-
 //	if (elevel & TFlags::ELEVEL::ELEMENT) {
 //		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement domains boundaries for elements.";
 //	}
@@ -96,19 +93,21 @@ void Transformation::computeDomainsBoundaries(NewMesh &mesh)
 	faceDistribution.front().push_back(0);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto elems = mesh._nodes->elems->cbegin();
 		std::vector<esglobal> common;
 		size_t ncommons, counter;
 		bool isAdept;
 
-		for (size_t d = mesh._domains->datatarray().distribution()[t]; d < mesh._domains->datatarray().distribution()[t + 1]; ++d) {
-			MeshDomain *domain = mesh._domains->datatarray()[d];
-			esglobal begine = IDBoundaries[environment->MPIrank] + domain->eoffset;
-			esglobal ende   = IDBoundaries[environment->MPIrank] + domain->eoffset + domain->esize;
-			auto dual = mesh._elems->decomposedDual->cbegin() + domain->eoffset;
-			auto epointer = mesh._elems->epointers->cbegin() + domain->eoffset;
+		for (size_t d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; ++d) {
+			esglobal begine = IDBoundaries[environment->MPIrank] + mesh._domains->domainBoundaries[d];
+			esglobal ende   = IDBoundaries[environment->MPIrank] + mesh._domains->domainBoundaries[d + 1];
+			auto elems = mesh._elems->nodes->cbegin() + mesh._domains->domainBoundaries[d];
+			auto dual = mesh._elems->decomposedDual->cbegin() + mesh._domains->domainBoundaries[d];
+			auto epointer = mesh._elems->epointers->cbegin() + mesh._domains->domainBoundaries[d];
 
-			for (auto e = domain->elements->begin(); e != domain->elements->end(); ++e, ++dual, ++epointer) {
+			for (
+					auto e = mesh._elems->nodes->cbegin() + mesh._domains->domainBoundaries[d];
+					e != mesh._elems->nodes->cbegin() + mesh._domains->domainBoundaries[d + 1];
+					++e, ++dual, ++epointer) {
 
 				isAdept = false;
 				if (dual->size() < epointer->front()->faces->structures()) {

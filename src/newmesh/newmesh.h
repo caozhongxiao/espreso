@@ -7,23 +7,10 @@
 namespace espreso {
 
 class Mesh;
-struct ElementStore;
+struct DomainStore;
 struct BoundaryStore;
+struct ElementStore;
 class NewElement;
-template <typename TEBoundaries, typename TEData> class serializededata;
-template <typename TEBoundaries, typename TEData> struct serializededatainterval;
-
-class MeshDomain {
-
-public:
-	int cluster;
-	std::vector<int> neighbours;
-
-	size_t eoffset;
-	size_t esize;
-
-	serializededatainterval<eslocal, eslocal> *elements;
-};
 
 class NewMesh {
 
@@ -31,7 +18,7 @@ class NewMesh {
 public:
 	NewMesh(Mesh &mesh);
 
-	serializededata<eslocal, MeshDomain*> *_domains;
+	DomainStore *_domains;
 	BoundaryStore *_domainsBoundaries;
 
 // protected:

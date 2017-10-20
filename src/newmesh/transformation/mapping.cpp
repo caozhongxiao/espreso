@@ -4,6 +4,7 @@
 #include "../newmesh.h"
 #include "../elements/newelement.h"
 #include "../elements/elementstore.h"
+#include "../store/domainstore.h"
 
 #include "../../basis/containers/serializededata.h"
 #include "../../basis/logging/logging.h"
@@ -478,8 +479,8 @@ void Transformation::assignDomainsToNodes(NewMesh &mesh)
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	std::vector<esglobal> sIDDomainBoundaries, IDRankBoundaries = mesh._elems->gatherSizes();
-	for (size_t d = 0; d < mesh._domains->structures(); d++) {
-		sIDDomainBoundaries.push_back(mesh._domains->datatarray()[d]->eoffset + IDRankBoundaries[environment->MPIrank]);
+	for (size_t d = 0; d < mesh._domains->domainBoundaries.size(); d++) {
+		sIDDomainBoundaries.push_back(mesh._domains->domainBoundaries[d] + IDRankBoundaries[environment->MPIrank]);
 	}
 	sIDDomainBoundaries.push_back(IDRankBoundaries[environment->MPIrank + 1]);
 
