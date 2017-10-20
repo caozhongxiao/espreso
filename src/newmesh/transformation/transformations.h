@@ -37,6 +37,7 @@ private:
 	static void exchangeElements(NewMesh &mesh, const std::vector<esglobal> &partition);
 	static void permuteElements(NewMesh &mesh, const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
 	static void permuteNodes(NewMesh &mesh, const std::vector<eslocal> &permutation);
+	static void projectElementsToDomains(NewMesh &mesh);
 };
 
 }

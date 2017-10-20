@@ -450,7 +450,8 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 		}
 	}
 
-	domainCounter.push_back(Esutils::sizesToOffsets(domainCounter));
+	mesh._domains->size = Esutils::sizesToOffsets(domainCounter);
+	domainCounter.push_back(mesh._domains->size);
 	mesh._domains->domainDistribution = domainCounter;
 
 	mesh._domains->domainBoundaries.push_back(0);
@@ -467,9 +468,6 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 			}
 		}
 	}
-
-	std::cout << "distribution: " << mesh._domains->domainDistribution;
-	std::cout << "boundaries: " << mesh._domains->domainBoundaries;
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::decomposition of the mesh finished.";
 }

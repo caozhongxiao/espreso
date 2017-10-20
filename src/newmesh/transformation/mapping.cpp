@@ -537,4 +537,34 @@ void Transformation::assignDomainsToNodes(NewMesh &mesh)
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::assign domains to nodes finished.";
 }
 
+void Transformation::projectElementsToDomains(NewMesh &mesh)
+{
+	if (mesh._domains == NULL) {
+		ESINFO(TVERBOSITY) << std::string(2 * (level + 1), ' ') << "Transformation::project elements to domains skipped.";
+		return;
+	}
+
+	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "Transformation::project elements to domains started.";
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	std::vector<std::vector<eslocal> > domainNodes(mesh._domains->size);
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (size_t d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; ++d) {
+			for (
+					auto enodes = mesh._elems->nodes->cbegin() + mesh._domains->domainBoundaries[d];
+					enodes != mesh._elems->nodes->cbegin() + mesh._domains->domainBoundaries[d + 1];
+					++enodes) {
+
+				domainNodes[d].push_back();
+			}
+		}
+	}
+
+
+	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::project elements to domains finished.";
+}
+
 
