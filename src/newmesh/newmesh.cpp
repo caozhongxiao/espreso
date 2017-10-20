@@ -55,6 +55,7 @@ NewMesh::NewMesh(Mesh &mesh)
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<NewElement> eclasses;
+		_eclasses[t] = new NewElement[static_cast<int>(NewElement::CODE::SIZE)];
 
 		eclasses.push_back(Point1::create());
 
@@ -72,12 +73,12 @@ NewMesh::NewMesh(Mesh &mesh)
 		eclasses.push_back(Pyramid13::create());
 		eclasses.push_back(Prisma6::create());
 		eclasses.push_back(Prisma15::create());
-		eclasses.push_back(Hexahedron8::create(t));
+		eclasses.push_back(Hexahedron8::create(t, _eclasses[t]));
 		eclasses.push_back(Hexahedron20::create());
 
 		std::sort(eclasses.begin(), eclasses.end(), [] (const NewElement &e1, const NewElement &e2) { return static_cast<int>(e1.code) < static_cast<int>(e2.code); });
 
-		_eclasses[t] = new NewElement[eclasses.size()];
+
 		memcpy(_eclasses[t], eclasses.data(), eclasses.size() * sizeof(NewElement));
 	}
 
@@ -250,7 +251,7 @@ NewMesh::NewMesh(Mesh &mesh)
 	Transformation::partitiate(*this, 4, TFlags::SEPARATE::MATERIALS | TFlags::SEPARATE::ETYPES);
 	Transformation::computeDomainsBoundaries(*this); //, TFlags::ELEVEL::FACE | TFlags::ELEVEL::NODE);
 
-	NewOutput::VTKLegacy("test", _elems, _nodes);
+	NewOutput::VTKLegacy("test", _domainsBoundaries, _nodes);
 
 	MPI_Barrier(environment->MPICommunicator);
 	MPI_Finalize();

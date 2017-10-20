@@ -457,8 +457,8 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 				decompositionData[t].front()->eoffset = domainDistribution[t];
 				decompositionData[t].front()->esize = domainDistribution[t + 1] - domainDistribution[t];
 				decompositionData[t].front()->elements = new serializededatainterval<eslocal, eslocal>(
-						mesh._elems->nodes->cbegin() + t,
-						mesh._elems->nodes->cbegin() + t + 1);
+						mesh._elems->nodes->cbegin() + domainDistribution[t],
+						mesh._elems->nodes->cbegin() + domainDistribution[t + 1]);
 			}
 		} else {
 			auto begin = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution[t]);
@@ -467,8 +467,8 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 				decompositionData[t][it - begin]->eoffset = *it;
 				decompositionData[t][it - begin]->esize = *(it + 1) - *it;
 				decompositionData[t][it - begin]->elements = new serializededatainterval<eslocal, eslocal>(
-						mesh._elems->nodes->cbegin() + (it - domainDistribution.begin()),
-						mesh._elems->nodes->cbegin() + (it - domainDistribution.begin() + 1));
+						mesh._elems->nodes->cbegin() + *it,
+						mesh._elems->nodes->cbegin() + *(it + 1));
 			}
 		}
 	}

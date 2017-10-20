@@ -7,11 +7,12 @@
 
 using namespace espreso;
 
-NewElement Hexahedron8::fill(NewElement e, size_t thread)
+NewElement Hexahedron8::fill(NewElement e, size_t thread, NewElement* begin)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	std::vector<std::vector<int> > data(threads);
+	std::vector<std::vector<NewElement*> > facepointers(threads);
 
 	data[thread] = {
 		0, 1, 5, 4,
@@ -22,10 +23,14 @@ NewElement Hexahedron8::fill(NewElement e, size_t thread)
 		3, 0, 4, 7
 	};
 
+	facepointers[thread].resize(6, begin + static_cast<int>(NewElement::CODE::SQUARE4));
+
 	e.faces = new serializededata<int, int>(4, data);
+	e.facepointers = new serializededata<int, NewElement*>(1, facepointers);
 
 	return e;
 }
+
 
 
 

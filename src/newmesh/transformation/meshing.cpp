@@ -38,5 +38,32 @@ void Transformation::computeElementCenters(NewMesh &mesh)
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "MESH::computation of elements centers finished.";
 }
 
+void Transformation::computeDomainsCenters(NewMesh &mesh)
+{
+	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "MESH::computation of domain centers started.";
+
+//	if (mesh._nodes->domains == NULL) {
+//		Transformation::assignDomainsToNodes(mesh);
+//	}
+//
+//	size_t threads = environment->OMP_NUM_THREADS;
+//
+//	std::vector<std::vector<Point> > centers(threads, std::vector<Point>(mesh._domains->structures()));
+//
+//	#pragma omp parallel for
+//	for (size_t t = 0; t < threads; t++) {
+//		auto domains = mesh._nodes->domains->cbegin(t);
+//		for (auto n = mesh._nodes->coordinates->cbegin(t); n != mesh._nodes->coordinates->cend(t); ++n, ++domains) {
+//			for (auto d = domains->begin(); d != domains->end(); ++d) {
+//				;
+//			}
+//		}
+//	}
+//
+//	mesh._elems->coordinates = new serializededata<eslocal, Point>(1, centers);
+
+	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "MESH::computation of domain centers finished.";
+}
+
 
 

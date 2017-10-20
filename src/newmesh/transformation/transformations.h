@@ -26,6 +26,7 @@ struct Transformation {
 	static void computeDomainsBoundaries(NewMesh &mesh);
 
 	static void computeElementCenters(NewMesh &mesh);
+	static void computeDomainsCenters(NewMesh &mesh);
 
 	static void reclusterize(NewMesh &mesh);
 	static void partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE separate);

@@ -13,10 +13,8 @@ struct NewElement;
 
 struct BoundaryStore {
 
-	size_t size;
-	std::vector<size_t> distribution;
-
-	serializededata<eslocal, eslocal>* faces;
+	serializededata<eslocal, eslocal>* clusterfaces;
+	serializededata<eslocal, eslocal>* localfaces;
 	serializededata<eslocal, eslocal>* edges;
 	serializededata<eslocal, eslocal>* nodes;
 
