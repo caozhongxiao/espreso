@@ -11,10 +11,9 @@ NewElement Hexahedron8::fill(NewElement e, size_t thread, NewElement* begin)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<std::vector<int> > data(threads);
-	std::vector<std::vector<NewElement*> > facepointers(threads);
+	std::vector<NewElement*> facepointers(6, begin + static_cast<int>(NewElement::CODE::SQUARE4));
 
-	data[thread] = {
+	std::vector<int> data = {
 		0, 1, 5, 4,
 		3, 2, 1, 0,
 		4, 5, 6, 7,
@@ -23,10 +22,8 @@ NewElement Hexahedron8::fill(NewElement e, size_t thread, NewElement* begin)
 		3, 0, 4, 7
 	};
 
-	facepointers[thread].resize(6, begin + static_cast<int>(NewElement::CODE::SQUARE4));
-
-	e.faces = new serializededata<int, int>(4, data);
-	e.facepointers = new serializededata<int, NewElement*>(1, facepointers);
+	e.faces = new serializededata<int, int>(4, { thread, threads, data });
+	e.facepointers = new serializededata<int, NewElement*>(1, { thread, threads, facepointers });
 
 	return e;
 }

@@ -1,5 +1,6 @@
 
 #include "elementstore.h"
+#include "newelement.h"
 #include "../../config/ecf/environment.h"
 #include "../../basis/containers/serializededata.h"
 #include "../../basis/point/point.h"
@@ -12,7 +13,7 @@
 
 using namespace espreso;
 
-ElementStore::ElementStore()
+ElementStore::ElementStore(std::vector<NewElement*> &eclasses)
 : size(0),
   distribution({0, 0}),
   IDs(NULL),
@@ -30,7 +31,9 @@ ElementStore::ElementStore()
   ranks(NULL),
 
   dual(NULL),
-  decomposedDual(NULL)
+  decomposedDual(NULL),
+
+  _eclasses(eclasses)
 {
 
 }
@@ -122,7 +125,26 @@ void ElementStore::permute(const std::vector<eslocal> &permutation, const std::v
 	if (coordinates != NULL) { coordinates->permute(permutation, distribution); }
 	if (body != NULL) { body->permute(permutation, distribution); }
 	if (material != NULL) { material->permute(permutation, distribution); }
-	if (epointers != NULL) { epointers->permute(permutation, distribution); }
+
+	size_t threads = environment->OMP_NUM_THREADS;
+	if (threads > 1) {
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			for (size_t i = epointers->datatarray().distribution()[t]; i < epointers->datatarray().distribution()[t + 1]; ++i) {
+				epointers->datatarray()[i] = _eclasses[0] + (epointers->datatarray()[i] - _eclasses[t]);
+			}
+		}
+
+		if (epointers != NULL) { epointers->permute(permutation, distribution); }
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			for (size_t i = this->distribution[t]; i < this->distribution[t + 1]; ++i) {
+				epointers->datatarray()[i] = _eclasses[t] + (epointers->datatarray()[i] - _eclasses[0]);
+			}
+		}
+	}
+
 	if (domains != NULL) { domains->permute(permutation, distribution); }
 	if (ranks != NULL) { ranks->permute(permutation, distribution); }
 

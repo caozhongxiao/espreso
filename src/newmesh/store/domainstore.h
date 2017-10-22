@@ -13,7 +13,8 @@ struct DomainStore {
 
 	size_t size;
 	std::vector<size_t> domainDistribution;
-	std::vector<size_t> domainBoundaries;
+	std::vector<size_t> domainElementBoundaries;
+	std::vector<size_t> domainNodeBoundaries;
 
 	std::vector<int> clusters;
 

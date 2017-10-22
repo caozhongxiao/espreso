@@ -454,17 +454,17 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 	domainCounter.push_back(mesh._domains->size);
 	mesh._domains->domainDistribution = domainCounter;
 
-	mesh._domains->domainBoundaries.push_back(0);
+	mesh._domains->domainElementBoundaries.push_back(0);
 	for (size_t t = 0; t < threads; t++) {
 		if (domainDistribution.size() < threads + 1) {
 			if (t < domainDistribution.size() - 1) {
-				mesh._domains->domainBoundaries.push_back(domainDistribution[t + 1]);
+				mesh._domains->domainElementBoundaries.push_back(domainDistribution[t + 1]);
 			}
 		} else {
 			auto begin = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution[t]);
 			auto end   = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution[t + 1]);
 			for (auto it = begin; it != end; ++it) {
-				mesh._domains->domainBoundaries.push_back(*(it + 1));
+				mesh._domains->domainElementBoundaries.push_back(*(it + 1));
 			}
 		}
 	}
@@ -625,7 +625,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 		return std::lower_bound(targets.begin(), targets.end(), target) - targets.begin();
 	};
 
-	ElementStore *elements = new ElementStore();
+	ElementStore *elements = new ElementStore(mesh._eclasses);
 
 	std::vector<std::vector<esglobal> >    elemsIDs(threads);
 	std::vector<std::vector<int> >         elemsBody(threads);
@@ -634,7 +634,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	std::vector<std::vector<eslocal> >     elemsNodesDistribution(threads);
 	std::vector<std::vector<esglobal> >    elemsNodesData(threads);
 
-	ElementStore *nodes = new ElementStore();
+	ElementStore *nodes = new ElementStore(mesh._eclasses);
 
 	std::vector<std::vector<esglobal> > nodesIDs(threads);
 	std::vector<std::vector<Point> >    nodesCoordinates(threads);
@@ -1076,7 +1076,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	std::swap(mesh._elems, elements);
 	std::swap(mesh._nodes, nodes);
 	delete mesh._halo;
-	mesh._halo = new ElementStore();
+	mesh._halo = new ElementStore(mesh._eclasses);
 	mesh._neighbours = neighbors;
 
 	delete elements;

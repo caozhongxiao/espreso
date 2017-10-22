@@ -98,15 +98,14 @@ void Transformation::computeDomainsBoundaries(NewMesh &mesh)
 		bool isAdept;
 
 		for (size_t d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; ++d) {
-			esglobal begine = IDBoundaries[environment->MPIrank] + mesh._domains->domainBoundaries[d];
-			esglobal ende   = IDBoundaries[environment->MPIrank] + mesh._domains->domainBoundaries[d + 1];
-			auto elems = mesh._elems->nodes->cbegin() + mesh._domains->domainBoundaries[d];
-			auto dual = mesh._elems->decomposedDual->cbegin() + mesh._domains->domainBoundaries[d];
-			auto epointer = mesh._elems->epointers->cbegin() + mesh._domains->domainBoundaries[d];
+			esglobal begine = IDBoundaries[environment->MPIrank] + mesh._domains->domainElementBoundaries[d];
+			esglobal ende   = IDBoundaries[environment->MPIrank] + mesh._domains->domainElementBoundaries[d + 1];
+			auto dual = mesh._elems->decomposedDual->cbegin() + mesh._domains->domainElementBoundaries[d];
+			auto epointer = mesh._elems->epointers->cbegin() + mesh._domains->domainElementBoundaries[d];
 
 			for (
-					auto e = mesh._elems->nodes->cbegin() + mesh._domains->domainBoundaries[d];
-					e != mesh._elems->nodes->cbegin() + mesh._domains->domainBoundaries[d + 1];
+					auto e = mesh._elems->nodes->cbegin() + mesh._domains->domainElementBoundaries[d];
+					e != mesh._elems->nodes->cbegin() + mesh._domains->domainElementBoundaries[d + 1];
 					++e, ++dual, ++epointer) {
 
 				isAdept = false;
@@ -123,7 +122,7 @@ void Transformation::computeDomainsBoundaries(NewMesh &mesh)
 
 				if (isAdept) {
 					auto facepointer = epointer->front()->facepointers->cbegin(t);
-					for (auto face = epointer->front()->faces->cbegin(); face != epointer->front()->faces->cend(); ++face, ++facepointer) {
+					for (auto face = epointer->front()->faces->cbegin(t); face != epointer->front()->faces->cend(t); ++face, ++facepointer) {
 
 						common.clear();
 						for (auto n = face->begin(); n != face->end(); ++n) {
@@ -177,7 +176,6 @@ void Transformation::computeDomainsBoundaries(NewMesh &mesh)
 
 	Esutils::threadDistributionToFullDistribution(faceDistribution);
 
-	mesh._domainsBoundaries = new BoundaryStore();
 	mesh._domainsBoundaries->clusterfaces = new serializededata<eslocal, eslocal>(faceDistribution, faceData);
 	mesh._domainsBoundaries->localfaces = new serializededata<eslocal, eslocal>(faceDistribution, faceData);
 	mesh._domainsBoundaries->facepointers = new serializededata<eslocal, NewElement*>(1, faceCodes);

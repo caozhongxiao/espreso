@@ -47,9 +47,9 @@ using namespace espreso;
 
 
 NewMesh::NewMesh(Mesh &mesh)
-: _nodes(new ElementStore()), _edges(new ElementStore()), _faces(new ElementStore()), _elems(new ElementStore()), _halo(new ElementStore()),
+: _nodes(new ElementStore(_eclasses)), _edges(new ElementStore(_eclasses)), _faces(new ElementStore(_eclasses)), _elems(new ElementStore(_eclasses)), _halo(new ElementStore(_eclasses)),
   _domains(new DomainStore), _domainsBoundaries(new BoundaryStore()),
-  _processesCommonBoundary(new ElementStore()),
+  _processesCommonBoundary(new ElementStore(_eclasses)),
   _eclasses(environment->OMP_NUM_THREADS)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
@@ -79,7 +79,6 @@ NewMesh::NewMesh(Mesh &mesh)
 		eclasses.push_back(Hexahedron20::create());
 
 		std::sort(eclasses.begin(), eclasses.end(), [] (const NewElement &e1, const NewElement &e2) { return static_cast<int>(e1.code) < static_cast<int>(e2.code); });
-
 
 		memcpy(_eclasses[t], eclasses.data(), eclasses.size() * sizeof(NewElement));
 	}

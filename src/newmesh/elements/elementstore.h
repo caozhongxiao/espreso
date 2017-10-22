@@ -41,8 +41,11 @@ struct ElementStore {
 	serializededata<eslocal, esglobal>* dual;
 	serializededata<eslocal, eslocal>* decomposedDual;
 
-	ElementStore();
+	ElementStore(std::vector<NewElement*> &eclasses);
 	~ElementStore();
+
+private:
+	std::vector<NewElement*> &_eclasses;
 };
 
 }
