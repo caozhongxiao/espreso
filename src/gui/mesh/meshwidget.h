@@ -13,27 +13,6 @@
 
 namespace espreso {
 
-    struct MeshPoint3D
-    {
-        eslocal id;
-        QVector3D vector;
-    };
-
-    struct MeshTriangle
-    {
-        QVector<MeshPoint3D> points;
-    };
-
-    struct MeshFace
-    {
-        QVector<MeshTriangle> triangles;
-    };
-
-    struct MeshElement
-    {
-        QVector<MeshFace> faces;
-    };
-
     struct MeshRegion
     {
         QVector<float> points;

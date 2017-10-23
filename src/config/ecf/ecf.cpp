@@ -39,7 +39,7 @@ void ECFConfiguration::init()
 
 	physics = PHYSICS::HEAT_TRANSFER_2D;
 	REGISTER(physics, ECFMetaData()
-			.setdescription({ "A selected physics." })
+            .setdescription({ "Physics" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("HEAT_TRANSFER_2D").setdescription("Heat transfer 2D."))
 			.addoption(ECFOption().setname("HEAT_TRANSFER_3D").setdescription("Heat transfer 3D."))

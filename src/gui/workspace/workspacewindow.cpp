@@ -25,6 +25,7 @@ void WorkspaceWindow::init()
     if (this->m_manager->isECFLoaded())
     {
         this->m_ecf = this->m_manager->ecf();
+        this->m_workflow->setECF(this->m_ecf);
         this->initPanels();
     }
 }
@@ -32,7 +33,7 @@ void WorkspaceWindow::init()
 void WorkspaceWindow::initUi()
 {
     this->m_workflow = new WorkflowWidget(this);
-    ui->top->layout()->addWidget(m_workflow);
+    ui->right->layout()->addWidget(m_workflow);
     connect(m_workflow, &WorkflowWidget::fileOpened, this, &WorkspaceWindow::onFileOpened);
     if (environment->MPIrank == 0) MeshWidget::initOGL();
 }
@@ -42,6 +43,7 @@ void WorkspaceWindow::onFileOpened(const QString &filename)
     this->m_manager->masterOpenECF(filename);
 
     this->m_ecf = this->m_manager->ecf();
+    this->m_workflow->setECF(this->m_ecf);
 
     this->initPanels();
 }
@@ -62,7 +64,7 @@ void WorkspaceWindow::initPanels()
 
     if (this->m_regions != nullptr)
     {
-        ui->right->layout()->removeWidget(m_regions);
+        ui->left->layout()->removeWidget(m_regions);
         this->m_regions = nullptr;
     }
 
@@ -74,5 +76,5 @@ void WorkspaceWindow::initPanels()
     m_mesh->setVisible(true);
 
     this->m_regions = new RegionPickerWidget(m_mesh, this);
-    ui->right->layout()->addWidget(m_regions);
+    ui->left->layout()->addWidget(m_regions);
 }

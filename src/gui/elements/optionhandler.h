@@ -15,7 +15,7 @@ namespace espreso {
         Q_OBJECT
 
     public:
-        explicit OptionHandler(ECFParameter*, QWidget*);
+        explicit OptionHandler(ECFParameter*, QWidget*, bool = true);
         ~OptionHandler();
 
     signals:

@@ -69,7 +69,6 @@ void MaterialDialog::iterateObject(ECFObject* obj)
 
 void MaterialDialog::iterateObject(ECFObject* obj, QWidget* parent)
 {
-	// Parent widget determination
     QWidget* widget = parent;
 
     this->drawHeadline(obj, widget);

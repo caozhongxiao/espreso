@@ -3,6 +3,11 @@
 
 #include <QWidget>
 
+#include "../../config/configuration.h"
+#include "../../config/ecf/ecf.h"
+
+#include "physicswidget.h"
+
 namespace espreso
 {
 
@@ -18,6 +23,8 @@ public:
     explicit WorkflowWidget(QWidget *parent = 0);
     ~WorkflowWidget();
 
+    void setECF(ECFConfiguration* ecf);
+
 signals:
     void fileOpened(const QString& filename);
 
@@ -26,6 +33,12 @@ private slots:
 
 private:
     Ui::WorkflowWidget *ui;
+
+    ECFConfiguration* m_ecf;
+
+    void createPhysicsTab();
+    QWidget* m_physicsTab;
+    PhysicsWidget* m_phyDetail = nullptr;
 };
 
 }

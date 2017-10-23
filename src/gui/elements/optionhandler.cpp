@@ -4,11 +4,14 @@
 using namespace espreso;
 
 
-OptionHandler::OptionHandler(ECFParameter* option, QWidget *parent) :
+OptionHandler::OptionHandler(ECFParameter* option, QWidget *parent, bool withLabel) :
     QWidget(parent),
     ui(new Ui::OptionHandler)
 {
     ui->setupUi(this);
+
+    if (!withLabel)
+        ui->label->hide();
 
     this->m_option = option;
 
