@@ -760,8 +760,9 @@ void EqualityConstraints::insertMortarGluingToB1(const Step &step, const std::st
 		}
 	}
 
+	std::vector<IJV> d, m, supports, normals;
 	if (mregion->elements().size()) {
-		computeMortarEqualityConstraints(rows, columns, values, masterElements, masterCoordinates, slaveElements, slaveCoordinates);
+		computeMortarEqualityConstraints(d, m, supports, normals, masterElements, masterCoordinates, slaveElements, slaveCoordinates);
 	}
 }
 
