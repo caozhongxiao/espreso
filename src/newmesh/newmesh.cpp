@@ -50,6 +50,7 @@ NewMesh::NewMesh(Mesh &mesh)
 : _nodes(new ElementStore(_eclasses)), _edges(new ElementStore(_eclasses)), _faces(new ElementStore(_eclasses)), _elems(new ElementStore(_eclasses)), _halo(new ElementStore(_eclasses)),
   _domains(new DomainStore), _domainsBoundaries(new BoundaryStore()),
   _processesCommonBoundary(new ElementStore(_eclasses)),
+  _neighbours(mesh.neighbours()),
   _eclasses(environment->OMP_NUM_THREADS)
 {
 	size_t threads = environment->OMP_NUM_THREADS;

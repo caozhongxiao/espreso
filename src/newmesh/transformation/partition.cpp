@@ -278,7 +278,7 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			auto dual = mesh._elems->decomposedDual->boundarytaaray();
+			const auto &dual = mesh._elems->decomposedDual->boundarytaaray();
 			for (size_t i = 0, e = mesh._elems->distribution[t]; e < mesh._elems->distribution[t + 1]; ++e, ++i) {
 				tdecomposition[t][partID[t][part[t][i]]].push_back(e);
 				tdualsize[t][partID[t][part[t][i]]] += dual[e + 1] - dual[e];
@@ -501,7 +501,7 @@ void Transformation::permuteElements(NewMesh &mesh, const std::vector<eslocal> &
 
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			auto eIndex = mesh._processesCommonBoundary->elems->datatarray();
+			const auto &eIndex = mesh._processesCommonBoundary->elems->datatarray();
 			std::vector<int> neighbors;
 			for (size_t e = distribution[t]; e < distribution[t + 1]; ++e) {
 				auto nodes = mesh._elems->nodes->cbegin() + eIndex[e];
@@ -697,12 +697,12 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	nodesElemsDistribution.front().push_back(0);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto IDs = mesh._nodes->IDs->datatarray().data();
-		auto coordinates = mesh._nodes->coordinates->datatarray().data();
+		const auto &IDs = mesh._nodes->IDs->datatarray();
+		const auto &coordinates = mesh._nodes->coordinates->datatarray();
 		auto ranks = mesh._nodes->ranks->cbegin(t);
 		auto elems = mesh._nodes->elems->cbegin(t);
 
-		auto eIDs = mesh._elems->IDs->datatarray();
+		const auto &eIDs = mesh._elems->IDs->datatarray();
 
 		size_t target;
 		std::vector<bool> last(targets.size() + 1); // targets + me
@@ -715,7 +715,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 					if (!last[target] && !std::binary_search(ranks->begin(), ranks->end(), partition[it - eIDs.begin()])) {
 						sNodes[t][target].push_back(IDs[n]);
 						sNodes[t][target].insert(sNodes[t][target].end(), sizeof(Point) / sizeof(esglobal), 0);
-						memcpy(sNodes[t][target].data() + sNodes[t][target].size() - (sizeof(Point) / sizeof(esglobal)), coordinates + n, sizeof(Point));
+						memcpy(sNodes[t][target].data() + sNodes[t][target].size() - (sizeof(Point) / sizeof(esglobal)), coordinates.data() + n, sizeof(Point));
 						sNodes[t][target].push_back(elems->size());
 						sNodes[t][target].insert(sNodes[t][target].end(), elems->begin(), elems->end());
 						last[target] = true;

@@ -23,7 +23,6 @@ std::vector<size_t> tarray<TType>::distribute(size_t threads, size_t size)
 	return distribution;
 }
 
-
 template <typename TType>
 tarray<TType>::tarray(const tarray<TType> &other)
 : _size(other._size), _data(other._data), _distribution(other._distribution)

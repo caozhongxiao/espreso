@@ -6,6 +6,7 @@
 #include "../../basis/point/point.h"
 #include "../../basis/logging/logging.h"
 #include "../../basis/utilities/communication.h"
+#include "../../basis/utilities/utils.h"
 
 #include <fstream>
 #include <algorithm>
@@ -95,6 +96,14 @@ void ElementStore::store(const std::string &file)
 
 	storedata(os, "dual", dual);
 	storedata(os, "decomposedDual", decomposedDual);
+
+	if (epointers != NULL) {
+		os << "epointers\n";
+		for (auto elem = epointers->begin(); elem != epointers->end(); ++elem) {
+			os << "[ " << static_cast<int>(elem->front()->code) << "] ";
+		}
+		os << "\n";
+	}
 }
 
 void ElementStore::sort()
@@ -143,6 +152,8 @@ void ElementStore::permute(const std::vector<eslocal> &permutation, const std::v
 				epointers->datatarray()[i] = _eclasses[t] + (epointers->datatarray()[i] - _eclasses[0]);
 			}
 		}
+	} else {
+		if (epointers != NULL) { epointers->permute(permutation, distribution); }
 	}
 
 	if (domains != NULL) { domains->permute(permutation, distribution); }

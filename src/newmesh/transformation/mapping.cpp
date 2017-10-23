@@ -79,9 +79,9 @@ void Transformation::addLinkFromTo(NewMesh &mesh, TFlags::ELEVEL from, TFlags::E
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		auto nodes = storeto->nodes->cbegin(t);
-		auto IDto = storeto->IDs->datatarray();
+		const auto &IDto = storeto->IDs->datatarray();
 
-		auto IDfrom = storefrom->IDs->datatarray();
+		const auto &IDfrom = storefrom->IDs->datatarray();
 
 		for (size_t e = storeto->distribution[t]; e < storeto->distribution[t + 1]; ++e, ++nodes) {
 			for (size_t n = 0; n < nodes->size(); ++n) {
@@ -126,7 +126,7 @@ void Transformation::addLinkFromTo(NewMesh &mesh, TFlags::ELEVEL from, TFlags::E
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::pair<esglobal, esglobal> IDpair;
-		auto IDfrom = storefrom->IDs->datatarray();
+		const auto &IDfrom = storefrom->IDs->datatarray();
 
 		for (size_t n = storefrom->distribution[t]; n < storefrom->distribution[t + 1]; ++n) {
 			IDpair.first = IDfrom[n];
@@ -190,10 +190,10 @@ void Transformation::exchangeHaloElements(NewMesh &mesh)
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto IDs = mesh._elems->IDs->datatarray();
-		auto body = mesh._elems->body->datatarray();
-		auto material = mesh._elems->material->datatarray();
-		auto code = mesh._elems->epointers->datatarray();
+		const auto &IDs = mesh._elems->IDs->datatarray();
+		const auto &body = mesh._elems->body->datatarray();
+		const auto &material = mesh._elems->material->datatarray();
+		const auto &code = mesh._elems->epointers->datatarray();
 		auto nodes = mesh._elems->nodes->cbegin(t);
 		std::vector<int> neighbors;
 		__haloElement__ haloElement;
@@ -265,16 +265,15 @@ void Transformation::exchangeHaloElements(NewMesh &mesh)
 	mesh._halo->size = mesh._halo->IDs->datatarray().size();
 	mesh._halo->distribution = mesh._halo->IDs->datatarray().distribution();
 
-	mesh._halo->sort();
-
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto epointer = mesh._halo->epointers->datatarray();
-
+		auto &epointer = mesh._halo->epointers->datatarray();
 		for (auto e = mesh._halo->distribution[t]; e < mesh._halo->distribution[t + 1]; ++e) {
 			epointer[e] = mesh._eclasses[t] + (epointer[e] - mesh._eclasses[0]);
 		}
 	}
+
+	mesh._halo->sort();
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "MESH::exchanging halo elements finished.";
 }
@@ -303,7 +302,7 @@ void Transformation::computeDual(NewMesh &mesh)
 	dualDistribution.front().push_back(0);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto IDs = mesh._elems->IDs->datatarray();
+		const auto &IDs = mesh._elems->IDs->datatarray();
 		auto nodes = mesh._elems->nodes->cbegin(t);
 		std::vector<esglobal> neighElementIDs;
 		int myCommon, neighCommon;
@@ -374,11 +373,11 @@ void Transformation::computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separ
 	if (mesh._elems->dual == NULL) {
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			auto IDs = mesh._elems->IDs->datatarray();
+			const auto &IDs = mesh._elems->IDs->datatarray();
+			const auto &body = mesh._elems->body->datatarray();
+			const auto &material = mesh._elems->body->datatarray();
+			const auto &epointer = mesh._elems->epointers->datatarray();
 			auto nodes = mesh._elems->nodes->cbegin(t);
-			auto body = mesh._elems->body->datatarray();
-			auto material = mesh._elems->body->datatarray();
-			auto epointer = mesh._elems->epointers->datatarray();
 			std::vector<esglobal> neighElementIDs;
 			int myCommon, neighCommon;
 			size_t neigh, nCounter;
@@ -428,11 +427,11 @@ void Transformation::computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separ
 	} else {
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			auto IDs = mesh._elems->IDs->datatarray();
+			const auto &IDs = mesh._elems->IDs->datatarray();
+			const auto &body = mesh._elems->body->datatarray();
+			const auto &material = mesh._elems->body->datatarray();
+			const auto &epointer = mesh._elems->epointers->datatarray();
 			auto dual = mesh._elems->dual->cbegin(t);
-			auto body = mesh._elems->body->datatarray();
-			auto material = mesh._elems->body->datatarray();
-			auto epointer = mesh._elems->epointers->datatarray();
 
 			for (size_t e = mesh._elems->distribution[t]; e < mesh._elems->distribution[t + 1]; ++e, ++dual) {
 				dualDistribution[t].push_back(0);

@@ -202,6 +202,7 @@ public:
 
 	serializededata(const serializededata<TEBoundaries, TEData> &other)
 	: _eboundaries(other._eboundaries), _edata(other._edata) { inititerators(); }
+
 	serializededata(serializededata<TEBoundaries, TEData> &&other)
 	: _eboundaries(std::move(other._eboundaries)), _edata(std::move(other._edata)) { inititerators(); }
 
