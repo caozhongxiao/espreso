@@ -70,7 +70,7 @@ NewMesh::NewMesh(Mesh &mesh)
 		eclasses.push_back(Square4::create());
 		eclasses.push_back(Square8::create());
 
-		eclasses.push_back(Tetrahedron4::create());
+		eclasses.push_back(Tetrahedron4::create(t, _eclasses[t]));
 		eclasses.push_back(Tetrahedron10::create());
 		eclasses.push_back(Pyramid5::create());
 		eclasses.push_back(Pyramid13::create());

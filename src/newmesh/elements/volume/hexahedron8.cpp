@@ -2,7 +2,6 @@
 #include "hexahedron8.h"
 
 #include "../../../basis/containers/serializededata.h"
-
 #include "../../../config/ecf/environment.h"
 
 using namespace espreso;

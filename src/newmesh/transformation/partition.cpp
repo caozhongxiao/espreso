@@ -790,9 +790,9 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 			rdistribution.push_back(p += rNodes[i][p]);
 		}
 		std::vector<std::vector<esglobal> > tnodeset(threads);
-		Point point;
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
+			Point point;
 			for (size_t n = rdistribution[t]; n + 1 < rdistribution[t + 1]; ) {
 				if (!std::binary_search(nodeset.begin(), nodeset.end(), rNodes[i][++n])) {
 					nodesIDs[t].push_back(rNodes[i][n]);
