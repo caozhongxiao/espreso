@@ -27,5 +27,3 @@ BoundaryStore::~BoundaryStore()
 	if (edgepointers == NULL) { delete edgepointers; }
 }
 
-
-

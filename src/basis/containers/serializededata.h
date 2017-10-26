@@ -290,15 +290,16 @@ private:
 	void permuteUniformData(const std::vector<eslocal> &permutation, const std::vector<size_t> *distribution = NULL)
 	{
 		std::vector<std::vector<TEData> > pdata(threads());
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads(); t++) {
-			for (size_t i = _edata.distribution()[t]; i < _edata.distribution()[t + 1]; ++i) {
-				pdata[t].push_back(_edata.data()[permutation[i]]);
-			}
+		std::vector<size_t> newdistribution = _edata.distribution();
+		if (distribution != NULL) {
+			newdistribution = *distribution;
 		}
 
-		if (distribution != NULL) {
-			balance(_iterator.front()->end() - _iterator.front()->begin(), pdata);
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads(); t++) {
+			for (size_t i = newdistribution[t]; i < newdistribution[t + 1]; ++i) {
+				pdata[t].push_back(_edata.data()[permutation[i]]);
+			}
 		}
 
 		_edata = tarray<TEData>(pdata);
@@ -309,11 +310,20 @@ private:
 	{
 		std::vector<std::vector<TEBoundaries> > pboundaries(threads());
 		std::vector<std::vector<TEData> > pdata(threads());
+		std::vector<size_t> newdistribution = _eboundaries.distribution();
+		if (distribution != NULL) {
+			newdistribution = *distribution;
+			if (_eboundaries.distribution().back() > newdistribution.back()) {
+				for (size_t t = 1; t <= threads(); t++) {
+					newdistribution[t] += 1;
+				}
+			}
+		}
 
 		pboundaries.front().push_back(0);
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads(); t++) {
-			for (size_t e = t == 0 ? 1 : _eboundaries.distribution()[t]; e < _eboundaries.distribution()[t + 1]; ++e) {
+			for (size_t e = t == 0 ? 1 : newdistribution[t]; e < newdistribution[t + 1]; ++e) {
 				pboundaries[t].push_back(_eboundaries.data()[permutation[e - 1] + 1] - _eboundaries.data()[permutation[e - 1]]);
 				for (size_t i = _eboundaries.data()[permutation[e - 1]]; i < _eboundaries.data()[permutation[e - 1] + 1]; ++i) {
 					pdata[t].push_back(_edata.data()[i]);
@@ -344,9 +354,6 @@ private:
 			}
 		}
 
-		if (distribution != NULL) {
-			balance(pboundaries, pdata);
-		}
 		_eboundaries = tarray<TEBoundaries>(pboundaries);
 		_edata = tarray<TEData>(pdata);
 		inititerators();

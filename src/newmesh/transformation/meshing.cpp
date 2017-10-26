@@ -192,7 +192,7 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 		return di->size() < dj->size();
 	});
 
-	Communication::serialize([&] () { std::cout << permutation; });
+	// Communication::serialize([&] () { std::cout << permutation; });
 
 //	std::vector<std::vector<Point> > centers(threads, std::vector<Point>(mesh._domains->structures()));
 //
