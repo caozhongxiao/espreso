@@ -3,6 +3,7 @@
 #define SRC_BASIS_CONTAINERS_SERIALIZEDEDATA_H_
 
 #include <vector>
+#include <ostream>
 
 #include "edata.h"
 #include "tarray.h"
@@ -376,6 +377,19 @@ struct serializededatainterval {
 
 	typename serializededata<TEBoundaries, TEData>::const_iterator _begin, _end;
 };
+
+template <typename TEBoundaries, typename TEData>
+std::ostream& operator<< (std::ostream& os, const serializededata<TEBoundaries, TEData> &data)
+{
+	for(auto e = data.cbegin(); e != data.cend(); ++e) {
+		os << "[ ";
+		for (auto i = e->begin(); i != e->end(); ++i) {
+			os << *i << " ";
+		}
+		os << "]";
+	}
+	return os;
+}
 
 }
 
