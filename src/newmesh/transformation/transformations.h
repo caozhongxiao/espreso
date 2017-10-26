@@ -22,7 +22,7 @@ struct Transformation {
 	static void computeDual(NewMesh &mesh);
 	static void computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separate);
 
-	static void computeProcessesCommonBoundary(NewMesh &mesh);
+	static void computeProcessBoundaries(NewMesh &mesh);
 	static void computeDomainsBoundaries(NewMesh &mesh);
 
 	static void computeElementCenters(NewMesh &mesh);
@@ -30,6 +30,10 @@ struct Transformation {
 
 	static void reclusterize(NewMesh &mesh);
 	static void partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE separate);
+
+	static void reindexNodes(NewMesh &mesh);
+	static void arrangeNodes(NewMesh &mesh);
+
 	static void assignDomainsToNodes(NewMesh &mesh);
 private:
 	static size_t level;

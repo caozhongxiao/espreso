@@ -5,6 +5,7 @@
 #include "../elements/newelement.h"
 #include "../elements/elementstore.h"
 #include "../store/domainstore.h"
+#include "../store/boundarystore.h"
 
 #include "../../basis/point/point.h"
 #include "../../basis/containers/serializededata.h"
@@ -114,6 +115,7 @@ void Transformation::reclusterize(NewMesh &mesh)
 //	ESINFO(TVERBOSITY);
 
 	Transformation::exchangeElements(mesh, partition);
+	Transformation::reindexNodes(mesh);
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::re-distribution of the mesh to processes finished.";
 }
@@ -469,6 +471,9 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 		}
 	}
 
+	Transformation::arrangeNodes(mesh);
+	Transformation::projectElementsToDomains(mesh);
+
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::decomposition of the mesh finished.";
 }
 
@@ -476,8 +481,8 @@ void Transformation::permuteElements(NewMesh &mesh, const std::vector<eslocal> &
 {
 	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "Transformation::permutation of elements started.";
 
-	if (mesh._processesCommonBoundary->elems == NULL) {
-		Transformation::computeProcessesCommonBoundary(mesh);
+	if (mesh._processBoundaries->elems == NULL) {
+		Transformation::computeProcessBoundaries(mesh);
 	}
 
 	std::vector<eslocal> backpermutation(permutation.size());
@@ -497,11 +502,11 @@ void Transformation::permuteElements(NewMesh &mesh, const std::vector<eslocal> &
 		// thread x neighbor x elements(oldID, newID)
 		std::vector<std::vector<std::vector<std::pair<esglobal, esglobal> > > > sHalo(threads, std::vector<std::vector<std::pair<esglobal, esglobal> > >(mesh._neighbours.size()));
 
-		const std::vector<size_t> &distribution = mesh._processesCommonBoundary->elems->datatarray().distribution();
+		const std::vector<size_t> &distribution = mesh._processBoundaries->elems->datatarray().distribution();
 
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			const auto &eIndex = mesh._processesCommonBoundary->elems->datatarray();
+			const auto &eIndex = mesh._processBoundaries->elems->datatarray();
 			std::vector<int> neighbors;
 			for (size_t e = distribution[t]; e < distribution[t + 1]; ++e) {
 				auto nodes = mesh._elems->nodes->cbegin() + eIndex[e];
@@ -567,7 +572,7 @@ void Transformation::permuteElements(NewMesh &mesh, const std::vector<eslocal> &
 	globalremap(mesh._elems->dual);
 	globalremap(mesh._nodes->elems);
 	localremap(mesh._elems->decomposedDual);
-	localremap(mesh._processesCommonBoundary->elems);
+	localremap(mesh._processBoundaries->elems);
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::permutation of elements finished.";
 }

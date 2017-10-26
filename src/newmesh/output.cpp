@@ -107,8 +107,8 @@ void NewOutput::VTKLegacy(const std::string &name, BoundaryStore *elements, Elem
 	}
 	os << "\n";
 
-	os << "CELLS " << elements->localfaces->structures() << " " << elements->localfaces->structures() + elements->localfaces->datatarray().size() << "\n";
-	for (auto e = elements->localfaces->cbegin(); e != elements->localfaces->cend(); ++e) {
+	os << "CELLS " << elements->faces->structures() << " " << elements->faces->structures() + elements->faces->datatarray().size() << "\n";
+	for (auto e = elements->faces->cbegin(); e != elements->faces->cend(); ++e) {
 		os << e->size() << " ";
 		for (auto n = e->begin(); n != e->end(); ++n) {
 			os << *n << " ";
@@ -133,7 +133,7 @@ void NewOutput::VTKLegacy(const std::string &name, BoundaryStore *elements, Elem
 //	}
 //	os << "\n";
 
-	os << "CELL_TYPES " << elements->clusterfaces->structures() << "\n";
+	os << "CELL_TYPES " << elements->faces->structures() << "\n";
 	for (auto e = elements->facepointers->datatarray().begin(); e != elements->facepointers->datatarray().end(); ++e) {
 		switch ((*e)->code) {
 		case NewElement::CODE::SQUARE4:
@@ -176,10 +176,10 @@ void NewOutput::VTKLegacy(const std::string &name, BoundaryStore *elements, Elem
 	}
 	os << "\n";
 
-	os << "CELL_DATA " << elements->clusterfaces->structures() << "\n";
+	os << "CELL_DATA " << elements->faces->structures() << "\n";
 	os << "SCALARS cluster int 1\n";
 	os << "LOOKUP_TABLE default\n";
-	for (size_t e = 0; e < elements->clusterfaces->structures(); e++) {
+	for (size_t e = 0; e < elements->faces->structures(); e++) {
 		os << environment->MPIrank << "\n";
 	}
 }

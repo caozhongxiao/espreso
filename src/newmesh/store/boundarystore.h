@@ -11,10 +11,10 @@ struct NewElement;
 
 struct BoundaryStore {
 
-	serializededata<eslocal, eslocal>* clusterfaces;
-	serializededata<eslocal, eslocal>* localfaces;
-	serializededata<eslocal, eslocal>* edges;
-	serializededata<eslocal, eslocal>* nodes;
+	serializededata<eslocal, esglobal>* elems;
+	serializededata<eslocal, eslocal>*  faces;
+	serializededata<eslocal, eslocal>*  edges;
+	serializededata<eslocal, eslocal>*  nodes;
 
 	serializededata<eslocal, NewElement*>* facepointers;
 	serializededata<eslocal, NewElement*>* edgepointers;

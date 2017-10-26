@@ -520,7 +520,7 @@ void Transformation::assignDomainsToNodes(NewMesh &mesh)
 			for (size_t d = 0; d < domains.size(); ++d) {
 				domainsData[t].push_back(domains[d] - min);
 				if (domains[d] >= max) {
-					domainsData[t].back() = -1;
+					domainsData[t].back() *= -1;
 				}
 			}
 			if (domainsDistribution[t].size() > 1) {

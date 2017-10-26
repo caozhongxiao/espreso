@@ -5,8 +5,8 @@
 using namespace espreso;
 
 BoundaryStore::BoundaryStore()
-: clusterfaces(NULL),
-  localfaces(NULL),
+: elems(NULL),
+  faces(NULL),
   edges(NULL),
   nodes(NULL),
 
@@ -18,8 +18,8 @@ BoundaryStore::BoundaryStore()
 
 BoundaryStore::~BoundaryStore()
 {
-	if (clusterfaces == NULL) { delete clusterfaces; }
-	if (localfaces == NULL) { delete localfaces; }
+	if (elems == NULL) { delete elems; }
+	if (faces == NULL) { delete faces; }
 	if (edges == NULL) { delete edges; }
 	if (nodes == NULL) { delete nodes; }
 

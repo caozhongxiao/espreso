@@ -17,9 +17,9 @@
 
 using namespace espreso;
 
-void Transformation::computeProcessesCommonBoundary(NewMesh &mesh)
+void Transformation::computeProcessBoundaries(NewMesh &mesh)
 {
-	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "MESH::computation of processes boundary started.";
+	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "MESH::computation of process boundaries started.";
 
 	if (mesh._nodes->elems == NULL) {
 		Transformation::addLinkFromTo(mesh, TFlags::ELEVEL::NODE, TFlags::ELEVEL::ELEMENT);
@@ -53,10 +53,10 @@ void Transformation::computeProcessesCommonBoundary(NewMesh &mesh)
 	serializededata<eslocal, esglobal>::balance(1, belements);
 	serializededata<eslocal, eslocal>::balance(1, bnodes);
 
-	mesh._processesCommonBoundary->elems = new serializededata<eslocal, esglobal>(1, belements);
-	mesh._processesCommonBoundary->nodes = new serializededata<eslocal, eslocal>(1, bnodes);
+	mesh._processBoundaries->elems = new serializededata<eslocal, esglobal>(1, belements);
+	mesh._processBoundaries->nodes = new serializededata<eslocal, eslocal>(1, bnodes);
 
-	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "MESH::computation of processes boundary finished.";
+	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "MESH::computation of process boundaries finished.";
 }
 
 void Transformation::computeDomainsBoundaries(NewMesh &mesh)
@@ -75,14 +75,6 @@ void Transformation::computeDomainsBoundaries(NewMesh &mesh)
 	if (mesh._elems->decomposedDual == NULL) {
 		Transformation::computeDecomposedDual(mesh, TFlags::SEPARATE::ETYPES);
 	}
-
-//	if (elevel & TFlags::ELEVEL::ELEMENT) {
-//		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement domains boundaries for elements.";
-//	}
-//
-//	if (elevel & TFlags::ELEVEL::EDGE) {
-//		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement domains boundaries for elements.";
-//	}
 
 	std::vector<esglobal> IDBoundaries = mesh._elems->gatherSizes();
 
@@ -176,14 +168,13 @@ void Transformation::computeDomainsBoundaries(NewMesh &mesh)
 
 	Esutils::threadDistributionToFullDistribution(faceDistribution);
 
-	mesh._domainsBoundaries->clusterfaces = new serializededata<eslocal, eslocal>(faceDistribution, faceData);
-	mesh._domainsBoundaries->localfaces = new serializededata<eslocal, eslocal>(faceDistribution, faceData);
+	mesh._domainsBoundaries->faces = new serializededata<eslocal, eslocal>(faceDistribution, faceData);
 	mesh._domainsBoundaries->facepointers = new serializededata<eslocal, NewElement*>(1, faceCodes);
 	mesh._domainsBoundaries->nodes = new serializededata<eslocal, eslocal>(1, faceNodes);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (auto n = mesh._domainsBoundaries->localfaces->begin(t)->begin(); n != mesh._domainsBoundaries->localfaces->end(t)->begin(); ++n) {
+		for (auto n = mesh._domainsBoundaries->faces->begin(t)->begin(); n != mesh._domainsBoundaries->faces->end(t)->begin(); ++n) {
 			*n = std::lower_bound(faceNodes[0].begin(), faceNodes[0].end(), *n) - faceNodes[0].begin();
 		}
 	}

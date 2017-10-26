@@ -2,9 +2,8 @@
 #include "mpi.h"
 
 #include "communication.h"
-#include "../../config/ecf/environment.h"
 
-#include <algorithm>
+#include "../../config/ecf/environment.h"
 
 namespace espreso {
 
@@ -284,6 +283,17 @@ bool Communication::sendVariousTargets(const std::vector<std::vector<Ttype> > &s
 	MPI_Waitall(targets.size(), req.data(), MPI_STATUSES_IGNORE);
 	MPI_Barrier(MPI_COMM_WORLD); // MPI_Iprobe(ANY_SOURCE) can be problem when calling this function more times
 	return true;
+}
+
+inline void Communication::serialize(std::function<void(void)> fnc)
+{
+	for (int r = 0; r < environment->MPIsize; ++r) {
+		if (r == environment->MPIrank) {
+			fnc();
+		}
+		MPI_Barrier(environment->MPICommunicator);
+	}
+	MPI_Barrier(environment->MPICommunicator);
 }
 
 }

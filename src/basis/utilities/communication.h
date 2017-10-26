@@ -2,6 +2,10 @@
 #ifndef SRC_BASIS_UTILITIES_COMMUNICATION_H_
 #define SRC_BASIS_UTILITIES_COMMUNICATION_H_
 
+#include <cstddef>
+#include <vector>
+#include <functional>
+
 namespace espreso {
 
 struct Communication {
@@ -45,6 +49,8 @@ struct Communication {
 
 	template <typename Ttype>
 	static bool sendVariousTargets(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &targets, std::vector<int> &sources);
+
+	static void serialize(std::function<void(void)> fnc);
 };
 
 

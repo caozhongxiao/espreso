@@ -20,12 +20,10 @@ public:
 
 	DomainStore *_domains;
 	BoundaryStore *_domainsBoundaries;
+	BoundaryStore *_processBoundaries;
 
 // protected:
 	ElementStore *_nodes, *_edges, *_faces, *_elems, *_halo;
-
-	// TODO: ElementStore -> RegionStore
-	ElementStore *_processesCommonBoundary;
 
 	std::vector<int> _neighbours;
 
