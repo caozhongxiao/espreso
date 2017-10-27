@@ -5,7 +5,9 @@
 #include <QScrollArea>
 #include <QLabel>
 #include <QDebug>
-#include <QComboBox>
+
+#include "../validators/validatorfactory.h"
+#include "../elements/spinnerhandler.h"
 
 using namespace espreso;
 
@@ -40,6 +42,7 @@ QWidget* PhysicsWidget::initContainer()
     }
 
     cmbPhysics->setCurrentIndex(active);
+    this->m_physics = cmbPhysics;
     this->m_obj = this->physics(active);
     connect(cmbPhysics, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &PhysicsWidget::onPhysicsChange);
@@ -80,12 +83,11 @@ void PhysicsWidget::onPhysicsChange(int index)
 
 void PhysicsWidget::drawObject(ECFObject* obj)
 {
-    QScrollArea* area = new QScrollArea(this->m_container);
-    QWidget* scrollWidget = new QWidget;
-    QFormLayout* layout = new QFormLayout;
-    scrollWidget->setLayout(layout);
-
-    this->processParameters(obj, scrollWidget);
+    QWidget* widget = new QWidget(this->m_container);
+    QLayout* layout;
+    if (obj->parameters.size()) layout = new QFormLayout;
+    else layout = new QVBoxLayout;
+    widget->setLayout(layout);
 
     QSpacerItem* verticalSpacer = new QSpacerItem(0,
                                                   0,
@@ -93,9 +95,17 @@ void PhysicsWidget::drawObject(ECFObject* obj)
                                                   QSizePolicy::Expanding);
     layout->addItem(verticalSpacer);
 
-    area->setWidgetResizable(true);
-    area->setWidget(scrollWidget);
-    this->m_widget->layout()->addWidget(area);
+    this->m_widget->layout()->addWidget(widget);
+
+
+    if (obj->parameters.size())
+    {
+        this->processParameters(obj, widget);
+    }
+    else if ( !obj->parameters.size() && (obj->metadata.datatype.size() == 2) )
+    {
+        //TODO: INITIAL TEMPERATURE AND THICKNESS
+    }
 }
 
 void PhysicsWidget::processParameters(ECFObject* obj, QWidget* widget)
@@ -111,7 +121,11 @@ void PhysicsWidget::processParameters(ECFObject* obj, QWidget* widget)
 
         if ( (*parameter)->isObject() )
         {
-            this->drawObject(static_cast<ECFObject*>(*parameter));
+            ECFObject* v_obj = static_cast<ECFObject*>(*parameter);
+            if (v_obj->name.compare("material_set") == 0
+                    || v_obj->name.compare("load_steps_settings") == 0)
+                continue;
+            this->drawObject(v_obj);
         }
         else if ((*parameter)->metadata.datatype.size() == 1)
         {
@@ -125,17 +139,44 @@ void PhysicsWidget::processParameters(ECFObject* obj, QWidget* widget)
             }
             else if ( type == ECFDataType::FLOAT )
             {
-
+                DoubleValidatorFactory df;
+                FieldHandler* handler = new FieldHandler(*parameter, &df);
+                l_layout->addRow(QString::fromStdString((*parameter)->metadata.description[0]),
+                        handler);
+                this->m_savables.append(handler);
+                this->m_validatables.append(handler);
             }
             else if ( type == ECFDataType::POSITIVE_INTEGER)
             {
-
-            }
-            else
-            {
-                if ((*parameter)->metadata.description.size() > 0)
-                    qInfo() << QString::fromStdString((*parameter)->metadata.description.at(0));
+                if ((*parameter)->name.compare("load_steps") == 0)
+                {
+                    SpinnerHandler* handler = new SpinnerHandler(*parameter, false, widget);
+                    connect(handler, &SpinnerHandler::valueChanged, this, &PhysicsWidget::onLoadstepsChange);
+                    l_layout->addRow(QString::fromStdString((*parameter)->metadata.description[0]),
+                            handler);
+                    this->m_savables.append(handler);
+                    this->m_validatables.append(handler);
+                }
+                else
+                {
+                    PositiveIntegerValidatorFactory df;
+                    FieldHandler* handler = new FieldHandler(*parameter, &df, false, widget);
+                    l_layout->addRow(QString::fromStdString((*parameter)->metadata.description[0]),
+                            handler);
+                    this->m_savables.append(handler);
+                    this->m_validatables.append(handler);
+                }
             }
         }
     }
+}
+
+void PhysicsWidget::onLoadstepsChange(int loadsteps)
+{
+    emit this->loadstepsChanged(loadsteps);
+}
+
+ECFObject* PhysicsWidget::activePhysics()
+{
+    return this->physics(m_physics->currentIndex());
 }

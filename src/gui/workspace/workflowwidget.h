@@ -30,6 +30,7 @@ signals:
 
 private slots:
     void on_btnMesh_clicked();
+    void onLoadstepsChange(int loadsteps);
 
 private:
     Ui::WorkflowWidget *ui;
@@ -39,6 +40,12 @@ private:
     void createPhysicsTab();
     QWidget* m_physicsTab;
     PhysicsWidget* m_phyDetail = nullptr;
+
+    void createMaterialsTab();
+
+    int m_loadsteps;
+    int m_loadsteps_fst_tab_index;
+    void createLoadstepsTabs();
 };
 
 }

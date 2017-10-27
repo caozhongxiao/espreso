@@ -10,15 +10,22 @@ public:
     ValidatorFactory() {}
     virtual ~ValidatorFactory() {}
 
-    virtual QValidator* create(QObject* parent = nullptr) = 0;
+    virtual QValidator* create(QObject* parent = nullptr) const = 0;
 };
 
 
-class NumberValidatorFactory : public ValidatorFactory
+class DoubleValidatorFactory : public ValidatorFactory
 {
 
 public:
-    QValidator* create(QObject *parent = nullptr) override;
+    QValidator* create(QObject *parent = nullptr) const override;
+};
+
+
+class PositiveIntegerValidatorFactory : public ValidatorFactory
+{
+public:
+    QValidator* create(QObject *parent = nullptr) const override;
 };
 
 #endif // VALIDATORFACTORY_H

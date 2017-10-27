@@ -32,8 +32,8 @@ PiecewiseTypeWidget::PiecewiseTypeWidget(const std::vector<std::string>& variabl
     QStringList rightCmbOptions;
     rightCmbOptions << ">" << ")";
     this->mTable->setItemDelegateForColumn(0, new ComboBoxDelegate(leftCmbOptions, this));
-    this->mTable->setItemDelegateForColumn(1, new ValidatorDelegate(new NumberValidatorFactory(), this));
-    this->mTable->setItemDelegateForColumn(2, new ValidatorDelegate(new NumberValidatorFactory(), this));
+    this->mTable->setItemDelegateForColumn(1, new ValidatorDelegate(new DoubleValidatorFactory(), this));
+    this->mTable->setItemDelegateForColumn(2, new ValidatorDelegate(new DoubleValidatorFactory(), this));
     this->mTable->setItemDelegateForColumn(3, new ComboBoxDelegate(rightCmbOptions, this));
     this->mTable->setItemDelegateForColumn(4, new ExpressionEditDelegate(variables, this));
 

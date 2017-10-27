@@ -21,8 +21,8 @@ QStringList TableTypeWidget::headlines()
 TableTypeWidget::TableTypeWidget(QWidget* parent) :
     TableWidget(2, TableTypeWidget::headlines(), parent)
 {
-    this->mTable->setItemDelegateForColumn(0, new ValidatorDelegate(new NumberValidatorFactory()));
-    this->mTable->setItemDelegateForColumn(1, new ValidatorDelegate(new NumberValidatorFactory()));
+    this->mTable->setItemDelegateForColumn(0, new ValidatorDelegate(new DoubleValidatorFactory()));
+    this->mTable->setItemDelegateForColumn(1, new ValidatorDelegate(new DoubleValidatorFactory()));
 
     this->defaultValues << "" << "";
 }

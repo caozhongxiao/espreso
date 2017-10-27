@@ -22,7 +22,8 @@ class ECFObjectWidget : public QWidget
     Q_OBJECT
 
 public:
-    ~ECFObjectWidget();
+    explicit ECFObjectWidget(ECFObject* object, QWidget *parent = 0);
+    virtual ~ECFObjectWidget();
     void init();
 
 protected slots:
@@ -45,8 +46,6 @@ protected:
     void drawMe();
 
     OptionHandler* createOption(ECFParameter*, QWidget* = 0, bool = true);
-
-    explicit ECFObjectWidget(ECFObject* object, QWidget *parent = 0);
 };
 
 }
