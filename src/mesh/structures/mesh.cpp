@@ -1127,13 +1127,17 @@ void Mesh::loadMaterials(const std::map<std::string, MaterialConfiguration> &mat
 		if (materials.find(it->second) == materials.end()) {
 			ESINFO(GLOBAL_ERROR) << "Invalid .ecf file: material " << it->second << " is not set.";
 		} else {
+			const MaterialConfiguration &mat = materials.find(it->second)->second;
+			if (mat.phase_change && (mat.phases.find(1) == mat.phases.end() || mat.phases.find(2) == mat.phases.end())) {
+				ESINFO(GLOBAL_ERROR) << "Material with phase change has to have fill phase 1 and phase 2.";
+			}
 			Region *r = this->region(it->first);
 			#pragma omp parallel for
 			for (size_t e = 0; e < r->elements().size(); e++) {
 				r->elements()[e]->setParam(Element::MATERIAL, index);
 			}
 			_materials.push_back(new MaterialConfiguration());
-			*_materials.back() = materials.find(it->second)->second;
+			*_materials.back() = mat;
 			evaluateMaterial(*_materials.back());
 			ESINFO(OVERVIEW) << "Set material '" << it->second << "' for region '" << r->name << "'";
 		}

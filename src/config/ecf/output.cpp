@@ -83,6 +83,15 @@ espreso::ResultsSelectionConfiguration::ResultsSelectionConfiguration(const PHYS
 			.setdatatype({ ECFDataType::BOOL })
 			.allowonly(thermal));
 
+	REGISTER(phase, ECFMetaData()
+			.setdescription({ "Material phase." })
+			.setdatatype({ ECFDataType::BOOL })
+			.allowonly(thermal));
+	REGISTER(latent_heat, ECFMetaData()
+			.setdescription({ "Latent heat." })
+			.setdatatype({ ECFDataType::BOOL })
+			.allowonly(thermal));
+
 	REGISTER(displacement, ECFMetaData()
 			.setdescription({ "Displacement." })
 			.setdatatype({ ECFDataType::BOOL })
@@ -92,13 +101,13 @@ espreso::ResultsSelectionConfiguration::ResultsSelectionConfiguration(const PHYS
 void espreso::ResultsSelectionConfiguration::basic()
 {
 	temperature = true;
-	gradient = flux = false;
+	gradient = flux = phase = latent_heat = false;
 	displacement = true;
 }
 
 void espreso::ResultsSelectionConfiguration::all()
 {
-	temperature = gradient = flux = true;
+	temperature = gradient = flux = phase = latent_heat = true;
 	displacement = true;
 }
 

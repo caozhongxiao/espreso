@@ -1,5 +1,6 @@
 
 #include "../../config/ecf/physics/heattransfer.h"
+#include "../../config/ecf/output.h"
 #include "../step.h"
 #include "../instance.h"
 #include "../solution.h"
@@ -58,7 +59,7 @@ std::vector<std::pair<ElementType, Property> > HeatTransfer3D::propertiesToStore
 	return {};
 }
 
-void HeatTransfer3D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
+void HeatTransfer3D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, const MaterialBaseConfiguration *mat, double phase, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
 {
 	const MaterialConfiguration* material = _mesh->materials()[e->param(Element::MATERIAL)];
 
@@ -254,6 +255,12 @@ void HeatTransfer3D::processElement(const Step &step, Matrices matrices, const E
 
 	const MaterialConfiguration* material = _mesh->materials()[e->param(Element::MATERIAL)];
 
+	const MaterialBaseConfiguration *phase1, *phase2;
+	if (material->phase_change) {
+		phase1 = &material->phases.find(1)->second;
+		phase2 = &material->phases.find(2)->second;
+	}
+
 	if (tangentCorrection) {
 		CD.resize(e->nodes(), 9);
 		CDe.resize(3, 3);
@@ -265,16 +272,30 @@ void HeatTransfer3D::processElement(const Step &step, Matrices matrices, const E
 		coordinates(i, 0) = _mesh->coordinates()[e->node(i)].x;
 		coordinates(i, 1) = _mesh->coordinates()[e->node(i)].y;
 		coordinates(i, 2) = _mesh->coordinates()[e->node(i)].z;
-		m(i, 0) =
-				material->density.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp) *
-				material->heat_capacity.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
+		if (material->phase_change) {
+			double phase, derivation;
+			smoothstep(phase, derivation, material->phase_change_temperature - material->transition_interval / 2, material->phase_change_temperature + material->transition_interval / 2, temp, material->smooth_step_order);
+			assembleMaterialMatrix(step, e, i, phase1, phase, temp, K, CD, tangentCorrection);
+			assembleMaterialMatrix(step, e, i, phase2, (1 - phase), temp, K, CD, tangentCorrection);
+			m(i, 0) =
+					(    phase  * phase1->density.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp) +
+					(1 - phase) * phase2->density.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp)) *
+
+					(    phase  * phase1->heat_capacity.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp) +
+					(1 - phase) * phase2->heat_capacity.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp) +
+					material->latent_heat * derivation);
+		} else {
+			assembleMaterialMatrix(step, e, i, material, 1, temp, K, CD, tangentCorrection);
+			m(i, 0) =
+					material->density.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp) *
+					material->heat_capacity.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
+		}
 
 		U(i, 0) = e->getProperty(Property::TRANSLATION_MOTION_X, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp, 0) * m(i, 0);
 		U(i, 1) = e->getProperty(Property::TRANSLATION_MOTION_Y, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp, 0) * m(i, 0);
 		U(i, 2) = e->getProperty(Property::TRANSLATION_MOTION_Z, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp, 0) * m(i, 0);
 
 		f(i, 0) = e->sumProperty(Property::HEAT_SOURCE, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp, 0);
-		assembleMaterialMatrix(step, e, i, temp, K, CD, tangentCorrection);
 	}
 
 	eslocal Ksize = e->nodes();
@@ -657,6 +678,12 @@ void HeatTransfer3D::postProcessElement(const Step &step, const Element *e, std:
 
 	const MaterialConfiguration* material = _mesh->materials()[e->param(Element::MATERIAL)];
 
+	const MaterialBaseConfiguration *phase1, *phase2;
+	if (material->phase_change) {
+		phase1 = &material->phases.find(1)->second;
+		phase2 = &material->phases.find(2)->second;
+	}
+
 	coordinates.resize(e->nodes(), 3);
 
 	for (size_t i = 0; i < e->nodes(); i++) {
@@ -664,15 +691,31 @@ void HeatTransfer3D::postProcessElement(const Step &step, const Element *e, std:
 		coordinates(i, 0) = _mesh->coordinates()[e->node(i)].x;
 		coordinates(i, 1) = _mesh->coordinates()[e->node(i)].y;
 		coordinates(i, 2) = _mesh->coordinates()[e->node(i)].z;
-		m =
-			material->density.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp(i, 0)) *
-			material->heat_capacity.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp(i, 0));
+		if (material->phase_change) {
+			double phase, derivation;
+			smoothstep(phase, derivation, material->phase_change_temperature - material->transition_interval / 2, material->phase_change_temperature + material->transition_interval / 2, temp(i, 0), material->smooth_step_order);
+			assembleMaterialMatrix(step, e, i, phase1, phase, temp(i, 0), K, CD, false);
+			assembleMaterialMatrix(step, e, i, phase2, (1 - phase), temp(i, 0), K, CD, false);
+			m =
+					(    phase  * phase1->density.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp(i, 0)) +
+					(1 - phase) * phase2->density.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp(i, 0))) *
+
+					(    phase  * phase1->heat_capacity.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp(i, 0)) +
+					(1 - phase) * phase2->heat_capacity.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp(i, 0)) +
+					material->latent_heat * derivation);
+
+			solution[offset + SolutionIndex::PHASE]->data[e->domains().front()][_mesh->coordinates().localIndex(e->node(i), e->domains().front())] = phase;
+			solution[offset + SolutionIndex::LATENT_HEAT]->data[e->domains().front()][_mesh->coordinates().localIndex(e->node(i), e->domains().front())] = material->latent_heat * derivation;
+		} else {
+			assembleMaterialMatrix(step, e, i, material, 1, temp(i, 0), K, CD, false);
+			m =
+					material->density.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp(i, 0)) *
+					material->heat_capacity.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp(i, 0));
+		}
 
 		U(i, 0) = e->getProperty(Property::TRANSLATION_MOTION_X, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp(i, 0), 0) * m;
 		U(i, 1) = e->getProperty(Property::TRANSLATION_MOTION_Y, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp(i, 0), 0) * m;
 		U(i, 2) = e->getProperty(Property::TRANSLATION_MOTION_Z, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp(i, 0), 0) * m;
-
-		assembleMaterialMatrix(step, e, i, temp(i, 0), K, CD, false);
 	}
 
 	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
@@ -724,16 +767,45 @@ void HeatTransfer3D::postProcessElement(const Step &step, const Element *e, std:
 
 void HeatTransfer3D::processSolution(const Step &step)
 {
-	if (_instance->solutions[offset + SolutionIndex::GRADIENT] == NULL) {
-		_instance->solutions[offset + SolutionIndex::GRADIENT] = new Solution(*_mesh, "gradient", ElementType::ELEMENTS, { Property::GRADIENT_X, Property::GRADIENT_Y, Property::GRADIENT_Z });
-	}
-	if (_instance->solutions[offset + SolutionIndex::FLUX] == NULL) {
-		_instance->solutions[offset + SolutionIndex::FLUX] = new Solution(*_mesh, "flux", ElementType::ELEMENTS, { Property::FLUX_X, Property::FLUX_Y, Property::FLUX_Z });
+	if (_propertiesConfiguration.gradient) {
+		if (_instance->solutions[offset + SolutionIndex::GRADIENT] == NULL) {
+			_instance->solutions[offset + SolutionIndex::GRADIENT] = new Solution(*_mesh, "gradient", ElementType::ELEMENTS, { Property::GRADIENT_X, Property::GRADIENT_Y, Property::GRADIENT_Z });
+		}
+		for (size_t p = 0; p < _mesh->parts(); p++) {
+			_instance->solutions[offset + SolutionIndex::GRADIENT]->data[p].clear();
+		}
 	}
 
-	for (size_t p = 0; p < _mesh->parts(); p++) {
-		_instance->solutions[offset + SolutionIndex::GRADIENT]->data[p].clear();
-		_instance->solutions[offset + SolutionIndex::FLUX]->data[p].clear();
+	if (_propertiesConfiguration.flux) {
+		if (_instance->solutions[offset + SolutionIndex::FLUX] == NULL) {
+			_instance->solutions[offset + SolutionIndex::FLUX] = new Solution(*_mesh, "flux", ElementType::ELEMENTS, { Property::FLUX_X, Property::FLUX_Y, Property::FLUX_Z });
+		}
+		for (size_t p = 0; p < _mesh->parts(); p++) {
+			_instance->solutions[offset + SolutionIndex::FLUX]->data[p].clear();
+		}
+	}
+
+	bool phase_change = false;
+	for (size_t m = 0; m < _mesh->materials().size(); m++) {
+		phase_change |= _mesh->materials()[m]->phase_change;
+	}
+
+	if (_propertiesConfiguration.phase && phase_change) {
+		if (_instance->solutions[offset + SolutionIndex::PHASE] == NULL) {
+			_instance->solutions[offset + SolutionIndex::PHASE] = new Solution(*_mesh, "phase", ElementType::NODES, { Property::PHASE });
+		}
+		for (size_t p = 0; p < _mesh->parts(); p++) {
+			_instance->solutions[offset + SolutionIndex::PHASE]->data[p].clear();
+		}
+	}
+
+	if (_propertiesConfiguration.latent_heat && phase_change) {
+		if (_instance->solutions[offset + SolutionIndex::LATENT_HEAT] == NULL) {
+			_instance->solutions[offset + SolutionIndex::LATENT_HEAT] = new Solution(*_mesh, "latent_heat", ElementType::NODES, { Property::LATENT_HEAT });
+		}
+		for (size_t p = 0; p < _mesh->parts(); p++) {
+			_instance->solutions[offset + SolutionIndex::LATENT_HEAT]->data[p].clear();
+		}
 	}
 
 	#pragma omp parallel for

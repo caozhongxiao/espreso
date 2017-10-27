@@ -98,7 +98,7 @@ void NewtonRaphson::solve(Step &step, LoadStepSolver &loadStepSolver)
 					break;
 				}
 			} else {
-				ESINFO(CONVERGENCE) <<  "]n >> EQUILIBRIUM ITERATION " << step.iteration + 1 << " IN SUBSTEP "  << step.substep + 1;
+				ESINFO(CONVERGENCE) << " >> EQUILIBRIUM ITERATION " << step.iteration + 1 << " IN SUBSTEP "  << step.substep + 1;
 				ESINFO(CONVERGENCE) << "    HEAT_CONVERGENCE_VALUE =  " <<  heatResidual_first << "  CRITERION_VALUE = " << heatResidual_second * _configuration.requested_second_residual;
 			}
 		}

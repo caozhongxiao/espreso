@@ -31,7 +31,7 @@ protected:
 
 struct ResultsSelectionConfiguration: public ECFObject {
 
-	bool temperature, gradient, flux;
+	bool temperature, gradient, flux, phase, latent_heat;
 	bool displacement;
 
 	void basic();

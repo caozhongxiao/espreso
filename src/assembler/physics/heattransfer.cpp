@@ -294,6 +294,12 @@ std::vector<size_t> HeatTransfer::solutionsIndicesToStore() const
 	if (_instance->solutions[offset + SolutionIndex::FLUX] != NULL) {
 		results.push_back(offset + SolutionIndex::FLUX);
 	}
+	if (_instance->solutions[offset + SolutionIndex::PHASE] != NULL) {
+		results.push_back(offset + SolutionIndex::PHASE);
+	}
+	if (_instance->solutions[offset + SolutionIndex::LATENT_HEAT] != NULL) {
+		results.push_back(offset + SolutionIndex::LATENT_HEAT);
+	}
 	return results;
 }
 

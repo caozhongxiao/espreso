@@ -8,6 +8,7 @@
 namespace espreso {
 
 enum class Property;
+class MaterialBaseConfiguration;
 
 struct HeatTransfer2D: public HeatTransfer, public Physics2D
 {
@@ -24,7 +25,7 @@ struct HeatTransfer2D: public HeatTransfer, public Physics2D
 	void processSolution(const Step &step);
 
 protected:
-	void assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const;
+	void assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, const MaterialBaseConfiguration *mat, double phase, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const;
 	void postProcessElement(const Step &step, const Element *e, std::vector<Solution*> &solution);
 };
 

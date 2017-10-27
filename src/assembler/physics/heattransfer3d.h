@@ -7,6 +7,8 @@
 
 namespace espreso {
 
+class MaterialBaseConfiguration;
+
 struct HeatTransfer3D: public HeatTransfer, public Physics3D
 {
 	HeatTransfer3D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
@@ -22,7 +24,7 @@ struct HeatTransfer3D: public HeatTransfer, public Physics3D
 	virtual void processSolution(const Step &step);
 
 protected:
-	void assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const;
+	void assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, const MaterialBaseConfiguration *mat, double phase, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const;
 	void postProcessElement(const Step &step, const Element *e, std::vector<Solution*> &solution);
 };
 

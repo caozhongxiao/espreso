@@ -48,6 +48,9 @@ enum class Property : int {
 	FLUX_Y,
 	FLUX_Z,
 
+	PHASE,
+	LATENT_HEAT,
+
 	WALL_HEIGHT,
 	TILT_ANGLE,
 	DIAMETER,

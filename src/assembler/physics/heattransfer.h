@@ -54,11 +54,14 @@ struct HeatTransfer: public virtual Physics
 
 protected:
 	enum SolutionIndex: size_t {
-		TEMPERATURE = 0,
-		GRADIENT    = 1,
-		FLUX        = 2,
+		TEMPERATURE,
+		GRADIENT,
+		FLUX,
 
-		SIZE        = 3
+		PHASE,
+		LATENT_HEAT,
+
+		SIZE
 	};
 
 	static size_t offset;
