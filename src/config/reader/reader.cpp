@@ -432,9 +432,16 @@ static void printECF(const ECFObject &configuration, std::ostream &os, size_t in
 		}
 	};
 
+	auto wasRed = [&] (const ECFParameter* parameter) {
+		if (parameters.parameters.size()) {
+			return std::find(parameters.parameters.begin(), parameters.parameters.end(), parameter) != parameters.parameters.end();
+		}
+		return true;
+	};
+
 	size_t maxSize = 0;
 	for (size_t i = 0; i < configuration.parameters.size(); i++) {
-		if (parameters.parameters.size() && std::find(parameters.parameters.begin(), parameters.parameters.end(), configuration.parameters[i]) == parameters.parameters.end()) {
+		if (!wasRed(configuration.parameters[i])) {
 			continue;
 		}
 		if ((configuration.parameters[i]->metadata.isallowed() || !onlyAllowed) && configuration.parameters[i]->isValue()) {
@@ -450,12 +457,13 @@ static void printECF(const ECFObject &configuration, std::ostream &os, size_t in
 
 	bool printSpace = false;
 	bool firstParameter = true;
+	bool firstValue = true;
 
 	auto printparameter = [&] (const ECFParameter *parameter) {
 		if (onlyAllowed && !parameter->metadata.isallowed()) {
 			return;
 		}
-		if (parameters.parameters.size() && std::find(parameters.parameters.begin(), parameters.parameters.end(), parameter) == parameters.parameters.end()) {
+		if (!wasRed(parameter)) {
 			// Empty spaces are never red. Hence, they cannot be skipped
 			if (parameter->isObject() || parameter->isValue()) {
 				return;
@@ -464,7 +472,9 @@ static void printECF(const ECFObject &configuration, std::ostream &os, size_t in
 
 		if (parameter->isValue()) {
 			if (printSpace) {
-				os << "\n";
+				if (!firstValue) {
+					os << "\n";
+				}
 				printSpace = false;
 			}
 			std::string value = parameter->getValue();
@@ -498,6 +508,7 @@ static void printECF(const ECFObject &configuration, std::ostream &os, size_t in
 			} else {
 				os << Parser::uppercase(value) << ";\n";
 			}
+			firstValue = false;
 		} else if (parameter->isObject()) {
 			if (!firstParameter) {
 				os << "\n";
@@ -512,6 +523,7 @@ static void printECF(const ECFObject &configuration, std::ostream &os, size_t in
 			printECF(*dynamic_cast<const ECFObject*>(parameter), os, indent + 2, parameter->metadata.datatype.size(), onlyAllowed, printPatterns, pattern, parameters);
 			printindent(indent);
 			os << "}\n";
+			firstValue = false;
 		} else {
 			printSpace = true;
 			// Separators etc..
@@ -520,9 +532,19 @@ static void printECF(const ECFObject &configuration, std::ostream &os, size_t in
 		firstParameter = false;
 	};
 
+	bool spaceAfterObject = false;
 	for (size_t i = 0; i < configuration.parameters.size(); i++) {
-		if (i && configuration.parameters[i - 1]->isObject() && configuration.parameters[i]->isValue()) {
-			os << "\n";
+		if (!configuration.parameters[i]->isObject() && !configuration.parameters[i]->isValue()) {
+			spaceAfterObject = false;
+		}
+		if (spaceAfterObject && (wasRed(configuration.parameters[i]))) {
+			spaceAfterObject = false;
+			if (configuration.parameters[i]->isValue()) {
+				os << "\n";
+			}
+		}
+		if (configuration.parameters[i]->isObject() && wasRed(configuration.parameters[i])) {
+			spaceAfterObject = true;
 		}
 		printparameter(configuration.parameters[i]);
 	}
