@@ -121,6 +121,8 @@ protected:
 
 	virtual void assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution);
 
+	static void smoothstep(double &smoothStep, double &derivation, double edge0, double edge1, double value, size_t order);
+
 	std::string _name;
 	Mesh *_mesh;
 	Instance *_instance;
