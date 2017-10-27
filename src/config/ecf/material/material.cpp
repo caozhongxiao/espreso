@@ -133,6 +133,7 @@ MaterialConfiguration::MaterialConfiguration()
 MaterialConfiguration::MaterialConfiguration(DIMENSION dimension, PHYSICAL_MODEL allowedPhysicalModels)
 : MaterialConfiguration()
 {
+	this->dimension = dimension;
 	_allowed_physical_models = allowedPhysicalModels;
 	coordinate_system.dimension = dimension;
 	thermal_conductivity.dimension = dimension;
@@ -173,12 +174,20 @@ MaterialConfiguration& MaterialConfiguration::operator=(const MaterialConfigurat
 	if (this != &other) {
 		name = other.name;
 		description = other.description;
+		dimension = other.dimension;
 		physical_model = other.physical_model;
 		_allowed_physical_models = other._allowed_physical_models;
+
+		phase_change = other.phase_change;
+		smooth_step_order = other.smooth_step_order;
+		latent_heat = other.latent_heat;
+		transition_interval = other.transition_interval;
+		phase_change_temperature = other.phase_change_temperature;
 
 		*dynamic_cast<MaterialBaseConfiguration*>(this) = dynamic_cast<const MaterialBaseConfiguration&>(other);
 
 		for (auto it = other.phases.begin(); it != other.phases.end(); ++it) {
+			getParameter(&phases)->getParameter(std::to_string(it->first));
 			phases[it->first] = it->second;
 		}
 	}
