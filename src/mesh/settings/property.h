@@ -115,6 +115,9 @@ inline std::ostream& operator<<(std::ostream& os, const Property& property)
 		case Property::FLUX_Y: return os << "FLUX_Y";
 		case Property::FLUX_Z: return os << "FLUX_Z";
 
+		case Property::PHASE: return os << "PHASE";
+		case Property::LATENT_HEAT: return os << "LATENT_HEAT";
+
 		case Property::WALL_HEIGHT: return os << "WALL_HEIGHT";
 		case Property::TILT_ANGLE: return os << "TILT_ANGLE";
 		case Property::DIAMETER: return os << "DIAMETER";
