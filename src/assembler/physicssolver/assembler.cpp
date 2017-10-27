@@ -237,6 +237,26 @@ void Assembler::multiply(std::vector<std::vector<double> > &y, std::vector<Spars
 	});
 }
 
+// v = x * y
+double Assembler::multiply(std::vector<std::vector<double> > &x, std::vector<std::vector<double> > &y, const std::string &description)
+{
+	double sum = 0;
+	timeWrapper("compute: " + description, [&] () {
+		double psum = 0;
+		#pragma omp parallel for reduction(+:psum)
+		for (size_t d = 0; d < x.size(); d++) {
+			if (x[d].size() != y[d].size()) {
+				ESINFO(ERROR) << "ESPRESO internal error while " << description << ". Vectors have different dimension.";
+			}
+			for (size_t i = 0; i < x[d].size(); i++) {
+				psum += x[d][i] * y[d][i];
+			}
+		}
+		sum = psum;
+	});
+	return sum;
+}
+
 double Assembler::sumSquares(const Step &step, const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction, const std::string &description)
 {
 	double result;

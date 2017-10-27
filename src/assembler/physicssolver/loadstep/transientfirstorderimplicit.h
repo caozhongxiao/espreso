@@ -26,12 +26,13 @@ protected:
 
 	const TransientSolverConfiguration &_configuration;
 	double _alpha;
+	double _nTimeStep;
 
 	static size_t loadStep;
 	static std::vector<Solution*> solutions;
 
 private:
-	enum SolutionIndex { U, dU, V, X, Y };
+	enum SolutionIndex { U, dU, V, X, Y, dTK };
 };
 
 }

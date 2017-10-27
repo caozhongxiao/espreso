@@ -56,6 +56,8 @@ public:
 
 	/// y = A * x
 	void multiply(std::vector<std::vector<double> > &y, std::vector<SparseMatrix> &A, std::vector<std::vector<double> > &x, const std::string &description);
+	/// a = x * y
+	double multiply(std::vector<std::vector<double> > &x, std::vector<std::vector<double> > &y, const std::string &description);
 
 	double sumSquares(const Step &step, const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction, const std::string &description);
 	void addToDirichletInB1(double a, const std::vector<std::vector<double> > &x);

@@ -10,7 +10,9 @@ struct AutoTimeSteppingConfiguration: public ECFObject {
 
 	bool allowed;
 
-	double initial_time_step, min_time_step, max_time_step;
+	double min_time_step, max_time_step;
+
+	double oscilation_limit, IDFactor;
 
 	AutoTimeSteppingConfiguration();
 };

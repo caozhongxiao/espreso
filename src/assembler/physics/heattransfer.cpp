@@ -81,7 +81,8 @@ void HeatTransfer::prepare()
 
 		if (
 			!loadStepConfiguration.temperature.size() && !loadStepConfiguration.convection.size() &&
-			!_mesh->hasProperty(Property::TEMPERATURE, loadStep) && !_mesh->hasProperty(Property::EXTERNAL_TEMPERATURE, loadStep)) {
+			!_mesh->hasProperty(Property::TEMPERATURE, loadStep) && !_mesh->hasProperty(Property::EXTERNAL_TEMPERATURE, loadStep) &&
+			loadStepConfiguration.type == LoadStepConfiguration::TYPE::STEADY_STATE) {
 
 			ESINFO(GLOBAL_ERROR) << "Invalid boundary conditions for HEAT TRANSFER - missing temperature or convection for LOAD_STEP=" << loadStep + 1;
 		}

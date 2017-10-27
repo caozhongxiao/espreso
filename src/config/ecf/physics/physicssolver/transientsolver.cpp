@@ -4,22 +4,31 @@
 
 espreso::AutoTimeSteppingConfiguration::AutoTimeSteppingConfiguration()
 {
-	allowed = true;
+	allowed = false;
 	REGISTER(allowed, ECFMetaData()
 			.setdescription({ "Allow auto time stepping." })
 			.setdatatype({ ECFDataType::BOOL }));
 
-	initial_time_step = 1e-2;
+	addSeparator();
+
 	min_time_step = 1e-3;
 	max_time_step = 1;
-	REGISTER(initial_time_step, ECFMetaData()
-			.setdescription({ "Initial time step." })
-			.setdatatype({ ECFDataType::FLOAT }));
 	REGISTER(min_time_step, ECFMetaData()
 			.setdescription({ "Minimal time step." })
 			.setdatatype({ ECFDataType::FLOAT }));
 	REGISTER(max_time_step, ECFMetaData()
 			.setdescription({ "Maximal time step." })
+			.setdatatype({ ECFDataType::FLOAT }));
+
+	addSeparator();
+
+	oscilation_limit = 0.5;
+	IDFactor = 3;
+	REGISTER(oscilation_limit, ECFMetaData()
+			.setdescription({ "Oscilation limit." })
+			.setdatatype({ ECFDataType::FLOAT }));
+	REGISTER(IDFactor, ECFMetaData()
+			.setdescription({ "Increace/ decrease factor." })
 			.setdatatype({ ECFDataType::FLOAT }));
 }
 

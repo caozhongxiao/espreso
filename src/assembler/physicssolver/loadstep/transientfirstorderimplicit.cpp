@@ -6,9 +6,14 @@
 #include "../../step.h"
 #include "../../instance.h"
 #include "../../solution.h"
+#include "../../physics/physics.h"
 #include "../../../mesh/structures/elementtypes.h"
 #include "../../../basis/logging/logging.h"
 #include "../../../config/ecf/physics/physicssolver/transientsolver.h"
+#include "../../../config/ecf/environment.h"
+
+#include <iostream>
+#include <cmath>
 
 using namespace espreso;
 
@@ -16,7 +21,7 @@ size_t TransientFirstOrderImplicit::loadStep = 0;
 std::vector<Solution*> TransientFirstOrderImplicit::solutions;
 
 TransientFirstOrderImplicit::TransientFirstOrderImplicit(TimeStepSolver &timeStepSolver, const TransientSolverConfiguration &configuration, double duration)
-: LoadStepSolver("TRANSIENT", timeStepSolver, duration), _configuration(configuration), _alpha(0)
+: LoadStepSolver("TRANSIENT", timeStepSolver, duration), _configuration(configuration), _alpha(0), _nTimeStep(_configuration.time_step)
 {
 	if (configuration.time_step < 1e-7) {
 		ESINFO(GLOBAL_ERROR) << "Set time step for TRANSIENT solver greater than 1e-7.";
@@ -95,11 +100,12 @@ void TransientFirstOrderImplicit::initLoadStep(Step &step)
 	}
 
 	if (!solutions.size()) {
-		solutions.push_back(_assembler.addSolution("trans_U", ElementType::NODES));
+		solutions.push_back(_assembler.addSolution("trans_U" , ElementType::NODES));
 		solutions.push_back(_assembler.addSolution("trans_dU", ElementType::NODES));
-		solutions.push_back(_assembler.addSolution("trans_V", ElementType::NODES));
-		solutions.push_back(_assembler.addSolution("trans_X", ElementType::NODES));
-		solutions.push_back(_assembler.addSolution("trans_Y", ElementType::NODES));
+		solutions.push_back(_assembler.addSolution("trans_V" , ElementType::NODES));
+		solutions.push_back(_assembler.addSolution("trans_X" , ElementType::NODES));
+		solutions.push_back(_assembler.addSolution("trans_Y" , ElementType::NODES));
+		solutions.push_back(_assembler.addSolution("dTK"     , ElementType::NODES));
 	}
 	if (loadStep + 1 != step.step) {
 		solutions[SolutionIndex::V]->fill(0);
@@ -111,7 +117,7 @@ void TransientFirstOrderImplicit::initLoadStep(Step &step)
 void TransientFirstOrderImplicit::runNextTimeStep(Step &step)
 {
 	double last = step.currentTime;
-	step.currentTime += _configuration.time_step;
+	step.currentTime += _nTimeStep;
 	if (step.currentTime + _precision >= _startTime + _duration) {
 		step.currentTime = _startTime + _duration;
 	}
@@ -133,16 +139,79 @@ void TransientFirstOrderImplicit::processTimeStep(Step &step)
 			-1, solutions[SolutionIndex::U]->data,
 			"delta U = U_i - U_i_1");
 
-	_assembler.sum(
-			solutions[SolutionIndex::V]->data,
-			1 / (_alpha * step.timeStep), solutions[SolutionIndex::dU]->data,
-			- (1 - _alpha) / _alpha, solutions[SolutionIndex::V]->data,
-			"V = (1 / alpha * delta T) * delta U - (1 - alpha) / alpha * V");
+	_nTimeStep = step.timeStep;
 
-	solutions[SolutionIndex::U]->data = _assembler.instance.primalSolution;
+	if (_configuration.auto_time_stepping.allowed && step.currentTime < _startTime + _duration) {
+		double resFreq, oscilationLimit;
 
-	_assembler.processSolution(step);
-	_assembler.storeSolution(step);
+		double norm =
+				sqrt(_assembler.sumSquares(step, solutions[SolutionIndex::dU]->data, SumOperation::AVERAGE, SumRestriction::NONE, "|dU|")) /
+				sqrt(_assembler.sumSquares(step, solutions[SolutionIndex::U]->data, SumOperation::AVERAGE, SumRestriction::NONE, "|U|"));
+
+		if (norm < 1e-5) {
+			_nTimeStep = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * step.timeStep);
+		} else {
+			_assembler.multiply(
+					solutions[SolutionIndex::dTK]->data,
+					_assembler.instance.origK,
+					solutions[SolutionIndex::dU]->data,
+					"dTK = delta T * K");
+			double TKT = _assembler.multiply(solutions[SolutionIndex::dTK]->data, solutions[SolutionIndex::dU]->data, "res. freq. = dTK * delta T");
+
+			_assembler.multiply(
+					solutions[SolutionIndex::dTK]->data,
+					_assembler.instance.M,
+					solutions[SolutionIndex::dU]->data,
+					"dTM = delta T * M");
+			double TMT = _assembler.multiply(solutions[SolutionIndex::dTK]->data, solutions[SolutionIndex::dU]->data, "res. freq. = dTM * delta T");
+
+
+			double gTKT, gTMT;
+			MPI_Allreduce(&TKT, &gTKT, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
+			MPI_Allreduce(&TMT, &gTMT, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
+
+			resFreq = gTKT / gTMT;
+
+			oscilationLimit = step.timeStep * resFreq;
+
+			double t1 = _configuration.auto_time_stepping.oscilation_limit / resFreq;
+
+			if (step.timeStep != t1) {
+				if (step.timeStep < t1) {
+					if (_configuration.auto_time_stepping.IDFactor * step.timeStep < t1) {
+						_nTimeStep = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * step.timeStep);
+					}
+				} else {
+					if (step.timeStep / _configuration.auto_time_stepping.IDFactor > t1) {
+						_nTimeStep = std::max(_configuration.auto_time_stepping.min_time_step, step.timeStep / _configuration.auto_time_stepping.IDFactor);
+					}
+				}
+			}
+
+			ESINFO(CONVERGENCE) << "AUTOMATIC TIME STEPPING INFO: RESPONSE EIGENVALUE(" << resFreq << "), OSCILLATION LIMIT(" << oscilationLimit << ")";
+		}
+
+		if (std::fabs(step.timeStep - _nTimeStep) / step.timeStep < _precision) {
+			ESINFO(CONVERGENCE) << "TIME STEP UNCHANGED (" << _nTimeStep << ")";
+		} else {
+			ESINFO(CONVERGENCE) << "NEW TIME STEP " << (step.timeStep < _nTimeStep ? "INCREASED " : "DECREASED ") << "TO VALUE: " << _nTimeStep;
+		}
+	}
+
+	if (step.timeStep - _precision < _nTimeStep) {
+		_assembler.sum(
+				solutions[SolutionIndex::V]->data,
+				1 / (_alpha * step.timeStep), solutions[SolutionIndex::dU]->data,
+				- (1 - _alpha) / _alpha, solutions[SolutionIndex::V]->data,
+				"V = (1 / alpha * delta T) * delta U - (1 - alpha) / alpha * V");
+
+		solutions[SolutionIndex::U]->data = _assembler.instance.primalSolution;
+		_assembler.processSolution(step);
+		_assembler.storeSolution(step);
+	} else {
+		step.currentTime -= step.timeStep;
+		--step.substep;
+	}
 }
 
 
