@@ -756,18 +756,24 @@ void HeatTransfer3D::postProcessElement(const Step &step, const Element *e, std:
 		matFlux.multiply(Ce, dND * temp, 1, 1);
 	}
 
-	solution[offset + SolutionIndex::GRADIENT]->data[e->domains().front()].push_back(matGradient(0, 0) / e->gaussePoints());
-	solution[offset + SolutionIndex::GRADIENT]->data[e->domains().front()].push_back(matGradient(1, 0) / e->gaussePoints());
-	solution[offset + SolutionIndex::GRADIENT]->data[e->domains().front()].push_back(matGradient(2, 0) / e->gaussePoints());
+	if (_propertiesConfiguration.gradient) {
+		solution[offset + SolutionIndex::GRADIENT]->data[e->domains().front()].push_back(matGradient(0, 0) / e->gaussePoints());
+		solution[offset + SolutionIndex::GRADIENT]->data[e->domains().front()].push_back(matGradient(1, 0) / e->gaussePoints());
+		solution[offset + SolutionIndex::GRADIENT]->data[e->domains().front()].push_back(matGradient(2, 0) / e->gaussePoints());
+	}
 
-	solution[offset + SolutionIndex::FLUX]->data[e->domains().front()].push_back(matFlux(0, 0) / e->gaussePoints());
-	solution[offset + SolutionIndex::FLUX]->data[e->domains().front()].push_back(matFlux(1, 0) / e->gaussePoints());
-	solution[offset + SolutionIndex::FLUX]->data[e->domains().front()].push_back(matFlux(2, 0) / e->gaussePoints());
+	if (_propertiesConfiguration.flux) {
+		solution[offset + SolutionIndex::FLUX]->data[e->domains().front()].push_back(matFlux(0, 0) / e->gaussePoints());
+		solution[offset + SolutionIndex::FLUX]->data[e->domains().front()].push_back(matFlux(1, 0) / e->gaussePoints());
+		solution[offset + SolutionIndex::FLUX]->data[e->domains().front()].push_back(matFlux(2, 0) / e->gaussePoints());
+	}
 }
 
 void HeatTransfer3D::processSolution(const Step &step)
 {
+	bool postProcess = false;
 	if (_propertiesConfiguration.gradient) {
+		postProcess = true;
 		if (_instance->solutions[offset + SolutionIndex::GRADIENT] == NULL) {
 			_instance->solutions[offset + SolutionIndex::GRADIENT] = new Solution(*_mesh, "gradient", ElementType::ELEMENTS, { Property::GRADIENT_X, Property::GRADIENT_Y, Property::GRADIENT_Z });
 		}
@@ -777,6 +783,7 @@ void HeatTransfer3D::processSolution(const Step &step)
 	}
 
 	if (_propertiesConfiguration.flux) {
+		postProcess = true;
 		if (_instance->solutions[offset + SolutionIndex::FLUX] == NULL) {
 			_instance->solutions[offset + SolutionIndex::FLUX] = new Solution(*_mesh, "flux", ElementType::ELEMENTS, { Property::FLUX_X, Property::FLUX_Y, Property::FLUX_Z });
 		}
@@ -791,6 +798,7 @@ void HeatTransfer3D::processSolution(const Step &step)
 	}
 
 	if (_propertiesConfiguration.phase && phase_change) {
+		postProcess = true;
 		if (_instance->solutions[offset + SolutionIndex::PHASE] == NULL) {
 			_instance->solutions[offset + SolutionIndex::PHASE] = new Solution(*_mesh, "phase", ElementType::NODES, { Property::PHASE });
 		}
@@ -800,6 +808,7 @@ void HeatTransfer3D::processSolution(const Step &step)
 	}
 
 	if (_propertiesConfiguration.latent_heat && phase_change) {
+		postProcess = true;
 		if (_instance->solutions[offset + SolutionIndex::LATENT_HEAT] == NULL) {
 			_instance->solutions[offset + SolutionIndex::LATENT_HEAT] = new Solution(*_mesh, "latent_heat", ElementType::NODES, { Property::LATENT_HEAT });
 		}
@@ -808,10 +817,12 @@ void HeatTransfer3D::processSolution(const Step &step)
 		}
 	}
 
-	#pragma omp parallel for
-	for (size_t p = 0; p < _mesh->parts(); p++) {
-		for (eslocal e = _mesh->getPartition()[p]; e < _mesh->getPartition()[p + 1]; e++) {
-			postProcessElement(step, _mesh->elements()[e], _instance->solutions);
+	if (postProcess) {
+		#pragma omp parallel for
+		for (size_t p = 0; p < _mesh->parts(); p++) {
+			for (eslocal e = _mesh->getPartition()[p]; e < _mesh->getPartition()[p + 1]; e++) {
+				postProcessElement(step, _mesh->elements()[e], _instance->solutions);
+			}
 		}
 	}
 }
