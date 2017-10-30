@@ -79,6 +79,8 @@ void PhysicsWidget::onPhysicsChange(int index)
     this->m_obj = this->physics(index);
 
     this->redraw();
+
+    emit physicsChanged(this->m_obj);
 }
 
 void PhysicsWidget::drawObject(ECFObject* obj)

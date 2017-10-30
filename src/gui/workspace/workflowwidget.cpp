@@ -38,7 +38,7 @@ void WorkflowWidget::setECF(ECFConfiguration *ecf)
     int tabs = ui->workflow->count();
     for (int i = 1; i < tabs; i++)
     {
-        ui->workflow->removeTab(i);
+        ui->workflow->removeTab(1);
     }
 
     this->m_ecf = ecf;
@@ -65,6 +65,7 @@ void WorkflowWidget::createPhysicsTab()
                         ->getValue()
                 ).toInt();
     connect(pw, &PhysicsWidget::loadstepsChanged, this, &WorkflowWidget::onLoadstepsChange);
+    connect(pw, &PhysicsWidget::physicsChanged, this, &WorkflowWidget::onPhysicsChange);
 
     ui->workflow->addTab(pw, QLatin1String("Physics"));
     ui->workflow->setCurrentIndex(ui->workflow->count() - 1);
@@ -104,4 +105,14 @@ void WorkflowWidget::onLoadstepsChange(int loadsteps)
         lsw->init();
         ui->workflow->addTab(lsw, tr("Loadstep %1").arg(this->m_loadsteps));
     }
+}
+
+PhysicsConfiguration* WorkflowWidget::activePhysics()
+{
+    return dynamic_cast<PhysicsConfiguration*>(this->m_phyDetail->activePhysics());
+}
+
+void WorkflowWidget::onPhysicsChange(ECFObject *physics)
+{
+    emit physicsChanged(physics);
 }

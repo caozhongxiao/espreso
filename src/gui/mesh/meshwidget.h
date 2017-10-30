@@ -53,7 +53,7 @@ namespace espreso {
         QMap<QString, MeshRegion> m_regions;
         void gatherRegions();
 
-        QOpenGLShaderProgram* m_basicProgram;
+        QOpenGLShaderProgram* m_basicProgram = nullptr;
         GLuint m_basicProgram_position;
         GLuint m_basicProgram_normal;
         QVector3D m_basicProgram_objectColor;
@@ -68,7 +68,7 @@ namespace espreso {
 
         float m_fov = 45.0f;
 
-        QOpenGLShaderProgram* m_clickProgram;
+        QOpenGLShaderProgram* m_clickProgram = nullptr;
         GLuint m_clickProgram_position;
 
         const char* m_basicVS =

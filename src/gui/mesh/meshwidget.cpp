@@ -28,8 +28,10 @@ MeshWidget::MeshWidget(MpiManager* manager, QWidget* parent) :
 
 MeshWidget::~MeshWidget()
 {
-    delete this->m_basicProgram;
-    delete this->m_clickProgram;
+    if (this->m_basicProgram != nullptr)
+        delete this->m_basicProgram;
+    if (this->m_clickProgram != nullptr)
+        delete this->m_clickProgram;
 }
 
 void MeshWidget::gatherRegions()

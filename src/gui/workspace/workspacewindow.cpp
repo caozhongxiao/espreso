@@ -35,6 +35,7 @@ void WorkspaceWindow::initUi()
     this->m_workflow = new WorkflowWidget(this);
     ui->right->layout()->addWidget(m_workflow);
     connect(m_workflow, &WorkflowWidget::fileOpened, this, &WorkspaceWindow::onFileOpened);
+    connect(m_workflow, &WorkflowWidget::physicsChanged, this, &WorkspaceWindow::onPhysicsChanged);
     if (environment->MPIrank == 0) MeshWidget::initOGL();
 }
 
@@ -69,6 +70,7 @@ void WorkspaceWindow::initPanels()
     }
 
     this->m_declarations = new DeclarationsWidget(this);
+    this->m_declarations->initialize(this->m_workflow->activePhysics());
     ui->left->layout()->addWidget(m_declarations);
 
     this->m_mesh = new MeshWidget(m_manager, this);
@@ -77,4 +79,9 @@ void WorkspaceWindow::initPanels()
 
     this->m_regions = new RegionPickerWidget(m_mesh, this);
     ui->left->layout()->addWidget(m_regions);
+}
+
+void WorkspaceWindow::onPhysicsChanged(ECFObject *physics)
+{
+    this->m_declarations->setPhysics(dynamic_cast<PhysicsConfiguration*>(physics));
 }

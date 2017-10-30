@@ -21,10 +21,10 @@ namespace espreso
 
     public:
         explicit DeclarationsWidget(QWidget *parent = 0);
-        DeclarationsWidget(PhysicsConfiguration* physics, QWidget *parent = 0);
         ~DeclarationsWidget();
 
         void setPhysics(PhysicsConfiguration* physics);
+        void initialize(PhysicsConfiguration* physics);
 
     private slots:
         void on_DeclarationTree_customContextMenuRequested(const QPoint &pos);
@@ -36,6 +36,8 @@ namespace espreso
 
     private:
         Ui::DeclarationsWidget *ui;
+
+        bool m_initialized = false;
 
         QAction* m_newItem;
         QAction* m_editItem;
@@ -57,7 +59,7 @@ namespace espreso
         std::map<std::string, MaterialConfiguration>* m_materials = &m_localMaterials;
         QVector<std::string> m_materialIDs;
         QVector<std::string> m_materialNames;
-        int m_materialID = 1;
+        int m_materialID = 0;
 
         PhysicsConfiguration* m_physics = nullptr;
 

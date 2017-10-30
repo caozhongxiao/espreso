@@ -21,6 +21,7 @@ public:
 
 signals:
     void loadstepsChanged(int loadsteps);
+    void physicsChanged(ECFObject* physics);
 
 protected:
     QWidget* initContainer() override;

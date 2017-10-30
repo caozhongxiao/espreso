@@ -33,6 +33,7 @@ public:
 
 private slots:
     void onFileOpened(const QString& filename);
+    void onPhysicsChanged(ECFObject* physics);
 
 private:
     Ui::WorkspaceWindow *ui;

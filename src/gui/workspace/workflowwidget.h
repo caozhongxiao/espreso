@@ -24,13 +24,16 @@ public:
     ~WorkflowWidget();
 
     void setECF(ECFConfiguration* ecf);
+    PhysicsConfiguration* activePhysics();
 
 signals:
     void fileOpened(const QString& filename);
+    void physicsChanged(ECFObject* physics);
 
 private slots:
     void on_btnMesh_clicked();
     void onLoadstepsChange(int loadsteps);
+    void onPhysicsChange(ECFObject* physics);
 
 private:
     Ui::WorkflowWidget *ui;

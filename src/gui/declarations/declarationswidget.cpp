@@ -20,21 +20,50 @@ DeclarationsWidget::DeclarationsWidget(QWidget *parent) :
     this->createActions();
 }
 
-DeclarationsWidget::DeclarationsWidget(PhysicsConfiguration *physics, QWidget *parent)
-    : DeclarationsWidget(parent)
-{
-    this->m_physics = physics;
-    this->m_materials = &m_physics->materials;
-}
-
 DeclarationsWidget::~DeclarationsWidget()
 {
     delete ui;
 }
 
-void DeclarationsWidget::setPhysics(PhysicsConfiguration *physics)
+void DeclarationsWidget::initialize(PhysicsConfiguration *physics)
 {
     this->m_physics = physics;
+    this->m_materials = &m_physics->materials;
+    for (auto it = this->m_materials->begin(); it != this->m_materials->end(); ++it)
+    {
+        bool ok;
+        int mid = QString::fromStdString(it->first).toInt(&ok);
+        if (ok && mid > this->m_materialID) this->m_materialID = mid;
+        this->m_materialNames.append(it->second.getParameter("name")->getValue());
+        this->m_materialIDs.append(it->first);
+        QStandardItem* item = new QStandardItem(
+                    QString::fromStdString(
+                        it->second.getParameter("name")->getValue()
+                        )
+                    );
+        m_treeNodeMats->appendRow(item);
+    }
+    this->m_materialID++;
+
+    this->m_initialized = true;
+}
+
+void DeclarationsWidget::setPhysics(PhysicsConfiguration *physics)
+{
+    if (!this->m_initialized)
+    {
+        qFatal("DeclarationsWidget: Method initialize should be called before one can change physics.");
+        return;
+    }
+
+    this->m_physics = physics;
+    physics->materials.clear();
+
+    for (auto it = m_materials->begin(); it != m_materials->end(); ++it)
+    {
+        physics->materials[it->first] = it->second;
+    }
+
     this->m_materials = &m_physics->materials;
 }
 
@@ -242,18 +271,21 @@ void DeclarationsWidget::on_DeclarationTree_doubleClicked(const QModelIndex &ind
 MaterialConfiguration* DeclarationsWidget::createMaterial()
 {
     std::string mID = this->createMaterialId();
-    if (this->m_physics == nullptr)
-    {
-        (*this->m_materials)[mID];// = MaterialConfiguration();
-    }
-    else
-    {
-        qCritical("NOT SUPPORTED YET!");
-//        (*this->m_materials)[mID] = MaterialConfiguration(
-//                    this->m_physics->dimension,
-//                    this->m_physics->physical_model
-//                    );
-    }
+
+    (*this->m_materials)[mID];// = MaterialConfiguration();
+
+//    if (this->m_physics == nullptr)
+//    {
+//        (*this->m_materials)[mID];// = MaterialConfiguration();
+//    }
+//    else
+//    {
+//        qCritical("NOT SUPPORTED YET!");
+////        (*this->m_materials)[mID] = MaterialConfiguration(
+////                    this->m_physics->dimension,
+////                    this->m_physics->physical_model
+////                    );
+//    }
     this->m_materialIDs.append(mID);
 
     return &(*this->m_materials)[mID];
@@ -261,7 +293,7 @@ MaterialConfiguration* DeclarationsWidget::createMaterial()
 
 std::string DeclarationsWidget::createMaterialId()
 {
-    return "material_" + std::to_string(m_materialID++);
+    return std::to_string(m_materialID++);
 }
 
 void DeclarationsWidget::removeMaterial(int index)
