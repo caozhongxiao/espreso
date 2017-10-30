@@ -324,11 +324,12 @@ private:
 		pboundaries.front().push_back(0);
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads(); t++) {
-			for (size_t e = t == 0 ? 1 : newdistribution[t]; e < newdistribution[t + 1]; ++e) {
+			for (size_t e = (t == 0 ? 1 : newdistribution[t]); e < newdistribution[t + 1]; ++e) {
 				pboundaries[t].push_back(_eboundaries.data()[permutation[e - 1] + 1] - _eboundaries.data()[permutation[e - 1]]);
-				for (size_t i = _eboundaries.data()[permutation[e - 1]]; i < _eboundaries.data()[permutation[e - 1] + 1]; ++i) {
-					pdata[t].push_back(_edata.data()[i]);
-				}
+				pdata[t].insert(
+						pdata[t].end(),
+						_edata.data() + _eboundaries.data()[permutation[e - 1]],
+						_edata.data() + _eboundaries.data()[permutation[e - 1] + 1]);
 				if (pboundaries[t].size() > 1) {
 					pboundaries[t].back() += *(pboundaries[t].end() - 2);
 				}

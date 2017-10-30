@@ -189,8 +189,8 @@ NewMesh::NewMesh(Mesh &mesh)
 	Transformation::partitiate(*this, 4, TFlags::SEPARATE::MATERIALS | TFlags::SEPARATE::ETYPES);
 	Transformation::computeDomainsBoundaries(*this); //, TFlags::ELEVEL::FACE | TFlags::ELEVEL::NODE);
 
-	NewOutput::VTKLegacy("processBoundaries", _processBoundaries, _nodes);
-	NewOutput::VTKLegacy("domainsBoundaries", _domainsBoundaries, _nodes);
+	NewOutput::VTKLegacy("processBoundaries", _processBoundaries, _nodes, false);
+//	NewOutput::VTKLegacy("domainsBoundaries", _domainsBoundaries, _nodes);
 
 	MPI_Barrier(environment->MPICommunicator);
 	MPI_Finalize();

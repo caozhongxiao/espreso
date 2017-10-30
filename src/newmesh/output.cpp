@@ -91,50 +91,69 @@ void NewOutput::VTKLegacy(const std::string &name, ElementStore *elements, Eleme
 	}
 }
 
-void NewOutput::VTKLegacy(const std::string &name, BoundaryStore *elements, ElementStore *nodes)
+void NewOutput::VTKLegacy(const std::string &name, BoundaryStore *elements, ElementStore *nodes, bool inner)
 {
 	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+
+	size_t nbegin = 0, nend = elements->nodes->structures(), ebegin = 0, eend = elements->faces->structures();
+	if (inner) {
+		nbegin = nend;
+		ebegin = eend;
+		for (size_t i = 0; i < elements->nodesIntervals.size(); ++i) {
+			if (elements->nodesIntervals[i].neighbors.front() != -1 || elements->nodesIntervals[i].neighbors.size() > 1) {
+				nbegin = elements->nodesIntervals[i].begin;
+				break;
+			}
+		}
+		for (size_t i = 0; i < elements->facesIntervals.size(); ++i) {
+			if (elements->facesIntervals[i].neighbors.front() != -1 || elements->facesIntervals[i].neighbors.size() > 1) {
+				ebegin = elements->facesIntervals[i].begin;
+				break;
+			}
+		}
+	} else {
+		nend = eend = 0;
+		for (size_t i = 0; i < elements->nodesIntervals.size(); ++i) {
+			if (elements->nodesIntervals[i].neighbors.front() == -1) {
+				nend = elements->nodesIntervals[i].end;
+			} else {
+				break;
+			}
+		}
+		for (size_t i = 0; i < elements->facesIntervals.size(); ++i) {
+			if (elements->facesIntervals[i].neighbors.front() == -1) {
+				eend = elements->facesIntervals[i].end;
+			} else {
+				break;
+			}
+		}
+	}
 
 	os << "# vtk DataFile Version 2.0\n";
 	os << "EXAMPLE\n";
 	os << "ASCII\n";
 	os << "DATASET UNSTRUCTURED_GRID\n\n";
 
-	os << "POINTS " << elements->nodes->structures() << " float\n";
-	for (auto n = elements->nodes->datatarray().begin(); n != elements->nodes->datatarray().end(); ++n) {
+	os << "POINTS " << nend - nbegin << " float\n";
+	for (auto n = elements->nodes->datatarray().begin() + nbegin; n != elements->nodes->datatarray().begin() + nend; ++n) {
 		Point &p = nodes->coordinates->datatarray()[*n];
 		os << p.x << " " << p.y << " " << p.z << "\n";
 	}
 	os << "\n";
 
-	os << "CELLS " << elements->faces->structures() << " " << elements->faces->structures() + elements->faces->datatarray().size() << "\n";
-	for (auto e = elements->faces->cbegin(); e != elements->faces->cend(); ++e) {
+	size_t cells = eend - ebegin, cellsnodes = elements->faces->boundarytaaray()[eend] - elements->faces->boundarytaaray()[ebegin];
+	os << "CELLS " << cells << " " << cells + cellsnodes << "\n";
+	for (auto e = elements->faces->cbegin() + ebegin; e != elements->faces->cbegin() + eend; ++e) {
 		os << e->size() << " ";
 		for (auto n = e->begin(); n != e->end(); ++n) {
-			os << *n << " ";
+			os << *n - nbegin << " ";
 		}
 		os << "\n";
 	}
 	os << "\n";
 
-//	os << "POINTS " << nodes->size << " float\n";
-//	for (auto n = nodes->coordinates->datatarray().begin(); n != nodes->coordinates->datatarray().end(); ++n) {
-//		os << n->x << " " << n->y << " " << n->z << "\n";
-//	}
-//	os << "\n";
-//
-//	os << "CELLS " << elements->clusterfaces->structures() << " " << elements->clusterfaces->structures() + elements->clusterfaces->datatarray().size() << "\n";
-//	for (auto e = elements->clusterfaces->cbegin(); e != elements->clusterfaces->cend(); ++e) {
-//		os << e->size() << " ";
-//		for (auto n = e->begin(); n != e->end(); ++n) {
-//			os << *n << " ";
-//		}
-//		os << "\n";
-//	}
-//	os << "\n";
-
-	os << "CELL_TYPES " << elements->faces->structures() << "\n";
-	for (auto e = elements->facepointers->datatarray().begin(); e != elements->facepointers->datatarray().end(); ++e) {
+	os << "CELL_TYPES " << cells << "\n";
+	for (auto e = elements->facepointers->datatarray().begin() + ebegin; e != elements->facepointers->datatarray().begin() + eend; ++e) {
 		switch ((*e)->code) {
 		case NewElement::CODE::SQUARE4:
 			os << "9\n";
@@ -176,10 +195,10 @@ void NewOutput::VTKLegacy(const std::string &name, BoundaryStore *elements, Elem
 	}
 	os << "\n";
 
-	os << "CELL_DATA " << elements->faces->structures() << "\n";
+	os << "CELL_DATA " << cells << "\n";
 	os << "SCALARS cluster int 1\n";
 	os << "LOOKUP_TABLE default\n";
-	for (size_t e = 0; e < elements->faces->structures(); e++) {
+	for (size_t e = 0; e < cells; e++) {
 		os << environment->MPIrank << "\n";
 	}
 }

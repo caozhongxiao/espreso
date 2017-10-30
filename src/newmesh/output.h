@@ -12,7 +12,7 @@ class BoundaryStore;
 struct NewOutput {
 
 	static void VTKLegacy(const std::string &name, ElementStore *elements, ElementStore *nodes);
-	static void VTKLegacy(const std::string &name, BoundaryStore *elements, ElementStore *nodes);
+	static void VTKLegacy(const std::string &name, BoundaryStore *elements, ElementStore *nodes, bool inner = false);
 };
 
 }

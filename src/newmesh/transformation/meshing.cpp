@@ -168,29 +168,29 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 	// 3. number of boundaries domains
 	// 4. boundaries IDs
 	// 5. ID
-	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) {
-		auto di = mesh._nodes->domains->cbegin() + i;
-		auto dj = mesh._nodes->domains->cbegin() + j;
-
-		if ((di->front() < 0 || di->back() < 0) && (dj->front() >= 0 || dj->back() >= 0)) {
-			// only first node is on boundary
-			return true;
-		}
-		if ((dj->front() < 0 || dj->back() < 0) && (di->front() >= 0 || di->back() >= 0)) {
-			// only second node is on boundary
-			return false;
-		}
-		if (di->size() == dj->size()) {
-			// the same number of boundaries
-			for (size_t d = 0; d < di->size(); d++) {
-				if ((*di)[d] != (*dj)[d]) {
-					return (*di)[d] < (*dj)[d];
-				}
-			}
-			return mesh._nodes->IDs->datatarray()[i] < mesh._nodes->IDs->datatarray()[j];
-		}
-		return di->size() < dj->size();
-	});
+//	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) {
+//		auto di = mesh._nodes->domains->cbegin() + i;
+//		auto dj = mesh._nodes->domains->cbegin() + j;
+//
+//		if ((di->front() < 0 || di->back() < 0) && (dj->front() >= 0 || dj->back() >= 0)) {
+//			// only first node is on boundary
+//			return true;
+//		}
+//		if ((dj->front() < 0 || dj->back() < 0) && (di->front() >= 0 || di->back() >= 0)) {
+//			// only second node is on boundary
+//			return false;
+//		}
+//		if (di->size() == dj->size()) {
+//			// the same number of boundaries
+//			for (size_t d = 0; d < di->size(); d++) {
+//				if ((*di)[d] != (*dj)[d]) {
+//					return (*di)[d] < (*dj)[d];
+//				}
+//			}
+//			return mesh._nodes->IDs->datatarray()[i] < mesh._nodes->IDs->datatarray()[j];
+//		}
+//		return di->size() < dj->size();
+//	});
 
 	// Communication::serialize([&] () { std::cout << permutation; });
 

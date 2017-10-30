@@ -52,7 +52,7 @@ void Transformation::computeProcessBoundaries(NewMesh &mesh)
 		esglobal eID = mesh._elems->distribution[t];
 
 		for (auto e = mesh._elems->nodes->cbegin(t); e != mesh._elems->nodes->cend(t); ++e, ++dual, ++epointer, ++eID) {
-			if (dual->front() < begine || dual->back() >= ende || dual->size() < epointer->front()->faces->structures()) {
+			if (dual->size() < epointer->front()->faces->structures() || dual->front() < begine || dual->back() >= ende) {
 
 				auto facepointer = epointer->front()->facepointers->cbegin(t);
 				for (auto face = epointer->front()->faces->cbegin(t); face != epointer->front()->faces->cend(t); ++face, ++facepointer) {
@@ -157,6 +157,7 @@ void Transformation::computeProcessBoundaries(NewMesh &mesh)
 	for (size_t t = 1; t < threads; t++) {
 		faceNeighbors[0].insert(faceNeighbors[0].end(), faceNeighbors[t].begin(), faceNeighbors[t].end());
 	}
+	Esutils::threadDistributionToFullDistribution(faceDistribution);
 	mesh._processBoundaries->faces = new serializededata<eslocal, eslocal>(faceDistribution, faceData);
 	mesh._processBoundaries->facepointers = new serializededata<eslocal, NewElement*>(1, faceCodes);
 	permutation.resize(mesh._processBoundaries->faces->structures());
@@ -169,7 +170,7 @@ void Transformation::computeProcessBoundaries(NewMesh &mesh)
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = fdistribution[t]; i < fdistribution[t + 1]; ++i) {
-			if (i && faceNeighbors[0][i - 1] == faceNeighbors[0][i]) {
+			if (i > fdistribution[t] && faceNeighbors[0][permutation[i - 1]] == faceNeighbors[0][permutation[i]]) {
 				++fintervals[t].back().end;
 			} else {
 				fintervals[t].push_back(BoundaryInterval(i, i + 1, { faceNeighbors[0][permutation[i]] }));
@@ -180,23 +181,124 @@ void Transformation::computeProcessBoundaries(NewMesh &mesh)
 	for (size_t t = 1; t < threads; t++) {
 		if (fintervals[t].size() && fintervals[0].back().neighbors.front() == fintervals[t].front().neighbors.front()) {
 			fintervals[0].back().end = fintervals[t].front().end;
+			fintervals[0].insert(fintervals[0].end(), fintervals[t].begin() + 1, fintervals[t].end());
 		} else {
 			fintervals[0].insert(fintervals[0].end(), fintervals[t].begin(), fintervals[t].end());
 		}
 	}
-	fintervals[0].front().neighbors.clear();
 	mesh._processBoundaries->facesIntervals = fintervals[0];
 
 
-	Communication::serialize([&] () {
-		for (size_t i = 0; i < mesh._processBoundaries->facesIntervals.size(); ++i) {
-			std::cout << mesh._processBoundaries->facesIntervals[i].begin << " -> " << mesh._processBoundaries->facesIntervals[i].end << " | " << mesh._processBoundaries->facesIntervals[i].neighbors;
-		}
-		std::cout << *mesh._processBoundaries->faces << "\n";
-
-	});
 	// Distribute nodes to interval
+	std::vector<std::vector<eslocal> > bnodes(mesh._processBoundaries->facesIntervals.size() + 1);
 
+	#pragma omp parallel for
+	for (size_t i = 0; i < mesh._processBoundaries->facesIntervals.size() + 1; ++i) {
+		if (i == bnodes.size() - 1) {
+			auto begin = mesh._processBoundaries->faces->datatarray().begin();
+			auto end   = mesh._processBoundaries->faces->datatarray().end();
+			bnodes[i].insert(bnodes[i].end(), begin, end);
+			Esutils::sortAndRemoveDuplicity(bnodes[i]);
+		} else {
+			auto begin = (mesh._processBoundaries->faces->cbegin() + mesh._processBoundaries->facesIntervals[i].begin)->begin();
+			auto end   = (mesh._processBoundaries->faces->cbegin() + mesh._processBoundaries->facesIntervals[i].end)->begin();
+			bnodes[i].insert(bnodes[i].end(), begin, end);
+			Esutils::sortAndRemoveDuplicity(bnodes[i]);
+		}
+	}
+
+	std::vector<std::vector<eslocal> > nodeNeighDistribution(threads), nodeNeighData(threads);
+	std::vector<size_t> ndistribution = tarray<eslocal>::distribute(threads, bnodes.back().size());
+
+	nodeNeighDistribution.front().push_back(0);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		size_t offset = 0;
+		for (size_t n = ndistribution[t]; n < ndistribution[t + 1]; ++n) {
+			for (size_t i = 0; i < mesh._processBoundaries->facesIntervals.size(); ++i) {
+				if (std::binary_search(bnodes[i].begin(), bnodes[i].end(), bnodes.back()[n])) {
+					++offset;
+					nodeNeighData[t].push_back(mesh._processBoundaries->facesIntervals[i].neighbors.front());
+				}
+			}
+			nodeNeighDistribution[t].push_back(offset);
+		}
+	}
+
+	Esutils::threadDistributionToFullDistribution(nodeNeighDistribution);
+	serializededata<eslocal, eslocal> nodesNeigh(nodeNeighDistribution, nodeNeighData);
+
+	permutation.resize(nodesNeigh.structures());
+	std::iota(permutation.begin(), permutation.end(), 0);
+	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) {
+		auto ni = nodesNeigh.cbegin() + i;
+		auto nj = nodesNeigh.cbegin() + j;
+		for (size_t n = 0; n < ni->size() && n < nj->size(); ++n) {
+			if ((*ni)[n] != (*nj)[n]) {
+				return (*ni)[n] < (*nj)[n];
+			}
+		}
+		if (ni->size() != nj->size()) {
+			return ni->size() < nj->size();
+		}
+		return bnodes.back()[i] < bnodes.back()[j];
+	});
+
+	std::vector<std::vector<eslocal> > nodesData(threads);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (size_t i = ndistribution[t]; i < ndistribution[t + 1]; ++i) {
+			nodesData[t].push_back(bnodes.back()[permutation[i]]);
+		}
+	}
+
+	mesh._processBoundaries->nodes = new serializededata<eslocal, eslocal>(1, nodesData);
+
+	std::vector<eslocal> backpermutation(permutation.size());
+	std::iota(backpermutation.begin(), backpermutation.end(), 0);
+	std::sort(backpermutation.begin(), backpermutation.end(), [&] (eslocal i, eslocal j) { return permutation[i] < permutation[j]; });
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (auto n = mesh._processBoundaries->faces->begin(t)->begin(); n != mesh._processBoundaries->faces->end(t)->begin(); ++n) {
+			*n = backpermutation[std::lower_bound(bnodes.back().begin(), bnodes.back().end(), *n) - bnodes.back().begin()];
+		}
+	}
+
+	auto equalNeighs = [] (serializededata<eslocal, eslocal>::const_iterator &i, serializededata<eslocal, eslocal>::const_iterator j) {
+		if (i->size() != j->size()) {
+			return false;
+		}
+		for (size_t n = 0; n < i->size(); ++n) {
+			if ((*i)[n] != (*j)[n]) {
+				return false;
+			}
+		}
+		return true;
+	};
+
+	std::vector<std::vector<BoundaryInterval> > nintervals(threads);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (size_t i = ndistribution[t]; i < ndistribution[t + 1]; ++i) {
+			auto neighs = nodesNeigh.cbegin() + permutation[i];
+			if (i > ndistribution[t] && equalNeighs(neighs, nodesNeigh.cbegin() + permutation[i - 1])) {
+				++nintervals[t].back().end;
+			} else {
+				nintervals[t].push_back(BoundaryInterval(i, i + 1, std::vector<int>(neighs->begin(), neighs->end())));
+			}
+		}
+	}
+
+	for (size_t t = 1; t < threads; t++) {
+		if (nintervals[t].size() && nintervals[0].back().neighbors == nintervals[t].front().neighbors) {
+			nintervals[0].back().end = nintervals[t].front().end;
+			nintervals[0].insert(nintervals[0].end(), nintervals[t].begin() + 1, nintervals[t].end());
+		} else {
+			nintervals[0].insert(nintervals[0].end(), nintervals[t].begin(), nintervals[t].end());
+		}
+	}
+	mesh._processBoundaries->nodesIntervals = nintervals[0];
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "MESH::computation of process boundaries finished.";
 }
