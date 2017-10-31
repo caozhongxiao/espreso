@@ -733,7 +733,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 				auto it = std::lower_bound(eIDs.begin(), eIDs.end(), *e);
 				if (it != eIDs.end() && *it == *e) {
 					target = t2i(partition[it - eIDs.begin()]);
-					if (!last[target] && !std::binary_search(ranks->begin(), ranks->end(), partition[it - eIDs.begin()])) {
+					if (!last[target] && partition[it - eIDs.begin()] != environment->MPIrank) {
 						sNodes[t][target].push_back(IDs[n]);
 						sNodes[t][target].insert(sNodes[t][target].end(), sizeof(Point) / sizeof(esglobal), 0);
 						memcpy(sNodes[t][target].data() + sNodes[t][target].size() - (sizeof(Point) / sizeof(esglobal)), coordinates.data() + n, sizeof(Point));
@@ -804,6 +804,10 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 
 	// Step 4: Deserialize node data
 	std::vector<esglobal> nodeset;
+	for (size_t t = 0; t < threads; t++) {
+		nodeset.insert(nodeset.end(), nodesIDs[t].begin(), nodesIDs[t].end());
+	}
+	std::sort(nodeset.begin(), nodeset.end());
 	for (size_t i = 0; i < rNodes.size(); i++) {
 		std::vector<size_t> rdistribution({ 0 });
 		size_t p = 0;

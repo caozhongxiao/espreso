@@ -130,6 +130,7 @@ void Transformation::reindexNodes(NewMesh &mesh)
 			IDMap[n].resize(sIDMap[0][n].size());
 		}
 	}
+
 	if (!Communication::receiveLowerKnownSize(sIDMap[0], IDMap, mesh._neighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: receive IDs from lower ranks.";
 	}
