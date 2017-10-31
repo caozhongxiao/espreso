@@ -481,7 +481,11 @@ void Physics::smoothstep(double &smoothStep, double &derivation, double edge0, d
 	switch (order) {
 	case 0:
 		smoothStep = value;
-		derivation = 1;
+		if (value == 0 || value == 1) {
+			derivation = 0;
+		} else {
+			derivation = 1;
+		}
 		break;
 	case 1:
 		smoothStep = -2 * pow(value, 3) + 3 * pow(value, 2);
