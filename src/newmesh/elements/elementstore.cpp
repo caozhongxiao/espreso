@@ -163,7 +163,7 @@ void ElementStore::permute(const std::vector<eslocal> &permutation, const std::v
 	if (decomposedDual != NULL) { decomposedDual->permute(permutation, distribution); }
 }
 
-std::vector<esglobal> ElementStore::gatherSizes()
+std::vector<esglobal> ElementStore::gatherElementDistrubution()
 {
 	std::vector<esglobal> result(environment->MPIsize + 1);
 	esglobal esize = size;

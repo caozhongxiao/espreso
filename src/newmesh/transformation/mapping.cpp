@@ -363,7 +363,7 @@ void Transformation::computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separ
 	}
 
 	size_t threads = environment->OMP_NUM_THREADS;
-	std::vector<eslocal> IDBoundaries = mesh._elems->gatherSizes();
+	std::vector<eslocal> IDBoundaries = mesh._elems->gatherElementDistrubution();
 
 	std::vector<std::vector<eslocal> > dualDistribution(threads);
 	std::vector<std::vector<esglobal> > dualData(threads);
@@ -477,7 +477,7 @@ void Transformation::assignDomainsToNodes(NewMesh &mesh)
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<esglobal> sIDDomainBoundaries, IDRankBoundaries = mesh._elems->gatherSizes();
+	std::vector<esglobal> sIDDomainBoundaries, IDRankBoundaries = mesh._elems->gatherElementDistrubution();
 	for (size_t d = 0; d < mesh._domains->domainElementBoundaries.size(); d++) {
 		sIDDomainBoundaries.push_back(mesh._domains->domainElementBoundaries[d] + IDRankBoundaries[environment->MPIrank]);
 	}

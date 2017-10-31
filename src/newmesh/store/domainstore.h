@@ -21,6 +21,8 @@ struct DomainStore {
 	serializededata<eslocal, eslocal> *elems;
 	serializededata<eslocal, eslocal> *nodes;
 
+	std::vector<esglobal> gatherDomainDistribution();
+
 	DomainStore();
 	~DomainStore();
 };

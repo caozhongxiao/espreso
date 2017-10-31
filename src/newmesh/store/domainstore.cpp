@@ -2,6 +2,9 @@
 #include "domainstore.h"
 
 #include "../../basis/containers/serializededata.h"
+#include "../../basis/utilities/communication.h"
+#include "../../basis/utilities/utils.h"
+#include "../../basis/logging/logging.h"
 
 using namespace espreso;
 
@@ -19,5 +22,25 @@ DomainStore::~DomainStore()
 	if (nodes == NULL) { delete nodes; }
 }
 
+std::vector<esglobal> DomainStore::gatherDomainDistribution()
+{
+	esglobal offset = elems->structures();
+	Communication::exscan(offset);
 
+	std::vector<esglobal> distribution(domainElementBoundaries.begin(), domainElementBoundaries.end());
+	for (size_t i = 0; i < distribution.size(); i++) {
+		distribution[i] += offset;
+	}
+	std::vector<esglobal> result;
+
+	if (!Communication::gatherUnknownSize(distribution, result)) {
+		ESINFO(ERROR) << "ESPRESO internal error: gather domain distribution.";
+	}
+	if (!Communication::broadcastUnknownSize(result)) {
+		ESINFO(ERROR) << "ESPRESO internal error: broadcast domain distribution.";
+	}
+
+	Esutils::removeDuplicity(result);
+	return result;
+}
 

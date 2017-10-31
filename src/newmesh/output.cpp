@@ -106,7 +106,7 @@ void NewOutput::VTKLegacy(const std::string &name, BoundaryStore *elements, Elem
 			}
 		}
 		for (size_t i = 0; i < elements->facesIntervals.size(); ++i) {
-			if (elements->facesIntervals[i].neighbors.front() != -1 || elements->facesIntervals[i].neighbors.size() > 1) {
+			if (elements->facesIntervals[i].neighbors.front() != -1) {
 				ebegin = elements->facesIntervals[i].begin;
 				break;
 			}

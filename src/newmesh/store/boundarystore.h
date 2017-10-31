@@ -20,10 +20,10 @@ struct BoundaryInterval {
 
 struct BoundaryStore {
 
-	serializededata<eslocal, esglobal>* elems;
-	serializededata<eslocal, eslocal>*  faces;
-	serializededata<eslocal, eslocal>*  edges;
-	serializededata<eslocal, eslocal>*  nodes;
+	serializededata<eslocal, eslocal>* elems;
+	serializededata<eslocal, eslocal>* faces;
+	serializededata<eslocal, eslocal>* edges;
+	serializededata<eslocal, eslocal>* nodes;
 
 	serializededata<eslocal, NewElement*>* facepointers;
 	serializededata<eslocal, NewElement*>* edgepointers;

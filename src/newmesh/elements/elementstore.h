@@ -19,7 +19,7 @@ struct ElementStore {
 	void sort();
 	void permute(const std::vector<eslocal> &permutation, const std::vector<size_t> *distribution = NULL);
 
-	std::vector<esglobal> gatherSizes();
+	std::vector<esglobal> gatherElementDistrubution();
 
 	size_t size;
 	std::vector<size_t> distribution;

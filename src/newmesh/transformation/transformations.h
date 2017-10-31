@@ -9,7 +9,10 @@
 namespace espreso {
 
 class NewMesh;
+class NewElement;
 class ElementStore;
+class BoundaryStore;
+template <typename TEBoundaries, typename TEData> class serializededata;
 
 #define TVERBOSITY PROGRESS1
 
@@ -42,6 +45,31 @@ private:
 	static void permuteElements(NewMesh &mesh, const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
 	static void permuteNodes(NewMesh &mesh, const std::vector<eslocal> &permutation);
 	static void projectElementsToDomains(NewMesh &mesh);
+
+	template <typename Tdual>
+	static void computeBoundaries(NewMesh &mesh,
+			serializededata<eslocal, Tdual>       *elementDual,
+			esglobal                               dualOffset,
+			const std::vector<esglobal>            &IDBoundaries,
+			std::vector<std::vector<eslocal> >     *elementData,
+			std::vector<std::vector<eslocal> >     *faceDistribution,
+			std::vector<std::vector<eslocal> >     *faceData,
+			std::vector<std::vector<NewElement*> > *faceCodes,
+			std::vector<std::vector<int> >         *faceNeighbors);
+
+	static void distributeElementsToIntervals(NewMesh &mesh,
+			BoundaryStore*                         &boundaries,
+			const std::vector<esglobal>            &IDBoundaries,
+			std::vector<std::vector<eslocal> >     &elementData);
+
+	static void distributeFacesToIntervals(NewMesh &mesh,
+			BoundaryStore*                         &boundaries,
+			std::vector<std::vector<eslocal> >     &faceDistribution,
+			std::vector<std::vector<eslocal> >     &faceData,
+			std::vector<std::vector<NewElement*> > &faceCodes,
+			std::vector<std::vector<int> >         &faceNeighbors);
+
+	static void distributeNodesToIntervals(NewMesh &mesh, BoundaryStore* &boundaries);
 };
 
 }
