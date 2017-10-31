@@ -61,31 +61,29 @@ std::vector<std::pair<ElementType, Property> > HeatTransfer3D::propertiesToStore
 
 void HeatTransfer3D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, const MaterialBaseConfiguration *mat, double phase, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
 {
-	const MaterialConfiguration* material = _mesh->materials()[e->param(Element::MATERIAL)];
-
 	auto d2r = [] (double degree) -> double {
 		return M_PI * degree / 180;
 	};
 
 	Point sin, cos;
-	switch (material->coordinate_system.type) {
+	switch (mat->coordinate_system.type) {
 	case CoordinateSystemConfiguration::TYPE::CARTESIAN:
 
-		cos.x = std::cos(d2r(material->coordinate_system.rotation_x.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp)));
-		cos.y = std::cos(d2r(material->coordinate_system.rotation_y.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp)));
-		cos.z = std::cos(d2r(material->coordinate_system.rotation_z.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp)));
+		cos.x = std::cos(d2r(mat->coordinate_system.rotation_x.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp)));
+		cos.y = std::cos(d2r(mat->coordinate_system.rotation_y.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp)));
+		cos.z = std::cos(d2r(mat->coordinate_system.rotation_z.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp)));
 
-		sin.x = std::sin(d2r(material->coordinate_system.rotation_x.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp)));
-		sin.y = std::sin(d2r(material->coordinate_system.rotation_y.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp)));
-		sin.z = std::sin(d2r(material->coordinate_system.rotation_z.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp)));
+		sin.x = std::sin(d2r(mat->coordinate_system.rotation_x.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp)));
+		sin.y = std::sin(d2r(mat->coordinate_system.rotation_y.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp)));
+		sin.z = std::sin(d2r(mat->coordinate_system.rotation_z.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp)));
 
 		break;
 
 	case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: {
 
 		Point origin(
-				material->coordinate_system.center_x.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp),
-				material->coordinate_system.center_y.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp),
+				mat->coordinate_system.center_x.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp),
+				mat->coordinate_system.center_y.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp),
 				0);
 		const Point &p = _mesh->coordinates()[e->node(node)];
 		double rotation = std::atan2((p.y - origin.y), (p.x - origin.x));
@@ -103,9 +101,9 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, const Element *e, 
 	case CoordinateSystemConfiguration::TYPE::SPHERICAL: {
 
 		Point origin(
-				material->coordinate_system.center_x.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp),
-				material->coordinate_system.center_y.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp),
-				material->coordinate_system.center_z.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp));
+				mat->coordinate_system.center_x.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp),
+				mat->coordinate_system.center_y.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp),
+				mat->coordinate_system.center_z.evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp));
 
 		const Point &p = _mesh->coordinates()[e->node(node)];
 
@@ -150,63 +148,63 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, const Element *e, 
 				) / (2 * h);
 	};
 
-	switch (material->thermal_conductivity.model) {
+	switch (mat->thermal_conductivity.model) {
 	case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
-		C(0, 0) = C(1, 1) = C(2, 2) = material->thermal_conductivity.values.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		C(0, 0) = C(1, 1) = C(2, 2) = mat->thermal_conductivity.values.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
 		C(0, 1) = C(0, 2) = C(1, 0) = C(1, 2) = C(2, 0) = C(2, 1) = 0;
 		if (tangentCorrection) {
-			_CD(0, 0) = _CD(1, 1) = _CD(2, 2) = derivation(material->thermal_conductivity.values.get(0, 0), temp / 1e4);
+			_CD(0, 0) = _CD(1, 1) = _CD(2, 2) = derivation(mat->thermal_conductivity.values.get(0, 0), temp / 1e4);
 			_CD(0, 1) = _CD(0, 2) = _CD(1, 0) = _CD(1, 2) = _CD(2, 0) = _CD(2, 1) = 0;
 		}
 		break;
 	case ThermalConductivityConfiguration::MODEL::DIAGONAL:
-		C(0, 0) = material->thermal_conductivity.values.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		C(1, 1) = material->thermal_conductivity.values.get(1, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		C(2, 2) = material->thermal_conductivity.values.get(2, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		C(0, 0) = mat->thermal_conductivity.values.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		C(1, 1) = mat->thermal_conductivity.values.get(1, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		C(2, 2) = mat->thermal_conductivity.values.get(2, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
 		C(0, 1) = C(0, 2) = C(1, 0) = C(1, 2) = C(2, 0) = C(2, 1) = 0;
 		if (tangentCorrection) {
-			_CD(0, 0) = derivation(material->thermal_conductivity.values.get(0, 0), temp / 1e4);
-			_CD(1, 1) = derivation(material->thermal_conductivity.values.get(1, 1), temp / 1e4);
-			_CD(2, 2) = derivation(material->thermal_conductivity.values.get(2, 2), temp / 1e4);
+			_CD(0, 0) = derivation(mat->thermal_conductivity.values.get(0, 0), temp / 1e4);
+			_CD(1, 1) = derivation(mat->thermal_conductivity.values.get(1, 1), temp / 1e4);
+			_CD(2, 2) = derivation(mat->thermal_conductivity.values.get(2, 2), temp / 1e4);
 			_CD(0, 1) = _CD(0, 2) = _CD(1, 0) = _CD(1, 2) = _CD(2, 0) = _CD(2, 1) = 0;
 		}
 		break;
 	case ThermalConductivityConfiguration::MODEL::SYMMETRIC:
-		C(0, 0) = material->thermal_conductivity.values.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		C(1, 1) = material->thermal_conductivity.values.get(1, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		C(2, 2) = material->thermal_conductivity.values.get(2, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		C(0, 1) = C(1, 0) = material->thermal_conductivity.values.get(0, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		C(0, 2) = C(2, 0) = material->thermal_conductivity.values.get(0, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		C(1, 2) = C(2, 1) = material->thermal_conductivity.values.get(1, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		C(0, 0) = mat->thermal_conductivity.values.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		C(1, 1) = mat->thermal_conductivity.values.get(1, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		C(2, 2) = mat->thermal_conductivity.values.get(2, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		C(0, 1) = C(1, 0) = mat->thermal_conductivity.values.get(0, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		C(0, 2) = C(2, 0) = mat->thermal_conductivity.values.get(0, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		C(1, 2) = C(2, 1) = mat->thermal_conductivity.values.get(1, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
 		if (tangentCorrection) {
-			_CD(0, 0) = derivation(material->thermal_conductivity.values.get(0, 0), temp / 1e4);
-			_CD(1, 1) = derivation(material->thermal_conductivity.values.get(1, 1), temp / 1e4);
-			_CD(2, 2) = derivation(material->thermal_conductivity.values.get(2, 2), temp / 1e4);
-			_CD(0, 1) = _CD(1, 0) = derivation(material->thermal_conductivity.values.get(0, 1), temp / 1e4);
-			_CD(0, 2) = _CD(2, 0) = derivation(material->thermal_conductivity.values.get(0, 2), temp / 1e4);
-			_CD(1, 2) = _CD(2, 1) = derivation(material->thermal_conductivity.values.get(1, 2), temp / 1e4);
+			_CD(0, 0) = derivation(mat->thermal_conductivity.values.get(0, 0), temp / 1e4);
+			_CD(1, 1) = derivation(mat->thermal_conductivity.values.get(1, 1), temp / 1e4);
+			_CD(2, 2) = derivation(mat->thermal_conductivity.values.get(2, 2), temp / 1e4);
+			_CD(0, 1) = _CD(1, 0) = derivation(mat->thermal_conductivity.values.get(0, 1), temp / 1e4);
+			_CD(0, 2) = _CD(2, 0) = derivation(mat->thermal_conductivity.values.get(0, 2), temp / 1e4);
+			_CD(1, 2) = _CD(2, 1) = derivation(mat->thermal_conductivity.values.get(1, 2), temp / 1e4);
 		}
 		break;
 	case ThermalConductivityConfiguration::MODEL::ANISOTROPIC:
-		C(0, 0) = material->thermal_conductivity.values.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		C(1, 1) = material->thermal_conductivity.values.get(1, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		C(2, 2) = material->thermal_conductivity.values.get(2, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		C(0, 1) = material->thermal_conductivity.values.get(0, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		C(0, 2) = material->thermal_conductivity.values.get(0, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		C(1, 0) = material->thermal_conductivity.values.get(1, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		C(1, 2) = material->thermal_conductivity.values.get(1, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		C(2, 0) = material->thermal_conductivity.values.get(2, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		C(2, 1) = material->thermal_conductivity.values.get(2, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		C(0, 0) = mat->thermal_conductivity.values.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		C(1, 1) = mat->thermal_conductivity.values.get(1, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		C(2, 2) = mat->thermal_conductivity.values.get(2, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		C(0, 1) = mat->thermal_conductivity.values.get(0, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		C(0, 2) = mat->thermal_conductivity.values.get(0, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		C(1, 0) = mat->thermal_conductivity.values.get(1, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		C(1, 2) = mat->thermal_conductivity.values.get(1, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		C(2, 0) = mat->thermal_conductivity.values.get(2, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		C(2, 1) = mat->thermal_conductivity.values.get(2, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
 		if (tangentCorrection) {
-			_CD(0, 0) = derivation(material->thermal_conductivity.values.get(0, 0), temp / 1e4);
-			_CD(1, 1) = derivation(material->thermal_conductivity.values.get(1, 1), temp / 1e4);
-			_CD(2, 2) = derivation(material->thermal_conductivity.values.get(2, 2), temp / 1e4);
-			_CD(0, 1) = derivation(material->thermal_conductivity.values.get(0, 1), temp / 1e4);
-			_CD(0, 2) = derivation(material->thermal_conductivity.values.get(0, 2), temp / 1e4);
-			_CD(1, 2) = derivation(material->thermal_conductivity.values.get(1, 2), temp / 1e4);
-			_CD(1, 0) = derivation(material->thermal_conductivity.values.get(1, 0), temp / 1e4);
-			_CD(2, 0) = derivation(material->thermal_conductivity.values.get(2, 0), temp / 1e4);
-			_CD(2, 1) = derivation(material->thermal_conductivity.values.get(2, 1), temp / 1e4);
+			_CD(0, 0) = derivation(mat->thermal_conductivity.values.get(0, 0), temp / 1e4);
+			_CD(1, 1) = derivation(mat->thermal_conductivity.values.get(1, 1), temp / 1e4);
+			_CD(2, 2) = derivation(mat->thermal_conductivity.values.get(2, 2), temp / 1e4);
+			_CD(0, 1) = derivation(mat->thermal_conductivity.values.get(0, 1), temp / 1e4);
+			_CD(0, 2) = derivation(mat->thermal_conductivity.values.get(0, 2), temp / 1e4);
+			_CD(1, 2) = derivation(mat->thermal_conductivity.values.get(1, 2), temp / 1e4);
+			_CD(1, 0) = derivation(mat->thermal_conductivity.values.get(1, 0), temp / 1e4);
+			_CD(2, 0) = derivation(mat->thermal_conductivity.values.get(2, 0), temp / 1e4);
+			_CD(2, 1) = derivation(mat->thermal_conductivity.values.get(2, 1), temp / 1e4);
 		}
 		break;
 	default:
@@ -216,26 +214,26 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, const Element *e, 
 	TCT.multiply(T, C * T, 1, 0, true, false);
 	if (tangentCorrection) {
 		TCDT.multiply(T, _CD * T, 1, 0, true, false);
-		CD(node, 0) = TCDT(0, 0);
-		CD(node, 1) = TCDT(1, 1);
-		CD(node, 2) = TCDT(2, 2);
-		CD(node, 3) = TCDT(0, 1);
-		CD(node, 4) = TCDT(0, 2);
-		CD(node, 5) = TCDT(1, 0);
-		CD(node, 6) = TCDT(1, 2);
-		CD(node, 7) = TCDT(2, 0);
-		CD(node, 8) = TCDT(2, 1);
+		CD(node, 0) += phase * TCDT(0, 0);
+		CD(node, 1) += phase * TCDT(1, 1);
+		CD(node, 2) += phase * TCDT(2, 2);
+		CD(node, 3) += phase * TCDT(0, 1);
+		CD(node, 4) += phase * TCDT(0, 2);
+		CD(node, 5) += phase * TCDT(1, 0);
+		CD(node, 6) += phase * TCDT(1, 2);
+		CD(node, 7) += phase * TCDT(2, 0);
+		CD(node, 8) += phase * TCDT(2, 1);
 	}
 
-	K(node, 0) = TCT(0, 0);
-	K(node, 1) = TCT(1, 1);
-	K(node, 2) = TCT(2, 2);
-	K(node, 3) = TCT(0, 1);
-	K(node, 4) = TCT(0, 2);
-	K(node, 5) = TCT(1, 0);
-	K(node, 6) = TCT(1, 2);
-	K(node, 7) = TCT(2, 0);
-	K(node, 8) = TCT(2, 1);
+	K(node, 0) += phase * TCT(0, 0);
+	K(node, 1) += phase * TCT(1, 1);
+	K(node, 2) += phase * TCT(2, 2);
+	K(node, 3) += phase * TCT(0, 1);
+	K(node, 4) += phase * TCT(0, 2);
+	K(node, 5) += phase * TCT(1, 0);
+	K(node, 6) += phase * TCT(1, 2);
+	K(node, 7) += phase * TCT(2, 0);
+	K(node, 8) += phase * TCT(2, 1);
 }
 
 void HeatTransfer3D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
