@@ -185,8 +185,8 @@ NewMesh::NewMesh(Mesh &mesh)
 //	Transformation::computeDecomposedDual(*this, TFlags::SEPARATE::MATERIALS | TFlags::SEPARATE::ETYPES);
 //	Transformation::computeElementCenters(*this);
 
-	Transformation::reclusterize(*this);
-	Transformation::partitiate(*this, 4, TFlags::SEPARATE::MATERIALS | TFlags::SEPARATE::ETYPES);
+	// Transformation::reclusterize(*this);
+	Transformation::partitiate(*this, 2, TFlags::SEPARATE::MATERIALS | TFlags::SEPARATE::ETYPES);
 	Transformation::computeProcessBoundaries(*this);
 	Transformation::computeDomainsBoundaries(*this); //, TFlags::ELEVEL::FACE | TFlags::ELEVEL::NODE);
 

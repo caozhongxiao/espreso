@@ -353,13 +353,13 @@ void Transformation::computeProcessBoundaries(NewMesh &mesh)
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<esglobal> IDBoundaries = mesh._elems->gatherElementDistrubution();
 
-	std::vector<std::vector<eslocal> > elementData(threads), faceDistribution(threads), faceData(threads);
+	std::vector<std::vector<eslocal> > faceDistribution(threads), faceData(threads);
 	std::vector<std::vector<NewElement*> > faceCodes(threads);
 	std::vector<std::vector<int> > faceNeighbors(threads);
 
-	Transformation::computeBoundaries(mesh, mesh._elems->dual, 0, IDBoundaries, &elementData, &faceDistribution, &faceData, &faceCodes, &faceNeighbors);
+	Transformation::computeBoundaries(mesh, mesh._elems->dual, 0, IDBoundaries, NULL, &faceDistribution, &faceData, &faceCodes, &faceNeighbors);
 
-	Transformation::distributeElementsToIntervals(mesh, mesh._processBoundaries, IDBoundaries, elementData);
+	// Transformation::distributeElementsToIntervals(mesh, mesh._processBoundaries, IDBoundaries, elementData);
 	Transformation::distributeFacesToIntervals(mesh, mesh._processBoundaries, faceDistribution, faceData, faceCodes, faceNeighbors);
 	Transformation::distributeNodesToIntervals(mesh, mesh._processBoundaries);
 

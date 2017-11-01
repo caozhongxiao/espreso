@@ -472,7 +472,6 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 	}
 
 	Transformation::arrangeNodes(mesh);
-	Transformation::projectElementsToDomains(mesh);
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::decomposition of the mesh finished.";
 }
