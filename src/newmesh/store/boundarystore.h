@@ -5,18 +5,12 @@
 #include <cstddef>
 #include <vector>
 
+#include "einterval.h"
+
 namespace espreso {
 
 template <typename TEBoundaries, typename TEData> class serializededata;
 struct NewElement;
-
-struct BoundaryInterval {
-	std::vector<int> neighbors;
-	eslocal begin, end;
-
-	BoundaryInterval(eslocal begin, eslocal end, std::vector<int> &&neighbors)
-	: begin(begin), end(end), neighbors(std::move(neighbors)) {};
-};
 
 struct BoundaryStore {
 
@@ -28,10 +22,10 @@ struct BoundaryStore {
 	serializededata<eslocal, NewElement*>* facepointers;
 	serializededata<eslocal, NewElement*>* edgepointers;
 
-	std::vector<BoundaryInterval> elemsIntervals;
-	std::vector<BoundaryInterval> facesIntervals;
-	std::vector<BoundaryInterval> edgesIntervals;
-	std::vector<BoundaryInterval> nodesIntervals;
+	std::vector<EInterval> elemsIntervals;
+	std::vector<EInterval> facesIntervals;
+	std::vector<EInterval> edgesIntervals;
+	std::vector<EInterval> nodesIntervals;
 
 	BoundaryStore();
 	~BoundaryStore();

@@ -12,6 +12,7 @@ class NewMesh;
 class NewElement;
 class ElementStore;
 class BoundaryStore;
+class EInterval;
 template <typename TEBoundaries, typename TEData> class serializededata;
 
 #define TVERBOSITY PROGRESS1
@@ -43,8 +44,8 @@ private:
 
 	static void exchangeElements(NewMesh &mesh, const std::vector<esglobal> &partition);
 	static void permuteElements(NewMesh &mesh, const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
-	static void permuteNodes(NewMesh &mesh, const std::vector<eslocal> &permutation);
 	static void projectNodesToDomains(NewMesh &mesh);
+	static void computeIntervals(std::vector<EInterval> &intervals, const serializededata<eslocal, eslocal> &compdata, const std::vector<size_t> &distribution, const std::vector<eslocal> &permutation);
 
 	template <typename Tdual>
 	static void computeBoundaries(NewMesh &mesh,

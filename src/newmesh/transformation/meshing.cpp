@@ -3,6 +3,8 @@
 
 #include "../newmesh.h"
 #include "../elements/elementstore.h"
+#include "../store/domainstore.h"
+#include "../store/boundarystore.h"
 
 #include "../../basis/point/point.h"
 #include "../../basis/containers/serializededata.h"
@@ -158,56 +160,143 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 		Transformation::assignDomainsToNodes(mesh);
 	}
 
+	if (mesh._processBoundaries->nodes == NULL) {
+		Transformation::computeProcessBoundaries(mesh);
+	}
+
 	size_t threads = environment->OMP_NUM_THREADS;
+	std::vector<esglobal> domainBoundaries = mesh._domains->gatherDomainDistribution();
+	std::vector<esglobal> processBoundaries = mesh._elems->gatherElementDistrubution();
 
-	std::vector<eslocal> permutation(mesh._nodes->size);
-	std::iota(permutation.begin(), permutation.end(), 0);
+	int min = std::lower_bound(domainBoundaries.begin(), domainBoundaries.end(), processBoundaries[environment->MPIrank] + 1) - domainBoundaries.begin() - 1;
+	int max = std::lower_bound(domainBoundaries.begin(), domainBoundaries.end(), processBoundaries[environment->MPIrank + 1] + 1) - domainBoundaries.begin() - 2;
 
-	// sorted according the following criteria:
-	// 1. on external boundary
-	// 2. on internal boundary
-	// 3. number of boundaries domains
-	// 4. boundaries IDs
-	// 5. ID
-//	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) {
-//		auto di = mesh._nodes->domains->cbegin() + i;
-//		auto dj = mesh._nodes->domains->cbegin() + j;
-//
-//		if ((di->front() < 0 || di->back() < 0) && (dj->front() >= 0 || dj->back() >= 0)) {
-//			// only first node is on boundary
-//			return true;
-//		}
-//		if ((dj->front() < 0 || dj->back() < 0) && (di->front() >= 0 || di->back() >= 0)) {
-//			// only second node is on boundary
-//			return false;
-//		}
-//		if (di->size() == dj->size()) {
-//			// the same number of boundaries
-//			for (size_t d = 0; d < di->size(); d++) {
-//				if ((*di)[d] != (*dj)[d]) {
-//					return (*di)[d] < (*dj)[d];
-//				}
-//			}
-//			return mesh._nodes->IDs->datatarray()[i] < mesh._nodes->IDs->datatarray()[j];
-//		}
-//		return di->size() < dj->size();
-//	});
+	size_t externalNodeCount = 0, boundaryNodeCount = mesh._processBoundaries->nodesIntervals.back().end;
+	for (size_t i = 0; i < mesh._processBoundaries->nodesIntervals.size() && mesh._processBoundaries->nodesIntervals[i].neighbors.front() == -1; ++i) {
+		externalNodeCount = mesh._processBoundaries->nodesIntervals[i].end;
+	}
 
-	// Communication::serialize([&] () { std::cout << permutation; });
+	std::vector<eslocal> permutation;
+	permutation.reserve(mesh._nodes->size);
+	permutation.insert(permutation.end(), mesh._processBoundaries->nodes->datatarray().data(), mesh._processBoundaries->nodes->datatarray().data() + boundaryNodeCount);
 
-//	std::vector<std::vector<Point> > centers(threads, std::vector<Point>(mesh._domains->structures()));
-//
-//	#pragma omp parallel for
-//	for (size_t t = 0; t < threads; t++) {
-//		auto domains = mesh._nodes->domains->cbegin(t);
-//		for (auto n = mesh._nodes->coordinates->cbegin(t); n != mesh._nodes->coordinates->cend(t); ++n, ++domains) {
-//			for (auto d = domains->begin(); d != domains->end(); ++d) {
-//				;
-//			}
-//		}
-//	}
-//
-//	mesh._elems->coordinates = new serializededata<eslocal, Point>(1, centers);
+	std::vector<eslocal> indices(mesh._processBoundaries->nodesIntervals.size());
+	for (size_t i = 0; i < mesh._processBoundaries->nodesIntervals.size(); ++i) {
+		indices[i] = mesh._processBoundaries->nodesIntervals[i].begin;
+	}
+	for (size_t n = 0; n < mesh._nodes->size; ++n) {
+		for (size_t i = 0; i < indices.size(); ++i) {
+			if (indices[i] < mesh._processBoundaries->nodesIntervals[i].end && permutation[indices[i]] == n) {
+				indices[i]++;
+				break;
+			}
+			if (i + 1 == indices.size()) {
+				permutation.push_back(n);
+			}
+		}
+	}
+
+	auto comp = [&] (eslocal i, eslocal j) {
+		auto di = mesh._nodes->domains->cbegin() + i;
+		auto dj = mesh._nodes->domains->cbegin() + j;
+
+		if (di->size() == dj->size()) {
+			for (size_t d = 0; d < di->size(); d++) {
+				if ((*di)[d] != (*dj)[d]) {
+					return (*di)[d] < (*dj)[d];
+				}
+			}
+		}
+		return di->size() > dj->size();
+	};
+
+	std::sort(permutation.begin(), permutation.begin() + externalNodeCount, comp);
+	std::sort(permutation.begin() + externalNodeCount, permutation.begin() + boundaryNodeCount, comp);
+	std::sort(permutation.begin() + boundaryNodeCount, permutation.end(), comp);
+
+
+	std::vector<EInterval> nintervals;
+
+	auto splitinterval = [&] (size_t boundary) {
+		auto it = std::lower_bound(nintervals.begin(), nintervals.end(), boundary, [] (EInterval &internal, size_t n) { return internal.end < n; });
+		if (boundary < it->end) {
+			size_t i = it - nintervals.begin();
+			nintervals.insert(it, *it);
+			nintervals[i].end = boundary;
+			nintervals[i + 1].begin = boundary;
+		}
+	};
+
+	Transformation::computeIntervals(nintervals, *mesh._nodes->domains, mesh._nodes->distribution, permutation);
+	splitinterval(externalNodeCount);
+	splitinterval(boundaryNodeCount);
+	auto iti = nintervals.begin();
+	while (iti->end <= externalNodeCount) {
+		iti->neighbors.insert(iti->neighbors.begin(), -1);
+		++iti;
+	}
+
+	mesh._domains->nodesIntervals.resize(mesh._domains->size);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (auto d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; d++) {
+			for (size_t i = 0; i < nintervals.size(); i++) {
+				auto lower = std::lower_bound(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), min);
+				auto me    = std::lower_bound(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), min + d);
+				if (*lower == min + d || (me != nintervals[i].neighbors.end() && *me == min + d)) {
+					mesh._domains->nodesIntervals[d].push_back(nintervals[i]);
+				}
+			}
+		}
+	}
+
+	#pragma omp parallel for
+	for (size_t i = 0; i < nintervals.size(); ++i) {
+		std::sort(permutation.begin() + nintervals[i].begin, permutation.begin() + nintervals[i].end, [&] (eslocal i, eslocal j) {
+			return mesh._nodes->IDs->datatarray()[i] < mesh._nodes->IDs->datatarray()[j];
+		});
+	}
+
+	std::vector<eslocal> finalpermutation;
+	finalpermutation.reserve(permutation.size());
+
+	for (size_t t = 0; t < threads; t++) {
+		for (auto d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; d++) {
+			for (size_t i = 0; i < nintervals.size(); i++) {
+				if (*std::lower_bound(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), min) == min + d) {
+					finalpermutation.insert(finalpermutation.end(), permutation.begin() + nintervals[i].begin, permutation.begin() + nintervals[i].end);
+				}
+			}
+		}
+	}
+
+	mesh._nodes->permute(finalpermutation);
+
+	std::vector<eslocal> backpermutation(permutation.size());
+	std::iota(backpermutation.begin(), backpermutation.end(), 0);
+	std::sort(backpermutation.begin(), backpermutation.end(), [&] (eslocal i, eslocal j) { return finalpermutation[i] < finalpermutation[j]; });
+
+	auto localremap = [&] (serializededata<eslocal, eslocal>* data) {
+		if (data == NULL) {
+			return;
+		}
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			size_t source;
+			for (auto e = data->begin(t); e != data->end(t); ++e) {
+				for (auto n = e->begin(); n != e->end(); ++n) {
+					*n = backpermutation[*n];
+				}
+			}
+		}
+	};
+
+	localremap(mesh._elems->nodes);
+	localremap(mesh._processBoundaries->nodes);
+	localremap(mesh._domainsBoundaries->nodes);
+	delete mesh._domains->elems;
+	delete mesh._domains->nodes;
+	Transformation::projectNodesToDomains(mesh);
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "MESH::arrange nodes finished.";
 }

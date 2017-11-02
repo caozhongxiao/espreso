@@ -100,7 +100,7 @@ void NewOutput::VTKLegacy(const std::string &name, BoundaryStore *elements, Elem
 		nbegin = nend;
 		ebegin = eend;
 		for (size_t i = 0; i < elements->nodesIntervals.size(); ++i) {
-			if (elements->nodesIntervals[i].neighbors.front() != -1 || elements->nodesIntervals[i].neighbors.size() > 1) {
+			if (elements->nodesIntervals[i].neighbors.front() != -1 || elements->nodesIntervals[i].neighbors.size() > 2) {
 				nbegin = elements->nodesIntervals[i].begin;
 				break;
 			}

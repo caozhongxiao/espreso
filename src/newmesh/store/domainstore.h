@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <vector>
 
+#include "einterval.h"
+
 namespace espreso {
 
 template <typename TEBoundaries, typename TEData> class serializededata;
@@ -20,6 +22,9 @@ struct DomainStore {
 
 	serializededata<eslocal, eslocal> *elems;
 	serializededata<eslocal, eslocal> *nodes;
+
+	// domain x intervals (in order: internal boundary, external boundary, internal nodes)
+	std::vector<std::vector<EInterval> > nodesIntervals;
 
 	std::vector<esglobal> gatherDomainDistribution();
 

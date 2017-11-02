@@ -195,7 +195,7 @@ void Transformation::distributeFacesToIntervals(NewMesh &mesh,
 	});
 	boundaries->faces->permute(permutation, &fdistribution);
 
-	std::vector<std::vector<BoundaryInterval> > fintervals(threads);
+	std::vector<std::vector<EInterval> > fintervals(threads);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = fdistribution[t]; i < fdistribution[t + 1]; ++i) {
@@ -205,7 +205,7 @@ void Transformation::distributeFacesToIntervals(NewMesh &mesh,
 					faceNeighbors[0][2 * permutation[i - 1] + 1] == faceNeighbors[0][2 * permutation[i] + 1]) {
 				++fintervals[t].back().end;
 			} else {
-				fintervals[t].push_back(BoundaryInterval(i, i + 1, { faceNeighbors[0][2 * permutation[i]], faceNeighbors[0][2 * permutation[i] + 1] }));
+				fintervals[t].push_back(EInterval(i, i + 1, { faceNeighbors[0][2 * permutation[i]], faceNeighbors[0][2 * permutation[i] + 1] }));
 			}
 		}
 	}
@@ -302,44 +302,15 @@ void Transformation::distributeNodesToIntervals(NewMesh &mesh, BoundaryStore* &b
 		}
 	}
 
-	auto equalNeighs = [] (serializededata<eslocal, eslocal>::const_iterator &i, serializededata<eslocal, eslocal>::const_iterator j) {
-		if (i->size() != j->size()) {
-			return false;
-		}
-		for (size_t n = 0; n < i->size(); ++n) {
-			if ((*i)[n] != (*j)[n]) {
-				return false;
-			}
-		}
-		return true;
-	};
-
-	std::vector<std::vector<BoundaryInterval> > nintervals(threads);
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		for (size_t i = ndistribution[t]; i < ndistribution[t + 1]; ++i) {
-			auto neighs = nodesNeigh.cbegin() + permutation[i];
-			if (i > ndistribution[t] && equalNeighs(neighs, nodesNeigh.cbegin() + permutation[i - 1])) {
-				++nintervals[t].back().end;
-			} else {
-				nintervals[t].push_back(BoundaryInterval(i, i + 1, std::vector<int>(neighs->begin(), neighs->end())));
-			}
-		}
-	}
-
-	for (size_t t = 1; t < threads; t++) {
-		if (nintervals[t].size() && nintervals[0].back().neighbors == nintervals[t].front().neighbors) {
-			nintervals[0].back().end = nintervals[t].front().end;
-			nintervals[0].insert(nintervals[0].end(), nintervals[t].begin() + 1, nintervals[t].end());
-		} else {
-			nintervals[0].insert(nintervals[0].end(), nintervals[t].begin(), nintervals[t].end());
-		}
-	}
-	boundaries->nodesIntervals = nintervals[0];
+	Transformation::computeIntervals(boundaries->nodesIntervals, nodesNeigh, ndistribution, permutation);
 }
 
 void Transformation::computeProcessBoundaries(NewMesh &mesh)
 {
+	if (mesh._processBoundaries->faces != NULL && mesh._processBoundaries->nodes != NULL) {
+		return;
+	}
+
 	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "MESH::computation of process boundaries started.";
 
 	if (mesh._nodes->elems == NULL) {
@@ -368,6 +339,10 @@ void Transformation::computeProcessBoundaries(NewMesh &mesh)
 
 void Transformation::computeDomainsBoundaries(NewMesh &mesh)
 {
+	if (mesh._domainsBoundaries->faces != NULL && mesh._domainsBoundaries->nodes != NULL) {
+		return;
+	}
+
 	if (mesh._domains == NULL) {
 		ESINFO(TVERBOSITY) << std::string(2 * (level + 1), ' ') << "MESH::computation of domains boundaries skipped. There are no domains.";
 		return;

@@ -135,25 +135,27 @@ void ElementStore::permute(const std::vector<eslocal> &permutation, const std::v
 	if (body != NULL) { body->permute(permutation, distribution); }
 	if (material != NULL) { material->permute(permutation, distribution); }
 
-	size_t threads = environment->OMP_NUM_THREADS;
-	if (threads > 1) {
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			for (size_t i = epointers->datatarray().distribution()[t]; i < epointers->datatarray().distribution()[t + 1]; ++i) {
-				epointers->datatarray()[i] = _eclasses[0] + (epointers->datatarray()[i] - _eclasses[t]);
+	if (epointers != NULL) {
+		size_t threads = environment->OMP_NUM_THREADS;
+		if (threads > 1) {
+			#pragma omp parallel for
+			for (size_t t = 0; t < threads; t++) {
+				for (size_t i = epointers->datatarray().distribution()[t]; i < epointers->datatarray().distribution()[t + 1]; ++i) {
+					epointers->datatarray()[i] = _eclasses[0] + (epointers->datatarray()[i] - _eclasses[t]);
+				}
 			}
-		}
 
-		if (epointers != NULL) { epointers->permute(permutation, distribution); }
+			epointers->permute(permutation, distribution);
 
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			for (size_t i = this->distribution[t]; i < this->distribution[t + 1]; ++i) {
-				epointers->datatarray()[i] = _eclasses[t] + (epointers->datatarray()[i] - _eclasses[0]);
+			#pragma omp parallel for
+			for (size_t t = 0; t < threads; t++) {
+				for (size_t i = this->distribution[t]; i < this->distribution[t + 1]; ++i) {
+					epointers->datatarray()[i] = _eclasses[t] + (epointers->datatarray()[i] - _eclasses[0]);
+				}
 			}
+		} else {
+			epointers->permute(permutation, distribution);
 		}
-	} else {
-		if (epointers != NULL) { epointers->permute(permutation, distribution); }
 	}
 
 	if (domains != NULL) { domains->permute(permutation, distribution); }

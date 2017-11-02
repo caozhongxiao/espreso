@@ -562,4 +562,44 @@ void Transformation::assignDomainsToNodes(NewMesh &mesh)
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::assign domains to nodes finished.";
 }
 
+void Transformation::computeIntervals(std::vector<EInterval> &intervals, const serializededata<eslocal, eslocal> &compdata, const std::vector<size_t> &distribution, const std::vector<eslocal> &permutation)
+{
+	auto equalNeighs = [] (serializededata<eslocal, eslocal>::const_iterator &i, serializededata<eslocal, eslocal>::const_iterator j) {
+		if (i->size() != j->size()) {
+			return false;
+		}
+		for (size_t n = 0; n < i->size(); ++n) {
+			if ((*i)[n] != (*j)[n]) {
+				return false;
+			}
+		}
+		return true;
+	};
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	std::vector<std::vector<EInterval> > nintervals(threads);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (size_t i = distribution[t]; i < distribution[t + 1]; ++i) {
+			auto data = compdata.cbegin() + permutation[i];
+			if (i > distribution[t] && equalNeighs(data, compdata.cbegin() + permutation[i - 1])) {
+				++nintervals[t].back().end;
+			} else {
+				nintervals[t].push_back(EInterval(i, i + 1, std::vector<int>(data->begin(), data->end())));
+			}
+		}
+	}
+
+	for (size_t t = 1; t < threads; t++) {
+		if (nintervals[t].size() && nintervals[0].back().neighbors == nintervals[t].front().neighbors) {
+			nintervals[0].back().end = nintervals[t].front().end;
+			nintervals[0].insert(nintervals[0].end(), nintervals[t].begin() + 1, nintervals[t].end());
+		} else {
+			nintervals[0].insert(nintervals[0].end(), nintervals[t].begin(), nintervals[t].end());
+		}
+	}
+	intervals = nintervals[0];
+}
+
 

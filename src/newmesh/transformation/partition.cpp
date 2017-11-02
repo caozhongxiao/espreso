@@ -592,13 +592,6 @@ void Transformation::permuteElements(NewMesh &mesh, const std::vector<eslocal> &
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::permutation of elements finished.";
 }
 
-void Transformation::permuteNodes(NewMesh &mesh, const std::vector<eslocal> &permutation)
-{
-	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "Transformation::permutation of nodes started.";
-
-	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::permutation of nodes finished.";
-}
-
 void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal> &partition)
 {
 	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "Transformation::exchanging elements started.";
