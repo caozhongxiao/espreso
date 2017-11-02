@@ -180,7 +180,7 @@ struct ECFObject: public ECFParameter {
 
 	virtual ~ECFObject();
 
-	void dropParameter(ECFParameter *parameter);
+	virtual void dropParameter(ECFParameter *parameter);
 protected:
 	ECFParameter* addSeparator();
 	ECFParameter* addSpace();
