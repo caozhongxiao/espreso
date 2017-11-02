@@ -128,6 +128,9 @@ MaterialConfiguration::MaterialConfiguration()
 			.setpattern({ "1" })
 			.allowonly([&] () { return phase_change; }),
 			static_cast<bool*>(NULL), &physical_model, &dimension);
+
+	getParameter(&phases)->getParameter("1");
+	getParameter(&phases)->getParameter("2");
 }
 
 MaterialConfiguration::MaterialConfiguration(DIMENSION dimension, PHYSICAL_MODEL allowedPhysicalModels)
