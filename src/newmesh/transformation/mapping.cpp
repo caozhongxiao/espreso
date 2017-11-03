@@ -410,7 +410,6 @@ void Transformation::computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separ
 									(!(separate & TFlags::SEPARATE::ETYPES) || epointer[e]->type == epointer[it - IDs.begin()]->type)
 								) {
 
-
 								++dualDistribution[t].back();
 								dualData[t].push_back(neighElementIDs[neigh] - IDBoundaries[environment->MPIrank]);
 							}

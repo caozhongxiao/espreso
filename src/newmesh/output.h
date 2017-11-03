@@ -8,11 +8,13 @@ namespace espreso {
 
 class ElementStore;
 class BoundaryStore;
+class DomainStore;
 
 struct NewOutput {
 
-	static void VTKLegacy(const std::string &name, ElementStore *elements, ElementStore *nodes);
+	static void VTKLegacy(const std::string &name, ElementStore *elements, ElementStore *nodes, DomainStore *domains);
 	static void VTKLegacy(const std::string &name, BoundaryStore *elements, ElementStore *nodes, bool inner = false);
+	static void VTKLegacyDual(const std::string &name, ElementStore *elements, ElementStore *nodes, DomainStore *domains);
 };
 
 }

@@ -115,7 +115,7 @@ void Transformation::reclusterize(NewMesh &mesh)
 //	ESINFO(TVERBOSITY);
 
 	Transformation::exchangeElements(mesh, partition);
-	Transformation::reindexNodes(mesh);
+//	Transformation::reindexNodes(mesh);
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::re-distribution of the mesh to processes finished.";
 }
@@ -230,7 +230,8 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 
 	size_t edgeConst = 10000;
 
-	std::vector<eslocal> blocks, partition(mesh._elems->size);
+
+	std::vector<eslocal> partition(mesh._elems->size);
 	if (nextID == 1) {
 
 		std::vector<eslocal> edgeWeights(mesh._elems->decomposedDual->datatarray().size());
@@ -270,7 +271,6 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 				0, NULL, edgeWeights.data(),
 				parts, partition.data());
 		ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::METIS::KWay finished.";
-		blocks = std::vector<eslocal>({ 0, (eslocal)mesh._elems->size });
 		mesh._domains->clusters.resize(parts, 0);
 
 	} else { // non-continuous dual graph
@@ -378,21 +378,23 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 		}
 		ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::METIS::KWay finished.";
 
-		blocks = partoffset;
+		std::vector<eslocal> ppartition = partition;
+		nextID = 0;
+		for (size_t p = 0; p < tdecomposition[0].size(); p++) {
+			for (size_t i = 0; i < tdecomposition[0][p].size(); ++i) {
+				partition[tdecomposition[0][p][i]] = ppartition[partoffset[p] + i] + nextID;
+			}
+			nextID += pparts[p];
+		}
 	}
 
 	std::vector<eslocal> permutation(partition.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
 	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) {
-		auto it1 = std::lower_bound(blocks.begin(), blocks.end(), i + 1);
-		auto it2 = std::lower_bound(blocks.begin(), blocks.end(), i + 1);
-		if (it1 == it2) {
-			if (partition[i] == partition[j]) {
-				return i < j;
-			}
-			return partition[i] < partition[j];
+		if (partition[i] == partition[j]) {
+			return i < j;
 		}
-		return it1 < it2;
+		return partition[i] < partition[j];
 	});
 
 	std::vector<eslocal> domainDistribution;
@@ -403,15 +405,11 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 	auto begin = permutation.begin();
 	while (begin != permutation.end()) {
 		domainDistribution.push_back(begin - permutation.begin());
-		begin = std::lower_bound(begin, permutation.begin() + blocks[blockindex + 1], ++partindex, [&] (eslocal i, eslocal val) {
+		begin = std::lower_bound(begin, permutation.end(), ++partindex, [&] (eslocal i, eslocal val) {
 			return partition[i] < val;
 		});
-		if (begin - permutation.begin() == blocks[blockindex + 1]) {
-			++blockindex;
-			partindex = 0;
-		}
 	}
-	domainDistribution.push_back(begin - permutation.begin());
+	domainDistribution.push_back(permutation.size());
 
 	// TODO: improve domain distribution for more complicated decomposition
 	if (domainDistribution.size() == threads + 1) {
@@ -471,7 +469,7 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 		}
 	}
 
-	Transformation::arrangeNodes(mesh);
+//	Transformation::arrangeNodes(mesh);
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::decomposition of the mesh finished.";
 }

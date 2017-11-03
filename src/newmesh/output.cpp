@@ -5,6 +5,7 @@
 #include "elements/newelement.h"
 #include "elements/elementstore.h"
 #include "store/boundarystore.h"
+#include "store/domainstore.h"
 
 #include "../basis/point/point.h"
 #include "../basis/containers/serializededata.h"
@@ -15,7 +16,7 @@
 
 using namespace espreso;
 
-void NewOutput::VTKLegacy(const std::string &name, ElementStore *elements, ElementStore *nodes)
+void NewOutput::VTKLegacy(const std::string &name, ElementStore *elements, ElementStore *nodes, DomainStore *domains)
 {
 	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
 
@@ -88,6 +89,15 @@ void NewOutput::VTKLegacy(const std::string &name, ElementStore *elements, Eleme
 	os << "LOOKUP_TABLE default\n";
 	for (size_t e = 0; e < elements->size; e++) {
 		os << environment->MPIrank << "\n";
+	}
+	os << "\n";
+
+	os << "SCALARS domain int 1\n";
+	os << "LOOKUP_TABLE default\n";
+	for (size_t d = 0; d < domains->size; d++) {
+		for (size_t e = domains->domainElementBoundaries[d]; e < domains->domainElementBoundaries[d + 1]; ++e) {
+			os << d << "\n";
+		}
 	}
 }
 
@@ -200,6 +210,112 @@ void NewOutput::VTKLegacy(const std::string &name, BoundaryStore *elements, Elem
 	os << "LOOKUP_TABLE default\n";
 	for (size_t e = 0; e < cells; e++) {
 		os << environment->MPIrank << "\n";
+	}
+}
+
+void NewOutput::VTKLegacyDual(const std::string &name, ElementStore *elements, ElementStore *nodes, DomainStore *domains)
+{
+	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+
+	os << "# vtk DataFile Version 2.0\n";
+	os << "EXAMPLE\n";
+	os << "ASCII\n";
+	os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+//	os << "POINTS " << domains->domainElementBoundaries[1] << " float\n";
+//	for (auto e = elements->nodes->cbegin(); e != elements->nodes->cbegin() + domains->domainElementBoundaries[1]; ++e) {
+//		Point center;
+//		for (auto n = e->begin(); n != e->end(); ++n) {
+//			center += nodes->coordinates->datatarray()[*n];
+//		}
+//		center /= e->size();
+//		os << center.x << " " << center.y << " " << center.z << "\n";
+//	}
+//	os << "\n";
+//
+//	size_t cells = 0;
+//	auto e = elements->decomposedDual->cbegin();
+//	for (size_t c = 0; c < domains->domainElementBoundaries[1]; ++c, ++e) {
+//		for (auto n = e->begin(); n != e->end(); ++n) {
+//			if (*n < domains->domainElementBoundaries[1]) {
+//				cells++;
+//			}
+//		}
+//	}
+//
+//	os << "CELLS " << cells << " " << 3 * cells << "\n";
+//	e = elements->decomposedDual->cbegin();
+//	for (size_t c = 0; c < domains->domainElementBoundaries[1]; ++c, ++e) {
+//		for (auto n = e->begin(); n != e->end(); ++n) {
+//			if (*n < domains->domainElementBoundaries[1]) {
+//				os << 2 << " " << c << " " << *n << "\n";
+//			}
+//		}
+//	}
+//	os << "\n";
+//
+//	os << "CELL_TYPES " << cells << "\n";
+//	for (size_t c = 0; c < cells; ++c) {
+//		os << "3\n";
+//	}
+//	os << "\n";
+//
+//	os << "CELL_DATA " << cells << "\n";
+//	os << "SCALARS cluster int 1\n";
+//	os << "LOOKUP_TABLE default\n";
+//	for (size_t e = 0; e < cells; e++) {
+//		os << environment->MPIrank << "\n";
+//	}
+//
+//	os << "POINT_DATA " << domains->domainElementBoundaries[1] << "\n";
+//	os << "SCALARS domain int 1\n";
+//	os << "LOOKUP_TABLE default\n";
+//	for (size_t d = 0; d < 1; d++) {
+//		for (size_t e = domains->domainElementBoundaries[d]; e < domains->domainElementBoundaries[d + 1]; ++e) {
+//			os << d << "\n";
+//		}
+//	}
+	os << "POINTS " << elements->size << " float\n";
+	for (auto e = elements->nodes->cbegin(); e != elements->nodes->cend(); ++e) {
+		Point center;
+		for (auto n = e->begin(); n != e->end(); ++n) {
+			center += nodes->coordinates->datatarray()[*n];
+		}
+		center /= e->size();
+		os << center.x << " " << center.y << " " << center.z << "\n";
+	}
+	os << "\n";
+
+	size_t cells = elements->decomposedDual->datatarray().size();
+	os << "CELLS " << cells << " " << 3 * cells << "\n";
+	auto e = elements->decomposedDual->cbegin();
+	for (size_t c = 0; c < elements->decomposedDual->structures(); ++c, ++e) {
+		for (auto n = e->begin(); n != e->end(); ++n) {
+			os << 2 << " " << c << " " << *n << "\n";
+		}
+	}
+	os << "\n";
+
+	os << "CELL_TYPES " << cells << "\n";
+	for (size_t c = 0; c < cells; ++c) {
+		os << "3\n";
+	}
+	os << "\n";
+
+	os << "CELL_DATA " << cells << "\n";
+	os << "SCALARS cluster int 1\n";
+	os << "LOOKUP_TABLE default\n";
+	for (size_t e = 0; e < cells; e++) {
+		os << environment->MPIrank << "\n";
+	}
+
+	os << "POINT_DATA " << elements->size << "\n";
+	os << "SCALARS domain int 1\n";
+	os << "LOOKUP_TABLE default\n";
+	for (size_t d = 0; d < domains->size; d++) {
+		for (size_t e = domains->domainElementBoundaries[d]; e < domains->domainElementBoundaries[d + 1]; ++e) {
+			os << d << "\n";
+		}
 	}
 }
 

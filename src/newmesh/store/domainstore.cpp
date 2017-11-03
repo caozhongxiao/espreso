@@ -24,7 +24,7 @@ DomainStore::~DomainStore()
 
 std::vector<esglobal> DomainStore::gatherDomainDistribution()
 {
-	esglobal offset = elems->structures();
+	esglobal offset = domainElementBoundaries.back();
 	Communication::exscan(offset);
 
 	std::vector<esglobal> distribution(domainElementBoundaries.begin(), domainElementBoundaries.end());
