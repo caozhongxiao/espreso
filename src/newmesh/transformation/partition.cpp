@@ -469,7 +469,7 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 		}
 	}
 
-//	Transformation::arrangeNodes(mesh);
+	Transformation::arrangeNodes(mesh);
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::decomposition of the mesh finished.";
 }

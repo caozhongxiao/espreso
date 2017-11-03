@@ -214,7 +214,6 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 	std::sort(permutation.begin() + externalNodeCount, permutation.begin() + boundaryNodeCount, comp);
 	std::sort(permutation.begin() + boundaryNodeCount, permutation.end(), comp);
 
-
 	std::vector<EInterval> nintervals;
 
 	auto splitinterval = [&] (size_t boundary) {
@@ -257,6 +256,40 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 		});
 	}
 
+	for (size_t d = 0; d < mesh._domains->size; d++) {
+		std::sort(mesh._domains->nodesIntervals[d].begin(), mesh._domains->nodesIntervals[d].end(), [&] (EInterval &ei1, EInterval &ei2) {
+			int l1 = 2, l2 = 2;
+			if ((ei1.neighbors[0] != -1 && ei1.neighbors[0] < min + d) || (ei1.neighbors[0] == -1 && ei1.neighbors[1] < min + d)) {
+				l1 = 0;
+			}
+			if ((ei2.neighbors[0] != -1 && ei2.neighbors[0] < min + d) || (ei2.neighbors[0] == -1 && ei2.neighbors[1] < min + d)) {
+				l2 = 0;
+			}
+			if ((ei1.neighbors[0] == min + d && ei1.neighbors.size() > 1) || (ei1.neighbors[0] == -1 && ei1.neighbors[1] == min + d && ei1.neighbors.size() > 2)) {
+				l1 = 1;
+			}
+			if ((ei2.neighbors[0] == min + d && ei2.neighbors.size() > 1) || (ei2.neighbors[0] == -1 && ei2.neighbors[1] == min + d && ei2.neighbors.size() > 2)) {
+				l2 = 1;
+			}
+			if (l1 == l2) {
+				if (ei1.neighbors.size() == ei2.neighbors.size()) {
+					return ei1.neighbors.size() > ei2.neighbors.size();
+				}
+				return ei1.neighbors < ei1.neighbors;
+			}
+			return l1 < l2;
+		});
+	}
+
+	Communication::serialize([&] () {
+		for (size_t d = 0; d < mesh._domains->size; d++) {
+			std::cout << "DOMAIN: " << d << "\n";
+			for (size_t i = 0; i < mesh._domains->nodesIntervals[d].size(); i++) {
+				std::cout << "<" << mesh._domains->nodesIntervals[d][i].begin << " " << mesh._domains->nodesIntervals[d][i].end << "> " << mesh._domains->nodesIntervals[d][i].neighbors;
+			}
+		}
+	});
+
 	std::vector<eslocal> finalpermutation;
 	finalpermutation.reserve(permutation.size());
 
@@ -294,9 +327,6 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 	localremap(mesh._elems->nodes);
 	localremap(mesh._processBoundaries->nodes);
 	localremap(mesh._domainsBoundaries->nodes);
-	delete mesh._domains->elems;
-	delete mesh._domains->nodes;
-	Transformation::projectNodesToDomains(mesh);
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "MESH::arrange nodes finished.";
 }
