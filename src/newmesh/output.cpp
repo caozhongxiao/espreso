@@ -80,6 +80,8 @@ void NewOutput::VTKLegacy(const std::string &name, ElementStore *elements, Eleme
 		case NewElement::CODE::HEXA20:
 			os << "25\n";
 			break;
+		default:
+			break;
 		}
 	}
 	os << "\n";

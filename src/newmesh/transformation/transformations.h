@@ -4,6 +4,7 @@
 
 #include "tflags.h"
 
+#include <cstddef>
 #include <vector>
 
 namespace espreso {

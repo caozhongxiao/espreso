@@ -5,6 +5,8 @@
 
 #include "../../config/ecf/environment.h"
 
+#include <algorithm>
+
 namespace espreso {
 
 template <typename Ttype>
