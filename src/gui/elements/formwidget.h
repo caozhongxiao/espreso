@@ -7,6 +7,7 @@
 #include "../../config/configuration.h"
 #include "isavableobject.h"
 #include "ivalidatableobject.h"
+#include "fieldhandler.h"
 
 namespace espreso
 {
@@ -20,6 +21,9 @@ namespace espreso
 		explicit FormWidget(QWidget* = nullptr);
 
 		void appendString(ECFParameter*);
+        void appendNonnegativeInteger(ECFParameter*);
+        void appendPositiveInteger(ECFParameter*);
+        void appendFloat(ECFParameter*);
 
         void save() override;
         void saveState() override;
@@ -31,10 +35,10 @@ namespace espreso
 	private:
 		QFormLayout* m_layout;
 
-        QVector<QPair<ECFParameter*, QLineEdit*> > m_strings;
+        QVector<QPair<ECFParameter*, FieldHandler*> > m_fields;
         int m_invalidIndex = 0;
 
-        QVector<std::string> m_state_strings;
+        QVector<std::string> m_state_fields;
         bool m_stateStored = false;
 	};
 

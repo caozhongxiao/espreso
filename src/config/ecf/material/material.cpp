@@ -4,6 +4,8 @@
 #include "../../configuration.hpp"
 
 using namespace espreso;
+
+MaterialBaseConfiguration::MaterialBaseConfiguration()
 : _phase_change(NULL), _physical_model(NULL)
 {
 	REGISTER(coordinate_system, ECFMetaData()
@@ -89,7 +91,7 @@ MaterialConfiguration::MaterialConfiguration()
 					.allowonly([&] () { return _allowed_physical_models & PHYSICAL_MODEL::LINEAR_ELASTIC; })));
 
 	REGISTER(phase_change, ECFMetaData()
-			.setdescription({ "Turn on/off phase change." })
+            .setdescription({ "Phase change" })
 			.setdatatype({ ECFDataType::BOOL }));
 
 	addSeparator();

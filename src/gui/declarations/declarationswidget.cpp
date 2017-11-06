@@ -301,7 +301,8 @@ void DeclarationsWidget::removeMaterial(int index)
     std::string key = this->m_materialIDs.at(index);
     this->m_materials->erase(key);
     this->m_materialIDs.remove(index);
-    this->m_materialNames.remove(index);
+    if (this->m_materialNames.size() > index)
+        this->m_materialNames.remove(index);
 }
 
 std::string DeclarationsWidget::toUpper(const std::string& text)

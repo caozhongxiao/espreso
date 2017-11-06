@@ -27,6 +27,7 @@ public:
     ~FieldHandler();
 
     void setValue(const QString& val);
+    QString value() const;
 
     void save() override;
     void saveState() override;

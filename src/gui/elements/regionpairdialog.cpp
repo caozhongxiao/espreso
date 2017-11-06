@@ -51,7 +51,7 @@ QWidget* RegionPairDialog::uiValue(ECFDataType type, QLayout* layout)
         layout->addWidget(new QLabel(tr("Region:"), this));
         QComboBox* cmb = new QComboBox(this);
         //auto regions = const_cast<std::vector<Region*>& >(m_mesh->regions());
-        for (auto it = m_mesh->regions().cbegin(); it != m_mesh->regions().cend(); it++)
+        for (auto it = m_mesh->regions().begin(); it != m_mesh->regions().end(); it++)
         {
             std::string ahoj = (*it)->name;
 //            bool found = false;

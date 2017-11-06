@@ -17,7 +17,9 @@ FieldHandler::FieldHandler(ECFParameter* data,
     ui->label->setText(QString::fromStdString(data->metadata.description[0]));
     if (!withLabel) ui->label->hide();
 
-    ui->field->setValidator(validator->create(this));
+    if (validator != nullptr)
+        ui->field->setValidator(validator->create(this));
+
     ui->field->setText(QString::fromStdString(data->getValue()));
 }
 
@@ -29,6 +31,11 @@ FieldHandler::~FieldHandler()
 void FieldHandler::setValue(const QString& val)
 {
     ui->field->setText(val);
+}
+
+QString FieldHandler::value() const
+{
+    return ui->field->text();
 }
 
 void FieldHandler::save()

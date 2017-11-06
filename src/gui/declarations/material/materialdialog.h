@@ -8,6 +8,7 @@
 #include "../../../config/ecf/material/material.h"
 #include "../../elements/isavableobject.h"
 #include "../../elements/ivalidatableobject.h"
+#include "materialwidget.h"
 
 namespace espreso
 {
@@ -28,27 +29,10 @@ namespace espreso
 
         void accept() override;
 
-    private slots:
-        void redraw();
-
     private:
         Ui::MaterialDialog *ui;
 
-        ECFObject* m_material;
-        QVector<std::string> m_names;
-
-        QFrame* m_frame;
-        QVBoxLayout* m_frameLayout;
-
-        QVector<ISavableObject*> m_save;
-        QVector<IValidatableObject*> m_valid;
-
-        void drawMe();
-        void iterateObject(ECFObject*, QWidget*);
-        void iterateObject(ECFObject*);
-        void processParameters(ECFObject*, QWidget*);
-        void drawHeadline(ECFObject*, QWidget*);
-        void drawOption(ECFParameter*, QWidget*);
+        MaterialWidget* m_widget;
     };
 
 }

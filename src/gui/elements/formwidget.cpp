@@ -2,6 +2,8 @@
 
 #include <QLabel>
 
+#include "../validators/validatorfactory.h"
+
 using namespace espreso;
 
 FormWidget::FormWidget(QWidget* parent) : QWidget(parent)
@@ -13,36 +15,83 @@ FormWidget::FormWidget(QWidget* parent) : QWidget(parent)
 void FormWidget::appendString(ECFParameter* p_string)
 {
 
-	QLabel* lbl = new QLabel(QString::fromStdString(p_string->metadata.description.at(0)),
-							 this);
+    QLabel* lbl = new QLabel(QString::fromStdString(p_string->metadata.description.at(0)),
+                             this);
 
-	QLineEdit* edit = new QLineEdit(QString::fromStdString(p_string->getValue()),
-									this);
+    FieldHandler* edit = new FieldHandler(p_string);
 
-    QPair<ECFParameter*, QLineEdit*> pair(p_string, edit);
-    this->m_strings.append(pair);
+    QPair<ECFParameter*, FieldHandler*> pair(p_string, edit);
+    this->m_fields.append(pair);
 
-	this->m_layout->addRow(lbl, edit);
+    this->m_layout->addRow(lbl, edit);
+}
+
+void FormWidget::appendNonnegativeInteger(ECFParameter* p_nint)
+{
+
+    QLabel* lbl = new QLabel(QString::fromStdString(p_nint->metadata.description.at(0)),
+                             this);
+
+    ValidatorFactory* vf = new NonnegativeIntegerValidatorFactory;
+    FieldHandler* edit = new FieldHandler(p_nint, vf);
+    delete vf;
+
+    QPair<ECFParameter*, FieldHandler*> pair(p_nint, edit);
+    this->m_fields.append(pair);
+
+    this->m_layout->addRow(lbl, edit);
+}
+
+void FormWidget::appendPositiveInteger(ECFParameter* p_nint)
+{
+
+    QLabel* lbl = new QLabel(QString::fromStdString(p_nint->metadata.description.at(0)),
+                             this);
+
+    ValidatorFactory* vf = new PositiveIntegerValidatorFactory;
+    FieldHandler* edit = new FieldHandler(p_nint, vf);
+    delete vf;
+
+    QPair<ECFParameter*, FieldHandler*> pair(p_nint, edit);
+    this->m_fields.append(pair);
+
+    this->m_layout->addRow(lbl, edit);
+}
+
+void FormWidget::appendFloat(ECFParameter* p_nint)
+{
+
+    QLabel* lbl = new QLabel(QString::fromStdString(p_nint->metadata.description.at(0)),
+                             this);
+
+    ValidatorFactory* vf = new DoubleValidatorFactory;
+    FieldHandler* edit = new FieldHandler(p_nint, vf);
+    delete vf;
+
+    QPair<ECFParameter*, FieldHandler*> pair(p_nint, edit);
+    this->m_fields.append(pair);
+
+    this->m_layout->addRow(lbl, edit);
 }
 
 void FormWidget::save()
 {
-    for (auto pair = m_strings.cbegin();
-         pair != m_strings.cend();
+    for (auto pair = m_fields.cbegin();
+         pair != m_fields.cend();
          ++pair)
     {
-        pair->first->setValue(pair->second->text().toStdString());
+        pair->first->setValue(pair->second->value().toStdString());
     }
 }
 
 bool FormWidget::isValid()
 {
     int index = 0;
-    for (auto pair = m_strings.cbegin();
-         pair != m_strings.cend();
+    for (auto pair = m_fields.cbegin();
+         pair != m_fields.cend();
          ++pair)
     {
-        if (pair->second->text().isEmpty())
+        if (pair->second->value().isEmpty())
         {
             this->m_invalidIndex = index;
             return false;
@@ -56,7 +105,7 @@ QString FormWidget::errorMessage()
 {
     return tr("Empty %1 field")
             .arg(QString::fromStdString(
-                     m_strings
+                     m_fields
                         .at(m_invalidIndex)
                         .first->metadata
                             .description
@@ -66,13 +115,13 @@ QString FormWidget::errorMessage()
 
 void FormWidget::saveState()
 {
-    this->m_state_strings.clear();
+    this->m_state_fields.clear();
 
-    for (auto pair = m_strings.cbegin();
-         pair != m_strings.cend();
+    for (auto pair = m_fields.cbegin();
+         pair != m_fields.cend();
          ++pair)
     {
-        m_state_strings.append(
+        m_state_fields.append(
                     pair->first->getValue()
                     );
     }
@@ -86,12 +135,15 @@ void FormWidget::restoreState()
         return;
 
     int index = 0;
-    for (auto pair = m_strings.cbegin();
-         pair != m_strings.cend();
+    for (auto pair = m_fields.cbegin();
+         pair != m_fields.cend();
          ++pair)
     {
         pair->first->setValue(
-                    m_state_strings.at(index)
+                    m_state_fields.at(index)
+                    );
+        pair->second->setValue(
+                    QString::fromStdString(m_state_fields.at(index))
                     );
         index++;
     }

@@ -28,4 +28,10 @@ public:
     QValidator* create(QObject *parent = nullptr) const override;
 };
 
+class NonnegativeIntegerValidatorFactory : public ValidatorFactory
+{
+public:
+    QValidator* create(QObject *parent = nullptr) const override;
+};
+
 #endif // VALIDATORFACTORY_H

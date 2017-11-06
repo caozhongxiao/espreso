@@ -116,27 +116,26 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
     if (this->m_mesh != nullptr) delete this->m_mesh;
     this->m_mesh = new Mesh;
 
-    Mesh& mesh = *this->m_mesh;
-    input::Loader::load(*m_ecf, mesh, environment->MPIrank, environment->MPIsize);
+    input::Loader::load(*m_ecf, *m_mesh, environment->MPIrank, environment->MPIsize);
 
-    for (size_t e = 0; e < mesh.elements().size(); e++) {
-        mesh.elements()[e]->fillFaces();
+    for (size_t e = 0; e < m_mesh->elements().size(); e++) {
+        m_mesh->elements()[e]->fillFaces();
     }
 
     QMap<QString, QVector<float> > regions;
 
-    for (size_t e = 0; e < mesh.elements().size(); e++) {
+    for (size_t e = 0; e < m_mesh->elements().size(); e++) {
 
-        for (size_t f = 0; f < mesh.elements()[e]->faces(); f++) {
+        for (size_t f = 0; f < m_mesh->elements()[e]->faces(); f++) {
             QVector<QString> regionNames;
             regionNames << QLatin1String("#global");
-            if (mesh.elements()[e]->face(f)->regions().size())
+            if (m_mesh->elements()[e]->face(f)->regions().size())
             {
                 regionNames.clear();
 
-                for (size_t r = 0; r < mesh.elements()[e]->face(f)->regions().size(); r++)
+                for (size_t r = 0; r < m_mesh->elements()[e]->face(f)->regions().size(); r++)
                 {
-                    QString regionName = QString::fromStdString(mesh.elements()[e]->face(f)->regions()[0]->name);
+                    QString regionName = QString::fromStdString(m_mesh->elements()[e]->face(f)->regions()[0]->name);
                     regionNames << regionName;
 
                     if (!regions.contains(regionName))
@@ -146,16 +145,16 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
                 }
             }
 
-            std::vector<std::vector<eslocal> > triangles = dynamic_cast<PlaneElement*>(mesh.elements()[e]->face(f))->triangularize();
+            std::vector<std::vector<eslocal> > triangles = dynamic_cast<PlaneElement*>(m_mesh->elements()[e]->face(f))->triangularize();
 
             for (size_t t = 0; t < triangles.size(); t++) {
 
                 for (size_t n = 0; n < triangles[t].size(); n++) {
                     foreach (QString rn, regionNames)
                     {
-                        regions[rn].push_back(mesh.coordinates()[triangles[t][n]].x);
-                        regions[rn].push_back(mesh.coordinates()[triangles[t][n]].y);
-                        regions[rn].push_back(mesh.coordinates()[triangles[t][n]].z);
+                        regions[rn].push_back(m_mesh->coordinates()[triangles[t][n]].x);
+                        regions[rn].push_back(m_mesh->coordinates()[triangles[t][n]].y);
+                        regions[rn].push_back(m_mesh->coordinates()[triangles[t][n]].z);
                         regions[rn].push_back(0.0f);
                         regions[rn].push_back(1.0f);
                         regions[rn].push_back(0.0f);

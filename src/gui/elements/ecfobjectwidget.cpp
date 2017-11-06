@@ -43,6 +43,14 @@ OptionHandler* ECFObjectWidget::createOption(ECFParameter* option, QWidget* pare
     return handler;
 }
 
+BoolHandler* ECFObjectWidget::createBool(ECFParameter* param, QWidget* parent)
+{
+    BoolHandler* handler = new BoolHandler(param, parent);
+    connect(handler, &BoolHandler::stateChanged, this, &ECFObjectWidget::redraw);
+
+    return handler;
+}
+
 void ECFObjectWidget::redraw()
 {
     foreach (ISavableObject* obj, m_savables) {
@@ -68,4 +76,32 @@ bool ECFObjectWidget::validate()
     }
 
     return true;
+}
+
+bool ECFObjectWidget::isValid()
+{
+    foreach (IValidatableObject* obj, m_validatables) {
+        if (!obj->isValid())
+        {
+            this->m_errormsg = obj->errorMessage();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+QString ECFObjectWidget::errorMessage()
+{
+    this->isValid();
+
+    return this->m_errormsg;
+}
+
+void ECFObjectWidget::save()
+{
+    foreach (ISavableObject* obj, m_savables)
+    {
+        obj->save();
+    }
 }

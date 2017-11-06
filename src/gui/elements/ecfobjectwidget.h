@@ -9,6 +9,7 @@
 #include "isavableobject.h"
 #include "ivalidatableobject.h"
 #include "optionhandler.h"
+#include "boolhandler.h"
 
 namespace espreso
 {
@@ -17,7 +18,8 @@ namespace Ui {
 class ECFObjectWidget;
 }
 
-class ECFObjectWidget : public QWidget
+class ECFObjectWidget : public QWidget,
+        public IValidatableObject, public ISavableObject
 {
     Q_OBJECT
 
@@ -25,6 +27,11 @@ public:
     explicit ECFObjectWidget(ECFObject* object, QWidget *parent = 0);
     virtual ~ECFObjectWidget();
     void init();
+
+    virtual bool isValid() override;
+    virtual QString errorMessage() override;
+
+    virtual void save() override;
 
 protected slots:
     void redraw();
@@ -40,12 +47,15 @@ protected:
     QVector<IValidatableObject*> m_validatables;
     bool validate();
 
+    QString m_errormsg;
+
     virtual QWidget* initContainer() = 0;
 
     virtual void drawObject(ECFObject*) = 0;
     void drawMe();
 
     OptionHandler* createOption(ECFParameter*, QWidget* = 0, bool = true);
+    BoolHandler* createBool(ECFParameter*, QWidget* = 0);
 };
 
 }
