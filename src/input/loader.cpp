@@ -1,15 +1,17 @@
 
 #include "loader.h"
 
+#include "../basis/evaluators/evaluator.h"
 #include "ansys/ansys.h"
 #include "openfoam/openfoam.h"
 #include "generator/generator.h"
 
 #include "../mesh/elements/element.h"
 #include "../mesh/structures/elementtypes.h"
+#include "../mesh/structures/coordinates.h"
 #include "../mesh/structures/mesh.h"
 #include "../mesh/structures/region.h"
-#include "../mesh/settings/evaluator.h"
+#include "../mesh/settings/property.h"
 
 #include "../basis/logging/timeeval.h"
 #include "../basis/logging/logging.hpp"

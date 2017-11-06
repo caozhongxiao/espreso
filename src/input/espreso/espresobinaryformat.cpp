@@ -22,9 +22,9 @@
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
 #include "../../mesh/structures/elementtypes.h"
-#include "../../mesh/settings/evaluator.h"
-
 #include "espresobinaryformat.h"
+
+#include "../../basis/evaluators/evaluator.h"
 #include "../../config/reader/reader.h"
 #include "../../config/ecf/environment.h"
 #include "../../config/ecf/input/input.h"
@@ -167,7 +167,6 @@ void ESPRESOBinaryFormat::materials(std::vector<MaterialConfiguration*> &materia
 	for (eslocal i = 0; i < mats; i++) {
 		materials.push_back(new MaterialConfiguration());
 		ECFReader::read(*materials.back(), _configuration.path + "/" + std::to_string(_rank) + "/mat" + std::to_string(i) + ".mat");
-		mesh.evaluateMaterial(*materials.back());
 	}
 	is.close();
 }

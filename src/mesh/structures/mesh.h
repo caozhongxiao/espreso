@@ -67,7 +67,6 @@ public:
 	bool isAnyPropertyTemperatureDependent(const std::vector<Property> &properties, size_t loadStep) const;
 
 	void loadMaterials(const std::map<std::string, MaterialConfiguration> &materials, const std::map<std::string, std::string> &sets);
-	void evaluateMaterial(MaterialConfiguration &material);
 
 	const Coordinates& coordinates() const { return *_coordinates; }
 	const std::vector<Element*>& elements() const { return _elements; };

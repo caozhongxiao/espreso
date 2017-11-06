@@ -69,17 +69,10 @@ void AnsysWorkbench::elements(std::vector<size_t> &bodies, std::vector<Element*>
 
 void AnsysWorkbench::materials(std::vector<MaterialConfiguration*> &materials)
 {
-	auto evaluate = [&] () {
-		for (size_t i = 0; i < materials.size(); i++) {
-			mesh.evaluateMaterial(*materials[i]);
-		}
-	};
-
 	while (true) {
 		switch (_parser.process()) {
 		case WorkbenchCommands::WB:
 			if (_parser.workbench("mat", "end")) {
-				evaluate();
 				return;
 			}
 			break;
@@ -92,7 +85,6 @@ void AnsysWorkbench::materials(std::vector<MaterialConfiguration*> &materials)
 			break;
 		}
 		case WorkbenchCommands::END:
-			evaluate();
 			return;
 		default:
 			break;

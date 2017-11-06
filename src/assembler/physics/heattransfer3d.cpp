@@ -7,7 +7,6 @@
 #include "../constraints/equalityconstraints.h"
 
 #include "../../mesh/settings/property.h"
-#include "../../mesh/settings/evaluator.h"
 #include "../../mesh/elements/element.h"
 #include "../../mesh/structures/mesh.h"
 #include "../../mesh/structures/coordinates.h"
@@ -18,6 +17,7 @@
 #include "../../basis/matrices/denseMatrix.h"
 #include "../../solver/generic/SparseMatrix.h"
 #include "heattransfer3d.h"
+#include "../../basis/evaluators/evaluator.h"
 
 using namespace espreso;
 

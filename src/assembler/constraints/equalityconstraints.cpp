@@ -14,12 +14,11 @@
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
 #include "../../mesh/settings/property.h"
-#include "../../mesh/settings/evaluator.h"
-
 #include "../../config/ecf/environment.h"
 
 #include <numeric>
 #include <algorithm>
+#include "../../basis/evaluators/evaluator.h"
 
 using namespace espreso;
 

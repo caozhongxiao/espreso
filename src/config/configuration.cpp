@@ -3,7 +3,7 @@
 
 #include "../basis/logging/logging.h"
 #include "../basis/utilities/parser.h"
-#include "../mesh/settings/evaluator.h"
+#include "../basis/evaluators/evaluator.h"
 
 #include <iostream>
 #include <algorithm>
@@ -46,13 +46,40 @@ ECFExpression& ECFExpression::operator=(const ECFExpression &other)
 	return *this;
 }
 
+bool ECFExpression::createEvaluator(const std::vector<std::string> &variables)
+{
+	if (evaluator != NULL) {
+		delete evaluator;
+	}
+	if (StringCompare::contains(this->value, { "TABULAR" })) {
+		std::string value = Parser::strip(this->value.substr(this->value.find_first_of("[")));
+		value = value.substr(1, value.size() - 3);
+		std::vector<std::string> lines = Parser::split(value, ";");
+		std::vector<std::pair<double, double> > table;
+
+		for (size_t i = 0; i < lines.size(); i++) {
+			if (lines[i].size() == 0) {
+				continue;
+			}
+			std::vector<std::string> line = Parser::split(lines[i], ",");
+			if (line.size() != 2) {
+				ESINFO(GLOBAL_ERROR) << "Invalid TABULAR data: " << value;
+			}
+			table.push_back(std::make_pair(std::stod(line[0]), std::stod(line[1])));
+		}
+		evaluator = new TableInterpolationEvaluator(table);
+		return true;
+	}
+	if (Expression::isValid(this->value, variables)) {
+		evaluator = new ExpressionEvaluator(this->value, variables);
+		return true;
+	}
+	return false;
+}
+
 double ECFExpression::evaluate(const Point &p, double time, double temperature, double pressure, double velocity) const
 {
-	if (evaluator) {
-		return evaluator->evaluate(p, time, temperature, pressure, velocity);
-	}
-	ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not created ECFExpression evaluator.";
-	return 0;
+	return evaluator->evaluate(p, time, temperature, pressure, velocity);
 }
 
 void ECFMetaData::checkdescription(const std::string &name, size_t size) const

@@ -2,12 +2,12 @@
 #include "../../config/ecf/physics/structuralmechanics.h"
 #include "structuralmechanics3d.h"
 
+#include "../../basis/evaluators/evaluator.h"
 #include "../step.h"
 #include "../instance.h"
 #include "../constraints/equalityconstraints.h"
 
 #include "../../mesh/settings/property.h"
-#include "../../mesh/settings/evaluator.h"
 #include "../../mesh/elements/element.h"
 #include "../../mesh/structures/mesh.h"
 #include "../../mesh/structures/coordinates.h"

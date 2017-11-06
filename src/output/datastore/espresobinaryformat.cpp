@@ -3,6 +3,7 @@
 
 #include <fstream>
 
+#include "../../basis/evaluators/evaluator.h"
 #include "../../config/reader/reader.h"
 #include "../../config/ecf/environment.h"
 #include "../../config/ecf/material/material.h"
@@ -11,7 +12,6 @@
 #include "../../mesh/structures/region.h"
 #include "../../mesh/structures/elementtypes.h"
 #include "../../mesh/elements/element.h"
-#include "../../mesh/settings/evaluator.h"
 
 using namespace espreso;
 

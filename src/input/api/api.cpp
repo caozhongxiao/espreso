@@ -2,7 +2,9 @@
 #include "mpi.h"
 
 #include "api.h"
-#include "../../mesh/settings/evaluator.h"
+
+#include "../../basis/evaluators/evaluator.h"
+#include "../../mesh/settings/property.h"
 
 #include "../../mesh/elements/volume/unknownvolume.h"
 #include "../../mesh/elements/plane/unknownplane.h"

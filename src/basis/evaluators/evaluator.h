@@ -1,12 +1,13 @@
 
-#ifndef SRC_MESH_SETTINGS_EVALUATOR_H_
-#define SRC_MESH_SETTINGS_EVALUATOR_H_
+#ifndef SRC_BASIS_EVALUATORS_EVALUATOR_H_
+#define SRC_BASIS_EVALUATORS_EVALUATOR_H_
 
-#include "property.h"
-#include "../../basis/logging/logging.h"
-#include "../structures/coordinates.h"
-#include "../../basis/expression/expression.h"
+#include "../point/point.h"
+#include "../expression/expression.h"
+
 #include "omp.h"
+
+#include <algorithm>
 
 namespace espreso {
 
@@ -208,4 +209,4 @@ protected:
 
 
 
-#endif /* SRC_MESH_SETTINGS_EVALUATOR_H_ */
+#endif /* SRC_BASIS_EVALUATORS_EVALUATOR_H_ */

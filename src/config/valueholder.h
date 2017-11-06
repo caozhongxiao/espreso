@@ -33,6 +33,15 @@ struct ECFValueHolder: public ECFValue {
 };
 
 template <>
+inline ECFValueHolder<ECFExpression>::ECFValueHolder(ECFExpression &value)
+: value(value)
+{
+	if (value.value.size()) {
+		value.createEvaluator(metadata.variables);
+	}
+}
+
+template <>
 inline std::string ECFValueHolder<std::string>::getValue() const
 {
 	return value;
@@ -55,7 +64,7 @@ template <>
 inline bool ECFValueHolder<ECFExpression>::_setValue(const std::string &value)
 {
 	this->value.value = Parser::uppercase(value);
-	return true;
+	return this->value.createEvaluator(metadata.variables);
 }
 
 template <>
