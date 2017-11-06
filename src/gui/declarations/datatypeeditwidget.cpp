@@ -15,6 +15,17 @@ DataTypeEditWidget::DataTypeEditWidget(QWidget *parent) :
     ui->setupUi(this);
 }
 
+DataTypeEditWidget::DataTypeEditWidget(const std::vector<std::string>& variables, QWidget* parent) :
+    DataTypeEditWidget(parent)
+{
+    this->m_param = nullptr;
+    this->m_param_variables = variables;
+
+    this->createUi();
+    this->initExpression();
+    this->activeType = 0;
+}
+
 DataTypeEditWidget::DataTypeEditWidget(ECFParameter* data, QWidget *parent) :
     DataTypeEditWidget(parent)
 {
@@ -51,7 +62,7 @@ void DataTypeEditWidget::createUi()
 {
     ExpressionEdit* function = new ExpressionEdit(
                 "",
-                m_param->metadata.variables,
+                param_variables(),
                 this);
     function->hide();
 
@@ -59,7 +70,7 @@ void DataTypeEditWidget::createUi()
     table->hide();
 
     PiecewiseTypeWidget* piecewise = new PiecewiseTypeWidget(
-                m_param->metadata.variables,
+                param_variables(),
                 this);
     piecewise->hide();
 
@@ -74,20 +85,32 @@ void DataTypeEditWidget::createUi()
 
 void DataTypeEditWidget::initExpression()
 {
-    this->uiExpression->setText(QString::fromStdString(m_param->getValue()));
+    this->uiExpression->setText(param_getValue());
     this->uiExpression->show();
 }
 
 void DataTypeEditWidget::initTable()
 {
-    this->uiTable->addData(QString::fromStdString(m_param->getValue()));
+    this->uiTable->addData(param_getValue());
     this->uiTable->show();
 }
 
 void DataTypeEditWidget::initPiecewise()
 {
-    this->uiPiecewise->addData(QString::fromStdString(m_param->getValue()));
+    this->uiPiecewise->addData(param_getValue());
     this->uiPiecewise->show();
+}
+
+QString DataTypeEditWidget::param_getValue()
+{
+    if (this->m_param != nullptr) return QString::fromStdString(m_param->getValue());
+    return QString();
+}
+
+std::vector<std::string> DataTypeEditWidget::param_variables()
+{
+    if (this->m_param != nullptr) return m_param->metadata.variables;
+    return this->m_param_variables;
 }
 
 QComboBox* DataTypeEditWidget::createComboBox(QWidget *parent)
@@ -136,6 +159,8 @@ QString DataTypeEditWidget::errorMessage()
 
 void DataTypeEditWidget::save()
 {
+    if (this->m_param == nullptr) return;
+
     if (this->activeType == 0)
     {
         this->m_param->setValue(uiExpression->text().toStdString());
@@ -186,4 +211,24 @@ QStringList DataTypeEditWidget::typeNames()
            << QObject::tr("Piecewise function");
 
     return result;
+}
+
+QString DataTypeEditWidget::value()
+{
+    if (this->activeType == 0)
+    {
+        return uiExpression->text();
+    }
+    else if (this->activeType == 1)
+    {
+        return uiTable->data();
+    }
+    else if (this->activeType == 2)
+    {
+        return uiPiecewise->data();
+    }
+    else
+    {
+        return "";
+    }
 }

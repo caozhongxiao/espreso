@@ -33,7 +33,7 @@ void WorkflowWidget::on_btnMesh_clicked()
     emit fileOpened(filename);
 }
 
-void WorkflowWidget::setECF(ECFConfiguration *ecf)
+void WorkflowWidget::setData(ECFConfiguration *ecf, Mesh* mesh)
 {
     int tabs = ui->workflow->count();
     for (int i = 1; i < tabs; i++)
@@ -43,6 +43,7 @@ void WorkflowWidget::setECF(ECFConfiguration *ecf)
 
     this->m_ecf = ecf;
     this->m_physicsTab = nullptr;
+    this->m_mesh = m_mesh;
 
     this->createPhysicsTab();
 
@@ -55,7 +56,7 @@ void WorkflowWidget::setECF(ECFConfiguration *ecf)
 
 void WorkflowWidget::createPhysicsTab()
 {
-    PhysicsWidget* pw = new PhysicsWidget(this->m_ecf, this);
+    PhysicsWidget* pw = new PhysicsWidget(this->m_ecf, this->m_mesh, this);
     pw->init();
 
     this->m_phyDetail = pw;

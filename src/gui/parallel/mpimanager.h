@@ -38,9 +38,12 @@ class MpiManager
 {
 public:
     MpiManager(int argc, char* argv[]);
+    ~MpiManager();
 
     bool isECFLoaded() const;
     ECFConfiguration* ecf();
+
+    Mesh* mesh();
 
     void loop();
 
@@ -52,6 +55,8 @@ public:
 private:
     ECFConfiguration* m_ecf;
     bool m_ecf_loaded = false;
+
+    Mesh* m_mesh = nullptr;
 
     void performOperation(int code);
 

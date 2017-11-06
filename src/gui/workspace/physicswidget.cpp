@@ -11,10 +11,11 @@
 
 using namespace espreso;
 
-PhysicsWidget::PhysicsWidget(ECFConfiguration* ecf, QWidget* parent) :
+PhysicsWidget::PhysicsWidget(ECFConfiguration* ecf, Mesh* mesh, QWidget* parent) :
     ECFObjectWidget(ecf, parent)
 {
     this->m_ecf = ecf;
+    this->m_mesh = mesh;
 }
 
 QWidget* PhysicsWidget::initContainer()
@@ -77,6 +78,7 @@ void PhysicsWidget::onPhysicsChange(int index)
     physics->setValue(physics->metadata.options[index].name);
 
     this->m_obj = this->physics(index);
+    this->m_properties = nullptr;
 
     this->redraw();
 
@@ -85,6 +87,21 @@ void PhysicsWidget::onPhysicsChange(int index)
 
 void PhysicsWidget::drawObject(ECFObject* obj)
 {
+    if ( !obj->parameters.size() && (obj->metadata.datatype.size() == 2) )
+    {
+        if (this->m_properties == nullptr)
+        {
+            this->m_properties = new RegionPropertyWidget(m_mesh,
+                                                          static_cast<PhysicsConfiguration*>(this->activePhysics()),
+                                                          this->m_container,
+                                                          tr("Region properties"));
+        }
+        this->m_properties->addProperty(obj);
+        this->m_widget->layout()->addWidget(m_properties);
+
+        return;
+    }
+
     QWidget* widget = new QWidget(this->m_container);
     QLayout* layout;
     if (obj->parameters.size()) layout = new QFormLayout;
@@ -104,15 +121,12 @@ void PhysicsWidget::drawObject(ECFObject* obj)
     {
         this->processParameters(obj, widget);
     }
-    else if ( !obj->parameters.size() && (obj->metadata.datatype.size() == 2) )
-    {
-        //TODO: INITIAL TEMPERATURE AND THICKNESS
-    }
 }
 
 void PhysicsWidget::processParameters(ECFObject* obj, QWidget* widget)
 {
     QFormLayout* l_layout = (QFormLayout*)widget->layout();
+    l_layout->addRow(QString::fromStdString(obj->metadata.description[0]), new QLabel(""));
 
     for (auto parameter = obj->parameters.cbegin();
          parameter != obj->parameters.cend();

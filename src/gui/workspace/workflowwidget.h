@@ -6,6 +6,11 @@
 #include "../../config/configuration.h"
 #include "../../config/ecf/ecf.h"
 
+#include "../../mesh/structures/mesh.h"
+#include "../../mesh/structures/coordinates.h"
+#include "../../mesh/structures/region.h"
+#include "../../mesh/elements/plane/planeelement.h"
+
 #include "physicswidget.h"
 
 namespace espreso
@@ -23,7 +28,7 @@ public:
     explicit WorkflowWidget(QWidget *parent = 0);
     ~WorkflowWidget();
 
-    void setECF(ECFConfiguration* ecf);
+    void setData(ECFConfiguration* ecf, Mesh* mesh);
     PhysicsConfiguration* activePhysics();
 
 signals:
@@ -39,6 +44,7 @@ private:
     Ui::WorkflowWidget *ui;
 
     ECFConfiguration* m_ecf;
+    Mesh* m_mesh;
 
     void createPhysicsTab();
     QWidget* m_physicsTab;

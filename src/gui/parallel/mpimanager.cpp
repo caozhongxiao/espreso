@@ -10,6 +10,11 @@ MpiManager::MpiManager(int argc, char* argv[])
     this->m_ecf_loaded = this->m_ecf->fill(&argc, &argv);
 }
 
+MpiManager::~MpiManager()
+{
+    if (this->m_mesh != nullptr) delete this->m_mesh;
+}
+
 bool MpiManager::isECFLoaded() const
 {
     return this->m_ecf_loaded;
@@ -18,6 +23,11 @@ bool MpiManager::isECFLoaded() const
 ECFConfiguration* MpiManager::ecf()
 {
     return this->m_ecf;
+}
+
+Mesh* MpiManager::mesh()
+{
+    return this->m_mesh;
 }
 
 void MpiManager::loop()
@@ -103,7 +113,10 @@ void MpiManager::slaveGatherMesh()
 
 QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
 {
-    Mesh mesh;
+    if (this->m_mesh != nullptr) delete this->m_mesh;
+    this->m_mesh = new Mesh;
+
+    Mesh& mesh = *this->m_mesh;
     input::Loader::load(*m_ecf, mesh, environment->MPIrank, environment->MPIsize);
 
     for (size_t e = 0; e < mesh.elements().size(); e++) {

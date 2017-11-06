@@ -28,12 +28,15 @@ namespace espreso
         static QStringList typeNames();
 
         explicit DataTypeEditWidget(ECFParameter* data, QWidget* parent = 0);
+        explicit DataTypeEditWidget(const std::vector<std::string>& variables, QWidget* parent = 0);
         ~DataTypeEditWidget();
 
         QComboBox* createComboBox(QWidget* parent = nullptr);
         bool isValid() override;
         QString errorMessage() override;
         void save() override;
+
+        QString value();
 
     private slots:
         void changeType(int index);
@@ -50,6 +53,9 @@ namespace espreso
         PiecewiseTypeWidget* uiPiecewise;
 
         int activeType;
+        std::vector<std::string> m_param_variables;
+        QString param_getValue();
+        std::vector<std::string> param_variables();
 
         void createUi();
         void initExpression();

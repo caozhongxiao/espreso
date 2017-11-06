@@ -65,6 +65,7 @@ void LoadstepWidget::drawObject(ECFObject* obj)
 void LoadstepWidget::processParameters(ECFObject *obj, QWidget *widget)
 {
     QFormLayout* l_layout = (QFormLayout*)widget->layout();
+    l_layout->addRow(QString::fromStdString(obj->metadata.description[0]), new QLabel(""));
 
     for (auto parameter = obj->parameters.cbegin();
          parameter != obj->parameters.cend();

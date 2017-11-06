@@ -6,6 +6,7 @@
 
 #include "../elements/ecfobjectwidget.h"
 #include "../elements/fieldhandler.h"
+#include "../elements/regionpropertywidget.h"
 
 namespace espreso
 {
@@ -15,7 +16,7 @@ class PhysicsWidget : public ECFObjectWidget
     Q_OBJECT
 
 public:
-    explicit PhysicsWidget(ECFConfiguration* ecf, QWidget* parent = 0);
+    explicit PhysicsWidget(ECFConfiguration* ecf, Mesh* mesh, QWidget* parent = 0);
 
     ECFObject* activePhysics();
 
@@ -33,9 +34,12 @@ private slots:
 
 private:
     ECFConfiguration* m_ecf;
+    Mesh* m_mesh;
     QWidget* m_widget;
 
     QComboBox* m_physics;
+
+    RegionPropertyWidget* m_properties = nullptr;
 
     void processParameters(ECFObject* obj, QWidget* widget);
     ECFObject* physics(int index);

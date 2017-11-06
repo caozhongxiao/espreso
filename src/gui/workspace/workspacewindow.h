@@ -41,11 +41,12 @@ private:
     MpiManager* m_manager;
 
     ECFConfiguration* m_ecf;
+    Mesh* m_mesh;
 
     WorkflowWidget* m_workflow;
 
     DeclarationsWidget* m_declarations = nullptr;
-    MeshWidget* m_mesh = nullptr;
+    MeshWidget* m_mesh3D = nullptr;
     RegionPickerWidget* m_regions = nullptr;
 
     void initUi();
