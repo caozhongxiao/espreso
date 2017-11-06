@@ -306,6 +306,7 @@ ECFRedParameters ECFReader::_read(
 				break;
 			}
 			if (StringCompare::caseInsensitiveEq(values.back(), "TABULAR")) {
+				link = "TABULAR [" + value + "]";
 				values.push_back("[" + value + "]");
 			} else {
 				values.push_back(value);
