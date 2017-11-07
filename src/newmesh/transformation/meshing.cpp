@@ -280,15 +280,6 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 		});
 	}
 
-	Communication::serialize([&] () {
-		for (size_t d = 0; d < mesh._domains->size; d++) {
-			std::cout << "DOMAIN: " << d << "\n";
-			for (size_t i = 0; i < mesh._domains->nodesIntervals[d].size(); i++) {
-				std::cout << "<" << mesh._domains->nodesIntervals[d][i].begin << " " << mesh._domains->nodesIntervals[d][i].end << "> " << mesh._domains->nodesIntervals[d][i].neighbors;
-			}
-		}
-	});
-
 	std::vector<eslocal> finalpermutation;
 	finalpermutation.reserve(permutation.size());
 
