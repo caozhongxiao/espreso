@@ -44,16 +44,7 @@ void Transformation::reclusterize(NewMesh &mesh)
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<esglobal> edistribution(environment->MPIsize + 1);
-
-	esglobal esize = mesh._elems->size;
-	Communication::exscan(esize);
-
-	MPI_Allgather(&esize, sizeof(esglobal), MPI_BYTE, edistribution.data(), sizeof(esglobal), MPI_BYTE, MPI_COMM_WORLD);
-	edistribution.back() = esize + mesh._elems->size;
-	MPI_Bcast(&edistribution.back(), sizeof(esglobal), MPI_BYTE, environment->MPIsize - 1, MPI_COMM_WORLD);
-
-
+	std::vector<esglobal> edistribution = mesh._elems->gatherElementDistrubution();
 	std::vector<esglobal> partition(mesh._elems->size), permutation(mesh._elems->size), edgeWeights(mesh._elems->dual->datatarray().size());
 
 	size_t edgeConst = 10000;

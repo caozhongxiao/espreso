@@ -25,7 +25,7 @@ esglobal ParMETIS::call(
 	esglobal options[4] = { 0, 0, 0, PARMETIS_PSR_UNCOUPLED };
 	double itr = 1e6;
 	esglobal edgecut;
-	MPI_Comm communication = MPI_COMM_WORLD;
+	MPI_Comm communication = environment->MPICommunicator;
 
 	if (verticesWeights != NULL) {
 		wgtflag += 2;

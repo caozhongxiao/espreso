@@ -171,12 +171,9 @@ std::vector<esglobal> ElementStore::gatherElementDistrubution()
 	esglobal esize = size;
 	Communication::exscan(esize);
 
-	MPI_Allgather(&esize, sizeof(esglobal), MPI_BYTE, result.data(), sizeof(esglobal), MPI_BYTE, MPI_COMM_WORLD);
+	MPI_Allgather(&esize, sizeof(esglobal), MPI_BYTE, result.data(), sizeof(esglobal), MPI_BYTE, environment->MPICommunicator);
 	result.back() = esize + size;
-	MPI_Bcast(&result.back(), sizeof(esglobal), MPI_BYTE, environment->MPIsize - 1, MPI_COMM_WORLD);
+	MPI_Bcast(&result.back(), sizeof(esglobal), MPI_BYTE, environment->MPIsize - 1, environment->MPICommunicator);
 
-	Communication::serialize([&] () {
-		// std::cout << environment->MPIrank << "::" << result;
-	});
 	return result;
 }

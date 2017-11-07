@@ -213,7 +213,7 @@ static void offsetSum(void *in, void *out, int *len, MPI_Datatype *datatype)
 template <typename Ttype>
 Ttype Communication::exscan(Ttype &value)
 {
-	size_t size = value;
+	Ttype size = value;
 	if (environment->MPIsize == 1) {
 		value = 0;
 		return size;
@@ -221,13 +221,14 @@ Ttype Communication::exscan(Ttype &value)
 
 	MPI_Op op;
 	MPI_Op_create(offsetSum<Ttype>, 1, &op);
-	MPI_Exscan(&size, &value, sizeof(size_t), MPI_BYTE, op, environment->MPICommunicator);
+	MPI_Exscan(&size, &value, sizeof(Ttype), MPI_BYTE, op, environment->MPICommunicator);
 
 	size = value + size;
-	MPI_Bcast(&size, sizeof(size_t), MPI_BYTE, environment->MPIsize - 1, environment->MPICommunicator);
+	MPI_Bcast(&size, sizeof(Ttype), MPI_BYTE, environment->MPIsize - 1, environment->MPICommunicator);
 	if (environment->MPIrank == 0) {
 		value = 0;
 	}
+	MPI_Barrier(environment->MPICommunicator);
 
 	return size;
 }
@@ -241,11 +242,11 @@ bool Communication::sendVariousTargets(const std::vector<std::vector<Ttype> > &s
 		smsgcounter[targets[n]] = 1;
 	}
 
-	MPI_Allreduce(smsgcounter.data(), rmsgcounter.data(), environment->MPIsize, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce(smsgcounter.data(), rmsgcounter.data(), environment->MPIsize, MPI_INT, MPI_SUM, environment->MPICommunicator);
 
 	std::vector<MPI_Request> req(targets.size());
 	for (size_t t = 0; t < targets.size(); t++) {
-		MPI_Isend(const_cast<Ttype*>(sBuffer[t].data()), sizeof(Ttype) * sBuffer[t].size(), MPI_BYTE, targets[t], 0, MPI_COMM_WORLD, req.data() + t);
+		MPI_Isend(const_cast<Ttype*>(sBuffer[t].data()), sizeof(Ttype) * sBuffer[t].size(), MPI_BYTE, targets[t], 0, environment->MPICommunicator, req.data() + t);
 	}
 
 	int flag;
@@ -255,12 +256,12 @@ bool Communication::sendVariousTargets(const std::vector<std::vector<Ttype> > &s
 	std::vector<std::vector<Ttype> > tmpBuffer;
 	tmpBuffer.reserve(rmsgcounter[environment->MPIrank]);
 	while (counter < rmsgcounter[environment->MPIrank]) {
-		MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);
+		MPI_Iprobe(MPI_ANY_SOURCE, 0, environment->MPICommunicator, &flag, &status);
 		if (flag) {
 			int count;
 			MPI_Get_count(&status, MPI_BYTE, &count);
 			tmpBuffer.push_back(std::vector<Ttype>(count / sizeof(Ttype)));
-			MPI_Recv(tmpBuffer.back().data(), count, MPI_BYTE, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Recv(tmpBuffer.back().data(), count, MPI_BYTE, status.MPI_SOURCE, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
 			sources.push_back(status.MPI_SOURCE);
 			counter++;
 		}
@@ -279,7 +280,7 @@ bool Communication::sendVariousTargets(const std::vector<std::vector<Ttype> > &s
 	std::sort(sources.begin(), sources.end());
 
 	MPI_Waitall(targets.size(), req.data(), MPI_STATUSES_IGNORE);
-	MPI_Barrier(MPI_COMM_WORLD); // MPI_Iprobe(ANY_SOURCE) can be problem when calling this function more times
+	MPI_Barrier(environment->MPICommunicator); // MPI_Iprobe(ANY_SOURCE) can be problem when calling this function more times
 	return true;
 }
 
