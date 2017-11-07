@@ -175,5 +175,8 @@ std::vector<esglobal> ElementStore::gatherElementDistrubution()
 	result.back() = esize + size;
 	MPI_Bcast(&result.back(), sizeof(esglobal), MPI_BYTE, environment->MPIsize - 1, MPI_COMM_WORLD);
 
+	Communication::serialize([&] () {
+		// std::cout << environment->MPIrank << "::" << result;
+	});
 	return result;
 }

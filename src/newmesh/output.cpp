@@ -97,7 +97,7 @@ void NewOutput::VTKLegacy(const std::string &name, ElementStore *elements, Eleme
 	os << "SCALARS domain int 1\n";
 	os << "LOOKUP_TABLE default\n";
 	for (size_t d = 0; d < domains->size; d++) {
-		for (size_t e = domains->domainElementBoundaries[d]; e < domains->domainElementBoundaries[d + 1]; ++e) {
+		for (eslocal e = domains->domainElementBoundaries[d]; e < domains->domainElementBoundaries[d + 1]; ++e) {
 			os << d << "\n";
 		}
 	}
@@ -202,6 +202,8 @@ void NewOutput::VTKLegacy(const std::string &name, BoundaryStore *elements, Elem
 			break;
 		case NewElement::CODE::HEXA20:
 			os << "25\n";
+			break;
+		default:
 			break;
 		}
 	}
@@ -315,7 +317,7 @@ void NewOutput::VTKLegacyDual(const std::string &name, ElementStore *elements, E
 	os << "SCALARS domain int 1\n";
 	os << "LOOKUP_TABLE default\n";
 	for (size_t d = 0; d < domains->size; d++) {
-		for (size_t e = domains->domainElementBoundaries[d]; e < domains->domainElementBoundaries[d + 1]; ++e) {
+		for (eslocal e = domains->domainElementBoundaries[d]; e < domains->domainElementBoundaries[d + 1]; ++e) {
 			os << d << "\n";
 		}
 	}

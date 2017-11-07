@@ -142,7 +142,8 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 	for (size_t t = 0; t < threads; t++) {
 		part[t].resize(mesh._elems->distribution[t + 1] - mesh._elems->distribution[t], -1);
 		std::vector<eslocal> stack;
-		eslocal current, target;
+		eslocal current;
+		size_t target;
 		int partCounter = 0;
 
 		for (size_t i = mesh._elems->distribution[t]; i < mesh._elems->distribution[t + 1]; ++i) {
@@ -289,7 +290,7 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 		std::vector<std::vector<eslocal> > foffsets(nextID), noffsets(nextID);
 		std::vector<eslocal> partoffset(nextID);
 		#pragma omp parallel for
-		for (size_t p = 0; p < nextID; p++) {
+		for (int p = 0; p < nextID; p++) {
 			foffsets[p].push_back(0);
 			noffsets[p].push_back(0);
 			for (size_t t = 1; t < threads; t++) {
@@ -299,13 +300,13 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 				tdualsize[0][p] += tdualsize[t][p];
 			}
 		}
-		for (size_t p = 1; p < nextID; p++) {
+		for (int p = 1; p < nextID; p++) {
 			partoffset[p] = partoffset[p - 1] + tdecomposition[0][p - 1].size();
 		}
 
 		std::vector<std::vector<eslocal> > frames(nextID), neighbors(nextID), edgeWeights(nextID);
 		#pragma omp parallel for
-		for (size_t p = 0; p < nextID; p++) {
+		for (int p = 0; p < nextID; p++) {
 			frames[p].resize(1 + tdecomposition[0][p].size());
 			neighbors[p].resize(tdualsize[0][p]);
 			edgeWeights[p].resize(tdualsize[0][p]);
@@ -318,7 +319,7 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 			int material;
 			NewElement::TYPE type;
 			std::vector<eslocal> foffset(nextID), noffset(nextID), edgeIndices(nextID);
-			for (size_t p = 0; p < nextID; p++) {
+			for (int p = 0; p < nextID; p++) {
 				foffset[p] = foffsets[p][t];
 				edgeIndices[p] = noffset[p] = noffsets[p][t];
 			}
@@ -333,7 +334,7 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 					frames[partindex][foffset[partindex]] += noffset[partindex];
 				}
 				auto node = dual->begin();
-				for (size_t n = frames[partindex][foffset[partindex]] - dual->size(); n < frames[partindex][foffset[partindex]]; ++n, ++node) {
+				for (eslocal n = frames[partindex][foffset[partindex]] - dual->size(); n < frames[partindex][foffset[partindex]]; ++n, ++node) {
 					neighbors[partindex][n] = std::lower_bound(tdecomposition[0][partindex].begin(), tdecomposition[0][partindex].end(), *node) - tdecomposition[0][partindex].begin();
 
 					auto it = std::lower_bound(mesh._elems->IDs->datatarray().cbegin(), mesh._elems->IDs->datatarray().cend(), *node);
@@ -362,14 +363,14 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 
 		double averageDomainSize = mesh._elems->size / (double)parts;
 		size_t partsCounter = 0;
-		for (size_t p = 0; p < nextID; p++) {
+		for (int p = 0; p < nextID; p++) {
 			partsCounter += pparts[p] = std::ceil((frames[p].size() - 1) / averageDomainSize);
 			mesh._domains->clusters.resize(partsCounter, p);
 		}
 
 		ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "Transformation::METIS::KWay started.";
 		#pragma omp parallel for
-		for (size_t p = 0; p < nextID; p++) {
+		for (int p = 0; p < nextID; p++) {
 			METIS::call(
 					frames[p].size() - 1,
 					frames[p].data(), neighbors[p].data(),
@@ -401,7 +402,6 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 	std::vector<size_t> tdistribution;
 
 	eslocal partindex = 0;
-	eslocal blockindex = 0;
 	auto begin = permutation.begin();
 	while (begin != permutation.end()) {
 		domainDistribution.push_back(begin - permutation.begin());
@@ -435,7 +435,7 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 
 	Transformation::permuteElements(mesh, permutation, tdistribution);
 
-	std::vector<size_t> domainCounter(threads);
+	std::vector<eslocal> domainCounter(threads);
 	for (size_t t = 0; t < threads; t++) {
 		if (domainDistribution.size() < threads + 1) {
 			if (t < domainDistribution.size() - 1) {
@@ -536,7 +536,7 @@ void Transformation::permuteElements(NewMesh &mesh, const std::vector<eslocal> &
 		}
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			size_t source;
+			int source;
 			for (auto e = data->begin(t); e != data->end(t); ++e) {
 				for (auto n = e->begin(); n != e->end(); ++n) {
 					source = std::lower_bound(IDBoundaries.begin(), IDBoundaries.end(), *n + 1) - IDBoundaries.begin() - 1;
@@ -559,7 +559,6 @@ void Transformation::permuteElements(NewMesh &mesh, const std::vector<eslocal> &
 		}
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			size_t source;
 			for (auto e = data->begin(t); e != data->end(t); ++e) {
 				for (auto n = e->begin(); n != e->end(); ++n) {
 					*n = backpermutation[*n];

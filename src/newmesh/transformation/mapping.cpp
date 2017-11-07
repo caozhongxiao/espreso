@@ -292,10 +292,6 @@ void Transformation::computeDual(NewMesh &mesh)
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	auto n2i = [ & ] (size_t neighbour) {
-		return std::lower_bound(mesh._neighbours.begin(), mesh._neighbours.end(), neighbour) - mesh._neighbours.begin();
-	};
-
 	std::vector<std::vector<eslocal> > dualDistribution(threads);
 	std::vector<std::vector<esglobal> > dualData(threads);
 
@@ -306,7 +302,7 @@ void Transformation::computeDual(NewMesh &mesh)
 		auto nodes = mesh._elems->nodes->cbegin(t);
 		std::vector<esglobal> neighElementIDs;
 		int myCommon, neighCommon;
-		size_t neigh, nCounter;
+		int neigh, nCounter;
 
 		for (size_t e = mesh._elems->distribution[t]; e < mesh._elems->distribution[t + 1]; ++e, ++nodes) {
 			neighElementIDs.clear();
@@ -320,8 +316,8 @@ void Transformation::computeDual(NewMesh &mesh)
 			neigh = 0;
 			nCounter = 1;
 			dualDistribution[t].push_back(0);
-			while (neigh < neighElementIDs.size()) {
-				while (neigh + nCounter < neighElementIDs.size() && neighElementIDs[neigh] == neighElementIDs[neigh + nCounter]) {
+			while (neigh < (int)neighElementIDs.size()) {
+				while (neigh + nCounter < (int)neighElementIDs.size() && neighElementIDs[neigh] == neighElementIDs[neigh + nCounter]) {
 					nCounter++;
 				}
 
@@ -380,7 +376,7 @@ void Transformation::computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separ
 			auto nodes = mesh._elems->nodes->cbegin(t);
 			std::vector<esglobal> neighElementIDs;
 			int myCommon, neighCommon;
-			size_t neigh, nCounter;
+			int neigh, nCounter;
 
 			for (size_t e = mesh._elems->distribution[t]; e < mesh._elems->distribution[t + 1]; ++e, ++nodes) {
 				neighElementIDs.clear();
@@ -394,8 +390,8 @@ void Transformation::computeDecomposedDual(NewMesh &mesh, TFlags::SEPARATE separ
 				neigh = 0;
 				nCounter = 1;
 				dualDistribution[t].push_back(0);
-				while (neigh < neighElementIDs.size()) {
-					while (neigh + nCounter < neighElementIDs.size() && neighElementIDs[neigh] == neighElementIDs[neigh + nCounter]) {
+				while (neigh < (eslocal)neighElementIDs.size()) {
+					while (neigh + nCounter < (eslocal)neighElementIDs.size() && neighElementIDs[neigh] == neighElementIDs[neigh + nCounter]) {
 						nCounter++;
 					}
 
@@ -478,7 +474,7 @@ void Transformation::projectNodesToDomains(NewMesh &mesh)
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (size_t d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; ++d) {
+		for (eslocal d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; ++d) {
 			domainNodes[d].insert(domainNodes[d].end(),
 					(mesh._domains->elems->cbegin() + mesh._domains->domainElementBoundaries[d])->begin(),
 					(mesh._domains->elems->cbegin() + mesh._domains->domainElementBoundaries[d + 1])->begin());
@@ -504,7 +500,7 @@ void Transformation::projectNodesToDomains(NewMesh &mesh)
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (size_t d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; ++d) {
+		for (eslocal d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; ++d) {
 			tdomainNodes[t].insert(tdomainNodes[t].end(), domainNodes[d].begin(), domainNodes[d].end());
 		}
 	}

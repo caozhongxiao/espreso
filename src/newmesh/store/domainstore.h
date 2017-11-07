@@ -14,9 +14,9 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 struct DomainStore {
 
 	size_t size;
-	std::vector<size_t> domainDistribution;
-	std::vector<size_t> domainElementBoundaries;
-	std::vector<size_t> domainNodeBoundaries;
+	std::vector<eslocal> domainDistribution;
+	std::vector<eslocal> domainElementBoundaries;
+	std::vector<eslocal> domainNodeBoundaries;
 
 	std::vector<int> clusters;
 

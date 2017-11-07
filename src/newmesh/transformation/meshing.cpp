@@ -128,7 +128,7 @@ void Transformation::reindexNodes(NewMesh &mesh)
 	Esutils::mergeThreadedUniqueData(sIDMap);
 
 	for (size_t n = 0; n < mesh._neighbours.size(); n++) {
-		if (n < environment->MPIrank) {
+		if (mesh._neighbours[n] < environment->MPIrank) {
 			IDMap[n].resize(sIDMap[0][n].size());
 		}
 	}
@@ -169,9 +169,8 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 	std::vector<esglobal> processBoundaries = mesh._elems->gatherElementDistrubution();
 
 	int min = std::lower_bound(domainBoundaries.begin(), domainBoundaries.end(), processBoundaries[environment->MPIrank] + 1) - domainBoundaries.begin() - 1;
-	int max = std::lower_bound(domainBoundaries.begin(), domainBoundaries.end(), processBoundaries[environment->MPIrank + 1] + 1) - domainBoundaries.begin() - 2;
 
-	size_t externalNodeCount = 0, boundaryNodeCount = mesh._processBoundaries->nodesIntervals.back().end;
+	eslocal externalNodeCount = 0, boundaryNodeCount = mesh._processBoundaries->nodesIntervals.back().end;
 	for (size_t i = 0; i < mesh._processBoundaries->nodesIntervals.size() && mesh._processBoundaries->nodesIntervals[i].neighbors.front() == -1; ++i) {
 		externalNodeCount = mesh._processBoundaries->nodesIntervals[i].end;
 	}
@@ -184,7 +183,7 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 	for (size_t i = 0; i < mesh._processBoundaries->nodesIntervals.size(); ++i) {
 		indices[i] = mesh._processBoundaries->nodesIntervals[i].begin;
 	}
-	for (size_t n = 0; n < mesh._nodes->size; ++n) {
+	for (eslocal n = 0; n < (eslocal)mesh._nodes->size; ++n) {
 		for (size_t i = 0; i < indices.size(); ++i) {
 			if (indices[i] < mesh._processBoundaries->nodesIntervals[i].end && permutation[indices[i]] == n) {
 				indices[i]++;
@@ -216,8 +215,8 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 
 	std::vector<EInterval> nintervals;
 
-	auto splitinterval = [&] (size_t boundary) {
-		auto it = std::lower_bound(nintervals.begin(), nintervals.end(), boundary, [] (EInterval &internal, size_t n) { return internal.end < n; });
+	auto splitinterval = [&] (eslocal boundary) {
+		auto it = std::lower_bound(nintervals.begin(), nintervals.end(), boundary, [] (EInterval &internal, eslocal n) { return internal.end < n; });
 		if (boundary < it->end) {
 			size_t i = it - nintervals.begin();
 			nintervals.insert(it, *it);
@@ -238,7 +237,7 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 	mesh._domains->nodesIntervals.resize(mesh._domains->size);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (auto d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; d++) {
+		for (eslocal d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; d++) {
 			for (size_t i = 0; i < nintervals.size(); i++) {
 				auto lower = std::lower_bound(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), min);
 				auto me    = std::lower_bound(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), min + d);
@@ -256,7 +255,7 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 		});
 	}
 
-	for (size_t d = 0; d < mesh._domains->size; d++) {
+	for (eslocal d = 0; d < (eslocal)mesh._domains->size; d++) {
 		std::sort(mesh._domains->nodesIntervals[d].begin(), mesh._domains->nodesIntervals[d].end(), [&] (EInterval &ei1, EInterval &ei2) {
 			int l1 = 2, l2 = 2;
 			if ((ei1.neighbors[0] != -1 && ei1.neighbors[0] < min + d) || (ei1.neighbors[0] == -1 && ei1.neighbors[1] < min + d)) {
@@ -294,7 +293,7 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 	finalpermutation.reserve(permutation.size());
 
 	for (size_t t = 0; t < threads; t++) {
-		for (auto d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; d++) {
+		for (eslocal d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; d++) {
 			for (size_t i = 0; i < nintervals.size(); i++) {
 				if (*std::lower_bound(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), min) == min + d) {
 					finalpermutation.insert(finalpermutation.end(), permutation.begin() + nintervals[i].begin, permutation.begin() + nintervals[i].end);
@@ -315,7 +314,6 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 		}
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			size_t source;
 			for (auto e = data->begin(t); e != data->end(t); ++e) {
 				for (auto n = e->begin(); n != e->end(); ++n) {
 					*n = backpermutation[*n];

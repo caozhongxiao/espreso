@@ -12,10 +12,6 @@ namespace espreso {
 template <typename Ttype>
 bool Communication::exchangeKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours)
 {
-	auto n2i = [ & ] (size_t neighbour) {
-		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
-	};
-
 	std::vector<MPI_Request> req(2 * neighbours.size());
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		// bullxmpi violate MPI standard (cast away constness)
@@ -253,7 +249,7 @@ bool Communication::sendVariousTargets(const std::vector<std::vector<Ttype> > &s
 	}
 
 	int flag;
-	size_t counter = 0;
+	int counter = 0;
 	MPI_Status status;
 	sources.clear();
 	std::vector<std::vector<Ttype> > tmpBuffer;

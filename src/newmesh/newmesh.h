@@ -18,12 +18,12 @@ class NewMesh {
 public:
 	NewMesh(Mesh &mesh);
 
+// protected:
+	ElementStore *_nodes, *_edges, *_faces, *_elems, *_halo;
+
 	DomainStore *_domains;
 	BoundaryStore *_domainsBoundaries;
 	BoundaryStore *_processBoundaries;
-
-// protected:
-	ElementStore *_nodes, *_edges, *_faces, *_elems, *_halo;
 
 	std::vector<int> _neighbours;
 
