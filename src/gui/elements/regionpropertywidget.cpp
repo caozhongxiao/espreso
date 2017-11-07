@@ -2,6 +2,7 @@
 #include "ui_regionpropertywidget.h"
 
 #include <QMenu>
+#include <QTreeView>
 
 #include "regionpairdialog.h"
 
@@ -24,9 +25,14 @@ RegionPropertyWidget::RegionPropertyWidget(Mesh* mesh, PhysicsConfiguration* phy
     this->m_model = new QStandardItemModel();
     this->m_root = this->m_model->invisibleRootItem();
 
-    ui->tree->setModel(this->m_model);
-    ui->tree->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    ui->tree->setContextMenuPolicy(Qt::CustomContextMenu);
+    QTreeView* view = new QTreeView(this);
+    view->setModel(m_model);
+    view->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    view->setContextMenuPolicy(Qt::CustomContextMenu);
+    view->setHeaderHidden(true);
+    ui->verticalLayout->addWidget(view);
+    connect(view, &QTreeView::customContextMenuRequested, this, &RegionPropertyWidget::on_tree_customContextMenuRequested);
+    this->m_view = view;
 
     this->m_action_new = new QAction(tr("&New"), this);
     connect(this->m_action_new, &QAction::triggered, this, &RegionPropertyWidget::onActionNew);
@@ -93,7 +99,7 @@ void RegionPropertyWidget::onActionDelete()
 
 QModelIndex RegionPropertyWidget::selectedItem()
 {
-    QModelIndexList indexList = ui->tree->selectionModel()->selectedIndexes();
+    QModelIndexList indexList = m_view->selectionModel()->selectedIndexes();
     if (!indexList.count())
         return QModelIndex();
 
@@ -114,5 +120,5 @@ void RegionPropertyWidget::on_tree_customContextMenuRequested(const QPoint &pos)
     treeMenu.addAction(this->m_action_new);
     treeMenu.addAction(this->m_action_edit);
     treeMenu.addAction(this->m_action_delete);
-    treeMenu.exec(ui->tree->mapToGlobal(pos));
+    treeMenu.exec(m_view->mapToGlobal(pos));
 }

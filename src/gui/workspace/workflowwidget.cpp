@@ -43,7 +43,7 @@ void WorkflowWidget::setData(ECFConfiguration *ecf, Mesh* mesh)
 
     this->m_ecf = ecf;
     this->m_physicsTab = nullptr;
-    this->m_mesh = m_mesh;
+    this->m_mesh = mesh;
 
     this->createPhysicsTab();
 
@@ -108,9 +108,22 @@ void WorkflowWidget::onLoadstepsChange(int loadsteps)
     }
 }
 
-PhysicsConfiguration* WorkflowWidget::activePhysics()
+PhysicsConfiguration* WorkflowWidget::activePhysics(ECFConfiguration* ecf)
 {
-    return dynamic_cast<PhysicsConfiguration*>(this->m_phyDetail->activePhysics());
+    switch (ecf->physics)
+    {
+    case PHYSICS::HEAT_TRANSFER_2D:
+        return &ecf->heat_transfer_2d;
+    case PHYSICS::HEAT_TRANSFER_3D:
+        return &ecf->heat_transfer_3d;
+    case PHYSICS::STRUCTURAL_MECHANICS_2D:
+        return &ecf->structural_mechanics_2d;
+    case PHYSICS::STRUCTURAL_MECHANICS_3D:
+        return &ecf->structural_mechanics_3d;
+    default:
+        qFatal("WorkflowWidget: Unknown physics!");
+        return nullptr;
+    }
 }
 
 void WorkflowWidget::onPhysicsChange(ECFObject *physics)

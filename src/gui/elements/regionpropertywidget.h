@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QStandardItemModel>
+#include <QTreeView>
 
 #include "../../config/configuration.h"
 #include "../../config/ecf/ecf.h"
@@ -46,6 +47,8 @@ private:
     QVector<QStandardItem*> m_groups;
     QVector<ECFObject*> m_objs;
     QStandardItem* m_root;
+
+    QTreeView* m_view;
 
     QAction* m_action_new;
     QAction* m_action_edit;

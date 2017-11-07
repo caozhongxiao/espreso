@@ -29,7 +29,7 @@ public:
     ~WorkflowWidget();
 
     void setData(ECFConfiguration* ecf, Mesh* mesh);
-    PhysicsConfiguration* activePhysics();
+    PhysicsConfiguration* activePhysics(ECFConfiguration* ecf);
 
 signals:
     void fileOpened(const QString& filename);

@@ -50,23 +50,20 @@ QWidget* RegionPairDialog::uiValue(ECFDataType type, QLayout* layout)
     {
         layout->addWidget(new QLabel(tr("Region:"), this));
         QComboBox* cmb = new QComboBox(this);
-        //auto regions = const_cast<std::vector<Region*>& >(m_mesh->regions());
         for (auto it = m_mesh->regions().begin(); it != m_mesh->regions().end(); it++)
         {
-            std::string ahoj = (*it)->name;
-//            bool found = false;
-//            for (auto key = this->m_map->parameters.begin(); key != this->m_map->parameters.end(); key++)
-//            {
-//                if ((*key)->name.compare((*it)->name) == 0)
-//                {
-//                    found = true;
-//                    break;
-//                }
-//            }
-//            if (found) continue;
-//            cmb->addItem(QString::fromStdString((*it)->name));
+            bool found = false;
+            for (auto key = this->m_map->parameters.begin(); key != this->m_map->parameters.end(); key++)
+            {
+                if ((*key)->name.compare((*it)->name) == 0)
+                {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) continue;
+            cmb->addItem(QString::fromStdString((*it)->name));
         }
-        //cmb->setCurrentIndex(0);
         layout->addWidget(cmb);
         ret = cmb;
     }
@@ -89,11 +86,13 @@ QWidget* RegionPairDialog::uiValue(ECFDataType type, QLayout* layout)
     {
         ECFObject* tmp = static_cast<ECFObject*>(this->m_map->getParameter("***"));
         DataTypeEditWidget* w = new DataTypeEditWidget(tmp->metadata.variables, this);
-        // TODO: DELETE tmp
+        this->m_map->dropParameter(tmp);
+        QWidget* container = new QWidget;
         QFormLayout* fl = new QFormLayout;
-        layout->addItem(fl);
         fl->addRow(tr("Type:"), w->createComboBox(this));
         fl->addRow(tr("Value:"), w);
+        container->setLayout(fl);
+        layout->addWidget(container);
         ret = w;
     }
 

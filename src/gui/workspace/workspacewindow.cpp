@@ -25,9 +25,9 @@ void WorkspaceWindow::init()
     if (this->m_manager->isECFLoaded())
     {
         this->m_ecf = this->m_manager->ecf();
+        this->initPanels();
         this->m_mesh = this->m_manager->mesh();
         this->m_workflow->setData(this->m_ecf, this->m_mesh);
-        this->initPanels();
     }
 }
 
@@ -45,10 +45,9 @@ void WorkspaceWindow::onFileOpened(const QString &filename)
     this->m_manager->masterOpenECF(filename);
 
     this->m_ecf = this->m_manager->ecf();
+    this->initPanels();
     this->m_mesh = this->m_manager->mesh();
     this->m_workflow->setData(this->m_ecf, this->m_mesh);
-
-    this->initPanels();
 }
 
 void WorkspaceWindow::initPanels()
@@ -59,10 +58,10 @@ void WorkspaceWindow::initPanels()
         this->m_declarations = nullptr;
     }
 
-    if (this->m_mesh != nullptr)
+    if (this->m_mesh3D != nullptr)
     {
         ui->center->layout()->removeWidget(m_mesh3D);
-        this->m_mesh = nullptr;
+        this->m_mesh3D = nullptr;
     }
 
     if (this->m_regions != nullptr)
@@ -72,7 +71,7 @@ void WorkspaceWindow::initPanels()
     }
 
     this->m_declarations = new DeclarationsWidget(this);
-    this->m_declarations->initialize(this->m_workflow->activePhysics());
+    this->m_declarations->initialize(this->m_workflow->activePhysics(this->m_ecf));
     ui->left->layout()->addWidget(m_declarations);
 
     this->m_mesh3D = new MeshWidget(m_manager, this);

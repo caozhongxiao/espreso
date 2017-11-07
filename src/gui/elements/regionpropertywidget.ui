@@ -33,9 +33,6 @@
      </property>
     </widget>
    </item>
-   <item>
-    <widget class="QListView" name="tree"/>
-   </item>
   </layout>
  </widget>
  <resources/>
