@@ -186,9 +186,11 @@ NewMesh::NewMesh(Mesh &mesh)
 //	Transformation::computeElementCenters(*this);
 
 	Transformation::reclusterize(*this);
-	Transformation::partitiate(*this, 1, TFlags::SEPARATE::MATERIALS | TFlags::SEPARATE::ETYPES);
+	Transformation::partitiate(*this, 3, TFlags::SEPARATE::MATERIALS | TFlags::SEPARATE::ETYPES);
 	Transformation::computeProcessBoundaries(*this);
 	Transformation::computeDomainsBoundaries(*this); //, TFlags::ELEVEL::FACE | TFlags::ELEVEL::NODE);
+
+	NewOutput::VTKLegacy("nodes", _nodes, _domains);
 
 	NewOutput::VTKLegacy("processBoundaries", _processBoundaries, _nodes, false);
 	NewOutput::VTKLegacy("domainsBoundaries", _domainsBoundaries, _nodes, true);

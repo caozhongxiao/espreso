@@ -492,7 +492,7 @@ void Transformation::projectNodesToDomains(NewMesh &mesh)
 
 	mesh._domains->domainNodeBoundaries.clear();
 	mesh._domains->domainNodeBoundaries.push_back(0);
-	for (size_t d = 0; d < mesh._domains->size; ++d) {
+	for (eslocal d = 0; d < mesh._domains->size; ++d) {
 		mesh._domains->domainNodeBoundaries.push_back(mesh._domains->domainNodeBoundaries.back() + domainNodes[d].size());
 	}
 

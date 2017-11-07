@@ -9,7 +9,8 @@
 using namespace espreso;
 
 DomainStore::DomainStore()
-: size(0),
+: offset(0),
+  size(0),
   elems(NULL),
   nodes(NULL)
 {

@@ -168,7 +168,7 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 	std::vector<esglobal> domainBoundaries = mesh._domains->gatherDomainDistribution();
 	std::vector<esglobal> processBoundaries = mesh._elems->gatherElementDistrubution();
 
-	int min = std::lower_bound(domainBoundaries.begin(), domainBoundaries.end(), processBoundaries[environment->MPIrank] + 1) - domainBoundaries.begin() - 1;
+	mesh._domains->offset = std::lower_bound(domainBoundaries.begin(), domainBoundaries.end(), processBoundaries[environment->MPIrank] + 1) - domainBoundaries.begin() - 1;
 
 	eslocal externalNodeCount = 0, boundaryNodeCount = mesh._processBoundaries->nodesIntervals.back().end;
 	for (size_t i = 0; i < mesh._processBoundaries->nodesIntervals.size() && mesh._processBoundaries->nodesIntervals[i].neighbors.front() == -1; ++i) {
@@ -234,20 +234,6 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 		++iti;
 	}
 
-	mesh._domains->nodesIntervals.resize(mesh._domains->size);
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		for (eslocal d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; d++) {
-			for (size_t i = 0; i < nintervals.size(); i++) {
-				auto lower = std::lower_bound(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), min);
-				auto me    = std::lower_bound(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), min + d);
-				if (*lower == min + d || (me != nintervals[i].neighbors.end() && *me == min + d)) {
-					mesh._domains->nodesIntervals[d].push_back(nintervals[i]);
-				}
-			}
-		}
-	}
-
 	#pragma omp parallel for
 	for (size_t i = 0; i < nintervals.size(); ++i) {
 		std::sort(permutation.begin() + nintervals[i].begin, permutation.begin() + nintervals[i].end, [&] (eslocal i, eslocal j) {
@@ -255,30 +241,33 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 		});
 	}
 
-	for (eslocal d = 0; d < (eslocal)mesh._domains->size; d++) {
-		std::sort(mesh._domains->nodesIntervals[d].begin(), mesh._domains->nodesIntervals[d].end(), [&] (EInterval &ei1, EInterval &ei2) {
-			int l1 = 2, l2 = 2;
-			if ((ei1.neighbors[0] != -1 && ei1.neighbors[0] < min + d) || (ei1.neighbors[0] == -1 && ei1.neighbors[1] < min + d)) {
-				l1 = 0;
+	// 0 -> external + inner, 1 -> inner, 2 -> external, 3 -> rest
+	auto getBoundary = [] (const std::vector<int> &neighbors) {
+		if (neighbors.front() == -1) {
+			if (neighbors.size() > 2) {
+				return 0;
+			} else {
+				return 2;
 			}
-			if ((ei2.neighbors[0] != -1 && ei2.neighbors[0] < min + d) || (ei2.neighbors[0] == -1 && ei2.neighbors[1] < min + d)) {
-				l2 = 0;
+		} else {
+			if (neighbors.size() > 1) {
+				return 1;
+			} else {
+				return 3;
 			}
-			if ((ei1.neighbors[0] == min + d && ei1.neighbors.size() > 1) || (ei1.neighbors[0] == -1 && ei1.neighbors[1] == min + d && ei1.neighbors.size() > 2)) {
-				l1 = 1;
+		}
+	};
+
+	std::sort(nintervals.begin(), nintervals.end(), [&] (EInterval &ei1, EInterval &ei2) {
+		int b1 = getBoundary(ei1.neighbors), b2 = getBoundary(ei2.neighbors);
+		if (b1 == b2) {
+			if (ei1.neighbors.size() == ei2.neighbors.size()) {
+				return ei1.neighbors.size() > ei2.neighbors.size();
 			}
-			if ((ei2.neighbors[0] == min + d && ei2.neighbors.size() > 1) || (ei2.neighbors[0] == -1 && ei2.neighbors[1] == min + d && ei2.neighbors.size() > 2)) {
-				l2 = 1;
-			}
-			if (l1 == l2) {
-				if (ei1.neighbors.size() == ei2.neighbors.size()) {
-					return ei1.neighbors.size() > ei2.neighbors.size();
-				}
-				return ei1.neighbors < ei1.neighbors;
-			}
-			return l1 < l2;
-		});
-	}
+			return ei1.neighbors < ei1.neighbors;
+		}
+		return b1 < b2;
+	});
 
 	std::vector<eslocal> finalpermutation;
 	finalpermutation.reserve(permutation.size());
@@ -286,8 +275,28 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 	for (size_t t = 0; t < threads; t++) {
 		for (eslocal d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; d++) {
 			for (size_t i = 0; i < nintervals.size(); i++) {
-				if (*std::lower_bound(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), min) == min + d) {
+				if (*std::lower_bound(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), mesh._domains->offset) == mesh._domains->offset + d) {
 					finalpermutation.insert(finalpermutation.end(), permutation.begin() + nintervals[i].begin, permutation.begin() + nintervals[i].end);
+				}
+			}
+		}
+	}
+
+	eslocal ioffset = 0;
+	for (size_t i = 0; i < nintervals.size(); ++i) {
+		eslocal isize = nintervals[i].end - nintervals[i].begin;
+		nintervals[i].begin = ioffset;
+		ioffset += isize;
+		nintervals[i].end = ioffset;
+	}
+
+	mesh._domains->nodesIntervals.resize(mesh._domains->size);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (eslocal d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; d++) {
+			for (size_t i = 0; i < nintervals.size(); i++) {
+				if (std::binary_search(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), mesh._domains->offset + d)) {
+					mesh._domains->nodesIntervals[d].push_back(nintervals[i]);
 				}
 			}
 		}

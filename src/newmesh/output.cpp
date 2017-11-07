@@ -96,7 +96,7 @@ void NewOutput::VTKLegacy(const std::string &name, ElementStore *elements, Eleme
 
 	os << "SCALARS domain int 1\n";
 	os << "LOOKUP_TABLE default\n";
-	for (size_t d = 0; d < domains->size; d++) {
+	for (eslocal d = 0; d < domains->size; d++) {
 		for (eslocal e = domains->domainElementBoundaries[d]; e < domains->domainElementBoundaries[d + 1]; ++e) {
 			os << d << "\n";
 		}
@@ -226,59 +226,6 @@ void NewOutput::VTKLegacyDual(const std::string &name, ElementStore *elements, E
 	os << "ASCII\n";
 	os << "DATASET UNSTRUCTURED_GRID\n\n";
 
-//	os << "POINTS " << domains->domainElementBoundaries[1] << " float\n";
-//	for (auto e = elements->nodes->cbegin(); e != elements->nodes->cbegin() + domains->domainElementBoundaries[1]; ++e) {
-//		Point center;
-//		for (auto n = e->begin(); n != e->end(); ++n) {
-//			center += nodes->coordinates->datatarray()[*n];
-//		}
-//		center /= e->size();
-//		os << center.x << " " << center.y << " " << center.z << "\n";
-//	}
-//	os << "\n";
-//
-//	size_t cells = 0;
-//	auto e = elements->decomposedDual->cbegin();
-//	for (size_t c = 0; c < domains->domainElementBoundaries[1]; ++c, ++e) {
-//		for (auto n = e->begin(); n != e->end(); ++n) {
-//			if (*n < domains->domainElementBoundaries[1]) {
-//				cells++;
-//			}
-//		}
-//	}
-//
-//	os << "CELLS " << cells << " " << 3 * cells << "\n";
-//	e = elements->decomposedDual->cbegin();
-//	for (size_t c = 0; c < domains->domainElementBoundaries[1]; ++c, ++e) {
-//		for (auto n = e->begin(); n != e->end(); ++n) {
-//			if (*n < domains->domainElementBoundaries[1]) {
-//				os << 2 << " " << c << " " << *n << "\n";
-//			}
-//		}
-//	}
-//	os << "\n";
-//
-//	os << "CELL_TYPES " << cells << "\n";
-//	for (size_t c = 0; c < cells; ++c) {
-//		os << "3\n";
-//	}
-//	os << "\n";
-//
-//	os << "CELL_DATA " << cells << "\n";
-//	os << "SCALARS cluster int 1\n";
-//	os << "LOOKUP_TABLE default\n";
-//	for (size_t e = 0; e < cells; e++) {
-//		os << environment->MPIrank << "\n";
-//	}
-//
-//	os << "POINT_DATA " << domains->domainElementBoundaries[1] << "\n";
-//	os << "SCALARS domain int 1\n";
-//	os << "LOOKUP_TABLE default\n";
-//	for (size_t d = 0; d < 1; d++) {
-//		for (size_t e = domains->domainElementBoundaries[d]; e < domains->domainElementBoundaries[d + 1]; ++e) {
-//			os << d << "\n";
-//		}
-//	}
 	os << "POINTS " << elements->size << " float\n";
 	for (auto e = elements->nodes->cbegin(); e != elements->nodes->cend(); ++e) {
 		Point center;
@@ -316,11 +263,63 @@ void NewOutput::VTKLegacyDual(const std::string &name, ElementStore *elements, E
 	os << "POINT_DATA " << elements->size << "\n";
 	os << "SCALARS domain int 1\n";
 	os << "LOOKUP_TABLE default\n";
-	for (size_t d = 0; d < domains->size; d++) {
+	for (eslocal d = 0; d < domains->size; d++) {
 		for (eslocal e = domains->domainElementBoundaries[d]; e < domains->domainElementBoundaries[d + 1]; ++e) {
 			os << d << "\n";
 		}
 	}
+}
+
+void NewOutput::VTKLegacy(const std::string &name, ElementStore *nodes, DomainStore *domains)
+{
+	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+
+	os << "# vtk DataFile Version 2.0\n";
+	os << "EXAMPLE\n";
+	os << "ASCII\n";
+	os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+	os << "POINTS " << nodes->size << " float\n";
+	for (auto n = nodes->coordinates->datatarray().begin(); n != nodes->coordinates->datatarray().end(); ++n) {
+		os << n->x << " " << n->y << " " << n->z << "\n";
+	}
+	os << "\n";
+
+	os << "CELLS " << nodes->size << " " << 2 * nodes->size << "\n";
+	for (size_t n = 0; n < nodes->size; ++n) {
+		os << "1 " << n << "\n";
+	}
+	os << "\n";
+
+	os << "CELL_TYPES " << nodes->size << "\n";
+	for (size_t n = 0; n < nodes->size; ++n) {
+		os << "1\n";
+	}
+	os << "\n";
+
+	os << "CELL_DATA " << nodes->size << "\n";
+	os << "SCALARS interval int 1\n";
+	os << "LOOKUP_TABLE default\n";
+	int interval = 0;
+	for (eslocal d = 0; d < domains->size; d++) {
+		for (size_t i = 0; i < domains->nodesIntervals[d].size(); i++) {
+			if (*std::lower_bound(domains->nodesIntervals[d][i].neighbors.begin(), domains->nodesIntervals[d][i].neighbors.end(), domains->offset) == domains->offset + d) {
+				for (eslocal n = domains->nodesIntervals[d][i].begin; n < domains->nodesIntervals[d][i].end; n++) {
+					os << interval << "\n";
+				}
+				interval++;
+			}
+		}
+	}
+	os << "\n";
+
+	os << "SCALARS cluster int 1\n";
+	os << "LOOKUP_TABLE default\n";
+	for (size_t n = 0; n < nodes->size; ++n) {
+		os << environment->MPIrank << "\n";
+	}
+	os << "\n";
+
 }
 
 
