@@ -6,6 +6,7 @@
 #include "elements/elementstore.h"
 #include "store/boundarystore.h"
 #include "store/domainstore.h"
+#include "store/regionstore.h"
 
 #include "../basis/point/point.h"
 #include "../basis/containers/serializededata.h"
@@ -303,7 +304,7 @@ void NewOutput::VTKLegacy(const std::string &name, ElementStore *nodes, DomainSt
 	int interval = 0;
 	for (eslocal d = 0; d < domains->size; d++) {
 		for (size_t i = 0; i < domains->nodesIntervals[d].size(); i++) {
-			if (*std::lower_bound(domains->nodesIntervals[d][i].neighbors.begin(), domains->nodesIntervals[d][i].neighbors.end(), domains->offset) == domains->offset + d) {
+			if (domains->nodesIntervals[d][i].offset == 0) {
 				for (eslocal n = domains->nodesIntervals[d][i].begin; n < domains->nodesIntervals[d][i].end; n++) {
 					os << interval << "\n";
 				}
@@ -319,7 +320,51 @@ void NewOutput::VTKLegacy(const std::string &name, ElementStore *nodes, DomainSt
 		os << environment->MPIrank << "\n";
 	}
 	os << "\n";
+}
 
+void NewOutput::VTKLegacy(const std::string &name, ElementStore *nodes, RegionStore *region)
+{
+	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+
+	os << "# vtk DataFile Version 2.0\n";
+	os << "EXAMPLE\n";
+	os << "ASCII\n";
+	os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+	os << "POINTS " << region->nodes->structures() << " float\n";
+	const auto &coords = nodes->coordinates->datatarray();
+	for (auto n = region->nodes->datatarray().begin(); n < region->nodes->datatarray().end(); ++n) {
+		os << coords[*n].x << " " << coords[*n].y << " " << coords[*n].z << "\n";
+	}
+	os << "\n";
+
+	os << "CELLS " << region->nodes->structures() << " " << 2 * region->nodes->structures() << "\n";
+	for (size_t n = 0; n < region->nodes->structures(); ++n) {
+		os << "1 " << n << "\n";
+	}
+	os << "\n";
+
+	os << "CELL_TYPES " << region->nodes->structures() << "\n";
+	for (size_t n = 0; n < region->nodes->structures(); ++n) {
+		os << "1\n";
+	}
+	os << "\n";
+
+	os << "CELL_DATA " << region->nodes->structures() << "\n";
+	os << "SCALARS interval int 1\n";
+	os << "LOOKUP_TABLE default\n";
+	int interval = 0;
+	for (eslocal d = 0; d < (eslocal)region->nodesIntervals.size(); d++) {
+		for (size_t i = 0; i < region->nodesIntervals[d].size(); i++) {
+			if (region->nodesIntervals[d][i].offset == 0) {
+				for (eslocal n = region->nodesIntervals[d][i].begin; n < region->nodesIntervals[d][i].end; n++) {
+					os << interval << "\n";
+				}
+				interval++;
+			}
+		}
+	}
+	os << "\n";
 }
 
 

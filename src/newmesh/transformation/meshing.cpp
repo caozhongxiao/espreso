@@ -5,6 +5,7 @@
 #include "../elements/elementstore.h"
 #include "../store/domainstore.h"
 #include "../store/boundarystore.h"
+#include "../store/regionstore.h"
 
 #include "../../basis/point/point.h"
 #include "../../basis/containers/serializededata.h"
@@ -297,6 +298,11 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 			for (size_t i = 0; i < nintervals.size(); i++) {
 				if (std::binary_search(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), mesh._domains->offset + d)) {
 					mesh._domains->nodesIntervals[d].push_back(nintervals[i]);
+					mesh._domains->nodesIntervals[d].back().offset =
+							std::lower_bound(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), mesh._domains->offset + d) - nintervals[i].neighbors.begin();
+					if (nintervals[i].neighbors.front() == -1) {
+						--mesh._domains->nodesIntervals[d].back().offset;
+					}
 				}
 			}
 		}
@@ -325,6 +331,30 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 	localremap(mesh._elems->nodes);
 	localremap(mesh._processBoundaries->nodes);
 	localremap(mesh._domainsBoundaries->nodes);
+
+	for (size_t r = 0; r < mesh._regions.size(); r++) {
+		localremap(mesh._regions[r]->nodes);
+		std::sort(mesh._regions[r]->nodes->datatarray().begin(), mesh._regions[r]->nodes->datatarray().end());
+
+		mesh._regions[r]->nodesIntervals.resize(mesh._domains->size);
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			for (eslocal d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; d++) {
+				auto offset = mesh._regions[r]->nodes->datatarray().cbegin();
+				auto cend = mesh._regions[r]->nodes->datatarray().cend();
+				for (size_t i = 0; i < mesh._domains->nodesIntervals[d].size(); i++) {
+					auto begin = offset = std::lower_bound(offset, cend, mesh._domains->nodesIntervals[d][i].begin);
+					auto end   = offset = std::lower_bound(offset, cend, mesh._domains->nodesIntervals[d][i].end);
+					if (begin != end) {
+						mesh._regions[r]->nodesIntervals[d].push_back(mesh._domains->nodesIntervals[d][i]);
+						mesh._regions[r]->nodesIntervals[d].back().begin = begin - mesh._regions[r]->nodes->datatarray().cbegin();
+						mesh._regions[r]->nodesIntervals[d].back().end   = end   - mesh._regions[r]->nodes->datatarray().cbegin();
+					}
+				}
+			}
+		}
+
+	}
 
 	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "MESH::arrange nodes finished.";
 }

@@ -5,6 +5,7 @@
 #include "elements/elementstore.h"
 #include "store/domainstore.h"
 #include "store/boundarystore.h"
+#include "store/regionstore.h"
 
 
 #include "elements/point/point1.h"
@@ -35,6 +36,8 @@
 
 #include "../mesh/structures/mesh.h"
 #include "../mesh/structures/coordinates.h"
+#include "../mesh/structures/region.h"
+#include "../mesh/structures/elementtypes.h"
 #include "../mesh/elements/element.h"
 
 #include <iostream>
@@ -180,6 +183,48 @@ NewMesh::NewMesh(Mesh &mesh)
 		_elems->material = new serializededata<eslocal, esglobal>(1, material);
 	}
 
+	for (size_t r = 2; r < mesh.regions().size(); r++) {
+		std::vector<size_t> tdistributions = tarray<size_t>::distribute(threads, mesh.regions()[r]->elements().size());
+		std::vector<std::vector<eslocal> > rdistribution(threads), rdata(threads);
+
+		if (mesh.regions()[r]->eType == ElementType::NODES) {
+			#pragma omp parallel for
+			for (size_t t = 0; t < threads; t++) {
+				for (size_t e = tdistributions[t]; e < tdistributions[t + 1]; e++) {
+					rdata[t].push_back(mesh.regions()[r]->elements()[e]->node(0));
+				}
+			}
+		} else {
+			rdistribution[0].push_back(0);
+			#pragma omp parallel for
+			for (size_t t = 0; t < threads; t++) {
+				for (size_t e = tdistributions[t]; e < tdistributions[t + 1]; e++) {
+					for (size_t n = 0; n < mesh.regions()[r]->elements()[e]->nodes(); n++) {
+						rdata[t].push_back(mesh.regions()[r]->elements()[e]->node(n));
+					}
+					rdistribution[t].push_back(rdata[t].size());
+				}
+			}
+		}
+
+		switch (mesh.regions()[r]->eType) {
+		case ElementType::ELEMENTS:
+			std::cout << "region: " << mesh.regions()[r]->name << " of elements\n";
+			break;
+		case ElementType::FACES:
+			std::cout << "region: " << mesh.regions()[r]->name << " of faces\n";
+			break;
+		case ElementType::EDGES:
+			std::cout << "region: " << mesh.regions()[r]->name << " of edges\n";
+			break;
+		case ElementType::NODES:
+			_regions.push_back(new RegionStore(mesh.regions()[r]->name, TFlags::ELEVEL::NODE));
+			_regions.back()->nodes = new serializededata<eslocal, eslocal>(1, rdata);
+			std::sort(_regions.back()->nodes->datatarray().begin(), _regions.back()->nodes->datatarray().end());
+			break;
+		}
+	}
+
 	// Transformation::addLinkFromTo(*this, TFlags::ELEVEL::NODE, TFlags::ELEVEL::ELEMENT);
 //	Transformation::computeDual(*this);
 //	Transformation::computeDecomposedDual(*this, TFlags::SEPARATE::MATERIALS | TFlags::SEPARATE::ETYPES);
@@ -194,6 +239,10 @@ NewMesh::NewMesh(Mesh &mesh)
 
 	NewOutput::VTKLegacy("processBoundaries", _processBoundaries, _nodes, false);
 	NewOutput::VTKLegacy("domainsBoundaries", _domainsBoundaries, _nodes, true);
+
+	for (size_t r = 0; r < _regions.size(); ++r) {
+		NewOutput::VTKLegacy(_regions[r]->name, _nodes, _regions[r]);
+	}
 
 	MPI_Barrier(environment->MPICommunicator);
 	MPI_Finalize();

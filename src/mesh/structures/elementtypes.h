@@ -13,5 +13,4 @@ enum class ElementType {
 
 }
 
-
 #endif /* SRC_MESH_STRUCTURES_ELEMENTTYPES_H_ */

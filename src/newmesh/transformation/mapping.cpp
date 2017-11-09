@@ -595,6 +595,10 @@ void Transformation::computeIntervals(std::vector<EInterval> &intervals, const s
 		}
 	}
 	intervals = nintervals[0];
+	for (size_t i = 0; i < intervals.size(); i++) {
+		intervals[i].first = intervals[i].neighbors.front();
+		intervals[i].size = intervals[i].neighbors.size();
+	}
 }
 
 

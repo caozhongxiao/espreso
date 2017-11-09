@@ -10,6 +10,7 @@ class Mesh;
 struct DomainStore;
 struct BoundaryStore;
 struct ElementStore;
+struct RegionStore;
 class NewElement;
 
 class NewMesh {
@@ -24,6 +25,8 @@ public:
 	DomainStore *_domains;
 	BoundaryStore *_domainsBoundaries;
 	BoundaryStore *_processBoundaries;
+
+	std::vector<RegionStore*> _regions;
 
 	std::vector<int> _neighbours;
 

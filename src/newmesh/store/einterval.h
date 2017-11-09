@@ -6,10 +6,13 @@ namespace espreso {
 
 struct EInterval {
 	eslocal begin, end;
+	eslocal first, offset, size;
 	std::vector<int> neighbors;
 
 	EInterval(eslocal begin, eslocal end, std::vector<int> &&neighbors)
-	: begin(begin), end(end), neighbors(std::move(neighbors)) {};
+	: begin(begin), end(end),
+	  first(0), offset(0), size(0),
+	  neighbors(std::move(neighbors)) {};
 };
 
 }
