@@ -270,25 +270,24 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 		return b1 < b2;
 	});
 
+
+
 	std::vector<eslocal> finalpermutation;
 	finalpermutation.reserve(permutation.size());
 
+	eslocal ioffset = 0;
 	for (size_t t = 0; t < threads; t++) {
 		for (eslocal d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; d++) {
 			for (size_t i = 0; i < nintervals.size(); i++) {
 				if (*std::lower_bound(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), mesh._domains->offset) == mesh._domains->offset + d) {
 					finalpermutation.insert(finalpermutation.end(), permutation.begin() + nintervals[i].begin, permutation.begin() + nintervals[i].end);
+					eslocal isize = nintervals[i].end - nintervals[i].begin;
+					nintervals[i].begin = ioffset;
+					ioffset += isize;
+					nintervals[i].end = ioffset;
 				}
 			}
 		}
-	}
-
-	eslocal ioffset = 0;
-	for (size_t i = 0; i < nintervals.size(); ++i) {
-		eslocal isize = nintervals[i].end - nintervals[i].begin;
-		nintervals[i].begin = ioffset;
-		ioffset += isize;
-		nintervals[i].end = ioffset;
 	}
 
 	mesh._domains->nodesIntervals.resize(mesh._domains->size);

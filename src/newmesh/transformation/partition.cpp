@@ -6,6 +6,7 @@
 #include "../elements/elementstore.h"
 #include "../store/domainstore.h"
 #include "../store/boundarystore.h"
+#include "../store/regionstore.h"
 
 #include "../../basis/point/point.h"
 #include "../../basis/containers/serializededata.h"
@@ -641,6 +642,10 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	std::vector<std::vector<Point> >    nodesCoordinates(threads);
 	std::vector<std::vector<eslocal> >  nodesElemsDistribution(threads);
 	std::vector<std::vector<esglobal> > nodesElemsData(threads);
+	std::vector<std::vector<int> >      nodesRegions(threads);
+
+	// regions are transfered via mask
+	int regionsBitMaskSize = mesh._regions.size() / (8 * sizeof(int)) + (mesh._regions.size() % (8 * sizeof(int)) ? 1 : 0);
 
 	// serialize data that have to be exchanged
 	// the first thread value denotes the thread data size
@@ -682,7 +687,6 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 				}
 			} else {
 				target = t2i(partition[e]);
-
 				sElements[t][target].insert(sElements[t][target].end(), { IDs[e], body[e], material[e], static_cast<esglobal>(code[e] - mesh._eclasses[t]) });
 				sElements[t][target].push_back(enodes->size());
 				sElements[t][target].insert(sElements[t][target].end(), enodes->begin(), enodes->end());
@@ -694,6 +698,22 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	}
 
 	// Step 2: Serialize node data
+
+	std::vector<int> regionNodeMask(mesh._nodes->size * regionsBitMaskSize);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		int maskOffset = 0;
+		for (size_t r = 0; r < mesh._regions.size(); r++) {
+			maskOffset = r / (8 * sizeof(int));
+			if (mesh._regions[r]->etype == TFlags::ELEVEL::NODE) {
+				auto begin = std::lower_bound(mesh._regions[r]->nodes->datatarray().begin(), mesh._regions[r]->nodes->datatarray().end(), mesh._nodes->distribution[t]);
+				auto end = std::lower_bound(mesh._regions[r]->nodes->datatarray().begin(), mesh._regions[r]->nodes->datatarray().end(), mesh._nodes->distribution[t + 1]);
+				for (auto i = begin; i != end; ++i) {
+					regionNodeMask[*i * regionsBitMaskSize + maskOffset] |= 1 << r;
+				}
+			}
+		}
+	}
 
 	nodesElemsDistribution.front().push_back(0);
 	#pragma omp parallel for
@@ -719,6 +739,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 						memcpy(sNodes[t][target].data() + sNodes[t][target].size() - (sizeof(Point) / sizeof(esglobal)), coordinates.data() + n, sizeof(Point));
 						sNodes[t][target].push_back(elems->size());
 						sNodes[t][target].insert(sNodes[t][target].end(), elems->begin(), elems->end());
+						sNodes[t][target].insert(sNodes[t][target].end(), regionNodeMask.begin() + n * regionsBitMaskSize, regionNodeMask.begin() + (n + 1) * regionsBitMaskSize);
 						last[target] = true;
 					}
 					if (!last.back() && partition[it - eIDs.begin()] == environment->MPIrank) {
@@ -729,6 +750,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 						if (nodesElemsDistribution[t].size() > 1) {
 							nodesElemsDistribution[t].back() += *(nodesElemsDistribution[t].end() - 2);
 						}
+						nodesRegions[t].insert(nodesRegions[t].end(), regionNodeMask.begin() + n * regionsBitMaskSize, regionNodeMask.begin() + (n + 1) * regionsBitMaskSize);
 						last.back() = true;
 					}
 				}
@@ -811,9 +833,12 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 					if (nodesElemsDistribution[t].size() > 1) {
 						nodesElemsDistribution[t].back() += *(nodesElemsDistribution[t].end() - 2);
 					}
+					n += regionsBitMaskSize;
+					nodesRegions[t].insert(nodesRegions[t].end(), rNodes[i].begin() + n * regionsBitMaskSize, rNodes[i].begin() + (n + 1) * regionsBitMaskSize);
 				} else {
 					n += 1 + sizeof(Point) / sizeof(esglobal); // id, Point
 					n += rNodes[i][n]; // elems
+					n += regionsBitMaskSize; // regions
 				}
 			}
 		}
@@ -837,6 +862,11 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	elements->distribution = elements->IDs->datatarray().distribution();
 
 	// Step 5: Balance node data to threads
+	std::vector<size_t> nodeDistribution(threads);
+	for (size_t t = 1; t < threads; t++) {
+		nodeDistribution[t] = nodeDistribution[t - 1] + nodesIDs[t - 1].size();
+	}
+
 	serializededata<eslocal, esglobal>::balance(1, nodesIDs);
 	serializededata<eslocal, Point>::balance(1, nodesCoordinates);
 	serializededata<eslocal, esglobal>::balance(nodesElemsDistribution, nodesElemsData);
@@ -846,6 +876,25 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	nodes->elems = new serializededata<eslocal, esglobal>(nodesElemsDistribution, nodesElemsData);
 	nodes->size = nodes->IDs->datatarray().size();
 	nodes->distribution = nodes->IDs->datatarray().distribution();
+
+	for (size_t r = 0; r < mesh._regions.size(); r++) {
+		int maskOffset = r / (8 * sizeof(int));
+		if (mesh._regions[r]->etype == TFlags::ELEVEL::NODE) {
+			delete mesh._regions[r]->nodes;
+			std::vector<std::vector<eslocal> > regionnodes(threads);
+
+			#pragma omp parallel for
+			for (size_t t = 0; t < threads; t++) {
+				for (size_t i = 0; i < nodesRegions[t].size(); i += regionsBitMaskSize) {
+					if (nodesRegions[t][i + maskOffset] & (1 << r)) {
+						regionnodes[t].push_back(nodeDistribution[t] + i / regionsBitMaskSize);
+					}
+				}
+			}
+			mesh._regions[r]->nodes = new serializededata<eslocal, eslocal>(1, regionnodes);
+			std::sort(mesh._regions[r]->nodes->datatarray().begin(), mesh._regions[r]->nodes->datatarray().end());
+		}
+	}
 
 	// Step 6: Re-index elements
 	// Elements IDs are always kept increasing
