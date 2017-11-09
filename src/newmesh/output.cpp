@@ -304,7 +304,7 @@ void NewOutput::VTKLegacy(const std::string &name, ElementStore *nodes, DomainSt
 	int interval = 0;
 	for (eslocal d = 0; d < domains->size; d++) {
 		for (size_t i = 0; i < domains->nodesIntervals[d].size(); i++) {
-			if (domains->nodesIntervals[d][i].offset == 0) {
+			if (domains->nodesIntervals[d][i].localOffset == 0) {
 				for (eslocal n = domains->nodesIntervals[d][i].begin; n < domains->nodesIntervals[d][i].end; n++) {
 					os << interval << "\n";
 				}
@@ -356,7 +356,7 @@ void NewOutput::VTKLegacy(const std::string &name, ElementStore *nodes, RegionSt
 	int interval = 0;
 	for (eslocal d = 0; d < (eslocal)region->nodesIntervals.size(); d++) {
 		for (size_t i = 0; i < region->nodesIntervals[d].size(); i++) {
-			if (region->nodesIntervals[d][i].offset == 0) {
+			if (region->nodesIntervals[d][i].localOffset == 0) {
 				for (eslocal n = region->nodesIntervals[d][i].begin; n < region->nodesIntervals[d][i].end; n++) {
 					os << interval << "\n";
 				}

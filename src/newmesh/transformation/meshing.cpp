@@ -298,10 +298,13 @@ void Transformation::arrangeNodes(NewMesh &mesh)
 			for (size_t i = 0; i < nintervals.size(); i++) {
 				if (std::binary_search(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), mesh._domains->offset + d)) {
 					mesh._domains->nodesIntervals[d].push_back(nintervals[i]);
-					mesh._domains->nodesIntervals[d].back().offset =
+					mesh._domains->nodesIntervals[d].back().globalOffset =
 							std::lower_bound(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), mesh._domains->offset + d) - nintervals[i].neighbors.begin();
+					mesh._domains->nodesIntervals[d].back().localOffset =
+							std::lower_bound(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), mesh._domains->offset) - nintervals[i].neighbors.begin();
+					mesh._domains->nodesIntervals[d].back().localOffset = mesh._domains->nodesIntervals[d].back().globalOffset - mesh._domains->nodesIntervals[d].back().localOffset;
 					if (nintervals[i].neighbors.front() == -1) {
-						--mesh._domains->nodesIntervals[d].back().offset;
+						--mesh._domains->nodesIntervals[d].back().globalOffset;
 					}
 				}
 			}
