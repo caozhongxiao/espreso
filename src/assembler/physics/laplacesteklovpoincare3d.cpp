@@ -9,9 +9,9 @@
 #include "../step.h"
 #include "../solution.h"
 
-#include "../../mesh/structures/mesh.h"
-#include "../../mesh/structures/coordinates.h"
-#include "../../mesh/structures/elementtypes.h"
+#include "../../old/mesh/structures/mesh.h"
+#include "../../old/mesh/structures/coordinates.h"
+#include "../../old/mesh/structures/elementtypes.h"
 
 #include "../../solver/generic/SparseMatrix.h"
 

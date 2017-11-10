@@ -17,7 +17,7 @@
 #include "../../newmesh/newmesh.h"
 #include "../../input/loader.h"
 #include "../../config/ecf/ecf.h"
-#include "../../mesh/structures/mesh.h"
+#include "../../old/mesh/structures/mesh.h"
 #include "../../solver/generic/FETISolver.h"
 
 #include "../../output/resultstorelist.h"

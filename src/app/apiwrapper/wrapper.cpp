@@ -14,7 +14,7 @@
 #include "../../config/ecf/ecf.h"
 #include "../../input/api/api.h"
 
-#include "../../mesh/structures/mesh.h"
+#include "../../old/mesh/structures/mesh.h"
 #include "../../solver/generic/FETISolver.h"
 
 

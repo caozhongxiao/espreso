@@ -1,7 +1,7 @@
 
 #include "physics2d.h"
 
-#include "../../mesh/structures/mesh.h"
+#include "../../old/mesh/structures/mesh.h"
 #include "../constraints/equalityconstraints.h"
 
 using namespace espreso;

@@ -8,7 +8,7 @@
 #include "blocksetting.h"
 #include "../selections/blockborder.h"
 
-#include "../../../mesh/elements/element.h"
+#include "../../../old/mesh/elements/element.h"
 
 namespace espreso {
 namespace input {

@@ -3,9 +3,9 @@
 
 #include "../instance.h"
 
-#include "../../mesh/structures/mesh.h"
-#include "../../mesh/structures/coordinates.h"
-#include "../../mesh/elements/plane/planeelement.h"
+#include "../../old/mesh/structures/mesh.h"
+#include "../../old/mesh/structures/coordinates.h"
+#include "../../old/mesh/elements/plane/planeelement.h"
 #include "boundarybased3d.h"
 
 using namespace espreso;

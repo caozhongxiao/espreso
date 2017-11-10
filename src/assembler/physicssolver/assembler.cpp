@@ -12,7 +12,7 @@
 #include "../../basis/logging/timeeval.h"
 #include "../../basis/logging/logging.h"
 #include "../../basis/utilities/utils.h"
-#include "../../mesh/structures/elementtypes.h"
+#include "../../old/mesh/structures/elementtypes.h"
 
 #include "mpi.h"
 

@@ -2,9 +2,9 @@
 #include "monitoring.h"
 
 #include "../../config/ecf/output.h"
-#include "../../mesh/settings/property.h"
-#include "../../mesh/structures/mesh.h"
-#include "../../mesh/structures/region.h"
+#include "../../old/mesh/settings/property.h"
+#include "../../old/mesh/structures/mesh.h"
+#include "../../old/mesh/structures/region.h"
 #include "../../assembler/step.h"
 #include "../../assembler/solution.h"
 

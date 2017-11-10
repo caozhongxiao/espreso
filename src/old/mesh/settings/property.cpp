@@ -1,7 +1,7 @@
 
 #include "property.h"
-#include "../../basis/utilities/parser.h"
-#include "../../basis/logging/logging.h"
+#include "../../../basis/utilities/parser.h"
+#include "../../../basis/logging/logging.h"
 
 namespace espreso {
 

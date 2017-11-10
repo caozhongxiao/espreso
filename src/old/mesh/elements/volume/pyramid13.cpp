@@ -6,7 +6,7 @@
 #include "../line/line3.h"
 #include "../plane/triangle6.h"
 #include "../plane/square8.h"
-#include "../../../basis/matrices/denseMatrix.h"
+#include "../../../../basis/matrices/denseMatrix.h"
 
 using namespace espreso;
 

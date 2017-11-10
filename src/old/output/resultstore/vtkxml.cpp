@@ -7,7 +7,7 @@
 #include "../../config/ecf/output.h"
 #include "../../basis/logging/logging.h"
 #include "../../assembler/solution.h"
-#include "../../mesh/structures/elementtypes.h"
+#include "../../old/mesh/structures/elementtypes.h"
 #include "../regiondata.h"
 
 using namespace espreso;

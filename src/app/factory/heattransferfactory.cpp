@@ -13,7 +13,7 @@
 #include "../../assembler/instance.h"
 #include "../../assembler/physics/heattransfer2d.h"
 #include "../../assembler/physics/heattransfer3d.h"
-#include "../../mesh/structures/mesh.h"
+#include "../../old/mesh/structures/mesh.h"
 #include "../../basis/logging/logging.h"
 #include "heattransferfactory.h"
 

@@ -13,7 +13,7 @@
 #include "../../assembler/physicssolver/loadstep/steadystate.h"
 
 #include "../../assembler/instance.h"
-#include "../../mesh/structures/mesh.h"
+#include "../../old/mesh/structures/mesh.h"
 #include "../../basis/logging/logging.h"
 
 using namespace espreso;

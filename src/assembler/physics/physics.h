@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <vector>
 
-#include "../../mesh/settings/property.h"
+#include "../../old/mesh/settings/property.h"
 
 namespace espreso {
 

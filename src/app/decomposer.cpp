@@ -2,8 +2,8 @@
 #include "mpi.h"
 
 #include "../config/ecf/ecf.h"
-#include "../mesh/structures/mesh.h"
-#include "../mesh/structures/coordinates.h"
+#include "../old/mesh/structures/mesh.h"
+#include "../old/mesh/structures/coordinates.h"
 #include "../basis/logging/logging.hpp"
 
 // TODO: MESH

@@ -6,10 +6,10 @@
 
 #include <numeric>
 
-#include "../../basis/evaluators/evaluator.h"
-#include "../../basis/logging/logging.h"
-#include "../../basis/utilities/utils.h"
-#include "../../basis/utilities/communication.h"
+#include "../../../basis/evaluators/evaluator.h"
+#include "../../../basis/logging/logging.h"
+#include "../../../basis/utilities/utils.h"
+#include "../../../basis/utilities/communication.h"
 
 #include "../settings/property.h"
 #include "coordinates.h"
@@ -31,10 +31,10 @@
 #include "elementtypes.h"
 
 #include "metis.h"
-#include "../../config/valueholder.h"
-#include "../../config/ecf/environment.h"
-#include "../../config/ecf/material/material.h"
-#include "../../basis/utilities/parser.h"
+#include "../../../config/valueholder.h"
+#include "../../../config/ecf/environment.h"
+#include "../../../config/ecf/material/material.h"
+#include "../../../basis/utilities/parser.h"
 
 namespace espreso {
 

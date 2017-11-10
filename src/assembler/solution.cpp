@@ -1,10 +1,10 @@
 
 #include "solution.h"
 
-#include "../mesh/settings/property.h"
-#include "../mesh/structures/mesh.h"
-#include "../mesh/structures/coordinates.h"
-#include "../mesh/structures/elementtypes.h"
+#include "../old/mesh/settings/property.h"
+#include "../old/mesh/structures/mesh.h"
+#include "../old/mesh/structures/coordinates.h"
+#include "../old/mesh/structures/elementtypes.h"
 #include "../basis/logging/logging.h"
 
 using namespace espreso;

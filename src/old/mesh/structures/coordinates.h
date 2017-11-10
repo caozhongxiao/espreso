@@ -4,7 +4,7 @@
 #include <vector>
 #include <algorithm>
 
-#include "../../basis/point/point.h"
+#include "../../../basis/point/point.h"
 
 namespace espreso
 {

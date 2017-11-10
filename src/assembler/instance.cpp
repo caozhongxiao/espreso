@@ -1,7 +1,7 @@
 
 #include "instance.h"
 
-#include "../mesh/structures/mesh.h"
+#include "../old/mesh/structures/mesh.h"
 #include "../solver/generic/SparseMatrix.h"
 #include "solution.h"
 #include "../basis/logging/logging.h"

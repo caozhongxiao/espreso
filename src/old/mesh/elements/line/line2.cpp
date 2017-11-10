@@ -3,7 +3,7 @@
 #include <fstream>
 
 #include "line2.h"
-#include "../../../basis/matrices/denseMatrix.h"
+#include "../../../../basis/matrices/denseMatrix.h"
 
 using namespace espreso;
 

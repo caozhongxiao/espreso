@@ -4,7 +4,7 @@
 
 #include "triangle6.h"
 #include "../line/line3.h"
-#include "../../../basis/matrices/denseMatrix.h"
+#include "../../../../basis/matrices/denseMatrix.h"
 
 using namespace espreso;
 

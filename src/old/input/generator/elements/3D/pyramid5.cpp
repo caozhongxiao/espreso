@@ -1,8 +1,8 @@
 
 #include "pyramid5.h"
 
-#include "../../../../mesh/elements/plane/square4.h"
-#include "../../../../mesh/elements/volume/pyramid5.h"
+#include "../../../../old/mesh/elements/plane/square4.h"
+#include "../../../../old/mesh/elements/volume/pyramid5.h"
 
 using namespace espreso::input;
 

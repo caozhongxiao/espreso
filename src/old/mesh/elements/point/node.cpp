@@ -1,6 +1,6 @@
 
 #include "node.h"
-#include "../../../basis/matrices/denseMatrix.h"
+#include "../../../../basis/matrices/denseMatrix.h"
 
 using namespace espreso;
 

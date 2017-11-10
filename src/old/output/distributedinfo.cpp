@@ -5,12 +5,12 @@
 #include "../config/ecf/environment.h"
 
 #include "../basis/point/point.h"
-#include "../mesh/elements/element.h"
-#include "../mesh/settings/property.h"
-#include "../mesh/structures/coordinates.h"
-#include "../mesh/structures/mesh.h"
-#include "../mesh/structures/elementtypes.h"
-#include "../mesh/structures/region.h"
+#include "../old/mesh/elements/element.h"
+#include "../old/mesh/settings/property.h"
+#include "../old/mesh/structures/coordinates.h"
+#include "../old/mesh/structures/mesh.h"
+#include "../old/mesh/structures/elementtypes.h"
+#include "../old/mesh/structures/region.h"
 
 #include "../assembler/solution.h"
 #include "../assembler/step.h"

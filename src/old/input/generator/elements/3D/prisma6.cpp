@@ -2,8 +2,8 @@
 #include "prisma6.h"
 #include "hexahedron8.h"
 
-#include "../../../../mesh/elements/plane/triangle3.h"
-#include "../../../../mesh/elements/volume/prisma6.h"
+#include "../../../../old/mesh/elements/plane/triangle3.h"
+#include "../../../../old/mesh/elements/volume/prisma6.h"
 
 using namespace espreso::input;
 

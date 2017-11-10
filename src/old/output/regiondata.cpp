@@ -4,7 +4,7 @@
 #include "regiondata.h"
 
 #include "../assembler/solution.h"
-#include "../mesh/structures/elementtypes.h"
+#include "../old/mesh/structures/elementtypes.h"
 
 using namespace espreso;
 
