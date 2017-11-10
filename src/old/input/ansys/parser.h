@@ -7,7 +7,7 @@
 #include <fstream>
 
 #include "utils.h"
-#include "../../basis/utilities/parser.h"
+#include "../../../basis/utilities/parser.h"
 
 namespace espreso {
 

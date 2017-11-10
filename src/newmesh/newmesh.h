@@ -18,6 +18,7 @@ class NewMesh {
 	friend class Transformation;
 public:
 	NewMesh(Mesh &mesh);
+	void load();
 
 // protected:
 	ElementStore *_nodes, *_edges, *_faces, *_elems, *_halo;
@@ -31,6 +32,8 @@ public:
 	std::vector<int> _neighbours;
 
 	std::vector<NewElement*> _eclasses;
+
+	Mesh &mesh;
 };
 
 }

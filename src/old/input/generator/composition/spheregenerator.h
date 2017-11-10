@@ -29,7 +29,7 @@ struct SphereSettings {
 	bool uniformDecomposition;
 };
 
-class SphereGenerator: public Loader {
+class SphereGenerator: public OldLoader {
 
 public:
 	SphereGenerator(const SphereGeneratorConfiguration &configuration, Mesh &mesh, size_t index, size_t size);

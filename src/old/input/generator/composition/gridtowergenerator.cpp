@@ -20,7 +20,7 @@ void GridTowerGenerator::load(const GridTowerGeneratorConfiguration &configurati
 }
 
 GridTowerGenerator::GridTowerGenerator(const GridTowerGeneratorConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
-: Loader(mesh), _configuration(configuration), _gridGenerator(NULL), _gridPointsIDOffset(0), _index(index), _size(size)
+: OldLoader(mesh), _configuration(configuration), _gridGenerator(NULL), _gridPointsIDOffset(0), _index(index), _size(size)
 {
 	size_t gridIndex = 0, firstCluster = 0, lastCluster = 0;
 	Triple<esglobal> gridPointsOffset(0, 0, 0);

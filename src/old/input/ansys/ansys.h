@@ -1,8 +1,15 @@
 
-#ifndef INPUT_ESPRESO_ESPRESOBINARYFORMAT_H_
-#define INPUT_ESPRESO_ESPRESOBINARYFORMAT_H_
+#ifndef INPUT_ANSYS_ANSYS_H_
+#define INPUT_ANSYS_ANSYS_H_
+
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <vector>
 
 #include "../loader.h"
+#include "utils.h"
+#include "parser.h"
 
 namespace espreso {
 
@@ -10,14 +17,14 @@ struct InputConfiguration;
 
 namespace input {
 
-class ESPRESOBinaryFormat: public Loader {
+class AnsysWorkbench: public OldLoader {
 
 public:
 	static void load(const InputConfiguration &configuration, Mesh &mesh, int rank, int size);
 
 protected:
-	ESPRESOBinaryFormat(const InputConfiguration &configuration, Mesh &mesh, int rank, int size)
-	: Loader(mesh), _configuration(configuration), _rank(rank), _size(size) { };
+	AnsysWorkbench(const InputConfiguration &configuration, Mesh &mesh, int rank, int size)
+	: OldLoader(mesh), _workbench(configuration), _parser(mesh) { };
 
 	void points(Coordinates &coordinates);
 	void elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
@@ -32,14 +39,19 @@ protected:
 	void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges);
 	bool partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners);
 
+	void open();
+	void close();
+
 private:
-	const InputConfiguration &_configuration;
-	int _rank;
-	int _size;
+	const InputConfiguration &_workbench;
+	WorkbenchParser _parser;
 };
 
 }
 }
 
 
-#endif /* INPUT_ESPRESO_ESPRESOBINARYFORMAT_H_ */
+
+
+
+#endif /* INPUT_ANSYS_ANSYS_H_ */

@@ -111,6 +111,7 @@ def configure(ctx):
     ctx.recurse("src/mesh")
     ctx.recurse("src/newmesh")
     ctx.recurse("src/input")
+    ctx.recurse("src/old/input")
     ctx.recurse("src/solver")
     ctx.recurse("src/assembler")
 
@@ -160,6 +161,7 @@ def build(ctx):
     ctx.recurse("src/mesh")
     ctx.recurse("src/newmesh")
     ctx.recurse("src/input")
+    ctx.recurse("src/old/input")
     ctx.recurse("src/solver")
     ctx.recurse("src/assembler")
 

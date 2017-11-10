@@ -1,16 +1,16 @@
 
 #include "openfoam.h"
 
-#include "../../mesh/elements/plane/square4.h"
-#include "../../mesh/elements/plane/triangle3.h"
+#include "../../../mesh/elements/plane/square4.h"
+#include "../../../mesh/elements/plane/triangle3.h"
 
-#include "../../mesh/structures/mesh.h"
-#include "../../mesh/structures/elementtypes.h"
-#include "../../mesh/structures/coordinates.h"
-#include "../../mesh/structures/region.h"
+#include "../../../mesh/structures/mesh.h"
+#include "../../../mesh/structures/elementtypes.h"
+#include "../../../mesh/structures/coordinates.h"
+#include "../../../mesh/structures/region.h"
 
-#include "../../basis/logging/logging.h"
-#include "../../config/ecf/input/input.h"
+#include "../../../basis/logging/logging.h"
+#include "../../../config/ecf/input/input.h"
 
 using namespace espreso::input;
 
@@ -23,7 +23,7 @@ void OpenFOAM::load(const InputConfiguration &configuration, Mesh &mesh, int ran
 }
 
 OpenFOAM::OpenFOAM(const InputConfiguration &configuration, Mesh &mesh, int rank, int size) :
-		Loader(mesh), _configuration(configuration)
+		OldLoader(mesh), _configuration(configuration)
 {
 	_projectPath = _configuration.path;
 	solveParseError(computePolyMeshPath(rank, size));
@@ -55,7 +55,7 @@ ParseError* OpenFOAM::computePolyMeshPath(int rank, int size)
 			if (numberOfSubdomains != size) {
 				std::stringstream ss;
 				ss << "Task is decopmosed to " << numberOfSubdomains << " sub-domains. But there is " << size << " processes.";
-				return new ParseError(ss.str(), "Loader");
+				return new ParseError(ss.str(), "OldLoader");
 			}
 			std::stringstream ss;
 			ss << _projectPath << "/processor" << rank << "/constant/polyMesh/";
@@ -64,7 +64,7 @@ ParseError* OpenFOAM::computePolyMeshPath(int rank, int size)
 		}
 		std::stringstream ss;
 		ss << "There is no file: " << decomposePar << "; but there are " << size << " processes.";
-		return new ParseError(ss.str(), "Loader");
+		return new ParseError(ss.str(), "OldLoader");
 	}
 	_polyMeshPath = _projectPath + "/constant/polyMesh/";
 	return NULL;

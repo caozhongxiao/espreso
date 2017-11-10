@@ -52,9 +52,15 @@ using namespace espreso;
 NewMesh::NewMesh(Mesh &mesh)
 : _nodes(new ElementStore(_eclasses)), _edges(new ElementStore(_eclasses)), _faces(new ElementStore(_eclasses)), _elems(new ElementStore(_eclasses)), _halo(new ElementStore(_eclasses)),
   _domains(new DomainStore), _domainsBoundaries(new BoundaryStore()), _processBoundaries(new BoundaryStore()),
-  _neighbours(mesh.neighbours()),
-  _eclasses(environment->OMP_NUM_THREADS)
+  _eclasses(environment->OMP_NUM_THREADS),
+  mesh(mesh)
 {
+
+}
+
+void NewMesh::load()
+{
+	_neighbours = mesh.neighbours();
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	#pragma omp parallel for
@@ -225,22 +231,18 @@ NewMesh::NewMesh(Mesh &mesh)
 		}
 	}
 
-	Transformation::reclusterize(*this);
-	Transformation::partitiate(*this, 3, TFlags::SEPARATE::MATERIALS | TFlags::SEPARATE::ETYPES);
-	Transformation::computeProcessBoundaries(*this);
-	Transformation::computeDomainsBoundaries(*this); //, TFlags::ELEVEL::FACE | TFlags::ELEVEL::NODE);
+//	Transformation::reclusterize(*this);
+	Transformation::partitiate(*this, 1, TFlags::SEPARATE::MATERIALS | TFlags::SEPARATE::ETYPES);
+//	Transformation::computeProcessBoundaries(*this);
+//	Transformation::computeDomainsBoundaries(*this); //, TFlags::ELEVEL::FACE | TFlags::ELEVEL::NODE);
 
-	NewOutput::VTKLegacy("nodes", _nodes, _domains);
-
-	NewOutput::VTKLegacy("processBoundaries", _processBoundaries, _nodes, false);
-	NewOutput::VTKLegacy("domainsBoundaries", _domainsBoundaries, _nodes, true);
-
-	for (size_t r = 0; r < _regions.size(); ++r) {
-		NewOutput::VTKLegacy(_regions[r]->name, _nodes, _regions[r]);
-	}
-
-	MPI_Barrier(environment->MPICommunicator);
-	MPI_Finalize();
-	exit(0);
+//	NewOutput::VTKLegacy("nodes", _nodes, _domains);
+//
+//	NewOutput::VTKLegacy("processBoundaries", _processBoundaries, _nodes, false);
+//	NewOutput::VTKLegacy("domainsBoundaries", _domainsBoundaries, _nodes, true);
+//
+//	for (size_t r = 0; r < _regions.size(); ++r) {
+//		NewOutput::VTKLegacy(_regions[r]->name, _nodes, _regions[r]);
+//	}
 }
 

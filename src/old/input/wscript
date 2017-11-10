@@ -1,0 +1,17 @@
+
+def configure(ctx):
+    ctx.recurse("espreso")
+    ctx.recurse("ansys")
+    ctx.recurse("generator")
+    ctx.recurse("openfoam")
+
+def build(ctx):
+    ctx.recurse("espreso")
+    ctx.recurse("ansys")
+    ctx.recurse("generator")
+    ctx.recurse("openfoam")
+
+    ctx.objects(
+        source = ctx.path.ant_glob('*.cpp'),
+        target = "oldloader"
+    )

@@ -13,8 +13,9 @@
 #include "../../assembler/physics/physics.h"
 #include "../../assembler/step.h"
 #include "../../assembler/instance.h"
-#include "../../input/loader.h"
 
+#include "../../newmesh/newmesh.h"
+#include "../../input/loader.h"
 #include "../../config/ecf/ecf.h"
 #include "../../mesh/structures/mesh.h"
 #include "../../solver/generic/FETISolver.h"
@@ -57,7 +58,8 @@ void ESPRESO::run(int *argc, char ***argv)
 Factory::Factory(const ECFConfiguration &configuration, Mesh &mesh, ResultStoreList &store)
 : _mesh(&mesh), _store(&store), _loader(NULL)
 {
-	input::Loader::load(configuration, *_mesh, configuration.environment.MPIrank, configuration.environment.MPIsize);
+	NewMesh nmesh(mesh);
+	Loader::load(configuration, nmesh, configuration.environment.MPIrank, configuration.environment.MPIsize);
 
 	// LOAD PHYSICS
 	switch (configuration.physics) {

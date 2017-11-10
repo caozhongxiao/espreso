@@ -10,7 +10,7 @@ struct GridTowerGeneratorConfiguration;
 
 namespace input {
 
-class GridTowerGenerator: public Loader {
+class GridTowerGenerator: public OldLoader {
 
 public:
 	GridTowerGenerator(const GridTowerGeneratorConfiguration &configuration, Mesh &mesh, size_t index, size_t size);

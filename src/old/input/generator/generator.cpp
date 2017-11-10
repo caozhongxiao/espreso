@@ -1,8 +1,8 @@
 
 #include "generator.h"
 
-#include "../../config/ecf/input/generator.h"
-#include "../../basis/logging/logging.h"
+#include "../../../config/ecf/input/generator.h"
+#include "../../../basis/logging/logging.h"
 #include "composition/gridgenerator.h"
 #include "composition/gridtowergenerator.h"
 #include "composition/spheregenerator.h"

@@ -20,14 +20,14 @@ enum class Property;
 enum class ElementType;
 
 namespace input {
-class Loader;
+class OldLoader;
 }
 
 class Mesh
 {
 
 public:
-	friend class input::Loader;
+	friend class input::OldLoader;
 
 	Mesh();
 	virtual ~Mesh();

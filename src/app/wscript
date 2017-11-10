@@ -52,7 +52,7 @@ def build(ctx):
     ctx.program(
         source       = "espreso.cpp",
         target       = "espreso",
-        use          = "basis config wrappers mesh newmesh loader generator ansys_in espreso_in openfoam_in resultstore bem assembler factory solver",
+        use          = "basis config wrappers mesh newmesh loader oldloader generator ansys_in espreso_in openfoam_in resultstore bem assembler factory solver",
         install_path = ctx.ROOT + "/bin"
     )
 
@@ -66,14 +66,14 @@ def build(ctx):
     ctx.program(
         source       = "decomposer.cpp",
         target       = "decomposer",
-        use          = "basis config wrappers mesh newmesh loader generator ansys_in espreso_in openfoam_in datastore",
+        use          = "basis config wrappers mesh newmesh loader oldloader generator ansys_in espreso_in openfoam_in datastore",
         install_path = ctx.ROOT + "/bin"
     )
 
     ctx.program(
         source       = "apitest.cpp",
         target       = "apitest",
-        use          = "feti4i factory loader generator ansys_in espreso_in openfoam_in",
+        use          = "feti4i factory loader oldloader generator ansys_in espreso_in openfoam_in",
         install_path = ctx.ROOT + "/bin"
     )
 

@@ -545,7 +545,8 @@ void EqualityConstraints::insertCornersGluingToB0()
 		}
 	}
 
-	ESINFO(EXHAUSTIVE) << "Average number of lambdas in B0 is " << Info::averageValue(lambdas);
+	// TODO: MESH
+	// ESINFO(EXHAUSTIVE) << "Average number of lambdas in B0 is " << Info::averageValue(lambdas);
 }
 
 void EqualityConstraints::insertKernelsGluingToB0(const std::vector<SparseMatrix> &kernels)

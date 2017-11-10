@@ -31,7 +31,7 @@ struct GridSettings {
 	bool uniformDecomposition;
 };
 
-class GridGenerator: public Loader {
+class GridGenerator: public OldLoader {
 
 	friend class GridTowerGenerator;
 

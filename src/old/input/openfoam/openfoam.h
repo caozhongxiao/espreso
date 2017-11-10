@@ -17,7 +17,7 @@ struct InputConfiguration;
 
 namespace input {
 
-class OpenFOAM: public Loader {
+class OpenFOAM: public OldLoader {
 
 public:
 	static void load(const InputConfiguration &configuration, Mesh &mesh, int rank, int size);

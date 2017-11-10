@@ -51,7 +51,7 @@ void SphereGenerator::load(const SphereGeneratorConfiguration &configuration, Me
 }
 
 SphereGenerator::SphereGenerator(const SphereGeneratorConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
-: Loader(mesh), _configuration(configuration), _settings(configuration), _index(index), _size(size)
+: OldLoader(mesh), _configuration(configuration), _settings(configuration), _index(index), _size(size)
 {
 	if (size % 6 != 0) {
 		ESINFO(GLOBAL_ERROR) << "Number of MPI process should be 6 x clusters for sphere generator.";

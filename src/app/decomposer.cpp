@@ -4,11 +4,11 @@
 #include "../config/ecf/ecf.h"
 #include "../mesh/structures/mesh.h"
 #include "../mesh/structures/coordinates.h"
-#include "../input/loader.h"
 #include "../basis/logging/logging.hpp"
 
 // TODO: MESH
 // #include "../output/datastore/espresobinaryformat.h"
+// #include "../input/loader.h"
 
  using namespace espreso;
 
@@ -27,7 +27,8 @@ int main(int argc, char** argv)
 	}
 
 	Mesh mesh;
-	input::Loader::load(ecf, mesh, ecf.environment.MPIrank, ecf.environment.MPIsize);
+	// TODO: MESH
+	// input::Loader::load(ecf, mesh, ecf.environment.MPIrank, ecf.environment.MPIsize);
 	std::stringstream decomposition(ecf.decomposer.parts);
 	while (decomposition >> parts) {
 		std::stringstream path;

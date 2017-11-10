@@ -73,7 +73,7 @@ void GridGenerator::load(const GridGeneratorConfiguration &configuration, Mesh &
 }
 
 GridGenerator::GridGenerator(const GridGeneratorConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
-: Loader(mesh), _configuration(configuration), _settings(configuration), _index(index), _size(size), _body(0)
+: OldLoader(mesh), _configuration(configuration), _settings(configuration), _index(index), _size(size), _body(0)
 {
 	Triple<size_t> clusters = _settings.blocks * _settings.clusters;
 	std::string element;
