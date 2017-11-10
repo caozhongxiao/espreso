@@ -11,7 +11,7 @@ struct DomainStore;
 struct BoundaryStore;
 struct ElementStore;
 struct RegionStore;
-class NewElement;
+class Element;
 
 class NewMesh {
 
@@ -31,7 +31,7 @@ public:
 
 	std::vector<int> _neighbours;
 
-	std::vector<NewElement*> _eclasses;
+	std::vector<Element*> _eclasses;
 
 	OldMesh &mesh;
 };

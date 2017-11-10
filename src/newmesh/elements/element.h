@@ -10,7 +10,7 @@ namespace espreso {
 template <typename TEBoundaries, typename TEData> class serializededata;
 class ElementStore;
 
-struct NewElement {
+struct Element {
 
 	enum class TYPE: int {
 		POINT  = 0,
@@ -58,14 +58,14 @@ struct NewElement {
 	serializededata<int, int> *faces;
 	serializededata<int, int> *edges;
 
-	serializededata<int, NewElement*> *facepointers;
-	serializededata<int, NewElement*> *edgepointers;
+	serializededata<int, Element*> *facepointers;
+	serializededata<int, Element*> *edgepointers;
 
-	NewElement(TYPE type, CODE code, int coarseNodes, int nCommonFace, int nCommonEdge)
+	Element(TYPE type, CODE code, int coarseNodes, int nCommonFace, int nCommonEdge)
 	: type(type), code(code), coarseNodes(coarseNodes), nCommonFace(nCommonFace), nCommonEdge(nCommonEdge),
 	  faces(NULL), edges(NULL), facepointers(NULL), edgepointers(NULL) {}
 
-	NewElement()
+	Element()
 	: type(TYPE::POINT), code(CODE::POINT1), coarseNodes(1), nCommonFace(1), nCommonEdge(1),
 	  faces(NULL), edges(NULL), facepointers(NULL), edgepointers(NULL) {}
 };

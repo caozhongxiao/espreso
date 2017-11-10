@@ -2,7 +2,7 @@
 #include "transformations.h"
 
 #include "../newmesh.h"
-#include "../elements/newelement.h"
+#include "../elements/element.h"
 #include "../elements/elementstore.h"
 #include "../store/domainstore.h"
 #include "../store/boundarystore.h"
@@ -54,7 +54,7 @@ void Transformation::reclusterize(NewMesh &mesh)
 	for (size_t t = 0; t < threads; t++) {
 		auto dual = mesh._elems->dual->cbegin(t);
 		int material;
-		NewElement::TYPE type;
+		Element::TYPE type;
 
 		size_t edgeIndex = mesh._elems->dual->datatarray().distribution()[t];
 		for (size_t e = mesh._elems->distribution[t]; e < mesh._elems->distribution[t + 1]; ++e, ++dual) {
@@ -232,7 +232,7 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 		for (size_t t = 0; t < threads; t++) {
 			auto dual = mesh._elems->decomposedDual->cbegin(t);
 			int material;
-			NewElement::TYPE type;
+			Element::TYPE type;
 
 			size_t edgeIndex = mesh._elems->decomposedDual->datatarray().distribution()[t];
 			for (size_t e = mesh._elems->distribution[t]; e < mesh._elems->distribution[t + 1]; ++e, ++dual) {
@@ -309,7 +309,7 @@ void Transformation::partitiate(NewMesh &mesh, esglobal parts, TFlags::SEPARATE 
 			auto dual = mesh._elems->decomposedDual->cbegin(t);
 			size_t partindex;
 			int material;
-			NewElement::TYPE type;
+			Element::TYPE type;
 			std::vector<eslocal> foffset(nextID), noffset(nextID), edgeIndices(nextID);
 			for (int p = 0; p < nextID; p++) {
 				foffset[p] = foffsets[p][t];
@@ -632,7 +632,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	std::vector<std::vector<esglobal> >    elemsIDs(threads);
 	std::vector<std::vector<int> >         elemsBody(threads);
 	std::vector<std::vector<int> >         elemsMaterial(threads);
-	std::vector<std::vector<NewElement*> > elemsEpointer(threads);
+	std::vector<std::vector<Element*> > elemsEpointer(threads);
 	std::vector<std::vector<eslocal> >     elemsNodesDistribution(threads);
 	std::vector<std::vector<esglobal> >    elemsNodesData(threads);
 	std::vector<std::vector<int> >         elemsRegions(threads);
@@ -881,7 +881,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	elements->IDs = new serializededata<eslocal, esglobal>(1, elemsIDs);
 	elements->body = new serializededata<eslocal, int>(1, elemsBody);
 	elements->material = new serializededata<eslocal, int>(1, elemsMaterial);
-	elements->epointers = new serializededata<eslocal, NewElement*>(1, elemsEpointer);
+	elements->epointers = new serializededata<eslocal, Element*>(1, elemsEpointer);
 	elements->nodes = new serializededata<eslocal, esglobal>(elemsNodesDistribution, elemsNodesData); // global IDs
 
 	elements->size = elements->IDs->structures();

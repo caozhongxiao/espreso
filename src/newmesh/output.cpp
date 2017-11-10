@@ -2,7 +2,7 @@
 #include "output.h"
 
 #include "newmesh.h"
-#include "elements/newelement.h"
+#include "elements/element.h"
 #include "elements/elementstore.h"
 #include "store/boundarystore.h"
 #include "store/domainstore.h"
@@ -45,40 +45,40 @@ void NewOutput::VTKLegacy(const std::string &name, ElementStore *elements, Eleme
 	os << "CELL_TYPES " << elements->size << "\n";
 	for (auto e = elements->epointers->datatarray().begin(); e != elements->epointers->datatarray().end(); ++e) {
 		switch ((*e)->code) {
-		case NewElement::CODE::SQUARE4:
+		case Element::CODE::SQUARE4:
 			os << "9\n";
 			break;
-		case NewElement::CODE::SQUARE8:
+		case Element::CODE::SQUARE8:
 			os << "23\n";
 			break;
-		case NewElement::CODE::TRIANGLE3:
+		case Element::CODE::TRIANGLE3:
 			os << "5\n";
 			break;
-		case NewElement::CODE::TRIANGLE6:
+		case Element::CODE::TRIANGLE6:
 			os << "22\n";
 			break;
-		case NewElement::CODE::TETRA4:
+		case Element::CODE::TETRA4:
 			os << "10\n";
 			break;
-		case NewElement::CODE::TETRA10:
+		case Element::CODE::TETRA10:
 			os << "24\n";
 			break;
-		case NewElement::CODE::PYRAMID5:
+		case Element::CODE::PYRAMID5:
 			os << "14\n";
 			break;
-		case NewElement::CODE::PYRAMID13:
+		case Element::CODE::PYRAMID13:
 			os << "27\n";
 			break;
-		case NewElement::CODE::PRISMA6:
+		case Element::CODE::PRISMA6:
 			os << "13\n";
 			break;
-		case NewElement::CODE::PRISMA15:
+		case Element::CODE::PRISMA15:
 			os << "26\n";
 			break;
-		case NewElement::CODE::HEXA8:
+		case Element::CODE::HEXA8:
 			os << "12\n";
 			break;
-		case NewElement::CODE::HEXA20:
+		case Element::CODE::HEXA20:
 			os << "25\n";
 			break;
 		default:
@@ -168,40 +168,40 @@ void NewOutput::VTKLegacy(const std::string &name, BoundaryStore *elements, Elem
 	os << "CELL_TYPES " << cells << "\n";
 	for (auto e = elements->facepointers->datatarray().begin() + ebegin; e != elements->facepointers->datatarray().begin() + eend; ++e) {
 		switch ((*e)->code) {
-		case NewElement::CODE::SQUARE4:
+		case Element::CODE::SQUARE4:
 			os << "9\n";
 			break;
-		case NewElement::CODE::SQUARE8:
+		case Element::CODE::SQUARE8:
 			os << "23\n";
 			break;
-		case NewElement::CODE::TRIANGLE3:
+		case Element::CODE::TRIANGLE3:
 			os << "5\n";
 			break;
-		case NewElement::CODE::TRIANGLE6:
+		case Element::CODE::TRIANGLE6:
 			os << "22\n";
 			break;
-		case NewElement::CODE::TETRA4:
+		case Element::CODE::TETRA4:
 			os << "10\n";
 			break;
-		case NewElement::CODE::TETRA10:
+		case Element::CODE::TETRA10:
 			os << "24\n";
 			break;
-		case NewElement::CODE::PYRAMID5:
+		case Element::CODE::PYRAMID5:
 			os << "14\n";
 			break;
-		case NewElement::CODE::PYRAMID13:
+		case Element::CODE::PYRAMID13:
 			os << "27\n";
 			break;
-		case NewElement::CODE::PRISMA6:
+		case Element::CODE::PRISMA6:
 			os << "13\n";
 			break;
-		case NewElement::CODE::PRISMA15:
+		case Element::CODE::PRISMA15:
 			os << "26\n";
 			break;
-		case NewElement::CODE::HEXA8:
+		case Element::CODE::HEXA8:
 			os << "12\n";
 			break;
-		case NewElement::CODE::HEXA20:
+		case Element::CODE::HEXA20:
 			os << "25\n";
 			break;
 		default:

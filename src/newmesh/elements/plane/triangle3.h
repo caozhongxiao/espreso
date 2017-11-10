@@ -2,15 +2,15 @@
 #ifndef SRC_NEWMESH_ELEMENTS_PLANE_TRIANGLE3_H_
 #define SRC_NEWMESH_ELEMENTS_PLANE_TRIANGLE3_H_
 
-#include "../newelement.h"
+#include "../element.h"
 
 namespace espreso {
 
 struct Triangle3 {
 
-	static NewElement create()
+	static Element create()
 	{
-		return NewElement(NewElement::TYPE::PLANE, NewElement::CODE::TRIANGLE3, 3, 2, 1);
+		return Element(Element::TYPE::PLANE, Element::CODE::TRIANGLE3, 3, 2, 1);
 	}
 };
 

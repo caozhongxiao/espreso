@@ -65,8 +65,8 @@ void NewMesh::load()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		std::vector<NewElement> eclasses;
-		_eclasses[t] = new NewElement[static_cast<int>(NewElement::CODE::SIZE)];
+		std::vector<Element> eclasses;
+		_eclasses[t] = new Element[static_cast<int>(Element::CODE::SIZE)];
 
 		eclasses.push_back(Point1::create());
 
@@ -87,9 +87,9 @@ void NewMesh::load()
 		eclasses.push_back(Hexahedron8::create(t, _eclasses[t]));
 		eclasses.push_back(Hexahedron20::create());
 
-		std::sort(eclasses.begin(), eclasses.end(), [] (const NewElement &e1, const NewElement &e2) { return static_cast<int>(e1.code) < static_cast<int>(e2.code); });
+		std::sort(eclasses.begin(), eclasses.end(), [] (const Element &e1, const Element &e2) { return static_cast<int>(e1.code) < static_cast<int>(e2.code); });
 
-		memcpy(_eclasses[t], eclasses.data(), eclasses.size() * sizeof(NewElement));
+		memcpy(_eclasses[t], eclasses.data(), eclasses.size() * sizeof(Element));
 	}
 
 	// LOAD NODES
@@ -126,7 +126,7 @@ void NewMesh::load()
 	auto loadElements = [&] (ElementStore *store, const std::vector<OldElement*> &elements) {
 		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, elements.size());
 		std::vector<std::vector<eslocal> > boundaries(threads), indices(threads);
-		std::vector<std::vector<NewElement*> > epointers(threads);
+		std::vector<std::vector<Element*> > epointers(threads);
 
 		boundaries.front().push_back(0);
 		#pragma omp parallel for
@@ -134,23 +134,23 @@ void NewMesh::load()
 			size_t offset = 0;
 			for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 				switch (elements[e]->vtkCode()) {
-				case  3: epointers[t].push_back(&_eclasses[t][static_cast<int>(NewElement::CODE::LINE2)]); break;
-				case  4: epointers[t].push_back(&_eclasses[t][static_cast<int>(NewElement::CODE::LINE3)]); break;
+				case  3: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::LINE2)]); break;
+				case  4: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::LINE3)]); break;
 
-				case  5: epointers[t].push_back(&_eclasses[t][static_cast<int>(NewElement::CODE::TRIANGLE3)]); break;
-				case  9: epointers[t].push_back(&_eclasses[t][static_cast<int>(NewElement::CODE::SQUARE4)]); break;
-				case 22: epointers[t].push_back(&_eclasses[t][static_cast<int>(NewElement::CODE::TRIANGLE6)]); break;
-				case 23: epointers[t].push_back(&_eclasses[t][static_cast<int>(NewElement::CODE::SQUARE8)]); break;
+				case  5: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::TRIANGLE3)]); break;
+				case  9: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::SQUARE4)]); break;
+				case 22: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::TRIANGLE6)]); break;
+				case 23: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::SQUARE8)]); break;
 
-				case 10: epointers[t].push_back(&_eclasses[t][static_cast<int>(NewElement::CODE::TETRA4)]); break;
-				case 12: epointers[t].push_back(&_eclasses[t][static_cast<int>(NewElement::CODE::HEXA8)]); break;
-				case 13: epointers[t].push_back(&_eclasses[t][static_cast<int>(NewElement::CODE::PRISMA6)]); break;
-				case 14: epointers[t].push_back(&_eclasses[t][static_cast<int>(NewElement::CODE::PYRAMID5)]); break;
+				case 10: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::TETRA4)]); break;
+				case 12: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::HEXA8)]); break;
+				case 13: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::PRISMA6)]); break;
+				case 14: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::PYRAMID5)]); break;
 
-				case 24: epointers[t].push_back(&_eclasses[t][static_cast<int>(NewElement::CODE::TETRA10)]); break;
-				case 25: epointers[t].push_back(&_eclasses[t][static_cast<int>(NewElement::CODE::HEXA20)]); break;
-				case 26: epointers[t].push_back(&_eclasses[t][static_cast<int>(NewElement::CODE::PRISMA15)]); break;
-				case 27: epointers[t].push_back(&_eclasses[t][static_cast<int>(NewElement::CODE::PYRAMID13)]); break;
+				case 24: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::TETRA10)]); break;
+				case 25: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::HEXA20)]); break;
+				case 26: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::PRISMA15)]); break;
+				case 27: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::PYRAMID13)]); break;
 				}
 				boundaries[t].push_back(offset = offset + elements[e]->nodes());
 				for (size_t n = 0; n < elements[e]->nodes(); n++) {
@@ -163,7 +163,7 @@ void NewMesh::load()
 
 		store->size = elements.size();
 		store->distribution = distribution;
-		store->epointers = new serializededata<eslocal, NewElement*>(1, std::move(tarray<NewElement*>(epointers)));
+		store->epointers = new serializededata<eslocal, Element*>(1, std::move(tarray<Element*>(epointers)));
 		store->nodes = new serializededata<eslocal, eslocal>(std::move(tarray<eslocal>(boundaries)), std::move(tarray<eslocal>(indices)));
 	};
 

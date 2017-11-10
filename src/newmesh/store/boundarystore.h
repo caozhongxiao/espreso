@@ -10,7 +10,7 @@
 namespace espreso {
 
 template <typename TEBoundaries, typename TEData> class serializededata;
-struct NewElement;
+struct Element;
 
 struct BoundaryStore {
 
@@ -19,8 +19,8 @@ struct BoundaryStore {
 	serializededata<eslocal, eslocal>* edges;
 	serializededata<eslocal, eslocal>* nodes;
 
-	serializededata<eslocal, NewElement*>* facepointers;
-	serializededata<eslocal, NewElement*>* edgepointers;
+	serializededata<eslocal, Element*>* facepointers;
+	serializededata<eslocal, Element*>* edgepointers;
 
 	std::vector<EInterval> elemsIntervals;
 	std::vector<EInterval> facesIntervals;

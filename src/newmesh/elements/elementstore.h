@@ -10,7 +10,7 @@ namespace espreso {
 
 template <typename TEBoundaries, typename TEData> class serializededata;
 struct Point;
-struct NewElement;
+struct Element;
 
 struct ElementStore {
 
@@ -34,18 +34,18 @@ struct ElementStore {
 	serializededata<eslocal, Point>* coordinates;
 	serializededata<eslocal, int>* body;
 	serializededata<eslocal, int>* material;
-	serializededata<eslocal, NewElement*>* epointers;
+	serializededata<eslocal, Element*>* epointers;
 	serializededata<eslocal, eslocal>* domains;
 	serializededata<eslocal, int>* ranks;
 
 	serializededata<eslocal, esglobal>* dual;
 	serializededata<eslocal, eslocal>* decomposedDual;
 
-	ElementStore(std::vector<NewElement*> &eclasses);
+	ElementStore(std::vector<Element*> &eclasses);
 	~ElementStore();
 
 private:
-	std::vector<NewElement*> &_eclasses;
+	std::vector<Element*> &_eclasses;
 };
 
 }

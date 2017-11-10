@@ -6,11 +6,11 @@
 
 using namespace espreso;
 
-NewElement Tetrahedron4::fill(NewElement e, size_t thread, NewElement* begin)
+Element Tetrahedron4::fill(Element e, size_t thread, Element* begin)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<NewElement*> facepointers(4, begin + static_cast<int>(NewElement::CODE::TRIANGLE3));
+	std::vector<Element*> facepointers(4, begin + static_cast<int>(Element::CODE::TRIANGLE3));
 
 	std::vector<int> data = {
 		0, 1, 3,
@@ -20,7 +20,7 @@ NewElement Tetrahedron4::fill(NewElement e, size_t thread, NewElement* begin)
 	};
 
 	e.faces = new serializededata<int, int>(3, { thread, threads, data });
-	e.facepointers = new serializededata<int, NewElement*>(1, { thread, threads, facepointers });
+	e.facepointers = new serializededata<int, Element*>(1, { thread, threads, facepointers });
 
 	return e;
 }

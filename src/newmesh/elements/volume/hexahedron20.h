@@ -2,15 +2,15 @@
 #ifndef SRC_NEWMESH_ELEMENTS_VOLUME_HEXAHEDRON20_H_
 #define SRC_NEWMESH_ELEMENTS_VOLUME_HEXAHEDRON20_H_
 
-#include "../newelement.h"
+#include "../element.h"
 
 namespace espreso {
 
 struct Hexahedron20 {
 
-	static NewElement create()
+	static Element create()
 	{
-		return NewElement(NewElement::TYPE::VOLUME, NewElement::CODE::HEXA20, 20, 4, 3);
+		return Element(Element::TYPE::VOLUME, Element::CODE::HEXA20, 20, 4, 3);
 	}
 };
 

@@ -2,15 +2,15 @@
 #ifndef SRC_NEWMESH_ELEMENTS_PLANE_SQUARE8_H_
 #define SRC_NEWMESH_ELEMENTS_PLANE_SQUARE8_H_
 
-#include "../newelement.h"
+#include "../element.h"
 
 namespace espreso {
 
 struct Square8 {
 
-	static NewElement create()
+	static Element create()
 	{
-		return NewElement(NewElement::TYPE::PLANE, NewElement::CODE::SQUARE8, 8, 3, 2);
+		return Element(Element::TYPE::PLANE, Element::CODE::SQUARE8, 8, 3, 2);
 	}
 };
 

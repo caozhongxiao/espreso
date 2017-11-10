@@ -2,15 +2,15 @@
 #ifndef SRC_NEWMESH_ELEMENTS_LINE_LINE2_H_
 #define SRC_NEWMESH_ELEMENTS_LINE_LINE2_H_
 
-#include "../newelement.h"
+#include "../element.h"
 
 namespace espreso {
 
 struct Line2 {
 
-	static NewElement create()
+	static Element create()
 	{
-		return NewElement(NewElement::TYPE::LINE, NewElement::CODE::LINE2, 2, 1, 1);
+		return Element(Element::TYPE::LINE, Element::CODE::LINE2, 2, 1, 1);
 	}
 };
 

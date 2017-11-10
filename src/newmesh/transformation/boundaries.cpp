@@ -2,7 +2,7 @@
 #include "transformations.h"
 
 #include "../newmesh.h"
-#include "../elements/newelement.h"
+#include "../elements/element.h"
 #include "../elements/elementstore.h"
 #include "../store/domainstore.h"
 #include "../store/boundarystore.h"
@@ -28,7 +28,7 @@ void Transformation::computeBoundaries(NewMesh &mesh,
 		std::vector<std::vector<eslocal> >     *elementData,
 		std::vector<std::vector<eslocal> >     *faceDistribution,
 		std::vector<std::vector<eslocal> >     *faceData,
-		std::vector<std::vector<NewElement*> > *faceCodes,
+		std::vector<std::vector<Element*> > *faceCodes,
 		std::vector<std::vector<int> >         *faceNeighbors)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
@@ -173,7 +173,7 @@ void Transformation::distributeFacesToIntervals(NewMesh &mesh,
 		BoundaryStore*                         &boundaries,
 		std::vector<std::vector<eslocal> >     &faceDistribution,
 		std::vector<std::vector<eslocal> >     &faceData,
-		std::vector<std::vector<NewElement*> > &faceCodes,
+		std::vector<std::vector<Element*> > &faceCodes,
 		std::vector<std::vector<int> >         &faceNeighbors)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
@@ -183,7 +183,7 @@ void Transformation::distributeFacesToIntervals(NewMesh &mesh,
 	}
 	Esutils::threadDistributionToFullDistribution(faceDistribution);
 	boundaries->faces = new serializededata<eslocal, eslocal>(faceDistribution, faceData);
-	boundaries->facepointers = new serializededata<eslocal, NewElement*>(1, faceCodes);
+	boundaries->facepointers = new serializededata<eslocal, Element*>(1, faceCodes);
 	std::vector<eslocal> permutation(boundaries->faces->structures());
 	std::vector<size_t> fdistribution = tarray<eslocal>::distribute(threads, permutation.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
@@ -325,7 +325,7 @@ void Transformation::computeProcessBoundaries(NewMesh &mesh)
 	std::vector<esglobal> IDBoundaries = mesh._elems->gatherElementDistrubution();
 
 	std::vector<std::vector<eslocal> > faceDistribution(threads), faceData(threads);
-	std::vector<std::vector<NewElement*> > faceCodes(threads);
+	std::vector<std::vector<Element*> > faceCodes(threads);
 	std::vector<std::vector<int> > faceNeighbors(threads);
 
 	Transformation::computeBoundaries(mesh, mesh._elems->dual, 0, IDBoundaries, NULL, &faceDistribution, &faceData, &faceCodes, &faceNeighbors);
@@ -362,7 +362,7 @@ void Transformation::computeDomainsBoundaries(NewMesh &mesh)
 	std::vector<esglobal> IDBoundaries = mesh._domains->gatherDomainDistribution();
 
 	std::vector<std::vector<eslocal> > faceDistribution(threads), faceData(threads);
-	std::vector<std::vector<NewElement*> > faceCodes(threads);
+	std::vector<std::vector<Element*> > faceCodes(threads);
 	std::vector<std::vector<int> > faceNeighbors(threads);
 
 	Transformation::computeBoundaries(mesh, mesh._elems->decomposedDual, mesh._elems->IDs->datatarray().front(), IDBoundaries, NULL, &faceDistribution, &faceData, &faceCodes, &faceNeighbors);

@@ -2,7 +2,7 @@
 #include "transformations.h"
 
 #include "../newmesh.h"
-#include "../elements/newelement.h"
+#include "../elements/element.h"
 #include "../elements/elementstore.h"
 #include "../store/domainstore.h"
 
@@ -237,7 +237,7 @@ void Transformation::exchangeHaloElements(NewMesh &mesh)
 
 	std::vector<std::vector<esglobal> > hid(threads);
 	std::vector<std::vector<int> > hbody(threads), hmaterial(threads);
-	std::vector<std::vector<NewElement*> > hcode(threads);
+	std::vector<std::vector<Element*> > hcode(threads);
 
 	for (size_t n = 0; n < rBuffer.size(); ++n) {
 		std::vector<size_t> distribution = tarray<esglobal>::distribute(threads, rBuffer[n].size());
@@ -255,12 +255,12 @@ void Transformation::exchangeHaloElements(NewMesh &mesh)
 	serializededata<eslocal, esglobal>::balance(1, hid);
 	serializededata<eslocal, eslocal>::balance(1, hbody);
 	serializededata<eslocal, eslocal>::balance(1, hmaterial);
-	serializededata<eslocal, NewElement*>::balance(1, hcode);
+	serializededata<eslocal, Element*>::balance(1, hcode);
 
 	mesh._halo->IDs = new serializededata<eslocal, esglobal>(1, hid);
 	mesh._halo->body = new serializededata<eslocal, eslocal>(1, hbody);
 	mesh._halo->material = new serializededata<eslocal, eslocal>(1, hmaterial);
-	mesh._halo->epointers = new serializededata<eslocal, NewElement*>(1, hcode);
+	mesh._halo->epointers = new serializededata<eslocal, Element*>(1, hcode);
 
 	mesh._halo->size = mesh._halo->IDs->datatarray().size();
 	mesh._halo->distribution = mesh._halo->IDs->datatarray().distribution();

@@ -2,15 +2,15 @@
 #ifndef SRC_NEWMESH_ELEMENTS_VOLUME_PRISMA6_H_
 #define SRC_NEWMESH_ELEMENTS_VOLUME_PRISMA6_H_
 
-#include "../newelement.h"
+#include "../element.h"
 
 namespace espreso {
 
 struct Prisma6 {
 
-	static NewElement create()
+	static Element create()
 	{
-		return NewElement(NewElement::TYPE::VOLUME, NewElement::CODE::PRISMA6, 6, 3, 2);
+		return Element(Element::TYPE::VOLUME, Element::CODE::PRISMA6, 6, 3, 2);
 	}
 };
 

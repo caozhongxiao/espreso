@@ -2,15 +2,15 @@
 #ifndef SRC_NEWMESH_ELEMENTS_VOLUME_PYRAMID13_H_
 #define SRC_NEWMESH_ELEMENTS_VOLUME_PYRAMID13_H_
 
-#include "../newelement.h"
+#include "../element.h"
 
 namespace espreso {
 
 struct Pyramid13 {
 
-	static NewElement create()
+	static Element create()
 	{
-		return NewElement(NewElement::TYPE::VOLUME, NewElement::CODE::PYRAMID13, 13, 4, 3);
+		return Element(Element::TYPE::VOLUME, Element::CODE::PYRAMID13, 13, 4, 3);
 	}
 };
 

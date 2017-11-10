@@ -1,6 +1,6 @@
 
 #include "elementstore.h"
-#include "newelement.h"
+#include "element.h"
 #include "../../config/ecf/environment.h"
 #include "../../basis/containers/serializededata.h"
 #include "../../basis/point/point.h"
@@ -14,7 +14,7 @@
 
 using namespace espreso;
 
-ElementStore::ElementStore(std::vector<NewElement*> &eclasses)
+ElementStore::ElementStore(std::vector<Element*> &eclasses)
 : size(0),
   distribution({0, 0}),
   IDs(NULL),

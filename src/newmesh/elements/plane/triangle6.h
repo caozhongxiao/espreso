@@ -2,15 +2,15 @@
 #ifndef SRC_NEWMESH_ELEMENTS_PLANE_TRIANGLE6_H_
 #define SRC_NEWMESH_ELEMENTS_PLANE_TRIANGLE6_H_
 
-#include "../newelement.h"
+#include "../element.h"
 
 namespace espreso {
 
 struct Triangle6 {
 
-	static NewElement create()
+	static Element create()
 	{
-		return NewElement(NewElement::TYPE::PLANE, NewElement::CODE::TRIANGLE6, 6, 3, 2);
+		return Element(Element::TYPE::PLANE, Element::CODE::TRIANGLE6, 6, 3, 2);
 	}
 };
 

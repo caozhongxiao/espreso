@@ -10,7 +10,7 @@
 namespace espreso {
 
 class NewMesh;
-class NewElement;
+class Element;
 class ElementStore;
 class BoundaryStore;
 class EInterval;
@@ -56,7 +56,7 @@ private:
 			std::vector<std::vector<eslocal> >     *elementData,
 			std::vector<std::vector<eslocal> >     *faceDistribution,
 			std::vector<std::vector<eslocal> >     *faceData,
-			std::vector<std::vector<NewElement*> > *faceCodes,
+			std::vector<std::vector<Element*> > *faceCodes,
 			std::vector<std::vector<int> >         *faceNeighbors);
 
 	static void distributeElementsToIntervals(NewMesh &mesh,
@@ -68,7 +68,7 @@ private:
 			BoundaryStore*                         &boundaries,
 			std::vector<std::vector<eslocal> >     &faceDistribution,
 			std::vector<std::vector<eslocal> >     &faceData,
-			std::vector<std::vector<NewElement*> > &faceCodes,
+			std::vector<std::vector<Element*> > &faceCodes,
 			std::vector<std::vector<int> >         &faceNeighbors);
 
 	static void distributeNodesToIntervals(NewMesh &mesh, BoundaryStore* &boundaries);
