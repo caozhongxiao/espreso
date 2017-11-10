@@ -10,7 +10,7 @@
 
 namespace espreso {
 
-class Mesh;
+class OldMesh;
 struct Region;
 struct Solution;
 struct Point;
@@ -31,8 +31,8 @@ public:
 		SEPARATE_MATERIALS = 1 << 2
 	};
 
-	MeshInfo(const Mesh *mesh, InfoMode mode): _mesh(mesh), _mode(mode), _region(NULL) {};
-	MeshInfo(const Mesh *mesh, const Region *region, InfoMode mode): _mesh(mesh), _mode(mode), _region(region) {};
+	MeshInfo(const OldMesh *mesh, InfoMode mode): _mesh(mesh), _mode(mode), _region(NULL) {};
+	MeshInfo(const OldMesh *mesh, const Region *region, InfoMode mode): _mesh(mesh), _mode(mode), _region(region) {};
 
 
 	size_t regions() const { return _regions.size(); }
@@ -60,7 +60,7 @@ public:
 	}
 
 protected:
-	const Mesh *_mesh;
+	const OldMesh *_mesh;
 	InfoMode _mode;
 
 	std::vector<RegionData> _regions;

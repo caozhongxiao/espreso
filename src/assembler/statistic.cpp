@@ -20,7 +20,7 @@
 using namespace espreso;
 
 
-Statistic::Statistic(ElementType eType, const Mesh &mesh, const std::vector<std::vector<double> > &data, const std::vector<Property> &properties)
+Statistic::Statistic(ElementType eType, const OldMesh &mesh, const std::vector<std::vector<double> > &data, const std::vector<Property> &properties)
 : _operation(Operation::AVERAGE),
   _eType(eType), _dataSize(properties.size()), _computed(false), _mesh(mesh), _data(data)
 {

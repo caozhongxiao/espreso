@@ -10,7 +10,7 @@ namespace espreso {
 
 class Element;
 class Region;
-class Mesh;
+class OldMesh;
 enum class Property;
 class Instance;
 struct Step;
@@ -20,7 +20,7 @@ struct EqualityConstraints
 {
 	EqualityConstraints(
 			Instance &instance,
-			const Mesh &mesh,
+			const OldMesh &mesh,
 			const std::vector<Element*> &gluedElements,
 			const std::vector<Element*> &gluedInterfaceElements,
 			const std::vector<Property> &gluedDOFs,
@@ -45,7 +45,7 @@ protected:
 	std::vector<esglobal> computeLambdasID(const Step &step, bool withRedundantMultiplier);
 
 	Instance &_instance;
-	const Mesh &_mesh;
+	const OldMesh &_mesh;
 	const std::vector<Element*> &_gluedElements;
 	const std::vector<Element*> &_gluedInterfaceElements;
 	const std::vector<Property> &_gluedDOFs;

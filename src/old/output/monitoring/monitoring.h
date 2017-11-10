@@ -8,7 +8,7 @@
 
 namespace espreso {
 
-class Mesh;
+class OldMesh;
 class Region;
 enum class Property;
 enum StatisticalData: int;
@@ -25,7 +25,7 @@ struct Monitor {
 class Monitoring: public Store {
 
 public:
-	Monitoring(const OutputConfiguration &output, const Mesh *mesh);
+	Monitoring(const OutputConfiguration &output, const OldMesh *mesh);
 
 	void updateMesh();
 
@@ -39,7 +39,7 @@ public:
 	static char delimiter;
 
 protected:
-	const Mesh *_mesh;
+	const OldMesh *_mesh;
 	std::ofstream _os;
 
 

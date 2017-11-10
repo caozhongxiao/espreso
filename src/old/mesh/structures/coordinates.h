@@ -23,7 +23,7 @@ struct G2L {
 
 struct Coordinates
 {
-	friend class Mesh;
+	friend class OldMesh;
 	friend std::ostream& operator<<(std::ostream& os, const Coordinates &c);
 
 public:

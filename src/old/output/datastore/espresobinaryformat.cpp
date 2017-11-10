@@ -30,12 +30,12 @@ void ESPRESOBinaryFormat::prepareDirectories(const std::string &path, size_t par
 	}
 }
 
-void ESPRESOBinaryFormat::store(const Mesh &mesh, const std::string &path)
+void ESPRESOBinaryFormat::store(const OldMesh &mesh, const std::string &path)
 {
 	ESPRESOBinaryFormat(mesh, path);
 }
 
-ESPRESOBinaryFormat::ESPRESOBinaryFormat(const Mesh &mesh, const std::string &path)
+ESPRESOBinaryFormat::ESPRESOBinaryFormat(const OldMesh &mesh, const std::string &path)
 : _mesh(mesh), _path(path)
 {
 	metafile();

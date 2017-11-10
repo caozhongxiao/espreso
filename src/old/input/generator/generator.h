@@ -7,13 +7,13 @@
 namespace espreso {
 
 struct InputGeneratorConfiguration;
-class Mesh;
+class OldMesh;
 
 namespace input {
 
 struct Generator {
 
-	static void generate(const InputGeneratorConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
+	static void generate(const InputGeneratorConfiguration &configuration, OldMesh &mesh, size_t index, size_t size);
 
 	static double precision;
 };

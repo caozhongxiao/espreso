@@ -9,7 +9,7 @@
 
 using namespace espreso::input;
 
-void AnsysWorkbench::load(const InputConfiguration &configuration, Mesh &mesh, int rank, int size)
+void AnsysWorkbench::load(const InputConfiguration &configuration, OldMesh &mesh, int rank, int size)
 {
 	ESINFO(OVERVIEW) << "Load mesh from Ansys/Workbench format from file " << configuration.path;
 	AnsysWorkbench workbench(configuration, mesh, rank, size);

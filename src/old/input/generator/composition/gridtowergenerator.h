@@ -13,10 +13,10 @@ namespace input {
 class GridTowerGenerator: public OldLoader {
 
 public:
-	GridTowerGenerator(const GridTowerGeneratorConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
+	GridTowerGenerator(const GridTowerGeneratorConfiguration &configuration, OldMesh &mesh, size_t index, size_t size);
 	virtual ~GridTowerGenerator();
 
-	static void load(const GridTowerGeneratorConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
+	static void load(const GridTowerGeneratorConfiguration &configuration, OldMesh &mesh, size_t index, size_t size);
 
 	virtual void points(Coordinates &coordinates);
 	virtual void elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);

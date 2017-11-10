@@ -11,8 +11,8 @@ class Element;
 
 struct CollectedInfo: public MeshInfo {
 
-	CollectedInfo(const Mesh *mesh, InfoMode mode = InfoMode::PREPARE);
-	CollectedInfo(const Mesh *mesh, const Region* region, InfoMode mode = InfoMode::PREPARE);
+	CollectedInfo(const OldMesh *mesh, InfoMode mode = InfoMode::PREPARE);
+	CollectedInfo(const OldMesh *mesh, const Region* region, InfoMode mode = InfoMode::PREPARE);
 
 	MeshInfo* deriveRegion(const Region *region) const;
 	MeshInfo* copyWithoutMesh() const;

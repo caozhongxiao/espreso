@@ -17,8 +17,8 @@ enum class ElementType;
 
 struct Solution {
 
-	Solution(const Mesh &mesh, const std::string &name, ElementType eType, const std::vector<Property> &properties, std::vector<std::vector<double> > &data);
-	Solution(const Mesh &mesh, const std::string &name, ElementType eType, const std::vector<Property> &properties);
+	Solution(const OldMesh &mesh, const std::string &name, ElementType eType, const std::vector<Property> &properties, std::vector<std::vector<double> > &data);
+	Solution(const OldMesh &mesh, const std::string &name, ElementType eType, const std::vector<Property> &properties);
 
 	void fill(double value);
 

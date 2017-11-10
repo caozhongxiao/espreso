@@ -25,7 +25,7 @@ using namespace espreso;
 
 size_t LaplaceSteklovPoincare3D::BEMOffset = -1;
 
-LaplaceSteklovPoincare3D::LaplaceSteklovPoincare3D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
+LaplaceSteklovPoincare3D::LaplaceSteklovPoincare3D(OldMesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
 : Physics("LAPLACE STEKLOV POINCARE 3D", mesh, instance, &configuration), HeatTransfer3D(mesh, instance, configuration, propertiesConfiguration)
 {
 #ifndef BEM4I

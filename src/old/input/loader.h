@@ -9,7 +9,7 @@ namespace espreso {
 
 struct ECFConfiguration;
 struct MaterialConfiguration;
-class Mesh;
+class OldMesh;
 class Coordinates;
 class Element;
 class Evaluator;
@@ -20,7 +20,7 @@ namespace input {
 class OldLoader {
 
 public:
-	static void load(const ECFConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
+	static void load(const ECFConfiguration &configuration, OldMesh &mesh, size_t index, size_t size);
 
 	void fill();
 
@@ -42,10 +42,10 @@ public:
 	virtual bool partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners) = 0;
 
 protected:
-	OldLoader(Mesh &mesh): mesh(mesh) {}
+	OldLoader(OldMesh &mesh): mesh(mesh) {}
 	virtual ~OldLoader() {};
 
-	Mesh &mesh;
+	OldMesh &mesh;
 };
 
 }

@@ -46,7 +46,7 @@ void ESPRESO::run(int *argc, char ***argv)
 	ECFConfiguration configuration(argc, argv);
 	ESINFO(OVERVIEW) << "Run ESPRESO on " << environment->MPIsize << " process(es).";
 
-	Mesh mesh;
+	OldMesh mesh;
 	ResultStoreList* solutionStore = ResultStoreList::createAsynchronizedStore(configuration.output);
 	if (ResultStoreList::isComputeNode()) {
 		Factory factory(configuration, mesh, *solutionStore);
@@ -55,7 +55,7 @@ void ESPRESO::run(int *argc, char ***argv)
 	ResultStoreList::destroyAsynchronizedStore();
 }
 
-Factory::Factory(const ECFConfiguration &configuration, Mesh &mesh, ResultStoreList &store)
+Factory::Factory(const ECFConfiguration &configuration, OldMesh &mesh, ResultStoreList &store)
 : _mesh(&mesh), _store(&store), _loader(NULL)
 {
 	NewMesh nmesh(mesh);

@@ -13,10 +13,10 @@ namespace input {
 class ESPRESOBinaryFormat: public OldLoader {
 
 public:
-	static void load(const InputConfiguration &configuration, Mesh &mesh, int rank, int size);
+	static void load(const InputConfiguration &configuration, OldMesh &mesh, int rank, int size);
 
 protected:
-	ESPRESOBinaryFormat(const InputConfiguration &configuration, Mesh &mesh, int rank, int size)
+	ESPRESOBinaryFormat(const InputConfiguration &configuration, OldMesh &mesh, int rank, int size)
 	: OldLoader(mesh), _configuration(configuration), _rank(rank), _size(size) { };
 
 	void points(Coordinates &coordinates);

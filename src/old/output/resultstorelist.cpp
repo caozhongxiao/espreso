@@ -17,7 +17,7 @@ using namespace espreso;
 ResultStoreList* ResultStoreList::_resultStoreList = NULL;
 async::Dispatcher* ResultStoreList::_dispatcher = NULL;
 
-ResultStoreList* ResultStoreList::createAsynchronizedStore(const OutputConfiguration &configuration, const Mesh *mesh)
+ResultStoreList* ResultStoreList::createAsynchronizedStore(const OutputConfiguration &configuration, const OldMesh *mesh)
 {
 	if (_resultStoreList != NULL) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: try to create multiple ASYNC instances.";

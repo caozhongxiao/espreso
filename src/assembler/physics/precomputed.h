@@ -17,7 +17,7 @@ struct Precomputed: public virtual Physics
 		SIZE       = 2
 	};
 
-	Precomputed(Mesh *mesh, Instance *instance, MatrixType type, double *rhs, size_t rhsSize);
+	Precomputed(OldMesh *mesh, Instance *instance, MatrixType type, double *rhs, size_t rhsSize);
 
 	std::vector<size_t> solutionsIndicesToStore() const;
 	std::vector<std::pair<ElementType, Property> > propertiesToStore() const;

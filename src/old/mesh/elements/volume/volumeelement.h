@@ -9,7 +9,7 @@ namespace espreso {
 class VolumeElement: public Element
 {
 
-	friend class Mesh;
+	friend class OldMesh;
 
 public:
 	Type type() const { return Type::VOLUME; }

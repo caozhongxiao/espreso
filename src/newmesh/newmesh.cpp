@@ -49,7 +49,7 @@
 using namespace espreso;
 
 
-NewMesh::NewMesh(Mesh &mesh)
+NewMesh::NewMesh(OldMesh &mesh)
 : _nodes(new ElementStore(_eclasses)), _edges(new ElementStore(_eclasses)), _faces(new ElementStore(_eclasses)), _elems(new ElementStore(_eclasses)), _halo(new ElementStore(_eclasses)),
   _domains(new DomainStore), _domainsBoundaries(new BoundaryStore()), _processBoundaries(new BoundaryStore()),
   _eclasses(environment->OMP_NUM_THREADS),

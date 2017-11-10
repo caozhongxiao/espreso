@@ -94,7 +94,7 @@ public:
 
 protected:
 	ECFConfiguration ecf;
-	Mesh mesh;
+	OldMesh mesh;
 	ResultStoreList store;
 	Factory factory;
 	Step step;

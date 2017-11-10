@@ -24,7 +24,7 @@ using namespace espreso;
 
 EqualityConstraints::EqualityConstraints(
 		Instance &instance,
-		const Mesh &mesh,
+		const OldMesh &mesh,
 		const std::vector<Element*> &gluedElements,
 		const std::vector<Element*> &gluedInterfaceElements,
 		const std::vector<Property> &gluedDOFs,
@@ -58,7 +58,7 @@ void EqualityConstraints::goThroughDirichlet(
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 
 			for (size_t dof = 0; dof < _gluedDOFs.size(); dof++) {
-				if (Mesh::commonRegion(fixedRegions[dof], _gluedElements[i]->regions())) {
+				if (OldMesh::commonRegion(fixedRegions[dof], _gluedElements[i]->regions())) {
 					if (!withRedundantMultiplier && _gluedElements[i]->clusters()[0] != environment->MPIrank) {
 						continue;
 					}
@@ -210,7 +210,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(const Step &step, bo
 
 			for (size_t dof = 0; dof < _gluedDOFs.size(); dof++) {
 				size_t n = _gluedElements[e]->numberOfGlobalDomainsWithDOF(_gluedDOFsMeshOffsets[dof]);
-				if (n > 1 && (!withRedundantMultiplier || !Mesh::commonRegion(skippedRegions[dof], _gluedElements[e]->regions()))) {
+				if (n > 1 && (!withRedundantMultiplier || !OldMesh::commonRegion(skippedRegions[dof], _gluedElements[e]->regions()))) {
 					if (_gluedElements[e]->clusters()[0] == environment->MPIrank) { // set lambda ID
 						if (withRedundantMultiplier) {
 							lambdasID[e * _gluedDOFs.size() + dof] = n * (n - 1) / 2;

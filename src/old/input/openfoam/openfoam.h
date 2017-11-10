@@ -20,11 +20,11 @@ namespace input {
 class OpenFOAM: public OldLoader {
 
 public:
-	static void load(const InputConfiguration &configuration, Mesh &mesh, int rank, int size);
+	static void load(const InputConfiguration &configuration, OldMesh &mesh, int rank, int size);
 	bool faceBased() const { return true; }
 
 protected:
-	OpenFOAM(const InputConfiguration &configuration, Mesh &mesh, int rank, int size);
+	OpenFOAM(const InputConfiguration &configuration, OldMesh &mesh, int rank, int size);
 
 	void points(Coordinates &coordinates);
 	void elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);

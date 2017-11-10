@@ -121,7 +121,7 @@ void Monitoring::updateMesh()
 	_os << "\n\n";
 }
 
-Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
+Monitoring::Monitoring(const OutputConfiguration &output, const OldMesh *mesh)
 : Store(output), _mesh(mesh)
 {
 

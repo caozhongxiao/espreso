@@ -13,13 +13,13 @@
 
 using namespace espreso::input;
 
-void GridTowerGenerator::load(const GridTowerGeneratorConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
+void GridTowerGenerator::load(const GridTowerGeneratorConfiguration &configuration, OldMesh &mesh, size_t index, size_t size)
 {
 	GridTowerGenerator gridtower(configuration, mesh, index, size);
 	gridtower.fill();
 }
 
-GridTowerGenerator::GridTowerGenerator(const GridTowerGeneratorConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
+GridTowerGenerator::GridTowerGenerator(const GridTowerGeneratorConfiguration &configuration, OldMesh &mesh, size_t index, size_t size)
 : OldLoader(mesh), _configuration(configuration), _gridGenerator(NULL), _gridPointsIDOffset(0), _index(index), _size(size)
 {
 	size_t gridIndex = 0, firstCluster = 0, lastCluster = 0;

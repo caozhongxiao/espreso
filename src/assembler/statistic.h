@@ -9,7 +9,7 @@
 
 namespace espreso {
 
-class Mesh;
+class OldMesh;
 class Region;
 enum class ElementType;
 enum class Property;
@@ -32,7 +32,7 @@ public:
 		AVERAGE
 	};
 
-	Statistic(ElementType eType, const Mesh &mesh, const std::vector<std::vector<double> > &data, const std::vector<Property> &properties);
+	Statistic(ElementType eType, const OldMesh &mesh, const std::vector<std::vector<double> > &data, const std::vector<Property> &properties);
 
 	void compute(const Step &step);
 	double get(const Region* region, size_t offset, StatisticalData statistics);
@@ -53,7 +53,7 @@ private:
 	bool _computed;
 	Step _step;
 
-	const Mesh &_mesh;
+	const OldMesh &_mesh;
 	const std::vector<std::vector<double> > &_data;
 	std::vector<Region*> _selection;
 };

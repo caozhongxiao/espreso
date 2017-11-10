@@ -15,14 +15,14 @@
 using namespace espreso::input;
 
 
-void OpenFOAM::load(const InputConfiguration &configuration, Mesh &mesh, int rank, int size)
+void OpenFOAM::load(const InputConfiguration &configuration, OldMesh &mesh, int rank, int size)
 {
 	ESINFO(OVERVIEW) << "Load mesh from OpenFOAM format from directory " << configuration.path;
 	OpenFOAM openfoam(configuration, mesh, rank, size);
 	openfoam.fill();
 }
 
-OpenFOAM::OpenFOAM(const InputConfiguration &configuration, Mesh &mesh, int rank, int size) :
+OpenFOAM::OpenFOAM(const InputConfiguration &configuration, OldMesh &mesh, int rank, int size) :
 		OldLoader(mesh), _configuration(configuration)
 {
 	_projectPath = _configuration.path;

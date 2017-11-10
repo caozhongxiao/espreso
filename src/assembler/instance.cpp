@@ -8,7 +8,7 @@
 
 using namespace espreso;
 
-Instance::Instance(const Mesh &mesh)
+Instance::Instance(const OldMesh &mesh)
 : domains(mesh.parts()),
   domainDOFCount(_domainDOFCount),
   properties(_properties),

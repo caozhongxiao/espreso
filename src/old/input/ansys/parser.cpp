@@ -14,7 +14,7 @@
 
 using namespace espreso::input;
 
-WorkbenchParser::WorkbenchParser(Mesh &mesh): bodyCounter(0), _mesh(mesh)
+WorkbenchParser::WorkbenchParser(OldMesh &mesh): bodyCounter(0), _mesh(mesh)
 {
 	_commands["/wb"] = WorkbenchCommands::WB;
 	_commands["nblock"] = WorkbenchCommands::NBLOCK;

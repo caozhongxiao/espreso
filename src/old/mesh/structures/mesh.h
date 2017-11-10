@@ -23,14 +23,14 @@ namespace input {
 class OldLoader;
 }
 
-class Mesh
+class OldMesh
 {
 
 public:
 	friend class input::OldLoader;
 
-	Mesh();
-	virtual ~Mesh();
+	OldMesh();
+	virtual ~OldMesh();
 
 	virtual void partitiate(size_t parts);
 	virtual void partitiateNoncontinuously(size_t parts, size_t noncontinuousParts);
@@ -109,7 +109,7 @@ public:
 	void computeEdgesDOFsCounters(const std::vector<Property> &DOFs);
 	void computeFacesDOFsCounters(const std::vector<Property> &DOFs);
 
-	void getSurface(Mesh &surface) const;
+	void getSurface(OldMesh &surface) const;
 
 	void synchronizeGlobalIndices();
 	void synchronizeNeighbours();
@@ -234,13 +234,13 @@ protected:
 	std::vector<Evaluator*> _evaluators;
 
 private:
-	Mesh(const Mesh &mesh) = delete;
-	Mesh& operator=(const Mesh &mesh) = delete;
+	OldMesh(const OldMesh &mesh) = delete;
+	OldMesh& operator=(const OldMesh &mesh) = delete;
 };
 
 namespace input { class API; }
 
-class APIMesh: public Mesh
+class APIMesh: public OldMesh
 {
 	friend class input::API;
 public:

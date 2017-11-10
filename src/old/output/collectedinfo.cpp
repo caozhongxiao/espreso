@@ -21,7 +21,7 @@
 
 using namespace espreso;
 
-CollectedInfo::CollectedInfo(const Mesh *mesh, InfoMode mode)
+CollectedInfo::CollectedInfo(const OldMesh *mesh, InfoMode mode)
 : MeshInfo(mesh, mode)
 {
 	if (_mode | InfoMode::PREPARE) {
@@ -29,7 +29,7 @@ CollectedInfo::CollectedInfo(const Mesh *mesh, InfoMode mode)
 	}
 }
 
-CollectedInfo::CollectedInfo(const Mesh *mesh, const Region* region, InfoMode mode)
+CollectedInfo::CollectedInfo(const OldMesh *mesh, const Region* region, InfoMode mode)
 : MeshInfo(mesh, region, mode)
 {
 	if (_mode | InfoMode::PREPARE) {

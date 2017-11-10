@@ -13,7 +13,7 @@ namespace espreso {
 
 enum class Property;
 struct MaterialConfiguration;
-class Mesh;
+class OldMesh;
 class Coordinates;
 class Region;
 class Evaluator;
@@ -54,7 +54,7 @@ enum ConditionElements {
 class WorkbenchParser {
 
 public:
-	WorkbenchParser(Mesh &mesh);
+	WorkbenchParser(OldMesh &mesh);
 
 	void open(std::string path);
 	void close()
@@ -100,7 +100,7 @@ protected:
 
 	int bodyCounter;
 	std::vector<int> eType;
-	Mesh &_mesh;
+	OldMesh &_mesh;
 
 	std::string _selectedRegion;
 	std::map<std::string, TableEvaluator*> _tables;

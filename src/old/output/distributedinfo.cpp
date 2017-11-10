@@ -19,7 +19,7 @@
 
 using namespace espreso;
 
-static std::vector<espreso::Point> computeDomainsCenters(const espreso::Mesh *mesh)
+static std::vector<espreso::Point> computeDomainsCenters(const espreso::OldMesh *mesh)
 {
 	std::vector<espreso::Point> domainsCenters(mesh->parts());
 	for (size_t p = 0; p < mesh->coordinates().parts(); p++) {
@@ -31,7 +31,7 @@ static std::vector<espreso::Point> computeDomainsCenters(const espreso::Mesh *me
 	return domainsCenters;
 }
 
-static espreso::Point computeClusterCenter(const espreso::Mesh *mesh)
+static espreso::Point computeClusterCenter(const espreso::OldMesh *mesh)
 {
 	espreso::Point clusterCenter;
 	for (size_t i = 0; i < mesh->coordinates().clusterSize(); i++) {
@@ -41,7 +41,7 @@ static espreso::Point computeClusterCenter(const espreso::Mesh *mesh)
 	return clusterCenter;
 }
 
-DistributedInfo::DistributedInfo(const Mesh *mesh, double domainShrinkRatio, double clusterShrinkRatio, InfoMode mode)
+DistributedInfo::DistributedInfo(const OldMesh *mesh, double domainShrinkRatio, double clusterShrinkRatio, InfoMode mode)
 : MeshInfo(mesh, mode), _domainShrinkRatio(domainShrinkRatio), _clusterShrinkRatio(clusterShrinkRatio)
 {
 	if (_mode & InfoMode::PREPARE) {
@@ -51,7 +51,7 @@ DistributedInfo::DistributedInfo(const Mesh *mesh, double domainShrinkRatio, dou
 	}
 }
 
-DistributedInfo::DistributedInfo(const Mesh *mesh, const Region* region, double domainShrinkRatio, double clusterShrinkRatio, InfoMode mode)
+DistributedInfo::DistributedInfo(const OldMesh *mesh, const Region* region, double domainShrinkRatio, double clusterShrinkRatio, InfoMode mode)
 : MeshInfo(mesh, region, mode), _domainShrinkRatio(domainShrinkRatio), _clusterShrinkRatio(clusterShrinkRatio)
 {
 	if (_mode & InfoMode::PREPARE) {

@@ -18,7 +18,7 @@
 
 using namespace espreso;
 
-StructuralMechanics3D::StructuralMechanics3D(Mesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
+StructuralMechanics3D::StructuralMechanics3D(OldMesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
 : Physics("STRUCTURAL MECHANICS 3D", mesh, instance, &configuration), StructuralMechanics(configuration, propertiesConfiguration)
 {
 	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, _mesh->nodes(), _mesh->faces(), pointDOFs(), pointDOFsOffsets());

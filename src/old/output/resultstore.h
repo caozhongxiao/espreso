@@ -13,7 +13,7 @@
 namespace espreso {
 
 class Element;
-class Mesh;
+class OldMesh;
 class Region;
 
 struct RegionData;
@@ -38,14 +38,14 @@ public:
 	virtual ~ResultStore();
 
 protected:
-	ResultStore(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode = MeshInfo::EMPTY);
+	ResultStore(const OutputConfiguration &output, const OldMesh *mesh, MeshInfo::InfoMode mode = MeshInfo::EMPTY);
 
 	virtual std::vector<std::string> store(const std::string &name, const Step &step, const MeshInfo *meshInfo);
 	virtual std::string store(const std::string &name, const RegionData &regionData) =0;
 	virtual std::string linkClusters(const std::string &root, const std::string &name, const RegionData &regionData) =0;
 	virtual void linkSteps(const std::string &name, const std::vector<std::pair<Step, std::vector<std::string> > > &steps) =0;
 
-	const Mesh *_mesh;
+	const OldMesh *_mesh;
 
 	MeshInfo::InfoMode _mode;
 	MeshInfo* _meshInfo;

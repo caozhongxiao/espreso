@@ -32,7 +32,7 @@
 
 using namespace espreso::input;
 
-void ESPRESOBinaryFormat::load(const InputConfiguration &configuration, Mesh &mesh, int rank, int size)
+void ESPRESOBinaryFormat::load(const InputConfiguration &configuration, OldMesh &mesh, int rank, int size)
 {
 	auto checkFile = [&] (int cluster, const std::string &file) {
 		std::stringstream ss;

@@ -9,19 +9,19 @@
 
 namespace espreso {
 
-class Mesh;
+class OldMesh;
 
 class AsyncStore : public ResultStore, private async::Module<AsyncStoreExecutor, OutputConfiguration, Param> {
 
 public:
-	AsyncStore(const OutputConfiguration &configuration, const Mesh *mesh, MeshInfo::InfoMode mode = MeshInfo::EMPTY)
+	AsyncStore(const OutputConfiguration &configuration, const OldMesh *mesh, MeshInfo::InfoMode mode = MeshInfo::EMPTY)
 		: ResultStore(configuration, mesh, mode), _finalized(false), _bufferSize(0), _headerStore(0L) {};
 	virtual ~AsyncStore() { delete _headerStore; };
 
 	/** Called by ASYNC on all ranks, needs to set at least the executor */
 	void setUp() { setExecutor(_executor); };
 
-	void init(const Mesh *mesh);
+	void init(const OldMesh *mesh);
 
 	virtual std::vector<std::string> store(const std::string &name, const Step &step, const MeshInfo *meshInfo);
 	virtual std::string store(const std::string &name, const RegionData &regionData);

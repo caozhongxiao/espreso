@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-class Mesh;
+class OldMesh;
 struct DomainStore;
 struct BoundaryStore;
 struct ElementStore;
@@ -17,7 +17,7 @@ class NewMesh {
 
 	friend class Transformation;
 public:
-	NewMesh(Mesh &mesh);
+	NewMesh(OldMesh &mesh);
 	void load();
 
 // protected:
@@ -33,7 +33,7 @@ public:
 
 	std::vector<NewElement*> _eclasses;
 
-	Mesh &mesh;
+	OldMesh &mesh;
 };
 
 }

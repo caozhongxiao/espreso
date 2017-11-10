@@ -11,7 +11,7 @@
 
 using namespace espreso;
 
-VTKLegacy::VTKLegacy(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode)
+VTKLegacy::VTKLegacy(const OutputConfiguration &output, const OldMesh *mesh, MeshInfo::InfoMode mode)
 : ResultStore(output, mesh, mode)
 {
 

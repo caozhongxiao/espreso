@@ -14,7 +14,7 @@
 
 using namespace espreso;
 
-void AsyncStore::init(const Mesh *mesh)
+void AsyncStore::init(const OldMesh *mesh)
 {
 	async::Module<AsyncStoreExecutor, OutputConfiguration, Param>::init();
 

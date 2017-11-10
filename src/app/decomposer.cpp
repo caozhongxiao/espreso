@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 		// ESPRESOBinaryFormat::prepareDirectories(path.str(), parts);
 	}
 
-	Mesh mesh;
+	OldMesh mesh;
 	// TODO: MESH
 	// input::Loader::load(ecf, mesh, ecf.environment.MPIrank, ecf.environment.MPIsize);
 	std::stringstream decomposition(ecf.decomposer.parts);

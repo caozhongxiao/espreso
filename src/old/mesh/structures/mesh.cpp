@@ -38,7 +38,7 @@
 
 namespace espreso {
 
-Mesh::Mesh(): _continuous(true), _elements(0)
+OldMesh::OldMesh(): _continuous(true), _elements(0)
 {
 	_coordinates = new Coordinates();
 	_steps = 1;
@@ -57,7 +57,7 @@ APIMesh::APIMesh(eslocal *l2g, size_t size)
 	_g2l = new std::vector<G2L>();
 }
 
-void Mesh::computeFixPoints(size_t number)
+void OldMesh::computeFixPoints(size_t number)
 {
 	if (_fixPoints.size() && _fixPoints[0].size() == number) {
 		return;
@@ -212,7 +212,7 @@ static std::vector<eslocal> continuousReorder(std::vector<Element*> &elements, s
 	return partPtrs;
 }
 
-void Mesh::partitiateNoncontinuously(size_t parts, size_t noncontinuousParts)
+void OldMesh::partitiateNoncontinuously(size_t parts, size_t noncontinuousParts)
 {
 	ESTEST(MANDATORY) << "Number of domains cannot be " << parts << (parts == 0 ? TEST_FAILED : TEST_PASSED);
 	_continuousPartId.clear();
@@ -292,7 +292,7 @@ void Mesh::partitiateNoncontinuously(size_t parts, size_t noncontinuousParts)
 	}
 }
 
-void Mesh::partitiate(size_t parts)
+void OldMesh::partitiate(size_t parts)
 {
 	ESTEST(MANDATORY) << "Number of domains cannot be " << parts << (parts == 0 ? TEST_FAILED : TEST_PASSED);
 	_continuousPartId.clear();
@@ -437,7 +437,7 @@ void APIMesh::partitiate(size_t parts)
 	mapCoordinatesToDomains();
 }
 
-std::vector<eslocal> Mesh::getPartition(const std::vector<Element*> &elements, size_t begin, size_t end, eslocal parts) const
+std::vector<eslocal> OldMesh::getPartition(const std::vector<Element*> &elements, size_t begin, size_t end, eslocal parts) const
 {
 	if (parts == 1) {
 		return std::vector<eslocal> (end - begin, 0);
@@ -450,7 +450,7 @@ std::vector<eslocal> Mesh::getPartition(const std::vector<Element*> &elements, s
 	return computePartition(metisElements, metisNodes, end - begin, nodeProjection.size(), nCommon, parts);
 }
 
-std::vector<eslocal> Mesh::getPartition(size_t begin, size_t end, eslocal parts) const
+std::vector<eslocal> OldMesh::getPartition(size_t begin, size_t end, eslocal parts) const
 {
 	if (parts == 1) {
 		return std::vector<eslocal> (end - begin, 0);
@@ -512,7 +512,7 @@ static eslocal computeCenter(std::vector<std::vector<eslocal> > &neighbours)
 	return cblas_isamax(nSize, x.data(), incr);
 }
 
-eslocal Mesh::getCentralNode(const std::vector<Element*> &elements, size_t begin, size_t end, const std::vector<eslocal> &ePartition, eslocal subpart) const
+eslocal OldMesh::getCentralNode(const std::vector<Element*> &elements, size_t begin, size_t end, const std::vector<eslocal> &ePartition, eslocal subpart) const
 {
 	std::vector<eslocal> nMap;
 	for (size_t e = begin; e < end; e++) {
@@ -551,7 +551,7 @@ eslocal Mesh::getCentralNode(const std::vector<Element*> &elements, size_t begin
 	return nMap[computeCenter(neighbours)];
 }
 
-eslocal Mesh::getCentralNode(eslocal begin, eslocal end, const std::vector<eslocal> &ePartition, eslocal part, eslocal subpart) const
+eslocal OldMesh::getCentralNode(eslocal begin, eslocal end, const std::vector<eslocal> &ePartition, eslocal part, eslocal subpart) const
 {
 	// Compute CSR format of symmetric adjacency matrix
 	////////////////////////////////////////////////////////////////////////////
@@ -572,7 +572,7 @@ eslocal Mesh::getCentralNode(eslocal begin, eslocal end, const std::vector<esloc
 	return _coordinates->clusterIndex(computeCenter(neighbours), part);
 }
 
-Mesh::~Mesh()
+OldMesh::~OldMesh()
 {
 	for (size_t i = 0; i < _elements.size(); i++) {
 		delete _elements[i];
@@ -632,7 +632,7 @@ APIMesh::~APIMesh()
 //	return false;
 //}
 
-void Mesh::getSurface(Mesh &surface) const
+void OldMesh::getSurface(OldMesh &surface) const
 {
 	ESINFO(ERROR) << "Not use getSurface method\n";
 //	// vector of faces in all parts
@@ -724,7 +724,7 @@ void Mesh::getSurface(Mesh &surface) const
 //	}
 }
 
-void Mesh::computeVolumeCorners(size_t number, bool onVertices, bool onEdges, bool onFaces)
+void OldMesh::computeVolumeCorners(size_t number, bool onVertices, bool onEdges, bool onFaces)
 {
 	if (parts() == 1 || (!onVertices && !onEdges && !onFaces)) {
 		return;
@@ -743,7 +743,7 @@ void Mesh::computeVolumeCorners(size_t number, bool onVertices, bool onEdges, bo
 	}
 }
 
-void Mesh::computePlaneCorners(size_t number, bool onVertices, bool onEdges)
+void OldMesh::computePlaneCorners(size_t number, bool onVertices, bool onEdges)
 {
 	if (parts() == 1 || (!onVertices && !onEdges)) {
 		return;
@@ -815,7 +815,7 @@ static std::vector<Element*> mergeElements(size_t threads, std::vector<std::vect
 	return result;
 }
 
-const std::vector<Property>& Mesh::propertyGroup(Property property) const
+const std::vector<Property>& OldMesh::propertyGroup(Property property) const
 {
 	auto it = _propertyGroups.find(property);
 	if (it == _propertyGroups.end()) {
@@ -824,14 +824,14 @@ const std::vector<Property>& Mesh::propertyGroup(Property property) const
 	return it->second;
 }
 
-void Mesh::addPropertyGroup(const std::vector<Property> &properties)
+void OldMesh::addPropertyGroup(const std::vector<Property> &properties)
 {
 	for (size_t i = 0; i < properties.size(); i++) {
 		_propertyGroups[properties[i]] = properties;
 	}
 }
 
-void Mesh::loadProperty(
+void OldMesh::loadProperty(
 		size_t loadStep,
 		const std::map<std::string, std::string> &regions,
 		const std::vector<std::string> &parameters,
@@ -1008,7 +1008,7 @@ void Mesh::loadProperty(
 	}
 }
 
-void Mesh::loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep)
+void OldMesh::loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep)
 {
 	loadProperty(loadStep, regions, parameters, properties, ElementType::ELEMENTS);
 	for (size_t i = 0; i < properties.size(); i++) {
@@ -1016,7 +1016,7 @@ void Mesh::loadProperty(const std::map<std::string, std::string> &regions, const
 	}
 }
 
-void Mesh::loadNodeProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep)
+void OldMesh::loadNodeProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep)
 {
 	loadProperty(loadStep, regions, parameters, properties, ElementType::NODES);
 	for (size_t i = 0; i < properties.size(); i++) {
@@ -1024,7 +1024,7 @@ void Mesh::loadNodeProperty(const std::map<std::string, std::string> &regions, c
 	}
 }
 
-void Mesh::loadFaceProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep)
+void OldMesh::loadFaceProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep)
 {
 	loadProperty(loadStep, regions, parameters, properties, ElementType::FACES);
 	for (size_t i = 0; i < properties.size(); i++) {
@@ -1033,7 +1033,7 @@ void Mesh::loadFaceProperty(const std::map<std::string, std::string> &regions, c
 }
 
 
-Region* Mesh::region(const std::string &name) const
+Region* OldMesh::region(const std::string &name) const
 {
 	auto it = std::find_if(_regions.begin(), _regions.end(), [&] (const Region *region) { return region->name.compare(name) == 0; });
 	if (it != _regions.end()) {
@@ -1043,7 +1043,7 @@ Region* Mesh::region(const std::string &name) const
 	return NULL;
 }
 
-void Mesh::addMonitoredRegion(Region* region) const
+void OldMesh::addMonitoredRegion(Region* region) const
 {
 	for (size_t r = 0; r < _monitoredRegions.size(); r++) {
 		if (_monitoredRegions[r] == region) {
@@ -1053,7 +1053,7 @@ void Mesh::addMonitoredRegion(Region* region) const
 	_monitoredRegions.push_back(region);
 }
 
-std::vector<std::vector<Region*> > Mesh::getRegionsWithProperties(const std::vector<Region*> &regions, size_t loadStep, const std::vector<Property> &properties)
+std::vector<std::vector<Region*> > OldMesh::getRegionsWithProperties(const std::vector<Region*> &regions, size_t loadStep, const std::vector<Property> &properties)
 {
 	std::vector<std::vector<Region*> > result(properties.size());
 	for (size_t r = 0; r < regions.size(); r++) {
@@ -1072,12 +1072,12 @@ std::vector<std::vector<Region*> > Mesh::getRegionsWithProperties(const std::vec
 	return result;
 }
 
-std::vector<std::vector<Region*> > Mesh::getRegionsWithProperties(size_t loadStep, const std::vector<Property> &properties) const
+std::vector<std::vector<Region*> > OldMesh::getRegionsWithProperties(size_t loadStep, const std::vector<Property> &properties) const
 {
 	return getRegionsWithProperties(_regions, loadStep, properties);
 }
 
-bool Mesh::commonRegion(const std::vector<Region*> &v1, const std::vector<Region*> &v2)
+bool OldMesh::commonRegion(const std::vector<Region*> &v1, const std::vector<Region*> &v2)
 {
 	for (size_t i = 0, j = 0; i < v1.size() && j < v2.size(); v1[i] < v2[j] ? i++ : j++) {
 		if (v1[i] == v2[j]) {
@@ -1087,7 +1087,7 @@ bool Mesh::commonRegion(const std::vector<Region*> &v1, const std::vector<Region
 	return false;
 }
 
-void Mesh::loadMaterials(const std::map<std::string, MaterialConfiguration> &materials, const std::map<std::string, std::string> &sets)
+void OldMesh::loadMaterials(const std::map<std::string, MaterialConfiguration> &materials, const std::map<std::string, std::string> &sets)
 {
 	size_t index = 0;
 	for (auto it = sets.begin(); it != sets.end(); ++it, index++) {
@@ -1113,7 +1113,7 @@ void Mesh::loadMaterials(const std::map<std::string, MaterialConfiguration> &mat
 	}
 }
 
-void Mesh::removeDuplicateRegions()
+void OldMesh::removeDuplicateRegions()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -1134,7 +1134,7 @@ void Mesh::removeDuplicateRegions()
 	remove(_nodes);
 }
 
-void Mesh::fillDomainsSettings()
+void OldMesh::fillDomainsSettings()
 {
 	_properties.clear();
 	_properties.resize(parts());
@@ -1189,12 +1189,12 @@ void Mesh::fillDomainsSettings()
 	}
 }
 
-bool Mesh::hasProperty(size_t domain, Property property, size_t loadStep) const
+bool OldMesh::hasProperty(size_t domain, Property property, size_t loadStep) const
 {
 	return loadStep < _properties[domain].size() && _properties[domain][loadStep].count(property);
 }
 
-bool Mesh::hasProperty(Property property, size_t loadStep) const
+bool OldMesh::hasProperty(Property property, size_t loadStep) const
 {
 	for (size_t r = 0; r < _regions.size(); r++) {
 		if (loadStep < _regions[r]->settings.size() && _regions[r]->settings[loadStep].find(property) != _regions[r]->settings[loadStep].end()) {
@@ -1204,7 +1204,7 @@ bool Mesh::hasProperty(Property property, size_t loadStep) const
 	return false;
 }
 
-bool Mesh::isPropertyTimeDependent(Property property, size_t loadStep) const
+bool OldMesh::isPropertyTimeDependent(Property property, size_t loadStep) const
 {
 	for (size_t r = 0; r < _regions.size(); r++) {
 		if (loadStep < _regions[r]->settings.size()) {
@@ -1217,7 +1217,7 @@ bool Mesh::isPropertyTimeDependent(Property property, size_t loadStep) const
 	return false;
 }
 
-bool Mesh::isPropertyTemperatureDependent(Property property, size_t loadStep) const
+bool OldMesh::isPropertyTemperatureDependent(Property property, size_t loadStep) const
 {
 	for (size_t r = 0; r < _regions.size(); r++) {
 		if (loadStep < _regions[r]->settings.size()) {
@@ -1230,17 +1230,17 @@ bool Mesh::isPropertyTemperatureDependent(Property property, size_t loadStep) co
 	return false;
 }
 
-bool Mesh::isAnyPropertyTimeDependent(const std::vector<Property> &properties, size_t loadStep) const
+bool OldMesh::isAnyPropertyTimeDependent(const std::vector<Property> &properties, size_t loadStep) const
 {
 	return std::any_of(properties.begin(), properties.end(), [&] (Property p) { return isPropertyTimeDependent(p, loadStep); });
 }
 
-bool Mesh::isAnyPropertyTemperatureDependent(const std::vector<Property> &properties, size_t loadStep) const
+bool OldMesh::isAnyPropertyTemperatureDependent(const std::vector<Property> &properties, size_t loadStep) const
 {
 	return std::any_of(properties.begin(), properties.end(), [&] (Property p) { return isPropertyTemperatureDependent(p, loadStep); });
 }
 
-void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* edge)> filter)
+void OldMesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* edge)> filter)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _elements.size());
@@ -1282,7 +1282,7 @@ void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> 
 	fillParentEdgesToNodes();
 }
 
-void Mesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* face)> filter)
+void OldMesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* face)> filter)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _elements.size());
@@ -1322,7 +1322,7 @@ void Mesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> 
 	fillParentFacesToNodes();
 }
 
-void Mesh::fillNodesFromCoordinates()
+void OldMesh::fillNodesFromCoordinates()
 {
 	_nodes.reserve(_coordinates->clusterSize());
 	for (size_t i = 0; i < _coordinates->clusterSize(); i++) {
@@ -1330,12 +1330,12 @@ void Mesh::fillNodesFromCoordinates()
 	}
 }
 
-void Mesh::computeElementsFromFaces()
+void OldMesh::computeElementsFromFaces()
 {
 	ESINFO(GLOBAL_ERROR) << "Implement computeElementFromFaces";
 }
 
-void Mesh::fillParentElementsToNodes()
+void OldMesh::fillParentElementsToNodes()
 {
 	#pragma omp parallel for
 	for  (size_t i = 0; i < _nodes.size(); i++) {
@@ -1375,7 +1375,7 @@ void APIMesh::fillParentElementsToDOFs(const std::vector<std::vector<eslocal> > 
 	}
 }
 
-void Mesh::fillParentFacesToNodes()
+void OldMesh::fillParentFacesToNodes()
 {
 	#pragma omp parallel for
 	for  (size_t i = 0; i < _nodes.size(); i++) {
@@ -1394,7 +1394,7 @@ void Mesh::fillParentFacesToNodes()
 	}
 }
 
-void Mesh::fillParentEdgesToNodes()
+void OldMesh::fillParentEdgesToNodes()
 {
 	#pragma omp parallel for
 	for  (size_t i = 0; i < _nodes.size(); i++) {
@@ -1413,7 +1413,7 @@ void Mesh::fillParentEdgesToNodes()
 	}
 }
 
-void Mesh::fillEdgesFromFaces(std::function<bool(const std::vector<Element*> &faces, const Element* edge)> filter)
+void OldMesh::fillEdgesFromFaces(std::function<bool(const std::vector<Element*> &faces, const Element* edge)> filter)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _faces.size());
@@ -1470,7 +1470,7 @@ static Element* parentElement(const std::vector<Element*> &nodes, const Element 
 	return intersection[0];
 }
 
-void Mesh::fillEdgesParents()
+void OldMesh::fillEdgesParents()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _edges.size());
@@ -1493,7 +1493,7 @@ void Mesh::fillEdgesParents()
 	}
 }
 
-void Mesh::fillFacesParents()
+void OldMesh::fillFacesParents()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _faces.size());
@@ -1516,13 +1516,13 @@ void Mesh::fillFacesParents()
 	}
 }
 
-void Mesh::computeFacesOfAllElements()
+void OldMesh::computeFacesOfAllElements()
 {
 	fillFacesFromElements([] (const std::vector<Element*> &nodes, const Element* face) { return true; });
 }
 
 
-void Mesh::computeFacesOnDomainsSurface()
+void OldMesh::computeFacesOnDomainsSurface()
 {
 	fillFacesFromElements([] (const std::vector<Element*> &nodes, const Element *face) {
 		std::vector<Element*> intersection(nodes[face->node(face->nodes() - 1)]->parentElements()); // it is better to start from end (from mid points)
@@ -1543,7 +1543,7 @@ void Mesh::computeFacesOnDomainsSurface()
 	});
 }
 
-void Mesh::computeFacesSharedByDomains()
+void OldMesh::computeFacesSharedByDomains()
 {
 	fillFacesFromElements([] (const std::vector<Element*> &nodes, const Element *face) {
 		std::vector<Element*> intersection(nodes[face->node(face->nodes() - 1)]->parentElements()); // it is better to start from end (from mid points)
@@ -1580,7 +1580,7 @@ void APIMesh::computeFacesSharedByDomains()
 	}
 }
 
-void Mesh::clearFacesWithoutSettings()
+void OldMesh::clearFacesWithoutSettings()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _faces.size());
@@ -1611,12 +1611,12 @@ void Mesh::clearFacesWithoutSettings()
 	_faces.resize(it);
 }
 
-void Mesh::computeEdgesOfAllElements()
+void OldMesh::computeEdgesOfAllElements()
 {
 	fillEdgesFromElements([] (const std::vector<Element*> &nodes, const Element* edge) { return true; });
 }
 
-void Mesh::computeEdgesSharedByDomains()
+void OldMesh::computeEdgesSharedByDomains()
 {
 	fillEdgesFromElements([] (const std::vector<Element*> &nodes, const Element *edge) {
 		std::vector<Element*> intersection(nodes[edge->node(edge->nodes() - 1)]->parentElements()); // it is better to start from end (from mid points)
@@ -1637,7 +1637,7 @@ void Mesh::computeEdgesSharedByDomains()
 	});
 }
 
-void Mesh::computeEdgesOnBordersOfFacesSharedByDomains()
+void OldMesh::computeEdgesOnBordersOfFacesSharedByDomains()
 {
 	fillEdgesFromFaces([] (const std::vector<Element*> &nodes, const Element* edge) {
 		std::vector<Element*> intersection(nodes[edge->node(edge->nodes() - 1)]->parentFaces()); // it is better to start from end (from mid points)
@@ -1664,7 +1664,7 @@ void Mesh::computeEdgesOnBordersOfFacesSharedByDomains()
 	});
 }
 
-void Mesh::clearEdgesWithoutSettings()
+void OldMesh::clearEdgesWithoutSettings()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _edges.size());
@@ -1695,7 +1695,7 @@ void Mesh::clearEdgesWithoutSettings()
 	_edges.resize(it);
 }
 
-void Mesh::computeCornersOnEdges(size_t number, bool onVertices, bool onEdges)
+void OldMesh::computeCornersOnEdges(size_t number, bool onVertices, bool onEdges)
 {
 	if (_edges.size() == 0) {
 		ESINFO(ERROR) << "There are no edges for computation of corners.";
@@ -1778,7 +1778,7 @@ void Mesh::computeCornersOnEdges(size_t number, bool onVertices, bool onEdges)
 	Esutils::removeDuplicity(_corners);
 }
 
-void Mesh::computeCornersOnFaces(size_t number, bool onVertices, bool onEdges, bool onFaces)
+void OldMesh::computeCornersOnFaces(size_t number, bool onVertices, bool onEdges, bool onFaces)
 {
 	ESINFO(GLOBAL_ERROR) << "Corners in faces are not implemented.";
 }
@@ -1796,7 +1796,7 @@ static void setCluster(Element* &element, std::vector<Element*> &nodes)
 	element->clusters() = intersection;
 }
 
-void Mesh::mapFacesToClusters()
+void OldMesh::mapFacesToClusters()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _faces.size());
@@ -1815,7 +1815,7 @@ void Mesh::mapFacesToClusters()
 	}
 }
 
-void Mesh::mapEdgesToClusters()
+void OldMesh::mapEdgesToClusters()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _edges.size());
@@ -1850,7 +1850,7 @@ static void assignDomains(std::vector<Element*> &elements)
 	}
 }
 
-void Mesh::mapElementsToDomains()
+void OldMesh::mapElementsToDomains()
 {
 	#pragma omp parallel for
 	for  (size_t p = 0; p < parts(); p++) {
@@ -1861,17 +1861,17 @@ void Mesh::mapElementsToDomains()
 	}
 }
 
-void Mesh::mapFacesToDomains()
+void OldMesh::mapFacesToDomains()
 {
 	assignDomains(_faces);
 }
 
-void Mesh::mapEdgesToDomains()
+void OldMesh::mapEdgesToDomains()
 {
 	assignDomains(_edges);
 }
 
-void Mesh::mapNodesToDomains()
+void OldMesh::mapNodesToDomains()
 {
 	assignDomains(_nodes);
 }
@@ -1938,7 +1938,7 @@ static void fillDOFsOffsets(std::vector<Property> &allDOFsOffsets, const std::ve
 	}
 }
 
-std::vector<size_t> Mesh::assignVariousDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets)
+std::vector<size_t> OldMesh::assignVariousDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets)
 {
 	auto findDOF = [&] (const std::vector<Property> &DOFs, size_t &added, std::vector<bool> &addDOF) {
 		for (size_t dof = 0; dof < DOFs.size(); dof++) {
@@ -2057,25 +2057,25 @@ static std::vector<size_t> fillUniformDOFs(
 	return sizes;
 }
 
-std::vector<size_t> Mesh::assignUniformDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets)
+std::vector<size_t> OldMesh::assignUniformDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets)
 {
 	fillDOFsOffsets(_nodesDOFsOffsets, DOFs, DOFsOffsets);
 	return fillUniformDOFs(_nodes, _DOFtoElement, parts(), _nodesDOFsOffsets.size() - DOFs.size(), DOFsOffsets, offsets);
 }
 
-std::vector<size_t> Mesh::assignUniformDOFsIndicesToEdges(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets)
+std::vector<size_t> OldMesh::assignUniformDOFsIndicesToEdges(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets)
 {
 	fillDOFsOffsets(_edgesDOFsOffsets, DOFs, DOFsOffsets);
 	return fillUniformDOFs(_edges, _DOFtoElement, parts(), 0, DOFsOffsets, offsets);
 }
 
-std::vector<size_t> Mesh::assignUniformDOFsIndicesToFaces(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets)
+std::vector<size_t> OldMesh::assignUniformDOFsIndicesToFaces(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets)
 {
 	fillDOFsOffsets(_facesDOFsOffsets, DOFs, DOFsOffsets);
 	return fillUniformDOFs(_faces, _DOFtoElement, parts(), 0, DOFsOffsets, offsets);
 }
 
-std::vector<size_t> Mesh::assignUniformDOFsIndicesToElements(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets)
+std::vector<size_t> OldMesh::assignUniformDOFsIndicesToElements(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets)
 {
 	fillDOFsOffsets(_elementsDOFsOffsets, DOFs, DOFsOffsets);
 	return fillUniformDOFs(_elements, _DOFtoElement, parts(), 0, DOFsOffsets, offsets);
@@ -2257,17 +2257,17 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 }
 
 
-void Mesh::computeNodesDOFsCounters(const std::vector<Property> &DOFs)
+void OldMesh::computeNodesDOFsCounters(const std::vector<Property> &DOFs)
 {
 	computeDOFsCounters(_nodes, DOFs, _neighbours, _coordinates->_globalIndex, _coordinates->_globalMapping);
 }
 
-void Mesh::computeEdgesDOFsCounters(const std::vector<Property> &DOFs)
+void OldMesh::computeEdgesDOFsCounters(const std::vector<Property> &DOFs)
 {
 	computeDOFsCounters(_edges, DOFs, _neighbours, _coordinates->_globalIndex, _coordinates->_globalMapping);
 }
 
-void Mesh::computeFacesDOFsCounters(const std::vector<Property> &DOFs)
+void OldMesh::computeFacesDOFsCounters(const std::vector<Property> &DOFs)
 {
 	computeDOFsCounters(_faces, DOFs, _neighbours, _coordinates->_globalIndex, _coordinates->_globalMapping);
 }
@@ -2277,7 +2277,7 @@ void APIMesh::computeDOFsDOFsCounters()
 	computeDOFsCounters(_DOFs, { Property::UNKNOWN }, _neighbours, _l2g, *_g2l);
 }
 
-void Mesh::mapCoordinatesToDomains()
+void OldMesh::mapCoordinatesToDomains()
 {
 	_coordinates->_clusterIndex.clear();
 	_coordinates->_clusterIndex.resize(parts());
@@ -2325,7 +2325,7 @@ struct __Point__ {
 	esglobal id;
 };
 
-void Mesh::synchronizeGlobalIndices()
+void OldMesh::synchronizeGlobalIndices()
 {
 	auto n2i = [ & ] (size_t neighbour) {
 		return std::lower_bound(_neighbours.begin(), _neighbours.end(), neighbour) - _neighbours.begin();
@@ -2394,7 +2394,7 @@ void Mesh::synchronizeGlobalIndices()
 	std::sort(_coordinates->_globalMapping.begin(), _coordinates->_globalMapping.end());
 }
 
-void Mesh::synchronizeNeighbours()
+void OldMesh::synchronizeNeighbours()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<std::vector<std::vector<int> > > sNeighbours(threads, std::vector<std::vector<int> >(environment->MPIsize));
@@ -2484,7 +2484,7 @@ void Mesh::synchronizeNeighbours()
 	}
 }
 
-void Mesh::synchronizeRegionOrder()
+void OldMesh::synchronizeRegionOrder()
 {
 	std::vector<Region*> regions(_regions.begin(), _regions.begin() + 2);
 	std::vector<char> name;
@@ -2496,7 +2496,7 @@ void Mesh::synchronizeRegionOrder()
 	_regions.swap(regions);
 }
 
-void Mesh::checkNeighbours()
+void OldMesh::checkNeighbours()
 {
 	ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "Checking whether neighbours are correct";
 	int nSize = _neighbours.size();
@@ -2560,7 +2560,7 @@ void Mesh::checkNeighbours()
 	}
 }
 
-void Mesh::storeNodeData(const std::string &name, std::function<void (std::ofstream &os, const Element* e)> store)
+void OldMesh::storeNodeData(const std::string &name, std::function<void (std::ofstream &os, const Element* e)> store)
 {
 	ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "Storing node data: '" << name << "'";
 	std::ofstream os(Logging::prepareFile(name));
@@ -2571,7 +2571,7 @@ void Mesh::storeNodeData(const std::string &name, std::function<void (std::ofstr
 	os.close();
 }
 
-void Mesh::storeRegions()
+void OldMesh::storeRegions()
 {
 	ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "Storing regions";
 	for (size_t r = 0; r < _regions.size(); r++) {
@@ -2583,7 +2583,7 @@ void Mesh::storeRegions()
 	}
 }
 
-void Mesh::checkRegions(const std::vector<Element*> &elements)
+void OldMesh::checkRegions(const std::vector<Element*> &elements)
 {
 	storeNodeData("clusters", [] (std::ofstream &os, const Element* e) { os << e->clusters(); });
 	storeNodeData("regions", [] (std::ofstream &os, const Element* e) {

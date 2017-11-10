@@ -29,7 +29,7 @@
 
 using namespace espreso;
 
-ResultStore::ResultStore(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode)
+ResultStore::ResultStore(const OutputConfiguration &output, const OldMesh *mesh, MeshInfo::InfoMode mode)
 : Store(output), _mesh(mesh), _meshInfo(NULL)
 {
 	if (_configuration.separate_bodies) {

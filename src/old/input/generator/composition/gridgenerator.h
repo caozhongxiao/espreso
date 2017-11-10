@@ -36,10 +36,10 @@ class GridGenerator: public OldLoader {
 	friend class GridTowerGenerator;
 
 public:
-	GridGenerator(const GridGeneratorConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
+	GridGenerator(const GridGeneratorConfiguration &configuration, OldMesh &mesh, size_t index, size_t size);
 	virtual ~GridGenerator();
 
-	static void load(const GridGeneratorConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
+	static void load(const GridGeneratorConfiguration &configuration, OldMesh &mesh, size_t index, size_t size);
 
 	virtual void points(Coordinates &coordinates) { points(coordinates, 0); }
 	virtual void points(Coordinates &coordinates, size_t globalIdOffset);

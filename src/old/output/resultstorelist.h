@@ -10,13 +10,13 @@ namespace async { class Dispatcher; }
 
 namespace espreso {
 
-class Mesh;
+class OldMesh;
 class OutputConfiguration;
 
 class ResultStoreList: public Store {
 
 public:
-	static ResultStoreList* createAsynchronizedStore(const OutputConfiguration &configuration, const Mesh *mesh);
+	static ResultStoreList* createAsynchronizedStore(const OutputConfiguration &configuration, const OldMesh *mesh);
 	static void destroyAsynchronizedStore();
 	static bool isStoreNode();
 	static bool isComputeNode();

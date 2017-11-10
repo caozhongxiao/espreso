@@ -20,10 +20,10 @@ namespace input {
 class AnsysWorkbench: public OldLoader {
 
 public:
-	static void load(const InputConfiguration &configuration, Mesh &mesh, int rank, int size);
+	static void load(const InputConfiguration &configuration, OldMesh &mesh, int rank, int size);
 
 protected:
-	AnsysWorkbench(const InputConfiguration &configuration, Mesh &mesh, int rank, int size)
+	AnsysWorkbench(const InputConfiguration &configuration, OldMesh &mesh, int rank, int size)
 	: OldLoader(mesh), _workbench(configuration), _parser(mesh) { };
 
 	void points(Coordinates &coordinates);

@@ -44,13 +44,13 @@ SphereSettings::SphereSettings(const SphereGeneratorConfiguration &configuration
 	uniformDecomposition = configuration.uniform_decomposition;
 }
 
-void SphereGenerator::load(const SphereGeneratorConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
+void SphereGenerator::load(const SphereGeneratorConfiguration &configuration, OldMesh &mesh, size_t index, size_t size)
 {
 	SphereGenerator sphere(configuration, mesh, index, size);
 	sphere.fill();
 }
 
-SphereGenerator::SphereGenerator(const SphereGeneratorConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
+SphereGenerator::SphereGenerator(const SphereGeneratorConfiguration &configuration, OldMesh &mesh, size_t index, size_t size)
 : OldLoader(mesh), _configuration(configuration), _settings(configuration), _index(index), _size(size)
 {
 	if (size % 6 != 0) {

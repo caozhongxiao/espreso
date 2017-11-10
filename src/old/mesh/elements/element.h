@@ -14,13 +14,13 @@ namespace espreso {
 class Point;
 class Region;
 class Coordinates;
-class Mesh;
+class OldMesh;
 class DenseMatrix;
 enum class Property;
 
 class Element
 {
-	friend class Mesh;
+	friend class OldMesh;
 
 public:
 	enum class Type {

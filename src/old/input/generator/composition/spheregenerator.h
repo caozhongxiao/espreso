@@ -32,10 +32,10 @@ struct SphereSettings {
 class SphereGenerator: public OldLoader {
 
 public:
-	SphereGenerator(const SphereGeneratorConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
+	SphereGenerator(const SphereGeneratorConfiguration &configuration, OldMesh &mesh, size_t index, size_t size);
 	virtual ~SphereGenerator();
 
-	static void load(const SphereGeneratorConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
+	static void load(const SphereGeneratorConfiguration &configuration, OldMesh &mesh, size_t index, size_t size);
 
 	virtual void points(Coordinates &coordinates);
 	virtual void elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);

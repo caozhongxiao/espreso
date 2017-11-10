@@ -13,7 +13,7 @@ namespace espreso {
 class Catalyst: public VTKXMLASCII {
 
 public:
-	Catalyst(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode = MeshInfo::PREPARE);
+	Catalyst(const OutputConfiguration &output, const OldMesh *mesh, MeshInfo::InfoMode mode = MeshInfo::PREPARE);
 	virtual ~Catalyst();
 
 	virtual void storeSettings(const Step &step);

@@ -11,7 +11,7 @@ class MaterialBaseConfiguration;
 
 struct HeatTransfer3D: public HeatTransfer, public Physics3D
 {
-	HeatTransfer3D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
+	HeatTransfer3D(OldMesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
 
 	virtual void prepare();
 

@@ -7,16 +7,16 @@
 
 namespace espreso {
 
-class Mesh;
+class OldMesh;
 
 class ESPRESOBinaryFormat {
 
 public:
 	static void prepareDirectories(const std::string &path, size_t parts);
-	static void store(const Mesh &mesh, const std::string &path);
+	static void store(const OldMesh &mesh, const std::string &path);
 
 protected:
-	ESPRESOBinaryFormat(const Mesh &mesh, const std::string &path);
+	ESPRESOBinaryFormat(const OldMesh &mesh, const std::string &path);
 
 	void metafile();
 	void coordinates();
@@ -25,7 +25,7 @@ protected:
 	void regions();
 	void boundaries();
 
-	const Mesh &_mesh;
+	const OldMesh &_mesh;
 	std::string _path;
 };
 

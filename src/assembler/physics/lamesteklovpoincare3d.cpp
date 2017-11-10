@@ -26,7 +26,7 @@ using namespace espreso;
 
 size_t LameSteklovPoincare3D::BEMOffset = -1;
 
-LameSteklovPoincare3D::LameSteklovPoincare3D(Mesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
+LameSteklovPoincare3D::LameSteklovPoincare3D(OldMesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
 : Physics("LAME STEKLOV POINCARE 3D", mesh, instance, &configuration), StructuralMechanics3D(mesh, instance, configuration, propertiesConfiguration)
 {
 #ifndef BEM4I

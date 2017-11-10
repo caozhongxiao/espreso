@@ -29,7 +29,7 @@ Physics::Physics()
 
 }
 
-Physics::Physics(const std::string &name, Mesh *mesh, Instance *instance, const PhysicsConfiguration *configuration)
+Physics::Physics(const std::string &name, OldMesh *mesh, Instance *instance, const PhysicsConfiguration *configuration)
 : _name(name), _mesh(mesh), _instance(instance), _equalityConstraints(NULL), _configuration(configuration) // initialized in a particular physics
 {
 

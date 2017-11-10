@@ -66,13 +66,13 @@ GridSettings::GridSettings(const GridGeneratorConfiguration &configuration)
 	uniformDecomposition = configuration.uniform_decomposition;
 }
 
-void GridGenerator::load(const GridGeneratorConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
+void GridGenerator::load(const GridGeneratorConfiguration &configuration, OldMesh &mesh, size_t index, size_t size)
 {
 	GridGenerator grid(configuration, mesh, index, size);
 	grid.fill();
 }
 
-GridGenerator::GridGenerator(const GridGeneratorConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
+GridGenerator::GridGenerator(const GridGeneratorConfiguration &configuration, OldMesh &mesh, size_t index, size_t size)
 : OldLoader(mesh), _configuration(configuration), _settings(configuration), _index(index), _size(size), _body(0)
 {
 	Triple<size_t> clusters = _settings.blocks * _settings.clusters;

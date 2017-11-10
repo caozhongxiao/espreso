@@ -24,7 +24,7 @@
 using namespace espreso::input;
 
 
-void OldLoader::load(const ECFConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
+void OldLoader::load(const ECFConfiguration &configuration, OldMesh &mesh, size_t index, size_t size)
 {
 	switch (configuration.input) {
 	case INPUT_FORMAT::WORKBENCH:

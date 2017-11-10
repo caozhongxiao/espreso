@@ -11,7 +11,7 @@ using namespace espreso::input;
 
 double Generator::precision = 1e-4;
 
-void Generator::generate(const InputGeneratorConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
+void Generator::generate(const InputGeneratorConfiguration &configuration, OldMesh &mesh, size_t index, size_t size)
 {
 	switch (configuration.shape) {
 	case INPUT_GENERATOR_SHAPE::GRID:

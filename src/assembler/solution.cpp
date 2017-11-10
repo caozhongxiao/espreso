@@ -9,7 +9,7 @@
 
 using namespace espreso;
 
-Solution::Solution(const Mesh &mesh, const std::string &name, ElementType eType, const std::vector<Property> &properties, std::vector<std::vector<double> > &data)
+Solution::Solution(const OldMesh &mesh, const std::string &name, ElementType eType, const std::vector<Property> &properties, std::vector<std::vector<double> > &data)
 : name(name), eType(eType), properties(properties), data(data), _offset(static_cast<int>(Property::SIZE), -1), _statistic(eType, mesh, data, properties)
 {
 	for (size_t p = 0; p < properties.size(); p++) {
@@ -17,7 +17,7 @@ Solution::Solution(const Mesh &mesh, const std::string &name, ElementType eType,
 	}
 }
 
-Solution::Solution(const Mesh &mesh, const std::string &name, ElementType eType, const std::vector<Property> &properties)
+Solution::Solution(const OldMesh &mesh, const std::string &name, ElementType eType, const std::vector<Property> &properties)
 : name(name), eType(eType), properties(properties), data(_data), _offset(static_cast<int>(Property::SIZE), -1), _statistic(eType, mesh, data, properties)
 {
 	for (size_t p = 0; p < properties.size(); p++) {

@@ -11,8 +11,8 @@ class Element;
 
 struct DistributedInfo: public MeshInfo {
 
-	DistributedInfo(const Mesh *mesh, double domainShrinkRatio, double clusterShrinkRatio, InfoMode mode = InfoMode::PREPARE);
-	DistributedInfo(const Mesh *mesh, const Region* region, double domainShrinkRatio, double clusterShrinkRatio, InfoMode mode = InfoMode::PREPARE);
+	DistributedInfo(const OldMesh *mesh, double domainShrinkRatio, double clusterShrinkRatio, InfoMode mode = InfoMode::PREPARE);
+	DistributedInfo(const OldMesh *mesh, const Region* region, double domainShrinkRatio, double clusterShrinkRatio, InfoMode mode = InfoMode::PREPARE);
 
 	MeshInfo* deriveRegion(const Region *region) const;
 	MeshInfo* copyWithoutMesh() const;

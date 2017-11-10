@@ -16,7 +16,7 @@ enum class ElementType;
 template<typename TIndices> class SparseVVPMatrix;
 class DenseMatrix;
 class Element;
-class Mesh;
+class OldMesh;
 class Instance;
 class EqualityConstraints;
 class Solution;
@@ -41,7 +41,7 @@ struct Physics {
 	friend class APITestESPRESODataProvider;
 
 	Physics();
-	Physics(const std::string &name, Mesh *mesh, Instance *instance, const PhysicsConfiguration *configuration);
+	Physics(const std::string &name, OldMesh *mesh, Instance *instance, const PhysicsConfiguration *configuration);
 	const std::string& name() const { return _name; }
 
 	virtual std::vector<size_t> solutionsIndicesToStore() const =0;
@@ -124,7 +124,7 @@ protected:
 	static void smoothstep(double &smoothStep, double &derivation, double edge0, double edge1, double value, size_t order);
 
 	std::string _name;
-	Mesh *_mesh;
+	OldMesh *_mesh;
 	Instance *_instance;
 	EqualityConstraints *_equalityConstraints;
 

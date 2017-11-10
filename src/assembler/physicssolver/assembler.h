@@ -11,7 +11,7 @@ namespace espreso {
 struct Step;
 struct Instance;
 struct Physics;
-class Mesh;
+class OldMesh;
 struct LinearSolver;
 class TimeEval;
 class TimeEvent;
@@ -26,7 +26,7 @@ enum class SumRestriction;
 class Assembler {
 
 public:
-	Assembler(Instance &instance, Physics &physics, Mesh &mesh, ResultStoreList &store, LinearSolver &linearSolver);
+	Assembler(Instance &instance, Physics &physics, OldMesh &mesh, ResultStoreList &store, LinearSolver &linearSolver);
 	~Assembler();
 
 	void preprocessData(const Step &step);
@@ -67,7 +67,7 @@ public:
 
 	Instance &instance;
 	Physics &physics;
-	Mesh &mesh;
+	OldMesh &mesh;
 	ResultStoreList &store;
 	LinearSolver &linearSolver;
 
