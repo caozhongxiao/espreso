@@ -635,6 +635,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	std::vector<std::vector<NewElement*> > elemsEpointer(threads);
 	std::vector<std::vector<eslocal> >     elemsNodesDistribution(threads);
 	std::vector<std::vector<esglobal> >    elemsNodesData(threads);
+	std::vector<std::vector<int> >         elemsRegions(threads);
 
 	ElementStore *nodes = new ElementStore(mesh._eclasses);
 
@@ -659,6 +660,22 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	std::vector<std::vector<esglobal> > rNodes;
 
 	// Step 1: Serialize element data
+
+	std::vector<int> regionElementMask(mesh._nodes->size * regionsBitMaskSize);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		int maskOffset = 0;
+		for (size_t r = 0; r < mesh._regions.size(); r++) {
+			maskOffset = r / (8 * sizeof(int));
+			if (mesh._regions[r]->etype == TFlags::ELEVEL::ELEMENT) {
+				auto begin = std::lower_bound(mesh._regions[r]->elems->datatarray().begin(), mesh._regions[r]->elems->datatarray().end(), mesh._elems->distribution[t]);
+				auto end = std::lower_bound(mesh._regions[r]->elems->datatarray().begin(), mesh._regions[r]->elems->datatarray().end(), mesh._elems->distribution[t + 1]);
+				for (auto i = begin; i != end; ++i) {
+					regionElementMask[*i * regionsBitMaskSize + maskOffset] |= 1 << r;
+				}
+			}
+		}
+	}
 
 	elemsNodesDistribution.front().push_back(0);
 	#pragma omp parallel for
@@ -685,6 +702,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 				for (size_t n = 0; n < enodes->size(); n++) {
 					*(elemsNodesData[t].end() - enodes->size() + n) = mesh._nodes->IDs->datatarray().data()[(*enodes)[n]];
 				}
+				elemsRegions[t].insert(elemsRegions[t].end(), regionElementMask.begin() + e * regionsBitMaskSize, regionElementMask.begin() + (e + 1) * regionsBitMaskSize);
 			} else {
 				target = t2i(partition[e]);
 				sElements[t][target].insert(sElements[t][target].end(), { IDs[e], body[e], material[e], static_cast<esglobal>(code[e] - mesh._eclasses[t]) });
@@ -693,6 +711,7 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 				for (size_t n = 0; n < enodes->size(); n++) {
 					*(sElements[t][target].end() - enodes->size() + n) = nIDs[(*enodes)[n]];
 				}
+				sElements[t][target].insert(sElements[t][target].end(), regionElementMask.begin() + e * regionsBitMaskSize, regionElementMask.begin() + (e + 1) * regionsBitMaskSize);
 			}
 		}
 	}
@@ -800,6 +819,8 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 				if (elemsNodesDistribution[t].size() > 1) {
 					elemsNodesDistribution[t].back() += *(elemsNodesDistribution[t].end() - 2);
 				}
+				e += regionsBitMaskSize;
+				elemsRegions[t].insert(elemsRegions[t].end(), rElements[i].begin() + e * regionsBitMaskSize, rElements[i].begin() + (e + 1) * regionsBitMaskSize);
 			}
 		}
 	}
@@ -852,6 +873,11 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 	Esutils::threadDistributionToFullDistribution(nodesElemsDistribution);
 
 	// elements are redistributed later while decomposition -> distribution is not changed now
+	std::vector<size_t> elemDistribution(threads);
+	for (size_t t = 1; t < threads; t++) {
+		elemDistribution[t] = elemDistribution[t - 1] + elemsIDs[t - 1].size();
+	}
+
 	elements->IDs = new serializededata<eslocal, esglobal>(1, elemsIDs);
 	elements->body = new serializededata<eslocal, int>(1, elemsBody);
 	elements->material = new serializededata<eslocal, int>(1, elemsMaterial);
@@ -891,8 +917,27 @@ void Transformation::exchangeElements(NewMesh &mesh, const std::vector<esglobal>
 					}
 				}
 			}
+
+			serializededata<eslocal, eslocal>::balance(1, regionnodes);
 			mesh._regions[r]->nodes = new serializededata<eslocal, eslocal>(1, regionnodes);
 			std::sort(mesh._regions[r]->nodes->datatarray().begin(), mesh._regions[r]->nodes->datatarray().end());
+		}
+		if (mesh._regions[r]->etype == TFlags::ELEVEL::ELEMENT) {
+			delete mesh._regions[r]->elems;
+			std::vector<std::vector<eslocal> > regionelems(threads);
+
+			#pragma omp parallel for
+			for (size_t t = 0; t < threads; t++) {
+				for (size_t i = 0; i < elemsRegions[t].size(); i += regionsBitMaskSize) {
+					if (nodesRegions[t][i + maskOffset] & (1 << r)) {
+						regionelems[t].push_back(elemDistribution[t] + i / regionsBitMaskSize);
+					}
+				}
+			}
+
+			serializededata<eslocal, eslocal>::balance(1, regionelems);
+			mesh._regions[r]->elems = new serializededata<eslocal, eslocal>(1, regionelems);
+			std::sort(mesh._regions[r]->elems->datatarray().begin(), mesh._regions[r]->elems->datatarray().end());
 		}
 	}
 
