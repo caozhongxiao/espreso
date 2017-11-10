@@ -5,12 +5,12 @@
 namespace espreso {
 
 class ECFConfiguration;
-class NewMesh;
+class Mesh;
 
 class Loader {
 
 public:
-	static void load(const ECFConfiguration &configuration, NewMesh &mesh, int MPIrank, int MPIsize);
+	static void load(const ECFConfiguration &configuration, Mesh &mesh, int MPIrank, int MPIsize);
 };
 
 }

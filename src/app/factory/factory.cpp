@@ -14,7 +14,7 @@
 #include "../../assembler/step.h"
 #include "../../assembler/instance.h"
 
-#include "../../newmesh/newmesh.h"
+#include "../../mesh/mesh.h"
 #include "../../input/loader.h"
 #include "../../config/ecf/ecf.h"
 #include "../../old/mesh/structures/mesh.h"
@@ -58,7 +58,7 @@ void ESPRESO::run(int *argc, char ***argv)
 Factory::Factory(const ECFConfiguration &configuration, OldMesh &mesh, ResultStoreList &store)
 : _mesh(&mesh), _store(&store), _loader(NULL)
 {
-	NewMesh nmesh(mesh);
+	Mesh nmesh(mesh);
 	Loader::load(configuration, nmesh, configuration.environment.MPIrank, configuration.environment.MPIsize);
 
 	// LOAD PHYSICS

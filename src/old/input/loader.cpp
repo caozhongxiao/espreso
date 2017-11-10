@@ -19,7 +19,7 @@
 #include "../../config/ecf/ecf.h"
 #include "espreso/espresobinaryformat.h"
 
-#include "../../newmesh/newmesh.h"
+#include "../../mesh/mesh.h"
 
 using namespace espreso::input;
 
