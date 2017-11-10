@@ -152,7 +152,7 @@ void Loader::fill()
 
 	measurement.totalTime.endWithBarrier(); measurement.printStatsMPI();
 
-	NewMesh improvedMesh(mesh);
+	// NewMesh improvedMesh(mesh);
 }
 
 

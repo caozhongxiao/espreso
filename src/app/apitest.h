@@ -16,13 +16,14 @@
 #include "../assembler/physics/physics.h"
 #include "../assembler/physicssolver/assembler.h"
 #include "../solver/generic/SparseMatrix.h"
+#include "../output/resultstorelist.h"
 
 namespace espreso {
 
 class APITestESPRESODataProvider {
 
 public:
-	APITestESPRESODataProvider(int *argc, char ***argv): ecf(argc, argv), factory(ecf, 1)
+	APITestESPRESODataProvider(int *argc, char ***argv): ecf(argc, argv), store(ecf.output), factory(ecf, mesh, store)
 	{
 		if (factory._loadSteps.size() > 1) {
 			ESINFO(GLOBAL_ERROR) << "APITEST: Cannot test instance with more loadsteps.";
@@ -93,6 +94,8 @@ public:
 
 protected:
 	ECFConfiguration ecf;
+	Mesh mesh;
+	ResultStoreList store;
 	Factory factory;
 	Step step;
 };

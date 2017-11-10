@@ -6,15 +6,28 @@
 
 #include "store.h"
 
+namespace async { class Dispatcher; }
+
 namespace espreso {
+
+class Mesh;
+class OutputConfiguration;
 
 class ResultStoreList: public Store {
 
 public:
+	static ResultStoreList* createAsynchronizedStore(const OutputConfiguration &configuration, const Mesh *mesh);
+	static void destroyAsynchronizedStore();
+	static bool isStoreNode();
+	static bool isComputeNode();
+
 	ResultStoreList(const OutputConfiguration &output): Store(output) { };
 	~ResultStoreList() { std::for_each(_results.begin(), _results.end(), [] (Store *rs) { delete rs; } ); }
 
-	void add(Store *rs) { _results.push_back(rs); }
+	virtual void updateMesh()
+	{
+		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->updateMesh(); } );
+	}
 
 	virtual void storeSettings(const Step &step)
 	{
@@ -43,6 +56,9 @@ public:
 
 protected:
 	std::vector<Store*> _results;
+
+	static ResultStoreList *_resultStoreList;
+	static async::Dispatcher *_dispatcher;
 };
 
 }

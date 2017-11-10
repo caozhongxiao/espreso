@@ -60,8 +60,7 @@ Monitor::Monitor()
 
 }
 
-Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
-: Store(output), _mesh(mesh)
+void Monitoring::updateMesh()
 {
 	_monitors.reserve(_configuration.monitoring.size());
 	for (auto it = _configuration.monitoring.begin(); it != _configuration.monitoring.end(); ++it) {
@@ -120,6 +119,12 @@ Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
 		}
 	}
 	_os << "\n\n";
+}
+
+Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
+: Store(output), _mesh(mesh)
+{
+
 }
 
 void Monitoring::storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties)

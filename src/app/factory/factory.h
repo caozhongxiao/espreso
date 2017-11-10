@@ -3,8 +3,8 @@
 #define APP_FACTORY_FACTORY_H_
 
 #include <vector>
+#include <string>
 #include <map>
-#include "async/Dispatcher.h"
 
 namespace espreso {
 
@@ -16,11 +16,8 @@ class TimeStepSolver;
 class LoadStepSolver;
 class Mesh;
 class Store;
-class AsyncStore;
-class ResultStoreList;
 
 struct ECFConfiguration;
-struct OutputConfiguration;
 struct LoadStepConfiguration;
 
 class FactoryLoader {
@@ -59,37 +56,28 @@ protected:
 
 class Factory {
 
+	friend class ESPRESO;
 	friend class APITestESPRESODataProvider;
-public:
-	Factory(const ECFConfiguration &configuration);
+
+protected:
+	Factory(const ECFConfiguration &configuration, Mesh &mesh, Store &solutionStore);
 	~Factory();
 
 	void solve();
-	void finalize();
-
-protected:
-	Factory(const ECFConfiguration &configuration, size_t domains);
-
-	void initAsync(const OutputConfiguration &configuration);
-	void loadPhysics(const ECFConfiguration &configuration);
-	void setOutput(const OutputConfiguration &configuration);
 
 	FactoryLoader* createFactoryLoader(const ECFConfiguration &configuration);
 
 	Mesh *_mesh;
-	ResultStoreList* _storeList;
+	Store *_store;
+
 	FactoryLoader *_loader;
 	std::vector<LoadStepSolver*> _loadSteps;
+};
 
-	/**
-	 * We always create the async store (even if the output is not enabled).
-	 * This is a drawback of the ASYNC library but required to get synchronization
-	 * right.
-	 */
-	AsyncStore* _asyncStore;
+class ESPRESO {
 
-	/** The dispatcher for the I/O ranks */
-	async::Dispatcher _dispatcher;
+public:
+	static void run(int *argc, char ***argv);
 };
 
 
