@@ -10,7 +10,7 @@ using namespace espreso::input;
 size_t Tetrahedron4::subelements = 6;
 size_t Tetrahedron4::subnodes[] = { 2, 2, 2 };
 
-void Tetrahedron4::addElements(std::vector<Element*> &elements, const eslocal indices[], const eslocal params[])
+void Tetrahedron4::addElements(std::vector<OldElement*> &elements, const eslocal indices[], const eslocal params[])
 {
 	eslocal tetra[4];
 	tetra[0] = indices[0];
@@ -50,12 +50,12 @@ void Tetrahedron4::addElements(std::vector<Element*> &elements, const eslocal in
 	elements.push_back(new espreso::Tetrahedron4(tetra, 4, params));
 }
 
-void Tetrahedron4::addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdge edge)
+void Tetrahedron4::addEdges(std::vector<OldElement*> &edges, const eslocal indices[], CubeEdge edge)
 {
 	ESINFO(GLOBAL_ERROR) << "Implement addEdges for TETRAHEDRON4";
 }
 
-void Tetrahedron4::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)
+void Tetrahedron4::addFaces(std::vector<OldElement*> &faces, const eslocal indices[], CubeFace face)
 {
 	eslocal triangle1[3], triangle2[3];
 
@@ -122,12 +122,12 @@ void Tetrahedron4::addFaces(std::vector<Element*> &faces, const eslocal indices[
 	faces.push_back(new espreso::Triangle3(triangle2));
 }
 
-void Tetrahedron4::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeEdge edge)
+void Tetrahedron4::pickNodes(const std::vector<OldElement*> &nodes, std::vector<OldElement*> &selection, const eslocal indices[], CubeEdge edge)
 {
 	ESINFO(GLOBAL_ERROR) << "Implement pickNodes for an edge for TETRAHEDRON4";
 }
 
-void Tetrahedron4::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFace face)
+void Tetrahedron4::pickNodes(const std::vector<OldElement*> &nodes, std::vector<OldElement*> &selection, const eslocal indices[], CubeFace face)
 {
 	Hexahedron8::pickNodes(nodes, selection, indices, face);
 }

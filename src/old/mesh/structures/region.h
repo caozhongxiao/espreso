@@ -7,7 +7,7 @@
 
 namespace espreso {
 
-class Element;
+class OldElement;
 class Evaluator;
 class Coordinates;
 enum class Property;
@@ -19,18 +19,18 @@ struct Region {
 	std::vector<std::map<Property, std::vector<Evaluator*> > > settings;
 	mutable double area;
 
-	std::vector<Element*>& elements() { return *_elements; }
-	const std::vector<Element*>& elements() const { return *_elements; }
+	std::vector<OldElement*>& elements() { return *_elements; }
+	const std::vector<OldElement*>& elements() const { return *_elements; }
 
 	Region(ElementType eType);
-	Region(ElementType eType, std::vector<Element*> &element);
+	Region(ElementType eType, std::vector<OldElement*> &element);
 
 	~Region();
 
 	void computeArea(const Coordinates &coordinates) const;
 
 protected:
-	std::vector<Element*> *_elements;
+	std::vector<OldElement*> *_elements;
 	bool _destroy;
 };
 

@@ -88,7 +88,7 @@ espreso::Point DistributedInfo::shrink(const Point &p, eslocal domain) const
 	return point;
 }
 
-void DistributedInfo::prepare(const std::vector<Element*> &region, InfoMode mode)
+void DistributedInfo::prepare(const std::vector<OldElement*> &region, InfoMode mode)
 {
 	size_t bodies    = mode & InfoMode::SEPARATE_BODIES    ? _mesh->bodies()           : 1;
 	size_t materials = mode & InfoMode::SEPARATE_MATERIALS ? _mesh->materials().size() : 1;
@@ -117,10 +117,10 @@ void DistributedInfo::prepare(const std::vector<Element*> &region, InfoMode mode
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 			size_t regionOffset = 0;
 			if ((mode & InfoMode::SEPARATE_BODIES) && region[e]->params()) {
-				regionOffset += region[e]->param(Element::Params::BODY) * materials;
+				regionOffset += region[e]->param(OldElement::Params::BODY) * materials;
 			}
 			if ((mode & InfoMode::SEPARATE_MATERIALS) && region[e]->params()) {
-				regionOffset += region[e]->param(Element::Params::MATERIAL);
+				regionOffset += region[e]->param(OldElement::Params::MATERIAL);
 			}
 
 			for (auto d = region[e]->domains().begin(); d != region[e]->domains().end(); ++d) {
@@ -245,15 +245,15 @@ void DistributedInfo::addGeneralInfo()
 		}
 	}
 
-	const std::vector<Element*> &region = _region != NULL ? _region->elements() : _mesh->elements();
+	const std::vector<OldElement*> &region = _region != NULL ? _region->elements() : _mesh->elements();
 
 	for (size_t e = 0; e < region.size(); e++) {
 		size_t regionOffset = 0;
 		if ((_mode & InfoMode::SEPARATE_BODIES) && region[e]->params()) {
-			regionOffset += region[e]->param(Element::Params::BODY) * materials;
+			regionOffset += region[e]->param(OldElement::Params::BODY) * materials;
 		}
 		if ((_mode & InfoMode::SEPARATE_MATERIALS) && region[e]->params()) {
-			regionOffset += region[e]->param(Element::Params::MATERIAL);
+			regionOffset += region[e]->param(OldElement::Params::MATERIAL);
 		}
 
 		for (auto d = region[e]->domains().begin(); d != region[e]->domains().end(); ++d) {
@@ -296,11 +296,11 @@ void DistributedInfo::addSettings(const Step &step)
 
 		for (size_t e = 0; e < region->elements().size(); e++) {
 			size_t regionOffset = 0, material = -1, body = -1;
-			body = region->elements()[e]->param(Element::Params::BODY);
+			body = region->elements()[e]->param(OldElement::Params::BODY);
 			if (_mode & InfoMode::SEPARATE_BODIES) {
 				regionOffset += body * materials;
 			}
-			material = region->elements()[e]->param(Element::Params::MATERIAL);
+			material = region->elements()[e]->param(OldElement::Params::MATERIAL);
 			if (_mode & InfoMode::SEPARATE_MATERIALS) {
 				regionOffset += material;
 			}
@@ -341,10 +341,10 @@ void DistributedInfo::addSettings(const Step &step)
 		for (size_t e = 0; e < region->elements().size(); e++) {
 			size_t regionOffset = 0;
 			if ((_mode & InfoMode::SEPARATE_BODIES) && region->elements()[e]->params()) {
-				regionOffset += region->elements()[e]->param(Element::Params::BODY) * materials;
+				regionOffset += region->elements()[e]->param(OldElement::Params::BODY) * materials;
 			}
 			if ((_mode & InfoMode::SEPARATE_MATERIALS) && region->elements()[e]->params()) {
-				regionOffset += region->elements()[e]->param(Element::Params::MATERIAL);
+				regionOffset += region->elements()[e]->param(OldElement::Params::MATERIAL);
 			}
 
 			for (auto p = pGroup.begin(); p != pGroup.end(); ++p) {

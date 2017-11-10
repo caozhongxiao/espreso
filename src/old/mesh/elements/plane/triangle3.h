@@ -35,7 +35,7 @@ public:
 	Triangle3(const eslocal *indices);
 	Triangle3(const eslocal *indices, const eslocal *params);
 	Triangle3(std::ifstream &is);
-	Element* copy() const { return new Triangle3(*this); }
+	OldElement* copy() const { return new Triangle3(*this); }
 
 	std::vector<std::vector<eslocal> > triangularize() const;
 

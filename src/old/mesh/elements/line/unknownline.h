@@ -11,11 +11,11 @@ namespace espreso {
 class UnknownLine: public LineElement
 {
 public:
-	UnknownLine(const std::vector<Element*> &nodes, std::vector<eslocal> &indices, std::vector<eslocal> &DOFsIndices, std::vector<double> &stiffnessMatrix)
+	UnknownLine(const std::vector<OldElement*> &nodes, std::vector<eslocal> &indices, std::vector<eslocal> &DOFsIndices, std::vector<double> &stiffnessMatrix)
 	: _nodes(nodes), _indices(indices), _stiffnessMatrix(stiffnessMatrix) { _DOFsIndices = DOFsIndices; }
-	UnknownLine(const std::vector<Element*> &nodes, std::vector<eslocal> &indices, std::vector<double> &stiffnessMatrix)
+	UnknownLine(const std::vector<OldElement*> &nodes, std::vector<eslocal> &indices, std::vector<double> &stiffnessMatrix)
 	: _nodes(nodes), _indices(indices), _stiffnessMatrix(stiffnessMatrix) { }
-	Element* copy() const { return new UnknownLine(*this); }
+	OldElement* copy() const { return new UnknownLine(*this); }
 
 	eslocal nCommon() const { return _indices.size() > 4 ? 3 : 2; }
 	eslocal vtkCode() const { return UnknownLineVTKCode; }
@@ -46,7 +46,7 @@ protected:
 	const eslocal* indices() const { return _indices.data(); }
 
 private:
-	const std::vector<Element*> &_nodes;
+	const std::vector<OldElement*> &_nodes;
 	std::vector<eslocal> &_indices;
 	std::vector<double> &_stiffnessMatrix;
 };

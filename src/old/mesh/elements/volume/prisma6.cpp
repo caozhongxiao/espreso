@@ -161,24 +161,24 @@ bool Prisma6::match(const eslocal *indices, eslocal n) {
 	case Prisma6NodesCount:
 		for (eslocal i = 0; i < Prisma6NodesCount - 1; i++) {
 			for (eslocal j = i + 1; j < Prisma6NodesCount; j++) {
-				if (Element::match(indices, i, j)) {
+				if (OldElement::match(indices, i, j)) {
 					return false;
 				}
 			}
 		}
 		return true;
 	case 8 : {
-		if (!Element::match(indices, 2, 3)) {
+		if (!OldElement::match(indices, 2, 3)) {
 			return false;
 		}
-		if (!Element::match(indices, 6, 7)) {
+		if (!OldElement::match(indices, 6, 7)) {
 			return false;
 		}
 
 		eslocal various[6] = { 0, 1, 2, 4, 5, 6 };
 		for (eslocal i = 0; i < 5; i++) {
 			for (eslocal j = i + 1; j < 6; j++) {
-				if (Element::match(indices, various[i], various[j])) {
+				if (OldElement::match(indices, various[i], various[j])) {
 					return false;
 				}
 			}
@@ -256,7 +256,7 @@ size_t Prisma6::fillFaces()
 	return filled;
 }
 
-Element* Prisma6::addFace(const std::vector<eslocal> &nodes)
+OldElement* Prisma6::addFace(const std::vector<eslocal> &nodes)
 {
 	for (size_t f = 0; f < faces(); f++) {
 		size_t found;

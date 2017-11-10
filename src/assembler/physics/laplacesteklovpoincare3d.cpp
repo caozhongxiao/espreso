@@ -101,7 +101,7 @@ void LaplaceSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices,
 	assembleBoundaryConditions(K, M, step, Matrices::f, domain, solution);
 }
 
-void LaplaceSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution)
+void LaplaceSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution)
 {
 	ESINFO(ERROR) << "BEM discretization not supports assembling of stiffness matrix K for one element.";
 }

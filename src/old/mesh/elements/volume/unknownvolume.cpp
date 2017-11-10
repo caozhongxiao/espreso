@@ -9,7 +9,7 @@ using namespace espreso;
 
 size_t UnknownVolume::fillFaces()
 {
-	std::vector<Element*> elements;
+	std::vector<OldElement*> elements;
 	for (size_t i = 0; i < _indices.size(); i++) {
 		elements.insert(elements.end(), _nodes[_indices[i]]->parentElements().begin(), _nodes[_indices[i]]->parentElements().end());
 	}

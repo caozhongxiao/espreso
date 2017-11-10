@@ -38,7 +38,7 @@ public:
 
 	Prisma6(const eslocal *indices, eslocal n, const eslocal *params);
 	Prisma6(std::ifstream &is);
-	Element* copy() const { return new Prisma6(*this); }
+	OldElement* copy() const { return new Prisma6(*this); }
 
 	eslocal nCommon() const { return Prisma6CommonNodes; }
 	eslocal vtkCode() const { return Prisma6VTKCode; }
@@ -49,7 +49,7 @@ public:
 	size_t coarseNodes() const { return Prisma6NodesCount; }
 	size_t gaussePoints() const { return Prisma6GPCount; }
 
-	Element* addFace(const std::vector<eslocal> &nodes);
+	OldElement* addFace(const std::vector<eslocal> &nodes);
 
 	const std::vector<eslocal>& faceNodes(size_t index) const { return Prisma6::_facesNodes[index]; }
 	const std::vector<eslocal>& edgeNodes(size_t index) const { return Prisma6::_edgesNodes[index]; }

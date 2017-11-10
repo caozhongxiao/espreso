@@ -210,7 +210,7 @@ void ResultStore::storeElementInfo(const Step &step)
 
 void ResultStore::storeFixPoints(const Step &step)
 {
-	std::vector<Element*> fixPoints;
+	std::vector<OldElement*> fixPoints;
 	for (size_t p = 0; p < _mesh->fixPoints().size(); p++) {
 		fixPoints.insert(fixPoints.end(), _mesh->fixPoints(p).begin(), _mesh->fixPoints(p).end());
 	}
@@ -228,7 +228,7 @@ void ResultStore::storeFixPoints(const Step &step)
 
 void ResultStore::storeCorners(const Step &step)
 {
-	std::vector<Element*> corners = _mesh->corners();
+	std::vector<OldElement*> corners = _mesh->corners();
 
 	Region region(ElementType::NODES, corners);
 
@@ -252,7 +252,7 @@ void ResultStore::storeDirichlet(const Step &step, const Instance &instance)
 
 		for (size_t d = 0; d < instance.domains; d++) {
 			for (size_t i = 0; i < instance.B1[d].I_row_indices.size() && instance.B1[d].I_row_indices[i] <= (eslocal)instance.block[Instance::CONSTRAINT::DIRICHLET]; i++) {
-				const Element *e = _mesh->getDOFsElement(d, instance.B1[d].J_col_indices[i] - 1);
+				const OldElement *e = _mesh->getDOFsElement(d, instance.B1[d].J_col_indices[i] - 1);
 				if (e->DOFOffset(d, instance.B1[d].J_col_indices[i] - 1) != p) {
 					continue;
 				}
@@ -306,7 +306,7 @@ void ResultStore::storeLambdas(const Step &step, const Instance &instance)
 				auto it = std::lower_bound(instance.B1clustersMap.begin(), instance.B1clustersMap.end(), instance.B1[d].I_row_indices[i] - 1, [&] (const std::vector<esglobal> &v, esglobal i) {
 					return v[0] < i;
 				});
-				const Element *e = _mesh->getDOFsElement(d, instance.B1[d].J_col_indices[i] - 1);
+				const OldElement *e = _mesh->getDOFsElement(d, instance.B1[d].J_col_indices[i] - 1);
 				if (e->DOFOffset(d, instance.B1[d].J_col_indices[i] - 1) != p) {
 					continue;
 				}
@@ -346,7 +346,7 @@ void ResultStore::storeLambdas(const Step &step, const Instance &instance)
 				auto it = std::lower_bound(instance.B1clustersMap.begin(), instance.B1clustersMap.end(), instance.B1[d].I_row_indices[i] - 1, [&] (const std::vector<esglobal> &v, esglobal i) {
 					return v[0] < i;
 				});
-				const Element *e = _mesh->getDOFsElement(d, instance.B1[d].J_col_indices[i] - 1);
+				const OldElement *e = _mesh->getDOFsElement(d, instance.B1[d].J_col_indices[i] - 1);
 				if (e->DOFOffset(d, instance.B1[d].J_col_indices[i] - 1) != p) {
 					continue;
 				}

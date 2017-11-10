@@ -9,7 +9,7 @@ using namespace espreso::input;
 size_t Hexahedron8::subelements = 1;
 size_t Hexahedron8::subnodes[] = { 2, 2, 2 };
 
-void Hexahedron8::addElements(std::vector<Element*> &elements, const eslocal indices[], const eslocal params[])
+void Hexahedron8::addElements(std::vector<OldElement*> &elements, const eslocal indices[], const eslocal params[])
 {
 	eslocal hexa[8];
 	hexa[0] = indices[0];
@@ -23,12 +23,12 @@ void Hexahedron8::addElements(std::vector<Element*> &elements, const eslocal ind
 	elements.push_back(new espreso::Hexahedron8(hexa, 8, params));
 }
 
-void Hexahedron8::addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdge edge)
+void Hexahedron8::addEdges(std::vector<OldElement*> &edges, const eslocal indices[], CubeEdge edge)
 {
 	ESINFO(GLOBAL_ERROR) << "Implement addEdges for HEXA8";
 }
 
-void Hexahedron8::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)
+void Hexahedron8::addFaces(std::vector<OldElement*> &faces, const eslocal indices[], CubeFace face)
 {
 	eslocal square[4];
 
@@ -76,12 +76,12 @@ void Hexahedron8::addFaces(std::vector<Element*> &faces, const eslocal indices[]
 	faces.push_back(new espreso::Square4(square));
 }
 
-void Hexahedron8::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeEdge edge)
+void Hexahedron8::pickNodes(const std::vector<OldElement*> &nodes, std::vector<OldElement*> &selection, const eslocal indices[], CubeEdge edge)
 {
 	ESINFO(GLOBAL_ERROR) << "Implement pickNodes for an edge for HEXA8";
 }
 
-void Hexahedron8::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFace face)
+void Hexahedron8::pickNodes(const std::vector<OldElement*> &nodes, std::vector<OldElement*> &selection, const eslocal indices[], CubeFace face)
 {
 	switch (face) {
 	case CubeFace::X_1:

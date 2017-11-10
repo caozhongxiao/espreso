@@ -59,7 +59,7 @@ std::vector<std::pair<ElementType, Property> > HeatTransfer3D::propertiesToStore
 	return {};
 }
 
-void HeatTransfer3D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, const MaterialBaseConfiguration *mat, double phase, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
+void HeatTransfer3D::assembleMaterialMatrix(const Step &step, const OldElement *e, eslocal node, const MaterialBaseConfiguration *mat, double phase, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
 {
 	auto d2r = [] (double degree) -> double {
 		return M_PI * degree / 180;
@@ -236,7 +236,7 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, const Element *e, 
 	K(node, 8) += phase * TCT(2, 1);
 }
 
-void HeatTransfer3D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer3D::processElement(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	bool CAU = _configuration.stabilization == HeatTransferConfiguration::STABILIZATION::CAU;
 	bool tangentCorrection = (matrices & Matrices::K) && step.tangentMatrixCorrection;
@@ -251,7 +251,7 @@ void HeatTransfer3D::processElement(const Step &step, Matrices matrices, const E
 	DenseMatrix gpK(1, 9), gpM(1, 1);
 	DenseMatrix tangentK, BT, BTN, gpCD, CD, CDBTN, CDe;
 
-	const MaterialConfiguration* material = _mesh->materials()[e->param(Element::MATERIAL)];
+	const MaterialConfiguration* material = _mesh->materials()[e->param(OldElement::MATERIAL)];
 
 	const MaterialBaseConfiguration *phase1, *phase2;
 	if (material->phase_change) {
@@ -461,7 +461,7 @@ void HeatTransfer3D::processElement(const Step &step, Matrices matrices, const E
 	}
 }
 
-void HeatTransfer3D::processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer3D::processFace(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step) ||
 		e->hasProperty(Property::HEAT_FLOW, step.step) ||
@@ -562,7 +562,7 @@ void HeatTransfer3D::processFace(const Step &step, Matrices matrices, const Elem
 	}
 }
 
-void HeatTransfer3D::processEdge(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer3D::processEdge(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step) ||
 		e->hasProperty(Property::HEAT_FLOW, step.step) ||
@@ -659,7 +659,7 @@ void HeatTransfer3D::processEdge(const Step &step, Matrices matrices, const Elem
 	}
 }
 
-void HeatTransfer3D::processNode(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer3D::processNode(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
@@ -667,14 +667,14 @@ void HeatTransfer3D::processNode(const Step &step, Matrices matrices, const Elem
 	fe.resize(0, 0);
 }
 
-void HeatTransfer3D::postProcessElement(const Step &step, const Element *e, std::vector<Solution*> &solution)
+void HeatTransfer3D::postProcessElement(const Step &step, const OldElement *e, std::vector<Solution*> &solution)
 {
 	DenseMatrix Ce(3, 3), coordinates, J(3, 3), invJ(3, 3), dND, temp(e->nodes(), 1);
 	double detJ, m, norm_u_e, h_e;
 	DenseMatrix U(e->nodes(), 3), K(e->nodes(), 9), gpK(1, 9), CD;
 	DenseMatrix u(1, 3), matFlux(3, 1), matGradient(3, 1);
 
-	const MaterialConfiguration* material = _mesh->materials()[e->param(Element::MATERIAL)];
+	const MaterialConfiguration* material = _mesh->materials()[e->param(OldElement::MATERIAL)];
 
 	const MaterialBaseConfiguration *phase1, *phase2;
 	if (material->phase_change) {

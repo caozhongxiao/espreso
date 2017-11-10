@@ -11,7 +11,7 @@ struct ECFConfiguration;
 struct MaterialConfiguration;
 class OldMesh;
 class Coordinates;
-class Element;
+class OldElement;
 class Evaluator;
 class Region;
 
@@ -25,21 +25,21 @@ public:
 	void fill();
 
 	virtual void points(Coordinates &coordinates) = 0;
-	virtual void elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges) = 0;
+	virtual void elements(std::vector<size_t> &bodies, std::vector<OldElement*> &elements, std::vector<OldElement*> &faces, std::vector<OldElement*> &edges) = 0;
 	virtual void materials(std::vector<MaterialConfiguration*> &materials) {};
-	virtual void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges) = 0;
+	virtual void neighbours(std::vector<OldElement*> &nodes, std::vector<int> &neighbours, const std::vector<OldElement*> &faces, const std::vector<OldElement*> &edges) = 0;
 	virtual void regions(
 			std::vector<Evaluator*> &evaluators,
 			std::vector<Region*> &regions,
-			std::vector<Element*> &elements,
-			std::vector<Element*> &faces,
-			std::vector<Element*> &edges,
-			std::vector<Element*> &nodes) = 0;
+			std::vector<OldElement*> &elements,
+			std::vector<OldElement*> &faces,
+			std::vector<OldElement*> &edges,
+			std::vector<OldElement*> &nodes) = 0;
 
 	virtual void open() {};
 	virtual void close() {};
 
-	virtual bool partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners) = 0;
+	virtual bool partitiate(const std::vector<OldElement*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<OldElement*> > &fixPoints, std::vector<OldElement*> &corners) = 0;
 
 protected:
 	OldLoader(OldMesh &mesh): mesh(mesh) {}

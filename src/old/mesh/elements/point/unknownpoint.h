@@ -13,7 +13,7 @@ class UnknownPoint: public PointElement
 
 public:
 	UnknownPoint(eslocal index): PointElement(index) {};
-	Element* copy() const { return new UnknownPoint(*this); }
+	OldElement* copy() const { return new UnknownPoint(*this); }
 
 	eslocal vtkCode() const { return UnknownPointVTKCode; }
 	size_t gaussePoints() const { ESINFO(GLOBAL_ERROR) << "Unknown point has no gausse points."; return 0; }

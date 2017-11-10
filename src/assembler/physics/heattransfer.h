@@ -69,11 +69,11 @@ protected:
 	void computeInitialTemperature(const Step &step, std::vector<std::vector<double> > &data);
 
 	double computeHTC(
-			const ConvectionConfiguration &convection, const Element *e, const Point &p, Step step,
+			const ConvectionConfiguration &convection, const OldElement *e, const Point &p, Step step,
 			double temp) const;
 
 	void convectionMatParameters(
-			const ConvectionConfiguration &convection, const Element *e, const Point &p, Step step,
+			const ConvectionConfiguration &convection, const OldElement *e, const Point &p, Step step,
 			double temp, double T_EXT,
 			double &rho, double &dynamic_viscosity, double &dynamic_viscosity_T, double &heat_capacity, double &thermal_conductivity) const;
 

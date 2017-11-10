@@ -80,11 +80,11 @@ void Block<TElement>::forEachElement(const Triple<size_t> &start, const Triple<s
 
 
 template <class TElement>
-void Block<TElement>::elements(std::vector<Element*> &elements, size_t body)
+void Block<TElement>::elements(std::vector<OldElement*> &elements, size_t body)
 {
 	elements.reserve(TElement::subelements * (block.domains * block.elements).mul());
 	std::vector<eslocal> params(6);
-	params[Element::Params::BODY] = body;
+	params[OldElement::Params::BODY] = body;
 
 	Triple<size_t> offset;
 	for (offset.z = 0; offset.z < block.domains.z; offset.z++) {
@@ -112,7 +112,7 @@ void Block<TElement>::uniformPartition(std::vector<eslocal> &partsPtrs, size_t s
 }
 
 template<class TElement>
-void Block<TElement>::uniformFixPoints(const std::vector<Element*> &nodes, std::vector<std::vector<Element*> > &fixPoints)
+void Block<TElement>::uniformFixPoints(const std::vector<OldElement*> &nodes, std::vector<std::vector<OldElement*> > &fixPoints)
 {
 	Triple<int>shift = Triple<int>(TElement::subnodes) - 1;
 	Triple<eslocal> dnodes = (Triple<int>(TElement::subnodes) - 1) * block.elements;
@@ -139,7 +139,7 @@ void Block<TElement>::uniformFixPoints(const std::vector<Element*> &nodes, std::
 	number *= TElement::subnodes[1] > 1 ? 2 : 1;
 	number *= TElement::subnodes[2] > 1 ? 2 : 1;
 
-	fixPoints.resize(block.domains.mul(), std::vector<Element*>(number, NULL));
+	fixPoints.resize(block.domains.mul(), std::vector<OldElement*>(number, NULL));
 
 	Triple<size_t> domain;
 	for (domain.z = 0; domain.z < block.domains.z; domain.z++) {
@@ -156,7 +156,7 @@ void Block<TElement>::uniformFixPoints(const std::vector<Element*> &nodes, std::
 }
 
 template<class TElement>
-void Block<TElement>::uniformCorners(const std::vector<Element*> &nodes, std::vector<Element*> &corners, size_t number, bool point, bool edge, bool face)
+void Block<TElement>::uniformCorners(const std::vector<OldElement*> &nodes, std::vector<OldElement*> &corners, size_t number, bool point, bool edge, bool face)
 {
 	Triple<size_t> dnodes = (Triple<size_t>(TElement::subnodes) - 1) * block.elements;
 	Triple<size_t> cnodes = block.domains * dnodes;
@@ -233,7 +233,7 @@ void Block<TElement>::uniformCorners(const std::vector<Element*> &nodes, std::ve
 }
 
 template <class TElement>
-void Block<TElement>::boundaries(std::vector<Element*> &nodes, const std::vector<int> &neighbours)
+void Block<TElement>::boundaries(std::vector<OldElement*> &nodes, const std::vector<int> &neighbours)
 {
 	std::vector<int> sorted(neighbours.size());
 	std::iota(sorted.begin(), sorted.end(), 0);
@@ -266,7 +266,7 @@ void Block<TElement>::boundaries(std::vector<Element*> &nodes, const std::vector
 }
 
 template <class TElement>
-void Block<TElement>::pickElements(const Triple<size_t> &start, const Triple<size_t> &end, const std::vector<Element*> &elements, Region *region)
+void Block<TElement>::pickElements(const Triple<size_t> &start, const Triple<size_t> &end, const std::vector<OldElement*> &elements, Region *region)
 {
 	auto isIn = [&] (const Triple<size_t> &index) {
 		return
@@ -300,7 +300,7 @@ void Block<TElement>::pickElements(const Triple<size_t> &start, const Triple<siz
 }
 
 template <class TElement>
-void Block<TElement>::region(const std::vector<Element*> &elements, Region *region, const BlockBorder &border, size_t dimension)
+void Block<TElement>::region(const std::vector<OldElement*> &elements, Region *region, const BlockBorder &border, size_t dimension)
 {
 	BlockBorder intersection = border.intersect(block);
 	if (intersection.dimension() > 3) {
@@ -442,7 +442,7 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region *regi
 }
 
 template <class TElement>
-void Block<TElement>::pattern(const std::vector<Element*> &elements, Region *region, const Triple<size_t> &offset, const Triple<size_t> &size, Pattern pattern, size_t psize)
+void Block<TElement>::pattern(const std::vector<OldElement*> &elements, Region *region, const Triple<size_t> &offset, const Triple<size_t> &size, Pattern pattern, size_t psize)
 {
 	Triple<size_t> divisor(size * block.elements * block.domains / psize);
 	Triple<size_t> modulo;

@@ -14,7 +14,7 @@ class DOF: public PointElement
 
 public:
 	DOF(eslocal index): PointElement(index) {};
-	Element* copy() const { return new DOF(*this); }
+	OldElement* copy() const { return new DOF(*this); }
 
 	eslocal vtkCode() const { return DOFVTKCode; }
 	size_t gaussePoints() const { return DOFGPCount; }

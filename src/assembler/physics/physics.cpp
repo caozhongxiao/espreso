@@ -134,7 +134,7 @@ void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPM
 	}
 }
 
-void Physics::updateMatrix(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution)
+void Physics::updateMatrix(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution)
 {
 	processElement(step, matrices, e, Ke, Me, Re, fe, solution);
 
@@ -161,7 +161,7 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, const Element *e
  * x1, x2, x3, ..., y1, y2, y3, ..., z1, z2, z3,...
  *
  */
-void Physics::fillDOFsIndices(const Element *e, eslocal domain, std::vector<eslocal> &DOFs) const
+void Physics::fillDOFsIndices(const OldElement *e, eslocal domain, std::vector<eslocal> &DOFs) const
 {
 	DOFs.resize(e->nodes() * pointDOFsOffsets().size());
 	for (size_t dof = 0, i = 0; dof < pointDOFsOffsets().size(); dof++) {

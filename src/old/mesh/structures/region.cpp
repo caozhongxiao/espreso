@@ -12,10 +12,10 @@ using namespace espreso;
 Region::Region(ElementType eType)
 : eType(eType), area(0), _destroy(true)
 {
-	_elements = new std::vector<Element*>();
+	_elements = new std::vector<OldElement*>();
 }
 
-Region::Region(ElementType eType, std::vector<Element*> &element)
+Region::Region(ElementType eType, std::vector<OldElement*> &element)
 : eType(eType), area(0), _elements(&element), _destroy(false)
 {
 
@@ -37,13 +37,13 @@ void Region::computeArea(const Coordinates &coordinates) const
 			coords(n, 2) = coordinates[elements()[e]->node(n)].z;
 		}
 
-		if (elements()[e]->type() == Element::Type::LINE) {
+		if (elements()[e]->type() == OldElement::Type::LINE) {
 			for (size_t gp = 0; gp < elements()[e]->gaussePoints(); gp++) {
 				dND.multiply(dN[gp], coords);
 				A += dND.norm() * weighFactor[gp];
 			}
 		}
-		if (elements()[e]->type() == Element::Type::PLANE) {
+		if (elements()[e]->type() == OldElement::Type::PLANE) {
 			for (size_t gp = 0; gp < elements()[e]->gaussePoints(); gp++) {
 				dND.multiply(dN[gp], coords);
 				Point v2(dND(0, 0), dND(0, 1), dND(0, 2));

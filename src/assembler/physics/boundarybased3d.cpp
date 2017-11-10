@@ -35,7 +35,7 @@ void BoundaryBased3D::extractBoundaryNodes()
 
 	for (size_t p = 0; p < _mesh->parts(); p++) {
 		for (size_t i = 0; i < _boundaryIndices[p].size(); i++) {
-			Element *node = _mesh->nodes()[_boundaryIndices[p][i]];
+			OldElement *node = _mesh->nodes()[_boundaryIndices[p][i]];
 			size_t d = std::lower_bound(node->domains().begin(), node->domains().end(), p) - node->domains().begin();
 			for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
 				node->DOFsIndices()[pointDOFs().size() * d + dof] = pointDOFs().size() * i + dof;

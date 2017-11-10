@@ -125,7 +125,7 @@ bool Triangle3::match(eslocal *indices, eslocal n)
 
 	for (eslocal i = 0; i < Triangle3NodesCount - 1; i++) {
 		for (eslocal j = i + 1; j < Triangle3NodesCount; j++) {
-			if (Element::match(indices, i, j)) {
+			if (OldElement::match(indices, i, j)) {
 				return false;
 			}
 		}

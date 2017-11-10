@@ -15,7 +15,7 @@ struct G2L;
 class Coordinates;
 class Evaluator;
 class Region;
-class Element;
+class OldElement;
 enum class Property;
 enum class ElementType;
 
@@ -69,12 +69,12 @@ public:
 	void loadMaterials(const std::map<std::string, MaterialConfiguration> &materials, const std::map<std::string, std::string> &sets);
 
 	const Coordinates& coordinates() const { return *_coordinates; }
-	const std::vector<Element*>& elements() const { return _elements; };
-	const std::vector<Element*>& faces() const { return _faces; };
-	const std::vector<Element*>& edges() const { return _edges; };
-	const std::vector<Element*>& nodes() const { return _nodes; };
+	const std::vector<OldElement*>& elements() const { return _elements; };
+	const std::vector<OldElement*>& faces() const { return _faces; };
+	const std::vector<OldElement*>& edges() const { return _edges; };
+	const std::vector<OldElement*>& nodes() const { return _nodes; };
 
-	Element* getDOFsElement(size_t part, size_t DOF) const { return _DOFtoElement[part][DOF]; }
+	OldElement* getDOFsElement(size_t part, size_t DOF) const { return _DOFtoElement[part][DOF]; }
 	std::vector<std::vector<Region*> > getRegionsWithProperties(size_t loadStep, const std::vector<Property> &properties) const;
 	static std::vector<std::vector<Region*> > getRegionsWithProperties(const std::vector<Region*> &regions, size_t loadStep, const std::vector<Property> &properties);
 	static bool commonRegion(const std::vector<Region*> &v1, const std::vector<Region*> &v2);
@@ -83,9 +83,9 @@ public:
 	const std::map<Property, std::vector<Property> >& propertyGroups() const { return _propertyGroups; }
 
 
-	const std::vector<std::vector<Element*> >& fixPoints() const { return _fixPoints; }
-	const std::vector<Element*>& fixPoints(size_t part) const { return _fixPoints[part]; }
-	const std::vector<Element*>& corners() const { return _corners; }
+	const std::vector<std::vector<OldElement*> >& fixPoints() const { return _fixPoints; }
+	const std::vector<OldElement*>& fixPoints(size_t part) const { return _fixPoints[part]; }
+	const std::vector<OldElement*>& corners() const { return _corners; }
 
 	size_t steps() const { return _steps; }
 	size_t parts() const { return _partPtrs.size() - 1; }
@@ -122,16 +122,16 @@ public:
 	const std::vector<eslocal>& getContinuityPartition() const { return _continuousPartId; }
 
 	void checkNeighbours();
-	void storeNodeData(const std::string &name, std::function<void (std::ofstream &os, const Element* e)> store);
+	void storeNodeData(const std::string &name, std::function<void (std::ofstream &os, const OldElement* e)> store);
 	void storeRegions();
-	void checkRegions(const std::vector<Element*> &elements);
+	void checkRegions(const std::vector<OldElement*> &elements);
 
 protected:
-	void fillFacesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* face)> filter);
-	void fillEdgesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* edge)> filter);
+	void fillFacesFromElements(std::function<bool(const std::vector<OldElement*> &nodes, const OldElement* face)> filter);
+	void fillEdgesFromElements(std::function<bool(const std::vector<OldElement*> &nodes, const OldElement* edge)> filter);
 	void fillNodesFromCoordinates();
 
-	void fillEdgesFromFaces(std::function<bool(const std::vector<Element*> &nodes, const Element* edge)> filter);
+	void fillEdgesFromFaces(std::function<bool(const std::vector<OldElement*> &nodes, const OldElement* edge)> filter);
 
 	void fillParentEdgesToNodes();
 	void fillParentFacesToNodes();
@@ -157,9 +157,9 @@ protected:
 			ElementType type);
 
 	std::vector<eslocal> getPartition(size_t begin, size_t end, eslocal parts) const;
-	std::vector<eslocal> getPartition(const std::vector<Element*> &elements, size_t begin, size_t end, eslocal parts) const;
+	std::vector<eslocal> getPartition(const std::vector<OldElement*> &elements, size_t begin, size_t end, eslocal parts) const;
 	eslocal getCentralNode(eslocal begin, eslocal end, const std::vector<eslocal> &ePartition, eslocal part, eslocal subpart) const;
-	eslocal getCentralNode(const std::vector<Element*> &elements, size_t begin, size_t end, const std::vector<eslocal> &ePartition, eslocal subpart) const;
+	eslocal getCentralNode(const std::vector<OldElement*> &elements, size_t begin, size_t end, const std::vector<eslocal> &ePartition, eslocal subpart) const;
 	void makePartContinuous(size_t part);
 
 	/** @brief Reference to coordinates. */
@@ -177,25 +177,25 @@ protected:
 	std::vector<eslocal> _continuousPartId;
 
 	/// Elements of the mesh.
-	std::vector<Element*> _elements;
+	std::vector<OldElement*> _elements;
 
 	/// Faces of the elements.
-	std::vector<Element*> _faces;
+	std::vector<OldElement*> _faces;
 
 	/// Edges of the elements.
-	std::vector<Element*> _edges;
+	std::vector<OldElement*> _edges;
 
 	/// Nodes of the elements.
-	std::vector<Element*> _nodes;
+	std::vector<OldElement*> _nodes;
 
 	/// Back map from DOFs to Element
-	std::vector<std::vector<Element*> > _DOFtoElement;
+	std::vector<std::vector<OldElement*> > _DOFtoElement;
 
 	/** @brief Fix points for all parts. */
-	std::vector<std::vector<Element*> > _fixPoints;
+	std::vector<std::vector<OldElement*> > _fixPoints;
 
 	/// Corners for HFETI
-	std::vector<Element*> _corners;
+	std::vector<OldElement*> _corners;
 
 	/** @brief list of neighbours MPI ranks */
 	std::vector<int> _neighbours;
@@ -256,10 +256,10 @@ public:
 	void computeDOFsDOFsCounters();
 	std::vector<size_t> distributeDOFsToDomains(const std::vector<size_t> &offsets);
 
-	const std::vector<Element*>& DOFs() const { return _DOFs; }
+	const std::vector<OldElement*>& DOFs() const { return _DOFs; }
 
 protected:
-	std::vector<Element*> _DOFs;
+	std::vector<OldElement*> _DOFs;
 	std::vector<esglobal> _l2g;
 	std::vector<G2L> *_g2l;
 };

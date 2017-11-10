@@ -11,7 +11,7 @@ using namespace espreso::input;
 size_t Prisma15::subelements = 2;
 size_t Prisma15::subnodes[] = { 3, 3, 3 };
 
-void Prisma15::addElements(std::vector<Element*> &elements, const eslocal indices[], const eslocal params[])
+void Prisma15::addElements(std::vector<OldElement*> &elements, const eslocal indices[], const eslocal params[])
 {
 	eslocal prisma[15];
 	prisma[0] = indices[0];
@@ -51,12 +51,12 @@ void Prisma15::addElements(std::vector<Element*> &elements, const eslocal indice
 	elements.push_back(new espreso::Prisma15(prisma, 15, params));
 }
 
-void Prisma15::addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdge edge)
+void Prisma15::addEdges(std::vector<OldElement*> &edges, const eslocal indices[], CubeEdge edge)
 {
 	ESINFO(GLOBAL_ERROR) << "Implement addEdges for PRISMA15";
 }
 
-void Prisma15::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)
+void Prisma15::addFaces(std::vector<OldElement*> &faces, const eslocal indices[], CubeFace face)
 {
 	eslocal triangle1[6], triangle2[6];
 
@@ -106,12 +106,12 @@ void Prisma15::addFaces(std::vector<Element*> &faces, const eslocal indices[], C
 	}
 }
 
-void Prisma15::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeEdge edge)
+void Prisma15::pickNodes(const std::vector<OldElement*> &nodes, std::vector<OldElement*> &selection, const eslocal indices[], CubeEdge edge)
 {
 	ESINFO(GLOBAL_ERROR) << "Implement pickNodes for an edge for PRISMA15";
 }
 
-void Prisma15::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFace face)
+void Prisma15::pickNodes(const std::vector<OldElement*> &nodes, std::vector<OldElement*> &selection, const eslocal indices[], CubeFace face)
 {
 	switch (face) {
 	case CubeFace::X_1:

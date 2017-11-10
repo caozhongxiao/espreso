@@ -11,9 +11,9 @@ namespace espreso {
 class UnknownVolume: public VolumeElement
 {
 public:
-	UnknownVolume(const std::vector<Element*> &nodes, std::vector<eslocal> &indices, std::vector<eslocal> &DOFsIndices, std::vector<double> &stiffnessMatrix)
+	UnknownVolume(const std::vector<OldElement*> &nodes, std::vector<eslocal> &indices, std::vector<eslocal> &DOFsIndices, std::vector<double> &stiffnessMatrix)
 	: _nodes(nodes), _indices(indices), _stiffnessMatrix(stiffnessMatrix) { _DOFsIndices = DOFsIndices; };
-	Element* copy() const { return new UnknownVolume(*this); }
+	OldElement* copy() const { return new UnknownVolume(*this); }
 
 	eslocal nCommon() const { return _indices.size() > 8 ? 4 : 3; }
 	eslocal vtkCode() const { return UnknownVolumeVTKCode; }
@@ -43,7 +43,7 @@ public:
 		return faceNodes;
 	}
 
-	Element* addFace(const std::vector<eslocal> &nodes) { return NULL; }
+	OldElement* addFace(const std::vector<eslocal> &nodes) { return NULL; }
 
 	const std::vector<DenseMatrix>& facedN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(ERROR) << "Unknown volume has no base functions for face."; exit(1); }
 	const std::vector<DenseMatrix>& faceN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(ERROR) << "Unknown volume has no base functions for face."; exit(1); }
@@ -73,7 +73,7 @@ protected:
 	size_t fillEdges() { ESINFO(GLOBAL_ERROR) << "Unknown volume element cannot fill edges."; return 0; }
 
 private:
-	const std::vector<Element*> &_nodes;
+	const std::vector<OldElement*> &_nodes;
 	std::vector<eslocal> &_indices;
 	std::vector<double> &_stiffnessMatrix;
 	std::vector<std::vector<eslocal> > _faceNodes;

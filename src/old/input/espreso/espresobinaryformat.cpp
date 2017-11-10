@@ -89,7 +89,7 @@ void ESPRESOBinaryFormat::points(Coordinates &coordinates)
 	}
 }
 
-static void addElements(std::ifstream &is, std::vector<espreso::Element*> &elements, size_t number)
+static void addElements(std::ifstream &is, std::vector<espreso::OldElement*> &elements, size_t number)
 {
 	eslocal type;
 	for (size_t i = 0; i < number; i++) {
@@ -141,7 +141,7 @@ static void addElements(std::ifstream &is, std::vector<espreso::Element*> &eleme
 	}
 };
 
-void ESPRESOBinaryFormat::elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
+void ESPRESOBinaryFormat::elements(std::vector<size_t> &bodies, std::vector<OldElement*> &elements, std::vector<OldElement*> &faces, std::vector<OldElement*> &edges)
 {
 	std::stringstream fileName;
 	fileName << _configuration.path << "/" << _rank << "/elements.dat";
@@ -174,10 +174,10 @@ void ESPRESOBinaryFormat::materials(std::vector<MaterialConfiguration*> &materia
 void ESPRESOBinaryFormat::regions(
 		std::vector<Evaluator*> &evaluators,
 		std::vector<Region*> &regions,
-		std::vector<Element*> &elements,
-		std::vector<Element*> &faces,
-		std::vector<Element*> &edges,
-		std::vector<Element*> &nodes)
+		std::vector<OldElement*> &elements,
+		std::vector<OldElement*> &faces,
+		std::vector<OldElement*> &edges,
+		std::vector<OldElement*> &nodes)
 {
 	std::stringstream fileName;
 	fileName << _configuration.path << "/" << _rank << "/regions.dat";
@@ -274,13 +274,13 @@ void ESPRESOBinaryFormat::regions(
 	is.close();
 }
 
-bool ESPRESOBinaryFormat::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
+bool ESPRESOBinaryFormat::partitiate(const std::vector<OldElement*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<OldElement*> > &fixPoints, std::vector<OldElement*> &corners)
 {
 	mesh.partitiate(_configuration.domains);
 	return true;
 }
 
-void ESPRESOBinaryFormat::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges)
+void ESPRESOBinaryFormat::neighbours(std::vector<OldElement*> &nodes, std::vector<int> &neighbours, const std::vector<OldElement*> &faces, const std::vector<OldElement*> &edges)
 {
 	std::stringstream fileName;
 	fileName << _configuration.path << "/" << _rank << "/boundaries.dat";

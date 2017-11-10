@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-class VolumeElement: public Element
+class VolumeElement: public OldElement
 {
 
 	friend class OldMesh;
@@ -21,31 +21,31 @@ public:
 	virtual size_t filledFaces() const { return _faces.size(); }
 	virtual size_t filledEdges() const { return _edges.size(); }
 
-	virtual Element* face(size_t index) const
+	virtual OldElement* face(size_t index) const
 	{
 		if (index >= _faces.size()) {
 			ESINFO(ERROR) << "Element does not have face " << index;
 		}
 		return _faces[index];
 	}
-	virtual Element* edge(size_t index) const { return _edges[index]; }
+	virtual OldElement* edge(size_t index) const { return _edges[index]; }
 
-	virtual void addFace(Element* face)
+	virtual void addFace(OldElement* face)
 	{
 		_faces.push_back(face);
 	}
-	virtual void addEdge(Element* edge)
+	virtual void addEdge(OldElement* edge)
 	{
 		_edges.push_back(edge);
 	}
 
 protected:
-	void setFace(size_t index, Element* face) { _faces[index] = face; }
-	void setEdge(size_t index, Element* edge) { _edges[index] = edge; }
+	void setFace(size_t index, OldElement* face) { _faces[index] = face; }
+	void setEdge(size_t index, OldElement* edge) { _edges[index] = edge; }
 
 	eslocal _params[PARAMS_SIZE];
-	std::vector<Element*> _edges;
-	std::vector<Element*> _faces;
+	std::vector<OldElement*> _edges;
+	std::vector<OldElement*> _faces;
 };
 
 }

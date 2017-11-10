@@ -80,7 +80,7 @@ void Precomputed::updateMatrix(const Step &step, Matrices matrices, size_t domai
 	}
 
 	const std::vector<eslocal> &partition = dynamic_cast<APIMesh*>(_mesh)->getPartition();
-	const std::vector<Element*> &DOFs = dynamic_cast<APIMesh*>(_mesh)->DOFs();
+	const std::vector<OldElement*> &DOFs = dynamic_cast<APIMesh*>(_mesh)->DOFs();
 
 	for (eslocal e = partition[domain]; e < partition[domain + 1]; e++) {
 
@@ -141,22 +141,22 @@ void Precomputed::analyticRegularization(size_t domain, bool ortogonalCluster)
 	ESINFO(ERROR) << "Cannot compute analytic regularization of not PRECOMPUTED physics. Set FETI_REGULARIZATION = ALGEBRAIC";
 }
 
-void Precomputed::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void Precomputed::processElement(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	ESINFO(ERROR) << "ESPRESO internal error: cannot process element of precomputed physics";
 }
 
-void Precomputed::processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void Precomputed::processFace(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	ESINFO(ERROR) << "ESPRESO internal error: cannot process face of precomputed physics";
 }
 
-void Precomputed::processEdge(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void Precomputed::processEdge(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	ESINFO(ERROR) << "ESPRESO internal error: cannot process edge of precomputed physics";
 }
 
-void Precomputed::processNode(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void Precomputed::processNode(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	ESINFO(ERROR) << "ESPRESO internal error: cannot process node of precomputed physics";
 }

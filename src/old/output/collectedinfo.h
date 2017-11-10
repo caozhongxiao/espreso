@@ -7,7 +7,7 @@
 
 namespace espreso {
 
-class Element;
+class OldElement;
 
 struct CollectedInfo: public MeshInfo {
 
@@ -36,7 +36,7 @@ protected:
 	std::vector<std::vector<eslocal> > _cIndices;
 
 private:
-	void prepare(const std::vector<Element*> &region);
+	void prepare(const std::vector<OldElement*> &region);
 
 };
 

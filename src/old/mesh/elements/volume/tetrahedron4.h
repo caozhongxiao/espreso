@@ -37,7 +37,7 @@ public:
 
 	Tetrahedron4(const eslocal *indices, eslocal n, const eslocal *params);
 	Tetrahedron4(std::ifstream &is);
-	Element* copy() const { return new Tetrahedron4(*this); }
+	OldElement* copy() const { return new Tetrahedron4(*this); }
 
 	eslocal nCommon() const { return Tetrahedron4CommonNodes; }
 	eslocal vtkCode() const { return Tetrahedron4VTKCode; }
@@ -48,7 +48,7 @@ public:
 	size_t coarseNodes() const { return Tetrahedron4NodesCount; }
 	size_t gaussePoints() const { return Tetrahedron4GPCount; }
 
-	Element* addFace(const std::vector<eslocal> &nodes);
+	OldElement* addFace(const std::vector<eslocal> &nodes);
 
 	const std::vector<eslocal>& faceNodes(size_t index) const { return Tetrahedron4::_facesNodes[index]; }
 	const std::vector<eslocal>& edgeNodes(size_t index) const { return Tetrahedron4::_edgesNodes[index]; }

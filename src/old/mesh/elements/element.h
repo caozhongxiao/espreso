@@ -18,7 +18,7 @@ class OldMesh;
 class DenseMatrix;
 enum class Property;
 
-class Element
+class OldElement
 {
 	friend class OldMesh;
 
@@ -49,9 +49,9 @@ public:
 	}
 
 	void store(std::ofstream& os, const Coordinates &coordinates, size_t part);
-	friend std::ostream& operator<<(std::ostream& os, const Element &e);
+	friend std::ostream& operator<<(std::ostream& os, const OldElement &e);
 
-	bool operator<(const Element& other) const
+	bool operator<(const OldElement& other) const
 	{
 		if (coarseNodes() != other.coarseNodes()) {
 			return coarseNodes() < other.coarseNodes();
@@ -64,7 +64,7 @@ public:
 		return e1 < e2;
 	}
 
-	bool operator==(const Element& other) const
+	bool operator==(const OldElement& other) const
 	{
 		if (coarseNodes() != other.coarseNodes()) {
 			return false;
@@ -72,7 +72,7 @@ public:
 		return std::is_permutation(indices(), indices() + coarseNodes(), other.indices());
 	}
 
-	virtual ~Element() {};
+	virtual ~OldElement() {};
 
 	virtual const std::vector<DenseMatrix>& facedN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const = 0;
 	virtual const std::vector<DenseMatrix>& faceN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const = 0;
@@ -103,8 +103,8 @@ public:
 	virtual const std::vector<eslocal>& faceNodes(size_t index) const =0;
 	virtual const std::vector<eslocal>& edgeNodes(size_t index) const =0;
 
-	virtual Element* face(size_t index) const = 0;
-	virtual Element* edge(size_t index) const = 0;
+	virtual OldElement* face(size_t index) const = 0;
+	virtual OldElement* edge(size_t index) const = 0;
 	eslocal& node(size_t index) { return indices()[index]; }
 	const eslocal& node(size_t index) const { return indices()[index]; }
 	virtual eslocal* indices() = 0;
@@ -119,14 +119,14 @@ public:
 	std::vector<Region*>& regions() { return _regions; }
 	const std::vector<Region*>& regions() const { return _regions; }
 
-	std::vector<Element*>& parentElements() { return _parentElements; }
-	const std::vector<Element*>& parentElements() const { return _parentElements; }
+	std::vector<OldElement*>& parentElements() { return _parentElements; }
+	const std::vector<OldElement*>& parentElements() const { return _parentElements; }
 
-	std::vector<Element*>& parentFaces() { return _parentFaces; }
-	const std::vector<Element*>& parentFaces() const { return _parentFaces; }
+	std::vector<OldElement*>& parentFaces() { return _parentFaces; }
+	const std::vector<OldElement*>& parentFaces() const { return _parentFaces; }
 
-	std::vector<Element*>& parentEdges() { return _parentEdges; }
-	const std::vector<Element*>& parentEdges() const { return _parentEdges; }
+	std::vector<OldElement*>& parentEdges() { return _parentEdges; }
+	const std::vector<OldElement*>& parentEdges() const { return _parentEdges; }
 
 	std::vector<eslocal>& domains() { return _domains; }
 	const std::vector<eslocal>& domains() const { return _domains; }
@@ -203,62 +203,62 @@ public:
 		return it != _domains.end() && *it == domain;
 	}
 
-	void addParent(Element* parent) { _parentElements.push_back(parent); }
-	virtual void addFace(Element* face) = 0;
-	virtual void addEdge(Element* edge) = 0;
+	void addParent(OldElement* parent) { _parentElements.push_back(parent); }
+	virtual void addFace(OldElement* face) = 0;
+	virtual void addEdge(OldElement* edge) = 0;
 
-	virtual Element* addFace(const std::vector<eslocal> &nodes) = 0;
+	virtual OldElement* addFace(const std::vector<eslocal> &nodes) = 0;
 
-	bool isFaceSwapped(const Element* face) const;
-	void rotateOutside(const Element* parent, const Coordinates &coordinates, Point &normal) const;
+	bool isFaceSwapped(const OldElement* face) const;
+	void rotateOutside(const OldElement* parent, const Coordinates &coordinates, Point &normal) const;
 
 	bool hasProperty(Property property, size_t step) const;
 	double sumProperty(Property property, size_t step, const Point &p, double time, double temperature, double defaultValue) const;
 	double getProperty(Property property, size_t step, const Point &p, double time, double temperature, double defaultValue) const;
 
 protected:
-	virtual Element* copy() const =0;
+	virtual OldElement* copy() const =0;
 	virtual std::vector<eslocal> getNeighbours(size_t nodeIndex) const = 0;
 
-	virtual void setFace(size_t index, Element* face) = 0;
-	virtual void setEdge(size_t index, Element* edge) = 0;
+	virtual void setFace(size_t index, OldElement* face) = 0;
+	virtual void setEdge(size_t index, OldElement* edge) = 0;
 
 	virtual size_t fillFaces() = 0;
 	virtual size_t fillEdges() = 0;
 
 
 	template <class TEdge>
-	Element* addUniqueEdge(const eslocal *line, size_t filled, size_t coarseSize)
+	OldElement* addUniqueEdge(const eslocal *line, size_t filled, size_t coarseSize)
 	{
 		for (size_t i = 0; i < filled; i++) {
 			if (std::is_permutation(edge(i)->indices(), edge(i)->indices() + coarseSize, line)) {
 				return this->edge(i);
 			}
 		}
-		Element *e = new TEdge(line);
+		OldElement *e = new TEdge(line);
 		addEdge(e);
 		e->addParent(this);
 		return e;
 	}
 
 	template <class TFace>
-	Element* addUniqueFace(const eslocal *face, size_t filled, size_t coarseSize)
+	OldElement* addUniqueFace(const eslocal *face, size_t filled, size_t coarseSize)
 	{
 		for (size_t i = 0; i < filled; i++) {
 			if (std::is_permutation(this->face(i)->indices(), this->face(i)->indices() + coarseSize, face)) {
 				return this->face(i);
 			}
 		}
-		Element *f = new TFace(face);
+		OldElement *f = new TFace(face);
 		addFace(f);
 		f->addParent(this);
 		return f;
 	}
 
 	std::vector<Region*> _regions;
-	std::vector<Element*> _parentElements;
-	std::vector<Element*> _parentFaces;
-	std::vector<Element*> _parentEdges;
+	std::vector<OldElement*> _parentElements;
+	std::vector<OldElement*> _parentFaces;
+	std::vector<OldElement*> _parentEdges;
 	std::vector<eslocal> _domains;
 	std::vector<eslocal> _clusters;
 	std::vector<eslocal> _DOFsIndices;
@@ -267,7 +267,7 @@ protected:
 	size_t _domainsCounters;
 };
 
-inline std::ostream& operator<<(std::ostream& os, const Element &e)
+inline std::ostream& operator<<(std::ostream& os, const OldElement &e)
 {
 	for (size_t i = 0; i < e.nodes(); i++) {
 		os << e.node(i) << " ";

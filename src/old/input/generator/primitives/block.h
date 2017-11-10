@@ -22,8 +22,8 @@ enum class Pattern {
 class BlockGenerator: public ClusterGenerator {
 
 public:
-	virtual void region(const std::vector<Element*> &elements, Region *region, const BlockBorder &border, size_t dimension) =0;
-	virtual void pattern(const std::vector<Element*> &elements, Region *region, const Triple<size_t> &offset, const Triple<size_t> &size, Pattern pattern, size_t psize) =0;
+	virtual void region(const std::vector<OldElement*> &elements, Region *region, const BlockBorder &border, size_t dimension) =0;
+	virtual void pattern(const std::vector<OldElement*> &elements, Region *region, const Triple<size_t> &offset, const Triple<size_t> &size, Pattern pattern, size_t psize) =0;
 	virtual ~BlockGenerator() {};
 
 	BlockSetting block;
@@ -38,19 +38,19 @@ public:
 	Block(const BlockSetting &block): BlockGenerator(block) {};
 
 	void points(std::vector<Point> &points);
-	void elements(std::vector<Element*> &elements, size_t body);
-	void boundaries(std::vector<Element*> &nodes, const std::vector<int> &neighbours);
+	void elements(std::vector<OldElement*> &elements, size_t body);
+	void boundaries(std::vector<OldElement*> &nodes, const std::vector<int> &neighbours);
 	void uniformPartition(std::vector<eslocal> &partsPtrs, size_t subdomains);
-	void uniformFixPoints(const std::vector<Element*> &nodes, std::vector<std::vector<Element*> > &fixPoints);
-	void uniformCorners(const std::vector<Element*> &nodes, std::vector<Element*> &corners, size_t number, bool point, bool edge, bool face);
+	void uniformFixPoints(const std::vector<OldElement*> &nodes, std::vector<std::vector<OldElement*> > &fixPoints);
+	void uniformCorners(const std::vector<OldElement*> &nodes, std::vector<OldElement*> &corners, size_t number, bool point, bool edge, bool face);
 
-	void region(const std::vector<Element*> &elements, Region *region, const BlockBorder &border, size_t dimension);
-	void pattern(const std::vector<Element*> &elements, Region *region, const Triple<size_t> &offset, const Triple<size_t> &size, Pattern pattern, size_t psize);
+	void region(const std::vector<OldElement*> &elements, Region *region, const BlockBorder &border, size_t dimension);
+	void pattern(const std::vector<OldElement*> &elements, Region *region, const Triple<size_t> &offset, const Triple<size_t> &size, Pattern pattern, size_t psize);
 
 private:
 	void forEachElement(const Triple<size_t> &start, const Triple<size_t> &end, std::function<void(std::vector<eslocal> &indices)> operation);
 	void forEachElement(const Triple<size_t> &start, const Triple<size_t> &end, std::function<void(std::vector<eslocal> &indices)> operation, std::function<void(Triple<size_t> &offset)> restriction);
-	void pickElements(const Triple<size_t> &start, const Triple<size_t> &end, const std::vector<Element*> &elements, Region *region);
+	void pickElements(const Triple<size_t> &start, const Triple<size_t> &end, const std::vector<OldElement*> &elements, Region *region);
 };
 
 }

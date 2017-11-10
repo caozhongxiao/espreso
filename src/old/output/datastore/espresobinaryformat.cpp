@@ -89,7 +89,7 @@ void ESPRESOBinaryFormat::elements()
 	for  (size_t p = 0; p < _mesh.parts(); p++) {
 		std::ofstream os;
 		const std::vector<eslocal> &parts = _mesh.getPartition();
-		const std::vector<Element*> &elements = _mesh.elements();
+		const std::vector<OldElement*> &elements = _mesh.elements();
 		eslocal size;
 
 		std::stringstream ss;
@@ -130,7 +130,7 @@ void ESPRESOBinaryFormat::materials()
 
 void ESPRESOBinaryFormat::regions()
 {
-	auto computeIntervals = [] (const std::vector<espreso::Element*> &elements, eslocal p) {
+	auto computeIntervals = [] (const std::vector<espreso::OldElement*> &elements, eslocal p) {
 		std::vector<size_t> intervals;
 		if (!elements.size()) {
 			return intervals;
@@ -188,8 +188,8 @@ void ESPRESOBinaryFormat::regions()
 		}
 
 		eslocal size;
-		std::vector<Element*> faces;
-		std::vector<Element*> edges;
+		std::vector<OldElement*> faces;
+		std::vector<OldElement*> edges;
 		for (size_t i = 0; i < _mesh.faces().size(); i++) {
 			if (_mesh.faces()[i]->regions().size()) {
 				faces.push_back(_mesh.faces()[i]);
@@ -201,8 +201,8 @@ void ESPRESOBinaryFormat::regions()
 			}
 		}
 
-		std::sort(faces.begin(), faces.end(), [] (Element *e1, Element *e2) { return e1->domains() < e2->domains(); });
-		std::sort(edges.begin(), edges.end(), [] (Element *e1, Element *e2) { return e1->domains() < e2->domains(); });
+		std::sort(faces.begin(), faces.end(), [] (OldElement *e1, OldElement *e2) { return e1->domains() < e2->domains(); });
+		std::sort(edges.begin(), edges.end(), [] (OldElement *e1, OldElement *e2) { return e1->domains() < e2->domains(); });
 
 		// faces
 		std::vector<size_t> fIntervals = computeIntervals(faces, p);
@@ -261,7 +261,7 @@ void ESPRESOBinaryFormat::regions()
 
 		// elements
 		const std::vector<eslocal> &parts = _mesh.getPartition();
-		const std::vector<Element*> &elements = _mesh.elements();
+		const std::vector<OldElement*> &elements = _mesh.elements();
 		size = parts[p + 1] - parts[p];
 		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
 		for (eslocal e = parts[p]; e < parts[p + 1]; e++) {
@@ -303,7 +303,7 @@ void ESPRESOBinaryFormat::regions()
 		size = _mesh.coordinates().localSize(p);
 		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
 		for (size_t i = 0; i < _mesh.coordinates().localSize(p); i++) {
-			const Element* node = _mesh.nodes()[_mesh.coordinates().clusterIndex(i, p)];
+			const OldElement* node = _mesh.nodes()[_mesh.coordinates().clusterIndex(i, p)];
 			size = node->regions().size() - 1;
 			os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
 			for (size_t r = 1; r < node->regions().size(); r++) {

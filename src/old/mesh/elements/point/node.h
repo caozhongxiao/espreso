@@ -28,7 +28,7 @@ public:
 	}
 
 	Node(eslocal index): PointElement(index) {};
-	Element* copy() const { return new Node(*this); }
+	OldElement* copy() const { return new Node(*this); }
 
 	eslocal vtkCode() const { return NodeVTKCode; }
 

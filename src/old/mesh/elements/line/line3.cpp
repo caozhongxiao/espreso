@@ -61,7 +61,7 @@ bool Line3::match(const eslocal *indices, eslocal n)
 		return false;
 	}
 
-	if (Element::match(indices, 0, 1) || Element::match(indices, 0, 2) || Element::match(indices, 1, 2)) {
+	if (OldElement::match(indices, 0, 1) || OldElement::match(indices, 0, 2) || OldElement::match(indices, 1, 2)) {
 		return false;
 	}
 

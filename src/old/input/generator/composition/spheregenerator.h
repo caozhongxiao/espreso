@@ -38,17 +38,17 @@ public:
 	static void load(const SphereGeneratorConfiguration &configuration, OldMesh &mesh, size_t index, size_t size);
 
 	virtual void points(Coordinates &coordinates);
-	virtual void elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
-	virtual void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges);
+	virtual void elements(std::vector<size_t> &bodies, std::vector<OldElement*> &elements, std::vector<OldElement*> &faces, std::vector<OldElement*> &edges);
+	virtual void neighbours(std::vector<OldElement*> &nodes, std::vector<int> &neighbours, const std::vector<OldElement*> &faces, const std::vector<OldElement*> &edges);
 	virtual void regions(
 			std::vector<Evaluator*> &evaluators,
 			std::vector<Region*> &regions,
-			std::vector<Element*> &elements,
-			std::vector<Element*> &faces,
-			std::vector<Element*> &edges,
-			std::vector<Element*> &nodes);
+			std::vector<OldElement*> &elements,
+			std::vector<OldElement*> &faces,
+			std::vector<OldElement*> &edges,
+			std::vector<OldElement*> &nodes);
 
-	virtual bool partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners);
+	virtual bool partitiate(const std::vector<OldElement*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<OldElement*> > &fixPoints, std::vector<OldElement*> &corners);
 
 protected:
 	enum class SIDE : int {

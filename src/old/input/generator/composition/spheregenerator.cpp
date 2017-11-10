@@ -178,13 +178,13 @@ void SphereGenerator::points(Coordinates &coordinates)
 	}
 }
 
-void SphereGenerator::elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
+void SphereGenerator::elements(std::vector<size_t> &bodies, std::vector<OldElement*> &elements, std::vector<OldElement*> &faces, std::vector<OldElement*> &edges)
 {
 	_block->elements(elements, 0);
 	bodies = { 0, elements.size() };
 }
 
-bool SphereGenerator::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
+bool SphereGenerator::partitiate(const std::vector<OldElement*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<OldElement*> > &fixPoints, std::vector<OldElement*> &corners)
 {
 	if (_settings.uniformDecomposition) {
 		_block->uniformPartition(partsPtrs, _settings.domains.mul());
@@ -197,7 +197,7 @@ bool SphereGenerator::partitiate(const std::vector<Element*> &nodes, std::vector
 	}
 }
 
-void SphereGenerator::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges)
+void SphereGenerator::neighbours(std::vector<OldElement*> &nodes, std::vector<int> &neighbours, const std::vector<OldElement*> &faces, const std::vector<OldElement*> &edges)
 {
 	std::vector<int> map(27, -1);
 	std::vector<eslocal> cross(9 * _settings.clusters * _settings.clusters, -1);
@@ -295,10 +295,10 @@ void SphereGenerator::neighbours(std::vector<Element*> &nodes, std::vector<int> 
 void SphereGenerator::regions(
 		std::vector<Evaluator*> &evaluators,
 		std::vector<Region*> &regions,
-		std::vector<Element*> &elements,
-		std::vector<Element*> &faces,
-		std::vector<Element*> &edges,
-		std::vector<Element*> &nodes)
+		std::vector<OldElement*> &elements,
+		std::vector<OldElement*> &faces,
+		std::vector<OldElement*> &edges,
+		std::vector<OldElement*> &nodes)
 {
 	for (auto it = _configuration.nodes.begin(); it != _configuration.nodes.end(); ++it) {
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {

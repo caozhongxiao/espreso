@@ -120,7 +120,7 @@ bool Triangle6::match(const eslocal *indices, const eslocal n)
 
 	for (eslocal i = 0; i < Triangle6NodesCount - 1; i++) {
 		for (eslocal j = i + 1; j < Triangle6NodesCount; j++) {
-			if (Element::match(indices, i, j)) {
+			if (OldElement::match(indices, i, j)) {
 				return false;
 			}
 		}

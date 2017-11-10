@@ -16,12 +16,12 @@ ElementBuilder::~ElementBuilder() {
 
 }
 
-ParseError* ElementBuilder::createElement(Element *&element, const Coordinates &coordinates) {
+ParseError* ElementBuilder::createElement(OldElement *&element, const Coordinates &coordinates) {
 
 	std::set< eslocal > nodes;
 	int numberOfSquares = 0;
 	eslocal indicies[8];
-	std::vector<eslocal> params(Element::PARAMS_SIZE);
+	std::vector<eslocal> params(OldElement::PARAMS_SIZE);
 
 	for (std::list<Face* >::iterator  it = selectedFaces.begin(); it != selectedFaces.end(); ++it) {
 		Face *face = *it;

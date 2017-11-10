@@ -9,7 +9,7 @@ using namespace espreso::input;
 size_t Triangle3::subelements = 2;
 size_t Triangle3::subnodes[] = { 2, 2, 1 };
 
-void Triangle3::addElements(std::vector<Element*> &elements, const eslocal indices[], const eslocal params[])
+void Triangle3::addElements(std::vector<OldElement*> &elements, const eslocal indices[], const eslocal params[])
 {
 	eslocal triangle[3];
 
@@ -24,12 +24,12 @@ void Triangle3::addElements(std::vector<Element*> &elements, const eslocal indic
 	elements.push_back(new espreso::Triangle3(triangle, params));
 }
 
-void Triangle3::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)
+void Triangle3::addFaces(std::vector<OldElement*> &faces, const eslocal indices[], CubeFace face)
 {
 	ESINFO(GLOBAL_ERROR) << "Generator: plane element has no faces.";
 }
 
-void Triangle3::addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdge edge)
+void Triangle3::addEdges(std::vector<OldElement*> &edges, const eslocal indices[], CubeEdge edge)
 {
 	eslocal line[2];
 	switch (edge) {
@@ -55,7 +55,7 @@ void Triangle3::addEdges(std::vector<Element*> &edges, const eslocal indices[], 
 	edges.push_back(new espreso::Line2(line));
 }
 
-void Triangle3::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeEdge edge)
+void Triangle3::pickNodes(const std::vector<OldElement*> &nodes, std::vector<OldElement*> &selection, const eslocal indices[], CubeEdge edge)
 {
 	switch (edge) {
 	case CubeEdge::X_0_Z_0:
@@ -79,7 +79,7 @@ void Triangle3::pickNodes(const std::vector<Element*> &nodes, std::vector<Elemen
 	}
 }
 
-void Triangle3::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFace face)
+void Triangle3::pickNodes(const std::vector<OldElement*> &nodes, std::vector<OldElement*> &selection, const eslocal indices[], CubeFace face)
 {
 	ESINFO(GLOBAL_ERROR) << "Implement pickNodes for a face for TRIANGLE3";
 }

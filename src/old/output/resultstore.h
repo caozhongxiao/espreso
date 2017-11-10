@@ -12,7 +12,7 @@
 
 namespace espreso {
 
-class Element;
+class OldElement;
 class OldMesh;
 class Region;
 

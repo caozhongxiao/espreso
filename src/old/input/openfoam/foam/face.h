@@ -31,7 +31,7 @@ public:
 
 	eslocal p[4];
 	eslocal numberOfPoints;
-	Element *faceElement;
+	OldElement *faceElement;
 
 protected:
 private:

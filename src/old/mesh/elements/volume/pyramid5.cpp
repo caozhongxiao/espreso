@@ -147,27 +147,27 @@ bool Pyramid5::match(const eslocal *indices, eslocal n) {
 	case 5:
 		for (eslocal i = 0; i < 4; i++) {
 			for (eslocal j = i + 1; j < 5; j++) {
-				if (Element::match(indices, i, j)) {
+				if (OldElement::match(indices, i, j)) {
 					return false;
 				}
 			}
 		}
 		return true;
 	case 8: {
-		if (!Element::match(indices, 4, 5)) {
+		if (!OldElement::match(indices, 4, 5)) {
 			return false;
 		}
-		if (!Element::match(indices, 5, 6)) {
+		if (!OldElement::match(indices, 5, 6)) {
 			return false;
 		}
-		if (!Element::match(indices, 6, 7)) {
+		if (!OldElement::match(indices, 6, 7)) {
 			return false;
 		}
 
 		eslocal various[5] = { 0, 1, 2, 3, 4};
 		for (eslocal i = 0; i < 4; i++) {
 			for (eslocal j = i + 1; j < 5; j++) {
-				if (Element::match(indices, various[i], various[j])) {
+				if (OldElement::match(indices, various[i], various[j])) {
 					return false;
 				}
 			}
@@ -241,7 +241,7 @@ size_t Pyramid5::fillFaces()
 	return filled;
 }
 
-Element* Pyramid5::addFace(const std::vector<eslocal> &nodes)
+OldElement* Pyramid5::addFace(const std::vector<eslocal> &nodes)
 {
 	for (size_t f = 0; f < faces(); f++) {
 		size_t found;

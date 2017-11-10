@@ -7,7 +7,7 @@
 
 namespace espreso {
 
-class Element;
+class OldElement;
 
 struct DistributedInfo: public MeshInfo {
 
@@ -42,7 +42,7 @@ protected:
 	std::vector<std::vector<size_t> > _cEOffset;
 
 private:
-	void prepare(const std::vector<Element*> &region, InfoMode mode);
+	void prepare(const std::vector<OldElement*> &region, InfoMode mode);
 };
 
 }

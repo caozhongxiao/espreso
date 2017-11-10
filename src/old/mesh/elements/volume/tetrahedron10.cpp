@@ -249,41 +249,41 @@ bool Tetrahedron10::match(const eslocal *indices, eslocal n) {
 
 	switch (n) {
 	case 20: {
-		if (!Element::match(indices, 2, 3)) {
+		if (!OldElement::match(indices, 2, 3)) {
 			return false;
 		}
-		if (!Element::match(indices, 2, 10)) {
+		if (!OldElement::match(indices, 2, 10)) {
 			return false;
 		}
-		if (!Element::match(indices, 18, 19)) {
+		if (!OldElement::match(indices, 18, 19)) {
 			return false;
 		}
-		if (!Element::match(indices, 4, 5)) {
+		if (!OldElement::match(indices, 4, 5)) {
 			return false;
 		}
-		if (!Element::match(indices, 4, 6)) {
+		if (!OldElement::match(indices, 4, 6)) {
 			return false;
 		}
-		if (!Element::match(indices, 4, 7)) {
+		if (!OldElement::match(indices, 4, 7)) {
 			return false;
 		}
-		if (!Element::match(indices, 4, 12)) {
+		if (!OldElement::match(indices, 4, 12)) {
 			return false;
 		}
-		if (!Element::match(indices, 4, 13)) {
+		if (!OldElement::match(indices, 4, 13)) {
 			return false;
 		}
-		if (!Element::match(indices, 4, 14)) {
+		if (!OldElement::match(indices, 4, 14)) {
 			return false;
 		}
-		if (!Element::match(indices, 4, 15)) {
+		if (!OldElement::match(indices, 4, 15)) {
 			return false;
 		}
 
 		eslocal various[10] = { 0, 1, 2, 4, 8, 9 ,11, 16, 17, 18 };
 		for (eslocal i = 0; i < 9; i++) {
 			for (eslocal j = i + 1; j < 10; j++) {
-				if (Element::match(indices, various[i], various[j])) {
+				if (OldElement::match(indices, various[i], various[j])) {
 					return false;
 				}
 			}
@@ -293,7 +293,7 @@ bool Tetrahedron10::match(const eslocal *indices, eslocal n) {
 	case 10:
 		for (eslocal i = 0; i < 9; i++) {
 			for (eslocal j = i + 1; j < 10; j++) {
-				if (Element::match(indices, i, j)) {
+				if (OldElement::match(indices, i, j)) {
 					return false;
 				}
 			}
@@ -414,7 +414,7 @@ size_t Tetrahedron10::fillFaces()
 	return filled;
 }
 
-Element* Tetrahedron10::addFace(const std::vector<eslocal> &nodes)
+OldElement* Tetrahedron10::addFace(const std::vector<eslocal> &nodes)
 {
 	for (size_t f = 0; f < faces(); f++) {
 		size_t found;

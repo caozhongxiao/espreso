@@ -49,7 +49,7 @@ MeshInfo* CollectedInfo::copyWithoutMesh() const
 	return copy;
 }
 
-void CollectedInfo::prepare(const std::vector<Element*> &region)
+void CollectedInfo::prepare(const std::vector<OldElement*> &region)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -69,10 +69,10 @@ void CollectedInfo::prepare(const std::vector<Element*> &region)
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 			size_t regionOffset = 0;
 			if ((_mode & InfoMode::SEPARATE_BODIES) && region[e]->params()) {
-				regionOffset += region[e]->param(Element::Params::BODY) * materials;
+				regionOffset += region[e]->param(OldElement::Params::BODY) * materials;
 			}
 			if ((_mode & InfoMode::SEPARATE_MATERIALS) && region[e]->params()) {
-				regionOffset += region[e]->param(Element::Params::MATERIAL);
+				regionOffset += region[e]->param(OldElement::Params::MATERIAL);
 			}
 			sElementsTypes[regionOffset][t].push_back(region[e]->vtkCode());
 			sElementsNodes[regionOffset][t].push_back(region[e]->nodes());
@@ -296,11 +296,11 @@ void CollectedInfo::addSettings(const Step &step)
 	for (size_t e = 0; e < region->elements().size(); e++) {
 		size_t regionOffset = 0, material = -1, body = -1;
 		if ((_mode & InfoMode::SEPARATE_BODIES) && region->elements()[e]->params()) {
-			body = region->elements()[e]->param(Element::Params::BODY);
+			body = region->elements()[e]->param(OldElement::Params::BODY);
 			regionOffset += body * materials;
 		}
 		if ((_mode & InfoMode::SEPARATE_MATERIALS) && region->elements()[e]->params()) {
-			material = region->elements()[e]->param(Element::Params::MATERIAL);
+			material = region->elements()[e]->param(OldElement::Params::MATERIAL);
 			regionOffset += material;
 		}
 
@@ -340,10 +340,10 @@ void CollectedInfo::addSettings(const Step &step)
 		for (size_t e = 0; e < region->elements().size(); e++) {
 			size_t regionOffset = 0;
 			if ((_mode & InfoMode::SEPARATE_BODIES) && region->elements()[e]->params()) {
-				regionOffset += region->elements()[e]->param(Element::Params::BODY) * materials;
+				regionOffset += region->elements()[e]->param(OldElement::Params::BODY) * materials;
 			}
 			if ((_mode & InfoMode::SEPARATE_MATERIALS) && region->elements()[e]->params()) {
-				regionOffset += region->elements()[e]->param(Element::Params::MATERIAL);
+				regionOffset += region->elements()[e]->param(OldElement::Params::MATERIAL);
 			}
 
 			for (auto p = pGroup.begin(); p != pGroup.end(); ++p) {
@@ -398,10 +398,10 @@ void CollectedInfo::addProperty(const Step &step, ElementType eType, Property pr
 			for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 				size_t regionOffset = 0;
 				if ((_mode & InfoMode::SEPARATE_BODIES) && _mesh->elements()[e]->params()) {
-					regionOffset += _mesh->elements()[e]->param(Element::Params::BODY) * materials;
+					regionOffset += _mesh->elements()[e]->param(OldElement::Params::BODY) * materials;
 				}
 				if ((_mode & InfoMode::SEPARATE_MATERIALS) && _mesh->elements()[e]->params()) {
-					regionOffset += _mesh->elements()[e]->param(Element::Params::MATERIAL);
+					regionOffset += _mesh->elements()[e]->param(OldElement::Params::MATERIAL);
 				}
 				Point center;
 				for (size_t n = 0; n < _mesh->elements()[e]->nodes(); n++) {
@@ -498,10 +498,10 @@ void CollectedInfo::addSolution(const std::vector<Solution*> &solution)
 				for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 					size_t regionOffset = 0;
 					if ((_mode & InfoMode::SEPARATE_BODIES) && _mesh->elements()[e]->params()) {
-						regionOffset += _mesh->elements()[e]->param(Element::Params::BODY) * materials;
+						regionOffset += _mesh->elements()[e]->param(OldElement::Params::BODY) * materials;
 					}
 					if ((_mode & InfoMode::SEPARATE_MATERIALS) && _mesh->elements()[e]->params()) {
-						regionOffset += _mesh->elements()[e]->param(Element::Params::MATERIAL);
+						regionOffset += _mesh->elements()[e]->param(OldElement::Params::MATERIAL);
 					}
 
 					eslocal d = std::lower_bound(_mesh->getPartition().begin(), _mesh->getPartition().end(), e + 1) - _mesh->getPartition().begin() - 1;

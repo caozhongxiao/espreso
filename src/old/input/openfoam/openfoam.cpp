@@ -98,14 +98,14 @@ void OpenFOAM::points(Coordinates &coordinates)
 	}
 }
 
-void OpenFOAM::elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
+void OpenFOAM::elements(std::vector<size_t> &bodies, std::vector<OldElement*> &elements, std::vector<OldElement*> &faces, std::vector<OldElement*> &edges)
 {
 	FoamFile facesFile(_polyMeshPath + "faces");
 	std::vector<Face> _faces;
 	solveParseError(parse(facesFile.getTokenizer(), _faces));
 
 	for (std::vector<Face>::iterator it = _faces.begin(); it != _faces.end(); ++it) {
-		Element *faceElement;
+		OldElement *faceElement;
 		switch ((*it).numberOfPoints) {
 		case 3:
 			faceElement = new Triangle3((*it).p);
@@ -147,7 +147,7 @@ void OpenFOAM::elements(std::vector<size_t> &bodies, std::vector<Element*> &elem
 	}
 
 	for (std::vector<ElementBuilder*>::iterator it = elementBuilders.begin(); it != elementBuilders.end(); ++it) {
-		Element *element = NULL;
+		OldElement *element = NULL;
 		solveParseError((*it)->createElement(element, mesh.coordinates()));
 		if (element == NULL) {
 			ESINFO(GLOBAL_ERROR) << "Unrecognized element form face: " << (*it) << "\n";
@@ -171,10 +171,10 @@ void OpenFOAM::elements(std::vector<size_t> &bodies, std::vector<Element*> &elem
 void OpenFOAM::regions(
 		std::vector<Evaluator*> &evaluators,
 		std::vector<Region*> &regions,
-		std::vector<Element*> &elements,
-		std::vector<Element*> &faces,
-		std::vector<Element*> &edges,
-		std::vector<Element*> &nodes)
+		std::vector<OldElement*> &elements,
+		std::vector<OldElement*> &faces,
+		std::vector<OldElement*> &edges,
+		std::vector<OldElement*> &nodes)
 {
 	//reads boundary
 	FoamFile boundaryFile(_polyMeshPath + "boundary");
@@ -192,7 +192,7 @@ void OpenFOAM::regions(
 			Region *region = regions[regions.size() - 1];
 			region->name = (*it).getName();
 			region->elements().resize(nFaces);
-			memcpy(region->elements().data(), &faces[startFace], nFaces * sizeof(Element*));
+			memcpy(region->elements().data(), &faces[startFace], nFaces * sizeof(OldElement*));
 		}
 	}
 	//reads cell zones
@@ -240,13 +240,13 @@ void OpenFOAM::regions(
 	}
 }
 
-bool OpenFOAM::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
+bool OpenFOAM::partitiate(const std::vector<OldElement*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<OldElement*> > &fixPoints, std::vector<OldElement*> &corners)
 {
 	mesh.partitiate(_configuration.domains);
 	return true;
 }
 
-void OpenFOAM::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges)
+void OpenFOAM::neighbours(std::vector<OldElement*> &nodes, std::vector<int> &neighbours, const std::vector<OldElement*> &faces, const std::vector<OldElement*> &edges)
 {
 	FoamFile boundaryFile(_polyMeshPath + "boundary");
 	std::vector<Dictionary> boundary;

@@ -80,7 +80,7 @@ void GridTowerGenerator::points(Coordinates &coordinates)
 	_gridGenerator->_block->block.start = start;
 }
 
-void GridTowerGenerator::elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
+void GridTowerGenerator::elements(std::vector<size_t> &bodies, std::vector<OldElement*> &elements, std::vector<OldElement*> &faces, std::vector<OldElement*> &edges)
 {
 	_gridGenerator->elements(bodies, elements, faces, edges);
 	bodies.resize(_configuration.grids.size() + 1);
@@ -93,12 +93,12 @@ void GridTowerGenerator::elements(std::vector<size_t> &bodies, std::vector<Eleme
 	}
 }
 
-bool GridTowerGenerator::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
+bool GridTowerGenerator::partitiate(const std::vector<OldElement*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<OldElement*> > &fixPoints, std::vector<OldElement*> &corners)
 {
 	return _gridGenerator->partitiate(nodes, partsPtrs, fixPoints, corners);
 }
 
-void GridTowerGenerator::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges)
+void GridTowerGenerator::neighbours(std::vector<OldElement*> &nodes, std::vector<int> &neighbours, const std::vector<OldElement*> &faces, const std::vector<OldElement*> &edges)
 {
 	auto middle = _configuration.grids.find(_gridIndex);
 	auto lower  = _configuration.grids.end();
@@ -231,10 +231,10 @@ void GridTowerGenerator::neighbours(std::vector<Element*> &nodes, std::vector<in
 void GridTowerGenerator::regions(
 		std::vector<Evaluator*> &evaluators,
 		std::vector<Region*> &regions,
-		std::vector<Element*> &elements,
-		std::vector<Element*> &faces,
-		std::vector<Element*> &edges,
-		std::vector<Element*> &nodes)
+		std::vector<OldElement*> &elements,
+		std::vector<OldElement*> &faces,
+		std::vector<OldElement*> &edges,
+		std::vector<OldElement*> &nodes)
 {
 	_gridGenerator->regions(evaluators, regions, elements, faces, edges, nodes);
 

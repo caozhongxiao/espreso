@@ -173,7 +173,7 @@ void WorkbenchParser::nblock(Coordinates &coordinates)
 	}
 }
 
-void WorkbenchParser::eblock(std::vector<Element*> &elements, std::vector<Region*> &regions, std::vector<Element*> &faces, std::vector<Element*> &edges)
+void WorkbenchParser::eblock(std::vector<OldElement*> &elements, std::vector<Region*> &regions, std::vector<OldElement*> &faces, std::vector<OldElement*> &edges)
 {
 	regions.push_back(new Region(ElementType::ELEMENTS));
 
@@ -215,7 +215,7 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements, std::vector<Region
 
 	ESINFO(DETAILS) << "WB: CREATE EBLOCK";
 
-	std::vector<eslocal> values(38), eParams(Element::PARAMS_SIZE);
+	std::vector<eslocal> values(38), eParams(OldElement::PARAMS_SIZE);
 	for (eslocal i = 0; i < (NDSEL ? NDSEL : i + 1); i++) {
 		getline(_file, _line);
 		size_t start = 0;
@@ -244,11 +244,11 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements, std::vector<Region
 			NODE_SIZE = values[NODES];
 		}
 
-		eParams[Element::MATERIAL] = values[MATERIAL] - 1;
-		eParams[Element::CONSTANT] = values[CONSTANT];
-		eParams[Element::COORDINATES] = values[COORDINATES] - 1;
-		eParams[Element::BODY] = 0; // FIX ME! bodyCounter;
-		Element *e = AnsysUtils::createElement(values.data() + PARAM_SIZE, NODE_SIZE, eParams.data(), eType[values[ETYPE] - 1]);
+		eParams[OldElement::MATERIAL] = values[MATERIAL] - 1;
+		eParams[OldElement::CONSTANT] = values[CONSTANT];
+		eParams[OldElement::COORDINATES] = values[COORDINATES] - 1;
+		eParams[OldElement::BODY] = 0; // FIX ME! bodyCounter;
+		OldElement *e = AnsysUtils::createElement(values.data() + PARAM_SIZE, NODE_SIZE, eParams.data(), eType[values[ETYPE] - 1]);
 		switch (eType[values[ETYPE] - 1]) {
 		case 77:
 		case 87:
@@ -271,13 +271,13 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements, std::vector<Region
 		regions.back()->elements().push_back(e);
 	}
 	switch (regions.back()->elements().back()->type()) {
-	case Element::Type::VOLUME:
+	case OldElement::Type::VOLUME:
 		regions.back()->eType = ElementType::ELEMENTS;
 		break;
-	case Element::Type::PLANE:
+	case OldElement::Type::PLANE:
 		regions.back()->eType = ElementType::FACES;
 		break;
-	case Element::Type::LINE:
+	case OldElement::Type::LINE:
 		regions.back()->eType = ElementType::EDGES;
 		break;
 	default:
@@ -433,14 +433,14 @@ static size_t getRegionIndex(std::vector<espreso::Region*> &regions, const std::
 	return -1;
 }
 
-void WorkbenchParser::cmblock(std::vector<Element*> &elements, std::vector<Region*> &regions, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes)
+void WorkbenchParser::cmblock(std::vector<OldElement*> &elements, std::vector<Region*> &regions, std::vector<OldElement*> &faces, std::vector<OldElement*> &edges, std::vector<OldElement*> &nodes)
 {
 	std::vector<std::string> params = divide(_line);
 
 	params[1] = Parser::strip(params[1]);
 	regions.push_back(new Region(ElementType::NODES));
 	regions.back()->name = params[1];
-	std::vector<Element*> &region = regions.back()->elements();
+	std::vector<OldElement*> &region = regions.back()->elements();
 	if (params[2].compare(0, 4, "NODE") == 0) {
 		ESINFO(DETAILS) << "WB: CREATE BLOCK OF NODES: " << params[1];
 		eslocal size = std::stol(params[3]);
@@ -492,7 +492,7 @@ bool WorkbenchParser::setProperty(const std::string &parameter, const std::strin
 	return false;
 };
 
-void WorkbenchParser::dirichlet(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes)
+void WorkbenchParser::dirichlet(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<OldElement*> &elements, std::vector<OldElement*> &faces, std::vector<OldElement*> &edges, std::vector<OldElement*> &nodes)
 {
 	std::vector<std::string> params = divide(_line);
 	bool set = false;
@@ -526,7 +526,7 @@ void WorkbenchParser::dirichlet(std::vector<Evaluator*> &evaluators, std::vector
 	}
 }
 
-void WorkbenchParser::force(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes)
+void WorkbenchParser::force(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<OldElement*> &elements, std::vector<OldElement*> &faces, std::vector<OldElement*> &edges, std::vector<OldElement*> &nodes)
 {
 	std::vector<std::string> params = divide(_line);
 	bool set = false;
@@ -551,7 +551,7 @@ void WorkbenchParser::force(std::vector<Evaluator*> &evaluators, std::vector<Reg
 	}
 }
 
-void WorkbenchParser::sf(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
+void WorkbenchParser::sf(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<OldElement*> &elements, std::vector<OldElement*> &faces, std::vector<OldElement*> &edges)
 {
 	std::vector<std::string> params = divide(_line);
 	bool set = false;
@@ -606,7 +606,7 @@ void WorkbenchParser::initial_temperature(std::vector<Evaluator*> &evaluators, s
 	}
 }
 
-void WorkbenchParser::obstacle(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes)
+void WorkbenchParser::obstacle(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<OldElement*> &elements, std::vector<OldElement*> &faces, std::vector<OldElement*> &edges, std::vector<OldElement*> &nodes)
 {
 	std::vector<std::string> params = divide(_line);
 

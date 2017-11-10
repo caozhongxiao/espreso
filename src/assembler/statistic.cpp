@@ -86,8 +86,8 @@ void Statistic::computeNodes()
 		return std::lower_bound(_mesh.neighbours().begin(), _mesh.neighbours().end(), neighbour) - _mesh.neighbours().begin();
 	};
 
-	std::vector<Element*> _elements;
-	const std::vector<Element*> &elements = std::find(_selection.begin(), _selection.end(), _mesh.regions()[1]) != _selection.end() ? _mesh.nodes() : _elements;
+	std::vector<OldElement*> _elements;
+	const std::vector<OldElement*> &elements = std::find(_selection.begin(), _selection.end(), _mesh.regions()[1]) != _selection.end() ? _mesh.nodes() : _elements;
 
 	if (std::find(_selection.begin(), _selection.end(), _mesh.regions()[1]) == _selection.end()) {
 		for (size_t s = 0; s < _selection.size(); s++) {
@@ -228,13 +228,13 @@ void Statistic::computeNodes()
 
 			eregions.clear();
 			eregions.insert(eregions.end(), elements[e]->regions().begin(), elements[e]->regions().end());
-			std::for_each(elements[e]->parentElements().begin(), elements[e]->parentElements().end(), [&] (Element *parent) {
+			std::for_each(elements[e]->parentElements().begin(), elements[e]->parentElements().end(), [&] (OldElement *parent) {
 				eregions.insert(eregions.end(), parent->regions().begin(), parent->regions().end());
 			});
-			std::for_each(elements[e]->parentFaces().begin(), elements[e]->parentFaces().end(), [&] (Element *parent) {
+			std::for_each(elements[e]->parentFaces().begin(), elements[e]->parentFaces().end(), [&] (OldElement *parent) {
 				eregions.insert(eregions.end(), parent->regions().begin(), parent->regions().end());
 			});
-			std::for_each(elements[e]->parentEdges().begin(), elements[e]->parentEdges().end(), [&] (Element *parent) {
+			std::for_each(elements[e]->parentEdges().begin(), elements[e]->parentEdges().end(), [&] (OldElement *parent) {
 				eregions.insert(eregions.end(), parent->regions().begin(), parent->regions().end());
 			});
 			std::sort(eregions.begin(), eregions.end());

@@ -305,7 +305,7 @@ std::vector<size_t> HeatTransfer::solutionsIndicesToStore() const
 }
 
 void HeatTransfer::convectionMatParameters(
-		const ConvectionConfiguration &convection, const Element *e, const Point &p, Step step,
+		const ConvectionConfiguration &convection, const OldElement *e, const Point &p, Step step,
 		double temp, double T_EXT,
 		double &rho, double &dynamic_viscosity, double &dynamic_viscosity_T, double &heat_capacity, double &thermal_conductivity) const
 {
@@ -524,7 +524,7 @@ void HeatTransfer::convectionMatParameters(
 
 
 double HeatTransfer::computeHTC(
-		const ConvectionConfiguration &convection, const Element *e, const Point &p, Step step,
+		const ConvectionConfiguration &convection, const OldElement *e, const Point &p, Step step,
 		double temp) const
 {
 	double htc = 0;

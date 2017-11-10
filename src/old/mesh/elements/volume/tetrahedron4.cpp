@@ -184,30 +184,30 @@ bool Tetrahedron4::match(const eslocal *indices, eslocal n) {
 	case 4:
 		for (eslocal i = 0; i < 3; i++) {
 			for (eslocal j = i + 1; j < 4; j++) {
-				if (Element::match(indices, i, j)) {
+				if (OldElement::match(indices, i, j)) {
 					return false;
 				}
 			}
 		}
 		return true;
 	case 8: {
-		if (!Element::match(indices, 2, 3)) {
+		if (!OldElement::match(indices, 2, 3)) {
 			return false;
 		}
-		if (!Element::match(indices, 4, 5)) {
+		if (!OldElement::match(indices, 4, 5)) {
 			return false;
 		}
-		if (!Element::match(indices, 5, 6)) {
+		if (!OldElement::match(indices, 5, 6)) {
 			return false;
 		}
-		if (!Element::match(indices, 6, 7)) {
+		if (!OldElement::match(indices, 6, 7)) {
 			return false;
 		}
 
 		eslocal various[4] = { 0, 1, 2, 4 };
 		for (eslocal i = 0; i < 3; i++) {
 			for (eslocal j = i + 1; j < 4; j++) {
-				if (Element::match(indices, various[i], various[j])) {
+				if (OldElement::match(indices, various[i], various[j])) {
 					return false;
 				}
 			}
@@ -273,7 +273,7 @@ size_t Tetrahedron4::fillFaces()
 	return filled;
 }
 
-Element* Tetrahedron4::addFace(const std::vector<eslocal> &nodes)
+OldElement* Tetrahedron4::addFace(const std::vector<eslocal> &nodes)
 {
 	for (size_t f = 0; f < faces(); f++) {
 		size_t found;

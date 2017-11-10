@@ -36,7 +36,7 @@ public:
 
 	Hexahedron8(const eslocal *indices, eslocal n, const eslocal *params);
 	Hexahedron8(std::ifstream &is);
-	Element* copy() const { return new Hexahedron8(*this); }
+	OldElement* copy() const { return new Hexahedron8(*this); }
 
 	eslocal nCommon() const { return Hexahedron8CommonNodes; }
 	eslocal vtkCode() const { return Hexahedron8VTKCode; }
@@ -47,7 +47,7 @@ public:
 	size_t coarseNodes() const { return Hexahedron8NodesCount; }
 	size_t gaussePoints() const { return Hexahedron8GPCount; }
 
-	Element* addFace(const std::vector<eslocal> &nodes);
+	OldElement* addFace(const std::vector<eslocal> &nodes);
 
 	const std::vector<eslocal>& faceNodes(size_t index) const { return Hexahedron8::_facesNodes[index]; }
 	const std::vector<eslocal>& edgeNodes(size_t index) const { return Hexahedron8::_edgesNodes[index]; }

@@ -11,7 +11,7 @@
 
 namespace espreso {
 
-class PointElement: public Element
+class PointElement: public OldElement
 {
 
 public:
@@ -32,21 +32,21 @@ public:
 	size_t nodes() const { return PointNodesCount; }
 	size_t coarseNodes() const { return PointNodesCount; }
 
-	virtual Element* face(size_t index) const
+	virtual OldElement* face(size_t index) const
 	{
 		ESINFO(GLOBAL_ERROR) << "Point element has no face";
 		return NULL;
 	}
-	virtual Element* edge(size_t index) const
+	virtual OldElement* edge(size_t index) const
 	{
 		ESINFO(GLOBAL_ERROR) << "Point element has no edge";
 		return NULL;
 	}
 
-	void addFace(Element* face) { ESINFO(GLOBAL_ERROR) << "Point element has no face"; }
-	void addEdge(Element* edge) { ESINFO(GLOBAL_ERROR) << "Point element has no edge"; }
+	void addFace(OldElement* face) { ESINFO(GLOBAL_ERROR) << "Point element has no face"; }
+	void addEdge(OldElement* edge) { ESINFO(GLOBAL_ERROR) << "Point element has no edge"; }
 
-	Element* addFace(const std::vector<eslocal> &nodes) { return NULL; }
+	OldElement* addFace(const std::vector<eslocal> &nodes) { return NULL; }
 
 	const std::vector<eslocal>& faceNodes(size_t index) const
 	{
@@ -72,8 +72,8 @@ protected:
 		return {};
 	}
 
-	void setFace(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Point element has no face"; }
-	void setEdge(size_t index, Element* edge) { ESINFO(GLOBAL_ERROR) << "Point element has no edge"; }
+	void setFace(size_t index, OldElement* face) { ESINFO(GLOBAL_ERROR) << "Point element has no face"; }
+	void setEdge(size_t index, OldElement* edge) { ESINFO(GLOBAL_ERROR) << "Point element has no edge"; }
 
 	size_t fillFaces() { ESINFO(GLOBAL_ERROR) << "Call fill faces on Point element"; return 0; }
 	size_t fillEdges() { ESINFO(GLOBAL_ERROR) << "Call fill edges on Point element"; return 0; }

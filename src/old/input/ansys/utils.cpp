@@ -29,9 +29,9 @@ static std::string print_indices(eslocal *indices, eslocal n)
 	return ss.str();
 };
 
-espreso::Element* AnsysUtils::createElement(eslocal *indices, eslocal n, eslocal *params)
+espreso::OldElement* AnsysUtils::createElement(eslocal *indices, eslocal n, eslocal *params)
 {
-	Element *e = NULL;
+	OldElement *e = NULL;
 	if (Tetrahedron4::match(indices, n)) {
 		e = new Tetrahedron4(indices, n, params);
 	}
@@ -64,7 +64,7 @@ espreso::Element* AnsysUtils::createElement(eslocal *indices, eslocal n, eslocal
 	return e;
 }
 
-espreso::Element* AnsysUtils::createElement(eslocal *indices, eslocal n, eslocal *params, int eType)
+espreso::OldElement* AnsysUtils::createElement(eslocal *indices, eslocal n, eslocal *params, int eType)
 {
 	switch (eType) {
 	case 185:

@@ -131,7 +131,7 @@ bool Hexahedron8::match(const eslocal *indices, eslocal n) {
 	case Hexahedron8NodesCount:
 		for (eslocal i = 0; i < Hexahedron8NodesCount - 1; i++) {
 			for (eslocal j = i + 1; j < Hexahedron8NodesCount; j++) {
-				if (Element::match(indices, i, j)) {
+				if (OldElement::match(indices, i, j)) {
 					return false;
 				}
 			}
@@ -200,7 +200,7 @@ size_t Hexahedron8::fillFaces()
 	return filled;
 }
 
-Element* Hexahedron8::addFace(const std::vector<eslocal> &nodes)
+OldElement* Hexahedron8::addFace(const std::vector<eslocal> &nodes)
 {
 	for (size_t f = 0; f < faces(); f++) {
 		size_t found;

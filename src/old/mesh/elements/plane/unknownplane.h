@@ -11,11 +11,11 @@ namespace espreso {
 class UnknownPlane: public PlaneElement
 {
 public:
-	UnknownPlane(const std::vector<Element*> &nodes, std::vector<eslocal> &indices, std::vector<eslocal> &DOFsIndices, std::vector<double> &stiffnessMatrix)
+	UnknownPlane(const std::vector<OldElement*> &nodes, std::vector<eslocal> &indices, std::vector<eslocal> &DOFsIndices, std::vector<double> &stiffnessMatrix)
 	: _nodes(nodes), _indices(indices), _stiffnessMatrix(stiffnessMatrix) {  _DOFsIndices = DOFsIndices; }
-	UnknownPlane(const std::vector<Element*> &nodes, std::vector<eslocal> &indices, std::vector<double> &stiffnessMatrix)
+	UnknownPlane(const std::vector<OldElement*> &nodes, std::vector<eslocal> &indices, std::vector<double> &stiffnessMatrix)
 	: _nodes(nodes), _indices(indices), _stiffnessMatrix(stiffnessMatrix) {};
-	Element* copy() const { return new UnknownPlane(*this); }
+	OldElement* copy() const { return new UnknownPlane(*this); }
 
 	std::vector<std::vector<eslocal> > triangularize() const { ESINFO(ERROR) << "Cannot triangularize unknown plane"; exit(EXIT_FAILURE); }
 
@@ -61,7 +61,7 @@ protected:
 	size_t fillEdges();
 
 private:
-	const std::vector<Element*> &_nodes;
+	const std::vector<OldElement*> &_nodes;
 	std::vector<eslocal> &_indices;
 	std::vector<double> &_stiffnessMatrix;
 	std::vector<std::vector<eslocal> > _edgeNodes;

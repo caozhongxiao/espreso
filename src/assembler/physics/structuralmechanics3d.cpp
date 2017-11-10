@@ -181,9 +181,9 @@ std::vector<std::pair<ElementType, Property> > StructuralMechanics3D::properties
 }
 
 
-void StructuralMechanics3D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K) const
+void StructuralMechanics3D::assembleMaterialMatrix(const Step &step, const OldElement *e, eslocal node, double temp, DenseMatrix &K) const
 {
-	const MaterialConfiguration* material = _mesh->materials()[e->param(Element::MATERIAL)];
+	const MaterialConfiguration* material = _mesh->materials()[e->param(OldElement::MATERIAL)];
 	double Ex, Ey, Ez, miXY, miXZ, miYZ, Gx, Gy, Gz;
 
 	switch (material->linear_elastic_properties.model) {
@@ -344,14 +344,14 @@ void StructuralMechanics3D::assembleMaterialMatrix(const Step &step, const Eleme
 	}
 }
 
-void StructuralMechanics3D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics3D::processElement(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	DenseMatrix Ce(6, 6), coordinates(e->nodes(), 3), J, invJ(3, 3), dND, B, precision, rhsT;
 	DenseMatrix K(e->nodes(), 36), TE(e->nodes(), 3), inertia(e->nodes(), 3), dens(e->nodes(), 1);
 	DenseMatrix gpK(e->nodes(), 36), gpTE(1, 3), gpInertia(1, 3), gpDens(1, 1);
 	double detJ, temp, initTemp, CP = 1;
 
-	const MaterialConfiguration* material = _mesh->materials()[e->param(Element::MATERIAL)];
+	const MaterialConfiguration* material = _mesh->materials()[e->param(OldElement::MATERIAL)];
 
 	for (size_t i = 0; i < e->nodes(); i++) {
 		initTemp = e->getProperty(Property::INITIAL_TEMPERATURE, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, 0, 0);
@@ -459,7 +459,7 @@ void StructuralMechanics3D::processElement(const Step &step, Matrices matrices, 
 	}
 }
 
-void StructuralMechanics3D::processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics3D::processFace(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	if (!e->hasProperty(Property::PRESSURE, step.step)) {
 		Ke.resize(0, 0);
@@ -517,7 +517,7 @@ void StructuralMechanics3D::processFace(const Step &step, Matrices matrices, con
 	}
 }
 
-void StructuralMechanics3D::processEdge(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics3D::processEdge(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
@@ -525,7 +525,7 @@ void StructuralMechanics3D::processEdge(const Step &step, Matrices matrices, con
 	fe.resize(0, 0);
 }
 
-void StructuralMechanics3D::processNode(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics3D::processNode(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	if (
 			e->hasProperty(Property::FORCE_X, step.step) ||
@@ -548,7 +548,7 @@ void StructuralMechanics3D::processNode(const Step &step, Matrices matrices, con
 	fe.resize(0, 0);
 }
 
-void StructuralMechanics3D::postProcessElement(const Step &step, const Element *e, std::vector<Solution*> &solution)
+void StructuralMechanics3D::postProcessElement(const Step &step, const OldElement *e, std::vector<Solution*> &solution)
 {
 
 }

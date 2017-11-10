@@ -205,13 +205,13 @@ void GridGenerator::points(Coordinates &coordinates, size_t globalIdOffset)
 	}
 }
 
-void GridGenerator::elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
+void GridGenerator::elements(std::vector<size_t> &bodies, std::vector<OldElement*> &elements, std::vector<OldElement*> &faces, std::vector<OldElement*> &edges)
 {
 	_block->elements(elements, _body);
 	bodies = { 0, elements.size() };
 }
 
-bool GridGenerator::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
+bool GridGenerator::partitiate(const std::vector<OldElement*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<OldElement*> > &fixPoints, std::vector<OldElement*> &corners)
 {
 	size_t parts = _settings.domains.mul();
 	if (_settings.uniformDecomposition) {
@@ -239,7 +239,7 @@ bool GridGenerator::partitiate(const std::vector<Element*> &nodes, std::vector<e
 	}
 }
 
-void GridGenerator::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges)
+void GridGenerator::neighbours(std::vector<OldElement*> &nodes, std::vector<int> &neighbours, const std::vector<OldElement*> &faces, const std::vector<OldElement*> &edges)
 {
 	std::vector<int> map(27);
 
@@ -267,10 +267,10 @@ void GridGenerator::neighbours(std::vector<Element*> &nodes, std::vector<int> &n
 void GridGenerator::regions(
 		std::vector<Evaluator*> &evaluators,
 		std::vector<Region*> &regions,
-		std::vector<Element*> &elements,
-		std::vector<Element*> &faces,
-		std::vector<Element*> &edges,
-		std::vector<Element*> &nodes)
+		std::vector<OldElement*> &elements,
+		std::vector<OldElement*> &faces,
+		std::vector<OldElement*> &edges,
+		std::vector<OldElement*> &nodes)
 {
 	for (auto it = _configuration.nodes.begin(); it != _configuration.nodes.end(); ++it) {
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
@@ -328,7 +328,7 @@ void GridGenerator::regions(
 	}
 	for (auto it = _configuration.elements.begin(); it != _configuration.elements.end(); ++it) {
 		if (StringCompare::caseInsensitiveEq("not_selected", it->second)) {
-			std::vector<Element*> all(mesh.elements()), selected;
+			std::vector<OldElement*> all(mesh.elements()), selected;
 			for (size_t r = 2; r < regions.size(); r++) {
 				if (regions[r]->eType == ElementType::ELEMENTS) {
 					selected.insert(selected.end(), regions[r]->elements().begin(), regions[r]->elements().end());

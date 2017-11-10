@@ -197,33 +197,33 @@ bool Prisma15::match(const eslocal *indices, eslocal n) {
 	case Prisma15NodesCount:
 		for (eslocal i = 0; i < Prisma15NodesCount - 1; i++) {
 			for (eslocal j = i + 1; j < Prisma15NodesCount; j++) {
-				if (Element::match(indices, i, j)) {
+				if (OldElement::match(indices, i, j)) {
 					return false;
 				}
 			}
 		}
 		return true;
 	case 20: {
-		if (!Element::match(indices, 2, 3)) {
+		if (!OldElement::match(indices, 2, 3)) {
 			return false;
 		}
-		if (!Element::match(indices, 3, 10)) {
+		if (!OldElement::match(indices, 3, 10)) {
 			return false;
 		}
-		if (!Element::match(indices, 6, 7)) {
+		if (!OldElement::match(indices, 6, 7)) {
 			return false;
 		}
-		if (!Element::match(indices, 7, 14)) {
+		if (!OldElement::match(indices, 7, 14)) {
 			return false;
 		}
-		if (!Element::match(indices, 18, 19)) {
+		if (!OldElement::match(indices, 18, 19)) {
 			return false;
 		}
 
 		eslocal various[Prisma15NodesCount] = { 0, 1, 2, 4, 5, 6, 8, 9, 11, 12, 13, 15, 16, 17, 18 };
 		for (eslocal i = 0; i < Prisma15NodesCount - 1; i++) {
 			for (eslocal j = i + 1; j < Prisma15NodesCount; j++) {
-				if (Element::match(indices, various[i], various[j])) {
+				if (OldElement::match(indices, various[i], various[j])) {
 					return false;
 				}
 			}
@@ -380,7 +380,7 @@ size_t Prisma15::fillFaces()
 	return filled;
 }
 
-Element* Prisma15::addFace(const std::vector<eslocal> &nodes)
+OldElement* Prisma15::addFace(const std::vector<eslocal> &nodes)
 {
 	for (size_t f = 0; f < faces(); f++) {
 		size_t found;

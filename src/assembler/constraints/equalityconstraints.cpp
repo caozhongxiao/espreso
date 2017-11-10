@@ -25,8 +25,8 @@ using namespace espreso;
 EqualityConstraints::EqualityConstraints(
 		Instance &instance,
 		const OldMesh &mesh,
-		const std::vector<Element*> &gluedElements,
-		const std::vector<Element*> &gluedInterfaceElements,
+		const std::vector<OldElement*> &gluedElements,
+		const std::vector<OldElement*> &gluedInterfaceElements,
 		const std::vector<Property> &gluedDOFs,
 		const std::vector<size_t> &gluedDOFsMeshOffsets,
 		bool interfaceElementContainsGluedDOFs,
@@ -325,7 +325,7 @@ void EqualityConstraints::insertElementGluingToB1(const Step &step, bool withRed
 
 	std::vector<std::vector<std::vector<esglobal> > > cMap(threads);
 
-	auto findDomain = [&] (const Element *e, size_t d, size_t dof) -> eslocal {
+	auto findDomain = [&] (const OldElement *e, size_t d, size_t dof) -> eslocal {
 		auto &DOFIndices = e->DOFsIndices();
 		size_t c = 0, DOFsSize = DOFIndices.size() / e->domains().size();
 		for (size_t i = 0; i < e->domains().size(); i++) {
@@ -355,7 +355,7 @@ void EqualityConstraints::insertElementGluingToB1(const Step &step, bool withRed
 		for (size_t t = 0; t < threads; t++) {
 			for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 
-				const Element *e = _gluedElements[permutation[i] / _gluedDOFs.size()];
+				const OldElement *e = _gluedElements[permutation[i] / _gluedDOFs.size()];
 				size_t dof = _gluedDOFsMeshOffsets[permutation[i] % _gluedDOFs.size()];
 
 				for (auto c = e->clusters().begin(); c != e->clusters().end(); ++c) {
@@ -382,7 +382,7 @@ void EqualityConstraints::insertElementGluingToB1(const Step &step, bool withRed
 		std::vector<eslocal> nPointer(_mesh.neighbours().size());
 		for (size_t i = 0; i < diagonals.size(); i++) {
 
-			const Element *e = _gluedElements[permutation[i] / _gluedDOFs.size()];
+			const OldElement *e = _gluedElements[permutation[i] / _gluedDOFs.size()];
 			size_t dof = _gluedDOFsMeshOffsets[permutation[i] % _gluedDOFs.size()];
 
 			for (auto c = e->clusters().begin(); c != e->clusters().end(); ++c) {
@@ -404,7 +404,7 @@ void EqualityConstraints::insertElementGluingToB1(const Step &step, bool withRed
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 
-			const Element *e = _gluedElements[permutation[i] / _gluedDOFs.size()];
+			const OldElement *e = _gluedElements[permutation[i] / _gluedDOFs.size()];
 			size_t dof = _gluedDOFsMeshOffsets[permutation[i] % _gluedDOFs.size()];
 			esglobal offset = 0;
 			double duplicity = 0;
@@ -500,7 +500,7 @@ void EqualityConstraints::insertElementGluingToB1(const Step &step, bool withRed
 
 void EqualityConstraints::insertCornersGluingToB0()
 {
-	const std::vector<Element*> &corners = _mesh.corners();
+	const std::vector<OldElement*> &corners = _mesh.corners();
 	if (!corners.size()) {
 		ESINFO(ERROR) << "Mesh not contains corners.";
 		return;
@@ -551,9 +551,9 @@ void EqualityConstraints::insertCornersGluingToB0()
 
 void EqualityConstraints::insertKernelsGluingToB0(const std::vector<SparseMatrix> &kernels)
 {
-	std::vector<Element*> el(_gluedInterfaceElements);
+	std::vector<OldElement*> el(_gluedInterfaceElements);
 
-	std::sort(el.begin(), el.end(), [] (Element* e1, Element* e2) {
+	std::sort(el.begin(), el.end(), [] (OldElement* e1, OldElement* e2) {
 		if (e1->domains().size() != e2->domains().size()) {
 			return e1->domains().size() < e2->domains().size();
 		}
@@ -561,7 +561,7 @@ void EqualityConstraints::insertKernelsGluingToB0(const std::vector<SparseMatrix
 	});
 
 	std::vector<size_t> part;
-	part.push_back(std::lower_bound(el.begin(), el.end(), 2, [] (Element *e, size_t size) { return e->domains().size() < size; }) - el.begin());
+	part.push_back(std::lower_bound(el.begin(), el.end(), 2, [] (OldElement *e, size_t size) { return e->domains().size() < size; }) - el.begin());
 	ESTEST(MANDATORY) << "There are not elements on the sub-domains interface." << ((_gluedInterfaceElements.size() - part[0]) ? TEST_PASSED : TEST_FAILED);
 	for (size_t i = part[0] + 1; i < el.size(); i++) {
 		if (i && el[i - 1]->domains() != el[i]->domains()) {
@@ -597,7 +597,7 @@ void EqualityConstraints::insertKernelsGluingToB0(const std::vector<SparseMatrix
 				continue;
 			}
 
-			std::vector<Element*> DOFsOnInterface;
+			std::vector<OldElement*> DOFsOnInterface;
 			for (size_t e = part[i]; e < part[i + 1]; e++) {
 				if (_interfaceElementContainsGluedDOFs) {
 					for (size_t n = 0; n < el[e]->DOFsIndices().size(); n++) {

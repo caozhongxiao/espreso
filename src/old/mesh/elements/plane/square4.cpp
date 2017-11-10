@@ -89,7 +89,7 @@ bool Square4::match(const eslocal *indices, eslocal n)
 
 	for (eslocal i = 0; i < Square4NodesCount - 1; i++) {
 		for (eslocal j = i + 1; j < Square4NodesCount; j++) {
-			if (Element::match(indices, i, j)) {
+			if (OldElement::match(indices, i, j)) {
 				return false;
 			}
 		}

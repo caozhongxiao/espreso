@@ -38,7 +38,7 @@ public:
 
 	Pyramid13(const eslocal *indices, eslocal n, const eslocal *params);
 	Pyramid13(std::ifstream &is);
-	Element* copy() const { return new Pyramid13(*this); }
+	OldElement* copy() const { return new Pyramid13(*this); }
 
 	eslocal nCommon() const { return Pyramid13CommonNodes; }
 	eslocal vtkCode() const { return Pyramid13VTKCode; }
@@ -49,7 +49,7 @@ public:
 	size_t coarseNodes() const { return Pyramid5NodesCount; }
 	size_t gaussePoints() const { return Pyramid13GPCount; }
 
-	Element* addFace(const std::vector<eslocal> &nodes);
+	OldElement* addFace(const std::vector<eslocal> &nodes);
 
 	const std::vector<eslocal>& faceNodes(size_t index) const { return Pyramid13::_facesNodes[index]; }
 	const std::vector<eslocal>& edgeNodes(size_t index) const { return Pyramid13::_edgesNodes[index]; }

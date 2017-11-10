@@ -27,17 +27,17 @@ protected:
 	: OldLoader(mesh), _workbench(configuration), _parser(mesh) { };
 
 	void points(Coordinates &coordinates);
-	void elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
+	void elements(std::vector<size_t> &bodies, std::vector<OldElement*> &elements, std::vector<OldElement*> &faces, std::vector<OldElement*> &edges);
 	void materials(std::vector<MaterialConfiguration*> &materials);
 	void regions(
 			std::vector<Evaluator*> &evaluators,
 			std::vector<Region*> &regions,
-			std::vector<Element*> &elements,
-			std::vector<Element*> &faces,
-			std::vector<Element*> &edges,
-			std::vector<Element*> &nodes);
-	void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges);
-	bool partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners);
+			std::vector<OldElement*> &elements,
+			std::vector<OldElement*> &faces,
+			std::vector<OldElement*> &edges,
+			std::vector<OldElement*> &nodes);
+	void neighbours(std::vector<OldElement*> &nodes, std::vector<int> &neighbours, const std::vector<OldElement*> &faces, const std::vector<OldElement*> &edges);
+	bool partitiate(const std::vector<OldElement*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<OldElement*> > &fixPoints, std::vector<OldElement*> &corners);
 
 	void open();
 	void close();

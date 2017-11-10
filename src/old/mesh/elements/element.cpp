@@ -9,7 +9,7 @@
 
 using namespace espreso;
 
-void Element::store(std::ofstream& os, const Coordinates &coordinates, size_t part)
+void OldElement::store(std::ofstream& os, const Coordinates &coordinates, size_t part)
 {
 	eslocal value = vtkCode(), pSize = params(), p;
 	os.write(reinterpret_cast<const char *>(&value), sizeof(eslocal));
@@ -19,18 +19,18 @@ void Element::store(std::ofstream& os, const Coordinates &coordinates, size_t pa
 	}
 	os.write(reinterpret_cast<const char *>(&pSize), sizeof(eslocal));
 	if (pSize) {
-		p = param(Element::MATERIAL);
+		p = param(OldElement::MATERIAL);
 		os.write(reinterpret_cast<const char *>(&p), sizeof(eslocal));
-		p = param(Element::CONSTANT);
+		p = param(OldElement::CONSTANT);
 		os.write(reinterpret_cast<const char *>(&p), sizeof(eslocal));
-		p = param(Element::COORDINATES);
+		p = param(OldElement::COORDINATES);
 		os.write(reinterpret_cast<const char *>(&p), sizeof(eslocal));
-		p = param(Element::BODY);
+		p = param(OldElement::BODY);
 		os.write(reinterpret_cast<const char *>(&p), sizeof(eslocal));
 	}
 }
 
-bool Element::isFaceSwapped(const Element* face) const
+bool OldElement::isFaceSwapped(const OldElement* face) const
 {
 	for (size_t i = 0; i < face->_regions.size(); i++) {
 		return false;
@@ -57,7 +57,7 @@ bool Element::isFaceSwapped(const Element* face) const
 	return true;
 }
 
-void Element::rotateOutside(const Element* parent, const Coordinates &coordinates, Point &normal) const
+void OldElement::rotateOutside(const OldElement* parent, const Coordinates &coordinates, Point &normal) const
 {
 	Point eMid(0, 0, 0), mid(0, 0, 0);
 	for (size_t i = 0; i < parent->coarseNodes(); i++) {
@@ -76,7 +76,7 @@ void Element::rotateOutside(const Element* parent, const Coordinates &coordinate
 	}
 }
 
-bool Element::hasProperty(Property property, size_t step) const
+bool OldElement::hasProperty(Property property, size_t step) const
 {
 	for (size_t i = 0; i < _regions.size(); i++) {
 		if (step < _regions[i]->settings.size() && _regions[i]->settings[step].count(property)) {
@@ -86,7 +86,7 @@ bool Element::hasProperty(Property property, size_t step) const
 	return false;
 }
 
-double Element::sumProperty(Property property, size_t step, const Point &p, double time, double temperature, double defaultValue) const
+double OldElement::sumProperty(Property property, size_t step, const Point &p, double time, double temperature, double defaultValue) const
 {
 	double result = 0;
 	bool set = false;
@@ -105,7 +105,7 @@ double Element::sumProperty(Property property, size_t step, const Point &p, doub
 	return set ? result : defaultValue;
 }
 
-double Element::getProperty(Property property, size_t step, const Point &p, double time, double temperature, double defaultValue) const
+double OldElement::getProperty(Property property, size_t step, const Point &p, double time, double temperature, double defaultValue) const
 {
 	for (size_t i = 0; i < _regions.size(); i++) {
 		if (step < _regions[i]->settings.size()) {

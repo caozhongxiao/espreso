@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-class PlaneElement: public Element
+class PlaneElement: public OldElement
 {
 
 public:
@@ -23,20 +23,20 @@ public:
 
 	size_t faces() const { return 0; }
 
-	virtual Element* face(size_t index) const
+	virtual OldElement* face(size_t index) const
 	{
 		ESINFO(GLOBAL_ERROR) << "Plane element has no face";
 		return NULL;
 	}
-	virtual Element* edge(size_t index) const { return _edges[index]; }
+	virtual OldElement* edge(size_t index) const { return _edges[index]; }
 
-	void addFace(Element* face) { ESINFO(GLOBAL_ERROR) << "Plane element has no face"; }
-	virtual void addEdge(Element* edge)
+	void addFace(OldElement* face) { ESINFO(GLOBAL_ERROR) << "Plane element has no face"; }
+	virtual void addEdge(OldElement* edge)
 	{
 		_edges.push_back(edge);
 	}
 
-	Element* addFace(const std::vector<eslocal> &nodes) { return NULL; }
+	OldElement* addFace(const std::vector<eslocal> &nodes) { return NULL; }
 
 	const std::vector<eslocal>& faceNodes(size_t index) const
 	{
@@ -48,13 +48,13 @@ public:
 	const std::vector<DenseMatrix>& faceN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(ERROR) << "Plane element has no base functions for face."; exit(1); }
 
 protected:
-	void setFace(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Plane element has no face"; }
-	void setEdge(size_t index, Element* edge) { _edges[index] = edge; }
+	void setFace(size_t index, OldElement* face) { ESINFO(GLOBAL_ERROR) << "Plane element has no face"; }
+	void setEdge(size_t index, OldElement* edge) { _edges[index] = edge; }
 
 	size_t fillFaces() { ESINFO(GLOBAL_ERROR) << "Call fill faces on plane element."; return 0; }
 
 	std::vector<eslocal> _params;
-	std::vector<Element*> _edges;
+	std::vector<OldElement*> _edges;
 };
 
 }

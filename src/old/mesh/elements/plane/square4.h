@@ -35,7 +35,7 @@ public:
 	Square4(const eslocal *indices);
 	Square4(const eslocal *indices, const eslocal *params);
 	Square4(std::ifstream &is);
-	Element* copy() const { return new Square4(*this); }
+	OldElement* copy() const { return new Square4(*this); }
 
 	std::vector<std::vector<eslocal> > triangularize() const;
 

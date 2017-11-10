@@ -43,7 +43,7 @@ void AnsysWorkbench::points(Coordinates &coordinates)
 }
 
 
-void AnsysWorkbench::elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
+void AnsysWorkbench::elements(std::vector<size_t> &bodies, std::vector<OldElement*> &elements, std::vector<OldElement*> &faces, std::vector<OldElement*> &edges)
 {
 	bodies = { 0 };
 	while (true) {
@@ -95,10 +95,10 @@ void AnsysWorkbench::materials(std::vector<MaterialConfiguration*> &materials)
 void AnsysWorkbench::regions(
 			std::vector<Evaluator*> &evaluators,
 			std::vector<Region*> &regions,
-			std::vector<Element*> &elements,
-			std::vector<Element*> &faces,
-			std::vector<Element*> &edges,
-			std::vector<Element*> &nodes)
+			std::vector<OldElement*> &elements,
+			std::vector<OldElement*> &faces,
+			std::vector<OldElement*> &edges,
+			std::vector<OldElement*> &nodes)
 {
 	while (true) {
 		switch (_parser.process()) {
@@ -138,13 +138,13 @@ void AnsysWorkbench::regions(
 	}
 }
 
-bool AnsysWorkbench::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
+bool AnsysWorkbench::partitiate(const std::vector<OldElement*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<OldElement*> > &fixPoints, std::vector<OldElement*> &corners)
 {
 	mesh.partitiate(_workbench.domains);
 	return true;
 }
 
-void AnsysWorkbench::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges)
+void AnsysWorkbench::neighbours(std::vector<OldElement*> &nodes, std::vector<int> &neighbours, const std::vector<OldElement*> &faces, const std::vector<OldElement*> &edges)
 {
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
 		nodes[i]->clusters().push_back(0);

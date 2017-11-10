@@ -9,7 +9,7 @@ using namespace espreso::input;
 size_t Pyramid13::subelements = 6;
 size_t Pyramid13::subnodes[] = { 5, 5, 5 };
 
-void Pyramid13::addElements(std::vector<Element*> &elements, const eslocal indices[], const eslocal params[])
+void Pyramid13::addElements(std::vector<OldElement*> &elements, const eslocal indices[], const eslocal params[])
 {
 	eslocal pyramid[13];
 	pyramid[0] = indices[100];
@@ -104,12 +104,12 @@ void Pyramid13::addElements(std::vector<Element*> &elements, const eslocal indic
 	elements.push_back(new espreso::Pyramid13(pyramid, 13, params));
 }
 
-void Pyramid13::addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdge edge)
+void Pyramid13::addEdges(std::vector<OldElement*> &edges, const eslocal indices[], CubeEdge edge)
 {
 	ESINFO(GLOBAL_ERROR) << "Implement addEdges for PYRAMID13";
 }
 
-void Pyramid13::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)
+void Pyramid13::addFaces(std::vector<OldElement*> &faces, const eslocal indices[], CubeFace face)
 {
 	eslocal square[8];
 
@@ -181,12 +181,12 @@ void Pyramid13::addFaces(std::vector<Element*> &faces, const eslocal indices[], 
 	faces.push_back(new espreso::Square8(square));
 }
 
-void Pyramid13::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeEdge edge)
+void Pyramid13::pickNodes(const std::vector<OldElement*> &nodes, std::vector<OldElement*> &selection, const eslocal indices[], CubeEdge edge)
 {
 	ESINFO(GLOBAL_ERROR) << "Implement pickNodes for an edge for PYRAMID13";
 }
 
-void Pyramid13::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFace face)
+void Pyramid13::pickNodes(const std::vector<OldElement*> &nodes, std::vector<OldElement*> &selection, const eslocal indices[], CubeFace face)
 {
 	switch (face) {
 	case CubeFace::X_1:

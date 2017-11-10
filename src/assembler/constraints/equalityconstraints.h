@@ -8,7 +8,7 @@
 
 namespace espreso {
 
-class Element;
+class OldElement;
 class Region;
 class OldMesh;
 enum class Property;
@@ -21,8 +21,8 @@ struct EqualityConstraints
 	EqualityConstraints(
 			Instance &instance,
 			const OldMesh &mesh,
-			const std::vector<Element*> &gluedElements,
-			const std::vector<Element*> &gluedInterfaceElements,
+			const std::vector<OldElement*> &gluedElements,
+			const std::vector<OldElement*> &gluedInterfaceElements,
 			const std::vector<Property> &gluedDOFs,
 			const std::vector<size_t> &gluedDOFsMeshOffsets,
 			bool interfaceElementContainsGluedDOFs = false,
@@ -46,8 +46,8 @@ protected:
 
 	Instance &_instance;
 	const OldMesh &_mesh;
-	const std::vector<Element*> &_gluedElements;
-	const std::vector<Element*> &_gluedInterfaceElements;
+	const std::vector<OldElement*> &_gluedElements;
+	const std::vector<OldElement*> &_gluedInterfaceElements;
 	const std::vector<Property> &_gluedDOFs;
 	const std::vector<size_t> &_gluedDOFsMeshOffsets;
 	bool _interfaceElementContainsGluedDOFs;

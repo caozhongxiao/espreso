@@ -123,7 +123,7 @@ void NewMesh::load()
 		_nodes->ranks = new serializededata<eslocal, int>(ranksBoundaries, ranksData);
 	}
 
-	auto loadElements = [&] (ElementStore *store, const std::vector<Element*> &elements) {
+	auto loadElements = [&] (ElementStore *store, const std::vector<OldElement*> &elements) {
 		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, elements.size());
 		std::vector<std::vector<eslocal> > boundaries(threads), indices(threads);
 		std::vector<std::vector<NewElement*> > epointers(threads);
@@ -180,8 +180,8 @@ void NewMesh::load()
 		for (size_t t = 0; t < threads; t++) {
 			for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 				eIDs[t].push_back(e + esize);
-				body[t].push_back(mesh.elements()[e]->param(Element::Params::BODY));
-				material[t].push_back(mesh.elements()[e]->param(Element::Params::MATERIAL));
+				body[t].push_back(mesh.elements()[e]->param(OldElement::Params::BODY));
+				material[t].push_back(mesh.elements()[e]->param(OldElement::Params::MATERIAL));
 			}
 		}
 		_elems->IDs = new serializededata<eslocal, esglobal>(1, eIDs);
