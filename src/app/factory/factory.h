@@ -15,7 +15,7 @@ class Assembler;
 class TimeStepSolver;
 class LoadStepSolver;
 class Mesh;
-class Store;
+class ResultStoreList;
 
 struct ECFConfiguration;
 struct LoadStepConfiguration;
@@ -29,7 +29,7 @@ public:
 	void preprocessMesh();
 	virtual size_t loadSteps() const =0;
 
-	virtual LoadStepSolver* getLoadStepSolver(size_t step, Mesh *mesh, Store *store) =0;
+	virtual LoadStepSolver* getLoadStepSolver(size_t step, Mesh *mesh, ResultStoreList *store) =0;
 
 	template<class TLoadStepSettings>
 	const TLoadStepSettings& getLoadStepsSettings(size_t step, const std::map<size_t, TLoadStepSettings> &setting) const
@@ -60,7 +60,7 @@ class Factory {
 	friend class APITestESPRESODataProvider;
 
 protected:
-	Factory(const ECFConfiguration &configuration, Mesh &mesh, Store &solutionStore);
+	Factory(const ECFConfiguration &configuration, Mesh &mesh, ResultStoreList &store);
 	~Factory();
 
 	void solve();
@@ -68,7 +68,7 @@ protected:
 	FactoryLoader* createFactoryLoader(const ECFConfiguration &configuration);
 
 	Mesh *_mesh;
-	Store *_store;
+	ResultStoreList *_store;
 
 	FactoryLoader *_loader;
 	std::vector<LoadStepSolver*> _loadSteps;

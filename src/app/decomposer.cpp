@@ -6,7 +6,9 @@
 #include "../mesh/structures/coordinates.h"
 #include "../input/loader.h"
 #include "../basis/logging/logging.hpp"
-#include "../output/datastore/espresobinaryformat.h"
+
+// TODO: MESH
+// #include "../output/datastore/espresobinaryformat.h"
 
  using namespace espreso;
 
@@ -20,7 +22,8 @@ int main(int argc, char** argv)
 	while (directoryTree >> parts) {
 		std::stringstream path;
 		path << ecf.decomposer.prefix << parts * environment->MPIsize;
-		ESPRESOBinaryFormat::prepareDirectories(path.str(), parts);
+		// TODO: MESH
+		// ESPRESOBinaryFormat::prepareDirectories(path.str(), parts);
 	}
 
 	Mesh mesh;
@@ -37,7 +40,8 @@ int main(int argc, char** argv)
 			sizes[p] = mesh.coordinates().localSize(p);
 		}
 		ESINFO(ALWAYS_ON_ROOT) << "Nodes in domains: " << Info::averageValues(sizes);
-		ESPRESOBinaryFormat::store(mesh, path.str());
+		// TODO: MESH
+		// ESPRESOBinaryFormat::store(mesh, path.str());
 		ESINFO(ALWAYS_ON_ROOT) << "Mesh partitiated to " << parts * environment->MPIsize << " parts saved";
 	}
 

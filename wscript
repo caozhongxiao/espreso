@@ -115,7 +115,7 @@ def configure(ctx):
     ctx.recurse("src/assembler")
 
     ctx.setenv("espreso", ctx.env.derive());
-    ctx.recurse("src/output")
+    #ctx.recurse("src/output")
     ctx.recurse("src/app")
 
     check_environment(ctx)
@@ -164,7 +164,7 @@ def build(ctx):
     ctx.recurse("src/assembler")
 
     ctx.env = ctx.all_envs["espreso"]
-    ctx.recurse("src/output")
+    #ctx.recurse("src/output")
     ctx.recurse("src/app")
 
     ctx.env = ctx.all_envs["gui"]

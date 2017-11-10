@@ -2,65 +2,52 @@
 #ifndef SRC_OUTPUT_RESULTSTORELIST_H_
 #define SRC_OUTPUT_RESULTSTORELIST_H_
 
-#include <algorithm>
-
-#include "store.h"
-
-namespace async { class Dispatcher; }
+//namespace async { class Dispatcher; }
 
 namespace espreso {
 
-class Mesh;
 class OutputConfiguration;
 
-class ResultStoreList: public Store {
+class ResultStoreList {
 
 public:
-	static ResultStoreList* createAsynchronizedStore(const OutputConfiguration &configuration, const Mesh *mesh);
-	static void destroyAsynchronizedStore();
-	static bool isStoreNode();
-	static bool isComputeNode();
+	static ResultStoreList* createAsynchronizedStore(const OutputConfiguration &configuration) { return NULL; }
+	static void destroyAsynchronizedStore() {}
+	static bool isStoreNode() { return false; }
+	static bool isComputeNode() { return !isStoreNode(); }
 
-	ResultStoreList(const OutputConfiguration &output): Store(output) { };
-	~ResultStoreList() { std::for_each(_results.begin(), _results.end(), [] (Store *rs) { delete rs; } ); }
+	ResultStoreList() { }
 
-	virtual void updateMesh()
+	~ResultStoreList()
 	{
-		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->updateMesh(); } );
+//		for (size_t i = 0; i < _results.size(); ++i) {
+//			delete _results[i];
+//		}
 	}
 
-	virtual void storeSettings(const Step &step)
+	void updateMesh()
 	{
-		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeSettings(step); } );
+//		for (size_t i = 0; i < _results.size(); ++i) {
+//			_results[i]->updateMesh();
+//		}
 	}
 
-	virtual void storeFETIData(const Step &step, const Instance &instance)
+	void updateSolution()
 	{
-		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeFETIData(step, instance); } );
-	}
-
-	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties)
-	{
-		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeSolution(step, solution, properties); } );
-	}
-
-	virtual void storeSubSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties)
-	{
-		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeSubSolution(step, solution, properties); } );
-	}
-
-	virtual void finalize()
-	{
-		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->finalize(); } );
+//		for (size_t i = 0; i < _results.size(); ++i) {
+//			_results[i]->updateSolution();
+//		}
 	}
 
 protected:
-	std::vector<Store*> _results;
-
-	static ResultStoreList *_resultStoreList;
-	static async::Dispatcher *_dispatcher;
+//	std::vector<ResultStore*> _results;
+//
+//	static ResultStoreList *_resultStoreList;
+//	static async::Dispatcher *_dispatcher;
 };
 
 }
+
+
 
 #endif /* SRC_OUTPUT_RESULTSTORELIST_H_ */

@@ -23,7 +23,7 @@ namespace espreso {
 class APITestESPRESODataProvider {
 
 public:
-	APITestESPRESODataProvider(int *argc, char ***argv): ecf(argc, argv), store(ecf.output), factory(ecf, mesh, store)
+	APITestESPRESODataProvider(int *argc, char ***argv): ecf(argc, argv), factory(ecf, mesh, store)
 	{
 		if (factory._loadSteps.size() > 1) {
 			ESINFO(GLOBAL_ERROR) << "APITEST: Cannot test instance with more loadsteps.";

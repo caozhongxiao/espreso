@@ -4,7 +4,7 @@
 #include "../instance.h"
 #include "../solution.h"
 #include "../physics/physics.h"
-#include "../../output/store.h"
+#include "../../output/resultstorelist.h"
 #include "../../linearsolver/linearsolver.h"
 
 #include "../../config/ecf/environment.h"
@@ -36,7 +36,7 @@ static std::string mNames(espreso::Matrices matrices, const std::string &prefix 
 	std::string(matrices & espreso::Matrices::dual        ? prefix + "Dual "        : "");
 }
 
-Assembler::Assembler(Instance &instance, Physics &physics, Mesh &mesh, Store &store, LinearSolver &linearSolver)
+Assembler::Assembler(Instance &instance, Physics &physics, Mesh &mesh, ResultStoreList &store, LinearSolver &linearSolver)
 : instance(instance), physics(physics), mesh(mesh), store(store), linearSolver(linearSolver), _timeStatistics(new TimeEval("Physics solver timing"))
 {
 	_timeStatistics->totalTime.startWithBarrier();
@@ -112,7 +112,9 @@ void Assembler::processSolution(const Step &step)
 
 void Assembler::solve(const Step &step, Matrices updatedMatrices)
 {
-	store.storeFETIData(step, instance);
+	// TODO: MESH
+	// store.storeFETIData(step, instance);
+
 	Matrices solverMatrices = Matrices::K | Matrices::M | Matrices::f | Matrices::B1;
 	storeWrapper(mNames(solverMatrices), solverMatrices);
 
@@ -132,7 +134,8 @@ void Assembler::storeSolution(const Step &step)
 		for (size_t i = 0; i < physics.solutionsIndicesToStore().size(); i++) {
 			solutions.push_back(instance.solutions[physics.solutionsIndicesToStore()[i]]);
 		}
-		store.storeSolution(step, solutions, physics.propertiesToStore());
+		// TODO: MESH
+		// store.storeSolution(step, solutions, physics.propertiesToStore());
 	});
 }
 
@@ -143,7 +146,8 @@ void Assembler::storeSubSolution(const Step &step)
 		for (size_t i = 0; i < physics.solutionsIndicesToStore().size(); i++) {
 			solutions.push_back(instance.solutions[physics.solutionsIndicesToStore()[i]]);
 		}
-		store.storeSubSolution(step, solutions, {});
+		// TODO: MESH
+		// store.storeSubSolution(step, solutions, {});
 	});
 }
 

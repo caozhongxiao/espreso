@@ -46,7 +46,7 @@ void ESPRESO::run(int *argc, char ***argv)
 	ESINFO(OVERVIEW) << "Run ESPRESO on " << environment->MPIsize << " process(es).";
 
 	Mesh mesh;
-	ResultStoreList* solutionStore = ResultStoreList::createAsynchronizedStore(configuration.output, &mesh);
+	ResultStoreList* solutionStore = ResultStoreList::createAsynchronizedStore(configuration.output);
 	if (ResultStoreList::isComputeNode()) {
 		Factory factory(configuration, mesh, *solutionStore);
 		factory.solve();
@@ -54,7 +54,7 @@ void ESPRESO::run(int *argc, char ***argv)
 	ResultStoreList::destroyAsynchronizedStore();
 }
 
-Factory::Factory(const ECFConfiguration &configuration, Mesh &mesh, Store &store)
+Factory::Factory(const ECFConfiguration &configuration, Mesh &mesh, ResultStoreList &store)
 : _mesh(&mesh), _store(&store), _loader(NULL)
 {
 	input::Loader::load(configuration, *_mesh, configuration.environment.MPIrank, configuration.environment.MPIsize);
@@ -93,7 +93,6 @@ void Factory::solve()
 	for (step.step = 0; step.step < _loadSteps.size(); step.step++) {
 		_loadSteps[step.step]->run(step);
 	}
-	_store->finalize();
 }
 
 template <class TType>
