@@ -8,6 +8,7 @@
 #include <QScrollArea>
 
 #include "loadstepwidget.h"
+#include "regionmaterialswidget.h"
 
 using namespace espreso;
 
@@ -74,7 +75,10 @@ void WorkflowWidget::createPhysicsTab()
 
 void WorkflowWidget::createMaterialsTab()
 {
-
+    RegionMaterialsWidget* rmw = new RegionMaterialsWidget(this->m_mesh,
+                                                           this->activePhysics(this->m_ecf),
+                                                           this);
+    ui->workflow->addTab(rmw, QLatin1String("Materials"));
 }
 
 void WorkflowWidget::createLoadstepsTabs()
@@ -128,5 +132,25 @@ PhysicsConfiguration* WorkflowWidget::activePhysics(ECFConfiguration* ecf)
 
 void WorkflowWidget::onPhysicsChange(ECFObject *physics)
 {
+
+    int tabs = ui->workflow->count();
+    for (int i = 1; i < tabs; i++)
+    {
+        ui->workflow->removeTab(1);
+    }
+
+    this->createMaterialsTab();
+
+    this->m_loadsteps = QString::fromStdString(
+                this->m_phyDetail
+                        ->activePhysics()
+                            ->getParameter("load_steps")
+                                ->getValue()
+                ).toInt();
+
+    this->createLoadstepsTabs();
+
+    this->m_loadsteps_fst_tab_index = ui->workflow->count();
+
     emit physicsChanged(physics);
 }

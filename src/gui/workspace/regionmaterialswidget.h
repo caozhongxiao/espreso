@@ -23,7 +23,7 @@ class RegionMaterialsWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit RegionMaterialsWidget(QWidget *parent = 0);
+    explicit RegionMaterialsWidget(Mesh* mesh, PhysicsConfiguration* physics, QWidget *parent = 0);
     ~RegionMaterialsWidget();
 
 private:

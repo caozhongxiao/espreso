@@ -46,7 +46,7 @@ RegionPairDialog::RegionPairDialog(ECFParameter* pair, ECFDataType value,
         int i = 0;
         for (auto it = scope->parameters.begin(); it != scope->parameters.end(); ++it)
         {
-            if ((*it)->getValue().compare(value) == 0)
+            if ((*it)->getParameter("name")->getValue().compare(value) == 0)
             {
                 mat->setCurrentIndex(i);
                 break;
