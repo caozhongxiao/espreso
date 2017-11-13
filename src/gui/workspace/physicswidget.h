@@ -27,6 +27,7 @@ signals:
 protected:
     QWidget* initContainer() override;
     void drawObject(ECFObject*) override;
+    FormWidget* processPositiveInteger(ECFParameter *, FormWidget *, QWidget *) override;
 
 private slots:
     void onPhysicsChange(int index);
@@ -41,7 +42,6 @@ private:
 
     RegionPropertyWidget* m_properties = nullptr;
 
-    void processParameters(ECFObject* obj, QWidget* widget);
     ECFObject* physics(int index);
 };
 

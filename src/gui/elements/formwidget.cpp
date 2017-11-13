@@ -74,6 +74,11 @@ void FormWidget::appendFloat(ECFParameter* p_nint)
     this->m_layout->addRow(lbl, edit);
 }
 
+void FormWidget::appendRow(const QString& label, QWidget* widget)
+{
+    this->m_layout->addRow(label, widget);
+}
+
 void FormWidget::save()
 {
     for (auto pair = m_fields.cbegin();

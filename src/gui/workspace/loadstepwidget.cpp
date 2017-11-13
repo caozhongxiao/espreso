@@ -11,12 +11,14 @@
 
 using namespace espreso;
 
-LoadstepWidget::LoadstepWidget(size_t id, ECFObject* physics, QWidget* parent) :
+LoadstepWidget::LoadstepWidget(size_t id, Mesh* mesh, ECFObject* physics, QWidget* parent) :
     ECFObjectWidget(physics, parent)
 {
     this->m_physics = physics;
     this->m_loadstep = m_physics->getParameter("load_steps_settings")->getParameter(QString::number(id).toStdString());
     this->m_obj = static_cast<ECFObject*>(m_loadstep);
+    this->m_mesh = mesh;
+    this->m_properties = nullptr;
 }
 
 
@@ -37,6 +39,24 @@ QWidget* LoadstepWidget::initContainer()
 
 void LoadstepWidget::drawObject(ECFObject* obj)
 {
+    if (obj->name.compare("material_set") == 0
+            || obj->name.compare("load_steps_settings") == 0)
+        return;
+
+    if ( obj->metadata.datatype.size() == 2 )
+    {
+        if (this->m_properties == nullptr)
+        {
+            this->m_properties = new RegionPropertyWidget(m_mesh,
+                                                          static_cast<PhysicsConfiguration*>(m_physics),
+                                                          this->m_container,
+                                                          tr("Region properties"));
+        }
+        this->m_properties->addProperty(obj);
+        this->m_widget->layout()->addWidget(m_properties);
+        return;
+    }
+
     QWidget* widget = new QWidget(this->m_container);
     QLayout* layout;
     if (obj->parameters.size()) layout = new QFormLayout;
@@ -51,65 +71,7 @@ void LoadstepWidget::drawObject(ECFObject* obj)
 
     this->m_widget->layout()->addWidget(widget);
 
+    this->createHeadline(obj, widget);
 
-    if (obj->parameters.size())
-    {
-        this->processParameters(obj, widget);
-    }
-    else if ( !obj->parameters.size() && (obj->metadata.datatype.size() == 2) )
-    {
-        //TODO: INITIAL TEMPERATURE AND THICKNESS
-    }
-}
-
-void LoadstepWidget::processParameters(ECFObject *obj, QWidget *widget)
-{
-    QFormLayout* l_layout = (QFormLayout*)widget->layout();
-    l_layout->addRow(QString::fromStdString(obj->metadata.description[0]), new QLabel(""));
-
-    for (auto parameter = obj->parameters.cbegin();
-         parameter != obj->parameters.cend();
-         ++parameter)
-    {
-        if (!(*parameter)->metadata.isallowed())
-            continue;
-
-        if ( (*parameter)->isObject() )
-        {
-            ECFObject* v_obj = static_cast<ECFObject*>(*parameter);
-            if (v_obj->name.compare("material_set") == 0
-                    || v_obj->name.compare("load_steps_settings") == 0)
-                continue;
-            this->drawObject(v_obj);
-        }
-        else if ((*parameter)->metadata.datatype.size() == 1)
-        {
-            ECFDataType type = (*parameter)->metadata.datatype.at(0);
-
-            if ( type == ECFDataType::OPTION
-                 || type == ECFDataType::ENUM_FLAGS )
-            {
-                l_layout->addRow(QString::fromStdString((*parameter)->metadata.description[0]),
-                                 this->createOption(*parameter, widget, false));
-            }
-            else if ( type == ECFDataType::FLOAT )
-            {
-                DoubleValidatorFactory df;
-                FieldHandler* handler = new FieldHandler(*parameter, &df);
-                l_layout->addRow(QString::fromStdString((*parameter)->metadata.description[0]),
-                        handler);
-                this->m_savables.append(handler);
-                this->m_validatables.append(handler);
-            }
-            else if ( type == ECFDataType::POSITIVE_INTEGER)
-            {
-                PositiveIntegerValidatorFactory df;
-                FieldHandler* handler = new FieldHandler(*parameter, &df, false, widget);
-                l_layout->addRow(QString::fromStdString((*parameter)->metadata.description[0]),
-                        handler);
-                this->m_savables.append(handler);
-                this->m_validatables.append(handler);
-            }
-        }
-    }
+    this->processParameters(obj, widget);
 }

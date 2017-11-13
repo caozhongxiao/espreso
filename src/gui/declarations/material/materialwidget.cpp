@@ -33,7 +33,7 @@ QWidget* MaterialWidget::initContainer()
     QVBoxLayout* w_layout = new QVBoxLayout;
     widget->setLayout(w_layout);
 
-    this->drawHeadline(this->m_obj, widget);
+    this->createHeadline(this->m_obj, widget);
 
     area->setWidgetResizable(true);
     area->setWidget(widget);
@@ -49,7 +49,7 @@ void MaterialWidget::drawObject(ECFObject* obj)
 
     this->m_widget->layout()->addWidget(widget);
 
-    this->drawHeadline(obj, widget);
+    this->createHeadline(obj, widget);
 
     this->processParameters(obj, widget);
 
@@ -58,103 +58,6 @@ void MaterialWidget::drawObject(ECFObject* obj)
                                                   QSizePolicy::Minimum,
                                                   QSizePolicy::Expanding);
     layout->addItem(verticalSpacer);
-}
-
-void MaterialWidget::drawHeadline(ECFObject* obj, QWidget* widget)
-{
-    if (!obj->metadata.description.size())
-        return;
-
-    QString lblNameText = QString::fromStdString(obj->metadata.description.at(0));
-    QLabel* lblName = new QLabel(lblNameText);
-    widget->layout()->addWidget(lblName);
-}
-
-void MaterialWidget::processParameters(ECFObject *obj, QWidget *widget)
-{
-    // Scalar properties
-    MaterialPropertyTableWidget* propertyTable;
-    bool propertyTableNotInserted = true;
-
-    // Material details (name, description, ...)
-    FormWidget* formWidget = nullptr;
-
-    // Iterating over material parameters and creating proper UI widgets
-    for (auto parameter = obj->parameters.cbegin();
-         parameter != obj->parameters.cend();
-         ++parameter)
-    {
-        if (!(*parameter)->metadata.isallowed())
-            continue;
-
-        if ( (*parameter)->isObject() )
-        {
-            this->drawObject(static_cast<ECFObject*>(*parameter));
-        }
-        else if ((*parameter)->metadata.datatype.size())
-        {
-
-            ECFDataType type = (*parameter)->metadata.datatype.at(0);
-
-            if ( type == ECFDataType::OPTION
-                 || type == ECFDataType::ENUM_FLAGS )
-            {
-                QWidget* handler = this->createOption(*parameter, widget);
-                widget->layout()->addWidget(handler);
-            }
-            else if (type == ECFDataType::BOOL)
-            {
-                QWidget* handler = this->createBool(*parameter, widget);
-                widget->layout()->addWidget(handler);
-            }
-            else if ( type == ECFDataType::EXPRESSION )
-            {
-
-                if (propertyTableNotInserted)
-                {
-                    propertyTable = new MaterialPropertyTableWidget(widget);
-                    this->m_savables.append(propertyTable);
-                    this->m_validatables.append(propertyTable);
-                    widget->layout()->addWidget(propertyTable);
-                    propertyTableNotInserted = false;
-                }
-                propertyTable->addProperty(*parameter);
-
-            }
-            else if (type == ECFDataType::STRING)
-            {
-                formWidget = this->createFormWidget(widget, formWidget);
-                formWidget->appendString(*parameter);
-            }
-            else if (type == ECFDataType::FLOAT)
-            {
-                formWidget = this->createFormWidget(widget, formWidget);
-                formWidget->appendFloat(*parameter);
-            }
-            else if (type == ECFDataType::NONNEGATIVE_INTEGER)
-            {
-                formWidget = this->createFormWidget(widget, formWidget);
-                formWidget->appendNonnegativeInteger(*parameter);
-            }
-            else if (type == ECFDataType::POSITIVE_INTEGER)
-            {
-                formWidget = this->createFormWidget(widget, formWidget);
-                formWidget->appendPositiveInteger(*parameter);
-            }
-        }
-    }
-}
-
-FormWidget* MaterialWidget::createFormWidget(QWidget* container, FormWidget* form)
-{
-    if (form != nullptr) return form;
-
-    FormWidget* formWidget = new FormWidget;
-    this->m_savables.append(formWidget);
-    this->m_validatables.append(formWidget);
-    container->layout()->addWidget(formWidget);
-
-    return formWidget;
 }
 
 bool MaterialWidget::isValid()

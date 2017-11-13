@@ -25,6 +25,8 @@ namespace espreso
         void appendPositiveInteger(ECFParameter*);
         void appendFloat(ECFParameter*);
 
+        void appendRow(const QString&, QWidget*);
+
         void save() override;
         void saveState() override;
         void restoreState() override;

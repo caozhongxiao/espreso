@@ -24,11 +24,6 @@ protected:
 private:
     QVector<std::string> m_names;
     QWidget* m_widget;
-
-    void processParameters(ECFObject*, QWidget*);
-    void drawHeadline(ECFObject*, QWidget*);
-
-    FormWidget* createFormWidget(QWidget*, FormWidget* = nullptr);
 };
 
 }

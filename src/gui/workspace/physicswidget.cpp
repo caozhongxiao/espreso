@@ -87,7 +87,10 @@ void PhysicsWidget::onPhysicsChange(int index)
 
 void PhysicsWidget::drawObject(ECFObject* obj)
 {
-    if ( !obj->parameters.size() && (obj->metadata.datatype.size() == 2) )
+    if (obj->name.compare("material_set") == 0 || obj->name.compare("load_steps_settings") == 0)
+        return;
+
+    if ( obj->metadata.datatype.size() == 2 )
     {
         if (this->m_properties == nullptr)
         {
@@ -116,81 +119,26 @@ void PhysicsWidget::drawObject(ECFObject* obj)
 
     this->m_widget->layout()->addWidget(widget);
 
+    this->createHeadline(obj, widget);
 
-    if (obj->parameters.size())
-    {
-        this->processParameters(obj, widget);
-    }
+    this->processParameters(obj, widget);
 }
 
-void PhysicsWidget::processParameters(ECFObject* obj, QWidget* widget)
+FormWidget* PhysicsWidget::processPositiveInteger(ECFParameter* parameter, FormWidget* form, QWidget* widget)
 {
-    QFormLayout* l_layout = (QFormLayout*)widget->layout();
-    l_layout->addRow(QString::fromStdString(obj->metadata.description[0]), new QLabel(""));
-
-    for (auto parameter = obj->parameters.cbegin();
-         parameter != obj->parameters.cend();
-         ++parameter)
+    FormWidget* fw = this->createFormWidget(widget, form);
+    if (parameter->name.compare("load_steps") == 0)
     {
-        if (!(*parameter)->metadata.isallowed())
-            continue;
-
-        if ( (*parameter)->isObject() )
-        {
-            ECFObject* v_obj = static_cast<ECFObject*>(*parameter);
-            if (v_obj->name.compare("material_set") == 0
-                    || v_obj->name.compare("load_steps_settings") == 0)
-                continue;
-            this->drawObject(v_obj);
-        }
-        else if ((*parameter)->metadata.datatype.size() == 1)
-        {
-            ECFDataType type = (*parameter)->metadata.datatype.at(0);
-
-            if ( type == ECFDataType::OPTION
-                 || type == ECFDataType::ENUM_FLAGS )
-            {
-                l_layout->addRow(QString::fromStdString((*parameter)->metadata.description[0]),
-                                 this->createOption(*parameter, widget, false));
-            }
-            else if ( type == ECFDataType::FLOAT )
-            {
-                DoubleValidatorFactory df;
-                FieldHandler* handler = new FieldHandler(*parameter, &df);
-                l_layout->addRow(QString::fromStdString((*parameter)->metadata.description[0]),
-                        handler);
-                this->m_savables.append(handler);
-                this->m_validatables.append(handler);
-            }
-            else if ( type == ECFDataType::POSITIVE_INTEGER)
-            {
-                if ((*parameter)->name.compare("load_steps") == 0)
-                {
-                    SpinnerHandler* handler = new SpinnerHandler(*parameter, false, widget);
-                    connect(handler, &SpinnerHandler::valueChanged, this, &PhysicsWidget::onLoadstepsChange);
-                    l_layout->addRow(QString::fromStdString((*parameter)->metadata.description[0]),
-                            handler);
-                    this->m_savables.append(handler);
-                    this->m_validatables.append(handler);
-                }
-                else
-                {
-                    PositiveIntegerValidatorFactory df;
-                    FieldHandler* handler = new FieldHandler(*parameter, &df, false, widget);
-                    l_layout->addRow(QString::fromStdString((*parameter)->metadata.description[0]),
-                            handler);
-                    this->m_savables.append(handler);
-                    this->m_validatables.append(handler);
-                }
-            }
-            else if ( type == ECFDataType::REGION )
-            {
-                FieldHandler* handler = new FieldHandler(*parameter);
-                l_layout->addRow(QString::fromStdString((*parameter)->metadata.description[0]), handler);
-                this->m_savables.append(handler);
-                this->m_validatables.append(handler);
-            }
-        }
+        SpinnerHandler* handler = new SpinnerHandler(parameter, false, widget);
+        connect(handler, &SpinnerHandler::valueChanged, this, &PhysicsWidget::onLoadstepsChange);
+        fw->appendRow(QString::fromStdString(parameter->metadata.description[0]),
+                handler);
+        this->m_savables.append(handler);
+        this->m_validatables.append(handler);
+    }
+    else
+    {
+        return ECFObjectWidget::processPositiveInteger(parameter, form, widget);
     }
 }
 

@@ -85,7 +85,7 @@ void WorkflowWidget::createLoadstepsTabs()
 {
     for (int i = 0; i < m_loadsteps; i++)
     {
-        LoadstepWidget* lsw = new LoadstepWidget(i + 1, m_phyDetail->activePhysics(), this);
+        LoadstepWidget* lsw = new LoadstepWidget(i + 1, this->m_mesh, m_phyDetail->activePhysics(), this);
         lsw->init();
         ui->workflow->addTab(lsw, tr("Loadstep %1").arg(i + 1));
     }
@@ -106,7 +106,7 @@ void WorkflowWidget::onLoadstepsChange(int loadsteps)
     {
         //ADD LOADSTEPS
 
-        LoadstepWidget* lsw = new LoadstepWidget(++this->m_loadsteps, m_phyDetail->activePhysics(), this);
+        LoadstepWidget* lsw = new LoadstepWidget(++this->m_loadsteps, this->m_mesh, m_phyDetail->activePhysics(), this);
         lsw->init();
         ui->workflow->addTab(lsw, tr("Loadstep %1").arg(this->m_loadsteps));
     }
@@ -134,9 +134,9 @@ void WorkflowWidget::onPhysicsChange(ECFObject *physics)
 {
 
     int tabs = ui->workflow->count();
-    for (int i = 1; i < tabs; i++)
+    for (int i = 2; i < tabs; i++)
     {
-        ui->workflow->removeTab(1);
+        ui->workflow->removeTab(2);
     }
 
     this->createMaterialsTab();
