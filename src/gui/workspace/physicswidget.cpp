@@ -183,6 +183,13 @@ void PhysicsWidget::processParameters(ECFObject* obj, QWidget* widget)
                     this->m_validatables.append(handler);
                 }
             }
+            else if ( type == ECFDataType::REGION )
+            {
+                FieldHandler* handler = new FieldHandler(*parameter);
+                l_layout->addRow(QString::fromStdString((*parameter)->metadata.description[0]), handler);
+                this->m_savables.append(handler);
+                this->m_validatables.append(handler);
+            }
         }
     }
 }
