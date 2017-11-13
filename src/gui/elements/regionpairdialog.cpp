@@ -4,6 +4,8 @@
 #include <QLabel>
 #include <QComboBox>
 #include <QFormLayout>
+#include <QMessageBox>
+#include <QDebug>
 
 #include "../declarations/datatypeeditwidget.h"
 
@@ -27,19 +29,58 @@ RegionPairDialog::RegionPairDialog(ECFDataType value, ECFObject* map,
     this->m_second_widget = this->uiValue(m_second, ui->second);
 }
 
+RegionPairDialog::RegionPairDialog(ECFParameter* pair, ECFDataType value,
+                         ECFObject* map, Mesh* mesh,
+                         ECFObject* scope, QWidget *parent)
+    : RegionPairDialog(value, map, mesh, scope, parent)
+{
+    this->m_first_widget->setEnabled(false);
+    QComboBox* cmb = static_cast<QComboBox*>(this->m_first_widget);
+    cmb->clear();
+    cmb->addItem(QString::fromStdString(pair->name));
+
+    if (this->m_second == ECFDataType::MATERIAL)
+    {
+        QComboBox* mat = static_cast<QComboBox*>(this->m_second_widget);
+        std::string value = pair->getValue();
+        int i = 0;
+        for (auto it = scope->parameters.begin(); it != scope->parameters.end(); ++it)
+        {
+            if ((*it)->getValue().compare(value) == 0)
+            {
+                mat->setCurrentIndex(i);
+                break;
+            }
+            i++;
+        }
+    }
+    else if (this->m_second == ECFDataType::EXPRESSION)
+    {
+        DataTypeEditWidget* expr = static_cast<DataTypeEditWidget*>(this->m_second_widget);
+        std::string value = pair->getValue();
+        expr->setValue(QString::fromStdString(value));
+    }
+}
+
 RegionPairDialog::~RegionPairDialog()
 {
     delete ui;
 }
 
-RegionPairDialog* RegionPairDialog::createRegionMaterial(ECFObject* map, Mesh* mesh, ECFObject* materials)
+RegionPairDialog* RegionPairDialog::createRegionMaterial(ECFObject* map, Mesh* mesh, ECFObject* materials, ECFParameter* pair)
 {
-    return new RegionPairDialog(ECFDataType::MATERIAL, map, mesh, materials);
+    if (pair == nullptr)
+        return new RegionPairDialog(ECFDataType::MATERIAL, map, mesh, materials);
+    else
+        return new RegionPairDialog(pair, ECFDataType::MATERIAL, map, mesh, materials);
 }
 
-RegionPairDialog* RegionPairDialog::createRegionExpression(ECFObject* map, Mesh* mesh)
+RegionPairDialog* RegionPairDialog::createRegionExpression(ECFObject* map, Mesh* mesh, ECFParameter* pair)
 {
-    return new RegionPairDialog(ECFDataType::EXPRESSION, map, mesh, nullptr);
+    if (pair == nullptr)
+        return new RegionPairDialog(ECFDataType::EXPRESSION, map, mesh, nullptr);
+    else
+        return new RegionPairDialog(pair, ECFDataType::EXPRESSION, map, mesh, nullptr);
 }
 
 QWidget* RegionPairDialog::uiValue(ECFDataType type, QLayout* layout)
@@ -115,12 +156,26 @@ void RegionPairDialog::accept()
     if (this->m_second == ECFDataType::EXPRESSION)
     {
         DataTypeEditWidget* w = static_cast<DataTypeEditWidget*>(this->m_second_widget);
+        if (!w->isValid())
+        {
+            if (value->getValue().empty()) this->m_map->dropParameter(value);
+            this->displayError(w->errorMessage());
+            return;
+        }
         value->setValue(w->value().toStdString());
     }
 
     this->m_region = QString::fromStdString(key);
 
     QDialog::accept();
+}
+
+void RegionPairDialog::displayError(const QString& msg)
+{
+    QMessageBox msgbox;
+    msgbox.setWindowTitle(tr("Error"));
+    msgbox.setText(msg);
+    msgbox.exec();
 }
 
 QString RegionPairDialog::region()

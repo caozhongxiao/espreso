@@ -13,6 +13,8 @@
 #include "../../mesh/structures/region.h"
 #include "../../mesh/elements/plane/planeelement.h"
 
+#include "regionpairdialog.h"
+
 namespace espreso
 {
 
@@ -35,7 +37,7 @@ private slots:
     void onActionEdit();
     void onActionDelete();
 
-    void on_tree_customContextMenuRequested(const QPoint &pos);
+    void onContextMenu(const QPoint &pos);
 
 private:
     Ui::RegionPropertyWidget *ui;
@@ -55,6 +57,8 @@ private:
     QAction* m_action_delete;
 
     QModelIndex selectedItem();
+    RegionPairDialog* createDialog(const QModelIndex& groupIndex, ECFParameter* param = nullptr);
+    ECFParameter* selectedParam(const QModelIndex& groupIndex);
 };
 
 }

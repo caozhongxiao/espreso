@@ -3,8 +3,7 @@
 
 #include <QMenu>
 #include <QTreeView>
-
-#include "regionpairdialog.h"
+#include <QDebug>
 
 using namespace espreso;
 
@@ -31,7 +30,7 @@ RegionPropertyWidget::RegionPropertyWidget(Mesh* mesh, PhysicsConfiguration* phy
     view->setContextMenuPolicy(Qt::CustomContextMenu);
     view->setHeaderHidden(true);
     ui->verticalLayout->addWidget(view);
-    connect(view, &QTreeView::customContextMenuRequested, this, &RegionPropertyWidget::on_tree_customContextMenuRequested);
+    connect(view, &QTreeView::customContextMenuRequested, this, &RegionPropertyWidget::onContextMenu);
     this->m_view = view;
 
     this->m_action_new = new QAction(tr("&New"), this);
@@ -69,15 +68,7 @@ void RegionPropertyWidget::onActionNew()
 
     RegionPairDialog* dialog;
 
-    if (m_objs[groupIndex.row()]->metadata.datatype.size() == 2)
-    {
-        if (m_objs[groupIndex.row()]->metadata.datatype[1] == ECFDataType::EXPRESSION)
-            dialog = RegionPairDialog::createRegionExpression(m_objs[groupIndex.row()], m_mesh);
-
-        if (m_objs[groupIndex.row()]->metadata.datatype[1] == ECFDataType::MATERIAL)
-            dialog = RegionPairDialog::createRegionMaterial(m_objs[groupIndex.row()], m_mesh,
-                    static_cast<ECFObject*>(m_physics->getParameter("materials")));
-    }
+    dialog = this->createDialog(groupIndex);
 
     if (dialog->exec() == QDialog::Accepted)
     {
@@ -89,12 +80,59 @@ void RegionPropertyWidget::onActionNew()
 
 void RegionPropertyWidget::onActionEdit()
 {
+    QModelIndex groupIndex = this->selectedItem();
+    if ( !(groupIndex.isValid()) ) return;
 
+    ECFParameter* param = this->selectedParam(groupIndex);
+    if (param == nullptr) return;
+
+    RegionPairDialog* dialog;
+
+    dialog = this->createDialog(groupIndex, param);
+
+    dialog->exec();
+}
+
+RegionPairDialog* RegionPropertyWidget::createDialog(const QModelIndex& groupIndex, ECFParameter *param)
+{
+    if (m_objs[groupIndex.row()]->metadata.datatype.size() == 2)
+    {
+        if (m_objs[groupIndex.row()]->metadata.datatype[1] == ECFDataType::EXPRESSION)
+            return RegionPairDialog::createRegionExpression(m_objs[groupIndex.row()], m_mesh, param);
+
+        if (m_objs[groupIndex.row()]->metadata.datatype[1] == ECFDataType::MATERIAL)
+            return RegionPairDialog::createRegionMaterial(m_objs[groupIndex.row()], m_mesh,
+                    static_cast<ECFObject*>(m_physics->getParameter("materials")), param);
+    }
+
+    return nullptr;
 }
 
 void RegionPropertyWidget::onActionDelete()
 {
+    QModelIndex groupIndex = this->selectedItem();
+    if ( !(groupIndex.isValid()) ) return;
 
+    ECFParameter* param = this->selectedParam(groupIndex);
+    if (param == nullptr) return;
+
+    this->m_objs[groupIndex.row()]->dropParameter(param);
+
+    QModelIndexList indexList = m_view->selectionModel()->selectedIndexes();
+    QModelIndex clicked = indexList.at(0);
+    this->m_groups[groupIndex.row()]->removeRow(clicked.row());
+}
+
+ECFParameter* RegionPropertyWidget::selectedParam(const QModelIndex &groupIndex)
+{
+    QModelIndexList indexList = m_view->selectionModel()->selectedIndexes();
+    QModelIndex clicked = indexList.at(0);
+    if (!clicked.parent().isValid()) return nullptr;
+
+    ECFObject* obj = this->m_objs[groupIndex.row()];
+    std::string key = this->m_model->data(clicked).toString().toStdString();
+
+    return obj->getParameter(key);
 }
 
 QModelIndex RegionPropertyWidget::selectedItem()
@@ -114,7 +152,7 @@ QModelIndex RegionPropertyWidget::selectedItem()
     return parent;
 }
 
-void RegionPropertyWidget::on_tree_customContextMenuRequested(const QPoint &pos)
+void RegionPropertyWidget::onContextMenu(const QPoint &pos)
 {
     QMenu treeMenu(this);
     treeMenu.addAction(this->m_action_new);

@@ -23,8 +23,8 @@ class RegionPairDialog : public QDialog
     Q_OBJECT
 
 public:
-    static RegionPairDialog* createRegionMaterial(ECFObject* map, Mesh* mesh, ECFObject* materials);
-    static RegionPairDialog* createRegionExpression(ECFObject* map, Mesh* mesh);
+    static RegionPairDialog* createRegionMaterial(ECFObject* map, Mesh* mesh, ECFObject* materials, ECFParameter* pair = nullptr);
+    static RegionPairDialog* createRegionExpression(ECFObject* map, Mesh* mesh, ECFParameter* pair = nullptr);
     ~RegionPairDialog();
 
     void accept() override;
@@ -33,6 +33,9 @@ public:
 
 private:
     explicit RegionPairDialog(ECFDataType value,
+                             ECFObject* map, Mesh* mesh,
+                             ECFObject* scope, QWidget *parent = 0);
+    explicit RegionPairDialog(ECFParameter* pair, ECFDataType value,
                              ECFObject* map, Mesh* mesh,
                              ECFObject* scope, QWidget *parent = 0);
 
@@ -49,6 +52,8 @@ private:
     QString m_region;
 
     QWidget* uiValue(ECFDataType type, QLayout* layout);
+
+    void displayError(const QString&);
 
     std::string getKey();
 };

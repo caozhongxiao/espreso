@@ -38,6 +38,8 @@ namespace espreso
 
         QString value();
 
+        void setValue(const QString& value);
+
     private slots:
         void changeType(int index);
 
