@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-class APIMesh;
+class Mesh;
 
 namespace input {
 
@@ -14,7 +14,7 @@ class API {
 
 public:
 	static void load(
-			APIMesh &mesh,
+			Mesh &mesh,
 			eslocal indexBase,
 			size_t domains,
 			const std::vector<eslocal> &eType,
@@ -28,14 +28,14 @@ public:
 			size_t size, const eslocal *l2g) {}
 
 protected:
-	API(APIMesh &mesh, eslocal offset, size_t domains): _mesh(mesh), _offset(offset), _domains(domains) {}
+	API(Mesh &mesh, eslocal offset, size_t domains): _mesh(mesh), _offset(offset), _domains(domains) {}
 
 	void points(const std::vector<std::vector<eslocal> > &eNodes, size_t DOFsSize) {}
 	void elements(const std::vector<eslocal> &eType, std::vector<std::vector<eslocal> > &eNodes, std::vector<std::vector<eslocal> > &eDOFs, std::vector<std::vector<double> > &eMatrices) {}
 	void dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dirichletValues) {}
 	void clusterBoundaries(std::vector<int> &neighbours, size_t size, const eslocal *l2g) {}
 
-	APIMesh &_mesh;
+	Mesh &_mesh;
 	eslocal _offset;
 	size_t _domains;
 };

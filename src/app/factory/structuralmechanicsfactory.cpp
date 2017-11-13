@@ -18,7 +18,7 @@
 
 using namespace espreso;
 
-StructuralMechanicsFactory::StructuralMechanicsFactory(const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, OldMesh *mesh)
+StructuralMechanicsFactory::StructuralMechanicsFactory(const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh)
 : _configuration(configuration), _propertiesConfiguration(propertiesConfiguration), _bem(false)
 {
 	_instances.push_back(new Instance(*mesh));
@@ -55,7 +55,7 @@ size_t StructuralMechanicsFactory::loadSteps() const
 	return _configuration.load_steps;
 }
 
-LoadStepSolver* StructuralMechanicsFactory::getLoadStepSolver(size_t step, OldMesh *mesh, ResultStoreList *store)
+LoadStepSolver* StructuralMechanicsFactory::getLoadStepSolver(size_t step, Mesh *mesh, ResultStoreList *store)
 {
 	const StructuralMechanicsLoadStepConfiguration &settings = getLoadStepsSettings(step, _configuration.load_steps_settings);
 

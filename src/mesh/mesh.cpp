@@ -49,18 +49,18 @@
 using namespace espreso;
 
 
-Mesh::Mesh(OldMesh &mesh)
+Mesh::Mesh()
 : _nodes(new ElementStore(_eclasses)), _edges(new ElementStore(_eclasses)), _faces(new ElementStore(_eclasses)), _elems(new ElementStore(_eclasses)), _halo(new ElementStore(_eclasses)),
   _domains(new DomainStore), _domainsBoundaries(new BoundaryStore()), _processBoundaries(new BoundaryStore()),
   _eclasses(environment->OMP_NUM_THREADS),
-  mesh(mesh)
+  mesh(NULL)
 {
 
 }
 
 void Mesh::load()
 {
-	_neighbours = mesh.neighbours();
+	_neighbours = mesh->neighbours();
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	#pragma omp parallel for
@@ -94,7 +94,7 @@ void Mesh::load()
 
 	// LOAD NODES
 	{
-		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, mesh.nodes().size());
+		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, mesh->nodes().size());
 		std::vector<std::vector<Point> > coordinates(threads);
 		std::vector<std::vector<esglobal> > IDs(threads);
 		std::vector<std::vector<eslocal> > ranksBoundaries(threads);
@@ -105,18 +105,18 @@ void Mesh::load()
 		for (size_t t = 0; t < threads; t++) {
 			size_t offset = 0;
 			for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
-				coordinates[t].push_back(mesh.coordinates()[n]);
-				IDs[t].push_back(mesh.coordinates().globalIndex(n));
-				ranksBoundaries[t].push_back(offset = offset + mesh.nodes()[n]->clusters().size());
-				for (size_t c = 0; c < mesh.nodes()[n]->clusters().size(); c++) {
-					ranksData[t].push_back(mesh.nodes()[n]->clusters()[c]);
+				coordinates[t].push_back(mesh->coordinates()[n]);
+				IDs[t].push_back(mesh->coordinates().globalIndex(n));
+				ranksBoundaries[t].push_back(offset = offset + mesh->nodes()[n]->clusters().size());
+				for (size_t c = 0; c < mesh->nodes()[n]->clusters().size(); c++) {
+					ranksData[t].push_back(mesh->nodes()[n]->clusters()[c]);
 				}
 			}
 		}
 
 		Esutils::threadDistributionToFullDistribution(ranksBoundaries);
 
-		_nodes->size = mesh.nodes().size();
+		_nodes->size = mesh->nodes().size();
 		_nodes->distribution = distribution;
 		_nodes->coordinates = new serializededata<eslocal, Point>(1, coordinates);
 		_nodes->IDs = new serializededata<eslocal, esglobal>(1, IDs);
@@ -167,21 +167,21 @@ void Mesh::load()
 		store->nodes = new serializededata<eslocal, eslocal>(std::move(tarray<eslocal>(boundaries)), std::move(tarray<eslocal>(indices)));
 	};
 
-	loadElements(_edges, mesh.edges());
-	loadElements(_faces, mesh.faces());
-	loadElements(_elems, mesh.elements());
+	loadElements(_edges, mesh->edges());
+	loadElements(_faces, mesh->faces());
+	loadElements(_elems, mesh->elements());
 
 	{
-		size_t esize = mesh.elements().size();
-		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, mesh.elements().size());
+		size_t esize = mesh->elements().size();
+		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, mesh->elements().size());
 		Communication::exscan(esize);
 		std::vector<std::vector<esglobal> > eIDs(threads);
 		std::vector<std::vector<int> > body(threads), material(threads);
 		for (size_t t = 0; t < threads; t++) {
 			for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 				eIDs[t].push_back(e + esize);
-				body[t].push_back(mesh.elements()[e]->param(OldElement::Params::BODY));
-				material[t].push_back(mesh.elements()[e]->param(OldElement::Params::MATERIAL));
+				body[t].push_back(mesh->elements()[e]->param(OldElement::Params::BODY));
+				material[t].push_back(mesh->elements()[e]->param(OldElement::Params::MATERIAL));
 			}
 		}
 		_elems->IDs = new serializededata<eslocal, esglobal>(1, eIDs);
@@ -189,15 +189,15 @@ void Mesh::load()
 		_elems->material = new serializededata<eslocal, esglobal>(1, material);
 	}
 
-	for (size_t r = 2; r < mesh.regions().size(); r++) {
-		std::vector<size_t> tdistributions = tarray<size_t>::distribute(threads, mesh.regions()[r]->elements().size());
+	for (size_t r = 2; r < mesh->regions().size(); r++) {
+		std::vector<size_t> tdistributions = tarray<size_t>::distribute(threads, mesh->regions()[r]->elements().size());
 		std::vector<std::vector<eslocal> > rdistribution(threads), rdata(threads);
 
-		if (mesh.regions()[r]->eType == ElementType::NODES) {
+		if (mesh->regions()[r]->eType == ElementType::NODES) {
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
 				for (size_t e = tdistributions[t]; e < tdistributions[t + 1]; e++) {
-					rdata[t].push_back(mesh.regions()[r]->elements()[e]->node(0));
+					rdata[t].push_back(mesh->regions()[r]->elements()[e]->node(0));
 				}
 			}
 		} else {
@@ -205,26 +205,26 @@ void Mesh::load()
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
 				for (size_t e = tdistributions[t]; e < tdistributions[t + 1]; e++) {
-					for (size_t n = 0; n < mesh.regions()[r]->elements()[e]->nodes(); n++) {
-						rdata[t].push_back(mesh.regions()[r]->elements()[e]->node(n));
+					for (size_t n = 0; n < mesh->regions()[r]->elements()[e]->nodes(); n++) {
+						rdata[t].push_back(mesh->regions()[r]->elements()[e]->node(n));
 					}
 					rdistribution[t].push_back(rdata[t].size());
 				}
 			}
 		}
 
-		switch (mesh.regions()[r]->eType) {
+		switch (mesh->regions()[r]->eType) {
 		case ElementType::ELEMENTS:
-			std::cout << "region: " << mesh.regions()[r]->name << " of elements\n";
+			std::cout << "region: " << mesh->regions()[r]->name << " of elements\n";
 			break;
 		case ElementType::FACES:
-			std::cout << "region: " << mesh.regions()[r]->name << " of faces\n";
+			std::cout << "region: " << mesh->regions()[r]->name << " of faces\n";
 			break;
 		case ElementType::EDGES:
-			std::cout << "region: " << mesh.regions()[r]->name << " of edges\n";
+			std::cout << "region: " << mesh->regions()[r]->name << " of edges\n";
 			break;
 		case ElementType::NODES:
-			_regions.push_back(new RegionStore(mesh.regions()[r]->name, TFlags::ELEVEL::NODE));
+			_regions.push_back(new RegionStore(mesh->regions()[r]->name, TFlags::ELEVEL::NODE));
 			_regions.back()->nodes = new serializededata<eslocal, eslocal>(1, rdata);
 			std::sort(_regions.back()->nodes->datatarray().begin(), _regions.back()->nodes->datatarray().end());
 			break;

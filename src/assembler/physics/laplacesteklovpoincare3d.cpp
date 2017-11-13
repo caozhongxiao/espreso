@@ -25,7 +25,7 @@ using namespace espreso;
 
 size_t LaplaceSteklovPoincare3D::BEMOffset = -1;
 
-LaplaceSteklovPoincare3D::LaplaceSteklovPoincare3D(OldMesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
+LaplaceSteklovPoincare3D::LaplaceSteklovPoincare3D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
 : Physics("LAPLACE STEKLOV POINCARE 3D", mesh, instance, &configuration), HeatTransfer3D(mesh, instance, configuration, propertiesConfiguration)
 {
 #ifndef BEM4I
@@ -109,13 +109,13 @@ void LaplaceSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices,
 void LaplaceSteklovPoincare3D::processSolution(const Step &step)
 {
 	// TODO: get solution for all nodes from BEM library
-	#pragma omp parallel for
-	for (size_t p = 0; p < _mesh->parts(); p++) {
-		std::fill(_instance->solutions[offset + SolutionIndex::TEMPERATURE]->data[p].begin(), _instance->solutions[offset + SolutionIndex::TEMPERATURE]->data[p].end(), 0);
-		for (size_t i = 0; i < _boundaryIndices[p].size(); i++) {
-			_instance->solutions[offset + SolutionIndex::TEMPERATURE]->data[p][_mesh->coordinates().localIndex(_boundaryIndices[p][i], p)] = _instance->primalSolution[p][i];
-		}
-	}
+//	#pragma omp parallel for
+//	for (size_t p = 0; p < _mesh->parts(); p++) {
+//		std::fill(_instance->solutions[offset + SolutionIndex::TEMPERATURE]->data[p].begin(), _instance->solutions[offset + SolutionIndex::TEMPERATURE]->data[p].end(), 0);
+//		for (size_t i = 0; i < _boundaryIndices[p].size(); i++) {
+//			_instance->solutions[offset + SolutionIndex::TEMPERATURE]->data[p][_mesh->coordinates().localIndex(_boundaryIndices[p][i], p)] = _instance->primalSolution[p][i];
+//		}
+//	}
 }
 
 

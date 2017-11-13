@@ -2,15 +2,17 @@
 #include "mpi.h"
 
 #include "../config/ecf/ecf.h"
-#include "../old/mesh/structures/mesh.h"
-#include "../old/mesh/structures/coordinates.h"
+#include "../mesh/mesh.h"
+#include "../mesh/store/domainstore.h"
 #include "../basis/logging/logging.hpp"
+#include "../input/loader.h"
 
 // TODO: MESH
 // #include "../output/datastore/espresobinaryformat.h"
-// #include "../input/loader.h"
 
- using namespace espreso;
+
+
+using namespace espreso;
 
 int main(int argc, char** argv)
 {
@@ -26,19 +28,20 @@ int main(int argc, char** argv)
 		// ESPRESOBinaryFormat::prepareDirectories(path.str(), parts);
 	}
 
-	OldMesh mesh;
-	// TODO: MESH
-	// input::Loader::load(ecf, mesh, ecf.environment.MPIrank, ecf.environment.MPIsize);
+	Mesh mesh;
+	Loader::load(ecf, mesh, ecf.environment.MPIrank, ecf.environment.MPIsize);
 	std::stringstream decomposition(ecf.decomposer.parts);
 	while (decomposition >> parts) {
 		std::stringstream path;
 		path << ecf.decomposer.prefix << parts * environment->MPIsize;
 
-		mesh.partitiate(parts);
+		// TODO: MESH
+		// mesh.partitiate(parts);
 		ESINFO(ALWAYS_ON_ROOT) << "Mesh partitiated to " << parts * environment->MPIsize << " parts";
-		std::vector<size_t> sizes(mesh.parts());
-		for (size_t p = 0; p < mesh.parts(); p++) {
-			sizes[p] = mesh.coordinates().localSize(p);
+		std::vector<size_t> sizes(mesh._domains->size);
+		for (size_t p = 0; p < mesh._domains->size; p++) {
+			// TODO: MESH
+			// sizes[p] = mesh.coordinates().localSize(p);
 		}
 		ESINFO(ALWAYS_ON_ROOT) << "Nodes in domains: " << Info::averageValues(sizes);
 		// TODO: MESH

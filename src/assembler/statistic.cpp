@@ -9,7 +9,8 @@
 #include "../config/ecf/environment.h"
 
 #include "../old/mesh/structures/coordinates.h"
-#include "../old/mesh/structures/mesh.h"
+#include "../mesh/mesh.h"
+#include "../mesh/store/domainstore.h"
 #include "../old/mesh/structures/region.h"
 #include "../old/mesh/structures/elementtypes.h"
 #include "../old/mesh/elements/element.h"
@@ -20,19 +21,19 @@
 using namespace espreso;
 
 
-Statistic::Statistic(ElementType eType, const OldMesh &mesh, const std::vector<std::vector<double> > &data, const std::vector<Property> &properties)
+Statistic::Statistic(ElementType eType, const Mesh &mesh, const std::vector<std::vector<double> > &data, const std::vector<Property> &properties)
 : _operation(Operation::AVERAGE),
   _eType(eType), _dataSize(properties.size()), _computed(false), _mesh(mesh), _data(data)
 {
-	for (size_t r = 0; r < _mesh.monitoredRegions().size(); r++) {
-		if (eType == ElementType::ELEMENTS) {
-			if (_mesh.monitoredRegions()[r]->eType == ElementType::ELEMENTS) {
-				_selection.push_back(_mesh.monitoredRegions()[r]);
-			}
-		} else {
-			_selection.push_back(_mesh.monitoredRegions()[r]);
-		}
-	}
+//	for (size_t r = 0; r < _mesh.monitoredRegions().size(); r++) {
+//		if (eType == ElementType::ELEMENTS) {
+//			if (_mesh.monitoredRegions()[r]->eType == ElementType::ELEMENTS) {
+//				_selection.push_back(_mesh.monitoredRegions()[r]);
+//			}
+//		} else {
+//			_selection.push_back(_mesh.monitoredRegions()[r]);
+//		}
+//	}
 }
 
 double Statistic::get(const Region* region, size_t offset, StatisticalData statistics)
@@ -83,37 +84,40 @@ void Statistic::compute(const Step &step)
 void Statistic::computeNodes()
 {
 	auto n2i = [ & ] (size_t neighbour) {
-		return std::lower_bound(_mesh.neighbours().begin(), _mesh.neighbours().end(), neighbour) - _mesh.neighbours().begin();
+		return std::lower_bound(_mesh._neighbours.begin(), _mesh._neighbours.end(), neighbour) - _mesh._neighbours.begin();
 	};
 
+	// TODO: MESH
 	std::vector<OldElement*> _elements;
-	const std::vector<OldElement*> &elements = std::find(_selection.begin(), _selection.end(), _mesh.regions()[1]) != _selection.end() ? _mesh.nodes() : _elements;
-
-	if (std::find(_selection.begin(), _selection.end(), _mesh.regions()[1]) == _selection.end()) {
-		for (size_t s = 0; s < _selection.size(); s++) {
-			if (_selection[s]->eType != ElementType::NODES) {
-				for (size_t e = 0; e < _selection[s]->elements().size(); e++) {
-					for (size_t n = 0; n < _selection[s]->elements()[e]->nodes(); n++) {
-						_elements.push_back(_mesh.nodes()[_selection[s]->elements()[e]->node(n)]);
-					}
-				}
-			} else {
-				_elements.insert(_elements.end(), _selection[s]->elements().begin(), _selection[s]->elements().end());
-			}
-		}
-		std::sort(_elements.begin(), _elements.end());
-		Esutils::removeDuplicity(_elements);
-	}
+	const std::vector<OldElement*> elements;
+//	std::vector<OldElement*> _elements;
+//	const std::vector<OldElement*> &elements = std::find(_selection.begin(), _selection.end(), _mesh.regions()[1]) != _selection.end() ? _mesh.nodes() : _elements;
+//
+//	if (std::find(_selection.begin(), _selection.end(), _mesh.regions()[1]) == _selection.end()) {
+//		for (size_t s = 0; s < _selection.size(); s++) {
+//			if (_selection[s]->eType != ElementType::NODES) {
+//				for (size_t e = 0; e < _selection[s]->elements().size(); e++) {
+//					for (size_t n = 0; n < _selection[s]->elements()[e]->nodes(); n++) {
+//						_elements.push_back(_mesh.nodes()[_selection[s]->elements()[e]->node(n)]);
+//					}
+//				}
+//			} else {
+//				_elements.insert(_elements.end(), _selection[s]->elements().begin(), _selection[s]->elements().end());
+//			}
+//		}
+//		std::sort(_elements.begin(), _elements.end());
+//		Esutils::removeDuplicity(_elements);
+//	}
 
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 
 	// thread x neighbour x data
-	std::vector<std::vector<std::vector<double> > > sBuffer(threads, std::vector<std::vector<double> >(_mesh.neighbours().size()));
-	std::vector<std::vector<std::vector<esglobal> > > rIDs(threads, std::vector<std::vector<esglobal> >(_mesh.neighbours().size()));
-	std::vector<std::vector<size_t> > rOffset(_mesh.neighbours().size(), std::vector<size_t>(threads));
+	std::vector<std::vector<std::vector<double> > > sBuffer(threads, std::vector<std::vector<double> >(_mesh._neighbours.size()));
+	std::vector<std::vector<std::vector<esglobal> > > rIDs(threads, std::vector<std::vector<esglobal> >(_mesh._neighbours.size()));
+	std::vector<std::vector<size_t> > rOffset(_mesh._neighbours.size(), std::vector<size_t>(threads));
 
-	std::vector<std::vector<double> > rBuffer(_mesh.neighbours().size());
+	std::vector<std::vector<double> > rBuffer(_mesh._neighbours.size());
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -139,7 +143,7 @@ void Statistic::computeNodes()
 				for (size_t i = 0; i < _dataSize; i++) {
 					sBuffer[t][n].push_back(0);
 					for (auto d = elements[e]->domains().begin(); d != elements[e]->domains().end(); ++d) {
-						sBuffer[t][n].back() += _data[*d][_dataSize * _mesh.coordinates().localIndex(elements[e]->node(0), *d) + i];
+						// sBuffer[t][n].back() += _data[*d][_dataSize * _mesh.coordinates().localIndex(elements[e]->node(0), *d) + i];
 					}
 				}
 			}
@@ -148,7 +152,7 @@ void Statistic::computeNodes()
 	}
 
 	#pragma omp parallel for
-	for (size_t n = 0; n < _mesh.neighbours().size(); n++) {
+	for (size_t n = 0; n < _mesh._neighbours.size(); n++) {
 		for (size_t t = 1; t < threads; t++) {
 			sBuffer[0][n].insert(sBuffer[0][n].end(), sBuffer[t][n].begin(), sBuffer[t][n].end());
 			rIDs[0][n].insert(rIDs[0][n].end(), rIDs[t][n].begin(), rIDs[t][n].end());
@@ -156,16 +160,16 @@ void Statistic::computeNodes()
 		Esutils::sizesToOffsets(rOffset[n]);
 	}
 
-	if (!Communication::receiveUpperUnknownSize(sBuffer[0], rBuffer, _mesh.neighbours())) {
+	if (!Communication::receiveUpperUnknownSize(sBuffer[0], rBuffer, _mesh._neighbours)) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error in computing statistic.";
 	}
 
 	#pragma omp parallel for
-	for (size_t n = 0; n < _mesh.neighbours().size(); n++) {
+	for (size_t n = 0; n < _mesh._neighbours.size(); n++) {
 		std::vector<eslocal> permutation(rIDs[0][n].size());
 		std::iota(permutation.begin(), permutation.end(), 0);
 		std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) {
-			return elements[rIDs[0][n][i]]->clusterOffset(_mesh.neighbours()[n]) < elements[rIDs[0][n][j]]->clusterOffset(_mesh.neighbours()[n]);
+			return elements[rIDs[0][n][i]]->clusterOffset(_mesh._neighbours[n]) < elements[rIDs[0][n][j]]->clusterOffset(_mesh._neighbours[n]);
 		});
 
 		std::vector<double> permuted;
@@ -203,7 +207,7 @@ void Statistic::computeNodes()
 			std::fill(value.begin(), value.end(), 0);
 			for (auto d = elements[e]->domains().begin(); d != elements[e]->domains().end(); ++d) {
 				for (size_t i = 0; i < _dataSize; i++) {
-					value[i] += _data[*d][_dataSize * _mesh.coordinates().localIndex(elements[e]->node(0), *d) + i];
+//					value[i] += _data[*d][_dataSize * _mesh.coordinates().localIndex(elements[e]->node(0), *d) + i];
 				}
 			}
 
@@ -319,40 +323,40 @@ void Statistic::computeElements()
 	std::vector<double> initData = { std::numeric_limits<double>::max(), -std::numeric_limits<double>::max(), 0, 0, 0, 0 };
 
 	// part x region x offsets x data
-	std::vector<std::vector<std::vector<std::vector<double> > > > tData(_mesh.parts(), std::vector<std::vector<std::vector<double> > >(_selection.size(), std::vector<std::vector<double> >(_dataSize + 1, initData)));
+	std::vector<std::vector<std::vector<std::vector<double> > > > tData(_mesh._domains->size, std::vector<std::vector<std::vector<double> > >(_selection.size(), std::vector<std::vector<double> >(_dataSize + 1, initData)));
 
-	#pragma omp parallel for
-	for (size_t p = 0; p < _mesh.parts(); p++) {
-		std::vector<double> value(_dataSize + 1);
-
-		for (eslocal e = _mesh.getPartition()[p]; e < _mesh.getPartition()[p + 1]; e++) {
-
-			std::fill(value.begin(), value.end(), 0);
-			for (size_t i = 0; i < _dataSize; i++) {
-				value[i] = _data[p][_dataSize * (e - _mesh.getPartition()[p]) + i];
-			}
-
-			for (size_t i = 0; i < _dataSize; i++) {
-				value[_dataSize] += value[i] * value[i];
-			}
-			value[_dataSize] = std::sqrt(value[_dataSize]);
-
-			for (size_t i = 0; i <= _dataSize; i++) {
-				for (size_t r = 0; r < _selection.size(); r++) {
-					if (std::binary_search(_mesh.elements()[e]->regions().begin(), _mesh.elements()[e]->regions().end(), _selection[r])) {
-						tData[p][r][i][0] = std::min(tData[p][r][i][0], value[i]);
-						tData[p][r][i][1] = std::max(tData[p][r][i][1], value[i]);
-						tData[p][r][i][2] += value[i];
-						tData[p][r][i][3] += value[i] * value[i];
-						tData[p][r][i][4] += value[i] * value[i];
-
-						tData[p][r][i][5] += 1;
-					}
-				}
-			}
-
-		}
-	}
+//	#pragma omp parallel for
+//	for (size_t p = 0; p < _mesh.parts(); p++) {
+//		std::vector<double> value(_dataSize + 1);
+//
+//		for (eslocal e = _mesh.getPartition()[p]; e < _mesh.getPartition()[p + 1]; e++) {
+//
+//			std::fill(value.begin(), value.end(), 0);
+//			for (size_t i = 0; i < _dataSize; i++) {
+//				value[i] = _data[p][_dataSize * (e - _mesh.getPartition()[p]) + i];
+//			}
+//
+//			for (size_t i = 0; i < _dataSize; i++) {
+//				value[_dataSize] += value[i] * value[i];
+//			}
+//			value[_dataSize] = std::sqrt(value[_dataSize]);
+//
+//			for (size_t i = 0; i <= _dataSize; i++) {
+//				for (size_t r = 0; r < _selection.size(); r++) {
+//					if (std::binary_search(_mesh.elements()[e]->regions().begin(), _mesh.elements()[e]->regions().end(), _selection[r])) {
+//						tData[p][r][i][0] = std::min(tData[p][r][i][0], value[i]);
+//						tData[p][r][i][1] = std::max(tData[p][r][i][1], value[i]);
+//						tData[p][r][i][2] += value[i];
+//						tData[p][r][i][3] += value[i] * value[i];
+//						tData[p][r][i][4] += value[i] * value[i];
+//
+//						tData[p][r][i][5] += 1;
+//					}
+//				}
+//			}
+//
+//		}
+//	}
 
 	std::vector<double> cData;
 	cData.reserve(_selection.size() * (_dataSize + 1) * initData.size());
@@ -366,7 +370,7 @@ void Statistic::computeElements()
 		}
 	}
 
-	for (size_t p = 0; p < _mesh.parts(); p++) {
+	for (size_t p = 0; p < _mesh._domains->size; p++) {
 		for (size_t i = 0, offset = 0; i <= _dataSize; i++) {
 			for (size_t r = 0; r < _selection.size(); r++, offset++) {
 				cData[initData.size() * offset + 0] = std::min(cData[initData.size() * offset + 0], tData[p][r][i][0]);

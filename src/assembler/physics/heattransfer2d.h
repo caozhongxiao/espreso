@@ -12,7 +12,7 @@ class MaterialBaseConfiguration;
 
 struct HeatTransfer2D: public HeatTransfer, public Physics2D
 {
-	HeatTransfer2D(OldMesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
+	HeatTransfer2D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
 
 	void prepare();
 

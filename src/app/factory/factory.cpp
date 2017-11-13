@@ -17,7 +17,7 @@
 #include "../../mesh/mesh.h"
 #include "../../input/loader.h"
 #include "../../config/ecf/ecf.h"
-#include "../../old/mesh/structures/mesh.h"
+#include "../../mesh/mesh.h"
 #include "../../solver/generic/FETISolver.h"
 
 #include "../../output/resultstorelist.h"
@@ -46,7 +46,7 @@ void ESPRESO::run(int *argc, char ***argv)
 	ECFConfiguration configuration(argc, argv);
 	ESINFO(OVERVIEW) << "Run ESPRESO on " << environment->MPIsize << " process(es).";
 
-	OldMesh mesh;
+	Mesh mesh;
 	ResultStoreList* solutionStore = ResultStoreList::createAsynchronizedStore(configuration.output);
 	if (ResultStoreList::isComputeNode()) {
 		Factory factory(configuration, mesh, *solutionStore);
@@ -55,11 +55,10 @@ void ESPRESO::run(int *argc, char ***argv)
 	ResultStoreList::destroyAsynchronizedStore();
 }
 
-Factory::Factory(const ECFConfiguration &configuration, OldMesh &mesh, ResultStoreList &store)
+Factory::Factory(const ECFConfiguration &configuration, Mesh &mesh, ResultStoreList &store)
 : _mesh(&mesh), _store(&store), _loader(NULL)
 {
-	Mesh nmesh(mesh);
-	Loader::load(configuration, nmesh, configuration.environment.MPIrank, configuration.environment.MPIsize);
+	Loader::load(configuration, mesh, configuration.environment.MPIrank, configuration.environment.MPIsize);
 
 	// LOAD PHYSICS
 	switch (configuration.physics) {

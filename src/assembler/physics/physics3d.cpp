@@ -9,13 +9,13 @@ using namespace espreso;
 void Physics3D::prepareHybridTotalFETIWithCorners()
 {
 	prepare();
-	_mesh->computeVolumeCorners(1, true, true, false);
+//	_mesh->computeVolumeCorners(1, true, true, false);
 }
 
 void Physics3D::prepareHybridTotalFETIWithKernels()
 {
 	prepare();
-	_mesh->computeFacesSharedByDomains();
+//	_mesh->computeFacesSharedByDomains();
 }
 
 

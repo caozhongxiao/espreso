@@ -1,19 +1,20 @@
 
 #include "instance.h"
 
-#include "../old/mesh/structures/mesh.h"
+#include "../mesh/mesh.h"
+#include "../mesh/store/domainstore.h"
 #include "../solver/generic/SparseMatrix.h"
 #include "solution.h"
 #include "../basis/logging/logging.h"
 
 using namespace espreso;
 
-Instance::Instance(const OldMesh &mesh)
-: domains(mesh.parts()),
+Instance::Instance(const Mesh &mesh)
+: domains(mesh._domains->size),
   domainDOFCount(_domainDOFCount),
   properties(_properties),
-  neighbours(mesh.neighbours()),
-  clustersMap(mesh.getContinuityPartition()),
+  neighbours(mesh._neighbours),
+  clustersMap(mesh._domains->clusters),
   origK(_origK), K(_K),
   origKN1(_origKN1), origKN2(_origKN2), origRegMat(_origRegMat),
   N1(_N1), N2(_N2), RegMat(_RegMat),

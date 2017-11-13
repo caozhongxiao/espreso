@@ -26,7 +26,7 @@ using namespace espreso;
 
 size_t LameSteklovPoincare3D::BEMOffset = -1;
 
-LameSteklovPoincare3D::LameSteklovPoincare3D(OldMesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
+LameSteklovPoincare3D::LameSteklovPoincare3D(Mesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
 : Physics("LAME STEKLOV POINCARE 3D", mesh, instance, &configuration), StructuralMechanics3D(mesh, instance, configuration, propertiesConfiguration)
 {
 #ifndef BEM4I
@@ -114,15 +114,15 @@ void LameSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices, co
 void LameSteklovPoincare3D::processSolution(const Step &step)
 {
 	// TODO: get solution for all nodes from BEM library
-	#pragma omp parallel for
-	for (size_t p = 0; p < _mesh->parts(); p++) {
-		std::fill(_instance->solutions[offset + SolutionIndex::DISPLACEMENT]->data[p].begin(), _instance->solutions[offset + SolutionIndex::DISPLACEMENT]->data[p].end(), 0);
-		for (size_t i = 0; i < _boundaryIndices[p].size(); i++) {
-			for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
-				_instance->solutions[offset + SolutionIndex::DISPLACEMENT]->data[p][pointDOFs().size() * _mesh->coordinates().localIndex(_boundaryIndices[p][i], p) + dof] = _instance->primalSolution[p][pointDOFs().size() * i + dof];
-			}
-		}
-	}
+//	#pragma omp parallel for
+//	for (size_t p = 0; p < _mesh->parts(); p++) {
+//		std::fill(_instance->solutions[offset + SolutionIndex::DISPLACEMENT]->data[p].begin(), _instance->solutions[offset + SolutionIndex::DISPLACEMENT]->data[p].end(), 0);
+//		for (size_t i = 0; i < _boundaryIndices[p].size(); i++) {
+//			for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
+//				_instance->solutions[offset + SolutionIndex::DISPLACEMENT]->data[p][pointDOFs().size() * _mesh->coordinates().localIndex(_boundaryIndices[p][i], p) + dof] = _instance->primalSolution[p][pointDOFs().size() * i + dof];
+//			}
+//		}
+//	}
 }
 
 

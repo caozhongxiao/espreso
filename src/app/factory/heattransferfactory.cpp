@@ -19,7 +19,7 @@
 
 using namespace espreso;
 
-HeatTransferFactory::HeatTransferFactory(const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, OldMesh *mesh)
+HeatTransferFactory::HeatTransferFactory(const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh)
 : _configuration(configuration), _propertiesConfiguration(propertiesConfiguration), _bem(false)
 {
 	_instances.push_back(new Instance(*mesh));
@@ -56,7 +56,7 @@ size_t HeatTransferFactory::loadSteps() const
 	return _configuration.load_steps;
 }
 
-LoadStepSolver* HeatTransferFactory::getLoadStepSolver(size_t step, OldMesh *mesh, ResultStoreList *store)
+LoadStepSolver* HeatTransferFactory::getLoadStepSolver(size_t step, Mesh *mesh, ResultStoreList *store)
 {
 	const HeatTransferLoadStepConfiguration &settings = getLoadStepsSettings(step, _configuration.load_steps_settings);
 

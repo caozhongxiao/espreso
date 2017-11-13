@@ -12,7 +12,7 @@ namespace espreso {
 enum class Property;
 class SparseMatrix;
 class Solution;
-class OldMesh;
+class Mesh;
 enum class FETI_REGULARIZATION;
 enum class FETI_B0_TYPE;
 
@@ -33,7 +33,7 @@ enum Matrices : int {
 
 struct Instance {
 
-	Instance(const OldMesh &mesh);
+	Instance(const Mesh &mesh);
 	Instance(Instance &other, Matrices &share);
 	~Instance();
 

@@ -9,7 +9,7 @@ namespace espreso {
 
 struct StructuralMechanics3D: public StructuralMechanics, public Physics3D
 {
-	StructuralMechanics3D(OldMesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
+	StructuralMechanics3D(Mesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
 
 	virtual std::vector<std::pair<ElementType, Property> > propertiesToStore() const;
 

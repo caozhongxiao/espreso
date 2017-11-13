@@ -17,7 +17,7 @@ class Mesh {
 
 	friend class Transformation;
 public:
-	Mesh(OldMesh &mesh);
+	Mesh();
 	void load();
 
 // protected:
@@ -33,7 +33,7 @@ public:
 
 	std::vector<Element*> _eclasses;
 
-	OldMesh &mesh;
+	OldMesh *mesh;
 };
 
 }

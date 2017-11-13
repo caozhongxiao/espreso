@@ -14,7 +14,7 @@
 #include "../../config/ecf/ecf.h"
 #include "../../input/api/api.h"
 
-#include "../../old/mesh/structures/mesh.h"
+#include "../../mesh/mesh.h"
 #include "../../solver/generic/FETISolver.h"
 
 
@@ -29,7 +29,8 @@ FETI4IStructInstance::FETI4IStructInstance(FETI4IStructMatrix &matrix, eslocal *
 : instance(NULL), physics(NULL), linearSolver(NULL), assembler(NULL), timeStepSolver(NULL), loadStepSolver(NULL)
 {
 	store = new ResultStoreList();
-	mesh = new APIMesh(l2g, size);
+	// TODO: MESH
+	//mesh = new APIMesh(l2g, size);
 }
 
 FETI4IStructInstance::~FETI4IStructInstance()

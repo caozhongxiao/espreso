@@ -25,7 +25,7 @@
 using namespace espreso::input;
 
 void API::load(
-		APIMesh &mesh,
+		Mesh &mesh,
 		eslocal indexBase,
 		size_t domains,
 		const std::vector<eslocal> &eType,
