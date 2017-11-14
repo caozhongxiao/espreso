@@ -100,6 +100,9 @@ RegionPairDialog::RegionPairDialog(ECFObject *pair, ECFObject *map, Mesh *mesh, 
 
     this->m_first_widget = this->uiValue(m_first, ui->first);
     this->m_first_widget->setEnabled(false);
+    QComboBox* cmb = static_cast<QComboBox*>(this->m_first_widget);
+    cmb->clear();
+    cmb->addItem(QString::fromStdString(pair->name));
 
     RegionObjectWidget* row = new RegionObjectWidget(pair);
     row->init();

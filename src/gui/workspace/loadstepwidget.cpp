@@ -50,7 +50,7 @@ void LoadstepWidget::drawObject(ECFObject* obj)
             this->m_properties = new RegionPropertyWidget(m_mesh,
                                                           static_cast<PhysicsConfiguration*>(m_physics),
                                                           this->m_container,
-                                                          tr("Region properties"));
+                                                          tr("Boundary conditions"));
         }
         this->m_properties->addProperty(obj);
         this->m_widget->layout()->addWidget(m_properties);
