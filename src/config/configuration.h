@@ -106,7 +106,7 @@ struct ECFParameter {
 	virtual ECFParameter* getParameter(const char* name) =0;
 	virtual ECFParameter* getParameter(const void* data) =0;
 
-	virtual const ECFParameter* getPattern() const =0;
+    virtual ECFParameter* getPattern() const =0;
 	virtual const void* data() const =0;
 
 	virtual void addListener(Event event, std::function<void()> listener);
@@ -128,7 +128,7 @@ struct ECFSeparator: public ECFParameter {
 	ECFParameter* getParameter(const char* name) { return NULL; };
 	ECFParameter* getParameter(const void* data) { return NULL; }
 
-	virtual const ECFParameter* getPattern() const { return NULL; }
+    virtual ECFParameter* getPattern() const { return NULL; }
 	virtual const void* data() const { return NULL; }
 };
 
@@ -141,7 +141,7 @@ struct ECFValue: public ECFParameter {
 	bool isValue() const { return true; }
 	bool isObject() const { return false; }
 
-	virtual const ECFParameter* getPattern() const { return NULL; }
+    virtual ECFParameter* getPattern() const { return NULL; }
 };
 
 struct ECFObject: public ECFParameter {
@@ -156,7 +156,7 @@ struct ECFObject: public ECFParameter {
 	virtual ECFParameter* getParameter(const char* data);
 	virtual ECFParameter* getParameter(const void* data);
 
-	virtual const ECFParameter* getPattern() const { return NULL; }
+    virtual ECFParameter* getPattern() const { return NULL; }
 	virtual const void* data() const { return this; }
 
 	void forEachParameters(std::function<void(ECFParameter*)> fnc, bool onlyAllowed = true);
