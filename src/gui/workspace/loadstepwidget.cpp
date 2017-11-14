@@ -43,7 +43,7 @@ void LoadstepWidget::drawObject(ECFObject* obj)
             || obj->name.compare("load_steps_settings") == 0)
         return;
 
-    if ( obj->metadata.datatype.size() == 2 )
+    if ( obj->metadata.datatype.size() == 2 || obj->metadata.description.size() == 2)
     {
         if (this->m_properties == nullptr)
         {
@@ -58,9 +58,7 @@ void LoadstepWidget::drawObject(ECFObject* obj)
     }
 
     QWidget* widget = new QWidget(this->m_container);
-    QLayout* layout;
-    if (obj->parameters.size()) layout = new QFormLayout;
-    else layout = new QVBoxLayout;
+    QLayout* layout = new QVBoxLayout;
     widget->setLayout(layout);
 
     QSpacerItem* verticalSpacer = new QSpacerItem(0,

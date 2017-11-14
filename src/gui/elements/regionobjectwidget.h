@@ -1,17 +1,22 @@
 #ifndef REGIONOBJECTWIDGET_H
 #define REGIONOBJECTWIDGET_H
 
-#include <QWidget>
+#include "ecfobjectwidget.h"
 
-class RegionObjectWidget : public QWidget
+namespace espreso
+{
+
+class RegionObjectWidget : public ECFObjectWidget
 {
     Q_OBJECT
 public:
-    explicit RegionObjectWidget(QWidget *parent = nullptr);
+    explicit RegionObjectWidget(ECFObject* obj, QWidget *parent = nullptr);
 
-signals:
-
-public slots:
+protected:
+    virtual QWidget* initContainer() override;
+    virtual void drawObject(ECFObject*) override;
 };
+
+}
 
 #endif // REGIONOBJECTWIDGET_H

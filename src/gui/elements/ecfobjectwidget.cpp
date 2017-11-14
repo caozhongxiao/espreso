@@ -68,6 +68,7 @@ void ECFObjectWidget::redraw()
         obj->save();
     }
 
+    this->m_container->hide();
     ui->layout->removeWidget(this->m_container);
 
     this->drawMe();

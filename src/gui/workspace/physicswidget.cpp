@@ -106,9 +106,7 @@ void PhysicsWidget::drawObject(ECFObject* obj)
     }
 
     QWidget* widget = new QWidget(this->m_container);
-    QLayout* layout;
-    if (obj->parameters.size()) layout = new QFormLayout;
-    else layout = new QVBoxLayout;
+    QLayout* layout = new QVBoxLayout;
     widget->setLayout(layout);
 
     QSpacerItem* verticalSpacer = new QSpacerItem(0,
