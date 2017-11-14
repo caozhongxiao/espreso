@@ -528,7 +528,7 @@ void Transformation::assignDomainsToNodes(Mesh &mesh)
 	}
 
 	size_t threads = environment->OMP_NUM_THREADS;
-	std::vector<esglobal> domainBoundaries = mesh._domains->gatherDomainDistribution();
+	std::vector<esglobal> domainBoundaries = mesh._domains->gatherElementDistribution();
 
 	std::vector<std::vector<eslocal> > domainsDistribution(threads), domainsData(threads);
 
@@ -596,8 +596,8 @@ void Transformation::computeIntervals(std::vector<EInterval> &intervals, const s
 	}
 	intervals = nintervals[0];
 	for (size_t i = 0; i < intervals.size(); i++) {
-		intervals[i].first = intervals[i].neighbors.front();
-		intervals[i].size = intervals[i].neighbors.size();
+		intervals[i].firstDomain = intervals[i].neighbors.front();
+		intervals[i].ndomains = intervals[i].neighbors.size();
 	}
 }
 

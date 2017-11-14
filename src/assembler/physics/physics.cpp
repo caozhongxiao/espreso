@@ -450,18 +450,24 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOpe
 
 void Physics::assembleB1(const Step &step, bool withRedundantMultipliers, bool withGluing, bool withScaling)
 {
-	_equalityConstraints->insertDirichletToB1(step, withRedundantMultipliers);
+	_equalityConstraints->B1DirichletInsert(step);
 	if (withGluing) {
-		_equalityConstraints->insertElementGluingToB1(step, withRedundantMultipliers, withScaling);
-		if (_configuration != NULL && _configuration->mortar.slave.size() && _configuration->mortar.master.size()) {
-			_equalityConstraints->insertMortarGluingToB1(step, _configuration->mortar.master, _configuration->mortar.slave);
-		}
+		_equalityConstraints->B1GlueElements(step);
 	}
+	// TODO: MESH
+//	_equalityConstraints->insertDirichletToB1(step, withRedundantMultipliers);
+//	if (withGluing) {
+//		_equalityConstraints->insertElementGluingToB1(step, withRedundantMultipliers, withScaling);
+//		if (_configuration != NULL && _configuration->mortar.slave.size() && _configuration->mortar.master.size()) {
+//			_equalityConstraints->insertMortarGluingToB1(step, _configuration->mortar.master, _configuration->mortar.slave);
+//		}
+//	}
 }
 
 void Physics::updateDirichletInB1(const Step &step, bool withRedundantMultipliers)
 {
-	_equalityConstraints->updateDirichletValuesInB1(step, withRedundantMultipliers);
+	// TODO: MESH
+	// _equalityConstraints->updateDirichletValuesInB1(step, withRedundantMultipliers);
 }
 
 void Physics::assembleB0FromCorners()

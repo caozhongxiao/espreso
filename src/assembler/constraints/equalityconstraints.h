@@ -8,50 +8,39 @@
 
 namespace espreso {
 
+class Instance;
+class Mesh;
+class RegionStore;
+
 class OldElement;
 class Region;
-class Mesh;
 enum class Property;
-class Instance;
 struct Step;
 class SparseMatrix;
 
 struct EqualityConstraints
 {
-	EqualityConstraints(
-			Instance &instance,
-			const Mesh &mesh,
-			const std::vector<OldElement*> &gluedElements,
-			const std::vector<OldElement*> &gluedInterfaceElements,
-			const std::vector<Property> &gluedDOFs,
-			const std::vector<size_t> &gluedDOFsMeshOffsets,
-			bool interfaceElementContainsGluedDOFs = false,
-			bool dirichletSetByArrayEvaluator = false);
+	EqualityConstraints(Instance &instance, Mesh &mesh, const std::vector<RegionStore*> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling);
+	void update(const std::vector<RegionStore*> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling);
 
-	void insertDirichletToB1(const Step &step, bool withRedundantMultiplier);
-	void updateDirichletValuesInB1(const Step &step, bool withRedundantMultiplier);
-	void insertElementGluingToB1(const Step &step, bool withRedundantMultiplier, bool withScaling);
+	void B1DirichletInsert(const Step &step);
+	void B1GlueElements(const Step &step);
+
 
 	void insertMortarGluingToB1(const Step &step, const std::string &master, const std::string &slave);
-
 	void insertCornersGluingToB0();
 	void insertKernelsGluingToB0(const std::vector<SparseMatrix> &kernels);
 
 protected:
-	void goThroughDirichlet(
-			size_t threads, const std::vector<size_t> &distribution,
-			const Step &step, bool withRedundantMultiplier,
-			std::function<void(size_t thread, eslocal domain, eslocal DOF, double value)> fnc);
-	std::vector<esglobal> computeLambdasID(const Step &step, bool withRedundantMultiplier);
-
 	Instance &_instance;
-	const Mesh &_mesh;
-	const std::vector<OldElement*> &_gluedElements;
-	const std::vector<OldElement*> &_gluedInterfaceElements;
-	const std::vector<Property> &_gluedDOFs;
-	const std::vector<size_t> &_gluedDOFsMeshOffsets;
-	bool _interfaceElementContainsGluedDOFs;
-	bool _dirichletSetByArrayEvaluator;
+	Mesh &_mesh;
+	std::vector<RegionStore*> _dirichlet;
+	size_t _DOFs;
+	esglobal _dirichletSize, _gluingSize;
+	bool _withRedundantMultipliers, _withScaling;
+
+	std::vector<std::vector<eslocal> > _mergedDirichletIndices;
+	std::vector<std::vector<double> > _mergedDirichletValues;
 };
 
 }

@@ -359,7 +359,7 @@ void Transformation::computeDomainsBoundaries(Mesh &mesh)
 	}
 
 	size_t threads = environment->OMP_NUM_THREADS;
-	std::vector<esglobal> IDBoundaries = mesh._domains->gatherDomainDistribution();
+	std::vector<esglobal> IDBoundaries = mesh._domains->gatherElementDistribution();
 
 	std::vector<std::vector<eslocal> > faceDistribution(threads), faceData(threads);
 	std::vector<std::vector<Element*> > faceCodes(threads);

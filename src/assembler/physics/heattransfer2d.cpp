@@ -24,7 +24,7 @@ using namespace espreso;
 HeatTransfer2D::HeatTransfer2D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
 : Physics("HEAT TRANSFER 2D", mesh, instance, &configuration), HeatTransfer(configuration, propertiesConfiguration)
 {
-//	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, _mesh->nodes(), _mesh->edges(), pointDOFs(), pointDOFsOffsets());
+	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, {}, 1, configuration.load_steps_settings.at(1).feti.redundant_lagrange, configuration.load_steps_settings.at(1).feti.scaling);
 }
 
 void HeatTransfer2D::prepare()

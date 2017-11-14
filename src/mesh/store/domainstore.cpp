@@ -23,7 +23,7 @@ DomainStore::~DomainStore()
 	if (nodes == NULL) { delete nodes; }
 }
 
-std::vector<esglobal> DomainStore::gatherDomainDistribution()
+std::vector<esglobal> DomainStore::gatherElementDistribution()
 {
 	esglobal offset = domainElementBoundaries.back();
 	Communication::exscan(offset);
@@ -42,6 +42,17 @@ std::vector<esglobal> DomainStore::gatherDomainDistribution()
 	}
 
 	Esutils::removeDuplicity(result);
+	return result;
+}
+
+std::vector<esglobal> DomainStore::gatherProcsDistribution()
+{
+	std::vector<esglobal> result(environment->MPIsize + 1);
+
+	MPI_Allgather(&offset, sizeof(eslocal), MPI_BYTE, result.data(), sizeof(eslocal), MPI_BYTE, environment->MPICommunicator);
+	result.back() = offset + size;
+	MPI_Bcast(&result.back(), sizeof(eslocal), MPI_BYTE, environment->MPIsize - 1, environment->MPICommunicator);
+
 	return result;
 }
 

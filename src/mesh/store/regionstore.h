@@ -27,10 +27,15 @@ struct RegionStore {
 	serializededata<eslocal, Element*>* facepointers;
 	serializededata<eslocal, Element*>* edgepointers;
 
-	std::vector<std::vector<EInterval> > elemsIntervals;
-	std::vector<std::vector<EInterval> > facesIntervals;
-	std::vector<std::vector<EInterval> > edgesIntervals;
-	std::vector<std::vector<EInterval> > nodesIntervals;
+	std::vector<EInterval> elemsIntervals;
+	std::vector<EInterval> facesIntervals;
+	std::vector<EInterval> edgesIntervals;
+	std::vector<EInterval> nodesIntervals;
+
+	std::vector<std::vector<EInterval> > domainElemsIntervals;
+	std::vector<std::vector<EInterval> > domainFacesIntervals;
+	std::vector<std::vector<EInterval> > domainEdgesIntervals;
+	std::vector<std::vector<EInterval> > domainNodesIntervals;
 
 	RegionStore(const std::string &name, TFlags::ELEVEL etype);
 	~RegionStore();

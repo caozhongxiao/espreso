@@ -80,7 +80,7 @@ public:
 
 	void fillDirichlet(std::vector<FETI4IInt> &dirichlet_indices, std::vector<FETI4IReal> &dirichlet_values)
 	{
-		factory._loader->_physics[0]->_equalityConstraints->insertDirichletToB1(step, false);
+		factory._loader->_physics[0]->_equalityConstraints->B1DirichletInsert(step);
 		for (auto it = factory._loader->_instances[0]->B1[0].J_col_indices.begin(); it != factory._loader->_instances[0]->B1[0].J_col_indices.end(); ++it) {
 			dirichlet_indices.push_back(*it - 1);
 		}

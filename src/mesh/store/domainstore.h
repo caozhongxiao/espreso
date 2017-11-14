@@ -26,9 +26,13 @@ struct DomainStore {
 	serializededata<eslocal, eslocal> *nodes;
 
 	// domain x intervals (in order: received nodes, send nodes, internal nodes)
-	std::vector<std::vector<EInterval> > nodesIntervals;
+	std::vector<std::vector<EInterval> > domainNodesIntervals;
 
-	std::vector<esglobal> gatherDomainDistribution();
+	// sorted according neighbors
+	std::vector<EInterval> nodesIntervals;
+
+	std::vector<esglobal> gatherElementDistribution();
+	std::vector<esglobal> gatherProcsDistribution();
 
 	DomainStore();
 	~DomainStore();

@@ -166,7 +166,7 @@ void Transformation::arrangeNodes(Mesh &mesh)
 	}
 
 	size_t threads = environment->OMP_NUM_THREADS;
-	std::vector<esglobal> domainBoundaries = mesh._domains->gatherDomainDistribution();
+	std::vector<esglobal> domainBoundaries = mesh._domains->gatherElementDistribution();
 	std::vector<esglobal> processBoundaries = mesh._elems->gatherElementDistrubution();
 
 	mesh._domains->offset = std::lower_bound(domainBoundaries.begin(), domainBoundaries.end(), processBoundaries[environment->MPIrank] + 1) - domainBoundaries.begin() - 1;
@@ -270,8 +270,6 @@ void Transformation::arrangeNodes(Mesh &mesh)
 		return b1 < b2;
 	});
 
-
-
 	std::vector<eslocal> finalpermutation;
 	finalpermutation.reserve(permutation.size());
 
@@ -282,7 +280,7 @@ void Transformation::arrangeNodes(Mesh &mesh)
 				if (*std::lower_bound(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), mesh._domains->offset) == mesh._domains->offset + d) {
 					finalpermutation.insert(finalpermutation.end(), permutation.begin() + nintervals[i].begin, permutation.begin() + nintervals[i].end);
 					eslocal isize = nintervals[i].end - nintervals[i].begin;
-					nintervals[i].begin = ioffset;
+					nintervals[i].begin = nintervals[i].clusterOffset = ioffset;
 					ioffset += isize;
 					nintervals[i].end = ioffset;
 				}
@@ -290,21 +288,30 @@ void Transformation::arrangeNodes(Mesh &mesh)
 		}
 	}
 
-	mesh._domains->nodesIntervals.resize(mesh._domains->size);
+	mesh.computeIntervalsOffsets(
+			nintervals,
+			[&] (eslocal i) { return nintervals[i].end - nintervals[i].begin; },
+			[&] (eslocal i, esglobal offset) { nintervals[i].globalOffset = offset; });
+
+	mesh._domains->nodesIntervals = nintervals;
+	mesh._domains->domainNodesIntervals.resize(mesh._domains->size);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (eslocal d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; d++) {
+			eslocal doffset = 0;
 			for (size_t i = 0; i < nintervals.size(); i++) {
 				if (std::binary_search(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), mesh._domains->offset + d)) {
-					mesh._domains->nodesIntervals[d].push_back(nintervals[i]);
-					mesh._domains->nodesIntervals[d].back().globalOffset =
+					mesh._domains->domainNodesIntervals[d].push_back(nintervals[i]);
+					mesh._domains->domainNodesIntervals[d].back().globalDomainOffset =
 							std::lower_bound(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), mesh._domains->offset + d) - nintervals[i].neighbors.begin();
-					mesh._domains->nodesIntervals[d].back().localOffset =
+					mesh._domains->domainNodesIntervals[d].back().localDomainOffset =
 							std::lower_bound(nintervals[i].neighbors.begin(), nintervals[i].neighbors.end(), mesh._domains->offset) - nintervals[i].neighbors.begin();
-					mesh._domains->nodesIntervals[d].back().localOffset = mesh._domains->nodesIntervals[d].back().globalOffset - mesh._domains->nodesIntervals[d].back().localOffset;
+					mesh._domains->domainNodesIntervals[d].back().localDomainOffset = mesh._domains->domainNodesIntervals[d].back().globalDomainOffset - mesh._domains->domainNodesIntervals[d].back().localDomainOffset;
 					if (nintervals[i].neighbors.front() == -1) {
-						--mesh._domains->nodesIntervals[d].back().globalOffset;
+						--mesh._domains->domainNodesIntervals[d].back().globalDomainOffset;
 					}
+					mesh._domains->domainNodesIntervals[d].back().domainOffset = doffset;
+					doffset += nintervals[i].end - nintervals[i].begin;
 				}
 			}
 		}
@@ -338,20 +345,30 @@ void Transformation::arrangeNodes(Mesh &mesh)
 		localremap(mesh._regions[r]->nodes);
 		std::sort(mesh._regions[r]->nodes->datatarray().begin(), mesh._regions[r]->nodes->datatarray().end());
 
-		mesh._regions[r]->nodesIntervals.resize(mesh._domains->size);
+		{
+			auto offset = mesh._regions[r]->nodes->datatarray().cbegin();
+			auto cend = mesh._regions[r]->nodes->datatarray().cend();
+			for (size_t i = 0; i < mesh._domains->nodesIntervals.size(); i++) {
+				auto begin = offset = std::lower_bound(offset, cend, mesh._domains->nodesIntervals[i].begin);
+				auto end   = offset = std::lower_bound(offset, cend, mesh._domains->nodesIntervals[i].end);
+				mesh._regions[r]->nodesIntervals.push_back(mesh._domains->nodesIntervals[i]);
+				mesh._regions[r]->nodesIntervals.back().begin = begin - mesh._regions[r]->nodes->datatarray().cbegin();
+				mesh._regions[r]->nodesIntervals.back().end   = end   - mesh._regions[r]->nodes->datatarray().cbegin();
+			}
+		}
+
+		mesh._regions[r]->domainNodesIntervals.resize(mesh._domains->size);
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			for (eslocal d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; d++) {
 				auto offset = mesh._regions[r]->nodes->datatarray().cbegin();
 				auto cend = mesh._regions[r]->nodes->datatarray().cend();
-				for (size_t i = 0; i < mesh._domains->nodesIntervals[d].size(); i++) {
-					auto begin = offset = std::lower_bound(offset, cend, mesh._domains->nodesIntervals[d][i].begin);
-					auto end   = offset = std::lower_bound(offset, cend, mesh._domains->nodesIntervals[d][i].end);
-					if (begin != end) {
-						mesh._regions[r]->nodesIntervals[d].push_back(mesh._domains->nodesIntervals[d][i]);
-						mesh._regions[r]->nodesIntervals[d].back().begin = begin - mesh._regions[r]->nodes->datatarray().cbegin();
-						mesh._regions[r]->nodesIntervals[d].back().end   = end   - mesh._regions[r]->nodes->datatarray().cbegin();
-					}
+				for (size_t i = 0; i < mesh._domains->domainNodesIntervals[d].size(); i++) {
+					auto begin = offset = std::lower_bound(offset, cend, mesh._domains->domainNodesIntervals[d][i].begin);
+					auto end   = offset = std::lower_bound(offset, cend, mesh._domains->domainNodesIntervals[d][i].end);
+					mesh._regions[r]->domainNodesIntervals[d].push_back(mesh._domains->domainNodesIntervals[d][i]);
+					mesh._regions[r]->domainNodesIntervals[d].back().begin = begin - mesh._regions[r]->nodes->datatarray().cbegin();
+					mesh._regions[r]->domainNodesIntervals[d].back().end   = end   - mesh._regions[r]->nodes->datatarray().cbegin();
 				}
 			}
 		}

@@ -4,295 +4,311 @@
 #include "../instance.h"
 #include "../step.h"
 
+#include "../../basis/evaluators/evaluator.h"
+#include "../../basis/containers/serializededata.h"
+
 #include "../../basis/utilities/utils.h"
 #include "../../basis/utilities/communication.h"
 
 #include "../../solver/generic/SparseMatrix.h"
 
 #include "../../mesh/mesh.h"
+#include "../../mesh/store/regionstore.h"
+#include "../../mesh/store/domainstore.h"
 #include "../../config/ecf/environment.h"
 
 #include <numeric>
 #include <algorithm>
-#include "../../basis/evaluators/evaluator.h"
+
 
 using namespace espreso;
 
-EqualityConstraints::EqualityConstraints(
-		Instance &instance,
-		const Mesh &mesh,
-		const std::vector<OldElement*> &gluedElements,
-		const std::vector<OldElement*> &gluedInterfaceElements,
-		const std::vector<Property> &gluedDOFs,
-		const std::vector<size_t> &gluedDOFsMeshOffsets,
-		bool interfaceElementContainsGluedDOFs,
-		bool dirichletSetByArrayEvaluator)
-: _instance(instance),
-  _mesh(mesh),
-  _gluedElements(gluedElements),
-  _gluedInterfaceElements(gluedInterfaceElements),
-  _gluedDOFs(gluedDOFs),
-  _gluedDOFsMeshOffsets(gluedDOFsMeshOffsets),
-  _interfaceElementContainsGluedDOFs(interfaceElementContainsGluedDOFs),
-  _dirichletSetByArrayEvaluator(dirichletSetByArrayEvaluator)
+EqualityConstraints::EqualityConstraints(Instance &instance, Mesh &mesh, const std::vector<RegionStore*> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling)
+: _instance(instance), _mesh(mesh)
 {
-
+	update(dirichlet, DOFs, withRedundantMultiplier, withScaling);
 }
 
-void EqualityConstraints::goThroughDirichlet(
-		size_t threads, const std::vector<size_t> &distribution,
-		const Step &step, bool withRedundantMultiplier,
-		std::function<void(size_t thread, eslocal domain, eslocal DOF, double value)> addFnc)
+void EqualityConstraints::update(const std::vector<RegionStore*> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling)
 {
+	_dirichlet = dirichlet;
+	_DOFs = DOFs;
+	_withRedundantMultipliers = withRedundantMultiplier;
+	_withScaling = withScaling;
 
-//	std::vector<std::vector<Region*> > fixedRegions = _mesh.getRegionsWithProperties(step.step, _gluedDOFs);
-//
-//	double temp = 0; // irrelevant -> set to zero
-//
-//	#pragma omp parallel for
-//	for (size_t t = 0; t < threads; t++) {
-//		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
-//
-//			for (size_t dof = 0; dof < _gluedDOFs.size(); dof++) {
-//				if (Mesh::commonRegion(fixedRegions[dof], _gluedElements[i]->regions())) {
-//					if (!withRedundantMultiplier && _gluedElements[i]->clusters()[0] != environment->MPIrank) {
-//						continue;
-//					}
-//					// TODO: works only for gluing of NODES!!
-//					double value;
-//					if (_dirichletSetByArrayEvaluator) {
-//						value = step.internalForceReduction * dynamic_cast<ArrayEvaluator*>(_gluedElements[i]->regions().front()->settings[0][Property::UNKNOWN].front())->evaluate(_gluedElements[i]->node(0));
-//					} else {
-//						value = step.internalForceReduction * _gluedElements[i]->getProperty(_gluedDOFs[dof], step.step, _mesh.coordinates()[_gluedElements[i]->node(0)], step.currentTime, temp, 0);
-//					}
-//					for(size_t d = 0; d < _gluedElements[i]->domains().size(); d++) {
-//						if (_gluedElements[i]->DOFIndex(_gluedElements[i]->domains()[d], _gluedDOFsMeshOffsets[dof]) != -1) {
-//							addFnc(t, _gluedElements[i]->domains()[d], _gluedElements[i]->DOFIndex(_gluedElements[i]->domains()[d], _gluedDOFsMeshOffsets[dof]), value);
-//						}
-//						if (!withRedundantMultiplier) {
-//							break;
-//						}
-//					}
-//				}
-//			}
-//
-//		}
-//	}
+	_mergedDirichletIndices.clear();
+	for (size_t i = 0; i < _mesh._domains->nodesIntervals.size(); ++i) {
+		std::vector<eslocal> uniqueNodes;
+		std::vector<double> values;
+		for (size_t r = 0; r < dirichlet.size(); r++) {
+			uniqueNodes.insert(uniqueNodes.end(),
+					dirichlet[r]->nodes->datatarray().begin() + dirichlet[r]->nodesIntervals[i].begin,
+					dirichlet[r]->nodes->datatarray().begin() + dirichlet[r]->nodesIntervals[i].end);
+			for (auto n = dirichlet[r]->nodes->datatarray().begin(); n != dirichlet[r]->nodes->datatarray().end(); ++n) {
+				// TODO: MESH
+				values.push_back(375.15);
+			}
+		}
+		std::vector<eslocal> permutation(uniqueNodes.size());
+		std::iota(permutation.begin(), permutation.end(), 0);
+		std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return uniqueNodes[i] < uniqueNodes[j]; });
+
+		_mergedDirichletIndices.push_back({});
+		_mergedDirichletValues.push_back({});
+		for (size_t p = 0; p < permutation.size(); ++p) {
+			_mergedDirichletIndices.back().push_back(uniqueNodes[permutation[p]]);
+			_mergedDirichletValues.back().push_back(values[permutation[p]]);
+		}
+
+		size_t unique = 0;
+		for (size_t n = 1; n < _mergedDirichletIndices.back().size(); ++n) {
+			if (_mergedDirichletIndices.back()[unique] != _mergedDirichletIndices.back()[n]) {
+				_mergedDirichletIndices.back()[++unique] = _mergedDirichletIndices.back()[n];
+				_mergedDirichletValues.back()[unique] = _mergedDirichletValues.back()[n];
+			} else {
+				if (_mergedDirichletValues.back()[unique] != _mergedDirichletValues.back()[n]) {
+					ESINFO(ERROR) << "Multiple dirichlet values for a node.";
+				}
+			}
+		}
+		_mergedDirichletIndices.back().resize(std::min(unique + 1, _mergedDirichletIndices.back().size()));
+		_mergedDirichletValues.back().resize(std::min(unique + 1, _mergedDirichletValues.back().size()));
+	}
+
+	auto getDirichletSize = [&] (eslocal i) -> eslocal {
+		if (_withRedundantMultipliers) {
+			return (eslocal)(_mesh._domains->nodesIntervals[i].ndomains * _mergedDirichletIndices[i].size());
+		} else {
+			return (eslocal)_mergedDirichletIndices[i].size();
+		}
+	};
+
+	auto setDirichletOffset = [&] (eslocal i, esglobal offset) {
+		for (size_t r = 0; r < dirichlet.size(); r++) {
+			dirichlet[r]->nodesIntervals[i].LMOffset = offset;
+			for (eslocal d = 0; d < _mesh._domains->size; d++) {
+				eslocal ii = std::min(i, (eslocal)dirichlet[r]->domainNodesIntervals[d].size() - 1);
+				while (ii >= 0 && dirichlet[r]->nodesIntervals[i].clusterOffset != dirichlet[r]->domainNodesIntervals[d][ii].clusterOffset) { --ii; }
+				if (ii >= 0) {
+					dirichlet[r]->domainNodesIntervals[d][ii].LMOffset = offset + _mergedDirichletIndices[i].size() * dirichlet[r]->domainNodesIntervals[d][ii].globalDomainOffset;
+				}
+			}
+		}
+	};
+
+	_dirichletSize = _mesh.computeIntervalsOffsets(_mesh._domains->nodesIntervals, getDirichletSize, setDirichletOffset);
+
+	auto getGluingSize = [&] (eslocal i) -> eslocal {
+		if (_mesh._domains->nodesIntervals[i].ndomains == 1) {
+			return 0;
+		}
+		eslocal ndomains = _mesh._domains->nodesIntervals[i].ndomains;
+		eslocal size = _mesh._domains->nodesIntervals[i].end - _mesh._domains->nodesIntervals[i].begin;
+		size -= _mergedDirichletIndices[i].size();
+		if (_withRedundantMultipliers) {
+			return size * (ndomains * (ndomains - 1) / 2);
+		} else {
+			return size * (ndomains - 1);
+		}
+
+	};
+
+	auto setGluingOffset = [&] (eslocal i, esglobal offset) {
+		if (_mesh._domains->nodesIntervals[i].ndomains > 1) {
+			_mesh._domains->nodesIntervals[i].LMOffset = _dirichletSize + offset;
+			for (size_t d = 0; d < _mesh._domains->size; d++) {
+				eslocal ii = std::min(i, (eslocal)_mesh._domains->domainNodesIntervals[d].size() - 1);
+				while (ii >= 0 && _mesh._domains->nodesIntervals[i].clusterOffset != _mesh._domains->domainNodesIntervals[d][ii].clusterOffset) { --ii; }
+				if (ii >= 0) {
+					_mesh._domains->domainNodesIntervals[d][ii].LMOffset = _dirichletSize + offset;
+				}
+			}
+		}
+	};
+
+	_gluingSize = _mesh.computeIntervalsOffsets(_mesh._domains->nodesIntervals, getGluingSize, setGluingOffset);
 }
 
-void EqualityConstraints::insertDirichletToB1(const Step &step, bool withRedundantMultiplier)
+void EqualityConstraints::B1DirichletInsert(const Step &step)
 {
+	if (_dirichlet.size() == 0) {
+		return;
+	}
 	size_t threads = environment->OMP_NUM_THREADS;
-	std::vector<size_t> distribution = Esutils::getDistribution(threads, _gluedElements.size());
-
-	// part x thread x Dirichlet
-	std::vector<std::vector<std::vector<esglobal> > > dirichlet(_instance.domains, std::vector<std::vector<esglobal> >(threads));
-	std::vector<std::vector<std::vector<double> > > dirichletValues(_instance.domains, std::vector<std::vector<double> >(threads));
-
-	goThroughDirichlet(threads, distribution, step, withRedundantMultiplier, [&] (size_t thread, eslocal domain, eslocal DOF, double value) {
-		dirichlet[domain][thread].push_back(DOF + 1);
-		dirichletValues[domain][thread].push_back(value);
-	});
-
-	std::vector<size_t> dirichletSizes(_instance.domains);
-	#pragma omp parallel for
-	for (size_t p = 0; p < _instance.domains; p++) {
-		size_t size = 0;
-		for (size_t t = 0; t < threads; t++) {
-			size += dirichlet[p][t].size();
-		}
-		dirichletSizes[p] = size;
-	}
-
-	size_t clusterOffset = 0;
-	std::vector<eslocal> subdomainsWithDirichlet;
-	for (size_t p = 0; p < _instance.domains; p++) {
-		clusterOffset += dirichletSizes[p];
-		if (dirichletSizes[p]) {
-			subdomainsWithDirichlet.push_back(p);
-		}
-	}
-
-	size_t clusterDirichletSize = clusterOffset;
-	size_t globalDirichletSize = Communication::exscan(clusterOffset);
-	_instance.block[Instance::CONSTRAINT::DIRICHLET] += globalDirichletSize;
-
-	clusterOffset += _instance.B1[0].rows;
-	#pragma omp parallel for
-	for (size_t p = 0; p < _instance.domains; p++) {
-		_instance.B1[p].rows += globalDirichletSize;
-		_instance.B1[p].cols = _instance.domainDOFCount[p];
-	}
 
 	#pragma omp parallel for
-	for (size_t i = 0; i < subdomainsWithDirichlet.size(); i++) {
-		size_t s = subdomainsWithDirichlet[i];
-		_instance.B1[s].nnz += dirichletSizes[s];
-		_instance.B1[s].I_row_indices.reserve(_instance.B1[s].nnz);
-		_instance.B1[s].J_col_indices.reserve(_instance.B1[s].nnz);
-		_instance.B1[s].V_values.resize(_instance.B1[s].nnz, 1);
+	for (size_t t = 0; t < threads; t++) {
+		for (eslocal d = _mesh._domains->domainDistribution[t]; d < _mesh._domains->domainDistribution[t + 1]; d++) {
+			for (size_t i = 0, ii = 0; i < _mesh._domains->domainNodesIntervals[d].size(); ++i, ++ii) {
+				if (_withRedundantMultipliers || _mesh._domains->domainNodesIntervals[d][i].globalDomainOffset == 0) {
+
+					while (_mesh._domains->nodesIntervals[ii].clusterOffset != _mesh._domains->domainNodesIntervals[d][i].clusterOffset) { ++ii; }
+
+					_instance.B1[d].I_row_indices.insert(_instance.B1[d].I_row_indices.end(), _mergedDirichletIndices[ii].size(), 0);
+					std::iota(_instance.B1[d].I_row_indices.end() - _mergedDirichletIndices[ii].size(), _instance.B1[d].I_row_indices.end(), _dirichlet.front()->domainNodesIntervals[d][i].LMOffset + 1);
+
+					for (size_t n = 0; n < _mergedDirichletIndices[ii].size(); ++n) {
+						_instance.B1[d].J_col_indices.push_back(_mesh._domains->domainNodesIntervals[d][i].domainOffset + _mergedDirichletIndices[ii][n] - _mesh._domains->domainNodesIntervals[d][i].clusterOffset + 1);
+					}
+
+					_instance.B1c[d].insert(_instance.B1c[d].end(), _mergedDirichletValues[ii].begin(), _mergedDirichletValues[ii].end());
+
+					_instance.B1[d].V_values.insert(_instance.B1[d].V_values.end(), _mergedDirichletIndices[ii].size(), 1);
+					_instance.B1duplicity[d].insert(_instance.B1duplicity[d].end(), _mergedDirichletIndices[ii].size(), 1);
+
+					_instance.B1subdomainsMap[d].insert(_instance.B1subdomainsMap[d].end(), _mergedDirichletIndices[ii].size(), 0);
+					std::iota(_instance.B1subdomainsMap[d].end() - _mergedDirichletIndices[ii].size(), _instance.B1subdomainsMap[d].end(), _dirichlet.front()->domainNodesIntervals[d][i].LMOffset);
+
+					_instance.B1[d].nnz = _instance.B1[d].I_row_indices.size();
+					_instance.B1[d].rows = _dirichletSize;
+
+					_instance.LB[d].resize(_instance.B1[d].nnz, -std::numeric_limits<double>::infinity());
+				}
+			}
+		}
 	}
 
-	Esutils::sizesToOffsets(dirichletSizes);
-	#pragma omp parallel for
-	for (size_t i = 0; i < subdomainsWithDirichlet.size(); i++) {
-		size_t s = subdomainsWithDirichlet[i];
-		for (eslocal i = 0; i < _instance.B1[s].nnz; i++) {
-			_instance.B1[s].I_row_indices.push_back(clusterOffset + dirichletSizes[s] + i + 1);
-		}
-		for (size_t t = 0; t < threads; t++) {
-			_instance.B1[s].J_col_indices.insert(_instance.B1[s].J_col_indices.end(), dirichlet[s][t].begin(), dirichlet[s][t].end());
-			_instance.B1c[s].insert(_instance.B1c[s].end(), dirichletValues[s][t].begin(), dirichletValues[s][t].end());
-		}
-		_instance.B1duplicity[s].resize(_instance.B1[s].I_row_indices.size(), 1);
-		for (eslocal r = _instance.B1subdomainsMap[s].size(); r < _instance.B1[s].nnz; r++) {
-			_instance.B1subdomainsMap[s].push_back(_instance.B1[s].I_row_indices[r] - 1);
-		}
-		_instance.LB[s].resize(_instance.B1[s].nnz, -std::numeric_limits<double>::infinity());
-	}
+	for (size_t i = 0; i < _mesh._domains->nodesIntervals.size(); ++i) {
+		for (size_t d = 0; d < _mesh._domains->size; d++) {
 
-	_instance.B1clustersMap.reserve(_instance.B1clustersMap.size() + clusterDirichletSize);
-	for (size_t i = clusterOffset; i < clusterOffset + clusterDirichletSize; i++) {
-		_instance.B1clustersMap.push_back({ (esglobal)i, environment->MPIrank });
-	}
+			eslocal ii = std::min(i, _mesh._domains->domainNodesIntervals[d].size() - 1);
+			while (ii >= 0 && _mesh._domains->nodesIntervals[i].clusterOffset != _mesh._domains->domainNodesIntervals[d][ii].clusterOffset) { --ii; }
 
-	ESINFO(EXHAUSTIVE) << "Lambdas with Dirichlet in B1: " << _instance.B1[0].rows;
+			if (ii >= 0 && (_withRedundantMultipliers || _mesh._domains->domainNodesIntervals[d][ii].globalDomainOffset == 0)) {
+				for (size_t n = 0; n < _mergedDirichletIndices[i].size(); n++) {
+					_instance.B1clustersMap.push_back({
+						(esglobal)(_dirichlet.front()->domainNodesIntervals[d][ii].LMOffset + n),
+						(esglobal)environment->MPIrank
+					});
+				}
+			}
+		}
+	}
 }
 
-void EqualityConstraints::updateDirichletValuesInB1(const Step &step, bool withRedundantMultiplier)
+void EqualityConstraints::B1GlueElements(const Step &step)
 {
+	auto redundantglue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter) {
+		const EInterval &interval = _mesh._domains->domainNodesIntervals[d][i];
+		esglobal LMindex = interval.LMOffset + LMcounter * (interval.ndomains * (interval.ndomains - 1) / 2);
+		eslocal DOFindex = interval.domainOffset + (begin - interval.clusterOffset) + 1;
+		for (eslocal n = begin; n != end; ++n, ++DOFindex, ++LMcounter) {
+			for (eslocal lm = 0; lm < interval.globalDomainOffset; LMindex += interval.ndomains - ++lm) {
+				_instance.B1[d].J_col_indices.push_back(DOFindex);
+				_instance.B1[d].I_row_indices.push_back(LMindex + interval.globalDomainOffset - lm);
+			}
+			for (eslocal lm = interval.globalDomainOffset + 1; lm < interval.ndomains; LMindex += interval.ndomains - lm++) {
+				_instance.B1[d].J_col_indices.push_back(DOFindex);
+				_instance.B1[d].I_row_indices.push_back(LMindex + lm - interval.globalDomainOffset);
+			}
+			_instance.B1[d].V_values.insert(_instance.B1[d].V_values.end(), interval.globalDomainOffset, -1);
+			_instance.B1[d].V_values.insert(_instance.B1[d].V_values.end(), interval.ndomains - interval.globalDomainOffset - 1, 1);
+			_instance.B1duplicity[d].insert(_instance.B1duplicity[d].end(), interval.ndomains - 1, 1.0 / interval.ndomains);
+		}
+	};
+
+	auto nonredundantglue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter) {
+		const EInterval &interval = _mesh._domains->domainNodesIntervals[d][i];
+		esglobal LMindex = interval.LMOffset + LMcounter * (interval.ndomains - 1);
+		eslocal DOFindex = interval.domainOffset + (begin - interval.clusterOffset) + 1;
+		for (eslocal n = begin; n != end; ++n, ++DOFindex, ++LMcounter) {
+			if (interval.globalDomainOffset) {
+				_instance.B1[d].J_col_indices.push_back(DOFindex);
+				_instance.B1[d].I_row_indices.push_back(LMindex + interval.globalDomainOffset - 1);
+				_instance.B1[d].V_values.push_back(-1);
+				_instance.B1duplicity[d].push_back(1.0 / interval.ndomains);
+			}
+			if (interval.globalDomainOffset + 1 < interval.ndomains) {
+				_instance.B1[d].J_col_indices.push_back(DOFindex);
+				_instance.B1[d].I_row_indices.push_back(LMindex + interval.globalDomainOffset);
+				_instance.B1[d].V_values.push_back(1);
+				_instance.B1duplicity[d].push_back(1.0 / interval.ndomains);
+			}
+		}
+	};
+
+	auto glue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter) {
+		if (_withRedundantMultipliers) {
+			redundantglue(d, i, begin, end, LMcounter);
+		} else {
+			nonredundantglue(d, i, begin, end, LMcounter);
+		}
+	};
+
 	size_t threads = environment->OMP_NUM_THREADS;
-	std::vector<size_t> distribution = Esutils::getDistribution(threads, _gluedElements.size());
-
-	// part x thread x Dirichlet
-	std::vector<std::vector<std::vector<double> > > dirichletValues(_instance.domains, std::vector<std::vector<double> >(threads));
-
-	goThroughDirichlet(threads, distribution, step, withRedundantMultiplier, [&] (size_t thread, eslocal domain, eslocal DOF, double value) {
-		dirichletValues[domain][thread].push_back(value);
-	});
 
 	#pragma omp parallel for
-	for (size_t d = 0; d < _instance.domains; d++) {
-		size_t offset = 0;
-		for (size_t t = 0; t < threads; t++) {
-			std::copy(dirichletValues[d][t].begin(), dirichletValues[d][t].end(), _instance.B1c[d].begin() + offset);
-			offset += dirichletValues[d][t].size();
+	for (size_t t = 0; t < threads; t++) {
+		for (eslocal d = _mesh._domains->domainDistribution[t]; d < _mesh._domains->domainDistribution[t + 1]; d++) {
+			for (size_t i = 0, ii = 0; i < _mesh._domains->domainNodesIntervals[d].size(); ++i, ++ii) {
+				eslocal LMcounter = 0;
+				eslocal current = _mesh._domains->domainNodesIntervals[d][i].begin;
+				while (_mesh._domains->nodesIntervals[ii].clusterOffset != _mesh._domains->domainNodesIntervals[d][i].clusterOffset) { ++ii; }
+				for (auto end = _mergedDirichletIndices[ii].begin(); end != _mergedDirichletIndices[ii].end(); current = *end + 1, ++end) {
+					glue(d, i, current, *end, LMcounter);
+				}
+				glue(d, i, current, _mesh._domains->domainNodesIntervals[d][i].end, LMcounter);
+			}
+			_instance.B1[d].rows += _gluingSize;
+			_instance.B1[d].nnz = _instance.B1[d].I_row_indices.size();
+			_instance.B1c[d].resize(_instance.B1duplicity[d].size());
+			for (size_t i = _instance.B1subdomainsMap[d].size(); i < _instance.B1[d].I_row_indices.size(); ++i) {
+				_instance.B1subdomainsMap[d].push_back(_instance.B1[d].I_row_indices[i] - 1);
+			}
+		}
+	}
+
+	std::vector<esglobal> domainProcDistribution = _mesh._domains->gatherProcsDistribution();
+	for (size_t i = 0; i < _mesh._domains->nodesIntervals.size(); ++i) {
+		const EInterval &interval = _mesh._domains->nodesIntervals[i];
+		esglobal LMindex = 0;
+		std::vector<std::vector<esglobal> > nmap;
+
+		for (auto n1 = interval.neighbors[0] == -1 ? interval.neighbors.begin() + 1 : interval.neighbors.begin(); n1 != interval.neighbors.end(); ++n1) {
+			int fromRank = std::lower_bound(domainProcDistribution.begin(), domainProcDistribution.end(), *n1 + 1) - domainProcDistribution.begin() - 1;
+			for (auto n2 = n1 + 1; n2 != interval.neighbors.end(); ++n2, ++LMindex) {
+				int toRank = std::lower_bound(domainProcDistribution.begin(), domainProcDistribution.end(), *n2 + 1) - domainProcDistribution.begin() - 1;
+
+				if (fromRank == environment->MPIrank) {
+					nmap.push_back({ LMindex, environment->MPIrank });
+					if (toRank != environment->MPIrank) {
+						nmap.back().push_back(toRank);
+					}
+				} else if (toRank == environment->MPIrank) {
+					nmap.push_back({ LMindex, environment->MPIrank });
+					if (fromRank != environment->MPIrank) {
+						nmap.back().push_back(fromRank);
+					}
+				}
+
+				if (!_withRedundantMultipliers) {
+					break;
+				}
+			}
+			if (!_withRedundantMultipliers) {
+				break;
+			}
+		}
+
+		size_t isize = _mesh._domains->nodesIntervals[i].end - _mesh._domains->nodesIntervals[i].begin - _mergedDirichletIndices[i].size();
+		LMindex = interval.LMOffset;
+		eslocal noffset;
+		if (_withRedundantMultipliers) {
+			noffset = interval.ndomains * (interval.ndomains - 1) / 2;
+		} else {
+			noffset = interval.ndomains - 1;
+		}
+		for (size_t n = 0; n < isize; ++n, LMindex += noffset) {
+			_instance.B1clustersMap.insert(_instance.B1clustersMap.end(), nmap.begin(), nmap.end());
+			for (auto map = _instance.B1clustersMap.end() - nmap.size(); map != _instance.B1clustersMap.end(); ++map) {
+				map->front() += LMindex;
+			}
 		}
 	}
 }
 
-std::vector<esglobal> EqualityConstraints::computeLambdasID(const Step &step, bool withRedundantMultiplier)
-{
-	std::vector<esglobal> lambdasID(_gluedElements.size() * _gluedDOFs.size(), -1);
-
-//	auto n2i = [ & ] (size_t neighbour) {
-//		return std::lower_bound(_mesh.neighbours().begin(), _mesh.neighbours().end(), neighbour) - _mesh.neighbours().begin();
-//	};
-//
-//	size_t threads = environment->OMP_NUM_THREADS;
-//	std::vector<size_t> distribution = Esutils::getDistribution(threads, _gluedElements.size());
-//	std::vector<size_t> offsets(threads);
-//
-//	// neighbours x threads x data
-//	std::vector<std::vector<std::vector<esglobal> > > sLambdas(threads, std::vector<std::vector<esglobal> >(_mesh.neighbours().size()));
-//	std::vector<std::vector<std::vector<std::pair<esglobal, esglobal> > > > rLambdas(threads, std::vector<std::vector<std::pair<esglobal,esglobal> > >(_mesh.neighbours().size()));
-//
-//	std::vector<std::vector<Region*> > skippedRegions = _mesh.getRegionsWithProperties(step.step, _gluedDOFs);
-//
-//	#pragma omp parallel for
-//	for (size_t t = 0; t < threads; t++) {
-//		size_t lambdasSize = 0;
-//		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
-//
-//			for (size_t dof = 0; dof < _gluedDOFs.size(); dof++) {
-//				size_t n = _gluedElements[e]->numberOfGlobalDomainsWithDOF(_gluedDOFsMeshOffsets[dof]);
-//				if (n > 1 && (!withRedundantMultiplier || !Mesh::commonRegion(skippedRegions[dof], _gluedElements[e]->regions()))) {
-//					if (_gluedElements[e]->clusters()[0] == environment->MPIrank) { // set lambda ID
-//						if (withRedundantMultiplier) {
-//							lambdasID[e * _gluedDOFs.size() + dof] = n * (n - 1) / 2;
-//							lambdasSize += n * (n - 1) / 2;
-//						} else {
-//							lambdasID[e * _gluedDOFs.size() + dof] = n - 1;
-//							lambdasSize += n - 1;
-//						}
-//						for (size_t c = 1; c < _gluedElements[e]->clusters().size(); c++) { // send to higher clusters
-//							sLambdas[t][n2i(_gluedElements[e]->clusters()[c])].push_back(e * _gluedDOFs.size() + dof);
-//						}
-//					} else { // pick ID from lower cluster
-//						rLambdas[t][n2i(_gluedElements[e]->clusters()[0])].push_back( // offset + lambda
-//								std::make_pair(_gluedElements[e]->clusterOffset(_gluedElements[e]->clusters()[0]), e * _gluedDOFs.size() + dof)
-//						);
-//					}
-//				}
-//			}
-//
-//		}
-//		offsets[t] = lambdasSize;
-//	}
-
-//	size_t numberOfClusterLambdas = Esutils::sizesToOffsets(offsets);
-//	size_t clusterOffset = numberOfClusterLambdas;
-//	size_t totalNumberOfLambdas = Communication::exscan(clusterOffset);
-//
-//	for (size_t i = 0; i < offsets.size(); i++) {
-//		offsets[i] += clusterOffset + _instance.B1[0].rows;
-//	}
-//
-//	#pragma omp parallel for
-//	for (size_t t = 0; t < threads; t++) {
-//		esglobal offset = offsets[t];
-//		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
-//
-//			for (size_t dof = 0; dof < _gluedDOFs.size(); dof++) {
-//				if (lambdasID[e * _gluedDOFs.size() + dof] > 0) {
-//					offset += lambdasID[e * _gluedDOFs.size() + dof];
-//					lambdasID[e * _gluedDOFs.size() + dof] = offset - lambdasID[e * _gluedDOFs.size() + dof];
-//				}
-//			}
-//
-//		}
-//
-//		for (size_t n = 0; n < _mesh.neighbours().size(); n++) {
-//			for (size_t i = 0; i < sLambdas[t][n].size(); i++) {
-//				sLambdas[t][n][i] = lambdasID[sLambdas[t][n][i]];
-//			}
-//		}
-//	}
-//
-//	std::vector<std::vector<esglobal> > rBuffer(_mesh.neighbours().size());
-//
-//	#pragma omp parallel for
-//	for (size_t n = 0; n < _mesh.neighbours().size(); n++) {
-//		for (size_t t = 1; t < threads; t++) {
-//			sLambdas[0][n].insert(sLambdas[0][n].end(), sLambdas[t][n].begin(), sLambdas[t][n].end());
-//			rLambdas[0][n].insert(rLambdas[0][n].end(), rLambdas[t][n].begin(), rLambdas[t][n].end());
-//		}
-//		std::sort(rLambdas[0][n].begin(), rLambdas[0][n].end());
-//		rBuffer[n].resize(rLambdas[0][n].size());
-//	}
-//
-//	if (!Communication::receiveLowerKnownSize(sLambdas[0], rBuffer, _mesh.neighbours())) {
-//		ESINFO(ERROR) << "problem while synchronization of lambdas.";
-//	}
-//
-//	for (size_t n = 0; n < _mesh.neighbours().size(); n++) {
-//		for (size_t i = 0; i < rLambdas[0][n].size(); i++) {
-//			lambdasID[rLambdas[0][n][i].second] = rBuffer[n][i];
-//		}
-//	}
-//
-//	#pragma omp parallel for
-//	for (size_t p = 0; p < _instance.domains; p++) {
-//		_instance.B1[p].rows += totalNumberOfLambdas;
-//		_instance.B1[p].cols = _instance.domainDOFCount[p];
-//	}
-//	_instance.block[Instance::CONSTRAINT::EQUALITY_CONSTRAINTS] += totalNumberOfLambdas;
-
-	return lambdasID;
-}
-
-void EqualityConstraints::insertElementGluingToB1(const Step &step, bool withRedundantMultiplier, bool withScaling)
-{
+//void EqualityConstraints::insertElementGluingToB1(const Step &step, bool withRedundantMultiplier, bool withScaling)
+//{
 //	auto n2i = [ & ] (size_t neighbour) {
 //		return std::lower_bound(_mesh._neighbours.begin(), _mesh._neighbours.end(), neighbour) - _mesh._neighbours.begin();
 //	};
@@ -492,7 +508,7 @@ void EqualityConstraints::insertElementGluingToB1(const Step &step, bool withRed
 //	}
 //
 //	ESINFO(EXHAUSTIVE) << "Lambdas in B1: " << _instance.B1[0].rows;
-}
+//}
 
 void EqualityConstraints::insertCornersGluingToB0()
 {

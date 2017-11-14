@@ -303,9 +303,9 @@ void NewOutput::VTKLegacy(const std::string &name, ElementStore *nodes, DomainSt
 	os << "LOOKUP_TABLE default\n";
 	int interval = 0;
 	for (eslocal d = 0; d < domains->size; d++) {
-		for (size_t i = 0; i < domains->nodesIntervals[d].size(); i++) {
-			if (domains->nodesIntervals[d][i].localOffset == 0) {
-				for (eslocal n = domains->nodesIntervals[d][i].begin; n < domains->nodesIntervals[d][i].end; n++) {
+		for (size_t i = 0; i < domains->domainNodesIntervals[d].size(); i++) {
+			if (domains->domainNodesIntervals[d][i].localDomainOffset == 0) {
+				for (eslocal n = domains->domainNodesIntervals[d][i].begin; n < domains->domainNodesIntervals[d][i].end; n++) {
 					os << interval << "\n";
 				}
 				interval++;
@@ -354,10 +354,10 @@ void NewOutput::VTKLegacy(const std::string &name, ElementStore *nodes, RegionSt
 	os << "SCALARS interval int 1\n";
 	os << "LOOKUP_TABLE default\n";
 	int interval = 0;
-	for (eslocal d = 0; d < (eslocal)region->nodesIntervals.size(); d++) {
-		for (size_t i = 0; i < region->nodesIntervals[d].size(); i++) {
-			if (region->nodesIntervals[d][i].localOffset == 0) {
-				for (eslocal n = region->nodesIntervals[d][i].begin; n < region->nodesIntervals[d][i].end; n++) {
+	for (eslocal d = 0; d < (eslocal)region->domainNodesIntervals.size(); d++) {
+		for (size_t i = 0; i < region->domainNodesIntervals[d].size(); i++) {
+			if (region->domainNodesIntervals[d][i].localDomainOffset == 0) {
+				for (eslocal n = region->domainNodesIntervals[d][i].begin; n < region->domainNodesIntervals[d][i].end; n++) {
 					os << interval << "\n";
 				}
 				interval++;
