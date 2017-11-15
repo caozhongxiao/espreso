@@ -30,19 +30,6 @@ HeatTransfer3D::HeatTransfer3D(Mesh *mesh, Instance *instance, const HeatTransfe
 	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, dirichlet, 1, configuration.load_steps_settings.at(1).feti.redundant_lagrange, configuration.load_steps_settings.at(1).feti.scaling);
 }
 
-void HeatTransfer3D::prepare()
-{
-//	_mesh->loadNodeProperty(_configuration.thickness, { }, { Property::THICKNESS }, 0);
-//	for (size_t loadStep = 0; loadStep < _configuration.load_steps; loadStep++) {
-//		_mesh->loadProperty(_configuration.load_steps_settings.at(loadStep + 1).translation_motions, { "X", "Y", "Z" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y, Property::TRANSLATION_MOTION_Z }, loadStep);
-//	}
-//
-//	_mesh->addPropertyGroup({ Property::FLUX_X, Property::FLUX_Y, Property::FLUX_Z });
-//	_mesh->addPropertyGroup({ Property::GRADIENT_X, Property::GRADIENT_Y, Property::GRADIENT_Z });
-
-	HeatTransfer::prepare();
-}
-
 std::vector<std::pair<ElementType, Property> > HeatTransfer3D::propertiesToStore() const
 {
 //	for (size_t s = 0; s < _mesh->steps(); s++) {
@@ -276,7 +263,7 @@ void HeatTransfer3D::processElement(const Step &step, Matrices matrices, eslocal
 
 	for (size_t n = 0; n < nodes->size(); n++) {
 		auto it = std::lower_bound(intervals.begin(), intervals.end(), nodes->at(n), [] (const EInterval &interval, eslocal node) { return interval.end < node; });
-		temp = solution[offset + SolutionIndex::TEMPERATURE]->get(Property::TEMPERATURE, domain, it->domainOffset + nodes->at(n) - it->clusterOffset);
+		temp = solution[offset + SolutionIndex::TEMPERATURE]->get(0, domain, it->domainOffset + nodes->at(n) - it->clusterOffset);
 		const Point &p = _mesh->_nodes->coordinates->datatarray()[nodes->at(n)];
 		T(n, 0) = temp;
 		coordinates(n, 0) = p.x;

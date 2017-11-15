@@ -21,9 +21,9 @@
 using namespace espreso;
 
 
-Statistic::Statistic(ElementType eType, const Mesh &mesh, const std::vector<std::vector<double> > &data, const std::vector<Property> &properties)
+Statistic::Statistic(ElementType eType, const Mesh &mesh, const std::vector<std::vector<double> > &data, size_t DOFs)
 : _operation(Operation::AVERAGE),
-  _eType(eType), _dataSize(properties.size()), _computed(false), _mesh(mesh), _data(data)
+  _eType(eType), _dataSize(DOFs), _computed(false), _mesh(mesh), _data(data)
 {
 //	for (size_t r = 0; r < _mesh.monitoredRegions().size(); r++) {
 //		if (eType == ElementType::ELEMENTS) {

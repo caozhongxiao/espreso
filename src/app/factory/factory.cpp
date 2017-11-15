@@ -130,26 +130,7 @@ void FactoryLoader::preprocessMesh()
 	// TODO: generalize it !!
 
 	for (size_t i = 0; i < _physics.size(); i++) {
-
-		switch (dynamic_cast<FETISolver*>(_linearSolvers.front())->configuration.method) {
-		case FETI_METHOD::TOTAL_FETI:
-			_physics[i]->prepare();
-			break;
-		case FETI_METHOD::HYBRID_FETI:
-			switch (dynamic_cast<FETISolver*>(_linearSolvers.front())->configuration.B0_type) {
-			case FETI_B0_TYPE::CORNERS:
-				_physics[i]->prepareHybridTotalFETIWithCorners();
-				break;
-			case FETI_B0_TYPE::KERNELS:
-				_physics[i]->prepareHybridTotalFETIWithKernels();
-				break;
-			default:
-				ESINFO(GLOBAL_ERROR) << "Unknown type of B0";
-			}
-			break;
-		default:
-			ESINFO(GLOBAL_ERROR) << "Unknown FETI method";
-		}
+		_physics[i]->prepare();
 	}
 }
 

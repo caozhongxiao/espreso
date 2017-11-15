@@ -22,18 +22,6 @@ HeatTransfer2D::HeatTransfer2D(Mesh *mesh, Instance *instance, const HeatTransfe
 	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, {}, 1, configuration.load_steps_settings.at(1).feti.redundant_lagrange, configuration.load_steps_settings.at(1).feti.scaling);
 }
 
-void HeatTransfer2D::prepare()
-{
-//	_mesh->loadNodeProperty(_configuration.thickness, { }, { Property::THICKNESS }, 0);
-//	for (size_t loadStep = 0; loadStep < _configuration.load_steps; loadStep++) {
-//		_mesh->loadProperty(_configuration.load_steps_settings.at(loadStep + 1).translation_motions, { "X", "Y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y }, loadStep);
-//	}
-//	_mesh->addPropertyGroup({ Property::FLUX_X, Property::FLUX_Y });
-//	_mesh->addPropertyGroup({ Property::GRADIENT_X, Property::GRADIENT_Y });
-
-	HeatTransfer::prepare();
-}
-
 std::vector<std::pair<ElementType, Property> > HeatTransfer2D::propertiesToStore() const
 {
 //	for (size_t s = 0; s < _mesh->steps(); s++) {

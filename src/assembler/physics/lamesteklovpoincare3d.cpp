@@ -34,12 +34,6 @@ LameSteklovPoincare3D::LameSteklovPoincare3D(Mesh *mesh, Instance *instance, con
 #endif
 }
 
-void LameSteklovPoincare3D::prepare()
-{
-	StructuralMechanics3D::prepare();
-	extractBoundaryNodes();
-}
-
 void LameSteklovPoincare3D::prepareHybridTotalFETIWithKernels()
 {
 	// extraction of boundary nodes compute all faces on domains. Hence, no face computation is needed
@@ -51,13 +45,13 @@ void LameSteklovPoincare3D::preprocessData(const Step &step)
 	if (offset == (size_t)-1) {
 		offset = _instance->solutions.size();
 		_instance->solutions.resize(offset + SolutionIndex::SIZE, NULL);
-		_instance->solutions[offset + SolutionIndex::DISPLACEMENT] = new Solution(*_mesh, "displacement", ElementType::NODES, pointDOFs());
+		_instance->solutions[offset + SolutionIndex::DISPLACEMENT] = new Solution(*_mesh, "displacement", ElementType::NODES, 3);
 	}
 
 	if (BEMOffset == (size_t)-1) {
 		BEMOffset = _instance->solutions.size();
 		_instance->solutions.resize(BEMOffset + BEMSolutionIndex::SIZE, NULL);
-		_instance->solutions[BEMOffset + BEMSolutionIndex::BOUNDARY] = new Solution(*_mesh, "temperatureOnBoundary", ElementType::NODES, pointDOFs(), _instance->primalSolution);
+		_instance->solutions[BEMOffset + BEMSolutionIndex::BOUNDARY] = new Solution(*_mesh, "temperatureOnBoundary", ElementType::NODES, 3, _instance->primalSolution);
 	}
 }
 
@@ -70,26 +64,27 @@ void LameSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices, si
 
 	std::vector<eslocal> elements;
 	std::vector<double> coordinates;
-	boundaryTriangularization(elements, coordinates, domain);
-
-	_instance->K[domain].rows = pointDOFs().size() * _boundaryIndices[domain].size();
-	_instance->K[domain].cols = pointDOFs().size() * _boundaryIndices[domain].size();
-	_instance->K[domain].nnz  = _instance->K[domain].rows * _instance->K[domain].cols;
-	_instance->K[domain].type = 'G';
-	_instance->K[domain].dense_values.resize(_instance->K[domain].nnz);
-	_instance->K[domain].mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+	// TODO: MESH
+//	boundaryTriangularization(elements, coordinates, domain);
+//
+//	_instance->K[domain].rows = pointDOFs().size() * _boundaryIndices[domain].size();
+//	_instance->K[domain].cols = pointDOFs().size() * _boundaryIndices[domain].size();
+//	_instance->K[domain].nnz  = _instance->K[domain].rows * _instance->K[domain].cols;
+//	_instance->K[domain].type = 'G';
+//	_instance->K[domain].dense_values.resize(_instance->K[domain].nnz);
+//	_instance->K[domain].mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 
 	DenseMatrix permuted(_instance->K[domain].rows, _instance->K[domain].cols);
 
 #ifdef BEM4I
-	bem4i::getLameSteklovPoincare(
-			permuted.values(),
-			(eslocal)_boundaryIndices[domain].size(),
-			coordinates.data(),
-			(eslocal)(elements.size() / 3),
-			elements.data(),
-			0.3, 2.1e5, // TODO: mi, E -> load from material
-			3, 4, false);
+//	bem4i::getLameSteklovPoincare(
+//			permuted.values(),
+//			(eslocal)_boundaryIndices[domain].size(),
+//			coordinates.data(),
+//			(eslocal)(elements.size() / 3),
+//			elements.data(),
+//			0.3, 2.1e5, // TODO: mi, E -> load from material
+//			3, 4, false);
 #endif
 
 	eslocal n = _instance->K[domain].rows;

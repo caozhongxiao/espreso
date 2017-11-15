@@ -46,9 +46,7 @@ struct Physics {
 	virtual std::vector<size_t> solutionsIndicesToStore() const =0;
 	virtual std::vector<std::pair<ElementType, Property> > propertiesToStore() const =0;
 
-	virtual void prepare() =0;
-	virtual void prepareHybridTotalFETIWithCorners() =0;
-	virtual void prepareHybridTotalFETIWithKernels() =0;
+	virtual void prepare() {};
 
 	virtual void preprocessData(const Step &step) =0;
 
@@ -78,37 +76,6 @@ struct Physics {
 
 	virtual ~Physics();
 
-	virtual const std::vector<Property>& pointDOFs() const =0;
-	virtual const std::vector<Property>& midPointDOFs() const =0;
-	virtual const std::vector<Property>& edgeDOFs() const =0;
-	virtual const std::vector<Property>& faceDOFs() const =0;
-	virtual const std::vector<Property>& elementDOFs() const =0;
-
-	inline const std::vector<size_t>& pointDOFsOffsets() const
-	{
-		return _nodesDOFsOffsets;
-	}
-
-	inline const std::vector<size_t>& midPointDOFsOffsets() const
-	{
-		return _midNodesDOFsOffsets;
-	}
-
-	inline const std::vector<size_t>& edgeDOFsOffsets() const
-	{
-		return _edgesDOFsOffsets;
-	}
-
-	inline const std::vector<size_t>& faceDOFsOffsets() const
-	{
-		return _facesDOFsOffsets;
-	}
-
-	inline const std::vector<size_t>& elementDOFsOffsets() const
-	{
-		return _elementsDOFsOffsets;
-	}
-
 protected:
 	virtual void fillDOFsIndices(eslocal eindex, eslocal domain, std::vector<eslocal> &DOFs) const;
 	virtual void insertElementToDomain(
@@ -127,12 +94,6 @@ protected:
 	EqualityConstraints *_equalityConstraints;
 
 	const PhysicsConfiguration *_configuration;
-
-	std::vector<size_t> _nodesDOFsOffsets;
-	std::vector<size_t> _midNodesDOFsOffsets;
-	std::vector<size_t> _edgesDOFsOffsets;
-	std::vector<size_t> _facesDOFsOffsets;
-	std::vector<size_t> _elementsDOFsOffsets;
 };
 
 }

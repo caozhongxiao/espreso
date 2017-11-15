@@ -9,20 +9,15 @@
 
 using namespace espreso;
 
-Solution::Solution(const Mesh &mesh, const std::string &name, ElementType eType, const std::vector<Property> &properties, std::vector<std::vector<double> > &data)
-: name(name), eType(eType), properties(properties), data(data), _offset(static_cast<int>(Property::SIZE), -1), _statistic(eType, mesh, data, properties)
+Solution::Solution(const Mesh &mesh, const std::string &name, ElementType eType, size_t DOFs, std::vector<std::vector<double> > &data)
+: name(name), eType(eType), DOFs(DOFs), data(data), _statistic(eType, mesh, data, DOFs)
 {
-	for (size_t p = 0; p < properties.size(); p++) {
-		_offset[static_cast<int>(properties[p])] = p;
-	}
+
 }
 
-Solution::Solution(const Mesh &mesh, const std::string &name, ElementType eType, const std::vector<Property> &properties)
-: name(name), eType(eType), properties(properties), data(_data), _offset(static_cast<int>(Property::SIZE), -1), _statistic(eType, mesh, data, properties)
+Solution::Solution(const Mesh &mesh, const std::string &name, ElementType eType, size_t DOFs)
+: name(name), eType(eType), DOFs(DOFs), data(_data), _statistic(eType, mesh, data, DOFs)
 {
-	for (size_t p = 0; p < properties.size(); p++) {
-		_offset[static_cast<int>(properties[p])] = p;
-	}
 	// TODO: MESH
 //	_data.resize(mesh.parts());
 //	for (size_t p = 0; p < mesh.parts(); p++) {
@@ -46,22 +41,17 @@ void Solution::fill(double value)
 	}
 }
 
-bool Solution::hasProperty(Property property) const
-{
-	return _offset[static_cast<int>(property)] != -1;
-}
-
 void Solution::computeStatisticalData(const Step &step)
 {
 	_statistic.compute(step);
 }
 
-double Solution::getStatisticalData(const std::vector<Property> &properties, StatisticalData data, const Region *region) const
+double Solution::getStatisticalData(size_t DOF, StatisticalData data, const Region *region) const
 {
-	if (properties.size() > 1) {
+	if (DOF > DOFs) {
 		return _statistic.getMagnitude(region, data);
 	} else {
-		return _statistic.get(region, _offset[static_cast<int>(properties[0])], data);
+		return _statistic.get(region, DOF, data);
 	}
 
 }

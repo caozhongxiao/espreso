@@ -12,9 +12,7 @@ class Instance;
 class Mesh;
 class RegionStore;
 
-class OldElement;
 class Region;
-enum class Property;
 struct Step;
 class SparseMatrix;
 

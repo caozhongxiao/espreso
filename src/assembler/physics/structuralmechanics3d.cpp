@@ -20,26 +20,6 @@ StructuralMechanics3D::StructuralMechanics3D(Mesh *mesh, Instance *instance, con
 //	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, _mesh->nodes(), _mesh->faces(), pointDOFs(), pointDOFsOffsets());
 }
 
-void StructuralMechanics3D::prepare()
-{
-//	for (size_t loadStep = 0; loadStep < _configuration.load_steps; loadStep++) {
-//		_mesh->loadProperty(_configuration.load_steps_settings.at(loadStep + 1).displacement, { "X", "Y", "Z" }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z }, loadStep);
-//		_mesh->loadProperty(_configuration.load_steps_settings.at(loadStep + 1).acceleration, { "X", "Y", "Z" }, { Property::ACCELERATION_X, Property::ACCELERATION_Y, Property::ACCELERATION_Z }, loadStep);
-//	}
-//
-//	for (size_t loadStep = 0; loadStep < _configuration.load_steps; loadStep++) {
-//		if (_configuration.load_steps_settings.at(loadStep + 1).solver == LoadStepConfiguration::SOLVER::FETI &&
-//			_configuration.load_steps_settings.at(loadStep + 1).feti.regularization == FETI_REGULARIZATION::ANALYTIC) {
-//
-//				_mesh->computeFixPoints(8);
-//				break;
-//		}
-//	}
-
-	StructuralMechanics::prepare();
-}
-
-
 void StructuralMechanics3D::analyticRegularization(size_t domain, bool ortogonalCluster)
 {
 	if (_instance->K[domain].mtype != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {

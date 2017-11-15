@@ -12,7 +12,6 @@ using namespace espreso;
 Instance::Instance(const Mesh &mesh)
 : domains(mesh._domains->size),
   domainDOFCount(_domainDOFCount),
-  properties(_properties),
   neighbours(mesh._neighbours),
   clustersMap(mesh._domains->clusters),
   origK(_origK), K(_K),
@@ -95,7 +94,6 @@ Instance::Instance(const Mesh &mesh)
 Instance::Instance(Instance &other, Matrices &share)
 : domains(other.domains),
   domainDOFCount(share & Matrices::K ? other.domainDOFCount :_domainDOFCount),
-  properties(other.properties),
   neighbours(other.neighbours),
   clustersMap(other.clustersMap),
 

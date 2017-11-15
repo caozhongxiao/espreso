@@ -11,39 +11,30 @@
 
 namespace espreso {
 
-enum class Property;
 enum class ElementType;
 
 
 struct Solution {
 
-	Solution(const Mesh &mesh, const std::string &name, ElementType eType, const std::vector<Property> &properties, std::vector<std::vector<double> > &data);
-	Solution(const Mesh &mesh, const std::string &name, ElementType eType, const std::vector<Property> &properties);
+	Solution(const Mesh &mesh, const std::string &name, ElementType eType, size_t DOFs, std::vector<std::vector<double> > &data);
+	Solution(const Mesh &mesh, const std::string &name, ElementType eType, size_t DOFs);
 
 	void fill(double value);
 
-	inline double get(Property property, eslocal domain, eslocal index) const
+	inline double get(size_t DOF, eslocal domain, eslocal index) const
 	{
-		return data[domain][index * properties.size() + _offset[static_cast<int>(property)]];
+		return data[domain][index * DOFs + DOF];
 	}
 
-	inline double get(size_t propertyOffset, eslocal domain, eslocal index) const
-	{
-		return data[domain][index * properties.size() + propertyOffset];
-	}
-
-	bool hasProperty(Property property) const;
 	void computeStatisticalData(const Step &step);
-	double getStatisticalData(const std::vector<Property> &property, StatisticalData data, const Region *region) const;
+	double getStatisticalData(size_t DOF, StatisticalData data, const Region *region) const;
 
 	std::string name;
 	ElementType eType;
-	std::vector<Property> properties;
+	size_t DOFs;
 	std::vector<std::vector<double> > &data;
 
 protected:
-	std::vector<int> _offset;
-
 	// when no data are provided, store it here
 	std::vector<std::vector<double> > _data;
 

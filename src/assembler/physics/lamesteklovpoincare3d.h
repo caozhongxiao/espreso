@@ -3,15 +3,13 @@
 #define SRC_ASSEMBLER_PHYSICS_LAMESTEKLOVPOINCARE3D_H_
 
 #include "structuralmechanics3d.h"
-#include "boundarybased3d.h"
 
 namespace espreso {
 
-struct LameSteklovPoincare3D: public BoundaryBased3D, public StructuralMechanics3D
+struct LameSteklovPoincare3D: public StructuralMechanics3D
 {
 	LameSteklovPoincare3D(Mesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
 
-	void prepare();
 	void prepareHybridTotalFETIWithKernels();
 
 	virtual void preprocessData(const Step &step);

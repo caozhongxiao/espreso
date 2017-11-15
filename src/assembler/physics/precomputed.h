@@ -24,9 +24,6 @@ struct Precomputed: public virtual Physics
 	bool isMatrixTimeDependent(const Step &step) const;
 	bool isMatrixTemperatureDependent(const Step &step) const;
 
-	void prepare();
-	void prepareHybridTotalFETIWithCorners();
-	void prepareHybridTotalFETIWithKernels();
 	void preprocessData(const Step &step);
 
 	void analyticRegularization(size_t domain, bool ortogonalCluster);
@@ -39,32 +36,6 @@ struct Precomputed: public virtual Physics
 	void processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
 	void processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
 	void processSolution(const Step &step);
-
-	const std::vector<Property>& pointDOFs() const
-	{
-		static std::vector<Property> pointDOFs = { Property::UNKNOWN };
-		return pointDOFs;
-	}
-	const std::vector<Property>& midPointDOFs() const
-	{
-		static std::vector<Property> midPointDOFs = { Property::UNKNOWN };
-		return midPointDOFs;
-	}
-	const std::vector<Property>& edgeDOFs() const
-	{
-		static std::vector<Property> edgeDOFs = { };
-		return edgeDOFs;
-	}
-	const std::vector<Property>& faceDOFs() const
-	{
-		static std::vector<Property> faceDOFs = { };
-		return faceDOFs;
-	}
-	const std::vector<Property>& elementDOFs() const
-	{
-		static std::vector<Property> elementDOFs = { };
-		return elementDOFs;
-	}
 
 	virtual ~Precomputed() {}
 

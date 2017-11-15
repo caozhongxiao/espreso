@@ -14,8 +14,6 @@ struct HeatTransfer2D: public HeatTransfer, public Physics2D
 {
 	HeatTransfer2D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
 
-	void prepare();
-
 	virtual std::vector<std::pair<ElementType, Property> > propertiesToStore() const;
 
 	void processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;

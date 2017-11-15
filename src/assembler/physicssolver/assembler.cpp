@@ -163,20 +163,21 @@ void Assembler::finalize()
 
 Solution* Assembler::addSolution(const std::string &name, ElementType eType)
 {
-	switch (eType) {
-	case ElementType::NODES:
-		instance.solutions.push_back(new Solution(mesh, name, eType, physics.pointDOFs()));
-		break;
-	case ElementType::EDGES:
-		instance.solutions.push_back(new Solution(mesh, name, eType, physics.edgeDOFs()));
-		break;
-	case ElementType::FACES:
-		instance.solutions.push_back(new Solution(mesh, name, eType, physics.faceDOFs()));
-		break;
-	case ElementType::ELEMENTS:
-		instance.solutions.push_back(new Solution(mesh, name, eType, physics.elementDOFs()));
-		break;
-	}
+	// TODO: MESH
+//	switch (eType) {
+//	case ElementType::NODES:
+//		instance.solutions.push_back(new Solution(mesh, name, eType, physics.pointDOFs()));
+//		break;
+//	case ElementType::EDGES:
+//		instance.solutions.push_back(new Solution(mesh, name, eType, physics.edgeDOFs()));
+//		break;
+//	case ElementType::FACES:
+//		instance.solutions.push_back(new Solution(mesh, name, eType, physics.faceDOFs()));
+//		break;
+//	case ElementType::ELEMENTS:
+//		instance.solutions.push_back(new Solution(mesh, name, eType, physics.elementDOFs()));
+//		break;
+//	}
 
 	return instance.solutions.back();
 }

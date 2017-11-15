@@ -212,17 +212,7 @@ void FETI4ICreateInstance(
 			*DataHolder::instances.back()->linearSolver);
 	DataHolder::instances.back()->timeStepSolver = new LinearTimeStep(*DataHolder::instances.back()->assembler);
 	DataHolder::instances.back()->loadStepSolver = new SteadyStateSolver(*DataHolder::instances.back()->timeStepSolver, 1);
-
-	switch (DataHolder::instances.back()->configuration.feti4ilibrary.solver.method) {
-	case FETI_METHOD::TOTAL_FETI:
-		DataHolder::instances.back()->physics->prepare();
-		break;
-	case FETI_METHOD::HYBRID_FETI:
-		DataHolder::instances.back()->physics->prepareHybridTotalFETIWithKernels();
-		break;
-	default:
-		ESINFO(ERROR) << "API request unknown FETI method.";
-	}
+	DataHolder::instances.back()->physics->prepare();
 
 	event.endWithBarrier(); DataHolder::timeStatistics.addEvent(event);
 }

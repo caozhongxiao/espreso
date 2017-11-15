@@ -12,7 +12,6 @@ namespace espreso {
 class Mesh;
 class Region;
 enum class ElementType;
-enum class Property;
 
 enum StatisticalData: int {
 	EMPTY   = 0,
@@ -32,7 +31,7 @@ public:
 		AVERAGE
 	};
 
-	Statistic(ElementType eType, const Mesh &mesh, const std::vector<std::vector<double> > &data, const std::vector<Property> &properties);
+	Statistic(ElementType eType, const Mesh &mesh, const std::vector<std::vector<double> > &data, size_t DOFs);
 
 	void compute(const Step &step);
 	double get(const Region* region, size_t offset, StatisticalData statistics);

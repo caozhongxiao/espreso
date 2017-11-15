@@ -24,32 +24,6 @@ struct HeatTransfer: public virtual Physics
 	virtual void preprocessData(const Step &step);
 	virtual void analyticRegularization(size_t domain, bool ortogonalCluster);
 
-	const std::vector<Property>& pointDOFs() const
-	{
-		static std::vector<Property> pointDOFs = { Property::TEMPERATURE };
-		return pointDOFs;
-	}
-	const std::vector<Property>& midPointDOFs() const
-	{
-		static std::vector<Property> midPointDOFs = { Property::TEMPERATURE };
-		return midPointDOFs;
-	}
-	const std::vector<Property>& edgeDOFs() const
-	{
-		static std::vector<Property> edgeDOFs = { };
-		return edgeDOFs;
-	}
-	const std::vector<Property>& faceDOFs() const
-	{
-		static std::vector<Property> faceDOFs = { };
-		return faceDOFs;
-	}
-	const std::vector<Property>& elementDOFs() const
-	{
-		static std::vector<Property> elementDOFs = { };
-		return elementDOFs;
-	}
-
 	virtual ~HeatTransfer() {}
 
 protected:

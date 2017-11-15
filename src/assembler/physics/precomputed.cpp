@@ -48,19 +48,6 @@ bool Precomputed::isMatrixTemperatureDependent(const Step &step) const
 	return false;
 }
 
-void Precomputed::prepare()
-{
-//	_instance->domainDOFCount = dynamic_cast<APIMesh*>(_mesh)->distributeDOFsToDomains(_instance->domainDOFCount);
-//	dynamic_cast<APIMesh*>(_mesh)->computeDOFsDOFsCounters();
-//	_nodesDOFsOffsets = { 0 };
-}
-
-void Precomputed::prepareHybridTotalFETIWithKernels()
-{
-	prepare();
-//	dynamic_cast<APIMesh*>(_mesh)->computeFacesSharedByDomains();
-}
-
 void Precomputed::updateMatrix(const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution)
 {
 //	SparseVVPMatrix<eslocal> _K;
@@ -123,12 +110,6 @@ void Precomputed::processSolution(const Step &step)
 //		}
 //		_mergedSolution[0][i] /= dynamic_cast<APIMesh*>(_mesh)->DOFs()[i]->domains().size();
 //	}
-}
-
-
-void Precomputed::prepareHybridTotalFETIWithCorners()
-{
-	ESINFO(ERROR) << "Cannot compute corners. Use HYBRID FETI with kernels.";
 }
 
 void Precomputed::assembleB0FromCorners()

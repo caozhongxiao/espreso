@@ -20,28 +20,6 @@ StructuralMechanics2D::StructuralMechanics2D(Mesh *mesh, Instance *instance, con
 //	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, _mesh->nodes(), _mesh->edges(), pointDOFs(), pointDOFsOffsets());
 }
 
-void StructuralMechanics2D::prepare()
-{
-//	_mesh->loadNodeProperty(_configuration.thickness, { }, { Property::THICKNESS }, 0);
-//	for (size_t loadStep = 0; loadStep < _configuration.load_steps; loadStep++) {
-//		_mesh->loadNodeProperty(_configuration.load_steps_settings.at(loadStep + 1).displacement, { "X", "Y" }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y }, loadStep);
-//		_mesh->loadProperty(_configuration.load_steps_settings.at(loadStep + 1).acceleration    , { "X", "Y" }, { Property::ACCELERATION_X, Property::ACCELERATION_Y }, loadStep);
-//		_mesh->loadProperty(_configuration.load_steps_settings.at(loadStep + 1).angular_velocity, { "X", "Y" }, { Property::ANGULAR_VELOCITY_X, Property::ANGULAR_VELOCITY_Y }, loadStep);
-//	}
-//
-//	for (size_t loadStep = 0; loadStep < _configuration.load_steps; loadStep++) {
-//		if (_configuration.load_steps_settings.at(loadStep + 1).solver == LoadStepConfiguration::SOLVER::FETI &&
-//			_configuration.load_steps_settings.at(loadStep + 1).feti.regularization == FETI_REGULARIZATION::ANALYTIC) {
-//
-//				_mesh->computeFixPoints(4);
-//				break;
-//		}
-//	}
-//
-//	StructuralMechanics::prepare();
-}
-
-
 void StructuralMechanics2D::analyticRegularization(size_t domain, bool ortogonalCluster)
 {
 //	if (_instance->K[domain].mtype != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {

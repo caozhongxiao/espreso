@@ -63,11 +63,6 @@ struct Physics2D: public virtual Physics {
 		memcpy(target + 1 * rows * columns + columns, source + columns, sizeof(double) * columns);
 		memcpy(target + 3 * rows * columns          , source + columns, sizeof(double) * columns);
 	}
-
-
-
-	virtual void prepareHybridTotalFETIWithCorners();
-	virtual void prepareHybridTotalFETIWithKernels();
 };
 
 }

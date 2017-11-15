@@ -22,22 +22,6 @@ struct StructuralMechanics: public virtual Physics
 	virtual void prepare();
 	virtual void preprocessData(const Step &step);
 
-	const std::vector<Property>& edgeDOFs() const
-	{
-		static std::vector<Property> edgeDOFs = { };
-		return edgeDOFs;
-	}
-	const std::vector<Property>& faceDOFs() const
-	{
-		static std::vector<Property> faceDOFs = { };
-		return faceDOFs;
-	}
-	const std::vector<Property>& elementDOFs() const
-	{
-		static std::vector<Property> elementDOFs = { };
-		return elementDOFs;
-	}
-
 protected:
 	enum SolutionIndex: size_t {
 		DISPLACEMENT = 0,

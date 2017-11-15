@@ -59,35 +59,6 @@ bool StructuralMechanics::isMatrixTemperatureDependent(const Step &step) const
 
 void StructuralMechanics::prepare()
 {
-//	_instance->domainDOFCount = _mesh->assignUniformDOFsIndicesToNodes(_instance->domainDOFCount, pointDOFs(), _nodesDOFsOffsets);
-//	_instance->properties = pointDOFs();
-//	_mesh->computeNodesDOFsCounters(pointDOFs());
-//
-//	_mesh->loadProperty(_configuration.initial_temperature, { }, { Property::INITIAL_TEMPERATURE }, 0);
-//
-//	for (size_t loadStep = 0; loadStep < _configuration.load_steps; loadStep++) {
-//		const StructuralMechanicsLoadStepConfiguration &loadStepConfiguration = _configuration.load_steps_settings.at(loadStep + 1);
-//
-//		if (
-//			!loadStepConfiguration.displacement.size() &&
-//			!_mesh->hasProperty(Property::DISPLACEMENT_X, loadStep) &&
-//			!_mesh->hasProperty(Property::DISPLACEMENT_Y, loadStep) &&
-//			!_mesh->hasProperty(Property::DISPLACEMENT_Z, loadStep)) {
-//
-//			ESINFO(GLOBAL_ERROR) << "Invalid boundary conditions for STRUCTURAL MECHANICS - missing temperature or convection for LOAD_STEP=" << loadStep + 1;
-//		}
-//
-//		_mesh->loadNodeProperty(loadStepConfiguration.temperature     , { }, { Property::TEMPERATURE }, loadStep);
-//		_mesh->loadNodeProperty(loadStepConfiguration.obstacle        , { }, { Property::OBSTACLE }, loadStep);
-//		_mesh->loadNodeProperty(loadStepConfiguration.normal_direction, { }, { Property::NORMAL_DIRECTION }, loadStep);
-//		_mesh->loadProperty(loadStepConfiguration.normal_pressure     , { }, { Property::PRESSURE }, loadStep);
-//	}
-//
-//	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
-//
-//	_mesh->removeDuplicateRegions();
-//	_mesh->fillDomainsSettings();
-//
 //	size_t clusters = *std::max_element(_mesh->getContinuityPartition().begin(), _mesh->getContinuityPartition().end()) + 1;
 //
 //	_cCenter = _cNorm = std::vector<Point>(clusters, Point(0, 0, 0));
@@ -266,7 +237,7 @@ void StructuralMechanics::preprocessData(const Step &step)
 	}
 	offset = _instance->solutions.size();
 	_instance->solutions.resize(offset + SolutionIndex::SIZE, NULL);
-	_instance->solutions[offset + SolutionIndex::DISPLACEMENT] = new Solution(*_mesh, "displacement", ElementType::NODES, pointDOFs(), _instance->primalSolution);
+	_instance->solutions[offset + SolutionIndex::DISPLACEMENT] = new Solution(*_mesh, "displacement", ElementType::NODES, 3, _instance->primalSolution);
 }
 
 std::vector<size_t> StructuralMechanics::solutionsIndicesToStore() const

@@ -39,12 +39,6 @@ LaplaceSteklovPoincare3D::LaplaceSteklovPoincare3D(Mesh *mesh, Instance *instanc
 	}
 }
 
-void LaplaceSteklovPoincare3D::prepare()
-{
-	HeatTransfer3D::prepare();
-	extractBoundaryNodes();
-}
-
 void LaplaceSteklovPoincare3D::prepareHybridTotalFETIWithKernels()
 {
 	// extraction of boundary nodes compute all faces on domains. Hence, no face computation is needed
@@ -57,14 +51,14 @@ void LaplaceSteklovPoincare3D::preprocessData(const Step &step)
 		offset = _instance->solutions.size();
 		_instance->solutions.resize(offset + SolutionIndex::SIZE, NULL);
 
-		_instance->solutions[offset + SolutionIndex::TEMPERATURE] = new Solution(*_mesh, "temperature", ElementType::NODES, pointDOFs());
+		_instance->solutions[offset + SolutionIndex::TEMPERATURE] = new Solution(*_mesh, "temperature", ElementType::NODES, 1);
 		computeInitialTemperature(step, _instance->solutions[offset + SolutionIndex::TEMPERATURE]->data);
 	}
 
 	if (BEMOffset == (size_t)-1) {
 		BEMOffset = _instance->solutions.size();
 		_instance->solutions.resize(BEMOffset + BEMSolutionIndex::SIZE, NULL);
-		_instance->solutions[BEMOffset + BEMSolutionIndex::BOUNDARY] = new Solution(*_mesh, "temperatureOnBoundary", ElementType::NODES, pointDOFs(), _instance->primalSolution);
+		_instance->solutions[BEMOffset + BEMSolutionIndex::BOUNDARY] = new Solution(*_mesh, "temperatureOnBoundary", ElementType::NODES, 1, _instance->primalSolution);
 	}
 }
 
@@ -77,23 +71,24 @@ void LaplaceSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices,
 
 	std::vector<eslocal> elements;
 	std::vector<double> coordinates;
-	boundaryTriangularization(elements, coordinates, domain);
-
-	_instance->K[domain].rows = _boundaryIndices[domain].size();
-	_instance->K[domain].cols = _boundaryIndices[domain].size();
-	_instance->K[domain].nnz  = _boundaryIndices[domain].size() * _boundaryIndices[domain].size();
-	_instance->K[domain].type = 'G';
-	_instance->K[domain].dense_values.resize(_instance->K[domain].nnz);
-	_instance->K[domain].mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+	// TODO: MESH
+//	boundaryTriangularization(elements, coordinates, domain);
+//
+//	_instance->K[domain].rows = _boundaryIndices[domain].size();
+//	_instance->K[domain].cols = _boundaryIndices[domain].size();
+//	_instance->K[domain].nnz  = _boundaryIndices[domain].size() * _boundaryIndices[domain].size();
+//	_instance->K[domain].type = 'G';
+//	_instance->K[domain].dense_values.resize(_instance->K[domain].nnz);
+//	_instance->K[domain].mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 
 #ifdef BEM4I
-	bem4i::getLaplaceSteklovPoincare(
-			_instance->K[domain].dense_values.data(),
-			(eslocal)_boundaryIndices[domain].size(),
-			coordinates.data(),
-			(eslocal)(elements.size() / 3),
-			elements.data(),
-			3, 3, 0);
+//	bem4i::getLaplaceSteklovPoincare(
+//			_instance->K[domain].dense_values.data(),
+//			(eslocal)_boundaryIndices[domain].size(),
+//			coordinates.data(),
+//			(eslocal)(elements.size() / 3),
+//			elements.data(),
+//			3, 3, 0);
 #endif
 
 	_instance->K[domain].ConvertDenseToCSR(1);
