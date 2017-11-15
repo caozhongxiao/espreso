@@ -22,6 +22,9 @@ namespace espreso {
 
 struct ECFConfiguration: public ECFObject {
 
+	ECFObject* getInput();
+	PhysicsConfiguration* getPhysics();
+
 	// Environment has to be created first!
 	Environment environment;
 

@@ -7,6 +7,40 @@
 
 using namespace espreso;
 
+ECFObject* ECFConfiguration::getInput()
+{
+	switch (input) {
+	case INPUT_FORMAT::GENERATOR:
+		return &generator;
+	case INPUT_FORMAT::WORKBENCH:
+		return &workbench;
+	case INPUT_FORMAT::OPENFOAM:
+		return &openfoam;
+	case INPUT_FORMAT::ESDATA:
+		return &esdata;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Request for unknown input.";
+		return NULL;
+	}
+}
+
+PhysicsConfiguration* ECFConfiguration::getPhysics()
+{
+	switch (physics) {
+	case PHYSICS::HEAT_TRANSFER_2D:
+		return &heat_transfer_2d;
+	case PHYSICS::HEAT_TRANSFER_3D:
+		return &heat_transfer_3d;
+	case PHYSICS::STRUCTURAL_MECHANICS_2D:
+		return &structural_mechanics_2d;
+	case PHYSICS::STRUCTURAL_MECHANICS_3D:
+		return &structural_mechanics_3d;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Request for unknown physics.";
+		return NULL;
+	}
+}
+
 
 void ECFConfiguration::init()
 {
