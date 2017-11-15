@@ -7,7 +7,7 @@
 
 using namespace espreso;
 
-ECFObject* ECFConfiguration::getInput()
+const ECFObject* ECFConfiguration::_getInput() const
 {
 	switch (input) {
 	case INPUT_FORMAT::GENERATOR:
@@ -24,7 +24,7 @@ ECFObject* ECFConfiguration::getInput()
 	}
 }
 
-PhysicsConfiguration* ECFConfiguration::getPhysics()
+const PhysicsConfiguration* ECFConfiguration::_getPhysics() const
 {
 	switch (physics) {
 	case PHYSICS::HEAT_TRANSFER_2D:

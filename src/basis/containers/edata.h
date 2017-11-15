@@ -14,6 +14,7 @@ public:
 	size_t size() const          { return this->_end - this->_begin; }
 
 	TData& operator[] (size_t n) { return *(this->_begin + n); }
+	TData& at(size_t n)          { return *(this->_begin + n); }
 	TData* data()                { return   this->_begin; }
 	TData& back()                { return *(this->_end - 1); }
 	TData& front()               { return * this->_begin; }

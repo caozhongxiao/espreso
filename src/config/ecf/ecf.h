@@ -22,8 +22,11 @@ namespace espreso {
 
 struct ECFConfiguration: public ECFObject {
 
-	ECFObject* getInput();
-	PhysicsConfiguration* getPhysics();
+	ECFObject* getInput() { return const_cast<ECFObject*>(_getInput()); }
+	const ECFObject* getInput() const { return _getInput(); }
+
+	PhysicsConfiguration* getPhysics() { return const_cast<PhysicsConfiguration*>(_getPhysics()); }
+	const PhysicsConfiguration* getPhysics() const { return _getPhysics(); }
 
 	// Environment has to be created first!
 	Environment environment;
@@ -58,6 +61,9 @@ struct ECFConfiguration: public ECFObject {
 
 protected:
 	void init();
+
+	const ECFObject* _getInput() const;
+	const PhysicsConfiguration* _getPhysics() const;
 };
 
 }

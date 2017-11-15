@@ -6,12 +6,7 @@
 #include "../solution.h"
 #include "../constraints/equalityconstraints.h"
 
-#include "../../old/mesh/settings/property.h"
-#include "../../old/mesh/elements/element.h"
-#include "../../old/mesh/structures/mesh.h"
-#include "../../old/mesh/structures/coordinates.h"
-#include "../../old/mesh/structures/region.h"
-#include "../../old/mesh/structures/elementtypes.h"
+#include "../../mesh/mesh.h"
 
 
 #include "../../basis/matrices/denseMatrix.h"
@@ -57,7 +52,7 @@ std::vector<std::pair<ElementType, Property> > HeatTransfer2D::propertiesToStore
 }
 
 
-void HeatTransfer2D::assembleMaterialMatrix(const Step &step, const OldElement *e, eslocal node, const MaterialBaseConfiguration *mat, double phase, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
+void HeatTransfer2D::assembleMaterialMatrix(const Step &step, eslocal eindex, eslocal node, const MaterialBaseConfiguration *mat, double phase, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
 {
 //	auto conductivity = [&] (int row, int column, double t) {
 //		return mat->thermal_conductivity.values.get(row, column).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, t);
@@ -163,20 +158,20 @@ void HeatTransfer2D::assembleMaterialMatrix(const Step &step, const OldElement *
 //	K(node, 3) += phase * TCT(1, 0);
 }
 
-void HeatTransfer2D::processElement(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer2D::processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
-	bool CAU = _configuration.stabilization == HeatTransferConfiguration::STABILIZATION::CAU;
-	bool tangentCorrection = (matrices & Matrices::K) && step.tangentMatrixCorrection;
-
-	DenseMatrix Ce(2, 2), coordinates(e->nodes(), 2), J(2, 2), invJ(2, 2), dND;
-	double detJ, temp;
-	DenseMatrix f(e->nodes(), 1);
-	DenseMatrix U(e->nodes(), 2);
-	DenseMatrix m(e->nodes(), 1);
-	DenseMatrix T(e->nodes(), 1);
-	DenseMatrix thickness(e->nodes(), 1), K(e->nodes(), 4);
-	DenseMatrix gpThickness(1, 1), gpK(1, 4), gpM(1, 1);
-	DenseMatrix tangentK, BT, BTN, gpCD, CD, CDBTN, CDe;
+//	bool CAU = _configuration.stabilization == HeatTransferConfiguration::STABILIZATION::CAU;
+//	bool tangentCorrection = (matrices & Matrices::K) && step.tangentMatrixCorrection;
+//
+//	DenseMatrix Ce(2, 2), coordinates(e->nodes(), 2), J(2, 2), invJ(2, 2), dND;
+//	double detJ, temp;
+//	DenseMatrix f(e->nodes(), 1);
+//	DenseMatrix U(e->nodes(), 2);
+//	DenseMatrix m(e->nodes(), 1);
+//	DenseMatrix T(e->nodes(), 1);
+//	DenseMatrix thickness(e->nodes(), 1), K(e->nodes(), 4);
+//	DenseMatrix gpThickness(1, 1), gpK(1, 4), gpM(1, 1);
+//	DenseMatrix tangentK, BT, BTN, gpCD, CD, CDBTN, CDe;
 
 //	const MaterialConfiguration* material = _mesh->materials()[e->param(OldElement::MATERIAL)];
 //
@@ -223,226 +218,226 @@ void HeatTransfer2D::processElement(const Step &step, Matrices matrices, const O
 //		U(i, 1) = e->getProperty(Property::TRANSLATION_MOTION_Y, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp, 0) * m(i, 0);
 //		f(i, 0) = e->sumProperty(Property::HEAT_SOURCE, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp, 0) * thickness(i, 0);
 //	}
-
-	eslocal Ksize = e->nodes();
-
-	Ke.resize(0, 0);
-	Me.resize(0, 0);
-	Re.resize(0, 0);
-	fe.resize(0, 0);
-	if ((matrices & Matrices::K) || ((matrices & Matrices::R) && step.timeIntegrationConstantK != 0)) {
-		Ke.resize(Ksize, Ksize);
-		Ke = 0;
-	}
-	if ((matrices & Matrices::M) || ((matrices & Matrices::R) && step.timeIntegrationConstantM != 0)) {
-		Me.resize(Ksize, Ksize);
-		Me = 0;
-	}
-	if (matrices & Matrices::R) {
-		Re.resize(Ksize, 1);
-		Re = 0;
-	}
-	if (matrices & Matrices::f) {
-		fe.resize(Ksize, 1);
-		fe = 0;
-	}
-
-	if (tangentCorrection) {
-		tangentK.resize(Ksize, Ksize);
-	}
-
-	DenseMatrix u(1, 2), v(1, 2), re(1, e->nodes());
-	double normGradN = 0;
-
-	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
-		u.multiply(e->N()[gp], U, 1, 0);
-
-		J.multiply(e->dN()[gp], coordinates);
-		detJ = determinant2x2(J.values());
-		inverse2x2(J.values(), invJ.values(), detJ);
-
-		gpThickness.multiply(e->N()[gp], thickness);
-		gpK.multiply(e->N()[gp], K);
-		if (tangentCorrection) {
-			gpCD.multiply(e->N()[gp], CD);
-			CDe(0, 0) = gpCD(0, 0);
-			CDe(1, 1) = gpCD(0, 1);
-			CDe(0, 1) = gpCD(0, 2);
-			CDe(1, 0) = gpCD(0, 3);
-		}
-		gpM.multiply(e->N()[gp], m);
-
-		Ce(0, 0) = gpK(0, 0);
-		Ce(1, 1) = gpK(0, 1);
-		Ce(0, 1) = gpK(0, 2);
-		Ce(1, 0) = gpK(0, 3);
-
-
-		dND.multiply(invJ, e->dN()[gp]);
-
-		DenseMatrix b_e(1, e->nodes()), b_e_c(1, e->nodes());
-		b_e.multiply(u, dND, 1, 0);
-
-		if (CAU) {
-			normGradN = dND.norm();
-			if (normGradN >= 1e-12) {
-				for (size_t i = 0; i < re.columns(); i++) {
-					re(0, i) = b_e(0, i) - f(i, 0);
-				}
-				DenseMatrix ReBt(1, 2);
-				ReBt.multiply(re, dND, 1 / pow(normGradN, 2), 0, false, true);
-				for (size_t i = 0; i < ReBt.columns(); i++) {
-					v(0, i) = u(0, i) - ReBt(0, i);
-				}
-			} else {
-				v = u;
-			}
-		}
-
-
-		double norm_u_e = u.norm();
-		double h_e = 0, tau_e = 0, konst = 0;
-		double C_e = 0;
-
-		if (norm_u_e != 0) {
-			h_e = 2 * norm_u_e / b_e.norm();
-			double P_e = h_e * norm_u_e / (2 * Ce(0, 0));
-			tau_e = std::max(0.0, 1 - 1 / P_e);
-			konst = h_e * tau_e / (2 * norm_u_e);
-
-			if (CAU) {
-				DenseMatrix u_v(1, 2);
-				u_v(0, 0) = u(0, 0) - v(0, 0);
-				u_v(0, 1) = u(0, 1) - v(0, 1);
-				b_e_c.multiply(u_v, dND, 1, 0);
-				double norm_u_v = u_v.norm();
-				double h_e_c = 2 * norm_u_v / b_e_c.norm();
-				double P_e_c = h_e_c * norm_u_v / (2 * Ce.norm());
-				double tau_e_c = std::max(0.0, 1 - 1 / P_e_c);
-
-				double konst1 = re.norm() / normGradN;
-				double konst2 = tau_e * h_e != 0 ? tau_e_c * h_e_c / (tau_e * h_e) : 0;
-				if (konst1 / norm_u_e < konst2) {
-					C_e = tau_e * h_e * konst1 * (konst2 - konst1 / norm_u_e) / 2;
-				} else {
-					C_e = 0;
-				}
-			}
-		}
-
-		Ce(0, 0) += _configuration.sigma * h_e * norm_u_e;
-		Ce(1, 1) += _configuration.sigma * h_e * norm_u_e;
-
-		if (matrices & (Matrices::M | Matrices::R)) {
-			Me.multiply(e->N()[gp], e->N()[gp], detJ * gpM(0, 0) * e->weighFactor()[gp], 1, true);
-		}
-		if (matrices & (Matrices::K | Matrices::R)) {
-			if (tangentCorrection) {
-				BT.multiply(dND, T);
-				BTN.multiply(BT, e->N()[gp]);
-				CDBTN.multiply(CDe, BTN);
-				tangentK.multiply(dND, CDBTN,  detJ * e->weighFactor()[gp] * gpThickness(0, 0), 1, true);
-			}
-			Ke.multiply(dND, Ce * dND, detJ * e->weighFactor()[gp] * gpThickness(0, 0), 1, true);
-			Ke.multiply(e->N()[gp], b_e, detJ * e->weighFactor()[gp], 1, true);
-			if (konst * e->weighFactor()[gp] * detJ != 0) {
-				Ke.multiply(b_e, b_e, konst * e->weighFactor()[gp] * detJ, 1, true);
-			}
-			if (CAU) {
-				Ke.multiply(dND, dND, C_e * e->weighFactor()[gp] * detJ, 1, true);
-			}
-		}
-
-		if (matrices & Matrices::f) {
-			for (eslocal i = 0; i < Ksize; i++) {
-				fe(i, 0) += detJ * e->weighFactor()[gp] * e->N()[gp](0, i) * f(i, 0);
-				if (norm_u_e != 0) {
-					fe(i, 0) += detJ * e->weighFactor()[gp] * h_e * tau_e * b_e(0, i) * f(i, 0) / (2 * norm_u_e);
-				}
-			}
-		}
-	}
-
-	if (matrices & Matrices::R) {
-		Re.multiply(Ke, T, step.timeIntegrationConstantK, 0);
-		Re.multiply(Me, T, step.timeIntegrationConstantM, 1);
-		if (!(matrices & Matrices::K)) {
-			Ke.resize(0, 0);
-		}
-		if (!(matrices & Matrices::M)) {
-			Me.resize(0, 0);
-		}
-	}
-
-	if (tangentCorrection) {
-		Ke += tangentK;
-	}
+//
+//	eslocal Ksize = e->nodes();
+//
+//	Ke.resize(0, 0);
+//	Me.resize(0, 0);
+//	Re.resize(0, 0);
+//	fe.resize(0, 0);
+//	if ((matrices & Matrices::K) || ((matrices & Matrices::R) && step.timeIntegrationConstantK != 0)) {
+//		Ke.resize(Ksize, Ksize);
+//		Ke = 0;
+//	}
+//	if ((matrices & Matrices::M) || ((matrices & Matrices::R) && step.timeIntegrationConstantM != 0)) {
+//		Me.resize(Ksize, Ksize);
+//		Me = 0;
+//	}
+//	if (matrices & Matrices::R) {
+//		Re.resize(Ksize, 1);
+//		Re = 0;
+//	}
+//	if (matrices & Matrices::f) {
+//		fe.resize(Ksize, 1);
+//		fe = 0;
+//	}
+//
+//	if (tangentCorrection) {
+//		tangentK.resize(Ksize, Ksize);
+//	}
+//
+//	DenseMatrix u(1, 2), v(1, 2), re(1, e->nodes());
+//	double normGradN = 0;
+//
+//	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
+//		u.multiply(e->N()[gp], U, 1, 0);
+//
+//		J.multiply(e->dN()[gp], coordinates);
+//		detJ = determinant2x2(J.values());
+//		inverse2x2(J.values(), invJ.values(), detJ);
+//
+//		gpThickness.multiply(e->N()[gp], thickness);
+//		gpK.multiply(e->N()[gp], K);
+//		if (tangentCorrection) {
+//			gpCD.multiply(e->N()[gp], CD);
+//			CDe(0, 0) = gpCD(0, 0);
+//			CDe(1, 1) = gpCD(0, 1);
+//			CDe(0, 1) = gpCD(0, 2);
+//			CDe(1, 0) = gpCD(0, 3);
+//		}
+//		gpM.multiply(e->N()[gp], m);
+//
+//		Ce(0, 0) = gpK(0, 0);
+//		Ce(1, 1) = gpK(0, 1);
+//		Ce(0, 1) = gpK(0, 2);
+//		Ce(1, 0) = gpK(0, 3);
+//
+//
+//		dND.multiply(invJ, e->dN()[gp]);
+//
+//		DenseMatrix b_e(1, e->nodes()), b_e_c(1, e->nodes());
+//		b_e.multiply(u, dND, 1, 0);
+//
+//		if (CAU) {
+//			normGradN = dND.norm();
+//			if (normGradN >= 1e-12) {
+//				for (size_t i = 0; i < re.columns(); i++) {
+//					re(0, i) = b_e(0, i) - f(i, 0);
+//				}
+//				DenseMatrix ReBt(1, 2);
+//				ReBt.multiply(re, dND, 1 / pow(normGradN, 2), 0, false, true);
+//				for (size_t i = 0; i < ReBt.columns(); i++) {
+//					v(0, i) = u(0, i) - ReBt(0, i);
+//				}
+//			} else {
+//				v = u;
+//			}
+//		}
+//
+//
+//		double norm_u_e = u.norm();
+//		double h_e = 0, tau_e = 0, konst = 0;
+//		double C_e = 0;
+//
+//		if (norm_u_e != 0) {
+//			h_e = 2 * norm_u_e / b_e.norm();
+//			double P_e = h_e * norm_u_e / (2 * Ce(0, 0));
+//			tau_e = std::max(0.0, 1 - 1 / P_e);
+//			konst = h_e * tau_e / (2 * norm_u_e);
+//
+//			if (CAU) {
+//				DenseMatrix u_v(1, 2);
+//				u_v(0, 0) = u(0, 0) - v(0, 0);
+//				u_v(0, 1) = u(0, 1) - v(0, 1);
+//				b_e_c.multiply(u_v, dND, 1, 0);
+//				double norm_u_v = u_v.norm();
+//				double h_e_c = 2 * norm_u_v / b_e_c.norm();
+//				double P_e_c = h_e_c * norm_u_v / (2 * Ce.norm());
+//				double tau_e_c = std::max(0.0, 1 - 1 / P_e_c);
+//
+//				double konst1 = re.norm() / normGradN;
+//				double konst2 = tau_e * h_e != 0 ? tau_e_c * h_e_c / (tau_e * h_e) : 0;
+//				if (konst1 / norm_u_e < konst2) {
+//					C_e = tau_e * h_e * konst1 * (konst2 - konst1 / norm_u_e) / 2;
+//				} else {
+//					C_e = 0;
+//				}
+//			}
+//		}
+//
+//		Ce(0, 0) += _configuration.sigma * h_e * norm_u_e;
+//		Ce(1, 1) += _configuration.sigma * h_e * norm_u_e;
+//
+//		if (matrices & (Matrices::M | Matrices::R)) {
+//			Me.multiply(e->N()[gp], e->N()[gp], detJ * gpM(0, 0) * e->weighFactor()[gp], 1, true);
+//		}
+//		if (matrices & (Matrices::K | Matrices::R)) {
+//			if (tangentCorrection) {
+//				BT.multiply(dND, T);
+//				BTN.multiply(BT, e->N()[gp]);
+//				CDBTN.multiply(CDe, BTN);
+//				tangentK.multiply(dND, CDBTN,  detJ * e->weighFactor()[gp] * gpThickness(0, 0), 1, true);
+//			}
+//			Ke.multiply(dND, Ce * dND, detJ * e->weighFactor()[gp] * gpThickness(0, 0), 1, true);
+//			Ke.multiply(e->N()[gp], b_e, detJ * e->weighFactor()[gp], 1, true);
+//			if (konst * e->weighFactor()[gp] * detJ != 0) {
+//				Ke.multiply(b_e, b_e, konst * e->weighFactor()[gp] * detJ, 1, true);
+//			}
+//			if (CAU) {
+//				Ke.multiply(dND, dND, C_e * e->weighFactor()[gp] * detJ, 1, true);
+//			}
+//		}
+//
+//		if (matrices & Matrices::f) {
+//			for (eslocal i = 0; i < Ksize; i++) {
+//				fe(i, 0) += detJ * e->weighFactor()[gp] * e->N()[gp](0, i) * f(i, 0);
+//				if (norm_u_e != 0) {
+//					fe(i, 0) += detJ * e->weighFactor()[gp] * h_e * tau_e * b_e(0, i) * f(i, 0) / (2 * norm_u_e);
+//				}
+//			}
+//		}
+//	}
+//
+//	if (matrices & Matrices::R) {
+//		Re.multiply(Ke, T, step.timeIntegrationConstantK, 0);
+//		Re.multiply(Me, T, step.timeIntegrationConstantM, 1);
+//		if (!(matrices & Matrices::K)) {
+//			Ke.resize(0, 0);
+//		}
+//		if (!(matrices & Matrices::M)) {
+//			Me.resize(0, 0);
+//		}
+//	}
+//
+//	if (tangentCorrection) {
+//		Ke += tangentK;
+//	}
 }
 
-void HeatTransfer2D::processFace(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer2D::processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	ESINFO(ERROR) << "Advection diffusion 2D cannot process face";
 }
 
 
-void HeatTransfer2D::processEdge(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer2D::processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
-	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step) ||
-		e->hasProperty(Property::HEAT_FLOW, step.step) ||
-		e->hasProperty(Property::HEAT_FLUX, step.step))) {
-
-		Ke.resize(0, 0);
-		Me.resize(0, 0);
-		Re.resize(0, 0);
-		fe.resize(0, 0);
-		return;
-	}
-	if (!(matrices & (Matrices::K | Matrices::f))) {
-		Ke.resize(0, 0);
-		Me.resize(0, 0);
-		Re.resize(0, 0);
-		fe.resize(0, 0);
-		return;
-	}
-
-	DenseMatrix coordinates(e->nodes(), 2), dND(1, 2), q(e->nodes(), 1), htc(e->nodes(), 1), thickness(e->nodes(), 1), flow(e->nodes(), 1), emiss(e->nodes(), 1);
-	DenseMatrix gpQ(1, 1), gpHtc(1, 1), gpThickness(1, 1), gpFlow(1, 1), gpEmiss(1, 1);
-
-	double area = 1, temp;
-	eslocal Ksize = e->nodes();
-	Ke.resize(0, 0);
-	Me.resize(0, 0);
-	Re.resize(0, 0);
-	fe.resize(0, 0);
-
-	if (matrices & Matrices::f) {
-		fe.resize(Ksize, 1);
-		fe = 0;
-	}
-
-	for (size_t r = 0; r < e->regions().size(); r++) {
-		if (step.step < e->regions()[r]->settings.size() && e->regions()[r]->settings[step.step].count(Property::HEAT_FLOW)) {
-			area = e->regions()[r]->area;
-			break;
-		}
-	}
-	if (e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step)) {
-		Ke.resize(Ksize, Ksize);
-		Ke = 0;
-	}
-
-	const std::vector<DenseMatrix> &dN = e->dN();
-	const std::vector<DenseMatrix> &N = e->N();
-	const std::vector<double> &weighFactor = e->weighFactor();
-
-
-	const ConvectionConfiguration *convection = NULL;
-	for (size_t r = 0; convection == NULL && r < e->regions().size(); r++) {
-		auto regionit = _configuration.load_steps_settings.at(step.step + 1).convection.find(e->regions()[r]->name);
-		if (regionit != _configuration.load_steps_settings.at(step.step + 1).convection.end()) {
-			convection = &regionit->second;
-		}
-	}
+//	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step) ||
+//		e->hasProperty(Property::HEAT_FLOW, step.step) ||
+//		e->hasProperty(Property::HEAT_FLUX, step.step))) {
+//
+//		Ke.resize(0, 0);
+//		Me.resize(0, 0);
+//		Re.resize(0, 0);
+//		fe.resize(0, 0);
+//		return;
+//	}
+//	if (!(matrices & (Matrices::K | Matrices::f))) {
+//		Ke.resize(0, 0);
+//		Me.resize(0, 0);
+//		Re.resize(0, 0);
+//		fe.resize(0, 0);
+//		return;
+//	}
+//
+//	DenseMatrix coordinates(e->nodes(), 2), dND(1, 2), q(e->nodes(), 1), htc(e->nodes(), 1), thickness(e->nodes(), 1), flow(e->nodes(), 1), emiss(e->nodes(), 1);
+//	DenseMatrix gpQ(1, 1), gpHtc(1, 1), gpThickness(1, 1), gpFlow(1, 1), gpEmiss(1, 1);
+//
+//	double area = 1, temp;
+//	eslocal Ksize = e->nodes();
+//	Ke.resize(0, 0);
+//	Me.resize(0, 0);
+//	Re.resize(0, 0);
+//	fe.resize(0, 0);
+//
+//	if (matrices & Matrices::f) {
+//		fe.resize(Ksize, 1);
+//		fe = 0;
+//	}
+//
+//	for (size_t r = 0; r < e->regions().size(); r++) {
+//		if (step.step < e->regions()[r]->settings.size() && e->regions()[r]->settings[step.step].count(Property::HEAT_FLOW)) {
+//			area = e->regions()[r]->area;
+//			break;
+//		}
+//	}
+//	if (e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step)) {
+//		Ke.resize(Ksize, Ksize);
+//		Ke = 0;
+//	}
+//
+//	const std::vector<DenseMatrix> &dN = e->dN();
+//	const std::vector<DenseMatrix> &N = e->N();
+//	const std::vector<double> &weighFactor = e->weighFactor();
+//
+//
+//	const ConvectionConfiguration *convection = NULL;
+//	for (size_t r = 0; convection == NULL && r < e->regions().size(); r++) {
+//		auto regionit = _configuration.load_steps_settings.at(step.step + 1).convection.find(e->regions()[r]->name);
+//		if (regionit != _configuration.load_steps_settings.at(step.step + 1).convection.end()) {
+//			convection = &regionit->second;
+//		}
+//	}
 
 //	for (size_t n = 0; n < e->nodes(); n++) {
 //		coordinates(n, 0) = _mesh->coordinates()[e->node(n)].x;
@@ -468,26 +463,26 @@ void HeatTransfer2D::processEdge(const Step &step, Matrices matrices, const OldE
 //		thickness(n, 0) = e->getProperty(Property::THICKNESS, step.step, _mesh->coordinates()[e->node(n)], step.currentTime, temp, 1);
 //		q(n, 0) *= thickness(n, 0);
 //	}
-
-	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
-		dND.multiply(dN[gp], coordinates);
-		double J = dND.norm();
-		gpQ.multiply(N[gp], q);
-		if (e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step)) {
-			gpHtc.multiply(N[gp], htc);
-			gpEmiss.multiply(N[gp], emiss);
-			gpThickness.multiply(N[gp], thickness);
-
-			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpHtc(0, 0) * gpThickness(0, 0), 1, true);
-			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpEmiss(0, 0) * gpThickness(0, 0), 1, true);
-		}
-		for (eslocal i = 0; i < Ksize; i++) {
-			fe(i, 0) += J * weighFactor[gp] * N[gp](0, i % e->nodes()) * gpQ(0, 0);
-		}
-	}
+//
+//	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
+//		dND.multiply(dN[gp], coordinates);
+//		double J = dND.norm();
+//		gpQ.multiply(N[gp], q);
+//		if (e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step)) {
+//			gpHtc.multiply(N[gp], htc);
+//			gpEmiss.multiply(N[gp], emiss);
+//			gpThickness.multiply(N[gp], thickness);
+//
+//			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpHtc(0, 0) * gpThickness(0, 0), 1, true);
+//			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpEmiss(0, 0) * gpThickness(0, 0), 1, true);
+//		}
+//		for (eslocal i = 0; i < Ksize; i++) {
+//			fe(i, 0) += J * weighFactor[gp] * N[gp](0, i % e->nodes()) * gpQ(0, 0);
+//		}
+//	}
 }
 
-void HeatTransfer2D::processNode(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer2D::processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
@@ -495,12 +490,12 @@ void HeatTransfer2D::processNode(const Step &step, Matrices matrices, const OldE
 	fe.resize(0, 0);
 }
 
-void HeatTransfer2D::postProcessElement(const Step &step, const OldElement *e, std::vector<Solution*> &solution)
+void HeatTransfer2D::postProcessElement(const Step &step, eslocal eindex, std::vector<Solution*> &solution)
 {
-	DenseMatrix Ce(2, 2), coordinates, J(2, 2), invJ(2, 2), dND, temp(e->nodes(), 1);
-	double detJ, m, norm_u_e, h_e;
-	DenseMatrix thickness(e->nodes(), 1), U(e->nodes(), 2), K(e->nodes(), 4), gpK(1, 4), CD;
-	DenseMatrix u(1, 2), matFlux(2, 1), matGradient(2, 1);
+//	DenseMatrix Ce(2, 2), coordinates, J(2, 2), invJ(2, 2), dND, temp(e->nodes(), 1);
+//	double detJ, m, norm_u_e, h_e;
+//	DenseMatrix thickness(e->nodes(), 1), U(e->nodes(), 2), K(e->nodes(), 4), gpK(1, 4), CD;
+//	DenseMatrix u(1, 2), matFlux(2, 1), matGradient(2, 1);
 
 //	const MaterialConfiguration* material = _mesh->materials()[e->param(OldElement::MATERIAL)];
 //
@@ -544,54 +539,54 @@ void HeatTransfer2D::postProcessElement(const Step &step, const OldElement *e, s
 //		U(i, 0) = e->getProperty(Property::TRANSLATION_MOTION_X, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp(i, 0), 0) * m;
 //		U(i, 1) = e->getProperty(Property::TRANSLATION_MOTION_Y, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp(i, 0), 0) * m;
 //	}
-
-
-
-	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
-		u.multiply(e->N()[gp], U, 1, 0);
-
-		J.multiply(e->dN()[gp], coordinates);
-		detJ = determinant2x2(J.values());
-		inverse2x2(J.values(), invJ.values(), detJ);
-
-		gpK.multiply(e->N()[gp], K);
-
-		Ce(0, 0) = gpK(0, 0);
-		Ce(1, 1) = gpK(0, 1);
-		Ce(0, 1) = gpK(0, 2);
-		Ce(1, 0) = gpK(0, 3);
-
-		dND.multiply(invJ, e->dN()[gp]);
-
-		norm_u_e = u.norm();
-		h_e = 0;
-
-		if (norm_u_e != 0) {
-			DenseMatrix b_e(1, e->nodes());
-			b_e.multiply(u, dND, 1, 0);
-			h_e = 2 * norm_u_e / b_e.norm();
-		}
-
-		Ce(0, 0) += _configuration.sigma * h_e * norm_u_e;
-		Ce(1, 1) += _configuration.sigma * h_e * norm_u_e;
-
-		if (_propertiesConfiguration.gradient) {
-			matGradient.multiply(dND, temp, 1, 1);
-		}
-		if (_propertiesConfiguration.flux) {
-			matFlux.multiply(Ce, dND * temp, 1, 1);
-		}
-	}
-
-	if (_propertiesConfiguration.gradient) {
-		solution[offset + SolutionIndex::GRADIENT]->data[e->domains().front()].push_back(matGradient(0, 0) / e->gaussePoints());
-		solution[offset + SolutionIndex::GRADIENT]->data[e->domains().front()].push_back(matGradient(1, 0) / e->gaussePoints());
-	}
-
-	if (_propertiesConfiguration.flux) {
-		solution[offset + SolutionIndex::FLUX]->data[e->domains().front()].push_back(matFlux(0, 0) / e->gaussePoints());
-		solution[offset + SolutionIndex::FLUX]->data[e->domains().front()].push_back(matFlux(1, 0) / e->gaussePoints());
-	}
+//
+//
+//
+//	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
+//		u.multiply(e->N()[gp], U, 1, 0);
+//
+//		J.multiply(e->dN()[gp], coordinates);
+//		detJ = determinant2x2(J.values());
+//		inverse2x2(J.values(), invJ.values(), detJ);
+//
+//		gpK.multiply(e->N()[gp], K);
+//
+//		Ce(0, 0) = gpK(0, 0);
+//		Ce(1, 1) = gpK(0, 1);
+//		Ce(0, 1) = gpK(0, 2);
+//		Ce(1, 0) = gpK(0, 3);
+//
+//		dND.multiply(invJ, e->dN()[gp]);
+//
+//		norm_u_e = u.norm();
+//		h_e = 0;
+//
+//		if (norm_u_e != 0) {
+//			DenseMatrix b_e(1, e->nodes());
+//			b_e.multiply(u, dND, 1, 0);
+//			h_e = 2 * norm_u_e / b_e.norm();
+//		}
+//
+//		Ce(0, 0) += _configuration.sigma * h_e * norm_u_e;
+//		Ce(1, 1) += _configuration.sigma * h_e * norm_u_e;
+//
+//		if (_propertiesConfiguration.gradient) {
+//			matGradient.multiply(dND, temp, 1, 1);
+//		}
+//		if (_propertiesConfiguration.flux) {
+//			matFlux.multiply(Ce, dND * temp, 1, 1);
+//		}
+//	}
+//
+//	if (_propertiesConfiguration.gradient) {
+//		solution[offset + SolutionIndex::GRADIENT]->data[e->domains().front()].push_back(matGradient(0, 0) / e->gaussePoints());
+//		solution[offset + SolutionIndex::GRADIENT]->data[e->domains().front()].push_back(matGradient(1, 0) / e->gaussePoints());
+//	}
+//
+//	if (_propertiesConfiguration.flux) {
+//		solution[offset + SolutionIndex::FLUX]->data[e->domains().front()].push_back(matFlux(0, 0) / e->gaussePoints());
+//		solution[offset + SolutionIndex::FLUX]->data[e->domains().front()].push_back(matFlux(1, 0) / e->gaussePoints());
+//	}
 }
 
 void HeatTransfer2D::processSolution(const Step &step)

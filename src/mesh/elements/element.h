@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <vector>
 
+#include "../../basis/matrices/denseMatrix.h"
+
 namespace espreso {
 
 template <typename TEBoundaries, typename TEData> class serializededata;
@@ -53,7 +55,10 @@ struct Element {
 	int coarseNodes;
 	int nCommonFace;
 	int nCommonEdge;
-	// add base functions
+
+	std::vector<DenseMatrix> *N;
+	std::vector<DenseMatrix> *dN;
+	std::vector<double> *weighFactor;
 
 	serializededata<int, int> *faces;
 	serializededata<int, int> *edges;
@@ -63,10 +68,12 @@ struct Element {
 
 	Element(TYPE type, CODE code, int coarseNodes, int nCommonFace, int nCommonEdge)
 	: type(type), code(code), coarseNodes(coarseNodes), nCommonFace(nCommonFace), nCommonEdge(nCommonEdge),
+	  N(NULL), dN(NULL), weighFactor(NULL),
 	  faces(NULL), edges(NULL), facepointers(NULL), edgepointers(NULL) {}
 
 	Element()
 	: type(TYPE::POINT), code(CODE::POINT1), coarseNodes(1), nCommonFace(1), nCommonEdge(1),
+	  N(NULL), dN(NULL), weighFactor(NULL),
 	  faces(NULL), edges(NULL), facepointers(NULL), edgepointers(NULL) {}
 };
 

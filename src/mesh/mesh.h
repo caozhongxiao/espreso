@@ -15,6 +15,8 @@ struct ElementStore;
 struct RegionStore;
 class Element;
 struct EInterval;
+class MaterialConfiguration;
+struct ECFConfiguration;
 
 enum class ETYPE: int {
 	ELEMENT,
@@ -28,7 +30,8 @@ class Mesh {
 	friend class Transformation;
 public:
 	Mesh();
-	void load();
+	void load(const ECFConfiguration &configuration);
+	void update(const ECFConfiguration &configuration);
 
 	esglobal computeIntervalsOffsets(std::vector<EInterval> &intervals, std::function<eslocal(eslocal)> getsize, std::function<void(eslocal, esglobal)> setsize);
 
@@ -42,6 +45,7 @@ public:
 	BoundaryStore *_processBoundaries;
 
 	std::vector<RegionStore*> _regions;
+	std::vector<const MaterialConfiguration*> _materials;
 
 	std::vector<int> _neighbours;
 

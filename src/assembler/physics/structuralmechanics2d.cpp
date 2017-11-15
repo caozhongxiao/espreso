@@ -7,11 +7,7 @@
 #include "../instance.h"
 #include "../constraints/equalityconstraints.h"
 
-#include "../../old/mesh/settings/property.h"
-#include "../../old/mesh/elements/element.h"
-#include "../../old/mesh/structures/mesh.h"
-#include "../../old/mesh/structures/coordinates.h"
-#include "../../old/mesh/structures/elementtypes.h"
+#include "../../mesh/mesh.h"
 
 #include "../../basis/matrices/denseMatrix.h"
 #include "../../solver/specific/sparsesolvers.h"
@@ -149,7 +145,7 @@ std::vector<std::pair<ElementType, Property> > StructuralMechanics2D::properties
 }
 
 
-void StructuralMechanics2D::assembleMaterialMatrix(const Step &step, const OldElement *e, eslocal node, double temp, DenseMatrix &K) const
+void StructuralMechanics2D::assembleMaterialMatrix(const Step &step, eslocal eindex, eslocal node, double temp, DenseMatrix &K) const
 {
 //	const MaterialConfiguration* material = _mesh->materials()[e->param(OldElement::MATERIAL)];
 //	double Ex, Ey, mi;
@@ -258,7 +254,7 @@ void StructuralMechanics2D::assembleMaterialMatrix(const Step &step, const OldEl
 //	}
 }
 
-void StructuralMechanics2D::processElement(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics2D::processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 //	DenseMatrix Ce(4, 4), XY(1, 2), coordinates(e->nodes(), 2), J, invJ(2, 2), dND, B, precision, rhsT;
 //	DenseMatrix K(e->nodes(), 9), TE(e->nodes(), 2), thickness(e->nodes(), 1), inertia(e->nodes(), 2), dens(e->nodes(), 1);
@@ -425,41 +421,41 @@ void StructuralMechanics2D::processElement(const Step &step, Matrices matrices, 
 //	}
 }
 
-void StructuralMechanics2D::processFace(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics2D::processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	ESINFO(ERROR) << "Structural mechanics 2D cannot process face";
 }
 
-void StructuralMechanics2D::processEdge(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics2D::processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
-	if (!e->hasProperty(Property::PRESSURE, step.step)) {
-		Ke.resize(0, 0);
-		Me.resize(0, 0);
-		Re.resize(0, 0);
-		fe.resize(0, 0);
-		return;
-	}
-	if (!(matrices & (Matrices::K | Matrices::f))) {
-		Ke.resize(0, 0);
-		Me.resize(0, 0);
-		Re.resize(0, 0);
-		fe.resize(0, 0);
-		return;
-	}
-
-	DenseMatrix coordinates(e->nodes(), 2), dND(1, 2), P(e->nodes(), 1), normal(2, 1), matThickness(e->nodes(), 1), XY(1, 2);
-	DenseMatrix gpP(1, 1), gpQ(1, 2), gpThickness(1, 1);
-
-	eslocal Ksize = pointDOFs().size() * e->nodes();
-	Ke.resize(0, 0);
-	Me.resize(0, 0);
-	Re.resize(0, 0);
-	fe.resize(0, 0);
-
-	if (matrices & Matrices::f) {
-		fe.resize(Ksize, 1);
-		fe = 0;
-	}
+//	if (!e->hasProperty(Property::PRESSURE, step.step)) {
+//		Ke.resize(0, 0);
+//		Me.resize(0, 0);
+//		Re.resize(0, 0);
+//		fe.resize(0, 0);
+//		return;
+//	}
+//	if (!(matrices & (Matrices::K | Matrices::f))) {
+//		Ke.resize(0, 0);
+//		Me.resize(0, 0);
+//		Re.resize(0, 0);
+//		fe.resize(0, 0);
+//		return;
+//	}
+//
+//	DenseMatrix coordinates(e->nodes(), 2), dND(1, 2), P(e->nodes(), 1), normal(2, 1), matThickness(e->nodes(), 1), XY(1, 2);
+//	DenseMatrix gpP(1, 1), gpQ(1, 2), gpThickness(1, 1);
+//
+//	eslocal Ksize = pointDOFs().size() * e->nodes();
+//	Ke.resize(0, 0);
+//	Me.resize(0, 0);
+//	Re.resize(0, 0);
+//	fe.resize(0, 0);
+//
+//	if (matrices & Matrices::f) {
+//		fe.resize(Ksize, 1);
+//		fe = 0;
+//	}
 
 //	for (size_t n = 0; n < e->nodes(); n++) {
 //		coordinates(n, 0) = _mesh->coordinates()[e->node(n)].x;
@@ -500,28 +496,28 @@ void StructuralMechanics2D::processEdge(const Step &step, Matrices matrices, con
 //	}
 }
 
-void StructuralMechanics2D::processNode(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics2D::processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
-	if (
-			e->hasProperty(Property::FORCE_X, step.step) ||
-			e->hasProperty(Property::FORCE_Y, step.step)) {
-
-		Ke.resize(0, 0);
-		Me.resize(0, 0);
-		Re.resize(0, 0);
-		fe.resize(pointDOFs().size(), 0);
-
-//		fe(0, 0) = e->sumProperty(Property::FORCE_X, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
-//		fe(1, 0) = e->sumProperty(Property::FORCE_Y, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
-		return;
-	}
+//	if (
+//			e->hasProperty(Property::FORCE_X, step.step) ||
+//			e->hasProperty(Property::FORCE_Y, step.step)) {
+//
+//		Ke.resize(0, 0);
+//		Me.resize(0, 0);
+//		Re.resize(0, 0);
+//		fe.resize(pointDOFs().size(), 0);
+//
+////		fe(0, 0) = e->sumProperty(Property::FORCE_X, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
+////		fe(1, 0) = e->sumProperty(Property::FORCE_Y, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
+//		return;
+//	}
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
 	Re.resize(0, 0);
 	fe.resize(0, 0);
 }
 
-void StructuralMechanics2D::postProcessElement(const Step &step, const OldElement *e, std::vector<Solution*> &solution)
+void StructuralMechanics2D::postProcessElement(const Step &step, eslocal eindex, std::vector<Solution*> &solution)
 {
 
 }

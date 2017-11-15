@@ -1,15 +1,15 @@
 
 #include "physics.h"
 
+#include "../../basis/containers/serializededata.h"
 #include "../../basis/utilities/utils.h"
 #include "../../basis/utilities/communication.h"
 #include "../instance.h"
 #include "../step.h"
 
-#include "../../old/mesh/elements/element.h"
-#include "../../old/mesh/structures/mesh.h"
-#include "../../old/mesh/structures/coordinates.h"
-#include "../../old/mesh/structures/region.h"
+#include "../../mesh/mesh.h"
+#include "../../mesh/store/domainstore.h"
+#include "../../mesh/elements/elementstore.h"
 
 #include "../constraints/equalityconstraints.h"
 
@@ -85,11 +85,11 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain, c
 		_instance->f[domain].resize(_instance->domainDOFCount[domain]);
 	}
 
-//	for (eslocal e = _mesh->getPartition()[domain]; e < _mesh->getPartition()[domain + 1]; e++) {
-//		processElement(step, matrices, _mesh->elements()[e], Ke, Me, Re, fe, solution);
-//		fillDOFsIndices(_mesh->elements()[e], domain, DOFs);
-//		insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, step, domain, false);
-//	}
+	for (eslocal e = _mesh->_domains->domainElementBoundaries[domain]; e < _mesh->_domains->domainElementBoundaries[domain + 1]; e++) {
+		processElement(step, matrices, e, Ke, Me, Re, fe, solution);
+		fillDOFsIndices(e, domain, DOFs);
+		insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, step, domain, false);
+	}
 
 	assembleBoundaryConditions(_K, _M, step, matrices, domain, solution);
 
@@ -111,6 +111,7 @@ void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPM
 	DenseMatrix Ke, fe, Me(0, 0), Re(0, 0);
 	std::vector<eslocal> DOFs;
 
+	// TODO: MESH
 //	for (size_t i = 0; i < _mesh->faces().size(); i++) {
 //		if (_mesh->faces()[i]->domains().front() == (eslocal)domain && _mesh->faces()[i]->clusters().front() == environment->MPIrank) {
 //			processFace(step, matrices, _mesh->faces()[i], Ke, Me, Re, fe, solution);
@@ -134,41 +135,24 @@ void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPM
 //	}
 }
 
-void Physics::updateMatrix(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution)
-{
-	processElement(step, matrices, e, Ke, Me, Re, fe, solution);
-
-	DenseMatrix Ki, Mi, Ri, fi;
-	for (size_t i = 0; i < e->filledFaces(); i++) {
-		processFace(step, matrices, e->face(i), Ki, Mi, Ri, fi, solution);
-		Ke += Ki;
-		Me += Mi;
-		Re += Ri;
-		fe += fi;
-	}
-	for (size_t i = 0; i < e->filledEdges(); i++) {
-		processEdge(step, matrices, e->edge(i), Ki, Mi, Ri, fi, solution);
-		Ke += Ki;
-		Me += Mi;
-		Re += Ri;
-		fe += fi;
-	}
-}
-
 /**
  *
  * The method assumed that element matrix is composed in the following order:
  * x1, x2, x3, ..., y1, y2, y3, ..., z1, z2, z3,...
  *
  */
-void Physics::fillDOFsIndices(const OldElement *e, eslocal domain, std::vector<eslocal> &DOFs) const
+void Physics::fillDOFsIndices(eslocal eindex, eslocal domain, std::vector<eslocal> &DOFs) const
 {
-//	DOFs.resize(e->nodes() * pointDOFsOffsets().size());
-//	for (size_t dof = 0, i = 0; dof < pointDOFsOffsets().size(); dof++) {
-//		for (size_t n = 0; n < e->nodes(); n++, i++) {
-//			DOFs[i] = _mesh->nodes()[e->node(n)]->DOFIndex(domain, pointDOFsOffsets()[dof]);
-//		}
-//	}
+	// TODO: MESH: improve performance
+	auto nodes = _mesh->_elems->nodes->begin() + eindex;
+	const std::vector<EInterval> &intervals = _mesh->_domains->domainNodesIntervals[domain];
+	DOFs.resize(nodes->size());
+	for (size_t dof = 0, i = 0; dof < 1; dof++) {
+		for (auto n = nodes->begin(); n != nodes->end(); n++, i++) {
+			auto it = std::lower_bound(intervals.begin(), intervals.end(), *n, [] (const EInterval &interval, eslocal node) { return interval.end < node; });
+			DOFs[i] = 1 * (it->domainOffset + *n - it->clusterOffset);
+		}
+	}
 }
 
 void Physics::insertElementToDomain(

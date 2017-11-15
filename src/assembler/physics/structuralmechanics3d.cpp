@@ -7,11 +7,7 @@
 #include "../instance.h"
 #include "../constraints/equalityconstraints.h"
 
-#include "../../old/mesh/settings/property.h"
-#include "../../old/mesh/elements/element.h"
-#include "../../old/mesh/structures/mesh.h"
-#include "../../old/mesh/structures/coordinates.h"
-#include "../../old/mesh/structures/elementtypes.h"
+#include "../../mesh/mesh.h"
 
 #include "../../basis/matrices/denseMatrix.h"
 #include "../../solver/specific/sparsesolvers.h"
@@ -181,7 +177,7 @@ std::vector<std::pair<ElementType, Property> > StructuralMechanics3D::properties
 }
 
 
-void StructuralMechanics3D::assembleMaterialMatrix(const Step &step, const OldElement *e, eslocal node, double temp, DenseMatrix &K) const
+void StructuralMechanics3D::assembleMaterialMatrix(const Step &step, eslocal eindex, eslocal node, double temp, DenseMatrix &K) const
 {
 //	const MaterialConfiguration* material = _mesh->materials()[e->param(OldElement::MATERIAL)];
 //	double Ex, Ey, Ez, miXY, miXZ, miYZ, Gx, Gy, Gz;
@@ -344,12 +340,12 @@ void StructuralMechanics3D::assembleMaterialMatrix(const Step &step, const OldEl
 //	}
 }
 
-void StructuralMechanics3D::processElement(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics3D::processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
-	DenseMatrix Ce(6, 6), coordinates(e->nodes(), 3), J, invJ(3, 3), dND, B, precision, rhsT;
-	DenseMatrix K(e->nodes(), 36), TE(e->nodes(), 3), inertia(e->nodes(), 3), dens(e->nodes(), 1);
-	DenseMatrix gpK(e->nodes(), 36), gpTE(1, 3), gpInertia(1, 3), gpDens(1, 1);
-	double detJ, temp, initTemp, CP = 1;
+//	DenseMatrix Ce(6, 6), coordinates(e->nodes(), 3), J, invJ(3, 3), dND, B, precision, rhsT;
+//	DenseMatrix K(e->nodes(), 36), TE(e->nodes(), 3), inertia(e->nodes(), 3), dens(e->nodes(), 1);
+//	DenseMatrix gpK(e->nodes(), 36), gpTE(1, 3), gpInertia(1, 3), gpDens(1, 1);
+//	double detJ, temp, initTemp, CP = 1;
 
 //	const MaterialConfiguration* material = _mesh->materials()[e->param(OldElement::MATERIAL)];
 //
@@ -378,117 +374,117 @@ void StructuralMechanics3D::processElement(const Step &step, Matrices matrices, 
 //		}
 //		assembleMaterialMatrix(step, e, i, temp, K);
 //	}
-
-	eslocal Ksize = pointDOFs().size() * e->nodes();
-
-	Ke.resize(0, 0);
-	Me.resize(0, 0);
-	Re.resize(0, 0);
-	fe.resize(0, 0);
-	if (matrices & (Matrices::K | Matrices::R)) {
-		Ke.resize(Ksize, Ksize);
-		Ke = 0;
-	}
-	if (matrices & Matrices::M) {
-		Me.resize(Ksize, Ksize);
-		Me = 0;
-	}
-	if (matrices & Matrices::R) {
-		Re.resize(Ksize, 1);
-		Re = 0;
-	}
-	if (matrices & Matrices::f) {
-		fe.resize(Ksize, 1);
-		fe = 0;
-	}
-
-	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
-		J.multiply(e->dN()[gp], coordinates);
-		detJ = determinant3x3(J.values());
-		inverse3x3(J.values(), invJ.values(), detJ);
-
-		gpK.multiply(e->N()[gp], K);
-		dND.multiply(invJ, e->dN()[gp]);
-		gpDens.multiply(e->N()[gp], dens);
-
-		if (matrices & Matrices::f) {
-			gpTE.multiply(e->N()[gp], TE);
-			gpInertia.multiply(e->N()[gp], inertia);
-		}
-
-		if (matrices & Matrices::M) {
-			Me.multiply(e->N()[gp], e->N()[gp], gpDens(0, 0) * detJ * e->weighFactor()[gp] * CP, 1, true);
-		}
-
-		Ce.resize(6, 6);
-		size_t k = 0;
-		for (size_t i = 0; i < 6; i++) {
-			Ce(i, i) = gpK(0, k++);
-		}
-		for (size_t i = 0; i < 6; i++) {
-			for (size_t j = i + 1; j < 6; j++) {
-				Ce(i, j) = gpK(0, k++);
-			}
-		}
-		for (size_t i = 0; i < 6; i++) {
-			for (size_t j = 0; j < i; j++) {
-				Ce(i, j) = gpK(0, k++);
-			}
-		}
-
-		B.resize(Ce.rows(), Ksize);
-		distribute6x3(B.values(), dND.values(), dND.rows(), dND.columns());
-
-		if (matrices & Matrices::K) {
-			Ke.multiply(B, Ce * B, detJ * e->weighFactor()[gp], 1, true);
-		}
-
-		if (matrices & Matrices::f) {
-			precision.resize(Ce.rows(), 1);
-			precision(0, 0) = gpTE(0, 0);
-			precision(1, 0) = gpTE(0, 1);
-			precision(2, 0) = gpTE(0, 2);
-			precision(3, 0) = precision(4, 0) = precision(5, 0) = 0;
-
-			rhsT.multiply(B, Ce * precision, detJ * e->weighFactor()[gp], 0, true, false);
-			for (eslocal i = 0; i < Ksize; i++) {
-				fe(i, 0) += gpDens(0, 0) * detJ * e->weighFactor()[gp] * e->N()[gp](0, i % e->nodes()) * gpInertia(0, i / e->nodes());
-				fe(i, 0) += rhsT(i, 0);
-			}
-		}
-	}
+//
+//	eslocal Ksize = pointDOFs().size() * e->nodes();
+//
+//	Ke.resize(0, 0);
+//	Me.resize(0, 0);
+//	Re.resize(0, 0);
+//	fe.resize(0, 0);
+//	if (matrices & (Matrices::K | Matrices::R)) {
+//		Ke.resize(Ksize, Ksize);
+//		Ke = 0;
+//	}
+//	if (matrices & Matrices::M) {
+//		Me.resize(Ksize, Ksize);
+//		Me = 0;
+//	}
+//	if (matrices & Matrices::R) {
+//		Re.resize(Ksize, 1);
+//		Re = 0;
+//	}
+//	if (matrices & Matrices::f) {
+//		fe.resize(Ksize, 1);
+//		fe = 0;
+//	}
+//
+//	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
+//		J.multiply(e->dN()[gp], coordinates);
+//		detJ = determinant3x3(J.values());
+//		inverse3x3(J.values(), invJ.values(), detJ);
+//
+//		gpK.multiply(e->N()[gp], K);
+//		dND.multiply(invJ, e->dN()[gp]);
+//		gpDens.multiply(e->N()[gp], dens);
+//
+//		if (matrices & Matrices::f) {
+//			gpTE.multiply(e->N()[gp], TE);
+//			gpInertia.multiply(e->N()[gp], inertia);
+//		}
+//
+//		if (matrices & Matrices::M) {
+//			Me.multiply(e->N()[gp], e->N()[gp], gpDens(0, 0) * detJ * e->weighFactor()[gp] * CP, 1, true);
+//		}
+//
+//		Ce.resize(6, 6);
+//		size_t k = 0;
+//		for (size_t i = 0; i < 6; i++) {
+//			Ce(i, i) = gpK(0, k++);
+//		}
+//		for (size_t i = 0; i < 6; i++) {
+//			for (size_t j = i + 1; j < 6; j++) {
+//				Ce(i, j) = gpK(0, k++);
+//			}
+//		}
+//		for (size_t i = 0; i < 6; i++) {
+//			for (size_t j = 0; j < i; j++) {
+//				Ce(i, j) = gpK(0, k++);
+//			}
+//		}
+//
+//		B.resize(Ce.rows(), Ksize);
+//		distribute6x3(B.values(), dND.values(), dND.rows(), dND.columns());
+//
+//		if (matrices & Matrices::K) {
+//			Ke.multiply(B, Ce * B, detJ * e->weighFactor()[gp], 1, true);
+//		}
+//
+//		if (matrices & Matrices::f) {
+//			precision.resize(Ce.rows(), 1);
+//			precision(0, 0) = gpTE(0, 0);
+//			precision(1, 0) = gpTE(0, 1);
+//			precision(2, 0) = gpTE(0, 2);
+//			precision(3, 0) = precision(4, 0) = precision(5, 0) = 0;
+//
+//			rhsT.multiply(B, Ce * precision, detJ * e->weighFactor()[gp], 0, true, false);
+//			for (eslocal i = 0; i < Ksize; i++) {
+//				fe(i, 0) += gpDens(0, 0) * detJ * e->weighFactor()[gp] * e->N()[gp](0, i % e->nodes()) * gpInertia(0, i / e->nodes());
+//				fe(i, 0) += rhsT(i, 0);
+//			}
+//		}
+//	}
 }
 
-void StructuralMechanics3D::processFace(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics3D::processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
-	if (!e->hasProperty(Property::PRESSURE, step.step)) {
-		Ke.resize(0, 0);
-		Me.resize(0, 0);
-		Re.resize(0, 0);
-		fe.resize(0, 0);
-		return;
-	}
-	if (!(matrices & (Matrices::K | Matrices::f))) {
-		Ke.resize(0, 0);
-		Me.resize(0, 0);
-		Re.resize(0, 0);
-		fe.resize(0, 0);
-		return;
-	}
-
-	DenseMatrix coordinates(e->nodes(), 3), dND(1, 3), P(e->nodes(), 1), normal(1, 3);
-	DenseMatrix gpP(1, 1), gpQ(1, 3);
-
-	eslocal Ksize = pointDOFs().size() * e->nodes();
-	Ke.resize(0, 0);
-	Me.resize(0, 0);
-	Re.resize(0, 0);
-	fe.resize(0, 0);
-
-	if (matrices & Matrices::f) {
-		fe.resize(Ksize, 1);
-		fe = 0;
-	}
+//	if (!e->hasProperty(Property::PRESSURE, step.step)) {
+//		Ke.resize(0, 0);
+//		Me.resize(0, 0);
+//		Re.resize(0, 0);
+//		fe.resize(0, 0);
+//		return;
+//	}
+//	if (!(matrices & (Matrices::K | Matrices::f))) {
+//		Ke.resize(0, 0);
+//		Me.resize(0, 0);
+//		Re.resize(0, 0);
+//		fe.resize(0, 0);
+//		return;
+//	}
+//
+//	DenseMatrix coordinates(e->nodes(), 3), dND(1, 3), P(e->nodes(), 1), normal(1, 3);
+//	DenseMatrix gpP(1, 1), gpQ(1, 3);
+//
+//	eslocal Ksize = pointDOFs().size() * e->nodes();
+//	Ke.resize(0, 0);
+//	Me.resize(0, 0);
+//	Re.resize(0, 0);
+//	fe.resize(0, 0);
+//
+//	if (matrices & Matrices::f) {
+//		fe.resize(Ksize, 1);
+//		fe = 0;
+//	}
 
 //	for (size_t n = 0; n < e->nodes(); n++) {
 //		coordinates(n, 0) = _mesh->coordinates()[e->node(n)].x;
@@ -517,7 +513,7 @@ void StructuralMechanics3D::processFace(const Step &step, Matrices matrices, con
 //	}
 }
 
-void StructuralMechanics3D::processEdge(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics3D::processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
@@ -525,30 +521,30 @@ void StructuralMechanics3D::processEdge(const Step &step, Matrices matrices, con
 	fe.resize(0, 0);
 }
 
-void StructuralMechanics3D::processNode(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics3D::processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
-	if (
-			e->hasProperty(Property::FORCE_X, step.step) ||
-			e->hasProperty(Property::FORCE_Y, step.step) ||
-			e->hasProperty(Property::FORCE_Z, step.step)) {
-
-		Ke.resize(0, 0);
-		Me.resize(0, 0);
-		Re.resize(0, 0);
-		fe.resize(pointDOFs().size(), 0);
-
-//		fe(0, 0) = e->sumProperty(Property::FORCE_X, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
-//		fe(1, 0) = e->sumProperty(Property::FORCE_Y, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
-//		fe(2, 0) = e->sumProperty(Property::FORCE_Z, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
-		return;
-	}
+//	if (
+//			e->hasProperty(Property::FORCE_X, step.step) ||
+//			e->hasProperty(Property::FORCE_Y, step.step) ||
+//			e->hasProperty(Property::FORCE_Z, step.step)) {
+//
+//		Ke.resize(0, 0);
+//		Me.resize(0, 0);
+//		Re.resize(0, 0);
+//		fe.resize(pointDOFs().size(), 0);
+//
+////		fe(0, 0) = e->sumProperty(Property::FORCE_X, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
+////		fe(1, 0) = e->sumProperty(Property::FORCE_Y, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
+////		fe(2, 0) = e->sumProperty(Property::FORCE_Z, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
+//		return;
+//	}
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
 	Re.resize(0, 0);
 	fe.resize(0, 0);
 }
 
-void StructuralMechanics3D::postProcessElement(const Step &step, const OldElement *e, std::vector<Solution*> &solution)
+void StructuralMechanics3D::postProcessElement(const Step &step, eslocal eindex, std::vector<Solution*> &solution)
 {
 
 }

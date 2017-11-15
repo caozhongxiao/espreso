@@ -82,6 +82,7 @@ void Assembler::updateMatrices(const Step &step, Matrices matrices)
 			instance.B1clustersMap.clear();
 			for (size_t d = 0; d < instance.domains; d++) {
 				instance.B1[d].type = 'G';
+				instance.B1[d].cols = instance.domainDOFCount[d];
 				instance.B1c[d].clear();
 				instance.LB[d].clear();
 				instance.B1duplicity[d].clear();

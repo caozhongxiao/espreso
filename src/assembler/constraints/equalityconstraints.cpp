@@ -26,6 +26,11 @@ using namespace espreso;
 EqualityConstraints::EqualityConstraints(Instance &instance, Mesh &mesh, const std::vector<RegionStore*> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling)
 : _instance(instance), _mesh(mesh)
 {
+	for (eslocal d = 0; d < _mesh._domains->size; d++) {
+		_instance.B1[d].cols = _instance.domainDOFCount[d];
+		_instance.B0[d].cols = _instance.domainDOFCount[d];
+	}
+
 	update(dirichlet, DOFs, withRedundantMultiplier, withScaling);
 }
 
@@ -41,12 +46,12 @@ void EqualityConstraints::update(const std::vector<RegionStore*> &dirichlet, siz
 		std::vector<eslocal> uniqueNodes;
 		std::vector<double> values;
 		for (size_t r = 0; r < dirichlet.size(); r++) {
-			uniqueNodes.insert(uniqueNodes.end(),
-					dirichlet[r]->nodes->datatarray().begin() + dirichlet[r]->nodesIntervals[i].begin,
-					dirichlet[r]->nodes->datatarray().begin() + dirichlet[r]->nodesIntervals[i].end);
-			for (auto n = dirichlet[r]->nodes->datatarray().begin(); n != dirichlet[r]->nodes->datatarray().end(); ++n) {
+			auto begin = dirichlet[r]->nodes->datatarray().begin() + dirichlet[r]->nodesIntervals[i].begin;
+			auto end = dirichlet[r]->nodes->datatarray().begin() + dirichlet[r]->nodesIntervals[i].end;
+			uniqueNodes.insert(uniqueNodes.end(), begin, end);
+			for (auto n = begin; n != end; ++n) {
 				// TODO: MESH
-				values.push_back(375.15);
+				values.push_back(r * 375.15);
 			}
 		}
 		std::vector<eslocal> permutation(uniqueNodes.size());

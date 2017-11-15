@@ -16,10 +16,10 @@ struct StructuralMechanics2D: public StructuralMechanics, public Physics2D
 	void prepare();
 	void analyticRegularization(size_t domain, bool ortogonalCluster);
 
-	void processElement(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
-	void processFace(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
-	void processEdge(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
-	void processNode(const Step &step, Matrices matrices, const OldElement *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
+	void processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
+	void processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
+	void processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
+	void processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
 	void processSolution(const Step &step);
 
 	const std::vector<Property>& pointDOFs() const
@@ -34,8 +34,8 @@ struct StructuralMechanics2D: public StructuralMechanics, public Physics2D
 	}
 
 protected:
-	void assembleMaterialMatrix(const Step &step, const OldElement *e, eslocal node, double temp, DenseMatrix &K) const;
-	void postProcessElement(const Step &step, const OldElement *e, std::vector<Solution*> &solution);
+	void assembleMaterialMatrix(const Step &step, eslocal eindex, eslocal node, double temp, DenseMatrix &K) const;
+	void postProcessElement(const Step &step, eslocal eindex, std::vector<Solution*> &solution);
 };
 
 }

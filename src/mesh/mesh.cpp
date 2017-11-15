@@ -33,7 +33,9 @@
 #include "../basis/utilities/communication.h"
 #include "../basis/utilities/parser.h"
 
+#include "../config/ecf/ecf.h"
 #include "../config/ecf/environment.h"
+#include "../config/ecf/physics/physics.h"
 
 #include "../old/mesh/structures/mesh.h"
 #include "../old/mesh/structures/coordinates.h"
@@ -59,7 +61,7 @@ Mesh::Mesh()
 
 }
 
-void Mesh::load()
+void Mesh::load(const ECFConfiguration &configuration)
 {
 	_neighbours = mesh->neighbours();
 	size_t threads = environment->OMP_NUM_THREADS;
@@ -232,19 +234,31 @@ void Mesh::load()
 		}
 	}
 
+	update(configuration);
+
+
 //	Transformation::reclusterize(*this);
-	Transformation::partitiate(*this, 3, TFlags::SEPARATE::MATERIALS | TFlags::SEPARATE::ETYPES);
-	Transformation::computeProcessBoundaries(*this);
-	Transformation::computeDomainsBoundaries(*this); //, TFlags::ELEVEL::FACE | TFlags::ELEVEL::NODE);
+	Transformation::partitiate(*this, 2, TFlags::SEPARATE::MATERIALS | TFlags::SEPARATE::ETYPES);
+//	Transformation::computeProcessBoundaries(*this);
+//	Transformation::computeDomainsBoundaries(*this); //, TFlags::ELEVEL::FACE | TFlags::ELEVEL::NODE);
 
 //	NewOutput::VTKLegacy("nodes", _nodes, _domains);
 //
-	NewOutput::VTKLegacy("processBoundaries", _processBoundaries, _nodes, false);
-	NewOutput::VTKLegacy("domainsBoundaries", _domainsBoundaries, _nodes, true);
+//	NewOutput::VTKLegacy("processBoundaries", _processBoundaries, _nodes, false);
+//	NewOutput::VTKLegacy("domainsBoundaries", _domainsBoundaries, _nodes, true);
 //
 //	for (size_t r = 0; r < _regions.size(); ++r) {
 //		NewOutput::VTKLegacy(_regions[r]->name, _nodes, _regions[r]);
 //	}
+}
+
+
+void Mesh::update(const ECFConfiguration &configuration)
+{
+	_materials.clear();
+	for (auto mat = configuration.getPhysics()->materials.begin(); mat != configuration.getPhysics()->materials.end(); ++mat) {
+		_materials.push_back(&mat->second);
+	}
 }
 
 RegionStore* Mesh::region(const std::string &name)
