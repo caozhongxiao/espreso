@@ -1,6 +1,7 @@
 
-#include "elementstore.h"
-#include "element.h"
+#include "../store/elementstore.h"
+
+#include "../elements/element.h"
 #include "../../config/ecf/environment.h"
 #include "../../basis/containers/serializededata.h"
 #include "../../basis/logging/logging.h"

@@ -3,7 +3,6 @@
 
 #include "../mesh.h"
 #include "../elements/element.h"
-#include "../elements/elementstore.h"
 #include "../store/domainstore.h"
 #include "../store/boundarystore.h"
 
@@ -17,6 +16,7 @@
 #include <iostream>
 
 #include "../../basis/utilities/communication.h"
+#include "../store/elementstore.h"
 
 using namespace espreso;
 

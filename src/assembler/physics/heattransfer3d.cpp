@@ -8,7 +8,6 @@
 
 #include "../../mesh/mesh.h"
 #include "../../mesh/elements/element.h"
-#include "../../mesh/elements/elementstore.h"
 #include "../../mesh/store/domainstore.h"
 
 #include "../../basis/containers/serializededata.h"
@@ -16,6 +15,7 @@
 #include "../../solver/generic/SparseMatrix.h"
 #include "heattransfer3d.h"
 #include "../../basis/evaluators/evaluator.h"
+#include "../../mesh/store/elementstore.h"
 
 using namespace espreso;
 

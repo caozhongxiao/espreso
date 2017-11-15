@@ -2,7 +2,6 @@
 #include "transformations.h"
 
 #include "../mesh.h"
-#include "../elements/elementstore.h"
 #include "../store/domainstore.h"
 #include "../store/boundarystore.h"
 #include "../store/regionstore.h"
@@ -17,6 +16,7 @@
 #include <numeric>
 #include <algorithm>
 #include "../../basis/containers/point.h"
+#include "../store/elementstore.h"
 
 using namespace espreso;
 

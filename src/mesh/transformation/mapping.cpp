@@ -3,7 +3,6 @@
 
 #include "../mesh.h"
 #include "../elements/element.h"
-#include "../elements/elementstore.h"
 #include "../store/domainstore.h"
 
 #include "../../basis/containers/serializededata.h"
@@ -14,6 +13,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include "../store/elementstore.h"
 
 using namespace espreso;
 
@@ -47,12 +47,6 @@ void Transformation::addLinkFromTo(Mesh &mesh, TFlags::ELEVEL from, TFlags::ELEV
 	switch (to) {
 	case TFlags::ELEVEL::ELEMENT:
 		storeto = mesh._elems;
-		break;
-	case TFlags::ELEVEL::FACE:
-		storeto = mesh._faces;
-		break;
-	case TFlags::ELEVEL::EDGE:
-		storeto = mesh._edges;
 		break;
 	default:
 		break;

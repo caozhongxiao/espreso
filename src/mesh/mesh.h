@@ -38,7 +38,7 @@ public:
 	RegionStore* region(const std::string &name);
 
 // protected:
-	ElementStore *_nodes, *_edges, *_faces, *_elems, *_halo;
+	ElementStore *_nodes, *_elems, *_halo;
 
 	DomainStore *_domains;
 	BoundaryStore *_domainsBoundaries;

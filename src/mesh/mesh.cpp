@@ -2,7 +2,6 @@
 #include "mesh.h"
 #include "output.h"
 
-#include "elements/elementstore.h"
 #include "store/domainstore.h"
 #include "store/boundarystore.h"
 #include "store/regionstore.h"
@@ -48,12 +47,13 @@
 
 #include "../basis/containers/serializededata.h"
 #include "../basis/containers/tarray.h"
+#include "store/elementstore.h"
 
 using namespace espreso;
 
 
 Mesh::Mesh()
-: _nodes(new ElementStore(_eclasses)), _edges(new ElementStore(_eclasses)), _faces(new ElementStore(_eclasses)), _elems(new ElementStore(_eclasses)), _halo(new ElementStore(_eclasses)),
+: _nodes(new ElementStore(_eclasses)), _elems(new ElementStore(_eclasses)), _halo(new ElementStore(_eclasses)),
   _domains(new DomainStore), _domainsBoundaries(new BoundaryStore()), _processBoundaries(new BoundaryStore()),
   _eclasses(environment->OMP_NUM_THREADS),
   mesh(new OldMesh())
@@ -170,8 +170,6 @@ void Mesh::load(const ECFConfiguration &configuration)
 		store->nodes = new serializededata<eslocal, eslocal>(std::move(tarray<eslocal>(boundaries)), std::move(tarray<eslocal>(indices)));
 	};
 
-	loadElements(_edges, mesh->edges());
-	loadElements(_faces, mesh->faces());
 	loadElements(_elems, mesh->elements());
 
 	{

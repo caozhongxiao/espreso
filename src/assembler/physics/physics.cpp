@@ -9,8 +9,6 @@
 
 #include "../../mesh/mesh.h"
 #include "../../mesh/store/domainstore.h"
-#include "../../mesh/elements/elementstore.h"
-
 #include "../constraints/equalityconstraints.h"
 
 #include "../../solver/generic/SparseMatrix.h"
@@ -19,6 +17,7 @@
 #include "../../basis/matrices/sparseCSRMatrix.h"
 #include "../../config/ecf/solver/feti.h"
 #include "../../config/ecf/physics/physics.h"
+#include "../../mesh/store/elementstore.h"
 
 
 using namespace espreso;

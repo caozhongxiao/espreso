@@ -1,6 +1,6 @@
 
-#ifndef SRC_MESH_ELEMENTS_ELEMENTSTORE_H_
-#define SRC_MESH_ELEMENTS_ELEMENTSTORE_H_
+#ifndef SRC_MESH_STORE_ELEMENTSTORE_H_
+#define SRC_MESH_STORE_ELEMENTSTORE_H_
 
 #include <cstddef>
 #include <string>
@@ -52,4 +52,4 @@ private:
 
 
 
-#endif /* SRC_MESH_ELEMENTS_ELEMENTSTORE_H_ */
+#endif /* SRC_MESH_STORE_ELEMENTSTORE_H_ */
