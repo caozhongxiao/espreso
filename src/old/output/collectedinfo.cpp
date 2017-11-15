@@ -6,7 +6,6 @@
 #include "../basis/utilities/utils.h"
 #include "../basis/utilities/communication.h"
 
-#include "../basis/point/point.h"
 #include "../old/mesh/elements/element.h"
 #include "../old/mesh/settings/property.h"
 #include "../old/mesh/structures/coordinates.h"
@@ -18,6 +17,7 @@
 #include "../assembler/step.h"
 
 #include <numeric>
+#include "../../basis/containers/point.h"
 
 using namespace espreso;
 

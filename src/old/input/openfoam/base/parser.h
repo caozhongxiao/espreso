@@ -5,7 +5,7 @@
 #include "../../loader.h"
 #include <vector>
 
-#include "../../../../basis/point/point.h"
+#include "../../../../basis/containers/point.h"
 
 namespace espreso {
 namespace input {

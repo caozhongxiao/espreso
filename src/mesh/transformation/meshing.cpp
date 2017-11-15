@@ -7,7 +7,6 @@
 #include "../store/boundarystore.h"
 #include "../store/regionstore.h"
 
-#include "../../basis/point/point.h"
 #include "../../basis/containers/serializededata.h"
 #include "../../basis/logging/logging.h"
 #include "../../basis/utilities/utils.h"
@@ -17,6 +16,7 @@
 
 #include <numeric>
 #include <algorithm>
+#include "../../basis/containers/point.h"
 
 using namespace espreso;
 

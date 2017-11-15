@@ -6,9 +6,9 @@
 
 #include <numeric>
 
+#include "../../basis/containers/point.h"
 #include "../config/ecf/output.h"
 
-#include "../basis/point/point.h"
 #include "../old/mesh/elements/element.h"
 #include "../old/mesh/elements/point/node.h"
 #include "../old/mesh/elements/line/line2.h"

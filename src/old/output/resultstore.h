@@ -5,7 +5,7 @@
 #include <string>
 #include <map>
 
-#include "../basis/point/point.h"
+#include "../../basis/containers/point.h"
 #include "../assembler/step.h"
 #include "store.h"
 #include "meshinfo.h"

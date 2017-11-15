@@ -3,7 +3,6 @@
 #include "element.h"
 #include "../../config/ecf/environment.h"
 #include "../../basis/containers/serializededata.h"
-#include "../../basis/point/point.h"
 #include "../../basis/logging/logging.h"
 #include "../../basis/utilities/communication.h"
 #include "../../basis/utilities/utils.h"
@@ -11,6 +10,7 @@
 #include <fstream>
 #include <algorithm>
 #include <numeric>
+#include "../../basis/containers/point.h"
 
 using namespace espreso;
 

@@ -25,7 +25,7 @@ void Block<TElement>::points(std::vector<Point> &points)
 						Generator::precision * (block.start.x + x * step.x),
 						Generator::precision * (block.start.y + y * step.y),
 						Generator::precision * (block.start.z + z * step.z)};
-				points.push_back(Point(block.projection.x(p), block.projection.y(p), block.projection.z(p), block.rotation.x(p), block.rotation.y(p), block.rotation.z(p)));
+				points.push_back(Point(block.projection.x(p), block.projection.y(p), block.projection.z(p)));
 			}
 		}
 	}

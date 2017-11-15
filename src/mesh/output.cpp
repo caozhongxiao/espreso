@@ -8,12 +8,12 @@
 #include "store/domainstore.h"
 #include "store/regionstore.h"
 
-#include "../basis/point/point.h"
 #include "../basis/containers/serializededata.h"
 
 #include "../config/ecf/environment.h"
 
 #include <fstream>
+#include "../basis/containers/point.h"
 
 using namespace espreso;
 

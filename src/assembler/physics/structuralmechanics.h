@@ -2,8 +2,8 @@
 #ifndef SRC_ASSEMBLER_PHYSICS_STRUCTURALMECHANICS_H_
 #define SRC_ASSEMBLER_PHYSICS_STRUCTURALMECHANICS_H_
 
+#include "../../basis/containers/point.h"
 #include "physics.h"
-#include "../../basis/point/point.h"
 
 namespace espreso {
 

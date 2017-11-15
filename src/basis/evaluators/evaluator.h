@@ -2,12 +2,12 @@
 #ifndef SRC_BASIS_EVALUATORS_EVALUATOR_H_
 #define SRC_BASIS_EVALUATORS_EVALUATOR_H_
 
-#include "../point/point.h"
 #include "../expression/expression.h"
 
 #include "omp.h"
 
 #include <algorithm>
+#include "../containers/point.h"
 
 namespace espreso {
 

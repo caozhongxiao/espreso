@@ -2,7 +2,7 @@
 #ifndef SRC_OUTPUT_COLLECTEDINFO_H_
 #define SRC_OUTPUT_COLLECTEDINFO_H_
 
-#include "../basis/point/point.h"
+#include "../../basis/containers/point.h"
 #include "meshinfo.h"
 
 namespace espreso {

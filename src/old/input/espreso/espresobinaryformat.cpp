@@ -25,6 +25,7 @@
 #include "espresobinaryformat.h"
 
 #include "../../../basis/evaluators/evaluator.h"
+#include "../../../basis/logging/logging.h"
 #include "../../../config/reader/reader.h"
 #include "../../../config/ecf/environment.h"
 #include "../../../config/ecf/input/input.h"
@@ -84,7 +85,7 @@ void ESPRESOBinaryFormat::points(Coordinates &coordinates)
 	coordinates.reserve(size);
 	for (eslocal i = 0; i < size; i++) {
 		is.read(reinterpret_cast<char *>(&index), sizeof(esglobal));
-		is.read(reinterpret_cast<char *>(&point), Point::size() * sizeof(double));
+		is.read(reinterpret_cast<char *>(&point), sizeof(Point));
 		coordinates.add(point, i, index);
 	}
 }
