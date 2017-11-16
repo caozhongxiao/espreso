@@ -1,30 +1,19 @@
 
 #include "mesh.h"
-#include "output.h"
 
+#include "store/elementstore.h"
+#include "store/nodestore.h"
+#include "store/elementsregionstore.h"
+#include "store/boundaryregionstore.h"
+
+#include "preprocessing/meshpreprocessing.h"
+
+
+// OLD
 #include "store/domainstore.h"
 #include "store/boundarystore.h"
-#include "store/regionstore.h"
 
-
-#include "elements/point/point1.h"
-
-#include "elements/line/line2.h"
-#include "elements/line/line3.h"
-
-#include "elements/plane/triangle3.h"
-#include "elements/plane/triangle6.h"
-#include "elements/plane/square4.h"
-#include "elements/plane/square8.h"
-
-#include "elements/volume/tetrahedron4.h"
-#include "elements/volume/tetrahedron10.h"
-#include "elements/volume/pyramid5.h"
-#include "elements/volume/pyramid13.h"
-#include "elements/volume/prisma6.h"
-#include "elements/volume/prisma15.h"
-#include "elements/volume/hexahedron8.h"
-#include "elements/volume/hexahedron20.h"
+#include "elements/elements.h"
 
 #include "transformation/transformations.h"
 
@@ -47,13 +36,17 @@
 
 #include "../basis/containers/serializededata.h"
 #include "../basis/containers/tarray.h"
-#include "store/elementstore.h"
+#include "../output/visualization/output.h"
+
 
 using namespace espreso;
 
 
 Mesh::Mesh()
-: _nodes(new ElementStore(_eclasses)), _elems(new ElementStore(_eclasses)), _halo(new ElementStore(_eclasses)),
+: elements(new ElementStore(_eclasses)), nodes(new NodeStore()),
+  halo(new ElementStore(_eclasses)),
+  preprocessing(new MeshPreprocessing(this)),
+
   _domains(new DomainStore), _domainsBoundaries(new BoundaryStore()), _processBoundaries(new BoundaryStore()),
   _eclasses(environment->OMP_NUM_THREADS),
   mesh(new OldMesh())
@@ -63,7 +56,7 @@ Mesh::Mesh()
 
 void Mesh::load(const ECFConfiguration &configuration)
 {
-	_neighbours = mesh->neighbours();
+	neighbours = mesh->neighbours();
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	#pragma omp parallel for
@@ -99,7 +92,7 @@ void Mesh::load(const ECFConfiguration &configuration)
 	{
 		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, mesh->nodes().size());
 		std::vector<std::vector<Point> > coordinates(threads);
-		std::vector<std::vector<esglobal> > IDs(threads);
+		std::vector<std::vector<eslocal> > IDs(threads);
 		std::vector<std::vector<eslocal> > ranksBoundaries(threads);
 		std::vector<std::vector<int> > ranksData(threads);
 
@@ -119,24 +112,30 @@ void Mesh::load(const ECFConfiguration &configuration)
 
 		Esutils::threadDistributionToFullDistribution(ranksBoundaries);
 
-		_nodes->size = mesh->nodes().size();
-		_nodes->distribution = distribution;
-		_nodes->coordinates = new serializededata<eslocal, Point>(1, coordinates);
-		_nodes->IDs = new serializededata<eslocal, esglobal>(1, IDs);
-		_nodes->ranks = new serializededata<eslocal, int>(ranksBoundaries, ranksData);
+		nodes->size = mesh->nodes().size();
+		nodes->distribution = distribution;
+
+		nodes->IDs = new serializededata<eslocal, esglobal>(1, IDs);
+
+		nodes->coordinates = new serializededata<eslocal, Point>(1, coordinates);
+		nodes->ranks = new serializededata<eslocal, int>(ranksBoundaries, ranksData);
 	}
 
-	auto loadElements = [&] (ElementStore *store, const std::vector<OldElement*> &elements) {
-		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, elements.size());
+	{
+		size_t esize = mesh->elements().size();
+		Communication::exscan(esize);
+		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, mesh->elements().size());
 		std::vector<std::vector<eslocal> > boundaries(threads), indices(threads);
 		std::vector<std::vector<Element*> > epointers(threads);
+		std::vector<std::vector<eslocal> > eIDs(threads);
+		std::vector<std::vector<int> > body(threads), material(threads);
 
 		boundaries.front().push_back(0);
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			size_t offset = 0;
 			for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
-				switch (elements[e]->vtkCode()) {
+				switch (mesh->elements()[e]->vtkCode()) {
 				case  3: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::LINE2)]); break;
 				case  4: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::LINE3)]); break;
 
@@ -155,39 +154,28 @@ void Mesh::load(const ECFConfiguration &configuration)
 				case 26: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::PRISMA15)]); break;
 				case 27: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::PYRAMID13)]); break;
 				}
-				boundaries[t].push_back(offset = offset + elements[e]->nodes());
-				for (size_t n = 0; n < elements[e]->nodes(); n++) {
-					indices[t].push_back(elements[e]->node(n));
+				boundaries[t].push_back(offset = offset + mesh->elements()[e]->nodes());
+				for (size_t n = 0; n < mesh->elements()[e]->nodes(); n++) {
+					indices[t].push_back(mesh->elements()[e]->node(n));
 				}
-			}
-		}
 
-		Esutils::threadDistributionToFullDistribution(boundaries);
-
-		store->size = elements.size();
-		store->distribution = distribution;
-		store->epointers = new serializededata<eslocal, Element*>(1, std::move(tarray<Element*>(epointers)));
-		store->nodes = new serializededata<eslocal, eslocal>(std::move(tarray<eslocal>(boundaries)), std::move(tarray<eslocal>(indices)));
-	};
-
-	loadElements(_elems, mesh->elements());
-
-	{
-		size_t esize = mesh->elements().size();
-		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, mesh->elements().size());
-		Communication::exscan(esize);
-		std::vector<std::vector<esglobal> > eIDs(threads);
-		std::vector<std::vector<int> > body(threads), material(threads);
-		for (size_t t = 0; t < threads; t++) {
-			for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 				eIDs[t].push_back(e + esize);
 				body[t].push_back(mesh->elements()[e]->param(OldElement::Params::BODY));
 				material[t].push_back(mesh->elements()[e]->param(OldElement::Params::MATERIAL));
 			}
 		}
-		_elems->IDs = new serializededata<eslocal, esglobal>(1, eIDs);
-		_elems->body = new serializededata<eslocal, esglobal>(1, body);
-		_elems->material = new serializededata<eslocal, esglobal>(1, material);
+
+		Esutils::threadDistributionToFullDistribution(boundaries);
+
+		elements->size = mesh->elements().size();
+		elements->distribution = distribution;
+
+		elements->IDs = new serializededata<eslocal, esglobal>(1, eIDs);
+		elements->nodes = new serializededata<eslocal, eslocal>(std::move(tarray<eslocal>(boundaries)), std::move(tarray<eslocal>(indices)));
+
+		elements->body = new serializededata<eslocal, esglobal>(1, body);
+		elements->material = new serializededata<eslocal, esglobal>(1, material);
+		elements->epointers = new serializededata<eslocal, Element*>(1, std::move(tarray<Element*>(epointers)));
 	}
 
 	for (size_t r = 2; r < mesh->regions().size(); r++) {
@@ -225,9 +213,9 @@ void Mesh::load(const ECFConfiguration &configuration)
 			std::cout << "region: " << mesh->regions()[r]->name << " of edges\n";
 			break;
 		case ElementType::NODES:
-			_regions.push_back(new RegionStore(mesh->regions()[r]->name, TFlags::ELEVEL::NODE));
-			_regions.back()->nodes = new serializededata<eslocal, eslocal>(1, rdata);
-			std::sort(_regions.back()->nodes->datatarray().begin(), _regions.back()->nodes->datatarray().end());
+			boundaryRegions.push_back(new BoundaryRegionStore(mesh->regions()[r]->name));
+			boundaryRegions.back()->nodes = new serializededata<eslocal, eslocal>(1, rdata);
+			std::sort(boundaryRegions.back()->nodes->datatarray().begin(), boundaryRegions.back()->nodes->datatarray().end());
 			break;
 		}
 	}
@@ -236,7 +224,7 @@ void Mesh::load(const ECFConfiguration &configuration)
 
 
 //	Transformation::reclusterize(*this);
-	Transformation::partitiate(*this, 2, TFlags::SEPARATE::MATERIALS | TFlags::SEPARATE::ETYPES);
+//	Transformation::partitiate(*this, 2, TFlags::SEPARATE::MATERIALS | TFlags::SEPARATE::ETYPES);
 //	Transformation::computeProcessBoundaries(*this);
 //	Transformation::computeDomainsBoundaries(*this); //, TFlags::ELEVEL::FACE | TFlags::ELEVEL::NODE);
 
@@ -259,28 +247,28 @@ void Mesh::update(const ECFConfiguration &configuration)
 	}
 }
 
-RegionStore* Mesh::region(const std::string &name)
-{
-	for (size_t r = 0; r < _regions.size(); r++) {
-		if (StringCompare::caseInsensitiveEq(_regions[r]->name, name)) {
-			return _regions[r];
-		}
-	}
-	ESINFO(ERROR) << "Request for unknown region '" << name << "'";
-	return NULL;
-}
+//RegionStore* Mesh::region(const std::string &name)
+//{
+//	for (size_t r = 0; r < _regions.size(); r++) {
+//		if (StringCompare::caseInsensitiveEq(_regions[r]->name, name)) {
+//			return _regions[r];
+//		}
+//	}
+//	ESINFO(ERROR) << "Request for unknown region '" << name << "'";
+//	return NULL;
+//}
 
 esglobal Mesh::computeIntervalsOffsets(std::vector<EInterval> &intervals, std::function<eslocal(eslocal)> getsize, std::function<void(eslocal, esglobal)> setsize)
 {
 	std::vector<eslocal> domainProcDistribution = _domains->gatherProcsDistribution();
 	auto n2i = [&] (size_t n) {
-		return std::lower_bound(_neighbours.begin(), _neighbours.end(), n) - _neighbours.begin();
+		return std::lower_bound(neighbours.begin(), neighbours.end(), n) - neighbours.begin();
 	};
 	auto d2p = [&] (eslocal d) {
 		return std::lower_bound(domainProcDistribution.begin(), domainProcDistribution.end(), d + 1) - domainProcDistribution.begin() - 1;
 	};
 
-	std::vector<std::vector<esglobal> > sGlobalOffset(_neighbours.size()), rGlobalOffset(_neighbours.size());
+	std::vector<std::vector<esglobal> > sGlobalOffset(neighbours.size()), rGlobalOffset(neighbours.size());
 	esglobal offset = 0;
 
 	for (size_t i = 0; i < intervals.size(); ++i) {
@@ -307,11 +295,11 @@ esglobal Mesh::computeIntervalsOffsets(std::vector<EInterval> &intervals, std::f
 		}
 	}
 
-	if (!Communication::receiveLowerKnownSize(sGlobalOffset, rGlobalOffset, _neighbours)) {
+	if (!Communication::receiveLowerKnownSize(sGlobalOffset, rGlobalOffset, neighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: compute nodes global offset.";
 	}
 
-	std::vector<int> rDataOffset(_neighbours.size());
+	std::vector<int> rDataOffset(neighbours.size());
 	for (size_t i = 0; i < intervals.size(); ++i) {
 		eslocal first = intervals[i].neighbors[0] == -1 ? intervals[i].neighbors[1] : intervals[i].neighbors[0];
 		if (_domains->offset <= first && first < _domains->offset + _domains->size) {

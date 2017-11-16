@@ -84,7 +84,7 @@ void Statistic::compute(const Step &step)
 void Statistic::computeNodes()
 {
 	auto n2i = [ & ] (size_t neighbour) {
-		return std::lower_bound(_mesh._neighbours.begin(), _mesh._neighbours.end(), neighbour) - _mesh._neighbours.begin();
+		return std::lower_bound(_mesh.neighbours.begin(), _mesh.neighbours.end(), neighbour) - _mesh.neighbours.begin();
 	};
 
 	// TODO: MESH
@@ -113,11 +113,11 @@ void Statistic::computeNodes()
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 
 	// thread x neighbour x data
-	std::vector<std::vector<std::vector<double> > > sBuffer(threads, std::vector<std::vector<double> >(_mesh._neighbours.size()));
-	std::vector<std::vector<std::vector<esglobal> > > rIDs(threads, std::vector<std::vector<esglobal> >(_mesh._neighbours.size()));
-	std::vector<std::vector<size_t> > rOffset(_mesh._neighbours.size(), std::vector<size_t>(threads));
+	std::vector<std::vector<std::vector<double> > > sBuffer(threads, std::vector<std::vector<double> >(_mesh.neighbours.size()));
+	std::vector<std::vector<std::vector<esglobal> > > rIDs(threads, std::vector<std::vector<esglobal> >(_mesh.neighbours.size()));
+	std::vector<std::vector<size_t> > rOffset(_mesh.neighbours.size(), std::vector<size_t>(threads));
 
-	std::vector<std::vector<double> > rBuffer(_mesh._neighbours.size());
+	std::vector<std::vector<double> > rBuffer(_mesh.neighbours.size());
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -152,7 +152,7 @@ void Statistic::computeNodes()
 	}
 
 	#pragma omp parallel for
-	for (size_t n = 0; n < _mesh._neighbours.size(); n++) {
+	for (size_t n = 0; n < _mesh.neighbours.size(); n++) {
 		for (size_t t = 1; t < threads; t++) {
 			sBuffer[0][n].insert(sBuffer[0][n].end(), sBuffer[t][n].begin(), sBuffer[t][n].end());
 			rIDs[0][n].insert(rIDs[0][n].end(), rIDs[t][n].begin(), rIDs[t][n].end());
@@ -160,16 +160,16 @@ void Statistic::computeNodes()
 		Esutils::sizesToOffsets(rOffset[n]);
 	}
 
-	if (!Communication::receiveUpperUnknownSize(sBuffer[0], rBuffer, _mesh._neighbours)) {
+	if (!Communication::receiveUpperUnknownSize(sBuffer[0], rBuffer, _mesh.neighbours)) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error in computing statistic.";
 	}
 
 	#pragma omp parallel for
-	for (size_t n = 0; n < _mesh._neighbours.size(); n++) {
+	for (size_t n = 0; n < _mesh.neighbours.size(); n++) {
 		std::vector<eslocal> permutation(rIDs[0][n].size());
 		std::iota(permutation.begin(), permutation.end(), 0);
 		std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) {
-			return elements[rIDs[0][n][i]]->clusterOffset(_mesh._neighbours[n]) < elements[rIDs[0][n][j]]->clusterOffset(_mesh._neighbours[n]);
+			return elements[rIDs[0][n][i]]->clusterOffset(_mesh.neighbours[n]) < elements[rIDs[0][n][j]]->clusterOffset(_mesh.neighbours[n]);
 		});
 
 		std::vector<double> permuted;

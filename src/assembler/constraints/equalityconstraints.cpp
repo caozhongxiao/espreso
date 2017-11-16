@@ -13,7 +13,8 @@
 #include "../../solver/generic/SparseMatrix.h"
 
 #include "../../mesh/mesh.h"
-#include "../../mesh/store/regionstore.h"
+#include "../../mesh/store/boundaryregionstore.h"
+
 #include "../../mesh/store/domainstore.h"
 #include "../../config/ecf/environment.h"
 
@@ -23,7 +24,7 @@
 
 using namespace espreso;
 
-EqualityConstraints::EqualityConstraints(Instance &instance, Mesh &mesh, const std::vector<RegionStore*> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling)
+EqualityConstraints::EqualityConstraints(Instance &instance, Mesh &mesh, const std::vector<BoundaryRegionStore*> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling)
 : _instance(instance), _mesh(mesh)
 {
 	for (eslocal d = 0; d < _mesh._domains->size; d++) {
@@ -34,7 +35,7 @@ EqualityConstraints::EqualityConstraints(Instance &instance, Mesh &mesh, const s
 	update(dirichlet, DOFs, withRedundantMultiplier, withScaling);
 }
 
-void EqualityConstraints::update(const std::vector<RegionStore*> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling)
+void EqualityConstraints::update(const std::vector<BoundaryRegionStore*> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling)
 {
 	_dirichlet = dirichlet;
 	_DOFs = DOFs;

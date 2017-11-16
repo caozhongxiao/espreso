@@ -7,24 +7,24 @@
 
 using namespace espreso;
 
-esglobal ParMETIS::call(
+eslocal ParMETIS::call(
 			ParMETIS::METHOD method,
-			esglobal *edistribution,
-			esglobal *eframes, esglobal *eneighbors,
-			esglobal dimensions, double *coordinates,
-			esglobal verticesWeightCount, esglobal *verticesWeights, esglobal *edgeWeights,
-			esglobal *partition)
+			eslocal *edistribution,
+			eslocal *eframes, eslocal *eneighbors,
+			eslocal dimensions, double *coordinates,
+			eslocal verticesWeightCount, eslocal *verticesWeights, eslocal *edgeWeights,
+			eslocal *partition)
 {
 	verticesWeightCount = std::max(1, verticesWeightCount);
 
-	esglobal wgtflag = 0;
-	esglobal numflag = 0;
-	esglobal parts = environment->MPIsize;
+	eslocal wgtflag = 0;
+	eslocal numflag = 0;
+	eslocal parts = environment->MPIsize;
 	std::vector<double> partFraction(verticesWeightCount * parts, 1.0 / (verticesWeightCount * parts));
 	std::vector<double> unbalanceTolerance(verticesWeightCount, 1.05);
-	esglobal options[4] = { 0, 0, 0, PARMETIS_PSR_UNCOUPLED };
+	eslocal options[4] = { 0, 0, 0, PARMETIS_PSR_UNCOUPLED };
 	double itr = 1e6;
-	esglobal edgecut;
+	eslocal edgecut;
 	MPI_Comm communication = environment->MPICommunicator;
 
 	if (verticesWeights != NULL) {

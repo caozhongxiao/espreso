@@ -12,13 +12,13 @@ struct ParMETIS {
 		ParMETIS_V3_AdaptiveRepart
 	};
 
-	static esglobal call(
+	static eslocal call(
 			METHOD method,
-			esglobal *edistribution,
-			esglobal *eframes, esglobal *eneighbors,
-			esglobal dimensions, double *coordinates,
-			esglobal verticesWeightCount, esglobal *verticesWeights, esglobal *edgeWeights,
-			esglobal *partition);
+			eslocal *edistribution,
+			eslocal *eframes, eslocal *eneighbors,
+			eslocal dimensions, double *coordinates,
+			eslocal verticesWeightCount, eslocal *verticesWeights, eslocal *edgeWeights,
+			eslocal *partition);
 };
 
 }

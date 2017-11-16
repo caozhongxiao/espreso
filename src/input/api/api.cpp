@@ -208,7 +208,7 @@ void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const esl
 	}
 	std::sort(_mesh._g2l->begin(), _mesh._g2l->end());
 
-	_mesh._neighbours = neighbours;
+	_mesh.neighbours = neighbours;
 
 	std::vector<std::vector<std::pair<esglobal, double> > > sDirichlet(neighbours.size());
 	std::vector<std::vector<std::pair<esglobal, double> > > rDirichlet(neighbours.size());

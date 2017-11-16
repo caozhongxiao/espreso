@@ -2,15 +2,12 @@
 #ifndef SRC_MESH_ELEMENTS_ELEMENT_H_
 #define SRC_MESH_ELEMENTS_ELEMENT_H_
 
-#include <cstddef>
 #include <vector>
-
-#include "../../basis/matrices/denseMatrix.h"
 
 namespace espreso {
 
+class DenseMatrix;
 template <typename TEBoundaries, typename TEData> class serializededata;
-class ElementStore;
 
 struct Element {
 

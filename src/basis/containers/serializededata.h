@@ -237,7 +237,7 @@ public:
 		}
 	}
 
-	void permute(const std::vector<eslocal> &permutation, const std::vector<size_t> *distribution = NULL)
+	void permute(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution)
 	{
 		if (_eboundaries.size()) {
 			permuteNonUniformData(permutation, distribution);
@@ -288,17 +288,13 @@ private:
 		}
 	}
 
-	void permuteUniformData(const std::vector<eslocal> &permutation, const std::vector<size_t> *distribution = NULL)
+	void permuteUniformData(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution)
 	{
 		std::vector<std::vector<TEData> > pdata(threads());
-		std::vector<size_t> newdistribution = _edata.distribution();
-		if (distribution != NULL) {
-			newdistribution = *distribution;
-		}
 
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads(); t++) {
-			for (size_t i = newdistribution[t]; i < newdistribution[t + 1]; ++i) {
+			for (size_t i = distribution[t]; i < distribution[t + 1]; ++i) {
 				pdata[t].push_back(_edata.data()[permutation[i]]);
 			}
 		}
@@ -307,24 +303,21 @@ private:
 		inititerators(_iterator.front()->end() - _iterator.front()->begin());
 	}
 
-	void permuteNonUniformData(const std::vector<eslocal> &permutation, const std::vector<size_t> *distribution = NULL)
+	void permuteNonUniformData(const std::vector<eslocal> &permutation, const std::vector<size_t> &providedDistribution)
 	{
 		std::vector<std::vector<TEBoundaries> > pboundaries(threads());
 		std::vector<std::vector<TEData> > pdata(threads());
-		std::vector<size_t> newdistribution = _eboundaries.distribution();
-		if (distribution != NULL) {
-			newdistribution = *distribution;
-			if (_eboundaries.distribution().back() > newdistribution.back()) {
-				for (size_t t = 1; t <= threads(); t++) {
-					newdistribution[t] += 1;
-				}
+		std::vector<size_t> distribution = providedDistribution;
+		if (_eboundaries.distribution().back() > distribution.back()) {
+			for (size_t t = 1; t <= threads(); t++) {
+				distribution[t] += 1;
 			}
 		}
 
 		pboundaries.front().push_back(0);
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads(); t++) {
-			for (size_t e = (t == 0 ? 1 : newdistribution[t]); e < newdistribution[t + 1]; ++e) {
+			for (size_t e = (t == 0 ? 1 : distribution[t]); e < distribution[t + 1]; ++e) {
 				pboundaries[t].push_back(_eboundaries.data()[permutation[e - 1] + 1] - _eboundaries.data()[permutation[e - 1]]);
 				pdata[t].insert(
 						pdata[t].end(),

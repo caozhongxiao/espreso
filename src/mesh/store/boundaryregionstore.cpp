@@ -1,27 +1,25 @@
 
-#include "regionstore.h"
+#include "boundaryregionstore.h"
+
 #include "../../basis/containers/serializededata.h"
 
 using namespace espreso;
 
-RegionStore::RegionStore(const std::string &name, TFlags::ELEVEL etype)
+BoundaryRegionStore::BoundaryRegionStore(const std::string &name)
 : name(name),
-  etype(etype),
 
-  elems(NULL),
   faces(NULL),
   edges(NULL),
   nodes(NULL),
 
-  facepointers(),
-  edgepointers()
+  facepointers(NULL),
+  edgepointers(NULL)
 {
 
 }
 
-RegionStore::~RegionStore()
+BoundaryRegionStore::~BoundaryRegionStore()
 {
-	if (elems == NULL) { delete elems; }
 	if (faces == NULL) { delete faces; }
 	if (edges == NULL) { delete edges; }
 	if (nodes == NULL) { delete nodes; }
@@ -29,3 +27,4 @@ RegionStore::~RegionStore()
 	if (facepointers == NULL) { delete facepointers; }
 	if (edgepointers == NULL) { delete edgepointers; }
 }
+

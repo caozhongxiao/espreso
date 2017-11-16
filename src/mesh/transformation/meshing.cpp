@@ -82,7 +82,7 @@ void Transformation::reindexNodes(Mesh &mesh)
 	std::vector<esglobal> myIDs(threads);
 
 	auto n2i = [&] (int neighbor) {
-		return std::lower_bound(mesh._neighbours.begin(), mesh._neighbours.end(), neighbor) - mesh._neighbours.begin();
+		return std::lower_bound(mesh.neighbours.begin(), mesh.neighbours.end(), neighbor) - mesh.neighbours.begin();
 	};
 
 	#pragma omp parallel for
@@ -101,8 +101,8 @@ void Transformation::reindexNodes(Mesh &mesh)
 		ESINFO(ERROR) << "ESPRESO internal error: exscan IDOffsets.";
 	}
 
-	std::vector<std::vector<std::vector<std::pair<esglobal, esglobal> > > > sIDMap(threads, std::vector<std::vector<std::pair<esglobal, esglobal> > >(mesh._neighbours.size()));
-	std::vector<std::vector<std::pair<esglobal, esglobal> > > IDMap(mesh._neighbours.size());
+	std::vector<std::vector<std::vector<std::pair<esglobal, esglobal> > > > sIDMap(threads, std::vector<std::vector<std::pair<esglobal, esglobal> > >(mesh.neighbours.size()));
+	std::vector<std::vector<std::pair<esglobal, esglobal> > > IDMap(mesh.neighbours.size());
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -128,13 +128,13 @@ void Transformation::reindexNodes(Mesh &mesh)
 
 	Esutils::mergeThreadedUniqueData(sIDMap);
 
-	for (size_t n = 0; n < mesh._neighbours.size(); n++) {
-		if (mesh._neighbours[n] < environment->MPIrank) {
+	for (size_t n = 0; n < mesh.neighbours.size(); n++) {
+		if (mesh.neighbours[n] < environment->MPIrank) {
 			IDMap[n].resize(sIDMap[0][n].size());
 		}
 	}
 
-	if (!Communication::receiveLowerKnownSize(sIDMap[0], IDMap, mesh._neighbours)) {
+	if (!Communication::receiveLowerKnownSize(sIDMap[0], IDMap, mesh.neighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: receive IDs from lower ranks.";
 	}
 

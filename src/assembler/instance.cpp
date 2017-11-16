@@ -12,7 +12,7 @@ using namespace espreso;
 Instance::Instance(const Mesh &mesh)
 : domains(mesh._domains->size),
   domainDOFCount(_domainDOFCount),
-  neighbours(mesh._neighbours),
+  neighbours(mesh.neighbours),
   clustersMap(mesh._domains->clusters),
   origK(_origK), K(_K),
   origKN1(_origKN1), origKN2(_origKN2), origRegMat(_origRegMat),

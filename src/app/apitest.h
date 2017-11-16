@@ -89,7 +89,7 @@ public:
 
 	void fillNeighbours(std::vector<FETI4IMPIInt> &neighbours)
 	{
-		neighbours = factory._mesh->_neighbours;
+		neighbours = factory._mesh->neighbours;
 	}
 
 protected:

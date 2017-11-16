@@ -1,39 +1,30 @@
 
-#include "../store/elementstore.h"
+#include "store.h"
+#include "elementstore.h"
 
 #include "../elements/element.h"
-#include "../../config/ecf/environment.h"
-#include "../../basis/containers/serializededata.h"
-#include "../../basis/logging/logging.h"
-#include "../../basis/utilities/communication.h"
-#include "../../basis/utilities/utils.h"
 
-#include <fstream>
-#include <algorithm>
-#include <numeric>
-#include "../../basis/containers/point.h"
+#include "../../basis/containers/serializededata.h"
+#include "../../config/ecf/environment.h"
 
 using namespace espreso;
 
 ElementStore::ElementStore(std::vector<Element*> &eclasses)
 : size(0),
   distribution({0, 0}),
-  IDs(NULL),
 
-  elems(NULL),
-  faces(NULL),
-  edges(NULL),
+  IDs(NULL),
   nodes(NULL),
 
-  coordinates(NULL),
   body(NULL),
   material(NULL),
   epointers(NULL),
-  domains(NULL),
-  ranks(NULL),
 
   dual(NULL),
   decomposedDual(NULL),
+
+  firstDomain(0),
+  ndomains(1),
 
   _eclasses(eclasses)
 {
@@ -43,96 +34,40 @@ ElementStore::ElementStore(std::vector<Element*> &eclasses)
 ElementStore::~ElementStore()
 {
 	if (IDs == NULL) { delete IDs; }
-
-	if (elems == NULL) { delete elems; }
-	if (faces == NULL) { delete faces; }
-	if (edges == NULL) { delete edges; }
 	if (nodes == NULL) { delete nodes; }
 
-	if (coordinates == NULL) { delete coordinates; }
 	if (body == NULL) { delete body; }
 	if (material == NULL) { delete material; }
 	if (epointers == NULL) { delete epointers; }
-	if (domains == NULL) { delete domains; }
-	if (ranks == NULL) { delete ranks; }
 
 	if (dual == NULL) { delete dual; }
 	if (decomposedDual == NULL) { delete decomposedDual; }
-}
-
-template <typename TBoundaries, typename TData>
-static void storedata(std::ofstream &os, const std::string &head, const serializededata<TBoundaries, TData> *data)
-{
-	if (data == NULL) {
-		return;
-	}
-
-	os << head << "\n";
-	for (auto elem = data->begin(); elem != data->end(); ++elem) {
-		os << "[ ";
-		for (auto i = elem->begin(); i != elem->end(); ++i) {
-			os << *i << " ";
-		}
-		os << "] ";
-	}
-	os << "\n";
 }
 
 void ElementStore::store(const std::string &file)
 {
 	std::ofstream os(file + std::to_string(environment->MPIrank) + ".txt");
 
-	storedata(os, "IDs", IDs);
+	Store::storedata(os, "IDs", IDs);
 
-	storedata(os, "elements", elems);
-	storedata(os, "faces", faces);
-	storedata(os, "edges", edges);
-	storedata(os, "nodes", nodes);
+	Store::storedata(os, "nodes", nodes);
 
-	storedata(os, "coordinates", coordinates);
-	storedata(os, "body", body);
-	storedata(os, "material", material);
-	storedata(os, "domains", domains);
-	storedata(os, "ranks", ranks);
+	Store::storedata(os, "body", body);
+	Store::storedata(os, "material", material);
+	Store::storedata(os, "epointers", epointers);
 
-	storedata(os, "dual", dual);
-	storedata(os, "decomposedDual", decomposedDual);
-
-	if (epointers != NULL) {
-		os << "epointers\n";
-		for (auto elem = epointers->begin(); elem != epointers->end(); ++elem) {
-			os << "[ " << static_cast<int>(elem->front()->code) << "] ";
-		}
-		os << "\n";
-	}
+	Store::storedata(os, "dual", dual);
+	Store::storedata(os, "decomposedDual", decomposedDual);
 }
 
-void ElementStore::sort()
+void ElementStore::permute(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution)
 {
-	if (IDs == NULL) {
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: sort element store that has no IDs.";
-	}
-	std::vector<eslocal> permutation(IDs->datatarray().size());
-	std::iota(permutation.begin(), permutation.end(), 0);
-	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return IDs->datatarray().data()[i] < IDs->datatarray().data()[j]; });
-
-	permute(permutation);
-}
-
-void ElementStore::permute(const std::vector<eslocal> &permutation, const std::vector<size_t> *distribution)
-{
-	if (distribution != NULL) {
-		this->distribution = *distribution;
-	}
+	this->distribution = distribution;
 
 	if (IDs != NULL) { IDs->permute(permutation, distribution); }
 
-	if (elems != NULL) { elems->permute(permutation, distribution); }
-	if (faces != NULL) { faces->permute(permutation, distribution); }
-	if (edges != NULL) { edges->permute(permutation, distribution); }
 	if (nodes != NULL) { nodes->permute(permutation, distribution); }
 
-	if (coordinates != NULL) { coordinates->permute(permutation, distribution); }
 	if (body != NULL) { body->permute(permutation, distribution); }
 	if (material != NULL) { material->permute(permutation, distribution); }
 
@@ -159,22 +94,11 @@ void ElementStore::permute(const std::vector<eslocal> &permutation, const std::v
 		}
 	}
 
-	if (domains != NULL) { domains->permute(permutation, distribution); }
-	if (ranks != NULL) { ranks->permute(permutation, distribution); }
-
 	if (dual != NULL) { dual->permute(permutation, distribution); }
 	if (decomposedDual != NULL) { decomposedDual->permute(permutation, distribution); }
 }
 
-std::vector<esglobal> ElementStore::gatherElementDistrubution()
+std::vector<eslocal> ElementStore::gatherElementProcDistribution()
 {
-	std::vector<esglobal> result(environment->MPIsize + 1);
-	esglobal esize = size;
-	Communication::exscan(esize);
-
-	MPI_Allgather(&esize, sizeof(esglobal), MPI_BYTE, result.data(), sizeof(esglobal), MPI_BYTE, environment->MPICommunicator);
-	result.back() = esize + size;
-	MPI_Bcast(&result.back(), sizeof(esglobal), MPI_BYTE, environment->MPIsize - 1, environment->MPICommunicator);
-
-	return result;
+	return Store::gatherDistribution(size);
 }

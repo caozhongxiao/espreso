@@ -7,6 +7,10 @@
 #include "../constraints/equalityconstraints.h"
 
 #include "../../mesh/mesh.h"
+#include "../../mesh/store/elementstore.h"
+#include "../../mesh/store/nodestore.h"
+#include "../../mesh/store/boundaryregionstore.h"
+
 #include "../../mesh/elements/element.h"
 #include "../../mesh/store/domainstore.h"
 
@@ -15,16 +19,16 @@
 #include "../../solver/generic/SparseMatrix.h"
 #include "heattransfer3d.h"
 #include "../../basis/evaluators/evaluator.h"
-#include "../../mesh/store/elementstore.h"
+
 
 using namespace espreso;
 
 HeatTransfer3D::HeatTransfer3D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
 : Physics("HEAT TRANSFER 3D", mesh, instance, &configuration), HeatTransfer(configuration, propertiesConfiguration)
 {
-	std::vector<RegionStore*> dirichlet;
+	std::vector<BoundaryRegionStore*> dirichlet;
 	for (auto it = configuration.load_steps_settings.at(1).temperature.begin(); it != configuration.load_steps_settings.at(1).temperature.end(); ++it) {
-		dirichlet.push_back(mesh->region(it->first));
+		// dirichlet.push_back(mesh->region(it->first));
 	}
 
 	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, dirichlet, 1, configuration.load_steps_settings.at(1).feti.redundant_lagrange, configuration.load_steps_settings.at(1).feti.scaling);
@@ -226,8 +230,8 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, eslocal eindex, es
 
 void HeatTransfer3D::processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
-	auto nodes = _mesh->_elems->nodes->cbegin() + eindex;
-	auto epointer = _mesh->_elems->epointers->datatarray()[eindex];
+	auto nodes = _mesh->elements->nodes->cbegin() + eindex;
+	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
 	eslocal domain = std::lower_bound(_mesh->_domains->domainElementBoundaries.begin(), _mesh->_domains->domainElementBoundaries.end(), eindex + 1) - _mesh->_domains->domainElementBoundaries.begin() - 1;
 	const std::vector<EInterval> &intervals = _mesh->_domains->domainNodesIntervals[domain];
 
@@ -248,7 +252,7 @@ void HeatTransfer3D::processElement(const Step &step, Matrices matrices, eslocal
 	DenseMatrix gpK(1, 9), gpM(1, 1);
 	DenseMatrix tangentK, BT, BTN, gpCD, CD, CDBTN, CDe;
 
-	const MaterialConfiguration* material = _mesh->_materials[_mesh->_elems->material->datatarray()[eindex]];
+	const MaterialConfiguration* material = _mesh->_materials[_mesh->elements->material->datatarray()[eindex]];
 
 	const MaterialBaseConfiguration *phase1, *phase2;
 	if (material->phase_change) {
@@ -264,7 +268,7 @@ void HeatTransfer3D::processElement(const Step &step, Matrices matrices, eslocal
 	for (size_t n = 0; n < nodes->size(); n++) {
 		auto it = std::lower_bound(intervals.begin(), intervals.end(), nodes->at(n), [] (const EInterval &interval, eslocal node) { return interval.end < node; });
 		temp = solution[offset + SolutionIndex::TEMPERATURE]->get(0, domain, it->domainOffset + nodes->at(n) - it->clusterOffset);
-		const Point &p = _mesh->_nodes->coordinates->datatarray()[nodes->at(n)];
+		const Point &p = _mesh->nodes->coordinates->datatarray()[nodes->at(n)];
 		T(n, 0) = temp;
 		coordinates(n, 0) = p.x;
 		coordinates(n, 1) = p.y;

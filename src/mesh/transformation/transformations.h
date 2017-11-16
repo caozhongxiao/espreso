@@ -20,12 +20,12 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 
 struct Transformation {
 
-	static void addLinkFromTo(Mesh &mesh, TFlags::ELEVEL from, TFlags::ELEVEL to);
+	// static void addLinkFromTo(Mesh &mesh, TFlags::ELEVEL from, TFlags::ELEVEL to);
 
-	static void exchangeHaloElements(Mesh &mesh);
+	// static void exchangeHaloElements(Mesh &mesh);
 
-	static void computeDual(Mesh &mesh);
-	static void computeDecomposedDual(Mesh &mesh, TFlags::SEPARATE separate);
+//	static void computeDual(Mesh &mesh);
+//	static void computeDecomposedDual(Mesh &mesh, TFlags::SEPARATE separate);
 
 	static void computeProcessBoundaries(Mesh &mesh);
 	static void computeDomainsBoundaries(Mesh &mesh);
@@ -33,8 +33,8 @@ struct Transformation {
 	static void computeElementCenters(Mesh &mesh);
 	static void computeDomainsCenters(Mesh &mesh);
 
-	static void reclusterize(Mesh &mesh);
-	static void partitiate(Mesh &mesh, esglobal parts, TFlags::SEPARATE separate);
+//	static void reclusterize(Mesh &mesh);
+//	static void partitiate(Mesh &mesh, esglobal parts, TFlags::SEPARATE separate);
 
 	static void reindexNodes(Mesh &mesh);
 	static void arrangeNodes(Mesh &mesh);
@@ -43,8 +43,8 @@ struct Transformation {
 private:
 	static size_t level;
 
-	static void exchangeElements(Mesh &mesh, const std::vector<esglobal> &partition);
-	static void permuteElements(Mesh &mesh, const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
+//	static void exchangeElements(Mesh &mesh, const std::vector<esglobal> &partition);
+//	static void permuteElements(Mesh &mesh, const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
 	static void projectNodesToDomains(Mesh &mesh);
 	static void computeIntervals(std::vector<EInterval> &intervals, const serializededata<eslocal, eslocal> &compdata, const std::vector<size_t> &distribution, const std::vector<eslocal> &permutation);
 
@@ -75,7 +75,5 @@ private:
 };
 
 }
-
-
 
 #endif /* SRC_MESH_TRANSFORMATION_TRANSFORMATIONS_H_ */

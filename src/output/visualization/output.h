@@ -1,6 +1,6 @@
 
-#ifndef SRC_NEWOUTPUT_OUTPUT_H_
-#define SRC_NEWOUTPUT_OUTPUT_H_
+#ifndef SRC_OUTPUT_VISUALIZATION_OUTPUT_H_
+#define SRC_OUTPUT_VISUALIZATION_OUTPUT_H_
 
 #include <string>
 
@@ -11,7 +11,7 @@ class BoundaryStore;
 class DomainStore;
 class RegionStore;
 
-struct NewOutput {
+struct Output {
 
 	static void VTKLegacy(const std::string &name, ElementStore *nodes, RegionStore *region);
 	static void VTKLegacy(const std::string &name, ElementStore *nodes, DomainStore *domains);
@@ -25,4 +25,4 @@ struct NewOutput {
 
 
 
-#endif /* SRC_NEWOUTPUT_OUTPUT_H_ */
+#endif /* SRC_OUTPUT_VISUALIZATION_OUTPUT_H_ */

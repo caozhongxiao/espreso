@@ -10,7 +10,7 @@ namespace espreso {
 
 class Instance;
 class Mesh;
-class RegionStore;
+class BoundaryRegionStore;
 
 class Region;
 struct Step;
@@ -18,8 +18,8 @@ class SparseMatrix;
 
 struct EqualityConstraints
 {
-	EqualityConstraints(Instance &instance, Mesh &mesh, const std::vector<RegionStore*> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling);
-	void update(const std::vector<RegionStore*> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling);
+	EqualityConstraints(Instance &instance, Mesh &mesh, const std::vector<BoundaryRegionStore*> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling);
+	void update(const std::vector<BoundaryRegionStore*> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling);
 
 	void B1DirichletInsert(const Step &step);
 	void B1GlueElements(const Step &step);
@@ -32,7 +32,7 @@ struct EqualityConstraints
 protected:
 	Instance &_instance;
 	Mesh &_mesh;
-	std::vector<RegionStore*> _dirichlet;
+	std::vector<BoundaryRegionStore*> _dirichlet;
 	size_t _DOFs;
 	esglobal _dirichletSize, _gluingSize;
 	bool _withRedundantMultipliers, _withScaling;

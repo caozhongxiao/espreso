@@ -16,30 +16,29 @@ struct ElementStore {
 
 	void store(const std::string &file);
 
-	void sort();
-	void permute(const std::vector<eslocal> &permutation, const std::vector<size_t> *distribution = NULL);
+	void permute(const std::vector<eslocal> &permutation) { permute(permutation, distribution); }
+	void permute(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
 
-	std::vector<esglobal> gatherElementDistrubution();
+	std::vector<eslocal> gatherElementProcDistribution();
 
-	size_t size;
+	eslocal size;
 	std::vector<size_t> distribution;
 
-	serializededata<eslocal, esglobal>* IDs;
-
-	serializededata<eslocal, eslocal>* elems;
-	serializededata<eslocal, eslocal>* faces;
-	serializededata<eslocal, eslocal>* edges;
+	serializededata<eslocal, eslocal>* IDs;
 	serializededata<eslocal, eslocal>* nodes;
 
-	serializededata<eslocal, Point>* coordinates;
 	serializededata<eslocal, int>* body;
 	serializededata<eslocal, int>* material;
 	serializededata<eslocal, Element*>* epointers;
-	serializededata<eslocal, eslocal>* domains;
-	serializededata<eslocal, int>* ranks;
 
-	serializededata<eslocal, esglobal>* dual;
+	serializededata<eslocal, eslocal>* dual;
 	serializededata<eslocal, eslocal>* decomposedDual;
+
+	eslocal firstDomain;
+	eslocal ndomains;
+	std::vector<size_t> domainDistribution;
+	std::vector<size_t> domainElementDistribution;
+	std::vector<int> clusters;
 
 	ElementStore(std::vector<Element*> &eclasses);
 	~ElementStore();
