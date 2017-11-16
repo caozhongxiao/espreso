@@ -98,9 +98,9 @@ class ECFParser:
 
         levels = len(ecf["LEVELS"])
         for table in ecf["TABLES"]:
-            check_parameter(ecf["TABLES"][table], "ROWS", "Set ROWS for table '{}'".format(table))
-            check_parameter(ecf["TABLES"][table], "COLUMNS", "Set COLUMNS for table '{}'".format(table))
-            check_parameter(ecf["TABLES"][table], "VALUES", "Set values for table '{}'".format(table))
+            check_parameter(ecf["TABLES"][table], "ROWS", "Set ROWS for table '{0}'".format(table))
+            check_parameter(ecf["TABLES"][table], "COLUMNS", "Set COLUMNS for table '{0}'".format(table))
+            check_parameter(ecf["TABLES"][table], "VALUES", "Set values for table '{0}'".format(table))
             for level in range(1, levels + 1):
                 check_parameter(ecf["TABLES"][table], "L{0}".format(level), "Each table has to set values for all levels")
 
