@@ -6,9 +6,9 @@ namespace espreso {
 
 struct DomainInterval {
 	eslocal begin, end;
-	eslocal pindex;
+	eslocal pindex, DOFOffset;
 
-	DomainInterval(eslocal begin, eslocal end, eslocal pindex): begin(begin), end(end), pindex(pindex) {}
+	DomainInterval(eslocal begin, eslocal end, eslocal pindex, eslocal DOFOffset): begin(begin), end(end), pindex(pindex), DOFOffset(DOFOffset) {}
 };
 
 }

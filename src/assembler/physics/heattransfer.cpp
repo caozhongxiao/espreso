@@ -4,7 +4,8 @@
 #include "../../solver/generic/SparseMatrix.h"
 
 #include "../../mesh/mesh.h"
-#include "../../mesh/store/domainstore.h"
+#include "../../mesh/store/elementstore.h"
+#include "../../mesh/store/nodestore.h"
 
 #include "../instance.h"
 #include "../solution.h"
@@ -21,9 +22,9 @@ HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration, const
 : Physics("", NULL, NULL, &configuration), // skipped because Physics is inherited virtually
   _configuration(configuration), _propertiesConfiguration(propertiesConfiguration)
 {
-	for (eslocal d = 0; d < _mesh->_domains->size; d++) {
-		const std::vector<EInterval> &intervals = _mesh->_domains->domainNodesIntervals[d];
-		_instance->domainDOFCount[d] = intervals.back().domainOffset + intervals.back().end - intervals.back().begin;
+	for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
+		const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[d];
+		_instance->domainDOFCount[d] = intervals.back().DOFOffset + intervals.back().end - intervals.back().begin;
 	}
 }
 
@@ -123,12 +124,12 @@ void HeatTransfer::analyticRegularization(size_t domain, bool ortogonalCluster)
 
 void HeatTransfer::computeInitialTemperature(const Step &step, std::vector<std::vector<double> > &data)
 {
-	data.resize(_mesh->_domains->size);
+	data.resize(_mesh->elements->ndomains);
 
 	#pragma omp parallel for
-	for (eslocal d = 0; d < _mesh->_domains->size; d++) {
-		const std::vector<EInterval> &intervals = _mesh->_domains->domainNodesIntervals[d];
-		data[d].resize(intervals.back().domainOffset + intervals.back().end - intervals.back().begin, 273.15 + 20);
+	for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
+		const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[d];
+		data[d].resize(intervals.back().DOFOffset + intervals.back().end - intervals.back().begin, 273.15 + 20);
 
 		// TODO: get data from regions
 //		for (auto it = _configuration.initial_temperature.begin(); it != _configuration.initial_temperature.end(); ++it) {

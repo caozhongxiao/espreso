@@ -38,7 +38,7 @@ public:
 
 	size_t elements()
 	{
-		return factory._mesh->_elems->size;
+		return factory._mesh->elements->size;
 	}
 
 	void addElementMatrix(FETI4IMatrix &K, size_t e)

@@ -8,7 +8,8 @@
 #include "../step.h"
 
 #include "../../mesh/mesh.h"
-#include "../../mesh/store/domainstore.h"
+#include "../../mesh/store/nodestore.h"
+
 #include "../constraints/equalityconstraints.h"
 
 #include "../../solver/generic/SparseMatrix.h"
@@ -84,7 +85,7 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain, c
 		_instance->f[domain].resize(_instance->domainDOFCount[domain]);
 	}
 
-	for (eslocal e = _mesh->_domains->domainElementBoundaries[domain]; e < _mesh->_domains->domainElementBoundaries[domain + 1]; e++) {
+	for (eslocal e = _mesh->elements->elementsDistribution[domain]; e < (eslocal)_mesh->elements->elementsDistribution[domain + 1]; e++) {
 		processElement(step, matrices, e, Ke, Me, Re, fe, solution);
 		fillDOFsIndices(e, domain, DOFs);
 		insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, step, domain, false);
@@ -143,13 +144,13 @@ void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPM
 void Physics::fillDOFsIndices(eslocal eindex, eslocal domain, std::vector<eslocal> &DOFs) const
 {
 	// TODO: MESH: improve performance
-	auto nodes = _mesh->_elems->nodes->begin() + eindex;
-	const std::vector<EInterval> &intervals = _mesh->_domains->domainNodesIntervals[domain];
+	auto nodes = _mesh->elements->nodes->begin() + eindex;
+	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
 	DOFs.resize(nodes->size());
 	for (size_t dof = 0, i = 0; dof < 1; dof++) {
 		for (auto n = nodes->begin(); n != nodes->end(); n++, i++) {
-			auto it = std::lower_bound(intervals.begin(), intervals.end(), *n, [] (const EInterval &interval, eslocal node) { return interval.end < node; });
-			DOFs[i] = 1 * (it->domainOffset + *n - it->clusterOffset);
+			auto it = std::lower_bound(intervals.begin(), intervals.end(), *n, [] (const DomainInterval &interval, eslocal node) { return interval.end <= node; });
+			DOFs[i] = 1 * (it->DOFOffset + *n - it->begin);
 		}
 	}
 }

@@ -98,7 +98,22 @@ void ElementStore::permute(const std::vector<eslocal> &permutation, const std::v
 	if (decomposedDual != NULL) { decomposedDual->permute(permutation, distribution); }
 }
 
-std::vector<eslocal> ElementStore::gatherElementProcDistribution()
+std::vector<eslocal> ElementStore::gatherElementsProcDistribution()
 {
 	return Store::gatherDistribution(size);
+}
+
+std::vector<eslocal> ElementStore::gatherDomainsProcDistribution()
+{
+	return Store::gatherDistribution(ndomains);
+}
+
+std::vector<size_t> ElementStore::gatherDomainsDistribution()
+{
+	return Store::gatherDistribution(domainDistribution, (size_t)firstDomain);
+}
+
+std::vector<size_t> ElementStore::gatherElementsDistribution()
+{
+	return Store::gatherDistribution(elementsDistribution, (size_t)IDs->datatarray().front());
 }

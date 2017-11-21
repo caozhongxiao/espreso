@@ -2,7 +2,7 @@
 #include "instance.h"
 
 #include "../mesh/mesh.h"
-#include "../mesh/store/domainstore.h"
+#include "../mesh/store/elementstore.h"
 #include "../solver/generic/SparseMatrix.h"
 #include "solution.h"
 #include "../basis/logging/logging.h"
@@ -10,10 +10,10 @@
 using namespace espreso;
 
 Instance::Instance(const Mesh &mesh)
-: domains(mesh._domains->size),
+: domains(mesh.elements->ndomains),
   domainDOFCount(_domainDOFCount),
   neighbours(mesh.neighbours),
-  clustersMap(mesh._domains->clusters),
+  clustersMap(mesh.elements->clusters),
   origK(_origK), K(_K),
   origKN1(_origKN1), origKN2(_origKN2), origRegMat(_origRegMat),
   N1(_N1), N2(_N2), RegMat(_RegMat),

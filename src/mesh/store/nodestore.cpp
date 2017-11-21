@@ -15,8 +15,9 @@ NodeStore::NodeStore()
   elements(NULL),
 
   coordinates(NULL),
-  domains(NULL),
-  ranks(NULL)
+  ranks(NULL),
+
+  idomains(NULL)
 {
 
 }
@@ -27,8 +28,9 @@ NodeStore::~NodeStore()
 	if (elements == NULL) { delete elements; }
 
 	if (coordinates == NULL) { delete coordinates; }
-	if (domains == NULL) { delete domains; }
 	if (ranks == NULL) { delete ranks; }
+
+	if (idomains == NULL) { delete idomains; }
 }
 
 void NodeStore::store(const std::string &file)
@@ -39,8 +41,9 @@ void NodeStore::store(const std::string &file)
 	Store::storedata(os, "elements", elements);
 
 	Store::storedata(os, "coordinates", coordinates);
-	Store::storedata(os, "domains", domains);
 	Store::storedata(os, "ranks", ranks);
+
+	Store::storedata(os, "ineighbors", idomains);
 }
 
 void NodeStore::permute(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution)
@@ -51,7 +54,6 @@ void NodeStore::permute(const std::vector<eslocal> &permutation, const std::vect
 	if (elements != NULL) { elements->permute(permutation, distribution); }
 
 	if (coordinates != NULL) { coordinates->permute(permutation, distribution); }
-	if (domains != NULL) { domains->permute(permutation, distribution); }
 	if (ranks != NULL) { ranks->permute(permutation, distribution); }
 }
 

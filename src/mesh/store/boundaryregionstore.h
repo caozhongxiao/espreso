@@ -8,6 +8,7 @@
 
 #include "../intervals/processinterval.h"
 #include "../intervals/domaininterval.h"
+#include "../intervals/gluinginterval.h"
 
 namespace espreso {
 

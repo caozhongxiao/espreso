@@ -1,21 +1,21 @@
 
-#include "transformations.h"
-
-#include "../mesh.h"
-#include "../elements/element.h"
-#include "../store/domainstore.h"
-
-#include "../../basis/containers/serializededata.h"
-#include "../../basis/logging/logging.h"
-#include "../../basis/utilities/utils.h"
-#include "../../basis/utilities/communication.h"
-#include "../../config/ecf/environment.h"
-
-#include <algorithm>
-#include <iostream>
-#include "../store/elementstore.h"
-
-using namespace espreso;
+//#include "transformations.h"
+//
+//#include "../mesh.h"
+//#include "../elements/element.h"
+//#include "../store/domainstore.h"
+//
+//#include "../../basis/containers/serializededata.h"
+//#include "../../basis/logging/logging.h"
+//#include "../../basis/utilities/utils.h"
+//#include "../../basis/utilities/communication.h"
+//#include "../../config/ecf/environment.h"
+//
+//#include <algorithm>
+//#include <iostream>
+//#include "../store/elementstore.h"
+//
+//using namespace espreso;
 
 //void Transformation::addLinkFromTo(Mesh &mesh, TFlags::ELEVEL from, TFlags::ELEVEL to)
 //{
@@ -450,149 +450,149 @@ using namespace espreso;
 //
 //	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "MESH::computation of the decomposed dual graph of local elements finished.";
 //}
-
-void Transformation::projectNodesToDomains(Mesh &mesh)
-{
-	if (mesh._domains == NULL) {
-		ESINFO(TVERBOSITY) << std::string(2 * (level + 1), ' ') << "Transformation::project nodes to domains skipped.";
-		return;
-	}
-
-	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "Transformation::project nodes to domains started.";
-
-	size_t threads = environment->OMP_NUM_THREADS;
-
-	std::vector<std::vector<eslocal> > domainNodes(mesh._domains->size);
-
-	mesh._domains->elems = new serializededata<eslocal, eslocal>(*mesh._elems->nodes);
-
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		for (eslocal d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; ++d) {
-			domainNodes[d].insert(domainNodes[d].end(),
-					(mesh._domains->elems->cbegin() + mesh._domains->domainElementBoundaries[d])->begin(),
-					(mesh._domains->elems->cbegin() + mesh._domains->domainElementBoundaries[d + 1])->begin());
-
-			Esutils::sortAndRemoveDuplicity(domainNodes[d]);
-			for (
-				auto n = (mesh._domains->elems->begin() + mesh._domains->domainElementBoundaries[d])->begin();
-				n != (mesh._domains->elems->begin() + mesh._domains->domainElementBoundaries[d + 1])->begin();
-				++n) {
-
-				*n = std::lower_bound(domainNodes[d].begin(), domainNodes[d].end(), *n) - domainNodes[d].begin();
-			}
-		}
-	}
-
-	mesh._domains->domainNodeBoundaries.clear();
-	mesh._domains->domainNodeBoundaries.push_back(0);
-	for (eslocal d = 0; d < mesh._domains->size; ++d) {
-		mesh._domains->domainNodeBoundaries.push_back(mesh._domains->domainNodeBoundaries.back() + domainNodes[d].size());
-	}
-
-	std::vector<std::vector<eslocal> > tdomainNodes(threads);
-
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		for (eslocal d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; ++d) {
-			tdomainNodes[t].insert(tdomainNodes[t].end(), domainNodes[d].begin(), domainNodes[d].end());
-		}
-	}
-
-	mesh._domains->nodes = new serializededata<eslocal, eslocal>(1, tdomainNodes);
-
-	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::project nodes to domains finished.";
-}
-
-void Transformation::assignDomainsToNodes(Mesh &mesh)
-{
-	if (mesh._domains == NULL) {
-		ESINFO(TVERBOSITY) << std::string(2 * (level + 1), ' ') << "Transformation::assign domains to nodes skipped.";
-		return;
-	}
-
-	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "Transformation::assign domains to nodes started.";
-
-	if (mesh._nodes->elems == NULL) {
-		Transformation::addLinkFromTo(mesh, TFlags::ELEVEL::NODE, TFlags::ELEVEL::ELEMENT);
-	}
-
-	if (mesh._domains->elems == NULL) {
-		Transformation::projectNodesToDomains(mesh);
-	}
-
-	size_t threads = environment->OMP_NUM_THREADS;
-	std::vector<esglobal> domainBoundaries = mesh._domains->gatherElementDistribution();
-
-	std::vector<std::vector<eslocal> > domainsDistribution(threads), domainsData(threads);
-
-	domainsDistribution.front().push_back(0);
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		for (auto elems = mesh._nodes->elems->cbegin(t); elems != mesh._nodes->elems->cend(t); ++elems) {
-			auto prev = domainBoundaries.begin() - 1;
-			auto domain = domainBoundaries.begin();
-			for (auto e = elems->begin(); e != elems->end(); ++e) {
-				domain = std::lower_bound(domain, domainBoundaries.end(), *e + 1) - 1;
-				if (prev != domain) {
-					domainsData[t].push_back(domain - domainBoundaries.begin());
-				}
-				prev = domain;
-			}
-
-			domainsDistribution[t].push_back(domainsData[t].size());
-		}
-	}
-
-	Esutils::threadDistributionToFullDistribution(domainsDistribution);
-
-	mesh._nodes->domains = new serializededata<eslocal, eslocal>(domainsDistribution, domainsData);
-
-	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::assign domains to nodes finished.";
-}
-
-void Transformation::computeIntervals(std::vector<EInterval> &intervals, const serializededata<eslocal, eslocal> &compdata, const std::vector<size_t> &distribution, const std::vector<eslocal> &permutation)
-{
-	auto equalNeighs = [] (serializededata<eslocal, eslocal>::const_iterator &i, serializededata<eslocal, eslocal>::const_iterator j) {
-		if (i->size() != j->size()) {
-			return false;
-		}
-		for (size_t n = 0; n < i->size(); ++n) {
-			if ((*i)[n] != (*j)[n]) {
-				return false;
-			}
-		}
-		return true;
-	};
-
-	size_t threads = environment->OMP_NUM_THREADS;
-
-	std::vector<std::vector<EInterval> > nintervals(threads);
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		for (size_t i = distribution[t]; i < distribution[t + 1]; ++i) {
-			auto data = compdata.cbegin() + permutation[i];
-			if (i > distribution[t] && equalNeighs(data, compdata.cbegin() + permutation[i - 1])) {
-				++nintervals[t].back().end;
-			} else {
-				nintervals[t].push_back(EInterval(i, i + 1, std::vector<int>(data->begin(), data->end())));
-			}
-		}
-	}
-
-	for (size_t t = 1; t < threads; t++) {
-		if (nintervals[t].size() && nintervals[0].back().neighbors == nintervals[t].front().neighbors) {
-			nintervals[0].back().end = nintervals[t].front().end;
-			nintervals[0].insert(nintervals[0].end(), nintervals[t].begin() + 1, nintervals[t].end());
-		} else {
-			nintervals[0].insert(nintervals[0].end(), nintervals[t].begin(), nintervals[t].end());
-		}
-	}
-	intervals = nintervals[0];
-	for (size_t i = 0; i < intervals.size(); i++) {
-		intervals[i].firstDomain = intervals[i].neighbors.front();
-		intervals[i].ndomains = intervals[i].neighbors.size();
-	}
-}
+//
+//void Transformation::projectNodesToDomains(Mesh &mesh)
+//{
+//	if (mesh._domains == NULL) {
+//		ESINFO(TVERBOSITY) << std::string(2 * (level + 1), ' ') << "Transformation::project nodes to domains skipped.";
+//		return;
+//	}
+//
+//	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "Transformation::project nodes to domains started.";
+//
+//	size_t threads = environment->OMP_NUM_THREADS;
+//
+//	std::vector<std::vector<eslocal> > domainNodes(mesh._domains->size);
+//
+//	mesh._domains->elems = new serializededata<eslocal, eslocal>(*mesh._elems->nodes);
+//
+//	#pragma omp parallel for
+//	for (size_t t = 0; t < threads; t++) {
+//		for (eslocal d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; ++d) {
+//			domainNodes[d].insert(domainNodes[d].end(),
+//					(mesh._domains->elems->cbegin() + mesh._domains->domainElementBoundaries[d])->begin(),
+//					(mesh._domains->elems->cbegin() + mesh._domains->domainElementBoundaries[d + 1])->begin());
+//
+//			Esutils::sortAndRemoveDuplicity(domainNodes[d]);
+//			for (
+//				auto n = (mesh._domains->elems->begin() + mesh._domains->domainElementBoundaries[d])->begin();
+//				n != (mesh._domains->elems->begin() + mesh._domains->domainElementBoundaries[d + 1])->begin();
+//				++n) {
+//
+//				*n = std::lower_bound(domainNodes[d].begin(), domainNodes[d].end(), *n) - domainNodes[d].begin();
+//			}
+//		}
+//	}
+//
+//	mesh._domains->domainNodeBoundaries.clear();
+//	mesh._domains->domainNodeBoundaries.push_back(0);
+//	for (eslocal d = 0; d < mesh._domains->size; ++d) {
+//		mesh._domains->domainNodeBoundaries.push_back(mesh._domains->domainNodeBoundaries.back() + domainNodes[d].size());
+//	}
+//
+//	std::vector<std::vector<eslocal> > tdomainNodes(threads);
+//
+//	#pragma omp parallel for
+//	for (size_t t = 0; t < threads; t++) {
+//		for (eslocal d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; ++d) {
+//			tdomainNodes[t].insert(tdomainNodes[t].end(), domainNodes[d].begin(), domainNodes[d].end());
+//		}
+//	}
+//
+//	mesh._domains->nodes = new serializededata<eslocal, eslocal>(1, tdomainNodes);
+//
+//	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::project nodes to domains finished.";
+//}
+//
+//void Transformation::assignDomainsToNodes(Mesh &mesh)
+//{
+//	if (mesh._domains == NULL) {
+//		ESINFO(TVERBOSITY) << std::string(2 * (level + 1), ' ') << "Transformation::assign domains to nodes skipped.";
+//		return;
+//	}
+//
+//	ESINFO(TVERBOSITY) << std::string(2 * level++, ' ') << "Transformation::assign domains to nodes started.";
+//
+//	if (mesh._nodes->elems == NULL) {
+//		Transformation::addLinkFromTo(mesh, TFlags::ELEVEL::NODE, TFlags::ELEVEL::ELEMENT);
+//	}
+//
+//	if (mesh._domains->elems == NULL) {
+//		Transformation::projectNodesToDomains(mesh);
+//	}
+//
+//	size_t threads = environment->OMP_NUM_THREADS;
+//	std::vector<esglobal> domainBoundaries = mesh._domains->gatherElementDistribution();
+//
+//	std::vector<std::vector<eslocal> > domainsDistribution(threads), domainsData(threads);
+//
+//	domainsDistribution.front().push_back(0);
+//	#pragma omp parallel for
+//	for (size_t t = 0; t < threads; t++) {
+//		for (auto elems = mesh._nodes->elems->cbegin(t); elems != mesh._nodes->elems->cend(t); ++elems) {
+//			auto prev = domainBoundaries.begin() - 1;
+//			auto domain = domainBoundaries.begin();
+//			for (auto e = elems->begin(); e != elems->end(); ++e) {
+//				domain = std::lower_bound(domain, domainBoundaries.end(), *e + 1) - 1;
+//				if (prev != domain) {
+//					domainsData[t].push_back(domain - domainBoundaries.begin());
+//				}
+//				prev = domain;
+//			}
+//
+//			domainsDistribution[t].push_back(domainsData[t].size());
+//		}
+//	}
+//
+//	Esutils::threadDistributionToFullDistribution(domainsDistribution);
+//
+//	mesh._nodes->domains = new serializededata<eslocal, eslocal>(domainsDistribution, domainsData);
+//
+//	ESINFO(TVERBOSITY) << std::string(--level * 2, ' ') << "Transformation::assign domains to nodes finished.";
+//}
+//
+//void Transformation::computeIntervals(std::vector<EInterval> &intervals, const serializededata<eslocal, eslocal> &compdata, const std::vector<size_t> &distribution, const std::vector<eslocal> &permutation)
+//{
+//	auto equalNeighs = [] (serializededata<eslocal, eslocal>::const_iterator &i, serializededata<eslocal, eslocal>::const_iterator j) {
+//		if (i->size() != j->size()) {
+//			return false;
+//		}
+//		for (size_t n = 0; n < i->size(); ++n) {
+//			if ((*i)[n] != (*j)[n]) {
+//				return false;
+//			}
+//		}
+//		return true;
+//	};
+//
+//	size_t threads = environment->OMP_NUM_THREADS;
+//
+//	std::vector<std::vector<EInterval> > nintervals(threads);
+//	#pragma omp parallel for
+//	for (size_t t = 0; t < threads; t++) {
+//		for (size_t i = distribution[t]; i < distribution[t + 1]; ++i) {
+//			auto data = compdata.cbegin() + permutation[i];
+//			if (i > distribution[t] && equalNeighs(data, compdata.cbegin() + permutation[i - 1])) {
+//				++nintervals[t].back().end;
+//			} else {
+//				nintervals[t].push_back(EInterval(i, i + 1, std::vector<int>(data->begin(), data->end())));
+//			}
+//		}
+//	}
+//
+//	for (size_t t = 1; t < threads; t++) {
+//		if (nintervals[t].size() && nintervals[0].back().neighbors == nintervals[t].front().neighbors) {
+//			nintervals[0].back().end = nintervals[t].front().end;
+//			nintervals[0].insert(nintervals[0].end(), nintervals[t].begin() + 1, nintervals[t].end());
+//		} else {
+//			nintervals[0].insert(nintervals[0].end(), nintervals[t].begin(), nintervals[t].end());
+//		}
+//	}
+//	intervals = nintervals[0];
+//	for (size_t i = 0; i < intervals.size(); i++) {
+//		intervals[i].firstDomain = intervals[i].neighbors.front();
+//		intervals[i].ndomains = intervals[i].neighbors.size();
+//	}
+//}
 
 

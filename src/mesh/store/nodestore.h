@@ -8,6 +8,7 @@
 
 #include "../intervals/processinterval.h"
 #include "../intervals/domaininterval.h"
+#include "../intervals/gluinginterval.h"
 
 namespace espreso {
 
@@ -30,12 +31,14 @@ struct NodeStore {
 	serializededata<eslocal, eslocal>* elements;
 
 	serializededata<eslocal, Point>* coordinates;
-	serializededata<eslocal, eslocal>* domains;
 	serializededata<eslocal, int>* ranks;
 
+	eslocal externalIntervals;
 	std::vector<ProcessInterval> pintervals;
 	std::vector<std::vector<DomainInterval> > dintervals;
-	serializededata<eslocal, eslocal>* ineighbors;
+	std::vector<std::vector<GluingInterval> > gintervals;
+	serializededata<eslocal, eslocal>* idomains;
+	serializededata<eslocal, int>* iprocesses;
 
 	NodeStore();
 	~NodeStore();

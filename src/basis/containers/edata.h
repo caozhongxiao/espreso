@@ -3,6 +3,7 @@
 #define SRC_BASIS_CONTAINERS_EDATA_H_
 
 #include <cstddef>
+#include <ostream>
 
 namespace espreso {
 
@@ -26,6 +27,18 @@ private:
 	TData *_begin;
 	TData *_end;
 };
+
+template <typename TData>
+std::ostream& operator<< (std::ostream& os, edata<TData> &data)
+{
+	os << "[ ";
+	for (auto i = data.begin(); i != data.end(); ++i) {
+		os << *i << " ";
+	}
+	os << "]";
+	return os;
+}
+
 
 }
 

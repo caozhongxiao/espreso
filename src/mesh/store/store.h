@@ -8,6 +8,7 @@
 #include <fstream>
 
 #include "../../basis/utilities/communication.h"
+#include "../../basis/utilities/utils.h"
 
 namespace espreso {
 
@@ -42,6 +43,21 @@ struct Store {
 		MPI_Allgather(&esize, sizeof(eslocal), MPI_BYTE, result.data(), sizeof(eslocal), MPI_BYTE, environment->MPICommunicator);
 		result.back() = esize + size;
 		MPI_Bcast(&result.back(), sizeof(eslocal), MPI_BYTE, environment->MPIsize - 1, environment->MPICommunicator);
+
+		return result;
+	}
+
+	template <typename TType>
+	static std::vector<TType> gatherDistribution(std::vector<TType> &distribution, TType offset)
+	{
+		std::vector<TType> odistribution = distribution;
+		for (size_t i = 0; i < odistribution.size(); i++) {
+			odistribution[i] += offset;
+		}
+		std::vector<TType> result;
+		Communication::gatherUnknownSize(odistribution, result);
+		Esutils::removeDuplicity(result);
+		Communication::broadcastUnknownSize(result);
 
 		return result;
 	}

@@ -2,10 +2,13 @@
 #ifndef SRC_MESH_MESH_H_
 #define SRC_MESH_MESH_H_
 
+#include <string>
 #include <vector>
-#include <functional>
 
 namespace espreso {
+
+struct ECFConfiguration;
+struct MaterialConfiguration;
 
 struct ElementStore;
 struct NodeStore;
@@ -14,17 +17,9 @@ struct ElementsRegionStore;
 struct BoundaryRegionStore;
 
 class MeshPreprocessing;
-
-// OLD
+class Element;
 
 class OldMesh;
-struct DomainStore;
-struct BoundaryStore;
-struct RegionStore;
-class Element;
-struct EInterval;
-class MaterialConfiguration;
-struct ECFConfiguration;
 
 enum class ETYPE: int {
 	ELEMENT,
@@ -41,9 +36,8 @@ public:
 	void load(const ECFConfiguration &configuration);
 	void update(const ECFConfiguration &configuration);
 
-	esglobal computeIntervalsOffsets(std::vector<EInterval> &intervals, std::function<eslocal(eslocal)> getsize, std::function<void(eslocal, esglobal)> setsize);
-
-	// RegionStore* region(const std::string &name) {};
+	ElementsRegionStore* eregion(const std::string &name);
+	BoundaryRegionStore* bregion(const std::string &name);
 
 	ElementStore* elements;
 	NodeStore* nodes;
@@ -57,15 +51,7 @@ public:
 
 	std::vector<int> neighbours;
 
-	///// <<<<< OLD >>>>>> //////
-
-	DomainStore *_domains;
-	BoundaryStore *_domainsBoundaries;
-	BoundaryStore *_processBoundaries;
-
-	std::vector<const MaterialConfiguration*> _materials;
-
-
+	std::vector<const MaterialConfiguration*> materials;
 
 //protected:
 	std::vector<Element*> _eclasses;

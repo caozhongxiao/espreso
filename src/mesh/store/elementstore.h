@@ -9,7 +9,6 @@
 namespace espreso {
 
 template <typename TEBoundaries, typename TEData> class serializededata;
-struct Point;
 struct Element;
 
 struct ElementStore {
@@ -19,7 +18,12 @@ struct ElementStore {
 	void permute(const std::vector<eslocal> &permutation) { permute(permutation, distribution); }
 	void permute(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
 
-	std::vector<eslocal> gatherElementProcDistribution();
+	std::vector<size_t> gatherElementsDistribution();
+	std::vector<eslocal> gatherElementsProcDistribution();
+
+	std::vector<size_t> gatherDomainsDistribution();
+	std::vector<eslocal> gatherDomainsProcDistribution();
+
 
 	eslocal size;
 	std::vector<size_t> distribution;
@@ -37,7 +41,7 @@ struct ElementStore {
 	eslocal firstDomain;
 	eslocal ndomains;
 	std::vector<size_t> domainDistribution;
-	std::vector<size_t> domainElementDistribution;
+	std::vector<size_t> elementsDistribution;
 	std::vector<int> clusters;
 
 	ElementStore(std::vector<Element*> &eclasses);

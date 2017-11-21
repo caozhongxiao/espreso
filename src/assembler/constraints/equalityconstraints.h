@@ -30,13 +30,15 @@ struct EqualityConstraints
 	void insertKernelsGluingToB0(const std::vector<SparseMatrix> &kernels);
 
 protected:
+	eslocal computeIntervalsOffsets(std::function<eslocal(eslocal)> getsize, std::function<void(eslocal, eslocal)> setsize);
+
 	Instance &_instance;
 	Mesh &_mesh;
-	std::vector<BoundaryRegionStore*> _dirichlet;
 	size_t _DOFs;
 	esglobal _dirichletSize, _gluingSize;
 	bool _withRedundantMultipliers, _withScaling;
 
+	std::vector<eslocal> _mergedDirichletLMOffset;
 	std::vector<std::vector<eslocal> > _mergedDirichletIndices;
 	std::vector<std::vector<double> > _mergedDirichletValues;
 };

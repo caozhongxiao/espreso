@@ -3,6 +3,7 @@
 #define SRC_MESH_PREPROCESSING_MESHPREPROCESSING_H_
 
 #include <cstddef>
+#include <string>
 #include <vector>
 
 namespace espreso {
@@ -10,6 +11,7 @@ namespace espreso {
 #define VERBOSITY(level) level == 0 ? PROGRESS1 : level == 1 ? PROGRESS2 : PROGRESS3
 
 class Mesh;
+class BoundaryStore;
 
 class MeshPreprocessing {
 
@@ -25,6 +27,8 @@ public:
 	void reclusterize();
 	void partitiate(eslocal parts, bool separateMaterials, bool separateEtype);
 
+	void arrangeNodes();
+
 protected:
 	static size_t level;
 
@@ -34,6 +38,10 @@ protected:
 private:
 	void exchangeElements(const std::vector<eslocal> &partition);
 	void permuteElements(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
+	void computeBoundaryNodes(std::vector<eslocal> &externalBoundary, std::vector<eslocal> &internalBoundary);
+	void start(const std::string &message);
+	void skip(const std::string &message);
+	void finish(const std::string &message);
 };
 
 }

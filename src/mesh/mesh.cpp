@@ -8,14 +8,7 @@
 
 #include "preprocessing/meshpreprocessing.h"
 
-
-// OLD
-#include "store/domainstore.h"
-#include "store/boundarystore.h"
-
 #include "elements/elements.h"
-
-#include "transformation/transformations.h"
 
 #include "../basis/utilities/utils.h"
 #include "../basis/utilities/communication.h"
@@ -47,11 +40,32 @@ Mesh::Mesh()
   halo(new ElementStore(_eclasses)),
   preprocessing(new MeshPreprocessing(this)),
 
-  _domains(new DomainStore), _domainsBoundaries(new BoundaryStore()), _processBoundaries(new BoundaryStore()),
   _eclasses(environment->OMP_NUM_THREADS),
   mesh(new OldMesh())
 {
 
+}
+
+ElementsRegionStore* Mesh::eregion(const std::string &name)
+{
+	for (size_t r = 0; r < elementsRegions.size(); r++) {
+		if (StringCompare::caseInsensitiveEq(elementsRegions[r]->name, name)) {
+			return elementsRegions[r];
+		}
+	}
+	ESINFO(ERROR) << "ESPRESO internal error: request for unknown region '" << name << "'.";
+	return NULL;
+}
+
+BoundaryRegionStore* Mesh::bregion(const std::string &name)
+{
+	for (size_t r = 0; r < boundaryRegions.size(); r++) {
+		if (StringCompare::caseInsensitiveEq(boundaryRegions[r]->name, name)) {
+			return boundaryRegions[r];
+		}
+	}
+	ESINFO(ERROR) << "ESPRESO internal error: request for unknown region '" << name << "'.";
+	return NULL;
 }
 
 void Mesh::load(const ECFConfiguration &configuration)
@@ -241,10 +255,13 @@ void Mesh::load(const ECFConfiguration &configuration)
 
 void Mesh::update(const ECFConfiguration &configuration)
 {
-	_materials.clear();
+	materials.clear();
 	for (auto mat = configuration.getPhysics()->materials.begin(); mat != configuration.getPhysics()->materials.end(); ++mat) {
-		_materials.push_back(&mat->second);
+		materials.push_back(&mat->second);
 	}
+
+	// preprocessing->reclusterize();
+	preprocessing->partitiate(2, true, true);
 }
 
 //RegionStore* Mesh::region(const std::string &name)
@@ -257,61 +274,4 @@ void Mesh::update(const ECFConfiguration &configuration)
 //	ESINFO(ERROR) << "Request for unknown region '" << name << "'";
 //	return NULL;
 //}
-
-esglobal Mesh::computeIntervalsOffsets(std::vector<EInterval> &intervals, std::function<eslocal(eslocal)> getsize, std::function<void(eslocal, esglobal)> setsize)
-{
-	std::vector<eslocal> domainProcDistribution = _domains->gatherProcsDistribution();
-	auto n2i = [&] (size_t n) {
-		return std::lower_bound(neighbours.begin(), neighbours.end(), n) - neighbours.begin();
-	};
-	auto d2p = [&] (eslocal d) {
-		return std::lower_bound(domainProcDistribution.begin(), domainProcDistribution.end(), d + 1) - domainProcDistribution.begin() - 1;
-	};
-
-	std::vector<std::vector<esglobal> > sGlobalOffset(neighbours.size()), rGlobalOffset(neighbours.size());
-	esglobal offset = 0;
-
-	for (size_t i = 0; i < intervals.size(); ++i) {
-		eslocal first = intervals[i].neighbors[0] == -1 ? intervals[i].neighbors[1] : intervals[i].neighbors[0];
-		if (_domains->offset <= first && first < _domains->offset + _domains->size) {
-			auto begin = std::lower_bound(intervals[i].neighbors.begin(), intervals[i].neighbors.end(), _domains->offset + _domains->size) - 1;
-			for (size_t n = begin - intervals[i].neighbors.begin(); n < intervals[i].neighbors.size(); n++) {
-				auto next = std::lower_bound(begin, intervals[i].neighbors.end(), intervals[i].neighbors[n]);
-				if (d2p(*begin) < d2p(*next)) {
-					sGlobalOffset[n2i(d2p(*next))].push_back(offset);
-				}
-				begin = next;
-			}
-			offset += getsize(i);
-		} else {
-			rGlobalOffset[n2i(d2p(first))].push_back(0);
-		}
-	}
-
-	Communication::exscan(offset);
-	for (size_t n = 0; n < sGlobalOffset.size(); n++) {
-		for (size_t i = 0; i < sGlobalOffset[n].size(); i++) {
-			sGlobalOffset[n][i] += offset;
-		}
-	}
-
-	if (!Communication::receiveLowerKnownSize(sGlobalOffset, rGlobalOffset, neighbours)) {
-		ESINFO(ERROR) << "ESPRESO internal error: compute nodes global offset.";
-	}
-
-	std::vector<int> rDataOffset(neighbours.size());
-	for (size_t i = 0; i < intervals.size(); ++i) {
-		eslocal first = intervals[i].neighbors[0] == -1 ? intervals[i].neighbors[1] : intervals[i].neighbors[0];
-		if (_domains->offset <= first && first < _domains->offset + _domains->size) {
-			setsize(i, offset);
-			offset += getsize(i);
-		} else {
-			setsize(i, rGlobalOffset[n2i(d2p(first))][rDataOffset[n2i(d2p(first))]++]);
-		}
-	}
-
-	MPI_Bcast(&offset, sizeof(esglobal), MPI_BYTE, environment->MPIsize - 1, environment->MPICommunicator);
-
-	return offset;
-}
 

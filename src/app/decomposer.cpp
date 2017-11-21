@@ -3,7 +3,7 @@
 
 #include "../config/ecf/ecf.h"
 #include "../mesh/mesh.h"
-#include "../mesh/store/domainstore.h"
+#include "../mesh/store/elementstore.h"
 #include "../basis/logging/logging.hpp"
 #include "../input/loader.h"
 
@@ -38,8 +38,8 @@ int main(int argc, char** argv)
 		// TODO: MESH
 		// mesh.partitiate(parts);
 		ESINFO(ALWAYS_ON_ROOT) << "Mesh partitiated to " << parts * environment->MPIsize << " parts";
-		std::vector<size_t> sizes(mesh._domains->size);
-		for (size_t p = 0; p < mesh._domains->size; p++) {
+		std::vector<size_t> sizes(mesh.elements->ndomains);
+		for (size_t d = 0; d < mesh.elements->ndomains; d++) {
 			// TODO: MESH
 			// sizes[p] = mesh.coordinates().localSize(p);
 		}

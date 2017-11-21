@@ -376,11 +376,7 @@ template <typename TEBoundaries, typename TEData>
 std::ostream& operator<< (std::ostream& os, const serializededata<TEBoundaries, TEData> &data)
 {
 	for(auto e = data.cbegin(); e != data.cend(); ++e) {
-		os << "[ ";
-		for (auto i = e->begin(); i != e->end(); ++i) {
-			os << *i << " ";
-		}
-		os << "]";
+		os << *e;
 	}
 	return os;
 }

@@ -10,7 +10,7 @@
 
 #include "../old/mesh/structures/coordinates.h"
 #include "../mesh/mesh.h"
-#include "../mesh/store/domainstore.h"
+#include "../mesh/store/elementstore.h"
 #include "../old/mesh/structures/region.h"
 #include "../old/mesh/structures/elementtypes.h"
 #include "../old/mesh/elements/element.h"
@@ -323,7 +323,7 @@ void Statistic::computeElements()
 	std::vector<double> initData = { std::numeric_limits<double>::max(), -std::numeric_limits<double>::max(), 0, 0, 0, 0 };
 
 	// part x region x offsets x data
-	std::vector<std::vector<std::vector<std::vector<double> > > > tData(_mesh._domains->size, std::vector<std::vector<std::vector<double> > >(_selection.size(), std::vector<std::vector<double> >(_dataSize + 1, initData)));
+	std::vector<std::vector<std::vector<std::vector<double> > > > tData(_mesh.elements->ndomains, std::vector<std::vector<std::vector<double> > >(_selection.size(), std::vector<std::vector<double> >(_dataSize + 1, initData)));
 
 //	#pragma omp parallel for
 //	for (size_t p = 0; p < _mesh.parts(); p++) {
@@ -370,7 +370,7 @@ void Statistic::computeElements()
 		}
 	}
 
-	for (size_t p = 0; p < _mesh._domains->size; p++) {
+	for (size_t p = 0; p < _mesh.elements->ndomains; p++) {
 		for (size_t i = 0, offset = 0; i <= _dataSize; i++) {
 			for (size_t r = 0; r < _selection.size(); r++, offset++) {
 				cData[initData.size() * offset + 0] = std::min(cData[initData.size() * offset + 0], tData[p][r][i][0]);
