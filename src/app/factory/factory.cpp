@@ -18,9 +18,9 @@
 #include "../../input/loader.h"
 #include "../../config/ecf/ecf.h"
 #include "../../mesh/mesh.h"
+#include "../../output/results/resultstorelist.h"
 #include "../../solver/generic/FETISolver.h"
 
-#include "../../output/resultstorelist.h"
 
 namespace espreso {
 
@@ -83,6 +83,8 @@ Factory::Factory(const ECFConfiguration &configuration, Mesh &mesh, ResultStoreL
 	}
 
 	_loader->preprocessMesh();
+
+	_store->storePreprocessedData();
 	_store->updateMesh();
 }
 

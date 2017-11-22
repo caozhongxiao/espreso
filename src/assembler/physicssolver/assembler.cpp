@@ -4,7 +4,6 @@
 #include "../instance.h"
 #include "../solution.h"
 #include "../physics/physics.h"
-#include "../../output/resultstorelist.h"
 #include "../../linearsolver/linearsolver.h"
 
 #include "../../config/ecf/environment.h"
@@ -15,6 +14,7 @@
 #include "../../old/mesh/structures/elementtypes.h"
 
 #include "mpi.h"
+#include "../../output/results/resultstorelist.h"
 
 using namespace espreso;
 
@@ -137,6 +137,7 @@ void Assembler::storeSolution(const Step &step)
 		}
 		// TODO: MESH
 		// store.storeSolution(step, solutions, physics.propertiesToStore());
+		store.updateSolution();
 	});
 }
 

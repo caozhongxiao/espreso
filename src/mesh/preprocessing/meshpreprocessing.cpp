@@ -1977,6 +1977,32 @@ void MeshPreprocessing::arrangeNodes()
 
 	_mesh->nodes->permute(finalpermutation);
 
+	Communication::serialize([&] () {
+		std::cout << " >> " << environment->MPIrank << " << \n";
+		auto domains = _mesh->nodes->idomains->cbegin();
+		for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++domains) {
+			if (std::binary_search(_mesh->nodes->externalIntervals.begin(), _mesh->nodes->externalIntervals.end(), i)) {
+				std::cout << "*";
+			} else {
+				std::cout << " ";
+			}
+			std::cout << _mesh->nodes->pintervals[i].begin << " -> " << _mesh->nodes->pintervals[i].end << " :: " << *domains << "\n";
+		}
+
+		for (eslocal d = 0; d < _mesh->elements->ndomains; ++d) {
+			std::cout << " :: " << d << " :: \n";
+			for (size_t i = 0; i < _mesh->nodes->dintervals[d].size(); ++i) {
+				if (std::binary_search(_mesh->nodes->externalIntervals.begin(), _mesh->nodes->externalIntervals.end(), _mesh->nodes->dintervals[d][i].pindex)) {
+					std::cout << "*";
+				} else {
+					std::cout << " ";
+				}
+				std::cout << _mesh->nodes->pintervals[_mesh->nodes->dintervals[d][i].pindex].begin << " -> " << _mesh->nodes->pintervals[_mesh->nodes->dintervals[d][i].pindex].end;
+				std::cout << " :: " << *(_mesh->nodes->idomains->cbegin() + _mesh->nodes->dintervals[d][i].pindex) << "\n";
+			}
+		}
+	});
+
 	std::vector<eslocal> backpermutation(permutation.size());
 	std::iota(backpermutation.begin(), backpermutation.end(), 0);
 	std::sort(backpermutation.begin(), backpermutation.end(), [&] (eslocal i, eslocal j) { return finalpermutation[i] < finalpermutation[j]; });

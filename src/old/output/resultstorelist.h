@@ -13,16 +13,16 @@ namespace espreso {
 class OldMesh;
 class OutputConfiguration;
 
-class ResultStoreList: public Store {
+class ResultsStoreList: public Store {
 
 public:
-	static ResultStoreList* createAsynchronizedStore(const OutputConfiguration &configuration, const OldMesh *mesh);
+	static ResultsStoreList* createAsynchronizedStore(const OutputConfiguration &configuration, const OldMesh *mesh);
 	static void destroyAsynchronizedStore();
 	static bool isStoreNode();
 	static bool isComputeNode();
 
-	ResultStoreList(const OutputConfiguration &output): Store(output) { };
-	~ResultStoreList() { std::for_each(_results.begin(), _results.end(), [] (Store *rs) { delete rs; } ); }
+	ResultsStoreList(const OutputConfiguration &output): Store(output) { };
+	~ResultsStoreList() { std::for_each(_results.begin(), _results.end(), [] (Store *rs) { delete rs; } ); }
 
 	virtual void updateMesh()
 	{
@@ -57,7 +57,7 @@ public:
 protected:
 	std::vector<Store*> _results;
 
-	static ResultStoreList *_resultStoreList;
+	static ResultsStoreList *_resultStoreList;
 	static async::Dispatcher *_dispatcher;
 };
 

@@ -5,34 +5,36 @@
 #include "../../config/ecf/output.h"
 #include "../../basis/logging/logging.h"
 
-#include "resultstore/vtklegacy.h"
-#include "resultstore/vtkxmlascii.h"
-#include "resultstore/vtkxmlbinary.h"
-#include "monitoring/monitoring.h"
+#include "executor/directexecutor.h"
+#include "executor/asyncexecutor.h"
 
 #include "async/Dispatcher.h"
 
 using namespace espreso;
 
-ResultsStoreList* ResultsStoreList::_resultStoreList = NULL;
-async::Dispatcher* ResultsStoreList::_dispatcher = NULL;
+ResultStoreList* ResultStoreList::_resultStoreList = NULL;
+async::Dispatcher* ResultStoreList::_dispatcher = NULL;
 
-ResultsStoreList* ResultsStoreList::createAsynchronizedStore(const OutputConfiguration &configuration, const OldMesh *mesh)
+ResultStoreList* ResultStoreList::createAsynchronizedStore(const OutputConfiguration &configuration)
 {
 	if (_resultStoreList != NULL) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: try to create multiple ASYNC instances.";
 	}
-	_resultStoreList = new ResultsStoreList(configuration);
+	_resultStoreList = new ResultStoreList();
 	_dispatcher = new async::Dispatcher();
 
 	switch (configuration.mode) {
 	case OutputConfiguration::MODE::SYNC:
+		std::cout << "SYNC\n";
+		_resultStoreList->add(new DirectExecutor(configuration));
 		async::Config::setMode(async::SYNC);
 		break;
 	case OutputConfiguration::MODE::THREAD:
+		_resultStoreList->add(new AsyncStore(configuration));
 		async::Config::setMode(async::THREAD);
 		break;
 	case OutputConfiguration::MODE::MPI:
+		_resultStoreList->add(new AsyncStore(configuration));
 		if (environment->MPIsize == 1) {
 			ESINFO(GLOBAL_ERROR) << "Invalid number of MPI processes. OUTPUT::MODE==MPI required at least two MPI processes.";
 		}
@@ -45,30 +47,14 @@ ResultsStoreList* ResultsStoreList::createAsynchronizedStore(const OutputConfigu
 		break;
 	}
 
-
-	ResultsStoreList storeList(configuration);
-	switch (configuration.format) {
-	case OutputConfiguration::FORMAT::VTK_LEGACY:
-		_resultStoreList->_results.push_back(new VTKLegacy(configuration, mesh));
-		break;
-	case OutputConfiguration::FORMAT::VTK_XML_ASCII:
-		_resultStoreList->_results.push_back(new VTKXMLASCII(configuration, mesh));
-		break;
-	case OutputConfiguration::FORMAT::VTK_XML_BINARY:
-		_resultStoreList->_results.push_back(new VTKXMLBinary(configuration, mesh));
-		break;
-	default:
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: add OUTPUT_FORMAT to factory.";
-	}
-
 	_dispatcher->init();
 	_dispatcher->dispatch();
-
-	if (isComputeNode()) {
-		if (configuration.monitoring.size()) {
-			_resultStoreList->_results.push_back(new Monitoring(configuration, mesh));
-		}
-	}
+//
+//	if (isComputeNode()) {
+//		if (configuration.monitoring.size()) {
+//			_resultStoreList->_results.push_back(new Monitoring(configuration, mesh));
+//		}
+//	}
 
 	if (configuration.mode == OutputConfiguration::MODE::MPI) {
 		int computeSize;
@@ -83,7 +69,7 @@ ResultsStoreList* ResultsStoreList::createAsynchronizedStore(const OutputConfigu
 	return _resultStoreList;
 }
 
-void ResultsStoreList::destroyAsynchronizedStore()
+void ResultStoreList::destroyAsynchronizedStore()
 {
 	delete _resultStoreList;
 	delete _dispatcher;
@@ -92,12 +78,12 @@ void ResultsStoreList::destroyAsynchronizedStore()
 	_dispatcher = NULL;
 }
 
-bool ResultsStoreList::isStoreNode()
+bool ResultStoreList::isStoreNode()
 {
 	return _dispatcher == NULL || _dispatcher->isExecutor();
 }
 
-bool ResultsStoreList::isComputeNode()
+bool ResultStoreList::isComputeNode()
 {
 	return !isStoreNode();
 }

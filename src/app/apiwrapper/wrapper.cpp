@@ -9,12 +9,11 @@
 #include "../../assembler/step.h"
 #include "../../assembler/solution.h"
 
-#include "../../output/resultstorelist.h"
-
 #include "../../config/ecf/ecf.h"
 #include "../../input/api/api.h"
 
 #include "../../mesh/mesh.h"
+#include "../../output/results/resultstorelist.h"
 #include "../../solver/generic/FETISolver.h"
 
 

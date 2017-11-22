@@ -15,8 +15,8 @@
 #include "../assembler/physics/physics.h"
 #include "../assembler/physicssolver/assembler.h"
 #include "../mesh/store/elementstore.h"
+#include "../output/results/resultstorelist.h"
 #include "../solver/generic/SparseMatrix.h"
-#include "../output/resultstorelist.h"
 
 namespace espreso {
 
