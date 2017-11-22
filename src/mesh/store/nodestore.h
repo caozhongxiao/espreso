@@ -33,7 +33,7 @@ struct NodeStore {
 	serializededata<eslocal, Point>* coordinates;
 	serializededata<eslocal, int>* ranks;
 
-	eslocal externalIntervals;
+	std::vector<eslocal> externalIntervals;
 	std::vector<ProcessInterval> pintervals;
 	std::vector<std::vector<DomainInterval> > dintervals;
 	std::vector<std::vector<GluingInterval> > gintervals;

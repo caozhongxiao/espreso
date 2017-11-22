@@ -1886,10 +1886,10 @@ void MeshPreprocessing::arrangeNodes()
 	_mesh->nodes->idomains = new serializededata<eslocal, eslocal>(tarray<eslocal>(0, threads, intervalDomainsDistribution), tarray<eslocal>(0, threads, intervalDomainsData));
 	_mesh->nodes->iprocesses = new serializededata<eslocal, int>(tarray<eslocal>(0, threads, intervalDomainsDistribution), tarray<eslocal>(0, threads, intervalDomainsProcs));
 
-	_mesh->nodes->externalIntervals = 0;
+	eslocal externalIntervals = 0;
 	auto iti = _mesh->nodes->pintervals.begin();
 	while (iti != _mesh->nodes->pintervals.end() && iti->end <= (eslocal)externalBoundary.size()) {
-		++_mesh->nodes->externalIntervals;
+		++externalIntervals;
 		++iti;
 	}
 
@@ -1900,50 +1900,33 @@ void MeshPreprocessing::arrangeNodes()
 		});
 	}
 
-	// 0 -> external + inner, 1 -> inner, 2 -> external, 3 -> rest
-	auto getBoundary = [&] (eslocal i) {
-		auto neighbors = _mesh->nodes->idomains->cbegin() + i;
-		if (i < _mesh->nodes->externalIntervals) {
-			if (neighbors->size() > 1) {
-				return 0;
-			} else {
-				return 2;
-			}
-		} else {
-			if (neighbors->size() > 1) {
-				return 1;
-			} else {
-				return 3;
-			}
-		}
-	};
-
 	std::vector<eslocal> ipermutation(_mesh->nodes->pintervals.size());
 	std::iota(ipermutation.begin(), ipermutation.end(), 0);
 	std::sort(ipermutation.begin(), ipermutation.end(), [&] (eslocal i, eslocal j) {
-		int b1 = getBoundary(i), b2 = getBoundary(j);
 		auto n1 = _mesh->nodes->idomains->cbegin() + i;
 		auto n2 = _mesh->nodes->idomains->cbegin() + j;
-		if (b1 == b2) {
-			if (n1->size() != n2->size()) {
-				return n1->size() > n2->size();
-			}
 
+		if (n1->size() == n2->size()) {
 			for (eslocal d = 0; d < n1->size(); d++) {
 				if ((*n1)[d] != (*n2)[d]) {
 					return (*n1)[d] < (*n2)[d];
 				}
 			}
 		}
-		return b1 < b2;
+		return n1->size() > n2->size();
 	});
 
 	_mesh->nodes->idomains->permute(ipermutation, _mesh->nodes->idomains->boundarytaaray().distribution());
 	_mesh->nodes->iprocesses->permute(ipermutation, _mesh->nodes->iprocesses->boundarytaaray().distribution());
 	std::vector<ProcessInterval> permutedIntervals;
+	std::vector<eslocal> exIntervals;
 	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); i++) {
 		permutedIntervals.push_back(_mesh->nodes->pintervals[ipermutation[i]]);
+		if (ipermutation[i] < externalIntervals) {
+			exIntervals.push_back(i);
+		}
 	}
+	std::sort(exIntervals.begin(), exIntervals.end());
 
 	std::vector<eslocal> finalpermutation;
 	finalpermutation.reserve(permutation.size());
@@ -1963,12 +1946,16 @@ void MeshPreprocessing::arrangeNodes()
 					permutedIntervals[i].end = ioffset;
 					ipermutation.push_back(i);
 					_mesh->nodes->pintervals.push_back(permutedIntervals[i]);
+					if (std::binary_search(exIntervals.begin(), exIntervals.end(), i)) {
+						_mesh->nodes->externalIntervals.push_back(_mesh->nodes->pintervals.size() - 1);
+					}
 				}
 			}
 		}
 	}
 	_mesh->nodes->idomains->permute(ipermutation, _mesh->nodes->idomains->boundarytaaray().distribution());
 	_mesh->nodes->iprocesses->permute(ipermutation, _mesh->nodes->iprocesses->boundarytaaray().distribution());
+	std::sort(_mesh->nodes->externalIntervals.begin(), _mesh->nodes->externalIntervals.end());
 
 	_mesh->nodes->dintervals.resize(_mesh->elements->ndomains);
 	_mesh->nodes->gintervals.resize(_mesh->elements->ndomains);
