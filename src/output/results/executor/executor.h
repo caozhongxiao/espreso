@@ -9,7 +9,7 @@ namespace espreso {
 class ResultStoreExecutor: public ResultStore {
 
 public:
-	void storePreprocessedData();
+	void storePreprocessedData(const Mesh &mesh);
 
 	ResultStoreExecutor(const OutputConfiguration &configuration): ResultStore(configuration) {}
 };

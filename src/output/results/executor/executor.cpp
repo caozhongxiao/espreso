@@ -1,13 +1,20 @@
 
 #include "executor.h"
 
-#include <iostream>
+#include "../visualization/vtklegacy.h"
+
+#include "../../../basis/utilities/utils.h"
+
+#include "../../../mesh/mesh.h"
 
 using namespace espreso;
 
-void ResultStoreExecutor::storePreprocessedData()
+void ResultStoreExecutor::storePreprocessedData(const Mesh &mesh)
 {
-	std::cout << "STORE DATA\n";
+	std::string root = Esutils::createDirectory({ Logging::outputRoot(), "PREPROCESSED_DATA" });
+
+	VTKLegacy::mesh(root + "/mesh", mesh.nodes, mesh.elements);
+	VTKLegacy::nodesIntervals(root + "/nodeIntervals", mesh.nodes);
 }
 
 

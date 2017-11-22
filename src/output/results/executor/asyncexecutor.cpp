@@ -59,11 +59,11 @@ void AsyncExecutor::execInit(const async::ExecInfo &info, const InitParameters &
 void AsyncExecutor::exec(const async::ExecInfo &info, const ExecParameters &parameters)
 {
 	if (parameters.updatedBuffers & 1 << AsyncBufferManager::COORDINATES) {
-		std::cout << "COORDINATES: " << *static_cast<const double*>(info.buffer(AsyncBufferManager::buffer(AsyncBufferManager::COORDINATES))) << "\n";
+//		std::cout << "COORDINATES: " << *static_cast<const double*>(info.buffer(AsyncBufferManager::buffer(AsyncBufferManager::COORDINATES))) << "\n";
 	}
 
 	if (parameters.updatedBuffers & 1 << AsyncBufferManager::ELEMENTS) {
-		std::cout << "ELEMENTS: " << *static_cast<const int*>(info.buffer(AsyncBufferManager::buffer(AsyncBufferManager::ELEMENTS))) << "\n";
+//		std::cout << "ELEMENTS: " << *static_cast<const int*>(info.buffer(AsyncBufferManager::buffer(AsyncBufferManager::ELEMENTS))) << "\n";
 	}
 
 	if (
@@ -74,7 +74,7 @@ void AsyncExecutor::exec(const async::ExecInfo &info, const ExecParameters &para
 	}
 
 	if (parameters.updatedBuffers & 1 << AsyncBufferManager::SOLUTION) {
-		std::cout << "SOLUTION: " << *static_cast<const int*>(info.buffer(AsyncBufferManager::buffer(AsyncBufferManager::SOLUTION))) << "\n";
+//		std::cout << "SOLUTION: " << *static_cast<const int*>(info.buffer(AsyncBufferManager::buffer(AsyncBufferManager::SOLUTION))) << "\n";
 		updateSolution();
 	}
 }

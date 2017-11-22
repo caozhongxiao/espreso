@@ -20,10 +20,10 @@ public:
 	static bool isStoreNode();
 	static bool isComputeNode();
 
-	void storePreprocessedData()
+	void storePreprocessedData(const Mesh &mesh)
 	{
 		for (size_t i = 0; i < _results.size(); ++i) {
-			_results[i]->storePreprocessedData();
+			_results[i]->storePreprocessedData(mesh);
 		}
 	}
 

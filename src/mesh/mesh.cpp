@@ -29,7 +29,7 @@
 
 #include "../basis/containers/serializededata.h"
 #include "../basis/containers/tarray.h"
-#include "../output/results/visualization/output.h"
+#include "../output/results/visualization/vtklegacy.h"
 
 
 using namespace espreso;

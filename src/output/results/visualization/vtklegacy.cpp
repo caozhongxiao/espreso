@@ -1,109 +1,138 @@
-//
-//#include "../output/visualization/output.h"
-//
-//#include "mesh.h"
-//#include "elements/element.h"
-//#include "store/boundarystore.h"
-//#include "store/domainstore.h"
-//#include "store/regionstore.h"
-//
-//#include "../basis/containers/serializededata.h"
-//
-//#include "../config/ecf/environment.h"
-//
-//#include <fstream>
-//#include "../basis/containers/point.h"
-//#include "store/elementstore.h"
-//
-//using namespace espreso;
-//
-//void NewOutput::VTKLegacy(const std::string &name, ElementStore *elements, ElementStore *nodes, DomainStore *domains)
-//{
-//	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
-//
-//	os << "# vtk DataFile Version 2.0\n";
-//	os << "EXAMPLE\n";
-//	os << "ASCII\n";
-//	os << "DATASET UNSTRUCTURED_GRID\n\n";
-//
-//	os << "POINTS " << nodes->size << " float\n";
-//	for (auto n = nodes->coordinates->datatarray().begin(); n != nodes->coordinates->datatarray().end(); ++n) {
-//		os << n->x << " " << n->y << " " << n->z << "\n";
-//	}
-//	os << "\n";
-//
-//	os << "CELLS " << elements->size << " " << elements->size + elements->nodes->datatarray().size() << "\n";
-//	for (auto e = elements->nodes->cbegin(); e != elements->nodes->cend(); ++e) {
-//		os << e->size() << " ";
-//		for (auto n = e->begin(); n != e->end(); ++n) {
-//			os << *n << " ";
-//		}
-//		os << "\n";
-//	}
-//	os << "\n";
-//
-//	os << "CELL_TYPES " << elements->size << "\n";
-//	for (auto e = elements->epointers->datatarray().begin(); e != elements->epointers->datatarray().end(); ++e) {
-//		switch ((*e)->code) {
-//		case Element::CODE::SQUARE4:
-//			os << "9\n";
-//			break;
-//		case Element::CODE::SQUARE8:
-//			os << "23\n";
-//			break;
-//		case Element::CODE::TRIANGLE3:
-//			os << "5\n";
-//			break;
-//		case Element::CODE::TRIANGLE6:
-//			os << "22\n";
-//			break;
-//		case Element::CODE::TETRA4:
-//			os << "10\n";
-//			break;
-//		case Element::CODE::TETRA10:
-//			os << "24\n";
-//			break;
-//		case Element::CODE::PYRAMID5:
-//			os << "14\n";
-//			break;
-//		case Element::CODE::PYRAMID13:
-//			os << "27\n";
-//			break;
-//		case Element::CODE::PRISMA6:
-//			os << "13\n";
-//			break;
-//		case Element::CODE::PRISMA15:
-//			os << "26\n";
-//			break;
-//		case Element::CODE::HEXA8:
-//			os << "12\n";
-//			break;
-//		case Element::CODE::HEXA20:
-//			os << "25\n";
-//			break;
-//		default:
-//			break;
-//		}
-//	}
-//	os << "\n";
-//
-//	os << "CELL_DATA " << elements->size << "\n";
-//	os << "SCALARS cluster int 1\n";
-//	os << "LOOKUP_TABLE default\n";
-//	for (size_t e = 0; e < elements->size; e++) {
-//		os << environment->MPIrank << "\n";
-//	}
-//	os << "\n";
-//
-//	os << "SCALARS domain int 1\n";
-//	os << "LOOKUP_TABLE default\n";
-//	for (eslocal d = 0; d < domains->size; d++) {
-//		for (eslocal e = domains->domainElementBoundaries[d]; e < domains->domainElementBoundaries[d + 1]; ++e) {
-//			os << d << "\n";
-//		}
-//	}
-//}
-//
+
+#include "vtklegacy.h"
+
+#include "../../../basis/containers/point.h"
+#include "../../../basis/containers/serializededata.h"
+
+#include "../../../config/ecf/environment.h"
+
+#include "../../../mesh/elements/element.h"
+#include "../../../mesh/store/nodestore.h"
+#include "../../../mesh/store/elementstore.h"
+
+#include <fstream>
+
+using namespace espreso;
+
+void VTKLegacy::mesh(const std::string &name, NodeStore *nodes, ElementStore *elements)
+{
+	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+
+	os << "# vtk DataFile Version 2.0\n";
+	os << "EXAMPLE\n";
+	os << "ASCII\n";
+	os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+	os << "POINTS " << nodes->size << " float\n";
+	for (auto n = nodes->coordinates->datatarray().begin(); n != nodes->coordinates->datatarray().end(); ++n) {
+		os << n->x << " " << n->y << " " << n->z << "\n";
+	}
+	os << "\n";
+
+	os << "CELLS " << elements->size << " " << elements->size + elements->nodes->datatarray().size() << "\n";
+	for (auto e = elements->nodes->cbegin(); e != elements->nodes->cend(); ++e) {
+		os << e->size() << " ";
+		for (auto n = e->begin(); n != e->end(); ++n) {
+			os << *n << " ";
+		}
+		os << "\n";
+	}
+	os << "\n";
+
+	os << "CELL_TYPES " << elements->size << "\n";
+	for (auto e = elements->epointers->datatarray().begin(); e != elements->epointers->datatarray().end(); ++e) {
+		switch ((*e)->code) {
+		case Element::CODE::SQUARE4:
+			os << "9\n";
+			break;
+		case Element::CODE::SQUARE8:
+			os << "23\n";
+			break;
+		case Element::CODE::TRIANGLE3:
+			os << "5\n";
+			break;
+		case Element::CODE::TRIANGLE6:
+			os << "22\n";
+			break;
+		case Element::CODE::TETRA4:
+			os << "10\n";
+			break;
+		case Element::CODE::TETRA10:
+			os << "24\n";
+			break;
+		case Element::CODE::PYRAMID5:
+			os << "14\n";
+			break;
+		case Element::CODE::PYRAMID13:
+			os << "27\n";
+			break;
+		case Element::CODE::PRISMA6:
+			os << "13\n";
+			break;
+		case Element::CODE::PRISMA15:
+			os << "26\n";
+			break;
+		case Element::CODE::HEXA8:
+			os << "12\n";
+			break;
+		case Element::CODE::HEXA20:
+			os << "25\n";
+			break;
+		default:
+			break;
+		}
+	}
+	os << "\n";
+
+	os << "CELL_DATA " << elements->size << "\n";
+	os << "SCALARS cluster int 1\n";
+	os << "LOOKUP_TABLE default\n";
+	for (size_t e = 0; e < elements->size; e++) {
+		os << environment->MPIrank << "\n";
+	}
+	os << "\n";
+}
+
+void VTKLegacy::nodesIntervals(const std::string &name, NodeStore *nodes)
+{
+	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+
+	os << "# vtk DataFile Version 2.0\n";
+	os << "EXAMPLE\n";
+	os << "ASCII\n";
+	os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+	os << "POINTS " << nodes->size << " float\n";
+	for (auto n = nodes->coordinates->datatarray().begin(); n != nodes->coordinates->datatarray().end(); ++n) {
+		os << n->x << " " << n->y << " " << n->z << "\n";
+	}
+	os << "\n";
+
+	os << "CELLS " << nodes->size << " " << 2 * nodes->size << "\n";
+	for (size_t n = 0; n < nodes->size; ++n) {
+		os << "1 " << n << "\n";
+	}
+	os << "\n";
+
+	os << "CELL_TYPES " << nodes->size << "\n";
+	for (size_t n = 0; n < nodes->size; ++n) {
+		os << "1\n";
+	}
+	os << "\n";
+
+	os << "CELL_DATA " << nodes->size << "\n";
+	os << "SCALARS interval int 1\n";
+	os << "LOOKUP_TABLE default\n";
+	int interval = 0;
+	for (eslocal i = 0; i < nodes->pintervals.size(); i++) {
+		for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; n++) {
+			os << interval << "\n";
+		}
+		interval++;
+	}
+	os << "\n";
+}
+
 //void NewOutput::VTKLegacy(const std::string &name, BoundaryStore *elements, ElementStore *nodes, bool inner)
 //{
 //	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
@@ -270,58 +299,7 @@
 //		}
 //	}
 //}
-//
-//void NewOutput::VTKLegacy(const std::string &name, ElementStore *nodes, DomainStore *domains)
-//{
-//	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
-//
-//	os << "# vtk DataFile Version 2.0\n";
-//	os << "EXAMPLE\n";
-//	os << "ASCII\n";
-//	os << "DATASET UNSTRUCTURED_GRID\n\n";
-//
-//	os << "POINTS " << nodes->size << " float\n";
-//	for (auto n = nodes->coordinates->datatarray().begin(); n != nodes->coordinates->datatarray().end(); ++n) {
-//		os << n->x << " " << n->y << " " << n->z << "\n";
-//	}
-//	os << "\n";
-//
-//	os << "CELLS " << nodes->size << " " << 2 * nodes->size << "\n";
-//	for (size_t n = 0; n < nodes->size; ++n) {
-//		os << "1 " << n << "\n";
-//	}
-//	os << "\n";
-//
-//	os << "CELL_TYPES " << nodes->size << "\n";
-//	for (size_t n = 0; n < nodes->size; ++n) {
-//		os << "1\n";
-//	}
-//	os << "\n";
-//
-//	os << "CELL_DATA " << nodes->size << "\n";
-//	os << "SCALARS interval int 1\n";
-//	os << "LOOKUP_TABLE default\n";
-//	int interval = 0;
-//	for (eslocal d = 0; d < domains->size; d++) {
-//		for (size_t i = 0; i < domains->domainNodesIntervals[d].size(); i++) {
-//			if (domains->domainNodesIntervals[d][i].localDomainOffset == 0) {
-//				for (eslocal n = domains->domainNodesIntervals[d][i].begin; n < domains->domainNodesIntervals[d][i].end; n++) {
-//					os << interval << "\n";
-//				}
-//				interval++;
-//			}
-//		}
-//	}
-//	os << "\n";
-//
-//	os << "SCALARS cluster int 1\n";
-//	os << "LOOKUP_TABLE default\n";
-//	for (size_t n = 0; n < nodes->size; ++n) {
-//		os << environment->MPIrank << "\n";
-//	}
-//	os << "\n";
-//}
-//
+
 //void NewOutput::VTKLegacy(const std::string &name, ElementStore *nodes, RegionStore *region)
 //{
 //	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");

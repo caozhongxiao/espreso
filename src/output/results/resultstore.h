@@ -5,11 +5,12 @@
 namespace espreso {
 
 struct OutputConfiguration;
+class Mesh;
 
 class Store {
 
 public:
-	virtual void storePreprocessedData() =0;
+	virtual void storePreprocessedData(const Mesh &mesh) =0;
 
 	virtual void updateMesh() =0;
 	virtual void updateSolution() =0;
@@ -22,7 +23,7 @@ class ResultStore: public Store {
 public:
 	ResultStore(const OutputConfiguration &configuration): _configuration(configuration) {};
 
-	virtual void storePreprocessedData() {}
+	virtual void storePreprocessedData(const Mesh &mesh) {}
 
 	virtual void updateMesh() {}
 	virtual void updateSolution() {}

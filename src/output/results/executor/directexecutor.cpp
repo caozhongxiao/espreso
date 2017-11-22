@@ -7,12 +7,12 @@ using namespace espreso;
 
 void DirectExecutor::updateMesh()
 {
-	std::cout << "DIRECT MESH\n";
+//	std::cout << "DIRECT MESH\n";
 }
 
 void DirectExecutor::updateSolution()
 {
-	std::cout << "DIRECT SOLUTION\n";
+//	std::cout << "DIRECT SOLUTION\n";
 }
 
 
