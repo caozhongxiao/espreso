@@ -1,11 +1,11 @@
 
 #include "gridtowergenerator.h"
 
-#include "../../../config/ecf/environment.h"
-#include "../../../config/ecf/input/gridtower.h"
+#include "../../../../config/ecf/environment.h"
+#include "../../../../config/ecf/input/gridtower.h"
 
-#include "../../../old/mesh/structures/mesh.h"
-#include "../../../old/mesh/structures/elementtypes.h"
+#include "../../../mesh/structures/mesh.h"
+#include "../../../mesh/structures/elementtypes.h"
 #include "../primitives/block.h"
 #include "../generator.h"
 

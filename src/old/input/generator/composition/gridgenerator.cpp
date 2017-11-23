@@ -3,15 +3,15 @@
 
 #include <random>
 
-#include "../../../config/ecf/environment.h"
-#include "../../../config/ecf/input/grid.h"
-#include "../../../basis/utilities/parser.h"
+#include "../../../../config/ecf/environment.h"
+#include "../../../../config/ecf/input/grid.h"
+#include "../../../../basis/utilities/parser.h"
 #include "../primitives/block.h"
 #include "../generator.h"
-#include "../../../old/mesh/structures/region.h"
-#include "../../../old/mesh/structures/mesh.h"
-#include "../../../old/mesh/structures/elementtypes.h"
-#include "../../../old/mesh/structures/coordinates.h"
+#include "../../../mesh/structures/region.h"
+#include "../../../mesh/structures/mesh.h"
+#include "../../../mesh/structures/elementtypes.h"
+#include "../../../mesh/structures/coordinates.h"
 
 #include "../elements/2D/square4.h"
 #include "../elements/2D/square8.h"

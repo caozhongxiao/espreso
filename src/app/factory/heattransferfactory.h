@@ -15,7 +15,7 @@ public:
 	HeatTransferFactory(const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh);
 
 	size_t loadSteps() const;
-	LoadStepSolver* getLoadStepSolver(size_t step, Mesh *mesh, ResultStoreList *store);
+	LoadStepSolver* getLoadStepSolver(size_t step, Mesh *mesh, SolutionStoreList *store);
 
 protected:
 	const HeatTransferConfiguration &_configuration;

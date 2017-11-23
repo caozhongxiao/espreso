@@ -1,13 +1,13 @@
 
 #include "openfoam.h"
 
-#include "../../../old/mesh/elements/plane/square4.h"
-#include "../../../old/mesh/elements/plane/triangle3.h"
+#include "../../mesh/elements/plane/square4.h"
+#include "../../mesh/elements/plane/triangle3.h"
 
-#include "../../../old/mesh/structures/mesh.h"
-#include "../../../old/mesh/structures/elementtypes.h"
-#include "../../../old/mesh/structures/coordinates.h"
-#include "../../../old/mesh/structures/region.h"
+#include "../../mesh/structures/mesh.h"
+#include "../../mesh/structures/elementtypes.h"
+#include "../../mesh/structures/coordinates.h"
+#include "../../mesh/structures/region.h"
 
 #include "../../../basis/logging/logging.h"
 #include "../../../config/ecf/input/input.h"

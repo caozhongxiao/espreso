@@ -7,6 +7,7 @@ namespace espreso {
 struct ProcessInterval {
 	eslocal begin, end;
 
+	ProcessInterval(): begin(0), end(0) {}
 	ProcessInterval(eslocal begin, eslocal end): begin(begin), end(end) {}
 };
 

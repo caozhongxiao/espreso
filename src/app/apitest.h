@@ -15,7 +15,7 @@
 #include "../assembler/physics/physics.h"
 #include "../assembler/physicssolver/assembler.h"
 #include "../mesh/store/elementstore.h"
-#include "../output/results/resultstorelist.h"
+#include "../output/solution/solutionstorelist.h"
 #include "../solver/generic/SparseMatrix.h"
 
 namespace espreso {
@@ -95,7 +95,7 @@ public:
 protected:
 	ECFConfiguration ecf;
 	Mesh mesh;
-	ResultStoreList store;
+	SolutionStoreList store;
 	Factory factory;
 	Step step;
 };

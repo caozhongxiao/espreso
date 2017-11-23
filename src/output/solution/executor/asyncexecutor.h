@@ -1,9 +1,11 @@
 
-#ifndef SRC_OUTPUT_RESULTS_EXECUTOR_ASYNCEXECUTOR_H_
-#define SRC_OUTPUT_RESULTS_EXECUTOR_ASYNCEXECUTOR_H_
+#ifndef SRC_OUTPUT_SOLUTION_EXECUTOR_ASYNCEXECUTOR_H_
+#define SRC_OUTPUT_SOLUTION_EXECUTOR_ASYNCEXECUTOR_H_
 
 #include "directexecutor.h"
 #include "async/Module.h"
+
+#include "../../../mesh/mesh.h"
 
 namespace espreso {
 
@@ -11,8 +13,7 @@ class AsyncBufferManager {
 
 public:
 	enum Buffer: int {
-		NAME,
-		COORDINATES,
+		NODES,
 		ELEMENTS,
 		SOLUTION,
 
@@ -35,24 +36,28 @@ struct ExecParameters
 
 	ExecParameters(): updatedBuffers(0) { }
 
-	template <typename Buffer, typename...Rest>
-	ExecParameters(Buffer buffer, Rest... rest): ExecParameters(rest...) { updatedBuffers |= 1 << buffer; }
+	template <typename...Rest>
+	ExecParameters(AsyncBufferManager::Buffer buffer, Rest... rest): ExecParameters(rest...) { updatedBuffers |= 1 << buffer; }
 };
 
 class AsyncExecutor: public DirectExecutor {
 
 public:
-	AsyncExecutor(const OutputConfiguration &configuration): DirectExecutor(configuration) {}
+	AsyncExecutor(const OutputConfiguration &configuration): DirectExecutor(_mesh, configuration), _buffer(NULL) {}
 
 	void execInit(const async::ExecInfo &info, const InitParameters &initParameters);
 	void exec(const async::ExecInfo &info, const ExecParameters &parameters);
 //	void finalize();
+
+protected:
+	Mesh _mesh;
+	const char *_buffer;
 };
 
-class AsyncStore : public ResultStoreExecutor, private async::Module<AsyncExecutor, InitParameters, ExecParameters> {
+class AsyncStore : public SolutionStoreExecutor, private async::Module<AsyncExecutor, InitParameters, ExecParameters> {
 
 public:
-	AsyncStore(const OutputConfiguration &configuration);
+	AsyncStore(const Mesh &mesh, const OutputConfiguration &configuration);
 	~AsyncStore();
 
 	void updateMesh();
@@ -63,11 +68,14 @@ protected:
 	void setUp() { setExecutor(_executor); };
 //	void tearDown() { _executor.finalize(); }
 
+	void prepareBuffer(AsyncBufferManager::Buffer buffer, size_t size);
+
 	AsyncExecutor _executor;
+	char *_buffer;
 };
 
 }
 
 
 
-#endif /* SRC_OUTPUT_RESULTS_EXECUTOR_ASYNCEXECUTOR_H_ */
+#endif /* SRC_OUTPUT_SOLUTION_EXECUTOR_ASYNCEXECUTOR_H_ */

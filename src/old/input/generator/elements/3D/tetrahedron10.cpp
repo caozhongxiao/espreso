@@ -1,8 +1,8 @@
 
 #include "tetrahedron10.h"
 
-#include "../../../../old/mesh/elements/plane/triangle6.h"
-#include "../../../../old/mesh/elements/volume/tetrahedron10.h"
+#include "../../../../mesh/elements/plane/triangle6.h"
+#include "../../../../mesh/elements/volume/tetrahedron10.h"
 
 using namespace espreso::input;
 

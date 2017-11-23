@@ -1,8 +1,8 @@
 
 #include "triangle6.h"
 
-#include "../../../../old/mesh/elements/line/line3.h"
-#include "../../../../old/mesh/elements/plane/triangle6.h"
+#include "../../../../mesh/elements/line/line3.h"
+#include "../../../../mesh/elements/plane/triangle6.h"
 
 using namespace espreso::input;
 

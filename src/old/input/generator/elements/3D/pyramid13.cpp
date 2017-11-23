@@ -1,8 +1,8 @@
 
 #include "pyramid13.h"
 
-#include "../../../../old/mesh/elements/plane/square8.h"
-#include "../../../../old/mesh/elements/volume/pyramid13.h"
+#include "../../../../mesh/elements/plane/square8.h"
+#include "../../../../mesh/elements/volume/pyramid13.h"
 
 using namespace espreso::input;
 

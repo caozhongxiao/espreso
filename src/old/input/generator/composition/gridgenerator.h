@@ -5,7 +5,7 @@
 #include "../../loader.h"
 #include "../primitives/triple.h"
 
-#include "../../../basis/expression/expression.h"
+#include "../../../../basis/expression/expression.h"
 
 namespace espreso {
 

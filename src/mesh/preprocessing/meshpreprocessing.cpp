@@ -1884,7 +1884,7 @@ void MeshPreprocessing::arrangeNodes()
 	}
 	_mesh->nodes->pintervals.back().end = _mesh->nodes->size;
 	_mesh->nodes->idomains = new serializededata<eslocal, eslocal>(tarray<eslocal>(0, threads, intervalDomainsDistribution), tarray<eslocal>(0, threads, intervalDomainsData));
-	_mesh->nodes->iprocesses = new serializededata<eslocal, int>(tarray<eslocal>(0, threads, intervalDomainsDistribution), tarray<eslocal>(0, threads, intervalDomainsProcs));
+	_mesh->nodes->iranks = new serializededata<eslocal, int>(tarray<eslocal>(0, threads, intervalDomainsDistribution), tarray<eslocal>(0, threads, intervalDomainsProcs));
 
 	eslocal externalIntervals = 0;
 	auto iti = _mesh->nodes->pintervals.begin();
@@ -1917,7 +1917,7 @@ void MeshPreprocessing::arrangeNodes()
 	});
 
 	_mesh->nodes->idomains->permute(ipermutation, _mesh->nodes->idomains->boundarytaaray().distribution());
-	_mesh->nodes->iprocesses->permute(ipermutation, _mesh->nodes->iprocesses->boundarytaaray().distribution());
+	_mesh->nodes->iranks->permute(ipermutation, _mesh->nodes->iranks->boundarytaaray().distribution());
 	std::vector<ProcessInterval> permutedIntervals;
 	std::vector<eslocal> exIntervals;
 	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); i++) {
@@ -1954,7 +1954,7 @@ void MeshPreprocessing::arrangeNodes()
 		}
 	}
 	_mesh->nodes->idomains->permute(ipermutation, _mesh->nodes->idomains->boundarytaaray().distribution());
-	_mesh->nodes->iprocesses->permute(ipermutation, _mesh->nodes->iprocesses->boundarytaaray().distribution());
+	_mesh->nodes->iranks->permute(ipermutation, _mesh->nodes->iranks->boundarytaaray().distribution());
 	std::sort(_mesh->nodes->externalIntervals.begin(), _mesh->nodes->externalIntervals.end());
 
 	_mesh->nodes->dintervals.resize(_mesh->elements->ndomains);
@@ -1977,31 +1977,31 @@ void MeshPreprocessing::arrangeNodes()
 
 	_mesh->nodes->permute(finalpermutation);
 
-	Communication::serialize([&] () {
-		std::cout << " >> " << environment->MPIrank << " << \n";
-		auto domains = _mesh->nodes->idomains->cbegin();
-		for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++domains) {
-			if (std::binary_search(_mesh->nodes->externalIntervals.begin(), _mesh->nodes->externalIntervals.end(), i)) {
-				std::cout << "*";
-			} else {
-				std::cout << " ";
-			}
-			std::cout << _mesh->nodes->pintervals[i].begin << " -> " << _mesh->nodes->pintervals[i].end << " :: " << *domains << "\n";
-		}
-
-		for (eslocal d = 0; d < _mesh->elements->ndomains; ++d) {
-			std::cout << " :: " << d << " :: \n";
-			for (size_t i = 0; i < _mesh->nodes->dintervals[d].size(); ++i) {
-				if (std::binary_search(_mesh->nodes->externalIntervals.begin(), _mesh->nodes->externalIntervals.end(), _mesh->nodes->dintervals[d][i].pindex)) {
-					std::cout << "*";
-				} else {
-					std::cout << " ";
-				}
-				std::cout << _mesh->nodes->pintervals[_mesh->nodes->dintervals[d][i].pindex].begin << " -> " << _mesh->nodes->pintervals[_mesh->nodes->dintervals[d][i].pindex].end;
-				std::cout << " :: " << *(_mesh->nodes->idomains->cbegin() + _mesh->nodes->dintervals[d][i].pindex) << "\n";
-			}
-		}
-	});
+//	Communication::serialize([&] () {
+//		std::cout << " >> " << environment->MPIrank << " << \n";
+//		auto domains = _mesh->nodes->idomains->cbegin();
+//		for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++domains) {
+//			if (std::binary_search(_mesh->nodes->externalIntervals.begin(), _mesh->nodes->externalIntervals.end(), i)) {
+//				std::cout << "*";
+//			} else {
+//				std::cout << " ";
+//			}
+//			std::cout << _mesh->nodes->pintervals[i].begin << " -> " << _mesh->nodes->pintervals[i].end << " :: " << *domains << "\n";
+//		}
+//
+//		for (eslocal d = 0; d < _mesh->elements->ndomains; ++d) {
+//			std::cout << " :: " << d << " :: \n";
+//			for (size_t i = 0; i < _mesh->nodes->dintervals[d].size(); ++i) {
+//				if (std::binary_search(_mesh->nodes->externalIntervals.begin(), _mesh->nodes->externalIntervals.end(), _mesh->nodes->dintervals[d][i].pindex)) {
+//					std::cout << "*";
+//				} else {
+//					std::cout << " ";
+//				}
+//				std::cout << _mesh->nodes->pintervals[_mesh->nodes->dintervals[d][i].pindex].begin << " -> " << _mesh->nodes->pintervals[_mesh->nodes->dintervals[d][i].pindex].end;
+//				std::cout << " :: " << *(_mesh->nodes->idomains->cbegin() + _mesh->nodes->dintervals[d][i].pindex) << "\n";
+//			}
+//		}
+//	});
 
 	std::vector<eslocal> backpermutation(permutation.size());
 	std::iota(backpermutation.begin(), backpermutation.end(), 0);

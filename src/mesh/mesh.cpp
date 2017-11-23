@@ -29,7 +29,7 @@
 
 #include "../basis/containers/serializededata.h"
 #include "../basis/containers/tarray.h"
-#include "../output/results/visualization/vtklegacy.h"
+#include "../output/solution/visualization/vtklegacy.h"
 
 
 using namespace espreso;
@@ -43,34 +43,6 @@ Mesh::Mesh()
   _eclasses(environment->OMP_NUM_THREADS),
   mesh(new OldMesh())
 {
-
-}
-
-ElementsRegionStore* Mesh::eregion(const std::string &name)
-{
-	for (size_t r = 0; r < elementsRegions.size(); r++) {
-		if (StringCompare::caseInsensitiveEq(elementsRegions[r]->name, name)) {
-			return elementsRegions[r];
-		}
-	}
-	ESINFO(ERROR) << "ESPRESO internal error: request for unknown region '" << name << "'.";
-	return NULL;
-}
-
-BoundaryRegionStore* Mesh::bregion(const std::string &name)
-{
-	for (size_t r = 0; r < boundaryRegions.size(); r++) {
-		if (StringCompare::caseInsensitiveEq(boundaryRegions[r]->name, name)) {
-			return boundaryRegions[r];
-		}
-	}
-	ESINFO(ERROR) << "ESPRESO internal error: request for unknown region '" << name << "'.";
-	return NULL;
-}
-
-void Mesh::load(const ECFConfiguration &configuration)
-{
-	neighbours = mesh->neighbours();
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	#pragma omp parallel for
@@ -101,6 +73,35 @@ void Mesh::load(const ECFConfiguration &configuration)
 
 		memcpy(_eclasses[t], eclasses.data(), eclasses.size() * sizeof(Element));
 	}
+}
+
+ElementsRegionStore* Mesh::eregion(const std::string &name)
+{
+	for (size_t r = 0; r < elementsRegions.size(); r++) {
+		if (StringCompare::caseInsensitiveEq(elementsRegions[r]->name, name)) {
+			return elementsRegions[r];
+		}
+	}
+	ESINFO(ERROR) << "ESPRESO internal error: request for unknown region '" << name << "'.";
+	return NULL;
+}
+
+BoundaryRegionStore* Mesh::bregion(const std::string &name)
+{
+	for (size_t r = 0; r < boundaryRegions.size(); r++) {
+		if (StringCompare::caseInsensitiveEq(boundaryRegions[r]->name, name)) {
+			return boundaryRegions[r];
+		}
+	}
+	ESINFO(ERROR) << "ESPRESO internal error: request for unknown region '" << name << "'.";
+	return NULL;
+}
+
+void Mesh::load(const ECFConfiguration &configuration)
+{
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	neighbours = mesh->neighbours();
 
 	// LOAD NODES
 	{

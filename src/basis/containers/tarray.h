@@ -47,6 +47,10 @@ public:
 	const TType* cbegin()              const { return _data; }
 	const TType* cend()                const { return _data + _size; }
 
+	size_t packedSize() const;
+	void pack(char* &p) const;
+	void unpack(const char* &p);
+
 	~tarray();
 
 private:

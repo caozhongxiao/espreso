@@ -55,7 +55,7 @@ size_t StructuralMechanicsFactory::loadSteps() const
 	return _configuration.load_steps;
 }
 
-LoadStepSolver* StructuralMechanicsFactory::getLoadStepSolver(size_t step, Mesh *mesh, ResultStoreList *store)
+LoadStepSolver* StructuralMechanicsFactory::getLoadStepSolver(size_t step, Mesh *mesh, SolutionStoreList *store)
 {
 	const StructuralMechanicsLoadStepConfiguration &settings = getLoadStepsSettings(step, _configuration.load_steps_settings);
 

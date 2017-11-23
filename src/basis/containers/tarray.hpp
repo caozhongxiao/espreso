@@ -130,6 +130,40 @@ tarray<TType>::tarray(size_t thread, size_t threads, const std::vector<TType> &d
 }
 
 template <typename TType>
+size_t tarray<TType>::packedSize() const
+{
+	return sizeof(size_t) + _size * sizeof(TType);
+}
+
+template <typename TType>
+void tarray<TType>::pack(char* &p) const
+{
+	memcpy(p, &_size, sizeof(size_t));
+	p += sizeof(size_t);
+	memcpy(p, _data, _size * sizeof(TType));
+	p += _size * sizeof(TType);
+}
+
+template <typename TType>
+void tarray<TType>::unpack(const char* &p)
+{
+	memcpy(&_size, p, sizeof(size_t));
+	p += sizeof(size_t);
+
+	if (_data != NULL && _distribution.back() != _size) {
+		delete _data;
+		_data = NULL;
+	}
+	if (_data == NULL) {
+		_data = new TType[_size];
+	}
+	memcpy(_data, p, _size * sizeof(TType));
+	p += _size * sizeof(TType);
+
+	_distribution = { 0, _size };
+}
+
+template <typename TType>
 tarray<TType>::~tarray()
 {
 	if (_data) {

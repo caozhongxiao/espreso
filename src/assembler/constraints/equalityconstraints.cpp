@@ -332,7 +332,7 @@ void EqualityConstraints::B1GlueElements(const Step &step)
 	}
 
 	esglobal LMoffset = _dirichletSize;
-	auto processes = _mesh.nodes->iprocesses->cbegin();
+	auto processes = _mesh.nodes->iranks->cbegin();
 	for (size_t i = 0; i < _mesh.nodes->pintervals.size(); ++i, ++processes) {
 		esglobal LMindex = 0;
 		std::vector<std::vector<esglobal> > nmap;

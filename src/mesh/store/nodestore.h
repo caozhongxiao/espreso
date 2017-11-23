@@ -38,7 +38,11 @@ struct NodeStore {
 	std::vector<std::vector<DomainInterval> > dintervals;
 	std::vector<std::vector<GluingInterval> > gintervals;
 	serializededata<eslocal, eslocal>* idomains;
-	serializededata<eslocal, int>* iprocesses;
+	serializededata<eslocal, int>* iranks;
+
+	size_t packedSize() const;
+	void pack(char* &p) const;
+	void unpack(const char* &p);
 
 	NodeStore();
 	~NodeStore();

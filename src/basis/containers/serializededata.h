@@ -265,6 +265,36 @@ public:
 	tarray<TEData>&             datatarray()           { return _edata; }
 	const tarray<TEData>&       datatarray()     const { return _edata; }
 
+	size_t packedSize() const
+	{
+		return sizeof(size_t) + _eboundaries.packedSize() + _edata.packedSize();
+	}
+
+	void pack(char* &p) const
+	{
+		size_t structures = this->structures();
+		memcpy(p, &structures, sizeof(size_t));
+		p += sizeof(size_t);
+
+		_eboundaries.pack(p);
+		_edata.pack(p);
+	}
+	void unpack(const char* &p)
+	{
+		size_t structures;
+		memcpy(&structures, p, sizeof(size_t));
+		p += sizeof(size_t);
+
+		_eboundaries.unpack(p);
+		_edata.unpack(p);
+
+		if (_eboundaries.size()) {
+			inititerators();
+		} else {
+			inititerators(_edata.size() / structures);
+		}
+	}
+
 private:
 	void inititerators()
 	{
@@ -359,17 +389,6 @@ private:
 
 	std::vector<iterator> _iterator;
 	std::vector<const_iterator> _constiterator;
-};
-
-template <typename TEBoundaries, typename TEData>
-struct serializededatainterval {
-	serializededatainterval(typename serializededata<TEBoundaries, TEData>::const_iterator begin, typename serializededata<TEBoundaries, TEData>::const_iterator end)
-	: _begin(begin), _end(end) {}
-
-	typename serializededata<TEBoundaries, TEData>::const_iterator& begin() { return _begin; }
-	typename serializededata<TEBoundaries, TEData>::const_iterator& end() { return _end; }
-
-	typename serializededata<TEBoundaries, TEData>::const_iterator _begin, _end;
 };
 
 template <typename TEBoundaries, typename TEData>

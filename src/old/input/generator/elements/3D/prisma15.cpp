@@ -3,8 +3,8 @@
 #include "hexahedron20.h"
 #include "tetrahedron10.h"
 
-#include "../../../../old/mesh/elements/plane/triangle6.h"
-#include "../../../../old/mesh/elements/volume/prisma15.h"
+#include "../../../../mesh/elements/plane/triangle6.h"
+#include "../../../../mesh/elements/volume/prisma15.h"
 
 using namespace espreso::input;
 

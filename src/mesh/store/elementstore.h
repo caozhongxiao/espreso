@@ -44,6 +44,10 @@ struct ElementStore {
 	std::vector<size_t> elementsDistribution;
 	std::vector<int> clusters;
 
+	size_t packedSize() const;
+	void pack(char* &p) const;
+	void unpack(const char* &p);
+
 	ElementStore(std::vector<Element*> &eclasses);
 	~ElementStore();
 

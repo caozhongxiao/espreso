@@ -1,5 +1,5 @@
 
-#include "vtklegacy.h"
+#include "../../solution/visualization/vtklegacy.h"
 
 #include "../../../basis/containers/point.h"
 #include "../../../basis/containers/serializededata.h"

@@ -122,7 +122,7 @@ def configure(ctx):
     check_environment(ctx)
 
     ctx.setenv("gui", ctx.all_envs["espreso"].derive());
-    ctx.recurse("src/gui")
+    #ctx.recurse("src/gui")
 
     optional_libraries = [
         (ctx.env.QT, "QT5", "GUI"),
@@ -170,7 +170,7 @@ def build(ctx):
     ctx.recurse("src/app")
 
     ctx.env = ctx.all_envs["gui"]
-    ctx.recurse("src/gui")
+    #ctx.recurse("src/gui")
 
 def options(opt):
     opt.parser.formatter.max_help_position = 32

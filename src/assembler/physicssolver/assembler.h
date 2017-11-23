@@ -17,7 +17,7 @@ class TimeEval;
 class TimeEvent;
 class SparseMatrix;
 class Solution;
-class ResultStoreList;
+class SolutionStoreList;
 enum Matrices: int;
 enum class ElementType;
 enum class SumOperation;
@@ -26,7 +26,7 @@ enum class SumRestriction;
 class Assembler {
 
 public:
-	Assembler(Instance &instance, Physics &physics, Mesh &mesh, ResultStoreList &store, LinearSolver &linearSolver);
+	Assembler(Instance &instance, Physics &physics, Mesh &mesh, SolutionStoreList &store, LinearSolver &linearSolver);
 	~Assembler();
 
 	void preprocessData(const Step &step);
@@ -68,7 +68,7 @@ public:
 	Instance &instance;
 	Physics &physics;
 	Mesh &mesh;
-	ResultStoreList &store;
+	SolutionStoreList &store;
 	LinearSolver &linearSolver;
 
 protected:

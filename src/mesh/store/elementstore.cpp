@@ -31,6 +31,63 @@ ElementStore::ElementStore(std::vector<Element*> &eclasses)
 
 }
 
+size_t ElementStore::packedSize() const
+{
+	if (nodes == NULL || epointers == NULL) {
+		ESINFO(ERROR) << "ESPRESO internal error: invalid request for packedSize.";
+	}
+	return
+			Esutils::packedSize(size) +
+			nodes->packedSize() +
+			sizeof(size_t) + epointers->datatarray().size() * sizeof(int) +
+			Esutils::packedSize(elementsDistribution);
+}
+
+void ElementStore::pack(char* &p) const
+{
+	Esutils::pack(size, p);
+	nodes->pack(p);
+	if (epointers != NULL) {
+		std::vector<int> eindices;
+		eindices.reserve(epointers->datatarray().size());
+
+		size_t threads = environment->OMP_NUM_THREADS;
+		for (size_t t = 0; t < threads; t++) {
+			for (size_t i = this->distribution[t]; i < this->distribution[t + 1]; ++i) {
+				eindices.push_back(epointers->datatarray()[i] - _eclasses[t]);
+			}
+		}
+		Esutils::pack(eindices, p);
+
+	}
+	Esutils::pack(elementsDistribution, p);
+}
+
+void ElementStore::unpack(const char* &p)
+{
+	if (nodes == NULL) {
+		nodes = new serializededata<eslocal, eslocal>(tarray<eslocal>(1, 0), tarray<eslocal>(1, 0));
+	}
+	if (epointers == NULL) {
+		epointers = new serializededata<eslocal, Element*>(1, tarray<Element*>(1, 0));
+	}
+
+	Esutils::unpack(size, p);
+	nodes->unpack(p);
+	if (epointers != NULL) {
+		std::vector<int> eindices;
+		Esutils::unpack(eindices, p);
+		if (epointers != NULL) {
+			delete epointers;
+		}
+		epointers = new serializededata<eslocal, Element*>(1, tarray<Element*>(1, size));
+		for (size_t i = 0; i < size; ++i) {
+			epointers->datatarray()[i] = &_eclasses[0][eindices[i]];
+		}
+	}
+	Esutils::unpack(elementsDistribution, p);
+}
+
 ElementStore::~ElementStore()
 {
 	if (IDs == NULL) { delete IDs; }

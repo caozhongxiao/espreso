@@ -2,6 +2,7 @@
 #include "../logging/logging.h"
 #include <cmath>
 #include <algorithm>
+#include <cstring>
 
 #include "utils.h"
 
@@ -147,6 +148,56 @@ typename std::vector<Ttype>::const_iterator Esutils::max_element(const std::vect
 		}
 	}
 	return max;
+}
+
+template<typename Ttype>
+size_t Esutils::packedSize(const Ttype &data)
+{
+	return sizeof(Ttype);
+}
+
+template<typename Ttype>
+size_t Esutils::packedSize(const std::vector<Ttype> &data)
+{
+	return data.size() * sizeof(Ttype) + sizeof(size_t);
+}
+
+template<typename Ttype>
+void Esutils::pack(const Ttype &data, char* &p)
+{
+	memcpy(p, &data, packedSize(data));
+	p += packedSize(data);
+}
+
+template<typename Ttype>
+void Esutils::pack(const std::vector<Ttype> &data, char* &p)
+{
+	size_t size = data.size();
+
+	memcpy(p, &size, packedSize(size));
+	p += packedSize(size);
+
+	memcpy(p, data.data(), data.size() * sizeof(Ttype));
+	p += data.size() * sizeof(Ttype);
+}
+
+template<typename Ttype>
+void Esutils::unpack(Ttype &data, const char* &p)
+{
+	memcpy(&data, p, packedSize(data));
+	p += packedSize(data);
+}
+
+template<typename Ttype>
+void Esutils::unpack(std::vector<Ttype> &data, const char* &p)
+{
+	size_t size;
+	memcpy(&size, p, packedSize(size));
+	p += packedSize(size);
+
+	data.resize(size);
+	memcpy(data.data(), p, data.size() * sizeof(Ttype));
+	p += data.size() * sizeof(Ttype);
 }
 
 }
