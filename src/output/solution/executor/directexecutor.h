@@ -6,13 +6,19 @@
 
 namespace espreso {
 
+class EnSight;
+
 class DirectExecutor: public SolutionStoreExecutor {
 
 public:
 	void updateMesh();
 	void updateSolution();
 
-	DirectExecutor(const Mesh &mesh, const OutputConfiguration &configuration): SolutionStoreExecutor(mesh, configuration) {}
+	DirectExecutor(const Mesh &mesh, const OutputConfiguration &configuration);
+	~DirectExecutor();
+
+protected:
+	EnSight *_ensight;
 };
 
 }
