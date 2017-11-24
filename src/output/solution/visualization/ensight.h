@@ -3,7 +3,6 @@
 #define SRC_OUTPUT_SOLUTION_VISUALIZATION_ENSIGHT_H_
 
 #include <string>
-#include <fstream>
 
 namespace espreso {
 
@@ -11,6 +10,7 @@ class Mesh;
 
 struct EnSight {
 	EnSight(const std::string &name, const Mesh &mesh);
+	~EnSight();
 
 	void storeGeometry();
 	void storeVariables();
@@ -20,7 +20,7 @@ protected:
 	std::string _name;
 	const Mesh &_mesh;
 
-	std::ofstream _casefile;
+	std::ofstream *_casefile;
 };
 
 }

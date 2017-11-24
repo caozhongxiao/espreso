@@ -11,6 +11,7 @@
 #include "../../basis/logging/timeeval.h"
 #include "../../basis/logging/logging.h"
 #include "../../basis/utilities/utils.h"
+#include "../../mesh/mesh.h"
 #include "../../old/mesh/structures/elementtypes.h"
 
 #include "mpi.h"
@@ -131,15 +132,17 @@ void Assembler::solve(const Step &step, Matrices updatedMatrices)
 
 void Assembler::storeSolution(const Step &step)
 {
-	timeWrapper("store solution", [&] () {
-		std::vector<Solution*> solutions;
-		for (size_t i = 0; i < physics.solutionsIndicesToStore().size(); i++) {
-			solutions.push_back(instance.solutions[physics.solutionsIndicesToStore()[i]]);
-		}
-		// TODO: MESH
-		// store.storeSolution(step, solutions, physics.propertiesToStore());
-		store.updateSolution();
-	});
+	if (mesh.prepareSolutionForOutput(step)) {
+		timeWrapper("store solution", [&] () {
+			std::vector<Solution*> solutions;
+			for (size_t i = 0; i < physics.solutionsIndicesToStore().size(); i++) {
+				solutions.push_back(instance.solutions[physics.solutionsIndicesToStore()[i]]);
+			}
+			// TODO: MESH
+			// store.storeSolution(step, solutions, physics.propertiesToStore());
+			store.updateSolution();
+		});
+	}
 }
 
 void Assembler::storeSubSolution(const Step &step)

@@ -15,7 +15,8 @@ public:
 	enum Buffer: int {
 		NODES,
 		ELEMENTS,
-		SOLUTION,
+		NODEDATA,
+		ELEMENTDATA,
 
 		SIZE
 	};
@@ -43,7 +44,7 @@ struct ExecParameters
 class AsyncExecutor: public DirectExecutor {
 
 public:
-	AsyncExecutor(const OutputConfiguration &configuration): DirectExecutor(_mesh, configuration), _buffer(NULL) {}
+	AsyncExecutor(const ECFConfiguration &configuration);
 
 	void execInit(const async::ExecInfo &info, const InitParameters &initParameters);
 	void exec(const async::ExecInfo &info, const ExecParameters &parameters);

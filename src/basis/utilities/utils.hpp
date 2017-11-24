@@ -150,6 +150,12 @@ typename std::vector<Ttype>::const_iterator Esutils::max_element(const std::vect
 	return max;
 }
 
+template<>
+size_t Esutils::packedSize(const std::string &data)
+{
+	return sizeof(size_t) + data.size();
+}
+
 template<typename Ttype>
 size_t Esutils::packedSize(const Ttype &data)
 {
@@ -160,6 +166,17 @@ template<typename Ttype>
 size_t Esutils::packedSize(const std::vector<Ttype> &data)
 {
 	return data.size() * sizeof(Ttype) + sizeof(size_t);
+}
+
+template<>
+void Esutils::pack(const std::string &data, char* &p)
+{
+	size_t size = data.size();
+	memcpy(p, &size, packedSize(size));
+	p += packedSize(size);
+
+	memcpy(p, data.data(), data.size());
+	p += data.size();
 }
 
 template<typename Ttype>
@@ -179,6 +196,16 @@ void Esutils::pack(const std::vector<Ttype> &data, char* &p)
 
 	memcpy(p, data.data(), data.size() * sizeof(Ttype));
 	p += data.size() * sizeof(Ttype);
+}
+
+template<>
+void Esutils::unpack(std::string &data, const char* &p)
+{
+	size_t size;
+	memcpy(&size, p, packedSize(size));
+	p += packedSize(size);
+	data = std::string(p, size);
+	p += size;
 }
 
 template<typename Ttype>

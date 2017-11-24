@@ -18,6 +18,8 @@
 #include "../config/ecf/environment.h"
 #include "../config/ecf/physics/physics.h"
 
+#include "../assembler/step.h"
+
 #include "../old/mesh/structures/mesh.h"
 #include "../old/mesh/structures/coordinates.h"
 #include "../old/mesh/structures/region.h"
@@ -35,11 +37,12 @@
 using namespace espreso;
 
 
-Mesh::Mesh()
+Mesh::Mesh(const ECFConfiguration &configuration)
 : elements(new ElementStore(_eclasses)), nodes(new NodeStore()),
   halo(new ElementStore(_eclasses)),
   preprocessing(new MeshPreprocessing(this)),
 
+  configuration(configuration),
   _eclasses(environment->OMP_NUM_THREADS),
   mesh(new OldMesh())
 {
@@ -97,7 +100,7 @@ BoundaryRegionStore* Mesh::bregion(const std::string &name)
 	return NULL;
 }
 
-void Mesh::load(const ECFConfiguration &configuration)
+void Mesh::load()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -235,7 +238,7 @@ void Mesh::load(const ECFConfiguration &configuration)
 		}
 	}
 
-	update(configuration);
+	update();
 
 
 //	Transformation::reclusterize(*this);
@@ -254,7 +257,7 @@ void Mesh::load(const ECFConfiguration &configuration)
 }
 
 
-void Mesh::update(const ECFConfiguration &configuration)
+void Mesh::update()
 {
 	materials.clear();
 	for (auto mat = configuration.getPhysics()->materials.begin(); mat != configuration.getPhysics()->materials.end(); ++mat) {
@@ -262,7 +265,105 @@ void Mesh::update(const ECFConfiguration &configuration)
 	}
 
 	// preprocessing->reclusterize();
-	preprocessing->partitiate(2, true, true);
+	preprocessing->partitiate(1, true, true);
+}
+
+bool Mesh::prepareSolutionForOutput(const Step &step)
+{
+	// TODO: NUMA + load balancing
+
+	std::vector<int> allranks(neighbours);
+	allranks.push_back(environment->MPIrank);
+	std::sort(allranks.begin(), allranks.end());
+
+	auto n2i = [ & ] (int neighbour) {
+		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
+	};
+
+	auto r2i = [ & ] (int rank) {
+		return std::lower_bound(allranks.begin(), allranks.end(), rank) - allranks.begin();
+	};
+
+	auto doffset = [&] (eslocal d, eslocal i) {
+		return std::lower_bound(nodes->dintervals[d].begin(), nodes->dintervals[d].end(), i, [] (const DomainInterval &interval, eslocal i) { return interval.pindex < i; })->DOFOffset;
+	};
+
+	for (auto datait = nodes->data.begin(); datait != nodes->data.end(); ++datait) {
+		NodeData* data = *datait;
+		if (data->names.size()) {
+			data->gathredData->clear();
+			data->gathredData->resize(nodes->uniqueSize);
+
+
+			std::vector<eslocal> soffsets(nodes->pintervals.size()), scouters(allranks.size());
+			std::vector<std::vector<double> > sBuffer(neighbours.size()), rBuffer(neighbours.size());
+
+			for (size_t i = 0; i < nodes->pintervals.size(); ++i) {
+				soffsets[i] = scouters[r2i(nodes->pintervals[i].sourceProcess)];
+				scouters[r2i(nodes->pintervals[i].sourceProcess)] += nodes->pintervals[i].end - nodes->pintervals[i].begin;
+			}
+
+			for (size_t n = 0; n < neighbours.size(); ++n) {
+				if (neighbours[n] < environment->MPIrank) {
+					sBuffer[n].resize(scouters[n]);
+				}
+			}
+
+			#pragma omp parallel for
+			for (size_t i = 0; i < nodes->pintervals.size(); ++i) {
+				auto domains = nodes->idomains->cbegin() + i;
+				eslocal offset, goffset;
+
+				if (nodes->pintervals[i].sourceProcess < environment->MPIrank) {
+					for (auto d = domains->begin(); d != domains->end(); ++d) {
+						if (elements->firstDomain <= *d && *d < elements->firstDomain + elements->ndomains) {
+							offset = doffset(*d - elements->firstDomain, i);
+							for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++offset) {
+								sBuffer[n2i(nodes->pintervals[i].sourceProcess)][soffsets[i]++] += (*data->decomposedData)[*d - elements->firstDomain][offset];
+							}
+						}
+					}
+				}
+			}
+
+			if (!Communication::receiveUpperUnknownSize(sBuffer, rBuffer, neighbours)) {
+				ESINFO(ERROR) << "ESPRESO internal error: gather results\n";
+			}
+
+			#pragma omp parallel for
+			for (size_t i = 0; i < nodes->pintervals.size(); ++i) {
+				auto domains = nodes->idomains->cbegin() + i;
+				eslocal offset, goffset;
+
+				if (nodes->pintervals[i].sourceProcess == environment->MPIrank) {
+					for (auto d = domains->begin(); d != domains->end(); ++d) {
+						if (*d < elements->firstDomain + elements->ndomains) {
+							offset = doffset(*d - elements->firstDomain, i);
+							goffset = nodes->pintervals[i].globalOffset - nodes->uniqueOffset;
+							for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++offset, ++goffset) {
+								(*data->gathredData)[goffset] += (*data->decomposedData)[*d - elements->firstDomain][offset];
+							}
+						} else {
+							auto neigbors = nodes->ineighborOffsets->cbegin() + i;
+							for (auto neigh = neigbors->begin(); neigh != neigbors->end(); neigh += 2) {
+								offset = *(neigh + 1);
+								goffset = nodes->pintervals[i].globalOffset - nodes->uniqueOffset;
+								for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++offset, ++goffset) {
+									(*data->gathredData)[goffset] += rBuffer[n2i(*neigh)][offset];
+								}
+							}
+						}
+					}
+					goffset = nodes->pintervals[i].globalOffset - nodes->uniqueOffset;
+					for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++goffset) {
+						(*data->gathredData)[goffset] /= domains->size();
+					}
+				}
+			}
+		}
+	}
+
+	return true;
 }
 
 //RegionStore* Mesh::region(const std::string &name)

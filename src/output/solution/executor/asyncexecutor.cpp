@@ -1,6 +1,8 @@
 
 #include "asyncexecutor.h"
 
+#include "../../../config/ecf/ecf.h"
+
 #include "../../../mesh/mesh.h"
 #include "../../../mesh/store/nodestore.h"
 #include "../../../mesh/store/elementstore.h"
@@ -40,14 +42,14 @@ void AsyncStore::updateSolution()
 {
 	wait();
 
-	prepareBuffer(AsyncBufferManager::SOLUTION, _mesh.nodes->packedSize());
-	_mesh.nodes->pack(_buffer = managedBuffer<char*>(AsyncBufferManager::buffer(AsyncBufferManager::SOLUTION)));
+	prepareBuffer(AsyncBufferManager::NODEDATA, _mesh.nodes->packedDataSize());
+	_mesh.nodes->packData(_buffer = managedBuffer<char*>(AsyncBufferManager::buffer(AsyncBufferManager::NODEDATA)));
 
-	call(ExecParameters(AsyncBufferManager::SOLUTION));
+	call(ExecParameters(AsyncBufferManager::NODEDATA));
 }
 
 AsyncStore::AsyncStore(const Mesh &mesh, const OutputConfiguration &configuration)
-: SolutionStoreExecutor(mesh, configuration), _executor(configuration), _buffer(NULL)
+: SolutionStoreExecutor(mesh, configuration), _executor(mesh.configuration), _buffer(NULL)
 {
 	async::Module<AsyncExecutor, InitParameters, ExecParameters>::init();
 	callInit(InitParameters());
@@ -57,6 +59,12 @@ AsyncStore::~AsyncStore()
 {
 	wait();
 	async::Module<AsyncExecutor, InitParameters, ExecParameters>::finalize();
+}
+
+AsyncExecutor::AsyncExecutor(const ECFConfiguration &configuration)
+: _mesh(configuration), DirectExecutor(_mesh, configuration.output), _buffer(NULL)
+{
+
 }
 
 void AsyncExecutor::execInit(const async::ExecInfo &info, const InitParameters &initParameters)
@@ -81,8 +89,8 @@ void AsyncExecutor::exec(const async::ExecInfo &info, const ExecParameters &para
 		updateMesh();
 	}
 
-	if (parameters.updatedBuffers & 1 << AsyncBufferManager::SOLUTION) {
-//		std::cout << "SOLUTION: " << *static_cast<const int*>(info.buffer(AsyncBufferManager::buffer(AsyncBufferManager::SOLUTION))) << "\n";
+	if (parameters.updatedBuffers & 1 << AsyncBufferManager::NODEDATA) {
+		_mesh.nodes->unpackData(_buffer = static_cast<const char*>(info.buffer(AsyncBufferManager::buffer(AsyncBufferManager::NODEDATA))));
 		updateSolution();
 	}
 }

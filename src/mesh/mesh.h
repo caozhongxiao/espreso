@@ -8,7 +8,9 @@
 namespace espreso {
 
 struct ECFConfiguration;
+struct OutputConfiguration;
 struct MaterialConfiguration;
+struct Step;
 
 struct ElementStore;
 struct NodeStore;
@@ -32,9 +34,11 @@ class Mesh {
 
 	friend class MeshPreprocessing;
 public:
-	Mesh();
-	void load(const ECFConfiguration &configuration);
-	void update(const ECFConfiguration &configuration);
+	Mesh(const ECFConfiguration &configuration);
+	void load();
+	void update();
+
+	bool prepareSolutionForOutput(const Step &step);
 
 	ElementsRegionStore* eregion(const std::string &name);
 	BoundaryRegionStore* bregion(const std::string &name);
@@ -54,6 +58,7 @@ public:
 	std::vector<const MaterialConfiguration*> materials;
 
 //protected:
+	const ECFConfiguration &configuration;
 	std::vector<Element*> _eclasses;
 	OldMesh *mesh;
 };

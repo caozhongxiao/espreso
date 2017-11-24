@@ -16,6 +16,8 @@
 #include "../../basis/utilities/utils.h"
 #include "../../basis/logging/logging.h"
 
+#include "../../config/ecf/environment.h"
+
 #include "../../wrappers/wparmetis.h"
 #include "../../wrappers/wmetis.h"
 
@@ -1963,30 +1965,62 @@ void MeshPreprocessing::arrangeNodes()
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
 			eslocal doffset = 0;
-			auto neighbors = _mesh->nodes->idomains->cbegin();
-			for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++neighbors) {
-				auto iit = std::lower_bound(neighbors->begin(), neighbors->end(), _mesh->elements->firstDomain + d);
-				if (iit != neighbors->end() && *iit == _mesh->elements->firstDomain + d) {
+			auto domains = _mesh->nodes->idomains->cbegin();
+			for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++domains) {
+				auto iit = std::lower_bound(domains->begin(), domains->end(), _mesh->elements->firstDomain + d);
+				if (iit != domains->end() && *iit == _mesh->elements->firstDomain + d) {
 					_mesh->nodes->dintervals[d].push_back(DomainInterval(_mesh->nodes->pintervals[i].begin, _mesh->nodes->pintervals[i].end, i, doffset));
-					_mesh->nodes->gintervals[d].push_back(GluingInterval(_mesh->nodes->dintervals[d].back(), iit - neighbors->begin(), neighbors->size()));
+					_mesh->nodes->gintervals[d].push_back(GluingInterval(_mesh->nodes->dintervals[d].back(), iit - domains->begin(), domains->size()));
 					doffset += _mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin;
 				}
 			}
 		}
 	}
 
-	_mesh->nodes->permute(finalpermutation);
+	auto ranks = _mesh->nodes->iranks->cbegin();
+	eslocal goffset = 0;
+	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++ranks) {
+		_mesh->nodes->pintervals[i].sourceProcess = ranks->front();
+		if (ranks->front() == environment->MPIrank) {
+			goffset += _mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin;
+		}
+	}
+
+	_mesh->nodes->uniqueSize = goffset;
+	std::vector<eslocal> goffsets = _mesh->nodes->gatherUniqueNodeDistribution();
+	std::vector<eslocal> roffsets(environment->MPIsize);
+	_mesh->nodes->uniqueOffset = goffsets[environment->MPIrank];
+
+	std::vector<eslocal> neighDistribution({ 0 }), neighData;
+	ranks = _mesh->nodes->iranks->cbegin();
+	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++ranks) {
+		_mesh->nodes->pintervals[i].globalOffset = goffsets[_mesh->nodes->pintervals[i].sourceProcess];
+		goffsets[_mesh->nodes->pintervals[i].sourceProcess] += _mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin;
+		for (auto prev = ranks->begin(), r = prev + 1; r != ranks->end(); ++r) {
+			if (environment->MPIrank < *r && *prev != *r) {
+				neighData.push_back(*r);
+				neighData.push_back(roffsets[*r]);
+				roffsets[*r] += _mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin;
+			}
+		}
+		neighDistribution.push_back(neighData.size());
+	}
+	_mesh->nodes->ineighborOffsets = new serializededata<eslocal, eslocal>(tarray<eslocal>(0, 1, neighDistribution), tarray<eslocal>(0, 1, neighData));
 
 //	Communication::serialize([&] () {
 //		std::cout << " >> " << environment->MPIrank << " << \n";
 //		auto domains = _mesh->nodes->idomains->cbegin();
-//		for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++domains) {
+//		auto neighbors = _mesh->nodes->ineighborOffsets->cbegin();
+//		for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++domains, ++neighbors) {
 //			if (std::binary_search(_mesh->nodes->externalIntervals.begin(), _mesh->nodes->externalIntervals.end(), i)) {
 //				std::cout << "*";
 //			} else {
 //				std::cout << " ";
 //			}
-//			std::cout << _mesh->nodes->pintervals[i].begin << " -> " << _mesh->nodes->pintervals[i].end << " :: " << *domains << "\n";
+//			std::cout
+//				<< _mesh->nodes->pintervals[i].begin << " -> " << _mesh->nodes->pintervals[i].end << " :: "
+//				<< _mesh->nodes->pintervals[i].sourceProcess << " " << _mesh->nodes->pintervals[i].globalOffset << " :: "
+//				<< *domains << " << " << *neighbors << "\n";
 //		}
 //
 //		for (eslocal d = 0; d < _mesh->elements->ndomains; ++d) {
@@ -1998,10 +2032,13 @@ void MeshPreprocessing::arrangeNodes()
 //					std::cout << " ";
 //				}
 //				std::cout << _mesh->nodes->pintervals[_mesh->nodes->dintervals[d][i].pindex].begin << " -> " << _mesh->nodes->pintervals[_mesh->nodes->dintervals[d][i].pindex].end;
+//				std::cout << " :: " << _mesh->nodes->pintervals[_mesh->nodes->dintervals[d][i].pindex].sourceProcess << " " << _mesh->nodes->pintervals[_mesh->nodes->dintervals[d][i].pindex].globalOffset;
 //				std::cout << " :: " << *(_mesh->nodes->idomains->cbegin() + _mesh->nodes->dintervals[d][i].pindex) << "\n";
 //			}
 //		}
 //	});
+
+	_mesh->nodes->permute(finalpermutation);
 
 	std::vector<eslocal> backpermutation(permutation.size());
 	std::iota(backpermutation.begin(), backpermutation.end(), 0);

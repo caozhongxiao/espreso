@@ -31,6 +31,7 @@ HeatTransfer3D::HeatTransfer3D(Mesh *mesh, Instance *instance, const HeatTransfe
 	}
 
 	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, dirichlet, 1, configuration.load_steps_settings.at(1).feti.redundant_lagrange, configuration.load_steps_settings.at(1).feti.scaling);
+	mesh->nodes->appendData({ "TEMPERATURE" }, &instance->primalSolution);
 }
 
 std::vector<std::pair<ElementType, Property> > HeatTransfer3D::propertiesToStore() const
