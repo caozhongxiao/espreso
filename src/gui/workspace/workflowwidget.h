@@ -55,6 +55,8 @@ private:
     int m_loadsteps;
     int m_loadsteps_fst_tab_index;
     void createLoadstepsTabs();
+
+    void createOutputTab();
 };
 
 }

@@ -9,6 +9,7 @@
 
 #include "loadstepwidget.h"
 #include "regionmaterialswidget.h"
+#include "outputconfigurationwidget.h"
 
 using namespace espreso;
 
@@ -53,6 +54,8 @@ void WorkflowWidget::setData(ECFConfiguration *ecf, Mesh* mesh)
     this->createLoadstepsTabs();
 
     this->m_loadsteps_fst_tab_index = ui->workflow->count();
+
+    this->createOutputTab();
 }
 
 void WorkflowWidget::createPhysicsTab()
@@ -79,6 +82,13 @@ void WorkflowWidget::createMaterialsTab()
                                                            this->activePhysics(this->m_ecf),
                                                            this);
     ui->workflow->addTab(rmw, QLatin1String("Materials"));
+}
+
+void WorkflowWidget::createOutputTab()
+{
+    OutputConfigurationWidget* ocw = new OutputConfigurationWidget(&this->m_ecf->output, this);
+    ocw->init();
+    ui->workflow->addTab(ocw, QLatin1String("Output"));
 }
 
 void WorkflowWidget::createLoadstepsTabs()
@@ -151,6 +161,8 @@ void WorkflowWidget::onPhysicsChange(ECFObject *physics)
     this->createLoadstepsTabs();
 
     this->m_loadsteps_fst_tab_index = ui->workflow->count();
+
+    this->createOutputTab();
 
     emit physicsChanged(physics);
 }
