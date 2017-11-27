@@ -18,10 +18,10 @@ struct ElementStore {
 	void permute(const std::vector<eslocal> &permutation) { permute(permutation, distribution); }
 	void permute(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
 
-	std::vector<size_t> gatherElementsDistribution();
+	std::vector<eslocal> gatherElementsDistribution();
 	std::vector<eslocal> gatherElementsProcDistribution();
 
-	std::vector<size_t> gatherDomainsDistribution();
+	std::vector<eslocal> gatherDomainsDistribution();
 	std::vector<eslocal> gatherDomainsProcDistribution();
 
 
@@ -40,8 +40,8 @@ struct ElementStore {
 
 	eslocal firstDomain;
 	eslocal ndomains;
-	std::vector<size_t> domainDistribution;
-	std::vector<size_t> elementsDistribution;
+	std::vector<eslocal> domainDistribution;
+	std::vector<eslocal> elementsDistribution;
 	std::vector<int> clusters;
 
 	size_t packedSize() const;

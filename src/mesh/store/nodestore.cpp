@@ -37,6 +37,7 @@ size_t NodeStore::packedSize() const
 	}
 	return
 			Esutils::packedSize(size) +
+			Esutils::packedSize(uniqueSize) +
 			IDs->packedSize() +
 			coordinates->packedSize() +
 			idomains->packedSize() +
@@ -47,6 +48,7 @@ size_t NodeStore::packedSize() const
 void NodeStore::pack(char* &p) const
 {
 	Esutils::pack(size, p);
+	Esutils::pack(uniqueSize, p);
 	IDs->pack(p);
 	coordinates->pack(p);
 	idomains->pack(p);
@@ -67,6 +69,7 @@ void NodeStore::unpack(const char* &p)
 	}
 
 	Esutils::unpack(size, p);
+	Esutils::unpack(uniqueSize, p);
 	IDs->unpack(p);
 	coordinates->unpack(p);
 	idomains->unpack(p);

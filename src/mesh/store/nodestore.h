@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include "../intervals/processinterval.h"
 #include "../intervals/domaininterval.h"
@@ -40,6 +41,16 @@ protected:
 	bool _delete;
 };
 
+struct TNeighborOffset {
+	eslocal process, offset;
+};
+
+inline std::ostream& operator<<(std::ostream& os, const TNeighborOffset &neighborOffset)
+{
+	os << neighborOffset.process << " " << neighborOffset.offset;
+	return os;
+}
+
 struct NodeStore {
 
 	void store(const std::string &file);
@@ -69,7 +80,7 @@ struct NodeStore {
 	std::vector<std::vector<DomainInterval> > dintervals;
 	std::vector<std::vector<GluingInterval> > gintervals;
 	serializededata<eslocal, eslocal>* idomains;
-	serializededata<eslocal, eslocal>* ineighborOffsets; // pair::<process, offset>
+	serializededata<eslocal, TNeighborOffset>* ineighborOffsets;
 	serializededata<eslocal, int>* iranks;
 
 

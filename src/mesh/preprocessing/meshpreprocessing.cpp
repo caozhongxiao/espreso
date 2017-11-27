@@ -669,7 +669,7 @@ void MeshPreprocessing::partitiate(eslocal parts, bool separateMaterials, bool s
 	}
 	Esutils::removeDuplicity(domainDistribution);
 
-	std::vector<size_t> domainCounter(threads);
+	std::vector<eslocal> domainCounter(threads);
 	for (size_t t = 0; t < threads; t++) {
 		if (domainDistribution.size() < threads + 1) {
 			if (t < domainDistribution.size() - 1) {
@@ -1618,7 +1618,7 @@ void MeshPreprocessing::computeBoundaryNodes(std::vector<eslocal> &externalBound
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<size_t> IDBoundaries = _mesh->elements->gatherElementsDistribution();
+	std::vector<eslocal> IDBoundaries = _mesh->elements->gatherElementsDistribution();
 
 	std::vector<std::vector<eslocal> > external(threads), internal(threads);
 
@@ -1769,7 +1769,7 @@ void MeshPreprocessing::arrangeNodes()
 //
 //	mesh._domains->nodes = new serializededata<eslocal, eslocal>(1, tdomainNodes);
 
-	std::vector<size_t> eDist = _mesh->elements->gatherElementsDistribution();
+	std::vector<eslocal> eDist = _mesh->elements->gatherElementsDistribution();
 	std::vector<eslocal> dProcDist = _mesh->elements->gatherDomainsProcDistribution();
 	std::vector<std::vector<eslocal> > domainsDistribution(threads), domainsData(threads);
 	std::vector<std::vector<int> > domainsProcs(threads);
@@ -1991,21 +1991,21 @@ void MeshPreprocessing::arrangeNodes()
 	std::vector<eslocal> roffsets(environment->MPIsize);
 	_mesh->nodes->uniqueOffset = goffsets[environment->MPIrank];
 
-	std::vector<eslocal> neighDistribution({ 0 }), neighData;
+	std::vector<eslocal> neighDistribution({ 0 });
+	std::vector<TNeighborOffset> neighData;
 	ranks = _mesh->nodes->iranks->cbegin();
 	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++ranks) {
 		_mesh->nodes->pintervals[i].globalOffset = goffsets[_mesh->nodes->pintervals[i].sourceProcess];
 		goffsets[_mesh->nodes->pintervals[i].sourceProcess] += _mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin;
 		for (auto prev = ranks->begin(), r = prev + 1; r != ranks->end(); ++r) {
 			if (environment->MPIrank < *r && *prev != *r) {
-				neighData.push_back(*r);
-				neighData.push_back(roffsets[*r]);
+				neighData.push_back({*r, roffsets[*r]});
 				roffsets[*r] += _mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin;
 			}
 		}
 		neighDistribution.push_back(neighData.size());
 	}
-	_mesh->nodes->ineighborOffsets = new serializededata<eslocal, eslocal>(tarray<eslocal>(0, 1, neighDistribution), tarray<eslocal>(0, 1, neighData));
+	_mesh->nodes->ineighborOffsets = new serializededata<eslocal, TNeighborOffset>(tarray<eslocal>(0, 1, neighDistribution), tarray<TNeighborOffset>(0, 1, neighData));
 
 //	Communication::serialize([&] () {
 //		std::cout << " >> " << environment->MPIrank << " << \n";

@@ -265,7 +265,7 @@ void Mesh::update()
 	}
 
 	// preprocessing->reclusterize();
-	preprocessing->partitiate(1, true, true);
+	preprocessing->partitiate(3, true, true);
 }
 
 bool Mesh::prepareSolutionForOutput(const Step &step)
@@ -345,11 +345,11 @@ bool Mesh::prepareSolutionForOutput(const Step &step)
 							}
 						} else {
 							auto neigbors = nodes->ineighborOffsets->cbegin() + i;
-							for (auto neigh = neigbors->begin(); neigh != neigbors->end(); neigh += 2) {
-								offset = *(neigh + 1);
+							for (auto neigh = neigbors->begin(); neigh != neigbors->end(); ++neigh) {
+								offset = neigh->offset;
 								goffset = nodes->pintervals[i].globalOffset - nodes->uniqueOffset;
 								for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++offset, ++goffset) {
-									(*data->gathredData)[goffset] += rBuffer[n2i(*neigh)][offset];
+									(*data->gathredData)[goffset] += rBuffer[n2i(neigh->process)][offset];
 								}
 							}
 						}

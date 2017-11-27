@@ -165,12 +165,12 @@ std::vector<eslocal> ElementStore::gatherDomainsProcDistribution()
 	return Store::gatherDistribution(ndomains);
 }
 
-std::vector<size_t> ElementStore::gatherDomainsDistribution()
+std::vector<eslocal> ElementStore::gatherDomainsDistribution()
 {
-	return Store::gatherDistribution(domainDistribution, (size_t)firstDomain);
+	return Store::gatherDistribution(domainDistribution, firstDomain);
 }
 
-std::vector<size_t> ElementStore::gatherElementsDistribution()
+std::vector<eslocal> ElementStore::gatherElementsDistribution()
 {
-	return Store::gatherDistribution(elementsDistribution, (size_t)IDs->datatarray().front());
+	return Store::gatherDistribution(elementsDistribution, IDs->datatarray().front());
 }
