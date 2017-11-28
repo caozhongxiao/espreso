@@ -1908,12 +1908,14 @@ void MeshPreprocessing::arrangeNodes()
 		auto n1 = _mesh->nodes->idomains->cbegin() + i;
 		auto n2 = _mesh->nodes->idomains->cbegin() + j;
 
-		if (n1->size() == n2->size()) {
-			for (eslocal d = 0; d < n1->size(); d++) {
-				if ((*n1)[d] != (*n2)[d]) {
-					return (*n1)[d] < (*n2)[d];
-				}
+		eslocal size = std::min(n1->size(), n2->size());
+		for (eslocal i = 0; i < size; ++i) {
+			if ((*n1)[i] != (*n2)[i]) {
+				return (*n1)[i] < (*n2)[i];
 			}
+		}
+		if (n1->size() == n2->size()) {
+			return i < j;
 		}
 		return n1->size() > n2->size();
 	});
@@ -1921,43 +1923,25 @@ void MeshPreprocessing::arrangeNodes()
 	_mesh->nodes->idomains->permute(ipermutation, _mesh->nodes->idomains->boundarytaaray().distribution());
 	_mesh->nodes->iranks->permute(ipermutation, _mesh->nodes->iranks->boundarytaaray().distribution());
 	std::vector<ProcessInterval> permutedIntervals;
-	std::vector<eslocal> exIntervals;
 	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); i++) {
 		permutedIntervals.push_back(_mesh->nodes->pintervals[ipermutation[i]]);
 		if (ipermutation[i] < externalIntervals) {
-			exIntervals.push_back(i);
+			_mesh->nodes->externalIntervals.push_back(i);
 		}
 	}
-	std::sort(exIntervals.begin(), exIntervals.end());
 
 	std::vector<eslocal> finalpermutation;
 	finalpermutation.reserve(permutation.size());
 
-	_mesh->nodes->pintervals.clear();
-	ipermutation.clear();
+	_mesh->nodes->pintervals = permutedIntervals;
 	eslocal ioffset = 0;
-	for (size_t t = 0; t < threads; t++) {
-		for (size_t d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
-			auto domains = _mesh->nodes->idomains->cbegin();
-			for (size_t i = 0; i < permutedIntervals.size(); ++i, ++domains) {
-				if (*std::lower_bound(domains->begin(), domains->end(), _mesh->elements->firstDomain) == _mesh->elements->firstDomain + d) {
-					finalpermutation.insert(finalpermutation.end(), permutation.begin() + permutedIntervals[i].begin, permutation.begin() + permutedIntervals[i].end);
-					eslocal isize = permutedIntervals[i].end - permutedIntervals[i].begin;
-					permutedIntervals[i].begin = ioffset;
-					ioffset += isize;
-					permutedIntervals[i].end = ioffset;
-					ipermutation.push_back(i);
-					_mesh->nodes->pintervals.push_back(permutedIntervals[i]);
-					if (std::binary_search(exIntervals.begin(), exIntervals.end(), i)) {
-						_mesh->nodes->externalIntervals.push_back(_mesh->nodes->pintervals.size() - 1);
-					}
-				}
-			}
-		}
+	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i) {
+		finalpermutation.insert(finalpermutation.end(), permutation.begin() + _mesh->nodes->pintervals[i].begin, permutation.begin() + _mesh->nodes->pintervals[i].end);
+		eslocal isize = _mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin;
+		_mesh->nodes->pintervals[i].begin = ioffset;
+		ioffset += isize;
+		_mesh->nodes->pintervals[i].end = ioffset;
 	}
-	_mesh->nodes->idomains->permute(ipermutation, _mesh->nodes->idomains->boundarytaaray().distribution());
-	_mesh->nodes->iranks->permute(ipermutation, _mesh->nodes->iranks->boundarytaaray().distribution());
-	std::sort(_mesh->nodes->externalIntervals.begin(), _mesh->nodes->externalIntervals.end());
 
 	_mesh->nodes->dintervals.resize(_mesh->elements->ndomains);
 	_mesh->nodes->gintervals.resize(_mesh->elements->ndomains);
@@ -1977,68 +1961,91 @@ void MeshPreprocessing::arrangeNodes()
 		}
 	}
 
+	auto n2i = [ & ] (int neighbour) {
+		return std::lower_bound(_mesh->neighbours.begin(), _mesh->neighbours.end(), neighbour) - _mesh->neighbours.begin();
+	};
+
+	std::vector<std::vector<eslocal> > sOffset(_mesh->neighbours.size()), rOffset(_mesh->neighbours.size());
 	auto ranks = _mesh->nodes->iranks->cbegin();
 	eslocal goffset = 0;
 	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++ranks) {
 		_mesh->nodes->pintervals[i].sourceProcess = ranks->front();
 		if (ranks->front() == environment->MPIrank) {
+			for (auto r = ranks->begin(), prev = r++; r != ranks->end(); prev = r++) {
+				if (*prev != *r) {
+					sOffset[n2i(*r)].push_back(goffset);
+				}
+			}
 			goffset += _mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin;
+		} else {
+			rOffset[n2i(ranks->front())].push_back(0);
 		}
 	}
 
-	_mesh->nodes->uniqueSize = goffset;
-	std::vector<eslocal> goffsets = _mesh->nodes->gatherUniqueNodeDistribution();
-	std::vector<eslocal> roffsets(environment->MPIsize);
-	_mesh->nodes->uniqueOffset = goffsets[environment->MPIrank];
+	if (!Communication::receiveLowerKnownSize(sOffset, rOffset, _mesh->neighbours)) {
+		ESINFO(ERROR) << "ESPRESO internal error: receive global offset of node intervals.";
+	}
 
+	_mesh->nodes->uniqueSize = goffset;
+	std::vector<eslocal> goffsets(_mesh->neighbours.size());
+	std::vector<eslocal> roffsets(environment->MPIsize);
+	std::vector<eslocal> uniqueNodeOffsets = _mesh->nodes->gatherUniqueNodeDistribution();
+	_mesh->nodes->uniqueOffset = uniqueNodeOffsets[environment->MPIrank];
+
+	goffset = _mesh->nodes->uniqueOffset;
 	std::vector<eslocal> neighDistribution({ 0 });
 	std::vector<TNeighborOffset> neighData;
 	ranks = _mesh->nodes->iranks->cbegin();
 	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++ranks) {
-		_mesh->nodes->pintervals[i].globalOffset = goffsets[_mesh->nodes->pintervals[i].sourceProcess];
-		goffsets[_mesh->nodes->pintervals[i].sourceProcess] += _mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin;
-		for (auto prev = ranks->begin(), r = prev + 1; r != ranks->end(); ++r) {
-			if (environment->MPIrank < *r && *prev != *r) {
-				neighData.push_back({*r, roffsets[*r]});
-				roffsets[*r] += _mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin;
+		if (_mesh->nodes->pintervals[i].sourceProcess == environment->MPIrank) {
+			_mesh->nodes->pintervals[i].globalOffset = goffset;
+			goffset += _mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin;
+		} else {
+			int nindex = n2i(_mesh->nodes->pintervals[i].sourceProcess);
+			_mesh->nodes->pintervals[i].globalOffset = rOffset[nindex][goffsets[nindex]++];
+			_mesh->nodes->pintervals[i].globalOffset += uniqueNodeOffsets[_mesh->nodes->pintervals[i].sourceProcess];
+		}
+
+		if (ranks->front() == environment->MPIrank) {
+			for (auto r = ranks->begin(), prev = r++; r != ranks->end(); prev = r++) {
+				if (*prev != *r) {
+					neighData.push_back({*r, roffsets[*r]});
+					roffsets[*r] += _mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin;
+				}
 			}
 		}
 		neighDistribution.push_back(neighData.size());
 	}
 	_mesh->nodes->ineighborOffsets = new serializededata<eslocal, TNeighborOffset>(tarray<eslocal>(0, 1, neighDistribution), tarray<TNeighborOffset>(0, 1, neighData));
-
-//	Communication::serialize([&] () {
-//		std::cout << " >> " << environment->MPIrank << " << \n";
-//		auto domains = _mesh->nodes->idomains->cbegin();
-//		auto neighbors = _mesh->nodes->ineighborOffsets->cbegin();
-//		for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++domains, ++neighbors) {
-//			if (std::binary_search(_mesh->nodes->externalIntervals.begin(), _mesh->nodes->externalIntervals.end(), i)) {
-//				std::cout << "*";
-//			} else {
-//				std::cout << " ";
-//			}
-//			std::cout
-//				<< _mesh->nodes->pintervals[i].begin << " -> " << _mesh->nodes->pintervals[i].end << " :: "
-//				<< _mesh->nodes->pintervals[i].sourceProcess << " " << _mesh->nodes->pintervals[i].globalOffset << " :: "
-//				<< *domains << " << " << *neighbors << "\n";
-//		}
-//
-//		for (eslocal d = 0; d < _mesh->elements->ndomains; ++d) {
-//			std::cout << " :: " << d << " :: \n";
-//			for (size_t i = 0; i < _mesh->nodes->dintervals[d].size(); ++i) {
-//				if (std::binary_search(_mesh->nodes->externalIntervals.begin(), _mesh->nodes->externalIntervals.end(), _mesh->nodes->dintervals[d][i].pindex)) {
-//					std::cout << "*";
-//				} else {
-//					std::cout << " ";
-//				}
-//				std::cout << _mesh->nodes->pintervals[_mesh->nodes->dintervals[d][i].pindex].begin << " -> " << _mesh->nodes->pintervals[_mesh->nodes->dintervals[d][i].pindex].end;
-//				std::cout << " :: " << _mesh->nodes->pintervals[_mesh->nodes->dintervals[d][i].pindex].sourceProcess << " " << _mesh->nodes->pintervals[_mesh->nodes->dintervals[d][i].pindex].globalOffset;
-//				std::cout << " :: " << *(_mesh->nodes->idomains->cbegin() + _mesh->nodes->dintervals[d][i].pindex) << "\n";
-//			}
-//		}
-//	});
-
 	_mesh->nodes->permute(finalpermutation);
+	_mesh->nodes->dcenter.resize(_mesh->elements->ndomains);
+	std::vector<Point> centers(_mesh->nodes->pintervals.size());
+
+	#pragma omp parallel for
+	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i) {
+		Point center;
+		const auto &coordinates = _mesh->nodes->coordinates->datatarray();
+		for (eslocal n = _mesh->nodes->pintervals[i].begin; n < _mesh->nodes->pintervals[i].end; ++n) {
+			center += coordinates[n];
+		}
+		centers[i] = center;
+	}
+
+	#pragma omp parallel for
+	for (size_t d = 0; d < _mesh->nodes->dintervals.size(); ++d) {
+		Point center;
+		eslocal size = 0;
+		for (size_t i = 0; i < _mesh->nodes->dintervals[d].size(); ++i) {
+			center += centers[_mesh->nodes->dintervals[d][i].pindex];
+			size += _mesh->nodes->dintervals[d][i].end - _mesh->nodes->dintervals[d][i].begin;
+		}
+		_mesh->nodes->dcenter[d] = center / size;
+	}
+
+	for (size_t i = 0; i < centers.size(); i++) {
+		_mesh->nodes->center += centers[i];
+	}
+	_mesh->nodes->center /= _mesh->nodes->size;
 
 	std::vector<eslocal> backpermutation(permutation.size());
 	std::iota(backpermutation.begin(), backpermutation.end(), 0);

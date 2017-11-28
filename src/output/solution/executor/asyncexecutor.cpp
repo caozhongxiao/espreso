@@ -1,11 +1,14 @@
 
 #include "asyncexecutor.h"
 
+#include "../../../basis/utilities/utils.h"
 #include "../../../config/ecf/ecf.h"
 
 #include "../../../mesh/mesh.h"
 #include "../../../mesh/store/nodestore.h"
 #include "../../../mesh/store/elementstore.h"
+
+#include "../visualization/vtklegacy.h"
 
 #include <iostream>
 
@@ -40,6 +43,10 @@ void AsyncStore::updateMesh()
 
 void AsyncStore::updateSolution()
 {
+	std::string root = Esutils::createDirectory({ Logging::outputRoot(), "PREPROCESSED_DATA" });
+
+	VTKLegacy::solution(root + "/solution", _configuration, _mesh.nodes, _mesh.elements);
+
 	wait();
 
 	prepareBuffer(AsyncBufferManager::NODEDATA, _mesh.nodes->packedDataSize());

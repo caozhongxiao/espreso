@@ -2,18 +2,21 @@
 #ifndef SRC_OUTPUT_SOLUTION_VISUALIZATION_VTKLEGACY_H_
 #define SRC_OUTPUT_SOLUTION_VISUALIZATION_VTKLEGACY_H_
 
+#include "visualization.h"
+
 #include <string>
 
 namespace espreso {
 
+struct OutputConfiguration;
 class ElementStore;
 class NodeStore;
 
-struct VTKLegacy {
+struct VTKLegacy: public Visualization {
 
-	static void mesh(const std::string &name, NodeStore *nodes, ElementStore *elements);
+	static void mesh(const std::string &name, const OutputConfiguration &configuration, NodeStore *nodes, ElementStore *elements);
+	static void solution(const std::string &name, const OutputConfiguration &configuration, NodeStore *nodes, ElementStore *elements);
 	static void nodesIntervals(const std::string &name, NodeStore *nodes);
-
 
 //	static void VTKLegacy(const std::string &name, ElementStore *nodes, RegionStore *region);
 //	static void VTKLegacy(const std::string &name, ElementStore *nodes, DomainStore *domains);

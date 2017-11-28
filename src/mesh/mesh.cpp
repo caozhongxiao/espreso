@@ -265,7 +265,7 @@ void Mesh::update()
 	}
 
 	// preprocessing->reclusterize();
-	preprocessing->partitiate(3, true, true);
+	preprocessing->partitiate(6, true, true);
 }
 
 bool Mesh::prepareSolutionForOutput(const Step &step)
@@ -294,7 +294,6 @@ bool Mesh::prepareSolutionForOutput(const Step &step)
 			data->gathredData->clear();
 			data->gathredData->resize(nodes->uniqueSize);
 
-
 			std::vector<eslocal> soffsets(nodes->pintervals.size()), scouters(allranks.size());
 			std::vector<std::vector<double> > sBuffer(neighbours.size()), rBuffer(neighbours.size());
 
@@ -312,14 +311,15 @@ bool Mesh::prepareSolutionForOutput(const Step &step)
 			#pragma omp parallel for
 			for (size_t i = 0; i < nodes->pintervals.size(); ++i) {
 				auto domains = nodes->idomains->cbegin() + i;
-				eslocal offset, goffset;
+				eslocal offset, soffset;
 
 				if (nodes->pintervals[i].sourceProcess < environment->MPIrank) {
 					for (auto d = domains->begin(); d != domains->end(); ++d) {
 						if (elements->firstDomain <= *d && *d < elements->firstDomain + elements->ndomains) {
 							offset = doffset(*d - elements->firstDomain, i);
-							for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++offset) {
-								sBuffer[n2i(nodes->pintervals[i].sourceProcess)][soffsets[i]++] += (*data->decomposedData)[*d - elements->firstDomain][offset];
+							soffset = soffsets[i];
+							for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++offset, ++soffset) {
+								sBuffer[n2i(nodes->pintervals[i].sourceProcess)][soffset] += (*data->decomposedData)[*d - elements->firstDomain][offset];
 							}
 						}
 					}
@@ -330,33 +330,33 @@ bool Mesh::prepareSolutionForOutput(const Step &step)
 				ESINFO(ERROR) << "ESPRESO internal error: gather results\n";
 			}
 
+			auto idomains = nodes->idomains->cbegin();
+			auto ineighbors = nodes->ineighborOffsets->cbegin();
 			#pragma omp parallel for
-			for (size_t i = 0; i < nodes->pintervals.size(); ++i) {
-				auto domains = nodes->idomains->cbegin() + i;
+			for (size_t i = 0; i < nodes->pintervals.size(); ++i, ++idomains, ++ineighbors) {
+
 				eslocal offset, goffset;
 
 				if (nodes->pintervals[i].sourceProcess == environment->MPIrank) {
-					for (auto d = domains->begin(); d != domains->end(); ++d) {
-						if (*d < elements->firstDomain + elements->ndomains) {
-							offset = doffset(*d - elements->firstDomain, i);
-							goffset = nodes->pintervals[i].globalOffset - nodes->uniqueOffset;
-							for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++offset, ++goffset) {
-								(*data->gathredData)[goffset] += (*data->decomposedData)[*d - elements->firstDomain][offset];
-							}
-						} else {
-							auto neigbors = nodes->ineighborOffsets->cbegin() + i;
-							for (auto neigh = neigbors->begin(); neigh != neigbors->end(); ++neigh) {
-								offset = neigh->offset;
-								goffset = nodes->pintervals[i].globalOffset - nodes->uniqueOffset;
-								for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++offset, ++goffset) {
-									(*data->gathredData)[goffset] += rBuffer[n2i(neigh->process)][offset];
-								}
-							}
+					for (auto d = idomains->begin(); d != idomains->end() && *d < elements->firstDomain + elements->ndomains; ++d) {
+						goffset = nodes->pintervals[i].globalOffset - nodes->uniqueOffset;
+						offset = doffset(*d - elements->firstDomain, i);
+//						printf("%d local domain goffset=%d, offset=%d\n", environment->MPIrank, goffset, offset);
+						for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++offset, ++goffset) {
+							(*data->gathredData)[goffset] += (*data->decomposedData)[*d - elements->firstDomain][offset];
+						}
+					}
+					for (auto neigh = ineighbors->begin(); neigh != ineighbors->end(); ++neigh) {
+						goffset = nodes->pintervals[i].globalOffset - nodes->uniqueOffset;
+						offset = neigh->offset;
+//						printf("%d from %d goffset=%d, offset=%d\n", environment->MPIrank, neigh->process, goffset, offset);
+						for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++offset, ++goffset) {
+							(*data->gathredData)[goffset] += rBuffer[n2i(neigh->process)][offset];
 						}
 					}
 					goffset = nodes->pintervals[i].globalOffset - nodes->uniqueOffset;
 					for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++goffset) {
-						(*data->gathredData)[goffset] /= domains->size();
+						(*data->gathredData)[goffset] /= idomains->size();
 					}
 				}
 			}

@@ -11,9 +11,10 @@
 #include "../intervals/domaininterval.h"
 #include "../intervals/gluinginterval.h"
 
+#include "../../basis/containers/point.h"
+
 namespace espreso {
 
-struct Point;
 template <typename TEBoundaries, typename TEData> class serializededata;
 
 struct NodeStore;
@@ -83,6 +84,8 @@ struct NodeStore {
 	serializededata<eslocal, TNeighborOffset>* ineighborOffsets;
 	serializededata<eslocal, int>* iranks;
 
+	Point center;
+	std::vector<Point> dcenter;
 
 	std::vector<NodeData*> data;
 

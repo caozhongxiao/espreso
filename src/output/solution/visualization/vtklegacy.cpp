@@ -5,16 +5,18 @@
 #include "../../../basis/containers/serializededata.h"
 
 #include "../../../config/ecf/environment.h"
+#include "../../../config/ecf/output.h"
 
 #include "../../../mesh/elements/element.h"
 #include "../../../mesh/store/nodestore.h"
 #include "../../../mesh/store/elementstore.h"
 
 #include <fstream>
+#include <algorithm>
 
 using namespace espreso;
 
-void VTKLegacy::mesh(const std::string &name, NodeStore *nodes, ElementStore *elements)
+void VTKLegacy::mesh(const std::string &name, const OutputConfiguration &configuration, NodeStore *nodes, ElementStore *elements)
 {
 	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
 
@@ -23,19 +25,38 @@ void VTKLegacy::mesh(const std::string &name, NodeStore *nodes, ElementStore *el
 	os << "ASCII\n";
 	os << "DATASET UNSTRUCTURED_GRID\n\n";
 
-	os << "POINTS " << nodes->size << " float\n";
-	for (auto n = nodes->coordinates->datatarray().begin(); n != nodes->coordinates->datatarray().end(); ++n) {
-		os << n->x << " " << n->y << " " << n->z << "\n";
+	size_t nsize = 0;
+	std::vector<eslocal> doffset(elements->ndomains);
+
+	for (size_t d = 0; d < elements->ndomains; d++) {
+		doffset[d] = nsize;
+		nsize += nodes->dintervals[d].back().DOFOffset + nodes->dintervals[d].back().end - nodes->dintervals[d].back().begin;
+	}
+
+	os << "POINTS " << nsize << " float\n";
+	for (size_t d = 0; d < elements->ndomains; d++) {
+		const auto &coordinates = nodes->coordinates->datatarray();
+		Point p;
+		for (size_t i = 0; i < nodes->dintervals[d].size(); ++i) {
+			for (eslocal n = nodes->dintervals[d][i].begin; n < nodes->dintervals[d][i].end; ++n) {
+				p = shrink(coordinates[n], nodes->center, nodes->dcenter[d], configuration.cluster_shrink_ratio, configuration.domain_shrink_ratio);
+				os << p.x << " " << p.y << " " << p.z << "\n";
+			}
+		}
 	}
 	os << "\n";
 
 	os << "CELLS " << elements->size << " " << elements->size + elements->nodes->datatarray().size() << "\n";
-	for (auto e = elements->nodes->cbegin(); e != elements->nodes->cend(); ++e) {
-		os << e->size() << " ";
-		for (auto n = e->begin(); n != e->end(); ++n) {
-			os << *n << " ";
+	auto enodes = elements->nodes->cbegin();
+	for (eslocal d = 0; d < elements->ndomains; d++) {
+		for (eslocal e = elements->elementsDistribution[d]; e < elements->elementsDistribution[d + 1]; ++e, ++enodes) {
+			os << enodes->size() << " ";
+			for (auto n = enodes->begin(); n != enodes->end(); ++n) {
+				auto it = std::lower_bound(nodes->dintervals[d].begin(), nodes->dintervals[d].end(), *n, [] (const DomainInterval &interval, eslocal node) { return interval.end <= node; });
+				os << doffset[d] + it->DOFOffset + *n - it->begin << " ";
+			}
+			os << "\n";
 		}
-		os << "\n";
 	}
 	os << "\n";
 
@@ -91,6 +112,117 @@ void VTKLegacy::mesh(const std::string &name, NodeStore *nodes, ElementStore *el
 		os << environment->MPIrank << "\n";
 	}
 	os << "\n";
+	os << "\n";
+
+	os << "SCALARS domains int 1\n";
+	os << "LOOKUP_TABLE default\n";
+	for (eslocal d = 0; d < elements->ndomains; d++) {
+		for (eslocal e = elements->elementsDistribution[d]; e < elements->elementsDistribution[d + 1]; ++e) {
+			os << elements->firstDomain + d << "\n";
+		}
+	}
+	os << "\n";
+}
+
+void VTKLegacy::solution(const std::string &name, const OutputConfiguration &configuration, NodeStore *nodes, ElementStore *elements)
+{
+	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+
+	os << "# vtk DataFile Version 2.0\n";
+	os << "EXAMPLE\n";
+	os << "ASCII\n";
+	os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+	size_t nsize = 0;
+	std::vector<eslocal> doffset(elements->ndomains);
+
+	for (size_t d = 0; d < elements->ndomains; d++) {
+		doffset[d] = nsize;
+		nsize += nodes->dintervals[d].back().DOFOffset + nodes->dintervals[d].back().end - nodes->dintervals[d].back().begin;
+	}
+
+	os << "POINTS " << nsize << " float\n";
+	for (size_t d = 0; d < elements->ndomains; d++) {
+		const auto &coordinates = nodes->coordinates->datatarray();
+		Point p;
+		for (size_t i = 0; i < nodes->dintervals[d].size(); ++i) {
+			for (eslocal n = nodes->dintervals[d][i].begin; n < nodes->dintervals[d][i].end; ++n) {
+				p = shrink(coordinates[n], nodes->center, nodes->dcenter[d], configuration.cluster_shrink_ratio, configuration.domain_shrink_ratio);
+				os << p.x << " " << p.y << " " << p.z << "\n";
+			}
+		}
+	}
+	os << "\n";
+
+	os << "CELLS " << elements->size << " " << elements->size + elements->nodes->datatarray().size() << "\n";
+	auto enodes = elements->nodes->cbegin();
+	for (eslocal d = 0; d < elements->ndomains; d++) {
+		for (eslocal e = elements->elementsDistribution[d]; e < elements->elementsDistribution[d + 1]; ++e, ++enodes) {
+			os << enodes->size() << " ";
+			for (auto n = enodes->begin(); n != enodes->end(); ++n) {
+				auto it = std::lower_bound(nodes->dintervals[d].begin(), nodes->dintervals[d].end(), *n, [] (const DomainInterval &interval, eslocal node) { return interval.end <= node; });
+				os << doffset[d] + it->DOFOffset + *n - it->begin << " ";
+			}
+			os << "\n";
+		}
+	}
+	os << "\n";
+
+	os << "CELL_TYPES " << elements->size << "\n";
+	for (auto e = elements->epointers->datatarray().begin(); e != elements->epointers->datatarray().end(); ++e) {
+		switch ((*e)->code) {
+		case Element::CODE::SQUARE4:
+			os << "9\n";
+			break;
+		case Element::CODE::SQUARE8:
+			os << "23\n";
+			break;
+		case Element::CODE::TRIANGLE3:
+			os << "5\n";
+			break;
+		case Element::CODE::TRIANGLE6:
+			os << "22\n";
+			break;
+		case Element::CODE::TETRA4:
+			os << "10\n";
+			break;
+		case Element::CODE::TETRA10:
+			os << "24\n";
+			break;
+		case Element::CODE::PYRAMID5:
+			os << "14\n";
+			break;
+		case Element::CODE::PYRAMID13:
+			os << "27\n";
+			break;
+		case Element::CODE::PRISMA6:
+			os << "13\n";
+			break;
+		case Element::CODE::PRISMA15:
+			os << "26\n";
+			break;
+		case Element::CODE::HEXA8:
+			os << "12\n";
+			break;
+		case Element::CODE::HEXA20:
+			os << "25\n";
+			break;
+		default:
+			break;
+		}
+	}
+	os << "\n";
+
+	os << "POINT_DATA " << nsize << "\n";
+	os << "SCALARS TEMPERATURE double 1\n";
+	os << "LOOKUP_TABLE default\n";
+	for (size_t d = 0; d < elements->ndomains; d++) {
+		for (size_t i = 0; i < nodes->dintervals[d].size(); ++i) {
+			for (size_t n = 0; n < nodes->dintervals[d][i].end - nodes->dintervals[d][i].begin; n++) {
+				os << (*nodes->data.front()->decomposedData)[d][nodes->dintervals[d][i].DOFOffset + n] << "\n";
+			}
+		}
+	}
 }
 
 void VTKLegacy::nodesIntervals(const std::string &name, NodeStore *nodes)

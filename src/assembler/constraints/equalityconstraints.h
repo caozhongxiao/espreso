@@ -38,9 +38,11 @@ protected:
 	esglobal _dirichletSize, _gluingSize;
 	bool _withRedundantMultipliers, _withScaling;
 
-	std::vector<eslocal> _mergedDirichletLMOffset;
+	std::vector<eslocal> _mergedDirichletOffset;
 	std::vector<std::vector<eslocal> > _mergedDirichletIndices;
 	std::vector<std::vector<double> > _mergedDirichletValues;
+
+	std::vector<eslocal> _intervalGluingOffset;
 };
 
 }

@@ -11,7 +11,7 @@ void SolutionStoreExecutor::storePreprocessedData()
 {
 	std::string root = Esutils::createDirectory({ Logging::outputRoot(), "PREPROCESSED_DATA" });
 
-	VTKLegacy::mesh(root + "/mesh", _mesh.nodes, _mesh.elements);
+	VTKLegacy::mesh(root + "/mesh", _configuration, _mesh.nodes, _mesh.elements);
 	VTKLegacy::nodesIntervals(root + "/nodeIntervals", _mesh.nodes);
 }
 
