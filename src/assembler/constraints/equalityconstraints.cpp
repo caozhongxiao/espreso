@@ -5,7 +5,7 @@
 #include "../step.h"
 
 #include "../../basis/containers/serializededata.h"
-
+#include "../../basis/evaluator/evaluator.h"
 #include "../../basis/utilities/utils.h"
 #include "../../basis/utilities/communication.h"
 
@@ -21,12 +21,9 @@
 #include <numeric>
 #include <algorithm>
 
-#include "../../old/oldevaluators/oldevaluator.h"
-
-
 using namespace espreso;
 
-EqualityConstraints::EqualityConstraints(Instance &instance, Mesh &mesh, const std::vector<BoundaryRegionStore*> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling)
+EqualityConstraints::EqualityConstraints(Instance &instance, Mesh &mesh, const std::vector<std::pair<BoundaryRegionStore*, Evaluator*> > &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling)
 : _instance(instance), _mesh(mesh)
 {
 	for (eslocal d = 0; d < _mesh.elements->ndomains; d++) {
@@ -95,7 +92,7 @@ eslocal EqualityConstraints::computeIntervalsOffsets(std::function<eslocal(esloc
 	return offset;
 }
 
-void EqualityConstraints::update(const std::vector<BoundaryRegionStore*> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling)
+void EqualityConstraints::update(const std::vector<std::pair<BoundaryRegionStore*, Evaluator*> > &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling)
 {
 	_DOFs = DOFs;
 	_withRedundantMultipliers = withRedundantMultiplier;
@@ -108,13 +105,11 @@ void EqualityConstraints::update(const std::vector<BoundaryRegionStore*> &dirich
 		std::vector<eslocal> uniqueNodes;
 		std::vector<double> values;
 		for (size_t r = 0; r < dirichlet.size(); r++) {
-			auto begin = dirichlet[r]->nodes->datatarray().begin() + dirichlet[r]->nodesIntervals[i].begin;
-			auto end = dirichlet[r]->nodes->datatarray().begin() + dirichlet[r]->nodesIntervals[i].end;
+			auto begin = dirichlet[r].first->nodes->datatarray().begin() + dirichlet[r].first->nodesIntervals[i].begin;
+			auto end = dirichlet[r].first->nodes->datatarray().begin() + dirichlet[r].first->nodesIntervals[i].end;
 			uniqueNodes.insert(uniqueNodes.end(), begin, end);
-			for (auto n = begin; n != end; ++n) {
-				// TODO: MESH
-				values.push_back(r * 375.15);
-			}
+			values.insert(values.end(), begin, end);
+			dirichlet[r].second->evaluate(end - begin, NULL, NULL, 0, values.data() + values.size() - (end - begin));
 		}
 		std::vector<eslocal> permutation(uniqueNodes.size());
 		std::iota(permutation.begin(), permutation.end(), 0);

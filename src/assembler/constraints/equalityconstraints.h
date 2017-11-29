@@ -2,6 +2,7 @@
 #ifndef SRC_ASSEMBLER_CONSTRAINTS_EQUALITYCONSTRAINTS_H_
 #define SRC_ASSEMBLER_CONSTRAINTS_EQUALITYCONSTRAINTS_H_
 
+#include <utility>
 #include <vector>
 #include <cstddef>
 #include <functional>
@@ -11,6 +12,7 @@ namespace espreso {
 class Instance;
 class Mesh;
 class BoundaryRegionStore;
+class Evaluator;
 
 class Region;
 struct Step;
@@ -18,8 +20,8 @@ class SparseMatrix;
 
 struct EqualityConstraints
 {
-	EqualityConstraints(Instance &instance, Mesh &mesh, const std::vector<BoundaryRegionStore*> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling);
-	void update(const std::vector<BoundaryRegionStore*> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling);
+	EqualityConstraints(Instance &instance, Mesh &mesh, const std::vector<std::pair<BoundaryRegionStore*, Evaluator*> > &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling);
+	void update(const std::vector<std::pair<BoundaryRegionStore*, Evaluator*> > &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling);
 
 	void B1DirichletInsert(const Step &step);
 	void B1GlueElements(const Step &step);

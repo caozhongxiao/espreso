@@ -25,9 +25,9 @@ using namespace espreso;
 HeatTransfer3D::HeatTransfer3D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
 : Physics("HEAT TRANSFER 3D", mesh, instance, &configuration), HeatTransfer(configuration, propertiesConfiguration)
 {
-	std::vector<BoundaryRegionStore*> dirichlet;
+	std::vector<std::pair<BoundaryRegionStore*, Evaluator*> > dirichlet;
 	for (auto it = configuration.load_steps_settings.at(1).temperature.begin(); it != configuration.load_steps_settings.at(1).temperature.end(); ++it) {
-		dirichlet.push_back(mesh->bregion(it->first));
+		dirichlet.push_back(std::make_pair(mesh->bregion(it->first), it->second.evaluator));
 	}
 
 	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, dirichlet, 1, configuration.load_steps_settings.at(1).feti.redundant_lagrange, configuration.load_steps_settings.at(1).feti.scaling);

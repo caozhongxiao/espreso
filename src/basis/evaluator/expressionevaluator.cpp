@@ -46,10 +46,14 @@ void ExpressionEvaluator::evaluate(eslocal size, const Point* cbegin, const doub
 {
 	int thread = omp_get_thread_num();
 	for (eslocal i = 0; i < size; ++i) {
-		_expressions[thread]->values[0] = cbegin[i].x;
-		_expressions[thread]->values[1] = cbegin[i].y;
-		_expressions[thread]->values[2] = cbegin[i].z;
-		_expressions[thread]->values[3] = tbegin[i];
+		if (cbegin != NULL) {
+			_expressions[thread]->values[0] = cbegin[i].x;
+			_expressions[thread]->values[1] = cbegin[i].y;
+			_expressions[thread]->values[2] = cbegin[i].z;
+		}
+		if (tbegin != NULL) {
+			_expressions[thread]->values[3] = tbegin[i];
+		}
 		_expressions[thread]->values[4] = time;
 		results[i] = _expressions[thread]->evaluate();
 	}
