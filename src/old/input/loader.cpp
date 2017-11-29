@@ -1,8 +1,7 @@
 
 #include "loader.h"
 
-#include "../../basis/evaluators/evaluator.h"
-#include "ansys/ansys.h"
+// #include "ansys/ansys.h"
 #include "openfoam/openfoam.h"
 #include "generator/generator.h"
 
@@ -20,6 +19,7 @@
 #include "espreso/espresobinaryformat.h"
 
 #include "../../mesh/mesh.h"
+#include "../oldevaluators/oldevaluator.h"
 
 using namespace espreso::input;
 
@@ -28,7 +28,8 @@ void OldLoader::load(const ECFConfiguration &configuration, OldMesh &mesh, size_
 {
 	switch (configuration.input) {
 	case INPUT_FORMAT::WORKBENCH:
-		AnsysWorkbench::load(configuration.workbench, mesh, index, size);
+		ESINFO(GLOBAL_ERROR) << "FIX WORKBENCH";
+		// AnsysWorkbench::load(configuration.workbench, mesh, index, size);
 		break;
 	case INPUT_FORMAT::OPENFOAM:
 		OpenFOAM::load(configuration.openfoam, mesh, index, size);

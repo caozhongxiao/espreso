@@ -93,7 +93,7 @@ void AnsysWorkbench::materials(std::vector<MaterialConfiguration*> &materials)
 }
 
 void AnsysWorkbench::regions(
-			std::vector<Evaluator*> &evaluators,
+			std::vector<OldEvaluator*> &evaluators,
 			std::vector<Region*> &regions,
 			std::vector<OldElement*> &elements,
 			std::vector<OldElement*> &faces,

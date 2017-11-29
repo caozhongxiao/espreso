@@ -6,7 +6,6 @@
 
 #include <numeric>
 
-#include "../../../basis/evaluators/evaluator.h"
 #include "../../../basis/logging/logging.h"
 #include "../../../basis/utilities/utils.h"
 #include "../../../basis/utilities/communication.h"
@@ -35,6 +34,7 @@
 #include "../../../config/ecf/environment.h"
 #include "../../../config/ecf/material/material.h"
 #include "../../../basis/utilities/parser.h"
+#include "../../oldevaluators/oldevaluator.h"
 
 namespace espreso {
 
@@ -855,7 +855,7 @@ void OldMesh::loadProperty(
 		return std::lower_bound(_neighbours.begin(), _neighbours.end(), neighbour) - _neighbours.begin();
 	};
 
-	auto distribute = [] (std::vector<OldElement*> &elements, Property property, Evaluator *evaluator, Region *region) {
+	auto distribute = [] (std::vector<OldElement*> &elements, Property property, OldEvaluator *evaluator, Region *region) {
 		size_t threads = environment->OMP_NUM_THREADS;
 		std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 
@@ -867,7 +867,7 @@ void OldMesh::loadProperty(
 		}
 	};
 
-	auto distributeNodes = [&] (std::vector<eslocal> &nodes, Property property, Evaluator *evaluator, Region *region) {
+	auto distributeNodes = [&] (std::vector<eslocal> &nodes, Property property, OldEvaluator *evaluator, Region *region) {
 		size_t threads = environment->OMP_NUM_THREADS;
 		std::vector<size_t> distribution = Esutils::getDistribution(threads, nodes.size());
 
@@ -894,9 +894,9 @@ void OldMesh::loadProperty(
 
 			if (!StringCompare::contains(value, { "x", "y", "z", "TEMPERATURE", "TIME" })) {
 				Expression expr(value, {});
-				_evaluators.push_back(new ConstEvaluator(expr.evaluate({})));
+				_evaluators.push_back(new ConstOldEvaluator(expr.evaluate({})));
 			} else {
-				_evaluators.push_back(new ExpressionEvaluator(value));
+				_evaluators.push_back(new ExpressionOldEvaluator(value));
 			}
 
 			std::vector<std::vector<esglobal> > boundaryNodes(_neighbours.size());
@@ -1210,7 +1210,7 @@ bool OldMesh::isPropertyTimeDependent(Property property, size_t loadStep) const
 		if (loadStep < _regions[r]->settings.size()) {
 			auto it = _regions[r]->settings[loadStep].find(property);
 			if (it != _regions[r]->settings[loadStep].end()) {
-				return std::any_of(it->second.begin(), it->second.end(), [] (const Evaluator *e) { return e->isTimeDependent(); });
+				return std::any_of(it->second.begin(), it->second.end(), [] (const OldEvaluator *e) { return e->isTimeDependent(); });
 			}
 		}
 	}
@@ -1223,7 +1223,7 @@ bool OldMesh::isPropertyTemperatureDependent(Property property, size_t loadStep)
 		if (loadStep < _regions[r]->settings.size()) {
 			auto it = _regions[r]->settings[loadStep].find(property);
 			if (it != _regions[r]->settings[loadStep].end()) {
-				return std::any_of(it->second.begin(), it->second.end(), [] (const Evaluator *e) { return e->isTemperatureDependent(); });
+				return std::any_of(it->second.begin(), it->second.end(), [] (const OldEvaluator *e) { return e->isTemperatureDependent(); });
 			}
 		}
 	}

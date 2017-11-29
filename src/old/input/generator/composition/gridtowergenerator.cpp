@@ -229,7 +229,7 @@ void GridTowerGenerator::neighbours(std::vector<OldElement*> &nodes, std::vector
 }
 
 void GridTowerGenerator::regions(
-		std::vector<Evaluator*> &evaluators,
+		std::vector<OldEvaluator*> &evaluators,
 		std::vector<Region*> &regions,
 		std::vector<OldElement*> &elements,
 		std::vector<OldElement*> &faces,

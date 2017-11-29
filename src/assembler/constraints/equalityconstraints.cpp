@@ -4,7 +4,6 @@
 #include "../instance.h"
 #include "../step.h"
 
-#include "../../basis/evaluators/evaluator.h"
 #include "../../basis/containers/serializededata.h"
 
 #include "../../basis/utilities/utils.h"
@@ -21,6 +20,8 @@
 
 #include <numeric>
 #include <algorithm>
+
+#include "../../old/oldevaluators/oldevaluator.h"
 
 
 using namespace espreso;

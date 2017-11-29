@@ -2,7 +2,6 @@
 #include "../../config/ecf/physics/structuralmechanics.h"
 #include "structuralmechanics3d.h"
 
-#include "../../basis/evaluators/evaluator.h"
 #include "../step.h"
 #include "../instance.h"
 #include "../constraints/equalityconstraints.h"

@@ -48,8 +48,6 @@ struct ECFExpression {
 	std::string value;
 	Evaluator *evaluator;
 
-	double evaluate(const Point &p, double time = 0, double temperature = 0, double pressure = 0, double velocity = 0) const;
-
 	ECFExpression();
 	ECFExpression(const ECFExpression &other);
 	ECFExpression& operator=(const ECFExpression &other);

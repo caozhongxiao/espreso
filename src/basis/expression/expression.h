@@ -22,11 +22,13 @@ public:
 	Expression(const Expression &other);
 	~Expression();
 	Expression& operator=(const Expression &other);
-	double operator()(const std::vector<double> &values) const;
-	double evaluate(const std::vector<double> &values) const;
+	double operator()(const std::vector<double> &values) const { this->values = values; return evaluate(); }
+	double evaluate(const std::vector<double> &values) const { this->values = values; return evaluate(); }
+	double evaluate() const;
 
 	std::string expression() const { return _str; }
 
+	mutable std::vector<double> values;
 protected:
 	void parse();
 
@@ -34,7 +36,6 @@ protected:
 	exprtk::symbol_table<double> *_symbol_table;
 	exprtk::expression<double> *_expression;
 	std::vector<std::string> _variables;
-	mutable std::vector<double> _values;
 };
 
 }

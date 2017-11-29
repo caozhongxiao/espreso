@@ -169,7 +169,7 @@ void OpenFOAM::elements(std::vector<size_t> &bodies, std::vector<OldElement*> &e
 }
 
 void OpenFOAM::regions(
-		std::vector<Evaluator*> &evaluators,
+		std::vector<OldEvaluator*> &evaluators,
 		std::vector<Region*> &regions,
 		std::vector<OldElement*> &elements,
 		std::vector<OldElement*> &faces,

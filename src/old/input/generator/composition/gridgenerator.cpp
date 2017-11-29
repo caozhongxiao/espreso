@@ -265,7 +265,7 @@ void GridGenerator::neighbours(std::vector<OldElement*> &nodes, std::vector<int>
 }
 
 void GridGenerator::regions(
-		std::vector<Evaluator*> &evaluators,
+		std::vector<OldEvaluator*> &evaluators,
 		std::vector<Region*> &regions,
 		std::vector<OldElement*> &elements,
 		std::vector<OldElement*> &faces,

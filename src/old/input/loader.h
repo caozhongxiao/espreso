@@ -12,7 +12,7 @@ struct MaterialConfiguration;
 class OldMesh;
 class Coordinates;
 class OldElement;
-class Evaluator;
+class OldEvaluator;
 class Region;
 
 namespace input {
@@ -29,7 +29,7 @@ public:
 	virtual void materials(std::vector<MaterialConfiguration*> &materials) {};
 	virtual void neighbours(std::vector<OldElement*> &nodes, std::vector<int> &neighbours, const std::vector<OldElement*> &faces, const std::vector<OldElement*> &edges) = 0;
 	virtual void regions(
-			std::vector<Evaluator*> &evaluators,
+			std::vector<OldEvaluator*> &evaluators,
 			std::vector<Region*> &regions,
 			std::vector<OldElement*> &elements,
 			std::vector<OldElement*> &faces,

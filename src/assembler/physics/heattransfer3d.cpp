@@ -14,10 +14,10 @@
 #include "../../mesh/elements/element.h"
 
 #include "../../basis/containers/serializededata.h"
+#include "../../basis/evaluator/evaluator.h"
 #include "../../basis/matrices/denseMatrix.h"
 #include "../../solver/generic/SparseMatrix.h"
 #include "heattransfer3d.h"
-#include "../../basis/evaluators/evaluator.h"
 
 
 using namespace espreso;
@@ -63,21 +63,21 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, eslocal eindex, es
 	switch (mat->coordinate_system.type) {
 	case CoordinateSystemConfiguration::TYPE::CARTESIAN:
 
-		cos.x = std::cos(d2r(mat->coordinate_system.rotation_x.evaluate(p, step.currentTime, temp)));
-		cos.y = std::cos(d2r(mat->coordinate_system.rotation_y.evaluate(p, step.currentTime, temp)));
-		cos.z = std::cos(d2r(mat->coordinate_system.rotation_z.evaluate(p, step.currentTime, temp)));
+		cos.x = std::cos(d2r(mat->coordinate_system.rotation_x.evaluator->evaluate(p, step.currentTime, temp)));
+		cos.y = std::cos(d2r(mat->coordinate_system.rotation_y.evaluator->evaluate(p, step.currentTime, temp)));
+		cos.z = std::cos(d2r(mat->coordinate_system.rotation_z.evaluator->evaluate(p, step.currentTime, temp)));
 
-		sin.x = std::sin(d2r(mat->coordinate_system.rotation_x.evaluate(p, step.currentTime, temp)));
-		sin.y = std::sin(d2r(mat->coordinate_system.rotation_y.evaluate(p, step.currentTime, temp)));
-		sin.z = std::sin(d2r(mat->coordinate_system.rotation_z.evaluate(p, step.currentTime, temp)));
+		sin.x = std::sin(d2r(mat->coordinate_system.rotation_x.evaluator->evaluate(p, step.currentTime, temp)));
+		sin.y = std::sin(d2r(mat->coordinate_system.rotation_y.evaluator->evaluate(p, step.currentTime, temp)));
+		sin.z = std::sin(d2r(mat->coordinate_system.rotation_z.evaluator->evaluate(p, step.currentTime, temp)));
 
 		break;
 
 	case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: {
 
 		Point origin(
-				mat->coordinate_system.center_x.evaluate(p, step.currentTime, temp),
-				mat->coordinate_system.center_y.evaluate(p, step.currentTime, temp),
+				mat->coordinate_system.center_x.evaluator->evaluate(p, step.currentTime, temp),
+				mat->coordinate_system.center_y.evaluator->evaluate(p, step.currentTime, temp),
 				0);
 
 		double rotation = std::atan2((p.y - origin.y), (p.x - origin.x));
@@ -95,9 +95,9 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, eslocal eindex, es
 	case CoordinateSystemConfiguration::TYPE::SPHERICAL: {
 
 		Point origin(
-				mat->coordinate_system.center_x.evaluate(p, step.currentTime, temp),
-				mat->coordinate_system.center_y.evaluate(p, step.currentTime, temp),
-				mat->coordinate_system.center_z.evaluate(p, step.currentTime, temp));
+				mat->coordinate_system.center_x.evaluator->evaluate(p, step.currentTime, temp),
+				mat->coordinate_system.center_y.evaluator->evaluate(p, step.currentTime, temp),
+				mat->coordinate_system.center_z.evaluator->evaluate(p, step.currentTime, temp));
 
 		double azimut = std::atan2((p.y - origin.y), (p.x - origin.x));
 		double r = std::sqrt(pow((p.x - origin.x), 2) + pow((p.y - origin.y), 2) + pow((p.z - origin.z), 2));
@@ -135,14 +135,14 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, eslocal eindex, es
 
 	auto derivation = [&] (const ECFExpression &expression, double h) {
 		return (
-				expression.evaluate(p, step.currentTime, temp + h) -
-				expression.evaluate(p, step.currentTime, temp - h)
+				expression.evaluator->evaluate(p, step.currentTime, temp + h) -
+				expression.evaluator->evaluate(p, step.currentTime, temp - h)
 				) / (2 * h);
 	};
 
 	switch (mat->thermal_conductivity.model) {
 	case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
-		C(0, 0) = C(1, 1) = C(2, 2) = mat->thermal_conductivity.values.get(0, 0).evaluate(p, step.currentTime, temp);
+		C(0, 0) = C(1, 1) = C(2, 2) = mat->thermal_conductivity.values.get(0, 0).evaluator->evaluate(p, step.currentTime, temp);
 		C(0, 1) = C(0, 2) = C(1, 0) = C(1, 2) = C(2, 0) = C(2, 1) = 0;
 		if (tangentCorrection) {
 			_CD(0, 0) = _CD(1, 1) = _CD(2, 2) = derivation(mat->thermal_conductivity.values.get(0, 0), temp / 1e4);
@@ -150,9 +150,9 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, eslocal eindex, es
 		}
 		break;
 	case ThermalConductivityConfiguration::MODEL::DIAGONAL:
-		C(0, 0) = mat->thermal_conductivity.values.get(0, 0).evaluate(p, step.currentTime, temp);
-		C(1, 1) = mat->thermal_conductivity.values.get(1, 1).evaluate(p, step.currentTime, temp);
-		C(2, 2) = mat->thermal_conductivity.values.get(2, 2).evaluate(p, step.currentTime, temp);
+		C(0, 0) = mat->thermal_conductivity.values.get(0, 0).evaluator->evaluate(p, step.currentTime, temp);
+		C(1, 1) = mat->thermal_conductivity.values.get(1, 1).evaluator->evaluate(p, step.currentTime, temp);
+		C(2, 2) = mat->thermal_conductivity.values.get(2, 2).evaluator->evaluate(p, step.currentTime, temp);
 		C(0, 1) = C(0, 2) = C(1, 0) = C(1, 2) = C(2, 0) = C(2, 1) = 0;
 		if (tangentCorrection) {
 			_CD(0, 0) = derivation(mat->thermal_conductivity.values.get(0, 0), temp / 1e4);
@@ -162,12 +162,12 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, eslocal eindex, es
 		}
 		break;
 	case ThermalConductivityConfiguration::MODEL::SYMMETRIC:
-		C(0, 0) = mat->thermal_conductivity.values.get(0, 0).evaluate(p, step.currentTime, temp);
-		C(1, 1) = mat->thermal_conductivity.values.get(1, 1).evaluate(p, step.currentTime, temp);
-		C(2, 2) = mat->thermal_conductivity.values.get(2, 2).evaluate(p, step.currentTime, temp);
-		C(0, 1) = C(1, 0) = mat->thermal_conductivity.values.get(0, 1).evaluate(p, step.currentTime, temp);
-		C(0, 2) = C(2, 0) = mat->thermal_conductivity.values.get(0, 2).evaluate(p, step.currentTime, temp);
-		C(1, 2) = C(2, 1) = mat->thermal_conductivity.values.get(1, 2).evaluate(p, step.currentTime, temp);
+		C(0, 0) = mat->thermal_conductivity.values.get(0, 0).evaluator->evaluate(p, step.currentTime, temp);
+		C(1, 1) = mat->thermal_conductivity.values.get(1, 1).evaluator->evaluate(p, step.currentTime, temp);
+		C(2, 2) = mat->thermal_conductivity.values.get(2, 2).evaluator->evaluate(p, step.currentTime, temp);
+		C(0, 1) = C(1, 0) = mat->thermal_conductivity.values.get(0, 1).evaluator->evaluate(p, step.currentTime, temp);
+		C(0, 2) = C(2, 0) = mat->thermal_conductivity.values.get(0, 2).evaluator->evaluate(p, step.currentTime, temp);
+		C(1, 2) = C(2, 1) = mat->thermal_conductivity.values.get(1, 2).evaluator->evaluate(p, step.currentTime, temp);
 		if (tangentCorrection) {
 			_CD(0, 0) = derivation(mat->thermal_conductivity.values.get(0, 0), temp / 1e4);
 			_CD(1, 1) = derivation(mat->thermal_conductivity.values.get(1, 1), temp / 1e4);
@@ -178,15 +178,15 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, eslocal eindex, es
 		}
 		break;
 	case ThermalConductivityConfiguration::MODEL::ANISOTROPIC:
-		C(0, 0) = mat->thermal_conductivity.values.get(0, 0).evaluate(p, step.currentTime, temp);
-		C(1, 1) = mat->thermal_conductivity.values.get(1, 1).evaluate(p, step.currentTime, temp);
-		C(2, 2) = mat->thermal_conductivity.values.get(2, 2).evaluate(p, step.currentTime, temp);
-		C(0, 1) = mat->thermal_conductivity.values.get(0, 1).evaluate(p, step.currentTime, temp);
-		C(0, 2) = mat->thermal_conductivity.values.get(0, 2).evaluate(p, step.currentTime, temp);
-		C(1, 0) = mat->thermal_conductivity.values.get(1, 0).evaluate(p, step.currentTime, temp);
-		C(1, 2) = mat->thermal_conductivity.values.get(1, 2).evaluate(p, step.currentTime, temp);
-		C(2, 0) = mat->thermal_conductivity.values.get(2, 0).evaluate(p, step.currentTime, temp);
-		C(2, 1) = mat->thermal_conductivity.values.get(2, 1).evaluate(p, step.currentTime, temp);
+		C(0, 0) = mat->thermal_conductivity.values.get(0, 0).evaluator->evaluate(p, step.currentTime, temp);
+		C(1, 1) = mat->thermal_conductivity.values.get(1, 1).evaluator->evaluate(p, step.currentTime, temp);
+		C(2, 2) = mat->thermal_conductivity.values.get(2, 2).evaluator->evaluate(p, step.currentTime, temp);
+		C(0, 1) = mat->thermal_conductivity.values.get(0, 1).evaluator->evaluate(p, step.currentTime, temp);
+		C(0, 2) = mat->thermal_conductivity.values.get(0, 2).evaluator->evaluate(p, step.currentTime, temp);
+		C(1, 0) = mat->thermal_conductivity.values.get(1, 0).evaluator->evaluate(p, step.currentTime, temp);
+		C(1, 2) = mat->thermal_conductivity.values.get(1, 2).evaluator->evaluate(p, step.currentTime, temp);
+		C(2, 0) = mat->thermal_conductivity.values.get(2, 0).evaluator->evaluate(p, step.currentTime, temp);
+		C(2, 1) = mat->thermal_conductivity.values.get(2, 1).evaluator->evaluate(p, step.currentTime, temp);
 		if (tangentCorrection) {
 			_CD(0, 0) = derivation(mat->thermal_conductivity.values.get(0, 0), temp / 1e4);
 			_CD(1, 1) = derivation(mat->thermal_conductivity.values.get(1, 1), temp / 1e4);
@@ -279,17 +279,17 @@ void HeatTransfer3D::processElement(const Step &step, Matrices matrices, eslocal
 			assembleMaterialMatrix(step, eindex, n, p, phase1, phase, temp, K, CD, tangentCorrection);
 			assembleMaterialMatrix(step, eindex, n, p, phase2, (1 - phase), temp, K, CD, tangentCorrection);
 			m(n, 0) =
-					(    phase  * phase1->density.evaluate(p, step.currentTime, temp) +
-					(1 - phase) * phase2->density.evaluate(p, step.currentTime, temp)) *
+					(    phase  * phase1->density.evaluator->evaluate(p, step.currentTime, temp) +
+					(1 - phase) * phase2->density.evaluator->evaluate(p, step.currentTime, temp)) *
 
-					(    phase  * phase1->heat_capacity.evaluate(p, step.currentTime, temp) +
-					(1 - phase) * phase2->heat_capacity.evaluate(p, step.currentTime, temp) +
+					(    phase  * phase1->heat_capacity.evaluator->evaluate(p, step.currentTime, temp) +
+					(1 - phase) * phase2->heat_capacity.evaluator->evaluate(p, step.currentTime, temp) +
 					material->latent_heat * derivation);
 		} else {
 			assembleMaterialMatrix(step, eindex, n, p, material, 1, temp, K, CD, tangentCorrection);
 			m(n, 0) =
-					material->density.evaluate(p, step.currentTime, temp) *
-					material->heat_capacity.evaluate(p, step.currentTime, temp);
+					material->density.evaluator->evaluate(p, step.currentTime, temp) *
+					material->heat_capacity.evaluator->evaluate(p, step.currentTime, temp);
 		}
 
 		// TODO: MESH

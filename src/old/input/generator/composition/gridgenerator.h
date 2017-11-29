@@ -46,7 +46,7 @@ public:
 	virtual void elements(std::vector<size_t> &bodies, std::vector<OldElement*> &elements, std::vector<OldElement*> &faces, std::vector<OldElement*> &edges);
 	virtual void neighbours(std::vector<OldElement*> &nodes, std::vector<int> &neighbours, const std::vector<OldElement*> &faces, const std::vector<OldElement*> &edges);
 	virtual void regions(
-			std::vector<Evaluator*> &evaluators,
+			std::vector<OldEvaluator*> &evaluators,
 			std::vector<Region*> &regions,
 			std::vector<OldElement*> &elements,
 			std::vector<OldElement*> &faces,

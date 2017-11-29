@@ -24,12 +24,12 @@
 #include "../../../old/mesh/structures/elementtypes.h"
 #include "espresobinaryformat.h"
 
-#include "../../../basis/evaluators/evaluator.h"
 #include "../../../basis/logging/logging.h"
 #include "../../../config/reader/reader.h"
 #include "../../../config/ecf/environment.h"
 #include "../../../config/ecf/input/input.h"
 #include "../../../config/ecf/material/material.h"
+#include "../../oldevaluators/oldevaluator.h"
 
 using namespace espreso::input;
 
@@ -173,7 +173,7 @@ void ESPRESOBinaryFormat::materials(std::vector<MaterialConfiguration*> &materia
 }
 
 void ESPRESOBinaryFormat::regions(
-		std::vector<Evaluator*> &evaluators,
+		std::vector<OldEvaluator*> &evaluators,
 		std::vector<Region*> &regions,
 		std::vector<OldElement*> &elements,
 		std::vector<OldElement*> &faces,
@@ -197,7 +197,7 @@ void ESPRESOBinaryFormat::regions(
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	for (eslocal i = 0; i < size; i++) {
-		evaluators.push_back(Evaluator::create(is));
+		evaluators.push_back(OldEvaluator::create(is));
 	}
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));

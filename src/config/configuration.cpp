@@ -3,10 +3,13 @@
 
 #include "../basis/logging/logging.h"
 #include "../basis/utilities/parser.h"
-#include "../basis/evaluators/evaluator.h"
-
 #include <iostream>
 #include <algorithm>
+
+#include "../basis/expression/expression.h"
+#include "../basis/evaluator/constevaluator.h"
+#include "../basis/evaluator/expressionevaluator.h"
+#include "../basis/evaluator/tableinterpolationevaluator.h"
 
 using namespace espreso;
 
@@ -71,15 +74,10 @@ bool ECFExpression::createEvaluator(const std::vector<std::string> &variables)
 		return true;
 	}
 	if (Expression::isValid(this->value, variables)) {
-		evaluator = new ExpressionEvaluator(this->value, variables);
+		evaluator = new ExpressionEvaluator(this->value);
 		return true;
 	}
 	return false;
-}
-
-double ECFExpression::evaluate(const Point &p, double time, double temperature, double pressure, double velocity) const
-{
-	return evaluator->evaluate(p, time, temperature, pressure, velocity);
 }
 
 void ECFMetaData::checkdescription(const std::string &name, size_t size) const

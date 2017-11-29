@@ -3,7 +3,6 @@
 
 #include "api.h"
 
-#include "../../basis/evaluators/evaluator.h"
 #include "../../old/mesh/settings/property.h"
 
 #include "../../old/mesh/elements/volume/unknownvolume.h"
@@ -21,6 +20,7 @@
 #include "../../basis/utilities/utils.h"
 #include "../../config/ecf/environment.h"
 #include "../../config/ecf/input/input.h"
+#include "../../old/oldevaluators/oldevaluator.h"
 
 using namespace espreso::input;
 

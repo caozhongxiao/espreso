@@ -109,6 +109,7 @@ def configure(ctx):
     ctx.setenv("solver", ctx.env.derive());
     append_solver_attributes(ctx, compiler_attributes)
     ctx.recurse("src/old/mesh")
+    ctx.recurse("src/old/oldevaluators")
     ctx.recurse("src/mesh")
     ctx.recurse("src/input")
     ctx.recurse("src/old/input")
@@ -159,6 +160,7 @@ def build(ctx):
 
     ctx.env = ctx.all_envs["solver"]
     ctx.recurse("src/old/mesh")
+    ctx.recurse("src/old/oldevaluators")
     ctx.recurse("src/mesh")
     ctx.recurse("src/input")
     ctx.recurse("src/old/input")

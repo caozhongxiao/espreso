@@ -1,62 +1,61 @@
 
-#include "evaluator.h"
+#include "oldevaluator.h"
 
 #include <fstream>
 
 #include <numeric>
 #include "../../config/ecf/environment.h"
-#include "../utilities/parser.h"
-#include "../logging/logging.h"
+#include "../../basis/utilities/parser.h"
+#include "../../basis/logging/logging.h"
 
-using namespace espreso;
+namespace espreso {
 
-
-Evaluator* Evaluator::create(std::ifstream &is)
+OldEvaluator* OldEvaluator::create(std::ifstream &is)
 {
-	Evaluator::Type type;
-	is.read(reinterpret_cast<char *>(&type), sizeof(Evaluator::Type));
+	OldEvaluator::Type type;
+	is.read(reinterpret_cast<char *>(&type), sizeof(OldEvaluator::Type));
 
 	switch (type) {
-	case Type::DEFAULT: return new Evaluator();
-	case Type::CONST: return new ConstEvaluator(is);
-	case Type::EXPRESSION: return new ExpressionEvaluator(is);
-	case Type::TABLE: return new TableEvaluator(is);
-	case Type::TABLE_INTERPOLATION: return new TableInterpolationEvaluator(is);
+	case Type::DEFAULT: return new OldEvaluator();
+	case Type::CONST: return new ConstOldEvaluator(is);
+	case Type::EXPRESSION: return new ExpressionOldEvaluator(is);
+	case Type::TABLE: return new TableOldEvaluator(is);
+	case Type::TABLE_INTERPOLATION: return new TableInterpolationOldEvaluator(is);
 	case Type::ARRAY: ESINFO(GLOBAL_ERROR) << "Implement loading of Array evaluator"; return NULL;
 	default: ESINFO(GLOBAL_ERROR) << "Unknown evaluator type"; return NULL;
 	}
 }
 
-void Evaluator::store(std::ofstream& os)
+void OldEvaluator::store(std::ofstream& os)
 {
 	Type type = Type::DEFAULT;
-	os.write(reinterpret_cast<const char *>(&type), sizeof(Evaluator::Type));
+	os.write(reinterpret_cast<const char *>(&type), sizeof(OldEvaluator::Type));
 }
 
-ConstEvaluator::ConstEvaluator(double value)
+ConstOldEvaluator::ConstOldEvaluator(double value)
 : _value(value)
 {
 
 }
 
-ConstEvaluator::ConstEvaluator(std::ifstream &is)
+ConstOldEvaluator::ConstOldEvaluator(std::ifstream &is)
 {
 	is.read(reinterpret_cast<char *>(&_value), sizeof(double));
 }
 
-void ConstEvaluator::store(std::ofstream& os)
+void ConstOldEvaluator::store(std::ofstream& os)
 {
 	Type type = Type::CONST;
-	os.write(reinterpret_cast<const char *>(&type), sizeof(Evaluator::Type));
+	os.write(reinterpret_cast<const char *>(&type), sizeof(OldEvaluator::Type));
 	os.write(reinterpret_cast<const char *>(&_value), sizeof(double));
 }
 
-ExpressionEvaluator::ExpressionEvaluator(const std::string &expression, const std::vector<std::string> &variables)
+ExpressionOldEvaluator::ExpressionOldEvaluator(const std::string &expression, const std::vector<std::string> &variables)
 : _variables({ "X", "Y", "Z", "TIME", "TEMPERATURE", "PRESSURE", "VELOCITY" })
 {
 	for (size_t i = 0; i < variables.size(); i++) {
 		if (std::find(_variables.begin(), _variables.end(), variables[i]) == _variables.end()) {
-			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: ExpressionEvaluator not supports variable: '" << variables[i] << "'.";
+			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: ExpressionOldEvaluator not supports variable: '" << variables[i] << "'.";
 		}
 	}
 	_expression.resize(environment->OMP_NUM_THREADS, Expression(expression, _variables));
@@ -65,7 +64,7 @@ ExpressionEvaluator::ExpressionEvaluator(const std::string &expression, const st
 	_temperatureDependency = StringCompare::contains(expression, { "TEMPERATURE" });
 }
 
-ExpressionEvaluator::ExpressionEvaluator(std::ifstream &is)
+ExpressionOldEvaluator::ExpressionOldEvaluator(std::ifstream &is)
 {
 	eslocal size;
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
@@ -88,10 +87,10 @@ ExpressionEvaluator::ExpressionEvaluator(std::ifstream &is)
 	_temperatureDependency = StringCompare::contains(_expression[0].expression(), { "TEMPERATURE" });
 }
 
-void ExpressionEvaluator::store(std::ofstream& os)
+void ExpressionOldEvaluator::store(std::ofstream& os)
 {
 	Type type = Type::EXPRESSION;
-	os.write(reinterpret_cast<const char *>(&type), sizeof(Evaluator::Type));
+	os.write(reinterpret_cast<const char *>(&type), sizeof(OldEvaluator::Type));
 	eslocal size = _expression[0].expression().size();
 	os.write(reinterpret_cast<const char *>(&size), sizeof(eslocal));
 	os.write(_expression[0].expression().c_str(), _expression[0].expression().size());
@@ -105,7 +104,7 @@ void ExpressionEvaluator::store(std::ofstream& os)
 }
 
 
-TableEvaluator::TableEvaluator(
+TableOldEvaluator::TableOldEvaluator(
 			const std::vector<std::vector<std::vector<double> > > &table,
 			const std::vector<TableProperty> &properties,
 			const std::vector<std::vector<double> > &axis)
@@ -114,7 +113,7 @@ TableEvaluator::TableEvaluator(
 
 }
 
-TableEvaluator::TableEvaluator(std::ifstream &is)
+TableOldEvaluator::TableOldEvaluator(std::ifstream &is)
 {
 	is.read(reinterpret_cast<char *>(&_dimension), sizeof(size_t));
 
@@ -152,10 +151,10 @@ TableEvaluator::TableEvaluator(std::ifstream &is)
 	}
 }
 
-void TableEvaluator::store(std::ofstream& os)
+void TableOldEvaluator::store(std::ofstream& os)
 {
 	Type type = Type::TABLE;
-	os.write(reinterpret_cast<const char *>(&type), sizeof(Evaluator::Type));
+	os.write(reinterpret_cast<const char *>(&type), sizeof(OldEvaluator::Type));
 	size_t size = _dimension;
 	os.write(reinterpret_cast<const char *>(&size), sizeof(size_t));
 
@@ -190,7 +189,7 @@ void TableEvaluator::store(std::ofstream& os)
 	}
 }
 
-TableInterpolationEvaluator::TableInterpolationEvaluator(const std::vector<std::pair<double, double> > &table)
+TableInterpolationOldEvaluator::TableInterpolationOldEvaluator(const std::vector<std::pair<double, double> > &table)
 : table(table)
 {
 	if (!table.size()) {
@@ -198,7 +197,7 @@ TableInterpolationEvaluator::TableInterpolationEvaluator(const std::vector<std::
 	}
 }
 
-TableInterpolationEvaluator::TableInterpolationEvaluator(std::ifstream &is)
+TableInterpolationOldEvaluator::TableInterpolationOldEvaluator(std::ifstream &is)
 {
 	size_t size;
 	is.read(reinterpret_cast<char *>(&size), sizeof(size_t));
@@ -206,10 +205,10 @@ TableInterpolationEvaluator::TableInterpolationEvaluator(std::ifstream &is)
 	is.read(reinterpret_cast<char *>(table.data()), 2 * sizeof(size_t) * table.size());
 }
 
-void TableInterpolationEvaluator::store(std::ofstream& os)
+void TableInterpolationOldEvaluator::store(std::ofstream& os)
 {
 	Type type = Type::TABLE_INTERPOLATION;
-	os.write(reinterpret_cast<const char *>(&type), sizeof(Evaluator::Type));
+	os.write(reinterpret_cast<const char *>(&type), sizeof(OldEvaluator::Type));
 
 	size_t size = table.size();
 	os.write(reinterpret_cast<const char *>(&size), sizeof(size_t));
@@ -270,6 +269,8 @@ double ArrayEvaluator::evaluate(eslocal index) const
 		ESINFO(ERROR) << "Array evaluator has no specified value for index '" << index << "'";
 		return 0;
 	}
+}
+
 }
 
 

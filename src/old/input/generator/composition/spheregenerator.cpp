@@ -293,7 +293,7 @@ void SphereGenerator::neighbours(std::vector<OldElement*> &nodes, std::vector<in
 }
 
 void SphereGenerator::regions(
-		std::vector<Evaluator*> &evaluators,
+		std::vector<OldEvaluator*> &evaluators,
 		std::vector<Region*> &regions,
 		std::vector<OldElement*> &elements,
 		std::vector<OldElement*> &faces,

@@ -1,7 +1,6 @@
 
 #include "parser.h"
 
-#include "../../../basis/evaluators/evaluator.h"
 #include "../../../old/mesh/structures/elementtypes.h"
 #include "../../../old/mesh/structures/mesh.h"
 #include "../../../old/mesh/structures/coordinates.h"
@@ -11,6 +10,8 @@
 #include "../../../config/ecf/material/material.h"
 
 #include "../../../basis/logging/logging.h"
+#include "../../../basis/evaluator/expressionevaluator.h"
+#include "../../oldevaluators/oldevaluator.h"
 
 using namespace espreso::input;
 
@@ -307,8 +308,8 @@ void WorkbenchParser::mp(std::vector<MaterialConfiguration*> &materials, TableIn
 				expression.evaluator = new ExpressionEvaluator(params[3]);
 			} else {
 				expression.value = "TABULAR [";
-				for (size_t i = 0; i < evaluator->table.size(); i++) {
-					expression.value += std::to_string(evaluator->table[i].first) + "," + std::to_string(evaluator->table[i].second) + ";";
+				for (size_t i = 0; i < evaluator->_table.size(); i++) {
+					expression.value += std::to_string(evaluator->_table[i].first) + "," + std::to_string(evaluator->_table[i].second) + ";";
 				}
 				expression.value += "]";
 				expression.evaluator = evaluator;
@@ -467,7 +468,7 @@ void WorkbenchParser::cmblock(std::vector<OldElement*> &elements, std::vector<Re
 static void pushEvaluator(std::vector<espreso::Evaluator*> &evaluators, const std::string &value, const espreso::Coordinates &coordinates) {
 	if (value.find("x") == std::string::npos && value.find("y") == std::string::npos && value.find("z") == std::string::npos) {
 		espreso::Expression expr(value, {});
-		evaluators.push_back(new espreso::ConstEvaluator(expr.evaluate({})));
+		evaluators.push_back(new espreso::ConstEvaluator(expr.evaluate()));
 	} else {
 		evaluators.push_back(new espreso::ExpressionEvaluator(value));
 	}

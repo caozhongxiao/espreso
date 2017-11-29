@@ -30,7 +30,7 @@ protected:
 	void elements(std::vector<size_t> &bodies, std::vector<OldElement*> &elements, std::vector<OldElement*> &faces, std::vector<OldElement*> &edges);
 	void materials(std::vector<MaterialConfiguration*> &materials) {};
 	void regions(
-				std::vector<Evaluator*> &evaluators,
+				std::vector<OldEvaluator*> &evaluators,
 				std::vector<Region*> &regions,
 				std::vector<OldElement*> &elements,
 				std::vector<OldElement*> &faces,

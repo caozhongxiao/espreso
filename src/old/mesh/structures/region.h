@@ -8,7 +8,7 @@
 namespace espreso {
 
 class OldElement;
-class Evaluator;
+class OldEvaluator;
 class Coordinates;
 enum class Property;
 enum class ElementType;
@@ -16,7 +16,7 @@ enum class ElementType;
 struct Region {
 	std::string name;
 	ElementType eType;
-	std::vector<std::map<Property, std::vector<Evaluator*> > > settings;
+	std::vector<std::map<Property, std::vector<OldEvaluator*> > > settings;
 	mutable double area;
 
 	std::vector<OldElement*>& elements() { return *_elements; }

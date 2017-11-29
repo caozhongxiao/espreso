@@ -1,17 +1,17 @@
 
-#ifndef SRC_BASIS_EVALUATORS_EVALUATOR_H_
-#define SRC_BASIS_EVALUATORS_EVALUATOR_H_
+#ifndef SRC_OLD_OLDEVALUATORS_OLDEVALUATOR_H_
+#define SRC_OLD_OLDEVALUATORS_OLDEVALUATOR_H_
 
-#include "../expression/expression.h"
+#include "../../basis/expression/expression.h"
 
 #include "omp.h"
 
 #include <algorithm>
-#include "../containers/point.h"
+#include "../../basis/containers/point.h"
 
 namespace espreso {
 
-class Evaluator {
+class OldEvaluator {
 
 protected:
 	enum class Type: int {
@@ -24,14 +24,14 @@ protected:
 	};
 
 public:
-	static Evaluator* create(std::ifstream &is);
+	static OldEvaluator* create(std::ifstream &is);
 
-	virtual Evaluator* copy() const { return new Evaluator(*this); }
+	virtual OldEvaluator* copy() const { return new OldEvaluator(*this); }
 
 	virtual Type type() { return Type::DEFAULT; }
 	virtual double evaluate(const Point &p, double time = 0, double temperature = 0, double pressure = 0, double velocity = 0) const { return 0; }
 
-	virtual ~Evaluator() {};
+	virtual ~OldEvaluator() {};
 
 	virtual bool isTimeDependent() const { return false; }
 	virtual bool isTemperatureDependent() const { return false; }
@@ -39,13 +39,13 @@ public:
 	virtual void store(std::ofstream& os);
 };
 
-class ConstEvaluator: public Evaluator {
+class ConstOldEvaluator: public OldEvaluator {
 
 public:
-	ConstEvaluator(double value);
-	ConstEvaluator(std::ifstream &is);
+	ConstOldEvaluator(double value);
+	ConstOldEvaluator(std::ifstream &is);
 
-	virtual Evaluator* copy() const { return new ConstEvaluator(*this); }
+	virtual OldEvaluator* copy() const { return new ConstOldEvaluator(*this); }
 
 	virtual Type type() { return Type::CONST; }
 	double inline evaluate(const Point &p, double time = 0, double temperature = 0, double pressure = 0, double velocity = 0) const { return _value; }
@@ -61,25 +61,26 @@ private:
  * Evaluator can be called from various threads.
  * Create one instance for each worker in order to avoid race conditions.
  */
-class ExpressionEvaluator: public Evaluator {
+class ExpressionOldEvaluator: public OldEvaluator {
 
 public:
-	ExpressionEvaluator(const std::string &expression, const std::vector<std::string> &variables = { "X", "Y", "Z", "TIME", "TEMPERATURE" });
-	ExpressionEvaluator(std::ifstream &is);
+	ExpressionOldEvaluator(const std::string &expression, const std::vector<std::string> &variables = { "X", "Y", "Z", "TIME", "TEMPERATURE" });
+	ExpressionOldEvaluator(std::ifstream &is);
 
-	virtual Evaluator* copy() const { return new ExpressionEvaluator(*this); }
+	virtual OldEvaluator* copy() const { return new ExpressionOldEvaluator(*this); }
 
 	virtual Type type() { return Type::EXPRESSION; }
 	double inline evaluate(const Point &p, double time = 0, double temperature = 0, double pressure = 0, double velocity = 0) const
 	{
-		_values[omp_get_thread_num()][0] = p.x;
-		_values[omp_get_thread_num()][1] = p.y;
-		_values[omp_get_thread_num()][2] = p.z;
-		_values[omp_get_thread_num()][3] = time;
-		_values[omp_get_thread_num()][4] = temperature;
-		_values[omp_get_thread_num()][5] = pressure;
-		_values[omp_get_thread_num()][6] = velocity;
-		return _expression[omp_get_thread_num()].evaluate(_values[omp_get_thread_num()]);
+//		_values[omp_get_thread_num()][0] = p.x;
+//		_values[omp_get_thread_num()][1] = p.y;
+//		_values[omp_get_thread_num()][2] = p.z;
+//		_values[omp_get_thread_num()][3] = time;
+//		_values[omp_get_thread_num()][4] = temperature;
+//		_values[omp_get_thread_num()][5] = pressure;
+//		_values[omp_get_thread_num()][6] = velocity;
+//		return _expression[omp_get_thread_num()].evaluate(_values[omp_get_thread_num()]);
+		return 0;
 	}
 
 	bool isTimeDependent() const { return _timeDependency; }
@@ -94,7 +95,7 @@ private:
 	bool _timeDependency, _temperatureDependency;
 };
 
-class TableEvaluator: public Evaluator {
+class TableOldEvaluator: public OldEvaluator {
 
 public:
 	enum class TableProperty {
@@ -104,14 +105,14 @@ public:
 		VELOCITY
 	};
 
-	TableEvaluator(
+	TableOldEvaluator(
 			const std::vector<std::vector<std::vector<double> > > &table,
 			const std::vector<TableProperty> &properties,
 			const std::vector<std::vector<double> > &axis);
 
-	TableEvaluator(std::ifstream &is);
+	TableOldEvaluator(std::ifstream &is);
 
-	virtual Evaluator* copy() const { return new TableEvaluator(*this); }
+	virtual OldEvaluator* copy() const { return new TableOldEvaluator(*this); }
 
 	virtual Type type() { return Type::TABLE; }
 	virtual double inline evaluate(const Point &p, double time = 0, double temperature = 0, double pressure = 0, double velocity = 0) const
@@ -149,13 +150,13 @@ protected:
 	std::vector<std::vector<double> > _axis;
 };
 
-class TableInterpolationEvaluator: public Evaluator {
+class TableInterpolationOldEvaluator: public OldEvaluator {
 
 public:
-	TableInterpolationEvaluator(const std::vector<std::pair<double, double> > &table);
-	TableInterpolationEvaluator(std::ifstream &is);
+	TableInterpolationOldEvaluator(const std::vector<std::pair<double, double> > &table);
+	TableInterpolationOldEvaluator(std::ifstream &is);
 
-	virtual Evaluator* copy() const { return new TableInterpolationEvaluator(*this); }
+	virtual OldEvaluator* copy() const { return new TableInterpolationOldEvaluator(*this); }
 
 	virtual Type type() { return Type::TABLE_INTERPOLATION; }
 	virtual double inline evaluate(const Point &p, double time = 0, double temperature = 0, double pressure = 0, double velocity = 0) const
@@ -183,7 +184,7 @@ public:
 
 namespace input { class API; }
 
-class ArrayEvaluator: public Evaluator {
+class ArrayEvaluator: public OldEvaluator {
 
 	friend class input::API;
 public:
@@ -192,7 +193,7 @@ public:
 
 	void addIndex(eslocal index, eslocal value);
 
-	virtual Evaluator* copy() const { return new ArrayEvaluator(*this); }
+	virtual OldEvaluator* copy() const { return new ArrayEvaluator(*this); }
 
 	virtual Type type() { return Type::ARRAY; }
 	virtual double evaluate(const Point &p, double time = 0, double temperature = 0, double pressure = 0, double velocity = 0) const;
@@ -209,4 +210,5 @@ protected:
 
 
 
-#endif /* SRC_BASIS_EVALUATORS_EVALUATOR_H_ */
+
+#endif /* SRC_OLD_OLDEVALUATORS_OLDEVALUATOR_H_ */

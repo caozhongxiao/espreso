@@ -13,7 +13,7 @@ namespace espreso {
 struct MaterialConfiguration;
 struct G2L;
 class Coordinates;
-class Evaluator;
+class OldEvaluator;
 class Region;
 class OldElement;
 enum class Property;
@@ -97,7 +97,7 @@ public:
 	const std::vector<Region*>& regions() const { return _regions; }
 	const std::vector<Region*>& monitoredRegions() const { return _monitoredRegions; }
 	const std::vector<MaterialConfiguration*>& materials() const { return _materials; }
-	const std::vector<Evaluator*>& evaluators() const { return _evaluators; }
+	const std::vector<OldEvaluator*>& evaluators() const { return _evaluators; }
 
 	std::vector<size_t> assignVariousDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets);
 	std::vector<size_t> assignUniformDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets);
@@ -231,7 +231,7 @@ protected:
 	std::vector<Property> _elementsDOFsOffsets;
 
 	/** @brief list of evaluators */
-	std::vector<Evaluator*> _evaluators;
+	std::vector<OldEvaluator*> _evaluators;
 
 private:
 	OldMesh(const OldMesh &mesh) = delete;

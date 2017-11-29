@@ -12,7 +12,6 @@
 #include "../../basis/matrices/denseMatrix.h"
 #include "../../solver/generic/SparseMatrix.h"
 #include "heattransfer2d.h"
-#include "../../basis/evaluators/evaluator.h"
 
 using namespace espreso;
 
