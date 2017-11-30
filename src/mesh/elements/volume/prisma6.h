@@ -8,9 +8,11 @@ namespace espreso {
 
 struct Prisma6 {
 
-	static Element create()
+	static Element fill(Element e, Element* begin);
+
+	static Element create(Element* begin)
 	{
-		return Element(Element::TYPE::VOLUME, Element::CODE::PRISMA6, 6, 3, 2);
+		return fill(Element(Element::TYPE::VOLUME, Element::CODE::PRISMA6, 6, 3, 2), begin);
 	}
 };
 

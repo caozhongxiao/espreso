@@ -8,9 +8,11 @@ namespace espreso {
 
 struct Triangle3 {
 
-	static Element create()
+	static Element fill(Element e, Element* begin);
+
+	static Element create(Element* begin)
 	{
-		return Element(Element::TYPE::PLANE, Element::CODE::TRIANGLE3, 3, 2, 1);
+		return fill(Element(Element::TYPE::PLANE, Element::CODE::TRIANGLE3, 3, 2, 1), begin);
 	}
 };
 

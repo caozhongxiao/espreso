@@ -8,11 +8,11 @@ namespace espreso {
 
 struct Hexahedron8 {
 
-	static Element fill(Element e, size_t thread, Element* begin);
+	static Element fill(Element e, Element* begin);
 
-	static Element create(size_t thread, Element* begin)
+	static Element create(Element* begin)
 	{
-		return fill(Element(Element::TYPE::VOLUME, Element::CODE::HEXA8, 8, 3, 2), thread, begin);
+		return fill(Element(Element::TYPE::VOLUME, Element::CODE::HEXA8, 8, 3, 2), begin);
 	}
 
 };

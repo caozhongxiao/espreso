@@ -8,9 +8,11 @@ namespace espreso {
 
 struct Pyramid5 {
 
-	static Element create()
+	static Element fill(Element e, Element* begin);
+
+	static Element create(Element* begin)
 	{
-		return Element(Element::TYPE::VOLUME, Element::CODE::PYRAMID5, 5, 3, 2);
+		return fill(Element(Element::TYPE::VOLUME, Element::CODE::PYRAMID5, 5, 3, 2), begin);
 	}
 };
 

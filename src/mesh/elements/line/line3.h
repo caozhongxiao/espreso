@@ -8,9 +8,11 @@ namespace espreso {
 
 struct Line3 {
 
-	static Element create()
+	static Element fill(Element e, Element* begin);
+
+	static Element create(Element* begin)
 	{
-		return Element(Element::TYPE::LINE, Element::CODE::LINE3, 3, 1, 1);
+		return fill(Element(Element::TYPE::LINE, Element::CODE::LINE3, 3, 1, 1), begin);
 	}
 };
 

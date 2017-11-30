@@ -53,24 +53,24 @@ Mesh::Mesh(const ECFConfiguration &configuration)
 		std::vector<Element> eclasses;
 		_eclasses[t] = new Element[static_cast<int>(Element::CODE::SIZE)];
 
-		eclasses.push_back(Point1::create());
+		eclasses.push_back(Point1::create(_eclasses[t]));
 
-		eclasses.push_back(Line2::create());
-		eclasses.push_back(Line3::create());
+		eclasses.push_back(Line2::create(_eclasses[t]));
+		eclasses.push_back(Line3::create(_eclasses[t]));
 
-		eclasses.push_back(Triangle3::create());
-		eclasses.push_back(Triangle6::create());
-		eclasses.push_back(Square4::create());
-		eclasses.push_back(Square8::create());
+		eclasses.push_back(Triangle3::create(_eclasses[t]));
+		eclasses.push_back(Triangle6::create(_eclasses[t]));
+		eclasses.push_back(Square4::create(_eclasses[t]));
+		eclasses.push_back(Square8::create(_eclasses[t]));
 
-		eclasses.push_back(Tetrahedron4::create(t, _eclasses[t]));
-		eclasses.push_back(Tetrahedron10::create());
-		eclasses.push_back(Pyramid5::create());
-		eclasses.push_back(Pyramid13::create());
-		eclasses.push_back(Prisma6::create());
-		eclasses.push_back(Prisma15::create());
-		eclasses.push_back(Hexahedron8::create(t, _eclasses[t]));
-		eclasses.push_back(Hexahedron20::create());
+		eclasses.push_back(Tetrahedron4::create(_eclasses[t]));
+		eclasses.push_back(Tetrahedron10::create(_eclasses[t]));
+		eclasses.push_back(Pyramid5::create(_eclasses[t]));
+		eclasses.push_back(Pyramid13::create(_eclasses[t]));
+		eclasses.push_back(Prisma6::create(_eclasses[t]));
+		eclasses.push_back(Prisma15::create(_eclasses[t]));
+		eclasses.push_back(Hexahedron8::create(_eclasses[t]));
+		eclasses.push_back(Hexahedron20::create(_eclasses[t]));
 
 		std::sort(eclasses.begin(), eclasses.end(), [] (const Element &e1, const Element &e2) { return static_cast<int>(e1.code) < static_cast<int>(e2.code); });
 
@@ -106,6 +106,7 @@ void Mesh::load()
 
 	neighbours = mesh->neighbours();
 
+	std::vector<eslocal> shrink(mesh->nodes().size());
 	// LOAD NODES
 	{
 		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, mesh->nodes().size());
@@ -113,27 +114,43 @@ void Mesh::load()
 		std::vector<std::vector<eslocal> > IDs(threads);
 		std::vector<std::vector<eslocal> > ranksBoundaries(threads);
 		std::vector<std::vector<int> > ranksData(threads);
+		std::vector<eslocal> tempty(threads);
 
 		ranksBoundaries.front().push_back(0);
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			size_t offset = 0;
+			eslocal empty = 0;
 			for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
-				coordinates[t].push_back(mesh->coordinates()[n]);
-				IDs[t].push_back(mesh->coordinates().globalIndex(n));
-				ranksBoundaries[t].push_back(offset = offset + mesh->nodes()[n]->clusters().size());
-				for (size_t c = 0; c < mesh->nodes()[n]->clusters().size(); c++) {
-					ranksData[t].push_back(mesh->nodes()[n]->clusters()[c]);
+				if (mesh->nodes()[n]->parentElements().size()) {
+					coordinates[t].push_back(mesh->coordinates()[n]);
+					IDs[t].push_back(mesh->coordinates().globalIndex(n));
+					ranksBoundaries[t].push_back(offset = offset + mesh->nodes()[n]->clusters().size());
+					for (size_t c = 0; c < mesh->nodes()[n]->clusters().size(); c++) {
+						ranksData[t].push_back(mesh->nodes()[n]->clusters()[c]);
+					}
+				} else {
+					++empty;
 				}
+				shrink[n] = empty;
+			}
+			tempty[t] = empty;
+		}
+
+		Esutils::sizesToOffsets(tempty);
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
+				shrink[n] += tempty[t];
 			}
 		}
 
 		Esutils::threadDistributionToFullDistribution(ranksBoundaries);
 
-		nodes->size = mesh->nodes().size();
-		nodes->distribution = distribution;
-
 		nodes->IDs = new serializededata<eslocal, esglobal>(1, IDs);
+
+		nodes->size = nodes->IDs->structures();
+		nodes->distribution = nodes->IDs->datatarray().distribution();
 
 		nodes->coordinates = new serializededata<eslocal, Point>(1, coordinates);
 		nodes->ranks = new serializededata<eslocal, int>(ranksBoundaries, ranksData);
@@ -174,7 +191,7 @@ void Mesh::load()
 				}
 				boundaries[t].push_back(offset = offset + mesh->elements()[e]->nodes());
 				for (size_t n = 0; n < mesh->elements()[e]->nodes(); n++) {
-					indices[t].push_back(mesh->elements()[e]->node(n));
+					indices[t].push_back(mesh->elements()[e]->node(n) - shrink[mesh->elements()[e]->node(n)]);
 				}
 
 				eIDs[t].push_back(e + esize);
@@ -204,7 +221,7 @@ void Mesh::load()
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
 				for (size_t e = tdistributions[t]; e < tdistributions[t + 1]; e++) {
-					rdata[t].push_back(mesh->regions()[r]->elements()[e]->node(0));
+					rdata[t].push_back(mesh->regions()[r]->elements()[e]->node(0) - shrink[mesh->regions()[r]->elements()[e]->node(0)]);
 				}
 			}
 		} else {
@@ -213,7 +230,7 @@ void Mesh::load()
 			for (size_t t = 0; t < threads; t++) {
 				for (size_t e = tdistributions[t]; e < tdistributions[t + 1]; e++) {
 					for (size_t n = 0; n < mesh->regions()[r]->elements()[e]->nodes(); n++) {
-						rdata[t].push_back(mesh->regions()[r]->elements()[e]->node(n));
+						rdata[t].push_back(mesh->regions()[r]->elements()[e]->node(n) - shrink[mesh->regions()[r]->elements()[e]->node(n)]);
 					}
 					rdistribution[t].push_back(rdata[t].size());
 				}
@@ -264,8 +281,8 @@ void Mesh::update()
 		materials.push_back(&mat->second);
 	}
 
-	// preprocessing->reclusterize();
-	preprocessing->partitiate(6, true, true);
+	preprocessing->reclusterize();
+	preprocessing->partitiate(5, true, true);
 }
 
 bool Mesh::prepareSolutionForOutput(const Step &step)

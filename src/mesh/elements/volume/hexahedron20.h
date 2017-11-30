@@ -8,9 +8,11 @@ namespace espreso {
 
 struct Hexahedron20 {
 
-	static Element create()
+	static Element fill(Element e, Element* begin);
+
+	static Element create(Element* begin)
 	{
-		return Element(Element::TYPE::VOLUME, Element::CODE::HEXA20, 20, 4, 3);
+		return fill(Element(Element::TYPE::VOLUME, Element::CODE::HEXA20, 20, 4, 3), begin);
 	}
 };
 

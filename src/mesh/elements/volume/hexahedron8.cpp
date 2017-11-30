@@ -3,14 +3,11 @@
 
 #include "../../../basis/containers/serializededata.h"
 #include "../../../basis/matrices/denseMatrix.h"
-#include "../../../config/ecf/environment.h"
 
 using namespace espreso;
 
-Element Hexahedron8::fill(Element e, size_t thread, Element* begin)
+Element Hexahedron8::fill(Element e, Element* begin)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
-
 	std::vector<Element*> facepointers(6, begin + static_cast<int>(Element::CODE::SQUARE4));
 
 	std::vector<int> data = {

@@ -8,9 +8,11 @@ namespace espreso {
 
 struct Square8 {
 
-	static Element create()
+	static Element fill(Element e, Element* begin);
+
+	static Element create(Element* begin)
 	{
-		return Element(Element::TYPE::PLANE, Element::CODE::SQUARE8, 8, 3, 2);
+		return fill(Element(Element::TYPE::PLANE, Element::CODE::SQUARE8, 8, 3, 2), begin);
 	}
 };
 

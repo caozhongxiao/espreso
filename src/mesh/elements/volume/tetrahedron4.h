@@ -8,11 +8,11 @@ namespace espreso {
 
 struct Tetrahedron4 {
 
-	static Element fill(Element e, size_t thread, Element* begin);
+	static Element fill(Element e, Element* begin);
 
-	static Element create(size_t thread, Element* begin)
+	static Element create(Element* begin)
 	{
-		return fill(Element(Element::TYPE::VOLUME, Element::CODE::TETRA4, 4, 3, 2), thread, begin);
+		return fill(Element(Element::TYPE::VOLUME, Element::CODE::TETRA4, 4, 3, 2), begin);
 	}
 };
 

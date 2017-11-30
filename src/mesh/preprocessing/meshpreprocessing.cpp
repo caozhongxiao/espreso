@@ -66,7 +66,6 @@ void MeshPreprocessing::linkNodesAndElements()
 	// thread x vector(from, to)
 	std::vector<std::vector<std::pair<eslocal, eslocal> > > localLinks(threads);
 
-
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		auto nodes = _mesh->elements->nodes->cbegin(t);
