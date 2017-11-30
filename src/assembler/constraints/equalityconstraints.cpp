@@ -23,7 +23,7 @@
 
 using namespace espreso;
 
-EqualityConstraints::EqualityConstraints(Instance &instance, Mesh &mesh, const std::vector<std::pair<BoundaryRegionStore*, Evaluator*> > &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling)
+EqualityConstraints::EqualityConstraints(Instance &instance, Mesh &mesh, const std::map<std::string, ECFExpression> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling)
 : _instance(instance), _mesh(mesh)
 {
 	for (eslocal d = 0; d < _mesh.elements->ndomains; d++) {
@@ -92,7 +92,7 @@ eslocal EqualityConstraints::computeIntervalsOffsets(std::function<eslocal(esloc
 	return offset;
 }
 
-void EqualityConstraints::update(const std::vector<std::pair<BoundaryRegionStore*, Evaluator*> > &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling)
+void EqualityConstraints::update(const std::map<std::string, ECFExpression> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling)
 {
 	_DOFs = DOFs;
 	_withRedundantMultipliers = withRedundantMultiplier;
@@ -101,15 +101,21 @@ void EqualityConstraints::update(const std::vector<std::pair<BoundaryRegionStore
 	_mergedDirichletOffset.clear();
 	_mergedDirichletIndices.clear();
 	_mergedDirichletValues.clear();
+	std::vector<BoundaryRegionStore*> dregions;
+	std::vector<Evaluator*> devaluator;
+	for (auto it = dirichlet.begin(); it != dirichlet.end(); ++it) {
+		dregions.push_back(_mesh.bregion(it->first));
+		devaluator.push_back(it->second.evaluator);
+	}
 	for (size_t i = 0; i < _mesh.nodes->pintervals.size(); ++i) {
 		std::vector<eslocal> uniqueNodes;
 		std::vector<double> values;
-		for (size_t r = 0; r < dirichlet.size(); r++) {
-			auto begin = dirichlet[r].first->nodes->datatarray().begin() + dirichlet[r].first->nodesIntervals[i].begin;
-			auto end = dirichlet[r].first->nodes->datatarray().begin() + dirichlet[r].first->nodesIntervals[i].end;
+		for (size_t r = 0; r < dregions.size(); r++) {
+			auto begin = dregions[r]->nodes->datatarray().begin() + dregions[r]->nodesIntervals[i].begin;
+			auto end = dregions[r]->nodes->datatarray().begin() + dregions[r]->nodesIntervals[i].end;
 			uniqueNodes.insert(uniqueNodes.end(), begin, end);
 			values.insert(values.end(), begin, end);
-			dirichlet[r].second->evaluate(end - begin, NULL, NULL, 0, values.data() + values.size() - (end - begin));
+			devaluator[r]->evaluate(end - begin, NULL, NULL, 0, values.data() + values.size() - (end - begin));
 		}
 		std::vector<eslocal> permutation(uniqueNodes.size());
 		std::iota(permutation.begin(), permutation.end(), 0);

@@ -4,6 +4,7 @@
 
 #include <utility>
 #include <vector>
+#include <map>
 #include <cstddef>
 #include <functional>
 
@@ -11,8 +12,7 @@ namespace espreso {
 
 class Instance;
 class Mesh;
-class BoundaryRegionStore;
-class Evaluator;
+struct ECFExpression;
 
 class Region;
 struct Step;
@@ -20,8 +20,8 @@ class SparseMatrix;
 
 struct EqualityConstraints
 {
-	EqualityConstraints(Instance &instance, Mesh &mesh, const std::vector<std::pair<BoundaryRegionStore*, Evaluator*> > &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling);
-	void update(const std::vector<std::pair<BoundaryRegionStore*, Evaluator*> > &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling);
+	EqualityConstraints(Instance &instance, Mesh &mesh, const std::map<std::string, ECFExpression> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling);
+	void update(const std::map<std::string, ECFExpression> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling);
 
 	void B1DirichletInsert(const Step &step);
 	void B1GlueElements(const Step &step);

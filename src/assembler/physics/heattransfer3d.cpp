@@ -30,7 +30,13 @@ HeatTransfer3D::HeatTransfer3D(Mesh *mesh, Instance *instance, const HeatTransfe
 		dirichlet.push_back(std::make_pair(mesh->bregion(it->first), it->second.evaluator));
 	}
 
-	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, dirichlet, 1, configuration.load_steps_settings.at(1).feti.redundant_lagrange, configuration.load_steps_settings.at(1).feti.scaling);
+	_equalityConstraints = new EqualityConstraints(
+			*_instance,
+			*_mesh,
+			configuration.load_steps_settings.at(1).temperature, 1,
+			configuration.load_steps_settings.at(1).feti.redundant_lagrange,
+			configuration.load_steps_settings.at(1).feti.scaling);
+
 	mesh->nodes->appendData({ "TEMPERATURE" }, &instance->primalSolution);
 }
 
