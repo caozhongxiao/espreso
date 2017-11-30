@@ -19,8 +19,8 @@ Element Tetrahedron4::fill(Element e, size_t thread, Element* begin)
 		2, 1, 0
 	};
 
-	e.faces = new serializededata<int, int>(3, { thread, threads, data });
-	e.facepointers = new serializededata<int, Element*>(1, { thread, threads, facepointers });
+	e.faces = new serializededata<int, int>(3, data);
+	e.facepointers = new serializededata<int, Element*>(1, facepointers);
 
 	return e;
 }

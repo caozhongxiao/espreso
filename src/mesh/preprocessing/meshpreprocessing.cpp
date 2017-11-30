@@ -1641,8 +1641,8 @@ void MeshPreprocessing::computeBoundaryNodes(std::vector<eslocal> &externalBound
 			}
 			if (dual->size() < epointer->front()->faces->structures() || dual->front() < begine || dual->back() >= ende) {
 
-				auto facepointer = epointer->front()->facepointers->cbegin(t);
-				for (auto face = epointer->front()->faces->cbegin(t); face != epointer->front()->faces->cend(t); ++face, ++facepointer) {
+				auto facepointer = epointer->front()->facepointers->cbegin();
+				for (auto face = epointer->front()->faces->cbegin(); face != epointer->front()->faces->cend(); ++face, ++facepointer) {
 
 					isExternal = true;
 					common.clear();
@@ -1885,8 +1885,8 @@ void MeshPreprocessing::arrangeNodes()
 		intervalDomainsDistribution.push_back(intervalDomainsData.size());
 	}
 	_mesh->nodes->pintervals.back().end = _mesh->nodes->size;
-	_mesh->nodes->idomains = new serializededata<eslocal, eslocal>(tarray<eslocal>(0, threads, intervalDomainsDistribution), tarray<eslocal>(0, threads, intervalDomainsData));
-	_mesh->nodes->iranks = new serializededata<eslocal, int>(tarray<eslocal>(0, threads, intervalDomainsDistribution), tarray<eslocal>(0, threads, intervalDomainsProcs));
+	_mesh->nodes->idomains = new serializededata<eslocal, eslocal>(intervalDomainsDistribution, intervalDomainsData);
+	_mesh->nodes->iranks = new serializededata<eslocal, int>(intervalDomainsDistribution, intervalDomainsProcs);
 
 	eslocal externalIntervals = 0;
 	auto iti = _mesh->nodes->pintervals.begin();
@@ -2016,7 +2016,7 @@ void MeshPreprocessing::arrangeNodes()
 		}
 		neighDistribution.push_back(neighData.size());
 	}
-	_mesh->nodes->ineighborOffsets = new serializededata<eslocal, TNeighborOffset>(tarray<eslocal>(0, 1, neighDistribution), tarray<TNeighborOffset>(0, 1, neighData));
+	_mesh->nodes->ineighborOffsets = new serializededata<eslocal, TNeighborOffset>(neighDistribution, neighData);
 	_mesh->nodes->permute(finalpermutation);
 	_mesh->nodes->dcenter.resize(_mesh->elements->ndomains);
 	std::vector<Point> centers(_mesh->nodes->pintervals.size());

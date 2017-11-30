@@ -114,14 +114,11 @@ tarray<TType>::tarray(const std::vector<std::vector<TType> > &data)
 }
 
 template <typename TType>
-tarray<TType>::tarray(size_t thread, size_t threads, const std::vector<TType> &data)
+tarray<TType>::tarray(const std::vector<TType> &data)
 : _data(NULL)
 {
 	_size = data.size();
-	_distribution = std::vector<size_t>(threads + 1, 0);
-	for (size_t t = thread; t < threads; t++) {
-		_distribution[t + 1] = _size;
-	}
+	_distribution = { 0, _size };
 
 	if (_size) {
 		_data = new TType[_size];

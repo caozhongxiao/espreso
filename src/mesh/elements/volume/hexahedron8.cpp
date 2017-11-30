@@ -22,8 +22,8 @@ Element Hexahedron8::fill(Element e, size_t thread, Element* begin)
 		3, 0, 4, 7
 	};
 
-	e.faces = new serializededata<int, int>(4, { thread, threads, data });
-	e.facepointers = new serializededata<int, Element*>(1, { thread, threads, facepointers });
+	e.faces = new serializededata<int, int>(4, data);
+	e.facepointers = new serializededata<int, Element*>(1, facepointers);
 
 	size_t GPCount = 8, nodeCount = 8;
 
