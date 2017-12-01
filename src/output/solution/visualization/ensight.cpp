@@ -9,6 +9,7 @@
 
 #include "../../../config/ecf/environment.h"
 
+#include "../../../mesh/elements/element.h"
 #include "../../../mesh/mesh.h"
 #include "../../../mesh/store/nodestore.h"
 #include "../../../mesh/store/elementstore.h"
@@ -44,6 +45,38 @@ EnSight::~EnSight()
 {
 	if (_casefile != NULL) {
 		delete _casefile;
+	}
+}
+
+std::string EnSight::codetotype(int code)
+{
+	switch (static_cast<Element::CODE>(code)) {
+
+	case Element::CODE::POINT1: return "point";
+
+	case Element::CODE::LINE2: return "bar2";
+
+	case Element::CODE::TRIANGLE3: return "tria3";
+	case Element::CODE::SQUARE4: return "quad4";
+
+	case Element::CODE::TETRA4: return "tetra4";
+	case Element::CODE::PYRAMID5: return "pyramid5";
+	case Element::CODE::PRISMA6: return "penta6";
+	case Element::CODE::HEXA8: return "hexa8";
+
+	case Element::CODE::LINE3: return "bar3";
+
+	case Element::CODE::TRIANGLE6: return "tria6";
+	case Element::CODE::SQUARE8: return "quad8";
+
+	case Element::CODE::TETRA10: return "tetra10";
+	case Element::CODE::PYRAMID13: return "pyramid13";
+	case Element::CODE::PRISMA15: return "penta15";
+	case Element::CODE::HEXA20: return "hexa20";
+
+	default:
+		ESINFO(ERROR) << "ESPRESO internal error: unknown element code.";
+		return "";
 	}
 }
 
@@ -89,31 +122,40 @@ void EnSight::storeGeometry()
 				auto begin = _mesh.nodes->coordinates->datatarray().begin() + _mesh.nodes->pintervals[i].begin;
 				auto end = _mesh.nodes->coordinates->datatarray().begin() + _mesh.nodes->pintervals[i].end;
 				for (auto n = begin; n != end; ++n) {
-					os << std::showpos << std::scientific << std::setprecision(5) << getCoordinate(n) << "\n";
+					os << std::scientific << std::setprecision(5) << getCoordinate(n) << "\n";
 				}
 			}
 		}
 		pushInterval();
 	};
 
+	os << std::showpos;
 	storeNodes([] (const Point *p) { return p->x; });
 	storeNodes([] (const Point *p) { return p->y; });
 	storeNodes([] (const Point *p) { return p->z; });
+	os << std::noshowpos;
 
-	if (environment->MPIrank == 0) {
-		os << "hexa8\n";
-		os << std::setw(10) << edistribution.back() << "\n";
-	}
-	auto node = _mesh.elements->nodes->datatarray().cbegin();
-	for (size_t e = 0; e < _mesh.elements->size; e++) {
-		for (size_t n = 0; n < 8; ++n, ++node) {
-			auto it = std::lower_bound(_mesh.nodes->pintervals.begin(), _mesh.nodes->pintervals.end(), *node, [] (const ProcessInterval &interval, eslocal node) { return interval.end <= node; });
-			os << std::setw(10) << it->globalOffset + *node - it->begin + 1;
+	for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
+		if (_mesh.elements->ecounters[etype]) {
+			if (environment->MPIrank == 0) {
+				os << codetotype(etype) << "\n";
+				os << std::setw(10) << _mesh.elements->ecounters[etype] << "\n";
+			}
+
+			for (size_t i = 0; i < _mesh.elements->eintervals.size(); i++) {
+				auto nodes = _mesh.elements->nodes->cbegin() + _mesh.elements->eintervals[i].begin;
+				for (eslocal e = _mesh.elements->eintervals[i].begin; e < _mesh.elements->eintervals[i].end; ++e, ++nodes) {
+					for (auto n = nodes->begin(); n != nodes->end(); ++n) {
+						auto it = std::lower_bound(_mesh.nodes->pintervals.begin(), _mesh.nodes->pintervals.end(), *n, [] (const ProcessInterval &interval, eslocal node) { return interval.end <= node; });
+						os << std::setw(10) << it->globalOffset + *n - it->begin + 1;
+					}
+					os << "\n";
+				}
+			}
+
+			pushInterval();
 		}
-		os << "\n";
 	}
-
-	pushInterval();
 
 	MPI_Datatype indexes;
 	MPI_Type_create_hindexed(displacement.size(), lenghts.data(), displacement.data(), MPI_BYTE, &indexes);
@@ -155,8 +197,9 @@ void EnSight::storeVariables()
 		os << "coordinates\n";
 	}
 
+	os << std::showpos;
 	for (size_t n = 0; n < _mesh.nodes->data.front()->gathredData->size(); ++n) {
-		os << std::showpos << std::scientific << std::setprecision(5) << (*_mesh.nodes->data.front()->gathredData)[n] << "\n";
+		os << std::scientific << std::setprecision(5) << (*_mesh.nodes->data.front()->gathredData)[n] << "\n";
 	}
 
 	std::vector<MPI_Aint> displacement;

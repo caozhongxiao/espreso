@@ -18,6 +18,8 @@ struct EnSight: public CollectedVisualization {
 	void storeVariables();
 
 protected:
+	std::string codetotype(int code);
+
 	std::string _path;
 	std::string _name;
 	const Mesh &_mesh;

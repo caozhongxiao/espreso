@@ -72,7 +72,7 @@ Mesh::Mesh(const ECFConfiguration &configuration)
 		eclasses.push_back(Hexahedron8::create(_eclasses[t]));
 		eclasses.push_back(Hexahedron20::create(_eclasses[t]));
 
-		std::sort(eclasses.begin(), eclasses.end(), [] (const Element &e1, const Element &e2) { return static_cast<int>(e1.code) < static_cast<int>(e2.code); });
+		std::sort(eclasses.begin(), eclasses.end(), [] (const Element &e1, const Element &e2) { return e1.code < e2.code; });
 
 		memcpy(_eclasses[t], eclasses.data(), eclasses.size() * sizeof(Element));
 	}
@@ -282,7 +282,7 @@ void Mesh::update()
 	}
 
 	preprocessing->reclusterize();
-	preprocessing->partitiate(5, true, true);
+	preprocessing->partitiate(1, true, true);
 }
 
 bool Mesh::prepareSolutionForOutput(const Step &step)

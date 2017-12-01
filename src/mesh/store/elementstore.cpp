@@ -26,6 +26,8 @@ ElementStore::ElementStore(std::vector<Element*> &eclasses)
   firstDomain(0),
   ndomains(1),
 
+  ecounters(static_cast<int>(Element::CODE::SIZE)),
+
   _eclasses(eclasses)
 {
 
@@ -40,7 +42,9 @@ size_t ElementStore::packedSize() const
 			Esutils::packedSize(size) +
 			nodes->packedSize() +
 			sizeof(size_t) + epointers->datatarray().size() * sizeof(int) +
-			Esutils::packedSize(elementsDistribution);
+			Esutils::packedSize(elementsDistribution) +
+			Esutils::packedSize(ecounters) +
+			Esutils::packedSize(eintervals);
 }
 
 void ElementStore::pack(char* &p) const
@@ -61,6 +65,8 @@ void ElementStore::pack(char* &p) const
 
 	}
 	Esutils::pack(elementsDistribution, p);
+	Esutils::pack(ecounters, p);
+	Esutils::pack(eintervals, p);
 }
 
 void ElementStore::unpack(const char* &p)
@@ -86,6 +92,8 @@ void ElementStore::unpack(const char* &p)
 		}
 	}
 	Esutils::unpack(elementsDistribution, p);
+	Esutils::unpack(ecounters, p);
+	Esutils::unpack(eintervals, p);
 }
 
 ElementStore::~ElementStore()

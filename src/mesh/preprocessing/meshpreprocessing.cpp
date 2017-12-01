@@ -659,8 +659,6 @@ void MeshPreprocessing::partitiate(eslocal parts, bool separateMaterials, bool s
 		}
 	}
 
-	this->permuteElements(permutation, tdistribution);
-
 	for (size_t i = 1; i < domainDistribution.size(); i++) {
 		if (domainDistribution[i - 1] != domainDistribution[i]) {
 			_mesh->elements->clusters.push_back(clusters[i - 1]);
@@ -704,7 +702,10 @@ void MeshPreprocessing::partitiate(eslocal parts, bool separateMaterials, bool s
 		}
 	}
 
-	MeshPreprocessing::arrangeNodes();
+	arrangeElementsPermutation(permutation);
+	this->permuteElements(permutation, tdistribution);
+
+	arrangeNodes();
 
 	finish("decomposition of the mesh");
 }
@@ -2098,8 +2099,80 @@ void MeshPreprocessing::arrangeNodes()
 
 			}
 		}
-
 	}
 
 	finish("arrange nodes");
+}
+
+void MeshPreprocessing::arrangeElements()
+{
+	start("arrange elements");
+
+	std::vector<eslocal> permutation(_mesh->elements->size);
+	std::iota(permutation.begin(), permutation.end(), 0);
+	arrangeElementsPermutation(permutation);
+	permuteElements(permutation, _mesh->elements->distribution);
+
+	finish("arrange elements");
+}
+
+void MeshPreprocessing::arrangeElementsPermutation(std::vector<eslocal> &permutation)
+{
+	start("arrange elements permutation");
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; ++d) {
+			std::sort(
+					permutation.begin() + _mesh->elements->elementsDistribution[d],
+					permutation.begin() + _mesh->elements->elementsDistribution[d + 1],
+					[&] (eslocal i, eslocal j) {
+				return _mesh->elements->epointers->datatarray()[i]->code < _mesh->elements->epointers->datatarray()[j]->code;
+			});
+		}
+	}
+
+	std::vector<std::vector<eslocal> > iboundaries(threads);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; ++d) {
+			for (eslocal e = _mesh->elements->elementsDistribution[d]; e < _mesh->elements->elementsDistribution[d + 1]; ++e) {
+				if (e > 1 && _mesh->elements->epointers->datatarray()[permutation[e]]->code != _mesh->elements->epointers->datatarray()[permutation[e - 1]]->code) {
+					iboundaries[t].push_back(e);
+				}
+			}
+		}
+	}
+	Esutils::mergeThreadedUniqueData(iboundaries);
+
+	_mesh->elements->eintervals.push_back(ElementsInterval(0, 0, static_cast<int>(_mesh->elements->epointers->datatarray()[permutation[0]]->code)));
+	for (size_t i = 0; i < iboundaries[0].size(); i++) {
+		_mesh->elements->eintervals.back().end = iboundaries[0][i];
+		_mesh->elements->eintervals.push_back(ElementsInterval(iboundaries[0][i], iboundaries[0][i], static_cast<int>(_mesh->elements->epointers->datatarray()[permutation[0]]->code)));
+	}
+	_mesh->elements->eintervals.back().end = _mesh->elements->size;
+
+	int elementstypes = static_cast<int>(Element::CODE::SIZE);
+	if (elementstypes > 32) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: increase synchronization buffer.";
+	}
+
+	int codes = 0;
+	for (size_t i = 0; i < _mesh->elements->eintervals.size(); ++i) {
+		codes |= 1 << _mesh->elements->eintervals[i].code;
+		_mesh->elements->ecounters[_mesh->elements->eintervals[i].code] = _mesh->elements->eintervals[i].end - _mesh->elements->eintervals[i].begin;
+	}
+
+	int allcodes = 0;
+	MPI_Allreduce(&codes, &allcodes, 1, MPI_INT, MPI_LOR, environment->MPICommunicator);
+
+	for (int i = 0, bitmask = 1; i < elementstypes; i++, bitmask << 1) {
+		if (allcodes & bitmask) {
+			_mesh->elements->ecounters[i] = Communication::exscan(_mesh->elements->ecounters[i]);
+		}
+	}
+
+	finish("arrange elements permutation");
 }

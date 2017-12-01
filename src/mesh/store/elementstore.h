@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "../intervals/elementsinterval.h"
+
 namespace espreso {
 
 template <typename TEBoundaries, typename TEData> class serializededata;
@@ -43,6 +45,9 @@ struct ElementStore {
 	std::vector<eslocal> domainDistribution;
 	std::vector<eslocal> elementsDistribution;
 	std::vector<int> clusters;
+
+	std::vector<eslocal> ecounters;
+	std::vector<ElementsInterval> eintervals;
 
 	size_t packedSize() const;
 	void pack(char* &p) const;
