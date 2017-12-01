@@ -18,46 +18,9 @@ using namespace espreso;
 MaterialWidget::MaterialWidget(MaterialConfiguration* material,
                                const QVector<std::string>& materialNames,
                                QWidget *parent) :
-    ECFObjectWidget(material, parent)
+    ScrollECFObjectWidget(material, parent)
 {
     this->m_names = materialNames;
-}
-
-
-QWidget* MaterialWidget::initContainer()
-{
-    QScrollArea* area = new QScrollArea;
-
-    QWidget* widget = new QWidget(area);
-    this->m_widget = widget;
-    QVBoxLayout* w_layout = new QVBoxLayout;
-    widget->setLayout(w_layout);
-
-    this->createHeadline(this->m_obj, widget);
-
-    area->setWidgetResizable(true);
-    area->setWidget(widget);
-
-    return area;
-}
-
-void MaterialWidget::drawObject(ECFObject* obj)
-{
-    QWidget* widget = new QWidget;
-    QVBoxLayout* layout = new QVBoxLayout;
-    widget->setLayout(layout);
-
-    this->m_widget->layout()->addWidget(widget);
-
-    this->createHeadline(obj, widget);
-
-    this->processParameters(obj, widget);
-
-    QSpacerItem* verticalSpacer = new QSpacerItem(0,
-                                                  0,
-                                                  QSizePolicy::Minimum,
-                                                  QSizePolicy::Expanding);
-    layout->addItem(verticalSpacer);
 }
 
 bool MaterialWidget::isValid()

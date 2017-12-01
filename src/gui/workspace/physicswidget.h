@@ -4,14 +4,14 @@
 #include <QPushButton>
 #include <QComboBox>
 
-#include "../elements/ecfobjectwidget.h"
+#include "../elements/scrollecfobjectwidget.h"
 #include "../elements/fieldhandler.h"
 #include "../elements/regionpropertywidget.h"
 
 namespace espreso
 {
 
-class PhysicsWidget : public ECFObjectWidget
+class PhysicsWidget : public ScrollECFObjectWidget
 {
     Q_OBJECT
 
@@ -36,7 +36,6 @@ private slots:
 private:
     ECFConfiguration* m_ecf;
     Mesh* m_mesh;
-    QWidget* m_widget;
 
     QComboBox* m_physics;
 

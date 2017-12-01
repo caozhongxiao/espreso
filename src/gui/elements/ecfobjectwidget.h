@@ -36,6 +36,8 @@ public:
 
     virtual void save() override;
 
+    void setDrawHeadline(bool draw);
+
 protected slots:
     void redraw();
 
@@ -45,16 +47,20 @@ protected:
     ECFObject* m_obj;
 
     QWidget* m_container;
+    QWidget* m_widget;
 
     QVector<ISavableObject*> m_savables;
     QVector<IValidatableObject*> m_validatables;
     bool validate();
 
+    bool m_draw_headlines = true;
+
     QString m_errormsg;
 
+    virtual QWidget* initContainerWidget();
     virtual QWidget* initContainer() = 0;
 
-    virtual void drawObject(ECFObject*) = 0;
+    virtual void drawObject(ECFObject*);
     void drawMe();
 
     void processParameters(ECFObject*, QWidget*);

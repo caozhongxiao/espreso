@@ -36,7 +36,7 @@ void WorkflowWidget::on_btnMesh_clicked()
 }
 
 void WorkflowWidget::setData(ECFConfiguration *ecf, Mesh* mesh)
-{
+{   
     int tabs = ui->workflow->count();
     for (int i = 1; i < tabs; i++)
     {
@@ -47,6 +47,8 @@ void WorkflowWidget::setData(ECFConfiguration *ecf, Mesh* mesh)
     this->m_physicsTab = nullptr;
     this->m_mesh = mesh;
 
+    this->createInput();
+
     this->createPhysicsTab();
 
     this->createMaterialsTab();
@@ -56,6 +58,60 @@ void WorkflowWidget::setData(ECFConfiguration *ecf, Mesh* mesh)
     this->m_loadsteps_fst_tab_index = ui->workflow->count();
 
     this->createOutputTab();
+}
+
+void WorkflowWidget::createInput()
+{
+    ECFParameter* i = this->m_ecf->getParameter("input");
+    if (!this->m_inputBox_filled)
+    {
+        for (auto opt = i->metadata.options.begin(); opt != i->metadata.options.end(); ++opt)
+        {
+            ui->cmbInput->addItem( QString::fromStdString((*opt).description) );
+        }
+        connect(ui->cmbInput, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+                this, &WorkflowWidget::onInputChange);
+        this->m_inputBox_filled = true;
+    }
+    int index = 0;
+    for (auto opt = i->metadata.options.begin(); opt != i->metadata.options.end(); ++opt)
+    {
+        if ((*opt).name.compare(i->getValue()) == 0) break;
+        index++;
+    }
+    ui->cmbInput->setCurrentIndex(index);
+
+    this->onInputChange(ui->cmbInput->currentIndex());
+}
+
+void WorkflowWidget::onInputChange(int)
+{
+    if (this->m_inputWidget != nullptr)
+    {
+        this->m_inputWidget->hide();
+        ui->inputConfigLayout->removeWidget(this->m_inputWidget);
+    }
+
+    this->m_inputWidget = new FixedECFObjectWidget(this->input());
+    this->m_inputWidget->init();
+    ui->inputConfigLayout->addWidget(this->m_inputWidget);
+}
+
+ECFObject* WorkflowWidget::input()
+{
+    switch (ui->cmbInput->currentIndex())
+    {
+    case 0:
+        return &this->m_ecf->workbench;
+    case 1:
+        return &this->m_ecf->openfoam;
+    case 2:
+        return &this->m_ecf->esdata;
+    case 3:
+        return &this->m_ecf->generator;
+    default:
+        return &this->m_ecf->generator;
+    }
 }
 
 void WorkflowWidget::createPhysicsTab()

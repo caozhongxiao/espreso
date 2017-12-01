@@ -1,13 +1,13 @@
 #ifndef MATERIALWIDGET_H
 #define MATERIALWIDGET_H
 
-#include "../../elements/ecfobjectwidget.h"
+#include "../../elements/scrollecfobjectwidget.h"
 #include "../../elements/formwidget.h"
 
 namespace espreso
 {
 
-class MaterialWidget : public ECFObjectWidget
+class MaterialWidget : public ScrollECFObjectWidget
 {
     Q_OBJECT
 public:
@@ -17,9 +17,6 @@ public:
 
     bool isValid() override;
 
-protected:
-    QWidget* initContainer() override;
-    void drawObject(ECFObject*) override;
 
 private:
     QVector<std::string> m_names;

@@ -12,29 +12,13 @@
 using namespace espreso;
 
 LoadstepWidget::LoadstepWidget(size_t id, Mesh* mesh, ECFObject* physics, QWidget* parent) :
-    ECFObjectWidget(physics, parent)
+    ScrollECFObjectWidget(physics, parent)
 {
     this->m_physics = physics;
     this->m_loadstep = m_physics->getParameter("load_steps_settings")->getParameter(QString::number(id).toStdString());
     this->m_obj = static_cast<ECFObject*>(m_loadstep);
     this->m_mesh = mesh;
     this->m_properties = nullptr;
-}
-
-
-QWidget* LoadstepWidget::initContainer()
-{
-    QScrollArea* area = new QScrollArea;
-
-    QWidget* widget = new QWidget(area);
-    this->m_widget = widget;
-    QVBoxLayout* w_layout = new QVBoxLayout;
-    widget->setLayout(w_layout);
-
-    area->setWidgetResizable(true);
-    area->setWidget(widget);
-
-    return area;
 }
 
 void LoadstepWidget::drawObject(ECFObject* obj)
@@ -57,19 +41,5 @@ void LoadstepWidget::drawObject(ECFObject* obj)
         return;
     }
 
-    QWidget* widget = new QWidget(this->m_container);
-    QLayout* layout = new QVBoxLayout;
-    widget->setLayout(layout);
-
-    QSpacerItem* verticalSpacer = new QSpacerItem(0,
-                                                  0,
-                                                  QSizePolicy::Minimum,
-                                                  QSizePolicy::Expanding);
-    layout->addItem(verticalSpacer);
-
-    this->m_widget->layout()->addWidget(widget);
-
-    this->createHeadline(obj, widget);
-
-    this->processParameters(obj, widget);
+    ScrollECFObjectWidget::drawObject(obj);
 }

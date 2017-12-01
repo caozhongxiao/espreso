@@ -13,14 +13,8 @@ class FixedECFObjectWidget : public ECFObjectWidget
 public:
     FixedECFObjectWidget(ECFObject* obj, QWidget* parent = 0);
 
-    void setDrawHeadline(bool draw);
-
 protected:
     virtual QWidget* initContainer() override;
-    virtual void drawObject(ECFObject*) override;
-
-private:
-    bool m_draw_headlines;
 };
 
 }

@@ -12,7 +12,7 @@
 using namespace espreso;
 
 PhysicsWidget::PhysicsWidget(ECFConfiguration* ecf, Mesh* mesh, QWidget* parent) :
-    ECFObjectWidget(ecf, parent)
+    ScrollECFObjectWidget(ecf, parent)
 {
     this->m_ecf = ecf;
     this->m_mesh = mesh;
@@ -22,15 +22,8 @@ QWidget* PhysicsWidget::initContainer()
 {
     ECFParameter* physics = m_ecf->getParameter("physics");
 
-    QScrollArea* area = new QScrollArea;
-
-    QWidget* widget = new QWidget(area);
-    this->m_widget = widget;
-    QVBoxLayout* w_layout = new QVBoxLayout;
-    widget->setLayout(w_layout);
-
-    QComboBox* cmbPhysics = new QComboBox(widget);
-    w_layout->addWidget(cmbPhysics);
+    QComboBox* cmbPhysics = new QComboBox(this->m_widget);
+    this->m_widget->layout()->addWidget(cmbPhysics);
 
     int active = 0;
     int index = 0;
@@ -48,10 +41,7 @@ QWidget* PhysicsWidget::initContainer()
     connect(cmbPhysics, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &PhysicsWidget::onPhysicsChange);
 
-    area->setWidgetResizable(true);
-    area->setWidget(widget);
-
-    return area;
+    return ScrollECFObjectWidget::initContainer();
 }
 
 ECFObject* PhysicsWidget::physics(int index)
@@ -105,21 +95,7 @@ void PhysicsWidget::drawObject(ECFObject* obj)
         return;
     }
 
-    QWidget* widget = new QWidget(this->m_container);
-    QLayout* layout = new QVBoxLayout;
-    widget->setLayout(layout);
-
-    QSpacerItem* verticalSpacer = new QSpacerItem(0,
-                                                  0,
-                                                  QSizePolicy::Minimum,
-                                                  QSizePolicy::Expanding);
-    layout->addItem(verticalSpacer);
-
-    this->m_widget->layout()->addWidget(widget);
-
-    this->createHeadline(obj, widget);
-
-    this->processParameters(obj, widget);
+    ScrollECFObjectWidget::drawObject(obj);
 }
 
 FormWidget* PhysicsWidget::processPositiveInteger(ECFParameter* parameter, FormWidget* form, QWidget* widget)

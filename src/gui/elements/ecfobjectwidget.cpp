@@ -30,10 +30,39 @@ void ECFObjectWidget::drawMe()
     this->m_savables.clear();
     this->m_validatables.clear();
 
+    this->m_widget = this->initContainerWidget();
     this->m_container = this->initContainer();
     ui->layout->addWidget(this->m_container);
 
     this->drawObject(this->m_obj);
+}
+
+QWidget* ECFObjectWidget::initContainerWidget()
+{
+    QWidget* widget = new QWidget;
+    QVBoxLayout* w_layout = new QVBoxLayout;
+    widget->setLayout(w_layout);
+
+    return widget;
+}
+
+void ECFObjectWidget::drawObject(ECFObject *obj)
+{
+    QWidget* widget = new QWidget;
+    QVBoxLayout* layout = new QVBoxLayout;
+    widget->setLayout(layout);
+
+    this->m_widget->layout()->addWidget(widget);
+
+    if (this->m_draw_headlines) this->createHeadline(obj, widget);
+
+    this->processParameters(obj, widget);
+
+    QSpacerItem* verticalSpacer = new QSpacerItem(0,
+                                                  0,
+                                                  QSizePolicy::Minimum,
+                                                  QSizePolicy::Expanding);
+    layout->addItem(verticalSpacer);
 }
 
 OptionHandler* ECFObjectWidget::createOption(ECFParameter* option, QWidget* parent, bool withLabel)
@@ -116,6 +145,11 @@ void ECFObjectWidget::save()
     {
         obj->save();
     }
+}
+
+void ECFObjectWidget::setDrawHeadline(bool draw)
+{
+    this->m_draw_headlines = draw;
 }
 
 void ECFObjectWidget::processParameters(ECFObject* obj, QWidget* widget)

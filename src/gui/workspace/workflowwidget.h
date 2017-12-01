@@ -12,6 +12,7 @@
 #include "../../mesh/elements/plane/planeelement.h"
 
 #include "physicswidget.h"
+#include "../elements/fixedecfobjectwidget.h"
 
 namespace espreso
 {
@@ -30,6 +31,7 @@ public:
 
     void setData(ECFConfiguration* ecf, Mesh* mesh);
     PhysicsConfiguration* activePhysics(ECFConfiguration* ecf);
+    ECFObject* input();
 
 signals:
     void fileOpened(const QString& filename);
@@ -39,12 +41,17 @@ private slots:
     void on_btnMesh_clicked();
     void onLoadstepsChange(int loadsteps);
     void onPhysicsChange(ECFObject* physics);
+    void onInputChange(int);
 
 private:
     Ui::WorkflowWidget *ui;
 
     ECFConfiguration* m_ecf;
     Mesh* m_mesh;
+
+    bool m_inputBox_filled = false;
+    void createInput();
+    FixedECFObjectWidget* m_inputWidget = nullptr;
 
     void createPhysicsTab();
     QWidget* m_physicsTab;
