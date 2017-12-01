@@ -40,6 +40,7 @@ private:
 	void exchangeElements(const std::vector<eslocal> &partition);
 	void permuteElements(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
 	void arrangeElementsPermutation(std::vector<eslocal> &permutation);
+	void arrangeRegions();
 	void computeBoundaryNodes(std::vector<eslocal> &externalBoundary, std::vector<eslocal> &internalBoundary);
 	void start(const std::string &message);
 	void skip(const std::string &message);

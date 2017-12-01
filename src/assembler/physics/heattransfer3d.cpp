@@ -10,6 +10,7 @@
 #include "../../mesh/store/elementstore.h"
 #include "../../mesh/store/nodestore.h"
 #include "../../mesh/store/boundaryregionstore.h"
+#include "../../mesh/store/elementsregionstore.h"
 
 #include "../../mesh/elements/element.h"
 
@@ -240,6 +241,22 @@ void HeatTransfer3D::processElement(const Step &step, Matrices matrices, eslocal
 	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
 	eslocal domain = std::lower_bound(_mesh->elements->elementsDistribution.begin(), _mesh->elements->elementsDistribution.end(), eindex + 1) - _mesh->elements->elementsDistribution.begin() - 1;
 	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
+	Evaluator *translation_motion = NULL;
+	Evaluator *heat_source = NULL;
+	for (auto it = _configuration.load_steps_settings.at(step.step + 1).translation_motions.begin(); it != _configuration.load_steps_settings.at(step.step + 1).translation_motions.end(); ++it) {
+		ElementsRegionStore *region = _mesh->eregion(it->first);
+		if (std::binary_search(region->elements->datatarray().cbegin(), region->elements->datatarray().cend(), eindex)) {
+			translation_motion = it->second.evaluator;
+			break;
+		}
+	}
+	for (auto it = _configuration.load_steps_settings.at(step.step + 1).heat_source.begin(); it != _configuration.load_steps_settings.at(step.step + 1).heat_source.end(); ++it) {
+		ElementsRegionStore *region = _mesh->eregion(it->first);
+		if (std::binary_search(region->elements->datatarray().cbegin(), region->elements->datatarray().cend(), eindex)) {
+			heat_source = it->second.evaluator;
+			break;
+		}
+	}
 
 	const std::vector<DenseMatrix> &N = *(epointer->N);
 	const std::vector<DenseMatrix> &dN = *(epointer->dN);
@@ -298,12 +315,14 @@ void HeatTransfer3D::processElement(const Step &step, Matrices matrices, eslocal
 					material->heat_capacity.evaluator->evaluate(p, step.currentTime, temp);
 		}
 
-		// TODO: MESH
-//		U(n, 0) = e->getProperty(Property::TRANSLATION_MOTION_X, step.step, p, step.currentTime, temp, 0) * m(n, 0);
-//		U(n, 1) = e->getProperty(Property::TRANSLATION_MOTION_Y, step.step, p, step.currentTime, temp, 0) * m(n, 0);
-//		U(n, 2) = e->getProperty(Property::TRANSLATION_MOTION_Z, step.step, p, step.currentTime, temp, 0) * m(n, 0);
-//
-//		f(n, 0) = e->sumProperty(Property::HEAT_SOURCE, step.step, p, step.currentTime, temp, 0);
+		if (translation_motion) {
+			U(n, 0) = translation_motion->evaluate(p, step.currentTime, temp);
+			U(n, 1) = translation_motion->evaluate(p, step.currentTime, temp);
+			U(n, 2) = translation_motion->evaluate(p, step.currentTime, temp);
+		}
+		if (heat_source) {
+			f(n, 0) = heat_source->evaluate(p, step.currentTime, temp);
+		}
 	}
 
 	eslocal Ksize = nodes->size();

@@ -28,6 +28,7 @@
 
 #include <iostream>
 #include <vector>
+#include <numeric>
 
 #include "../basis/containers/serializededata.h"
 #include "../basis/containers/tarray.h"
@@ -156,6 +157,29 @@ void Mesh::load()
 		nodes->ranks = new serializededata<eslocal, int>(ranksBoundaries, ranksData);
 	}
 
+	auto geteoffset = [] (eslocal vtkCode) {
+		switch (vtkCode) {
+		case  3: return static_cast<int>(Element::CODE::LINE2);
+		case  4: return static_cast<int>(Element::CODE::LINE3);
+
+		case  5: return static_cast<int>(Element::CODE::TRIANGLE3);
+		case  9: return static_cast<int>(Element::CODE::SQUARE4);
+		case 22: return static_cast<int>(Element::CODE::TRIANGLE6);
+		case 23: return static_cast<int>(Element::CODE::SQUARE8);
+
+		case 10: return static_cast<int>(Element::CODE::TETRA4);
+		case 12: return static_cast<int>(Element::CODE::HEXA8);
+		case 13: return static_cast<int>(Element::CODE::PRISMA6);
+		case 14: return static_cast<int>(Element::CODE::PYRAMID5);
+
+		case 24: return static_cast<int>(Element::CODE::TETRA10);
+		case 25: return static_cast<int>(Element::CODE::HEXA20);
+		case 26: return static_cast<int>(Element::CODE::PRISMA15);
+		case 27: return static_cast<int>(Element::CODE::PYRAMID13);
+		}
+		return -1;
+	};
+
 	{
 		size_t esize = mesh->elements().size();
 		Communication::exscan(esize);
@@ -170,25 +194,7 @@ void Mesh::load()
 		for (size_t t = 0; t < threads; t++) {
 			size_t offset = 0;
 			for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
-				switch (mesh->elements()[e]->vtkCode()) {
-				case  3: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::LINE2)]); break;
-				case  4: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::LINE3)]); break;
-
-				case  5: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::TRIANGLE3)]); break;
-				case  9: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::SQUARE4)]); break;
-				case 22: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::TRIANGLE6)]); break;
-				case 23: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::SQUARE8)]); break;
-
-				case 10: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::TETRA4)]); break;
-				case 12: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::HEXA8)]); break;
-				case 13: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::PRISMA6)]); break;
-				case 14: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::PYRAMID5)]); break;
-
-				case 24: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::TETRA10)]); break;
-				case 25: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::HEXA20)]); break;
-				case 26: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::PRISMA15)]); break;
-				case 27: epointers[t].push_back(&_eclasses[t][static_cast<int>(Element::CODE::PYRAMID13)]); break;
-				}
+				epointers[t].push_back(&_eclasses[t][geteoffset(mesh->elements()[e]->vtkCode())]);
 				boundaries[t].push_back(offset = offset + mesh->elements()[e]->nodes());
 				for (size_t n = 0; n < mesh->elements()[e]->nodes(); n++) {
 					indices[t].push_back(mesh->elements()[e]->node(n) - shrink[mesh->elements()[e]->node(n)]);
@@ -213,18 +219,32 @@ void Mesh::load()
 		elements->epointers = new serializededata<eslocal, Element*>(1, std::move(tarray<Element*>(epointers)));
 	}
 
-	for (size_t r = 2; r < mesh->regions().size(); r++) {
+	for (size_t r = 0; r < mesh->regions().size(); r++) {
 		std::vector<size_t> tdistributions = tarray<size_t>::distribute(threads, mesh->regions()[r]->elements().size());
 		std::vector<std::vector<eslocal> > rdistribution(threads), rdata(threads);
+		std::vector<std::vector<Element*> > epointers(threads);
 
-		if (mesh->regions()[r]->eType == ElementType::NODES) {
-			#pragma omp parallel for
-			for (size_t t = 0; t < threads; t++) {
-				for (size_t e = tdistributions[t]; e < tdistributions[t + 1]; e++) {
-					rdata[t].push_back(mesh->regions()[r]->elements()[e]->node(0) - shrink[mesh->regions()[r]->elements()[e]->node(0)]);
+		switch (mesh->regions()[r]->eType) {
+		case ElementType::ELEMENTS:
+			elementsRegions.push_back(new ElementsRegionStore(mesh->regions()[r]->name));
+			if (mesh->regions()[r]->elements().size() == mesh->elements().size()) {
+				#pragma omp parallel for
+				for (size_t t = 0; t < threads; t++) {
+					rdata[t].resize(tdistributions[t + 1] - tdistributions[t]);
+					std::iota(rdata[t].begin(), rdata[t].end(), tdistributions[t]);
+				}
+			} else {
+				#pragma omp parallel for
+				for (size_t t = 0; t < threads; t++) {
+					for (size_t e = tdistributions[t]; e < tdistributions[t + 1]; e++) {
+						rdata[t].push_back(std::lower_bound(mesh->elements().begin(), mesh->elements().end(), mesh->regions()[r]->elements()[e]) - mesh->elements().begin());
+					}
 				}
 			}
-		} else {
+			elementsRegions.back()->elements = new serializededata<eslocal, eslocal>(1, rdata);
+			break;
+		case ElementType::FACES:
+		case ElementType::EDGES:
 			rdistribution[0].push_back(0);
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
@@ -232,22 +252,30 @@ void Mesh::load()
 					for (size_t n = 0; n < mesh->regions()[r]->elements()[e]->nodes(); n++) {
 						rdata[t].push_back(mesh->regions()[r]->elements()[e]->node(n) - shrink[mesh->regions()[r]->elements()[e]->node(n)]);
 					}
+					epointers[t].push_back(&_eclasses[t][geteoffset(mesh->elements()[e]->vtkCode())]);
 					rdistribution[t].push_back(rdata[t].size());
 				}
 			}
-		}
 
-		switch (mesh->regions()[r]->eType) {
-		case ElementType::ELEMENTS:
-			std::cout << "region: " << mesh->regions()[r]->name << " of elements\n";
-			break;
-		case ElementType::FACES:
-			std::cout << "region: " << mesh->regions()[r]->name << " of faces\n";
-			break;
-		case ElementType::EDGES:
-			std::cout << "region: " << mesh->regions()[r]->name << " of edges\n";
+			boundaryRegions.push_back(new BoundaryRegionStore(mesh->regions()[r]->name));
+			if (mesh->regions()[r]->eType == ElementType::FACES) {
+				boundaryRegions.back()->faces = new serializededata<eslocal, eslocal>(rdistribution, rdata);
+				boundaryRegions.back()->facepointers = new serializededata<eslocal, Element*>(1, epointers);
+			} else {
+				boundaryRegions.back()->edges = new serializededata<eslocal, eslocal>(rdistribution, rdata);
+				boundaryRegions.back()->edgepointers = new serializededata<eslocal, Element*>(1, epointers);
+			}
+
 			break;
 		case ElementType::NODES:
+
+			#pragma omp parallel for
+			for (size_t t = 0; t < threads; t++) {
+				for (size_t e = tdistributions[t]; e < tdistributions[t + 1]; e++) {
+					rdata[t].push_back(mesh->regions()[r]->elements()[e]->node(0) - shrink[mesh->regions()[r]->elements()[e]->node(0)]);
+				}
+			}
+
 			boundaryRegions.push_back(new BoundaryRegionStore(mesh->regions()[r]->name));
 			boundaryRegions.back()->nodes = new serializededata<eslocal, eslocal>(1, rdata);
 			std::sort(boundaryRegions.back()->nodes->datatarray().begin(), boundaryRegions.back()->nodes->datatarray().end());

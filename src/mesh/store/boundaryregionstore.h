@@ -2,13 +2,10 @@
 #ifndef SRC_MESH_STORE_BOUNDARYREGIONSTORE_H_
 #define SRC_MESH_STORE_BOUNDARYREGIONSTORE_H_
 
-#include <cstddef>
 #include <vector>
 #include <string>
 
-#include "../intervals/processinterval.h"
-#include "../intervals/domaininterval.h"
-#include "../intervals/gluinginterval.h"
+#include "../intervals/regioninterval.h"
 
 namespace espreso {
 
@@ -26,13 +23,9 @@ struct BoundaryRegionStore {
 	serializededata<eslocal, Element*>* facepointers;
 	serializededata<eslocal, Element*>* edgepointers;
 
-	std::vector<ProcessInterval> facesIntervals;
-	std::vector<ProcessInterval> edgesIntervals;
-	std::vector<ProcessInterval> nodesIntervals;
-
-	std::vector<std::vector<DomainInterval> > domainFacesIntervals;
-	std::vector<std::vector<DomainInterval> > domainEdgesIntervals;
-	std::vector<std::vector<DomainInterval> > domainNodesIntervals;
+	std::vector<RegionInterval> facesIntervals;
+	std::vector<RegionInterval> edgesIntervals;
+	std::vector<RegionInterval> nodesIntervals;
 
 	BoundaryRegionStore(const std::string &name);
 	~BoundaryRegionStore();

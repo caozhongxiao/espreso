@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 
-#include "../intervals/processinterval.h"
+#include "../intervals/regioninterval.h"
 
 namespace espreso {
 
@@ -16,7 +16,7 @@ struct ElementsRegionStore {
 	std::string name;
 
 	serializededata<eslocal, eslocal>* elements;
-	std::vector<ProcessInterval> intervals;
+	std::vector<RegionInterval> intervals;
 
 	ElementsRegionStore(const std::string &name);
 	~ElementsRegionStore();

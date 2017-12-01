@@ -706,6 +706,7 @@ void MeshPreprocessing::partitiate(eslocal parts, bool separateMaterials, bool s
 	this->permuteElements(permutation, tdistribution);
 
 	arrangeNodes();
+	arrangeRegions();
 
 	finish("decomposition of the mesh");
 }
@@ -1416,6 +1417,13 @@ void MeshPreprocessing::permuteElements(const std::vector<eslocal> &permutation,
 	globalremap(_mesh->nodes->elements, true);
 	localremap(_mesh->elements->decomposedDual, true);
 
+	for (size_t r = 0; r < _mesh->elementsRegions.size(); ++r) {
+		for (auto n = _mesh->elementsRegions[r]->elements->datatarray().begin(); n != _mesh->elementsRegions[r]->elements->datatarray().end(); ++n) {
+			*n = backpermutation[*n];
+		}
+		std::sort(_mesh->elementsRegions[r]->elements->datatarray().begin(), _mesh->elementsRegions[r]->elements->datatarray().end());
+	}
+
 	// TODO: MESH
 //	localremap(_mesh->_processBoundaries->elems, false);
 //
@@ -2070,35 +2078,6 @@ void MeshPreprocessing::arrangeNodes()
 	for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
 		localremap(_mesh->boundaryRegions[r]->nodes);
 		std::sort(_mesh->boundaryRegions[r]->nodes->datatarray().begin(), _mesh->boundaryRegions[r]->nodes->datatarray().end());
-
-		{
-			auto offset = _mesh->boundaryRegions[r]->nodes->datatarray().cbegin();
-			auto cend = _mesh->boundaryRegions[r]->nodes->datatarray().cend();
-			for (size_t i = 0; i < _mesh->nodes->pintervals.size(); i++) {
-				auto begin = offset = std::lower_bound(offset, cend, _mesh->nodes->pintervals[i].begin);
-				auto end   = offset = std::lower_bound(offset, cend, _mesh->nodes->pintervals[i].end);
-				_mesh->boundaryRegions[r]->nodesIntervals.push_back(_mesh->nodes->pintervals[i]);
-				_mesh->boundaryRegions[r]->nodesIntervals.back().begin = begin - _mesh->boundaryRegions[r]->nodes->datatarray().cbegin();
-				_mesh->boundaryRegions[r]->nodesIntervals.back().end   = end   - _mesh->boundaryRegions[r]->nodes->datatarray().cbegin();
-			}
-		}
-
-		_mesh->boundaryRegions[r]->domainNodesIntervals.resize(_mesh->elements->ndomains);
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			for (size_t d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
-				auto offset = _mesh->boundaryRegions[r]->nodes->datatarray().cbegin();
-				auto cend = _mesh->boundaryRegions[r]->nodes->datatarray().cend();
-				for (size_t i = 0; i < _mesh->nodes->dintervals[d].size(); i++) {
-					auto begin = offset = std::lower_bound(offset, cend, _mesh->nodes->dintervals[d][i].begin);
-					auto end   = offset = std::lower_bound(offset, cend, _mesh->nodes->dintervals[d][i].end);
-					_mesh->boundaryRegions[r]->domainNodesIntervals[d].push_back(_mesh->nodes->dintervals[d][i]);
-					_mesh->boundaryRegions[r]->domainNodesIntervals[d].back().begin = begin - _mesh->boundaryRegions[r]->nodes->datatarray().cbegin();
-					_mesh->boundaryRegions[r]->domainNodesIntervals[d].back().end   = end   - _mesh->boundaryRegions[r]->nodes->datatarray().cbegin();
-				}
-
-			}
-		}
 	}
 
 	finish("arrange nodes");
@@ -2176,3 +2155,54 @@ void MeshPreprocessing::arrangeElementsPermutation(std::vector<eslocal> &permuta
 
 	finish("arrange elements permutation");
 }
+
+void MeshPreprocessing::arrangeRegions()
+{
+	start("arrange regions");
+
+	for (size_t r = 0; r < _mesh->elementsRegions.size(); r++) {
+		const auto &elements = _mesh->elementsRegions[r]->elements->datatarray();
+
+		_mesh->elementsRegions[r]->intervals.push_back(RegionInterval(0, 0));
+		for (size_t d = 1; d < _mesh->elements->ndomains; d++) {
+			eslocal boundary = std::lower_bound(elements.cbegin(), elements.cend(), _mesh->elements->elementsDistribution[d]) - elements.cbegin();
+			_mesh->elementsRegions[r]->intervals.back().end = boundary;
+			_mesh->elementsRegions[r]->intervals.push_back(RegionInterval(boundary, boundary));
+		}
+		_mesh->elementsRegions[r]->intervals.back().end = elements.size();
+	}
+
+	for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
+		const auto &nodes = _mesh->boundaryRegions[r]->nodes->datatarray();
+
+		_mesh->boundaryRegions[r]->nodesIntervals.push_back(RegionInterval(0, 0));
+		for (size_t i = 1; i < _mesh->nodes->pintervals.size(); i++) {
+			eslocal boundary = std::lower_bound(nodes.cbegin(), nodes.cend(), _mesh->nodes->pintervals[i].begin) - nodes.cbegin();
+			_mesh->boundaryRegions[r]->nodesIntervals.back().end = boundary;
+			_mesh->boundaryRegions[r]->nodesIntervals.push_back(RegionInterval(boundary, boundary));
+		}
+		_mesh->boundaryRegions[r]->nodesIntervals.back().end = nodes.size();
+	}
+
+	finish("arrange regions");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
