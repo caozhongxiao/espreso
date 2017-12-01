@@ -62,7 +62,6 @@ void ElementStore::pack(char* &p) const
 			}
 		}
 		Esutils::pack(eindices, p);
-
 	}
 	Esutils::pack(elementsDistribution, p);
 	Esutils::pack(ecounters, p);

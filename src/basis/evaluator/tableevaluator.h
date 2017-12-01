@@ -4,6 +4,7 @@
 
 #include "evaluator.h"
 
+#include <cstddef>
 #include <vector>
 
 namespace espreso {

@@ -1999,6 +1999,7 @@ void MeshPreprocessing::arrangeNodes()
 	std::vector<eslocal> roffsets(environment->MPIsize);
 	std::vector<eslocal> uniqueNodeOffsets = _mesh->nodes->gatherUniqueNodeDistribution();
 	_mesh->nodes->uniqueOffset = uniqueNodeOffsets[environment->MPIrank];
+	_mesh->nodes->uniqueTotalSize = uniqueNodeOffsets.back();
 
 	goffset = _mesh->nodes->uniqueOffset;
 	std::vector<eslocal> neighDistribution({ 0 });
@@ -2076,8 +2077,10 @@ void MeshPreprocessing::arrangeNodes()
 	localremap(_mesh->elements->nodes);
 
 	for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
-		localremap(_mesh->boundaryRegions[r]->nodes);
-		std::sort(_mesh->boundaryRegions[r]->nodes->datatarray().begin(), _mesh->boundaryRegions[r]->nodes->datatarray().end());
+		if (_mesh->boundaryRegions[r]->nodes != NULL) {
+			localremap(_mesh->boundaryRegions[r]->nodes);
+			std::sort(_mesh->boundaryRegions[r]->nodes->datatarray().begin(), _mesh->boundaryRegions[r]->nodes->datatarray().end());
+		}
 	}
 
 	finish("arrange nodes");
@@ -2147,7 +2150,7 @@ void MeshPreprocessing::arrangeElementsPermutation(std::vector<eslocal> &permuta
 	int allcodes = 0;
 	MPI_Allreduce(&codes, &allcodes, 1, MPI_INT, MPI_LOR, environment->MPICommunicator);
 
-	for (int i = 0, bitmask = 1; i < elementstypes; i++, bitmask << 1) {
+	for (int i = 0, bitmask = 1; i < elementstypes; i++, bitmask = bitmask << 1) {
 		if (allcodes & bitmask) {
 			_mesh->elements->ecounters[i] = Communication::exscan(_mesh->elements->ecounters[i]);
 		}
@@ -2173,15 +2176,27 @@ void MeshPreprocessing::arrangeRegions()
 	}
 
 	for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
-		const auto &nodes = _mesh->boundaryRegions[r]->nodes->datatarray();
+		if (_mesh->boundaryRegions[r]->nodes) {
+			const auto &nodes = _mesh->boundaryRegions[r]->nodes->datatarray();
 
-		_mesh->boundaryRegions[r]->nodesIntervals.push_back(RegionInterval(0, 0));
-		for (size_t i = 1; i < _mesh->nodes->pintervals.size(); i++) {
-			eslocal boundary = std::lower_bound(nodes.cbegin(), nodes.cend(), _mesh->nodes->pintervals[i].begin) - nodes.cbegin();
-			_mesh->boundaryRegions[r]->nodesIntervals.back().end = boundary;
-			_mesh->boundaryRegions[r]->nodesIntervals.push_back(RegionInterval(boundary, boundary));
+			eslocal size = 0, gsize = 0;
+			_mesh->boundaryRegions[r]->nodesIntervals.push_back(ProcessInterval(0, 0, _mesh->nodes->pintervals.front().sourceProcess, 0));
+			for (size_t i = 1; i < _mesh->nodes->pintervals.size(); i++) {
+				eslocal boundary = std::lower_bound(nodes.cbegin(), nodes.cend(), _mesh->nodes->pintervals[i].begin) - nodes.cbegin();
+				_mesh->boundaryRegions[r]->nodesIntervals.back().end = boundary;
+				size += _mesh->boundaryRegions[r]->nodesIntervals.back().end - _mesh->boundaryRegions[r]->nodesIntervals.back().begin;
+				_mesh->boundaryRegions[r]->nodesIntervals.push_back(ProcessInterval(boundary, boundary, _mesh->nodes->pintervals[i].sourceProcess, size));
+			}
+			_mesh->boundaryRegions[r]->nodesIntervals.back().end = nodes.size();
+			size += _mesh->boundaryRegions[r]->nodesIntervals.back().end - _mesh->boundaryRegions[r]->nodesIntervals.back().begin;
+
+			_mesh->boundaryRegions[r]->uniqueSize = size;
+			_mesh->boundaryRegions[r]->uniqueTotalSize = Communication::exscan(size);
+			_mesh->boundaryRegions[r]->uniqueOffset = size;
+			for (size_t i = 0; i < _mesh->boundaryRegions[r]->nodesIntervals.size(); i++) {
+				_mesh->boundaryRegions[r]->nodesIntervals[i].globalOffset += size;
+			}
 		}
-		_mesh->boundaryRegions[r]->nodesIntervals.back().end = nodes.size();
 	}
 
 	finish("arrange regions");

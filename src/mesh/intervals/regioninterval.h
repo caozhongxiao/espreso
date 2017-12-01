@@ -7,6 +7,7 @@ namespace espreso {
 struct RegionInterval {
 	eslocal begin, end;
 
+	RegionInterval(): begin(0), end(0) {}
 	RegionInterval(eslocal begin, eslocal end): begin(begin), end(end) {}
 };
 

@@ -66,8 +66,9 @@ struct NodeStore {
 	std::vector<eslocal> gatherUniqueNodeDistribution();
 
 	eslocal size;
-	eslocal uniqueSize;
 	eslocal uniqueOffset;
+	eslocal uniqueSize;
+	eslocal uniqueTotalSize;
 	std::vector<size_t> distribution;
 
 	serializededata<eslocal, eslocal>* IDs;

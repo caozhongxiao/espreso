@@ -151,25 +151,25 @@ typename std::vector<Ttype>::const_iterator Esutils::max_element(const std::vect
 }
 
 template<>
-size_t Esutils::packedSize(const std::string &data)
+inline size_t Esutils::packedSize(const std::string &data)
 {
 	return sizeof(size_t) + data.size();
 }
 
 template<typename Ttype>
-size_t Esutils::packedSize(const Ttype &data)
+inline size_t Esutils::packedSize(const Ttype &data)
 {
 	return sizeof(Ttype);
 }
 
 template<typename Ttype>
-size_t Esutils::packedSize(const std::vector<Ttype> &data)
+inline size_t Esutils::packedSize(const std::vector<Ttype> &data)
 {
 	return data.size() * sizeof(Ttype) + sizeof(size_t);
 }
 
 template<>
-void Esutils::pack(const std::string &data, char* &p)
+inline void Esutils::pack(const std::string &data, char* &p)
 {
 	size_t size = data.size();
 	memcpy(p, &size, packedSize(size));
@@ -180,14 +180,14 @@ void Esutils::pack(const std::string &data, char* &p)
 }
 
 template<typename Ttype>
-void Esutils::pack(const Ttype &data, char* &p)
+inline void Esutils::pack(const Ttype &data, char* &p)
 {
 	memcpy(p, &data, packedSize(data));
 	p += packedSize(data);
 }
 
 template<typename Ttype>
-void Esutils::pack(const std::vector<Ttype> &data, char* &p)
+inline void Esutils::pack(const std::vector<Ttype> &data, char* &p)
 {
 	size_t size = data.size();
 
@@ -199,7 +199,7 @@ void Esutils::pack(const std::vector<Ttype> &data, char* &p)
 }
 
 template<>
-void Esutils::unpack(std::string &data, const char* &p)
+inline void Esutils::unpack(std::string &data, const char* &p)
 {
 	size_t size;
 	memcpy(&size, p, packedSize(size));
@@ -209,14 +209,14 @@ void Esutils::unpack(std::string &data, const char* &p)
 }
 
 template<typename Ttype>
-void Esutils::unpack(Ttype &data, const char* &p)
+inline void Esutils::unpack(Ttype &data, const char* &p)
 {
 	memcpy(&data, p, packedSize(data));
 	p += packedSize(data);
 }
 
 template<typename Ttype>
-void Esutils::unpack(std::vector<Ttype> &data, const char* &p)
+inline void Esutils::unpack(std::vector<Ttype> &data, const char* &p)
 {
 	size_t size;
 	memcpy(&size, p, packedSize(size));

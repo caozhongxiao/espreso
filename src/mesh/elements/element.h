@@ -2,6 +2,7 @@
 #ifndef SRC_MESH_ELEMENTS_ELEMENT_H_
 #define SRC_MESH_ELEMENTS_ELEMENT_H_
 
+#include <cstddef>
 #include <vector>
 
 namespace espreso {

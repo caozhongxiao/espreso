@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 
-#include "../intervals/regioninterval.h"
+#include "../intervals/processinterval.h"
 
 namespace espreso {
 
@@ -16,6 +16,10 @@ struct BoundaryRegionStore {
 
 	std::string name;
 
+	eslocal uniqueOffset;
+	eslocal uniqueSize;
+	eslocal uniqueTotalSize;
+
 	serializededata<eslocal, eslocal>* faces;
 	serializededata<eslocal, eslocal>* edges;
 	serializededata<eslocal, eslocal>* nodes;
@@ -23,12 +27,19 @@ struct BoundaryRegionStore {
 	serializededata<eslocal, Element*>* facepointers;
 	serializededata<eslocal, Element*>* edgepointers;
 
-	std::vector<RegionInterval> facesIntervals;
-	std::vector<RegionInterval> edgesIntervals;
-	std::vector<RegionInterval> nodesIntervals;
+	std::vector<ProcessInterval> facesIntervals;
+	std::vector<ProcessInterval> edgesIntervals;
+	std::vector<ProcessInterval> nodesIntervals;
 
-	BoundaryRegionStore(const std::string &name);
+	size_t packedSize() const;
+	void pack(char* &p) const;
+	void unpack(const char* &p);
+
+	BoundaryRegionStore(const std::string &name, std::vector<Element*> &eclasses);
 	~BoundaryRegionStore();
+
+private:
+	std::vector<Element*> &_eclasses;
 };
 
 }

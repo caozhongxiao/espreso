@@ -7,6 +7,8 @@
 #include "../../../mesh/mesh.h"
 #include "../../../mesh/store/nodestore.h"
 #include "../../../mesh/store/elementstore.h"
+#include "../../../mesh/store/elementsregionstore.h"
+#include "../../../mesh/store/boundaryregionstore.h"
 
 #include "../visualization/vtklegacy.h"
 
@@ -38,7 +40,33 @@ void AsyncStore::updateMesh()
 	prepareBuffer(AsyncBufferManager::ELEMENTS, _mesh.elements->packedSize());
 	_mesh.elements->pack(_buffer = managedBuffer<char*>(AsyncBufferManager::buffer(AsyncBufferManager::ELEMENTS)));
 
-	call(ExecParameters(AsyncBufferManager::NODES, AsyncBufferManager::ELEMENTS));
+	{ // ELEMENT REGIONS
+		size_t esize = 0;
+		for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
+			esize += _mesh.elementsRegions[r]->packedSize();
+		}
+		prepareBuffer(AsyncBufferManager::ELEMENTREGIONS, esize);
+
+		_buffer = managedBuffer<char*>(AsyncBufferManager::buffer(AsyncBufferManager::ELEMENTREGIONS));
+		for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
+			_mesh.elementsRegions[r]->pack(_buffer);
+		}
+	}
+
+	{ // BOUNDARY REGIONS
+		size_t bsize = 0;
+		for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
+			bsize += _mesh.boundaryRegions[r]->packedSize();
+		}
+		prepareBuffer(AsyncBufferManager::BOUNDARYREGIONS, bsize);
+
+		_buffer = managedBuffer<char*>(AsyncBufferManager::buffer(AsyncBufferManager::BOUNDARYREGIONS));
+		for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
+			_mesh.boundaryRegions[r]->pack(_buffer);
+		}
+	}
+
+	call(ExecParameters(AsyncBufferManager::NODES, AsyncBufferManager::ELEMENTS, AsyncBufferManager::ELEMENTREGIONS, AsyncBufferManager::BOUNDARYREGIONS));
 }
 
 void AsyncStore::updateSolution()
@@ -87,6 +115,24 @@ void AsyncExecutor::exec(const async::ExecInfo &info, const ExecParameters &para
 
 	if (parameters.updatedBuffers & 1 << AsyncBufferManager::ELEMENTS) {
 		_mesh.elements->unpack(_buffer = static_cast<const char*>(info.buffer(AsyncBufferManager::buffer(AsyncBufferManager::ELEMENTS))));
+	}
+
+	if (parameters.updatedBuffers & 1 << AsyncBufferManager::ELEMENTREGIONS) {
+		int bufferid = AsyncBufferManager::buffer(AsyncBufferManager::ELEMENTREGIONS);
+		_buffer = static_cast<const char*>(info.buffer(bufferid));
+		while (_buffer < info.buffer(bufferid) + info.bufferSize(bufferid)) {
+			_mesh.elementsRegions.push_back(new ElementsRegionStore(""));
+			_mesh.elementsRegions.back()->unpack(_buffer);
+		}
+	}
+
+	if (parameters.updatedBuffers & 1 << AsyncBufferManager::BOUNDARYREGIONS) {
+		int bufferid = AsyncBufferManager::buffer(AsyncBufferManager::BOUNDARYREGIONS);
+		_buffer = static_cast<const char*>(info.buffer(bufferid));
+		while (_buffer < info.buffer(bufferid) + info.bufferSize(bufferid)) {
+			_mesh.boundaryRegions.push_back(new BoundaryRegionStore("", _mesh._eclasses));
+			_mesh.boundaryRegions.back()->unpack(_buffer);
+		}
 	}
 
 	if (

@@ -13,6 +13,7 @@
 #include "../../../mesh/mesh.h"
 #include "../../../mesh/store/nodestore.h"
 #include "../../../mesh/store/elementstore.h"
+#include "../../../mesh/store/boundaryregionstore.h"
 
 #include <fstream>
 #include <sstream>
@@ -90,6 +91,8 @@ void EnSight::storeGeometry()
 	std::vector<MPI_Aint> displacement;
 	std::vector<int> lenghts;
 
+	int part = 1;
+
 	std::stringstream os;
 	if (environment->MPIrank == 0) {
 		os << "EnSight Gold geometry format\n";
@@ -99,7 +102,7 @@ void EnSight::storeGeometry()
 		os << "element id off\n";
 
 		os << "part\n";
-		os << std::setw(10) << 1 << "\n";
+		os << std::setw(10) << part++ << "\n";
 		os << "MESH\n";
 
 		os << "coordinates\n";
@@ -123,6 +126,17 @@ void EnSight::storeGeometry()
 				auto end = _mesh.nodes->coordinates->datatarray().begin() + _mesh.nodes->pintervals[i].end;
 				for (auto n = begin; n != end; ++n) {
 					os << std::scientific << std::setprecision(5) << getCoordinate(n) << "\n";
+				}
+			}
+		}
+		pushInterval();
+	};
+
+	auto storeRegionNodes = [&] (const BoundaryRegionStore *store, std::function<double(const Point *p)> getCoordinate) {
+		for (size_t i = 0; i < store->nodesIntervals.size(); i++) {
+			if (_mesh.nodes->pintervals[i].sourceProcess == environment->MPIrank) {
+				for (auto n = store->nodes->datatarray().cbegin() + store->nodesIntervals[i].begin; n != store->nodes->datatarray().cbegin() + store->nodesIntervals[i].end; ++n) {
+					os << std::scientific << std::setprecision(5) << getCoordinate(_mesh.nodes->coordinates->datatarray().cbegin() + *n) << "\n";
 				}
 			}
 		}
@@ -156,6 +170,37 @@ void EnSight::storeGeometry()
 			pushInterval();
 		}
 	}
+
+//	for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
+//		if (_mesh.boundaryRegions[r]->nodes) {
+//			if (environment->MPIrank == 0) {
+//				os << "part\n";
+//				os << std::setw(10) << part++ << "\n";
+//				os << _mesh.boundaryRegions[r]->name << "\n";
+//
+//				os << "coordinates\n";
+//				os << std::setw(10) << _mesh.boundaryRegions[r]->uniqueTotalSize << "\n";
+//			}
+//
+//			os << std::showpos;
+//			storeRegionNodes(_mesh.boundaryRegions[r], [] (const Point *p) { return p->x; });
+//			storeRegionNodes(_mesh.boundaryRegions[r], [] (const Point *p) { return p->y; });
+//			storeRegionNodes(_mesh.boundaryRegions[r], [] (const Point *p) { return p->z; });
+//			os << std::noshowpos;
+//
+//			if (environment->MPIrank == 0) {
+//				os << codetotype(static_cast<int>(Element::CODE::POINT1)) << "\n";
+//				os << std::setw(10) << _mesh.boundaryRegions[r]->uniqueTotalSize << "\n";
+//			}
+//
+//			eslocal offset = 1;
+//			for (auto n = _mesh.boundaryRegions[r]->nodes->datatarray().cbegin(); n != _mesh.boundaryRegions[r]->nodes->datatarray().cend(); ++n) {
+//				os << std::setw(10) << _mesh.boundaryRegions[r]->uniqueOffset + offset++ << "\n";
+//			}
+//
+//			pushInterval();
+//		}
+//	}
 
 	MPI_Datatype indexes;
 	MPI_Type_create_hindexed(displacement.size(), lenghts.data(), displacement.data(), MPI_BYTE, &indexes);

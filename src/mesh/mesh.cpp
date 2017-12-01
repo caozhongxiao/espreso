@@ -257,7 +257,7 @@ void Mesh::load()
 				}
 			}
 
-			boundaryRegions.push_back(new BoundaryRegionStore(mesh->regions()[r]->name));
+			boundaryRegions.push_back(new BoundaryRegionStore(mesh->regions()[r]->name, _eclasses));
 			if (mesh->regions()[r]->eType == ElementType::FACES) {
 				boundaryRegions.back()->faces = new serializededata<eslocal, eslocal>(rdistribution, rdata);
 				boundaryRegions.back()->facepointers = new serializededata<eslocal, Element*>(1, epointers);
@@ -276,7 +276,7 @@ void Mesh::load()
 				}
 			}
 
-			boundaryRegions.push_back(new BoundaryRegionStore(mesh->regions()[r]->name));
+			boundaryRegions.push_back(new BoundaryRegionStore(mesh->regions()[r]->name, _eclasses));
 			boundaryRegions.back()->nodes = new serializededata<eslocal, eslocal>(1, rdata);
 			std::sort(boundaryRegions.back()->nodes->datatarray().begin(), boundaryRegions.back()->nodes->datatarray().end());
 			break;
@@ -309,8 +309,8 @@ void Mesh::update()
 		materials.push_back(&mat->second);
 	}
 
-	preprocessing->reclusterize();
-	preprocessing->partitiate(1, true, true);
+	// preprocessing->reclusterize();
+	preprocessing->partitiate(mesh->parts(), true, true);
 }
 
 bool Mesh::prepareSolutionForOutput(const Step &step)
@@ -378,7 +378,7 @@ bool Mesh::prepareSolutionForOutput(const Step &step)
 			auto idomains = nodes->idomains->cbegin();
 			auto ineighbors = nodes->ineighborOffsets->cbegin();
 			#pragma omp parallel for
-			for (size_t i = 0; i < nodes->pintervals.size(); ++i, ++idomains, ++ineighbors) {
+			for (size_t i = 0; i < nodes->pintervals.size(); ++i) {
 
 				eslocal offset, goffset;
 
@@ -386,7 +386,6 @@ bool Mesh::prepareSolutionForOutput(const Step &step)
 					for (auto d = idomains->begin(); d != idomains->end() && *d < elements->firstDomain + elements->ndomains; ++d) {
 						goffset = nodes->pintervals[i].globalOffset - nodes->uniqueOffset;
 						offset = doffset(*d - elements->firstDomain, i);
-//						printf("%d local domain goffset=%d, offset=%d\n", environment->MPIrank, goffset, offset);
 						for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++offset, ++goffset) {
 							(*data->gathredData)[goffset] += (*data->decomposedData)[*d - elements->firstDomain][offset];
 						}
@@ -394,7 +393,6 @@ bool Mesh::prepareSolutionForOutput(const Step &step)
 					for (auto neigh = ineighbors->begin(); neigh != ineighbors->end(); ++neigh) {
 						goffset = nodes->pintervals[i].globalOffset - nodes->uniqueOffset;
 						offset = neigh->offset;
-//						printf("%d from %d goffset=%d, offset=%d\n", environment->MPIrank, neigh->process, goffset, offset);
 						for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++offset, ++goffset) {
 							(*data->gathredData)[goffset] += rBuffer[n2i(neigh->process)][offset];
 						}
@@ -404,6 +402,8 @@ bool Mesh::prepareSolutionForOutput(const Step &step)
 						(*data->gathredData)[goffset] /= idomains->size();
 					}
 				}
+				++idomains;
+				++ineighbors;
 			}
 		}
 	}

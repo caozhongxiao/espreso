@@ -15,6 +15,10 @@ public:
 	enum Buffer: int {
 		NODES,
 		ELEMENTS,
+
+		ELEMENTREGIONS,
+		BOUNDARYREGIONS,
+
 		NODEDATA,
 		ELEMENTDATA,
 

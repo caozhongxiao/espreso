@@ -18,6 +18,10 @@ struct ElementsRegionStore {
 	serializededata<eslocal, eslocal>* elements;
 	std::vector<RegionInterval> intervals;
 
+	size_t packedSize() const;
+	void pack(char* &p) const;
+	void unpack(const char* &p);
+
 	ElementsRegionStore(const std::string &name);
 	~ElementsRegionStore();
 };
