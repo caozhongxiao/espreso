@@ -7,17 +7,12 @@ using namespace espreso;
 MpiManager::MpiManager(int argc, char* argv[])
 {
     this->m_ecf = new ECFConfiguration();
-    this->m_ecf_loaded = this->m_ecf->fill(&argc, &argv);
+    this->m_ecf->fill(&argc, &argv);
 }
 
 MpiManager::~MpiManager()
 {
     if (this->m_mesh != nullptr) delete this->m_mesh;
-}
-
-bool MpiManager::isECFLoaded() const
-{
-    return this->m_ecf_loaded;
 }
 
 ECFConfiguration* MpiManager::ecf()
@@ -86,16 +81,9 @@ void MpiManager::slaveOpenECF()
 
 void MpiManager::_openECF(const std::string& filename)
 {
-    if (!this->m_ecf_loaded)
-    {
-        this->m_ecf_loaded = this->m_ecf->fill(filename);
-    }
-    else
-    {
-        ECFConfiguration* tmp = this->m_ecf;
-        delete tmp;
-        this->m_ecf = new ECFConfiguration(filename);
-    }
+    ECFConfiguration* tmp = this->m_ecf;
+    delete tmp;
+    this->m_ecf = new ECFConfiguration(filename);
 }
 
 QMap<QString, QVector<float> >* MpiManager::masterGatherMesh()

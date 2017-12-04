@@ -34,7 +34,6 @@ public:
     ECFObject* input();
 
 signals:
-    void fileOpened(const QString& filename);
     void inputChanged();
     void physicsChanged(ECFObject* physics);
 

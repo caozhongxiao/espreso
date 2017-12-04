@@ -41,9 +41,8 @@ IntegerTabWidget::IntegerTabWidget(ECFObject* map,
 
         ECFObject* obj = static_cast<ECFObject*>(*param);
         int k = QString::fromStdString(obj->name).toInt();
-        if (k > this->m_key) this->m_key = k;
+        if (k > this->m_key) this->m_key = k + 1;
     }
-    this->m_key++;
 
     layout->addWidget(this->m_tabwidget);
 }

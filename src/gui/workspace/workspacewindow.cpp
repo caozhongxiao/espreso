@@ -22,33 +22,19 @@ void WorkspaceWindow::init()
     ui->setupUi(this);
     this->initUi();
 
-    if (this->m_manager->isECFLoaded())
-    {
-        this->m_ecf = this->m_manager->ecf();
-        this->initPanels();
-        this->m_mesh = this->m_manager->mesh();
-        this->m_workflow->setData(this->m_ecf, this->m_mesh);
-    }
+    this->m_ecf = this->m_manager->ecf();
+    this->initPanels();
+    this->m_mesh = this->m_manager->mesh();
+    this->m_workflow->setData(this->m_ecf, this->m_mesh);
 }
 
 void WorkspaceWindow::initUi()
 {
     this->m_workflow = new WorkflowWidget(this);
     ui->right->layout()->addWidget(m_workflow);
-    connect(m_workflow, &WorkflowWidget::fileOpened, this, &WorkspaceWindow::onFileOpened);
     connect(m_workflow, &WorkflowWidget::inputChanged, this, &WorkspaceWindow::onInputChanged);
     connect(m_workflow, &WorkflowWidget::physicsChanged, this, &WorkspaceWindow::onPhysicsChanged);
     if (environment->MPIrank == 0) MeshWidget::initOGL();
-}
-
-void WorkspaceWindow::onFileOpened(const QString &filename)
-{
-    this->m_manager->masterOpenECF(filename);
-
-    this->m_ecf = this->m_manager->ecf();
-    this->initPanels();
-    this->m_mesh = this->m_manager->mesh();
-    this->m_workflow->setData(this->m_ecf, this->m_mesh);
 }
 
 void WorkspaceWindow::onInputChanged()
@@ -93,4 +79,18 @@ void WorkspaceWindow::initPanels()
 void WorkspaceWindow::onPhysicsChanged(ECFObject *physics)
 {
     this->m_declarations->setPhysics(dynamic_cast<PhysicsConfiguration*>(physics));
+}
+
+void espreso::WorkspaceWindow::on_btnOpen_pressed()
+{
+    QString filename = QFileDialog::getOpenFileName(this,
+                                                    tr("Open ESPRESO Configuration File"), ".", tr("ECF (*.ecf)"));
+    if (filename.isEmpty()) return;
+
+    this->m_manager->masterOpenECF(filename);
+
+    this->m_ecf = this->m_manager->ecf();
+    this->initPanels();
+    this->m_mesh = this->m_manager->mesh();
+    this->m_workflow->setData(this->m_ecf, this->m_mesh);
 }

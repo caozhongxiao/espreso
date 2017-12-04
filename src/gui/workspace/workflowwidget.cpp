@@ -168,7 +168,9 @@ void WorkflowWidget::onLoadstepsChange(int loadsteps)
 
         LoadstepWidget* lsw = new LoadstepWidget(++this->m_loadsteps, this->m_mesh, m_phyDetail->activePhysics(), this);
         lsw->init();
-        ui->workflow->addTab(lsw, tr("Loadstep %1").arg(this->m_loadsteps));
+        ui->workflow->insertTab(this->m_loadsteps + this->m_loadsteps_fst_tab_index - 2,
+                                lsw,
+                                tr("Loadstep %1").arg(this->m_loadsteps));
     }
 }
 
