@@ -375,10 +375,10 @@ bool Mesh::prepareSolutionForOutput(const Step &step)
 				ESINFO(ERROR) << "ESPRESO internal error: gather results\n";
 			}
 
-			auto idomains = nodes->idomains->cbegin();
-			auto ineighbors = nodes->ineighborOffsets->cbegin();
 			#pragma omp parallel for
 			for (size_t i = 0; i < nodes->pintervals.size(); ++i) {
+				auto idomains = nodes->idomains->cbegin() + i;
+				auto ineighbors = nodes->ineighborOffsets->cbegin() + i;
 
 				eslocal offset, goffset;
 
@@ -402,8 +402,6 @@ bool Mesh::prepareSolutionForOutput(const Step &step)
 						(*data->gathredData)[goffset] /= idomains->size();
 					}
 				}
-				++idomains;
-				++ineighbors;
 			}
 		}
 	}
