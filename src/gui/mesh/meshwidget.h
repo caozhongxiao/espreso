@@ -73,8 +73,8 @@ namespace espreso {
 
         const char* m_basicVS =
                 "#version 330 core \n"
-                "attribute highp vec3 aPos;\n"
-                "attribute highp vec3 aNormal;\n"
+                "in highp vec3 aPos;\n"
+                "in highp vec3 aNormal;\n"
                 "uniform mat4 view;\n"
                 "uniform mat4 projection;\n"
                 "out vec3 Normal;"
