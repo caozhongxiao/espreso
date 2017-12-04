@@ -1,7 +1,7 @@
 #include "meshwidget.h"
 
 #include "../../config/ecf/environment.h"
-#include "mpi/mpi.h"
+#include "mpi.h"
 
 using namespace espreso;
 
