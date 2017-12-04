@@ -539,7 +539,8 @@ void MeshPreprocessing::partitiate(eslocal parts, bool separateMaterials, bool s
 			edgeWeights[p].resize(tdualsize[0][p]);
 		}
 
-		#pragma omp parallel for
+		// TODO: try parallelization
+		// #pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			auto dual = _mesh->elements->decomposedDual->cbegin(t);
 			size_t partindex;
@@ -761,13 +762,13 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	ElementStore *elements = new ElementStore(_mesh->_eclasses);
 
-	std::vector<std::vector<eslocal> >    elemsIDs(threads);
-	std::vector<std::vector<int> >         elemsBody(threads);
-	std::vector<std::vector<int> >         elemsMaterial(threads);
+	std::vector<std::vector<eslocal> >  elemsIDs(threads);
+	std::vector<std::vector<int> >      elemsBody(threads);
+	std::vector<std::vector<int> >      elemsMaterial(threads);
 	std::vector<std::vector<Element*> > elemsEpointer(threads);
-	std::vector<std::vector<eslocal> >     elemsNodesDistribution(threads);
-	std::vector<std::vector<eslocal> >    elemsNodesData(threads);
-	std::vector<std::vector<int> >         elemsRegions(threads);
+	std::vector<std::vector<eslocal> >  elemsNodesDistribution(threads);
+	std::vector<std::vector<eslocal> >  elemsNodesData(threads);
+	std::vector<std::vector<int> >      elemsRegions(threads);
 
 	NodeStore *nodes = new NodeStore();
 
@@ -1040,7 +1041,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			for (size_t i = 0; i < elemsRegions[t].size(); i += eregionsBitMaskSize) {
-				if (nodesRegions[t][i + maskOffset] & (1 << r)) {
+				if (elemsRegions[t][i + maskOffset] & (1 << r)) {
 					regionelems[t].push_back(elemDistribution[t] + i / eregionsBitMaskSize);
 				}
 			}
