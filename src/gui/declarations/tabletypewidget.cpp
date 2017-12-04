@@ -23,8 +23,6 @@ TableTypeWidget::TableTypeWidget(QWidget* parent) :
 {
     this->mTable->setItemDelegateForColumn(0, new ValidatorDelegate(new DoubleValidatorFactory()));
     this->mTable->setItemDelegateForColumn(1, new ValidatorDelegate(new DoubleValidatorFactory()));
-
-    this->defaultValues << "" << "";
 }
 
 void TableTypeWidget::addData(const QString& data)
@@ -54,11 +52,6 @@ void TableTypeWidget::addData(const QString& data)
             pair << x << fx;
             this->addRow(pair);
     }
-}
-
-QString TableTypeWidget::columnDefaultValue(int column) const
-{
-    return this->defaultValues.at(column);
 }
 
 QString TableTypeWidget::data()

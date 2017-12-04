@@ -1,5 +1,5 @@
-#ifndef MAPTABLEWIDGETCREATOR_H
-#define MAPTABLEWIDGETCREATOR_H
+#ifndef MAPTABLEWIDGETFACTORY_H
+#define MAPTABLEWIDGETFACTORY_H
 
 #include "maptablewidget.h"
 #include "maptables/defaultmaptablewidget.h"
@@ -8,10 +8,10 @@
 namespace espreso
 {
 
-class MapTableWidgetCreator
+class MapTableWidgetFactory
 {
 public:
-    MapTableWidgetCreator();
+    MapTableWidgetFactory();
     MapTableWidget* create(ECFObject* map, QWidget* parent = 0);
 
 private:
@@ -21,4 +21,4 @@ private:
 
 }
 
-#endif // MAPTABLEWIDGETCREATOR_H
+#endif // MAPTABLEWIDGETFACTORY_H

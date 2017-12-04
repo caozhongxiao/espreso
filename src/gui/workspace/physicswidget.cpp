@@ -109,6 +109,8 @@ FormWidget* PhysicsWidget::processPositiveInteger(ECFParameter* parameter, FormW
                 handler);
         this->m_savables.append(handler);
         this->m_validatables.append(handler);
+
+        return fw;
     }
     else
     {

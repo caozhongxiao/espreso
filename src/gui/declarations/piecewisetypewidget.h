@@ -22,12 +22,8 @@ namespace espreso
 
         virtual void addData(const QString&) override;
 
-    protected:
-        virtual QString columnDefaultValue(int column) const override;
-
     private:
         std::vector<std::string> m_variables;
-        QVector<QString> defaultValues;
         int m_invalidRow = 0;
         bool m_isValid = true;
     };

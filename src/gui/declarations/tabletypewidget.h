@@ -18,12 +18,6 @@ namespace espreso
         virtual void addData(const QString& data) override;
 
         QString data() override;
-
-    protected:
-        virtual QString columnDefaultValue(int column) const override;
-
-    private:
-        QVector<QString> defaultValues;
     };
 }
 

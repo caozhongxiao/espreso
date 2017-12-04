@@ -8,17 +8,20 @@
 namespace espreso
 {
 
+class BoolCleanRowFactory : public CleanRowFactory
+{
+public:
+    virtual QList<QStandardItem*> create(int columns) override;
+};
+
 class BoolMapTableWidget : public DefaultMapTableWidget
 {
 public:
     BoolMapTableWidget(ECFObject* map, const QStringList& headlines, QWidget* parent = 0);
 
     void addRow(const QVector<QString> &rowData) override;
-
     QVector<QPair<QString, QString> > dataInRows() override;
-
     QString errorMessage() override;
-
     void save() override;
 
 private:

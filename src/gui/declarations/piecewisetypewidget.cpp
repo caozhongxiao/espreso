@@ -36,8 +36,6 @@ PiecewiseTypeWidget::PiecewiseTypeWidget(const std::vector<std::string>& variabl
     this->mTable->setItemDelegateForColumn(2, new ValidatorDelegate(new DoubleValidatorFactory(), this));
     this->mTable->setItemDelegateForColumn(3, new ComboBoxDelegate(rightCmbOptions, this));
     this->mTable->setItemDelegateForColumn(4, new ExpressionEditDelegate(variables, this));
-
-    this->defaultValues << "<" << "" << "" << ")" << "";
 }
 
 bool PiecewiseTypeWidget::isValid()
@@ -155,9 +153,4 @@ QString PiecewiseTypeWidget::data()
     }
 
     return ifs.join(QLatin1String(" "));
-}
-
-QString PiecewiseTypeWidget::columnDefaultValue(int column) const
-{
-    return this->defaultValues.at(column);
 }

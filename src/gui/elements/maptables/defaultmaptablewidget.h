@@ -11,7 +11,10 @@ namespace espreso
 class DefaultMapTableWidget : public MapTableWidget
 {
 public:
-    DefaultMapTableWidget(ECFObject* map, const QStringList& headlines, QWidget* parent = 0);
+    DefaultMapTableWidget(ECFObject* map,
+                          const QStringList& headlines,
+                          QWidget* parent = 0,
+                          std::unique_ptr<CleanRowFactory> rowFactory = std::unique_ptr<CleanRowFactory>(new DefaultCleanRowFactory));
 
     QVector<QPair<QString, QString> > dataInRows() override;
 

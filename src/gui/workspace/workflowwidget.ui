@@ -156,7 +156,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="btnMesh">
+        <widget class="QPushButton" name="btnLoad">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>

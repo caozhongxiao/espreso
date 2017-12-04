@@ -9,6 +9,7 @@
 #include <QAction>
 #include <QMenu>
 #include "../elements/ivalidatableobject.h"
+#include <memory>
 
 namespace espreso
 {
@@ -16,6 +17,18 @@ namespace espreso
     namespace Ui {
     class TableWidget;
     }
+
+    class CleanRowFactory
+    {
+    public:
+        virtual QList<QStandardItem*> create(int columns) = 0;
+    };
+
+    class DefaultCleanRowFactory : public CleanRowFactory
+    {
+    public:
+        virtual QList<QStandardItem*> create(int columns) override;
+    };
 
     class TableWidget : public QWidget, public IValidatableObject
     {
@@ -35,9 +48,10 @@ namespace espreso
         QTableView* mTable;
         QStandardItemModel* mModel;
 
-        explicit TableWidget(int columns, const QStringList& headlines, QWidget *parent = 0);
-
-        virtual QString columnDefaultValue(int) const { return ""; }
+        explicit TableWidget(int columns,
+                             const QStringList& headlines,
+                             QWidget *parent = 0,
+                             std::unique_ptr<CleanRowFactory> rowFactory = std::unique_ptr<CleanRowFactory>(new DefaultCleanRowFactory));
 
     private slots:
         void onItemDoubleClick(const QModelIndex& index);
@@ -47,14 +61,14 @@ namespace espreso
     private:
         Ui::TableWidget *ui;
 
+        std::unique_ptr<CleanRowFactory> m_cleanRowFactory;
+
         QModelIndex toDelete;
         QAction* mActionDelete;
 
         int m_invalidRow = 0;
         int m_invalidCol = 0;
         bool m_empty = true;
-
-        void addCleanRow();
     };
 }
 #endif // TABLEWIDGET_H

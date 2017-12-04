@@ -5,7 +5,19 @@
 
 using namespace espreso;
 
-TableWidget::TableWidget(int columns, const QStringList& headlines, QWidget *parent) :
+QList<QStandardItem*> DefaultCleanRowFactory::create(int columns)
+{
+    QList<QStandardItem*> row;
+    for (int i = 0; i < columns; ++i)
+    {
+        row << new QStandardItem();
+    }
+
+    return row;
+}
+
+TableWidget::TableWidget(int columns, const QStringList& headlines,
+                         QWidget *parent, std::unique_ptr<CleanRowFactory> rowFactory) :
     QWidget(parent),
     ui(new Ui::TableWidget)
 {
@@ -20,7 +32,8 @@ TableWidget::TableWidget(int columns, const QStringList& headlines, QWidget *par
 
     this->mModel->setHorizontalHeaderLabels(headlines);
 
-    this->addCleanRow();
+    this->m_cleanRowFactory = std::move(rowFactory);
+    this->mModel->appendRow(this->m_cleanRowFactory->create(this->mModel->columnCount()));
 
     connect(mTable, &QTableView::doubleClicked,
             this, &TableWidget::onItemDoubleClick);
@@ -36,17 +49,6 @@ TableWidget::TableWidget(int columns, const QStringList& headlines, QWidget *par
 TableWidget::~TableWidget()
 {
     delete ui;
-}
-
-void TableWidget::addCleanRow()
-{
-    QList<QStandardItem*> row;
-    for (int i = 0; i < mModel->columnCount(); ++i)
-    {
-        //row << new QStandardItem(columnDefaultValue(i));
-        row << new QStandardItem();
-    }
-    this->mModel->appendRow(row);
 }
 
 void TableWidget::addRow(const QVector<QString>& rowData)
@@ -70,7 +72,7 @@ void TableWidget::onItemDoubleClick(const QModelIndex &index)
     if (index.row() != this->mModel->rowCount() - 1)
         return;
 
-    this->addCleanRow();
+    this->mModel->appendRow(this->m_cleanRowFactory->create(this->mModel->columnCount()));
 }
 
 void TableWidget::onContextMenu(const QPoint& point)

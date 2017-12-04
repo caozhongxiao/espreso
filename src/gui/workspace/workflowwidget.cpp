@@ -6,6 +6,7 @@
 #include <QComboBox>
 #include <QDebug>
 #include <QScrollArea>
+#include <QMessageBox>
 
 #include "loadstepwidget.h"
 #include "regionmaterialswidget.h"
@@ -23,16 +24,6 @@ WorkflowWidget::WorkflowWidget(QWidget *parent) :
 WorkflowWidget::~WorkflowWidget()
 {
     delete ui;
-}
-
-void WorkflowWidget::on_btnMesh_clicked()
-{
-    QString filename = QFileDialog::getOpenFileName(this, tr("Open a file"),
-                                                    "", tr("Espreso configuration file (*.ecf)"));
-    if (filename.size() == 0)
-        return;
-
-    emit fileOpened(filename);
 }
 
 void WorkflowWidget::setData(ECFConfiguration *ecf, Mesh* mesh)
@@ -84,7 +75,7 @@ void WorkflowWidget::createInput()
     this->onInputChange(ui->cmbInput->currentIndex());
 }
 
-void WorkflowWidget::onInputChange(int)
+void WorkflowWidget::onInputChange(int index)
 {
     if (this->m_inputWidget != nullptr)
     {
@@ -92,7 +83,10 @@ void WorkflowWidget::onInputChange(int)
         ui->inputConfigLayout->removeWidget(this->m_inputWidget);
     }
 
-    this->m_inputWidget = new FixedECFObjectWidget(this->input());
+    ECFParameter* input = this->m_ecf->getParameter("input");
+    input->setValue(input->metadata.options[index].name);
+
+    this->m_inputWidget = new InputWidget(this->input());
     this->m_inputWidget->init();
     ui->inputConfigLayout->addWidget(this->m_inputWidget);
 }
@@ -221,4 +215,19 @@ void WorkflowWidget::onPhysicsChange(ECFObject *physics)
     this->createOutputTab();
 
     emit physicsChanged(physics);
+}
+
+void WorkflowWidget::on_btnLoad_pressed()
+{
+    if (!this->m_inputWidget->isValid())
+    {
+        QMessageBox msg;
+        msg.setWindowTitle(tr("Error"));
+        msg.setText(this->m_inputWidget->errorMessage());
+        msg.exec();
+        return;
+    }
+
+    this->m_inputWidget->save();
+    emit inputChanged();
 }

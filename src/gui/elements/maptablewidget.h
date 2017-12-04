@@ -14,11 +14,14 @@ class MapTableWidget : public TableWidget, public ISavableObject
 public:
     virtual QVector<QPair<QString, QString> > dataInRows() = 0;
 
+    using TableWidget::addData;
     virtual void addData(const QString& data) override;
     virtual QString data() override;
 
 protected:
-    MapTableWidget(const QStringList& headlines, QWidget *parent = 0);
+    MapTableWidget(const QStringList& headlines,
+                   QWidget *parent = 0,
+                   std::unique_ptr<CleanRowFactory> rowFactory = std::unique_ptr<CleanRowFactory>(new DefaultCleanRowFactory));
 };
 
 }

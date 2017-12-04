@@ -7,8 +7,9 @@ using namespace espreso;
 
 DefaultMapTableWidget::DefaultMapTableWidget(ECFObject* map,
                                            const QStringList& headlines,
-                                           QWidget* parent) :
-    MapTableWidget(headlines, parent)
+                                           QWidget* parent,
+                                           std::unique_ptr<CleanRowFactory> rowFactory) :
+    MapTableWidget(headlines, parent, std::move(rowFactory))
 {
     this->m_map = map;
 

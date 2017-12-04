@@ -1,8 +1,8 @@
-#include "maptablewidgetcreator.h"
+#include "maptablewidgetfactory.h"
 
 using namespace espreso;
 
-MapTableWidgetCreator::MapTableWidgetCreator()
+MapTableWidgetFactory::MapTableWidgetFactory()
 {
     this->m_first << ECFDataType::POSITIVE_INTEGER
             << ECFDataType::NONNEGATIVE_INTEGER
@@ -12,7 +12,7 @@ MapTableWidgetCreator::MapTableWidgetCreator()
              << ECFDataType::INTERVAL;
 }
 
-MapTableWidget* MapTableWidgetCreator::create(ECFObject* map, QWidget* parent)
+MapTableWidget* MapTableWidgetFactory::create(ECFObject* map, QWidget* parent)
 {
     if (map->metadata.datatype.size() != 2)
     {
@@ -25,6 +25,8 @@ MapTableWidget* MapTableWidgetCreator::create(ECFObject* map, QWidget* parent)
         return nullptr;
     }
 
+    MapTableWidget* ret = nullptr;
+
     QStringList headlines;
     headlines << QString::fromStdString(map->metadata.description[0])
             << QString::fromStdString(map->metadata.description[1]);
@@ -32,13 +34,23 @@ MapTableWidget* MapTableWidgetCreator::create(ECFObject* map, QWidget* parent)
     if (this->m_first.contains(map->metadata.datatype[0])
             && this->m_second.contains(map->metadata.datatype[1]))
     {
-        return new DefaultMapTableWidget(map, headlines, parent);
+        ret = new DefaultMapTableWidget(map, headlines, parent);
     }
     else if (this->m_first.contains(map->metadata.datatype[0])
              && map->metadata.datatype[1] == ECFDataType::BOOL)
     {
-        return new BoolMapTableWidget(map, headlines, parent);
+        ret = new BoolMapTableWidget(map, headlines, parent);
     }
 
-    return nullptr;
+    QVector<QVector<QString> > data;
+    for (auto p = map->parameters.begin(); p != map->parameters.end(); ++p)
+    {
+        QVector<QString> row;
+        row.append(QString::fromStdString((*p)->name));
+        row.append(QString::fromStdString((*p)->getValue()));
+        data.append(row);
+    }
+    ret->addData(data);
+
+    return ret;
 }

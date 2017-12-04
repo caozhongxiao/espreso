@@ -5,10 +5,25 @@
 
 using namespace espreso;
 
+QList<QStandardItem*> BoolCleanRowFactory::create(int columns)
+{
+    if (columns != 2) return QList<QStandardItem*>();
+
+    QList<QStandardItem*> row;
+
+    row << new QStandardItem();
+    QStandardItem* check = new QStandardItem();
+    check->setCheckable(true);
+    check->setEditable(false);
+    row << check;
+
+    return row;
+}
+
 BoolMapTableWidget::BoolMapTableWidget(ECFObject* map,
                                            const QStringList& headlines,
                                            QWidget* parent) :
-    DefaultMapTableWidget(map, headlines, parent)
+    DefaultMapTableWidget(map, headlines, parent, std::unique_ptr<CleanRowFactory>(new BoolCleanRowFactory))
 {
 }
 

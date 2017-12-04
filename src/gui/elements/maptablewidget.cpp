@@ -2,8 +2,10 @@
 
 using namespace espreso;
 
-MapTableWidget::MapTableWidget(const QStringList& headlines, QWidget *parent) :
-    TableWidget(2, headlines, parent)
+MapTableWidget::MapTableWidget(const QStringList& headlines,
+                               QWidget *parent,
+                               std::unique_ptr<CleanRowFactory> rowFactory) :
+    TableWidget(2, headlines, parent, std::move(rowFactory))
 {
 
 }
