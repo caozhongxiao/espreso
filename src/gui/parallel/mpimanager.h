@@ -3,7 +3,7 @@
 
 #include <QtGui>
 
-#include "mpi/mpi.h"
+#include "mpi.h"
 
 #include "../../config/ecf/environment.h"
 #include "../../config/ecf/ecf.h"

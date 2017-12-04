@@ -22,7 +22,7 @@
 
 #include "../input/loader.h"
 
-#include "mpi/mpi.h"
+#include "mpi.h"
 
 using namespace espreso;
 
