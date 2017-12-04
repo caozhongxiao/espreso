@@ -31,6 +31,8 @@ Environment::Environment(): executable("espreso")
 	PAR_NUM_THREADS    = Esutils::getEnv<size_t>("PAR_NUM_THREADS");
 	CILK_NWORKERS      = Esutils::getEnv<size_t>("CILK_NWORKERS");
 
+	MPI_Bcast(&Logging::time, sizeof(time_t), MPI_BYTE, 0, MPICommunicator);
+
 	log_dir = "debug";
 	REGISTER(log_dir, ECFMetaData()
 			.setdescription({ "A name of logging directory" })
