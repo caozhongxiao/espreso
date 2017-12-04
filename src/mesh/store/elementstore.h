@@ -26,6 +26,7 @@ struct ElementStore {
 	std::vector<eslocal> gatherDomainsDistribution();
 	std::vector<eslocal> gatherDomainsProcDistribution();
 
+	std::vector<eslocal> gatherClustersDistribution();
 
 	eslocal size;
 	std::vector<size_t> distribution;
@@ -45,6 +46,7 @@ struct ElementStore {
 	std::vector<eslocal> domainDistribution;
 	std::vector<eslocal> elementsDistribution;
 	std::vector<int> clusters;
+	eslocal nclusters;
 
 	std::vector<eslocal> ecounters;
 	std::vector<ElementsInterval> eintervals;

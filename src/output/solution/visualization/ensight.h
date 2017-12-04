@@ -15,6 +15,7 @@ struct EnSight: public CollectedVisualization {
 	~EnSight();
 
 	void storeGeometry();
+	void storeFETIData();
 	void storeVariables();
 
 protected:

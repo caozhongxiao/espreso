@@ -19,6 +19,7 @@ DirectExecutor::DirectExecutor(const Mesh &mesh, const OutputConfiguration &conf
 void DirectExecutor::updateMesh()
 {
 	_ensight->storeGeometry();
+	_ensight->storeFETIData();
 }
 
 void DirectExecutor::updateSolution()

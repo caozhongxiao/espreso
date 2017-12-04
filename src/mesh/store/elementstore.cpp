@@ -25,6 +25,7 @@ ElementStore::ElementStore(std::vector<Element*> &eclasses)
 
   firstDomain(0),
   ndomains(1),
+  nclusters(1),
 
   ecounters(static_cast<int>(Element::CODE::SIZE)),
 
@@ -42,6 +43,10 @@ size_t ElementStore::packedSize() const
 			Esutils::packedSize(size) +
 			nodes->packedSize() +
 			sizeof(size_t) + epointers->datatarray().size() * sizeof(int) +
+			Esutils::packedSize(firstDomain) +
+			Esutils::packedSize(ndomains) +
+			Esutils::packedSize(nclusters) +
+			Esutils::packedSize(clusters) +
 			Esutils::packedSize(elementsDistribution) +
 			Esutils::packedSize(ecounters) +
 			Esutils::packedSize(eintervals);
@@ -63,6 +68,10 @@ void ElementStore::pack(char* &p) const
 		}
 		Esutils::pack(eindices, p);
 	}
+	Esutils::pack(firstDomain, p);
+	Esutils::pack(ndomains, p);
+	Esutils::pack(nclusters, p);
+	Esutils::pack(clusters, p);
 	Esutils::pack(elementsDistribution, p);
 	Esutils::pack(ecounters, p);
 	Esutils::pack(eintervals, p);
@@ -90,6 +99,10 @@ void ElementStore::unpack(const char* &p)
 			epointers->datatarray()[i] = &_eclasses[0][eindices[i]];
 		}
 	}
+	Esutils::unpack(firstDomain, p);
+	Esutils::unpack(ndomains, p);
+	Esutils::unpack(nclusters, p);
+	Esutils::unpack(clusters, p);
 	Esutils::unpack(elementsDistribution, p);
 	Esutils::unpack(ecounters, p);
 	Esutils::unpack(eintervals, p);
@@ -180,4 +193,9 @@ std::vector<eslocal> ElementStore::gatherDomainsDistribution()
 std::vector<eslocal> ElementStore::gatherElementsDistribution()
 {
 	return Store::gatherDistribution(elementsDistribution, IDs->datatarray().front());
+}
+
+std::vector<eslocal> ElementStore::gatherClustersDistribution()
+{
+	return Store::gatherDistribution(nclusters);
 }

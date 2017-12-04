@@ -499,6 +499,7 @@ void MeshPreprocessing::partitiate(eslocal parts, bool separateMaterials, bool s
 				parts, partition.data());
 		finish("METIS::KWay");
 		clusters.resize(parts, 0);
+		_mesh->elements->nclusters = 1;
 
 	} else { // non-continuous dual graph
 		// thread x part x elements
@@ -593,6 +594,7 @@ void MeshPreprocessing::partitiate(eslocal parts, bool separateMaterials, bool s
 			partsCounter += pparts[p] = std::ceil((frames[p].size() - 1) / averageDomainSize);
 			clusters.resize(partsCounter, p);
 		}
+		_mesh->elements->nclusters = nextID;
 
 		start("METIS::KWay");
 		#pragma omp parallel for
@@ -2148,7 +2150,7 @@ void MeshPreprocessing::arrangeElementsPermutation(std::vector<eslocal> &permuta
 	}
 
 	int allcodes = 0;
-	MPI_Allreduce(&codes, &allcodes, 1, MPI_INT, MPI_LOR, environment->MPICommunicator);
+	MPI_Allreduce(&codes, &allcodes, 1, MPI_INT, MPI_BOR, environment->MPICommunicator);
 
 	for (int i = 0, bitmask = 1; i < elementstypes; i++, bitmask = bitmask << 1) {
 		if (allcodes & bitmask) {
@@ -2179,16 +2181,20 @@ void MeshPreprocessing::arrangeRegions()
 		if (_mesh->boundaryRegions[r]->nodes) {
 			const auto &nodes = _mesh->boundaryRegions[r]->nodes->datatarray();
 
-			eslocal size = 0, gsize = 0;
+			eslocal size = 0;
 			_mesh->boundaryRegions[r]->nodesIntervals.push_back(ProcessInterval(0, 0, _mesh->nodes->pintervals.front().sourceProcess, 0));
 			for (size_t i = 1; i < _mesh->nodes->pintervals.size(); i++) {
 				eslocal boundary = std::lower_bound(nodes.cbegin(), nodes.cend(), _mesh->nodes->pintervals[i].begin) - nodes.cbegin();
 				_mesh->boundaryRegions[r]->nodesIntervals.back().end = boundary;
-				size += _mesh->boundaryRegions[r]->nodesIntervals.back().end - _mesh->boundaryRegions[r]->nodesIntervals.back().begin;
+				if (_mesh->nodes->pintervals[i - 1].sourceProcess == environment->MPIrank) {
+					size += _mesh->boundaryRegions[r]->nodesIntervals.back().end - _mesh->boundaryRegions[r]->nodesIntervals.back().begin;
+				}
 				_mesh->boundaryRegions[r]->nodesIntervals.push_back(ProcessInterval(boundary, boundary, _mesh->nodes->pintervals[i].sourceProcess, size));
 			}
 			_mesh->boundaryRegions[r]->nodesIntervals.back().end = nodes.size();
-			size += _mesh->boundaryRegions[r]->nodesIntervals.back().end - _mesh->boundaryRegions[r]->nodesIntervals.back().begin;
+			if (_mesh->nodes->pintervals.back().sourceProcess == environment->MPIrank) {
+				size += _mesh->boundaryRegions[r]->nodesIntervals.back().end - _mesh->boundaryRegions[r]->nodesIntervals.back().begin;
+			}
 
 			_mesh->boundaryRegions[r]->uniqueSize = size;
 			_mesh->boundaryRegions[r]->uniqueTotalSize = Communication::exscan(size);

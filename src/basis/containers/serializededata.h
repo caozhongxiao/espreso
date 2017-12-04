@@ -288,7 +288,7 @@ public:
 		_eboundaries.unpack(p);
 		_edata.unpack(p);
 
-		if (_eboundaries.size()) {
+		if (_eboundaries.size() || structures == 0) {
 			inititerators();
 		} else {
 			inititerators(_edata.size() / structures);
