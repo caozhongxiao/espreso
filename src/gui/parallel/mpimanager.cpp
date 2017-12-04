@@ -190,7 +190,7 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
             coordinates.resize(numsum);
         }
 
-        MPI_Gatherv(it.value().data(), num, MPI_FLOAT, coordinates.data(), nums, displs, MPI_FLOAT, 0, environment->MPICommunicator);
+        MPI_Gatherv(const_cast<float*>(it.value().data()), num, MPI_FLOAT, coordinates.data(), nums, displs, MPI_FLOAT, 0, environment->MPICommunicator);
 
         if (environment->MPIrank == 0)
         {
