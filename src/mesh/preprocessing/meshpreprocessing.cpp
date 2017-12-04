@@ -794,7 +794,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	// Step 1: Serialize element data
 
-	std::vector<int> regionElementMask(_mesh->nodes->size * eregionsBitMaskSize);
+	std::vector<int> regionElementMask(_mesh->elements->size * eregionsBitMaskSize);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		int maskOffset = 0;
