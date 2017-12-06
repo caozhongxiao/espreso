@@ -12,6 +12,7 @@ namespace espreso {
 
 class Mesh;
 class BoundaryStore;
+struct ProcessInterval;
 
 class MeshPreprocessing {
 
@@ -42,6 +43,9 @@ private:
 	void arrangeElementsPermutation(std::vector<eslocal> &permutation);
 	void arrangeRegions();
 	void computeBoundaryNodes(std::vector<eslocal> &externalBoundary, std::vector<eslocal> &internalBoundary);
+	void fillRegionMask();
+	void computeIntervalOffsets(std::vector<ProcessInterval> &intervals, eslocal &uniqueOffset, eslocal &uniqueSize, eslocal &uniqueTotalSize);
+
 	void start(const std::string &message);
 	void skip(const std::string &message);
 	void finish(const std::string &message);

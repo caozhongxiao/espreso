@@ -237,7 +237,7 @@ void Mesh::load()
 				#pragma omp parallel for
 				for (size_t t = 0; t < threads; t++) {
 					for (size_t e = tdistributions[t]; e < tdistributions[t + 1]; e++) {
-						rdata[t].push_back(std::lower_bound(mesh->elements().begin(), mesh->elements().end(), mesh->regions()[r]->elements()[e]) - mesh->elements().begin());
+						rdata[t].push_back(std::find(mesh->elements().begin(), mesh->elements().end(), mesh->regions()[r]->elements()[e]) - mesh->elements().begin());
 					}
 				}
 			}

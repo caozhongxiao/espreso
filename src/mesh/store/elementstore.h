@@ -36,6 +36,7 @@ struct ElementStore {
 
 	serializededata<eslocal, int>* body;
 	serializededata<eslocal, int>* material;
+	serializededata<eslocal, int>* regions;
 	serializededata<eslocal, Element*>* epointers;
 
 	serializededata<eslocal, eslocal>* dual;
@@ -48,6 +49,7 @@ struct ElementStore {
 	std::vector<int> clusters;
 	eslocal nclusters;
 
+	int regionMaskSize;
 	std::vector<eslocal> ecounters;
 	std::vector<ElementsInterval> eintervals;
 

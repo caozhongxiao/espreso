@@ -195,23 +195,24 @@ public:
 
 	// data are uniform
 	serializededata(size_t edatasize, tarray<TEData> &&edata)
-	: _eboundaries(0, 0), _edata(std::move(edata)) { inititerators(edatasize); }
+	: _eboundaries(0, 0), _edata(std::move(edata)), _edatasize(edatasize) { inititerators(edatasize); }
 
 	// data are non-uniform
 	serializededata(tarray<TEBoundaries> &&eboundaries, tarray<TEData> &&edata)
-	: _eboundaries(std::move(eboundaries)), _edata(std::move(edata)) { inititerators(); }
+	: _eboundaries(std::move(eboundaries)), _edata(std::move(edata)), _edatasize(-1) { inititerators(); }
 
 	serializededata(const serializededata<TEBoundaries, TEData> &other)
-	: _eboundaries(other._eboundaries), _edata(other._edata) { inititerators(); }
+	: _eboundaries(other._eboundaries), _edata(other._edata), _edatasize(other._edatasize) { inititerators(); }
 
 	serializededata(serializededata<TEBoundaries, TEData> &&other)
-	: _eboundaries(std::move(other._eboundaries)), _edata(std::move(other._edata)) { inititerators(); }
+	: _eboundaries(std::move(other._eboundaries)), _edata(std::move(other._edata)), _edatasize(std::move(other._edatasize)) { inititerators(); }
 
 	serializededata<TEBoundaries, TEData>& operator=(const serializededata<TEBoundaries, TEData> &other)
 	{
 		if (this != &other) {
 			_eboundaries = other._eboundaries;
 			_edata = other._edata;
+			_edatasize = other._edatasize;
 			inititerators();
 		}
 		return *this;
@@ -221,6 +222,7 @@ public:
 		if (this != &other) {
 			_eboundaries = std::move(other._eboundaries);
 			_edata = std::move(other._edata);
+			_edatasize = std::move(other._edatasize);
 			inititerators();
 		}
 		return *this;
@@ -232,8 +234,7 @@ public:
 		if (_eboundaries.size()) {
 			return _eboundaries.size() - 1;
 		} else {
-			const_iterator it = _constiterator.front();
-			return _edata.size() / it->size();
+			return _edata.size() / _edatasize;
 		}
 	}
 
@@ -267,31 +268,30 @@ public:
 
 	size_t packedSize() const
 	{
-		return sizeof(size_t) + _eboundaries.packedSize() + _edata.packedSize();
+		return sizeof(eslocal) + _eboundaries.packedSize() + _edata.packedSize();
 	}
 
 	void pack(char* &p) const
 	{
-		size_t structures = this->structures();
-		memcpy(p, &structures, sizeof(size_t));
-		p += sizeof(size_t);
+		memcpy(p, &_edatasize, sizeof(eslocal));
+		p += sizeof(eslocal);
 
 		_eboundaries.pack(p);
 		_edata.pack(p);
 	}
+
 	void unpack(const char* &p)
 	{
-		size_t structures;
-		memcpy(&structures, p, sizeof(size_t));
-		p += sizeof(size_t);
+		memcpy(&_edatasize, p, sizeof(eslocal));
+		p += sizeof(eslocal);
 
 		_eboundaries.unpack(p);
 		_edata.unpack(p);
 
-		if (_eboundaries.size() || structures == 0) {
+		if (_edatasize == -1) {
 			inititerators();
 		} else {
-			inititerators(_edata.size() / structures);
+			inititerators(_edatasize);
 		}
 	}
 
@@ -387,6 +387,7 @@ private:
 	tarray<TEBoundaries> _eboundaries;
 	tarray<TEData> _edata;
 
+	eslocal _edatasize;
 	std::vector<iterator> _iterator;
 	std::vector<const_iterator> _constiterator;
 };

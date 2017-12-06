@@ -39,6 +39,7 @@ size_t NodeStore::packedSize() const
 	}
 	return
 			Esutils::packedSize(size) +
+			Esutils::packedSize(uniqueOffset) +
 			Esutils::packedSize(uniqueSize) +
 			Esutils::packedSize(uniqueTotalSize) +
 			IDs->packedSize() +
@@ -51,6 +52,7 @@ size_t NodeStore::packedSize() const
 void NodeStore::pack(char* &p) const
 {
 	Esutils::pack(size, p);
+	Esutils::pack(uniqueOffset, p);
 	Esutils::pack(uniqueSize, p);
 	Esutils::pack(uniqueTotalSize, p);
 	IDs->pack(p);
@@ -73,6 +75,7 @@ void NodeStore::unpack(const char* &p)
 	}
 
 	Esutils::unpack(size, p);
+	Esutils::unpack(uniqueOffset, p);
 	Esutils::unpack(uniqueSize, p);
 	Esutils::unpack(uniqueTotalSize, p);
 	IDs->unpack(p);

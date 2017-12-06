@@ -18,6 +18,7 @@ ElementStore::ElementStore(std::vector<Element*> &eclasses)
 
   body(NULL),
   material(NULL),
+  regions(NULL),
   epointers(NULL),
 
   dual(NULL),
@@ -27,6 +28,7 @@ ElementStore::ElementStore(std::vector<Element*> &eclasses)
   ndomains(1),
   nclusters(1),
 
+  regionMaskSize(1),
   ecounters(static_cast<int>(Element::CODE::SIZE)),
 
   _eclasses(eclasses)
@@ -115,6 +117,7 @@ ElementStore::~ElementStore()
 
 	if (body == NULL) { delete body; }
 	if (material == NULL) { delete material; }
+	if (regions == NULL) { delete regions; }
 	if (epointers == NULL) { delete epointers; }
 
 	if (dual == NULL) { delete dual; }
@@ -147,6 +150,7 @@ void ElementStore::permute(const std::vector<eslocal> &permutation, const std::v
 
 	if (body != NULL) { body->permute(permutation, distribution); }
 	if (material != NULL) { material->permute(permutation, distribution); }
+	if (regions != NULL) { regions->permute(permutation, distribution); }
 
 	if (epointers != NULL) {
 		size_t threads = environment->OMP_NUM_THREADS;
