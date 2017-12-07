@@ -12,7 +12,7 @@ struct Pyramid13 {
 
 	static Element create(Element* begin)
 	{
-		return fill(Element(Element::TYPE::VOLUME, Element::CODE::PYRAMID13, 13, 4, 3), begin);
+		return fill(Element(Element::TYPE::VOLUME, Element::CODE::PYRAMID13, 13, 5, 4, 3), begin);
 	}
 };
 

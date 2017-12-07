@@ -12,7 +12,7 @@ struct Tetrahedron4 {
 
 	static Element create(Element* begin)
 	{
-		return fill(Element(Element::TYPE::VOLUME, Element::CODE::TETRA4, 4, 3, 2), begin);
+		return fill(Element(Element::TYPE::VOLUME, Element::CODE::TETRA4, 4, 4, 3, 2), begin);
 	}
 };
 

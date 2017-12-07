@@ -50,6 +50,7 @@ struct Element {
 
 	TYPE type;
 	CODE code;
+	int nodes;
 	int coarseNodes;
 	int nCommonFace;
 	int nCommonEdge;
@@ -64,13 +65,13 @@ struct Element {
 	serializededata<int, Element*> *facepointers;
 	serializededata<int, Element*> *edgepointers;
 
-	Element(TYPE type, CODE code, int coarseNodes, int nCommonFace, int nCommonEdge)
-	: type(type), code(code), coarseNodes(coarseNodes), nCommonFace(nCommonFace), nCommonEdge(nCommonEdge),
+	Element(TYPE type, CODE code, int nodes, int coarseNodes, int nCommonFace, int nCommonEdge)
+	: type(type), code(code), nodes(nodes), coarseNodes(coarseNodes), nCommonFace(nCommonFace), nCommonEdge(nCommonEdge),
 	  N(NULL), dN(NULL), weighFactor(NULL),
 	  faces(NULL), edges(NULL), facepointers(NULL), edgepointers(NULL) {}
 
 	Element()
-	: type(TYPE::POINT), code(CODE::POINT1), coarseNodes(1), nCommonFace(1), nCommonEdge(1),
+	: type(TYPE::POINT), code(CODE::POINT1), nodes(1), coarseNodes(1), nCommonFace(1), nCommonEdge(1),
 	  N(NULL), dN(NULL), weighFactor(NULL),
 	  faces(NULL), edges(NULL), facepointers(NULL), edgepointers(NULL) {}
 };

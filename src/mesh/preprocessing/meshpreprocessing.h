@@ -11,7 +11,6 @@ namespace espreso {
 #define VERBOSITY(level) level == 0 ? PROGRESS1 : level == 1 ? PROGRESS2 : PROGRESS3
 
 class Mesh;
-class BoundaryStore;
 struct ProcessInterval;
 template <typename TEBoundaries, typename TEData> class serializededata;
 

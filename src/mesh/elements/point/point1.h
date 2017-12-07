@@ -12,7 +12,7 @@ struct Point1 {
 
 	static Element create(Element* begin)
 	{
-		return fill(Element(Element::TYPE::POINT, Element::CODE::POINT1, 1, 1, 1), begin);
+		return fill(Element(Element::TYPE::POINT, Element::CODE::POINT1, 1, 1, 1, 1), begin);
 	}
 };
 

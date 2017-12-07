@@ -12,7 +12,7 @@ struct Hexahedron20 {
 
 	static Element create(Element* begin)
 	{
-		return fill(Element(Element::TYPE::VOLUME, Element::CODE::HEXA20, 20, 4, 3), begin);
+		return fill(Element(Element::TYPE::VOLUME, Element::CODE::HEXA20, 20, 8, 4, 3), begin);
 	}
 };
 

@@ -12,7 +12,7 @@ struct Square8 {
 
 	static Element create(Element* begin)
 	{
-		return fill(Element(Element::TYPE::PLANE, Element::CODE::SQUARE8, 8, 3, 2), begin);
+		return fill(Element(Element::TYPE::PLANE, Element::CODE::SQUARE8, 8, 4, 3, 2), begin);
 	}
 };
 

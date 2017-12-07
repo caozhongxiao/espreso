@@ -12,7 +12,7 @@ struct Triangle3 {
 
 	static Element create(Element* begin)
 	{
-		return fill(Element(Element::TYPE::PLANE, Element::CODE::TRIANGLE3, 3, 2, 1), begin);
+		return fill(Element(Element::TYPE::PLANE, Element::CODE::TRIANGLE3, 3, 3, 2, 1), begin);
 	}
 };
 

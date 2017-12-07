@@ -311,7 +311,7 @@ void Mesh::update()
 		materials.push_back(&mat->second);
 	}
 
-	//preprocessing->reclusterize();
+	preprocessing->reclusterize();
 	preprocessing->partitiate(mesh->parts(), true, true);
 }
 

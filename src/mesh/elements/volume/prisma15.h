@@ -12,7 +12,7 @@ struct Prisma15 {
 
 	static Element create(Element* begin)
 	{
-		return fill(Element(Element::TYPE::VOLUME, Element::CODE::PRISMA15, 15, 4, 3), begin);
+		return fill(Element(Element::TYPE::VOLUME, Element::CODE::PRISMA15, 15, 6, 4, 3), begin);
 	}
 };
 

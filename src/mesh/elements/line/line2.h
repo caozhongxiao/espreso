@@ -12,7 +12,7 @@ struct Line2 {
 
 	static Element create(Element* begin)
 	{
-		return fill(Element(Element::TYPE::LINE, Element::CODE::LINE2, 2, 1, 1), begin);
+		return fill(Element(Element::TYPE::LINE, Element::CODE::LINE2, 2, 2, 1, 1), begin);
 	}
 };
 

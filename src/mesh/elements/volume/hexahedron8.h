@@ -12,7 +12,7 @@ struct Hexahedron8 {
 
 	static Element create(Element* begin)
 	{
-		return fill(Element(Element::TYPE::VOLUME, Element::CODE::HEXA8, 8, 3, 2), begin);
+		return fill(Element(Element::TYPE::VOLUME, Element::CODE::HEXA8, 8, 8, 3, 2), begin);
 	}
 
 };
