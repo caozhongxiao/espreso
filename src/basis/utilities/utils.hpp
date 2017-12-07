@@ -194,8 +194,10 @@ inline void Esutils::pack(const std::vector<Ttype> &data, char* &p)
 	memcpy(p, &size, packedSize(size));
 	p += packedSize(size);
 
-	memcpy(p, data.data(), data.size() * sizeof(Ttype));
-	p += data.size() * sizeof(Ttype);
+	if (size) {
+		memcpy(p, data.data(), data.size() * sizeof(Ttype));
+		p += data.size() * sizeof(Ttype);
+	}
 }
 
 template<>
@@ -222,9 +224,11 @@ inline void Esutils::unpack(std::vector<Ttype> &data, const char* &p)
 	memcpy(&size, p, packedSize(size));
 	p += packedSize(size);
 
-	data.resize(size);
-	memcpy(data.data(), p, data.size() * sizeof(Ttype));
-	p += data.size() * sizeof(Ttype);
+	if (size) {
+		data.resize(size);
+		memcpy(data.data(), p, data.size() * sizeof(Ttype));
+		p += data.size() * sizeof(Ttype);
+	}
 }
 
 }

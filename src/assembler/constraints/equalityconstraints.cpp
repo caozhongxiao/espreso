@@ -111,8 +111,8 @@ void EqualityConstraints::update(const std::map<std::string, ECFExpression> &dir
 		std::vector<eslocal> uniqueNodes;
 		std::vector<double> values;
 		for (size_t r = 0; r < dregions.size(); r++) {
-			auto begin = dregions[r]->nodes->datatarray().begin() + dregions[r]->nodesIntervals[i].begin;
-			auto end = dregions[r]->nodes->datatarray().begin() + dregions[r]->nodesIntervals[i].end;
+			auto begin = dregions[r]->nodes->datatarray().begin() + dregions[r]->nintervals[i].begin;
+			auto end = dregions[r]->nodes->datatarray().begin() + dregions[r]->nintervals[i].end;
 			uniqueNodes.insert(uniqueNodes.end(), begin, end);
 			values.insert(values.end(), begin, end);
 			devaluator[r]->evaluate(end - begin, NULL, NULL, 0, values.data() + values.size() - (end - begin));

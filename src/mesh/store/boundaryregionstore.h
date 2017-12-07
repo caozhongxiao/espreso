@@ -2,9 +2,11 @@
 #ifndef SRC_MESH_STORE_BOUNDARYREGIONSTORE_H_
 #define SRC_MESH_STORE_BOUNDARYREGIONSTORE_H_
 
+#include <cstddef>
 #include <vector>
 #include <string>
 
+#include "../intervals/elementsinterval.h"
 #include "../intervals/processinterval.h"
 
 namespace espreso {
@@ -16,24 +18,30 @@ struct BoundaryRegionStore {
 
 	std::string name;
 
+	std::vector<size_t> distribution;
+
+	eslocal dimension;
+
 	eslocal uniqueOffset;
 	eslocal uniqueSize;
 	eslocal uniqueTotalSize;
 
-	serializededata<eslocal, eslocal>* faces;
-	serializededata<eslocal, eslocal>* edges;
+	serializededata<eslocal, eslocal>* elements;
 	serializededata<eslocal, eslocal>* nodes;
 
-	serializededata<eslocal, Element*>* facepointers;
-	serializededata<eslocal, Element*>* edgepointers;
+	serializededata<eslocal, Element*>* epointers;
 
-	std::vector<ProcessInterval> facesIntervals;
-	std::vector<ProcessInterval> edgesIntervals;
-	std::vector<ProcessInterval> nodesIntervals;
+	std::vector<ElementsInterval> eintervals;
+	std::vector<ProcessInterval> nintervals;
+
+	std::vector<eslocal> ecounters;
 
 	size_t packedSize() const;
 	void pack(char* &p) const;
 	void unpack(const char* &p);
+
+	void permute(const std::vector<eslocal> &permutation) { permute(permutation, distribution); }
+	void permute(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
 
 	BoundaryRegionStore(const std::string &name, std::vector<Element*> &eclasses);
 	~BoundaryRegionStore();

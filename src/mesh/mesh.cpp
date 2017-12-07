@@ -252,18 +252,20 @@ void Mesh::load()
 					for (size_t n = 0; n < mesh->regions()[r]->elements()[e]->nodes(); n++) {
 						rdata[t].push_back(mesh->regions()[r]->elements()[e]->node(n) - shrink[mesh->regions()[r]->elements()[e]->node(n)]);
 					}
-					epointers[t].push_back(&_eclasses[t][geteoffset(mesh->elements()[e]->vtkCode())]);
+					epointers[t].push_back(&_eclasses[t][geteoffset(mesh->regions()[r]->elements()[e]->vtkCode())]);
 					rdistribution[t].push_back(rdata[t].size());
 				}
 			}
+			Esutils::threadDistributionToFullDistribution(rdistribution);
 
 			boundaryRegions.push_back(new BoundaryRegionStore(mesh->regions()[r]->name, _eclasses));
+			boundaryRegions.back()->distribution = tdistributions;
+			boundaryRegions.back()->elements = new serializededata<eslocal, eslocal>(rdistribution, rdata);
+			boundaryRegions.back()->epointers = new serializededata<eslocal, Element*>(1, epointers);
 			if (mesh->regions()[r]->eType == ElementType::FACES) {
-				boundaryRegions.back()->faces = new serializededata<eslocal, eslocal>(rdistribution, rdata);
-				boundaryRegions.back()->facepointers = new serializededata<eslocal, Element*>(1, epointers);
+				boundaryRegions.back()->dimension = 2;
 			} else {
-				boundaryRegions.back()->edges = new serializededata<eslocal, eslocal>(rdistribution, rdata);
-				boundaryRegions.back()->edgepointers = new serializededata<eslocal, Element*>(1, epointers);
+				boundaryRegions.back()->dimension = 1;
 			}
 
 			break;
@@ -309,7 +311,7 @@ void Mesh::update()
 		materials.push_back(&mat->second);
 	}
 
-	preprocessing->reclusterize();
+	//preprocessing->reclusterize();
 	preprocessing->partitiate(mesh->parts(), true, true);
 }
 

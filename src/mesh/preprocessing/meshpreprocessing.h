@@ -13,6 +13,7 @@ namespace espreso {
 class Mesh;
 class BoundaryStore;
 struct ProcessInterval;
+template <typename TEBoundaries, typename TEData> class serializededata;
 
 class MeshPreprocessing {
 
@@ -30,6 +31,7 @@ public:
 
 	void arrangeNodes();
 	void arrangeElements();
+	void arrangeRegions();
 
 protected:
 	static size_t level;
@@ -41,9 +43,10 @@ private:
 	void exchangeElements(const std::vector<eslocal> &partition);
 	void permuteElements(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
 	void arrangeElementsPermutation(std::vector<eslocal> &permutation);
-	void arrangeRegions();
 	void computeBoundaryNodes(std::vector<eslocal> &externalBoundary, std::vector<eslocal> &internalBoundary);
 	void fillRegionMask();
+
+	void synchronizeRegionNodes(const std::string &name, serializededata<eslocal, eslocal>* &rnodes, std::vector<ProcessInterval> &nintervals);
 	void computeIntervalOffsets(std::vector<ProcessInterval> &intervals, eslocal &uniqueOffset, eslocal &uniqueSize, eslocal &uniqueTotalSize);
 
 	void start(const std::string &message);

@@ -137,8 +137,10 @@ void tarray<TType>::pack(char* &p) const
 {
 	memcpy(p, &_size, sizeof(size_t));
 	p += sizeof(size_t);
-	memcpy(p, _data, _size * sizeof(TType));
-	p += _size * sizeof(TType);
+	if (_size) {
+		memcpy(p, _data, _size * sizeof(TType));
+		p += _size * sizeof(TType);
+	}
 }
 
 template <typename TType>
@@ -151,11 +153,13 @@ void tarray<TType>::unpack(const char* &p)
 		delete _data;
 		_data = NULL;
 	}
-	if (_data == NULL) {
-		_data = new TType[_size];
+	if (_size) {
+		if (_data == NULL) {
+			_data = new TType[_size];
+		}
+		memcpy(_data, p, _size * sizeof(TType));
+		p += _size * sizeof(TType);
 	}
-	memcpy(_data, p, _size * sizeof(TType));
-	p += _size * sizeof(TType);
 
 	_distribution = { 0, _size };
 }

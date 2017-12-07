@@ -123,7 +123,14 @@ void EnSight::storeGeometry()
 		pushInterval(os.str().size());
 	};
 
-	auto storeRegionElements = [&] (
+	auto storeNodeRegionIndex = [&] (eslocal n, const std::vector<ProcessInterval> &nintervals, const tarray<eslocal> &nodes) {
+		auto iit = std::lower_bound(_mesh.nodes->pintervals.begin(), _mesh.nodes->pintervals.end(), n, [] (const ProcessInterval &interval, eslocal node) { return interval.end <= node; });
+		size_t iindex = iit - _mesh.nodes->pintervals.begin();
+		eslocal offset = std::lower_bound(nodes.begin() + nintervals[iindex].begin, nodes.begin() + nintervals[iindex].end, n) - nodes.begin();
+		return nintervals[iindex].globalOffset + offset - nintervals[iindex].begin;
+	};
+
+	auto storeElements = [&] (
 			const std::vector<eslocal> &ecounters,
 			const tarray<eslocal> &elements, const std::vector<ElementsInterval> &eintervals,
 			const tarray<eslocal> &nodes, const std::vector<ProcessInterval> &nintervals) {
@@ -142,10 +149,31 @@ void EnSight::storeGeometry()
 						for (eslocal e = eintervals[i].begin; e < eintervals[i].end; prev = elements[e++]) {
 							enodes += elements[e] - prev;
 							for (auto n = enodes->begin(); n != enodes->end(); ++n) {
-								auto iit = std::lower_bound(_mesh.nodes->pintervals.begin(), _mesh.nodes->pintervals.end(), *n, [] (const ProcessInterval &interval, eslocal node) { return interval.end <= node; });
-								size_t iindex = iit - _mesh.nodes->pintervals.begin();
-								eslocal offset = std::lower_bound(nodes.begin() + nintervals[iindex].begin, nodes.begin() + nintervals[iindex].end, *n) - nodes.begin();
-								os << std::setw(10) << nintervals[iindex].globalOffset + offset - nintervals[iindex].begin + 1;
+								os << std::setw(10) << storeNodeRegionIndex(*n, nintervals, nodes) + 1;
+							}
+							os << "\n";
+						}
+					}
+				}
+				pushInterval(os.str().size());
+			}
+		}
+	};
+
+	auto storeBoundaryElements = [&] (const BoundaryRegionStore *region) {
+		for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
+			if (region->ecounters[etype]) {
+				if (environment->MPIrank == 0) {
+					os << codetotype(etype) << "\n";
+					os << std::setw(10) << region->ecounters[etype] << "\n";
+				}
+
+				for (size_t i = 0; i < region->eintervals.size(); i++) {
+					if (region->eintervals[i].code == etype) {
+						auto enodes = region->elements->cbegin() + region->eintervals[i].begin;
+						for (eslocal e = region->eintervals[i].begin; e < region->eintervals[i].end; ++e, ++enodes) {
+							for (auto n = enodes->begin(); n != enodes->end(); ++n) {
+								os << std::setw(10) << storeNodeRegionIndex(*n, region->nintervals, region->nodes->datatarray()) + 1;
 							}
 							os << "\n";
 						}
@@ -162,19 +190,41 @@ void EnSight::storeGeometry()
 		storeRegionNodes(region->nintervals, region->nodes, [] (const Point *p) { return p->z; });
 
 		if (StringCompare::caseInsensitiveEq(region->name, "ALL_ELEMENTS")) {
-			storeRegionElements(region->ecounters, region->uniqueElements->datatarray(), region->ueintervals, region->nodes->datatarray(), region->nintervals);
+			storeElements(region->ecounters, region->uniqueElements->datatarray(), region->ueintervals, region->nodes->datatarray(), region->nintervals);
 		} else {
-			storeRegionElements(region->ecounters, region->elements->datatarray(), region->eintervals, region->nodes->datatarray(), region->nintervals);
+			storeElements(region->ecounters, region->elements->datatarray(), region->eintervals, region->nodes->datatarray(), region->nintervals);
 		}
 	};
 
-	auto storeBRegion = [&] () {
+	auto storeBRegion = [&] (const BoundaryRegionStore *region) {
+		storeRegionNodes(region->nintervals, region->nodes, [] (const Point *p) { return p->x; });
+		storeRegionNodes(region->nintervals, region->nodes, [] (const Point *p) { return p->y; });
+		storeRegionNodes(region->nintervals, region->nodes, [] (const Point *p) { return p->z; });
 
+		if (region->dimension) {
+			storeBoundaryElements(region);
+		} else {
+			if (environment->MPIrank == 0) {
+				os << codetotype(static_cast<int>(Element::CODE::POINT1)) << "\n";
+				os << std::setw(10) << region->uniqueTotalSize << "\n";
+			}
+			for (eslocal i = 0; i < region->uniqueSize; ++i) {
+				os << std::setw(10) << region->uniqueOffset + i + 1 << "\n";
+			}
+			pushInterval(os.str().size());
+		}
 	};
 
 	for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
 		storePartHeader(_mesh.elementsRegions[r]->name, _mesh.elementsRegions[r]->uniqueTotalSize);
 		storeERegion(_mesh.elementsRegions[r]);
+	}
+
+	for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
+		if (!StringCompare::caseInsensitiveEq(_mesh.boundaryRegions[r]->name, "ALL_NODES")) {
+			storePartHeader(_mesh.boundaryRegions[r]->name, _mesh.boundaryRegions[r]->uniqueTotalSize);
+			storeBRegion(_mesh.boundaryRegions[r]);
+		}
 	}
 
 	storeIntervals(name, os.str(), commitIntervals());
@@ -314,6 +364,13 @@ void EnSight::storeVariables()
 	for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
 		storePartHeader();
 		iterateNodes(_mesh.elementsRegions[r]->nintervals, _mesh.elementsRegions[r]->nodes->datatarray());
+	}
+
+	for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
+		if (!StringCompare::caseInsensitiveEq(_mesh.boundaryRegions[r]->name, "ALL_NODES")) {
+			storePartHeader();
+			iterateNodes(_mesh.boundaryRegions[r]->nintervals, _mesh.boundaryRegions[r]->nodes->datatarray());
+		}
 	}
 
 	storeIntervals(name, os.str(), commitIntervals());
