@@ -315,7 +315,7 @@ void Mesh::update()
 	preprocessing->partitiate(mesh->parts(), true, true);
 }
 
-bool Mesh::prepareSolutionForOutput(const Step &step)
+void Mesh::gatherNodeData(bool data, bool statistics)
 {
 	// TODO: NUMA + load balancing
 
@@ -407,8 +407,6 @@ bool Mesh::prepareSolutionForOutput(const Step &step)
 			}
 		}
 	}
-
-	return true;
 }
 
 //RegionStore* Mesh::region(const std::string &name)

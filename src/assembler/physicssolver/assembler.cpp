@@ -132,15 +132,14 @@ void Assembler::solve(const Step &step, Matrices updatedMatrices)
 
 void Assembler::storeSolution(const Step &step)
 {
-	if (mesh.prepareSolutionForOutput(step)) {
+	if (store.storeSolution(step) || store.storeStatistics(step)) {
+		mesh.gatherNodeData(store.storeSolution(step), store.storeStatistics(step));
 		timeWrapper("store solution", [&] () {
 			std::vector<Solution*> solutions;
 			for (size_t i = 0; i < physics.solutionsIndicesToStore().size(); i++) {
 				solutions.push_back(instance.solutions[physics.solutionsIndicesToStore()[i]]);
 			}
-			// TODO: MESH
-			// store.storeSolution(step, solutions, physics.propertiesToStore());
-			store.updateSolution();
+			store.updateSolution(step);
 		});
 	}
 }
@@ -169,20 +168,14 @@ void Assembler::finalize()
 Solution* Assembler::addSolution(const std::string &name, ElementType eType)
 {
 	// TODO: MESH
-//	switch (eType) {
-//	case ElementType::NODES:
-//		instance.solutions.push_back(new Solution(mesh, name, eType, physics.pointDOFs()));
-//		break;
-//	case ElementType::EDGES:
-//		instance.solutions.push_back(new Solution(mesh, name, eType, physics.edgeDOFs()));
-//		break;
-//	case ElementType::FACES:
-//		instance.solutions.push_back(new Solution(mesh, name, eType, physics.faceDOFs()));
-//		break;
-//	case ElementType::ELEMENTS:
-//		instance.solutions.push_back(new Solution(mesh, name, eType, physics.elementDOFs()));
-//		break;
-//	}
+	switch (eType) {
+	case ElementType::NODES:
+		instance.solutions.push_back(new Solution(mesh, name, eType, 1));
+		break;
+	case ElementType::ELEMENTS:
+		instance.solutions.push_back(new Solution(mesh, name, eType, 0));
+		break;
+	}
 
 	return instance.solutions.back();
 }

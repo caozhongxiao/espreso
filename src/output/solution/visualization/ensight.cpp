@@ -10,6 +10,8 @@
 
 #include "../../../config/ecf/environment.h"
 
+#include "../../../assembler/step.h"
+
 #include "../../../mesh/elements/element.h"
 #include "../../../mesh/mesh.h"
 #include "../../../mesh/store/nodestore.h"
@@ -18,7 +20,6 @@
 #include "../../../mesh/store/boundaryregionstore.h"
 
 #include <fstream>
-#include <sstream>
 #include <iomanip>
 #include <algorithm>
 #include <functional>
@@ -26,30 +27,41 @@
 using namespace espreso;
 
 EnSight::EnSight(const std::string &name, const Mesh &mesh)
-: _path(Logging::outputRoot() + "/"), _name(name), _mesh(mesh), _casefile(NULL)
+: _path(Logging::outputRoot() + "/"), _name(name), _mesh(mesh), _variableCounter(0)
 {
-	if (environment->MPIrank == 0) {
-		_casefile = new std::ofstream(_path + _name + ".case");
-		(*_casefile) << "#\n";
-		(*_casefile) << "# ESPRESO solution\n";
-		(*_casefile) << "#\n";
+	_caseheader << "#\n";
+	_caseheader << "# ESPRESO solution\n";
+	_caseheader << "#\n";
 
-		(*_casefile) << "\nFORMAT\n";
-		(*_casefile) << "type: \tensight gold\n\n";
+	_caseheader << "\nFORMAT\n";
+	_caseheader << "type: \tensight gold\n\n";
 
-		(*_casefile) << "GEOMETRY\n\n";
-		(*_casefile) << "model:\t" << _name << ".geo\n\n";
+	_casegeometry << "GEOMETRY\n\n";
 
-		(*_casefile) << "VARIABLE\n\n";
-
-		(*_casefile).flush();
-	}
+	_casevariables << "VARIABLE\n\n";
 }
 
 EnSight::~EnSight()
 {
-	if (_casefile != NULL) {
-		delete _casefile;
+
+}
+
+void EnSight::storecasefile()
+{
+	if (environment->MPIrank == 0) {
+		std::ofstream os(_path + _name + ".case");
+		os << _caseheader.str() << "\n";
+		os << _casegeometry.str() << "\n";
+		os << _casevariables.str() << "\n";
+
+		if (_variableCounter) {
+			os << "TIME\n\n";
+			os << "time set:              1\n";
+			os << "number of steps:       " << _variableCounter << "\n";
+			os << "filename start number: 1\n";
+			os << "filename increment:    1\n";
+			os << "time values:           " << _casetime.str() << "\n";
+		}
 	}
 }
 
@@ -87,6 +99,8 @@ std::string EnSight::codetotype(int code)
 
 void EnSight::storeGeometry()
 {
+	_casegeometry << "model:\t" << _name << ".geo\n\n";
+
 	std::string name = _path + _name + ".geo";
 	int part = 1;
 
@@ -228,10 +242,15 @@ void EnSight::storeGeometry()
 	}
 
 	storeIntervals(name, os.str(), commitIntervals());
+
+	storecasefile();
 }
 
 void EnSight::storeFETIData()
 {
+	_casevariables << "scalar per element:\tDOMAINS\t\t" << _name << ".DOMAINS" << "\n";
+	_casevariables << "scalar per element:\tCLUSTERS\t" << _name << ".CLUSTERS" << "\n";
+
 	auto iterateElements = [&] (std::stringstream &os, const std::vector<ElementsInterval> &intervals, const std::vector<eslocal> &ecounters, std::function<double(eslocal domain)> fnc) {
 		os << std::scientific << std::setprecision(5);
 		for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
@@ -270,8 +289,6 @@ void EnSight::storeFETIData()
 
 		std::stringstream os;
 		if (environment->MPIrank == 0) {
-			(*_casefile) << "scalar per element:\tDOMAINS\t\t" << filename << "\n";
-			_casefile->flush();
 			os << "DOMAINS\n";
 		}
 
@@ -295,8 +312,6 @@ void EnSight::storeFETIData()
 
 		std::stringstream os;
 		if (environment->MPIrank == 0) {
-			(*_casefile) << "scalar per element:\tCLUSTERS\t" << filename << "\n";
-			_casefile->flush();
 			os << "CLUSTERS\n";
 		}
 
@@ -314,21 +329,29 @@ void EnSight::storeFETIData()
 
 		storeIntervals(name, os.str(), commitIntervals());
 	}
+
+	storecasefile();
 }
 
-void EnSight::storeVariables()
+void EnSight::storeVariables(const Step &step)
 {
 	if (_mesh.nodes->data.size() != 1) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement store variables.";
 	}
 
 	std::string filename = _name + "." + _mesh.nodes->data.front()->names.front().substr(0, 4);
-	std::string name = _path + filename;
-
-	if (environment->MPIrank == 0) {
-		(*_casefile) << "scalar per node:\t" << _mesh.nodes->data.front()->names.front() << "\t" << filename << "\n";
-		_casefile->flush();
+	if (_variableCounter == 0) {
+		_casevariables << "scalar per node:\t1 " << _mesh.nodes->data.front()->names.front() << "\t" << filename << "_***\n";
 	}
+	_casetime << step.currentTime;
+	if ((_variableCounter + 1) % 10 == 0) {
+		_casetime << "\n                       ";
+	} else {
+		_casetime << " ";
+	}
+
+	std::stringstream name;
+	name << _path + filename + "_" << std::setw(3) << std::setfill('0') << ++_variableCounter;
 
 	std::stringstream os;
 	if (environment->MPIrank == 0) {
@@ -373,7 +396,8 @@ void EnSight::storeVariables()
 		}
 	}
 
-	storeIntervals(name, os.str(), commitIntervals());
+	storeIntervals(name.str(), os.str(), commitIntervals());
+	storecasefile();
 }
 
 

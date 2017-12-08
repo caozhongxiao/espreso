@@ -117,7 +117,9 @@ void NodeStore::unpackData(const char* &p)
 	size_t size;
 	Esutils::unpack(size, p);
 	for (size_t i = 0; i < size; i++) {
-		data.push_back(new NodeData());
+		if (i >= data.size()) {
+			data.push_back(new NodeData());
+		}
 		data.back()->unpack(p);
 	}
 }

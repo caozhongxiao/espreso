@@ -22,9 +22,9 @@ void DirectExecutor::updateMesh()
 	_ensight->storeFETIData();
 }
 
-void DirectExecutor::updateSolution()
+void DirectExecutor::updateSolution(const Step &step)
 {
-	_ensight->storeVariables();
+	_ensight->storeVariables(step);
 }
 
 DirectExecutor::~DirectExecutor()

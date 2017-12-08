@@ -6,14 +6,18 @@ namespace espreso {
 
 struct OutputConfiguration;
 class Mesh;
+struct Step;
 
 class Store {
 
 public:
 	virtual void storePreprocessedData() =0;
 
+	virtual bool storeSolution(const Step &step) =0;
+	virtual bool storeStatistics(const Step &step) =0;
+
 	virtual void updateMesh() =0;
-	virtual void updateSolution() =0;
+	virtual void updateSolution(const Step &step) =0;
 
 	virtual ~Store() {};
 };
@@ -26,8 +30,11 @@ public:
 
 	virtual void storePreprocessedData() { }
 
+	virtual bool storeSolution(const Step &step) { return false; }
+	virtual bool storeStatistics(const Step &step) { return false; }
+
 	virtual void updateMesh() {}
-	virtual void updateSolution() {}
+	virtual void updateSolution(const Step &step) {}
 
 protected:
 	const Mesh &_mesh;

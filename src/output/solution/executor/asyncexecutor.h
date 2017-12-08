@@ -66,7 +66,7 @@ public:
 	~AsyncStore();
 
 	void updateMesh();
-	void updateSolution();
+	void updateSolution(const Step &step);
 
 protected:
 	void init();

@@ -12,7 +12,7 @@ class DirectExecutor: public SolutionStoreExecutor {
 
 public:
 	void updateMesh();
-	void updateSolution();
+	void updateSolution(const Step &step);
 
 	DirectExecutor(const Mesh &mesh, const OutputConfiguration &configuration);
 	~DirectExecutor();

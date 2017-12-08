@@ -38,7 +38,7 @@ public:
 	void load();
 	void update();
 
-	bool prepareSolutionForOutput(const Step &step);
+	void gatherNodeData(bool data, bool statistics);
 
 	ElementsRegionStore* eregion(const std::string &name);
 	BoundaryRegionStore* bregion(const std::string &name);

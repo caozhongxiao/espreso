@@ -27,6 +27,26 @@ public:
 		}
 	}
 
+	bool storeSolution(const Step &step)
+	{
+		for (size_t i = 0; i < _results.size(); ++i) {
+			if (_results[i]->storeSolution(step)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool storeStatistics(const Step &step)
+	{
+		for (size_t i = 0; i < _results.size(); ++i) {
+			if (_results[i]->storeStatistics(step)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	void updateMesh()
 	{
 		for (size_t i = 0; i < _results.size(); ++i) {
@@ -34,10 +54,10 @@ public:
 		}
 	}
 
-	void updateSolution()
+	void updateSolution(const Step &step)
 	{
 		for (size_t i = 0; i < _results.size(); ++i) {
-			_results[i]->updateSolution();
+			_results[i]->updateSolution(step);
 		}
 	}
 

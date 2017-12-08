@@ -10,6 +10,7 @@ class SolutionStoreExecutor: public SolutionStore {
 
 public:
 	void storePreprocessedData();
+	bool storeSolution(const Step &step);
 
 	SolutionStoreExecutor(const Mesh &mesh, const OutputConfiguration &configuration): SolutionStore(mesh, configuration) {}
 };

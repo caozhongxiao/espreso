@@ -4,6 +4,8 @@
 #include "../../../basis/utilities/utils.h"
 #include "../../../config/ecf/ecf.h"
 
+#include "../../../assembler/step.h"
+
 #include "../../../mesh/mesh.h"
 #include "../../../mesh/store/nodestore.h"
 #include "../../../mesh/store/elementstore.h"
@@ -69,7 +71,7 @@ void AsyncStore::updateMesh()
 	call(ExecParameters(AsyncBufferManager::NODES, AsyncBufferManager::ELEMENTS, AsyncBufferManager::ELEMENTREGIONS, AsyncBufferManager::BOUNDARYREGIONS));
 }
 
-void AsyncStore::updateSolution()
+void AsyncStore::updateSolution(const Step &step)
 {
 	std::string root = Esutils::createDirectory({ Logging::outputRoot(), "PREPROCESSED_DATA" });
 
@@ -77,8 +79,10 @@ void AsyncStore::updateSolution()
 
 	wait();
 
-	prepareBuffer(AsyncBufferManager::NODEDATA, _mesh.nodes->packedDataSize());
-	_mesh.nodes->packData(_buffer = managedBuffer<char*>(AsyncBufferManager::buffer(AsyncBufferManager::NODEDATA)));
+	prepareBuffer(AsyncBufferManager::NODEDATA, sizeof(Step) + _mesh.nodes->packedDataSize());
+	_buffer = managedBuffer<char*>(AsyncBufferManager::buffer(AsyncBufferManager::NODEDATA));
+	Esutils::pack(step, _buffer);
+	_mesh.nodes->packData(_buffer);
 
 	call(ExecParameters(AsyncBufferManager::NODEDATA));
 }
@@ -143,8 +147,11 @@ void AsyncExecutor::exec(const async::ExecInfo &info, const ExecParameters &para
 	}
 
 	if (parameters.updatedBuffers & 1 << AsyncBufferManager::NODEDATA) {
-		_mesh.nodes->unpackData(_buffer = static_cast<const char*>(info.buffer(AsyncBufferManager::buffer(AsyncBufferManager::NODEDATA))));
-		updateSolution();
+		_buffer = static_cast<const char*>(info.buffer(AsyncBufferManager::buffer(AsyncBufferManager::NODEDATA)));
+		Step step;
+		Esutils::unpack(step, _buffer);
+		_mesh.nodes->unpackData(_buffer);
+		updateSolution(step);
 	}
 }
 

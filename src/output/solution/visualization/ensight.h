@@ -5,9 +5,11 @@
 #include "collectedvisualization.h"
 
 #include <string>
+#include <sstream>
 
 namespace espreso {
 
+struct Step;
 class Mesh;
 
 struct EnSight: public CollectedVisualization {
@@ -16,16 +18,22 @@ struct EnSight: public CollectedVisualization {
 
 	void storeGeometry();
 	void storeFETIData();
-	void storeVariables();
+	void storeVariables(const Step &step);
 
 protected:
 	std::string codetotype(int code);
+	void storecasefile();
 
 	std::string _path;
 	std::string _name;
 	const Mesh &_mesh;
 
-	std::ofstream *_casefile;
+	std::stringstream _caseheader;
+	std::stringstream _casegeometry;
+	std::stringstream _casevariables;
+	std::stringstream _casetime;
+
+	int _variableCounter;
 };
 
 }
