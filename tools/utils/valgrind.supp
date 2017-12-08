@@ -200,3 +200,44 @@
    ...
 }
 
+{
+   MPI init thread
+   Memcheck:Cond
+   ...
+   fun:PMPI_Init_thread
+   ...
+}
+
+{
+   MPI IO Cond
+   Memcheck:Cond
+   ...
+   fun:PMPI_File_open
+   ...
+}
+
+{
+   MPI IO uninit read
+   Memcheck:Value8
+   ...
+   fun:PMPI_File_open
+   ...
+}
+
+{
+   MPI IO Cond
+   Memcheck:Cond
+   ...
+   fun:PMPI_File_set_view
+   ...
+}
+
+{
+   MPI IO Cond
+   Memcheck:Cond
+   ...
+   fun:PMPI_File_write_all
+   ...
+}
+
+
