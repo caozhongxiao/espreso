@@ -1216,7 +1216,9 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	std::swap(_mesh->nodes, nodes);
 	delete _mesh->halo;
 	_mesh->halo = new ElementStore(_mesh->_eclasses);
-	_mesh->neighbours = neighbors;
+	_mesh->neighbours = _mesh->neighboursWithMe = neighbors;
+	_mesh->neighboursWithMe.push_back(environment->MPIrank);
+	std::sort(_mesh->neighboursWithMe.begin(), _mesh->neighboursWithMe.end());
 
 	delete elements;
 	delete nodes;

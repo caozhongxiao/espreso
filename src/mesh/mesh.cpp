@@ -106,6 +106,9 @@ void Mesh::load()
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	neighbours = mesh->neighbours();
+	neighboursWithMe = neighbours;
+	neighboursWithMe.push_back(environment->MPIrank);
+	std::sort(neighboursWithMe.begin(), neighboursWithMe.end());
 
 	std::vector<eslocal> shrink(mesh->nodes().size());
 	// LOAD NODES
@@ -286,21 +289,6 @@ void Mesh::load()
 	}
 
 	update();
-
-
-//	Transformation::reclusterize(*this);
-//	Transformation::partitiate(*this, 2, TFlags::SEPARATE::MATERIALS | TFlags::SEPARATE::ETYPES);
-//	Transformation::computeProcessBoundaries(*this);
-//	Transformation::computeDomainsBoundaries(*this); //, TFlags::ELEVEL::FACE | TFlags::ELEVEL::NODE);
-
-//	NewOutput::VTKLegacy("nodes", _nodes, _domains);
-//
-//	NewOutput::VTKLegacy("processBoundaries", _processBoundaries, _nodes, false);
-//	NewOutput::VTKLegacy("domainsBoundaries", _domainsBoundaries, _nodes, true);
-//
-//	for (size_t r = 0; r < _regions.size(); ++r) {
-//		NewOutput::VTKLegacy(_regions[r]->name, _nodes, _regions[r]);
-//	}
 }
 
 
@@ -315,20 +303,35 @@ void Mesh::update()
 	preprocessing->partitiate(mesh->parts(), true, true);
 }
 
+void Mesh::initNodeData()
+{
+	for (auto datait = nodes->data.begin(); datait != nodes->data.end(); ++datait) {
+		NodeData* data = *datait;
+		if (data->names.size()) {
+			data->gathredData->resize(nodes->uniqueSize);
+			data->sBuffer.resize(neighbours.size());
+			data->rBuffer.resize(neighbours.size());
+
+			for (size_t n = 0; n < neighbours.size(); ++n) {
+				if (neighbours[n] < environment->MPIrank) {
+					data->sBuffer[n].resize(nodes->scouters[n]);
+				} else {
+					data->rBuffer[n].resize(nodes->scouters[n + 1]);
+				}
+			}
+		}
+	}
+}
+
 void Mesh::gatherNodeData(bool data, bool statistics)
 {
 	// TODO: NUMA + load balancing
-
-	std::vector<int> allranks(neighbours);
-	allranks.push_back(environment->MPIrank);
-	std::sort(allranks.begin(), allranks.end());
+	if (!nodes->_dataBuffersPrepared) {
+		initNodeData();
+	}
 
 	auto n2i = [ & ] (int neighbour) {
 		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
-	};
-
-	auto r2i = [ & ] (int rank) {
-		return std::lower_bound(allranks.begin(), allranks.end(), rank) - allranks.begin();
 	};
 
 	auto doffset = [&] (eslocal d, eslocal i) {
@@ -338,42 +341,26 @@ void Mesh::gatherNodeData(bool data, bool statistics)
 	for (auto datait = nodes->data.begin(); datait != nodes->data.end(); ++datait) {
 		NodeData* data = *datait;
 		if (data->names.size()) {
-			data->gathredData->clear();
-			data->gathredData->resize(nodes->uniqueSize);
-
-			std::vector<eslocal> soffsets(nodes->pintervals.size()), scouters(allranks.size());
-			std::vector<std::vector<double> > sBuffer(neighbours.size()), rBuffer(neighbours.size());
-
-			for (size_t i = 0; i < nodes->pintervals.size(); ++i) {
-				soffsets[i] = scouters[r2i(nodes->pintervals[i].sourceProcess)];
-				scouters[r2i(nodes->pintervals[i].sourceProcess)] += nodes->pintervals[i].end - nodes->pintervals[i].begin;
-			}
-
-			for (size_t n = 0; n < neighbours.size(); ++n) {
-				if (neighbours[n] < environment->MPIrank) {
-					sBuffer[n].resize(scouters[n]);
-				}
-			}
-
 			#pragma omp parallel for
 			for (size_t i = 0; i < nodes->pintervals.size(); ++i) {
 				auto domains = nodes->idomains->cbegin() + i;
-				eslocal offset, soffset;
+				eslocal offset, soffset, noffset;
 
 				if (nodes->pintervals[i].sourceProcess < environment->MPIrank) {
+					noffset = n2i(nodes->pintervals[i].sourceProcess);
 					for (auto d = domains->begin(); d != domains->end(); ++d) {
 						if (elements->firstDomain <= *d && *d < elements->firstDomain + elements->ndomains) {
 							offset = doffset(*d - elements->firstDomain, i);
-							soffset = soffsets[i];
+							soffset = nodes->soffsets[i];
 							for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++offset, ++soffset) {
-								sBuffer[n2i(nodes->pintervals[i].sourceProcess)][soffset] += (*data->decomposedData)[*d - elements->firstDomain][offset];
+								data->sBuffer[noffset][soffset] += (*data->decomposedData)[*d - elements->firstDomain][offset];
 							}
 						}
 					}
 				}
 			}
 
-			if (!Communication::receiveUpperUnknownSize(sBuffer, rBuffer, neighbours)) {
+			if (!Communication::receiveUpperKnownSize(data->sBuffer, data->rBuffer, neighbours)) {
 				ESINFO(ERROR) << "ESPRESO internal error: gather results\n";
 			}
 
@@ -382,7 +369,7 @@ void Mesh::gatherNodeData(bool data, bool statistics)
 				auto idomains = nodes->idomains->cbegin() + i;
 				auto ineighbors = nodes->ineighborOffsets->cbegin() + i;
 
-				eslocal offset, goffset;
+				eslocal offset, goffset, noffset;
 
 				if (nodes->pintervals[i].sourceProcess == environment->MPIrank) {
 					for (auto d = idomains->begin(); d != idomains->end() && *d < elements->firstDomain + elements->ndomains; ++d) {
@@ -395,8 +382,9 @@ void Mesh::gatherNodeData(bool data, bool statistics)
 					for (auto neigh = ineighbors->begin(); neigh != ineighbors->end(); ++neigh) {
 						goffset = nodes->pintervals[i].globalOffset - nodes->uniqueOffset;
 						offset = neigh->offset;
+						noffset = n2i(neigh->process);
 						for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++offset, ++goffset) {
-							(*data->gathredData)[goffset] += rBuffer[n2i(neigh->process)][offset];
+							(*data->gathredData)[goffset] += data->rBuffer[noffset][offset];
 						}
 					}
 					goffset = nodes->pintervals[i].globalOffset - nodes->uniqueOffset;
@@ -408,15 +396,4 @@ void Mesh::gatherNodeData(bool data, bool statistics)
 		}
 	}
 }
-
-//RegionStore* Mesh::region(const std::string &name)
-//{
-//	for (size_t r = 0; r < _regions.size(); r++) {
-//		if (StringCompare::caseInsensitiveEq(_regions[r]->name, name)) {
-//			return _regions[r];
-//		}
-//	}
-//	ESINFO(ERROR) << "Request for unknown region '" << name << "'";
-//	return NULL;
-//}
 

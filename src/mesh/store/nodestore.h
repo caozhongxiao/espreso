@@ -20,6 +20,8 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 struct NodeStore;
 
 struct NodeData {
+	friend class Mesh;
+
 	std::vector<std::string> names;
 
 	std::vector<std::vector<double> > *decomposedData;
@@ -39,6 +41,8 @@ struct NodeData {
 	~NodeData();
 
 protected:
+	std::vector<std::vector<double> > sBuffer, rBuffer;
+
 	bool _delete;
 };
 
@@ -53,6 +57,7 @@ inline std::ostream& operator<<(std::ostream& os, const TNeighborOffset &neighbo
 }
 
 struct NodeStore {
+	friend class Mesh;
 
 	void store(const std::string &file);
 
@@ -89,6 +94,7 @@ struct NodeStore {
 	std::vector<Point> dcenter;
 
 	std::vector<NodeData*> data;
+	std::vector<eslocal> soffsets, scouters;
 
 	size_t packedSize() const;
 	void pack(char* &p) const;
@@ -100,6 +106,9 @@ struct NodeStore {
 
 	NodeStore();
 	~NodeStore();
+
+protected:
+	bool _dataBuffersPrepared;
 };
 
 }

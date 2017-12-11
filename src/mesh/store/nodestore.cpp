@@ -27,7 +27,9 @@ NodeStore::NodeStore()
 
   idomains(NULL),
   ineighborOffsets(NULL),
-  iranks(NULL)
+  iranks(NULL),
+
+  _dataBuffersPrepared(false)
 {
 
 }

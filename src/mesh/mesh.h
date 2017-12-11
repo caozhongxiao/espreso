@@ -54,6 +54,7 @@ public:
 	MeshPreprocessing *preprocessing;
 
 	std::vector<int> neighbours;
+	std::vector<int> neighboursWithMe;
 
 	std::vector<const MaterialConfiguration*> materials;
 
@@ -61,6 +62,10 @@ public:
 	const ECFConfiguration &configuration;
 	std::vector<Element*> _eclasses;
 	OldMesh *mesh;
+
+private:
+	void initNodeData();
+
 };
 
 }

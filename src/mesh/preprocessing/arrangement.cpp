@@ -337,6 +337,25 @@ void MeshPreprocessing::arrangeNodes()
 	}
 	_mesh->nodes->ineighborOffsets = new serializededata<eslocal, TNeighborOffset>(neighDistribution, neighData);
 	_mesh->nodes->permute(finalpermutation);
+
+	auto r2i = [ & ] (int rank) {
+		return std::lower_bound(_mesh->neighboursWithMe.begin(), _mesh->neighboursWithMe.end(), rank) - _mesh->neighboursWithMe.begin();
+	};
+
+	_mesh->nodes->soffsets.resize(_mesh->nodes->pintervals.size());
+	_mesh->nodes->scouters.resize(_mesh->neighboursWithMe.size());
+
+	ranks = _mesh->nodes->iranks->cbegin();
+	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++ranks) {
+		_mesh->nodes->soffsets[i] = _mesh->nodes->scouters[r2i(_mesh->nodes->pintervals[i].sourceProcess)];
+		_mesh->nodes->scouters[r2i(_mesh->nodes->pintervals[i].sourceProcess)] += _mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin;
+		for (auto rank = ranks->begin(), prev = rank++; rank != ranks->end(); prev = rank++) {
+			if (*rank != *prev && environment->MPIrank < *rank) {
+				_mesh->nodes->scouters[r2i(*rank)] += _mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin;
+			}
+		}
+	}
+
 	_mesh->nodes->dcenter.resize(_mesh->elements->ndomains);
 	std::vector<Point> centers(_mesh->nodes->pintervals.size());
 
