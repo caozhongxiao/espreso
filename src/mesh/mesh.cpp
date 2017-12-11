@@ -323,12 +323,9 @@ void Mesh::initNodeData()
 	}
 }
 
-void Mesh::gatherNodeData(bool data, bool statistics)
+void Mesh::gatherNodeData()
 {
 	// TODO: NUMA + load balancing
-	if (!nodes->_dataBuffersPrepared) {
-		initNodeData();
-	}
 
 	auto n2i = [ & ] (int neighbour) {
 		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();

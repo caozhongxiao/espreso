@@ -83,6 +83,7 @@ Factory::Factory(const ECFConfiguration &configuration, Mesh &mesh, ResultStore 
 	}
 
 	_loader->preprocessMesh();
+	mesh.initNodeData();
 
 	_store->updateMesh();
 }

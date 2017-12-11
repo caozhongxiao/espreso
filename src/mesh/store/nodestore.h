@@ -106,9 +106,6 @@ struct NodeStore {
 
 	NodeStore();
 	~NodeStore();
-
-protected:
-	bool _dataBuffersPrepared;
 };
 
 }

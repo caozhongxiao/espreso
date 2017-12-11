@@ -23,13 +23,6 @@ class Element;
 
 class OldMesh;
 
-enum class ETYPE: int {
-	ELEMENT,
-	FACE,
-	EDGE,
-	NODE
-};
-
 class Mesh {
 
 	friend class MeshPreprocessing;
@@ -38,7 +31,8 @@ public:
 	void load();
 	void update();
 
-	void gatherNodeData(bool data, bool statistics);
+	void initNodeData();
+	void gatherNodeData();
 
 	ElementsRegionStore* eregion(const std::string &name);
 	BoundaryRegionStore* bregion(const std::string &name);
@@ -62,9 +56,6 @@ public:
 	const ECFConfiguration &configuration;
 	std::vector<Element*> _eclasses;
 	OldMesh *mesh;
-
-private:
-	void initNodeData();
 
 };
 
