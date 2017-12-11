@@ -1,5 +1,5 @@
 
-#include "ensight.h"
+#include "collectedensight.h"
 
 #include "../../../basis/containers/point.h"
 #include "../../../basis/containers/serializededata.h"
@@ -26,8 +26,8 @@
 
 using namespace espreso;
 
-EnSight::EnSight(const std::string &name, const Mesh &mesh)
-: _path(Logging::outputRoot() + "/"), _name(name), _mesh(mesh), _variableCounter(0)
+CollectedEnSight::CollectedEnSight(const std::string &name, const Mesh &mesh)
+: CollectedVisualization(mesh), _path(Logging::outputRoot() + "/"), _name(name), _variableCounter(0)
 {
 	_caseheader << "#\n";
 	_caseheader << "# ESPRESO solution\n";
@@ -41,12 +41,12 @@ EnSight::EnSight(const std::string &name, const Mesh &mesh)
 	_casevariables << "VARIABLE\n\n";
 }
 
-EnSight::~EnSight()
+CollectedEnSight::~CollectedEnSight()
 {
 
 }
 
-void EnSight::storecasefile()
+void CollectedEnSight::storecasefile()
 {
 	if (environment->MPIrank == 0) {
 		std::ofstream os(_path + _name + ".case");
@@ -65,7 +65,7 @@ void EnSight::storecasefile()
 	}
 }
 
-std::string EnSight::codetotype(int code)
+std::string CollectedEnSight::codetotype(int code)
 {
 	switch (static_cast<Element::CODE>(code)) {
 
@@ -97,7 +97,7 @@ std::string EnSight::codetotype(int code)
 	}
 }
 
-void EnSight::storeGeometry()
+void CollectedEnSight::updateMesh()
 {
 	_casegeometry << "model:\t" << _name << ".geo\n\n";
 
@@ -246,7 +246,7 @@ void EnSight::storeGeometry()
 	storecasefile();
 }
 
-void EnSight::storeFETIData()
+void CollectedEnSight::storeDecomposition()
 {
 	_casevariables << "scalar per element:\tDOMAINS\t\t" << _name << ".DOMAINS" << "\n";
 	_casevariables << "scalar per element:\tCLUSTERS\t" << _name << ".CLUSTERS" << "\n";
@@ -333,7 +333,7 @@ void EnSight::storeFETIData()
 	storecasefile();
 }
 
-void EnSight::storeVariables(const Step &step)
+void CollectedEnSight::updateSolution(const Step &step)
 {
 	if (_mesh.nodes->data.size() != 1) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement store variables.";

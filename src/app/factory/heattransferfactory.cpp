@@ -56,7 +56,7 @@ size_t HeatTransferFactory::loadSteps() const
 	return _configuration.load_steps;
 }
 
-LoadStepSolver* HeatTransferFactory::getLoadStepSolver(size_t step, Mesh *mesh, SolutionStoreList *store)
+LoadStepSolver* HeatTransferFactory::getLoadStepSolver(size_t step, Mesh *mesh, ResultStore *store)
 {
 	const HeatTransferLoadStepConfiguration &settings = getLoadStepsSettings(step, _configuration.load_steps_settings);
 

@@ -1,11 +1,11 @@
 
-#ifndef SRC_OUTPUT_SOLUTION_EXECUTOR_ASYNCEXECUTOR_H_
-#define SRC_OUTPUT_SOLUTION_EXECUTOR_ASYNCEXECUTOR_H_
+#ifndef SRC_OUTPUT_RESULT_EXECUTOR_ASYNCEXECUTOR_H_
+#define SRC_OUTPUT_RESULT_EXECUTOR_ASYNCEXECUTOR_H_
 
-#include "directexecutor.h"
 #include "async/Module.h"
 
 #include "../../../mesh/mesh.h"
+#include "directexecutor.h"
 
 namespace espreso {
 
@@ -52,18 +52,20 @@ public:
 
 	void execInit(const async::ExecInfo &info, const InitParameters &initParameters);
 	void exec(const async::ExecInfo &info, const ExecParameters &parameters);
-//	void finalize();
 
 protected:
 	Mesh _mesh;
 	const char *_buffer;
 };
 
-class AsyncStore : public SolutionStoreExecutor, private async::Module<AsyncExecutor, InitParameters, ExecParameters> {
+class AsyncStore: public ResultStoreExecutor, private async::Module<AsyncExecutor, InitParameters, ExecParameters> {
 
 public:
 	AsyncStore(const Mesh &mesh, const OutputConfiguration &configuration);
 	~AsyncStore();
+
+	void addResultStore(ResultStoreBase *resultStore);
+	bool hasStore();
 
 	void updateMesh();
 	void updateSolution(const Step &step);
@@ -71,7 +73,6 @@ public:
 protected:
 	void init();
 	void setUp() { setExecutor(_executor); };
-//	void tearDown() { _executor.finalize(); }
 
 	void prepareBuffer(AsyncBufferManager::Buffer buffer, size_t size);
 
@@ -83,4 +84,4 @@ protected:
 
 
 
-#endif /* SRC_OUTPUT_SOLUTION_EXECUTOR_ASYNCEXECUTOR_H_ */
+#endif /* SRC_OUTPUT_RESULT_EXECUTOR_ASYNCEXECUTOR_H_ */

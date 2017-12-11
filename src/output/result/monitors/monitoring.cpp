@@ -41,25 +41,9 @@ std::string right(const std::string &value, size_t size)
 
 
 Monitoring::Monitoring(const Mesh &mesh, const OutputConfiguration &configuration)
-: SolutionStore(mesh, configuration), _mesh(mesh)
+: ResultStoreBase(mesh), _mesh(mesh)
 {
 
-}
-
-bool Monitoring::storeStatistics(const Step &step)
-{
-	switch (_configuration.monitors_store_frequency) {
-	case OutputConfiguration::STORE_FREQUENCY::NEVER:
-		return false;
-	case OutputConfiguration::STORE_FREQUENCY::EVERY_TIMESTEP:
-		return true;
-	case OutputConfiguration::STORE_FREQUENCY::EVERY_NTH_TIMESTEP:
-		return step.substep % _configuration.monitors_nth_stepping == 0;
-	case OutputConfiguration::STORE_FREQUENCY::LAST_TIMESTEP:
-		return step.isLast();
-	default:
-		return false;
-	}
 }
 
 void Monitoring::updateSolution(const Step &step)

@@ -1,8 +1,8 @@
 
-#ifndef SRC_OUTPUT_SOLUTION_MONITORS_MONITORING_H_
-#define SRC_OUTPUT_SOLUTION_MONITORS_MONITORING_H_
+#ifndef SRC_OUTPUT_RESULT_MONITORS_MONITORING_H_
+#define SRC_OUTPUT_RESULT_MONITORS_MONITORING_H_
 
-#include "../solutionstore.h"
+#include "../resultstore.h"
 
 #include <vector>
 #include <fstream>
@@ -17,10 +17,10 @@ struct Monitor {
 	Monitor();
 };
 
-class Monitoring: public SolutionStore {
+class Monitoring: public ResultStoreBase {
 
 public:
-	bool storeStatistics(const Step &step);
+	void updateMesh() {}
 	void updateSolution(const Step &step);
 
 	Monitoring(const Mesh &mesh, const OutputConfiguration &configuration);
@@ -37,4 +37,4 @@ protected:
 
 
 
-#endif /* SRC_OUTPUT_SOLUTION_MONITORS_MONITORING_H_ */
+#endif /* SRC_OUTPUT_RESULT_MONITORS_MONITORING_H_ */

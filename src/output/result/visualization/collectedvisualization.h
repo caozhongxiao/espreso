@@ -1,16 +1,17 @@
 
-#ifndef SRC_OUTPUT_SOLUTION_VISUALIZATION_COLLECTEDVISUALIZATION_H_
-#define SRC_OUTPUT_SOLUTION_VISUALIZATION_COLLECTEDVISUALIZATION_H_
+#ifndef SRC_OUTPUT_RESULT_VISUALIZATION_COLLECTEDVISUALIZATION_H_
+#define SRC_OUTPUT_RESULT_VISUALIZATION_COLLECTEDVISUALIZATION_H_
 
 #include "mpi.h"
-#include "visualization.h"
-
 #include <vector>
+
+#include "visualization.h"
 
 namespace espreso {
 
 struct CollectedVisualization: public Visualization {
-	CollectedVisualization();
+
+	CollectedVisualization(const Mesh &mesh);
 	~CollectedVisualization();
 
 protected:
@@ -32,4 +33,4 @@ protected:
 
 
 
-#endif /* SRC_OUTPUT_SOLUTION_VISUALIZATION_COLLECTEDVISUALIZATION_H_ */
+#endif /* SRC_OUTPUT_RESULT_VISUALIZATION_COLLECTEDVISUALIZATION_H_ */

@@ -16,7 +16,7 @@
 
 #include "mpi.h"
 
-#include "../../output/solution/solutionstorelist.h"
+#include "../../output/result/resultstore.h"
 
 using namespace espreso;
 
@@ -38,7 +38,7 @@ static std::string mNames(espreso::Matrices matrices, const std::string &prefix 
 	std::string(matrices & espreso::Matrices::dual        ? prefix + "Dual "        : "");
 }
 
-Assembler::Assembler(Instance &instance, Physics &physics, Mesh &mesh, SolutionStoreList &store, LinearSolver &linearSolver)
+Assembler::Assembler(Instance &instance, Physics &physics, Mesh &mesh, ResultStore &store, LinearSolver &linearSolver)
 : instance(instance), physics(physics), mesh(mesh), store(store), linearSolver(linearSolver), _timeStatistics(new TimeEval("Physics solver timing"))
 {
 	_timeStatistics->totalTime.startWithBarrier();

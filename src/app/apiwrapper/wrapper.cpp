@@ -13,7 +13,7 @@
 #include "../../input/api/api.h"
 
 #include "../../mesh/mesh.h"
-#include "../../output/solution/solutionstorelist.h"
+#include "../../output/result/resultstore.h"
 #include "../../solver/generic/FETISolver.h"
 
 
@@ -27,7 +27,7 @@ using namespace espreso;
 FETI4IStructInstance::FETI4IStructInstance(FETI4IStructMatrix &matrix, eslocal *l2g, size_t size)
 : instance(NULL), physics(NULL), linearSolver(NULL), assembler(NULL), timeStepSolver(NULL), loadStepSolver(NULL)
 {
-	store = new SolutionStoreList();
+	store = new ResultStore();
 	// TODO: MESH
 	//mesh = new APIMesh(l2g, size);
 }

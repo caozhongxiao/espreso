@@ -8,7 +8,7 @@
 
 using namespace espreso;
 
-CollectedVisualization::CollectedVisualization()
+CollectedVisualization::CollectedVisualization(const Mesh &mesh): Visualization(mesh)
 {
 	MPI_Comm_split(environment->MPICommunicator, 0, environment->MPIrank, &_storeCommunicator);
 	clearIntervals();
@@ -56,7 +56,7 @@ void CollectedVisualization::storeIntervals(const std::string &name, const std::
 		ESINFO(ERROR) << "MPI cannot create file '" << name << "'";
 	} else {
 		MPI_File_set_view(MPIfile, 0, MPI_BYTE, *datatype, "native", MPI_INFO_NULL);
-		MPI_File_write_all(MPIfile, data.c_str(), data.size(), MPI_BYTE, MPI_STATUSES_IGNORE);
+		MPI_File_write_all(MPIfile, data.c_str(), data.size(), MPI_BYTE, MPI_STATUS_IGNORE);
 		MPI_File_close(&MPIfile);
 	}
 }

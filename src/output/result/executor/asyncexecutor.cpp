@@ -12,9 +12,9 @@
 #include "../../../mesh/store/elementsregionstore.h"
 #include "../../../mesh/store/boundaryregionstore.h"
 
-#include "../visualization/vtklegacy.h"
-
 #include <iostream>
+
+#include "../visualization/vtklegacy.h"
 
 using namespace espreso;
 
@@ -73,10 +73,6 @@ void AsyncStore::updateMesh()
 
 void AsyncStore::updateSolution(const Step &step)
 {
-	std::string root = Esutils::createDirectory({ Logging::outputRoot(), "PREPROCESSED_DATA" });
-
-	VTKLegacy::solution(root + "/solution", _configuration, _mesh.nodes, _mesh.elements);
-
 	wait();
 
 	prepareBuffer(AsyncBufferManager::NODEDATA, sizeof(Step) + _mesh.nodes->packedDataSize());
@@ -88,10 +84,20 @@ void AsyncStore::updateSolution(const Step &step)
 }
 
 AsyncStore::AsyncStore(const Mesh &mesh, const OutputConfiguration &configuration)
-: SolutionStoreExecutor(mesh, configuration), _executor(mesh.configuration), _buffer(NULL)
+: ResultStoreExecutor(mesh, configuration), _executor(mesh.configuration), _buffer(NULL)
 {
 	async::Module<AsyncExecutor, InitParameters, ExecParameters>::init();
 	callInit(InitParameters());
+}
+
+void AsyncStore::addResultStore(ResultStoreBase *resultStore)
+{
+	_executor.addResultStore(resultStore);
+}
+
+bool AsyncStore::hasStore()
+{
+	return _executor.hasStore();
 }
 
 AsyncStore::~AsyncStore()
@@ -154,8 +160,3 @@ void AsyncExecutor::exec(const async::ExecInfo &info, const ExecParameters &para
 		updateSolution(step);
 	}
 }
-
-//void AsyncExecutor::finalize()
-//{
-//	std::cout << "finalize\n";
-//}

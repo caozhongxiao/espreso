@@ -19,7 +19,7 @@ class Assembler;
 class Mesh;
 class ECFConfiguration;
 class FETISolver;
-class SolutionStoreList;
+class ResultStore;
 }
 
 struct FETI4IStructMatrix {
@@ -41,7 +41,7 @@ struct FETI4IStructInstance {
 	espreso::Instance *instance;
 	espreso::Physics * physics;
 	espreso::FETISolver *linearSolver;
-	espreso::SolutionStoreList *store;
+	espreso::ResultStore *store;
 	espreso::Assembler *assembler;
 	espreso::TimeStepSolver *timeStepSolver;
 	espreso::LoadStepSolver *loadStepSolver;
