@@ -64,6 +64,8 @@ public:
 	AsyncStore(const Mesh &mesh, const OutputConfiguration &configuration);
 	~AsyncStore();
 
+	bool isCollected() { return true; }
+
 	void addResultStore(ResultStoreBase *resultStore);
 	bool hasStore();
 

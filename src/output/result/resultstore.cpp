@@ -51,7 +51,10 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 
 	// TODO: optimize
 	_asyncStore->_async->addResultStore(new CollectedEnSightWithDecomposition("solution", mesh));
-	_asyncStore->_async->addResultStore(new Monitoring(mesh, configuration));
+	if (configuration.monitoring.size()) {
+		// _asyncStore->_async->addResultStore(new Monitoring(mesh, configuration, true));
+		_asyncStore->_direct->addResultStore(new Monitoring(mesh, configuration, false));
+	}
 
 	if (_asyncStore->_direct->hasStore() == 0) {
 		delete _asyncStore->_direct;
@@ -106,19 +109,19 @@ bool ResultStore::isComputeNode()
 	return !isStoreNode();
 }
 
-bool ResultStore::storeSolution(const Step &step)
+bool ResultStore::isCollected()
 {
 	bool store = false;
-	if (_async) store |= _async->storeSolution(step);
-	if (_direct) store |= _direct->storeSolution(step);
+	if (_async) store |= _async->isCollected();
+	if (_direct) store |= _direct->isCollected();
 	return store;
 }
 
-bool ResultStore::storeStatistics(const Step &step)
+bool ResultStore::storeStep(const Step &step)
 {
 	bool store = false;
-	if (_async) store |= _async->storeStatistics(step);
-	if (_direct) store |= _direct->storeStatistics(step);
+	if (_async) store |= _async->storeStep(step);
+	if (_direct) store |= _direct->storeStep(step);
 	return store;
 }
 

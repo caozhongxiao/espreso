@@ -11,14 +11,14 @@ namespace espreso {
 class ResultStoreExecutor: public ResultStoreBase {
 
 public:
-	bool storeSolution(const Step &step);
-	bool storeStatistics(const Step &step);
+	virtual bool isCollected();
+	bool storeStep(const Step &step);
 
 	virtual void addResultStore(ResultStoreBase *resultStore);
 	virtual bool hasStore() { return _resultStore.size(); }
 
 	ResultStoreExecutor(const Mesh &mesh, const OutputConfiguration &configuration): ResultStoreBase(mesh), _configuration(configuration) {}
-	~ResultStoreExecutor();
+	virtual ~ResultStoreExecutor();
 
 protected:
 	const OutputConfiguration &_configuration;

@@ -195,7 +195,7 @@ size_t NodeData::packedSize() const
 	for (size_t i = 0; i < names.size(); i++) {
 		size += sizeof(size_t) + names[i].size();
 	}
-	return sizeof(size_t) + size + Esutils::packedSize(*gathredData);
+	return sizeof(size_t) + size + Esutils::packedSize(gatheredData);
 }
 
 void NodeData::pack(char* &p) const
@@ -205,7 +205,7 @@ void NodeData::pack(char* &p) const
 	for (size_t i = 0; i < names.size(); i++) {
 		Esutils::pack(names[i], p);
 	}
-	Esutils::pack(*gathredData, p);
+	Esutils::pack(gatheredData, p);
 }
 
 void NodeData::unpack(const char* &p)
@@ -216,14 +216,13 @@ void NodeData::unpack(const char* &p)
 	for (size_t i = 0; i < names.size(); i++) {
 		Esutils::unpack(names[i], p);
 	}
-	Esutils::unpack(*gathredData, p);
+	Esutils::unpack(gatheredData, p);
 }
 
 NodeData::NodeData()
 : _delete(true)
 {
 	decomposedData = new std::vector<std::vector<double> >();
-	gathredData = new std::vector<double>();
 }
 
 NodeData::NodeData(const std::vector<std::string> &names, std::vector<std::vector<double> > *data)
@@ -232,26 +231,23 @@ NodeData::NodeData(const std::vector<std::string> &names, std::vector<std::vecto
 	if (decomposedData == NULL) {
 		decomposedData = new std::vector<std::vector<double> >();
 	}
-	gathredData = new std::vector<double>();
 }
 
 NodeData::NodeData(NodeData &&other)
-: names(std::move(other.names)), decomposedData(other.decomposedData), gathredData(other.gathredData),
+: names(std::move(other.names)), decomposedData(other.decomposedData), gatheredData(std::move(other.gatheredData)),
   _delete(std::move(other._delete))
 {
 	other.decomposedData = NULL;
-	other.gathredData = NULL;
 	other._delete = false;
 }
 
 NodeData::NodeData(const NodeData &other)
-: names(other.names), decomposedData(other.decomposedData),
+: names(other.names), decomposedData(other.decomposedData), gatheredData(other.gatheredData),
   _delete(other._delete)
 {
 	if (_delete) {
 		decomposedData = new std::vector<std::vector<double> >(*other.decomposedData);
 	}
-	gathredData = new std::vector<double>(*other.gathredData);
 }
 
 NodeData& NodeData::operator=(const NodeData &other)
@@ -263,7 +259,7 @@ NodeData& NodeData::operator=(const NodeData &other)
 		if (_delete) {
 			decomposedData = new std::vector<std::vector<double> >(*other.decomposedData);
 		}
-		gathredData = new std::vector<double>(*other.gathredData);
+		gatheredData = other.gatheredData;
 	}
 	return *this;
 }
@@ -272,9 +268,6 @@ NodeData::~NodeData()
 {
 	if (_delete && decomposedData != NULL) {
 		delete decomposedData;
-	}
-	if (gathredData != NULL) {
-		delete gathredData;
 	}
 }
 

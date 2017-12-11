@@ -12,6 +12,7 @@ struct OutputConfiguration;
 struct MaterialConfiguration;
 struct Step;
 
+struct Statistics;
 struct ElementStore;
 struct NodeStore;
 
@@ -33,6 +34,10 @@ public:
 
 	void initNodeData();
 	void gatherNodeData();
+	void computeNodeStatistic(const ElementsRegionStore* region, Statistics &statistics) const;
+	void computeNodeStatistic(const BoundaryRegionStore* region, Statistics &statistics) const;
+	void computeGatheredNodeStatistic(const ElementsRegionStore* region, Statistics &statistics) const;
+	void computeGatheredNodeStatistic(const BoundaryRegionStore* region, Statistics &statistics) const;
 
 	ElementsRegionStore* eregion(const std::string &name);
 	BoundaryRegionStore* bregion(const std::string &name);

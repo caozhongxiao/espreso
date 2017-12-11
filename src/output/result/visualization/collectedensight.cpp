@@ -375,7 +375,7 @@ void CollectedEnSight::updateSolution(const Step &step)
 				eslocal offset = _mesh.nodes->pintervals[i].globalOffset - _mesh.nodes->uniqueOffset;
 				for (eslocal n = intervals[i].begin; n < intervals[i].end; ++n) {
 					eslocal index = offset + nodes[n] - _mesh.nodes->pintervals[i].begin;
-					os << (*_mesh.nodes->data.front()->gathredData)[index] << "\n";
+					os << _mesh.nodes->data.front()->gatheredData[index] << "\n";
 				}
 			}
 		}

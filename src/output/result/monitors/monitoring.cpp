@@ -1,22 +1,19 @@
 
 #include "monitoring.h"
 
+#include "../../../basis/logging/logging.h"
+#include "../../../basis/utilities/utils.h"
+#include "../../../basis/utilities/parser.h"
+
+#include "../../../config/ecf/environment.h"
 #include "../../../config/ecf/output.h"
 #include "../../../assembler/step.h"
-#include "../../../mesh/mesh.h"
 
-//#include "../../config/ecf/output.h"
-//#include "../../old/mesh/settings/property.h"
-//#include "../../old/mesh/structures/mesh.h"
-//#include "../../old/mesh/structures/region.h"
-//#include "../../assembler/step.h"
-//#include "../../assembler/solution.h"
-//
-//#include "../../config/ecf/environment.h"
-//#include "../../basis/logging/logging.h"
-//#include "../../basis/utilities/parser.h"
-//
-//#include <cmath>
+#include "../../../mesh/mesh.h"
+#include "../../../mesh/store/boundaryregionstore.h"
+#include "../../../mesh/store/elementsregionstore.h"
+
+#include <iomanip>
 
 using namespace espreso;
 
@@ -40,174 +37,143 @@ std::string right(const std::string &value, size_t size)
 }
 
 
-Monitoring::Monitoring(const Mesh &mesh, const OutputConfiguration &configuration)
-: ResultStoreBase(mesh), _mesh(mesh)
+Monitoring::Monitoring(const Mesh &mesh, const OutputConfiguration &configuration, bool async)
+: ResultStoreBase(mesh), _configuration(configuration), _async(async)
 {
 
+}
+
+void Monitoring::updateMesh()
+{
+	for (auto it = _configuration.monitoring.begin(); it != _configuration.monitoring.end(); ++it) {
+		if (it->first <= 0) {
+			ESINFO(GLOBAL_ERROR) << "Invalid column index in monitoring.";
+		}
+		if (it->first > _monitors.size()) {
+			_monitors.resize(it->first);
+		}
+		for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
+			if (StringCompare::caseInsensitiveEq(it->second.region, _mesh.elementsRegions[r]->name)) {
+				_eregions.push_back(_mesh.elementsRegions[r]);
+			}
+		}
+		for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
+			if (StringCompare::caseInsensitiveEq(it->second.region, _mesh.boundaryRegions[r]->name)) {
+				_bregions.push_back(_mesh.boundaryRegions[r]);
+			}
+		}
+	}
+	Esutils::sortAndRemoveDuplicity(_eregions);
+	Esutils::sortAndRemoveDuplicity(_bregions);
+
+	_data.resize(_eregions.size() + _bregions.size());
+
+	for (auto it = _configuration.monitoring.begin(); it != _configuration.monitoring.end(); ++it) {
+		_monitors[it->first - 1].name = it->second.region;
+		_monitors[it->first - 1].property = it->second.property;
+		_monitors[it->first - 1].printSize = std::max(std::max((size_t)10, it->second.region.size()), it->second.property.size()) + 4;
+		for (size_t r = 0; r < _eregions.size(); r++) {
+			if (StringCompare::caseInsensitiveEq(it->second.region, _eregions[r]->name)) {
+				switch (it->second.statistics) {
+				case MonitorConfiguration::STATISTICS::MIN:
+					_monitors[it->first - 1].stats = "<MIN>";
+					_monitors[it->first - 1].data = &_data[r].min; continue;
+				case MonitorConfiguration::STATISTICS::MAX:
+					_monitors[it->first - 1].stats = "<MAX>";
+					_monitors[it->first - 1].data = &_data[r].max; continue;
+				case MonitorConfiguration::STATISTICS::AVG:
+					_monitors[it->first - 1].stats = "<AVERAGE>";
+					_monitors[it->first - 1].data = &_data[r].avg; continue;
+				case MonitorConfiguration::STATISTICS::NORM:
+					_monitors[it->first - 1].stats = "<NORM>";
+					_monitors[it->first - 1].data = &_data[r].norm; continue;
+				}
+			}
+		}
+		for (size_t r = 0; r < _bregions.size(); r++) {
+			if (StringCompare::caseInsensitiveEq(it->second.region, _bregions[r]->name)) {
+				switch (it->second.statistics) {
+				case MonitorConfiguration::STATISTICS::MIN:
+					_monitors[it->first - 1].stats = "<MIN>";
+					_monitors[it->first - 1].data = &_data[_eregions.size() + r].min; continue;
+				case MonitorConfiguration::STATISTICS::MAX:
+					_monitors[it->first - 1].stats = "<MAX>";
+					_monitors[it->first - 1].data = &_data[_eregions.size() + r].max; continue;
+				case MonitorConfiguration::STATISTICS::AVG:
+					_monitors[it->first - 1].stats = "<AVERAGE>";
+					_monitors[it->first - 1].data = &_data[_eregions.size() + r].avg; continue;
+				case MonitorConfiguration::STATISTICS::NORM:
+					_monitors[it->first - 1].stats = "<NORM>";
+					_monitors[it->first - 1].data = &_data[_eregions.size() + r].norm; continue;
+				}
+			}
+		}
+	}
+
+	_os.open(Logging::outputRoot() + "/" + Logging::name + ".emr");
+
+	if (!_os.is_open()) {
+		ESINFO(GLOBAL_ERROR) << "Cannot open file for storing monitor report\n";
+	}
+
+	_os << "\n";
+	_os << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter;
+	for (size_t i = 0; i < _monitors.size(); i++) {
+		_os << center(_monitors[i].name, _monitors[i].printSize) << delimiter;
+	}
+	_os << "\n";
+
+	_os << right("step ", 9) << delimiter << right("substep ", 9) << delimiter << right("time ", 9) << delimiter;
+	for (size_t i = 0; i < _monitors.size(); i++) {
+		_os << center(_monitors[i].property, _monitors[i].printSize) << delimiter;
+	}
+	_os << "\n";
+
+	_os << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter;
+	for (size_t i = 0; i < _monitors.size(); i++) {
+		_os << center(_monitors[i].stats, _monitors[i].printSize) << delimiter;
+	}
+	_os << "\n\n";
+	_os.flush();
 }
 
 void Monitoring::updateSolution(const Step &step)
 {
+	eslocal offset = 0;
+	for (size_t i = 0; i < _eregions.size(); ++i, ++offset) {
+		if (_async) {
+			_mesh.computeGatheredNodeStatistic(_eregions[i], _data[offset]);
+		} else {
+			_mesh.computeNodeStatistic(_eregions[i], _data[offset]);
+		}
+	}
+	for (size_t i = 0; i < _bregions.size(); ++i, ++offset) {
+		if (_async) {
+			_mesh.computeGatheredNodeStatistic(_bregions[i], _data[offset]);
+		} else {
+			_mesh.computeNodeStatistic(_bregions[i], _data[offset]);
+		}
+	}
 
+	if (environment->MPIrank) {
+		return;
+	}
+
+	_os << right(std::to_string(step.step + 1), 8) << " " << delimiter;
+	_os << right(std::to_string(step.substep + 1), 8) << " " << delimiter;
+	std::stringstream time; time << std::setprecision(4) << std::fixed << step.currentTime;
+	_os << right(time.str(), 8) << " " << delimiter;
+
+	for (size_t i = 0; i < _monitors.size(); i++) {
+		std::stringstream value;
+		if (_monitors[i].data != NULL) {
+			value << std::scientific << *_monitors[i].data;
+		}
+		_os << center(value.str(), _monitors[i].printSize) << delimiter;
+	}
+	_os << "\n";
+	_os.flush();
 }
-
-//std::vector<espreso::Property> Monitoring::getProperties(const std::string &name)
-//{
-//	for (auto p = _mesh->propertyGroups().begin(); p != _mesh->propertyGroups().end(); ++p) {
-//		if (p->second.size() > 1) {
-//			std::stringstream ss; ss << p->first;
-//			std::string pname = ss.str().substr(0, ss.str().find_last_of("_"));
-//			if (StringCompare::caseInsensitiveEq(pname, name)) {
-//				return p->second;
-//			}
-//		}
-//	}
-//
-//	std::stringstream ss(name);
-//	espreso::Property property;
-//	ss >> property;
-//
-//	return { property };
-//}
-//
-//Monitor::Monitor()
-//: printSize(10), region(NULL), statistics(StatisticalData::EMPTY)
-//{
-//
-//}
-
-//void Monitoring::updateMesh()
-//{
-//	_monitors.reserve(_configuration.monitoring.size());
-//	for (auto it = _configuration.monitoring.begin(); it != _configuration.monitoring.end(); ++it) {
-//		_monitors.resize(it->first);
-//		_monitors.back().region = _mesh->region(it->second.region);
-//		_mesh->addMonitoredRegion(_monitors.back().region);
-//		_monitors.back().statistics = static_cast<StatisticalData>(std::pow(2, static_cast<int>(it->second.statistics)));
-//		_monitors.back().properties = getProperties(it->second.property);
-//		_monitors.back().printSize = std::max(std::max((size_t)10, it->second.region.size()), it->second.property.size()) + 4;
-//	}
-//
-//	if (environment->MPIrank) {
-//		return;
-//	}
-//
-//	_os.open(Logging::outputRoot() + "/" + Logging::name + ".emr");
-//	if (!_os.is_open()) {
-//		ESINFO(GLOBAL_ERROR) << "Cannot open file for storing monitor report\n";
-//	}
-//
-//	_os << "\n";
-//	_os << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter;
-//	for (size_t i = 0; i < _monitors.size(); i++) {
-//		if (_monitors[i].region == NULL) {
-//			_os << center("---", _monitors[i].printSize) << delimiter;
-//		} else {
-//			_os << center(_monitors[i].region->name, _monitors[i].printSize) << delimiter;
-//		}
-//	}
-//	_os << "\n";
-//
-//	_os << right("step", 9) << delimiter << right("substep", 9) << delimiter;
-//	for (size_t i = 0; i < _monitors.size(); i++) {
-//		std::stringstream ss;
-//		if (_monitors[i].properties.size() == 0) {
-//			ss << "-";
-//		} else if (_monitors[i].properties.size() > 1) {
-//			std::stringstream ssp; ssp << _monitors[i].properties[0];
-//			ss << ssp.str().substr(0, ssp.str().find_last_of("_"));
-//		} else {
-//			ss << _monitors[i].properties[0];
-//		}
-//		_os << center(ss.str(), _monitors[i].printSize) << delimiter;
-//	}
-//	_os << "\n";
-//
-//	_os << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter;
-//	for (size_t i = 0; i < _monitors.size(); i++) {
-//		switch (_monitors[i].statistics) {
-//		case StatisticalData::EMPTY:   _os << center("<--->"    , _monitors[i].printSize) << delimiter; break;
-//		case StatisticalData::AVERAGE: _os << center("<AVERAGE>", _monitors[i].printSize) << delimiter; break;
-//		case StatisticalData::MIN:     _os << center("<MIN>"    , _monitors[i].printSize) << delimiter; break;
-//		case StatisticalData::MAX:     _os << center("<MAX>"    , _monitors[i].printSize) << delimiter; break;
-//		case StatisticalData::NORM:    _os << center("<NORM>"   , _monitors[i].printSize) << delimiter; break;
-//		default: break;
-//		}
-//	}
-//	_os << "\n\n";
-//
-//}
-//void Monitoring::storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties)
-//{
-//	switch (_configuration.monitors_store_frequency) {
-//	case OutputConfiguration::STORE_FREQUENCY::NEVER:
-//		return;
-//
-//	case OutputConfiguration::STORE_FREQUENCY::EVERY_NTH_TIMESTEP:
-//		if ((step.substep + 1) % _configuration.monitors_nth_stepping != 0) {
-//			return;
-//		}
-//		break;
-//	case OutputConfiguration::STORE_FREQUENCY::LAST_TIMESTEP:
-//		if (!step.isLast()) {
-//			return;
-//		}
-//		break;
-//	case OutputConfiguration::STORE_FREQUENCY::EVERY_TIMESTEP:
-//	case OutputConfiguration::STORE_FREQUENCY::DEBUG:
-//		break;
-//	}
-//
-//	for (size_t i = 0; i < _monitors.size(); i++) {
-//		if (_monitors[i].statistics == StatisticalData::EMPTY) {
-//			continue;
-//		}
-//		for (size_t s = 0; s < solution.size(); s++) {
-//			if (solution[s]->hasProperty(_monitors[i].properties[0])) {
-//				solution[s]->computeStatisticalData(step);
-//			}
-//		}
-//	}
-//
-//	if (environment->MPIrank) {
-//		return;
-//	}
-//	_os << right(std::to_string(step.step + 1), 8) << " " << delimiter;
-//	_os << right(std::to_string(step.substep + 1), 8) << " " << delimiter;
-//
-//	for (size_t i = 0; i < _monitors.size(); i++) {
-//		if (_monitors[i].statistics == StatisticalData::EMPTY) {
-//			_os << center("|", _monitors[i].printSize) << delimiter;
-//			continue;
-//		}
-//		double value;
-//		bool found = false;
-//		for (size_t s = 0; s < solution.size(); s++) {
-//			if (solution[s]->hasProperty(_monitors[i].properties[0])) {
-//				value = solution[s]->getStatisticalData(_monitors[i].properties, _monitors[i].statistics, _monitors[i].region);
-//				found = true;
-//				break;
-//			}
-//		}
-//		if (!found) {
-//			ESINFO(GLOBAL_ERROR) << "ESPRESO monitor error: request for unknown property: " << _monitors[i].properties[0];
-//		}
-//
-//		std::stringstream ss;
-//		ss << std::scientific << value;
-//		_os << center(ss.str(), _monitors[i].printSize) << delimiter;
-//	}
-//	_os << "\n";
-//
-//}
-//
-//void Monitoring::finalize()
-//{
-//	if (environment->MPIrank) {
-//		return;
-//	}
-//	_os.close();
-//}
 
 
 

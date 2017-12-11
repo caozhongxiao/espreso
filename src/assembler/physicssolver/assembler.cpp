@@ -132,8 +132,10 @@ void Assembler::solve(const Step &step, Matrices updatedMatrices)
 
 void Assembler::storeSolution(const Step &step)
 {
-	if (store.storeSolution(step) || store.storeStatistics(step)) {
-		mesh.gatherNodeData();
+	if (store.storeStep(step)) {
+		if (store.isCollected()) {
+			mesh.gatherNodeData();
+		}
 		timeWrapper("store solution", [&] () {
 			std::vector<Solution*> solutions;
 			for (size_t i = 0; i < physics.solutionsIndicesToStore().size(); i++) {

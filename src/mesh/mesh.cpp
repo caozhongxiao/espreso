@@ -1,6 +1,7 @@
 
 #include "mesh.h"
 
+#include "store/statisticsstore.h"
 #include "store/elementstore.h"
 #include "store/nodestore.h"
 #include "store/elementsregionstore.h"
@@ -308,7 +309,7 @@ void Mesh::initNodeData()
 	for (auto datait = nodes->data.begin(); datait != nodes->data.end(); ++datait) {
 		NodeData* data = *datait;
 		if (data->names.size()) {
-			data->gathredData->resize(nodes->uniqueSize);
+			data->gatheredData.resize(nodes->uniqueSize);
 			data->sBuffer.resize(neighbours.size());
 			data->rBuffer.resize(neighbours.size());
 
@@ -373,7 +374,7 @@ void Mesh::gatherNodeData()
 						goffset = nodes->pintervals[i].globalOffset - nodes->uniqueOffset;
 						offset = doffset(*d - elements->firstDomain, i);
 						for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++offset, ++goffset) {
-							(*data->gathredData)[goffset] += (*data->decomposedData)[*d - elements->firstDomain][offset];
+							data->gatheredData[goffset] += (*data->decomposedData)[*d - elements->firstDomain][offset];
 						}
 					}
 					for (auto neigh = ineighbors->begin(); neigh != ineighbors->end(); ++neigh) {
@@ -381,16 +382,36 @@ void Mesh::gatherNodeData()
 						offset = neigh->offset;
 						noffset = n2i(neigh->process);
 						for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++offset, ++goffset) {
-							(*data->gathredData)[goffset] += data->rBuffer[noffset][offset];
+							data->gatheredData[goffset] += data->rBuffer[noffset][offset];
 						}
 					}
 					goffset = nodes->pintervals[i].globalOffset - nodes->uniqueOffset;
 					for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++goffset) {
-						(*data->gathredData)[goffset] /= idomains->size();
+						data->gatheredData[goffset] /= idomains->size();
 					}
 				}
 			}
 		}
 	}
+}
+
+void Mesh::computeNodeStatistic(const ElementsRegionStore* region, Statistics &statistics) const
+{
+
+}
+
+void Mesh::computeNodeStatistic(const BoundaryRegionStore* region, Statistics &statistics) const
+{
+
+}
+
+void Mesh::computeGatheredNodeStatistic(const ElementsRegionStore* region, Statistics &statistics) const
+{
+
+}
+
+void Mesh::computeGatheredNodeStatistic(const BoundaryRegionStore* region, Statistics &statistics) const
+{
+
 }
 

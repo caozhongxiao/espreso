@@ -14,6 +14,8 @@ struct CollectedVisualization: public Visualization {
 	CollectedVisualization(const Mesh &mesh);
 	~CollectedVisualization();
 
+	virtual bool isCollected() { return true; }
+
 protected:
 	void clearIntervals();
 	void pushInterval(eslocal size);

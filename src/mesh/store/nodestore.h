@@ -25,7 +25,8 @@ struct NodeData {
 	std::vector<std::string> names;
 
 	std::vector<std::vector<double> > *decomposedData;
-	std::vector<double> *gathredData;
+
+	std::vector<double> gatheredData;
 
 	size_t packedSize() const;
 	void pack(char* &p) const;
