@@ -179,6 +179,23 @@ void ElementStore::permute(const std::vector<eslocal> &permutation, const std::v
 	if (decomposedDual != NULL) { decomposedDual->permute(permutation, distribution); }
 }
 
+ElementData* ElementStore::appendData(const std::vector<std::string> &names)
+{
+	data.push_back(new ElementData(names));
+	if (names.size() < 2) {
+		data.back()->data->resize(size);
+	} else {
+		data.back()->data->resize((names.size() - 1) * size);
+	}
+	return data.back();
+}
+
+ElementData* ElementStore::appendData(const std::vector<std::string> &names, std::vector<double> &data)
+{
+	this->data.push_back(new ElementData(names, &data));
+	return this->data.back();
+}
+
 std::vector<eslocal> ElementStore::gatherElementsProcDistribution()
 {
 	return Store::gatherDistribution(size);
@@ -202,4 +219,86 @@ std::vector<eslocal> ElementStore::gatherElementsDistribution()
 std::vector<eslocal> ElementStore::gatherClustersDistribution()
 {
 	return Store::gatherDistribution(nclusters);
+}
+
+
+size_t ElementData::packedSize() const
+{
+	size_t size = 0;
+	for (size_t i = 0; i < names.size(); i++) {
+		size += sizeof(size_t) + names[i].size();
+	}
+	return sizeof(size_t) + size + Esutils::packedSize(*data);
+}
+
+void ElementData::pack(char* &p) const
+{
+	size_t size = names.size();
+	Esutils::pack(size, p);
+	for (size_t i = 0; i < names.size(); i++) {
+		Esutils::pack(names[i], p);
+	}
+	Esutils::pack(*data, p);
+}
+
+void ElementData::unpack(const char* &p)
+{
+	size_t size;
+	Esutils::unpack(size, p);
+	names.resize(size);
+	for (size_t i = 0; i < names.size(); i++) {
+		Esutils::unpack(names[i], p);
+	}
+	Esutils::unpack(*data, p);
+}
+
+ElementData::ElementData()
+: _delete(true)
+{
+	data = new std::vector<double>();
+}
+
+ElementData::ElementData(const std::vector<std::string> &names, std::vector<double> *data)
+: names(names), data(data), _delete(false)
+{
+	if (data == NULL) {
+		this->data = new std::vector<double>();
+	}
+}
+
+ElementData::ElementData(ElementData &&other)
+: names(std::move(other.names)), data(other.data),
+  _delete(std::move(other._delete))
+{
+	other.data = NULL;
+	other._delete = false;
+}
+
+ElementData::ElementData(const ElementData &other)
+: names(other.names), data(other.data),
+  _delete(other._delete)
+{
+	if (_delete) {
+		data = new std::vector<double>(*other.data);
+	}
+}
+
+ElementData& ElementData::operator=(const ElementData &other)
+{
+	if (this != &other) {
+		names = other.names;
+		data = other.data;
+		_delete = other._delete;
+		if (_delete) {
+			data = new std::vector<double>(*other.data);
+		}
+	}
+	return *this;
+}
+
+ElementData::~ElementData()
+{
+	if (_delete && data != NULL) {
+		delete data;
+	}
 }

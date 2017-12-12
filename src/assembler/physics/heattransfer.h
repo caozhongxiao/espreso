@@ -27,19 +27,6 @@ struct HeatTransfer: public virtual Physics
 	virtual ~HeatTransfer() {}
 
 protected:
-	enum SolutionIndex: size_t {
-		TEMPERATURE,
-		GRADIENT,
-		FLUX,
-
-		PHASE,
-		LATENT_HEAT,
-
-		SIZE
-	};
-
-	static size_t offset;
-
 	void computeInitialTemperature(const Step &step, std::vector<std::vector<double> > &data);
 
 	double computeHTC(
@@ -53,6 +40,9 @@ protected:
 
 	const HeatTransferConfiguration &_configuration;
 	const ResultsSelectionConfiguration &_propertiesConfiguration;
+
+	NodeData *temperature;
+	ElementData *gradient, *flux;
 };
 
 }

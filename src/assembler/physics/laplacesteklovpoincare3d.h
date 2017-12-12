@@ -18,15 +18,6 @@ struct LaplaceSteklovPoincare3D: public HeatTransfer3D
 	virtual void updateMatrix(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution);
 
 	void processSolution(const Step &step);
-
-protected:
-	enum BEMSolutionIndex: size_t {
-		BOUNDARY = 0,
-
-		SIZE     = 1
-	};
-
-	static size_t BEMOffset;
 };
 
 }

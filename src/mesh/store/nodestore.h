@@ -66,7 +66,7 @@ struct NodeStore {
 	void permute(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
 
 	NodeData* appendData(const std::vector<std::string> &names);
-	NodeData* appendData(const std::vector<std::string> &names, std::vector<std::vector<double> > *data);
+	NodeData* appendData(const std::vector<std::string> &names, std::vector<std::vector<double> > &data);
 
 	std::vector<eslocal> gatherNodeDistribution();
 	std::vector<eslocal> gatherUniqueNodeDistribution();

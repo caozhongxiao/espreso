@@ -22,6 +22,8 @@ class Solution;
 class SparseMatrix;
 struct PhysicsConfiguration;
 namespace store { class ResultStore; }
+struct NodeData;
+struct ElementData;
 
 enum class FETI_REGULARIZATION;
 

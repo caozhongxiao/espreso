@@ -23,8 +23,6 @@
 
 using namespace espreso;
 
-size_t LaplaceSteklovPoincare3D::BEMOffset = -1;
-
 LaplaceSteklovPoincare3D::LaplaceSteklovPoincare3D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
 : Physics("LAPLACE STEKLOV POINCARE 3D", mesh, instance, &configuration), HeatTransfer3D(mesh, instance, configuration, propertiesConfiguration)
 {
@@ -47,19 +45,23 @@ void LaplaceSteklovPoincare3D::prepareHybridTotalFETIWithKernels()
 
 void LaplaceSteklovPoincare3D::preprocessData(const Step &step)
 {
-	if (offset == (size_t)-1) {
-		offset = _instance->solutions.size();
-		_instance->solutions.resize(offset + SolutionIndex::SIZE, NULL);
-
-		_instance->solutions[offset + SolutionIndex::TEMPERATURE] = new Solution(*_mesh, "temperature", ElementType::NODES, 1);
-		computeInitialTemperature(step, _instance->solutions[offset + SolutionIndex::TEMPERATURE]->data);
-	}
-
-	if (BEMOffset == (size_t)-1) {
-		BEMOffset = _instance->solutions.size();
-		_instance->solutions.resize(BEMOffset + BEMSolutionIndex::SIZE, NULL);
-		_instance->solutions[BEMOffset + BEMSolutionIndex::BOUNDARY] = new Solution(*_mesh, "temperatureOnBoundary", ElementType::NODES, 1, _instance->primalSolution);
-	}
+	// TODO: MESH
+//	if (offset == (size_t)-1) {
+//		offset = _instance->solutions.size();
+//		_instance->solutions.resize(offset + SolutionIndex::SIZE, NULL);
+//
+//		_instance->solutions[offset + SolutionIndex::TEMPERATURE] = new Solution(*_mesh, "temperature", ElementType::NODES, 1);
+//		computeInitialTemperature(step, _instance->solutions[offset + SolutionIndex::TEMPERATURE]->data);
+//	}
+//
+//	computeInitialTemperature(step, _instance->primalSolution);
+//	temperature = _mesh->nodes->appendData({ "TEMPERATURE" }, _instance->primalSolution);
+//
+//	if (BEMOffset == (size_t)-1) {
+//		BEMOffset = _instance->solutions.size();
+//		_instance->solutions.resize(BEMOffset + BEMSolutionIndex::SIZE, NULL);
+//		_instance->solutions[BEMOffset + BEMSolutionIndex::BOUNDARY] = new Solution(*_mesh, "temperatureOnBoundary", ElementType::NODES, 1, _instance->primalSolution);
+//	}
 }
 
 void LaplaceSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution)

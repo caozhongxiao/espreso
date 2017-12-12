@@ -183,9 +183,9 @@ NodeData* NodeStore::appendData(const std::vector<std::string> &names)
 	return data.back();
 }
 
-NodeData* NodeStore::appendData(const std::vector<std::string> &names, std::vector<std::vector<double> > *data)
+NodeData* NodeStore::appendData(const std::vector<std::string> &names, std::vector<std::vector<double> > &data)
 {
-	this->data.push_back(new NodeData(names, data));
+	this->data.push_back(new NodeData(names, &data));
 	return this->data.back();
 }
 

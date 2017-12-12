@@ -16,11 +16,10 @@
 
 using namespace espreso;
 
-size_t HeatTransfer::offset = -1;
-
 HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
 : Physics("", NULL, NULL, &configuration), // skipped because Physics is inherited virtually
-  _configuration(configuration), _propertiesConfiguration(propertiesConfiguration)
+  _configuration(configuration), _propertiesConfiguration(propertiesConfiguration),
+  temperature(NULL), gradient(NULL), flux(NULL)
 {
 	for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
 		const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[d];
@@ -150,32 +149,26 @@ void HeatTransfer::computeInitialTemperature(const Step &step, std::vector<std::
 
 void HeatTransfer::preprocessData(const Step &step)
 {
-	if (offset != (size_t)-1) {
-		return;
-	}
-	offset = _instance->solutions.size();
-	_instance->solutions.resize(offset + SolutionIndex::SIZE, NULL);
-
 	computeInitialTemperature(step, _instance->primalSolution);
-	_instance->solutions[offset + SolutionIndex::TEMPERATURE] = new Solution(*_mesh, "temperature", ElementType::NODES, 1, _instance->primalSolution);
 }
 
 std::vector<size_t> HeatTransfer::solutionsIndicesToStore() const
 {
-	std::vector<size_t> results = { offset + SolutionIndex::TEMPERATURE };
-	if (_instance->solutions[offset + SolutionIndex::GRADIENT] != NULL) {
-		results.push_back(offset + SolutionIndex::GRADIENT);
-	}
-	if (_instance->solutions[offset + SolutionIndex::FLUX] != NULL) {
-		results.push_back(offset + SolutionIndex::FLUX);
-	}
-	if (_instance->solutions[offset + SolutionIndex::PHASE] != NULL) {
-		results.push_back(offset + SolutionIndex::PHASE);
-	}
-	if (_instance->solutions[offset + SolutionIndex::LATENT_HEAT] != NULL) {
-		results.push_back(offset + SolutionIndex::LATENT_HEAT);
-	}
-	return results;
+	return {};
+//	std::vector<size_t> results = { offset + SolutionIndex::TEMPERATURE };
+//	if (_instance->solutions[offset + SolutionIndex::GRADIENT] != NULL) {
+//		results.push_back(offset + SolutionIndex::GRADIENT);
+//	}
+//	if (_instance->solutions[offset + SolutionIndex::FLUX] != NULL) {
+//		results.push_back(offset + SolutionIndex::FLUX);
+//	}
+//	if (_instance->solutions[offset + SolutionIndex::PHASE] != NULL) {
+//		results.push_back(offset + SolutionIndex::PHASE);
+//	}
+//	if (_instance->solutions[offset + SolutionIndex::LATENT_HEAT] != NULL) {
+//		results.push_back(offset + SolutionIndex::LATENT_HEAT);
+//	}
+//	return results;
 }
 
 void HeatTransfer::convectionMatParameters(

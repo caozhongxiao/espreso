@@ -330,73 +330,180 @@ void CollectedEnSight::storeDecomposition()
 		storeIntervals(name, os.str(), commitIntervals());
 	}
 
+	auto tabs = [] (size_t size) {
+		return size < 8 ? 2 : 1;
+	};
+
+	auto format = [] (size_t size) {
+		if (size == 1) return "scalar";
+		if (size == 4) return "vector";
+		return "";
+	};
+
+	if (_variableCounter == 0) {
+		for (size_t i = 0; i < _mesh.nodes->data.size(); i++) {
+			if (_mesh.nodes->data[i]->names.size()) {
+				std::string filename = _name + "." + _mesh.nodes->data[i]->names.front().substr(0, 4);
+				_casevariables << format(_mesh.nodes->data[i]->names.size());
+				_casevariables << " per node:\t1 ";
+				_casevariables << _mesh.nodes->data[i]->names.front();
+				_casevariables << std::string(tabs(_mesh.nodes->data[i]->names.front().size()), '\t');
+				_casevariables << filename << "_***\n";
+			}
+		}
+		for (size_t i = 0; i < _mesh.elements->data.size(); i++) {
+			if (_mesh.elements->data[i]->names.size()) {
+				std::string filename = _name + "." + _mesh.elements->data[i]->names.front().substr(0, 4);
+				_casevariables << format(_mesh.elements->data[i]->names.size());
+				_casevariables << " per element:\t1 ";
+				_casevariables << _mesh.elements->data[i]->names.front();
+				_casevariables << std::string(tabs(_mesh.elements->data[i]->names.front().size()), '\t');
+				_casevariables << filename << "_***\n";
+			}
+		}
+	} else {
+		ESINFO(GLOBAL_ERROR) << "Implement update mesh.";
+	}
+
 	storecasefile();
 }
 
 void CollectedEnSight::updateSolution(const Step &step)
 {
-	if (_mesh.nodes->data.size() != 1) {
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement store variables.";
-	}
+	++_variableCounter;
 
-	std::string filename = _name + "." + _mesh.nodes->data.front()->names.front().substr(0, 4);
-	if (_variableCounter == 0) {
-		_casevariables << "scalar per node:\t1 " << _mesh.nodes->data.front()->names.front() << "\t" << filename << "_***\n";
-	}
 	_casetime << step.currentTime;
-	if ((_variableCounter + 1) % 10 == 0) {
+	if ((_variableCounter) % 10 == 0) {
 		_casetime << "\n                       ";
 	} else {
 		_casetime << " ";
 	}
 
-	std::stringstream name;
-	name << _path + filename + "_" << std::setw(3) << std::setfill('0') << ++_variableCounter;
+	for (size_t di = 0; di < _mesh.nodes->data.size(); di++) {
+		if (_mesh.nodes->data[di]->names.size() == 0) {
+			continue;
+		}
+		std::string filename = _name + "." + _mesh.nodes->data[di]->names.front().substr(0, 4);
+		std::stringstream name;
+		name << _path + filename + "_" << std::setw(3) << std::setfill('0') << _variableCounter;
 
-	std::stringstream os;
-	if (environment->MPIrank == 0) {
-		os << _mesh.nodes->data.front()->names.front() << "\n";
+		std::stringstream os;
+		if (environment->MPIrank == 0) {
+			os << _mesh.nodes->data[di]->names.front() << "\n";
+		}
+
+		eslocal part = 1;
+
+		auto storePartHeader = [&] () {
+			if (environment->MPIrank == 0) {
+				os << "part\n";
+				os << std::setw(10) << part++ << "\n";
+				os << "coordinates\n";
+			}
+		};
+
+		auto iterateNodes = [&] (const std::vector<ProcessInterval> &intervals, const tarray<eslocal> &nodes) {
+			os << std::showpos << std::scientific << std::setprecision(5);
+			for (size_t i = 0; i < intervals.size(); i++) {
+				if (intervals[i].sourceProcess == environment->MPIrank) {
+					eslocal offset = _mesh.nodes->pintervals[i].globalOffset - _mesh.nodes->uniqueOffset;
+					for (eslocal n = intervals[i].begin; n < intervals[i].end; ++n) {
+						eslocal index = offset + nodes[n] - _mesh.nodes->pintervals[i].begin;
+						os << _mesh.nodes->data[di]->gatheredData[index] << "\n";
+					}
+				}
+			}
+			os << std::noshowpos;
+			pushInterval(os.str().size());
+		};
+
+		clearIntervals();
+		for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
+			storePartHeader();
+			iterateNodes(_mesh.elementsRegions[r]->nintervals, _mesh.elementsRegions[r]->nodes->datatarray());
+		}
+
+		for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
+			if (!StringCompare::caseInsensitiveEq(_mesh.boundaryRegions[r]->name, "ALL_NODES")) {
+				storePartHeader();
+				iterateNodes(_mesh.boundaryRegions[r]->nintervals, _mesh.boundaryRegions[r]->nodes->datatarray());
+			}
+		}
+
+		storeIntervals(name.str(), os.str(), commitIntervals());
 	}
 
-	eslocal part = 1;
-
-	auto storePartHeader = [&] () {
-		if (environment->MPIrank == 0) {
-			os << "part\n";
-			os << std::setw(10) << part++ << "\n";
-			os << "coordinates\n";
+	for (size_t di = 0; di < _mesh.elements->data.size(); di++) {
+		if (_mesh.elements->data[di]->names.size() == 0) {
+			continue;
 		}
-	};
+		std::string filename = _name + "." + _mesh.elements->data[di]->names.front().substr(0, 4);
+		std::stringstream name;
+		name << _path + filename + "_" << std::setw(3) << std::setfill('0') << _variableCounter;
 
-	auto iterateNodes = [&] (const std::vector<ProcessInterval> &intervals, const tarray<eslocal> &nodes) {
-		os << std::showpos << std::scientific << std::setprecision(5);
-		for (size_t i = 0; i < intervals.size(); i++) {
-			if (intervals[i].sourceProcess == environment->MPIrank) {
-				eslocal offset = _mesh.nodes->pintervals[i].globalOffset - _mesh.nodes->uniqueOffset;
-				for (eslocal n = intervals[i].begin; n < intervals[i].end; ++n) {
-					eslocal index = offset + nodes[n] - _mesh.nodes->pintervals[i].begin;
-					os << _mesh.nodes->data.front()->gatheredData[index] << "\n";
+		std::stringstream os;
+		if (environment->MPIrank == 0) {
+			os << _mesh.elements->data[di]->names.front() << "\n";
+		}
+
+		eslocal part = 1;
+
+		auto storePartHeader = [&] () {
+			if (environment->MPIrank == 0) {
+				os << "part\n";
+				os << std::setw(10) << part++ << "\n";
+			}
+		};
+
+		auto iterateElements = [&] (
+				std::stringstream &os, int etype,
+				const tarray<eslocal> &elements, const std::vector<ElementsInterval> &eintervals,
+				std::vector<double> &data, eslocal size) {
+
+				for (eslocal s = 0; s < size; s++) {
+					for (size_t i = 0; i < eintervals.size(); i++) {
+						if (eintervals[i].code == etype) {
+							for (eslocal e = eintervals[i].begin; e < eintervals[i].end; ++e) {
+								os << std::setw(10) << data[size * elements[e] + s];
+								os << "\n";
+							}
+						}
+					}
+					pushInterval(os.str().size());
+				}
+		};
+
+		clearIntervals();
+		for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
+			storePartHeader();
+			for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
+				if (_mesh.elementsRegions[r]->ecounters[etype]) {
+					if (environment->MPIrank == 0) {
+						os << codetotype(etype) << "\n";
+					}
+
+					os << std::showpos << std::scientific << std::setprecision(5);
+					if (_mesh.elements->data[di]->names.size() == 1) {
+						if (StringCompare::caseInsensitiveEq(_mesh.elementsRegions[r]->name, "ALL_ELEMENTS")) {
+							iterateElements(os, etype, _mesh.elementsRegions[r]->elements->datatarray(), _mesh.elementsRegions[r]->ueintervals, *_mesh.elements->data[di]->data, 1);
+						} else {
+							iterateElements(os, etype, _mesh.elementsRegions[r]->elements->datatarray(), _mesh.elementsRegions[r]->eintervals, *_mesh.elements->data[di]->data, 1);
+						}
+					} else {
+						if (StringCompare::caseInsensitiveEq(_mesh.elementsRegions[r]->name, "ALL_ELEMENTS")) {
+							iterateElements(os, etype, _mesh.elementsRegions[r]->elements->datatarray(), _mesh.elementsRegions[r]->ueintervals, *_mesh.elements->data[di]->data, 3);
+						} else {
+							iterateElements(os, etype, _mesh.elementsRegions[r]->elements->datatarray(), _mesh.elementsRegions[r]->eintervals, *_mesh.elements->data[di]->data, 3);
+						}
+					}
+					os << std::noshowpos;
 				}
 			}
 		}
-		os << std::noshowpos;
-		pushInterval(os.str().size());
-	};
 
-	clearIntervals();
-	for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
-		storePartHeader();
-		iterateNodes(_mesh.elementsRegions[r]->nintervals, _mesh.elementsRegions[r]->nodes->datatarray());
+		storeIntervals(name.str(), os.str(), commitIntervals());
 	}
 
-	for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
-		if (!StringCompare::caseInsensitiveEq(_mesh.boundaryRegions[r]->name, "ALL_NODES")) {
-			storePartHeader();
-			iterateNodes(_mesh.boundaryRegions[r]->nintervals, _mesh.boundaryRegions[r]->nodes->datatarray());
-		}
-	}
-
-	storeIntervals(name.str(), os.str(), commitIntervals());
 	storecasefile();
 }
 
