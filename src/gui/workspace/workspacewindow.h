@@ -36,6 +36,8 @@ private slots:
     void onInputChanged();
     void on_btnOpen_pressed();
 
+    void on_btnClose_pressed();
+
 private:
     Ui::WorkspaceWindow *ui;
 

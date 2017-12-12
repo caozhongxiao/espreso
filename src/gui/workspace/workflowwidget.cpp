@@ -233,3 +233,22 @@ void WorkflowWidget::on_btnLoad_pressed()
     this->m_inputWidget->save();
     emit inputChanged();
 }
+
+void WorkflowWidget::save()
+{
+   this->m_inputWidget->save();
+
+   for (int i = 1; i < ui->workflow->count(); i++)
+   {
+       static_cast<ISavableObject*>(ui->workflow->widget(i))->save();
+   }
+}
+
+bool WorkflowWidget::isValid()
+{
+    return true;
+}
+QString WorkflowWidget::errorMessage()
+{
+    return "";
+}

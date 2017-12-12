@@ -94,3 +94,8 @@ void espreso::WorkspaceWindow::on_btnOpen_pressed()
     this->m_mesh = this->m_manager->mesh();
     this->m_workflow->setData(this->m_ecf, this->m_mesh);
 }
+
+void espreso::WorkspaceWindow::on_btnClose_pressed()
+{
+
+}

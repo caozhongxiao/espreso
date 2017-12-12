@@ -21,7 +21,7 @@ namespace Ui {
 class WorkflowWidget;
 }
 
-class WorkflowWidget : public QWidget
+class WorkflowWidget : public QWidget, public ISavableObject, public IValidatableObject
 {
     Q_OBJECT
 
@@ -32,6 +32,10 @@ public:
     void setData(ECFConfiguration* ecf, Mesh* mesh);
     PhysicsConfiguration* activePhysics(ECFConfiguration* ecf);
     ECFObject* input();
+
+    virtual void save() override;
+    virtual bool isValid() override;
+    virtual QString errorMessage() override;
 
 signals:
     void inputChanged();
