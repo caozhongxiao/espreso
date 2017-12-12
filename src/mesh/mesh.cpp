@@ -186,7 +186,7 @@ void Mesh::load()
 
 	{
 		size_t esize = mesh->elements().size();
-		Communication::exscan(esize);
+		Communication::exscan(esize, MPITools::operations().sizeToOffsets);
 		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, mesh->elements().size());
 		std::vector<std::vector<eslocal> > boundaries(threads), indices(threads);
 		std::vector<std::vector<Element*> > epointers(threads);
@@ -395,23 +395,49 @@ void Mesh::gatherNodeData()
 	}
 }
 
-void Mesh::computeNodeStatistic(const ElementsRegionStore* region, Statistics &statistics) const
+static void _computeNodeStatistics(const NodeData *data, const std::vector<ProcessInterval> &intervals, const tarray<eslocal> &nodes, Statistics *statistics, MPI_Comm communicator)
 {
-
+	ESINFO(ERROR) << "Implement node statistics.";
 }
 
-void Mesh::computeNodeStatistic(const BoundaryRegionStore* region, Statistics &statistics) const
+void Mesh::computeNodeStatistic(const NodeData *data, const ElementsRegionStore* region, Statistics *statistics, MPI_Comm communicator) const
 {
-
+	_computeNodeStatistics(data, region->nintervals, region->nodes->datatarray(), statistics, communicator);
 }
 
-void Mesh::computeGatheredNodeStatistic(const ElementsRegionStore* region, Statistics &statistics) const
+void Mesh::computeNodeStatistic(const NodeData *data, const BoundaryRegionStore* region, Statistics *statistics, MPI_Comm communicator) const
 {
-
+	_computeNodeStatistics(data, region->nintervals, region->nodes->datatarray(), statistics, communicator);
 }
 
-void Mesh::computeGatheredNodeStatistic(const BoundaryRegionStore* region, Statistics &statistics) const
+static void _computeGatheredNodeStatistics(const Mesh *mesh, const NodeData *data, const std::vector<ProcessInterval> &intervals, const tarray<eslocal> &nodes, eslocal offset, Statistics *statistics, MPI_Comm communicator)
 {
+	eslocal goffset, index;
+	for (size_t i = 0; i < intervals.size(); i++) {
+		if (intervals[i].sourceProcess == environment->MPIrank) {
+			goffset = mesh->nodes->pintervals[i].globalOffset - offset;
+			for (auto n = nodes.cbegin() + intervals[i].begin; n != nodes.cbegin() + intervals[i].end; ++n) {
+				index = goffset + *n - mesh->nodes->pintervals[i].begin;
+				statistics->min = std::min(statistics->min, data->gatheredData[index]);
+				statistics->max = std::max(statistics->max, data->gatheredData[index]);
+				statistics->avg += data->gatheredData[index];
+				statistics->norm += data->gatheredData[index] * data->gatheredData[index];
+			}
+		}
+	}
 
+	std::vector<Statistics> global(data->names.size());
+	MPI_Reduce(statistics, global.data(), sizeof(Statistics) * data->names.size(), MPI_BYTE, MPITools::operations().mergeStatistics, 0, communicator);
+	memcpy(statistics, global.data(), sizeof(Statistics) * data->names.size());
+}
+
+void Mesh::computeGatheredNodeStatistic(const NodeData *data, const ElementsRegionStore* region, Statistics *statistics, MPI_Comm communicator) const
+{
+	_computeGatheredNodeStatistics(this, data, region->nintervals, region->nodes->datatarray(), nodes->uniqueOffset, statistics, communicator);
+}
+
+void Mesh::computeGatheredNodeStatistic(const NodeData *data, const BoundaryRegionStore* region, Statistics *statistics, MPI_Comm communicator) const
+{
+	_computeGatheredNodeStatistics(this, data, region->nintervals, region->nodes->datatarray(), nodes->uniqueOffset, statistics, communicator);
 }
 

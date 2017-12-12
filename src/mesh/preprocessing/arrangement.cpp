@@ -489,7 +489,7 @@ void MeshPreprocessing::arrangeElementsPermutation(std::vector<eslocal> &permuta
 
 	for (int i = 0, bitmask = 1; i < elementstypes; i++, bitmask = bitmask << 1) {
 		if (allcodes & bitmask) {
-			_mesh->elements->ecounters[i] = Communication::exscan(_mesh->elements->ecounters[i]);
+			_mesh->elements->ecounters[i] = Communication::exscan(_mesh->elements->ecounters[i], MPITools::operations().sizeToOffsets);
 		}
 	}
 
@@ -605,7 +605,7 @@ void MeshPreprocessing::arrangeRegions()
 	for (size_t i = 0; i < _mesh->elements->ecounters.size(); i++) {
 		if (_mesh->elements->ecounters[i]) {
 			for (size_t r = 0; r < _mesh->elementsRegions.size(); r++) {
-				_mesh->elementsRegions[r]->ecounters[i] = Communication::exscan(_mesh->elementsRegions[r]->ecounters[i]);
+				_mesh->elementsRegions[r]->ecounters[i] = Communication::exscan(_mesh->elementsRegions[r]->ecounters[i], MPITools::operations().sizeToOffsets);
 			}
 		}
 	}
@@ -621,6 +621,8 @@ void MeshPreprocessing::arrangeRegions()
 		if (!StringCompare::caseInsensitiveEq(store->name, "ALL_NODES")) {
 			synchronizeRegionNodes(store->name, store->nodes, store->nintervals);
 			computeIntervalOffsets(store->nintervals, store->uniqueOffset, store->uniqueSize, store->uniqueTotalSize);
+		} else {
+			store->nintervals = _mesh->nodes->pintervals;
 		}
 
 		if (_mesh->boundaryRegions[r]->dimension == 0) {
@@ -716,7 +718,7 @@ void MeshPreprocessing::arrangeRegions()
 
 			for (int i = 0, bitmask = 1; i < _mesh->elements->ecounters.size(); i++, bitmask = bitmask << 1) {
 				if (allcodes & bitmask) {
-					_mesh->boundaryRegions[r]->ecounters[i] = Communication::exscan(_mesh->boundaryRegions[r]->ecounters[i]);
+					_mesh->boundaryRegions[r]->ecounters[i] = Communication::exscan(_mesh->boundaryRegions[r]->ecounters[i], MPITools::operations().sizeToOffsets);
 				}
 			}
 		}

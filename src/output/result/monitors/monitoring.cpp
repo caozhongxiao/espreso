@@ -10,6 +10,7 @@
 #include "../../../assembler/step.h"
 
 #include "../../../mesh/mesh.h"
+#include "../../../mesh/store/nodestore.h"
 #include "../../../mesh/store/boundaryregionstore.h"
 #include "../../../mesh/store/elementsregionstore.h"
 
@@ -40,7 +41,12 @@ std::string right(const std::string &value, size_t size)
 Monitoring::Monitoring(const Mesh &mesh, const OutputConfiguration &configuration, bool async)
 : ResultStoreBase(mesh), _configuration(configuration), _async(async)
 {
+	MPI_Comm_split(environment->MPICommunicator, 0, environment->MPIrank, &_communicator);
+}
 
+Monitoring::~Monitoring()
+{
+	MPI_Comm_free(&_communicator);
 }
 
 void Monitoring::updateMesh()
@@ -141,18 +147,10 @@ void Monitoring::updateSolution(const Step &step)
 {
 	eslocal offset = 0;
 	for (size_t i = 0; i < _eregions.size(); ++i, ++offset) {
-		if (_async) {
-			_mesh.computeGatheredNodeStatistic(_eregions[i], _data[offset]);
-		} else {
-			_mesh.computeNodeStatistic(_eregions[i], _data[offset]);
-		}
+		_mesh.computeGatheredNodeStatistic(_mesh.nodes->data.front(), _eregions[i], _data.data() + offset, _communicator);
 	}
 	for (size_t i = 0; i < _bregions.size(); ++i, ++offset) {
-		if (_async) {
-			_mesh.computeGatheredNodeStatistic(_bregions[i], _data[offset]);
-		} else {
-			_mesh.computeNodeStatistic(_bregions[i], _data[offset]);
-		}
+		_mesh.computeGatheredNodeStatistic(_mesh.nodes->data.front(), _bregions[i], _data.data() + offset, _communicator);
 	}
 
 	if (environment->MPIrank) {

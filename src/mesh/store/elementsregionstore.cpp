@@ -16,7 +16,6 @@ ElementsRegionStore::ElementsRegionStore(const std::string &name)
   uniqueElements(NULL),
 
   nodes(NULL),
-  regionIndices(NULL),
 
   uniqueOffset(0),
   uniqueSize(0),

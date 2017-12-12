@@ -1,9 +1,5 @@
 
-#include "mpi.h"
-
 #include "communication.h"
-
-#include "../../config/ecf/environment.h"
 
 #include <algorithm>
 
@@ -205,13 +201,7 @@ bool Communication::broadcastUnknownSize(std::vector<Ttype> &buffer)
 }
 
 template <typename Ttype>
-static void offsetSum(void *in, void *out, int *len, MPI_Datatype *datatype)
-{
-	*(static_cast<Ttype*>(out)) += *(static_cast<Ttype*>(in));
-}
-
-template <typename Ttype>
-Ttype Communication::exscan(Ttype &value)
+Ttype Communication::exscan(Ttype &value, MPI_Op &operation)
 {
 	Ttype size = value;
 	if (environment->MPIsize == 1) {
@@ -219,9 +209,7 @@ Ttype Communication::exscan(Ttype &value)
 		return size;
 	}
 
-	MPI_Op op;
-	MPI_Op_create(offsetSum<Ttype>, 1, &op);
-	MPI_Exscan(&size, &value, sizeof(Ttype), MPI_BYTE, op, environment->MPICommunicator);
+	MPI_Exscan(&size, &value, sizeof(Ttype), MPI_BYTE, operation, environment->MPICommunicator);
 
 	size = value + size;
 	MPI_Bcast(&size, sizeof(Ttype), MPI_BYTE, environment->MPIsize - 1, environment->MPICommunicator);

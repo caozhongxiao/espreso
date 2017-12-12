@@ -6,6 +6,8 @@ namespace espreso {
 
 struct Statistics {
 	double min, max, avg, norm;
+
+	Statistics();
 };
 
 }

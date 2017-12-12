@@ -20,7 +20,6 @@ struct ElementsRegionStore {
 	serializededata<eslocal, eslocal>* uniqueElements;
 
 	serializededata<eslocal, eslocal>* nodes;
-	serializededata<eslocal, eslocal>* regionIndices;
 
 	std::vector<ElementsInterval> eintervals;
 	std::vector<ElementsInterval> ueintervals;

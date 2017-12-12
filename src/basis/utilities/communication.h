@@ -2,11 +2,40 @@
 #ifndef SRC_BASIS_UTILITIES_COMMUNICATION_H_
 #define SRC_BASIS_UTILITIES_COMMUNICATION_H_
 
+#include "mpi.h"
+
+#include "../../config/ecf/environment.h"
+
 #include <cstddef>
 #include <vector>
 #include <functional>
 
 namespace espreso {
+
+class MPITools
+{
+	class Operations {
+		friend class MPITools;
+	public:
+		MPI_Op sizeToOffsets;
+		MPI_Op mergeStatistics;
+
+	private:
+		Operations();
+	public:
+		Operations(Operations const&) = delete;
+		void operator=(Operations const&) = delete;
+	};
+
+public:
+	static Operations& operations()
+	{
+		static Operations instance;
+		return instance;
+	}
+private:
+	MPITools() = delete;
+};
 
 struct Communication {
 
@@ -38,7 +67,7 @@ struct Communication {
 	static bool broadcastUnknownSize(std::vector<Ttype> &buffer);
 
 	template <typename Ttype>
-	static Ttype exscan(Ttype &value);
+	static Ttype exscan(Ttype &value, MPI_Op &operation);
 
 	template <typename Ttype>
 	static bool sendVariousTargets(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &targets)

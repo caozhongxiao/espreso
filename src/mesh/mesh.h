@@ -2,6 +2,8 @@
 #ifndef SRC_MESH_MESH_H_
 #define SRC_MESH_MESH_H_
 
+#include "mpi.h"
+
 #include <string>
 #include <vector>
 
@@ -15,6 +17,7 @@ struct Step;
 struct Statistics;
 struct ElementStore;
 struct NodeStore;
+struct NodeData;
 
 struct ElementsRegionStore;
 struct BoundaryRegionStore;
@@ -34,10 +37,10 @@ public:
 
 	void initNodeData();
 	void gatherNodeData();
-	void computeNodeStatistic(const ElementsRegionStore* region, Statistics &statistics) const;
-	void computeNodeStatistic(const BoundaryRegionStore* region, Statistics &statistics) const;
-	void computeGatheredNodeStatistic(const ElementsRegionStore* region, Statistics &statistics) const;
-	void computeGatheredNodeStatistic(const BoundaryRegionStore* region, Statistics &statistics) const;
+	void computeNodeStatistic(const NodeData *data, const ElementsRegionStore* region, Statistics *statistics, MPI_Comm communicator) const;
+	void computeNodeStatistic(const NodeData *data, const BoundaryRegionStore* region, Statistics *statistics, MPI_Comm communicator) const;
+	void computeGatheredNodeStatistic(const NodeData *data, const ElementsRegionStore* region, Statistics *statistics, MPI_Comm communicator) const;
+	void computeGatheredNodeStatistic(const NodeData *data, const BoundaryRegionStore* region, Statistics *statistics, MPI_Comm communicator) const;
 
 	ElementsRegionStore* eregion(const std::string &name);
 	BoundaryRegionStore* bregion(const std::string &name);
@@ -61,7 +64,6 @@ public:
 	const ECFConfiguration &configuration;
 	std::vector<Element*> _eclasses;
 	OldMesh *mesh;
-
 };
 
 }
