@@ -23,16 +23,6 @@ Precomputed::Precomputed(Mesh *mesh, Instance *instance, MatrixType type, double
 //	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, dynamic_cast<APIMesh*>(_mesh)->DOFs(), _mesh->faces(), pointDOFs(), pointDOFsOffsets(), true, true);
 }
 
-std::vector<size_t> Precomputed::solutionsIndicesToStore() const
-{
-	return { };
-}
-
-std::vector<std::pair<ElementType, Property> > Precomputed::propertiesToStore() const
-{
-	return { };
-}
-
 MatrixType Precomputed::getMatrixType(const Step &step, size_t domain) const
 {
 	return _mtype;

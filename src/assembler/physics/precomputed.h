@@ -17,9 +17,6 @@ struct Precomputed: public virtual Physics
 
 	Precomputed(Mesh *mesh, Instance *instance, MatrixType type, double *rhs, size_t rhsSize);
 
-	std::vector<size_t> solutionsIndicesToStore() const;
-	std::vector<std::pair<ElementType, Property> > propertiesToStore() const;
-
 	MatrixType getMatrixType(const Step &step, size_t domain) const;
 	bool isMatrixTimeDependent(const Step &step) const;
 	bool isMatrixTemperatureDependent(const Step &step) const;

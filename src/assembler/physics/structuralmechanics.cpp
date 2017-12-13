@@ -240,11 +240,6 @@ void StructuralMechanics::preprocessData(const Step &step)
 	_instance->solutions[offset + SolutionIndex::DISPLACEMENT] = new Solution(*_mesh, "displacement", ElementType::NODES, 3, _instance->primalSolution);
 }
 
-std::vector<size_t> StructuralMechanics::solutionsIndicesToStore() const
-{
-	return { offset + SolutionIndex::DISPLACEMENT };
-}
-
 
 
 

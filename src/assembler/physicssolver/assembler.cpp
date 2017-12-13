@@ -137,10 +137,6 @@ void Assembler::storeSolution(const Step &step)
 			mesh.gatherNodeData();
 		}
 		timeWrapper("store solution", [&] () {
-			std::vector<Solution*> solutions;
-			for (size_t i = 0; i < physics.solutionsIndicesToStore().size(); i++) {
-				solutions.push_back(instance.solutions[physics.solutionsIndicesToStore()[i]]);
-			}
 			store.updateSolution(step);
 		});
 	}
@@ -149,10 +145,6 @@ void Assembler::storeSolution(const Step &step)
 void Assembler::storeSubSolution(const Step &step)
 {
 	timeWrapper("store solution", [&] () {
-		std::vector<Solution*> solutions;
-		for (size_t i = 0; i < physics.solutionsIndicesToStore().size(); i++) {
-			solutions.push_back(instance.solutions[physics.solutionsIndicesToStore()[i]]);
-		}
 		// TODO: MESH
 		// store.storeSubSolution(step, solutions, {});
 	});

@@ -116,12 +116,6 @@ void StructuralMechanics2D::analyticRegularization(size_t domain, bool ortogonal
 //	_instance->RegMat[domain].MatScale(_instance->K[domain].getDiagonalMaximum());
 }
 
-std::vector<std::pair<ElementType, Property> > StructuralMechanics2D::propertiesToStore() const
-{
-	return {};
-}
-
-
 void StructuralMechanics2D::assembleMaterialMatrix(const Step &step, eslocal eindex, eslocal node, double temp, DenseMatrix &K) const
 {
 //	const MaterialConfiguration* material = _mesh->materials()[e->param(OldElement::MATERIAL)];

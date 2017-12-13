@@ -45,11 +45,7 @@ struct Physics {
 	Physics(const std::string &name, Mesh *mesh, Instance *instance, const PhysicsConfiguration *configuration);
 	const std::string& name() const { return _name; }
 
-	virtual std::vector<size_t> solutionsIndicesToStore() const =0;
-	virtual std::vector<std::pair<ElementType, Property> > propertiesToStore() const =0;
-
 	virtual void prepare() {};
-
 	virtual void preprocessData(const Step &step) =0;
 
 	virtual void updateMatrix(const Step &step, Matrices matrices, const std::vector<Solution*> &solution);

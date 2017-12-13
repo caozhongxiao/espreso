@@ -21,24 +21,6 @@ HeatTransfer2D::HeatTransfer2D(Mesh *mesh, Instance *instance, const HeatTransfe
 	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, {}, 1, configuration.load_steps_settings.at(1).feti.redundant_lagrange, configuration.load_steps_settings.at(1).feti.scaling);
 }
 
-std::vector<std::pair<ElementType, Property> > HeatTransfer2D::propertiesToStore() const
-{
-//	for (size_t s = 0; s < _mesh->steps(); s++) {
-//		if (
-//				_mesh->isPropertyTimeDependent(Property::TRANSLATION_MOTION_X, s) ||
-//				_mesh->isPropertyTimeDependent(Property::TRANSLATION_MOTION_Y, s)) {
-//
-//			return {
-//				{ ElementType::NODES, Property::TRANSLATION_MOTION_X },
-//				{ ElementType::NODES, Property::TRANSLATION_MOTION_Y }
-//			};
-//		}
-//	}
-
-	return {};
-}
-
-
 void HeatTransfer2D::assembleMaterialMatrix(const Step &step, eslocal eindex, eslocal node, const MaterialBaseConfiguration *mat, double phase, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
 {
 //	auto conductivity = [&] (int row, int column, double t) {

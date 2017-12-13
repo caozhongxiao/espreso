@@ -15,8 +15,6 @@ struct HeatTransfer: public virtual Physics
 {
 	HeatTransfer(const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
 
-	virtual std::vector<size_t> solutionsIndicesToStore() const;
-
 	virtual MatrixType getMatrixType(const Step &step, size_t domain) const;
 	virtual bool isMatrixTimeDependent(const Step &step) const;
 	virtual bool isMatrixTemperatureDependent(const Step &step) const;
@@ -41,8 +39,9 @@ protected:
 	const HeatTransferConfiguration &_configuration;
 	const ResultsSelectionConfiguration &_propertiesConfiguration;
 
-	NodeData *temperature;
-	ElementData *gradient, *flux;
+	NodeData *_temperature;
+	ElementData *_gradient, *_flux;
+	NodeData *_phaseChange, *_latentHeat;
 };
 
 }

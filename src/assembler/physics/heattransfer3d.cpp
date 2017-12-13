@@ -38,33 +38,24 @@ HeatTransfer3D::HeatTransfer3D(Mesh *mesh, Instance *instance, const HeatTransfe
 			configuration.load_steps_settings.at(1).feti.redundant_lagrange,
 			configuration.load_steps_settings.at(1).feti.scaling);
 
-	temperature = _mesh->nodes->appendData({ "TEMPERATURE" }, _instance->primalSolution);
+	_temperature = _mesh->nodes->appendData({ "TEMPERATURE" }, _instance->primalSolution);
 	if (_propertiesConfiguration.gradient) {
-		gradient = _mesh->elements->appendData({ "GRADIENT", "GRADIENT_X", "GRADIENT_Y", "GRADIENT_Z" });
+		_gradient = _mesh->elements->appendData({ "GRADIENT", "GRADIENT_X", "GRADIENT_Y", "GRADIENT_Z" });
 	}
 
 	if (_propertiesConfiguration.flux) {
-		flux = _mesh->elements->appendData({ "FLUX", "FLUX_X", "FLUX_Y", "FLUX_Z" });
+		_flux = _mesh->elements->appendData({ "FLUX", "FLUX_X", "FLUX_Y", "FLUX_Z" });
 	}
-}
 
-std::vector<std::pair<ElementType, Property> > HeatTransfer3D::propertiesToStore() const
-{
-//	for (size_t s = 0; s < _mesh->steps(); s++) {
-//		if (
-//				_mesh->isPropertyTimeDependent(Property::TRANSLATION_MOTION_X, s) ||
-//				_mesh->isPropertyTimeDependent(Property::TRANSLATION_MOTION_Y, s) ||
-//				_mesh->isPropertyTimeDependent(Property::TRANSLATION_MOTION_Z, s)) {
-//
-//			return {
-//				{ ElementType::NODES, Property::TRANSLATION_MOTION_X },
-//				{ ElementType::NODES, Property::TRANSLATION_MOTION_Y },
-//				{ ElementType::NODES, Property::TRANSLATION_MOTION_Z }
-//			};
-//		}
-//	}
+	bool phaseChange = false;
+	for (size_t m = 0; m < _mesh->materials.size(); m++) {
+		phaseChange |= _mesh->materials[m]->phase_change;
+	}
 
-	return {};
+	if (phaseChange) {
+		_phaseChange = _mesh->nodes->appendData({ "PHASE_CHANGE" });
+		_latentHeat = _mesh->nodes->appendData({ "PHASE_CHANGE" });
+	}
 }
 
 void HeatTransfer3D::assembleMaterialMatrix(const Step &step, eslocal eindex, eslocal node, const Point &p, const MaterialBaseConfiguration *mat, double phase, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
@@ -297,7 +288,7 @@ void HeatTransfer3D::processElement(const Step &step, Matrices matrices, eslocal
 
 	for (size_t n = 0; n < nodes->size(); n++) {
 		auto it = std::lower_bound(intervals.begin(), intervals.end(), nodes->at(n), [] (const DomainInterval &interval, eslocal node) { return interval.end < node; });
-		temp = (*temperature->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin];
+		temp = (*_temperature->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin];
 		const Point &p = _mesh->nodes->coordinates->datatarray()[nodes->at(n)];
 		T(n, 0) = temp;
 		coordinates(n, 0) = p.x;
@@ -747,7 +738,7 @@ void HeatTransfer3D::postProcessElement(const Step &step, eslocal eindex, std::v
 
 	for (size_t i = 0; i < nodes->size(); i++) {
 		auto it = std::lower_bound(intervals.begin(), intervals.end(), nodes->at(i), [] (const DomainInterval &interval, eslocal node) { return interval.end < node; });
-		temp(i, 0) = (*temperature->decomposedData)[domain][it->DOFOffset + nodes->at(i) - it->begin];
+		temp(i, 0) = (*_temperature->decomposedData)[domain][it->DOFOffset + nodes->at(i) - it->begin];
 		const Point &p = _mesh->nodes->coordinates->datatarray()[nodes->at(i)];
 		coordinates(i, 0) = p.x;
 		coordinates(i, 1) = p.y;
@@ -765,9 +756,10 @@ void HeatTransfer3D::postProcessElement(const Step &step, eslocal eindex, std::v
 					(1 - phase) * phase2->heat_capacity.evaluator->evaluate(p, step.currentTime, temp(i, 0)) +
 					material->latent_heat * derivation);
 
-			// TODO: MESH
-//			solution[offset + SolutionIndex::PHASE]->data[domain][_mesh->coordinates().localIndex(nodes->at(i), domain)] = phase;
-//			solution[offset + SolutionIndex::LATENT_HEAT]->data[domain][_mesh->coordinates().localIndex(nodes->at(i), domain)] = material->latent_heat * derivation;
+			if (_phaseChange) {
+				(*_phaseChange->decomposedData)[domain][it->DOFOffset + nodes->at(i) - it->begin] = phase;
+				(*_latentHeat->decomposedData)[domain][it->DOFOffset + nodes->at(i) - it->begin] = material->latent_heat * derivation;
+			}
 		} else {
 			assembleMaterialMatrix(step, eindex, i, p, material, 1, temp(i, 0), K, CD, false);
 			m =
@@ -803,8 +795,8 @@ void HeatTransfer3D::postProcessElement(const Step &step, eslocal eindex, std::v
 
 		dND.multiply(invJ, dN[gp]);
 
-		 norm_u_e = u.norm();
-		 h_e = 0;
+		norm_u_e = u.norm();
+		h_e = 0;
 
 		if (norm_u_e != 0) {
 			DenseMatrix b_e(1, nodes->size());
@@ -821,46 +813,21 @@ void HeatTransfer3D::postProcessElement(const Step &step, eslocal eindex, std::v
 	}
 
 	if (_propertiesConfiguration.gradient) {
-		(*gradient->data)[3 * eindex + 0] = matGradient(0, 0) / N.size();
-		(*gradient->data)[3 * eindex + 1] = matGradient(1, 0) / N.size();
-		(*gradient->data)[3 * eindex + 2] = matGradient(2, 0) / N.size();
+		(*_gradient->data)[3 * eindex + 0] = matGradient(0, 0) / N.size();
+		(*_gradient->data)[3 * eindex + 1] = matGradient(1, 0) / N.size();
+		(*_gradient->data)[3 * eindex + 2] = matGradient(2, 0) / N.size();
 	}
 
 	if (_propertiesConfiguration.flux) {
-		(*flux->data)[3 * eindex + 0] = matFlux(0, 0) / N.size();
-		(*flux->data)[3 * eindex + 1] = matFlux(1, 0) / N.size();
-		(*flux->data)[3 * eindex + 2] = matFlux(2, 0) / N.size();
+		(*_flux->data)[3 * eindex + 0] = matFlux(0, 0) / N.size();
+		(*_flux->data)[3 * eindex + 1] = matFlux(1, 0) / N.size();
+		(*_flux->data)[3 * eindex + 2] = matFlux(2, 0) / N.size();
 	}
 }
 
 void HeatTransfer3D::processSolution(const Step &step)
 {
-//	bool phase_change = false;
-//	for (size_t m = 0; m < _mesh->materials().size(); m++) {
-//		phase_change |= _mesh->materials()[m]->phase_change;
-//	}
-//
-//	if (_propertiesConfiguration.phase && phase_change) {
-//		postProcess = true;
-//		if (_instance->solutions[offset + SolutionIndex::PHASE] == NULL) {
-//			_instance->solutions[offset + SolutionIndex::PHASE] = new Solution(*_mesh, "phase", ElementType::NODES, { Property::PHASE });
-//		}
-//		for (size_t p = 0; p < _mesh->parts(); p++) {
-//			_instance->solutions[offset + SolutionIndex::PHASE]->data[p].clear();
-//		}
-//	}
-//
-//	if (_propertiesConfiguration.latent_heat && phase_change) {
-//		postProcess = true;
-//		if (_instance->solutions[offset + SolutionIndex::LATENT_HEAT] == NULL) {
-//			_instance->solutions[offset + SolutionIndex::LATENT_HEAT] = new Solution(*_mesh, "latent_heat", ElementType::NODES, { Property::LATENT_HEAT });
-//		}
-//		for (size_t p = 0; p < _mesh->parts(); p++) {
-//			_instance->solutions[offset + SolutionIndex::LATENT_HEAT]->data[p].clear();
-//		}
-//	}
-
-	if (gradient || flux) {
+	if (_gradient || _flux || _phaseChange) {
 		#pragma omp parallel for
 		for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
 			for (eslocal e = _mesh->elements->elementsDistribution[d]; e < (eslocal)_mesh->elements->elementsDistribution[d + 1]; e++) {
