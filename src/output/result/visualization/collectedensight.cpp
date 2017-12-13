@@ -65,6 +65,40 @@ void CollectedEnSight::storecasefile()
 	}
 }
 
+void CollectedEnSight::addcasevariables()
+{
+	auto tabs = [] (size_t size) {
+		return size < 8 ? 2 : 1;
+	};
+
+	auto format = [] (size_t size) {
+		if (size == 1) return "scalar";
+		if (size == 4) return "vector";
+		return "";
+	};
+
+	for (size_t i = 0; i < _mesh.nodes->data.size(); i++) {
+		if (_mesh.nodes->data[i]->names.size()) {
+			std::string filename = _name + "." + _mesh.nodes->data[i]->names.front().substr(0, 4);
+			_casevariables << format(_mesh.nodes->data[i]->names.size());
+			_casevariables << " per node:\t1 ";
+			_casevariables << _mesh.nodes->data[i]->names.front();
+			_casevariables << std::string(tabs(_mesh.nodes->data[i]->names.front().size()), '\t');
+			_casevariables << filename << "_***\n";
+		}
+	}
+	for (size_t i = 0; i < _mesh.elements->data.size(); i++) {
+		if (_mesh.elements->data[i]->names.size()) {
+			std::string filename = _name + "." + _mesh.elements->data[i]->names.front().substr(0, 4);
+			_casevariables << format(_mesh.elements->data[i]->names.size());
+			_casevariables << " per element:\t1 ";
+			_casevariables << _mesh.elements->data[i]->names.front();
+			_casevariables << std::string(tabs(_mesh.elements->data[i]->names.front().size()), '\t');
+			_casevariables << filename << "_***\n";
+		}
+	}
+}
+
 std::string CollectedEnSight::codetotype(int code)
 {
 	switch (static_cast<Element::CODE>(code)) {
@@ -330,46 +364,15 @@ void CollectedEnSight::storeDecomposition()
 		storeIntervals(name, os.str(), commitIntervals());
 	}
 
-	auto tabs = [] (size_t size) {
-		return size < 8 ? 2 : 1;
-	};
-
-	auto format = [] (size_t size) {
-		if (size == 1) return "scalar";
-		if (size == 4) return "vector";
-		return "";
-	};
-
-	if (_variableCounter == 0) {
-		for (size_t i = 0; i < _mesh.nodes->data.size(); i++) {
-			if (_mesh.nodes->data[i]->names.size()) {
-				std::string filename = _name + "." + _mesh.nodes->data[i]->names.front().substr(0, 4);
-				_casevariables << format(_mesh.nodes->data[i]->names.size());
-				_casevariables << " per node:\t1 ";
-				_casevariables << _mesh.nodes->data[i]->names.front();
-				_casevariables << std::string(tabs(_mesh.nodes->data[i]->names.front().size()), '\t');
-				_casevariables << filename << "_***\n";
-			}
-		}
-		for (size_t i = 0; i < _mesh.elements->data.size(); i++) {
-			if (_mesh.elements->data[i]->names.size()) {
-				std::string filename = _name + "." + _mesh.elements->data[i]->names.front().substr(0, 4);
-				_casevariables << format(_mesh.elements->data[i]->names.size());
-				_casevariables << " per element:\t1 ";
-				_casevariables << _mesh.elements->data[i]->names.front();
-				_casevariables << std::string(tabs(_mesh.elements->data[i]->names.front().size()), '\t');
-				_casevariables << filename << "_***\n";
-			}
-		}
-	} else {
-		ESINFO(GLOBAL_ERROR) << "Implement update mesh.";
-	}
-
 	storecasefile();
 }
 
 void CollectedEnSight::updateSolution(const Step &step)
 {
+	if (_variableCounter == 0) {
+		addcasevariables();
+	}
+
 	++_variableCounter;
 
 	_casetime << step.currentTime;

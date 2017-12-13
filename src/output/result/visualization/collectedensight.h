@@ -22,6 +22,7 @@ struct CollectedEnSight: public CollectedVisualization {
 protected:
 	std::string codetotype(int code);
 	void storecasefile();
+	void addcasevariables();
 
 	void storeDecomposition();
 

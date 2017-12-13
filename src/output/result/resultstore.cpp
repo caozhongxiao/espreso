@@ -50,10 +50,10 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 	}
 
 	// TODO: optimize
-	_asyncStore->_async->addResultStore(new CollectedEnSightWithDecomposition("solution", mesh));
+	_asyncStore->_async->addResultStore(new CollectedEnSightWithDecomposition("solution", _asyncStore->_async->mesh()));
 	if (configuration.monitoring.size()) {
-		// _asyncStore->_async->addResultStore(new Monitoring(mesh, configuration, true));
-		_asyncStore->_direct->addResultStore(new Monitoring(mesh, configuration, false));
+		// _asyncStore->_async->addResultStore(new Monitoring(_asyncStore->_async->mesh(), configuration, true));
+		_asyncStore->_direct->addResultStore(new Monitoring(_asyncStore->_direct->mesh(), configuration, false));
 	}
 
 	if (_asyncStore->_direct->hasStore() == 0) {

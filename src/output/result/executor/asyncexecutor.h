@@ -53,6 +53,8 @@ public:
 	void execInit(const async::ExecInfo &info, const InitParameters &initParameters);
 	void exec(const async::ExecInfo &info, const ExecParameters &parameters);
 
+	const Mesh& mesh() const { return _mesh; }
+
 protected:
 	Mesh _mesh;
 	const char *_buffer;
@@ -65,6 +67,7 @@ public:
 	~AsyncStore();
 
 	bool isCollected() { return true; }
+	virtual const Mesh& mesh() const { return _executor.mesh(); }
 
 	void addResultStore(ResultStoreBase *resultStore);
 	bool hasStore();

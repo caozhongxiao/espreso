@@ -19,6 +19,8 @@ public:
 	virtual void updateMesh() =0;
 	virtual void updateSolution(const Step &step) =0;
 
+	virtual const Mesh& mesh() const { return _mesh; }
+
 	virtual ~ResultStoreBase() {};
 
 protected:
