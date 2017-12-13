@@ -86,6 +86,10 @@ struct ElementStore {
 	void pack(char* &p) const;
 	void unpack(const char* &p);
 
+	size_t packedDataSize() const;
+	void packData(char* &p) const;
+	void unpackData(const char* &p);
+
 	ElementStore(std::vector<Element*> &eclasses);
 	~ElementStore();
 

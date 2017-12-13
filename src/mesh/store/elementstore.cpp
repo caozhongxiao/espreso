@@ -110,6 +110,45 @@ void ElementStore::unpack(const char* &p)
 	Esutils::unpack(eintervals, p);
 }
 
+size_t ElementStore::packedDataSize() const
+{
+	size_t size = sizeof(size_t);
+	for (size_t i = 0; i < data.size(); i++) {
+		if (data[i]->names.size()) {
+			size += data[i]->packedSize();
+		}
+	}
+	return size;
+}
+
+void ElementStore::packData(char* &p) const
+{
+	size_t size = 0;
+	for (size_t i = 0; i < data.size(); i++) {
+		if (data[i]->names.size()) {
+			++size;
+		}
+	}
+	Esutils::pack(size, p);
+	for (size_t i = 0; i < data.size(); i++) {
+		if (data[i]->names.size()) {
+			data[i]->pack(p);
+		}
+	}
+}
+
+void ElementStore::unpackData(const char* &p)
+{
+	size_t size;
+	Esutils::unpack(size, p);
+	for (size_t i = 0; i < size; i++) {
+		if (i >= data.size()) {
+			data.push_back(new ElementData());
+		}
+		data.back()->unpack(p);
+	}
+}
+
 ElementStore::~ElementStore()
 {
 	if (IDs == NULL) { delete IDs; }

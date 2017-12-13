@@ -80,7 +80,12 @@ void AsyncStore::updateSolution(const Step &step)
 	Esutils::pack(step, _buffer);
 	_mesh.nodes->packData(_buffer);
 
-	call(ExecParameters(AsyncBufferManager::NODEDATA));
+	prepareBuffer(AsyncBufferManager::ELEMENTDATA, sizeof(Step) + _mesh.elements->packedDataSize());
+	_buffer = managedBuffer<char*>(AsyncBufferManager::buffer(AsyncBufferManager::ELEMENTDATA));
+	Esutils::pack(step, _buffer);
+	_mesh.elements->packData(_buffer);
+
+	call(ExecParameters(AsyncBufferManager::NODEDATA, AsyncBufferManager::ELEMENTDATA));
 }
 
 AsyncStore::AsyncStore(const Mesh &mesh, const OutputConfiguration &configuration)
@@ -152,11 +157,23 @@ void AsyncExecutor::exec(const async::ExecInfo &info, const ExecParameters &para
 		updateMesh();
 	}
 
+	Step step;
 	if (parameters.updatedBuffers & 1 << AsyncBufferManager::NODEDATA) {
 		_buffer = static_cast<const char*>(info.buffer(AsyncBufferManager::buffer(AsyncBufferManager::NODEDATA)));
-		Step step;
 		Esutils::unpack(step, _buffer);
 		_mesh.nodes->unpackData(_buffer);
+	}
+
+	if (parameters.updatedBuffers & 1 << AsyncBufferManager::ELEMENTDATA) {
+		_buffer = static_cast<const char*>(info.buffer(AsyncBufferManager::buffer(AsyncBufferManager::ELEMENTDATA)));
+		Esutils::unpack(step, _buffer);
+		_mesh.elements->unpackData(_buffer);
+	}
+
+	if (
+			(parameters.updatedBuffers & 1 << AsyncBufferManager::NODEDATA) ||
+			(parameters.updatedBuffers & 1 << AsyncBufferManager::ELEMENTDATA)) {
+
 		updateSolution(step);
 	}
 }
