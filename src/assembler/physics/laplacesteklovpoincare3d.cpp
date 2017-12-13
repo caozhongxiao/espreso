@@ -7,7 +7,6 @@
 
 #include "../instance.h"
 #include "../step.h"
-#include "../solution.h"
 
 #include "../../old/mesh/structures/mesh.h"
 #include "../../old/mesh/structures/coordinates.h"
@@ -64,7 +63,7 @@ void LaplaceSteklovPoincare3D::preprocessData(const Step &step)
 //	}
 }
 
-void LaplaceSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution)
+void LaplaceSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices, size_t domain)
 {
 	if (matrices & Matrices::f) {
 		_instance->f[domain].clear();
@@ -95,10 +94,10 @@ void LaplaceSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices,
 
 	_instance->K[domain].ConvertDenseToCSR(1);
 	SparseVVPMatrix<eslocal> K, M; // never filled
-	assembleBoundaryConditions(K, M, step, Matrices::f, domain, solution);
+	assembleBoundaryConditions(K, M, step, Matrices::f, domain);
 }
 
-void LaplaceSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution)
+void LaplaceSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe)
 {
 	ESINFO(ERROR) << "BEM discretization not supports assembling of stiffness matrix K for one element.";
 }

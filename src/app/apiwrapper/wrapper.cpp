@@ -7,7 +7,6 @@
 #include "../../assembler/physicssolver/timestep/linear.h"
 #include "../../assembler/physicssolver/loadstep/steadystate.h"
 #include "../../assembler/step.h"
-#include "../../assembler/solution.h"
 
 #include "../../config/ecf/ecf.h"
 #include "../../input/api/api.h"
@@ -228,7 +227,8 @@ void FETI4ISolve(
 	Logging::step = &step;
 	instance->loadStepSolver->run(step);
 
-	memcpy(solution, instance->instance->solutions[espreso::Precomputed::SolutionIndex::MERGED]->data[0].data(), solution_size * sizeof(double));
+	// TODO: MESH
+	// memcpy(solution, instance->instance->solutions[espreso::Precomputed::SolutionIndex::MERGED]->data[0].data(), solution_size * sizeof(double));
 
 	event.endWithBarrier(); DataHolder::timeStatistics.addEvent(event);
 	DataHolder::timeStatistics.totalTime.endWithBarrier();

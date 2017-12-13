@@ -225,7 +225,7 @@ void StructuralMechanics2D::assembleMaterialMatrix(const Step &step, eslocal ein
 //	}
 }
 
-void StructuralMechanics2D::processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics2D::processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 //	DenseMatrix Ce(4, 4), XY(1, 2), coordinates(e->nodes(), 2), J, invJ(2, 2), dND, B, precision, rhsT;
 //	DenseMatrix K(e->nodes(), 9), TE(e->nodes(), 2), thickness(e->nodes(), 1), inertia(e->nodes(), 2), dens(e->nodes(), 1);
@@ -392,12 +392,12 @@ void StructuralMechanics2D::processElement(const Step &step, Matrices matrices, 
 //	}
 }
 
-void StructuralMechanics2D::processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics2D::processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	ESINFO(ERROR) << "Structural mechanics 2D cannot process face";
 }
 
-void StructuralMechanics2D::processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics2D::processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 //	if (!e->hasProperty(Property::PRESSURE, step.step)) {
 //		Ke.resize(0, 0);
@@ -467,7 +467,7 @@ void StructuralMechanics2D::processEdge(const Step &step, Matrices matrices, esl
 //	}
 }
 
-void StructuralMechanics2D::processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics2D::processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 //	if (
 //			e->hasProperty(Property::FORCE_X, step.step) ||
@@ -488,7 +488,7 @@ void StructuralMechanics2D::processNode(const Step &step, Matrices matrices, esl
 	fe.resize(0, 0);
 }
 
-void StructuralMechanics2D::postProcessElement(const Step &step, eslocal eindex, std::vector<Solution*> &solution)
+void StructuralMechanics2D::postProcessElement(const Step &step, eslocal eindex)
 {
 
 }

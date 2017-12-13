@@ -4,7 +4,6 @@
 #include "../mesh/mesh.h"
 #include "../mesh/store/elementstore.h"
 #include "../solver/generic/SparseMatrix.h"
-#include "solution.h"
 #include "../basis/logging/logging.h"
 
 using namespace espreso;
@@ -263,9 +262,7 @@ void Instance::clear()
 
 Instance::~Instance()
 {
-	for (size_t i = 0; i < solutions.size(); i++) {
-		delete solutions[i];
-	}
+
 }
 
 

@@ -14,19 +14,10 @@ struct LameSteklovPoincare3D: public StructuralMechanics3D
 
 	virtual void preprocessData(const Step &step);
 
-	virtual void updateMatrix(const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution);
-	virtual void updateMatrix(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution);
+	virtual void updateMatrix(const Step &step, Matrices matrices, size_t domain);
+	virtual void updateMatrix(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe);
 
 	void processSolution(const Step &step);
-
-protected:
-	enum BEMSolutionIndex: size_t {
-		BOUNDARY = 0,
-
-		SIZE     = 1
-	};
-
-	static size_t BEMOffset;
 };
 
 }

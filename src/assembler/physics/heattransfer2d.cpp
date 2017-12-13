@@ -3,7 +3,6 @@
 #include "../../config/ecf/output.h"
 #include "../step.h"
 #include "../instance.h"
-#include "../solution.h"
 #include "../constraints/equalityconstraints.h"
 
 #include "../../mesh/mesh.h"
@@ -127,7 +126,7 @@ void HeatTransfer2D::assembleMaterialMatrix(const Step &step, eslocal eindex, es
 //	K(node, 3) += phase * TCT(1, 0);
 }
 
-void HeatTransfer2D::processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer2D::processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 //	bool CAU = _configuration.stabilization == HeatTransferConfiguration::STABILIZATION::CAU;
 //	bool tangentCorrection = (matrices & Matrices::K) && step.tangentMatrixCorrection;
@@ -343,13 +342,13 @@ void HeatTransfer2D::processElement(const Step &step, Matrices matrices, eslocal
 //	}
 }
 
-void HeatTransfer2D::processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer2D::processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	ESINFO(ERROR) << "Advection diffusion 2D cannot process face";
 }
 
 
-void HeatTransfer2D::processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer2D::processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 //	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step) ||
 //		e->hasProperty(Property::HEAT_FLOW, step.step) ||
@@ -451,7 +450,7 @@ void HeatTransfer2D::processEdge(const Step &step, Matrices matrices, eslocal ei
 //	}
 }
 
-void HeatTransfer2D::processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer2D::processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
@@ -459,7 +458,7 @@ void HeatTransfer2D::processNode(const Step &step, Matrices matrices, eslocal ni
 	fe.resize(0, 0);
 }
 
-void HeatTransfer2D::postProcessElement(const Step &step, eslocal eindex, std::vector<Solution*> &solution)
+void HeatTransfer2D::postProcessElement(const Step &step, eslocal eindex)
 {
 //	DenseMatrix Ce(2, 2), coordinates, J(2, 2), invJ(2, 2), dND, temp(e->nodes(), 1);
 //	double detJ, m, norm_u_e, h_e;

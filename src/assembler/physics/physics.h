@@ -3,25 +3,21 @@
 #define SRC_ASSEMBLER_PHYSICS_PHYSICS_H_
 
 #include <cstddef>
+#include <string>
 #include <vector>
-
-#include "../../old/mesh/settings/property.h"
 
 namespace espreso {
 
 struct Step;
 enum Matrices : int;
 enum class MatrixType;
-enum class ElementType;
 template<typename TIndices> class SparseVVPMatrix;
 class DenseMatrix;
 class Mesh;
 class Instance;
 class EqualityConstraints;
-class Solution;
 class SparseMatrix;
 struct PhysicsConfiguration;
-namespace store { class ResultStore; }
 struct NodeData;
 struct ElementData;
 
@@ -48,17 +44,15 @@ struct Physics {
 	virtual void prepare() {};
 	virtual void preprocessData(const Step &step) =0;
 
-	virtual void updateMatrix(const Step &step, Matrices matrices, const std::vector<Solution*> &solution);
-	virtual void updateMatrix(const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution);
+	virtual void updateMatrix(const Step &step, Matrices matrices);
+	virtual void updateMatrix(const Step &step, Matrices matrices, size_t domain);
 
 	virtual MatrixType getMatrixType(const Step &step, size_t domain) const =0;
-	virtual bool isMatrixTimeDependent(const Step &step) const =0;
-	virtual bool isMatrixTemperatureDependent(const Step &step) const =0;
 
-	virtual void processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const =0;
-	virtual void processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const =0;
-	virtual void processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const =0;
-	virtual void processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const =0;
+	virtual void processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const =0;
+	virtual void processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const =0;
+	virtual void processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const =0;
+	virtual void processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const =0;
 	virtual void processSolution(const Step &step) =0;
 
 	virtual void makeStiffnessMatricesRegular(FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster);
@@ -82,7 +76,7 @@ protected:
 			const DenseMatrix &Ke, const DenseMatrix &Me, const DenseMatrix &Re, const DenseMatrix &fe,
 			const Step &step, size_t domain, bool isBoundaryCondition);
 
-	virtual void assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution);
+	virtual void assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, const Step &step, Matrices matrices, size_t domain);
 
 	static void smoothstep(double &smoothStep, double &derivation, double edge0, double edge1, double value, size_t order);
 

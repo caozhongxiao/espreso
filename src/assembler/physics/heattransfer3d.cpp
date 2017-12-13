@@ -3,7 +3,6 @@
 #include "../../config/ecf/output.h"
 #include "../step.h"
 #include "../instance.h"
-#include "../solution.h"
 #include "../constraints/equalityconstraints.h"
 
 #include "../../mesh/mesh.h"
@@ -233,7 +232,7 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, eslocal eindex, es
 	K(node, 8) += phase * TCT(2, 1);
 }
 
-void HeatTransfer3D::processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer3D::processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	auto nodes = _mesh->elements->nodes->cbegin() + eindex;
 	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
@@ -488,7 +487,7 @@ void HeatTransfer3D::processElement(const Step &step, Matrices matrices, eslocal
 	}
 }
 
-void HeatTransfer3D::processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer3D::processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 //	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step) ||
 //		e->hasProperty(Property::HEAT_FLOW, step.step) ||
@@ -589,7 +588,7 @@ void HeatTransfer3D::processFace(const Step &step, Matrices matrices, eslocal fi
 //	}
 }
 
-void HeatTransfer3D::processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer3D::processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 //	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step) ||
 //		e->hasProperty(Property::HEAT_FLOW, step.step) ||
@@ -686,7 +685,7 @@ void HeatTransfer3D::processEdge(const Step &step, Matrices matrices, eslocal ei
 //	}
 }
 
-void HeatTransfer3D::processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void HeatTransfer3D::processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
@@ -694,7 +693,7 @@ void HeatTransfer3D::processNode(const Step &step, Matrices matrices, eslocal ni
 	fe.resize(0, 0);
 }
 
-void HeatTransfer3D::postProcessElement(const Step &step, eslocal eindex, std::vector<Solution*> &solution)
+void HeatTransfer3D::postProcessElement(const Step &step, eslocal eindex)
 {
 	auto nodes = _mesh->elements->nodes->cbegin() + eindex;
 	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
@@ -831,7 +830,7 @@ void HeatTransfer3D::processSolution(const Step &step)
 		#pragma omp parallel for
 		for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
 			for (eslocal e = _mesh->elements->elementsDistribution[d]; e < (eslocal)_mesh->elements->elementsDistribution[d + 1]; e++) {
-				postProcessElement(step, e, _instance->solutions);
+				postProcessElement(step, e);
 			}
 
 		}

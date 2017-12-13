@@ -314,7 +314,7 @@ void StructuralMechanics3D::assembleMaterialMatrix(const Step &step, eslocal ein
 //	}
 }
 
-void StructuralMechanics3D::processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics3D::processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 //	DenseMatrix Ce(6, 6), coordinates(e->nodes(), 3), J, invJ(3, 3), dND, B, precision, rhsT;
 //	DenseMatrix K(e->nodes(), 36), TE(e->nodes(), 3), inertia(e->nodes(), 3), dens(e->nodes(), 1);
@@ -429,7 +429,7 @@ void StructuralMechanics3D::processElement(const Step &step, Matrices matrices, 
 //	}
 }
 
-void StructuralMechanics3D::processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics3D::processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 //	if (!e->hasProperty(Property::PRESSURE, step.step)) {
 //		Ke.resize(0, 0);
@@ -487,7 +487,7 @@ void StructuralMechanics3D::processFace(const Step &step, Matrices matrices, esl
 //	}
 }
 
-void StructuralMechanics3D::processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics3D::processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
@@ -495,7 +495,7 @@ void StructuralMechanics3D::processEdge(const Step &step, Matrices matrices, esl
 	fe.resize(0, 0);
 }
 
-void StructuralMechanics3D::processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics3D::processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 //	if (
 //			e->hasProperty(Property::FORCE_X, step.step) ||
@@ -518,7 +518,7 @@ void StructuralMechanics3D::processNode(const Step &step, Matrices matrices, esl
 	fe.resize(0, 0);
 }
 
-void StructuralMechanics3D::postProcessElement(const Step &step, eslocal eindex, std::vector<Solution*> &solution)
+void StructuralMechanics3D::postProcessElement(const Step &step, eslocal eindex)
 {
 
 }

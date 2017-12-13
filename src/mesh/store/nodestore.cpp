@@ -178,7 +178,7 @@ NodeData* NodeStore::appendData(const std::vector<std::string> &names)
 	data.push_back(new NodeData(names));
 	data.back()->decomposedData->resize(dintervals.size());
 	for (size_t d = 0; d < dintervals.size(); d++) {
-		data.back()->decomposedData[d].resize(dintervals[d].back().DOFOffset + dintervals[d].back().end - dintervals[d].back().begin);
+		(*data.back()->decomposedData)[d].resize(dintervals[d].back().DOFOffset + dintervals[d].back().end - dintervals[d].back().begin);
 	}
 	return data.back();
 }

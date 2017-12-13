@@ -3,7 +3,6 @@
 
 #include "../step.h"
 #include "../instance.h"
-#include "../solution.h"
 
 #include "../constraints/equalityconstraints.h"
 
@@ -28,17 +27,7 @@ MatrixType Precomputed::getMatrixType(const Step &step, size_t domain) const
 	return _mtype;
 }
 
-bool Precomputed::isMatrixTimeDependent(const Step &step) const
-{
-	return false;
-}
-
-bool Precomputed::isMatrixTemperatureDependent(const Step &step) const
-{
-	return false;
-}
-
-void Precomputed::updateMatrix(const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution)
+void Precomputed::updateMatrix(const Step &step, Matrices matrices, size_t domain)
 {
 //	SparseVVPMatrix<eslocal> _K;
 //
@@ -112,22 +101,22 @@ void Precomputed::analyticRegularization(size_t domain, bool ortogonalCluster)
 	ESINFO(ERROR) << "Cannot compute analytic regularization of not PRECOMPUTED physics. Set FETI_REGULARIZATION = ALGEBRAIC";
 }
 
-void Precomputed::processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void Precomputed::processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	ESINFO(ERROR) << "ESPRESO internal error: cannot process element of precomputed physics";
 }
 
-void Precomputed::processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void Precomputed::processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	ESINFO(ERROR) << "ESPRESO internal error: cannot process face of precomputed physics";
 }
 
-void Precomputed::processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void Precomputed::processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	ESINFO(ERROR) << "ESPRESO internal error: cannot process edge of precomputed physics";
 }
 
-void Precomputed::processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void Precomputed::processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	ESINFO(ERROR) << "ESPRESO internal error: cannot process node of precomputed physics";
 }

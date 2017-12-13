@@ -8,7 +8,6 @@
 #include "../../mesh/store/nodestore.h"
 
 #include "../instance.h"
-#include "../solution.h"
 #include "../step.h"
 #include "heattransfer.h"
 
@@ -46,33 +45,6 @@ MatrixType HeatTransfer::getMatrixType(const Step &step, size_t domain) const
 	} else {
 		return MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 	}
-}
-
-bool HeatTransfer::isMatrixTimeDependent(const Step &step) const
-{
-//	return _mesh->isAnyPropertyTimeDependent({
-//		Property::TEMPERATURE,
-//		Property::THICKNESS,
-//		Property::HEAT_SOURCE,
-//		Property::HEAT_FLUX,
-//		Property::HEAT_FLOW,
-//
-//		Property::EXTERNAL_TEMPERATURE,
-//		Property::HEAT_TRANSFER_COEFFICIENT,
-//		Property::WALL_HEIGHT,
-//		Property::ABSOLUTE_PRESSURE,
-//		Property::TILT_ANGLE,
-//		Property::DIAMETER,
-//		Property::LENGTH,
-//		Property::FLUID_VELOCITY,
-//		Property::EMISSIVITY
-//	}, step.step);
-	return true;
-}
-
-bool HeatTransfer::isMatrixTemperatureDependent(const Step &step) const
-{
-	return true;
 }
 
 void HeatTransfer::prepare()

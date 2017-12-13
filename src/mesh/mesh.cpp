@@ -339,6 +339,11 @@ void Mesh::gatherNodeData()
 	for (auto datait = nodes->data.begin(); datait != nodes->data.end(); ++datait) {
 		NodeData* data = *datait;
 		if (data->names.size()) {
+			for (size_t i = 0; i < data->sBuffer.size(); i++) {
+				std::fill(data->sBuffer[i].begin(), data->sBuffer[i].end(), 0);
+			}
+			std::fill(data->gatheredData.begin(), data->gatheredData.end(), 0);
+
 			#pragma omp parallel for
 			for (size_t i = 0; i < nodes->pintervals.size(); ++i) {
 				auto domains = nodes->idomains->cbegin() + i;

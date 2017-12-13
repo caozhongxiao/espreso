@@ -8,7 +8,6 @@
 
 #include "../instance.h"
 #include "../step.h"
-#include "../solution.h"
 
 #include "../../old/mesh/structures/mesh.h"
 #include "../../old/mesh/structures/coordinates.h"
@@ -23,8 +22,6 @@
 #include "../../basis/utilities/utils.h"
 
 using namespace espreso;
-
-size_t LameSteklovPoincare3D::BEMOffset = -1;
 
 LameSteklovPoincare3D::LameSteklovPoincare3D(Mesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
 : Physics("LAME STEKLOV POINCARE 3D", mesh, instance, &configuration), StructuralMechanics3D(mesh, instance, configuration, propertiesConfiguration)
@@ -42,20 +39,20 @@ void LameSteklovPoincare3D::prepareHybridTotalFETIWithKernels()
 
 void LameSteklovPoincare3D::preprocessData(const Step &step)
 {
-	if (offset == (size_t)-1) {
-		offset = _instance->solutions.size();
-		_instance->solutions.resize(offset + SolutionIndex::SIZE, NULL);
-		_instance->solutions[offset + SolutionIndex::DISPLACEMENT] = new Solution(*_mesh, "displacement", ElementType::NODES, 3);
-	}
-
-	if (BEMOffset == (size_t)-1) {
-		BEMOffset = _instance->solutions.size();
-		_instance->solutions.resize(BEMOffset + BEMSolutionIndex::SIZE, NULL);
-		_instance->solutions[BEMOffset + BEMSolutionIndex::BOUNDARY] = new Solution(*_mesh, "temperatureOnBoundary", ElementType::NODES, 3, _instance->primalSolution);
-	}
+//	if (offset == (size_t)-1) {
+//		offset = _instance->solutions.size();
+//		_instance->solutions.resize(offset + SolutionIndex::SIZE, NULL);
+//		_instance->solutions[offset + SolutionIndex::DISPLACEMENT] = new Solution(*_mesh, "displacement", ElementType::NODES, 3);
+//	}
+//
+//	if (BEMOffset == (size_t)-1) {
+//		BEMOffset = _instance->solutions.size();
+//		_instance->solutions.resize(BEMOffset + BEMSolutionIndex::SIZE, NULL);
+//		_instance->solutions[BEMOffset + BEMSolutionIndex::BOUNDARY] = new Solution(*_mesh, "temperatureOnBoundary", ElementType::NODES, 3, _instance->primalSolution);
+//	}
 }
 
-void LameSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution)
+void LameSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices, size_t domain)
 {
 	if (matrices & Matrices::f) {
 		_instance->f[domain].clear();
@@ -98,10 +95,10 @@ void LameSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices, si
 
 	_instance->K[domain].ConvertDenseToCSR(1);
 	SparseVVPMatrix<eslocal> K, M; // never filled
-	assembleBoundaryConditions(K, M, step, Matrices::f, domain, solution);
+	assembleBoundaryConditions(K, M, step, Matrices::f, domain);
 }
 
-void LameSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution)
+void LameSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe)
 {
 	ESINFO(ERROR) << "BEM discretization not supports assembling of stiffness matrix K for one element.";
 }

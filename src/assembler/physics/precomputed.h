@@ -18,20 +18,18 @@ struct Precomputed: public virtual Physics
 	Precomputed(Mesh *mesh, Instance *instance, MatrixType type, double *rhs, size_t rhsSize);
 
 	MatrixType getMatrixType(const Step &step, size_t domain) const;
-	bool isMatrixTimeDependent(const Step &step) const;
-	bool isMatrixTemperatureDependent(const Step &step) const;
 
 	void preprocessData(const Step &step);
 
 	void analyticRegularization(size_t domain, bool ortogonalCluster);
 
-	void updateMatrix(const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution);
+	void updateMatrix(const Step &step, Matrices matrices, size_t domain);
 	void assembleB0FromCorners();
 
-	void processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
-	void processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
-	void processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
-	void processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
+	void processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const;
+	void processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const;
+	void processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const;
+	void processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const;
 	void processSolution(const Step &step);
 
 	virtual ~Precomputed() {}

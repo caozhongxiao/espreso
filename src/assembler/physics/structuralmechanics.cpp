@@ -13,7 +13,6 @@
 #include "../../old/mesh/structures/elementtypes.h"
 
 #include "../instance.h"
-#include "../solution.h"
 #include "../step.h"
 
 using namespace espreso;
@@ -29,32 +28,6 @@ StructuralMechanics::StructuralMechanics(const StructuralMechanicsConfiguration 
 MatrixType StructuralMechanics::getMatrixType(const Step &step, size_t domain) const
 {
 	return MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-}
-
-bool StructuralMechanics::isMatrixTimeDependent(const Step &step) const
-{
-//	return _mesh->isAnyPropertyTimeDependent({
-//		Property::DISPLACEMENT_X,
-//		Property::DISPLACEMENT_Y,
-//		Property::DISPLACEMENT_Z,
-//		Property::PRESSURE,
-//		Property::OBSTACLE,
-//		Property::NORMAL_DIRECTION,
-//		Property::TEMPERATURE
-//	}, step.step);
-}
-
-bool StructuralMechanics::isMatrixTemperatureDependent(const Step &step) const
-{
-//	return _mesh->isAnyPropertyTemperatureDependent({
-//		Property::DISPLACEMENT_X,
-//		Property::DISPLACEMENT_Y,
-//		Property::DISPLACEMENT_Z,
-//		Property::PRESSURE,
-//		Property::OBSTACLE,
-//		Property::NORMAL_DIRECTION,
-//		Property::TEMPERATURE
-//	}, step.step);
 }
 
 void StructuralMechanics::prepare()
@@ -232,12 +205,12 @@ void StructuralMechanics::prepare()
 
 void StructuralMechanics::preprocessData(const Step &step)
 {
-	if (offset != (size_t)-1) {
-		return;
-	}
-	offset = _instance->solutions.size();
-	_instance->solutions.resize(offset + SolutionIndex::SIZE, NULL);
-	_instance->solutions[offset + SolutionIndex::DISPLACEMENT] = new Solution(*_mesh, "displacement", ElementType::NODES, 3, _instance->primalSolution);
+//	if (offset != (size_t)-1) {
+//		return;
+//	}
+//	offset = _instance->solutions.size();
+//	_instance->solutions.resize(offset + SolutionIndex::SIZE, NULL);
+//	_instance->solutions[offset + SolutionIndex::DISPLACEMENT] = new Solution(*_mesh, "displacement", ElementType::NODES, 3, _instance->primalSolution);
 }
 
 

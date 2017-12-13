@@ -42,12 +42,12 @@ Physics::~Physics()
 	}
 }
 
-void Physics::updateMatrix(const Step &step, Matrices matrix, const std::vector<Solution*> &solution)
+void Physics::updateMatrix(const Step &step, Matrices matrix)
 {
 	#pragma omp parallel for
 	for  (size_t d = 0; d < _instance->domains; d++) {
 
-		updateMatrix(step, matrix, d, solution);
+		updateMatrix(step, matrix, d);
 
 		switch (_instance->K[d].mtype) {
 		case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -64,7 +64,7 @@ void Physics::updateMatrix(const Step &step, Matrices matrix, const std::vector<
 	ESINFO(PROGRESS3);
 }
 
-void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution)
+void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain)
 {
 	SparseVVPMatrix<eslocal> _K, _M;
 	DenseMatrix Ke, Me, Re, fe;
@@ -86,12 +86,12 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain, c
 	}
 
 	for (eslocal e = _mesh->elements->elementsDistribution[domain]; e < (eslocal)_mesh->elements->elementsDistribution[domain + 1]; e++) {
-		processElement(step, matrices, e, Ke, Me, Re, fe, solution);
+		processElement(step, matrices, e, Ke, Me, Re, fe);
 		fillDOFsIndices(e, domain, DOFs);
 		insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, step, domain, false);
 	}
 
-	assembleBoundaryConditions(_K, _M, step, matrices, domain, solution);
+	assembleBoundaryConditions(_K, _M, step, matrices, domain);
 
 	// TODO: make it direct
 	if (matrices & Matrices::K) {
@@ -106,7 +106,7 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain, c
 	}
 }
 
-void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution)
+void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, const Step &step, Matrices matrices, size_t domain)
 {
 	DenseMatrix Ke, fe, Me(0, 0), Re(0, 0);
 	std::vector<eslocal> DOFs;

@@ -12,7 +12,7 @@ using namespace espreso;
 
 LoadStepSolver::LoadStepSolver(const std::string &description, TimeStepSolver &timeStepSolver, double duration)
 : _description(description), _timeStepSolver(timeStepSolver), _assembler(timeStepSolver._assembler), _duration(duration),
-  _startTime(0), _precision(1e-8), _timeDependent(true), _tempDependent(true)
+  _startTime(0), _precision(1e-8)
 {
 
 }
@@ -34,9 +34,6 @@ void LoadStepSolver::initLoadStep(Step &step)
 	}
 	_assembler.setRegularizationCallback();
 	_assembler.setB0Callback();
-
-	_timeDependent = _assembler.physics.isMatrixTimeDependent(step);
-	_timeDependent = _assembler.physics.isMatrixTemperatureDependent(step);
 }
 
 bool LoadStepSolver::hasNextTimeStep(Step &step)

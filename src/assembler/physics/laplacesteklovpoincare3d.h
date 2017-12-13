@@ -14,8 +14,8 @@ struct LaplaceSteklovPoincare3D: public HeatTransfer3D
 
 	virtual void preprocessData(const Step &step);
 
-	virtual void updateMatrix(const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution);
-	virtual void updateMatrix(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution);
+	virtual void updateMatrix(const Step &step, Matrices matrices, size_t domain);
+	virtual void updateMatrix(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe);
 
 	void processSolution(const Step &step);
 };

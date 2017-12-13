@@ -10,7 +10,6 @@
 namespace espreso {
 
 class SparseMatrix;
-class Solution;
 class Mesh;
 enum class FETI_REGULARIZATION;
 enum class FETI_B0_TYPE;
@@ -77,11 +76,8 @@ struct Instance {
 
 	std::vector<size_t> &block;
 
-
 	std::vector<std::vector<double> > primalSolution;
 	std::vector<std::vector<double> > dualSolution;
-
-	std::vector<Solution*> solutions;
 
 	std::function<void(FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster)> computeKernelsCallback;
 	std::function<void(FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster)> computeKernelsFromOrigKCallback;

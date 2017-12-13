@@ -42,9 +42,6 @@ protected:
 
 	double _startTime;
 	double _precision;
-
-	bool _timeDependent;
-	bool _tempDependent;
 };
 
 }

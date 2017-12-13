@@ -16,7 +16,6 @@ struct LinearSolver;
 class TimeEval;
 class TimeEvent;
 class SparseMatrix;
-class Solution;
 class ResultStore;
 enum Matrices: int;
 enum class ElementType;
@@ -44,8 +43,6 @@ public:
 	void storeSubSolution(const Step &step);
 
 	void finalize();
-
-	Solution* addSolution(const std::string &name, ElementType eType);
 
 	/// z = a * x + b + y
 	void sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::string &description);

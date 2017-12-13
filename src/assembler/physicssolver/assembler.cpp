@@ -1,8 +1,8 @@
 
 #include "assembler.h"
 
+#include "../step.h"
 #include "../instance.h"
-#include "../solution.h"
 #include "../physics/physics.h"
 #include "../../linearsolver/linearsolver.h"
 
@@ -69,7 +69,7 @@ void Assembler::updateMatrices(const Step &step, Matrices matrices)
 
 	if (structural) {
 		timeWrapper("update " + mNames(structural), [&] () {
-			physics.updateMatrix(step, structural, instance.solutions);
+			physics.updateMatrix(step, structural);
 		});
 	}
 
@@ -157,21 +157,6 @@ void Assembler::finalize()
 	});
 	_timeStatistics->totalTime.endWithBarrier();
 	_timeStatistics->printStatsMPI();
-}
-
-Solution* Assembler::addSolution(const std::string &name, ElementType eType)
-{
-	// TODO: MESH
-	switch (eType) {
-	case ElementType::NODES:
-		instance.solutions.push_back(new Solution(mesh, name, eType, 1));
-		break;
-	case ElementType::ELEMENTS:
-		instance.solutions.push_back(new Solution(mesh, name, eType, 0));
-		break;
-	}
-
-	return instance.solutions.back();
 }
 
 void Assembler::keepK(const Step &step)
@@ -323,7 +308,7 @@ double Assembler::lineSearch(const Step &step, const std::vector<std::vector<dou
 			sum(solution, 1, U, alpha, deltaU, "U = U + alpha * delta U (line search)");
 
 			solution.swap(instance.primalSolution);
-			physics.updateMatrix(step, Matrices::R, instance.solutions);
+			physics.updateMatrix(step, Matrices::R);
 			solution.swap(instance.primalSolution);
 
 			if (i == 0) {

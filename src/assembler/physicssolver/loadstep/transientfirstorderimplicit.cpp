@@ -5,9 +5,11 @@
 #include "../timestep/timestepsolver.h"
 #include "../../step.h"
 #include "../../instance.h"
-#include "../../solution.h"
 #include "../../physics/physics.h"
-#include "../../../old/mesh/structures/elementtypes.h"
+
+#include "../../../mesh/mesh.h"
+#include "../../../mesh/store/nodestore.h"
+
 #include "../../../basis/logging/logging.h"
 #include "../../../config/ecf/physics/physicssolver/transientsolver.h"
 #include "../../../config/ecf/environment.h"
@@ -18,7 +20,6 @@
 using namespace espreso;
 
 size_t TransientFirstOrderImplicit::loadStep = 0;
-std::vector<Solution*> TransientFirstOrderImplicit::solutions;
 
 TransientFirstOrderImplicit::TransientFirstOrderImplicit(TimeStepSolver &timeStepSolver, const TransientSolverConfiguration &configuration, double duration)
 : LoadStepSolver("TRANSIENT", timeStepSolver, duration), _configuration(configuration), _alpha(0), _nTimeStep(_configuration.time_step)
@@ -26,13 +27,20 @@ TransientFirstOrderImplicit::TransientFirstOrderImplicit(TimeStepSolver &timeSte
 	if (configuration.time_step < 1e-7) {
 		ESINFO(GLOBAL_ERROR) << "Set time step for TRANSIENT solver greater than 1e-7.";
 	}
+
+	U = _assembler.mesh.nodes->appendData({});
+	dU = _assembler.mesh.nodes->appendData({});
+	V = _assembler.mesh.nodes->appendData({});
+	X = _assembler.mesh.nodes->appendData({});
+	Y = _assembler.mesh.nodes->appendData({});
+	dTK = _assembler.mesh.nodes->appendData({});
 }
 
 Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Step &step, Matrices matrices)
 {
 	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R | Matrices::B1 | Matrices::B1c | Matrices::B1duplicity);
 
-	if (step.substep && !_timeDependent && !_tempDependent) {
+	if (step.substep) {
 		updatedMatrices &= (Matrices::f | Matrices::B1c);
 	}
 
@@ -52,19 +60,19 @@ Matrices TransientFirstOrderImplicit::reassembleStructuralMatrices(Step &step, M
 
 	if (matrices & (Matrices::K | Matrices::M | Matrices::f)) {
 		_assembler.sum(
-				solutions[SolutionIndex::X]->data,
-				1 / (_alpha * step.timeStep), solutions[SolutionIndex::U]->data,
-				(1 - _alpha) / _alpha, solutions[SolutionIndex::V]->data,
+				*X->decomposedData,
+				1 / (_alpha * step.timeStep), *U->decomposedData,
+				(1 - _alpha) / _alpha, *V->decomposedData,
 				"x = (1 / alpha * delta T) * U + (1 - alpha) / alpha * V");
 
 		_assembler.multiply(
-				solutions[SolutionIndex::Y]->data,
-				_assembler.instance.M, solutions[SolutionIndex::X]->data,
+				*Y->decomposedData,
+				_assembler.instance.M, *X->decomposedData,
 				"y = M * x");
 
 		_assembler.sum(_assembler.instance.f,
 				1, _assembler.instance.f,
-				1, solutions[SolutionIndex::Y]->data,
+				1, *Y->decomposedData,
 				"f += y");
 	}
 
@@ -99,19 +107,13 @@ void TransientFirstOrderImplicit::initLoadStep(Step &step)
 		ESINFO(GLOBAL_ERROR) << "Not supported first order implicit solver method.";
 	}
 
-	if (!solutions.size()) {
-		solutions.push_back(_assembler.addSolution("trans_U" , ElementType::NODES));
-		solutions.push_back(_assembler.addSolution("trans_dU", ElementType::NODES));
-		solutions.push_back(_assembler.addSolution("trans_V" , ElementType::NODES));
-		solutions.push_back(_assembler.addSolution("trans_X" , ElementType::NODES));
-		solutions.push_back(_assembler.addSolution("trans_Y" , ElementType::NODES));
-		solutions.push_back(_assembler.addSolution("dTK"     , ElementType::NODES));
-	}
 	if (loadStep + 1 != step.step) {
-		solutions[SolutionIndex::V]->fill(0);
+		for (size_t i = 0; i < V->decomposedData->size(); i++) {
+			std::fill((*V->decomposedData)[i].begin(), (*V->decomposedData)[i].end(), 0);
+		}
 	}
 	loadStep = step.step;
-	solutions[SolutionIndex::U]->data = _assembler.instance.primalSolution;
+	(*U->decomposedData) = _assembler.instance.primalSolution;
 }
 
 void TransientFirstOrderImplicit::runNextTimeStep(Step &step)
@@ -134,9 +136,9 @@ void TransientFirstOrderImplicit::processTimeStep(Step &step)
 	_timeStepSolver.solve(step, *this);
 
 	_assembler.sum(
-			solutions[SolutionIndex::dU]->data,
+			*dU->decomposedData,
 			1, _assembler.instance.primalSolution,
-			-1, solutions[SolutionIndex::U]->data,
+			-1, *U->decomposedData,
 			"delta U = U_i - U_i_1");
 
 	_nTimeStep = step.timeStep;
@@ -145,25 +147,25 @@ void TransientFirstOrderImplicit::processTimeStep(Step &step)
 		double resFreq, oscilationLimit;
 
 		double norm =
-				sqrt(_assembler.sumSquares(step, solutions[SolutionIndex::dU]->data, SumOperation::AVERAGE, SumRestriction::NONE, "|dU|")) /
-				sqrt(_assembler.sumSquares(step, solutions[SolutionIndex::U]->data, SumOperation::AVERAGE, SumRestriction::NONE, "|U|"));
+				sqrt(_assembler.sumSquares(step, *dU->decomposedData, SumOperation::AVERAGE, SumRestriction::NONE, "|dU|")) /
+				sqrt(_assembler.sumSquares(step, *U->decomposedData, SumOperation::AVERAGE, SumRestriction::NONE, "|U|"));
 
 		if (norm < 1e-5) {
 			_nTimeStep = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * step.timeStep);
 		} else {
 			_assembler.multiply(
-					solutions[SolutionIndex::dTK]->data,
+					*dTK->decomposedData,
 					_assembler.instance.origK,
-					solutions[SolutionIndex::dU]->data,
+					*dU->decomposedData,
 					"dTK = delta T * K");
-			double TKT = _assembler.multiply(solutions[SolutionIndex::dTK]->data, solutions[SolutionIndex::dU]->data, "res. freq. = dTK * delta T");
+			double TKT = _assembler.multiply(*dTK->decomposedData, *dU->decomposedData, "res. freq. = dTK * delta T");
 
 			_assembler.multiply(
-					solutions[SolutionIndex::dTK]->data,
+					*dTK->decomposedData,
 					_assembler.instance.M,
-					solutions[SolutionIndex::dU]->data,
+					*dU->decomposedData,
 					"dTM = delta T * M");
-			double TMT = _assembler.multiply(solutions[SolutionIndex::dTK]->data, solutions[SolutionIndex::dU]->data, "res. freq. = dTM * delta T");
+			double TMT = _assembler.multiply(*dTK->decomposedData, *dU->decomposedData, "res. freq. = dTM * delta T");
 
 
 			double gTKT, gTMT;
@@ -200,12 +202,12 @@ void TransientFirstOrderImplicit::processTimeStep(Step &step)
 
 	if (step.timeStep - _precision < _nTimeStep) {
 		_assembler.sum(
-				solutions[SolutionIndex::V]->data,
-				1 / (_alpha * step.timeStep), solutions[SolutionIndex::dU]->data,
-				- (1 - _alpha) / _alpha, solutions[SolutionIndex::V]->data,
+				*V->decomposedData,
+				1 / (_alpha * step.timeStep), *dU->decomposedData,
+				- (1 - _alpha) / _alpha, *V->decomposedData,
 				"V = (1 / alpha * delta T) * delta U - (1 - alpha) / alpha * V");
 
-		solutions[SolutionIndex::U]->data = _assembler.instance.primalSolution;
+		*U->decomposedData = _assembler.instance.primalSolution;
 		_assembler.processSolution(step);
 		_assembler.storeSolution(step);
 	} else {
