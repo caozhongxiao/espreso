@@ -747,7 +747,7 @@ void HeatTransfer3D::postProcessElement(const Step &step, eslocal eindex, std::v
 
 	for (size_t i = 0; i < nodes->size(); i++) {
 		auto it = std::lower_bound(intervals.begin(), intervals.end(), nodes->at(i), [] (const DomainInterval &interval, eslocal node) { return interval.end < node; });
-		temp = (*temperature->decomposedData)[domain][it->DOFOffset + nodes->at(i) - it->begin];
+		temp(i, 0) = (*temperature->decomposedData)[domain][it->DOFOffset + nodes->at(i) - it->begin];
 		const Point &p = _mesh->nodes->coordinates->datatarray()[nodes->at(i)];
 		coordinates(i, 0) = p.x;
 		coordinates(i, 1) = p.y;

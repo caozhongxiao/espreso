@@ -485,13 +485,13 @@ void CollectedEnSight::updateSolution(const Step &step)
 					os << std::showpos << std::scientific << std::setprecision(5);
 					if (_mesh.elements->data[di]->names.size() == 1) {
 						if (StringCompare::caseInsensitiveEq(_mesh.elementsRegions[r]->name, "ALL_ELEMENTS")) {
-							iterateElements(os, etype, _mesh.elementsRegions[r]->elements->datatarray(), _mesh.elementsRegions[r]->ueintervals, *_mesh.elements->data[di]->data, 1);
+							iterateElements(os, etype, _mesh.elementsRegions[r]->uniqueElements->datatarray(), _mesh.elementsRegions[r]->ueintervals, *_mesh.elements->data[di]->data, 1);
 						} else {
 							iterateElements(os, etype, _mesh.elementsRegions[r]->elements->datatarray(), _mesh.elementsRegions[r]->eintervals, *_mesh.elements->data[di]->data, 1);
 						}
 					} else {
 						if (StringCompare::caseInsensitiveEq(_mesh.elementsRegions[r]->name, "ALL_ELEMENTS")) {
-							iterateElements(os, etype, _mesh.elementsRegions[r]->elements->datatarray(), _mesh.elementsRegions[r]->ueintervals, *_mesh.elements->data[di]->data, 3);
+							iterateElements(os, etype, _mesh.elementsRegions[r]->uniqueElements->datatarray(), _mesh.elementsRegions[r]->ueintervals, *_mesh.elements->data[di]->data, 3);
 						} else {
 							iterateElements(os, etype, _mesh.elementsRegions[r]->elements->datatarray(), _mesh.elementsRegions[r]->eintervals, *_mesh.elements->data[di]->data, 3);
 						}
