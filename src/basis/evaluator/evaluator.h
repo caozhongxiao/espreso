@@ -27,7 +27,7 @@ public:
 	virtual void evaluate(eslocal size, const Point* cbegin, const double* tbegin, double time, double *results) const {};
 
 	// TODO: remove
-	double evaluate(const Point &p, double temperature, double time);
+	double evaluate(const Point &p, double temperature, double time) const;
 
 	virtual bool isCoordinateDependent() const { return false; }
 	virtual bool isTimeDependent() const { return false; }

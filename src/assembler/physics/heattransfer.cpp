@@ -1,17 +1,19 @@
 
-#include "../../config/ecf/physics/heattransfer.h"
+#include "heattransfer.h"
+
+#include "../instance.h"
+#include "../step.h"
+
 #include "../../basis/matrices/denseMatrix.h"
-#include "../../solver/generic/SparseMatrix.h"
+#include "../../basis/evaluator/evaluator.h"
+
+#include "../../config/ecf/physics/heattransfer.h"
 
 #include "../../mesh/mesh.h"
 #include "../../mesh/store/elementstore.h"
 #include "../../mesh/store/nodestore.h"
 
-#include "../instance.h"
-#include "../step.h"
-#include "heattransfer.h"
-
-#include "../../old/mesh/structures/elementtypes.h"
+#include "../../solver/generic/SparseMatrix.h"
 
 using namespace espreso;
 
@@ -344,220 +346,213 @@ void HeatTransfer::convectionMatParameters(
 }
 
 
-double HeatTransfer::computeHTC(
-		const ConvectionConfiguration &convection, eslocal eindex, const Point &p, Step step,
-		double temp) const
+double HeatTransfer::computeHTC(const Step &step, const ConvectionConfiguration *convection, const Point &p, double temp) const
 {
-	// TODO: MESH
-//	double htc = 0;
-//	switch (convection.type) {
-//	case ConvectionConfiguration::TYPE::USER:{
-//		htc = e->getProperty(Property::HEAT_TRANSFER_COEFFICIENT, step.step, p, step.currentTime, temp, 0);
-//	}break;
-//	case ConvectionConfiguration::TYPE::EXTERNAL_NATURAL:{
-//
-//		double T_AVG, g, rho, dynamic_viscosity, heat_capacity, thermal_conductivity, dynamic_viscosity_T;
-//
-//		T_AVG = (e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, p, step.currentTime, temp, 0) + temp) / 2.0;
-//		g = 9.81;
-//
-//		convectionMatParameters(convection, e, p, step, temp, T_AVG, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
-//
-//		switch (convection.variant) {
-//		case ConvectionConfiguration::VARIANT::INCLINED_WALL: {
-//
-//			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, p, step.currentTime, temp, 0)  ) * pow(e->getProperty(Property::WALL_HEIGHT, step.step, p, step.currentTime, temp, 0), 3.0) / ( thermal_conductivity * dynamic_viscosity);
-//			double tilt_angle = e->getProperty(Property::TILT_ANGLE, step.step, p, step.currentTime, temp, 0) * M_PI / 180.0;
-//			if (RaL <= 1e9) {
-//				htc = (thermal_conductivity	/ e->getProperty(Property::WALL_HEIGHT, step.step, p, step.currentTime, temp, 0)) * (0.68 + (0.67 * cos(tilt_angle) * pow(RaL,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
-//			} else {
-//				htc = (thermal_conductivity	/ e->getProperty(Property::WALL_HEIGHT, step.step, p, step.currentTime, temp, 0)) * pow(0.825 + (0.387 * pow(RaL,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
-//			}
-//
-//		}break;
-//		case ConvectionConfiguration::VARIANT::VERTICAL_WALL: {
-//
-//			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, p, step.currentTime, temp, 0)) * pow(e->getProperty(Property::WALL_HEIGHT, step.step, p, step.currentTime, temp, 0), 3.0)/ ( thermal_conductivity * dynamic_viscosity);
-//
-//			if (RaL <= 1e9) {
-//				htc = (thermal_conductivity	/ e->getProperty(Property::WALL_HEIGHT, step.step, p, step.currentTime, temp, 0)) * (0.68 + (0.67 * pow(RaL,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
-//			} else {
-//				htc = (thermal_conductivity	/ e->getProperty(Property::WALL_HEIGHT, step.step, p, step.currentTime, temp, 0)) * pow(0.825 + (0.387 * pow(RaL,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
-//			}
-//
-//		}break;
-//		case ConvectionConfiguration::VARIANT::HORIZONTAL_PLATE_UP:{
-//
-//			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, p, step.currentTime, temp, 0)) * pow(e->getProperty(Property::LENGTH, step.step, p, step.currentTime, temp, 0), 3.0)/ ( thermal_conductivity * dynamic_viscosity);
-//
-//			if (temp > e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, p, step.currentTime, temp, 0)){
-//
-//				if (RaL <= 1e7) {
-//					htc = thermal_conductivity / e->getProperty(Property::LENGTH, step.step, p, step.currentTime, temp, 0) * 0.54 * pow(RaL,0.25);
-//				}else{
-//					htc = thermal_conductivity / e->getProperty(Property::LENGTH, step.step, p, step.currentTime, temp, 0) * 0.15 * pow(RaL,1.0/3.0);
-//				}
-//			}else{
-//				htc = thermal_conductivity / e->getProperty(Property::LENGTH, step.step, p, step.currentTime, temp, 0) * 0.27 * pow(RaL,0.25);
-//			}
-//
-//		}break;
-//		case ConvectionConfiguration::VARIANT::HORIZONTAL_PLATE_DOWN:{
-//
-//			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, p, step.currentTime, temp, 0)) *pow(e->getProperty(Property::LENGTH, step.step, p, step.currentTime, temp, 0), 3.0)/ ( thermal_conductivity * dynamic_viscosity);
-//
-//			if (temp <= e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, p, step.currentTime, temp, 0)){
-//
-//				if (RaL <= 1e7) {
-//					htc = thermal_conductivity / e->getProperty(Property::LENGTH, step.step, p, step.currentTime, temp, 0) * 0.54 * pow(RaL,0.25);
-//				}else{
-//					htc = thermal_conductivity / e->getProperty(Property::LENGTH, step.step, p, step.currentTime, temp, 0) * 0.15 * pow(RaL,1.0/3.0);
-//				}
-//			}else{
-//				htc = thermal_conductivity / e->getProperty(Property::LENGTH, step.step, p, step.currentTime, temp, 0) * 0.27 * pow(RaL,0.25);
-//			}
-//		}break;
-//		case ConvectionConfiguration::VARIANT::HORIZONTAL_CYLINDER:{
-//
-//			double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, p, step.currentTime, temp, 0)) * pow(e->getProperty(Property::DIAMETER, step.step, p, step.currentTime, temp, 0), 3.0)/ ( thermal_conductivity * dynamic_viscosity);
-//			double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
-//
-//			if ( RaD > 10e12 ){
-//				// warning!!!!
-//				ESINFO(ERROR) << "Validated only for RaD <= 10e12 ";
-//			}
-//
-//			htc = thermal_conductivity / e->getProperty(Property::DIAMETER, step.step, p, step.currentTime, temp, 0) * pow( 0.6 + ( 0.387*pow(RaD,1.0/6.0)/ pow( 1 + pow( 0.559/Pr, 9.0/16.0), 8.0/27.0) ) ,2.0);
-//
-//		}break;
-//		case ConvectionConfiguration::VARIANT::SPHERE:{
-//
-//			double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, p, step.currentTime, temp, 0)) * pow(e->getProperty(Property::DIAMETER, step.step, p, step.currentTime, temp, 0), 3.0) / ( thermal_conductivity * dynamic_viscosity);
-//			double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
-//
-//			if ( RaD > 10e11 || Pr < 0.7 ){
-//				// warning!!!!
-//				ESINFO(ERROR) << "Validated only for RaD <= 10e11 and Pr >= 0.7 ";
-//			}
-//
-//			htc = thermal_conductivity / e->getProperty(Property::DIAMETER, step.step, p, step.currentTime, temp, 0) * pow(2.0 + ( 0.589*pow(RaD,0.25)/ pow( 1 + pow( 0.469/Pr, 9.0/16.0), 4.0/9.0) ) ,2.0);
-//
-//		}break;
-//		default:
-//			ESINFO(ERROR) << "Invalid convection variant for EXTERNAL_NATURAL.";
-//		}
-//	}break;
-//
-//	case ConvectionConfiguration::TYPE::INTERNAL_NATURAL:{
-//
-//		double T_AVG, g, rho, dynamic_viscosity, heat_capacity, thermal_conductivity,dynamic_viscosity_T;
-//
-//		T_AVG = (e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, p, step.currentTime, temp, 0) + temp) / 2.0;
-//		g = 9.81;
-//
-//		convectionMatParameters(convection, e, p, step, temp, T_AVG, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
-//
-//		switch (convection.variant) {
-//		case ConvectionConfiguration::VARIANT::PARALLEL_PLATES: {
-//
-//			double H_L = e->getProperty(Property::WALL_HEIGHT, step.step, p, step.currentTime, temp, 0) / e->getProperty(Property::LENGTH, step.step, p, step.currentTime, temp, 0);
-//			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs(temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, p, step.currentTime, temp, 0)  ) * pow(e->getProperty(Property::LENGTH, step.step, p, step.currentTime, temp, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
-//
-//			if (( RaL < H_L ) && (temp >  e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, p, step.currentTime, temp, 0)  )){
-//
-//				htc = thermal_conductivity / e->getProperty(Property::WALL_HEIGHT, step.step, p, step.currentTime, temp, 0) * ( 1.0 / 24.0 ) * RaL;
-//
-//			}else{
-//
-//				double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, p, step.currentTime, temp, 0)  ) * pow(e->getProperty(Property::LENGTH, step.step, p, step.currentTime, temp, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
-//
-//				if (RaL <= 1e9) {
-//					htc = (thermal_conductivity	/ e->getProperty(Property::LENGTH, step.step, p, step.currentTime, temp, 0)) * (0.68 + (0.67 * pow(RaL,0.25)) / (pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
-//				} else {
-//					htc = (thermal_conductivity	/ e->getProperty(Property::LENGTH, step.step, p, step.currentTime, temp, 0)) * pow(0.825 + (0.387 * pow(RaL,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
-//				}
-//			}
-//
-//		}break;
-//		case ConvectionConfiguration::VARIANT::CIRCULAR_TUBE: {
-//			double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, p, step.currentTime, temp, 0)  ) * pow(e->getProperty(Property::DIAMETER, step.step, p, step.currentTime, temp, 0), 3.0)/ ( thermal_conductivity * dynamic_viscosity);
-//			double H_D = e->getProperty(Property::WALL_HEIGHT, step.step, p, step.currentTime, temp, 0) / e->getProperty(Property::DIAMETER, step.step, p, step.currentTime, temp, 0);
-//
-//			if ( RaD < H_D ){
-//				htc = thermal_conductivity / e->getProperty(Property::WALL_HEIGHT, step.step, p, step.currentTime, temp, 0) * ( 1.0 / 128.0 ) * RaD;
-//			}else{
-//
-//				double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, p, step.currentTime, temp, 0)  ) * pow(e->getProperty(Property::DIAMETER, step.step, p, step.currentTime, temp, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
-//				if (RaD <= 1e9) {
-//					htc = (thermal_conductivity	/ e->getProperty(Property::DIAMETER, step.step, p, step.currentTime, temp, 0)) * (0.68 + (0.67 * pow(RaD,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
-//				} else {
-//					htc = (thermal_conductivity	/ e->getProperty(Property::DIAMETER, step.step, p, step.currentTime, temp, 0)) * pow(0.825 + (0.387 * pow(RaD,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
-//				}
-//			}
-//
-//		}break;
-//		default:
-//			ESINFO(ERROR) << "Invalid convection variant for INTERNAL_NATURAL.";
-//		}
-//	}break;
-//
-//	case ConvectionConfiguration::TYPE::EXTERNAL_FORCED:{
-//
-//			switch (convection.variant) {
-//			case ConvectionConfiguration::VARIANT::AVERAGE_PLATE: {
-//
-//				double T_AVG, rho, dynamic_viscosity, heat_capacity, thermal_conductivity,dynamic_viscosity_T;
-//
-//				T_AVG = (e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, p, step.currentTime, temp, 0) + temp) / 2.0;
-//
-//				convectionMatParameters(convection, e, p, step, temp, T_AVG, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
-//
-//				double Re = rho	* e->getProperty(Property::FLUID_VELOCITY, step.step, p, step.currentTime, temp, 0) * e->getProperty(Property::LENGTH, step.step, p, step.currentTime, temp, 0) / dynamic_viscosity;
-//				double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
-//				if (Re <= 5e5) {
-//					htc = 2	* (thermal_conductivity	/ e->getProperty(Property::LENGTH, step.step, p, step.currentTime, temp, 0)) * ((0.3387 * pow(Pr, 1.0 / 3.0) * pow(Re, 0.5)) / (pow(1 + pow(0.0468 / Pr, 2.0 / 3.0), 0.25)));
-//				} else {
-//					htc = 2	* (thermal_conductivity	/ e->getProperty(Property::LENGTH, step.step, p, step.currentTime, temp, 0)) * pow(Pr, 1.0 / 3.0)	* (0.037 * pow(Re, 0.8) - 871);
-//				}
-//
-//			}break;
-//			default:
-//				ESINFO(ERROR) << "Invalid convection variant for EXTERNAL_FORCED.";
-//			}
-//	}break;
-//
-//
-//	case ConvectionConfiguration::TYPE::INTERNAL_FORCED:{
-//
-//			switch (convection.variant) {
-//			case ConvectionConfiguration::VARIANT::TUBE: {
-//
-//				double T_EXT, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity;
-//
-//				T_EXT = e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, p, step.currentTime, temp, 0);
-//
-//				convectionMatParameters(convection, e, p, step, temp, T_EXT, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
-//
-//				double Re = rho * e->getProperty(Property::FLUID_VELOCITY, step.step, p, step.currentTime, temp, 0) * e->getProperty(Property::DIAMETER, step.step, p, step.currentTime, temp, 0) / dynamic_viscosity;
-//				double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
-//				double n = temp < e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, p, step.currentTime, temp, 0) ? 0.3 : 0.4;
-//				htc = thermal_conductivity / e->getProperty(Property::DIAMETER, step.step, p, step.currentTime, temp, 0);
-//				if (Re <= 2500) {
-//					htc *= 3.66;
-//				} else {
-//					htc *= 0.027 * pow(Re, .8) * pow(Pr, n)	* pow(dynamic_viscosity / dynamic_viscosity_T, 0.14);
-//				}
-//			}break;
-//			default:
-//				ESINFO(ERROR) << "Invalid convection variant for EXTERNAL_FORCED.";
-//			}
-//	}break;
-//
-//	default:
-//		ESINFO(ERROR) << "Invalid convection TYPE.";
-//	}
-//
-//	return htc;
+	double htc = 0;
+	switch (convection->type) {
+	case ConvectionConfiguration::TYPE::USER:
+		return convection->heat_transfer_coefficient.evaluator->evaluate(p, temp, step.currentTime);
+
+	case ConvectionConfiguration::TYPE::EXTERNAL_NATURAL: {
+		double T_AVG, g, rho, dynamic_viscosity, heat_capacity, thermal_conductivity, dynamic_viscosity_T, text;
+
+		text = convection->external_temperature.evaluator->evaluate(p, temp, step.currentTime);
+		T_AVG = (text + temp) / 2;
+		g = 9.81;
+
+		// convectionMatParameters(convection, e, p, step, temp, T_AVG, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
+
+		switch (convection->variant) {
+		case ConvectionConfiguration::VARIANT::INCLINED_WALL: {
+			double wallHeaight = convection->wall_height.evaluator->evaluate(p, temp, step.currentTime);
+			double RaL = pow(rho,2) * g * (1 / T_AVG) * heat_capacity * std::fabs(temp - text  ) * pow(wallHeaight, 3.0) / ( thermal_conductivity * dynamic_viscosity);
+			double tilt_angle = convection->tilt_angle.evaluator->evaluate(p, temp, step.currentTime) * M_PI / 180.0;
+			if (RaL <= 1e9) {
+				htc = (thermal_conductivity / wallHeaight) * (0.68 + (0.67 * cos(tilt_angle) * pow(RaL,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
+			} else {
+				htc = (thermal_conductivity / wallHeaight) * pow(0.825 + (0.387 * pow(RaL,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
+			}
+
+		} break;
+		case ConvectionConfiguration::VARIANT::VERTICAL_WALL: {
+			double wallHeaight = convection->wall_height.evaluator->evaluate(p, temp, step.currentTime);
+			double RaL = pow(rho,2) * g * (1/T_AVG) * heat_capacity * std::fabs(temp - text) * pow(wallHeaight, 3.0)/ ( thermal_conductivity * dynamic_viscosity);
+
+			if (RaL <= 1e9) {
+				htc = (thermal_conductivity / wallHeaight) * (0.68 + (0.67 * pow(RaL,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
+			} else {
+				htc = (thermal_conductivity / wallHeaight) * pow(0.825 + (0.387 * pow(RaL,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
+			}
+
+		} break;
+		case ConvectionConfiguration::VARIANT::HORIZONTAL_PLATE_UP: {
+			double lenght = convection->length.evaluator->evaluate(p, temp, step.currentTime);
+			double RaL = pow(rho,2) * g * (1/T_AVG) * heat_capacity * std::fabs(temp - text) * pow(lenght, 3.0)/ ( thermal_conductivity * dynamic_viscosity);
+
+			if (temp > text) {
+				if (RaL <= 1e7) {
+					htc = thermal_conductivity / lenght * 0.54 * pow(RaL,0.25);
+				} else {
+					htc = thermal_conductivity / lenght * 0.15 * pow(RaL,1.0/3.0);
+				}
+			} else {
+				htc = thermal_conductivity / lenght * 0.27 * pow(RaL,0.25);
+			}
+
+		} break;
+		case ConvectionConfiguration::VARIANT::HORIZONTAL_PLATE_DOWN: {
+			double lenght = convection->length.evaluator->evaluate(p, temp, step.currentTime);
+			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs(temp - text) *pow(lenght, 3.0)/ ( thermal_conductivity * dynamic_viscosity);
+
+			if (temp <= text) {
+				if (RaL <= 1e7) {
+					htc = thermal_conductivity / lenght * 0.54 * pow(RaL,0.25);
+				} else {
+					htc = thermal_conductivity / lenght * 0.15 * pow(RaL,1.0/3.0);
+				}
+			} else {
+				htc = thermal_conductivity / lenght * 0.27 * pow(RaL,0.25);
+			}
+		} break;
+		case ConvectionConfiguration::VARIANT::HORIZONTAL_CYLINDER:{
+			double diameter = convection->diameter.evaluator->evaluate(p, temp, step.currentTime);
+			double RaD = pow(rho,2) * g * (1/T_AVG) * heat_capacity * std::fabs(temp - text) * pow(diameter, 3.0)/ ( thermal_conductivity * dynamic_viscosity);
+			double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
+
+			if ( RaD > 10e12 ){
+				// warning!!!!
+				ESINFO(ERROR) << "Validated only for RaD <= 10e12 ";
+			}
+			htc = thermal_conductivity / diameter * pow( 0.6 + ( 0.387*pow(RaD,1.0/6.0)/ pow( 1 + pow( 0.559/Pr, 9.0/16.0), 8.0/27.0) ) ,2.0);
+
+		} break;
+		case ConvectionConfiguration::VARIANT::SPHERE: {
+			double diameter = convection->diameter.evaluator->evaluate(p, temp, step.currentTime);
+			double RaD = pow(rho,2) * g * (1/T_AVG) * heat_capacity * std::fabs( temp - text) * pow(diameter, 3.0) / ( thermal_conductivity * dynamic_viscosity);
+			double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
+
+			if ( RaD > 10e11 || Pr < 0.7 ){
+				// warning!!!!
+				ESINFO(ERROR) << "Validated only for RaD <= 10e11 and Pr >= 0.7 ";
+			}
+			htc = thermal_conductivity / diameter * pow(2.0 + ( 0.589*pow(RaD,0.25)/ pow( 1 + pow( 0.469/Pr, 9.0/16.0), 4.0/9.0) ) ,2.0);
+		} break;
+		default:
+			ESINFO(ERROR) << "Invalid convection variant for EXTERNAL_NATURAL.";
+		}
+	} break;
+
+	case ConvectionConfiguration::TYPE::INTERNAL_NATURAL:{
+
+		double T_AVG, g, rho, dynamic_viscosity, heat_capacity, thermal_conductivity,dynamic_viscosity_T, text;
+
+		text = convection->external_temperature.evaluator->evaluate(p, temp, step.currentTime);
+		T_AVG = (text + temp) / 2.0;
+		g = 9.81;
+
+		// convectionMatParameters(convection, e, p, step, temp, T_AVG, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
+
+		switch (convection->variant) {
+		case ConvectionConfiguration::VARIANT::PARALLEL_PLATES: {
+			double wallHeight = convection->wall_height.evaluator->evaluate(p, temp, step.currentTime);
+			double length = convection->length.evaluator->evaluate(p, temp, step.currentTime);
+			double H_L = wallHeight / length;
+			double RaL = pow(rho,2) * g * (1/T_AVG) * heat_capacity * std::fabs(temp - text) * pow(length,3.0)/ ( thermal_conductivity * dynamic_viscosity);
+
+			if (( RaL < H_L ) && (temp >  text)) {
+				htc = thermal_conductivity / wallHeight * ( 1.0 / 24.0 ) * RaL;
+			} else {
+				double RaL = pow(rho,2) * g * (1/T_AVG) * heat_capacity * std::fabs( temp - text) * pow(length,3.0)/ ( thermal_conductivity * dynamic_viscosity);
+				if (RaL <= 1e9) {
+					htc = (thermal_conductivity / length) * (0.68 + (0.67 * pow(RaL,0.25)) / (pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
+				} else {
+					htc = (thermal_conductivity / length) * pow(0.825 + (0.387 * pow(RaL,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
+				}
+			}
+
+		} break;
+		case ConvectionConfiguration::VARIANT::CIRCULAR_TUBE: {
+			double diameter = convection->diameter.evaluator->evaluate(p, temp, step.currentTime);
+			double wallHeight = convection->wall_height.evaluator->evaluate(p, temp, step.currentTime);
+			double RaD = pow(rho,2) * g * (1/T_AVG) * heat_capacity * std::fabs(temp - text) * pow(diameter, 3.0)/ ( thermal_conductivity * dynamic_viscosity);
+			double H_D = wallHeight / diameter;
+
+			if ( RaD < H_D ){
+				htc = thermal_conductivity / wallHeight * ( 1.0 / 128.0 ) * RaD;
+			}else{
+
+				double RaD = pow(rho,2) * g * (1/T_AVG) * heat_capacity * std::fabs(temp - text) * pow(diameter, 3.0)/ ( thermal_conductivity * dynamic_viscosity);
+				if (RaD <= 1e9) {
+					htc = (thermal_conductivity / diameter) * (0.68 + (0.67 * pow(RaD,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
+				} else {
+					htc = (thermal_conductivity / diameter) * pow(0.825 + (0.387 * pow(RaD,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
+				}
+			}
+
+		} break;
+		default:
+			ESINFO(ERROR) << "Invalid convection variant for INTERNAL_NATURAL.";
+		}
+	} break;
+
+	case ConvectionConfiguration::TYPE::EXTERNAL_FORCED: {
+
+			switch (convection->variant) {
+			case ConvectionConfiguration::VARIANT::AVERAGE_PLATE: {
+
+				double T_AVG, rho, dynamic_viscosity, heat_capacity, thermal_conductivity,dynamic_viscosity_T, text;
+				text = convection->external_temperature.evaluator->evaluate(p, temp, step.currentTime);
+				double length = convection->length.evaluator->evaluate(p, temp, step.currentTime);
+
+				T_AVG = (text + temp) / 2.0;
+
+				// convectionMatParameters(convection, e, p, step, temp, T_AVG, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
+
+				double Re = rho * convection->fluid_velocity.evaluator->evaluate(p, temp, step.currentTime) * length / dynamic_viscosity;
+				double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
+				if (Re <= 5e5) {
+					htc = 2 * (thermal_conductivity / length) * ((0.3387 * pow(Pr, 1.0 / 3.0) * pow(Re, 0.5)) / (pow(1 + pow(0.0468 / Pr, 2.0 / 3.0), 0.25)));
+				} else {
+					htc = 2 * (thermal_conductivity / length) * pow(Pr, 1.0 / 3.0)	* (0.037 * pow(Re, 0.8) - 871);
+				}
+
+			} break;
+			default:
+				ESINFO(ERROR) << "Invalid convection variant for EXTERNAL_FORCED.";
+			}
+	} break;
+
+	case ConvectionConfiguration::TYPE::INTERNAL_FORCED:{
+
+			switch (convection->variant) {
+			case ConvectionConfiguration::VARIANT::TUBE: {
+
+				double T_EXT, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity;
+
+				T_EXT = convection->external_temperature.evaluator->evaluate(p, temp, step.currentTime);
+
+				// convectionMatParameters(convection, e, p, step, temp, T_EXT, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
+
+				double Re = rho * convection->fluid_velocity.evaluator->evaluate(p, temp, step.currentTime) * convection->diameter.evaluator->evaluate(p, temp, step.currentTime) / dynamic_viscosity;
+				double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
+				double n = temp < T_EXT ? 0.3 : 0.4;
+				htc = thermal_conductivity / convection->diameter.evaluator->evaluate(p, temp, step.currentTime);
+				if (Re <= 2500) {
+					htc *= 3.66;
+				} else {
+					htc *= 0.027 * pow(Re, .8) * pow(Pr, n)	* pow(dynamic_viscosity / dynamic_viscosity_T, 0.14);
+				}
+			}break;
+			default:
+				ESINFO(ERROR) << "Invalid convection variant for EXTERNAL_FORCED.";
+			}
+	}break;
+
+	default:
+		ESINFO(ERROR) << "Invalid convection TYPE.";
+	}
+
+	return htc;
 }
 
 

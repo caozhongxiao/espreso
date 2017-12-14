@@ -1,24 +1,31 @@
 
-#include "../../config/ecf/physics/heattransfer.h"
-#include "../../config/ecf/output.h"
+#include "heattransfer3d.h"
+
 #include "../step.h"
 #include "../instance.h"
+
 #include "../constraints/equalityconstraints.h"
 
+#include "../../basis/containers/serializededata.h"
+#include "../../basis/evaluator/evaluator.h"
+#include "../../basis/matrices/denseMatrix.h"
+
+#include "../../config/ecf/physics/heattransfer.h"
+#include "../../config/ecf/output.h"
+
 #include "../../mesh/mesh.h"
+#include "../../mesh/elements/element.h"
 #include "../../mesh/store/elementstore.h"
 #include "../../mesh/store/nodestore.h"
 #include "../../mesh/store/boundaryregionstore.h"
 #include "../../mesh/store/elementsregionstore.h"
 
-#include "../../mesh/elements/element.h"
-
-#include "../../basis/containers/serializededata.h"
-#include "../../basis/evaluator/evaluator.h"
-#include "../../basis/matrices/denseMatrix.h"
 #include "../../solver/generic/SparseMatrix.h"
-#include "heattransfer3d.h"
 
+
+
+// TODO: create file fith constants
+#define CONST_Stefan_Boltzmann 5.6703e-8
 
 using namespace espreso;
 
@@ -53,7 +60,7 @@ HeatTransfer3D::HeatTransfer3D(Mesh *mesh, Instance *instance, const HeatTransfe
 
 	if (phaseChange) {
 		_phaseChange = _mesh->nodes->appendData({ "PHASE_CHANGE" });
-		_latentHeat = _mesh->nodes->appendData({ "PHASE_CHANGE" });
+		_latentHeat = _mesh->nodes->appendData({ "LATENT_HEAT" });
 	}
 }
 
@@ -232,11 +239,10 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, eslocal eindex, es
 	K(node, 8) += phase * TCT(2, 1);
 }
 
-void HeatTransfer3D::processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void HeatTransfer3D::processElement(const Step &step, eslocal domain, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	auto nodes = _mesh->elements->nodes->cbegin() + eindex;
 	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
-	eslocal domain = std::lower_bound(_mesh->elements->elementsDistribution.begin(), _mesh->elements->elementsDistribution.end(), eindex + 1) - _mesh->elements->elementsDistribution.begin() - 1;
 	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
 	Evaluator *translation_motion = NULL;
 	Evaluator *heat_source = NULL;
@@ -487,108 +493,128 @@ void HeatTransfer3D::processElement(const Step &step, Matrices matrices, eslocal
 	}
 }
 
-void HeatTransfer3D::processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void HeatTransfer3D::processFace(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
-//	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step) ||
-//		e->hasProperty(Property::HEAT_FLOW, step.step) ||
-//		e->hasProperty(Property::HEAT_FLUX, step.step))) {
-//
-//		Ke.resize(0, 0);
-//		Me.resize(0, 0);
-//		Re.resize(0, 0);
-//		fe.resize(0, 0);
-//		return;
-//	}
-//	if (!(matrices & (Matrices::K | Matrices::f))) {
-//		Ke.resize(0, 0);
-//		Me.resize(0, 0);
-//		Re.resize(0, 0);
-//		fe.resize(0, 0);
-//		return;
-//	}
-//
-//	DenseMatrix coordinates(e->nodes(), 3), dND(1, 3), q(e->nodes(), 1), htc(e->nodes(), 1), flow(e->nodes(), 1), emiss(e->nodes(), 1);
-//	DenseMatrix gpQ(1, 1), gpHtc(1, 1), gpFlow(1, 1), gpEmiss(1, 1);
-//
-//	double area = 1, temp;
-//	eslocal Ksize = e->nodes();
-//	Ke.resize(0, 0);
-//	Me.resize(0, 0);
-//	Re.resize(0, 0);
-//	fe.resize(0, 0);
-//
-//	if (matrices & Matrices::f) {
-//		fe.resize(Ksize, 1);
-//		fe = 0;
-//	}
-//
-//	for (size_t r = 0; r < e->regions().size(); r++) {
-//		if (step.step < e->regions()[r]->settings.size() && e->regions()[r]->settings[step.step].count(Property::HEAT_FLOW)) {
-//			area = e->regions()[r]->area;
-//			break;
-//		}
-//	}
-//	if (e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step)) {
-//		Ke.resize(Ksize, Ksize);
-//		Ke = 0;
-//	}
-//
-//	const std::vector<DenseMatrix> &dN = e->dN();
-//	const std::vector<DenseMatrix> &N = e->N();
-//	const std::vector<double> &weighFactor = e->weighFactor();
-//
-//	const ConvectionConfiguration *convection = NULL;
-//	for (size_t r = 0; convection == NULL && r < e->regions().size(); r++) {
-//		auto regionit = _configuration.load_steps_settings.at(step.step + 1).convection.find(e->regions()[r]->name);
-//		if (regionit != _configuration.load_steps_settings.at(step.step + 1).convection.end()) {
-//			convection = &regionit->second;
-//		}
-//	}
+	const ConvectionConfiguration *convection = NULL;
+	const RadiationConfiguration *radiation = NULL;
+	const Evaluator *heatFlow = NULL, *heatFlux = NULL;
 
-//	for (size_t n = 0; n < e->nodes(); n++) {
-//		coordinates(n, 0) = _mesh->coordinates()[e->node(n)].x;
-//		coordinates(n, 1) = _mesh->coordinates()[e->node(n)].y;
-//		coordinates(n, 2) = _mesh->coordinates()[e->node(n)].z;
-//
-//		temp = solution[offset + SolutionIndex::TEMPERATURE]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(n), e->domains().front()));
-//		htc(n, 0) = convection != NULL ? computeHTC(*convection, e, _mesh->coordinates()[e->node(n)], step, temp) : 0;
-//
-//		if (step.iteration) {
-//			q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, _mesh->coordinates()[e->node(n)], step.currentTime, temp, 0) - temp);
-//		} else {
-//			q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, _mesh->coordinates()[e->node(n)], step.currentTime, temp, 0));
-//		}
-//
-//		emiss(n, 0) = CONST_Stefan_Boltzmann * e->getProperty(Property::EMISSIVITY, step.step, _mesh->coordinates()[e->node(n)], step.currentTime, temp, 0);
-//		q(n, 0) += emiss(n, 0) * (pow(e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, _mesh->coordinates()[e->node(n)], step.currentTime, temp, 0), 4) - pow(temp, 4));
-//		q(n, 0) += e->getProperty(Property::HEAT_FLOW, step.step, _mesh->coordinates()[e->node(n)], step.currentTime, temp, 0) / area;
-//		q(n, 0) += e->getProperty(Property::HEAT_FLUX, step.step, _mesh->coordinates()[e->node(n)], step.currentTime, temp, 0);
-//
-//		emiss(n, 0) *= 4 * temp * temp * temp;
-//	}
-//
-//	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
-//		dND.multiply(dN[gp], coordinates);
-//		Point v2(dND(0, 0), dND(0, 1), dND(0, 2));
-//		Point v1(dND(1, 0), dND(1, 1), dND(1, 2));
-//		Point va = Point::cross(v1, v2);
-//		double J = va.norm();
-//
-//		gpQ.multiply(N[gp], q);
-//		if (e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step)) {
-//			gpHtc.multiply(N[gp], htc);
-//			gpEmiss.multiply(N[gp], emiss);
-//
-//			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpHtc(0, 0), 1, true);
-//			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpEmiss(0, 0), 1, true);
-//		}
-//		for (eslocal i = 0; i < Ksize; i++) {
-//			fe(i, 0) += J * weighFactor[gp] * N[gp](0, i % e->nodes()) * gpQ(0, 0);
-//		}
-//	}
+	auto itc = _configuration.load_steps_settings.at(step.step + 1).convection.find(region->name);
+	if (itc != _configuration.load_steps_settings.at(step.step + 1).convection.end()) {
+		convection = &itc->second;
+	}
+
+	auto itr = _configuration.load_steps_settings.at(step.step + 1).diffuse_radiation.find(region->name);
+	if (itr != _configuration.load_steps_settings.at(step.step + 1).diffuse_radiation.end()) {
+		radiation = &itr->second;
+	}
+
+	auto it = _configuration.load_steps_settings.at(step.step + 1).heat_flow.find(region->name);
+	if (it != _configuration.load_steps_settings.at(step.step + 1).heat_flow.end()) {
+		heatFlow = it->second.evaluator;
+	}
+	it = _configuration.load_steps_settings.at(step.step + 1).heat_flux.find(region->name);
+	if (it != _configuration.load_steps_settings.at(step.step + 1).heat_flux.end()) {
+		heatFlux = it->second.evaluator;
+	}
+
+	if (convection == NULL && heatFlow == NULL && heatFlux == NULL && radiation == NULL) {
+		Ke.resize(0, 0);
+		Me.resize(0, 0);
+		Re.resize(0, 0);
+		fe.resize(0, 0);
+		return;
+	}
+	if (!(matrices & (Matrices::K | Matrices::f))) {
+		Ke.resize(0, 0);
+		Me.resize(0, 0);
+		Re.resize(0, 0);
+		fe.resize(0, 0);
+		return;
+	}
+
+	auto nodes = region->elements->cbegin() + findex;
+	auto epointer = region->epointers->datatarray()[findex];
+	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
+
+	const std::vector<DenseMatrix> &N = *(epointer->N);
+	const std::vector<DenseMatrix> &dN = *(epointer->dN);
+	const std::vector<double> &weighFactor = *(epointer->weighFactor);
+
+	DenseMatrix coordinates(nodes->size(), 3), dND(1, 3), q(nodes->size(), 1), htc(nodes->size(), 1), flow(nodes->size(), 1), emiss(nodes->size(), 1);
+	DenseMatrix gpQ(1, 1), gpHtc(1, 1), gpFlow(1, 1), gpEmiss(1, 1);
+
+	double area = 1, temp, text;
+	eslocal Ksize = nodes->size();
+	Ke.resize(0, 0);
+	Me.resize(0, 0);
+	Re.resize(0, 0);
+	fe.resize(0, 0);
+
+	if (matrices & Matrices::f) {
+		fe.resize(Ksize, 1);
+		fe = 0;
+	}
+
+	if (convection != NULL) {
+		Ke.resize(Ksize, Ksize);
+		Ke = 0;
+	}
+
+	for (size_t n = 0; n < nodes->size(); n++) {
+		auto it = std::lower_bound(intervals.begin(), intervals.end(), nodes->at(n), [] (const DomainInterval &interval, eslocal node) { return interval.end < node; });
+		temp = (*_temperature->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin];
+		const Point &p = _mesh->nodes->coordinates->datatarray()[nodes->at(n)];
+		coordinates(n, 0) = p.x;
+		coordinates(n, 1) = p.y;
+		coordinates(n, 2) = p.z;
+		if (convection != NULL) {
+			text = convection->external_temperature.evaluator->evaluate(p, temp, step.currentTime);
+			htc(n, 0) = convection != NULL ? computeHTC(step, convection, p, temp) : 0;
+
+			if (step.iteration) {
+				q(n, 0) += htc(n, 0) * (text - temp);
+			} else {
+				q(n, 0) += htc(n, 0) * (text);
+			}
+		}
+
+		if (radiation != NULL) {
+			emiss(n, 0) = CONST_Stefan_Boltzmann * radiation->emissivity.evaluator->evaluate(p, temp, step.currentTime);
+			q(n, 0) += emiss(n, 0) * (pow(radiation->external_temperature.evaluator->evaluate(p, temp, step.currentTime), 4) - pow(temp, 4));
+			emiss(n, 0) *= 4 * temp * temp * temp;
+		}
+		if (heatFlow) {
+			q(n, 0) += heatFlow->evaluate(p, temp, step.currentTime) / area;
+		}
+		if (heatFlux) {
+			q(n, 0) += heatFlux->evaluate(p, temp, step.currentTime);
+		}
+	}
+
+	for (size_t gp = 0; gp < N.size(); gp++) {
+		dND.multiply(dN[gp], coordinates);
+		Point v2(dND(0, 0), dND(0, 1), dND(0, 2));
+		Point v1(dND(1, 0), dND(1, 1), dND(1, 2));
+		Point va = Point::cross(v1, v2);
+		double J = va.norm();
+
+		gpQ.multiply(N[gp], q);
+		if (convection != NULL) {
+			gpHtc.multiply(N[gp], htc);
+			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpHtc(0, 0), 1, true);
+		}
+		if (radiation != NULL) {
+			gpEmiss.multiply(N[gp], emiss);
+			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpEmiss(0, 0), 1, true);
+		}
+		for (eslocal i = 0; i < Ksize; i++) {
+			fe(i, 0) += J * weighFactor[gp] * N[gp](0, i % nodes->size()) * gpQ(0, 0);
+		}
+	}
 }
 
-void HeatTransfer3D::processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void HeatTransfer3D::processEdge(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 //	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step) ||
 //		e->hasProperty(Property::HEAT_FLOW, step.step) ||
@@ -685,7 +711,7 @@ void HeatTransfer3D::processEdge(const Step &step, Matrices matrices, eslocal ei
 //	}
 }
 
-void HeatTransfer3D::processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void HeatTransfer3D::processNode(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
@@ -700,18 +726,10 @@ void HeatTransfer3D::postProcessElement(const Step &step, eslocal eindex)
 	eslocal domain = std::lower_bound(_mesh->elements->elementsDistribution.begin(), _mesh->elements->elementsDistribution.end(), eindex + 1) - _mesh->elements->elementsDistribution.begin() - 1;
 	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
 	Evaluator *translation_motion = NULL;
-	Evaluator *heat_source = NULL;
 	for (auto it = _configuration.load_steps_settings.at(step.step + 1).translation_motions.begin(); it != _configuration.load_steps_settings.at(step.step + 1).translation_motions.end(); ++it) {
 		ElementsRegionStore *region = _mesh->eregion(it->first);
 		if (std::binary_search(region->elements->datatarray().cbegin(), region->elements->datatarray().cend(), eindex)) {
 			translation_motion = it->second.evaluator;
-			break;
-		}
-	}
-	for (auto it = _configuration.load_steps_settings.at(step.step + 1).heat_source.begin(); it != _configuration.load_steps_settings.at(step.step + 1).heat_source.end(); ++it) {
-		ElementsRegionStore *region = _mesh->eregion(it->first);
-		if (std::binary_search(region->elements->datatarray().cbegin(), region->elements->datatarray().cend(), eindex)) {
-			heat_source = it->second.evaluator;
 			break;
 		}
 	}

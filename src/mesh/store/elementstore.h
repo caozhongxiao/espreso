@@ -79,6 +79,7 @@ struct ElementStore {
 	int regionMaskSize;
 	std::vector<eslocal> ecounters;
 	std::vector<ElementsInterval> eintervals;
+	std::vector<eslocal> eintervalsDistribution;
 
 	std::vector<ElementData*> data;
 

@@ -25,9 +25,7 @@ struct HeatTransfer: public virtual Physics
 protected:
 	void computeInitialTemperature(const Step &step, std::vector<std::vector<double> > &data);
 
-	double computeHTC(
-			const ConvectionConfiguration &convection, eslocal eindex, const Point &p, Step step,
-			double temp) const;
+	double computeHTC(const Step &step, const ConvectionConfiguration *convection, const Point &p, double temp) const;
 
 	void convectionMatParameters(
 			const ConvectionConfiguration &convection, eslocal eindex, const Point &p, Step step,

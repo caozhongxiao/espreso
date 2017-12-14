@@ -466,12 +466,22 @@ void MeshPreprocessing::arrangeElementsPermutation(std::vector<eslocal> &permuta
 	}
 	Esutils::mergeThreadedUniqueData(iboundaries);
 
-	_mesh->elements->eintervals.push_back(ElementsInterval(0, 0, static_cast<int>(_mesh->elements->epointers->datatarray()[permutation[0]]->code)));
+	_mesh->elements->eintervals.push_back(ElementsInterval(0, 0));
+	_mesh->elements->eintervals.back().domain = _mesh->elements->firstDomain;
+	_mesh->elements->eintervals.back().code = static_cast<int>(_mesh->elements->epointers->datatarray()[permutation[0]]->code);
+	_mesh->elements->eintervalsDistribution.push_back(0);
 	for (size_t i = 0; i < iboundaries[0].size(); i++) {
 		_mesh->elements->eintervals.back().end = iboundaries[0][i];
-		_mesh->elements->eintervals.push_back(ElementsInterval(iboundaries[0][i], iboundaries[0][i], static_cast<int>(_mesh->elements->epointers->datatarray()[permutation[0]]->code)));
+		_mesh->elements->eintervals.push_back(ElementsInterval(iboundaries[0][i], iboundaries[0][i]));
+		const std::vector<eslocal> &edist = _mesh->elements->elementsDistribution;
+		_mesh->elements->eintervals.back().domain = std::lower_bound(edist.begin(), edist.end(), _mesh->elements->eintervals.back().begin) - edist.begin() + _mesh->elements->firstDomain;
+		_mesh->elements->eintervals.back().code = static_cast<int>(_mesh->elements->epointers->datatarray()[permutation[_mesh->elements->eintervals.back().begin]]->code);
+		if ((_mesh->elements->eintervals.end() - 1)->domain != (_mesh->elements->eintervals.end() - 2)->domain) {
+			_mesh->elements->eintervalsDistribution.push_back(_mesh->elements->eintervals.size() - 1);
+		}
 	}
 	_mesh->elements->eintervals.back().end = _mesh->elements->size;
+	_mesh->elements->eintervalsDistribution.push_back(_mesh->elements->eintervals.size());
 
 	int elementstypes = static_cast<int>(Element::CODE::SIZE);
 	if (elementstypes > 32) {
@@ -702,10 +712,24 @@ void MeshPreprocessing::arrangeRegions()
 			iboundaries.back().push_back(edistribution.back());
 			Esutils::mergeThreadedUniqueData(iboundaries);
 
+			_mesh->boundaryRegions[r]->eintervalsDistribution.push_back(0);
+			eslocal lastDomain = 0;
 			for (size_t i = 0; i < iboundaries[0].size() - 1; i++) {
 				_mesh->boundaryRegions[r]->eintervals.push_back(ElementsInterval(iboundaries[0][i], iboundaries[0][i + 1]));
 				_mesh->boundaryRegions[r]->eintervals.back().code = static_cast<int>(_mesh->boundaryRegions[r]->epointers->datatarray()[iboundaries[0][i]]->code);
+				_mesh->boundaryRegions[r]->eintervals.back().domain = edomain[permutation[iboundaries[0][i]]];
+				if (_mesh->boundaryRegions[r]->eintervals.back().domain != lastDomain) {
+					_mesh->boundaryRegions[r]->eintervalsDistribution.insert(
+							_mesh->boundaryRegions[r]->eintervalsDistribution.end(),
+							_mesh->boundaryRegions[r]->eintervals.back().domain - lastDomain,
+							_mesh->boundaryRegions[r]->eintervals.size() - 1);
+				}
+				lastDomain = _mesh->boundaryRegions[r]->eintervals.back().domain;
 			}
+			_mesh->boundaryRegions[r]->eintervalsDistribution.insert(
+					_mesh->boundaryRegions[r]->eintervalsDistribution.end(),
+					_mesh->elements->ndomains - lastDomain,
+					_mesh->boundaryRegions[r]->eintervals.size());
 
 			int codes = 0;
 			for (size_t i = 0; i < _mesh->boundaryRegions[r]->eintervals.size(); ++i) {

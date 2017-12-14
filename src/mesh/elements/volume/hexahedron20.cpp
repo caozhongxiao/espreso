@@ -19,7 +19,7 @@ Element Hexahedron20::fill(Element e, Element* begin)
 		3, 0, 4, 7, 11, 16, 15, 19
 	};
 
-	e.faces = new serializededata<int, int>(4, data);
+	e.faces = new serializededata<int, int>(8, data);
 	e.facepointers = new serializededata<int, Element*>(1, facepointers);
 
 	size_t GPCount = 8, nodeCount = 20;

@@ -41,15 +41,15 @@ struct ConvectionConfiguration: public ECFObject {
 	VARIANT variant;
 	FLUID fluid;
 
-	std::string heat_transfer_coefficient, external_temperature;
-	std::string wall_height, tilt_angle, diameter, plate_length, fluid_velocity, plate_distance, length, absolute_pressure;
+	ECFExpression heat_transfer_coefficient, external_temperature;
+	ECFExpression wall_height, tilt_angle, diameter, plate_length, fluid_velocity, plate_distance, length, absolute_pressure;
 
 	ConvectionConfiguration();
 };
 
 struct RadiationConfiguration: public ECFObject {
 
-	std::string emissivity, external_temperature;
+	ECFExpression emissivity, external_temperature;
 
 	RadiationConfiguration();
 };

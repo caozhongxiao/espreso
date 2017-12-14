@@ -38,7 +38,6 @@ espreso::ConvectionConfiguration::ConvectionConfiguration()
 			.addoption(ECFOption().setname("ENGINE_OIL").setdescription("Engine oil."))
 			.addoption(ECFOption().setname("TRANSFORMER_OIL").setdescription("Tranformer oil.")));
 
-	heat_transfer_coefficient = external_temperature = "0";
 	REGISTER(heat_transfer_coefficient, ECFMetaData()
 			.setdescription({ "Heat transfer coefficient." })
 			.setdatatype({ ECFDataType::EXPRESSION }));
@@ -46,7 +45,6 @@ espreso::ConvectionConfiguration::ConvectionConfiguration()
 			.setdescription({ "External temperature." })
 			.setdatatype({ ECFDataType::EXPRESSION }));
 
-	wall_height = tilt_angle = diameter = plate_length = fluid_velocity = plate_distance = length = absolute_pressure = "0";
 	REGISTER(wall_height, ECFMetaData()
 			.setdescription({ "Wall height." })
 			.setdatatype({ ECFDataType::EXPRESSION }));
@@ -75,7 +73,6 @@ espreso::ConvectionConfiguration::ConvectionConfiguration()
 
 espreso::RadiationConfiguration::RadiationConfiguration()
 {
-	emissivity = external_temperature = "0";
 	REGISTER(emissivity, ECFMetaData()
 			.setdescription({ "Emissivity." })
 			.setdatatype({ ECFDataType::EXPRESSION }));

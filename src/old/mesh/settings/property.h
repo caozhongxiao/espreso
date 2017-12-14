@@ -6,8 +6,6 @@
 
 namespace espreso {
 
-#define CONST_Stefan_Boltzmann 5.6703e-8
-
 enum class Property : int {
 	UNKNOWN, // API has unknown properties
 	DISPLACEMENT_X,

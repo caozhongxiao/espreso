@@ -18,8 +18,11 @@ class Instance;
 class EqualityConstraints;
 class SparseMatrix;
 struct PhysicsConfiguration;
+
+template <typename TType> class edata;
 struct NodeData;
 struct ElementData;
+struct BoundaryRegionStore;
 
 enum class FETI_REGULARIZATION;
 
@@ -49,10 +52,10 @@ struct Physics {
 
 	virtual MatrixType getMatrixType(const Step &step, size_t domain) const =0;
 
-	virtual void processElement(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const =0;
-	virtual void processFace(const Step &step, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const =0;
-	virtual void processEdge(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const =0;
-	virtual void processNode(const Step &step, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const =0;
+	virtual void processElement(const Step &step, eslocal domain, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const =0;
+	virtual void processFace(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const =0;
+	virtual void processEdge(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const =0;
+	virtual void processNode(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const =0;
 	virtual void processSolution(const Step &step) =0;
 
 	virtual void makeStiffnessMatricesRegular(FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster);
@@ -69,7 +72,7 @@ struct Physics {
 	virtual ~Physics();
 
 protected:
-	virtual void fillDOFsIndices(eslocal eindex, eslocal domain, std::vector<eslocal> &DOFs) const;
+	virtual void fillDOFsIndices(edata<const eslocal> &nodes, eslocal domain, std::vector<eslocal> &DOFs) const;
 	virtual void insertElementToDomain(
 			SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M,
 			const std::vector<eslocal> &DOFs,

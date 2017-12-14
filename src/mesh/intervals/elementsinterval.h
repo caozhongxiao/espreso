@@ -6,13 +6,14 @@ namespace espreso {
 
 struct ElementsInterval {
 	eslocal begin, end;
+	eslocal domain;
 	int code;
 
-	ElementsInterval(): begin(0), end(0), code(-1) {}
-	ElementsInterval(eslocal begin, eslocal end): begin(begin), end(end), code(0) {}
-	ElementsInterval(eslocal begin, eslocal end, int code) : begin(begin), end(end), code(code) {}
+	ElementsInterval(): begin(0), end(0), domain(-1), code(-1) {}
+	ElementsInterval(eslocal begin, eslocal end): begin(begin), end(end), domain(-1), code(-1) {}
+	ElementsInterval(eslocal begin, eslocal end, eslocal domain, int code) : begin(begin), end(end), domain(domain), code(code) {}
 
-	bool operator==(const ElementsInterval &other) const { return begin == other.begin && end == other.end && code == other.code; }
+	bool operator==(const ElementsInterval &other) const { return begin == other.begin && end == other.end && domain == other.domain && code == other.code; }
 };
 
 }

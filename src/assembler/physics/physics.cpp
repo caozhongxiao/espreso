@@ -9,6 +9,9 @@
 
 #include "../../mesh/mesh.h"
 #include "../../mesh/store/nodestore.h"
+#include "../../mesh/store/elementstore.h"
+#include "../../mesh/store/boundaryregionstore.h"
+#include "../../mesh/store/elementsregionstore.h"
 
 #include "../constraints/equalityconstraints.h"
 
@@ -18,8 +21,6 @@
 #include "../../basis/matrices/sparseCSRMatrix.h"
 #include "../../config/ecf/solver/feti.h"
 #include "../../config/ecf/physics/physics.h"
-#include "../../mesh/store/elementstore.h"
-
 
 using namespace espreso;
 
@@ -85,9 +86,10 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain)
 		_instance->f[domain].resize(_instance->domainDOFCount[domain]);
 	}
 
-	for (eslocal e = _mesh->elements->elementsDistribution[domain]; e < (eslocal)_mesh->elements->elementsDistribution[domain + 1]; e++) {
-		processElement(step, matrices, e, Ke, Me, Re, fe);
-		fillDOFsIndices(e, domain, DOFs);
+	auto nodes = _mesh->elements->nodes->cbegin() + _mesh->elements->elementsDistribution[domain];
+	for (eslocal e = _mesh->elements->elementsDistribution[domain]; e < (eslocal)_mesh->elements->elementsDistribution[domain + 1]; ++e, ++nodes) {
+		processElement(step, domain, matrices, e, Ke, Me, Re, fe);
+		fillDOFsIndices(*nodes, domain, DOFs);
 		insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, step, domain, false);
 	}
 
@@ -112,6 +114,20 @@ void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPM
 	std::vector<eslocal> DOFs;
 
 	// TODO: MESH
+	for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
+		if (_mesh->boundaryRegions[r]->dimension == 2) {
+			if (_mesh->boundaryRegions[r]->eintervalsDistribution[domain] < _mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]) {
+				eslocal begin = _mesh->boundaryRegions[r]->eintervals[_mesh->boundaryRegions[r]->eintervalsDistribution[domain]].begin;
+				eslocal end = _mesh->boundaryRegions[r]->eintervals[_mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1] - 1].end;
+				auto nodes = _mesh->boundaryRegions[r]->elements->cbegin() + begin;
+				for (eslocal i = begin; i < end; ++i, ++nodes) {
+					processFace(step, domain, _mesh->boundaryRegions[r], matrices, i, Ke, Me, Re, fe);
+					fillDOFsIndices(*nodes, domain, DOFs);
+					insertElementToDomain(K, M, DOFs, Ke, Me, Re, fe, step, domain, true);
+				}
+			}
+		}
+	}
 //	for (size_t i = 0; i < _mesh->faces().size(); i++) {
 //		if (_mesh->faces()[i]->domains().front() == (eslocal)domain && _mesh->faces()[i]->clusters().front() == environment->MPIrank) {
 //			processFace(step, matrices, _mesh->faces()[i], Ke, Me, Re, fe, solution);
@@ -119,7 +135,7 @@ void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPM
 //			insertElementToDomain(K, M, DOFs, Ke, Me, Re, fe, step, domain, true);
 //		}
 //	}
-//
+
 //	for (size_t i = 0; i < _mesh->edges().size(); i++) {
 //		if (_mesh->edges()[i]->domains().front() == (eslocal)domain && _mesh->edges()[i]->clusters().front() == environment->MPIrank) {
 //			processEdge(step, matrices, _mesh->edges()[i], Ke, Me, Re, fe, solution);
@@ -141,14 +157,13 @@ void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPM
  * x1, x2, x3, ..., y1, y2, y3, ..., z1, z2, z3,...
  *
  */
-void Physics::fillDOFsIndices(eslocal eindex, eslocal domain, std::vector<eslocal> &DOFs) const
+void Physics::fillDOFsIndices(edata<const eslocal> &nodes, eslocal domain, std::vector<eslocal> &DOFs) const
 {
 	// TODO: MESH: improve performance
-	auto nodes = _mesh->elements->nodes->begin() + eindex;
 	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
-	DOFs.resize(nodes->size());
+	DOFs.resize(nodes.size());
 	for (size_t dof = 0, i = 0; dof < 1; dof++) {
-		for (auto n = nodes->begin(); n != nodes->end(); n++, i++) {
+		for (auto n = nodes.begin(); n != nodes.end(); n++, i++) {
 			auto it = std::lower_bound(intervals.begin(), intervals.end(), *n, [] (const DomainInterval &interval, eslocal node) { return interval.end <= node; });
 			DOFs[i] = 1 * (it->DOFOffset + *n - it->begin);
 		}

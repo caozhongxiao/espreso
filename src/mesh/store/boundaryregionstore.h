@@ -31,8 +31,9 @@ struct BoundaryRegionStore {
 
 	serializededata<eslocal, Element*>* epointers;
 
-	std::vector<ElementsInterval> eintervals;
 	std::vector<ProcessInterval> nintervals;
+	std::vector<ElementsInterval> eintervals;
+	std::vector<eslocal> eintervalsDistribution;
 
 	std::vector<eslocal> ecounters;
 
