@@ -4,8 +4,6 @@
 #include "../step.h"
 #include "../instance.h"
 
-#include "../constraints/equalityconstraints.h"
-
 #include "../../basis/containers/serializededata.h"
 #include "../../basis/evaluator/evaluator.h"
 #include "../../basis/matrices/denseMatrix.h"
@@ -32,35 +30,12 @@ using namespace espreso;
 HeatTransfer3D::HeatTransfer3D(Mesh *mesh, Instance *instance, Step *step, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
 : Physics("HEAT TRANSFER 3D", mesh, instance, step, &configuration), HeatTransfer(configuration, propertiesConfiguration)
 {
-	std::vector<std::pair<BoundaryRegionStore*, Evaluator*> > dirichlet;
-	for (auto it = configuration.load_steps_settings.at(1).temperature.begin(); it != configuration.load_steps_settings.at(1).temperature.end(); ++it) {
-		dirichlet.push_back(std::make_pair(mesh->bregion(it->first), it->second.evaluator));
-	}
-
-	_equalityConstraints = new EqualityConstraints(
-			*_instance,
-			*_mesh,
-			configuration.load_steps_settings.at(1).temperature, 1,
-			configuration.load_steps_settings.at(1).feti.redundant_lagrange,
-			configuration.load_steps_settings.at(1).feti.scaling);
-
-	_temperature = _mesh->nodes->appendData({ "TEMPERATURE" }, _instance->primalSolution);
 	if (_propertiesConfiguration.gradient) {
 		_gradient = _mesh->elements->appendData({ "GRADIENT", "GRADIENT_X", "GRADIENT_Y", "GRADIENT_Z" });
 	}
 
 	if (_propertiesConfiguration.flux) {
 		_flux = _mesh->elements->appendData({ "FLUX", "FLUX_X", "FLUX_Y", "FLUX_Z" });
-	}
-
-	bool phaseChange = false;
-	for (size_t m = 0; m < _mesh->materials.size(); m++) {
-		phaseChange |= _mesh->materials[m]->phase_change;
-	}
-
-	if (phaseChange) {
-		_phaseChange = _mesh->nodes->appendData({ "PHASE_CHANGE" });
-		_latentHeat = _mesh->nodes->appendData({ "LATENT_HEAT" });
 	}
 }
 
@@ -319,9 +294,9 @@ void HeatTransfer3D::processElement(eslocal domain, Matrices matrices, eslocal e
 		}
 
 		if (translation_motion) {
-			U(n, 0) = translation_motion->evaluate(p, _step->currentTime, temp);
-			U(n, 1) = translation_motion->evaluate(p, _step->currentTime, temp);
-			U(n, 2) = translation_motion->evaluate(p, _step->currentTime, temp);
+			U(n, 0) = translation_motion->evaluate(p, _step->currentTime, temp) * m(n, 0);
+			U(n, 1) = translation_motion->evaluate(p, _step->currentTime, temp) * m(n, 0);
+			U(n, 2) = translation_motion->evaluate(p, _step->currentTime, temp) * m(n, 0);
 		}
 		if (heat_source) {
 			f(n, 0) = heat_source->evaluate(p, _step->currentTime, temp);
@@ -556,7 +531,7 @@ void HeatTransfer3D::processFace(eslocal domain, const BoundaryRegionStore *regi
 		fe = 0;
 	}
 
-	if (convection != NULL) {
+	if (convection != NULL || radiation != NULL) {
 		Ke.resize(Ksize, Ksize);
 		Ke = 0;
 	}
@@ -570,7 +545,7 @@ void HeatTransfer3D::processFace(eslocal domain, const BoundaryRegionStore *regi
 		coordinates(n, 2) = p.z;
 		if (convection != NULL) {
 			text = convection->external_temperature.evaluator->evaluate(p, temp, _step->currentTime);
-			htc(n, 0) = convection != NULL ? computeHTC(convection, p, temp) : 0;
+			htc(n, 0) = computeHTC(convection, p, temp);
 
 			if (_step->iteration) {
 				q(n, 0) += htc(n, 0) * (text - temp);
@@ -719,11 +694,10 @@ void HeatTransfer3D::processNode(eslocal domain, const BoundaryRegionStore *regi
 	fe.resize(0, 0);
 }
 
-void HeatTransfer3D::postProcessElement(eslocal eindex)
+void HeatTransfer3D::postProcessElement(eslocal domain, eslocal eindex)
 {
 	auto nodes = _mesh->elements->nodes->cbegin() + eindex;
 	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
-	eslocal domain = std::lower_bound(_mesh->elements->elementsDistribution.begin(), _mesh->elements->elementsDistribution.end(), eindex + 1) - _mesh->elements->elementsDistribution.begin() - 1;
 	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
 	Evaluator *translation_motion = NULL;
 	for (auto it = _configuration.load_steps_settings.at(_step->step + 1).translation_motions.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).translation_motions.end(); ++it) {
@@ -848,7 +822,7 @@ void HeatTransfer3D::processSolution()
 		#pragma omp parallel for
 		for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
 			for (eslocal e = _mesh->elements->elementsDistribution[d]; e < (eslocal)_mesh->elements->elementsDistribution[d + 1]; e++) {
-				postProcessElement(e);
+				postProcessElement(d, e);
 			}
 
 		}

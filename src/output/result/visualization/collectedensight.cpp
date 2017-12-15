@@ -251,7 +251,7 @@ void CollectedEnSight::updateMesh()
 
 	auto format = [] (size_t size) {
 		if (size == 1) return "scalar";
-		if (size == 4) return "vector";
+		if (size == 4 || size == 3) return "vector";
 		return "";
 	};
 
@@ -465,6 +465,17 @@ void CollectedEnSight::updateSolution(const Step &step)
 					}
 					pushInterval(os.str().size());
 				}
+				if (size == 2) {
+					for (size_t i = 0; i < eintervals.size(); i++) {
+						if (eintervals[i].code == etype) {
+							for (eslocal e = eintervals[i].begin; e < eintervals[i].end; ++e) {
+								os << std::setw(10) << .0;
+								os << "\n";
+							}
+						}
+					}
+					pushInterval(os.str().size());
+				}
 		};
 
 		clearIntervals();
@@ -477,18 +488,14 @@ void CollectedEnSight::updateSolution(const Step &step)
 					}
 
 					os << std::showpos << std::scientific << std::setprecision(5);
-					if (_mesh.elements->data[di]->names.size() == 1) {
-						if (StringCompare::caseInsensitiveEq(_mesh.elementsRegions[r]->name, "ALL_ELEMENTS")) {
-							iterateElements(os, etype, _mesh.elementsRegions[r]->uniqueElements->datatarray(), _mesh.elementsRegions[r]->ueintervals, *_mesh.elements->data[di]->data, 1);
-						} else {
-							iterateElements(os, etype, _mesh.elementsRegions[r]->elements->datatarray(), _mesh.elementsRegions[r]->eintervals, *_mesh.elements->data[di]->data, 1);
-						}
+					eslocal size = _mesh.elements->data[di]->names.size();
+					if (size > 1) {
+						--size;
+					}
+					if (StringCompare::caseInsensitiveEq(_mesh.elementsRegions[r]->name, "ALL_ELEMENTS")) {
+						iterateElements(os, etype, _mesh.elementsRegions[r]->uniqueElements->datatarray(), _mesh.elementsRegions[r]->ueintervals, *_mesh.elements->data[di]->data, size);
 					} else {
-						if (StringCompare::caseInsensitiveEq(_mesh.elementsRegions[r]->name, "ALL_ELEMENTS")) {
-							iterateElements(os, etype, _mesh.elementsRegions[r]->uniqueElements->datatarray(), _mesh.elementsRegions[r]->ueintervals, *_mesh.elements->data[di]->data, 3);
-						} else {
-							iterateElements(os, etype, _mesh.elementsRegions[r]->elements->datatarray(), _mesh.elementsRegions[r]->eintervals, *_mesh.elements->data[di]->data, 3);
-						}
+						iterateElements(os, etype, _mesh.elementsRegions[r]->elements->datatarray(), _mesh.elementsRegions[r]->eintervals, *_mesh.elements->data[di]->data, size);
 					}
 					os << std::noshowpos;
 				}

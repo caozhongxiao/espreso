@@ -19,6 +19,8 @@ Element Square8::fill(Element e, Element* begin)
 
 	e.edges = new serializededata<int, int>(3, data);
 	e.edgepointers = new serializededata<int, Element*>(1, edgepointers);
+	e.faces = new serializededata<int, int>(3, data);
+	e.facepointers = new serializededata<int, Element*>(1, edgepointers);
 
 	size_t GPCount = 9, nodeCount = 8;
 

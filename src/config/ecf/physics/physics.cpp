@@ -49,12 +49,14 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension, Materia
 	REGISTER(initial_temperature, ECFMetaData()
 			.setdescription({ "The name of a region.", "Initial temperature of a given region." })
 			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
+			.setcoordinatevariables()
 			.setpattern({ "MY_REGION", "273.15" }));
 
 	if (dimension == DIMENSION::D2) {
 		REGISTER(thickness, ECFMetaData()
 				.setdescription({ "The name of a region.", "Thickness of a given region." })
 				.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
+				.setcoordinatevariables()
 				.setpattern({ "MY_REGION", "1" }));
 	}
 

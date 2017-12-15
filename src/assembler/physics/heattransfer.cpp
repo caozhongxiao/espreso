@@ -4,6 +4,8 @@
 #include "../instance.h"
 #include "../step.h"
 
+#include "../constraints/equalityconstraints.h"
+
 #include "../../basis/matrices/denseMatrix.h"
 #include "../../basis/evaluator/evaluator.h"
 
@@ -26,6 +28,25 @@ HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration, const
 	for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
 		const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[d];
 		_instance->domainDOFCount[d] = intervals.back().DOFOffset + intervals.back().end - intervals.back().begin;
+	}
+
+	_equalityConstraints = new EqualityConstraints(
+			*_instance,
+			*_mesh,
+			configuration.load_steps_settings.at(1).temperature, 1,
+			configuration.load_steps_settings.at(1).feti.redundant_lagrange,
+			configuration.load_steps_settings.at(1).feti.scaling);
+
+	_temperature = _mesh->nodes->appendData({ "TEMPERATURE" }, _instance->primalSolution);
+
+	bool phaseChange = false;
+	for (size_t m = 0; m < _mesh->materials.size(); m++) {
+		phaseChange |= _mesh->materials[m]->phase_change;
+	}
+
+	if (phaseChange) {
+		_phaseChange = _mesh->nodes->appendData({ "PHASE_CHANGE" });
+		_latentHeat = _mesh->nodes->appendData({ "LATENT_HEAT" });
 	}
 }
 

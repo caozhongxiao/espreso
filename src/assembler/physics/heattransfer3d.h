@@ -21,7 +21,7 @@ struct HeatTransfer3D: public HeatTransfer, public Physics3D
 
 protected:
 	void assembleMaterialMatrix(eslocal eindex, eslocal node, const Point &p, const MaterialBaseConfiguration *mat, double phase, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const;
-	void postProcessElement(eslocal eindex);
+	void postProcessElement(eslocal domain, eslocal eindex);
 };
 
 }

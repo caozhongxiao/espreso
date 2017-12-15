@@ -115,7 +115,8 @@ ECFMetaData ECFMetaData::suffix(size_t start) const
 	return ECFMetaData()
 			.setdescription(getsuffix(start, description))
 			.setdatatype(getsuffix(start, datatype))
-			.setpattern(getsuffix(start, pattern));
+			.setpattern(getsuffix(start, pattern))
+			.setvariables(variables);
 }
 
 bool ECFParameter::setValue(const std::string &value)
