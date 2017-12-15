@@ -1,6 +1,8 @@
 #ifndef IVALIDATABLEOBJECT_H
 #define IVALIDATABLEOBJECT_H
 
+#include <QString>
+
 namespace espreso
 {
 

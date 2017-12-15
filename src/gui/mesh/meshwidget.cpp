@@ -3,6 +3,8 @@
 #include "../../config/ecf/environment.h"
 #include "mpi.h"
 
+#include <QDebug>
+
 using namespace espreso;
 
 void MeshWidget::initOGL()
@@ -87,6 +89,12 @@ void MeshWidget::initializeGL()
 
 void MeshWidget::paintGL()
 {
+    if (this->m_clicked)
+    {
+        this->m_clicked = false;
+        this->clicked(this->m_mouse_pos);
+    }
+
     glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -205,7 +213,7 @@ void MeshWidget::wheelEvent(QWheelEvent *event)
     this->update();
 }
 
-void MeshWidget::mousePressEvent(QMouseEvent* event)
+void MeshWidget::clicked(const MeshMousePosition& position)
 {
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -241,7 +249,7 @@ void MeshWidget::mousePressEvent(QMouseEvent* event)
         float blue = (color & 0x000000FF);
         m_clickProgram->setUniformValue("code", QVector3D(red, green, blue));
         colorCodes.insert(color, it.key());
-        color++;
+        color += 1;
 
         float* vertices = &r.points.data()[0];
         int len = r.points.size() / 6;
@@ -268,13 +276,11 @@ void MeshWidget::mousePressEvent(QMouseEvent* event)
         vbo.release();
     }
 
-    m_basicProgram->release();
-
     unsigned char res[4];
     GLint viewport[4];
 
-    int qtx = event->pos().x();
-    int qty = event->pos().y();
+    int qtx = position.x;
+    int qty = position.y;
 
     glGetIntegerv(GL_VIEWPORT, viewport);
     int glx = viewport[2] * ((float)qtx / (float)this->width());
@@ -286,8 +292,17 @@ void MeshWidget::mousePressEvent(QMouseEvent* event)
     clickedColor |= (res[1] << 8);
     clickedColor |= res[2];
 
+    m_clickProgram->release();
+
     if (colorCodes.contains(clickedColor))
         emit regionClicked(colorCodes[clickedColor]);
+}
+
+void MeshWidget::mousePressEvent(QMouseEvent* event)
+{
+    this->m_clicked = true;
+    this->m_mouse_pos = {event->pos().x(), event->pos().y()};
+    this->update();
 }
 
 QList<QString> MeshWidget::regions()

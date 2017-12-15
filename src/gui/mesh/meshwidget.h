@@ -20,6 +20,12 @@ namespace espreso {
         bool isActive = true;
     };
 
+    struct MeshMousePosition
+    {
+        int x;
+        int y;
+    };
+
     class MeshWidget : public QOpenGLWidget, protected QOpenGLFunctions
     {
         Q_OBJECT
@@ -70,6 +76,9 @@ namespace espreso {
 
         QOpenGLShaderProgram* m_clickProgram = nullptr;
         GLuint m_clickProgram_position;
+        bool m_clicked = false;
+        MeshMousePosition m_mouse_pos;
+        void clicked(const MeshMousePosition& event);
 
         const char* m_basicVS =
                 "#version 330 core \n"

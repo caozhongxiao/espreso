@@ -238,10 +238,10 @@ void WorkflowWidget::save()
 {
    this->m_inputWidget->save();
 
-   for (int i = 1; i < ui->workflow->count(); i++)
-   {
-       static_cast<ISavableObject*>(ui->workflow->widget(i))->save();
-   }
+//   for (int i = 1; i < ui->workflow->count(); i++)
+//   {
+//       static_cast<ISavableObject*>(ui->workflow->widget(i))->save();
+//   }
 }
 
 bool WorkflowWidget::isValid()
