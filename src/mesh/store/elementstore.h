@@ -20,10 +20,6 @@ struct ElementData {
 
 	std::vector<double> *data;
 
-	size_t packedSize() const;
-	void pack(char* &p) const;
-	void unpack(const char* &p);
-
 	ElementData();
 	ElementData(const std::vector<std::string> &names, std::vector<double> *data = NULL);
 	ElementData(std::vector<double> *data);

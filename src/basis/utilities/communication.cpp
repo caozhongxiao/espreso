@@ -13,11 +13,12 @@ static void _sizeToOffsets(void *in, void *out, int *len, MPI_Datatype *datatype
 
 static void _mergeStatistics(void *in, void *out, int *len, MPI_Datatype *datatype)
 {
-	for (int i = 0; i < *len; i++) {
-		static_cast<Statistics*>(out)->min = std::min(static_cast<Statistics*>(out)->min, static_cast<Statistics*>(in)->min);
-		static_cast<Statistics*>(out)->max = std::max(static_cast<Statistics*>(out)->max, static_cast<Statistics*>(in)->max);
-		static_cast<Statistics*>(out)->avg += static_cast<Statistics*>(in)->avg;
-		static_cast<Statistics*>(out)->norm += static_cast<Statistics*>(in)->norm;
+	int size = *len / sizeof(Statistics);
+	for (int i = 0; i < size; i++) {
+		(static_cast<Statistics*>(out) + i)->min = std::min((static_cast<Statistics*>(out) + i)->min, (static_cast<Statistics*>(in) + i)->min);
+		(static_cast<Statistics*>(out) + i)->max = std::max((static_cast<Statistics*>(out) + i)->max, (static_cast<Statistics*>(in) + i)->max);
+		(static_cast<Statistics*>(out) + i)->avg += (static_cast<Statistics*>(in) + i)->avg;
+		(static_cast<Statistics*>(out) + i)->norm += (static_cast<Statistics*>(in) + i)->norm;
 	}
 }
 

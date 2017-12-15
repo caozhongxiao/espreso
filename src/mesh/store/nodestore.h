@@ -28,10 +28,6 @@ struct NodeData {
 
 	std::vector<double> gatheredData;
 
-	size_t packedSize() const;
-	void pack(char* &p) const;
-	void unpack(const char* &p);
-
 	NodeData();
 	NodeData(const std::vector<std::string> &names, std::vector<std::vector<double> > *data = NULL);
 	NodeData(std::vector<std::vector<double> > *data);

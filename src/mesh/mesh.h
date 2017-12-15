@@ -16,6 +16,7 @@ struct Step;
 
 struct Statistics;
 struct ElementStore;
+struct ElementData;
 struct NodeStore;
 struct NodeData;
 
@@ -37,10 +38,13 @@ public:
 
 	void initNodeData();
 	void gatherNodeData();
+
 	void computeNodeStatistic(const NodeData *data, const ElementsRegionStore* region, Statistics *statistics, MPI_Comm communicator) const;
 	void computeNodeStatistic(const NodeData *data, const BoundaryRegionStore* region, Statistics *statistics, MPI_Comm communicator) const;
 	void computeGatheredNodeStatistic(const NodeData *data, const ElementsRegionStore* region, Statistics *statistics, MPI_Comm communicator) const;
 	void computeGatheredNodeStatistic(const NodeData *data, const BoundaryRegionStore* region, Statistics *statistics, MPI_Comm communicator) const;
+
+	void computeElementStatistic(const ElementData *data, const ElementsRegionStore* region, Statistics *statistics, MPI_Comm communicator) const;
 
 	ElementsRegionStore* eregion(const std::string &name);
 	BoundaryRegionStore* bregion(const std::string &name);

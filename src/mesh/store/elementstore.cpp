@@ -41,6 +41,14 @@ size_t ElementStore::packedSize() const
 	if (nodes == NULL || epointers == NULL) {
 		ESINFO(ERROR) << "ESPRESO internal error: invalid request for packedSize.";
 	}
+
+	size_t datasize = sizeof(size_t);
+	for (size_t i = 0; i < data.size(); i++) {
+		if (data[i]->names.size()) {
+			datasize += Esutils::packedSize(data[i]->names);
+		}
+	}
+
 	return
 			Esutils::packedSize(size) +
 			nodes->packedSize() +
@@ -51,7 +59,8 @@ size_t ElementStore::packedSize() const
 			Esutils::packedSize(clusters) +
 			Esutils::packedSize(elementsDistribution) +
 			Esutils::packedSize(ecounters) +
-			Esutils::packedSize(eintervals);
+			Esutils::packedSize(eintervals) +
+			datasize;
 }
 
 void ElementStore::pack(char* &p) const
@@ -77,6 +86,19 @@ void ElementStore::pack(char* &p) const
 	Esutils::pack(elementsDistribution, p);
 	Esutils::pack(ecounters, p);
 	Esutils::pack(eintervals, p);
+
+	size_t size = 0;
+	for (size_t i = 0; i < data.size(); i++) {
+		if (data[i]->names.size()) {
+			size += 1;
+		}
+	}
+	Esutils::pack(size, p);
+	for (size_t i = 0; i < data.size(); i++) {
+		if (data[i]->names.size()) {
+			Esutils::pack(data[i]->names, p);
+		}
+	}
 }
 
 void ElementStore::unpack(const char* &p)
@@ -108,14 +130,23 @@ void ElementStore::unpack(const char* &p)
 	Esutils::unpack(elementsDistribution, p);
 	Esutils::unpack(ecounters, p);
 	Esutils::unpack(eintervals, p);
+
+	size_t datasize;
+	Esutils::unpack(datasize, p);
+	for (size_t i = 0; i < datasize; i++) {
+		if (i >= data.size()) {
+			data.push_back(new ElementData());
+		}
+		Esutils::unpack(data[i]->names, p);
+	}
 }
 
 size_t ElementStore::packedDataSize() const
 {
-	size_t size = sizeof(size_t);
+	size_t size = 0;
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {
-			size += data[i]->packedSize();
+			size += Esutils::packedSize(*data[i]->data);
 		}
 	}
 	return size;
@@ -123,29 +154,17 @@ size_t ElementStore::packedDataSize() const
 
 void ElementStore::packData(char* &p) const
 {
-	size_t size = 0;
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {
-			++size;
-		}
-	}
-	Esutils::pack(size, p);
-	for (size_t i = 0; i < data.size(); i++) {
-		if (data[i]->names.size()) {
-			data[i]->pack(p);
+			Esutils::pack(*data[i]->data, p);
 		}
 	}
 }
 
 void ElementStore::unpackData(const char* &p)
 {
-	size_t size;
-	Esutils::unpack(size, p);
-	for (size_t i = 0; i < size; i++) {
-		if (i >= data.size()) {
-			data.push_back(new ElementData());
-		}
-		data.back()->unpack(p);
+	for (size_t i = 0; i < data.size(); i++) {
+		Esutils::unpack(*data[i]->data, p);
 	}
 }
 
@@ -260,36 +279,6 @@ std::vector<eslocal> ElementStore::gatherClustersDistribution()
 	return Store::gatherDistribution(nclusters);
 }
 
-
-size_t ElementData::packedSize() const
-{
-	size_t size = 0;
-	for (size_t i = 0; i < names.size(); i++) {
-		size += sizeof(size_t) + names[i].size();
-	}
-	return sizeof(size_t) + size + Esutils::packedSize(*data);
-}
-
-void ElementData::pack(char* &p) const
-{
-	size_t size = names.size();
-	Esutils::pack(size, p);
-	for (size_t i = 0; i < names.size(); i++) {
-		Esutils::pack(names[i], p);
-	}
-	Esutils::pack(*data, p);
-}
-
-void ElementData::unpack(const char* &p)
-{
-	size_t size;
-	Esutils::unpack(size, p);
-	names.resize(size);
-	for (size_t i = 0; i < names.size(); i++) {
-		Esutils::unpack(names[i], p);
-	}
-	Esutils::unpack(*data, p);
-}
 
 ElementData::ElementData()
 : _delete(true)

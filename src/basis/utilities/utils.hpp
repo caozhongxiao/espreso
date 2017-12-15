@@ -162,6 +162,16 @@ inline size_t Esutils::packedSize(const Ttype &data)
 	return sizeof(Ttype);
 }
 
+template<>
+inline size_t Esutils::packedSize(const std::vector<std::string> &data)
+{
+	size_t size = sizeof(size_t);
+	for (size_t i = 0; i < data.size(); i++) {
+		size += packedSize(data[i]);
+	}
+	return size;
+}
+
 template<typename Ttype>
 inline size_t Esutils::packedSize(const std::vector<Ttype> &data)
 {
@@ -184,6 +194,18 @@ inline void Esutils::pack(const Ttype &data, char* &p)
 {
 	memcpy(p, &data, packedSize(data));
 	p += packedSize(data);
+}
+
+template<>
+inline void Esutils::pack(const std::vector<std::string> &data, char* &p)
+{
+	size_t size = data.size();
+	memcpy(p, &size, packedSize(size));
+	p += packedSize(size);
+
+	for (size_t i = 0; i < data.size(); i++) {
+		pack(data[i], p);
+	}
 }
 
 template<typename Ttype>
@@ -215,6 +237,21 @@ inline void Esutils::unpack(Ttype &data, const char* &p)
 {
 	memcpy(&data, p, packedSize(data));
 	p += packedSize(data);
+}
+
+template<>
+inline void Esutils::unpack(std::vector<std::string> &data, const char* &p)
+{
+	size_t size;
+	memcpy(&size, p, packedSize(size));
+	p += packedSize(size);
+
+	if (size) {
+		data.resize(size);
+		for (size_t i = 0; i < data.size(); i++) {
+			unpack(data[i], p);
+		}
+	}
 }
 
 template<typename Ttype>

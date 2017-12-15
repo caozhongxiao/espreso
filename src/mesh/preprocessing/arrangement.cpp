@@ -633,6 +633,9 @@ void MeshPreprocessing::arrangeRegions()
 			computeIntervalOffsets(store->nintervals, store->uniqueOffset, store->uniqueSize, store->uniqueTotalSize);
 		} else {
 			store->nintervals = _mesh->nodes->pintervals;
+			store->uniqueOffset = _mesh->nodes->uniqueOffset;
+			store->uniqueSize = _mesh->nodes->uniqueSize;
+			store->uniqueTotalSize = _mesh->nodes->uniqueTotalSize;
 		}
 
 		if (_mesh->boundaryRegions[r]->dimension == 0) {

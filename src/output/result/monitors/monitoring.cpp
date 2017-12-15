@@ -11,6 +11,7 @@
 
 #include "../../../mesh/mesh.h"
 #include "../../../mesh/store/nodestore.h"
+#include "../../../mesh/store/elementstore.h"
 #include "../../../mesh/store/boundaryregionstore.h"
 #include "../../../mesh/store/elementsregionstore.h"
 
@@ -58,61 +59,119 @@ void Monitoring::updateMesh()
 		if (it->first > _monitors.size()) {
 			_monitors.resize(it->first);
 		}
-		for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
+
+		ElementsRegionStore *estore = NULL;
+		BoundaryRegionStore *bstore = NULL;
+		bool regionNotFound = true;
+		for (size_t r = 0; r < regionNotFound && _mesh.elementsRegions.size(); r++) {
 			if (StringCompare::caseInsensitiveEq(it->second.region, _mesh.elementsRegions[r]->name)) {
-				_eregions.push_back(_mesh.elementsRegions[r]);
+				estore = _mesh.elementsRegions[r];
+				regionNotFound = false;
 			}
 		}
-		for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
+		for (size_t r = 0; r < regionNotFound && _mesh.boundaryRegions.size(); r++) {
 			if (StringCompare::caseInsensitiveEq(it->second.region, _mesh.boundaryRegions[r]->name)) {
-				_bregions.push_back(_mesh.boundaryRegions[r]);
+				bstore = _mesh.boundaryRegions[r];
+				regionNotFound = false;
 			}
+		}
+		if (regionNotFound) {
+			ESINFO(GLOBAL_ERROR) << "Monitoring contains unknown region '" << it->second.region << "'.";
+		}
+
+		NodeData *ndata = NULL;
+		ElementData *edata = NULL;
+		bool propertyNotFound = true;
+		for (size_t i = 0; propertyNotFound && i < _mesh.nodes->data.size(); i++) {
+			for (size_t p = 0; p < _mesh.nodes->data[i]->names.size(); p++) {
+				if (StringCompare::caseInsensitiveEq(it->second.property, _mesh.nodes->data[i]->names[p])) {
+					ndata = _mesh.nodes->data[i];
+					propertyNotFound = false;
+					break;
+				}
+			}
+		}
+
+		for (size_t i = 0; propertyNotFound && i < _mesh.elements->data.size(); i++) {
+			for (size_t p = 0; p < _mesh.elements->data[i]->names.size(); p++) {
+				if (StringCompare::caseInsensitiveEq(it->second.property, _mesh.elements->data[i]->names[p])) {
+					edata = _mesh.elements->data[i];
+					propertyNotFound = false;
+					break;
+				}
+			}
+		}
+		if (propertyNotFound) {
+			ESINFO(GLOBAL_ERROR) << "Monitoring contains unknown property '" << it->second.property << "'.";
+		}
+
+		if (edata != NULL && bstore != NULL) {
+			ESINFO(GLOBAL_ERROR) << "Cannot monitor element property '" << it->second.property << "' on element region '" << it->second.region << "'.";
+		}
+		if (edata != NULL && estore != NULL) {
+			_edata.push_back(std::make_pair(edata, estore));
+		}
+		if (ndata != NULL && bstore != NULL) {
+			_nbdata.push_back(std::make_pair(ndata, bstore));
+		}
+		if (ndata != NULL && estore != NULL) {
+			_nedata.push_back(std::make_pair(ndata, estore));
 		}
 	}
-	Esutils::sortAndRemoveDuplicity(_eregions);
-	Esutils::sortAndRemoveDuplicity(_bregions);
+	Esutils::sortAndRemoveDuplicity(_edata);
+	Esutils::sortAndRemoveDuplicity(_nbdata);
+	Esutils::sortAndRemoveDuplicity(_nedata);
 
-	_data.resize(_eregions.size() + _bregions.size());
+	for (size_t i = 0; i < _edata.size(); i++) {
+		_data.resize(_data.size() + _edata[i].first->names.size());
+	}
+	for (size_t i = 0; i < _nbdata.size(); i++) {
+		_data.resize(_data.size() + _nbdata[i].first->names.size());
+	}
+	for (size_t i = 0; i < _nedata.size(); i++) {
+		_data.resize(_data.size() + _nedata[i].first->names.size());
+	}
 
 	for (auto it = _configuration.monitoring.begin(); it != _configuration.monitoring.end(); ++it) {
 		_monitors[it->first - 1].name = it->second.region;
 		_monitors[it->first - 1].property = it->second.property;
 		_monitors[it->first - 1].printSize = std::max(std::max((size_t)10, it->second.region.size()), it->second.property.size()) + 4;
-		for (size_t r = 0; r < _eregions.size(); r++) {
-			if (StringCompare::caseInsensitiveEq(it->second.region, _eregions[r]->name)) {
-				switch (it->second.statistics) {
-				case MonitorConfiguration::STATISTICS::MIN:
-					_monitors[it->first - 1].stats = "<MIN>";
-					_monitors[it->first - 1].data = &_data[r].min; continue;
-				case MonitorConfiguration::STATISTICS::MAX:
-					_monitors[it->first - 1].stats = "<MAX>";
-					_monitors[it->first - 1].data = &_data[r].max; continue;
-				case MonitorConfiguration::STATISTICS::AVG:
-					_monitors[it->first - 1].stats = "<AVERAGE>";
-					_monitors[it->first - 1].data = &_data[r].avg; continue;
-				case MonitorConfiguration::STATISTICS::NORM:
-					_monitors[it->first - 1].stats = "<NORM>";
-					_monitors[it->first - 1].data = &_data[r].norm; continue;
+
+		eslocal offset = 0;
+		for (size_t i = 0; i < _edata.size(); i++) {
+			for (size_t p = 0; p < _edata[i].first->names.size(); ++p, ++offset) {
+				if (StringCompare::caseInsensitiveEq(it->second.property, _edata[i].first->names[p])) {
+					_monitors[it->first - 1].data = (double*)(_data.data() + offset);
 				}
 			}
 		}
-		for (size_t r = 0; r < _bregions.size(); r++) {
-			if (StringCompare::caseInsensitiveEq(it->second.region, _bregions[r]->name)) {
-				switch (it->second.statistics) {
-				case MonitorConfiguration::STATISTICS::MIN:
-					_monitors[it->first - 1].stats = "<MIN>";
-					_monitors[it->first - 1].data = &_data[_eregions.size() + r].min; continue;
-				case MonitorConfiguration::STATISTICS::MAX:
-					_monitors[it->first - 1].stats = "<MAX>";
-					_monitors[it->first - 1].data = &_data[_eregions.size() + r].max; continue;
-				case MonitorConfiguration::STATISTICS::AVG:
-					_monitors[it->first - 1].stats = "<AVERAGE>";
-					_monitors[it->first - 1].data = &_data[_eregions.size() + r].avg; continue;
-				case MonitorConfiguration::STATISTICS::NORM:
-					_monitors[it->first - 1].stats = "<NORM>";
-					_monitors[it->first - 1].data = &_data[_eregions.size() + r].norm; continue;
+		for (size_t i = 0; i < _nbdata.size(); i++) {
+			for (size_t p = 0; p < _nbdata[i].first->names.size(); ++p, ++offset) {
+				if (StringCompare::caseInsensitiveEq(it->second.property, _nbdata[i].first->names[p])) {
+					_monitors[it->first - 1].data = (double*)(_data.data() + offset);
 				}
 			}
+		}
+		for (size_t i = 0; i < _nedata.size(); i++) {
+			for (size_t p = 0; p < _nedata[i].first->names.size(); ++p, ++offset) {
+				if (StringCompare::caseInsensitiveEq(it->second.property, _nedata[i].first->names[p])) {
+					_monitors[it->first - 1].data = (double*)(_data.data() + offset);
+				}
+			}
+		}
+
+		switch (it->second.statistics) {
+		case MonitorConfiguration::STATISTICS::MIN:
+			_monitors[it->first - 1].stats = "<MIN>"; break;
+		case MonitorConfiguration::STATISTICS::MAX:
+			_monitors[it->first - 1].data += 1;
+			_monitors[it->first - 1].stats = "<MAX>"; break;
+		case MonitorConfiguration::STATISTICS::AVG:
+			_monitors[it->first - 1].data += 2;
+			_monitors[it->first - 1].stats = "<AVERAGE>"; break;
+		case MonitorConfiguration::STATISTICS::NORM:
+			_monitors[it->first - 1].data += 3;
+			_monitors[it->first - 1].stats = "<NORM>"; break;
 		}
 	}
 
@@ -146,11 +205,14 @@ void Monitoring::updateMesh()
 void Monitoring::updateSolution(const Step &step)
 {
 	eslocal offset = 0;
-	for (size_t i = 0; i < _eregions.size(); ++i, ++offset) {
-		_mesh.computeGatheredNodeStatistic(_mesh.nodes->data.front(), _eregions[i], _data.data() + offset, _communicator);
+	for (size_t i = 0; i < _edata.size(); offset += _edata[i++].first->names.size()) {
+		_mesh.computeElementStatistic(_edata[i].first, _edata[i].second, _data.data() + offset, _communicator);
 	}
-	for (size_t i = 0; i < _bregions.size(); ++i, ++offset) {
-		_mesh.computeGatheredNodeStatistic(_mesh.nodes->data.front(), _bregions[i], _data.data() + offset, _communicator);
+	for (size_t i = 0; i < _nbdata.size(); offset += _nbdata[i++].first->names.size()) {
+		_mesh.computeGatheredNodeStatistic(_nbdata[i].first, _nbdata[i].second, _data.data() + offset, _communicator);
+	}
+	for (size_t i = 0; i < _nedata.size(); offset += _nedata[i++].first->names.size()) {
+		_mesh.computeGatheredNodeStatistic(_nedata[i].first, _nedata[i].second, _data.data() + offset, _communicator);
 	}
 
 	if (environment->MPIrank) {

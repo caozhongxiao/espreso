@@ -7,6 +7,7 @@
 #include "../resultstore.h"
 #include "../../../mesh/store/statisticsstore.h"
 
+#include <utility>
 #include <vector>
 #include <fstream>
 
@@ -14,6 +15,8 @@ namespace espreso {
 
 struct ElementsRegionStore;
 struct BoundaryRegionStore;
+struct NodeData;
+struct ElementData;
 
 struct Monitor {
 	std::string name;
@@ -45,8 +48,10 @@ protected:
 
 	std::vector<Monitor> _monitors;
 
-	std::vector<const ElementsRegionStore*> _eregions;
-	std::vector<const BoundaryRegionStore*> _bregions;
+	std::vector<std::pair<NodeData*, const ElementsRegionStore*> > _nedata;
+	std::vector<std::pair<NodeData*, const BoundaryRegionStore*> > _nbdata;
+	std::vector<std::pair<ElementData*, const ElementsRegionStore*> > _edata;
+
 	std::vector<Statistics> _data;
 };
 
