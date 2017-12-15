@@ -127,28 +127,32 @@ void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPM
 				}
 			}
 		}
+		if (_mesh->boundaryRegions[r]->dimension == 1) {
+			if (_mesh->boundaryRegions[r]->eintervalsDistribution[domain] < _mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]) {
+				eslocal begin = _mesh->boundaryRegions[r]->eintervals[_mesh->boundaryRegions[r]->eintervalsDistribution[domain]].begin;
+				eslocal end = _mesh->boundaryRegions[r]->eintervals[_mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1] - 1].end;
+				auto nodes = _mesh->boundaryRegions[r]->elements->cbegin() + begin;
+				for (eslocal i = begin; i < end; ++i, ++nodes) {
+					processEdge(domain, _mesh->boundaryRegions[r], matrices, i, Ke, Me, Re, fe);
+					fillDOFsIndices(*nodes, domain, DOFs);
+					insertElementToDomain(K, M, DOFs, Ke, Me, Re, fe, domain, true);
+				}
+			}
+		}
+		// TODO: process NODE
+//		if (_mesh->boundaryRegions[r]->dimension == 0) {
+//			if (_mesh->boundaryRegions[r]->eintervalsDistribution[domain] < _mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]) {
+//				eslocal begin = _mesh->boundaryRegions[r]->eintervals[_mesh->boundaryRegions[r]->eintervalsDistribution[domain]].begin;
+//				eslocal end = _mesh->boundaryRegions[r]->eintervals[_mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1] - 1].end;
+//				auto nodes = _mesh->boundaryRegions[r]->elements->cbegin() + begin;
+//				for (eslocal i = begin; i < end; ++i, ++nodes) {
+//					processEdge(domain, _mesh->boundaryRegions[r], matrices, i, Ke, Me, Re, fe);
+//					fillDOFsIndices(*nodes, domain, DOFs);
+//					insertElementToDomain(K, M, DOFs, Ke, Me, Re, fe, domain, true);
+//				}
+//			}
+//		}
 	}
-//	for (size_t i = 0; i < _mesh->faces().size(); i++) {
-//		if (_mesh->faces()[i]->domains().front() == (eslocal)domain && _mesh->faces()[i]->clusters().front() == environment->MPIrank) {
-//			processFace(step, matrices, _mesh->faces()[i], Ke, Me, Re, fe, solution);
-//			fillDOFsIndices(_mesh->faces()[i], domain, DOFs);
-//			insertElementToDomain(K, M, DOFs, Ke, Me, Re, fe, step, domain, true);
-//		}
-//	}
-
-//	for (size_t i = 0; i < _mesh->edges().size(); i++) {
-//		if (_mesh->edges()[i]->domains().front() == (eslocal)domain && _mesh->edges()[i]->clusters().front() == environment->MPIrank) {
-//			processEdge(step, matrices, _mesh->edges()[i], Ke, Me, Re, fe, solution);
-//			fillDOFsIndices(_mesh->edges()[i], domain, DOFs);
-//			insertElementToDomain(K, M, DOFs, Ke, Me, Re, fe, step, domain, true);
-//		}
-//	}
-//
-//	for (size_t i = 0; i < _mesh->coordinates().localSize(domain); i++) {
-//		processNode(step, matrices, _mesh->nodes()[_mesh->coordinates().clusterIndex(i, domain)], Ke, Me, Re, fe, solution);
-//		fillDOFsIndices(_mesh->nodes()[_mesh->coordinates().clusterIndex(i, domain)], domain, DOFs);
-//		insertElementToDomain(K, M, DOFs, Ke, Me, Re, fe, step, domain, true);
-//	}
 }
 
 /**
