@@ -28,8 +28,7 @@ protected:
 	double computeHTC(const ConvectionConfiguration *convection, const Point &p, double temp) const;
 
 	void convectionMatParameters(
-			const ConvectionConfiguration &convection, eslocal eindex, const Point &p, Step step,
-			double temp, double T_EXT,
+			const ConvectionConfiguration *convection, const Point &p, double temp, double T_EXT,
 			double &rho, double &dynamic_viscosity, double &dynamic_viscosity_T, double &heat_capacity, double &thermal_conductivity) const;
 
 	const HeatTransferConfiguration &_configuration;
