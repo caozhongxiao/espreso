@@ -11,7 +11,7 @@ class LinearTimeStep: public TimeStepSolver {
 public:
 	LinearTimeStep(Assembler &assembler);
 
-	void solve(Step &step, LoadStepSolver &loadStepSolver);
+	void solve(LoadStepSolver &loadStepSolver);
 
 };
 

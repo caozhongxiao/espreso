@@ -13,8 +13,8 @@
 
 using namespace espreso;
 
-StructuralMechanics2D::StructuralMechanics2D(Mesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
-: Physics("STRUCTURAL MECHANICS 2D", mesh, instance, &configuration), StructuralMechanics(configuration, propertiesConfiguration)
+StructuralMechanics2D::StructuralMechanics2D(Mesh *mesh, Instance *instance, Step *step, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
+: Physics("STRUCTURAL MECHANICS 2D", mesh, instance, step, &configuration), StructuralMechanics(configuration, propertiesConfiguration)
 {
 //	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, _mesh->nodes(), _mesh->edges(), pointDOFs(), pointDOFsOffsets());
 }
@@ -116,7 +116,7 @@ void StructuralMechanics2D::analyticRegularization(size_t domain, bool ortogonal
 //	_instance->RegMat[domain].MatScale(_instance->K[domain].getDiagonalMaximum());
 }
 
-void StructuralMechanics2D::assembleMaterialMatrix(const Step &step, eslocal eindex, eslocal node, double temp, DenseMatrix &K) const
+void StructuralMechanics2D::assembleMaterialMatrix(eslocal eindex, eslocal node, double temp, DenseMatrix &K) const
 {
 //	const MaterialConfiguration* material = _mesh->materials()[e->param(OldElement::MATERIAL)];
 //	double Ex, Ey, mi;
@@ -225,7 +225,7 @@ void StructuralMechanics2D::assembleMaterialMatrix(const Step &step, eslocal ein
 //	}
 }
 
-void StructuralMechanics2D::processElement(const Step &step, eslocal domain, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void StructuralMechanics2D::processElement(eslocal domain, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 //	DenseMatrix Ce(4, 4), XY(1, 2), coordinates(e->nodes(), 2), J, invJ(2, 2), dND, B, precision, rhsT;
 //	DenseMatrix K(e->nodes(), 9), TE(e->nodes(), 2), thickness(e->nodes(), 1), inertia(e->nodes(), 2), dens(e->nodes(), 1);
@@ -392,12 +392,12 @@ void StructuralMechanics2D::processElement(const Step &step, eslocal domain, Mat
 //	}
 }
 
-void StructuralMechanics2D::processFace(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void StructuralMechanics2D::processFace(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	ESINFO(ERROR) << "Structural mechanics 2D cannot process face";
 }
 
-void StructuralMechanics2D::processEdge(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void StructuralMechanics2D::processEdge(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 //	if (!e->hasProperty(Property::PRESSURE, step.step)) {
 //		Ke.resize(0, 0);
@@ -467,7 +467,7 @@ void StructuralMechanics2D::processEdge(const Step &step, eslocal domain, const 
 //	}
 }
 
-void StructuralMechanics2D::processNode(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void StructuralMechanics2D::processNode(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 //	if (
 //			e->hasProperty(Property::FORCE_X, step.step) ||
@@ -488,12 +488,12 @@ void StructuralMechanics2D::processNode(const Step &step, eslocal domain, const 
 	fe.resize(0, 0);
 }
 
-void StructuralMechanics2D::postProcessElement(const Step &step, eslocal eindex)
+void StructuralMechanics2D::postProcessElement(eslocal eindex)
 {
 
 }
 
-void StructuralMechanics2D::processSolution(const Step &step)
+void StructuralMechanics2D::processSolution()
 {
 }
 

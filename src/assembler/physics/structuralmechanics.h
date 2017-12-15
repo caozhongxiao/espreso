@@ -14,9 +14,9 @@ struct StructuralMechanics: public virtual Physics
 {
 	StructuralMechanics(const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
 
-	virtual MatrixType getMatrixType(const Step &step, size_t domain) const;
+	virtual MatrixType getMatrixType(size_t domain) const;
 	virtual void prepare();
-	virtual void preprocessData(const Step &step);
+	virtual void preprocessData();
 
 protected:
 	enum SolutionIndex: size_t {

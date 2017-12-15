@@ -19,8 +19,8 @@
 
 using namespace espreso;
 
-HeatTransferFactory::HeatTransferFactory(const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh)
-: _configuration(configuration), _propertiesConfiguration(propertiesConfiguration), _bem(false)
+HeatTransferFactory::HeatTransferFactory(Step *step, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh)
+: _step(step), _configuration(configuration), _propertiesConfiguration(propertiesConfiguration), _bem(false)
 {
 	_instances.push_back(new Instance(*mesh));
 
@@ -28,10 +28,10 @@ HeatTransferFactory::HeatTransferFactory(const HeatTransferConfiguration &config
 	case DISCRETIZATION::FEM:
 		switch (configuration.dimension) {
 		case DIMENSION::D2:
-			_physics.push_back(new HeatTransfer2D(mesh, _instances.front(), configuration, propertiesConfiguration));
+			_physics.push_back(new HeatTransfer2D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
 			break;
 		case DIMENSION::D3:
-			_physics.push_back(new HeatTransfer3D(mesh, _instances.front(), configuration, propertiesConfiguration));
+			_physics.push_back(new HeatTransfer3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
 			break;
 		}
 		break;
@@ -42,7 +42,7 @@ HeatTransferFactory::HeatTransferFactory(const HeatTransferConfiguration &config
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: cannot solve HEAT TRANSFER 2D with BEM discretization.";
 			break;
 		case DIMENSION::D3:
-			_physics.push_back(new LaplaceSteklovPoincare3D(mesh, _instances.front(), configuration, propertiesConfiguration));
+			_physics.push_back(new LaplaceSteklovPoincare3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
 			break;
 		}
 		break;
@@ -61,7 +61,7 @@ LoadStepSolver* HeatTransferFactory::getLoadStepSolver(size_t step, Mesh *mesh, 
 	const HeatTransferLoadStepConfiguration &settings = getLoadStepsSettings(step, _configuration.load_steps_settings);
 
 	_linearSolvers.push_back(getLinearSolver(settings, _instances.front()));
-	_assemblers.push_back(new Assembler(*_instances.front(), *_physics.front(), *mesh, *store, *_linearSolvers.back()));
+	_assemblers.push_back(new Assembler(*_instances.front(), *_physics.front(), *mesh, *_step, *store, *_linearSolvers.back()));
 
 	switch (settings.mode) {
 	case LoadStepConfiguration::MODE::LINEAR:

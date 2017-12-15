@@ -16,6 +16,7 @@ class Physics;
 class TimeStepSolver;
 class LoadStepSolver;
 class Assembler;
+struct Step;
 class Mesh;
 class ECFConfiguration;
 class FETISolver;
@@ -42,6 +43,7 @@ struct FETI4IStructInstance {
 	espreso::Physics * physics;
 	espreso::FETISolver *linearSolver;
 	espreso::ResultStore *store;
+	espreso::Step *step;
 	espreso::Assembler *assembler;
 	espreso::TimeStepSolver *timeStepSolver;
 	espreso::LoadStepSolver *loadStepSolver;

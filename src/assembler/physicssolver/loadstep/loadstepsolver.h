@@ -20,20 +20,20 @@ public:
 	LoadStepSolver(const std::string &description, TimeStepSolver &timeStepSolver, double duration);
 	virtual ~LoadStepSolver() {}
 
-	void run(Step &step);
+	void run();
 
 	std::string description() const;
 	double duration() const;
 
 protected:
-	virtual Matrices updateStructuralMatrices(Step &step, Matrices matrices) =0;
-	virtual Matrices reassembleStructuralMatrices(Step &step, Matrices matrices) =0;
+	virtual Matrices updateStructuralMatrices(Matrices matrices) =0;
+	virtual Matrices reassembleStructuralMatrices(Matrices matrices) =0;
 
-	virtual void initLoadStep(Step &step);
-	virtual bool hasNextTimeStep(Step &step);
-	virtual void runNextTimeStep(Step &step) =0;
-	virtual void processTimeStep(Step &step) =0;
-	virtual void finalizeLoadStep(Step &step);
+	virtual void initLoadStep();
+	virtual bool hasNextTimeStep();
+	virtual void runNextTimeStep() =0;
+	virtual void processTimeStep() =0;
+	virtual void finalizeLoadStep();
 
 	std::string _description;
 	TimeStepSolver &_timeStepSolver;

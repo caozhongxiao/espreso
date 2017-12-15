@@ -12,13 +12,14 @@
 #include "../../mesh/mesh.h"
 #include "../../mesh/store/elementstore.h"
 #include "../../mesh/store/nodestore.h"
+#include "../../mesh/store/boundaryregionstore.h"
 
 #include "../../solver/generic/SparseMatrix.h"
 
 using namespace espreso;
 
 HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
-: Physics("", NULL, NULL, &configuration), // skipped because Physics is inherited virtually
+: Physics("", NULL, NULL, NULL, &configuration), // skipped because Physics is inherited virtually
   _configuration(configuration), _propertiesConfiguration(propertiesConfiguration),
   _temperature(NULL), _gradient(NULL), _flux(NULL), _phaseChange(NULL), _latentHeat(NULL)
 {
@@ -28,25 +29,21 @@ HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration, const
 	}
 }
 
-MatrixType HeatTransfer::getMatrixType(const Step &step, size_t domain) const
+MatrixType HeatTransfer::getMatrixType(size_t domain) const
 {
-	if (step.tangentMatrixCorrection) {
+	if (_step->tangentMatrixCorrection) {
 		return MatrixType::REAL_UNSYMMETRIC;
 	}
-//	if (
-//			_mesh->hasProperty(domain, Property::TRANSLATION_MOTION_X, step.step) ||
-//			_mesh->hasProperty(domain, Property::TRANSLATION_MOTION_Y, step.step) ||
-//			_mesh->hasProperty(domain, Property::TRANSLATION_MOTION_Z, step.step)) {
-//
-//		return MatrixType::REAL_UNSYMMETRIC;
-//	} else {
-//		return MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-//	}
-	if (_configuration.load_steps_settings.at(step.step + 1).translation_motions.size()) {
-		return MatrixType::REAL_UNSYMMETRIC;
-	} else {
-		return MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+
+	if (_configuration.load_steps_settings.at(_step->step + 1).translation_motions.size()) {
+		for (auto it = _configuration.load_steps_settings.at(_step->step + 1).translation_motions.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).translation_motions.end(); ++it) {
+			BoundaryRegionStore *region = _mesh->bregion(it->first);
+			if (region->eintervalsDistribution[domain] != region->eintervalsDistribution[domain + 1]) {
+				return MatrixType::REAL_UNSYMMETRIC;
+			}
+		}
 	}
+	return MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 }
 
 void HeatTransfer::prepare()
@@ -59,23 +56,37 @@ void HeatTransfer::analyticRegularization(size_t domain, bool ortogonalCluster)
 	if (_instance->K[domain].mtype != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
 		ESINFO(ERROR) << "Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set FETI_REGULARIZATION = ALGEBRAIC";
 	}
-//
-//	if (_mesh->hasProperty(domain, Property::EXTERNAL_TEMPERATURE, 0)) {
-//		return;
-//	}
+
+	if (_configuration.load_steps_settings.at(_step->step + 1).convection.size()) {
+		for (auto it = _configuration.load_steps_settings.at(_step->step + 1).convection.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).convection.end(); ++it) {
+			BoundaryRegionStore *region = _mesh->bregion(it->first);
+			if (region->eintervalsDistribution[domain] != region->eintervalsDistribution[domain + 1]) {
+				return;
+			}
+		}
+	}
+
+	if (_configuration.load_steps_settings.at(_step->step + 1).diffuse_radiation.size()) {
+		for (auto it = _configuration.load_steps_settings.at(_step->step + 1).diffuse_radiation.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).diffuse_radiation.end(); ++it) {
+			BoundaryRegionStore *region = _mesh->bregion(it->first);
+			if (region->eintervalsDistribution[domain] != region->eintervalsDistribution[domain + 1]) {
+				return;
+			}
+		}
+	}
 
 	double value;
-//	if (ortogonalCluster) {
-//		size_t nSum = 0;
-//		for (size_t d = 0; d < _instance->domains; d++) {
-//			if (_mesh->getContinuityPartition()[d] == _mesh->getContinuityPartition()[domain]) {
-//				nSum += _instance->K[d].rows;
-//			}
-//		}
-//		value = 1 / sqrt(nSum);
-//	} else {
-//		value = 1 / sqrt(_instance->K[domain].rows);
-//	}
+	if (ortogonalCluster) {
+		size_t nSum = 0;
+		for (size_t d = 0; d < _instance->domains; d++) {
+			if (_mesh->elements->clusters[d] == _mesh->elements->clusters[domain]) {
+				nSum += _instance->K[d].rows;
+			}
+		}
+		value = 1 / sqrt(nSum);
+	} else {
+		value = 1 / sqrt(_instance->K[domain].rows);
+	}
 
 	_instance->N1[domain].rows = _instance->K[domain].rows;
 	_instance->N1[domain].cols = 1;
@@ -95,7 +106,7 @@ void HeatTransfer::analyticRegularization(size_t domain, bool ortogonalCluster)
 	_instance->RegMat[domain].ConvertToCSR(1);
 }
 
-void HeatTransfer::computeInitialTemperature(const Step &step, std::vector<std::vector<double> > &data)
+void HeatTransfer::computeInitialTemperature(std::vector<std::vector<double> > &data)
 {
 	data.resize(_mesh->elements->ndomains);
 
@@ -116,14 +127,14 @@ void HeatTransfer::computeInitialTemperature(const Step &step, std::vector<std::
 //			}
 //		}
 //		for (size_t n = 0; n < _mesh->coordinates().localSize(p); n++) {
-//			data[p].push_back(_mesh->nodes()[_mesh->coordinates().clusterIndex(n, p)]->getProperty(Property::INITIAL_TEMPERATURE, step.step, _mesh->coordinates().get(n, p), step.currentTime, 0, 273.15 + 20));
+//			data[p].push_back(_mesh->nodes()[_mesh->coordinates().clusterIndex(n, p)]->getProperty(Property::INITIAL_TEMPERATURE, _step->step, _mesh->coordinates().get(n, p), _step->currentTime, 0, 273.15 + 20));
 //		}
 	}
 }
 
-void HeatTransfer::preprocessData(const Step &step)
+void HeatTransfer::preprocessData()
 {
-	computeInitialTemperature(step, _instance->primalSolution);
+	computeInitialTemperature(_instance->primalSolution);
 }
 
 void HeatTransfer::convectionMatParameters(
@@ -139,7 +150,7 @@ void HeatTransfer::convectionMatParameters(
 //
 //
 //		gas_constant = 286.9;
-//		rho = (e->getProperty(Property::ABSOLUTE_PRESSURE, step.step, p, step.currentTime, T_EXT, 0)) / (gas_constant * T_EXT);
+//		rho = (e->getProperty(Property::ABSOLUTE_PRESSURE, _step->step, p, _step->currentTime, T_EXT, 0)) / (gas_constant * T_EXT);
 //
 //
 //		if ((T_EXT >=200) && (T_EXT <= 1600)){
@@ -346,17 +357,17 @@ void HeatTransfer::convectionMatParameters(
 }
 
 
-double HeatTransfer::computeHTC(const Step &step, const ConvectionConfiguration *convection, const Point &p, double temp) const
+double HeatTransfer::computeHTC(const ConvectionConfiguration *convection, const Point &p, double temp) const
 {
 	double htc = 0;
 	switch (convection->type) {
 	case ConvectionConfiguration::TYPE::USER:
-		return convection->heat_transfer_coefficient.evaluator->evaluate(p, temp, step.currentTime);
+		return convection->heat_transfer_coefficient.evaluator->evaluate(p, temp, _step->currentTime);
 
 	case ConvectionConfiguration::TYPE::EXTERNAL_NATURAL: {
 		double T_AVG, g, rho, dynamic_viscosity, heat_capacity, thermal_conductivity, dynamic_viscosity_T, text;
 
-		text = convection->external_temperature.evaluator->evaluate(p, temp, step.currentTime);
+		text = convection->external_temperature.evaluator->evaluate(p, temp, _step->currentTime);
 		T_AVG = (text + temp) / 2;
 		g = 9.81;
 
@@ -364,9 +375,9 @@ double HeatTransfer::computeHTC(const Step &step, const ConvectionConfiguration 
 
 		switch (convection->variant) {
 		case ConvectionConfiguration::VARIANT::INCLINED_WALL: {
-			double wallHeaight = convection->wall_height.evaluator->evaluate(p, temp, step.currentTime);
+			double wallHeaight = convection->wall_height.evaluator->evaluate(p, temp, _step->currentTime);
 			double RaL = pow(rho,2) * g * (1 / T_AVG) * heat_capacity * std::fabs(temp - text  ) * pow(wallHeaight, 3.0) / ( thermal_conductivity * dynamic_viscosity);
-			double tilt_angle = convection->tilt_angle.evaluator->evaluate(p, temp, step.currentTime) * M_PI / 180.0;
+			double tilt_angle = convection->tilt_angle.evaluator->evaluate(p, temp, _step->currentTime) * M_PI / 180.0;
 			if (RaL <= 1e9) {
 				htc = (thermal_conductivity / wallHeaight) * (0.68 + (0.67 * cos(tilt_angle) * pow(RaL,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
 			} else {
@@ -375,7 +386,7 @@ double HeatTransfer::computeHTC(const Step &step, const ConvectionConfiguration 
 
 		} break;
 		case ConvectionConfiguration::VARIANT::VERTICAL_WALL: {
-			double wallHeaight = convection->wall_height.evaluator->evaluate(p, temp, step.currentTime);
+			double wallHeaight = convection->wall_height.evaluator->evaluate(p, temp, _step->currentTime);
 			double RaL = pow(rho,2) * g * (1/T_AVG) * heat_capacity * std::fabs(temp - text) * pow(wallHeaight, 3.0)/ ( thermal_conductivity * dynamic_viscosity);
 
 			if (RaL <= 1e9) {
@@ -386,7 +397,7 @@ double HeatTransfer::computeHTC(const Step &step, const ConvectionConfiguration 
 
 		} break;
 		case ConvectionConfiguration::VARIANT::HORIZONTAL_PLATE_UP: {
-			double lenght = convection->length.evaluator->evaluate(p, temp, step.currentTime);
+			double lenght = convection->length.evaluator->evaluate(p, temp, _step->currentTime);
 			double RaL = pow(rho,2) * g * (1/T_AVG) * heat_capacity * std::fabs(temp - text) * pow(lenght, 3.0)/ ( thermal_conductivity * dynamic_viscosity);
 
 			if (temp > text) {
@@ -401,7 +412,7 @@ double HeatTransfer::computeHTC(const Step &step, const ConvectionConfiguration 
 
 		} break;
 		case ConvectionConfiguration::VARIANT::HORIZONTAL_PLATE_DOWN: {
-			double lenght = convection->length.evaluator->evaluate(p, temp, step.currentTime);
+			double lenght = convection->length.evaluator->evaluate(p, temp, _step->currentTime);
 			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs(temp - text) *pow(lenght, 3.0)/ ( thermal_conductivity * dynamic_viscosity);
 
 			if (temp <= text) {
@@ -415,7 +426,7 @@ double HeatTransfer::computeHTC(const Step &step, const ConvectionConfiguration 
 			}
 		} break;
 		case ConvectionConfiguration::VARIANT::HORIZONTAL_CYLINDER:{
-			double diameter = convection->diameter.evaluator->evaluate(p, temp, step.currentTime);
+			double diameter = convection->diameter.evaluator->evaluate(p, temp, _step->currentTime);
 			double RaD = pow(rho,2) * g * (1/T_AVG) * heat_capacity * std::fabs(temp - text) * pow(diameter, 3.0)/ ( thermal_conductivity * dynamic_viscosity);
 			double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
 
@@ -427,7 +438,7 @@ double HeatTransfer::computeHTC(const Step &step, const ConvectionConfiguration 
 
 		} break;
 		case ConvectionConfiguration::VARIANT::SPHERE: {
-			double diameter = convection->diameter.evaluator->evaluate(p, temp, step.currentTime);
+			double diameter = convection->diameter.evaluator->evaluate(p, temp, _step->currentTime);
 			double RaD = pow(rho,2) * g * (1/T_AVG) * heat_capacity * std::fabs( temp - text) * pow(diameter, 3.0) / ( thermal_conductivity * dynamic_viscosity);
 			double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
 
@@ -446,7 +457,7 @@ double HeatTransfer::computeHTC(const Step &step, const ConvectionConfiguration 
 
 		double T_AVG, g, rho, dynamic_viscosity, heat_capacity, thermal_conductivity,dynamic_viscosity_T, text;
 
-		text = convection->external_temperature.evaluator->evaluate(p, temp, step.currentTime);
+		text = convection->external_temperature.evaluator->evaluate(p, temp, _step->currentTime);
 		T_AVG = (text + temp) / 2.0;
 		g = 9.81;
 
@@ -454,8 +465,8 @@ double HeatTransfer::computeHTC(const Step &step, const ConvectionConfiguration 
 
 		switch (convection->variant) {
 		case ConvectionConfiguration::VARIANT::PARALLEL_PLATES: {
-			double wallHeight = convection->wall_height.evaluator->evaluate(p, temp, step.currentTime);
-			double length = convection->length.evaluator->evaluate(p, temp, step.currentTime);
+			double wallHeight = convection->wall_height.evaluator->evaluate(p, temp, _step->currentTime);
+			double length = convection->length.evaluator->evaluate(p, temp, _step->currentTime);
 			double H_L = wallHeight / length;
 			double RaL = pow(rho,2) * g * (1/T_AVG) * heat_capacity * std::fabs(temp - text) * pow(length,3.0)/ ( thermal_conductivity * dynamic_viscosity);
 
@@ -472,8 +483,8 @@ double HeatTransfer::computeHTC(const Step &step, const ConvectionConfiguration 
 
 		} break;
 		case ConvectionConfiguration::VARIANT::CIRCULAR_TUBE: {
-			double diameter = convection->diameter.evaluator->evaluate(p, temp, step.currentTime);
-			double wallHeight = convection->wall_height.evaluator->evaluate(p, temp, step.currentTime);
+			double diameter = convection->diameter.evaluator->evaluate(p, temp, _step->currentTime);
+			double wallHeight = convection->wall_height.evaluator->evaluate(p, temp, _step->currentTime);
 			double RaD = pow(rho,2) * g * (1/T_AVG) * heat_capacity * std::fabs(temp - text) * pow(diameter, 3.0)/ ( thermal_conductivity * dynamic_viscosity);
 			double H_D = wallHeight / diameter;
 
@@ -501,14 +512,14 @@ double HeatTransfer::computeHTC(const Step &step, const ConvectionConfiguration 
 			case ConvectionConfiguration::VARIANT::AVERAGE_PLATE: {
 
 				double T_AVG, rho, dynamic_viscosity, heat_capacity, thermal_conductivity,dynamic_viscosity_T, text;
-				text = convection->external_temperature.evaluator->evaluate(p, temp, step.currentTime);
-				double length = convection->length.evaluator->evaluate(p, temp, step.currentTime);
+				text = convection->external_temperature.evaluator->evaluate(p, temp, _step->currentTime);
+				double length = convection->length.evaluator->evaluate(p, temp, _step->currentTime);
 
 				T_AVG = (text + temp) / 2.0;
 
 				// convectionMatParameters(convection, e, p, step, temp, T_AVG, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
 
-				double Re = rho * convection->fluid_velocity.evaluator->evaluate(p, temp, step.currentTime) * length / dynamic_viscosity;
+				double Re = rho * convection->fluid_velocity.evaluator->evaluate(p, temp, _step->currentTime) * length / dynamic_viscosity;
 				double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
 				if (Re <= 5e5) {
 					htc = 2 * (thermal_conductivity / length) * ((0.3387 * pow(Pr, 1.0 / 3.0) * pow(Re, 0.5)) / (pow(1 + pow(0.0468 / Pr, 2.0 / 3.0), 0.25)));
@@ -529,14 +540,14 @@ double HeatTransfer::computeHTC(const Step &step, const ConvectionConfiguration 
 
 				double T_EXT, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity;
 
-				T_EXT = convection->external_temperature.evaluator->evaluate(p, temp, step.currentTime);
+				T_EXT = convection->external_temperature.evaluator->evaluate(p, temp, _step->currentTime);
 
 				// convectionMatParameters(convection, e, p, step, temp, T_EXT, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
 
-				double Re = rho * convection->fluid_velocity.evaluator->evaluate(p, temp, step.currentTime) * convection->diameter.evaluator->evaluate(p, temp, step.currentTime) / dynamic_viscosity;
+				double Re = rho * convection->fluid_velocity.evaluator->evaluate(p, temp, _step->currentTime) * convection->diameter.evaluator->evaluate(p, temp, _step->currentTime) / dynamic_viscosity;
 				double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
 				double n = temp < T_EXT ? 0.3 : 0.4;
-				htc = thermal_conductivity / convection->diameter.evaluator->evaluate(p, temp, step.currentTime);
+				htc = thermal_conductivity / convection->diameter.evaluator->evaluate(p, temp, _step->currentTime);
 				if (Re <= 2500) {
 					htc *= 3.66;
 				} else {

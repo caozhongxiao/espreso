@@ -13,12 +13,12 @@ class PseudoTimeStepping: public LoadStepSolver {
 public:
 	PseudoTimeStepping(TimeStepSolver &timeStepSolver, const NonLinearSolverConfiguration &configuration, double duration);
 
-	Matrices updateStructuralMatrices(Step &step, Matrices matrices);
-	Matrices reassembleStructuralMatrices(Step &step, Matrices matrices);
+	Matrices updateStructuralMatrices(Matrices matrices);
+	Matrices reassembleStructuralMatrices(Matrices matrices);
 
 protected:
-	void runNextTimeStep(Step &step);
-	void processTimeStep(Step &step);
+	void runNextTimeStep();
+	void processTimeStep();
 
 	const NonLinearSolverConfiguration &_configuration;
 };

@@ -38,8 +38,8 @@ static std::string mNames(espreso::Matrices matrices, const std::string &prefix 
 	std::string(matrices & espreso::Matrices::dual        ? prefix + "Dual "        : "");
 }
 
-Assembler::Assembler(Instance &instance, Physics &physics, Mesh &mesh, ResultStore &store, LinearSolver &linearSolver)
-: instance(instance), physics(physics), mesh(mesh), store(store), linearSolver(linearSolver), _timeStatistics(new TimeEval("Physics solver timing"))
+Assembler::Assembler(Instance &instance, Physics &physics, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver)
+: instance(instance), physics(physics), mesh(mesh), step(step), store(store), linearSolver(linearSolver), _timeStatistics(new TimeEval("Physics solver timing"))
 {
 	_timeStatistics->totalTime.startWithBarrier();
 }
@@ -52,14 +52,14 @@ Assembler::~Assembler()
 	}
 }
 
-void Assembler::preprocessData(const Step &step)
+void Assembler::preprocessData()
 {
 	timeWrapper("pre-process data", [&] () {
-		physics.preprocessData(step);
+		physics.preprocessData();
 	});
 }
 
-void Assembler::updateMatrices(const Step &step, Matrices matrices)
+void Assembler::updateMatrices(Matrices matrices)
 {
 	if (!matrices) {
 		return;
@@ -69,7 +69,7 @@ void Assembler::updateMatrices(const Step &step, Matrices matrices)
 
 	if (structural) {
 		timeWrapper("update " + mNames(structural), [&] () {
-			physics.updateMatrix(step, structural);
+			physics.updateMatrix(structural);
 		});
 	}
 
@@ -93,27 +93,27 @@ void Assembler::updateMatrices(const Step &step, Matrices matrices)
 			}
 			instance.block.clear();
 			instance.block.resize(3, 0);
-			physics.assembleB1(step, linearSolver.applyB1LagrangeRedundancy(), linearSolver.glueDomainsByLagrangeMultipliers(), linearSolver.applyB1Scaling());
+			physics.assembleB1(linearSolver.applyB1LagrangeRedundancy(), linearSolver.glueDomainsByLagrangeMultipliers(), linearSolver.applyB1Scaling());
 
 		});
 	}
 
 	if (matrices & Matrices::B1c) {
 		timeWrapper("update " + mNames(Matrices::B1c), [&] () {
-			physics.updateDirichletInB1(step, linearSolver.applyB1LagrangeRedundancy());
+			physics.updateDirichletInB1(linearSolver.applyB1LagrangeRedundancy());
 		});
 	}
 }
 
-void Assembler::processSolution(const Step &step)
+void Assembler::processSolution()
 {
 	timeWrapper("post-processing", [&] () {
-		physics.processSolution(step);
+		physics.processSolution();
 	});
 	storeWrapper(mNames(Matrices::primal), Matrices::primal);
 }
 
-void Assembler::solve(const Step &step, Matrices updatedMatrices)
+void Assembler::solve(Matrices updatedMatrices)
 {
 	// TODO: MESH
 	// store.storeFETIData(step, instance);
@@ -130,7 +130,7 @@ void Assembler::solve(const Step &step, Matrices updatedMatrices)
 	});
 }
 
-void Assembler::storeSolution(const Step &step)
+void Assembler::storeSolution()
 {
 	if (store.storeStep(step)) {
 		if (store.isCollected()) {
@@ -142,7 +142,7 @@ void Assembler::storeSolution(const Step &step)
 	}
 }
 
-void Assembler::storeSubSolution(const Step &step)
+void Assembler::storeSubSolution()
 {
 	timeWrapper("store solution", [&] () {
 		// TODO: MESH
@@ -159,7 +159,7 @@ void Assembler::finalize()
 	_timeStatistics->printStatsMPI();
 }
 
-void Assembler::keepK(const Step &step)
+void Assembler::keepK()
 {
 	timeWrapper("copy K to origK", [&] () {
 		#pragma omp parallel for
@@ -240,11 +240,11 @@ double Assembler::multiply(std::vector<std::vector<double> > &x, std::vector<std
 	return sum;
 }
 
-double Assembler::sumSquares(const Step &step, const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction, const std::string &description)
+double Assembler::sumSquares(const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction, const std::string &description)
 {
 	double result;
 	timeWrapper(description, [&] () {
-		result = physics.sumSquares(data, operation, restriction, step.step);
+		result = physics.sumSquares(data, operation, restriction);
 	});
 	return result;
 }
@@ -278,7 +278,7 @@ double Assembler::maxAbsValue(const std::vector<std::vector<double> > &v, const 
 	return gmax;
 }
 
-double Assembler::lineSearch(const Step &step, const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext)
+double Assembler::lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext)
 {
 	double alpha = 1;
 	timeWrapper("line search", [&] () {
@@ -308,7 +308,7 @@ double Assembler::lineSearch(const Step &step, const std::vector<std::vector<dou
 			sum(solution, 1, U, alpha, deltaU, "U = U + alpha * delta U (line search)");
 
 			solution.swap(instance.primalSolution);
-			physics.updateMatrix(step, Matrices::R);
+			physics.updateMatrix(Matrices::R);
 			solution.swap(instance.primalSolution);
 
 			if (i == 0) {

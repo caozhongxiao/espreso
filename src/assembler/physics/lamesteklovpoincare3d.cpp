@@ -23,8 +23,8 @@
 
 using namespace espreso;
 
-LameSteklovPoincare3D::LameSteklovPoincare3D(Mesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
-: Physics("LAME STEKLOV POINCARE 3D", mesh, instance, &configuration), StructuralMechanics3D(mesh, instance, configuration, propertiesConfiguration)
+LameSteklovPoincare3D::LameSteklovPoincare3D(Mesh *mesh, Instance *instance, Step *step, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
+: Physics("LAME STEKLOV POINCARE 3D", mesh, instance, step, &configuration), StructuralMechanics3D(mesh, instance, step, configuration, propertiesConfiguration)
 {
 #ifndef BEM4I
 	ESINFO(GLOBAL_ERROR) << "BEM4I is not linked!. Copy BEM4I library to tools/bem4i and re-configure ESPRESO.";
@@ -37,7 +37,7 @@ void LameSteklovPoincare3D::prepareHybridTotalFETIWithKernels()
 	prepare();
 }
 
-void LameSteklovPoincare3D::preprocessData(const Step &step)
+void LameSteklovPoincare3D::preprocessData()
 {
 //	if (offset == (size_t)-1) {
 //		offset = _instance->solutions.size();
@@ -52,7 +52,7 @@ void LameSteklovPoincare3D::preprocessData(const Step &step)
 //	}
 }
 
-void LameSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices, size_t domain)
+void LameSteklovPoincare3D::updateMatrix(Matrices matrices, size_t domain)
 {
 	if (matrices & Matrices::f) {
 		_instance->f[domain].clear();
@@ -95,15 +95,15 @@ void LameSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices, si
 
 	_instance->K[domain].ConvertDenseToCSR(1);
 	SparseVVPMatrix<eslocal> K, M; // never filled
-	assembleBoundaryConditions(K, M, step, Matrices::f, domain);
+	assembleBoundaryConditions(K, M, Matrices::f, domain);
 }
 
-void LameSteklovPoincare3D::updateMatrix(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe)
+void LameSteklovPoincare3D::updateMatrix(Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe)
 {
 	ESINFO(ERROR) << "BEM discretization not supports assembling of stiffness matrix K for one element.";
 }
 
-void LameSteklovPoincare3D::processSolution(const Step &step)
+void LameSteklovPoincare3D::processSolution()
 {
 	// TODO: get solution for all nodes from BEM library
 //	#pragma omp parallel for

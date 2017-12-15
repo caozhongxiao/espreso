@@ -15,17 +15,17 @@ struct HeatTransfer: public virtual Physics
 {
 	HeatTransfer(const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
 
-	virtual MatrixType getMatrixType(const Step &step, size_t domain) const;
+	virtual MatrixType getMatrixType(size_t domain) const;
 	virtual void prepare();
-	virtual void preprocessData(const Step &step);
+	virtual void preprocessData();
 	virtual void analyticRegularization(size_t domain, bool ortogonalCluster);
 
 	virtual ~HeatTransfer() {}
 
 protected:
-	void computeInitialTemperature(const Step &step, std::vector<std::vector<double> > &data);
+	void computeInitialTemperature(std::vector<std::vector<double> > &data);
 
-	double computeHTC(const Step &step, const ConvectionConfiguration *convection, const Point &p, double temp) const;
+	double computeHTC(const ConvectionConfiguration *convection, const Point &p, double temp) const;
 
 	void convectionMatParameters(
 			const ConvectionConfiguration &convection, eslocal eindex, const Point &p, Step step,

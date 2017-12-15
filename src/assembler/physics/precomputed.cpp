@@ -17,17 +17,17 @@
 using namespace espreso;
 
 Precomputed::Precomputed(Mesh *mesh, Instance *instance, MatrixType type, double *rhs, size_t rhsSize)
-: Physics("API", mesh, instance, NULL), _mtype(type), _rhs(rhs), _rhsSize(rhsSize)
+: Physics("API", mesh, instance, NULL, NULL), _mtype(type), _rhs(rhs), _rhsSize(rhsSize)
 {
 //	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, dynamic_cast<APIMesh*>(_mesh)->DOFs(), _mesh->faces(), pointDOFs(), pointDOFsOffsets(), true, true);
 }
 
-MatrixType Precomputed::getMatrixType(const Step &step, size_t domain) const
+MatrixType Precomputed::getMatrixType(size_t domain) const
 {
 	return _mtype;
 }
 
-void Precomputed::updateMatrix(const Step &step, Matrices matrices, size_t domain)
+void Precomputed::updateMatrix(Matrices matrices, size_t domain)
 {
 //	SparseVVPMatrix<eslocal> _K;
 //
@@ -70,7 +70,7 @@ void Precomputed::updateMatrix(const Step &step, Matrices matrices, size_t domai
 //	}
 }
 
-void Precomputed::preprocessData(const Step &step)
+void Precomputed::preprocessData()
 {
 //	_instance->solutions.resize(SolutionIndex::SIZE, NULL);
 //	_instance->solutions[SolutionIndex::DECOMPOSED] = new Solution(*_mesh, "decomposed", ElementType::NODES, { Property::UNKNOWN }, _instance->primalSolution);
@@ -78,7 +78,7 @@ void Precomputed::preprocessData(const Step &step)
 //	_instance->solutions[SolutionIndex::MERGED] = new Solution(*_mesh, "mergedSolution", ElementType::NODES, { Property::UNKNOWN }, _mergedSolution);
 }
 
-void Precomputed::processSolution(const Step &step)
+void Precomputed::processSolution()
 {
 //	for (size_t i = 0; i < dynamic_cast<APIMesh*>(_mesh)->DOFs().size(); i++) {
 //		_mergedSolution[0][i] = 0;
@@ -101,22 +101,22 @@ void Precomputed::analyticRegularization(size_t domain, bool ortogonalCluster)
 	ESINFO(ERROR) << "Cannot compute analytic regularization of not PRECOMPUTED physics. Set FETI_REGULARIZATION = ALGEBRAIC";
 }
 
-void Precomputed::processElement(const Step &step, eslocal domain, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void Precomputed::processElement(eslocal domain, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	ESINFO(ERROR) << "ESPRESO internal error: cannot process element of precomputed physics";
 }
 
-void Precomputed::processFace(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void Precomputed::processFace(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	ESINFO(ERROR) << "ESPRESO internal error: cannot process face of precomputed physics";
 }
 
-void Precomputed::processEdge(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void Precomputed::processEdge(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	ESINFO(ERROR) << "ESPRESO internal error: cannot process edge of precomputed physics";
 }
 
-void Precomputed::processNode(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void Precomputed::processNode(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	ESINFO(ERROR) << "ESPRESO internal error: cannot process node of precomputed physics";
 }

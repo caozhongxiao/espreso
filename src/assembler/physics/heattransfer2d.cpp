@@ -14,13 +14,13 @@
 
 using namespace espreso;
 
-HeatTransfer2D::HeatTransfer2D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
-: Physics("HEAT TRANSFER 2D", mesh, instance, &configuration), HeatTransfer(configuration, propertiesConfiguration)
+HeatTransfer2D::HeatTransfer2D(Mesh *mesh, Instance *instance, Step *step, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
+: Physics("HEAT TRANSFER 2D", mesh, instance, step, &configuration), HeatTransfer(configuration, propertiesConfiguration)
 {
 	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, {}, 1, configuration.load_steps_settings.at(1).feti.redundant_lagrange, configuration.load_steps_settings.at(1).feti.scaling);
 }
 
-void HeatTransfer2D::assembleMaterialMatrix(const Step &step, eslocal eindex, eslocal node, const MaterialBaseConfiguration *mat, double phase, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
+void HeatTransfer2D::assembleMaterialMatrix(eslocal eindex, eslocal node, const MaterialBaseConfiguration *mat, double phase, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
 {
 //	auto conductivity = [&] (int row, int column, double t) {
 //		return mat->thermal_conductivity.values.get(row, column).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, t);
@@ -126,7 +126,7 @@ void HeatTransfer2D::assembleMaterialMatrix(const Step &step, eslocal eindex, es
 //	K(node, 3) += phase * TCT(1, 0);
 }
 
-void HeatTransfer2D::processElement(const Step &step, eslocal domain, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 //	bool CAU = _configuration.stabilization == HeatTransferConfiguration::STABILIZATION::CAU;
 //	bool tangentCorrection = (matrices & Matrices::K) && step.tangentMatrixCorrection;
@@ -342,13 +342,13 @@ void HeatTransfer2D::processElement(const Step &step, eslocal domain, Matrices m
 //	}
 }
 
-void HeatTransfer2D::processFace(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void HeatTransfer2D::processFace(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	ESINFO(ERROR) << "Advection diffusion 2D cannot process face";
 }
 
 
-void HeatTransfer2D::processEdge(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void HeatTransfer2D::processEdge(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 //	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step) ||
 //		e->hasProperty(Property::HEAT_FLOW, step.step) ||
@@ -450,7 +450,7 @@ void HeatTransfer2D::processEdge(const Step &step, eslocal domain, const Boundar
 //	}
 }
 
-void HeatTransfer2D::processNode(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void HeatTransfer2D::processNode(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
@@ -458,7 +458,7 @@ void HeatTransfer2D::processNode(const Step &step, eslocal domain, const Boundar
 	fe.resize(0, 0);
 }
 
-void HeatTransfer2D::postProcessElement(const Step &step, eslocal eindex)
+void HeatTransfer2D::postProcessElement(eslocal eindex)
 {
 //	DenseMatrix Ce(2, 2), coordinates, J(2, 2), invJ(2, 2), dND, temp(e->nodes(), 1);
 //	double detJ, m, norm_u_e, h_e;
@@ -557,7 +557,7 @@ void HeatTransfer2D::postProcessElement(const Step &step, eslocal eindex)
 //	}
 }
 
-void HeatTransfer2D::processSolution(const Step &step)
+void HeatTransfer2D::processSolution()
 {
 	bool postProcess = false;
 //	if (_propertiesConfiguration.gradient) {

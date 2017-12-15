@@ -25,13 +25,13 @@
 using namespace espreso;
 
 Physics::Physics()
-: _name(""), _mesh(NULL), _instance(NULL), _equalityConstraints(NULL), _configuration(NULL)
+: _name(""), _mesh(NULL), _instance(NULL), _step(NULL), _equalityConstraints(NULL), _configuration(NULL)
 {
 
 }
 
-Physics::Physics(const std::string &name, Mesh *mesh, Instance *instance, const PhysicsConfiguration *configuration)
-: _name(name), _mesh(mesh), _instance(instance), _equalityConstraints(NULL), _configuration(configuration) // initialized in a particular physics
+Physics::Physics(const std::string &name, Mesh *mesh, Instance *instance, Step *step, const PhysicsConfiguration *configuration)
+: _name(name), _mesh(mesh), _instance(instance), _step(step), _equalityConstraints(NULL), _configuration(configuration) // initialized in a particular physics
 {
 
 }
@@ -43,12 +43,12 @@ Physics::~Physics()
 	}
 }
 
-void Physics::updateMatrix(const Step &step, Matrices matrix)
+void Physics::updateMatrix(Matrices matrix)
 {
 	#pragma omp parallel for
 	for  (size_t d = 0; d < _instance->domains; d++) {
 
-		updateMatrix(step, matrix, d);
+		updateMatrix(matrix, d);
 
 		switch (_instance->K[d].mtype) {
 		case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -65,7 +65,7 @@ void Physics::updateMatrix(const Step &step, Matrices matrix)
 	ESINFO(PROGRESS3);
 }
 
-void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain)
+void Physics::updateMatrix(Matrices matrices, size_t domain)
 {
 	SparseVVPMatrix<eslocal> _K, _M;
 	DenseMatrix Ke, Me, Re, fe;
@@ -88,18 +88,18 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain)
 
 	auto nodes = _mesh->elements->nodes->cbegin() + _mesh->elements->elementsDistribution[domain];
 	for (eslocal e = _mesh->elements->elementsDistribution[domain]; e < (eslocal)_mesh->elements->elementsDistribution[domain + 1]; ++e, ++nodes) {
-		processElement(step, domain, matrices, e, Ke, Me, Re, fe);
+		processElement(domain, matrices, e, Ke, Me, Re, fe);
 		fillDOFsIndices(*nodes, domain, DOFs);
-		insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, step, domain, false);
+		insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, domain, false);
 	}
 
-	assembleBoundaryConditions(_K, _M, step, matrices, domain);
+	assembleBoundaryConditions(_K, _M, matrices, domain);
 
 	// TODO: make it direct
 	if (matrices & Matrices::K) {
 		SparseCSRMatrix<eslocal> csrK = _K;
 		_instance->K[domain] = csrK;
-		_instance->K[domain].mtype = getMatrixType(step, domain);
+		_instance->K[domain].mtype = getMatrixType(domain);
 	}
 	if (matrices & Matrices::M) {
 		SparseCSRMatrix<eslocal> csrM = _M;
@@ -108,7 +108,7 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain)
 	}
 }
 
-void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, const Step &step, Matrices matrices, size_t domain)
+void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, Matrices matrices, size_t domain)
 {
 	DenseMatrix Ke, fe, Me(0, 0), Re(0, 0);
 	std::vector<eslocal> DOFs;
@@ -121,9 +121,9 @@ void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPM
 				eslocal end = _mesh->boundaryRegions[r]->eintervals[_mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1] - 1].end;
 				auto nodes = _mesh->boundaryRegions[r]->elements->cbegin() + begin;
 				for (eslocal i = begin; i < end; ++i, ++nodes) {
-					processFace(step, domain, _mesh->boundaryRegions[r], matrices, i, Ke, Me, Re, fe);
+					processFace(domain, _mesh->boundaryRegions[r], matrices, i, Ke, Me, Re, fe);
 					fillDOFsIndices(*nodes, domain, DOFs);
-					insertElementToDomain(K, M, DOFs, Ke, Me, Re, fe, step, domain, true);
+					insertElementToDomain(K, M, DOFs, Ke, Me, Re, fe, domain, true);
 				}
 			}
 		}
@@ -174,9 +174,9 @@ void Physics::insertElementToDomain(
 		SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M,
 		const std::vector<eslocal> &DOFs,
 		const DenseMatrix &Ke, const DenseMatrix &Me, const DenseMatrix &Re, const DenseMatrix &fe,
-		const Step &step, size_t domain, bool isBOundaryCondition)
+		size_t domain, bool isBOundaryCondition)
 {
-	double RHSreduction = step.internalForceReduction;
+	double RHSreduction = _step->internalForceReduction;
 	double Kreduction = isBOundaryCondition ? RHSreduction : 1;
 
 	if (Ke.rows() == DOFs.size() && Ke.columns() == DOFs.size()) {
@@ -447,11 +447,11 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOpe
 //	return gsum;
 }
 
-void Physics::assembleB1(const Step &step, bool withRedundantMultipliers, bool withGluing, bool withScaling)
+void Physics::assembleB1(bool withRedundantMultipliers, bool withGluing, bool withScaling)
 {
-	_equalityConstraints->B1DirichletInsert(step);
+	_equalityConstraints->B1DirichletInsert(*_step);
 	if (withGluing) {
-		_equalityConstraints->B1GlueElements(step);
+		_equalityConstraints->B1GlueElements(*_step);
 	}
 	// TODO: MESH
 //	_equalityConstraints->insertDirichletToB1(step, withRedundantMultipliers);
@@ -463,7 +463,7 @@ void Physics::assembleB1(const Step &step, bool withRedundantMultipliers, bool w
 //	}
 }
 
-void Physics::updateDirichletInB1(const Step &step, bool withRedundantMultipliers)
+void Physics::updateDirichletInB1(bool withRedundantMultipliers)
 {
 	// TODO: MESH
 	// _equalityConstraints->updateDirichletValuesInB1(step, withRedundantMultipliers);

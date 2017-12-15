@@ -18,8 +18,8 @@
 
 using namespace espreso;
 
-StructuralMechanicsFactory::StructuralMechanicsFactory(const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh)
-: _configuration(configuration), _propertiesConfiguration(propertiesConfiguration), _bem(false)
+StructuralMechanicsFactory::StructuralMechanicsFactory(Step *step, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh)
+: _step(step), _configuration(configuration), _propertiesConfiguration(propertiesConfiguration), _bem(false)
 {
 	_instances.push_back(new Instance(*mesh));
 
@@ -27,10 +27,10 @@ StructuralMechanicsFactory::StructuralMechanicsFactory(const StructuralMechanics
 	case DISCRETIZATION::FEM:
 		switch (configuration.dimension) {
 		case DIMENSION::D2:
-			_physics.push_back(new StructuralMechanics2D(mesh, _instances.front(), configuration, propertiesConfiguration));
+			_physics.push_back(new StructuralMechanics2D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
 			break;
 		case DIMENSION::D3:
-			_physics.push_back(new StructuralMechanics3D(mesh, _instances.front(), configuration, propertiesConfiguration));
+			_physics.push_back(new StructuralMechanics3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
 			break;
 		}
 		break;
@@ -41,7 +41,7 @@ StructuralMechanicsFactory::StructuralMechanicsFactory(const StructuralMechanics
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: cannot solve STRUCTURAL MECHANICS 2D with BEM discretization.";
 			break;
 		case DIMENSION::D3:
-			_physics.push_back(new LameSteklovPoincare3D(mesh, _instances.front(), configuration, propertiesConfiguration));
+			_physics.push_back(new LameSteklovPoincare3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
 			break;
 		}
 		break;
@@ -60,7 +60,7 @@ LoadStepSolver* StructuralMechanicsFactory::getLoadStepSolver(size_t step, Mesh 
 	const StructuralMechanicsLoadStepConfiguration &settings = getLoadStepsSettings(step, _configuration.load_steps_settings);
 
 	_linearSolvers.push_back(getLinearSolver(settings, _instances.front()));
-	_assemblers.push_back(new Assembler(*_instances.front(), *_physics.front(), *mesh, *store, *_linearSolvers.back()));
+	_assemblers.push_back(new Assembler(*_instances.front(), *_physics.front(), *mesh, *_step, *store, *_linearSolvers.back()));
 
 	switch (settings.mode) {
 	case LoadStepConfiguration::MODE::LINEAR:

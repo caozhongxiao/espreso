@@ -28,12 +28,12 @@ public:
 		if (factory._loadSteps.size() > 1) {
 			ESINFO(GLOBAL_ERROR) << "APITEST: Cannot test instance with more loadsteps.";
 		}
-		factory._loader->_physics[0]->preprocessData(step);
+		factory._loader->_physics[0]->preprocessData();
 	}
 
 	int matrixType()
 	{
-		return static_cast<int>(factory._loader->_assemblers[0]->physics.getMatrixType(step, 0));
+		return static_cast<int>(factory._loader->_assemblers[0]->physics.getMatrixType(0));
 	}
 
 	size_t elements()

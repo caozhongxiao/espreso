@@ -17,44 +17,44 @@ PseudoTimeStepping::PseudoTimeStepping(TimeStepSolver &timeStepSolver, const Non
 	_assembler.setB0Callback();
 }
 
-Matrices PseudoTimeStepping::updateStructuralMatrices(Step &step, Matrices matrices)
+Matrices PseudoTimeStepping::updateStructuralMatrices(Matrices matrices)
 {
 	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::f | Matrices::R | Matrices::B1 | Matrices::B1c | Matrices::B1duplicity);
 
-	if (step.substep) {
+	if (_assembler.step.substep) {
 		updatedMatrices &= (Matrices::f | Matrices::B1c);
 	}
 
-	return reassembleStructuralMatrices(step, updatedMatrices);
+	return reassembleStructuralMatrices(updatedMatrices);
 }
 
-Matrices PseudoTimeStepping::reassembleStructuralMatrices(Step &step, Matrices matrices)
+Matrices PseudoTimeStepping::reassembleStructuralMatrices(Matrices matrices)
 {
-	_assembler.updateMatrices(step, matrices);
+	_assembler.updateMatrices(matrices);
 	return matrices;
 }
 
-void PseudoTimeStepping::runNextTimeStep(Step &step)
+void PseudoTimeStepping::runNextTimeStep()
 {
-	double last = step.currentTime;
-	step.currentTime += _duration / _configuration.substeps;
-	if (step.currentTime + _precision >= _startTime + _duration) {
-		step.currentTime = _startTime + _duration;
+	double last = _assembler.step.currentTime;
+	_assembler.step.currentTime += _duration / _configuration.substeps;
+	if (_assembler.step.currentTime + _precision >= _startTime + _duration) {
+		_assembler.step.currentTime = _startTime + _duration;
 	}
-	step.timeStep = step.currentTime - last;
-	processTimeStep(step);
+	_assembler.step.timeStep = _assembler.step.currentTime - last;
+	processTimeStep();
 }
 
-void PseudoTimeStepping::processTimeStep(Step &step)
+void PseudoTimeStepping::processTimeStep()
 {
-	step.internalForceReduction = (double)(step.substep + 1) / _configuration.substeps;
-	step.timeIntegrationConstantK = 1;
-	step.timeIntegrationConstantM = 0;
+	_assembler.step.internalForceReduction = (double)(_assembler.step.substep + 1) / _configuration.substeps;
+	_assembler.step.timeIntegrationConstantK = 1;
+	_assembler.step.timeIntegrationConstantM = 0;
 
-	_timeStepSolver.solve(step, *this);
+	_timeStepSolver.solve(*this);
 
-	_assembler.processSolution(step);
-	_assembler.storeSolution(step);
+	_assembler.processSolution();
+	_assembler.storeSolution();
 }
 
 

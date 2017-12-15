@@ -36,32 +36,32 @@ TransientFirstOrderImplicit::TransientFirstOrderImplicit(TimeStepSolver &timeSte
 	dTK = _assembler.mesh.nodes->appendData({});
 }
 
-Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Step &step, Matrices matrices)
+Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Matrices matrices)
 {
 	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R | Matrices::B1 | Matrices::B1c | Matrices::B1duplicity);
 
-	if (step.substep) {
+	if (_assembler.step.substep) {
 		updatedMatrices &= (Matrices::f | Matrices::B1c);
 	}
 
-	return reassembleStructuralMatrices(step, updatedMatrices);
+	return reassembleStructuralMatrices(updatedMatrices);
 }
 
-Matrices TransientFirstOrderImplicit::reassembleStructuralMatrices(Step &step, Matrices matrices)
+Matrices TransientFirstOrderImplicit::reassembleStructuralMatrices(Matrices matrices)
 {
-	_assembler.updateMatrices(step, matrices);
+	_assembler.updateMatrices(matrices);
 	if (matrices & (Matrices::K | Matrices::M)) {
-		_assembler.keepK(step);
+		_assembler.keepK();
 		_assembler.sum(
 				_assembler.instance.K,
-				1 / (_alpha * step.timeStep), _assembler.instance.M,
+				1 / (_alpha * _assembler.step.timeStep), _assembler.instance.M,
 				"K += (1 / alpha * delta T) * M");
 	}
 
 	if (matrices & (Matrices::K | Matrices::M | Matrices::f)) {
 		_assembler.sum(
 				*X->decomposedData,
-				1 / (_alpha * step.timeStep), *U->decomposedData,
+				1 / (_alpha * _assembler.step.timeStep), *U->decomposedData,
 				(1 - _alpha) / _alpha, *V->decomposedData,
 				"x = (1 / alpha * delta T) * U + (1 - alpha) / alpha * V");
 
@@ -79,9 +79,9 @@ Matrices TransientFirstOrderImplicit::reassembleStructuralMatrices(Step &step, M
 	return matrices;
 }
 
-void TransientFirstOrderImplicit::initLoadStep(Step &step)
+void TransientFirstOrderImplicit::initLoadStep()
 {
-	LoadStepSolver::initLoadStep(step);
+	LoadStepSolver::initLoadStep();
 
 	_assembler.setEmptyRegularizationCallback();
 	_assembler.setRegularizationFromOrigKCallback();
@@ -107,33 +107,33 @@ void TransientFirstOrderImplicit::initLoadStep(Step &step)
 		ESINFO(GLOBAL_ERROR) << "Not supported first order implicit solver method.";
 	}
 
-	if (loadStep + 1 != step.step) {
+	if (loadStep + 1 != _assembler.step.step) {
 		for (size_t i = 0; i < V->decomposedData->size(); i++) {
 			std::fill((*V->decomposedData)[i].begin(), (*V->decomposedData)[i].end(), 0);
 		}
 	}
-	loadStep = step.step;
+	loadStep = _assembler.step.step;
 	(*U->decomposedData) = _assembler.instance.primalSolution;
 }
 
-void TransientFirstOrderImplicit::runNextTimeStep(Step &step)
+void TransientFirstOrderImplicit::runNextTimeStep()
 {
-	double last = step.currentTime;
-	step.currentTime += _nTimeStep;
-	if (step.currentTime + _precision >= _startTime + _duration) {
-		step.currentTime = _startTime + _duration;
+	double last = _assembler.step.currentTime;
+	_assembler.step.currentTime += _nTimeStep;
+	if (_assembler.step.currentTime + _precision >= _startTime + _duration) {
+		_assembler.step.currentTime = _startTime + _duration;
 	}
-	step.timeStep = step.currentTime - last;
-	processTimeStep(step);
+	_assembler.step.timeStep = _assembler.step.currentTime - last;
+	processTimeStep();
 }
 
-void TransientFirstOrderImplicit::processTimeStep(Step &step)
+void TransientFirstOrderImplicit::processTimeStep()
 {
-	step.internalForceReduction = 1;
-	step.timeIntegrationConstantK = 1;
-	step.timeIntegrationConstantM = 1 / (_alpha * step.timeStep);
+	_assembler.step.internalForceReduction = 1;
+	_assembler.step.timeIntegrationConstantK = 1;
+	_assembler.step.timeIntegrationConstantM = 1 / (_alpha * _assembler.step.timeStep);
 
-	_timeStepSolver.solve(step, *this);
+	_timeStepSolver.solve(*this);
 
 	_assembler.sum(
 			*dU->decomposedData,
@@ -141,17 +141,17 @@ void TransientFirstOrderImplicit::processTimeStep(Step &step)
 			-1, *U->decomposedData,
 			"delta U = U_i - U_i_1");
 
-	_nTimeStep = step.timeStep;
+	_nTimeStep = _assembler.step.timeStep;
 
-	if (_configuration.auto_time_stepping.allowed && step.currentTime < _startTime + _duration) {
+	if (_configuration.auto_time_stepping.allowed && _assembler.step.currentTime < _startTime + _duration) {
 		double resFreq, oscilationLimit;
 
 		double norm =
-				sqrt(_assembler.sumSquares(step, *dU->decomposedData, SumOperation::AVERAGE, SumRestriction::NONE, "|dU|")) /
-				sqrt(_assembler.sumSquares(step, *U->decomposedData, SumOperation::AVERAGE, SumRestriction::NONE, "|U|"));
+				sqrt(_assembler.sumSquares(*dU->decomposedData, SumOperation::AVERAGE, SumRestriction::NONE, "|dU|")) /
+				sqrt(_assembler.sumSquares(*U->decomposedData, SumOperation::AVERAGE, SumRestriction::NONE, "|U|"));
 
 		if (norm < 1e-5) {
-			_nTimeStep = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * step.timeStep);
+			_nTimeStep = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * _assembler.step.timeStep);
 		} else {
 			_assembler.multiply(
 					*dTK->decomposedData,
@@ -174,18 +174,18 @@ void TransientFirstOrderImplicit::processTimeStep(Step &step)
 
 			resFreq = gTKT / gTMT;
 
-			oscilationLimit = step.timeStep * resFreq;
+			oscilationLimit = _assembler.step.timeStep * resFreq;
 
 			double t1 = _configuration.auto_time_stepping.oscilation_limit / resFreq;
 
-			if (step.timeStep != t1) {
-				if (step.timeStep < t1) {
-					if (_configuration.auto_time_stepping.IDFactor * step.timeStep < t1) {
-						_nTimeStep = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * step.timeStep);
+			if (_assembler.step.timeStep != t1) {
+				if (_assembler.step.timeStep < t1) {
+					if (_configuration.auto_time_stepping.IDFactor * _assembler.step.timeStep < t1) {
+						_nTimeStep = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * _assembler.step.timeStep);
 					}
 				} else {
-					if (step.timeStep / _configuration.auto_time_stepping.IDFactor > t1) {
-						_nTimeStep = std::max(_configuration.auto_time_stepping.min_time_step, step.timeStep / _configuration.auto_time_stepping.IDFactor);
+					if (_assembler.step.timeStep / _configuration.auto_time_stepping.IDFactor > t1) {
+						_nTimeStep = std::max(_configuration.auto_time_stepping.min_time_step, _assembler.step.timeStep / _configuration.auto_time_stepping.IDFactor);
 					}
 				}
 			}
@@ -193,26 +193,26 @@ void TransientFirstOrderImplicit::processTimeStep(Step &step)
 			ESINFO(CONVERGENCE) << "AUTOMATIC TIME STEPPING INFO: RESPONSE EIGENVALUE(" << resFreq << "), OSCILLATION LIMIT(" << oscilationLimit << ")";
 		}
 
-		if (std::fabs(step.timeStep - _nTimeStep) / step.timeStep < _precision) {
+		if (std::fabs(_assembler.step.timeStep - _nTimeStep) / _assembler.step.timeStep < _precision) {
 			ESINFO(CONVERGENCE) << "TIME STEP UNCHANGED (" << _nTimeStep << ")";
 		} else {
-			ESINFO(CONVERGENCE) << "NEW TIME STEP " << (step.timeStep < _nTimeStep ? "INCREASED " : "DECREASED ") << "TO VALUE: " << _nTimeStep;
+			ESINFO(CONVERGENCE) << "NEW TIME STEP " << (_assembler.step.timeStep < _nTimeStep ? "INCREASED " : "DECREASED ") << "TO VALUE: " << _nTimeStep;
 		}
 	}
 
-	if (step.timeStep - _precision < _nTimeStep) {
+	if (_assembler.step.timeStep - _precision < _nTimeStep) {
 		_assembler.sum(
 				*V->decomposedData,
-				1 / (_alpha * step.timeStep), *dU->decomposedData,
+				1 / (_alpha * _assembler.step.timeStep), *dU->decomposedData,
 				- (1 - _alpha) / _alpha, *V->decomposedData,
 				"V = (1 / alpha * delta T) * delta U - (1 - alpha) / alpha * V");
 
 		*U->decomposedData = _assembler.instance.primalSolution;
-		_assembler.processSolution(step);
-		_assembler.storeSolution(step);
+		_assembler.processSolution();
+		_assembler.storeSolution();
 	} else {
-		step.currentTime -= step.timeStep;
-		--step.substep;
+		_assembler.step.currentTime -= _assembler.step.timeStep;
+		--_assembler.step.substep;
 	}
 }
 

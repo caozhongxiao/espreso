@@ -14,36 +14,36 @@ SteadyStateSolver::SteadyStateSolver(TimeStepSolver &timeStepSolver, double dura
 
 }
 
-Matrices SteadyStateSolver::updateStructuralMatrices(Step &step, Matrices matrices)
+Matrices SteadyStateSolver::updateStructuralMatrices(Matrices matrices)
 {
 	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::f | Matrices::R | Matrices::B1 | Matrices::B1c | Matrices::B1duplicity);
 
-	return reassembleStructuralMatrices(step, updatedMatrices);
+	return reassembleStructuralMatrices(updatedMatrices);
 }
 
-Matrices SteadyStateSolver::reassembleStructuralMatrices(Step &step, Matrices matrices)
+Matrices SteadyStateSolver::reassembleStructuralMatrices(Matrices matrices)
 {
-	_assembler.updateMatrices(step, matrices);
+	_assembler.updateMatrices(matrices);
 	return matrices;
 }
 
-void SteadyStateSolver::runNextTimeStep(Step &step)
+void SteadyStateSolver::runNextTimeStep()
 {
-	step.currentTime += _duration;
-	step.timeStep = _duration;
-	processTimeStep(step);
+	_assembler.step.currentTime += _duration;
+	_assembler.step.timeStep = _duration;
+	processTimeStep();
 }
 
 
-void SteadyStateSolver::processTimeStep(Step &step)
+void SteadyStateSolver::processTimeStep()
 {
-	step.internalForceReduction = 1;
-	step.timeIntegrationConstantK = 1;
-	step.timeIntegrationConstantM = 0;
+	_assembler.step.internalForceReduction = 1;
+	_assembler.step.timeIntegrationConstantK = 1;
+	_assembler.step.timeIntegrationConstantM = 0;
 
-	_timeStepSolver.solve(step, *this);
+	_timeStepSolver.solve(*this);
 
-	_assembler.processSolution(step);
-	_assembler.storeSolution(step);
+	_assembler.processSolution();
+	_assembler.storeSolution();
 }
 

@@ -58,21 +58,23 @@ void ESPRESO::run(int *argc, char ***argv)
 Factory::Factory(const ECFConfiguration &configuration, Mesh &mesh, ResultStore &store)
 : _mesh(&mesh), _store(&store), _loader(NULL)
 {
+	_step = new Step();
+	Logging::step = _step;
 	Loader::load(configuration, mesh, configuration.environment.MPIrank, configuration.environment.MPIsize);
 
 	// LOAD PHYSICS
 	switch (configuration.physics) {
 	case PHYSICS::HEAT_TRANSFER_2D:
-		_loader = new HeatTransferFactory(configuration.heat_transfer_2d, configuration.output.results_selection, _mesh);
+		_loader = new HeatTransferFactory(_step, configuration.heat_transfer_2d, configuration.output.results_selection, _mesh);
 		break;
 	case PHYSICS::HEAT_TRANSFER_3D:
-		_loader = new HeatTransferFactory(configuration.heat_transfer_3d, configuration.output.results_selection, _mesh);
+		_loader = new HeatTransferFactory(_step, configuration.heat_transfer_3d, configuration.output.results_selection, _mesh);
 		break;
 	case PHYSICS::STRUCTURAL_MECHANICS_2D:
-		_loader = new StructuralMechanicsFactory(configuration.structural_mechanics_2d, configuration.output.results_selection, _mesh);
+		_loader = new StructuralMechanicsFactory(_step, configuration.structural_mechanics_2d, configuration.output.results_selection, _mesh);
 		break;
 	case PHYSICS::STRUCTURAL_MECHANICS_3D:
-		_loader = new StructuralMechanicsFactory(configuration.structural_mechanics_3d, configuration.output.results_selection, _mesh);
+		_loader = new StructuralMechanicsFactory(_step, configuration.structural_mechanics_3d, configuration.output.results_selection, _mesh);
 		break;
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown PHYSICS in configuration file";
@@ -90,11 +92,8 @@ Factory::Factory(const ECFConfiguration &configuration, Mesh &mesh, ResultStore 
 
 void Factory::solve()
 {
-	Step step;
-	Logging::step = &step;
-
-	for (step.step = 0; step.step < _loadSteps.size(); step.step++) {
-		_loadSteps[step.step]->run(step);
+	for (_step->step = 0; _step->step < _loadSteps.size(); _step->step++) {
+		_loadSteps[_step->step]->run();
 	}
 }
 

@@ -13,8 +13,8 @@
 
 using namespace espreso;
 
-StructuralMechanics3D::StructuralMechanics3D(Mesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
-: Physics("STRUCTURAL MECHANICS 3D", mesh, instance, &configuration), StructuralMechanics(configuration, propertiesConfiguration)
+StructuralMechanics3D::StructuralMechanics3D(Mesh *mesh, Instance *instance, Step *step, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
+: Physics("STRUCTURAL MECHANICS 3D", mesh, instance, step, &configuration), StructuralMechanics(configuration, propertiesConfiguration)
 {
 //	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, _mesh->nodes(), _mesh->faces(), pointDOFs(), pointDOFsOffsets());
 }
@@ -151,7 +151,7 @@ void StructuralMechanics3D::analyticRegularization(size_t domain, bool ortogonal
 }
 
 
-void StructuralMechanics3D::assembleMaterialMatrix(const Step &step, eslocal eindex, eslocal node, double temp, DenseMatrix &K) const
+void StructuralMechanics3D::assembleMaterialMatrix(eslocal eindex, eslocal node, double temp, DenseMatrix &K) const
 {
 //	const MaterialConfiguration* material = _mesh->materials()[e->param(OldElement::MATERIAL)];
 //	double Ex, Ey, Ez, miXY, miXZ, miYZ, Gx, Gy, Gz;
@@ -314,7 +314,7 @@ void StructuralMechanics3D::assembleMaterialMatrix(const Step &step, eslocal ein
 //	}
 }
 
-void StructuralMechanics3D::processElement(const Step &step, eslocal domain, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void StructuralMechanics3D::processElement(eslocal domain, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 //	DenseMatrix Ce(6, 6), coordinates(e->nodes(), 3), J, invJ(3, 3), dND, B, precision, rhsT;
 //	DenseMatrix K(e->nodes(), 36), TE(e->nodes(), 3), inertia(e->nodes(), 3), dens(e->nodes(), 1);
@@ -429,7 +429,7 @@ void StructuralMechanics3D::processElement(const Step &step, eslocal domain, Mat
 //	}
 }
 
-void StructuralMechanics3D::processFace(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void StructuralMechanics3D::processFace(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 //	if (!e->hasProperty(Property::PRESSURE, step.step)) {
 //		Ke.resize(0, 0);
@@ -487,7 +487,7 @@ void StructuralMechanics3D::processFace(const Step &step, eslocal domain, const 
 //	}
 }
 
-void StructuralMechanics3D::processEdge(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void StructuralMechanics3D::processEdge(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
@@ -495,7 +495,7 @@ void StructuralMechanics3D::processEdge(const Step &step, eslocal domain, const 
 	fe.resize(0, 0);
 }
 
-void StructuralMechanics3D::processNode(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void StructuralMechanics3D::processNode(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 //	if (
 //			e->hasProperty(Property::FORCE_X, step.step) ||
@@ -518,12 +518,12 @@ void StructuralMechanics3D::processNode(const Step &step, eslocal domain, const 
 	fe.resize(0, 0);
 }
 
-void StructuralMechanics3D::postProcessElement(const Step &step, eslocal eindex)
+void StructuralMechanics3D::postProcessElement(eslocal eindex)
 {
 
 }
 
-void StructuralMechanics3D::processSolution(const Step &step)
+void StructuralMechanics3D::processSolution()
 {
 }
 

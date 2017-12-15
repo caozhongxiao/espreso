@@ -10,6 +10,7 @@ namespace espreso {
 
 class Mesh;
 struct Instance;
+struct Step;
 struct Physics;
 class LinearSolver;
 class Assembler;
@@ -69,6 +70,7 @@ protected:
 
 	Mesh *_mesh;
 	ResultStore *_store;
+	Step *_step;
 
 	FactoryLoader *_loader;
 	std::vector<LoadStepSolver*> _loadSteps;

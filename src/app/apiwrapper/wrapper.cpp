@@ -36,6 +36,7 @@ FETI4IStructInstance::~FETI4IStructInstance()
 	if (instance != NULL) { delete instance; }
 	if (physics != NULL) { delete physics; }
 	if (linearSolver != NULL) { delete linearSolver; }
+	if (step != NULL) { delete step; }
 	if (assembler != NULL) { delete assembler; }
 	if (timeStepSolver != NULL) { delete timeStepSolver; }
 	if (loadStepSolver != NULL) { delete loadStepSolver; }
@@ -202,10 +203,12 @@ void FETI4ICreateInstance(
 	DataHolder::instances.back()->instance = new Instance(*DataHolder::instances.back()->mesh);
 	DataHolder::instances.back()->physics = new Precomputed(DataHolder::instances.back()->mesh, DataHolder::instances.back()->instance, (espreso::MatrixType)matrix->type, rhs, size);
 	DataHolder::instances.back()->linearSolver = new FETISolver(DataHolder::instances.back()->instance, DataHolder::instances.back()->configuration.feti4ilibrary.solver);
+	DataHolder::instances.back()->step = new Step();
 	DataHolder::instances.back()->assembler = new Assembler(
 			*DataHolder::instances.back()->instance,
 			*DataHolder::instances.back()->physics,
 			*DataHolder::instances.back()->mesh,
+			*DataHolder::instances.back()->step,
 			*DataHolder::instances.back()->store,
 			*DataHolder::instances.back()->linearSolver);
 	DataHolder::instances.back()->timeStepSolver = new LinearTimeStep(*DataHolder::instances.back()->assembler);
@@ -223,9 +226,8 @@ void FETI4ISolve(
 	checkConfiguration();
 	TimeEvent event("Solve FETI4I instance"); event.startWithBarrier();
 
-	Step step;
-	Logging::step = &step;
-	instance->loadStepSolver->run(step);
+	Logging::step = instance->step;
+	instance->loadStepSolver->run();
 
 	// TODO: MESH
 	// memcpy(solution, instance->instance->solutions[espreso::Precomputed::SolutionIndex::MERGED]->data[0].data(), solution_size * sizeof(double));

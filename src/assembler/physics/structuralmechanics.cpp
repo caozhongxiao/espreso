@@ -25,7 +25,7 @@ StructuralMechanics::StructuralMechanics(const StructuralMechanicsConfiguration 
 
 }
 
-MatrixType StructuralMechanics::getMatrixType(const Step &step, size_t domain) const
+MatrixType StructuralMechanics::getMatrixType(size_t domain) const
 {
 	return MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 }
@@ -203,7 +203,7 @@ void StructuralMechanics::prepare()
 //	}
 }
 
-void StructuralMechanics::preprocessData(const Step &step)
+void StructuralMechanics::preprocessData()
 {
 //	if (offset != (size_t)-1) {
 //		return;

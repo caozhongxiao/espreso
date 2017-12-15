@@ -8,16 +8,16 @@ namespace espreso {
 
 struct LameSteklovPoincare3D: public StructuralMechanics3D
 {
-	LameSteklovPoincare3D(Mesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
+	LameSteklovPoincare3D(Mesh *mesh, Instance *instance, Step *step, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
 
 	void prepareHybridTotalFETIWithKernels();
 
-	virtual void preprocessData(const Step &step);
+	virtual void preprocessData();
 
-	virtual void updateMatrix(const Step &step, Matrices matrices, size_t domain);
-	virtual void updateMatrix(const Step &step, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe);
+	virtual void updateMatrix(Matrices matrices, size_t domain);
+	virtual void updateMatrix(Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe);
 
-	void processSolution(const Step &step);
+	void processSolution();
 };
 
 }

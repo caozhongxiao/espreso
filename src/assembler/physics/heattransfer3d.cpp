@@ -29,8 +29,8 @@
 
 using namespace espreso;
 
-HeatTransfer3D::HeatTransfer3D(Mesh *mesh, Instance *instance, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
-: Physics("HEAT TRANSFER 3D", mesh, instance, &configuration), HeatTransfer(configuration, propertiesConfiguration)
+HeatTransfer3D::HeatTransfer3D(Mesh *mesh, Instance *instance, Step *step, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
+: Physics("HEAT TRANSFER 3D", mesh, instance, step, &configuration), HeatTransfer(configuration, propertiesConfiguration)
 {
 	std::vector<std::pair<BoundaryRegionStore*, Evaluator*> > dirichlet;
 	for (auto it = configuration.load_steps_settings.at(1).temperature.begin(); it != configuration.load_steps_settings.at(1).temperature.end(); ++it) {
@@ -64,7 +64,7 @@ HeatTransfer3D::HeatTransfer3D(Mesh *mesh, Instance *instance, const HeatTransfe
 	}
 }
 
-void HeatTransfer3D::assembleMaterialMatrix(const Step &step, eslocal eindex, eslocal node, const Point &p, const MaterialBaseConfiguration *mat, double phase, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
+void HeatTransfer3D::assembleMaterialMatrix(eslocal eindex, eslocal node, const Point &p, const MaterialBaseConfiguration *mat, double phase, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
 {
 	auto d2r = [] (double degree) -> double {
 		return M_PI * degree / 180;
@@ -74,21 +74,21 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, eslocal eindex, es
 	switch (mat->coordinate_system.type) {
 	case CoordinateSystemConfiguration::TYPE::CARTESIAN:
 
-		cos.x = std::cos(d2r(mat->coordinate_system.rotation_x.evaluator->evaluate(p, step.currentTime, temp)));
-		cos.y = std::cos(d2r(mat->coordinate_system.rotation_y.evaluator->evaluate(p, step.currentTime, temp)));
-		cos.z = std::cos(d2r(mat->coordinate_system.rotation_z.evaluator->evaluate(p, step.currentTime, temp)));
+		cos.x = std::cos(d2r(mat->coordinate_system.rotation_x.evaluator->evaluate(p, _step->currentTime, temp)));
+		cos.y = std::cos(d2r(mat->coordinate_system.rotation_y.evaluator->evaluate(p, _step->currentTime, temp)));
+		cos.z = std::cos(d2r(mat->coordinate_system.rotation_z.evaluator->evaluate(p, _step->currentTime, temp)));
 
-		sin.x = std::sin(d2r(mat->coordinate_system.rotation_x.evaluator->evaluate(p, step.currentTime, temp)));
-		sin.y = std::sin(d2r(mat->coordinate_system.rotation_y.evaluator->evaluate(p, step.currentTime, temp)));
-		sin.z = std::sin(d2r(mat->coordinate_system.rotation_z.evaluator->evaluate(p, step.currentTime, temp)));
+		sin.x = std::sin(d2r(mat->coordinate_system.rotation_x.evaluator->evaluate(p, _step->currentTime, temp)));
+		sin.y = std::sin(d2r(mat->coordinate_system.rotation_y.evaluator->evaluate(p, _step->currentTime, temp)));
+		sin.z = std::sin(d2r(mat->coordinate_system.rotation_z.evaluator->evaluate(p, _step->currentTime, temp)));
 
 		break;
 
 	case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: {
 
 		Point origin(
-				mat->coordinate_system.center_x.evaluator->evaluate(p, step.currentTime, temp),
-				mat->coordinate_system.center_y.evaluator->evaluate(p, step.currentTime, temp),
+				mat->coordinate_system.center_x.evaluator->evaluate(p, _step->currentTime, temp),
+				mat->coordinate_system.center_y.evaluator->evaluate(p, _step->currentTime, temp),
 				0);
 
 		double rotation = std::atan2((p.y - origin.y), (p.x - origin.x));
@@ -106,9 +106,9 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, eslocal eindex, es
 	case CoordinateSystemConfiguration::TYPE::SPHERICAL: {
 
 		Point origin(
-				mat->coordinate_system.center_x.evaluator->evaluate(p, step.currentTime, temp),
-				mat->coordinate_system.center_y.evaluator->evaluate(p, step.currentTime, temp),
-				mat->coordinate_system.center_z.evaluator->evaluate(p, step.currentTime, temp));
+				mat->coordinate_system.center_x.evaluator->evaluate(p, _step->currentTime, temp),
+				mat->coordinate_system.center_y.evaluator->evaluate(p, _step->currentTime, temp),
+				mat->coordinate_system.center_z.evaluator->evaluate(p, _step->currentTime, temp));
 
 		double azimut = std::atan2((p.y - origin.y), (p.x - origin.x));
 		double r = std::sqrt(pow((p.x - origin.x), 2) + pow((p.y - origin.y), 2) + pow((p.z - origin.z), 2));
@@ -146,14 +146,14 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, eslocal eindex, es
 
 	auto derivation = [&] (const ECFExpression &expression, double h) {
 		return (
-				expression.evaluator->evaluate(p, step.currentTime, temp + h) -
-				expression.evaluator->evaluate(p, step.currentTime, temp - h)
+				expression.evaluator->evaluate(p, _step->currentTime, temp + h) -
+				expression.evaluator->evaluate(p, _step->currentTime, temp - h)
 				) / (2 * h);
 	};
 
 	switch (mat->thermal_conductivity.model) {
 	case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
-		C(0, 0) = C(1, 1) = C(2, 2) = mat->thermal_conductivity.values.get(0, 0).evaluator->evaluate(p, step.currentTime, temp);
+		C(0, 0) = C(1, 1) = C(2, 2) = mat->thermal_conductivity.values.get(0, 0).evaluator->evaluate(p, _step->currentTime, temp);
 		C(0, 1) = C(0, 2) = C(1, 0) = C(1, 2) = C(2, 0) = C(2, 1) = 0;
 		if (tangentCorrection) {
 			_CD(0, 0) = _CD(1, 1) = _CD(2, 2) = derivation(mat->thermal_conductivity.values.get(0, 0), temp / 1e4);
@@ -161,9 +161,9 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, eslocal eindex, es
 		}
 		break;
 	case ThermalConductivityConfiguration::MODEL::DIAGONAL:
-		C(0, 0) = mat->thermal_conductivity.values.get(0, 0).evaluator->evaluate(p, step.currentTime, temp);
-		C(1, 1) = mat->thermal_conductivity.values.get(1, 1).evaluator->evaluate(p, step.currentTime, temp);
-		C(2, 2) = mat->thermal_conductivity.values.get(2, 2).evaluator->evaluate(p, step.currentTime, temp);
+		C(0, 0) = mat->thermal_conductivity.values.get(0, 0).evaluator->evaluate(p, _step->currentTime, temp);
+		C(1, 1) = mat->thermal_conductivity.values.get(1, 1).evaluator->evaluate(p, _step->currentTime, temp);
+		C(2, 2) = mat->thermal_conductivity.values.get(2, 2).evaluator->evaluate(p, _step->currentTime, temp);
 		C(0, 1) = C(0, 2) = C(1, 0) = C(1, 2) = C(2, 0) = C(2, 1) = 0;
 		if (tangentCorrection) {
 			_CD(0, 0) = derivation(mat->thermal_conductivity.values.get(0, 0), temp / 1e4);
@@ -173,12 +173,12 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, eslocal eindex, es
 		}
 		break;
 	case ThermalConductivityConfiguration::MODEL::SYMMETRIC:
-		C(0, 0) = mat->thermal_conductivity.values.get(0, 0).evaluator->evaluate(p, step.currentTime, temp);
-		C(1, 1) = mat->thermal_conductivity.values.get(1, 1).evaluator->evaluate(p, step.currentTime, temp);
-		C(2, 2) = mat->thermal_conductivity.values.get(2, 2).evaluator->evaluate(p, step.currentTime, temp);
-		C(0, 1) = C(1, 0) = mat->thermal_conductivity.values.get(0, 1).evaluator->evaluate(p, step.currentTime, temp);
-		C(0, 2) = C(2, 0) = mat->thermal_conductivity.values.get(0, 2).evaluator->evaluate(p, step.currentTime, temp);
-		C(1, 2) = C(2, 1) = mat->thermal_conductivity.values.get(1, 2).evaluator->evaluate(p, step.currentTime, temp);
+		C(0, 0) = mat->thermal_conductivity.values.get(0, 0).evaluator->evaluate(p, _step->currentTime, temp);
+		C(1, 1) = mat->thermal_conductivity.values.get(1, 1).evaluator->evaluate(p, _step->currentTime, temp);
+		C(2, 2) = mat->thermal_conductivity.values.get(2, 2).evaluator->evaluate(p, _step->currentTime, temp);
+		C(0, 1) = C(1, 0) = mat->thermal_conductivity.values.get(0, 1).evaluator->evaluate(p, _step->currentTime, temp);
+		C(0, 2) = C(2, 0) = mat->thermal_conductivity.values.get(0, 2).evaluator->evaluate(p, _step->currentTime, temp);
+		C(1, 2) = C(2, 1) = mat->thermal_conductivity.values.get(1, 2).evaluator->evaluate(p, _step->currentTime, temp);
 		if (tangentCorrection) {
 			_CD(0, 0) = derivation(mat->thermal_conductivity.values.get(0, 0), temp / 1e4);
 			_CD(1, 1) = derivation(mat->thermal_conductivity.values.get(1, 1), temp / 1e4);
@@ -189,15 +189,15 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, eslocal eindex, es
 		}
 		break;
 	case ThermalConductivityConfiguration::MODEL::ANISOTROPIC:
-		C(0, 0) = mat->thermal_conductivity.values.get(0, 0).evaluator->evaluate(p, step.currentTime, temp);
-		C(1, 1) = mat->thermal_conductivity.values.get(1, 1).evaluator->evaluate(p, step.currentTime, temp);
-		C(2, 2) = mat->thermal_conductivity.values.get(2, 2).evaluator->evaluate(p, step.currentTime, temp);
-		C(0, 1) = mat->thermal_conductivity.values.get(0, 1).evaluator->evaluate(p, step.currentTime, temp);
-		C(0, 2) = mat->thermal_conductivity.values.get(0, 2).evaluator->evaluate(p, step.currentTime, temp);
-		C(1, 0) = mat->thermal_conductivity.values.get(1, 0).evaluator->evaluate(p, step.currentTime, temp);
-		C(1, 2) = mat->thermal_conductivity.values.get(1, 2).evaluator->evaluate(p, step.currentTime, temp);
-		C(2, 0) = mat->thermal_conductivity.values.get(2, 0).evaluator->evaluate(p, step.currentTime, temp);
-		C(2, 1) = mat->thermal_conductivity.values.get(2, 1).evaluator->evaluate(p, step.currentTime, temp);
+		C(0, 0) = mat->thermal_conductivity.values.get(0, 0).evaluator->evaluate(p, _step->currentTime, temp);
+		C(1, 1) = mat->thermal_conductivity.values.get(1, 1).evaluator->evaluate(p, _step->currentTime, temp);
+		C(2, 2) = mat->thermal_conductivity.values.get(2, 2).evaluator->evaluate(p, _step->currentTime, temp);
+		C(0, 1) = mat->thermal_conductivity.values.get(0, 1).evaluator->evaluate(p, _step->currentTime, temp);
+		C(0, 2) = mat->thermal_conductivity.values.get(0, 2).evaluator->evaluate(p, _step->currentTime, temp);
+		C(1, 0) = mat->thermal_conductivity.values.get(1, 0).evaluator->evaluate(p, _step->currentTime, temp);
+		C(1, 2) = mat->thermal_conductivity.values.get(1, 2).evaluator->evaluate(p, _step->currentTime, temp);
+		C(2, 0) = mat->thermal_conductivity.values.get(2, 0).evaluator->evaluate(p, _step->currentTime, temp);
+		C(2, 1) = mat->thermal_conductivity.values.get(2, 1).evaluator->evaluate(p, _step->currentTime, temp);
 		if (tangentCorrection) {
 			_CD(0, 0) = derivation(mat->thermal_conductivity.values.get(0, 0), temp / 1e4);
 			_CD(1, 1) = derivation(mat->thermal_conductivity.values.get(1, 1), temp / 1e4);
@@ -239,21 +239,21 @@ void HeatTransfer3D::assembleMaterialMatrix(const Step &step, eslocal eindex, es
 	K(node, 8) += phase * TCT(2, 1);
 }
 
-void HeatTransfer3D::processElement(const Step &step, eslocal domain, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void HeatTransfer3D::processElement(eslocal domain, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	auto nodes = _mesh->elements->nodes->cbegin() + eindex;
 	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
 	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
 	Evaluator *translation_motion = NULL;
 	Evaluator *heat_source = NULL;
-	for (auto it = _configuration.load_steps_settings.at(step.step + 1).translation_motions.begin(); it != _configuration.load_steps_settings.at(step.step + 1).translation_motions.end(); ++it) {
+	for (auto it = _configuration.load_steps_settings.at(_step->step + 1).translation_motions.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).translation_motions.end(); ++it) {
 		ElementsRegionStore *region = _mesh->eregion(it->first);
 		if (std::binary_search(region->elements->datatarray().cbegin(), region->elements->datatarray().cend(), eindex)) {
 			translation_motion = it->second.evaluator;
 			break;
 		}
 	}
-	for (auto it = _configuration.load_steps_settings.at(step.step + 1).heat_source.begin(); it != _configuration.load_steps_settings.at(step.step + 1).heat_source.end(); ++it) {
+	for (auto it = _configuration.load_steps_settings.at(_step->step + 1).heat_source.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).heat_source.end(); ++it) {
 		ElementsRegionStore *region = _mesh->eregion(it->first);
 		if (std::binary_search(region->elements->datatarray().cbegin(), region->elements->datatarray().cend(), eindex)) {
 			heat_source = it->second.evaluator;
@@ -266,7 +266,7 @@ void HeatTransfer3D::processElement(const Step &step, eslocal domain, Matrices m
 	const std::vector<double> &weighFactor = *(epointer->weighFactor);
 
 	bool CAU = _configuration.stabilization == HeatTransferConfiguration::STABILIZATION::CAU;
-	bool tangentCorrection = (matrices & Matrices::K) && step.tangentMatrixCorrection;
+	bool tangentCorrection = (matrices & Matrices::K) && _step->tangentMatrixCorrection;
 
 	DenseMatrix Ce(3, 3), coordinates(nodes->size(), 3), J(3, 3), invJ(3, 3), dND;
 	double detJ, temp;
@@ -302,29 +302,29 @@ void HeatTransfer3D::processElement(const Step &step, eslocal domain, Matrices m
 		if (material->phase_change) {
 			double phase, derivation;
 			smoothstep(phase, derivation, material->phase_change_temperature - material->transition_interval / 2, material->phase_change_temperature + material->transition_interval / 2, temp, material->smooth_step_order);
-			assembleMaterialMatrix(step, eindex, n, p, phase1, phase, temp, K, CD, tangentCorrection);
-			assembleMaterialMatrix(step, eindex, n, p, phase2, (1 - phase), temp, K, CD, tangentCorrection);
+			assembleMaterialMatrix(eindex, n, p, phase1, phase, temp, K, CD, tangentCorrection);
+			assembleMaterialMatrix(eindex, n, p, phase2, (1 - phase), temp, K, CD, tangentCorrection);
 			m(n, 0) =
-					(    phase  * phase1->density.evaluator->evaluate(p, step.currentTime, temp) +
-					(1 - phase) * phase2->density.evaluator->evaluate(p, step.currentTime, temp)) *
+					(    phase  * phase1->density.evaluator->evaluate(p, _step->currentTime, temp) +
+					(1 - phase) * phase2->density.evaluator->evaluate(p, _step->currentTime, temp)) *
 
-					(    phase  * phase1->heat_capacity.evaluator->evaluate(p, step.currentTime, temp) +
-					(1 - phase) * phase2->heat_capacity.evaluator->evaluate(p, step.currentTime, temp) +
+					(    phase  * phase1->heat_capacity.evaluator->evaluate(p, _step->currentTime, temp) +
+					(1 - phase) * phase2->heat_capacity.evaluator->evaluate(p, _step->currentTime, temp) +
 					material->latent_heat * derivation);
 		} else {
-			assembleMaterialMatrix(step, eindex, n, p, material, 1, temp, K, CD, tangentCorrection);
+			assembleMaterialMatrix(eindex, n, p, material, 1, temp, K, CD, tangentCorrection);
 			m(n, 0) =
-					material->density.evaluator->evaluate(p, step.currentTime, temp) *
-					material->heat_capacity.evaluator->evaluate(p, step.currentTime, temp);
+					material->density.evaluator->evaluate(p, _step->currentTime, temp) *
+					material->heat_capacity.evaluator->evaluate(p, _step->currentTime, temp);
 		}
 
 		if (translation_motion) {
-			U(n, 0) = translation_motion->evaluate(p, step.currentTime, temp);
-			U(n, 1) = translation_motion->evaluate(p, step.currentTime, temp);
-			U(n, 2) = translation_motion->evaluate(p, step.currentTime, temp);
+			U(n, 0) = translation_motion->evaluate(p, _step->currentTime, temp);
+			U(n, 1) = translation_motion->evaluate(p, _step->currentTime, temp);
+			U(n, 2) = translation_motion->evaluate(p, _step->currentTime, temp);
 		}
 		if (heat_source) {
-			f(n, 0) = heat_source->evaluate(p, step.currentTime, temp);
+			f(n, 0) = heat_source->evaluate(p, _step->currentTime, temp);
 		}
 	}
 
@@ -334,11 +334,11 @@ void HeatTransfer3D::processElement(const Step &step, eslocal domain, Matrices m
 	Me.resize(0, 0);
 	Re.resize(0, 0);
 	fe.resize(0, 0);
-	if ((matrices & Matrices::K) || ((matrices & Matrices::R) && step.timeIntegrationConstantK != 0)) {
+	if ((matrices & Matrices::K) || ((matrices & Matrices::R) && _step->timeIntegrationConstantK != 0)) {
 		Ke.resize(Ksize, Ksize);
 		Ke = 0;
 	}
-	if ((matrices & Matrices::M) || ((matrices & Matrices::R) && step.timeIntegrationConstantM != 0)) {
+	if ((matrices & Matrices::M) || ((matrices & Matrices::R) && _step->timeIntegrationConstantM != 0)) {
 		Me.resize(Ksize, Ksize);
 		Me = 0;
 	}
@@ -478,8 +478,8 @@ void HeatTransfer3D::processElement(const Step &step, eslocal domain, Matrices m
 	}
 
 	if (matrices & Matrices::R) {
-		Re.multiply(Ke, T, step.timeIntegrationConstantK, 0);
-		Re.multiply(Me, T, step.timeIntegrationConstantM, 1);
+		Re.multiply(Ke, T, _step->timeIntegrationConstantK, 0);
+		Re.multiply(Me, T, _step->timeIntegrationConstantM, 1);
 		if (!(matrices & Matrices::K)) {
 			Ke.resize(0, 0);
 		}
@@ -493,28 +493,28 @@ void HeatTransfer3D::processElement(const Step &step, eslocal domain, Matrices m
 	}
 }
 
-void HeatTransfer3D::processFace(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void HeatTransfer3D::processFace(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	const ConvectionConfiguration *convection = NULL;
 	const RadiationConfiguration *radiation = NULL;
 	const Evaluator *heatFlow = NULL, *heatFlux = NULL;
 
-	auto itc = _configuration.load_steps_settings.at(step.step + 1).convection.find(region->name);
-	if (itc != _configuration.load_steps_settings.at(step.step + 1).convection.end()) {
+	auto itc = _configuration.load_steps_settings.at(_step->step + 1).convection.find(region->name);
+	if (itc != _configuration.load_steps_settings.at(_step->step + 1).convection.end()) {
 		convection = &itc->second;
 	}
 
-	auto itr = _configuration.load_steps_settings.at(step.step + 1).diffuse_radiation.find(region->name);
-	if (itr != _configuration.load_steps_settings.at(step.step + 1).diffuse_radiation.end()) {
+	auto itr = _configuration.load_steps_settings.at(_step->step + 1).diffuse_radiation.find(region->name);
+	if (itr != _configuration.load_steps_settings.at(_step->step + 1).diffuse_radiation.end()) {
 		radiation = &itr->second;
 	}
 
-	auto it = _configuration.load_steps_settings.at(step.step + 1).heat_flow.find(region->name);
-	if (it != _configuration.load_steps_settings.at(step.step + 1).heat_flow.end()) {
+	auto it = _configuration.load_steps_settings.at(_step->step + 1).heat_flow.find(region->name);
+	if (it != _configuration.load_steps_settings.at(_step->step + 1).heat_flow.end()) {
 		heatFlow = it->second.evaluator;
 	}
-	it = _configuration.load_steps_settings.at(step.step + 1).heat_flux.find(region->name);
-	if (it != _configuration.load_steps_settings.at(step.step + 1).heat_flux.end()) {
+	it = _configuration.load_steps_settings.at(_step->step + 1).heat_flux.find(region->name);
+	if (it != _configuration.load_steps_settings.at(_step->step + 1).heat_flux.end()) {
 		heatFlux = it->second.evaluator;
 	}
 
@@ -569,10 +569,10 @@ void HeatTransfer3D::processFace(const Step &step, eslocal domain, const Boundar
 		coordinates(n, 1) = p.y;
 		coordinates(n, 2) = p.z;
 		if (convection != NULL) {
-			text = convection->external_temperature.evaluator->evaluate(p, temp, step.currentTime);
-			htc(n, 0) = convection != NULL ? computeHTC(step, convection, p, temp) : 0;
+			text = convection->external_temperature.evaluator->evaluate(p, temp, _step->currentTime);
+			htc(n, 0) = convection != NULL ? computeHTC(convection, p, temp) : 0;
 
-			if (step.iteration) {
+			if (_step->iteration) {
 				q(n, 0) += htc(n, 0) * (text - temp);
 			} else {
 				q(n, 0) += htc(n, 0) * (text);
@@ -580,15 +580,15 @@ void HeatTransfer3D::processFace(const Step &step, eslocal domain, const Boundar
 		}
 
 		if (radiation != NULL) {
-			emiss(n, 0) = CONST_Stefan_Boltzmann * radiation->emissivity.evaluator->evaluate(p, temp, step.currentTime);
-			q(n, 0) += emiss(n, 0) * (pow(radiation->external_temperature.evaluator->evaluate(p, temp, step.currentTime), 4) - pow(temp, 4));
+			emiss(n, 0) = CONST_Stefan_Boltzmann * radiation->emissivity.evaluator->evaluate(p, temp, _step->currentTime);
+			q(n, 0) += emiss(n, 0) * (pow(radiation->external_temperature.evaluator->evaluate(p, temp, _step->currentTime), 4) - pow(temp, 4));
 			emiss(n, 0) *= 4 * temp * temp * temp;
 		}
 		if (heatFlow) {
-			q(n, 0) += heatFlow->evaluate(p, temp, step.currentTime) / area;
+			q(n, 0) += heatFlow->evaluate(p, temp, _step->currentTime) / area;
 		}
 		if (heatFlux) {
-			q(n, 0) += heatFlux->evaluate(p, temp, step.currentTime);
+			q(n, 0) += heatFlux->evaluate(p, temp, _step->currentTime);
 		}
 	}
 
@@ -614,11 +614,11 @@ void HeatTransfer3D::processFace(const Step &step, eslocal domain, const Boundar
 	}
 }
 
-void HeatTransfer3D::processEdge(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void HeatTransfer3D::processEdge(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
-//	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step) ||
-//		e->hasProperty(Property::HEAT_FLOW, step.step) ||
-//		e->hasProperty(Property::HEAT_FLUX, step.step))) {
+//	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, _step->step) ||
+//		e->hasProperty(Property::HEAT_FLOW, _step->step) ||
+//		e->hasProperty(Property::HEAT_FLUX, _step->step))) {
 //
 //		Ke.resize(0, 0);
 //		Me.resize(0, 0);
@@ -650,12 +650,12 @@ void HeatTransfer3D::processEdge(const Step &step, eslocal domain, const Boundar
 //	}
 //
 //	for (size_t r = 0; r < e->regions().size(); r++) {
-//		if (step.step < e->regions()[r]->settings.size() && e->regions()[r]->settings[step.step].count(Property::HEAT_FLOW)) {
+//		if (_step->step < e->regions()[r]->settings.size() && e->regions()[r]->settings[_step->step].count(Property::HEAT_FLOW)) {
 //			area = e->regions()[r]->area;
 //			break;
 //		}
 //	}
-//	if (e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step)) {
+//	if (e->hasProperty(Property::EXTERNAL_TEMPERATURE, _step->step)) {
 //		Ke.resize(Ksize, Ksize);
 //		Ke = 0;
 //	}
@@ -666,8 +666,8 @@ void HeatTransfer3D::processEdge(const Step &step, eslocal domain, const Boundar
 //
 //	const ConvectionConfiguration *convection = NULL;
 //	for (size_t r = 0; convection == NULL && r < e->regions().size(); r++) {
-//		auto regionit = _configuration.load_steps_settings.at(step.step + 1).convection.find(e->regions()[r]->name);
-//		if (regionit != _configuration.load_steps_settings.at(step.step + 1).convection.end()) {
+//		auto regionit = _configuration.load_steps_settings.at(_step->step + 1).convection.find(e->regions()[r]->name);
+//		if (regionit != _configuration.load_steps_settings.at(_step->step + 1).convection.end()) {
 //			convection = &regionit->second;
 //		}
 //	}
@@ -680,16 +680,16 @@ void HeatTransfer3D::processEdge(const Step &step, eslocal domain, const Boundar
 //		temp = solution[offset + SolutionIndex::TEMPERATURE]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(n), e->domains().front()));
 //		htc(n, 0) = convection != NULL ? computeHTC(*convection, e, _mesh->coordinates()[e->node(n)], step, temp) : 0;
 //
-//		if (step.iteration) {
-//			q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, _mesh->coordinates()[e->node(n)], step.currentTime, temp, 0) - temp);
+//		if (_step->iteration) {
+//			q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, _step->step, _mesh->coordinates()[e->node(n)], _step->currentTime, temp, 0) - temp);
 //		} else {
-//			q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, _mesh->coordinates()[e->node(n)], step.currentTime, temp, 0));
+//			q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, _step->step, _mesh->coordinates()[e->node(n)], _step->currentTime, temp, 0));
 //		}
 //
-//		emiss(n, 0) = CONST_Stefan_Boltzmann * e->getProperty(Property::EMISSIVITY, step.step, _mesh->coordinates()[e->node(n)], step.currentTime, temp, 0);
-//		q(n, 0) += emiss(n, 0) * (pow(e->getProperty(Property::EXTERNAL_TEMPERATURE, step.step, _mesh->coordinates()[e->node(n)], step.currentTime, temp, 0), 4) - pow(temp, 4));
-//		q(n, 0) += e->getProperty(Property::HEAT_FLOW, step.step, _mesh->coordinates()[e->node(n)], step.currentTime, temp, 0) / area;
-//		q(n, 0) += e->getProperty(Property::HEAT_FLUX, step.step, _mesh->coordinates()[e->node(n)], step.currentTime, temp, 0);
+//		emiss(n, 0) = CONST_Stefan_Boltzmann * e->getProperty(Property::EMISSIVITY, _step->step, _mesh->coordinates()[e->node(n)], _step->currentTime, temp, 0);
+//		q(n, 0) += emiss(n, 0) * (pow(e->getProperty(Property::EXTERNAL_TEMPERATURE, _step->step, _mesh->coordinates()[e->node(n)], _step->currentTime, temp, 0), 4) - pow(temp, 4));
+//		q(n, 0) += e->getProperty(Property::HEAT_FLOW, _step->step, _mesh->coordinates()[e->node(n)], _step->currentTime, temp, 0) / area;
+//		q(n, 0) += e->getProperty(Property::HEAT_FLUX, _step->step, _mesh->coordinates()[e->node(n)], _step->currentTime, temp, 0);
 //
 //		emiss(n, 0) *= 4 * temp * temp * temp;
 //	}
@@ -698,7 +698,7 @@ void HeatTransfer3D::processEdge(const Step &step, eslocal domain, const Boundar
 //		dND.multiply(dN[gp], coordinates);
 //		double J = dND.norm();
 //		gpQ.multiply(N[gp], q);
-//		if (e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step)) {
+//		if (e->hasProperty(Property::EXTERNAL_TEMPERATURE, _step->step)) {
 //			gpHtc.multiply(N[gp], htc);
 //			gpEmiss.multiply(N[gp], emiss);
 //
@@ -711,7 +711,7 @@ void HeatTransfer3D::processEdge(const Step &step, eslocal domain, const Boundar
 //	}
 }
 
-void HeatTransfer3D::processNode(const Step &step, eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void HeatTransfer3D::processNode(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
@@ -719,14 +719,14 @@ void HeatTransfer3D::processNode(const Step &step, eslocal domain, const Boundar
 	fe.resize(0, 0);
 }
 
-void HeatTransfer3D::postProcessElement(const Step &step, eslocal eindex)
+void HeatTransfer3D::postProcessElement(eslocal eindex)
 {
 	auto nodes = _mesh->elements->nodes->cbegin() + eindex;
 	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
 	eslocal domain = std::lower_bound(_mesh->elements->elementsDistribution.begin(), _mesh->elements->elementsDistribution.end(), eindex + 1) - _mesh->elements->elementsDistribution.begin() - 1;
 	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
 	Evaluator *translation_motion = NULL;
-	for (auto it = _configuration.load_steps_settings.at(step.step + 1).translation_motions.begin(); it != _configuration.load_steps_settings.at(step.step + 1).translation_motions.end(); ++it) {
+	for (auto it = _configuration.load_steps_settings.at(_step->step + 1).translation_motions.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).translation_motions.end(); ++it) {
 		ElementsRegionStore *region = _mesh->eregion(it->first);
 		if (std::binary_search(region->elements->datatarray().cbegin(), region->elements->datatarray().cend(), eindex)) {
 			translation_motion = it->second.evaluator;
@@ -763,14 +763,14 @@ void HeatTransfer3D::postProcessElement(const Step &step, eslocal eindex)
 		if (material->phase_change) {
 			double phase, derivation;
 			smoothstep(phase, derivation, material->phase_change_temperature - material->transition_interval / 2, material->phase_change_temperature + material->transition_interval / 2, temp(i, 0), material->smooth_step_order);
-			assembleMaterialMatrix(step, eindex, i, p, phase1, phase, temp(i, 0), K, CD, false);
-			assembleMaterialMatrix(step, eindex, i, p, phase2, (1 - phase), temp(i, 0), K, CD, false);
+			assembleMaterialMatrix(eindex, i, p, phase1, phase, temp(i, 0), K, CD, false);
+			assembleMaterialMatrix(eindex, i, p, phase2, (1 - phase), temp(i, 0), K, CD, false);
 			m =
-					(    phase  * phase1->density.evaluator->evaluate(p, step.currentTime, temp(i, 0)) +
-					(1 - phase) * phase2->density.evaluator->evaluate(p, step.currentTime, temp(i, 0))) *
+					(    phase  * phase1->density.evaluator->evaluate(p, _step->currentTime, temp(i, 0)) +
+					(1 - phase) * phase2->density.evaluator->evaluate(p, _step->currentTime, temp(i, 0))) *
 
-					(    phase  * phase1->heat_capacity.evaluator->evaluate(p, step.currentTime, temp(i, 0)) +
-					(1 - phase) * phase2->heat_capacity.evaluator->evaluate(p, step.currentTime, temp(i, 0)) +
+					(    phase  * phase1->heat_capacity.evaluator->evaluate(p, _step->currentTime, temp(i, 0)) +
+					(1 - phase) * phase2->heat_capacity.evaluator->evaluate(p, _step->currentTime, temp(i, 0)) +
 					material->latent_heat * derivation);
 
 			if (_phaseChange) {
@@ -778,16 +778,16 @@ void HeatTransfer3D::postProcessElement(const Step &step, eslocal eindex)
 				(*_latentHeat->decomposedData)[domain][it->DOFOffset + nodes->at(i) - it->begin] = material->latent_heat * derivation;
 			}
 		} else {
-			assembleMaterialMatrix(step, eindex, i, p, material, 1, temp(i, 0), K, CD, false);
+			assembleMaterialMatrix(eindex, i, p, material, 1, temp(i, 0), K, CD, false);
 			m =
-					material->density.evaluator->evaluate(p, step.currentTime, temp(i, 0)) *
-					material->heat_capacity.evaluator->evaluate(p, step.currentTime, temp(i, 0));
+					material->density.evaluator->evaluate(p, _step->currentTime, temp(i, 0)) *
+					material->heat_capacity.evaluator->evaluate(p, _step->currentTime, temp(i, 0));
 		}
 
 		if (translation_motion) {
-			U(i, 0) = translation_motion->evaluate(p, step.currentTime, temp(i, 0));
-			U(i, 1) = translation_motion->evaluate(p, step.currentTime, temp(i, 0));
-			U(i, 2) = translation_motion->evaluate(p, step.currentTime, temp(i, 0));
+			U(i, 0) = translation_motion->evaluate(p, _step->currentTime, temp(i, 0));
+			U(i, 1) = translation_motion->evaluate(p, _step->currentTime, temp(i, 0));
+			U(i, 2) = translation_motion->evaluate(p, _step->currentTime, temp(i, 0));
 		}
 	}
 
@@ -842,13 +842,13 @@ void HeatTransfer3D::postProcessElement(const Step &step, eslocal eindex)
 	}
 }
 
-void HeatTransfer3D::processSolution(const Step &step)
+void HeatTransfer3D::processSolution()
 {
 	if (_gradient || _flux || _phaseChange) {
 		#pragma omp parallel for
 		for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
 			for (eslocal e = _mesh->elements->elementsDistribution[d]; e < (eslocal)_mesh->elements->elementsDistribution[d + 1]; e++) {
-				postProcessElement(step, e);
+				postProcessElement(e);
 			}
 
 		}

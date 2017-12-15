@@ -11,12 +11,12 @@ class SteadyStateSolver: public LoadStepSolver {
 public:
 	SteadyStateSolver(TimeStepSolver &timeStepSolver, double duration);
 
-	Matrices updateStructuralMatrices(Step &step, Matrices matrices);
-	Matrices reassembleStructuralMatrices(Step &step, Matrices matrices);
+	Matrices updateStructuralMatrices(Matrices matrices);
+	Matrices reassembleStructuralMatrices(Matrices matrices);
 
 protected:
-	void runNextTimeStep(Step &step);
-	void processTimeStep(Step &step);
+	void runNextTimeStep();
+	void processTimeStep();
 };
 
 }
