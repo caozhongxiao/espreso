@@ -93,6 +93,8 @@ void ECFObjectWidget::createHeadline(ECFObject* obj, QWidget* widget)
 
 void ECFObjectWidget::redraw()
 {
+    this->performBeforeRedraw();
+
     foreach (ISavableObject* obj, m_savables) {
         obj->save();
     }

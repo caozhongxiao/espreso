@@ -27,6 +27,7 @@ signals:
 protected:
     QWidget* initContainer() override;
     void drawObject(ECFObject*) override;
+    virtual void performBeforeRedraw() override;
     FormWidget* processPositiveInteger(ECFParameter *, FormWidget *, QWidget *) override;
 
 private slots:

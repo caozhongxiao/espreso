@@ -15,6 +15,7 @@ public:
 
 protected:
     virtual QWidget* initContainer() override;
+    virtual void performBeforeRedraw() override {}
 };
 
 }

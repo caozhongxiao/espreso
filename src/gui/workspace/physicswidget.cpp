@@ -98,6 +98,12 @@ void PhysicsWidget::drawObject(ECFObject* obj)
     ScrollECFObjectWidget::drawObject(obj);
 }
 
+void PhysicsWidget::performBeforeRedraw()
+{
+    this->m_properties->hide();
+    this->m_properties = nullptr;
+}
+
 FormWidget* PhysicsWidget::processPositiveInteger(ECFParameter* parameter, FormWidget* form, QWidget* widget)
 {
     FormWidget* fw = this->createFormWidget(widget, form);

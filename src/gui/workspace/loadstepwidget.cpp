@@ -43,3 +43,9 @@ void LoadstepWidget::drawObject(ECFObject* obj)
 
     ScrollECFObjectWidget::drawObject(obj);
 }
+
+void LoadstepWidget::performBeforeRedraw()
+{
+    this->m_properties->hide();
+    this->m_properties = nullptr;
+}

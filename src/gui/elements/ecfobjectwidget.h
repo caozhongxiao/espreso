@@ -59,6 +59,7 @@ protected:
 
     virtual QWidget* initContainerWidget();
     virtual QWidget* initContainer() = 0;
+    virtual void performBeforeRedraw() = 0;
 
     virtual void drawObject(ECFObject*);
     void drawMe();

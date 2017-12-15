@@ -17,6 +17,7 @@ public:
 
 protected:
     void drawObject(ECFObject*) override;
+    virtual void performBeforeRedraw() override;
 
 private:
     ECFObject* m_physics;
