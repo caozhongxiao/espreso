@@ -42,7 +42,7 @@ struct PhysicsConfiguration: public ECFObject {
 	std::map<std::string, MaterialConfiguration> materials;
 	std::map<std::string, std::string> material_set;
 
-	std::map<std::string, std::string> initial_temperature, thickness;
+	std::map<std::string, ECFExpression> initial_temperature, thickness;
 
 	MortarConfiguration mortar;
 

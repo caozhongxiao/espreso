@@ -108,27 +108,28 @@ void HeatTransfer::analyticRegularization(size_t domain, bool ortogonalCluster)
 
 void HeatTransfer::computeInitialTemperature(std::vector<std::vector<double> > &data)
 {
+	auto itemp = _configuration.initial_temperature.find("ALL_ELEMENTS");
+	if (_configuration.initial_temperature.size() > 1) {
+		ESINFO(GLOBAL_ERROR) << "Not implemented format of initial temperature.";
+	}
+	if (itemp == _configuration.initial_temperature.end() && _configuration.initial_temperature.size() != 0) {
+		ESINFO(GLOBAL_ERROR) << "Not implemented format of initial temperature.";
+	}
+	if (itemp != _configuration.initial_temperature.end()) {
+		if (itemp->second.evaluator->isCoordinateDependent() || itemp->second.evaluator->isTemperatureDependent()) {
+			ESINFO(GLOBAL_ERROR) << "Not implemented format of initial temperature.";
+		}
+	}
+
 	data.resize(_mesh->elements->ndomains);
 
 	#pragma omp parallel for
 	for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
 		const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[d];
 		data[d].resize(intervals.back().DOFOffset + intervals.back().end - intervals.back().begin, 273.15 + 20);
-
-		// TODO: get data from regions
-//		for (auto it = _configuration.initial_temperature.begin(); it != _configuration.initial_temperature.end(); ++it) {
-//
-//
-//		}
-//
-//		for (size_t i = 0; i < intervals.size(); ++i) {
-//			for (eslocal n = intervals[i].begin; n != intervals[i].end; ++n) {
-//				data[d].push_back(_configuration.initial_temperature);
-//			}
-//		}
-//		for (size_t n = 0; n < _mesh->coordinates().localSize(p); n++) {
-//			data[p].push_back(_mesh->nodes()[_mesh->coordinates().clusterIndex(n, p)]->getProperty(Property::INITIAL_TEMPERATURE, _step->step, _mesh->coordinates().get(n, p), _step->currentTime, 0, 273.15 + 20));
-//		}
+		if (itemp != _configuration.initial_temperature.end()) {
+			itemp->second.evaluator->evaluate(data[d].size(), NULL, NULL, _step->currentTime, data[d].data());
+		}
 	}
 }
 
