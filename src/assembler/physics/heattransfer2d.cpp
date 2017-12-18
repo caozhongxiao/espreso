@@ -455,7 +455,7 @@ void HeatTransfer2D::processEdge(eslocal domain, const BoundaryRegionStore *regi
 	DenseMatrix coordinates(nodes->size(), 2), dND(1, 2), q(nodes->size(), 1), htc(nodes->size(), 1), thickness(nodes->size(), 1), flow(nodes->size(), 1), emiss(nodes->size(), 1);
 	DenseMatrix gpQ(1, 1), gpHtc(1, 1), gpThickness(1, 1), gpFlow(1, 1), gpEmiss(1, 1);
 
-	double area = 1, temp, text;
+	double area = region->area, temp, text;
 	eslocal Ksize = nodes->size();
 	Ke.resize(0, 0);
 	Me.resize(0, 0);

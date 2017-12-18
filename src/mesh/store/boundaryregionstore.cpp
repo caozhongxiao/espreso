@@ -13,6 +13,7 @@ using namespace espreso;
 BoundaryRegionStore::BoundaryRegionStore(const std::string &name, std::vector<Element*> &eclasses)
 : name(name),
   dimension(0),
+  area(0),
 
   uniqueOffset(0),
   uniqueSize(0),

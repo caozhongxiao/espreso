@@ -13,6 +13,7 @@
 
 #include "../../basis/containers/point.h"
 #include "../../basis/containers/serializededata.h"
+#include "../../basis/matrices/denseMatrix.h"
 #include "../../basis/utilities/communication.h"
 #include "../../basis/utilities/utils.h"
 #include "../../basis/utilities/parser.h"
@@ -543,6 +544,45 @@ void MeshPreprocessing::computeBoundaryNodes(std::vector<eslocal> &externalBound
 	internalBoundary.resize(std::set_difference(internal[0].begin(), internal[0].end(), externalBoundary.begin(), externalBoundary.end(), internalBoundary.begin()) - internalBoundary.begin());
 
 	finish("computation of boundary nodes");
+}
+
+void MeshPreprocessing::computeRegionArea(BoundaryRegionStore *store)
+{
+	double A = 0;
+	auto nodes = store->elements->cbegin();
+	const auto &epointers = store->epointers->datatarray();
+	const auto &coordinates = _mesh->nodes->coordinates->datatarray();
+	for (size_t e = 0; e < store->elements->structures(); ++e, ++nodes) {
+
+		DenseMatrix coords(nodes->size(), 3), dND(1, 3);
+
+		const std::vector<DenseMatrix> &dN = *epointers[e]->dN;
+		const std::vector<double> &weighFactor = *epointers[e]->weighFactor;
+
+		for (size_t n = 0; n < nodes->size(); ++n) {
+			coords(n, 0) = coordinates[nodes->at(n)].x;
+			coords(n, 1) = coordinates[nodes->at(n)].y;
+			coords(n, 2) = coordinates[nodes->at(n)].z;
+		}
+
+		if (store->dimension == 1) {
+			for (size_t gp = 0; gp < dN.size(); gp++) {
+				dND.multiply(dN[gp], coords);
+				A += dND.norm() * weighFactor[gp];
+			}
+		}
+		if (store->dimension == 2) {
+			for (size_t gp = 0; gp < dN.size(); gp++) {
+				dND.multiply(dN[gp], coords);
+				Point v2(dND(0, 0), dND(0, 1), dND(0, 2));
+				Point v1(dND(1, 0), dND(1, 1), dND(1, 2));
+				Point va = Point::cross(v1, v2);
+				A += va.norm() * weighFactor[gp];
+			}
+		}
+	}
+
+	MPI_Allreduce(&A, &store->area, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 }
 
 

@@ -21,6 +21,7 @@ struct BoundaryRegionStore {
 	std::vector<size_t> distribution;
 
 	eslocal dimension;
+	double area;
 
 	eslocal uniqueOffset;
 	eslocal uniqueSize;

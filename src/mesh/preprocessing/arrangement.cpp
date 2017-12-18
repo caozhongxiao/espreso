@@ -751,6 +751,12 @@ void MeshPreprocessing::arrangeRegions()
 		}
 	}
 
+	for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
+		if (_mesh->boundaryRegions[r]->dimension) {
+			computeRegionArea(_mesh->boundaryRegions[r]);
+		}
+	}
+
 	finish("arrange regions");
 }
 
