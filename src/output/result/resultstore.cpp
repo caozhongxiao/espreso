@@ -1,15 +1,17 @@
 
-#include "../result/resultstore.h"
+#include "resultstore.h"
 
 #include "../../config/ecf/environment.h"
 #include "../../config/ecf/output.h"
 #include "../../basis/logging/logging.h"
+
 #include "executor/asyncexecutor.h"
 #include "executor/directexecutor.h"
 #include "async/Dispatcher.h"
 
 #include "monitors/monitoring.h"
 #include "visualization/collectedensight.h"
+#include "visualization/vtklegacy.h"
 
 
 using namespace espreso;
@@ -55,6 +57,7 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 		_asyncStore->_async->addResultStore(new Monitoring(_asyncStore->_async->mesh(), configuration, true));
 		// _asyncStore->_direct->addResultStore(new Monitoring(_asyncStore->_direct->mesh(), configuration, false));
 	}
+	// _asyncStore->_direct->addResultStore(new VTKLegacyDebugInfo(_asyncStore->_direct->mesh(), configuration.cluster_shrink_ratio, configuration.domain_shrink_ratio));
 
 	if (_asyncStore->_direct->hasStore() == 0) {
 		delete _asyncStore->_direct;

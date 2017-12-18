@@ -10,9 +10,9 @@ namespace espreso {
 
 struct VTKLegacy: public Visualization {
 
+protected:
 	VTKLegacy(const Mesh &mesh, double clusterShrinkRatio, double domainShrinkRatio);
 
-protected:
 	void mesh(const std::string &name);
 	void solution(const std::string &name);
 	void nodesIntervals(const std::string &name);
@@ -20,9 +20,9 @@ protected:
 	double _clusterShrinkRatio, _domainShrinkRatio;
 };
 
-struct VTKLegacySimpleDebug: public VTKLegacy {
+struct VTKLegacyDebugInfo: public VTKLegacy {
 
-	VTKLegacySimpleDebug(const Mesh &mesh, double clusterShrinkRatio, double domainShrinkRatio);
+	VTKLegacyDebugInfo(const Mesh &mesh, double clusterShrinkRatio, double domainShrinkRatio);
 
 	void updateMesh()
 	{

@@ -18,7 +18,7 @@
 
 using namespace espreso;
 
-VTKLegacySimpleDebug::VTKLegacySimpleDebug(const Mesh &mesh, double clusterShrinkRatio, double domainShrinkRatio)
+VTKLegacyDebugInfo::VTKLegacyDebugInfo(const Mesh &mesh, double clusterShrinkRatio, double domainShrinkRatio)
 : VTKLegacy(mesh, clusterShrinkRatio, domainShrinkRatio)
 {
 	_path = Esutils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" });
