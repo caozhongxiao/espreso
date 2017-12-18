@@ -135,7 +135,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 				1, _solution, "U = delta U + U");
 
 		if (_configuration.check_first_residual) {
-			 temperatureResidual_second = sqrt(_assembler.sumSquares(_assembler.instance.primalSolution, SumOperation::AVERAGE, SumRestriction::NONE, "|U|"));
+			temperatureResidual_second = sqrt(_assembler.sumSquares(_assembler.instance.primalSolution, SumOperation::AVERAGE, SumRestriction::NONE, "|U|"));
 			if (temperatureResidual_second < 1e-3) {
 				temperatureResidual_second = 1e-3;
 			}

@@ -8,10 +8,6 @@
 #include "../instance.h"
 #include "../step.h"
 
-#include "../../old/mesh/structures/mesh.h"
-#include "../../old/mesh/structures/coordinates.h"
-#include "../../old/mesh/structures/elementtypes.h"
-
 #include "../../solver/generic/SparseMatrix.h"
 
 #ifdef BEM4I

@@ -6,10 +6,6 @@
 
 #include "../constraints/equalityconstraints.h"
 
-#include "../../old/mesh/structures/mesh.h"
-#include "../../old/mesh/structures/elementtypes.h"
-#include "../../old/mesh/elements/element.h"
-
 #include "../../basis/matrices/sparseVVPMatrix.h"
 #include "../../basis/matrices/sparseCSRMatrix.h"
 #include "../../solver/generic/SparseMatrix.h"

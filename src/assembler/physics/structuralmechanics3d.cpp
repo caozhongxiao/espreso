@@ -1,6 +1,7 @@
 
-#include "../../config/ecf/physics/structuralmechanics.h"
 #include "structuralmechanics3d.h"
+#include "../../config/ecf/physics/structuralmechanics.h"
+
 
 #include "../step.h"
 #include "../instance.h"

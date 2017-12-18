@@ -12,7 +12,6 @@
 #include "../../basis/logging/logging.h"
 #include "../../basis/utilities/utils.h"
 #include "../../mesh/mesh.h"
-#include "../../old/mesh/structures/elementtypes.h"
 
 #include "mpi.h"
 
@@ -115,9 +114,6 @@ void Assembler::processSolution()
 
 void Assembler::solve(Matrices updatedMatrices)
 {
-	// TODO: MESH
-	// store.storeFETIData(step, instance);
-
 	Matrices solverMatrices = Matrices::K | Matrices::M | Matrices::f | Matrices::B1;
 	storeWrapper(mNames(solverMatrices), solverMatrices);
 

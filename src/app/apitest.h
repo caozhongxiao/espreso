@@ -8,7 +8,6 @@
 #include "../basis/logging/logging.h"
 #include "../basis/matrices/denseMatrix.h"
 #include "../mesh/mesh.h"
-#include "../old/mesh/structures/coordinates.h"
 #include "../assembler/step.h"
 #include "../assembler/instance.h"
 #include "../assembler/constraints/equalityconstraints.h"
