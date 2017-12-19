@@ -15,6 +15,7 @@
 #include "../../mesh/store/elementstore.h"
 #include "../../mesh/store/nodestore.h"
 #include "../../mesh/store/boundaryregionstore.h"
+#include "../../mesh/store/elementsregionstore.h"
 
 #include "../../solver/generic/SparseMatrix.h"
 
@@ -58,9 +59,11 @@ MatrixType HeatTransfer::getMatrixType(size_t domain) const
 
 	if (_configuration.load_steps_settings.at(_step->step + 1).translation_motions.size()) {
 		for (auto it = _configuration.load_steps_settings.at(_step->step + 1).translation_motions.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).translation_motions.end(); ++it) {
-			BoundaryRegionStore *region = _mesh->bregion(it->first);
-			if (region->eintervalsDistribution[domain] != region->eintervalsDistribution[domain + 1]) {
-				return MatrixType::REAL_UNSYMMETRIC;
+			ElementsRegionStore *region = _mesh->eregion(it->first);
+			for (eslocal i = _mesh->elements->eintervalsDistribution[domain]; i < _mesh->elements->eintervalsDistribution[domain + 1]; i++) {
+				if (region->eintervals[i].begin != region->eintervals[i].end) {
+					return MatrixType::REAL_UNSYMMETRIC;
+				}
 			}
 		}
 	}

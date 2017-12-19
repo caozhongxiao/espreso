@@ -25,6 +25,12 @@ struct MortarConfiguration: public ECFObject {
 	MortarConfiguration();
 };
 
+struct ECFExpressionVector: public ECFObject {
+	ECFExpression x, y, z;
+
+	ECFExpressionVector(DIMENSION dimension, bool fillWithZeros);
+};
+
 struct PhysicsConfiguration: public ECFObject {
 
 	enum class INTERPOLATION {

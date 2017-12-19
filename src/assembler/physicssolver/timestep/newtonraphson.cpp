@@ -83,9 +83,9 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 					_f_R_BtLambda,
 					1, _assembler.instance.f,
 					-1, _assembler.instance.dualSolution,
-					"(f - R) * Bt * Lambda");
+					"(f - R) - Bt * Lambda");
 
-			heatResidual_first = sqrt(_assembler.sumSquares(_f_R_BtLambda, SumOperation::SUM, SumRestriction::NONE, "norm of (f - R) * Bt * Lambda"));
+			heatResidual_first = sqrt(_assembler.sumSquares(_f_R_BtLambda, SumOperation::SUM, SumRestriction::NONE, "norm of (f - R) - Bt * Lambda"));
 			heatResidual = heatResidual_first / heatResidual_second;
 
 			if (heatResidual < _configuration.requested_second_residual && _assembler.step.iteration > 1 ) {

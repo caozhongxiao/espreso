@@ -219,12 +219,12 @@ void HeatTransfer3D::processElement(eslocal domain, Matrices matrices, eslocal e
 	auto nodes = _mesh->elements->nodes->cbegin() + eindex;
 	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
 	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
-	Evaluator *translation_motion = NULL;
+	const ECFExpressionVector *translation_motion = NULL;
 	Evaluator *heat_source = NULL;
 	for (auto it = _configuration.load_steps_settings.at(_step->step + 1).translation_motions.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).translation_motions.end(); ++it) {
 		ElementsRegionStore *region = _mesh->eregion(it->first);
 		if (std::binary_search(region->elements->datatarray().cbegin(), region->elements->datatarray().cend(), eindex)) {
-			translation_motion = it->second.evaluator;
+			translation_motion = &it->second;
 			break;
 		}
 	}
@@ -294,9 +294,9 @@ void HeatTransfer3D::processElement(eslocal domain, Matrices matrices, eslocal e
 		}
 
 		if (translation_motion) {
-			U(n, 0) = translation_motion->evaluate(p, _step->currentTime, temp) * m(n, 0);
-			U(n, 1) = translation_motion->evaluate(p, _step->currentTime, temp) * m(n, 0);
-			U(n, 2) = translation_motion->evaluate(p, _step->currentTime, temp) * m(n, 0);
+			U(n, 0) = translation_motion->x.evaluator->evaluate(p, _step->currentTime, temp) * m(n, 0);
+			U(n, 1) = translation_motion->y.evaluator->evaluate(p, _step->currentTime, temp) * m(n, 0);
+			U(n, 2) = translation_motion->z.evaluator->evaluate(p, _step->currentTime, temp) * m(n, 0);
 		}
 		if (heat_source) {
 			f(n, 0) = heat_source->evaluate(p, _step->currentTime, temp);
@@ -699,11 +699,11 @@ void HeatTransfer3D::postProcessElement(eslocal domain, eslocal eindex)
 	auto nodes = _mesh->elements->nodes->cbegin() + eindex;
 	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
 	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
-	Evaluator *translation_motion = NULL;
+	const ECFExpressionVector *translation_motion = NULL;
 	for (auto it = _configuration.load_steps_settings.at(_step->step + 1).translation_motions.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).translation_motions.end(); ++it) {
 		ElementsRegionStore *region = _mesh->eregion(it->first);
 		if (std::binary_search(region->elements->datatarray().cbegin(), region->elements->datatarray().cend(), eindex)) {
-			translation_motion = it->second.evaluator;
+			translation_motion = &it->second;
 			break;
 		}
 	}
@@ -759,9 +759,9 @@ void HeatTransfer3D::postProcessElement(eslocal domain, eslocal eindex)
 		}
 
 		if (translation_motion) {
-			U(i, 0) = translation_motion->evaluate(p, _step->currentTime, temp(i, 0));
-			U(i, 1) = translation_motion->evaluate(p, _step->currentTime, temp(i, 0));
-			U(i, 2) = translation_motion->evaluate(p, _step->currentTime, temp(i, 0));
+			U(i, 0) = translation_motion->x.evaluator->evaluate(p, _step->currentTime, temp(i, 0));
+			U(i, 1) = translation_motion->y.evaluator->evaluate(p, _step->currentTime, temp(i, 0));
+			U(i, 2) = translation_motion->z.evaluator->evaluate(p, _step->currentTime, temp(i, 0));
 		}
 	}
 

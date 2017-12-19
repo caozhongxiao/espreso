@@ -367,6 +367,9 @@ ECFRedParameters ECFReader::_read(
 				prefix.push_back(values[0]);
 				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Unexpected parameter '" << prefix << "'\n" << tokenStack.top()->lastLines(2);
 			}
+			if (parameter->isObject()) {
+				ESINFO(GLOBAL_ERROR) << "Invalid ECF configuration. Parameter '" << prefix << "::" << parameter->name << "' is an object. Expected '{' instead of '" << ss.str() << "'";
+			}
 			if (!parameter->setValue(ss.str())) {
 				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Parameter '" << values[0] << "' has wrong value '" << ss.str() << "'";
 			}

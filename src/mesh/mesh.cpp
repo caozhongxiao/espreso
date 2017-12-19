@@ -87,7 +87,7 @@ ElementsRegionStore* Mesh::eregion(const std::string &name)
 			return elementsRegions[r];
 		}
 	}
-	ESINFO(ERROR) << "ESPRESO internal error: request for unknown region '" << name << "'.";
+	ESINFO(ERROR) << "ESPRESO internal error: request for unknown region of elements with '" << name << "'.";
 	return NULL;
 }
 
@@ -98,7 +98,7 @@ BoundaryRegionStore* Mesh::bregion(const std::string &name)
 			return boundaryRegions[r];
 		}
 	}
-	ESINFO(ERROR) << "ESPRESO internal error: request for unknown region '" << name << "'.";
+	ESINFO(ERROR) << "ESPRESO internal error: request for unknown boundary region '" << name << "'.";
 	return NULL;
 }
 
