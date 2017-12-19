@@ -12,6 +12,7 @@
 #include "../../../mesh/elements/element.h"
 #include "../../../mesh/store/nodestore.h"
 #include "../../../mesh/store/elementstore.h"
+#include "../../../mesh/store/sharedinterfacestore.h"
 
 #include <fstream>
 #include <algorithm>
@@ -281,6 +282,45 @@ void VTKLegacy::nodesIntervals(const std::string &name)
 
 void VTKLegacy::sharedInterface(const std::string &name)
 {
+	if (_mesh.sharedInterface == NULL) {
+		return;
+	}
+	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
 
+	os << "# vtk DataFile Version 2.0\n";
+	os << "EXAMPLE\n";
+	os << "ASCII\n";
+	os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+	size_t points = _mesh.sharedInterface->nodes->datatarray().size();
+
+	os << "POINTS " << points << " float\n";
+	for (size_t i = 0; i < points; i++) {
+		const Point &n = _mesh.nodes->coordinates->datatarray()[_mesh.sharedInterface->nodes->datatarray()[i]];
+		os << n.x << " " << n.y << " " << n.z << "\n";
+	}
+	os << "\n";
+
+	os << "CELLS " << points << " " << 2 * points << "\n";
+	for (size_t n = 0; n < points; ++n) {
+		os << "1 " << n << "\n";
+	}
+	os << "\n";
+
+	os << "CELL_TYPES " << points << "\n";
+	for (size_t n = 0; n < points; ++n) {
+		os << "1\n";
+	}
+	os << "\n";
+
+	os << "CELL_DATA " << points << "\n";
+	os << "SCALARS distribution int 1\n";
+	os << "LOOKUP_TABLE default\n";
+	for (eslocal i = 0; i < _mesh.sharedInterface->nodeDistribution.size() - 1; i++) {
+		for (eslocal n = _mesh.sharedInterface->nodeDistribution[i]; n < _mesh.sharedInterface->nodeDistribution[i + 1]; n++) {
+			os << i << "\n";
+		}
+	}
+	os << "\n";
 }
 

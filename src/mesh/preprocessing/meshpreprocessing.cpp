@@ -676,6 +676,7 @@ void MeshPreprocessing::computeSharedFaces()
 		}
 	}
 	Esutils::threadDistributionToFullDistribution(inodesDistribution);
+	Esutils::mergeThreadedUniqueData(inodesDistribution);
 
 	if (_mesh->sharedInterface != NULL) {
 		delete _mesh->sharedInterface;
