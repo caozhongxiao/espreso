@@ -279,3 +279,8 @@ void VTKLegacy::nodesIntervals(const std::string &name)
 	os << "\n";
 }
 
+void VTKLegacy::sharedInterface(const std::string &name)
+{
+
+}
+

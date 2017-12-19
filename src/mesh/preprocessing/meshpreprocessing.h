@@ -33,6 +33,8 @@ public:
 	void arrangeElements();
 	void arrangeRegions();
 
+	void computeSharedFaces();
+
 protected:
 	static size_t level;
 

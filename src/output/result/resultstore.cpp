@@ -57,7 +57,7 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 		_asyncStore->_async->addResultStore(new Monitoring(_asyncStore->_async->mesh(), configuration, true));
 		// _asyncStore->_direct->addResultStore(new Monitoring(_asyncStore->_direct->mesh(), configuration, false));
 	}
-	// _asyncStore->_direct->addResultStore(new VTKLegacyDebugInfo(_asyncStore->_direct->mesh(), configuration.cluster_shrink_ratio, configuration.domain_shrink_ratio));
+	_asyncStore->_direct->addResultStore(new VTKLegacyDebugInfo(_asyncStore->_direct->mesh(), configuration.cluster_shrink_ratio, configuration.domain_shrink_ratio));
 
 	if (_asyncStore->_direct->hasStore() == 0) {
 		delete _asyncStore->_direct;
