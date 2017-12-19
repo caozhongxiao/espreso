@@ -15,11 +15,11 @@
 #include "../../mesh/store/elementstore.h"
 #include "../../mesh/store/nodestore.h"
 #include "../../mesh/store/boundaryregionstore.h"
-
 #include "../../config/ecf/environment.h"
 
 #include <numeric>
 #include <algorithm>
+#include "../../mesh/store/fetidatastore.h"
 
 using namespace espreso;
 
@@ -372,6 +372,135 @@ void EqualityConstraints::B1GlueElements(const Step &step)
 	}
 }
 
+void EqualityConstraints::B0Kernels(const std::vector<SparseMatrix> &kernels)
+{
+	std::vector<eslocal> rowIndex(_mesh.FETIData->inodesDomains.size());
+	std::vector<eslocal> rCounters(*std::max_element(_mesh.elements->clusters.begin(), _mesh.elements->clusters.end()) + 1);
+
+	for (size_t i = 0; i < _mesh.FETIData->inodesDomains.size(); i++) {
+		eslocal domain = _mesh.FETIData->inodesDomains[i].first;
+		eslocal ndomain = _mesh.FETIData->inodesDomains[i].second;
+		eslocal cluster = _mesh.elements->clusters[domain];
+		rowIndex[i] = rCounters[cluster];
+		rCounters[cluster] += std::max(kernels[domain].cols, std::max(kernels[ndomain].cols, 1));
+	}
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		const auto &nodes = _mesh.FETIData->interfaceNodes->datatarray();
+		int sign, cols, master;
+		for (eslocal d = _mesh.elements->domainDistribution[t]; d < _mesh.elements->domainDistribution[t + 1]; d++) {
+			for (size_t i = 0; i < _mesh.FETIData->inodesDomains.size(); i++) {
+				sign = 0;
+				if (_mesh.FETIData->inodesDomains[i].first == d) {
+					sign = 1;
+				}
+				if (_mesh.FETIData->inodesDomains[i].second == d) {
+					sign = -1;
+				}
+
+				if (sign != 0) {
+					master = _mesh.FETIData->inodesDomains[i].first;
+					cols = kernels[master].cols;
+					if (kernels[d].cols > kernels[master].cols) {
+						master = d;
+						cols = kernels[d].cols;
+					}
+					if (cols) {
+						for (eslocal c = 0; c < cols; c++) {
+							auto dit = _mesh.nodes->dintervals[d].begin();
+							auto masterit = _mesh.nodes->dintervals[master].begin();
+							for (size_t n = _mesh.FETIData->inodesDistribution[i]; n < _mesh.FETIData->inodesDistribution[i + 1]; n++) {
+								while (dit->end < nodes[n]) {
+									++dit;
+								}
+								while (masterit->end < nodes[n]) {
+									++masterit;
+								}
+								_instance.B0[d].I_row_indices.push_back(rowIndex[i] + c + 1);
+								_instance.B0[d].J_col_indices.push_back(dit->DOFOffset + nodes[n] - dit->begin + 1);
+								_instance.B0[d].V_values.push_back(sign * kernels[master].dense_values[kernels[master].rows * c + masterit->DOFOffset + nodes[n] - masterit->begin]);
+							}
+						}
+					} else {
+						auto dit = _mesh.nodes->dintervals[d].begin();
+						for (size_t n = _mesh.FETIData->inodesDistribution[i]; n < _mesh.FETIData->inodesDistribution[i + 1]; n++) {
+							while (nodes[n] < dit->begin) {
+								++dit;
+							}
+							_instance.B0[d].I_row_indices.push_back(rowIndex[i] + 1);
+							_instance.B0[d].J_col_indices.push_back(dit->DOFOffset + nodes[n] - dit->begin + 1);
+							_instance.B0[d].V_values.push_back(sign);
+						}
+					}
+				}
+			}
+			_instance.B0[d].rows = rCounters[_mesh.elements->clusters[d]];
+			_instance.B0[d].cols = _instance.domainDOFCount[d];
+			_instance.B0[d].nnz = _instance.B0[d].I_row_indices.size();
+			_instance.B0subdomainsMap[d].reserve(_instance.B0[d].nnz);
+			for (eslocal i = _instance.B0subdomainsMap[d].size(); i < _instance.B0[d].nnz; i++) {
+				_instance.B0subdomainsMap[d].push_back(_instance.B0[d].I_row_indices[i]);
+			}
+		}
+	}
+}
+
+void EqualityConstraints::B0Corners()
+{
+	if (!_mesh.FETIData->corners.size()) {
+		ESINFO(ERROR) << "Mesh not contains corners.";
+		return;
+	}
+
+	for (size_t d = 0; d < _instance.domains; d++) {
+		_instance.B0[d].cols = _instance.K[d].cols;
+	}
+
+	size_t lambdas = 1;
+
+	auto domains = _mesh.FETIData->cornerDomains->cbegin();
+	for (size_t n = 0; n < _mesh.FETIData->corners.size(); ++n, ++domains) {
+		for (size_t dof = 0; dof < 1; dof++) {
+			for (size_t d1 = 0, d2 = 1; d2 < domains->size(); ++d1, ++d2) {
+
+				auto d1it = _mesh.nodes->dintervals[domains->at(d1)].begin();
+				auto d2it = _mesh.nodes->dintervals[domains->at(d2)].begin();
+				while (d1it->end < _mesh.FETIData->corners[n]) {
+					++d1it;
+				}
+				while (d2it->end < _mesh.FETIData->corners[n]) {
+					++d2it;
+				}
+
+				_instance.B0[domains->at(d1)].I_row_indices.push_back(lambdas);
+				_instance.B0[domains->at(d1)].J_col_indices.push_back(_mesh.FETIData->corners[n] - d1it->begin + d1it->DOFOffset + 1);
+				_instance.B0[domains->at(d1)].V_values.push_back(1);
+
+				_instance.B0[domains->at(d2)].I_row_indices.push_back(lambdas);
+				_instance.B0[domains->at(d2)].J_col_indices.push_back(_mesh.FETIData->corners[n] - d2it->begin + d2it->DOFOffset + 1);
+				_instance.B0[domains->at(d2)].V_values.push_back(-1);
+
+				lambdas++;
+			}
+		}
+	}
+
+	#pragma omp parallel for
+	for  (size_t p = 0; p < _instance.domains; p++) {
+		_instance.B0[p].rows = lambdas - 1;
+		_instance.B0[p].cols = _instance.domainDOFCount[p];
+		_instance.B0[p].nnz = _instance.B0[p].I_row_indices.size();
+
+		_instance.B0subdomainsMap[p].reserve(_instance.B0[p].nnz);
+		for (eslocal i = _instance.B0subdomainsMap[p].size(); i < _instance.B0[p].nnz; i++) {
+			_instance.B0subdomainsMap[p].push_back(_instance.B0[p].I_row_indices[i] - 1);
+		}
+	}
+}
+
 //void EqualityConstraints::insertElementGluingToB1(const Step &step, bool withRedundantMultiplier, bool withScaling)
 //{
 //	auto n2i = [ & ] (size_t neighbour) {
@@ -575,154 +704,6 @@ void EqualityConstraints::B1GlueElements(const Step &step)
 //	ESINFO(EXHAUSTIVE) << "Lambdas in B1: " << _instance.B1[0].rows;
 //}
 
-void EqualityConstraints::insertCornersGluingToB0()
-{
-//	const std::vector<OldElement*> corners;
-//	// const std::vector<OldElement*> &corners = _mesh.corners();
-//	if (!corners.size()) {
-//		ESINFO(ERROR) << "Mesh not contains corners.";
-//		return;
-//	}
-//
-//	for (size_t d = 0; d < _instance.domains; d++) {
-//		_instance.B0[d].cols = _instance.K[d].cols;
-//	}
-//
-//	size_t lambdas = _instance.B0[0].rows;
-//
-//	for (size_t e = 0; e < corners.size(); e++) {
-//		for (size_t dof = 0; dof < _gluedDOFs.size(); dof++) {
-//			if (corners[e]->numberOfLocalDomainsWithDOF(_gluedDOFsMeshOffsets[dof]) > 1) { // inner nodes are not glued
-//
-//				for (size_t d1 = 0, d2 = 1; d2 < corners[e]->domains().size(); d1++, d2++) {
-//
-//					_instance.B0[corners[e]->domains()[d1]].I_row_indices.push_back(lambdas + 1);
-//					_instance.B0[corners[e]->domains()[d1]].J_col_indices.push_back(corners[e]->DOFIndex(corners[e]->domains()[d1], _gluedDOFsMeshOffsets[dof]) + 1);
-//					_instance.B0[corners[e]->domains()[d1]].V_values.push_back(1);
-//
-//					_instance.B0[corners[e]->domains()[d2]].I_row_indices.push_back(lambdas + 1);
-//					_instance.B0[corners[e]->domains()[d2]].J_col_indices.push_back(corners[e]->DOFIndex(corners[e]->domains()[d2], _gluedDOFsMeshOffsets[dof]) + 1);
-//					_instance.B0[corners[e]->domains()[d2]].V_values.push_back(-1);
-//
-//					lambdas++;
-//				}
-//
-//			}
-//		}
-//	}
-//
-//	#pragma omp parallel for
-//	for  (size_t p = 0; p < _instance.domains; p++) {
-//		_instance.B0[p].rows = lambdas;
-//		_instance.B0[p].cols = _instance.domainDOFCount[p];
-//		_instance.B0[p].nnz = _instance.B0[p].I_row_indices.size();
-//
-//		_instance.B0subdomainsMap[p].reserve(_instance.B0[p].nnz);
-//		for (eslocal i = _instance.B0subdomainsMap[p].size(); i < _instance.B0[p].nnz; i++) {
-//			_instance.B0subdomainsMap[p].push_back(_instance.B0[p].I_row_indices[i] - 1);
-//		}
-//	}
-
-	// TODO: MESH
-	// ESINFO(EXHAUSTIVE) << "Average number of lambdas in B0 is " << Info::averageValue(lambdas);
-}
-
-void EqualityConstraints::insertKernelsGluingToB0(const std::vector<SparseMatrix> &kernels)
-{
-//	std::vector<OldElement*> el(_gluedInterfaceElements);
-//
-//	std::sort(el.begin(), el.end(), [] (OldElement* e1, OldElement* e2) {
-//		if (e1->domains().size() != e2->domains().size()) {
-//			return e1->domains().size() < e2->domains().size();
-//		}
-//		return e1->domains() < e2->domains();
-//	});
-//
-//	std::vector<size_t> part;
-//	part.push_back(std::lower_bound(el.begin(), el.end(), 2, [] (OldElement *e, size_t size) { return e->domains().size() < size; }) - el.begin());
-//	ESTEST(MANDATORY) << "There are not elements on the sub-domains interface." << ((_gluedInterfaceElements.size() - part[0]) ? TEST_PASSED : TEST_FAILED);
-//	for (size_t i = part[0] + 1; i < el.size(); i++) {
-//		if (i && el[i - 1]->domains() != el[i]->domains()) {
-//			part.push_back(i);
-//		}
-//	}
-//	part.push_back(el.size());
-//
-//	std::vector<eslocal> rowIndex;
-//	std::vector<eslocal> clusterRowIndex(_instance.clustersMap.size(), 1);
-//	for (size_t i = 0; i < part.size() - 1; i++) {
-//		const std::vector<eslocal> &domains = el[part[i]]->domains();
-//		if (_instance.clustersMap[domains[0]] == _instance.clustersMap[domains[1]]) {
-//			eslocal master = kernels[domains[0]].cols > kernels[domains[1]].cols ? domains[0] : domains[1];
-//			eslocal rows = kernels[master].cols > 0 ? kernels[master].cols : 1;
-//			rowIndex.push_back(clusterRowIndex[_instance.clustersMap[domains[0]]]);
-//			clusterRowIndex[_instance.clustersMap[domains[0]]] += rows;
-//		} else {
-//			rowIndex.push_back(-1);
-//		}
-//	}
-//
-//	#pragma omp parallel for
-//	for  (size_t p = 0; p < _instance.domains; p++) {
-//		for (size_t i = 0; i < part.size() - 1; i++) {
-//			const std::vector<eslocal> &domains = el[part[i]]->domains();
-//			if (_instance.clustersMap[domains[0]] != _instance.clustersMap[domains[1]]) {
-//				continue;
-//			}
-//
-//			int sign = domains[0] == (eslocal)p ? 1 : domains[1] == (eslocal)p ? -1 : 0;
-//			if (sign == 0) {
-//				continue;
-//			}
-//
-//			std::vector<OldElement*> DOFsOnInterface;
-//			for (size_t e = part[i]; e < part[i + 1]; e++) {
-//				if (_interfaceElementContainsGluedDOFs) {
-//					for (size_t n = 0; n < el[e]->DOFsIndices().size(); n++) {
-//						DOFsOnInterface.push_back(_gluedElements[el[e]->DOFsIndices()[n]]);
-//					}
-//				} else {
-//					for (size_t n = 0; n < el[e]->nodes(); n++) {
-//						DOFsOnInterface.push_back(_gluedElements[el[e]->node(n)]);
-//					}
-//				}
-//			}
-//			std::sort(DOFsOnInterface.begin(), DOFsOnInterface.end());
-//			Esutils::removeDuplicity(DOFsOnInterface);
-//
-//			eslocal master = kernels[domains[0]].cols > kernels[domains[1]].cols ? domains[0] : domains[1];
-//			if (kernels[master].cols == 0) {
-//				for (size_t n = 0; n < DOFsOnInterface.size(); n++) {
-//					for (size_t dof = 0; dof < _gluedDOFs.size(); dof++) {
-//						_instance.B0[p].I_row_indices.push_back(rowIndex[i]);
-//						_instance.B0[p].J_col_indices.push_back(DOFsOnInterface[n]->DOFIndex(p, _gluedDOFsMeshOffsets[dof]) + 1);
-//						_instance.B0[p].V_values.push_back(sign);
-//					}
-//				}
-//			} else {
-//				for (eslocal col = 0; col < kernels[master].cols; col++) {
-//					for (size_t n = 0; n < DOFsOnInterface.size(); n++) {
-//						for (size_t dof = 0; dof < _gluedDOFs.size(); dof++) {
-//							_instance.B0[p].I_row_indices.push_back(rowIndex[i] + col);
-//							_instance.B0[p].J_col_indices.push_back(DOFsOnInterface[n]->DOFIndex(p, _gluedDOFsMeshOffsets[dof]) + 1);
-//							_instance.B0[p].V_values.push_back(sign * kernels[master].dense_values[kernels[master].rows * col + DOFsOnInterface[n]->DOFIndex(master, _gluedDOFsMeshOffsets[dof])]);
-//						}
-//					}
-//				}
-//			}
-//		}
-//
-//
-//		_instance.B0[p].rows = clusterRowIndex[_instance.clustersMap[p]] - 1;
-//		_instance.B0[p].cols = _instance.domainDOFCount[p];
-//		_instance.B0[p].nnz = _instance.B0[p].I_row_indices.size();
-//		_instance.B0subdomainsMap[p].reserve(_instance.B0[p].nnz);
-//		for (eslocal i = _instance.B0subdomainsMap[p].size(); i < _instance.B0[p].nnz; i++) {
-//			_instance.B0subdomainsMap[p].push_back(_instance.B0[p].I_row_indices[i] - 1);
-//		}
-//	}
-}
-
 #ifndef HAVE_MORTAR
 
 void EqualityConstraints::insertMortarGluingToB1(const Step &step, const std::string &master, const std::string &slave)
@@ -745,7 +726,7 @@ void EqualityConstraints::insertMortarGluingToB1(const Step &step, const std::st
 	std::vector<Point_3D> masterCoordinates;
 	std::vector<std::vector<int> > slaveElements;
 	std::vector<Point_3D> slaveCoordinates;
-	std::vector<int> nodes;
+	std::vector<int> interfaceNodes;
 
 //	Region *mregion = _mesh.region(master);
 //	Region *sregion = _mesh.region(slave);

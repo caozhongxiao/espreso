@@ -26,10 +26,10 @@ struct EqualityConstraints
 	void B1DirichletInsert(const Step &step);
 	void B1GlueElements(const Step &step);
 
+	void B0Kernels(const std::vector<SparseMatrix> &kernels);
+	void B0Corners();
 
 	void insertMortarGluingToB1(const Step &step, const std::string &master, const std::string &slave);
-	void insertCornersGluingToB0();
-	void insertKernelsGluingToB0(const std::vector<SparseMatrix> &kernels);
 
 protected:
 	eslocal computeIntervalsOffsets(std::function<eslocal(eslocal)> getsize, std::function<void(eslocal, eslocal)> setsize);

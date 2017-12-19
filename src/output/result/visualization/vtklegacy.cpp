@@ -12,10 +12,9 @@
 #include "../../../mesh/elements/element.h"
 #include "../../../mesh/store/nodestore.h"
 #include "../../../mesh/store/elementstore.h"
-#include "../../../mesh/store/sharedinterfacestore.h"
-
 #include <fstream>
 #include <algorithm>
+#include "../../../mesh/store/fetidatastore.h"
 
 using namespace espreso;
 
@@ -282,7 +281,7 @@ void VTKLegacy::nodesIntervals(const std::string &name)
 
 void VTKLegacy::sharedInterface(const std::string &name)
 {
-	if (_mesh.sharedInterface == NULL) {
+	if (_mesh.FETIData == NULL) {
 		return;
 	}
 	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
@@ -292,11 +291,11 @@ void VTKLegacy::sharedInterface(const std::string &name)
 	os << "ASCII\n";
 	os << "DATASET UNSTRUCTURED_GRID\n\n";
 
-	size_t points = _mesh.sharedInterface->nodes->datatarray().size();
+	size_t points = _mesh.FETIData->interfaceNodes->datatarray().size();
 
 	os << "POINTS " << points << " float\n";
 	for (size_t i = 0; i < points; i++) {
-		const Point &n = _mesh.nodes->coordinates->datatarray()[_mesh.sharedInterface->nodes->datatarray()[i]];
+		const Point &n = _mesh.nodes->coordinates->datatarray()[_mesh.FETIData->interfaceNodes->datatarray()[i]];
 		os << n.x << " " << n.y << " " << n.z << "\n";
 	}
 	os << "\n";
@@ -316,8 +315,8 @@ void VTKLegacy::sharedInterface(const std::string &name)
 	os << "CELL_DATA " << points << "\n";
 	os << "SCALARS distribution int 1\n";
 	os << "LOOKUP_TABLE default\n";
-	for (eslocal i = 0; i < _mesh.sharedInterface->nodeDistribution.size() - 1; i++) {
-		for (eslocal n = _mesh.sharedInterface->nodeDistribution[i]; n < _mesh.sharedInterface->nodeDistribution[i + 1]; n++) {
+	for (eslocal i = 0; i < _mesh.FETIData->inodesDistribution.size() - 1; i++) {
+		for (eslocal n = _mesh.FETIData->inodesDistribution[i]; n < _mesh.FETIData->inodesDistribution[i + 1]; n++) {
 			os << i << "\n";
 		}
 	}

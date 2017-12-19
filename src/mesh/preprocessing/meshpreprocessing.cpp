@@ -8,8 +8,6 @@
 #include "../store/nodestore.h"
 #include "../store/elementsregionstore.h"
 #include "../store/boundaryregionstore.h"
-#include "../store/sharedinterfacestore.h"
-
 #include "../elements/element.h"
 
 #include "../../basis/containers/point.h"
@@ -22,12 +20,10 @@
 
 #include "../../config/ecf/environment.h"
 
-#include "../../wrappers/wparmetis.h"
-#include "../../wrappers/wmetis.h"
-
 #include <algorithm>
 #include <numeric>
 #include <cstring>
+#include "../store/fetidatastore.h"
 
 using namespace espreso;
 
@@ -584,108 +580,6 @@ void MeshPreprocessing::computeRegionArea(BoundaryRegionStore *store)
 	}
 
 	MPI_Allreduce(&A, &store->area, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
-}
-
-void MeshPreprocessing::computeSharedFaces()
-{
-	start("computation of shared faces");
-
-	if (_mesh->nodes->elements == NULL) {
-		linkNodesAndElements();
-	}
-
-	size_t threads = environment->OMP_NUM_THREADS;
-	eslocal eoffset = _mesh->elements->IDs->datatarray().front();
-
-	std::vector<std::vector<eslocal> > inodes(threads);
-	std::vector<std::vector<eslocal> > inodesDistribution(threads);
-
-	inodesDistribution.front().push_back(0);
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		std::vector<eslocal> neighDomains;
-		std::vector<eslocal> elements;
-		std::vector<eslocal> dnodes;
-		std::vector<std::pair<eslocal, eslocal> > intervals;
-		const auto &epointers = _mesh->elements->epointers->datatarray();
-		for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
-			neighDomains.clear();
-			for (size_t i = 0; i < _mesh->nodes->dintervals[d].size(); i++) {
-				auto domains = _mesh->nodes->idomains->cbegin() + _mesh->nodes->dintervals[d][i].pindex;
-				neighDomains.insert(neighDomains.end(), domains->begin(), domains->end());
-			}
-			Esutils::sortAndRemoveDuplicity(neighDomains);
-
-			for (auto nd = neighDomains.begin(); nd != neighDomains.end(); ++nd) {
-				if (*nd <= _mesh->elements->firstDomain + d) {
-					continue;
-				}
-
-				intervals.clear();
-				for (size_t i = 0; i < _mesh->nodes->dintervals[d].size(); i++) {
-					auto domains = _mesh->nodes->idomains->cbegin() + _mesh->nodes->dintervals[d][i].pindex;
-					if (std::binary_search(domains->begin(), domains->end(), *nd)) {
-						intervals.push_back(std::make_pair(_mesh->nodes->dintervals[d][i].begin, _mesh->nodes->dintervals[d][i].end));
-					}
-				}
-				for (size_t i = 1; i < intervals.size(); i++) {
-					if (intervals[i - 1].second == intervals[i].first) {
-						intervals[i].first = intervals[i - 1].first;
-						intervals[i - 1].second = intervals[i].second;
-					}
-				}
-				Esutils::removeDuplicity(intervals);
-
-				elements.clear();
-				for (size_t i = 0; i < intervals.size(); i++) {
-					auto nelements = _mesh->nodes->elements->cbegin() + intervals[i].first;
-					for (eslocal e = intervals[i].first; e < intervals[i].second; ++e, ++nelements) {
-						for (auto ne = nelements->begin(); ne != nelements->end(); ++ne) {
-							if (_mesh->elements->elementsDistribution[d] <= *ne - eoffset && *ne - eoffset < _mesh->elements->elementsDistribution[d + 1]) {
-								elements.push_back(*ne - eoffset);
-							}
-						}
-					}
-				}
-				Esutils::sortAndRemoveDuplicity(elements);
-
-				dnodes.clear();
-				for (size_t e = 0; e < elements.size(); ++e) {
-					auto nodes = _mesh->elements->nodes->cbegin() + elements[e];
-					for (auto f = epointers[elements[e]]->faces->cbegin(); f != epointers[elements[e]]->faces->cend(); ++f) {
-						size_t size = 0;
-						for (auto fn = f->begin(); fn != f->end(); ++fn) {
-							auto it = std::lower_bound(intervals.begin(), intervals.end(), nodes->at(*fn), [&] (const std::pair<eslocal, eslocal> &interval, eslocal node) {
-								return interval.second < node;
-							});
-							if (it != intervals.end() && it->first <= nodes->at(*fn) && nodes->at(*fn) < it->second) {
-								++size;
-							}
-						}
-						if (size == f->size()) {
-							for (auto fn = f->begin(); fn != f->end(); ++fn) {
-								dnodes.push_back(nodes->at(*fn));
-							}
-						}
-					}
-				}
-				Esutils::sortAndRemoveDuplicity(dnodes);
-				inodes[t].insert(inodes[t].end(), dnodes.begin(), dnodes.end());
-				inodesDistribution[t].push_back(inodes[t].size());
-			}
-		}
-	}
-	Esutils::threadDistributionToFullDistribution(inodesDistribution);
-	Esutils::mergeThreadedUniqueData(inodesDistribution);
-
-	if (_mesh->sharedInterface != NULL) {
-		delete _mesh->sharedInterface;
-	}
-	_mesh->sharedInterface = new SharedInterfaceStore();
-	_mesh->sharedInterface->nodes = new serializededata<eslocal, eslocal>(1, inodes);
-	_mesh->sharedInterface->nodeDistribution = inodesDistribution[0];
-
-	finish("computation of shared faces");
 }
 
 

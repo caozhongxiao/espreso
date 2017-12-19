@@ -475,12 +475,12 @@ void Physics::updateDirichletInB1(bool withRedundantMultipliers)
 
 void Physics::assembleB0FromCorners()
 {
-	_equalityConstraints->insertCornersGluingToB0();
+	_equalityConstraints->B0Corners();
 }
 
 void Physics::assembleB0FromKernels(const std::vector<SparseMatrix> &kernels)
 {
-	_equalityConstraints->insertKernelsGluingToB0(kernels);
+	_equalityConstraints->B0Kernels(kernels);
 }
 
 void Physics::smoothstep(double &smoothStep, double &derivation, double edge0, double edge1, double value, size_t order)

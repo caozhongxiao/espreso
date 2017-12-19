@@ -41,7 +41,7 @@ using namespace espreso;
 
 Mesh::Mesh(const ECFConfiguration &configuration)
 : elements(new ElementStore(_eclasses)), nodes(new NodeStore()),
-  sharedInterface(NULL),
+  FETIData(NULL),
   halo(new ElementStore(_eclasses)),
   preprocessing(new MeshPreprocessing(this)),
 
@@ -304,6 +304,7 @@ void Mesh::update()
 	preprocessing->reclusterize();
 	preprocessing->partitiate(mesh->parts(), true, true);
 	preprocessing->computeSharedFaces();
+	preprocessing->computeCornerNodes();
 }
 
 void Mesh::initNodeData()

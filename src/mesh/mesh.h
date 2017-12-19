@@ -22,7 +22,7 @@ struct NodeData;
 
 struct ElementsRegionStore;
 struct BoundaryRegionStore;
-struct SharedInterfaceStore;
+struct FETIDataStore;
 
 class MeshPreprocessing;
 class Element;
@@ -56,7 +56,7 @@ public:
 	std::vector<ElementsRegionStore*> elementsRegions;
 	std::vector<BoundaryRegionStore*> boundaryRegions;
 
-	SharedInterfaceStore *sharedInterface;
+	FETIDataStore *FETIData;
 
 	ElementStore *halo;
 

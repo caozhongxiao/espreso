@@ -34,6 +34,7 @@ public:
 	void arrangeRegions();
 
 	void computeSharedFaces();
+	void computeCornerNodes();
 
 protected:
 	static size_t level;
