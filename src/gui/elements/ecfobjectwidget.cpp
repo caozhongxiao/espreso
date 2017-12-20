@@ -68,7 +68,7 @@ void ECFObjectWidget::drawObject(ECFObject *obj)
 OptionHandler* ECFObjectWidget::createOption(ECFParameter* option, QWidget* parent, bool withLabel)
 {
     OptionHandler* handler = new OptionHandler(option, parent, withLabel);
-    connect(handler, &OptionHandler::optionChanged, this, &ECFObjectWidget::redraw);
+    connect(handler, SIGNAL(optionChanged()), this, SLOT(redraw()));
 
     return handler;
 }
@@ -76,7 +76,7 @@ OptionHandler* ECFObjectWidget::createOption(ECFParameter* option, QWidget* pare
 BoolHandler* ECFObjectWidget::createBool(ECFParameter* param, QWidget* parent)
 {
     BoolHandler* handler = new BoolHandler(param, parent);
-    connect(handler, &BoolHandler::stateChanged, this, &ECFObjectWidget::redraw);
+    connect(handler, SIGNAL(stateChanged()), this, SLOT(redraw()));
 
     return handler;
 }

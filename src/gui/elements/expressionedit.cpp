@@ -13,8 +13,8 @@ ExpressionEdit::ExpressionEdit(const QString& contents,
 {
     this->m_variables = variables;
 
-    connect(this, &ExpressionEdit::textChanged,
-            this, &ExpressionEdit::onTextChanged);
+    connect(this, SIGNAL(textChanged(QString)),
+            this, SLOT(onTextChanged(QString)));
 
     this->m_isValid = Expression::isValid(contents.toStdString(), m_variables);
 }

@@ -35,15 +35,15 @@ TableWidget::TableWidget(int columns, const QStringList& headlines,
     this->m_cleanRowFactory = std::move(rowFactory);
     this->mModel->appendRow(this->m_cleanRowFactory->create(this->mModel->columnCount()));
 
-    connect(mTable, &QTableView::doubleClicked,
-            this, &TableWidget::onItemDoubleClick);
+    connect(mTable, SIGNAL(doubleClicked(QModelIndex)),
+            this, SLOT(onItemDoubleClick(QModelIndex)));
 
     this->mTable->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(mTable, &QTableView::customContextMenuRequested,
-            this, &TableWidget::onContextMenu);
+    connect(mTable, SIGNAL(customContextMenuRequested(QPoint)),
+            this, SLOT(onContextMenu(QPoint)));
 
     this->mActionDelete = new QAction(tr("&Delete"), this);
-    connect(mActionDelete, &QAction::triggered, this, &TableWidget::deleteItem);
+    connect(mActionDelete, SIGNAL(triggered(bool)), this, SLOT(deleteItem()));
 }
 
 TableWidget::~TableWidget()

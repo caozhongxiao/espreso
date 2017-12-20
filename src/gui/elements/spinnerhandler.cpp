@@ -17,8 +17,8 @@ SpinnerHandler::SpinnerHandler(ECFParameter* data,
     if (!withLabel) ui->label->hide();
 
     ui->spinBox->setValue(QString::fromStdString(data->getValue()).toInt());
-    connect(ui->spinBox, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-            this, &SpinnerHandler::onSpinnerValueChanged);
+    connect(ui->spinBox, SIGNAL(valueChanged(int)),
+            this, SLOT(onSpinnerValueChanged(int)));
 }
 
 SpinnerHandler::~SpinnerHandler()

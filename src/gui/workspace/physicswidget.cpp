@@ -38,8 +38,8 @@ QWidget* PhysicsWidget::initContainer()
     cmbPhysics->setCurrentIndex(active);
     this->m_physics = cmbPhysics;
     this->m_obj = this->physics(active);
-    connect(cmbPhysics, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &PhysicsWidget::onPhysicsChange);
+    connect(cmbPhysics, SIGNAL(currentIndexChanged(int)),
+            this, SLOT(onPhysicsChange(int)));
 
     return ScrollECFObjectWidget::initContainer();
 }
@@ -109,7 +109,7 @@ FormWidget* PhysicsWidget::processPositiveInteger(ECFParameter* parameter, FormW
     if (parameter->name.compare("load_steps") == 0)
     {
         SpinnerHandler* handler = new SpinnerHandler(parameter, false, widget);
-        connect(handler, &SpinnerHandler::valueChanged, this, &PhysicsWidget::onLoadstepsChange);
+        connect(handler, SIGNAL(valueChanged(int)), this, SLOT(onLoadstepsChange(int)));
         fw->appendRow(QString::fromStdString(parameter->metadata.description[0]),
                 handler);
         this->m_savables.append(handler);

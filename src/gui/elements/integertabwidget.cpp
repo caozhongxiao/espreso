@@ -23,16 +23,16 @@ IntegerTabWidget::IntegerTabWidget(ECFObject* map,
 
     QPushButton* btnAdd = new QPushButton(tr("Add"));
     header->addWidget(btnAdd);
-    connect(btnAdd, &QPushButton::pressed,
-            this, &IntegerTabWidget::onAddPressed);
+    connect(btnAdd, SIGNAL(pressed()),
+            this, SLOT(onAddPressed()));
 
     layout->addLayout(header);
 
     this->m_tabwidget = new QTabWidget(this);
     this->m_tabwidget->setTabsClosable(true);
 
-    connect(this->m_tabwidget, &QTabWidget::tabCloseRequested,
-            this, &IntegerTabWidget::onTabClosed);
+    connect(this->m_tabwidget, SIGNAL(tabCloseRequested(int)),
+            this, SLOT(onTabClosed(int)));
 
     this->m_key = 1;
     for (auto param = map->parameters.begin(); param != map->parameters.end(); ++param)

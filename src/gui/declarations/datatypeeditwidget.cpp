@@ -119,8 +119,8 @@ QComboBox* DataTypeEditWidget::createComboBox(QWidget *parent)
     box->addItems(DataTypeEditWidget::typeNames());
     box->setCurrentIndex(this->activeType);
 
-    connect(box, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &DataTypeEditWidget::changeType);
+    connect(box, SIGNAL(currentIndexChanged(int)),
+            this, SLOT(changeType(int)));
 
     return box;
 }

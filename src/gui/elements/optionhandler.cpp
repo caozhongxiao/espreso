@@ -36,8 +36,8 @@ OptionHandler::OptionHandler(ECFParameter* option, QWidget *parent, bool withLab
 
     this->optionsAdded = true;
 
-    connect(ui->cmb, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &OptionHandler::onIndexChanged);
+    connect(ui->cmb, SIGNAL(currentIndexChanged(int)),
+            this, SLOT(onIndexChanged(int)));
 }
 
 void OptionHandler::onIndexChanged(int index)

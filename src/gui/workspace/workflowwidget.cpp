@@ -60,8 +60,8 @@ void WorkflowWidget::createInput()
         {
             ui->cmbInput->addItem( QString::fromStdString((*opt).description) );
         }
-        connect(ui->cmbInput, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-                this, &WorkflowWidget::onInputChange);
+        connect(ui->cmbInput, SIGNAL(currentIndexChanged(int)),
+                this, SLOT(onInputChange(int)));
         this->m_inputBox_filled = true;
     }
     int index = 0;
@@ -119,8 +119,8 @@ void WorkflowWidget::createPhysicsTab()
                         ->getParameter("load_steps")
                         ->getValue()
                 ).toInt();
-    connect(pw, &PhysicsWidget::loadstepsChanged, this, &WorkflowWidget::onLoadstepsChange);
-    connect(pw, &PhysicsWidget::physicsChanged, this, &WorkflowWidget::onPhysicsChange);
+    connect(pw, SIGNAL(loadstepsChanged(int)), this, SLOT(onLoadstepsChange(int)));
+    connect(pw, SIGNAL(physicsChanged(ECFObject*)), this, SLOT(onPhysicsChange(ECFObject*)));
 
     ui->workflow->addTab(pw, QLatin1String("Physics"));
     ui->workflow->setCurrentIndex(ui->workflow->count() - 1);

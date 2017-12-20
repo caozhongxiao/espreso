@@ -32,8 +32,8 @@ void WorkspaceWindow::initUi()
 {
     this->m_workflow = new WorkflowWidget(this);
     ui->right->layout()->addWidget(m_workflow);
-    connect(m_workflow, &WorkflowWidget::inputChanged, this, &WorkspaceWindow::onInputChanged);
-    connect(m_workflow, &WorkflowWidget::physicsChanged, this, &WorkspaceWindow::onPhysicsChanged);
+    connect(m_workflow, SIGNAL(inputChanged()), this, SLOT(onInputChanged()));
+    connect(m_workflow, SIGNAL(physicsChanged(ECFObject*)), this, SLOT(onPhysicsChanged(ECFObject*)));
     if (environment->MPIrank == 0) MeshWidget::initOGL();
 }
 

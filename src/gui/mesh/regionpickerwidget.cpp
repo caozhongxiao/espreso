@@ -10,7 +10,7 @@ RegionPickerWidget::RegionPickerWidget(MeshWidget* mesh, QWidget *parent) :
     ui->setupUi(this);
 
     this->m_mesh = mesh;
-    connect(m_mesh, &MeshWidget::regionClicked, this, &RegionPickerWidget::onRegionClicked);
+    connect(m_mesh, SIGNAL(regionClicked(QString)), this, SLOT(onRegionClicked(QString)));
 
     this->setupModel();
 }
@@ -36,8 +36,8 @@ void RegionPickerWidget::setupModel()
 
     ui->tree->setModel(m_model);
 
-    connect(m_model, &QStandardItemModel::itemChanged,
-            this, &RegionPickerWidget::regionStateChanged);
+    connect(m_model, SIGNAL(itemChanged(QStandardItem*)),
+            this, SLOT(regionStateChanged(QStandardItem*)));
 }
 
 void RegionPickerWidget::regionStateChanged(QStandardItem* item)

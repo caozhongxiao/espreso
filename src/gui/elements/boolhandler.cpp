@@ -18,7 +18,7 @@ BoolHandler::BoolHandler(ECFParameter* param, QWidget *parent) :
     if (param->getValue().compare("FALSE") == 0) ui->chck->setChecked(false);
     else ui->chck->setChecked(true);
 
-    connect(ui->chck, &QCheckBox::stateChanged, this, &BoolHandler::onStateChanged);
+    connect(ui->chck, SIGNAL(stateChanged(int)), this, SLOT(onStateChanged(int)));
 }
 
 BoolHandler::~BoolHandler()
