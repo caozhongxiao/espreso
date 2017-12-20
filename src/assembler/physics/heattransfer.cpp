@@ -34,7 +34,7 @@ HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration, const
 	_equalityConstraints = new EqualityConstraints(
 			*_instance,
 			*_mesh,
-			configuration.load_steps_settings.at(1).temperature, 1,
+			configuration.load_steps_settings.at(1).temperature,
 			configuration.load_steps_settings.at(1).feti.redundant_lagrange,
 			configuration.load_steps_settings.at(1).feti.scaling);
 

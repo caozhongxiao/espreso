@@ -17,11 +17,13 @@ struct ECFExpression;
 class Region;
 struct Step;
 class SparseMatrix;
+struct BoundaryRegionStore;
+class Evaluator;
 
 struct EqualityConstraints
 {
-	EqualityConstraints(Instance &instance, Mesh &mesh, const std::map<std::string, ECFExpression> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling);
-	void update(const std::map<std::string, ECFExpression> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling);
+	EqualityConstraints(Instance &instance, Mesh &mesh, const std::map<std::string, ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling);
+	void update(const std::map<std::string, ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling);
 
 	void B1DirichletInsert(const Step &step);
 	void B1DirichletUpdate(const Step &step);
@@ -37,14 +39,16 @@ protected:
 
 	Instance &_instance;
 	Mesh &_mesh;
-	size_t _DOFs;
 	esglobal _dirichletSize, _gluingSize;
 	bool _withRedundantMultipliers, _withScaling;
 
-	std::vector<eslocal> _mergedDirichletOffset;
-	std::vector<std::vector<eslocal> > _mergedDirichletIndices;
-	std::vector<std::vector<double> > _mergedDirichletValues;
+	// DOF x CONDITIONS
+	std::vector<std::vector<std::pair<BoundaryRegionStore*, Evaluator*> > > _dirichlet;
 
+	// DOF x INTERVAL x NODES
+	std::vector<std::vector<std::vector<eslocal> > > _intervalDirichletNodes;
+
+	std::vector<eslocal> _intervalDirichletOffset;
 	std::vector<eslocal> _intervalGluingOffset;
 };
 

@@ -38,11 +38,11 @@ TransientFirstOrderImplicit::TransientFirstOrderImplicit(TimeStepSolver &timeSte
 
 Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Matrices matrices)
 {
-	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R | Matrices::B1 | Matrices::B1c | Matrices::B1duplicity);
+	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R | Matrices::B1);
 
-	if (_assembler.step.substep) {
-		updatedMatrices &= (Matrices::f | Matrices::B1c);
-	}
+//	if (_assembler.step.substep) {
+//		updatedMatrices &= (Matrices::f | Matrices::B1c);
+//	}
 
 	return reassembleStructuralMatrices(updatedMatrices);
 }

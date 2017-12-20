@@ -93,11 +93,10 @@ void Assembler::updateMatrices(Matrices matrices)
 			instance.block.clear();
 			instance.block.resize(3, 0);
 			physics.assembleB1(linearSolver.applyB1LagrangeRedundancy(), linearSolver.glueDomainsByLagrangeMultipliers(), linearSolver.applyB1Scaling());
-
 		});
 	}
 
-	if (matrices & Matrices::B1c) {
+	if (!(matrices & (Matrices::B1 | Matrices::B1duplicity)) && (matrices & Matrices::B1c)) {
 		timeWrapper("update " + mNames(Matrices::B1c), [&] () {
 			physics.updateDirichletInB1(linearSolver.applyB1LagrangeRedundancy());
 		});
