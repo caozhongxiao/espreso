@@ -12,6 +12,7 @@
 #include "../../elements/formwidget.h"
 #include "../../elements/boolhandler.h"
 #include "materialpropertytablewidget.h"
+#include "../../utils/utils.h"
 
 using namespace espreso;
 
@@ -26,7 +27,14 @@ MaterialWidget::MaterialWidget(MaterialConfiguration* material,
 bool MaterialWidget::isValid()
 {
     if (!ECFObjectWidget::isValid())
+    {
+        QMessageBox msg;
+        msg.setWindowTitle(tr("Error"));
+        msg.setText(this->errorMessage());
+        msg.exec();
+
         return false;
+    }
 
     ISavableObject* info = m_savables.first();
     info->saveState();
@@ -39,7 +47,7 @@ bool MaterialWidget::isValid()
                 .toUpper()
                 .toStdString();
 
-    if (m_names.indexOf(newName) != -1)
+    if (Utils::caseInsensitiveIndexOf(m_names, newName) != -1)
     {
         QMessageBox msg;
         msg.setWindowTitle(tr("Error"));

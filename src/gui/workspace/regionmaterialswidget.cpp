@@ -11,7 +11,7 @@ RegionMaterialsWidget::RegionMaterialsWidget(Mesh* mesh, PhysicsConfiguration* p
 {
     ui->setupUi(this);
 
-    RegionPropertyWidget* rpw = new RegionPropertyWidget(mesh, physics, this);
+    RegionPropertyWidget* rpw = new RegionPropertyWidget(mesh, physics, "", this);
     rpw->addProperty(static_cast<ECFObject*>(physics->getParameter("material_set")));
 
     ui->layout->addWidget(rpw);

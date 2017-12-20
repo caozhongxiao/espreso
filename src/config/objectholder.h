@@ -80,6 +80,12 @@ struct ECFObjectMap: public ECFObject {
 		ECFObject::dropParameter(parameter);
 	}
 
+    virtual void dropAllParameters()
+    {
+        value.clear();
+        ECFObject::dropAllParameters();
+    }
+
     virtual ECFParameter* getPattern() const
 	{
 		std::map<TParameter, TObject*> dummy;
@@ -116,6 +122,12 @@ struct ECFValueMapMap: public ECFObject {
 		value.erase(key);
 		ECFObject::dropParameter(parameter);
 	}
+
+    virtual void dropAllParameters()
+    {
+        value.clear();
+        ECFObject::dropAllParameters();
+    }
 
     virtual ECFParameter* getPattern() const
 	{
@@ -156,6 +168,12 @@ struct ECFObjectMapMap: public ECFObject {
 		value.erase(key);
 		ECFObject::dropParameter(parameter);
 	}
+
+    virtual void dropAllParameters()
+    {
+        value.clear();
+        ECFObject::dropAllParameters();
+    }
 
     virtual ECFParameter* getPattern() const
 	{

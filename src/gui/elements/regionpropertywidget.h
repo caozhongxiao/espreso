@@ -14,51 +14,31 @@
 #include "../../mesh/elements/plane/planeelement.h"
 
 #include "regionpairdialog.h"
+#include "ecfobjecttreewidget.h"
 
 namespace espreso
 {
 
-namespace Ui {
-class RegionPropertyWidget;
-}
-
-class RegionPropertyWidget : public QWidget
+class RegionPropertyWidget : public ECFObjectTreeWidget
 {
     Q_OBJECT
 
 public:
-    explicit RegionPropertyWidget(Mesh* mesh, PhysicsConfiguration* physics, QWidget *parent = 0, const QString& label = "");
-    ~RegionPropertyWidget();
+    explicit RegionPropertyWidget(Mesh* mesh, PhysicsConfiguration* physics, const QString& label = "", QWidget *parent = 0);
 
     void addProperty(ECFObject* obj);
 
-private slots:
-    void onActionNew();
-    void onActionEdit();
-    void onActionDelete();
+protected:
+    virtual QDialog* createDialog(const QModelIndex& groupIndex, ECFParameter* param = nullptr) override;
+    virtual QString dialogResult(QDialog* dialog) override;
 
-    void onContextMenu(const QPoint &pos);
+    virtual void newItemAccepted(int, QString) override {}
+    virtual void newItemRejected(int) override {}
+    virtual void itemEditted(int, ECFParameter*) override {}
 
 private:
-    Ui::RegionPropertyWidget *ui;
-
     Mesh* m_mesh;
     PhysicsConfiguration* m_physics;
-
-    QStandardItemModel* m_model;
-    QVector<QStandardItem*> m_groups;
-    QVector<ECFObject*> m_objs;
-    QStandardItem* m_root;
-
-    QTreeView* m_view;
-
-    QAction* m_action_new;
-    QAction* m_action_edit;
-    QAction* m_action_delete;
-
-    QModelIndex selectedItem();
-    RegionPairDialog* createDialog(const QModelIndex& groupIndex, ECFParameter* param = nullptr);
-    ECFParameter* selectedParam(const QModelIndex& groupIndex);
 };
 
 }

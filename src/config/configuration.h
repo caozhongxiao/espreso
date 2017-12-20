@@ -181,6 +181,7 @@ struct ECFObject: public ECFParameter {
 	virtual ~ECFObject();
 
 	virtual void dropParameter(ECFParameter *parameter);
+    virtual void dropAllParameters();
 protected:
 	ECFParameter* addSeparator();
 	ECFParameter* addSpace();

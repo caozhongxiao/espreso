@@ -69,6 +69,8 @@ private:
     void createLoadstepsTabs();
 
     void createOutputTab();
+
+    QString m_errmsg;
 };
 
 }

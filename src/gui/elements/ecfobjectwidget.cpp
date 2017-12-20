@@ -136,8 +136,6 @@ bool ECFObjectWidget::isValid()
 
 QString ECFObjectWidget::errorMessage()
 {
-    this->isValid();
-
     return this->m_errormsg;
 }
 

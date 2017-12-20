@@ -90,7 +90,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="btnClose">
+           <widget class="QPushButton" name="btnSave">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
               <horstretch>0</horstretch>

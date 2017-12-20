@@ -238,17 +238,45 @@ void WorkflowWidget::save()
 {
    this->m_inputWidget->save();
 
-//   for (int i = 1; i < ui->workflow->count(); i++)
-//   {
-//       static_cast<ISavableObject*>(ui->workflow->widget(i))->save();
-//   }
+   for (int i = 1; i < ui->workflow->count(); i++)
+   {
+       QWidget* widget = ui->workflow->widget(i);
+       RegionMaterialsWidget* rmw = dynamic_cast<RegionMaterialsWidget*>(widget);
+       if (rmw == nullptr)
+       {
+            static_cast<ECFObjectWidget*>(widget)->save();
+       }
+   }
 }
 
 bool WorkflowWidget::isValid()
 {
+    if (!this->m_inputWidget->isValid())
+    {
+        this->m_errmsg = this->m_inputWidget->errorMessage();
+        return false;
+    }
+
+    for (int i = 1; i < ui->workflow->count(); i++)
+    {
+        QWidget* widget = ui->workflow->widget(i);
+        RegionMaterialsWidget* rmw = dynamic_cast<RegionMaterialsWidget*>(widget);
+        if (rmw == nullptr)
+        {
+             ECFObjectWidget *ecfwidget = static_cast<ECFObjectWidget*>(widget);
+             if (!ecfwidget->isValid())
+             {
+                 this->m_errmsg = ecfwidget->errorMessage();
+                 return false;
+             }
+        }
+    }
+
+    this->m_errmsg = "";
     return true;
 }
+
 QString WorkflowWidget::errorMessage()
 {
-    return "";
+    return this->m_errmsg;
 }

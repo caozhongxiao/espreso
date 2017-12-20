@@ -86,8 +86,8 @@ void PhysicsWidget::drawObject(ECFObject* obj)
         {
             this->m_properties = new RegionPropertyWidget(m_mesh,
                                                           static_cast<PhysicsConfiguration*>(this->activePhysics()),
-                                                          this->m_container,
-                                                          tr("Region properties"));
+                                                          tr("Region properties"),
+                                                          this->m_container);
         }
         this->m_properties->addProperty(obj);
         this->m_widget->layout()->addWidget(m_properties);
@@ -100,7 +100,6 @@ void PhysicsWidget::drawObject(ECFObject* obj)
 
 void PhysicsWidget::performBeforeRedraw()
 {
-    this->m_properties->hide();
     this->m_properties = nullptr;
 }
 

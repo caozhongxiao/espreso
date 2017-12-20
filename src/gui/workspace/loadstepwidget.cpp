@@ -33,8 +33,8 @@ void LoadstepWidget::drawObject(ECFObject* obj)
         {
             this->m_properties = new RegionPropertyWidget(m_mesh,
                                                           static_cast<PhysicsConfiguration*>(m_physics),
-                                                          this->m_container,
-                                                          tr("Boundary conditions"));
+                                                          tr("Boundary conditions"),
+                                                          this->m_container);
         }
         this->m_properties->addProperty(obj);
         this->m_widget->layout()->addWidget(m_properties);
@@ -46,6 +46,5 @@ void LoadstepWidget::drawObject(ECFObject* obj)
 
 void LoadstepWidget::performBeforeRedraw()
 {
-    this->m_properties->hide();
     this->m_properties = nullptr;
 }

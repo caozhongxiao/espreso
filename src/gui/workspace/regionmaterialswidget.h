@@ -21,13 +21,9 @@ namespace Ui {
 class RegionMaterialsWidget;
 }
 
-class RegionMaterialsWidget : public QWidget, public ISavableObject, public IValidatableObject
+class RegionMaterialsWidget : public QWidget
 {
     Q_OBJECT
-
-    virtual void save() override {}
-    virtual bool isValid() override { return true; }
-    virtual QString errorMessage() override { return QLatin1String(""); }
 
 public:
     explicit RegionMaterialsWidget(Mesh* mesh, PhysicsConfiguration* physics, QWidget *parent = 0);

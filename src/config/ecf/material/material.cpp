@@ -69,12 +69,12 @@ MaterialConfiguration::MaterialConfiguration()
   phase_change(false),
   _allowed_physical_models(static_cast<PHYSICAL_MODEL>(~0))
 {
-	name = "MATERIAL_NAME";
+    name = "";
 	REGISTER(name, ECFMetaData()
 			 .setdescription({ "Name" })
 			 .setdatatype( { ECFDataType::STRING } ));
 
-	description = "MATERIAL_DESCRIPTION";
+    description = "";
 	REGISTER(description, ECFMetaData()
 			 .setdescription({ "Description" })
 			 .setdatatype( { ECFDataType::STRING } ));

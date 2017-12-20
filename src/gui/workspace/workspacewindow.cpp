@@ -46,10 +46,10 @@ void WorkspaceWindow::onInputChanged()
 
 void WorkspaceWindow::initPanels()
 {
-    if (this->m_declarations != nullptr)
+    if (this->m_datasets != nullptr)
     {
-        ui->left->layout()->removeWidget(m_declarations);
-        this->m_declarations = nullptr;
+        ui->left->layout()->removeWidget(m_datasets);
+        this->m_datasets = nullptr;
     }
 
     if (this->m_mesh3D != nullptr)
@@ -64,9 +64,9 @@ void WorkspaceWindow::initPanels()
         this->m_regions = nullptr;
     }
 
-    this->m_declarations = new DeclarationsWidget(this);
-    this->m_declarations->initialize(this->m_workflow->activePhysics(this->m_ecf));
-    ui->left->layout()->addWidget(m_declarations);
+    ECFObject* materials = static_cast<ECFObject*>(this->m_workflow->activePhysics(this->m_ecf)->getParameter("materials"));
+    this->m_datasets = new DataSetsWidget(materials, tr("Data sets"), this);
+    ui->left->layout()->addWidget(m_datasets);
 
     this->m_mesh3D = new MeshWidget(m_manager, this);
     ui->center->layout()->addWidget(m_mesh3D);
@@ -78,7 +78,8 @@ void WorkspaceWindow::initPanels()
 
 void WorkspaceWindow::onPhysicsChanged(ECFObject *physics)
 {
-    this->m_declarations->setPhysics(dynamic_cast<PhysicsConfiguration*>(physics));
+    ECFObject* materials = static_cast<ECFObject*>(physics->getParameter("materials"));
+    this->m_datasets->setMaterials(materials);
 }
 
 void espreso::WorkspaceWindow::on_btnOpen_pressed()
@@ -95,7 +96,7 @@ void espreso::WorkspaceWindow::on_btnOpen_pressed()
     this->m_workflow->setData(this->m_ecf, this->m_mesh);
 }
 
-void espreso::WorkspaceWindow::on_btnClose_pressed()
+void espreso::WorkspaceWindow::on_btnSave_pressed()
 {
 
 }

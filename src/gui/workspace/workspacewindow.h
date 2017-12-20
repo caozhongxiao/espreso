@@ -7,7 +7,7 @@
 #include "../../config/ecf/ecf.h"
 #include "../../input/loader.h"
 
-#include "../declarations/declarationswidget.h"
+#include "../declarations/datasetswidget.h"
 #include "../mesh/meshwidget.h"
 #include "../mesh/regionpickerwidget.h"
 #include "workflowwidget.h"
@@ -35,8 +35,7 @@ private slots:
     void onPhysicsChanged(ECFObject* physics);
     void onInputChanged();
     void on_btnOpen_pressed();
-
-    void on_btnClose_pressed();
+    void on_btnSave_pressed();
 
 private:
     Ui::WorkspaceWindow *ui;
@@ -48,7 +47,7 @@ private:
 
     WorkflowWidget* m_workflow;
 
-    DeclarationsWidget* m_declarations = nullptr;
+    DataSetsWidget* m_datasets = nullptr;
     MeshWidget* m_mesh3D = nullptr;
     RegionPickerWidget* m_regions = nullptr;
 
