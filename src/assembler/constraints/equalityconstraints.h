@@ -24,7 +24,8 @@ struct EqualityConstraints
 	void update(const std::map<std::string, ECFExpression> &dirichlet, size_t DOFs, bool withRedundantMultiplier, bool withScaling);
 
 	void B1DirichletInsert(const Step &step);
-	void B1GlueElements(const Step &step);
+	void B1DirichletUpdate(const Step &step);
+	void B1GlueElements();
 
 	void B0Kernels(const std::vector<SparseMatrix> &kernels);
 	void B0Corners();

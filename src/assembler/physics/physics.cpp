@@ -113,7 +113,6 @@ void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPM
 	DenseMatrix Ke, fe, Me(0, 0), Re(0, 0);
 	std::vector<eslocal> DOFs;
 
-	// TODO: MESH
 	for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
 		if (_mesh->boundaryRegions[r]->dimension == 2) {
 			if (_mesh->boundaryRegions[r]->eintervalsDistribution[domain] < _mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]) {
@@ -163,7 +162,7 @@ void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPM
  */
 void Physics::fillDOFsIndices(edata<const eslocal> &nodes, eslocal domain, std::vector<eslocal> &DOFs) const
 {
-	// TODO: MESH: improve performance
+	// TODO: improve performance
 	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
 	DOFs.resize(nodes.size());
 	for (size_t dof = 0, i = 0; dof < 1; dof++) {
@@ -278,194 +277,19 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumRes
 {
 	ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement sumSquares.";
 	return 0;
-//	auto n2i = [ & ] (size_t neighbour) {
-//		return std::lower_bound(_mesh->neighbours().begin(), _mesh->neighbours().end(), neighbour) - _mesh->neighbours().begin();
-//	};
-//
-//	double csum = 0, gsum;
-//
-//	size_t threads = environment->OMP_NUM_THREADS;
-//	std::vector<size_t> distribution = Esutils::getDistribution(threads, _mesh->nodes().size());
-//
-//	std::vector<std::vector<std::vector<double> > > sBuffer(threads, std::vector<std::vector<double> >(_mesh->neighbours().size()));
-//	std::vector<std::vector<double> > rBuffer(_mesh->neighbours().size());
-//	std::vector<std::vector<size_t> > rBufferSize(threads, std::vector<size_t>(_mesh->neighbours().size()));
-//	std::vector<std::vector<eslocal> > incomplete(threads);
-//	std::vector<std::vector<double> > incompleteData(threads);
-//
-//	// clusterOffset not work because only to the lowest rank receive data
-//	std::vector<std::vector<std::vector<eslocal> > > skipped(threads, std::vector<std::vector<eslocal> >(_mesh->neighbours().size()));
-//
-//	std::vector<std::vector<Region*> > restricted(pointDOFs().size());
-//	switch (restriction) {
-//	case SumRestriction::NONE:
-//		break;
-//	case SumRestriction::DIRICHLET:
-//	case SumRestriction::NON_DIRICHLET:
-//		restricted = _mesh->getRegionsWithProperties(loadStep, pointDOFs());
-//		break;
-//	default:
-//		ESINFO(GLOBAL_ERROR) << "Not implemented sumSquares restriction";
-//	}
-//
-//	auto skip = [&] (size_t dof, size_t n) {
-//		switch (restriction) {
-//		case SumRestriction::DIRICHLET:
-//			if (!_mesh->commonRegion(restricted[dof], _mesh->nodes()[n]->regions())) {
-//				return true;
-//			}
-//			break;
-//		case SumRestriction::NON_DIRICHLET:
-//			if (_mesh->commonRegion(restricted[dof], _mesh->nodes()[n]->regions())) {
-//				return true;
-//			}
-//			break;
-//		case SumRestriction::NONE:
-//			break;
-//		}
-//		return false;
-//	};
-//
-//	#pragma omp parallel for
-//	for (size_t t = 0; t < threads; t++) {
-//		double tSum = 0;
-//		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
-//
-//			if (!_mesh->nodes()[n]->parentElements().size()) {
-//				// mesh generator can generate dangling nodes -> skip them
-//				continue;
-//			}
-//
-//			if (_mesh->nodes()[n]->clusters().size() > 1) {
-//				if (_mesh->nodes()[n]->clusters().front() == environment->MPIrank) {
-//					for (auto c = _mesh->nodes()[n]->clusters().begin() + 1; c != _mesh->nodes()[n]->clusters().end(); ++c) {
-//						rBufferSize[t][n2i(*c)] += pointDOFs().size();
-//					}
-//					incomplete[t].push_back(n);
-//					incompleteData[t].insert(incompleteData[t].end(), pointDOFs().size(), 0);
-//					for (auto d = _mesh->nodes()[n]->domains().begin(); d != _mesh->nodes()[n]->domains().end(); ++d) {
-//						for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
-//							if (!skip(dof, n) && _mesh->nodes()[n]->DOFIndex(*d, dof) >= 0) {
-//								incompleteData[t][incompleteData[t].size() - pointDOFs().size() + dof] += data[*d][_mesh->nodes()[n]->DOFIndex(*d, dof)];
-//							}
-//						}
-//					}
-//				} else {
-//					eslocal cluster = _mesh->nodes()[n]->clusters().front();
-//					for (auto c = _mesh->nodes()[n]->clusters().begin() + 1; c != _mesh->nodes()[n]->clusters().end(); ++c) {
-//						if (*c != environment->MPIrank) {
-//							skipped[t][n2i(*c)].push_back(_mesh->nodes()[n]->clusterOffset(*c));
-//						}
-//					}
-//					sBuffer[t][n2i(cluster)].resize(sBuffer[t][n2i(cluster)].size() + pointDOFs().size());
-//					for (auto d = _mesh->nodes()[n]->domains().begin(); d != _mesh->nodes()[n]->domains().end(); ++d) {
-//						for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
-//							if (!skip(dof, n) && _mesh->nodes()[n]->DOFIndex(*d, dof) >= 0) {
-//								sBuffer[t][n2i(cluster)][sBuffer[t][n2i(cluster)].size() - pointDOFs().size() + dof] += data[*d][_mesh->nodes()[n]->DOFIndex(*d, dof)];
-//							}
-//						}
-//					}
-//				}
-//			} else {
-//				for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
-//					double sum = 0;
-//					for (auto d = _mesh->nodes()[n]->domains().begin(); d != _mesh->nodes()[n]->domains().end(); ++d) {
-//							if (!skip(dof, n) && _mesh->nodes()[n]->DOFIndex(*d, dof) >= 0) {
-//								sum += data[*d][_mesh->nodes()[n]->DOFIndex(*d, dof)];
-//							}
-//					}
-//					switch (operation) {
-//					case SumOperation::AVERAGE:
-//						sum /= _mesh->nodes()[n]->numberOfGlobalDomainsWithDOF(dof);
-//					case SumOperation::SUM:
-//						tSum += sum * sum;
-//						break;
-//					default:
-//						ESINFO(GLOBAL_ERROR) << "Implement new SumOperation.";
-//					}
-//				}
-//			}
-//
-//		}
-//		#pragma omp atomic
-//		csum += tSum;
-//	}
-//
-//	for (size_t n = 0; n < _mesh->neighbours().size(); n++) {
-//		size_t rSize = rBufferSize[0][n];
-//		for (size_t t = 1; t < threads; t++) {
-//			sBuffer[0][n].insert(sBuffer[0][n].end(), sBuffer[t][n].begin(), sBuffer[t][n].end());
-//			skipped[0][n].insert(skipped[0][n].end(), skipped[t][n].begin(), skipped[t][n].end());
-//			rSize += rBufferSize[t][n];
-//		}
-//		rBuffer[n].resize(rSize);
-//	}
-//
-//	for (size_t t = 1; t < threads; t++) {
-//		incomplete[0].insert(incomplete[0].end(), incomplete[t].begin(), incomplete[t].end());
-//		incompleteData[0].insert(incompleteData[0].end(), incompleteData[t].begin(), incompleteData[t].end());
-//	}
-//
-//	#pragma omp parallel for
-//	for (size_t n = 0; n < _mesh->neighbours().size(); n++) {
-//		std::sort(skipped[0][n].begin(), skipped[0][n].end());
-//	}
-//
-//	if (!Communication::receiveUpperKnownSize(sBuffer[0], rBuffer, _mesh->neighbours())) {
-//		ESINFO(ERROR) << "problem while exchange sum of squares.";
-//	}
-//
-//	auto clusterOffset = [&] (size_t n, eslocal cluster) {
-//		eslocal offset = _mesh->nodes()[n]->clusterOffset(cluster);
-//		auto it = std::lower_bound(skipped[0][n2i(cluster)].begin(), skipped[0][n2i(cluster)].end(), offset);
-//		return offset - (it - skipped[0][n2i(cluster)].begin());
-//	};
-//
-//	distribution = Esutils::getDistribution(threads, incomplete[0].size());
-//	#pragma omp parallel for
-//	for (size_t t = 0; t < threads; t++) {
-//		double tSum = 0;
-//		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
-//			size_t n = incomplete[0][i];
-//
-//			for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
-//				double sum = incompleteData[0][i * pointDOFs().size() + dof];
-//				for (auto c = _mesh->nodes()[n]->clusters().begin() + 1; c != _mesh->nodes()[n]->clusters().end(); ++c) {
-//					sum += rBuffer[n2i(*c)][clusterOffset(n, *c) * pointDOFs().size() + dof];
-//				}
-//				switch (operation) {
-//				case SumOperation::AVERAGE:
-//					sum /= _mesh->nodes()[n]->numberOfGlobalDomainsWithDOF(dof);
-//				case SumOperation::SUM:
-//					tSum += sum * sum;
-//					break;
-//				default:
-//					ESINFO(GLOBAL_ERROR) << "Implement new SumOperation.";
-//				}
-//			}
-//
-//		}
-//		#pragma omp atomic
-//		csum += tSum;
-//	}
-//
-//	MPI_Allreduce(&csum, &gsum, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
-//	return gsum;
 }
 
 void Physics::assembleB1(bool withRedundantMultipliers, bool withGluing, bool withScaling)
 {
 	_equalityConstraints->B1DirichletInsert(*_step);
 	if (withGluing) {
-		_equalityConstraints->B1GlueElements(*_step);
+		_equalityConstraints->B1GlueElements();
 	}
 }
 
 void Physics::updateDirichletInB1(bool withRedundantMultipliers)
 {
-//	ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: update dirichlet in B1.";
-	// TODO: MESH
-	// _equalityConstraints->updateDirichletValuesInB1(step, withRedundantMultipliers);
+	_equalityConstraints->B1DirichletUpdate(*_step);
 }
 
 void Physics::assembleB0FromCorners()

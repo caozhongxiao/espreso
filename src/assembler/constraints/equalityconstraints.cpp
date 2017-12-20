@@ -212,7 +212,9 @@ void EqualityConstraints::B1DirichletInsert(const Step &step)
 						_instance.B1[d].J_col_indices.push_back(interval.DOFOffset + _mergedDirichletIndices[interval.pindex][n] - interval.begin + 1);
 					}
 
-					_instance.B1c[d].insert(_instance.B1c[d].end(), _mergedDirichletValues[interval.pindex].begin(), _mergedDirichletValues[interval.pindex].end());
+					for (size_t j = 0; j < _mergedDirichletValues[interval.pindex].size(); ++j) {
+						_instance.B1c[d].push_back(step.internalForceReduction * _mergedDirichletValues[interval.pindex][j]);
+					}
 
 					_instance.B1[d].V_values.insert(_instance.B1[d].V_values.end(), _mergedDirichletIndices[interval.pindex].size(), 1);
 					_instance.B1duplicity[d].insert(_instance.B1duplicity[d].end(), _mergedDirichletIndices[interval.pindex].size(), 1);
@@ -252,7 +254,27 @@ void EqualityConstraints::B1DirichletInsert(const Step &step)
 	}
 }
 
-void EqualityConstraints::B1GlueElements(const Step &step)
+void EqualityConstraints::B1DirichletUpdate(const Step &step)
+{
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (size_t d = _mesh.elements->domainDistribution[t]; d < _mesh.elements->domainDistribution[t + 1]; d++) {
+			eslocal offset = 0;
+			for (size_t i = 0; i < _mesh.nodes->gintervals[d].size(); ++i) {
+				const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
+				if (_withRedundantMultipliers || interval.dindex == 0) {
+					for (size_t j = 0; j < _mergedDirichletValues[interval.pindex].size(); ++j, ++offset) {
+						_instance.B1c[d][offset] = step.internalForceReduction * _mergedDirichletValues[interval.pindex][j];
+					}
+				}
+			}
+		}
+	}
+}
+
+void EqualityConstraints::B1GlueElements()
 {
 	auto redundantglue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter) {
 		const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
