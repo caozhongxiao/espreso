@@ -64,8 +64,8 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 			_f_ext = _assembler.instance.f;
 		}
 		if (_configuration.check_second_residual) {
-			heatResidual_second = _assembler.sumSquares(_assembler.instance.f, SumOperation::SUM, SumRestriction::NON_DIRICHLET, "norm of f not on DIRICHLET");
-			heatResidual_second += _assembler.sumSquares(_assembler.instance.R, SumOperation::SUM, SumRestriction::DIRICHLET, "norm of R on DIRICHLET");
+			heatResidual_second = _assembler.sumSquares(_assembler.instance.f, SumRestriction::NON_DIRICHLET, "norm of f not on DIRICHLET");
+			heatResidual_second += _assembler.sumSquares(_assembler.instance.R, SumRestriction::DIRICHLET, "norm of R on DIRICHLET");
 			heatResidual_second = sqrt(heatResidual_second);
 			if (heatResidual_second < 1e-3) {
 				heatResidual_second = 1e-3;
@@ -85,7 +85,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 					-1, _assembler.instance.dualSolution,
 					"(f - R) - Bt * Lambda");
 
-			heatResidual_first = sqrt(_assembler.sumSquares(_f_R_BtLambda, SumOperation::SUM, SumRestriction::NONE, "norm of (f - R) - Bt * Lambda"));
+			heatResidual_first = sqrt(_assembler.sumSquares(_f_R_BtLambda, SumRestriction::NONE, "norm of (f - R) - Bt * Lambda"));
 			heatResidual = heatResidual_first / heatResidual_second;
 
 			if (heatResidual < _configuration.requested_second_residual && _assembler.step.iteration > 1 ) {
@@ -127,7 +127,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 			ESINFO(CONVERGENCE) << "    LINE_SEARCH_OUTPUT: " << "PARAMETER = " << alpha << "  MAX_DOF_INCREMENT = " << maxSolutionValue << "  SCALED_MAX_INCREMENT = " << alpha * maxSolutionValue;
 		}
 		if (_configuration.check_first_residual) {
-			temperatureResidual_first = sqrt(_assembler.sumSquares(_assembler.instance.primalSolution, SumOperation::AVERAGE, SumRestriction::NONE, "|delta U|"));
+			temperatureResidual_first = sqrt(_assembler.sumSquares(_assembler.instance.primalSolution, SumRestriction::NONE, "|delta U|"));
 		}
 		_assembler.sum(
 				_assembler.instance.primalSolution,
@@ -135,7 +135,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 				1, _solution, "U = delta U + U");
 
 		if (_configuration.check_first_residual) {
-			temperatureResidual_second = sqrt(_assembler.sumSquares(_assembler.instance.primalSolution, SumOperation::AVERAGE, SumRestriction::NONE, "|U|"));
+			temperatureResidual_second = sqrt(_assembler.sumSquares(_assembler.instance.primalSolution, SumRestriction::NONE, "|U|"));
 			if (temperatureResidual_second < 1e-3) {
 				temperatureResidual_second = 1e-3;
 			}

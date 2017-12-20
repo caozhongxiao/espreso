@@ -26,11 +26,6 @@ struct BoundaryRegionStore;
 
 enum class FETI_REGULARIZATION;
 
-enum class SumOperation {
-	SUM,
-	AVERAGE
-};
-
 enum class SumRestriction {
 	NONE,
 	DIRICHLET,
@@ -67,7 +62,7 @@ struct Physics {
 	virtual void assembleB0FromCorners();
 	virtual void assembleB0FromKernels(const std::vector<SparseMatrix> &kernels);
 
-	virtual double sumSquares(const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction = SumRestriction::NONE, size_t loadStep = 0) const;
+	virtual double sumSquares(const std::vector<std::vector<double> > &data, SumRestriction restriction = SumRestriction::NONE) const;
 
 	virtual ~Physics();
 

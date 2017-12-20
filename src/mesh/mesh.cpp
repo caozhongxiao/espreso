@@ -403,19 +403,33 @@ void Mesh::gatherNodeData()
 	}
 }
 
-static void _computeNodeStatistics(const NodeData *data, const std::vector<ProcessInterval> &intervals, const tarray<eslocal> &nodes, Statistics *statistics, MPI_Comm communicator)
+double Mesh::sumSquares(const std::vector<std::vector<double> > &data, const BoundaryRegionStore* region)
 {
-	ESINFO(ERROR) << "Implement node statistics.";
-}
+	size_t threads = environment->OMP_NUM_THREADS;
 
-void Mesh::computeNodeStatistic(const NodeData *data, const ElementsRegionStore* region, Statistics *statistics, MPI_Comm communicator) const
-{
-	_computeNodeStatistics(data, region->nintervals, region->nodes->datatarray(), statistics, communicator);
-}
+	double csum = 0, gsum;
 
-void Mesh::computeNodeStatistic(const NodeData *data, const BoundaryRegionStore* region, Statistics *statistics, MPI_Comm communicator) const
-{
-	_computeNodeStatistics(data, region->nintervals, region->nodes->datatarray(), statistics, communicator);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		double tsum = 0, value;
+		eslocal offset;
+
+		for (eslocal d = elements->domainDistribution[t]; d < elements->domainDistribution[t + 1]; d++) {
+			for (size_t di = 0; di < nodes->dintervals[d].size(); di++) {
+				offset = nodes->pintervals[nodes->dintervals[d][di].pindex].begin;
+				for (eslocal i = region->nintervals[nodes->dintervals[d][di].pindex].begin; i < region->nintervals[nodes->dintervals[d][di].pindex].end; ++i) {
+					value = data[d][nodes->dintervals[d][di].DOFOffset + region->nodes->datatarray()[i] - offset];
+					tsum += value * value;
+				}
+			}
+		}
+
+		#pragma omp atomic
+		csum += tsum;
+	}
+
+	MPI_Allreduce(&csum, &gsum, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
+	return gsum;
 }
 
 static void _computeGatheredNodeStatistics(const Mesh *mesh, const NodeData *data, const std::vector<ProcessInterval> &intervals, const tarray<eslocal> &nodes, eslocal offset, Statistics *statistics, MPI_Comm communicator)

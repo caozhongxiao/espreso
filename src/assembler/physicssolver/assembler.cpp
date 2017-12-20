@@ -236,11 +236,11 @@ double Assembler::multiply(std::vector<std::vector<double> > &x, std::vector<std
 	return sum;
 }
 
-double Assembler::sumSquares(const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction, const std::string &description)
+double Assembler::sumSquares(const std::vector<std::vector<double> > &data, SumRestriction restriction, const std::string &description)
 {
 	double result;
 	timeWrapper(description, [&] () {
-		result = physics.sumSquares(data, operation, restriction);
+		result = physics.sumSquares(data, restriction);
 	});
 	return result;
 }

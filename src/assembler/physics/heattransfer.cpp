@@ -162,6 +162,24 @@ void HeatTransfer::preprocessData()
 	computeInitialTemperature(_instance->primalSolution);
 }
 
+double HeatTransfer::sumSquares(const std::vector<std::vector<double> > &data, SumRestriction restriction) const
+{
+	switch (restriction) {
+	case SumRestriction::NONE:
+		return _mesh->sumSquares(data, _mesh->bregion("ALL_NODES"));
+	case SumRestriction::DIRICHLET: {
+		double sum = 0;
+		for (auto it = _configuration.load_steps_settings.at(_step->step + 1).temperature.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).temperature.end(); ++it) {
+			sum += _mesh->sumSquares(data, _mesh->bregion(it->first));
+		}
+		return sum;
+	}
+	case SumRestriction::NON_DIRICHLET:
+		return sumSquares(data, SumRestriction::NONE) - sumSquares(data, SumRestriction::DIRICHLET);
+	}
+	return 0;
+}
+
 void HeatTransfer::convectionMatParameters(
 		const ConvectionConfiguration *convection, const Point &p, double temp, double T_EXT,
 		double &rho, double &dynamic_viscosity, double &dynamic_viscosity_T, double &heat_capacity, double &thermal_conductivity) const

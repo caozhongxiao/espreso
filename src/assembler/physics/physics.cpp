@@ -274,8 +274,10 @@ void Physics::makeStiffnessMatrixRegular(FETI_REGULARIZATION regularization, siz
 	}
 }
 
-double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction, size_t loadStep) const
+double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumRestriction restriction) const
 {
+	ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement sumSquares.";
+	return 0;
 //	auto n2i = [ & ] (size_t neighbour) {
 //		return std::lower_bound(_mesh->neighbours().begin(), _mesh->neighbours().end(), neighbour) - _mesh->neighbours().begin();
 //	};
@@ -457,18 +459,11 @@ void Physics::assembleB1(bool withRedundantMultipliers, bool withGluing, bool wi
 	if (withGluing) {
 		_equalityConstraints->B1GlueElements(*_step);
 	}
-	// TODO: MESH
-//	_equalityConstraints->insertDirichletToB1(step, withRedundantMultipliers);
-//	if (withGluing) {
-//		_equalityConstraints->insertElementGluingToB1(step, withRedundantMultipliers, withScaling);
-//		if (_configuration != NULL && _configuration->mortar.slave.size() && _configuration->mortar.master.size()) {
-//			_equalityConstraints->insertMortarGluingToB1(step, _configuration->mortar.master, _configuration->mortar.slave);
-//		}
-//	}
 }
 
 void Physics::updateDirichletInB1(bool withRedundantMultipliers)
 {
+//	ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: update dirichlet in B1.";
 	// TODO: MESH
 	// _equalityConstraints->updateDirichletValuesInB1(step, withRedundantMultipliers);
 }

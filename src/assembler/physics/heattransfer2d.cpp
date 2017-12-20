@@ -178,7 +178,7 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 	bool tangentCorrection = (matrices & Matrices::K) && _step->tangentMatrixCorrection;
 
 	DenseMatrix Ce(2, 2), coordinates(nodes->size(), 2), J(2, 2), invJ(2, 2), dND;
-	double detJ, temp;
+	double detJ;
 	DenseMatrix f(nodes->size(), 1);
 	DenseMatrix U(nodes->size(), 2);
 	DenseMatrix m(nodes->size(), 1);
@@ -209,29 +209,29 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 		thickness(n, 0) = thick != NULL ? thick->evaluate(p, T(n, 0), _step->currentTime) : 1;
 		if (material->phase_change) {
 			double phase, derivation;
-			smoothstep(phase, derivation, material->phase_change_temperature - material->transition_interval / 2, material->phase_change_temperature + material->transition_interval / 2, temp, material->smooth_step_order);
-			assembleMaterialMatrix(eindex, n, p, phase1, phase, temp, K, CD, tangentCorrection);
-			assembleMaterialMatrix(eindex, n, p, phase2, (1 - phase), temp, K, CD, tangentCorrection);
+			smoothstep(phase, derivation, material->phase_change_temperature - material->transition_interval / 2, material->phase_change_temperature + material->transition_interval / 2, T(n, 0), material->smooth_step_order);
+			assembleMaterialMatrix(eindex, n, p, phase1, phase, T(n, 0), K, CD, tangentCorrection);
+			assembleMaterialMatrix(eindex, n, p, phase2, (1 - phase), T(n, 0), K, CD, tangentCorrection);
 			m(n, 0) =
-					(    phase  * phase1->density.evaluator->evaluate(p, _step->currentTime, temp) +
-					(1 - phase) * phase2->density.evaluator->evaluate(p, _step->currentTime, temp)) *
+					(    phase  * phase1->density.evaluator->evaluate(p, _step->currentTime, T(n, 0)) +
+					(1 - phase) * phase2->density.evaluator->evaluate(p, _step->currentTime, T(n, 0))) *
 
-					(    phase  * phase1->heat_capacity.evaluator->evaluate(p, _step->currentTime, temp) +
-					(1 - phase) * phase2->heat_capacity.evaluator->evaluate(p, _step->currentTime, temp) +
+					(    phase  * phase1->heat_capacity.evaluator->evaluate(p, _step->currentTime, T(n, 0)) +
+					(1 - phase) * phase2->heat_capacity.evaluator->evaluate(p, _step->currentTime, T(n, 0)) +
 					material->latent_heat * derivation) * thickness(n, 0);
 		} else {
-			assembleMaterialMatrix(eindex, n, p, material, 1, temp, K, CD, tangentCorrection);
+			assembleMaterialMatrix(eindex, n, p, material, 1, T(n, 0), K, CD, tangentCorrection);
 			m(n, 0) =
-					material->density.evaluator->evaluate(p, _step->currentTime, temp) *
-					material->heat_capacity.evaluator->evaluate(p, _step->currentTime, temp) * thickness(n, 0);
+					material->density.evaluator->evaluate(p, _step->currentTime, T(n, 0)) *
+					material->heat_capacity.evaluator->evaluate(p, _step->currentTime, T(n, 0)) * thickness(n, 0);
 		}
 
 		if (translation_motion) {
-			U(n, 0) = translation_motion->x.evaluator->evaluate(p, _step->currentTime, temp) * m(n, 0);
-			U(n, 1) = translation_motion->y.evaluator->evaluate(p, _step->currentTime, temp) * m(n, 0);
+			U(n, 0) = translation_motion->x.evaluator->evaluate(p, _step->currentTime, T(n, 0)) * m(n, 0);
+			U(n, 1) = translation_motion->y.evaluator->evaluate(p, _step->currentTime, T(n, 0)) * m(n, 0);
 		}
 		if (heat_source) {
-			f(n, 0) = heat_source->evaluate(p, _step->currentTime, temp) * thickness(n, 0);
+			f(n, 0) = heat_source->evaluate(p, _step->currentTime, T(n, 0)) * thickness(n, 0);
 		}
 	}
 

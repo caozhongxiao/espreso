@@ -18,8 +18,6 @@ class TimeEvent;
 class SparseMatrix;
 class ResultStore;
 enum Matrices: int;
-enum class ElementType;
-enum class SumOperation;
 enum class SumRestriction;
 
 class Assembler {
@@ -56,7 +54,7 @@ public:
 	/// a = x * y
 	double multiply(std::vector<std::vector<double> > &x, std::vector<std::vector<double> > &y, const std::string &description);
 
-	double sumSquares(const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction, const std::string &description);
+	double sumSquares(const std::vector<std::vector<double> > &data, SumRestriction restriction, const std::string &description);
 	void addToDirichletInB1(double a, const std::vector<std::vector<double> > &x);
 	double maxAbsValue(const std::vector<std::vector<double> > &v, const std::string &description);
 	double lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext);

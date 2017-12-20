@@ -147,8 +147,8 @@ void TransientFirstOrderImplicit::processTimeStep()
 		double resFreq, oscilationLimit;
 
 		double norm =
-				sqrt(_assembler.sumSquares(*dU->decomposedData, SumOperation::AVERAGE, SumRestriction::NONE, "|dU|")) /
-				sqrt(_assembler.sumSquares(*U->decomposedData, SumOperation::AVERAGE, SumRestriction::NONE, "|U|"));
+				sqrt(_assembler.sumSquares(*dU->decomposedData, SumRestriction::NONE, "|dU|")) /
+				sqrt(_assembler.sumSquares(*U->decomposedData, SumRestriction::NONE, "|U|"));
 
 		if (norm < 1e-5) {
 			_nTimeStep = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * _assembler.step.timeStep);

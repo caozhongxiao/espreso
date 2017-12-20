@@ -231,6 +231,7 @@ void EqualityConstraints::B1DirichletInsert(const Step &step)
 			}
 		}
 	}
+	_instance.block[Instance::CONSTRAINT::DIRICHLET] = _dirichletSize;
 
 	auto iranks = _mesh.nodes->iranks->cbegin();
 	for (size_t i = 0; i < _mesh.nodes->pintervals.size(); ++i, ++iranks) {
@@ -370,6 +371,8 @@ void EqualityConstraints::B1GlueElements(const Step &step)
 			}
 		}
 	}
+
+	_instance.block[Instance::CONSTRAINT::EQUALITY_CONSTRAINTS] = _dirichletSize + _gluingSize;
 }
 
 void EqualityConstraints::B0Kernels(const std::vector<SparseMatrix> &kernels)

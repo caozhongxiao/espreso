@@ -20,6 +20,8 @@ struct HeatTransfer: public virtual Physics
 	virtual void preprocessData();
 	virtual void analyticRegularization(size_t domain, bool ortogonalCluster);
 
+	double sumSquares(const std::vector<std::vector<double> > &data, SumRestriction restriction) const;
+
 	virtual ~HeatTransfer() {}
 
 protected:
