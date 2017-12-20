@@ -96,7 +96,7 @@ bool FormWidget::isValid()
          pair != m_fields.cend();
          ++pair)
     {
-        if (pair->second->value().isEmpty())
+        if (pair->first->metadata.ismandatory() && pair->second->value().isEmpty())
         {
             this->m_invalidIndex = index;
             return false;

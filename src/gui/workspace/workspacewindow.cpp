@@ -2,6 +2,11 @@
 #include "ui_workspacewindow.h"
 
 #include <QFileDialog>
+#include <QMessageBox>
+
+#include "../../config/reader/reader.h"
+#include <iostream>
+#include <fstream>
 
 using namespace espreso;
 
@@ -98,5 +103,21 @@ void espreso::WorkspaceWindow::on_btnOpen_pressed()
 
 void espreso::WorkspaceWindow::on_btnSave_pressed()
 {
+    if (!this->m_workflow->isValid())
+    {
+        QMessageBox msg;
+        msg.setWindowTitle(tr("Error"));
+        msg.setText(this->m_workflow->errorMessage());
+        msg.exec();
 
+        return;
+    }
+
+    this->m_workflow->save();
+
+    QString path = QFileDialog::getSaveFileName(this, tr("Save Configuration As"), tr("espreso.ecf"));
+    std::ofstream file;
+    file.open(path.toStdString());
+
+    ECFReader::store(*this->m_ecf, file);
 }

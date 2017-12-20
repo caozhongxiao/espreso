@@ -73,3 +73,31 @@ void IntegerTabWidget::addParam(ECFParameter *param)
     QString label = QString::fromStdString(obj->name);
     this->m_tabwidget->addTab(w, label);
 }
+
+void IntegerTabWidget::save()
+{
+    for (int tab = 0; tab < this->m_tabwidget->count(); tab++)
+    {
+        static_cast<ECFObjectWidget*>(this->m_tabwidget->widget(tab))->save();
+    }
+}
+
+bool IntegerTabWidget::isValid()
+{
+    for (int tab = 0; tab < this->m_tabwidget->count(); tab++)
+    {
+        ECFObjectWidget* w = static_cast<ECFObjectWidget*>(this->m_tabwidget->widget(tab));
+        if (!w->isValid())
+        {
+            this->m_errmsg = w->errorMessage();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+QString IntegerTabWidget::errorMessage()
+{
+    return this->m_errmsg;
+}

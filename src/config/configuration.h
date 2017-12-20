@@ -65,6 +65,7 @@ struct ECFMetaData {
 	std::string unit;
 
 	std::function<bool(void)> isallowed;
+    std::function<bool(void)> ismandatory;
 
 	ECFMetaData& setdescription(const std::vector<std::string> &description) { this->description = description; return *this; }
 	ECFMetaData& setdatatype(const std::vector<ECFDataType> &datatype) { this->datatype = datatype; return *this; }
@@ -73,6 +74,7 @@ struct ECFMetaData {
 	ECFMetaData& settensor(TensorConfiguration &tensor) { this->tensor = &tensor; return *this; }
 	ECFMetaData& setunit(const std::string &unit) { this->unit = unit; return *this; }
 	ECFMetaData& allowonly(std::function<bool(void)> isallowed) { this->isallowed = isallowed; return *this; }
+    ECFMetaData& mandatoryonly(std::function<bool(void)> ismandatory) { this->ismandatory = ismandatory; return *this; }
 
 	ECFMetaData& addoption(const ECFOption &option) { options.push_back(option); return *this; }
 
@@ -86,7 +88,11 @@ struct ECFMetaData {
 
 	ECFMetaData suffix(size_t start) const;
 
-	ECFMetaData(): tensor(NULL) { isallowed = [] () { return true; }; }
+    ECFMetaData(): tensor(NULL)
+    {
+        isallowed = [] () { return true; };
+        ismandatory = [] () { return true; };
+    }
 };
 
 struct ECFParameter {

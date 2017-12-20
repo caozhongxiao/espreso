@@ -23,7 +23,10 @@ void OutputConfigurationWidget::drawObject(ECFObject* obj)
     if (obj->name.compare("monitoring") == 0)
     {
         std::unique_ptr<ECFObjectWidgetFactory> factory(new FixedECFObjectWidgetFactory(false));
-        this->m_widget->layout()->addWidget(new IntegerTabWidget(obj, std::move(factory)));
+        IntegerTabWidget* w = new IntegerTabWidget(obj, std::move(factory));
+        this->m_widget->layout()->addWidget(w);
+        this->m_savables.append(w);
+        this->m_validatables.append(w);
         return;
     }
 

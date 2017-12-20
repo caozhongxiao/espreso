@@ -1,6 +1,8 @@
 #include "optionhandler.h"
 #include "ui_optionhandler.h"
 
+#include <QDebug>
+
 using namespace espreso;
 
 
@@ -33,6 +35,9 @@ OptionHandler::OptionHandler(ECFParameter* option, QWidget *parent, bool withLab
         }
         index++;
     }
+
+    if (option->getValue().empty())
+        option->setValue(ui->cmb->currentText().toStdString());
 
     this->optionsAdded = true;
 
