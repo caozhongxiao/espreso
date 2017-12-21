@@ -25,7 +25,7 @@ GENERATOR {
 
     NODES {
       LEFT   <0 , 0> <0 , 1> <0 , 0>;
-      TOP    <0 , 1> <1 , 1> <0 , 0>;
+      TOP    (0 , 1> <1 , 1> <0 , 0>;
     }
 
     EDGES {
@@ -78,7 +78,7 @@ HEAT_TRANSFER_2D {
   }
 
   THICKNESS {
-    ALL_NODES   1;
+    ALL_ELEMENTS   1;
   }
 
   STABILIZATION   SUPG;

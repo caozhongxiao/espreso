@@ -604,6 +604,10 @@ void HeatTransfer2D::postProcessElement(eslocal domain, eslocal eindex)
 					(    phase  * phase1->heat_capacity.evaluator->evaluate(p, _step->currentTime, temp(n, 0)) +
 					(1 - phase) * phase2->heat_capacity.evaluator->evaluate(p, _step->currentTime, temp(n, 0)) +
 					material->latent_heat * derivation) * thickness(n, 0);
+			if (_phaseChange) {
+				(*_phaseChange->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin] = phase;
+				(*_latentHeat->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin] = material->latent_heat * derivation;
+			}
 		} else {
 			assembleMaterialMatrix(eindex, n, p, material, 1, temp(n, 0), K, CD, false);
 			m =

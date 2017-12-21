@@ -426,11 +426,10 @@ void EqualityConstraints::B0Kernels(const std::vector<SparseMatrix> &kernels)
 
 				if (sign != 0) {
 					master = _mesh.FETIData->inodesDomains[i].first;
-					cols = kernels[master].cols;
-					if (kernels[d].cols > kernels[master].cols) {
-						master = d;
-						cols = kernels[d].cols;
+					if (kernels[master].cols < kernels[_mesh.FETIData->inodesDomains[i].second].cols) {
+						master = _mesh.FETIData->inodesDomains[i].second;
 					}
+					cols = kernels[master].cols;
 					if (cols) {
 						for (eslocal c = 0; c < cols; c++) {
 							auto dit = _mesh.nodes->dintervals[d].begin();
@@ -450,7 +449,7 @@ void EqualityConstraints::B0Kernels(const std::vector<SparseMatrix> &kernels)
 					} else {
 						auto dit = _mesh.nodes->dintervals[d].begin();
 						for (size_t n = _mesh.FETIData->inodesDistribution[i]; n < _mesh.FETIData->inodesDistribution[i + 1]; n++) {
-							while (nodes[n] < dit->begin) {
+							while (dit->end < nodes[n]) {
 								++dit;
 							}
 							_instance.B0[d].I_row_indices.push_back(rowIndex[i] + 1);

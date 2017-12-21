@@ -323,3 +323,36 @@ void VTKLegacy::sharedInterface(const std::string &name)
 	os << "\n";
 }
 
+void VTKLegacy::corners(const std::string &name)
+{
+	if (_mesh.FETIData == NULL) {
+		return;
+	}
+	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+
+	os << "# vtk DataFile Version 2.0\n";
+	os << "EXAMPLE\n";
+	os << "ASCII\n";
+	os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+	size_t points = _mesh.FETIData->corners.size();
+
+	os << "POINTS " << points << " float\n";
+	for (size_t i = 0; i < points; i++) {
+		const Point &n = _mesh.nodes->coordinates->datatarray()[_mesh.FETIData->corners[i]];
+		os << n.x << " " << n.y << " " << n.z << "\n";
+	}
+	os << "\n";
+
+	os << "CELLS " << points << " " << 2 * points << "\n";
+	for (size_t n = 0; n < points; ++n) {
+		os << "1 " << n << "\n";
+	}
+	os << "\n";
+
+	os << "CELL_TYPES " << points << "\n";
+	for (size_t n = 0; n < points; ++n) {
+		os << "1\n";
+	}
+	os << "\n";
+}

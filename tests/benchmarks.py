@@ -21,10 +21,10 @@ class ESPRESOBenchmarks(unittest.TestCase):
             { "config": os.path.join(path, file), "ENV::VERBOSE_LEVEL": 0, "ENV::MEASURE_LEVEL": 0, "OUTPUT::RESULTS_STORE_FREQUENCY": "NEVER" }
         )
 
-        self.espreso.compare_monitors(
-            os.path.join(path, file.replace(".ecf", ".emr")),
-            os.path.join(path, "results", "last", file.replace(".ecf", ".emr"))
-        )
+#        self.espreso.compare_monitors(
+#            os.path.join(path, file.replace(".ecf", ".emr")),
+#            os.path.join(path, "results", "last", file.replace(".ecf", ".emr"))
+#        )
 
 
 if __name__ == '__main__':

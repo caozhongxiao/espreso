@@ -17,6 +17,7 @@ protected:
 	void solution(const std::string &name);
 	void nodesIntervals(const std::string &name);
 	void sharedInterface(const std::string &name);
+	void corners(const std::string &name);
 
 	double _clusterShrinkRatio, _domainShrinkRatio;
 };
@@ -30,6 +31,7 @@ struct VTKLegacyDebugInfo: public VTKLegacy {
 		mesh(_path + "mesh");
 		nodesIntervals(_path + "nodeintervals");
 		sharedInterface(_path + "sharedinterfaces");
+		corners(_path + "corners");
 	}
 	void updateSolution(const Step &step)
 	{

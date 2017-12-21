@@ -46,7 +46,7 @@ HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration, const
 	}
 
 	if (phaseChange) {
-		_phaseChange = _mesh->nodes->appendData({ "PHASE_CHANGE" });
+		_phaseChange = _mesh->nodes->appendData({ "PHASE" });
 		_latentHeat = _mesh->nodes->appendData({ "LATENT_HEAT" });
 	}
 }

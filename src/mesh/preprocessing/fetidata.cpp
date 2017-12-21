@@ -145,14 +145,26 @@ void MeshPreprocessing::computeCornerNodes()
 	std::vector<eslocal> domainData;
 	auto domains = _mesh->nodes->idomains->cbegin();
 	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++domains) {
-		if (_mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin == 1) {
-			_mesh->FETIData->corners.push_back(_mesh->nodes->pintervals[i].begin);
-			for (auto d = domains->begin(); d != domains->end(); ++d) {
-				if (_mesh->elements->firstDomain <= *d && *d < _mesh->elements->firstDomain + _mesh->elements->ndomains) {
-					domainData.push_back(*d - _mesh->elements->firstDomain);
+		if (_mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin < 3) {
+			for (size_t n = _mesh->nodes->pintervals[i].begin; n < _mesh->nodes->pintervals[i].end; n++) {
+				_mesh->FETIData->corners.push_back(n);
+				for (auto d = domains->begin(); d != domains->end(); ++d) {
+					if (_mesh->elements->firstDomain <= *d && *d < _mesh->elements->firstDomain + _mesh->elements->ndomains) {
+						domainData.push_back(*d - _mesh->elements->firstDomain);
+					}
 				}
+				domainDistribution.push_back(domainData.size());
 			}
-			domainDistribution.push_back(domainData.size());
+		} else {
+			if (domains->size() > 1) {
+				_mesh->FETIData->corners.push_back(_mesh->nodes->pintervals[i].begin + (_mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin) / 2);
+				for (auto d = domains->begin(); d != domains->end(); ++d) {
+					if (_mesh->elements->firstDomain <= *d && *d < _mesh->elements->firstDomain + _mesh->elements->ndomains) {
+						domainData.push_back(*d - _mesh->elements->firstDomain);
+					}
+				}
+				domainDistribution.push_back(domainData.size());
+			}
 		}
 	}
 
