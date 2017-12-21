@@ -1,6 +1,7 @@
 #include "inputwidget.h"
 
 #include "../elements/maptablewidgetfactory.h"
+#include "../elements/pathhandler.h"
 
 using namespace espreso;
 
@@ -31,4 +32,20 @@ void InputWidget::drawObject(ECFObject* obj)
     }
 
     FixedECFObjectWidget::drawObject(obj);
+}
+
+FormWidget* InputWidget::processString(ECFParameter* param, FormWidget* fw, QWidget* widget)
+{
+    FormWidget* form = this->createFormWidget(widget, fw);
+    if (param->name.compare("path") == 0)
+    {
+        PathHandler* ph = new PathHandler(param, this);
+        this->m_validatables.append(ph);
+        form->appendRow(
+                QString::fromStdString(param->metadata.description[0]),
+                ph);
+        return form;
+    }
+
+    return FixedECFObjectWidget::processString(param, form, widget);
 }

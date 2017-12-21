@@ -13,6 +13,7 @@ public:
 
 protected:
     void drawObject(ECFObject*) override;
+    virtual FormWidget* processString(ECFParameter*, FormWidget*, QWidget*) override;
 };
 
 }
