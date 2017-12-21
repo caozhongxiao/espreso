@@ -31,10 +31,6 @@ GENERATOR {
       N_ALL                        ALL;
     }
 
-    ELEMENTS {
-      ALL_EL   ALL;
-    }
-
     ELEMENT_TYPE         SQUARE4;
 
     BLOCKS_X                   1;
@@ -102,11 +98,11 @@ HEAT_TRANSFER_2D {
       }
 
       HEAT_SOURCE {
-        ALL_EL   1;
+        ALL_ELEMENTS   1;
       }
 
       TRANSLATION_MOTIONS {
-        ALL_EL   X 0.5 , Y 0.5;
+        ALL_ELEMENTS  { X 0.5; Y 0.5; }
       }
     }
   }

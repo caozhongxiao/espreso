@@ -34,10 +34,6 @@ GENERATOR {
       RIGHT   <0 , 1> <1 , 1> <0 , 0>;
     }
 
-    ELEMENTS {
-      ALL_EL   ALL;
-    }
-
     ELEMENT_TYPE          [ARG0];
 
     BLOCKS_X                   1;
@@ -76,7 +72,7 @@ HEAT_TRANSFER_2D {
   }
 
   MATERIAL_SET {
-    ALL_EL   1;
+    ALL_ELEMENTS   1;
   }
 
 
@@ -105,7 +101,7 @@ HEAT_TRANSFER_2D {
       }
 
       TRANSLATION_MOTIONS {
-        ALL_EL   X -10 , Y 2;
+        ALL_ELEMENTS  { X -10 ;Y 2; }
       }
 
       HEAT_FLOW {

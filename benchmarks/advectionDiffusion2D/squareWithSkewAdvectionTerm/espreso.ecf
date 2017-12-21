@@ -32,11 +32,6 @@ GENERATOR {
       RIGHT        (0 , 1> <1 , 1> <0 , 0>;
       LEFT         (0 , 1> <0 , 0> <0 , 0>;
       BOTTOM       <1 , 1> (0 , 1> <0 , 0>;
-      N_ALL                            ALL;
-    }
-
-    ELEMENTS {
-      ALL_EL   ALL;
     }
 
     ELEMENT_TYPE         SQUARE8;
@@ -77,7 +72,7 @@ HEAT_TRANSFER_2D {
   }
 
   MATERIAL_SET {
-    ALL_EL   1;
+    ALL_ELEMENTS   1;
   }
 
 
@@ -112,11 +107,11 @@ HEAT_TRANSFER_2D {
       }
 
       HEAT_SOURCE {
-        ALL_EL   0;
+        ALL_ELEMENTS   0;
       }
 
       TRANSLATION_MOTIONS {
-        ALL_EL   X Y , Y -X;
+        ALL_ELEMENTS  { X Y ; Y -X;}
       }
     }
   }
