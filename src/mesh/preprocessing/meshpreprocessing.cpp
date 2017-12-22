@@ -354,7 +354,7 @@ void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separ
 		for (size_t t = 0; t < threads; t++) {
 			const auto &IDs = _mesh->elements->IDs->datatarray();
 			const auto &body = _mesh->elements->body->datatarray();
-			const auto &material = _mesh->elements->body->datatarray();
+			const auto &material = _mesh->elements->material->datatarray();
 			const auto &epointer = _mesh->elements->epointers->datatarray();
 			auto nodes = _mesh->elements->nodes->cbegin(t);
 			std::vector<eslocal> neighElementIDs;
@@ -407,7 +407,7 @@ void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separ
 		for (size_t t = 0; t < threads; t++) {
 			const auto &IDs = _mesh->elements->IDs->datatarray();
 			const auto &body = _mesh->elements->body->datatarray();
-			const auto &material = _mesh->elements->body->datatarray();
+			const auto &material = _mesh->elements->material->datatarray();
 			const auto &epointer = _mesh->elements->epointers->datatarray();
 			auto dual = _mesh->elements->dual->cbegin(t);
 
@@ -425,6 +425,7 @@ void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separ
 						++dualDistribution[t].back();
 						dualData[t].push_back(*neigh - IDBoundaries[environment->MPIrank]);
 					}
+
 				}
 				if (dualDistribution[t].size() > 1) {
 					dualDistribution[t].back() += *(dualDistribution[t].end() - 2);

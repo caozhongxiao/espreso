@@ -297,8 +297,21 @@ void Mesh::load()
 void Mesh::update()
 {
 	materials.clear();
+	std::map<std::string, int> matindex;
 	for (auto mat = configuration.getPhysics()->materials.begin(); mat != configuration.getPhysics()->materials.end(); ++mat) {
 		materials.push_back(&mat->second);
+		matindex[mat->first] = materials.size() - 1;
+	}
+
+	for (auto mat = configuration.getPhysics()->material_set.begin(); mat != configuration.getPhysics()->material_set.end(); ++mat) {
+		ElementsRegionStore *region = eregion(mat->first);
+		if (matindex.find(mat->second) == matindex.end()) {
+			ESINFO(GLOBAL_ERROR) << "Unknown material '" << mat->second << "'.";
+		}
+		int material = matindex.find(mat->second)->second;
+		for (auto e = region->elements->datatarray().cbegin(); e != region->elements->datatarray().cend(); ++e) {
+			elements->material->datatarray()[*e] = material;
+		}
 	}
 
 	preprocessing->reclusterize();
