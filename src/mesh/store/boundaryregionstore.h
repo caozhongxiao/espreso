@@ -28,13 +28,18 @@ struct BoundaryRegionStore {
 	eslocal uniqueTotalSize;
 
 	serializededata<eslocal, eslocal>* elements;
+	serializededata<eslocal, eslocal>* uniqueElements;
 	serializededata<eslocal, eslocal>* nodes;
+	serializededata<eslocal, eslocal>* uniqueNodes;
 
 	serializededata<eslocal, Element*>* epointers;
 
 	std::vector<ProcessInterval> nintervals;
+	std::vector<ProcessInterval> unintervals;
 	std::vector<ElementsInterval> eintervals;
+	std::vector<ElementsInterval> ueintervals;
 	std::vector<eslocal> eintervalsDistribution;
+	std::vector<eslocal> ueintervalsDistribution;
 
 	std::vector<eslocal> ecounters;
 

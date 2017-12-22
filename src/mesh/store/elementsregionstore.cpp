@@ -36,6 +36,9 @@ ElementsRegionStore::~ElementsRegionStore()
 
 size_t ElementsRegionStore::packedSize() const
 {
+	if (elements == NULL) {
+		return 0;
+	}
 	return
 			Esutils::packedSize(name) +
 			Esutils::packedSize(uniqueOffset) +
@@ -50,6 +53,9 @@ size_t ElementsRegionStore::packedSize() const
 
 void ElementsRegionStore::pack(char* &p) const
 {
+	if (elements == NULL) {
+		return;
+	}
 	Esutils::pack(name, p);
 	Esutils::pack(uniqueOffset, p);
 	Esutils::pack(uniqueSize, p);

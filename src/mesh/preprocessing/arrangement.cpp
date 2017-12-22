@@ -506,6 +506,7 @@ void MeshPreprocessing::arrangeElementsPermutation(std::vector<eslocal> &permuta
 	finish("arrange elements permutation");
 }
 
+
 void MeshPreprocessing::arrangeRegions()
 {
 	start("arrange regions");
@@ -550,7 +551,7 @@ void MeshPreprocessing::arrangeRegions()
 			for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
 				size_t usize = unique[t].size();
 				for (eslocal e = _mesh->elementsRegions[r]->eintervals[d].begin; e < _mesh->elementsRegions[r]->eintervals[d].end; ++e) {
-					if (memcmp(regions.data() + e * maskSize, mask.data(), maskSize) == 0) {
+					if (memcmp(regions.data() + e * maskSize, mask.data(), sizeof(int) * maskSize) == 0) {
 						unique[t].push_back(e);
 					}
 				}
@@ -610,6 +611,103 @@ void MeshPreprocessing::arrangeRegions()
 
 		synchronizeRegionNodes(store->name, store->nodes, store->nintervals);
 		computeIntervalOffsets(store->nintervals, store->uniqueOffset, store->uniqueSize, store->uniqueTotalSize);
+	}
+
+	{ // compute eregion intersection
+//		std::vector<eslocal> nonunique(_mesh->eregion("ALL_ELEMENTS")->elements->structures() - _mesh->eregion("ALL_ELEMENTS")->uniqueElements->structures());
+//		std::set_difference(
+//				_mesh->eregion("ALL_ELEMENTS")->elements->datatarray().cbegin(), _mesh->eregion("ALL_ELEMENTS")->elements->datatarray().cend(),
+//				_mesh->eregion("ALL_ELEMENTS")->uniqueElements->datatarray().cbegin(), _mesh->eregion("ALL_ELEMENTS")->uniqueElements->datatarray().cend(),
+//				nonunique.begin());
+//
+//		int maskSize = _mesh->elements->regionMaskSize;
+//		std::vector<std::vector<int> > tintersections(threads);
+//		const auto &regions = _mesh->elements->regions->datatarray();
+//		std::vector<size_t> nudistribution = tarray<eslocal>::distribute(threads, nonunique.size());
+//
+//		auto wasFound = [&] (std::vector<int> &found, const int *mask) {
+//			for (size_t i = 0; i < found.size(); i += maskSize) {
+//				if (memcmp(found.data() + i, mask, sizeof(int) * maskSize) == 0) {
+//					return true;
+//				}
+//			}
+//			return false;
+//		};
+//
+//		#pragma omp parallel for
+//		for (size_t t = 0; t < threads; t++) {
+//			for (eslocal e = nudistribution[t]; e < nudistribution[t + 1]; ++e) {
+//				if (!wasFound(tintersections[t], regions.data() + e * maskSize)) {
+//					tintersections[t].insert(tintersections[t].end(), regions.begin() + e * maskSize, regions.begin() + (e + 1) * maskSize);
+//				}
+//			}
+//		}
+//
+//		std::vector<int> cintersections;
+//		for (size_t t = 0; t < threads; t++) {
+//			for (size_t i = 0; i < tintersections[t].size(); i += maskSize) {
+//				if (!wasFound(cintersections, tintersections[t].data() + i)) {
+//					cintersections.insert(cintersections.end(), tintersections[t].begin() + i, tintersections[t].begin() + i + maskSize);
+//				}
+//			}
+//		}
+//
+//		std::vector<int> gintersections;
+//		Communication::gatherUnknownSize(cintersections, gintersections);
+//		gintersections.swap(cintersections);
+//		for (size_t i = 0; i < cintersections.size(); i += maskSize) {
+//			if (!wasFound(gintersections, cintersections.data() + i)) {
+//				gintersections.insert(gintersections.end(), cintersections.begin() + i, cintersections.begin() + i + maskSize);
+//			}
+//		}
+//		Communication::broadcastUnknownSize(gintersections);
+//
+//		std::vector<std::vector<eslocal> > unique(threads);
+//		for (size_t i = 0; i < gintersections.size(); i += maskSize) {
+//			std::string name;
+//			for (size_t r = 0; r < _mesh->elementsRegions.size(); r++) {
+//				int maskOffset = r / (8 * sizeof(int));
+//				int bit = 1 << (r % (8 * sizeof(int)));
+//				if (gintersections[i + maskOffset] & bit) {
+//					name += "_" + _mesh->elementsRegions[r]->name;
+//				}
+//			}
+//			_mesh->elementsRegions.push_back(new ElementsRegionStore(name));
+//
+//			_mesh->elementsRegions.back()->ueintervals = _mesh->elements->eintervals;
+//
+//			#pragma omp parallel for
+//			for (size_t t = 0; t < threads; t++) {
+//				unique[t].clear();
+//				for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
+//					eslocal begin = std::lower_bound(nonunique.begin(), nonunique.end(), _mesh->elements->elementsDistribution[d]) - nonunique.begin();
+//					eslocal end = std::lower_bound(nonunique.begin(), nonunique.end(), _mesh->elements->elementsDistribution[d + 1]) - nonunique.begin();
+//					size_t usize = unique[t].size();
+//					for (eslocal e = begin; e < end; ++e) {
+//						if (memcmp(regions.data() + e * maskSize, gintersections.data() + i, sizeof(int) * maskSize) == 0) {
+//							unique[t].push_back(e);
+//						}
+//					}
+//					_mesh->elementsRegions.back()->ueintervals[d].begin = 0;
+//					_mesh->elementsRegions.back()->ueintervals[d].end = unique[t].size() - usize;
+//				}
+//			}
+//
+//			_mesh->elementsRegions.back()->uniqueElements = new serializededata<eslocal, eslocal>(1, unique);
+//			for (size_t i = 1; i < _mesh->elementsRegions.back()->ueintervals.size(); ++i) {
+//				_mesh->elementsRegions.back()->ueintervals[i].begin += _mesh->elementsRegions.back()->ueintervals[i - 1].end;
+//				_mesh->elementsRegions.back()->ueintervals[i].end   += _mesh->elementsRegions.back()->ueintervals[i - 1].end;
+//			}
+//		}
+//
+//		#pragma omp parallel for
+//		for (size_t t = 0; t < threads; t++) {
+//			for (eslocal e = nudistribution[t]; e < nudistribution[t + 1]; ++e) {
+//				if (!wasFound(tintersections[t], regions.data() + e * maskSize)) {
+//					tintersections[t].insert(tintersections[t].end(), regions.begin() + e * maskSize, regions.begin() + (e + 1) * maskSize);
+//				}
+//			}
+//		}
 	}
 
 	for (size_t i = 0; i < _mesh->elements->ecounters.size(); i++) {
