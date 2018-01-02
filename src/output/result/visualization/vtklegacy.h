@@ -16,6 +16,7 @@ protected:
 	void mesh(const std::string &name);
 	void solution(const std::string &name);
 	void nodesIntervals(const std::string &name);
+	void externalIntervals(const std::string &name);
 	void sharedInterface(const std::string &name);
 	void corners(const std::string &name);
 
@@ -30,6 +31,7 @@ struct VTKLegacyDebugInfo: public VTKLegacy {
 	{
 		mesh(_path + "mesh");
 		nodesIntervals(_path + "nodeintervals");
+		externalIntervals(_path + "externalIntervals");
 		sharedInterface(_path + "sharedinterfaces");
 		corners(_path + "corners");
 	}

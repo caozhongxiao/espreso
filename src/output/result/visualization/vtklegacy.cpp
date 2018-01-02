@@ -276,6 +276,63 @@ void VTKLegacy::nodesIntervals(const std::string &name)
 		}
 		interval++;
 	}
+	os << "SCALARS sourceProcess int 1\n";
+	os << "LOOKUP_TABLE default\n";
+	for (eslocal i = 0; i < _mesh.nodes->pintervals.size(); i++) {
+		for (eslocal n = _mesh.nodes->pintervals[i].begin; n < _mesh.nodes->pintervals[i].end; n++) {
+			os << _mesh.nodes->pintervals[i].sourceProcess << "\n";
+		}
+	}
+	os << "\n";
+}
+
+void VTKLegacy::externalIntervals(const std::string &name)
+{
+	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+
+	os << "# vtk DataFile Version 2.0\n";
+	os << "EXAMPLE\n";
+	os << "ASCII\n";
+	os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+	os << "POINTS " << _mesh.nodes->size << " float\n";
+	for (auto n = _mesh.nodes->coordinates->datatarray().begin(); n != _mesh.nodes->coordinates->datatarray().end(); ++n) {
+		os << n->x << " " << n->y << " " << n->z << "\n";
+	}
+	os << "\n";
+
+	eslocal csize = 0;
+	for (eslocal i = 0; i < _mesh.nodes->externalIntervals.size(); i++) {
+		eslocal ii = _mesh.nodes->externalIntervals[i];
+		csize += _mesh.nodes->pintervals[ii].end - _mesh.nodes->pintervals[ii].begin;
+	}
+
+	os << "CELLS " << csize << " " << 2 * csize << "\n";
+	for (eslocal i = 0; i < _mesh.nodes->externalIntervals.size(); i++) {
+		eslocal ii = _mesh.nodes->externalIntervals[i];
+		for (eslocal n = _mesh.nodes->pintervals[ii].begin; n < _mesh.nodes->pintervals[ii].end; n++) {
+			os << "1 " << n << "\n";
+		}
+	}
+	os << "\n";
+
+	os << "CELL_TYPES " << csize << "\n";
+	for (size_t n = 0; n < csize; ++n) {
+		os << "1\n";
+	}
+	os << "\n";
+
+	os << "CELL_DATA " << csize << "\n";
+	os << "SCALARS interval int 1\n";
+	os << "LOOKUP_TABLE default\n";
+	int interval = 0;
+	for (eslocal i = 0; i < _mesh.nodes->externalIntervals.size(); i++) {
+		eslocal ii = _mesh.nodes->externalIntervals[i];
+		for (eslocal n = _mesh.nodes->pintervals[ii].begin; n < _mesh.nodes->pintervals[ii].end; n++) {
+			os << interval << "\n";
+		}
+		interval++;
+	}
 	os << "\n";
 }
 

@@ -538,6 +538,54 @@ void MeshPreprocessing::computeBoundaryNodes(std::vector<eslocal> &externalBound
 	}
 	Esutils::sortAndRemoveDuplicity(internal[0]);
 
+	auto n2i = [ & ] (size_t neighbour) {
+		return std::lower_bound(_mesh->neighbours.begin(), _mesh->neighbours.end(), neighbour) - _mesh->neighbours.begin();
+	};
+
+	// external nodes need to be synchronized
+	std::vector<std::vector<eslocal> > sBuffer(_mesh->neighbours.size()), rBuffer(_mesh->neighbours.size());
+	std::vector<eslocal> nExternal;
+
+	for (size_t i = 0; i < externalBoundary.size(); i++) {
+		auto nrank = _mesh->nodes->ranks->cbegin() + externalBoundary[i];
+		for (auto rank = nrank->begin(); rank != nrank->end(); ++rank) {
+			if (*rank != environment->MPIrank) {
+				sBuffer[n2i(*rank)].push_back(_mesh->nodes->IDs->datatarray()[externalBoundary[i]]);
+			}
+		}
+	}
+
+	for (size_t n = 0; n < _mesh->neighbours.size(); n++) {
+		std::sort(sBuffer[n].begin(), sBuffer[n].end());
+	}
+
+	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, _mesh->neighbours)) {
+		ESINFO(ERROR) << "ESPRESO internal error: exchange external nodes.";
+	}
+
+	for (size_t n = 0; n < _mesh->neighbours.size(); n++) {
+		nExternal.insert(nExternal.end(), rBuffer[n].begin(), rBuffer[n].end());
+	}
+	Esutils::sortAndRemoveDuplicity(nExternal);
+
+	for (size_t n = 0; n < _mesh->neighbours.size(); n++) {
+		nExternal.resize(std::set_difference(nExternal.begin(), nExternal.end(), sBuffer[n].begin(), sBuffer[n].end(), nExternal.begin()) - nExternal.begin());
+	}
+	for (size_t n = 0; n < nExternal.size(); n++) {
+		std::vector<std::vector<eslocal> > tnExternal(threads);
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			auto it = std::find(_mesh->nodes->IDs->datatarray().cbegin() + _mesh->nodes->distribution[t], _mesh->nodes->IDs->datatarray().cbegin() + _mesh->nodes->distribution[t + 1], nExternal[n]);
+			if (it != _mesh->nodes->IDs->datatarray().cbegin() + _mesh->nodes->distribution[t + 1]) {
+				tnExternal[t].push_back(it - _mesh->nodes->IDs->datatarray().cbegin() + _mesh->nodes->distribution[t]);
+			}
+		}
+		for (size_t t = 0; t < threads; t++) {
+			externalBoundary.insert(externalBoundary.end(), tnExternal[t].begin(), tnExternal[t].end());
+		}
+	}
+	std::sort(externalBoundary.begin(), externalBoundary.end());
+
 	internalBoundary.resize(internal[0].size());
 	internalBoundary.resize(std::set_difference(internal[0].begin(), internal[0].end(), externalBoundary.begin(), externalBoundary.end(), internalBoundary.begin()) - internalBoundary.begin());
 
