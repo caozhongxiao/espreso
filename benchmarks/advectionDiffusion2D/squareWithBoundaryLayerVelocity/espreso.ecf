@@ -28,7 +28,6 @@ GENERATOR {
       TOP      <0 , 0> <0 , 1> <0 , 0>;
       BOTTOM   <1 , 1> <0 , 1> <0 , 0>;
       RIGHT    (0 , 1) <1 , 1> <0 , 0>;
-      N_ALL                        ALL;
     }
 
     ELEMENT_TYPE         SQUARE8;
@@ -69,7 +68,7 @@ HEAT_TRANSFER_2D {
   }
 
   MATERIAL_SET {
-    ALL_EL   MAT;
+    ALL_ELEMENTS   MAT;
   }
 
 

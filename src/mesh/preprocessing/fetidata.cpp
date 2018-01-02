@@ -76,6 +76,7 @@ void MeshPreprocessing::computeSharedFaces()
 						intervals[last].second = intervals[i].second;
 					} else {
 						++last;
+						intervals[last] = intervals[i];
 					}
 				}
 				intervals.resize(last + 1);

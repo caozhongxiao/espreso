@@ -135,10 +135,12 @@ void Mesh::load()
 					for (size_t c = 0; c < mesh->nodes()[n]->clusters().size(); c++) {
 						ranksData[t].push_back(mesh->nodes()[n]->clusters()[c]);
 					}
+					shrink[n] = empty;
 				} else {
 					++empty;
+					shrink[n] = -1;
 				}
-				shrink[n] = empty;
+
 			}
 			tempty[t] = empty;
 		}
@@ -147,7 +149,9 @@ void Mesh::load()
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
-				shrink[n] += tempty[t];
+				if (shrink[n] != -1 ) {
+					shrink[n] += tempty[t];
+				}
 			}
 		}
 
@@ -279,7 +283,9 @@ void Mesh::load()
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
 				for (size_t e = tdistributions[t]; e < tdistributions[t + 1]; e++) {
-					rdata[t].push_back(mesh->regions()[r]->elements()[e]->node(0) - shrink[mesh->regions()[r]->elements()[e]->node(0)]);
+					if (shrink[mesh->regions()[r]->elements()[e]->node(0)] != -1) {
+						rdata[t].push_back(mesh->regions()[r]->elements()[e]->node(0) - shrink[mesh->regions()[r]->elements()[e]->node(0)]);
+					}
 				}
 			}
 
