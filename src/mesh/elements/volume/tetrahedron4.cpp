@@ -77,8 +77,7 @@ Element Tetrahedron4::fill(Element e, Element* begin)
 
 	switch (GPCount) {
 	case 4: {
-		e.weighFactor->resize(5, 3.0 / 40.0);
-		(*e.weighFactor)[0] = - 2.0 / 15.0;
+		e.weighFactor->resize(4, 1.0 / 24.0);
 		break;
 	}
 	default:

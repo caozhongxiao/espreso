@@ -261,8 +261,8 @@ public:
 	const_iterator end   (size_t thread) const { return _constiterator[thread + 1]; }
 	const_iterator cend  (size_t thread) const { return _constiterator[thread + 1]; }
 
-	tarray<TEBoundaries>&       boundarytaaray()       { return _eboundaries; }
-	const tarray<TEBoundaries>& boundarytaaray() const { return _eboundaries; }
+	tarray<TEBoundaries>&       boundarytarray()       { return _eboundaries; }
+	const tarray<TEBoundaries>& boundarytarray() const { return _eboundaries; }
 	tarray<TEData>&             datatarray()           { return _edata; }
 	const tarray<TEData>&       datatarray()     const { return _edata; }
 

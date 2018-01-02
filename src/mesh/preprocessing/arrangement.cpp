@@ -238,8 +238,8 @@ void MeshPreprocessing::arrangeNodes()
 		return n1->size() > n2->size();
 	});
 
-	_mesh->nodes->idomains->permute(ipermutation, _mesh->nodes->idomains->boundarytaaray().distribution());
-	_mesh->nodes->iranks->permute(ipermutation, _mesh->nodes->iranks->boundarytaaray().distribution());
+	_mesh->nodes->idomains->permute(ipermutation, _mesh->nodes->idomains->boundarytarray().distribution());
+	_mesh->nodes->iranks->permute(ipermutation, _mesh->nodes->iranks->boundarytarray().distribution());
 	std::vector<ProcessInterval> permutedIntervals;
 	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); i++) {
 		permutedIntervals.push_back(_mesh->nodes->pintervals[ipermutation[i]]);

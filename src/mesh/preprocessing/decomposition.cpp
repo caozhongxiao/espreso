@@ -88,7 +88,7 @@ void MeshPreprocessing::reclusterize()
 	start("ParMETIS::KWay");
 	ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_PartKway,
 		edistribution.data(),
-		_mesh->elements->dual->boundarytaaray().data(), _mesh->elements->dual->datatarray().data(),
+		_mesh->elements->dual->boundarytarray().data(), _mesh->elements->dual->datatarray().data(),
 		0, NULL, // 3, _mesh->elements->coordinates->datatarray(),
 		0, NULL, edgeWeights.data(),
 		partition.data()
@@ -102,7 +102,7 @@ void MeshPreprocessing::reclusterize()
 //		prev = edgecut;
 //		edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_AdaptiveRepart,
 //			edistribution.data(),
-//			_mesh->elements->dual->boundarytaaray().data(), _mesh->elements->dual->datatarray().data(),
+//			_mesh->elements->dual->boundarytarray().data(), _mesh->elements->dual->datatarray().data(),
 //			0, NULL, // 3, _mesh->elements->coordinates->datatarray(),
 //			0, NULL, edgeWeights.data(),
 //			partition.data()
@@ -127,104 +127,120 @@ void MeshPreprocessing::partitiate(eslocal parts, bool separateMaterials, bool s
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	auto e2t = [&] (eslocal element) ->eslocal {
-		return std::lower_bound(_mesh->elements->distribution.begin(), _mesh->elements->distribution.end(), element + 1) - _mesh->elements->distribution.begin() - 1;
-	};
+	std::vector<int> partID(_mesh->elements->size, -1);
 
-	std::vector<std::vector<int> > part(threads);
-	// thread x partID x eID from other part
-	std::vector<std::vector<std::vector<eslocal> > > neighElem(threads);
-
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		part[t].resize(_mesh->elements->distribution[t + 1] - _mesh->elements->distribution[t], -1);
-		std::vector<eslocal> stack;
-		eslocal current;
-		size_t target;
-		int partCounter = 0;
-
-		for (size_t i = _mesh->elements->distribution[t]; i < _mesh->elements->distribution[t + 1]; ++i) {
-			if (part[t][i - _mesh->elements->distribution[t]] == -1) {
-				neighElem[t].push_back(std::vector<eslocal>(threads, -1));
-				stack.push_back(i);
-				part[t][i - _mesh->elements->distribution[t]] = partCounter;
-				while (stack.size()) {
-					current = stack.back();
-					stack.pop_back();
-					auto neighs = _mesh->elements->decomposedDual->cbegin() + current;
-					for (auto e = neighs->begin(); e != neighs->end(); ++e) {
-						target = e2t(*e);
-						if (target == t) {
-							if (part[t][*e - _mesh->elements->distribution[t]] == -1) {
-								stack.push_back(*e);
-								part[t][*e - _mesh->elements->distribution[t]] = partCounter;
-							}
-						} else {
-							if (neighElem[t][partCounter][target] == -1) {
-								neighElem[t][partCounter][target] = *e;
-							}
-						}
-					}
-				}
-				partCounter++;
-			}
-		}
-	}
-
-	std::vector<std::vector<int> > partID(threads);
 	int nextID = 0;
-	{ // get parts together
-		auto reindexPart = [&] (int oldIndex, int newIndex) {
-			for (size_t t = 0; t < threads; t++) {
-				for (size_t i = 0; i < partID[t].size(); i++) {
-					if (partID[t][i] == oldIndex) {
-						partID[t][i] = newIndex;
+	for (eslocal e = 0; e < _mesh->elements->size; ++e) {
+		std::vector<eslocal> stack;
+		if (partID[e] == -1) {
+			stack.push_back(e);
+			partID[e] = nextID;
+			while (stack.size()) {
+				eslocal current = stack.back();
+				stack.pop_back();
+				auto neighs = _mesh->elements->decomposedDual->cbegin() + current;
+				for (auto n = neighs->begin(); n != neighs->end(); ++n) {
+					if (partID[*n] == -1) {
+						stack.push_back(*n);
+						partID[*n] = nextID;
 					}
 				}
 			}
-		};
-
-		for (size_t t = 0; t < threads; t++) {
-			partID[t].resize(neighElem[t].size(), -1);
-		}
-		int reindex;
-		std::vector<std::pair<eslocal, eslocal> > stack; // thread x link to element
-		std::pair<size_t, eslocal> current;
-		for (size_t t = 0; t < threads; t++) {
-			for (size_t i = 0; i < neighElem[t].size(); i++) {
-				if (partID[t][i] == -1) {
-					reindex = -1;
-					partID[t][i] = nextID;
-					for (size_t n = 0; n < neighElem[t][i].size(); n++) {
-						if (neighElem[t][i][n] != -1) {
-							stack.push_back(std::make_pair(e2t(neighElem[t][i][n]), neighElem[t][i][n]));
-						}
-					}
-					while (stack.size()) {
-						current = stack.back();
-						stack.pop_back();
-						int npart = part[current.first][current.second - _mesh->elements->distribution[current.first]];
-						if (partID[current.first][npart] == -1) {
-							partID[current.first][npart] = nextID;
-							for (size_t n = 0; n < neighElem[current.first][npart].size(); n++) {
-								if (neighElem[current.first][npart][n] != -1) {
-									stack.push_back(std::make_pair(e2t(neighElem[current.first][npart][n]), neighElem[current.first][npart][n]));
-								}
-							}
-						}
-						if (partID[current.first][npart] < nextID) {
-							reindex = partID[current.first][npart];
-						}
-					}
-					if (reindex != -1) {
-						reindexPart(nextID, reindex);
-					} else {
-						++nextID;
-					}
-				}
-			}
+			nextID++;
 		}
 	}
+
+	// TODO: parallelization
+//	#pragma omp parallel for
+//	for (size_t t = 0; t < threads; t++) {
+//		part[t].resize(_mesh->elements->distribution[t + 1] - _mesh->elements->distribution[t], -1);
+//		std::vector<eslocal> stack;
+//		eslocal current;
+//		size_t target;
+//		int partCounter = 0;
+//
+//		for (size_t i = _mesh->elements->distribution[t]; i < _mesh->elements->distribution[t + 1]; ++i) {
+//			if (part[t][i - _mesh->elements->distribution[t]] == -1) {
+//				neighElem[t].push_back(std::vector<eslocal>(threads, -1));
+//				stack.push_back(i);
+//				part[t][i - _mesh->elements->distribution[t]] = partCounter;
+//				while (stack.size()) {
+//					current = stack.back();
+//					stack.pop_back();
+//					auto neighs = _mesh->elements->decomposedDual->cbegin() + current;
+//					for (auto e = neighs->begin(); e != neighs->end(); ++e) {
+//						target = e2t(*e);
+//						if (target == t) {
+//							if (part[t][*e - _mesh->elements->distribution[t]] == -1) {
+//								stack.push_back(*e);
+//								part[t][*e - _mesh->elements->distribution[t]] = partCounter;
+//							}
+//						} else {
+//							if (neighElem[t][partCounter][target] == -1) {
+//								neighElem[t][partCounter][target] = *e;
+//							}
+//						}
+//					}
+//				}
+//				partCounter++;
+//			}
+//		}
+//	}
+//
+//	std::vector<std::vector<int> > partID(threads);
+//	int nextID = 0;
+//	{ // get parts together
+//		auto reindexPart = [&] (int oldIndex, int newIndex) {
+//			for (size_t t = 0; t < threads; t++) {
+//				for (size_t i = 0; i < partID[t].size(); i++) {
+//					if (partID[t][i] == oldIndex) {
+//						partID[t][i] = newIndex;
+//					}
+//				}
+//			}
+//		};
+//
+//		for (size_t t = 0; t < threads; t++) {
+//			partID[t].resize(neighElem[t].size(), -1);
+//		}
+//		int reindex;
+//		std::vector<std::pair<eslocal, eslocal> > stack; // thread x link to element
+//		std::pair<size_t, eslocal> current;
+//		for (size_t t = 0; t < threads; t++) {
+//			for (size_t i = 0; i < neighElem[t].size(); i++) {
+//				if (partID[t][i] == -1) {
+//					reindex = -1;
+//					partID[t][i] = nextID;
+//					for (size_t n = 0; n < neighElem[t][i].size(); n++) {
+//						if (neighElem[t][i][n] != -1) {
+//							stack.push_back(std::make_pair(e2t(neighElem[t][i][n]), neighElem[t][i][n]));
+//						}
+//					}
+//					while (stack.size()) {
+//						current = stack.back();
+//						stack.pop_back();
+//						int npart = part[current.first][current.second - _mesh->elements->distribution[current.first]];
+//						if (partID[current.first][npart] == -1) {
+//							partID[current.first][npart] = nextID;
+//							for (size_t n = 0; n < neighElem[current.first][npart].size(); n++) {
+//								if (neighElem[current.first][npart][n] != -1) {
+//									stack.push_back(std::make_pair(e2t(neighElem[current.first][npart][n]), neighElem[current.first][npart][n]));
+//								}
+//							}
+//						}
+//						if (partID[current.first][npart] < nextID) {
+//							reindex = partID[current.first][npart];
+//						}
+//					}
+//					if (reindex != -1) {
+//						reindexPart(nextID, reindex);
+//					} else {
+//						++nextID;
+//					}
+//				}
+//			}
+//		}
+//	}
 
 	size_t edgeConst = 10000;
 
@@ -265,7 +281,7 @@ void MeshPreprocessing::partitiate(eslocal parts, bool separateMaterials, bool s
 		start("METIS::KWay");
 		METIS::call(
 				_mesh->elements->size,
-				_mesh->elements->decomposedDual->boundarytaaray().data(), _mesh->elements->decomposedDual->datatarray().data(),
+				_mesh->elements->decomposedDual->boundarytarray().data(), _mesh->elements->decomposedDual->datatarray().data(),
 				0, NULL, edgeWeights.data(),
 				parts, partition.data());
 		finish("METIS::KWay");
@@ -279,10 +295,10 @@ void MeshPreprocessing::partitiate(eslocal parts, bool separateMaterials, bool s
 
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			const auto &dual = _mesh->elements->decomposedDual->boundarytaaray();
-			for (size_t i = 0, e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++i) {
-				tdecomposition[t][partID[t][part[t][i]]].push_back(e);
-				tdualsize[t][partID[t][part[t][i]]] += dual[e + 1] - dual[e];
+			const auto &dual = _mesh->elements->decomposedDual->boundarytarray();
+			for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e) {
+				tdecomposition[t][partID[e]].push_back(e);
+				tdualsize[t][partID[e]] += dual[e + 1] - dual[e];
 			}
 		}
 		std::vector<std::vector<eslocal> > foffsets(nextID), noffsets(nextID);
@@ -323,11 +339,11 @@ void MeshPreprocessing::partitiate(eslocal parts, bool separateMaterials, bool s
 				edgeIndices[p] = noffset[p] = noffsets[p][t];
 			}
 
-			for (size_t i = 0, e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++i, ++dual) {
-				partindex = partID[t][part[t][i]];
+			for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++dual) {
+				partindex = partID[e];
 
 				frames[partindex][++foffset[partindex]] = dual->size();
-				if (i) {
+				if (e > _mesh->elements->distribution[t]) {
 					frames[partindex][foffset[partindex]] += frames[partindex][foffset[partindex] - 1];
 				} else {
 					frames[partindex][foffset[partindex]] += noffset[partindex];
