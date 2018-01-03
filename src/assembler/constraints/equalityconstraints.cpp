@@ -15,11 +15,11 @@
 #include "../../mesh/store/elementstore.h"
 #include "../../mesh/store/nodestore.h"
 #include "../../mesh/store/boundaryregionstore.h"
+#include "../../mesh/store/fetidatastore.h"
 #include "../../config/ecf/environment.h"
 
 #include <numeric>
 #include <algorithm>
-#include "../../mesh/store/fetidatastore.h"
 
 using namespace espreso;
 
@@ -102,6 +102,8 @@ void EqualityConstraints::update(const std::map<std::string, ECFExpression> &dir
 	_intervalDirichletNodes.clear();
 	_intervalDirichletNodes.resize(1);
 	_intervalDirichletNodes[0].resize(_mesh.nodes->pintervals.size());
+
+	_domainDirichletSize.resize(_mesh.elements->ndomains);
 
 	for (auto it = dirichlet.begin(); it != dirichlet.end(); ++it) {
 		_dirichlet[0].push_back(std::make_pair(_mesh.bregion(it->first), it->second.evaluator));
@@ -220,6 +222,8 @@ void EqualityConstraints::B1DirichletInsert(const Step &step)
 					_instance.B1[d].rows = _dirichletSize;
 
 					_instance.LB[d].resize(_instance.B1[d].nnz, -std::numeric_limits<double>::infinity());
+
+					_domainDirichletSize[d] = _instance.B1[d].nnz;
 				}
 			}
 		}
@@ -289,8 +293,8 @@ void EqualityConstraints::B1GlueElements()
 			LMindex += ((interval.ndomains - interval.dindex - 1) * (interval.ndomains - interval.dindex - 2) / 2);
 			_instance.B1[d].V_values.insert(_instance.B1[d].V_values.end(), interval.dindex, -1);
 			_instance.B1[d].V_values.insert(_instance.B1[d].V_values.end(), interval.ndomains - interval.dindex - 1, 1);
-			_instance.B1duplicity[d].insert(_instance.B1duplicity[d].end(), interval.ndomains - 1, 1.0 / interval.ndomains);
 		}
+		_instance.B1duplicity[d].insert(_instance.B1duplicity[d].end(), (end - begin) * (interval.ndomains - 1), 1.0 / interval.ndomains);
 	};
 
 	auto nonredundantglue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter) {
@@ -302,14 +306,18 @@ void EqualityConstraints::B1GlueElements()
 				_instance.B1[d].J_col_indices.push_back(DOFindex);
 				_instance.B1[d].I_row_indices.push_back(LMindex + interval.dindex + lm);
 				_instance.B1[d].V_values.push_back(-1);
-				_instance.B1duplicity[d].push_back(1.0 / interval.ndomains);
 			}
 			if (interval.dindex + 1 < interval.ndomains) {
 				_instance.B1[d].J_col_indices.push_back(DOFindex);
 				_instance.B1[d].I_row_indices.push_back(LMindex + interval.dindex + 1 + lm);
 				_instance.B1[d].V_values.push_back(1);
-				_instance.B1duplicity[d].push_back(1.0 / interval.ndomains);
 			}
+		}
+		if (interval.dindex) {
+			_instance.B1duplicity[d].insert(_instance.B1duplicity[d].end(), end - begin, 1.0 / interval.ndomains);
+		}
+		if (interval.dindex + 1 < interval.ndomains) {
+			_instance.B1duplicity[d].insert(_instance.B1duplicity[d].end(), end - begin, 1.0 / interval.ndomains);
 		}
 	};
 
@@ -395,6 +403,142 @@ void EqualityConstraints::B1GlueElements()
 	}
 
 	_instance.block[Instance::CONSTRAINT::EQUALITY_CONSTRAINTS] = _dirichletSize + _gluingSize;
+
+	if (_withScaling) {
+		B1DuplicityUpdate();
+	}
+}
+
+void EqualityConstraints::B1DuplicityUpdate()
+{
+	if (!_withScaling || !_withRedundantMultipliers) {
+		return;
+	}
+
+	auto n2i = [ & ] (size_t neighbour) {
+		return std::lower_bound(_mesh.neighbours.begin(), _mesh.neighbours.end(), neighbour) - _mesh.neighbours.begin();
+	};
+
+	// interval x DOF0(d0, d1, ...), DOF1(d0, d1, ...)
+	std::vector<std::vector<double> > diagonals(_mesh.nodes->pintervals.size());
+	if (_withScaling) {
+		std::vector<std::vector<double> > D(_mesh.elements->ndomains);
+		#pragma omp parallel for
+		for  (size_t d = 0; d < _instance.domains; d++) {
+			D[d] = _instance.K[d].getDiagonal();
+		}
+
+		std::vector<std::vector<double> > sBuffer(_mesh.neighbours.size()), rBuffer(_mesh.neighbours.size());
+		auto irank = _mesh.nodes->iranks->cbegin();
+		auto idomain = _mesh.nodes->idomains->cbegin();
+		std::vector<int> dindex(_mesh.elements->ndomains), ranks;
+		for (size_t i = 0; i < _mesh.nodes->pintervals.size(); ++i, ++irank, ++idomain) {
+			ranks.clear();
+			ranks.insert(ranks.end(), irank->begin(), irank->end());
+			Esutils::sortAndRemoveDuplicity(ranks);
+			for (auto rank = ranks.begin(); rank != ranks.end(); ++rank) {
+				if (*rank != environment->MPIrank) {
+					eslocal target = n2i(*rank);
+					for (auto domain = idomain->begin(); domain != idomain->end(); ++domain) {
+						if (_mesh.elements->firstDomain <= *domain && *domain < _mesh.elements->firstDomain + _mesh.elements->ndomains) {
+							eslocal d = *domain - _mesh.elements->firstDomain;
+							auto begin = D[d].begin() + _mesh.nodes->dintervals[d][dindex[d]].DOFOffset;
+							auto end = begin + _mesh.nodes->dintervals[d][dindex[d]].end - _mesh.nodes->dintervals[d][dindex[d]].begin;
+							sBuffer[target].insert(sBuffer[target].end(), begin, end);
+						}
+					}
+				}
+			}
+			for (auto domain = idomain->begin(); domain != idomain->end(); ++domain) {
+				if (_mesh.elements->firstDomain <= *domain && *domain < _mesh.elements->firstDomain + _mesh.elements->ndomains) {
+					++dindex[*domain - _mesh.elements->firstDomain];
+				}
+			}
+		}
+
+		if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, _mesh.neighbours)) {
+			ESINFO(ERROR) << "problem while exchange K diagonal in B1 scaling.";
+		}
+
+		irank = _mesh.nodes->iranks->cbegin();
+		idomain = _mesh.nodes->idomains->cbegin();
+		std::fill(dindex.begin(), dindex.end(), 0);
+		std::vector<eslocal> rindex(_mesh.neighbours.size());
+		for (size_t i = 0; i < _mesh.nodes->pintervals.size(); ++i, ++irank, ++idomain) {
+			if (idomain->size() > 1) {
+				eslocal isize = _mesh.nodes->pintervals[i].end - _mesh.nodes->pintervals[i].begin;
+				diagonals[i].resize(isize * idomain->size());
+				for (int r = 0; r < irank->size(); ++r) {
+					if (irank->at(r) != environment->MPIrank) {
+						eslocal target = n2i(irank->at(r));
+						for (eslocal n = 0; n < isize; ++n) {
+							diagonals[i][n * idomain->size() + r] = rBuffer[target][rindex[target]++];
+						}
+					} else {
+						eslocal d = idomain->at(r) - _mesh.elements->firstDomain;
+						for (eslocal n = 0; n < isize; ++n) {
+							diagonals[i][n * idomain->size() + r] = D[d][_mesh.nodes->dintervals[d][dindex[d]].DOFOffset + n];
+						}
+						++dindex[d];
+					}
+				}
+			}
+		}
+	}
+
+	std::vector<eslocal> dindex = _domainDirichletSize;
+
+	auto redundantglue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter) {
+		const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
+		double sum;
+		for (eslocal n = begin; n != end; ++n) {
+			sum = 0;
+			for (eslocal i = 0; i < interval.ndomains; i++) {
+				sum += diagonals[interval.pindex][(n - interval.begin) * interval.ndomains + i];
+			}
+			for (eslocal i = 0; i < interval.dindex; ++i) {
+				_instance.B1duplicity[d][dindex[d]++] = diagonals[interval.pindex][(n - interval.begin) * interval.ndomains + i] / sum;
+			}
+			for (eslocal i = interval.dindex + 1; i < interval.ndomains; ++i) {
+				_instance.B1duplicity[d][dindex[d]++] = diagonals[interval.pindex][(n - interval.begin) * interval.ndomains + i] / sum;
+			}
+		}
+	};
+
+	auto nonredundantglue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter) {
+		// CURRENT SCALING WORKS ONLY WITH REDUNDANT MULTIPLIERS
+	};
+
+	auto glue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter) {
+		if (_withRedundantMultipliers) {
+			redundantglue(d, i, begin, end, LMcounter);
+		} else {
+			nonredundantglue(d, i, begin, end, LMcounter);
+		}
+	};
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (size_t d = _mesh.elements->domainDistribution[t]; d < _mesh.elements->domainDistribution[t + 1]; d++) {
+			for (size_t i = 0; i < _mesh.nodes->gintervals[d].size(); ++i) {
+				if (_mesh.nodes->gintervals[d][i].ndomains > 1) {
+					eslocal LMcounter = 0;
+					if (_withRedundantMultipliers) {
+						const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
+						eslocal current = interval.begin;
+						for (auto end = _intervalDirichletNodes[0][interval.pindex].begin(); end != _intervalDirichletNodes[0][interval.pindex].end(); current = *end + 1, ++end) {
+							glue(d, i, current, *end, LMcounter);
+						}
+						glue(d, i, current, interval.end, LMcounter);
+					} else {
+						glue(d, i, _mesh.nodes->gintervals[d][i].begin, _mesh.nodes->gintervals[d][i].end, LMcounter);
+					}
+				}
+			}
+		}
+	}
 }
 
 void EqualityConstraints::B0Kernels(const std::vector<SparseMatrix> &kernels)

@@ -28,6 +28,7 @@ struct EqualityConstraints
 	void B1DirichletInsert(const Step &step);
 	void B1DirichletUpdate(const Step &step);
 	void B1GlueElements();
+	void B1DuplicityUpdate();
 
 	void B0Kernels(const std::vector<SparseMatrix> &kernels);
 	void B0Corners();
@@ -47,6 +48,8 @@ protected:
 
 	// DOF x INTERVAL x NODES
 	std::vector<std::vector<std::vector<eslocal> > > _intervalDirichletNodes;
+
+	std::vector<eslocal> _domainDirichletSize;
 
 	std::vector<eslocal> _intervalDirichletOffset;
 	std::vector<eslocal> _intervalGluingOffset;
