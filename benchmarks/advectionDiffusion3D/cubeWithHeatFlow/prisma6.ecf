@@ -28,10 +28,10 @@ GENERATOR {
     LENGTH_Z                    1;
 
     NODES {
-      Z0   <0 , 1> <0 , 1> <0 , 0>;
-      Y0   <0 , 1> <0 , 0> <0 , 1>;
+      Z0   (0 , 1) (0 , 1) <0 , 0>;
+      Y0   (0 , 1) <0 , 0> <0 , 1>;
       X0   <0 , 0> <0 , 1> <0 , 1>;
-      Y1   <0 , 1> <1 , 1> <0 , 1>;
+      Y1   (0 , 1) <1 , 1> <0 , 1>;
       X1   <1 , 1> <0 , 1> <0 , 1>;
     }
 
@@ -108,7 +108,7 @@ HEAT_TRANSFER_3D {
       }
 
       TRANSLATION_MOTIONS {
-        ALL_ELEMENTS   Z -10;
+        ALL_ELEMENTS   { Z -10; }
       }
 
       HEAT_FLOW {

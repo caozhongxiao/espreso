@@ -21,7 +21,7 @@
 #include "../../solver/generic/SparseMatrix.h"
 
 
-// TODO: create file fith constants
+// TODO: create file with constants
 #define CONST_Stefan_Boltzmann 5.6703e-8
 
 using namespace espreso;

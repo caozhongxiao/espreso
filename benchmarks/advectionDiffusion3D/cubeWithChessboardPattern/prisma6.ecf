@@ -28,8 +28,8 @@ GENERATOR {
 
     NODES {
       Z0   <0 , 1> <0 , 1> <0 , 0>;
-      Y0   <0 , 1> <0 , 0> <0 , 1>;
-      X0   <0 , 0> <0 , 1> <0 , 1>;
+      Y0   (0 , 1> <0 , 0> (0 , 1>;
+      X0   <0 , 0> <0 , 1> (0 , 1>;
     }
 
     ELEMENTS {
@@ -95,7 +95,7 @@ HEAT_TRANSFER_3D {
 
 
   STABILIZATION   CAU;
-  SIGMA             0;
+  SIGMA            .1;
 
   LOAD_STEPS_SETTINGS {
     1 {
@@ -124,7 +124,7 @@ HEAT_TRANSFER_3D {
       }
 
       TRANSLATION_MOTIONS {
-        ALL_ELEMENTS   X 50 , Y 50 , Z 50;
+        ALL_ELEMENTS  { X 50; Y 50; Z 50; }
       }
     }
   }
