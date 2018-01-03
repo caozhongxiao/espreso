@@ -149,9 +149,8 @@ void EqualityConstraints::update(const std::map<std::string, ECFExpression> &dir
 			return 0;
 		}
 		eslocal size = _mesh.nodes->pintervals[i].end - _mesh.nodes->pintervals[i].begin;
-		size -= dsize[i];
 		if (_withRedundantMultipliers) {
-			return size * (ndomains * (ndomains - 1) / 2);
+			return (size - dsize[i]) * (ndomains * (ndomains - 1) / 2);
 		} else {
 			return size * (ndomains - 1);
 		}
@@ -260,7 +259,7 @@ void EqualityConstraints::B1DirichletUpdate(const Step &step)
 					for (size_t dof = 0; dof < _dirichlet.size(); dof++) {
 						for (size_t r = 0; r < _dirichlet[0].size(); r++) {
 							for (eslocal n = _dirichlet[0][r].first->nintervals[interval.pindex].begin; n < _dirichlet[0][r].first->nintervals[interval.pindex].end; ++n, ++offset) {
-								// TODO: evaluate at one and correctly
+								// TODO: evaluate at once and correctly
 								Point p;
 								_instance.B1c[d][offset] = step.internalForceReduction * _dirichlet[0][r].second->evaluate(p, step.currentTime, 0);
 							}
@@ -298,16 +297,16 @@ void EqualityConstraints::B1GlueElements()
 		const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
 		esglobal LMindex = interval.LMOffset + LMcounter * (interval.ndomains - 1);
 		eslocal DOFindex = interval.DOFOffset + (begin - interval.begin) + 1;
-		for (eslocal n = begin; n != end; ++n, ++DOFindex, ++LMcounter) {
+		for (eslocal n = begin, lm = 0; n != end; ++n, ++lm, ++DOFindex, ++LMcounter) {
 			if (interval.dindex) {
 				_instance.B1[d].J_col_indices.push_back(DOFindex);
-				_instance.B1[d].I_row_indices.push_back(LMindex + interval.dindex - 1);
+				_instance.B1[d].I_row_indices.push_back(LMindex + interval.dindex + lm);
 				_instance.B1[d].V_values.push_back(-1);
 				_instance.B1duplicity[d].push_back(1.0 / interval.ndomains);
 			}
 			if (interval.dindex + 1 < interval.ndomains) {
 				_instance.B1[d].J_col_indices.push_back(DOFindex);
-				_instance.B1[d].I_row_indices.push_back(LMindex + interval.dindex);
+				_instance.B1[d].I_row_indices.push_back(LMindex + interval.dindex + 1 + lm);
 				_instance.B1[d].V_values.push_back(1);
 				_instance.B1duplicity[d].push_back(1.0 / interval.ndomains);
 			}
@@ -328,13 +327,17 @@ void EqualityConstraints::B1GlueElements()
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t d = _mesh.elements->domainDistribution[t]; d < _mesh.elements->domainDistribution[t + 1]; d++) {
 			for (size_t i = 0; i < _mesh.nodes->gintervals[d].size(); ++i) {
-				const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
 				eslocal LMcounter = 0;
-				eslocal current = interval.begin;
-				for (auto end = _intervalDirichletNodes[0][interval.pindex].begin(); end != _intervalDirichletNodes[0][interval.pindex].end(); current = *end + 1, ++end) {
-					glue(d, i, current, *end, LMcounter);
+				if (_withRedundantMultipliers) {
+					const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
+					eslocal current = interval.begin;
+					for (auto end = _intervalDirichletNodes[0][interval.pindex].begin(); end != _intervalDirichletNodes[0][interval.pindex].end(); current = *end + 1, ++end) {
+						glue(d, i, current, *end, LMcounter);
+					}
+					glue(d, i, current, interval.end, LMcounter);
+				} else {
+					glue(d, i, _mesh.nodes->gintervals[d][i].begin, _mesh.nodes->gintervals[d][i].end, LMcounter);
 				}
-				glue(d, i, current, interval.end, LMcounter);
 			}
 			_instance.B1[d].rows += _gluingSize;
 			_instance.B1[d].nnz = _instance.B1[d].I_row_indices.size();
@@ -353,8 +356,7 @@ void EqualityConstraints::B1GlueElements()
 		std::vector<std::vector<esglobal> > nmap;
 
 		for (auto r1 = iranks->begin(); r1 != iranks->end(); ++r1) {
-			for (auto r2 = r1 + 1; r2 != iranks->end(); ++r2, ++LMindex) {
-
+			for (auto r2 = r1 + 1; r2 != iranks->end(); ++r2) {
 				if (*r1 == environment->MPIrank) {
 					nmap.push_back({ LMindex, environment->MPIrank });
 					if (*r2 != environment->MPIrank) {
@@ -366,13 +368,10 @@ void EqualityConstraints::B1GlueElements()
 						nmap.back().push_back(*r1);
 					}
 				}
-
+				++LMindex;
 				if (!_withRedundantMultipliers) {
 					break;
 				}
-			}
-			if (!_withRedundantMultipliers) {
-				break;
 			}
 		}
 
@@ -383,7 +382,10 @@ void EqualityConstraints::B1GlueElements()
 			noffset = iranks->size() - 1;
 		}
 
-		eslocal isize = _mesh.nodes->pintervals[i].end - _mesh.nodes->pintervals[i].begin - _intervalDirichletNodes[0][i].size();
+		eslocal isize = _mesh.nodes->pintervals[i].end - _mesh.nodes->pintervals[i].begin;
+		if (_withRedundantMultipliers) {
+			isize -= _intervalDirichletNodes[0][i].size();
+		}
 		for (eslocal n = 0, LMoffset = _intervalGluingOffset[i]; n < isize; ++n, LMoffset += noffset) {
 			_instance.B1clustersMap.insert(_instance.B1clustersMap.end(), nmap.begin(), nmap.end());
 			for (auto map = _instance.B1clustersMap.end() - nmap.size(); map != _instance.B1clustersMap.end(); ++map) {
