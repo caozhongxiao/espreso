@@ -179,8 +179,12 @@ void MeshPreprocessing::arrangeNodes()
 			}
 		}
 	}
-	iBoundary[0].push_back(externalBoundary.size());
-	iBoundary[0].push_back(externalBoundary.size() + internalBoundary.size());
+	if (externalBoundary.size()) {
+		iBoundary[0].push_back(externalBoundary.size());
+	}
+	if (internalBoundary.size()) {
+		iBoundary[0].push_back(externalBoundary.size() + internalBoundary.size());
+	}
 
 	Esutils::mergeThreadedUniqueData(iBoundary);
 	if (iBoundary[0].back() == _mesh->nodes->size) {
