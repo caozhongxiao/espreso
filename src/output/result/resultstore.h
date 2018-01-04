@@ -46,6 +46,10 @@ public:
 	ResultStore();
 	~ResultStore();
 
+	int storeThreads;
+	int storeProcesses;
+	int computeProcesses;
+
 protected:
 	ResultStoreExecutor *_async;
 	ResultStoreExecutor *_direct;

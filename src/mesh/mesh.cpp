@@ -324,6 +324,8 @@ void Mesh::update()
 	preprocessing->partitiate(mesh->parts(), true, true);
 	preprocessing->computeSharedFaces();
 	preprocessing->computeCornerNodes();
+
+	printStatistics();
 }
 
 void Mesh::initNodeData()
@@ -559,5 +561,100 @@ void Mesh::computeElementStatistic(const ElementData *data, const ElementsRegion
 		(statistics + i)->avg /= region->uniqueTotalSize;
 		(statistics + i)->norm = std::sqrt((statistics + i)->norm);
 	}
+}
+
+void Mesh::printStatistics()
+{
+	auto ename = [] (int code) -> std::string {
+		switch (static_cast<Element::CODE>(code)) {
+
+		case Element::CODE::POINT1: return "POINT1";
+
+		case Element::CODE::LINE2: return "LINE2";
+
+		case Element::CODE::TRIANGLE3: return "TRIANGLE3";
+		case Element::CODE::SQUARE4: return "SQUARE4";
+
+		case Element::CODE::TETRA4: return "TETRA4";
+		case Element::CODE::PYRAMID5: return "PYRAMID5";
+		case Element::CODE::PRISMA6: return "PRISMA6";
+		case Element::CODE::HEXA8: return "HEXA8";
+
+		case Element::CODE::LINE3: return "LINE3";
+
+		case Element::CODE::TRIANGLE6: return "TRIANGLE6";
+		case Element::CODE::SQUARE8: return "SQUARE8";
+
+		case Element::CODE::TETRA10: return "TETRA10";
+		case Element::CODE::PYRAMID13: return "PYRAMID13";
+		case Element::CODE::PRISMA15: return "PRISMA15";
+		case Element::CODE::HEXA20: return "HEXA20";
+
+		default:
+			ESINFO(ERROR) << "ESPRESO internal error: unknown element code.";
+			return "";
+		}
+	};
+
+	auto esize = [&] (int code) {;
+		if (elements->ecounters[code]) {
+			ESINFO(OVERVIEW) << std::string(21 - ename(code).size(), ' ') << ename(code) << " : " << elements->ecounters[code];
+		}
+	};
+
+	auto totalesize = [] (std::vector<eslocal> &ecounters) {
+		eslocal size = 0;
+		for (int etype = 0; etype < ecounters.size(); etype++) {
+			size += ecounters[etype];
+		}
+		return size;
+	};
+
+	ESINFO(OVERVIEW) << "============= Mesh statistics =============";
+
+	ESINFO(OVERVIEW) << " Number of nodes      : " << nodes->uniqueTotalSize;
+
+	ESINFO(OVERVIEW) << " Number of elements   : " << totalesize(elements->ecounters);
+	for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
+		esize(etype);
+	}
+
+	ESINFO(OVERVIEW);
+
+	ESINFO(OVERVIEW) << " Element regions size :";
+	ESINFO(OVERVIEW) << std::string(21 - elementsRegions[0]->name.size(), ' ') << elementsRegions[0]->name << " : " << totalesize(elements->ecounters);
+	for (size_t r = 1; r < elementsRegions.size(); r++) {
+		ESINFO(OVERVIEW) << std::string(21 - elementsRegions[r]->name.size(), ' ') << elementsRegions[r]->name << " : " << totalesize(elementsRegions[r]->ecounters);
+	}
+	ESINFO(OVERVIEW) << " Face regions size    :";
+	for (size_t r = 0; r < boundaryRegions.size(); r++) {
+		if (boundaryRegions[r]->dimension == 2) {
+			ESINFO(OVERVIEW) << std::string(21 - boundaryRegions[r]->name.size(), ' ') << boundaryRegions[r]->name << " : " << totalesize(boundaryRegions[r]->ecounters);
+		}
+	}
+	ESINFO(OVERVIEW) << " Edge regions size    :";
+	for (size_t r = 0; r < boundaryRegions.size(); r++) {
+		if (boundaryRegions[r]->dimension == 1) {
+			ESINFO(OVERVIEW) << std::string(21 - boundaryRegions[r]->name.size(), ' ') << boundaryRegions[r]->name << " : " << totalesize(boundaryRegions[r]->ecounters);
+		}
+	}
+	ESINFO(OVERVIEW) << " Node regions size    :";
+	for (size_t r = 0; r < boundaryRegions.size(); r++) {
+		if (boundaryRegions[r]->dimension == 0) {
+			ESINFO(OVERVIEW) << std::string(21 - boundaryRegions[r]->name.size(), ' ') << boundaryRegions[r]->name << " : " << boundaryRegions[r]->uniqueTotalSize;
+		}
+	}
+
+	ESINFO(OVERVIEW);
+
+	int totalClusters, clusters = elements->nclusters;
+	MPI_Reduce(&clusters, &totalClusters, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
+	ESINFO(OVERVIEW) << " Number of clusters   : " << totalClusters;
+
+	int totalDomains, domains = elements->ndomains;
+	MPI_Reduce(&domains, &totalDomains, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
+	ESINFO(OVERVIEW) << " Number of domains    : " << totalDomains;
+
+	ESINFO(OVERVIEW) << "============================================";
 }
 

@@ -70,6 +70,9 @@ public:
 	const ECFConfiguration &configuration;
 	std::vector<Element*> _eclasses;
 	OldMesh *mesh;
+
+private:
+	void printStatistics();
 };
 
 }

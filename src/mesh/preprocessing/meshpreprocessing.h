@@ -8,7 +8,7 @@
 
 namespace espreso {
 
-#define VERBOSITY(level) level == 0 ? PROGRESS1 : level == 1 ? PROGRESS2 : PROGRESS3
+#define VERBOSITY(level) level == 0 ? PROGRESS2 : PROGRESS3
 
 class Mesh;
 struct ProcessInterval;

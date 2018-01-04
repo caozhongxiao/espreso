@@ -172,7 +172,7 @@ GridGenerator::GridGenerator(const GridGeneratorConfiguration &configuration, Ol
 	if (cluster != size) {
 		ESINFO(GLOBAL_ERROR) << "Incorrect number of MPI processes (" << size << "). Should be " << cluster;
 	}
-	ESINFO(OVERVIEW) << "Generate grid of " << element;
+	ESINFO(PROGRESS2) << "Generate grid of " << element;
 }
 
 GridGenerator::~GridGenerator()

@@ -62,7 +62,7 @@ void OldLoader::fill()
 	points(*mesh._coordinates);
 	std::sort(mesh._coordinates->_globalMapping.begin(), mesh._coordinates->_globalMapping.end());
 	tPoints.end(); measurement.addEvent(tPoints);
-	ESINFO(OVERVIEW) << "Coordinates loaded - total number of nodes: " << Info::sumValue(mesh.coordinates().clusterSize());
+	ESINFO(PROGRESS2) << "Coordinates loaded - total number of nodes: " << Info::sumValue(mesh.coordinates().clusterSize());
 
 	// LOAD ELEMENTS
 	TimeEvent tElements("elements"); tElements.start();
@@ -72,13 +72,13 @@ void OldLoader::fill()
 	mesh.fillNodesFromCoordinates();
 	mesh.fillParentElementsToNodes();
 	tElements.end(); measurement.addEvent(tElements);
-	ESINFO(OVERVIEW) << "Elements loaded - total number of elements: " << Info::sumValue(mesh.elements().size());
+	ESINFO(PROGRESS2) << "Elements loaded - total number of elements: " << Info::sumValue(mesh.elements().size());
 
 	// LOAD NEIGHBOURS
 	TimeEvent tClusterBoundaries("cluster boundaries"); tClusterBoundaries.start();
 	neighbours(mesh._nodes, mesh._neighbours, mesh._faces, mesh._edges);
 	tClusterBoundaries.end(); measurement.addEvent(tClusterBoundaries);
-	ESINFO(OVERVIEW) << "Neighbours loaded - number of neighbours for each cluster is " << Info::averageValue(mesh.neighbours().size());
+	ESINFO(PROGRESS2) << "Neighbours loaded - number of neighbours for each cluster is " << Info::averageValue(mesh.neighbours().size());
 
 	if (Test::report(EXPENSIVE)) {
 		mesh.checkNeighbours();
@@ -106,7 +106,7 @@ void OldLoader::fill()
 		default:
 			ESINFO(ERROR) << "ESPRESO internal error: loader not recognizes element type of region " << mesh._regions[r]->name;
 		}
-		ESINFO(OVERVIEW) << "Loaded region '" << mesh._regions[r]->name << "' of " << Info::sumValue(mesh._regions[r]->elements().size()) << " " << type;
+		ESINFO(PROGRESS2) << "Loaded region '" << mesh._regions[r]->name << "' of " << Info::sumValue(mesh._regions[r]->elements().size()) << " " << type;
 	}
 
 	for (size_t r = 0; r < mesh._regions.size(); r++) {
@@ -123,7 +123,7 @@ void OldLoader::fill()
 
 		for (size_t s = 0; s < mesh._regions[r]->settings.size(); s++) {
 			for (auto it = mesh._regions[r]->settings[s].begin(); it != mesh._regions[r]->settings[s].end(); ++it) {
-				ESINFO(OVERVIEW) << it->first << " loaded for LOAD STEP " << s + 1 << " for region '" << mesh._regions[r]->name << "'";
+				ESINFO(PROGRESS2) << it->first << " loaded for LOAD STEP " << s + 1 << " for region '" << mesh._regions[r]->name << "'";
 			}
 		}
 	}
@@ -148,7 +148,7 @@ void OldLoader::fill()
 	}
 
 	tPartition.end(); measurement.addEvent(tPartition);
-	ESINFO(OVERVIEW) << "Mesh partitioned into " << environment->MPIsize << " * " << mesh.parts() << " = " << mesh.parts() * environment->MPIsize
+	ESINFO(PROGRESS2) << "Mesh partitioned into " << environment->MPIsize << " * " << mesh.parts() << " = " << mesh.parts() * environment->MPIsize
 			<< " parts. There is " << intervalStats(mesh._partPtrs) << " elements in subdomain.";
 
 	measurement.totalTime.endWithBarrier(); measurement.printStatsMPI();

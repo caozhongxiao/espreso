@@ -44,10 +44,23 @@ void ESPRESO::run(int *argc, char ***argv)
 	std::signal(SIGSEGV, signalHandler);
 
 	ECFConfiguration configuration(argc, argv);
-	ESINFO(OVERVIEW) << "Run ESPRESO on " << environment->MPIsize << " process(es).";
-
 	Mesh mesh(configuration);
 	ResultStore* solutionStore = ResultStore::createAsynchronizedStore(mesh, configuration.output);
+
+	std::string processes, threads;
+	if (solutionStore->storeProcesses) {
+		processes = std::to_string(solutionStore->computeProcesses) + " + " + std::to_string(solutionStore->storeProcesses);
+	} else {
+		processes = std::to_string(solutionStore->computeProcesses);
+	}
+	if (solutionStore->storeThreads) {
+		threads = std::to_string(environment->OMP_NUM_THREADS) + " + " + std::to_string(solutionStore->storeThreads);
+	} else {
+		threads = std::to_string(environment->OMP_NUM_THREADS);
+	}
+
+	ESINFO(OVERVIEW) << "Run ESPRESO SOLVER using " << processes << " MPI and " << threads << " threads.";
+
 	if (ResultStore::isComputeNode()) {
 		Factory factory(configuration, mesh, *solutionStore);
 		factory.solve();

@@ -24,7 +24,12 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 	if (_asyncStore != NULL) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: try to create multiple ASYNC instances.";
 	}
+
+
 	_asyncStore = new ResultStore();
+	_asyncStore->storeThreads = 0;
+	_asyncStore->storeProcesses = 0;
+	_asyncStore->computeProcesses = environment->MPIsize;
 
 	_asyncStore->_direct = new DirectExecutor(mesh, configuration);
 	switch (configuration.mode) {
@@ -34,6 +39,7 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 		_dispatcher = new async::Dispatcher();
 		_asyncStore->_async = new AsyncStore(mesh, configuration);
 		async::Config::setMode(async::THREAD);
+		_asyncStore->storeThreads = 1;
 		break;
 	case OutputConfiguration::MODE::MPI:
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented OUTPUT::MODE==MPI.";
@@ -78,7 +84,8 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 		if (configuration.mode == OutputConfiguration::MODE::MPI) {
 			int computeSize;
 			MPI_Comm_size(_dispatcher->commWorld(), &computeSize);
-			ESINFO(OVERVIEW) << "Reserve " << environment->MPIsize - computeSize << " MPI process(es) for storing solution.";
+			_asyncStore->computeProcesses = computeSize;
+			_asyncStore->storeProcesses = environment->MPIsize - computeSize;
 		}
 
 		environment->MPICommunicator = _dispatcher->commWorld();

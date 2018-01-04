@@ -160,7 +160,7 @@ SphereGenerator::SphereGenerator(const SphereGeneratorConfiguration &configurati
 		ESINFO(GLOBAL_ERROR) << "Unsupported element type";
 	}
 
-	ESINFO(OVERVIEW) << "Generate sphere " << element;
+	ESINFO(PROGRESS2) << "Generate sphere " << element;
 }
 
 SphereGenerator::~SphereGenerator()
