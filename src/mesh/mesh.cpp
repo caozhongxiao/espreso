@@ -16,8 +16,6 @@
 #include "../basis/utilities/parser.h"
 
 #include "../config/ecf/ecf.h"
-#include "../config/ecf/environment.h"
-#include "../config/ecf/physics/physics.h"
 
 #include "../assembler/step.h"
 
@@ -251,6 +249,7 @@ void Mesh::load()
 				}
 			}
 			elementsRegions.back()->elements = new serializededata<eslocal, eslocal>(1, rdata);
+			std::sort(elementsRegions.back()->elements->datatarray().begin(), elementsRegions.back()->elements->datatarray().end());
 			break;
 		case ElementType::FACES:
 		case ElementType::EDGES:
@@ -320,8 +319,39 @@ void Mesh::update()
 		}
 	}
 
-	preprocessing->reclusterize();
-	preprocessing->partitiate(mesh->parts(), true, true);
+	if (configuration.decomposition.balance_clusters) {
+		preprocessing->reclusterize();
+	}
+
+	bool uniformDecomposition = false;
+	if (configuration.input == INPUT_FORMAT::GENERATOR) {
+		switch (configuration.generator.shape) {
+		case INPUT_GENERATOR_SHAPE::GRID:
+			if (configuration.generator.grid.uniform_decomposition) {
+				uniformDecomposition = true;
+			}
+			break;
+		case INPUT_GENERATOR_SHAPE::GRID_TOWER:
+//			if (configuration.generator.grid_tower.grids.at()) {
+//				// uniform dec
+//			}
+			break;
+		case INPUT_GENERATOR_SHAPE::SPHERE:
+			if (configuration.generator.sphere.uniform_decomposition) {
+				uniformDecomposition = true;
+			}
+			break;
+		}
+	}
+
+	if (uniformDecomposition) {
+		// TODO
+	} else {
+		preprocessing->partitiate(mesh->parts(),
+				configuration.decomposition.separate_materials,
+				configuration.decomposition.separate_regions,
+				configuration.decomposition.separate_etypes);
+	}
 	preprocessing->computeSharedFaces();
 	preprocessing->computeCornerNodes();
 

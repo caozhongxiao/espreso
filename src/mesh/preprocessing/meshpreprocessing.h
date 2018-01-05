@@ -24,10 +24,10 @@ public:
 	void exchangeHalo();
 
 	void computeDual();
-	void computeDecomposedDual(bool separateMaterials, bool separateEtype);
+	void computeDecomposedDual(bool separateMaterials, bool separateRegions, bool separateEtype);
 
 	void reclusterize();
-	void partitiate(eslocal parts, bool separateMaterials, bool separateEtype);
+	void partitiate(eslocal parts, bool separateMaterials, bool separateRegions, bool separateEtype);
 
 	void arrangeNodes();
 	void arrangeElements();

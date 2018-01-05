@@ -117,12 +117,12 @@ void MeshPreprocessing::reclusterize()
 	finish("re-distribution of the mesh to processes");
 }
 
-void MeshPreprocessing::partitiate(eslocal parts, bool separateMaterials, bool separateEtype)
+void MeshPreprocessing::partitiate(eslocal parts, bool separateMaterials, bool separateRegions, bool separateEtype)
 {
 	start("decomposition of the mesh");
 
 	if (_mesh->elements->decomposedDual == NULL) {
-		this->computeDecomposedDual(separateMaterials, separateEtype);
+		this->computeDecomposedDual(separateMaterials, separateRegions, separateEtype);
 	}
 
 	size_t threads = environment->OMP_NUM_THREADS;

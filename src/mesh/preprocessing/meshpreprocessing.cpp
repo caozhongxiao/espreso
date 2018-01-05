@@ -333,12 +333,16 @@ void MeshPreprocessing::computeDual()
 	finish("computation of the dual graph of all elements");
 }
 
-void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separateEtype)
+void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separateRegions, bool separateEtype)
 {
 	start("computation of the decomposed dual graph of local elements");
 
 	if (_mesh->nodes->elements == NULL) {
 		this->linkNodesAndElements();
+	}
+
+	if (separateRegions && _mesh->elements->regions == NULL) {
+		this->fillRegionMask();
 	}
 
 	size_t threads = environment->OMP_NUM_THREADS;
@@ -355,6 +359,8 @@ void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separ
 			const auto &IDs = _mesh->elements->IDs->datatarray();
 			const auto &body = _mesh->elements->body->datatarray();
 			const auto &material = _mesh->elements->material->datatarray();
+			const auto &regions = _mesh->elements->regions->datatarray();
+			int rsize = _mesh->elements->regionMaskSize;
 			const auto &epointer = _mesh->elements->epointers->datatarray();
 			auto nodes = _mesh->elements->nodes->cbegin(t);
 			std::vector<eslocal> neighElementIDs;
@@ -386,6 +392,7 @@ void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separ
 									nCounter >= std::min(myCommon, neighCommon) &&
 									body[e] == body[it - IDs.begin()] &&
 									(!separateMaterials || material[e] == material[it - IDs.begin()]) &&
+									(!separateRegions || memcmp(regions.data() + e * rsize, regions.data() + (it - IDs.begin()) * rsize, rsize) == 0) &&
 									(!separateEtype || epointer[e]->type == epointer[it - IDs.begin()]->type)
 								) {
 
@@ -408,6 +415,8 @@ void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separ
 			const auto &IDs = _mesh->elements->IDs->datatarray();
 			const auto &body = _mesh->elements->body->datatarray();
 			const auto &material = _mesh->elements->material->datatarray();
+			const auto &regions = _mesh->elements->regions->datatarray();
+			int rsize = _mesh->elements->regionMaskSize;
 			const auto &epointer = _mesh->elements->epointers->datatarray();
 			auto dual = _mesh->elements->dual->cbegin(t);
 
@@ -419,6 +428,7 @@ void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separ
 							it != IDs.end() && *it == *neigh &&
 							body[e] == body[it - IDs.begin()] &&
 							(!separateMaterials || material[e] == material[it - IDs.begin()]) &&
+							(!separateRegions || memcmp(regions.data() + e * rsize, regions.data() + (it - IDs.begin()) * rsize, rsize) == 0) &&
 							(!separateEtype || epointer[e]->type == epointer[it - IDs.begin()]->type)
 						) {
 

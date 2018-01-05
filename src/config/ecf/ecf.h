@@ -5,6 +5,7 @@
 #include "environment.h"
 #include "output.h"
 #include "decomposer.h"
+#include "decomposition.h"
 
 #include "pythontestgenerator.h"
 
@@ -38,6 +39,8 @@ struct ECFConfiguration: public ECFObject {
 
 	INPUT_FORMAT input;
 	PHYSICS physics;
+
+	DecompositionConfiguration decomposition;
 
 	InputConfiguration workbench, openfoam, esdata;
 	InputGeneratorConfiguration generator;

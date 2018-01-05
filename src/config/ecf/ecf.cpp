@@ -61,6 +61,9 @@ void ECFConfiguration::init()
 
 	addSpace();
 
+	REGISTER(decomposition, ECFMetaData()
+			.setdescription({ "Domains decomposition settings." }));
+
 	input = INPUT_FORMAT::GENERATOR;
 
 	REGISTER(input, ECFMetaData()

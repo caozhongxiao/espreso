@@ -341,7 +341,7 @@ void GridGenerator::regions(
 			if (selected.size()) {
 				regions.push_back(new Region(ElementType::ELEMENTS));
 				for (size_t e = 0, sindex = 0; e < all.size(); e++) {
-					if (all[e] == selected[sindex]) {
+					if (sindex < selected.size() && all[e] == selected[sindex]) {
 						sindex++;
 					} else {
 						regions.back()->elements().push_back(all[e]);
