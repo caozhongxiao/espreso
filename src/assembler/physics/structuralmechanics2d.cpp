@@ -116,6 +116,11 @@ void StructuralMechanics2D::analyticRegularization(size_t domain, bool ortogonal
 //	_instance->RegMat[domain].MatScale(_instance->K[domain].getDiagonalMaximum());
 }
 
+void StructuralMechanics2D::processBEM(eslocal domain, Matrices matrices)
+{
+
+}
+
 void StructuralMechanics2D::assembleMaterialMatrix(eslocal eindex, eslocal node, double temp, DenseMatrix &K) const
 {
 //	const MaterialConfiguration* material = _mesh->materials()[e->param(OldElement::MATERIAL)];

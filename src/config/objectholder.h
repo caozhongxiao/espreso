@@ -47,6 +47,46 @@ private:
 	mutable TValue _patternValue;
 };
 
+template <typename TParameter, typename TValue>
+struct ECFEnumMap: public ECFObject {
+	std::map<TParameter, TValue> &value;
+
+	ECFEnumMap(std::map<TParameter, TValue> &value): value(value) {}
+
+	virtual ECFParameter* getParameter(const std::string &name)
+	{
+		if (ECFObject::getParameter(name) != NULL) {
+			return ECFObject::getParameter(name);
+		}
+		TParameter key;
+		if (ECFValueHolder<TParameter>(key).setValue(name)) {
+			return registerParameter(name, new ECFEnumHolder<TValue>(value[key]), metadata.suffix(1));
+		} else {
+			return NULL;
+		}
+	}
+
+	virtual void dropParameter(ECFParameter *parameter)
+	{
+		TParameter key;
+		ECFValueHolder<TParameter>(key).setValue(parameter->name);
+		value.erase(key);
+		ECFObject::dropParameter(parameter);
+	}
+
+	virtual const ECFParameter* getPattern() const
+	{
+		ECFParameter *parameter = new ECFEnumHolder<TValue>(_patternValue);
+		parameter->setValue(metadata.pattern[1]);
+		return registerPatternParameter(parameter);
+	}
+
+	virtual const void* data() const { return &value; }
+
+private:
+	mutable TValue _patternValue;
+};
+
 template <typename TParameter, typename TObject, typename... TArgs>
 struct ECFObjectMap: public ECFObject {
 	std::map<TParameter, TObject> &value;

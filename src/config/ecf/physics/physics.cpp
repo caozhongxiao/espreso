@@ -59,10 +59,10 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension, Materia
 			.addoption(ECFOption().setname("LINEAR").setdescription("Linear interpolation."))
 			.addoption(ECFOption().setname("QUADRATIC").setdescription("Quadratic interpolation.")));
 
-	discretization = DISCRETIZATION::FEM;
 	REGISTER(discretization, ECFMetaData()
-			.setdescription({ "Discretization of stiffness matrices." })
-		.setdatatype({ ECFDataType::OPTION })
+			.setdescription({ "Discretization settings for regions.", "Discretization of stiffness matrices." })
+		.setdatatype({ ECFDataType::REGION, ECFDataType::OPTION })
+		.setpattern({ "MY_REGION", "FEM" })
 		.addoption(ECFOption().setname("FEM").setdescription("Finite elements."))
 		.addoption(ECFOption().setname("BEM").setdescription("Boundary elements.")));
 

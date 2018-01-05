@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+namespace bem4i { template< class LO, class SC > struct bem4iData; }
+
 namespace espreso {
 
 struct Step;
@@ -47,6 +49,7 @@ struct Physics {
 
 	virtual MatrixType getMatrixType(size_t domain) const =0;
 
+	virtual void processBEM(eslocal domain, Matrices matrices) =0;
 	virtual void processElement(eslocal domain, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const =0;
 	virtual void processFace(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const =0;
 	virtual void processEdge(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const =0;
@@ -85,6 +88,9 @@ protected:
 	EqualityConstraints *_equalityConstraints;
 
 	const PhysicsConfiguration *_configuration;
+
+	std::vector<int> _bemRegions;
+	std::vector<bem4i::bem4iData<eslocal, double>* > _BEMData;
 };
 
 }

@@ -71,9 +71,21 @@ ECFObject::registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &
 	return registerParameter(name, new ECFObjectMap<Ttype1, Ttype2, TArgs...>(parameter, args...), metadata);
 }
 
+// TYPE2 = ENUM
+template<typename Ttype1, typename Ttype2>
+typename std::enable_if<std::is_enum<Ttype2>::value, ECFParameter*>::type
+ECFObject::registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata)
+{
+	metadata.checkdescription(name, 2);
+	metadata.checkdatatype(name, 2);
+	metadata.checkpattern(name, 2);
+
+	return registerParameter(name, new ECFEnumMap<Ttype1, Ttype2>(parameter), metadata);
+}
+
 // TYPE2 = REST
 template<typename Ttype1, typename Ttype2>
-typename std::enable_if<!std::is_class<Ttype2>::value || (std::is_class<Ttype2>::value && !std::is_base_of<ECFObject, Ttype2>::value), ECFParameter*>::type
+typename std::enable_if<(!std::is_class<Ttype2>::value && !std::is_enum<Ttype2>::value) || (std::is_class<Ttype2>::value && !std::is_base_of<ECFObject, Ttype2>::value), ECFParameter*>::type
 ECFObject::registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata)
 {
 	metadata.checkdescription(name, 2);

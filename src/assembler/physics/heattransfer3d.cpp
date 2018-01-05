@@ -20,7 +20,9 @@
 
 #include "../../solver/generic/SparseMatrix.h"
 
-
+#ifdef BEM4I
+#include "esbem.h"
+#endif
 
 // TODO: create file fith constants
 #define CONST_Stefan_Boltzmann 5.6703e-8
@@ -37,6 +39,35 @@ HeatTransfer3D::HeatTransfer3D(Mesh *mesh, Instance *instance, Step *step, const
 	if (_propertiesConfiguration.flux) {
 		_flux = _mesh->elements->appendData({ "FLUX", "FLUX_X", "FLUX_Y", "FLUX_Z" });
 	}
+}
+
+void HeatTransfer3D::processBEM(eslocal domain, Matrices matrices)
+{
+	_instance->K[domain].rows = _mesh->nodes->dintervals[domain].back().DOFOffset;
+	_instance->K[domain].cols = _instance->K[domain].rows;
+	_instance->K[domain].nnz  = _instance->K[domain].rows * _instance->K[domain].cols;
+	_instance->K[domain].type = 'G';
+	_instance->K[domain].dense_values.resize(_instance->K[domain].nnz);
+	_instance->K[domain].mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+
+#ifndef BEM4I
+	ESINFO(GLOBAL_ERROR) << "BEM4I is not linked!";
+#else
+	std::vector<eslocal> elements;
+	std::vector<double> coordinates;
+
+	bem4i::getLaplaceSteklovPoincare(
+			_instance->K[domain].dense_values.data(),
+			_mesh->nodes->dintervals[domain].back().DOFOffset,
+			coordinates.data(),
+			(eslocal)(elements.size() / 3),
+			elements.data(),
+			0,
+			3, 3,
+			&_BEMData[domain],
+			0);
+#endif
+
 }
 
 void HeatTransfer3D::assembleMaterialMatrix(eslocal eindex, eslocal node, const Point &p, const MaterialBaseConfiguration *mat, double phase, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const

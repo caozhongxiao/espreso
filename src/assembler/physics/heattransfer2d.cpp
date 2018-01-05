@@ -38,6 +38,11 @@ HeatTransfer2D::HeatTransfer2D(Mesh *mesh, Instance *instance, Step *step, const
 	}
 }
 
+void HeatTransfer2D::processBEM(eslocal domain, Matrices matrices)
+{
+	ESINFO(ERROR) << "BEM for 2D heat transfer is not implemented.";
+}
+
 void HeatTransfer2D::assembleMaterialMatrix(eslocal eindex, eslocal node, const Point &p, const MaterialBaseConfiguration *mat, double phase, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
 {
 	auto d2r = [] (double degree) -> double {

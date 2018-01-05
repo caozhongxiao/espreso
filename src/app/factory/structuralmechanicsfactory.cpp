@@ -22,30 +22,19 @@ StructuralMechanicsFactory::StructuralMechanicsFactory(Step *step, const Structu
 {
 	_instances.push_back(new Instance(*mesh));
 
-	switch (configuration.discretization) {
-	case DISCRETIZATION::FEM:
-		switch (configuration.dimension) {
-		case DIMENSION::D2:
-			_physics.push_back(new StructuralMechanics2D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
-			break;
-		case DIMENSION::D3:
-			_physics.push_back(new StructuralMechanics3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
-			break;
-		}
+	switch (configuration.dimension) {
+	case DIMENSION::D2:
+		_physics.push_back(new StructuralMechanics2D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
 		break;
-	case DISCRETIZATION::BEM:
-		_bem = true;
-		switch (configuration.dimension) {
-		case DIMENSION::D2:
-			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: cannot solve STRUCTURAL MECHANICS 2D with BEM discretization.";
-			break;
-		case DIMENSION::D3:
-			_physics.push_back(new LameSteklovPoincare3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
-			break;
-		}
+	case DIMENSION::D3:
+		_physics.push_back(new StructuralMechanics3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
 		break;
-	default:
-		ESINFO(GLOBAL_ERROR) << "Unknown DISCRETIZATION for StructuralMechanics3D";
+	}
+
+	for (auto it = _configuration.discretization.begin(); it != _configuration.discretization.end(); ++it) {
+		if (it->second == DISCRETIZATION::BEM) {
+			_bem = true;
+		}
 	}
 }
 

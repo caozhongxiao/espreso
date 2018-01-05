@@ -97,6 +97,11 @@ void Precomputed::analyticRegularization(size_t domain, bool ortogonalCluster)
 	ESINFO(ERROR) << "Cannot compute analytic regularization of not PRECOMPUTED physics. Set FETI_REGULARIZATION = ALGEBRAIC";
 }
 
+void Precomputed::processBEM(eslocal domain, Matrices matrices)
+{
+	ESINFO(ERROR) << "ESPRESO internal error: cannot process BEM of precomputed physics";
+}
+
 void Precomputed::processElement(eslocal domain, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	ESINFO(ERROR) << "ESPRESO internal error: cannot process element of precomputed physics";

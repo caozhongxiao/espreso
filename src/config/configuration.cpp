@@ -112,11 +112,10 @@ static std::vector<TType> getsuffix(size_t start, const std::vector<TType> &data
 
 ECFMetaData ECFMetaData::suffix(size_t start) const
 {
-	return ECFMetaData()
+	return ECFMetaData(*this)
 			.setdescription(getsuffix(start, description))
 			.setdatatype(getsuffix(start, datatype))
-			.setpattern(getsuffix(start, pattern))
-			.setvariables(variables);
+			.setpattern(getsuffix(start, pattern));
 }
 
 bool ECFParameter::setValue(const std::string &value)

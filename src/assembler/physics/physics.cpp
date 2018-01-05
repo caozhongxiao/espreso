@@ -3,6 +3,7 @@
 
 #include "../../basis/containers/serializededata.h"
 #include "../../basis/utilities/utils.h"
+#include "../../basis/utilities/parser.h"
 #include "../../basis/utilities/communication.h"
 #include "../instance.h"
 #include "../step.h"
@@ -33,7 +34,18 @@ Physics::Physics()
 Physics::Physics(const std::string &name, Mesh *mesh, Instance *instance, Step *step, const PhysicsConfiguration *configuration)
 : _name(name), _mesh(mesh), _instance(instance), _step(step), _equalityConstraints(NULL), _configuration(configuration) // initialized in a particular physics
 {
+	_bemRegions.resize(_mesh->elements->regionMaskSize);
+	for (auto it = configuration->discretization.begin(); it != configuration->discretization.end(); ++it) {
+		if (it->second == DISCRETIZATION::BEM) {
+			for (size_t r = 0; r < _mesh->elementsRegions.size(); r++) {
+				if (StringCompare::caseInsensitiveEq(it->first, _mesh->elementsRegions[r]->name)) {
+					_bemRegions[r / (8 * sizeof(int))] |= 1 << (r % (8 * sizeof(int)));
+				}
+			}
+		}
+	}
 
+	_BEMData.resize(mesh->elements->ndomains);
 }
 
 Physics::~Physics()
@@ -68,43 +80,61 @@ void Physics::updateMatrix(Matrices matrix)
 void Physics::updateMatrix(Matrices matrices, size_t domain)
 {
 	SparseVVPMatrix<eslocal> _K, _M;
-	DenseMatrix Ke, Me, Re, fe;
-	std::vector<eslocal> DOFs;
 
-	if (matrices & Matrices::K) {
-		_K.resize(_instance->domainDOFCount[domain], _instance->domainDOFCount[domain]);
+	bool bem = false;
+	for (int i = 0; i < _mesh->elements->regionMaskSize; i++) {
+		if (_mesh->elements->regions->datatarray()[_mesh->elements->elementsDistribution[domain] * _mesh->elements->regionMaskSize + i] & _bemRegions[i]) {
+			bem = true;
+		}
 	}
-	if (matrices & Matrices::M) {
-		_M.resize(_instance->domainDOFCount[domain], _instance->domainDOFCount[domain]);
-	}
-	if (matrices & Matrices::R) {
-		_instance->R[domain].clear();
-		_instance->R[domain].resize(_instance->domainDOFCount[domain]);
-	}
+
 	if (matrices & Matrices::f) {
 		_instance->f[domain].clear();
 		_instance->f[domain].resize(_instance->domainDOFCount[domain]);
 	}
+	if (bem) {
+		if (matrices & Matrices::M) {
+			ESINFO(ERROR) << "BEM not support computation of matrix M.";
+		}
+		if (matrices & Matrices::R) {
+			ESINFO(ERROR) << "BEM not support computation of matrix R.";
+		}
+		processBEM(domain, matrices);
+		_instance->K[domain].ConvertDenseToCSR(1);
+		assembleBoundaryConditions(_K, _M, matrices & Matrices::f, domain);
+	} else {
+		if (matrices & Matrices::K) {
+			_K.resize(_instance->domainDOFCount[domain], _instance->domainDOFCount[domain]);
+		}
+		if (matrices & Matrices::M) {
+			_M.resize(_instance->domainDOFCount[domain], _instance->domainDOFCount[domain]);
+		}
+		if (matrices & Matrices::R) {
+			_instance->R[domain].clear();
+			_instance->R[domain].resize(_instance->domainDOFCount[domain]);
+		}
 
-	auto nodes = _mesh->elements->nodes->cbegin() + _mesh->elements->elementsDistribution[domain];
-	for (eslocal e = _mesh->elements->elementsDistribution[domain]; e < (eslocal)_mesh->elements->elementsDistribution[domain + 1]; ++e, ++nodes) {
-		processElement(domain, matrices, e, Ke, Me, Re, fe);
-		fillDOFsIndices(*nodes, domain, DOFs);
-		insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, domain, false);
-	}
+		std::vector<eslocal> DOFs;
+		DenseMatrix Ke, Me, Re, fe;
 
-	assembleBoundaryConditions(_K, _M, matrices, domain);
-
-	// TODO: make it direct
-	if (matrices & Matrices::K) {
-		SparseCSRMatrix<eslocal> csrK = _K;
-		_instance->K[domain] = csrK;
-		_instance->K[domain].mtype = getMatrixType(domain);
-	}
-	if (matrices & Matrices::M) {
-		SparseCSRMatrix<eslocal> csrM = _M;
-		_instance->M[domain] = csrM;
-		_instance->M[domain].mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+		auto nodes = _mesh->elements->nodes->cbegin() + _mesh->elements->elementsDistribution[domain];
+		for (eslocal e = _mesh->elements->elementsDistribution[domain]; e < (eslocal)_mesh->elements->elementsDistribution[domain + 1]; ++e, ++nodes) {
+			processElement(domain, matrices, e, Ke, Me, Re, fe);
+			fillDOFsIndices(*nodes, domain, DOFs);
+			insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, domain, false);
+		}
+		assembleBoundaryConditions(_K, _M, matrices, domain);
+		// TODO: make it direct
+		if (matrices & Matrices::K) {
+			SparseCSRMatrix<eslocal> csrK = _K;
+			_instance->K[domain] = csrK;
+			_instance->K[domain].mtype = getMatrixType(domain);
+		}
+		if (matrices & Matrices::M) {
+			SparseCSRMatrix<eslocal> csrM = _M;
+			_instance->M[domain] = csrM;
+			_instance->M[domain].mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+		}
 	}
 }
 

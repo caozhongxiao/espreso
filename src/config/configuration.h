@@ -213,9 +213,14 @@ protected:
 	typename std::enable_if<std::is_class<Ttype2>::value && std::is_base_of<ECFObject, Ttype2>::value, ECFParameter*>::type
 	registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata, TArgs... args);
 
+	// TYPE2 = ENUM
+	template<typename Ttype1, typename Ttype2>
+	typename std::enable_if<std::is_enum<Ttype2>::value, ECFParameter*>::type
+	registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata);
+
 	// TYPE2 = REST
 	template<typename Ttype1, typename Ttype2>
-	typename std::enable_if<!std::is_class<Ttype2>::value || (std::is_class<Ttype2>::value && !std::is_base_of<ECFObject, Ttype2>::value), ECFParameter*>::type
+	typename std::enable_if<(!std::is_class<Ttype2>::value && !std::is_enum<Ttype2>::value) || (std::is_class<Ttype2>::value && !std::is_base_of<ECFObject, Ttype2>::value), ECFParameter*>::type
 	registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata);
 
 	//////////// MAP MAP ////////////

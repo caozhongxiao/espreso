@@ -353,13 +353,39 @@ void Mesh::update()
 		uniformDecomposition = false;
 	}
 
+	auto hasBEM = [] (const PhysicsConfiguration &physics) {
+		for (auto it = physics.discretization.begin(); it != physics.discretization.end(); ++it) {
+			if (it->second == DISCRETIZATION::BEM) {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	auto getPhysics = [&] () -> const PhysicsConfiguration& {
+		switch (configuration.physics) {
+		case PHYSICS::HEAT_TRANSFER_2D:
+			return configuration.heat_transfer_2d;
+		case PHYSICS::HEAT_TRANSFER_3D:
+			return configuration.heat_transfer_3d;
+		case PHYSICS::STRUCTURAL_MECHANICS_2D:
+			return configuration.structural_mechanics_2d;
+		case PHYSICS::STRUCTURAL_MECHANICS_3D:
+			return configuration.structural_mechanics_3d;
+		default:
+			ESINFO(GLOBAL_ERROR) << "Not implemented physics.";
+			exit(0);
+		}
+	};
+
+
 	uniformDecomposition = false;
 	if (uniformDecomposition) {
 		// implement uniform decomposition
 	} else {
 		preprocessing->partitiate(mesh->parts(),
-				configuration.decomposition.separate_materials,
-				configuration.decomposition.separate_regions,
+				configuration.decomposition.separate_materials || hasBEM(getPhysics()), // BEM domain has to have only one material
+				configuration.decomposition.separate_regions || hasBEM(getPhysics()),
 				configuration.decomposition.separate_etypes);
 	}
 	preprocessing->computeSharedFaces();

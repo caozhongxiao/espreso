@@ -41,7 +41,7 @@ struct PhysicsConfiguration: public ECFObject {
 	size_t load_steps;
 
 	INTERPOLATION interpolation;
-	DISCRETIZATION discretization;
+	std::map<std::string, DISCRETIZATION> discretization;
 	DIMENSION dimension;
 	MaterialConfiguration::PHYSICAL_MODEL physical_model;
 
