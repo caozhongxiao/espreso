@@ -332,9 +332,12 @@ void Mesh::update()
 			}
 			break;
 		case INPUT_GENERATOR_SHAPE::GRID_TOWER:
-//			if (configuration.generator.grid_tower.grids.at()) {
-//				// uniform dec
-//			}
+			uniformDecomposition = true;
+			for (auto it = configuration.generator.grid_tower.grids.begin(); it != configuration.generator.grid_tower.grids.end(); ++it) {
+				if (!it->second.uniform_decomposition) {
+					uniformDecomposition = false;
+				}
+			}
 			break;
 		case INPUT_GENERATOR_SHAPE::SPHERE:
 			if (configuration.generator.sphere.uniform_decomposition) {
@@ -343,9 +346,16 @@ void Mesh::update()
 			break;
 		}
 	}
+	if (
+			configuration.decomposition.separate_materials ||
+			configuration.decomposition.separate_regions ||
+			configuration.decomposition.separate_etypes) {
+		uniformDecomposition = false;
+	}
 
+	uniformDecomposition = false;
 	if (uniformDecomposition) {
-		// TODO
+		// implement uniform decomposition
 	} else {
 		preprocessing->partitiate(mesh->parts(),
 				configuration.decomposition.separate_materials,
