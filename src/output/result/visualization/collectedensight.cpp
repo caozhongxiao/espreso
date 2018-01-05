@@ -292,9 +292,8 @@ void CollectedEnSight::storeDecomposition()
 
 				for (size_t i = 0; i < intervals.size(); i++) {
 					if (intervals[i].code == etype) {
-						auto domain = std::lower_bound(_mesh.elements->elementsDistribution.begin(), _mesh.elements->elementsDistribution.end(), intervals[i].begin) - _mesh.elements->elementsDistribution.begin();
 						for (eslocal e = intervals[i].begin; e < intervals[i].end; ++e) {
-							os << " " << fnc(domain) << "\n";
+							os << " " << fnc(intervals[i].domain) << "\n";
 						}
 					}
 				}
