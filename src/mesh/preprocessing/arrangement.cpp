@@ -269,7 +269,7 @@ void MeshPreprocessing::arrangeNodes()
 	_mesh->nodes->gintervals.resize(_mesh->elements->ndomains);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (size_t d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
+		for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
 			eslocal doffset = 0;
 			auto domains = _mesh->nodes->idomains->cbegin();
 			for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++domains) {

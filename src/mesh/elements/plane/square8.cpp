@@ -17,10 +17,20 @@ Element Square8::fill(Element e, Element* begin)
 		3, 0, 7
 	};
 
+	std::vector<int> tringles = {
+		0, 4, 7,
+		4, 1, 5,
+		5, 2, 6,
+		6, 3, 7,
+		4, 5, 6,
+		4, 6, 7
+	};
+
 	e.edges = new serializededata<int, int>(3, data);
 	e.edgepointers = new serializededata<int, Element*>(1, edgepointers);
 	e.faces = new serializededata<int, int>(3, data);
 	e.facepointers = new serializededata<int, Element*>(1, edgepointers);
+	e.triangles = new serializededata<int, int>(3, tringles);
 
 	size_t GPCount = 9, nodeCount = 8;
 

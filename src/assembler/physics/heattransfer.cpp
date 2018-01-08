@@ -16,6 +16,7 @@
 #include "../../mesh/store/nodestore.h"
 #include "../../mesh/store/boundaryregionstore.h"
 #include "../../mesh/store/elementsregionstore.h"
+#include "../../mesh/store/surfacestore.h"
 
 #include "../../solver/generic/SparseMatrix.h"
 
@@ -26,9 +27,16 @@ HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration, const
   _configuration(configuration), _propertiesConfiguration(propertiesConfiguration),
   _temperature(NULL), _gradient(NULL), _flux(NULL), _phaseChange(NULL), _latentHeat(NULL)
 {
+	bool bem = false;
 	for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
-		const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[d];
-		_instance->domainDOFCount[d] = intervals.back().DOFOffset + intervals.back().end - intervals.back().begin;
+
+		if (_BEMDomain[d]) {
+			_instance->domainDOFCount[d] = _mesh->domainsSurface->cdistribution[d + 1] - _mesh->domainsSurface->cdistribution[d];
+			bem = true;
+		} else {
+			const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[d];
+			_instance->domainDOFCount[d] = intervals.back().DOFOffset + intervals.back().end - intervals.back().begin;
+		}
 	}
 
 	_equalityConstraints = new EqualityConstraints(
@@ -38,7 +46,11 @@ HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration, const
 			configuration.load_steps_settings.at(1).feti.redundant_lagrange,
 			configuration.load_steps_settings.at(1).feti.scaling);
 
-	_temperature = _mesh->nodes->appendData({ "TEMPERATURE" }, _instance->primalSolution);
+	if (bem) {
+		_temperature = _mesh->nodes->appendData({ "TEMPERATURE" });
+	} else {
+		_temperature = _mesh->nodes->appendData({ "TEMPERATURE" }, _instance->primalSolution);
+	}
 
 	bool phaseChange = false;
 	for (size_t m = 0; m < _mesh->materials.size(); m++) {

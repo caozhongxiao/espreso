@@ -23,6 +23,7 @@ struct NodeData;
 struct ElementsRegionStore;
 struct BoundaryRegionStore;
 struct FETIDataStore;
+struct SurfaceStore;
 
 class MeshPreprocessing;
 class Element;
@@ -58,6 +59,8 @@ public:
 	FETIDataStore *FETIData;
 
 	ElementStore *halo;
+
+	SurfaceStore *domainsSurface;
 
 	MeshPreprocessing *preprocessing;
 

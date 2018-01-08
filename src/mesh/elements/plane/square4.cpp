@@ -10,17 +10,23 @@ Element Square4::fill(Element e, Element* begin)
 {
 	std::vector<Element*> edgepointers(4, begin + static_cast<int>(Element::CODE::LINE2));
 
-	std::vector<int> data = {
+	std::vector<int> lines = {
 		0, 1,
 		1, 2,
 		2, 3,
 		3, 0
 	};
 
-	e.edges = new serializededata<int, int>(2, data);
+	std::vector<int> tringles = {
+		0, 1, 2,
+		0, 2, 3
+	};
+
+	e.edges = new serializededata<int, int>(2, lines);
 	e.edgepointers = new serializededata<int, Element*>(1, edgepointers);
-	e.faces = new serializededata<int, int>(2, data);
+	e.faces = new serializededata<int, int>(2, lines);
 	e.facepointers = new serializededata<int, Element*>(1, edgepointers);
+	e.triangles = new serializededata<int, int>(3, tringles);
 
 	size_t GPCount = 4, nodeCount = 4;
 

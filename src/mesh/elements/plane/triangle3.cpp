@@ -16,10 +16,15 @@ Element Triangle3::fill(Element e, Element* begin)
 		2, 0
 	};
 
+	std::vector<int> tringles = {
+		0, 1, 2
+	};
+
 	e.edges = new serializededata<int, int>(2, data);
 	e.edgepointers = new serializededata<int, Element*>(1, edgepointers);
 	e.faces = new serializededata<int, int>(2, data);
 	e.facepointers = new serializededata<int, Element*>(1, edgepointers);
+	e.triangles = new serializededata<int, int>(3, tringles);
 
 	size_t GPCount = 1, nodeCount = 3;
 

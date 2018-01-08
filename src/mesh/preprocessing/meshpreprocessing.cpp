@@ -484,8 +484,7 @@ void MeshPreprocessing::computeBoundaryNodes(std::vector<eslocal> &externalBound
 			}
 			if (dual->size() < epointer->front()->faces->structures() || dual->front() < begine || dual->back() >= ende) {
 
-				auto facepointer = epointer->front()->facepointers->cbegin();
-				for (auto face = epointer->front()->faces->cbegin(); face != epointer->front()->faces->cend(); ++face, ++facepointer) {
+				for (auto face = epointer->front()->faces->cbegin(); face != epointer->front()->faces->cend(); ++face) {
 
 					isExternal = true;
 					common.clear();

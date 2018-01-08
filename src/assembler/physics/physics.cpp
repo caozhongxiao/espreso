@@ -23,6 +23,10 @@
 #include "../../config/ecf/solver/feti.h"
 #include "../../config/ecf/physics/physics.h"
 
+#ifdef BEM4I
+#include "esbem.h"
+#endif
+
 using namespace espreso;
 
 Physics::Physics()
@@ -34,18 +38,29 @@ Physics::Physics()
 Physics::Physics(const std::string &name, Mesh *mesh, Instance *instance, Step *step, const PhysicsConfiguration *configuration)
 : _name(name), _mesh(mesh), _instance(instance), _step(step), _equalityConstraints(NULL), _configuration(configuration) // initialized in a particular physics
 {
-	_bemRegions.resize(_mesh->elements->regionMaskSize);
+	std::vector<int> BEMRegions(_mesh->elements->regionMaskSize);
 	for (auto it = configuration->discretization.begin(); it != configuration->discretization.end(); ++it) {
 		if (it->second == DISCRETIZATION::BEM) {
 			for (size_t r = 0; r < _mesh->elementsRegions.size(); r++) {
 				if (StringCompare::caseInsensitiveEq(it->first, _mesh->elementsRegions[r]->name)) {
-					_bemRegions[r / (8 * sizeof(int))] |= 1 << (r % (8 * sizeof(int)));
+					BEMRegions[r / (8 * sizeof(int))] |= 1 << (r % (8 * sizeof(int)));
 				}
 			}
 		}
 	}
 
-	_BEMData.resize(mesh->elements->ndomains);
+	_hasBEM = false;
+	_BEMDomain.resize(_mesh->elements->ndomains);
+	for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
+		for (int i = 0; i < _mesh->elements->regionMaskSize; i++) {
+			if (_mesh->elements->regions->datatarray()[_mesh->elements->elementsDistribution[d] * _mesh->elements->regionMaskSize + i] & BEMRegions[i]) {
+				_BEMDomain[d] = 1;
+				_hasBEM = true;
+			}
+		}
+	}
+
+	_BEMData.resize(mesh->elements->ndomains, NULL);
 }
 
 Physics::~Physics()
@@ -53,6 +68,13 @@ Physics::~Physics()
 	if (_equalityConstraints != NULL) {
 		delete _equalityConstraints;
 	}
+#ifdef BEM4I
+	for (size_t i = 0; i < _BEMData.size(); i++) {
+		if (_BEMData[i] != NULL) {
+			bem4i::deleteBem4iData(_BEMData[i]);
+		}
+	}
+#endif
 }
 
 void Physics::updateMatrix(Matrices matrix)
@@ -81,18 +103,12 @@ void Physics::updateMatrix(Matrices matrices, size_t domain)
 {
 	SparseVVPMatrix<eslocal> _K, _M;
 
-	bool bem = false;
-	for (int i = 0; i < _mesh->elements->regionMaskSize; i++) {
-		if (_mesh->elements->regions->datatarray()[_mesh->elements->elementsDistribution[domain] * _mesh->elements->regionMaskSize + i] & _bemRegions[i]) {
-			bem = true;
-		}
-	}
-
 	if (matrices & Matrices::f) {
 		_instance->f[domain].clear();
 		_instance->f[domain].resize(_instance->domainDOFCount[domain]);
 	}
-	if (bem) {
+
+	if (_BEMDomain[domain]) {
 		if (matrices & Matrices::M) {
 			ESINFO(ERROR) << "BEM not support computation of matrix M.";
 		}

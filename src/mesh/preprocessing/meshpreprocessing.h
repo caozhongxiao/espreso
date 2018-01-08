@@ -35,6 +35,7 @@ public:
 
 	void computeSharedFaces();
 	void computeCornerNodes();
+	void computeDomainsSurface();
 
 protected:
 	static size_t level;

@@ -17,6 +17,7 @@
 #include "../../mesh/store/nodestore.h"
 #include "../../mesh/store/boundaryregionstore.h"
 #include "../../mesh/store/elementsregionstore.h"
+#include "../../mesh/store/surfacestore.h"
 
 #include "../../solver/generic/SparseMatrix.h"
 
@@ -24,7 +25,7 @@
 #include "esbem.h"
 #endif
 
-// TODO: create file fith constants
+// TODO: create file with constants
 #define CONST_Stefan_Boltzmann 5.6703e-8
 
 using namespace espreso;
@@ -43,7 +44,7 @@ HeatTransfer3D::HeatTransfer3D(Mesh *mesh, Instance *instance, Step *step, const
 
 void HeatTransfer3D::processBEM(eslocal domain, Matrices matrices)
 {
-	_instance->K[domain].rows = _mesh->nodes->dintervals[domain].back().DOFOffset;
+	_instance->K[domain].rows = _mesh->domainsSurface->cdistribution[domain + 1] - _mesh->domainsSurface->cdistribution[domain];
 	_instance->K[domain].cols = _instance->K[domain].rows;
 	_instance->K[domain].nnz  = _instance->K[domain].rows * _instance->K[domain].cols;
 	_instance->K[domain].type = 'G';
@@ -53,18 +54,15 @@ void HeatTransfer3D::processBEM(eslocal domain, Matrices matrices)
 #ifndef BEM4I
 	ESINFO(GLOBAL_ERROR) << "BEM4I is not linked!";
 #else
-	std::vector<eslocal> elements;
-	std::vector<double> coordinates;
-
 	bem4i::getLaplaceSteklovPoincare(
 			_instance->K[domain].dense_values.data(),
-			_mesh->nodes->dintervals[domain].back().DOFOffset,
-			coordinates.data(),
-			(eslocal)(elements.size() / 3),
-			elements.data(),
+			_instance->K[domain].rows,
+			reinterpret_cast<double*>(_mesh->domainsSurface->coordinates->datatarray().data() + _mesh->domainsSurface->cdistribution[domain]),
+			_mesh->domainsSurface->edistribution[domain + 1] - _mesh->domainsSurface->edistribution[domain],
+			_mesh->domainsSurface->triangles->datatarray().data() + 3 * _mesh->domainsSurface->edistribution[domain],
 			0,
 			3, 3,
-			&_BEMData[domain],
+			_BEMData[domain],
 			0);
 #endif
 
@@ -847,8 +845,39 @@ void HeatTransfer3D::postProcessElement(eslocal domain, eslocal eindex)
 	}
 }
 
+void HeatTransfer3D::processBEMSolution(eslocal domain)
+{
+#ifdef BEM4I
+	if (_instance->primalSolution[domain].size() < (*_temperature->decomposedData)[domain].size()) {
+		bem4i::evaluateLaplaceRepresentationFormula(
+				_instance->K[domain].rows,
+				reinterpret_cast<double*>(_mesh->domainsSurface->coordinates->datatarray().data() + _mesh->domainsSurface->cdistribution[domain]),
+				_mesh->domainsSurface->edistribution[domain + 1] - _mesh->domainsSurface->edistribution[domain],
+				_mesh->domainsSurface->triangles->datatarray().data() + 3 * _mesh->domainsSurface->edistribution[domain],
+				_mesh->nodes->dintervals[domain].back().end - _mesh->nodes->dintervals[domain].back().begin,
+				reinterpret_cast<double*>(_mesh->nodes->coordinates->datatarray().data() + _mesh->nodes->dintervals[domain].back().begin),
+				(*_temperature->decomposedData)[domain].data() + _mesh->nodes->dintervals[domain].back().DOFOffset,
+				(*_temperature->decomposedData)[domain].data(),
+				4,
+				_BEMData[domain],
+				0);
+	}
+#endif
+}
+
 void HeatTransfer3D::processSolution()
 {
+	if (_hasBEM) {
+		#pragma omp parallel for
+		for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
+			memcpy((*_temperature->decomposedData)[d].data(), _instance->primalSolution[d].data(), _instance->primalSolution[d].size() * sizeof(double));
+			if (_BEMDomain[d]) {
+				processBEMSolution(d);
+			}
+		}
+	}
+
+
 	if (_gradient || _flux || _phaseChange) {
 		#pragma omp parallel for
 		for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {

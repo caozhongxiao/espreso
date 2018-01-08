@@ -41,6 +41,7 @@ Mesh::Mesh(const ECFConfiguration &configuration)
 : elements(new ElementStore(_eclasses)), nodes(new NodeStore()),
   FETIData(NULL),
   halo(new ElementStore(_eclasses)),
+  domainsSurface(NULL),
   preprocessing(new MeshPreprocessing(this)),
 
   configuration(configuration),
@@ -378,7 +379,6 @@ void Mesh::update()
 		}
 	};
 
-
 	uniformDecomposition = false;
 	if (uniformDecomposition) {
 		// implement uniform decomposition
@@ -388,6 +388,11 @@ void Mesh::update()
 				configuration.decomposition.separate_regions || hasBEM(getPhysics()),
 				configuration.decomposition.separate_etypes);
 	}
+
+	if (hasBEM(getPhysics())) {
+		preprocessing->computeDomainsSurface();
+	}
+
 	preprocessing->computeSharedFaces();
 	preprocessing->computeCornerNodes();
 

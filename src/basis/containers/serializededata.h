@@ -20,7 +20,7 @@ public:
 		if (distribution == NULL) {
 			size_t size = 0;
 			for (size_t t = 0; t < data.size(); t++) {
-				size += esize * data[t].size();
+				size += data[t].size();
 			}
 
 			_distribution = tarray<TEBoundaries>::distribute(data.size(), size);
@@ -29,8 +29,8 @@ public:
 		}
 
 		for (size_t t = 0, tt = 0; t < data.size(); tt = ++t) {
-			while (++tt && data[t].size() < _distribution[t + 1] - _distribution[t]) {
-				size_t diff = _distribution[t + 1] - _distribution[t] - data[t].size();
+			while (++tt && data[t].size() < esize * (_distribution[t + 1] - _distribution[t])) {
+				size_t diff = esize * (_distribution[t + 1] - _distribution[t]) - data[t].size();
 				if (diff < data[tt].size()) {
 					data[t].insert(data[t].end(), data[tt].begin(), data[tt].begin() + diff);
 					data[tt].erase(data[tt].begin(), data[tt].begin() + diff);
@@ -40,8 +40,8 @@ public:
 
 				}
 			}
-			if (data[t].size() > _distribution[t + 1] - _distribution[t]) {
-				size_t diff = data[t].size() - (_distribution[t + 1] - _distribution[t]);
+			if (data[t].size() > esize * (_distribution[t + 1] - _distribution[t])) {
+				size_t diff = data[t].size() - esize * (_distribution[t + 1] - _distribution[t]);
 				data[t + 1].insert(data[t + 1].begin(), data[t].end() - diff, data[t].end());
 				data[t].erase(data[t].end() - diff, data[t].end());
 			}

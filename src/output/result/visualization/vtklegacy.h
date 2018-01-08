@@ -18,6 +18,7 @@ protected:
 	void nodesIntervals(const std::string &name);
 	void externalIntervals(const std::string &name);
 	void sharedInterface(const std::string &name);
+	void domainSurface(const std::string &name);
 	void corners(const std::string &name);
 
 	double _clusterShrinkRatio, _domainShrinkRatio;
@@ -33,6 +34,7 @@ struct VTKLegacyDebugInfo: public VTKLegacy {
 		nodesIntervals(_path + "nodeintervals");
 		externalIntervals(_path + "externalIntervals");
 		sharedInterface(_path + "sharedinterfaces");
+		domainSurface(_path + "domainSurface");
 		corners(_path + "corners");
 	}
 	void updateSolution(const Step &step)

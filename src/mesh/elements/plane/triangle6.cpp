@@ -16,10 +16,19 @@ Element Triangle6::fill(Element e, Element* begin)
 		2, 0, 5
 	};
 
+	std::vector<int> tringles = {
+		0, 3, 5,
+		3, 1, 4,
+		4, 2, 5,
+		5, 0, 3,
+		3, 4, 5
+	};
+
 	e.edges = new serializededata<int, int>(3, data);
 	e.edgepointers = new serializededata<int, Element*>(1, edgepointers);
 	e.faces = new serializededata<int, int>(3, data);
 	e.facepointers = new serializededata<int, Element*>(1, edgepointers);
+	e.triangles = new serializededata<int, int>(3, tringles);
 
 	size_t GPCount = 6, nodeCount = 6;
 

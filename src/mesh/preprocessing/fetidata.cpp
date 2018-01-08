@@ -8,6 +8,7 @@
 #include "../store/nodestore.h"
 #include "../store/elementsregionstore.h"
 #include "../store/boundaryregionstore.h"
+#include "../store/surfacestore.h"
 #include "../elements/element.h"
 
 #include "../../basis/containers/point.h"
@@ -172,5 +173,137 @@ void MeshPreprocessing::computeCornerNodes()
 	_mesh->FETIData->cornerDomains = new serializededata<eslocal, eslocal>(domainDistribution, domainData);
 
 	finish("computation of corner nodes");
+}
+
+void MeshPreprocessing::computeDomainsSurface()
+{
+	start("computation domains surface");
+
+	if (_mesh->elements->dual == NULL) {
+		this->computeDual();
+	}
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	std::vector<eslocal> IDBoundaries = _mesh->elements->gatherElementsDistribution();
+
+	std::vector<std::vector<eslocal> > triangles(threads);
+	std::vector<std::vector<eslocal> > intervals(threads);
+
+	intervals.front().push_back(0);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		std::vector<eslocal> common;
+		size_t ncommons, counter;
+		eslocal eID = _mesh->elements->distribution[t], eoffset = _mesh->elements->IDs->datatarray().front();
+		auto dual = _mesh->elements->dual->cbegin(t);
+		auto epointer = _mesh->elements->epointers->cbegin(t);
+		auto IDpointer = std::lower_bound(IDBoundaries.begin(), IDBoundaries.end(), eID + eoffset + 1) - 1;
+		eslocal begine = *IDpointer, ende = *(IDpointer + 1);
+
+		for (auto e = _mesh->elements->nodes->cbegin(t); e != _mesh->elements->nodes->cend(t); ++e, ++dual, ++epointer, ++eID) {
+			if (eID + eoffset >= ende) {
+				++IDpointer;
+				begine = *IDpointer;
+				ende = *(IDpointer + 1);
+				intervals[t].push_back(triangles[t].size() / 3);
+			}
+			if (dual->size() < epointer->front()->faces->structures() || dual->front() < begine || dual->back() >= ende) {
+
+				auto facepointer = epointer->front()->facepointers->datatarray().cbegin();
+				for (auto face = epointer->front()->faces->cbegin(); face != epointer->front()->faces->cend(); ++face, ++facepointer) {
+
+					common.clear();
+					for (auto n = face->begin(); n != face->end(); ++n) {
+						auto nelements = _mesh->nodes->elements->cbegin() + (*e)[*n];
+						for (auto ne = nelements->begin(); ne != nelements->end(); ++ne) {
+							common.push_back(*ne);
+						}
+					}
+					std::sort(common.begin(), common.end());
+
+					ncommons = counter = 0;
+					for (size_t i = 1; i < common.size(); i++) {
+						if (common[i - 1] == common[i]) {
+							++counter;
+						} else {
+							if (face->size() == counter + 1) {
+								if (begine <= common[i - 1] && common[i - 1] < ende) {
+									++ncommons;
+								}
+							}
+							counter = 0;
+						}
+					}
+					if (face->size() == counter + 1) {
+						if (begine <= common.back() && common.back() < ende) {
+							++ncommons;
+						}
+					}
+
+					if (ncommons == 1) {
+						for (auto n = (*facepointer)->triangles->datatarray().cbegin(); n != (*facepointer)->triangles->datatarray().cend(); ++n) {
+							triangles[t].push_back((*e)[face->at(*n)]);
+						}
+					}
+				}
+			}
+		}
+		if (eID + eoffset == ende) {
+			intervals[t].push_back(triangles[t].size() / 3);
+		}
+	}
+
+	if (_mesh->domainsSurface == NULL) {
+		_mesh->domainsSurface = new SurfaceStore();
+	}
+
+	eslocal tsize = 0;
+	for (size_t t = 0; t < threads; t++) {
+		for (size_t i = 0; i < intervals[t].size(); i++) {
+			intervals[t][i] += tsize;
+		}
+		tsize += triangles[t].size() / 3;
+	}
+	Esutils::mergeThreadedUniqueData(intervals);
+	Esutils::sortAndRemoveDuplicity(intervals[0]);
+
+	_mesh->domainsSurface->edistribution = intervals[0];
+
+	std::vector<size_t> tdistribution = { 0 };
+	for (size_t t = 0; t < threads; t++) {
+		tdistribution.push_back(_mesh->domainsSurface->edistribution[_mesh->elements->domainDistribution[t + 1]]);
+	}
+
+	serializededata<eslocal, eslocal>::balance(3, triangles, &tdistribution);
+	_mesh->domainsSurface->triangles = new serializededata<eslocal, eslocal>(3, triangles);
+
+	std::vector<std::vector<Point> > coordinates(threads);
+	std::vector<std::vector<eslocal> > cdistribution(threads);
+	cdistribution.front().push_back(0);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
+			std::vector<eslocal> nodes(
+					_mesh->domainsSurface->triangles->datatarray().begin() + 3 * _mesh->domainsSurface->edistribution[d],
+					_mesh->domainsSurface->triangles->datatarray().begin() + 3 * _mesh->domainsSurface->edistribution[d + 1]);
+			Esutils::sortAndRemoveDuplicity(nodes);
+			coordinates[t].reserve(coordinates[t].size() + nodes.size());
+			for (size_t n = 0; n < nodes.size(); n++) {
+				coordinates[t].push_back(_mesh->nodes->coordinates->datatarray()[nodes[n]]);
+			}
+			for (size_t n = 3 * _mesh->domainsSurface->edistribution[d]; n < 3 * _mesh->domainsSurface->edistribution[d + 1]; n++) {
+				_mesh->domainsSurface->triangles->datatarray()[n] = std::lower_bound(nodes.begin(), nodes.end(), _mesh->domainsSurface->triangles->datatarray()[n]) - nodes.begin();
+			}
+			cdistribution[t].push_back(coordinates[t].size());
+		}
+	}
+	Esutils::threadDistributionToFullDistribution(cdistribution);
+	Esutils::mergeThreadedUniqueData(cdistribution);
+
+	_mesh->domainsSurface->coordinates = new serializededata<eslocal, Point>(1, coordinates);
+	_mesh->domainsSurface->cdistribution = cdistribution[0];
+
+	finish("computation domains surface");
 }
 

@@ -89,7 +89,8 @@ protected:
 
 	const PhysicsConfiguration *_configuration;
 
-	std::vector<int> _bemRegions;
+	bool _hasBEM;
+	std::vector<int> _BEMDomain;
 	std::vector<bem4i::bem4iData<eslocal, double>* > _BEMData;
 };
 

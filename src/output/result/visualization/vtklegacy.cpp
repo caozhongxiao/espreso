@@ -12,9 +12,11 @@
 #include "../../../mesh/elements/element.h"
 #include "../../../mesh/store/nodestore.h"
 #include "../../../mesh/store/elementstore.h"
+#include "../../../mesh/store/fetidatastore.h"
+#include "../../../mesh/store/surfacestore.h"
 #include <fstream>
 #include <algorithm>
-#include "../../../mesh/store/fetidatastore.h"
+
 
 using namespace espreso;
 
@@ -376,6 +378,46 @@ void VTKLegacy::sharedInterface(const std::string &name)
 		for (eslocal n = _mesh.FETIData->inodesDistribution[i]; n < _mesh.FETIData->inodesDistribution[i + 1]; n++) {
 			os << i << "\n";
 		}
+	}
+	os << "\n";
+}
+
+void VTKLegacy::domainSurface(const std::string &name)
+{
+	if (_mesh.domainsSurface == NULL) {
+		return;
+	}
+	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+
+	os << "# vtk DataFile Version 2.0\n";
+	os << "EXAMPLE\n";
+	os << "ASCII\n";
+	os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+	os << "POINTS " << _mesh.domainsSurface->coordinates->datatarray().size() << " float\n";
+	for (size_t d = 0; d < _mesh.elements->ndomains; ++d) {
+		for (eslocal n = _mesh.domainsSurface->cdistribution[d]; n < _mesh.domainsSurface->cdistribution[d + 1]; ++n) {
+			Point p = shrink(_mesh.domainsSurface->coordinates->datatarray()[n], _mesh.nodes->center, _mesh.nodes->dcenter[d], _clusterShrinkRatio, _domainShrinkRatio);
+			os << p.x << " " << p.y << " " << p.z << "\n";
+		}
+	}
+	os << "\n";
+
+	os << "CELLS " << _mesh.domainsSurface->triangles->datatarray().size() / 3 << " " << 4 * _mesh.domainsSurface->triangles->datatarray().size() / 3 << "\n";
+	for (size_t d = 0; d < _mesh.elements->ndomains; ++d) {
+		for (eslocal n = _mesh.domainsSurface->edistribution[d]; n < _mesh.domainsSurface->edistribution[d + 1]; ++n) {
+			os << "3 ";
+			for (int i = 0; i < 3; i++) {
+				os << _mesh.domainsSurface->cdistribution[d] + _mesh.domainsSurface->triangles->datatarray()[3 * n + i] << " ";
+			}
+			os << "\n";
+		}
+	}
+	os << "\n";
+
+	os << "CELL_TYPES " << _mesh.domainsSurface->edistribution.back() << "\n";
+	for (size_t n = 0; n < _mesh.domainsSurface->edistribution.back(); ++n) {
+		os << "5\n";
 	}
 	os << "\n";
 }
