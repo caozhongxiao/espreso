@@ -1,8 +1,6 @@
 
 #include "../../config/ecf/physics/heattransfer.h"
 
-#include "../../assembler/physics/laplacesteklovpoincare3d.h"
-
 #include "../../assembler/physicssolver/assembler.h"
 #include "../../assembler/physicssolver/timestep/linear.h"
 #include "../../assembler/physicssolver/timestep/newtonraphson.h"

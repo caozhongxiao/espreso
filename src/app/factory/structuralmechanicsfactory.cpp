@@ -2,10 +2,8 @@
 #include "structuralmechanicsfactory.h"
 
 #include "../../config/ecf/physics/structuralmechanics.h"
-
 #include "../../assembler/physics/structuralmechanics2d.h"
 #include "../../assembler/physics/structuralmechanics3d.h"
-#include "../../assembler/physics/lamesteklovpoincare3d.h"
 
 #include "../../assembler/physicssolver/assembler.h"
 #include "../../assembler/physicssolver/timestep/linear.h"
