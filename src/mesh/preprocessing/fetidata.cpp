@@ -128,10 +128,10 @@ void MeshPreprocessing::computeSharedFaces()
 	Esutils::mergeThreadedUniqueData(inodesDistribution);
 	Esutils::mergeThreadedUniqueData(inodesDomains);
 
-	if (_mesh->FETIData != NULL) {
-		delete _mesh->FETIData;
+	if (_mesh->FETIData == NULL) {
+		_mesh->FETIData = new FETIDataStore();
 	}
-	_mesh->FETIData = new FETIDataStore();
+
 	_mesh->FETIData->interfaceNodes = new serializededata<eslocal, eslocal>(1, inodes);
 	_mesh->FETIData->inodesDistribution = inodesDistribution[0];
 	_mesh->FETIData->inodesDomains = inodesDomains[0];
@@ -142,6 +142,10 @@ void MeshPreprocessing::computeSharedFaces()
 void MeshPreprocessing::computeCornerNodes()
 {
 	start("computation of corner nodes");
+
+	if (_mesh->FETIData == NULL) {
+		_mesh->FETIData = new FETIDataStore();
+	}
 
 	std::vector<eslocal> domainDistribution = { 0 };
 	std::vector<eslocal> domainData;

@@ -340,7 +340,7 @@ void VTKLegacy::externalIntervals(const std::string &name)
 
 void VTKLegacy::sharedInterface(const std::string &name)
 {
-	if (_mesh.FETIData == NULL) {
+	if (_mesh.FETIData == NULL || _mesh.FETIData->interfaceNodes == NULL) {
 		return;
 	}
 	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");

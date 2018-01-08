@@ -379,6 +379,36 @@ void Mesh::update()
 		}
 	};
 
+	auto forEachSteps = [&] (std::function<bool(const LoadStepConfiguration &)> fnc) {
+		bool ret = false;
+		switch (configuration.physics) {
+		case PHYSICS::HEAT_TRANSFER_2D:
+			for (auto step = configuration.heat_transfer_2d.load_steps_settings.begin(); step != configuration.heat_transfer_2d.load_steps_settings.end(); ++step) {
+				ret |= fnc(step->second);
+			}
+			break;
+		case PHYSICS::HEAT_TRANSFER_3D:
+			for (auto step = configuration.heat_transfer_3d.load_steps_settings.begin(); step != configuration.heat_transfer_3d.load_steps_settings.end(); ++step) {
+				ret |= fnc(step->second);
+			}
+			break;
+		case PHYSICS::STRUCTURAL_MECHANICS_2D:
+			for (auto step = configuration.structural_mechanics_2d.load_steps_settings.begin(); step != configuration.structural_mechanics_2d.load_steps_settings.end(); ++step) {
+				ret |= fnc(step->second);
+			}
+			break;
+		case PHYSICS::STRUCTURAL_MECHANICS_3D:
+			for (auto step = configuration.structural_mechanics_3d.load_steps_settings.begin(); step != configuration.structural_mechanics_3d.load_steps_settings.end(); ++step) {
+				ret |= fnc(step->second);
+			}
+			break;
+		default:
+			ESINFO(GLOBAL_ERROR) << "Not implemented physics.";
+			exit(0);
+		}
+		return ret;
+	};
+
 	uniformDecomposition = false;
 	if (uniformDecomposition) {
 		// implement uniform decomposition
@@ -393,8 +423,19 @@ void Mesh::update()
 		preprocessing->computeDomainsSurface();
 	}
 
-	preprocessing->computeSharedFaces();
-	preprocessing->computeCornerNodes();
+	if (forEachSteps([] (const LoadStepConfiguration &step) {
+		return step.solver == LoadStepConfiguration::SOLVER::FETI && step.feti.method == FETI_METHOD::HYBRID_FETI && step.feti.B0_type == FETI_B0_TYPE::KERNELS;
+	})) {
+
+		preprocessing->computeSharedFaces();
+	}
+
+	if (forEachSteps([] (const LoadStepConfiguration &step) {
+		return step.solver == LoadStepConfiguration::SOLVER::FETI && step.feti.method == FETI_METHOD::HYBRID_FETI && step.feti.B0_type == FETI_B0_TYPE::CORNERS;
+	})) {
+
+		preprocessing->computeCornerNodes();
+	}
 
 	printStatistics();
 }
