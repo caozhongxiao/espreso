@@ -13,6 +13,7 @@ namespace espreso {
 class Instance;
 class Mesh;
 struct ECFExpression;
+struct ECFExpressionOptionalVector;
 
 class Region;
 struct Step;
@@ -23,7 +24,9 @@ class Evaluator;
 struct EqualityConstraints
 {
 	EqualityConstraints(Instance &instance, Mesh &mesh, const std::map<std::string, ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling);
+	EqualityConstraints(Instance &instance, Mesh &mesh, const std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int DOFs, bool withRedundantMultiplier, bool withScaling);
 	void update(const std::map<std::string, ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling);
+	void update(const std::map<std::string, ECFExpressionOptionalVector> &dirichlet, bool withRedundantMultiplier, bool withScaling);
 
 	void B1DirichletInsert(const Step &step);
 	void B1DirichletUpdate(const Step &step);
@@ -37,11 +40,14 @@ struct EqualityConstraints
 
 protected:
 	eslocal computeIntervalsOffsets(std::function<eslocal(eslocal)> getsize, std::function<void(eslocal, eslocal)> setsize);
+	void update(bool withRedundantMultiplier, bool withScaling);
 
 	Instance &_instance;
 	Mesh &_mesh;
 	esglobal _dirichletSize, _gluingSize;
 	bool _withRedundantMultipliers, _withScaling;
+
+	int _DOFs;
 
 	// DOF x CONDITIONS
 	std::vector<std::vector<std::pair<BoundaryRegionStore*, Evaluator*> > > _dirichlet;

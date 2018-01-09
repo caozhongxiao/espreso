@@ -9,7 +9,9 @@ namespace espreso {
 
 struct StructuralMechanicsLoadStepConfiguration: public LoadStepConfiguration {
 
-	std::map<std::string, std::string> angular_velocity, temperature, displacement, acceleration, normal_pressure, obstacle, normal_direction;
+	std::map<std::string, ECFExpression> temperature, normal_pressure, obstacle;
+	std::map<std::string, ECFExpressionVector> angular_velocity, acceleration, normal_direction;
+	std::map<std::string, ECFExpressionOptionalVector> displacement;
 
 	StructuralMechanicsLoadStepConfiguration(DIMENSION dimension);
 };

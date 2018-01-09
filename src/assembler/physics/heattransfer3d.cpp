@@ -31,7 +31,7 @@
 using namespace espreso;
 
 HeatTransfer3D::HeatTransfer3D(Mesh *mesh, Instance *instance, Step *step, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
-: Physics("HEAT TRANSFER 3D", mesh, instance, step, &configuration), HeatTransfer(configuration, propertiesConfiguration)
+: Physics("HEAT TRANSFER 3D", mesh, instance, step, &configuration, 1), HeatTransfer(configuration, propertiesConfiguration)
 {
 	if (_propertiesConfiguration.gradient) {
 		_gradient = _mesh->elements->appendData({ "GRADIENT", "GRADIENT_X", "GRADIENT_Y", "GRADIENT_Z" });
@@ -68,7 +68,7 @@ void HeatTransfer3D::processBEM(eslocal domain, Matrices matrices)
 
 }
 
-void HeatTransfer3D::assembleMaterialMatrix(eslocal eindex, eslocal node, const Point &p, const MaterialBaseConfiguration *mat, double phase, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
+void HeatTransfer3D::assembleMaterialMatrix(eslocal node, const Point &p, const MaterialBaseConfiguration *mat, double phase, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
 {
 	auto d2r = [] (double degree) -> double {
 		return M_PI * degree / 180;
@@ -306,8 +306,8 @@ void HeatTransfer3D::processElement(eslocal domain, Matrices matrices, eslocal e
 		if (material->phase_change) {
 			double phase, derivation;
 			smoothstep(phase, derivation, material->phase_change_temperature - material->transition_interval / 2, material->phase_change_temperature + material->transition_interval / 2, temp, material->smooth_step_order);
-			assembleMaterialMatrix(eindex, n, p, phase1, phase, temp, K, CD, tangentCorrection);
-			assembleMaterialMatrix(eindex, n, p, phase2, (1 - phase), temp, K, CD, tangentCorrection);
+			assembleMaterialMatrix(n, p, phase1, phase, temp, K, CD, tangentCorrection);
+			assembleMaterialMatrix(n, p, phase2, (1 - phase), temp, K, CD, tangentCorrection);
 			m(n, 0) =
 					(    phase  * phase1->density.evaluator->evaluate(p, _step->currentTime, temp) +
 					(1 - phase) * phase2->density.evaluator->evaluate(p, _step->currentTime, temp)) *
@@ -316,7 +316,7 @@ void HeatTransfer3D::processElement(eslocal domain, Matrices matrices, eslocal e
 					(1 - phase) * phase2->heat_capacity.evaluator->evaluate(p, _step->currentTime, temp) +
 					material->latent_heat * derivation);
 		} else {
-			assembleMaterialMatrix(eindex, n, p, material, 1, temp, K, CD, tangentCorrection);
+			assembleMaterialMatrix(n, p, material, 1, temp, K, CD, tangentCorrection);
 			m(n, 0) =
 					material->density.evaluator->evaluate(p, _step->currentTime, temp) *
 					material->heat_capacity.evaluator->evaluate(p, _step->currentTime, temp);
@@ -766,8 +766,8 @@ void HeatTransfer3D::postProcessElement(eslocal domain, eslocal eindex)
 		if (material->phase_change) {
 			double phase, derivation;
 			smoothstep(phase, derivation, material->phase_change_temperature - material->transition_interval / 2, material->phase_change_temperature + material->transition_interval / 2, temp(i, 0), material->smooth_step_order);
-			assembleMaterialMatrix(eindex, i, p, phase1, phase, temp(i, 0), K, CD, false);
-			assembleMaterialMatrix(eindex, i, p, phase2, (1 - phase), temp(i, 0), K, CD, false);
+			assembleMaterialMatrix(i, p, phase1, phase, temp(i, 0), K, CD, false);
+			assembleMaterialMatrix(i, p, phase2, (1 - phase), temp(i, 0), K, CD, false);
 			m =
 					(    phase  * phase1->density.evaluator->evaluate(p, _step->currentTime, temp(i, 0)) +
 					(1 - phase) * phase2->density.evaluator->evaluate(p, _step->currentTime, temp(i, 0))) *
@@ -781,7 +781,7 @@ void HeatTransfer3D::postProcessElement(eslocal domain, eslocal eindex)
 				(*_latentHeat->decomposedData)[domain][it->DOFOffset + nodes->at(i) - it->begin] = material->latent_heat * derivation;
 			}
 		} else {
-			assembleMaterialMatrix(eindex, i, p, material, 1, temp(i, 0), K, CD, false);
+			assembleMaterialMatrix(i, p, material, 1, temp(i, 0), K, CD, false);
 			m =
 					material->density.evaluator->evaluate(p, _step->currentTime, temp(i, 0)) *
 					material->heat_capacity.evaluator->evaluate(p, _step->currentTime, temp(i, 0));

@@ -1,22 +1,31 @@
 
 #include "structuralmechanics2d.h"
-#include "../../config/ecf/physics/structuralmechanics.h"
 
-#include "../step.h"
 #include "../instance.h"
+#include "../step.h"
+
 #include "../constraints/equalityconstraints.h"
 
-#include "../../mesh/mesh.h"
-
 #include "../../basis/matrices/denseMatrix.h"
-#include "../../solver/specific/sparsesolvers.h"
+#include "../../basis/evaluator/evaluator.h"
+
+#include "../../config/ecf/physics/structuralmechanics.h"
+
+#include "../../mesh/mesh.h"
+#include "../../mesh/store/elementstore.h"
+#include "../../mesh/store/nodestore.h"
+#include "../../mesh/store/boundaryregionstore.h"
+#include "../../mesh/store/elementsregionstore.h"
+#include "../../mesh/store/surfacestore.h"
+
+#include "../../solver/generic/SparseMatrix.h"
 
 using namespace espreso;
 
 StructuralMechanics2D::StructuralMechanics2D(Mesh *mesh, Instance *instance, Step *step, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
-: Physics("STRUCTURAL MECHANICS 2D", mesh, instance, step, &configuration), StructuralMechanics(configuration, propertiesConfiguration)
+: Physics("STRUCTURAL MECHANICS 2D", mesh, instance, step, &configuration, 2), StructuralMechanics(configuration, propertiesConfiguration, 2)
 {
-//	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, _mesh->nodes(), _mesh->edges(), pointDOFs(), pointDOFsOffsets());
+
 }
 
 void StructuralMechanics2D::analyticRegularization(size_t domain, bool ortogonalCluster)

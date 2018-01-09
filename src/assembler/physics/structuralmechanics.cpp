@@ -1,21 +1,58 @@
 
-#include "../../config/ecf/physics/structuralmechanics.h"
 #include "structuralmechanics.h"
-
-#include "../../basis/matrices/denseMatrix.h"
-#include "../../solver/generic/SparseMatrix.h"
 
 #include "../instance.h"
 #include "../step.h"
 
+#include "../constraints/equalityconstraints.h"
+
+#include "../../basis/matrices/denseMatrix.h"
+#include "../../basis/evaluator/evaluator.h"
+
+#include "../../config/ecf/physics/structuralmechanics.h"
+
+#include "../../mesh/mesh.h"
+#include "../../mesh/store/elementstore.h"
+#include "../../mesh/store/nodestore.h"
+#include "../../mesh/store/boundaryregionstore.h"
+#include "../../mesh/store/elementsregionstore.h"
+#include "../../mesh/store/surfacestore.h"
+
+#include "../../solver/generic/SparseMatrix.h"
+
 using namespace espreso;
 
-size_t StructuralMechanics::offset = -1;
-
-StructuralMechanics::StructuralMechanics(const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
+StructuralMechanics::StructuralMechanics(const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, int DOFs)
 : _configuration(configuration), _propertiesConfiguration(propertiesConfiguration)
 {
+	for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
+		if (_BEMDomain[d]) {
+			_instance->domainDOFCount[d] = DOFs * (_mesh->domainsSurface->cdistribution[d + 1] - _mesh->domainsSurface->cdistribution[d]);
+		} else {
+			const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[d];
+			_instance->domainDOFCount[d] = DOFs * (intervals.back().DOFOffset + intervals.back().end - intervals.back().begin);
+		}
+	}
 
+	_equalityConstraints = new EqualityConstraints(
+			*_instance,
+			*_mesh,
+			configuration.load_steps_settings.at(1).displacement, DOFs,
+			configuration.load_steps_settings.at(1).feti.redundant_lagrange,
+			configuration.load_steps_settings.at(1).feti.scaling);
+
+	std::vector<std::string> datanames;
+	if (DOFs == 2) {
+		datanames = { "DISPLACEMENT", "DISPLACEMENT_X", "DISPLACEMENT_Y" };
+	}
+	if (DOFs == 3) {
+		datanames = { "DISPLACEMENT", "DISPLACEMENT_X", "DISPLACEMENT_Y", "DISPLACEMENT_Z" };
+	}
+	if (_hasBEM) {
+		_displacement = _mesh->nodes->appendData(datanames);
+	} else {
+		_displacement = _mesh->nodes->appendData(datanames, _instance->primalSolution);
+	}
 }
 
 MatrixType StructuralMechanics::getMatrixType(size_t domain) const
@@ -25,21 +62,21 @@ MatrixType StructuralMechanics::getMatrixType(size_t domain) const
 
 void StructuralMechanics::prepare()
 {
-//	size_t clusters = *std::max_element(_mesh->getContinuityPartition().begin(), _mesh->getContinuityPartition().end()) + 1;
+//	size_t clusters = *std::max_element(_mesh->elements->clusters.begin(), _mesh->elements->clusters.end()) + 1;
 //
 //	_cCenter = _cNorm = std::vector<Point>(clusters, Point(0, 0, 0));
 //	_cr44 = _cr45 = _cr46 = _cr55 = _cr56 = std::vector<double>(clusters, 0);
 //	_cNp = std::vector<size_t>(clusters, 0);
 //
-//	_dCenter = _dNorm = std::vector<Point>(_mesh->parts(), Point(0, 0, 0));
-//	_dr44 = _dr45 = _dr46 = _dr55 = _dr56 = std::vector<double>(_mesh->parts(), 0);
-//	_dNp = std::vector<size_t>(_mesh->parts(), 0);
+//	_dCenter = _dNorm = std::vector<Point>(_mesh->elements->ndomains, Point(0, 0, 0));
+//	_dr44 = _dr45 = _dr46 = _dr55 = _dr56 = std::vector<double>(_mesh->elements->ndomains, 0);
+//	_dNp = std::vector<size_t>(_mesh->elements->ndomains, 0);
 //
-//	std::vector<double> cbuffer1(_mesh->parts(), 0), cbuffer2(_mesh->parts(), 0), cbuffer3(_mesh->parts(), 0);
+//	std::vector<double> cbuffer1(_mesh->elements->ndomains, 0), cbuffer2(_mesh->elements->ndomains, 0), cbuffer3(_mesh->elements->ndomains, 0);
 //
 //	// Get center
 //	#pragma omp parallel for
-//	for (size_t p = 0; p < _mesh->parts(); p++) {
+//	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
 //		Point center;
 //		for (size_t n = 0; n < _mesh->coordinates().localSize(p); n++) {
 //			center += _mesh->coordinates().get(n, p);
@@ -47,11 +84,11 @@ void StructuralMechanics::prepare()
 //		_dCenter[p] = center;
 //	}
 //
-//	for (size_t p = 0; p < _mesh->parts(); p++) {
-//		_cCenter[_mesh->getContinuityPartition()[p]] += _dCenter[p];
+//	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
+//		_cCenter[_mesh->elements->clusters[p]] += _dCenter[p];
 //		_dNp[p] = _mesh->coordinates().localSize(p);
 //		_dCenter[p] = _dCenter[p] / _dNp[p];
-//		_cNp[_mesh->getContinuityPartition()[p]] += _dNp[p];
+//		_cNp[_mesh->elements->clusters[p]] += _dNp[p];
 //	}
 //	for (size_t c = 0; c < clusters; c++) {
 //		_cCenter[c] /= _cNp[c];
@@ -59,29 +96,29 @@ void StructuralMechanics::prepare()
 //
 //	// Compute norm of column 4 (norm.x)
 //	#pragma omp parallel for
-//	for (size_t p = 0; p < _mesh->parts(); p++) {
+//	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
 //		double pnorm = 0, pcnorm = 0;
 //		for (size_t n = 0; n < _mesh->coordinates().localSize(p); n++) {
 //			Point dp = _mesh->coordinates().get(n, p) - _dCenter[p];
 //			pnorm += dp.x * dp.x + dp.y * dp.y;
-//			Point cp = _mesh->coordinates().get(n, p) - _cCenter[_mesh->getContinuityPartition()[p]];
+//			Point cp = _mesh->coordinates().get(n, p) - _cCenter[_mesh->elements->clusters[p]];
 //			pcnorm += cp.x * cp.x + cp.y * cp.y;
 //		}
 //		_dNorm[p].x = std::sqrt(pnorm);
 //		cbuffer1[p] += pcnorm;
 //	}
-//	for (size_t p = 0; p < _mesh->parts(); p++) {
-//		_cNorm[_mesh->getContinuityPartition()[p]].x += cbuffer1[p];
+//	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
+//		_cNorm[_mesh->elements->clusters[p]].x += cbuffer1[p];
 //	}
 //	for (size_t c = 0; c < clusters; c++) {
 //		_cNorm[c].x = std::sqrt(_cNorm[c].x);
 //	}
 //
 //	// Compute coefficient r44, r45
-//	cbuffer1 = cbuffer2 = std::vector<double>(_mesh->parts(), 0);
+//	cbuffer1 = cbuffer2 = std::vector<double>(_mesh->elements->ndomains, 0);
 //	#pragma omp parallel for
-//	for (size_t p = 0; p < _mesh->parts(); p++) {
-//		size_t c = _mesh->getContinuityPartition()[p];
+//	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
+//		size_t c = _mesh->elements->clusters[p];
 //		for (size_t n = 0; n < _mesh->coordinates().localSize(p); n++) {
 //			Point dp = _mesh->coordinates().get(n, p) - _dCenter[p];
 //			_dr44[p] += (-dp.y / _dNorm[p].x) * (-dp.y / _dNorm[p].x) + (dp.x / _dNorm[p].x) * (dp.x / _dNorm[p].x);
@@ -92,17 +129,17 @@ void StructuralMechanics::prepare()
 //			cbuffer2[p] += (-cp.y / _cNorm[c].x) * (-cp.z);
 //		}
 //	}
-//	for (size_t p = 0; p < _mesh->parts(); p++) {
-//		_cr44[_mesh->getContinuityPartition()[p]] += cbuffer1[p];
-//		_cr45[_mesh->getContinuityPartition()[p]] += cbuffer2[p];
+//	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
+//		_cr44[_mesh->elements->clusters[p]] += cbuffer1[p];
+//		_cr45[_mesh->elements->clusters[p]] += cbuffer2[p];
 //	}
 //
 //	// Compute norm of column 5 (norm.y)
-//	cbuffer1 = std::vector<double>(_mesh->parts(), 0);
+//	cbuffer1 = std::vector<double>(_mesh->elements->ndomains, 0);
 //	#pragma omp parallel for
-//	for (size_t p = 0; p < _mesh->parts(); p++) {
+//	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
 //		double dnorm = 0, cnorm = 0;
-//		size_t c = _mesh->getContinuityPartition()[p];
+//		size_t c = _mesh->elements->clusters[p];
 //		for (size_t n = 0; n < _mesh->coordinates().localSize(p); n++) {
 //			Point dp = _mesh->coordinates().get(n, p) - _dCenter[p];
 //			dnorm += (-dp.z - _dr45[p] / _dr44[p] * (-dp.y / _dNorm[p].x)) * (-dp.z - _dr45[p] / _dr44[p] * (-dp.y / _dNorm[p].x));
@@ -117,19 +154,19 @@ void StructuralMechanics::prepare()
 //		_dNorm[p].y = std::sqrt(dnorm);
 //		cbuffer1[p] = cnorm;
 //	}
-//	for (size_t p = 0; p < _mesh->parts(); p++) {
-//		_cNorm[_mesh->getContinuityPartition()[p]].y += cbuffer1[p];
+//	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
+//		_cNorm[_mesh->elements->clusters[p]].y += cbuffer1[p];
 //	}
 //	for (size_t c = 0; c < clusters; c++) {
 //		_cNorm[c].y = std::sqrt(_cNorm[c].y);
 //	}
 //
 //	// Compute coefficient r46, r55, r56
-//	cbuffer1 = cbuffer2 = cbuffer3 = std::vector<double>(_mesh->parts(), 0);
+//	cbuffer1 = cbuffer2 = cbuffer3 = std::vector<double>(_mesh->elements->ndomains, 0);
 //	#pragma omp parallel for
-//	for (size_t p = 0; p < _mesh->parts(); p++) {
+//	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
 //		double c5;
-//		size_t c = _mesh->getContinuityPartition()[p];
+//		size_t c = _mesh->elements->clusters[p];
 //		for (size_t n = 0; n < _mesh->coordinates().localSize(p); n++) {
 //			Point dp = _mesh->coordinates().get(n, p) - _dCenter[p];
 //			_dr46[p] += (dp.x / _dNorm[p].x) * (-dp.z);
@@ -156,18 +193,18 @@ void StructuralMechanics::prepare()
 //			cbuffer3[p] += c5 * cp.y;
 //		}
 //	}
-//	for (size_t p = 0; p < _mesh->parts(); p++) {
-//		_cr46[_mesh->getContinuityPartition()[p]] += cbuffer1[p];
-//		_cr55[_mesh->getContinuityPartition()[p]] += cbuffer2[p];
-//		_cr56[_mesh->getContinuityPartition()[p]] += cbuffer3[p];
+//	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
+//		_cr46[_mesh->elements->clusters[p]] += cbuffer1[p];
+//		_cr55[_mesh->elements->clusters[p]] += cbuffer2[p];
+//		_cr56[_mesh->elements->clusters[p]] += cbuffer3[p];
 //	}
 //
 //	// Compute norm of column 6 (norm.z)
-//	cbuffer1 = std::vector<double>(_mesh->parts(), 0);
+//	cbuffer1 = std::vector<double>(_mesh->elements->ndomains, 0);
 //	#pragma omp parallel for
-//	for (size_t p = 0; p < _mesh->parts(); p++) {
+//	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
 //		double dnorm = 0, cnorm = 0, c6;
-//		size_t c = _mesh->getContinuityPartition()[p];
+//		size_t c = _mesh->elements->clusters[p];
 //		for (size_t n = 0; n < _mesh->coordinates().localSize(p); n++) {
 //			Point dp = _mesh->coordinates().get(n, p) - _dCenter[p];
 //			c6 =     0 - _dr56[p] / _dr55[p] * (-dp.z - _dr45[p] / _dr44[p] * (-dp.y / _dNorm[p].x)) / _dNorm[p].y - _dr46[p] / _dr44[p] * (-dp.y / _dNorm[p].x);
@@ -188,8 +225,8 @@ void StructuralMechanics::prepare()
 //		_dNorm[p].z = std::sqrt(dnorm);
 //		cbuffer1[p] = cnorm;
 //	}
-//	for (size_t p = 0; p < _mesh->parts(); p++) {
-//		_cNorm[_mesh->getContinuityPartition()[p]].z += cbuffer1[p];
+//	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
+//		_cNorm[_mesh->elements->clusters[p]].z += cbuffer1[p];
 //	}
 //	for (size_t c = 0; c < clusters; c++) {
 //		_cNorm[c].z = std::sqrt(_cNorm[c].z);
@@ -198,12 +235,7 @@ void StructuralMechanics::prepare()
 
 void StructuralMechanics::preprocessData()
 {
-//	if (offset != (size_t)-1) {
-//		return;
-//	}
-//	offset = _instance->solutions.size();
-//	_instance->solutions.resize(offset + SolutionIndex::SIZE, NULL);
-//	_instance->solutions[offset + SolutionIndex::DISPLACEMENT] = new Solution(*_mesh, "displacement", ElementType::NODES, 3, _instance->primalSolution);
+
 }
 
 

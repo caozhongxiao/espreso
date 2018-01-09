@@ -27,8 +27,15 @@ struct MortarConfiguration: public ECFObject {
 
 struct ECFExpressionVector: public ECFObject {
 	ECFExpression x, y, z;
+	DIMENSION dimension;
 
 	ECFExpressionVector(DIMENSION dimension, bool fillWithZeros);
+};
+
+struct ECFExpressionOptionalVector: public ECFExpressionVector {
+	ECFExpression all;
+
+	ECFExpressionOptionalVector(DIMENSION dimension);
 };
 
 struct PhysicsConfiguration: public ECFObject {

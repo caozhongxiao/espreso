@@ -13,7 +13,7 @@
 using namespace espreso;
 
 Precomputed::Precomputed(Mesh *mesh, Instance *instance, MatrixType type, double *rhs, size_t rhsSize)
-: Physics("API", mesh, instance, NULL, NULL), _mtype(type), _rhs(rhs), _rhsSize(rhsSize)
+: Physics("API", mesh, instance, NULL, NULL, 1), _mtype(type), _rhs(rhs), _rhsSize(rhsSize)
 {
 //	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, dynamic_cast<APIMesh*>(_mesh)->DOFs(), _mesh->faces(), pointDOFs(), pointDOFsOffsets(), true, true);
 }

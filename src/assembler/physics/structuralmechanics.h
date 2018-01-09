@@ -12,23 +12,17 @@ struct ResultsSelectionConfiguration;
 
 struct StructuralMechanics: public virtual Physics
 {
-	StructuralMechanics(const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
+	StructuralMechanics(const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, int DOFs);
 
 	virtual MatrixType getMatrixType(size_t domain) const;
 	virtual void prepare();
 	virtual void preprocessData();
 
 protected:
-	enum SolutionIndex: size_t {
-		DISPLACEMENT = 0,
-
-		SIZE         = 1
-	};
-
-	static size_t offset;
-
 	const StructuralMechanicsConfiguration &_configuration;
 	const ResultsSelectionConfiguration &_propertiesConfiguration;
+
+	NodeData *_displacement;
 
 	// to handle with non-continuous partition
 	std::vector<Point> _cCenter, _cNorm;

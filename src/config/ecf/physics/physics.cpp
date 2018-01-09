@@ -14,7 +14,9 @@ espreso::MortarConfiguration::MortarConfiguration()
 }
 
 espreso::ECFExpressionVector::ECFExpressionVector(DIMENSION dimension, bool fillWithZeros)
+: dimension(dimension)
 {
+
 	REGISTER(x, ECFMetaData()
 			.setdescription({ "x-direction." })
 			.setdatatype({ ECFDataType::EXPRESSION })
@@ -40,6 +42,15 @@ espreso::ECFExpressionVector::ECFExpressionVector(DIMENSION dimension, bool fill
 			z.createEvaluator(ECFMetaData().setboundaryconditionvariables().variables);
 		}
 	}
+}
+
+espreso::ECFExpressionOptionalVector::ECFExpressionOptionalVector(DIMENSION dimension)
+: ECFExpressionVector(dimension, false)
+{
+	REGISTER(all, ECFMetaData()
+			.setdescription({ "all-directions." })
+			.setdatatype({ ECFDataType::EXPRESSION })
+			.setboundaryconditionvariables());
 }
 
 espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension, MaterialConfiguration::PHYSICAL_MODEL physicalModel)

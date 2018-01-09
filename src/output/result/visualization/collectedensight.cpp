@@ -380,6 +380,8 @@ void CollectedEnSight::updateSolution(const Step &step)
 		if (_mesh.nodes->data[di]->names.size() == 0) {
 			continue;
 		}
+		eslocal size = _mesh.nodes->data[di]->names.size() == 1 ? 1 : _mesh.nodes->data[di]->names.size() - 1;
+
 		std::string filename = _name + "." + _mesh.nodes->data[di]->names.front().substr(0, 4);
 		std::stringstream name;
 		name << _path + filename + "_" << std::setw(3) << std::setfill('0') << _variableCounter;
@@ -402,16 +404,30 @@ void CollectedEnSight::updateSolution(const Step &step)
 		};
 
 		auto iterateNodes = [&] (const std::vector<ProcessInterval> &intervals, const tarray<eslocal> &nodes) {
-			for (size_t i = 0; i < intervals.size(); i++) {
-				if (intervals[i].sourceProcess == environment->MPIrank) {
-					eslocal offset = _mesh.nodes->pintervals[i].globalOffset - _mesh.nodes->uniqueOffset;
-					for (eslocal n = intervals[i].begin; n < intervals[i].end; ++n) {
-						eslocal index = offset + nodes[n] - _mesh.nodes->pintervals[i].begin;
-						_writer.storeFloat(os, _mesh.nodes->data[di]->gatheredData[index]);
+			for (eslocal s = 0; s < size; s++) {
+				for (size_t i = 0; i < intervals.size(); i++) {
+					if (intervals[i].sourceProcess == environment->MPIrank) {
+						eslocal offset = _mesh.nodes->pintervals[i].globalOffset - _mesh.nodes->uniqueOffset;
+						for (eslocal n = intervals[i].begin; n < intervals[i].end; ++n) {
+							eslocal index = offset + nodes[n] - _mesh.nodes->pintervals[i].begin;
+							_writer.storeFloat(os, _mesh.nodes->data[di]->gatheredData[size * index + s]);
+						}
 					}
 				}
+				pushInterval(os.str().size());
 			}
-			pushInterval(os.str().size());
+			if (size == 2) {
+				for (size_t i = 0; i < intervals.size(); i++) {
+					if (intervals[i].sourceProcess == environment->MPIrank) {
+						eslocal offset = _mesh.nodes->pintervals[i].globalOffset - _mesh.nodes->uniqueOffset;
+						for (eslocal n = intervals[i].begin; n < intervals[i].end; ++n) {
+							eslocal index = offset + nodes[n] - _mesh.nodes->pintervals[i].begin;
+							_writer.storeFloat(os, .0);
+						}
+					}
+				}
+				pushInterval(os.str().size());
+			}
 		};
 
 		clearIntervals();
@@ -434,6 +450,8 @@ void CollectedEnSight::updateSolution(const Step &step)
 		if (_mesh.elements->data[di]->names.size() == 0) {
 			continue;
 		}
+		eslocal size = _mesh.elements->data[di]->names.size() == 1 ? 1 : _mesh.elements->data[di]->names.size() - 1;
+
 		std::string filename = _name + "." + _mesh.elements->data[di]->names.front().substr(0, 4);
 		std::stringstream name;
 		name << _path + filename + "_" << std::setw(3) << std::setfill('0') << _variableCounter;
@@ -454,31 +472,27 @@ void CollectedEnSight::updateSolution(const Step &step)
 			}
 		};
 
-		auto iterateElements = [&] (
-				std::stringstream &os, int etype,
-				const tarray<eslocal> &elements, const std::vector<ElementsInterval> &eintervals,
-				std::vector<double> &data, eslocal size) {
-
-				for (eslocal s = 0; s < size; s++) {
-					for (size_t i = 0; i < eintervals.size(); i++) {
-						if (eintervals[i].code == etype) {
-							for (eslocal e = eintervals[i].begin; e < eintervals[i].end; ++e) {
-								_writer.storeFloat(os, data[size * elements[e] + s]);
-							}
+		auto iterateElements = [&] (std::stringstream &os, int etype, const tarray<eslocal> &elements, const std::vector<ElementsInterval> &eintervals) {
+			for (eslocal s = 0; s < size; s++) {
+				for (size_t i = 0; i < eintervals.size(); i++) {
+					if (eintervals[i].code == etype) {
+						for (eslocal e = eintervals[i].begin; e < eintervals[i].end; ++e) {
+							_writer.storeFloat(os, (*_mesh.elements->data[di]->data)[size * elements[e] + s]);
 						}
 					}
-					pushInterval(os.str().size());
 				}
-				if (size == 2) {
-					for (size_t i = 0; i < eintervals.size(); i++) {
-						if (eintervals[i].code == etype) {
-							for (eslocal e = eintervals[i].begin; e < eintervals[i].end; ++e) {
-								_writer.storeFloat(os, .0);
-							}
+				pushInterval(os.str().size());
+			}
+			if (size == 2) {
+				for (size_t i = 0; i < eintervals.size(); i++) {
+					if (eintervals[i].code == etype) {
+						for (eslocal e = eintervals[i].begin; e < eintervals[i].end; ++e) {
+							_writer.storeFloat(os, .0);
 						}
 					}
-					pushInterval(os.str().size());
 				}
+				pushInterval(os.str().size());
+			}
 		};
 
 		clearIntervals();
@@ -490,14 +504,10 @@ void CollectedEnSight::updateSolution(const Step &step)
 						_writer.storeDescriptionLine(os, codetotype(etype));
 					}
 
-					eslocal size = _mesh.elements->data[di]->names.size();
-					if (size > 1) {
-						--size;
-					}
 					if (StringCompare::caseInsensitiveEq(_mesh.elementsRegions[r]->name, "ALL_ELEMENTS")) {
-						iterateElements(os, etype, _mesh.elementsRegions[r]->uniqueElements->datatarray(), _mesh.elementsRegions[r]->ueintervals, *_mesh.elements->data[di]->data, size);
+						iterateElements(os, etype, _mesh.elementsRegions[r]->uniqueElements->datatarray(), _mesh.elementsRegions[r]->ueintervals);
 					} else {
-						iterateElements(os, etype, _mesh.elementsRegions[r]->elements->datatarray(), _mesh.elementsRegions[r]->eintervals, *_mesh.elements->data[di]->data, size);
+						iterateElements(os, etype, _mesh.elementsRegions[r]->elements->datatarray(), _mesh.elementsRegions[r]->eintervals);
 					}
 				}
 			}

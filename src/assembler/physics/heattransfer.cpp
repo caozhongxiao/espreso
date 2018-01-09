@@ -23,16 +23,13 @@
 using namespace espreso;
 
 HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
-: Physics("", NULL, NULL, NULL, &configuration), // skipped because Physics is inherited virtually
+: Physics("", NULL, NULL, NULL, &configuration, 1), // skipped because Physics is inherited virtually
   _configuration(configuration), _propertiesConfiguration(propertiesConfiguration),
   _temperature(NULL), _gradient(NULL), _flux(NULL), _phaseChange(NULL), _latentHeat(NULL)
 {
-	bool bem = false;
 	for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
-
 		if (_BEMDomain[d]) {
 			_instance->domainDOFCount[d] = _mesh->domainsSurface->cdistribution[d + 1] - _mesh->domainsSurface->cdistribution[d];
-			bem = true;
 		} else {
 			const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[d];
 			_instance->domainDOFCount[d] = intervals.back().DOFOffset + intervals.back().end - intervals.back().begin;
@@ -46,7 +43,7 @@ HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration, const
 			configuration.load_steps_settings.at(1).feti.redundant_lagrange,
 			configuration.load_steps_settings.at(1).feti.scaling);
 
-	if (bem) {
+	if (_hasBEM) {
 		_temperature = _mesh->nodes->appendData({ "TEMPERATURE" });
 	} else {
 		_temperature = _mesh->nodes->appendData({ "TEMPERATURE" }, _instance->primalSolution);

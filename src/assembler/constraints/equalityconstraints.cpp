@@ -17,6 +17,7 @@
 #include "../../mesh/store/boundaryregionstore.h"
 #include "../../mesh/store/fetidatastore.h"
 #include "../../config/ecf/environment.h"
+#include "../../config/ecf/physics/physics.h"
 
 #include <numeric>
 #include <algorithm>
@@ -24,13 +25,14 @@
 using namespace espreso;
 
 EqualityConstraints::EqualityConstraints(Instance &instance, Mesh &mesh, const std::map<std::string, ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling)
-: _instance(instance), _mesh(mesh)
+: _instance(instance), _mesh(mesh), _DOFs(1)
 {
-	for (eslocal d = 0; d < _mesh.elements->ndomains; d++) {
-		_instance.B1[d].cols = _instance.domainDOFCount[d];
-		_instance.B0[d].cols = _instance.domainDOFCount[d];
-	}
+	update(dirichlet, withRedundantMultiplier, withScaling);
+}
 
+EqualityConstraints::EqualityConstraints(Instance &instance, Mesh &mesh, const std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int DOFs, bool withRedundantMultiplier, bool withScaling)
+: _instance(instance), _mesh(mesh), _DOFs(DOFs)
+{
 	update(dirichlet, withRedundantMultiplier, withScaling);
 }
 
@@ -94,9 +96,6 @@ eslocal EqualityConstraints::computeIntervalsOffsets(std::function<eslocal(esloc
 
 void EqualityConstraints::update(const std::map<std::string, ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling)
 {
-	_withRedundantMultipliers = withRedundantMultiplier;
-	_withScaling = withScaling;
-
 	_dirichlet.clear();
 	_dirichlet.resize(1);
 	_intervalDirichletNodes.clear();
@@ -114,11 +113,71 @@ void EqualityConstraints::update(const std::map<std::string, ECFExpression> &dir
 		}
 	}
 
+	update(withRedundantMultiplier, withScaling);
+}
+
+void EqualityConstraints::update(const std::map<std::string, ECFExpressionOptionalVector> &dirichlet, bool withRedundantMultiplier, bool withScaling)
+{
+	_dirichlet.clear();
+	_dirichlet.resize(_DOFs);
+	_intervalDirichletNodes.clear();
+	_intervalDirichletNodes.resize(_DOFs);
+	for (int d = 0; d < _DOFs; d++) {
+		_intervalDirichletNodes[d].resize(_mesh.nodes->pintervals.size());
+	}
+
+	_domainDirichletSize.resize(_mesh.elements->ndomains);
+
+	auto insert = [&] (int d) {
+		for (size_t i = 0; i < _mesh.nodes->pintervals.size(); i++) {
+			_intervalDirichletNodes[d][i].insert(_intervalDirichletNodes[d][i].end(),
+					_dirichlet[d].back().first->nodes->datatarray().begin() + _dirichlet[d].back().first->nintervals[i].begin,
+					_dirichlet[d].back().first->nodes->datatarray().begin() + _dirichlet[d].back().first->nintervals[i].end);
+		}
+	};
+
+	for (auto it = dirichlet.begin(); it != dirichlet.end(); ++it) {
+		if (it->second.all.value.size()) {
+			for (int d = 0; d < _DOFs; d++) {
+				_dirichlet[d].push_back(std::make_pair(_mesh.bregion(it->first), it->second.all.evaluator));
+				insert(d);
+			}
+		} else {
+			if (it->second.x.value.size()) {
+				_dirichlet[0].push_back(std::make_pair(_mesh.bregion(it->first), it->second.x.evaluator));
+				insert(0);
+			}
+			if (it->second.y.value.size()) {
+				_dirichlet[1].push_back(std::make_pair(_mesh.bregion(it->first), it->second.y.evaluator));
+				insert(1);
+			}
+			if (_DOFs == 3 && it->second.z.value.size()) {
+				_dirichlet[2].push_back(std::make_pair(_mesh.bregion(it->first), it->second.z.evaluator));
+				insert(2);
+			}
+		}
+	}
+
+	update(withRedundantMultiplier, withScaling);
+}
+
+void EqualityConstraints::update(bool withRedundantMultiplier, bool withScaling)
+{
+	_withRedundantMultipliers = withRedundantMultiplier;
+	_withScaling = withScaling;
+
+	for (eslocal d = 0; d < _mesh.elements->ndomains; d++) {
+		_instance.B1[d].cols = _instance.domainDOFCount[d];
+		_instance.B0[d].cols = _instance.domainDOFCount[d];
+	}
+
 	for (size_t i = 0; i < _mesh.nodes->pintervals.size(); i++) {
-		size_t presize = _intervalDirichletNodes[0][i].size();
-		Esutils::sortAndRemoveDuplicity(_intervalDirichletNodes[0][i]);
-		if (presize != _intervalDirichletNodes[0][i].size()) {
-			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: DIRICHLET intervals have to be disjunct.";
+		for (size_t d = 0; d < _intervalDirichletNodes.size(); d++) {
+			size_t presize = _intervalDirichletNodes[d][i].size();
+			Esutils::sortAndRemoveDuplicity(_intervalDirichletNodes[d][i]);
+			if (presize != _intervalDirichletNodes[d][i].size()) {
+				ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: DIRICHLET intervals have to be disjunct.";
+			}
 		}
 	}
 
@@ -150,7 +209,7 @@ void EqualityConstraints::update(const std::map<std::string, ECFExpression> &dir
 		if (ndomains == 1) {
 			return 0;
 		}
-		eslocal size = _mesh.nodes->pintervals[i].end - _mesh.nodes->pintervals[i].begin;
+		eslocal size = _DOFs * (_mesh.nodes->pintervals[i].end - _mesh.nodes->pintervals[i].begin);
 		if (_withRedundantMultipliers) {
 			return (size - dsize[i]) * (ndomains * (ndomains - 1) / 2);
 		} else {
@@ -185,45 +244,48 @@ void EqualityConstraints::B1DirichletInsert(const Step &step)
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t d = _mesh.elements->domainDistribution[t]; d < _mesh.elements->domainDistribution[t + 1]; d++) {
 			for (size_t i = 0; i < _mesh.nodes->gintervals[d].size(); ++i) {
+				eslocal LMoffset = 0;
 				const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
-				if (_withRedundantMultipliers || interval.dindex == 0) {
+				for (int dof = 0; dof < _DOFs; dof++) {
+					if (_withRedundantMultipliers || interval.dindex == 0) {
 
-					_instance.B1[d].I_row_indices.insert(_instance.B1[d].I_row_indices.end(), _intervalDirichletNodes[0][interval.pindex].size(), 0);
-					std::iota(
-							_instance.B1[d].I_row_indices.end() - _intervalDirichletNodes[0][interval.pindex].size(),
-							_instance.B1[d].I_row_indices.end(),
-							_intervalDirichletOffset[interval.pindex] + interval.dindex * _intervalDirichletNodes[0][interval.pindex].size() + 1);
+						_instance.B1[d].I_row_indices.insert(_instance.B1[d].I_row_indices.end(), _intervalDirichletNodes[dof][interval.pindex].size(), 0);
+						std::iota(
+								_instance.B1[d].I_row_indices.end() - _intervalDirichletNodes[dof][interval.pindex].size(),
+								_instance.B1[d].I_row_indices.end(),
+								_intervalDirichletOffset[interval.pindex] + interval.dindex * _intervalDirichletNodes[dof][interval.pindex].size() + LMoffset + 1);
 
-					for (size_t dof = 0; dof < _dirichlet.size(); dof++) {
-						for (size_t r = 0; r < _dirichlet[0].size(); r++) {
+						for (size_t r = 0; r < _dirichlet[dof].size(); r++) {
 							for (
-									auto n = _dirichlet[0][r].first->nodes->datatarray().cbegin() + _dirichlet[0][r].first->nintervals[interval.pindex].begin;
-									n != _dirichlet[0][r].first->nodes->datatarray().cbegin() + _dirichlet[0][r].first->nintervals[interval.pindex].end;
+									auto n = _dirichlet[dof][r].first->nodes->datatarray().cbegin() + _dirichlet[dof][r].first->nintervals[interval.pindex].begin;
+									n != _dirichlet[dof][r].first->nodes->datatarray().cbegin() + _dirichlet[dof][r].first->nintervals[interval.pindex].end;
 									++n) {
-								_instance.B1[d].J_col_indices.push_back(interval.DOFOffset + *n - interval.begin + 1);
+								_instance.B1[d].J_col_indices.push_back(_DOFs * (interval.DOFOffset + *n - interval.begin) + dof + 1);
 
 								// TODO: evaluate at one and correctly
 								Point p;
-								_instance.B1c[d].push_back(step.internalForceReduction * _dirichlet[0][r].second->evaluate(p, step.currentTime, 0));
+								_instance.B1c[d].push_back(step.internalForceReduction * _dirichlet[dof][r].second->evaluate(p, step.currentTime, 0));
 							}
 						}
+
+						_instance.B1[d].V_values.insert(_instance.B1[d].V_values.end(), _intervalDirichletNodes[dof][interval.pindex].size(), 1);
+						_instance.B1duplicity[d].insert(_instance.B1duplicity[d].end(), _intervalDirichletNodes[dof][interval.pindex].size(), 1);
+
+						_instance.B1subdomainsMap[d].insert(_instance.B1subdomainsMap[d].end(), _intervalDirichletNodes[dof][interval.pindex].size(), 0);
+						std::iota(
+								_instance.B1subdomainsMap[d].end() - _intervalDirichletNodes[dof][interval.pindex].size(),
+								_instance.B1subdomainsMap[d].end(),
+								_intervalDirichletOffset[interval.pindex] + interval.dindex * _intervalDirichletNodes[dof][interval.pindex].size() + LMoffset);
+
+						_instance.B1[d].nnz = _instance.B1[d].I_row_indices.size();
+						_instance.B1[d].rows = _dirichletSize;
+
+						_instance.LB[d].resize(_instance.B1[d].nnz, -std::numeric_limits<double>::infinity());
+
+						_domainDirichletSize[d] = _instance.B1[d].nnz;
+
+						LMoffset += interval.ndomains * _intervalDirichletNodes[dof][interval.pindex].size();
 					}
-
-					_instance.B1[d].V_values.insert(_instance.B1[d].V_values.end(), _intervalDirichletNodes[0][interval.pindex].size(), 1);
-					_instance.B1duplicity[d].insert(_instance.B1duplicity[d].end(), _intervalDirichletNodes[0][interval.pindex].size(), 1);
-
-					_instance.B1subdomainsMap[d].insert(_instance.B1subdomainsMap[d].end(), _intervalDirichletNodes[0][interval.pindex].size(), 0);
-					std::iota(
-							_instance.B1subdomainsMap[d].end() - _intervalDirichletNodes[0][interval.pindex].size(),
-							_instance.B1subdomainsMap[d].end(),
-							_intervalDirichletOffset[interval.pindex] + interval.dindex * _intervalDirichletNodes[0][interval.pindex].size());
-
-					_instance.B1[d].nnz = _instance.B1[d].I_row_indices.size();
-					_instance.B1[d].rows = _dirichletSize;
-
-					_instance.LB[d].resize(_instance.B1[d].nnz, -std::numeric_limits<double>::infinity());
-
-					_domainDirichletSize[d] = _instance.B1[d].nnz;
 				}
 			}
 		}
@@ -233,17 +295,21 @@ void EqualityConstraints::B1DirichletInsert(const Step &step)
 	auto iranks = _mesh.nodes->iranks->cbegin();
 	for (size_t i = 0; i < _mesh.nodes->pintervals.size(); ++i, ++iranks) {
 		eslocal d = 0;
-		for (auto r = iranks->begin(); r != iranks->end(); ++r, ++d) {
-			if (*r == environment->MPIrank) {
-				for (size_t n = 0; n < _intervalDirichletNodes[0][i].size(); ++n) {
-					_instance.B1clustersMap.push_back({
-						(esglobal)(_intervalDirichletOffset[i] + d * _intervalDirichletNodes[0][i].size() + n),
-						(esglobal)environment->MPIrank
-					});
+		eslocal LMoffset = _intervalDirichletOffset[i];
+		for (int dof = 0; dof < _DOFs; dof++) {
+			for (auto r = iranks->begin(); r != iranks->end(); ++r, ++d) {
+				if (*r == environment->MPIrank) {
+					for (size_t n = 0; n < _intervalDirichletNodes[dof][i].size(); ++n) {
+						_instance.B1clustersMap.push_back({
+							(esglobal)(n + LMoffset),
+							(esglobal)environment->MPIrank
+						});
+					}
 				}
-			}
-			if (!_withRedundantMultipliers) {
-				break;
+				LMoffset += _intervalDirichletNodes[dof][i].size();
+				if (!_withRedundantMultipliers) {
+					break;
+				}
 			}
 		}
 	}
@@ -259,13 +325,13 @@ void EqualityConstraints::B1DirichletUpdate(const Step &step)
 			eslocal offset = 0;
 			for (size_t i = 0; i < _mesh.nodes->gintervals[d].size(); ++i) {
 				const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
-				if (_withRedundantMultipliers || interval.dindex == 0) {
-					for (size_t dof = 0; dof < _dirichlet.size(); dof++) {
-						for (size_t r = 0; r < _dirichlet[0].size(); r++) {
-							for (eslocal n = _dirichlet[0][r].first->nintervals[interval.pindex].begin; n < _dirichlet[0][r].first->nintervals[interval.pindex].end; ++n, ++offset) {
+				for (int dof = 0; dof < _DOFs; dof++) {
+					if (_withRedundantMultipliers || interval.dindex == 0) {
+						for (size_t r = 0; r < _dirichlet[dof].size(); r++) {
+							for (eslocal n = _dirichlet[dof][r].first->nintervals[interval.pindex].begin; n < _dirichlet[dof][r].first->nintervals[interval.pindex].end; ++n, ++offset) {
 								// TODO: evaluate at once and correctly
 								Point p;
-								_instance.B1c[d][offset] = step.internalForceReduction * _dirichlet[0][r].second->evaluate(p, step.currentTime, 0);
+								_instance.B1c[d][offset] = step.internalForceReduction * _dirichlet[dof][r].second->evaluate(p, step.currentTime, 0);
 							}
 						}
 					}
@@ -277,17 +343,17 @@ void EqualityConstraints::B1DirichletUpdate(const Step &step)
 
 void EqualityConstraints::B1GlueElements()
 {
-	auto redundantglue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter) {
+	auto redundantglue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter, int dof) {
 		const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
 		esglobal LMindex = interval.LMOffset + LMcounter * (interval.ndomains * (interval.ndomains - 1) / 2);
-		eslocal DOFindex = interval.DOFOffset + (begin - interval.begin) + 1;
+		eslocal DOFindex = interval.DOFOffset + (begin - interval.begin);
 		for (eslocal n = begin; n != end; ++n, ++DOFindex, ++LMcounter) {
 			for (eslocal lm = 0; lm < interval.dindex; LMindex += interval.ndomains - ++lm) {
-				_instance.B1[d].J_col_indices.push_back(DOFindex);
+				_instance.B1[d].J_col_indices.push_back(_DOFs * DOFindex + dof + 1);
 				_instance.B1[d].I_row_indices.push_back(LMindex + interval.dindex - lm);
 			}
 			for (eslocal lm = interval.dindex + 1; lm < interval.ndomains; ++LMindex, ++lm) {
-				_instance.B1[d].J_col_indices.push_back(DOFindex);
+				_instance.B1[d].J_col_indices.push_back(_DOFs * DOFindex + dof + 1);
 				_instance.B1[d].I_row_indices.push_back(LMindex + 1);
 			}
 			LMindex += ((interval.ndomains - interval.dindex - 1) * (interval.ndomains - interval.dindex - 2) / 2);
@@ -297,18 +363,18 @@ void EqualityConstraints::B1GlueElements()
 		_instance.B1duplicity[d].insert(_instance.B1duplicity[d].end(), (end - begin) * (interval.ndomains - 1), 1.0 / interval.ndomains);
 	};
 
-	auto nonredundantglue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter) {
+	auto nonredundantglue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter, int dof) {
 		const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
 		esglobal LMindex = interval.LMOffset + LMcounter * (interval.ndomains - 1);
-		eslocal DOFindex = interval.DOFOffset + (begin - interval.begin) + 1;
+		eslocal DOFindex = interval.DOFOffset + (begin - interval.begin);
 		for (eslocal n = begin, lm = 0; n != end; ++n, ++lm, ++DOFindex, ++LMcounter) {
 			if (interval.dindex) {
-				_instance.B1[d].J_col_indices.push_back(DOFindex);
+				_instance.B1[d].J_col_indices.push_back(_DOFs * DOFindex + dof + 1);
 				_instance.B1[d].I_row_indices.push_back(LMindex + interval.dindex + lm);
 				_instance.B1[d].V_values.push_back(-1);
 			}
 			if (interval.dindex + 1 < interval.ndomains) {
-				_instance.B1[d].J_col_indices.push_back(DOFindex);
+				_instance.B1[d].J_col_indices.push_back(_DOFs * DOFindex + dof + 1);
 				_instance.B1[d].I_row_indices.push_back(LMindex + interval.dindex + 1 + lm);
 				_instance.B1[d].V_values.push_back(1);
 			}
@@ -321,11 +387,11 @@ void EqualityConstraints::B1GlueElements()
 		}
 	};
 
-	auto glue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter) {
+	auto glue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter, int dof) {
 		if (_withRedundantMultipliers) {
-			redundantglue(d, i, begin, end, LMcounter);
+			redundantglue(d, i, begin, end, LMcounter, dof);
 		} else {
-			nonredundantglue(d, i, begin, end, LMcounter);
+			nonredundantglue(d, i, begin, end, LMcounter, dof);
 		}
 	};
 
@@ -336,15 +402,17 @@ void EqualityConstraints::B1GlueElements()
 		for (size_t d = _mesh.elements->domainDistribution[t]; d < _mesh.elements->domainDistribution[t + 1]; d++) {
 			for (size_t i = 0; i < _mesh.nodes->gintervals[d].size(); ++i) {
 				eslocal LMcounter = 0;
-				if (_withRedundantMultipliers) {
-					const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
-					eslocal current = interval.begin;
-					for (auto end = _intervalDirichletNodes[0][interval.pindex].begin(); end != _intervalDirichletNodes[0][interval.pindex].end(); current = *end + 1, ++end) {
-						glue(d, i, current, *end, LMcounter);
+				const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
+				for (int dof = 0; dof < _DOFs; dof++) {
+					if (_withRedundantMultipliers) {
+						eslocal current = interval.begin;
+						for (auto end = _intervalDirichletNodes[dof][interval.pindex].begin(); end != _intervalDirichletNodes[dof][interval.pindex].end(); current = *end + 1, ++end) {
+							glue(d, i, current, *end, LMcounter, dof);
+						}
+						glue(d, i, current, interval.end, LMcounter, dof);
+					} else {
+						glue(d, i, _mesh.nodes->gintervals[d][i].begin, _mesh.nodes->gintervals[d][i].end, LMcounter, dof);
 					}
-					glue(d, i, current, interval.end, LMcounter);
-				} else {
-					glue(d, i, _mesh.nodes->gintervals[d][i].begin, _mesh.nodes->gintervals[d][i].end, LMcounter);
 				}
 			}
 			_instance.B1[d].rows += _gluingSize;
@@ -390,14 +458,17 @@ void EqualityConstraints::B1GlueElements()
 			noffset = iranks->size() - 1;
 		}
 
-		eslocal isize = _mesh.nodes->pintervals[i].end - _mesh.nodes->pintervals[i].begin;
-		if (_withRedundantMultipliers) {
-			isize -= _intervalDirichletNodes[0][i].size();
-		}
-		for (eslocal n = 0, LMoffset = _intervalGluingOffset[i]; n < isize; ++n, LMoffset += noffset) {
-			_instance.B1clustersMap.insert(_instance.B1clustersMap.end(), nmap.begin(), nmap.end());
-			for (auto map = _instance.B1clustersMap.end() - nmap.size(); map != _instance.B1clustersMap.end(); ++map) {
-				map->front() += LMoffset;
+		eslocal LMoffset = _intervalGluingOffset[i];
+		for (int dof = 0; dof < _DOFs; dof++) {
+			eslocal isize = _mesh.nodes->pintervals[i].end - _mesh.nodes->pintervals[i].begin;
+			if (_withRedundantMultipliers) {
+				isize -= _intervalDirichletNodes[dof][i].size();
+			}
+			for (eslocal n = 0; n < isize; ++n, LMoffset += noffset) {
+				_instance.B1clustersMap.insert(_instance.B1clustersMap.end(), nmap.begin(), nmap.end());
+				for (auto map = _instance.B1clustersMap.end() - nmap.size(); map != _instance.B1clustersMap.end(); ++map) {
+					map->front() += LMoffset;
+				}
 			}
 		}
 	}

@@ -30,13 +30,13 @@
 using namespace espreso;
 
 Physics::Physics()
-: _name(""), _mesh(NULL), _instance(NULL), _step(NULL), _equalityConstraints(NULL), _configuration(NULL)
+: _name(""), _mesh(NULL), _instance(NULL), _step(NULL), _equalityConstraints(NULL), _configuration(NULL), _DOFs(0)
 {
 
 }
 
-Physics::Physics(const std::string &name, Mesh *mesh, Instance *instance, Step *step, const PhysicsConfiguration *configuration)
-: _name(name), _mesh(mesh), _instance(instance), _step(step), _equalityConstraints(NULL), _configuration(configuration) // initialized in a particular physics
+Physics::Physics(const std::string &name, Mesh *mesh, Instance *instance, Step *step, const PhysicsConfiguration *configuration, int DOFs)
+: _name(name), _mesh(mesh), _instance(instance), _step(step), _equalityConstraints(NULL), _configuration(configuration), _DOFs(DOFs) // initialized in a particular physics
 {
 	std::vector<int> BEMRegions(_mesh->elements->regionMaskSize);
 	for (auto it = configuration->discretization.begin(); it != configuration->discretization.end(); ++it) {
@@ -210,11 +210,12 @@ void Physics::fillDOFsIndices(edata<const eslocal> &nodes, eslocal domain, std::
 {
 	// TODO: improve performance
 	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
-	DOFs.resize(nodes.size());
-	for (size_t dof = 0, i = 0; dof < 1; dof++) {
-		for (auto n = nodes.begin(); n != nodes.end(); n++, i++) {
+	DOFs.resize(_DOFs * nodes.size());
+	size_t i = 0;
+	for (size_t dof = 0; dof < _DOFs; dof++) {
+		for (auto n = nodes.begin(); n != nodes.end(); n++) {
 			auto it = std::lower_bound(intervals.begin(), intervals.end(), *n, [] (const DomainInterval &interval, eslocal node) { return interval.end <= node; });
-			DOFs[i] = 1 * (it->DOFOffset + *n - it->begin);
+			DOFs[i++] = _DOFs * (it->DOFOffset + *n - it->begin) + dof;
 		}
 	}
 }

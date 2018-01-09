@@ -445,15 +445,16 @@ void Mesh::initNodeData()
 	for (auto datait = nodes->data.begin(); datait != nodes->data.end(); ++datait) {
 		NodeData* data = *datait;
 		if (data->names.size()) {
-			data->gatheredData.resize(nodes->uniqueSize);
+			int dimension = data->names.size() == 1 ? 1 : data->names.size() - 1;
+			data->gatheredData.resize(dimension * nodes->uniqueSize);
 			data->sBuffer.resize(neighbours.size());
 			data->rBuffer.resize(neighbours.size());
 
 			for (size_t n = 0; n < neighbours.size(); ++n) {
 				if (neighbours[n] < environment->MPIrank) {
-					data->sBuffer[n].resize(nodes->scouters[n]);
+					data->sBuffer[n].resize(dimension * nodes->scouters[n]);
 				} else {
-					data->rBuffer[n].resize(nodes->scouters[n + 1]);
+					data->rBuffer[n].resize(dimension * nodes->scouters[n + 1]);
 				}
 			}
 		}
@@ -475,6 +476,7 @@ void Mesh::gatherNodeData()
 	for (auto datait = nodes->data.begin(); datait != nodes->data.end(); ++datait) {
 		NodeData* data = *datait;
 		if (data->names.size()) {
+			int dimension = data->names.size() == 1 ? 1 : data->names.size() - 1;
 			for (size_t i = 0; i < data->sBuffer.size(); i++) {
 				std::fill(data->sBuffer[i].begin(), data->sBuffer[i].end(), 0);
 			}
@@ -489,10 +491,12 @@ void Mesh::gatherNodeData()
 					noffset = n2i(nodes->pintervals[i].sourceProcess);
 					for (auto d = domains->begin(); d != domains->end(); ++d) {
 						if (elements->firstDomain <= *d && *d < elements->firstDomain + elements->ndomains) {
-							offset = doffset(*d - elements->firstDomain, i);
-							soffset = nodes->soffsets[i];
-							for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++offset, ++soffset) {
-								data->sBuffer[noffset][soffset] += (*data->decomposedData)[*d - elements->firstDomain][offset];
+							offset = dimension * doffset(*d - elements->firstDomain, i);
+							soffset = dimension * nodes->soffsets[i];
+							for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n) {
+								for (int dof = 0; dof < dimension; ++dof, ++soffset, ++offset) {
+									data->sBuffer[noffset][soffset] += (*data->decomposedData)[*d - elements->firstDomain][offset];
+								}
 							}
 						}
 					}
@@ -512,23 +516,29 @@ void Mesh::gatherNodeData()
 
 				if (nodes->pintervals[i].sourceProcess == environment->MPIrank) {
 					for (auto d = idomains->begin(); d != idomains->end() && *d < elements->firstDomain + elements->ndomains; ++d) {
-						goffset = nodes->pintervals[i].globalOffset - nodes->uniqueOffset;
-						offset = doffset(*d - elements->firstDomain, i);
-						for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++offset, ++goffset) {
-							data->gatheredData[goffset] += (*data->decomposedData)[*d - elements->firstDomain][offset];
+						goffset = dimension * (nodes->pintervals[i].globalOffset - nodes->uniqueOffset);
+						offset = dimension * doffset(*d - elements->firstDomain, i);
+						for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n) {
+							for (int dof = 0; dof < dimension; ++dof, ++goffset, ++offset) {
+								data->gatheredData[goffset] += (*data->decomposedData)[*d - elements->firstDomain][offset];
+							}
 						}
 					}
 					for (auto neigh = ineighbors->begin(); neigh != ineighbors->end(); ++neigh) {
-						goffset = nodes->pintervals[i].globalOffset - nodes->uniqueOffset;
-						offset = neigh->offset;
+						goffset = dimension * (nodes->pintervals[i].globalOffset - nodes->uniqueOffset);
+						offset = dimension * neigh->offset;
 						noffset = n2i(neigh->process);
-						for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++offset, ++goffset) {
-							data->gatheredData[goffset] += data->rBuffer[noffset][offset];
+						for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n) {
+							for (int dof = 0; dof < dimension; ++dof, ++goffset, ++offset) {
+								data->gatheredData[goffset] += data->rBuffer[noffset][offset];
+							}
 						}
 					}
-					goffset = nodes->pintervals[i].globalOffset - nodes->uniqueOffset;
-					for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n, ++goffset) {
-						data->gatheredData[goffset] /= idomains->size();
+					goffset = dimension * (nodes->pintervals[i].globalOffset - nodes->uniqueOffset);
+					for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n) {
+						for (int dof = 0; dof < dimension; ++dof, ++goffset) {
+							data->gatheredData[goffset] /= idomains->size();
+						}
 					}
 				}
 			}
@@ -542,6 +552,7 @@ double Mesh::sumSquares(const std::vector<std::vector<double> > &data, const Bou
 
 	double csum = 0, gsum;
 
+	int dimension = data.front().size() / (nodes->dintervals.front().back().DOFOffset + nodes->dintervals.front().back().end - nodes->dintervals.front().back().begin);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		double tsum = 0, value;
@@ -549,8 +560,8 @@ double Mesh::sumSquares(const std::vector<std::vector<double> > &data, const Bou
 
 		for (eslocal d = elements->domainDistribution[t]; d < elements->domainDistribution[t + 1]; d++) {
 			for (size_t di = 0; di < nodes->dintervals[d].size(); di++) {
-				offset = nodes->pintervals[nodes->dintervals[d][di].pindex].begin;
-				for (eslocal i = region->nintervals[nodes->dintervals[d][di].pindex].begin; i < region->nintervals[nodes->dintervals[d][di].pindex].end; ++i) {
+				offset = dimension * nodes->pintervals[nodes->dintervals[d][di].pindex].begin;
+				for (eslocal i = dimension * region->nintervals[nodes->dintervals[d][di].pindex].begin; i < dimension * region->nintervals[nodes->dintervals[d][di].pindex].end; ++i) {
 					value = data[d][nodes->dintervals[d][di].DOFOffset + region->nodes->datatarray()[i] - offset];
 					tsum += value * value;
 				}
@@ -759,11 +770,11 @@ void Mesh::printStatistics()
 
 	ESINFO(OVERVIEW);
 
-	int totalClusters, clusters = elements->nclusters;
+	int totalClusters = 0, clusters = elements->nclusters;
 	MPI_Reduce(&clusters, &totalClusters, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
 	ESINFO(OVERVIEW) << " Number of clusters   : " << totalClusters;
 
-	int totalDomains, domains = elements->ndomains;
+	int totalDomains = 0, domains = elements->ndomains;
 	MPI_Reduce(&domains, &totalDomains, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
 	ESINFO(OVERVIEW) << " Number of domains    : " << totalDomains;
 

@@ -38,7 +38,7 @@ struct Physics {
 	friend class APITestESPRESODataProvider;
 
 	Physics();
-	Physics(const std::string &name, Mesh *mesh, Instance *instance, Step *step, const PhysicsConfiguration *configuration);
+	Physics(const std::string &name, Mesh *mesh, Instance *instance, Step *step, const PhysicsConfiguration *configuration, int DOFs);
 	const std::string& name() const { return _name; }
 
 	virtual void prepare() {};
@@ -88,6 +88,8 @@ protected:
 	EqualityConstraints *_equalityConstraints;
 
 	const PhysicsConfiguration *_configuration;
+
+	int _DOFs;
 
 	bool _hasBEM;
 	std::vector<int> _BEMDomain;
