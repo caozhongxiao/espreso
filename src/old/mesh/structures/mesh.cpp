@@ -29,7 +29,7 @@
 #include "../elements/element.h"
 #include "elementtypes.h"
 
-#include "metis.h"
+//#include "metis.h"
 #include "../../../config/valueholder.h"
 #include "../../../config/ecf/environment.h"
 #include "../../../config/ecf/material/material.h"
@@ -89,14 +89,14 @@ void OldMesh::computeFixPoints(size_t number)
 
 static void checkMETISResult(eslocal result)
 {
-	switch (result) {
-	case METIS_ERROR_INPUT:
-		ESINFO(ERROR) << "An input for METIS procedure is incorrect.\n";
-	case METIS_ERROR_MEMORY:
-		ESINFO(ERROR) << "There is not enough memory for compute a partition.\n";
-	case METIS_ERROR:
-		ESINFO(ERROR) << "METIS fail computation.\n";
-	}
+//	switch (result) {
+//	case METIS_ERROR_INPUT:
+//		ESINFO(ERROR) << "An input for METIS procedure is incorrect.\n";
+//	case METIS_ERROR_MEMORY:
+//		ESINFO(ERROR) << "There is not enough memory for compute a partition.\n";
+//	case METIS_ERROR:
+//		ESINFO(ERROR) << "METIS fail computation.\n";
+//	}
 }
 
 static std::vector<eslocal> computePartition(std::vector<eslocal> &elements, std::vector<eslocal> &nodes, eslocal eSize, eslocal nSize, eslocal nCommon, eslocal parts)
@@ -105,28 +105,28 @@ static std::vector<eslocal> computePartition(std::vector<eslocal> &elements, std
 		return std::vector<eslocal> (elements.size(), 0);
 	}
 	// INPUTS
-	eslocal options[METIS_NOPTIONS];
-	METIS_SetDefaultOptions(options);
-	options[METIS_OPTION_CONTIG] = 1;
-
-	// OUTPUTS
-	eslocal objval;
+//	eslocal options[METIS_NOPTIONS];
+//	METIS_SetDefaultOptions(options);
+//	options[METIS_OPTION_CONTIG] = 1;
+//
+//	// OUTPUTS
+//	eslocal objval;
 	std::vector<eslocal> ePartition(eSize), nPartition(nSize);
-
-	checkMETISResult(METIS_PartMeshDual(
-			&eSize,
-			&nSize,
-			elements.data(),
-			nodes.data(),
-			NULL,		// weights of nodes
-			NULL,		// size of nodes
-			&nCommon,
-			&parts,
-			NULL,		// weights of parts
-			options,
-			&objval,
-			ePartition.data(),
-			nPartition.data()));
+//
+//	checkMETISResult(METIS_PartMeshDual(
+//			&eSize,
+//			&nSize,
+//			elements.data(),
+//			nodes.data(),
+//			NULL,		// weights of nodes
+//			NULL,		// size of nodes
+//			&nCommon,
+//			&parts,
+//			NULL,		// weights of parts
+//			options,
+//			&objval,
+//			ePartition.data(),
+//			nPartition.data()));
 
 	return ePartition;
 }
@@ -178,7 +178,7 @@ static std::vector<eslocal> continuousReorder(std::vector<OldElement*> &elements
 	METISMeshRepresentation(elements, begin, end, nodeProjection, metisElements, metisNodes, nCommon);
 
 	eslocal ne = end - begin, nn = nodeProjection.size(), numflag = 0, *xAdj, *adjncy;
-	checkMETISResult(METIS_MeshToDual(&ne, &nn, metisElements.data(), metisNodes.data(), &nCommon, &numflag, &xAdj, &adjncy));
+	// checkMETISResult(METIS_MeshToDual(&ne, &nn, metisElements.data(), metisNodes.data(), &nCommon, &numflag, &xAdj, &adjncy));
 
 	std::vector<eslocal> partPtrs;
 	std::vector<OldElement*> eCopy(elements.begin() + begin, elements.begin() + end);
@@ -206,8 +206,8 @@ static std::vector<eslocal> continuousReorder(std::vector<OldElement*> &elements
 		}
 	}
 
-	METIS_Free(xAdj);
-	METIS_Free(adjncy);
+//	METIS_Free(xAdj);
+//	METIS_Free(adjncy);
 
 	return partPtrs;
 }

@@ -20,12 +20,11 @@
 
 #include "../../config/ecf/environment.h"
 
-#include "../../wrappers/wparmetis.h"
-#include "../../wrappers/wmetis.h"
-
 #include <algorithm>
 #include <numeric>
 #include <cstring>
+#include "../../wrappers/metis/wmetis.h"
+#include "../../wrappers/metis/wparmetis.h"
 
 using namespace espreso;
 

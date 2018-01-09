@@ -1,6 +1,6 @@
 
-#ifndef SRC_WRAPPERS_WPARMETIS_H_
-#define SRC_WRAPPERS_WPARMETIS_H_
+#ifndef SRC_WRAPPERS_METIS_WPARMETIS_H_
+#define SRC_WRAPPERS_METIS_WPARMETIS_H_
 
 namespace espreso {
 
@@ -25,4 +25,4 @@ struct ParMETIS {
 
 
 
-#endif /* SRC_WRAPPERS_WPARMETIS_H_ */
+#endif /* SRC_WRAPPERS_METIS_WPARMETIS_H_ */
