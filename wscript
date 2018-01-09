@@ -144,7 +144,7 @@ def configure(ctx):
 def build(ctx):
 
     ctx(
-        export_includes = "src/include tools/bem4i/src tools/ASYNC",
+        export_includes = "tools/bem4i/src tools/ASYNC",
         name            = "espreso_includes"
     )
 
