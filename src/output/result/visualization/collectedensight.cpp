@@ -1,5 +1,6 @@
 
 #include "collectedensight.h"
+#include "ensightwriter.h"
 
 #include "../../../basis/containers/point.h"
 #include "../../../basis/containers/serializededata.h"
@@ -19,10 +20,9 @@
 #include "../../../mesh/store/elementsregionstore.h"
 #include "../../../mesh/store/boundaryregionstore.h"
 
-#include <fstream>
-#include <iomanip>
 #include <algorithm>
 #include <functional>
+#include <fstream>
 
 using namespace espreso;
 
@@ -105,35 +105,36 @@ void CollectedEnSight::updateMesh()
 	int part = 1;
 
 	std::stringstream os;
-	if (environment->MPIrank == 0) {
-		os << "EnSight Gold geometry format\n";
-		os << "----------------------------\n";
+	os << std::showpos << std::scientific << std::setprecision(5);
 
-		os << "node id off\n";
-		os << "element id off\n";
+	if (environment->MPIrank == 0) {
+		_writer.storeFormat(os);
+		_writer.storeDescriptionLine(os, "EnSight Gold geometry format");
+		_writer.storeDescriptionLine(os, "----------------------------");
+
+		_writer.storeDescriptionLine(os, "node id off");
+		_writer.storeDescriptionLine(os, "element id off");
 	}
 
 	auto storePartHeader = [&] (const std::string &name, eslocal nodes) {
 		if (environment->MPIrank == 0) {
-			os << "part\n";
-			os << std::setw(10) << part++ << "\n";
-			os << name << "\n";
+			_writer.storeDescriptionLine(os, "part");
+			_writer.storeInt(os, part++);
+			_writer.storeDescriptionLine(os, name);
 
-			os << "coordinates\n";
-			os << std::setw(10) << nodes << "\n";
+			_writer.storeDescriptionLine(os, "coordinates");
+			_writer.storeInt(os, nodes);
 		}
 	};
 
 	auto storeRegionNodes = [&] (const std::vector<ProcessInterval> &intervals, const serializededata<eslocal, eslocal> *nodes, std::function<double(const Point *p)> getCoordinate) {
-		os << std::showpos << std::scientific << std::setprecision(5);
 		for (size_t i = 0; i < intervals.size(); i++) {
 			if (intervals[i].sourceProcess == environment->MPIrank) {
 				for (auto n = nodes->datatarray().cbegin() + intervals[i].begin; n != nodes->datatarray().cbegin() + intervals[i].end; ++n) {
-					os << getCoordinate(_mesh.nodes->coordinates->datatarray().cbegin() + *n) << "\n";
+					_writer.storeFloat(os, getCoordinate(_mesh.nodes->coordinates->datatarray().cbegin() + *n));
 				}
 			}
 		}
-		os << std::noshowpos;
 		pushInterval(os.str().size());
 	};
 
@@ -152,8 +153,8 @@ void CollectedEnSight::updateMesh()
 		for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
 			if (ecounters[etype]) {
 				if (environment->MPIrank == 0) {
-					os << codetotype(etype) << "\n";
-					os << std::setw(10) << ecounters[etype] << "\n";
+					_writer.storeDescriptionLine(os, codetotype(etype));
+					_writer.storeInt(os, ecounters[etype]);
 				}
 
 				for (size_t i = 0; i < eintervals.size(); i++) {
@@ -163,9 +164,9 @@ void CollectedEnSight::updateMesh()
 						for (eslocal e = eintervals[i].begin; e < eintervals[i].end; prev = elements[e++]) {
 							enodes += elements[e] - prev;
 							for (auto n = enodes->begin(); n != enodes->end(); ++n) {
-								os << std::setw(10) << storeNodeRegionIndex(*n, nintervals, nodes) + 1;
+								_writer.eIndex(os, storeNodeRegionIndex(*n, nintervals, nodes) + 1);
 							}
-							os << "\n";
+							_writer.eEnd(os);
 						}
 					}
 				}
@@ -178,8 +179,8 @@ void CollectedEnSight::updateMesh()
 		for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
 			if (region->ecounters[etype]) {
 				if (environment->MPIrank == 0) {
-					os << codetotype(etype) << "\n";
-					os << std::setw(10) << region->ecounters[etype] << "\n";
+					_writer.storeDescriptionLine(os, codetotype(etype));
+					_writer.storeInt(os, region->ecounters[etype]);
 				}
 
 				for (size_t i = 0; i < region->eintervals.size(); i++) {
@@ -187,9 +188,9 @@ void CollectedEnSight::updateMesh()
 						auto enodes = region->elements->cbegin() + region->eintervals[i].begin;
 						for (eslocal e = region->eintervals[i].begin; e < region->eintervals[i].end; ++e, ++enodes) {
 							for (auto n = enodes->begin(); n != enodes->end(); ++n) {
-								os << std::setw(10) << storeNodeRegionIndex(*n, region->nintervals, region->nodes->datatarray()) + 1;
+								_writer.eIndex(os, storeNodeRegionIndex(*n, region->nintervals, region->nodes->datatarray()) + 1);
 							}
-							os << "\n";
+							_writer.eEnd(os);
 						}
 					}
 				}
@@ -219,11 +220,11 @@ void CollectedEnSight::updateMesh()
 			storeBoundaryElements(region);
 		} else {
 			if (environment->MPIrank == 0) {
-				os << codetotype(static_cast<int>(Element::CODE::POINT1)) << "\n";
-				os << std::setw(10) << region->uniqueTotalSize << "\n";
+				_writer.storeDescriptionLine(os, codetotype(static_cast<int>(Element::CODE::POINT1)));
+				_writer.storeInt(os, region->uniqueTotalSize);
 			}
 			for (eslocal i = 0; i < region->uniqueSize; ++i) {
-				os << std::setw(10) << region->uniqueOffset + i + 1 << "\n";
+				_writer.storeInt(os, region->uniqueOffset + i + 1);
 			}
 			pushInterval(os.str().size());
 		}
@@ -283,17 +284,16 @@ void CollectedEnSight::storeDecomposition()
 	_casevariables << "scalar per element:\tCLUSTERS\t" << _name << ".CLUSTERS" << "\n";
 
 	auto iterateElements = [&] (std::stringstream &os, const std::vector<ElementsInterval> &intervals, const std::vector<eslocal> &ecounters, std::function<double(eslocal domain)> fnc) {
-		os << std::scientific << std::setprecision(5);
 		for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
 			if (ecounters[etype]) {
 				if (environment->MPIrank == 0) {
-					os << codetotype(etype) << "\n";
+					_writer.storeDescriptionLine(os, codetotype(etype));
 				}
 
 				for (size_t i = 0; i < intervals.size(); i++) {
 					if (intervals[i].code == etype) {
 						for (eslocal e = intervals[i].begin; e < intervals[i].end; ++e) {
-							os << " " << fnc(intervals[i].domain) << "\n";
+							_writer.storeFloat(os, fnc(intervals[i].domain));
 						}
 					}
 				}
@@ -307,8 +307,8 @@ void CollectedEnSight::storeDecomposition()
 
 	auto storePartHeader = [&] (std::stringstream &os) {
 		if (environment->MPIrank == 0) {
-			os << "part\n";
-			os << std::setw(10) << part++ << "\n";
+			_writer.storeDescriptionLine(os, "part");
+			_writer.storeInt(os, part++);
 		}
 	};
 
@@ -318,8 +318,10 @@ void CollectedEnSight::storeDecomposition()
 		std::string name = _path + filename;
 
 		std::stringstream os;
+		os << std::showpos << std::scientific << std::setprecision(5);
+
 		if (environment->MPIrank == 0) {
-			os << "DOMAINS\n";
+			_writer.storeDescriptionLine(os, "DOMAINS");
 		}
 
 		part = 1;
@@ -341,8 +343,10 @@ void CollectedEnSight::storeDecomposition()
 		std::string name = _path + filename;
 
 		std::stringstream os;
+		os << std::showpos << std::scientific << std::setprecision(5);
+
 		if (environment->MPIrank == 0) {
-			os << "CLUSTERS\n";
+			_writer.storeDescriptionLine(os, "CLUSTERS");
 		}
 
 		part = 1;
@@ -381,32 +385,32 @@ void CollectedEnSight::updateSolution(const Step &step)
 		name << _path + filename + "_" << std::setw(3) << std::setfill('0') << _variableCounter;
 
 		std::stringstream os;
+		os << std::showpos << std::scientific << std::setprecision(5);
+
 		if (environment->MPIrank == 0) {
-			os << _mesh.nodes->data[di]->names.front() << "\n";
+			_writer.storeDescriptionLine(os, _mesh.nodes->data[di]->names.front());
 		}
 
 		eslocal part = 1;
 
 		auto storePartHeader = [&] () {
 			if (environment->MPIrank == 0) {
-				os << "part\n";
-				os << std::setw(10) << part++ << "\n";
-				os << "coordinates\n";
+				_writer.storeDescriptionLine(os, "part");
+				_writer.storeInt(os, part++);
+				_writer.storeDescriptionLine(os, "coordinates");
 			}
 		};
 
 		auto iterateNodes = [&] (const std::vector<ProcessInterval> &intervals, const tarray<eslocal> &nodes) {
-			os << std::showpos << std::scientific << std::setprecision(5);
 			for (size_t i = 0; i < intervals.size(); i++) {
 				if (intervals[i].sourceProcess == environment->MPIrank) {
 					eslocal offset = _mesh.nodes->pintervals[i].globalOffset - _mesh.nodes->uniqueOffset;
 					for (eslocal n = intervals[i].begin; n < intervals[i].end; ++n) {
 						eslocal index = offset + nodes[n] - _mesh.nodes->pintervals[i].begin;
-						os << _mesh.nodes->data[di]->gatheredData[index] << "\n";
+						_writer.storeFloat(os, _mesh.nodes->data[di]->gatheredData[index]);
 					}
 				}
 			}
-			os << std::noshowpos;
 			pushInterval(os.str().size());
 		};
 
@@ -435,16 +439,18 @@ void CollectedEnSight::updateSolution(const Step &step)
 		name << _path + filename + "_" << std::setw(3) << std::setfill('0') << _variableCounter;
 
 		std::stringstream os;
+		os << std::showpos << std::scientific << std::setprecision(5);
+
 		if (environment->MPIrank == 0) {
-			os << _mesh.elements->data[di]->names.front() << "\n";
+			_writer.storeDescriptionLine(os, _mesh.elements->data[di]->names.front());
 		}
 
 		eslocal part = 1;
 
 		auto storePartHeader = [&] () {
 			if (environment->MPIrank == 0) {
-				os << "part\n";
-				os << std::setw(10) << part++ << "\n";
+				_writer.storeDescriptionLine(os, "part");
+				_writer.storeInt(os, part++);
 			}
 		};
 
@@ -457,8 +463,7 @@ void CollectedEnSight::updateSolution(const Step &step)
 					for (size_t i = 0; i < eintervals.size(); i++) {
 						if (eintervals[i].code == etype) {
 							for (eslocal e = eintervals[i].begin; e < eintervals[i].end; ++e) {
-								os << std::setw(10) << data[size * elements[e] + s];
-								os << "\n";
+								_writer.storeFloat(os, data[size * elements[e] + s]);
 							}
 						}
 					}
@@ -468,8 +473,7 @@ void CollectedEnSight::updateSolution(const Step &step)
 					for (size_t i = 0; i < eintervals.size(); i++) {
 						if (eintervals[i].code == etype) {
 							for (eslocal e = eintervals[i].begin; e < eintervals[i].end; ++e) {
-								os << std::setw(10) << .0;
-								os << "\n";
+								_writer.storeFloat(os, .0);
 							}
 						}
 					}
@@ -483,10 +487,9 @@ void CollectedEnSight::updateSolution(const Step &step)
 			for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
 				if (_mesh.elementsRegions[r]->ecounters[etype]) {
 					if (environment->MPIrank == 0) {
-						os << codetotype(etype) << "\n";
+						_writer.storeDescriptionLine(os, codetotype(etype));
 					}
 
-					os << std::showpos << std::scientific << std::setprecision(5);
 					eslocal size = _mesh.elements->data[di]->names.size();
 					if (size > 1) {
 						--size;
@@ -496,7 +499,6 @@ void CollectedEnSight::updateSolution(const Step &step)
 					} else {
 						iterateElements(os, etype, _mesh.elementsRegions[r]->elements->datatarray(), _mesh.elementsRegions[r]->eintervals, *_mesh.elements->data[di]->data, size);
 					}
-					os << std::noshowpos;
 				}
 			}
 		}

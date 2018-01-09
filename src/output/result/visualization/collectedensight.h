@@ -6,6 +6,7 @@
 #include <sstream>
 
 #include "collectedvisualization.h"
+#include "ensightwriter.h"
 
 namespace espreso {
 
@@ -34,9 +35,11 @@ protected:
 	std::stringstream _casetime;
 
 	int _variableCounter;
+
+	const EnsightBinaryWriter _writer;
 };
 
-struct CollectedEnSightWithDecomposition: public CollectedEnSight {
+struct CollectedEnSightWithDecomposition: public virtual CollectedEnSight {
 	CollectedEnSightWithDecomposition(const std::string &name, const Mesh &mesh): CollectedEnSight(name, mesh) {}
 
 	void updateMesh()
