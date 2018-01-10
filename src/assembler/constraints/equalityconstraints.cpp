@@ -513,8 +513,8 @@ void EqualityConstraints::B1DuplicityUpdate()
 					for (auto domain = idomain->begin(); domain != idomain->end(); ++domain) {
 						if (_mesh.elements->firstDomain <= *domain && *domain < _mesh.elements->firstDomain + _mesh.elements->ndomains) {
 							eslocal d = *domain - _mesh.elements->firstDomain;
-							auto begin = D[d].begin() + _mesh.nodes->dintervals[d][dindex[d]].DOFOffset;
-							auto end = begin + _mesh.nodes->dintervals[d][dindex[d]].end - _mesh.nodes->dintervals[d][dindex[d]].begin;
+							auto begin = D[d].begin() + _DOFs * _mesh.nodes->dintervals[d][dindex[d]].DOFOffset;
+							auto end = begin + _DOFs * (_mesh.nodes->dintervals[d][dindex[d]].end - _mesh.nodes->dintervals[d][dindex[d]].begin);
 							sBuffer[target].insert(sBuffer[target].end(), begin, end);
 						}
 					}
@@ -538,17 +538,21 @@ void EqualityConstraints::B1DuplicityUpdate()
 		for (size_t i = 0; i < _mesh.nodes->pintervals.size(); ++i, ++irank, ++idomain) {
 			if (idomain->size() > 1) {
 				eslocal isize = _mesh.nodes->pintervals[i].end - _mesh.nodes->pintervals[i].begin;
-				diagonals[i].resize(isize * idomain->size());
+				diagonals[i].resize(_DOFs * isize * idomain->size());
 				for (int r = 0; r < irank->size(); ++r) {
 					if (irank->at(r) != environment->MPIrank) {
 						eslocal target = n2i(irank->at(r));
 						for (eslocal n = 0; n < isize; ++n) {
-							diagonals[i][n * idomain->size() + r] = rBuffer[target][rindex[target]++];
+							for (int dof = 0; dof < _DOFs; dof++) {
+								diagonals[i][_DOFs * n * idomain->size() + dof * idomain->size() + r] = rBuffer[target][rindex[target]++];
+							}
 						}
 					} else {
 						eslocal d = idomain->at(r) - _mesh.elements->firstDomain;
 						for (eslocal n = 0; n < isize; ++n) {
-							diagonals[i][n * idomain->size() + r] = D[d][_mesh.nodes->dintervals[d][dindex[d]].DOFOffset + n];
+							for (int dof = 0; dof < _DOFs; dof++) {
+								diagonals[i][_DOFs * n * idomain->size() + dof * idomain->size() + r] = D[d][_DOFs * (_mesh.nodes->dintervals[d][dindex[d]].DOFOffset + n) + dof];
+							}
 						}
 						++dindex[d];
 					}
@@ -559,32 +563,32 @@ void EqualityConstraints::B1DuplicityUpdate()
 
 	std::vector<eslocal> dindex = _domainDirichletSize;
 
-	auto redundantglue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter) {
+	auto redundantglue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter, int dof) {
 		const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
 		double sum;
 		for (eslocal n = begin; n != end; ++n) {
 			sum = 0;
 			for (eslocal i = 0; i < interval.ndomains; i++) {
-				sum += diagonals[interval.pindex][(n - interval.begin) * interval.ndomains + i];
+				sum += diagonals[interval.pindex][_DOFs * (n - interval.begin) * interval.ndomains + dof * interval.ndomains + i];
 			}
 			for (eslocal i = 0; i < interval.dindex; ++i) {
-				_instance.B1duplicity[d][dindex[d]++] = diagonals[interval.pindex][(n - interval.begin) * interval.ndomains + i] / sum;
+				_instance.B1duplicity[d][dindex[d]++] = diagonals[interval.pindex][_DOFs * (n - interval.begin) * interval.ndomains + dof * interval.ndomains + i] / sum;
 			}
 			for (eslocal i = interval.dindex + 1; i < interval.ndomains; ++i) {
-				_instance.B1duplicity[d][dindex[d]++] = diagonals[interval.pindex][(n - interval.begin) * interval.ndomains + i] / sum;
+				_instance.B1duplicity[d][dindex[d]++] = diagonals[interval.pindex][_DOFs * (n - interval.begin) * interval.ndomains + dof * interval.ndomains + i] / sum;
 			}
 		}
 	};
 
-	auto nonredundantglue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter) {
+	auto nonredundantglue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter, int dof) {
 		// CURRENT SCALING WORKS ONLY WITH REDUNDANT MULTIPLIERS
 	};
 
-	auto glue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter) {
+	auto glue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter, int dof) {
 		if (_withRedundantMultipliers) {
-			redundantglue(d, i, begin, end, LMcounter);
+			redundantglue(d, i, begin, end, LMcounter, dof);
 		} else {
-			nonredundantglue(d, i, begin, end, LMcounter);
+			nonredundantglue(d, i, begin, end, LMcounter, dof);
 		}
 	};
 
@@ -596,15 +600,17 @@ void EqualityConstraints::B1DuplicityUpdate()
 			for (size_t i = 0; i < _mesh.nodes->gintervals[d].size(); ++i) {
 				if (_mesh.nodes->gintervals[d][i].ndomains > 1) {
 					eslocal LMcounter = 0;
-					if (_withRedundantMultipliers) {
-						const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
-						eslocal current = interval.begin;
-						for (auto end = _intervalDirichletNodes[0][interval.pindex].begin(); end != _intervalDirichletNodes[0][interval.pindex].end(); current = *end + 1, ++end) {
-							glue(d, i, current, *end, LMcounter);
+					for (int dof = 0; dof < _DOFs; dof++) {
+						if (_withRedundantMultipliers) {
+							const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
+							eslocal current = interval.begin;
+							for (auto end = _intervalDirichletNodes[dof][interval.pindex].begin(); end != _intervalDirichletNodes[dof][interval.pindex].end(); current = *end + 1, ++end) {
+								glue(d, i, current, *end, LMcounter, dof);
+							}
+							glue(d, i, current, interval.end, LMcounter, dof);
+						} else {
+							glue(d, i, _mesh.nodes->gintervals[d][i].begin, _mesh.nodes->gintervals[d][i].end, LMcounter, dof);
 						}
-						glue(d, i, current, interval.end, LMcounter);
-					} else {
-						glue(d, i, _mesh.nodes->gintervals[d][i].begin, _mesh.nodes->gintervals[d][i].end, LMcounter);
 					}
 				}
 			}
