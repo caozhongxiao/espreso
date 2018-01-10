@@ -664,9 +664,11 @@ void EqualityConstraints::B0Kernels(const std::vector<SparseMatrix> &kernels)
 								while (masterit->end < nodes[n]) {
 									++masterit;
 								}
-								_instance.B0[d].I_row_indices.push_back(rowIndex[i] + c + 1);
-								_instance.B0[d].J_col_indices.push_back(dit->DOFOffset + nodes[n] - dit->begin + 1);
-								_instance.B0[d].V_values.push_back(sign * kernels[master].dense_values[kernels[master].rows * c + masterit->DOFOffset + nodes[n] - masterit->begin]);
+								for (int dof = 0; dof < _DOFs; dof++) {
+									_instance.B0[d].I_row_indices.push_back(rowIndex[i] + c + 1);
+									_instance.B0[d].J_col_indices.push_back(_DOFs * (dit->DOFOffset + nodes[n] - dit->begin) + dof + 1);
+									_instance.B0[d].V_values.push_back(sign * kernels[master].dense_values[kernels[master].rows * c + _DOFs * (masterit->DOFOffset + nodes[n] - masterit->begin) + dof]);
+								}
 							}
 						}
 					} else {
@@ -675,9 +677,11 @@ void EqualityConstraints::B0Kernels(const std::vector<SparseMatrix> &kernels)
 							while (dit->end < nodes[n]) {
 								++dit;
 							}
-							_instance.B0[d].I_row_indices.push_back(rowIndex[i] + 1);
-							_instance.B0[d].J_col_indices.push_back(dit->DOFOffset + nodes[n] - dit->begin + 1);
-							_instance.B0[d].V_values.push_back(sign);
+							for (int dof = 0; dof < _DOFs; dof++) {
+								_instance.B0[d].I_row_indices.push_back(rowIndex[i] + 1);
+								_instance.B0[d].J_col_indices.push_back(_DOFs * (dit->DOFOffset + nodes[n] - dit->begin) + dof + 1);
+								_instance.B0[d].V_values.push_back(sign);
+							}
 						}
 					}
 				}
@@ -720,15 +724,17 @@ void EqualityConstraints::B0Corners()
 					++d2it;
 				}
 
-				_instance.B0[domains->at(d1)].I_row_indices.push_back(lambdas);
-				_instance.B0[domains->at(d1)].J_col_indices.push_back(_mesh.FETIData->corners[n] - d1it->begin + d1it->DOFOffset + 1);
-				_instance.B0[domains->at(d1)].V_values.push_back(1);
+				for (int dof = 0; dof < _DOFs; dof++) {
+					_instance.B0[domains->at(d1)].I_row_indices.push_back(lambdas);
+					_instance.B0[domains->at(d1)].J_col_indices.push_back(_DOFs * (_mesh.FETIData->corners[n] - d1it->begin + d1it->DOFOffset) + dof + 1);
+					_instance.B0[domains->at(d1)].V_values.push_back(1);
 
-				_instance.B0[domains->at(d2)].I_row_indices.push_back(lambdas);
-				_instance.B0[domains->at(d2)].J_col_indices.push_back(_mesh.FETIData->corners[n] - d2it->begin + d2it->DOFOffset + 1);
-				_instance.B0[domains->at(d2)].V_values.push_back(-1);
+					_instance.B0[domains->at(d2)].I_row_indices.push_back(lambdas);
+					_instance.B0[domains->at(d2)].J_col_indices.push_back(_DOFs * (_mesh.FETIData->corners[n] - d2it->begin + d2it->DOFOffset) + dof + 1);
+					_instance.B0[domains->at(d2)].V_values.push_back(-1);
 
-				lambdas++;
+					lambdas++;
+				}
 			}
 		}
 	}
