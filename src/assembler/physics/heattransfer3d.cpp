@@ -54,14 +54,17 @@ void HeatTransfer3D::processBEM(eslocal domain, Matrices matrices)
 #ifndef BEM4I
 	ESINFO(GLOBAL_ERROR) << "BEM4I is not linked!";
 #else
+	const MaterialConfiguration* material = _mesh->materials[_mesh->elements->material->datatarray()[_mesh->elements->elementsDistribution[domain]]];
+
 	bem4i::getLaplaceSteklovPoincare(
 			_instance->K[domain].dense_values.data(),
 			_instance->K[domain].rows,
 			reinterpret_cast<double*>(_mesh->domainsSurface->coordinates->datatarray().data() + _mesh->domainsSurface->cdistribution[domain]),
-			_mesh->domainsSurface->edistribution[domain + 1] - _mesh->domainsSurface->edistribution[domain],
-			_mesh->domainsSurface->triangles->datatarray().data() + 3 * _mesh->domainsSurface->edistribution[domain],
-			0,
-			3, 3,
+			_mesh->domainsSurface->tdistribution[domain + 1] - _mesh->domainsSurface->tdistribution[domain],
+			_mesh->domainsSurface->triangles->datatarray().data() + 3 * _mesh->domainsSurface->tdistribution[domain],
+			material->thermal_conductivity.values.get(0, 0).evaluator->evaluate(Point(), _step->currentTime, 0),
+			1,
+			4, 4,
 			_BEMData[domain],
 			0);
 #endif
