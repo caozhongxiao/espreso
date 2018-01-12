@@ -474,21 +474,29 @@ void VTKLegacy::corners(const std::string &name)
 	os << "ASCII\n";
 	os << "DATASET UNSTRUCTURED_GRID\n\n";
 
-	os << "POINTS " << _mesh.FETIData->corners.size() << " float\n";
-	for (size_t i = 0; i < _mesh.FETIData->corners.size(); i++) {
-		const Point &n = _mesh.nodes->coordinates->datatarray()[_mesh.FETIData->corners[i]];
-		os << n.x << " " << n.y << " " << n.z << "\n";
+	eslocal points = 0;
+	auto cdomains = _mesh.FETIData->cornerDomains->begin();
+	for (size_t i = 0; i < _mesh.FETIData->corners.size(); ++i, ++cdomains) {
+		points += cdomains->size();
+	}
+	os << "POINTS " << points << " float\n";
+	cdomains = _mesh.FETIData->cornerDomains->begin();
+	for (size_t i = 0; i < _mesh.FETIData->corners.size(); ++i, ++cdomains) {
+		for (auto d = cdomains->begin(); d != cdomains->end(); ++d) {
+			Point n = shrink(_mesh.nodes->coordinates->datatarray()[_mesh.FETIData->corners[i]], _mesh.nodes->center, _mesh.nodes->dcenter[*d], _clusterShrinkRatio, _domainShrinkRatio);
+			os << n.x << " " << n.y << " " << n.z << "\n";
+		}
 	}
 	os << "\n";
 
-	os << "CELLS " << _mesh.FETIData->corners.size() << " " << 2 * _mesh.FETIData->corners.size() << "\n";
-	for (size_t n = 0; n < _mesh.FETIData->corners.size(); ++n) {
+	os << "CELLS " << points << " " << 2 * points << "\n";
+	for (size_t n = 0; n < points; ++n) {
 		os << "1 " << n << "\n";
 	}
 	os << "\n";
 
-	os << "CELL_TYPES " << _mesh.FETIData->corners.size() << "\n";
-	for (size_t n = 0; n < _mesh.FETIData->corners.size(); ++n) {
+	os << "CELL_TYPES " << points << "\n";
+	for (size_t n = 0; n < points; ++n) {
 		os << "1\n";
 	}
 	os << "\n";
