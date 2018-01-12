@@ -507,60 +507,75 @@ void StructuralMechanics3D::processElement(eslocal domain, Matrices matrices, es
 
 void StructuralMechanics3D::processFace(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
-//	if (!e->hasProperty(Property::PRESSURE, step.step)) {
-//		Ke.resize(0, 0);
-//		Me.resize(0, 0);
-//		Re.resize(0, 0);
-//		fe.resize(0, 0);
-//		return;
-//	}
-//	if (!(matrices & (Matrices::K | Matrices::f))) {
-//		Ke.resize(0, 0);
-//		Me.resize(0, 0);
-//		Re.resize(0, 0);
-//		fe.resize(0, 0);
-//		return;
-//	}
-//
-//	DenseMatrix coordinates(e->nodes(), 3), dND(1, 3), P(e->nodes(), 1), normal(1, 3);
-//	DenseMatrix gpP(1, 1), gpQ(1, 3);
-//
-//	eslocal Ksize = pointDOFs().size() * e->nodes();
-//	Ke.resize(0, 0);
-//	Me.resize(0, 0);
-//	Re.resize(0, 0);
-//	fe.resize(0, 0);
-//
-//	if (matrices & Matrices::f) {
-//		fe.resize(Ksize, 1);
-//		fe = 0;
-//	}
+	const Evaluator *pressure = NULL;
+	auto it = _configuration.load_steps_settings.at(_step->step + 1).normal_pressure.find(region->name);
+	if (it != _configuration.load_steps_settings.at(_step->step + 1).normal_pressure.end()) {
+		pressure = it->second.evaluator;
+	}
 
-//	for (size_t n = 0; n < e->nodes(); n++) {
-//		coordinates(n, 0) = _mesh->coordinates()[e->node(n)].x;
-//		coordinates(n, 1) = _mesh->coordinates()[e->node(n)].y;
-//		coordinates(n, 2) = _mesh->coordinates()[e->node(n)].z;
-//		P(n, 0) = e->getProperty(Property::PRESSURE, step.step, _mesh->coordinates()[e->node(n)], step.currentTime, 0, 0);
-//	}
-//
-//	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
-//		dND.multiply(e->dN()[gp], coordinates);
-//		Point v2(dND(0, 0), dND(0, 1), dND(0, 2));
-//		Point v1(dND(1, 0), dND(1, 1), dND(1, 2));
-//		Point va = Point::cross(v1, v2);
-//		e->rotateOutside(e->parentElements()[0], _mesh->coordinates(), va);
-//		double J = va.norm();
-//		normal(0, 0) = va.x / va.norm();
-//		normal(0, 1) = va.y / va.norm();
-//		normal(0, 2) = va.z / va.norm();
-//
-//		gpP.multiply(e->N()[gp], P);
-//		gpQ.multiply(normal, gpP, 1, 0, true);
-//
-//		for (eslocal i = 0; i < Ksize; i++) {
-//			fe(i, 0) += J * e->weighFactor()[gp] * e->N()[gp](0, i % e->nodes()) * gpQ(0, i / e->nodes());
-//		}
-//	}
+	if (pressure == NULL) {
+		Ke.resize(0, 0);
+		Me.resize(0, 0);
+		Re.resize(0, 0);
+		fe.resize(0, 0);
+		return;
+	}
+	if (!(matrices & (Matrices::K | Matrices::f))) {
+		Ke.resize(0, 0);
+		Me.resize(0, 0);
+		Re.resize(0, 0);
+		fe.resize(0, 0);
+		return;
+	}
+
+	auto nodes = region->elements->cbegin() + findex;
+	auto epointer = region->epointers->datatarray()[findex];
+	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
+
+	const std::vector<DenseMatrix> &N = *(epointer->N);
+	const std::vector<DenseMatrix> &dN = *(epointer->dN);
+	const std::vector<double> &weighFactor = *(epointer->weighFactor);
+
+	DenseMatrix coordinates(nodes->size(), 3), dND(1, 3), P(nodes->size(), 1), normal(1, 3);
+	DenseMatrix gpP(1, 1), gpQ(1, 3);
+
+	eslocal Ksize = 3 * nodes->size();
+	Ke.resize(0, 0);
+	Me.resize(0, 0);
+	Re.resize(0, 0);
+	fe.resize(0, 0);
+
+	if (matrices & Matrices::f) {
+		fe.resize(Ksize, 1);
+		fe = 0;
+	}
+
+	for (size_t n = 0; n < nodes->size(); n++) {
+		const Point &p = _mesh->nodes->coordinates->datatarray()[nodes->at(n)];
+		coordinates(n, 0) = p.x;
+		coordinates(n, 1) = p.y;
+		coordinates(n, 2) = p.z;
+		P(n, 0) += pressure->evaluate(p, 0, _step->currentTime);
+	}
+
+	for (size_t gp = 0; gp < N.size(); gp++) {
+		dND.multiply(dN[gp], coordinates);
+		Point v2(dND(0, 0), dND(0, 1), dND(0, 2));
+		Point v1(dND(1, 0), dND(1, 1), dND(1, 2));
+		Point va = Point::cross(v1, v2);
+		// e->rotateOutside(e->parentElements()[0], _mesh->coordinates(), va);
+		double J = va.norm();
+		normal(0, 0) = va.x / va.norm();
+		normal(0, 1) = va.y / va.norm();
+		normal(0, 2) = va.z / va.norm();
+
+		gpP.multiply(N[gp], P);
+		gpQ.multiply(normal, gpP, 1, 0, true);
+
+		for (eslocal i = 0; i < Ksize; i++) {
+			fe(i, 0) += J * weighFactor[gp] * N[gp](0, i % nodes->size()) * gpQ(0, i / nodes->size());
+		}
+	}
 }
 
 void StructuralMechanics3D::processEdge(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const

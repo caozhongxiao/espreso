@@ -463,7 +463,7 @@ void VTKLegacy::points(const std::string &name, const std::vector<eslocal> &poin
 
 void VTKLegacy::corners(const std::string &name)
 {
-	if (_mesh.FETIData == NULL) {
+	if (_mesh.FETIData == NULL || _mesh.FETIData->corners.size() == 0) {
 		return;
 	}
 
