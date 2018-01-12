@@ -6,15 +6,17 @@
 using namespace espreso;
 
 SurfaceStore::SurfaceStore()
-: triangles(NULL), coordinates(NULL)
+: triangles(NULL), elements(NULL), coordinates(NULL), epointers(NULL)
 {
 
 }
 
 SurfaceStore::~SurfaceStore()
 {
-	if (triangles == NULL) { delete triangles; }
-	if (coordinates == NULL) { delete coordinates; }
+	if (triangles != NULL && triangles != elements) { delete triangles; }
+	if (elements != NULL) { delete elements; }
+	if (coordinates != NULL) { delete coordinates; }
+	if (epointers != NULL) { delete epointers; }
 }
 
 

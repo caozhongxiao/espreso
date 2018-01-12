@@ -31,10 +31,10 @@ struct Esutils
 	static void threadDistributionToFullDistribution(std::vector<std::vector<Ttype> > &distribution);
 
 	template<typename Ttype>
-	static void removeDuplicity(std::vector<Ttype> &data);
+	static void removeDuplicity(std::vector<Ttype> &data, size_t begin = 0);
 
 	template<typename Ttype>
-	static void sortAndRemoveDuplicity(std::vector<Ttype> &data);
+	static void sortAndRemoveDuplicity(std::vector<Ttype> &data, size_t begin = 0);
 
 	template<typename Ttype>
 	static void sortAndRemoveDuplicity(std::vector<std::vector<Ttype> > &data);

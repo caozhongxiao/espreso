@@ -3,6 +3,7 @@
 #define SRC_OUTPUT_RESULT_VISUALIZATION_VTKLEGACY_H_
 
 #include <string>
+#include <vector>
 
 #include "visualization.h"
 
@@ -20,6 +21,10 @@ protected:
 	void sharedInterface(const std::string &name);
 	void domainSurface(const std::string &name);
 	void corners(const std::string &name);
+	void sFixPoints(const std::string &name);
+	void iFixPoints(const std::string &name);
+
+	void points(const std::string &name, const std::vector<eslocal> &points, const std::vector<eslocal> &distribution);
 
 	double _clusterShrinkRatio, _domainShrinkRatio;
 };
@@ -36,6 +41,8 @@ struct VTKLegacyDebugInfo: public VTKLegacy {
 		sharedInterface(_path + "sharedinterfaces");
 		domainSurface(_path + "domainSurface");
 		corners(_path + "corners");
+		sFixPoints(_path + "sfixpoints");
+		iFixPoints(_path + "ifixpoints");
 	}
 	void updateSolution(const Step &step)
 	{

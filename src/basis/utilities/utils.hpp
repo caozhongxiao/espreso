@@ -87,13 +87,13 @@ void Esutils::threadDistributionToFullDistribution(std::vector<std::vector<Ttype
 }
 
 template<typename Ttype>
-void Esutils::removeDuplicity(std::vector<Ttype> &data)
+void Esutils::removeDuplicity(std::vector<Ttype> &data, size_t begin)
 {
-	if (data.size() == 0) {
+	if (data.size() == begin) {
 		return;
 	}
-	size_t unique = 0;
-	for (size_t d = 1; d < data.size(); d++) {
+	size_t unique = begin;
+	for (size_t d = begin + 1; d < data.size(); d++) {
 		if (data[unique] != data[d]) {
 			data[++unique] = data[d];
 		}
@@ -103,10 +103,10 @@ void Esutils::removeDuplicity(std::vector<Ttype> &data)
 }
 
 template<typename Ttype>
-void Esutils::sortAndRemoveDuplicity(std::vector<Ttype> &data)
+void Esutils::sortAndRemoveDuplicity(std::vector<Ttype> &data, size_t begin)
 {
-	std::sort(data.begin(), data.end());
-	Esutils::removeDuplicity(data);
+	std::sort(data.begin() + begin, data.end());
+	Esutils::removeDuplicity(data, begin);
 }
 
 template<typename Ttype>

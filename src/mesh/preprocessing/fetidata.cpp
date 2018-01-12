@@ -21,6 +21,9 @@
 
 #include "../../config/ecf/environment.h"
 
+#include "../../wrappers/metis/wmetis.h"
+#include "../../wrappers/math/math.h"
+
 #include <algorithm>
 #include <numeric>
 #include <cstring>
@@ -28,9 +31,9 @@
 
 using namespace espreso;
 
-void MeshPreprocessing::computeSharedFaces()
+void MeshPreprocessing::computeSharedFaceNodes()
 {
-	start("computation of shared faces");
+	start("computation of shared face nodes");
 
 	if (_mesh->nodes->elements == NULL) {
 		linkNodesAndElements();
@@ -136,7 +139,7 @@ void MeshPreprocessing::computeSharedFaces()
 	_mesh->FETIData->inodesDistribution = inodesDistribution[0];
 	_mesh->FETIData->inodesDomains = inodesDomains[0];
 
-	finish("computation of shared faces");
+	finish("computation of shared face nodes");
 }
 
 void MeshPreprocessing::computeCornerNodes()
@@ -179,6 +182,235 @@ void MeshPreprocessing::computeCornerNodes()
 	finish("computation of corner nodes");
 }
 
+void MeshPreprocessing::addFixPoints(const serializededata<eslocal, eslocal>* elements, eslocal begin, eslocal end, const serializededata<eslocal, Element*>* epointers, std::vector<eslocal> &fixPoints)
+{
+	start("computation of coarse nodes dual graph");
+
+	eslocal FIX_POINTS_SIZE = 8;
+
+	auto neighs = [] (std::vector<eslocal> &neighs, Element::CODE code, int node, const eslocal* nodes) {
+		switch (code) {
+		case Element::CODE::HEXA8:
+		case Element::CODE::HEXA20:
+			if (node < 4) {
+				neighs.push_back((nodes[(node + 1) % 4]));
+				neighs.push_back((nodes[(node + 3) % 4]));
+				neighs.push_back((nodes[node + 4]));
+			} else {
+				neighs.push_back((nodes[(node + 1) % 4 + 4]));
+				neighs.push_back((nodes[(node + 3) % 4 + 4]));
+				neighs.push_back((nodes[node - 4]));
+			}
+			return 3;
+		case Element::CODE::TETRA4:
+		case Element::CODE::TETRA10:
+			neighs.push_back(nodes[(node + 1) % 4]);
+			neighs.push_back(nodes[(node + 2) % 4]);
+			neighs.push_back(nodes[(node + 3) % 4]);
+			return 3;
+		case Element::CODE::PRISMA6:
+		case Element::CODE::PRISMA15:
+			if (node < 3) {
+				neighs.push_back(nodes[(node + 1) % 3]);
+				neighs.push_back(nodes[(node + 2) % 3]);
+				neighs.push_back(nodes[node + 3]);
+			} else {
+				neighs.push_back(nodes[(node + 1) % 3 + 3]);
+				neighs.push_back(nodes[(node + 2) % 3 + 3]);
+				neighs.push_back(nodes[node - 3]);
+			}
+			return 3;
+
+		case Element::CODE::PYRAMID5:
+		case Element::CODE::PYRAMID13:
+			if (node == 4) {
+				neighs.insert(neighs.end(), nodes, nodes + 4);
+				return 4;
+			} else {
+				neighs.push_back(nodes[(node + 1) % 4]);
+				neighs.push_back(nodes[(node + 3) % 4]);
+				neighs.push_back(nodes[4]);
+				return 3;
+			}
+
+		case Element::CODE::TRIANGLE3:
+		case Element::CODE::TRIANGLE6:
+			neighs.push_back(nodes[(node + 1) % 3]);
+			neighs.push_back(nodes[(node + 2) % 3]);
+			return 2;
+
+		case Element::CODE::SQUARE4:
+		case Element::CODE::SQUARE8:
+			neighs.push_back(nodes[(node + 1) % 4]);
+			neighs.push_back(nodes[(node + 3) % 4]);
+			return 2;
+
+		case Element::CODE::LINE2:
+		case Element::CODE::LINE3:
+			neighs.push_back(nodes[(node + 1) % 2]);
+			return 1;
+		}
+		return 0;
+	};
+
+	std::vector<eslocal> originnodes, neighsnodes;
+	auto element = elements->begin() + begin;
+	const auto &epointer = epointers->datatarray();
+	for (eslocal e = 0; e < end - begin; ++e, ++element) {
+		for (int n = 0; n < epointer[begin + e]->coarseNodes; ++n) {
+			originnodes.insert(
+					originnodes.end(),
+					neighs(neighsnodes, epointer[begin + e]->code, n, element->data()),
+					element->at(n));
+		}
+	}
+
+	std::vector<eslocal> permutation(originnodes.size());
+	std::iota(permutation.begin(), permutation.end(), 0);
+	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) {
+		return originnodes[i] < originnodes[j];
+	});
+
+	std::vector<eslocal> ids, dist, data;
+	dist.push_back(0);
+	ids.push_back(originnodes[permutation[0]]);
+	for (size_t i = 0; i < permutation.size(); i++) {
+		if (i && originnodes[permutation[i]] != originnodes[permutation[i - 1]]) {
+			Esutils::sortAndRemoveDuplicity(data, dist.back());
+			dist.push_back(data.size());
+			ids.push_back(originnodes[permutation[i]]);
+		}
+		data.push_back(neighsnodes[permutation[i]]);
+	}
+	Esutils::sortAndRemoveDuplicity(data, dist.back());
+	dist.push_back(data.size());
+
+	for (size_t i = 0; i < data.size(); i++) {
+		data[i] = std::lower_bound(ids.begin(), ids.end(), data[i]) - ids.begin();
+	}
+
+	std::vector<eslocal> partition(ids.size());
+	METIS::call(ids.size(), dist.data(), data.data(), 0, NULL, NULL, FIX_POINTS_SIZE, partition.data());
+
+	std::vector<std::vector<eslocal> > pids(FIX_POINTS_SIZE), pdist(FIX_POINTS_SIZE, { 0 }), pdata(FIX_POINTS_SIZE);
+	for (size_t i = 0; i < partition.size(); i++) {
+		pids[partition[i]].push_back(i);
+	}
+	for (size_t i = 0; i < partition.size(); i++) {
+		eslocal p = partition[i];
+		for (eslocal j = dist[i]; j < dist[i + 1]; j++) {
+			if (partition[data[j]] == p) {
+				eslocal index = std::lower_bound(pids[p].begin(), pids[p].end(), data[j]) - pids[p].begin();
+				if (pdist[p].size() <= index) {
+					pdata[p].push_back(index);
+				}
+			}
+		}
+		pdist[p].push_back(pdata[p].size());
+	}
+
+	for (eslocal p = 0; p < FIX_POINTS_SIZE; p++) {
+		if (pids[p].size()) {
+			std::vector<float> vals(pdata[p].size(), 1), x(pids[p].size(), 1. / pids[p].size()), y(pids[p].size());
+			float last_l = pids[p].size(), l = 1;
+
+			while (fabs((l - last_l) / l) > 1e-6) {
+				MATH::upCSRMatVecProduct(pids[p].size(), pids[p].size(), pdist[p].data(), pdata[p].data(), vals.data(), x.data(), y.data());
+				last_l = l;
+				l = MATH::vecNorm(pids[p].size(), y.data());
+				MATH::vecScale(pids[p].size(), 1 / l, y.data());
+				x.swap(y);
+			}
+
+			fixPoints.push_back(pids[p][MATH::vecNormMaxIndex(pids[p].size(), x.data())]);
+		}
+	}
+
+	finish("computation of coarse nodes dual graph");
+}
+
+void MeshPreprocessing::computeFixPoints()
+{
+	start("computation of fix points");
+
+	if (_mesh->FETIData == NULL) {
+		_mesh->FETIData = new FETIDataStore();
+	}
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	std::vector<std::vector<eslocal> > fixPoints(threads), fixPointsDist(threads);
+
+	fixPointsDist.front().push_back(0);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		std::vector<eslocal> dist, data, partition;
+		for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
+			size_t size = fixPoints[t].size();
+			addFixPoints(_mesh->elements->nodes, _mesh->elements->elementsDistribution[d], _mesh->elements->elementsDistribution[d + 1], _mesh->elements->epointers, fixPoints[t]);
+			Esutils::sortAndRemoveDuplicity(fixPoints[t], size);
+			auto dit = _mesh->nodes->dintervals[d].begin();
+			for (size_t i = size; i < fixPoints[t].size(); i++) {
+				while (dit->DOFOffset + dit->end - dit->begin < fixPoints[t][i]) { ++dit; }
+				fixPoints[t][i] = dit->begin + fixPoints[t][i] - dit->DOFOffset;
+			}
+			fixPointsDist[t].push_back(fixPoints[t].size());
+		}
+	}
+
+	Esutils::threadDistributionToFullDistribution(fixPointsDist);
+	_mesh->FETIData->iFixPointsDistribution.clear();
+	for (size_t t = 0; t < threads; t++) {
+		_mesh->FETIData->iFixPointsDistribution.insert(_mesh->FETIData->iFixPointsDistribution.end(), fixPointsDist[t].begin(), fixPointsDist[t].end());
+		_mesh->FETIData->innerFixPoints.insert(_mesh->FETIData->innerFixPoints.end(), fixPoints[t].begin(), fixPoints[t].end());
+	}
+
+	finish("computation of fix points");
+}
+
+void MeshPreprocessing::computeFixPointsOnSurface()
+{
+	start("computation of fix points on surface");
+
+	if (_mesh->domainsSurface == NULL || _mesh->domainsSurface->elements == NULL) {
+		computeDomainsSurface();
+	}
+
+	if (_mesh->FETIData == NULL) {
+		_mesh->FETIData = new FETIDataStore();
+	}
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	std::vector<std::vector<eslocal> > fixPoints(threads), fixPointsDist(threads);
+
+	fixPointsDist.front().push_back(0);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		std::vector<eslocal> dist, data, partition;
+		for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
+			size_t size = fixPoints[t].size();
+			addFixPoints(_mesh->domainsSurface->elements, _mesh->domainsSurface->edistribution[d], _mesh->domainsSurface->edistribution[d + 1], _mesh->domainsSurface->epointers, fixPoints[t]);
+			Esutils::sortAndRemoveDuplicity(fixPoints[t], size);
+			auto dit = _mesh->nodes->dintervals[d].begin();
+			for (size_t i = size; i < fixPoints[t].size(); i++) {
+				while (dit->DOFOffset + dit->end - dit->begin < fixPoints[t][i]) { ++dit; }
+				fixPoints[t][i] = dit->begin + fixPoints[t][i] - dit->DOFOffset;
+			}
+			fixPointsDist[t].push_back(fixPoints[t].size());
+		}
+	}
+
+	Esutils::threadDistributionToFullDistribution(fixPointsDist);
+	_mesh->FETIData->sFixPointsDistribution.clear();
+	for (size_t t = 0; t < threads; t++) {
+		_mesh->FETIData->sFixPointsDistribution.insert(_mesh->FETIData->sFixPointsDistribution.end(), fixPointsDist[t].begin(), fixPointsDist[t].end());
+		_mesh->FETIData->surfaceFixPoints.insert(_mesh->FETIData->surfaceFixPoints.end(), fixPoints[t].begin(), fixPoints[t].end());
+	}
+
+	finish("computation of fix points on surface");
+}
+
 void MeshPreprocessing::computeDomainsSurface()
 {
 	start("computation domains surface");
@@ -191,9 +423,11 @@ void MeshPreprocessing::computeDomainsSurface()
 
 	std::vector<eslocal> IDBoundaries = _mesh->elements->gatherElementsDistribution();
 
-	std::vector<std::vector<eslocal> > triangles(threads);
+	std::vector<std::vector<eslocal> > faces(threads), facesDistribution(threads), ecounter(threads, std::vector<eslocal>((int)Element::CODE::SIZE));
+	std::vector<std::vector<Element*> > fpointer(threads);
 	std::vector<std::vector<eslocal> > intervals(threads);
 
+	facesDistribution.front().push_back(0);
 	intervals.front().push_back(0);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -210,7 +444,7 @@ void MeshPreprocessing::computeDomainsSurface()
 				++IDpointer;
 				begine = *IDpointer;
 				ende = *(IDpointer + 1);
-				intervals[t].push_back(triangles[t].size() / 3);
+				intervals[t].push_back(facesDistribution[t].size());
 			}
 			if (dual->size() < epointer->front()->faces->structures() || dual->front() < begine || dual->back() >= ende) {
 
@@ -246,15 +480,18 @@ void MeshPreprocessing::computeDomainsSurface()
 					}
 
 					if (ncommons == 1) {
-						for (auto n = (*facepointer)->triangles->datatarray().cbegin(); n != (*facepointer)->triangles->datatarray().cend(); ++n) {
-							triangles[t].push_back((*e)[face->at(*n)]);
+						for (auto n = face->begin(); n != face->end(); ++n) {
+							faces[t].push_back((*e)[*n]);
 						}
+						facesDistribution[t].push_back(faces[t].size());
+						fpointer[t].push_back(*facepointer);
+						++ecounter[t][(int)(*facepointer)->code];
 					}
 				}
 			}
 		}
 		if (eID + eoffset == ende) {
-			intervals[t].push_back(triangles[t].size() / 3);
+			intervals[t].push_back(facesDistribution[t].size());
 		}
 	}
 
@@ -262,12 +499,24 @@ void MeshPreprocessing::computeDomainsSurface()
 		_mesh->domainsSurface = new SurfaceStore();
 	}
 
-	eslocal tsize = 0;
-	for (size_t t = 0; t < threads; t++) {
+	for (size_t t = 1; t < threads; t++) {
+		for (size_t e = 0; e < ecounter[0].size(); e++) {
+			ecounter[0][e] += ecounter[t][e];
+		}
+	}
+
+	_mesh->domainsSurface->epointers = new serializededata<eslocal, Element*>(1, fpointer);
+	_mesh->domainsSurface->ecounters = ecounter[0];
+
+	for (size_t i = 1; i < intervals[0].size(); i++) {
+		--intervals[0][i];
+	}
+	eslocal tsize = facesDistribution[0].size() - 1;
+	for (size_t t = 1; t < threads; t++) {
 		for (size_t i = 0; i < intervals[t].size(); i++) {
 			intervals[t][i] += tsize;
 		}
-		tsize += triangles[t].size() / 3;
+		tsize += facesDistribution[t].size();
 	}
 	Esutils::mergeThreadedUniqueData(intervals);
 	Esutils::sortAndRemoveDuplicity(intervals[0]);
@@ -279,8 +528,16 @@ void MeshPreprocessing::computeDomainsSurface()
 		tdistribution.push_back(_mesh->domainsSurface->edistribution[_mesh->elements->domainDistribution[t + 1]]);
 	}
 
-	serializededata<eslocal, eslocal>::balance(3, triangles, &tdistribution);
-	_mesh->domainsSurface->triangles = new serializededata<eslocal, eslocal>(3, triangles);
+	if (ecounter[0][(int)Element::CODE::TRIANGLE3] == _mesh->domainsSurface->edistribution.back()) {
+		serializededata<eslocal, eslocal>::balance(3, faces, &tdistribution);
+		_mesh->domainsSurface->elements = new serializededata<eslocal, eslocal>(3, faces);
+		_mesh->domainsSurface->triangles = _mesh->domainsSurface->elements;
+		_mesh->domainsSurface->tdistribution = _mesh->domainsSurface->edistribution;
+	} else {
+		Esutils::threadDistributionToFullDistribution(facesDistribution);
+		serializededata<eslocal, eslocal>::balance(facesDistribution, faces, &tdistribution);
+		_mesh->domainsSurface->elements = new serializededata<eslocal, eslocal>(facesDistribution, faces);
+	}
 
 	std::vector<std::vector<Point> > coordinates(threads);
 	std::vector<std::vector<eslocal> > cdistribution(threads);
@@ -289,15 +546,19 @@ void MeshPreprocessing::computeDomainsSurface()
 	for (size_t t = 0; t < threads; t++) {
 		for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
 			std::vector<eslocal> nodes(
-					_mesh->domainsSurface->triangles->datatarray().begin() + 3 * _mesh->domainsSurface->edistribution[d],
-					_mesh->domainsSurface->triangles->datatarray().begin() + 3 * _mesh->domainsSurface->edistribution[d + 1]);
+					(_mesh->domainsSurface->elements->cbegin() + _mesh->domainsSurface->edistribution[d])->begin(),
+					(_mesh->domainsSurface->elements->cbegin() + _mesh->domainsSurface->edistribution[d + 1])->begin());
 			Esutils::sortAndRemoveDuplicity(nodes);
 			coordinates[t].reserve(coordinates[t].size() + nodes.size());
 			for (size_t n = 0; n < nodes.size(); n++) {
 				coordinates[t].push_back(_mesh->nodes->coordinates->datatarray()[nodes[n]]);
 			}
-			for (size_t n = 3 * _mesh->domainsSurface->edistribution[d]; n < 3 * _mesh->domainsSurface->edistribution[d + 1]; n++) {
-				_mesh->domainsSurface->triangles->datatarray()[n] = std::lower_bound(nodes.begin(), nodes.end(), _mesh->domainsSurface->triangles->datatarray()[n]) - nodes.begin();
+			for (
+					auto n = (_mesh->domainsSurface->elements->begin() + _mesh->domainsSurface->edistribution[d])->begin();
+					n != (_mesh->domainsSurface->elements->begin() + _mesh->domainsSurface->edistribution[d + 1])->begin();
+					++n) {
+
+				*n = std::lower_bound(nodes.begin(), nodes.end(), *n) - nodes.begin();
 			}
 			cdistribution[t].push_back(coordinates[t].size());
 		}
@@ -309,5 +570,46 @@ void MeshPreprocessing::computeDomainsSurface()
 	_mesh->domainsSurface->cdistribution = cdistribution[0];
 
 	finish("computation domains surface");
+}
+
+void MeshPreprocessing::triangularizeDomainSurface()
+{
+	start("triangularize domain surface");
+
+	if (_mesh->domainsSurface->elements == NULL) {
+		computeDomainsSurface();
+	}
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	if (_mesh->domainsSurface->triangles == NULL) {
+
+		std::vector<std::vector<eslocal> > triangles(threads);
+		std::vector<std::vector<eslocal> > intervals(threads);
+
+		intervals.front().push_back(0);
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
+				auto elements = _mesh->domainsSurface->elements->cbegin() + _mesh->domainsSurface->edistribution[d];
+				auto epointer = _mesh->domainsSurface->epointers->datatarray().begin() + _mesh->domainsSurface->edistribution[d];
+
+				for (eslocal e = _mesh->domainsSurface->edistribution[d]; e < _mesh->domainsSurface->edistribution[d + 1]; ++e, ++elements, ++epointer) {
+					for (auto n = (*epointer)->triangles->datatarray().cbegin(); n != (*epointer)->triangles->datatarray().cend(); ++n) {
+						triangles[t].push_back(elements->at(*n));
+					}
+				}
+				intervals[t].push_back(triangles[t].size() / 3);
+			}
+		}
+
+		Esutils::threadDistributionToFullDistribution(intervals);
+		Esutils::mergeThreadedUniqueData(intervals);
+
+		_mesh->domainsSurface->tdistribution = intervals[0];
+		_mesh->domainsSurface->triangles = new serializededata<eslocal, eslocal>(3, triangles);
+	}
+
+	finish("triangularize domain surface");
 }
 

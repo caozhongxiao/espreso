@@ -387,6 +387,51 @@ void VTKLegacy::domainSurface(const std::string &name)
 	if (_mesh.domainsSurface == NULL) {
 		return;
 	}
+
+	auto surface = [&] (const std::string &suffix, serializededata<eslocal, eslocal>* elements, std::vector<eslocal> &distribution) {
+		std::ofstream os(name + "." + suffix + std::to_string(environment->MPIrank) + ".vtk");
+
+		os << "# vtk DataFile Version 2.0\n";
+		os << "EXAMPLE\n";
+		os << "ASCII\n";
+		os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+		os << "POINTS " << _mesh.domainsSurface->coordinates->datatarray().size() << " float\n";
+		for (size_t d = 0; d < _mesh.elements->ndomains; ++d) {
+			for (eslocal n = _mesh.domainsSurface->cdistribution[d]; n < _mesh.domainsSurface->cdistribution[d + 1]; ++n) {
+				Point p = shrink(_mesh.domainsSurface->coordinates->datatarray()[n], _mesh.nodes->center, _mesh.nodes->dcenter[d], _clusterShrinkRatio, _domainShrinkRatio);
+				os << p.x << " " << p.y << " " << p.z << "\n";
+			}
+		}
+		os << "\n";
+
+		os << "CELLS " << elements->structures() << " " << elements->structures() + elements->datatarray().size() << "\n";
+		for (size_t d = 0; d < _mesh.elements->ndomains; ++d) {
+			for (auto element = elements->cbegin() + distribution[d]; element != elements->cbegin() + distribution[d + 1]; ++element) {
+				os << element->size() << " ";
+				for (auto n = element->begin(); n != element->end(); ++n) {
+					os << _mesh.domainsSurface->cdistribution[d] + *n << " ";
+				}
+				os << "\n";
+			}
+		}
+		os << "\n";
+
+		os << "CELL_TYPES " << distribution.back() << "\n";
+		for (size_t n = 0; n < distribution.back(); ++n) {
+			os << "5\n";
+		}
+		os << "\n";
+	};
+
+	surface("elements",  _mesh.domainsSurface->elements, _mesh.domainsSurface->edistribution);
+	if (_mesh.domainsSurface->triangles != NULL) {
+		surface("triangles",  _mesh.domainsSurface->triangles, _mesh.domainsSurface->tdistribution);
+	}
+}
+
+void VTKLegacy::points(const std::string &name, const std::vector<eslocal> &points, const std::vector<eslocal> &distribution)
+{
 	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
 
 	os << "# vtk DataFile Version 2.0\n";
@@ -394,30 +439,24 @@ void VTKLegacy::domainSurface(const std::string &name)
 	os << "ASCII\n";
 	os << "DATASET UNSTRUCTURED_GRID\n\n";
 
-	os << "POINTS " << _mesh.domainsSurface->coordinates->datatarray().size() << " float\n";
-	for (size_t d = 0; d < _mesh.elements->ndomains; ++d) {
-		for (eslocal n = _mesh.domainsSurface->cdistribution[d]; n < _mesh.domainsSurface->cdistribution[d + 1]; ++n) {
-			Point p = shrink(_mesh.domainsSurface->coordinates->datatarray()[n], _mesh.nodes->center, _mesh.nodes->dcenter[d], _clusterShrinkRatio, _domainShrinkRatio);
-			os << p.x << " " << p.y << " " << p.z << "\n";
+	os << "POINTS " << points.size() << " float\n";
+	for (size_t d = 0; d < distribution.size() - 1; d++) {
+		for (size_t i = distribution[d]; i < distribution[d + 1]; i++) {
+			Point n = shrink(_mesh.nodes->coordinates->datatarray()[points[i]], _mesh.nodes->center, _mesh.nodes->dcenter[d], _clusterShrinkRatio, _domainShrinkRatio);
+			os << n.x << " " << n.y << " " << n.z << "\n";
 		}
 	}
 	os << "\n";
 
-	os << "CELLS " << _mesh.domainsSurface->triangles->datatarray().size() / 3 << " " << 4 * _mesh.domainsSurface->triangles->datatarray().size() / 3 << "\n";
-	for (size_t d = 0; d < _mesh.elements->ndomains; ++d) {
-		for (eslocal n = _mesh.domainsSurface->edistribution[d]; n < _mesh.domainsSurface->edistribution[d + 1]; ++n) {
-			os << "3 ";
-			for (int i = 0; i < 3; i++) {
-				os << _mesh.domainsSurface->cdistribution[d] + _mesh.domainsSurface->triangles->datatarray()[3 * n + i] << " ";
-			}
-			os << "\n";
-		}
+	os << "CELLS " << points.size() << " " << 2 * points.size() << "\n";
+	for (size_t n = 0; n < points.size(); ++n) {
+		os << "1 " << n << "\n";
 	}
 	os << "\n";
 
-	os << "CELL_TYPES " << _mesh.domainsSurface->edistribution.back() << "\n";
-	for (size_t n = 0; n < _mesh.domainsSurface->edistribution.back(); ++n) {
-		os << "5\n";
+	os << "CELL_TYPES " << points.size() << "\n";
+	for (size_t n = 0; n < points.size(); ++n) {
+		os << "1\n";
 	}
 	os << "\n";
 }
@@ -427,6 +466,7 @@ void VTKLegacy::corners(const std::string &name)
 	if (_mesh.FETIData == NULL) {
 		return;
 	}
+
 	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
 
 	os << "# vtk DataFile Version 2.0\n";
@@ -434,24 +474,39 @@ void VTKLegacy::corners(const std::string &name)
 	os << "ASCII\n";
 	os << "DATASET UNSTRUCTURED_GRID\n\n";
 
-	size_t points = _mesh.FETIData->corners.size();
-
-	os << "POINTS " << points << " float\n";
-	for (size_t i = 0; i < points; i++) {
+	os << "POINTS " << _mesh.FETIData->corners.size() << " float\n";
+	for (size_t i = 0; i < _mesh.FETIData->corners.size(); i++) {
 		const Point &n = _mesh.nodes->coordinates->datatarray()[_mesh.FETIData->corners[i]];
 		os << n.x << " " << n.y << " " << n.z << "\n";
 	}
 	os << "\n";
 
-	os << "CELLS " << points << " " << 2 * points << "\n";
-	for (size_t n = 0; n < points; ++n) {
+	os << "CELLS " << _mesh.FETIData->corners.size() << " " << 2 * _mesh.FETIData->corners.size() << "\n";
+	for (size_t n = 0; n < _mesh.FETIData->corners.size(); ++n) {
 		os << "1 " << n << "\n";
 	}
 	os << "\n";
 
-	os << "CELL_TYPES " << points << "\n";
-	for (size_t n = 0; n < points; ++n) {
+	os << "CELL_TYPES " << _mesh.FETIData->corners.size() << "\n";
+	for (size_t n = 0; n < _mesh.FETIData->corners.size(); ++n) {
 		os << "1\n";
 	}
 	os << "\n";
 }
+
+void VTKLegacy::sFixPoints(const std::string &name)
+{
+	if (_mesh.FETIData == NULL) {
+		return;
+	}
+	points(name, _mesh.FETIData->surfaceFixPoints, _mesh.FETIData->sFixPointsDistribution);
+}
+
+void VTKLegacy::iFixPoints(const std::string &name)
+{
+	if (_mesh.FETIData == NULL) {
+		return;
+	}
+	points(name, _mesh.FETIData->innerFixPoints, _mesh.FETIData->iFixPointsDistribution);
+}
+

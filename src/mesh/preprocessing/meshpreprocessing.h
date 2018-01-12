@@ -11,6 +11,7 @@ namespace espreso {
 #define VERBOSITY(level) level == 0 ? PROGRESS2 : PROGRESS3
 
 class Mesh;
+struct Element;
 struct ProcessInterval;
 struct BoundaryRegionStore;
 template <typename TEBoundaries, typename TEData> class serializededata;
@@ -25,6 +26,7 @@ public:
 
 	void computeDual();
 	void computeDecomposedDual(bool separateMaterials, bool separateRegions, bool separateEtype);
+	void computeFullDual(const serializededata<eslocal, eslocal>* elements, eslocal begin, eslocal end, std::vector<eslocal> &dist, std::vector<eslocal> &data);
 
 	void reclusterize();
 	void partitiate(eslocal parts, bool separateMaterials, bool separateRegions, bool separateEtype);
@@ -33,9 +35,12 @@ public:
 	void arrangeElements();
 	void arrangeRegions();
 
-	void computeSharedFaces();
+	void computeSharedFaceNodes();
 	void computeCornerNodes();
+	void computeFixPoints();
+	void computeFixPointsOnSurface();
 	void computeDomainsSurface();
+	void triangularizeDomainSurface();
 
 protected:
 	static size_t level;
@@ -50,6 +55,8 @@ private:
 	void computeBoundaryNodes(std::vector<eslocal> &externalBoundary, std::vector<eslocal> &internalBoundary);
 	void fillRegionMask();
 	void computeRegionArea(BoundaryRegionStore *store);
+
+	void addFixPoints(const serializededata<eslocal, eslocal>* elements, eslocal begin, eslocal end, const serializededata<eslocal, Element*>* epointers, std::vector<eslocal> &fixPoints);
 
 	void synchronizeRegionNodes(const std::string &name, serializededata<eslocal, eslocal>* &rnodes, std::vector<ProcessInterval> &nintervals);
 	void computeIntervalOffsets(std::vector<ProcessInterval> &intervals, eslocal &uniqueOffset, eslocal &uniqueSize, eslocal &uniqueTotalSize);

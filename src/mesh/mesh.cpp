@@ -421,13 +421,14 @@ void Mesh::update()
 
 	if (hasBEM(getPhysics())) {
 		preprocessing->computeDomainsSurface();
+		preprocessing->triangularizeDomainSurface();
 	}
 
 	if (forEachSteps([] (const LoadStepConfiguration &step) {
 		return step.solver == LoadStepConfiguration::SOLVER::FETI && step.feti.method == FETI_METHOD::HYBRID_FETI && step.feti.B0_type == FETI_B0_TYPE::KERNELS;
 	})) {
 
-		preprocessing->computeSharedFaces();
+		preprocessing->computeSharedFaceNodes();
 	}
 
 	if (forEachSteps([] (const LoadStepConfiguration &step) {
@@ -435,6 +436,16 @@ void Mesh::update()
 	})) {
 
 		preprocessing->computeCornerNodes();
+	}
+
+	if (configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_2D || configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {
+		if (forEachSteps([] (const LoadStepConfiguration &step) {
+			return step.solver == LoadStepConfiguration::SOLVER::FETI && step.feti.regularization == FETI_REGULARIZATION::ANALYTIC;
+		})) {
+
+			preprocessing->computeFixPoints();
+			preprocessing->computeFixPointsOnSurface();
+		}
 	}
 
 	printStatistics();

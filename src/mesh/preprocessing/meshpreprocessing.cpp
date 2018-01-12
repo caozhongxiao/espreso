@@ -451,6 +451,65 @@ void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separ
 	finish("computation of the decomposed dual graph of local elements");
 }
 
+void MeshPreprocessing::computeFullDual(const serializededata<eslocal, eslocal>* elements, eslocal begin, eslocal end, std::vector<eslocal> &dist, std::vector<eslocal> &data)
+{
+	start("computation of dual graph a given elements");
+
+	dist.clear();
+	data.clear();
+
+	std::vector<eslocal> nodes((elements->begin() + begin)->begin(), (elements->begin() + end)->begin()), permutation(nodes.size());
+	std::iota(permutation.begin(), permutation.end(), 0);
+	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) {
+		return nodes[i] < nodes[j];
+	});
+
+	std::vector<eslocal> epointers, pepointers, pepointersDist;
+	epointers.reserve(nodes.size());
+	auto element = elements->begin() + begin;
+	for (eslocal e = 0; e < end - begin; ++e, ++element) {
+		epointers.insert(epointers.end(), element->size(), e);
+	}
+
+	pepointersDist.push_back(0);
+	pepointers.reserve(nodes.size());
+	for (size_t i = 0; i < permutation.size(); i++) {
+		if (i && nodes[permutation[i]] != nodes[permutation[i - 1]]) {
+			pepointersDist.push_back(pepointers.size());
+		}
+		pepointers.push_back(epointers[permutation[i]]);
+	}
+	pepointersDist.push_back(epointers.size());
+
+	std::vector<eslocal> pnodes(nodes.size(), -1);
+	for (size_t n = 0; n + 1 < pepointersDist.size(); ++n) {
+		for (eslocal e = pepointersDist[n]; e < pepointersDist[n + 1]; ++e) {
+			eslocal index = elements->boundarytarray()[begin + pepointers[e]] - elements->boundarytarray()[begin];
+			while (pnodes[index] != -1) { ++index; }
+			pnodes[index] = n;
+		}
+	}
+
+	element = elements->begin() + begin;
+	std::vector<eslocal> neigh;
+	dist.push_back(0);
+	for (eslocal e = 0, nindex = 0; e < end - begin; ++e, ++element) {
+		neigh.clear();
+		for (eslocal i = 0; i < element->size(); ++i, ++nindex) {
+			neigh.insert(neigh.end(), pepointers.begin() + pepointersDist[pnodes[nindex]], pepointers.begin() + pepointersDist[pnodes[nindex] + 1]);
+		}
+		Esutils::sortAndRemoveDuplicity(neigh);
+		for (size_t n = 0; n < neigh.size(); n++) {
+			if (neigh[n] != e) {
+				data.push_back(neigh[n]);
+			}
+		}
+		dist.push_back(data.size());
+	}
+
+	finish("computation of dual graph a given elements");
+}
+
 void MeshPreprocessing::computeBoundaryNodes(std::vector<eslocal> &externalBoundary, std::vector<eslocal> &internalBoundary)
 {
 	start("computation of boundary nodes");

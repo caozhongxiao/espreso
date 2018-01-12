@@ -22,6 +22,10 @@ struct FETIDataStore {
 	std::vector<eslocal> corners;
 	serializededata<eslocal, eslocal>* cornerDomains;
 
+	// Regularization from fix points
+	std::vector<eslocal> surfaceFixPoints, sFixPointsDistribution;
+	std::vector<eslocal> innerFixPoints, iFixPointsDistribution;
+
 	FETIDataStore();
 	~FETIDataStore();
 };

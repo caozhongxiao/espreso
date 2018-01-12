@@ -9,7 +9,8 @@ FETIDataStore::FETIDataStore()
 : interfaceNodes(NULL),
   cornerDomains(NULL)
 {
-
+	sFixPointsDistribution = {0, 0};
+	iFixPointsDistribution = {0, 0};
 }
 
 FETIDataStore::~FETIDataStore()
