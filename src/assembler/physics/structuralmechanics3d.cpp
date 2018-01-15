@@ -397,7 +397,7 @@ void StructuralMechanics3D::processElement(eslocal domain, Matrices matrices, es
 		if (initial_temperature != NULL) {
 			initTemp = initial_temperature->evaluate(p, _step->currentTime, 0);
 		}
-		if (initial_temperature != NULL) {
+		if (temperature != NULL) {
 			temp = temperature->evaluate(p, _step->currentTime, 0);
 		}
 		if (acceleration != NULL) {

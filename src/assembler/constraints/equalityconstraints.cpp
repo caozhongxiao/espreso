@@ -699,11 +699,6 @@ void EqualityConstraints::B0Kernels(const std::vector<SparseMatrix> &kernels)
 
 void EqualityConstraints::B0Corners()
 {
-	if (!_mesh.FETIData->corners.size()) {
-		ESINFO(ERROR) << "Mesh not contains corners.";
-		return;
-	}
-
 	for (size_t d = 0; d < _instance.domains; d++) {
 		_instance.B0[d].cols = _instance.K[d].cols;
 	}

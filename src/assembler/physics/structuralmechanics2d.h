@@ -7,6 +7,8 @@
 
 namespace espreso {
 
+struct MaterialBaseConfiguration;
+
 struct StructuralMechanics2D: public StructuralMechanics, public Physics2D
 {
 	StructuralMechanics2D(Mesh *mesh, Instance *instance, Step *step, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
@@ -21,7 +23,7 @@ struct StructuralMechanics2D: public StructuralMechanics, public Physics2D
 	void processSolution();
 
 protected:
-	void assembleMaterialMatrix(eslocal eindex, eslocal node, double temp, DenseMatrix &K) const;
+	void assembleMaterialMatrix(eslocal node, const Point &p, const MaterialBaseConfiguration *mat, double temp, DenseMatrix &K) const;
 	void postProcessElement(eslocal eindex);
 };
 
