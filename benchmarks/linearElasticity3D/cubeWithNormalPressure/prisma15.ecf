@@ -20,7 +20,7 @@ GENERATOR {
   SHAPE   GRID;
 
   GRID {
-    UNIFORM_DECOMPOSITION   FALSE;
+    UNIFORM_DECOMPOSITION TRUE;
 
 
     START_X                     0;
@@ -41,10 +41,6 @@ GENERATOR {
       Z1   <0 , 100> <0 , 100> <100 , 100>;
       Y1   <0 , 100> <100 , 100> <0 , 100>;
       X1   <100 , 100> <0 , 100> <0 , 100>;
-    }
-
-    ELEMENTS {
-      E_ALL   ALL;
     }
 
     ELEMENT_TYPE           [ARG0];
@@ -83,7 +79,7 @@ STRUCTURAL_MECHANICS_3D {
   }
 
   MATERIAL_SET {
-    E_ALL   1;
+    ALL_ELEMENTS   1;
   }
 
   LOAD_STEPS_SETTINGS {
@@ -103,9 +99,9 @@ STRUCTURAL_MECHANICS_3D {
       }
 
       DISPLACEMENT {
-        Z0   Z 0;
-        Y0   Y 0;
-        X0   X 0;
+        Z0   { Z 0; }
+        Y0   { Y 0; }
+        X0   { X 0; }
       }
 
       NORMAL_PRESSURE {

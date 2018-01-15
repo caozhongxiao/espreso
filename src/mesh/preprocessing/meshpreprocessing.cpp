@@ -639,15 +639,17 @@ void MeshPreprocessing::computeBoundaryNodes(std::vector<eslocal> &externalBound
 	for (size_t n = 0; n < _mesh->neighbours.size(); n++) {
 		nExternal.resize(std::set_difference(nExternal.begin(), nExternal.end(), sBuffer[n].begin(), sBuffer[n].end(), nExternal.begin()) - nExternal.begin());
 	}
+
 	for (size_t n = 0; n < nExternal.size(); n++) {
 		std::vector<std::vector<eslocal> > tnExternal(threads);
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			auto it = std::find(_mesh->nodes->IDs->datatarray().cbegin() + _mesh->nodes->distribution[t], _mesh->nodes->IDs->datatarray().cbegin() + _mesh->nodes->distribution[t + 1], nExternal[n]);
 			if (it != _mesh->nodes->IDs->datatarray().cbegin() + _mesh->nodes->distribution[t + 1]) {
-				tnExternal[t].push_back(it - _mesh->nodes->IDs->datatarray().cbegin() + _mesh->nodes->distribution[t]);
+				tnExternal[t].push_back(it - _mesh->nodes->IDs->datatarray().cbegin());
 			}
 		}
+
 		for (size_t t = 0; t < threads; t++) {
 			externalBoundary.insert(externalBoundary.end(), tnExternal[t].begin(), tnExternal[t].end());
 		}

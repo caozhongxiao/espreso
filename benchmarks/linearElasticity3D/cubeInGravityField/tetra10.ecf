@@ -35,10 +35,6 @@ GENERATOR {
       Z0   <0 , 100> <0 , 100> <0 , 0>;
     }
 
-    ELEMENTS {
-      E_ALL   ALL;
-    }
-
     ELEMENT_TYPE          [ARG0];
 
     CLUSTERS_X            [ARG1];
@@ -75,7 +71,7 @@ STRUCTURAL_MECHANICS_3D {
   }
 
   MATERIAL_SET {
-    E_ALL   1;
+    ALL_ELEMENTS   1;
   }
 
   LOAD_STEPS_SETTINGS {
@@ -94,11 +90,11 @@ STRUCTURAL_MECHANICS_3D {
       }
 
       DISPLACEMENT {
-        Z0   X 0 , Y 0 , Z 0;
+        Z0   { X 0 ; Y 0 ; Z 0; }
       }
 
       ACCELERATION {
-        E_ALL   Z 9.8066;
+        ALL_ELEMENTS   {Z 9.8066;};
       }
     }
   }

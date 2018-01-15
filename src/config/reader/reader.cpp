@@ -350,6 +350,9 @@ ECFRedParameters ECFReader::_read(
 				values.clear();
 				break;
 			}
+			if (values.size() == 0) {
+				break;
+			}
 			if (values.size() == 1) {
 				// allow to read an empty value
 				values.push_back("");

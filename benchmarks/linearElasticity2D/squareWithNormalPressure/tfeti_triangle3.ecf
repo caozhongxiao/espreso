@@ -17,7 +17,7 @@ GENERATOR {
   SHAPE   GRID;
 
   GRID {
-    UNIFORM_DECOMPOSITION   FALSE;
+    UNIFORM_DECOMPOSITION TRUE;
 
 
     START_X                     0;
@@ -92,8 +92,8 @@ STRUCTURAL_MECHANICS_2D {
       }
 
       DISPLACEMENT {
-        Y0   Y 0;
-        X0   X 0;
+        Y0   { Y 0; }
+        X0   { X 0; }
       }
 
       NORMAL_PRESSURE {
