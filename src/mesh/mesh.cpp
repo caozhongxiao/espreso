@@ -456,16 +456,15 @@ void Mesh::initNodeData()
 	for (auto datait = nodes->data.begin(); datait != nodes->data.end(); ++datait) {
 		NodeData* data = *datait;
 		if (data->names.size()) {
-			int dimension = data->names.size() == 1 ? 1 : data->names.size() - 1;
-			data->gatheredData.resize(dimension * nodes->uniqueSize);
+			data->gatheredData.resize(data->dimension * nodes->uniqueSize);
 			data->sBuffer.resize(neighbours.size());
 			data->rBuffer.resize(neighbours.size());
 
 			for (size_t n = 0; n < neighbours.size(); ++n) {
 				if (neighbours[n] < environment->MPIrank) {
-					data->sBuffer[n].resize(dimension * nodes->scouters[n]);
+					data->sBuffer[n].resize(data->dimension * nodes->scouters[n]);
 				} else {
-					data->rBuffer[n].resize(dimension * nodes->scouters[n + 1]);
+					data->rBuffer[n].resize(data->dimension * nodes->scouters[n + 1]);
 				}
 			}
 		}
@@ -487,7 +486,6 @@ void Mesh::gatherNodeData()
 	for (auto datait = nodes->data.begin(); datait != nodes->data.end(); ++datait) {
 		NodeData* data = *datait;
 		if (data->names.size()) {
-			int dimension = data->names.size() == 1 ? 1 : data->names.size() - 1;
 			for (size_t i = 0; i < data->sBuffer.size(); i++) {
 				std::fill(data->sBuffer[i].begin(), data->sBuffer[i].end(), 0);
 			}
@@ -502,10 +500,10 @@ void Mesh::gatherNodeData()
 					noffset = n2i(nodes->pintervals[i].sourceProcess);
 					for (auto d = domains->begin(); d != domains->end(); ++d) {
 						if (elements->firstDomain <= *d && *d < elements->firstDomain + elements->ndomains) {
-							offset = dimension * doffset(*d - elements->firstDomain, i);
-							soffset = dimension * nodes->soffsets[i];
+							offset = data->dimension * doffset(*d - elements->firstDomain, i);
+							soffset = data->dimension * nodes->soffsets[i];
 							for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n) {
-								for (int dof = 0; dof < dimension; ++dof, ++soffset, ++offset) {
+								for (int dof = 0; dof < data->dimension; ++dof, ++soffset, ++offset) {
 									data->sBuffer[noffset][soffset] += (*data->decomposedData)[*d - elements->firstDomain][offset];
 								}
 							}
@@ -527,27 +525,27 @@ void Mesh::gatherNodeData()
 
 				if (nodes->pintervals[i].sourceProcess == environment->MPIrank) {
 					for (auto d = idomains->begin(); d != idomains->end() && *d < elements->firstDomain + elements->ndomains; ++d) {
-						goffset = dimension * (nodes->pintervals[i].globalOffset - nodes->uniqueOffset);
-						offset = dimension * doffset(*d - elements->firstDomain, i);
+						goffset = data->dimension * (nodes->pintervals[i].globalOffset - nodes->uniqueOffset);
+						offset = data->dimension * doffset(*d - elements->firstDomain, i);
 						for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n) {
-							for (int dof = 0; dof < dimension; ++dof, ++goffset, ++offset) {
+							for (int dof = 0; dof < data->dimension; ++dof, ++goffset, ++offset) {
 								data->gatheredData[goffset] += (*data->decomposedData)[*d - elements->firstDomain][offset];
 							}
 						}
 					}
 					for (auto neigh = ineighbors->begin(); neigh != ineighbors->end(); ++neigh) {
-						goffset = dimension * (nodes->pintervals[i].globalOffset - nodes->uniqueOffset);
-						offset = dimension * neigh->offset;
+						goffset = data->dimension * (nodes->pintervals[i].globalOffset - nodes->uniqueOffset);
+						offset = data->dimension * neigh->offset;
 						noffset = n2i(neigh->process);
 						for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n) {
-							for (int dof = 0; dof < dimension; ++dof, ++goffset, ++offset) {
+							for (int dof = 0; dof < data->dimension; ++dof, ++goffset, ++offset) {
 								data->gatheredData[goffset] += data->rBuffer[noffset][offset];
 							}
 						}
 					}
-					goffset = dimension * (nodes->pintervals[i].globalOffset - nodes->uniqueOffset);
+					goffset = data->dimension * (nodes->pintervals[i].globalOffset - nodes->uniqueOffset);
 					for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n) {
-						for (int dof = 0; dof < dimension; ++dof, ++goffset) {
+						for (int dof = 0; dof < data->dimension; ++dof, ++goffset) {
 							data->gatheredData[goffset] /= idomains->size();
 						}
 					}
@@ -605,7 +603,6 @@ static void _computeGatheredNodeStatistics(const Mesh *mesh, const NodeData *dat
 			}
 		}
 	} else {
-		int dimension = data->names.size() - 1;
 		double value;
 
 		for (size_t i = 0; i < intervals.size(); i++) {
@@ -614,12 +611,12 @@ static void _computeGatheredNodeStatistics(const Mesh *mesh, const NodeData *dat
 				for (auto n = nodes.cbegin() + intervals[i].begin; n != nodes.cbegin() + intervals[i].end; ++n) {
 					value = 0;
 					index = goffset + *n - mesh->nodes->pintervals[i].begin;
-					for (int d = 0; d < dimension; d++) {
-						value +=  data->gatheredData[index * dimension + d] * data->gatheredData[index * dimension + d];
-						(statistics + d + 1)->min = std::min((statistics + d + 1)->min, data->gatheredData[index * dimension + d]);
-						(statistics + d + 1)->max = std::max((statistics + d + 1)->max, data->gatheredData[index * dimension + d]);
-						(statistics + d + 1)->avg += data->gatheredData[index * dimension + d];
-						(statistics + d + 1)->norm += data->gatheredData[index * dimension + d] * data->gatheredData[index * dimension + d];
+					for (int d = 0; d < data->dimension; d++) {
+						value +=  data->gatheredData[index * data->dimension + d] * data->gatheredData[index * data->dimension + d];
+						(statistics + d + 1)->min = std::min((statistics + d + 1)->min, data->gatheredData[index * data->dimension + d]);
+						(statistics + d + 1)->max = std::max((statistics + d + 1)->max, data->gatheredData[index * data->dimension + d]);
+						(statistics + d + 1)->avg += data->gatheredData[index * data->dimension + d];
+						(statistics + d + 1)->norm += data->gatheredData[index * data->dimension + d] * data->gatheredData[index * data->dimension + d];
 					}
 					value = std::sqrt(value);
 					statistics->min = std::min(statistics->min, value);
@@ -666,18 +663,17 @@ void Mesh::computeElementStatistic(const ElementData *data, const ElementsRegion
 			}
 		}
 	} else {
-		int dimension = data->names.size() - 1;
 		double value;
 
 		for (size_t i = 0; i < region->eintervals.size(); i++) {
 			for (auto e = region->elements->datatarray().cbegin() + region->eintervals[i].begin; e != region->elements->datatarray().cbegin() + region->eintervals[i].end; ++e) {
 				value = 0;
-				for (int d = 0; d < dimension; d++) {
-					value += (*data->data)[*e * dimension + d] * (*data->data)[*e * dimension + d];
-					(statistics + d + 1)->min = std::min((statistics + d + 1)->min, (*data->data)[*e * dimension + d]);
-					(statistics + d + 1)->max = std::max((statistics + d + 1)->max, (*data->data)[*e * dimension + d]);
-					(statistics + d + 1)->avg += (*data->data)[*e * dimension + d];
-					(statistics + d + 1)->norm += (*data->data)[*e * dimension + d] * (*data->data)[*e * dimension + d];
+				for (int d = 0; d < data->dimension; d++) {
+					value += (*data->data)[*e * data->dimension + d] * (*data->data)[*e * data->dimension + d];
+					(statistics + d + 1)->min = std::min((statistics + d + 1)->min, (*data->data)[*e * data->dimension + d]);
+					(statistics + d + 1)->max = std::max((statistics + d + 1)->max, (*data->data)[*e * data->dimension + d]);
+					(statistics + d + 1)->avg += (*data->data)[*e * data->dimension + d];
+					(statistics + d + 1)->norm += (*data->data)[*e * data->dimension + d] * (*data->data)[*e * data->dimension + d];
 				}
 				value = std::sqrt(value);
 				statistics->min = std::min(statistics->min, value);

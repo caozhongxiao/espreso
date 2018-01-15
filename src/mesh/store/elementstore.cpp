@@ -45,7 +45,7 @@ size_t ElementStore::packedSize() const
 	size_t datasize = sizeof(size_t);
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {
-			datasize += Esutils::packedSize(data[i]->names);
+			datasize += sizeof(int) + Esutils::packedSize(data[i]->names);
 		}
 	}
 
@@ -96,6 +96,7 @@ void ElementStore::pack(char* &p) const
 	Esutils::pack(size, p);
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {
+			Esutils::pack(data[i]->dimension, p);
 			Esutils::pack(data[i]->names, p);
 		}
 	}
@@ -131,11 +132,13 @@ void ElementStore::unpack(const char* &p)
 	Esutils::unpack(ecounters, p);
 	Esutils::unpack(eintervals, p);
 
+	int dimension;
 	size_t datasize;
 	Esutils::unpack(datasize, p);
 	for (size_t i = 0; i < datasize; i++) {
 		if (i >= data.size()) {
-			data.push_back(new ElementData());
+			Esutils::unpack(dimension, p);
+			data.push_back(new ElementData(dimension));
 		}
 		Esutils::unpack(data[i]->names, p);
 	}
@@ -237,9 +240,9 @@ void ElementStore::permute(const std::vector<eslocal> &permutation, const std::v
 	if (decomposedDual != NULL) { decomposedDual->permute(permutation, distribution); }
 }
 
-ElementData* ElementStore::appendData(const std::vector<std::string> &names)
+ElementData* ElementStore::appendData(int dimension, const std::vector<std::string> &names)
 {
-	data.push_back(new ElementData(names));
+	data.push_back(new ElementData(dimension, names));
 	if (names.size() < 2) {
 		data.back()->data->resize(size);
 	} else {
@@ -248,9 +251,9 @@ ElementData* ElementStore::appendData(const std::vector<std::string> &names)
 	return data.back();
 }
 
-ElementData* ElementStore::appendData(const std::vector<std::string> &names, std::vector<double> &data)
+ElementData* ElementStore::appendData(int dimension, const std::vector<std::string> &names, std::vector<double> &data)
 {
-	this->data.push_back(new ElementData(names, &data));
+	this->data.push_back(new ElementData(dimension, names, &data));
 	return this->data.back();
 }
 
@@ -280,14 +283,14 @@ std::vector<eslocal> ElementStore::gatherClustersDistribution()
 }
 
 
-ElementData::ElementData()
-: _delete(true)
+ElementData::ElementData(int dimension)
+: dimension(dimension), _delete(true)
 {
 	data = new std::vector<double>();
 }
 
-ElementData::ElementData(const std::vector<std::string> &names, std::vector<double> *data)
-: names(names), data(data), _delete(false)
+ElementData::ElementData(int dimension, const std::vector<std::string> &names, std::vector<double> *data)
+: dimension(dimension), names(names), data(data), _delete(false)
 {
 	if (data == NULL) {
 		this->data = new std::vector<double>();
@@ -295,7 +298,7 @@ ElementData::ElementData(const std::vector<std::string> &names, std::vector<doub
 }
 
 ElementData::ElementData(ElementData &&other)
-: names(std::move(other.names)), data(other.data),
+: dimension(std::move(dimension)), names(std::move(other.names)), data(other.data),
   _delete(std::move(other._delete))
 {
 	other.data = NULL;
@@ -303,7 +306,7 @@ ElementData::ElementData(ElementData &&other)
 }
 
 ElementData::ElementData(const ElementData &other)
-: names(other.names), data(other.data),
+: dimension(std::move(dimension)), names(other.names), data(other.data),
   _delete(other._delete)
 {
 	if (_delete) {
@@ -314,6 +317,7 @@ ElementData::ElementData(const ElementData &other)
 ElementData& ElementData::operator=(const ElementData &other)
 {
 	if (this != &other) {
+		dimension = other.dimension;
 		names = other.names;
 		data = other.data;
 		_delete = other._delete;

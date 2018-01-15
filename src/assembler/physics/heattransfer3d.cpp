@@ -34,11 +34,11 @@ HeatTransfer3D::HeatTransfer3D(Mesh *mesh, Instance *instance, Step *step, const
 : Physics("HEAT TRANSFER 3D", mesh, instance, step, &configuration, 1), HeatTransfer(configuration, propertiesConfiguration)
 {
 	if (_propertiesConfiguration.gradient) {
-		_gradient = _mesh->elements->appendData({ "GRADIENT", "GRADIENT_X", "GRADIENT_Y", "GRADIENT_Z" });
+		_gradient = _mesh->elements->appendData(3, { "GRADIENT", "GRADIENT_X", "GRADIENT_Y", "GRADIENT_Z" });
 	}
 
 	if (_propertiesConfiguration.flux) {
-		_flux = _mesh->elements->appendData({ "FLUX", "FLUX_X", "FLUX_Y", "FLUX_Z" });
+		_flux = _mesh->elements->appendData(3, { "FLUX", "FLUX_X", "FLUX_Y", "FLUX_Z" });
 	}
 }
 

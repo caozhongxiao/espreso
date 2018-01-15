@@ -44,9 +44,9 @@ HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration, const
 			configuration.load_steps_settings.at(1).feti.scaling);
 
 	if (_hasBEM) {
-		_temperature = _mesh->nodes->appendData({ "TEMPERATURE" });
+		_temperature = _mesh->nodes->appendData(1, { "TEMPERATURE" });
 	} else {
-		_temperature = _mesh->nodes->appendData({ "TEMPERATURE" }, _instance->primalSolution);
+		_temperature = _mesh->nodes->appendData(1, { "TEMPERATURE" }, _instance->primalSolution);
 	}
 
 	bool phaseChange = false;
@@ -55,8 +55,8 @@ HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration, const
 	}
 
 	if (phaseChange) {
-		_phaseChange = _mesh->nodes->appendData({ "PHASE" });
-		_latentHeat = _mesh->nodes->appendData({ "LATENT_HEAT" });
+		_phaseChange = _mesh->nodes->appendData(1, { "PHASE" });
+		_latentHeat = _mesh->nodes->appendData(1, { "LATENT_HEAT" });
 	}
 }
 

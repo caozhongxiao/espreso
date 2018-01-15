@@ -30,11 +30,11 @@ HeatTransfer2D::HeatTransfer2D(Mesh *mesh, Instance *instance, Step *step, const
 : Physics("HEAT TRANSFER 2D", mesh, instance, step, &configuration, 1), HeatTransfer(configuration, propertiesConfiguration)
 {
 	if (_propertiesConfiguration.gradient) {
-		_gradient = _mesh->elements->appendData({ "GRADIENT", "GRADIENT_X", "GRADIENT_Y" });
+		_gradient = _mesh->elements->appendData(2, { "GRADIENT", "GRADIENT_X", "GRADIENT_Y" });
 	}
 
 	if (_propertiesConfiguration.flux) {
-		_flux = _mesh->elements->appendData({ "FLUX", "FLUX_X", "FLUX_Y" });
+		_flux = _mesh->elements->appendData(2, { "FLUX", "FLUX_X", "FLUX_Y" });
 	}
 }
 

@@ -50,9 +50,9 @@ StructuralMechanics::StructuralMechanics(const StructuralMechanicsConfiguration 
 		datanames = { "DISPLACEMENT", "DISPLACEMENT_X", "DISPLACEMENT_Y", "DISPLACEMENT_Z" };
 	}
 	if (_hasBEM) {
-		_displacement = _mesh->nodes->appendData(datanames);
+		_displacement = _mesh->nodes->appendData(DOFs, datanames);
 	} else {
-		_displacement = _mesh->nodes->appendData(datanames, _instance->primalSolution);
+		_displacement = _mesh->nodes->appendData(DOFs, datanames, _instance->primalSolution);
 	}
 }
 

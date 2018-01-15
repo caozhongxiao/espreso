@@ -28,12 +28,12 @@ TransientFirstOrderImplicit::TransientFirstOrderImplicit(TimeStepSolver &timeSte
 		ESINFO(GLOBAL_ERROR) << "Set time step for TRANSIENT solver greater than 1e-7.";
 	}
 
-	U = _assembler.mesh.nodes->appendData({});
-	dU = _assembler.mesh.nodes->appendData({});
-	V = _assembler.mesh.nodes->appendData({});
-	X = _assembler.mesh.nodes->appendData({});
-	Y = _assembler.mesh.nodes->appendData({});
-	dTK = _assembler.mesh.nodes->appendData({});
+	U = _assembler.mesh.nodes->appendData(1, {});
+	dU = _assembler.mesh.nodes->appendData(1, {});
+	V = _assembler.mesh.nodes->appendData(1, {});
+	X = _assembler.mesh.nodes->appendData(1, {});
+	Y = _assembler.mesh.nodes->appendData(1, {});
+	dTK = _assembler.mesh.nodes->appendData(1, {});
 }
 
 Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Matrices matrices)
