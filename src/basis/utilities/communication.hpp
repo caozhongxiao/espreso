@@ -189,6 +189,26 @@ bool Communication::gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::ve
 	}
 	return true;
 }
+template <typename Ttype>
+bool Communication::allGatherUnknownSize(std::vector<Ttype> &data)
+{
+	int size = sizeof(Ttype) * data.size();
+	std::vector<int> rSizes(environment->MPIsize), rOffsets(environment->MPIsize);
+	MPI_Allgather(&size, sizeof(int), MPI_BYTE, rSizes.data(), sizeof(int), MPI_BYTE, environment->MPICommunicator);
+
+	std::vector<Ttype> rdata;
+	size = 0;
+	for (size_t i = 0; i < rSizes.size(); i++) {
+		rOffsets[i] = size;
+		size += rSizes[i];
+	}
+	rdata.resize(size / sizeof(Ttype));
+
+	MPI_Allgatherv(data.data(), data.size() * sizeof(Ttype), MPI_BYTE, rdata.data(), rSizes.data(), rOffsets.data(), MPI_BYTE, environment->MPICommunicator);
+
+	rdata.swap(data);
+	return true;
+}
 
 template <typename Ttype>
 bool Communication::broadcastUnknownSize(std::vector<Ttype> &buffer)
@@ -219,6 +239,19 @@ Ttype Communication::exscan(Ttype &value, MPI_Op &operation)
 	MPI_Barrier(environment->MPICommunicator);
 
 	return size;
+}
+
+template <typename Ttype>
+std::vector<Ttype> Communication::getDistribution(Ttype size)
+{
+	std::vector<eslocal> result(environment->MPIsize + 1);
+	eslocal esize = size;
+	Communication::exscan(esize, MPITools::operations().sizeToOffsets);
+
+	MPI_Allgather(&esize, sizeof(eslocal), MPI_BYTE, result.data(), sizeof(eslocal), MPI_BYTE, environment->MPICommunicator);
+	result.back() = esize + size;
+	MPI_Bcast(&result.back(), sizeof(eslocal), MPI_BYTE, environment->MPIsize - 1, environment->MPICommunicator);
+	return result;
 }
 
 template <typename Ttype>

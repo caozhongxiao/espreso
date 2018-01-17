@@ -1,11 +1,9 @@
 
 def configure(ctx):
-    ctx.recurse("api")
+    pass
 
 def build(ctx):
-    ctx.recurse("api")
-
     ctx.objects(
-        source = ctx.path.ant_glob('*.cpp'),
+        source = ctx.path.ant_glob('**/*.cpp'),
         target = "loader"
     )

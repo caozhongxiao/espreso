@@ -64,10 +64,16 @@ struct Communication {
 	static bool gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, std::vector<size_t> &offsets);
 
 	template <typename Ttype>
+	static bool allGatherUnknownSize(std::vector<Ttype> &data);
+
+	template <typename Ttype>
 	static bool broadcastUnknownSize(std::vector<Ttype> &buffer);
 
 	template <typename Ttype>
 	static Ttype exscan(Ttype &value, MPI_Op &operation);
+
+	template <typename Ttype>
+	static std::vector<Ttype> getDistribution(Ttype size);
 
 	template <typename Ttype>
 	static bool sendVariousTargets(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &targets)
