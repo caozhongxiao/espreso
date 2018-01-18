@@ -219,11 +219,11 @@ void Mesh::load()
 		elements->size = mesh->elements().size();
 		elements->distribution = distribution;
 
-		elements->IDs = new serializededata<eslocal, esglobal>(1, eIDs);
+		elements->IDs = new serializededata<eslocal, eslocal>(1, eIDs);
 		elements->nodes = new serializededata<eslocal, eslocal>(std::move(tarray<eslocal>(boundaries)), std::move(tarray<eslocal>(indices)));
 
-		elements->body = new serializededata<eslocal, esglobal>(1, body);
-		elements->material = new serializededata<eslocal, esglobal>(1, material);
+		elements->body = new serializededata<eslocal, int>(1, body);
+		elements->material = new serializededata<eslocal, int>(1, material);
 		elements->epointers = new serializededata<eslocal, Element*>(1, std::move(tarray<Element*>(epointers)));
 	}
 
@@ -413,7 +413,7 @@ void Mesh::update()
 	if (uniformDecomposition) {
 		// implement uniform decomposition
 	} else {
-		preprocessing->partitiate(mesh->parts(),
+		preprocessing->partitiate(configuration.decomposition.domains ? configuration.decomposition.domains : mesh->parts(),
 				configuration.decomposition.separate_materials || hasBEM(getPhysics()), // BEM domain has to have only one material
 				configuration.decomposition.separate_regions || hasBEM(getPhysics()),
 				configuration.decomposition.separate_etypes);

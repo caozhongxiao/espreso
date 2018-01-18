@@ -102,7 +102,7 @@ public:
 	static std::string uppercase(const std::string &str);
 
 	static std::string strip(const std::string &line);
-	static std::vector<std::string> split(const std::string &line, const std::string &separator);
+	static std::vector<std::string> split(const std::string &line, const std::string &separator, bool skipMultiple = true);
 };
 
 }

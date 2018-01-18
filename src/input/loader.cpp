@@ -15,14 +15,13 @@ void Loader::load(const ECFConfiguration &configuration, Mesh &mesh, int MPIrank
 	switch (configuration.input) {
 	case INPUT_FORMAT::WORKBENCH:
 		WorkbenchLoader::load(configuration, mesh);
+		mesh.update();
 		break;
 	default:
 		input::OldLoader::load(configuration, *mesh.mesh, MPIrank, MPIsize);
+		mesh.load();
 		break;
 	}
-
-	exit(0);
-	mesh.load();
 }
 
 
