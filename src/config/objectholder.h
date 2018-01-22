@@ -77,6 +77,7 @@ struct ECFEnumMap: public ECFObject {
 	virtual const ECFParameter* getPattern() const
 	{
 		ECFParameter *parameter = new ECFEnumHolder<TValue>(_patternValue);
+		parameter->metadata = metadata.suffix(1);
 		parameter->setValue(metadata.pattern[1]);
 		return registerPatternParameter(parameter);
 	}
