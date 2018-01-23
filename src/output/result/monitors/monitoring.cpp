@@ -63,13 +63,13 @@ void Monitoring::updateMesh()
 		ElementsRegionStore *estore = NULL;
 		BoundaryRegionStore *bstore = NULL;
 		bool regionNotFound = true;
-		for (size_t r = 0; r < regionNotFound && _mesh.elementsRegions.size(); r++) {
+		for (size_t r = 0; regionNotFound && r < _mesh.elementsRegions.size(); r++) {
 			if (StringCompare::caseInsensitiveEq(it->second.region, _mesh.elementsRegions[r]->name)) {
 				estore = _mesh.elementsRegions[r];
 				regionNotFound = false;
 			}
 		}
-		for (size_t r = 0; r < regionNotFound && _mesh.boundaryRegions.size(); r++) {
+		for (size_t r = 0; regionNotFound && r < _mesh.boundaryRegions.size(); r++) {
 			if (StringCompare::caseInsensitiveEq(it->second.region, _mesh.boundaryRegions[r]->name)) {
 				bstore = _mesh.boundaryRegions[r];
 				regionNotFound = false;
