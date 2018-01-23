@@ -276,7 +276,6 @@ void Mesh::load()
 			} else {
 				boundaryRegions.back()->dimension = 1;
 			}
-
 			break;
 		case ElementType::NODES:
 
@@ -444,7 +443,9 @@ void Mesh::update()
 		})) {
 
 			preprocessing->computeFixPoints();
-			preprocessing->computeFixPointsOnSurface();
+			if (hasBEM(getPhysics())) {
+				preprocessing->computeFixPointsOnSurface();
+			}
 		}
 	}
 

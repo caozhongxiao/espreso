@@ -3,6 +3,13 @@
 
 using namespace espreso;
 
+std::string Parser::getLine(const char* begin)
+{
+	const char* end = begin;
+	while (*end++ != '\n');
+	return std::string(begin, end);
+}
+
 std::string Parser::uppercase(const std::string &str) {
 	std::string upper = str;
 	for (auto & c: upper) { c = toupper(c); }

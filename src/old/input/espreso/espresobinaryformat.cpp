@@ -277,7 +277,7 @@ void ESPRESOBinaryFormat::regions(
 
 bool ESPRESOBinaryFormat::partitiate(const std::vector<OldElement*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<OldElement*> > &fixPoints, std::vector<OldElement*> &corners)
 {
-	mesh.partitiate(_configuration.domains);
+	mesh.partitiate(1);
 	return true;
 }
 

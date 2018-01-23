@@ -12,10 +12,10 @@ InputConfiguration::InputConfiguration()
 			.setdescription({ "Path to an input example." })
 			.setdatatype({ ECFDataType::STRING }));
 
-	domains = 4;
-	REGISTER(domains, ECFMetaData()
-			.setdescription({ "Number of domains for each cluster (MPI process)." })
-			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
+	compress_numbers = false;
+	REGISTER(compress_numbers, ECFMetaData()
+			.setdescription({ "Make number compression (re-index nodes and element to make numbering continuous)." })
+			.setdatatype({ ECFDataType::BOOL }));
 }
 
 

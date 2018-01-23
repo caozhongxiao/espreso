@@ -188,8 +188,6 @@ void MeshPreprocessing::computeCornerNodes()
 
 void MeshPreprocessing::addFixPoints(const serializededata<eslocal, eslocal>* elements, eslocal begin, eslocal end, const serializededata<eslocal, Element*>* epointers, std::vector<eslocal> &fixPoints)
 {
-	start("computation of coarse nodes dual graph");
-
 	eslocal FIX_POINTS_SIZE = 8;
 
 	auto neighs = [] (std::vector<eslocal> &neighs, Element::CODE code, int node, const eslocal* nodes) {
@@ -329,8 +327,6 @@ void MeshPreprocessing::addFixPoints(const serializededata<eslocal, eslocal>* el
 			fixPoints.push_back(pids[p][MATH::vecNormMaxIndex(pids[p].size(), x.data())]);
 		}
 	}
-
-	finish("computation of coarse nodes dual graph");
 }
 
 void MeshPreprocessing::computeFixPoints()
