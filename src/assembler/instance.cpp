@@ -74,7 +74,7 @@ Instance::Instance(const Mesh &mesh)
 	};
 
 	computeKernelFromOrigKCallback = [] (FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster) {
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernel is empty function. Fill it in assembler.";
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernelFromOrigK is empty function. Fill it in assembler.";
 	};
 
 	computeKernelsFromOrigKCallback = [] (FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
