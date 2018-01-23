@@ -324,7 +324,7 @@ void MeshPreprocessing::addFixPoints(const serializededata<eslocal, eslocal>* el
 				x.swap(y);
 			}
 
-			fixPoints.push_back(pids[p][MATH::vecNormMaxIndex(pids[p].size(), x.data())]);
+			fixPoints.push_back(ids[pids[p][MATH::vecNormMaxIndex(pids[p].size(), x.data())]]);
 		}
 	}
 }
@@ -349,11 +349,6 @@ void MeshPreprocessing::computeFixPoints()
 			size_t size = fixPoints[t].size();
 			addFixPoints(_mesh->elements->nodes, _mesh->elements->elementsDistribution[d], _mesh->elements->elementsDistribution[d + 1], _mesh->elements->epointers, fixPoints[t]);
 			Esutils::sortAndRemoveDuplicity(fixPoints[t], size);
-			auto dit = _mesh->nodes->dintervals[d].begin();
-			for (size_t i = size; i < fixPoints[t].size(); i++) {
-				while (dit->DOFOffset + dit->end - dit->begin < fixPoints[t][i]) { ++dit; }
-				fixPoints[t][i] = dit->begin + fixPoints[t][i] - dit->DOFOffset;
-			}
 			fixPointsDist[t].push_back(fixPoints[t].size());
 		}
 	}
@@ -392,11 +387,6 @@ void MeshPreprocessing::computeFixPointsOnSurface()
 			size_t size = fixPoints[t].size();
 			addFixPoints(_mesh->domainsSurface->elements, _mesh->domainsSurface->edistribution[d], _mesh->domainsSurface->edistribution[d + 1], _mesh->domainsSurface->epointers, fixPoints[t]);
 			Esutils::sortAndRemoveDuplicity(fixPoints[t], size);
-			auto dit = _mesh->nodes->dintervals[d].begin();
-			for (size_t i = size; i < fixPoints[t].size(); i++) {
-				while (dit->DOFOffset + dit->end - dit->begin < fixPoints[t][i]) { ++dit; }
-				fixPoints[t][i] = dit->begin + fixPoints[t][i] - dit->DOFOffset;
-			}
 			fixPointsDist[t].push_back(fixPoints[t].size());
 		}
 	}
