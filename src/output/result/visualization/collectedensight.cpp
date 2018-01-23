@@ -380,7 +380,7 @@ void CollectedEnSight::updateSolution(const Step &step)
 		if (_mesh.nodes->data[di]->names.size() == 0) {
 			continue;
 		}
-		eslocal size = _mesh.nodes->data[di]->names.size() == 1 ? 1 : _mesh.nodes->data[di]->names.size() - 1;
+		eslocal size = _mesh.nodes->data[di]->dimension;
 
 		std::string filename = _name + "." + _mesh.nodes->data[di]->names.front().substr(0, 4);
 		std::stringstream name;
@@ -450,7 +450,7 @@ void CollectedEnSight::updateSolution(const Step &step)
 		if (_mesh.elements->data[di]->names.size() == 0) {
 			continue;
 		}
-		eslocal size = _mesh.elements->data[di]->names.size() == 1 ? 1 : _mesh.elements->data[di]->names.size() - 1;
+		eslocal size = _mesh.elements->data[di]->dimension;
 
 		std::string filename = _name + "." + _mesh.elements->data[di]->names.front().substr(0, 4);
 		std::stringstream name;
