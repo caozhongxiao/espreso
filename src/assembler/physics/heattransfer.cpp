@@ -6,6 +6,8 @@
 
 #include "../constraints/equalityconstraints.h"
 
+#include "../../basis/containers/point.h"
+#include "../../basis/containers/serializededata.h"
 #include "../../basis/matrices/denseMatrix.h"
 #include "../../basis/evaluator/evaluator.h"
 
@@ -172,6 +174,20 @@ void HeatTransfer::computeInitialTemperature(std::vector<std::vector<double> > &
 		data[d].resize(intervals.back().DOFOffset + intervals.back().end - intervals.back().begin, 273.15 + 20);
 		if (itemp != _configuration.initial_temperature.end()) {
 			itemp->second.evaluator->evaluate(data[d].size(), NULL, NULL, _step->currentTime, data[d].data());
+		}
+	}
+
+	for (auto it = _configuration.load_steps_settings.at(1).temperature.begin(); it != _configuration.load_steps_settings.at(1).temperature.end(); ++it) {
+		BoundaryRegionStore *region = _mesh->bregion(it->first);
+		#pragma omp parallel for
+		for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
+			const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[d];
+			for (size_t i = 0; i < intervals.size(); ++i) {
+				for (eslocal n = region->nintervals[intervals[i].pindex].begin; n < region->nintervals[intervals[i].pindex].end; ++n) {
+					eslocal dof = intervals[i].DOFOffset + region->nodes->datatarray()[n] - intervals[i].begin;
+					data[d][dof] = it->second.evaluator->evaluate(_mesh->nodes->coordinates->datatarray()[region->nodes->datatarray()[n]], 0, 0);
+				}
+			}
 		}
 	}
 }
