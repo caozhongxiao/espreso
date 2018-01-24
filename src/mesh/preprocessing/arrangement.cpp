@@ -897,7 +897,7 @@ void MeshPreprocessing::fillRegionMask()
 
 void MeshPreprocessing::synchronizeRegionNodes(const std::string &name, serializededata<eslocal, eslocal>* &rnodes, std::vector<ProcessInterval> &nintervals)
 {
-	start(name);
+	start("synchronize region: " + name);
 
 	const auto &nodes = rnodes->datatarray();
 
@@ -963,7 +963,7 @@ void MeshPreprocessing::synchronizeRegionNodes(const std::string &name, serializ
 		}
 	}
 
-	finish(name);
+	finish("synchronize region: " + name);
 }
 
 void MeshPreprocessing::computeIntervalOffsets(std::vector<ProcessInterval> &intervals, eslocal &uniqueOffset, eslocal &uniqueSize, eslocal &uniqueTotalSize)

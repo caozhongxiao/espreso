@@ -5,10 +5,14 @@
 #include <cstddef>
 #include <string>
 #include <vector>
+#include <map>
 
 namespace espreso {
 
 #define VERBOSITY(level) level == 0 ? PROGRESS2 : PROGRESS3
+
+class TimeEval;
+class TimeEvent;
 
 class Mesh;
 struct Element;
@@ -42,11 +46,17 @@ public:
 	void computeDomainsSurface();
 	void triangularizeDomainSurface();
 
+	void finishPreprocessing();
+
 protected:
 	static size_t level;
 
-	MeshPreprocessing(Mesh *mesh): _mesh(mesh) {}
+	MeshPreprocessing(Mesh *mesh);
+	~MeshPreprocessing();
 	Mesh *_mesh;
+
+	TimeEval *_timeStatistics;
+	std::map<std::string, TimeEvent*> _timeEvents;
 
 private:
 	void exchangeElements(const std::vector<eslocal> &partition);

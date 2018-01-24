@@ -17,6 +17,7 @@
 #include "../../basis/utilities/utils.h"
 #include "../../basis/utilities/parser.h"
 #include "../../basis/logging/logging.h"
+#include "../../basis/logging/timeeval.h"
 
 #include "../../config/ecf/environment.h"
 
@@ -29,10 +30,40 @@ using namespace espreso;
 
 size_t MeshPreprocessing::level = 0;
 
+MeshPreprocessing::MeshPreprocessing(Mesh *mesh)
+: _mesh(mesh), _timeStatistics(new TimeEval("Mesh preprocessing timing"))
+{
+	_timeStatistics->totalTime.startWithBarrier();
+}
+
+MeshPreprocessing::~MeshPreprocessing()
+{
+	delete _timeStatistics;
+	for (auto it = _timeEvents.begin(); it != _timeEvents.end(); ++it) {
+		delete it->second;
+	}
+}
+
+void MeshPreprocessing::finishPreprocessing()
+{
+	_timeStatistics->totalTime.endWithBarrier();
+	_timeStatistics->printStatsMPI();
+}
+
 void MeshPreprocessing::start(const std::string &message)
 {
 	ESINFO(VERBOSITY(level)) << std::string(2 * level, ' ') << "Mesh preprocessing :: " << message << " started.";
 	++level;
+
+	TimeEvent *event;
+	if (_timeEvents.find(message) != _timeEvents.end()) {
+		event = _timeEvents[message];
+	} else {
+		_timeEvents[message] = event = new TimeEvent(message);
+		_timeStatistics->addPointerToEvent(event);
+	}
+
+	event->start();
 }
 
 void MeshPreprocessing::skip(const std::string &message)
@@ -42,6 +73,16 @@ void MeshPreprocessing::skip(const std::string &message)
 
 void MeshPreprocessing::finish(const std::string &message)
 {
+	TimeEvent *event;
+	if (_timeEvents.find(message) != _timeEvents.end()) {
+		event = _timeEvents[message];
+	} else {
+		_timeEvents[message] = event = new TimeEvent(message);
+		_timeStatistics->addPointerToEvent(event);
+	}
+
+	event->endWithBarrier();
+
 	--level;
 	ESINFO(VERBOSITY(level)) << std::string(2 * level, ' ') << "Mesh preprocessing :: " << message << " finished.";
 }
@@ -263,7 +304,7 @@ void MeshPreprocessing::exchangeHalo()
 
 void MeshPreprocessing::computeDual()
 {
-	start("computation of the dual graph of all elements");
+	start("computation of the full dual graph");
 
 	if (_mesh->nodes->elements == NULL) {
 		this->linkNodesAndElements();
@@ -330,12 +371,12 @@ void MeshPreprocessing::computeDual()
 
 	_mesh->elements->dual = new serializededata<eslocal, eslocal>(dualDistribution, dualData);
 
-	finish("computation of the dual graph of all elements");
+	finish("computation of the full dual graph");
 }
 
 void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separateRegions, bool separateEtype)
 {
-	start("computation of the decomposed dual graph of local elements");
+	start("computation of clusters dual graphs");
 
 	if (_mesh->nodes->elements == NULL) {
 		this->linkNodesAndElements();
@@ -448,7 +489,7 @@ void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separ
 
 	_mesh->elements->decomposedDual = new serializededata<eslocal, eslocal>(dualDistribution, dualData);
 
-	finish("computation of the decomposed dual graph of local elements");
+	finish("computation of clusters dual graphs");
 }
 
 void MeshPreprocessing::computeFullDual(const serializededata<eslocal, eslocal>* elements, eslocal begin, eslocal end, std::vector<eslocal> &dist, std::vector<eslocal> &data)
@@ -700,22 +741,3 @@ void MeshPreprocessing::computeRegionArea(BoundaryRegionStore *store)
 
 	MPI_Allreduce(&A, &store->area, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

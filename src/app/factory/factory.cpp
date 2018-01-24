@@ -15,9 +15,9 @@
 #include "../../assembler/instance.h"
 
 #include "../../mesh/mesh.h"
+#include "../../mesh/preprocessing/meshpreprocessing.h"
 #include "../../input/loader.h"
 #include "../../config/ecf/ecf.h"
-#include "../../mesh/mesh.h"
 #include "../../output/result/resultstore.h"
 #include "../../solver/generic/FETISolver.h"
 
@@ -101,6 +101,8 @@ Factory::Factory(const ECFConfiguration &configuration, Mesh &mesh, ResultStore 
 	mesh.initNodeData();
 
 	_store->updateMesh();
+
+	mesh.preprocessing->finishPreprocessing();
 }
 
 void Factory::solve()
