@@ -17,6 +17,7 @@ struct StructuralMechanics: public virtual Physics
 	virtual MatrixType getMatrixType(size_t domain) const;
 	virtual void prepare();
 	virtual void preprocessData();
+	virtual void setDirichlet();
 
 protected:
 	const StructuralMechanicsConfiguration &_configuration;

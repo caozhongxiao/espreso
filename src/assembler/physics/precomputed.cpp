@@ -74,6 +74,11 @@ void Precomputed::preprocessData()
 //	_instance->solutions[SolutionIndex::MERGED] = new Solution(*_mesh, "mergedSolution", ElementType::NODES, { Property::UNKNOWN }, _mergedSolution);
 }
 
+void Precomputed::setDirichlet()
+{
+
+}
+
 void Precomputed::processSolution()
 {
 //	for (size_t i = 0; i < dynamic_cast<APIMesh*>(_mesh)->DOFs().size(); i++) {

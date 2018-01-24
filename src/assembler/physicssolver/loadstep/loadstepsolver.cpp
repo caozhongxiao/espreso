@@ -32,6 +32,7 @@ void LoadStepSolver::initLoadStep()
 	if (_assembler.step.step == 0) {
 		_assembler.preprocessData();
 	}
+	_assembler.physics.setDirichlet();
 	_assembler.setRegularizationCallback();
 	_assembler.setB0Callback();
 }

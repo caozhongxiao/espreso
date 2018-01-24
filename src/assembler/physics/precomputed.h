@@ -20,6 +20,7 @@ struct Precomputed: public virtual Physics
 	MatrixType getMatrixType(size_t domain) const;
 
 	void preprocessData();
+	void setDirichlet();
 
 	void analyticRegularization(size_t domain, bool ortogonalCluster);
 

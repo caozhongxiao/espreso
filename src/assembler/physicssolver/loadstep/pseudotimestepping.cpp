@@ -21,9 +21,9 @@ Matrices PseudoTimeStepping::updateStructuralMatrices(Matrices matrices)
 {
 	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::f | Matrices::R | Matrices::B1 | Matrices::B1c | Matrices::B1duplicity);
 
-	if (_assembler.step.substep) {
-		updatedMatrices &= (Matrices::f | Matrices::B1c);
-	}
+//	if (_assembler.step.iteration) {
+//		updatedMatrices &= (Matrices::f | Matrices::B1c | Matrices::R);
+//	}
 
 	return reassembleStructuralMatrices(updatedMatrices);
 }

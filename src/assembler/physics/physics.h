@@ -43,6 +43,7 @@ struct Physics {
 
 	virtual void prepare() {};
 	virtual void preprocessData() =0;
+	virtual void setDirichlet() =0;
 
 	virtual void updateMatrix(Matrices matrices);
 	virtual void updateMatrix(Matrices matrices, size_t domain);

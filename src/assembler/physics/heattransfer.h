@@ -18,6 +18,7 @@ struct HeatTransfer: public virtual Physics
 	virtual MatrixType getMatrixType(size_t domain) const;
 	virtual void prepare();
 	virtual void preprocessData();
+	virtual void setDirichlet();
 	virtual void analyticRegularization(size_t domain, bool ortogonalCluster);
 
 	double sumSquares(const std::vector<std::vector<double> > &data, SumRestriction restriction) const;

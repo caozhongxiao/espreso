@@ -56,6 +56,16 @@ StructuralMechanics::StructuralMechanics(const StructuralMechanicsConfiguration 
 	}
 }
 
+void StructuralMechanics::setDirichlet()
+{
+	if (_step->step) {
+		_equalityConstraints->update(
+				_configuration.load_steps_settings.at(_step->step + 1).displacement,
+				_configuration.load_steps_settings.at(_step->step + 1).feti.redundant_lagrange,
+				_configuration.load_steps_settings.at(_step->step + 1).feti.scaling);
+	}
+}
+
 MatrixType StructuralMechanics::getMatrixType(size_t domain) const
 {
 	return MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;

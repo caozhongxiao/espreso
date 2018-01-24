@@ -60,6 +60,16 @@ HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration, const
 	}
 }
 
+void HeatTransfer::setDirichlet()
+{
+	if (_step->step) {
+		_equalityConstraints->update(
+				_configuration.load_steps_settings.at(_step->step + 1).temperature,
+				_configuration.load_steps_settings.at(_step->step + 1).feti.redundant_lagrange,
+				_configuration.load_steps_settings.at(_step->step + 1).feti.scaling);
+	}
+}
+
 MatrixType HeatTransfer::getMatrixType(size_t domain) const
 {
 	if (_step->tangentMatrixCorrection) {
