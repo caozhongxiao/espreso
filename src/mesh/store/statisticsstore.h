@@ -8,6 +8,7 @@ struct Statistics {
 	double min, max, avg, norm;
 
 	Statistics();
+	void reset();
 };
 
 }

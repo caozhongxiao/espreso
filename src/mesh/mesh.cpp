@@ -591,6 +591,7 @@ static void _computeGatheredNodeStatistics(const Mesh *mesh, const NodeData *dat
 	eslocal goffset, index;
 
 	if (data->names.size() == 1) {
+		statistics->reset();
 		for (size_t i = 0; i < intervals.size(); i++) {
 			if (intervals[i].sourceProcess == environment->MPIrank) {
 				goffset = mesh->nodes->pintervals[i].globalOffset - offset;
@@ -605,6 +606,9 @@ static void _computeGatheredNodeStatistics(const Mesh *mesh, const NodeData *dat
 		}
 	} else {
 		double value;
+		for (int d = 0; d <= data->dimension; d++) {
+			(statistics + d)->reset();
+		}
 
 		for (size_t i = 0; i < intervals.size(); i++) {
 			if (intervals[i].sourceProcess == environment->MPIrank) {
@@ -655,6 +659,7 @@ void Mesh::computeGatheredNodeStatistic(const NodeData *data, const BoundaryRegi
 void Mesh::computeElementStatistic(const ElementData *data, const ElementsRegionStore* region, Statistics *statistics, MPI_Comm communicator) const
 {
 	if (data->names.size() == 1) {
+		statistics->reset();
 		for (size_t i = 0; i < region->eintervals.size(); i++) {
 			for (auto e = region->elements->datatarray().cbegin() + region->eintervals[i].begin; e != region->elements->datatarray().cbegin() + region->eintervals[i].end; ++e) {
 				statistics->min = std::min(statistics->min, (*data->data)[*e]);
@@ -665,6 +670,9 @@ void Mesh::computeElementStatistic(const ElementData *data, const ElementsRegion
 		}
 	} else {
 		double value;
+		for (int d = 0; d <= data->dimension; d++) {
+			(statistics + d)->reset();
+		}
 
 		for (size_t i = 0; i < region->eintervals.size(); i++) {
 			for (auto e = region->elements->datatarray().cbegin() + region->eintervals[i].begin; e != region->elements->datatarray().cbegin() + region->eintervals[i].end; ++e) {
