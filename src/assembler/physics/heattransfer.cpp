@@ -190,6 +190,10 @@ void HeatTransfer::computeInitialTemperature(std::vector<std::vector<double> > &
 			}
 		}
 	}
+
+	if (_configuration.diffusion_split) {
+		processSolution();
+	}
 }
 
 void HeatTransfer::preprocessData()

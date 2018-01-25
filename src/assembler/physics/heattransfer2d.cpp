@@ -183,7 +183,7 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 	bool tangentCorrection = (matrices & Matrices::K) && _step->tangentMatrixCorrection;
 
 	DenseMatrix Ce(2, 2), coordinates(nodes->size(), 2), J(2, 2), invJ(2, 2), dND;
-	double detJ;
+	double detJ, tauK, xi = 1, C1 = 1, C2 = 6;
 	DenseMatrix f(nodes->size(), 1);
 	DenseMatrix U(nodes->size(), 2);
 	DenseMatrix m(nodes->size(), 1);
@@ -191,6 +191,7 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 	DenseMatrix thickness(nodes->size(), 1), K(nodes->size(), 4);
 	DenseMatrix gpThickness(1, 1), gpK(1, 4), gpM(1, 1);
 	DenseMatrix tangentK, BT, BTN, gpCD, CD, CDBTN, CDe;
+	DenseMatrix gKe(nodes->size(), nodes->size());
 
 	const MaterialConfiguration* material = _mesh->materials[_mesh->elements->material->datatarray()[eindex]];
 
@@ -267,8 +268,13 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 		tangentK.resize(Ksize, Ksize);
 	}
 
-	DenseMatrix u(1, 2), v(1, 2), re(1, nodes->size());
+	DenseMatrix g(1, 2), u(1, 2), v(1, 2), re(1, nodes->size());
 	double normGradN = 0;
+
+	if (_configuration.diffusion_split) {
+		g(0, 0) = (*_gradient->data)[2 * eindex + 0];
+		g(0, 1) = (*_gradient->data)[2 * eindex + 1];
+	}
 
 	for (size_t gp = 0; gp < N.size(); gp++) {
 		u.multiply(N[gp], U, 1, 0);
@@ -293,11 +299,11 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 		Ce(0, 1) = gpK(0, 2);
 		Ce(1, 0) = gpK(0, 3);
 
-
 		dND.multiply(invJ, dN[gp]);
 
-		DenseMatrix b_e(1, nodes->size()), b_e_c(1, nodes->size());
+		DenseMatrix b_e(1, nodes->size()), b_e_c(1, nodes->size()), g_e(1, nodes->size());
 		b_e.multiply(u, dND, 1, 0);
+		g_e.multiply(g, dND, 1, 0);
 
 		if (CAU) {
 			normGradN = dND.norm();
@@ -317,8 +323,14 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 
 
 		double norm_u_e = u.norm();
-		double h_e = 0, tau_e = 0, konst = 0;
+		double h_e = 0, tau_e = 0, konst = 0, gh_e = 0;
 		double C_e = 0;
+
+		if (_configuration.diffusion_split && g.norm() != 0) {
+			gh_e = 2 * g.norm() / g_e.norm();
+			tauK = (C1 * gh_e * gh_e) / (Ce(0, 0) * C2 + gh_e * gh_e * (gpM(0, 0) / _step->timeStep));
+			xi = 1 / (1 - tauK * gpM(0, 0) / _step->timeStep);
+		}
 
 		if (norm_u_e != 0) {
 			h_e = 2 * norm_u_e / b_e.norm();
@@ -359,13 +371,23 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 				CDBTN.multiply(CDe, BTN);
 				tangentK.multiply(dND, CDBTN,  detJ * weighFactor[gp] * gpThickness(0, 0), 1, true);
 			}
-			Ke.multiply(dND, Ce * dND, detJ * weighFactor[gp] * gpThickness(0, 0), 1, true);
-			Ke.multiply(N[gp], b_e, detJ * weighFactor[gp], 1, true);
+			if (_configuration.diffusion_split) {
+				gKe.multiply(dND, Ce * dND, detJ * weighFactor[gp] * gpThickness(0, 0), 1, true);
+				gKe.multiply(N[gp], b_e, detJ * weighFactor[gp], 1, true);
+				if (konst * weighFactor[gp] * detJ != 0) {
+					gKe.multiply(b_e, b_e, konst * weighFactor[gp] * detJ, 1, true);
+				}
+				if (CAU) {
+					gKe.multiply(dND, dND, C_e * weighFactor[gp] * detJ, 1, true);
+				}
+			}
+			Ke.multiply(dND, Ce * dND, xi * detJ * weighFactor[gp] * gpThickness(0, 0), 1, true);
+			Ke.multiply(N[gp], b_e, xi * detJ * weighFactor[gp], 1, true);
 			if (konst * weighFactor[gp] * detJ != 0) {
-				Ke.multiply(b_e, b_e, konst * weighFactor[gp] * detJ, 1, true);
+				Ke.multiply(b_e, b_e, xi * konst * weighFactor[gp] * detJ, 1, true);
 			}
 			if (CAU) {
-				Ke.multiply(dND, dND, C_e * weighFactor[gp] * detJ, 1, true);
+				Ke.multiply(dND, dND, xi * C_e * weighFactor[gp] * detJ, 1, true);
 			}
 		}
 
@@ -376,6 +398,15 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 					fe(i, 0) += detJ * weighFactor[gp] * h_e * tau_e * b_e(0, i) * f(i, 0) / (2 * norm_u_e);
 				}
 			}
+		}
+	}
+
+	if (_configuration.diffusion_split) {
+		DenseMatrix T1, T2;
+		T1.multiply(Ke, T, 1, 0);
+		T2.multiply(gKe, T, 1, 0);
+		for (eslocal i = 0; i < Ksize; i++) {
+			fe(i, 0) += T1(i, 0) - T2(i, 0);
 		}
 	}
 
