@@ -17,8 +17,6 @@ struct InputConfiguration: public ECFObject {
 
 	std::string path;
 
-	bool compress_numbers;
-
 	InputConfiguration();
 };
 

@@ -50,20 +50,17 @@ class Loader {
 
 public:
 	static void load(const ECFConfiguration &configuration, Mesh &mesh, int MPIrank, int MPIsize);
-	static void loadDistributedMesh(DistributedMesh &dMesh, Mesh &mesh, bool shrinkIndices);
+	static void loadDistributedMesh(DistributedMesh &dMesh, Mesh &mesh);
 
 protected:
-	Loader(DistributedMesh &dMesh, Mesh &mesh, bool shrinkIndices);
+	Loader(DistributedMesh &dMesh, Mesh &mesh);
 
-	void distributeMeshWithShrinking();
 	void distributeMesh();
 
 	void fillElements();
 	void fillCoordinates();
 	void addNodeRegions();
 	void addBoundaryRegions();
-
-	void shrinkIndices();
 
 	DistributedMesh &_dMesh;
 	Mesh &_mesh;

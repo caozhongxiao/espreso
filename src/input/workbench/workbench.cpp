@@ -33,7 +33,7 @@ WorkbenchLoader::WorkbenchLoader(const ECFConfiguration &configuration, Mesh &me
 	parseData(dMesh);
 	ESINFO(PROGRESS2) << "Workbench:: data parsed.";
 
-	Loader::loadDistributedMesh(dMesh, mesh, configuration.workbench.compress_numbers);
+	Loader::loadDistributedMesh(dMesh, mesh);
 }
 
 void WorkbenchLoader::readData()
