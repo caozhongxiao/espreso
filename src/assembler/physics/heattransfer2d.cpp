@@ -329,7 +329,7 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 		if (_configuration.diffusion_split && g.norm() != 0) {
 			gh_e = 2 * g.norm() / g_e.norm();
 			tauK = (C1 * gh_e * gh_e) / (Ce(0, 0) * C2 + gh_e * gh_e * (gpM(0, 0) / _step->timeStep));
-			xi = 1 / (1 - tauK * gpM(0, 0) / _step->timeStep);
+			xi = std::max(1., 1 / (1 - tauK * gpM(0, 0) / _step->timeStep));
 		}
 
 		if (norm_u_e != 0) {
