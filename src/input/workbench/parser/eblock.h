@@ -28,8 +28,8 @@ struct EBlock: public WorkbenchParser {
 	bool readBoundary(std::vector<eslocal> &edist, std::vector<eslocal> &nodes, std::vector<eslocal> &data);
 
 protected:
-	bool solid(std::vector<eslocal> &edist, std::vector<eslocal> &nodes, std::vector<EData> &data);
-	bool boundary(std::vector<eslocal> &edist, std::vector<eslocal> &nodes, std::vector<eslocal> &data);
+	bool solid(std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &data);
+	bool boundary(std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<eslocal> &data);
 };
 
 }

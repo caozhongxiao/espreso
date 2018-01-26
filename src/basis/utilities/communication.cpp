@@ -22,10 +22,31 @@ static void _mergeStatistics(void *in, void *out, int *len, MPI_Datatype *dataty
 	}
 }
 
+template<typename Ttype>
+static void _max(void *in, void *out, int *len, MPI_Datatype *datatype)
+{
+	*(static_cast<Ttype*>(out)) = std::max(*(static_cast<Ttype*>(in)), *(static_cast<Ttype*>(out)));
+}
+
+template<typename Ttype>
+static void _min(void *in, void *out, int *len, MPI_Datatype *datatype)
+{
+	*(static_cast<Ttype*>(out)) = std::min(*(static_cast<Ttype*>(in)), *(static_cast<Ttype*>(out)));
+}
+
+template<typename Ttype>
+static void _sum(void *in, void *out, int *len, MPI_Datatype *datatype)
+{
+	*(static_cast<Ttype*>(out)) += *(static_cast<Ttype*>(in));
+}
+
 MPITools::Operations::Operations()
 {
 	MPI_Op_create(_sizeToOffsets<eslocal>, 1, &sizeToOffsets);
 	MPI_Op_create(_mergeStatistics, 1, &mergeStatistics);
+	MPI_Op_create(_max<eslocal>, 1, &max);
+	MPI_Op_create(_min<eslocal>, 1, &min);
+	MPI_Op_create(_sum<eslocal>, 1, &sum);
 }
 
 }

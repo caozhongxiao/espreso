@@ -19,6 +19,7 @@ class MPITools
 	public:
 		MPI_Op sizeToOffsets;
 		MPI_Op mergeStatistics;
+		MPI_Op max, min, sum;
 
 	private:
 		Operations();
@@ -68,6 +69,9 @@ struct Communication {
 
 	template <typename Ttype>
 	static bool broadcastUnknownSize(std::vector<Ttype> &buffer);
+
+	template <typename Ttype>
+	static bool balance(std::vector<Ttype> &buffer, const std::vector<size_t> &currentDistribution, const std::vector<size_t> &targetDistribution);
 
 	template <typename Ttype>
 	static Ttype exscan(Ttype &value, MPI_Op &operation);

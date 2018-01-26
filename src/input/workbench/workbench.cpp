@@ -202,6 +202,12 @@ void WorkbenchLoader::prepareData()
 	// fix distribution if EBlocks are across more processes and elements data have more lines
 	for (size_t i = 0; i < _EBlocks.size(); i++) {
 		_EBlocks[i].fixOffsets(_dataOffset);
+		if (_begin != WorkbenchParser::begin) {
+			_dataOffset[environment->MPIrank] += _begin - WorkbenchParser::begin;
+		}
+		if (_end != WorkbenchParser::end) {
+			_dataOffset[environment->MPIrank + 1] += _end - WorkbenchParser::end;
+		}
 		_begin = WorkbenchParser::begin;
 		_end = WorkbenchParser::end;
 	}
@@ -224,7 +230,7 @@ void WorkbenchLoader::parseData(DistributedMesh &dMesh)
 	}
 
 	for (size_t i = 0; i < _EBlocks.size(); i++) {
-		if (!_EBlocks[i].readSolid(dMesh.edist, dMesh.enodes, dMesh.edata)) {
+		if (!_EBlocks[i].readSolid(dMesh.esize, dMesh.enodes, dMesh.edata)) {
 			ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
 		}
 	}
@@ -232,7 +238,7 @@ void WorkbenchLoader::parseData(DistributedMesh &dMesh)
 	for (size_t i = 0; i < _BBlocks.size(); i++) {
 		dMesh.bregions.push_back(MeshBRegion());
 		dMesh.bregions.back().name = "BOUNDARY" + std::to_string(i + 1);
-		if (!_BBlocks[i].readBoundary(dMesh.bregions.back().edist, dMesh.bregions.back().enodes, dMesh.bregions.back().etypes)) {
+		if (!_BBlocks[i].readBoundary(dMesh.bregions.back().esize, dMesh.bregions.back().enodes, dMesh.bregions.back().etypes)) {
 			ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
 		}
 	}

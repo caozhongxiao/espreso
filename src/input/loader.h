@@ -4,6 +4,7 @@
 
 #include "../basis/containers/point.h"
 
+#include <cstddef>
 #include <string>
 #include <vector>
 
@@ -25,7 +26,7 @@ struct MeshERegion {
 
 struct MeshBRegion {
 	std::string name;
-	std::vector<eslocal> edist, enodes, etypes;
+	std::vector<eslocal> esize, enodes, etypes;
 };
 
 struct MeshNRegion {
@@ -37,7 +38,7 @@ struct DistributedMesh {
 	std::vector<eslocal> nIDs;
 	std::vector<Point> coordinates;
 
-	std::vector<eslocal> edist, enodes;
+	std::vector<eslocal> esize, enodes;
 	std::vector<EData> edata;
 
 	std::vector<MeshERegion> eregions;
@@ -54,7 +55,11 @@ public:
 protected:
 	Loader(DistributedMesh &dMesh, Mesh &mesh, bool shrinkIndices);
 
-	void fillMesh();
+	void distributeMeshWithShrinking();
+	void distributeMesh();
+
+	void fillElements();
+	void fillCoordinates();
 	void addNodeRegions();
 	void addBoundaryRegions();
 
@@ -62,6 +67,10 @@ protected:
 
 	DistributedMesh &_dMesh;
 	Mesh &_mesh;
+
+	std::vector<size_t> _nDistribution, _eDistribution;
+	std::vector<int> _targetRanks;
+	std::vector<std::vector<eslocal> > _rankNodeMap;
 };
 
 }

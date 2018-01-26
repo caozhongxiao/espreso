@@ -221,6 +221,50 @@ bool Communication::broadcastUnknownSize(std::vector<Ttype> &buffer)
 }
 
 template <typename Ttype>
+bool Communication::balance(std::vector<Ttype> &buffer, const std::vector<size_t> &currentDistribution, const std::vector<size_t> &targetDistribution)
+{
+	std::vector<Ttype> result(targetDistribution[environment->MPIrank + 1] - targetDistribution[environment->MPIrank]);
+	std::vector<int> ssize(environment->MPIsize), sdisp(environment->MPIsize), rsize(environment->MPIsize), rdisp(environment->MPIsize);
+
+	auto fill = [] (
+			const std::vector<size_t> &from, const std::vector<size_t> &to,
+			std::vector<int> &size, std::vector<int> &disp) {
+
+		size_t offset = 0;
+		size_t restSize = from[environment->MPIrank + 1] - from[environment->MPIrank];
+		size_t tIndex = std::lower_bound(to.begin(), to.end(), from[environment->MPIrank] + 1) - to.begin() - 1;
+		size_t tOffset = from[environment->MPIrank] - to[tIndex];
+		while (restSize) {
+			if (restSize < to[tIndex + 1] - to[tIndex] - tOffset) {
+				size[tIndex] = restSize;
+				disp[tIndex] = offset;
+				restSize = 0;
+			} else {
+				size[tIndex] = to[tIndex + 1] - to[tIndex] - tOffset;
+				disp[tIndex] = offset;
+				restSize -= size[tIndex];
+				offset += size[tIndex];
+				++tIndex;
+			}
+			tOffset = 0;
+		}
+
+		for (int r = 0; r < environment->MPIsize; ++r) {
+			size[r] *= sizeof(Ttype);
+			disp[r] *= sizeof(Ttype);
+		}
+	};
+
+	fill(currentDistribution, targetDistribution, ssize, sdisp);
+	fill(targetDistribution, currentDistribution, rsize, rdisp);
+
+	MPI_Alltoallv(buffer.data(), ssize.data(), sdisp.data(), MPI_BYTE, result.data(), rsize.data(), rdisp.data(), MPI_BYTE, environment->MPICommunicator);
+	buffer.swap(result);
+
+	return true;
+}
+
+template <typename Ttype>
 Ttype Communication::exscan(Ttype &value, MPI_Op &operation)
 {
 	Ttype size = value;
@@ -244,13 +288,13 @@ Ttype Communication::exscan(Ttype &value, MPI_Op &operation)
 template <typename Ttype>
 std::vector<Ttype> Communication::getDistribution(Ttype size)
 {
-	std::vector<eslocal> result(environment->MPIsize + 1);
-	eslocal esize = size;
+	std::vector<Ttype> result(environment->MPIsize + 1);
+	Ttype esize = size;
 	Communication::exscan(esize, MPITools::operations().sizeToOffsets);
 
-	MPI_Allgather(&esize, sizeof(eslocal), MPI_BYTE, result.data(), sizeof(eslocal), MPI_BYTE, environment->MPICommunicator);
+	MPI_Allgather(&esize, sizeof(Ttype), MPI_BYTE, result.data(), sizeof(Ttype), MPI_BYTE, environment->MPICommunicator);
 	result.back() = esize + size;
-	MPI_Bcast(&result.back(), sizeof(eslocal), MPI_BYTE, environment->MPIsize - 1, environment->MPICommunicator);
+	MPI_Bcast(&result.back(), sizeof(Ttype), MPI_BYTE, environment->MPIsize - 1, environment->MPICommunicator);
 	return result;
 }
 

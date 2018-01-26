@@ -319,7 +319,7 @@ void Mesh::update()
 		}
 	}
 
-	if (configuration.decomposition.balance_clusters) {
+	if (configuration.decomposition.balance_clusters || configuration.input == INPUT_FORMAT::WORKBENCH) {
 		preprocessing->reclusterize();
 	}
 
