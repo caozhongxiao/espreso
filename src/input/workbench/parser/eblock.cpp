@@ -41,15 +41,13 @@ EBlock& EBlock::parse(const char* begin)
 	}
 
 	switch (command.size()) {
+	case 5:
+		NDSEL = command[4].size() ? std::stol(command[4]) : -1;
+	case 4:
+		NDMAX = command[3].size() ? std::stol(command[3]) : -1;
 	case 3:
 		NUM_NODES = std::stoi(command[1]);
 		Solkey = command[2].size();
-		break;
-	case 5:
-		NUM_NODES = std::stoi(command[1]);
-		Solkey = command[2].size();
-		NDMAX = command[3].size() ? std::stol(command[3]) : -1;
-		NDSEL = command[4].size() ? std::stol(command[4]) : -1;
 		break;
 	default:
 		error(commandLine);
