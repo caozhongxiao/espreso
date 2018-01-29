@@ -366,7 +366,7 @@ void HeatTransfer3D::processElement(eslocal domain, Matrices matrices, eslocal e
 	DenseMatrix g(1, 3), u(1, 3), v(1, 3), re(1, nodes->size());
 	double normGradN = 0;
 
-	if (_configuration.diffusion_split) {
+	if ((matrices & Matrices::M) && _configuration.diffusion_split) {
 		g(0, 0) = (*_gradient->data)[3 * eindex + 0];
 		g(0, 1) = (*_gradient->data)[3 * eindex + 1];
 		g(0, 2) = (*_gradient->data)[3 * eindex + 2];
@@ -431,7 +431,7 @@ void HeatTransfer3D::processElement(eslocal domain, Matrices matrices, eslocal e
 		double h_e = 0, tau_e = 0, konst = 0, gh_e = 0;
 		double C_e = 0;
 
-		if (_configuration.diffusion_split && g.norm() != 0) {
+		if ((matrices & Matrices::M) && _configuration.diffusion_split && g.norm() != 0) {
 			gh_e = 2 * g.norm() / g_e.norm();
 			tauK = (C1 * gh_e * gh_e) / (Ce(0, 0) * C2 + gh_e * gh_e * (gpM(0, 0) / _step->timeStep));
 			xi = std::max(1., 1 / (1 - tauK * gpM(0, 0) / _step->timeStep));
@@ -478,7 +478,7 @@ void HeatTransfer3D::processElement(eslocal domain, Matrices matrices, eslocal e
 				CDBTN.multiply(CDe, BTN);
 				tangentK.multiply(dND, CDBTN,  detJ * weighFactor[gp], 1, true);
 			}
-			if (_configuration.diffusion_split) {
+			if ((matrices & Matrices::M) && _configuration.diffusion_split) {
 				gKe.multiply(dND, Ce * dND, detJ * weighFactor[gp], 1, true);
 				gKe.multiply(N[gp], b_e, detJ * weighFactor[gp], 1, true);
 				if (konst * weighFactor[gp] * detJ != 0) {
@@ -508,7 +508,7 @@ void HeatTransfer3D::processElement(eslocal domain, Matrices matrices, eslocal e
 		}
 	}
 
-	if (_configuration.diffusion_split) {
+	if ((matrices & Matrices::M) && _configuration.diffusion_split) {
 		DenseMatrix T1, T2;
 		T1.multiply(Ke, T, 1, 0);
 		T2.multiply(gKe, T, 1, 0);
