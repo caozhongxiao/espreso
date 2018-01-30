@@ -5,6 +5,10 @@
 #include <cstddef>
 #include <vector>
 
+#define MAX_COMMAND_SIZE 150 // upper bound on command size
+#define MAX_LINE_SIZE 500 // upper bound on line size
+#define MAX_LINE_STEP 3   // sometimes we need to red more lines to get full information
+
 namespace espreso {
 
 struct BlockEnd;

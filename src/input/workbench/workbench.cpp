@@ -10,9 +10,6 @@
 
 #include "../../mesh/mesh.h"
 
-#define MAX_LINE_SIZE 500 // upper bound on line size
-#define MAX_LINE_STEP 3   // sometimes we need to red more lines to get full information
-
 using namespace espreso;
 
 void WorkbenchLoader::load(const ECFConfiguration &configuration, Mesh &mesh)
@@ -116,6 +113,7 @@ void WorkbenchLoader::prepareData()
 	std::vector<std::vector<NBlock> > tNBlocks(threads);
 	std::vector<std::vector<EBlock> > tEBlocks(threads);
 	std::vector<std::vector<CMBlock> > tCMBlocks(threads);
+	std::vector<std::vector<ESel> > tESel(threads);
 	std::vector<std::vector<BlockEnd> > tBlockEnds(threads);
 
 	#pragma omp parallel for
@@ -150,6 +148,12 @@ void WorkbenchLoader::prepareData()
 			if (memcmp(tbegin, CMBlock::lower, CMBlock::size) == 0) {
 				tCMBlocks[t].push_back(CMBlock().parse(tbegin));
 			}
+			if (memcmp(tbegin, ESel::upper, ESel::size) == 0) {
+				tESel[t].push_back(ESel().parse(tbegin));
+			}
+			if (memcmp(tbegin, ESel::lower, ESel::size) == 0) {
+				tESel[t].push_back(ESel().parse(tbegin));
+			}
 			if (memcmp(tbegin, BlockEnd::nUpper, BlockEnd::nSize) == 0) {
 				tBlockEnds[t].push_back(BlockEnd().parse(tbegin));
 			}
@@ -172,6 +176,7 @@ void WorkbenchLoader::prepareData()
 		_NBlocks.insert(_NBlocks.end(), tNBlocks[t].begin(), tNBlocks[t].end());
 		_EBlocks.insert(_EBlocks.end(), tEBlocks[t].begin(), tEBlocks[t].end());
 		_CMBlocks.insert(_CMBlocks.end(), tCMBlocks[t].begin(), tCMBlocks[t].end());
+		_ESel.insert(_ESel.end(), tESel[t].begin(), tESel[t].end());
 		_blockEnds.insert(_blockEnds.end(), tBlockEnds[t].begin(), tBlockEnds[t].end());
 	}
 

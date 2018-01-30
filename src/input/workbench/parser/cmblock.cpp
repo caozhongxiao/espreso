@@ -3,8 +3,7 @@
 
 #include "../../../basis/containers/tarray.h"
 #include "../../../basis/utilities/parser.h"
-#include "../../../basis/utilities/utils.h"
-#include "../../../basis/utilities/communication.h"
+#include "../../../basis/logging/logging.h"
 
 #include "../../../config/ecf/environment.h"
 

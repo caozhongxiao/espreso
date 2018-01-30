@@ -5,6 +5,7 @@
 #include "parser/nblock.h"
 #include "parser/eblock.h"
 #include "parser/cmblock.h"
+#include "parser/esel.h"
 #include "parser/blockend.h"
 
 #include <vector>
@@ -35,6 +36,7 @@ protected:
 	std::vector<EBlock> _EBlocks;
 	std::vector<EBlock> _BBlocks;
 	std::vector<CMBlock> _CMBlocks;
+	std::vector<ESel> _ESel;
 	std::vector<BlockEnd> _blockEnds;
 
 	const char *_begin, *_current, *_end;
