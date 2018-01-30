@@ -81,21 +81,21 @@ void HeatTransfer3D::assembleMaterialMatrix(eslocal node, const Point &p, const 
 	switch (mat->coordinate_system.type) {
 	case CoordinateSystemConfiguration::TYPE::CARTESIAN:
 
-		cos.x = std::cos(d2r(mat->coordinate_system.rotation_x.evaluator->evaluate(p, _step->currentTime, temp)));
-		cos.y = std::cos(d2r(mat->coordinate_system.rotation_y.evaluator->evaluate(p, _step->currentTime, temp)));
-		cos.z = std::cos(d2r(mat->coordinate_system.rotation_z.evaluator->evaluate(p, _step->currentTime, temp)));
+		cos.x = std::cos(d2r(mat->coordinate_system.rotation.x.evaluator->evaluate(p, _step->currentTime, temp)));
+		cos.y = std::cos(d2r(mat->coordinate_system.rotation.y.evaluator->evaluate(p, _step->currentTime, temp)));
+		cos.z = std::cos(d2r(mat->coordinate_system.rotation.z.evaluator->evaluate(p, _step->currentTime, temp)));
 
-		sin.x = std::sin(d2r(mat->coordinate_system.rotation_x.evaluator->evaluate(p, _step->currentTime, temp)));
-		sin.y = std::sin(d2r(mat->coordinate_system.rotation_y.evaluator->evaluate(p, _step->currentTime, temp)));
-		sin.z = std::sin(d2r(mat->coordinate_system.rotation_z.evaluator->evaluate(p, _step->currentTime, temp)));
+		sin.x = std::sin(d2r(mat->coordinate_system.rotation.x.evaluator->evaluate(p, _step->currentTime, temp)));
+		sin.y = std::sin(d2r(mat->coordinate_system.rotation.y.evaluator->evaluate(p, _step->currentTime, temp)));
+		sin.z = std::sin(d2r(mat->coordinate_system.rotation.z.evaluator->evaluate(p, _step->currentTime, temp)));
 
 		break;
 
 	case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: {
 
 		Point origin(
-				mat->coordinate_system.center_x.evaluator->evaluate(p, _step->currentTime, temp),
-				mat->coordinate_system.center_y.evaluator->evaluate(p, _step->currentTime, temp),
+				mat->coordinate_system.center.x.evaluator->evaluate(p, _step->currentTime, temp),
+				mat->coordinate_system.center.y.evaluator->evaluate(p, _step->currentTime, temp),
 				0);
 
 		double rotation = std::atan2((p.y - origin.y), (p.x - origin.x));
@@ -113,9 +113,9 @@ void HeatTransfer3D::assembleMaterialMatrix(eslocal node, const Point &p, const 
 	case CoordinateSystemConfiguration::TYPE::SPHERICAL: {
 
 		Point origin(
-				mat->coordinate_system.center_x.evaluator->evaluate(p, _step->currentTime, temp),
-				mat->coordinate_system.center_y.evaluator->evaluate(p, _step->currentTime, temp),
-				mat->coordinate_system.center_z.evaluator->evaluate(p, _step->currentTime, temp));
+				mat->coordinate_system.center.x.evaluator->evaluate(p, _step->currentTime, temp),
+				mat->coordinate_system.center.y.evaluator->evaluate(p, _step->currentTime, temp),
+				mat->coordinate_system.center.z.evaluator->evaluate(p, _step->currentTime, temp));
 
 		double azimut = std::atan2((p.y - origin.y), (p.x - origin.x));
 		double r = std::sqrt(pow((p.x - origin.x), 2) + pow((p.y - origin.y), 2) + pow((p.z - origin.z), 2));

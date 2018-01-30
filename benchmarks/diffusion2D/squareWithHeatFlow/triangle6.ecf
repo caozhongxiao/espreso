@@ -61,7 +61,7 @@ HEAT_TRANSFER_2D {
     1 {
       COORDINATE_SYSTEM {
         TYPE   CARTESIAN;
-        ROTATION_Z    45;
+        ROTATION  { Z 45; }
       }
 
       DENS   1;

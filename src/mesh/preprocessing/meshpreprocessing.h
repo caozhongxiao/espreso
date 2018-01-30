@@ -46,6 +46,9 @@ public:
 	void computeDomainsSurface();
 	void triangularizeDomainSurface();
 
+	void morph2D();
+	void morph3D();
+
 	void finishPreprocessing();
 
 protected:

@@ -10,7 +10,6 @@
 namespace espreso {
 
 struct Point;
-class Evaluator;
 struct TensorConfiguration;
 
 enum class ECFDataType {
@@ -32,6 +31,13 @@ enum class ECFDataType {
 	SEPARATOR
 };
 
+enum class DIMENSION {
+	D1,
+	D2,
+	D3,
+	Z
+};
+
 struct ECFOption {
 	std::string name;
 	std::string description;
@@ -42,18 +48,6 @@ struct ECFOption {
 	ECFOption& allowonly(std::function<bool(void)> isallowed) { this->isallowed = isallowed; return *this; }
 
 	ECFOption() { isallowed = [] () { return true; }; }
-};
-
-struct ECFExpression {
-	std::string value;
-	Evaluator *evaluator;
-
-	ECFExpression();
-	ECFExpression(const ECFExpression &other);
-	ECFExpression& operator=(const ECFExpression &other);
-	~ECFExpression();
-
-	bool createEvaluator(const std::vector<std::string> &variables);
 };
 
 struct ECFMetaData {

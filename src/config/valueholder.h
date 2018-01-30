@@ -3,6 +3,7 @@
 #define SRC_CONFIG_VALUEHOLDER_H_
 
 #include "configuration.h"
+#include "expression.h"
 #include "../basis/utilities/parser.h"
 #include "../basis/logging/logging.h"
 #include <sstream>

@@ -52,13 +52,13 @@ void HeatTransfer2D::assembleMaterialMatrix(eslocal node, const Point &p, const 
 	double cos, sin;
 	switch (mat->coordinate_system.type) {
 	case CoordinateSystemConfiguration::TYPE::CARTESIAN:
-		cos = std::cos(d2r(mat->coordinate_system.rotation_z.evaluator->evaluate(p, _step->currentTime, temp)));
-		sin = std::sin(d2r(mat->coordinate_system.rotation_z.evaluator->evaluate(p, _step->currentTime, temp)));
+		cos = std::cos(d2r(mat->coordinate_system.rotation.z.evaluator->evaluate(p, _step->currentTime, temp)));
+		sin = std::sin(d2r(mat->coordinate_system.rotation.z.evaluator->evaluate(p, _step->currentTime, temp)));
 		break;
 	case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: {
 		Point origin(
-				mat->coordinate_system.center_x.evaluator->evaluate(p, _step->currentTime, temp),
-				mat->coordinate_system.center_y.evaluator->evaluate(p, _step->currentTime, temp),
+				mat->coordinate_system.center.x.evaluator->evaluate(p, _step->currentTime, temp),
+				mat->coordinate_system.center.y.evaluator->evaluate(p, _step->currentTime, temp),
 				0);
 		double rotation = std::atan2((p.y - origin.y), (p.x - origin.x));
 		cos = std::cos(rotation);

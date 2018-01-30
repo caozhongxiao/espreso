@@ -13,46 +13,6 @@ espreso::MortarConfiguration::MortarConfiguration()
 			.setdatatype({ ECFDataType::REGION }));
 }
 
-espreso::ECFExpressionVector::ECFExpressionVector(DIMENSION dimension, bool fillWithZeros)
-: dimension(dimension)
-{
-
-	REGISTER(x, ECFMetaData()
-			.setdescription({ "x-direction." })
-			.setdatatype({ ECFDataType::EXPRESSION })
-			.setboundaryconditionvariables());
-	REGISTER(y, ECFMetaData()
-			.setdescription({ "y-direction." })
-			.setdatatype({ ECFDataType::EXPRESSION })
-			.setboundaryconditionvariables());
-	if (dimension == DIMENSION::D3) {
-		REGISTER(z, ECFMetaData()
-				.setdescription({ "z-direction." })
-				.setdatatype({ ECFDataType::EXPRESSION })
-				.setboundaryconditionvariables());
-	}
-
-	if (fillWithZeros) {
-		x.value = "0";
-		y.value = "0";
-		x.createEvaluator(ECFMetaData().setboundaryconditionvariables().variables);
-		y.createEvaluator(ECFMetaData().setboundaryconditionvariables().variables);
-		if (dimension == DIMENSION::D3) {
-			z.value = "0";
-			z.createEvaluator(ECFMetaData().setboundaryconditionvariables().variables);
-		}
-	}
-}
-
-espreso::ECFExpressionOptionalVector::ECFExpressionOptionalVector(DIMENSION dimension)
-: ECFExpressionVector(dimension, false)
-{
-	REGISTER(all, ECFMetaData()
-			.setdescription({ "all-directions." })
-			.setdatatype({ ECFDataType::EXPRESSION })
-			.setboundaryconditionvariables());
-}
-
 espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension, MaterialConfiguration::PHYSICAL_MODEL physicalModel)
 : dimension(dimension), physical_model(physicalModel)
 {

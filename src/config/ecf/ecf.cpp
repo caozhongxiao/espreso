@@ -74,7 +74,7 @@ void ECFConfiguration::init()
 			.addoption(ECFOption().setname("ESDATA").setdescription("ESPRESO internal binary format."))
 			.addoption(ECFOption().setname("GENERATOR").setdescription("ESPRESO internal generator.")));
 
-	physics = PHYSICS::HEAT_TRANSFER_2D;
+	physics = PHYSICS::HEAT_TRANSFER_3D;
 	REGISTER(physics, ECFMetaData()
 			.setdescription({ "A selected physics." })
 			.setdatatype({ ECFDataType::OPTION })
@@ -98,6 +98,9 @@ void ECFConfiguration::init()
 
 	REGISTER(feti4ilibrary, ECFMetaData()
 			.setdescription({ "Settings for FETI4I library." }));
+
+	REGISTER(mesh_morphing, ECFMetaData()
+			.setdescription({ "Settings for mesh morphing." }));
 
 	REGISTER(heat_transfer_2d, ECFMetaData()
 			.setdescription({ "Advection diffusion 2D settings." })
@@ -128,6 +131,7 @@ ECFConfiguration::ECFConfiguration()
   heat_transfer_3d(DIMENSION::D3),
   structural_mechanics_2d(DIMENSION::D2),
   structural_mechanics_3d(DIMENSION::D3),
+  mesh_morphing(this),
   output(physics)
 {
 	init();

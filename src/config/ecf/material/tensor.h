@@ -3,6 +3,7 @@
 #define SRC_CONFIG_ECF_MATERIAL_TENSOR_H_
 
 #include "../../configuration.h"
+#include "../../expression.h"
 
 namespace espreso {
 
@@ -21,7 +22,5 @@ private:
 };
 
 }
-
-
 
 #endif /* SRC_CONFIG_ECF_MATERIAL_TENSOR_H_ */

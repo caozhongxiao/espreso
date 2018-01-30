@@ -3,13 +3,9 @@
 #define SRC_CONFIG_ECF_MATERIAL_COORDINATESYSTEM_H_
 
 #include "../../configuration.h"
+#include "../../expression.h"
 
 namespace espreso {
-
-enum class DIMENSION {
-	D2,
-	D3
-};
 
 struct CoordinateSystemConfiguration: public ECFObject {
 
@@ -22,8 +18,8 @@ struct CoordinateSystemConfiguration: public ECFObject {
 	TYPE type;
 	DIMENSION dimension;
 
-	ECFExpression rotation_x, rotation_y, rotation_z;
-	ECFExpression center_x, center_y, center_z;
+	ECFExpressionVector rotation;
+	ECFExpressionVector center;
 
 	CoordinateSystemConfiguration();
 };
