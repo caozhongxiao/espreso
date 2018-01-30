@@ -42,6 +42,7 @@ CMBlock& CMBlock::parse(const char* begin)
 		error(descriptionLine);
 	}
 
+	command[1] = Parser::strip(command[1]);
 	memcpy(name, command[1].data(), command[1].size() < 20 ? command[1].size() : 20);
 	if (StringCompare::caseInsensitiveEq(command[2], "NODE")) {
 		entity = Entity::NODE;

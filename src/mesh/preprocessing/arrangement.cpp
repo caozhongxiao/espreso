@@ -477,7 +477,7 @@ void MeshPreprocessing::arrangeElementsPermutation(std::vector<eslocal> &permuta
 		_mesh->elements->eintervals.back().end = iboundaries[0][i];
 		_mesh->elements->eintervals.push_back(ElementsInterval(iboundaries[0][i], iboundaries[0][i]));
 		const std::vector<eslocal> &edist = _mesh->elements->elementsDistribution;
-		_mesh->elements->eintervals.back().domain = std::lower_bound(edist.begin(), edist.end(), _mesh->elements->eintervals.back().begin) - edist.begin() + _mesh->elements->firstDomain;
+		_mesh->elements->eintervals.back().domain = std::lower_bound(edist.begin(), edist.end(), _mesh->elements->eintervals.back().begin + 1) - edist.begin() - 1 + _mesh->elements->firstDomain;
 		_mesh->elements->eintervals.back().code = static_cast<int>(_mesh->elements->epointers->datatarray()[permutation[_mesh->elements->eintervals.back().begin]]->code);
 		if ((_mesh->elements->eintervals.end() - 1)->domain != (_mesh->elements->eintervals.end() - 2)->domain) {
 			_mesh->elements->eintervalsDistribution.push_back(_mesh->elements->eintervals.size() - 1);
@@ -552,14 +552,16 @@ void MeshPreprocessing::arrangeRegions()
 			mask[maskOffset] = bit;
 
 			for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
-				size_t usize = unique[t].size();
-				for (eslocal e = _mesh->elementsRegions[r]->eintervals[d].begin; e < _mesh->elementsRegions[r]->eintervals[d].end; ++e) {
-					if (memcmp(regions.data() + e * maskSize, mask.data(), sizeof(int) * maskSize) == 0) {
-						unique[t].push_back(e);
+				for (eslocal i = _mesh->elements->eintervalsDistribution[d]; i < _mesh->elements->eintervalsDistribution[d + 1]; i++) {
+					size_t usize = unique[t].size();
+					for (eslocal e = _mesh->elementsRegions[r]->eintervals[i].begin; e < _mesh->elementsRegions[r]->eintervals[i].end; ++e) {
+						if (memcmp(regions.data() + e * maskSize, mask.data(), sizeof(int) * maskSize) == 0) {
+							unique[t].push_back(e);
+						}
 					}
+					_mesh->elementsRegions[r]->ueintervals[i].begin = 0;
+					_mesh->elementsRegions[r]->ueintervals[i].end = unique[t].size() - usize;
 				}
-				_mesh->elementsRegions[r]->ueintervals[d].begin = 0;
-				_mesh->elementsRegions[r]->ueintervals[d].end = unique[t].size() - usize;
 			}
 		}
 
@@ -583,17 +585,19 @@ void MeshPreprocessing::arrangeRegions()
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
 				for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
-					if (eintervals[d].end - eintervals[d].begin == _mesh->elements->elementsDistribution[d + 1] - _mesh->elements->elementsDistribution[d]) {
-						nodes[t].insert(
-								nodes[t].end(),
-								(_mesh->elements->nodes->cbegin() + _mesh->elements->elementsDistribution[d])->begin(),
-								(_mesh->elements->nodes->cbegin() + _mesh->elements->elementsDistribution[d + 1])->begin());
-					} else {
-						auto enodes = _mesh->elements->nodes->cbegin() + _mesh->elements->elementsDistribution[d];
-						eslocal prev = _mesh->elements->elementsDistribution[d];
-						for (eslocal e = eintervals[d].begin; e < eintervals[d].end; prev = elements[e++]) {
-							enodes += elements[e] - prev;
-							nodes[t].insert(nodes[t].end(), enodes->begin(), enodes->end());
+					for (eslocal i = _mesh->elements->eintervalsDistribution[d]; i < _mesh->elements->eintervalsDistribution[d + 1]; i++) {
+						if (eintervals[i].end - eintervals[i].begin == _mesh->elements->eintervals[i].end - _mesh->elements->eintervals[i].begin) {
+							nodes[t].insert(
+									nodes[t].end(),
+									(_mesh->elements->nodes->cbegin() + _mesh->elements->eintervals[i].begin)->begin(),
+									(_mesh->elements->nodes->cbegin() + _mesh->elements->eintervals[i].end)->begin());
+						} else {
+							auto enodes = _mesh->elements->nodes->cbegin() + _mesh->elements->eintervals[i].begin;
+							eslocal prev = elements[_mesh->elements->eintervals[i].begin];
+							for (eslocal e = eintervals[i].begin; e < eintervals[i].end; prev = elements[e++]) {
+								enodes += elements[e] - prev;
+								nodes[t].insert(nodes[t].end(), enodes->begin(), enodes->end());
+							}
 						}
 					}
 				}
@@ -793,12 +797,7 @@ void MeshPreprocessing::arrangeRegions()
 				edistribution.push_back(it - permutation.begin());
 			}
 
-			std::vector<size_t> tdistribution;
-			for (size_t t = 0; t < _mesh->elements->domainDistribution.size(); t++) {
-				tdistribution.push_back(edistribution[_mesh->elements->domainDistribution[t]]);
-			}
-
-			_mesh->boundaryRegions[r]->permute(permutation, tdistribution);
+			_mesh->boundaryRegions[r]->permute(permutation, edistribution);
 
 			std::vector<std::vector<eslocal> > iboundaries(threads);
 
