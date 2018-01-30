@@ -342,12 +342,12 @@ void Loader::fillCoordinates()
 	}
 
 	std::vector<size_t> distribution = tarray<Point>::distribute(threads, csize);
-	std::vector<std::vector<eslocal> > tIDs(threads), rankDistribution(_targetRanks.size());
-	std::vector<std::vector<int> > rankData(_targetRanks.size());
+	std::vector<std::vector<eslocal> > tIDs(threads), rankDistribution(sRanks.size());
+	std::vector<std::vector<int> > rankData(sRanks.size());
 	rankDistribution.front().push_back(0);
 
 	#pragma omp parallel for
-	for (size_t r = 0; r < _targetRanks.size(); r++) {
+	for (size_t r = 0; r < sRanks.size(); r++) {
 		for (size_t n = 0; n < nodeRanks[r].size(); n += nodeRanks[r][n] + 1) {
 			rankData[r].insert(rankData[r].end(), nodeRanks[r].begin() + n + 1, nodeRanks[r].begin() + n + 1 + nodeRanks[r][n]);
 			rankDistribution[r].push_back(rankData[r].size());
@@ -356,7 +356,7 @@ void Loader::fillCoordinates()
 
 	Esutils::threadDistributionToFullDistribution(rankDistribution);
 
-	for (size_t i = threads; i < _targetRanks.size(); i++) {
+	for (size_t i = threads; i < sRanks.size(); i++) {
 		coordinates[threads - 1].insert(coordinates[threads - 1].end(), coordinates[i].begin(), coordinates[i].end());
 		rankData[threads - 1].insert(rankData[threads - 1].end(), rankData[i].begin(), rankData[i].end());
 		rankDistribution[threads - 1].insert(rankDistribution[threads - 1].end(), rankDistribution[i].begin(), rankDistribution[i].end());
@@ -469,13 +469,14 @@ void Loader::addNodeRegions()
 			}
 		}
 
-		for (size_t t = 0, nonempty = 0; t < _targetRanks.size(); t++) {
+		for (size_t t = 0; t < _targetRanks.size(); t++) {
 			if (sBuffer[t].size()) {
 				tRanks.push_back(t);
-				++nonempty;
-			} else {
-				sBuffer[nonempty].swap(sBuffer[t]);
 			}
+		}
+		for (size_t t = 0; t < tRanks.size(); t++) {
+			sBuffer[t].swap(sBuffer[tRanks[t]]);
+			tRanks[t] = _targetRanks[tRanks[t]];
 		}
 		sBuffer.resize(tRanks.size());
 
@@ -604,13 +605,14 @@ void Loader::addBoundaryRegions()
 			}
 		}
 
-		for (size_t t = 0, nonempty = 0; t < _targetRanks.size(); t++) {
+		for (size_t t = 0; t < _targetRanks.size(); t++) {
 			if (sBuffer[t].size()) {
 				tRanks.push_back(t);
-				++nonempty;
-			} else {
-				sBuffer[nonempty].swap(sBuffer[t]);
 			}
+		}
+		for (size_t t = 0; t < tRanks.size(); t++) {
+			sBuffer[t].swap(sBuffer[tRanks[t]]);
+			tRanks[t] = _targetRanks[tRanks[t]];
 		}
 		sBuffer.resize(tRanks.size());
 
