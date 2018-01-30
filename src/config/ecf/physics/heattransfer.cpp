@@ -145,6 +145,11 @@ espreso::HeatTransferConfiguration::HeatTransferConfiguration(DIMENSION dimensio
 			.setdescription({ "Inconsistent stabilization parameter." })
 			.setdatatype({ ECFDataType::FLOAT }));
 
+	init_temp_respect_bc = true;
+	REGISTER(init_temp_respect_bc, ECFMetaData()
+			.setdescription({ "Initial temperature is set according to boundary condition." })
+			.setdatatype({ ECFDataType::BOOL }));
+
 	diffusion_split = false;
 	REGISTER(diffusion_split, ECFMetaData()
 			.setdescription({ "Turn on to fix temperature shock." })

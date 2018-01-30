@@ -177,15 +177,17 @@ void HeatTransfer::computeInitialTemperature(std::vector<std::vector<double> > &
 		}
 	}
 
-	for (auto it = _configuration.load_steps_settings.at(1).temperature.begin(); it != _configuration.load_steps_settings.at(1).temperature.end(); ++it) {
-		BoundaryRegionStore *region = _mesh->bregion(it->first);
-		#pragma omp parallel for
-		for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
-			const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[d];
-			for (size_t i = 0; i < intervals.size(); ++i) {
-				for (eslocal n = region->nintervals[intervals[i].pindex].begin; n < region->nintervals[intervals[i].pindex].end; ++n) {
-					eslocal dof = intervals[i].DOFOffset + region->nodes->datatarray()[n] - intervals[i].begin;
-					data[d][dof] = it->second.evaluator->evaluate(_mesh->nodes->coordinates->datatarray()[region->nodes->datatarray()[n]], 0, 0);
+	if (_configuration.init_temp_respect_bc) {
+		for (auto it = _configuration.load_steps_settings.at(1).temperature.begin(); it != _configuration.load_steps_settings.at(1).temperature.end(); ++it) {
+			BoundaryRegionStore *region = _mesh->bregion(it->first);
+			#pragma omp parallel for
+			for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
+				const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[d];
+				for (size_t i = 0; i < intervals.size(); ++i) {
+					for (eslocal n = region->nintervals[intervals[i].pindex].begin; n < region->nintervals[intervals[i].pindex].end; ++n) {
+						eslocal dof = intervals[i].DOFOffset + region->nodes->datatarray()[n] - intervals[i].begin;
+						data[d][dof] = it->second.evaluator->evaluate(_mesh->nodes->coordinates->datatarray()[region->nodes->datatarray()[n]], 0, 0);
+					}
 				}
 			}
 		}

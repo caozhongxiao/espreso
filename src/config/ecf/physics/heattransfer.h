@@ -73,7 +73,7 @@ struct HeatTransferConfiguration: public PhysicsConfiguration {
 
 	STABILIZATION stabilization;
 	double sigma;
-	bool diffusion_split;
+	bool init_temp_respect_bc, diffusion_split;
 
 	std::map<size_t, HeatTransferLoadStepConfiguration> load_steps_settings;
 
