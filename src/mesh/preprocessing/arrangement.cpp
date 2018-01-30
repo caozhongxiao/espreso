@@ -797,7 +797,12 @@ void MeshPreprocessing::arrangeRegions()
 				edistribution.push_back(it - permutation.begin());
 			}
 
-			_mesh->boundaryRegions[r]->permute(permutation, edistribution);
+			std::vector<size_t> tdistribution;
+			for (size_t t = 0; t < _mesh->elements->domainDistribution.size(); t++) {
+				tdistribution.push_back(edistribution[_mesh->elements->domainDistribution[t]]);
+			}
+
+			_mesh->boundaryRegions[r]->permute(permutation, tdistribution);
 
 			std::vector<std::vector<eslocal> > iboundaries(threads);
 
