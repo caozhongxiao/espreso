@@ -67,7 +67,7 @@ void EBlock::fixOffsets(std::vector<eslocal> &dataOffsets)
 	if (Solkey) {
 		eslocal nodes;
 		if (fRank == environment->MPIrank) {
-			nodes = std::stoi(Parser::split(Parser::getLine(begin + first - dataOffsets[environment->MPIrank]), " ")[9]);
+			nodes = std::stoi(Parser::split(Parser::getLine(begin + first - offset), " ")[9]);
 		}
 		MPI_Bcast(&nodes, sizeof(eslocal), MPI_BYTE, fRank, environment->MPICommunicator);
 
@@ -246,6 +246,7 @@ bool EBlock::solid(std::vector<eslocal> &esize, std::vector<eslocal> &enodes, st
 		}
 	}
 
+	size_t ssize = esize.size();
 	for (size_t t = 0; t < threads; t++) {
 		esize.insert(esize.end(), tesize[t].begin(), tesize[t].end());
 		enodes.insert(enodes.end(), tnodes[t].begin(), tnodes[t].end());

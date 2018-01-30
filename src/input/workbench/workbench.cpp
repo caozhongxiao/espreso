@@ -11,7 +11,7 @@
 #include "../../mesh/mesh.h"
 
 #define MAX_LINE_SIZE 500 // upper bound on line size
-#define MAX_LINE_STEP 2   // sometimes we need to red more lines to get full information
+#define MAX_LINE_STEP 3   // sometimes we need to red more lines to get full information
 
 using namespace espreso;
 
