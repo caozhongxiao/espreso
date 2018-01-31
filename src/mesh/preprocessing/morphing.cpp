@@ -1,6 +1,8 @@
 
 #include "meshpreprocessing.h"
 
+#include "../mesh.h"
+
 #include "../../basis/containers/point.h"
 #include "../../basis/containers/serializededata.h"
 #include "../../basis/matrices/denseMatrix.h"
@@ -21,6 +23,24 @@ void MeshPreprocessing::morphRBF2D()
 void MeshPreprocessing::morphRBF3D(const std::string &name, const RBFTargetConfiguration &configuration)
 {
 	start("apply morphing '" + name + "'");
+
+	std::vector<Point> sBuffer;
+
+	for(auto it = configuration.morphers.begin(); it != configuration.morphers.end(); ++it) {
+		BoundaryRegionStore *region = _mesh->bregion(it->first);
+		switch (it->second.transformation) {
+		case MORPHING_TRANSFORMATION::FIXED:
+			break;
+		case MORPHING_TRANSFORMATION::TRANSLATION:
+			break;
+		case MORPHING_TRANSFORMATION::OFFSET:
+		case MORPHING_TRANSFORMATION::SCALING:
+		case MORPHING_TRANSFORMATION::ROTATION:
+			// TODO:
+		default:
+			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement mesh morphing tranformation.";
+		}
+	}
 
 //	std::vector<double> pointsInMorphing;
 //	std::vector<double> displacements;

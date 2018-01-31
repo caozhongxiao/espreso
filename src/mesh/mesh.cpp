@@ -449,8 +449,10 @@ void Mesh::update()
 		}
 	}
 
-	for (auto it = configuration.mesh_morphing.rbf.begin(); it != configuration.mesh_morphing.rbf.end(); ++it) {
-		preprocessing->morphRBF3D(it->first, it->second);
+	if (configuration.mesh_morphing.type == MORPHING_TYPE::RBF) {
+		for (auto it = configuration.mesh_morphing.rbf.begin(); it != configuration.mesh_morphing.rbf.end(); ++it) {
+			preprocessing->morphRBF3D(it->first, it->second);
+		}
 	}
 
 	printStatistics();
