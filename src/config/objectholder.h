@@ -7,11 +7,13 @@
 
 namespace espreso {
 
-template <typename TParameter, typename TValue>
+template <typename TParameter, typename TValue, typename... TArgs>
 struct ECFValueMap: public ECFObject {
 	std::map<TParameter, TValue> &value;
+	std::tuple<TArgs...> args;
 
-	ECFValueMap(std::map<TParameter, TValue> &value): value(value) {}
+	ECFValueMap(std::map<TParameter, TValue> &value, TArgs... args): value(value), args(args...) {}
+	ECFValueMap(std::map<TParameter, TValue> &value, std::tuple<TArgs...> &args): value(value), args(args) {}
 
 	virtual ECFParameter* getParameter(const std::string &name)
 	{
@@ -20,7 +22,8 @@ struct ECFValueMap: public ECFObject {
 		}
 		TParameter key;
 		if (ECFValueHolder<TParameter>(key).setValue(name)) {
-			return registerParameter(name, new ECFValueHolder<TValue>(value[key]), metadata.suffix(1));
+			value.emplace(std::piecewise_construct, std::forward_as_tuple(key), args);
+			return registerParameter(name, new ECFValueHolder<TValue>(value.at(key)), metadata.suffix(1));
 		} else {
 			return NULL;
 		}
@@ -36,7 +39,11 @@ struct ECFValueMap: public ECFObject {
 
 	virtual const ECFParameter* getPattern() const
 	{
-		ECFParameter *parameter = new ECFValueHolder<TValue>(_patternValue);
+		TParameter key{};
+		if (_pattern.size() == 0) {
+			_pattern.emplace(std::piecewise_construct, std::forward_as_tuple(key), args);
+		}
+		ECFParameter *parameter = new ECFValueHolder<TValue>(_pattern.at(key));
 		parameter->setValue(metadata.pattern[1]);
 		return registerPatternParameter(parameter);
 	}
@@ -44,7 +51,7 @@ struct ECFValueMap: public ECFObject {
 	virtual const void* data() const { return &value; }
 
 private:
-	mutable TValue _patternValue;
+	mutable std::map<TParameter, TValue> _pattern;
 };
 
 template <typename TParameter, typename TValue>

@@ -3,6 +3,16 @@
 #include "heattransfer.h"
 
 espreso::ConvectionConfiguration::ConvectionConfiguration()
+: heat_transfer_coefficient(ECFMetaData::getboundaryconditionvariables()),
+  external_temperature(ECFMetaData::getboundaryconditionvariables()),
+  wall_height(ECFMetaData::getboundaryconditionvariables()),
+  tilt_angle(ECFMetaData::getboundaryconditionvariables()),
+  diameter(ECFMetaData::getboundaryconditionvariables()),
+  plate_length(ECFMetaData::getboundaryconditionvariables()),
+  fluid_velocity(ECFMetaData::getboundaryconditionvariables()),
+  plate_distance(ECFMetaData::getboundaryconditionvariables()),
+  length(ECFMetaData::getboundaryconditionvariables()),
+  absolute_pressure(ECFMetaData::getboundaryconditionvariables())
 {
 	type = TYPE::USER;
 	REGISTER(type, ECFMetaData()
@@ -72,6 +82,8 @@ espreso::ConvectionConfiguration::ConvectionConfiguration()
 }
 
 espreso::RadiationConfiguration::RadiationConfiguration()
+: emissivity(ECFMetaData::getboundaryconditionvariables()),
+  external_temperature(ECFMetaData::getboundaryconditionvariables())
 {
 	REGISTER(emissivity, ECFMetaData()
 			.setdescription({ "Emissivity." })
@@ -87,29 +99,29 @@ espreso::HeatTransferLoadStepConfiguration::HeatTransferLoadStepConfiguration(DI
 	REGISTER(temperature, ECFMetaData()
 			.setdescription({ "The name of a region.", "Temperature of a given region." })
 			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
-			.setboundaryconditionvariables()
-			.setpattern({ "MY_REGION", "273.15" }));
+			.setpattern({ "MY_REGION", "273.15" }),
+			ECFMetaData::getboundaryconditionvariables());
 	REGISTER(heat_source, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat source of a given region." })
 			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
-			.setboundaryconditionvariables()
-			.setpattern({ "MY_REGION", "273.15" }));
+			.setpattern({ "MY_REGION", "273.15" }),
+			ECFMetaData::getboundaryconditionvariables());
 	REGISTER(translation_motions, ECFMetaData()
 			.setdescription({ "The name of a region.", "Translation motion of a given region." })
 			.setdatatype({ ECFDataType::REGION })
 			.setpattern({ "MY_REGION" }),
-			dimension, true);
+			dimension, ECFMetaData::getboundaryconditionvariables(), "0");
 
 	REGISTER(heat_flux, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat flux on a given region." })
 			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
-			.setboundaryconditionvariables()
-			.setpattern({ "MY_REGION", "500" }));
+			.setpattern({ "MY_REGION", "500" }),
+			ECFMetaData::getboundaryconditionvariables());
 	REGISTER(heat_flow, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat flow on a given region." })
 			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
-			.setboundaryconditionvariables()
-			.setpattern({ "MY_REGION", "500" }));
+			.setpattern({ "MY_REGION", "500" }),
+			ECFMetaData::getboundaryconditionvariables());
 
 	REGISTER(convection, ECFMetaData()
 			.setdescription({ "The name of a region.", "Convection on a given region." })

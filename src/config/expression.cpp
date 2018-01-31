@@ -11,10 +11,16 @@
 
 using namespace espreso;
 
-ECFExpression::ECFExpression()
-: evaluator(NULL)
+ECFExpression::ECFExpression(const std::vector<std::string> &variables)
+: variables(variables), evaluator(NULL)
 {
 
+}
+
+ECFExpression::ECFExpression(const std::vector<std::string> &variables, const std::string &initialValue)
+: value(initialValue), variables(variables), evaluator(NULL)
+{
+	createEvaluator();
 }
 
 ECFExpression::~ECFExpression()
@@ -27,6 +33,8 @@ ECFExpression::~ECFExpression()
 ECFExpression::ECFExpression(const ECFExpression &other)
 {
 	value = other.value;
+	variables = other.variables;
+	evaluator = NULL;
 	if (other.evaluator != NULL) {
 		evaluator = other.evaluator->copy();
 	}
@@ -36,6 +44,7 @@ ECFExpression& ECFExpression::operator=(const ECFExpression &other)
 {
 	if (this != &other) {
 		value = other.value;
+		variables = other.variables;
 		if (evaluator != NULL) {
 			delete evaluator;
 			evaluator = NULL;
@@ -47,7 +56,7 @@ ECFExpression& ECFExpression::operator=(const ECFExpression &other)
 	return *this;
 }
 
-bool ECFExpression::createEvaluator(const std::vector<std::string> &variables)
+bool ECFExpression::createEvaluator()
 {
 	if (evaluator != NULL) {
 		delete evaluator;
@@ -78,42 +87,40 @@ bool ECFExpression::createEvaluator(const std::vector<std::string> &variables)
 	return false;
 }
 
-espreso::ECFExpressionVector::ECFExpressionVector(DIMENSION dimension, bool fillWithZeros)
-: dimension(dimension)
+void ECFExpressionVector::init()
 {
 	REGISTER(x, ECFMetaData()
 			.setdescription({ "x-direction." })
 			.setdatatype({ ECFDataType::EXPRESSION })
-			.setboundaryconditionvariables()
 			.allowonly([&] () { return dimension != DIMENSION::Z; }));
 	REGISTER(y, ECFMetaData()
 			.setdescription({ "y-direction." })
 			.setdatatype({ ECFDataType::EXPRESSION })
-			.setboundaryconditionvariables()
 			.allowonly([&] () { return dimension == DIMENSION::D2 || dimension == DIMENSION::D3; }));
 	REGISTER(z, ECFMetaData()
 			.setdescription({ "z-direction." })
 			.setdatatype({ ECFDataType::EXPRESSION })
-			.setboundaryconditionvariables()
 			.allowonly([&] () { return dimension == DIMENSION::Z || dimension == DIMENSION::D3; }));
-
-	if (fillWithZeros) {
-		x.value = "0";
-		y.value = "0";
-		z.value = "0";
-		x.createEvaluator(ECFMetaData().setboundaryconditionvariables().variables);
-		y.createEvaluator(ECFMetaData().setboundaryconditionvariables().variables);
-		z.createEvaluator(ECFMetaData().setboundaryconditionvariables().variables);
-	}
 }
 
-espreso::ECFExpressionOptionalVector::ECFExpressionOptionalVector(DIMENSION dimension)
-: ECFExpressionVector(dimension, false)
+ECFExpressionVector::ECFExpressionVector(DIMENSION dimension, const std::vector<std::string> &variables)
+: x(variables), y(variables), z(variables), dimension(dimension)
+{
+	init();
+}
+
+ECFExpressionVector::ECFExpressionVector(DIMENSION dimension, const std::vector<std::string> &variables, const std::string &initialValue)
+: x(variables, initialValue), y(variables, initialValue), z(variables, initialValue), dimension(dimension)
+{
+	init();
+}
+
+ECFExpressionOptionalVector::ECFExpressionOptionalVector(DIMENSION dimension, const std::vector<std::string> &variables)
+: ECFExpressionVector(dimension, variables), all(variables)
 {
 	REGISTER(all, ECFMetaData()
 			.setdescription({ "all-directions." })
-			.setdatatype({ ECFDataType::EXPRESSION })
-			.setboundaryconditionvariables());
+			.setdatatype({ ECFDataType::EXPRESSION }));
 }
 
 

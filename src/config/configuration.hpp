@@ -84,15 +84,15 @@ ECFObject::registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &
 }
 
 // TYPE2 = REST
-template<typename Ttype1, typename Ttype2>
+template<typename Ttype1, typename Ttype2, typename... TArgs>
 typename std::enable_if<(!std::is_class<Ttype2>::value && !std::is_enum<Ttype2>::value) || (std::is_class<Ttype2>::value && !std::is_base_of<ECFObject, Ttype2>::value), ECFParameter*>::type
-ECFObject::registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata)
+ECFObject::registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata, TArgs... args)
 {
 	metadata.checkdescription(name, 2);
 	metadata.checkdatatype(name, 2);
 	metadata.checkpattern(name, 2);
 
-	return registerParameter(name, new ECFValueMap<Ttype1, Ttype2>(parameter), metadata);
+	return registerParameter(name, new ECFValueMap<Ttype1, Ttype2, TArgs...>(parameter, args...), metadata);
 }
 
 //////////// MAP MAP ////////////

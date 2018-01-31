@@ -38,7 +38,7 @@ inline ECFValueHolder<ECFExpression>::ECFValueHolder(ECFExpression &value)
 : value(value)
 {
 	if (value.value.size()) {
-		value.createEvaluator(metadata.variables);
+		value.createEvaluator();
 	}
 }
 
@@ -65,7 +65,7 @@ template <>
 inline bool ECFValueHolder<ECFExpression>::_setValue(const std::string &value)
 {
 	this->value.value = Parser::uppercase(value);
-	return this->value.createEvaluator(metadata.variables);
+	return this->value.createEvaluator();
 }
 
 template <>

@@ -3,7 +3,10 @@
 #include "../configuration.hpp"
 
 espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfiguration(ECFConfiguration *ECFRoot)
-: _ECFRoot(ECFRoot), translation(DIMENSION::D3, true), scaling(DIMENSION::D3, false)
+: _ECFRoot(ECFRoot),
+  offset(ECFMetaData::getboundaryconditionvariables()),
+  translation(DIMENSION::D3, ECFMetaData::getboundaryconditionvariables(), "0"),
+  scaling(DIMENSION::D3, ECFMetaData::getboundaryconditionvariables(), "0")
 {
 	transformation = MORPHING_TRANSFORMATION::TRANSLATION;
 	REGISTER(transformation, ECFMetaData()
@@ -11,24 +14,29 @@ espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfigurat
 		.setdatatype({ ECFDataType::OPTION })
 		.addoption(ECFOption().setname("FIXED").setdescription("Fixed position."))
 		.addoption(ECFOption().setname("OFFSET").setdescription("OFFSET."))
+		.addoption(ECFOption().setname("SCALING").setdescription("Scaling."))
+		.addoption(ECFOption().setname("TRANSLATION").setdescription("Translation."))
 		.addoption(ECFOption().setname("ROTATION").setdescription("ROTATION."))
-		.addoption(ECFOption().setname("TRANSLATION").setdescription("Translation.")));
+		);
+
+	addSeparator();
 
 	REGISTER(offset, ECFMetaData()
 		.setdescription({ "Offset size." })
-		.setdatatype({ ECFDataType::EXPRESSION })
-		.setboundaryconditionvariables());
-
-	REGISTER(translation, ECFMetaData()
-		.setdescription({ "Translation vector." }));
+		.setdatatype({ ECFDataType::EXPRESSION }));
 
 	REGISTER(scaling, ECFMetaData()
 		.setdescription({ "Scale vector." }));
 
+	REGISTER(translation, ECFMetaData()
+		.setdescription({ "Translation vector." }));
+
+	addSeparator();
+
 	REGISTER(coordinate_system, ECFMetaData()
 		.setdescription({ "Configuration of coordinate system." }));
 
-	REGISTER(overriding, ECFMetaData()
+	REGISTER(override, ECFMetaData()
 		.setdescription({ "Turn morphing target override on/off." })
 		.setdatatype({ ECFDataType::BOOL }));
 
@@ -49,6 +57,7 @@ espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfigurat
 }
 
 espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECFConfiguration *ECFRoot)
+: function({ "R" }, "R")
 {
 	solver = MORPHING_RBF_SOLVER::DIRECT;
 	REGISTER(solver, ECFMetaData()
@@ -62,13 +71,17 @@ espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECFConfiguration *ECFRoo
 		.setdescription({ "Solver requested precision." })
 		.setdatatype({ ECFDataType::FLOAT }));
 
-	function.value = "R";
 	REGISTER(function, ECFMetaData()
 		.setdescription({ "Radial basis function." })
-		.setdatatype({ ECFDataType::EXPRESSION })
-		.setvariables({ "R" }));
+		.setdatatype({ ECFDataType::EXPRESSION }));
 
-	REGISTER(targets , ECFMetaData()
+	addSeparator();
+
+	REGISTER(target, ECFMetaData()
+		.setdescription({ "Set of morphed elements." })
+		.setdatatype({ ECFDataType::REGION }));
+
+	REGISTER(morphers , ECFMetaData()
 		.setdescription({ "Morphed region name.", "Target configuration." })
 		.setdatatype({ ECFDataType::REGION })
 		.setpattern({ "REGION" }),

@@ -71,9 +71,9 @@ struct ECFMetaData {
 
 	ECFMetaData& addoption(const ECFOption &option) { options.push_back(option); return *this; }
 
-	ECFMetaData& setcoordinatevariables() { return setvariables({ "X", "Y", "Z" }); }
-	ECFMetaData& setboundaryconditionvariables() { return setvariables({ "X", "Y", "Z", "TIME" }); }
-	ECFMetaData& setmaterialvariables() { return setvariables({ "X", "Y", "Z", "TIME", "TEMPERATURE" }); }
+	static std::vector<std::string> getcoordinatevariables() { return { "X", "Y", "Z" }; }
+	static std::vector<std::string> getboundaryconditionvariables() { return { "X", "Y", "Z", "TIME" }; }
+	static std::vector<std::string> getmaterialvariables() { return { "X", "Y", "Z", "TIME", "TEMPERATURE" }; }
 
 	void checkdescription(const std::string &name, size_t size) const;
 	void checkdatatype(const std::string &name, size_t size) const;
@@ -213,9 +213,9 @@ protected:
 	registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata);
 
 	// TYPE2 = REST
-	template<typename Ttype1, typename Ttype2>
+	template<typename Ttype1, typename Ttype2, typename... TArgs>
 	typename std::enable_if<(!std::is_class<Ttype2>::value && !std::is_enum<Ttype2>::value) || (std::is_class<Ttype2>::value && !std::is_base_of<ECFObject, Ttype2>::value), ECFParameter*>::type
-	registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata);
+	registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata, TArgs... args);
 
 	//////////// MAP MAP ////////////
 	/////////////////////////////////

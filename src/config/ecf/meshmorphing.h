@@ -21,22 +21,22 @@ enum class MORPHING_RBF_SOLVER {
 };
 
 enum class MORPHING_TRANSFORMATION {
-	FIXED = 0,
-	OFFSET = 1,
-	ROTATION = 2,
-	TRANSLATION = 3
+	FIXED,
+	OFFSET,
+	SCALING,
+	TRANSLATION,
+	ROTATION
 };
 
-struct RBFTargetTransformationConfiguration : public ECFObject {
+struct RBFTargetTransformationConfiguration: public ECFObject {
 
 	MORPHING_TRANSFORMATION transformation;
 
 	ECFExpression offset;
-	ECFExpressionVector translation;
-	ECFExpressionVector scaling;
+	ECFExpressionVector scaling, translation;
 	CoordinateSystemConfiguration coordinate_system;
 
-	bool overriding;
+	bool override;
 
 	RBFTargetTransformationConfiguration(ECFConfiguration *ECFRoot);
 
@@ -51,7 +51,8 @@ struct RBFTargetConfiguration: public ECFObject {
 	ECFExpression function;
 	double solver_precision;
 
-	std::map<std::string, RBFTargetTransformationConfiguration> targets;
+	std::string target;
+	std::map<std::string, RBFTargetTransformationConfiguration> morphers;
 
 	RBFTargetConfiguration(ECFConfiguration *ECFRoot);
 };
