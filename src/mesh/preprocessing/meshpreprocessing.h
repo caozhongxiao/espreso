@@ -19,6 +19,7 @@ struct Element;
 struct ProcessInterval;
 struct BoundaryRegionStore;
 template <typename TEBoundaries, typename TEData> class serializededata;
+struct RBFTargetConfiguration;
 
 class MeshPreprocessing {
 
@@ -46,8 +47,8 @@ public:
 	void computeDomainsSurface();
 	void triangularizeDomainSurface();
 
-	void morph2D();
-	void morph3D();
+	void morphRBF2D();
+	void morphRBF3D(const std::string &name, const RBFTargetConfiguration &configuration);
 
 	void finishPreprocessing();
 

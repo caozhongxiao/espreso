@@ -4,6 +4,7 @@
 
 #include "../configuration.h"
 #include "../expression.h"
+#include "material/coordinatesystem.h"
 
 namespace espreso {
 
@@ -26,37 +27,39 @@ enum class MORPHING_TRANSFORMATION {
 	TRANSLATION = 3
 };
 
-struct RBFTargetTransformation : public ECFObject {
+struct RBFTargetTransformationConfiguration : public ECFObject {
 
 	MORPHING_TRANSFORMATION transformation;
 
 	ECFExpression offset;
 	ECFExpressionVector translation;
+	ECFExpressionVector scaling;
+	CoordinateSystemConfiguration coordinate_system;
 
 	bool overriding;
 
-	RBFTargetTransformation(ECFConfiguration *ECFRoot);
+	RBFTargetTransformationConfiguration(ECFConfiguration *ECFRoot);
 
 protected:
 	ECFConfiguration *_ECFRoot;
 };
 
-struct RBFTarget : public ECFObject {
+struct RBFTargetConfiguration: public ECFObject {
 
 	MORPHING_RBF_SOLVER solver;
 
 	ECFExpression function;
 	double solver_precision;
 
-	std::map<std::string, RBFTargetTransformation> targets;
+	std::map<std::string, RBFTargetTransformationConfiguration> targets;
 
-	RBFTarget(ECFConfiguration *ECFRoot);
+	RBFTargetConfiguration(ECFConfiguration *ECFRoot);
 };
 
 struct MeshMorphing: public ECFObject {
 
 	MORPHING_TYPE type;
-	std::map<std::string, RBFTarget> rbf;
+	std::map<std::string, RBFTargetConfiguration> rbf;
 
 	MeshMorphing(ECFConfiguration *ECFRoot);
 };

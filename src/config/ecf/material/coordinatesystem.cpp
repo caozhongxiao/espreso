@@ -17,13 +17,11 @@ espreso::CoordinateSystemConfiguration::CoordinateSystemConfiguration()
 
 	REGISTER(rotation, ECFMetaData()
 			.setdescription({ "A x-rotation of the material." })
-			.setdatatype({ ECFDataType::EXPRESSION })
 			.setcoordinatevariables()
 			.allowonly([&] () { return type == TYPE::CARTESIAN; }));
 
 	REGISTER(center, ECFMetaData()
 			.setdescription({ "A x-center of the material." })
-			.setdatatype({ ECFDataType::EXPRESSION })
 			.setcoordinatevariables()
 			.allowonly([&] () { return type != TYPE::CARTESIAN; }));
 }

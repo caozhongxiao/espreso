@@ -2,8 +2,8 @@
 #include "ecf.h"
 #include "../configuration.hpp"
 
-espreso::RBFTargetTransformation::RBFTargetTransformation(ECFConfiguration *ECFRoot)
-: _ECFRoot(ECFRoot), translation(DIMENSION::D3, true)
+espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfiguration(ECFConfiguration *ECFRoot)
+: _ECFRoot(ECFRoot), translation(DIMENSION::D3, true), scaling(DIMENSION::D3, false)
 {
 	transformation = MORPHING_TRANSFORMATION::TRANSLATION;
 	REGISTER(transformation, ECFMetaData()
@@ -16,10 +16,17 @@ espreso::RBFTargetTransformation::RBFTargetTransformation(ECFConfiguration *ECFR
 
 	REGISTER(offset, ECFMetaData()
 		.setdescription({ "Offset size." })
-		.setdatatype({ ECFDataType::EXPRESSION }));
+		.setdatatype({ ECFDataType::EXPRESSION })
+		.setboundaryconditionvariables());
 
 	REGISTER(translation, ECFMetaData()
 		.setdescription({ "Translation vector." }));
+
+	REGISTER(scaling, ECFMetaData()
+		.setdescription({ "Scale vector." }));
+
+	REGISTER(coordinate_system, ECFMetaData()
+		.setdescription({ "Configuration of coordinate system." }));
 
 	REGISTER(overriding, ECFMetaData()
 		.setdescription({ "Turn morphing target override on/off." })
@@ -41,7 +48,7 @@ espreso::RBFTargetTransformation::RBFTargetTransformation(ECFConfiguration *ECFR
 	});
 }
 
-espreso::RBFTarget::RBFTarget(ECFConfiguration *ECFRoot)
+espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECFConfiguration *ECFRoot)
 {
 	solver = MORPHING_RBF_SOLVER::DIRECT;
 	REGISTER(solver, ECFMetaData()
@@ -57,13 +64,14 @@ espreso::RBFTarget::RBFTarget(ECFConfiguration *ECFRoot)
 
 	function.value = "R";
 	REGISTER(function, ECFMetaData()
-		.setdescription({ "x." })
-		.setdatatype({ ECFDataType::STRING }));
+		.setdescription({ "Radial basis function." })
+		.setdatatype({ ECFDataType::EXPRESSION })
+		.setvariables({ "R" }));
 
 	REGISTER(targets , ECFMetaData()
-		.setdescription({ "a.", "b." })
-		.setdatatype({ ECFDataType::STRING })
-		.setpattern({ "MY_TARGET" }),
+		.setdescription({ "Morphed region name.", "Target configuration." })
+		.setdatatype({ ECFDataType::REGION })
+		.setpattern({ "REGION" }),
 		ECFRoot);
 }
 
@@ -77,9 +85,9 @@ espreso::MeshMorphing::MeshMorphing(ECFConfiguration *ECFRoot)
 		.addoption(ECFOption().setname("RBF").setdescription("RBF (Radial Base Function) Mesh Morphing.")));
 
 	REGISTER(rbf, ECFMetaData()
-		.setdescription({ "Region.", "Target." })
+		.setdescription({ "Morphing name.", "Named RBF configuration." })
 		.setdatatype({ ECFDataType::STRING })
-		.setpattern({ "RBF morphing configuration." }),
+		.setpattern({ "MORPHING_NAME" }),
 		ECFRoot);
 }
 
