@@ -2,10 +2,15 @@
 #include "meshpreprocessing.h"
 
 #include "../mesh.h"
+#include "../store/nodestore.h"
+#include "../store/boundaryregionstore.h"
+#include "../store/elementsregionstore.h"
 
 #include "../../basis/containers/point.h"
 #include "../../basis/containers/serializededata.h"
+#include "../../basis/evaluator/evaluator.h"
 #include "../../basis/matrices/denseMatrix.h"
+#include "../../basis/matrices/sparseCSRMatrix.h"
 #include "../../basis/utilities/communication.h"
 #include "../../basis/utilities/utils.h"
 #include "../../basis/logging/logging.h"
@@ -22,17 +27,62 @@ void MeshPreprocessing::morphRBF2D()
 
 void MeshPreprocessing::morphRBF3D(const std::string &name, const RBFTargetConfiguration &configuration)
 {
+	size_t threads = environment->OMP_NUM_THREADS;
+
 	start("apply morphing '" + name + "'");
 
-	std::vector<Point> sBuffer;
+	if (_mesh->nodes->originCoordinates == NULL) {
+		_mesh->nodes->originCoordinates = new serializededata<eslocal, Point>(*_mesh->nodes->coordinates);
+	}
+
+	int dimension = 3;
+
+	std::vector<Point> sPoints, rPoints;
+	std::vector<double> sDisplacement, rDisplacement;
+
+	size_t nSize = 0;
+	for(auto it = configuration.morphers.begin(); it != configuration.morphers.end(); ++it) {
+		const BoundaryRegionStore *region = _mesh->bregion(it->first);
+		nSize += region->nodes->datatarray().size();
+	}
+
+	sPoints.reserve(nSize);
+	sDisplacement.reserve(dimension * nSize);
 
 	for(auto it = configuration.morphers.begin(); it != configuration.morphers.end(); ++it) {
-		BoundaryRegionStore *region = _mesh->bregion(it->first);
+		const BoundaryRegionStore *region = _mesh->bregion(it->first);
+		const auto &nodes = region->nodes->datatarray();
+		const auto &coordinates = _mesh->nodes->coordinates->datatarray();
+
 		switch (it->second.transformation) {
-		case MORPHING_TRANSFORMATION::FIXED:
-			break;
-		case MORPHING_TRANSFORMATION::TRANSLATION:
-			break;
+		case MORPHING_TRANSFORMATION::FIXED: {
+			for (size_t i = 0; i < region->nintervals.size(); i++) {
+				if (region->nintervals[i].sourceProcess == environment->MPIrank) {
+					for (auto n = nodes.begin() + region->nintervals[i].begin; n != nodes.begin() + region->nintervals[i].end; ++n) {
+						sPoints.push_back(coordinates[*n]);
+					}
+					sDisplacement.insert(sDisplacement.end(), dimension * (region->nintervals[i].end - region->nintervals[i].begin), 0);
+				}
+			}
+		} break;
+
+		case MORPHING_TRANSFORMATION::TRANSLATION: {
+			for (size_t i = 0; i < region->nintervals.size(); i++) {
+				if (region->nintervals[i].sourceProcess == environment->MPIrank) {
+					size_t prevsize = sPoints.size();
+					for (auto n = nodes.begin() + region->nintervals[i].begin; n != nodes.begin() + region->nintervals[i].end; ++n) {
+						sPoints.push_back(coordinates[*n]);
+					}
+					sDisplacement.resize(sDisplacement.size() + dimension * (region->nintervals[i].end - region->nintervals[i].begin));
+					it->second.translation.x.evaluator->evaluate(region->nintervals[i].end - region->nintervals[i].begin, 3, sPoints.data() + prevsize, NULL, 0, sDisplacement.data() + dimension * prevsize + 0);
+					it->second.translation.y.evaluator->evaluate(region->nintervals[i].end - region->nintervals[i].begin, 3, sPoints.data() + prevsize, NULL, 0, sDisplacement.data() + dimension * prevsize + 1);
+					if (dimension == 3) {
+						it->second.translation.z.evaluator->evaluate(region->nintervals[i].end - region->nintervals[i].begin, 3, sPoints.data() + prevsize, NULL, 0, sDisplacement.data() + dimension * prevsize + 2);
+					}
+				}
+			}
+		} break;
+
 		case MORPHING_TRANSFORMATION::OFFSET:
 		case MORPHING_TRANSFORMATION::SCALING:
 		case MORPHING_TRANSFORMATION::ROTATION:
@@ -42,219 +92,127 @@ void MeshPreprocessing::morphRBF3D(const std::string &name, const RBFTargetConfi
 		}
 	}
 
-//	std::vector<double> pointsInMorphing;
-//	std::vector<double> displacements;
-//
-//	std::vector<double> localPointsInMorphing;
-//	std::vector<double> localDisplacements;
-//
-//	std::vector<double> w_matrix;
-//	std::vector<double> q_matrix;
-//
-//	std::map<eslocal, std::pair<bool, std::vector<double>>> displacementForPoint;
-//
-//	// projde regiony a napocita body v moprhingu a posunuti
-//	// localPointsInMorphing (x, y, z)/ (x, y)
-//	// localDisplacements    (dx, dy, dy)/ (dx, dy)
-//	for(auto region = configuration.targets.begin(); region!=configuration.targets.end();region++) {
-//		ESINFO(OVERVIEW)<<"Processing region: "<<region->first;
-//		Region* r = this->region(region->first);
-//
-//		Expression t_x(region->second.translation_x, {"x", "y", "z"});
-//		Expression t_y(region->second.translation_y, {"x", "y", "z"});
-//		Expression t_z(region->second.translation_z, {"x", "y", "z"});
-//
-//		for(auto element = r->elements().begin(); element!=r->elements().end(); element++){
-//			//std::cout<<"Rank: "<<environment->MPIrank<<" - "<<**element<<" - nodes: "<<(*element)->nodes()<<std::endl;
-//			for(size_t i = 0; i<(*element)->nodes();i++) {
-//				eslocal node = (*element)->node(i);
-//				if (this->nodes()[node]->clusters().front()==environment->MPIrank) {
-//
-//					//TODO: Improve this solution
-//					auto elementInDisplacement = displacementForPoint.find(node);
-//					if (elementInDisplacement==displacementForPoint.end()) {
-//						std::pair<bool, std::vector<double>> empty;
-//						empty.first = false;
-//						empty.second.resize(3);
-//
-//						displacementForPoint[node] = empty;
-//
-//						elementInDisplacement = displacementForPoint.find(node);
-//					}
-//					if (elementInDisplacement->second.first && !region->second.overriding) {
-//						//point overridden, but region is not overriding
-//						continue;
-//					}
-//					elementInDisplacement->second.first=region->second.overriding;
-//
-//					const Point& p = this->coordinates()[node];
-//
-//					if (region->second.transformation == MORPHING_TRANSFORMATION::FIXED) {
-//						for(int dim=0;dim<dimension;dim++) {
-//							elementInDisplacement->second.second[dim]=0;
-//						}
-//					}else if (region->second.transformation == MORPHING_TRANSFORMATION::TRANSLATION) {
-//						std::vector<double> point(3);
-//						point[0] = p.x;
-//						point[1] = p.y;
-//						if (dimension==3){
-//							point[2] = p.z;
-//						}
-//						elementInDisplacement->second.second[0]=(t_x.evaluate(point)-p.x);
-//						elementInDisplacement->second.second[1]=(t_y.evaluate(point)-p.y);
-//						if (dimension==3) {
-//							elementInDisplacement->second.second[2]=(t_z.evaluate(point)-p.z);
-//						}
-//					}
-//				}
-//			}
-//		}
-//	}
-//
-//	for(auto it = displacementForPoint.begin(); it!=displacementForPoint.end(); it++) {
-//		const Point& p = this->coordinates()[it->first];
-//		localPointsInMorphing.push_back(p.x);
-//		localPointsInMorphing.push_back(p.y);
-//		if (dimension==3) {
-//			localPointsInMorphing.push_back(p.z);
-//		}
-//		for(int dim=0;dim<dimension;dim++) {
-//			localDisplacements.push_back( it->second.second[dim]);
-//		}
-//	}
-//	// end
-//	// localPointsInMorphing (x, y, z)/ (x, y)
-//	// localDisplacements    (dx, dy, dy)/ (dx, dy)
-//
-//	displacementForPoint.clear();
-//
-//
-//	// reseni se pocita na rank=0 ...
-//	//std::cout<<"Process: "<<environment->MPIrank<<" sends "<<localPointsInMorphing.size()<<" coordinates\n";
-//	Communication::gatherUnknownSize(localPointsInMorphing, pointsInMorphing);
-//	//std::cout<<"Process: "<<environment->MPIrank<<" sends "<<localDisplacements.size()<<" displacements\n";
-//	Communication::gatherUnknownSize(localDisplacements, displacements);
-//
-//	localPointsInMorphing.clear();
-//	localDisplacements.clear();
-//
-//	// reseni se pocita na rank=0 -> tady se to provede
-//	if (environment->MPIrank==0) {
-//
-//		int rowsFromCoordinates = displacements.size()/dimension;
-//
-//		DenseMatrix rhs(rowsFromCoordinates+dimension+1, dimension);
-//		std::vector<double>::iterator it = displacements.begin();
-//		for(int i=0;i<rowsFromCoordinates;i++) {
-//			for(int k = 0;k<dimension;k++) {
-//				rhs(i, k) = *it;
-//				it++;
-//			}
-//		}
-//
-//		displacements.clear();
-//
-//		//std::cout<<rhs;
-//
-//		DenseMatrix M(rowsFromCoordinates + dimension+1, rowsFromCoordinates+dimension+1);
-//
-//		for (int i=0;i<rowsFromCoordinates;i++) {
-//			for(int k = 0;k<dimension;k++) {
-//				M(rowsFromCoordinates+k,i) = M(i,rowsFromCoordinates+k) = pointsInMorphing[i*dimension+k];
-//			}
-//			M(rowsFromCoordinates+dimension, i  ) =	M(i, rowsFromCoordinates+dimension) = 1;
-//
-//			for(int j=0;j<i;j++) {
-//				double tmp = 0;
-//				for(int k = 0;k<dimension;k++) {
-//					double dist = pointsInMorphing[i*dimension+k] - pointsInMorphing[j*dimension+k];
-//					tmp += dist*dist;
-//				}
-//				std::vector<double> function_data;
-//				function_data.push_back(sqrt(tmp));
-//				// TODO:
-//				// M(i,j) = M(j,i) = configuration.function.evaluator->evaluate();
-//			}
-//		}
-//
-//		if (configuration.solver == MORPHING_RBF_SOLVER::DIRECT) {
-//
-//		} else if (configuration.solver == MORPHING_RBF_SOLVER::ITERATIVE) {
-//
-//			SparseCSRMatrix<MKL_INT> MSparse(M);
-//			rhs.transpose();
-//
-//			DenseMatrix wq(rhs.rows(), rhs.columns());
-//			for(int i=0;i<rhs.rows();i++) {
-//				MSparse.gmresSolve(&rhs(i,0), &wq(i,0), configuration.solver_precision, 600);
-//			}
-//			//std::cout<<wq;
-//
-//			//TODO: optimize
-//			for(int i=0;i<wq.columns();i++) {
-//				for(int j=0;j<wq.rows(); j++) {
-//					if (i<rowsFromCoordinates) {
-//						w_matrix.push_back(wq(j,i));
-//					}else {
-//						q_matrix.push_back(wq(j,i));
-//					}
-//				}
-//			}
-//		}
-//	}
-//
-//	// poslu vysledky na puvodni nody -> vsichni musi mit vsechno
-//	Communication::broadcastUnknownSize(pointsInMorphing);
-//	Communication::broadcastUnknownSize(w_matrix);
-//	Communication::broadcastUnknownSize(q_matrix);
-//
-//	// zaloha coordinatu
-//	_originalCoordinates = coordinates()._points;
-//
-//	int pointsCount = pointsInMorphing.size()/dimension;
-//	for(int i=0;i<coordinates().clusterSize();i++) {
-//		double displacement[dimension];
-//
-//		for(int k=0;k<dimension;k++) {
-//			displacement[k]=0.0;
-//		}
-//		Point& p = (*_coordinates)[i];
-//
-//		std::vector<double> point;
-//		point.push_back(p.x);
-//		point.push_back(p.y);
-//		if (dimension==3) point.push_back(p.z);
-//		point.push_back(1);
-//
-//		for(int j=0;j<pointsCount;j++) {
-//			double distance = 0.0;
-//			for(int k=0;k<dimension;k++) {
-//				double tmp = pointsInMorphing[j*dimension+k] - point[k];
-//				distance+=tmp*tmp;
-//			}
-//			distance = sqrt(distance);
-//
-//			std::vector<double> function_data;
-//			function_data.push_back(distance);
-//			distance = function_r.evaluate(function_data);
-//
-//			for(int k=0;k<dimension;k++) {
-//				displacement[k]+= distance * w_matrix[j*dimension + k];
-//			}
-//		}
-//
-//		for(int k=0;k<dimension;k++) {
-//			for(int j=0;j<point.size();j++) {
-//				displacement[k] += point[j]*q_matrix[j*dimension+k];
-//			}
-//		}
-//
-//		p.x += displacement[0];
-//		p.y += displacement[1];
-//		if (dimension==3) {
-//			p.z += displacement[2];
-//		}
-//	}
+	if (!Communication::gatherUnknownSize(sPoints, rPoints)) {
+		ESINFO(ERROR) << "ESPRESO internal error: gather morphed points";
+	}
+
+	if (!Communication::gatherUnknownSize(sDisplacement, rDisplacement)) {
+		ESINFO(ERROR) << "ESPRESO internal error: gather morphed displacement";
+	}
+
+	std::vector<double> W, Q;
+
+	if (environment->MPIrank == 0) {
+
+		eslocal rowsFromCoordinates = rDisplacement.size() / dimension;
+
+		// TODO: optimize
+		DenseMatrix rhs(rowsFromCoordinates + dimension + 1, dimension);
+		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+			for (int d = 0; d < dimension; d++) {
+				rhs(r, d) = rDisplacement[r * dimension + d];
+			}
+		}
+
+		DenseMatrix M(rowsFromCoordinates + dimension + 1, rowsFromCoordinates + dimension + 1);
+
+		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+			M(rowsFromCoordinates + 0, r) = M(r, rowsFromCoordinates + 0) = rPoints[r].x;
+			M(rowsFromCoordinates + 1, r) = M(r, rowsFromCoordinates + 1) = rPoints[r].y;
+			if (dimension == 3) {
+				M(rowsFromCoordinates + 2, r) = M(r, rowsFromCoordinates + 2) = rPoints[r].z;
+			}
+
+			M(rowsFromCoordinates + dimension, r) = M(r, rowsFromCoordinates + dimension) = 1;
+
+			for(int rr = 0; rr < r; rr++) {
+				Point diff = rPoints[r] - rPoints[rr];
+				M(r, rr) = M(rr, r) = configuration.function.evaluator->evaluate(diff.length());
+			}
+		}
+
+//		std::cout << M << rhs;
+
+		switch (configuration.solver) {
+		case MORPHING_RBF_SOLVER::ITERATIVE: {
+			SparseCSRMatrix<eslocal> MSparse(M);
+			rhs.transpose();
+
+			DenseMatrix wq(rhs.rows(), rhs.columns());
+			for(eslocal r = 0 ; r < rhs.rows(); r++) {
+				MSparse.gmresSolve(&rhs(r, 0), &wq(r, 0), configuration.solver_precision, 600);
+			}
+
+			for(eslocal c = 0; c < wq.columns(); c++) {
+				for(eslocal r = 0; r < wq.rows(); r++) {
+					if (c < rowsFromCoordinates) {
+						W.push_back(wq(r, c));
+					}else {
+						Q.push_back(wq(r, c));
+					}
+				}
+			}
+		} break;
+
+		case MORPHING_RBF_SOLVER::DIRECT:
+		default:
+			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement mesh morphing solver.";
+		}
+	}
+
+	if (!Communication::broadcastUnknownSize(rPoints)) {
+		ESINFO(ERROR) << "ESPRESO internal error: broadcast points.";
+	}
+	if (!Communication::broadcastUnknownSize(W)) {
+		ESINFO(ERROR) << "ESPRESO internal error: broadcast W.";
+	}
+	if (!Communication::broadcastUnknownSize(Q)) {
+		ESINFO(ERROR) << "ESPRESO internal error: broadcast Q.";
+	}
+
+	ElementsRegionStore *tregion = _mesh->eregion(configuration.target);
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (auto n = tregion->nodes->begin(t)->begin(); n != tregion->nodes->begin(t + 1)->begin(); ++n) {
+			Point &morphed = _mesh->nodes->coordinates->datatarray()[*n];
+			Point origin = morphed;
+
+			for (size_t i = 0; i < rPoints.size(); i++) {
+				double R = configuration.function.evaluator->evaluate((rPoints[i] - origin).length());
+
+				morphed.x = R * W[i + dimension + 0];
+				morphed.y = R * W[i + dimension + 1];
+				if (dimension == 3) {
+					morphed.z = R * W[i + dimension + 2];
+				}
+
+				if (dimension == 3) {
+					morphed.x += origin.x * Q[0 * dimension + 0];
+					morphed.x += origin.y * Q[1 * dimension + 0];
+					morphed.x += origin.z * Q[2 * dimension + 0];
+					morphed.x +=            Q[3 * dimension + 0];
+					morphed.y += origin.x * Q[0 * dimension + 1];
+					morphed.y += origin.y * Q[1 * dimension + 1];
+					morphed.y += origin.z * Q[2 * dimension + 1];
+					morphed.y +=            Q[3 * dimension + 1];
+					morphed.z += origin.x * Q[0 * dimension + 2];
+					morphed.z += origin.y * Q[1 * dimension + 2];
+					morphed.z += origin.z * Q[2 * dimension + 2];
+					morphed.z +=            Q[3 * dimension + 2];
+				}
+				if (dimension == 2) {
+					morphed.x += origin.x * Q[0 * dimension + 0];
+					morphed.x += origin.y * Q[1 * dimension + 0];
+					morphed.x +=            Q[2 * dimension + 0];
+					morphed.y += origin.x * Q[0 * dimension + 1];
+					morphed.y += origin.y * Q[1 * dimension + 1];
+					morphed.y +=            Q[2 * dimension + 1];
+				}
+			}
+			std::cout << origin << " to " << morphed << "\n";
+		}
+	}
 
 	finish("apply morphing '" + name + "'");
 }

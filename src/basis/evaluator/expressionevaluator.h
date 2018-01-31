@@ -24,7 +24,8 @@ public:
 	Type type() { return Type::EXPRESSION; }
 	virtual Evaluator* copy() const { return new ExpressionEvaluator(*this); }
 
-	void evaluate(eslocal size, const Point* cbegin, const double* tbegin, double time, double *results) const;
+	void evaluate(eslocal size, eslocal increment, const Point* cbegin, const double* tbegin, double time, double *results) const;
+	double evaluate(double r) const;
 
 	bool isCoordinateDependent() const { return _coordinateDependency; }
 	bool isTimeDependent() const { return _timeDependency; }

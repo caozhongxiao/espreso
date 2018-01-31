@@ -57,20 +57,20 @@ MESH_MORPHING {
 
   RBF {
     MY_RBF_MORPHING {
-      SOLVER             DENSE;
+      SOLVER         ITERATIVE;
       SOLVER_PRECISION   1E-05;
       FUNCTION           R + 1;
 
       TARGET      ALL_ELEMENTS;
 
       MORPHERS {
-        LEFT {
+        Z1 {
           TRANSFORMATION   TRANSLATION;
 
           TRANSLATION {
-            X       X;
-            Y       Y;
-            Z   2 * Z;
+            X       0;
+            Y       0;
+            Z       Z;
           }
         }
       }

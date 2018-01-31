@@ -22,6 +22,7 @@ NodeStore::NodeStore()
   IDs(NULL),
   elements(NULL),
 
+  originCoordinates(NULL),
   coordinates(NULL),
   ranks(NULL),
 
@@ -151,6 +152,7 @@ NodeStore::~NodeStore()
 	if (IDs == NULL) { delete IDs; }
 	if (elements == NULL) { delete elements; }
 
+	if (originCoordinates == NULL) { delete originCoordinates; }
 	if (coordinates == NULL) { delete coordinates; }
 	if (ranks == NULL) { delete ranks; }
 
@@ -181,6 +183,7 @@ void NodeStore::permute(const std::vector<eslocal> &permutation, const std::vect
 	if (IDs != NULL) { IDs->permute(permutation, distribution); }
 	if (elements != NULL) { elements->permute(permutation, distribution); }
 
+	if (originCoordinates != NULL) { originCoordinates->permute(permutation, distribution); }
 	if (coordinates != NULL) { coordinates->permute(permutation, distribution); }
 	if (ranks != NULL) { ranks->permute(permutation, distribution); }
 }

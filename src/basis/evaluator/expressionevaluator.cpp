@@ -42,7 +42,7 @@ ExpressionEvaluator::ExpressionEvaluator(const ExpressionEvaluator &other)
 	_temperatureDependency = other._temperatureDependency;
 }
 
-void ExpressionEvaluator::evaluate(eslocal size, const Point* cbegin, const double* tbegin, double time, double *results) const
+void ExpressionEvaluator::evaluate(eslocal size, eslocal increment, const Point* cbegin, const double* tbegin, double time, double *results) const
 {
 	int thread = omp_get_thread_num();
 	for (eslocal i = 0; i < size; ++i) {
@@ -55,8 +55,15 @@ void ExpressionEvaluator::evaluate(eslocal size, const Point* cbegin, const doub
 			_expressions[thread]->values[3] = tbegin[i];
 		}
 		_expressions[thread]->values[4] = time;
-		results[i] = _expressions[thread]->evaluate();
+		results[i * increment] = _expressions[thread]->evaluate();
 	}
+}
+
+double ExpressionEvaluator::evaluate(double r) const
+{
+	int thread = omp_get_thread_num();
+	_expressions[thread]->values[0] = r;
+	return _expressions[thread]->evaluate();
 }
 
 

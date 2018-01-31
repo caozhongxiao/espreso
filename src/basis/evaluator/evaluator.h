@@ -24,7 +24,13 @@ public:
 
 	virtual ~Evaluator() {};
 
-	virtual void evaluate(eslocal size, const Point* cbegin, const double* tbegin, double time, double *results) const {};
+	virtual void evaluate(eslocal size, const Point* cbegin, const double* tbegin, double time, double *results) const
+	{
+		evaluate(size, 1, cbegin, tbegin, time, results);
+	}
+	virtual void evaluate(eslocal size, eslocal increment, const Point* cbegin, const double* tbegin, double time, double *results) const {};
+
+	virtual double evaluate(double r) const { return 0; }
 
 	// TODO: remove
 	double evaluate(const Point &p, double time, double temperature) const;

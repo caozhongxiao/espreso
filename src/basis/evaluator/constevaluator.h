@@ -14,7 +14,8 @@ public:
 	Type type() { return Type::CONST; }
 	virtual Evaluator* copy() const { return new ConstEvaluator(*this); }
 
-	void evaluate(eslocal size, const Point* cbegin, const double* tbegin, double time, double *results) const;
+	void evaluate(eslocal size, eslocal increment, const Point* cbegin, const double* tbegin, double time, double *results) const;
+	double evaluate(double r) const { return _value; }
 
 protected:
 	double _value;

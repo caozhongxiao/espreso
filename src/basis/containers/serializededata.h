@@ -202,7 +202,7 @@ public:
 	: _eboundaries(std::move(eboundaries)), _edata(std::move(edata)), _edatasize(-1) { inititerators(); }
 
 	serializededata(const serializededata<TEBoundaries, TEData> &other)
-	: _eboundaries(other._eboundaries), _edata(other._edata), _edatasize(other._edatasize) { inititerators(); }
+	: _eboundaries(other._eboundaries), _edata(other._edata), _edatasize(other._edatasize) { _edatasize != -1 ? inititerators(_edatasize) : inititerators(); }
 
 	serializededata(serializededata<TEBoundaries, TEData> &&other)
 	: _eboundaries(std::move(other._eboundaries)), _edata(std::move(other._edata)), _edatasize(std::move(other._edatasize)) { inititerators(); }

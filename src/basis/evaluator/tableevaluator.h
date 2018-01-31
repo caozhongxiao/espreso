@@ -25,7 +25,7 @@ public:
 	virtual Type type() { return Type::TABLE; }
 	virtual Evaluator* copy() const { return new TableEvaluator(*this); }
 
-	void evaluate(eslocal size, const Point* cbegin, const double* tbegin, double time, double *results) const;
+	void evaluate(eslocal size, eslocal increment, const Point* cbegin, const double* tbegin, double time, double *results) const;
 
 	bool isCoordinateDependent() const { return false; }
 	bool isTimeDependent() const { return _timeDependency; }

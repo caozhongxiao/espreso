@@ -38,6 +38,7 @@ public:
 	SparseCSRMatrix<Tindices>& operator=(SparseVVPMatrix<Tindices> &other);
 
 	void multiply(SparseCSRMatrix<Tindices> &A, SparseCSRMatrix<Tindices> &B, bool transposeA = false);
+	int gmresSolve(double *rhs, double *computed_solution, double tolerance, int maxiter);
 
 	void resize(size_t rows, size_t values);
 	void transpose();

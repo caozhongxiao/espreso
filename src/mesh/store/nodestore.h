@@ -76,6 +76,7 @@ struct NodeStore {
 	serializededata<eslocal, eslocal>* IDs;
 	serializededata<eslocal, eslocal>* elements;
 
+	serializededata<eslocal, Point>* originCoordinates;
 	serializededata<eslocal, Point>* coordinates;
 	serializededata<eslocal, int>* ranks;
 

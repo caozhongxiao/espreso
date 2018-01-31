@@ -16,7 +16,7 @@ TableEvaluator::TableEvaluator(
 	_timeDependency = std::any_of(_properties.begin(), _properties.end(), [] (const TableProperty &p) { return p == TableProperty::TIME; });
 }
 
-void TableEvaluator::evaluate(eslocal size, const Point* cbegin, const double* tbegin, double time, double *results) const
+void TableEvaluator::evaluate(eslocal size, eslocal increment, const Point* cbegin, const double* tbegin, double time, double *results) const
 {
 	std::vector<size_t> cell(_dimension);
 
@@ -32,7 +32,7 @@ void TableEvaluator::evaluate(eslocal size, const Point* cbegin, const double* t
 
 			}
 		}
-		results[j] = _table[_dimension > 0 ? cell[0] : 0][_dimension > 1 ? cell[1] : 0][_dimension > 2 ? cell[2] : 0];
+		results[j * increment] = _table[_dimension > 0 ? cell[0] : 0][_dimension > 1 ? cell[1] : 0][_dimension > 2 ? cell[2] : 0];
 	}
 }
 
