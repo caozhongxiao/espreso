@@ -5,12 +5,12 @@
 
 using namespace espreso;
 
-void MATH::upCSRMatVecProduct(eslocal rows, eslocal cols, eslocal *mRows, eslocal *mCols, float *mVals, float *vVals, float *result)
+void MATH::upCSRMatRowMajorVecProduct(eslocal rows, eslocal cols, eslocal *mRows, eslocal *mCols, float *mVals, float *vVals, float *result)
 {
 	mkl_cspblas_scsrsymv("U", &rows, mVals, mRows, mCols, vVals, result);
 }
 
-void MATH::upCSRMatVecProduct(eslocal rows, eslocal cols, eslocal *mRows, eslocal *mCols, double *mVals, double *vVals, double *result)
+void MATH::upCSRMatRowMajorVecProduct(eslocal rows, eslocal cols, eslocal *mRows, eslocal *mCols, double *mVals, double *vVals, double *result)
 {
 	mkl_cspblas_dcsrsymv("U", &rows, mVals, mRows, mCols, vVals, result);
 }

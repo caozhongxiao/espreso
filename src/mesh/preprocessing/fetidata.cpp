@@ -317,7 +317,7 @@ void MeshPreprocessing::addFixPoints(const serializededata<eslocal, eslocal>* el
 			float last_l = pids[p].size(), l = 1;
 
 			while (fabs((l - last_l) / l) > 1e-6) {
-				MATH::upCSRMatVecProduct(pids[p].size(), pids[p].size(), pdist[p].data(), pdata[p].data(), vals.data(), x.data(), y.data());
+				MATH::upCSRMatRowMajorVecProduct(pids[p].size(), pids[p].size(), pdist[p].data(), pdata[p].data(), vals.data(), x.data(), y.data());
 				last_l = l;
 				l = MATH::vecNorm(pids[p].size(), y.data());
 				MATH::vecScale(pids[p].size(), 1 / l, y.data());
