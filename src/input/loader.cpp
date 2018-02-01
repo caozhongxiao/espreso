@@ -10,6 +10,7 @@
 #include "../config/ecf/ecf.h"
 
 #include "../mesh/mesh.h"
+#include "../mesh/preprocessing/meshpreprocessing.h"
 #include "../mesh/elements/element.h"
 #include "../mesh/store/nodestore.h"
 #include "../mesh/store/elementstore.h"
@@ -43,11 +44,30 @@ void Loader::loadDistributedMesh(DistributedMesh &dMesh, Mesh &mesh)
 
 Loader::Loader(DistributedMesh &dMesh, Mesh &mesh): _dMesh(dMesh), _mesh(mesh)
 {
+	Communication::serialize([&] () {
+		std::cout << environment->MPIrank << ": " << _dMesh.bregions.front().esize.size() << "\n";
+	});
+
+	ESINFO(OVERVIEW) << "Balance distributed mesh.";
 	distributeMesh();
+	ESINFO(PROGRESS2) << "Distributed loader:: data balanced.";
 	fillElements();
+	ESINFO(PROGRESS2) << "Distributed loader:: elements filled.";
 	fillCoordinates();
+	ESINFO(PROGRESS2) << "Distributed loader:: coordinates filled.";
 	addNodeRegions();
+	ESINFO(PROGRESS2) << "Distributed loader:: node regions filled.";
 	addBoundaryRegions();
+	ESINFO(PROGRESS2) << "Distributed loader:: boundary regions filled.";
+
+	Communication::serialize([&] () {
+		std::cout << environment->MPIrank << ": " << _mesh.boundaryRegions.back()->elements->structures() << "\n";
+	});
+	eslocal size = _mesh.boundaryRegions.back()->elements->structures(), total;
+	MPI_Reduce(&size, &total, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
+	if (environment->MPIrank == 0) {
+		std::cout << "total: " << total << "\n";
+	}
 }
 
 void Loader::distributeMesh()
@@ -547,6 +567,12 @@ void Loader::addBoundaryRegions()
 		return;
 	}
 
+	if (_dMesh.bregions.size()) {
+		_mesh.preprocessing->linkNodesAndElements();
+	}
+	std::vector<eslocal> edistribution = _mesh.elements->gatherElementsProcDistribution();
+	std::cout << edistribution;
+
 	for (size_t i = 0; i < _dMesh.bregions.size(); i++) {
 
 		std::vector<eslocal> edist = { 0 };
@@ -561,6 +587,7 @@ void Loader::addBoundaryRegions()
 			return _dMesh.bregions[i].enodes[edist[e1]] < _dMesh.bregions[i].enodes[edist[e2]];
 		});
 
+
 		std::vector<std::vector<eslocal> > sBuffer, rBuffer;
 		std::vector<int> sRanks, tRanks;
 
@@ -568,14 +595,20 @@ void Loader::addBoundaryRegions()
 			auto begin = std::lower_bound(permutation.begin(), permutation.end(), _nDistribution[t], [&] (eslocal e, eslocal n) { return _dMesh.bregions[i].enodes[edist[e]] < n; });
 			auto end = std::lower_bound(permutation.begin(), permutation.end(), _nDistribution[t + 1], [&] (eslocal e, eslocal n) { return _dMesh.bregions[i].enodes[edist[e]] < n; });
 			if (begin != end) {
-				sBuffer.push_back({});
 				sRanks.push_back(t);
 			}
-			for (size_t e = begin - permutation.begin(); e < end - permutation.begin(); ++e) {
-				sBuffer.back().push_back(_dMesh.bregions[i].etypes[permutation[e]]);
-				sBuffer.back().push_back(_dMesh.bregions[i].esize[permutation[e]]);
-				for (eslocal n = 0; n < _dMesh.bregions[i].esize[permutation[e]]; ++n) {
-					sBuffer.back().push_back(_dMesh.bregions[i].enodes[edist[permutation[e]] + n]);
+		}
+		sBuffer.resize(sRanks.size());
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < sRanks.size(); t++) {
+			auto begin = std::lower_bound(permutation.begin(), permutation.end(), _nDistribution[sRanks[t]], [&] (eslocal e, eslocal n) { return _dMesh.bregions[i].enodes[edist[e]] < n; });
+			auto end = std::lower_bound(permutation.begin(), permutation.end(), _nDistribution[sRanks[t] + 1], [&] (eslocal e, eslocal n) { return _dMesh.bregions[i].enodes[edist[e]] < n; });
+			for (auto e = begin; e != end; ++e) {
+				sBuffer[t].push_back(_dMesh.bregions[i].etypes[*e]);
+				sBuffer[t].push_back(_dMesh.bregions[i].esize[*e]);
+				for (eslocal n = 0; n < _dMesh.bregions[i].esize[*e]; ++n) {
+					sBuffer[t].push_back(_dMesh.bregions[i].enodes[edist[*e] + n]);
 				}
 			}
 		}
@@ -593,12 +626,18 @@ void Loader::addBoundaryRegions()
 				nodes.clear();
 				nodes.insert(nodes.end(), rBuffer[r].begin() + n + 2, rBuffer[r].begin() + n + 2 + rBuffer[r][n + 1]);
 				std::sort(nodes.begin(), nodes.end());
-				auto begin = std::lower_bound(nodes.begin(), nodes.end(), _nDistribution[environment->MPIrank]);
-				auto end = std::lower_bound(nodes.begin(), nodes.end(), _nDistribution[environment->MPIrank + 1]);
+				auto nbegin = std::lower_bound(nodes.begin(), nodes.end(), _nDistribution[environment->MPIrank]);
+				auto nend = std::lower_bound(nodes.begin(), nodes.end(), _nDistribution[environment->MPIrank + 1]);
 
 				#pragma omp parallel for
 				for (size_t t = 0; t < _targetRanks.size(); t++) {
-					if (std::includes(_rankNodeMap[t].begin(), _rankNodeMap[t].end(), begin, end)) {
+					auto it = _rankNodeMap[t].begin();
+					bool found = true;
+					for (auto current = nbegin; found && current != nend; ++current) {
+						it = std::lower_bound(it, _rankNodeMap[t].end(), *current);
+						found = it != _rankNodeMap[t].end() && *it == *current;
+					}
+					if (found) {
 						sBuffer[t].insert(sBuffer[t].end(), rBuffer[r].begin() + n, rBuffer[r].begin() + n + 2 + rBuffer[r][n + 1]);
 					}
 				}
@@ -621,30 +660,86 @@ void Loader::addBoundaryRegions()
 			ESINFO(ERROR) << "ESPRESO internal error: exchange node region to targets.";
 		}
 
-		std::vector<std::vector<eslocal> > tedist(threads), tnodes(threads);
-		std::vector<std::vector<Element*> > epointers(threads);
+		std::vector<std::vector<eslocal> > tedist(rBuffer.size(), { 0 }), tnodes(rBuffer.size());
+		std::vector<std::vector<Element*> > epointers(rBuffer.size());
 
-		tedist.front().push_back(0);
+		#pragma omp parallel for
 		for (size_t r = 0; r < rBuffer.size(); r++) {
 			std::vector<eslocal> nodes;
 			for (size_t n = 0; n < rBuffer[r].size(); n += 2 + rBuffer[r][n + 1]) {
 				nodes.clear();
 				nodes.insert(nodes.end(), rBuffer[r].begin() + n + 2, rBuffer[r].begin() + n + 2 + rBuffer[r][n + 1]);
 				std::sort(nodes.begin(), nodes.end());
-				if (std::includes(_mesh.nodes->IDs->datatarray().begin(), _mesh.nodes->IDs->datatarray().end(), nodes.begin(), nodes.end())) {
-					tedist.front().push_back(tedist.front().back() + nodes.size());
-					tnodes.front().insert(tnodes.front().end(), rBuffer[r].begin() + n + 2, rBuffer[r].begin() + n + 2 + rBuffer[r][n + 1]);
-					epointers.front().push_back(&_mesh._eclasses[0][rBuffer[r][n]]);
+
+				bool found = true;
+				auto it = _mesh.nodes->IDs->datatarray().begin();
+				for (auto current = nodes.begin(); found && current != nodes.end(); ++current) {
+					it = std::lower_bound(it, _mesh.nodes->IDs->datatarray().end(), *current);
+					found = it != _mesh.nodes->IDs->datatarray().end() && *it == *current;
+				}
+				if (found) {
+					tnodes[r].insert(tnodes[r].end(), rBuffer[r].begin() + n + 2, rBuffer[r].begin() + n + 2 + rBuffer[r][n + 1]);
+					tedist[r].push_back(tnodes[r].size());
+					epointers[r].push_back(&_mesh._eclasses[0][rBuffer[r][n]]);
 				}
 			}
 		}
 
-		_mesh.boundaryRegions.push_back(new BoundaryRegionStore(_dMesh.bregions[i].name, _mesh._eclasses));
-		_mesh.boundaryRegions.back()->distribution = tarray<eslocal>::distribute(threads, epointers.front().size());
-		_mesh.boundaryRegions.back()->dimension = 2;
+		#pragma omp parallel for
+		for (size_t r = 0; r < rBuffer.size(); r++) {
+			for (auto n = tnodes[r].begin(); n != tnodes[r].end(); ++n) {
+				*n = std::lower_bound(_mesh.nodes->IDs->datatarray().begin(), _mesh.nodes->IDs->datatarray().end(), *n) - _mesh.nodes->IDs->datatarray().begin();
+			}
 
-		serializededata<eslocal, eslocal>::balance(tedist, tnodes, &_mesh.boundaryRegions.back()->distribution);
-		serializededata<eslocal, Element*>::balance(1, epointers, &_mesh.boundaryRegions.back()->distribution);
+			auto elinks = _mesh.nodes->elements->begin();
+			std::vector<eslocal> elements;
+			eslocal size, maxsize, first = edistribution[environment->MPIrank], last = edistribution[environment->MPIrank + 1];
+			eslocal pdist = r == 0 ? 1 : 0, pnodes = 0, pclass = 0;
+			for (size_t e = 0; e < epointers[r].size(); ++e) {
+				elements.clear();
+				for (eslocal n = tedist[r][e]; n < tedist[r][e] + epointers[r][e]->coarseNodes; ++n) {
+					elements.insert(elements.end(), (elinks + tnodes[r][n])->begin(), (elinks + tnodes[r][n])->end());
+				}
+				std::sort(elements.begin(), elements.end());
+				size = 1; maxsize = 0;
+				for (size_t ei = 1; ei < elements.size(); ++ei) {
+					if (elements[ei - 1] == elements[ei]) {
+						++size;
+					} else {
+						if (maxsize < size && first <= elements[ei - 1] && elements[ei - 1] < last) {
+							maxsize = size;
+						}
+						size = 1;
+					}
+				}
+				if (maxsize < size && first <= elements.back() && elements.back() < last) {
+					maxsize = size;
+				}
+				if (maxsize == epointers[r][e]->coarseNodes) {
+					for (eslocal n = tedist[r][e]; n < tedist[r][e + 1]; ++n) {
+						tnodes[r][pnodes++] = tnodes[r][n];
+					}
+					tedist[r][pdist++] = pnodes;
+					epointers[r][pclass++] = epointers[r][e];
+				}
+			}
+			tnodes[r].resize(pnodes);
+			tedist[r].resize(pdist);
+			epointers[r].resize(pclass);
+		}
+
+		for (size_t t = threads; t < rBuffer.size(); t++) {
+			tedist[threads - 1].insert(tedist[threads - 1].end(), tedist[t].begin(), tedist[t].end());
+			tnodes[threads - 1].insert(tnodes[threads - 1].end(), tnodes[t].begin(), tnodes[t].end());
+			epointers[threads - 1].insert(epointers[threads - 1].end(), epointers[t].begin(), epointers[t].end());
+		}
+
+		tedist.resize(threads);
+		tnodes.resize(threads);
+		epointers.resize(threads);
+
+		serializededata<eslocal, eslocal>::balance(tedist, tnodes);
+		serializededata<eslocal, Element*>::balance(1, epointers);
 
 		#pragma omp parallel for
 		for (size_t t = 1; t < threads; t++) {
@@ -653,14 +748,10 @@ void Loader::addBoundaryRegions()
 			}
 		}
 
+		_mesh.boundaryRegions.push_back(new BoundaryRegionStore(_dMesh.bregions[i].name, _mesh._eclasses));
+		_mesh.boundaryRegions.back()->dimension = 2;
 		_mesh.boundaryRegions.back()->elements = new serializededata<eslocal, eslocal>(tedist, tnodes);
 		_mesh.boundaryRegions.back()->epointers = new serializededata<eslocal, Element*>(1, epointers);
-
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			for (auto n = _mesh.boundaryRegions.back()->elements->begin(t)->begin(); n != _mesh.boundaryRegions.back()->elements->end(t)->begin(); ++n) {
-				*n = std::lower_bound(_mesh.nodes->IDs->datatarray().begin(), _mesh.nodes->IDs->datatarray().end(), *n) - _mesh.nodes->IDs->datatarray().begin();
-			}
-		}
+		_mesh.boundaryRegions.back()->distribution = _mesh.boundaryRegions.back()->elements->datatarray().distribution();
 	}
 }

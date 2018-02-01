@@ -301,6 +301,7 @@ void Mesh::load()
 
 void Mesh::update()
 {
+	ESINFO(OVERVIEW) << "Preprocess mesh data.";
 	materials.clear();
 	std::map<std::string, int> matindex;
 	for (auto mat = configuration.getPhysics()->materials.begin(); mat != configuration.getPhysics()->materials.end(); ++mat) {
@@ -320,7 +321,7 @@ void Mesh::update()
 	}
 
 	if (configuration.decomposition.balance_clusters || configuration.input == INPUT_FORMAT::WORKBENCH) {
-		preprocessing->reclusterize();
+		// preprocessing->reclusterize();
 	}
 
 	bool uniformDecomposition = false;
