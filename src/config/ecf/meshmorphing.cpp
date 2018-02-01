@@ -6,7 +6,7 @@ espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfigurat
 : _ECFRoot(ECFRoot),
   offset(ECFMetaData::getboundaryconditionvariables()),
   translation(DIMENSION::D3, ECFMetaData::getboundaryconditionvariables(), "0"),
-  scaling(DIMENSION::D3, ECFMetaData::getboundaryconditionvariables(), "0")
+  scaling(DIMENSION::D3, { "TIME" }, "100")
 {
 	transformation = MORPHING_TRANSFORMATION::TRANSLATION;
 	REGISTER(transformation, ECFMetaData()

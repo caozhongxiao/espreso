@@ -604,8 +604,11 @@ void MeshPreprocessing::arrangeRegions()
 				Esutils::sortAndRemoveDuplicity(nodes[t]);
 			}
 			Esutils::mergeThreadedUniqueData(nodes);
+			nodes.resize(1);
+			nodes.resize(threads);
+			serializededata<eslocal, eslocal>::balance(1, nodes);
 
-			_mesh->elementsRegions[r]->nodes = new serializededata<eslocal, eslocal>(1, nodes[0]);
+			_mesh->elementsRegions[r]->nodes = new serializededata<eslocal, eslocal>(1, nodes);
 		};
 
 		if (StringCompare::caseInsensitiveEq(_mesh->elementsRegions[r]->name, "ALL_ELEMENTS")) {

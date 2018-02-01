@@ -47,8 +47,7 @@ public:
 	void computeDomainsSurface();
 	void triangularizeDomainSurface();
 
-	void morphRBF2D();
-	void morphRBF3D(const std::string &name, const RBFTargetConfiguration &configuration);
+	void morphRBF(const std::string &name, const RBFTargetConfiguration &configuration, int dimension);
 
 	void finishPreprocessing();
 

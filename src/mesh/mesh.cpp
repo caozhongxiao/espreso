@@ -321,7 +321,7 @@ void Mesh::update()
 	}
 
 	if (configuration.decomposition.balance_clusters || configuration.input == INPUT_FORMAT::WORKBENCH) {
-		// preprocessing->reclusterize();
+		preprocessing->reclusterize();
 	}
 
 	bool uniformDecomposition = false;
@@ -452,7 +452,23 @@ void Mesh::update()
 
 	if (configuration.mesh_morphing.type == MORPHING_TYPE::RBF) {
 		for (auto it = configuration.mesh_morphing.rbf.begin(); it != configuration.mesh_morphing.rbf.end(); ++it) {
-			preprocessing->morphRBF3D(it->first, it->second);
+			switch (configuration.physics) {
+			case PHYSICS::HEAT_TRANSFER_2D:
+				preprocessing->morphRBF(it->first, it->second, 2);
+				break;
+			case PHYSICS::HEAT_TRANSFER_3D:
+				preprocessing->morphRBF(it->first, it->second, 3);
+				break;
+			case PHYSICS::STRUCTURAL_MECHANICS_2D:
+				preprocessing->morphRBF(it->first, it->second, 2);
+				break;
+			case PHYSICS::STRUCTURAL_MECHANICS_3D:
+				preprocessing->morphRBF(it->first, it->second, 3);
+				break;
+			default:
+				ESINFO(GLOBAL_ERROR) << "Not implemented physics.";
+				exit(0);
+			}
 		}
 	}
 

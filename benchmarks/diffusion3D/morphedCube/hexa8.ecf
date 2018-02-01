@@ -23,13 +23,18 @@ GENERATOR {
     UNIFORM_DECOMPOSITION TRUE;
 
 
-    LENGTH_X                    1;
-    LENGTH_Y                    1;
-    LENGTH_Z                    1;
+
+    START_X                   -1;
+    START_Y                   -1;
+    START_Z                   -1;
+
+    LENGTH_X                    2;
+    LENGTH_Y                    2;
+    LENGTH_Z                    2;
 
     NODES {
-      Z0   <0 , 1> <0 , 1> <0 , 0>;
-      Z1   <0 , 1> <0 , 1> <1 , 1>;
+      Z0   <-1 , 1> <-1 , 1> <-1 , -1>;
+      Z1   <-1 , 1> <-1 , 1> < 1 ,  1>;
     }
 
     ELEMENT_TYPE           [ARG0];
@@ -58,19 +63,27 @@ MESH_MORPHING {
   RBF {
     MY_RBF_MORPHING {
       SOLVER         ITERATIVE;
-      SOLVER_PRECISION   1E-05;
-      FUNCTION           R + 1;
+      SOLVER_PRECISION   1E-07;
+      FUNCTION             R^3;
 
       TARGET      ALL_ELEMENTS;
 
       MORPHERS {
+        Z0 {
+          TRANSFORMATION   TRANSLATION;
+
+          TRANSLATION {
+            Z  1.25 + exp(- ( (X - 0)^2 + (Y - 0)^2) / (2 * .5^2)) / (sqrt( (2 * PI)^2 ) .5^2 );
+          }
+        }
+
         Z1 {
           TRANSFORMATION   TRANSLATION;
 
           TRANSLATION {
-            X       0;
-            Y       0;
-            Z       Z;
+            X        2*X;
+            Y        2*Y;
+            Z    exp(- ( (X - 0)^2 + (Y - 0)^2) / (2 * .5^2)) / (sqrt( (2 * PI)^2 ) .25^2 );
           }
         }
       }

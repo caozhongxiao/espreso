@@ -20,12 +20,7 @@
 
 using namespace espreso;
 
-void MeshPreprocessing::morphRBF2D()
-{
-
-}
-
-void MeshPreprocessing::morphRBF3D(const std::string &name, const RBFTargetConfiguration &configuration)
+void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfiguration &configuration, int dimension)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -34,8 +29,6 @@ void MeshPreprocessing::morphRBF3D(const std::string &name, const RBFTargetConfi
 	if (_mesh->nodes->originCoordinates == NULL) {
 		_mesh->nodes->originCoordinates = new serializededata<eslocal, Point>(*_mesh->nodes->coordinates);
 	}
-
-	int dimension = 3;
 
 	std::vector<Point> sPoints, rPoints;
 	std::vector<double> sDisplacement, rDisplacement;
@@ -74,10 +67,10 @@ void MeshPreprocessing::morphRBF3D(const std::string &name, const RBFTargetConfi
 						sPoints.push_back(coordinates[*n]);
 					}
 					sDisplacement.resize(sDisplacement.size() + dimension * (region->nintervals[i].end - region->nintervals[i].begin));
-					it->second.translation.x.evaluator->evaluate(region->nintervals[i].end - region->nintervals[i].begin, 3, sPoints.data() + prevsize, NULL, 0, sDisplacement.data() + dimension * prevsize + 0);
-					it->second.translation.y.evaluator->evaluate(region->nintervals[i].end - region->nintervals[i].begin, 3, sPoints.data() + prevsize, NULL, 0, sDisplacement.data() + dimension * prevsize + 1);
+					it->second.translation.x.evaluator->evaluate(region->nintervals[i].end - region->nintervals[i].begin, dimension, sPoints.data() + prevsize, NULL, 0, sDisplacement.data() + dimension * prevsize + 0);
+					it->second.translation.y.evaluator->evaluate(region->nintervals[i].end - region->nintervals[i].begin, dimension, sPoints.data() + prevsize, NULL, 0, sDisplacement.data() + dimension * prevsize + 1);
 					if (dimension == 3) {
-						it->second.translation.z.evaluator->evaluate(region->nintervals[i].end - region->nintervals[i].begin, 3, sPoints.data() + prevsize, NULL, 0, sDisplacement.data() + dimension * prevsize + 2);
+						it->second.translation.z.evaluator->evaluate(region->nintervals[i].end - region->nintervals[i].begin, dimension, sPoints.data() + prevsize, NULL, 0, sDisplacement.data() + dimension * prevsize + 2);
 					}
 				}
 			}
@@ -126,12 +119,9 @@ void MeshPreprocessing::morphRBF3D(const std::string &name, const RBFTargetConfi
 			M(rowsFromCoordinates + dimension, r) = M(r, rowsFromCoordinates + dimension) = 1;
 
 			for(int rr = 0; rr < r; rr++) {
-				Point diff = rPoints[r] - rPoints[rr];
-				M(r, rr) = M(rr, r) = configuration.function.evaluator->evaluate(diff.length());
+				M(r, rr) = M(rr, r) = configuration.function.evaluator->evaluate((rPoints[r] - rPoints[rr]).length());
 			}
 		}
-
-//		std::cout << M << rhs;
 
 		switch (configuration.solver) {
 		case MORPHING_RBF_SOLVER::ITERATIVE: {
@@ -174,43 +164,44 @@ void MeshPreprocessing::morphRBF3D(const std::string &name, const RBFTargetConfi
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (auto n = tregion->nodes->begin(t)->begin(); n != tregion->nodes->begin(t + 1)->begin(); ++n) {
+		for (auto n = tregion->nodes->begin(t)->begin(); n != tregion->nodes->end(t)->begin(); ++n) {
 			Point &morphed = _mesh->nodes->coordinates->datatarray()[*n];
 			Point origin = morphed;
 
 			for (size_t i = 0; i < rPoints.size(); i++) {
 				double R = configuration.function.evaluator->evaluate((rPoints[i] - origin).length());
 
-				morphed.x = R * W[i + dimension + 0];
-				morphed.y = R * W[i + dimension + 1];
+				morphed.x += R * W[i * dimension + 0];
+				morphed.y += R * W[i * dimension + 1];
 				if (dimension == 3) {
-					morphed.z = R * W[i + dimension + 2];
-				}
-
-				if (dimension == 3) {
-					morphed.x += origin.x * Q[0 * dimension + 0];
-					morphed.x += origin.y * Q[1 * dimension + 0];
-					morphed.x += origin.z * Q[2 * dimension + 0];
-					morphed.x +=            Q[3 * dimension + 0];
-					morphed.y += origin.x * Q[0 * dimension + 1];
-					morphed.y += origin.y * Q[1 * dimension + 1];
-					morphed.y += origin.z * Q[2 * dimension + 1];
-					morphed.y +=            Q[3 * dimension + 1];
-					morphed.z += origin.x * Q[0 * dimension + 2];
-					morphed.z += origin.y * Q[1 * dimension + 2];
-					morphed.z += origin.z * Q[2 * dimension + 2];
-					morphed.z +=            Q[3 * dimension + 2];
-				}
-				if (dimension == 2) {
-					morphed.x += origin.x * Q[0 * dimension + 0];
-					morphed.x += origin.y * Q[1 * dimension + 0];
-					morphed.x +=            Q[2 * dimension + 0];
-					morphed.y += origin.x * Q[0 * dimension + 1];
-					morphed.y += origin.y * Q[1 * dimension + 1];
-					morphed.y +=            Q[2 * dimension + 1];
+					morphed.z += R * W[i * dimension + 2];
 				}
 			}
-			std::cout << origin << " to " << morphed << "\n";
+			if (dimension == 3) {
+				morphed.x += origin.x * Q[0 * dimension + 0];
+				morphed.x += origin.y * Q[1 * dimension + 0];
+				morphed.x += origin.z * Q[2 * dimension + 0];
+				morphed.x +=            Q[3 * dimension + 0];
+
+				morphed.y += origin.x * Q[0 * dimension + 1];
+				morphed.y += origin.y * Q[1 * dimension + 1];
+				morphed.y += origin.z * Q[2 * dimension + 1];
+				morphed.y +=            Q[3 * dimension + 1];
+
+				morphed.z += origin.x * Q[0 * dimension + 2];
+				morphed.z += origin.y * Q[1 * dimension + 2];
+				morphed.z += origin.z * Q[2 * dimension + 2];
+				morphed.z +=            Q[3 * dimension + 2];
+			}
+			if (dimension == 2) {
+				morphed.x += origin.x * Q[0 * dimension + 0];
+				morphed.x += origin.y * Q[1 * dimension + 0];
+				morphed.x +=            Q[2 * dimension + 0];
+
+				morphed.y += origin.x * Q[0 * dimension + 1];
+				morphed.y += origin.y * Q[1 * dimension + 1];
+				morphed.y +=            Q[2 * dimension + 1];
+			}
 		}
 	}
 

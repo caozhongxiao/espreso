@@ -62,7 +62,7 @@ void ExpressionEvaluator::evaluate(eslocal size, eslocal increment, const Point*
 double ExpressionEvaluator::evaluate(double r) const
 {
 	int thread = omp_get_thread_num();
-	_expressions[thread]->values[0] = r;
+	_expressions[thread]->values[5] = r;
 	return _expressions[thread]->evaluate();
 }
 
