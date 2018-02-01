@@ -781,11 +781,6 @@ void MeshPreprocessing::arrangeRegions()
 					}
 				}
 			}
-			std::ofstream os("members" + std::to_string(environment->MPIrank) + ".txt");
-			for (size_t i = 0; i < emembership.size(); i++) {
-				os << emembership[i] << "\n";
-			}
-			os.close();
 
 			std::vector<eslocal> permutation(_mesh->boundaryRegions[r]->elements->structures());
 			std::iota(permutation.begin(), permutation.end(), 0);

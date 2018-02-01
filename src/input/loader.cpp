@@ -44,10 +44,6 @@ void Loader::loadDistributedMesh(DistributedMesh &dMesh, Mesh &mesh)
 
 Loader::Loader(DistributedMesh &dMesh, Mesh &mesh): _dMesh(dMesh), _mesh(mesh)
 {
-	Communication::serialize([&] () {
-		std::cout << environment->MPIrank << ": " << _dMesh.bregions.front().esize.size() << "\n";
-	});
-
 	ESINFO(OVERVIEW) << "Balance distributed mesh.";
 	distributeMesh();
 	ESINFO(PROGRESS2) << "Distributed loader:: data balanced.";
@@ -59,15 +55,6 @@ Loader::Loader(DistributedMesh &dMesh, Mesh &mesh): _dMesh(dMesh), _mesh(mesh)
 	ESINFO(PROGRESS2) << "Distributed loader:: node regions filled.";
 	addBoundaryRegions();
 	ESINFO(PROGRESS2) << "Distributed loader:: boundary regions filled.";
-
-	Communication::serialize([&] () {
-		std::cout << environment->MPIrank << ": " << _mesh.boundaryRegions.back()->elements->structures() << "\n";
-	});
-	eslocal size = _mesh.boundaryRegions.back()->elements->structures(), total;
-	MPI_Reduce(&size, &total, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
-	if (environment->MPIrank == 0) {
-		std::cout << "total: " << total << "\n";
-	}
 }
 
 void Loader::distributeMesh()
@@ -571,7 +558,6 @@ void Loader::addBoundaryRegions()
 		_mesh.preprocessing->linkNodesAndElements();
 	}
 	std::vector<eslocal> edistribution = _mesh.elements->gatherElementsProcDistribution();
-	std::cout << edistribution;
 
 	for (size_t i = 0; i < _dMesh.bregions.size(); i++) {
 
@@ -728,6 +714,8 @@ void Loader::addBoundaryRegions()
 			epointers[r].resize(pclass);
 		}
 
+		Esutils::threadDistributionToFullDistribution(tedist);
+
 		for (size_t t = threads; t < rBuffer.size(); t++) {
 			tedist[threads - 1].insert(tedist[threads - 1].end(), tedist[t].begin(), tedist[t].end());
 			tnodes[threads - 1].insert(tnodes[threads - 1].end(), tnodes[t].begin(), tnodes[t].end());
@@ -752,6 +740,6 @@ void Loader::addBoundaryRegions()
 		_mesh.boundaryRegions.back()->dimension = 2;
 		_mesh.boundaryRegions.back()->elements = new serializededata<eslocal, eslocal>(tedist, tnodes);
 		_mesh.boundaryRegions.back()->epointers = new serializededata<eslocal, Element*>(1, epointers);
-		_mesh.boundaryRegions.back()->distribution = _mesh.boundaryRegions.back()->elements->datatarray().distribution();
+		_mesh.boundaryRegions.back()->distribution = _mesh.boundaryRegions.back()->epointers->datatarray().distribution();
 	}
 }
