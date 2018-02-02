@@ -594,7 +594,7 @@ void MeshPreprocessing::arrangeRegions()
 										(_mesh->elements->nodes->cbegin() + _mesh->elements->eintervals[i].end)->begin());
 							} else {
 								auto enodes = _mesh->elements->nodes->cbegin() + _mesh->elements->eintervals[i].begin;
-								eslocal prev = elements[_mesh->elements->eintervals[i].begin];
+								eslocal prev = elements[eintervals[i].begin];
 								for (eslocal e = eintervals[i].begin; e < eintervals[i].end; prev = elements[e++]) {
 									enodes += elements[e] - prev;
 									nodes[t].insert(nodes[t].end(), enodes->begin(), enodes->end());

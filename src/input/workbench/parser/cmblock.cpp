@@ -18,7 +18,7 @@ CMBlock::CMBlock()
   lineSize(-1), lineEndSize(-1),
   valueSize(-1), valueLength(-1)
 {
-	memset(name, '\0', 21);
+	memset(name, '\0', MAX_NAME_SIZE);
 }
 
 CMBlock& CMBlock::parse(const char* begin)
@@ -42,7 +42,7 @@ CMBlock& CMBlock::parse(const char* begin)
 	}
 
 	command[1] = Parser::strip(command[1]);
-	memcpy(name, command[1].data(), command[1].size() < 20 ? command[1].size() : 20);
+	memcpy(name, command[1].data(), command[1].size() < MAX_NAME_SIZE ? command[1].size() : MAX_NAME_SIZE);
 	if (StringCompare::caseInsensitiveEq(command[2], "NODE")) {
 		entity = Entity::NODE;
 	} else {

@@ -658,8 +658,8 @@ void Loader::addBoundaryRegions()
 			ESINFO(ERROR) << "ESPRESO internal error: exchange node region to targets.";
 		}
 
-		std::vector<std::vector<eslocal> > tedist(rBuffer.size(), { 0 }), tnodes(rBuffer.size());
-		std::vector<std::vector<Element*> > epointers(rBuffer.size());
+		std::vector<std::vector<eslocal> > tedist(std::max((size_t)1, rBuffer.size()), { 0 }), tnodes(std::max((size_t)1, rBuffer.size()));
+		std::vector<std::vector<Element*> > epointers(std::max((size_t)1, rBuffer.size()));
 
 		#pragma omp parallel for
 		for (size_t r = 0; r < rBuffer.size(); r++) {

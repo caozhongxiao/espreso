@@ -22,7 +22,7 @@ const char* CM::lower = "cm,";
 CM::CM()
 : entity(Entity::ELEMENTS)
 {
-
+	memset(name, '\0', MAX_NAME_SIZE);
 }
 
 CM& CM::parse(const char* begin)
@@ -56,7 +56,7 @@ CM& CM::parse(const char* begin)
 			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement cm, Entity='" << command[2] << "'";
 		}
 	case 2:
-		memcpy(name, command[1].data(), command[1].size());
+		memcpy(name, command[1].data(), command[1].size() < MAX_NAME_SIZE ? command[1].size() : MAX_NAME_SIZE);
 		break;
 	default:
 		ESINFO(ERROR) << "ESPRESO Workbench parser error: unknown format of '" << commandLine << "'";

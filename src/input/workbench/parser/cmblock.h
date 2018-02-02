@@ -16,7 +16,7 @@ struct CMBlock: public WorkbenchParser {
 	static const char* upper;
 	static const char* lower;
 
-	char name[21];
+	char name[MAX_NAME_SIZE];
 	Entity entity;
 	eslocal NUMITEMS;
 
