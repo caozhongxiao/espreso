@@ -61,6 +61,4 @@ struct ESel: public WorkbenchParser {
 }
 
 
-
-
 #endif /* SRC_INPUT_WORKBENCH_PARSER_ESEL_H_ */

@@ -4,7 +4,9 @@
 
 #include <cstddef>
 #include <vector>
+#include <string>
 
+#define MAX_NAME_SIZE 50 // upper bound on name size
 #define MAX_COMMAND_SIZE 150 // upper bound on command size
 #define MAX_LINE_SIZE 500 // upper bound on line size
 #define MAX_LINE_STEP 3   // sometimes we need to red more lines to get full information
@@ -30,8 +32,10 @@ struct WorkbenchParser {
 	void fillIndices(const char* header, const char* first, const char* last);
 
 	void fillDistribution(std::vector<BlockEnd> &blocksEnds, std::vector<eslocal> &distribution);
-	const char* getFirst();
-	const char* getLast();
+	const char* getFirst() const;
+	const char* getLast() const;
+
+	std::string command() const;
 
 	void print(const char* data);
 };

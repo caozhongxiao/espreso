@@ -1,7 +1,6 @@
 
 #include "../parser/esel.h"
 
-#include "../../../basis/containers/tarray.h"
 #include "../../../basis/utilities/parser.h"
 #include "../../../basis/logging/logging.h"
 
@@ -34,7 +33,7 @@ ESel& ESel::parse(const char* begin)
 	case 6:
 		if (command[5].size()) {
 			size_t end;
-			VMAX = std::stoi(command[5], &end);
+			VMAX = std::stoi(command[5], &end) - 1;
 			if (end != command[5].size()) {
 				ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, VMAX='" << command[5] << "'";
 			}
@@ -42,7 +41,7 @@ ESel& ESel::parse(const char* begin)
 	case 5:
 		if (command[4].size()) {
 			size_t end;
-			VMIN = std::stoi(command[4], &end);
+			VMIN = std::stoi(command[4], &end) - 1;
 			if (end != command[4].size()) {
 				ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, VMIN='" << command[4] << "'";
 			}
@@ -132,8 +131,8 @@ ESel& ESel::parse(const char* begin)
 			type = Type::A;
 		}
 		if (StringCompare::caseInsensitiveEq("U", command[1])) {
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Type='" << command[1] << "'";
 			type = Type::U;
+			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Type='" << command[1] << "'";
 		}
 		if (StringCompare::caseInsensitiveEq("ALL", command[1])) {
 			type = Type::ALL;
@@ -142,12 +141,12 @@ ESel& ESel::parse(const char* begin)
 			type = Type::NONE;
 		}
 		if (StringCompare::caseInsensitiveEq("INVE", command[1])) {
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Type='" << command[1] << "'";
 			type = Type::INVE;
+			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Type='" << command[1] << "'";
 		}
 		if (StringCompare::caseInsensitiveEq("STAT", command[1])) {
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Type='" << command[1] << "'";
 			type = Type::STAT;
+			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Type='" << command[1] << "'";
 		}
 		break;
 	default:
@@ -161,7 +160,7 @@ ESel& ESel::parse(const char* begin)
 		ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel Comp='" << command[3] << "'";
 	}
 
-	WorkbenchParser::fillIndices(begin, begin + commandLine.size());
+	WorkbenchParser::fillIndices(begin, begin);
 	return *this;
 }
 

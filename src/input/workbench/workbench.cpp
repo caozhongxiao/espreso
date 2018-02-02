@@ -30,7 +30,7 @@ WorkbenchLoader::WorkbenchLoader(const ECFConfiguration &configuration, Mesh &me
 	parseData(dMesh);
 	ESINFO(PROGRESS2) << "Workbench:: data parsed.";
 
-	Loader::loadDistributedMesh(dMesh, mesh);
+	Loader::loadDistributedMesh(configuration, dMesh, mesh);
 }
 
 void WorkbenchLoader::readData()
@@ -114,6 +114,8 @@ void WorkbenchLoader::prepareData()
 	std::vector<std::vector<EBlock> > tEBlocks(threads);
 	std::vector<std::vector<CMBlock> > tCMBlocks(threads);
 	std::vector<std::vector<ESel> > tESel(threads);
+	std::vector<std::vector<NSel> > tNSel(threads);
+	std::vector<std::vector<CM> > tCM(threads);
 	std::vector<std::vector<BlockEnd> > tBlockEnds(threads);
 
 	#pragma omp parallel for
@@ -154,6 +156,19 @@ void WorkbenchLoader::prepareData()
 			if (memcmp(tbegin, ESel::lower, ESel::size) == 0) {
 				tESel[t].push_back(ESel().parse(tbegin));
 			}
+			// TODO: implement
+//			if (memcmp(tbegin, NSel::upper, NSel::size) == 0) {
+//				tNSel[t].push_back(NSel().parse(tbegin));
+//			}
+//			if (memcmp(tbegin, NSel::lower, NSel::size) == 0) {
+//				tNSel[t].push_back(NSel().parse(tbegin));
+//			}
+			if (memcmp(tbegin, CM::upper, CM::size) == 0) {
+				tCM[t].push_back(CM().parse(tbegin));
+			}
+			if (memcmp(tbegin, CM::lower, CM::size) == 0) {
+				tCM[t].push_back(CM().parse(tbegin));
+			}
 			if (memcmp(tbegin, BlockEnd::nUpper, BlockEnd::nSize) == 0) {
 				tBlockEnds[t].push_back(BlockEnd().parse(tbegin));
 			}
@@ -177,6 +192,8 @@ void WorkbenchLoader::prepareData()
 		_EBlocks.insert(_EBlocks.end(), tEBlocks[t].begin(), tEBlocks[t].end());
 		_CMBlocks.insert(_CMBlocks.end(), tCMBlocks[t].begin(), tCMBlocks[t].end());
 		_ESel.insert(_ESel.end(), tESel[t].begin(), tESel[t].end());
+		_NSel.insert(_NSel.end(), tNSel[t].begin(), tNSel[t].end());
+		_CM.insert(_CM.end(), tCM[t].begin(), tCM[t].end());
 		_blockEnds.insert(_blockEnds.end(), tBlockEnds[t].begin(), tBlockEnds[t].end());
 	}
 
@@ -193,6 +210,15 @@ void WorkbenchLoader::prepareData()
 	for (size_t i = 0; i < _CMBlocks.size(); i++) {
 		_CMBlocks[i].fillDistribution(_blockEnds, _dataOffset);
 	}
+	for (size_t i = 0; i < _ESel.size(); i++) {
+		_ESel[i].fillDistribution(_blockEnds, _dataOffset);
+	}
+	for (size_t i = 0; i < _NSel.size(); i++) {
+		_NSel[i].fillDistribution(_blockEnds, _dataOffset);
+	}
+	for (size_t i = 0; i < _CM.size(); i++) {
+		_CM[i].fillDistribution(_blockEnds, _dataOffset);
+	}
 
 	if (!Communication::allGatherUnknownSize(_NBlocks)) {
 		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench NBblocks.";
@@ -201,6 +227,16 @@ void WorkbenchLoader::prepareData()
 		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench EBlocks.";
 	}
 	if (!Communication::allGatherUnknownSize(_CMBlocks)) {
+		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench CMBlocks.";
+	}
+
+	if (!Communication::allGatherUnknownSize(_ESel)) {
+		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench CMBlocks.";
+	}
+	if (!Communication::allGatherUnknownSize(_NSel)) {
+		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench CMBlocks.";
+	}
+	if (!Communication::allGatherUnknownSize(_CM)) {
 		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench CMBlocks.";
 	}
 
@@ -262,5 +298,9 @@ void WorkbenchLoader::parseData(DistributedMesh &dMesh)
 				ESINFO(ERROR) << "Workbench parser: something wrong happens while read CMBLOCK.";
 			}
 		}
+	}
+
+	for (size_t i = 0; i < _CM.size(); i++) {
+		_CM[i].addRegion(_ESel, dMesh.edata, dMesh.eregions, _NSel, dMesh.nregions);
 	}
 }

@@ -14,6 +14,7 @@ class ECFConfiguration;
 class Mesh;
 
 struct EData {
+	eslocal id;
 	int etype;
 	int body;
 	int material;
@@ -50,10 +51,10 @@ class Loader {
 
 public:
 	static void load(const ECFConfiguration &configuration, Mesh &mesh, int MPIrank, int MPIsize);
-	static void loadDistributedMesh(DistributedMesh &dMesh, Mesh &mesh);
+	static void loadDistributedMesh(const ECFConfiguration &configuration, DistributedMesh &dMesh, Mesh &mesh);
 
 protected:
-	Loader(DistributedMesh &dMesh, Mesh &mesh);
+	Loader(const ECFConfiguration &configuration, DistributedMesh &dMesh, Mesh &mesh);
 
 	void distributeMesh();
 
@@ -61,7 +62,9 @@ protected:
 	void fillCoordinates();
 	void addNodeRegions();
 	void addBoundaryRegions();
+	void addElementRegions();
 
+	const ECFConfiguration &_configuration;
 	DistributedMesh &_dMesh;
 	Mesh &_mesh;
 

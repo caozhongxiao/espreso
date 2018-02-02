@@ -149,7 +149,7 @@ bool EBlock::solid(std::vector<eslocal> &esize, std::vector<eslocal> &enodes, st
 			tdata[t].push_back(EData());
 			tdata[t].back().body = 0;
 			tdata[t].back().material = atoi(element) - 1; element += valueLength; // material
-			element += valueLength; // etype
+			tdata[t].back().etype = atoi(element) - 1; element += valueLength; // etype
 			element += valueLength; // real constant
 			element += valueLength; // section ID
 			element += valueLength; // element coordinate system
@@ -158,7 +158,7 @@ bool EBlock::solid(std::vector<eslocal> &esize, std::vector<eslocal> &enodes, st
 			element += valueLength; // element shape flag
 			nnodes = atoi(element); element += valueLength; // number of nodes
 			element += valueLength; // not used
-			element += valueLength; // element ID
+			tdata[t].back().id = atoi(element) - 1; element += valueLength; // element ID
 
 			for (int i = 0; i < 8; i++) {
 				memcpy(value.data(), element, valueLength);

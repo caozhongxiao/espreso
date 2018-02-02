@@ -37,12 +37,13 @@ void Loader::load(const ECFConfiguration &configuration, Mesh &mesh, int MPIrank
 	}
 }
 
-void Loader::loadDistributedMesh(DistributedMesh &dMesh, Mesh &mesh)
+void Loader::loadDistributedMesh(const ECFConfiguration &configuration, DistributedMesh &dMesh, Mesh &mesh)
 {
-	Loader(dMesh, mesh);
+	Loader(configuration, dMesh, mesh);
 }
 
-Loader::Loader(DistributedMesh &dMesh, Mesh &mesh): _dMesh(dMesh), _mesh(mesh)
+Loader::Loader(const ECFConfiguration &configuration, DistributedMesh &dMesh, Mesh &mesh)
+: _configuration(configuration), _dMesh(dMesh), _mesh(mesh)
 {
 	ESINFO(OVERVIEW) << "Balance distributed mesh.";
 	distributeMesh();
@@ -55,6 +56,8 @@ Loader::Loader(DistributedMesh &dMesh, Mesh &mesh): _dMesh(dMesh), _mesh(mesh)
 	ESINFO(PROGRESS2) << "Distributed loader:: node regions filled.";
 	addBoundaryRegions();
 	ESINFO(PROGRESS2) << "Distributed loader:: boundary regions filled.";
+	addElementRegions();
+	ESINFO(PROGRESS2) << "Distributed loader:: elements regions filled.";
 }
 
 void Loader::distributeMesh()
@@ -215,11 +218,20 @@ void Loader::fillElements()
 		epointers[t].reserve(edistribution[t + 1] - edistribution[t]);
 
 		eBody[t].reserve(edistribution[t + 1] - edistribution[t]);
-		eMat[t].reserve(edistribution[t + 1] - edistribution[t]);
+
 		for (size_t e = edistribution[t]; e < edistribution[t + 1]; ++e) {
 			epointers[t].push_back(&_mesh._eclasses[t][_dMesh.edata[e].etype]);
 			eBody[t].push_back(_dMesh.edata[e].body);
-			eMat[t].push_back(_dMesh.edata[e].material);
+		}
+
+
+		if (_configuration.input == INPUT_FORMAT::WORKBENCH && _configuration.workbench.keep_material_sets) {
+			eMat[t].reserve(edistribution[t + 1] - edistribution[t]);
+			for (size_t e = edistribution[t]; e < edistribution[t + 1]; ++e) {
+				eMat[t].push_back(_dMesh.edata[e].material);
+			}
+		} else {
+			eMat[t].resize(edistribution[t + 1] - edistribution[t]);
 		}
 	}
 
@@ -741,5 +753,59 @@ void Loader::addBoundaryRegions()
 		_mesh.boundaryRegions.back()->elements = new serializededata<eslocal, eslocal>(tedist, tnodes);
 		_mesh.boundaryRegions.back()->epointers = new serializededata<eslocal, Element*>(1, epointers);
 		_mesh.boundaryRegions.back()->distribution = _mesh.boundaryRegions.back()->epointers->datatarray().distribution();
+	}
+}
+
+void Loader::addElementRegions()
+{
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	if (environment->MPIsize == 1) {
+		for (size_t i = 0; i < _dMesh.eregions.size(); i++) {
+			_mesh.elementsRegions.push_back(new ElementsRegionStore(_dMesh.eregions[i].name));
+
+			std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, _dMesh.eregions[i].elements.size());
+			std::vector<std::vector<eslocal> > telements(threads);
+			#pragma omp parallel for
+			for (size_t t = 0; t < threads; t++) {
+				telements[t].insert(telements[t].end(), _dMesh.eregions[i].elements.begin() + distribution[t], _dMesh.eregions[i].elements.begin() + distribution[t + 1]);
+			}
+			_mesh.elementsRegions.back()->elements = new serializededata<eslocal, eslocal>(1, telements);
+		}
+		return;
+	}
+
+	for (size_t i = 0; i < _dMesh.eregions.size(); i++) {
+		std::vector<std::vector<eslocal> > sBuffer, rBuffer;
+		std::vector<int> sRanks, tRanks;
+
+		for (int t = 0; t < environment->MPIsize; t++) {
+			auto begin = std::lower_bound(_dMesh.eregions[i].elements.begin(), _dMesh.eregions[i].elements.end(), _eDistribution[t]);
+			auto end = std::lower_bound(_dMesh.eregions[i].elements.begin(), _dMesh.eregions[i].elements.end(), _eDistribution[t + 1]);
+			if (end - begin) {
+				sBuffer.push_back(std::vector<eslocal>(begin, end));
+				sRanks.push_back(t);
+			}
+		}
+
+		if (!Communication::sendVariousTargets(sBuffer, rBuffer, sRanks)) {
+			ESINFO(ERROR) << "ESPRESO internal error: exchange node region.";
+		}
+
+		for (size_t t = threads; t < rBuffer.size(); t++) {
+			rBuffer[threads - 1].insert(rBuffer[threads - 1].end(), rBuffer[t].begin(), rBuffer[t].end());
+		}
+		rBuffer.resize(threads);
+		serializededata<eslocal, eslocal>::balance(1, rBuffer);
+
+		_mesh.elementsRegions.push_back(new ElementsRegionStore(_dMesh.eregions[i].name));
+		_mesh.elementsRegions.back()->elements = new serializededata<eslocal, eslocal>(1, rBuffer);
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			for (auto e = _mesh.elementsRegions.back()->elements->begin(t)->begin(); e != _mesh.elementsRegions.back()->elements->end(t)->begin(); ++e) {
+				*e -= _eDistribution[environment->MPIrank];
+			}
+		}
 	}
 }

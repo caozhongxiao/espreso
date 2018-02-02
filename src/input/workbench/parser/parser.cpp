@@ -25,7 +25,7 @@ void WorkbenchParser::fillIndices(const char* header, const char* first, const c
 	this->last = offset + last - begin;
 }
 
-const char* WorkbenchParser::getFirst()
+const char* WorkbenchParser::getFirst() const
 {
 	if (fRank <= environment->MPIrank && environment->MPIrank <= lRank) {
 		if (fRank == environment->MPIrank) {
@@ -37,7 +37,7 @@ const char* WorkbenchParser::getFirst()
 	return begin;
 }
 
-const char* WorkbenchParser::getLast()
+const char* WorkbenchParser::getLast() const
 {
 	if (fRank <= environment->MPIrank && environment->MPIrank <= lRank) {
 		if (lRank == environment->MPIrank) {
@@ -57,6 +57,16 @@ void WorkbenchParser::fillDistribution(std::vector<BlockEnd> &blocksEnds, std::v
 
 	fRank = std::lower_bound(distribution.begin(), distribution.end(), first + 1) - distribution.begin() - 1;
 	lRank = std::lower_bound(distribution.begin(), distribution.end(), last + 1) - distribution.begin() - 1;
+}
+
+std::string WorkbenchParser::command() const
+{
+	std::string cmd;
+	const char *p = getFirst();
+	while (*p != '\n') {
+		cmd += *p++;
+	}
+	return cmd;
 }
 
 void WorkbenchParser::print(const char* data)

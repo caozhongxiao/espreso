@@ -586,17 +586,19 @@ void MeshPreprocessing::arrangeRegions()
 			for (size_t t = 0; t < threads; t++) {
 				for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
 					for (eslocal i = _mesh->elements->eintervalsDistribution[d]; i < _mesh->elements->eintervalsDistribution[d + 1]; i++) {
-						if (eintervals[i].end - eintervals[i].begin == _mesh->elements->eintervals[i].end - _mesh->elements->eintervals[i].begin) {
-							nodes[t].insert(
-									nodes[t].end(),
-									(_mesh->elements->nodes->cbegin() + _mesh->elements->eintervals[i].begin)->begin(),
-									(_mesh->elements->nodes->cbegin() + _mesh->elements->eintervals[i].end)->begin());
-						} else {
-							auto enodes = _mesh->elements->nodes->cbegin() + _mesh->elements->eintervals[i].begin;
-							eslocal prev = elements[_mesh->elements->eintervals[i].begin];
-							for (eslocal e = eintervals[i].begin; e < eintervals[i].end; prev = elements[e++]) {
-								enodes += elements[e] - prev;
-								nodes[t].insert(nodes[t].end(), enodes->begin(), enodes->end());
+						if (eintervals[i].end - eintervals[i].begin > 0) {
+							if (eintervals[i].end - eintervals[i].begin == _mesh->elements->eintervals[i].end - _mesh->elements->eintervals[i].begin) {
+								nodes[t].insert(
+										nodes[t].end(),
+										(_mesh->elements->nodes->cbegin() + _mesh->elements->eintervals[i].begin)->begin(),
+										(_mesh->elements->nodes->cbegin() + _mesh->elements->eintervals[i].end)->begin());
+							} else {
+								auto enodes = _mesh->elements->nodes->cbegin() + _mesh->elements->eintervals[i].begin;
+								eslocal prev = elements[_mesh->elements->eintervals[i].begin];
+								for (eslocal e = eintervals[i].begin; e < eintervals[i].end; prev = elements[e++]) {
+									enodes += elements[e] - prev;
+									nodes[t].insert(nodes[t].end(), enodes->begin(), enodes->end());
+								}
 							}
 						}
 					}

@@ -17,6 +17,8 @@ struct InputConfiguration: public ECFObject {
 
 	std::string path;
 
+	bool keep_material_sets;
+
 	InputConfiguration();
 };
 
