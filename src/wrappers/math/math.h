@@ -6,8 +6,8 @@ namespace espreso {
 
 struct MATH {
 
-	static void upCSRMatRowMajorVecProduct(eslocal rows, eslocal cols, eslocal *mRows, eslocal *mCols, float *mVals, float *vVals, float *result);
-	static void upCSRMatRowMajorVecProduct(eslocal rows, eslocal cols, eslocal *mRows, eslocal *mCols, double *mVals, double *vVals, double *result);
+	static void upCSRMatVecProduct(eslocal rows, eslocal cols, eslocal *mRows, eslocal *mCols, float *mVals, float *vVals, float *result);
+	static void upCSRMatVecProduct(eslocal rows, eslocal cols, eslocal *mRows, eslocal *mCols, double *mVals, double *vVals, double *result);
 
 	static void vecScale(eslocal size, float alpha, float *vVals);
 	static void vecScale(eslocal size, double alpha, double *vVals);
@@ -20,8 +20,13 @@ struct MATH {
 
 	struct SOLVER {
 
-		static void GMRESUpCRSMatRowMajor(
+		static void GMRESUpCRSMat(
 				eslocal rows, eslocal cols, eslocal *mRows, eslocal *mCols, double *mVals,
+				eslocal rhs, double *rhsVals, double *results,
+				double tolerance, eslocal maxIterations);
+
+		static void GMRESDenseRowMajorMat(
+				eslocal rows, eslocal cols, double *mVals,
 				eslocal rhs, double *rhsVals, double *results,
 				double tolerance, eslocal maxIterations);
 	};

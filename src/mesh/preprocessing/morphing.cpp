@@ -18,6 +18,8 @@
 #include "../../config/ecf/environment.h"
 #include "../../config/ecf/meshmorphing.h"
 
+#include "../../wrappers/math/math.h"
+
 using namespace espreso;
 
 void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfiguration &configuration, int dimension)
@@ -130,7 +132,11 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 			DenseMatrix wq(rhs.rows(), rhs.columns());
 			for(eslocal r = 0 ; r < rhs.rows(); r++) {
-				MSparse.gmresSolve(&rhs(r, 0), &wq(r, 0), configuration.solver_precision, 600);
+				//MSparse.gmresSolve(&rhs(r, 0), &wq(r, 0), configuration.solver_precision, 600);
+				MATH::SOLVER::GMRESUpCRSMat(
+						MSparse.rows(), MSparse.columns(), MSparse.rowPtrs(), MSparse.columnIndices(), MSparse.values(),
+						1, rhs.values() + r * rhs.columns(), wq.values() + r * wq.columns(),
+						configuration.solver_precision, 600);
 			}
 
 			for(eslocal c = 0; c < wq.columns(); c++) {
