@@ -975,6 +975,105 @@ void MeshPreprocessing::synchronizeRegionNodes(const std::string &name, serializ
 	finish("synchronize region: " + name);
 }
 
+void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion, int elementDimension)
+{
+	start("compute boundary elements from nodes of region '" + bregion->name + "'");
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	if (_mesh->nodes->elements == NULL) {
+		linkNodesAndElements();
+	}
+
+	std::vector<std::vector<std::pair<eslocal, eslocal> > > elements(threads);
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (auto n = bregion->nodes->begin(t)->begin(); n != bregion->nodes->end(t)->begin(); ++n) {
+			auto links = _mesh->nodes->elements->begin() + *n;
+			for (auto e = links->begin(); e != links->end(); ++e) {
+				elements[t].push_back(std::make_pair(*e, *n));
+			}
+		}
+	}
+
+	for (size_t t = 1; t < threads; t++) {
+		elements[0].insert(elements[0].end(), elements[t].begin(), elements[t].end());
+	}
+
+	std::sort(elements[0].begin(), elements[0].end());
+
+	std::vector<eslocal> edistribution = _mesh->elements->gatherElementsProcDistribution();
+	auto begin = std::lower_bound(elements[0].begin(), elements[0].end(), edistribution[environment->MPIrank],
+			[] (const std::pair<eslocal, eslocal> &p, eslocal e) { return p.first < e; });
+	auto end = std::lower_bound(elements[0].begin(), elements[0].end(), edistribution[environment->MPIrank + 1],
+			[] (const std::pair<eslocal, eslocal> &p, eslocal e) { return p.first < e; });
+
+	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, end - begin);
+	for (size_t t = 1; t < threads; t++) {
+		while (
+				begin + tdistribution[t] < end && begin <= begin + tdistribution[t] - 1 &&
+				(begin + tdistribution[t] - 1)->first == (begin + tdistribution[t])->first) {
+
+			++tdistribution[t];
+		}
+	}
+
+	std::vector<std::vector<eslocal> > edist(threads), edata(threads), ecode(threads);
+	std::vector<std::vector<Element*> > epointers(threads);
+	edist.front().push_back(0);
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		std::vector<eslocal> nodes, facenodes;
+		for (size_t e = tdistribution[t]; e < tdistribution[t + 1]; e++) {
+			nodes.push_back((begin + e)->second);
+			if ((e + 1 == tdistribution[t + 1] || (begin + e + 1)->first != (begin + e)->first)) {
+
+				eslocal element = (begin + e)->first - edistribution[environment->MPIrank];
+				Esutils::sortAndRemoveDuplicity(nodes);
+
+				const auto &fpointers = _mesh->elements->epointers->datatarray()[element]->facepointers->datatarray();
+				auto fnodes = _mesh->elements->epointers->datatarray()[element]->faces->cbegin();
+
+				for (auto f = fpointers.begin(); f != fpointers.end(); ++f, ++fnodes) {
+					if (nodes.size() >= (*f)->nodes) {
+						auto enodes = _mesh->elements->nodes->cbegin() + element;
+						for (auto n = fnodes->begin(); n != fnodes->end(); ++n) {
+							facenodes.push_back(enodes->at(*n));
+						}
+						std::sort(facenodes.begin(), facenodes.end());
+						if (std::includes(nodes.begin(), nodes.end(), facenodes.begin(), facenodes.end())) {
+							for (auto n = fnodes->begin(); n != fnodes->end(); ++n) {
+								edata[t].push_back(enodes->at(*n));
+							}
+							edist[t].push_back(edata[t].size());
+							ecode[t].push_back((eslocal)(*f)->code);
+						}
+						facenodes.clear();
+					}
+				}
+				nodes.clear();
+
+			}
+		}
+	}
+
+	Esutils::threadDistributionToFullDistribution(edist);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (size_t e = 0; e < ecode[t].size(); e++) {
+			epointers[t].push_back(&_mesh->_eclasses[t][ecode[t][e]]);
+		}
+	}
+
+	bregion->elements = new serializededata<eslocal, eslocal>(edist, edata);
+	bregion->epointers = new serializededata<eslocal, Element*>(1, epointers);
+	bregion->dimension = elementDimension;
+
+	finish("compute boundary elements from nodes of region '" + bregion->name + "'");
+}
+
 void MeshPreprocessing::computeIntervalOffsets(std::vector<ProcessInterval> &intervals, eslocal &uniqueOffset, eslocal &uniqueSize, eslocal &uniqueTotalSize)
 {
 	auto n2i = [ & ] (int neighbour) {

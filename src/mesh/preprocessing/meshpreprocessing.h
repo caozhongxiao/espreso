@@ -48,6 +48,8 @@ public:
 	void computeDomainsSurface();
 	void triangularizeDomainSurface();
 
+	void computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion, int elementDimension);
+
 	void morphRBF(const std::string &name, const RBFTargetConfiguration &configuration, int dimension);
 
 	void finishPreprocessing();

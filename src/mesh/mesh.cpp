@@ -324,6 +324,60 @@ void Mesh::update()
 		preprocessing->reclusterize();
 	}
 
+	auto ntob = [&] (const std::string &rname, int dimension) {
+		BoundaryRegionStore *region = bregion(rname);
+		if (region->dimension == 0) {
+			preprocessing->computeBoundaryElementsFromNodes(region, dimension);
+		}
+	};
+
+	if (configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_2D || configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {
+		const StructuralMechanicsConfiguration *sm;
+		int dimension;
+		if (configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_2D) {
+			sm = &configuration.structural_mechanics_2d;
+			dimension = 1;
+		}
+		if (configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {
+			sm = &configuration.structural_mechanics_3d;
+			dimension = 2;
+		}
+
+		for (auto ls = sm->load_steps_settings.begin(); ls != sm->load_steps_settings.end(); ++ls) {
+			for (auto bc = ls->second.normal_pressure.begin(); bc != ls->second.normal_pressure.end(); ++bc) {
+				ntob(bc->first, dimension);
+			}
+		}
+	}
+
+	if (configuration.physics == PHYSICS::HEAT_TRANSFER_2D || configuration.physics == PHYSICS::HEAT_TRANSFER_3D) {
+		const HeatTransferConfiguration *ht;
+		int dimension;
+		if (configuration.physics == PHYSICS::HEAT_TRANSFER_2D) {
+			ht = &configuration.heat_transfer_2d;
+			dimension = 1;
+		}
+		if (configuration.physics == PHYSICS::HEAT_TRANSFER_3D) {
+			ht = &configuration.heat_transfer_3d;
+			dimension = 2;
+		}
+
+		for (auto ls = ht->load_steps_settings.begin(); ls != ht->load_steps_settings.end(); ++ls) {
+			for (auto bc = ls->second.heat_flow.begin(); bc != ls->second.heat_flow.end(); ++bc) {
+				ntob(bc->first, dimension);
+			}
+			for (auto bc = ls->second.heat_flux.begin(); bc != ls->second.heat_flux.end(); ++bc) {
+				ntob(bc->first, dimension);
+			}
+			for (auto bc = ls->second.convection.begin(); bc != ls->second.convection.end(); ++bc) {
+				ntob(bc->first, dimension);
+			}
+			for (auto bc = ls->second.diffuse_radiation.begin(); bc != ls->second.diffuse_radiation.end(); ++bc) {
+				ntob(bc->first, dimension);
+			}
+		}
+	}
+
 	bool uniformDecomposition = false;
 	if (configuration.input == INPUT_FORMAT::GENERATOR) {
 		switch (configuration.generator.shape) {
