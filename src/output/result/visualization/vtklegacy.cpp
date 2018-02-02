@@ -232,10 +232,18 @@ void VTKLegacy::solution(const std::string &name)
 	os << "POINT_DATA " << nsize << "\n";
 	os << "SCALARS TEMPERATURE double 1\n";
 	os << "LOOKUP_TABLE default\n";
+	NodeData *solution;
+	for (size_t i = 0; i < _mesh.nodes->data.size(); i++) {
+		if (_mesh.nodes->data[i]->decomposedData != NULL) {
+			solution = _mesh.nodes->data[i];
+			break;
+		}
+	}
+
 	for (size_t d = 0; d < _mesh.elements->ndomains; d++) {
 		for (size_t i = 0; i < _mesh.nodes->dintervals[d].size(); ++i) {
 			for (size_t n = 0; n < _mesh.nodes->dintervals[d][i].end - _mesh.nodes->dintervals[d][i].begin; n++) {
-				os << (*_mesh.nodes->data.front()->decomposedData)[d][_mesh.nodes->dintervals[d][i].DOFOffset + n] << "\n";
+				os << (*solution->decomposedData)[d][_mesh.nodes->dintervals[d][i].DOFOffset + n] << "\n";
 			}
 		}
 	}

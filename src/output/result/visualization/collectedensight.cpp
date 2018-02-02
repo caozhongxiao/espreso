@@ -252,14 +252,14 @@ void CollectedEnSight::updateMesh()
 
 	auto format = [] (size_t size) {
 		if (size == 1) return "scalar";
-		if (size == 4 || size == 3) return "vector";
+		if (size == 3) return "vector";
 		return "";
 	};
 
 	for (size_t i = 0; i < _mesh.nodes->data.size(); i++) {
 		if (_mesh.nodes->data[i]->names.size()) {
 			std::string filename = _name + "." + _mesh.nodes->data[i]->names.front().substr(0, 4);
-			_casevariables << format(_mesh.nodes->data[i]->names.size());
+			_casevariables << format(_mesh.nodes->data[i]->dimension);
 			_casevariables << " per node:\t1 ";
 			_casevariables << _mesh.nodes->data[i]->names.front();
 			_casevariables << std::string(tabs(_mesh.nodes->data[i]->names.front().size()), '\t');
@@ -269,7 +269,7 @@ void CollectedEnSight::updateMesh()
 	for (size_t i = 0; i < _mesh.elements->data.size(); i++) {
 		if (_mesh.elements->data[i]->names.size()) {
 			std::string filename = _name + "." + _mesh.elements->data[i]->names.front().substr(0, 4);
-			_casevariables << format(_mesh.elements->data[i]->names.size());
+			_casevariables << format(_mesh.elements->data[i]->dimension);
 			_casevariables << " per element:\t1 ";
 			_casevariables << _mesh.elements->data[i]->names.front();
 			_casevariables << std::string(tabs(_mesh.elements->data[i]->names.front().size()), '\t');

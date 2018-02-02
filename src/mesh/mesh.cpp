@@ -479,7 +479,7 @@ void Mesh::initNodeData()
 {
 	for (auto datait = nodes->data.begin(); datait != nodes->data.end(); ++datait) {
 		NodeData* data = *datait;
-		if (data->names.size()) {
+		if (data->names.size() && data->decomposedData != NULL) {
 			data->gatheredData.resize(data->dimension * nodes->uniqueSize);
 			data->sBuffer.resize(neighbours.size());
 			data->rBuffer.resize(neighbours.size());
@@ -509,7 +509,7 @@ void Mesh::gatherNodeData()
 
 	for (auto datait = nodes->data.begin(); datait != nodes->data.end(); ++datait) {
 		NodeData* data = *datait;
-		if (data->names.size()) {
+		if (data->names.size() && data->decomposedData != NULL) {
 			for (size_t i = 0; i < data->sBuffer.size(); i++) {
 				std::fill(data->sBuffer[i].begin(), data->sBuffer[i].end(), 0);
 			}

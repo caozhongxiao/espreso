@@ -16,6 +16,7 @@ class TimeEvent;
 
 class Mesh;
 struct Element;
+struct NodeData;
 struct ProcessInterval;
 struct BoundaryRegionStore;
 template <typename TEBoundaries, typename TEData> class serializededata;
@@ -57,6 +58,8 @@ protected:
 	MeshPreprocessing(Mesh *mesh);
 	~MeshPreprocessing();
 	Mesh *_mesh;
+
+	NodeData* _morphing;
 
 	TimeEval *_timeStatistics;
 	std::map<std::string, TimeEvent*> _timeEvents;

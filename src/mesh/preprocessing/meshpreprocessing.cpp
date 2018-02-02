@@ -31,7 +31,7 @@ using namespace espreso;
 size_t MeshPreprocessing::level = 0;
 
 MeshPreprocessing::MeshPreprocessing(Mesh *mesh)
-: _mesh(mesh), _timeStatistics(new TimeEval("Mesh preprocessing timing"))
+: _mesh(mesh), _morphing(NULL), _timeStatistics(new TimeEval("Mesh preprocessing timing"))
 {
 	_timeStatistics->totalTime.startWithBarrier();
 }

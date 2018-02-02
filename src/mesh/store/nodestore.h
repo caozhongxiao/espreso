@@ -29,8 +29,8 @@ struct NodeData {
 
 	std::vector<double> gatheredData;
 
-	NodeData(int dimension);
-	NodeData(int dimension, const std::vector<std::string> &names, std::vector<std::vector<double> > *data = NULL);
+	NodeData(int dimension, bool alreadyGathered = false);
+	NodeData(int dimension, const std::vector<std::string> &names, bool alreadyGathered = false, std::vector<std::vector<double> > *data = NULL);
 
 	NodeData(NodeData &&other);
 	NodeData(const NodeData &other);
@@ -61,7 +61,7 @@ struct NodeStore {
 	void permute(const std::vector<eslocal> &permutation) { permute(permutation, distribution); }
 	void permute(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
 
-	NodeData* appendData(int dimension, const std::vector<std::string> &names);
+	NodeData* appendData(int dimension, const std::vector<std::string> &names, bool alreadyGathered = false);
 	NodeData* appendData(int dimension, const std::vector<std::string> &names, std::vector<std::vector<double> > &data);
 
 	std::vector<eslocal> gatherNodeDistribution();

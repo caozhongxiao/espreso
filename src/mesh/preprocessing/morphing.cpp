@@ -205,6 +205,25 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		}
 	}
 
+	if (_morphing == NULL) {
+		_morphing = _mesh->nodes->appendData(3, { "RBF_MORPHING" }, true);
+		_morphing->gatheredData.resize(3 * _mesh->nodes->uniqueSize);
+	}
+
+	#pragma omp parallel for
+	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); i++) {
+		const auto &origin = _mesh->nodes->originCoordinates->datatarray();
+		const auto &morphed = _mesh->nodes->coordinates->datatarray();
+		if (_mesh->nodes->pintervals[i].sourceProcess == environment->MPIrank) {
+			eslocal offset = _mesh->nodes->pintervals[i].globalOffset - _mesh->nodes->uniqueOffset;
+			for (eslocal n = _mesh->nodes->pintervals[i].begin; n < _mesh->nodes->pintervals[i].end; ++n, ++offset) {
+				_morphing->gatheredData[3 * offset + 0] = (morphed[n] - origin[n]).x;
+				_morphing->gatheredData[3 * offset + 1] = (morphed[n] - origin[n]).y;
+				_morphing->gatheredData[3 * offset + 2] = (morphed[n] - origin[n]).z;
+			}
+		}
+	}
+
 	finish("apply morphing '" + name + "'");
 }
 
