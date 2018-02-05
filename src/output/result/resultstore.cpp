@@ -70,7 +70,7 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 		// _asyncStore->_direct->addResultStore(new Monitoring(_asyncStore->_direct->mesh(), configuration, false));
 	}
 	if (configuration.debug) {
-		_asyncStore->_direct->addResultStore(new VTKLegacyDebugInfo(_asyncStore->_direct->mesh(), .95, .9));
+		_asyncStore->_async->addResultStore(new VTKLegacyDebugInfo(_asyncStore->_direct->mesh(), .95, .9));
 	}
 
 	if (!_asyncStore->_direct->hasStore()) {
@@ -132,6 +132,14 @@ bool ResultStore::isCollected()
 	bool store = false;
 	if (_async) store |= _async->isCollected();
 	if (_direct) store |= _direct->isCollected();
+	return store;
+}
+
+bool ResultStore::isDistributed()
+{
+	bool store = false;
+	if (_async) store |= _async->isDistributed();
+	if (_direct) store |= _direct->isDistributed();
 	return store;
 }
 

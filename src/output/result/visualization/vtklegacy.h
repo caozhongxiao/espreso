@@ -5,11 +5,11 @@
 #include <string>
 #include <vector>
 
-#include "visualization.h"
+#include "distributedvisualization.h"
 
 namespace espreso {
 
-struct VTKLegacy: public Visualization {
+struct VTKLegacy: public DistributedVisualization {
 
 protected:
 	VTKLegacy(const Mesh &mesh, double clusterShrinkRatio, double domainShrinkRatio);

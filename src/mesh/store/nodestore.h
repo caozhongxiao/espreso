@@ -98,9 +98,9 @@ struct NodeStore {
 	void pack(char* &p) const;
 	void unpack(const char* &p);
 
-	size_t packedDataSize() const;
-	void packData(char* &p) const;
-	void unpackData(const char* &p);
+	size_t packedDataSize(bool collected, bool distributed) const;
+	void packData(char* &p, bool collected, bool distributed) const;
+	void unpackData(const char* &p, bool collected, bool distributed);
 
 	NodeStore();
 	~NodeStore();

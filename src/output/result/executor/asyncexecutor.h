@@ -66,8 +66,10 @@ public:
 	AsyncStore(const Mesh &mesh, const OutputConfiguration &configuration);
 	~AsyncStore();
 
-	bool isCollected() { return true; }
 	virtual const Mesh& mesh() const { return _executor.mesh(); }
+
+	bool isCollected();
+	bool isDistributed();
 
 	void addResultStore(ResultStoreBase *resultStore);
 	bool hasStore();

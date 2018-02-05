@@ -27,7 +27,7 @@ VTKLegacyDebugInfo::VTKLegacyDebugInfo(const Mesh &mesh, double clusterShrinkRat
 }
 
 VTKLegacy::VTKLegacy(const Mesh &mesh, double clusterShrinkRatio, double domainShrinkRatio)
-: Visualization(mesh), _clusterShrinkRatio(clusterShrinkRatio), _domainShrinkRatio(domainShrinkRatio)
+: DistributedVisualization(mesh), _clusterShrinkRatio(clusterShrinkRatio), _domainShrinkRatio(domainShrinkRatio)
 {
 
 }

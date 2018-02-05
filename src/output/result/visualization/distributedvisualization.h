@@ -1,6 +1,6 @@
 
-#ifndef SRC_OUTPUT_RESULT_VISUALIZATION_VISUALIZATION_H_
-#define SRC_OUTPUT_RESULT_VISUALIZATION_VISUALIZATION_H_
+#ifndef SRC_OUTPUT_RESULT_VISUALIZATION_DISTRIBUTEDVISUALIZATION_H_
+#define SRC_OUTPUT_RESULT_VISUALIZATION_DISTRIBUTEDVISUALIZATION_H_
 
 #include "../resultstore.h"
 
@@ -8,11 +8,12 @@
 
 namespace espreso {
 
-struct Visualization: public ResultStoreBase {
+struct DistributedVisualization: public ResultStoreBase {
 
-	Visualization(const Mesh &mesh): ResultStoreBase(mesh) {}
+	DistributedVisualization(const Mesh &mesh): ResultStoreBase(mesh) {}
 
 	virtual bool isCollected() { return false; }
+	virtual bool isDistributed() { return true; }
 
 	static Point shrink(const Point &p, const Point &ccenter, const Point &dcenter, double cratio, double dratio) {
 		Point point = ccenter + (p - ccenter) * cratio;
@@ -24,4 +25,4 @@ struct Visualization: public ResultStoreBase {
 }
 
 
-#endif /* SRC_OUTPUT_RESULT_VISUALIZATION_VISUALIZATION_H_ */
+#endif /* SRC_OUTPUT_RESULT_VISUALIZATION_DISTRIBUTEDVISUALIZATION_H_ */

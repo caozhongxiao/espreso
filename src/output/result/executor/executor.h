@@ -12,6 +12,7 @@ class ResultStoreExecutor: public ResultStoreBase {
 
 public:
 	virtual bool isCollected();
+	virtual bool isDistributed();
 	bool storeStep(const Step &step);
 
 	virtual void addResultStore(ResultStoreBase *resultStore);

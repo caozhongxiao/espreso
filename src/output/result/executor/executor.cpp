@@ -31,6 +31,15 @@ bool ResultStoreExecutor::isCollected()
 	return false;
 }
 
+bool ResultStoreExecutor::isDistributed()
+{
+	for (size_t i = 0; i < _resultStore.size(); i++) {
+		if (_resultStore[i]->isDistributed()) {
+			return true;
+		}
+	}
+	return false;
+}
 
 bool ResultStoreExecutor::storeStep(const Step &step)
 {

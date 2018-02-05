@@ -5,16 +5,17 @@
 #include "mpi.h"
 #include <vector>
 
-#include "visualization.h"
+#include "distributedvisualization.h"
 
 namespace espreso {
 
-struct CollectedVisualization: public Visualization {
+struct CollectedVisualization: public ResultStoreBase {
 
 	CollectedVisualization(const Mesh &mesh);
 	~CollectedVisualization();
 
 	virtual bool isCollected() { return true; }
+	virtual bool isDistributed() { return false; }
 
 protected:
 	void clearIntervals();

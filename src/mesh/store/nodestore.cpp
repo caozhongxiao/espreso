@@ -56,6 +56,7 @@ size_t NodeStore::packedSize() const
 			idomains->packedSize() +
 			Esutils::packedSize(externalIntervals) +
 			Esutils::packedSize(pintervals) +
+			Esutils::packedSize(dintervals) +
 			datasize;
 }
 
@@ -70,6 +71,7 @@ void NodeStore::pack(char* &p) const
 	idomains->pack(p);
 	Esutils::pack(externalIntervals, p);
 	Esutils::pack(pintervals, p);
+	Esutils::pack(dintervals, p);
 
 	size_t size = 0;
 	for (size_t i = 0; i < data.size(); i++) {
@@ -107,6 +109,7 @@ void NodeStore::unpack(const char* &p)
 	idomains->unpack(p);
 	Esutils::unpack(externalIntervals, p);
 	Esutils::unpack(pintervals, p);
+	Esutils::unpack(dintervals, p);
 
 	int dimension;
 	size_t datasize;
@@ -120,30 +123,57 @@ void NodeStore::unpack(const char* &p)
 	}
 }
 
-size_t NodeStore::packedDataSize() const
+size_t NodeStore::packedDataSize(bool collected, bool distributed) const
 {
 	size_t size = 0;
-	for (size_t i = 0; i < data.size(); i++) {
-		if (data[i]->names.size()) {
-			size += Esutils::packedSize(data[i]->gatheredData);
+	if (collected) {
+		for (size_t i = 0; i < data.size(); i++) {
+			if (data[i]->names.size()) {
+				size += Esutils::packedSize(data[i]->gatheredData);
+			}
+		}
+	}
+	if (distributed) {
+		for (size_t i = 0; i < data.size(); i++) {
+			if (data[i]->names.size()) {
+				size += Esutils::packedSize(*data[i]->decomposedData);
+			}
 		}
 	}
 	return size;
 }
 
-void NodeStore::packData(char* &p) const
+void NodeStore::packData(char* &p, bool collected, bool distributed) const
 {
-	for (size_t i = 0; i < data.size(); i++) {
-		if (data[i]->names.size()) {
-			Esutils::pack(data[i]->gatheredData, p);
+	if (collected) {
+		for (size_t i = 0; i < data.size(); i++) {
+			if (data[i]->names.size()) {
+				Esutils::pack(data[i]->gatheredData, p);
+			}
+		}
+	}
+	if (distributed) {
+		for (size_t i = 0; i < data.size(); i++) {
+			if (data[i]->names.size()) {
+				Esutils::pack(*data[i]->decomposedData, p);
+			}
 		}
 	}
 }
 
-void NodeStore::unpackData(const char* &p)
+void NodeStore::unpackData(const char* &p, bool collected, bool distributed)
 {
-	for (size_t i = 0; i < data.size(); i++) {
-		Esutils::unpack(data[i]->gatheredData, p);
+	if (collected) {
+		for (size_t i = 0; i < data.size(); i++) {
+			Esutils::unpack(data[i]->gatheredData, p);
+		}
+	}
+	if (distributed) {
+		for (size_t i = 0; i < data.size(); i++) {
+			if (data[i]->names.size()) {
+				Esutils::unpack(*data[i]->decomposedData, p);
+			}
+		}
 	}
 }
 

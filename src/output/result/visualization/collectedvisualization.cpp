@@ -8,7 +8,7 @@
 
 using namespace espreso;
 
-CollectedVisualization::CollectedVisualization(const Mesh &mesh): Visualization(mesh)
+CollectedVisualization::CollectedVisualization(const Mesh &mesh): ResultStoreBase(mesh)
 {
 	MPI_Comm_split(environment->MPICommunicator, 0, environment->MPIrank, &_storeCommunicator);
 	clearIntervals();

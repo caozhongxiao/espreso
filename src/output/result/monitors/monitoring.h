@@ -32,6 +32,7 @@ class Monitoring: public ResultStoreBase {
 
 public:
 	virtual bool isCollected() { return true; }
+	virtual bool isDistributed() { return false; }
 
 	void updateMesh();
 	void updateSolution(const Step &step);
