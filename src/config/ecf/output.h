@@ -54,7 +54,7 @@ struct OutputConfiguration: public ECFObject {
 	enum class MODE {
 		SYNC,
 		THREAD,
-		MPI,
+//		MPI,
 	};
 
 	enum class STORE_FREQUENCY {
@@ -74,7 +74,7 @@ struct OutputConfiguration: public ECFObject {
 	FORMAT format;
 	MODE mode;
 
-	size_t output_node_group_size;
+//	size_t output_node_group_size;
 
 	std::string path;
 
@@ -84,11 +84,10 @@ struct OutputConfiguration: public ECFObject {
 	STORE_RESULTS store_results;
 	ResultsSelectionConfiguration results_selection;
 
-	bool settings, FETI_data, catalyst;
-	size_t catalyst_sleep_time;
+	bool settings, debug; //, catalyst;
+	// size_t catalyst_sleep_time;
 
-	bool collected, separate_bodies, separate_materials;
-	double domain_shrink_ratio, cluster_shrink_ratio;
+	bool collected;
 
 	std::map<size_t, MonitorConfiguration> monitoring;
 

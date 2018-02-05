@@ -125,12 +125,12 @@ OUTPUT {
 
   STORE_RESULTS                         ALL;
 
-  COLLECTED                           FALSE;
-  SEPARATE_BODIES                     FALSE;
-  SEPARATE_MATERIALS                  FALSE;
+  ;
+  
+  
 
-  DOMAIN_SHRINK_RATIO                  0.95;
-  CLUSTER_SHRINK_RATIO                  0.9;
+  
+  
 
   MONITORING {
     1 {

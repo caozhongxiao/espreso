@@ -182,7 +182,7 @@ void ResultStore::finalize()
 
 void ResultStore::storeFETIData(const Step &step, const Instance &instance)
 {
-	if (!_configuration.FETI_data) {
+	if (!_configuration.debug) {
 		return;
 	}
 	if (_meshInfo == NULL) {

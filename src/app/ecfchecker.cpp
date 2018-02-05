@@ -118,11 +118,6 @@ int main(int argc, char **argv)
 	redParameters.parameters.push_back(ecf.output.getParameter(&ecf.output.store_results));
 	redParameters.parameters.push_back(ecf.output.getParameter(&ecf.output.results_selection));
 	eachProperties(ecf.output.results_selection);
-	redParameters.parameters.push_back(ecf.output.getParameter(&ecf.output.collected));
-	redParameters.parameters.push_back(ecf.output.getParameter(&ecf.output.separate_bodies));
-	redParameters.parameters.push_back(ecf.output.getParameter(&ecf.output.separate_materials));
-	redParameters.parameters.push_back(ecf.output.getParameter(&ecf.output.domain_shrink_ratio));
-	redParameters.parameters.push_back(ecf.output.getParameter(&ecf.output.cluster_shrink_ratio));
 
 	std::ofstream os(ECFReader::configurationFile);
 	ECFReader::store(ecf, os, true, false, redParameters);

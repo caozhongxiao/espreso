@@ -41,20 +41,20 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 		async::Config::setMode(async::THREAD);
 		_asyncStore->storeThreads = 1;
 		break;
-	case OutputConfiguration::MODE::MPI:
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented OUTPUT::MODE==MPI.";
-		_dispatcher = new async::Dispatcher();
-		_asyncStore->_async = new AsyncStore(mesh, configuration);
-		if (environment->MPIsize == 1) {
-			ESINFO(GLOBAL_ERROR) << "Invalid number of MPI processes. OUTPUT::MODE==MPI required at least two MPI processes.";
-		}
-		if (configuration.output_node_group_size == 0) {
-			ESINFO(GLOBAL_ERROR) << "OUTPUT::OUTPUT_NODE_GROUP_SIZE cannot be 0.";
-		}
-		async::Config::setMode(async::MPI);
-		async::Config::setGroupSize(configuration.output_node_group_size);
-		_dispatcher->setGroupSize(configuration.output_node_group_size);
-		break;
+//	case OutputConfiguration::MODE::MPI:
+//		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented OUTPUT::MODE==MPI.";
+//		_dispatcher = new async::Dispatcher();
+//		_asyncStore->_async = new AsyncStore(mesh, configuration);
+//		if (environment->MPIsize == 1) {
+//			ESINFO(GLOBAL_ERROR) << "Invalid number of MPI processes. OUTPUT::MODE==MPI required at least two MPI processes.";
+//		}
+//		if (configuration.output_node_group_size == 0) {
+//			ESINFO(GLOBAL_ERROR) << "OUTPUT::OUTPUT_NODE_GROUP_SIZE cannot be 0.";
+//		}
+//		async::Config::setMode(async::MPI);
+//		async::Config::setGroupSize(configuration.output_node_group_size);
+//		_dispatcher->setGroupSize(configuration.output_node_group_size);
+//		break;
 	}
 
 	// TODO: optimize
@@ -63,14 +63,16 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 		_asyncStore->_async->addResultStore(new Monitoring(_asyncStore->_async->mesh(), configuration, true));
 		// _asyncStore->_direct->addResultStore(new Monitoring(_asyncStore->_direct->mesh(), configuration, false));
 	}
-	_asyncStore->_direct->addResultStore(new VTKLegacyDebugInfo(_asyncStore->_direct->mesh(), configuration.cluster_shrink_ratio, configuration.domain_shrink_ratio));
+	if (configuration.debug) {
+		_asyncStore->_direct->addResultStore(new VTKLegacyDebugInfo(_asyncStore->_direct->mesh(), .95, .9));
+	}
 
-	if (_asyncStore->_direct->hasStore() == 0) {
+	if (!_asyncStore->_direct->hasStore()) {
 		delete _asyncStore->_direct;
 		_asyncStore->_direct = NULL;
 	}
 
-	if (_asyncStore->_async->hasStore() == 0) {
+	if (!_asyncStore->_async->hasStore()) {
 		delete _asyncStore->_dispatcher;
 		delete _asyncStore->_async;
 		_asyncStore->_dispatcher = NULL;
@@ -81,12 +83,12 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 		_dispatcher->init();
 		_dispatcher->dispatch();
 
-		if (configuration.mode == OutputConfiguration::MODE::MPI) {
-			int computeSize;
-			MPI_Comm_size(_dispatcher->commWorld(), &computeSize);
-			_asyncStore->computeProcesses = computeSize;
-			_asyncStore->storeProcesses = environment->MPIsize - computeSize;
-		}
+//		if (configuration.mode == OutputConfiguration::MODE::MPI) {
+//			int computeSize;
+//			MPI_Comm_size(_dispatcher->commWorld(), &computeSize);
+//			_asyncStore->computeProcesses = computeSize;
+//			_asyncStore->storeProcesses = environment->MPIsize - computeSize;
+//		}
 
 		environment->MPICommunicator = _dispatcher->commWorld();
 		MPI_Comm_rank(environment->MPICommunicator, &environment->MPIrank);
