@@ -22,12 +22,17 @@ struct MATH {
 
 		static void GMRESUpCRSMat(
 				eslocal rows, eslocal cols, eslocal *mRows, eslocal *mCols, double *mVals,
-				eslocal rhs, double *rhsVals, double *results,
+				double *rhsVals, double *results,
 				double tolerance, eslocal maxIterations);
 
 		static void GMRESDenseRowMajorMat(
 				eslocal rows, eslocal cols, double *mVals,
-				eslocal rhs, double *rhsVals, double *results,
+				double *rhsVals, double *results,
+				double tolerance, eslocal maxIterations);
+
+		static void GMRESUpperSymetricColumnMajorMat(
+				eslocal cols, double *mVals,
+				double *rhsVals, double *results,
 				double tolerance, eslocal maxIterations);
 	};
 };

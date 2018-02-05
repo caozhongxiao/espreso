@@ -28,6 +28,8 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 	start("apply morphing '" + name + "'");
 
+	ESINFO(OVERVIEW)<<"Processing morphing: "<<name;
+
 	if (_mesh->nodes->originCoordinates == NULL) {
 		_mesh->nodes->originCoordinates = new serializededata<eslocal, Point>(*_mesh->nodes->coordinates);
 	}
@@ -95,21 +97,27 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		ESINFO(ERROR) << "ESPRESO internal error: gather morphed displacement";
 	}
 
-	std::vector<double> W, Q;
+	std::vector<double> wq_values;
 
 	if (environment->MPIrank == 0) {
 
 		eslocal rowsFromCoordinates = rDisplacement.size() / dimension;
+		int M_size = rowsFromCoordinates + dimension + 1;
 
-		// TODO: optimize
-		DenseMatrix rhs(rowsFromCoordinates + dimension + 1, dimension);
-		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
-			for (int d = 0; d < dimension; d++) {
-				rhs(r, d) = rDisplacement[r * dimension + d];
+		wq_values.resize(M_size*dimension);
+
+		std::vector<double> rhs_values(M_size*dimension);
+		for (int d = 0; d < dimension; d++) {
+			eslocal r;
+			for (r = 0; r < rowsFromCoordinates; r++) {
+				rhs_values[M_size*d + r] = rDisplacement[r * dimension + d];
+			}
+			for ( ; r < M_size; r++) {
+				rhs_values[M_size*d + r] = 0;
 			}
 		}
 
-		DenseMatrix M(rowsFromCoordinates + dimension + 1, rowsFromCoordinates + dimension + 1);
+		/*DenseMatrix M(rowsFromCoordinates + dimension + 1, rowsFromCoordinates + dimension + 1);
 
 		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
 			M(rowsFromCoordinates + 0, r) = M(r, rowsFromCoordinates + 0) = rPoints[r].x;
@@ -125,32 +133,62 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 			}
 		}
 
+		std::vector<double> M_values;//(M_size*(M_size+1)/2);
+		for(eslocal i = 0;i<M_size;i++) {
+			for(eslocal j = 0;j<=i;j++) {
+				M_values.push_back(M(i,j));
+			}
+		}*/
+
+		std::vector<double> M_values;
+
+		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+			for(eslocal rr = 0; rr <= r; rr++) {
+				M_values.push_back(configuration.function.evaluator->evaluate((rPoints[r] - rPoints[rr]).length()));
+			}
+		}
+		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+			M_values.push_back(rPoints[r].x);
+		}
+		M_values.push_back(0);
+		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+			M_values.push_back(rPoints[r].y);
+		}
+		M_values.push_back(0);
+		M_values.push_back(0);
+		if (dimension == 3) {
+			for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+				M_values.push_back(rPoints[r].z);
+			}
+			M_values.push_back(0);
+			M_values.push_back(0);
+			M_values.push_back(0);
+		}
+		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+			M_values.push_back(1);
+		}
+		M_values.push_back(0);
+		M_values.push_back(0);
+		M_values.push_back(0);
+		M_values.push_back(0);
+
+
 		switch (configuration.solver) {
 		case MORPHING_RBF_SOLVER::ITERATIVE: {
-			SparseCSRMatrix<eslocal> MSparse(M);
-			rhs.transpose();
 
-			DenseMatrix wq(rhs.rows(), rhs.columns());
-			for(eslocal r = 0 ; r < rhs.rows(); r++) {
-				//MSparse.gmresSolve(&rhs(r, 0), &wq(r, 0), configuration.solver_precision, 600);
-				MATH::SOLVER::GMRESUpCRSMat(
-						MSparse.rows(), MSparse.columns(), MSparse.rowPtrs(), MSparse.columnIndices(), MSparse.values(),
-						1, rhs.values() + r * rhs.columns(), wq.values() + r * wq.columns(),
-						configuration.solver_precision, 600);
+			for(eslocal d = 0 ; d < dimension; d++) {
+				MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
+					 M_size, &M_values[0],
+					&rhs_values[d * M_size], &wq_values[d * M_size],
+					configuration.solver_precision, 600);
 			}
 
-			for(eslocal c = 0; c < wq.columns(); c++) {
-				for(eslocal r = 0; r < wq.rows(); r++) {
-					if (c < rowsFromCoordinates) {
-						W.push_back(wq(r, c));
-					}else {
-						Q.push_back(wq(r, c));
-					}
-				}
-			}
 		} break;
 
-		case MORPHING_RBF_SOLVER::DIRECT:
+		case MORPHING_RBF_SOLVER::DIRECT: {
+
+		} break;
+
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement mesh morphing solver.";
 		}
@@ -159,11 +197,21 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 	if (!Communication::broadcastUnknownSize(rPoints)) {
 		ESINFO(ERROR) << "ESPRESO internal error: broadcast points.";
 	}
-	if (!Communication::broadcastUnknownSize(W)) {
-		ESINFO(ERROR) << "ESPRESO internal error: broadcast W.";
+	if (!Communication::broadcastUnknownSize(wq_values)) {
+		ESINFO(ERROR) << "ESPRESO internal error: broadcast WQ.";
 	}
-	if (!Communication::broadcastUnknownSize(Q)) {
-		ESINFO(ERROR) << "ESPRESO internal error: broadcast Q.";
+
+	std::vector<double> W, Q;
+	eslocal wq_points = wq_values.size()/dimension;
+
+	for(eslocal c = 0; c < wq_points; c++) {
+		for(eslocal r = 0; r < dimension; r++) {
+			if (c < rPoints.size()) {
+				W.push_back(wq_values[r * wq_points+ c]);
+			}else {
+				Q.push_back(wq_values[r * wq_points+ c]);
+			}
+		}
 	}
 
 	ElementsRegionStore *tregion = _mesh->eregion(configuration.target);
