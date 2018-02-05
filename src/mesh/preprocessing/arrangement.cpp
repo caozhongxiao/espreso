@@ -1025,7 +1025,7 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		std::vector<eslocal> nodes, facenodes;
+		std::vector<eslocal> nodes, facenodes, lowerElements, lenodes;
 		for (size_t e = tdistribution[t]; e < tdistribution[t + 1]; e++) {
 			nodes.push_back((begin + e)->second);
 			if ((e + 1 == tdistribution[t + 1] || (begin + e + 1)->first != (begin + e)->first)) {
@@ -1044,11 +1044,30 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 						}
 						std::sort(facenodes.begin(), facenodes.end());
 						if (std::includes(nodes.begin(), nodes.end(), facenodes.begin(), facenodes.end())) {
-							for (auto n = fnodes->begin(); n != fnodes->end(); ++n) {
-								edata[t].push_back(enodes->at(*n));
+							bool isLower = true;
+							lowerElements.clear();
+							lowerElements.insert(lowerElements.end(), (_mesh->nodes->elements->cbegin() + facenodes.front())->begin(), (_mesh->nodes->elements->cbegin() + facenodes.front())->end());
+							for (size_t le = 0; isLower && le < lowerElements.size() && lowerElements[le] < (begin + e)->first; le++) {
+								lenodes.clear();
+								auto pcomp = [] (const std::pair<eslocal, eslocal> &p, eslocal e) { return p.first < e; };
+								auto lebegin = std::lower_bound(elements[0].begin(), elements[0].end(), lowerElements[le], pcomp);
+								auto leend = std::lower_bound(elements[0].begin(), elements[0].end(), lowerElements[le] + 1, pcomp);
+								if (lebegin != elements[0].end() && lebegin->first == lowerElements[le]) {
+									for (auto leit = lebegin; leit != leend; ++leit) {
+										lenodes.push_back(leit->second);
+									}
+									if (std::includes(lenodes.begin(), lenodes.end(), facenodes.begin(), facenodes.end())) {
+										isLower = false;
+									}
+								}
 							}
-							edist[t].push_back(edata[t].size());
-							ecode[t].push_back((eslocal)(*f)->code);
+							if (isLower) {
+								for (auto n = fnodes->begin(); n != fnodes->end(); ++n) {
+									edata[t].push_back(enodes->at(*n));
+								}
+								edist[t].push_back(edata[t].size());
+								ecode[t].push_back((eslocal)(*f)->code);
+							}
 						}
 						facenodes.clear();
 					}
