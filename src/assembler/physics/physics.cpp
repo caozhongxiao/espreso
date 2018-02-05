@@ -9,6 +9,7 @@
 #include "../step.h"
 
 #include "../../mesh/mesh.h"
+#include "../../mesh/elements/element.h"
 #include "../../mesh/store/nodestore.h"
 #include "../../mesh/store/elementstore.h"
 #include "../../mesh/store/boundaryregionstore.h"
@@ -75,6 +76,70 @@ Physics::~Physics()
 		}
 	}
 #endif
+}
+
+void Physics::printInvalidElement(eslocal eindex) const
+{
+	auto nodes = _mesh->elements->nodes->begin() + eindex;
+
+	std::ofstream os("invalidElement.vtk");
+	os << "# vtk DataFile Version 2.0\n";
+	os << "INVALID ELEMENT\n";
+	os << "ASCII\n";
+	os << "DATASET UNSTRUCTURED_GRID\n";
+	os << "\n";
+	os << "POINTS " << nodes->size() << " float\n";
+	for (auto n = nodes->begin(); n != nodes->end(); ++n) {
+		os << _mesh->nodes->coordinates->datatarray()[*n].x << " " << _mesh->nodes->coordinates->datatarray()[*n].y << " " << _mesh->nodes->coordinates->datatarray()[*n].z << "\n";
+	}
+	os << "\n";
+	os << "CELLS 1 " << nodes->size() + 1 << "\n";
+	os << nodes->size();
+	for (auto n = nodes->begin(); n != nodes->end(); ++n) {
+		os << " " << n - nodes->begin();
+	}
+	os << "\n";
+	os << "CeLL_TYPES 1\n";
+	switch (_mesh->elements->epointers->datatarray()[eindex]->code) {
+	case Element::CODE::SQUARE4:
+		os << "9\n";
+		break;
+	case Element::CODE::SQUARE8:
+		os << "23\n";
+		break;
+	case Element::CODE::TRIANGLE3:
+		os << "5\n";
+		break;
+	case Element::CODE::TRIANGLE6:
+		os << "22\n";
+		break;
+	case Element::CODE::TETRA4:
+		os << "10\n";
+		break;
+	case Element::CODE::TETRA10:
+		os << "24\n";
+		break;
+	case Element::CODE::PYRAMID5:
+		os << "14\n";
+		break;
+	case Element::CODE::PYRAMID13:
+		os << "27\n";
+		break;
+	case Element::CODE::PRISMA6:
+		os << "13\n";
+		break;
+	case Element::CODE::PRISMA15:
+		os << "26\n";
+		break;
+	case Element::CODE::HEXA8:
+		os << "12\n";
+		break;
+	case Element::CODE::HEXA20:
+		os << "25\n";
+		break;
+	default:
+		break;
+	}
 }
 
 void Physics::updateMatrix(Matrices matrix)

@@ -451,6 +451,10 @@ void StructuralMechanics3D::processElement(eslocal domain, Matrices matrices, es
 	for (size_t gp = 0; gp < N.size(); gp++) {
 		J.multiply(dN[gp], coordinates);
 		detJ = determinant3x3(J.values());
+		if (detJ <= 0) {
+			printInvalidElement(eindex);
+			ESINFO(ERROR) << "Invalid element detected - check input data.";
+		}
 		inverse3x3(J.values(), invJ.values(), detJ);
 
 		gpK.multiply(N[gp], K);

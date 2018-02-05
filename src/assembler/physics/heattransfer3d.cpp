@@ -377,6 +377,10 @@ void HeatTransfer3D::processElement(eslocal domain, Matrices matrices, eslocal e
 
 		J.multiply(dN[gp], coordinates);
 		detJ = determinant3x3(J.values());
+		if (detJ <= 0) {
+			printInvalidElement(eindex);
+			ESINFO(ERROR) << "Invalid element detected - check input data.";
+		}
 		inverse3x3(J.values(), invJ.values(), detJ);
 
 		gpK.multiply(N[gp], K);

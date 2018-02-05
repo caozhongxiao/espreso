@@ -80,6 +80,8 @@ protected:
 
 	virtual void assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, Matrices matrices, size_t domain);
 
+	void printInvalidElement(eslocal eindex) const;
+
 	static void smoothstep(double &smoothStep, double &derivation, double edge0, double edge1, double value, size_t order);
 
 	std::string _name;
