@@ -38,7 +38,7 @@ void WorkbenchLoader::readData()
 	MPI_File MPIfile;
 
 	if (MPI_File_open(environment->MPICommunicator, _configuration.workbench.path.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &MPIfile)) {
-		ESINFO(ERROR) << "MPI cannot create file '" << _configuration.workbench.path << "'";
+		ESINFO(ERROR) << "MPI cannot load file '" << _configuration.workbench.path << "'";
 	}
 
 	MPI_Offset size;
