@@ -5,7 +5,7 @@
 #include "../../../config/ecf/output.h"
 #include "../../../assembler/step.h"
 #include "../../../mesh/mesh.h"
-#include "../visualization/vtklegacy.h"
+#include "../visualization/distributedvtklegacy.h"
 
 using namespace espreso;
 

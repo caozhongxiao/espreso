@@ -1,6 +1,6 @@
 
-#ifndef SRC_OUTPUT_RESULT_VISUALIZATION_VTKLEGACY_H_
-#define SRC_OUTPUT_RESULT_VISUALIZATION_VTKLEGACY_H_
+#ifndef SRC_OUTPUT_RESULT_VISUALIZATION_DISTRIBUTEDVTKLEGACY_H_
+#define SRC_OUTPUT_RESULT_VISUALIZATION_DISTRIBUTEDVTKLEGACY_H_
 
 #include <string>
 #include <vector>
@@ -9,10 +9,10 @@
 
 namespace espreso {
 
-struct VTKLegacy: public DistributedVisualization {
+struct DistributedVTKLegacy: public DistributedVisualization {
 
 protected:
-	VTKLegacy(const Mesh &mesh, double clusterShrinkRatio, double domainShrinkRatio);
+	DistributedVTKLegacy(const Mesh &mesh, double clusterShrinkRatio, double domainShrinkRatio);
 
 	void mesh(const std::string &name);
 	void solution(const std::string &name);
@@ -29,7 +29,7 @@ protected:
 	double _clusterShrinkRatio, _domainShrinkRatio;
 };
 
-struct VTKLegacyDebugInfo: public VTKLegacy {
+struct VTKLegacyDebugInfo: public DistributedVTKLegacy {
 
 	VTKLegacyDebugInfo(const Mesh &mesh, double clusterShrinkRatio, double domainShrinkRatio);
 
@@ -56,4 +56,4 @@ protected:
 }
 
 
-#endif /* SRC_OUTPUT_RESULT_VISUALIZATION_VTKLEGACY_H_ */
+#endif /* SRC_OUTPUT_RESULT_VISUALIZATION_DISTRIBUTEDVTKLEGACY_H_ */

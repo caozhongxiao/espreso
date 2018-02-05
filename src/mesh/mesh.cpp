@@ -31,7 +31,6 @@
 
 #include "../basis/containers/serializededata.h"
 #include "../basis/containers/tarray.h"
-#include "../output/result/visualization/vtklegacy.h"
 
 
 using namespace espreso;

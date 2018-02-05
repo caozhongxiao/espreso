@@ -12,10 +12,6 @@
 #include "../../../mesh/store/elementsregionstore.h"
 #include "../../../mesh/store/boundaryregionstore.h"
 
-#include <iostream>
-
-#include "../visualization/vtklegacy.h"
-
 using namespace espreso;
 
 std::vector<int> AsyncBufferManager::_indices(Buffer::SIZE, -1);

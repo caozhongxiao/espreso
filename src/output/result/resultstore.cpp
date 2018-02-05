@@ -12,7 +12,7 @@
 
 #include "monitors/monitoring.h"
 #include "visualization/collectedensight.h"
-#include "visualization/vtklegacy.h"
+#include "visualization/distributedvtklegacy.h"
 
 
 using namespace espreso;

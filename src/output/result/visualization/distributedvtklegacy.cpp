@@ -1,6 +1,4 @@
 
-#include "vtklegacy.h"
-
 #include "../../../basis/containers/point.h"
 #include "../../../basis/containers/serializededata.h"
 #include "../../../basis/utilities/utils.h"
@@ -16,23 +14,24 @@
 #include "../../../mesh/store/surfacestore.h"
 #include <fstream>
 #include <algorithm>
+#include "distributedvtklegacy.h"
 
 
 using namespace espreso;
 
 VTKLegacyDebugInfo::VTKLegacyDebugInfo(const Mesh &mesh, double clusterShrinkRatio, double domainShrinkRatio)
-: VTKLegacy(mesh, clusterShrinkRatio, domainShrinkRatio)
+: DistributedVTKLegacy(mesh, clusterShrinkRatio, domainShrinkRatio)
 {
 	_path = Esutils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" });
 }
 
-VTKLegacy::VTKLegacy(const Mesh &mesh, double clusterShrinkRatio, double domainShrinkRatio)
+DistributedVTKLegacy::DistributedVTKLegacy(const Mesh &mesh, double clusterShrinkRatio, double domainShrinkRatio)
 : DistributedVisualization(mesh), _clusterShrinkRatio(clusterShrinkRatio), _domainShrinkRatio(domainShrinkRatio)
 {
 
 }
 
-void VTKLegacy::mesh(const std::string &name)
+void DistributedVTKLegacy::mesh(const std::string &name)
 {
 	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
 
@@ -140,7 +139,7 @@ void VTKLegacy::mesh(const std::string &name)
 	os << "\n";
 }
 
-void VTKLegacy::solution(const std::string &name)
+void DistributedVTKLegacy::solution(const std::string &name)
 {
 	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
 
@@ -249,7 +248,7 @@ void VTKLegacy::solution(const std::string &name)
 	}
 }
 
-void VTKLegacy::nodesIntervals(const std::string &name)
+void DistributedVTKLegacy::nodesIntervals(const std::string &name)
 {
 	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
 
@@ -296,7 +295,7 @@ void VTKLegacy::nodesIntervals(const std::string &name)
 	os << "\n";
 }
 
-void VTKLegacy::externalIntervals(const std::string &name)
+void DistributedVTKLegacy::externalIntervals(const std::string &name)
 {
 	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
 
@@ -346,7 +345,7 @@ void VTKLegacy::externalIntervals(const std::string &name)
 	os << "\n";
 }
 
-void VTKLegacy::sharedInterface(const std::string &name)
+void DistributedVTKLegacy::sharedInterface(const std::string &name)
 {
 	if (_mesh.FETIData == NULL || _mesh.FETIData->interfaceNodes == NULL) {
 		return;
@@ -390,7 +389,7 @@ void VTKLegacy::sharedInterface(const std::string &name)
 	os << "\n";
 }
 
-void VTKLegacy::domainSurface(const std::string &name)
+void DistributedVTKLegacy::domainSurface(const std::string &name)
 {
 	if (_mesh.domainsSurface == NULL) {
 		return;
@@ -438,7 +437,7 @@ void VTKLegacy::domainSurface(const std::string &name)
 	}
 }
 
-void VTKLegacy::points(const std::string &name, const std::vector<eslocal> &points, const std::vector<eslocal> &distribution)
+void DistributedVTKLegacy::points(const std::string &name, const std::vector<eslocal> &points, const std::vector<eslocal> &distribution)
 {
 	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
 
@@ -469,7 +468,7 @@ void VTKLegacy::points(const std::string &name, const std::vector<eslocal> &poin
 	os << "\n";
 }
 
-void VTKLegacy::corners(const std::string &name)
+void DistributedVTKLegacy::corners(const std::string &name)
 {
 	if (_mesh.FETIData == NULL || _mesh.FETIData->corners.size() == 0) {
 		return;
@@ -510,7 +509,7 @@ void VTKLegacy::corners(const std::string &name)
 	os << "\n";
 }
 
-void VTKLegacy::sFixPoints(const std::string &name)
+void DistributedVTKLegacy::sFixPoints(const std::string &name)
 {
 	if (_mesh.FETIData == NULL) {
 		return;
@@ -518,7 +517,7 @@ void VTKLegacy::sFixPoints(const std::string &name)
 	points(name, _mesh.FETIData->surfaceFixPoints, _mesh.FETIData->sFixPointsDistribution);
 }
 
-void VTKLegacy::iFixPoints(const std::string &name)
+void DistributedVTKLegacy::iFixPoints(const std::string &name)
 {
 	if (_mesh.FETIData == NULL) {
 		return;
