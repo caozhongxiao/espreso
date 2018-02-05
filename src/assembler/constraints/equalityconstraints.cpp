@@ -261,10 +261,6 @@ void EqualityConstraints::B1DirichletInsert(const Step &step)
 									n != _dirichlet[dof][r].first->nodes->datatarray().cbegin() + _dirichlet[dof][r].first->nintervals[interval.pindex].end;
 									++n) {
 								_instance.B1[d].J_col_indices.push_back(_DOFs * (interval.DOFOffset + *n - interval.begin) + dof + 1);
-
-								// TODO: evaluate at one and correctly
-								Point p;
-								_instance.B1c[d].push_back(step.internalForceReduction * _dirichlet[dof][r].second->evaluate(p, step.currentTime, 0));
 							}
 						}
 
@@ -288,9 +284,13 @@ void EqualityConstraints::B1DirichletInsert(const Step &step)
 					}
 				}
 			}
+			_instance.B1c[d].resize(_instance.B1[d].V_values.size());
 		}
 	}
 	_instance.block[Instance::CONSTRAINT::DIRICHLET] = _dirichletSize;
+
+
+	B1DirichletUpdate(step);
 
 	auto iranks = _mesh.nodes->iranks->cbegin();
 	for (size_t i = 0; i < _mesh.nodes->pintervals.size(); ++i, ++iranks) {
@@ -328,11 +328,26 @@ void EqualityConstraints::B1DirichletUpdate(const Step &step)
 				for (int dof = 0; dof < _DOFs; dof++) {
 					if (_withRedundantMultipliers || interval.dindex == 0) {
 						for (size_t r = 0; r < _dirichlet[dof].size(); r++) {
-							for (eslocal n = _dirichlet[dof][r].first->nintervals[interval.pindex].begin; n < _dirichlet[dof][r].first->nintervals[interval.pindex].end; ++n, ++offset) {
-								// TODO: evaluate at once and correctly
-								Point p;
-								_instance.B1c[d][offset] = step.internalForceReduction * _dirichlet[dof][r].second->evaluate(p, step.currentTime, 0);
+							size_t isize = _dirichlet[dof][r].first->nintervals[interval.pindex].end - _dirichlet[dof][r].first->nintervals[interval.pindex].begin;
+							if (_dirichlet[dof][r].second->isTemperatureDependent()) {
+								ESINFO(ERROR) << "Dirichlet boundary condition cannot be dependent on TEMPERATURE.";
 							}
+							if (_dirichlet[dof][r].second->isCoordinateDependent()) {
+								std::vector<Point> points;
+								points.reserve(isize);
+								for (eslocal n = _dirichlet[dof][r].first->nintervals[interval.pindex].begin; n < _dirichlet[dof][r].first->nintervals[interval.pindex].end; ++n) {
+									points.push_back(_mesh.nodes->coordinates->datatarray()[_dirichlet[dof][r].first->nodes->datatarray()[n]]);
+								}
+								_dirichlet[dof][r].second->evaluate(isize, points.data(), NULL, step.currentTime, _instance.B1c[d].data() + offset);
+							} else {
+								_dirichlet[dof][r].second->evaluate(isize, NULL, NULL, step.currentTime, _instance.B1c[d].data() + offset);
+							}
+							if (step.internalForceReduction != 1) {
+								for (eslocal i = 0; i < isize; i++) {
+									_instance.B1c[d][offset + i] *= step.internalForceReduction;
+								}
+							}
+							offset += isize;
 						}
 					}
 				}
