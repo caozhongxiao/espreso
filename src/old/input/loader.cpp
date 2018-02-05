@@ -1,7 +1,6 @@
 
 #include "loader.h"
 
-// #include "ansys/ansys.h"
 #include "openfoam/openfoam.h"
 #include "generator/generator.h"
 
