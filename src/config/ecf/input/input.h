@@ -19,6 +19,8 @@ struct InputConfiguration: public ECFObject {
 
 	bool keep_material_sets;
 
+	bool convert_database;
+
 	InputConfiguration();
 };
 

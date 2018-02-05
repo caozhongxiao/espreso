@@ -61,9 +61,21 @@ void ESPRESO::run(int *argc, char ***argv)
 
 	ESINFO(OVERVIEW) << "Run ESPRESO SOLVER using " << processes << " MPI and " << threads << " threads.";
 
+	auto computeSolution = [&] () {
+		switch (configuration.input) {
+		case INPUT_FORMAT::WORKBENCH:
+			return !configuration.workbench.convert_database;
+		case INPUT_FORMAT::OPENFOAM:
+			return !configuration.openfoam.convert_database;
+		}
+		return true;
+	};
+
 	if (ResultStore::isComputeNode()) {
 		Factory factory(configuration, mesh, *solutionStore);
-		factory.solve();
+		if (computeSolution()) {
+			factory.solve();
+		}
 	}
 	ResultStore::destroyAsynchronizedStore();
 }

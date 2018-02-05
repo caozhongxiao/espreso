@@ -245,7 +245,10 @@ void CollectedEnSight::updateMesh()
 	storeIntervals(name, os.str(), commitIntervals());
 
 	storecasefile();
+}
 
+void CollectedEnSight::setvariables()
+{
 	auto tabs = [] (size_t size) {
 		return size < 8 ? 2 : 1;
 	};
@@ -263,7 +266,7 @@ void CollectedEnSight::updateMesh()
 			_casevariables << " per node:\t1 ";
 			_casevariables << _mesh.nodes->data[i]->names.front();
 			_casevariables << std::string(tabs(_mesh.nodes->data[i]->names.front().size()), '\t');
-			_casevariables << filename << "_***\n";
+			_casevariables << filename << "_****\n";
 		}
 	}
 	for (size_t i = 0; i < _mesh.elements->data.size(); i++) {
@@ -273,7 +276,7 @@ void CollectedEnSight::updateMesh()
 			_casevariables << " per element:\t1 ";
 			_casevariables << _mesh.elements->data[i]->names.front();
 			_casevariables << std::string(tabs(_mesh.elements->data[i]->names.front().size()), '\t');
-			_casevariables << filename << "_***\n";
+			_casevariables << filename << "_****\n";
 		}
 	}
 }
@@ -369,6 +372,10 @@ void CollectedEnSight::storeDecomposition()
 
 void CollectedEnSight::updateSolution(const Step &step)
 {
+	if (_variableCounter == 0) {
+		setvariables();
+	}
+
 	_casetime << step.currentTime;
 	if ((++_variableCounter) % 10 == 0) {
 		_casetime << "\n                       ";
@@ -384,7 +391,7 @@ void CollectedEnSight::updateSolution(const Step &step)
 
 		std::string filename = _name + "." + _mesh.nodes->data[di]->names.front().substr(0, 4);
 		std::stringstream name;
-		name << _path + filename + "_" << std::setw(3) << std::setfill('0') << _variableCounter;
+		name << _path + filename + "_" << std::setw(4) << std::setfill('0') << _variableCounter;
 
 		std::stringstream os;
 		os << std::showpos << std::scientific << std::setprecision(5);
@@ -454,7 +461,7 @@ void CollectedEnSight::updateSolution(const Step &step)
 
 		std::string filename = _name + "." + _mesh.elements->data[di]->names.front().substr(0, 4);
 		std::stringstream name;
-		name << _path + filename + "_" << std::setw(3) << std::setfill('0') << _variableCounter;
+		name << _path + filename + "_" << std::setw(4) << std::setfill('0') << _variableCounter;
 
 		std::stringstream os;
 		os << std::showpos << std::scientific << std::setprecision(5);
