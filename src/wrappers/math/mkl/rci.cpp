@@ -320,3 +320,23 @@ void MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
 		//---------------------------------------------------------------------------
 }
 
+void MATH::SOLVER::DirectUpperSymetricIndefiniteColumnMajor(
+				eslocal cols, double *m_packed_values,
+				eslocal nrhs, double *rhsVals) {
+
+		char U = 'U';
+		MKL_INT info;
+		std::vector<MKL_INT>  m_ipiv(cols);
+
+		dsptrf( &U, &cols, &m_packed_values[0], &m_ipiv[0] , &info );
+
+        printf("Result  %d \n", info);
+
+        if (info == 0 ) {
+        	dsptrs( &U, &cols, &nrhs, &m_packed_values[0], &m_ipiv[0], &rhsVals[0], &cols, &info );
+        	printf("Result  %d \n", info);
+        	return;
+        }
+}
+
+

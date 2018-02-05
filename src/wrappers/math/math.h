@@ -34,6 +34,10 @@ struct MATH {
 				eslocal cols, double *mVals,
 				double *rhsVals, double *results,
 				double tolerance, eslocal maxIterations);
+
+		static void DirectUpperSymetricIndefiniteColumnMajor(
+						eslocal cols, double *m_packed_values,
+						eslocal nrhs, double *rhsVals);
 	};
 };
 

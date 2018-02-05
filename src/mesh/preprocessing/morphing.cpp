@@ -104,18 +104,6 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		eslocal rowsFromCoordinates = rDisplacement.size() / dimension;
 		int M_size = rowsFromCoordinates + dimension + 1;
 
-		wq_values.resize(M_size*dimension);
-
-		std::vector<double> rhs_values(M_size*dimension);
-		for (int d = 0; d < dimension; d++) {
-			eslocal r;
-			for (r = 0; r < rowsFromCoordinates; r++) {
-				rhs_values[M_size*d + r] = rDisplacement[r * dimension + d];
-			}
-			for ( ; r < M_size; r++) {
-				rhs_values[M_size*d + r] = 0;
-			}
-		}
 
 		/*DenseMatrix M(rowsFromCoordinates + dimension + 1, rowsFromCoordinates + dimension + 1);
 
@@ -176,6 +164,19 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		switch (configuration.solver) {
 		case MORPHING_RBF_SOLVER::ITERATIVE: {
 
+			wq_values.resize(M_size*dimension);
+
+			std::vector<double> rhs_values(M_size*dimension);
+			for (int d = 0; d < dimension; d++) {
+				eslocal r;
+				for (r = 0; r < rowsFromCoordinates; r++) {
+					rhs_values[M_size*d + r] = rDisplacement[r * dimension + d];
+				}
+				for ( ; r < M_size; r++) {
+					rhs_values[M_size*d + r] = 0;
+				}
+			}
+
 			for(eslocal d = 0 ; d < dimension; d++) {
 				MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
 					 M_size, &M_values[0],
@@ -185,7 +186,23 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 		} break;
 
-		case MORPHING_RBF_SOLVER::DIRECT: {
+		case MORPHING_RBF_SOLVER::DENSE: {
+
+			wq_values.resize(M_size*dimension);
+
+			for (int d = 0; d < dimension; d++) {
+				eslocal r;
+				for (r = 0; r < rowsFromCoordinates; r++) {
+					wq_values[M_size*d + r] = rDisplacement[r * dimension + d];
+				}
+				for ( ; r < M_size; r++) {
+					wq_values[M_size*d + r] = 0;
+				}
+			}
+
+			MATH::SOLVER::DirectUpperSymetricIndefiniteColumnMajor(
+					M_size,  &M_values[0],
+					dimension, &wq_values[0]);
 
 		} break;
 
@@ -213,6 +230,10 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 			}
 		}
 	}
+
+	std::cout<<"W Matrix:\n";
+	std::cout<<W;
+	std::cout<<"Q Matrix:\n"<<Q<<"\n";
 
 	ElementsRegionStore *tregion = _mesh->eregion(configuration.target);
 

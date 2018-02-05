@@ -17,7 +17,7 @@ enum class MORPHING_TYPE {
 
 enum class MORPHING_RBF_SOLVER {
 	ITERATIVE = 0,
-	DIRECT = 1
+	DENSE = 1
 };
 
 enum class MORPHING_TRANSFORMATION {

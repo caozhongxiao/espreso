@@ -59,7 +59,7 @@ espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfigurat
 espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECFConfiguration *ECFRoot)
 : function({ "R" }, "R")
 {
-	solver = MORPHING_RBF_SOLVER::DIRECT;
+	solver = MORPHING_RBF_SOLVER::DENSE;
 	REGISTER(solver, ECFMetaData()
 		.setdescription({ "Mesh Morphing solver." })
 		.setdatatype({ ECFDataType::OPTION })
