@@ -252,7 +252,7 @@ void CollectedEnSight::updateMesh()
 
 	auto format = [] (size_t size) {
 		if (size == 1) return "scalar";
-		if (size == 3) return "vector";
+		if (size == 3 || size == 2) return "vector";
 		return "";
 	};
 
