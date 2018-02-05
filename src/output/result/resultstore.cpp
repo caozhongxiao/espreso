@@ -4,6 +4,7 @@
 #include "../../config/ecf/environment.h"
 #include "../../config/ecf/output.h"
 #include "../../basis/logging/logging.h"
+#include "../../basis/utilities/utils.h"
 
 #include "executor/asyncexecutor.h"
 #include "executor/directexecutor.h"
@@ -18,6 +19,11 @@ using namespace espreso;
 
 ResultStore* ResultStore::_asyncStore = NULL;
 async::Dispatcher* ResultStore::_dispatcher = NULL;
+
+ResultStoreBase::ResultStoreBase(const Mesh &mesh): _mesh(mesh), _directory("PREPOSTDATA/")
+{
+	Esutils::createDirectory({ Logging::outputRoot(), _directory });
+}
 
 ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const OutputConfiguration &configuration)
 {
@@ -58,7 +64,7 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 	}
 
 	// TODO: optimize
-	_asyncStore->_async->addResultStore(new CollectedEnSightWithDecomposition("solution", _asyncStore->_async->mesh()));
+	_asyncStore->_async->addResultStore(new CollectedEnSightWithDecomposition(Logging::name, _asyncStore->_async->mesh()));
 	if (configuration.monitoring.size()) {
 		_asyncStore->_async->addResultStore(new Monitoring(_asyncStore->_async->mesh(), configuration, true));
 		// _asyncStore->_direct->addResultStore(new Monitoring(_asyncStore->_direct->mesh(), configuration, false));

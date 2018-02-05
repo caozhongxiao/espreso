@@ -2,6 +2,8 @@
 #ifndef SRC_OUTPUT_RESULT_RESULTSTORE_H_
 #define SRC_OUTPUT_RESULT_RESULTSTORE_H_
 
+#include <string>
+
 namespace async { class Dispatcher; }
 
 namespace espreso {
@@ -24,9 +26,10 @@ public:
 	virtual ~ResultStoreBase() {};
 
 protected:
-	ResultStoreBase(const Mesh &mesh): _mesh(mesh) {}
+	ResultStoreBase(const Mesh &mesh);
 
 	const Mesh &_mesh;
+	std::string _directory;
 };
 
 class ResultStore {

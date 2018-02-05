@@ -135,7 +135,7 @@ void AsyncExecutor::exec(const async::ExecInfo &info, const ExecParameters &para
 	if (parameters.updatedBuffers & 1 << AsyncBufferManager::ELEMENTREGIONS) {
 		int bufferid = AsyncBufferManager::buffer(AsyncBufferManager::ELEMENTREGIONS);
 		_buffer = static_cast<const char*>(info.buffer(bufferid));
-		while (_buffer < info.buffer(bufferid) + info.bufferSize(bufferid)) {
+		while (_buffer < static_cast<const char*>(info.buffer(bufferid)) + info.bufferSize(bufferid)) {
 			_mesh.elementsRegions.push_back(new ElementsRegionStore(""));
 			_mesh.elementsRegions.back()->unpack(_buffer);
 		}
@@ -144,7 +144,7 @@ void AsyncExecutor::exec(const async::ExecInfo &info, const ExecParameters &para
 	if (parameters.updatedBuffers & 1 << AsyncBufferManager::BOUNDARYREGIONS) {
 		int bufferid = AsyncBufferManager::buffer(AsyncBufferManager::BOUNDARYREGIONS);
 		_buffer = static_cast<const char*>(info.buffer(bufferid));
-		while (_buffer < info.buffer(bufferid) + info.bufferSize(bufferid)) {
+		while (_buffer < static_cast<const char*>(info.buffer(bufferid)) + info.bufferSize(bufferid)) {
 			_mesh.boundaryRegions.push_back(new BoundaryRegionStore("", _mesh._eclasses));
 			_mesh.boundaryRegions.back()->unpack(_buffer);
 		}

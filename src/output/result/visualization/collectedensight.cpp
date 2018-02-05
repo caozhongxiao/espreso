@@ -99,9 +99,9 @@ std::string CollectedEnSight::codetotype(int code)
 
 void CollectedEnSight::updateMesh()
 {
-	_casegeometry << "model:\t" << _name << ".geo\n\n";
+	_casegeometry << "model:\t" << _directory << _name << ".geo\n\n";
 
-	std::string name = _path + _name + ".geo";
+	std::string name = _path + _directory + _name + ".geo";
 	int part = 1;
 
 	std::stringstream os;
@@ -261,30 +261,30 @@ void CollectedEnSight::setvariables()
 
 	for (size_t i = 0; i < _mesh.nodes->data.size(); i++) {
 		if (_mesh.nodes->data[i]->names.size()) {
-			std::string filename = _name + "." + _mesh.nodes->data[i]->names.front().substr(0, 4);
+			std::string filename = _directory + _mesh.nodes->data[i]->names.front();
 			_casevariables << format(_mesh.nodes->data[i]->dimension);
 			_casevariables << " per node:\t1 ";
 			_casevariables << _mesh.nodes->data[i]->names.front();
 			_casevariables << std::string(tabs(_mesh.nodes->data[i]->names.front().size()), '\t');
-			_casevariables << filename << "_****\n";
+			_casevariables << filename << ".****\n";
 		}
 	}
 	for (size_t i = 0; i < _mesh.elements->data.size(); i++) {
 		if (_mesh.elements->data[i]->names.size()) {
-			std::string filename = _name + "." + _mesh.elements->data[i]->names.front().substr(0, 4);
+			std::string filename = _directory + _mesh.elements->data[i]->names.front();
 			_casevariables << format(_mesh.elements->data[i]->dimension);
 			_casevariables << " per element:\t1 ";
 			_casevariables << _mesh.elements->data[i]->names.front();
 			_casevariables << std::string(tabs(_mesh.elements->data[i]->names.front().size()), '\t');
-			_casevariables << filename << "_****\n";
+			_casevariables << filename << ".****\n";
 		}
 	}
 }
 
 void CollectedEnSight::storeDecomposition()
 {
-	_casevariables << "scalar per element:\tDOMAINS\t\t" << _name << ".DOMAINS" << "\n";
-	_casevariables << "scalar per element:\tCLUSTERS\t" << _name << ".CLUSTERS" << "\n";
+	_casevariables << "scalar per element:\tDOMAINS\t\t" << _directory << "DOMAINS" << "\n";
+	_casevariables << "scalar per element:\tCLUSTERS\t" << _directory << "CLUSTERS" << "\n";
 
 	auto iterateElements = [&] (std::stringstream &os, const std::vector<ElementsInterval> &intervals, const std::vector<eslocal> &ecounters, std::function<double(eslocal domain)> fnc) {
 		for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
@@ -317,7 +317,7 @@ void CollectedEnSight::storeDecomposition()
 
 
 	{ // DOMAINS
-		std::string filename = _name + ".DOMAINS";
+		std::string filename = _directory + "DOMAINS";
 		std::string name = _path + filename;
 
 		std::stringstream os;
@@ -342,7 +342,7 @@ void CollectedEnSight::storeDecomposition()
 	}
 
 	{ // CLUSTERS
-		std::string filename = _name + ".CLUSTERS";
+		std::string filename = _directory + "CLUSTERS";
 		std::string name = _path + filename;
 
 		std::stringstream os;
@@ -389,9 +389,9 @@ void CollectedEnSight::updateSolution(const Step &step)
 		}
 		eslocal size = _mesh.nodes->data[di]->dimension;
 
-		std::string filename = _name + "." + _mesh.nodes->data[di]->names.front().substr(0, 4);
+		std::string filename = _directory + _mesh.nodes->data[di]->names.front();
 		std::stringstream name;
-		name << _path + filename + "_" << std::setw(4) << std::setfill('0') << _variableCounter;
+		name << _path + filename + "." << std::setw(4) << std::setfill('0') << _variableCounter;
 
 		std::stringstream os;
 		os << std::showpos << std::scientific << std::setprecision(5);
@@ -459,9 +459,9 @@ void CollectedEnSight::updateSolution(const Step &step)
 		}
 		eslocal size = _mesh.elements->data[di]->dimension;
 
-		std::string filename = _name + "." + _mesh.elements->data[di]->names.front().substr(0, 4);
+		std::string filename = _directory + _mesh.elements->data[di]->names.front();
 		std::stringstream name;
-		name << _path + filename + "_" << std::setw(4) << std::setfill('0') << _variableCounter;
+		name << _path + filename + "." << std::setw(4) << std::setfill('0') << _variableCounter;
 
 		std::stringstream os;
 		os << std::showpos << std::scientific << std::setprecision(5);
