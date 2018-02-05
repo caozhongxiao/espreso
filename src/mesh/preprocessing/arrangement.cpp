@@ -460,8 +460,8 @@ void MeshPreprocessing::arrangeElementsPermutation(std::vector<eslocal> &permuta
 			if (d) {
 				iboundaries[t].push_back(_mesh->elements->elementsDistribution[d]);
 			}
-			for (eslocal e = _mesh->elements->elementsDistribution[d]; e < _mesh->elements->elementsDistribution[d + 1]; ++e) {
-				if (e > 1 && _mesh->elements->epointers->datatarray()[permutation[e]]->code != _mesh->elements->epointers->datatarray()[permutation[e - 1]]->code) {
+			for (eslocal e = _mesh->elements->elementsDistribution[d] + 1; e < _mesh->elements->elementsDistribution[d + 1]; ++e) {
+				if (_mesh->elements->epointers->datatarray()[permutation[e]]->code != _mesh->elements->epointers->datatarray()[permutation[e - 1]]->code) {
 					iboundaries[t].push_back(e);
 				}
 			}
