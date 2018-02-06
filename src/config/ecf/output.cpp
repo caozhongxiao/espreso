@@ -1,7 +1,7 @@
 
 #include "output.h"
 #include "../configuration.hpp"
-#include "ecf.h"
+#include "root.h"
 
 espreso::MonitorConfiguration::MonitorConfiguration(const PHYSICS &physics)
 : _physics(physics)

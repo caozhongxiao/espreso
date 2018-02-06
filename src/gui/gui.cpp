@@ -9,10 +9,10 @@
 #include <QApplication>
 
 #include "../config/ecf/environment.h"
-#include "../config/ecf/ecf.h"
 #include "../config/valueholder.h"
 #include "../config/ecf/physics/physics.h"
 #include "../basis/expression/expression.h"
+#include "../config/ecf/root.h"
 
 using namespace espreso;
 
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 //        std::cout << negV << " " << posV << std::endl;
 //    }
 
-//    ECFConfiguration ecf;
+//    ECFRoot ecf;
 //    printECF(ecf, 0);
 
 //    MaterialConfiguration mat;

@@ -9,7 +9,7 @@
 
 namespace espreso {
 
-struct ECFConfiguration;
+struct ECFRoot;
 
 struct MonitorConfiguration: public ECFObject {
 

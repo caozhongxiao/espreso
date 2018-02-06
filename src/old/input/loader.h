@@ -7,7 +7,7 @@
 
 namespace espreso {
 
-struct ECFConfiguration;
+struct ECFRoot;
 struct MaterialConfiguration;
 class OldMesh;
 class Coordinates;
@@ -20,7 +20,7 @@ namespace input {
 class OldLoader {
 
 public:
-	static void load(const ECFConfiguration &configuration, OldMesh &mesh, size_t index, size_t size);
+	static void load(const ECFRoot &configuration, OldMesh &mesh, size_t index, size_t size);
 
 	void fill();
 

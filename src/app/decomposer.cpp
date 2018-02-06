@@ -1,7 +1,7 @@
 
 #include "mpi.h"
 
-#include "../config/ecf/ecf.h"
+#include "../config/ecf/root.h"
 #include "../mesh/mesh.h"
 #include "../mesh/store/elementstore.h"
 #include "../basis/logging/logging.hpp"
@@ -17,7 +17,7 @@ using namespace espreso;
 int main(int argc, char** argv)
 {
 	MPI_Init(&argc, &argv);
-	ECFConfiguration ecf(&argc, &argv);
+	ECFRoot ecf(&argc, &argv);
 
 	size_t parts;
 	std::stringstream directoryTree(ecf.decomposer.parts);

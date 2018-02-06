@@ -14,7 +14,7 @@
 #include "../../basis/logging/timeeval.h"
 #include "../../basis/logging/logging.hpp"
 #include "../../basis/utilities/utils.h"
-#include "../../config/ecf/ecf.h"
+#include "../../config/ecf/root.h"
 #include "espreso/espresobinaryformat.h"
 
 #include "../../mesh/mesh.h"
@@ -23,7 +23,7 @@
 using namespace espreso::input;
 
 
-void OldLoader::load(const ECFConfiguration &configuration, OldMesh &mesh, size_t index, size_t size)
+void OldLoader::load(const ECFRoot &configuration, OldMesh &mesh, size_t index, size_t size)
 {
 	switch (configuration.input) {
 	case INPUT_FORMAT::WORKBENCH:

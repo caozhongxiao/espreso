@@ -8,7 +8,6 @@
 #include "../../assembler/physicssolver/loadstep/steadystate.h"
 #include "../../assembler/step.h"
 
-#include "../../config/ecf/ecf.h"
 #include "../../input/api/api.h"
 
 #include "../../mesh/mesh.h"
@@ -16,7 +15,7 @@
 #include "../../solver/generic/FETISolver.h"
 
 
-espreso::ECFConfiguration* espreso::DataHolder::configuration = NULL;
+espreso::ECFRoot* espreso::DataHolder::configuration = NULL;
 std::list<FETI4IStructMatrix*> espreso::DataHolder::matrices;
 std::list<FETI4IStructInstance*> espreso::DataHolder::instances;
 espreso::TimeEval espreso::DataHolder::timeStatistics("API total time");
@@ -48,7 +47,7 @@ FETI4IStructInstance::~FETI4IStructInstance()
 static void checkConfiguration()
 {
 	if (espreso::DataHolder::configuration == NULL) {
-		espreso::DataHolder::configuration = new ECFConfiguration();
+		espreso::DataHolder::configuration = new ECFRoot();
 		std::ifstream is("espreso.ecf");
 		if (is.good()) {
 			espreso::ECFReader::read(*espreso::DataHolder::configuration, "espreso.ecf", espreso::DataHolder::configuration->default_args, espreso::DataHolder::configuration->variables);
@@ -60,7 +59,7 @@ static void checkConfiguration()
 void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 {
 	checkConfiguration();
-	ECFConfiguration &ecf = *espreso::DataHolder::configuration;
+	ECFRoot &ecf = *espreso::DataHolder::configuration;
 
 	options[FETI4I_SUBDOMAINS] = ecf.feti4ilibrary.domains;
 
@@ -79,11 +78,11 @@ void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 void FETI4ISetDefaultRealOptions(FETI4IReal* options)
 {
 	checkConfiguration();
-	ECFConfiguration &ecf = *espreso::DataHolder::configuration;
+	ECFRoot &ecf = *espreso::DataHolder::configuration;
 	options[FETI4I_PRECISION] = ecf.feti4ilibrary.solver.precision;
 }
 
-static void FETI4ISetIntegerOptions(ECFConfiguration &configuration, FETI4IInt* options)
+static void FETI4ISetIntegerOptions(ECFRoot &configuration, FETI4IInt* options)
 {
 	if (!configuration.feti4ilibrary.getParameter(&configuration.feti4ilibrary.domains)->setValue(std::to_string(options[FETI4I_SUBDOMAINS]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'SUBDOMAINS' to " << options[FETI4I_SUBDOMAINS];
@@ -119,7 +118,7 @@ static void FETI4ISetIntegerOptions(ECFConfiguration &configuration, FETI4IInt* 
 	configuration.feti4ilibrary.solver.regularization = FETI_REGULARIZATION::ALGEBRAIC;
 }
 
-static void FETI4ISetRealOptions(espreso::ECFConfiguration &configuration, FETI4IReal* options)
+static void FETI4ISetRealOptions(espreso::ECFRoot &configuration, FETI4IReal* options)
 {
 	configuration.feti4ilibrary.solver.precision = options[FETI4I_PRECISION];
 }

@@ -1,5 +1,5 @@
 
-#include "ecf.h"
+#include "root.h"
 
 #include "../configuration.hpp"
 
@@ -7,7 +7,7 @@
 
 using namespace espreso;
 
-const ECFObject* ECFConfiguration::_getInput() const
+const ECFObject* ECFRoot::_getInput() const
 {
 	switch (input) {
 	case INPUT_FORMAT::GENERATOR:
@@ -24,7 +24,7 @@ const ECFObject* ECFConfiguration::_getInput() const
 	}
 }
 
-const PhysicsConfiguration* ECFConfiguration::_getPhysics() const
+const PhysicsConfiguration* ECFRoot::_getPhysics() const
 {
 	switch (physics) {
 	case PHYSICS::HEAT_TRANSFER_2D:
@@ -42,7 +42,7 @@ const PhysicsConfiguration* ECFConfiguration::_getPhysics() const
 }
 
 
-void ECFConfiguration::init()
+void ECFRoot::init()
 {
 	name = "root";
 
@@ -126,7 +126,7 @@ void ECFConfiguration::init()
 			.setdescription({ "Configuration of ESPRESO decomposer." }));
 }
 
-ECFConfiguration::ECFConfiguration()
+ECFRoot::ECFRoot()
 : heat_transfer_2d(DIMENSION::D2),
   heat_transfer_3d(DIMENSION::D3),
   structural_mechanics_2d(DIMENSION::D2),
@@ -137,16 +137,16 @@ ECFConfiguration::ECFConfiguration()
 	init();
 }
 
-ECFConfiguration::ECFConfiguration(const std::string &file)
-: ECFConfiguration()
+ECFRoot::ECFRoot(const std::string &file)
+: ECFRoot()
 {
 	if (!fill(file)) {
 		ESINFO(GLOBAL_ERROR) << "Cannot read ECF file '" << file << "'.";
 	}
 }
 
-ECFConfiguration::ECFConfiguration(int *argc, char ***argv)
-: ECFConfiguration()
+ECFRoot::ECFRoot(int *argc, char ***argv)
+: ECFRoot()
 {
 	if (!fill(argc, argv)) {
 		ESINFO(GLOBAL_ERROR)
@@ -155,7 +155,7 @@ ECFConfiguration::ECFConfiguration(int *argc, char ***argv)
 	}
 }
 
-bool ECFConfiguration::fill(const std::string &file)
+bool ECFRoot::fill(const std::string &file)
 {
 	if (ECFReader::read(*this, file, this->default_args, this->variables).hadValidECF) {
 		ECFReader::set(this->environment, this->output);
@@ -164,7 +164,7 @@ bool ECFConfiguration::fill(const std::string &file)
 	return false;
 }
 
-bool ECFConfiguration::fill(int *argc, char ***argv)
+bool ECFRoot::fill(int *argc, char ***argv)
 {
 	if (ECFReader::read(*this, argc, argv, this->default_args, this->variables).hadValidECF) {
 		ECFReader::set(this->environment, this->output);

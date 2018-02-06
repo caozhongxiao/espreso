@@ -9,7 +9,7 @@
 
 namespace espreso {
 
-struct ECFConfiguration;
+struct ECFRoot;
 struct OutputConfiguration;
 struct MaterialConfiguration;
 struct Step;
@@ -34,7 +34,7 @@ class Mesh {
 
 	friend class MeshPreprocessing;
 public:
-	Mesh(const ECFConfiguration &configuration);
+	Mesh(const ECFRoot &configuration);
 	void load();
 	void update();
 
@@ -70,7 +70,7 @@ public:
 	std::vector<const MaterialConfiguration*> materials;
 
 //protected:
-	const ECFConfiguration &configuration;
+	const ECFRoot &configuration;
 	std::vector<Element*> _eclasses;
 	OldMesh *mesh;
 

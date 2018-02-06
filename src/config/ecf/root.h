@@ -1,6 +1,6 @@
 
-#ifndef SRC_CONFIG_ECF_ECF_H_
-#define SRC_CONFIG_ECF_ECF_H_
+#ifndef SRC_CONFIG_ECF_ROOT_H_
+#define SRC_CONFIG_ECF_ROOT_H_
 
 #include "environment.h"
 #include "output.h"
@@ -23,7 +23,7 @@
 
 namespace espreso {
 
-struct ECFConfiguration: public ECFObject {
+struct ECFRoot: public ECFObject {
 
 	ECFObject* getInput() { return const_cast<ECFObject*>(_getInput()); }
 	const ECFObject* getInput() const { return _getInput(); }
@@ -60,9 +60,9 @@ struct ECFConfiguration: public ECFObject {
 	DecomposerConfiguration decomposer;
 
 
-	ECFConfiguration();
-	ECFConfiguration(const std::string &file);
-	ECFConfiguration(int *argc, char ***argv);
+	ECFRoot();
+	ECFRoot(const std::string &file);
+	ECFRoot(int *argc, char ***argv);
 	bool fill(const std::string &file);
 	bool fill(int *argc, char ***argv);
 
@@ -75,4 +75,4 @@ protected:
 
 }
 
-#endif /* SRC_CONFIG_ECF_ECF_H_ */
+#endif /* SRC_CONFIG_ECF_ROOT_H_ */

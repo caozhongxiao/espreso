@@ -18,7 +18,7 @@ class TimeStepSolver;
 class LoadStepSolver;
 class ResultStore;
 
-struct ECFConfiguration;
+struct ECFRoot;
 struct LoadStepConfiguration;
 
 class FactoryLoader {
@@ -61,12 +61,12 @@ class Factory {
 	friend class APITestESPRESODataProvider;
 
 protected:
-	Factory(const ECFConfiguration &configuration, Mesh &mesh, ResultStore &store);
+	Factory(const ECFRoot &configuration, Mesh &mesh, ResultStore &store);
 	~Factory();
 
 	void solve();
 
-	FactoryLoader* createFactoryLoader(const ECFConfiguration &configuration);
+	FactoryLoader* createFactoryLoader(const ECFRoot &configuration);
 
 	Mesh *_mesh;
 	ResultStore *_store;

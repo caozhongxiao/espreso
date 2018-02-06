@@ -1,19 +1,19 @@
 
 #include "mpi.h"
 
-#include "../config/ecf/ecf.h"
 #include "../config/reader/reader.h"
 #include "../basis/logging/logging.h"
 
 #include <iostream>
 #include <fstream>
+#include "../config/ecf/root.h"
 
 using namespace espreso;
 
 int main(int argc, char **argv)
 {
 	MPI_Init(&argc, &argv);
-	ECFConfiguration ecf;
+	ECFRoot ecf;
 	ECFRedParameters redParameters = ECFReader::read(ecf, &argc, &argv, ecf.default_args, ecf.variables);
 	ECFReader::set(ecf.environment, ecf.output);
 

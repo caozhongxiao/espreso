@@ -8,7 +8,7 @@
 
 namespace espreso {
 
-class ECFConfiguration;
+class ECFRoot;
 
 enum class MORPHING_TYPE {
 	NONE = 0,
@@ -38,10 +38,10 @@ struct RBFTargetTransformationConfiguration: public ECFObject {
 
 	bool override;
 
-	RBFTargetTransformationConfiguration(ECFConfiguration *ECFRoot);
+	RBFTargetTransformationConfiguration(ECFRoot *ECFRoot);
 
 protected:
-	ECFConfiguration *_ECFRoot;
+	ECFRoot *_ECFRoot;
 };
 
 struct RBFTargetConfiguration: public ECFObject {
@@ -54,7 +54,7 @@ struct RBFTargetConfiguration: public ECFObject {
 	std::string target;
 	std::map<std::string, RBFTargetTransformationConfiguration> morphers;
 
-	RBFTargetConfiguration(ECFConfiguration *ECFRoot);
+	RBFTargetConfiguration(ECFRoot *ECFRoot);
 };
 
 struct MeshMorphing: public ECFObject {
@@ -62,7 +62,7 @@ struct MeshMorphing: public ECFObject {
 	MORPHING_TYPE type;
 	std::map<std::string, RBFTargetConfiguration> rbf;
 
-	MeshMorphing(ECFConfiguration *ECFRoot);
+	MeshMorphing(ECFRoot *ECFRoot);
 };
 
 }

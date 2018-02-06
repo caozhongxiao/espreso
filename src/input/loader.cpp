@@ -7,8 +7,6 @@
 #include "../basis/utilities/utils.h"
 #include "../basis/utilities/communication.h"
 
-#include "../config/ecf/ecf.h"
-
 #include "../mesh/mesh.h"
 #include "../mesh/preprocessing/meshpreprocessing.h"
 #include "../mesh/elements/element.h"
@@ -20,10 +18,11 @@
 
 #include <numeric>
 #include <algorithm>
+#include "../config/ecf/root.h"
 
 using namespace espreso;
 
-void Loader::load(const ECFConfiguration &configuration, Mesh &mesh, int MPIrank, int MPIsize)
+void Loader::load(const ECFRoot &configuration, Mesh &mesh, int MPIrank, int MPIsize)
 {
 	switch (configuration.input) {
 	case INPUT_FORMAT::WORKBENCH:
@@ -37,12 +36,12 @@ void Loader::load(const ECFConfiguration &configuration, Mesh &mesh, int MPIrank
 	}
 }
 
-void Loader::loadDistributedMesh(const ECFConfiguration &configuration, DistributedMesh &dMesh, Mesh &mesh)
+void Loader::loadDistributedMesh(const ECFRoot &configuration, DistributedMesh &dMesh, Mesh &mesh)
 {
 	Loader(configuration, dMesh, mesh);
 }
 
-Loader::Loader(const ECFConfiguration &configuration, DistributedMesh &dMesh, Mesh &mesh)
+Loader::Loader(const ECFRoot &configuration, DistributedMesh &dMesh, Mesh &mesh)
 : _configuration(configuration), _dMesh(dMesh), _mesh(mesh)
 {
 	ESINFO(OVERVIEW) << "Balance distributed mesh.";

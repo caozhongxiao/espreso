@@ -5,19 +5,18 @@
 #include "../../basis/containers/tarray.h"
 #include "../../basis/logging/logging.h"
 #include "../../basis/utilities/communication.h"
-
-#include "../../config/ecf/ecf.h"
+#include "../../config/ecf/root.h"
 
 #include "../../mesh/mesh.h"
 
 using namespace espreso;
 
-void WorkbenchLoader::load(const ECFConfiguration &configuration, Mesh &mesh)
+void WorkbenchLoader::load(const ECFRoot &configuration, Mesh &mesh)
 {
 	WorkbenchLoader(configuration, mesh);
 }
 
-WorkbenchLoader::WorkbenchLoader(const ECFConfiguration &configuration, Mesh &mesh)
+WorkbenchLoader::WorkbenchLoader(const ECFRoot &configuration, Mesh &mesh)
 : _configuration(configuration), _mesh(mesh)
 {
 	ESINFO(OVERVIEW) << "Load ANSYS Workbench data from '" << configuration.workbench.path << "'.";

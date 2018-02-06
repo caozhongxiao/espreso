@@ -16,22 +16,22 @@ namespace espreso {
 
 struct Point;
 struct DistributedMesh;
-class ECFConfiguration;
+class ECFRoot;
 class Mesh;
 
 class WorkbenchLoader {
 
 public:
-	static void load(const ECFConfiguration &configuration, Mesh &mesh);
+	static void load(const ECFRoot &configuration, Mesh &mesh);
 
 protected:
-	WorkbenchLoader(const ECFConfiguration &configuration, Mesh &mesh);
+	WorkbenchLoader(const ECFRoot &configuration, Mesh &mesh);
 
 	void readData();
 	void prepareData();
 	void parseData(DistributedMesh &dMesh);
 
-	const ECFConfiguration &_configuration;
+	const ECFRoot &_configuration;
 	Mesh &_mesh;
 
 	std::vector<NBlock> _NBlocks;

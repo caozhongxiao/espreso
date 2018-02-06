@@ -4,7 +4,6 @@
 
 #include "factory/factory.h"
 
-#include "../config/ecf/ecf.h"
 #include "../basis/logging/logging.h"
 #include "../basis/matrices/denseMatrix.h"
 #include "../mesh/mesh.h"
@@ -13,6 +12,7 @@
 #include "../assembler/constraints/equalityconstraints.h"
 #include "../assembler/physics/physics.h"
 #include "../assembler/physicssolver/assembler.h"
+#include "../config/ecf/root.h"
 #include "../mesh/store/elementstore.h"
 #include "../output/result/resultstore.h"
 #include "../solver/generic/SparseMatrix.h"
@@ -92,7 +92,7 @@ public:
 	}
 
 protected:
-	ECFConfiguration ecf;
+	ECFRoot ecf;
 	Mesh mesh;
 	ResultStore store;
 	Factory factory;

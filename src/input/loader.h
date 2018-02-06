@@ -10,7 +10,7 @@
 
 namespace espreso {
 
-class ECFConfiguration;
+class ECFRoot;
 class Mesh;
 
 struct EData {
@@ -50,11 +50,11 @@ struct DistributedMesh {
 class Loader {
 
 public:
-	static void load(const ECFConfiguration &configuration, Mesh &mesh, int MPIrank, int MPIsize);
-	static void loadDistributedMesh(const ECFConfiguration &configuration, DistributedMesh &dMesh, Mesh &mesh);
+	static void load(const ECFRoot &configuration, Mesh &mesh, int MPIrank, int MPIsize);
+	static void loadDistributedMesh(const ECFRoot &configuration, DistributedMesh &dMesh, Mesh &mesh);
 
 protected:
-	Loader(const ECFConfiguration &configuration, DistributedMesh &dMesh, Mesh &mesh);
+	Loader(const ECFRoot &configuration, DistributedMesh &dMesh, Mesh &mesh);
 
 	void distributeMesh();
 
@@ -64,7 +64,7 @@ protected:
 	void addBoundaryRegions();
 	void addElementRegions();
 
-	const ECFConfiguration &_configuration;
+	const ECFRoot &_configuration;
 	DistributedMesh &_dMesh;
 	Mesh &_mesh;
 

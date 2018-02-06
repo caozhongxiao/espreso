@@ -48,7 +48,7 @@ struct ExecParameters
 class AsyncExecutor: public DirectExecutor {
 
 public:
-	AsyncExecutor(const ECFConfiguration &configuration);
+	AsyncExecutor(const ECFRoot &configuration);
 
 	void execInit(const async::ExecInfo &info, const InitParameters &initParameters);
 	void exec(const async::ExecInfo &info, const ExecParameters &parameters);

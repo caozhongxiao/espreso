@@ -15,8 +15,6 @@
 #include "../basis/utilities/communication.h"
 #include "../basis/utilities/parser.h"
 
-#include "../config/ecf/ecf.h"
-
 #include "../assembler/step.h"
 
 #include "../old/mesh/structures/mesh.h"
@@ -31,12 +29,13 @@
 
 #include "../basis/containers/serializededata.h"
 #include "../basis/containers/tarray.h"
+#include "../config/ecf/root.h"
 
 
 using namespace espreso;
 
 
-Mesh::Mesh(const ECFConfiguration &configuration)
+Mesh::Mesh(const ECFRoot &configuration)
 : elements(new ElementStore(_eclasses)), nodes(new NodeStore()),
   FETIData(NULL),
   halo(new ElementStore(_eclasses)),

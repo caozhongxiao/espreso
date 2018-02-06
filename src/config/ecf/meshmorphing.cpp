@@ -1,8 +1,8 @@
 
-#include "ecf.h"
 #include "../configuration.hpp"
+#include "root.h"
 
-espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfiguration(ECFConfiguration *ECFRoot)
+espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfiguration(ECFRoot *ECFRoot)
 : _ECFRoot(ECFRoot),
   offset(ECFMetaData::getboundaryconditionvariables()),
   translation(DIMENSION::D3, ECFMetaData::getboundaryconditionvariables(), "0"),
@@ -56,7 +56,7 @@ espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfigurat
 	});
 }
 
-espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECFConfiguration *ECFRoot)
+espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECFRoot *ECFRoot)
 : function({ "R" }, "R")
 {
 	solver = MORPHING_RBF_SOLVER::DIRECT;
@@ -88,7 +88,7 @@ espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECFConfiguration *ECFRoo
 		ECFRoot);
 }
 
-espreso::MeshMorphing::MeshMorphing(ECFConfiguration *ECFRoot)
+espreso::MeshMorphing::MeshMorphing(ECFRoot *ECFRoot)
 {
 	type = MORPHING_TYPE::NONE;
 	REGISTER(type, ECFMetaData()

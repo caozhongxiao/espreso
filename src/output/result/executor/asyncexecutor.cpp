@@ -2,9 +2,8 @@
 #include "asyncexecutor.h"
 
 #include "../../../basis/utilities/utils.h"
-#include "../../../config/ecf/ecf.h"
-
 #include "../../../assembler/step.h"
+#include "../../../config/ecf/root.h"
 
 #include "../../../mesh/mesh.h"
 #include "../../../mesh/store/nodestore.h"
@@ -117,7 +116,7 @@ AsyncStore::~AsyncStore()
 	async::Module<AsyncExecutor, InitParameters, ExecParameters>::finalize();
 }
 
-AsyncExecutor::AsyncExecutor(const ECFConfiguration &configuration)
+AsyncExecutor::AsyncExecutor(const ECFRoot &configuration)
 : _mesh(configuration), DirectExecutor(_mesh, configuration.output), _buffer(NULL)
 {
 
