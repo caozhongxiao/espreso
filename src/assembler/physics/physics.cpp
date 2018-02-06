@@ -99,7 +99,7 @@ void Physics::printInvalidElement(eslocal eindex) const
 		os << " " << n - nodes->begin();
 	}
 	os << "\n";
-	os << "CeLL_TYPES 1\n";
+	os << "CELL_TYPES 1\n";
 	switch (_mesh->elements->epointers->datatarray()[eindex]->code) {
 	case Element::CODE::SQUARE4:
 		os << "9\n";
