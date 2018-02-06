@@ -24,7 +24,7 @@
 
 using namespace espreso;
 
-EqualityConstraints::EqualityConstraints(Instance &instance, Mesh &mesh, const std::map<std::string, ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling)
+EqualityConstraints::EqualityConstraints(Instance &instance, Mesh &mesh, const RegionMap<ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling)
 : _instance(instance), _mesh(mesh), _DOFs(1)
 {
 	update(dirichlet, withRedundantMultiplier, withScaling);
@@ -94,7 +94,7 @@ eslocal EqualityConstraints::computeIntervalsOffsets(std::function<eslocal(esloc
 	return offset;
 }
 
-void EqualityConstraints::update(const std::map<std::string, ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling)
+void EqualityConstraints::update(const RegionMap<ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling)
 {
 	_dirichlet.clear();
 	_dirichlet.resize(1);
@@ -104,7 +104,7 @@ void EqualityConstraints::update(const std::map<std::string, ECFExpression> &dir
 
 	_domainDirichletSize.resize(_mesh.elements->ndomains);
 
-	for (auto it = dirichlet.begin(); it != dirichlet.end(); ++it) {
+	for (auto it = dirichlet.regions.begin(); it != dirichlet.regions.end(); ++it) {
 		_dirichlet[0].push_back(std::make_pair(_mesh.bregion(it->first), it->second.evaluator));
 		for (size_t i = 0; i < _mesh.nodes->pintervals.size(); i++) {
 			_intervalDirichletNodes[0][i].insert(_intervalDirichletNodes[0][i].end(),

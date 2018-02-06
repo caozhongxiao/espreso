@@ -7,6 +7,8 @@
 #include <map>
 #include <functional>
 
+#include "regionmap.h"
+
 namespace espreso {
 
 struct Point;
@@ -86,7 +88,8 @@ struct ECFMetaData {
 
 struct ECFParameter {
 	enum class Event {
-		VALUE_SET
+		VALUE_SET,
+		PARAMETER_GET
 	};
 
 	std::string name;
@@ -97,19 +100,24 @@ struct ECFParameter {
 
 	virtual bool setValue(const std::string &value);
 	virtual std::string getValue() const =0;
-	virtual ECFParameter* getParameter(const std::string &name) =0;
-	virtual ECFParameter* getParameter(const char* name) =0;
-	virtual ECFParameter* getParameter(const void* data) =0;
+	virtual ECFParameter* getParameter(const std::string &name);
+	virtual ECFParameter* getParameter(const char* name);
+	virtual ECFParameter* getParameter(const void* data);
 
 	virtual const ECFParameter* getPattern() const =0;
 	virtual const void* data() const =0;
 
-	virtual void addListener(Event event, std::function<void()> listener);
+	virtual void addListener(Event event, std::function<void(const std::string &value)> listener);
 
 	virtual ~ECFParameter() {};
 protected:
 	virtual bool _setValue(const std::string &value) =0;
-	std::vector<std::function<void()> > _setValueListeners;
+	virtual ECFParameter* _getParameter(const std::string &name) =0;
+	virtual ECFParameter* _getParameter(const void* data) =0;
+	virtual ECFParameter* _triggerParameterGet(ECFParameter* parameter);
+
+	std::vector<std::function<void(const std::string &value)> > _setValueListeners;
+	std::vector<std::function<void(const std::string &name)> > _parameterGetListeners;
 };
 
 struct ECFSeparator: public ECFParameter {
@@ -117,26 +125,27 @@ struct ECFSeparator: public ECFParameter {
 	bool isValue() const { return false; }
 	bool isObject() const { return false; }
 
-	bool _setValue(const std::string &value) { return false; }
 	std::string getValue() const { return ""; }
-	ECFParameter* getParameter(const std::string &name) { return NULL; }
-	ECFParameter* getParameter(const char* name) { return NULL; };
-	ECFParameter* getParameter(const void* data) { return NULL; }
 
 	virtual const ECFParameter* getPattern() const { return NULL; }
 	virtual const void* data() const { return NULL; }
+
+protected:
+	bool _setValue(const std::string &value) { return false; }
+	ECFParameter* _getParameter(const std::string &name) { return NULL; }
+	ECFParameter* _getParameter(const void* data) { return NULL; }
 };
 
 struct ECFValue: public ECFParameter {
-
-	virtual ECFParameter* getParameter(const std::string &name) { return NULL; }
-	virtual ECFParameter* getParameter(const char* data) { return NULL; }
-	virtual ECFParameter* getParameter(const void* data) { return NULL; }
 
 	bool isValue() const { return true; }
 	bool isObject() const { return false; }
 
 	virtual const ECFParameter* getPattern() const { return NULL; }
+
+protected:
+	ECFParameter* _getParameter(const std::string &name) { return NULL; }
+	ECFParameter* _getParameter(const void* data) { return NULL; }
 };
 
 struct ECFObject: public ECFParameter {
@@ -145,11 +154,7 @@ struct ECFObject: public ECFParameter {
 	bool isValue() const { return false; }
 	bool isObject() const { return true; }
 
-	virtual bool _setValue(const std::string &value);
 	virtual std::string getValue() const;
-	virtual ECFParameter* getParameter(const std::string &name);
-	virtual ECFParameter* getParameter(const char* data);
-	virtual ECFParameter* getParameter(const void* data);
 
 	virtual const ECFParameter* getPattern() const { return NULL; }
 	virtual const void* data() const { return this; }
@@ -179,6 +184,10 @@ struct ECFObject: public ECFParameter {
 protected:
 	ECFParameter* addSeparator();
 	ECFParameter* addSpace();
+
+	virtual bool _setValue(const std::string &value);
+	virtual ECFParameter* _getParameter(const std::string &name);
+	virtual ECFParameter* _getParameter(const void* data);
 
 	/////////// PARAMETER ///////////
 	/////////////////////////////////
@@ -230,6 +239,11 @@ protected:
 	typename std::enable_if<!std::is_class<Ttype3>::value || (std::is_class<Ttype3>::value && !std::is_base_of<ECFObject, Ttype3>::value), ECFParameter*>::type
 	registerParameter(const std::string &name, std::map<Ttype1, std::map<Ttype2, Ttype3> > &parameter, const ECFMetaData &metadata);
 
+
+	////////// REGION MAP ///////////
+	/////////////////////////////////
+	template<typename Ttype, typename... TArgs>
+	ECFParameter* registerParameter(const std::string &name, RegionMap<Ttype> &parameter, const ECFMetaData &metadata, TArgs... args);
 
 	/////////////////////////////////
 	ECFParameter* getWithError(const std::string &name);

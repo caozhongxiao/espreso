@@ -122,6 +122,19 @@ ECFObject::registerParameter(const std::string &name, std::map<Ttype1, std::map<
 	return registerParameter(name, new ECFValueMapMap<Ttype1, Ttype2, Ttype3>(parameter), metadata);
 }
 
+////////// REGION MAP ///////////
+/////////////////////////////////
+
+template<typename Ttype, typename... TArgs>
+ECFParameter* ECFObject::registerParameter(const std::string &name, RegionMap<Ttype> &parameter, const ECFMetaData &metadata, TArgs... args)
+{
+	ECFParameter* p = registerParameter(name, parameter.regions, metadata, args...);
+	p->addListener(Event::PARAMETER_GET, [&] (const std::string &name) {
+		parameter.addRegion(name);
+	});
+	return p;
+}
+
 }
 
 

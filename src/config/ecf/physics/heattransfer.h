@@ -56,7 +56,8 @@ struct RadiationConfiguration: public ECFObject {
 
 struct HeatTransferLoadStepConfiguration: public LoadStepConfiguration {
 
-	std::map<std::string, ECFExpression> temperature, heat_source, heat_flux, heat_flow, thickness;
+	RegionMap<ECFExpression> temperature;
+	std::map<std::string, ECFExpression> heat_source, heat_flux, heat_flow, thickness;
 	std::map<std::string, ECFExpressionVector> translation_motions;
 	std::map<std::string, ConvectionConfiguration> convection;
 	std::map<std::string, RadiationConfiguration> diffuse_radiation;

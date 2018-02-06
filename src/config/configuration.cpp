@@ -50,19 +50,46 @@ bool ECFParameter::setValue(const std::string &value)
 {
 	if (_setValue(value)) {
 		for (size_t i = 0; i < _setValueListeners.size(); i++) {
-			_setValueListeners[i]();
+			_setValueListeners[i](value);
 		}
 		return true;
 	}
 	return false;
 }
 
-void ECFParameter::addListener(Event event, std::function<void()> listener)
+ECFParameter* ECFParameter::_triggerParameterGet(ECFParameter* parameter)
+{
+	if (parameter != NULL) {
+		for (size_t i = 0; i < _parameterGetListeners.size(); i++) {
+			_parameterGetListeners[i](parameter->name);
+		}
+	}
+	return parameter;
+}
+
+ECFParameter* ECFParameter::getParameter(const std::string &name)
+{
+	return _triggerParameterGet(_getParameter(name));
+}
+
+ECFParameter* ECFParameter::getParameter(const char* name)
+{
+	return _triggerParameterGet(_getParameter(std::string(name)));
+}
+
+ECFParameter* ECFParameter::getParameter(const void* data)
+{
+	return _triggerParameterGet(_getParameter(data));
+}
+
+void ECFParameter::addListener(Event event, std::function<void(const std::string &value)> listener)
 {
 	switch (event) {
 	case Event::VALUE_SET:
 		_setValueListeners.push_back(listener);
 		break;
+	case Event::PARAMETER_GET:
+		_parameterGetListeners.push_back(listener);
 	}
 }
 
@@ -78,7 +105,7 @@ bool ECFObject::_setValue(const std::string &value)
 	return false;
 }
 
-ECFParameter* ECFObject::getParameter(const std::string &name)
+ECFParameter* ECFObject::_getParameter(const std::string &name)
 {
 	for (size_t i = 0; i < parameters.size(); i++) {
 		if (StringCompare::caseInsensitiveEq(name, parameters[i]->name)) {
@@ -88,12 +115,7 @@ ECFParameter* ECFObject::getParameter(const std::string &name)
 	return NULL;
 }
 
-ECFParameter* ECFObject::getParameter(const char* name)
-{
-	return getParameter(std::string(name));
-}
-
-ECFParameter* ECFObject::getParameter(const void* data)
+ECFParameter* ECFObject::_getParameter(const void* data)
 {
 	for (size_t i = 0; i < parameters.size(); i++) {
 		if (data == parameters[i]->data()) {
@@ -105,10 +127,10 @@ ECFParameter* ECFObject::getParameter(const void* data)
 
 ECFParameter* ECFObject::getWithError(const std::string &name)
 {
-	if (getParameter(name) == NULL) {
+	if (_getParameter(name) == NULL) {
 		ESINFO(GLOBAL_ERROR) << "ECF ERROR: Object " << this->name << " has no parameter '" << name << "'";
 	}
-	return getParameter(name);
+	return _getParameter(name);
 }
 
 void ECFObject::dropParameter(ECFParameter *parameter)

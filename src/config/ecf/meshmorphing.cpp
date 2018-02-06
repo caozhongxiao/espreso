@@ -40,7 +40,7 @@ espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfigurat
 		.setdescription({ "Turn morphing target override on/off." })
 		.setdatatype({ ECFDataType::BOOL }));
 
-	ECFRoot->getParameter(&ECFRoot->physics)->addListener(ECFParameter::Event::VALUE_SET, [&] () {
+	ECFRoot->getParameter(&ECFRoot->physics)->addListener(ECFParameter::Event::VALUE_SET, [&] (const std::string &value) {
 		switch (ECFRoot->physics) {
 		case PHYSICS::HEAT_TRANSFER_2D:
 		case PHYSICS::STRUCTURAL_MECHANICS_2D:

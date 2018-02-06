@@ -179,7 +179,7 @@ espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
 			.addoption(ECFOption().setname("BASIC").setdescription("Basic properties."))
 			.addoption(ECFOption().setname("ALL").setdescription("All properties."))
 			.addoption(ECFOption().setname("USER").setdescription("User defined properties.")))
-	->addListener(ECFParameter::Event::VALUE_SET, [&] () {
+	->addListener(ECFParameter::Event::VALUE_SET, [&] (const std::string &value) {
 		switch (store_results) {
 		case STORE_RESULTS::BASIC:
 			results_selection.basic();

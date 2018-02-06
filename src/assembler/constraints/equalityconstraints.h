@@ -12,6 +12,7 @@ namespace espreso {
 
 class Instance;
 class Mesh;
+template <typename TValue> struct RegionMap;
 struct ECFExpression;
 struct ECFExpressionOptionalVector;
 
@@ -23,9 +24,9 @@ class Evaluator;
 
 struct EqualityConstraints
 {
-	EqualityConstraints(Instance &instance, Mesh &mesh, const std::map<std::string, ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling);
+	EqualityConstraints(Instance &instance, Mesh &mesh, const RegionMap<ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling);
 	EqualityConstraints(Instance &instance, Mesh &mesh, const std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int DOFs, bool withRedundantMultiplier, bool withScaling);
-	void update(const std::map<std::string, ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling);
+	void update(const RegionMap<ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling);
 	void update(const std::map<std::string, ECFExpressionOptionalVector> &dirichlet, bool withRedundantMultiplier, bool withScaling);
 
 	void B1DirichletInsert(const Step &step);

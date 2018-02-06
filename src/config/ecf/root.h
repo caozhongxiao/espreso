@@ -59,7 +59,6 @@ struct ECFRoot: public ECFObject {
 
 	DecomposerConfiguration decomposer;
 
-
 	ECFRoot();
 	ECFRoot(const std::string &file);
 	ECFRoot(int *argc, char ***argv);

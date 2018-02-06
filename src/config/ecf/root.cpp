@@ -121,7 +121,6 @@ void ECFRoot::init()
 	REGISTER(output, ECFMetaData()
 			.setdescription({ "Output configurations." }));
 
-
 	REGISTER(decomposer, ECFMetaData()
 			.setdescription({ "Configuration of ESPRESO decomposer." }));
 }

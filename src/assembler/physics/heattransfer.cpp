@@ -178,7 +178,7 @@ void HeatTransfer::computeInitialTemperature(std::vector<std::vector<double> > &
 	}
 
 	if (_configuration.init_temp_respect_bc) {
-		for (auto it = _configuration.load_steps_settings.at(1).temperature.begin(); it != _configuration.load_steps_settings.at(1).temperature.end(); ++it) {
+		for (auto it = _configuration.load_steps_settings.at(1).temperature.regions.begin(); it != _configuration.load_steps_settings.at(1).temperature.regions.end(); ++it) {
 			BoundaryRegionStore *region = _mesh->bregion(it->first);
 			#pragma omp parallel for
 			for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
@@ -210,7 +210,7 @@ double HeatTransfer::sumSquares(const std::vector<std::vector<double> > &data, S
 		return _mesh->sumSquares(data, _mesh->bregion("ALL_NODES"));
 	case SumRestriction::DIRICHLET: {
 		double sum = 0;
-		for (auto it = _configuration.load_steps_settings.at(_step->step + 1).temperature.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).temperature.end(); ++it) {
+		for (auto it = _configuration.load_steps_settings.at(_step->step + 1).temperature.regions.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).temperature.regions.end(); ++it) {
 			sum += _mesh->sumSquares(data, _mesh->bregion(it->first));
 		}
 		return sum;
