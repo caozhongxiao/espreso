@@ -579,7 +579,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	std::vector<std::vector<std::vector<eslocal> > > sElements(threads, std::vector<std::vector<eslocal> >(targets.size(), std::vector<eslocal>({ 0 })));
 	std::vector<std::vector<eslocal> > rElements;
 
-	// threads x target x nodes(id, point, linksize, links)
+	// threads x target x nodes(id, point, linksize, links, regionMask) + size
 	std::vector<std::vector<std::vector<eslocal> > > sNodes(threads, std::vector<std::vector<eslocal> >(targets.size(), std::vector<eslocal>({ 0 })));
 	std::vector<std::vector<eslocal> > rNodes;
 
@@ -816,19 +816,20 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		}
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			for (size_t e = rdistribution[t]; e + 1 < rdistribution[t + 1]; ) {
-				elemsIDs[t].push_back(rElements[i][++e]);
-				elemsBody[t].push_back(rElements[i][++e]);
-				elemsMaterial[t].push_back(rElements[i][++e]);
-				elemsEpointer[t].push_back(_mesh->_eclasses[t] + rElements[i][++e]);
-				elemsNodesDistribution[t].push_back(rElements[i][++e]);
+			for (size_t e = rdistribution[t] + 1; e < rdistribution[t + 1]; ) {
+				elemsIDs[t].push_back(rElements[i][e++]);
+				elemsBody[t].push_back(rElements[i][e++]);
+				elemsMaterial[t].push_back(rElements[i][e++]);
+				elemsEpointer[t].push_back(_mesh->_eclasses[t] + rElements[i][e++]);
+				elemsNodesDistribution[t].push_back(rElements[i][e]);
 				elemsNodesData[t].insert(elemsNodesData[t].end(), rElements[i].begin() + e + 1, rElements[i].begin() + e + 1 + rElements[i][e]);
-				e += elemsNodesDistribution[t].back();
+				e += 1; // nodes size
+				e += elemsNodesDistribution[t].back(); // nodes
 				if (elemsNodesDistribution[t].size() > 1) {
 					elemsNodesDistribution[t].back() += *(elemsNodesDistribution[t].end() - 2);
 				}
+				elemsRegions[t].insert(elemsRegions[t].end(), rElements[i].begin() + e, rElements[i].begin() + e + eregionsBitMaskSize);
 				e += eregionsBitMaskSize;
-				elemsRegions[t].insert(elemsRegions[t].end(), rElements[i].begin() + e * eregionsBitMaskSize, rElements[i].begin() + (e + 1) * eregionsBitMaskSize);
 			}
 		}
 	}
@@ -849,25 +850,27 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			Point point;
-			for (size_t n = rdistribution[t]; n + 1 < rdistribution[t + 1]; ) {
-				if (!std::binary_search(nodeset.begin(), nodeset.end(), rNodes[i][++n])) {
+			for (size_t n = rdistribution[t] + 1; n < rdistribution[t + 1]; ) {
+				if (!std::binary_search(nodeset.begin(), nodeset.end(), rNodes[i][n])) {
 					nodesIDs[t].push_back(rNodes[i][n]);
 					tnodeset[t].push_back(rNodes[i][n]);
-					memcpy(&point, rNodes[i].data() + (++n), sizeof(Point));
+					n += 1; //ID
+					memcpy(&point, rNodes[i].data() + n, sizeof(Point));
 					nodesCoordinates[t].push_back(point);
-					n += sizeof(Point) / sizeof(eslocal);
+					n += sizeof(Point) / sizeof(eslocal); // points
 					nodesElemsDistribution[t].push_back(rNodes[i][n]);
 					nodesElemsData[t].insert(nodesElemsData[t].end(), rNodes[i].begin() + n + 1, rNodes[i].begin() + n + 1 + rNodes[i][n]);
-					n += nodesElemsDistribution[t].back();
+					n += 1; // linksize
+					n += nodesElemsDistribution[t].back(); // links
 					if (nodesElemsDistribution[t].size() > 1) {
 						nodesElemsDistribution[t].back() += *(nodesElemsDistribution[t].end() - 2);
 					}
-					n += bregionsBitMaskSize;
-					nodesRegions[t].insert(nodesRegions[t].end(), rNodes[i].begin() + n * bregionsBitMaskSize, rNodes[i].begin() + (n + 1) * bregionsBitMaskSize);
+					nodesRegions[t].insert(nodesRegions[t].end(), rNodes[i].begin() + n, rNodes[i].begin() + n + bregionsBitMaskSize);
+					n += bregionsBitMaskSize; // region mask
 				} else {
 					n += 1 + sizeof(Point) / sizeof(eslocal); // id, Point
-					n += rNodes[i][n]; // elems
-					n += bregionsBitMaskSize; // regions
+					n += 1 + rNodes[i][n]; // linksize, links
+					n += bregionsBitMaskSize; // region mask
 				}
 			}
 		}
