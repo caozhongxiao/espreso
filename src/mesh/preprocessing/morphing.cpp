@@ -20,6 +20,8 @@
 
 #include "../../wrappers/math/math.h"
 
+#include "mpi.h"
+
 using namespace espreso;
 
 void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfiguration &configuration, int dimension)
@@ -157,40 +159,23 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		ESINFO(ERROR) << "ESPRESO internal error: gather morphed points";
 	}
 
+	if (!Communication::broadcastUnknownSize(rPoints)) {
+			ESINFO(ERROR) << "ESPRESO internal error: broadcast points.";
+	}
+
 	if (!Communication::gatherUnknownSize(sDisplacement, rDisplacement)) {
 		ESINFO(ERROR) << "ESPRESO internal error: gather morphed displacement";
 	}
 
 	std::vector<double> wq_values;
 
-	if (environment->MPIrank == 0) {
+	if (environment->MPIrank == 0 ||
+			(configuration.solver == MORPHING_RBF_SOLVER::ITERATIVE &&
+			 environment->MPIrank < dimension &&
+			 environment->MPIsize >= dimension)) {
 
-		eslocal rowsFromCoordinates = rDisplacement.size() / dimension;
+		eslocal rowsFromCoordinates = rPoints.size();
 		int M_size = rowsFromCoordinates + dimension + 1;
-
-		/*DenseMatrix M(rowsFromCoordinates + dimension + 1, rowsFromCoordinates + dimension + 1);
-
-		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
-			M(rowsFromCoordinates + 0, r) = M(r, rowsFromCoordinates + 0) = rPoints[r].x;
-			M(rowsFromCoordinates + 1, r) = M(r, rowsFromCoordinates + 1) = rPoints[r].y;
-			if (dimension == 3) {
-				M(rowsFromCoordinates + 2, r) = M(r, rowsFromCoordinates + 2) = rPoints[r].z;
-			}
-
-			M(rowsFromCoordinates + dimension, r) = M(r, rowsFromCoordinates + dimension) = 1;
-
-			for(int rr = 0; rr < r; rr++) {
-				M(r, rr) = M(rr, r) = configuration.function.evaluator->evaluate((rPoints[r] - rPoints[rr]).length());
-			}
-		}
-		std::cout<<M;*/
-
-		/*std::vector<double> M_values;//(M_size*(M_size+1)/2);
-		for(eslocal i = 0;i<M_size;i++) {
-			for(eslocal j = 0;j<=i;j++) {
-				M_values.push_back(M(i,j));
-			}
-		}*/
 
 		std::vector<double> M_values;
 
@@ -228,24 +213,93 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		switch (configuration.solver) {
 		case MORPHING_RBF_SOLVER::ITERATIVE: {
 
-			wq_values.resize(M_size*dimension);
+			std::vector<double> rhs_values;
 
-			std::vector<double> rhs_values(M_size*dimension);
-			for (int d = 0; d < dimension; d++) {
-				eslocal r;
-				for (r = 0; r < rowsFromCoordinates; r++) {
-					rhs_values[M_size*d + r] = rDisplacement[r * dimension + d];
-				}
-				for ( ; r < M_size; r++) {
-					rhs_values[M_size*d + r] = 0;
+			if (environment->MPIrank == 0) {
+
+				rhs_values.resize(M_size*dimension);
+				wq_values.resize(M_size*dimension);
+
+				for (int d = 0; d < dimension; d++) {
+					eslocal r;
+					for (r = 0; r < rowsFromCoordinates; r++) {
+						rhs_values[M_size*d + r] = rDisplacement[r * dimension + d];
+					}
+					for ( ; r < M_size; r++) {
+						rhs_values[M_size*d + r] = 0;
+					}
 				}
 			}
 
-			for(eslocal d = 0 ; d < dimension; d++) {
+			if (environment->MPIrank == 0 && environment->MPIsize < dimension) {
+
+				for(eslocal d = 0 ; d < dimension; d++) {
+					MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
+							M_size, &M_values[0],
+							&rhs_values[d * M_size], &wq_values[d * M_size],
+							configuration.solver_precision, 600);
+				}
+			}else {
+
+				if (environment->MPIrank == 0) {
+
+					for(eslocal d = 1 ; d < dimension; d++) {
+						MPI_Send(&rhs_values[M_size*d], M_size, MPI_DOUBLE,
+									d, 0, environment->MPICommunicator);
+					}
+
+				}else{
+
+					rhs_values.resize(M_size);
+					wq_values.resize(M_size);
+
+					MPI_Recv(rhs_values.data(),M_size,
+							MPI_DOUBLE, 0, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
+
+				}
+
 				MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
-					 M_size, &M_values[0],
-					&rhs_values[d * M_size], &wq_values[d * M_size],
-					configuration.solver_precision, 600);
+						M_size, &M_values[0],
+						&rhs_values[0], &wq_values[0],
+						configuration.solver_precision, 600);
+
+				if (environment->MPIrank == 0) {
+
+					for (int d = 1; d < dimension; d++) {
+						MPI_Recv(&wq_values[d*M_size],M_size, MPI_DOUBLE,
+								d, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
+					}
+					/*std::cout<<"RHS "<<rhs_values<<"\n";
+					std::cout<<"WQ  "<<wq_values<<"\n";
+
+					wq_values.resize(M_size*dimension);
+
+					std::vector<double> rhs_values(M_size*dimension);
+					for (int d = 0; d < dimension; d++) {
+						eslocal r;
+						for (r = 0; r < rowsFromCoordinates; r++) {
+							rhs_values[M_size*d + r] = rDisplacement[r * dimension + d];
+						}
+						for ( ; r < M_size; r++) {
+							rhs_values[M_size*d + r] = 0;
+						}
+					}
+
+					for(eslocal d = 0 ; d < dimension; d++) {
+						MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
+							M_size, &M_values[0],
+							&rhs_values[d * M_size], &wq_values[d * M_size],
+							configuration.solver_precision, 600);
+					}
+					std::cout<<"RHS "<<rhs_values<<"\n";
+					std::cout<<"WQ2 "<<wq_values<<"\n";*/
+
+
+				}else {
+					MPI_Send(wq_values.data(), M_size, MPI_DOUBLE,
+							0, 0, environment->MPICommunicator);
+				}
+
 			}
 
 		} break;
@@ -288,9 +342,6 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		}
 	}
 
-	if (!Communication::broadcastUnknownSize(rPoints)) {
-		ESINFO(ERROR) << "ESPRESO internal error: broadcast points.";
-	}
 	if (!Communication::broadcastUnknownSize(wq_values)) {
 		ESINFO(ERROR) << "ESPRESO internal error: broadcast WQ.";
 	}
