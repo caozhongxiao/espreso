@@ -269,31 +269,6 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 						MPI_Recv(&wq_values[d*M_size],M_size, MPI_DOUBLE,
 								d, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
 					}
-					/*std::cout<<"RHS "<<rhs_values<<"\n";
-					std::cout<<"WQ  "<<wq_values<<"\n";
-
-					wq_values.resize(M_size*dimension);
-
-					std::vector<double> rhs_values(M_size*dimension);
-					for (int d = 0; d < dimension; d++) {
-						eslocal r;
-						for (r = 0; r < rowsFromCoordinates; r++) {
-							rhs_values[M_size*d + r] = rDisplacement[r * dimension + d];
-						}
-						for ( ; r < M_size; r++) {
-							rhs_values[M_size*d + r] = 0;
-						}
-					}
-
-					for(eslocal d = 0 ; d < dimension; d++) {
-						MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
-							M_size, &M_values[0],
-							&rhs_values[d * M_size], &wq_values[d * M_size],
-							configuration.solver_precision, 600);
-					}
-					std::cout<<"RHS "<<rhs_values<<"\n";
-					std::cout<<"WQ2 "<<wq_values<<"\n";*/
-
 
 				}else {
 					MPI_Send(wq_values.data(), M_size, MPI_DOUBLE,
@@ -318,7 +293,9 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 				}
 			}
 
-			/*int count=0;
+			/*std::cout<<"Points: "<<rPoints.size()<<" - "<<rPoints<<"\n";
+
+			int count=0;
 			for(int i=0;i<M_size;i++) {
 				for(int j=0;j<=i;j++) {
 					printf("%f ", M_values[count]);
@@ -346,19 +323,8 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		ESINFO(ERROR) << "ESPRESO internal error: broadcast WQ.";
 	}
 
-	//std::vector<double> W, Q;
 	eslocal wq_points = wq_values.size()/dimension;
 	eslocal points_size = rPoints.size();
-
-	/*for(eslocal c = 0; c < wq_points; c++) {
-		for(eslocal r = 0; r < dimension; r++) {
-			if (c < rPoints.size()) {
-				W.push_back(wq_values[r * wq_points+ c]);
-			}else {
-				Q.push_back(wq_values[r * wq_points+ c]);
-			}
-		}
-	}*/
 
 	ElementsRegionStore *tregion = _mesh->eregion(configuration.target);
 
@@ -404,40 +370,6 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 				morphed.y +=            wq_values[wq_points + points_size + 2];
 			}
 
-			/*for (size_t i = 0; i < rPoints.size(); i++) {
-				double R = configuration.function.evaluator->evaluate((rPoints[i] - origin).length());
-
-				morphed.x += R * W[i * dimension + 0];
-				morphed.y += R * W[i * dimension + 1];
-				if (dimension == 3) {
-					morphed.z += R * W[i * dimension + 2];
-				}
-			}
-			if (dimension == 3) {
-				morphed.x += origin.x * Q[0 * dimension + 0];
-				morphed.x += origin.y * Q[1 * dimension + 0];
-				morphed.x += origin.z * Q[2 * dimension + 0];
-				morphed.x +=            Q[3 * dimension + 0];
-
-				morphed.y += origin.x * Q[0 * dimension + 1];
-				morphed.y += origin.y * Q[1 * dimension + 1];
-				morphed.y += origin.z * Q[2 * dimension + 1];
-				morphed.y +=            Q[3 * dimension + 1];
-
-				morphed.z += origin.x * Q[0 * dimension + 2];
-				morphed.z += origin.y * Q[1 * dimension + 2];
-				morphed.z += origin.z * Q[2 * dimension + 2];
-				morphed.z +=            Q[3 * dimension + 2];
-			}
-			if (dimension == 2) {
-				morphed.x += origin.x * Q[0 * dimension + 0];
-				morphed.x += origin.y * Q[1 * dimension + 0];
-				morphed.x +=            Q[2 * dimension + 0];
-
-				morphed.y += origin.x * Q[0 * dimension + 1];
-				morphed.y += origin.y * Q[1 * dimension + 1];
-				morphed.y +=            Q[2 * dimension + 1];
-			}*/
 		}
 	}
 

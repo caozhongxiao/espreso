@@ -243,21 +243,15 @@ MESH_MORPHING {
       TARGET      ALL_ELEMENTS;
 
       MORPHERS {
-        RIGHT {
+        LEFT {
           #[FIXED,OFFSET,SCALING,TRANSLATION,ROTATION]
           TRANSFORMATION   TRANSLATION;
 
           TRANSLATION {
             X   X;
-            Y   Y;
+            Y   0;
             Z   0;
           }
-        }
-
-        LEFT {
-          #[FIXED,OFFSET,SCALING,TRANSLATION,ROTATION]
-          TRANSFORMATION   FIXED;
-
         }
       }
     }
