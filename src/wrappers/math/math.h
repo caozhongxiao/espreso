@@ -18,6 +18,11 @@ struct MATH {
 	static eslocal vecNormMaxIndex(eslocal size, float *vVals);
 	static eslocal vecNormMaxIndex(eslocal size, double *vVals);
 
+	static void matMatProduct(
+			eslocal aRows, eslocal aCols, double* aVals,
+			eslocal bCols, double* bVals,
+			double* cVals);
+
 	struct SOLVER {
 
 		static void GMRESUpCRSMat(
@@ -35,7 +40,7 @@ struct MATH {
 				double *rhsVals, double *results,
 				double tolerance, eslocal maxIterations);
 
-		static void DirectUpperSymetricIndefiniteColumnMajor(
+		static int directUpperSymetricIndefiniteColumnMajor(
 						eslocal cols, double *m_packed_values,
 						eslocal nrhs, double *rhsVals);
 	};

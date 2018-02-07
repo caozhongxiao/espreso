@@ -50,4 +50,14 @@ eslocal MATH::vecNormMaxIndex(eslocal size, double *vVals)
 	eslocal incr = 1;
 	return cblas_idamax(size, vVals, incr);
 }
+void MATH::matMatProduct(
+			eslocal aRows, eslocal aCols, double* aVals,
+			eslocal bCols, double* bVals,
+			double* cVals){
+	double alpha = 1.0;
+	double beta = 0.0;
 
+	cblas_dgemm(CblasRowMajor, CblasNoTrans,
+			CblasNoTrans, aRows, bCols, aCols, alpha,
+			aVals, aRows, bVals, aCols, beta, cVals, aRows);
+}
