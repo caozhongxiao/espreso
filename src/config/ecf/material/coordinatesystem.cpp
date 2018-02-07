@@ -9,7 +9,9 @@
 
 #include "mkl.h"
 
-espreso::CoordinateSystemConfiguration::CoordinateSystemConfiguration()
+using namespace espreso;
+
+CoordinateSystemConfiguration::CoordinateSystemConfiguration()
 : dimension(DIMENSION::D3), rotation(dimension, ECFMetaData::getcoordinatevariables(), "0"), center(dimension, ECFMetaData::getcoordinatevariables(), "0")
 {
 	type = TYPE::CARTESIAN;
@@ -31,7 +33,7 @@ espreso::CoordinateSystemConfiguration::CoordinateSystemConfiguration()
 }
 
 
-void espreso::CoordinateSystemConfiguration::createTranslationMatrix(std::vector<double> &m, double x, double y, double z) const {
+void CoordinateSystemConfiguration::createTranslationMatrix(std::vector<double> &m, double x, double y, double z) const {
 	switch (dimension) {
 			case DIMENSION::D3: {
 				m.resize(16,0);
@@ -58,7 +60,7 @@ void espreso::CoordinateSystemConfiguration::createTranslationMatrix(std::vector
 				ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: unsupported operation.";
 		}
 }
-void espreso::CoordinateSystemConfiguration::createScalingMatrix(std::vector<double> &m, double x, double y, double z) const {
+void CoordinateSystemConfiguration::createScalingMatrix(std::vector<double> &m, double x, double y, double z) const {
 	switch (dimension) {
 			case DIMENSION::D3: {
 				m.resize(16,0);
@@ -80,7 +82,7 @@ void espreso::CoordinateSystemConfiguration::createScalingMatrix(std::vector<dou
 				ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: unsupported operation.";
 		}
 }
-void espreso::CoordinateSystemConfiguration::createTranslationMatrixToCenter(std::vector<double> &m) const {
+void CoordinateSystemConfiguration::createTranslationMatrixToCenter(std::vector<double> &m) const {
 
 	switch (dimension) {
 		case DIMENSION::D3: {
@@ -108,7 +110,7 @@ void espreso::CoordinateSystemConfiguration::createTranslationMatrixToCenter(std
 }
 
 
-void espreso::CoordinateSystemConfiguration::createTranslationMatrixToZero(std::vector<double> &m) const{
+void CoordinateSystemConfiguration::createTranslationMatrixToZero(std::vector<double> &m) const{
 
 	switch (dimension) {
 		case DIMENSION::D3: {
@@ -134,39 +136,25 @@ void espreso::CoordinateSystemConfiguration::createTranslationMatrixToZero(std::
 	}
 }
 
-
-void matMatProduct(
-			eslocal aRows, eslocal aCols, double* aVals,
-			eslocal bCols, double* bVals,
-			double* cVals){
-	double alpha = 1.0;
-	double beta = 0.0;
-
-	cblas_dgemm(CblasRowMajor, CblasNoTrans,
-			CblasNoTrans, aRows, bCols, aCols, alpha,
-			aVals, aRows, bVals, aCols, beta, cVals, aRows);
-}
-
-void espreso::CoordinateSystemConfiguration::multiplyTransformationMatrices(std::vector<double> &left, std::vector<double> &result) const {
+void CoordinateSystemConfiguration::multiplyTransformationMatrices(std::vector<double> &left, std::vector<double> &result) const {
 	std::vector<double> right;
 	right = result;
 	result.clear();
 	switch (dimension) {
 		case DIMENSION::D3: {
 			result.resize(16);
-			//espreso::MATH::matMatProduct(4,4,left.data(),4,right.data(),result.data());
-			matMatProduct(4,4,left.data(),4,right.data(),result.data());
+			MATH::DenseMatDenseMatRowMajorProduct(1, false, 4, 4, left.data(), false, 4, right.data(), 0, result.data());
 		} break;
 		case DIMENSION::D2: {
 			result.resize(9);
-			matMatProduct(3,3,left.data(),3,right.data(),result.data());
+			MATH::DenseMatDenseMatRowMajorProduct(1, false, 3, 4, left.data(), false, 3, right.data(), 0, result.data());
 		} break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: unsupported operation.";
 	}
 }
 
-espreso::Point espreso::CoordinateSystemConfiguration::applyTransformation(std::vector<double> &m, const Point &p) const{
+Point CoordinateSystemConfiguration::applyTransformation(std::vector<double> &m, const Point &p) const{
 	Point result;
 
 	switch (dimension) {
@@ -190,7 +178,7 @@ espreso::Point espreso::CoordinateSystemConfiguration::applyTransformation(std::
 }
 
 
-void  espreso::CoordinateSystemConfiguration::createRotationMatrix(std::vector<double> &m) const {
+void CoordinateSystemConfiguration::createRotationMatrix(std::vector<double> &m) const {
 	auto d2r = [] (double degree) -> double {
 			return M_PI * degree / 180;
 	};

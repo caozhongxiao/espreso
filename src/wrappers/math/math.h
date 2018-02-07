@@ -18,10 +18,11 @@ struct MATH {
 	static eslocal vecNormMaxIndex(eslocal size, float *vVals);
 	static eslocal vecNormMaxIndex(eslocal size, double *vVals);
 
-	static void matMatProduct(
-			eslocal aRows, eslocal aCols, double* aVals,
-			eslocal bCols, double* bVals,
-			double* cVals);
+	// C = alpha * A * B + beta * C
+	static void DenseMatDenseMatRowMajorProduct(
+			double alpha, bool transposeA, eslocal aRows, eslocal aCols, double* aVals,
+			bool transposeB, eslocal bCols, double* bVals,
+			double beta, double* cVals);
 
 	struct SOLVER {
 
