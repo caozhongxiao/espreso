@@ -154,7 +154,7 @@ void espreso::CoordinateSystemConfiguration::multiplyTransformationMatrices(std:
 	switch (dimension) {
 		case DIMENSION::D3: {
 			result.resize(16);
-			//espreso::MATH::matMatProduct(4,4,left.data(),4,right.data(),tmp.data());
+			//espreso::MATH::matMatProduct(4,4,left.data(),4,right.data(),result.data());
 			matMatProduct(4,4,left.data(),4,right.data(),result.data());
 		} break;
 		case DIMENSION::D2: {
