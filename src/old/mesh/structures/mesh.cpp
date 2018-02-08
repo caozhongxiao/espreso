@@ -214,7 +214,6 @@ static std::vector<eslocal> continuousReorder(std::vector<OldElement*> &elements
 
 void OldMesh::partitiateNoncontinuously(size_t parts, size_t noncontinuousParts)
 {
-	ESTEST(MANDATORY) << "Number of domains cannot be " << parts << (parts == 0 ? TEST_FAILED : TEST_PASSED);
 	_continuousPartId.clear();
 	_continuousPartId.resize(parts, 0);
 	if (parts == 1 && this->parts() == 1) {
@@ -274,7 +273,6 @@ void OldMesh::partitiateNoncontinuously(size_t parts, size_t noncontinuousParts)
 		}
 
 		std::sort(_elements.begin(), _elements.end(), [] (const OldElement* e1, const OldElement* e2) { return e1->domains()[0] < e2->domains()[0]; });
-		ESTEST(MANDATORY) << "subdomain without element" << (std::any_of(_partPtrs.begin(), _partPtrs.end() - 1, [] (eslocal size) { return size == 0; }) ? TEST_FAILED : TEST_PASSED);
 		Esutils::sizesToOffsets(_partPtrs);
 	}
 
@@ -294,7 +292,6 @@ void OldMesh::partitiateNoncontinuously(size_t parts, size_t noncontinuousParts)
 
 void OldMesh::partitiate(size_t parts)
 {
-	ESTEST(MANDATORY) << "Number of domains cannot be " << parts << (parts == 0 ? TEST_FAILED : TEST_PASSED);
 	_continuousPartId.clear();
 	_continuousPartId.resize(parts, 0);
 	if (parts == 1 && this->parts() == 1) {
@@ -348,7 +345,6 @@ void OldMesh::partitiate(size_t parts)
 		}
 
 		std::sort(_elements.begin(), _elements.end(), [] (const OldElement* e1, const OldElement* e2) { return e1->domains()[0] < e2->domains()[0]; });
-		ESTEST(MANDATORY) << "subdomain without element" << (std::any_of(_partPtrs.begin(), _partPtrs.end() - 1, [] (eslocal size) { return size == 0; }) ? TEST_FAILED : TEST_PASSED);
 		Esutils::sizesToOffsets(_partPtrs);
 	}
 
@@ -368,7 +364,6 @@ void OldMesh::partitiate(size_t parts)
 
 void APIMesh::partitiate(size_t parts)
 {
-	ESTEST(MANDATORY) << "Number of domains cannot be " << parts << (parts == 0 ? TEST_FAILED : TEST_PASSED);
 	if (_elements.size() / parts < parts / 10.0) {
 		parts = _elements.size() / 20;
 		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW << "WARNINK: Too small domains. ESPRESO change DOMAINS=" << parts;
@@ -427,7 +422,6 @@ void APIMesh::partitiate(size_t parts)
 		}
 
 		std::sort(_elements.begin(), _elements.end(), [] (const OldElement* e1, const OldElement* e2) { return e1->domains()[0] < e2->domains()[0]; });
-		ESTEST(MANDATORY) << "subdomain without element" << (std::any_of(_partPtrs.begin(), _partPtrs.end() - 1, [] (eslocal size) { return size == 0; }) ? TEST_FAILED : TEST_PASSED);
 		Esutils::sizesToOffsets(_partPtrs);
 	}
 
@@ -1356,8 +1350,6 @@ void OldMesh::fillParentElementsToNodes()
 
 void APIMesh::fillParentElementsToDOFs(const std::vector<std::vector<eslocal> > &eDOFs)
 {
-	ESTEST(MANDATORY) << "Invalid number of recognized elements in API." << (eDOFs.size() != _elements.size() ? TEST_FAILED : TEST_PASSED);
-
 	#pragma omp parallel for
 	for  (size_t i = 0; i < _DOFs.size(); i++) {
 		_DOFs[i]->parentElements().clear();

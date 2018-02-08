@@ -3,6 +3,7 @@
 
 #include "matrix.h"
 #include "sparseVVPMatrix.h"
+#include "denseMatrix.h"
 
 namespace espreso {
 

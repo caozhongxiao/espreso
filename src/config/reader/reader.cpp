@@ -422,7 +422,6 @@ ECFRedParameters ECFReader::_read(
 
 void ECFReader::set(const Environment &env, const OutputConfiguration &output)
 {
-	Test::setLevel(env.testing_level);
 	Info::setLevel(env.verbose_level, env.testing_level);
 	Measure::setLevel(env.measure_level);
 	Logging::path = output.path;

@@ -77,10 +77,6 @@ void OldLoader::fill()
 	tClusterBoundaries.end(); measurement.addEvent(tClusterBoundaries);
 	ESINFO(PROGRESS2) << "Neighbours loaded - number of neighbours for each cluster is " << Info::averageValue(mesh.neighbours().size());
 
-	if (Test::report(EXPENSIVE)) {
-		mesh.checkNeighbours();
-	}
-
 	// LOAD BOUNDARY CONDITIONS
 	TimeEvent tSettings("settings"); tSettings.start();
 	regions(mesh._evaluators, mesh._regions, mesh._elements, mesh._faces, mesh._edges, mesh._nodes);
