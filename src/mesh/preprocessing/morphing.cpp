@@ -24,6 +24,83 @@
 
 using namespace espreso;
 
+void MeshPreprocessing::processMorpher(const RBFTargetTransformationConfiguration &target, int dimension,
+		std::vector<Point> &sPoints, eslocal startPoint, std::vector<double> &sDisplacement) {
+
+	int pointsToProcess = sPoints.size() - startPoint;
+
+	switch (target.transformation) {
+		case MORPHING_TRANSFORMATION::FIXED: {
+			sDisplacement.insert(sDisplacement.end(), dimension * sPoints.size(), 0);
+		} break;
+
+		case MORPHING_TRANSFORMATION::TRANSLATION: {
+
+			sDisplacement.resize(sDisplacement.size() + dimension * pointsToProcess);
+			target.translation.x.evaluator->evaluate(pointsToProcess, dimension, sPoints.data() + startPoint, NULL, 0, sDisplacement.data() + dimension * startPoint + 0);
+			target.translation.y.evaluator->evaluate(pointsToProcess, dimension, sPoints.data() + startPoint, NULL, 0, sDisplacement.data() + dimension * startPoint + 1);
+			if (dimension == 3) {
+				target.translation.z.evaluator->evaluate(pointsToProcess, dimension, sPoints.data() + startPoint, NULL, 0, sDisplacement.data() + dimension * startPoint + 2);
+			}
+		} break;
+
+		case MORPHING_TRANSFORMATION::OFFSET: {
+		} break;
+
+		case MORPHING_TRANSFORMATION::SCALING: {
+
+			std::vector<double> result;
+			target.coordinate_system.createTranslationMatrixToCenter(result);
+			std::vector<double> scaling;
+			std::vector<double> sv(3);
+			target.scaling.x.evaluator->evaluate(1, NULL, NULL, 0, &sv[0]);
+			target.scaling.y.evaluator->evaluate(1, NULL, NULL, 0, &sv[1]);
+			target.scaling.z.evaluator->evaluate(1, NULL, NULL, 0, &sv[2]);
+			target.coordinate_system.createScalingMatrix(scaling, sv[0]/100.0, sv[1]/100.0, sv[2]/100.0);
+			std::vector<double> TtoZero;
+			target.coordinate_system.createTranslationMatrixToZero(TtoZero);
+			target.coordinate_system.multiplyTransformationMatrices(scaling, result);
+			target.coordinate_system.multiplyTransformationMatrices(TtoZero, result);
+
+			for(auto it = sPoints.begin()+startPoint; it!=sPoints.end(); it++) {
+				const Point& p1 = *it;
+				Point p2= target.coordinate_system.applyTransformation(result, p1);
+				//std::cout<<"P1 "<<p1<<" P2 "<<p2<<"\n";
+				sDisplacement.push_back(p2.x - p1.x);
+				sDisplacement.push_back(p2.y - p1.y);
+				if (dimension == 3) {
+					sDisplacement.push_back(p2.z - p1.z);
+				}
+			}
+		} break;
+
+		case MORPHING_TRANSFORMATION::ROTATION: {
+
+			std::vector<double> result;
+			target.coordinate_system.createTranslationMatrixToCenter(result);
+			std::vector<double> rotation;
+			target.coordinate_system.createRotationMatrix(rotation);
+			std::vector<double> TtoZero;
+			target.coordinate_system.createTranslationMatrixToZero(TtoZero);
+			target.coordinate_system.multiplyTransformationMatrices(rotation, result);
+			target.coordinate_system.multiplyTransformationMatrices(TtoZero, result);
+
+			for(auto it = sPoints.begin()+startPoint; it!=sPoints.end(); it++) {
+				const Point& p1 = *it;
+				Point p2= target.coordinate_system.applyTransformation(result, p1);
+				//std::cout<<"P1 "<<p1<<" P2 "<<p2<<"\n";
+				sDisplacement.push_back(p2.x - p1.x);
+				sDisplacement.push_back(p2.y - p1.y);
+				if (dimension == 3) {
+					sDisplacement.push_back(p2.z - p1.z);
+				}
+			}
+		}break;
+	 	 default:
+	 		 ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement mesh morphing tranformation.";
+	}
+}
+
 void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfiguration &configuration, int dimension)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
@@ -53,107 +130,17 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		const auto &nodes = region->nodes->datatarray();
 		const auto &coordinates = _mesh->nodes->coordinates->datatarray();
 
-		switch (it->second.transformation) {
-			case MORPHING_TRANSFORMATION::FIXED: {
-				for (size_t i = 0; i < region->nintervals.size(); i++) {
-					if (region->nintervals[i].sourceProcess == environment->MPIrank) {
-						for (auto n = nodes.begin() + region->nintervals[i].begin; n != nodes.begin() + region->nintervals[i].end; ++n) {
-							sPoints.push_back(coordinates[*n]);
-						}
-						sDisplacement.insert(sDisplacement.end(), dimension * (region->nintervals[i].end - region->nintervals[i].begin), 0);
-					}
+		size_t prevsize = sPoints.size();
+		for (size_t i = 0; i < region->nintervals.size(); i++) {
+			if (region->nintervals[i].sourceProcess == environment->MPIrank) {
+				for (auto n = nodes.begin() + region->nintervals[i].begin; n != nodes.begin() + region->nintervals[i].end; ++n) {
+					sPoints.push_back(coordinates[*n]);
 				}
-			} break;
-
-			case MORPHING_TRANSFORMATION::TRANSLATION: {
-				for (size_t i = 0; i < region->nintervals.size(); i++) {
-					if (region->nintervals[i].sourceProcess == environment->MPIrank) {
-						size_t prevsize = sPoints.size();
-						for (auto n = nodes.begin() + region->nintervals[i].begin; n != nodes.begin() + region->nintervals[i].end; ++n) {
-							sPoints.push_back(coordinates[*n]);
-						}
-						sDisplacement.resize(sDisplacement.size() + dimension * (region->nintervals[i].end - region->nintervals[i].begin));
-						it->second.translation.x.evaluator->evaluate(region->nintervals[i].end - region->nintervals[i].begin, dimension, sPoints.data() + prevsize, NULL, 0, sDisplacement.data() + dimension * prevsize + 0);
-						it->second.translation.y.evaluator->evaluate(region->nintervals[i].end - region->nintervals[i].begin, dimension, sPoints.data() + prevsize, NULL, 0, sDisplacement.data() + dimension * prevsize + 1);
-						if (dimension == 3) {
-							it->second.translation.z.evaluator->evaluate(region->nintervals[i].end - region->nintervals[i].begin, dimension, sPoints.data() + prevsize, NULL, 0, sDisplacement.data() + dimension * prevsize + 2);
-						}
-					}
-				}
-			} break;
-
-			case MORPHING_TRANSFORMATION::OFFSET: {
-
-			} break;
-
-			case MORPHING_TRANSFORMATION::SCALING: {
-
-				std::vector<double> result;
-				it->second.coordinate_system.createTranslationMatrixToCenter(result);
-				std::vector<double> scaling;
-				std::vector<double> sv(3);
-				it->second.scaling.x.evaluator->evaluate(1, NULL, NULL, 0, &sv[0]);
-				it->second.scaling.y.evaluator->evaluate(1, NULL, NULL, 0, &sv[1]);
-				it->second.scaling.z.evaluator->evaluate(1, NULL, NULL, 0, &sv[2]);
-				it->second.coordinate_system.createScalingMatrix(scaling, sv[0]/100.0, sv[1]/100.0, sv[2]/100.0);
-				std::vector<double> TtoZero;
-				it->second.coordinate_system.createTranslationMatrixToZero(TtoZero);
-				it->second.coordinate_system.multiplyTransformationMatrices(scaling, result);
-				it->second.coordinate_system.multiplyTransformationMatrices(TtoZero, result);
-
-
-				for (size_t i = 0; i < region->nintervals.size(); i++) {
-					if (region->nintervals[i].sourceProcess == environment->MPIrank) {
-						size_t prevsize = sPoints.size();
-						for (auto n = nodes.begin() + region->nintervals[i].begin; n != nodes.begin() + region->nintervals[i].end; ++n) {
-							const Point& p1 = coordinates[*n];
-							sPoints.push_back(p1);
-							Point p2= it->second.coordinate_system.applyTransformation(result, p1);
-							//std::cout<<"P1 "<<p1<<" P2 "<<p2<<"\n";
-							sDisplacement.push_back(p2.x - p1.x);
-							sDisplacement.push_back(p2.y - p1.y);
-							if (dimension == 3) {
-								sDisplacement.push_back(p2.z - p1.z);
-							}
-						}
-					}
-				}
-			} break;
-
-			case MORPHING_TRANSFORMATION::ROTATION: {
-
-				std::vector<double> result;
-				it->second.coordinate_system.createTranslationMatrixToCenter(result);
-				std::vector<double> rotation;
-				it->second.coordinate_system.createRotationMatrix(rotation);
-				std::vector<double> TtoZero;
-				it->second.coordinate_system.createTranslationMatrixToZero(TtoZero);
-				it->second.coordinate_system.multiplyTransformationMatrices(rotation, result);
-				it->second.coordinate_system.multiplyTransformationMatrices(TtoZero, result);
-
-				for (size_t i = 0; i < region->nintervals.size(); i++) {
-					if (region->nintervals[i].sourceProcess == environment->MPIrank) {
-						size_t prevsize = sPoints.size();
-						for (auto n = nodes.begin() + region->nintervals[i].begin; n != nodes.begin() + region->nintervals[i].end; ++n) {
-							const Point& p1 = coordinates[*n];
-							sPoints.push_back(p1);
-							Point p2= it->second.coordinate_system.applyTransformation(result, p1);
-							//std::cout<<"P1 "<<p1<<" P2 "<<p2<<"\n";
-							sDisplacement.push_back(p2.x - p1.x);
-							sDisplacement.push_back(p2.y - p1.y);
-							if (dimension == 3) {
-								sDisplacement.push_back(p2.z - p1.z);
-							}
-						}
-					}
-				}
-
-			}break;
-
-		 	 default:
-		 		 ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement mesh morphing tranformation.";
+			}
 		}
+		processMorpher(it->second, dimension, sPoints, prevsize, sDisplacement);
 	}
+
 
 	if (!Communication::gatherUnknownSize(sPoints, rPoints)) {
 		ESINFO(ERROR) << "ESPRESO internal error: gather morphed points";

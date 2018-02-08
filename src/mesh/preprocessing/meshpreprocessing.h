@@ -21,6 +21,9 @@ struct ProcessInterval;
 struct BoundaryRegionStore;
 template <typename TEBoundaries, typename TEData> class serializededata;
 struct RBFTargetConfiguration;
+struct RBFTargetTransformationConfiguration;
+class Point;
+
 
 class MeshPreprocessing {
 
@@ -82,6 +85,9 @@ private:
 	void start(const std::string &message);
 	void skip(const std::string &message);
 	void finish(const std::string &message);
+
+	void processMorpher(const RBFTargetTransformationConfiguration &target, int dimension,
+		std::vector<Point> &sPoints, eslocal startPoint, std::vector<double> &sDisplacement);
 };
 
 }
