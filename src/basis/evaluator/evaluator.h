@@ -2,6 +2,8 @@
 #ifndef SRC_BASIS_EVALUATOR_EVALUATOR_H_
 #define SRC_BASIS_EVALUATOR_EVALUATOR_H_
 
+#include <string>
+
 namespace espreso {
 
 struct Point;
@@ -38,6 +40,8 @@ public:
 	virtual bool isCoordinateDependent() const { return false; }
 	virtual bool isTimeDependent() const { return false; }
 	virtual bool isTemperatureDependent() const { return false; }
+
+	virtual std::string getEXPRTKForm() const { return "0"; }
 };
 
 }

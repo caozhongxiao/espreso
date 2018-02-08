@@ -20,7 +20,6 @@ BoundaryRegionStore::BoundaryRegionStore(const std::string &name, std::vector<El
   uniqueTotalSize(0),
 
   elements(NULL),
-  uniqueElements(NULL),
   nodes(NULL),
   uniqueNodes(NULL),
 
@@ -34,7 +33,6 @@ BoundaryRegionStore::BoundaryRegionStore(const std::string &name, std::vector<El
 BoundaryRegionStore::~BoundaryRegionStore()
 {
 	if (elements == NULL) { delete elements; }
-	if (uniqueElements != NULL && uniqueElements != elements) { delete uniqueElements; }
 	if (nodes == NULL) { delete nodes; }
 	if (uniqueNodes != NULL && uniqueNodes != nodes) { delete uniqueNodes; }
 

@@ -37,7 +37,7 @@ espreso::StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepCo
 			.setdescription({ "The name of a region.", "Acceleration of a given region." })
 			.setdatatype({ ECFDataType::REGION })
 			.setpattern({ "MY_REGION" }),
-			dimension, ECFMetaData::getboundaryconditionvariables());
+			dimension, ECFMetaData::getboundaryconditionvariables(), "0");
 
 
 	REGISTER(displacement, ECFMetaData()
@@ -62,7 +62,7 @@ espreso::StructuralMechanicsConfiguration::StructuralMechanicsConfiguration(DIME
 	REGISTER(element_behaviour, ECFMetaData()
 			.setdescription({ "Physics solver type." })
 			.setdatatype({ ECFDataType::OPTION })
-			.allowonly([&] () { return dimension == DIMENSION::D2; })
+			.allowonly([&] () { return this->dimension == DIMENSION::D2; })
 			.addoption(ECFOption().setname("PLANE_STRAIN").setdescription("Plane strain."))
 			.addoption(ECFOption().setname("AXISYMMETRIC").setdescription("Axisymmetric."))
 			.addoption(ECFOption().setname("PLANE_STRESS").setdescription("Plane stress."))

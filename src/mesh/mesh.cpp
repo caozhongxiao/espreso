@@ -26,6 +26,7 @@
 #include <iostream>
 #include <vector>
 #include <numeric>
+#include <algorithm>
 
 #include "../basis/containers/serializededata.h"
 #include "../basis/containers/tarray.h"
@@ -89,6 +90,17 @@ ElementsRegionStore* Mesh::eregion(const std::string &name)
 	return NULL;
 }
 
+ElementsRegionsIntersectionStore* Mesh::ieregion(const std::string &name)
+{
+	for (size_t r = 0; r < elementsRegionsIntersections.size(); r++) {
+		if (StringCompare::caseInsensitiveEq(elementsRegionsIntersections[r]->name, name)) {
+			return elementsRegionsIntersections[r];
+		}
+	}
+	ESINFO(ERROR) << "ESPRESO internal error: request for unknown intersection of element regions '" << name << "'.";
+	return NULL;
+}
+
 BoundaryRegionStore* Mesh::bregion(const std::string &name)
 {
 	for (size_t r = 0; r < boundaryRegions.size(); r++) {
@@ -97,6 +109,17 @@ BoundaryRegionStore* Mesh::bregion(const std::string &name)
 		}
 	}
 	ESINFO(ERROR) << "ESPRESO internal error: request for unknown boundary region '" << name << "'.";
+	return NULL;
+}
+
+BoundaryRegionsIntersectionStore* Mesh::ibregion(const std::string &name)
+{
+	for (size_t r = 0; r < boundaryRegionsIntersections.size(); r++) {
+		if (StringCompare::caseInsensitiveEq(boundaryRegionsIntersections[r]->name, name)) {
+			return boundaryRegionsIntersections[r];
+		}
+	}
+	ESINFO(ERROR) << "ESPRESO internal error: request for unknown intersection of boundary regions '" << name << "'.";
 	return NULL;
 }
 
@@ -523,6 +546,12 @@ void Mesh::update()
 			}
 		}
 	}
+
+	configuration.forEachParameters([&] (const ECFParameter *parameter) {
+		if (parameter->metadata.regionMap != NULL) {
+			preprocessing->computeRegionsIntersection(*parameter->metadata.regionMap);
+		}
+	});
 
 	printStatistics();
 }

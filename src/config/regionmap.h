@@ -4,17 +4,16 @@
 
 #include "configuration.h"
 
+#include "../mesh/store/boundaryregionstore.h"
+
 #include <map>
 #include <algorithm>
+#include <iostream>
 
 namespace espreso {
 
-template <typename TValue>
-struct RegionMap {
-	std::map<std::string, TValue> regions;
-
+struct RegionMapBase {
 	std::vector<std::string> order;
-	bool areDisjunkt;
 
 	void addRegion(const std::string &name)
 	{
@@ -23,7 +22,20 @@ struct RegionMap {
 		}
 	}
 
-	RegionMap(): areDisjunkt(true) {}
+	virtual void addIntersection(const std::string &name, std::vector<std::string> &regions) =0;
+
+	virtual ~RegionMapBase() {}
+};
+
+template <typename TValue>
+struct RegionMap: public RegionMapBase {
+	std::map<std::string, TValue> regions;
+	std::map<std::string, TValue> intersections;
+
+	void addIntersection(const std::string &name, std::vector<std::string> &regions)
+	{
+		intersections.emplace(std::piecewise_construct, std::forward_as_tuple(name), std::forward_as_tuple(regions, this->regions));
+	}
 };
 
 }

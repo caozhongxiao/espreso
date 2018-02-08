@@ -17,6 +17,8 @@ public:
 	void evaluate(eslocal size, eslocal increment, const Point* cbegin, const double* tbegin, double time, double *results) const;
 	double evaluate(double r) const { return _value; }
 
+	std::string getEXPRTKForm() const { return std::to_string(_value); }
+
 protected:
 	double _value;
 };

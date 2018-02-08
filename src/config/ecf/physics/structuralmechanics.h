@@ -11,7 +11,8 @@ struct StructuralMechanicsLoadStepConfiguration: public LoadStepConfiguration {
 
 	std::map<std::string, ECFExpression> temperature, normal_pressure, obstacle;
 	std::map<std::string, ECFExpressionVector> angular_velocity, acceleration, normal_direction;
-	std::map<std::string, ECFExpressionOptionalVector> displacement;
+
+	RegionMap<ECFExpressionOptionalVector> displacement;
 
 	StructuralMechanicsLoadStepConfiguration(DIMENSION dimension);
 };

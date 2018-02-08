@@ -39,6 +39,13 @@ struct ElementsRegionStore {
 	~ElementsRegionStore();
 };
 
+struct ElementsRegionsIntersectionStore: public ElementsRegionStore {
+
+	std::vector<ElementsRegionStore*> regions;
+
+	ElementsRegionsIntersectionStore(const std::string &name): ElementsRegionStore(name) {}
+};
+
 }
 
 

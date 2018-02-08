@@ -126,9 +126,15 @@ ECFObject::registerParameter(const std::string &name, std::map<Ttype1, std::map<
 /////////////////////////////////
 
 template<typename Ttype, typename... TArgs>
-ECFParameter* ECFObject::registerParameter(const std::string &name, RegionMap<Ttype> &parameter, const ECFMetaData &metadata, TArgs... args)
+ECFParameter* ECFObject::registerParameter(const std::string &name, RegionMap<Ttype> &parameter, ECFMetaData &metadata, TArgs... args)
 {
-	ECFParameter* p = registerParameter(name, parameter.regions, metadata, args...);
+	static_assert(
+			std::is_base_of<ECFExpression, Ttype>::value ||
+			std::is_base_of<ECFExpressionVector, Ttype>::value ||
+			std::is_base_of<ECFExpressionOptionalVector, Ttype>::value,
+			"RegionMap accept only following parameters: ECFExpression, ECFExpressionVector, ECFExpressionOptionalVector");
+
+	ECFParameter* p = registerParameter(name, parameter.regions, metadata.setRegionMap(parameter), args...);
 	p->addListener(Event::PARAMETER_GET, [&] (const std::string &name) {
 		parameter.addRegion(name);
 	});

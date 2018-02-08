@@ -31,6 +31,8 @@ public:
 	bool isTimeDependent() const { return _timeDependency; }
 	bool isTemperatureDependent() const { return _temperatureDependency; }
 
+	std::string getEXPRTKForm() const;
+
 protected:
 	size_t _dimension;
 	std::vector<std::vector<std::vector<double> > > _table;

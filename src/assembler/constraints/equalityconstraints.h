@@ -25,9 +25,9 @@ class Evaluator;
 struct EqualityConstraints
 {
 	EqualityConstraints(Instance &instance, Mesh &mesh, const RegionMap<ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling);
-	EqualityConstraints(Instance &instance, Mesh &mesh, const std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int DOFs, bool withRedundantMultiplier, bool withScaling);
+	EqualityConstraints(Instance &instance, Mesh &mesh, const RegionMap<ECFExpressionOptionalVector> &dirichlet, int DOFs, bool withRedundantMultiplier, bool withScaling);
 	void update(const RegionMap<ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling);
-	void update(const std::map<std::string, ECFExpressionOptionalVector> &dirichlet, bool withRedundantMultiplier, bool withScaling);
+	void update(const RegionMap<ECFExpressionOptionalVector> &dirichlet, bool withRedundantMultiplier, bool withScaling);
 
 	void B1DirichletInsert(const Step &step);
 	void B1DirichletUpdate(const Step &step);

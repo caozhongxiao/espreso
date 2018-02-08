@@ -18,6 +18,8 @@ class Expression;
 class ExpressionEvaluator: public Evaluator {
 
 public:
+	static std::vector<std::string> variables() { return { "X", "Y", "Z", "TEMPERATURE", "TIME", "R" }; }
+
 	ExpressionEvaluator(const std::string &expression);
 	ExpressionEvaluator(const ExpressionEvaluator &other);
 
@@ -31,9 +33,9 @@ public:
 	bool isTimeDependent() const { return _timeDependency; }
 	bool isTemperatureDependent() const { return _temperatureDependency; }
 
+	std::string getEXPRTKForm() const;
+
 protected:
-
-
 	std::vector<Expression*> _expressions;
 	bool _coordinateDependency, _temperatureDependency, _timeDependency;
 };

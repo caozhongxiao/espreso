@@ -59,6 +59,7 @@ struct ECFMetaData {
 	std::vector<ECFOption> options;
 	std::vector<std::string> variables;
 	TensorConfiguration *tensor;
+	RegionMapBase *regionMap;
 	std::string unit;
 
 	std::function<bool(void)> isallowed;
@@ -68,6 +69,7 @@ struct ECFMetaData {
 	ECFMetaData& setpattern(const std::vector<std::string> &pattern) { this->pattern = pattern; return *this; }
 	ECFMetaData& setvariables(const std::vector<std::string> &variables) { this->variables = variables; return *this; }
 	ECFMetaData& settensor(TensorConfiguration &tensor) { this->tensor = &tensor; return *this; }
+	ECFMetaData& setRegionMap(RegionMapBase &rMap) { this->regionMap = &rMap; return *this; }
 	ECFMetaData& setunit(const std::string &unit) { this->unit = unit; return *this; }
 	ECFMetaData& allowonly(std::function<bool(void)> isallowed) { this->isallowed = isallowed; return *this; }
 
@@ -83,7 +85,7 @@ struct ECFMetaData {
 
 	ECFMetaData suffix(size_t start) const;
 
-	ECFMetaData(): tensor(NULL) { isallowed = [] () { return true; }; }
+	ECFMetaData(): tensor(NULL), regionMap(NULL) { isallowed = [] () { return true; }; }
 };
 
 struct ECFParameter {
@@ -243,7 +245,7 @@ protected:
 	////////// REGION MAP ///////////
 	/////////////////////////////////
 	template<typename Ttype, typename... TArgs>
-	ECFParameter* registerParameter(const std::string &name, RegionMap<Ttype> &parameter, const ECFMetaData &metadata, TArgs... args);
+	ECFParameter* registerParameter(const std::string &name, RegionMap<Ttype> &parameter, ECFMetaData &metadata, TArgs... args);
 
 	/////////////////////////////////
 	ECFParameter* getWithError(const std::string &name);

@@ -32,3 +32,22 @@ void TableInterpolationEvaluator::evaluate(eslocal size, eslocal increment, cons
 	}
 }
 
+std::string TableInterpolationEvaluator::getEXPRTKForm() const
+{
+	std::string exprtk;
+
+	exprtk += "if((TEMPERATURE<" + std::to_string(_table.front().first) + "), " + std::to_string(_table.front().second) + ", 0) + ";
+
+	for (size_t i = 0; i + 1 < _table.size(); i++) {
+		exprtk += "if((TEMPERATURE<=" + std::to_string(_table[i].first) + " and " + std::to_string(_table[i + 1].first) + "<TEMPERATURE), ";
+		double a = _table[i].first, b = _table[i + 1].first;
+		double va = _table[i].second, vb = _table[i + 1].second;
+		exprtk += std::to_string(va) + "+" + std::to_string(vb - va) + "*(TEMPERATURE - " + std::to_string(a) + "/" + std::to_string(b - a) + ")";
+		exprtk += ", 0) + ";
+	}
+
+	exprtk += "if((" + std::to_string(_table.back().first) + "<TEMPERATURE), " + std::to_string(_table.back().second) + ", 0)";
+
+	return exprtk;
+}
+

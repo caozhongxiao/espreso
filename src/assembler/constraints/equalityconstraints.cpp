@@ -30,7 +30,7 @@ EqualityConstraints::EqualityConstraints(Instance &instance, Mesh &mesh, const R
 	update(dirichlet, withRedundantMultiplier, withScaling);
 }
 
-EqualityConstraints::EqualityConstraints(Instance &instance, Mesh &mesh, const std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int DOFs, bool withRedundantMultiplier, bool withScaling)
+EqualityConstraints::EqualityConstraints(Instance &instance, Mesh &mesh, const RegionMap<ECFExpressionOptionalVector> &dirichlet, int DOFs, bool withRedundantMultiplier, bool withScaling)
 : _instance(instance), _mesh(mesh), _DOFs(DOFs)
 {
 	update(dirichlet, withRedundantMultiplier, withScaling);
@@ -108,15 +108,24 @@ void EqualityConstraints::update(const RegionMap<ECFExpression> &dirichlet, bool
 		_dirichlet[0].push_back(std::make_pair(_mesh.bregion(it->first), it->second.evaluator));
 		for (size_t i = 0; i < _mesh.nodes->pintervals.size(); i++) {
 			_intervalDirichletNodes[0][i].insert(_intervalDirichletNodes[0][i].end(),
-					_dirichlet[0].back().first->nodes->datatarray().begin() + _dirichlet[0].back().first->nintervals[i].begin,
-					_dirichlet[0].back().first->nodes->datatarray().begin() + _dirichlet[0].back().first->nintervals[i].end);
+					_dirichlet[0].back().first->uniqueNodes->datatarray().begin() + _dirichlet[0].back().first->unintervals[i].begin,
+					_dirichlet[0].back().first->uniqueNodes->datatarray().begin() + _dirichlet[0].back().first->unintervals[i].end);
+		}
+	}
+
+	for (auto it = dirichlet.intersections.begin(); it != dirichlet.intersections.end(); ++it) {
+		_dirichlet[0].push_back(std::make_pair(_mesh.ibregion(it->first), it->second.evaluator));
+		for (size_t i = 0; i < _mesh.nodes->pintervals.size(); i++) {
+			_intervalDirichletNodes[0][i].insert(_intervalDirichletNodes[0][i].end(),
+					_dirichlet[0].back().first->uniqueNodes->datatarray().begin() + _dirichlet[0].back().first->unintervals[i].begin,
+					_dirichlet[0].back().first->uniqueNodes->datatarray().begin() + _dirichlet[0].back().first->unintervals[i].end);
 		}
 	}
 
 	update(withRedundantMultiplier, withScaling);
 }
 
-void EqualityConstraints::update(const std::map<std::string, ECFExpressionOptionalVector> &dirichlet, bool withRedundantMultiplier, bool withScaling)
+void EqualityConstraints::update(const RegionMap<ECFExpressionOptionalVector> &dirichlet, bool withRedundantMultiplier, bool withScaling)
 {
 	_dirichlet.clear();
 	_dirichlet.resize(_DOFs);
@@ -131,12 +140,12 @@ void EqualityConstraints::update(const std::map<std::string, ECFExpressionOption
 	auto insert = [&] (int d) {
 		for (size_t i = 0; i < _mesh.nodes->pintervals.size(); i++) {
 			_intervalDirichletNodes[d][i].insert(_intervalDirichletNodes[d][i].end(),
-					_dirichlet[d].back().first->nodes->datatarray().begin() + _dirichlet[d].back().first->nintervals[i].begin,
-					_dirichlet[d].back().first->nodes->datatarray().begin() + _dirichlet[d].back().first->nintervals[i].end);
+					_dirichlet[d].back().first->uniqueNodes->datatarray().begin() + _dirichlet[d].back().first->unintervals[i].begin,
+					_dirichlet[d].back().first->uniqueNodes->datatarray().begin() + _dirichlet[d].back().first->unintervals[i].end);
 		}
 	};
 
-	for (auto it = dirichlet.begin(); it != dirichlet.end(); ++it) {
+	for (auto it = dirichlet.regions.begin(); it != dirichlet.regions.end(); ++it) {
 		if (it->second.all.value.size()) {
 			for (int d = 0; d < _DOFs; d++) {
 				_dirichlet[d].push_back(std::make_pair(_mesh.bregion(it->first), it->second.all.evaluator));
@@ -153,6 +162,28 @@ void EqualityConstraints::update(const std::map<std::string, ECFExpressionOption
 			}
 			if (_DOFs == 3 && it->second.z.value.size()) {
 				_dirichlet[2].push_back(std::make_pair(_mesh.bregion(it->first), it->second.z.evaluator));
+				insert(2);
+			}
+		}
+	}
+
+	for (auto it = dirichlet.intersections.begin(); it != dirichlet.intersections.end(); ++it) {
+		if (it->second.all.value.size()) {
+			for (int d = 0; d < _DOFs; d++) {
+				_dirichlet[d].push_back(std::make_pair(_mesh.ibregion(it->first), it->second.all.evaluator));
+				insert(d);
+			}
+		} else {
+			if (it->second.x.value.size()) {
+				_dirichlet[0].push_back(std::make_pair(_mesh.ibregion(it->first), it->second.x.evaluator));
+				insert(0);
+			}
+			if (it->second.y.value.size()) {
+				_dirichlet[1].push_back(std::make_pair(_mesh.ibregion(it->first), it->second.y.evaluator));
+				insert(1);
+			}
+			if (_DOFs == 3 && it->second.z.value.size()) {
+				_dirichlet[2].push_back(std::make_pair(_mesh.ibregion(it->first), it->second.z.evaluator));
 				insert(2);
 			}
 		}
@@ -257,8 +288,8 @@ void EqualityConstraints::B1DirichletInsert(const Step &step)
 
 						for (size_t r = 0; r < _dirichlet[dof].size(); r++) {
 							for (
-									auto n = _dirichlet[dof][r].first->nodes->datatarray().cbegin() + _dirichlet[dof][r].first->nintervals[interval.pindex].begin;
-									n != _dirichlet[dof][r].first->nodes->datatarray().cbegin() + _dirichlet[dof][r].first->nintervals[interval.pindex].end;
+									auto n = _dirichlet[dof][r].first->uniqueNodes->datatarray().cbegin() + _dirichlet[dof][r].first->unintervals[interval.pindex].begin;
+									n != _dirichlet[dof][r].first->uniqueNodes->datatarray().cbegin() + _dirichlet[dof][r].first->unintervals[interval.pindex].end;
 									++n) {
 								_instance.B1[d].J_col_indices.push_back(_DOFs * (interval.DOFOffset + *n - interval.begin) + dof + 1);
 							}
@@ -328,15 +359,15 @@ void EqualityConstraints::B1DirichletUpdate(const Step &step)
 				for (int dof = 0; dof < _DOFs; dof++) {
 					if (_withRedundantMultipliers || interval.dindex == 0) {
 						for (size_t r = 0; r < _dirichlet[dof].size(); r++) {
-							size_t isize = _dirichlet[dof][r].first->nintervals[interval.pindex].end - _dirichlet[dof][r].first->nintervals[interval.pindex].begin;
+							size_t isize = _dirichlet[dof][r].first->unintervals[interval.pindex].end - _dirichlet[dof][r].first->unintervals[interval.pindex].begin;
 							if (_dirichlet[dof][r].second->isTemperatureDependent()) {
 								ESINFO(ERROR) << "Dirichlet boundary condition cannot be dependent on TEMPERATURE.";
 							}
 							if (_dirichlet[dof][r].second->isCoordinateDependent()) {
 								std::vector<Point> points;
 								points.reserve(isize);
-								for (eslocal n = _dirichlet[dof][r].first->nintervals[interval.pindex].begin; n < _dirichlet[dof][r].first->nintervals[interval.pindex].end; ++n) {
-									points.push_back(_mesh.nodes->coordinates->datatarray()[_dirichlet[dof][r].first->nodes->datatarray()[n]]);
+								for (eslocal n = _dirichlet[dof][r].first->unintervals[interval.pindex].begin; n < _dirichlet[dof][r].first->unintervals[interval.pindex].end; ++n) {
+									points.push_back(_mesh.nodes->coordinates->datatarray()[_dirichlet[dof][r].first->uniqueNodes->datatarray()[n]]);
 								}
 								_dirichlet[dof][r].second->evaluate(isize, points.data(), NULL, step.currentTime, _instance.B1c[d].data() + offset);
 							} else {

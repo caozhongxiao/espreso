@@ -18,7 +18,7 @@ ExpressionEvaluator::ExpressionEvaluator(const std::string &expression)
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		_expressions[t] = new Expression(expression, { "X", "Y", "Z", "TEMPERATURE", "TIME", "R" });
+		_expressions[t] = new Expression(expression, ExpressionEvaluator::variables());
 	}
 
 	_coordinateDependency = StringCompare::contains(expression, { "X", "Y", "Z" });
@@ -64,6 +64,11 @@ double ExpressionEvaluator::evaluate(double r) const
 	int thread = omp_get_thread_num();
 	_expressions[thread]->values[5] = r;
 	return _expressions[thread]->evaluate();
+}
+
+std::string ExpressionEvaluator::getEXPRTKForm() const
+{
+	return _expressions.front()->expression();
 }
 
 

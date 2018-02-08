@@ -22,6 +22,8 @@ struct NodeData;
 
 struct ElementsRegionStore;
 struct BoundaryRegionStore;
+struct ElementsRegionsIntersectionStore;
+struct BoundaryRegionsIntersectionStore;
 struct FETIDataStore;
 struct SurfaceStore;
 
@@ -48,13 +50,18 @@ public:
 	void computeElementStatistic(const ElementData *data, const ElementsRegionStore* region, Statistics *statistics, MPI_Comm communicator) const;
 
 	ElementsRegionStore* eregion(const std::string &name);
+	ElementsRegionsIntersectionStore* ieregion(const std::string &name);
 	BoundaryRegionStore* bregion(const std::string &name);
+	BoundaryRegionsIntersectionStore* ibregion(const std::string &name);
 
 	ElementStore* elements;
 	NodeStore* nodes;
 
 	std::vector<ElementsRegionStore*> elementsRegions;
 	std::vector<BoundaryRegionStore*> boundaryRegions;
+
+	std::vector<ElementsRegionsIntersectionStore*> elementsRegionsIntersections;
+	std::vector<BoundaryRegionsIntersectionStore*> boundaryRegionsIntersections;
 
 	FETIDataStore *FETIData;
 

@@ -40,10 +40,13 @@ static std::vector<TType> getsuffix(size_t start, const std::vector<TType> &data
 
 ECFMetaData ECFMetaData::suffix(size_t start) const
 {
-	return ECFMetaData(*this)
-			.setdescription(getsuffix(start, description))
-			.setdatatype(getsuffix(start, datatype))
-			.setpattern(getsuffix(start, pattern));
+	ECFMetaData ret(*this);
+	ret.setdescription(getsuffix(start, description));
+	ret.setdatatype(getsuffix(start, datatype));
+	ret.setpattern(getsuffix(start, pattern));
+	ret.tensor = NULL;
+	ret.regionMap = NULL;
+	return ret;
 }
 
 bool ECFParameter::setValue(const std::string &value)
@@ -188,6 +191,7 @@ void ECFObject::forEachParameters(std::function<void(const ECFParameter*)> fnc, 
 			continue;
 		}
 		if (parameters[i]->isObject()) {
+			fnc(parameters[i]);
 			dynamic_cast<const ECFObject*>(parameters[i])->forEachParameters(fnc, onlyAllowed);
 		}
 		if (parameters[i]->isValue()) {

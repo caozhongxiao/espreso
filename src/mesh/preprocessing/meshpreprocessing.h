@@ -14,6 +14,7 @@ namespace espreso {
 class TimeEval;
 class TimeEvent;
 
+struct RegionMapBase;
 class Mesh;
 struct Element;
 struct NodeData;
@@ -49,6 +50,7 @@ public:
 	void triangularizeDomainSurface();
 
 	void computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion, int elementDimension);
+	void computeRegionsIntersection(RegionMapBase &map);
 
 	void morphRBF(const std::string &name, const RBFTargetConfiguration &configuration, int dimension);
 

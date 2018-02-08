@@ -23,6 +23,8 @@ public:
 	bool isTimeDependent() const { return false; }
 	bool isTemperatureDependent() const { return true; }
 
+	std::string getEXPRTKForm() const;
+
 protected:
 	std::vector<std::pair<double, double> > _table;
 };
