@@ -19,6 +19,7 @@
 #include "../../basis/logging/logging.h"
 
 #include "../../config/ecf/environment.h"
+#include "../../config/regionmap.h"
 
 #include <algorithm>
 #include <numeric>
@@ -1108,7 +1109,7 @@ void MeshPreprocessing::computeRegionsIntersection(RegionMapBase &map)
 
 	for (size_t i = 0; i < map.order.size(); i++) {
 		for (size_t r = 0; r < _mesh->elementsRegions.size(); r++) {
-			if (StringCompare::caseInsensitiveEq(_mesh->elementsRegions[r]->name, map.order[i])) {
+			if (StringCompare::caseSensitiveEq(_mesh->elementsRegions[r]->name, map.order[i])) {
 				eregions.push_back(_mesh->elementsRegions[r]);
 				break;
 			}
@@ -1117,7 +1118,7 @@ void MeshPreprocessing::computeRegionsIntersection(RegionMapBase &map)
 
 	for (size_t i = 0; i < map.order.size(); i++) {
 		for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
-			if (StringCompare::caseInsensitiveEq(_mesh->boundaryRegions[r]->name, map.order[i])) {
+			if (StringCompare::caseSensitiveEq(_mesh->boundaryRegions[r]->name, map.order[i])) {
 				if (_mesh->boundaryRegions[r]->dimension == 0) { // only node regions intersect
 					bregions.push_back(_mesh->boundaryRegions[r]);
 				}

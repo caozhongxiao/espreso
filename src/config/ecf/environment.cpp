@@ -1,5 +1,5 @@
 
-#include "environment.h"
+#include "environment.hpp"
 #include "../configuration.hpp"
 #include "../../basis/utilities/utils.h"
 
@@ -34,21 +34,25 @@ Environment::Environment(): executable("espreso")
 	MPI_Bcast(&Logging::time, sizeof(time_t), MPI_BYTE, 0, MPICommunicator);
 
 	log_dir = "debug";
-	REGISTER(log_dir, ECFMetaData()
-			.setdescription({ "A name of logging directory" })
-			.setdatatype({ ECFDataType::STRING }));
 
 	verbose_level = 1;
 	measure_level = testing_level = 0;
 	remove_old_results = print_matrices = false;
 
+	if (environment == NULL) {
+		environment = this;
+	}
+}
+
+EnvironmentConfiguration::EnvironmentConfiguration()
+{
+	REGISTER(log_dir, ECFMetaData()
+			.setdescription({ "A name of logging directory" })
+			.setdatatype({ ECFDataType::STRING }));
+
 	REGISTER(verbose_level, ECFMetaData()
 			.setdescription({ "Verbose level [0-3]." })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
-
-//	REGISTER(testing_level, ECFMetaData()
-//			.setdescription({ "Testing level [0-3]." })
-//			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
 
 	REGISTER(measure_level, ECFMetaData()
 			.setdescription({ "Measure level [0-3]." })
@@ -60,10 +64,6 @@ Environment::Environment(): executable("espreso")
 	REGISTER(remove_old_results, ECFMetaData()
 			.setdescription({ "Keep results of only the last ESPRESO run." })
 			.setdatatype({ ECFDataType::BOOL }));
-
-	if (environment == NULL) {
-		environment = this;
-	}
 }
 
 }

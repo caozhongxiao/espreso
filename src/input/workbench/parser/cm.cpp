@@ -12,6 +12,7 @@
 #include "../../../config/ecf/environment.h"
 
 #include <cstring>
+#include <functional>
 
 using namespace espreso;
 

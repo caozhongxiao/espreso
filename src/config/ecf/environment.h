@@ -3,11 +3,12 @@
 #define SRC_CONFIG_ECF_ENVIRONMENT_H_
 
 #include "mpi.h"
-#include "../configuration.h"
+
+#include <string>
 
 namespace espreso {
 
-struct Environment: public ECFObject {
+struct Environment {
 
 	Environment();
 

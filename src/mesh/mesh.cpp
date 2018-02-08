@@ -82,18 +82,18 @@ Mesh::Mesh(const ECFRoot &configuration)
 ElementsRegionStore* Mesh::eregion(const std::string &name)
 {
 	for (size_t r = 0; r < elementsRegions.size(); r++) {
-		if (StringCompare::caseInsensitiveEq(elementsRegions[r]->name, name)) {
+		if (StringCompare::caseSensitiveEq(elementsRegions[r]->name, name)) {
 			return elementsRegions[r];
 		}
 	}
-	ESINFO(ERROR) << "ESPRESO internal error: request for unknown region of elements with '" << name << "'.";
+	ESINFO(ERROR) << "Unknown region of elements with '" << name << "'.";
 	return NULL;
 }
 
 ElementsRegionsIntersectionStore* Mesh::ieregion(const std::string &name)
 {
 	for (size_t r = 0; r < elementsRegionsIntersections.size(); r++) {
-		if (StringCompare::caseInsensitiveEq(elementsRegionsIntersections[r]->name, name)) {
+		if (StringCompare::caseSensitiveEq(elementsRegionsIntersections[r]->name, name)) {
 			return elementsRegionsIntersections[r];
 		}
 	}
@@ -104,18 +104,18 @@ ElementsRegionsIntersectionStore* Mesh::ieregion(const std::string &name)
 BoundaryRegionStore* Mesh::bregion(const std::string &name)
 {
 	for (size_t r = 0; r < boundaryRegions.size(); r++) {
-		if (StringCompare::caseInsensitiveEq(boundaryRegions[r]->name, name)) {
+		if (StringCompare::caseSensitiveEq(boundaryRegions[r]->name, name)) {
 			return boundaryRegions[r];
 		}
 	}
-	ESINFO(ERROR) << "ESPRESO internal error: request for unknown boundary region '" << name << "'.";
+	ESINFO(ERROR) << "Unknown boundary region '" << name << "'.";
 	return NULL;
 }
 
 BoundaryRegionsIntersectionStore* Mesh::ibregion(const std::string &name)
 {
 	for (size_t r = 0; r < boundaryRegionsIntersections.size(); r++) {
-		if (StringCompare::caseInsensitiveEq(boundaryRegionsIntersections[r]->name, name)) {
+		if (StringCompare::caseSensitiveEq(boundaryRegionsIntersections[r]->name, name)) {
 			return boundaryRegionsIntersections[r];
 		}
 	}

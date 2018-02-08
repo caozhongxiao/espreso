@@ -2,13 +2,10 @@
 #ifndef SRC_CONFIG_REGIONMAP_H_
 #define SRC_CONFIG_REGIONMAP_H_
 
-#include "configuration.h"
-
 #include "../mesh/store/boundaryregionstore.h"
+#include "../basis/utilities/parser.h"
 
 #include <map>
-#include <algorithm>
-#include <iostream>
 
 namespace espreso {
 
@@ -26,14 +23,17 @@ struct RegionMapBase {
 
 	void addRegion(const std::string &name)
 	{
-		if (std::find(order.begin(), order.end(), name) == order.end()) {
-			order.push_back(name);
+		for (size_t i = 0; i < order.size(); i++) {
+			if (StringCompare::caseInsensitiveEq(order[i], name)) {
+				return;
+			}
 		}
+		order.push_back(name);
 	}
 
 	virtual void addIntersection(const std::string &name, std::vector<std::string> &regions) =0;
 
-	RegionMapBase(): regions_intersection(RegionIntersection::AVERAGE) {}
+	RegionMapBase(): regions_intersection(RegionIntersection::LAST) {}
 	virtual ~RegionMapBase() {}
 };
 
