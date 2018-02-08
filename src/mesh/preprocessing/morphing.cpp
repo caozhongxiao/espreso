@@ -308,7 +308,6 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 					M_size,  &M_values[0],
 					dimension, &wq_values[0]);
 
-
 			if (result!=0) {
 				ESINFO(ERROR) << "ESPRESO error: Dense solver is unable to solve the system. Try iterative solver.";
 			}

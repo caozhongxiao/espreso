@@ -57,7 +57,8 @@ espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfigurat
 }
 
 espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECFConfiguration *ECFRoot)
-: function({ "R" }, "R")
+: function({ "R" }, "R"),
+  external_ffd(ECFRoot)
 {
 	solver = MORPHING_RBF_SOLVER::DENSE;
 	REGISTER(solver, ECFMetaData()
@@ -86,7 +87,25 @@ espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECFConfiguration *ECFRoo
 		.setdatatype({ ECFDataType::REGION })
 		.setpattern({ "REGION" }),
 		ECFRoot);
+
+	REGISTER(external_ffd, ECFMetaData()
+			.setdescription({ "Configurations defined by an external FFD file." }));
 }
+
+espreso::ExternalFFDConfiguration::ExternalFFDConfiguration(ECFConfiguration *ECFRoot)
+{
+	path = "";
+	REGISTER(path, ECFMetaData()
+			.setdescription({ "Set path to external configuration file with regions." })
+			.setdatatype({ ECFDataType::STRING }));
+
+	REGISTER(morphers , ECFMetaData()
+			.setdescription({ "Morphed region name.", "Target configuration." })
+			.setdatatype({ ECFDataType::REGION })
+			.setpattern({ "REGION" }),
+			ECFRoot);
+}
+
 
 espreso::MeshMorphing::MeshMorphing(ECFConfiguration *ECFRoot)
 {

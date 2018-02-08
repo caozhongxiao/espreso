@@ -44,6 +44,14 @@ protected:
 	ECFConfiguration *_ECFRoot;
 };
 
+struct ExternalFFDConfiguration: public ECFObject {
+
+	std::string path;
+	std::map<std::string, RBFTargetTransformationConfiguration> morphers;
+
+	ExternalFFDConfiguration(ECFConfiguration *ECFRoot);
+};
+
 struct RBFTargetConfiguration: public ECFObject {
 
 	MORPHING_RBF_SOLVER solver;
@@ -53,6 +61,8 @@ struct RBFTargetConfiguration: public ECFObject {
 
 	std::string target;
 	std::map<std::string, RBFTargetTransformationConfiguration> morphers;
+
+	ExternalFFDConfiguration external_ffd;
 
 	RBFTargetConfiguration(ECFConfiguration *ECFRoot);
 };
