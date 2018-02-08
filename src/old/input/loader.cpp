@@ -15,7 +15,6 @@
 #include "../../basis/logging/logging.hpp"
 #include "../../basis/utilities/utils.h"
 #include "../../config/ecf/root.h"
-#include "espreso/espresobinaryformat.h"
 
 #include "../../mesh/mesh.h"
 #include "../oldevaluators/oldevaluator.h"
@@ -34,7 +33,6 @@ void OldLoader::load(const ECFRoot &configuration, OldMesh &mesh, size_t index, 
 		OpenFOAM::load(configuration.openfoam, mesh, index, size);
 		break;
 	case INPUT_FORMAT::ESDATA:
-		ESPRESOBinaryFormat::load(configuration.esdata, mesh, index, size);
 		break;
 	case INPUT_FORMAT::GENERATOR:
 		Generator::generate(configuration.generator, mesh, index, size);
