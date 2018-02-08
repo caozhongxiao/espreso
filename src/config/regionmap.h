@@ -13,7 +13,16 @@
 namespace espreso {
 
 struct RegionMapBase {
+	enum class RegionIntersection {
+		FIRST,
+		LAST,
+		SUM,
+		AVERAGE,
+		ERROR
+	};
+
 	std::vector<std::string> order;
+	RegionIntersection regions_intersection;
 
 	void addRegion(const std::string &name)
 	{
@@ -24,6 +33,7 @@ struct RegionMapBase {
 
 	virtual void addIntersection(const std::string &name, std::vector<std::string> &regions) =0;
 
+	RegionMapBase(): regions_intersection(RegionIntersection::AVERAGE) {}
 	virtual ~RegionMapBase() {}
 };
 
@@ -34,7 +44,7 @@ struct RegionMap: public RegionMapBase {
 
 	void addIntersection(const std::string &name, std::vector<std::string> &regions)
 	{
-		intersections.emplace(std::piecewise_construct, std::forward_as_tuple(name), std::forward_as_tuple(regions, this->regions));
+		intersections.emplace(std::piecewise_construct, std::forward_as_tuple(name), std::forward_as_tuple(regions_intersection, regions, this->regions));
 	}
 };
 

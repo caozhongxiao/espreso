@@ -9,14 +9,6 @@ namespace espreso {
 
 struct Environment: public ECFObject {
 
-	enum class RegionIntersection {
-		FIRST,
-		LAST,
-		SUM,
-		AVERAGE,
-		ERROR
-	};
-
 	Environment();
 
 	int MPIrank;
@@ -36,8 +28,6 @@ struct Environment: public ECFObject {
 	size_t verbose_level;
 	size_t testing_level;
 	size_t measure_level;
-
-	RegionIntersection region_intersection;
 
 	bool print_matrices;
 	bool remove_old_results;

@@ -96,6 +96,12 @@ void ECFParameter::addListener(Event event, std::function<void(const std::string
 	}
 }
 
+ECFParameter* ECFParameter::registerAdditionalParameter(ECFParameter* parameter)
+{
+	ESINFO(ERROR) << "ESPRESO internal error: parameter '" << name << "' cannot have additional parameters.";
+	return NULL;
+}
+
 std::string ECFObject::getValue() const
 {
 	ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: calling 'get' on ECFObject.";
@@ -134,6 +140,12 @@ ECFParameter* ECFObject::getWithError(const std::string &name)
 		ESINFO(GLOBAL_ERROR) << "ECF ERROR: Object " << this->name << " has no parameter '" << name << "'";
 	}
 	return _getParameter(name);
+}
+
+ECFParameter* ECFObject::registerAdditionalParameter(ECFParameter* parameter)
+{
+	parameters.push_back(parameter);
+	return parameter;
 }
 
 void ECFObject::dropParameter(ECFParameter *parameter)

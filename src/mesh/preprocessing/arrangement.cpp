@@ -1171,18 +1171,25 @@ void MeshPreprocessing::computeRegionsIntersection(RegionMapBase &map)
 			}
 		}
 
-		if (disjunkt.size() > bregions.size()) {
-			for (size_t i = 0; i < disjunkt.size(); offset += disjunkt[i++].size()) {
-				std::vector<BoundaryRegionStore*> regions;
-				for (size_t r = 0; r < bregions.size(); r++) {
-					int maskOffset = r / (8 * sizeof(eslocal));
-					int bit = 1 << (r % (8 * sizeof(eslocal)));
-					if (mask[permutation[offset] * maskSize + maskOffset] & bit) {
-						regions.push_back(bregions[r]);
-					}
+		for (size_t r = 0; r < bregions.size(); r++) {
+			bregions[r]->uniqueNodes = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(1, 0));
+			for (size_t i = 0; i < bregions[r]->unintervals.size(); i++) {
+				bregions[r]->unintervals[i].begin = 0;
+				bregions[r]->unintervals[i].end = 0;
+			}
+		}
+		for (size_t i = 0; i < disjunkt.size(); offset += disjunkt[i++].size()) {
+			std::vector<BoundaryRegionStore*> regions;
+			for (size_t r = 0; r < bregions.size(); r++) {
+				int maskOffset = r / (8 * sizeof(eslocal));
+				int bit = 1 << (r % (8 * sizeof(eslocal)));
+				if (mask[permutation[offset] * maskSize + maskOffset] & bit) {
+					regions.push_back(bregions[r]);
 				}
+			}
 
-				if (regions.size() == 1 && regions.front()->nodes->datatarray().size() != disjunkt[i].size()) {
+			if (regions.size() == 1) {
+				if (regions.front()->nodes->datatarray().size() != disjunkt[i].size()) {
 					std::sort(disjunkt[i].begin(), disjunkt[i].end());
 					regions.front()->uniqueNodes = new serializededata<eslocal, eslocal>(1, disjunkt[i]);
 					regions.front()->unintervals = _mesh->nodes->pintervals;
@@ -1190,32 +1197,36 @@ void MeshPreprocessing::computeRegionsIntersection(RegionMapBase &map)
 						regions.front()->unintervals[n].begin = std::lower_bound(disjunkt[i].begin(), disjunkt[i].end(), _mesh->nodes->pintervals[n].begin) - disjunkt[i].begin();
 						regions.front()->unintervals[n].end = std::lower_bound(disjunkt[i].begin(), disjunkt[i].end(), _mesh->nodes->pintervals[n].end) - disjunkt[i].begin();
 					}
+				} else {
+					delete regions.front()->uniqueNodes;
+					regions.front()->uniqueNodes = regions.front()->nodes;
+					regions.front()->unintervals = regions.front()->nintervals;
+				}
+			}
+
+			if (regions.size() > 1) {
+				BoundaryRegionsIntersectionStore *iregion = new BoundaryRegionsIntersectionStore("_", _mesh->_eclasses);
+				std::vector<std::string> rnames;
+				_mesh->boundaryRegionsIntersections.push_back(iregion);
+				std::sort(regions.begin(), regions.end(), [&] (BoundaryRegionStore *r1, BoundaryRegionStore *r2) {
+					auto it1 = std::find(bregions.begin(), bregions.end(), r1);
+					auto it2 = std::find(bregions.begin(), bregions.end(), r2);
+					return it1 < it2;
+				});
+				for (size_t r = 0; r < regions.size(); r++) {
+					rnames.push_back(regions[r]->name);
+					_mesh->boundaryRegionsIntersections.back()->name += regions[r]->name + "_";
+					_mesh->boundaryRegionsIntersections.back()->regions.push_back(regions[r]);
 				}
 
-				if (regions.size() > 1) {
-					BoundaryRegionsIntersectionStore *iregion = new BoundaryRegionsIntersectionStore("_", _mesh->_eclasses);
-					std::vector<std::string> rnames;
-					_mesh->boundaryRegionsIntersections.push_back(iregion);
-					std::sort(regions.begin(), regions.end(), [&] (BoundaryRegionStore *r1, BoundaryRegionStore *r2) {
-						auto it1 = std::find(bregions.begin(), bregions.end(), r1);
-						auto it2 = std::find(bregions.begin(), bregions.end(), r2);
-						return it1 < it2;
-					});
-					for (size_t r = 0; r < regions.size(); r++) {
-						rnames.push_back(regions[r]->name);
-						_mesh->boundaryRegionsIntersections.back()->name += regions[r]->name + "_";
-						_mesh->boundaryRegionsIntersections.back()->regions.push_back(regions[r]);
-					}
-
-					std::sort(disjunkt[i].begin(), disjunkt[i].end());
-					iregion->uniqueNodes = new serializededata<eslocal, eslocal>(1, disjunkt[i]);
-					iregion->unintervals = _mesh->nodes->pintervals;
-					for (size_t n = 0; n < regions.front()->unintervals.size(); n++) {
-						iregion->unintervals[n].begin = std::lower_bound(disjunkt[i].begin(), disjunkt[i].end(), _mesh->nodes->pintervals[n].begin) - disjunkt[i].begin();
-						iregion->unintervals[n].end = std::lower_bound(disjunkt[i].begin(), disjunkt[i].end(), _mesh->nodes->pintervals[n].end) - disjunkt[i].begin();
-					}
-					map.addIntersection(_mesh->boundaryRegionsIntersections.back()->name, rnames);
+				std::sort(disjunkt[i].begin(), disjunkt[i].end());
+				iregion->uniqueNodes = new serializededata<eslocal, eslocal>(1, disjunkt[i]);
+				iregion->unintervals = _mesh->nodes->pintervals;
+				for (size_t n = 0; n < regions.front()->unintervals.size(); n++) {
+					iregion->unintervals[n].begin = std::lower_bound(disjunkt[i].begin(), disjunkt[i].end(), _mesh->nodes->pintervals[n].begin) - disjunkt[i].begin();
+					iregion->unintervals[n].end = std::lower_bound(disjunkt[i].begin(), disjunkt[i].end(), _mesh->nodes->pintervals[n].end) - disjunkt[i].begin();
 				}
+				map.addIntersection(_mesh->boundaryRegionsIntersections.back()->name, rnames);
 			}
 		}
 	}

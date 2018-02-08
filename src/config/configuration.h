@@ -111,6 +111,8 @@ struct ECFParameter {
 
 	virtual void addListener(Event event, std::function<void(const std::string &value)> listener);
 
+	virtual ECFParameter* registerAdditionalParameter(ECFParameter* parameter);
+
 	virtual ~ECFParameter() {};
 protected:
 	virtual bool _setValue(const std::string &value) =0;
@@ -182,6 +184,7 @@ struct ECFObject: public ECFParameter {
 
 	virtual ~ECFObject();
 
+	virtual ECFParameter* registerAdditionalParameter(ECFParameter* parameter);
 	virtual void dropParameter(ECFParameter *parameter);
 protected:
 	ECFParameter* addSeparator();

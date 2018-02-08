@@ -54,16 +54,6 @@ Environment::Environment(): executable("espreso")
 			.setdescription({ "Measure level [0-3]." })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
 
-	region_intersection = RegionIntersection::AVERAGE;
-	REGISTER(region_intersection, ECFMetaData()
-			.setdescription({ "Treating with intersected region." })
-			.setdatatype( { ECFDataType::OPTION })
-			.addoption(ECFOption().setname("FIRST").setdescription("Setting from the first region is used."))
-			.addoption(ECFOption().setname("LAST").setdescription("Setting from the last region is used."))
-			.addoption(ECFOption().setname("SUM").setdescription("Setting from all regions is summed."))
-			.addoption(ECFOption().setname("AVERAGE").setdescription("Setting from all regions is averaged."))
-			.addoption(ECFOption().setname("ERROR").setdescription("Region intersection is not allowed.")));
-
 	REGISTER(print_matrices, ECFMetaData()
 			.setdescription({ "Print assembler matrices for debugging." })
 			.setdatatype({ ECFDataType::BOOL }));

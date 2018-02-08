@@ -138,6 +138,14 @@ ECFParameter* ECFObject::registerParameter(const std::string &name, RegionMap<Tt
 	p->addListener(Event::PARAMETER_GET, [&] (const std::string &name) {
 		parameter.addRegion(name);
 	});
+	p->registerAdditionalParameter(registerParameter("INTERSECTION", parameter.regions_intersection, ECFMetaData()
+			.setdescription({ "Treating with intersected region." })
+			.setdatatype( { ECFDataType::OPTION })
+			.addoption(ECFOption().setname("FIRST").setdescription("Setting from the first region is used."))
+			.addoption(ECFOption().setname("LAST").setdescription("Setting from the last region is used."))
+			.addoption(ECFOption().setname("SUM").setdescription("Setting from all regions is summed."))
+			.addoption(ECFOption().setname("AVERAGE").setdescription("Setting from all regions is averaged."))
+			.addoption(ECFOption().setname("ERROR").setdescription("Region intersection is not allowed."))));
 	return p;
 }
 

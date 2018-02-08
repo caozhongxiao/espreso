@@ -22,7 +22,7 @@ struct ECFExpression {
 	ECFExpression& operator=(const ECFExpression &other);
 	~ECFExpression();
 
-	ECFExpression(std::vector<std::string> &regions, const std::map<std::string, ECFExpression> &values);
+	ECFExpression(RegionMapBase::RegionIntersection intersection, std::vector<std::string> &regions, const std::map<std::string, ECFExpression> &values);
 
 	bool createEvaluator();
 };
@@ -36,8 +36,8 @@ struct ECFExpressionVector: public ECFObject {
 	ECFExpressionVector(DIMENSION dimension, const std::vector<std::string> &variables);
 	ECFExpressionVector(DIMENSION dimension, const std::vector<std::string> &variables, const std::string &initialValue);
 
-	ECFExpressionVector(std::vector<std::string> &regions, const std::map<std::string, ECFExpressionVector> &values);
-	ECFExpressionVector(std::vector<std::string> &regions, const std::map<std::string, ECFExpressionOptionalVector> &values);
+	ECFExpressionVector(RegionMapBase::RegionIntersection intersection, std::vector<std::string> &regions, const std::map<std::string, ECFExpressionVector> &values);
+	ECFExpressionVector(RegionMapBase::RegionIntersection intersection, std::vector<std::string> &regions, const std::map<std::string, ECFExpressionOptionalVector> &values);
 
 protected:
 	template <typename TValue>
@@ -60,7 +60,7 @@ struct ECFExpressionOptionalVector: public ECFExpressionVector {
 
 	ECFExpressionOptionalVector(DIMENSION dimension, const std::vector<std::string> &variables);
 
-	ECFExpressionOptionalVector(std::vector<std::string> &regions, const std::map<std::string, ECFExpressionOptionalVector> &values);
+	ECFExpressionOptionalVector(RegionMapBase::RegionIntersection intersection, std::vector<std::string> &regions, const std::map<std::string, ECFExpressionOptionalVector> &values);
 };
 
 }
