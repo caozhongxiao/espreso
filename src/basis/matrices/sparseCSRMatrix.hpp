@@ -4,19 +4,6 @@
 namespace espreso {
 
 template<typename Tindices>
-std::ostream& operator<<(std::ostream& os, const SparseCSRMatrix<Tindices> &m)
-{
-	SparseIJVMatrix<Tindices> ijv = m;
-	os << ijv;
-//	os << m.rows() << " " << m.columns() << " " << m.nonZeroValues() << "\n";
-//
-//	os << m._rowPtrs << "\n";
-//	os << m._columnIndices << "\n";
-//	os << m._values << "\n";
-	return os;
-}
-
-template<typename Tindices>
 SparseCSRMatrix<Tindices>::SparseCSRMatrix(): Matrix(CSRMatrixIndexing)
 {
 	_rowPtrs.assign(2, _indexing);
@@ -56,65 +43,6 @@ SparseCSRMatrix<Tindices>::SparseCSRMatrix(const DenseMatrix &other): Matrix(oth
 }
 
 template<typename Tindices>
-SparseCSRMatrix<Tindices>::SparseCSRMatrix(const SparseDOKMatrix<Tindices> &other): Matrix(other.rows(), other.columns(), CSRMatrixIndexing)
-{
-	size_t nnz = other.nonZeroValues();
-	_rowPtrs.resize(other.rows() + 1);
-	_columnIndices.reserve(nnz);
-	_values.reserve(nnz);
-
-	Tindices last_index = 0;
-
-	const std::map<Tindices, std::map<Tindices, double> > &dokValues = other.values();
-	typename std::map<Tindices, std::map<Tindices, double> >::const_iterator row;
-
-	nnz = 0;
-	for(row = dokValues.begin(); row != dokValues.end(); ++row) {
-		const typename std::map<Tindices, double> &columns = row->second;
-
-		std::fill(_rowPtrs.begin() + last_index, _rowPtrs.begin() + row->first - other.indexing() + 1, nnz + _indexing);
-		last_index = row->first - other.indexing() + 1;
-
-		typename std::map<Tindices, double>::const_iterator column;
-		for(column = columns.begin(); column != columns.end(); ++column) {
-			if (column->second != 0) {
-				_columnIndices.push_back(column->first - other.indexing() + _indexing);
-				_values.push_back(column->second);
-				nnz++;
-			}
-		}
-	}
-	std::fill(_rowPtrs.begin() + last_index, _rowPtrs.end(), nnz + _indexing);
-}
-
-template<typename Tindices>
-SparseCSRMatrix<Tindices>::SparseCSRMatrix(const SparseIJVMatrix<Tindices> &other): Matrix(other.rows(), other.columns(), CSRMatrixIndexing)
-{
-	Tindices nnz = other.nonZeroValues();
-	Tindices rows = _rows;
-	_rowPtrs.resize(other.rows() + 1);
-	_columnIndices.resize(nnz);
-	_values.resize(nnz);
-
-	Tindices job[6] = {
-		2, 					// IJV to sorted CSR
-		indexing(),			// indexing of CSR matrix
-		other.indexing(),	// indexing of IJV matrix
-		0,					// without any meaning
-		nnz,				// non-zero values
-		0,					// fill all output arrays
-	};
-
-	Tindices info;
-
-	mkl_dcsrcoo(
-		job, &rows,
-		values(), columnIndices(), rowPtrs(), &nnz,
-		const_cast<double*>(other.values()), const_cast<eslocal*>(other.rowIndices()), const_cast<eslocal*>(other.columnIndices()),
-		&info);
-}
-
-template<typename Tindices>
 SparseCSRMatrix<Tindices>::SparseCSRMatrix(SparseVVPMatrix<Tindices> &other): Matrix(other.rows(), other.columns(), CSRMatrixIndexing)
 {
 	other.shrink();
@@ -137,22 +65,6 @@ SparseCSRMatrix<Tindices>::SparseCSRMatrix(SparseVVPMatrix<Tindices> &other): Ma
 
 template<typename Tindices>
 SparseCSRMatrix<Tindices>& SparseCSRMatrix<Tindices>::operator=(const DenseMatrix &other)
-{
-	SparseCSRMatrix<Tindices> tmp(other);
-	assign(*this, tmp);
-	return *this;
-}
-
-template<typename Tindices>
-SparseCSRMatrix<Tindices>& SparseCSRMatrix<Tindices>::operator=(const SparseDOKMatrix<Tindices> &other)
-{
-	SparseCSRMatrix<Tindices> tmp(other);
-	assign(*this, tmp);
-	return *this;
-}
-
-template<typename Tindices>
-SparseCSRMatrix<Tindices>& SparseCSRMatrix<Tindices>::operator=(const SparseIJVMatrix<Tindices> &other)
 {
 	SparseCSRMatrix<Tindices> tmp(other);
 	assign(*this, tmp);

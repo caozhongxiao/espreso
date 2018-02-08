@@ -25,7 +25,6 @@ using std::fill;
 namespace espreso {
 
 template <typename TIndices> class SparseCSRMatrix;
-template <typename TIndices> class SparseIJVMatrix;
 
 class SparseMatrix
 {
@@ -38,7 +37,6 @@ public:
 	SparseMatrix();
 	SparseMatrix( const SparseMatrix &A_in);
 	SparseMatrix( const SparseCSRMatrix<eslocal> &A_in, char type_in );
-	SparseMatrix( const SparseIJVMatrix<eslocal> &A_in, char type_in );
 
 	friend std::ostream& operator<<(std::ostream& os, const SparseMatrix &m);
 
@@ -49,7 +47,6 @@ public:
 	//assignment operator
 	SparseMatrix& operator= ( const SparseMatrix &A_in);
 	SparseMatrix& operator= ( const SparseCSRMatrix<eslocal> &A_in );
-	SparseMatrix& operator= ( const SparseIJVMatrix<eslocal> &A_in );
 
 	void swap ( SparseMatrix &A_in);
 
