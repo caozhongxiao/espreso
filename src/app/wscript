@@ -64,13 +64,6 @@ def build(ctx):
     )
 
     ctx.program(
-        source       = "decomposer.cpp",
-        target       = "decomposer",
-        use          = "basis config wrappers mesh oldmesh loader oldloader oldeval generator ansys_in espreso_in openfoam_in datastore",
-        install_path = ctx.ROOT + "/bin"
-    )
-
-    ctx.program(
         source       = "apitest.cpp",
         target       = "apitest",
         use          = "feti4i factory loader oldloader generator ansys_in espreso_in openfoam_in",
