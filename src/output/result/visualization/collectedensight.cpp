@@ -231,7 +231,11 @@ void CollectedEnSight::updateMesh()
 	};
 
 	for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
-		storePartHeader(_mesh.elementsRegions[r]->name, _mesh.elementsRegions[r]->uniqueTotalSize);
+		if (StringCompare::caseInsensitiveEq(_mesh.elementsRegions[r]->name, "ALL_ELEMENTS")) {
+			storePartHeader("#UNNAMED ELEMENT SET", _mesh.elementsRegions[r]->uniqueTotalSize);
+		} else {
+			storePartHeader(_mesh.elementsRegions[r]->name, _mesh.elementsRegions[r]->uniqueTotalSize);
+		}
 		storeERegion(_mesh.elementsRegions[r]);
 	}
 
