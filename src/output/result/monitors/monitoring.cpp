@@ -109,6 +109,34 @@ void Monitoring::updateMesh()
 			ESINFO(GLOBAL_ERROR) << "Cannot monitor element property '" << it->second.property << "' on element region '" << it->second.region << "'.";
 		}
 		if (edata != NULL && estore != NULL) {
+			for (size_t i = 0; i < _edata.size(); i++) {
+				if (_edata[i].first->names == edata->names && _edata[i].second->name == estore->name) {
+					edata = NULL;
+					estore = NULL;
+					break;
+				}
+			}
+		}
+		if (ndata != NULL && bstore != NULL) {
+			for (size_t i = 0; i < _nbdata.size(); i++) {
+				if (_nbdata[i].first->names == ndata->names && _nbdata[i].second->name == bstore->name) {
+					ndata = NULL;
+					bstore = NULL;
+					break;
+				}
+			}
+		}
+		if (ndata != NULL && estore != NULL) {
+			for (size_t i = 0; i < _nedata.size(); i++) {
+				if (_nedata[i].first->names == ndata->names && _nedata[i].second->name == estore->name) {
+					ndata = NULL;
+					estore = NULL;
+					break;
+				}
+			}
+		}
+
+		if (edata != NULL && estore != NULL) {
 			_edata.push_back(std::make_pair(edata, estore));
 		}
 		if (ndata != NULL && bstore != NULL) {
@@ -118,9 +146,6 @@ void Monitoring::updateMesh()
 			_nedata.push_back(std::make_pair(ndata, estore));
 		}
 	}
-	Esutils::sortAndRemoveDuplicity(_edata);
-	Esutils::sortAndRemoveDuplicity(_nbdata);
-	Esutils::sortAndRemoveDuplicity(_nedata);
 
 	for (size_t i = 0; i < _edata.size(); i++) {
 		_data.resize(_data.size() + _edata[i].first->names.size());
