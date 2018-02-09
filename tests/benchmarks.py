@@ -15,11 +15,14 @@ class ESPRESOBenchmarks(unittest.TestCase):
     espreso = Espreso()
 
     def benchmark(self, path, file, args, report):
+        arguments = args.values()
+        for key in args:
+            arguments[int(key[3:])] = args[key]
         self.espreso.run(
             self.espreso.get_processes(os.path.join(path, file)),
             path,
             { "config": os.path.join(path, file), "ENV::VERBOSE_LEVEL": 0, "ENV::MEASURE_LEVEL": 0, "OUTPUT::RESULTS_STORE_FREQUENCY": "NEVER" },
-            args.values()
+            arguments
         )
 
         self.espreso.compare_monitors(
