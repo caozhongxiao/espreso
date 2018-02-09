@@ -46,6 +46,7 @@ Loader::Loader(const ECFRoot &configuration, DistributedMesh &dMesh, Mesh &mesh)
 {
 	ESINFO(OVERVIEW) << "Balance distributed mesh.";
 	distributeMesh();
+	checkERegions();
 	ESINFO(PROGRESS2) << "Distributed loader:: data balanced.";
 	fillElements();
 	ESINFO(PROGRESS2) << "Distributed loader:: elements filled.";
@@ -188,6 +189,100 @@ void Loader::distributeMesh()
 	_eDistribution = eTarget;
 }
 
+void Loader::checkERegions()
+{
+	std::vector<MeshERegion> bregions;
+
+	for (size_t r = 0; r < _dMesh.eregions.size(); r++) {
+		if (_dMesh.eregions[r].min < _eDistribution.back() && _eDistribution.back() < _dMesh.eregions[r].max) {
+			ESINFO(ERROR) << "ESPRESO Workbench parser error: weird element region.";
+		}
+		if (_dMesh.eregions[r].min >= _eDistribution.back()) {
+			bregions.push_back(MeshERegion(std::move(_dMesh.eregions[r])));
+			_dMesh.eregions.erase(_dMesh.eregions.begin() + r--);
+		}
+	}
+
+	size_t bsize = 0;
+	std::vector<size_t> rsize = { 0 };
+	for (size_t i = 0; i < _dMesh.bregions.size(); i++) {
+		bsize += _dMesh.bregions[i].esize.size();
+		rsize.push_back(bsize);
+	}
+
+	std::vector<size_t> fdistribution = Communication::getDistribution(bsize);
+
+	size_t origBSize = _dMesh.bregions.size();
+
+	for (size_t r = 0; r < bregions.size(); r++) {
+		std::vector<eslocal> borders;
+		for (int t = 0; t < environment->MPIsize; t++) {
+			auto begin = std::lower_bound(bregions[r].elements.begin(), bregions[r].elements.end(), fdistribution[t] + _eDistribution.back());
+			auto end = std::lower_bound(bregions[r].elements.begin(), bregions[r].elements.end(), fdistribution[t + 1] + _eDistribution.back());
+			if (begin != end) {
+				borders.push_back(*begin);
+				borders.push_back(borders.back() + end - begin);
+			}
+		}
+
+		if (!Communication::allGatherUnknownSize(borders)) {
+			ESINFO(ERROR) << "ESPRESO internal error: gather bregion borders.";
+		}
+
+		bool onlyRename = false;
+		for (size_t br = 0; br < origBSize; br++) {
+			if (_dMesh.bregions[br].min == borders.front() && _dMesh.bregions[br].max == borders.back() - 1) {
+				_dMesh.bregions[br].name = bregions[r].name;
+				onlyRename = true;
+				break;
+			}
+		}
+		if (onlyRename) {
+			continue;
+		}
+
+		std::vector<int> tRanks;
+		std::vector<std::vector<eslocal> > sBuffer, rBuffer;
+
+		for (int t = 0; t < environment->MPIsize; t++) {
+			auto begin = std::lower_bound(bregions[r].elements.begin(), bregions[r].elements.end(), fdistribution[t] + _eDistribution.back());
+			auto end = std::lower_bound(bregions[r].elements.begin(), bregions[r].elements.end(), fdistribution[t + 1] + _eDistribution.back());
+			if (begin != end) {
+				tRanks.push_back(t);
+				sBuffer.push_back(std::vector<eslocal>(begin, end));
+			}
+		}
+
+		if (!Communication::sendVariousTargets(sBuffer, rBuffer, tRanks)) {
+			ESINFO(ERROR) << "ESPRESO internal error: send boundary region indices.";
+		}
+
+		for (size_t i = 1; i < rBuffer.size(); i++) {
+			rBuffer[0].insert(rBuffer[0].end(), rBuffer[i].begin(), rBuffer[i].end());
+		}
+
+		auto cmp = [] (EData &edata, eslocal id) {
+			return edata.id < id;
+		};
+
+		_dMesh.bregions.push_back(MeshBRegion());
+		_dMesh.bregions.back().name = bregions[r].name;
+		if (rBuffer.size() && rBuffer.front().size()) {
+			for (size_t nr = 0; nr < origBSize; nr++) {
+				if (_dMesh.bregions[nr].esize.size()) {
+					auto begin = std::lower_bound(_dMesh.bregions[nr].edata.begin(), _dMesh.bregions[nr].edata.end(), rBuffer[0].front(), cmp);
+					auto end = std::lower_bound(_dMesh.bregions[nr].edata.begin(), _dMesh.bregions[nr].edata.end(), rBuffer[0].back() + 1, cmp);
+					for (size_t i = begin - _dMesh.bregions[nr].edata.begin(), nodes = 0; i < end - _dMesh.bregions[nr].edata.begin(); nodes += _dMesh.bregions[nr].esize[i++]) {
+						_dMesh.bregions.back().edata.push_back(_dMesh.bregions[nr].edata[i]);
+						_dMesh.bregions.back().enodes.insert(_dMesh.bregions.back().enodes.end(), _dMesh.bregions[nr].enodes.begin() + nodes, _dMesh.bregions[nr].enodes.begin() + nodes + _dMesh.bregions[nr].esize[i]);
+						_dMesh.bregions.back().esize.push_back(_dMesh.bregions[nr].esize[i]);
+					}
+				}
+			}
+		}
+	}
+}
+
 void Loader::fillElements()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
@@ -215,12 +310,14 @@ void Loader::fillElements()
 		eIDs[t].resize(edistribution[t + 1] - edistribution[t]);
 		std::iota(eIDs[t].begin(), eIDs[t].end(), _eDistribution[environment->MPIrank] + edistribution[t]);
 		epointers[t].reserve(edistribution[t + 1] - edistribution[t]);
-
 		eBody[t].reserve(edistribution[t + 1] - edistribution[t]);
 
 		for (size_t e = edistribution[t]; e < edistribution[t + 1]; ++e) {
 			epointers[t].push_back(&_mesh._eclasses[t][_dMesh.edata[e].etype]);
 			eBody[t].push_back(_dMesh.edata[e].body);
+			if (eIDs[t][e - edistribution[t]] != _dMesh.edata[e].id) {
+				ESINFO(ERROR) << "ESPRESO Workbench parser: not implemented ordering of EBLOCK elements IDs.";
+			}
 		}
 
 
@@ -542,7 +639,7 @@ void Loader::addBoundaryRegions()
 			for (size_t t = 0; t < threads; t++) {
 				for (size_t n = edistribution[t]; n < edistribution[t + 1]; ++n) {
 					tnodes[t].insert(tnodes[t].end(), _dMesh.bregions[i].enodes.begin() + edist[n], _dMesh.bregions[i].enodes.begin() + edist[n + 1]);
-					epointers[t].push_back(&_mesh._eclasses[t][_dMesh.bregions[i].etypes[n]]);
+					epointers[t].push_back(&_mesh._eclasses[t][_dMesh.bregions[i].edata[n].etype]);
 					tedist[t].push_back(tnodes[t].size());
 				}
 			}
@@ -602,7 +699,7 @@ void Loader::addBoundaryRegions()
 			auto begin = std::lower_bound(permutation.begin(), permutation.end(), _nDistribution[sRanks[t]], [&] (eslocal e, eslocal n) { return _dMesh.bregions[i].enodes[edist[e]] < n; });
 			auto end = std::lower_bound(permutation.begin(), permutation.end(), _nDistribution[sRanks[t] + 1], [&] (eslocal e, eslocal n) { return _dMesh.bregions[i].enodes[edist[e]] < n; });
 			for (auto e = begin; e != end; ++e) {
-				sBuffer[t].push_back(_dMesh.bregions[i].etypes[*e]);
+				sBuffer[t].push_back(_dMesh.bregions[i].edata[*e].etype);
 				sBuffer[t].push_back(_dMesh.bregions[i].esize[*e]);
 				for (eslocal n = 0; n < _dMesh.bregions[i].esize[*e]; ++n) {
 					sBuffer[t].push_back(_dMesh.bregions[i].enodes[edist[*e] + n]);

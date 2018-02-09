@@ -104,6 +104,7 @@ void EBlock::fixOffsets(std::vector<eslocal> &dataOffsets)
 				lineSize = valueSize * valueLength + lineEndSize;
 			}
 		}
+		MPI_Bcast(&valueSize, sizeof(eslocal), MPI_BYTE, fRank, environment->MPICommunicator);
 		MPI_Bcast(&lineSize, sizeof(eslocal), MPI_BYTE, fRank, environment->MPICommunicator);
 		elementSize = lineSize;
 	}
@@ -270,6 +271,10 @@ bool EBlock::boundary(std::vector<eslocal> &esize, std::vector<eslocal> &enodes,
 	std::vector<std::vector<eslocal> > tesize(threads), tnodes(threads);
 	std::vector<std::vector<EData> > tdata(threads);
 	int nodes = valueSize - 5;
+
+	if (nodes != 4 && nodes != 8) {
+		ESINFO(ERROR) << "ESPRESO Workbench parser: uknown format of EBLOCK.";
+	}
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {

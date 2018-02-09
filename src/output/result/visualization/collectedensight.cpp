@@ -235,12 +235,13 @@ void CollectedEnSight::updateMesh()
 	for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
 		if (StringCompare::caseInsensitiveEq(_mesh.elementsRegions[r]->name, "ALL_ELEMENTS")) {
 			if (_mesh.elementsRegions[r]->uniqueTotalSize) {
-				storePartHeader("#UNNAMED ELEMENT SET", _mesh.elementsRegions[r]->uniqueTotalSize);
+				storePartHeader("NAMELESS ELEMENT SET", _mesh.elementsRegions[r]->uniqueTotalSize);
+				storeERegion(_mesh.elementsRegions[r]);
 			}
 		} else {
 			storePartHeader(_mesh.elementsRegions[r]->name, _mesh.elementsRegions[r]->uniqueTotalSize);
+			storeERegion(_mesh.elementsRegions[r]);
 		}
-		storeERegion(_mesh.elementsRegions[r]);
 	}
 
 	for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
@@ -338,16 +339,16 @@ void CollectedEnSight::storeDecomposition()
 		part = 1;
 		clearIntervals();
 		for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
-			storePartHeader(os);
 			if (StringCompare::caseInsensitiveEq(_mesh.elementsRegions[r]->name, "ALL_ELEMENTS")) {
 				if (_mesh.elementsRegions[r]->uniqueElements->structures()) {
+					storePartHeader(os);
 					iterateElements(os, _mesh.elementsRegions[r]->ueintervals, _mesh.elementsRegions[r]->ecounters, [&] (eslocal domain)->double { return domain; });
 				}
 			} else {
+				storePartHeader(os);
 				iterateElements(os, _mesh.elementsRegions[r]->eintervals, _mesh.elementsRegions[r]->ecounters, [&] (eslocal domain)->double { return domain; });
 			}
 		}
-
 		storeIntervals(name, os.str(), commitIntervals());
 	}
 
@@ -366,12 +367,13 @@ void CollectedEnSight::storeDecomposition()
 		clearIntervals();
 		eslocal cluster = _mesh.elements->gatherClustersDistribution()[environment->MPIrank];
 		for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
-			storePartHeader(os);
 			if (StringCompare::caseInsensitiveEq(_mesh.elementsRegions[r]->name, "ALL_ELEMENTS")) {
 				if (_mesh.elementsRegions[r]->uniqueElements->structures()) {
+					storePartHeader(os);
 					iterateElements(os, _mesh.elementsRegions[r]->ueintervals, _mesh.elementsRegions[r]->ecounters, [&] (eslocal domain)->double { return _mesh.elements->clusters[domain - _mesh.elements->firstDomain] + cluster; });
 				}
 			} else {
+				storePartHeader(os);
 				iterateElements(os, _mesh.elementsRegions[r]->eintervals, _mesh.elementsRegions[r]->ecounters, [&] (eslocal domain)->double { return _mesh.elements->clusters[domain - _mesh.elements->firstDomain] + cluster; });
 			}
 		}
@@ -451,8 +453,15 @@ void CollectedEnSight::updateSolution(const Step &step)
 
 		clearIntervals();
 		for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
-			storePartHeader();
-			iterateNodes(_mesh.elementsRegions[r]->nintervals, _mesh.elementsRegions[r]->nodes->datatarray());
+			if (StringCompare::caseInsensitiveEq(_mesh.elementsRegions[r]->name, "ALL_ELEMENTS")) {
+				if (_mesh.elementsRegions[r]->uniqueElements->structures()) {
+					storePartHeader();
+					iterateNodes(_mesh.elementsRegions[r]->nintervals, _mesh.elementsRegions[r]->nodes->datatarray());
+				}
+			} else {
+				storePartHeader();
+				iterateNodes(_mesh.elementsRegions[r]->nintervals, _mesh.elementsRegions[r]->nodes->datatarray());
+			}
 		}
 
 		for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
@@ -516,13 +525,18 @@ void CollectedEnSight::updateSolution(const Step &step)
 
 		clearIntervals();
 		for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
-			storePartHeader();
+			if (StringCompare::caseInsensitiveEq(_mesh.elementsRegions[r]->name, "ALL_ELEMENTS")) {
+				if (_mesh.elementsRegions[r]->uniqueElements->structures()) {
+					storePartHeader();
+				}
+			} else {
+				storePartHeader();
+			}
 			for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
 				if (_mesh.elementsRegions[r]->ecounters[etype]) {
 					if (environment->MPIrank == 0) {
 						_writer.storeDescriptionLine(os, codetotype(etype));
 					}
-
 					if (StringCompare::caseInsensitiveEq(_mesh.elementsRegions[r]->name, "ALL_ELEMENTS")) {
 						if (_mesh.elementsRegions[r]->uniqueElements->structures()) {
 							iterateElements(os, etype, _mesh.elementsRegions[r]->uniqueElements->datatarray(), _mesh.elementsRegions[r]->ueintervals);

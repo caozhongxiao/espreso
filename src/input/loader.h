@@ -30,6 +30,7 @@ struct MeshBRegion {
 	std::string name;
 	std::vector<eslocal> esize, enodes;
 	std::vector<EData> edata;
+	eslocal min, max;
 };
 
 struct MeshNRegion {
@@ -59,6 +60,7 @@ protected:
 	Loader(const ECFRoot &configuration, DistributedMesh &dMesh, Mesh &mesh);
 
 	void distributeMesh();
+	void checkERegions();
 
 	void fillElements();
 	void fillCoordinates();

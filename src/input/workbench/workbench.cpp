@@ -277,10 +277,14 @@ void WorkbenchLoader::parseData(DistributedMesh &dMesh)
 
 	for (size_t i = 0; i < _BBlocks.size(); i++) {
 		dMesh.bregions.push_back(MeshBRegion());
-		dMesh.bregions.back().name = "FACE_SET_" + std::to_string(i + 1);
+		dMesh.bregions.back().name = "NAMELESS FACE_SET_" + std::to_string(i + 1);
 		if (!_BBlocks[i].readBoundary(dMesh.bregions.back().esize, dMesh.bregions.back().enodes, dMesh.bregions.back().edata)) {
 			ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
 		}
+		dMesh.bregions.back().min = dMesh.bregions.back().edata.size() ? dMesh.bregions.back().edata.front().id : 0;
+		dMesh.bregions.back().max = dMesh.bregions.back().edata.size() ? dMesh.bregions.back().edata.back().id : 0;
+		MPI_Bcast(&dMesh.bregions.back().min, sizeof(eslocal), MPI_BYTE, _BBlocks[i].fRank, environment->MPICommunicator);
+		MPI_Bcast(&dMesh.bregions.back().max, sizeof(eslocal), MPI_BYTE, _BBlocks[i].lRank, environment->MPICommunicator);
 	}
 
 	for (size_t i = 0; i < _CMBlocks.size(); i++) {
