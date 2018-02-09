@@ -23,11 +23,13 @@ struct EData {
 struct MeshERegion {
 	std::string name;
 	std::vector<eslocal> elements;
+	eslocal min, max;
 };
 
 struct MeshBRegion {
 	std::string name;
-	std::vector<eslocal> esize, enodes, etypes;
+	std::vector<eslocal> esize, enodes;
+	std::vector<EData> edata;
 };
 
 struct MeshNRegion {
