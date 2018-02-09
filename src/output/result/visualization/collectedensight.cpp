@@ -205,7 +205,9 @@ void CollectedEnSight::updateMesh()
 		storeRegionNodes(region->nintervals, region->nodes, [] (const Point *p) { return p->z; });
 
 		if (StringCompare::caseInsensitiveEq(region->name, "ALL_ELEMENTS")) {
-			storeElements(region->ecounters, region->uniqueElements->datatarray(), region->ueintervals, region->nodes->datatarray(), region->nintervals);
+			if (region->uniqueElements->structures()) {
+				storeElements(region->ecounters, region->uniqueElements->datatarray(), region->ueintervals, region->nodes->datatarray(), region->nintervals);
+			}
 		} else {
 			storeElements(region->ecounters, region->elements->datatarray(), region->eintervals, region->nodes->datatarray(), region->nintervals);
 		}
@@ -232,7 +234,9 @@ void CollectedEnSight::updateMesh()
 
 	for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
 		if (StringCompare::caseInsensitiveEq(_mesh.elementsRegions[r]->name, "ALL_ELEMENTS")) {
-			storePartHeader("#UNNAMED ELEMENT SET", _mesh.elementsRegions[r]->uniqueTotalSize);
+			if (_mesh.elementsRegions[r]->uniqueTotalSize) {
+				storePartHeader("#UNNAMED ELEMENT SET", _mesh.elementsRegions[r]->uniqueTotalSize);
+			}
 		} else {
 			storePartHeader(_mesh.elementsRegions[r]->name, _mesh.elementsRegions[r]->uniqueTotalSize);
 		}
@@ -336,7 +340,9 @@ void CollectedEnSight::storeDecomposition()
 		for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
 			storePartHeader(os);
 			if (StringCompare::caseInsensitiveEq(_mesh.elementsRegions[r]->name, "ALL_ELEMENTS")) {
-				iterateElements(os, _mesh.elementsRegions[r]->ueintervals, _mesh.elementsRegions[r]->ecounters, [&] (eslocal domain)->double { return domain; });
+				if (_mesh.elementsRegions[r]->uniqueElements->structures()) {
+					iterateElements(os, _mesh.elementsRegions[r]->ueintervals, _mesh.elementsRegions[r]->ecounters, [&] (eslocal domain)->double { return domain; });
+				}
 			} else {
 				iterateElements(os, _mesh.elementsRegions[r]->eintervals, _mesh.elementsRegions[r]->ecounters, [&] (eslocal domain)->double { return domain; });
 			}
@@ -362,7 +368,9 @@ void CollectedEnSight::storeDecomposition()
 		for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
 			storePartHeader(os);
 			if (StringCompare::caseInsensitiveEq(_mesh.elementsRegions[r]->name, "ALL_ELEMENTS")) {
-				iterateElements(os, _mesh.elementsRegions[r]->ueintervals, _mesh.elementsRegions[r]->ecounters, [&] (eslocal domain)->double { return _mesh.elements->clusters[domain - _mesh.elements->firstDomain] + cluster; });
+				if (_mesh.elementsRegions[r]->uniqueElements->structures()) {
+					iterateElements(os, _mesh.elementsRegions[r]->ueintervals, _mesh.elementsRegions[r]->ecounters, [&] (eslocal domain)->double { return _mesh.elements->clusters[domain - _mesh.elements->firstDomain] + cluster; });
+				}
 			} else {
 				iterateElements(os, _mesh.elementsRegions[r]->eintervals, _mesh.elementsRegions[r]->ecounters, [&] (eslocal domain)->double { return _mesh.elements->clusters[domain - _mesh.elements->firstDomain] + cluster; });
 			}
@@ -516,7 +524,9 @@ void CollectedEnSight::updateSolution(const Step &step)
 					}
 
 					if (StringCompare::caseInsensitiveEq(_mesh.elementsRegions[r]->name, "ALL_ELEMENTS")) {
-						iterateElements(os, etype, _mesh.elementsRegions[r]->uniqueElements->datatarray(), _mesh.elementsRegions[r]->ueintervals);
+						if (_mesh.elementsRegions[r]->uniqueElements->structures()) {
+							iterateElements(os, etype, _mesh.elementsRegions[r]->uniqueElements->datatarray(), _mesh.elementsRegions[r]->ueintervals);
+						}
 					} else {
 						iterateElements(os, etype, _mesh.elementsRegions[r]->elements->datatarray(), _mesh.elementsRegions[r]->eintervals);
 					}
