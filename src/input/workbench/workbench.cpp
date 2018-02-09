@@ -278,28 +278,41 @@ void WorkbenchLoader::parseData(DistributedMesh &dMesh)
 	for (size_t i = 0; i < _BBlocks.size(); i++) {
 		dMesh.bregions.push_back(MeshBRegion());
 		dMesh.bregions.back().name = "FACE_SET_" + std::to_string(i + 1);
-		if (!_BBlocks[i].readBoundary(dMesh.bregions.back().esize, dMesh.bregions.back().enodes, dMesh.bregions.back().etypes)) {
+		if (!_BBlocks[i].readBoundary(dMesh.bregions.back().esize, dMesh.bregions.back().enodes, dMesh.bregions.back().edata)) {
 			ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
 		}
 	}
 
 	for (size_t i = 0; i < _CMBlocks.size(); i++) {
-		if (_CMBlocks[i].entity == CMBlock::Entity::NODE) {
+		switch (_CMBlocks[i].entity) {
+		case CMBlock::Entity::NODE: {
 			dMesh.nregions.push_back(MeshNRegion());
 			dMesh.nregions.back().name = _CMBlocks[i].name;
 			if (!_CMBlocks[i].readData(dMesh.nregions.back().nodes)) {
 				ESINFO(ERROR) << "Workbench parser: something wrong happens while read CMBLOCK.";
 			}
-		} else {
+		} break;
+		case CMBlock::Entity::ELEMENT: {
 			dMesh.eregions.push_back(MeshERegion());
 			dMesh.eregions.back().name = _CMBlocks[i].name;
 			if (!_CMBlocks[i].readData(dMesh.eregions.back().elements)) {
 				ESINFO(ERROR) << "Workbench parser: something wrong happens while read CMBLOCK.";
 			}
+			dMesh.eregions.back().min = dMesh.eregions.back().elements.size() ? dMesh.eregions.back().elements.front() : 0;
+			dMesh.eregions.back().max = dMesh.eregions.back().elements.size() ? dMesh.eregions.back().elements.back() : 0;
+			MPI_Bcast(&dMesh.eregions.back().min, sizeof(eslocal), MPI_BYTE, _CMBlocks[i].fRank, environment->MPICommunicator);
+			MPI_Bcast(&dMesh.eregions.back().max, sizeof(eslocal), MPI_BYTE, _CMBlocks[i].lRank, environment->MPICommunicator);
+		} break;
+		default:
+			ESINFO(ERROR) << "ESPRESO Workbench parser: unknown CMBLOCK type.";
 		}
 	}
 
 	for (size_t i = 0; i < _CM.size(); i++) {
 		_CM[i].addRegion(_ESel, dMesh.edata, dMesh.eregions, _NSel, dMesh.nregions);
+		dMesh.eregions.back().min = dMesh.eregions.back().elements.size() ? dMesh.eregions.back().elements.front() : 0;
+		dMesh.eregions.back().max = dMesh.eregions.back().elements.size() ? dMesh.eregions.back().elements.back() : 0;
+		MPI_Bcast(&dMesh.eregions.back().min, sizeof(eslocal), MPI_BYTE, _CM[i].fRank, environment->MPICommunicator);
+		MPI_Bcast(&dMesh.eregions.back().max, sizeof(eslocal), MPI_BYTE, _CM[i].lRank, environment->MPICommunicator);
 	}
 }

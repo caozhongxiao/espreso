@@ -164,7 +164,7 @@ bool CM::addElementRegion(const std::vector<ESel> &esel, const std::vector<EData
 			break;
 			if (relevant[i].VINC == 1) {
 				checkElements([&] (size_t t, eslocal e) {
-					if (relevant[i].VMIN <= elements[e].material && elements[e].etype <= relevant[i].VMAX) {
+					if (relevant[i].VMIN <= elements[e].material && elements[e].material <= relevant[i].VMAX) {
 						eid[t].push_back(elements[e].id);
 					}
 				});

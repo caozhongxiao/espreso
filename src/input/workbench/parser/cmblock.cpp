@@ -7,6 +7,8 @@
 
 #include "../../../config/ecf/environment.h"
 
+#include <algorithm>
+
 using namespace espreso;
 
 size_t CMBlock::size = 7;
@@ -46,7 +48,7 @@ CMBlock& CMBlock::parse(const char* begin)
 	if (StringCompare::caseInsensitiveEq(command[2], "NODE")) {
 		entity = Entity::NODE;
 	} else {
-		if (StringCompare::caseInsensitiveEq(command[2], "ELEMENT")) {
+		if (StringCompare::caseInsensitiveEq(command[2], "ELEMENT") || StringCompare::caseInsensitiveEq(command[2], "ELEM") || StringCompare::caseInsensitiveEq(command[2], "ELEMENTS")) {
 			entity = Entity::ELEMENT;
 		} else {
 			error(commandLine);
@@ -108,6 +110,9 @@ bool CMBlock::readData(std::vector<eslocal> &indices)
 	for (size_t t = 0; t < threads; t++) {
 		indices.insert(indices.end(), tindices[t].begin(), tindices[t].end());
 	}
+
+	std::sort(indices.begin(), indices.end());
+
 	return true;
 }
 

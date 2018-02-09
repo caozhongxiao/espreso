@@ -24,12 +24,12 @@ struct EBlock: public WorkbenchParser {
 	bool solidBlock();
 
 	void fixOffsets(std::vector<eslocal> &dataOffsets);
-	bool readSolid(std::vector<eslocal> &edist, std::vector<eslocal> &nodes, std::vector<EData> &data);
-	bool readBoundary(std::vector<eslocal> &edist, std::vector<eslocal> &nodes, std::vector<eslocal> &data);
+	bool readSolid(std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &data);
+	bool readBoundary(std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &edata);
 
 protected:
 	bool solid(std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &data);
-	bool boundary(std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<eslocal> &data);
+	bool boundary(std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &edata);
 };
 
 }

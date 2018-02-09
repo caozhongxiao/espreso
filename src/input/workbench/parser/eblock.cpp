@@ -117,12 +117,12 @@ bool EBlock::readSolid(std::vector<eslocal> &edist, std::vector<eslocal> &enodes
 	return solid(edist, enodes, edata);
 }
 
-bool EBlock::readBoundary(std::vector<eslocal> &edist, std::vector<eslocal> &enodes, std::vector<eslocal> &edata)
+bool EBlock::readBoundary(std::vector<eslocal> &esize, std::vector<eslocal> &enodes, std::vector<EData> &edata)
 {
 	if (Solkey) {
 		ESINFO(ERROR) << "Workbench parser internal error: EBLOCK is not boundary.";
 	}
-	return boundary(edist, enodes, edata);
+	return boundary(esize, enodes, edata);
 }
 
 bool EBlock::solid(std::vector<eslocal> &esize, std::vector<eslocal> &enodes, std::vector<EData> &edata)
@@ -256,7 +256,7 @@ bool EBlock::solid(std::vector<eslocal> &esize, std::vector<eslocal> &enodes, st
 	return true;
 }
 
-bool EBlock::boundary(std::vector<eslocal> &esize, std::vector<eslocal> &enodes, std::vector<eslocal> &edata)
+bool EBlock::boundary(std::vector<eslocal> &esize, std::vector<eslocal> &enodes, std::vector<EData> &edata)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -267,7 +267,8 @@ bool EBlock::boundary(std::vector<eslocal> &esize, std::vector<eslocal> &enodes,
 
 	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, size);
 
-	std::vector<std::vector<eslocal> > tesize(threads), tnodes(threads), tdata(threads);
+	std::vector<std::vector<eslocal> > tesize(threads), tnodes(threads);
+	std::vector<std::vector<EData> > tdata(threads);
 	int nodes = valueSize - 5;
 
 	#pragma omp parallel for
@@ -276,15 +277,16 @@ bool EBlock::boundary(std::vector<eslocal> &esize, std::vector<eslocal> &enodes,
 		std::vector<eslocal> nindices(20);
 
 		for (auto element = first + elementSize * tdistribution[t]; element < first + elementSize * tdistribution[t + 1];) {
-			element += valueLength; // element ID
+			tdata[t].push_back(EData());
+			tdata[t].back().id = atoi(element) - 1; element += valueLength; // element ID
 			element += valueLength; // section ID
 			element += valueLength; // real constant
-			element += valueLength; // material
+			tdata[t].back().material = atoi(element) - 1; element += valueLength; // material
 			element += valueLength; // element coordinate system
 
 			for (int i = 0; i < nodes; i++) {
 				memcpy(value.data(), element, valueLength);
-				element += valueLength; // element ID
+				element += valueLength; // element node
 				nindices[i] = atol(value.data()) - 1;
 			}
 			element += lineEndSize;
@@ -292,24 +294,24 @@ bool EBlock::boundary(std::vector<eslocal> &esize, std::vector<eslocal> &enodes,
 			if (nodes == 4) {
 				if (nindices[2] == nindices[3]) { // triangle3
 					tesize[t].push_back(3);
-					tdata[t].push_back((eslocal)Element::CODE::TRIANGLE3);
+					tdata[t].back().etype = (eslocal)Element::CODE::TRIANGLE3;
 					tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 3);
 				} else { // square4
 					tesize[t].push_back(4);
-					tdata[t].push_back((eslocal)Element::CODE::SQUARE4);
+					tdata[t].back().etype = (eslocal)Element::CODE::SQUARE4;
 					tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 4);
 				}
 			}
 			if (nodes == 8) {
 				if (nindices[2] == nindices[3]) { // triangle6
 					tesize[t].push_back(6);
-					tdata[t].push_back((eslocal)Element::CODE::TRIANGLE6);
+					tdata[t].back().etype = (eslocal)Element::CODE::TRIANGLE6;
 					tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 3);
 					tnodes[t].insert(tnodes[t].end(), nindices.begin() + 4, nindices.begin() + 6);
 					tnodes[t].push_back(nindices[7]);
 				} else { // square8
 					tesize[t].push_back(8);
-					tdata[t].push_back((eslocal)Element::CODE::SQUARE8);
+					tdata[t].back().etype = (eslocal)Element::CODE::SQUARE8;
 					tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 8);
 				}
 			}
