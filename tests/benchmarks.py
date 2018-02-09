@@ -38,10 +38,9 @@ if __name__ == '__main__':
 
     def run(vars, range, name, path, file):
         def call(args):
-            report = ""
-            for var in vars:
-                report += args[var] + "."
             report = ".".join([ args[var] for var in vars ])
+            if len(report) == 0:
+                report = "espreso"
             TestCaseCreator.create_test(ESPRESOBenchmarks, ESPRESOBenchmarks.benchmark, name + "." + report, path, file, args, report + ".emr")
 
         TestCaseCreator.iterate(call, range)
