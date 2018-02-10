@@ -20,6 +20,8 @@
 
 #include "../../wrappers/math/math.h"
 
+#include "../../config/reader/tokenizer.h"
+
 #include "mpi.h"
 
 using namespace espreso;
@@ -141,6 +143,89 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		processMorpher(it->second, dimension, sPoints, prevsize, sDisplacement);
 	}
 
+	if (environment->MPIrank == 0) {
+		if (configuration.external_ffd.path!="") {
+			ESINFO(OVERVIEW)<<"Processing external FFD file: "<<configuration.external_ffd.path;
+
+			std::map<std::string, std::vector<Point>> external_data;
+
+			Tokenizer tokenizer(configuration.external_ffd.path);
+			Tokenizer::Token token;
+
+			auto myNextToken = [] (Tokenizer &tokenizer) -> Tokenizer::Token {
+				Tokenizer::Token token;
+				do {
+					token = tokenizer.next();
+				}while(token==Tokenizer::Token::LINE_END);
+				return token;
+			};
+			auto myExpectToken = [] (Tokenizer &tokenizer, Tokenizer::Token real, Tokenizer::Token expected, char* expectedToken) -> void {
+				if (real!=expected) {
+					ESINFO(GLOBAL_ERROR) << "Line: " << tokenizer.line() << ", unexpected symbol, was expecting "<<expectedToken;
+				}
+			};
+			auto myConvert = [] (Tokenizer &tokenizer) -> double {
+				size_t size;
+				double result = std::stod(tokenizer.value(), &size);
+				if (size != tokenizer.value().size()) {
+					ESINFO(GLOBAL_ERROR) << "Line: " << tokenizer.line() << ", error while converting "<<tokenizer.value()<<" into a number.";
+				}
+				return result;
+			};
+
+			token = myNextToken(tokenizer);
+			while(token!=Tokenizer::Token::END) {
+				myExpectToken(tokenizer, token, Tokenizer::Token::STRING, " a region name.");
+				std::string name = tokenizer.value();
+				if (external_data.find(name)!=external_data.end()) {
+					ESINFO(GLOBAL_ERROR) << "Line: " << tokenizer.line() << ", region "+tokenizer.value()<<" defined multiple times in the external file.";
+				}
+				token = myNextToken(tokenizer);
+				myExpectToken(tokenizer, token, Tokenizer::Token::OBJECT_OPEN, " symbol \"{\".");
+				token = myNextToken(tokenizer);
+				while(token!=Tokenizer::Token::OBJECT_CLOSE) {
+					Point p;
+					myExpectToken(tokenizer, token, Tokenizer::Token::STRING, " a number.");
+					p.x = myConvert(tokenizer);
+					token = myNextToken(tokenizer);
+					myExpectToken(tokenizer, token, Tokenizer::Token::DELIMITER, " symbol \",\".");
+
+					token = myNextToken(tokenizer);
+					myExpectToken(tokenizer, token, Tokenizer::Token::STRING, " a number.");
+					p.y = myConvert(tokenizer);
+
+					token = myNextToken(tokenizer);
+
+					if (dimension == 3) {
+						myExpectToken(tokenizer, token, Tokenizer::Token::DELIMITER, " symbol \",\".");
+
+						token = myNextToken(tokenizer);
+						myExpectToken(tokenizer, token, Tokenizer::Token::STRING, " a number.");
+						p.z = myConvert(tokenizer);
+
+						token = myNextToken(tokenizer);
+					}
+					myExpectToken(tokenizer, token, Tokenizer::Token::EXPRESSION_END, " symbol \";\".");
+					token = myNextToken(tokenizer);
+
+					external_data[name].push_back(p);
+				}
+				token = myNextToken(tokenizer);
+			}
+
+			for(auto it = configuration.external_ffd.morphers.begin(); it != configuration.external_ffd.morphers.end(); ++it) {
+				size_t prevsize = sPoints.size();
+				if (external_data.find(it->first)==external_data.end()) {
+					ESINFO(GLOBAL_ERROR) << "Region " << it->first << " does not exist in external file: "<<configuration.external_ffd.path;
+				}
+
+				for (auto n = external_data[it->first].begin(); n != external_data[it->first].end(); ++n) {
+					sPoints.push_back(*n);
+				}
+				processMorpher(it->second, dimension, sPoints, prevsize, sDisplacement);
+			}
+		}
+	}
 
 	if (!Communication::gatherUnknownSize(sPoints, rPoints)) {
 		ESINFO(ERROR) << "ESPRESO internal error: gather morphed points";
