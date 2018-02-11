@@ -40,6 +40,8 @@ struct RBFTargetTransformationConfiguration: public ECFObject {
 
 	RBFTargetTransformationConfiguration(ECFConfiguration *ECFRoot);
 
+	friend std::ostream& operator<<(std::ostream& os, const RBFTargetTransformationConfiguration &t);
+
 protected:
 	ECFConfiguration *_ECFRoot;
 };
@@ -65,6 +67,8 @@ struct RBFTargetConfiguration: public ECFObject {
 	ExternalFFDConfiguration external_ffd;
 
 	RBFTargetConfiguration(ECFConfiguration *ECFRoot);
+
+	friend std::ostream& operator<<(std::ostream& os, const RBFTargetConfiguration &t);
 };
 
 struct MeshMorphing: public ECFObject {
