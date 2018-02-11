@@ -88,6 +88,10 @@ private:
 
 	void processMorpher(const RBFTargetTransformationConfiguration &target, int dimension,
 		std::vector<Point> &sPoints, eslocal startPoint, std::vector<double> &sDisplacement);
+	void prepareMatrixM(std::vector<Point> &rPoints,
+			std::vector<double> &rDisplacement,
+			int dimension, const RBFTargetConfiguration &configuration,
+			std::vector<double> &M_values);
 };
 
 }

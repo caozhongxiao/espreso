@@ -103,6 +103,47 @@ void MeshPreprocessing::processMorpher(const RBFTargetTransformationConfiguratio
 	}
 }
 
+void MeshPreprocessing::prepareMatrixM(std::vector<Point> &rPoints,
+		std::vector<double> &rDisplacement,
+		int dimension, const RBFTargetConfiguration &configuration,
+		std::vector<double> &M_values
+) {
+
+	eslocal rowsFromCoordinates = rPoints.size();
+	int M_size = rowsFromCoordinates + dimension + 1;
+
+	for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+		for(eslocal rr = 0; rr <= r; rr++) {
+			M_values.push_back(configuration.function.evaluator->evaluate((rPoints[r] - rPoints[rr]).length()));
+		}
+	}
+	for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+		M_values.push_back(rPoints[r].x);
+	}
+	M_values.push_back(0);
+	for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+		M_values.push_back(rPoints[r].y);
+	}
+	M_values.push_back(0);
+	M_values.push_back(0);
+	if (dimension == 3) {
+		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+			M_values.push_back(rPoints[r].z);
+		}
+		M_values.push_back(0);
+		M_values.push_back(0);
+		M_values.push_back(0);
+	}
+	for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+		M_values.push_back(1);
+	}
+	M_values.push_back(0);
+	M_values.push_back(0);
+	M_values.push_back(0);
+	M_values.push_back(0);
+}
+
+
 void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfiguration &configuration, int dimension)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
@@ -246,41 +287,11 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 			 environment->MPIrank < dimension &&
 			 environment->MPIsize >= dimension)) {
 
-		eslocal rowsFromCoordinates = rPoints.size();
-		int M_size = rowsFromCoordinates + dimension + 1;
-
 		std::vector<double> M_values;
+		//eslocal rowsFromCoordinates = rPoints.size();
+		int M_size = rPoints.size() + dimension + 1;
 
-		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
-			for(eslocal rr = 0; rr <= r; rr++) {
-				M_values.push_back(configuration.function.evaluator->evaluate((rPoints[r] - rPoints[rr]).length()));
-			}
-		}
-		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
-			M_values.push_back(rPoints[r].x);
-		}
-		M_values.push_back(0);
-		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
-			M_values.push_back(rPoints[r].y);
-		}
-		M_values.push_back(0);
-		M_values.push_back(0);
-		if (dimension == 3) {
-			for (eslocal r = 0; r < rowsFromCoordinates; r++) {
-				M_values.push_back(rPoints[r].z);
-			}
-			M_values.push_back(0);
-			M_values.push_back(0);
-			M_values.push_back(0);
-		}
-		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
-			M_values.push_back(1);
-		}
-		M_values.push_back(0);
-		M_values.push_back(0);
-		M_values.push_back(0);
-		M_values.push_back(0);
-
+		prepareMatrixM(rPoints, rDisplacement, dimension, configuration, M_values);
 
 		switch (configuration.solver) {
 		case MORPHING_RBF_SOLVER::ITERATIVE: {
@@ -294,7 +305,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 				for (int d = 0; d < dimension; d++) {
 					eslocal r;
-					for (r = 0; r < rowsFromCoordinates; r++) {
+					for (r = 0; r < rPoints.size(); r++) {
 						rhs_values[M_size*d + r] = rDisplacement[r * dimension + d];
 					}
 					for ( ; r < M_size; r++) {
@@ -357,7 +368,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 			for (int d = 0; d < dimension; d++) {
 				eslocal r;
-				for (r = 0; r < rowsFromCoordinates; r++) {
+				for (r = 0; r < rPoints.size(); r++) {
 					wq_values[M_size*d + r] = rDisplacement[r * dimension + d];
 				}
 				for ( ; r < M_size; r++) {
@@ -381,7 +392,12 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 					dimension, &wq_values[0]);
 
 			if (result!=0) {
-				ESINFO(ERROR) << "ESPRESO error: Dense solver is unable to solve the system. Try iterative solver.";
+
+
+
+				if (result!=0) {
+					ESINFO(ERROR) << "ESPRESO error: Dense solver is unable to solve the system. Try iterative solver.";
+				}
 			}
 		} break;
 
