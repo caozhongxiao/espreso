@@ -103,46 +103,141 @@ void MeshPreprocessing::processMorpher(const RBFTargetTransformationConfiguratio
 	}
 }
 
-void MeshPreprocessing::prepareMatrixM(std::vector<Point> &rPoints,
+eslocal MeshPreprocessing::prepareMatrixM(std::vector<Point> &rPoints,
 		std::vector<double> &rDisplacement,
 		int dimension, const RBFTargetConfiguration &configuration,
-		std::vector<double> &M_values
+		std::vector<double> &M_values,
+		bool use_x, bool use_y, bool use_z
 ) {
 
 	eslocal rowsFromCoordinates = rPoints.size();
-	int M_size = rowsFromCoordinates + dimension + 1;
+	eslocal realsize = rowsFromCoordinates;
+
+	M_values.clear();
 
 	for (eslocal r = 0; r < rowsFromCoordinates; r++) {
 		for(eslocal rr = 0; rr <= r; rr++) {
 			M_values.push_back(configuration.function.evaluator->evaluate((rPoints[r] - rPoints[rr]).length()));
 		}
 	}
-	for (eslocal r = 0; r < rowsFromCoordinates; r++) {
-		M_values.push_back(rPoints[r].x);
+	if (use_x) {
+		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+			M_values.push_back(rPoints[r].x);
+		}
+		M_values.push_back(0);
+		realsize++;
 	}
-	M_values.push_back(0);
-	for (eslocal r = 0; r < rowsFromCoordinates; r++) {
-		M_values.push_back(rPoints[r].y);
+
+	if (use_y) {
+		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+			M_values.push_back(rPoints[r].y);
+		}
+		M_values.push_back(0);
+		realsize++;
 	}
-	M_values.push_back(0);
-	M_values.push_back(0);
-	if (dimension == 3) {
+	if (use_x)	M_values.push_back(0);
+
+	if (dimension == 3 && use_z) {
 		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
 			M_values.push_back(rPoints[r].z);
 		}
+		if (use_x) M_values.push_back(0);
+		if (use_y) M_values.push_back(0);
 		M_values.push_back(0);
-		M_values.push_back(0);
-		M_values.push_back(0);
+		realsize++;
 	}
+
 	for (eslocal r = 0; r < rowsFromCoordinates; r++) {
 		M_values.push_back(1);
 	}
+	if (use_x) M_values.push_back(0);
+	if (use_y) M_values.push_back(0);
+	if (dimension == 3 && use_z) M_values.push_back(0);
 	M_values.push_back(0);
-	M_values.push_back(0);
-	M_values.push_back(0);
-	M_values.push_back(0);
+	realsize++;
+	return realsize;
 }
 
+void MeshPreprocessing::readExternalFile(
+		const RBFTargetConfiguration &configuration, int dimension,
+		std::map<std::string, std::vector<Point>> &external_data) {
+
+	Tokenizer tokenizer(configuration.external_ffd.path);
+	Tokenizer::Token token;
+
+	auto myNextToken = [] (Tokenizer &tokenizer) -> Tokenizer::Token {
+		Tokenizer::Token token;
+		do {
+			token = tokenizer.next();
+		}while(token==Tokenizer::Token::LINE_END);
+		return token;
+	};
+	auto myExpectToken =
+			[] (Tokenizer &tokenizer, Tokenizer::Token real, Tokenizer::Token expected, char* expectedToken) -> void {
+				if (real!=expected) {
+					ESINFO(GLOBAL_ERROR) << "Line: " << tokenizer.line() << ", unexpected symbol, was expecting "<<expectedToken;
+				}
+			};
+	auto myConvert =
+			[] (Tokenizer &tokenizer) -> double {
+				size_t size;
+				double result = std::stod(tokenizer.value(), &size);
+				if (size != tokenizer.value().size()) {
+					ESINFO(GLOBAL_ERROR) << "Line: " << tokenizer.line() << ", error while converting "<<tokenizer.value()<<" into a number.";
+				}
+				return result;
+			};
+
+	token = myNextToken(tokenizer);
+	while (token != Tokenizer::Token::END) {
+		myExpectToken(tokenizer, token, Tokenizer::Token::STRING,
+				" a region name.");
+		std::string name = tokenizer.value();
+		if (external_data.find(name) != external_data.end()) {
+			ESINFO(GLOBAL_ERROR) << "Line: " << tokenizer.line()
+					<< ", region " + tokenizer.value()
+					<< " defined multiple times in the external file.";
+		}
+		token = myNextToken(tokenizer);
+		myExpectToken(tokenizer, token, Tokenizer::Token::OBJECT_OPEN,
+				" symbol \"{\".");
+		token = myNextToken(tokenizer);
+		while (token != Tokenizer::Token::OBJECT_CLOSE) {
+			Point p;
+			myExpectToken(tokenizer, token, Tokenizer::Token::STRING,
+					" a number.");
+			p.x = myConvert(tokenizer);
+			token = myNextToken(tokenizer);
+			myExpectToken(tokenizer, token, Tokenizer::Token::DELIMITER,
+					" symbol \",\".");
+
+			token = myNextToken(tokenizer);
+			myExpectToken(tokenizer, token, Tokenizer::Token::STRING,
+					" a number.");
+			p.y = myConvert(tokenizer);
+
+			token = myNextToken(tokenizer);
+
+			if (dimension == 3) {
+				myExpectToken(tokenizer, token, Tokenizer::Token::DELIMITER,
+						" symbol \",\".");
+
+				token = myNextToken(tokenizer);
+				myExpectToken(tokenizer, token, Tokenizer::Token::STRING,
+						" a number.");
+				p.z = myConvert(tokenizer);
+
+				token = myNextToken(tokenizer);
+			}
+			myExpectToken(tokenizer, token, Tokenizer::Token::EXPRESSION_END,
+					" symbol \";\".");
+			token = myNextToken(tokenizer);
+
+			external_data[name].push_back(p);
+		}
+		token = myNextToken(tokenizer);
+	}
+}
 
 void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfiguration &configuration, int dimension)
 {
@@ -190,69 +285,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 			std::map<std::string, std::vector<Point>> external_data;
 
-			Tokenizer tokenizer(configuration.external_ffd.path);
-			Tokenizer::Token token;
-
-			auto myNextToken = [] (Tokenizer &tokenizer) -> Tokenizer::Token {
-				Tokenizer::Token token;
-				do {
-					token = tokenizer.next();
-				}while(token==Tokenizer::Token::LINE_END);
-				return token;
-			};
-			auto myExpectToken = [] (Tokenizer &tokenizer, Tokenizer::Token real, Tokenizer::Token expected, char* expectedToken) -> void {
-				if (real!=expected) {
-					ESINFO(GLOBAL_ERROR) << "Line: " << tokenizer.line() << ", unexpected symbol, was expecting "<<expectedToken;
-				}
-			};
-			auto myConvert = [] (Tokenizer &tokenizer) -> double {
-				size_t size;
-				double result = std::stod(tokenizer.value(), &size);
-				if (size != tokenizer.value().size()) {
-					ESINFO(GLOBAL_ERROR) << "Line: " << tokenizer.line() << ", error while converting "<<tokenizer.value()<<" into a number.";
-				}
-				return result;
-			};
-
-			token = myNextToken(tokenizer);
-			while(token!=Tokenizer::Token::END) {
-				myExpectToken(tokenizer, token, Tokenizer::Token::STRING, " a region name.");
-				std::string name = tokenizer.value();
-				if (external_data.find(name)!=external_data.end()) {
-					ESINFO(GLOBAL_ERROR) << "Line: " << tokenizer.line() << ", region "+tokenizer.value()<<" defined multiple times in the external file.";
-				}
-				token = myNextToken(tokenizer);
-				myExpectToken(tokenizer, token, Tokenizer::Token::OBJECT_OPEN, " symbol \"{\".");
-				token = myNextToken(tokenizer);
-				while(token!=Tokenizer::Token::OBJECT_CLOSE) {
-					Point p;
-					myExpectToken(tokenizer, token, Tokenizer::Token::STRING, " a number.");
-					p.x = myConvert(tokenizer);
-					token = myNextToken(tokenizer);
-					myExpectToken(tokenizer, token, Tokenizer::Token::DELIMITER, " symbol \",\".");
-
-					token = myNextToken(tokenizer);
-					myExpectToken(tokenizer, token, Tokenizer::Token::STRING, " a number.");
-					p.y = myConvert(tokenizer);
-
-					token = myNextToken(tokenizer);
-
-					if (dimension == 3) {
-						myExpectToken(tokenizer, token, Tokenizer::Token::DELIMITER, " symbol \",\".");
-
-						token = myNextToken(tokenizer);
-						myExpectToken(tokenizer, token, Tokenizer::Token::STRING, " a number.");
-						p.z = myConvert(tokenizer);
-
-						token = myNextToken(tokenizer);
-					}
-					myExpectToken(tokenizer, token, Tokenizer::Token::EXPRESSION_END, " symbol \";\".");
-					token = myNextToken(tokenizer);
-
-					external_data[name].push_back(p);
-				}
-				token = myNextToken(tokenizer);
-			}
+			readExternalFile(configuration, dimension, external_data);
 
 			for(auto it = configuration.external_ffd.morphers.begin(); it != configuration.external_ffd.morphers.end(); ++it) {
 				size_t prevsize = sPoints.size();
@@ -291,7 +324,12 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		//eslocal rowsFromCoordinates = rPoints.size();
 		int M_size = rPoints.size() + dimension + 1;
 
-		prepareMatrixM(rPoints, rDisplacement, dimension, configuration, M_values);
+		eslocal realSize = prepareMatrixM(rPoints, rDisplacement, dimension, configuration, M_values);
+
+		if (realSize != M_size) {
+			ESINFO(GLOBAL_ERROR)
+					<< "ESPRESO internal error: error while building matrix M.";
+		}
 
 		switch (configuration.solver) {
 		case MORPHING_RBF_SOLVER::ITERATIVE: {
@@ -393,11 +431,103 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 			if (result!=0) {
 
+				ESINFO(OVERVIEW) << "Dense solver error: trying to repair matrix M.";
 
+				bool use_x = true,use_y = true,use_z = true;
+
+				std::vector<double> xs(rPoints.size()), ys(rPoints.size()), zs(rPoints.size());
+				for(int i=0; i<rPoints.size(); i++) {
+					Point &p = rPoints[i];
+					xs[i] = p.x;
+					ys[i] = p.y;
+					if (dimension == 3) {
+						zs[i] = p.z;
+					}
+				}
+
+				auto checkAllSame = [] (std::vector<double> &points) -> bool {
+					if (points.size()==0) return false;
+					for(auto it = points.begin()+1; it!=points.end();++it) {
+						if (points[0]!=*it) {
+							return false;
+						}
+					}
+					return true;
+				};
+
+				if (checkAllSame(xs)) {
+					ESINFO(OVERVIEW) << "Dense solver error: removing row containing X row from coordinates.";
+					use_x=false;
+				}
+				if (checkAllSame(ys)) {
+					ESINFO(OVERVIEW) << "Dense solver error: removing row containing Y row from coordinates.";
+					use_y=false;
+				}
+				if (dimension == 3) {
+					if (checkAllSame(zs)) {
+						ESINFO(OVERVIEW) << "Dense solver error: removing row containing Z row from coordinates.";
+						use_z=false;
+					}
+				}
+
+				eslocal realSize = prepareMatrixM(rPoints, rDisplacement, dimension, configuration, M_values,
+						use_x, use_y, use_z);
+
+				wq_values.clear();
+				wq_values.resize(realSize*dimension);
+
+				for (int d = 0; d < dimension; d++) {
+					eslocal r;
+					for (r = 0; r < rPoints.size(); r++) {
+						wq_values[realSize*d + r] = rDisplacement[r * dimension + d];
+					}
+					for ( ; r < M_size; r++) {
+						wq_values[realSize*d + r] = 0;
+					}
+				}
+
+				/*std::cout << "Points: " << rPoints.size() << " - " << rPoints
+						<< "\n";
+
+				int count = 0;
+				for (int i = 0; i < realSize; i++) {
+					for (int j = 0; j <= i; j++) {
+						printf("%f ", M_values[count]);
+						count++;
+					}
+					printf("\n");
+				}
+
+				printf("WQ\n");
+				for(int d=0;d<dimension;d++) {
+					for(int i=0;i<wq_values.size()/dimension;i++) {
+						printf("%f ", wq_values[wq_values.size()/dimension*d+i]);
+					}
+					printf("\n");
+				}*/
+
+				int result= MATH::SOLVER::directUpperSymetricIndefiniteColumnMajor(
+						realSize,  &M_values[0],
+						dimension, &wq_values[0]);
 
 				if (result!=0) {
 					ESINFO(ERROR) << "ESPRESO error: Dense solver is unable to solve the system. Try iterative solver.";
 				}
+
+				auto insertRowInWQ =
+						[&wq_values,dimension] (eslocal row) -> void {
+							eslocal size = wq_values.size()/dimension;
+							wq_values.insert(wq_values.begin()+row,0);
+							wq_values.insert(wq_values.begin()+ size +1 + row,0);
+							if (dimension ==3) {
+								wq_values.insert(wq_values.begin()+ (size +1)*2 + row,0);
+							}
+						};
+
+				if (!use_x) insertRowInWQ(rPoints.size());
+				if (!use_y) insertRowInWQ(rPoints.size()+1);
+				if (dimension == 3 && !use_z) insertRowInWQ(rPoints.size()+2);
+
 			}
 		} break;
 

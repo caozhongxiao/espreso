@@ -62,7 +62,7 @@ MESH_MORPHING {
 
   RBF {
     MY_RBF_MORPHING {
-      SOLVER         ITERATIVE;
+      SOLVER         DENSE;
       SOLVER_PRECISION   1E-07;
       FUNCTION             R^3;
 
@@ -77,7 +77,7 @@ MESH_MORPHING {
         PATH   benchmarks/diffusion3D/morphedCube/test.ffd;
 
         MORPHERS {
-          A0 {
+          A1 {
             #[FIXED,OFFSET,SCALING,TRANSLATION,ROTATION]
             TRANSFORMATION   ROTATION;
 

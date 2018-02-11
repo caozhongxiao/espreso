@@ -88,10 +88,14 @@ private:
 
 	void processMorpher(const RBFTargetTransformationConfiguration &target, int dimension,
 		std::vector<Point> &sPoints, eslocal startPoint, std::vector<double> &sDisplacement);
-	void prepareMatrixM(std::vector<Point> &rPoints,
+	eslocal prepareMatrixM(std::vector<Point> &rPoints,
 			std::vector<double> &rDisplacement,
 			int dimension, const RBFTargetConfiguration &configuration,
-			std::vector<double> &M_values);
+			std::vector<double> &M_values,
+			bool use_x = true,bool use_y = true,bool use_z = true);
+	void readExternalFile(
+			const RBFTargetConfiguration &configuration, int dimension,
+			std::map<std::string, std::vector<Point>> &external_data);
 };
 
 }
