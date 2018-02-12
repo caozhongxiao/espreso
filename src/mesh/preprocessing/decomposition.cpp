@@ -554,7 +554,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	std::vector<std::vector<Element*> > elemsEpointer(threads);
 	std::vector<std::vector<eslocal> >  elemsNodesDistribution(threads);
 	std::vector<std::vector<eslocal> >  elemsNodesData(threads);
-	std::vector<std::vector<eslocal> >      elemsRegions(threads);
+	std::vector<std::vector<eslocal> >  elemsRegions(threads);
 
 	NodeStore *nodes = new NodeStore();
 
@@ -562,10 +562,10 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	std::vector<std::vector<Point> >    nodesCoordinates(threads);
 	std::vector<std::vector<eslocal> >  nodesElemsDistribution(threads);
 	std::vector<std::vector<eslocal> >  nodesElemsData(threads);
-	std::vector<std::vector<eslocal> >      nodesRegions(threads);
+	std::vector<std::vector<eslocal> >  nodesRegions(threads);
 
-	std::vector<std::vector<std::vector<eslocal> > > boundaryEDistribution(_mesh->boundaryRegions.size(), std::vector<std::vector<eslocal> >(threads));
-	std::vector<std::vector<std::vector<eslocal> > > boundaryEData(_mesh->boundaryRegions.size(), std::vector<std::vector<eslocal> >(threads));
+	std::vector<std::vector<std::vector<eslocal> > >  boundaryEDistribution(_mesh->boundaryRegions.size(), std::vector<std::vector<eslocal> >(threads));
+	std::vector<std::vector<std::vector<eslocal> > >  boundaryEData(_mesh->boundaryRegions.size(), std::vector<std::vector<eslocal> >(threads));
 	std::vector<std::vector<std::vector<Element*> > > boundaryEPointers(_mesh->boundaryRegions.size(), std::vector<std::vector<Element*> >(threads));
 
 	// regions are transfered via mask
@@ -748,7 +748,6 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
 				eslocal mysize = 0, target;
-				std::vector<eslocal> targetsize(targets.size());
 				auto enodes = _mesh->boundaryRegions[r]->elements->cbegin() + distribution[t];
 				const auto &IDs = _mesh->nodes->IDs->datatarray();
 				const auto &epointer = _mesh->boundaryRegions[r]->epointers->datatarray();
@@ -766,11 +765,14 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 						for (auto n = enodes->begin(); n != enodes->end(); ++n) {
 							sBoundary[t][target].push_back(IDs[*n]);
 						}
-						++targetsize[target];
 					}
 				}
 				for (size_t i = 0; i < targets.size(); i++) {
-					sBoundary[t][i][r] = targetsize[i];
+					if (r) {
+						sBoundary[t][i][r] = sBoundary[t][i].size() - sBoundary[t][i][r - 1] - _mesh->boundaryRegions.size();
+					} else {
+						sBoundary[t][i][r] = sBoundary[t][i].size() - _mesh->boundaryRegions.size();
+					}
 				}
 			}
 		}
@@ -787,11 +789,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 			sElements[0][target].insert(sElements[0][target].end(), sElements[t][target].begin(), sElements[t][target].end());
 			sNodes[t][target].front() = sNodes[t][target].size();
 			sNodes[0][target].insert(sNodes[0][target].end(), sNodes[t][target].begin(), sNodes[t][target].end());
-
-			for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
-				sBoundary[0][target][r] += sBoundary[t][target][r];
-			}
-			sBoundary[0][target].insert(sBoundary[0][target].end(), sBoundary[t][target].begin() + _mesh->boundaryRegions.size(), sBoundary[t][target].end());
+			sBoundary[0][target].insert(sBoundary[0][target].end(), sBoundary[t][target].begin(), sBoundary[t][target].end());
 		}
 	}
 
@@ -884,18 +882,28 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	Esutils::threadDistributionToFullDistribution(nodesElemsDistribution);
 
 	// Step 4: Deserialize boundary data
-	std::vector<eslocal> rBoundaryOffset(rBoundary.size(), _mesh->boundaryRegions.size());
-	for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
-		size_t t = 0;
-		for (size_t n = 0; n < rBoundary.size(); ++n) {
-			eslocal elements = rBoundary[n][r];
-			for (eslocal e = 0; e < elements; ++e) {
-				boundaryEPointers[r][t].push_back(&_mesh->_eclasses[t][rBoundary[n][rBoundaryOffset[n]++]]);
-				boundaryEData[r][t].insert(boundaryEData[r][t].end(), rBoundary[n].begin() + rBoundaryOffset[n], rBoundary[n].begin() + rBoundaryOffset[n] + boundaryEPointers[r][t].back()->nodes);
-				boundaryEDistribution[r][t].push_back(boundaryEData[r][t].size());
-				rBoundaryOffset[n] += boundaryEPointers[r][t].back()->nodes;
+	for (size_t n = 0; n < rBoundary.size(); ++n) {
+		std::vector<std::vector<eslocal> > toffset(_mesh->boundaryRegions.size()), tsize(_mesh->boundaryRegions.size());
+		eslocal offset = 0, p = 0;
+		for (size_t t = 0; t < threads; t++) {
+			for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
+				toffset[r].push_back(offset + _mesh->boundaryRegions.size());
+				tsize[r].push_back(rBoundary[n][p + r]);
+				offset += rBoundary[n][p + r];
 			}
-			t = (t + 1) % threads;
+			offset += _mesh->boundaryRegions.size();
+			p = offset;
+		}
+		for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
+			#pragma omp parallel for
+			for (size_t t = 0; t < threads; t++) {
+				for (eslocal i = toffset[r][t]; i < toffset[r][t] + tsize[r][t];) {
+					boundaryEPointers[r][t].push_back(&_mesh->_eclasses[t][rBoundary[n][i++]]);
+					boundaryEData[r][t].insert(boundaryEData[r][t].end(), rBoundary[n].begin() + i, rBoundary[n].begin() + i + boundaryEPointers[r][t].back()->nodes);
+					boundaryEDistribution[r][t].push_back(boundaryEData[r][t].size());
+					i += boundaryEPointers[r][t].back()->nodes;
+				}
+			}
 		}
 	}
 

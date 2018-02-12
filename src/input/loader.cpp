@@ -7,6 +7,8 @@
 #include "../basis/utilities/utils.h"
 #include "../basis/utilities/communication.h"
 
+#include "../config/ecf/root.h"
+
 #include "../mesh/mesh.h"
 #include "../mesh/preprocessing/meshpreprocessing.h"
 #include "../mesh/elements/element.h"
@@ -18,7 +20,6 @@
 
 #include <numeric>
 #include <algorithm>
-#include "../config/ecf/root.h"
 
 using namespace espreso;
 
