@@ -12,7 +12,7 @@ namespace espreso {
 struct DistributedVTKLegacy: public DistributedVisualization {
 
 protected:
-	DistributedVTKLegacy(const Mesh &mesh, double clusterShrinkRatio, double domainShrinkRatio);
+	DistributedVTKLegacy(const Mesh &mesh, const OutputConfiguration &configuration, double clusterShrinkRatio, double domainShrinkRatio);
 
 	void mesh(const std::string &name);
 	void solution(const std::string &name);
@@ -31,7 +31,7 @@ protected:
 
 struct VTKLegacyDebugInfo: public DistributedVTKLegacy {
 
-	VTKLegacyDebugInfo(const Mesh &mesh, double clusterShrinkRatio, double domainShrinkRatio);
+	VTKLegacyDebugInfo(const Mesh &mesh, const OutputConfiguration &configuration, double clusterShrinkRatio, double domainShrinkRatio);
 
 	void updateMesh()
 	{

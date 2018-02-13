@@ -31,6 +31,8 @@ struct Monitor {
 class Monitoring: public ResultStoreBase {
 
 public:
+	static bool storeStep(const OutputConfiguration &configuration, const Step &step);
+
 	virtual bool isCollected() { return true; }
 	virtual bool isDistributed() { return false; }
 

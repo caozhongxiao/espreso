@@ -26,8 +26,8 @@
 
 using namespace espreso;
 
-CollectedEnSight::CollectedEnSight(const std::string &name, const Mesh &mesh)
-: CollectedVisualization(mesh), _path(Logging::outputRoot() + "/"), _name(name), _variableCounter(0)
+CollectedEnSight::CollectedEnSight(const std::string &name, const Mesh &mesh, const OutputConfiguration &configuration)
+: CollectedVisualization(mesh, configuration), _path(Logging::outputRoot() + "/"), _name(name), _variableCounter(0)
 {
 	_caseheader << "#\n";
 	_caseheader << "# ESPRESO solution\n";
@@ -386,6 +386,10 @@ void CollectedEnSight::storeDecomposition()
 
 void CollectedEnSight::updateSolution(const Step &step)
 {
+	if (!Visualization::storeStep(_configuration, step)) {
+		return;
+	}
+
 	if (_variableCounter == 0) {
 		setvariables();
 	}

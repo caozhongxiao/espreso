@@ -2,15 +2,15 @@
 #ifndef SRC_OUTPUT_RESULT_VISUALIZATION_DISTRIBUTEDVISUALIZATION_H_
 #define SRC_OUTPUT_RESULT_VISUALIZATION_DISTRIBUTEDVISUALIZATION_H_
 
-#include "../resultstore.h"
+#include "visualization.h"
 
 #include "../../../basis/containers/point.h"
 
 namespace espreso {
 
-struct DistributedVisualization: public ResultStoreBase {
+struct DistributedVisualization: public Visualization {
 
-	DistributedVisualization(const Mesh &mesh): ResultStoreBase(mesh) {}
+	DistributedVisualization(const Mesh &mesh, const OutputConfiguration &configuration): Visualization(mesh, configuration) {}
 
 	virtual bool isCollected() { return false; }
 	virtual bool isDistributed() { return true; }

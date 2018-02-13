@@ -5,13 +5,13 @@
 #include "mpi.h"
 #include <vector>
 
-#include "distributedvisualization.h"
+#include "visualization.h"
 
 namespace espreso {
 
-struct CollectedVisualization: public ResultStoreBase {
+struct CollectedVisualization: public Visualization {
 
-	CollectedVisualization(const Mesh &mesh);
+	CollectedVisualization(const Mesh &mesh, const OutputConfiguration &configuration);
 	~CollectedVisualization();
 
 	virtual bool isCollected() { return true; }

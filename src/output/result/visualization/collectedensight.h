@@ -14,7 +14,7 @@ struct Step;
 class Mesh;
 
 struct CollectedEnSight: public CollectedVisualization {
-	CollectedEnSight(const std::string &name, const Mesh &mesh);
+	CollectedEnSight(const std::string &name, const Mesh &mesh, const OutputConfiguration &configuration);
 	~CollectedEnSight();
 
 	void updateMesh();
@@ -41,7 +41,7 @@ protected:
 };
 
 struct CollectedEnSightWithDecomposition: public virtual CollectedEnSight {
-	CollectedEnSightWithDecomposition(const std::string &name, const Mesh &mesh): CollectedEnSight(name, mesh) {}
+	CollectedEnSightWithDecomposition(const std::string &name, const Mesh &mesh, const OutputConfiguration &configuration): CollectedEnSight(name, mesh, configuration) {}
 
 	void updateMesh()
 	{

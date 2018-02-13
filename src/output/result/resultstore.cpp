@@ -38,6 +38,7 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 	_asyncStore->computeProcesses = environment->MPIsize;
 
 	_asyncStore->_direct = new DirectExecutor(mesh, configuration);
+	ResultStoreExecutor *executor = _asyncStore->_direct;
 	switch (configuration.mode) {
 	case OutputConfiguration::MODE::SYNC:
 		break;
@@ -46,6 +47,7 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 		_asyncStore->_async = new AsyncStore(mesh, configuration);
 		async::Config::setMode(async::THREAD);
 		_asyncStore->storeThreads = 1;
+		executor = _asyncStore->_async;
 		break;
 //	case OutputConfiguration::MODE::MPI:
 //		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented OUTPUT::MODE==MPI.";
@@ -64,13 +66,12 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 	}
 
 	// TODO: optimize
-	_asyncStore->_async->addResultStore(new CollectedEnSightWithDecomposition(Logging::name, _asyncStore->_async->mesh()));
+	executor->addResultStore(new CollectedEnSightWithDecomposition(Logging::name, executor->mesh(), configuration));
 	if (configuration.monitoring.size()) {
-		_asyncStore->_async->addResultStore(new Monitoring(_asyncStore->_async->mesh(), configuration, true));
-		// _asyncStore->_direct->addResultStore(new Monitoring(_asyncStore->_direct->mesh(), configuration, false));
+		executor->addResultStore(new Monitoring(executor->mesh(), configuration, true));
 	}
 	if (configuration.debug) {
-		_asyncStore->_async->addResultStore(new VTKLegacyDebugInfo(_asyncStore->_direct->mesh(), .95, .9));
+		executor->addResultStore(new VTKLegacyDebugInfo(executor->mesh(), configuration, .95, .9));
 	}
 
 	if (!_asyncStore->_direct->hasStore()) {
@@ -78,7 +79,7 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 		_asyncStore->_direct = NULL;
 	}
 
-	if (!_asyncStore->_async->hasStore()) {
+	if (_asyncStore->_async != NULL && !_asyncStore->_async->hasStore()) {
 		delete _asyncStore->_dispatcher;
 		delete _asyncStore->_async;
 		_asyncStore->_dispatcher = NULL;

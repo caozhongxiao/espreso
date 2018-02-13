@@ -38,6 +38,22 @@ std::string right(const std::string &value, size_t size)
 	return ret;
 }
 
+bool Monitoring::storeStep(const OutputConfiguration &configuration, const Step &step)
+{
+	switch (configuration.monitors_store_frequency) {
+	case OutputConfiguration::STORE_FREQUENCY::NEVER:
+		return false;
+	case OutputConfiguration::STORE_FREQUENCY::EVERY_TIMESTEP:
+		return true;
+	case OutputConfiguration::STORE_FREQUENCY::EVERY_NTH_TIMESTEP:
+		return step.substep % configuration.monitors_nth_stepping == 0;
+	case OutputConfiguration::STORE_FREQUENCY::LAST_TIMESTEP:
+		return step.isLast();
+	default:
+		return false;
+	}
+}
+
 
 Monitoring::Monitoring(const Mesh &mesh, const OutputConfiguration &configuration, bool async)
 : ResultStoreBase(mesh), _configuration(configuration), _async(async)
@@ -238,6 +254,10 @@ void Monitoring::updateMesh()
 
 void Monitoring::updateSolution(const Step &step)
 {
+	if (!storeStep(_configuration, step)) {
+		return;
+	}
+
 	eslocal offset = 0;
 	for (size_t i = 0; i < _edata.size(); offset += _edata[i++].first->names.size()) {
 		_mesh.computeElementStatistic(_edata[i].first, _edata[i].second, _data.data() + offset, _communicator);

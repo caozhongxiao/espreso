@@ -19,14 +19,14 @@
 
 using namespace espreso;
 
-VTKLegacyDebugInfo::VTKLegacyDebugInfo(const Mesh &mesh, double clusterShrinkRatio, double domainShrinkRatio)
-: DistributedVTKLegacy(mesh, clusterShrinkRatio, domainShrinkRatio)
+VTKLegacyDebugInfo::VTKLegacyDebugInfo(const Mesh &mesh, const OutputConfiguration &configuration, double clusterShrinkRatio, double domainShrinkRatio)
+: DistributedVTKLegacy(mesh, configuration, clusterShrinkRatio, domainShrinkRatio)
 {
 	_path = Esutils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" });
 }
 
-DistributedVTKLegacy::DistributedVTKLegacy(const Mesh &mesh, double clusterShrinkRatio, double domainShrinkRatio)
-: DistributedVisualization(mesh), _clusterShrinkRatio(clusterShrinkRatio), _domainShrinkRatio(domainShrinkRatio)
+DistributedVTKLegacy::DistributedVTKLegacy(const Mesh &mesh, const OutputConfiguration &configuration, double clusterShrinkRatio, double domainShrinkRatio)
+: DistributedVisualization(mesh, configuration), _clusterShrinkRatio(clusterShrinkRatio), _domainShrinkRatio(domainShrinkRatio)
 {
 
 }
