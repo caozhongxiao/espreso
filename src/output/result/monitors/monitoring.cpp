@@ -165,21 +165,30 @@ void Monitoring::updateMesh()
 		eslocal offset = 0;
 		for (size_t i = 0; i < _edata.size(); i++) {
 			for (size_t p = 0; p < _edata[i].first->names.size(); ++p, ++offset) {
-				if (StringCompare::caseInsensitiveEq(it->second.property, _edata[i].first->names[p])) {
+				if (
+						StringCompare::caseInsensitiveEq(it->second.property, _edata[i].first->names[p]) &&
+						StringCompare::caseInsensitiveEq(it->second.region, _edata[i].second->name)) {
+
 					_monitors[it->first - 1].data = (double*)(_data.data() + offset);
 				}
 			}
 		}
 		for (size_t i = 0; i < _nbdata.size(); i++) {
 			for (size_t p = 0; p < _nbdata[i].first->names.size(); ++p, ++offset) {
-				if (StringCompare::caseInsensitiveEq(it->second.property, _nbdata[i].first->names[p])) {
+				if (
+						StringCompare::caseInsensitiveEq(it->second.property, _nbdata[i].first->names[p]) &&
+						StringCompare::caseInsensitiveEq(it->second.region, _nbdata[i].second->name)) {
+
 					_monitors[it->first - 1].data = (double*)(_data.data() + offset);
 				}
 			}
 		}
 		for (size_t i = 0; i < _nedata.size(); i++) {
 			for (size_t p = 0; p < _nedata[i].first->names.size(); ++p, ++offset) {
-				if (StringCompare::caseInsensitiveEq(it->second.property, _nedata[i].first->names[p])) {
+				if (
+						StringCompare::caseInsensitiveEq(it->second.property, _nedata[i].first->names[p]) &&
+						StringCompare::caseInsensitiveEq(it->second.region, _nedata[i].second->name)) {
+
 					_monitors[it->first - 1].data = (double*)(_data.data() + offset);
 				}
 			}
