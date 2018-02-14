@@ -36,6 +36,16 @@ HeatTransfer2D::HeatTransfer2D(Mesh *mesh, Instance *instance, Step *step, const
 	if (_propertiesConfiguration.flux) {
 		_flux = _mesh->elements->appendData(2, { "FLUX", "FLUX_X", "FLUX_Y" });
 	}
+
+	bool translationMotion = false;
+	for (auto ls = _configuration.load_steps_settings.begin(); ls != _configuration.load_steps_settings.end(); ++ls) {
+		if (ls->second.translation_motions.size()) {
+			translationMotion = true;
+		}
+	}
+	if (translationMotion) {
+		_translationMotion = _mesh->elements->appendData(2, { "TRANSLATION_MOTION", "TRANSLATION_MOTION_X", "TRANSLATION_MOTION_Y" });
+	}
 }
 
 void HeatTransfer2D::processBEM(eslocal domain, Matrices matrices)
@@ -184,6 +194,7 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 
 	DenseMatrix Ce(2, 2), coordinates(nodes->size(), 2), J(2, 2), invJ(2, 2), dND;
 	double detJ, tauK, xi = 1, C1 = 1, C2 = 6;
+	Point center;
 	DenseMatrix f(nodes->size(), 1);
 	DenseMatrix U(nodes->size(), 2);
 	DenseMatrix m(nodes->size(), 1);
@@ -212,6 +223,7 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 		const Point &p = _mesh->nodes->coordinates->datatarray()[nodes->at(n)];
 		coordinates(n, 0) = p.x;
 		coordinates(n, 1) = p.y;
+		center += p;
 		thickness(n, 0) = thick != NULL ? thick->evaluate(p, T(n, 0), _step->currentTime) : 1;
 		if (material->phase_change) {
 			double phase, derivation;
@@ -239,6 +251,12 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 		if (heat_source) {
 			f(n, 0) = heat_source->evaluate(p, _step->currentTime, T(n, 0)) * thickness(n, 0);
 		}
+	}
+
+	center /= nodes->size();
+	if (translation_motion) {
+		(*_translationMotion->data)[2 * eindex + 0] = translation_motion->x.evaluator->evaluate(center, _step->currentTime, 0);
+		(*_translationMotion->data)[2 * eindex + 1] = translation_motion->y.evaluator->evaluate(center, _step->currentTime, 0);
 	}
 
 	eslocal Ksize = nodes->size();

@@ -40,6 +40,7 @@ protected:
 	NodeData *_temperature;
 	ElementData *_gradient, *_flux;
 	NodeData *_phaseChange, *_latentHeat;
+	ElementData *_translationMotion;
 };
 
 }
