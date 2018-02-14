@@ -373,7 +373,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 					MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
 							M_size, &M_values[0],
 							&rhs_values[d * M_size], &wq_values[d * M_size],
-							configuration.solver_precision, 600, itercount);
+							configuration.solver_precision, configuration.solver_max_iter, itercount);
 					iterations.push_back(itercount);
 				}
 			}else {
@@ -398,7 +398,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 				MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
 						M_size, &M_values[0],
 						&rhs_values[0], &wq_values[0],
-						configuration.solver_precision, 600, itercount);
+						configuration.solver_precision, configuration.solver_max_iter, itercount);
 
 				iterations.push_back(itercount);
 

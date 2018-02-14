@@ -60,6 +60,7 @@ struct RBFTargetConfiguration: public ECFObject {
 
 	ECFExpression function;
 	double solver_precision;
+	int solver_max_iter;
 
 	std::string target;
 	std::map<std::string, RBFTargetTransformationConfiguration> morphers;

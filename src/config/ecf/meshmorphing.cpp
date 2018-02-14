@@ -121,6 +121,11 @@ espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECFConfiguration *ECFRoo
 		.setdescription({ "Solver requested precision." })
 		.setdatatype({ ECFDataType::FLOAT }));
 
+	solver_max_iter = 600;
+		REGISTER(solver_max_iter, ECFMetaData()
+			.setdescription({ "Solver requested maximum number of iterations." })
+			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
+
 	REGISTER(function, ECFMetaData()
 		.setdescription({ "Radial basis function." })
 		.setdatatype({ ECFDataType::EXPRESSION }));
