@@ -36,6 +36,11 @@ GENERATOR {
       BOTTOM  <1 , 1> <.5 , 1> <0 , 0>;
     }
 
+    ELEMENTS {
+      WHITE CHESSBOARD_WHITE;
+      BLACK CHESSBOARD_BLACK;
+    }
+
     ELEMENT_TYPE          [ARG0];
 
     BLOCKS_X                   1;
@@ -76,10 +81,28 @@ HEAT_TRANSFER_2D {
         KYY           10;
       }
     }
+
+    2 {
+      COORDINATE_SYSTEM {
+        TYPE   CARTESIAN;
+        ROTATION   { Z 135; }
+      }
+
+      DENS   1;
+      CP     1;
+
+      THERMAL_CONDUCTIVITY {
+        MODEL   DIAGONAL;
+
+        KXX            .5;
+        KYY             1;
+      }
+    }
   }
 
   MATERIAL_SET {
-    ALL_ELEMENTS   1;
+    WHITE   1;
+    BLACK   2;
   }
 
   INITIAL_TEMPERATURE {

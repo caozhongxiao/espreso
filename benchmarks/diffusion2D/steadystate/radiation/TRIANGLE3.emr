@@ -3,4 +3,4 @@
     step ; substep ;    time ;  TEMPERATURE  ;  TEMPERATURE  ;    GRADIENT    ;    GRADIENT    ;
          ;         ;         ;     <MAX>     ;     <MIN>     ;      <MAX>     ;      <MIN>     ;
 
-       1 ;       1 ;  1.0000 ;  4.000000e+02 ;  2.000000e+02 ;  4.826007e+02  ;  1.542804e+00  ;
+       1 ;       1 ;  1.0000 ;  4.000000e+02 ;  2.000000e+02 ;  1.474757e+03  ;  2.608459e+00  ;
