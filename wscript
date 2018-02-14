@@ -36,7 +36,7 @@ solvers = [ "MKL", "PARDISO", "CUDA", "CUDA_7", "MIC", "MUMPS", "DISSECTION" ]
 
 third_party = [
     ("HYPRE", "multigrid external solver.", "string", "PATH", [ "INCLUDE", "LIBPATH" ]),
-    ("CATALYST", "Catalyst. Allows real-time visualization.", "string", "PATH", [ "INCLUDE", "LIBPATH" ]),
+    ("CATALYST", "Catalyst. Allows in situ visualization.", "string", "PATH", [ "INCLUDE", "LIBPATH" ]),
     ("MORTAR", "assembler for mortar interface.", "string", "PATH", [ "INCLUDE", "LIBPATH" ]),
     ("BEM4I", "assembler for boundary element discretization.", "string", "PATH", [ "PATH" ]),
 ]
@@ -127,7 +127,7 @@ def configure(ctx):
 
     optional_libraries = [
         (ctx.env.QT, "QT5", "GUI"),
-        (ctx.env.CATALYST, "Paraview Catalyst", "real-time visualization"),
+        (ctx.env.CATALYST, "Paraview Catalyst", "in situ visualization"),
         (ctx.env.HYPRE, "HYPRE", "multigrid linear solver"),
         (ctx.env.MORTAR, "MORTAR", "gluing of non-matching grids"),
         (ctx.env.BEM4I, "BEM4I", "boundary element discretization")

@@ -84,8 +84,8 @@ struct OutputConfiguration: public ECFObject {
 	STORE_RESULTS store_results;
 	ResultsSelectionConfiguration results_selection;
 
-	bool settings, debug; //, catalyst;
-	// size_t catalyst_sleep_time;
+	bool settings, debug, catalyst;
+	size_t catalyst_sleep_time;
 
 	bool collected;
 

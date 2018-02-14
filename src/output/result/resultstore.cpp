@@ -13,6 +13,7 @@
 #include "monitors/monitoring.h"
 #include "visualization/collectedensight.h"
 #include "visualization/distributedvtklegacy.h"
+#include "visualization/insituvisualization.h"
 
 
 using namespace espreso;
@@ -69,6 +70,9 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 	executor->addResultStore(new CollectedEnSightWithDecomposition(Logging::name, executor->mesh(), configuration));
 	if (configuration.monitoring.size()) {
 		executor->addResultStore(new Monitoring(executor->mesh(), configuration, true));
+	}
+	if (configuration.catalyst) {
+		_asyncStore->_direct->addResultStore(new InSituVisualization(mesh, configuration));
 	}
 	if (configuration.debug) {
 		executor->addResultStore(new VTKLegacyDebugInfo(executor->mesh(), configuration, .95, .9));

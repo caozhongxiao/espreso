@@ -199,20 +199,20 @@ espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
 	addSeparator();
 
 	settings = debug = false;
-	//catalyst = false;
-	// catalyst_sleep_time = 0;
+	catalyst = false;
+	catalyst_sleep_time = 0;
 	REGISTER(settings, ECFMetaData()
 			.setdescription({ "Store settings." })
 			.setdatatype({ ECFDataType::BOOL }));
 	REGISTER(debug, ECFMetaData()
 			.setdescription({ "Store FETI related data." })
 			.setdatatype({ ECFDataType::BOOL }));
-//	REGISTER(catalyst, ECFMetaData()
-//			.setdescription({ "In-situ visualization by Catalyst." })
-//			.setdatatype({ ECFDataType::BOOL }));
-//	REGISTER(catalyst_sleep_time, ECFMetaData()
-//			.setdescription({ "The sleep time between each time steps when catalyst is used." })
-//			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
+	REGISTER(catalyst, ECFMetaData()
+			.setdescription({ "In-situ visualization by Catalyst." })
+			.setdatatype({ ECFDataType::BOOL }));
+	REGISTER(catalyst_sleep_time, ECFMetaData()
+			.setdescription({ "The sleep time between each time steps when catalyst is used." })
+			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
 
 	addSpace();
 
