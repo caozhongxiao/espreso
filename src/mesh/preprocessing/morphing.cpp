@@ -364,13 +364,17 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 				}
 			}
 
-			if (environment->MPIrank == 0 && environment->MPIsize < dimension) {
+			std::vector<eslocal> iterations;
 
+			if (environment->MPIrank == 0 && environment->MPIsize < dimension) {
+				eslocal itercount;
 				for(eslocal d = 0 ; d < dimension; d++) {
+					eslocal itercount;
 					MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
 							M_size, &M_values[0],
 							&rhs_values[d * M_size], &wq_values[d * M_size],
-							configuration.solver_precision, 600);
+							configuration.solver_precision, 600, itercount);
+					iterations.push_back(itercount);
 				}
 			}else {
 
@@ -390,27 +394,38 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 							MPI_DOUBLE, 0, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
 
 				}
-
+				eslocal itercount;
 				MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
 						M_size, &M_values[0],
 						&rhs_values[0], &wq_values[0],
-						configuration.solver_precision, 600);
+						configuration.solver_precision, 600, itercount);
+
+				iterations.push_back(itercount);
 
 				if (environment->MPIrank == 0) {
 
 					for (int d = 1; d < dimension; d++) {
 						MPI_Recv(&wq_values[d*M_size],M_size, MPI_DOUBLE,
 								d, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
+						MPI_Recv(&itercount,1, MPI_INT,
+										d, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
+						iterations.push_back(itercount);
 					}
 
 				}else {
 					MPI_Send(wq_values.data(), M_size, MPI_DOUBLE,
 							0, 0, environment->MPICommunicator);
+					MPI_Send(&itercount, 1, MPI_INT,
+								0, 0, environment->MPICommunicator);
 				}
 
 			}
-
-			ESINFO(OVERVIEW) << "\tSystem solved by iterative solver.";
+			if (environment->MPIrank == 0)  {
+				ESINFO(OVERVIEW) << "\tSystem solved by iterative solver.";
+				for(int d=0;d<dimension;d++) {
+					ESINFO(OVERVIEW) << "\tNumber of iterations to solve "<<d<<". column = "<<iterations[d];
+				}
+			}
 
 		} break;
 

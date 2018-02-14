@@ -29,17 +29,17 @@ struct MATH {
 		static void GMRESUpCRSMat(
 				eslocal rows, eslocal cols, eslocal *mRows, eslocal *mCols, double *mVals,
 				double *rhsVals, double *results,
-				double tolerance, eslocal maxIterations);
+				double tolerance, eslocal maxIterations, eslocal &itercount);
 
 		static void GMRESDenseRowMajorMat(
 				eslocal rows, eslocal cols, double *mVals,
 				double *rhsVals, double *results,
-				double tolerance, eslocal maxIterations);
+				double tolerance, eslocal maxIterations, eslocal &itercount);
 
 		static void GMRESUpperSymetricColumnMajorMat(
 				eslocal cols, double *mVals,
 				double *rhsVals, double *results,
-				double tolerance, eslocal maxIterations);
+				double tolerance, eslocal maxIterations, eslocal &itercount);
 
 		static int directUpperSymetricIndefiniteColumnMajor(
 						eslocal cols, double *m_packed_values,
