@@ -2,6 +2,7 @@
 import glob
 
 def check_catalyst(ctx):
+    ctx.env.append_unique("CXXFLAGS", [ "-I" + include for include in ctx.env["CATALYST::INCLUDE"] ])
     ctx.env.append_unique("LIBPATH", ctx.env["CATALYST::LIBPATH"])
 
     includes = []
@@ -13,7 +14,6 @@ def check_catalyst(ctx):
 
     ctx.env.CATALYST = ctx.check_cc(
         fragment    = "{0}int main() {{ return 0; }}\n".format("".join(includes)),
-        cflags      = ctx.env["CXXFLAGS"] + [ "-I" + include for include in ctx.env["CATALYST::INCLUDE"] ],
         mandatory   = False,
         execute     = False,
         msg         = "Checking for CATALYST headers",
@@ -35,6 +35,9 @@ def check_catalyst(ctx):
     ctx.env.append_unique("LIB", vtklibs)
 
 def configure(ctx):
+    env = ctx.env
+    ctx.setenv("wrappers", ctx.env.derive())
+
     check_catalyst(ctx)
 
     if ctx.env.BUILD_TOOLS == "0":
@@ -47,9 +50,10 @@ def configure(ctx):
     if ctx.env.LIBTYPE == "STATIC":
         ctx.env.append_unique("STLIB", [ "parmetis" ])
 
-    env = ctx.env
-    ctx.setenv("wrappers", ctx.env.derive())
-    ctx.env.append_unique("CXXFLAGS", [ "-I" + include for include in ctx.env["CATALYST::INCLUDE"] ])
+    env.append_unique("LIBPATH", ctx.env["LIBPATH"])
+    env.append_unique("LIB", ctx.env["LIB"])
+    env.append_unique("STLIB", ctx.env["STLIB"])
+    env.CATALYST = ctx.env.CATALYST
     ctx.setenv("", env)
 
 def build(ctx):

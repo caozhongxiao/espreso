@@ -1,29 +1,36 @@
 
 #include "insituvisualization.h"
 
+#include "../../../config/ecf/output.h"
+
 #include "../../../wrappers/insituwrappers/insituwrapper.h"
+
+#include <unistd.h>
 
 using namespace espreso;
 
 InSituVisualization::InSituVisualization(const Mesh &mesh, const OutputConfiguration &configuration)
-: Visualization(mesh, configuration)
+: Visualization(mesh, configuration), _inSitu(NULL)
 {
-	_inSitu = new InSituWrapper();
+
 }
 
 InSituVisualization::~InSituVisualization()
 {
-	delete _inSitu;
+	if (_inSitu != NULL) {
+		delete _inSitu;
+	}
 }
 
 void InSituVisualization::updateMesh()
 {
-
+	_inSitu = new InSituWrapper(_mesh);
 }
 
 void InSituVisualization::updateSolution(const Step &step)
 {
-	_inSitu->update();
+	_inSitu->update(step);
+	sleep(_configuration.catalyst_sleep_time);
 }
 
 

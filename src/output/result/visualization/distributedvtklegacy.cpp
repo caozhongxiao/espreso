@@ -1,4 +1,7 @@
 
+#include "distributedvtklegacy.h"
+#include "vtkwritter.h"
+
 #include "../../../basis/containers/point.h"
 #include "../../../basis/containers/serializededata.h"
 #include "../../../basis/utilities/utils.h"
@@ -12,10 +15,9 @@
 #include "../../../mesh/store/elementstore.h"
 #include "../../../mesh/store/fetidatastore.h"
 #include "../../../mesh/store/surfacestore.h"
+
 #include <fstream>
 #include <algorithm>
-#include "distributedvtklegacy.h"
-
 
 using namespace espreso;
 
@@ -77,46 +79,7 @@ void DistributedVTKLegacy::mesh(const std::string &name)
 
 	os << "CELL_TYPES " << _mesh.elements->size << "\n";
 	for (auto e = _mesh.elements->epointers->datatarray().begin(); e != _mesh.elements->epointers->datatarray().end(); ++e) {
-		switch ((*e)->code) {
-		case Element::CODE::SQUARE4:
-			os << "9\n";
-			break;
-		case Element::CODE::SQUARE8:
-			os << "23\n";
-			break;
-		case Element::CODE::TRIANGLE3:
-			os << "5\n";
-			break;
-		case Element::CODE::TRIANGLE6:
-			os << "22\n";
-			break;
-		case Element::CODE::TETRA4:
-			os << "10\n";
-			break;
-		case Element::CODE::TETRA10:
-			os << "24\n";
-			break;
-		case Element::CODE::PYRAMID5:
-			os << "14\n";
-			break;
-		case Element::CODE::PYRAMID13:
-			os << "27\n";
-			break;
-		case Element::CODE::PRISMA6:
-			os << "13\n";
-			break;
-		case Element::CODE::PRISMA15:
-			os << "26\n";
-			break;
-		case Element::CODE::HEXA8:
-			os << "12\n";
-			break;
-		case Element::CODE::HEXA20:
-			os << "25\n";
-			break;
-		default:
-			break;
-		}
+		os << VTKWritter::ecode((*e)->code) << "\n";
 	}
 	os << "\n";
 
