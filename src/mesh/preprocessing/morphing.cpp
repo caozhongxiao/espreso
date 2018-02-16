@@ -278,7 +278,8 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		}
 		processMorpher(it->second, dimension, sPoints, prevsize, sDisplacement);
 
-		ESINFO(OVERVIEW)<<"\tProcessing region: "<<it->first<<"\n"<<it->second;
+		ESINFO(OVERVIEW)<<"\tProcessing region: "<<it->first<<"\n"<<it->second<<Info::plain();
+		ESINFO(OVERVIEW)<<"\t\t\tSIZE\t\t: "<<region->uniqueTotalSize<<" nodes\n";
 	}
 
 	if (environment->MPIrank == 0) {
@@ -321,7 +322,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 	if (!Communication::gatherUnknownSize(sDisplacement, rDisplacement)) {
 		ESINFO(ERROR) << "ESPRESO internal error: gather morphed displacement";
 	}
-	ESINFO(OVERVIEW)<<"\tGathered "<<sPoints.size()<<" points in morphing and their displacements on process 0.";
+	ESINFO(OVERVIEW)<<"\tGathered "<<rPoints.size()<<" points in morphing and their displacements on process 0.";
 
 	std::vector<double> wq_values;
 

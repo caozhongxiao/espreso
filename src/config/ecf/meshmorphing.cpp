@@ -64,7 +64,7 @@ std::ostream& espreso::operator<<(std::ostream& os, const espreso::RBFTargetTran
 			} break;
 
 			case MORPHING_TRANSFORMATION::TRANSLATION: {
-				os<<"TRANSLATION\n";
+				os<<" TRANSLATION\n";
 				os<<"\t\t\tX\t\t: "<<t.translation.x.value<<"\n";
 				os<<"\t\t\tY\t\t: "<<t.translation.y.value<<"\n";
 				os<<"\t\t\tZ\t\t: "<<t.translation.z.value<<"\n";
