@@ -17,7 +17,7 @@ enum class MORPHING_TYPE {
 
 enum class MORPHING_RBF_SOLVER {
 	ITERATIVE = 0,
-	DIRECT = 1
+	DENSE = 1
 };
 
 enum class MORPHING_TRANSFORMATION {
@@ -40,8 +40,18 @@ struct RBFTargetTransformationConfiguration: public ECFObject {
 
 	RBFTargetTransformationConfiguration(ECFRoot *ECFRoot);
 
+	friend std::ostream& operator<<(std::ostream& os, const RBFTargetTransformationConfiguration &t);
+
 protected:
 	ECFRoot *_ECFRoot;
+};
+
+struct ExternalFFDConfiguration: public ECFObject {
+
+	std::string path;
+	std::map<std::string, RBFTargetTransformationConfiguration> morphers;
+
+	ExternalFFDConfiguration(ECFRoot *ECFRoot);
 };
 
 struct RBFTargetConfiguration: public ECFObject {
@@ -50,11 +60,16 @@ struct RBFTargetConfiguration: public ECFObject {
 
 	ECFExpression function;
 	double solver_precision;
+	int solver_max_iter;
 
 	std::string target;
 	std::map<std::string, RBFTargetTransformationConfiguration> morphers;
 
+	ExternalFFDConfiguration external_ffd;
+
 	RBFTargetConfiguration(ECFRoot *ECFRoot);
+
+	friend std::ostream& operator<<(std::ostream& os, const RBFTargetConfiguration &t);
 };
 
 struct MeshMorphing: public ECFObject {

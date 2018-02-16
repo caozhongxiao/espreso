@@ -59,7 +59,7 @@ def build(ctx):
     ctx.program(
         source       = "ecfchecker.cpp",
         target       = "ecfchecker",
-        use          = "basis config",
+        use          = "basis config wrappers",
         install_path = ctx.ROOT + "/bin"
     )
 

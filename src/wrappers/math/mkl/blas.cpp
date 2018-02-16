@@ -51,3 +51,12 @@ eslocal MATH::vecNormMaxIndex(eslocal size, double *vVals)
 	return cblas_idamax(size, vVals, incr);
 }
 
+void MATH::DenseMatDenseMatRowMajorProduct(
+			double alpha, bool transposeA, eslocal aRows, eslocal aCols, double* aVals,
+			bool transposeB, eslocal bCols, double* bVals,
+			double beta, double* cVals)
+{
+	cblas_dgemm(CblasRowMajor,
+			transposeA ? CblasTrans : CblasNoTrans, transposeB ? CblasTrans : CblasNoTrans,
+			aRows, bCols, aCols, alpha, aVals, aRows, bVals, aCols, beta, cVals, aRows);
+}

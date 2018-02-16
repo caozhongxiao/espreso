@@ -18,17 +18,32 @@ struct MATH {
 	static eslocal vecNormMaxIndex(eslocal size, float *vVals);
 	static eslocal vecNormMaxIndex(eslocal size, double *vVals);
 
+	// C = alpha * A * B + beta * C
+	static void DenseMatDenseMatRowMajorProduct(
+			double alpha, bool transposeA, eslocal aRows, eslocal aCols, double* aVals,
+			bool transposeB, eslocal bCols, double* bVals,
+			double beta, double* cVals);
+
 	struct SOLVER {
 
 		static void GMRESUpCRSMat(
 				eslocal rows, eslocal cols, eslocal *mRows, eslocal *mCols, double *mVals,
-				eslocal rhs, double *rhsVals, double *results,
-				double tolerance, eslocal maxIterations);
+				double *rhsVals, double *results,
+				double tolerance, eslocal maxIterations, eslocal &itercount);
 
 		static void GMRESDenseRowMajorMat(
 				eslocal rows, eslocal cols, double *mVals,
-				eslocal rhs, double *rhsVals, double *results,
-				double tolerance, eslocal maxIterations);
+				double *rhsVals, double *results,
+				double tolerance, eslocal maxIterations, eslocal &itercount);
+
+		static void GMRESUpperSymetricColumnMajorMat(
+				eslocal cols, double *mVals,
+				double *rhsVals, double *results,
+				double tolerance, eslocal maxIterations, eslocal &itercount);
+
+		static int directUpperSymetricIndefiniteColumnMajor(
+						eslocal cols, double *m_packed_values,
+						eslocal nrhs, double *rhsVals);
 	};
 };
 

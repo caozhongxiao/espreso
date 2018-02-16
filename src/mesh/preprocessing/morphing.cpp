@@ -20,13 +20,232 @@
 
 #include "../../wrappers/math/math.h"
 
+#include "../../config/reader/tokenizer.h"
+
+#include "mpi.h"
+
 using namespace espreso;
+
+void MeshPreprocessing::processMorpher(const RBFTargetTransformationConfiguration &target, int dimension,
+		std::vector<Point> &sPoints, eslocal startPoint, std::vector<double> &sDisplacement) {
+
+	int pointsToProcess = sPoints.size() - startPoint;
+
+	switch (target.transformation) {
+		case MORPHING_TRANSFORMATION::FIXED: {
+			sDisplacement.insert(sDisplacement.end(), dimension * sPoints.size(), 0);
+		} break;
+
+		case MORPHING_TRANSFORMATION::TRANSLATION: {
+
+			sDisplacement.resize(sDisplacement.size() + dimension * pointsToProcess);
+			target.translation.x.evaluator->evaluate(pointsToProcess, dimension, sPoints.data() + startPoint, NULL, 0, sDisplacement.data() + dimension * startPoint + 0);
+			target.translation.y.evaluator->evaluate(pointsToProcess, dimension, sPoints.data() + startPoint, NULL, 0, sDisplacement.data() + dimension * startPoint + 1);
+			if (dimension == 3) {
+				target.translation.z.evaluator->evaluate(pointsToProcess, dimension, sPoints.data() + startPoint, NULL, 0, sDisplacement.data() + dimension * startPoint + 2);
+			}
+		} break;
+
+		case MORPHING_TRANSFORMATION::OFFSET: {
+		} break;
+
+		case MORPHING_TRANSFORMATION::SCALING: {
+
+			std::vector<double> result;
+			target.coordinate_system.createTranslationMatrixToCenter(result);
+			std::vector<double> scaling;
+			std::vector<double> sv(3);
+			target.scaling.x.evaluator->evaluate(1, NULL, NULL, 0, &sv[0]);
+			target.scaling.y.evaluator->evaluate(1, NULL, NULL, 0, &sv[1]);
+			target.scaling.z.evaluator->evaluate(1, NULL, NULL, 0, &sv[2]);
+			target.coordinate_system.createScalingMatrix(scaling, sv[0]/100.0, sv[1]/100.0, sv[2]/100.0);
+			std::vector<double> TtoZero;
+			target.coordinate_system.createTranslationMatrixToZero(TtoZero);
+			target.coordinate_system.multiplyTransformationMatrices(scaling, result);
+			target.coordinate_system.multiplyTransformationMatrices(TtoZero, result);
+
+			for(auto it = sPoints.begin()+startPoint; it!=sPoints.end(); it++) {
+				const Point& p1 = *it;
+				Point p2= target.coordinate_system.applyTransformation(result, p1);
+				//std::cout<<"P1 "<<p1<<" P2 "<<p2<<"\n";
+				sDisplacement.push_back(p2.x - p1.x);
+				sDisplacement.push_back(p2.y - p1.y);
+				if (dimension == 3) {
+					sDisplacement.push_back(p2.z - p1.z);
+				}
+			}
+		} break;
+
+		case MORPHING_TRANSFORMATION::ROTATION: {
+
+			std::vector<double> result;
+			target.coordinate_system.createTranslationMatrixToCenter(result);
+			std::vector<double> rotation;
+			target.coordinate_system.createRotationMatrix(rotation);
+			std::vector<double> TtoZero;
+			target.coordinate_system.createTranslationMatrixToZero(TtoZero);
+			target.coordinate_system.multiplyTransformationMatrices(rotation, result);
+			target.coordinate_system.multiplyTransformationMatrices(TtoZero, result);
+
+			for(auto it = sPoints.begin()+startPoint; it!=sPoints.end(); it++) {
+				const Point& p1 = *it;
+				Point p2= target.coordinate_system.applyTransformation(result, p1);
+				//std::cout<<"P1 "<<p1<<" P2 "<<p2<<"\n";
+				sDisplacement.push_back(p2.x - p1.x);
+				sDisplacement.push_back(p2.y - p1.y);
+				if (dimension == 3) {
+					sDisplacement.push_back(p2.z - p1.z);
+				}
+			}
+		}break;
+	 	 default:
+	 		 ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement mesh morphing tranformation.";
+	}
+}
+
+eslocal MeshPreprocessing::prepareMatrixM(std::vector<Point> &rPoints,
+		std::vector<double> &rDisplacement,
+		int dimension, const RBFTargetConfiguration &configuration,
+		std::vector<double> &M_values,
+		bool use_x, bool use_y, bool use_z
+) {
+
+	eslocal rowsFromCoordinates = rPoints.size();
+	eslocal realsize = rowsFromCoordinates;
+
+	M_values.clear();
+
+	for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+		for(eslocal rr = 0; rr <= r; rr++) {
+			M_values.push_back(configuration.function.evaluator->evaluate((rPoints[r] - rPoints[rr]).length()));
+		}
+	}
+	if (use_x) {
+		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+			M_values.push_back(rPoints[r].x);
+		}
+		M_values.push_back(0);
+		realsize++;
+	}
+
+	if (use_y) {
+		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+			M_values.push_back(rPoints[r].y);
+		}
+		M_values.push_back(0);
+		realsize++;
+	}
+	if (use_x)	M_values.push_back(0);
+
+	if (dimension == 3 && use_z) {
+		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+			M_values.push_back(rPoints[r].z);
+		}
+		if (use_x) M_values.push_back(0);
+		if (use_y) M_values.push_back(0);
+		M_values.push_back(0);
+		realsize++;
+	}
+
+	for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+		M_values.push_back(1);
+	}
+	if (use_x) M_values.push_back(0);
+	if (use_y) M_values.push_back(0);
+	if (dimension == 3 && use_z) M_values.push_back(0);
+	M_values.push_back(0);
+	realsize++;
+	return realsize;
+}
+
+void MeshPreprocessing::readExternalFile(
+		const RBFTargetConfiguration &configuration, int dimension,
+		std::map<std::string, std::vector<Point>> &external_data) {
+
+	Tokenizer tokenizer(configuration.external_ffd.path);
+	Tokenizer::Token token;
+
+	auto myNextToken = [] (Tokenizer &tokenizer) -> Tokenizer::Token {
+		Tokenizer::Token token;
+		do {
+			token = tokenizer.next();
+		}while(token==Tokenizer::Token::LINE_END);
+		return token;
+	};
+	auto myExpectToken =
+			[] (Tokenizer &tokenizer, Tokenizer::Token real, Tokenizer::Token expected, char* expectedToken) -> void {
+				if (real!=expected) {
+					ESINFO(GLOBAL_ERROR) << "Line: " << tokenizer.line() << ", unexpected symbol, was expecting "<<expectedToken;
+				}
+			};
+	auto myConvert =
+			[] (Tokenizer &tokenizer) -> double {
+				size_t size;
+				double result = std::stod(tokenizer.value(), &size);
+				if (size != tokenizer.value().size()) {
+					ESINFO(GLOBAL_ERROR) << "Line: " << tokenizer.line() << ", error while converting "<<tokenizer.value()<<" into a number.";
+				}
+				return result;
+			};
+
+	token = myNextToken(tokenizer);
+	while (token != Tokenizer::Token::END) {
+		myExpectToken(tokenizer, token, Tokenizer::Token::STRING,
+				" a region name.");
+		std::string name = tokenizer.value();
+		if (external_data.find(name) != external_data.end()) {
+			ESINFO(GLOBAL_ERROR) << "Line: " << tokenizer.line()
+					<< ", region " + tokenizer.value()
+					<< " defined multiple times in the external file.";
+		}
+		token = myNextToken(tokenizer);
+		myExpectToken(tokenizer, token, Tokenizer::Token::OBJECT_OPEN,
+				" symbol \"{\".");
+		token = myNextToken(tokenizer);
+		while (token != Tokenizer::Token::OBJECT_CLOSE) {
+			Point p;
+			myExpectToken(tokenizer, token, Tokenizer::Token::STRING,
+					" a number.");
+			p.x = myConvert(tokenizer);
+			token = myNextToken(tokenizer);
+			myExpectToken(tokenizer, token, Tokenizer::Token::DELIMITER,
+					" symbol \",\".");
+
+			token = myNextToken(tokenizer);
+			myExpectToken(tokenizer, token, Tokenizer::Token::STRING,
+					" a number.");
+			p.y = myConvert(tokenizer);
+
+			token = myNextToken(tokenizer);
+
+			if (dimension == 3) {
+				myExpectToken(tokenizer, token, Tokenizer::Token::DELIMITER,
+						" symbol \",\".");
+
+				token = myNextToken(tokenizer);
+				myExpectToken(tokenizer, token, Tokenizer::Token::STRING,
+						" a number.");
+				p.z = myConvert(tokenizer);
+
+				token = myNextToken(tokenizer);
+			}
+			myExpectToken(tokenizer, token, Tokenizer::Token::EXPRESSION_END,
+					" symbol \";\".");
+			token = myNextToken(tokenizer);
+
+			external_data[name].push_back(p);
+		}
+		token = myNextToken(tokenizer);
+	}
+}
 
 void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfiguration &configuration, int dimension)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	start("apply morphing '" + name + "'");
+
+	ESINFO(OVERVIEW)<<"Processing morphing			: "<<name<<"\n"<<configuration;
 
 	if (_mesh->nodes->originCoordinates == NULL) {
 		_mesh->nodes->originCoordinates = new serializededata<eslocal, Point>(*_mesh->nodes->coordinates);
@@ -49,41 +268,46 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		const auto &nodes = region->nodes->datatarray();
 		const auto &coordinates = _mesh->nodes->coordinates->datatarray();
 
-		switch (it->second.transformation) {
-		case MORPHING_TRANSFORMATION::FIXED: {
-			for (size_t i = 0; i < region->nintervals.size(); i++) {
-				if (region->nintervals[i].sourceProcess == environment->MPIrank) {
-					for (auto n = nodes.begin() + region->nintervals[i].begin; n != nodes.begin() + region->nintervals[i].end; ++n) {
-						sPoints.push_back(coordinates[*n]);
-					}
-					sDisplacement.insert(sDisplacement.end(), dimension * (region->nintervals[i].end - region->nintervals[i].begin), 0);
+		size_t prevsize = sPoints.size();
+		for (size_t i = 0; i < region->nintervals.size(); i++) {
+			if (region->nintervals[i].sourceProcess == environment->MPIrank) {
+				for (auto n = nodes.begin() + region->nintervals[i].begin; n != nodes.begin() + region->nintervals[i].end; ++n) {
+					sPoints.push_back(coordinates[*n]);
 				}
 			}
-		} break;
+		}
+		processMorpher(it->second, dimension, sPoints, prevsize, sDisplacement);
 
-		case MORPHING_TRANSFORMATION::TRANSLATION: {
-			for (size_t i = 0; i < region->nintervals.size(); i++) {
-				if (region->nintervals[i].sourceProcess == environment->MPIrank) {
-					size_t prevsize = sPoints.size();
-					for (auto n = nodes.begin() + region->nintervals[i].begin; n != nodes.begin() + region->nintervals[i].end; ++n) {
-						sPoints.push_back(coordinates[*n]);
-					}
-					sDisplacement.resize(sDisplacement.size() + dimension * (region->nintervals[i].end - region->nintervals[i].begin));
-					it->second.translation.x.evaluator->evaluate(region->nintervals[i].end - region->nintervals[i].begin, dimension, sPoints.data() + prevsize, NULL, 0, sDisplacement.data() + dimension * prevsize + 0);
-					it->second.translation.y.evaluator->evaluate(region->nintervals[i].end - region->nintervals[i].begin, dimension, sPoints.data() + prevsize, NULL, 0, sDisplacement.data() + dimension * prevsize + 1);
-					if (dimension == 3) {
-						it->second.translation.z.evaluator->evaluate(region->nintervals[i].end - region->nintervals[i].begin, dimension, sPoints.data() + prevsize, NULL, 0, sDisplacement.data() + dimension * prevsize + 2);
-					}
-				}
+		ESINFO(OVERVIEW)<<"\tProcessing region: "<<it->first<<"\n"<<it->second<<Info::plain();
+		ESINFO(OVERVIEW)<<"\t\t\tSIZE\t\t: "<<region->uniqueTotalSize<<" nodes\n";
+	}
+
+	if (environment->MPIrank == 0) {
+		if (configuration.external_ffd.path!="") {
+			ESINFO(OVERVIEW)<<"\tExternal FFD file\t\t: "<<configuration.external_ffd.path;
+
+			std::map<std::string, std::vector<Point>> external_data;
+
+			readExternalFile(configuration, dimension, external_data);
+
+			for(auto it = external_data.begin(); it!=external_data.end(); ++it) {
+				ESINFO(OVERVIEW)<<"\t\tREGION\t\t\t: "<<it->first<<" ("<<it->second.size()<<" points)";
 			}
-		} break;
+			ESINFO(OVERVIEW)<<"";
 
-		case MORPHING_TRANSFORMATION::OFFSET:
-		case MORPHING_TRANSFORMATION::SCALING:
-		case MORPHING_TRANSFORMATION::ROTATION:
-			// TODO:
-		default:
-			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement mesh morphing tranformation.";
+			for(auto it = configuration.external_ffd.morphers.begin(); it != configuration.external_ffd.morphers.end(); ++it) {
+				size_t prevsize = sPoints.size();
+				if (external_data.find(it->first)==external_data.end()) {
+					ESINFO(GLOBAL_ERROR) << "Region " << it->first << " does not exist in external file: "<<configuration.external_ffd.path;
+				}
+
+				for (auto n = external_data[it->first].begin(); n != external_data[it->first].end(); ++n) {
+					sPoints.push_back(*n);
+				}
+				processMorpher(it->second, dimension, sPoints, prevsize, sDisplacement);
+
+				ESINFO(OVERVIEW)<<"\tProcessing region: "<<it->first<<"\n"<<it->second;
+			}
 		}
 	}
 
@@ -91,80 +315,265 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		ESINFO(ERROR) << "ESPRESO internal error: gather morphed points";
 	}
 
+	if (!Communication::broadcastUnknownSize(rPoints)) {
+			ESINFO(ERROR) << "ESPRESO internal error: broadcast points.";
+	}
+
 	if (!Communication::gatherUnknownSize(sDisplacement, rDisplacement)) {
 		ESINFO(ERROR) << "ESPRESO internal error: gather morphed displacement";
 	}
+	ESINFO(OVERVIEW)<<"\tGathered "<<rPoints.size()<<" points in morphing and their displacements on process 0.";
 
-	std::vector<double> W, Q;
+	std::vector<double> wq_values;
 
-	if (environment->MPIrank == 0) {
+	if (environment->MPIrank == 0 ||
+			(configuration.solver == MORPHING_RBF_SOLVER::ITERATIVE &&
+			 environment->MPIrank < dimension &&
+			 environment->MPIsize >= dimension)) {
 
-		eslocal rowsFromCoordinates = rDisplacement.size() / dimension;
+		std::vector<double> M_values;
+		//eslocal rowsFromCoordinates = rPoints.size();
+		int M_size = rPoints.size() + dimension + 1;
 
-		// TODO: optimize
-		DenseMatrix rhs(rowsFromCoordinates + dimension + 1, dimension);
-		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
-			for (int d = 0; d < dimension; d++) {
-				rhs(r, d) = rDisplacement[r * dimension + d];
-			}
-		}
+		eslocal realSize = prepareMatrixM(rPoints, rDisplacement, dimension, configuration, M_values);
 
-		DenseMatrix M(rowsFromCoordinates + dimension + 1, rowsFromCoordinates + dimension + 1);
-
-		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
-			M(rowsFromCoordinates + 0, r) = M(r, rowsFromCoordinates + 0) = rPoints[r].x;
-			M(rowsFromCoordinates + 1, r) = M(r, rowsFromCoordinates + 1) = rPoints[r].y;
-			if (dimension == 3) {
-				M(rowsFromCoordinates + 2, r) = M(r, rowsFromCoordinates + 2) = rPoints[r].z;
-			}
-
-			M(rowsFromCoordinates + dimension, r) = M(r, rowsFromCoordinates + dimension) = 1;
-
-			for(int rr = 0; rr < r; rr++) {
-				M(r, rr) = M(rr, r) = configuration.function.evaluator->evaluate((rPoints[r] - rPoints[rr]).length());
-			}
+		if (realSize != M_size) {
+			ESINFO(GLOBAL_ERROR)
+					<< "ESPRESO internal error: error while building matrix M.";
+		}else {
+			ESINFO(OVERVIEW)<<"\tSolving system: M["<<M_size<<","<<M_size<<"] * X = Y["<<M_size<<","<<dimension<<"].";
 		}
 
 		switch (configuration.solver) {
 		case MORPHING_RBF_SOLVER::ITERATIVE: {
-			SparseCSRMatrix<eslocal> MSparse(M);
-			rhs.transpose();
 
-			DenseMatrix wq(rhs.rows(), rhs.columns());
-			for(eslocal r = 0 ; r < rhs.rows(); r++) {
-				//MSparse.gmresSolve(&rhs(r, 0), &wq(r, 0), configuration.solver_precision, 600);
-				MATH::SOLVER::GMRESUpCRSMat(
-						MSparse.rows(), MSparse.columns(), MSparse.rowPtrs(), MSparse.columnIndices(), MSparse.values(),
-						1, rhs.values() + r * rhs.columns(), wq.values() + r * wq.columns(),
-						configuration.solver_precision, 600);
-			}
+			std::vector<double> rhs_values;
 
-			for(eslocal c = 0; c < wq.columns(); c++) {
-				for(eslocal r = 0; r < wq.rows(); r++) {
-					if (c < rowsFromCoordinates) {
-						W.push_back(wq(r, c));
-					}else {
-						Q.push_back(wq(r, c));
+			if (environment->MPIrank == 0) {
+
+				rhs_values.resize(M_size*dimension);
+				wq_values.resize(M_size*dimension);
+
+				for (int d = 0; d < dimension; d++) {
+					eslocal r;
+					for (r = 0; r < rPoints.size(); r++) {
+						rhs_values[M_size*d + r] = rDisplacement[r * dimension + d];
+					}
+					for ( ; r < M_size; r++) {
+						rhs_values[M_size*d + r] = 0;
 					}
 				}
 			}
+
+			std::vector<eslocal> iterations;
+
+			if (environment->MPIrank == 0 && environment->MPIsize < dimension) {
+				eslocal itercount;
+				for(eslocal d = 0 ; d < dimension; d++) {
+					eslocal itercount;
+					MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
+							M_size, &M_values[0],
+							&rhs_values[d * M_size], &wq_values[d * M_size],
+							configuration.solver_precision, configuration.solver_max_iter, itercount);
+					iterations.push_back(itercount);
+				}
+			}else {
+
+				if (environment->MPIrank == 0) {
+
+					for(eslocal d = 1 ; d < dimension; d++) {
+						MPI_Send(&rhs_values[M_size*d], M_size, MPI_DOUBLE,
+									d, 0, environment->MPICommunicator);
+					}
+
+				}else{
+
+					rhs_values.resize(M_size);
+					wq_values.resize(M_size);
+
+					MPI_Recv(rhs_values.data(),M_size,
+							MPI_DOUBLE, 0, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
+
+				}
+				eslocal itercount;
+				MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
+						M_size, &M_values[0],
+						&rhs_values[0], &wq_values[0],
+						configuration.solver_precision, configuration.solver_max_iter, itercount);
+
+				iterations.push_back(itercount);
+
+				if (environment->MPIrank == 0) {
+
+					for (int d = 1; d < dimension; d++) {
+						MPI_Recv(&wq_values[d*M_size],M_size, MPI_DOUBLE,
+								d, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
+						MPI_Recv(&itercount,1, MPI_INT,
+										d, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
+						iterations.push_back(itercount);
+					}
+
+				}else {
+					MPI_Send(wq_values.data(), M_size, MPI_DOUBLE,
+							0, 0, environment->MPICommunicator);
+					MPI_Send(&itercount, 1, MPI_INT,
+								0, 0, environment->MPICommunicator);
+				}
+
+			}
+			if (environment->MPIrank == 0)  {
+				ESINFO(OVERVIEW) << "\tSystem solved by iterative solver.";
+				for(int d=0;d<dimension;d++) {
+					ESINFO(OVERVIEW) << "\tNumber of iterations to solve "<<d<<". column = "<<iterations[d];
+				}
+			}
+
 		} break;
 
-		case MORPHING_RBF_SOLVER::DIRECT:
+		case MORPHING_RBF_SOLVER::DENSE: {
+
+			wq_values.resize(M_size*dimension);
+
+			for (int d = 0; d < dimension; d++) {
+				eslocal r;
+				for (r = 0; r < rPoints.size(); r++) {
+					wq_values[M_size*d + r] = rDisplacement[r * dimension + d];
+				}
+				for ( ; r < M_size; r++) {
+					wq_values[M_size*d + r] = 0;
+				}
+			}
+
+			/*std::cout<<"Points: "<<rPoints.size()<<" - "<<rPoints<<"\n";
+
+			int count=0;
+			for(int i=0;i<M_size;i++) {
+				for(int j=0;j<=i;j++) {
+					printf("%f ", M_values[count]);
+					count++;
+				}
+				printf("\n");
+			}*/
+
+			int result= MATH::SOLVER::directUpperSymetricIndefiniteColumnMajor(
+					M_size,  &M_values[0],
+					dimension, &wq_values[0]);
+
+			if (result!=0) {
+
+				ESINFO(OVERVIEW) << "\tDense solver error: trying to repair matrix M.";
+
+				bool use_x = true,use_y = true,use_z = true;
+
+				std::vector<double> xs(rPoints.size()), ys(rPoints.size()), zs(rPoints.size());
+				for(int i=0; i<rPoints.size(); i++) {
+					Point &p = rPoints[i];
+					xs[i] = p.x;
+					ys[i] = p.y;
+					if (dimension == 3) {
+						zs[i] = p.z;
+					}
+				}
+
+				auto checkAllSame = [] (std::vector<double> &points) -> bool {
+					if (points.size()==0) return false;
+					for(auto it = points.begin()+1; it!=points.end();++it) {
+						if (points[0]!=*it) {
+							return false;
+						}
+					}
+					return true;
+				};
+
+				if (checkAllSame(xs)) {
+					ESINFO(OVERVIEW) << "\tDense solver error: removing row containing X row from coordinates.";
+					use_x=false;
+				}
+				if (checkAllSame(ys)) {
+					ESINFO(OVERVIEW) << "\tDense solver error: removing row containing Y row from coordinates.";
+					use_y=false;
+				}
+				if (dimension == 3) {
+					if (checkAllSame(zs)) {
+						ESINFO(OVERVIEW) << "\tDense solver error: removing row containing Z row from coordinates.";
+						use_z=false;
+					}
+				}
+
+				eslocal realSize = prepareMatrixM(rPoints, rDisplacement, dimension, configuration, M_values,
+						use_x, use_y, use_z);
+
+				wq_values.clear();
+				wq_values.resize(realSize*dimension);
+
+				for (int d = 0; d < dimension; d++) {
+					eslocal r;
+					for (r = 0; r < rPoints.size(); r++) {
+						wq_values[realSize*d + r] = rDisplacement[r * dimension + d];
+					}
+					for ( ; r < M_size; r++) {
+						wq_values[realSize*d + r] = 0;
+					}
+				}
+
+				/*std::cout << "Points: " << rPoints.size() << " - " << rPoints
+						<< "\n";
+
+				int count = 0;
+				for (int i = 0; i < realSize; i++) {
+					for (int j = 0; j <= i; j++) {
+						printf("%f ", M_values[count]);
+						count++;
+					}
+					printf("\n");
+				}
+
+				printf("WQ\n");
+				for(int d=0;d<dimension;d++) {
+					for(int i=0;i<wq_values.size()/dimension;i++) {
+						printf("%f ", wq_values[wq_values.size()/dimension*d+i]);
+					}
+					printf("\n");
+				}*/
+
+				int result= MATH::SOLVER::directUpperSymetricIndefiniteColumnMajor(
+						realSize,  &M_values[0],
+						dimension, &wq_values[0]);
+
+				if (result!=0) {
+					ESINFO(ERROR) << "ESPRESO error: Dense solver is unable to solve the system. Try iterative solver.";
+				}
+
+				auto insertRowInWQ =
+						[&wq_values,dimension] (eslocal row) -> void {
+							eslocal size = wq_values.size()/dimension;
+							wq_values.insert(wq_values.begin()+row,0);
+							wq_values.insert(wq_values.begin()+ size +1 + row,0);
+							if (dimension ==3) {
+								wq_values.insert(wq_values.begin()+ (size +1)*2 + row,0);
+							}
+						};
+
+				if (!use_x) insertRowInWQ(rPoints.size());
+				if (!use_y) insertRowInWQ(rPoints.size()+1);
+				if (dimension == 3 && !use_z) insertRowInWQ(rPoints.size()+2);
+
+			}
+			ESINFO(OVERVIEW) << "\tSystem solved by direct solver.";
+		} break;
+
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement mesh morphing solver.";
 		}
 	}
 
-	if (!Communication::broadcastUnknownSize(rPoints)) {
-		ESINFO(ERROR) << "ESPRESO internal error: broadcast points.";
+	if (!Communication::broadcastUnknownSize(wq_values)) {
+		ESINFO(ERROR) << "ESPRESO internal error: broadcast WQ.";
 	}
-	if (!Communication::broadcastUnknownSize(W)) {
-		ESINFO(ERROR) << "ESPRESO internal error: broadcast W.";
-	}
-	if (!Communication::broadcastUnknownSize(Q)) {
-		ESINFO(ERROR) << "ESPRESO internal error: broadcast Q.";
-	}
+	ESINFO(OVERVIEW) << "\tSolution broadcasted to all processes.";
+
+	eslocal wq_points = wq_values.size()/dimension;
+	eslocal points_size = rPoints.size();
 
 	ElementsRegionStore *tregion = _mesh->eregion(configuration.target);
 
@@ -177,39 +586,43 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 			for (size_t i = 0; i < rPoints.size(); i++) {
 				double R = configuration.function.evaluator->evaluate((rPoints[i] - origin).length());
 
-				morphed.x += R * W[i * dimension + 0];
-				morphed.y += R * W[i * dimension + 1];
+				morphed.x += R * wq_values[i ];
+				morphed.y += R * wq_values[i + wq_points];
 				if (dimension == 3) {
-					morphed.z += R * W[i * dimension + 2];
+					morphed.z += R * wq_values[i + wq_points * 2];
 				}
 			}
 			if (dimension == 3) {
-				morphed.x += origin.x * Q[0 * dimension + 0];
-				morphed.x += origin.y * Q[1 * dimension + 0];
-				morphed.x += origin.z * Q[2 * dimension + 0];
-				morphed.x +=            Q[3 * dimension + 0];
+				morphed.x += origin.x * wq_values[points_size + 0];
+				morphed.x += origin.y * wq_values[points_size + 1];
+				morphed.x += origin.z * wq_values[points_size + 2];
+				morphed.x +=            wq_values[points_size + 3];
 
-				morphed.y += origin.x * Q[0 * dimension + 1];
-				morphed.y += origin.y * Q[1 * dimension + 1];
-				morphed.y += origin.z * Q[2 * dimension + 1];
-				morphed.y +=            Q[3 * dimension + 1];
+				morphed.y += origin.x * wq_values[wq_points + points_size + 0];
+				morphed.y += origin.y * wq_values[wq_points + points_size + 1];
+				morphed.y += origin.z * wq_values[wq_points + points_size + 2];
+				morphed.y +=            wq_values[wq_points + points_size + 3];
 
-				morphed.z += origin.x * Q[0 * dimension + 2];
-				morphed.z += origin.y * Q[1 * dimension + 2];
-				morphed.z += origin.z * Q[2 * dimension + 2];
-				morphed.z +=            Q[3 * dimension + 2];
+				morphed.z += origin.x * wq_values[wq_points*2 + points_size + 0];
+				morphed.z += origin.y * wq_values[wq_points*2 + points_size + 1];
+				morphed.z += origin.z * wq_values[wq_points*2 + points_size + 2];
+				morphed.z +=            wq_values[wq_points*2 + points_size + 3];
 			}
+
 			if (dimension == 2) {
-				morphed.x += origin.x * Q[0 * dimension + 0];
-				morphed.x += origin.y * Q[1 * dimension + 0];
-				morphed.x +=            Q[2 * dimension + 0];
+				morphed.x += origin.x * wq_values[points_size + 0];
+				morphed.x += origin.y * wq_values[points_size + 1];
+				morphed.x +=            wq_values[points_size + 2];
 
-				morphed.y += origin.x * Q[0 * dimension + 1];
-				morphed.y += origin.y * Q[1 * dimension + 1];
-				morphed.y +=            Q[2 * dimension + 1];
+				morphed.y += origin.x * wq_values[wq_points + points_size + 0];
+				morphed.y += origin.y * wq_values[wq_points + points_size + 1];
+				morphed.y +=            wq_values[wq_points + points_size + 2];
 			}
+
 		}
 	}
+
+	ESINFO(OVERVIEW) << "\tSolution applied to region\t:"<<configuration.target<<".";
 
 	if (_morphing == NULL) {
 		_morphing = _mesh->nodes->appendData(3, { "RBF_MORPHING" }, true);
