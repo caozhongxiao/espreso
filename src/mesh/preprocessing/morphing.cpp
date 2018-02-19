@@ -134,8 +134,8 @@ eslocal MeshPreprocessing::prepareMatrixM(std::vector<Point> &rPoints,
 		}
 		M_values.push_back(0);
 		realsize++;
+		if (use_x)	M_values.push_back(0);
 	}
-	if (use_x)	M_values.push_back(0);
 
 	if (dimension == 3 && use_z) {
 		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
@@ -243,8 +243,10 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	start("apply morphing '" + name + "'");
+	start("processing morphing '" + name + "'");
 
+	start("preparing data for morphing '" + name + "'");
+	ESINFO(OVERVIEW) << "============= Morphing data=================";
 	ESINFO(OVERVIEW)<<"Processing morphing			: "<<name<<"\n"<<configuration;
 
 	if (_mesh->nodes->originCoordinates == NULL) {
@@ -310,6 +312,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 			}
 		}
 	}
+	finish("preparing data for morphing '" + name + "'");
 
 	if (!Communication::gatherUnknownSize(sPoints, rPoints)) {
 		ESINFO(ERROR) << "ESPRESO internal error: gather morphed points";
@@ -324,6 +327,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 	}
 	ESINFO(OVERVIEW)<<"\tGathered "<<rPoints.size()<<" points in morphing and their displacements on process 0.";
 
+	start("solving data for morphing '" + name + "'");
 	std::vector<double> wq_values;
 
 	if (environment->MPIrank == 0 ||
@@ -567,10 +571,15 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		}
 	}
 
+	finish("solving data for morphing '" + name + "'");
+
 	if (!Communication::broadcastUnknownSize(wq_values)) {
 		ESINFO(ERROR) << "ESPRESO internal error: broadcast WQ.";
 	}
 	ESINFO(OVERVIEW) << "\tSolution broadcasted to all processes.";
+
+
+	start("applying morphing '" + name + "'");
 
 	eslocal wq_points = wq_values.size()/dimension;
 	eslocal points_size = rPoints.size();
@@ -621,8 +630,9 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 		}
 	}
-
 	ESINFO(OVERVIEW) << "\tSolution applied to region\t:"<<configuration.target<<".";
+	finish("applying morphing '" + name + "'");
+
 
 	if (_morphing == NULL) {
 		_morphing = _mesh->nodes->appendData(3, { "RBF_MORPHING" }, true);
@@ -643,6 +653,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		}
 	}
 
-	finish("apply morphing '" + name + "'");
+	//ESINFO(OVERVIEW) << "============================================";
+	finish("processing morphing '" + name + "'");
 }
 

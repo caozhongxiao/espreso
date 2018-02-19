@@ -853,7 +853,7 @@ void Mesh::printStatistics()
 		return size;
 	};
 
-	ESINFO(OVERVIEW) << "============= Mesh statistics =============";
+	ESINFO(OVERVIEW) << "============= Mesh statistics ==============";
 
 	ESINFO(OVERVIEW) << " Number of nodes      : " << nodes->uniqueTotalSize;
 
