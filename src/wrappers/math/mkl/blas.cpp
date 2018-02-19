@@ -5,6 +5,10 @@
 
 using namespace espreso;
 
+void MATH::setNumberOfThreads(int numberOfThreads) {
+	mkl_set_num_threads(numberOfThreads);
+}
+
 void MATH::upCSRMatVecProduct(eslocal rows, eslocal cols, eslocal *mRows, eslocal *mCols, float *mVals, float *vVals, float *result)
 {
 	mkl_cspblas_scsrsymv("U", &rows, mVals, mRows, mCols, vVals, result);

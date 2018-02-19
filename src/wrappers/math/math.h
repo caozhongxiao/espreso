@@ -6,6 +6,8 @@ namespace espreso {
 
 struct MATH {
 
+	static void setNumberOfThreads(int numberOfThreads);
+
 	static void upCSRMatVecProduct(eslocal rows, eslocal cols, eslocal *mRows, eslocal *mCols, float *mVals, float *vVals, float *result);
 	static void upCSRMatVecProduct(eslocal rows, eslocal cols, eslocal *mRows, eslocal *mCols, double *mVals, double *vVals, double *result);
 

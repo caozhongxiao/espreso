@@ -58,7 +58,7 @@ MESH_MORPHING {
 
   RBF {
     MY_RBF_MORPHING {
-      SOLVER             DENSE;
+      SOLVER            DIRECT;
       SOLVER_PRECISION   1E-07;
       FUNCTION             R^3;
 

@@ -109,12 +109,12 @@ espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECFRoot *ECFRoot)
 : function({ "R" }, "R"),
   external_ffd(ECFRoot)
 {
-	solver = MORPHING_RBF_SOLVER::DENSE;
+	solver = MORPHING_RBF_SOLVER::DIRECT;
 	REGISTER(solver, ECFMetaData()
 		.setdescription({ "Mesh Morphing solver." })
 		.setdatatype({ ECFDataType::OPTION })
 		.addoption(ECFOption().setname("ITERATIVE").setdescription("Iterative"))
-		.addoption(ECFOption().setname("DENSE").setdescription("Dense")));
+		.addoption(ECFOption().setname("DIRECT").setdescription("Direct")));
 
 	solver_precision = 1e-5;
 	REGISTER(solver_precision, ECFMetaData()
@@ -150,9 +150,9 @@ std::ostream& espreso::operator<<(std::ostream& os, const espreso::RBFTargetConf
 {
 	os<<"\tTARGET REGION\t\t\t: "<<t.target<<"\n";
 	os<<"\tSOLVER\t\t\t\t: ";
-	if (t.solver==espreso::MORPHING_RBF_SOLVER::DENSE) os<<"DENSE\n";
+	if (t.solver==espreso::MORPHING_RBF_SOLVER::DIRECT) os<<"DIRECT\n";
 	else {
-		os<<"ITERATIVE (prec. "<<t.solver_precision<<")\n";
+		os<<"ITERATIVE (prec. "<<t.solver_precision<<", max. iter. "<<t.solver_max_iter<<")\n";
 	}
 	os<<"\tRADIAL BASIS FUNCTION\t\t: "<<t.function.value<<"\n";
 

@@ -60,7 +60,7 @@ MESH_MORPHING {
   RBF {
     MORPHING_NAME {
       #[ITERATIVE,DENSE]
-      SOLVER             DENSE;
+      SOLVER            DIRECT;
       SOLVER_PRECISION   1E-05;
       FUNCTION               R;
 

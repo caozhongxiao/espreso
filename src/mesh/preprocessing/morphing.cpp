@@ -242,11 +242,12 @@ void MeshPreprocessing::readExternalFile(
 void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfiguration &configuration, int dimension)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
+	MATH::setNumberOfThreads(threads);
 
 	start("processing morphing '" + name + "'");
 
 	start("preparing data for morphing '" + name + "'");
-	ESINFO(OVERVIEW) << "============= Morphing data=================";
+	ESINFO(OVERVIEW) << "============= Morphing data ================";
 	ESINFO(OVERVIEW)<<"Processing morphing			: "<<name<<"\n"<<configuration;
 
 	if (_mesh->nodes->originCoordinates == NULL) {
@@ -314,6 +315,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 	}
 	finish("preparing data for morphing '" + name + "'");
 
+	start("transmitting data for morphing '" + name + "'");
 	if (!Communication::gatherUnknownSize(sPoints, rPoints)) {
 		ESINFO(ERROR) << "ESPRESO internal error: gather morphed points";
 	}
@@ -326,6 +328,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		ESINFO(ERROR) << "ESPRESO internal error: gather morphed displacement";
 	}
 	ESINFO(OVERVIEW)<<"\tGathered "<<rPoints.size()<<" points in morphing and their displacements on process 0.";
+	finish("transmitting data for morphing '" + name + "'");
 
 	start("solving data for morphing '" + name + "'");
 	std::vector<double> wq_values;
@@ -434,7 +437,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 		} break;
 
-		case MORPHING_RBF_SOLVER::DENSE: {
+		case MORPHING_RBF_SOLVER::DIRECT: {
 
 			wq_values.resize(M_size*dimension);
 
@@ -573,10 +576,12 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 	finish("solving data for morphing '" + name + "'");
 
+	start("transmitting results for morphing '" + name + "'");
 	if (!Communication::broadcastUnknownSize(wq_values)) {
 		ESINFO(ERROR) << "ESPRESO internal error: broadcast WQ.";
 	}
 	ESINFO(OVERVIEW) << "\tSolution broadcasted to all processes.";
+	finish("transmitting results for morphing '" + name + "'");
 
 
 	start("applying morphing '" + name + "'");
@@ -655,5 +660,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 	//ESINFO(OVERVIEW) << "============================================";
 	finish("processing morphing '" + name + "'");
+
+	MATH::setNumberOfThreads(1);
 }
 
