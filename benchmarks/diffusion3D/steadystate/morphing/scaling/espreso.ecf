@@ -69,8 +69,8 @@ MESH_MORPHING {
           TRANSFORMATION   SCALING;
 
           SCALING {
-            X   120;
-            Y   120;
+            X   100;
+            Y   100;
             Z   120;
           }
 
@@ -79,9 +79,9 @@ MESH_MORPHING {
             TYPE   CARTESIAN;
 
             CENTER {
-              X   0;
-              Y   0;
-              Z   0;
+              X   -1;
+              Y   -1;
+              Z   -1;
             }
           }
         }
