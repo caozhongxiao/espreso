@@ -101,85 +101,81 @@ void MeshPreprocessing::linkNodesAndElements()
 		return std::lower_bound(_mesh->neighbours.begin(), _mesh->neighbours.end(), neighbour) - _mesh->neighbours.begin();
 	};
 
-	// thread x neighbor x vector(from, to)
-	std::vector<std::vector<std::vector<std::pair<eslocal, eslocal> > > > sBuffer(threads, std::vector<std::vector<std::pair<eslocal, eslocal> > >(_mesh->neighbours.size()));
-	// neighbor x (from, to)
-	std::vector<std::vector<std::pair<eslocal, eslocal> > > rBuffer(_mesh->neighbours.size());
-	// thread x vector(from, to)
-	std::vector<std::vector<std::pair<eslocal, eslocal> > > localLinks(threads);
+	// neighbor x vector(from, to)
+	std::vector<std::vector<std::pair<eslocal, eslocal> > > sBuffer(_mesh->neighbours.size()), rBuffer(_mesh->neighbours.size());
+	std::vector<std::pair<eslocal, eslocal> > localLinks;
 
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		auto nodes = _mesh->elements->nodes->cbegin(t);
-		const auto &IDto = _mesh->elements->IDs->datatarray();
+	auto nodes = _mesh->elements->nodes->cbegin();
+	const auto &IDto = _mesh->elements->IDs->datatarray();
 
-		const auto &IDfrom = _mesh->nodes->IDs->datatarray();
+	localLinks.reserve(_mesh->elements->nodes->cend()->begin() - _mesh->elements->nodes->cbegin()->begin());
+	for (eslocal e = 0; e < _mesh->elements->size; ++e, ++nodes) {
+		for (size_t n = 0; n < nodes->size(); ++n) {
+			localLinks.push_back(std::make_pair(nodes->at(n), IDto[e]));
+		}
+	}
+	std::sort(localLinks.begin(), localLinks.end());
 
-		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++nodes) {
-			for (size_t n = 0; n < nodes->size(); ++n) {
-				localLinks[t].push_back(std::make_pair(IDfrom[(*nodes)[n]], IDto[e]));
-
-				auto ranks = _mesh->nodes->ranks->cbegin() + (*nodes)[n];
-				for (auto rank = ranks->begin(); rank != ranks->end(); ++rank) {
-					if (*rank != environment->MPIrank) {
-						sBuffer[t][n2i(*rank)].push_back(localLinks[t].back());
-					}
-				}
+	auto ranks = _mesh->nodes->ranks->cbegin();
+	auto send = [&] (std::vector<std::pair<eslocal, eslocal> >::iterator &begin, std::vector<std::pair<eslocal, eslocal> >::iterator &end, eslocal id) {
+		for (auto it = begin; it != end; ++it) {
+			it->first = id;
+		}
+		for (auto rank = ranks->begin(); rank != ranks->end(); ++rank) {
+			if (*rank != environment->MPIrank) {
+				sBuffer[n2i(*rank)].insert(sBuffer[n2i(*rank)].end(), begin, end);
 			}
 		}
-		std::sort(localLinks[t].begin(), localLinks[t].end());
-	}
+	};
 
-	#pragma omp parallel for
-	for (size_t n = 0; n < sBuffer[0].size(); n++) {
-		for (size_t t = 1; t < threads; t++) {
-			sBuffer[0][n].insert(sBuffer[0][n].end(), sBuffer[t][n].begin(), sBuffer[t][n].end());
-		}
-		std::sort(sBuffer[0][n].begin(), sBuffer[0][n].end());
+	auto begin = localLinks.begin();
+	auto end = begin;
+	for (eslocal n = 0; n < _mesh->nodes->size - 1; ++n, ++ranks) {
+		while (end->first == begin->first) ++end;
+		send(begin, end, _mesh->nodes->IDs->datatarray()[n]);
+		begin = end;
 	}
+	end = localLinks.end();
+	send(begin, end, _mesh->nodes->IDs->datatarray().back());
 
-	if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, _mesh->neighbours)) {
+	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, _mesh->neighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: addLinkFromTo - exchangeUnknownSize.";
+	}
+
+	std::vector<size_t> boundaries = { 0, localLinks.size() };
+	for (size_t r = 0; r < rBuffer.size(); r++) {
+		localLinks.insert(localLinks.end(), rBuffer[r].begin(), rBuffer[r].end());
+		boundaries.push_back(localLinks.size());
+	}
+
+	while (boundaries.size() > 3) {
+		for (size_t i = 1; i + 2 < boundaries.size(); i++) {
+			std::inplace_merge(localLinks.begin() + boundaries[i], localLinks.begin() + boundaries[i + 1], localLinks.begin() + boundaries[i + 2]);
+			boundaries.erase(boundaries.begin() + i + 1);
+		}
+	}
+	if (boundaries.size() == 3) {
+		std::inplace_merge(localLinks.begin() + boundaries[0], localLinks.begin() + boundaries[1], localLinks.begin() + boundaries[2]);
 	}
 
 	std::vector<std::vector<eslocal> > linksBoundaries(threads);
 	std::vector<std::vector<eslocal> > linksData(threads);
 
-	auto compare = [] (const std::pair<eslocal, eslocal> &position, const std::pair<eslocal, eslocal> &value) { return position.first < value.first; };
-	auto addLink = [&] (const std::vector<std::pair<eslocal, eslocal> > &links, const std::pair<eslocal, eslocal> &pair, size_t t) {
-		auto value = std::lower_bound(links.begin(), links.end(), pair, compare);
-		for(; value != links.end() && value->first == pair.first; ++value) {
-			++linksBoundaries[t].back();
-			linksData[t].push_back(value->second);
-		}
-	};
-
 	linksBoundaries.front().push_back(0);
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		std::pair<eslocal, eslocal> IDpair;
-		const auto &IDfrom = _mesh->nodes->IDs->datatarray();
-
-		for (size_t n = _mesh->nodes->distribution[t]; n < _mesh->nodes->distribution[t + 1]; ++n) {
-			IDpair.first = IDfrom[n];
-
-			linksBoundaries[t].push_back(0);
-			for (size_t r = 0; r < rBuffer.size(); r++) {
-				addLink(rBuffer[r], IDpair, t);
-			}
-			for (size_t tt = 0; tt < threads; ++tt) {
-				addLink(localLinks[tt], IDpair, t);
-			}
-
-			std::sort(linksData[t].end() - linksBoundaries[t].back(), linksData[t].end());
-			if (linksBoundaries[t].size() > 1) {
-				linksBoundaries[t].back() += *(linksBoundaries[t].end() - 2);
-			}
+	eslocal current;
+	for (eslocal n = 0, link = 0; n < _mesh->nodes->size - 1; ++n) {
+		current = localLinks[link].first;
+		while (current == localLinks[link].first) {
+			linksData.front().push_back(localLinks[link++].second);
 		}
+		linksBoundaries.front().push_back(link);
 	}
+	for (size_t n = linksBoundaries.front().back(); n < localLinks.size(); n++) {
+		linksData.front().push_back(localLinks[n].second);
+	}
+	linksBoundaries.front().push_back(localLinks.size());
 
-	Esutils::threadDistributionToFullDistribution(linksBoundaries);
-
+	serializededata<eslocal, eslocal>::balance(linksBoundaries, linksData);
 	_mesh->nodes->elements = new serializededata<eslocal, eslocal>(linksBoundaries, linksData);
 
 	finish("link nodes and elements");
