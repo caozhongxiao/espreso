@@ -809,7 +809,6 @@ void Loader::addBoundaryRegions()
 			return _dMesh.bregions[i].enodes[edist[e1]] < _dMesh.bregions[i].enodes[edist[e2]];
 		});
 
-
 		std::vector<std::vector<eslocal> > sBuffer, rBuffer;
 		std::vector<int> sRanks, tRanks;
 
@@ -851,7 +850,7 @@ void Loader::addBoundaryRegions()
 				auto nbegin = std::lower_bound(nodes.begin(), nodes.end(), _nDistribution[environment->MPIrank]);
 				auto nend = std::lower_bound(nodes.begin(), nodes.end(), _nDistribution[environment->MPIrank + 1]);
 
-				#pragma omp parallel for
+//				#pragma omp parallel for
 				for (size_t t = 0; t < _targetRanks.size(); t++) {
 					auto it = _rankNodeMap[t].begin();
 					bool found = true;
@@ -885,7 +884,7 @@ void Loader::addBoundaryRegions()
 		std::vector<std::vector<eslocal> > tedist(std::max((size_t)1, rBuffer.size()), { 0 }), tnodes(std::max((size_t)1, rBuffer.size()));
 		std::vector<std::vector<Element*> > epointers(std::max((size_t)1, rBuffer.size()));
 
-		#pragma omp parallel for
+//		#pragma omp parallel for
 		for (size_t r = 0; r < rBuffer.size(); r++) {
 			std::vector<eslocal> nodes;
 			for (size_t n = 0; n < rBuffer[r].size(); n += 2 + rBuffer[r][n + 1]) {
@@ -907,7 +906,7 @@ void Loader::addBoundaryRegions()
 			}
 		}
 
-		#pragma omp parallel for
+//		#pragma omp parallel for
 		for (size_t r = 0; r < rBuffer.size(); r++) {
 			for (auto n = tnodes[r].begin(); n != tnodes[r].end(); ++n) {
 				*n = std::lower_bound(_mesh.nodes->IDs->datatarray().begin(), _mesh.nodes->IDs->datatarray().end(), *n) - _mesh.nodes->IDs->datatarray().begin();
