@@ -325,12 +325,12 @@ private:
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads(); t++) {
 			for (size_t i = distribution[t]; i < distribution[t + 1]; ++i) {
-				pdata[t].push_back(_edata.data()[permutation[i]]);
+				pdata[t].insert(pdata[t].end(), _edata.data() + _edatasize * permutation[i], _edata.data() + _edatasize * (permutation[i] + 1));
 			}
 		}
 
 		_edata = tarray<TEData>(pdata);
-		inititerators(_iterator.front()->end() - _iterator.front()->begin());
+		inititerators(_edatasize);
 	}
 
 	void permuteNonUniformData(const std::vector<eslocal> &permutation, const std::vector<size_t> &providedDistribution)
