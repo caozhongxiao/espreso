@@ -6,6 +6,7 @@
 #include "../basis/containers/serializededata.h"
 #include "../basis/utilities/utils.h"
 #include "../basis/utilities/communication.h"
+#include "../basis/logging/timeeval.h"
 
 #include "../config/ecf/root.h"
 
@@ -46,19 +47,40 @@ Loader::Loader(const ECFRoot &configuration, DistributedMesh &dMesh, Mesh &mesh)
 : _configuration(configuration), _dMesh(dMesh), _mesh(mesh)
 {
 	ESINFO(OVERVIEW) << "Balance distributed mesh.";
+	TimeEval timing("Load distributed mesh");
+
+	TimeEvent tdistribution("distribute mesh across processes"); tdistribution.start();
 	distributeMesh();
 	checkERegions();
+	tdistribution.end(); timing.addEvent(tdistribution);
 	ESINFO(PROGRESS2) << "Distributed loader:: data balanced.";
+
+	TimeEvent telements("fill elements"); telements.start();
 	fillElements();
+	telements.end(); timing.addEvent(telements);
 	ESINFO(PROGRESS2) << "Distributed loader:: elements filled.";
+
+	TimeEvent tcoordinates("fill coordinates"); tcoordinates.start();
 	fillCoordinates();
+	tcoordinates.end(); timing.addEvent(tcoordinates);
 	ESINFO(PROGRESS2) << "Distributed loader:: coordinates filled.";
+
+	TimeEvent tnregions("fill node regions"); tnregions.start();
 	addNodeRegions();
+	tnregions.end(); timing.addEvent(tnregions);
 	ESINFO(PROGRESS2) << "Distributed loader:: node regions filled.";
+
+	TimeEvent tbregions("fill boundary regions"); tbregions.start();
 	addBoundaryRegions();
+	tbregions.end(); timing.addEvent(tbregions);
 	ESINFO(PROGRESS2) << "Distributed loader:: boundary regions filled.";
+
+	TimeEvent teregions("fill element regions"); teregions.start();
 	addElementRegions();
+	teregions.end(); timing.addEvent(teregions);
 	ESINFO(PROGRESS2) << "Distributed loader:: elements regions filled.";
+
+	timing.printStatsMPI();
 }
 
 void Loader::distributeMesh()

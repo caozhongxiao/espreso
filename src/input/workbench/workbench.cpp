@@ -4,6 +4,7 @@
 
 #include "../../basis/containers/tarray.h"
 #include "../../basis/logging/logging.h"
+#include "../../basis/logging/timeeval.h"
 #include "../../basis/utilities/communication.h"
 #include "../../config/ecf/root.h"
 
@@ -19,15 +20,27 @@ void WorkbenchLoader::load(const ECFRoot &configuration, Mesh &mesh)
 WorkbenchLoader::WorkbenchLoader(const ECFRoot &configuration, Mesh &mesh)
 : _configuration(configuration), _mesh(mesh)
 {
+	TimeEval timing("Parsing Workbench data");
 	ESINFO(OVERVIEW) << "Load ANSYS Workbench data from '" << configuration.workbench.path << "'.";
+
+	TimeEvent tread("read data from file"); tread.start();
 	readData();
+	tread.end(); timing.addEvent(tread);
 	ESINFO(PROGRESS2) << "Workbench:: data copied from file.";
+
+
+	TimeEvent tprepare("prepare data for parsing"); tprepare.start();
 	prepareData();
-	ESINFO(PROGRESS2) << "Workbench:: data prepared for reading.";
+	tprepare.end(); timing.addEvent(tprepare);
+	ESINFO(PROGRESS2) << "Workbench:: data prepared for parsing.";
 
 	DistributedMesh dMesh;
+	TimeEvent tparse("parsing data"); tparse.start();
 	parseData(dMesh);
+	tparse.end(); timing.addEvent(tparse);
 	ESINFO(PROGRESS2) << "Workbench:: data parsed.";
+
+	timing.printStatsMPI();
 
 	Loader::loadDistributedMesh(configuration, dMesh, mesh);
 }
