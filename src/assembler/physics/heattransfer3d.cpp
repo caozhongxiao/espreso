@@ -379,6 +379,7 @@ void HeatTransfer3D::processElement(eslocal domain, Matrices matrices, eslocal e
 		detJ = determinant3x3(J.values());
 		if (detJ <= 0) {
 			printInvalidElement(eindex);
+			detJ = -detJ;
 		}
 		inverse3x3(J.values(), invJ.values(), detJ);
 
