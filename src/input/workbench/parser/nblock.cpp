@@ -89,12 +89,12 @@ bool NBlock::index_x_y_z(std::vector<eslocal> &nIDs, std::vector<Point> &coordin
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	const char *first = getFirst(), *last = getLast();
-	eslocal size = (last - first) / lineSize;
+	size_t size = (last - first) / lineSize;
 
 	size_t offset = coordinates.size();
 	nIDs.resize(offset + size);
 	coordinates.resize(offset + size);
-	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, size);
+	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, size);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
