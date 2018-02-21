@@ -97,6 +97,8 @@ protected:
 	bool _hasBEM;
 	std::vector<int> _BEMDomain;
 	std::vector<bem4i::bem4iData<eslocal, double>* > _BEMData;
+
+	mutable size_t _invalidElements;
 };
 
 }

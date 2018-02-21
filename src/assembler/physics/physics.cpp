@@ -31,13 +31,13 @@
 using namespace espreso;
 
 Physics::Physics()
-: _name(""), _mesh(NULL), _instance(NULL), _step(NULL), _equalityConstraints(NULL), _configuration(NULL), _DOFs(0)
+: _name(""), _mesh(NULL), _instance(NULL), _step(NULL), _equalityConstraints(NULL), _configuration(NULL), _DOFs(0), _invalidElements(0)
 {
 
 }
 
 Physics::Physics(const std::string &name, Mesh *mesh, Instance *instance, Step *step, const PhysicsConfiguration *configuration, int DOFs)
-: _name(name), _mesh(mesh), _instance(instance), _step(step), _equalityConstraints(NULL), _configuration(configuration), _DOFs(DOFs) // initialized in a particular physics
+: _name(name), _mesh(mesh), _instance(instance), _step(step), _equalityConstraints(NULL), _configuration(configuration), _DOFs(DOFs), _invalidElements(0) // initialized in a particular physics
 {
 	std::vector<int> BEMRegions(_mesh->elements->regionMaskSize);
 	for (auto it = configuration->discretization.begin(); it != configuration->discretization.end(); ++it) {
@@ -80,65 +80,67 @@ Physics::~Physics()
 
 void Physics::printInvalidElement(eslocal eindex) const
 {
-	auto nodes = _mesh->elements->nodes->begin() + eindex;
+	if (_invalidElements++ == 0) {
+		auto nodes = _mesh->elements->nodes->begin() + eindex;
 
-	std::ofstream os("invalidElement.vtk");
-	os << "# vtk DataFile Version 2.0\n";
-	os << "INVALID ELEMENT\n";
-	os << "ASCII\n";
-	os << "DATASET UNSTRUCTURED_GRID\n";
-	os << "\n";
-	os << "POINTS " << nodes->size() << " float\n";
-	for (auto n = nodes->begin(); n != nodes->end(); ++n) {
-		os << _mesh->nodes->coordinates->datatarray()[*n].x << " " << _mesh->nodes->coordinates->datatarray()[*n].y << " " << _mesh->nodes->coordinates->datatarray()[*n].z << "\n";
-	}
-	os << "\n";
-	os << "CELLS 1 " << nodes->size() + 1 << "\n";
-	os << nodes->size();
-	for (auto n = nodes->begin(); n != nodes->end(); ++n) {
-		os << " " << n - nodes->begin();
-	}
-	os << "\n";
-	os << "CELL_TYPES 1\n";
-	switch (_mesh->elements->epointers->datatarray()[eindex]->code) {
-	case Element::CODE::SQUARE4:
-		os << "9\n";
-		break;
-	case Element::CODE::SQUARE8:
-		os << "23\n";
-		break;
-	case Element::CODE::TRIANGLE3:
-		os << "5\n";
-		break;
-	case Element::CODE::TRIANGLE6:
-		os << "22\n";
-		break;
-	case Element::CODE::TETRA4:
-		os << "10\n";
-		break;
-	case Element::CODE::TETRA10:
-		os << "24\n";
-		break;
-	case Element::CODE::PYRAMID5:
-		os << "14\n";
-		break;
-	case Element::CODE::PYRAMID13:
-		os << "27\n";
-		break;
-	case Element::CODE::PRISMA6:
-		os << "13\n";
-		break;
-	case Element::CODE::PRISMA15:
-		os << "26\n";
-		break;
-	case Element::CODE::HEXA8:
-		os << "12\n";
-		break;
-	case Element::CODE::HEXA20:
-		os << "25\n";
-		break;
-	default:
-		break;
+		std::ofstream os("invalidElement.vtk");
+		os << "# vtk DataFile Version 2.0\n";
+		os << "INVALID ELEMENT\n";
+		os << "ASCII\n";
+		os << "DATASET UNSTRUCTURED_GRID\n";
+		os << "\n";
+		os << "POINTS " << nodes->size() << " float\n";
+		for (auto n = nodes->begin(); n != nodes->end(); ++n) {
+			os << _mesh->nodes->coordinates->datatarray()[*n].x << " " << _mesh->nodes->coordinates->datatarray()[*n].y << " " << _mesh->nodes->coordinates->datatarray()[*n].z << "\n";
+		}
+		os << "\n";
+		os << "CELLS 1 " << nodes->size() + 1 << "\n";
+		os << nodes->size();
+		for (auto n = nodes->begin(); n != nodes->end(); ++n) {
+			os << " " << n - nodes->begin();
+		}
+		os << "\n";
+		os << "CELL_TYPES 1\n";
+		switch (_mesh->elements->epointers->datatarray()[eindex]->code) {
+		case Element::CODE::SQUARE4:
+			os << "9\n";
+			break;
+		case Element::CODE::SQUARE8:
+			os << "23\n";
+			break;
+		case Element::CODE::TRIANGLE3:
+			os << "5\n";
+			break;
+		case Element::CODE::TRIANGLE6:
+			os << "22\n";
+			break;
+		case Element::CODE::TETRA4:
+			os << "10\n";
+			break;
+		case Element::CODE::TETRA10:
+			os << "24\n";
+			break;
+		case Element::CODE::PYRAMID5:
+			os << "14\n";
+			break;
+		case Element::CODE::PYRAMID13:
+			os << "27\n";
+			break;
+		case Element::CODE::PRISMA6:
+			os << "13\n";
+			break;
+		case Element::CODE::PRISMA15:
+			os << "26\n";
+			break;
+		case Element::CODE::HEXA8:
+			os << "12\n";
+			break;
+		case Element::CODE::HEXA20:
+			os << "25\n";
+			break;
+		default:
+			break;
+		}
 	}
 }
 
@@ -162,6 +164,10 @@ void Physics::updateMatrix(Matrices matrix)
 		ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
 	ESINFO(PROGRESS3);
+
+	if (_invalidElements) {
+		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "ESPRESO internal error: " << _invalidElements << " invalid (dej <= 0) elements founed.";
+	}
 }
 
 void Physics::updateMatrix(Matrices matrices, size_t domain)
