@@ -6,6 +6,7 @@
 #include "../../basis/logging/logging.h"
 #include "../../basis/logging/timeeval.h"
 #include "../../basis/utilities/communication.h"
+#include "../../basis/utilities/utils.h"
 #include "../../config/ecf/root.h"
 
 #include "../../mesh/mesh.h"
@@ -56,23 +57,30 @@ void WorkbenchLoader::readData()
 	MPI_Offset size;
 	MPI_File_get_size(MPIfile, &size);
 
+	size_t block = 1;
+	while (size / (1L << (block - 1)) > (1L << 31)) {
+		block = block << 1;
+	}
+
+	std::vector<size_t> fdistribution = tarray<int>::distribute(environment->MPIsize, size / block + ((size % block) ? 1 : 0));
+	std::vector<MPI_Aint> displacement = { (MPI_Aint)fdistribution[environment->MPIrank] };
+	std::vector<int> length = { (int)(fdistribution[environment->MPIrank + 1] - fdistribution[environment->MPIrank]) };
+
+	MPI_Datatype chunk;
 	MPI_Datatype fDataDistribution;
-	std::vector<size_t> fdistribution = tarray<int>::distribute(environment->MPIsize, size);
 
-	std::vector<MPI_Aint> displacement;
-	std::vector<int> length;
-
-	displacement.push_back(fdistribution[environment->MPIrank]);
-	length.push_back(fdistribution[environment->MPIrank + 1] - fdistribution[environment->MPIrank]);
-
-	MPI_Type_create_hindexed(1, length.data(), displacement.data(), MPI_BYTE, &fDataDistribution);
+	MPI_Type_contiguous(block, MPI_BYTE, &chunk);
+	MPI_Type_commit(&chunk);
+	MPI_Type_create_hindexed(1, length.data(), displacement.data(), chunk, &fDataDistribution);
 	MPI_Type_commit(&fDataDistribution);
 
-	_data.resize(length.front() + MAX_LINE_STEP * MAX_LINE_SIZE);
+	_data.resize(block * length.front() + MAX_LINE_STEP * MAX_LINE_SIZE);
 
-	MPI_File_set_view(MPIfile, 0, MPI_BYTE, fDataDistribution, "native", MPI_INFO_NULL);
-	MPI_File_read_all(MPIfile, _data.data(), _data.size() - MAX_LINE_STEP * MAX_LINE_SIZE, MPI_BYTE, MPI_STATUS_IGNORE);
+	MPI_File_set_view(MPIfile, 0, chunk, fDataDistribution, "native", MPI_INFO_NULL);
+	MPI_File_read_all(MPIfile, _data.data(), length.front(), chunk, MPI_STATUS_IGNORE);
 	MPI_File_close(&MPIfile);
+
+	MPI_Type_free(&chunk);
 
 	_current = _data.data();
 	if (environment->MPIsize > 1) { // align to line end, TODO: fix for tiny files
@@ -109,8 +117,11 @@ void WorkbenchLoader::readData()
 	} else {
 		_end = _data.data() + _data.size() - MAX_LINE_STEP * MAX_LINE_SIZE;
 	}
+	if (environment->MPIrank + 1 == environment->MPIsize) {
+		_end -= block * fdistribution.back() - size;
+	}
 	_begin = _current;
-	_dataOffset = Communication::getDistribution<eslocal>(_end - _current);
+	_dataOffset = Communication::getDistribution<size_t>(_end - _current, MPITools::operations().sizeToOffsetsSize_t);
 
 	WorkbenchParser::offset = _dataOffset[environment->MPIrank];
 	WorkbenchParser::begin = _begin;

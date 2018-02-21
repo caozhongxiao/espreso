@@ -17,7 +17,8 @@ class MPITools
 	class Operations {
 		friend class MPITools;
 	public:
-		MPI_Op sizeToOffsets;
+		MPI_Op sizeToOffsetsEslocal;
+		MPI_Op sizeToOffsetsSize_t;
 		MPI_Op mergeStatistics;
 		MPI_Op max, min, sum;
 
@@ -77,7 +78,7 @@ struct Communication {
 	static Ttype exscan(Ttype &value, MPI_Op &operation);
 
 	template <typename Ttype>
-	static std::vector<Ttype> getDistribution(Ttype size);
+	static std::vector<Ttype> getDistribution(Ttype size, MPI_Op operation);
 
 	template <typename Ttype>
 	static bool sendVariousTargets(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &targets)

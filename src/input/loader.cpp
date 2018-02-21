@@ -107,7 +107,7 @@ void Loader::distributeMesh()
 		if (environment->MPIsize == 1) {
 			_nDistribution = { 0, _dMesh.nIDs.size() };
 		} else {
-			std::vector<size_t> cCurrent = Communication::getDistribution(_dMesh.nIDs.size());
+			std::vector<size_t> cCurrent = Communication::getDistribution(_dMesh.nIDs.size(), MPITools::operations().sizeToOffsetsSize_t);
 			_nDistribution = tarray<eslocal>::distribute(environment->MPIsize, cCurrent.back());
 
 			if (!Communication::balance(_dMesh.nIDs, cCurrent, _nDistribution)) {
@@ -194,10 +194,10 @@ void Loader::distributeMesh()
 	MPI_Allreduce(&sorted, &allSorted, 1, MPI_INT, MPI_MIN, environment->MPICommunicator);
 
 	if (allSorted) {
-		std::vector<size_t> eCurrent = Communication::getDistribution(_dMesh.esize.size());
+		std::vector<size_t> eCurrent = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
 		std::vector<size_t> eTarget = tarray<eslocal>::distribute(environment->MPIsize, eCurrent.back());
 
-		std::vector<size_t> nCurrent = Communication::getDistribution(_dMesh.enodes.size());
+		std::vector<size_t> nCurrent = Communication::getDistribution(_dMesh.enodes.size(), MPITools::operations().sizeToOffsetsSize_t);
 		std::vector<size_t> nTarget;
 
 		if (environment->MPIrank == 0) {
@@ -338,12 +338,12 @@ void Loader::checkERegions()
 		rsize.push_back(bsize);
 	}
 
-	std::vector<size_t> fdistribution = Communication::getDistribution(bsize);
+	std::vector<size_t> fdistribution = Communication::getDistribution(bsize, MPITools::operations().sizeToOffsetsSize_t);
 
 	size_t origBSize = _dMesh.bregions.size();
 
 	for (size_t r = 0; r < bregions.size(); r++) {
-		std::vector<eslocal> borders;
+		std::vector<size_t> borders;
 		for (int t = 0; t < environment->MPIsize; t++) {
 			auto begin = std::lower_bound(bregions[r].elements.begin(), bregions[r].elements.end(), fdistribution[t] + _eDistribution.back());
 			auto end = std::lower_bound(bregions[r].elements.begin(), bregions[r].elements.end(), fdistribution[t + 1] + _eDistribution.back());

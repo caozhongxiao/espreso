@@ -211,7 +211,7 @@ void Mesh::load()
 
 	{
 		size_t esize = mesh->elements().size();
-		Communication::exscan(esize, MPITools::operations().sizeToOffsets);
+		Communication::exscan(esize, MPITools::operations().sizeToOffsetsEslocal);
 		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, mesh->elements().size());
 		std::vector<std::vector<eslocal> > boundaries(threads), indices(threads);
 		std::vector<std::vector<Element*> > epointers(threads);

@@ -16,12 +16,12 @@ namespace espreso {
 struct BlockEnd;
 
 struct WorkbenchParser {
-	static eslocal offset;
+	static size_t offset;
 	static const char* begin;
 	static const char* end;
 
-	eslocal header;
-	eslocal first, last;
+	size_t header;
+	size_t first, last;
 	int fRank, lRank;
 
 	WorkbenchParser()
@@ -31,7 +31,7 @@ struct WorkbenchParser {
 	void fillIndices(const char* header, const char* data);
 	void fillIndices(const char* header, const char* first, const char* last);
 
-	void fillDistribution(std::vector<BlockEnd> &blocksEnds, std::vector<eslocal> &distribution);
+	void fillDistribution(std::vector<BlockEnd> &blocksEnds, std::vector<size_t> &distribution);
 	const char* getFirst() const;
 	const char* getLast() const;
 

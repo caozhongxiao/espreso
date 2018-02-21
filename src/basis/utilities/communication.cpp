@@ -42,7 +42,8 @@ static void _sum(void *in, void *out, int *len, MPI_Datatype *datatype)
 
 MPITools::Operations::Operations()
 {
-	MPI_Op_create(_sizeToOffsets<eslocal>, 1, &sizeToOffsets);
+	MPI_Op_create(_sizeToOffsets<eslocal>, 1, &sizeToOffsetsEslocal);
+	MPI_Op_create(_sizeToOffsets<size_t>, 1, &sizeToOffsetsSize_t);
 	MPI_Op_create(_mergeStatistics, 1, &mergeStatistics);
 	MPI_Op_create(_max<eslocal>, 1, &max);
 	MPI_Op_create(_min<eslocal>, 1, &min);

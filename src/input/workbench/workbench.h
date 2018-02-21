@@ -10,6 +10,7 @@
 #include "parser/cm.h"
 #include "parser/blockend.h"
 
+#include <cstddef>
 #include <vector>
 
 namespace espreso {
@@ -45,7 +46,7 @@ protected:
 
 	const char *_begin, *_current, *_end;
 	std::vector<char> _data;
-	std::vector<eslocal> _dataOffset;
+	std::vector<size_t> _dataOffset;
 };
 
 }

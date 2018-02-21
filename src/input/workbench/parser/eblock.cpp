@@ -62,7 +62,7 @@ EBlock& EBlock::parse(const char* begin)
 	return *this;
 }
 
-void EBlock::fixOffsets(std::vector<eslocal> &dataOffsets)
+void EBlock::fixOffsets(std::vector<size_t> &dataOffsets)
 {
 	if (Solkey) {
 		eslocal nodes;
@@ -131,11 +131,10 @@ bool EBlock::solid(std::vector<eslocal> &esize, std::vector<eslocal> &enodes, st
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	const char *first = getFirst(), *last = getLast();
-	eslocal size = (last - first) / elementSize;
-
+	size_t size = (last - first) / elementSize;
 	size_t offset = esize.size();
 
-	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, size);
+	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, size);
 
 	std::vector<std::vector<eslocal> > tesize(threads), tnodes(threads);
 	std::vector<std::vector<EData> > tdata(threads);

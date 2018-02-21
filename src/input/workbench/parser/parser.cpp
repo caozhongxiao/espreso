@@ -9,7 +9,7 @@
 
 using namespace espreso;
 
-eslocal WorkbenchParser::offset = 0;
+size_t WorkbenchParser::offset = 0;
 const char* WorkbenchParser::begin = NULL;
 const char* WorkbenchParser::end = NULL;
 
@@ -49,10 +49,10 @@ const char* WorkbenchParser::getLast() const
 	return begin;
 }
 
-void WorkbenchParser::fillDistribution(std::vector<BlockEnd> &blocksEnds, std::vector<eslocal> &distribution)
+void WorkbenchParser::fillDistribution(std::vector<BlockEnd> &blocksEnds, std::vector<size_t> &distribution)
 {
 	if (last == -1) {
-		last = std::lower_bound(blocksEnds.begin(), blocksEnds.end(), first, [] (BlockEnd &b, eslocal first) { return b.first < first; })->first;
+		last = std::lower_bound(blocksEnds.begin(), blocksEnds.end(), first, [] (BlockEnd &b, size_t first) { return b.first < first; })->first;
 	}
 
 	fRank = std::lower_bound(distribution.begin(), distribution.end(), first + 1) - distribution.begin() - 1;

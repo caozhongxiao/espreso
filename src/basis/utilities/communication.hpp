@@ -286,11 +286,11 @@ Ttype Communication::exscan(Ttype &value, MPI_Op &operation)
 }
 
 template <typename Ttype>
-std::vector<Ttype> Communication::getDistribution(Ttype size)
+std::vector<Ttype> Communication::getDistribution(Ttype size, MPI_Op operation)
 {
 	std::vector<Ttype> result(environment->MPIsize + 1);
 	Ttype esize = size;
-	Communication::exscan(esize, MPITools::operations().sizeToOffsets);
+	Communication::exscan(esize, operation);
 
 	MPI_Allgather(&esize, sizeof(Ttype), MPI_BYTE, result.data(), sizeof(Ttype), MPI_BYTE, environment->MPICommunicator);
 	result.back() = esize + size;
