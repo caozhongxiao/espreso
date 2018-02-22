@@ -48,6 +48,7 @@ Loader::Loader(const ECFRoot &configuration, DistributedMesh &dMesh, Mesh &mesh)
 {
 	ESINFO(OVERVIEW) << "Balance distributed mesh.";
 	TimeEval timing("Load distributed mesh");
+	timing.totalTime.startWithBarrier();
 
 	TimeEvent tdistribution("distribute mesh across processes"); tdistribution.start();
 	distributeMesh();
@@ -80,6 +81,7 @@ Loader::Loader(const ECFRoot &configuration, DistributedMesh &dMesh, Mesh &mesh)
 	teregions.end(); timing.addEvent(teregions);
 	ESINFO(PROGRESS2) << "Distributed loader:: elements regions filled.";
 
+	timing.totalTime.endWithBarrier();
 	timing.printStatsMPI();
 }
 

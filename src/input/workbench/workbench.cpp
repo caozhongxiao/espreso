@@ -22,6 +22,7 @@ WorkbenchLoader::WorkbenchLoader(const ECFRoot &configuration, Mesh &mesh)
 : _configuration(configuration), _mesh(mesh)
 {
 	TimeEval timing("Parsing Workbench data");
+	timing.totalTime.startWithBarrier();
 	ESINFO(OVERVIEW) << "Load ANSYS Workbench data from '" << configuration.workbench.path << "'.";
 
 	TimeEvent tread("read data from file"); tread.start();
@@ -41,6 +42,7 @@ WorkbenchLoader::WorkbenchLoader(const ECFRoot &configuration, Mesh &mesh)
 	tparse.end(); timing.addEvent(tparse);
 	ESINFO(PROGRESS2) << "Workbench:: data parsed.";
 
+	timing.totalTime.endWithBarrier();
 	timing.printStatsMPI();
 
 	Loader::loadDistributedMesh(configuration, dMesh, mesh);
