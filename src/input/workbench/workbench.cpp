@@ -290,7 +290,7 @@ void WorkbenchLoader::prepareData()
 void WorkbenchLoader::parseData(DistributedMesh &dMesh)
 {
 	for (size_t i = 0; i < _NBlocks.size(); i++) {
-		if (!_NBlocks[i].readData(dMesh.nIDs, dMesh.coordinates)) {
+		if (!_NBlocks[i].readData(dMesh.nIDs, dMesh.coordinates, _configuration.workbench.scale_factor)) {
 			ESINFO(ERROR) << "Workbench parser: something wrong happens while read NBLOCK.";
 		}
 	}

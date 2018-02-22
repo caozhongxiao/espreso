@@ -21,6 +21,11 @@ InputConfiguration::InputConfiguration()
 	REGISTER(convert_database, ECFMetaData()
 			.setdescription({ "Read data, create visual output and store to ESPRESO binary format." })
 			.setdatatype({ ECFDataType::BOOL }));
+
+	scale_factor = 1;
+	REGISTER(scale_factor, ECFMetaData()
+			.setdescription({ "Scale all coordinates." })
+			.setdatatype({ ECFDataType::FLOAT }));
 }
 
 

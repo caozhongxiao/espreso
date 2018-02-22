@@ -70,21 +70,21 @@ NBlock& NBlock::parse(const char* begin)
 	return *this;
 }
 
-bool NBlock::readData(std::vector<eslocal> &nIDs, std::vector<Point> &coordinates)
+bool NBlock::readData(std::vector<eslocal> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
 {
 	if (Solkey) {
 		if (NUMFIELD == 6) {
-			return index_solid_line_x_y_z(nIDs, coordinates);
+			return index_solid_line_x_y_z(nIDs, coordinates, scaleFactor);
 		}
 	} else {
 		if (NUMFIELD == 3) {
-			return index_x_y_z(nIDs, coordinates);
+			return index_x_y_z(nIDs, coordinates, scaleFactor);
 		}
 	}
 	return false;
 }
 
-bool NBlock::index_x_y_z(std::vector<eslocal> &nIDs, std::vector<Point> &coordinates)
+bool NBlock::index_x_y_z(std::vector<eslocal> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -109,15 +109,15 @@ bool NBlock::index_x_y_z(std::vector<eslocal> &nIDs, std::vector<Point> &coordin
 
 			memcpy(value.data(), data, valueLength);
 			data += valueLength;
-			x = atof(value.data());
+			x = scaleFactor * atof(value.data());
 
 			memcpy(value.data(), data, valueLength);
 			data += valueLength;
-			y = atof(value.data());
+			y = scaleFactor * atof(value.data());
 
 			memcpy(value.data(), data, valueLength);
 			data += valueLength;
-			z = atof(value.data());
+			z = scaleFactor * atof(value.data());
 
 			data += lineEndSize;
 
@@ -127,7 +127,7 @@ bool NBlock::index_x_y_z(std::vector<eslocal> &nIDs, std::vector<Point> &coordin
 	return true;
 }
 
-bool NBlock::index_solid_line_x_y_z(std::vector<eslocal> &nIDs, std::vector<Point> &coordinates)
+bool NBlock::index_solid_line_x_y_z(std::vector<eslocal> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -154,15 +154,15 @@ bool NBlock::index_solid_line_x_y_z(std::vector<eslocal> &nIDs, std::vector<Poin
 
 			memcpy(value.data(), data, valueLength);
 			data += valueLength;
-			x = atof(value.data());
+			x = scaleFactor * atof(value.data());
 
 			memcpy(value.data(), data, valueLength);
 			data += valueLength;
-			y = atof(value.data());
+			y = scaleFactor * atof(value.data());
 
 			memcpy(value.data(), data, valueLength);
 			data += valueLength;
-			z = atof(value.data());
+			z = scaleFactor * atof(value.data());
 
 			data += lineEndSize;
 
