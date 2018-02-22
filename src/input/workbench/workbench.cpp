@@ -61,8 +61,9 @@ void WorkbenchLoader::readData()
 
 	size_t block = 1;
 	while (size / (1L << (block - 1)) > (1L << 31)) {
-		block = block << 1;
+		++block;
 	}
+	block = 1L << block;
 
 	std::vector<size_t> fdistribution = tarray<int>::distribute(environment->MPIsize, size / block + ((size % block) ? 1 : 0));
 	std::vector<MPI_Aint> displacement = { (MPI_Aint)(block * fdistribution[environment->MPIrank]) };
