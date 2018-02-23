@@ -13,6 +13,7 @@
 
 #include <cstring>
 #include <functional>
+#include <algorithm>
 
 using namespace espreso;
 
@@ -135,16 +136,16 @@ bool CM::addElementRegion(const std::vector<ESel> &esel, const std::vector<EData
 						eid[t].push_back(elements[e].id);
 					}
 				});
+				break;
 			}
-			break;
 			if (relevant[i].VINC == 1) {
 				checkElements([&] (size_t t, eslocal e) {
 					if (relevant[i].VMIN <= elements[e].etype && elements[e].etype <= relevant[i].VMAX) {
 						eid[t].push_back(elements[e].id);
 					}
 				});
+				break;
 			}
-			break;
 			checkElements([&] (size_t t, eslocal e) {
 				eslocal value = relevant[i].VMIN;
 				if (relevant[i].VMIN <= elements[e].etype && elements[e].etype <= relevant[i].VMAX && (elements[e].etype - relevant[i].VMIN) % relevant[i].VINC == 0) {
@@ -160,16 +161,16 @@ bool CM::addElementRegion(const std::vector<ESel> &esel, const std::vector<EData
 						eid[t].push_back(elements[e].id);
 					}
 				});
+				break;
 			}
-			break;
 			if (relevant[i].VINC == 1) {
 				checkElements([&] (size_t t, eslocal e) {
 					if (relevant[i].VMIN <= elements[e].material && elements[e].material <= relevant[i].VMAX) {
 						eid[t].push_back(elements[e].id);
 					}
 				});
+				break;
 			}
-			break;
 			checkElements([&] (size_t t, eslocal e) {
 				eslocal value = relevant[i].VMIN;
 				if (relevant[i].VMIN <= elements[e].material && elements[e].material <= relevant[i].VMAX && (elements[e].material - relevant[i].VMIN) % relevant[i].VINC == 0) {
@@ -186,6 +187,7 @@ bool CM::addElementRegion(const std::vector<ESel> &esel, const std::vector<EData
 	for (size_t t = 0; t < threads; t++) {
 		eregions.back().elements.insert(eregions.back().elements.end(), eid[t].begin(), eid[t].end());
 	}
+	std::sort(eregions.back().elements.begin(), eregions.back().elements.end());
 
 	return true;
 }
