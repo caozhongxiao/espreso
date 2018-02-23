@@ -262,19 +262,37 @@ void Loader::distributeMesh()
 				edist.push_back(edist.back() + _dMesh.esize[e]);
 			}
 
-			for (int r = 0; r < environment->MPIsize; r++) {
-				auto begin = std::lower_bound(permutation.begin(), permutation.end(), _eDistribution[r], [&] (eslocal i, const size_t &ID) { return _dMesh.edata[i].id < ID; });
-				auto end = std::lower_bound(permutation.begin(), permutation.end(), _eDistribution[r + 1], [&] (eslocal i, const size_t &ID) { return _dMesh.edata[i].id < ID; });
-				if (begin != end) {
-					sSize.push_back({});
-					sNodes.push_back({});
-					sEData.push_back({});
-					targets.push_back(r);
+			if (sorted) {
+				for (int r = 0; r < environment->MPIsize; r++) {
+					auto begin = std::lower_bound(_dMesh.edata.begin(), _dMesh.edata.end(), _eDistribution[r], [&] (EData &edata, const size_t &ID) { return edata.id < ID; });
+					auto end = std::lower_bound(_dMesh.edata.begin(), _dMesh.edata.end(), _eDistribution[r + 1], [&] (EData &edata, const size_t &ID) { return edata.id < ID; });
+					if (begin != end) {
+						sSize.push_back({});
+						sNodes.push_back({});
+						sEData.push_back({});
+						targets.push_back(r);
+						size_t b = begin - _dMesh.edata.begin();
+						size_t e = end - _dMesh.edata.begin();
+						sSize.back().insert(sSize.back().end(), _dMesh.esize.begin() + b, _dMesh.esize.begin() + e);
+						sEData.back().insert(sEData.back().end(), _dMesh.edata.begin() + b, _dMesh.edata.begin() + e);
+						sNodes.back().insert(sNodes.back().end(), _dMesh.enodes.begin() + edist[b], _dMesh.enodes.begin() + edist[e]);
+					}
 				}
-				for (size_t n = begin - permutation.begin(); n < end - permutation.begin(); ++n) {
-					sSize.back().push_back(_dMesh.esize[permutation[n]]);
-					sEData.back().push_back(_dMesh.edata[permutation[n]]);
-					sNodes.back().insert(sNodes.back().end(), _dMesh.enodes.begin() + edist[permutation[n]], _dMesh.enodes.begin() + edist[permutation[n] + 1]);
+			} else {
+				for (int r = 0; r < environment->MPIsize; r++) {
+					auto begin = std::lower_bound(permutation.begin(), permutation.end(), _eDistribution[r], [&] (eslocal i, const size_t &ID) { return _dMesh.edata[i].id < ID; });
+					auto end = std::lower_bound(permutation.begin(), permutation.end(), _eDistribution[r + 1], [&] (eslocal i, const size_t &ID) { return _dMesh.edata[i].id < ID; });
+					if (begin != end) {
+						sSize.push_back({});
+						sNodes.push_back({});
+						sEData.push_back({});
+						targets.push_back(r);
+					}
+					for (size_t n = begin - permutation.begin(); n < end - permutation.begin(); ++n) {
+						sSize.back().push_back(_dMesh.esize[permutation[n]]);
+						sEData.back().push_back(_dMesh.edata[permutation[n]]);
+						sNodes.back().insert(sNodes.back().end(), _dMesh.enodes.begin() + edist[permutation[n]], _dMesh.enodes.begin() + edist[permutation[n] + 1]);
+					}
 				}
 			}
 
