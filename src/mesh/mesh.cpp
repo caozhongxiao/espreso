@@ -808,6 +808,20 @@ void Mesh::computeElementStatistic(const ElementData *data, const ElementsRegion
 
 void Mesh::printStatistics()
 {
+	size_t namesize = 25;
+
+	for (size_t r = 0; r < boundaryRegions.size(); r++) {
+		if (namesize < boundaryRegions[r]->name.size() + 5) {
+			namesize = boundaryRegions[r]->name.size() + 5;
+		}
+	}
+
+	for (size_t r = 0; r < elementsRegions.size(); r++) {
+		if (namesize < elementsRegions[r]->name.size() + 5) {
+			namesize = elementsRegions[r]->name.size() + 5;
+		}
+	}
+
 	auto ename = [] (int code) -> std::string {
 		switch (static_cast<Element::CODE>(code)) {
 
@@ -841,7 +855,7 @@ void Mesh::printStatistics()
 
 	auto esize = [&] (int code) {;
 		if (elements->ecounters[code]) {
-			ESINFO(OVERVIEW) << std::string(21 - ename(code).size(), ' ') << ename(code) << " : " << elements->ecounters[code];
+			ESINFO(OVERVIEW) << std::string(namesize - ename(code).size(), ' ') << ename(code) << " : " << elements->ecounters[code];
 		}
 	};
 
@@ -865,26 +879,26 @@ void Mesh::printStatistics()
 	ESINFO(OVERVIEW);
 
 	ESINFO(OVERVIEW) << " Element regions size :";
-	ESINFO(OVERVIEW) << std::string(21 - elementsRegions[0]->name.size(), ' ') << elementsRegions[0]->name << " : " << totalesize(elements->ecounters);
+	ESINFO(OVERVIEW) << std::string(namesize - elementsRegions[0]->name.size(), ' ') << elementsRegions[0]->name << " : " << totalesize(elements->ecounters);
 	for (size_t r = 1; r < elementsRegions.size(); r++) {
-		ESINFO(OVERVIEW) << std::string(21 - elementsRegions[r]->name.size(), ' ') << elementsRegions[r]->name << " : " << totalesize(elementsRegions[r]->ecounters);
+		ESINFO(OVERVIEW) << std::string(namesize - elementsRegions[r]->name.size(), ' ') << elementsRegions[r]->name << " : " << totalesize(elementsRegions[r]->ecounters);
 	}
 	ESINFO(OVERVIEW) << " Face regions size    :";
 	for (size_t r = 0; r < boundaryRegions.size(); r++) {
 		if (boundaryRegions[r]->dimension == 2) {
-			ESINFO(OVERVIEW) << std::string(21 - boundaryRegions[r]->name.size(), ' ') << boundaryRegions[r]->name << " : " << totalesize(boundaryRegions[r]->ecounters);
+			ESINFO(OVERVIEW) << std::string(namesize - boundaryRegions[r]->name.size(), ' ') << boundaryRegions[r]->name << " : " << totalesize(boundaryRegions[r]->ecounters);
 		}
 	}
 	ESINFO(OVERVIEW) << " Edge regions size    :";
 	for (size_t r = 0; r < boundaryRegions.size(); r++) {
 		if (boundaryRegions[r]->dimension == 1) {
-			ESINFO(OVERVIEW) << std::string(21 - boundaryRegions[r]->name.size(), ' ') << boundaryRegions[r]->name << " : " << totalesize(boundaryRegions[r]->ecounters);
+			ESINFO(OVERVIEW) << std::string(namesize - boundaryRegions[r]->name.size(), ' ') << boundaryRegions[r]->name << " : " << totalesize(boundaryRegions[r]->ecounters);
 		}
 	}
 	ESINFO(OVERVIEW) << " Node regions size    :";
 	for (size_t r = 0; r < boundaryRegions.size(); r++) {
 		if (boundaryRegions[r]->dimension == 0) {
-			ESINFO(OVERVIEW) << std::string(21 - boundaryRegions[r]->name.size(), ' ') << boundaryRegions[r]->name << " : " << boundaryRegions[r]->uniqueTotalSize;
+			ESINFO(OVERVIEW) << std::string(namesize - boundaryRegions[r]->name.size(), ' ') << boundaryRegions[r]->name << " : " << boundaryRegions[r]->uniqueTotalSize;
 		}
 	}
 
