@@ -53,19 +53,25 @@ void WorkspaceWindow::initPanels()
 {
     if (this->m_datasets != nullptr)
     {
-        ui->left->layout()->removeWidget(m_datasets);
+        this->m_datasets->setVisible(false);
+        ui->left->layout()->removeWidget(this->m_datasets);
+        delete this->m_datasets;
         this->m_datasets = nullptr;
     }
 
     if (this->m_mesh3D != nullptr)
     {
-        ui->center->layout()->removeWidget(m_mesh3D);
+        this->m_mesh3D->setVisible(false);
+        ui->center->layout()->removeWidget(this->m_mesh3D);
+        delete this->m_mesh3D;
         this->m_mesh3D = nullptr;
     }
 
     if (this->m_regions != nullptr)
     {
-        ui->left->layout()->removeWidget(m_regions);
+        this->m_regions->setVisible(false);
+        ui->left->layout()->removeWidget(this->m_regions);
+        delete this->m_regions;
         this->m_regions = nullptr;
     }
 
