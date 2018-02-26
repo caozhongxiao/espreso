@@ -743,10 +743,13 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 				}
 			}
 
-
 			boundaryEDistribution[r][0].push_back(0);
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
+				std::vector<size_t> tsize(targets.size());
+				for (size_t i = 0; i < targets.size(); i++) {
+					tsize[i] = sBoundary[t][i].size();
+				}
 				eslocal mysize = 0, target;
 				auto enodes = _mesh->boundaryRegions[r]->elements->cbegin() + distribution[t];
 				const auto &IDs = _mesh->nodes->IDs->datatarray();
@@ -768,11 +771,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 					}
 				}
 				for (size_t i = 0; i < targets.size(); i++) {
-					if (r) {
-						sBoundary[t][i][r] = sBoundary[t][i].size() - sBoundary[t][i][r - 1] - _mesh->boundaryRegions.size();
-					} else {
-						sBoundary[t][i][r] = sBoundary[t][i].size() - _mesh->boundaryRegions.size();
-					}
+					sBoundary[t][i][r] = sBoundary[t][i].size() - tsize[i];
 				}
 			}
 		}
