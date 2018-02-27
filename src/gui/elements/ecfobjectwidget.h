@@ -13,6 +13,7 @@
 #include "../declarations/material/materialpropertytablewidget.h"
 #include "formwidget.h"
 #include "regionpropertywidget.h"
+#include "ecfvaluetablewidget.h"
 
 namespace espreso
 {
@@ -65,18 +66,29 @@ protected:
     void drawMe();
 
     void processParameters(ECFObject*, QWidget*);
-    virtual FormWidget* processOptionEnum(ECFParameter*, FormWidget*, QWidget*);
-    virtual FormWidget* processBool(ECFParameter*, FormWidget*, QWidget*);
     virtual MaterialPropertyTableWidget* processExpression(ECFParameter*, MaterialPropertyTableWidget*, QWidget*);
-    virtual FormWidget* processString(ECFParameter*, FormWidget*, QWidget*);
-    virtual FormWidget* processFloat(ECFParameter*, FormWidget*, QWidget*);
-    virtual FormWidget* processNonnegativeInteger(ECFParameter*, FormWidget*, QWidget*);
-    virtual FormWidget* processPositiveInteger(ECFParameter*, FormWidget*, QWidget*);
-    virtual FormWidget* processRegion(ECFParameter*, FormWidget*, QWidget*);
+//    virtual FormWidget* processOptionEnum(ECFParameter*, FormWidget*, QWidget*);
+//    virtual FormWidget* processBool(ECFParameter*, FormWidget*, QWidget*);
+//    virtual FormWidget* processString(ECFParameter*, FormWidget*, QWidget*);
+//    virtual FormWidget* processFloat(ECFParameter*, FormWidget*, QWidget*);
+//    virtual FormWidget* processNonnegativeInteger(ECFParameter*, FormWidget*, QWidget*);
+//    virtual FormWidget* processPositiveInteger(ECFParameter*, FormWidget*, QWidget*);
+//    virtual FormWidget* processRegion(ECFParameter*, FormWidget*, QWidget*);
+
+    virtual ECFValueTableWidget* processParameter(ECFParameter* param, ECFValueTableWidget* table, QWidget* parent);
+
+    virtual ECFValueTableWidget* processOptionEnum(ECFParameter*, ECFValueTableWidget*, QWidget*);
+    virtual ECFValueTableWidget* processBool(ECFParameter*, ECFValueTableWidget*, QWidget*);
+    virtual ECFValueTableWidget* processString(ECFParameter*, ECFValueTableWidget*, QWidget*);
+    virtual ECFValueTableWidget* processFloat(ECFParameter*, ECFValueTableWidget*, QWidget*);
+    virtual ECFValueTableWidget* processNonnegativeInteger(ECFParameter*, ECFValueTableWidget*, QWidget*);
+    virtual ECFValueTableWidget* processPositiveInteger(ECFParameter*, ECFValueTableWidget*, QWidget*);
+    virtual ECFValueTableWidget* processRegion(ECFParameter*, ECFValueTableWidget*, QWidget*);
 
     OptionHandler* createOption(ECFParameter*, QWidget* = 0, bool = true);
     BoolHandler* createBool(ECFParameter*, QWidget* = 0);
-    FormWidget* createFormWidget(QWidget*, FormWidget*);
+//    FormWidget* createFormWidget(QWidget*, FormWidget*);
+    ECFValueTableWidget* createTableWidget(QWidget*, ECFValueTableWidget*);
     void createHeadline(ECFObject*, QWidget*);
 };
 

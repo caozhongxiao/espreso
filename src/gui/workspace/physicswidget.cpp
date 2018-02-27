@@ -108,25 +108,24 @@ void PhysicsWidget::performBeforeRedraw()
     this->m_properties = nullptr;
 }
 
-FormWidget* PhysicsWidget::processPositiveInteger(ECFParameter* parameter,
-                                                  FormWidget* form,
+ECFValueTableWidget* PhysicsWidget::processPositiveInteger(ECFParameter* parameter,
+                                                  ECFValueTableWidget* table,
                                                   QWidget* widget)
 {
-    FormWidget* fw = this->createFormWidget(widget, form);
+    ECFValueTableWidget* tw = this->createTableWidget(widget, table);
     if (parameter->name.compare("load_steps") == 0)
     {
         SpinnerHandler* handler = new SpinnerHandler(parameter, false, widget);
         connect(handler, SIGNAL(valueChanged(int)), this, SLOT(onLoadstepsChange(int)));
-        fw->appendRow(QString::fromStdString(parameter->metadata.description[0]),
-                handler);
+        tw->addWithWidget(static_cast<ECFValue*>(parameter), handler);
         this->m_savables.append(handler);
         this->m_validatables.append(handler);
 
-        return fw;
+        return tw;
     }
     else
     {
-        return ECFObjectWidget::processPositiveInteger(parameter, form, widget);
+        return ECFObjectWidget::processPositiveInteger(parameter, table, widget);
     }
 }
 

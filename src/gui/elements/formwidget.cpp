@@ -9,28 +9,27 @@ using namespace espreso;
 FormWidget::FormWidget(QWidget* parent) : QWidget(parent)
 {
 	this->m_layout = new QFormLayout;
-	this->setLayout(m_layout);
+    this->setLayout(m_layout);
+    this->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
 }
 
 void FormWidget::appendString(ECFParameter* p_string)
 {
 
-    QLabel* lbl = new QLabel(QString::fromStdString(p_string->metadata.description.at(0)),
-                             this);
+    QLabel* lbl = this->createLabel(QString::fromStdString(p_string->metadata.description.at(0)));
 
     FieldHandler* edit = new FieldHandler(p_string);
 
     QPair<ECFParameter*, FieldHandler*> pair(p_string, edit);
     this->m_fields.append(pair);
 
-    this->m_layout->addRow(lbl, edit);
+    this->appendRow(lbl, edit);
 }
 
 void FormWidget::appendNonnegativeInteger(ECFParameter* p_nint)
 {
 
-    QLabel* lbl = new QLabel(QString::fromStdString(p_nint->metadata.description.at(0)),
-                             this);
+    QLabel* lbl = this->createLabel(QString::fromStdString(p_nint->metadata.description.at(0)));
 
     ValidatorFactory* vf = new NonnegativeIntegerValidatorFactory;
     FieldHandler* edit = new FieldHandler(p_nint, vf);
@@ -39,43 +38,50 @@ void FormWidget::appendNonnegativeInteger(ECFParameter* p_nint)
     QPair<ECFParameter*, FieldHandler*> pair(p_nint, edit);
     this->m_fields.append(pair);
 
-    this->m_layout->addRow(lbl, edit);
+    this->appendRow(lbl, edit);
 }
 
-void FormWidget::appendPositiveInteger(ECFParameter* p_nint)
+void FormWidget::appendPositiveInteger(ECFParameter* p_pint)
 {
 
-    QLabel* lbl = new QLabel(QString::fromStdString(p_nint->metadata.description.at(0)),
-                             this);
+    QLabel* lbl = this->createLabel(QString::fromStdString(p_pint->metadata.description.at(0)));
 
     ValidatorFactory* vf = new PositiveIntegerValidatorFactory;
-    FieldHandler* edit = new FieldHandler(p_nint, vf);
+    FieldHandler* edit = new FieldHandler(p_pint, vf);
     delete vf;
 
-    QPair<ECFParameter*, FieldHandler*> pair(p_nint, edit);
+    QPair<ECFParameter*, FieldHandler*> pair(p_pint, edit);
     this->m_fields.append(pair);
 
-    this->m_layout->addRow(lbl, edit);
+    this->appendRow(lbl, edit);
 }
 
-void FormWidget::appendFloat(ECFParameter* p_nint)
+void FormWidget::appendFloat(ECFParameter* p_float)
 {
 
-    QLabel* lbl = new QLabel(QString::fromStdString(p_nint->metadata.description.at(0)),
-                             this);
+    QLabel* lbl = this->createLabel(QString::fromStdString(p_float->metadata.description.at(0)));
 
     ValidatorFactory* vf = new DoubleValidatorFactory;
-    FieldHandler* edit = new FieldHandler(p_nint, vf);
+    FieldHandler* edit = new FieldHandler(p_float, vf);
     delete vf;
 
-    QPair<ECFParameter*, FieldHandler*> pair(p_nint, edit);
+    QPair<ECFParameter*, FieldHandler*> pair(p_float, edit);
     this->m_fields.append(pair);
 
-    this->m_layout->addRow(lbl, edit);
+    this->appendRow(lbl, edit);
 }
 
 void FormWidget::appendRow(const QString& label, QWidget* widget)
 {
+    QLabel* lbl = this->createLabel(label);
+
+    this->appendRow(lbl, widget);
+}
+
+void FormWidget::appendRow(QLabel* label, QWidget* widget)
+{
+    widget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+
     this->m_layout->addRow(label, widget);
 }
 
@@ -152,4 +158,13 @@ void FormWidget::restoreState()
                     );
         index++;
     }
+}
+
+QLabel* FormWidget::createLabel(const QString &text)
+{
+    QLabel* lbl = new QLabel(text, this);
+    lbl->setMinimumSize(1, 1);
+    //lbl->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+
+    return lbl;
 }

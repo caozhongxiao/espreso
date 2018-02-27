@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>espreso::BoolHandler</class>
- <widget class="QWidget" name="espreso::BoolHandler">
+ <class>espreso::ECFValueTableWidget</class>
+ <widget class="QWidget" name="espreso::ECFValueTableWidget">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>23</height>
+    <width>288</width>
+    <height>599</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,16 +30,19 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QCheckBox" name="chck">
+    <widget class="QTableView" name="table">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
-     <property name="text">
-      <string>CheckBox</string>
-     </property>
+     <attribute name="horizontalHeaderVisible">
+      <bool>true</bool>
+     </attribute>
+     <attribute name="verticalHeaderVisible">
+      <bool>false</bool>
+     </attribute>
     </widget>
    </item>
   </layout>

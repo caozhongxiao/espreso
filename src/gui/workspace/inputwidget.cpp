@@ -1,7 +1,8 @@
 #include "inputwidget.h"
 
 #include "../elements/maptablewidgetfactory.h"
-#include "../elements/pathhandler.h"
+#include "../elements/textitemdelegate.h"
+#include "../elements/textitemwidgetfactory.h"
 
 using namespace espreso;
 
@@ -34,18 +35,18 @@ void InputWidget::drawObject(ECFObject* obj)
     FixedECFObjectWidget::drawObject(obj);
 }
 
-FormWidget* InputWidget::processString(ECFParameter* param, FormWidget* fw, QWidget* widget)
+ECFValueTableWidget* InputWidget::processString(ECFParameter* param, ECFValueTableWidget* table, QWidget* widget)
 {
-    FormWidget* form = this->createFormWidget(widget, fw);
+    ECFValueTableWidget* tw = this->createTableWidget(widget, table);
     if (param->name.compare("path") == 0)
     {
-        PathHandler* ph = new PathHandler(param, this);
-        this->m_validatables.append(ph);
-        form->appendRow(
-                QString::fromStdString(param->metadata.description[0]),
-                ph);
-        return form;
+        tw->addWithDelegate(static_cast<ECFValue*>(param),
+                            new TextItemDelegate(
+                                QString::fromStdString(param->getValue()),
+                                new FilepathWidgetFactory
+                                ));
+        return tw;
     }
 
-    return FixedECFObjectWidget::processString(param, form, widget);
+    return FixedECFObjectWidget::processString(param, table, widget);
 }

@@ -12,8 +12,8 @@ BoolHandler::BoolHandler(ECFParameter* param, QWidget *parent) :
     ui->setupUi(this);
 
     this->m_param = param;
-    QString label = QString::fromStdString(param->metadata.description[0]);
-    ui->chck->setText(label);
+//    QString label = QString::fromStdString(param->metadata.description[0]);
+    ui->chck->setText("");
 
     if (param->getValue().compare("FALSE") == 0) ui->chck->setChecked(false);
     else ui->chck->setChecked(true);

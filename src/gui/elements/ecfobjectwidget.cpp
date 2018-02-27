@@ -157,7 +157,8 @@ void ECFObjectWidget::processParameters(ECFObject* obj, QWidget* widget)
     // Property table (name, expression, units,...)
     MaterialPropertyTableWidget* propertyTable = nullptr;
     // Widget with form layout. Container for form fields.
-    FormWidget* formWidget = nullptr;
+    //FormWidget* formWidget = nullptr;
+    ECFValueTableWidget* tableWidget = nullptr;
 
     // Iterating object parameters and creating UI elements for them
     for (auto parameter = obj->parameters.cbegin();
@@ -178,11 +179,11 @@ void ECFObjectWidget::processParameters(ECFObject* obj, QWidget* widget)
             if ( type == ECFDataType::OPTION
                  || type == ECFDataType::ENUM_FLAGS )
             {
-                formWidget = this->processOptionEnum(*parameter, formWidget, widget);
+                tableWidget = this->processOptionEnum(*parameter, tableWidget, widget);
             }
             else if (type == ECFDataType::BOOL)
             {
-                formWidget = this->processBool(*parameter, formWidget, widget);
+                tableWidget = this->processBool(*parameter, tableWidget, widget);
             }
             else if (type == ECFDataType::EXPRESSION)
             {
@@ -190,47 +191,49 @@ void ECFObjectWidget::processParameters(ECFObject* obj, QWidget* widget)
             }
             else if (type == ECFDataType::STRING)
             {
-                formWidget = this->processString(*parameter, formWidget, widget);
+                tableWidget = this->processString(*parameter, tableWidget, widget);
             }
             else if (type == ECFDataType::FLOAT)
             {
-                formWidget = this->processFloat(*parameter, formWidget, widget);
+                tableWidget = this->processFloat(*parameter, tableWidget, widget);
             }
             else if (type == ECFDataType::NONNEGATIVE_INTEGER)
             {
-                formWidget = this->processNonnegativeInteger(*parameter, formWidget, widget);
+                tableWidget = this->processNonnegativeInteger(*parameter, tableWidget, widget);
             }
             else if (type == ECFDataType::POSITIVE_INTEGER)
             {
-                formWidget = this->processPositiveInteger(*parameter, formWidget, widget);
+                tableWidget = this->processPositiveInteger(*parameter, tableWidget, widget);
             }
             else if (type == ECFDataType::REGION)
             {
-                formWidget = this->processRegion(*parameter, formWidget, widget);
+                tableWidget = this->processRegion(*parameter, tableWidget, widget);
             }
         }
     }
+
+    if (tableWidget != nullptr) tableWidget->resizeCellsToContent();
 }
 
-FormWidget* ECFObjectWidget::processOptionEnum(ECFParameter* parameter, FormWidget* form, QWidget* widget)
-{
-    FormWidget* formWidget = this->createFormWidget(widget, form);
-    QWidget* handler = this->createOption(parameter, widget, false);
-    formWidget->appendRow(QString::fromStdString(parameter->metadata.description[0]),
-            handler);
+//FormWidget* ECFObjectWidget::processOptionEnum(ECFParameter* parameter, FormWidget* form, QWidget* widget)
+//{
+//    FormWidget* formWidget = this->createFormWidget(widget, form);
+//    QWidget* handler = this->createOption(parameter, widget, false);
+//    formWidget->appendRow(QString::fromStdString(parameter->metadata.description[0]),
+//            handler);
 
-    return formWidget;
-}
+//    return formWidget;
+//}
 
-FormWidget* ECFObjectWidget::processBool(ECFParameter* parameter, FormWidget* form, QWidget* widget)
-{
-    FormWidget* formWidget = this->createFormWidget(widget, form);
-    QWidget* handler = this->createBool(parameter, widget);
-    formWidget->appendRow(QString::fromStdString(parameter->metadata.description[0]),
-            handler);
+//FormWidget* ECFObjectWidget::processBool(ECFParameter* parameter, FormWidget* form, QWidget* widget)
+//{
+//    FormWidget* formWidget = this->createFormWidget(widget, form);
+//    QWidget* handler = this->createBool(parameter, widget);
+//    formWidget->appendRow(QString::fromStdString(parameter->metadata.description[0]),
+//            handler);
 
-    return formWidget;
-}
+//    return formWidget;
+//}
 
 MaterialPropertyTableWidget* ECFObjectWidget::processExpression(ECFParameter* parameter, MaterialPropertyTableWidget* tableWidget, QWidget* widget)
 {
@@ -247,54 +250,110 @@ MaterialPropertyTableWidget* ECFObjectWidget::processExpression(ECFParameter* pa
     return propertyTable;
 }
 
-FormWidget* ECFObjectWidget::processString(ECFParameter* parameter, FormWidget* form, QWidget* widget)
-{
-    FormWidget* formWidget = this->createFormWidget(widget, form);
-    formWidget->appendString(parameter);
+//FormWidget* ECFObjectWidget::processString(ECFParameter* parameter, FormWidget* form, QWidget* widget)
+//{
+//    FormWidget* formWidget = this->createFormWidget(widget, form);
+//    formWidget->appendString(parameter);
 
-    return formWidget;
+//    return formWidget;
+//}
+
+//FormWidget* ECFObjectWidget::processFloat(ECFParameter* parameter, FormWidget* form, QWidget* widget)
+//{
+//    FormWidget* formWidget = this->createFormWidget(widget, form);
+//    formWidget->appendFloat(parameter);
+
+//    return formWidget;
+//}
+
+//FormWidget* ECFObjectWidget::processNonnegativeInteger(ECFParameter* parameter, FormWidget* form, QWidget* widget)
+//{
+//    FormWidget* formWidget = this->createFormWidget(widget, form);
+//    formWidget->appendNonnegativeInteger(parameter);
+
+//    return formWidget;
+//}
+
+//FormWidget* ECFObjectWidget::processPositiveInteger(ECFParameter* parameter, FormWidget* form, QWidget* widget)
+//{
+//    FormWidget* formWidget = this->createFormWidget(widget, form);
+//    formWidget->appendPositiveInteger(parameter);
+
+//    return formWidget;
+//}
+
+//FormWidget* ECFObjectWidget::processRegion(ECFParameter* parameter, FormWidget* form, QWidget* widget)
+//{
+//    FormWidget* formWidget = this->createFormWidget(widget, form);
+//    formWidget->appendString(parameter);
+
+//    return formWidget;
+//}
+
+//FormWidget* ECFObjectWidget::createFormWidget(QWidget* container, FormWidget* form)
+//{
+//    if (form != nullptr) return form;
+
+//    FormWidget* formWidget = new FormWidget;
+//    this->m_savables.append(formWidget);
+//    this->m_validatables.append(formWidget);
+//    container->layout()->addWidget(formWidget);
+
+//    return formWidget;
+//}
+
+ECFValueTableWidget* ECFObjectWidget::createTableWidget(QWidget* container, ECFValueTableWidget* table)
+{
+    if (table != nullptr) return table;
+
+    ECFValueTableWidget* tableWidget = new ECFValueTableWidget;
+    this->m_savables.append(tableWidget);
+    this->m_validatables.append(tableWidget);
+    container->layout()->addWidget(tableWidget);
+    connect(tableWidget, SIGNAL(itemChanged()), this, SLOT(redraw()));
+
+    return tableWidget;
 }
 
-FormWidget* ECFObjectWidget::processFloat(ECFParameter* parameter, FormWidget* form, QWidget* widget)
+ECFValueTableWidget* ECFObjectWidget::processParameter(ECFParameter *param, ECFValueTableWidget *table, QWidget *parent)
 {
-    FormWidget* formWidget = this->createFormWidget(widget, form);
-    formWidget->appendFloat(parameter);
+    ECFValueTableWidget* tableWidget = this->createTableWidget(parent, table);
+    tableWidget->add(static_cast<ECFValue*>(param));
 
-    return formWidget;
+    return tableWidget;
 }
 
-FormWidget* ECFObjectWidget::processNonnegativeInteger(ECFParameter* parameter, FormWidget* form, QWidget* widget)
+ECFValueTableWidget* ECFObjectWidget::processOptionEnum(ECFParameter* parameter, ECFValueTableWidget* table, QWidget* widget)
 {
-    FormWidget* formWidget = this->createFormWidget(widget, form);
-    formWidget->appendNonnegativeInteger(parameter);
-
-    return formWidget;
+    return this->processParameter(parameter, table, widget);
 }
 
-FormWidget* ECFObjectWidget::processPositiveInteger(ECFParameter* parameter, FormWidget* form, QWidget* widget)
+ECFValueTableWidget* ECFObjectWidget::processBool(ECFParameter* parameter, ECFValueTableWidget* table, QWidget* widget)
 {
-    FormWidget* formWidget = this->createFormWidget(widget, form);
-    formWidget->appendPositiveInteger(parameter);
-
-    return formWidget;
+    return this->processParameter(parameter, table, widget);
 }
 
-FormWidget* ECFObjectWidget::processRegion(ECFParameter* parameter, FormWidget* form, QWidget* widget)
+ECFValueTableWidget* ECFObjectWidget::processString(ECFParameter* parameter, ECFValueTableWidget* table, QWidget* widget)
 {
-    FormWidget* formWidget = this->createFormWidget(widget, form);
-    formWidget->appendString(parameter);
-
-    return formWidget;
+    return this->processParameter(parameter, table, widget);
 }
 
-FormWidget* ECFObjectWidget::createFormWidget(QWidget* container, FormWidget* form)
+ECFValueTableWidget* ECFObjectWidget::processFloat(ECFParameter* parameter, ECFValueTableWidget* table, QWidget* widget)
 {
-    if (form != nullptr) return form;
+    return this->processParameter(parameter, table, widget);
+}
 
-    FormWidget* formWidget = new FormWidget;
-    this->m_savables.append(formWidget);
-    this->m_validatables.append(formWidget);
-    container->layout()->addWidget(formWidget);
+ECFValueTableWidget* ECFObjectWidget::processNonnegativeInteger(ECFParameter* parameter, ECFValueTableWidget* table, QWidget* widget)
+{
+    return this->processParameter(parameter, table, widget);
+}
 
-    return formWidget;
+ECFValueTableWidget* ECFObjectWidget::processPositiveInteger(ECFParameter* parameter, ECFValueTableWidget* table, QWidget* widget)
+{
+    return this->processParameter(parameter, table, widget);
+}
+
+ECFValueTableWidget* ECFObjectWidget::processRegion(ECFParameter* parameter, ECFValueTableWidget* table, QWidget* widget)
+{
+    return this->processParameter(parameter, table, widget);
 }

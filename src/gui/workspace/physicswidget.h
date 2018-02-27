@@ -28,7 +28,7 @@ protected:
     QWidget* initContainer() override;
     void drawObject(ECFObject*) override;
     virtual void performBeforeRedraw() override;
-    FormWidget* processPositiveInteger(ECFParameter *, FormWidget *, QWidget *) override;
+    ECFValueTableWidget* processPositiveInteger(ECFParameter *, ECFValueTableWidget *, QWidget *) override;
 
 private slots:
     void onPhysicsChange(int index);

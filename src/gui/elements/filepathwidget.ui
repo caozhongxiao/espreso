@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>espreso::SpinnerHandler</class>
- <widget class="QWidget" name="espreso::SpinnerHandler">
+ <class>espreso::FilepathWidget</class>
+ <widget class="QWidget" name="espreso::FilepathWidget">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>44</height>
+    <height>25</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -32,29 +32,29 @@
    <item>
     <widget class="QLabel" name="label">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
      <property name="text">
-      <string>TextLabel</string>
+      <string>path</string>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QSpinBox" name="spinBox">
+    <widget class="QPushButton" name="button">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
-     <property name="minimum">
-      <number>1</number>
+     <property name="text">
+      <string>...</string>
      </property>
-     <property name="maximum">
-      <number>10</number>
+     <property name="flat">
+      <bool>false</bool>
      </property>
     </widget>
    </item>
