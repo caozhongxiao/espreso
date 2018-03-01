@@ -19,6 +19,7 @@ ECFValueTableWidget::ECFValueTableWidget(QWidget *parent) :
     header << tr("Property") << tr("Value");
     this->m_model->setHorizontalHeaderLabels(header);
     ui->table->setModel(this->m_model);
+    ui->table->setEditTriggers(QAbstractItemView::AllEditTriggers);
 
     connect(this->m_model, SIGNAL(itemChanged(QStandardItem*)),
             this, SLOT(onItemChanged(QStandardItem*)));
