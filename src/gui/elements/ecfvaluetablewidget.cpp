@@ -224,6 +224,8 @@ void ECFValueTableWidget::resizeCellsToContent()
 {
     ui->table->resizeColumnsToContents();
     ui->table->resizeRowsToContents();
+
+    ui->table->horizontalHeader()->setStretchLastSection(true);
 }
 
 void ECFValueTableWidget::onItemChanged(QStandardItem *item)
