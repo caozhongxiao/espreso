@@ -4,7 +4,6 @@
 
 #include "mesh/meshwidget.h"
 #include "mesh/regionpickerwidget.h"
-#include "data/datatype.h"
 #include "parallel/mpimanager.h"
 
 #include "workspace/workspacewindow.h"

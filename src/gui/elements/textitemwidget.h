@@ -17,6 +17,9 @@ public:
 
     virtual void setText(const QString& text) = 0;
     virtual QString text() = 0;
+
+signals:
+    void finished(QWidget* itself);
 };
 
 }

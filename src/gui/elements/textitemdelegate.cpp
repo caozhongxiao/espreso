@@ -22,6 +22,7 @@ QWidget* TextItemDelegate::createEditor(QWidget *parent,
 {
     TextItemWidget *editor = this->m_factory->create(parent);
     editor->setText(this->m_defaultText);
+    connect(editor, SIGNAL(finished(QWidget*)), this, SLOT(onFinished(QWidget*)));
 
     return editor;
 }
@@ -48,3 +49,7 @@ void TextItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionV
     editor->setGeometry(option.rect);
 }
 
+void TextItemDelegate::onFinished(QWidget *widget)
+{
+    this->commitData(widget);
+}

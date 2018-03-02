@@ -8,13 +8,15 @@ DataSetsWidget::DataSetsWidget(ECFObject* materials,
     ECFObjectTreeWidget(label, parent)
 {
     this->m_materials = materials;
-    this->add(materials);
     this->initMaterials();
 }
 
 void DataSetsWidget::initMaterials()
 {
-    QStandardItem* material_group = this->m_groups.last();
+    QStandardItem* material_group = new QStandardItem(QString::fromStdString(this->m_materials->name));
+    this->m_root->appendRow(material_group);
+    this->m_groups.append(material_group);
+    this->m_objs.append(this->m_materials);
 
     for (auto m = this->m_materials->parameters.begin();
          this->m_materials->parameters.end() != m;

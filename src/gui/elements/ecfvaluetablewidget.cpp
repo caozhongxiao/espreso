@@ -6,6 +6,8 @@
 #include "../validators/validatordelegate.h"
 #include "comboboxdelegate.h"
 
+#include <QDebug>
+
 using namespace espreso;
 
 ECFValueTableWidget::ECFValueTableWidget(QWidget *parent) :
@@ -190,6 +192,7 @@ void ECFValueTableWidget::addBool(ECFValue *p_bool)
 
 void ECFValueTableWidget::addWithDelegate(ECFValue* value, QItemDelegate* delegate)
 {
+    this->m_values.append(value);
     QStandardItem* name = new QStandardItem(
                 QString::fromStdString(value->metadata.description.at(0))
                 );
@@ -206,6 +209,7 @@ void ECFValueTableWidget::addWithDelegate(ECFValue* value, QItemDelegate* delega
 
 void ECFValueTableWidget::addWithWidget(ECFValue* value, QWidget *widget)
 {
+    this->m_values.append(value);
     QStandardItem* name = new QStandardItem(
                 QString::fromStdString(value->metadata.description.at(0))
                 );

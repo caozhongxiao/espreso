@@ -26,6 +26,8 @@ void FilepathWidget::onPressed()
     if (filename.isEmpty()) return;
 
     ui->label->setText(filename);
+
+    emit finished(this);
 }
 
 void FilepathWidget::setText(const QString& text)

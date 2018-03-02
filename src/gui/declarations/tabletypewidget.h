@@ -2,7 +2,6 @@
 #define TABLETYPEWIDGET_H
 
 #include "tablewidget.h"
-#include "../data/datatype.h"
 
 namespace espreso
 {

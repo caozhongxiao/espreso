@@ -5,7 +5,6 @@
 #include <QLabel>
 #include <QLineEdit>
 
-#include "../../data/common.h"
 #include "../../validators/validatorfactory.h"
 #include "../tablewidget.h"
 

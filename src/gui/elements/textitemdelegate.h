@@ -26,6 +26,9 @@ protected:
 private:
     TextItemWidgetFactory* m_factory;
     QString m_defaultText;
+
+private slots:
+    void onFinished(QWidget* widget);
 };
 
 }
