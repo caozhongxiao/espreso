@@ -8,6 +8,7 @@ namespace espreso
 
 class InputWidget : public FixedECFObjectWidget
 {
+    Q_OBJECT
 public:
     InputWidget(ECFObject* obj, QWidget* parent = 0);
 

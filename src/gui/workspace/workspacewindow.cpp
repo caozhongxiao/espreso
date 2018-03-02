@@ -2,6 +2,7 @@
 #include "ui_workspacewindow.h"
 
 #include <QFileDialog>
+#include <QDebug>
 #include <QMessageBox>
 
 #include "../../config/reader/reader.h"

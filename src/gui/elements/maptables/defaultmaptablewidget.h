@@ -10,6 +10,7 @@ namespace espreso
 
 class DefaultMapTableWidget : public MapTableWidget
 {
+    Q_OBJECT
 public:
     DefaultMapTableWidget(ECFObject* map,
                           const QStringList& headlines,

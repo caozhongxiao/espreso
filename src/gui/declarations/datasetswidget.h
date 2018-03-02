@@ -9,6 +9,7 @@ namespace espreso
 
 class DataSetsWidget : public ECFObjectTreeWidget
 {
+    Q_OBJECT
 public:
     DataSetsWidget(ECFObject* materials, const QString& label = "", QWidget* parent = 0);
 

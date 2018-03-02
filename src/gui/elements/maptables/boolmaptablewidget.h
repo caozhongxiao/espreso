@@ -16,6 +16,7 @@ public:
 
 class BoolMapTableWidget : public DefaultMapTableWidget
 {
+    Q_OBJECT
 public:
     BoolMapTableWidget(ECFObject* map, const QStringList& headlines, QWidget* parent = 0);
 
