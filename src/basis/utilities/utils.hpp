@@ -139,6 +139,72 @@ void Esutils::mergeThreadedUniqueData(std::vector<std::vector<std::vector<Ttype>
 }
 
 template<typename Ttype>
+void Esutils::sortWithInplaceMerge(std::vector<Ttype> &data, const std::vector<size_t> &distribution)
+{
+	size_t size = distribution.size() - 1;
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < size; t++) {
+		std::sort(
+				data.data() + distribution[t],
+				data.data() + distribution[t + 1]);
+	}
+
+	size_t align = 1;
+	while (align < distribution.size()) align = align << 1;
+
+	std::vector<size_t> _distribution = distribution;
+	_distribution.insert(_distribution.end(), align - size, _distribution.back());
+
+	for (size_t i = 2; i <= align; i *= 2) {
+		#pragma omp parallel for
+		for (size_t t = 0; t < align / i; t++) {
+			std::inplace_merge(
+					data.data() + _distribution[i * t],
+					data.data() + _distribution[i * t + i / 2],
+					data.data() + _distribution[i * t + i]);
+		}
+	}
+}
+
+template<typename Ttype>
+void Esutils::sortAndMergedUniqueData(std::vector<std::vector<Ttype> > &data)
+{
+	std::vector<size_t> distribution = { 0, data[0].size() };
+	for (size_t t = 1; t < data.size(); t++) {
+		data[0].insert(data[0].end(), data[t].begin(), data[t].end());
+		distribution.push_back(data[0].size());
+	}
+	sortAndMergedUniqueData(data[0], distribution);
+}
+
+template<typename Ttype>
+void Esutils::mergeAppendedUniqueData(std::vector<Ttype> &data, const std::vector<size_t> &distribution)
+{
+	std::vector<size_t> _distribution(distribution.begin() + 1, distribution.end());
+
+	size_t align = 1;
+	while (align < _distribution.size()) align = align << 1;
+
+	_distribution.insert(_distribution.end(), align - distribution.size() + 2, _distribution.back());
+
+	for (size_t i = 2; i <= align; i *= 2) {
+		#pragma omp parallel for
+		for (size_t t = 0; t < align / i; t++) {
+			std::inplace_merge(
+					data.data() + _distribution[i * t],
+					data.data() + _distribution[i * t + i / 2],
+					data.data() + _distribution[i * t + i]);
+		}
+	}
+
+	std::inplace_merge(
+			data.data(),
+			data.data() + _distribution.front(),
+			data.data() + _distribution.back());
+}
+
+template<typename Ttype>
 typename std::vector<Ttype>::const_iterator Esutils::max_element(const std::vector<Ttype> &elements)
 {
 	auto max = elements.begin();

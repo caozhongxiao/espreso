@@ -97,48 +97,71 @@ void MeshPreprocessing::linkNodesAndElements()
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	auto n2i = [ & ] (size_t neighbour) {
-		return std::lower_bound(_mesh->neighbours.begin(), _mesh->neighbours.end(), neighbour) - _mesh->neighbours.begin();
-	};
-
-	// neighbor x vector(from, to)
-	std::vector<std::vector<std::pair<eslocal, eslocal> > > sBuffer(_mesh->neighbours.size()), rBuffer(_mesh->neighbours.size());
+	// thread x neighbor x vector(from, to)
+	std::vector<std::vector<std::vector<std::pair<eslocal, eslocal> > > > sBuffer(threads);
+	std::vector<std::vector<std::pair<eslocal, eslocal> > > rBuffer(_mesh->neighbours.size());
 	std::vector<std::pair<eslocal, eslocal> > localLinks;
 
-	auto nodes = _mesh->elements->nodes->cbegin();
-	const auto &IDto = _mesh->elements->IDs->datatarray();
+	localLinks.resize(_mesh->elements->nodes->cend()->begin() - _mesh->elements->nodes->cbegin()->begin());
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		auto tnodes = _mesh->elements->nodes->cbegin(t);
+		size_t offset = _mesh->elements->nodes->cbegin(t)->begin() - _mesh->elements->nodes->cbegin()->begin();
 
-	localLinks.reserve(_mesh->elements->nodes->cend()->begin() - _mesh->elements->nodes->cbegin()->begin());
-	for (eslocal e = 0; e < _mesh->elements->size; ++e, ++nodes) {
-		for (size_t n = 0; n < nodes->size(); ++n) {
-			localLinks.push_back(std::make_pair(nodes->at(n), IDto[e]));
-		}
-	}
-	std::sort(localLinks.begin(), localLinks.end());
-
-	auto ranks = _mesh->nodes->ranks->cbegin();
-	auto send = [&] (std::vector<std::pair<eslocal, eslocal> >::iterator &begin, std::vector<std::pair<eslocal, eslocal> >::iterator &end, eslocal id) {
-		for (auto it = begin; it != end; ++it) {
-			it->first = id;
-		}
-		for (auto rank = ranks->begin(); rank != ranks->end(); ++rank) {
-			if (*rank != environment->MPIrank) {
-				sBuffer[n2i(*rank)].insert(sBuffer[n2i(*rank)].end(), begin, end);
+		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++tnodes) {
+			for (auto n = tnodes->begin(); n != tnodes->end(); ++n, ++offset) {
+				localLinks[offset].first = *n;
+				localLinks[offset].second = _mesh->elements->IDs->datatarray()[e];
 			}
 		}
-	};
-
-	auto begin = localLinks.begin();
-	auto end = begin;
-	for (eslocal n = 0; n < _mesh->nodes->size - 1; ++n, ++ranks) {
-		while (end->first == begin->first) ++end;
-		send(begin, end, _mesh->nodes->IDs->datatarray()[n]);
-		begin = end;
 	}
-	end = localLinks.end();
-	send(begin, end, _mesh->nodes->IDs->datatarray().back());
 
-	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, _mesh->neighbours)) {
+	Esutils::sortWithInplaceMerge(localLinks, _mesh->elements->nodes->datatarray().distribution());
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		auto ranks = _mesh->nodes->ranks->cbegin(t);
+		std::vector<std::vector<std::pair<eslocal, eslocal> > > tBuffer(_mesh->neighbours.size());
+
+		auto begin = std::lower_bound(localLinks.begin(), localLinks.end(), _mesh->nodes->distribution[t], [] (std::pair<eslocal, eslocal> &p, size_t n) { return p.first < n; });
+		auto end = begin;
+
+		auto send = [&] (eslocal id) {
+			for (auto it = begin; it != end; ++it) {
+				it->first = id;
+			}
+			size_t i = 0;
+			for (auto rank = ranks->begin(); rank != ranks->end(); ++rank) {
+				if (*rank != environment->MPIrank) {
+					while (_mesh->neighbours[i] < *rank) ++i;
+					tBuffer[i].insert(tBuffer[i].end(), begin, end);
+				}
+			}
+		};
+
+		for (size_t n = _mesh->nodes->distribution[t]; n + 1 < _mesh->nodes->distribution[t + 1]; ++n, ++ranks) {
+			while (end->first == begin->first) ++end;
+			send(_mesh->nodes->IDs->datatarray()[n]);
+			begin = end;
+		}
+		if (t + 1 < threads) {
+			while (end->first == begin->first) ++end;
+			send(_mesh->nodes->IDs->datatarray()[_mesh->nodes->distribution[t + 1] - 1]);
+		} else {
+			end = localLinks.end();
+			send(_mesh->nodes->IDs->datatarray().back());
+		}
+
+		sBuffer[t].swap(tBuffer);
+	}
+
+	for (size_t t = 1; t < threads; t++) {
+		for (size_t r = 0; r < sBuffer[0].size(); r++) {
+			sBuffer[0][r].insert(sBuffer[0][r].end(), sBuffer[t][r].begin(), sBuffer[t][r].end());
+		}
+	}
+
+	if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, _mesh->neighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: addLinkFromTo - exchangeUnknownSize.";
 	}
 
@@ -148,34 +171,47 @@ void MeshPreprocessing::linkNodesAndElements()
 		boundaries.push_back(localLinks.size());
 	}
 
-	while (boundaries.size() > 3) {
-		for (size_t i = 1; i + 2 < boundaries.size(); i++) {
-			std::inplace_merge(localLinks.begin() + boundaries[i], localLinks.begin() + boundaries[i + 1], localLinks.begin() + boundaries[i + 2]);
-			boundaries.erase(boundaries.begin() + i + 1);
-		}
-	}
-	if (boundaries.size() == 3) {
-		std::inplace_merge(localLinks.begin() + boundaries[0], localLinks.begin() + boundaries[1], localLinks.begin() + boundaries[2]);
-	}
+	Esutils::mergeAppendedUniqueData(localLinks, boundaries);
 
 	std::vector<std::vector<eslocal> > linksBoundaries(threads);
 	std::vector<std::vector<eslocal> > linksData(threads);
 
-	linksBoundaries.front().push_back(0);
-	eslocal current;
-	for (eslocal n = 0, link = 0; n < _mesh->nodes->size - 1; ++n) {
-		current = localLinks[link].first;
-		while (current == localLinks[link].first) {
-			linksData.front().push_back(localLinks[link++].second);
-		}
-		linksBoundaries.front().push_back(link);
-	}
-	for (size_t n = linksBoundaries.front().back(); n < localLinks.size(); n++) {
-		linksData.front().push_back(localLinks[n].second);
-	}
-	linksBoundaries.front().push_back(localLinks.size());
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		auto llink = std::lower_bound(localLinks.begin(), localLinks.end(), _mesh->nodes->IDs->datatarray()[_mesh->nodes->distribution[t]], [] (std::pair<eslocal, eslocal> &p, size_t n) { return p.first < n; });
+		eslocal current;
 
-	serializededata<eslocal, eslocal>::balance(linksBoundaries, linksData);
+		std::vector<eslocal> tBoundaries, tData;
+		if (t == 0) {
+			tBoundaries.push_back(0);
+		}
+
+		for (size_t n = _mesh->nodes->distribution[t]; n + 1 < _mesh->nodes->distribution[t + 1]; ++n) {
+			current = llink->first;
+			while (current == llink->first) {
+				tData.push_back(llink->second);
+				++llink;
+			}
+			tBoundaries.push_back(llink - localLinks.begin());
+		}
+		if (t + 1 < threads) {
+			current = llink->first;
+			while (current == llink->first) {
+				tData.push_back(llink->second);
+				++llink;
+			}
+		} else {
+			while (llink != localLinks.end()) {
+				tData.push_back(llink->second);
+				++llink;
+			}
+		}
+		tBoundaries.push_back(llink - localLinks.begin());
+
+		linksBoundaries[t].swap(tBoundaries);
+		linksData[t].swap(tData);
+	}
+
 	_mesh->nodes->elements = new serializededata<eslocal, eslocal>(linksBoundaries, linksData);
 
 	finish("link nodes and elements");
@@ -188,65 +224,84 @@ struct __haloElement__ {
 
 void MeshPreprocessing::exchangeHalo()
 {
+	// halo elements are all elements that have some shared node
 	start("exchanging halo");
 
 	if (_mesh->nodes->elements == NULL) {
 		this->linkNodesAndElements();
 	}
 
+	std::vector<eslocal> eDistribution = _mesh->elements->gatherElementsProcDistribution();
+
 	size_t threads = environment->OMP_NUM_THREADS;
-	auto n2i = [ & ] (size_t neighbour) {
-		return std::lower_bound(_mesh->neighbours.begin(), _mesh->neighbours.end(), neighbour) - _mesh->neighbours.begin();
-	};
+	std::vector<std::vector<eslocal> > sBuffer(_mesh->neighbours.size()), rBuffer(_mesh->neighbours.size());
 
-	// thread x neighbors x halo elements
-	std::vector<std::vector<std::vector<__haloElement__> > > sBuffer(threads, std::vector<std::vector<__haloElement__> >(_mesh->neighbours.size()));
-	std::vector<std::vector<__haloElement__> > rBuffer(_mesh->neighbours.size());
+	std::vector<std::vector<std::vector<eslocal> > > hElements(threads);
 
+	// we have to got through all nodes because intervals are not computed yet
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		std::vector<std::vector<eslocal> > telements(_mesh->neighbours.size());
+		auto elinks = _mesh->nodes->elements->cbegin(t);
+		size_t i = 0;
+
+		for (auto ranks = _mesh->nodes->ranks->cbegin(t); ranks != _mesh->nodes->ranks->cend(t); ++ranks, ++elinks) {
+			auto begin = elinks->begin();
+			auto end = elinks->begin();
+			if (ranks->size() > 1) {
+				i = 0;
+				while (*begin < eDistribution[environment->MPIrank]) ++begin;
+				end = begin;
+				while (end != elinks->end() && *end < eDistribution[environment->MPIrank + 1]) ++end;
+				for (auto rank = ranks->begin(); rank != ranks->end(); ++rank) {
+					if (*rank != environment->MPIrank) {
+						while (_mesh->neighbours[i] < *rank) ++i;
+						telements[i].insert(telements[i].end(), begin, end);
+					}
+				}
+			}
+		}
+		hElements[t].swap(telements);
+	}
+
+	std::vector<std::vector<size_t> > tdist(_mesh->neighbours.size());
+	for (size_t n = 0; n < _mesh->neighbours.size(); ++n) {
+		tdist[n] = { 0, hElements[0][n].size() };
+	}
+	for (size_t t = 1; t < threads; t++) {
+		for (size_t n = 0; n < _mesh->neighbours.size(); ++n) {
+			hElements[0][n].insert(hElements[0][n].end(), hElements[t][n].begin(), hElements[t][n].end());
+			tdist[n].push_back(hElements[0][n].size());
+		}
+	}
+	for (size_t n = 0; n < _mesh->neighbours.size(); ++n) {
+		Esutils::sortWithInplaceMerge(hElements[0][n], tdist[n]);
+	}
+	#pragma omp parallel for
+	for (size_t n = 0; n < _mesh->neighbours.size(); ++n) {
+		Esutils::removeDuplicity(hElements[0][n]);
+		tdist[n] = tarray<eslocal>::distribute(threads, hElements[0][n].size());
+		sBuffer[n].resize(4 * hElements[0][n].size());
+	}
+
+	eslocal offset = eDistribution[environment->MPIrank];
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		const auto &IDs = _mesh->elements->IDs->datatarray();
 		const auto &body = _mesh->elements->body->datatarray();
 		const auto &material = _mesh->elements->material->datatarray();
 		const auto &code = _mesh->elements->epointers->datatarray();
-		auto nodes =_mesh->elements->nodes->cbegin(t);
-		std::vector<int> neighbors;
-		__haloElement__ haloElement;
-		haloElement.id = -1;
-
-		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++nodes) {
-			neighbors.clear();
-			for (size_t n = 0; n < nodes->size(); ++n) {
-				auto ranks =_mesh->nodes->ranks->cbegin() + (*nodes)[n];
-				neighbors.insert(neighbors.end(), ranks->begin(), ranks->end());
-			}
-			std::sort(neighbors.begin(), neighbors.end());
-			Esutils::removeDuplicity(neighbors);
-
-			if (neighbors.size() > 1) {
-				haloElement.id = IDs[e];
-				haloElement.body = body[e];
-				haloElement.material = material[e];
-				haloElement.code = code[e] - _mesh->_eclasses[t];
-
-				for (size_t n = 0; n < neighbors.size(); n++) {
-					if (neighbors[n] != environment->MPIrank) {
-						sBuffer[t][n2i(neighbors[n])].push_back(haloElement);
-					}
-				}
+		for (size_t n = 0; n < _mesh->neighbours.size(); ++n) {
+			for (size_t e = tdist[n][t]; e < tdist[n][t + 1]; e++) {
+				sBuffer[n][4 * e + 0] = IDs[hElements[0][n][e] - offset];
+				sBuffer[n][4 * e + 1] = body[hElements[0][n][e] - offset];
+				sBuffer[n][4 * e + 2] = material[hElements[0][n][e] - offset];
+				sBuffer[n][4 * e + 3] = (eslocal)code[hElements[0][n][e] - offset]->code;
 			}
 		}
 	}
 
-	// DUAL has to be computed before re-partition -> elements IDs has to be sorted
-	#pragma omp parallel for
-	for (size_t n = 0; n < sBuffer[0].size(); n++) {
-		for (size_t t = 1; t < threads; t++) {
-			sBuffer[0][n].insert(sBuffer[0][n].end(), sBuffer[t][n].begin(), sBuffer[t][n].end());
-		}
-	}
-
-	if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, _mesh->neighbours)) {
+	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, _mesh->neighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: exchange halo elements.";
 	}
 
@@ -255,22 +310,17 @@ void MeshPreprocessing::exchangeHalo()
 	std::vector<std::vector<Element*> > hcode(threads);
 
 	for (size_t n = 0; n < rBuffer.size(); ++n) {
-		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, rBuffer[n].size());
+		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, rBuffer[n].size() / 4);
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			for (size_t e = distribution[t]; e < distribution[t + 1]; ++e) {
-				hid[t].push_back(rBuffer[n][e].id);
-				hbody[t].push_back(rBuffer[n][e].body);
-				hmaterial[t].push_back(rBuffer[n][e].material);
-				hcode[t].push_back(_mesh->_eclasses[0] + rBuffer[n][e].code);
+				hid[t].push_back(rBuffer[n][4 * e + 0]);
+				hbody[t].push_back(rBuffer[n][4 * e + 1]);
+				hmaterial[t].push_back(rBuffer[n][4 * e + 2]);
+				hcode[t].push_back(_mesh->_eclasses[t] + rBuffer[n][4 * e + 3]);
 			}
 		}
 	}
-
-	serializededata<eslocal, eslocal>::balance(1, hid);
-	serializededata<eslocal, eslocal>::balance(1, hbody);
-	serializededata<eslocal, eslocal>::balance(1, hmaterial);
-	serializededata<eslocal, Element*>::balance(1, hcode);
 
 	_mesh->halo->IDs = new serializededata<eslocal, eslocal>(1, hid);
 	_mesh->halo->body = new serializededata<eslocal, eslocal>(1, hbody);
@@ -279,14 +329,6 @@ void MeshPreprocessing::exchangeHalo()
 
 	_mesh->halo->size = _mesh->halo->IDs->datatarray().size();
 	_mesh->halo->distribution = _mesh->halo->IDs->datatarray().distribution();
-
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		auto &epointer = _mesh->halo->epointers->datatarray();
-		for (auto e = _mesh->halo->distribution[t]; e < _mesh->halo->distribution[t + 1]; ++e) {
-			epointer[e] = _mesh->_eclasses[t] + (epointer[e] - _mesh->_eclasses[0]);
-		}
-	}
 
 	const auto &hIDs = _mesh->halo->IDs->datatarray();
 	std::vector<eslocal> permutation(hIDs.size());

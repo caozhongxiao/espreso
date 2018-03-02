@@ -46,6 +46,15 @@ struct Esutils
 	static void mergeThreadedUniqueData(std::vector<std::vector<std::vector<Ttype> > > &data);
 
 	template<typename Ttype>
+	static void sortWithInplaceMerge(std::vector<Ttype> &data, const std::vector<size_t> &distribution);
+
+	template<typename Ttype>
+	static void sortAndMergedUniqueData(std::vector<std::vector<Ttype> > &data);
+
+	template<typename Ttype>
+	static void mergeAppendedUniqueData(std::vector<Ttype> &data, const std::vector<size_t> &distribution);
+
+	template<typename Ttype>
 	static typename std::vector<Ttype>::const_iterator max_element(const std::vector<Ttype> &elements);
 
 	static std::string createDirectory(const std::vector<std::string> &path);
