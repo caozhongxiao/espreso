@@ -36,7 +36,7 @@
 using namespace espreso;
 
 
-Mesh::Mesh(const ECFRoot &configuration)
+Mesh::Mesh(const ECFRoot &configuration, bool withGUI)
 : elements(new ElementStore(_eclasses)), nodes(new NodeStore()),
   FETIData(NULL),
   halo(new ElementStore(_eclasses)),
@@ -45,7 +45,8 @@ Mesh::Mesh(const ECFRoot &configuration)
 
   configuration(configuration),
   _eclasses(environment->OMP_NUM_THREADS),
-  mesh(new OldMesh())
+  mesh(new OldMesh()),
+  _withGUI(withGUI)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -494,7 +495,7 @@ void Mesh::update()
 				configuration.decomposition.separate_etypes);
 	}
 
-	if (hasBEM(getPhysics())) {
+	if (hasBEM(getPhysics()) || _withGUI) {
 		preprocessing->computeDomainsSurface();
 		preprocessing->triangularizeDomainSurface();
 	}

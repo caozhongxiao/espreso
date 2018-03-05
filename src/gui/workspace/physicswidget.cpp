@@ -11,7 +11,7 @@
 
 using namespace espreso;
 
-PhysicsWidget::PhysicsWidget(ECFConfiguration* ecf, Mesh* mesh, QWidget* parent) :
+PhysicsWidget::PhysicsWidget(ECFRoot* ecf, Mesh* mesh, QWidget* parent) :
     ScrollECFObjectWidget(ecf, parent)
 {
     this->m_ecf = ecf;

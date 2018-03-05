@@ -4,10 +4,7 @@
 #include <QtGui>
 #include <QOpenGLWidget>
 
-#include "../mesh/structures/mesh.h"
-#include "../mesh/structures/coordinates.h"
-#include "../mesh/structures/region.h"
-#include "../mesh/elements/plane/planeelement.h"
+#include "../mesh/mesh.h"
 
 #include "../parallel/mpimanager.h"
 

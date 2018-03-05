@@ -36,7 +36,7 @@ class Mesh {
 
 	friend class MeshPreprocessing;
 public:
-	Mesh(const ECFRoot &configuration);
+	Mesh(const ECFRoot &configuration, bool withGUI = true);
 	void load();
 	void update();
 
@@ -80,6 +80,8 @@ public:
 	const ECFRoot &configuration;
 	std::vector<Element*> _eclasses;
 	OldMesh *mesh;
+
+	bool _withGUI;
 
 private:
 	void printStatistics();

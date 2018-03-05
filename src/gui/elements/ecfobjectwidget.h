@@ -4,7 +4,7 @@
 #include <QWidget>
 
 #include "../../config/configuration.h"
-#include "../../config/ecf/ecf.h"
+#include "../../config/ecf/root.h"
 
 #include "isavableobject.h"
 #include "ivalidatableobject.h"

@@ -7,7 +7,7 @@
 #include <QAction>
 
 #include "../../config/configuration.h"
-#include "../../config/ecf/ecf.h"
+#include "../../config/ecf/root.h"
 
 namespace espreso
 {

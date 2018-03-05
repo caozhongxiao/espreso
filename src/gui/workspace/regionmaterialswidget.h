@@ -2,12 +2,9 @@
 #define REGIONMATERIALSWIDGET_H
 
 #include "../../config/configuration.h"
-#include "../../config/ecf/ecf.h"
+#include "../../config/ecf/root.h"
 
-#include "../../mesh/structures/mesh.h"
-#include "../../mesh/structures/coordinates.h"
-#include "../../mesh/structures/region.h"
-#include "../../mesh/elements/plane/planeelement.h"
+#include "../../mesh/mesh.h"
 
 #include "../elements/isavableobject.h"
 #include "../elements/ivalidatableobject.h"

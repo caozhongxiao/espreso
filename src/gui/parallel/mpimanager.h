@@ -3,25 +3,12 @@
 
 #include <QtGui>
 
-#include "mpi.h"
-
-#include "../../config/ecf/environment.h"
-#include "../../config/ecf/ecf.h"
-#include "../../config/valueholder.h"
-#include "../../config/ecf/physics/physics.h"
-#include "../../config/ecf/physics/heattransfer.h"
-#include "../../basis/expression/expression.h"
-
-#include "../../mesh/structures/mesh.h"
-#include "../../mesh/structures/coordinates.h"
-#include "../../mesh/structures/region.h"
-#include "../../mesh/elements/plane/planeelement.h"
-
-#include "../../input/loader.h"
-
-
 namespace espreso
 {
+
+struct ECFRoot;
+class Mesh;
+
 
 namespace gui
 {
@@ -39,7 +26,7 @@ class MpiManager
 public:
     MpiManager(int argc, char* argv[]);
     ~MpiManager();
-    ECFConfiguration* ecf();
+    ECFRoot* ecf();
 
     Mesh* mesh();
 
@@ -51,7 +38,7 @@ public:
 
 
 private:
-    ECFConfiguration* m_ecf;
+    ECFRoot* m_ecf;
     Mesh* m_mesh = nullptr;
 
     void performOperation(int code);

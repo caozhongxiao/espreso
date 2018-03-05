@@ -1,12 +1,23 @@
 #include "mpimanager.h"
 
+#include "../../basis/containers/serializededata.h"
+
+#include "../../config/ecf/root.h"
+
+#include "../../input/loader.h"
+#include "../../mesh/mesh.h"
+#include "../../mesh/store/elementstore.h"
+#include "../../mesh/store/nodestore.h"
+#include "../../mesh/store/surfacestore.h"
+
+
 #include <QDebug>
 
 using namespace espreso;
 
 MpiManager::MpiManager(int argc, char* argv[])
 {
-    this->m_ecf = new ECFConfiguration();
+    this->m_ecf = new ECFRoot();
     this->m_ecf->fill(&argc, &argv);
 }
 
@@ -15,7 +26,7 @@ MpiManager::~MpiManager()
     if (this->m_mesh != nullptr) delete this->m_mesh;
 }
 
-ECFConfiguration* MpiManager::ecf()
+ECFRoot* MpiManager::ecf()
 {
     return this->m_ecf;
 }
@@ -81,9 +92,9 @@ void MpiManager::slaveOpenECF()
 
 void MpiManager::_openECF(const std::string& filename)
 {
-    ECFConfiguration* tmp = this->m_ecf;
+    ECFRoot* tmp = this->m_ecf;
     delete tmp;
-    this->m_ecf = new ECFConfiguration(filename);
+    this->m_ecf = new ECFRoot(filename);
 }
 
 QMap<QString, QVector<float> >* MpiManager::masterGatherMesh()
@@ -101,57 +112,82 @@ void MpiManager::slaveGatherMesh()
 
 QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
 {
-    if (this->m_mesh != nullptr) delete this->m_mesh;
-    this->m_mesh = new Mesh;
+	if (this->m_mesh != nullptr) delete this->m_mesh;
+	this->m_mesh = new Mesh(*m_ecf, true);
 
-    input::Loader::load(*m_ecf, *m_mesh, environment->MPIrank, environment->MPIsize);
+	Loader::load(*m_ecf, *m_mesh, environment->MPIrank, environment->MPIsize);
 
-    for (size_t e = 0; e < m_mesh->elements().size(); e++) {
-        m_mesh->elements()[e]->fillFaces();
-    }
+	auto shrink = [&] (const Point &p, eslocal domain) {
+		Point point = m_mesh->nodes->center + (p - m_mesh->nodes->center) * 0.95;
+		point = m_mesh->nodes->dcenter[domain] + (point - m_mesh->nodes->dcenter[domain]) * 0.9;
+		return point;
+	};
 
-    QMap<QString, QVector<float> > regions;
+	QMap<QString, QVector<float> > regions;
 
-    for (size_t e = 0; e < m_mesh->elements().size(); e++) {
+	QVector<float> &mesh = regions["ALL_ELEMENTS"];
 
-        for (size_t f = 0; f < m_mesh->elements()[e]->faces(); f++) {
-            QVector<QString> regionNames;
-            regionNames << QLatin1String("#global");
-            if (m_mesh->elements()[e]->face(f)->regions().size())
-            {
-                regionNames.clear();
+	SurfaceStore *surface = m_mesh->domainsSurface;
 
-                for (size_t r = 0; r < m_mesh->elements()[e]->face(f)->regions().size(); r++)
-                {
-                    QString regionName = QString::fromStdString(m_mesh->elements()[e]->face(f)->regions()[0]->name);
-                    regionNames << regionName;
+	for (size_t d = 0; d < m_mesh->elements->ndomains; ++d) {
+		for (
+				auto t = surface->triangles->cbegin() + surface->tdistribution[d];
+				t != surface->triangles->cbegin() + surface->tdistribution[d + 1];
+				++t) {
 
-                    if (!regions.contains(regionName))
-                    {
-                        regions.insert(regionName, QVector<float>());
-                    }
-                }
-            }
+			for (int i = 0; i < 3; ++i) {
+				Point p = shrink(surface->coordinates->datatarray()[t->at(i) + surface->cdistribution[d]], d);
+				mesh.push_back(p.x);
+				mesh.push_back(p.y);
+				mesh.push_back(p.z);
+				mesh.push_back(0);
+				mesh.push_back(1);
+				mesh.push_back(0);
+			}
+		}
+	}
 
-            std::vector<std::vector<eslocal> > triangles = dynamic_cast<PlaneElement*>(m_mesh->elements()[e]->face(f))->triangularize();
 
-            for (size_t t = 0; t < triangles.size(); t++) {
-
-                for (size_t n = 0; n < triangles[t].size(); n++) {
-                    foreach (QString rn, regionNames)
-                    {
-                        regions[rn].push_back(m_mesh->coordinates()[triangles[t][n]].x);
-                        regions[rn].push_back(m_mesh->coordinates()[triangles[t][n]].y);
-                        regions[rn].push_back(m_mesh->coordinates()[triangles[t][n]].z);
-                        regions[rn].push_back(0.0f);
-                        regions[rn].push_back(1.0f);
-                        regions[rn].push_back(0.0f);
-                    }
-                }
-
-            }
-        }
-    }
+//    for (size_t e = 0; e < m_mesh->elements().size(); e++) {
+//
+//        for (size_t f = 0; f < m_mesh->elements()[e]->faces(); f++) {
+//            QVector<QString> regionNames;
+//            regionNames << QLatin1String("#global");
+//            if (m_mesh->elements()[e]->face(f)->regions().size())
+//            {
+//                regionNames.clear();
+//
+//                for (size_t r = 0; r < m_mesh->elements()[e]->face(f)->regions().size(); r++)
+//                {
+//                    QString regionName = QString::fromStdString(m_mesh->elements()[e]->face(f)->regions()[0]->name);
+//                    regionNames << regionName;
+//
+//                    if (!regions.contains(regionName))
+//                    {
+//                        regions.insert(regionName, QVector<float>());
+//                    }
+//                }
+//            }
+//
+//            std::vector<std::vector<eslocal> > triangles = dynamic_cast<PlaneElement*>(m_mesh->elements()[e]->face(f))->triangularize();
+//
+//            for (size_t t = 0; t < triangles.size(); t++) {
+//
+//                for (size_t n = 0; n < triangles[t].size(); n++) {
+//                    foreach (QString rn, regionNames)
+//                    {
+//                        regions[rn].push_back(m_mesh->coordinates()[triangles[t][n]].x);
+//                        regions[rn].push_back(m_mesh->coordinates()[triangles[t][n]].y);
+//                        regions[rn].push_back(m_mesh->coordinates()[triangles[t][n]].z);
+//                        regions[rn].push_back(0.0f);
+//                        regions[rn].push_back(1.0f);
+//                        regions[rn].push_back(0.0f);
+//                    }
+//                }
+//
+//            }
+//        }
+//    }
 
     QMapIterator<QString, QVector<float> > it(regions);
 

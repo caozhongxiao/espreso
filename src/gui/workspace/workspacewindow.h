@@ -4,7 +4,7 @@
 #include <QMainWindow>
 
 #include "../../config/configuration.h"
-#include "../../config/ecf/ecf.h"
+#include "../../config/ecf/root.h"
 #include "../../input/loader.h"
 
 #include "../declarations/datasetswidget.h"
@@ -42,7 +42,7 @@ private:
 
     MpiManager* m_manager;
 
-    ECFConfiguration* m_ecf;
+    ECFRoot* m_ecf;
     Mesh* m_mesh;
 
     WorkflowWidget* m_workflow;

@@ -26,7 +26,7 @@ WorkflowWidget::~WorkflowWidget()
     delete ui;
 }
 
-void WorkflowWidget::setData(ECFConfiguration *ecf, Mesh* mesh)
+void WorkflowWidget::setData(ECFRoot *ecf, Mesh* mesh)
 {   
     int tabs = ui->workflow->count();
     for (int i = 1; i < tabs; i++)
@@ -174,7 +174,7 @@ void WorkflowWidget::onLoadstepsChange(int loadsteps)
     }
 }
 
-PhysicsConfiguration* WorkflowWidget::activePhysics(ECFConfiguration* ecf)
+PhysicsConfiguration* WorkflowWidget::activePhysics(ECFRoot* ecf)
 {
     switch (ecf->physics)
     {

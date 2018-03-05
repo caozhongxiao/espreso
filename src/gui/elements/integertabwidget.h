@@ -7,7 +7,7 @@
 #include <memory>
 
 #include "../../config/configuration.h"
-#include "../../config/ecf/ecf.h"
+#include "../../config/ecf/root.h"
 
 #include "ecfobjectwidgetfactory.h"
 #include "isavableobject.h"

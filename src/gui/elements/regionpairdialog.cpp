@@ -11,6 +11,9 @@
 #include "../declarations/datatypeeditwidget.h"
 #include "regionobjectwidget.h"
 
+#include "../../mesh/store/elementsregionstore.h"
+#include "../../mesh/store/boundaryregionstore.h"
+
 using namespace espreso;
 
 RegionPairDialog::RegionPairDialog(ECFDataType value, ECFObject* map,
@@ -148,7 +151,21 @@ QWidget* RegionPairDialog::uiValue(ECFDataType type, QLayout* layout)
     {
         layout->addWidget(new QLabel(tr("Region:"), this));
         QComboBox* cmb = new QComboBox(this);
-        for (auto it = m_mesh->regions().begin(); it != m_mesh->regions().end(); it++)
+        for (auto it = m_mesh->elementsRegions.begin(); it != m_mesh->elementsRegions.end(); it++)
+        {
+            bool found = false;
+            for (auto key = this->m_map->parameters.begin(); key != this->m_map->parameters.end(); key++)
+            {
+                if ((*key)->name.compare((*it)->name) == 0)
+                {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) continue;
+            cmb->addItem(QString::fromStdString((*it)->name));
+        }
+        for (auto it = m_mesh->boundaryRegions.begin(); it != m_mesh->boundaryRegions.end(); it++)
         {
             bool found = false;
             for (auto key = this->m_map->parameters.begin(); key != this->m_map->parameters.end(); key++)

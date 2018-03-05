@@ -15,9 +15,7 @@
 #include "../basis/expression/expression.h"
 #include "../config/ecf/root.h"
 
-#include "../mesh/structures/mesh.h"
-#include "../mesh/structures/coordinates.h"
-#include "../mesh/elements/plane/planeelement.h"
+#include "../mesh/mesh.h"
 
 #include "../input/loader.h"
 

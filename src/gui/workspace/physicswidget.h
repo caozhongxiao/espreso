@@ -16,7 +16,7 @@ class PhysicsWidget : public ScrollECFObjectWidget
     Q_OBJECT
 
 public:
-    explicit PhysicsWidget(ECFConfiguration* ecf, Mesh* mesh, QWidget* parent = 0);
+    explicit PhysicsWidget(ECFRoot* ecf, Mesh* mesh, QWidget* parent = 0);
 
     ECFObject* activePhysics();
 
@@ -35,7 +35,7 @@ private slots:
     void onLoadstepsChange(int loadsteps);
 
 private:
-    ECFConfiguration* m_ecf;
+    ECFRoot* m_ecf;
     Mesh* m_mesh;
 
     QComboBox* m_physics;

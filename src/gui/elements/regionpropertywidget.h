@@ -5,19 +5,15 @@
 #include <QStandardItemModel>
 #include <QTreeView>
 
-#include "../../config/configuration.h"
-#include "../../config/ecf/ecf.h"
-
-#include "../../mesh/structures/mesh.h"
-#include "../../mesh/structures/coordinates.h"
-#include "../../mesh/structures/region.h"
-#include "../../mesh/elements/plane/planeelement.h"
-
 #include "regionpairdialog.h"
 #include "ecfobjecttreewidget.h"
 
 namespace espreso
 {
+
+struct ECFObject;
+struct ECFParameter;
+class Mesh;
 
 class RegionPropertyWidget : public ECFObjectTreeWidget
 {

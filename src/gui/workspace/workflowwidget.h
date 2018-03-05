@@ -4,12 +4,9 @@
 #include <QWidget>
 
 #include "../../config/configuration.h"
-#include "../../config/ecf/ecf.h"
+#include "../../config/ecf/root.h"
 
-#include "../../mesh/structures/mesh.h"
-#include "../../mesh/structures/coordinates.h"
-#include "../../mesh/structures/region.h"
-#include "../../mesh/elements/plane/planeelement.h"
+#include "../../mesh/mesh.h"
 
 #include "physicswidget.h"
 #include "inputwidget.h"
@@ -29,8 +26,8 @@ public:
     explicit WorkflowWidget(QWidget *parent = 0);
     ~WorkflowWidget();
 
-    void setData(ECFConfiguration* ecf, Mesh* mesh);
-    PhysicsConfiguration* activePhysics(ECFConfiguration* ecf);
+    void setData(ECFRoot* ecf, Mesh* mesh);
+    PhysicsConfiguration* activePhysics(ECFRoot* ecf);
     ECFObject* input();
 
     virtual void save() override;
@@ -51,7 +48,7 @@ private slots:
 private:
     Ui::WorkflowWidget *ui;
 
-    ECFConfiguration* m_ecf;
+    ECFRoot* m_ecf;
     Mesh* m_mesh;
 
     bool m_inputBox_filled = false;
