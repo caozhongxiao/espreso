@@ -40,6 +40,13 @@ int main(int argc, char *argv[])
     {
         ww.init();
         ww.show();
+
+        // CSS
+        QCoreApplication::setAttribute(Qt::AA_UseStyleSheetPropagationInWidgetStyles, true);
+        QFile css(":/stylesheets/stylesheets/general.css");
+        css.open(QFile::ReadOnly);
+        QTextStream stream(&css);
+        a.setStyleSheet(stream.readAll());
     }
 
     mpim.loop();

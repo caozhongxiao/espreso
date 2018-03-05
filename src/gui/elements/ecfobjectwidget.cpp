@@ -41,6 +41,8 @@ QWidget* ECFObjectWidget::initContainerWidget()
 {
     QWidget* widget = new QWidget;
     QVBoxLayout* w_layout = new QVBoxLayout;
+    w_layout->setMargin(0);
+    w_layout->setSpacing(0);
     widget->setLayout(w_layout);
 
     return widget;
@@ -50,6 +52,8 @@ void ECFObjectWidget::drawObject(ECFObject *obj)
 {
     QWidget* widget = new QWidget;
     QVBoxLayout* layout = new QVBoxLayout;
+    layout->setMargin(0);
+    layout->setSpacing(0);
     widget->setLayout(layout);
 
     this->m_widget->layout()->addWidget(widget);
@@ -57,12 +61,6 @@ void ECFObjectWidget::drawObject(ECFObject *obj)
     if (this->m_draw_headlines) this->createHeadline(obj, widget);
 
     this->processParameters(obj, widget);
-
-    QSpacerItem* verticalSpacer = new QSpacerItem(0,
-                                                  0,
-                                                  QSizePolicy::Minimum,
-                                                  QSizePolicy::Expanding);
-    layout->addItem(verticalSpacer);
 }
 
 OptionHandler* ECFObjectWidget::createOption(ECFParameter* option, QWidget* parent, bool withLabel)
