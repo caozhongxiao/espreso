@@ -37,7 +37,7 @@ struct ECFValueMap: public ECFObject {
 		ECFObject::dropParameter(parameter);
 	}
 
-	virtual const ECFParameter* getPattern() const
+	virtual ECFParameter* getPattern() const
 	{
 		TParameter key{};
 		if (_pattern.size() == 0) {
@@ -81,7 +81,7 @@ struct ECFEnumMap: public ECFObject {
 		ECFObject::dropParameter(parameter);
 	}
 
-	virtual const ECFParameter* getPattern() const
+	virtual ECFParameter* getPattern() const
 	{
 		ECFParameter *parameter = new ECFEnumHolder<TValue>(_patternValue);
 		parameter->metadata = metadata.suffix(1);
@@ -128,7 +128,13 @@ struct ECFObjectMap: public ECFObject {
 		ECFObject::dropParameter(parameter);
 	}
 
-	virtual const ECFParameter* getPattern() const
+	virtual void dropAllParameters()
+	{
+		value.clear();
+		ECFObject::dropAllParameters();
+	}
+
+	virtual ECFParameter* getPattern() const
 	{
 		std::map<TParameter, TObject*> dummy;
 		auto it = value.emplace(std::piecewise_construct, std::forward_as_tuple(TParameter{}), args);
@@ -165,7 +171,13 @@ struct ECFValueMapMap: public ECFObject {
 		ECFObject::dropParameter(parameter);
 	}
 
-	virtual const ECFParameter* getPattern() const
+	virtual void dropAllParameters()
+	{
+		value.clear();
+		ECFObject::dropAllParameters();
+	}
+
+	virtual ECFParameter* getPattern() const
 	{
 		return registerPatternParameter(new ECFValueMap<TParameter2, TValue>(_patternValue));
 	}
@@ -205,7 +217,13 @@ struct ECFObjectMapMap: public ECFObject {
 		ECFObject::dropParameter(parameter);
 	}
 
-	virtual const ECFParameter* getPattern() const
+	virtual void dropAllParameters()
+	{
+		value.clear();
+		ECFObject::dropAllParameters();
+	}
+
+	virtual ECFParameter* getPattern() const
 	{
 		return registerPatternParameter(new ECFObjectMap<TParameter2, TObject>(_patternValue));
 	}

@@ -31,7 +31,7 @@ def build(ctx):
         source   = ctx.path.ant_glob("**/*.cpp"),
         moc      = ctx.path.ant_glob("**/*.h"),
 
-        use      = "ui basis config",
+        use      = "ui basis config mesh loader generator ansys_in espreso_in openfoam_in",
         uselib   = "QT5CORE QT5GUI QT5WIDGETS QT5OPENGL",
         includes = ".",
 

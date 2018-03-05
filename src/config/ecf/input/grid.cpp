@@ -104,14 +104,17 @@ espreso::GridGeneratorConfiguration::GridGeneratorConfiguration()
 
 	REGISTER(projection_x, ECFMetaData()
 			.setdescription({ "Projection of x-coordinate of generated GRID." })
+            .setvariables({ "X" })
 			.setdatatype({ ECFDataType::EXPRESSION }));
 
 	REGISTER(projection_y, ECFMetaData()
 			.setdescription({ "Projection of y-coordinate of generated GRID." })
+            .setvariables({ "Y" })
 			.setdatatype({ ECFDataType::EXPRESSION }));
 
 	REGISTER(projection_z, ECFMetaData()
 			.setdescription({ "Projection of z-coordinate of generated GRID." })
+            .setvariables({ "Z" })
 			.setdatatype({ ECFDataType::EXPRESSION }));
 
 	addSpace();

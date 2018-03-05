@@ -6,11 +6,13 @@ espreso::MortarConfiguration::MortarConfiguration()
 {
 	REGISTER(master, ECFMetaData()
 			.setdescription({ "Master region." })
-			.setdatatype({ ECFDataType::REGION }));
+            .setdatatype({ ECFDataType::REGION })
+            .mandatoryonly([&] () { return false; }));
 
 	REGISTER(slave, ECFMetaData()
 			.setdescription({ "Slave region." })
-			.setdatatype({ ECFDataType::REGION }));
+            .setdatatype({ ECFDataType::REGION })
+            .mandatoryonly([&] () { return false; }));
 }
 
 espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension, MaterialConfiguration::PHYSICAL_MODEL physicalModel)

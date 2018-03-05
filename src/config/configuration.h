@@ -63,6 +63,7 @@ struct ECFMetaData {
 	std::string unit;
 
 	std::function<bool(void)> isallowed;
+	std::function<bool(void)> ismandatory;
 
 	ECFMetaData& setdescription(const std::vector<std::string> &description) { this->description = description; return *this; }
 	ECFMetaData& setdatatype(const std::vector<ECFDataType> &datatype) { this->datatype = datatype; return *this; }
@@ -72,6 +73,7 @@ struct ECFMetaData {
 	ECFMetaData& setRegionMap(RegionMapBase &rMap) { this->regionMap = &rMap; return *this; }
 	ECFMetaData& setunit(const std::string &unit) { this->unit = unit; return *this; }
 	ECFMetaData& allowonly(std::function<bool(void)> isallowed) { this->isallowed = isallowed; return *this; }
+	ECFMetaData& mandatoryonly(std::function<bool(void)> ismandatory) { this->ismandatory = ismandatory; return *this; }
 
 	ECFMetaData& addoption(const ECFOption &option) { options.push_back(option); return *this; }
 
@@ -85,7 +87,11 @@ struct ECFMetaData {
 
 	ECFMetaData suffix(size_t start) const;
 
-	ECFMetaData(): tensor(NULL), regionMap(NULL) { isallowed = [] () { return true; }; }
+	ECFMetaData(): tensor(NULL), regionMap(NULL)
+	{
+		isallowed = [] () { return true; };
+		ismandatory = [] () { return true; };
+	}
 };
 
 struct ECFParameter {
@@ -106,7 +112,7 @@ struct ECFParameter {
 	virtual ECFParameter* getParameter(const char* name);
 	virtual ECFParameter* getParameter(const void* data);
 
-	virtual const ECFParameter* getPattern() const =0;
+	virtual ECFParameter* getPattern() const =0;
 	virtual const void* data() const =0;
 
 	virtual void addListener(Event event, std::function<void(const std::string &value)> listener);
@@ -131,7 +137,7 @@ struct ECFSeparator: public ECFParameter {
 
 	std::string getValue() const { return ""; }
 
-	virtual const ECFParameter* getPattern() const { return NULL; }
+	virtual ECFParameter* getPattern() const { return NULL; }
 	virtual const void* data() const { return NULL; }
 
 protected:
@@ -145,7 +151,7 @@ struct ECFValue: public ECFParameter {
 	bool isValue() const { return true; }
 	bool isObject() const { return false; }
 
-	virtual const ECFParameter* getPattern() const { return NULL; }
+	virtual ECFParameter* getPattern() const { return NULL; }
 
 protected:
 	ECFParameter* _getParameter(const std::string &name) { return NULL; }
@@ -160,7 +166,7 @@ struct ECFObject: public ECFParameter {
 
 	virtual std::string getValue() const;
 
-	virtual const ECFParameter* getPattern() const { return NULL; }
+	virtual ECFParameter* getPattern() const { return NULL; }
 	virtual const void* data() const { return this; }
 
 	void forEachParameters(std::function<void(ECFParameter*)> fnc, bool onlyAllowed = true);
@@ -186,6 +192,7 @@ struct ECFObject: public ECFParameter {
 
 	virtual ECFParameter* registerAdditionalParameter(ECFParameter* parameter);
 	virtual void dropParameter(ECFParameter *parameter);
+	virtual void dropAllParameters();
 protected:
 	ECFParameter* addSeparator();
 	ECFParameter* addSpace();

@@ -159,6 +159,11 @@ void ECFObject::dropParameter(ECFParameter *parameter)
 	ESINFO(GLOBAL_ERROR) << "ECF ERROR: Object cannot drop parameter '" << parameter->name << "'";
 }
 
+void ECFObject::dropAllParameters()
+{
+    parameters.clear();
+}
+
 ECFParameter* ECFObject::addSeparator()
 {
 	registerParameter("SEPARATOR", new ECFSeparator(), ECFMetaData().setdatatype({ ECFDataType::SEPARATOR }));

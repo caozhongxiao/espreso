@@ -141,7 +141,7 @@ espreso::HeatTransferConfiguration::HeatTransferConfiguration(DIMENSION dimensio
 			ECFMetaData()
 				.setdescription({ "The name of a material.", "Material description." })
 				.setdatatype({ ECFDataType::STRING })
-				.setpattern({ "MY_MATERIAL" }),
+                .setpattern({ "MY_MATERIAL" }),
 			dimension, MaterialConfiguration::PHYSICAL_MODEL::THERMAL);
 	moveLastBefore(PNAME(material_set));
 

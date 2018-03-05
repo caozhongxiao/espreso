@@ -67,18 +67,19 @@ MaterialConfiguration::MaterialConfiguration()
   phase_change(false),
   _allowed_physical_models(static_cast<PHYSICAL_MODEL>(~0))
 {
-	name = "MATERIAL_NAME";
+    name = "";
 	REGISTER(name, ECFMetaData()
 			 .setdescription({ "Name" })
 			 .setdatatype( { ECFDataType::STRING } ));
 
-	description = "MATERIAL_DESCRIPTION";
+    description = "";
 	REGISTER(description, ECFMetaData()
 			 .setdescription({ "Description" })
 			 .setdatatype( { ECFDataType::STRING } ));
 
 	addSpace();
 
+    physical_model = PHYSICAL_MODEL::THERMAL;
 	REGISTER(physical_model, ECFMetaData()
 			.setdescription({ "Physical model" })
 			.setdatatype({ ECFDataType::ENUM_FLAGS })
@@ -88,7 +89,7 @@ MaterialConfiguration::MaterialConfiguration()
 					.allowonly([&] () { return _allowed_physical_models & PHYSICAL_MODEL::LINEAR_ELASTIC; })));
 
 	REGISTER(phase_change, ECFMetaData()
-			.setdescription({ "Turn on/off phase change." })
+            .setdescription({ "Phase change" })
 			.setdatatype({ ECFDataType::BOOL }));
 
 	addSeparator();
