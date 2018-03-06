@@ -21,6 +21,8 @@
 
 #include "mpi.h"
 
+#include <locale>
+
 using namespace espreso;
 
 
@@ -33,6 +35,9 @@ int main(int argc, char *argv[])
     MpiManager mpim(argc, argv);
 
     WorkspaceWindow ww(&mpim);
+
+    setlocale(LC_ALL, "C");
+    setlocale(LC_CTYPE, "C");
 
     if (environment->MPIrank == 0)
     {
