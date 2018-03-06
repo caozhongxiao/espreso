@@ -75,7 +75,7 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 		_asyncStore->_direct->addResultStore(new InSituVisualization(mesh, configuration));
 	}
 	if (configuration.debug) {
-		executor->addResultStore(new VTKLegacyDebugInfo(executor->mesh(), configuration, .95, .9));
+		_asyncStore->_direct->addResultStore(new VTKLegacyDebugInfo(mesh, configuration, .95, .9));
 	}
 
 	if (!_asyncStore->_direct->hasStore()) {

@@ -57,7 +57,9 @@ size_t NodeStore::packedSize() const
 			Esutils::packedSize(externalIntervals) +
 			Esutils::packedSize(pintervals) +
 			Esutils::packedSize(dintervals) +
-			datasize;
+			datasize +
+			Esutils::packedSize(dcenter) +
+			Esutils::packedSize(center);
 }
 
 void NodeStore::pack(char* &p) const
@@ -72,6 +74,8 @@ void NodeStore::pack(char* &p) const
 	Esutils::pack(externalIntervals, p);
 	Esutils::pack(pintervals, p);
 	Esutils::pack(dintervals, p);
+	Esutils::pack(dcenter, p);
+	Esutils::pack(center, p);
 
 	size_t size = 0;
 	for (size_t i = 0; i < data.size(); i++) {
@@ -110,6 +114,8 @@ void NodeStore::unpack(const char* &p)
 	Esutils::unpack(externalIntervals, p);
 	Esutils::unpack(pintervals, p);
 	Esutils::unpack(dintervals, p);
+	Esutils::unpack(dcenter, p);
+	Esutils::unpack(center, p);
 
 	int dimension;
 	size_t datasize;
