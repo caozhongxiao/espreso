@@ -4,7 +4,8 @@
 #include <QLineEdit>
 #include "../validators/validatorfactory.h"
 #include "../validators/validatordelegate.h"
-#include "comboboxdelegate.h"
+#include "textitemwidgetfactory.h"
+#include "textitemdelegate.h"
 
 #include <QDebug>
 
@@ -149,9 +150,8 @@ void ECFValueTableWidget::addOption(ECFValue *option)
                 QString::fromStdString(value->metadata.description.at(0))
                 );
     name->setEditable(false);
-    QStandardItem* val = new QStandardItem(
-                QString::fromStdString(value->getValue())
-                );
+    QString text = QString::fromStdString(value->getValue());
+    QStandardItem* val = new QStandardItem(text);
     QList<QStandardItem*> list;
     list << name << val;
     this->m_model->appendRow(list);
@@ -164,7 +164,7 @@ void ECFValueTableWidget::addOption(ECFValue *option)
         options << QString::fromStdString(it->name);
     }
     ui->table->setItemDelegateForRow(this->m_model->rowCount() - 1,
-                                     new ComboBoxDelegate(options));
+                                     new TextItemDelegate(text, new OptionWidgetFactory(options)));
 
 }
 

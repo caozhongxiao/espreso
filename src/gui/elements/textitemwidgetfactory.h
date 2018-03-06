@@ -5,6 +5,7 @@
 
 #include "textitemwidget.h"
 #include "filepathwidget.h"
+#include "optionwidget.h"
 
 namespace espreso
 {
@@ -22,6 +23,17 @@ class FilepathWidgetFactory : public TextItemWidgetFactory
 {
 public:
     virtual TextItemWidget* create(QWidget* parent = 0) override;
+};
+
+class OptionWidgetFactory : public TextItemWidgetFactory
+{
+public:
+    OptionWidgetFactory(const QStringList& options);
+
+    virtual TextItemWidget* create(QWidget* parent = 0) override;
+
+private:
+    QStringList m_options;
 };
 
 }
