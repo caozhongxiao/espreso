@@ -90,6 +90,7 @@ struct NodeStore {
 
 	Point center;
 	std::vector<Point> dcenter;
+	Point min, max, lmin, lmax;
 
 	std::vector<NodeData*> data;
 	std::vector<eslocal> soffsets, scouters;

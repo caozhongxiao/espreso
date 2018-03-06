@@ -129,6 +129,8 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
 
 	SurfaceStore *surface = m_mesh->domainsSurface;
 
+//	std::cout << "MIN: " << m_mesh->nodes->min << ", MAX: " << m_mesh->nodes->max << "\n";
+
 	for (size_t d = 0; d < m_mesh->elements->ndomains; ++d) {
 		for (
 				auto t = surface->triangles->cbegin() + surface->tdistribution[d];

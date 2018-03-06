@@ -361,16 +361,35 @@ void MeshPreprocessing::arrangeNodes()
 	}
 
 	_mesh->nodes->dcenter.resize(_mesh->elements->ndomains);
-	std::vector<Point> centers(_mesh->nodes->pintervals.size());
+	std::vector<Point> centers(_mesh->nodes->pintervals.size()), mins(_mesh->nodes->pintervals.size()), maxs(_mesh->nodes->pintervals.size());
 
 	#pragma omp parallel for
 	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i) {
-		Point center;
 		const auto &coordinates = _mesh->nodes->coordinates->datatarray();
+		Point center, min = coordinates[_mesh->nodes->pintervals[i].begin], max = coordinates[_mesh->nodes->pintervals[i].begin];
 		for (eslocal n = _mesh->nodes->pintervals[i].begin; n < _mesh->nodes->pintervals[i].end; ++n) {
 			center += coordinates[n];
+			std::min(min.x, coordinates[n].x);
+			std::min(min.y, coordinates[n].y);
+			std::min(min.z, coordinates[n].z);
+			std::max(max.x, coordinates[n].x);
+			std::max(max.y, coordinates[n].y);
+			std::max(max.z, coordinates[n].z);
 		}
 		centers[i] = center;
+		mins[i] = min;
+		maxs[i] = max;
+	}
+
+	_mesh->nodes->lmin = mins.front();
+	_mesh->nodes->lmax = maxs.front();
+	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i) {
+		_mesh->nodes->lmin.x = std::min(_mesh->nodes->lmin.x, mins[i].x);
+		_mesh->nodes->lmin.y = std::min(_mesh->nodes->lmin.y, mins[i].y);
+		_mesh->nodes->lmin.z = std::min(_mesh->nodes->lmin.z, mins[i].z);
+		_mesh->nodes->lmax.x = std::max(_mesh->nodes->lmax.x, maxs[i].x);
+		_mesh->nodes->lmax.y = std::max(_mesh->nodes->lmax.y, maxs[i].y);
+		_mesh->nodes->lmax.z = std::max(_mesh->nodes->lmax.z, maxs[i].z);
 	}
 
 	#pragma omp parallel for
@@ -388,6 +407,13 @@ void MeshPreprocessing::arrangeNodes()
 		_mesh->nodes->center += centers[i];
 	}
 	_mesh->nodes->center /= _mesh->nodes->size;
+
+	MPI_Allreduce(&_mesh->nodes->lmin.x, &_mesh->nodes->min.x, 1, MPI_DOUBLE, MPI_MIN, environment->MPICommunicator);
+	MPI_Allreduce(&_mesh->nodes->lmin.y, &_mesh->nodes->min.y, 1, MPI_DOUBLE, MPI_MIN, environment->MPICommunicator);
+	MPI_Allreduce(&_mesh->nodes->lmin.z, &_mesh->nodes->min.z, 1, MPI_DOUBLE, MPI_MIN, environment->MPICommunicator);
+	MPI_Allreduce(&_mesh->nodes->lmax.x, &_mesh->nodes->max.x, 1, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
+	MPI_Allreduce(&_mesh->nodes->lmax.y, &_mesh->nodes->max.y, 1, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
+	MPI_Allreduce(&_mesh->nodes->lmax.z, &_mesh->nodes->max.z, 1, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
 
 	std::vector<eslocal> backpermutation(permutation.size());
 	std::iota(backpermutation.begin(), backpermutation.end(), 0);
