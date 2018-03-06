@@ -118,12 +118,17 @@ void MeshPreprocessing::linkNodesAndElements()
 
 	Esutils::sortWithInplaceMerge(localLinks, _mesh->elements->nodes->datatarray().distribution());
 
+	std::vector<size_t> tbegin(threads);
+	for (size_t t = 1; t < threads; t++) {
+		tbegin[t] = std::lower_bound(localLinks.begin() + tbegin[t - 1], localLinks.end(), _mesh->nodes->distribution[t], [] (std::pair<eslocal, eslocal> &p, size_t n) { return p.first < n; }) - localLinks.begin();
+	}
+
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		auto ranks = _mesh->nodes->ranks->cbegin(t);
 		std::vector<std::vector<std::pair<eslocal, eslocal> > > tBuffer(_mesh->neighbours.size());
 
-		auto begin = std::lower_bound(localLinks.begin(), localLinks.end(), _mesh->nodes->distribution[t], [] (std::pair<eslocal, eslocal> &p, size_t n) { return p.first < n; });
+		auto begin = localLinks.begin() + tbegin[t];
 		auto end = begin;
 
 		auto send = [&] (eslocal id) {
@@ -171,7 +176,7 @@ void MeshPreprocessing::linkNodesAndElements()
 		boundaries.push_back(localLinks.size());
 	}
 
-	Esutils::mergeAppendedUniqueData(localLinks, boundaries);
+	Esutils::mergeAppendedData(localLinks, boundaries);
 
 	std::vector<std::vector<eslocal> > linksBoundaries(threads);
 	std::vector<std::vector<eslocal> > linksData(threads);
@@ -217,11 +222,6 @@ void MeshPreprocessing::linkNodesAndElements()
 	finish("link nodes and elements");
 }
 
-struct __haloElement__ {
-	eslocal id;
-	int body, material, code;
-};
-
 void MeshPreprocessing::exchangeHalo()
 {
 	// halo elements are all elements that have some shared node
@@ -250,7 +250,7 @@ void MeshPreprocessing::exchangeHalo()
 			auto end = elinks->begin();
 			if (ranks->size() > 1) {
 				i = 0;
-				while (*begin < eDistribution[environment->MPIrank]) ++begin;
+				while (begin != elinks->end() && *begin < eDistribution[environment->MPIrank]) ++begin;
 				end = begin;
 				while (end != elinks->end() && *end < eDistribution[environment->MPIrank + 1]) ++end;
 				for (auto rank = ranks->begin(); rank != ranks->end(); ++rank) {

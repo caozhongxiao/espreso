@@ -179,7 +179,7 @@ void Esutils::sortAndMergedUniqueData(std::vector<std::vector<Ttype> > &data)
 }
 
 template<typename Ttype>
-void Esutils::mergeAppendedUniqueData(std::vector<Ttype> &data, const std::vector<size_t> &distribution)
+void Esutils::mergeAppendedData(std::vector<Ttype> &data, const std::vector<size_t> &distribution)
 {
 	std::vector<size_t> _distribution(distribution.begin() + 1, distribution.end());
 

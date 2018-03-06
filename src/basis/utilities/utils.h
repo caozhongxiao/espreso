@@ -52,7 +52,7 @@ struct Esutils
 	static void sortAndMergedUniqueData(std::vector<std::vector<Ttype> > &data);
 
 	template<typename Ttype>
-	static void mergeAppendedUniqueData(std::vector<Ttype> &data, const std::vector<size_t> &distribution);
+	static void mergeAppendedData(std::vector<Ttype> &data, const std::vector<size_t> &distribution);
 
 	template<typename Ttype>
 	static typename std::vector<Ttype>::const_iterator max_element(const std::vector<Ttype> &elements);
