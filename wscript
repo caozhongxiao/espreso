@@ -122,8 +122,9 @@ def configure(ctx):
 
     check_environment(ctx)
 
-    ctx.setenv("gui", ctx.all_envs["espreso"].derive());
-    ctx.recurse("src/gui")
+    if not ctx.options.disable_gui:
+        ctx.setenv("gui", ctx.all_envs["espreso"].derive());
+        ctx.recurse("src/gui")
 
     optional_libraries = [
         (ctx.env.QT, "QT5", "GUI"),
@@ -171,8 +172,9 @@ def build(ctx):
     ctx.recurse("src/output")
     ctx.recurse("src/app")
 
-    ctx.env = ctx.all_envs["gui"]
-    ctx.recurse("src/gui")
+    if not ctx.options.disable_gui:
+        ctx.env = ctx.all_envs["gui"]
+        ctx.recurse("src/gui")
 
 def options(opt):
     opt.parser.formatter.max_help_position = 32
@@ -248,6 +250,13 @@ def options(opt):
         action="store_true",
         default=False,
         help="Build ESPRESO without thread support and optimizations"
+    )
+
+    system.add_option(
+        "--disable-gui",
+        action="store_true",
+        default=False,
+        help="Build ESPRESO without GUI"
     )
 
 
