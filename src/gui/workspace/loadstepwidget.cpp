@@ -21,7 +21,7 @@ LoadstepWidget::LoadstepWidget(size_t id, Mesh* mesh, ECFObject* physics, QWidge
     this->m_properties = nullptr;
 }
 
-void LoadstepWidget::drawObject(ECFObject* obj)
+void LoadstepWidget::drawObject(ECFObject* obj, int groupId)
 {
     if (obj->name.compare("material_set") == 0
             || obj->name.compare("load_steps_settings") == 0)
@@ -41,7 +41,7 @@ void LoadstepWidget::drawObject(ECFObject* obj)
         return;
     }
 
-    ScrollECFObjectWidget::drawObject(obj);
+    ScrollECFObjectWidget::drawObject(obj, groupId);
 }
 
 void LoadstepWidget::performBeforeRedraw()

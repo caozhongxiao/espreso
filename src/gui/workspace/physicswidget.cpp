@@ -77,7 +77,7 @@ void PhysicsWidget::onPhysicsChange(int index)
     emit physicsChanged(this->m_obj);
 }
 
-void PhysicsWidget::drawObject(ECFObject* obj)
+void PhysicsWidget::drawObject(ECFObject* obj, int parentGroupId)
 {
     if (obj->name.compare("material_set") == 0
             || obj->name.compare("load_steps_settings") == 0
@@ -100,7 +100,7 @@ void PhysicsWidget::drawObject(ECFObject* obj)
         return;
     }
 
-    ScrollECFObjectWidget::drawObject(obj);
+    ScrollECFObjectWidget::drawObject(obj, parentGroupId);
 }
 
 void PhysicsWidget::performBeforeRedraw()
@@ -108,16 +108,38 @@ void PhysicsWidget::performBeforeRedraw()
     this->m_properties = nullptr;
 }
 
-ECFValueTableWidget* PhysicsWidget::processPositiveInteger(ECFParameter* parameter,
-                                                  ECFValueTableWidget* table,
-                                                  QWidget* widget)
+//ECFValueTableWidget* PhysicsWidget::processPositiveInteger(ECFParameter* parameter,
+//                                                  ECFValueTableWidget* table,
+//                                                  QWidget* widget)
+//{
+//    ECFValueTableWidget* tw = this->createTableWidget(widget, table);
+//    if (parameter->name.compare("load_steps") == 0)
+//    {
+//        SpinnerHandler* handler = new SpinnerHandler(parameter, false, widget);
+//        connect(handler, SIGNAL(valueChanged(int)), this, SLOT(onLoadstepsChange(int)));
+//        tw->addWithWidget(static_cast<ECFValue*>(parameter), handler);
+//        this->m_savables.append(handler);
+//        this->m_validatables.append(handler);
+
+//        return tw;
+//    }
+//    else
+//    {
+//        return ECFObjectWidget::processPositiveInteger(parameter, table, widget);
+//    }
+//}
+
+ECFParameterTreeWidget* PhysicsWidget::processPositiveInteger(ECFParameter* parameter,
+                                                              ECFParameterTreeWidget* table,
+                                                              QWidget* widget,
+                                                              int groupId)
 {
-    ECFValueTableWidget* tw = this->createTableWidget(widget, table);
+    ECFParameterTreeWidget* tw = this->createParameterWidget(widget, table);
     if (parameter->name.compare("load_steps") == 0)
     {
         SpinnerHandler* handler = new SpinnerHandler(parameter, false, widget);
         connect(handler, SIGNAL(valueChanged(int)), this, SLOT(onLoadstepsChange(int)));
-        tw->addWithWidget(static_cast<ECFValue*>(parameter), handler);
+        tw->addWithWidget(static_cast<ECFValue*>(parameter), handler, groupId);
         this->m_savables.append(handler);
         this->m_validatables.append(handler);
 
@@ -125,7 +147,7 @@ ECFValueTableWidget* PhysicsWidget::processPositiveInteger(ECFParameter* paramet
     }
     else
     {
-        return ECFObjectWidget::processPositiveInteger(parameter, table, widget);
+        return ECFObjectWidget::processPositiveInteger(parameter, table, widget, groupId);
     }
 }
 

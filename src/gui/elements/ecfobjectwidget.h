@@ -2,6 +2,7 @@
 #define ECFOBJECTWIDGET_H
 
 #include <QWidget>
+#include <QStack>
 
 #include "../../config/configuration.h"
 #include "../../config/ecf/root.h"
@@ -14,6 +15,7 @@
 #include "formwidget.h"
 #include "regionpropertywidget.h"
 #include "ecfvaluetablewidget.h"
+#include "ecfparametertreewidget.h"
 
 namespace espreso
 {
@@ -62,8 +64,11 @@ protected:
     virtual QWidget* initContainer() = 0;
     virtual void performBeforeRedraw() = 0;
 
-    virtual void drawObject(ECFObject*);
+    virtual void drawObject(ECFObject* obj, int parentGroupId = 0);
     void drawMe();
+
+    ECFParameterTreeWidget* m_parameter_tree = nullptr;
+    QStack<int> m_parameter_groups;
 
     void processParameters(ECFObject*, QWidget*);
     virtual MaterialPropertyTableWidget* processExpression(ECFParameter*, MaterialPropertyTableWidget*, QWidget*);
@@ -75,20 +80,35 @@ protected:
 //    virtual FormWidget* processPositiveInteger(ECFParameter*, FormWidget*, QWidget*);
 //    virtual FormWidget* processRegion(ECFParameter*, FormWidget*, QWidget*);
 
-    virtual ECFValueTableWidget* processParameter(ECFParameter* param, ECFValueTableWidget* table, QWidget* parent);
+//    virtual ECFValueTableWidget* processParameter(ECFParameter* param, ECFValueTableWidget* table, QWidget* parent);
 
-    virtual ECFValueTableWidget* processOptionEnum(ECFParameter*, ECFValueTableWidget*, QWidget*);
-    virtual ECFValueTableWidget* processBool(ECFParameter*, ECFValueTableWidget*, QWidget*);
-    virtual ECFValueTableWidget* processString(ECFParameter*, ECFValueTableWidget*, QWidget*);
-    virtual ECFValueTableWidget* processFloat(ECFParameter*, ECFValueTableWidget*, QWidget*);
-    virtual ECFValueTableWidget* processNonnegativeInteger(ECFParameter*, ECFValueTableWidget*, QWidget*);
-    virtual ECFValueTableWidget* processPositiveInteger(ECFParameter*, ECFValueTableWidget*, QWidget*);
-    virtual ECFValueTableWidget* processRegion(ECFParameter*, ECFValueTableWidget*, QWidget*);
+//    virtual ECFValueTableWidget* processOptionEnum(ECFParameter*, ECFValueTableWidget*, QWidget*);
+//    virtual ECFValueTableWidget* processBool(ECFParameter*, ECFValueTableWidget*, QWidget*);
+//    virtual ECFValueTableWidget* processString(ECFParameter*, ECFValueTableWidget*, QWidget*);
+//    virtual ECFValueTableWidget* processFloat(ECFParameter*, ECFValueTableWidget*, QWidget*);
+//    virtual ECFValueTableWidget* processNonnegativeInteger(ECFParameter*, ECFValueTableWidget*, QWidget*);
+//    virtual ECFValueTableWidget* processPositiveInteger(ECFParameter*, ECFValueTableWidget*, QWidget*);
+//    virtual ECFValueTableWidget* processRegion(ECFParameter*, ECFValueTableWidget*, QWidget*);
+
+    virtual ECFParameterTreeWidget* processParameter(ECFParameter* param,
+                                                     ECFParameterTreeWidget* table,
+                                                     QWidget* parent,
+                                                     int groupId = 0);
+
+    virtual ECFParameterTreeWidget* processOptionEnum(ECFParameter*, ECFParameterTreeWidget*, QWidget*, int = 0);
+    virtual ECFParameterTreeWidget* processBool(ECFParameter*, ECFParameterTreeWidget*, QWidget*, int = 0);
+    virtual ECFParameterTreeWidget* processString(ECFParameter*, ECFParameterTreeWidget*, QWidget*, int = 0);
+    virtual ECFParameterTreeWidget* processFloat(ECFParameter*, ECFParameterTreeWidget*, QWidget*, int = 0);
+    virtual ECFParameterTreeWidget* processNonnegativeInteger(ECFParameter*, ECFParameterTreeWidget*, QWidget*, int = 0);
+    virtual ECFParameterTreeWidget* processPositiveInteger(ECFParameter*, ECFParameterTreeWidget*, QWidget*, int = 0);
+    virtual ECFParameterTreeWidget* processRegion(ECFParameter*, ECFParameterTreeWidget*, QWidget*, int = 0);
+
+    ECFParameterTreeWidget* createParameterWidget(QWidget*, ECFParameterTreeWidget*);
 
     OptionHandler* createOption(ECFParameter*, QWidget* = 0, bool = true);
     BoolHandler* createBool(ECFParameter*, QWidget* = 0);
 //    FormWidget* createFormWidget(QWidget*, FormWidget*);
-    ECFValueTableWidget* createTableWidget(QWidget*, ECFValueTableWidget*);
+//    ECFValueTableWidget* createTableWidget(QWidget*, ECFValueTableWidget*);
     void createHeadline(ECFObject*, QWidget*);
 };
 

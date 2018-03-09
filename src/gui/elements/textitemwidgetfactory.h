@@ -6,6 +6,8 @@
 #include "textitemwidget.h"
 #include "filepathwidget.h"
 #include "optionwidget.h"
+#include "textwidget.h"
+#include "../validators/validatorfactory.h"
 
 namespace espreso
 {
@@ -34,6 +36,18 @@ public:
 
 private:
     QStringList m_options;
+};
+
+class TextWidgetFactory : public TextItemWidgetFactory
+{
+public:
+    TextWidgetFactory(ValidatorFactory* validatorFactory = nullptr);
+    virtual ~TextWidgetFactory();
+
+    virtual TextItemWidget* create(QWidget* parent = 0) override;
+
+private:
+    ValidatorFactory* m_factory;
 };
 
 }

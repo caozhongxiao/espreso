@@ -26,9 +26,10 @@ signals:
 
 protected:
     QWidget* initContainer() override;
-    void drawObject(ECFObject*) override;
+    virtual void drawObject(ECFObject* obj, int parentGroupId = 0) override;
     virtual void performBeforeRedraw() override;
-    ECFValueTableWidget* processPositiveInteger(ECFParameter *, ECFValueTableWidget *, QWidget *) override;
+    //ECFValueTableWidget* processPositiveInteger(ECFParameter *, ECFParameterTreeWidget *, QWidget *) override;
+    ECFParameterTreeWidget* processPositiveInteger(ECFParameter *, ECFParameterTreeWidget *, QWidget *, int = 0) override;
 
 private slots:
     void onPhysicsChange(int index);

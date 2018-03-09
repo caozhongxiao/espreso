@@ -16,7 +16,7 @@ public:
     explicit LoadstepWidget(size_t id, Mesh* mesh, ECFObject* physics, QWidget* parent = 0);
 
 protected:
-    void drawObject(ECFObject*) override;
+    void drawObject(ECFObject*, int = 0) override;
     virtual void performBeforeRedraw() override;
 
 private:

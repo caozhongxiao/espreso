@@ -11,7 +11,7 @@ InputWidget::InputWidget(ECFObject* obj, QWidget* parent) :
 {
 }
 
-void InputWidget::drawObject(ECFObject* obj)
+void InputWidget::drawObject(ECFObject* obj, int parentGroupId)
 {
     if (obj->metadata.datatype.size() == 2)
     {
@@ -32,21 +32,38 @@ void InputWidget::drawObject(ECFObject* obj)
         return;
     }
 
-    FixedECFObjectWidget::drawObject(obj);
+    FixedECFObjectWidget::drawObject(obj, parentGroupId);
 }
 
-ECFValueTableWidget* InputWidget::processString(ECFParameter* param, ECFValueTableWidget* table, QWidget* widget)
+//ECFValueTableWidget* InputWidget::processString(ECFParameter* param, ECFValueTableWidget* table, QWidget* widget)
+//{
+//    ECFValueTableWidget* tw = this->createTableWidget(widget, table);
+//    if (param->name.compare("path") == 0)
+//    {
+//        tw->addWithDelegate(static_cast<ECFValue*>(param),
+//                            new TextItemDelegate(
+//                                QString::fromStdString(param->getValue()),
+//                                new FilepathWidgetFactory
+//                                ));
+//        return tw;
+//    }
+
+//    return FixedECFObjectWidget::processString(param, table, widget);
+//}
+
+ECFParameterTreeWidget* InputWidget::processString(ECFParameter* param,
+                                                   ECFParameterTreeWidget* table,
+                                                   QWidget* widget,
+                                                   int groupId)
 {
-    ECFValueTableWidget* tw = this->createTableWidget(widget, table);
+    ECFParameterTreeWidget* tw = this->createParameterWidget(widget, table);
     if (param->name.compare("path") == 0)
     {
-        tw->addWithDelegate(static_cast<ECFValue*>(param),
-                            new TextItemDelegate(
-                                QString::fromStdString(param->getValue()),
-                                new FilepathWidgetFactory
-                                ));
+        tw->addWithEditorFactory(static_cast<ECFValue*>(param),
+                                 new FilepathWidgetFactory,
+                                 groupId);
         return tw;
     }
 
-    return FixedECFObjectWidget::processString(param, table, widget);
+    return FixedECFObjectWidget::processString(param, table, widget, groupId);
 }

@@ -13,8 +13,9 @@ public:
     InputWidget(ECFObject* obj, QWidget* parent = 0);
 
 protected:
-    void drawObject(ECFObject*) override;
-    virtual ECFValueTableWidget* processString(ECFParameter*, ECFValueTableWidget*, QWidget*) override;
+    void drawObject(ECFObject*, int = 0) override;
+//    virtual ECFValueTableWidget* processString(ECFParameter*, ECFValueTableWidget*, QWidget*) override;
+    virtual ECFParameterTreeWidget* processString(ECFParameter*, ECFParameterTreeWidget*, QWidget*, int = 0) override;
 };
 
 }

@@ -18,7 +18,7 @@ OutputConfigurationWidget::OutputConfigurationWidget(ECFObject* output, QWidget*
 
 }
 
-void OutputConfigurationWidget::drawObject(ECFObject* obj)
+void OutputConfigurationWidget::drawObject(ECFObject* obj, int groupId)
 {
     if (obj->name.compare("monitoring") == 0)
     {
@@ -30,5 +30,5 @@ void OutputConfigurationWidget::drawObject(ECFObject* obj)
         return;
     }
 
-    ScrollECFObjectWidget::drawObject(obj);
+    ScrollECFObjectWidget::drawObject(obj, groupId);
 }
