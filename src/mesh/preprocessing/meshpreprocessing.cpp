@@ -416,6 +416,10 @@ void MeshPreprocessing::computeDual()
 		this->computeElementsNeighbors();
 	}
 
+	if (_mesh->halo->IDs == NULL) {
+		this->exchangeHalo();
+	}
+
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	std::vector<std::vector<eslocal> > dualDistribution(threads);
@@ -454,8 +458,8 @@ void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separ
 {
 	start("computation of clusters dual graphs");
 
-	if (_mesh->nodes->elements == NULL) {
-		this->linkNodesAndElements();
+	if (_mesh->elements->neighbors == NULL) {
+		this->computeElementsNeighbors();
 	}
 
 	if (separateRegions && _mesh->elements->regions == NULL) {
@@ -463,102 +467,49 @@ void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separ
 	}
 
 	size_t threads = environment->OMP_NUM_THREADS;
-	std::vector<eslocal> IDBoundaries = _mesh->elements->gatherElementsProcDistribution();
+	eslocal eBegin = _mesh->elements->gatherElementsProcDistribution()[environment->MPIrank];
+	eslocal eEnd   = eBegin + _mesh->elements->size;
+	int rsize = _mesh->elements->regionMaskSize;
 
 	std::vector<std::vector<eslocal> > dualDistribution(threads);
 	std::vector<std::vector<eslocal> > dualData(threads);
 
-	dualDistribution.front().push_back(0);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		const auto &body = _mesh->elements->body->datatarray();
+		const auto &material = _mesh->elements->material->datatarray();
+		const auto &regions = _mesh->elements->regions->datatarray();
+		const auto &epointer = _mesh->elements->epointers->datatarray();
 
-	if (_mesh->elements->dual == NULL) {
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			const auto &IDs = _mesh->elements->IDs->datatarray();
-			const auto &body = _mesh->elements->body->datatarray();
-			const auto &material = _mesh->elements->material->datatarray();
-			const auto &regions = _mesh->elements->regions->datatarray();
-			int rsize = _mesh->elements->regionMaskSize;
-			const auto &epointer = _mesh->elements->epointers->datatarray();
-			auto nodes = _mesh->elements->nodes->cbegin(t);
-			std::vector<eslocal> neighElementIDs;
-			int myCommon, neighCommon;
-			int neigh, nCounter;
+		auto neighs = _mesh->elements->neighbors->cbegin(t);
 
-			for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++nodes) {
-				neighElementIDs.clear();
-				for (size_t n = 0; n < nodes->size(); ++n) {
-					auto elements = _mesh->nodes->elements->cbegin() + (*nodes)[n];
-					neighElementIDs.insert(neighElementIDs.end(), elements->begin(), elements->end());
-				}
-				std::sort(neighElementIDs.begin(), neighElementIDs.end());
-				myCommon = _mesh->elements->epointers->datatarray()[e]->nCommonFace;
+		std::vector<eslocal> edata(20), tdist, tdata;
+		if (t == 0) {
+			tdist.push_back(0);
+		}
 
-				neigh = 0;
-				nCounter = 1;
-				dualDistribution[t].push_back(0);
-				while (neigh < (eslocal)neighElementIDs.size()) {
-					while (neigh + nCounter < (eslocal)neighElementIDs.size() && neighElementIDs[neigh] == neighElementIDs[neigh + nCounter]) {
-						nCounter++;
-					}
+		auto areNeighbors = [&] (eslocal e1, eslocal e2) {
+			return
+					body[e1] == body[e2] &&
+					(!separateMaterials || material[e1] == material[e2]) &&
+					(!separateRegions || memcmp(regions.data() + e1 * rsize, regions.data() + e2 * rsize, rsize) == 0) &&
+					(!separateEtype || epointer[e1]->type == epointer[e2]->type);
+		};
 
-					if (IDs[e] != neighElementIDs[neigh]) {
-						auto it = std::lower_bound(IDs.begin(), IDs.end(), neighElementIDs[neigh]);
-						if (it != IDs.end() && *it == neighElementIDs[neigh]) {
-							neighCommon = _mesh->elements->epointers->datatarray()[it - IDs.begin()]->nCommonFace;
-							if (
-									nCounter >= std::min(myCommon, neighCommon) &&
-									body[e] == body[it - IDs.begin()] &&
-									(!separateMaterials || material[e] == material[it - IDs.begin()]) &&
-									(!separateRegions || memcmp(regions.data() + e * rsize, regions.data() + (it - IDs.begin()) * rsize, rsize) == 0) &&
-									(!separateEtype || epointer[e]->type == epointer[it - IDs.begin()]->type)
-								) {
+		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++neighs) {
+			edata.assign(neighs->begin(), neighs->end());
+			std::sort(edata.begin(), edata.end());
 
-								++dualDistribution[t].back();
-								dualData[t].push_back(neighElementIDs[neigh] - IDBoundaries[environment->MPIrank]);
-							}
-						}
-					}
-					neigh += nCounter;
-					nCounter = 1;
-				}
-				if (dualDistribution[t].size() > 1) {
-					dualDistribution[t].back() += *(dualDistribution[t].end() - 2);
+			for (auto n = edata.begin(); n != edata.end(); ++n) {
+				if (eBegin <= *n && *n < eEnd && areNeighbors(e, *n - eBegin)) {
+					tdata.push_back(*n - eBegin);
 				}
 			}
+
+			tdist.push_back(tdata.size());
 		}
-	} else {
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			const auto &IDs = _mesh->elements->IDs->datatarray();
-			const auto &body = _mesh->elements->body->datatarray();
-			const auto &material = _mesh->elements->material->datatarray();
-			const auto &regions = _mesh->elements->regions->datatarray();
-			int rsize = _mesh->elements->regionMaskSize;
-			const auto &epointer = _mesh->elements->epointers->datatarray();
-			auto dual = _mesh->elements->dual->cbegin(t);
-
-			for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++dual) {
-				dualDistribution[t].push_back(0);
-				for (auto neigh = dual->begin(); neigh != dual->end(); ++neigh) {
-					auto it = std::lower_bound(IDs.begin(), IDs.end(), *neigh);
-					if (
-							it != IDs.end() && *it == *neigh &&
-							body[e] == body[it - IDs.begin()] &&
-							(!separateMaterials || material[e] == material[it - IDs.begin()]) &&
-							(!separateRegions || memcmp(regions.data() + e * rsize, regions.data() + (it - IDs.begin()) * rsize, rsize) == 0) &&
-							(!separateEtype || epointer[e]->type == epointer[it - IDs.begin()]->type)
-						) {
-
-						++dualDistribution[t].back();
-						dualData[t].push_back(*neigh - IDBoundaries[environment->MPIrank]);
-					}
-
-				}
-				if (dualDistribution[t].size() > 1) {
-					dualDistribution[t].back() += *(dualDistribution[t].end() - 2);
-				}
-			}
-		}
+		dualDistribution[t].swap(tdist);
+		dualData[t].swap(tdata);
 	}
 
 	Esutils::threadDistributionToFullDistribution(dualDistribution);

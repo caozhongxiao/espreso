@@ -21,6 +21,7 @@ ElementStore::ElementStore(std::vector<Element*> &eclasses)
   regions(NULL),
   epointers(NULL),
 
+  neighbors(NULL),
   dual(NULL),
   decomposedDual(NULL),
 
@@ -181,6 +182,7 @@ ElementStore::~ElementStore()
 	if (regions == NULL) { delete regions; }
 	if (epointers == NULL) { delete epointers; }
 
+	if (neighbors == NULL) { delete neighbors; }
 	if (dual == NULL) { delete dual; }
 	if (decomposedDual == NULL) { delete decomposedDual; }
 }
