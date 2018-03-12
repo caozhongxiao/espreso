@@ -1,12 +1,10 @@
 # ESPRESO Configuration File
 
 DEFAULT_ARGS {
-  0       HEXA8;
+  0        HEXA8;
 
   1           10;
   2           10;
-
-  10 TOTAL_FETI;
 }
 
 INPUT            GENERATOR;
@@ -127,7 +125,7 @@ HEAT_TRANSFER_3D {
       SOLVER         FETI;
 
       FETI {
-        METHOD             [ARG10];
+        METHOD          TOTAL_FETI;
         PRECONDITIONER   DIRICHLET;
         PRECISION            1E-08;
         ITERATIVE_SOLVER       PCG;
