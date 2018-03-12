@@ -19,6 +19,7 @@ protected:
 	void nodesIntervals(const std::string &name);
 	void externalIntervals(const std::string &name);
 	void sharedInterface(const std::string &name);
+	void surface(const std::string &name);
 	void domainSurface(const std::string &name);
 	void corners(const std::string &name);
 	void sFixPoints(const std::string &name);
@@ -39,6 +40,7 @@ struct VTKLegacyDebugInfo: public DistributedVTKLegacy {
 		nodesIntervals(_path + "nodeintervals");
 		externalIntervals(_path + "externalIntervals");
 		sharedInterface(_path + "sharedinterfaces");
+		surface(_path + "surface");
 		domainSurface(_path + "domainSurface");
 		corners(_path + "corners");
 		sFixPoints(_path + "sfixpoints");

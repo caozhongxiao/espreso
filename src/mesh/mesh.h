@@ -36,7 +36,7 @@ class Mesh {
 
 	friend class MeshPreprocessing;
 public:
-	Mesh(const ECFRoot &configuration, bool withGUI = true);
+	Mesh(const ECFRoot &configuration, bool withGUI = false);
 	void load();
 	void update();
 

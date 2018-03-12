@@ -352,6 +352,61 @@ void DistributedVTKLegacy::sharedInterface(const std::string &name)
 	os << "\n";
 }
 
+void DistributedVTKLegacy::surface(const std::string &name)
+{
+	if (_mesh.surface == NULL) {
+		return;
+	}
+
+	auto surface = [&] (const std::string &suffix, serializededata<eslocal, eslocal>* elements, serializededata<eslocal, Element*>* epointers) {
+		std::ofstream os(name + "." + suffix + std::to_string(environment->MPIrank) + ".vtk");
+
+		os << "# vtk DataFile Version 2.0\n";
+		os << "EXAMPLE\n";
+		os << "ASCII\n";
+		os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+		std::vector<eslocal> nodes(elements->datatarray().begin(), elements->datatarray().end());
+		Esutils::sortAndRemoveDuplicity(nodes);
+
+		os << "POINTS " << nodes.size() << " float\n";
+		for (eslocal n = 0; n < nodes.size(); ++n) {
+			const Point &p = _mesh.nodes->coordinates->datatarray()[nodes[n]];
+			os << p.x << " " << p.y << " " << p.z << "\n";
+		}
+		os << "\n";
+
+		os << "CELLS " << elements->structures() << " " << elements->structures() + elements->datatarray().size() << "\n";
+		for (auto element = elements->cbegin(); element != elements->cend(); ++element) {
+			os << element->size() << " ";
+			for (auto n = element->begin(); n != element->end(); ++n) {
+				os << std::lower_bound(nodes.begin(), nodes.end(), *n) - nodes.begin() << " ";
+			}
+			os << "\n";
+		}
+		os << "\n";
+
+		if (epointers == NULL) {
+			os << "CELL_TYPES " << elements->structures() << "\n";
+			for (size_t n = 0; n < elements->structures(); ++n) {
+				os << "5\n";
+			}
+			os << "\n";
+		} else {
+			os << "CELL_TYPES " << epointers->structures() << "\n";
+			for (size_t n = 0; n < epointers->structures(); ++n) {
+				os << VTKWritter::ecode(epointers->datatarray()[n]->code) << "\n";
+			}
+			os << "\n";
+		}
+	};
+
+	surface("elements", _mesh.surface->elements, _mesh.surface->epointers);
+	if (_mesh.surface->triangles != NULL) {
+		surface("triangles",  _mesh.surface->triangles, NULL);
+	}
+}
+
 void DistributedVTKLegacy::domainSurface(const std::string &name)
 {
 	if (_mesh.domainsSurface == NULL) {
