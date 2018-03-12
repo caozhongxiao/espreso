@@ -19,7 +19,7 @@ struct SurfaceStore {
 
 	serializededata<eslocal, Point>* coordinates;
 
-	std::vector<eslocal> tdistribution, edistribution, cdistribution;
+	std::vector<size_t> tdistribution, edistribution, cdistribution;
 
 	serializededata<eslocal, Element*>* epointers;
 	std::vector<eslocal> ecounters;

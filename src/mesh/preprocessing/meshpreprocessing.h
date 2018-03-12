@@ -50,6 +50,7 @@ public:
 	void computeCornerNodes();
 	void computeFixPoints();
 	void computeFixPointsOnSurface();
+	void computeBodiesSurface();
 	void computeDomainsSurface();
 	void triangularizeDomainSurface();
 

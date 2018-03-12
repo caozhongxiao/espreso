@@ -67,6 +67,7 @@ public:
 
 	ElementStore *halo;
 
+	SurfaceStore *surface;
 	SurfaceStore *domainsSurface;
 
 	MeshPreprocessing *preprocessing;

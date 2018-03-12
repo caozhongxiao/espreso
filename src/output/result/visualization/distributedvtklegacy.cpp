@@ -358,7 +358,7 @@ void DistributedVTKLegacy::domainSurface(const std::string &name)
 		return;
 	}
 
-	auto surface = [&] (const std::string &suffix, serializededata<eslocal, eslocal>* elements, std::vector<eslocal> &distribution) {
+	auto surface = [&] (const std::string &suffix, serializededata<eslocal, eslocal>* elements, std::vector<size_t> &distribution) {
 		std::ofstream os(name + "." + suffix + std::to_string(environment->MPIrank) + ".vtk");
 
 		os << "# vtk DataFile Version 2.0\n";

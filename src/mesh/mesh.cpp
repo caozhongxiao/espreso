@@ -40,7 +40,7 @@ Mesh::Mesh(const ECFRoot &configuration, bool withGUI)
 : elements(new ElementStore(_eclasses)), nodes(new NodeStore()),
   FETIData(NULL),
   halo(new ElementStore(_eclasses)),
-  domainsSurface(NULL),
+  surface(NULL), domainsSurface(NULL),
   preprocessing(new MeshPreprocessing(this)),
 
   configuration(configuration),
@@ -553,6 +553,8 @@ void Mesh::update()
 			preprocessing->computeRegionsIntersection(*parameter->metadata.regionMap);
 		}
 	});
+
+	preprocessing->computeBodiesSurface();
 
 	printStatistics();
 }

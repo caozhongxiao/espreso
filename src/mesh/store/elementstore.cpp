@@ -238,6 +238,7 @@ void ElementStore::permute(const std::vector<eslocal> &permutation, const std::v
 		}
 	}
 
+	if (neighbors != NULL) { neighbors->permute(permutation, distribution); }
 	if (dual != NULL) { dual->permute(permutation, distribution); }
 	if (decomposedDual != NULL) { decomposedDual->permute(permutation, distribution); }
 }
