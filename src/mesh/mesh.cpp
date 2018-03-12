@@ -455,6 +455,22 @@ void Mesh::update()
 		}
 	};
 
+	auto is3D = [&] () {
+		switch (configuration.physics) {
+		case PHYSICS::HEAT_TRANSFER_2D:
+			return false;
+		case PHYSICS::HEAT_TRANSFER_3D:
+			return true;
+		case PHYSICS::STRUCTURAL_MECHANICS_2D:
+			return false;
+		case PHYSICS::STRUCTURAL_MECHANICS_3D:
+			return true;
+		default:
+			ESINFO(GLOBAL_ERROR) << "Not implemented physics.";
+			exit(0);
+		}
+	};
+
 	auto forEachSteps = [&] (std::function<bool(const LoadStepConfiguration &)> fnc) {
 		bool ret = false;
 		switch (configuration.physics) {
@@ -495,7 +511,7 @@ void Mesh::update()
 				configuration.decomposition.separate_etypes);
 	}
 
-	if (hasBEM(getPhysics()) || _withGUI) {
+	if (is3D() && (hasBEM(getPhysics()) || _withGUI)) {
 		preprocessing->computeDomainsSurface();
 		preprocessing->triangularizeDomainSurface();
 	}
