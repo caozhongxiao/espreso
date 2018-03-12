@@ -34,6 +34,7 @@ public:
 	void linkNodesAndElements();
 	void exchangeHalo();
 
+	void computeElementsNeighbors();
 	void computeDual();
 	void computeDecomposedDual(bool separateMaterials, bool separateRegions, bool separateEtype);
 	void computeFullDual(const serializededata<eslocal, eslocal>* elements, eslocal begin, eslocal end, std::vector<eslocal> &dist, std::vector<eslocal> &data);

@@ -340,16 +340,12 @@ void MeshPreprocessing::exchangeHalo()
 }
 
 
-void MeshPreprocessing::computeDual()
+void MeshPreprocessing::computeElementsNeighbors()
 {
-	start("computation of the full dual graph");
+	start("computation of elements neighbors");
 
 	if (_mesh->nodes->elements == NULL) {
 		this->linkNodesAndElements();
-	}
-
-	if (_mesh->halo->IDs == NULL) {
-		this->exchangeHalo();
 	}
 
 	size_t threads = environment->OMP_NUM_THREADS;
@@ -357,52 +353,94 @@ void MeshPreprocessing::computeDual()
 	std::vector<std::vector<eslocal> > dualDistribution(threads);
 	std::vector<std::vector<eslocal> > dualData(threads);
 
-	dualDistribution.front().push_back(0);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		const auto &IDs = _mesh->elements->IDs->datatarray();
 		auto nodes = _mesh->elements->nodes->cbegin(t);
-		std::vector<eslocal> neighElementIDs;
-		int myCommon, neighCommon;
-		int neigh, nCounter;
+		const auto &epointers = _mesh->elements->epointers->datatarray();
+
+		std::vector<eslocal> ndist = { 0 }, ndata, fdata, tdist, tdata;
+		if (t == 0) {
+			tdist.push_back(0);
+		}
+		ndist.reserve(21); // hexa 20
+		ndata.reserve(300); // coarse estimation
+		fdata.reserve(100);
 
 		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++nodes) {
-			neighElementIDs.clear();
-			for (size_t n = 0; n < nodes->size(); ++n) {
-				auto elements = _mesh->nodes->elements->cbegin() + (*nodes)[n];
-				neighElementIDs.insert(neighElementIDs.end(), elements->begin(), elements->end());
+			ndist.resize(1);
+			ndata.clear();
+			for (auto n = nodes->begin(); n != nodes->end(); ++n) {
+				auto elements = _mesh->nodes->elements->cbegin() + *n;
+				ndist.push_back(ndist.back() + elements->size());
+				ndata.insert(ndata.end(), elements->begin(), elements->end());
 			}
-			std::sort(neighElementIDs.begin(), neighElementIDs.end());
-			myCommon = _mesh->elements->epointers->datatarray()[e]->nCommonFace;
 
-			neigh = 0;
-			nCounter = 1;
-			dualDistribution[t].push_back(0);
-			while (neigh < (int)neighElementIDs.size()) {
-				while (neigh + nCounter < (int)neighElementIDs.size() && neighElementIDs[neigh] == neighElementIDs[neigh + nCounter]) {
-					nCounter++;
+			for (auto face = epointers[e]->faces->begin(); face != epointers[e]->faces->end(); ++face) {
+				fdata.clear();
+				for (auto n = face->begin(); n != face->end(); ++n) {
+					fdata.insert(fdata.end(), ndata.data() + ndist[*n], ndata.data() + ndist[*n + 1]);
 				}
+				std::sort(fdata.begin(), fdata.end());
 
-				if (IDs[e] != neighElementIDs[neigh]) {
-					auto it = std::lower_bound(IDs.begin(), IDs.end(), neighElementIDs[neigh]);
-					if (it != IDs.end() && *it == neighElementIDs[neigh]) {
-						neighCommon = _mesh->elements->epointers->datatarray()[it - IDs.begin()]->nCommonFace;
-					} else {
-						auto it = std::lower_bound(_mesh->halo->IDs->datatarray().begin(), _mesh->halo->IDs->datatarray().end(), neighElementIDs[neigh]);
-						neighCommon = _mesh->halo->epointers->datatarray()[it - _mesh->halo->IDs->datatarray().begin()]->nCommonFace;
+				tdata.push_back(-1);
+				auto begin = fdata.begin(), end = begin;
+				while (begin != fdata.end()) {
+					while (end != fdata.end() && *end == *begin) { ++end; }
+					if (*begin != IDs[e] && end - begin == face->size()) {
+						tdata.back() = *begin;
+						break;
 					}
-					if (nCounter >= std::min(myCommon, neighCommon)) {
-						++dualDistribution[t].back();
-						dualData[t].push_back(neighElementIDs[neigh]);
-					}
+					begin = end;
 				}
-				neigh += nCounter;
-				nCounter = 1;
 			}
-			if (dualDistribution[t].size() > 1) {
-				dualDistribution[t].back() += *(dualDistribution[t].end() - 2);
-			}
+			tdist.push_back(tdata.size());
 		}
+
+		dualDistribution[t].swap(tdist);
+		dualData[t].swap(tdata);
+	}
+
+	Esutils::threadDistributionToFullDistribution(dualDistribution);
+
+	_mesh->elements->neighbors = new serializededata<eslocal, eslocal>(dualDistribution, dualData);
+
+	finish("computation of elements neighbors");
+}
+
+void MeshPreprocessing::computeDual()
+{
+	start("computation of the full dual graph");
+
+	if (_mesh->elements->neighbors == NULL) {
+		this->computeElementsNeighbors();
+	}
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	std::vector<std::vector<eslocal> > dualDistribution(threads);
+	std::vector<std::vector<eslocal> > dualData(threads);
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		auto neighs = _mesh->elements->neighbors->cbegin(t);
+
+		std::vector<eslocal> edata(20), tdist, tdata;
+		if (t == 0) {
+			tdist.push_back(0);
+		}
+
+		for (auto neighs = _mesh->elements->neighbors->cbegin(t); neighs != _mesh->elements->neighbors->cend(t); ++neighs) {
+			edata.assign(neighs->begin(), neighs->end());
+			std::sort(edata.begin(), edata.end());
+			auto begin = edata.begin();
+			while (*begin == -1) { ++begin; }
+			tdata.insert(tdata.end(), begin, edata.end());
+			tdist.push_back(tdata.size());
+		}
+
+		dualDistribution[t].swap(tdist);
+		dualData[t].swap(tdata);
 	}
 
 	Esutils::threadDistributionToFullDistribution(dualDistribution);
