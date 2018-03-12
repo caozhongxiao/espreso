@@ -166,7 +166,7 @@ void Physics::updateMatrix(Matrices matrix)
 	ESINFO(PROGRESS3);
 
 	size_t invalid;
-	int my = _invalidElements, all;
+	int my = _invalidElements, all = 0;
 	MPI_Reduce(&my, &all, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
 	if (all) {
 		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW << "ESPRESO internal error: " << all << " invalid (dej <= 0) elements founded.";
