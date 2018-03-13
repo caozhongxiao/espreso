@@ -369,12 +369,12 @@ void MeshPreprocessing::arrangeNodes()
 		Point center, min = coordinates[_mesh->nodes->pintervals[i].begin], max = coordinates[_mesh->nodes->pintervals[i].begin];
 		for (eslocal n = _mesh->nodes->pintervals[i].begin; n < _mesh->nodes->pintervals[i].end; ++n) {
 			center += coordinates[n];
-			std::min(min.x, coordinates[n].x);
-			std::min(min.y, coordinates[n].y);
-			std::min(min.z, coordinates[n].z);
-			std::max(max.x, coordinates[n].x);
-			std::max(max.y, coordinates[n].y);
-			std::max(max.z, coordinates[n].z);
+			min.x = std::min(min.x, coordinates[n].x);
+			min.y = std::min(min.y, coordinates[n].y);
+			min.z = std::min(min.z, coordinates[n].z);
+			max.x = std::max(max.x, coordinates[n].x);
+			max.y = std::max(max.y, coordinates[n].y);
+			max.z = std::max(max.z, coordinates[n].z);
 		}
 		centers[i] = center;
 		mins[i] = min;
