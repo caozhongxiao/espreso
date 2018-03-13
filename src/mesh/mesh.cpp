@@ -6,6 +6,8 @@
 #include "store/nodestore.h"
 #include "store/elementsregionstore.h"
 #include "store/boundaryregionstore.h"
+#include "store/surfacestore.h"
+#include "store/contactstore.h"
 
 #include "preprocessing/meshpreprocessing.h"
 
@@ -41,6 +43,7 @@ Mesh::Mesh(const ECFRoot &configuration, bool withGUI)
   FETIData(NULL),
   halo(new ElementStore(_eclasses)),
   surface(NULL), domainsSurface(NULL),
+  contacts(NULL),
   preprocessing(new MeshPreprocessing(this)),
 
   configuration(configuration),
@@ -571,6 +574,9 @@ void Mesh::update()
 	});
 
 	preprocessing->computeBodiesSurface();
+	contacts = new ContactStore(surface);
+	preprocessing->computeSurfaceLocations();
+	preprocessing->searchContactInterfaces();
 
 	printStatistics();
 }

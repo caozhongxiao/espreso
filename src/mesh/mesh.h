@@ -26,6 +26,7 @@ struct ElementsRegionsIntersectionStore;
 struct BoundaryRegionsIntersectionStore;
 struct FETIDataStore;
 struct SurfaceStore;
+struct ContactStore;
 
 class MeshPreprocessing;
 class Element;
@@ -69,6 +70,8 @@ public:
 
 	SurfaceStore *surface;
 	SurfaceStore *domainsSurface;
+
+	ContactStore *contacts;
 
 	MeshPreprocessing *preprocessing;
 
