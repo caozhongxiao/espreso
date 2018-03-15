@@ -551,6 +551,11 @@ void DistributedVTKLegacy::contact(const std::string &name)
 		return;
 	}
 
+	double boxsize = _mesh.contacts->eps * _mesh.contacts->groupsize;
+	size_t xsize = std::ceil((_mesh.contacts->boundingBox[1].x - _mesh.contacts->boundingBox[0].x) / boxsize);
+	size_t ysize = std::ceil((_mesh.contacts->boundingBox[1].y - _mesh.contacts->boundingBox[0].y) / boxsize);
+	size_t zsize = std::ceil((_mesh.contacts->boundingBox[1].z - _mesh.contacts->boundingBox[0].z) / boxsize);
+
 	{ // BOUNDING BOX
 		std::ofstream osbb(name + std::to_string(environment->MPIrank) + ".boundingbox.vtk");
 
@@ -591,17 +596,13 @@ void DistributedVTKLegacy::contact(const std::string &name)
 
 		Point pmin = _mesh.contacts->boundingBox[0], pmax = _mesh.contacts->boundingBox[1];
 
-		size_t points = 4 *
-				((_mesh.contacts->xend - _mesh.contacts->xbegin - 1) +
-				(_mesh.contacts->yend - _mesh.contacts->ybegin - 1) +
-				(_mesh.contacts->zend - _mesh.contacts->zbegin - 1));
-
+		size_t points = 4 * (xsize - 1) * (ysize - 1) * (zsize - 1);
 		osb << "POINTS " << points << " float\n";
 
 		pmin = _mesh.contacts->boundingBox[0];
 		pmax = _mesh.contacts->boundingBox[1];
-		for (size_t x = _mesh.contacts->xbegin + 1; x < _mesh.contacts->xend; ++x) {
-			pmin.x = _mesh.contacts->globalBox[0].x + x * _mesh.contacts->eps * _mesh.contacts->groupsize;
+		for (size_t x = 1; x < xsize; ++x) {
+			pmin.x = _mesh.contacts->boundingBox[0].x + x * boxsize;
 			osb << pmin.x << " " << pmin.y << " " << pmin.z << "\n";
 			osb << pmin.x << " " << pmax.y << " " << pmin.z << "\n";
 			osb << pmin.x << " " << pmin.y << " " << pmax.z << "\n";
@@ -609,8 +610,8 @@ void DistributedVTKLegacy::contact(const std::string &name)
 		}
 		pmin = _mesh.contacts->boundingBox[0];
 		pmax = _mesh.contacts->boundingBox[1];
-		for (size_t y = _mesh.contacts->ybegin + 1; y < _mesh.contacts->yend; ++y) {
-			pmin.y = _mesh.contacts->globalBox[0].y + y * _mesh.contacts->eps * _mesh.contacts->groupsize;
+		for (size_t y = 1; y < ysize; ++y) {
+			pmin.y = _mesh.contacts->boundingBox[0].y + y * boxsize;
 			osb << pmin.x << " " << pmin.y << " " << pmin.z << "\n";
 			osb << pmax.x << " " << pmin.y << " " << pmin.z << "\n";
 			osb << pmin.x << " " << pmin.y << " " << pmax.z << "\n";
@@ -618,8 +619,8 @@ void DistributedVTKLegacy::contact(const std::string &name)
 		}
 		pmin = _mesh.contacts->boundingBox[0];
 		pmax = _mesh.contacts->boundingBox[1];
-		for (size_t z = _mesh.contacts->zbegin + 1; z < _mesh.contacts->zend; ++z) {
-			pmin.z = _mesh.contacts->globalBox[0].z + z * _mesh.contacts->eps * _mesh.contacts->groupsize;
+		for (size_t z = 1; z < zsize; ++z) {
+			pmin.z = _mesh.contacts->boundingBox[0].z + z * boxsize;
 			osb << pmin.x << " " << pmin.y << " " << pmin.z << "\n";
 			osb << pmax.x << " " << pmin.y << " " << pmin.z << "\n";
 			osb << pmin.x << " " << pmax.y << " " << pmin.z << "\n";
@@ -629,26 +630,26 @@ void DistributedVTKLegacy::contact(const std::string &name)
 
 		osb << "CELLS " << points / 4 << " " << points / 4 + points << " \n";
 		size_t plane = 0;
-		for (size_t x = _mesh.contacts->xbegin + 1; x < _mesh.contacts->xend; ++x, ++plane) {
+		for (size_t x = 1; x < xsize; ++x, ++plane) {
 			osb << "4 " << 4 * plane + 0 << " " << 4 * plane + 1 << " " << 4 * plane + 3 << " " << 4 * plane + 2 << "\n";
 		}
-		for (size_t y = _mesh.contacts->ybegin + 1; y < _mesh.contacts->yend; ++y, ++plane) {
+		for (size_t y = 1; y < ysize; ++y, ++plane) {
 			osb << "4 " << 4 * plane + 0 << " " << 4 * plane + 1 << " " << 4 * plane + 3 << " " << 4 * plane + 2 << "\n";
 		}
-		for (size_t z = _mesh.contacts->zbegin + 1; z < _mesh.contacts->zend; ++z, ++plane) {
+		for (size_t z = 1; z < zsize; ++z, ++plane) {
 			osb << "4 " << 4 * plane + 0 << " " << 4 * plane + 1 << " " << 4 * plane + 3 << " " << 4 * plane + 2 << "\n";
 		}
 		osb << "\n";
 
 		osb << "CELL_TYPES " << points / 4 << "\n";
 		Element::CODE code = Element::CODE::SQUARE4;
-		for (size_t x = _mesh.contacts->xbegin + 1; x < _mesh.contacts->xend; ++x) {
+		for (size_t x = 1; x < xsize; ++x) {
 			osb << VTKWritter::ecode(code) << "\n";
 		}
-		for (size_t y = _mesh.contacts->ybegin + 1; y < _mesh.contacts->yend; ++y) {
+		for (size_t y = 1; y < ysize; ++y) {
 			osb << VTKWritter::ecode(code) << "\n";
 		}
-		for (size_t z = _mesh.contacts->zbegin + 1; z < _mesh.contacts->zend; ++z) {
+		for (size_t z = 1; z < zsize; ++z) {
 			osb << VTKWritter::ecode(code) << "\n";
 		}
 		osb << "\n";
@@ -656,12 +657,6 @@ void DistributedVTKLegacy::contact(const std::string &name)
 	}
 
 	{ // FILLED
-		double boxsize = _mesh.contacts->eps * _mesh.contacts->groupsize;
-
-		size_t xsize = _mesh.contacts->xend - _mesh.contacts->xbegin;
-		size_t ysize = _mesh.contacts->yend - _mesh.contacts->ybegin;
-		size_t zsize = _mesh.contacts->zend - _mesh.contacts->zbegin;
-
 		size_t points = 8 * _mesh.contacts->filledCells.size();
 		Point begin, end;
 
@@ -674,10 +669,10 @@ void DistributedVTKLegacy::contact(const std::string &name)
 
 		os << "POINTS " << points << " float\n";
 		for (size_t i = 0; i < _mesh.contacts->filledCells.size(); ++i) {
-			begin = _mesh.contacts->globalBox[0];
-			begin.x += boxsize * (_mesh.contacts->xbegin + _mesh.contacts->filledCells[i] % xsize);
-			begin.y += boxsize * (_mesh.contacts->ybegin + _mesh.contacts->filledCells[i] % (xsize * ysize) / xsize);
-			begin.z += boxsize * (_mesh.contacts->zbegin + _mesh.contacts->filledCells[i] / (xsize * ysize));
+			begin = _mesh.contacts->boundingBox[0];
+			begin.x += boxsize * (_mesh.contacts->filledCells[i] % xsize);
+			begin.y += boxsize * (_mesh.contacts->filledCells[i] % (xsize * ysize) / xsize);
+			begin.z += boxsize * (_mesh.contacts->filledCells[i] / (xsize * ysize));
 			end.x = begin.x + boxsize;
 			end.y = begin.y + boxsize;
 			end.z = begin.z + boxsize;
@@ -763,6 +758,81 @@ void DistributedVTKLegacy::contact(const std::string &name)
 
 		os.close();
 	}
+}
 
+void DistributedVTKLegacy::closeElements(const std::string &name)
+{
+	if (_mesh.contacts->closeElements == NULL) {
+		return;
+	}
+
+	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+
+	os << "# vtk DataFile Version 2.0\n";
+	os << "EXAMPLE\n";
+	os << "ASCII\n";
+	os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+	size_t points = _mesh.contacts->elements->structures() + _mesh.contacts->closeElements->datatarray().size();;
+
+	os << "POINTS " << points << " float\n";
+	auto closest = _mesh.contacts->closeElements->cbegin();
+	for (auto e = _mesh.contacts->elements->cbegin(); e != _mesh.contacts->elements->cend(); ++e, ++closest) {
+		Point center;
+		for (auto n = e->begin(); n != e->end(); ++n) {
+			center += *n;
+		}
+		center /= e->size();
+		os << center.x << " " << center.y << " " << center.z << "\n";
+
+		for (auto ne = closest->begin(); ne != closest->end(); ++ne) {
+			auto ce = _mesh.contacts->elements->cbegin() + *ne;
+
+			Point ncenter;
+			for (auto n = ce->begin(); n != ce->end(); ++n) {
+				ncenter += *n;
+			}
+			ncenter /= ce->size();
+
+			ncenter = center + (ncenter - center) / 2;
+			os << ncenter.x << " " << ncenter.y << " " << ncenter.z << "\n";
+		}
+	}
+	os << "\n";
+
+	size_t cells = _mesh.contacts->closeElements->datatarray().size();
+
+	os << "CELLS " << cells << " " << 3 * cells << "\n";
+	size_t eindex = 0, noffset;
+	for (auto e = _mesh.contacts->closeElements->cbegin(); e != _mesh.contacts->closeElements->cend(); ++e) {
+		noffset = 1;
+		for (auto n = e->begin(); n != e->end(); ++n, ++noffset) {
+			os << "2 " << eindex << " " << eindex + noffset << "\n";
+		}
+		eindex += noffset;
+	}
+	os << "\n";
+
+	os << "CELL_TYPES " << cells << "\n";
+	Element::CODE ecode = Element::CODE::LINE2;
+	for (size_t n = 0; n < cells; ++n) {
+		os << VTKWritter::ecode(ecode) << "\n";
+	}
+	os << "\n";
+
+	os << "CELL_DATA " << cells << "\n";
+	os << "SCALARS value int 1\n";
+	os << "LOOKUP_TABLE default\n";
+	eindex = 0;
+	for (auto e = _mesh.contacts->closeElements->cbegin(); e != _mesh.contacts->closeElements->cend(); ++e, ++eindex) {
+		for (auto n = e->begin(); n != e->end(); ++n) {
+			if (*n < eindex) {
+				os << "1\n";
+			} else {
+				os << "-1\n";
+			}
+		}
+	}
+	os << "\n";
 }
 

@@ -31,6 +31,9 @@ struct Esutils
 	static void threadDistributionToFullDistribution(std::vector<std::vector<Ttype> > &distribution);
 
 	template<typename Ttype>
+	static void threadDistributionToFullDistribution(std::vector<Ttype> &data, const std::vector<size_t> &distribution);
+
+	template<typename Ttype>
 	static void removeDuplicity(std::vector<Ttype> &data, size_t begin = 0);
 
 	template<typename Ttype>
@@ -47,9 +50,6 @@ struct Esutils
 
 	template<typename Ttype>
 	static void sortWithInplaceMerge(std::vector<Ttype> &data, const std::vector<size_t> &distribution);
-
-	template<typename Ttype>
-	static void sortAndMergedUniqueData(std::vector<std::vector<Ttype> > &data);
 
 	template<typename Ttype>
 	static void mergeAppendedData(std::vector<Ttype> &data, const std::vector<size_t> &distribution);
