@@ -24,6 +24,7 @@ protected:
 	void corners(const std::string &name);
 	void sFixPoints(const std::string &name);
 	void iFixPoints(const std::string &name);
+	void contact(const std::string &name);
 
 	void points(const std::string &name, const std::vector<eslocal> &points, const std::vector<eslocal> &distribution);
 
@@ -45,6 +46,7 @@ struct VTKLegacyDebugInfo: public DistributedVTKLegacy {
 		corners(_path + "corners");
 		sFixPoints(_path + "sfixpoints");
 		iFixPoints(_path + "ifixpoints");
+		contact(_path + "contact");
 	}
 	void updateSolution(const Step &step)
 	{

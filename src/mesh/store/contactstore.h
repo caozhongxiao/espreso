@@ -18,13 +18,16 @@ struct ContactStore {
 	size_t groupsize;
 
 	SurfaceStore *surface;
+	serializededata<eslocal, Point>* elements;
 
-	Point boundingBox[2];
+	Point boundingBox[2], globalBox[2];
 	size_t xsize, ysize, zsize;
 	size_t xbegin, xend, ybegin, yend, zbegin, zend;
 
 	std::vector<eslocal> filledCells;
 	serializededata<eslocal, eslocal>* grid;
+
+	std::vector<int> neighbors;
 
 	ContactStore(SurfaceStore *surface);
 	~ContactStore();

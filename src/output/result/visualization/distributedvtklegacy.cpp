@@ -15,9 +15,11 @@
 #include "../../../mesh/store/elementstore.h"
 #include "../../../mesh/store/fetidatastore.h"
 #include "../../../mesh/store/surfacestore.h"
+#include "../../../mesh/store/contactstore.h"
 
 #include <fstream>
 #include <algorithm>
+#include <numeric>
 
 using namespace espreso;
 
@@ -541,5 +543,226 @@ void DistributedVTKLegacy::iFixPoints(const std::string &name)
 		return;
 	}
 	points(name, _mesh.FETIData->innerFixPoints, _mesh.FETIData->iFixPointsDistribution);
+}
+
+void DistributedVTKLegacy::contact(const std::string &name)
+{
+	if (_mesh.contacts == NULL) {
+		return;
+	}
+
+	{ // BOUNDING BOX
+		std::ofstream osbb(name + std::to_string(environment->MPIrank) + ".boundingbox.vtk");
+
+		osbb << "# vtk DataFile Version 2.0\n";
+		osbb << "EXAMPLE\n";
+		osbb << "ASCII\n";
+		osbb << "DATASET UNSTRUCTURED_GRID\n\n";
+
+		osbb << "POINTS 8 float\n";
+		osbb << _mesh.contacts->boundingBox[0].x << " " << _mesh.contacts->boundingBox[0].y << " " << _mesh.contacts->boundingBox[0].z << "\n";
+		osbb << _mesh.contacts->boundingBox[1].x << " " << _mesh.contacts->boundingBox[0].y << " " << _mesh.contacts->boundingBox[0].z << "\n";
+		osbb << _mesh.contacts->boundingBox[0].x << " " << _mesh.contacts->boundingBox[1].y << " " << _mesh.contacts->boundingBox[0].z << "\n";
+		osbb << _mesh.contacts->boundingBox[1].x << " " << _mesh.contacts->boundingBox[1].y << " " << _mesh.contacts->boundingBox[0].z << "\n";
+		osbb << _mesh.contacts->boundingBox[0].x << " " << _mesh.contacts->boundingBox[0].y << " " << _mesh.contacts->boundingBox[1].z << "\n";
+		osbb << _mesh.contacts->boundingBox[1].x << " " << _mesh.contacts->boundingBox[0].y << " " << _mesh.contacts->boundingBox[1].z << "\n";
+		osbb << _mesh.contacts->boundingBox[0].x << " " << _mesh.contacts->boundingBox[1].y << " " << _mesh.contacts->boundingBox[1].z << "\n";
+		osbb << _mesh.contacts->boundingBox[1].x << " " << _mesh.contacts->boundingBox[1].y << " " << _mesh.contacts->boundingBox[1].z << "\n";
+		osbb << "\n";
+
+		osbb << "CELLS 1 9 \n";
+		osbb << "8 0 1 3 2 4 5 7 6\n";
+		osbb << "\n";
+
+		osbb << "CELL_TYPES 1\n";
+		Element::CODE code = Element::CODE::HEXA8;
+		osbb << VTKWritter::ecode(code) << "\n";
+		osbb << "\n";
+		osbb.close();
+	}
+
+	{ // BOXS
+		std::ofstream osb(name + std::to_string(environment->MPIrank) + ".boxs.vtk");
+
+		osb << "# vtk DataFile Version 2.0\n";
+		osb << "EXAMPLE\n";
+		osb << "ASCII\n";
+		osb << "DATASET UNSTRUCTURED_GRID\n\n";
+
+		Point pmin = _mesh.contacts->boundingBox[0], pmax = _mesh.contacts->boundingBox[1];
+
+		size_t points = 4 *
+				((_mesh.contacts->xend - _mesh.contacts->xbegin - 1) +
+				(_mesh.contacts->yend - _mesh.contacts->ybegin - 1) +
+				(_mesh.contacts->zend - _mesh.contacts->zbegin - 1));
+
+		osb << "POINTS " << points << " float\n";
+
+		pmin = _mesh.contacts->boundingBox[0];
+		pmax = _mesh.contacts->boundingBox[1];
+		for (size_t x = _mesh.contacts->xbegin + 1; x < _mesh.contacts->xend; ++x) {
+			pmin.x = _mesh.contacts->globalBox[0].x + x * _mesh.contacts->eps * _mesh.contacts->groupsize;
+			osb << pmin.x << " " << pmin.y << " " << pmin.z << "\n";
+			osb << pmin.x << " " << pmax.y << " " << pmin.z << "\n";
+			osb << pmin.x << " " << pmin.y << " " << pmax.z << "\n";
+			osb << pmin.x << " " << pmax.y << " " << pmax.z << "\n";
+		}
+		pmin = _mesh.contacts->boundingBox[0];
+		pmax = _mesh.contacts->boundingBox[1];
+		for (size_t y = _mesh.contacts->ybegin + 1; y < _mesh.contacts->yend; ++y) {
+			pmin.y = _mesh.contacts->globalBox[0].y + y * _mesh.contacts->eps * _mesh.contacts->groupsize;
+			osb << pmin.x << " " << pmin.y << " " << pmin.z << "\n";
+			osb << pmax.x << " " << pmin.y << " " << pmin.z << "\n";
+			osb << pmin.x << " " << pmin.y << " " << pmax.z << "\n";
+			osb << pmax.x << " " << pmin.y << " " << pmax.z << "\n";
+		}
+		pmin = _mesh.contacts->boundingBox[0];
+		pmax = _mesh.contacts->boundingBox[1];
+		for (size_t z = _mesh.contacts->zbegin + 1; z < _mesh.contacts->zend; ++z) {
+			pmin.z = _mesh.contacts->globalBox[0].z + z * _mesh.contacts->eps * _mesh.contacts->groupsize;
+			osb << pmin.x << " " << pmin.y << " " << pmin.z << "\n";
+			osb << pmax.x << " " << pmin.y << " " << pmin.z << "\n";
+			osb << pmin.x << " " << pmax.y << " " << pmin.z << "\n";
+			osb << pmax.x << " " << pmax.y << " " << pmin.z << "\n";
+		}
+		osb << "\n";
+
+		osb << "CELLS " << points / 4 << " " << points / 4 + points << " \n";
+		size_t plane = 0;
+		for (size_t x = _mesh.contacts->xbegin + 1; x < _mesh.contacts->xend; ++x, ++plane) {
+			osb << "4 " << 4 * plane + 0 << " " << 4 * plane + 1 << " " << 4 * plane + 3 << " " << 4 * plane + 2 << "\n";
+		}
+		for (size_t y = _mesh.contacts->ybegin + 1; y < _mesh.contacts->yend; ++y, ++plane) {
+			osb << "4 " << 4 * plane + 0 << " " << 4 * plane + 1 << " " << 4 * plane + 3 << " " << 4 * plane + 2 << "\n";
+		}
+		for (size_t z = _mesh.contacts->zbegin + 1; z < _mesh.contacts->zend; ++z, ++plane) {
+			osb << "4 " << 4 * plane + 0 << " " << 4 * plane + 1 << " " << 4 * plane + 3 << " " << 4 * plane + 2 << "\n";
+		}
+		osb << "\n";
+
+		osb << "CELL_TYPES " << points / 4 << "\n";
+		Element::CODE code = Element::CODE::SQUARE4;
+		for (size_t x = _mesh.contacts->xbegin + 1; x < _mesh.contacts->xend; ++x) {
+			osb << VTKWritter::ecode(code) << "\n";
+		}
+		for (size_t y = _mesh.contacts->ybegin + 1; y < _mesh.contacts->yend; ++y) {
+			osb << VTKWritter::ecode(code) << "\n";
+		}
+		for (size_t z = _mesh.contacts->zbegin + 1; z < _mesh.contacts->zend; ++z) {
+			osb << VTKWritter::ecode(code) << "\n";
+		}
+		osb << "\n";
+		osb.close();
+	}
+
+	{ // FILLED
+		double boxsize = _mesh.contacts->eps * _mesh.contacts->groupsize;
+
+		size_t xsize = _mesh.contacts->xend - _mesh.contacts->xbegin;
+		size_t ysize = _mesh.contacts->yend - _mesh.contacts->ybegin;
+		size_t zsize = _mesh.contacts->zend - _mesh.contacts->zbegin;
+
+		size_t points = 8 * _mesh.contacts->filledCells.size();
+		Point begin, end;
+
+		std::ofstream os(name + std::to_string(environment->MPIrank) + ".filled.vtk");
+
+		os << "# vtk DataFile Version 2.0\n";
+		os << "EXAMPLE\n";
+		os << "ASCII\n";
+		os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+		os << "POINTS " << points << " float\n";
+		for (size_t i = 0; i < _mesh.contacts->filledCells.size(); ++i) {
+			begin = _mesh.contacts->globalBox[0];
+			begin.x += boxsize * (_mesh.contacts->xbegin + _mesh.contacts->filledCells[i] % xsize);
+			begin.y += boxsize * (_mesh.contacts->ybegin + _mesh.contacts->filledCells[i] % (xsize * ysize) / xsize);
+			begin.z += boxsize * (_mesh.contacts->zbegin + _mesh.contacts->filledCells[i] / (xsize * ysize));
+			end.x = begin.x + boxsize;
+			end.y = begin.y + boxsize;
+			end.z = begin.z + boxsize;
+
+			os << begin.x << " " << begin.y << " " << begin.z << "\n";
+			os << end.x << " " << begin.y << " " << begin.z << "\n";
+			os << begin.x << " " << end.y << " " << begin.z << "\n";
+			os << end.x << " " << end.y << " " << begin.z << "\n";
+			os << begin.x << " " << begin.y << " " << end.z << "\n";
+			os << end.x << " " << begin.y << " " << end.z << "\n";
+			os << begin.x << " " << end.y << " " << end.z << "\n";
+			os << end.x << " " << end.y << " " << end.z << "\n";
+		}
+
+		os << "CELLS " << points / 8 << " " << points / 8 + points << "\n";
+		for (size_t i = 0; i < _mesh.contacts->filledCells.size(); ++i) {
+			os << "8 "
+					<< 8 * i + 0 << " "
+					<< 8 * i + 1 << " "
+					<< 8 * i + 3 << " "
+					<< 8 * i + 2 << " "
+					<< 8 * i + 4 << " "
+					<< 8 * i + 5 << " "
+					<< 8 * i + 7 << " "
+					<< 8 * i + 6 << "\n";
+		}
+		os << "\n";
+
+		os << "CELL_TYPES " << points / 8 << "\n";
+		Element::CODE code = Element::CODE::HEXA8;
+		for (size_t i = 0; i < _mesh.contacts->filledCells.size(); ++i) {
+			os << VTKWritter::ecode(code) << "\n";
+		}
+		os << "\n";
+
+		os << "CELL_DATA " << points / 8 << "\n";
+		os << "SCALARS faces int 1\n";
+		os << "LOOKUP_TABLE default\n";
+		for (auto cell = _mesh.contacts->grid->cbegin(); cell != _mesh.contacts->grid->cend(); ++cell) {
+			os << cell->size() << "\n";
+		}
+		os << "\n";
+
+		os.close();
+	}
+
+	{ // NEIGHBORS
+		Point center(
+				(_mesh.contacts->boundingBox[0].x + _mesh.contacts->boundingBox[1].x) / 2,
+				(_mesh.contacts->boundingBox[0].y + _mesh.contacts->boundingBox[1].y) / 2,
+				(_mesh.contacts->boundingBox[0].z + _mesh.contacts->boundingBox[1].z) / 2);
+
+		std::vector<Point> centers(environment->MPIsize);
+		MPI_Allgather(&center, 3, MPI_DOUBLE, centers.data(), 3, MPI_DOUBLE, environment->MPICommunicator);
+
+		std::ofstream os(name + std::to_string(environment->MPIrank) + ".neighbors.vtk");
+
+		os << "# vtk DataFile Version 2.0\n";
+		os << "EXAMPLE\n";
+		os << "ASCII\n";
+		os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+		os << "POINTS " << _mesh.contacts->neighbors.size() + 1 << " float\n";
+		os << center.x << " " << center.y << " " << center.z << "\n";
+		for (size_t i = 0; i < _mesh.contacts->neighbors.size(); ++i) {
+			Point &p = centers[_mesh.contacts->neighbors[i]];
+			os << p.x << " " << p.y << " " << p.z << "\n";
+		}
+		os << "\n";
+
+		os << "CELLS " << _mesh.contacts->neighbors.size() << " " << 3 * _mesh.contacts->neighbors.size() << "\n";
+		for (size_t i = 0; i < _mesh.contacts->neighbors.size(); ++i) {
+			os << "2 0 " << i + 1 << "\n";
+		}
+		os << "\n";
+
+		os << "CELL_TYPES " << _mesh.contacts->neighbors.size() << "\n";
+		Element::CODE code = Element::CODE::LINE2;
+		for (size_t i = 0; i < _mesh.contacts->neighbors.size(); ++i) {
+			os << VTKWritter::ecode(code) << "\n";
+		}
+		os << "\n";
+
+		os.close();
+	}
+
 }
 
