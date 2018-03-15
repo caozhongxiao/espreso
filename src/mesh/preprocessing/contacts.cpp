@@ -355,9 +355,9 @@ void MeshPreprocessing::computeSurfaceLocations()
 
 void MeshPreprocessing::searchContactInterfaces()
 {
-	return;
 	start("search contact interfaces");
 
+	size_t threads = environment->OMP_NUM_THREADS;
 	double epsilon = 1e-6;
 
 	auto areIntersected = [&] (Point *block1, Point *block2) {
@@ -380,11 +380,11 @@ void MeshPreprocessing::searchContactInterfaces()
 	TimeEval eval("CONTACT");
 	eval.totalTime.startWithBarrier();
 
-	TimeEvent event3("---");
+	TimeEvent event3("exchange filled request");
 	event3.start();
 
 	std::vector<Point> boxes(2 * environment->MPIsize);
-	std::vector<Point> intersections;
+
 	MPI_Allgather(_mesh->contacts->boundingBox, 6, MPI_DOUBLE, boxes.data(), 6, MPI_DOUBLE, environment->MPICommunicator);
 
 	for (int r = 0; r < environment->MPIsize; r++) {
@@ -395,20 +395,38 @@ void MeshPreprocessing::searchContactInterfaces()
 		}
 	}
 
-	std::vector<std::vector<size_t> > sGroupSize(_mesh->contacts->neighbors.size(), { _mesh->contacts->groupsize }), rGroupSize(_mesh->contacts->neighbors.size());
-	std::vector<std::vector<eslocal> > sFilled(_mesh->contacts->neighbors.size()), rFilled(_mesh->contacts->neighbors.size());
-	std::vector<std::vector<eslocal> > sDist(_mesh->contacts->neighbors.size()), rDist(_mesh->contacts->neighbors.size());
-	std::vector<std::vector<eslocal> > sData(_mesh->contacts->neighbors.size()), rData(_mesh->contacts->neighbors.size());
 
-	intersections.resize(2 * _mesh->contacts->neighbors.size());
+	// EXCHANGE GROUP SIZES
+	std::vector<std::vector<size_t> > sGroupSize(_mesh->contacts->neighbors.size(), { _mesh->contacts->groupsize }), rGroupSize(_mesh->contacts->neighbors.size(), { 0 });
+	if (!Communication::exchangeKnownSize(sGroupSize, rGroupSize, _mesh->contacts->neighbors)) {
+		ESINFO(ERROR) << "ESPRESO internal error: exchange group size.";
+	}
+
 	double boxsize = _mesh->contacts->eps * _mesh->contacts->groupsize;
 	size_t xsize = _mesh->contacts->xend - _mesh->contacts->xbegin;
 	size_t ysize = _mesh->contacts->yend - _mesh->contacts->ybegin;
 	size_t zsize = _mesh->contacts->zend - _mesh->contacts->zbegin;
 
+	// CREATE FILLED REQUEST
+	std::vector<Point> intersections(2 * _mesh->contacts->neighbors.size());
+	std::vector<int> nsize(6 * _mesh->contacts->neighbors.size());
+
+	std::vector<std::vector<eslocal> > sFilled(_mesh->contacts->neighbors.size()), rFilled(_mesh->contacts->neighbors.size());
+
 	#pragma omp parallel for
 	for (size_t n = 0; n < _mesh->contacts->neighbors.size(); n++) {
+		std::vector<eslocal> tfilled;
 		intersect(intersections.data() + 2 * n, _mesh->contacts->boundingBox, boxes.data() + 2 * _mesh->contacts->neighbors[n]);
+		double nboxsize = _mesh->contacts->eps * rGroupSize[n].front();
+		// xmin, xmax
+		nsize[6 * n + 0] = std::floor((boxes[2 * _mesh->contacts->neighbors[n]].x - _mesh->contacts->globalBox[0].x) / nboxsize);
+		nsize[6 * n + 1] = std::ceil((boxes[2 * _mesh->contacts->neighbors[n] + 1].x - _mesh->contacts->globalBox[0].x) / nboxsize);
+		// ymin, ymax
+		nsize[6 * n + 2] = std::floor((boxes[2 * _mesh->contacts->neighbors[n]].y - _mesh->contacts->globalBox[0].y) / nboxsize);
+		nsize[6 * n + 3] = std::ceil((boxes[2 * _mesh->contacts->neighbors[n] + 1].y - _mesh->contacts->globalBox[0].y) / nboxsize);
+		// zmin, zmax
+		nsize[6 * n + 4] = std::floor((boxes[2 * _mesh->contacts->neighbors[n]].z - _mesh->contacts->globalBox[0].z) / nboxsize);
+		nsize[6 * n + 5] = std::ceil((boxes[2 * _mesh->contacts->neighbors[n] + 1].z - _mesh->contacts->globalBox[0].z) / nboxsize);
 
 		int xmin = std::floor((intersections[2 * n].x - _mesh->contacts->boundingBox[0].x - epsilon) / boxsize);
 		int xmax = std::ceil((intersections[2 * n + 1].x - _mesh->contacts->boundingBox[0].x + epsilon) / boxsize);
@@ -417,56 +435,128 @@ void MeshPreprocessing::searchContactInterfaces()
 		int zmin = std::floor((intersections[2 * n].z - _mesh->contacts->boundingBox[0].z - epsilon) / boxsize);
 		int zmax = std::ceil((intersections[2 * n + 1].z - _mesh->contacts->boundingBox[0].z + epsilon) / boxsize);
 
-		sDist[n].push_back(0);
-		auto filled = _mesh->contacts->filledCells.begin();
-		eslocal position;
-		auto cell = _mesh->contacts->grid->cbegin();
+		int nxmin, nxmax, nymin, nymax, nzmin, nzmax;
+		eslocal position = xsize * ysize * zmin + xsize * ymin + xmin;
+		auto filled = std::lower_bound(_mesh->contacts->filledCells.begin(), _mesh->contacts->filledCells.end(), position);
+		double cx, cy, cz;
 		for (int z = zmin; z < zmax; ++z) {
 			for (int y = ymin; y < ymax; ++y) {
 				for (int x = xmin; x < xmax; ++x) {
 					position = xsize * ysize * z + xsize * y + x;
-					if (position < _mesh->contacts->filledCells.back()) {
+					if (position <= _mesh->contacts->filledCells.back()) {
 						while (*filled < position) {
 							++filled;
-							++cell;
 						}
 						if (*filled == position) {
-							sFilled[n].push_back(position);
-							sData[n].insert(sData[n].end(), cell->begin(), cell->end());
-							sDist[n].push_back(sDist[n].back() + cell->size());
+							// generate neighbors index
+							cx = _mesh->contacts->boundingBox[0].x + x * boxsize - _mesh->contacts->eps;
+							cy = _mesh->contacts->boundingBox[0].y + y * boxsize - _mesh->contacts->eps;
+							cz = _mesh->contacts->boundingBox[0].z + z * boxsize - _mesh->contacts->eps;
+							nxmin = std::floor((cx - boxes[2 * _mesh->contacts->neighbors[n]].x - epsilon) / nboxsize);
+							nymin = std::floor((cy - boxes[2 * _mesh->contacts->neighbors[n]].y - epsilon) / nboxsize);
+							nzmin = std::floor((cz - boxes[2 * _mesh->contacts->neighbors[n]].z - epsilon) / nboxsize);
+
+							cx += boxsize + 2 * _mesh->contacts->eps;
+							cy += boxsize + 2 * _mesh->contacts->eps;
+							cz += boxsize + 2 * _mesh->contacts->eps;
+							nxmax = std::ceil((cx - boxes[2 * _mesh->contacts->neighbors[n]].x + epsilon) / nboxsize);
+							nymax = std::ceil((cy - boxes[2 * _mesh->contacts->neighbors[n]].y + epsilon) / nboxsize);
+							nzmax = std::ceil((cz - boxes[2 * _mesh->contacts->neighbors[n]].z + epsilon) / nboxsize);
+
+							nxmin = std::max(nxmin, 0);
+							nymin = std::max(nymin, 0);
+							nzmin = std::max(nzmin, 0);
+							nxmax = std::min(nxmax, nsize[6 * n + 1] - nsize[6 * n + 0]);
+							nymax = std::min(nymax, nsize[6 * n + 3] - nsize[6 * n + 2]);
+							nzmax = std::min(nzmax, nsize[6 * n + 5] - nsize[6 * n + 4]);
+
+							tfilled.push_back(nxmin);
+							tfilled.push_back(nxmax);
+							tfilled.push_back(nymin);
+							tfilled.push_back(nymax);
+							tfilled.push_back(nzmin);
+							tfilled.push_back(nzmax);
+						}
+					}
+				}
+			}
+		}
+		sFilled[n].swap(tfilled);
+	}
+
+	if (!Communication::exchangeUnknownSize(sFilled, rFilled, _mesh->contacts->neighbors)) {
+		ESINFO(ERROR) << "ESPRESO internal error: exchange filled boxes.";
+	}
+
+	event3.end();
+	eval.addEvent(event3);
+
+	TimeEvent event("return filled cells");
+	event.start();
+
+
+	for (size_t n = 0; n < _mesh->contacts->neighbors.size(); n++) {
+		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, rFilled[n].size() / 6);
+		std::vector<size_t> tsize(threads + 1);
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			size_t size = 0, sizex, sizey, sizez;
+			for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+				sizex = rFilled[n][6 * i + 1] - rFilled[n][6 * i + 0];
+				sizey = rFilled[n][6 * i + 3] - rFilled[n][6 * i + 2];
+				sizez = rFilled[n][6 * i + 5] - rFilled[n][6 * i + 4];
+				size += sizex * sizey * sizez;
+			}
+			tsize[t] = size;
+		}
+
+		size_t size = 0;
+		for (size_t t = 0; t < threads; t++) {
+			size += tsize[t];
+			tsize[t] = size - tsize[t];
+		}
+		tsize[threads] = size;
+
+		std::cout << environment->MPIrank << " SIZE: " << rFilled[n].size() / 6 << " -> " << size << "\n";
+
+		sFilled[n].resize(size);
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {;
+			for (size_t i = distribution[t], offset = tsize[t]; i < distribution[t + 1]; i++) {
+				for (int z = rFilled[n][6 * i + 4]; z < rFilled[n][6 * i + 5]; ++z) {
+					for (int y = rFilled[n][6 * i + 2]; y < rFilled[n][6 * i + 3]; ++y) {
+						for (int x = rFilled[n][6 * i + 0]; x < rFilled[n][6 * i + 1]; ++x, ++offset) {
+							sFilled[n][offset] = xsize * ysize * z + xsize * y + x;
 						}
 					}
 				}
 			}
 		}
 
+		Esutils::sortWithInplaceMerge(sFilled[n], tsize);
+
+		if (sFilled[n].size()) {
+			size_t unique = 0;
+			for (size_t d = 0 + 1; d < sFilled[n].size(); d++) {
+				if (sFilled[n][unique] != sFilled[n][d]) {
+					sFilled[n][++unique] = sFilled[n][d];
+				}
+			}
+
+			sFilled[n].resize(unique + 1);
+		}
 	}
 
+	event.end();
+	eval.addEvent(event);
 
+	std::cout << environment->MPIrank << "::" << sFilled.front().size() << "\n";
 
-
-	if (!Communication::exchangeKnownSize(sGroupSize, rGroupSize, _mesh->contacts->neighbors)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange group size.";
-	}
-
-	if (!Communication::exchangeKnownSize(sFilled, rFilled, _mesh->contacts->neighbors)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange group size.";
-	}
-
-	if (!Communication::exchangeKnownSize(sDist, rDist, _mesh->contacts->neighbors)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange group size.";
-	}
-
-	if (!Communication::exchangeKnownSize(sData, rData, _mesh->contacts->neighbors)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange group size.";
-	}
-
-	event3.end();
-	eval.addEvent(event3);
 	eval.totalTime.endWithBarrier();
 	eval.printStatsMPI();
-//	MPI_Barrier(environment->MPICommunicator);
-//	exit(0);
+	MPI_Barrier(environment->MPICommunicator);
+	exit(0);
 
 	finish("search contact interfaces");
 }
