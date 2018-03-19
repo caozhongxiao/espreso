@@ -4,8 +4,6 @@
 #include <QtGui>
 #include <QOpenGLWidget>
 
-#include "../mesh/mesh.h"
-
 #include "../parallel/mpimanager.h"
 
 namespace espreso {

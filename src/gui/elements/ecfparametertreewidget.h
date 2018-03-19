@@ -8,7 +8,6 @@
 #include <functional>
 
 #include "../../config/configuration.h"
-#include "../../config/ecf/ecf.h"
 #include "isavableobject.h"
 #include "ivalidatableobject.h"
 #include "ecfparametertreedelegate.h"
