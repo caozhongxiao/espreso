@@ -757,6 +757,20 @@ void MeshPreprocessing::arrangeRegions()
 		}
 	}
 
+	if (_mesh->eregion("ALL_ELEMENTS")->uniqueTotalSize) {
+		ElementsRegionStore* nameless = _mesh->eregion("ALL_ELEMENTS");
+		_mesh->elementsRegions.push_back(new ElementsRegionStore("NAMELESS_ELEMENT_SET"));
+		_mesh->elementsRegions.back()->ecounters = nameless->ecounters;
+		_mesh->elementsRegions.back()->eintervals = nameless->ueintervals;
+		_mesh->elementsRegions.back()->elements = nameless->uniqueElements;
+		_mesh->elementsRegions.back()->uniqueElements = nameless->uniqueElements;
+		_mesh->elementsRegions.back()->nodes = nameless->nodes;
+		_mesh->elementsRegions.back()->uniqueOffset = nameless->uniqueOffset;
+		_mesh->elementsRegions.back()->uniqueSize = nameless->uniqueSize;
+		_mesh->elementsRegions.back()->uniqueTotalSize = nameless->uniqueTotalSize;
+		_mesh->elementsRegions.back()->nintervals = nameless->nintervals;
+	}
+
 	eslocal eoffset = _mesh->elements->gatherElementsProcDistribution()[environment->MPIrank];
 	for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
 		if (_mesh->boundaryRegions[r]->nodes == NULL) {

@@ -45,7 +45,6 @@ size_t ElementsRegionStore::packedSize() const
 			Esutils::packedSize(uniqueSize) +
 			Esutils::packedSize(uniqueTotalSize) +
 			elements->packedSize() + Esutils::packedSize(eintervals) +
-			(StringCompare::caseInsensitiveEq(name, "ALL_ELEMENTS") ? uniqueElements->packedSize() + Esutils::packedSize(ueintervals) : 0) +
 			nodes->packedSize() +
 			Esutils::packedSize(nintervals) +
 			Esutils::packedSize(ecounters);
@@ -62,10 +61,6 @@ void ElementsRegionStore::pack(char* &p) const
 	Esutils::pack(uniqueTotalSize, p);
 	elements->pack(p);
 	Esutils::pack(eintervals, p);
-	if (StringCompare::caseInsensitiveEq(name, "ALL_ELEMENTS")) {
-		uniqueElements->pack(p);
-		Esutils::pack(ueintervals, p);
-	}
 	nodes->pack(p);
 	Esutils::pack(nintervals, p);
 	Esutils::pack(ecounters, p);
@@ -82,13 +77,6 @@ void ElementsRegionStore::unpack(const char* &p)
 	}
 	elements->unpack(p);
 	Esutils::unpack(eintervals, p);
-	if (StringCompare::caseInsensitiveEq(name, "ALL_ELEMENTS")) {
-		if (uniqueElements == NULL) {
-			uniqueElements = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(1, 0));
-		}
-		uniqueElements->unpack(p);
-		Esutils::unpack(ueintervals, p);
-	}
 	if (nodes == NULL) {
 		nodes = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(1, 0));
 	}
