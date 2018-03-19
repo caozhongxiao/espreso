@@ -63,10 +63,10 @@ private:
 
     QVector<std::string> m_stored_values;
 
-    int m_invalid = -1;
+    QString m_err;
 
     void addRow(ECFValue* value, TextItemWidgetFactory* editorFactory, int parent_id, bool valueCheckable = false);
-    void applyForAllItems(QStandardItem* root, std::function<void(QStandardItem*)> apply);
+    void applyForAllItems(QStandardItem* root, std::function<bool(QStandardItem*)> apply);
     bool findIndex(QStandardItem* item, QStandardItem* root, int *index);
 
 private slots:

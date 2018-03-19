@@ -62,5 +62,18 @@ TextItemWidget* DataTypeEditWidgetFactory::create(QWidget* parent)
     widget->setComboBox(true);
     widget->setSharedDatatype(&this->m_activeType);
 
+    this->m_valid = widget->isValid();
+    this->m_err = widget->errorMessage();
+
     return widget;
+}
+
+bool DataTypeEditWidgetFactory::isValid()
+{
+    return this->m_valid;
+}
+
+QString DataTypeEditWidgetFactory::errorMessage()
+{
+    return this->m_err;
 }

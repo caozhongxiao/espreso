@@ -245,29 +245,40 @@ void ECFParameterTreeWidget::onItemChanged(QStandardItem *item)
 
 bool ECFParameterTreeWidget::isValid()
 {
-//    SHOULD BE TRANSFERRED TO FUNCTIONAL WITH applyForAllItems
-//    for (int i = 0; i < this->m_model->rowCount(); i++)
-//    {
-//        if (this->m_model->item(i, 1)->text().isEmpty()
-//                && !this->m_model->item(i, 1)->isCheckable())
-//        {
-//            this->m_invalid = i;
-//            return false;
-//        }
-//    }
+    bool valid = true;
+    auto validateItems = [&] (QStandardItem* item) {
+        bool ok;
+        int id = item->data(ECFParameterTreeDelegate::EditorRole).toInt(&ok);
+        if (ok && !item->isCheckable() && this->m_values[id]->metadata.ismandatory())
+        {
+            IValidatableObject *validatable;
+            if (validatable = dynamic_cast<IValidatableObject*>(this->m_delegate->editorFactory(id)))
+            {
+                valid = validatable->isValid();
+                this->m_err = QString::fromStdString(this->m_values[id]->metadata.description[0])
+                        + validatable->errorMessage();
+            }
+            else if (item->text().isEmpty())
+            {
+                valid = false;
+                this->m_err = tr("Empty property %1")
+                        .arg(QString::fromStdString(this->m_values[id]->metadata.description[0]));
+            }
+            if (!valid) return false;
+        }
+        return true;
+    };
+    this->applyForAllItems(this->m_root, validateItems);
 
-//    this->m_invalid = -1;
-    return true;
+    return valid;
 }
 
 QString ECFParameterTreeWidget::errorMessage()
 {
-    if (this->m_invalid != -1)
-        return tr("Empty property %1").arg(this->m_model->item(m_invalid, 0)->text());
-    return QLatin1String("");
+    return this->m_err;
 }
 
-void ECFParameterTreeWidget::applyForAllItems(QStandardItem* root, std::function<void(QStandardItem*)> apply)
+void ECFParameterTreeWidget::applyForAllItems(QStandardItem* root, std::function<bool(QStandardItem*)> apply)
 {
     for (int row = 0; row < root->rowCount(); row++)
     {
@@ -279,7 +290,7 @@ void ECFParameterTreeWidget::applyForAllItems(QStandardItem* root, std::function
         }
         else {
             QStandardItem* value = root->child(row, 1);
-            apply(value);
+            if (!apply(value)) return;
         }
     }
 }
@@ -302,6 +313,7 @@ void ECFParameterTreeWidget::save()
                     ->setValue(item->text()
                                .toStdString());
         }
+        return true;
     };
     this->applyForAllItems(this->m_root, saveItems);
 }
@@ -324,19 +336,20 @@ void ECFParameterTreeWidget::restoreState()
     {
         bool ok;
         int i = item->data(ECFParameterTreeDelegate::EditorRole).toInt(&ok);
-        if (!ok) return;
+        if (!ok) return true;
         this->m_values[i]->setValue(this->m_stored_values[i]);
-        if (item->isCheckable())
-        {
-            if (this->m_values[i]->getValue().compare("TRUE") == 0)
-                item->setCheckState(Qt::Checked);
-            else
-                item->setCheckState(Qt::Unchecked);
-        }
-        else
-        {
-            item->setText(QString::fromStdString(this->m_values[i]->getValue()));
-        }
+//        if (item->isCheckable())
+//        {
+//            if (this->m_values[i]->getValue().compare("TRUE") == 0)
+//                item->setCheckState(Qt::Checked);
+//            else
+//                item->setCheckState(Qt::Unchecked);
+//        }
+//        else
+//        {
+//            item->setText(QString::fromStdString(this->m_values[i]->getValue()));
+//        }
+        return true;
     };
 
     this->applyForAllItems(m_root, restore);

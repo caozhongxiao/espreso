@@ -28,6 +28,11 @@ void ECFParameterTreeDelegate::registerEditor(int editorId, TextItemWidgetFactor
     this->m_editors[editorId] = factory;
 }
 
+TextItemWidgetFactory* ECFParameterTreeDelegate::editorFactory(int id)
+{
+    return this->m_editors[id];
+}
+
 void ECFParameterTreeDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
     bool ok;
