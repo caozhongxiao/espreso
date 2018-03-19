@@ -774,8 +774,10 @@ void MeshPreprocessing::arrangeRegions()
 	eslocal eoffset = _mesh->elements->gatherElementsProcDistribution()[environment->MPIrank];
 	for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
 		if (_mesh->boundaryRegions[r]->nodes == NULL) {
-			std::vector<eslocal> nodes(_mesh->boundaryRegions[r]->elements->datatarray().begin(), _mesh->boundaryRegions[r]->elements->datatarray().end());
-			Esutils::sortAndRemoveDuplicity(nodes);
+			std::vector<std::vector<eslocal> > nodes(threads);
+			nodes[0] = std::vector<eslocal>(_mesh->boundaryRegions[r]->elements->datatarray().begin(), _mesh->boundaryRegions[r]->elements->datatarray().end());
+			Esutils::sortAndRemoveDuplicity(nodes[0]);
+			serializededata<eslocal, eslocal>::balance(1, nodes);
 			_mesh->boundaryRegions[r]->nodes = new serializededata<eslocal, eslocal>(1, nodes);
 		}
 		BoundaryRegionStore *store = _mesh->boundaryRegions[r];
