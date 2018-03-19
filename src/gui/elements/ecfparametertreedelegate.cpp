@@ -1,5 +1,8 @@
 #include "ecfparametertreedelegate.h"
 
+#include <QPainter>
+#include <QDebug>
+
 #include "textitemwidget.h"
 
 using namespace espreso;
@@ -23,6 +26,49 @@ ECFParameterTreeDelegate::~ECFParameterTreeDelegate()
 void ECFParameterTreeDelegate::registerEditor(int editorId, TextItemWidgetFactory *factory)
 {
     this->m_editors[editorId] = factory;
+}
+
+void ECFParameterTreeDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    bool ok;
+    int editorIndex = index.data(EditorRole).toInt(&ok);
+    if (ok
+        && this->m_editors[editorIndex] != nullptr
+        && dynamic_cast<DataTypeEditWidgetFactory*>(this->m_editors[editorIndex]))
+    {
+        TextItemWidget *editor = this->m_editors[editorIndex]->create();
+        editor->hide();
+        editor->resize(option.rect.size());
+        QPixmap pixmap(option.rect.size());
+        editor->render(&pixmap);
+        painter->drawPixmap(option.rect, pixmap);
+        delete editor;
+    }
+    else
+    {
+        QItemDelegate::paint(painter, option, index);
+    }
+}
+
+QSize ECFParameterTreeDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    bool ok;
+    int editorIndex = index.data(EditorRole).toInt(&ok);
+    if (ok
+        && this->m_editors[editorIndex] != nullptr
+        && dynamic_cast<DataTypeEditWidgetFactory*>(this->m_editors[editorIndex]))
+    {
+        TextItemWidget *editor = this->m_editors[editorIndex]->create();
+        editor->hide();
+        QSize hint = editor->sizeHint();
+        delete editor;
+
+        return hint;
+    }
+    else
+    {
+        return QItemDelegate::sizeHint(option, index);
+    }
 }
 
 QWidget* ECFParameterTreeDelegate::createEditor(QWidget *parent,

@@ -9,10 +9,15 @@
 using namespace espreso;
 
 DataTypeEditWidget::DataTypeEditWidget(QWidget *parent) :
-    QWidget(parent),
+    TextItemWidget(parent),
     ui(new Ui::DataTypeEditWidget)
 {
     ui->setupUi(this);
+
+    this->m_cmb = this->createComboBox();
+    ui->layout->addWidget(m_cmb);
+    this->m_cmb->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    this->m_cmb->hide();
 }
 
 DataTypeEditWidget::DataTypeEditWidget(const std::vector<std::string>& variables, QWidget* parent) :
@@ -28,12 +33,12 @@ DataTypeEditWidget::DataTypeEditWidget(const std::vector<std::string>& variables
 
 DataTypeEditWidget::DataTypeEditWidget(ECFParameter* data, QWidget *parent) :
     DataTypeEditWidget(parent)
-{
+{    
     this->m_param = data;
     this->createUi();
 
     QString content = QString::fromStdString(data->getValue());
-    QRegularExpression tableregex("switch|SWITCH");
+    QRegularExpression tableregex("tabular|TABULAR");
     QRegularExpression piecewiseregex("if|IF");
 
     if (tableregex.match(content).hasMatch())
@@ -85,18 +90,21 @@ void DataTypeEditWidget::createUi()
 
 void DataTypeEditWidget::initExpression()
 {
+    this->m_cmb->setCurrentIndex(0);
     this->uiExpression->setText(param_getValue());
     this->uiExpression->show();
 }
 
 void DataTypeEditWidget::initTable()
 {
+    this->m_cmb->setCurrentIndex(1);
     this->uiTable->addData(param_getValue());
     this->uiTable->show();
 }
 
 void DataTypeEditWidget::initPiecewise()
 {
+    this->m_cmb->setCurrentIndex(2);
     this->uiPiecewise->addData(param_getValue());
     this->uiPiecewise->show();
 }
@@ -123,6 +131,26 @@ QComboBox* DataTypeEditWidget::createComboBox(QWidget *parent)
             this, SLOT(changeType(int)));
 
     return box;
+}
+
+void DataTypeEditWidget::setComboBox(bool show)
+{
+    if (show)
+        this->m_cmb->show();
+    else
+        this->m_cmb->hide();
+}
+
+void DataTypeEditWidget::setSharedDatatype(int *datatype)
+{
+    this->m_shared = datatype;
+    this->m_cmb->setCurrentIndex(*datatype);
+    this->changeType(*datatype);
+}
+
+int DataTypeEditWidget::datatype()
+{
+    return this->activeType;
 }
 
 bool DataTypeEditWidget::isValid()
@@ -175,6 +203,16 @@ void DataTypeEditWidget::save()
     }
 }
 
+void DataTypeEditWidget::setText(const QString&)
+{
+    // No behaviour
+}
+
+QString DataTypeEditWidget::text()
+{
+    return this->value();
+}
+
 void DataTypeEditWidget::changeType(int index)
 {
     switch (index)
@@ -201,6 +239,8 @@ void DataTypeEditWidget::changeType(int index)
     }
 
     this->activeType = index;
+    if (this->m_shared != nullptr) *this->m_shared = index;
+    emit finished(this);
 }
 
 QStringList DataTypeEditWidget::typeNames()

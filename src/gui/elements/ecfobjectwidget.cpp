@@ -5,6 +5,8 @@
 #include <QScrollArea>
 #include <QLabel>
 
+#include "../declarations/datatypeeditwidget.h"
+
 using namespace espreso;
 
 ECFObjectWidget::ECFObjectWidget(ECFObject* object, QWidget *parent) :
@@ -152,11 +154,6 @@ void ECFObjectWidget::setDrawHeadline(bool draw)
 
 void ECFObjectWidget::processParameters(ECFObject* obj, QWidget* widget)
 {
-    // Property table (name, expression, units,...)
-    MaterialPropertyTableWidget* propertyTable = nullptr;
-    // Widget with form layout. Container for form fields.
-    //FormWidget* formWidget = nullptr;
-//    ECFValueTableWidget* tableWidget = nullptr;
     int parentGroupId = this->m_parameter_groups.pop();
 
     // Iterating object parameters and creating UI elements for them
@@ -186,7 +183,7 @@ void ECFObjectWidget::processParameters(ECFObject* obj, QWidget* widget)
             }
             else if (type == ECFDataType::EXPRESSION)
             {
-                propertyTable = this->processExpression(*parameter, propertyTable, widget);
+                this->m_parameter_tree = this->processExpression(*parameter, m_parameter_tree, widget, parentGroupId);
             }
             else if (type == ECFDataType::STRING)
             {
@@ -214,201 +211,68 @@ void ECFObjectWidget::processParameters(ECFObject* obj, QWidget* widget)
     if (m_parameter_tree != nullptr) m_parameter_tree->resizeCellsToContent();
 }
 
-//FormWidget* ECFObjectWidget::processOptionEnum(ECFParameter* parameter, FormWidget* form, QWidget* widget)
-//{
-//    FormWidget* formWidget = this->createFormWidget(widget, form);
-//    QWidget* handler = this->createOption(parameter, widget, false);
-//    formWidget->appendRow(QString::fromStdString(parameter->metadata.description[0]),
-//            handler);
 
-//    return formWidget;
-//}
-
-//FormWidget* ECFObjectWidget::processBool(ECFParameter* parameter, FormWidget* form, QWidget* widget)
-//{
-//    FormWidget* formWidget = this->createFormWidget(widget, form);
-//    QWidget* handler = this->createBool(parameter, widget);
-//    formWidget->appendRow(QString::fromStdString(parameter->metadata.description[0]),
-//            handler);
-
-//    return formWidget;
-//}
-
-MaterialPropertyTableWidget* ECFObjectWidget::processExpression(ECFParameter* parameter, MaterialPropertyTableWidget* tableWidget, QWidget* widget)
+ECFParameterTreeWidget* ECFObjectWidget::createParameterWidget(QWidget* container, ECFParameterTreeWidget* tree)
 {
-    MaterialPropertyTableWidget* propertyTable = tableWidget;
-    if (propertyTable == nullptr)
-    {
-        propertyTable = new MaterialPropertyTableWidget(widget);
-        this->m_savables.append(propertyTable);
-        this->m_validatables.append(propertyTable);
-        widget->layout()->addWidget(propertyTable);
-    }
-    propertyTable->addProperty(parameter);
+    if (tree != nullptr) return tree;
 
-    return propertyTable;
+    ECFParameterTreeWidget* treeWidget = new ECFParameterTreeWidget;
+    this->m_savables.append(treeWidget);
+    this->m_validatables.append(treeWidget);
+    container->layout()->addWidget(treeWidget);
+    connect(treeWidget, SIGNAL(itemChanged()), this, SLOT(redraw()));
+
+    return treeWidget;
 }
 
-//FormWidget* ECFObjectWidget::processString(ECFParameter* parameter, FormWidget* form, QWidget* widget)
-//{
-//    FormWidget* formWidget = this->createFormWidget(widget, form);
-//    formWidget->appendString(parameter);
-
-//    return formWidget;
-//}
-
-//FormWidget* ECFObjectWidget::processFloat(ECFParameter* parameter, FormWidget* form, QWidget* widget)
-//{
-//    FormWidget* formWidget = this->createFormWidget(widget, form);
-//    formWidget->appendFloat(parameter);
-
-//    return formWidget;
-//}
-
-//FormWidget* ECFObjectWidget::processNonnegativeInteger(ECFParameter* parameter, FormWidget* form, QWidget* widget)
-//{
-//    FormWidget* formWidget = this->createFormWidget(widget, form);
-//    formWidget->appendNonnegativeInteger(parameter);
-
-//    return formWidget;
-//}
-
-//FormWidget* ECFObjectWidget::processPositiveInteger(ECFParameter* parameter, FormWidget* form, QWidget* widget)
-//{
-//    FormWidget* formWidget = this->createFormWidget(widget, form);
-//    formWidget->appendPositiveInteger(parameter);
-
-//    return formWidget;
-//}
-
-//FormWidget* ECFObjectWidget::processRegion(ECFParameter* parameter, FormWidget* form, QWidget* widget)
-//{
-//    FormWidget* formWidget = this->createFormWidget(widget, form);
-//    formWidget->appendString(parameter);
-
-//    return formWidget;
-//}
-
-//FormWidget* ECFObjectWidget::createFormWidget(QWidget* container, FormWidget* form)
-//{
-//    if (form != nullptr) return form;
-
-//    FormWidget* formWidget = new FormWidget;
-//    this->m_savables.append(formWidget);
-//    this->m_validatables.append(formWidget);
-//    container->layout()->addWidget(formWidget);
-
-//    return formWidget;
-//}
-
-//ECFValueTableWidget* ECFObjectWidget::createTableWidget(QWidget* container, ECFValueTableWidget* table)
-//{
-//    if (table != nullptr) return table;
-
-//    ECFValueTableWidget* tableWidget = new ECFValueTableWidget;
-//    this->m_savables.append(tableWidget);
-//    this->m_validatables.append(tableWidget);
-//    container->layout()->addWidget(tableWidget);
-//    connect(tableWidget, SIGNAL(itemChanged()), this, SLOT(redraw()));
-
-//    return tableWidget;
-//}
-
-//ECFValueTableWidget* ECFObjectWidget::processParameter(ECFParameter *param, ECFValueTableWidget *table, QWidget *parent)
-//{
-//    ECFValueTableWidget* tableWidget = this->createTableWidget(parent, table);
-//    tableWidget->add(static_cast<ECFValue*>(param));
-
-//    return tableWidget;
-//}
-
-//ECFValueTableWidget* ECFObjectWidget::processOptionEnum(ECFParameter* parameter, ECFValueTableWidget* table, QWidget* widget)
-//{
-//    return this->processParameter(parameter, table, widget);
-//}
-
-//ECFValueTableWidget* ECFObjectWidget::processBool(ECFParameter* parameter, ECFValueTableWidget* table, QWidget* widget)
-//{
-//    return this->processParameter(parameter, table, widget);
-//}
-
-//ECFValueTableWidget* ECFObjectWidget::processString(ECFParameter* parameter, ECFValueTableWidget* table, QWidget* widget)
-//{
-//    return this->processParameter(parameter, table, widget);
-//}
-
-//ECFValueTableWidget* ECFObjectWidget::processFloat(ECFParameter* parameter, ECFValueTableWidget* table, QWidget* widget)
-//{
-//    return this->processParameter(parameter, table, widget);
-//}
-
-//ECFValueTableWidget* ECFObjectWidget::processNonnegativeInteger(ECFParameter* parameter, ECFValueTableWidget* table, QWidget* widget)
-//{
-//    return this->processParameter(parameter, table, widget);
-//}
-
-//ECFValueTableWidget* ECFObjectWidget::processPositiveInteger(ECFParameter* parameter, ECFValueTableWidget* table, QWidget* widget)
-//{
-//    return this->processParameter(parameter, table, widget);
-//}
-
-//ECFValueTableWidget* ECFObjectWidget::processRegion(ECFParameter* parameter, ECFValueTableWidget* table, QWidget* widget)
-//{
-//    return this->processParameter(parameter, table, widget);
-//}
-
-ECFParameterTreeWidget* ECFObjectWidget::createParameterWidget(QWidget* container, ECFParameterTreeWidget* table)
+ECFParameterTreeWidget* ECFObjectWidget::processParameter(ECFParameter *param, ECFParameterTreeWidget *tree, QWidget *parent, int groupId)
 {
-    if (table != nullptr) return table;
+    ECFParameterTreeWidget* treeWidget = this->createParameterWidget(parent, tree);
+    treeWidget->add(static_cast<ECFValue*>(param), groupId);
 
-    ECFParameterTreeWidget* tableWidget = new ECFParameterTreeWidget;
-    this->m_savables.append(tableWidget);
-    this->m_validatables.append(tableWidget);
-    container->layout()->addWidget(tableWidget);
-    connect(tableWidget, SIGNAL(itemChanged()), this, SLOT(redraw()));
-
-    return tableWidget;
+    return treeWidget;
 }
 
-ECFParameterTreeWidget* ECFObjectWidget::processParameter(ECFParameter *param, ECFParameterTreeWidget *table, QWidget *parent, int groupId)
+ECFParameterTreeWidget* ECFObjectWidget::processExpression(ECFParameter* parameter, ECFParameterTreeWidget* tree, QWidget* widget, int groupId)
 {
-    ECFParameterTreeWidget* tableWidget = this->createParameterWidget(parent, table);
-    tableWidget->add(static_cast<ECFValue*>(param), groupId);
+    ECFParameterTreeWidget* treeWidget = this->createParameterWidget(widget, tree);
+    DataTypeEditWidgetFactory *factory = new DataTypeEditWidgetFactory(parameter);
+    treeWidget->addWithEditorFactory(static_cast<ECFValue*>(parameter), factory, groupId);
 
-    return tableWidget;
+    return treeWidget;
 }
 
-ECFParameterTreeWidget* ECFObjectWidget::processOptionEnum(ECFParameter* parameter, ECFParameterTreeWidget* table, QWidget* widget, int groupId)
+ECFParameterTreeWidget* ECFObjectWidget::processOptionEnum(ECFParameter* parameter, ECFParameterTreeWidget* tree, QWidget* widget, int groupId)
 {
-    return this->processParameter(parameter, table, widget, groupId);
+    return this->processParameter(parameter, tree, widget, groupId);
 }
 
-ECFParameterTreeWidget* ECFObjectWidget::processBool(ECFParameter* parameter, ECFParameterTreeWidget* table, QWidget* widget, int groupId)
+ECFParameterTreeWidget* ECFObjectWidget::processBool(ECFParameter* parameter, ECFParameterTreeWidget* tree, QWidget* widget, int groupId)
 {
-    return this->processParameter(parameter, table, widget, groupId);
+    return this->processParameter(parameter, tree, widget, groupId);
 }
 
-ECFParameterTreeWidget* ECFObjectWidget::processString(ECFParameter* parameter, ECFParameterTreeWidget* table, QWidget* widget, int groupId)
+ECFParameterTreeWidget* ECFObjectWidget::processString(ECFParameter* parameter, ECFParameterTreeWidget* tree, QWidget* widget, int groupId)
 {
-    return this->processParameter(parameter, table, widget, groupId);
+    return this->processParameter(parameter, tree, widget, groupId);
 }
 
-ECFParameterTreeWidget* ECFObjectWidget::processFloat(ECFParameter* parameter, ECFParameterTreeWidget* table, QWidget* widget, int groupId)
+ECFParameterTreeWidget* ECFObjectWidget::processFloat(ECFParameter* parameter, ECFParameterTreeWidget* tree, QWidget* widget, int groupId)
 {
-    return this->processParameter(parameter, table, widget, groupId);
+    return this->processParameter(parameter, tree, widget, groupId);
 }
 
-ECFParameterTreeWidget* ECFObjectWidget::processNonnegativeInteger(ECFParameter* parameter, ECFParameterTreeWidget* table, QWidget* widget, int groupId)
+ECFParameterTreeWidget* ECFObjectWidget::processNonnegativeInteger(ECFParameter* parameter, ECFParameterTreeWidget* tree, QWidget* widget, int groupId)
 {
-    return this->processParameter(parameter, table, widget, groupId);
+    return this->processParameter(parameter, tree, widget, groupId);
 }
 
-ECFParameterTreeWidget* ECFObjectWidget::processPositiveInteger(ECFParameter* parameter, ECFParameterTreeWidget* table, QWidget* widget, int groupId)
+ECFParameterTreeWidget* ECFObjectWidget::processPositiveInteger(ECFParameter* parameter, ECFParameterTreeWidget* tree, QWidget* widget, int groupId)
 {
-    return this->processParameter(parameter, table, widget, groupId);
+    return this->processParameter(parameter, tree, widget, groupId);
 }
 
-ECFParameterTreeWidget* ECFObjectWidget::processRegion(ECFParameter* parameter, ECFParameterTreeWidget* table, QWidget* widget, int groupId)
+ECFParameterTreeWidget* ECFObjectWidget::processRegion(ECFParameter* parameter, ECFParameterTreeWidget* tree, QWidget* widget, int groupId)
 {
-    return this->processParameter(parameter, table, widget, groupId);
+    return this->processParameter(parameter, tree, widget, groupId);
 }

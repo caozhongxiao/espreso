@@ -12,6 +12,8 @@
 namespace espreso
 {
 
+class ECFParameter;
+
 class TextItemWidgetFactory
 {
 public:
@@ -48,6 +50,19 @@ public:
 
 private:
     ValidatorFactory* m_factory;
+};
+
+class DataTypeEditWidgetFactory : public TextItemWidgetFactory
+{
+public:
+    DataTypeEditWidgetFactory(ECFParameter* expression = nullptr);
+
+    virtual TextItemWidget* create(QWidget* parent = 0) override;
+
+private:
+    ECFParameter* m_expr;
+    int m_activeType;
+
 };
 
 }

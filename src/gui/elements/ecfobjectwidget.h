@@ -71,30 +71,13 @@ protected:
     QStack<int> m_parameter_groups;
 
     void processParameters(ECFObject*, QWidget*);
-    virtual MaterialPropertyTableWidget* processExpression(ECFParameter*, MaterialPropertyTableWidget*, QWidget*);
-//    virtual FormWidget* processOptionEnum(ECFParameter*, FormWidget*, QWidget*);
-//    virtual FormWidget* processBool(ECFParameter*, FormWidget*, QWidget*);
-//    virtual FormWidget* processString(ECFParameter*, FormWidget*, QWidget*);
-//    virtual FormWidget* processFloat(ECFParameter*, FormWidget*, QWidget*);
-//    virtual FormWidget* processNonnegativeInteger(ECFParameter*, FormWidget*, QWidget*);
-//    virtual FormWidget* processPositiveInteger(ECFParameter*, FormWidget*, QWidget*);
-//    virtual FormWidget* processRegion(ECFParameter*, FormWidget*, QWidget*);
-
-//    virtual ECFValueTableWidget* processParameter(ECFParameter* param, ECFValueTableWidget* table, QWidget* parent);
-
-//    virtual ECFValueTableWidget* processOptionEnum(ECFParameter*, ECFValueTableWidget*, QWidget*);
-//    virtual ECFValueTableWidget* processBool(ECFParameter*, ECFValueTableWidget*, QWidget*);
-//    virtual ECFValueTableWidget* processString(ECFParameter*, ECFValueTableWidget*, QWidget*);
-//    virtual ECFValueTableWidget* processFloat(ECFParameter*, ECFValueTableWidget*, QWidget*);
-//    virtual ECFValueTableWidget* processNonnegativeInteger(ECFParameter*, ECFValueTableWidget*, QWidget*);
-//    virtual ECFValueTableWidget* processPositiveInteger(ECFParameter*, ECFValueTableWidget*, QWidget*);
-//    virtual ECFValueTableWidget* processRegion(ECFParameter*, ECFValueTableWidget*, QWidget*);
 
     virtual ECFParameterTreeWidget* processParameter(ECFParameter* param,
                                                      ECFParameterTreeWidget* table,
                                                      QWidget* parent,
                                                      int groupId = 0);
 
+    virtual ECFParameterTreeWidget* processExpression(ECFParameter*, ECFParameterTreeWidget*, QWidget*, int = 0);
     virtual ECFParameterTreeWidget* processOptionEnum(ECFParameter*, ECFParameterTreeWidget*, QWidget*, int = 0);
     virtual ECFParameterTreeWidget* processBool(ECFParameter*, ECFParameterTreeWidget*, QWidget*, int = 0);
     virtual ECFParameterTreeWidget* processString(ECFParameter*, ECFParameterTreeWidget*, QWidget*, int = 0);
@@ -107,8 +90,6 @@ protected:
 
     OptionHandler* createOption(ECFParameter*, QWidget* = 0, bool = true);
     BoolHandler* createBool(ECFParameter*, QWidget* = 0);
-//    FormWidget* createFormWidget(QWidget*, FormWidget*);
-//    ECFValueTableWidget* createTableWidget(QWidget*, ECFValueTableWidget*);
     void createHeadline(ECFObject*, QWidget*);
 };
 

@@ -7,6 +7,7 @@
 #include "../validators/validatordelegate.h"
 #include "textitemwidgetfactory.h"
 #include "textitemdelegate.h"
+#include "../declarations/datasetswidget.h"
 
 using namespace espreso;
 
@@ -238,6 +239,8 @@ void ECFParameterTreeWidget::onItemChanged(QStandardItem *item)
     {
         emit itemChanged();
     }
+
+    this->resizeCellsToContent();
 }
 
 bool ECFParameterTreeWidget::isValid()
@@ -284,7 +287,8 @@ void ECFParameterTreeWidget::applyForAllItems(QStandardItem* root, std::function
 void ECFParameterTreeWidget::save()
 {
     auto saveItems = [&] (QStandardItem* item) {
-        int id = item->data(ECFParameterTreeDelegate::EditorRole).toInt();
+        bool ok;
+        int id = item->data(ECFParameterTreeDelegate::EditorRole).toInt(&ok);
         if (item->isCheckable())
         {
             if (item->checkState() == Qt::Checked)
@@ -292,7 +296,7 @@ void ECFParameterTreeWidget::save()
             else
                 this->m_values[id]->setValue("FALSE");
         }
-        else
+        else if (ok)
         {
             this->m_values[id]
                     ->setValue(item->text()
@@ -318,7 +322,9 @@ void ECFParameterTreeWidget::restoreState()
 
     auto restore = [&] (QStandardItem* item)
     {
-        int i = item->data(ECFParameterTreeDelegate::EditorRole).toInt();
+        bool ok;
+        int i = item->data(ECFParameterTreeDelegate::EditorRole).toInt(&ok);
+        if (!ok) return;
         this->m_values[i]->setValue(this->m_stored_values[i]);
         if (item->isCheckable())
         {

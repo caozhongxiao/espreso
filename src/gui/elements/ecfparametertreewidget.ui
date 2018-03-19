@@ -30,7 +30,11 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QTreeView" name="tree"/>
+    <widget class="QTreeView" name="tree">
+     <property name="sizeAdjustPolicy">
+      <enum>QAbstractScrollArea::AdjustIgnored</enum>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

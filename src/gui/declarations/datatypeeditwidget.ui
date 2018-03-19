@@ -19,7 +19,7 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="layout">
+  <layout class="QHBoxLayout" name="layout">
    <property name="spacing">
     <number>0</number>
    </property>
