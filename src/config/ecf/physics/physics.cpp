@@ -2,19 +2,6 @@
 #include "physics.h"
 #include "../../configuration.hpp"
 
-espreso::MortarConfiguration::MortarConfiguration()
-{
-	REGISTER(master, ECFMetaData()
-			.setdescription({ "Master region." })
-            .setdatatype({ ECFDataType::REGION })
-            .mandatoryonly([&] () { return false; }));
-
-	REGISTER(slave, ECFMetaData()
-			.setdescription({ "Slave region." })
-            .setdatatype({ ECFDataType::REGION })
-            .mandatoryonly([&] () { return false; }));
-}
-
 espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension, MaterialConfiguration::PHYSICAL_MODEL physicalModel)
 : dimension(dimension), physical_model(physicalModel)
 {
@@ -64,8 +51,10 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension, Materia
 
 	addSeparator();
 
-	REGISTER(mortar, ECFMetaData()
-			.setdescription({ "Mortar interface." }));
+	contact_interfaces = false;
+	REGISTER(contact_interfaces, ECFMetaData()
+			.setdescription({ "Check contacts." })
+			.setdatatype({ ECFDataType::BOOL }));
 }
 
 

@@ -28,6 +28,11 @@ struct ContactStore {
 	serializededata<eslocal, eslocal>* grid;
 
 	std::vector<int> neighbors;
+	std::vector<std::vector<eslocal> > nsurface;
+	std::vector<serializededata<eslocal, Point>*> nelements;
+	std::vector<std::vector<eslocal> > nfilled;
+	std::vector<serializededata<eslocal, eslocal>*> ngrid;
+	std::vector<serializededata<eslocal, eslocal>*> ncloseElements;
 
 	ContactStore(SurfaceStore *surface);
 	~ContactStore();

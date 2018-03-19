@@ -762,7 +762,7 @@ void DistributedVTKLegacy::contact(const std::string &name)
 
 void DistributedVTKLegacy::closeElements(const std::string &name)
 {
-	if (_mesh.contacts->closeElements == NULL) {
+	if (_mesh.contacts == NULL || _mesh.contacts->closeElements == NULL) {
 		return;
 	}
 
@@ -773,7 +773,13 @@ void DistributedVTKLegacy::closeElements(const std::string &name)
 	os << "ASCII\n";
 	os << "DATASET UNSTRUCTURED_GRID\n\n";
 
-	size_t points = _mesh.contacts->elements->structures() + _mesh.contacts->closeElements->datatarray().size();;
+	size_t points = _mesh.contacts->elements->structures() + _mesh.contacts->closeElements->datatarray().size();
+	for (size_t n = 0; n < _mesh.contacts->neighbors.size(); n++) {
+		points += _mesh.contacts->nsurface[n].size() + _mesh.contacts->ncloseElements[n]->datatarray().size();
+	}
+
+	std::vector<Point> centers(environment->MPIsize);
+	MPI_Allgather(&_mesh.nodes->center, 3, MPI_DOUBLE, centers.data(), 3, MPI_DOUBLE, environment->MPICommunicator);
 
 	os << "POINTS " << points << " float\n";
 	auto closest = _mesh.contacts->closeElements->cbegin();
@@ -783,6 +789,7 @@ void DistributedVTKLegacy::closeElements(const std::string &name)
 			center += *n;
 		}
 		center /= e->size();
+		center = shrink(center, _mesh.nodes->center, center, _clusterShrinkRatio, 1);
 		os << center.x << " " << center.y << " " << center.z << "\n";
 
 		for (auto ne = closest->begin(); ne != closest->end(); ++ne) {
@@ -794,13 +801,46 @@ void DistributedVTKLegacy::closeElements(const std::string &name)
 			}
 			ncenter /= ce->size();
 
+			ncenter = shrink(ncenter, _mesh.nodes->center, ncenter, _clusterShrinkRatio, 1);
 			ncenter = center + (ncenter - center) / 2;
 			os << ncenter.x << " " << ncenter.y << " " << ncenter.z << "\n";
 		}
 	}
+
+	for (size_t n = 0; n < _mesh.contacts->neighbors.size(); n++) {
+		auto closest = _mesh.contacts->ncloseElements[n]->cbegin();
+		for (size_t i = 0; i < _mesh.contacts->nsurface[n].size(); ++i, ++closest) {
+			auto e = _mesh.contacts->elements->cbegin() + _mesh.contacts->nsurface[n][i];
+			Point center;
+			for (auto nn = e->begin(); nn != e->end(); ++nn) {
+				center += *nn;
+			}
+			center /= e->size();
+			center = shrink(center, _mesh.nodes->center, center, _clusterShrinkRatio, 1);
+			os << center.x << " " << center.y << " " << center.z << "\n";
+
+			for (auto ne = closest->begin(); ne != closest->end(); ++ne) {
+				auto ce = _mesh.contacts->nelements[n]->cbegin() + *ne;
+
+				Point ncenter;
+				for (auto nn = ce->begin(); nn != ce->end(); ++nn) {
+					ncenter += *nn;
+				}
+				ncenter /= ce->size();
+
+				ncenter = shrink(ncenter, centers[_mesh.contacts->neighbors[n]], ncenter, _clusterShrinkRatio, 1);
+				ncenter = center + (ncenter - center) / 2;
+				os << ncenter.x << " " << ncenter.y << " " << ncenter.z << "\n";
+			}
+		}
+	}
+
 	os << "\n";
 
 	size_t cells = _mesh.contacts->closeElements->datatarray().size();
+	for (size_t n = 0; n < _mesh.contacts->neighbors.size(); n++) {
+		cells += _mesh.contacts->ncloseElements[n]->datatarray().size();
+	}
 
 	os << "CELLS " << cells << " " << 3 * cells << "\n";
 	size_t eindex = 0, noffset;
@@ -810,6 +850,15 @@ void DistributedVTKLegacy::closeElements(const std::string &name)
 			os << "2 " << eindex << " " << eindex + noffset << "\n";
 		}
 		eindex += noffset;
+	}
+	for (size_t n = 0; n < _mesh.contacts->neighbors.size(); n++) {
+		for (auto e = _mesh.contacts->ncloseElements[n]->cbegin(); e != _mesh.contacts->ncloseElements[n]->cend(); ++e) {
+			noffset = 1;
+			for (auto n = e->begin(); n != e->end(); ++n, ++noffset) {
+				os << "2 " << eindex << " " << eindex + noffset << "\n";
+			}
+			eindex += noffset;
+		}
 	}
 	os << "\n";
 
@@ -830,6 +879,19 @@ void DistributedVTKLegacy::closeElements(const std::string &name)
 				os << "1\n";
 			} else {
 				os << "-1\n";
+			}
+		}
+	}
+	for (size_t n = 0; n < _mesh.contacts->neighbors.size(); n++) {
+		for (auto e = _mesh.contacts->ncloseElements[n]->cbegin(); e != _mesh.contacts->ncloseElements[n]->cend(); ++e, ++eindex) {
+			if (environment->MPIrank < _mesh.contacts->neighbors[n]) {
+				for (auto n = e->begin(); n != e->end(); ++n) {
+					os << "1\n";
+				}
+			} else {
+				for (auto n = e->begin(); n != e->end(); ++n) {
+					os << "-1\n";
+				}
 			}
 		}
 	}

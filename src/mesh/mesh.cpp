@@ -573,10 +573,13 @@ void Mesh::update()
 		}
 	});
 
-	preprocessing->computeBodiesSurface();
-	contacts = new ContactStore(surface);
-	preprocessing->computeSurfaceLocations();
-	preprocessing->searchContactInterfaces();
+
+	if (getPhysics().contact_interfaces) {
+		preprocessing->computeBodiesSurface();
+		contacts = new ContactStore(surface);
+		preprocessing->computeSurfaceLocations();
+		preprocessing->searchContactInterfaces();
+	}
 
 	printStatistics();
 }

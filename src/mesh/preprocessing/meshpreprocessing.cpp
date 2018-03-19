@@ -601,7 +601,10 @@ void MeshPreprocessing::computeBoundaryNodes(std::vector<eslocal> &externalBound
 		auto dual = _mesh->elements->dual->cbegin(t);
 		auto epointer = _mesh->elements->epointers->cbegin(t);
 		auto IDpointer = std::lower_bound(IDBoundaries.begin(), IDBoundaries.end(), eID + eoffset + 1) - 1;
-		eslocal begine = *IDpointer, ende = *(IDpointer + 1);
+		eslocal begine = *IDpointer, ende = *IDpointer;
+		if (IDpointer + 1 != IDBoundaries.end()) {
+			ende = *(IDpointer + 1);
+		}
 
 		for (auto e = _mesh->elements->nodes->cbegin(t); e != _mesh->elements->nodes->cend(t); ++e, ++dual, ++epointer, ++eID) {
 			if (eID + eoffset >= ende) {

@@ -93,7 +93,7 @@ void Esutils::threadDistributionToFullDistribution(std::vector<Ttype> &data, con
 	std::vector<size_t> offsets(distribution.size());
 	for (size_t t = 0; t < threads; t++) {
 		if (distribution[t] != distribution[t + 1]) {
-			offsets[t] = data[distribution[t + 1] - 1];
+			offsets[t] = data[distribution[t + 1]];
 		}
 	}
 	Esutils::sizesToOffsets(offsets);
@@ -101,7 +101,7 @@ void Esutils::threadDistributionToFullDistribution(std::vector<Ttype> &data, con
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		size_t offset = offsets[t];
-		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+		for (size_t i = distribution[t] + 1; i < distribution[t + 1] + 1; i++) {
 			data[i] += offset;
 		}
 	}

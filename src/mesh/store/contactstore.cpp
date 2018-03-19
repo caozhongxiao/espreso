@@ -20,6 +20,16 @@ ContactStore::~ContactStore()
 	if (grid != NULL) { delete grid; }
 	if (elements != NULL) { delete elements; }
 	if (closeElements != NULL) { delete closeElements; }
+
+	for (size_t i = 0; i < nelements.size(); i++) {
+		delete nelements[i];
+	}
+	for (size_t i = 0; i < ngrid.size(); i++) {
+		delete ngrid[i];
+	}
+	for (size_t i = 0; i < ncloseElements.size(); i++) {
+		delete ncloseElements[i];
+	}
 }
 
 
