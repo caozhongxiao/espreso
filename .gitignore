@@ -16,6 +16,9 @@ doc/html/*
 doc/xml/*
 doc/build/*
 
+# Qt
+build-espreso-gui-Desktop_Qt_5_9_1_GCC_64bit-Debug/
+
 # also skip tools - new tools are added by 'git add -f'
 # TODO: move building of tools to build directory
 tools/*
