@@ -775,11 +775,11 @@ void MeshPreprocessing::arrangeRegions()
 			store->uniqueTotalSize = _mesh->nodes->uniqueTotalSize;
 		}
 
+		_mesh->boundaryRegions[r]->uniqueNodes = _mesh->boundaryRegions[r]->nodes;
+		_mesh->boundaryRegions[r]->unintervals = _mesh->boundaryRegions[r]->nintervals;
 		if (_mesh->boundaryRegions[r]->dimension == 0) {
 			_mesh->boundaryRegions[r]->elements = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(threads, 0));
 			_mesh->boundaryRegions[r]->epointers = new serializededata<eslocal, Element*>(1, tarray<Element*>(threads, 0));
-			_mesh->boundaryRegions[r]->uniqueNodes = _mesh->boundaryRegions[r]->nodes;
-			_mesh->boundaryRegions[r]->unintervals = _mesh->boundaryRegions[r]->nintervals;
 		} else {
 			std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, _mesh->boundaryRegions[r]->elements->structures());
 			std::vector<eslocal> &eDomainDistribution = _mesh->elements->elementsDistribution;
@@ -1145,9 +1145,7 @@ void MeshPreprocessing::computeRegionsIntersection(RegionMapBase &map)
 	for (size_t i = 0; i < map.order.size(); i++) {
 		for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
 			if (StringCompare::caseSensitiveEq(_mesh->boundaryRegions[r]->name, map.order[i])) {
-				if (_mesh->boundaryRegions[r]->dimension == 0) { // only node regions intersect
-					bregions.push_back(_mesh->boundaryRegions[r]);
-				}
+				bregions.push_back(_mesh->boundaryRegions[r]);
 				break;
 			}
 		}
