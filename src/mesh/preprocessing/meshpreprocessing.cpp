@@ -492,7 +492,7 @@ void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separ
 			return
 					body[e1] == body[e2] &&
 					(!separateMaterials || material[e1] == material[e2]) &&
-					(!separateRegions || memcmp(regions.data() + e1 * rsize, regions.data() + e2 * rsize, rsize) == 0) &&
+					(!separateRegions || memcmp(regions.data() + e1 * rsize, regions.data() + e2 * rsize, sizeof(int) * rsize) == 0) &&
 					(!separateEtype || epointer[e1]->type == epointer[e2]->type);
 		};
 
