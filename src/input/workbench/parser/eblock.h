@@ -7,6 +7,7 @@
 namespace espreso {
 
 struct EData;
+struct ET;
 
 struct EBlock: public WorkbenchParser {
 	static size_t size;
@@ -24,12 +25,12 @@ struct EBlock: public WorkbenchParser {
 	bool solidBlock();
 
 	void fixOffsets(std::vector<size_t> &dataOffsets);
-	bool readSolid(std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &data);
-	bool readBoundary(std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &edata);
+	bool readSolid(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &data);
+	bool readBoundary(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &edata);
 
 protected:
-	bool solid(std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &data);
-	bool boundary(std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &edata);
+	bool solid(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &data);
+	bool boundary(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &edata);
 };
 
 }

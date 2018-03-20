@@ -139,6 +139,7 @@ void WorkbenchLoader::prepareData()
 	std::vector<std::vector<NBlock> > tNBlocks(threads);
 	std::vector<std::vector<EBlock> > tEBlocks(threads);
 	std::vector<std::vector<CMBlock> > tCMBlocks(threads);
+	std::vector<std::vector<ET> > tET(threads);
 	std::vector<std::vector<ESel> > tESel(threads);
 	std::vector<std::vector<NSel> > tNSel(threads);
 	std::vector<std::vector<CM> > tCM(threads);
@@ -175,6 +176,12 @@ void WorkbenchLoader::prepareData()
 			}
 			if (memcmp(tbegin, CMBlock::lower, CMBlock::size) == 0) {
 				tCMBlocks[t].push_back(CMBlock().parse(tbegin));
+			}
+			if (memcmp(tbegin, ET::upper, ET::size) == 0) {
+				tET[t].push_back(ET().parse(tbegin));
+			}
+			if (memcmp(tbegin, ET::lower, ET::size) == 0) {
+				tET[t].push_back(ET().parse(tbegin));
 			}
 			if (memcmp(tbegin, ESel::upper, ESel::size) == 0) {
 				tESel[t].push_back(ESel().parse(tbegin));
@@ -217,6 +224,7 @@ void WorkbenchLoader::prepareData()
 		_NBlocks.insert(_NBlocks.end(), tNBlocks[t].begin(), tNBlocks[t].end());
 		_EBlocks.insert(_EBlocks.end(), tEBlocks[t].begin(), tEBlocks[t].end());
 		_CMBlocks.insert(_CMBlocks.end(), tCMBlocks[t].begin(), tCMBlocks[t].end());
+		_ET.insert(_ET.end(), tET[t].begin(), tET[t].end());
 		_ESel.insert(_ESel.end(), tESel[t].begin(), tESel[t].end());
 		_NSel.insert(_NSel.end(), tNSel[t].begin(), tNSel[t].end());
 		_CM.insert(_CM.end(), tCM[t].begin(), tCM[t].end());
@@ -235,6 +243,9 @@ void WorkbenchLoader::prepareData()
 	}
 	for (size_t i = 0; i < _CMBlocks.size(); i++) {
 		_CMBlocks[i].fillDistribution(_blockEnds, _dataOffset);
+	}
+	for (size_t i = 0; i < _ET.size(); i++) {
+		_ET[i].fillDistribution(_blockEnds, _dataOffset);
 	}
 	for (size_t i = 0; i < _ESel.size(); i++) {
 		_ESel[i].fillDistribution(_blockEnds, _dataOffset);
@@ -256,14 +267,17 @@ void WorkbenchLoader::prepareData()
 		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench CMBlocks.";
 	}
 
+	if (!Communication::allGatherUnknownSize(_ET)) {
+		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench ET.";
+	}
 	if (!Communication::allGatherUnknownSize(_ESel)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench CMBlocks.";
+		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench ESel.";
 	}
 	if (!Communication::allGatherUnknownSize(_NSel)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench CMBlocks.";
+		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench NSel.";
 	}
 	if (!Communication::allGatherUnknownSize(_CM)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench CMBlocks.";
+		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench CM.";
 	}
 
 	// fix distribution if EBlocks are across more processes and elements data have more lines
@@ -290,6 +304,21 @@ void WorkbenchLoader::prepareData()
 
 void WorkbenchLoader::parseData(DistributedMesh &dMesh)
 {
+	std::vector<ET> et;
+	eslocal maxet = 0;
+	for (size_t i = 0; i < _ET.size(); i++) {
+		if (maxet < _ET[i].id) {
+			maxet = _ET[i].id;
+		}
+	}
+	et.resize(maxet + 1);
+	for (size_t i = 0; i < _ET.size(); i++) {
+		if (_ET[i].id >= 0) {
+			et[_ET[i].id] = _ET[i];
+		}
+	}
+	_ET.swap(et);
+
 	for (size_t i = 0; i < _NBlocks.size(); i++) {
 		if (!_NBlocks[i].readData(dMesh.nIDs, dMesh.coordinates, _configuration.workbench.scale_factor)) {
 			ESINFO(ERROR) << "Workbench parser: something wrong happens while read NBLOCK.";
@@ -297,7 +326,7 @@ void WorkbenchLoader::parseData(DistributedMesh &dMesh)
 	}
 
 	for (size_t i = 0; i < _EBlocks.size(); i++) {
-		if (!_EBlocks[i].readSolid(dMesh.esize, dMesh.enodes, dMesh.edata)) {
+		if (!_EBlocks[i].readSolid(_ET, dMesh.esize, dMesh.enodes, dMesh.edata)) {
 			ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
 		}
 	}
@@ -305,7 +334,7 @@ void WorkbenchLoader::parseData(DistributedMesh &dMesh)
 	for (size_t i = 0; i < _BBlocks.size(); i++) {
 		dMesh.bregions.push_back(MeshBRegion());
 		dMesh.bregions.back().name = "NAMELESS FACE_SET_" + std::to_string(i + 1);
-		if (!_BBlocks[i].readBoundary(dMesh.bregions.back().esize, dMesh.bregions.back().enodes, dMesh.bregions.back().edata)) {
+		if (!_BBlocks[i].readBoundary(_ET, dMesh.bregions.back().esize, dMesh.bregions.back().enodes, dMesh.bregions.back().edata)) {
 			ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
 		}
 		dMesh.bregions.back().min = dMesh.bregions.back().edata.size() ? dMesh.bregions.back().edata.front().id : 0;
