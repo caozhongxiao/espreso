@@ -60,7 +60,7 @@ std::ostream& espreso::operator<<(std::ostream& os, const espreso::RBFTargetTran
 	os<<"\t\tTRANSFORMATION\t\t:";
 	switch (t.transformation) {
 			case MORPHING_TRANSFORMATION::FIXED: {
-				os<<"FIXED\n";
+				os<<" FIXED\n";
 			} break;
 
 			case MORPHING_TRANSFORMATION::TRANSLATION: {
@@ -82,7 +82,7 @@ std::ostream& espreso::operator<<(std::ostream& os, const espreso::RBFTargetTran
 				os<<"\n";
 				os<<"\t\t\tCENTER X\t: "<<t.coordinate_system.center.x.value<<"\n";
 				os<<"\t\t\tCENTER Y\t: "<<t.coordinate_system.center.y.value<<"\n";
-				os<<"\t\t\tCENTER Z\t: t"<<t.coordinate_system.center.z.value<<"\n";
+				os<<"\t\t\tCENTER Z\t: "<<t.coordinate_system.center.z.value<<"\n";
 
 			} break;
 
