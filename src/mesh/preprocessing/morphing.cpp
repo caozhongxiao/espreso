@@ -640,7 +640,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 
 	if (_morphing == NULL) {
-		_morphing = _mesh->nodes->appendData(3, { "RBF_MORPHING" }, true);
+		_morphing = _mesh->nodes->appendData(3, { "RBF_MORPHING", "RBF_MORPHING_X", "RBF_MORPHING_Y", "RBF_MORPHING_Z" }, true);
 		_morphing->gatheredData.resize(3 * _mesh->nodes->uniqueSize);
 	}
 
