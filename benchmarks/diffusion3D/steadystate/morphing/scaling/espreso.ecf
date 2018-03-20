@@ -60,7 +60,7 @@ MESH_MORPHING {
     MY_RBF_MORPHING {
       SOLVER            DIRECT;
       SOLVER_PRECISION   1E-07;
-      FUNCTION             R^3;
+      FUNCTION               R;
 
       TARGET      ALL_ELEMENTS;
 
@@ -79,9 +79,9 @@ MESH_MORPHING {
             TYPE   CARTESIAN;
 
             CENTER {
-              X   -1;
-              Y   -1;
-              Z   -1;
+              X    0;
+              Y    0;
+              Z    0;
             }
           }
         }
