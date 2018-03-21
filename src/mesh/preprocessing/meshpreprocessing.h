@@ -37,7 +37,6 @@ public:
 	void computeElementsNeighbors();
 	void computeDual();
 	void computeDecomposedDual(bool separateMaterials, bool separateRegions, bool separateEtype);
-	void computeFullDual(const serializededata<eslocal, eslocal>* elements, eslocal begin, eslocal end, std::vector<eslocal> &dist, std::vector<eslocal> &data);
 
 	void reclusterize();
 	void partitiate(eslocal parts, bool separateMaterials, bool separateRegions, bool separateEtype);
