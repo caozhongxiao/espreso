@@ -915,6 +915,8 @@ void Mesh::printStatistics()
 		if (StringCompare::caseInsensitiveEq(elementsRegions[r]->name, "NAMELESS_ELEMENT_SET")) {
 			ESINFO(OVERVIEW) << Info::TextColor::YELLOW
 					<< std::string(namesize - elementsRegions[r]->name.size(), ' ') << elementsRegions[r]->name << " : " << totalesize(elementsRegions[r]->ecounters);
+		} else if (StringCompare::caseInsensitiveEq(elementsRegions[r]->name, "ALL_ELEMENTS")) {
+			ESINFO(OVERVIEW) << std::string(namesize - elementsRegions[r]->name.size(), ' ') << elementsRegions[r]->name << " : " << totalesize(elements->ecounters);
 		} else {
 			ESINFO(OVERVIEW) << std::string(namesize - elementsRegions[r]->name.size(), ' ') << elementsRegions[r]->name << " : " << totalesize(elementsRegions[r]->ecounters);
 		}
