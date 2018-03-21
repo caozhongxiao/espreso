@@ -129,7 +129,22 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
 
 	SurfaceStore *surface = m_mesh->domainsSurface;
 
-//	std::cout << "MIN: " << m_mesh->nodes->min << ", MAX: " << m_mesh->nodes->max << "\n";
+    std::cout << "MIN: " << m_mesh->nodes->min << ", MAX: " << m_mesh->nodes->max << "\n";
+
+    float axis_min = -1.0f;
+    float axis_max = 1.0f;
+    float axis_len = axis_max - axis_min;
+
+    float x_len = m_mesh->nodes->max.x - m_mesh->nodes->min.x;
+    float y_len = m_mesh->nodes->max.y - m_mesh->nodes->min.y;
+    float z_len = m_mesh->nodes->max.z - m_mesh->nodes->min.z;
+
+    auto transform = [] (float coordinate, float old_axis_min, float old_axis_len,
+            float new_axis_len, float new_axis_min)
+    {
+        return ( (coordinate - old_axis_min) / old_axis_len ) * new_axis_len + new_axis_min;
+    };
+
 
 	for (size_t d = 0; d < m_mesh->elements->ndomains; ++d) {
 		for (
@@ -139,16 +154,22 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
 
 			for (int i = 0; i < 3; ++i) {
 				Point p = shrink(surface->coordinates->datatarray()[t->at(i) + surface->cdistribution[d]], d);
-				mesh.push_back(p.x);
-				mesh.push_back(p.y);
-				mesh.push_back(p.z);
+                float _x = transform(p.x, m_mesh->nodes->min.x, x_len, axis_len, axis_min);
+                float _y = transform(p.y, m_mesh->nodes->min.y, y_len, axis_len, axis_min);
+                float _z = transform(p.z, m_mesh->nodes->min.z, z_len, axis_len, axis_min);
+                if ( (p.x - m_mesh->nodes->min.x) / x_len > 1.0f) qInfo() << "STRIKE X";
+                if ( (p.y - m_mesh->nodes->min.y) / y_len > 1.0f) qInfo() << "STRIKE Y";
+                if ( (p.z - m_mesh->nodes->min.z) / z_len > 1.0f) qInfo() << "STRIKE Z";
+                mesh.push_back( _x );
+                mesh.push_back( _y );
+                mesh.push_back( _z );
+                qInfo() << p.x << p.y << p.z << " : " << _x << _y << _z;
 				mesh.push_back(0);
 				mesh.push_back(1);
 				mesh.push_back(0);
 			}
 		}
 	}
-
 
 //    for (size_t e = 0; e < m_mesh->elements().size(); e++) {
 //

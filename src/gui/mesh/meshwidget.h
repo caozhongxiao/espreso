@@ -67,7 +67,9 @@ namespace espreso {
         float m_viewRotY = 0;
         float m_mouse = true;
 
-        float m_fov = 45.0f;
+        static constexpr float FOV = 80.0f;
+
+        float m_fov = FOV;
 
         QOpenGLShaderProgram* m_clickProgram = nullptr;
         GLuint m_clickProgram_position;

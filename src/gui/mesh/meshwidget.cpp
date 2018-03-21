@@ -201,14 +201,14 @@ void MeshWidget::wheelEvent(QWheelEvent *event)
 {
     float sign = (event->angleDelta().y() > 0) ? 1.0f : -1.0f;
 
-    if (m_fov >= 1.0f && m_fov <= 45.0f)
+    if (m_fov >= 1.0f && m_fov <= FOV)
         m_fov -= sign * 3;
 
     if (m_fov <= 1.0f)
         m_fov = 1.0f;
 
-    if (m_fov >= 45.0f)
-        m_fov = 45.0f;
+    if (m_fov >= FOV)
+        m_fov = FOV;
 
     this->update();
 }
