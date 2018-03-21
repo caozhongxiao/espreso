@@ -796,7 +796,16 @@ void Loader::addBoundaryRegions()
 
 			_mesh.boundaryRegions.push_back(new BoundaryRegionStore(_dMesh.bregions[i].name, _mesh._eclasses));
 			_mesh.boundaryRegions.back()->distribution = tarray<eslocal>::distribute(threads, epointers.front().size());
-			_mesh.boundaryRegions.back()->dimension = 2;
+			switch (epointers.front().front()->type) {
+			case Element::TYPE::PLANE:
+				_mesh.boundaryRegions.back()->dimension = 2;
+				break;
+			case Element::TYPE::LINE:
+				_mesh.boundaryRegions.back()->dimension = 1;
+				break;
+			default:
+				ESINFO(ERROR) << "ESPRESO Workbench parser: invalid boundary region type. Have to be 3D plane or 2D line.";
+			}
 			_mesh.boundaryRegions.back()->elements = new serializededata<eslocal, eslocal>(tedist, tnodes);
 			_mesh.boundaryRegions.back()->epointers = new serializededata<eslocal, Element*>(1, epointers);
 
@@ -993,6 +1002,21 @@ void Loader::addBoundaryRegions()
 
 		_mesh.boundaryRegions.push_back(new BoundaryRegionStore(_dMesh.bregions[i].name, _mesh._eclasses));
 		_mesh.boundaryRegions.back()->dimension = 2;
+		if (epointers.front().size()) {
+			switch (epointers.front().front()->type) {
+			case Element::TYPE::PLANE:
+				_mesh.boundaryRegions.back()->dimension = 2;
+				break;
+			case Element::TYPE::LINE:
+				_mesh.boundaryRegions.back()->dimension = 1;
+				break;
+			default:
+				ESINFO(ERROR) << "ESPRESO Workbench parser: invalid boundary region type. Have to be 3D plane or 2D line.";
+			}
+		}
+		int dim = _mesh.boundaryRegions.back()->dimension;
+		MPI_Allreduce(&dim, &_mesh.boundaryRegions.back()->dimension, 1, MPI_INT, MPI_MIN, environment->MPICommunicator);
+
 		_mesh.boundaryRegions.back()->elements = new serializededata<eslocal, eslocal>(tedist, tnodes);
 		_mesh.boundaryRegions.back()->epointers = new serializededata<eslocal, Element*>(1, epointers);
 		_mesh.boundaryRegions.back()->distribution = _mesh.boundaryRegions.back()->epointers->datatarray().distribution();

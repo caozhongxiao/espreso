@@ -333,7 +333,7 @@ void WorkbenchLoader::parseData(DistributedMesh &dMesh)
 
 	for (size_t i = 0; i < _BBlocks.size(); i++) {
 		dMesh.bregions.push_back(MeshBRegion());
-		dMesh.bregions.back().name = "NAMELESS FACE_SET_" + std::to_string(i + 1);
+		dMesh.bregions.back().name = "NAMELESS_SET_" + std::to_string(i + 1);
 		if (!_BBlocks[i].readBoundary(_ET, dMesh.bregions.back().esize, dMesh.bregions.back().enodes, dMesh.bregions.back().edata)) {
 			ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
 		}
