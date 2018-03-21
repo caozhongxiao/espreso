@@ -344,7 +344,7 @@ void CollectedEnSight::storeDecomposition()
 		part = 1;
 		clearIntervals();
 		eslocal cluster = _mesh.elements->gatherClustersDistribution()[environment->MPIrank];
-		for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
+		for (size_t r = 1; r < _mesh.elementsRegions.size(); r++) {
 			storePartHeader(os);
 			iterateElements(os, _mesh.elementsRegions[r]->eintervals, _mesh.elementsRegions[r]->ecounters, [&] (eslocal domain)->double { return _mesh.elements->clusters[domain - _mesh.elements->firstDomain] + cluster; });
 		}
