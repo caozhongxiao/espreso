@@ -1030,6 +1030,10 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 		linkNodesAndElements();
 	}
 
+	if (_mesh->elements->neighbors == NULL) {
+		computeElementsNeighbors();
+	}
+
 	std::vector<std::vector<std::pair<eslocal, eslocal> > > elements(threads);
 
 	#pragma omp parallel for
@@ -1042,16 +1046,21 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 		}
 	}
 
+	std::vector<size_t> distribution = { 0, elements[0].size() };
 	for (size_t t = 1; t < threads; t++) {
 		elements[0].insert(elements[0].end(), elements[t].begin(), elements[t].end());
+		distribution.push_back(elements[0].size());
 	}
 
-	std::sort(elements[0].begin(), elements[0].end());
+	Esutils::sortWithInplaceMerge(elements[0], distribution);
 
 	std::vector<eslocal> edistribution = _mesh->elements->gatherElementsProcDistribution();
-	auto begin = std::lower_bound(elements[0].begin(), elements[0].end(), edistribution[environment->MPIrank],
+	eslocal ebegin = edistribution[environment->MPIrank];
+	eslocal eend = edistribution[environment->MPIrank + 1];
+
+	auto begin = std::lower_bound(elements[0].begin(), elements[0].end(), ebegin,
 			[] (const std::pair<eslocal, eslocal> &p, eslocal e) { return p.first < e; });
-	auto end = std::lower_bound(elements[0].begin(), elements[0].end(), edistribution[environment->MPIrank + 1],
+	auto end = std::lower_bound(elements[0].begin(), elements[0].end(), eend,
 			[] (const std::pair<eslocal, eslocal> &p, eslocal e) { return p.first < e; });
 
 	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, end - begin);
@@ -1066,61 +1075,80 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 
 	std::vector<std::vector<eslocal> > edist(threads), edata(threads), ecode(threads);
 	std::vector<std::vector<Element*> > epointers(threads);
-	edist.front().push_back(0);
+
+	int rsize = _mesh->elements->regionMaskSize;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<eslocal> nodes, facenodes, lowerElements, lenodes;
+		std::vector<eslocal> tdist, tdata, tcode;
+		if (t == 0) {
+			tdist.push_back(0);
+		}
+
+		int nface;
+		eslocal element, neighbor, prev = 0;
+		auto enodes = _mesh->elements->nodes->cbegin();
+		auto neighbors = _mesh->elements->neighbors->cbegin();
+		const auto &regions = _mesh->elements->regions->datatarray();
+
 		for (size_t e = tdistribution[t]; e < tdistribution[t + 1]; e++) {
 			nodes.push_back((begin + e)->second);
 			if ((e + 1 == tdistribution[t + 1] || (begin + e + 1)->first != (begin + e)->first)) {
 
-				eslocal element = (begin + e)->first - edistribution[environment->MPIrank];
+				element = (begin + e)->first - ebegin;
 				Esutils::sortAndRemoveDuplicity(nodes);
+
+				enodes += element - prev;
+				neighbors += element - prev;
+				prev = element;
 
 				const auto &fpointers = _mesh->elements->epointers->datatarray()[element]->facepointers->datatarray();
 				auto fnodes = _mesh->elements->epointers->datatarray()[element]->faces->cbegin();
+				nface = 0;
+				for (auto f = fpointers.begin(); f != fpointers.end(); ++f, ++fnodes, ++nface) {
 
-				for (auto f = fpointers.begin(); f != fpointers.end(); ++f, ++fnodes) {
+					auto addFace = [&] () {
+						for (auto n = fnodes->begin(); n != fnodes->end(); ++n) {
+							tdata.push_back(enodes->at(*n));
+						}
+						tdist.push_back(tdata.size());
+						tcode.push_back((eslocal)(*f)->code);
+					};
+
 					if (nodes.size() >= (*f)->nodes) {
-						auto enodes = _mesh->elements->nodes->cbegin() + element;
 						for (auto n = fnodes->begin(); n != fnodes->end(); ++n) {
 							facenodes.push_back(enodes->at(*n));
 						}
 						std::sort(facenodes.begin(), facenodes.end());
 						if (std::includes(nodes.begin(), nodes.end(), facenodes.begin(), facenodes.end())) {
-							bool isLower = true;
-							lowerElements.clear();
-							lowerElements.insert(lowerElements.end(), (_mesh->nodes->elements->cbegin() + facenodes.front())->begin(), (_mesh->nodes->elements->cbegin() + facenodes.front())->end());
-							for (size_t le = 0; isLower && le < lowerElements.size() && lowerElements[le] < (begin + e)->first; le++) {
-								lenodes.clear();
-								auto pcomp = [] (const std::pair<eslocal, eslocal> &p, eslocal e) { return p.first < e; };
-								auto lebegin = std::lower_bound(elements[0].begin(), elements[0].end(), lowerElements[le], pcomp);
-								auto leend = std::lower_bound(elements[0].begin(), elements[0].end(), lowerElements[le] + 1, pcomp);
-								if (lebegin != elements[0].end() && lebegin->first == lowerElements[le]) {
-									for (auto leit = lebegin; leit != leend; ++leit) {
-										lenodes.push_back(leit->second);
+							neighbor = neighbors->at(nface);
+							if (neighbor == -1) {
+								addFace();
+							} else if (element + ebegin < neighbor) {
+								if (ebegin <= neighbor && neighbor < eend) {
+									neighbor -= ebegin;
+									if (memcmp(regions.data() + element * rsize, regions.data() + neighbor * rsize, sizeof(int) * rsize) != 0) {
+										addFace();
 									}
-									if (std::includes(lenodes.begin(), lenodes.end(), facenodes.begin(), facenodes.end())) {
-										isLower = false;
+								} else {
+									neighbor = std::lower_bound(_mesh->halo->IDs->datatarray().begin(), _mesh->halo->IDs->datatarray().end(), neighbor) - _mesh->halo->IDs->datatarray().begin();
+									if (memcmp(regions.data() + element * rsize, _mesh->halo->regions->datatarray().data() + neighbor * rsize, sizeof(int) * rsize) != 0) {
+										addFace();
 									}
 								}
-							}
-							if (isLower) {
-								for (auto n = fnodes->begin(); n != fnodes->end(); ++n) {
-									edata[t].push_back(enodes->at(*n));
-								}
-								edist[t].push_back(edata[t].size());
-								ecode[t].push_back((eslocal)(*f)->code);
 							}
 						}
 						facenodes.clear();
 					}
 				}
 				nodes.clear();
-
 			}
 		}
+
+		edist[t].swap(tdist);
+		edata[t].swap(tdata);
+		ecode[t].swap(tcode);
 	}
 
 	Esutils::threadDistributionToFullDistribution(edist);
