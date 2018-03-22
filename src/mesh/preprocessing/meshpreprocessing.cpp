@@ -519,100 +519,50 @@ void MeshPreprocessing::computeBoundaryNodes(std::vector<eslocal> &externalBound
 {
 	start("computation of boundary nodes");
 
-	if (_mesh->elements->fullDual == NULL) {
-		this->computeDual();
+	if (_mesh->elements->neighbors == NULL) {
+		this->computeElementsNeighbors();
 	}
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<eslocal> IDBoundaries = _mesh->elements->gatherElementsDistribution();
-
 	std::vector<std::vector<eslocal> > external(threads), internal(threads);
+
+	eslocal eoffset = _mesh->elements->gatherElementsProcDistribution()[environment->MPIrank];
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		std::vector<eslocal> common;
-		size_t ncommons, counter;
-		bool isExternal;
-		eslocal eID = _mesh->elements->distribution[t], eoffset = _mesh->elements->IDs->datatarray().front();
-		auto dual = _mesh->elements->fullDual->cbegin(t);
-		auto epointer = _mesh->elements->epointers->cbegin(t);
-		auto IDpointer = std::lower_bound(IDBoundaries.begin(), IDBoundaries.end(), eID + eoffset + 1) - 1;
-		eslocal begine = *IDpointer, ende = *IDpointer;
-		if (IDpointer + 1 != IDBoundaries.end()) {
-			ende = *(IDpointer + 1);
-		}
+		std::vector<eslocal> texternal, tinternal;
 
-		for (auto e = _mesh->elements->nodes->cbegin(t); e != _mesh->elements->nodes->cend(t); ++e, ++dual, ++epointer, ++eID) {
-			if (eID + eoffset >= ende) {
-				++IDpointer;
-				begine = *IDpointer;
-				ende = *(IDpointer + 1);
-			}
-			if (dual->size() < epointer->front()->faces->structures() || dual->front() < begine || dual->back() >= ende) {
+		auto neighbors = _mesh->elements->neighbors->cbegin(t);
+		auto enodes = _mesh->elements->nodes->cbegin(t);
+		for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
+			eslocal dbegin = _mesh->elements->elementsDistribution[d];
+			eslocal dend = _mesh->elements->elementsDistribution[d + 1];
 
-				for (auto face = epointer->front()->faces->cbegin(); face != epointer->front()->faces->cend(); ++face) {
+			for (eslocal e = dbegin; e < dend; ++e, ++neighbors, ++enodes) {
+				auto epointer = _mesh->elements->epointers->datatarray()[e];
+				auto faces = epointer->faces->begin();
 
-					isExternal = true;
-					common.clear();
-					for (auto n = face->begin(); n != face->end(); ++n) {
-						auto nelements = _mesh->nodes->elements->cbegin() + (*e)[*n];
-						for (auto ne = nelements->begin(); ne != nelements->end(); ++ne) {
-							common.push_back(*ne);
+				for (size_t n = 0; n < neighbors->size(); ++n, ++faces) {
+					if (neighbors->at(n) == -1) {
+						for (auto f = faces->begin(); f != faces->end(); ++f) {
+							texternal.push_back(enodes->at(*f));
 						}
-					}
-					std::sort(common.begin(), common.end());
-
-					ncommons = counter = 0;
-					for (size_t i = 1; i < common.size(); i++) {
-						if (common[i - 1] == common[i]) {
-							++counter;
-						} else {
-							if (face->size() == counter + 1) {
-								if (begine <= common[i - 1] && common[i - 1] < ende) {
-									++ncommons;
-								} else {
-									isExternal = false;
-								}
-							}
-							counter = 0;
-						}
-					}
-					if (face->size() == counter + 1) {
-						if (begine <= common.back() && common.back() < ende) {
-							++ncommons;
-						} else {
-							isExternal = false;
-						}
-					}
-
-					if (ncommons == 1) {
-						if (isExternal) {
-							for (auto n = face->begin(); n != face->end(); ++n) {
-								external[t].push_back((*e)[*n]);
-							}
-						} else {
-							for (auto n = face->begin(); n != face->end(); ++n) {
-								internal[t].push_back((*e)[*n]);
-							}
+					} else if (neighbors->at(n) < dbegin + eoffset || dend + eoffset <= neighbors->at(n)) {
+						for (auto f = faces->begin(); f != faces->end(); ++f) {
+							tinternal.push_back(enodes->at(*f));
 						}
 					}
 				}
 			}
 		}
-		Esutils::sortAndRemoveDuplicity(internal[t]);
-		Esutils::sortAndRemoveDuplicity(external[t]);
+
+		internal[t].swap(tinternal);
+		external[t].swap(texternal);
 	}
 
-	for (size_t t = 0; t < threads; t++) {
-		externalBoundary.insert(externalBoundary.end(), external[t].begin(), external[t].end());
-	}
-	Esutils::sortAndRemoveDuplicity(externalBoundary);
-
-	for (size_t t = 1; t < threads; t++) {
-		internal[0].insert(internal[0].end(), internal[t].begin(), internal[t].end());
-	}
-	Esutils::sortAndRemoveDuplicity(internal[0]);
+	Esutils::sortWithUniqueMerge(internal);
+	Esutils::sortWithUniqueMerge(external);
 
 	auto n2i = [ & ] (size_t neighbour) {
 		return std::lower_bound(_mesh->neighbours.begin(), _mesh->neighbours.end(), neighbour) - _mesh->neighbours.begin();
