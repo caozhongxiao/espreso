@@ -5,6 +5,7 @@
 #include "../../../basis/containers/point.h"
 #include "../../../basis/containers/serializededata.h"
 #include "../../../basis/utilities/utils.h"
+#include "../../../basis/utilities/communication.h"
 
 #include "../../../config/ecf/environment.h"
 #include "../../../config/ecf/output.h"
@@ -894,6 +895,110 @@ void DistributedVTKLegacy::closeElements(const std::string &name)
 				}
 			}
 		}
+	}
+	os << "\n";
+}
+
+void DistributedVTKLegacy::neighbors(const std::string &name)
+{
+	if (_mesh.elements->neighbors == NULL) {
+		return;
+	}
+
+	std::vector<eslocal> pdistribution = _mesh.elements->gatherElementsProcDistribution();
+	eslocal ebegin = pdistribution[environment->MPIrank];
+	eslocal eend = ebegin + _mesh.elements->size;
+
+	std::vector<std::vector<eslocal> > sIDs(_mesh.neighbours.size()), rIDs(_mesh.neighbours.size());
+	std::vector<std::vector<Point> > sCenters(_mesh.neighbours.size()), rCenters(_mesh.neighbours.size());
+
+	auto neighbors = _mesh.elements->neighbors->cbegin();
+	auto element = _mesh.elements->nodes->cbegin();
+	for (eslocal e = 0; e < _mesh.elements->size; ++e, ++element, ++neighbors) {
+		Point center;
+		for (auto n = element->begin(); n != element->end(); ++n) {
+			center += _mesh.nodes->coordinates->datatarray()[*n];
+		}
+		center /= element->size();
+
+		for (auto n = neighbors->begin(); n != neighbors->end(); ++n) {
+			if (*n != -1 && (*n < ebegin || eend <= *n)) {
+				eslocal target = std::lower_bound(pdistribution.begin(), pdistribution.end(), *n + 1) - pdistribution.begin() - 1;
+				eslocal tindex = std::lower_bound(_mesh.neighbours.begin(), _mesh.neighbours.end(), target + 1) - _mesh.neighbours.begin() - 1;
+				sIDs[tindex].push_back(ebegin + e);
+				sCenters[tindex].push_back(center);
+			}
+		}
+	}
+
+	Communication::exchangeUnknownSize(sIDs, rIDs, _mesh.neighbours);
+	Communication::exchangeUnknownSize(sCenters, rCenters, _mesh.neighbours);
+
+
+	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+
+	os << "# vtk DataFile Version 2.0\n";
+	os << "EXAMPLE\n";
+	os << "ASCII\n";
+	os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+	size_t points = _mesh.elements->size + _mesh.elements->neighbors->datatarray().size();
+	os << "POINTS " << points << " float\n";
+
+	neighbors = _mesh.elements->neighbors->cbegin();
+	element = _mesh.elements->nodes->cbegin();
+	for (eslocal e = 0; e < _mesh.elements->size; ++e, ++element, ++neighbors) {
+		Point center;
+		for (auto n = element->begin(); n != element->end(); ++n) {
+			center += _mesh.nodes->coordinates->datatarray()[*n];
+		}
+		center /= element->size();
+
+		os << center << "\n";
+
+		auto face = _mesh.elements->epointers->datatarray()[e]->faces->cbegin();
+		for (auto n = neighbors->begin(); n != neighbors->end(); ++n, ++face) {
+			if (*n == -1) {
+				Point fCenter;
+				for (auto f = face->begin(); f != face->end(); ++f) {
+					fCenter += _mesh.nodes->coordinates->datatarray()[element->at(*f)];
+				}
+				fCenter /= face->size();
+				os << center + (fCenter - center) / 2.1 << "\n";
+			} else if (*n < ebegin || eend <= *n) {
+				eslocal target = std::lower_bound(pdistribution.begin(), pdistribution.end(), *n + 1) - pdistribution.begin() - 1;
+				eslocal tindex = std::lower_bound(_mesh.neighbours.begin(), _mesh.neighbours.end(), target + 1) - _mesh.neighbours.begin() - 1;
+				eslocal offset = std::lower_bound(rIDs[tindex].begin(), rIDs[tindex].end(), *n) - rIDs[tindex].begin();
+				os << center + (rCenters[tindex][offset] - center) / 2.1 << "\n";
+			} else {
+				Point ncenter;
+				auto nelement = _mesh.elements->nodes->cbegin() + *n - ebegin;
+				for (auto nn = nelement->begin(); nn != nelement->end(); ++nn) {
+					ncenter += _mesh.nodes->coordinates->datatarray()[*nn];
+				}
+				ncenter /= nelement->size();
+				os << center + (ncenter - center) / 2.1 << "\n";
+			}
+		}
+	}
+	os << "\n";
+
+	size_t cells = _mesh.elements->neighbors->datatarray().size();
+
+	os << "CELLS " << cells << " " << 3 * cells << "\n";
+	size_t nindex = 0, noffset;
+	for (auto e = _mesh.elements->neighbors->cbegin(); e != _mesh.elements->neighbors->cend(); ++e, nindex += noffset) {
+		noffset = 1;
+		for (auto n = e->begin(); n != e->end(); ++n, ++noffset) {
+			os << "2 " << nindex << " " << nindex + noffset << "\n";
+		}
+	}
+	os << "\n";
+
+	os << "CELL_TYPES " << cells << "\n";
+	Element::CODE ecode = Element::CODE::LINE2;
+	for (size_t n = 0; n < cells; ++n) {
+		os << VTKWritter::ecode(ecode) << "\n";
 	}
 	os << "\n";
 }
