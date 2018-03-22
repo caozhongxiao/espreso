@@ -26,8 +26,29 @@ def create_symlink(ctx, lib, suffix=""):
             always = True,
             name   = "create symlink to {0}".format(lib)
         )
+def build_hypre(ctx):
+	
+    create_symlink(ctx, "HYPRE")
+    
+    if check_libraries(ctx, ["HYPRE-2.11.2"]):
+        return
 
-
+    path = ctx.ROOT + "/tools/hypre-2.11.2"
+    params = "--libdir={0}/lib/lib{1} --includedir={2} ".format(ctx.ROOT, ctx.env.INT_WIDTH, path+"/include")
+    
+    if ctx.env.LIBTYPE == "SHARED":
+        params += " --enable-shared "
+    
+    if ctx.env.INT_WIDTH == "64":
+        params += " --enable-bigint "
+    
+    
+    ctx(
+        rule    = "cd {0}; make clean; ./configure {1}; make install".format(path+"/src", params),
+        always  = True,
+        name    = "build HYPRE library"
+    )
+    
 def build_metis(ctx):
     create_symlink(ctx, "parmetis")
     create_symlink(ctx, "metis")
@@ -156,6 +177,7 @@ def build(ctx):
         return
 
     build_metis(ctx)
+    build_hypre(ctx)
 
     if ctx.env.SOLVER == "MUMPS":
         build_scotch(ctx)
