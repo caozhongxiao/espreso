@@ -38,8 +38,12 @@ void MeshPreprocessing::reclusterize()
 
 	start("re-distribution of the mesh to processes");
 
-	if (_mesh->elements->dual == NULL) {
+	if (_mesh->elements->fullDual == NULL) {
 		this->computeDual();
+	}
+
+	if (_mesh->halo->IDs == NULL) {
+		exchangeHalo();
 	}
 
 	// TODO: ParMetis can get elements coordinates to speed up decomposition
@@ -50,17 +54,17 @@ void MeshPreprocessing::reclusterize()
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	std::vector<eslocal> edistribution = _mesh->elements->gatherElementsProcDistribution();
-	std::vector<eslocal> partition(_mesh->elements->size), permutation(_mesh->elements->size), edgeWeights(_mesh->elements->dual->datatarray().size());
+	std::vector<eslocal> partition(_mesh->elements->size), permutation(_mesh->elements->size), edgeWeights(_mesh->elements->fullDual->datatarray().size());
 
 	size_t edgeConst = 10000;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto dual = _mesh->elements->dual->cbegin(t);
+		auto dual = _mesh->elements->fullDual->cbegin(t);
 		int material;
 		Element::TYPE type;
 
-		size_t edgeIndex = _mesh->elements->dual->datatarray().distribution()[t];
+		size_t edgeIndex = _mesh->elements->fullDual->datatarray().distribution()[t];
 		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++dual) {
 			for (auto neigh = dual->begin(); neigh != dual->end(); ++neigh) {
 				auto it = std::lower_bound(_mesh->elements->IDs->datatarray().cbegin(), _mesh->elements->IDs->datatarray().cend(), *neigh);
@@ -87,7 +91,7 @@ void MeshPreprocessing::reclusterize()
 	start("ParMETIS::KWay");
 	ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_PartKway,
 		edistribution.data(),
-		_mesh->elements->dual->boundarytarray().data(), _mesh->elements->dual->datatarray().data(),
+		_mesh->elements->fullDual->boundarytarray().data(), _mesh->elements->fullDual->datatarray().data(),
 		0, NULL, // 3, _mesh->elements->coordinates->datatarray(),
 		0, NULL, edgeWeights.data(),
 		partition.data()
@@ -1274,7 +1278,7 @@ void MeshPreprocessing::permuteElements(const std::vector<eslocal> &permutation,
 	std::vector<eslocal> IDBoundaries = _mesh->elements->gatherElementsProcDistribution();
 	std::vector<std::vector<std::pair<eslocal, eslocal> > > rHalo(_mesh->neighbours.size());
 
-	if (_mesh->elements->dual != NULL || _mesh->nodes->elements != NULL) {
+	if (_mesh->elements->fullDual != NULL || _mesh->nodes->elements != NULL) {
 		// thread x neighbor x elements(oldID, newID)
 		std::vector<std::vector<std::vector<std::pair<eslocal, eslocal> > > > sHalo(threads, std::vector<std::vector<std::pair<eslocal, eslocal> > >(_mesh->neighbours.size()));
 
@@ -1318,11 +1322,13 @@ void MeshPreprocessing::permuteElements(const std::vector<eslocal> &permutation,
 			int source;
 			for (auto e = data->begin(t); e != data->end(t); ++e) {
 				for (auto n = e->begin(); n != e->end(); ++n) {
-					source = std::lower_bound(IDBoundaries.begin(), IDBoundaries.end(), *n + 1) - IDBoundaries.begin() - 1;
-					if (source == environment->MPIrank) {
-						*n = IDBoundaries[environment->MPIrank] + backpermutation[*n - IDBoundaries[environment->MPIrank]];
-					} else {
-						*n = std::lower_bound(rHalo[n2i(source)].begin(), rHalo[n2i(source)].end(), std::make_pair(*n, 0))->second;
+					if (*n >= 0) {
+						source = std::lower_bound(IDBoundaries.begin(), IDBoundaries.end(), *n + 1) - IDBoundaries.begin() - 1;
+						if (source == environment->MPIrank) {
+							*n = IDBoundaries[environment->MPIrank] + backpermutation[*n - IDBoundaries[environment->MPIrank]];
+						} else {
+							*n = std::lower_bound(rHalo[n2i(source)].begin(), rHalo[n2i(source)].end(), std::make_pair(*n, 0))->second;
+						}
 					}
 				}
 				if (sort) {
@@ -1353,7 +1359,8 @@ void MeshPreprocessing::permuteElements(const std::vector<eslocal> &permutation,
 	_mesh->elements->permute(permutation, distribution);
 	std::iota(_mesh->elements->IDs->datatarray().begin(), _mesh->elements->IDs->datatarray().end(), firstID);
 
-	globalremap(_mesh->elements->dual, true);
+	globalremap(_mesh->elements->neighbors, false);
+	globalremap(_mesh->elements->fullDual, true);
 	globalremap(_mesh->nodes->elements, true);
 	localremap(_mesh->elements->decomposedDual, true);
 

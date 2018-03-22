@@ -22,7 +22,7 @@ ElementStore::ElementStore(std::vector<Element*> &eclasses)
   epointers(NULL),
 
   neighbors(NULL),
-  dual(NULL),
+  fullDual(NULL),
   decomposedDual(NULL),
 
   firstDomain(0),
@@ -183,7 +183,7 @@ ElementStore::~ElementStore()
 	if (epointers == NULL) { delete epointers; }
 
 	if (neighbors == NULL) { delete neighbors; }
-	if (dual == NULL) { delete dual; }
+	if (fullDual == NULL) { delete fullDual; }
 	if (decomposedDual == NULL) { delete decomposedDual; }
 }
 
@@ -199,7 +199,7 @@ void ElementStore::store(const std::string &file)
 	Store::storedata(os, "material", material);
 	Store::storedata(os, "epointers", epointers);
 
-	Store::storedata(os, "dual", dual);
+	Store::storedata(os, "dual", fullDual);
 	Store::storedata(os, "decomposedDual", decomposedDual);
 }
 
@@ -239,7 +239,7 @@ void ElementStore::permute(const std::vector<eslocal> &permutation, const std::v
 	}
 
 	if (neighbors != NULL) { neighbors->permute(permutation, distribution); }
-	if (dual != NULL) { dual->permute(permutation, distribution); }
+	if (fullDual != NULL) { fullDual->permute(permutation, distribution); }
 	if (decomposedDual != NULL) { decomposedDual->permute(permutation, distribution); }
 }
 

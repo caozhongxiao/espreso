@@ -405,84 +405,59 @@ void MeshPreprocessing::computeDomainsSurface()
 {
 	start("computation domains surface");
 
-	if (_mesh->elements->dual == NULL) {
-		this->computeDual();
+	if (_mesh->elements->neighbors == NULL) {
+		this->computeElementsNeighbors();
 	}
 
 	size_t threads = environment->OMP_NUM_THREADS;
-
-	std::vector<eslocal> IDBoundaries = _mesh->elements->gatherElementsDistribution();
 
 	std::vector<std::vector<eslocal> > faces(threads), facesDistribution(threads), ecounter(threads, std::vector<eslocal>((int)Element::CODE::SIZE));
 	std::vector<std::vector<Element*> > fpointer(threads);
 	std::vector<std::vector<size_t> > intervals(threads);
 
-	facesDistribution.front().push_back(0);
-	intervals.front().push_back(0);
+	eslocal eoffset = _mesh->elements->gatherElementsProcDistribution()[environment->MPIrank];
+
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		std::vector<eslocal> common;
-		size_t ncommons, counter;
-		eslocal eID = _mesh->elements->distribution[t], eoffset = _mesh->elements->IDs->datatarray().front();
-		auto dual = _mesh->elements->dual->cbegin(t);
-		auto epointer = _mesh->elements->epointers->cbegin(t);
-		auto IDpointer = std::lower_bound(IDBoundaries.begin(), IDBoundaries.end(), eID + eoffset + 1) - 1;
-		eslocal begine = *IDpointer, ende = *(IDpointer + 1);
+		std::vector<eslocal> tfaces, tfacesDistribution, tecounter((int)Element::CODE::SIZE);
+		std::vector<Element*> tfpointer;
+		std::vector<size_t> tintervals;
+		if (t == 0) {
+			tfacesDistribution.push_back(0);
+			tintervals.push_back(0);
+		}
 
-		for (auto e = _mesh->elements->nodes->cbegin(t); e != _mesh->elements->nodes->cend(t); ++e, ++dual, ++epointer, ++eID) {
-			if (eID + eoffset >= ende) {
-				++IDpointer;
-				begine = *IDpointer;
-				ende = *(IDpointer + 1);
-				intervals[t].push_back(facesDistribution[t].size());
-			}
-			if (dual->size() < epointer->front()->faces->structures() || dual->front() < begine || dual->back() >= ende) {
+		auto neighbors = _mesh->elements->neighbors->cbegin(t);
+		auto enodes = _mesh->elements->nodes->cbegin(t);
+		for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
+			eslocal dbegin = _mesh->elements->elementsDistribution[d];
+			eslocal dend = _mesh->elements->elementsDistribution[d + 1];
 
-				auto facepointer = epointer->front()->facepointers->datatarray().cbegin();
-				for (auto face = epointer->front()->faces->cbegin(); face != epointer->front()->faces->cend(); ++face, ++facepointer) {
+			for (eslocal e = dbegin; e < dend; ++e, ++neighbors, ++enodes) {
+				auto epointer = _mesh->elements->epointers->datatarray()[e];
+				auto faces = epointer->faces->begin();
+				auto facepointer = epointer->facepointers->datatarray().begin();
 
-					common.clear();
-					for (auto n = face->begin(); n != face->end(); ++n) {
-						auto nelements = _mesh->nodes->elements->cbegin() + (*e)[*n];
-						for (auto ne = nelements->begin(); ne != nelements->end(); ++ne) {
-							common.push_back(*ne);
+				for (size_t n = 0; n < neighbors->size(); ++n, ++faces, ++facepointer) {
+					if (neighbors->at(n) < dbegin + eoffset || dend + eoffset <= neighbors->at(n)) {
+						for (auto f = faces->begin(); f != faces->end(); ++f) {
+							tfaces.push_back(enodes->at(*f));
 						}
-					}
-					std::sort(common.begin(), common.end());
-
-					ncommons = counter = 0;
-					for (size_t i = 1; i < common.size(); i++) {
-						if (common[i - 1] == common[i]) {
-							++counter;
-						} else {
-							if (face->size() == counter + 1) {
-								if (begine <= common[i - 1] && common[i - 1] < ende) {
-									++ncommons;
-								}
-							}
-							counter = 0;
-						}
-					}
-					if (face->size() == counter + 1) {
-						if (begine <= common.back() && common.back() < ende) {
-							++ncommons;
-						}
-					}
-
-					if (ncommons == 1) {
-						for (auto n = face->begin(); n != face->end(); ++n) {
-							faces[t].push_back((*e)[*n]);
-						}
-						facesDistribution[t].push_back(faces[t].size());
-						fpointer[t].push_back(*facepointer);
-						++ecounter[t][(int)(*facepointer)->code];
+						tfacesDistribution.push_back(tfaces.size());
+						tfpointer.push_back(*facepointer);
+						++tecounter[(int)(*facepointer)->code];
 					}
 				}
 			}
+
+			tintervals.push_back(tfacesDistribution.size());
 		}
-		if (eID + eoffset == ende) {
-			intervals[t].push_back(facesDistribution[t].size());
-		}
+
+		faces[t].swap(tfaces);
+		facesDistribution[t].swap(tfacesDistribution);
+		fpointer[t].swap(tfpointer);
+		ecounter[t].swap(tecounter);
+		intervals[t].swap(tintervals);
 	}
 
 	if (_mesh->domainsSurface == NULL) {
@@ -531,27 +506,73 @@ void MeshPreprocessing::computeDomainsSurface()
 
 	std::vector<std::vector<Point> > coordinates(threads);
 	std::vector<std::vector<size_t> > cdistribution(threads);
-	cdistribution.front().push_back(0);
+
+	std::vector<eslocal> sintervals = _mesh->nodes->externalIntervals;
+	auto idomains = _mesh->nodes->idomains->cbegin();
+	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++idomains) {
+		if (idomains->size() > 1) {
+			sintervals.push_back(i);
+		}
+	}
+	Esutils::sortAndRemoveDuplicity(sintervals);
+
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
+		std::vector<Point> tcoordinates;
+		std::vector<size_t> tcdistribution;
+		std::vector<eslocal> ibounds, ioffset;
+		if (t == 0) {
+			tcdistribution.push_back(0);
+		}
+
+		size_t nsize = 0;
 		for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
-			std::vector<eslocal> nodes(
-					(_mesh->domainsSurface->elements->cbegin() + _mesh->domainsSurface->edistribution[d])->begin(),
-					(_mesh->domainsSurface->elements->cbegin() + _mesh->domainsSurface->edistribution[d + 1])->begin());
-			Esutils::sortAndRemoveDuplicity(nodes);
-			coordinates[t].reserve(coordinates[t].size() + nodes.size());
-			for (size_t n = 0; n < nodes.size(); n++) {
-				coordinates[t].push_back(_mesh->nodes->coordinates->datatarray()[nodes[n]]);
+			auto sit = sintervals.begin();
+			for (size_t i = 0; i < _mesh->nodes->dintervals[d].size(); ++i) {
+				while (*sit < _mesh->nodes->dintervals[d][i].pindex) { ++sit; }
+				if (*sit == _mesh->nodes->dintervals[d][i].pindex) {
+					nsize += _mesh->nodes->dintervals[d][i].end - _mesh->nodes->dintervals[d][i].begin;
+				}
 			}
+		}
+		tcoordinates.reserve(nsize);
+		for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
+			auto sit = sintervals.begin();
+			for (size_t i = 0; i < _mesh->nodes->dintervals[d].size(); ++i) {
+				while (*sit < _mesh->nodes->dintervals[d][i].pindex) { ++sit; }
+				if (*sit == _mesh->nodes->dintervals[d][i].pindex) {
+					tcoordinates.insert(tcoordinates.end(),
+							_mesh->nodes->coordinates->datatarray().data() + _mesh->nodes->dintervals[d][i].begin,
+							_mesh->nodes->coordinates->datatarray().data() + _mesh->nodes->dintervals[d][i].end);
+				}
+			}
+			tcdistribution.push_back(tcoordinates.size());
+		}
+
+		for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
+			auto sit = sintervals.begin();
+			ibounds.clear();
+			ioffset = { 0 };
+			for (size_t i = 0; i < _mesh->nodes->dintervals[d].size(); ++i) {
+				while (*sit < _mesh->nodes->dintervals[d][i].pindex) { ++sit; }
+				if (*sit == _mesh->nodes->dintervals[d][i].pindex) {
+					ibounds.push_back(_mesh->nodes->dintervals[d][i].begin);
+					ioffset.push_back(ioffset.back() + _mesh->nodes->dintervals[d][i].end - _mesh->nodes->dintervals[d][i].begin);
+				}
+			}
+
 			for (
 					auto n = (_mesh->domainsSurface->elements->begin() + _mesh->domainsSurface->edistribution[d])->begin();
 					n != (_mesh->domainsSurface->elements->begin() + _mesh->domainsSurface->edistribution[d + 1])->begin();
 					++n) {
 
-				*n = std::lower_bound(nodes.begin(), nodes.end(), *n) - nodes.begin();
+				size_t i = std::lower_bound(ibounds.begin(), ibounds.end(), *n + 1) - ibounds.begin() - 1;
+				*n = *n - ibounds[i] + ioffset[i];
 			}
-			cdistribution[t].push_back(coordinates[t].size());
 		}
+
+		cdistribution[t].swap(tcdistribution);
+		coordinates[t].swap(tcoordinates);
 	}
 	Esutils::threadDistributionToFullDistribution(cdistribution);
 	Esutils::mergeThreadedUniqueData(cdistribution);

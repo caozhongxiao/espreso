@@ -416,10 +416,6 @@ void MeshPreprocessing::computeDual()
 		this->computeElementsNeighbors();
 	}
 
-	if (_mesh->halo->IDs == NULL) {
-		this->exchangeHalo();
-	}
-
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	std::vector<std::vector<eslocal> > dualDistribution(threads);
@@ -449,7 +445,7 @@ void MeshPreprocessing::computeDual()
 
 	Esutils::threadDistributionToFullDistribution(dualDistribution);
 
-	_mesh->elements->dual = new serializededata<eslocal, eslocal>(dualDistribution, dualData);
+	_mesh->elements->fullDual = new serializededata<eslocal, eslocal>(dualDistribution, dualData);
 
 	finish("computation of the full dual graph");
 }
@@ -523,7 +519,7 @@ void MeshPreprocessing::computeBoundaryNodes(std::vector<eslocal> &externalBound
 {
 	start("computation of boundary nodes");
 
-	if (_mesh->elements->dual == NULL) {
+	if (_mesh->elements->fullDual == NULL) {
 		this->computeDual();
 	}
 
@@ -539,7 +535,7 @@ void MeshPreprocessing::computeBoundaryNodes(std::vector<eslocal> &externalBound
 		size_t ncommons, counter;
 		bool isExternal;
 		eslocal eID = _mesh->elements->distribution[t], eoffset = _mesh->elements->IDs->datatarray().front();
-		auto dual = _mesh->elements->dual->cbegin(t);
+		auto dual = _mesh->elements->fullDual->cbegin(t);
 		auto epointer = _mesh->elements->epointers->cbegin(t);
 		auto IDpointer = std::lower_bound(IDBoundaries.begin(), IDBoundaries.end(), eID + eoffset + 1) - 1;
 		eslocal begine = *IDpointer, ende = *IDpointer;

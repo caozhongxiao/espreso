@@ -63,7 +63,7 @@ struct ElementStore {
 	serializededata<eslocal, Element*>* epointers;
 
 	serializededata<eslocal, eslocal>* neighbors;
-	serializededata<eslocal, eslocal>* dual;
+	serializededata<eslocal, eslocal>* fullDual;
 	serializededata<eslocal, eslocal>* decomposedDual;
 
 	eslocal firstDomain;
