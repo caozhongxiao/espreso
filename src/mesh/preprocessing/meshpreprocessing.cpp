@@ -534,6 +534,8 @@ void MeshPreprocessing::computeBoundaryNodes(std::vector<eslocal> &externalBound
 	Esutils::sortWithUniqueMerge(internal);
 	Esutils::sortWithUniqueMerge(external);
 
+	externalBoundary.swap(external[0]);
+
 	auto n2i = [ & ] (size_t neighbour) {
 		return std::lower_bound(_mesh->neighbours.begin(), _mesh->neighbours.end(), neighbour) - _mesh->neighbours.begin();
 	};
