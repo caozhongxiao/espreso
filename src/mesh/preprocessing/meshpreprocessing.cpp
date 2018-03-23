@@ -150,7 +150,7 @@ void MeshPreprocessing::linkNodesAndElements()
 			begin = end;
 		}
 		if (t + 1 < threads) {
-			while (end->first == begin->first) ++end;
+			while (end != localLinks.end() && end->first == begin->first) ++end;
 			send(_mesh->nodes->IDs->datatarray()[_mesh->nodes->distribution[t + 1] - 1]);
 		} else {
 			end = localLinks.end();
@@ -183,38 +183,40 @@ void MeshPreprocessing::linkNodesAndElements()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto llink = std::lower_bound(localLinks.begin(), localLinks.end(), _mesh->nodes->IDs->datatarray()[_mesh->nodes->distribution[t]], [] (std::pair<eslocal, eslocal> &p, size_t n) { return p.first < n; });
-		eslocal current;
+		if (_mesh->nodes->distribution[t] != _mesh->nodes->distribution[t + 1]) {
+			auto llink = std::lower_bound(localLinks.begin(), localLinks.end(), _mesh->nodes->IDs->datatarray()[_mesh->nodes->distribution[t]], [] (std::pair<eslocal, eslocal> &p, size_t n) { return p.first < n; });
+			eslocal current;
 
-		std::vector<eslocal> tBoundaries, tData;
-		if (t == 0) {
-			tBoundaries.push_back(0);
-		}
+			std::vector<eslocal> tBoundaries, tData;
+			if (t == 0) {
+				tBoundaries.push_back(0);
+			}
 
-		for (size_t n = _mesh->nodes->distribution[t]; n + 1 < _mesh->nodes->distribution[t + 1]; ++n) {
-			current = llink->first;
-			while (current == llink->first) {
-				tData.push_back(llink->second);
-				++llink;
+			for (size_t n = _mesh->nodes->distribution[t]; n + 1 < _mesh->nodes->distribution[t + 1]; ++n) {
+				current = llink->first;
+				while (current == llink->first) {
+					tData.push_back(llink->second);
+					++llink;
+				}
+				tBoundaries.push_back(llink - localLinks.begin());
+			}
+			if (t + 1 < threads) {
+				current = llink->first;
+				while (llink != localLinks.end() && current == llink->first) {
+					tData.push_back(llink->second);
+					++llink;
+				}
+			} else {
+				while (llink != localLinks.end()) {
+					tData.push_back(llink->second);
+					++llink;
+				}
 			}
 			tBoundaries.push_back(llink - localLinks.begin());
-		}
-		if (t + 1 < threads) {
-			current = llink->first;
-			while (current == llink->first) {
-				tData.push_back(llink->second);
-				++llink;
-			}
-		} else {
-			while (llink != localLinks.end()) {
-				tData.push_back(llink->second);
-				++llink;
-			}
-		}
-		tBoundaries.push_back(llink - localLinks.begin());
 
-		linksBoundaries[t].swap(tBoundaries);
-		linksData[t].swap(tData);
+			linksBoundaries[t].swap(tBoundaries);
+			linksData[t].swap(tData);
+		}
 	}
 
 	_mesh->nodes->elements = new serializededata<eslocal, eslocal>(linksBoundaries, linksData);
