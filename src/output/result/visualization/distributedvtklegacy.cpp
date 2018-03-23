@@ -972,7 +972,7 @@ void DistributedVTKLegacy::neighbors(const std::string &name)
 				os << center + (rCenters[tindex][offset] - center) / 2.1 << "\n";
 			} else {
 				Point ncenter;
-				auto nelement = _mesh.elements->nodes->cbegin() + *n - ebegin;
+				auto nelement = _mesh.elements->nodes->cbegin() + (*n - ebegin);
 				for (auto nn = nelement->begin(); nn != nelement->end(); ++nn) {
 					ncenter += _mesh.nodes->coordinates->datatarray()[*nn];
 				}
