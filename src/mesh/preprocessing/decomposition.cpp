@@ -131,7 +131,7 @@ void MeshPreprocessing::reclusterize(bool separateMaterials, bool separateRegion
 //		prev = edgecut;
 //		edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_AdaptiveRepart,
 //			edistribution.data(),
-//			dualDistribution[0].data(), dualData[0].data(),
+//			dualDistribution.data(), dualData[0].data(),
 //			0, NULL, // 3, _mesh->elements->coordinates->datatarray(),
 //			0, NULL, NULL,
 //			partition.data()
