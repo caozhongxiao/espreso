@@ -17,6 +17,7 @@
 #include "../../basis/utilities/utils.h"
 #include "../../basis/utilities/parser.h"
 #include "../../basis/logging/logging.h"
+#include "../../basis/logging/timeeval.h"
 
 #include "../../config/ecf/environment.h"
 
@@ -29,7 +30,7 @@
 using namespace espreso;
 
 
-void MeshPreprocessing::reclusterize()
+void MeshPreprocessing::reclusterize(bool separateMaterials, bool separateRegions, bool separateEtype)
 {
 	if (environment->MPIsize == 1) {
 		skip("re-distribution of the mesh to processes");
@@ -38,84 +39,107 @@ void MeshPreprocessing::reclusterize()
 
 	start("re-distribution of the mesh to processes");
 
-	if (_mesh->elements->fullDual == NULL) {
-		this->computeDual();
+	if (_mesh->elements->neighbors == NULL) {
+		this->computeElementsNeighbors();
 	}
 
 	if (_mesh->halo->IDs == NULL) {
 		exchangeHalo();
 	}
 
-	// TODO: ParMetis can get elements coordinates to speed up decomposition
-//	if (_mesh->elements->coordinates == NULL) {
-//		Mesh preprocessing :: computeElementCenters(mesh);
-//	}
+	if (separateRegions && _mesh->elements->regions == NULL) {
+		fillRegionMask();
+	}
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<eslocal> edistribution = _mesh->elements->gatherElementsProcDistribution();
-	std::vector<eslocal> partition(_mesh->elements->size), permutation(_mesh->elements->size), edgeWeights(_mesh->elements->fullDual->datatarray().size());
+	eslocal eoffset = _mesh->elements->gatherElementsProcDistribution()[environment->MPIrank];
 
-	size_t edgeConst = 10000;
+	std::vector<eslocal> dualDistribution(_mesh->elements->size + 1);
+	std::vector<std::vector<eslocal> > dualData(threads);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto dual = _mesh->elements->fullDual->cbegin(t);
-		int material;
-		Element::TYPE type;
+		std::vector<eslocal> tdata;
+		int mat1 = 0, mat2 = 0, reg1 = 0, reg2 = 0, etype1 = 0, etype2 = 0;
+		int rsize = _mesh->elements->regionMaskSize;
+		eslocal hindex;
 
-		size_t edgeIndex = _mesh->elements->fullDual->datatarray().distribution()[t];
-		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++dual) {
-			for (auto neigh = dual->begin(); neigh != dual->end(); ++neigh) {
-				auto it = std::lower_bound(_mesh->elements->IDs->datatarray().cbegin(), _mesh->elements->IDs->datatarray().cend(), *neigh);
-				if (it == _mesh->elements->IDs->datatarray().cend()) {
-					auto halo = std::lower_bound(_mesh->halo->IDs->datatarray().cbegin(), _mesh->halo->IDs->datatarray().cend(), *neigh);
-					material = _mesh->halo->material->datatarray()[halo - _mesh->halo->IDs->datatarray().cbegin()];
-					type = _mesh->halo->epointers->datatarray()[halo - _mesh->halo->IDs->datatarray().cbegin()]->type;
-				} else {
-					material = _mesh->elements->material->datatarray()[it - _mesh->elements->IDs->datatarray().cbegin()];
-					type = _mesh->elements->epointers->datatarray()[it - _mesh->elements->IDs->datatarray().cbegin()]->type;
+		auto neighs = _mesh->elements->neighbors->cbegin(t);
+		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++neighs) {
+			for (auto n = neighs->begin(); n != neighs->end(); ++n) {
+				if (*n != -1) {
+					if ((separateRegions || separateMaterials || separateEtype) && (*n < eoffset || eoffset + _mesh->elements->size <= *n)) {
+						hindex = std::lower_bound(_mesh->halo->IDs->datatarray().begin(), _mesh->halo->IDs->datatarray().end(), *n) - _mesh->halo->IDs->datatarray().begin();
+					}
+					if (separateMaterials) {
+						mat1 = _mesh->elements->material->datatarray()[e];
+						if (*n < eoffset || eoffset + _mesh->elements->size <= *n) {
+							mat2 = _mesh->halo->material->datatarray()[hindex];
+						} else {
+							mat2 = _mesh->elements->material->datatarray()[*n - eoffset];
+						}
+					}
+					if (separateRegions) {
+						if (*n < eoffset || eoffset + _mesh->elements->size <= *n) {
+							reg2 = memcmp(_mesh->elements->regions->datatarray().data() + e * rsize, _mesh->halo->regions->datatarray().data() + hindex * rsize, sizeof(int) * rsize);
+						} else {
+							reg2 = memcmp(_mesh->elements->regions->datatarray().data() + e * rsize, _mesh->elements->regions->datatarray().data() + (*n - eoffset) * rsize, sizeof(int) * rsize);
+						}
+					}
+					if (separateEtype) {
+						etype1 = (int)_mesh->elements->epointers->datatarray()[e]->type;
+						if (*n < eoffset || eoffset + _mesh->elements->size <= *n) {
+							etype2 = (int)_mesh->halo->epointers->datatarray()[hindex]->type;
+						} else {
+							etype2 = (int)_mesh->elements->epointers->datatarray()[*n - eoffset]->type;
+						}
+					}
+
+					if (mat1 == mat2 && reg1 == reg2 && etype1 == etype2) {
+						tdata.push_back(*n);
+					}
 				}
-				edgeWeights[edgeIndex] = 6 * edgeConst + 1;
-				if (_mesh->elements->epointers->datatarray()[e]->type != type) {
-					edgeWeights[edgeIndex] -= 4 * edgeConst;
-				}
-				if (_mesh->elements->material->datatarray()[e] != material) {
-					edgeWeights[edgeIndex] -= 2 * edgeConst;
-				}
-				edgeIndex++;
 			}
+			dualDistribution[e + 1] = tdata.size();
 		}
+
+		dualData[t].swap(tdata);
 	}
 
+	Esutils::threadDistributionToFullDistribution(dualDistribution, _mesh->elements->distribution);
+	for (size_t t = 1; t < threads; t++) {
+		dualData[0].insert(dualData[0].end(), dualData[t].begin(), dualData[t].end());
+	}
+
+	std::vector<eslocal> edistribution = _mesh->elements->gatherElementsProcDistribution();
+	std::vector<eslocal> partition(_mesh->elements->size), permutation(_mesh->elements->size);
 	start("ParMETIS::KWay");
-	ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_PartKway,
+	eslocal edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_PartKway,
 		edistribution.data(),
-		_mesh->elements->fullDual->boundarytarray().data(), _mesh->elements->fullDual->datatarray().data(),
-		0, NULL, // 3, _mesh->elements->coordinates->datatarray(),
-		0, NULL, edgeWeights.data(),
+		dualDistribution.data(), dualData[0].data(),
+		0, NULL,
+		0, NULL, NULL,
 		partition.data()
 	);
 	finish("ParMETIS::KWay");
 
 	// comment out because weird ParMetis behavior
-//	ESINFO(TVERBOSITY) << Info::plain() << "Using ParMETIS to improve edge-cuts: " << edgecut;
+//	start("ParMETIS::AdaptiveRepart");
 //	eslocal prev = 2 * edgecut;
 //	while (1.01 * edgecut < prev) {
 //		prev = edgecut;
 //		edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_AdaptiveRepart,
 //			edistribution.data(),
-//			_mesh->elements->dual->boundarytarray().data(), _mesh->elements->dual->datatarray().data(),
+//			dualDistribution[0].data(), dualData[0].data(),
 //			0, NULL, // 3, _mesh->elements->coordinates->datatarray(),
-//			0, NULL, edgeWeights.data(),
+//			0, NULL, NULL,
 //			partition.data()
 //		);
-//		ESINFO(TVERBOSITY) << Info::plain() << " -> " << edgecut;
 //	}
-//	ESINFO(TVERBOSITY);
+//	finish("ParMETIS::AdaptiveRepart");
 
 	this->exchangeElements(partition);
-//	Mesh preprocessing :: reindexNodes(mesh);
 
 	finish("re-distribution of the mesh to processes");
 }
@@ -1252,7 +1276,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	delete elements;
 	delete nodes;
 
-	this->computeDual();
+	this->computeElementsNeighbors();
 
 	finish("exchanging elements");
 }
@@ -1278,7 +1302,7 @@ void MeshPreprocessing::permuteElements(const std::vector<eslocal> &permutation,
 	std::vector<eslocal> IDBoundaries = _mesh->elements->gatherElementsProcDistribution();
 	std::vector<std::vector<std::pair<eslocal, eslocal> > > rHalo(_mesh->neighbours.size());
 
-	if (_mesh->elements->fullDual != NULL || _mesh->nodes->elements != NULL) {
+	if (_mesh->elements->neighbors != NULL || _mesh->nodes->elements != NULL) {
 		// thread x neighbor x elements(oldID, newID)
 		std::vector<std::vector<std::vector<std::pair<eslocal, eslocal> > > > sHalo(threads, std::vector<std::vector<std::pair<eslocal, eslocal> > >(_mesh->neighbours.size()));
 
@@ -1360,7 +1384,6 @@ void MeshPreprocessing::permuteElements(const std::vector<eslocal> &permutation,
 	std::iota(_mesh->elements->IDs->datatarray().begin(), _mesh->elements->IDs->datatarray().end(), firstID);
 
 	globalremap(_mesh->elements->neighbors, false);
-	globalremap(_mesh->elements->fullDual, true);
 	globalremap(_mesh->nodes->elements, true);
 	localremap(_mesh->elements->decomposedDual, true);
 

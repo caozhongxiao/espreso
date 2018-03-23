@@ -346,7 +346,7 @@ void Mesh::update()
 	}
 
 	if (configuration.decomposition.balance_clusters || configuration.input == INPUT_FORMAT::WORKBENCH) {
-		preprocessing->reclusterize();
+		preprocessing->reclusterize(configuration.decomposition.separate_materials, configuration.decomposition.separate_regions, configuration.decomposition.separate_etypes);
 	}
 
 	auto ntob = [&] (const std::string &rname, int dimension) {

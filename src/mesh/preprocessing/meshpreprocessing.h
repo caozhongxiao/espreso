@@ -35,10 +35,9 @@ public:
 	void exchangeHalo();
 
 	void computeElementsNeighbors();
-	void computeDual();
 	void computeDecomposedDual(bool separateMaterials, bool separateRegions, bool separateEtype);
 
-	void reclusterize();
+	void reclusterize(bool separateMaterials, bool separateRegions, bool separateEtype);
 	void partitiate(eslocal parts, bool separateMaterials, bool separateRegions, bool separateEtype);
 
 	void arrangeNodes();

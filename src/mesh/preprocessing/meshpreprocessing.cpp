@@ -231,6 +231,10 @@ void MeshPreprocessing::exchangeHalo()
 		this->linkNodesAndElements();
 	}
 
+	if (_mesh->elements->regions == NULL) {
+		fillRegionMask();
+	}
+
 	std::vector<eslocal> eDistribution = _mesh->elements->gatherElementsProcDistribution();
 
 	size_t threads = environment->OMP_NUM_THREADS;
@@ -264,6 +268,8 @@ void MeshPreprocessing::exchangeHalo()
 		hElements[t].swap(telements);
 	}
 
+	int rsize = _mesh->elements->regionMaskSize;
+
 	std::vector<std::vector<size_t> > tdist(_mesh->neighbours.size());
 	for (size_t n = 0; n < _mesh->neighbours.size(); ++n) {
 		tdist[n] = { 0, hElements[0][n].size() };
@@ -281,7 +287,7 @@ void MeshPreprocessing::exchangeHalo()
 	for (size_t n = 0; n < _mesh->neighbours.size(); ++n) {
 		Esutils::removeDuplicity(hElements[0][n]);
 		tdist[n] = tarray<eslocal>::distribute(threads, hElements[0][n].size());
-		sBuffer[n].resize(4 * hElements[0][n].size());
+		sBuffer[n].resize((4 + rsize) * hElements[0][n].size());
 	}
 
 	eslocal offset = eDistribution[environment->MPIrank];
@@ -291,12 +297,14 @@ void MeshPreprocessing::exchangeHalo()
 		const auto &body = _mesh->elements->body->datatarray();
 		const auto &material = _mesh->elements->material->datatarray();
 		const auto &code = _mesh->elements->epointers->datatarray();
+		const auto &regions = _mesh->elements->regions->datatarray();
 		for (size_t n = 0; n < _mesh->neighbours.size(); ++n) {
 			for (size_t e = tdist[n][t]; e < tdist[n][t + 1]; e++) {
-				sBuffer[n][4 * e + 0] = IDs[hElements[0][n][e] - offset];
-				sBuffer[n][4 * e + 1] = body[hElements[0][n][e] - offset];
-				sBuffer[n][4 * e + 2] = material[hElements[0][n][e] - offset];
-				sBuffer[n][4 * e + 3] = (eslocal)code[hElements[0][n][e] - offset]->code;
+				sBuffer[n][(4 + rsize) * e + 0] = IDs[hElements[0][n][e] - offset];
+				sBuffer[n][(4 + rsize) * e + 1] = body[hElements[0][n][e] - offset];
+				sBuffer[n][(4 + rsize) * e + 2] = material[hElements[0][n][e] - offset];
+				sBuffer[n][(4 + rsize) * e + 3] = (eslocal)code[hElements[0][n][e] - offset]->code;
+				memcpy(sBuffer[n].data() + (4 + rsize) * e + 4, regions.data() + e * rsize, sizeof(int) * rsize);
 			}
 		}
 	}
@@ -306,26 +314,28 @@ void MeshPreprocessing::exchangeHalo()
 	}
 
 	std::vector<std::vector<eslocal> > hid(threads);
-	std::vector<std::vector<int> > hbody(threads), hmaterial(threads);
+	std::vector<std::vector<int> > hbody(threads), hmaterial(threads), hregions(threads);
 	std::vector<std::vector<Element*> > hcode(threads);
 
 	for (size_t n = 0; n < rBuffer.size(); ++n) {
-		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, rBuffer[n].size() / 4);
+		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, rBuffer[n].size() / (4 + rsize));
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			for (size_t e = distribution[t]; e < distribution[t + 1]; ++e) {
-				hid[t].push_back(rBuffer[n][4 * e + 0]);
-				hbody[t].push_back(rBuffer[n][4 * e + 1]);
-				hmaterial[t].push_back(rBuffer[n][4 * e + 2]);
-				hcode[t].push_back(_mesh->_eclasses[t] + rBuffer[n][4 * e + 3]);
+				hid[t].push_back(rBuffer[n][(4 + rsize) * e + 0]);
+				hbody[t].push_back(rBuffer[n][(4 + rsize) * e + 1]);
+				hmaterial[t].push_back(rBuffer[n][(4 + rsize) * e + 2]);
+				hcode[t].push_back(_mesh->_eclasses[t] + rBuffer[n][(4 + rsize) * e + 3]);
+				hregions[t].insert(hregions[t].end(), rBuffer[n].data() + (4 + rsize) * e + 4, rBuffer[n].data() + (4 + rsize) * e + 4 + rsize);
 			}
 		}
 	}
 
 	_mesh->halo->IDs = new serializededata<eslocal, eslocal>(1, hid);
-	_mesh->halo->body = new serializededata<eslocal, eslocal>(1, hbody);
-	_mesh->halo->material = new serializededata<eslocal, eslocal>(1, hmaterial);
+	_mesh->halo->body = new serializededata<eslocal, int>(1, hbody);
+	_mesh->halo->material = new serializededata<eslocal, int>(1, hmaterial);
 	_mesh->halo->epointers = new serializededata<eslocal, Element*>(1, hcode);
+	_mesh->halo->regions = new serializededata<eslocal, int>(1, hregions);
 
 	_mesh->halo->size = _mesh->halo->IDs->datatarray().size();
 	_mesh->halo->distribution = _mesh->halo->IDs->datatarray().distribution();
@@ -406,48 +416,6 @@ void MeshPreprocessing::computeElementsNeighbors()
 	_mesh->elements->neighbors = new serializededata<eslocal, eslocal>(dualDistribution, dualData);
 
 	finish("computation of elements neighbors");
-}
-
-void MeshPreprocessing::computeDual()
-{
-	start("computation of the full dual graph");
-
-	if (_mesh->elements->neighbors == NULL) {
-		this->computeElementsNeighbors();
-	}
-
-	size_t threads = environment->OMP_NUM_THREADS;
-
-	std::vector<std::vector<eslocal> > dualDistribution(threads);
-	std::vector<std::vector<eslocal> > dualData(threads);
-
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		auto neighs = _mesh->elements->neighbors->cbegin(t);
-
-		std::vector<eslocal> edata(20), tdist, tdata;
-		if (t == 0) {
-			tdist.push_back(0);
-		}
-
-		for (auto neighs = _mesh->elements->neighbors->cbegin(t); neighs != _mesh->elements->neighbors->cend(t); ++neighs) {
-			edata.assign(neighs->begin(), neighs->end());
-			std::sort(edata.begin(), edata.end());
-			auto begin = edata.begin();
-			while (*begin == -1) { ++begin; }
-			tdata.insert(tdata.end(), begin, edata.end());
-			tdist.push_back(tdata.size());
-		}
-
-		dualDistribution[t].swap(tdist);
-		dualData[t].swap(tdata);
-	}
-
-	Esutils::threadDistributionToFullDistribution(dualDistribution);
-
-	_mesh->elements->fullDual = new serializededata<eslocal, eslocal>(dualDistribution, dualData);
-
-	finish("computation of the full dual graph");
 }
 
 void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separateRegions, bool separateEtype)
