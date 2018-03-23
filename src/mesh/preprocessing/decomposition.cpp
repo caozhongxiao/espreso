@@ -61,7 +61,7 @@ void MeshPreprocessing::reclusterize(bool separateMaterials, bool separateRegion
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<eslocal> tdata;
-		int mat1 = 0, mat2 = 0, reg1 = 0, reg2 = 0, etype1 = 0, etype2 = 0;
+		int mat1 = 0, mat2 = 0, reg = 0, etype1 = 0, etype2 = 0;
 		int rsize = _mesh->elements->regionMaskSize;
 		eslocal hindex;
 
@@ -82,9 +82,9 @@ void MeshPreprocessing::reclusterize(bool separateMaterials, bool separateRegion
 					}
 					if (separateRegions) {
 						if (*n < eoffset || eoffset + _mesh->elements->size <= *n) {
-							reg2 = memcmp(_mesh->elements->regions->datatarray().data() + e * rsize, _mesh->halo->regions->datatarray().data() + hindex * rsize, sizeof(int) * rsize);
+							reg = memcmp(_mesh->elements->regions->datatarray().data() + e * rsize, _mesh->halo->regions->datatarray().data() + hindex * rsize, sizeof(int) * rsize);
 						} else {
-							reg2 = memcmp(_mesh->elements->regions->datatarray().data() + e * rsize, _mesh->elements->regions->datatarray().data() + (*n - eoffset) * rsize, sizeof(int) * rsize);
+							reg = memcmp(_mesh->elements->regions->datatarray().data() + e * rsize, _mesh->elements->regions->datatarray().data() + (*n - eoffset) * rsize, sizeof(int) * rsize);
 						}
 					}
 					if (separateEtype) {
@@ -96,7 +96,7 @@ void MeshPreprocessing::reclusterize(bool separateMaterials, bool separateRegion
 						}
 					}
 
-					if (mat1 == mat2 && reg1 == reg2 && etype1 == etype2) {
+					if (mat1 == mat2 && !reg && etype1 == etype2) {
 						tdata.push_back(*n);
 					}
 				}

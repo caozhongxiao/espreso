@@ -306,7 +306,7 @@ void MeshPreprocessing::exchangeHalo()
 				sBuffer[n][(4 + rsize) * e + 1] = body[hElements[0][n][e] - offset];
 				sBuffer[n][(4 + rsize) * e + 2] = material[hElements[0][n][e] - offset];
 				sBuffer[n][(4 + rsize) * e + 3] = (eslocal)code[hElements[0][n][e] - offset]->code;
-				memcpy(sBuffer[n].data() + (4 + rsize) * e + 4, regions.data() + e * rsize, sizeof(int) * rsize);
+				memcpy(sBuffer[n].data() + (4 + rsize) * e + 4, regions.data() + (hElements[0][n][e] - offset) * rsize, sizeof(int) * rsize);
 			}
 		}
 	}
@@ -337,7 +337,7 @@ void MeshPreprocessing::exchangeHalo()
 	_mesh->halo->body = new serializededata<eslocal, int>(1, hbody);
 	_mesh->halo->material = new serializededata<eslocal, int>(1, hmaterial);
 	_mesh->halo->epointers = new serializededata<eslocal, Element*>(1, hcode);
-	_mesh->halo->regions = new serializededata<eslocal, int>(1, hregions);
+	_mesh->halo->regions = new serializededata<eslocal, int>(rsize, hregions);
 
 	_mesh->halo->size = _mesh->halo->IDs->datatarray().size();
 	_mesh->halo->distribution = _mesh->halo->IDs->datatarray().distribution();
