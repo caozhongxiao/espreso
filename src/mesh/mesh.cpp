@@ -456,19 +456,14 @@ void Mesh::update()
 
 	std::vector<eslocal> dualDist, dualData;
 	if (configuration.decomposition.balance_clusters || configuration.input == INPUT_FORMAT::WORKBENCH) {
-		preprocessing->reclusterize(configuration.decomposition.separate_materials, configuration.decomposition.separate_regions, configuration.decomposition.separate_etypes,
-				dualDist, dualData);
+		preprocessing->reclusterize(dualDist, dualData);
 	}
 
 	uniformDecomposition = false;
 	if (uniformDecomposition) {
 		// implement uniform decomposition
 	} else {
-		preprocessing->partitiate(configuration.decomposition.domains ? configuration.decomposition.domains : mesh->parts(),
-				configuration.decomposition.separate_materials || hasBEM(getPhysics()), // BEM domain has to have only one material
-				configuration.decomposition.separate_regions || hasBEM(getPhysics()),
-				configuration.decomposition.separate_etypes,
-				dualDist, dualData);
+		preprocessing->partitiate(configuration.decomposition.domains ? configuration.decomposition.domains : mesh->parts(), dualDist, dualData);
 	}
 
 	if (configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_2D || configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {

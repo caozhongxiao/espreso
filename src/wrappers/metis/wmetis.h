@@ -4,9 +4,12 @@
 
 namespace espreso {
 
+struct METISConfiguration;
+
 struct METIS {
 
 	static eslocal call(
+			const METISConfiguration &options,
 			eslocal verticesCount,
 			eslocal *eframes, eslocal *eneighbors,
 			eslocal verticesWeightCount, eslocal *verticesWeights, eslocal *edgeWeights,

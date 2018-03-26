@@ -19,7 +19,8 @@
 #include "../../basis/logging/logging.h"
 #include "../../basis/logging/timeeval.h"
 
-#include "../../config/ecf/environment.h"
+#include "../../config/ecf/root.h"
+#include "../../config/ecf/decomposition.h"
 
 #include <algorithm>
 #include <numeric>
@@ -420,9 +421,13 @@ void MeshPreprocessing::computeElementsNeighbors()
 	finish("computation of elements neighbors");
 }
 
-void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separateRegions, bool separateEtype, std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData)
+void MeshPreprocessing::computeDecomposedDual(std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData)
 {
 	start("computation of clusters dual graphs");
+
+	bool separateRegions = _mesh->configuration.decomposition.separate_regions;
+	bool separateMaterials = _mesh->configuration.decomposition.separate_materials;
+	bool separateEtypes = _mesh->configuration.decomposition.separate_etypes;
 
 	if (_mesh->elements->neighbors == NULL) {
 		this->computeElementsNeighbors();
@@ -457,7 +462,7 @@ void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separ
 					if (separateRegions) {
 						reg = memcmp(_mesh->elements->regions->datatarray().data() + e * rsize, _mesh->elements->regions->datatarray().data() + (*n - eBegin) * rsize, sizeof(int) * rsize);
 					}
-					if (separateEtype) {
+					if (separateEtypes) {
 						etype1 = (int)_mesh->elements->epointers->datatarray()[e]->type;
 						etype2 = (int)_mesh->elements->epointers->datatarray()[*n - eBegin]->type;
 					}

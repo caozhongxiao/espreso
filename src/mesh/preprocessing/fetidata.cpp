@@ -20,6 +20,7 @@
 #include "../../basis/logging/logging.h"
 
 #include "../../config/ecf/environment.h"
+#include "../../config/ecf/decomposition.h"
 
 #include "../../wrappers/metis/wmetis.h"
 #include "../../wrappers/math/math.h"
@@ -292,7 +293,8 @@ void MeshPreprocessing::addFixPoints(const serializededata<eslocal, eslocal>* el
 	}
 
 	std::vector<eslocal> partition(ids.size());
-	METIS::call(ids.size(), dist.data(), data.data(), 0, NULL, NULL, FIX_POINTS_SIZE, partition.data());
+	METISConfiguration options;
+	METIS::call(options, ids.size(), dist.data(), data.data(), 0, NULL, NULL, FIX_POINTS_SIZE, partition.data());
 
 	std::vector<std::vector<eslocal> > pids(FIX_POINTS_SIZE), pdist(FIX_POINTS_SIZE, { 0 }), pdata(FIX_POINTS_SIZE);
 	for (size_t i = 0; i < partition.size(); i++) {

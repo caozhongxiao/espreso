@@ -19,7 +19,8 @@
 #include "../../basis/logging/logging.h"
 #include "../../basis/logging/timeeval.h"
 
-#include "../../config/ecf/environment.h"
+#include "../../config/ecf/root.h"
+#include "../../config/ecf/decomposition.h"
 
 #include <algorithm>
 #include <numeric>
@@ -30,7 +31,7 @@
 using namespace espreso;
 
 
-void MeshPreprocessing::reclusterize(bool separateMaterials, bool separateRegions, bool separateEtype, std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData)
+void MeshPreprocessing::reclusterize(std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData)
 {
 	if (environment->MPIsize == 1) {
 		skip("re-distribution of the mesh to processes");
@@ -46,6 +47,10 @@ void MeshPreprocessing::reclusterize(bool separateMaterials, bool separateRegion
 	if (_mesh->halo->IDs == NULL) {
 		exchangeHalo();
 	}
+
+	bool separateRegions = _mesh->configuration.decomposition.separate_regions;
+	bool separateMaterials = _mesh->configuration.decomposition.separate_materials;
+	bool separateEtypes = _mesh->configuration.decomposition.separate_etypes;
 
 	if (separateRegions && _mesh->elements->regions == NULL) {
 		fillRegionMask();
@@ -69,7 +74,7 @@ void MeshPreprocessing::reclusterize(bool separateMaterials, bool separateRegion
 		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++neighs) {
 			for (auto n = neighs->begin(); n != neighs->end(); ++n) {
 				if (*n != -1) {
-					if ((separateRegions || separateMaterials || separateEtype) && (*n < eoffset || eoffset + _mesh->elements->size <= *n)) {
+					if ((separateRegions || separateMaterials || separateEtypes) && (*n < eoffset || eoffset + _mesh->elements->size <= *n)) {
 						hindex = std::lower_bound(_mesh->halo->IDs->datatarray().begin(), _mesh->halo->IDs->datatarray().end(), *n) - _mesh->halo->IDs->datatarray().begin();
 					}
 					if (separateMaterials) {
@@ -87,7 +92,7 @@ void MeshPreprocessing::reclusterize(bool separateMaterials, bool separateRegion
 							reg = memcmp(_mesh->elements->regions->datatarray().data() + e * rsize, _mesh->elements->regions->datatarray().data() + (*n - eoffset) * rsize, sizeof(int) * rsize);
 						}
 					}
-					if (separateEtype) {
+					if (separateEtypes) {
 						etype1 = (int)_mesh->elements->epointers->datatarray()[e]->type;
 						if (*n < eoffset || eoffset + _mesh->elements->size <= *n) {
 							etype2 = (int)_mesh->halo->epointers->datatarray()[hindex]->type;
@@ -124,20 +129,21 @@ void MeshPreprocessing::reclusterize(bool separateMaterials, bool separateRegion
 	);
 	finish("ParMETIS::KWay");
 
-	// comment out because weird ParMetis behavior
-//	start("ParMETIS::AdaptiveRepart");
-//	eslocal prev = 2 * edgecut;
-//	while (1.01 * edgecut < prev) {
-//		prev = edgecut;
-//		edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_AdaptiveRepart,
-//			edistribution.data(),
-//			dualDistribution.data(), dualData[0].data(),
-//			0, NULL, // 3, _mesh->elements->coordinates->datatarray(),
-//			0, NULL, NULL,
-//			partition.data()
-//		);
-//	}
-//	finish("ParMETIS::AdaptiveRepart");
+	if (_mesh->configuration.decomposition.metis_options.adaptive_refinement) {
+		start("ParMETIS::AdaptiveRepart");
+		eslocal prev = 2 * edgecut;
+		while (1.01 * edgecut < prev) {
+			prev = edgecut;
+			edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_AdaptiveRepart,
+				edistribution.data(),
+				dDistribution.data(), dData[0].data(),
+				0, NULL, // 3, _mesh->elements->coordinates->datatarray(),
+				0, NULL, NULL,
+				partition.data()
+			);
+		}
+		finish("ParMETIS::AdaptiveRepart");
+	}
 
 	this->exchangeElements(partition);
 
@@ -147,14 +153,14 @@ void MeshPreprocessing::reclusterize(bool separateMaterials, bool separateRegion
 	finish("re-distribution of the mesh to processes");
 }
 
-void MeshPreprocessing::partitiate(eslocal parts, bool separateMaterials, bool separateRegions, bool separateEtype, std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData)
+void MeshPreprocessing::partitiate(eslocal parts, std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData)
 {
 	start("decomposition of the mesh");
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	if (dualDist.size() != _mesh->elements->size + 1) {
-		this->computeDecomposedDual(separateMaterials, separateRegions, separateEtype, dualDist, dualData);
+		this->computeDecomposedDual(dualDist, dualData);
 	} else {
 		std::vector<std::vector<eslocal> > dData(threads);
 		eslocal eoffset = _mesh->elements->gatherElementsProcDistribution()[environment->MPIrank];
@@ -210,6 +216,7 @@ void MeshPreprocessing::partitiate(eslocal parts, bool separateMaterials, bool s
 	if (nextID == 1) {
 		start("METIS::KWay");
 		METIS::call(
+				_mesh->configuration.decomposition.metis_options,
 				_mesh->elements->size,
 				dualDist.data(), dualData.data(),
 				0, NULL, NULL,
@@ -294,6 +301,7 @@ void MeshPreprocessing::partitiate(eslocal parts, bool separateMaterials, bool s
 		#pragma omp parallel for
 		for (int p = 0; p < nextID; p++) {
 			METIS::call(
+					_mesh->configuration.decomposition.metis_options,
 					frames[p].size() - 1,
 					frames[p].data(), neighbors[p].data(),
 					0, NULL, NULL,

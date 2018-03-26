@@ -2,6 +2,22 @@
 #include "decomposition.h"
 #include "../configuration.hpp"
 
+espreso::METISConfiguration::METISConfiguration()
+{
+	objective_type = OBJECTIVE_TYPE::VOLUME;
+	REGISTER(objective_type, ECFMetaData()
+			.setdescription({ "Decomposition respect materials." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("VOLUME").setdescription("METIS tries to minimize communication volume. Recommended to examples with various element size."))
+			.addoption(ECFOption().setname("EDGECUT").setdescription("METIS tries to minimize edgecut.")));
+
+
+	adaptive_refinement = false;
+	REGISTER(adaptive_refinement, ECFMetaData()
+			.setdescription({ "Decomposition respect materials." })
+			.setdatatype({ ECFDataType::BOOL }));
+}
+
 espreso::DecompositionConfiguration::DecompositionConfiguration()
 {
 	path = "EBF";
@@ -41,6 +57,9 @@ espreso::DecompositionConfiguration::DecompositionConfiguration()
 	REGISTER(separate_etypes, ECFMetaData()
 			.setdescription({ "Decomposition respect elements types." })
 			.setdatatype({ ECFDataType::BOOL }));
+
+	REGISTER(metis_options, ECFMetaData()
+			.setdescription({ "ParMETIS/METIS options." }));
 }
 
 
