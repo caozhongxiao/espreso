@@ -420,7 +420,7 @@ void MeshPreprocessing::computeElementsNeighbors()
 	finish("computation of elements neighbors");
 }
 
-void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separateRegions, bool separateEtype)
+void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separateRegions, bool separateEtype, std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData)
 {
 	start("computation of clusters dual graphs");
 
@@ -435,52 +435,51 @@ void MeshPreprocessing::computeDecomposedDual(bool separateMaterials, bool separ
 	size_t threads = environment->OMP_NUM_THREADS;
 	eslocal eBegin = _mesh->elements->gatherElementsProcDistribution()[environment->MPIrank];
 	eslocal eEnd   = eBegin + _mesh->elements->size;
-	int rsize = _mesh->elements->regionMaskSize;
 
-	std::vector<std::vector<eslocal> > dualDistribution(threads);
-	std::vector<std::vector<eslocal> > dualData(threads);
+	std::vector<eslocal> dDistribution(_mesh->elements->size + 1);
+	std::vector<std::vector<eslocal> > dData(threads);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		const auto &body = _mesh->elements->body->datatarray();
-		const auto &material = _mesh->elements->material->datatarray();
-		const auto &regions = _mesh->elements->regions->datatarray();
-		const auto &epointer = _mesh->elements->epointers->datatarray();
+		std::vector<eslocal> tdata;
+		int mat1 = 0, mat2 = 0, reg = 0, etype1 = 0, etype2 = 0;
+		int rsize = _mesh->elements->regionMaskSize;
+		eslocal hindex;
 
 		auto neighs = _mesh->elements->neighbors->cbegin(t);
-
-		std::vector<eslocal> edata(20), tdist, tdata;
-		if (t == 0) {
-			tdist.push_back(0);
-		}
-
-		auto areNeighbors = [&] (eslocal e1, eslocal e2) {
-			return
-					body[e1] == body[e2] &&
-					(!separateMaterials || material[e1] == material[e2]) &&
-					(!separateRegions || memcmp(regions.data() + e1 * rsize, regions.data() + e2 * rsize, sizeof(int) * rsize) == 0) &&
-					(!separateEtype || epointer[e1]->type == epointer[e2]->type);
-		};
-
 		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++neighs) {
-			edata.assign(neighs->begin(), neighs->end());
-			std::sort(edata.begin(), edata.end());
+			for (auto n = neighs->begin(); n != neighs->end(); ++n) {
+				if (*n != -1 && eBegin <= *n && *n < eEnd) {
+					if (separateMaterials) {
+						mat1 = _mesh->elements->material->datatarray()[e];
+						mat2 = _mesh->elements->material->datatarray()[*n - eBegin];
+					}
+					if (separateRegions) {
+						reg = memcmp(_mesh->elements->regions->datatarray().data() + e * rsize, _mesh->elements->regions->datatarray().data() + (*n - eBegin) * rsize, sizeof(int) * rsize);
+					}
+					if (separateEtype) {
+						etype1 = (int)_mesh->elements->epointers->datatarray()[e]->type;
+						etype2 = (int)_mesh->elements->epointers->datatarray()[*n - eBegin]->type;
+					}
 
-			for (auto n = edata.begin(); n != edata.end(); ++n) {
-				if (eBegin <= *n && *n < eEnd && areNeighbors(e, *n - eBegin)) {
-					tdata.push_back(*n - eBegin);
+					if (mat1 == mat2 && !reg && etype1 == etype2) {
+						tdata.push_back(*n - eBegin);
+					}
 				}
 			}
-
-			tdist.push_back(tdata.size());
+			dDistribution[e + 1] = tdata.size();
 		}
-		dualDistribution[t].swap(tdist);
-		dualData[t].swap(tdata);
+
+		dData[t].swap(tdata);
 	}
 
-	Esutils::threadDistributionToFullDistribution(dualDistribution);
+	Esutils::threadDistributionToFullDistribution(dDistribution, _mesh->elements->distribution);
+	for (size_t t = 1; t < threads; t++) {
+		dData[0].insert(dData[0].end(), dData[t].begin(), dData[t].end());
+	}
 
-	_mesh->elements->decomposedDual = new serializededata<eslocal, eslocal>(dualDistribution, dualData);
+	dualDist.swap(dDistribution);
+	dualData.swap(dData[0]);
 
 	finish("computation of clusters dual graphs");
 }

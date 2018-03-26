@@ -35,10 +35,10 @@ public:
 	void exchangeHalo();
 
 	void computeElementsNeighbors();
-	void computeDecomposedDual(bool separateMaterials, bool separateRegions, bool separateEtype);
+	void computeDecomposedDual(bool separateMaterials, bool separateRegions, bool separateEtype, std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData);
 
-	void reclusterize(bool separateMaterials, bool separateRegions, bool separateEtype);
-	void partitiate(eslocal parts, bool separateMaterials, bool separateRegions, bool separateEtype);
+	void reclusterize(bool separateMaterials, bool separateRegions, bool separateEtype, std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData);
+	void partitiate(eslocal parts, bool separateMaterials, bool separateRegions, bool separateEtype, std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData);
 
 	void arrangeNodes();
 	void arrangeElements();
