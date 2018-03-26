@@ -536,7 +536,6 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		}
 	}
 
-	elemsNodesDistribution.front().push_back(0);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		auto IDs = _mesh->elements->IDs->datatarray().data();
@@ -626,46 +625,66 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		}
 	}
 
-	nodesElemsDistribution.front().push_back(0);
+	eslocal eBegin = _mesh->elements->gatherElementsProcDistribution()[environment->MPIrank];
+	eslocal eEnd = eBegin + _mesh->elements->size;
+
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		const auto &IDs = _mesh->nodes->IDs->datatarray();
 		const auto &coordinates = _mesh->nodes->coordinates->datatarray();
 		auto elems = _mesh->nodes->elements->cbegin(t);
 
-		const auto &eIDs = _mesh->elements->IDs->datatarray();
+		std::vector<eslocal>  tnodesIDs;
+		std::vector<Point>    tnodesCoordinates;
+		std::vector<eslocal>  tnodesElemsDistribution;
+		std::vector<eslocal>  tnodesElemsData;
+		std::vector<eslocal>  tnodesRegions;
+
+		if (t == 0) {
+			tnodesElemsDistribution.push_back(0);
+		}
+
+		std::vector<std::vector<eslocal> > tsNodes(targets.size(), std::vector<eslocal>({ 0 }));
+
+		tnodesIDs.reserve(1.5 * _mesh->nodes->size / threads);
+		tnodesCoordinates.reserve(1.5 * _mesh->nodes->size / threads);
+		tnodesElemsDistribution.reserve(1.5 * _mesh->nodes->size / threads);
+		tnodesRegions.reserve(1.5 * _mesh->nodes->size / threads);
 
 		size_t target;
 		std::vector<bool> last(targets.size() + 1); // targets + me
 		for (size_t n = _mesh->nodes->distribution[t]; n < _mesh->nodes->distribution[t + 1]; ++n, ++elems) {
 			std::fill(last.begin(), last.end(), false);
 			for (auto e = elems->begin(); e != elems->end(); ++e) {
-				auto it = std::lower_bound(eIDs.begin(), eIDs.end(), *e);
-				if (it != eIDs.end() && *it == *e) {
-					target = t2i(partition[it - eIDs.begin()]);
-					if (!last[target] && partition[it - eIDs.begin()] != environment->MPIrank) {
-						sNodes[t][target].push_back(IDs[n]);
-						sNodes[t][target].insert(sNodes[t][target].end(), sizeof(Point) / sizeof(eslocal), 0);
-						memcpy(sNodes[t][target].data() + sNodes[t][target].size() - (sizeof(Point) / sizeof(eslocal)), coordinates.data() + n, sizeof(Point));
-						sNodes[t][target].push_back(elems->size());
-						sNodes[t][target].insert(sNodes[t][target].end(), elems->begin(), elems->end());
-						sNodes[t][target].insert(sNodes[t][target].end(), regionNodeMask.begin() + n * bregionsBitMaskSize, regionNodeMask.begin() + (n + 1) * bregionsBitMaskSize);
+				if (eBegin <= *e && *e < eEnd) {
+					target = t2i(partition[*e - eBegin]);
+					if (!last[target] && partition[*e - eBegin] != environment->MPIrank) {
+						tsNodes[target].push_back(IDs[n]);
+						tsNodes[target].insert(tsNodes[target].end(), reinterpret_cast<const eslocal*>(coordinates.data() + n), reinterpret_cast<const eslocal*>(coordinates.data() + n + 1));
+						tsNodes[target].push_back(elems->size());
+						tsNodes[target].insert(tsNodes[target].end(), elems->begin(), elems->end());
+						tsNodes[target].insert(tsNodes[target].end(), regionNodeMask.begin() + n * bregionsBitMaskSize, regionNodeMask.begin() + (n + 1) * bregionsBitMaskSize);
 						last[target] = true;
 					}
-					if (!last.back() && partition[it - eIDs.begin()] == environment->MPIrank) {
-						nodesIDs[t].push_back(IDs[n]);
-						nodesCoordinates[t].push_back(coordinates[n]);
-						nodesElemsDistribution[t].push_back(elems->size());
-						nodesElemsData[t].insert(nodesElemsData[t].end(), elems->begin(), elems->end());
-						if (nodesElemsDistribution[t].size() > 1) {
-							nodesElemsDistribution[t].back() += *(nodesElemsDistribution[t].end() - 2);
-						}
-						nodesRegions[t].insert(nodesRegions[t].end(), regionNodeMask.begin() + n * bregionsBitMaskSize, regionNodeMask.begin() + (n + 1) * bregionsBitMaskSize);
+					if (!last.back() && partition[*e - eBegin] == environment->MPIrank) {
+						tnodesIDs.push_back(IDs[n]);
+						tnodesCoordinates.push_back(coordinates[n]);
+						tnodesElemsData.insert(tnodesElemsData.end(), elems->begin(), elems->end());
+						tnodesElemsDistribution.push_back(tnodesElemsData.size());
+						tnodesRegions.insert(tnodesRegions.end(), regionNodeMask.begin() + n * bregionsBitMaskSize, regionNodeMask.begin() + (n + 1) * bregionsBitMaskSize);
 						last.back() = true;
 					}
 				}
 			}
 		}
+
+		nodesIDs[t].swap(tnodesIDs);
+		nodesCoordinates[t].swap(tnodesCoordinates);
+		nodesElemsDistribution[t].swap(tnodesElemsDistribution);
+		nodesElemsData[t].swap(tnodesElemsData);
+		nodesRegions[t].swap(tnodesRegions);
+
+		sNodes[t].swap(tsNodes);
 	}
 
 	e2.end();
