@@ -72,7 +72,7 @@ void MeshWidget::initializeGL()
 
     this->m_basicProgram_objectColor = QVector3D(1.0f, 0.5f, 0.31f);
     this->m_basicProgram_lightColor = QVector3D(1.0f, 1.0f, 1.0f);
-    this->m_basicProgram_lightPos = QVector3D(1.2f, 1.0f, -2.0f);
+    this->m_basicProgram_lightPos = QVector3D(1.2f, 1.0f, 2.0f);
 
     this->m_lastX = width() / 2;
     this->m_lastY = height() / 2;

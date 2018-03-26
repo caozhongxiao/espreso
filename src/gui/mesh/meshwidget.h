@@ -88,7 +88,7 @@ namespace espreso {
                 "void main()\n"
                 "{\n"
                 "gl_Position = projection * view * vec4(aPos, 1.0f);\n"
-                "FragPos = aPos;\n"
+                "FragPos = vec3(gl_Position);\n"
                 "Normal = aNormal;\n"
                 "}\n";
 
@@ -99,10 +99,11 @@ namespace espreso {
                 "uniform vec3 objectColor;\n"
                 "uniform vec3 lightColor;\n"
                 "uniform vec3 lightPos;\n"
+                "uniform vec3 viewPos;\n"
                 "out vec4 FragColor;\n"
                 "void main()\n"
                 "{\n"
-                "float ambientStrength = 0.5;\n"
+                "float ambientStrength = 0.3;\n"
                 "vec3 ambient = ambientStrength * lightColor;\n"
                 "vec3 norm = normalize(Normal);\n"
                 "vec3 lightDir = normalize(lightPos - FragPos);\n"
