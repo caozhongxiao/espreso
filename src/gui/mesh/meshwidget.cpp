@@ -72,7 +72,7 @@ void MeshWidget::initializeGL()
 
     this->m_basicProgram_objectColor = QVector3D(1.0f, 0.5f, 0.31f);
     this->m_basicProgram_lightColor = QVector3D(1.0f, 1.0f, 1.0f);
-    this->m_basicProgram_lightPos = QVector3D(1.2f, 1.0f, 2.0f);
+    this->m_basicProgram_lightPos = QVector3D(0.0f, 0.0f, 5.0f);
 
     this->m_lastX = width() / 2;
     this->m_lastY = height() / 2;
@@ -105,14 +105,10 @@ void MeshWidget::paintGL()
 
     QMatrix4x4 view;
     view.translate(0.0f, 0.0f, -3.0f);
-    view.rotate(m_viewRotX, 1.0f, 0.0f, 0.0f);
-    view.rotate(m_viewRotY, 0.0f, 1.0f, 0.0f);
-
     m_basicProgram->setUniformValue("view", view);
 
     QMatrix4x4 projection;
     projection.perspective(m_fov, (float)width() / (float)height(), 0.1f, 100.0f);
-
     m_basicProgram->setUniformValue("projection", projection);
 
     foreach (MeshRegion r, m_regions) {
@@ -123,6 +119,11 @@ void MeshWidget::paintGL()
 
         float* vertices = &r.points.data()[0];
         int len = r.points.size() / 6;
+
+        QMatrix4x4 model;
+        model.rotate(m_viewRotX, 1.0f, 0.0f, 0.0f);
+        model.rotate(m_viewRotY, 0.0f, 1.0f, 0.0f);
+        this->m_basicProgram->setUniformValue("model", model);
 
         QOpenGLBuffer vbo(QOpenGLBuffer::VertexBuffer);
         vbo.create();

@@ -83,13 +83,14 @@ namespace espreso {
                 "in highp vec3 aNormal;\n"
                 "uniform mat4 view;\n"
                 "uniform mat4 projection;\n"
+                "uniform mat4 model;\n"
                 "out vec3 Normal;"
                 "out vec3 FragPos;"
                 "void main()\n"
                 "{\n"
-                "gl_Position = projection * view * vec4(aPos, 1.0f);\n"
+                "gl_Position = projection * view * model * vec4(aPos, 1.0f);\n"
                 "FragPos = vec3(gl_Position);\n"
-                "Normal = aNormal;\n"
+                "Normal = mat3(transpose(inverse(model))) * aNormal;\n"
                 "}\n";
 
         const char* m_basicFS =
@@ -99,18 +100,17 @@ namespace espreso {
                 "uniform vec3 objectColor;\n"
                 "uniform vec3 lightColor;\n"
                 "uniform vec3 lightPos;\n"
-                "uniform vec3 viewPos;\n"
                 "out vec4 FragColor;\n"
                 "void main()\n"
                 "{\n"
-                "float ambientStrength = 0.3;\n"
+                "float ambientStrength = 0.5;\n"
                 "vec3 ambient = ambientStrength * lightColor;\n"
                 "vec3 norm = normalize(Normal);\n"
                 "vec3 lightDir = normalize(lightPos - FragPos);\n"
-                "float diff = max(dot(norm, lightDir), 0.0f);\n"
+                "float diff = max(dot(norm, lightDir), 0.0);\n"
                 "vec3 diffuse = diff * lightColor;\n"
                 "vec3 result = (ambient + diffuse) * objectColor;\n"
-                "FragColor = vec4(result, 1.0f);\n"
+                "FragColor = vec4(result, 1.0);\n"
                 "}\n";
 
         const char* m_clickVS =

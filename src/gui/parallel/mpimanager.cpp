@@ -11,7 +11,7 @@
 
 #include <QDebug>
 #include "../../input/sortedinput.h"
-
+#include <QtGui>
 #include <algorithm>
 
 using namespace espreso;
@@ -163,11 +163,80 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
                 mesh.push_back( _y );
                 mesh.push_back( _z );
 				mesh.push_back(0);
-				mesh.push_back(1);
+                mesh.push_back(0);
 				mesh.push_back(0);
 			}
 		}
 	}
+
+    struct vertex
+    {
+        QVector<float*> locations;
+        QVector<QVector3D> triangle_normals;
+    };
+
+    QHash<QString, vertex> vertices;
+
+    // COMPUTE TRIANGLE NORMALS
+    for (int t = 0; t < mesh.size(); t += 18)
+    {
+        QVector3D v1(mesh[t], mesh[t + 1], mesh[t + 2]);
+        QVector3D v2(mesh[t + 6], mesh[t + 7], mesh[t + 8]);
+        QVector3D v3(mesh[t + 12], mesh[t + 13], mesh[t + 14]);
+
+        QVector3D edge1 = v2 - v1;
+        QVector3D edge2 = v3 - v1;
+
+        QVector3D normal = QVector3D::crossProduct(edge1, edge2).normalized();
+
+        for (int v = 0; v < 3; v++)
+        {
+            mesh[t + 3 + 6*v] = normal.x();
+            mesh[t + 3 + 6*v + 1] = normal.y();
+            mesh[t + 3 + 6*v + 2] = normal.z();
+        }
+
+        QVector<QVector3D> vs;
+        vs << v1 << v2 << v3;
+
+        for (int i = 0; i < vs.size(); i++)
+        {
+            QString v_key;
+            QDebug(&v_key) << v1;
+            if (vertices.find(v_key) == vertices.end())
+            {
+                struct vertex v;
+                vertices[v_key] = v;
+            }
+            vertices[v_key].locations.append(&mesh.data()[t + 3 + 6*i]);
+            vertices[v_key].triangle_normals.append(normal);
+        }
+    }
+
+    // COMPUTE VERTEX NORMAL FROM SURROUNDING TRIANGLES AND USE IT WHEN angle IS BELOW m_threshold
+    QHashIterator<QString, vertex> i(vertices);
+    while (i.hasNext()) {
+        i.next();
+        QVector3D normal;
+        foreach (QVector3D n, i.value().triangle_normals) {
+            normal += n;
+        }
+        normal.normalize();
+
+
+        for (int v = 0; v < i.value().locations.size(); v++)
+        {
+            float cos_angle = QVector3D::dotProduct(normal, i.value().triangle_normals[v]) /
+                    ( normal.length() * i.value().triangle_normals[v].length() );
+            float angle = qRadiansToDegrees(qAcos(cos_angle));
+            if (angle < m_threshold)
+            {
+                i.value().locations[v][0] = normal.x();
+                i.value().locations[v][1] = normal.y();
+                i.value().locations[v][2] = normal.z();
+            }
+        }
+    }
 
 //    for (size_t e = 0; e < m_mesh->elements().size(); e++) {
 //

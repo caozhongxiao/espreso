@@ -40,6 +40,7 @@ public:
 private:
     ECFRoot* m_ecf;
     Mesh* m_mesh = nullptr;
+    float m_threshold = 5.0f;
 
     void performOperation(int code);
 
