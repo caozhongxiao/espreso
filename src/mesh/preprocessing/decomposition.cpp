@@ -700,7 +700,6 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 				}
 			}
 
-			boundaryEDistribution[r][0].push_back(0);
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
 				std::vector<eslocal>  tboundaryEDistribution;
@@ -790,23 +789,53 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		while (p < rElements[i].size()) {
 			rdistribution.push_back(p += rElements[i][p]);
 		}
+
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
+
+			std::vector<eslocal>  telemsIDs;
+			std::vector<int>      telemsBody;
+			std::vector<int>      telemsMaterial;
+			std::vector<Element*> telemsEpointer;
+			std::vector<eslocal>  telemsNodesDistribution;
+			std::vector<eslocal>  telemsNodesData;
+			std::vector<eslocal>  telemsRegions;
+
+			telemsIDs.reserve(rdistribution[t + 1] - rdistribution[t]);
+			telemsBody.reserve(rdistribution[t + 1] - rdistribution[t]);
+			telemsMaterial.reserve(rdistribution[t + 1] - rdistribution[t]);
+			telemsEpointer.reserve(rdistribution[t + 1] - rdistribution[t]);
+			telemsNodesDistribution.reserve(rdistribution[t + 1] - rdistribution[t] + 1);
+			telemsRegions.reserve(rdistribution[t + 1] - rdistribution[t]);
+
+			eslocal distOffset = 0;
+
+			if (elemsNodesDistribution[t].size()) {
+				distOffset = elemsNodesDistribution[t].back();
+			}
+			if (t == 0 && elemsNodesDistribution[t].size() == 0) {
+				telemsNodesDistribution.push_back(0);
+			}
+
 			for (size_t e = rdistribution[t] + 1; e < rdistribution[t + 1]; ) {
-				elemsIDs[t].push_back(rElements[i][e++]);
-				elemsBody[t].push_back(rElements[i][e++]);
-				elemsMaterial[t].push_back(rElements[i][e++]);
-				elemsEpointer[t].push_back(_mesh->_eclasses[t] + rElements[i][e++]);
-				elemsNodesDistribution[t].push_back(rElements[i][e]);
-				elemsNodesData[t].insert(elemsNodesData[t].end(), rElements[i].begin() + e + 1, rElements[i].begin() + e + 1 + rElements[i][e]);
-				e += 1; // nodes size
-				e += elemsNodesDistribution[t].back(); // nodes
-				if (elemsNodesDistribution[t].size() > 1) {
-					elemsNodesDistribution[t].back() += *(elemsNodesDistribution[t].end() - 2);
-				}
-				elemsRegions[t].insert(elemsRegions[t].end(), rElements[i].begin() + e, rElements[i].begin() + e + eregionsBitMaskSize);
+				telemsIDs.push_back(rElements[i][e++]);
+				telemsBody.push_back(rElements[i][e++]);
+				telemsMaterial.push_back(rElements[i][e++]);
+				telemsEpointer.push_back(_mesh->_eclasses[t] + rElements[i][e++]);
+				telemsNodesData.insert(telemsNodesData.end(), rElements[i].begin() + e + 1, rElements[i].begin() + e + 1 + rElements[i][e]);
+				telemsNodesDistribution.push_back(telemsNodesData.size() + distOffset);
+				e += rElements[i][e++]; // nodes + nodes size
+				telemsRegions.insert(telemsRegions.end(), rElements[i].begin() + e, rElements[i].begin() + e + eregionsBitMaskSize);
 				e += eregionsBitMaskSize;
 			}
+
+			elemsIDs[t].insert(elemsIDs[t].end(), telemsIDs.begin(), telemsIDs.end());
+			elemsBody[t].insert(elemsBody[t].end(), telemsBody.begin(), telemsBody.end());
+			elemsMaterial[t].insert(elemsMaterial[t].end(), telemsMaterial.begin(), telemsMaterial.end());
+			elemsEpointer[t].insert(elemsEpointer[t].end(), telemsEpointer.begin(), telemsEpointer.end());
+			elemsNodesDistribution[t].insert(elemsNodesDistribution[t].end(), telemsNodesDistribution.begin(), telemsNodesDistribution.end());
+			elemsNodesData[t].insert(elemsNodesData[t].end(), telemsNodesData.begin(), telemsNodesData.end());
+			elemsRegions[t].insert(elemsRegions[t].end(), telemsRegions.begin(), telemsRegions.end());
 		}
 	}
 
@@ -832,22 +861,46 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			Point point;
+
+			std::vector<eslocal>  tnodesIDs;
+			std::vector<Point>    tnodesCoordinates;
+			std::vector<eslocal>  tnodesElemsDistribution;
+			std::vector<eslocal>  tnodesElemsData;
+			std::vector<eslocal>  tnodesRegions;
+			std::vector<eslocal>  tnodeSet;
+
+			tnodesIDs.reserve(rdistribution[t + 1] - rdistribution[t]);
+			tnodesCoordinates.reserve(rdistribution[t + 1] - rdistribution[t]);
+			tnodesElemsDistribution.reserve(rdistribution[t + 1] - rdistribution[t]);
+			tnodesRegions.reserve(rdistribution[t + 1] - rdistribution[t]);
+			tnodeSet.reserve(rdistribution[t + 1] - rdistribution[t]);
+
+			eslocal distOffset = 0;
+
+			if (nodesElemsDistribution[t].size()) {
+				distOffset = nodesElemsDistribution[t].back();
+			}
+			if (t == 0 && nodesElemsDistribution[t].size() == 0) {
+				tnodesElemsDistribution.push_back(0);
+			}
+
+			auto nodesetit = nodeset.begin();
+			if (rdistribution[t] + 1 < rdistribution[t + 1]) {
+				nodesetit = std::lower_bound(nodeset.begin(), nodeset.end(), rNodes[i][rdistribution[t] + 1]);
+			}
 			for (size_t n = rdistribution[t] + 1; n < rdistribution[t + 1]; ) {
-				if (!std::binary_search(nodeset.begin(), nodeset.end(), rNodes[i][n])) {
-					nodesIDs[t].push_back(rNodes[i][n]);
-					tnodeset[t].push_back(rNodes[i][n]);
+				while (nodesetit != nodeset.end() && *nodesetit < rNodes[i][n]) ++nodesetit;
+				if (nodesetit == nodeset.end() || *nodesetit != rNodes[i][n]) {
+					tnodesIDs.push_back(rNodes[i][n]);
+					tnodeSet.push_back(rNodes[i][n]);
 					n += 1; //ID
 					memcpy(&point, rNodes[i].data() + n, sizeof(Point));
-					nodesCoordinates[t].push_back(point);
+					tnodesCoordinates.push_back(point);
 					n += sizeof(Point) / sizeof(eslocal); // points
-					nodesElemsDistribution[t].push_back(rNodes[i][n]);
-					nodesElemsData[t].insert(nodesElemsData[t].end(), rNodes[i].begin() + n + 1, rNodes[i].begin() + n + 1 + rNodes[i][n]);
-					n += 1; // linksize
-					n += nodesElemsDistribution[t].back(); // links
-					if (nodesElemsDistribution[t].size() > 1) {
-						nodesElemsDistribution[t].back() += *(nodesElemsDistribution[t].end() - 2);
-					}
-					nodesRegions[t].insert(nodesRegions[t].end(), rNodes[i].begin() + n, rNodes[i].begin() + n + bregionsBitMaskSize);
+					tnodesElemsData.insert(tnodesElemsData.end(), rNodes[i].begin() + n + 1, rNodes[i].begin() + n + 1 + rNodes[i][n]);
+					tnodesElemsDistribution.push_back(tnodesElemsData.size() + distOffset);
+					n += rNodes[i][n] + 1; // linksize + links
+					tnodesRegions.insert(tnodesRegions.end(), rNodes[i].begin() + n, rNodes[i].begin() + n + bregionsBitMaskSize);
 					n += bregionsBitMaskSize; // region mask
 				} else {
 					n += 1 + sizeof(Point) / sizeof(eslocal); // id, Point
@@ -855,11 +908,20 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 					n += bregionsBitMaskSize; // region mask
 				}
 			}
+
+			nodesIDs[t].insert(nodesIDs[t].end(), tnodesIDs.begin(), tnodesIDs.end());
+			nodesCoordinates[t].insert(nodesCoordinates[t].end(), tnodesCoordinates.begin(), tnodesCoordinates.end());
+			nodesElemsDistribution[t].insert(nodesElemsDistribution[t].end(), tnodesElemsDistribution.begin(), tnodesElemsDistribution.end());
+			nodesElemsData[t].insert(nodesElemsData[t].end(), tnodesElemsData.begin(), tnodesElemsData.end());
+			nodesRegions[t].insert(nodesRegions[t].end(), tnodesRegions.begin(), tnodesRegions.end());
+			tnodeset[t].swap(tnodeSet);
 		}
+
+		size_t nsize = nodeset.size();
 		for (size_t t = 0; t < threads; t++) {
 			nodeset.insert(nodeset.end(), tnodeset[t].begin(), tnodeset[t].end());
 		}
-		std::sort(nodeset.begin(), nodeset.end());
+		std::inplace_merge(nodeset.begin(), nodeset.begin() + nsize, nodeset.end());
 	}
 
 	Esutils::threadDistributionToFullDistribution(elemsNodesDistribution);
@@ -887,12 +949,30 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
-				for (eslocal i = toffset[r][t]; i < toffset[r][t] + tsize[r][t];) {
-					boundaryEPointers[r][t].push_back(&_mesh->_eclasses[t][rBoundary[n][i++]]);
-					boundaryEData[r][t].insert(boundaryEData[r][t].end(), rBoundary[n].begin() + i, rBoundary[n].begin() + i + boundaryEPointers[r][t].back()->nodes);
-					boundaryEDistribution[r][t].push_back(boundaryEData[r][t].size());
-					i += boundaryEPointers[r][t].back()->nodes;
+
+				std::vector<eslocal>  tboundaryEDistribution;
+				std::vector<eslocal>  tboundaryEData;
+				std::vector<Element*> tboundaryEPointers;
+
+				eslocal distOffset = 0;
+
+				if (boundaryEDistribution[r][t].size()) {
+					distOffset = boundaryEDistribution[r][t].back();
 				}
+				if (t == 0 && boundaryEDistribution[r][t].size() == 0) {
+					tboundaryEDistribution.push_back(0);
+				}
+
+				for (eslocal i = toffset[r][t]; i < toffset[r][t] + tsize[r][t];) {
+					tboundaryEPointers.push_back(&_mesh->_eclasses[t][rBoundary[n][i++]]);
+					tboundaryEData.insert(tboundaryEData.end(), rBoundary[n].begin() + i, rBoundary[n].begin() + i + tboundaryEPointers.back()->nodes);
+					tboundaryEDistribution.push_back(tboundaryEData.size() + distOffset);
+					i += tboundaryEPointers.back()->nodes;
+				}
+
+				boundaryEPointers[r][t].insert(boundaryEPointers[r][t].end(), tboundaryEPointers.begin(), tboundaryEPointers.end());
+				boundaryEDistribution[r][t].insert(boundaryEDistribution[r][t].end(), tboundaryEDistribution.begin(), tboundaryEDistribution.end());
+				boundaryEData[r][t].insert(boundaryEData[r][t].end(), tboundaryEData.begin(), tboundaryEData.end());
 			}
 		}
 	}
@@ -915,12 +995,6 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	elements->size = elements->IDs->structures();
 	elements->distribution = elements->IDs->datatarray().distribution();
 
-	e42.end();
-	eval.addEvent(e42);
-
-	TimeEvent e5("balance nodes");
-	e5.start();
-
 	// Step 5: Balance node data to threads
 	std::vector<size_t> nodeDistribution(threads);
 	for (size_t t = 1; t < threads; t++) {
@@ -936,6 +1010,12 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	nodes->elements = new serializededata<eslocal, eslocal>(nodesElemsDistribution, nodesElemsData);
 	nodes->size = nodes->IDs->datatarray().size();
 	nodes->distribution = nodes->IDs->datatarray().distribution();
+
+	e42.end();
+	eval.addEvent(e42);
+
+	TimeEvent e5("balance nodes");
+	e5.start();
 
 	for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
 		if (_mesh->boundaryRegions[r]->dimension) {
