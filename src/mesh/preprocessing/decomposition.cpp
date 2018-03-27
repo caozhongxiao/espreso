@@ -31,7 +31,7 @@
 using namespace espreso;
 
 
-void MeshPreprocessing::reclusterize(std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData)
+void MeshPreprocessing::reclusterize()
 {
 	if (environment->MPIsize == 1) {
 		skip("re-distribution of the mesh to processes");
@@ -147,47 +147,17 @@ void MeshPreprocessing::reclusterize(std::vector<eslocal> &dualDist, std::vector
 
 	this->exchangeElements(partition);
 
-	dualDist.swap(dDistribution);
-	dualData.swap(dData[0]);
-
 	finish("re-distribution of the mesh to processes");
 }
 
-void MeshPreprocessing::partitiate(eslocal parts, std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData)
+void MeshPreprocessing::partitiate(eslocal parts)
 {
 	start("decomposition of the mesh");
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	if (dualDist.size() != _mesh->elements->size + 1) {
-		this->computeDecomposedDual(dualDist, dualData);
-	} else {
-		std::vector<std::vector<eslocal> > dData(threads);
-		eslocal eoffset = _mesh->elements->gatherElementsProcDistribution()[environment->MPIrank];
-
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			std::vector<eslocal> tdata;
-			eslocal prev = dualDist[_mesh->elements->distribution[t]];
-			dualDist[_mesh->elements->distribution[t]] = 0;
-			for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e) {
-				for (eslocal n = prev; n < dualDist[e + 1]; ++n) {
-					if (eoffset <= dualData[n] && dualData[n] < eoffset + _mesh->elements->size) {
-						tdata.push_back(dualData[n] - eoffset);
-					}
-				}
-				prev = dualDist[e + 1];
-				dualDist[e + 1] = tdata.size();
-			}
-			dData[t].swap(tdata);
-		}
-
-		Esutils::threadDistributionToFullDistribution(dualDist, _mesh->elements->distribution);
-		for (size_t t = 1; t < threads; t++) {
-			dData[0].insert(dData[0].end(), dData[t].begin(), dData[t].end());
-		}
-		dualData.swap(dData[0]);
-	}
+	std::vector<eslocal> dualDist, dualData;
+	this->computeDecomposedDual(dualDist, dualData);
 
 	std::vector<int> partID(_mesh->elements->size, -1);
 

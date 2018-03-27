@@ -454,16 +454,15 @@ void Mesh::update()
 		uniformDecomposition = false;
 	}
 
-	std::vector<eslocal> dualDist, dualData;
 	if (configuration.decomposition.balance_clusters || configuration.input == INPUT_FORMAT::WORKBENCH) {
-		preprocessing->reclusterize(dualDist, dualData);
+		preprocessing->reclusterize();
 	}
 
 	uniformDecomposition = false;
 	if (uniformDecomposition) {
 		// implement uniform decomposition
 	} else {
-		preprocessing->partitiate(configuration.decomposition.domains ? configuration.decomposition.domains : mesh->parts(), dualDist, dualData);
+		preprocessing->partitiate(configuration.decomposition.domains ? configuration.decomposition.domains : mesh->parts());
 	}
 
 	if (configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_2D || configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {

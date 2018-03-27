@@ -37,8 +37,8 @@ public:
 	void computeElementsNeighbors();
 	void computeDecomposedDual(std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData);
 
-	void reclusterize(std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData);
-	void partitiate(eslocal parts, std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData);
+	void reclusterize();
+	void partitiate(eslocal parts);
 
 	void arrangeNodes();
 	void arrangeElements();
