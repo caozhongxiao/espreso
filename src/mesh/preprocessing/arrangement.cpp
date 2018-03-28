@@ -47,46 +47,6 @@ void MeshPreprocessing::arrangeNodes()
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	// TODO: element nodes reindex to domains
-//	std::vector<std::vector<eslocal> > domainNodes(_mesh->elements->ndomains);
-//
-//	mesh._domains->elems = new serializededata<eslocal, eslocal>(*mesh._elems->nodes);
-//
-//	#pragma omp parallel for
-//	for (size_t t = 0; t < threads; t++) {
-//		for (eslocal d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; ++d) {
-//			domainNodes[d].insert(domainNodes[d].end(),
-//					(mesh._domains->elems->cbegin() + mesh._domains->domainElementBoundaries[d])->begin(),
-//					(mesh._domains->elems->cbegin() + mesh._domains->domainElementBoundaries[d + 1])->begin());
-//
-//			Esutils::sortAndRemoveDuplicity(domainNodes[d]);
-//			for (
-//				auto n = (mesh._domains->elems->begin() + mesh._domains->domainElementBoundaries[d])->begin();
-//				n != (mesh._domains->elems->begin() + mesh._domains->domainElementBoundaries[d + 1])->begin();
-//				++n) {
-//
-//				*n = std::lower_bound(domainNodes[d].begin(), domainNodes[d].end(), *n) - domainNodes[d].begin();
-//			}
-//		}
-//	}
-//
-//	mesh._domains->domainNodeBoundaries.clear();
-//	mesh._domains->domainNodeBoundaries.push_back(0);
-//	for (eslocal d = 0; d < mesh._domains->size; ++d) {
-//		mesh._domains->domainNodeBoundaries.push_back(mesh._domains->domainNodeBoundaries.back() + domainNodes[d].size());
-//	}
-//
-//	std::vector<std::vector<eslocal> > tdomainNodes(threads);
-//
-//	#pragma omp parallel for
-//	for (size_t t = 0; t < threads; t++) {
-//		for (eslocal d = mesh._domains->domainDistribution[t]; d < mesh._domains->domainDistribution[t + 1]; ++d) {
-//			tdomainNodes[t].insert(tdomainNodes[t].end(), domainNodes[d].begin(), domainNodes[d].end());
-//		}
-//	}
-//
-//	mesh._domains->nodes = new serializededata<eslocal, eslocal>(1, tdomainNodes);
-
 	std::vector<eslocal> eDist = _mesh->elements->gatherElementsDistribution();
 	std::vector<eslocal> dProcDist = _mesh->elements->gatherDomainsProcDistribution();
 	std::vector<std::vector<eslocal> > domainsDistribution(threads), domainsData(threads);
