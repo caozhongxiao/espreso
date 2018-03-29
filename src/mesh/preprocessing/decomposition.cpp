@@ -1205,13 +1205,15 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 				newIDrequests[t][n].insert(newIDrequests[t][n].end(), tnewIDrequests[n].begin(), tnewIDrequests[n].end());
 			}
 		}
-	}
 
-	for (size_t t = 1; t < threads; ++t) {
-		for (size_t n = 0; n < IDtargets[0].size(); n++) {
-			newIDrequests[0][n].insert(newIDrequests[0][n].end(), newIDrequests[t][n].begin(), newIDrequests[t][n].end());
+		for (size_t t = 1; t < threads; ++t) {
+			for (size_t n = 0; n < IDtargets[0].size(); n++) {
+				newIDrequests[0][n].insert(newIDrequests[0][n].end(), newIDrequests[t][n].begin(), newIDrequests[t][n].end());
+				newIDrequests[t][n].clear();
+			}
 		}
 	}
+
 
 	if (!Communication::sendVariousTargets(newIDrequests[0], IDrequests, IDtargets[0], sources)) {
 		ESINFO(ERROR) << "ESPRESO internal error: request new ID.";
