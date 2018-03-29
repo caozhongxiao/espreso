@@ -50,6 +50,8 @@ void ECFObjectTreeWidget::add(ECFObject *obj)
     this->m_groups.append(group);
     this->m_objs.append(obj);
 
+    this->m_view->setExpanded(group->index(), true);
+
     for (auto it = obj->parameters.begin(); it != obj->parameters.end(); ++it)
     {
         group->appendRow(new QStandardItem(QString::fromStdString((*it)->name)));

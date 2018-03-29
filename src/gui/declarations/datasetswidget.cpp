@@ -17,6 +17,7 @@ void DataSetsWidget::initMaterials()
     this->m_root->appendRow(material_group);
     this->m_groups.append(material_group);
     this->m_objs.append(this->m_materials);
+    this->m_view->setExpanded(material_group->index(), true);
 
     for (auto m = this->m_materials->parameters.begin();
          this->m_materials->parameters.end() != m;

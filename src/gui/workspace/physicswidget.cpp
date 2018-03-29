@@ -22,8 +22,17 @@ QWidget* PhysicsWidget::initContainer()
 {
     ECFParameter* physics = m_ecf->getParameter("physics");
 
-    QComboBox* cmbPhysics = new QComboBox(this->m_widget);
-    this->m_widget->layout()->addWidget(cmbPhysics);
+    QWidget* cmbLine = new QWidget(this->m_widget);
+    QHBoxLayout* layout = new QHBoxLayout;
+    layout->setContentsMargins(0, 0, 0, 0);
+    cmbLine->setLayout(layout);
+    this->m_widget->layout()->addWidget(cmbLine);
+
+    QComboBox* cmbPhysics = new QComboBox(cmbLine);
+    QLabel* lblPhysics = new QLabel(tr("Physics:"), cmbLine);
+    lblPhysics->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+    layout->addWidget(lblPhysics);
+    layout->addWidget(cmbPhysics);
 
     int active = 0;
     int index = 0;
@@ -107,27 +116,6 @@ void PhysicsWidget::performBeforeRedraw()
 {
     this->m_properties = nullptr;
 }
-
-//ECFValueTableWidget* PhysicsWidget::processPositiveInteger(ECFParameter* parameter,
-//                                                  ECFValueTableWidget* table,
-//                                                  QWidget* widget)
-//{
-//    ECFValueTableWidget* tw = this->createTableWidget(widget, table);
-//    if (parameter->name.compare("load_steps") == 0)
-//    {
-//        SpinnerHandler* handler = new SpinnerHandler(parameter, false, widget);
-//        connect(handler, SIGNAL(valueChanged(int)), this, SLOT(onLoadstepsChange(int)));
-//        tw->addWithWidget(static_cast<ECFValue*>(parameter), handler);
-//        this->m_savables.append(handler);
-//        this->m_validatables.append(handler);
-
-//        return tw;
-//    }
-//    else
-//    {
-//        return ECFObjectWidget::processPositiveInteger(parameter, table, widget);
-//    }
-//}
 
 ECFParameterTreeWidget* PhysicsWidget::processPositiveInteger(ECFParameter* parameter,
                                                               ECFParameterTreeWidget* table,

@@ -58,6 +58,10 @@ int ECFParameterTreeWidget::createGroup(const QString& name, int parent_id)
     row << group << empty;
     this->m_groups[parent_id]->appendRow(row);
     this->m_groups.append(group);
+    if (parent_id == 0)
+    {
+        ui->tree->setExpanded(group->index(), true);
+    }
 
     return id;
 }
