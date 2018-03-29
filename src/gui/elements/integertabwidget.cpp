@@ -14,6 +14,7 @@ IntegerTabWidget::IntegerTabWidget(ECFObject* map,
     this->m_factory = std::move(factory);
 
     QVBoxLayout* layout = new QVBoxLayout();
+    layout->setContentsMargins(0,0,0,0);
     this->setLayout(layout);
 
     QHBoxLayout* header = new QHBoxLayout();
