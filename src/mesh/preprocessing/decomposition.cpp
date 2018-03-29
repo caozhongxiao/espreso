@@ -978,8 +978,8 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	}
 
 	// elements are redistributed later while decomposition -> distribution is not changed now
-	std::vector<size_t> elemDistribution(threads);
-	for (size_t t = 1; t < threads; t++) {
+	std::vector<size_t> elemDistribution(threads + 1);
+	for (size_t t = 1; t <= threads; t++) {
 		elemDistribution[t] = elemDistribution[t - 1] + elemsIDs[t - 1].size();
 	}
 
@@ -1045,7 +1045,6 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 		serializededata<eslocal, eslocal>::balance(1, regionelems);
 		_mesh->elementsRegions[r]->elements = new serializededata<eslocal, eslocal>(1, regionelems);
-		std::sort(_mesh->elementsRegions[r]->elements->datatarray().begin(), _mesh->elementsRegions[r]->elements->datatarray().end());
 	}
 
 	for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
@@ -1066,197 +1065,210 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 			serializededata<eslocal, eslocal>::balance(1, regionnodes);
 			_mesh->boundaryRegions[r]->nodes = new serializededata<eslocal, eslocal>(1, regionnodes);
-			std::sort(_mesh->boundaryRegions[r]->nodes->datatarray().begin(), _mesh->boundaryRegions[r]->nodes->datatarray().end());
 		}
 	}
 
 	e5.end();
 	eval.addEvent(e5);
 
-	TimeEvent e6("reindex elements");
-	e6.start();
+	TimeEvent e__("NEW REINDEXING");
+	e__.start();
 
-	// Step 6: Re-index elements
-	// Elements IDs are always kept increasing
+	std::vector<eslocal> eIDsOLD = _mesh->elements->gatherElementsProcDistribution();
+	std::vector<eslocal> eIDsNEW = elements->gatherElementsProcDistribution();
 
-	std::vector<eslocal> oldIDBoundaries = _mesh->elements->gatherElementsProcDistribution();
-	std::vector<eslocal> newIDBoundaries = elements->gatherElementsProcDistribution();
+	for (size_t t = 1; t < threads; ++t) {
+		elemsIDs[0].insert(elemsIDs[0].end(), elemsIDs[t].begin(), elemsIDs[t].end());
+	}
 
-	// thread x neighbor x data(ID, new rank)
-	std::vector<std::vector<std::vector<std::pair<eslocal, eslocal> > > > sHaloTarget(threads, std::vector<std::vector<std::pair<eslocal, eslocal> > >(_mesh->neighbours.size()));
-	std::vector<std::vector<std::pair<eslocal, eslocal> > > haloTarget(_mesh->neighbours.size());
+	std::vector<eslocal> epermutation(elemsIDs[0].size());
+	std::iota(epermutation.begin(), epermutation.end(), 0);
+	std::sort(epermutation.begin(), epermutation.end(), [&] (eslocal i, eslocal j) { return elemsIDs[0][i] < elemsIDs[0][j]; });
 
-	// halo elements that will be halo after exchange
-	std::vector<std::vector<eslocal> > keptHaloTarget(threads);
+	Esutils::sortWithInplaceMerge(elemsIDs[0], elemDistribution);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; ++t) {
+		Esutils::sortAndRemoveDuplicity(nodesElemsData[t]);
+	}
+	Esutils::inplaceMerge(nodesElemsData);
+	Esutils::sortAndRemoveDuplicity(nodesElemsData);
 
-	auto n2i = [ & ] (size_t neighbour) {
-		return std::lower_bound(_mesh->neighbours.begin(), _mesh->neighbours.end(), neighbour) - _mesh->neighbours.begin();
-	};
+	std::vector<std::vector<eslocal> > requestedIDs, receivedTargets, IDrequests;
+	std::vector<std::vector<int> > IDtargets(threads);
+	std::vector<int> sources;
+
+	std::vector<size_t> rdistribution = tarray<int>::distribute(threads, environment->MPIsize);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; ++t) {
-		auto links = _mesh->nodes->elements->cbegin(t);
-		auto ranks = _mesh->nodes->ranks->cbegin(t);
-		std::vector<std::pair<eslocal, eslocal> > buffer;
+		std::vector<int> ttargets;
 
-		for (size_t n = _mesh->nodes->distribution[t]; n < _mesh->nodes->distribution[t + 1]; ++n, ++links, ++ranks) {
-			if (ranks->size() > 1) {
-				buffer.clear();
-				bool keep = false;
-				size_t ksize = keptHaloTarget[t].size();
-				for (auto e = links->begin(); e != links->end(); ++e) {
-					if (oldIDBoundaries[environment->MPIrank] <= *e && *e < oldIDBoundaries[environment->MPIrank + 1]) {
-						buffer.push_back(std::make_pair(*e, partition[*e - oldIDBoundaries[environment->MPIrank]]));
-						if (partition[*e - oldIDBoundaries[environment->MPIrank]] == environment->MPIrank) {
-							keep = true;
-						}
-					} else {
-						keptHaloTarget[t].push_back(*e);
-					}
-				}
-				if (!keep) {
-					keptHaloTarget[t].resize(ksize);
-				}
-				for (auto rank = ranks->begin(); rank != ranks->end(); ++rank) {
-					if (*rank != environment->MPIrank) {
-						sHaloTarget[t][n2i(*rank)].insert(sHaloTarget[t][n2i(*rank)].end(), buffer.begin(), buffer.end());
-					}
+		auto eIDbegin = std::lower_bound(nodesElemsData[0].begin(), nodesElemsData[0].end(), eIDsOLD[rdistribution[t]]);
+		auto eIDend   = std::lower_bound(eIDbegin, nodesElemsData[0].end(), eIDsOLD[rdistribution[t + 1]]);
+
+		for (size_t r = rdistribution[t]; r < rdistribution[t + 1]; r++) {
+			eIDbegin = std::lower_bound(eIDbegin, eIDend, eIDsOLD[r]);
+			auto end = std::lower_bound(eIDbegin, eIDend, eIDsOLD[r + 1]);
+			if (eIDbegin != end) {
+				ttargets.push_back(r);
+			}
+			eIDbegin = end;
+		}
+
+		IDtargets[t].swap(ttargets);
+	}
+
+	for (size_t t = 1; t < threads; ++t) {
+		IDtargets[0].insert(IDtargets[0].end(), IDtargets[t].begin(), IDtargets[t].end());
+	}
+
+	requestedIDs.resize(IDtargets[0].size());
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < IDtargets[0].size(); t++) {
+		auto mybegin = std::lower_bound(elemsIDs[0].begin(), elemsIDs[0].end(), eIDsOLD[IDtargets[0][t]]);
+		auto myend   = std::lower_bound(elemsIDs[0].begin(), elemsIDs[0].end(), eIDsOLD[IDtargets[0][t] + 1]);
+		auto nbegin = std::lower_bound(nodesElemsData[0].begin(), nodesElemsData[0].end(), eIDsOLD[IDtargets[0][t]]);
+		auto nend   = std::lower_bound(nodesElemsData[0].begin(), nodesElemsData[0].end(), eIDsOLD[IDtargets[0][t] + 1]);
+		requestedIDs[t].resize(nend - nbegin);
+		requestedIDs[t].resize(std::set_difference(nbegin, nend, mybegin, myend, requestedIDs[t].begin()) - requestedIDs[t].begin());
+	}
+
+	if (!Communication::sendVariousTargets(requestedIDs, IDrequests, IDtargets[0], sources)) {
+		ESINFO(ERROR) << "ESPRESO internal error: exchange ID requests.";
+	}
+
+	for (size_t r = 0; r < IDrequests.size(); r++) {
+		rdistribution = tarray<size_t>::distribute(threads, IDrequests[r].size());
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; ++t) {
+			if (rdistribution[t] != rdistribution[t + 1]) {
+				for (size_t e = rdistribution[t]; e < rdistribution[t + 1]; ++e) {
+					IDrequests[r][e] = partition[IDrequests[r][e] - eIDsOLD[environment->MPIrank]];
 				}
 			}
 		}
-
-		Esutils::sortAndRemoveDuplicity(sHaloTarget[t]);
-		Esutils::sortAndRemoveDuplicity(keptHaloTarget[t]);
 	}
-	Esutils::mergeThreadedUniqueData(sHaloTarget);
 
-	if (!Communication::exchangeUnknownSize(sHaloTarget[0], haloTarget, _mesh->neighbours)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange elements new MPI processes.";
+	if (!Communication::sendVariousTargets(IDrequests, receivedTargets, sources)) {
+		ESINFO(ERROR) << "ESPRESO internal error: return ID targets.";
 	}
-	Esutils::mergeThreadedUniqueData(haloTarget);
 
-	// haloTarget contains target processes of halo elements
-	// fill newIDTargetSBuffet by target processes of elements that was exchanged
+	IDtargets.clear();
+	IDtargets.resize(threads);
+	for (size_t r = 0; r < receivedTargets.size(); r++) {
+		rdistribution = tarray<size_t>::distribute(threads, receivedTargets[r].size());
 
-	// thread x neighbor x data(oldID, new MPI process)
-	std::vector<std::vector<std::vector<std::pair<eslocal, eslocal> > > > newIDTargetSBuffet(threads, std::vector<std::vector<std::pair<eslocal, eslocal> > >(targets.size()));
-	std::vector<std::vector<std::pair<eslocal, eslocal> > > newIDTarget(targets.size());
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; ++t) {
+			std::vector<int> ttargets;
 
-	// elements that are sent to neighbors
-	std::vector<std::vector<std::pair<eslocal, eslocal> > > myIDTarget(threads);
-
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		auto enodes = _mesh->elements->nodes->cbegin(t);
-		eslocal target;
-		bool addToMyIDTargets;
-
-		for (auto e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++enodes) {
-			addToMyIDTargets = false;
-			if (partition[e] != environment->MPIrank) {
-				for (auto n = enodes->begin(); n != enodes->end(); ++n) {
-					auto nelems = _mesh->nodes->elements->cbegin() + *n;
-					for (auto ne = nelems->begin(); ne != nelems->end(); ++ne) {
-						if (oldIDBoundaries[environment->MPIrank] <= *ne && *ne < oldIDBoundaries[environment->MPIrank + 1]) {
-							target = partition[*ne - oldIDBoundaries[environment->MPIrank]];
-						} else {
-							target = std::lower_bound(haloTarget[0].begin(), haloTarget[0].end(), std::make_pair(*ne, 0))->second;
-						}
-						if (target != partition[e]) {
-							newIDTargetSBuffet[t][t2i(partition[e])].push_back(std::make_pair(*ne, target));
-						}
-						if (target == environment->MPIrank) {
-							addToMyIDTargets = true;
-						}
+			std::vector<int>::iterator it;
+			for (size_t e = rdistribution[t]; e < rdistribution[t + 1]; ++e) {
+				if (receivedTargets[r][e] != environment->MPIrank) {
+					it = std::lower_bound(ttargets.begin(), ttargets.end(), receivedTargets[r][e]);
+					if (it == ttargets.end() || *it != receivedTargets[r][e]) {
+						ttargets.insert(it, receivedTargets[r][e]);
 					}
 				}
-				if (addToMyIDTargets) {
-					myIDTarget[t].push_back(std::make_pair((eslocal)(oldIDBoundaries[environment->MPIrank] + e), partition[e]));
+			}
+
+			IDtargets[t].insert(IDtargets[t].end(), ttargets.begin(), ttargets.end());
+		}
+	}
+	for (size_t t = 0; t < threads; ++t) {
+		Esutils::sortAndRemoveDuplicity(IDtargets[t]);
+	}
+	for (size_t t = 1; t < threads; ++t) {
+		IDtargets[0].insert(IDtargets[0].end(), IDtargets[t].begin(), IDtargets[t].end());
+	}
+	Esutils::sortAndRemoveDuplicity(IDtargets[0]);
+
+	std::vector<std::vector<std::vector<eslocal> > > newIDrequests(threads, std::vector<std::vector<eslocal> >(IDtargets[0].size()));
+	std::vector<std::vector<eslocal> > newIDs;
+
+	for (size_t r = 0; r < receivedTargets.size(); r++) {
+		rdistribution = tarray<size_t>::distribute(threads, receivedTargets[r].size());
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; ++t) {
+			size_t tindex;
+			std::vector<std::vector<eslocal> > tnewIDrequests(IDtargets[0].size());
+
+			for (size_t e = rdistribution[t]; e < rdistribution[t + 1]; ++e) {
+				tindex = std::lower_bound(IDtargets[0].begin(), IDtargets[0].end(), receivedTargets[r][e]) - IDtargets[0].begin();
+				tnewIDrequests[tindex].push_back(requestedIDs[r][e]);
+			}
+
+			for (size_t n = 0; n < IDtargets[0].size(); n++) {
+				newIDrequests[t][n].insert(newIDrequests[t][n].end(), tnewIDrequests[n].begin(), tnewIDrequests[n].end());
+			}
+		}
+	}
+
+	for (size_t t = 1; t < threads; ++t) {
+		for (size_t n = 0; n < IDtargets[0].size(); n++) {
+			newIDrequests[0][n].insert(newIDrequests[0][n].end(), newIDrequests[t][n].begin(), newIDrequests[t][n].end());
+		}
+	}
+
+	if (!Communication::sendVariousTargets(newIDrequests[0], IDrequests, IDtargets[0], sources)) {
+		ESINFO(ERROR) << "ESPRESO internal error: request new ID.";
+	}
+
+	for (size_t r = 0; r < IDrequests.size(); r++) {
+		rdistribution = tarray<size_t>::distribute(threads, IDrequests[r].size());
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; ++t) {
+			if (rdistribution[t] != rdistribution[t + 1]) {
+				auto eit = std::lower_bound(elemsIDs[0].begin(), elemsIDs[0].end(), IDrequests[r][rdistribution[t]]);
+				for (size_t e = rdistribution[t]; e < rdistribution[t + 1]; ++e) {
+					while (eit != elemsIDs[0].end() && *eit < IDrequests[r][e]) ++eit;
+					IDrequests[r][e] = epermutation[eit - elemsIDs[0].begin()] + eIDsNEW[environment->MPIrank];
 				}
 			}
 		}
-		Esutils::sortAndRemoveDuplicity(newIDTargetSBuffet[t]);
-		Esutils::sortAndRemoveDuplicity(myIDTarget[t]);
 	}
 
-	Esutils::mergeThreadedUniqueData(newIDTargetSBuffet);
-
-	if (!Communication::sendVariousTargets(newIDTargetSBuffet[0], newIDTarget, targets)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange elements new IDs.";
-	}
-	if (newIDTarget.size() < threads) {
-		newIDTarget.resize(threads);
-	}
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		for (size_t i = 0; i < keptHaloTarget[t].size(); i++) {
-			auto it = std::lower_bound(haloTarget[0].begin(), haloTarget[0].end(), std::make_pair(keptHaloTarget[t][i], 0));
-			newIDTarget[t].push_back(*it);
-		}
-	}
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		newIDTarget[t].insert(newIDTarget[t].end(), myIDTarget[t].begin(), myIDTarget[t].end());
+	if (!Communication::sendVariousTargets(IDrequests, newIDs, sources)) {
+		ESINFO(ERROR) << "ESPRESO internal error: return new ID.";
 	}
 
-	Esutils::mergeThreadedUniqueData(newIDTarget);
-
-	// Ask targets to new IDs
-	std::sort(newIDTarget[0].begin(), newIDTarget[0].end(), [] (std::pair<eslocal, eslocal> &p1, std::pair<eslocal, eslocal> &p2) {
-		if (p1.second == p2.second) {
-			return p1.first < p2.first;
-		}
-		return p1.second < p2.second;
-	});
-
-	std::vector<int> neighbors;
-	std::vector<std::vector<std::pair<eslocal, eslocal> > > newID, newIDRequest;
-	auto begin = newIDTarget[0].begin();
-	while (begin != newIDTarget[0].end()) {
-		auto end = std::lower_bound(begin, newIDTarget[0].end(), std::make_pair(0, begin->second + 1), [] (std::pair<eslocal, eslocal> &p1, const std::pair<eslocal, eslocal> &p2) { return p1.second < p2.second; });
-		if (begin->second != environment->MPIrank) {
-			neighbors.push_back(begin->second);
-			newID.push_back(std::move(std::vector<std::pair<eslocal, eslocal> >(begin, end)));
-		}
-		begin = end;
+	std::vector<size_t> offsets = { 0 };
+	for (size_t r = 0; r < newIDs.size(); r++) {
+		offsets.push_back(offsets.back() + newIDs[r].size());
 	}
+	std::vector<std::pair<eslocal, eslocal> > IDMap(offsets.back());
 
-	newIDRequest.resize(newID.size());
-	if (!Communication::exchangeUnknownSize(newID, newIDRequest, neighbors)) {
-		ESINFO(ERROR) << "ESPRESO internal error: get new ID requests";
-	}
+	for (size_t r = 0; r < newIDs.size(); r++) {
+		rdistribution = tarray<size_t>::distribute(threads, newIDrequests[0][r].size());
 
-	std::vector<eslocal> permutation(elements->size);
-	std::iota(permutation.begin(), permutation.end(), 0);
-	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return elements->IDs->datatarray().data()[i] < elements->IDs->datatarray().data()[j]; });
-
-	#pragma omp parallel for
-	for (size_t n = 0; n < neighbors.size(); n++) {
-		for (size_t i = 0; i < newIDRequest[n].size(); i++) {
-			auto it = std::lower_bound(permutation.begin(), permutation.end(), newIDRequest[n][i].first, [&] (eslocal i, eslocal val) {
-				return elements->IDs->datatarray().data()[i] < val;
-			});
-			if (it == permutation.end()) {
-				ESINFO(ERROR) << "ESPRESO internal error: request for unknown element ID.";
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; ++t) {
+			for (size_t e = rdistribution[t]; e < rdistribution[t + 1]; ++e) {
+				IDMap[offsets[r] + e].first = newIDrequests[0][r][e];
+				IDMap[offsets[r] + e].second = newIDs[r][e];
 			}
-			newIDRequest[n][i].second = newIDBoundaries[environment->MPIrank] + *it;
 		}
 	}
 
-	if (!Communication::exchangeKnownSize(newIDRequest, newID, neighbors)) {
-		ESINFO(ERROR) << "ESPRESO internal error: get new elements IDs.";
-	}
-	Esutils::mergeThreadedUniqueData(newID);
+	Esutils::sortWithInplaceMerge(IDMap, offsets);
+
+	e__.end();
+	eval.addEvent(e__);
+
+	TimeEvent e15("reindex node->elements");
+	e15.start();
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (auto elem = nodes->elements->begin(t); elem != nodes->elements->end(t); ++elem) {
 			for (auto e = elem->begin(); e != elem->end(); ++e) {
-				auto it = std::lower_bound(newID[0].begin(), newID[0].end(), std::make_pair(*e, 0));
-				if (it == newID[0].end() || it->first != *e) {
-					*e = newIDBoundaries[environment->MPIrank] + *std::lower_bound(permutation.begin(), permutation.end(), *e, [&] (eslocal i, eslocal val) {
-						return elements->IDs->datatarray().data()[i] < val;
-					});
+				auto it = std::lower_bound(IDMap.begin(), IDMap.end(), std::make_pair(*e, 0));
+				if (it == IDMap.end() || it->first != *e) {
+					*e = eIDsNEW[environment->MPIrank] + epermutation[std::lower_bound(elemsIDs[0].begin(), elemsIDs[0].end(), *e) - elemsIDs[0].begin()];
 				} else {
 					*e = it->second;
 				}
@@ -1265,7 +1277,13 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		}
 	}
 
-	permutation.resize(nodes->size);
+	e15.end();
+	eval.addEvent(e15);
+
+	TimeEvent e16("reindex elements->nodes");
+	e16.start();
+
+	std::vector<eslocal> permutation(nodes->size);
 	std::iota(permutation.begin(), permutation.end(), 0);
 	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return nodes->IDs->datatarray().data()[i] < nodes->IDs->datatarray().data()[j]; });
 
@@ -1291,6 +1309,12 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		}
 	}
 
+	e16.end();
+	eval.addEvent(e16);
+
+	TimeEvent e17("reindex ranks");
+	e17.start();
+
 	std::vector<std::vector<eslocal> > rankBoundaries(threads);
 	std::vector<std::vector<int> > rankData(threads);
 
@@ -1300,9 +1324,9 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		int rank, rsize;
 		for (auto elem = nodes->elements->begin(t); elem != nodes->elements->end(t); ++elem) {
 			rsize = 1;
-			rankData[t].push_back(std::lower_bound(newIDBoundaries.begin(), newIDBoundaries.end(), *elem->begin() + 1) - newIDBoundaries.begin() - 1);
+			rankData[t].push_back(std::lower_bound(eIDsNEW.begin(), eIDsNEW.end(), *elem->begin() + 1) - eIDsNEW.begin() - 1);
 			for (auto e = elem->begin() + 1; e != elem->end(); ++e) {
-				rank = std::lower_bound(newIDBoundaries.begin(), newIDBoundaries.end(), *e + 1) - newIDBoundaries.begin() - 1;
+				rank = std::lower_bound(eIDsNEW.begin(), eIDsNEW.end(), *e + 1) - eIDsNEW.begin() - 1;
 				if (rank != rankData[t].back()) {
 					rankData[t].push_back(rank);
 					++rsize;
@@ -1319,23 +1343,35 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	nodes->ranks = new serializededata<eslocal, int>(rankBoundaries, rankData);
 
-	std::iota(elements->IDs->datatarray().begin(), elements->IDs->datatarray().end(), newIDBoundaries[environment->MPIrank]);
+	e17.end();
+	eval.addEvent(e17);
+
+	TimeEvent e18("swap");
+	e18.start();
+
+	std::iota(elements->IDs->datatarray().begin(), elements->IDs->datatarray().end(), eIDsNEW[environment->MPIrank]);
 	std::swap(_mesh->elements, elements);
 	std::swap(_mesh->nodes, nodes);
 	delete _mesh->halo;
 	_mesh->halo = new ElementStore(_mesh->_eclasses);
-	_mesh->neighbours = _mesh->neighboursWithMe = neighbors;
+	_mesh->neighbours.clear();
+	for (size_t t = 0; t < IDtargets[0].size(); t++) {
+		if (IDtargets[0][t] != environment->MPIrank) {
+			_mesh->neighbours.push_back(IDtargets[0][t]);
+		}
+	}
+	_mesh->neighboursWithMe = _mesh->neighbours;
 	_mesh->neighboursWithMe.push_back(environment->MPIrank);
 	std::sort(_mesh->neighboursWithMe.begin(), _mesh->neighboursWithMe.end());
 
 	delete elements;
 	delete nodes;
 
-	e6.end();
-	eval.addEvent(e6);
+	e18.end();
+	eval.addEvent(e18);
 
-	eval.totalTime.endWithBarrier();
-	eval.printStatsMPI();
+//	eval.totalTime.endWithBarrier();
+//	eval.printStatsMPI();
 //	exit(0);
 
 	this->computeElementsNeighbors();
