@@ -9,10 +9,14 @@
 
 namespace espreso {
 
+struct Instance;
+
 struct DistributedVTKLegacy: public DistributedVisualization {
 
+	static double clusterShrinkRatio, domainShrinkRatio;
+
 protected:
-	DistributedVTKLegacy(const Mesh &mesh, const OutputConfiguration &configuration, double clusterShrinkRatio, double domainShrinkRatio);
+	DistributedVTKLegacy(const Mesh &mesh, const OutputConfiguration &configuration);
 
 	void mesh(const std::string &name);
 	void solution(const std::string &name);
@@ -29,13 +33,14 @@ protected:
 	void neighbors(const std::string &name);
 
 	void points(const std::string &name, const std::vector<eslocal> &points, const std::vector<eslocal> &distribution);
-
-	double _clusterShrinkRatio, _domainShrinkRatio;
 };
 
 struct VTKLegacyDebugInfo: public DistributedVTKLegacy {
 
-	VTKLegacyDebugInfo(const Mesh &mesh, const OutputConfiguration &configuration, double clusterShrinkRatio, double domainShrinkRatio);
+	VTKLegacyDebugInfo(const Mesh &mesh, const OutputConfiguration &configuration);
+
+	static void dirichlet(const Mesh &mesh, const Instance &instance);
+	static void gluing(const Mesh &mesh, const Instance &instance);
 
 	void updateMesh()
 	{

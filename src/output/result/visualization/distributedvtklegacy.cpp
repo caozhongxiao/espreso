@@ -10,6 +10,8 @@
 #include "../../../config/ecf/environment.h"
 #include "../../../config/ecf/output.h"
 
+#include "../../../assembler/instance.h"
+
 #include "../../../mesh/mesh.h"
 #include "../../../mesh/elements/element.h"
 #include "../../../mesh/store/nodestore.h"
@@ -18,20 +20,25 @@
 #include "../../../mesh/store/surfacestore.h"
 #include "../../../mesh/store/contactstore.h"
 
+#include "../../../solver/generic/SparseMatrix.h"
+
 #include <fstream>
 #include <algorithm>
 #include <numeric>
 
 using namespace espreso;
 
-VTKLegacyDebugInfo::VTKLegacyDebugInfo(const Mesh &mesh, const OutputConfiguration &configuration, double clusterShrinkRatio, double domainShrinkRatio)
-: DistributedVTKLegacy(mesh, configuration, clusterShrinkRatio, domainShrinkRatio)
+double DistributedVTKLegacy::clusterShrinkRatio = 0.95;
+double DistributedVTKLegacy::domainShrinkRatio = 0.9;
+
+VTKLegacyDebugInfo::VTKLegacyDebugInfo(const Mesh &mesh, const OutputConfiguration &configuration)
+: DistributedVTKLegacy(mesh, configuration)
 {
 	_path = Esutils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" });
 }
 
-DistributedVTKLegacy::DistributedVTKLegacy(const Mesh &mesh, const OutputConfiguration &configuration, double clusterShrinkRatio, double domainShrinkRatio)
-: DistributedVisualization(mesh, configuration), _clusterShrinkRatio(clusterShrinkRatio), _domainShrinkRatio(domainShrinkRatio)
+DistributedVTKLegacy::DistributedVTKLegacy(const Mesh &mesh, const OutputConfiguration &configuration)
+: DistributedVisualization(mesh, configuration)
 {
 
 }
@@ -59,7 +66,7 @@ void DistributedVTKLegacy::mesh(const std::string &name)
 		Point p;
 		for (size_t i = 0; i < _mesh.nodes->dintervals[d].size(); ++i) {
 			for (eslocal n = _mesh.nodes->dintervals[d][i].begin; n < _mesh.nodes->dintervals[d][i].end; ++n) {
-				p = shrink(coordinates[n], _mesh.nodes->center, _mesh.nodes->dcenter[d], _clusterShrinkRatio, _domainShrinkRatio);
+				p = shrink(coordinates[n], _mesh.nodes->center, _mesh.nodes->dcenter[d], clusterShrinkRatio, domainShrinkRatio);
 				os << p.x << " " << p.y << " " << p.z << "\n";
 			}
 		}
@@ -128,7 +135,7 @@ void DistributedVTKLegacy::solution(const std::string &name)
 		Point p;
 		for (size_t i = 0; i < _mesh.nodes->dintervals[d].size(); ++i) {
 			for (eslocal n = _mesh.nodes->dintervals[d][i].begin; n < _mesh.nodes->dintervals[d][i].end; ++n) {
-				p = shrink(coordinates[n], _mesh.nodes->center, _mesh.nodes->dcenter[d], _clusterShrinkRatio, _domainShrinkRatio);
+				p = shrink(coordinates[n], _mesh.nodes->center, _mesh.nodes->dcenter[d], clusterShrinkRatio, domainShrinkRatio);
 				os << p.x << " " << p.y << " " << p.z << "\n";
 			}
 		}
@@ -427,7 +434,7 @@ void DistributedVTKLegacy::domainSurface(const std::string &name)
 		os << "POINTS " << _mesh.domainsSurface->coordinates->datatarray().size() << " float\n";
 		for (size_t d = 0; d < _mesh.elements->ndomains; ++d) {
 			for (eslocal n = _mesh.domainsSurface->cdistribution[d]; n < _mesh.domainsSurface->cdistribution[d + 1]; ++n) {
-				Point p = shrink(_mesh.domainsSurface->coordinates->datatarray()[n], _mesh.nodes->center, _mesh.nodes->dcenter[d], _clusterShrinkRatio, _domainShrinkRatio);
+				Point p = shrink(_mesh.domainsSurface->coordinates->datatarray()[n], _mesh.nodes->center, _mesh.nodes->dcenter[d], clusterShrinkRatio, domainShrinkRatio);
 				os << p.x << " " << p.y << " " << p.z << "\n";
 			}
 		}
@@ -470,7 +477,7 @@ void DistributedVTKLegacy::points(const std::string &name, const std::vector<esl
 	os << "POINTS " << points.size() << " float\n";
 	for (size_t d = 0; d < distribution.size() - 1; d++) {
 		for (size_t i = distribution[d]; i < distribution[d + 1]; i++) {
-			Point n = shrink(_mesh.nodes->coordinates->datatarray()[points[i]], _mesh.nodes->center, _mesh.nodes->dcenter[d], _clusterShrinkRatio, _domainShrinkRatio);
+			Point n = shrink(_mesh.nodes->coordinates->datatarray()[points[i]], _mesh.nodes->center, _mesh.nodes->dcenter[d], clusterShrinkRatio, domainShrinkRatio);
 			os << n.x << " " << n.y << " " << n.z << "\n";
 		}
 	}
@@ -511,7 +518,7 @@ void DistributedVTKLegacy::corners(const std::string &name)
 	cdomains = _mesh.FETIData->cornerDomains->begin();
 	for (size_t i = 0; i < _mesh.FETIData->corners.size(); ++i, ++cdomains) {
 		for (auto d = cdomains->begin(); d != cdomains->end(); ++d) {
-			Point n = shrink(_mesh.nodes->coordinates->datatarray()[_mesh.FETIData->corners[i]], _mesh.nodes->center, _mesh.nodes->dcenter[*d], _clusterShrinkRatio, _domainShrinkRatio);
+			Point n = shrink(_mesh.nodes->coordinates->datatarray()[_mesh.FETIData->corners[i]], _mesh.nodes->center, _mesh.nodes->dcenter[*d], clusterShrinkRatio, domainShrinkRatio);
 			os << n.x << " " << n.y << " " << n.z << "\n";
 		}
 	}
@@ -790,7 +797,7 @@ void DistributedVTKLegacy::closeElements(const std::string &name)
 			center += *n;
 		}
 		center /= e->size();
-		center = shrink(center, _mesh.nodes->center, center, _clusterShrinkRatio, 1);
+		center = shrink(center, _mesh.nodes->center, center, clusterShrinkRatio, 1);
 		os << center.x << " " << center.y << " " << center.z << "\n";
 
 		for (auto ne = closest->begin(); ne != closest->end(); ++ne) {
@@ -802,7 +809,7 @@ void DistributedVTKLegacy::closeElements(const std::string &name)
 			}
 			ncenter /= ce->size();
 
-			ncenter = shrink(ncenter, _mesh.nodes->center, ncenter, _clusterShrinkRatio, 1);
+			ncenter = shrink(ncenter, _mesh.nodes->center, ncenter, clusterShrinkRatio, 1);
 			ncenter = center + (ncenter - center) / 2;
 			os << ncenter.x << " " << ncenter.y << " " << ncenter.z << "\n";
 		}
@@ -817,7 +824,7 @@ void DistributedVTKLegacy::closeElements(const std::string &name)
 				center += *nn;
 			}
 			center /= e->size();
-			center = shrink(center, _mesh.nodes->center, center, _clusterShrinkRatio, 1);
+			center = shrink(center, _mesh.nodes->center, center, clusterShrinkRatio, 1);
 			os << center.x << " " << center.y << " " << center.z << "\n";
 
 			for (auto ne = closest->begin(); ne != closest->end(); ++ne) {
@@ -829,7 +836,7 @@ void DistributedVTKLegacy::closeElements(const std::string &name)
 				}
 				ncenter /= ce->size();
 
-				ncenter = shrink(ncenter, centers[_mesh.contacts->neighbors[n]], ncenter, _clusterShrinkRatio, 1);
+				ncenter = shrink(ncenter, centers[_mesh.contacts->neighbors[n]], ncenter, clusterShrinkRatio, 1);
 				ncenter = center + (ncenter - center) / 2;
 				os << ncenter.x << " " << ncenter.y << " " << ncenter.z << "\n";
 			}
@@ -1002,4 +1009,182 @@ void DistributedVTKLegacy::neighbors(const std::string &name)
 	}
 	os << "\n";
 }
+
+void VTKLegacyDebugInfo::dirichlet(const Mesh &mesh, const Instance &instance)
+{
+	std::ofstream os(Esutils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" }) + "DIRICHLET" + std::to_string(environment->MPIrank) + ".vtk");
+
+	os << "# vtk DataFile Version 2.0\n";
+	os << "EXAMPLE\n";
+	os << "ASCII\n";
+	os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+	size_t points = 0;
+	for (size_t d = 0; d < instance.domains; d++) {
+		points += std::lower_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[Instance::CONSTRAINT::DIRICHLET] + 1) - instance.B1[d].I_row_indices.begin();
+	}
+	os << "POINTS " << points << " float\n";
+
+	for (size_t d = 0; d < instance.domains; d++) {
+		for (size_t i = 0; i < instance.B1[d].I_row_indices.size() && instance.B1[d].I_row_indices[i] <= (eslocal)instance.block[Instance::CONSTRAINT::DIRICHLET]; i++) {
+			auto it = std::lower_bound(mesh.nodes->dintervals[d].begin(), mesh.nodes->dintervals[d].end(), instance.B1[d].J_col_indices[i], [&] (DomainInterval &d, eslocal dof) {
+				return d.DOFOffset + d.end - d.begin < dof;
+			});
+			Point p = shrink(
+					mesh.nodes->coordinates->datatarray()[it->begin + instance.B1[d].J_col_indices[i] - 1 - it->DOFOffset],
+					mesh.nodes->center, mesh.nodes->dcenter[d], clusterShrinkRatio, domainShrinkRatio);
+			os << p << "\n";
+		}
+	}
+
+	os << "\n";
+
+	size_t cells = points;
+
+	os << "CELLS " << cells << " " << 2 * cells << "\n";
+	for (size_t e = 0; e < cells; e++) {
+		os << "1 " << e << "\n";
+	}
+	os << "\n";
+
+	os << "CELL_TYPES " << cells << "\n";
+	Element::CODE ecode = Element::CODE::POINT1;
+	for (size_t n = 0; n < cells; ++n) {
+		os << VTKWritter::ecode(ecode) << "\n";
+	}
+	os << "\n";
+
+	os << "CELL_DATA " << cells << "\n";
+	os << "SCALARS value float 1\n";
+	os << "LOOKUP_TABLE default\n";
+	for (size_t d = 0; d < instance.domains; d++) {
+		for (size_t i = 0; i < instance.B1[d].I_row_indices.size() && instance.B1[d].I_row_indices[i] <= (eslocal)instance.block[Instance::CONSTRAINT::DIRICHLET]; i++) {
+			os << instance.B1c[d][i] << "\n";
+		}
+	}
+	os << "\n";
+}
+
+void VTKLegacyDebugInfo::gluing(const Mesh &mesh, const Instance &instance)
+{
+	std::vector<int> neighbours(environment->MPIsize);
+	std::iota(neighbours.begin(), neighbours.end(), 0);
+
+	std::vector<std::vector<eslocal> > sLambdas(environment->MPIsize), rLambdas(environment->MPIsize);
+	std::vector<std::vector<Point> > sPoints(environment->MPIsize), rPoints(environment->MPIsize);
+
+	size_t points = 0;
+
+	for (size_t d = 0; d < instance.domains; d++) {
+		auto start = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[Instance::CONSTRAINT::DIRICHLET]);
+		auto end = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[Instance::CONSTRAINT::DIRICHLET] + instance.block[Instance::CONSTRAINT::EQUALITY_CONSTRAINTS]);
+		points += end - start;
+		for (eslocal i = start - instance.B1[d].I_row_indices.begin(); i < end - instance.B1[d].I_row_indices.begin(); i++) {
+			auto cmapit = std::lower_bound(instance.B1clustersMap.begin(), instance.B1clustersMap.end(), instance.B1[d].I_row_indices[i] - 1, [&] (const std::vector<eslocal> &v, eslocal i) {
+				return v[0] < i;
+			});
+			auto dit = std::lower_bound(mesh.nodes->dintervals[d].begin(), mesh.nodes->dintervals[d].end(), instance.B1[d].J_col_indices[i], [&] (DomainInterval &d, eslocal dof) {
+				return d.DOFOffset + d.end - d.begin < dof;
+			});
+			Point p = shrink(
+					mesh.nodes->coordinates->datatarray()[dit->begin + instance.B1[d].J_col_indices[i] - 1 - dit->DOFOffset],
+					mesh.nodes->center, mesh.nodes->dcenter[d], clusterShrinkRatio, domainShrinkRatio);
+
+			sLambdas[(*cmapit)[1]].push_back(cmapit->front());
+			sPoints[(*cmapit)[1]].push_back(p);
+
+			if (cmapit->size() == 3) {
+				sLambdas[(*cmapit)[2]].push_back(cmapit->front());
+				sPoints[(*cmapit)[2]].push_back(p);
+			}
+		}
+	}
+
+	if (!Communication::exchangeUnknownSize(sLambdas, rLambdas, neighbours)) {
+		ESINFO(ERROR) << "problem while exchanging Lambdas in storeLambdas.";
+	}
+	if (!Communication::exchangeUnknownSize(sPoints, rPoints, neighbours)) {
+		ESINFO(ERROR) << "problem while exchanging Points in storeLambdas.";
+	}
+	for (int i = 0; i < environment->MPIsize; i++) {
+		if (sLambdas[i].size() != rLambdas[i].size() || sPoints[i].size() != rPoints[i].size()) {
+			ESINFO(ERROR) << "Lambda indices do not match.";
+		}
+	}
+
+	std::ofstream os(Esutils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" }) + "GLUING" + std::to_string(environment->MPIrank) + ".vtk");
+
+	os << "# vtk DataFile Version 2.0\n";
+	os << "EXAMPLE\n";
+	os << "ASCII\n";
+	os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+	os << "POINTS " << 2 * points << " float\n";
+
+	for (size_t d = 0, offset = 0; d < instance.domains; d++) {
+		auto start = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[Instance::CONSTRAINT::DIRICHLET]);
+		auto end = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[Instance::CONSTRAINT::DIRICHLET] + instance.block[Instance::CONSTRAINT::EQUALITY_CONSTRAINTS]);
+		for (eslocal i = start - instance.B1[d].I_row_indices.begin(); i < end - instance.B1[d].I_row_indices.begin(); i++, offset++) {
+			auto cmapit = std::lower_bound(instance.B1clustersMap.begin(), instance.B1clustersMap.end(), instance.B1[d].I_row_indices[i] - 1, [&] (const std::vector<eslocal> &v, eslocal i) {
+				return v[0] < i;
+			});
+			auto dit = std::lower_bound(mesh.nodes->dintervals[d].begin(), mesh.nodes->dintervals[d].end(), instance.B1[d].J_col_indices[i], [&] (DomainInterval &d, eslocal dof) {
+				return d.DOFOffset + d.end - d.begin < dof;
+			});
+			Point ptarget, psource = shrink(
+					mesh.nodes->coordinates->datatarray()[dit->begin + instance.B1[d].J_col_indices[i] - 1 - dit->DOFOffset],
+					mesh.nodes->center, mesh.nodes->dcenter[d], clusterShrinkRatio, domainShrinkRatio);
+
+			os << psource << "\n";
+
+			if (cmapit->size() == 3) {
+				size_t index = std::find(rLambdas[(*cmapit)[2]].begin(), rLambdas[(*cmapit)[2]].end(), cmapit->front()) - rLambdas[(*cmapit)[2]].begin();
+				if (index == rLambdas[(*cmapit)[2]].size() || rLambdas[(*cmapit)[2]][index] != cmapit->front()) {
+					ESINFO(ERROR) << "Different Lambdas on neighbour clusters.";
+				}
+				ptarget = rPoints[(*cmapit)[2]][index];
+			} else {
+				size_t index = std::find(rLambdas[(*cmapit)[1]].begin(), rLambdas[(*cmapit)[1]].begin() + offset, cmapit->front()) - rLambdas[(*cmapit)[1]].begin();
+				if (index == offset) {
+					index = std::find(rLambdas[(*cmapit)[1]].begin() + offset + 1, rLambdas[(*cmapit)[1]].end(), cmapit->front()) - rLambdas[(*cmapit)[1]].begin();
+				}
+				if (index == rLambdas[(*cmapit)[1]].size() || rLambdas[(*cmapit)[1]][index] != cmapit->front()) {
+					ESINFO(ERROR) << "Different Lambdas on neighbour clusters.";
+				}
+				ptarget = rPoints[(*cmapit)[1]][index];
+			}
+
+			os << psource + (ptarget - psource) * instance.B1duplicity[d][i] << "\n";
+		}
+	}
+	os << "\n";
+
+	size_t cells = points;
+
+	os << "CELLS " << cells << " " << 3 * cells << "\n";
+	for (size_t e = 0; e < cells; e++) {
+		os << "2 " << 2 * e << " " << 2 * e + 1 << "\n";
+	}
+	os << "\n";
+
+	os << "CELL_TYPES " << cells << "\n";
+	Element::CODE ecode = Element::CODE::LINE2;
+	for (size_t n = 0; n < cells; ++n) {
+		os << VTKWritter::ecode(ecode) << "\n";
+	}
+	os << "\n";
+
+	os << "CELL_DATA " << cells << "\n";
+	os << "SCALARS value float 1\n";
+	os << "LOOKUP_TABLE default\n";
+	for (size_t d = 0, offset = 0; d < instance.domains; d++) {
+		auto start = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[Instance::CONSTRAINT::DIRICHLET]);
+		auto end = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[Instance::CONSTRAINT::DIRICHLET] + instance.block[Instance::CONSTRAINT::EQUALITY_CONSTRAINTS]);
+		for (eslocal i = start - instance.B1[d].I_row_indices.begin(); i < end - instance.B1[d].I_row_indices.begin(); i++, offset++) {
+			os << instance.B1[d].V_values[i] << "\n";
+		}
+	}
+	os << "\n";
+}
+
 

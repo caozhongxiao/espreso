@@ -11,6 +11,8 @@ struct VTKWritter {
 	static int ecode(Element::CODE &code)
 	{
 		switch (code) {
+		case Element::CODE::POINT1:
+			return 1;
 		case Element::CODE::LINE2:
 			return 3;
 		case Element::CODE::LINE3:

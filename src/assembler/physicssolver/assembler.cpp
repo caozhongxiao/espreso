@@ -6,7 +6,7 @@
 #include "../physics/physics.h"
 #include "../../linearsolver/linearsolver.h"
 
-#include "../../config/ecf/environment.h"
+#include "../../config/ecf/root.h"
 #include "../../solver/generic/SparseMatrix.h"
 #include "../../basis/logging/timeeval.h"
 #include "../../basis/logging/logging.h"
@@ -16,6 +16,7 @@
 #include "mpi.h"
 
 #include "../../output/result/resultstore.h"
+#include "../../output/result/visualization/distributedvtklegacy.h"
 
 using namespace espreso;
 
@@ -94,6 +95,11 @@ void Assembler::updateMatrices(Matrices matrices)
 			instance.block.resize(3, 0);
 			physics.assembleB1(linearSolver.applyB1LagrangeRedundancy(), linearSolver.glueDomainsByLagrangeMultipliers(), linearSolver.applyB1Scaling());
 		});
+
+		if (mesh.configuration.output.debug) {
+			VTKLegacyDebugInfo::dirichlet(mesh, instance);
+			VTKLegacyDebugInfo::gluing(mesh, instance);
+		}
 	}
 
 	if (!(matrices & (Matrices::B1 | Matrices::B1duplicity)) && (matrices & Matrices::B1c)) {
