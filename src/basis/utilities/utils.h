@@ -49,6 +49,12 @@ struct Esutils
 	static void mergeThreadedUniqueData(std::vector<std::vector<std::vector<Ttype> > > &data);
 
 	template<typename Ttype>
+	static void inplaceMerge(std::vector<Ttype> &data, const std::vector<size_t> &distribution);
+
+	template<typename Ttype>
+	static void inplaceMerge(std::vector<std::vector<Ttype> > &data);
+
+	template<typename Ttype>
 	static void sortWithInplaceMerge(std::vector<Ttype> &data, const std::vector<size_t> &distribution);
 
 	template<typename Ttype>
