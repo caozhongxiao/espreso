@@ -17,7 +17,6 @@
 #include "../../basis/utilities/utils.h"
 #include "../../basis/utilities/parser.h"
 #include "../../basis/logging/logging.h"
-#include "../../basis/logging/timeeval.h"
 
 #include "../../config/ecf/root.h"
 #include "../../config/ecf/decomposition.h"
@@ -402,13 +401,11 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		this->linkNodesAndElements();
 	}
 
+	if (_mesh->elements->neighbors == NULL) {
+		this->computeElementsNeighbors();
+	}
+
 	size_t threads = environment->OMP_NUM_THREADS;
-
-	TimeEval eval("exchange");
-	eval.totalTime.startWithBarrier();
-
-	TimeEvent e0("compute targets");
-	e0.start();
 
 	// Step 0: Compute targets
 
@@ -450,6 +447,8 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	std::vector<std::vector<Element*> > elemsEpointer(threads);
 	std::vector<std::vector<eslocal> >  elemsNodesDistribution(threads);
 	std::vector<std::vector<eslocal> >  elemsNodesData(threads);
+	std::vector<std::vector<eslocal> >  elemsNeighborsDistribution(threads);
+	std::vector<std::vector<eslocal> >  elemsNeighborsData(threads);
 	std::vector<std::vector<eslocal> >  elemsRegions(threads);
 
 	NodeStore *nodes = new NodeStore();
@@ -483,12 +482,6 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	std::vector<std::vector<std::vector<eslocal> > > sBoundary(threads, std::vector<std::vector<eslocal> >(targets.size(), std::vector<eslocal>(_mesh->boundaryRegions.size())));
 	std::vector<std::vector<eslocal> > rBoundary;
 
-	e0.end();
-	eval.addEvent(e0);
-
-	TimeEvent e1("serialize elements");
-	e1.start();
-
 	// Step 1: Serialize element data
 
 	std::vector<eslocal> regionElementMask(_mesh->elements->size * eregionsBitMaskSize);
@@ -513,6 +506,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		auto material = _mesh->elements->material->datatarray().data();
 		auto code = _mesh->elements->epointers->datatarray().data();
 		auto enodes = _mesh->elements->nodes->cbegin(t);
+		auto eneighbors = _mesh->elements->neighbors->cbegin(t);
 		auto nIDs = _mesh->nodes->IDs->datatarray().data();
 
 		std::vector<std::vector<eslocal> > tsElements(targets.size(), std::vector<eslocal>({ 0 }));
@@ -523,9 +517,12 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		std::vector<Element*> telemsEpointer;
 		std::vector<eslocal>  telemsNodesDistribution;
 		std::vector<eslocal>  telemsNodesData;
+		std::vector<eslocal>  telemsNeighborsDistribution;
+		std::vector<eslocal>  telemsNeighborsData;
 		std::vector<eslocal>  telemsRegions;
 		if (t == 0) {
 			telemsNodesDistribution.push_back(0);
+			telemsNeighborsDistribution.push_back(0);
 		}
 
 		// estimation
@@ -534,10 +531,11 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		telemsMaterial.reserve(1.5 * _mesh->elements->size / threads);
 		telemsEpointer.reserve(1.5 * _mesh->elements->size / threads);
 		telemsNodesDistribution.reserve(1.5 * _mesh->elements->size / threads);
+		telemsNeighborsDistribution.reserve(1.5 * _mesh->elements->size / threads);
 		telemsRegions.reserve(1.5 * _mesh->elements->size / threads);
 
 		size_t target;
-		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++enodes) {
+		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++enodes, ++eneighbors) {
 			if (partition[e] == environment->MPIrank) {
 				telemsIDs.push_back(IDs[e]);
 				telemsBody.push_back(body[e]);
@@ -547,6 +545,8 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 					telemsNodesData.push_back(nIDs[*n]);
 				}
 				telemsNodesDistribution.push_back(telemsNodesData.size());
+				telemsNeighborsData.insert(telemsNeighborsData.end(), eneighbors->begin(), eneighbors->end());
+				telemsNeighborsDistribution.push_back(telemsNeighborsData.size());
 				telemsRegions.insert(telemsRegions.end(), regionElementMask.begin() + e * eregionsBitMaskSize, regionElementMask.begin() + (e + 1) * eregionsBitMaskSize);
 			} else {
 				target = t2i(partition[e]);
@@ -555,6 +555,8 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 				for (auto n = enodes->begin(); n != enodes->end(); ++n) {
 					tsElements[target].push_back(nIDs[*n]);
 				}
+				tsElements[target].push_back(eneighbors->size());
+				tsElements[target].insert(tsElements[target].end(), eneighbors->begin(), eneighbors->end());
 				tsElements[target].insert(tsElements[target].end(), regionElementMask.begin() + e * eregionsBitMaskSize, regionElementMask.begin() + (e + 1) * eregionsBitMaskSize);
 			}
 		}
@@ -565,16 +567,12 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		elemsEpointer[t].swap(telemsEpointer);
 		elemsNodesDistribution[t].swap(telemsNodesDistribution);
 		elemsNodesData[t].swap(telemsNodesData);
+		elemsNeighborsDistribution[t].swap(telemsNeighborsDistribution);
+		elemsNeighborsData[t].swap(telemsNeighborsData);
 		elemsRegions[t].swap(telemsRegions);
 
 		sElements[t].swap(tsElements);
 	}
-
-	e1.end();
-	eval.addEvent(e1);
-
-	TimeEvent e2("serialize nodes");
-	e2.start();
 
 	// Step 2: Serialize node data
 
@@ -657,12 +655,6 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		sNodes[t].swap(tsNodes);
 	}
 
-	e2.end();
-	eval.addEvent(e2);
-
-	TimeEvent e21("serialize boundary");
-	e21.start();
-
 	// Step 2.1: Serialize boundary regions data
 
 	std::vector<eslocal> emembership;
@@ -743,12 +735,6 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		}
 	}
 
-	e21.end();
-	eval.addEvent(e21);
-
-	TimeEvent e3("send data");
-	e3.start();
-
 	// Step 3: Send data to target processes
 
 	#pragma omp parallel for
@@ -776,12 +762,6 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		ESINFO(ERROR) << "ESPRESO internal error: exchange boundary data.";
 	}
 
-	e3.end();
-	eval.addEvent(e3);
-
-	TimeEvent e4("deserialize elements");
-	e4.start();
-
 	// Step 4: Deserialize element data
 	for (size_t i = 0; i < rElements.size(); i++) {
 		std::vector<size_t> rdistribution({ 0 });
@@ -799,6 +779,8 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 			std::vector<Element*> telemsEpointer;
 			std::vector<eslocal>  telemsNodesDistribution;
 			std::vector<eslocal>  telemsNodesData;
+			std::vector<eslocal>  telemsNeighborsDistribution;
+			std::vector<eslocal>  telemsNeighborsData;
 			std::vector<eslocal>  telemsRegions;
 
 			telemsIDs.reserve(rdistribution[t + 1] - rdistribution[t]);
@@ -806,15 +788,22 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 			telemsMaterial.reserve(rdistribution[t + 1] - rdistribution[t]);
 			telemsEpointer.reserve(rdistribution[t + 1] - rdistribution[t]);
 			telemsNodesDistribution.reserve(rdistribution[t + 1] - rdistribution[t] + 1);
+			telemsNeighborsDistribution.reserve(rdistribution[t + 1] - rdistribution[t] + 1);
 			telemsRegions.reserve(rdistribution[t + 1] - rdistribution[t]);
 
-			eslocal distOffset = 0;
+			eslocal distOffset = 0, neighOffset = 0;
 
 			if (elemsNodesDistribution[t].size()) {
 				distOffset = elemsNodesDistribution[t].back();
 			}
+			if (elemsNeighborsDistribution[t].size()) {
+				neighOffset = elemsNeighborsDistribution[t].back();
+			}
 			if (t == 0 && elemsNodesDistribution[t].size() == 0) {
 				telemsNodesDistribution.push_back(0);
+			}
+			if (t == 0 && elemsNeighborsDistribution[t].size() == 0) {
+				telemsNeighborsDistribution.push_back(0);
 			}
 
 			for (size_t e = rdistribution[t] + 1; e < rdistribution[t + 1]; ) {
@@ -825,6 +814,9 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 				telemsNodesData.insert(telemsNodesData.end(), rElements[i].begin() + e + 1, rElements[i].begin() + e + 1 + rElements[i][e]);
 				telemsNodesDistribution.push_back(telemsNodesData.size() + distOffset);
 				e += rElements[i][e++]; // nodes + nodes size
+				telemsNeighborsData.insert(telemsNeighborsData.end(), rElements[i].begin() + e + 1, rElements[i].begin() + e + 1 + rElements[i][e]);
+				telemsNeighborsDistribution.push_back(telemsNeighborsData.size() + neighOffset);
+				e += rElements[i][e++]; // neighbors + neighbors size
 				telemsRegions.insert(telemsRegions.end(), rElements[i].begin() + e, rElements[i].begin() + e + eregionsBitMaskSize);
 				e += eregionsBitMaskSize;
 			}
@@ -835,15 +827,11 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 			elemsEpointer[t].insert(elemsEpointer[t].end(), telemsEpointer.begin(), telemsEpointer.end());
 			elemsNodesDistribution[t].insert(elemsNodesDistribution[t].end(), telemsNodesDistribution.begin(), telemsNodesDistribution.end());
 			elemsNodesData[t].insert(elemsNodesData[t].end(), telemsNodesData.begin(), telemsNodesData.end());
+			elemsNeighborsDistribution[t].insert(elemsNeighborsDistribution[t].end(), telemsNeighborsDistribution.begin(), telemsNeighborsDistribution.end());
+			elemsNeighborsData[t].insert(elemsNeighborsData[t].end(), telemsNeighborsData.begin(), telemsNeighborsData.end());
 			elemsRegions[t].insert(elemsRegions[t].end(), telemsRegions.begin(), telemsRegions.end());
 		}
 	}
-
-	e4.end();
-	eval.addEvent(e4);
-
-	TimeEvent e41("deserialize nodes");
-	e41.start();
 
 	// Step 4: Deserialize node data
 	std::vector<eslocal> nodeset;
@@ -925,13 +913,8 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	}
 
 	Esutils::threadDistributionToFullDistribution(elemsNodesDistribution);
+	Esutils::threadDistributionToFullDistribution(elemsNeighborsDistribution);
 	Esutils::threadDistributionToFullDistribution(nodesElemsDistribution);
-
-	e41.end();
-	eval.addEvent(e41);
-
-	TimeEvent e42("deserialize boundary");
-	e42.start();
 
 	// Step 4: Deserialize boundary data
 	for (size_t n = 0; n < rBoundary.size(); ++n) {
@@ -992,6 +975,8 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	elements->regionMaskSize = eregionsBitMaskSize;
 	elements->regions = new serializededata<eslocal, int>(eregionsBitMaskSize, elemsRegions);
 
+	elements->neighbors = new serializededata<eslocal, eslocal>(elemsNeighborsDistribution, elemsNeighborsData);
+
 	elements->size = elements->IDs->structures();
 	elements->distribution = elements->IDs->datatarray().distribution();
 
@@ -1010,12 +995,6 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	nodes->elements = new serializededata<eslocal, eslocal>(nodesElemsDistribution, nodesElemsData);
 	nodes->size = nodes->IDs->datatarray().size();
 	nodes->distribution = nodes->IDs->datatarray().distribution();
-
-	e42.end();
-	eval.addEvent(e42);
-
-	TimeEvent e5("balance nodes");
-	e5.start();
 
 	for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
 		if (_mesh->boundaryRegions[r]->dimension) {
@@ -1068,12 +1047,6 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		}
 	}
 
-	e5.end();
-	eval.addEvent(e5);
-
-	TimeEvent e__("NEW REINDEXING");
-	e__.start();
-
 	std::vector<eslocal> eIDsOLD = _mesh->elements->gatherElementsProcDistribution();
 	std::vector<eslocal> eIDsNEW = elements->gatherElementsProcDistribution();
 
@@ -1085,13 +1058,16 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	std::iota(epermutation.begin(), epermutation.end(), 0);
 	std::sort(epermutation.begin(), epermutation.end(), [&] (eslocal i, eslocal j) { return elemsIDs[0][i] < elemsIDs[0][j]; });
 
-	Esutils::sortWithInplaceMerge(elemsIDs[0], elemDistribution);
+	std::vector<eslocal> sortedElements(epermutation.size());
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; ++t) {
+		for (size_t e = elemDistribution[t]; e < elemDistribution[t + 1]; e++) {
+			sortedElements[e] = elemsIDs[0][epermutation[e]];
+		}
 		Esutils::sortAndRemoveDuplicity(nodesElemsData[t]);
 	}
 	Esutils::inplaceMerge(nodesElemsData);
-	Esutils::sortAndRemoveDuplicity(nodesElemsData);
+	Esutils::removeDuplicity(nodesElemsData[0]);
 
 	std::vector<std::vector<eslocal> > requestedIDs, receivedTargets, IDrequests;
 	std::vector<std::vector<int> > IDtargets(threads);
@@ -1126,8 +1102,8 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < IDtargets[0].size(); t++) {
-		auto mybegin = std::lower_bound(elemsIDs[0].begin(), elemsIDs[0].end(), eIDsOLD[IDtargets[0][t]]);
-		auto myend   = std::lower_bound(elemsIDs[0].begin(), elemsIDs[0].end(), eIDsOLD[IDtargets[0][t] + 1]);
+		auto mybegin = std::lower_bound(sortedElements.begin(), sortedElements.end(), eIDsOLD[IDtargets[0][t]]);
+		auto myend   = std::lower_bound(sortedElements.begin(), sortedElements.end(), eIDsOLD[IDtargets[0][t] + 1]);
 		auto nbegin = std::lower_bound(nodesElemsData[0].begin(), nodesElemsData[0].end(), eIDsOLD[IDtargets[0][t]]);
 		auto nend   = std::lower_bound(nodesElemsData[0].begin(), nodesElemsData[0].end(), eIDsOLD[IDtargets[0][t] + 1]);
 		requestedIDs[t].resize(nend - nbegin);
@@ -1157,28 +1133,28 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	IDtargets.clear();
 	IDtargets.resize(threads);
+
+	std::vector<std::vector<bool> > newtargets(threads, std::vector<bool>(environment->MPIsize, false));
 	for (size_t r = 0; r < receivedTargets.size(); r++) {
 		rdistribution = tarray<size_t>::distribute(threads, receivedTargets[r].size());
 
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; ++t) {
-			std::vector<int> ttargets;
-
-			std::vector<int>::iterator it;
 			for (size_t e = rdistribution[t]; e < rdistribution[t + 1]; ++e) {
-				if (receivedTargets[r][e] != environment->MPIrank) {
-					it = std::lower_bound(ttargets.begin(), ttargets.end(), receivedTargets[r][e]);
-					if (it == ttargets.end() || *it != receivedTargets[r][e]) {
-						ttargets.insert(it, receivedTargets[r][e]);
-					}
-				}
+				newtargets[t][receivedTargets[r][e]] = true;
 			}
-
-			IDtargets[t].insert(IDtargets[t].end(), ttargets.begin(), ttargets.end());
 		}
 	}
+
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; ++t) {
-		Esutils::sortAndRemoveDuplicity(IDtargets[t]);
+		std::vector<int> ttargets;
+		for (int r = 0; r < environment->MPIsize; r++) {
+			if (r != environment->MPIrank && newtargets[t][r]) {
+				ttargets.push_back(r);
+			}
+		}
+		IDtargets[t].swap(ttargets);
 	}
 	for (size_t t = 1; t < threads; ++t) {
 		IDtargets[0].insert(IDtargets[0].end(), IDtargets[t].begin(), IDtargets[t].end());
@@ -1214,7 +1190,6 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		}
 	}
 
-
 	if (!Communication::sendVariousTargets(newIDrequests[0], IDrequests, IDtargets[0], sources)) {
 		ESINFO(ERROR) << "ESPRESO internal error: request new ID.";
 	}
@@ -1225,10 +1200,10 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; ++t) {
 			if (rdistribution[t] != rdistribution[t + 1]) {
-				auto eit = std::lower_bound(elemsIDs[0].begin(), elemsIDs[0].end(), IDrequests[r][rdistribution[t]]);
+				auto eit = std::lower_bound(sortedElements.begin(), sortedElements.end(), IDrequests[r][rdistribution[t]]);
 				for (size_t e = rdistribution[t]; e < rdistribution[t + 1]; ++e) {
-					while (eit != elemsIDs[0].end() && *eit < IDrequests[r][e]) ++eit;
-					IDrequests[r][e] = epermutation[eit - elemsIDs[0].begin()] + eIDsNEW[environment->MPIrank];
+					while (eit != sortedElements.end() && *eit < IDrequests[r][e]) ++eit;
+					IDrequests[r][e] = epermutation[eit - sortedElements.begin()] + eIDsNEW[environment->MPIrank];
 				}
 			}
 		}
@@ -1258,42 +1233,47 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	Esutils::sortWithInplaceMerge(IDMap, offsets);
 
-	e__.end();
-	eval.addEvent(e__);
-
-	TimeEvent e15("reindex node->elements");
-	e15.start();
-
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (auto elem = nodes->elements->begin(t); elem != nodes->elements->end(t); ++elem) {
 			for (auto e = elem->begin(); e != elem->end(); ++e) {
-				auto it = std::lower_bound(IDMap.begin(), IDMap.end(), std::make_pair(*e, 0));
-				if (it == IDMap.end() || it->first != *e) {
-					*e = eIDsNEW[environment->MPIrank] + epermutation[std::lower_bound(elemsIDs[0].begin(), elemsIDs[0].end(), *e) - elemsIDs[0].begin()];
+				auto mapit = std::lower_bound(IDMap.begin(), IDMap.end(), std::make_pair(*e, 0));
+				if (mapit == IDMap.end() || mapit->first != *e) {
+					*e = epermutation[std::lower_bound(sortedElements.begin(), sortedElements.end(), *e) - sortedElements.begin()] + eIDsNEW[environment->MPIrank];
 				} else {
-					*e = it->second;
+					*e = mapit->second;
 				}
 			}
 			std::sort(elem->begin(), elem->end());
 		}
 	}
 
-	e15.end();
-	eval.addEvent(e15);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (auto neighbors = elements->neighbors->begin(t); neighbors != elements->neighbors->end(t); ++neighbors) {
+			for (auto n = neighbors->begin(); n != neighbors->end(); ++n) {
+				if (*n != -1) {
+					auto mapit = std::lower_bound(IDMap.begin(), IDMap.end(), std::make_pair(*n, 0));
+					if (mapit == IDMap.end() || mapit->first != *n) {
+						*n = epermutation[std::lower_bound(sortedElements.begin(), sortedElements.end(), *n) - sortedElements.begin()] + eIDsNEW[environment->MPIrank];
+					} else {
+						*n = mapit->second;
+					}
+				}
+			}
+		}
+	}
 
-	TimeEvent e16("reindex elements->nodes");
-	e16.start();
 
 	std::vector<eslocal> permutation(nodes->size);
 	std::iota(permutation.begin(), permutation.end(), 0);
-	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return nodes->IDs->datatarray().data()[i] < nodes->IDs->datatarray().data()[j]; });
+	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return nodes->IDs->datatarray()[i] < nodes->IDs->datatarray()[j]; });
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (auto n = elements->nodes->begin(t)->begin(); n != elements->nodes->end(t)->begin(); ++n) {
 			*n = *std::lower_bound(permutation.begin(), permutation.end(), *n, [&] (eslocal i, eslocal val) {
-				return nodes->IDs->datatarray().data()[i] < val;
+				return nodes->IDs->datatarray()[i] < val;
 			});
 		}
 	}
@@ -1304,52 +1284,43 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 			for (size_t t = 0; t < threads; t++) {
 				for (auto n = _mesh->boundaryRegions[r]->elements->begin(t)->begin(); n != _mesh->boundaryRegions[r]->elements->end(t)->begin(); ++n) {
 					*n = *std::lower_bound(permutation.begin(), permutation.end(), *n, [&] (eslocal i, eslocal val) {
-						return nodes->IDs->datatarray().data()[i] < val;
+						return nodes->IDs->datatarray()[i] < val;
 					});
 				}
 			}
 		}
 	}
 
-	e16.end();
-	eval.addEvent(e16);
-
-	TimeEvent e17("reindex ranks");
-	e17.start();
-
 	std::vector<std::vector<eslocal> > rankBoundaries(threads);
 	std::vector<std::vector<int> > rankData(threads);
 
-	rankBoundaries.front().push_back(0);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		int rank, rsize;
+		std::vector<eslocal> trankBoundaries;
+		std::vector<int> trankData;
+		if (t == 0) {
+			trankBoundaries.push_back(0);
+		}
+
+		int rank;
 		for (auto elem = nodes->elements->begin(t); elem != nodes->elements->end(t); ++elem) {
-			rsize = 1;
-			rankData[t].push_back(std::lower_bound(eIDsNEW.begin(), eIDsNEW.end(), *elem->begin() + 1) - eIDsNEW.begin() - 1);
+			trankData.push_back(std::lower_bound(eIDsNEW.begin(), eIDsNEW.end(), *elem->begin() + 1) - eIDsNEW.begin() - 1);
 			for (auto e = elem->begin() + 1; e != elem->end(); ++e) {
 				rank = std::lower_bound(eIDsNEW.begin(), eIDsNEW.end(), *e + 1) - eIDsNEW.begin() - 1;
-				if (rank != rankData[t].back()) {
-					rankData[t].push_back(rank);
-					++rsize;
+				if (rank != trankData.back()) {
+					trankData.push_back(rank);
 				}
 			}
-			rankBoundaries[t].push_back(rsize);
-			if (rankBoundaries[t].size() > 1) {
-				rankBoundaries[t].back() += *(rankBoundaries[t].end() - 2);
-			}
+			trankBoundaries.push_back(trankData.size());
 		}
+
+		rankBoundaries[t].swap(trankBoundaries);
+		rankData[t].swap(trankData);
 	}
 
 	Esutils::threadDistributionToFullDistribution(rankBoundaries);
 
 	nodes->ranks = new serializededata<eslocal, int>(rankBoundaries, rankData);
-
-	e17.end();
-	eval.addEvent(e17);
-
-	TimeEvent e18("swap");
-	e18.start();
 
 	std::iota(elements->IDs->datatarray().begin(), elements->IDs->datatarray().end(), eIDsNEW[environment->MPIrank]);
 	std::swap(_mesh->elements, elements);
@@ -1368,15 +1339,6 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	delete elements;
 	delete nodes;
-
-	e18.end();
-	eval.addEvent(e18);
-
-//	eval.totalTime.endWithBarrier();
-//	eval.printStatsMPI();
-//	exit(0);
-
-	this->computeElementsNeighbors();
 
 	finish("exchanging elements");
 }
