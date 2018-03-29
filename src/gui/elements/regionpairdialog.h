@@ -22,6 +22,7 @@ class RegionPairDialog : public QDialog
 public:
     static RegionPairDialog* createRegionMaterial(ECFObject* map, Mesh* mesh, ECFObject* materials, ECFParameter* pair = nullptr);
     static RegionPairDialog* createRegionExpression(ECFObject* map, Mesh* mesh, ECFParameter* pair = nullptr);
+    static RegionPairDialog* createRegionOption(ECFObject* map, Mesh* mesh, ECFParameter* pair = nullptr);
     static RegionPairDialog* createRegionObject(ECFObject* map, Mesh* mesh, ECFObject* pair = nullptr);
     ~RegionPairDialog();
 

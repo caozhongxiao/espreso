@@ -65,6 +65,19 @@ RegionPairDialog::RegionPairDialog(ECFParameter* pair, ECFDataType value,
         std::string value = pair->getValue();
         expr->setValue(QString::fromStdString(value));
     }
+    else if (this->m_second == ECFDataType::OPTION)
+    {
+        QComboBox* options = static_cast<QComboBox*>(this->m_second_widget);
+        QString value = QString::fromStdString(pair->getValue());
+        for (int o = 0; o < options->count(); o++)
+        {
+            if (options->itemText(o).compare(value) == 0)
+            {
+                options->setCurrentIndex(o);
+                break;
+            }
+        }
+    }
 }
 
 RegionPairDialog::RegionPairDialog(ECFObject *map, Mesh *mesh, QWidget *parent) :
@@ -133,6 +146,14 @@ RegionPairDialog* RegionPairDialog::createRegionExpression(ECFObject* map, Mesh*
         return new RegionPairDialog(ECFDataType::EXPRESSION, map, mesh, nullptr);
     else
         return new RegionPairDialog(pair, ECFDataType::EXPRESSION, map, mesh, nullptr);
+}
+
+RegionPairDialog* RegionPairDialog::createRegionOption(ECFObject* map, Mesh* mesh, ECFParameter* pair)
+{
+    if (pair == nullptr)
+        return new RegionPairDialog(ECFDataType::OPTION, map, mesh, nullptr);
+    else
+        return new RegionPairDialog(pair, ECFDataType::OPTION, map, mesh, nullptr);
 }
 
 RegionPairDialog* RegionPairDialog::createRegionObject(ECFObject *map, Mesh *mesh, ECFObject *pair)
@@ -211,6 +232,23 @@ QWidget* RegionPairDialog::uiValue(ECFDataType type, QLayout* layout)
         ret = w;
     }
 
+    if (type == ECFDataType::OPTION)
+    {
+        ECFObject* tmp = static_cast<ECFObject*>(this->m_map->getParameter("***"));
+        QComboBox* options = new QComboBox;
+        for (auto option = tmp->metadata.options.cbegin(); option != tmp->metadata.options.cend(); option++)
+        {
+            options->addItem(QString::fromStdString(option->name));
+        }
+        this->m_map->dropParameter(tmp);
+        QWidget* container = new QWidget;
+        QFormLayout* fl = new QFormLayout;
+        fl->addRow(tr("Value:"), options);
+        container->setLayout(fl);
+        layout->addWidget(container);
+        ret = options;
+    }
+
     return ret;
 }
 
@@ -237,6 +275,12 @@ void RegionPairDialog::accept()
             return;
         }
         value->setValue(w->value().toStdString());
+    }
+
+    if (this->m_second == ECFDataType::OPTION)
+    {
+        QComboBox* w = static_cast<QComboBox*>(this->m_second_widget);
+        value->setValue(w->currentText().toStdString());
     }
 
     if (this->m_second == ECFDataType::LOAD_STEP)

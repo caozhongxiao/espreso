@@ -28,6 +28,9 @@ QDialog* RegionPropertyWidget::createDialog(const QModelIndex& groupIndex, ECFPa
         if (m_objs[groupIndex.row()]->metadata.datatype[1] == ECFDataType::MATERIAL)
             return RegionPairDialog::createRegionMaterial(m_objs[groupIndex.row()], m_mesh,
                     static_cast<ECFObject*>(m_physics->getParameter("materials")), param);
+
+        if (m_objs[groupIndex.row()]->metadata.datatype[1] == ECFDataType::OPTION)
+            return RegionPairDialog::createRegionOption(m_objs[groupIndex.row()], m_mesh, param);
     }
     if (m_objs[groupIndex.row()]->metadata.datatype.size() == 1
             && m_objs[groupIndex.row()]->metadata.description.size() == 2)
