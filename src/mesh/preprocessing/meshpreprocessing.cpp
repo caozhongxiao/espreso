@@ -507,8 +507,8 @@ void MeshPreprocessing::computeBoundaryNodes(std::vector<eslocal> &externalBound
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<eslocal> texternal, tinternal;
 
-		auto neighbors = _mesh->elements->neighbors->cbegin(t);
-		auto enodes = _mesh->elements->nodes->cbegin(t);
+		auto neighbors = _mesh->elements->neighbors->cbegin() + _mesh->elements->elementsDistribution[_mesh->elements->domainDistribution[t]];
+		auto enodes = _mesh->elements->nodes->cbegin() + _mesh->elements->elementsDistribution[_mesh->elements->domainDistribution[t]];
 		for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
 			eslocal dbegin = _mesh->elements->elementsDistribution[d];
 			eslocal dend = _mesh->elements->elementsDistribution[d + 1];
