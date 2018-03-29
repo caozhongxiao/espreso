@@ -319,7 +319,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 	}
 
 	if (environment->print_matrices) {
-		std::ofstream osS(Logging::prepareFile(d, "S"));
+		std::ofstream osS(Logging::prepareFile(domains[d].domain_global_index, "S"));
 		SparseMatrix SC = domains[d].Prec;
 		if (configuration.preconditioner == FETI_PRECONDITIONER::DIRICHLET) {
 			SC.ConvertDenseToCSR(1);
