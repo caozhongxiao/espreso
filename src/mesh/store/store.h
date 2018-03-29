@@ -10,11 +10,31 @@
 #include "../../basis/utilities/communication.h"
 #include "../../basis/utilities/utils.h"
 
+#include "../elements/element.h"
+
 namespace espreso {
 
 template <typename TEBoundaries, typename TEData> class serializededata;
 
 struct Store {
+
+	template <typename TBoundaries>
+	static void storedata(std::ofstream &os, const std::string &head, const serializededata<TBoundaries, Element*> *data)
+	{
+		if (data == NULL) {
+			return;
+		}
+
+		os << head << "\n";
+		for (auto elem = data->begin(); elem != data->end(); ++elem) {
+			os << "[ ";
+			for (auto i = elem->begin(); i != elem->end(); ++i) {
+				os << (int)(*i)->code << " ";
+			}
+			os << "]\n";
+		}
+		os << "\n";
+	}
 
 	template <typename TBoundaries, typename TData>
 	static void storedata(std::ofstream &os, const std::string &head, const serializededata<TBoundaries, TData> *data)
@@ -29,7 +49,7 @@ struct Store {
 			for (auto i = elem->begin(); i != elem->end(); ++i) {
 				os << *i << " ";
 			}
-			os << "] ";
+			os << "]\n";
 		}
 		os << "\n";
 	}

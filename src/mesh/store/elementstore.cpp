@@ -188,12 +188,14 @@ void ElementStore::store(const std::string &file)
 	std::ofstream os(file + std::to_string(environment->MPIrank) + ".txt");
 
 	Store::storedata(os, "IDs", IDs);
-
 	Store::storedata(os, "nodes", nodes);
 
 	Store::storedata(os, "body", body);
 	Store::storedata(os, "material", material);
+	Store::storedata(os, "regions", regions);
 	Store::storedata(os, "epointers", epointers);
+
+	Store::storedata(os, "neighbors", neighbors);
 }
 
 void ElementStore::permute(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution)
