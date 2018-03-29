@@ -30,14 +30,17 @@
     <number>0</number>
    </property>
    <item>
-    <layout class="QHBoxLayout" name="first">
-     <property name="spacing">
+    <layout class="QFormLayout" name="formLayout">
+     <property name="horizontalSpacing">
+      <number>0</number>
+     </property>
+     <property name="verticalSpacing">
       <number>0</number>
      </property>
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="second">
+    <layout class="QVBoxLayout" name="verticalLayout">
      <property name="spacing">
       <number>0</number>
      </property>

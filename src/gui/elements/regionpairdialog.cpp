@@ -30,8 +30,8 @@ RegionPairDialog::RegionPairDialog(ECFDataType value, ECFObject* map,
     this->m_scope = scope;
     this->m_mesh = mesh;
 
-    this->m_first_widget = this->uiValue(m_first, ui->first);
-    this->m_second_widget = this->uiValue(m_second, ui->second);
+    this->m_first_widget = this->uiValue(m_first);
+    this->m_second_widget = this->uiValue(m_second);
 }
 
 RegionPairDialog::RegionPairDialog(ECFParameter* pair, ECFDataType value,
@@ -92,14 +92,14 @@ RegionPairDialog::RegionPairDialog(ECFObject *map, Mesh *mesh, QWidget *parent) 
     this->m_map = map;
     this->m_mesh = mesh;
 
-    this->m_first_widget = this->uiValue(m_first, ui->first);
+    this->m_first_widget = this->uiValue(m_first);
 
     ECFObject* obj = static_cast<ECFObject*>(this->m_map->getPattern());
     RegionObjectWidget* row = new RegionObjectWidget(obj);
     row->init();
     this->m_object = obj;
     this->m_second_widget = row;
-    ui->second->addWidget(row);
+    ui->verticalLayout->addWidget(row);
 }
 
 RegionPairDialog::RegionPairDialog(ECFObject *pair, ECFObject *map, Mesh *mesh, QWidget *parent) :
@@ -114,7 +114,7 @@ RegionPairDialog::RegionPairDialog(ECFObject *pair, ECFObject *map, Mesh *mesh, 
     this->m_map = map;
     this->m_mesh = mesh;
 
-    this->m_first_widget = this->uiValue(m_first, ui->first);
+    this->m_first_widget = this->uiValue(m_first);
     this->m_first_widget->setEnabled(false);
     QComboBox* cmb = static_cast<QComboBox*>(this->m_first_widget);
     cmb->clear();
@@ -123,7 +123,7 @@ RegionPairDialog::RegionPairDialog(ECFObject *pair, ECFObject *map, Mesh *mesh, 
     RegionObjectWidget* row = new RegionObjectWidget(pair);
     row->init();
     this->m_second_widget = row;
-    ui->second->addWidget(row);
+    ui->verticalLayout->addWidget(row);
 }
 
 
@@ -164,13 +164,12 @@ RegionPairDialog* RegionPairDialog::createRegionObject(ECFObject *map, Mesh *mes
         return new RegionPairDialog(pair, map, mesh);
 }
 
-QWidget* RegionPairDialog::uiValue(ECFDataType type, QLayout* layout)
+QWidget* RegionPairDialog::uiValue(ECFDataType type)
 {
     QWidget* ret;
 
     if (type == ECFDataType::BOUNDARY_REGION)
     {
-        layout->addWidget(new QLabel(tr("Region:"), this));
         QComboBox* cmb = new QComboBox(this);
         for (auto it = m_mesh->elementsRegions.begin(); it != m_mesh->elementsRegions.end(); it++)
         {
@@ -200,13 +199,12 @@ QWidget* RegionPairDialog::uiValue(ECFDataType type, QLayout* layout)
             if (found) continue;
             cmb->addItem(QString::fromStdString((*it)->name));
         }
-        layout->addWidget(cmb);
+        ui->formLayout->addRow(tr("Region"), cmb);
         ret = cmb;
     }
 
     if (type == ECFDataType::MATERIAL)
     {
-        layout->addWidget(new QLabel(tr("Material:"), this));
         QComboBox* cmb = new QComboBox(this);
         for (auto it = this->m_scope->parameters.begin(); it != this->m_scope->parameters.end(); ++it)
         {
@@ -214,7 +212,7 @@ QWidget* RegionPairDialog::uiValue(ECFDataType type, QLayout* layout)
         }
         if (this->m_scope->parameters.size() > 0) cmb->setCurrentIndex(0);
         else ui->buttonBox->setEnabled(false);
-        layout->addWidget(cmb);
+        ui->formLayout->addRow(tr("Material"), cmb);
         ret = cmb;
     }
 
@@ -223,12 +221,8 @@ QWidget* RegionPairDialog::uiValue(ECFDataType type, QLayout* layout)
         ECFObject* tmp = static_cast<ECFObject*>(this->m_map->getParameter("***"));
         DataTypeEditWidget* w = new DataTypeEditWidget(tmp->metadata.variables, this);
         this->m_map->dropParameter(tmp);
-        QWidget* container = new QWidget;
-        QFormLayout* fl = new QFormLayout;
-        fl->addRow(tr("Type:"), w->createComboBox(this));
-        fl->addRow(tr("Value:"), w);
-        container->setLayout(fl);
-        layout->addWidget(container);
+        ui->formLayout->addRow(tr("Type:"), w->createComboBox(this));
+        ui->formLayout->addRow(tr("Value:"), w);
         ret = w;
     }
 
@@ -241,11 +235,7 @@ QWidget* RegionPairDialog::uiValue(ECFDataType type, QLayout* layout)
             options->addItem(QString::fromStdString(option->name));
         }
         this->m_map->dropParameter(tmp);
-        QWidget* container = new QWidget;
-        QFormLayout* fl = new QFormLayout;
-        fl->addRow(tr("Value:"), options);
-        container->setLayout(fl);
-        layout->addWidget(container);
+        ui->formLayout->addRow(tr("Value:"), options);
         ret = options;
     }
 

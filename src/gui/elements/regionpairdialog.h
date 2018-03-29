@@ -57,7 +57,7 @@ private:
 
     QString m_region;
 
-    QWidget* uiValue(ECFDataType type, QLayout* layout);
+    QWidget* uiValue(ECFDataType type);
 
     void displayError(const QString&);
 
