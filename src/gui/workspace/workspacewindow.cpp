@@ -86,6 +86,10 @@ void WorkspaceWindow::initPanels()
 
     this->m_regions = new RegionPickerWidget(m_mesh3D, this);
     ui->left->layout()->addWidget(m_regions);
+
+    QList<int> sizes;
+    sizes << 200 << 800 << 300;
+    ui->splitter->setSizes(sizes);
 }
 
 void WorkspaceWindow::onPhysicsChanged(ECFObject *physics)

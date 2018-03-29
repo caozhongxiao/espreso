@@ -4,6 +4,7 @@
 #include "mpi.h"
 
 #include <QDebug>
+#include <QVBoxLayout>
 
 using namespace espreso;
 
@@ -24,6 +25,7 @@ MeshWidget::MeshWidget(MpiManager* manager, QWidget* parent) :
 {
     this->m_manager = manager;
     this->gatherRegions();
+    this->setLayout(new QVBoxLayout);
 
 //    this->computeMesh();
 }

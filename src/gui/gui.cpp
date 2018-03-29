@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
     if (environment->MPIrank == 0)
     {
         ww.init();
-        ww.show();
+        ww.showMaximized();
 
         // CSS
         QCoreApplication::setAttribute(Qt::AA_UseStyleSheetPropagationInWidgetStyles, true);
