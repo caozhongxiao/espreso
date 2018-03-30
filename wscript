@@ -172,7 +172,8 @@ def build(ctx):
     ctx.recurse("src/output")
     ctx.recurse("src/app")
 
-    if not ctx.options.disable_gui:
+    if ctx.env.QT:
+        print ctx.env
         ctx.env = ctx.all_envs["gui"]
         ctx.recurse("src/gui")
 
