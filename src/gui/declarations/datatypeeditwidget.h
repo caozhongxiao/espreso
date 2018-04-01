@@ -20,6 +20,13 @@ namespace espreso
     class DataTypeEditWidget;
     }
 
+	struct DataTypeEditWidgetFactoryData
+	{
+		int type;
+		bool valid;
+		QString error_message;
+	};
+
     class DataTypeEditWidget : public TextItemWidget, public IValidatableObject,
             public ISavableObject
     {
@@ -45,8 +52,9 @@ namespace espreso
         QString value();
         void setValue(const QString& value);
 
-        void setSharedDatatype(int *datatype);
-        int datatype();
+		void setSharedData(DataTypeEditWidgetFactoryData* data);
+
+		int datatype();
 
     private slots:
         void changeType(int index);
@@ -57,6 +65,7 @@ namespace espreso
         Ui::DataTypeEditWidget *ui;
 
         ECFParameter* m_param;
+		QString m_text;
 
         QComboBox* m_cmb;
 
@@ -64,13 +73,15 @@ namespace espreso
         TableTypeWidget* uiTable;
         PiecewiseTypeWidget* uiPiecewise;
 
+		DataTypeEditWidgetFactoryData* m_shared = nullptr;
+
         int activeType;
-        int *m_shared = nullptr;
         std::vector<std::string> m_param_variables;
         QString param_getValue();
         std::vector<std::string> param_variables();
 
-        void createUi();
+		void createUi();
+		void parseValue(const QString&);
         void initExpression();
         void initTable();
         void initPiecewise();

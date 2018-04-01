@@ -31,6 +31,7 @@ void TableTypeWidget::addData(const QString& data)
     QStringList with_right_bracket = data.split(prefix, QString::SkipEmptyParts);
     QRegExp suffix("\\]");
     QStringList raw = with_right_bracket[0].split(suffix, QString::SkipEmptyParts);
+	if (raw.size() == 0) return;
     QRegExp delimiter("\\;");
     QStringList pairs = raw[0].split(delimiter, QString::SkipEmptyParts);
 

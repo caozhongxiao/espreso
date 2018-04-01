@@ -9,6 +9,7 @@
 #include "textwidget.h"
 #include "../validators/validatorfactory.h"
 #include "ivalidatableobject.h"
+#include "../declarations/datatypeeditwidget.h"
 
 namespace espreso
 {
@@ -64,12 +65,8 @@ public:
     virtual QString errorMessage() override;
 
 private:
+	DataTypeEditWidgetFactoryData m_data;
     ECFParameter* m_expr;
-    int m_activeType;
-
-    bool m_valid = true;
-    QString m_err;
-
 };
 
 }

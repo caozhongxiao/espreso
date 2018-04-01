@@ -18,9 +18,11 @@ public:
 protected:
     virtual QDialog* createDialog(const QModelIndex& groupIndex, ECFParameter* param = nullptr) override;
     virtual QString dialogResult(QDialog* dialog) override;
-    virtual void newItemAccepted(int, QString) override {}
+	virtual void newItemAccepted(int, QString) override {}
     virtual void newItemRejected(int group) override;
-    virtual void itemEditted(int group, ECFParameter* item) override;
+	virtual void editItemAccepted(const QModelIndex& group, const QModelIndex& item, ECFParameter* param) override;
+	virtual void editItemRejected(const QModelIndex &group, const QModelIndex &item, ECFParameter *param) override;
+	virtual void deleteItemAccepted(const QModelIndex& group, int index, const QString& name) override;
     virtual std::string itemKeyInECFObject(QString nameInTree) override;
 
 private:

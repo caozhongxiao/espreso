@@ -7,6 +7,8 @@
 #include "../../../basis/evaluator/evaluator.h"
 #include "../../../wrappers/math/math.h"
 
+#include <cmath>
+
 #include "mkl.h"
 
 using namespace espreso;

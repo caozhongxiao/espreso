@@ -1,7 +1,5 @@
 #include "textitemwidgetfactory.h"
 
-#include "../declarations/datatypeeditwidget.h"
-
 using namespace espreso;
 
 TextItemWidgetFactory::TextItemWidgetFactory()
@@ -47,33 +45,32 @@ TextItemWidget* TextWidgetFactory::create(QWidget *parent)
 DataTypeEditWidgetFactory::DataTypeEditWidgetFactory(ECFParameter* expression)
 {
     this->m_expr = expression;
-    if (m_expr->getValue().empty()) this->m_expr->setValue("0");
+	if (m_expr->getValue().empty()) this->m_expr->setValue("0");
 
-    DataTypeEditWidget* w = new DataTypeEditWidget(this->m_expr);
-    int datatype = w->datatype();
-    w->hide();
-    delete w;
-    this->m_activeType = datatype;
+	this->m_data.valid = true;
+
+	DataTypeEditWidget* w = new DataTypeEditWidget(this->m_expr);
+	int datatype = w->datatype();
+	w->hide();
+	delete w;
+	this->m_data.type = datatype;
 }
 
 TextItemWidget* DataTypeEditWidgetFactory::create(QWidget* parent)
 {
-    DataTypeEditWidget* widget = new DataTypeEditWidget(this->m_expr, parent);
+	DataTypeEditWidget* widget = new DataTypeEditWidget(this->m_expr->metadata.variables, parent);
     widget->setComboBox(true);
-    widget->setSharedDatatype(&this->m_activeType);
-
-    this->m_valid = widget->isValid();
-    this->m_err = widget->errorMessage();
+	widget->setSharedData(&this->m_data);
 
     return widget;
 }
 
 bool DataTypeEditWidgetFactory::isValid()
 {
-    return this->m_valid;
+	return this->m_data.valid;
 }
 
 QString DataTypeEditWidgetFactory::errorMessage()
 {
-    return this->m_err;
+	return this->m_data.error_message;
 }

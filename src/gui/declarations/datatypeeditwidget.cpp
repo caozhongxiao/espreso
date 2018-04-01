@@ -38,24 +38,7 @@ DataTypeEditWidget::DataTypeEditWidget(ECFParameter* data, QWidget *parent) :
     this->createUi();
 
     QString content = QString::fromStdString(data->getValue());
-    QRegularExpression tableregex("tabular|TABULAR");
-    QRegularExpression piecewiseregex("if|IF");
-
-    if (tableregex.match(content).hasMatch())
-    {
-        this->initTable();
-        this->activeType = 1;
-    }
-    else if (piecewiseregex.match(content).hasMatch())
-    {
-        this->initPiecewise();
-        this->activeType = 2;
-    }
-    else
-    {
-        this->initExpression();
-        this->activeType = 0;
-    }
+	this->parseValue(content);
 }
 
 DataTypeEditWidget::~DataTypeEditWidget()
@@ -88,6 +71,28 @@ void DataTypeEditWidget::createUi()
     ui->layout->addWidget(uiPiecewise);
 }
 
+void DataTypeEditWidget::parseValue(const QString &value)
+{
+	QRegularExpression tableregex("tabular|TABULAR");
+	QRegularExpression piecewiseregex("if|IF");
+
+	if (tableregex.match(value).hasMatch())
+	{
+		this->initTable();
+		this->activeType = 1;
+	}
+	else if (piecewiseregex.match(value).hasMatch())
+	{
+		this->initPiecewise();
+		this->activeType = 2;
+	}
+	else
+	{
+		this->initExpression();
+		this->activeType = 0;
+	}
+}
+
 void DataTypeEditWidget::initExpression()
 {
     this->m_cmb->setCurrentIndex(0);
@@ -111,6 +116,7 @@ void DataTypeEditWidget::initPiecewise()
 
 QString DataTypeEditWidget::param_getValue()
 {
+	if (!this->m_text.isEmpty()) return this->m_text;
     if (this->m_param != nullptr) return QString::fromStdString(m_param->getValue());
     return QString();
 }
@@ -141,11 +147,11 @@ void DataTypeEditWidget::setComboBox(bool show)
         this->m_cmb->hide();
 }
 
-void DataTypeEditWidget::setSharedDatatype(int *datatype)
+void DataTypeEditWidget::setSharedData(DataTypeEditWidgetFactoryData *data)
 {
-    this->m_shared = datatype;
-    this->m_cmb->setCurrentIndex(*datatype);
-    this->changeType(*datatype);
+	this->m_shared = data;
+	this->m_cmb->setCurrentIndex(data->type);
+	this->changeType(data->type);
 }
 
 int DataTypeEditWidget::datatype()
@@ -203,14 +209,21 @@ void DataTypeEditWidget::save()
     }
 }
 
-void DataTypeEditWidget::setText(const QString&)
+void DataTypeEditWidget::setText(const QString &text)
 {
-    // No behaviour
+	this->m_text = text;
+	if (!text.isEmpty())
+	{
+		this->parseValue(text);
+		if (this->m_shared == nullptr) return;
+		this->m_shared->valid = this->isValid();
+		this->m_shared->error_message = this->errorMessage();
+	}
 }
 
 QString DataTypeEditWidget::text()
 {
-    return this->value();
+	return this->value();
 }
 
 void DataTypeEditWidget::changeType(int index)
@@ -239,7 +252,7 @@ void DataTypeEditWidget::changeType(int index)
     }
 
     this->activeType = index;
-    if (this->m_shared != nullptr) *this->m_shared = index;
+	if (this->m_shared != nullptr) this->m_shared->type = index;
     emit finished(this);
 }
 

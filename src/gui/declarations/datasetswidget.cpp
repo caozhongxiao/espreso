@@ -1,5 +1,7 @@
 #include "datasetswidget.h"
 
+#include <QDebug>
+
 using namespace espreso;
 
 DataSetsWidget::DataSetsWidget(ECFObject* materials,
@@ -90,18 +92,35 @@ QDialog* DataSetsWidget::createDialog(const QModelIndex& groupIndex, ECFParamete
 QString DataSetsWidget::dialogResult(QDialog*)
 {
     std::string name = this->m_last_modified->name;
-    this->m_materials_names.append(name);
-    this->m_materials_ids.append(std::to_string(this->m_materials_id - 1));
-
+	this->m_materials_names.append(name);
+	this->m_materials_ids.append(std::to_string(this->m_materials_id - 1));
     return QString::fromStdString(name);
 }
 
-void DataSetsWidget::itemEditted(int group, ECFParameter*)
+void DataSetsWidget::editItemAccepted(const QModelIndex& group, const QModelIndex&, ECFParameter*)
 {
-    if (group == 0)
+	if (group.row() == 0)
     {
-        this->dialogResult(nullptr);
+		this->dialogResult(nullptr);
     }
+}
+
+void DataSetsWidget::editItemRejected(const QModelIndex &group, const QModelIndex &item, ECFParameter *param)
+{
+	if (group.row() == 0)
+	{
+		this->dialogResult(nullptr);
+	}
+}
+
+void DataSetsWidget::deleteItemAccepted(const QModelIndex& group, int, const QString& name)
+{
+	if (group.row() == 0)
+	{
+		int matIndex = this->m_materials_names.indexOf(name.toStdString());
+		this->m_materials_names.remove(matIndex);
+		this->m_materials_ids.remove(matIndex);
+	}
 }
 
 MaterialConfiguration* DataSetsWidget::newMaterial()

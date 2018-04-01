@@ -19,7 +19,7 @@ public:
     virtual QString text() = 0;
 
 signals:
-    void finished(QWidget* itself);
+	void finished(QWidget* itself);
 };
 
 }
