@@ -285,25 +285,3 @@ QString DataTypeEditWidget::value()
         return "";
     }
 }
-
-void DataTypeEditWidget::setValue(const QString &value)
-{
-    QRegularExpression tableregex("switch|SWITCH");
-    QRegularExpression piecewiseregex("if|IF");
-
-    if (tableregex.match(value).hasMatch())
-    {
-        this->uiTable->addData(value);
-        this->changeType(1);
-    }
-    else if (piecewiseregex.match(value).hasMatch())
-    {
-        this->uiPiecewise->addData(value);
-        this->changeType(2);
-    }
-    else
-    {
-        this->uiExpression->setText(value);
-        this->changeType(0);
-    }
-}

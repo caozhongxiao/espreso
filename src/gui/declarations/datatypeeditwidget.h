@@ -50,7 +50,6 @@ namespace espreso
         virtual QString text() override;
 
         QString value();
-        void setValue(const QString& value);
 
 		void setSharedData(DataTypeEditWidgetFactoryData* data);
 

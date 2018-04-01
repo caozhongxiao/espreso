@@ -63,7 +63,9 @@ RegionPairDialog::RegionPairDialog(ECFParameter* pair, ECFDataType value,
     {
         DataTypeEditWidget* expr = static_cast<DataTypeEditWidget*>(this->m_second_widget);
         std::string value = pair->getValue();
-        expr->setValue(QString::fromStdString(value));
+		expr->setText(QString::fromStdString(value));
+		ui->formLayout->removeRow(1);
+		ui->formLayout->insertRow(1, tr("Type:"), expr->createComboBox(this));
     }
     else if (this->m_second == ECFDataType::OPTION)
     {
@@ -199,7 +201,7 @@ QWidget* RegionPairDialog::uiValue(ECFDataType type)
             if (found) continue;
             cmb->addItem(QString::fromStdString((*it)->name));
         }
-        ui->formLayout->addRow(tr("Region"), cmb);
+		ui->formLayout->addRow(tr("Region:"), cmb);
         ret = cmb;
     }
 
