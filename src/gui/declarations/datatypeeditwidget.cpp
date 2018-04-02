@@ -18,6 +18,8 @@ DataTypeEditWidget::DataTypeEditWidget(QWidget *parent) :
     ui->layout->addWidget(m_cmb);
     this->m_cmb->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     this->m_cmb->hide();
+
+	this->m_datatype_empty << true << true << true;
 }
 
 DataTypeEditWidget::DataTypeEditWidget(const std::vector<std::string>& variables, QWidget* parent) :
@@ -29,6 +31,11 @@ DataTypeEditWidget::DataTypeEditWidget(const std::vector<std::string>& variables
     this->createUi();
     this->initExpression();
     this->activeType = 0;
+
+	connect(this->uiTable, SIGNAL(cellChanged()),
+			this, SLOT(onCellChange()));
+	connect(this->uiPiecewise, SIGNAL(cellChanged()),
+			this, SLOT(onCellChange()));
 }
 
 DataTypeEditWidget::DataTypeEditWidget(ECFParameter* data, QWidget *parent) :
@@ -90,6 +97,25 @@ void DataTypeEditWidget::parseValue(const QString &value)
 	{
 		this->initExpression();
 		this->activeType = 0;
+	}
+}
+
+int DataTypeEditWidget::checkDataType(const QString &data)
+{
+	QRegularExpression tableregex("tabular|TABULAR");
+	QRegularExpression piecewiseregex("if|IF");
+
+	if (tableregex.match(data).hasMatch())
+	{
+		return 1;
+	}
+	else if (piecewiseregex.match(data).hasMatch())
+	{
+		return 2;
+	}
+	else
+	{
+		return 0;
 	}
 }
 
@@ -212,9 +238,10 @@ void DataTypeEditWidget::save()
 void DataTypeEditWidget::setText(const QString &text)
 {
 	this->m_text = text;
-	if (!text.isEmpty())
+	if (!text.isEmpty() && this->m_datatype_empty[this->checkDataType(text)])
 	{
 		this->parseValue(text);
+		this->m_datatype_empty[this->activeType] = false;
 		if (this->m_shared == nullptr) return;
 		this->m_shared->valid = this->isValid();
 		this->m_shared->error_message = this->errorMessage();
@@ -224,6 +251,16 @@ void DataTypeEditWidget::setText(const QString &text)
 QString DataTypeEditWidget::text()
 {
 	return this->value();
+}
+
+void DataTypeEditWidget::onCellChange()
+{
+	qInfo() << "PRE" << this->text();
+	if (!this->m_datatype_empty[this->activeType])
+	{
+		qInfo() << this->text();
+		emit finished(this);
+	}
 }
 
 void DataTypeEditWidget::changeType(int index)

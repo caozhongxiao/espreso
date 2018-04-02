@@ -85,27 +85,19 @@ void ECFObjectTreeWidget::onActionEdit()
     if ( !(groupIndex.isValid()) ) return;
 
     ECFParameter* param = this->selectedParam(groupIndex);
-    if (param == nullptr)
-    {
-        qCritical("ECFObjectTreeWidget: No ECFParameter found on index %d", groupIndex.row());
-        return;
-    }
+	if (param == nullptr) return;
 
 	QModelIndexList indexList = m_view->selectionModel()->selectedIndexes();
 	QModelIndex clicked = indexList.at(0);
 
     QDialog* dialog = this->createDialog(groupIndex, param);
 
-	if (dialog->exec() == QDialog::Accepted)
-	{
-		QString item_name = this->dialogResult(dialog);
-		this->m_model->setData(clicked, item_name);
-		this->editItemAccepted(groupIndex, clicked, param);
-	}
-	else
-	{
-		this->editItemRejected(groupIndex, clicked, param);
-	}
+	int res = dialog->exec();
+	QString item_name = this->dialogResult(dialog);
+	this->m_model->setData(clicked, item_name);
+
+	if (res == QDialog::Accepted) this->editItemAccepted(groupIndex, clicked, param);
+	else this->editItemRejected(groupIndex, clicked, param);
 }
 
 void ECFObjectTreeWidget::onActionDelete()
@@ -114,11 +106,7 @@ void ECFObjectTreeWidget::onActionDelete()
     if ( !(groupIndex.isValid()) ) return;
 
     ECFParameter* param = this->selectedParam(groupIndex);
-    if (param == nullptr)
-    {
-        qCritical("ECFObjectTreeWidget: No ECFParameter found on index %d", groupIndex.row());
-        return;
-    }
+	if (param == nullptr) return;
 
     this->m_objs[groupIndex.row()]->dropParameter(param);
 

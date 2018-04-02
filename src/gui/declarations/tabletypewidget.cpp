@@ -36,7 +36,7 @@ void TableTypeWidget::addData(const QString& data)
     QStringList pairs = raw[0].split(delimiter, QString::SkipEmptyParts);
 
     foreach (QString p, pairs) {
-        QStringList coordinates = p.split(QRegExp("\\,"), QString::SkipEmptyParts);
+		QStringList coordinates = p.trimmed().split(QRegExp("\\,"), QString::SkipEmptyParts);
         this->addRow(coordinates.toVector());
     }
 }

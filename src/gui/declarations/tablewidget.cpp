@@ -44,6 +44,9 @@ TableWidget::TableWidget(int columns, const QStringList& headlines,
 
     this->mActionDelete = new QAction(tr("&Delete"), this);
     connect(mActionDelete, SIGNAL(triggered(bool)), this, SLOT(deleteItem()));
+
+	connect(this->mModel, SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)),
+								 this, SLOT(onDataChanged(QModelIndex,QModelIndex,QVector<int>)));
 }
 
 TableWidget::~TableWidget()
@@ -128,4 +131,9 @@ QString TableWidget::errorMessage()
         return tr("Empty cell at row %1 and column %2")
                 .arg(m_invalidRow)
                 .arg(m_invalidCol);
+}
+
+void TableWidget::onDataChanged(QModelIndex, QModelIndex, QVector<int>)
+{
+	emit cellChanged();
 }

@@ -88,7 +88,6 @@ QWidget* ECFParameterTreeDelegate::createEditor(QWidget *parent,
     return editor;
 }
 
-
 void ECFParameterTreeDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
     QString value = index.model()->data(index, Qt::EditRole).toString();

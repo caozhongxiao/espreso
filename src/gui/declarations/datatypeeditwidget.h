@@ -57,6 +57,7 @@ namespace espreso
 
     private slots:
         void changeType(int index);
+		void onCellChange();
 
     private:
         DataTypeEditWidget(QWidget *parent = 0);
@@ -74,6 +75,8 @@ namespace espreso
 
 		DataTypeEditWidgetFactoryData* m_shared = nullptr;
 
+		QVector<bool> m_datatype_empty;
+
         int activeType;
         std::vector<std::string> m_param_variables;
         QString param_getValue();
@@ -81,6 +84,7 @@ namespace espreso
 
 		void createUi();
 		void parseValue(const QString&);
+		int checkDataType(const QString&);
         void initExpression();
         void initTable();
         void initPiecewise();
