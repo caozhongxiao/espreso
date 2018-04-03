@@ -238,27 +238,32 @@ void DataTypeEditWidget::save()
 void DataTypeEditWidget::setText(const QString &text)
 {
 	this->m_text = text;
-	if (!text.isEmpty() && this->m_datatype_empty[this->checkDataType(text)])
+    if (!text.isEmpty() && this->m_datatype_empty[this->checkDataType(text)])
 	{
-		this->parseValue(text);
-		this->m_datatype_empty[this->activeType] = false;
-		if (this->m_shared == nullptr) return;
-		this->m_shared->valid = this->isValid();
-		this->m_shared->error_message = this->errorMessage();
+        this->parseValue(text);
+        this->m_datatype_empty[this->activeType] = false;
+        if (this->m_shared == nullptr) return;
+        this->m_shared->valid = this->isValid();
+        this->m_shared->error_message = this->errorMessage();
 	}
+    else if (text.isEmpty() && this->activeType == 2)
+    {
+        this->m_datatype_empty[this->activeType] = false;
+        if (this->m_shared == nullptr) return;
+        this->m_shared->valid = this->isValid();
+        this->m_shared->error_message = this->errorMessage();
+    }
 }
 
 QString DataTypeEditWidget::text()
 {
-	return this->value();
+    return this->value();
 }
 
 void DataTypeEditWidget::onCellChange()
 {
-	qInfo() << "PRE" << this->text();
 	if (!this->m_datatype_empty[this->activeType])
 	{
-		qInfo() << this->text();
 		emit finished(this);
 	}
 }

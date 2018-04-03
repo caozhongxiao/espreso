@@ -97,14 +97,6 @@ QString DataSetsWidget::dialogResult(QDialog*)
     return QString::fromStdString(name);
 }
 
-void DataSetsWidget::editItemRejected(const QModelIndex &group, const QModelIndex &item, ECFParameter *param)
-{
-	if (group.row() == 0)
-	{
-		this->dialogResult(nullptr);
-	}
-}
-
 void DataSetsWidget::deleteItemAccepted(const QModelIndex& group, int, const QString& name)
 {
 	if (group.row() == 0)
