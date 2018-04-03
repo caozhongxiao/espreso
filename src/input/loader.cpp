@@ -87,6 +87,9 @@ Loader::Loader(const ECFRoot &configuration, DistributedMesh &dMesh, Mesh &mesh)
 
 void Loader::distributeMesh()
 {
+	TimeEval timing("MESH DISTRIBUTION");
+	timing.totalTime.startWithBarrier();
+
 	// DISTRIBUTE NODES
 	eslocal myMaxID = 0, maxID;
 	int sorted = std::is_sorted(_dMesh.nIDs.begin(), _dMesh.nIDs.end()), allSorted;
@@ -112,12 +115,17 @@ void Loader::distributeMesh()
 			std::vector<size_t> cCurrent = Communication::getDistribution(_dMesh.nIDs.size(), MPITools::operations().sizeToOffsetsSize_t);
 			_nDistribution = tarray<eslocal>::distribute(environment->MPIsize, cCurrent.back());
 
+			TimeEvent e1("BALANCE IDS"); e1.start();
 			if (!Communication::balance(_dMesh.nIDs, cCurrent, _nDistribution)) {
 				ESINFO(ERROR) << "ESPRESO internal error: balance node IDs.";
 			}
+			e1.end(); timing.addEvent(e1);
+
+			TimeEvent e2("BALANCE COORDINATES"); e2.start();
 			if (!Communication::balance(_dMesh.coordinates, cCurrent, _nDistribution)) {
 				ESINFO(ERROR) << "ESPRESO internal error: balance coordinates.";
 			}
+			e2.end(); timing.addEvent(e2);
 		}
 	} else {
 		if (environment->MPIsize == 1) {
@@ -154,6 +162,7 @@ void Loader::distributeMesh()
 			if (!Communication::sendVariousTargets(sIDs, rIDs, targets)) {
 				ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted node IDs.";
 			}
+
 			if (!Communication::sendVariousTargets(sCoordinates, rCoordinates, targets)) {
 				ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted node coordinates.";
 			}
@@ -217,15 +226,23 @@ void Loader::distributeMesh()
 		}
 		Communication::allGatherUnknownSize(nTarget);
 
+		TimeEvent e3("BALANCE ESIZE"); e3.start();
 		if (!Communication::balance(_dMesh.esize, eCurrent, eTarget)) {
 			ESINFO(ERROR) << "ESPRESO internal error: balance element sizes.";
 		}
+		e3.end(); timing.addEvent(e3);
+
+		TimeEvent e4("BALANCE EDATA"); e4.start();
 		if (!Communication::balance(_dMesh.edata, eCurrent, eTarget)) {
 			ESINFO(ERROR) << "ESPRESO internal error: balance element data.";
 		}
+		e4.end(); timing.addEvent(e4);
+
+		TimeEvent e5("BALANCE ENODES"); e5.start();
 		if (!Communication::balance(_dMesh.enodes, nCurrent, nTarget)) {
 			ESINFO(ERROR) << "ESPRESO internal error: balance element nodes.";
 		}
+		e5.end(); timing.addEvent(e5);
 
 		_eDistribution = eTarget;
 	} else {
@@ -335,6 +352,10 @@ void Loader::distributeMesh()
 			}
 		}
 	}
+
+	timing.totalTime.endWithBarrier();
+	timing.printStatsMPI();
+	exit(0);
 }
 
 void Loader::checkERegions()
