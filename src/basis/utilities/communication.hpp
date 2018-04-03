@@ -249,16 +249,32 @@ bool Communication::balance(std::vector<Ttype> &buffer, const std::vector<size_t
 			tOffset = 0;
 		}
 
-		for (int r = 0; r < environment->MPIsize; ++r) {
-			size[r] *= sizeof(Ttype);
-			disp[r] *= sizeof(Ttype);
-		}
+//		for (int r = 0; r < environment->MPIsize; ++r) {
+//			size[r] *= sizeof(Ttype);
+//			disp[r] *= sizeof(Ttype);
+//		}
 	};
 
 	fill(currentDistribution, targetDistribution, ssize, sdisp);
 	fill(targetDistribution, currentDistribution, rsize, rdisp);
 
-	MPI_Alltoallv(buffer.data(), ssize.data(), sdisp.data(), MPI_BYTE, result.data(), rsize.data(), rdisp.data(), MPI_BYTE, environment->MPICommunicator);
+	std::vector<MPI_Request> requests(environment->MPIsize);
+	int nrequests = 0;
+
+	for (int r = 0; r < environment->MPIsize; ++r) {
+		if (rsize[r]) {
+			MPI_Irecv(result.data() + rdisp[r], rsize[r] * sizeof(Ttype), MPI_BYTE, r, 0, environment->MPICommunicator, requests.data() + nrequests++);
+		}
+	}
+
+	for (int r = 0; r < environment->MPIsize; ++r) {
+		if (ssize[r]) {
+			MPI_Isend(buffer.data() + sdisp[r], ssize[r] * sizeof(Ttype), MPI_BYTE, r, 0, environment->MPICommunicator, requests.data() + nrequests++);
+		}
+	}
+
+	MPI_Waitall(nrequests, requests.data(), MPI_STATUSES_IGNORE);
+//	MPI_Alltoallv(buffer.data(), ssize.data(), sdisp.data(), MPI_BYTE, result.data(), rsize.data(), rdisp.data(), MPI_BYTE, environment->MPICommunicator);
 	buffer.swap(result);
 
 	return true;
