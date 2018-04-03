@@ -159,13 +159,17 @@ void Loader::distributeMesh()
 				}
 			}
 
+			TimeEvent e2("VARIOUS IDS"); e2.start();
 			if (!Communication::sendVariousTargets(sIDs, rIDs, targets)) {
 				ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted node IDs.";
 			}
+			e2.end(); timing.addEvent(e2);
 
+			TimeEvent e3("VARIOUS COORDINATES"); e3.start();
 			if (!Communication::sendVariousTargets(sCoordinates, rCoordinates, targets)) {
 				ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted node coordinates.";
 			}
+			e3.end(); timing.addEvent(e3);
 
 			for (size_t r = 1; r < rIDs.size(); r++) {
 				rIDs[0].insert(rIDs[0].end(), rIDs[r].begin(), rIDs[r].end());
