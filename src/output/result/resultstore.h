@@ -29,6 +29,8 @@ public:
 protected:
 	ResultStoreBase(const Mesh &mesh);
 
+	void createOutputDirectory();
+
 	const Mesh &_mesh;
 	std::string _directory;
 };

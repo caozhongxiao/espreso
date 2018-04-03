@@ -6,6 +6,14 @@
 
 using namespace espreso;
 
+Visualization::Visualization(const Mesh &mesh, const OutputConfiguration &configuration)
+: ResultStoreBase(mesh), _configuration(configuration)
+{
+	if (configuration.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
+		createOutputDirectory();
+	}
+}
+
 bool Visualization::storeStep(const OutputConfiguration &configuration, const Step &step)
 {
 	switch (configuration.results_store_frequency) {

@@ -23,6 +23,11 @@ async::Dispatcher* ResultStore::_dispatcher = NULL;
 
 ResultStoreBase::ResultStoreBase(const Mesh &mesh): _mesh(mesh), _directory("PREPOSTDATA/")
 {
+
+}
+
+void ResultStoreBase::createOutputDirectory()
+{
 	Esutils::createDirectory({ Logging::outputRoot(), _directory });
 }
 

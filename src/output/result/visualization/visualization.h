@@ -11,7 +11,7 @@ class Visualization: public ResultStoreBase {
 public:
 	static bool storeStep(const OutputConfiguration &configuration, const Step &step);
 
-	Visualization(const Mesh &mesh, const OutputConfiguration &configuration): ResultStoreBase(mesh), _configuration(configuration) {}
+	Visualization(const Mesh &mesh, const OutputConfiguration &configuration);
 
 protected:
 	const OutputConfiguration &_configuration;
