@@ -313,15 +313,23 @@ void Loader::distributeMesh()
 				}
 			}
 
+			TimeEvent e3("VARIOUS ESIZE"); e3.start();
 			if (!Communication::sendVariousTargets(sSize, rSize, targets)) {
 				ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted elements sizes.";
 			}
+			e3.end(); timing.addEvent(e3);
+
+			TimeEvent e4("VARIOUS EDATA"); e4.start();
 			if (!Communication::sendVariousTargets(sEData, rEData, targets)) {
 				ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted element data.";
 			}
+			e4.end(); timing.addEvent(e4);
+
+			TimeEvent e5("VARIOUS NODES"); e5.start();
 			if (!Communication::sendVariousTargets(sNodes, rNodes, targets)) {
 				ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted element nodes.";
 			}
+			e5.end(); timing.addEvent(e5);
 
 			for (size_t r = 1; r < rSize.size(); r++) {
 				rSize[0].insert(rSize[0].end(), rSize[r].begin(), rSize[r].end());
