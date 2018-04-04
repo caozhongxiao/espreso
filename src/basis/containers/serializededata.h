@@ -57,6 +57,9 @@ public:
 			size += boundaries[t].size();
 		}
 		--sizes[0];
+		if (size == 0) {
+			return;
+		}
 
 		std::vector<size_t> _distribution;
 		if (distribution == NULL) {

@@ -258,7 +258,7 @@ bool Communication::balance(std::vector<Ttype> &buffer, const std::vector<size_t
 	fill(currentDistribution, targetDistribution, ssize, sdisp);
 	fill(targetDistribution, currentDistribution, rsize, rdisp);
 
-	std::vector<MPI_Request> requests(environment->MPIsize);
+	std::vector<MPI_Request> requests(environment->MPIsize + 1);
 	int nrequests = 0;
 
 	for (int r = 0; r < environment->MPIsize; ++r) {
