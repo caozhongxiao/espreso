@@ -7,14 +7,14 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension, Materia
 {
 	load_steps = 1;
 	REGISTER(load_steps, ECFMetaData()
-			.setdescription({ "Number of load steps." })
+            .setdescription({ "Number of loadSteps" })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
 	addSpace();
 
 	interpolation = INTERPOLATION::LINEAR;
 	REGISTER(interpolation, ECFMetaData()
-			.setdescription({ "Data interpolation." })
+            .setdescription({ "Data interpolation" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("LINEAR").setdescription("Linear interpolation."))
 			.addoption(ECFOption().setname("QUADRATIC").setdescription("Quadratic interpolation.")));
@@ -27,8 +27,8 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension, Materia
 			.addoption(ECFOption().setname("FACES").setdescription("Face based.")));
 
 	REGISTER(discretization, ECFMetaData()
-			.setdescription({ "Discretization settings for regions.", "Discretization of stiffness matrices." })
 		.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::OPTION })
+	        .setdescription({ "Discretization settings for regions.", "Discretization of stiffness matrices" })
 		.setpattern({ "MY_REGION", "FEM" })
 		.addoption(ECFOption().setname("FEM").setdescription("Finite elements."))
 		.addoption(ECFOption().setname("BEM").setdescription("Boundary elements.")));
@@ -43,15 +43,15 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension, Materia
 	addSeparator();
 
 	REGISTER(initial_temperature, ECFMetaData()
-			.setdescription({ "The name of a region.", "Initial temperature of a given region." })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
+                        .setdescription({ "The name of a region.", "Initial temperature" })
 			.setpattern({ "MY_REGION", "273.15" }),
 			ECFMetaData().getboundaryconditionvariables(), "273.15");
 
 	if (dimension == DIMENSION::D2) {
 		REGISTER(thickness, ECFMetaData()
-				.setdescription({ "The name of a region.", "Thickness of a given region." })
 				.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
+                                .setdescription({ "The name of a region.", "Thickness" })
 				.setpattern({ "MY_REGION", "1" }),
 				ECFMetaData().getboundaryconditionvariables(), "1");
 	}
@@ -60,7 +60,7 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension, Materia
 
 	contact_interfaces = false;
 	REGISTER(contact_interfaces, ECFMetaData()
-			.setdescription({ "Check contacts." })
+            .setdescription({ "Consistent stabilization" })
 			.setdatatype({ ECFDataType::BOOL }));
 }
 

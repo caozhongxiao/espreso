@@ -103,16 +103,16 @@ void ECFRoot::init()
 			.setdescription({ "Settings for mesh morphing." }));
 
 	REGISTER(heat_transfer_2d, ECFMetaData()
-			.setdescription({ "Advection diffusion 2D settings." })
+            .setdescription({ "Heat transfer 2D" })
 			.allowonly([&] () { return physics == PHYSICS::HEAT_TRANSFER_2D; }));
 	REGISTER(heat_transfer_3d, ECFMetaData()
-			.setdescription({ "Advection diffusion 3D settings." })
+            .setdescription({ "Heat transfer 3D" })
 			.allowonly([&] () { return physics == PHYSICS::HEAT_TRANSFER_3D; }));
 	REGISTER(structural_mechanics_2d, ECFMetaData()
-			.setdescription({ "Structural mechanics 2D settings." })
+            .setdescription({ "Structural mechanics 2D" })
 			.allowonly([&] () { return physics == PHYSICS::STRUCTURAL_MECHANICS_2D; }));
 	REGISTER(structural_mechanics_3d, ECFMetaData()
-			.setdescription({ "Structural mechanics 3D settings." })
+            .setdescription({ "Structural mechanics 3D" })
 			.allowonly([&] () { return physics == PHYSICS::STRUCTURAL_MECHANICS_3D; }));
 
 	registerParameter("env", environment, ECFMetaData()

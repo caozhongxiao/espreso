@@ -2,6 +2,7 @@
 
 #include <QLabel>
 #include <QPushButton>
+#include <QDebug>
 
 using namespace espreso;
 
@@ -50,7 +51,7 @@ IntegerTabWidget::IntegerTabWidget(ECFObject* map,
 
 void IntegerTabWidget::onTabClosed(int index)
 {
-    QString key = this->m_tabwidget->tabText(index);
+    QString key = QString::number(this->m_tabwidget->tabText(index).split(" ").at(1).toInt());
     this->m_map->dropParameter(
                     this->m_map->getParameter(key.toStdString())
                 );
@@ -71,7 +72,7 @@ void IntegerTabWidget::addParam(ECFParameter *param)
     ECFObject* obj = static_cast<ECFObject*>(param);
     ECFObjectWidget* w = this->m_factory->create(obj);
     w->init();
-    QString label = QString::fromStdString(obj->name);
+    QString label = "Monitor " + QString::fromStdString(obj->name);
     this->m_tabwidget->addTab(w, label);
 }
 

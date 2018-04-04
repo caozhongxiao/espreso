@@ -7,41 +7,43 @@ espreso::LoadStepConfiguration::LoadStepConfiguration(const std::string &firstRe
 {
 	duration_time = 1;
 	REGISTER(duration_time, ECFMetaData()
-			.setdescription({ "Duration of a load step." })
+            .setdescription({ "Duration" })
 			.setdatatype({ ECFDataType::FLOAT }));
 
 	type = TYPE::STEADY_STATE;
 	REGISTER(type, ECFMetaData()
-			.setdescription({ "Physics solver type." })
+            .setdescription({ "Simulation type" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("STEADY_STATE").setdescription("Steady state load step."))
 			.addoption(ECFOption().setname("TRANSIENT").setdescription("Transient load step.")));
 
 	mode = MODE::LINEAR;
 	REGISTER(mode, ECFMetaData()
-			.setdescription({ "Physics solver mode - set according to material properties." })
+            .setdescription({ "Simulation mode" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("LINEAR").setdescription("Linear material behavior."))
 			.addoption(ECFOption().setname("NONLINEAR").setdescription("Nonlinear material behavior.")));
 
 	solver = SOLVER::FETI;
 	REGISTER(solver, ECFMetaData()
-			.setdescription({ "Used linear solver method." })
+            .setdescription({ "Linear solver" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("FETI").setdescription("Use ESPRESO as linear solver."))
 			.addoption(ECFOption().setname("MULTIGRID").setdescription("Use hypre library as MULTIGRID solver.")));
 
 	REGISTER(nonlinear_solver, ECFMetaData()
-				.setdescription({ "Non-linear physics solver settings." })
+                .setdescription({ "Non-linear physics solver settings" })
 				.allowonly([&] () { return mode == MODE::NONLINEAR; }));
 	REGISTER(transient_solver, ECFMetaData()
-			.setdescription({ "Transient physics solver settings." })
+            .setdescription({ "Transient physics solver settings" })
 			.allowonly([&] () { return type == TYPE::TRANSIENT; }));
 
 	REGISTER(feti, ECFMetaData()
-			.setdescription({ "ESPRESO FETI solver settings." }));
+            .setdescription({ "FETI solver settings" })
+            .allowonly([&] () { return solver == SOLVER::FETI; }));
 	REGISTER(multigrid, ECFMetaData()
-			.setdescription({ "Hypre multigrid solver settings." }));
+            .setdescription({ "HYPRE multigrid solver settings" })
+            .allowonly([&] () { return solver == SOLVER::MULTIGRID; }));
 }
 
 

@@ -6,7 +6,7 @@ espreso::AutoTimeSteppingConfiguration::AutoTimeSteppingConfiguration()
 {
 	allowed = false;
 	REGISTER(allowed, ECFMetaData()
-			.setdescription({ "Allow auto time stepping." })
+            .setdescription({ "Allow" })
 			.setdatatype({ ECFDataType::BOOL }));
 
 	addSeparator();
@@ -14,10 +14,10 @@ espreso::AutoTimeSteppingConfiguration::AutoTimeSteppingConfiguration()
 	min_time_step = 1e-3;
 	max_time_step = 1;
 	REGISTER(min_time_step, ECFMetaData()
-			.setdescription({ "Minimal time step." })
+            .setdescription({ "Minimum time step" })
 			.setdatatype({ ECFDataType::FLOAT }));
 	REGISTER(max_time_step, ECFMetaData()
-			.setdescription({ "Maximal time step." })
+            .setdescription({ "Maximum time step" })
 			.setdatatype({ ECFDataType::FLOAT }));
 
 	addSeparator();
@@ -25,10 +25,10 @@ espreso::AutoTimeSteppingConfiguration::AutoTimeSteppingConfiguration()
 	oscilation_limit = 0.5;
 	IDFactor = 3;
 	REGISTER(oscilation_limit, ECFMetaData()
-			.setdescription({ "Oscilation limit." })
+            .setdescription({ "Oscilation limit" })
 			.setdatatype({ ECFDataType::FLOAT }));
 	REGISTER(IDFactor, ECFMetaData()
-			.setdescription({ "Increace/ decrease factor." })
+            .setdescription({ "I/D factor" })
 			.setdatatype({ ECFDataType::FLOAT }));
 }
 
@@ -36,7 +36,7 @@ espreso::TransientSolverConfiguration::TransientSolverConfiguration()
 {
 	method = METHOD::CRANK_NICOLSON;
 	REGISTER(method, ECFMetaData()
-			.setdescription({ "Transien solver used method." })
+            .setdescription({ "Method" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("CRANK_NICOLSON").setdescription("Alpha = 0.5."))
 			.addoption(ECFOption().setname("FORWARD_DIFF").setdescription("Alpha = ??."))
@@ -46,7 +46,7 @@ espreso::TransientSolverConfiguration::TransientSolverConfiguration()
 
 	alpha = 0.5;
 	REGISTER(alpha, ECFMetaData()
-			.setdescription({ "User defined Alpha." })
+            .setdescription({ "Alpha" })
 			.setdatatype({ ECFDataType::FLOAT })
 			.allowonly([&] () { return method == METHOD::USER; }));
 
@@ -54,11 +54,11 @@ espreso::TransientSolverConfiguration::TransientSolverConfiguration()
 
 	time_step = 0.1;
 	REGISTER(time_step, ECFMetaData()
-				.setdescription({ "Duration of a time step." })
+                .setdescription({ "Time step" })
 				.setdatatype({ ECFDataType::FLOAT }));
 
 	REGISTER(auto_time_stepping, ECFMetaData()
-			.setdescription({ "Auto time stepping." }));
+            .setdescription({ "Auto time stepping" }));
 
 
 }

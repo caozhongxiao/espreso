@@ -100,7 +100,7 @@ void PhysicsWidget::drawObject(ECFObject* obj, int parentGroupId)
             this->m_properties =
                     new RegionPropertyWidget(m_mesh,
                                              static_cast<PhysicsConfiguration*>(this->activePhysics()),
-                                             tr("Region properties"),
+                                             tr("Element region properties"),
                                              this->m_container);
         }
         this->m_properties->addProperty(obj);

@@ -103,26 +103,26 @@ MaterialConfiguration::MaterialConfiguration()
 
 	smooth_step_order = 1;
 	REGISTER(smooth_step_order, ECFMetaData()
-			.setdescription({ "Smooth step order." })
+            .setdescription({ "Smooth step order" })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER })
 			.allowonly([&] () { return phase_change; }));
 
 	latent_heat = transition_interval = phase_change_temperature = 0;
 	REGISTER(latent_heat, ECFMetaData()
-			.setdescription({ "Latent heat." })
+            .setdescription({ "Latent heat" })
 			.setdatatype({ ECFDataType::FLOAT })
 			.allowonly([&] () { return phase_change; }));
 	REGISTER(transition_interval, ECFMetaData()
-				.setdescription({ "Transition interval." })
+                .setdescription({ "Transition interval" })
 				.setdatatype({ ECFDataType::FLOAT })
 				.allowonly([&] () { return phase_change; }));
 	REGISTER(phase_change_temperature, ECFMetaData()
-				.setdescription({ "Phase change temperature." })
+                .setdescription({ "Phase change temperature" })
 				.setdatatype({ ECFDataType::FLOAT })
 				.allowonly([&] () { return phase_change; }));
 
 	REGISTER(phases, ECFMetaData()
-			.setdescription({ "Phase change settings.", "Settings for a particular phase." })
+            .setdescription({ "Phase change settings.", "Phase settings" })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER })
 			.setpattern({ "1" })
 			.allowonly([&] () { return phase_change; }),

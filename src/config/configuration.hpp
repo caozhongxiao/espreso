@@ -139,7 +139,7 @@ ECFParameter* ECFObject::registerParameter(const std::string &name, RegionMap<Tt
 		parameter.addRegion(name);
 	});
 	p->registerAdditionalParameter(registerParameter("INTERSECTION", parameter.regions_intersection, ECFMetaData()
-			.setdescription({ "Treating with intersected region." })
+            .setdescription({ "Treating with intersected region" })
 			.setdatatype( { ECFDataType::OPTION })
 			.addoption(ECFOption().setname("FIRST").setdescription("Setting from the first region is used."))
 			.addoption(ECFOption().setname("LAST").setdescription("Setting from the last region is used."))

@@ -24,6 +24,11 @@ RegionPairDialog::RegionPairDialog(ECFDataType value, ECFObject* map,
     ui->setupUi(this);
 
     this->m_first = ECFDataType::BOUNDARY_REGION;
+    this->setWindowTitle(
+                QString::fromStdString(map->metadata.description.at(1))
+                );
+
+    this->m_first = ECFDataType::REGION;
     this->m_second = value;
 
     this->m_map = map;
@@ -89,6 +94,10 @@ RegionPairDialog::RegionPairDialog(ECFObject *map, Mesh *mesh, QWidget *parent) 
     ui->setupUi(this);
 
     this->m_first = ECFDataType::BOUNDARY_REGION;
+    this->setWindowTitle(
+                QString::fromStdString(map->metadata.description.at(1))
+                );
+
     this->m_second = ECFDataType::LOAD_STEP;
 
     this->m_map = map;
@@ -111,6 +120,10 @@ RegionPairDialog::RegionPairDialog(ECFObject *pair, ECFObject *map, Mesh *mesh, 
     ui->setupUi(this);
 
     this->m_first = ECFDataType::BOUNDARY_REGION;
+    this->setWindowTitle(
+                QString::fromStdString(map->metadata.description.at(1))
+                );
+
     this->m_second = ECFDataType::LOAD_STEP;
 
     this->m_map = map;

@@ -6,7 +6,7 @@ espreso::MultigridConfiguration::MultigridConfiguration()
 {
 	solver = MULTIGRID_SOLVER::CG;
 	REGISTER(solver, ECFMetaData()
-			.setdescription({ "MULTIGRID solver." })
+            .setdescription({ "HYPRE solver" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("CG").setdescription("CG solver."))
 			.addoption(ECFOption().setname("GMRES").setdescription("GMRES solver."))
@@ -20,7 +20,7 @@ espreso::MultigridConfiguration::MultigridConfiguration()
 
 	preconditioner = MULTIGRID_PRECONDITIONER::BOOMERAMG;
 	REGISTER(preconditioner, ECFMetaData()
-			.setdescription({ "Preconditioner." })
+            .setdescription({ "Preconditioner" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("DIAGONAL").setdescription("DIAGONAL preconditioner."))
 			.addoption(ECFOption().setname("PILUT").setdescription("PILUT preconditioner."))
@@ -32,12 +32,12 @@ espreso::MultigridConfiguration::MultigridConfiguration()
 
 	precision = 1e-5;
 	REGISTER(precision, ECFMetaData()
-			.setdescription({ "MULTIGRID solver requested precision." })
+            .setdescription({ "Precision" })
 			.setdatatype({ ECFDataType::FLOAT }));
 
 	max_iterations = 200;
 	REGISTER(max_iterations, ECFMetaData()
-			.setdescription({ "Maximal number of iterations." })
+            .setdescription({ "Max iterations" })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 }
 
