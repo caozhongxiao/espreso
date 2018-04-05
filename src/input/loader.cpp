@@ -437,7 +437,8 @@ void Loader::fillElements()
 
 	std::vector<std::vector<eslocal> > tedist(threads);
 	std::vector<std::vector<eslocal> > tnodes(threads);
-	std::vector<std::vector<eslocal> > eIDs(threads), eMat(threads), eBody(threads), rData(threads);
+	std::vector<std::vector<eslocal> > eIDs(threads), rData(threads);
+	std::vector<std::vector<int> > eMat(threads), eBody(threads);
 	std::vector<std::vector<Element*> > epointers(threads);
 
 	std::vector<eslocal> edist = { 0 };
@@ -634,7 +635,7 @@ void Loader::fillCoordinates()
 
 	serializededata<eslocal, Point>::balance(1, coordinates, &distribution);
 	serializededata<eslocal, eslocal>::balance(1, sBuffer, &distribution);
-	serializededata<eslocal, eslocal>::balance(rankDistribution, rankData, &distribution);
+	serializededata<eslocal, int>::balance(rankDistribution, rankData, &distribution);
 
 
 	_mesh.nodes->size = distribution.back();

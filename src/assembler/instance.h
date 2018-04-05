@@ -47,7 +47,7 @@ struct Instance {
 	std::vector<size_t> &domainDOFCount;
 	std::vector<int> neighbours;
 
-	std::vector<eslocal> clustersMap;
+	std::vector<int> clustersMap;
 
 	std::vector<SparseMatrix> &origK, &K, &origKN1, &origKN2, &origRegMat, &N1, &N2, &RegMat;
 	std::vector<SparseMatrix> &M;

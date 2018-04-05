@@ -674,7 +674,7 @@ void EqualityConstraints::B0Kernels(const std::vector<SparseMatrix> &kernels)
 		eslocal ndomain = _mesh.FETIData->inodesDomains[i].second;
 		eslocal cluster = _mesh.elements->clusters[domain];
 		rowIndex[i] = rCounters[cluster];
-		rCounters[cluster] += std::max(kernels[domain].cols, std::max(kernels[ndomain].cols, 1));
+		rCounters[cluster] += std::max(kernels[domain].cols, std::max(kernels[ndomain].cols, (eslocal)1));
 	}
 
 	size_t threads = environment->OMP_NUM_THREADS;

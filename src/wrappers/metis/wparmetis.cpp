@@ -15,7 +15,7 @@ eslocal ParMETIS::call(
 			eslocal verticesWeightCount, eslocal *verticesWeights, eslocal *edgeWeights,
 			eslocal *partition)
 {
-	verticesWeightCount = std::max(1, verticesWeightCount);
+	verticesWeightCount = std::max((eslocal)1, verticesWeightCount);
 
 	eslocal wgtflag = 0;
 	eslocal numflag = 0;

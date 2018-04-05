@@ -47,13 +47,13 @@ void GMRESolverInternal(SOLVER_INTERNAL_TYPE type,
 		double alpha = 1.0;
 		double beta = 0.0;
 
-		int incx = 1;
-		int incy = 1;
+		eslocal incx = 1;
+		eslocal incy = 1;
 
 		//---------------------------------------------------------------------------
 		// Initialize the initial guess
 		//---------------------------------------------------------------------------
-		for (int i = 0; i < cols; i++) {
+		for (eslocal i = 0; i < cols; i++) {
 			results[i] = 0.0;
 		}
 
@@ -155,9 +155,9 @@ void MATH::SOLVER::GMRESUpCRSMat(
 }
 
 void MATH::SOLVER::GMRESDenseRowMajorMat(
-				eslocal rows, eslocal cols, double *mVals,
-				double *rhsVals, double *results,
-				double tolerance, eslocal maxIterations, eslocal &itercount)
+		eslocal rows, eslocal cols, double *mVals,
+		double *rhsVals, double *results,
+		double tolerance, eslocal maxIterations, eslocal &itercount)
 {
 	GMRESolverInternal(SOLVER_INTERNAL_TYPE::DGEMV,
 							rows, cols, NULL, NULL, mVals,
@@ -167,9 +167,9 @@ void MATH::SOLVER::GMRESDenseRowMajorMat(
 
 
 void MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
-						eslocal cols, double *mVals,
-						double *rhsVals, double *results,
-						double tolerance, eslocal maxIterations, eslocal &itercount)
+		eslocal cols, double *mVals,
+		double *rhsVals, double *results,
+		double tolerance, eslocal maxIterations, eslocal &itercount)
 {
 	GMRESolverInternal(SOLVER_INTERNAL_TYPE::DSPMV,
 							cols, cols, NULL, NULL, mVals,
@@ -177,23 +177,20 @@ void MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
 							tolerance, maxIterations, itercount);
 }
 
-int  MATH::SOLVER::directUpperSymetricIndefiniteColumnMajor(
-				eslocal cols, double *m_packed_values,
-				eslocal nrhs, double *rhsVals) {
+eslocal MATH::SOLVER::directUpperSymetricIndefiniteColumnMajor(
+		eslocal cols, double *m_packed_values,
+		eslocal nrhs, double *rhsVals)
+{
+	char U = 'U';
+	eslocal info;
+	std::vector<eslocal>  m_ipiv(cols);
 
-		char U = 'U';
-		MKL_INT info;
-		std::vector<MKL_INT>  m_ipiv(cols);
+	dsptrf(&U, &cols, &m_packed_values[0], &m_ipiv[0], &info);
 
-		dsptrf( &U, &cols, &m_packed_values[0], &m_ipiv[0] , &info );
-
-        if (info == 0 ) {
-        	dsptrs( &U, &cols, &nrhs, &m_packed_values[0], &m_ipiv[0], &rhsVals[0], &cols, &info );
-        	return info;
-        } else {
-        	return info;
-        }
-
+	if (info == 0 ) {
+		dsptrs(&U, &cols, &nrhs, &m_packed_values[0], &m_ipiv[0], &rhsVals[0], &cols, &info);
+	}
+	return info;
 }
 
 

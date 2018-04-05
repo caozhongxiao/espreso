@@ -271,7 +271,7 @@ void MeshPreprocessing::exchangeHalo()
 		hElements[t].swap(telements);
 	}
 
-	int rsize = _mesh->elements->regionMaskSize;
+	eslocal rsize = _mesh->elements->regionMaskSize;
 
 	std::vector<std::vector<size_t> > tdist(_mesh->neighbours.size());
 	for (size_t n = 0; n < _mesh->neighbours.size(); ++n) {
@@ -307,7 +307,7 @@ void MeshPreprocessing::exchangeHalo()
 				sBuffer[n][(4 + rsize) * e + 1] = body[hElements[0][n][e] - offset];
 				sBuffer[n][(4 + rsize) * e + 2] = material[hElements[0][n][e] - offset];
 				sBuffer[n][(4 + rsize) * e + 3] = (eslocal)code[hElements[0][n][e] - offset]->code;
-				memcpy(sBuffer[n].data() + (4 + rsize) * e + 4, regions.data() + (hElements[0][n][e] - offset) * rsize, sizeof(int) * rsize);
+				memcpy(sBuffer[n].data() + (4 + rsize) * e + 4, regions.data() + (hElements[0][n][e] - offset) * rsize, sizeof(eslocal) * rsize);
 			}
 		}
 	}
@@ -316,8 +316,8 @@ void MeshPreprocessing::exchangeHalo()
 		ESINFO(ERROR) << "ESPRESO internal error: exchange halo elements.";
 	}
 
-	std::vector<std::vector<eslocal> > hid(threads);
-	std::vector<std::vector<int> > hbody(threads), hmaterial(threads), hregions(threads);
+	std::vector<std::vector<eslocal> > hid(threads), hregions(threads);
+	std::vector<std::vector<int> > hbody(threads), hmaterial(threads);
 	std::vector<std::vector<Element*> > hcode(threads);
 
 	for (size_t n = 0; n < rBuffer.size(); ++n) {
@@ -338,7 +338,7 @@ void MeshPreprocessing::exchangeHalo()
 	_mesh->halo->body = new serializededata<eslocal, int>(1, hbody);
 	_mesh->halo->material = new serializededata<eslocal, int>(1, hmaterial);
 	_mesh->halo->epointers = new serializededata<eslocal, Element*>(1, hcode);
-	_mesh->halo->regions = new serializededata<eslocal, int>(rsize, hregions);
+	_mesh->halo->regions = new serializededata<eslocal, eslocal>(rsize, hregions);
 
 	_mesh->halo->size = _mesh->halo->IDs->datatarray().size();
 	_mesh->halo->distribution = _mesh->halo->IDs->datatarray().distribution();
@@ -460,7 +460,7 @@ void MeshPreprocessing::computeDecomposedDual(std::vector<eslocal> &dualDist, st
 						mat2 = _mesh->elements->material->datatarray()[*n - eBegin];
 					}
 					if (separateRegions) {
-						reg = memcmp(_mesh->elements->regions->datatarray().data() + e * rsize, _mesh->elements->regions->datatarray().data() + (*n - eBegin) * rsize, sizeof(int) * rsize);
+						reg = memcmp(_mesh->elements->regions->datatarray().data() + e * rsize, _mesh->elements->regions->datatarray().data() + (*n - eBegin) * rsize, sizeof(eslocal) * rsize);
 					}
 					if (separateEtypes) {
 						etype1 = (int)_mesh->elements->epointers->datatarray()[e]->type;

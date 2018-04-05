@@ -59,7 +59,7 @@ struct ElementStore {
 
 	serializededata<eslocal, int>* body;
 	serializededata<eslocal, int>* material;
-	serializededata<eslocal, int>* regions;
+	serializededata<eslocal, eslocal>* regions;
 	serializededata<eslocal, Element*>* epointers;
 
 	serializededata<eslocal, eslocal>* neighbors;

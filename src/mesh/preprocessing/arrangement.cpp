@@ -533,16 +533,16 @@ void MeshPreprocessing::arrangeRegions()
 		for (size_t t = 0; t < threads; t++) {
 			const auto &regions = _mesh->elements->regions->datatarray();
 			int maskSize = _mesh->elements->regionMaskSize;
-			int maskOffset = r / (8 * sizeof(int));
-			int bit = 1 << (r % (8 * sizeof(int)));
-			std::vector<int> mask(maskSize);
+			int maskOffset = r / (8 * sizeof(eslocal));
+			int bit = 1 << (r % (8 * sizeof(eslocal)));
+			std::vector<eslocal> mask(maskSize);
 			mask[maskOffset] = bit;
 
 			for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
 				for (eslocal i = _mesh->elements->eintervalsDistribution[d]; i < _mesh->elements->eintervalsDistribution[d + 1]; i++) {
 					size_t usize = unique[t].size();
 					for (eslocal e = _mesh->elementsRegions[r]->eintervals[i].begin; e < _mesh->elementsRegions[r]->eintervals[i].end; ++e) {
-						if (memcmp(regions.data() + e * maskSize, mask.data(), sizeof(int) * maskSize) == 0) {
+						if (memcmp(regions.data() + e * maskSize, mask.data(), sizeof(eslocal) * maskSize) == 0) {
 							unique[t].push_back(e);
 						}
 					}
@@ -881,18 +881,18 @@ void MeshPreprocessing::fillRegionMask()
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<std::vector<int> > eregions(threads);
+	std::vector<std::vector<eslocal> > eregions(threads);
 
 	// regions are transfered via mask
-	int regionsBitMaskSize = _mesh->elementsRegions.size() / (8 * sizeof(int)) + (_mesh->elementsRegions.size() % (8 * sizeof(int)) ? 1 : 0);
+	int regionsBitMaskSize = _mesh->elementsRegions.size() / (8 * sizeof(eslocal)) + (_mesh->elementsRegions.size() % (8 * sizeof(eslocal)) ? 1 : 0);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		int maskOffset = 0;
+		eslocal maskOffset = 0;
 		eregions[t].resize(regionsBitMaskSize * (_mesh->elements->distribution[t + 1] - _mesh->elements->distribution[t]));
 		for (size_t r = 0; r < _mesh->elementsRegions.size(); r++) {
-			maskOffset = r / (8 * sizeof(int));
-			int bit = 1 << (r % (8 * sizeof(int)));
+			maskOffset = r / (8 * sizeof(eslocal));
+			eslocal bit = 1 << (r % (8 * sizeof(eslocal)));
 
 			const auto &elements = _mesh->elementsRegions[r]->elements->datatarray();
 			auto begin = std::lower_bound(elements.begin(), elements.end(), _mesh->elements->distribution[t]);
@@ -904,7 +904,7 @@ void MeshPreprocessing::fillRegionMask()
 	}
 
 	_mesh->elements->regionMaskSize = regionsBitMaskSize;
-	_mesh->elements->regions = new serializededata<eslocal, int>(regionsBitMaskSize, eregions);
+	_mesh->elements->regions = new serializededata<eslocal, eslocal>(regionsBitMaskSize, eregions);
 
 	finish("fill region mask");
 }
@@ -1088,12 +1088,12 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 							} else if (element + ebegin < neighbor) {
 								if (ebegin <= neighbor && neighbor < eend) {
 									neighbor -= ebegin;
-									if (memcmp(regions.data() + element * rsize, regions.data() + neighbor * rsize, sizeof(int) * rsize) != 0) {
+									if (memcmp(regions.data() + element * rsize, regions.data() + neighbor * rsize, sizeof(eslocal) * rsize) != 0) {
 										addFace();
 									}
 								} else {
 									neighbor = std::lower_bound(_mesh->halo->IDs->datatarray().begin(), _mesh->halo->IDs->datatarray().end(), neighbor) - _mesh->halo->IDs->datatarray().begin();
-									if (memcmp(regions.data() + element * rsize, _mesh->halo->regions->datatarray().data() + neighbor * rsize, sizeof(int) * rsize) != 0) {
+									if (memcmp(regions.data() + element * rsize, _mesh->halo->regions->datatarray().data() + neighbor * rsize, sizeof(eslocal) * rsize) != 0) {
 										addFace();
 									}
 								}

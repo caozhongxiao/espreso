@@ -18,7 +18,7 @@ eslocal METIS::call(
 		eslocal parts, eslocal *partition)
 {
 
-	verticesWeightCount = std::max(1, verticesWeightCount);
+	verticesWeightCount = std::max((eslocal)1, verticesWeightCount);
 
 	eslocal moptions[METIS_NOPTIONS];
 	METIS_SetDefaultOptions(moptions);

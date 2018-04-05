@@ -86,9 +86,9 @@ void MeshPreprocessing::reclusterize()
 					}
 					if (separateRegions) {
 						if (*n < eoffset || eoffset + _mesh->elements->size <= *n) {
-							reg = memcmp(_mesh->elements->regions->datatarray().data() + e * rsize, _mesh->halo->regions->datatarray().data() + hindex * rsize, sizeof(int) * rsize);
+							reg = memcmp(_mesh->elements->regions->datatarray().data() + e * rsize, _mesh->halo->regions->datatarray().data() + hindex * rsize, sizeof(eslocal) * rsize);
 						} else {
-							reg = memcmp(_mesh->elements->regions->datatarray().data() + e * rsize, _mesh->elements->regions->datatarray().data() + (*n - eoffset) * rsize, sizeof(int) * rsize);
+							reg = memcmp(_mesh->elements->regions->datatarray().data() + e * rsize, _mesh->elements->regions->datatarray().data() + (*n - eoffset) * rsize, sizeof(eslocal) * rsize);
 						}
 					}
 					if (separateEtypes) {
@@ -411,11 +411,11 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	std::vector<int> targets;
 	{ // get target processes
-		std::vector<std::vector<eslocal> > ttargets(threads);
+		std::vector<std::vector<int> > ttargets(threads);
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 
-			std::vector<eslocal> ttt;
+			std::vector<int> ttt;
 			std::vector<bool> tflags(environment->MPIsize, false);
 			for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e) {
 				if (partition[e] != environment->MPIrank) {
@@ -487,10 +487,10 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	std::vector<eslocal> regionElementMask(_mesh->elements->size * eregionsBitMaskSize);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		int maskOffset = 0;
+		eslocal maskOffset = 0;
 		for (size_t r = 0; r < _mesh->elementsRegions.size(); r++) {
 			maskOffset = r / (8 * sizeof(eslocal));
-			int bit = 1 << (r % (8 * sizeof(eslocal)));
+			eslocal bit = 1 << (r % (8 * sizeof(eslocal)));
 			auto begin = std::lower_bound(_mesh->elementsRegions[r]->elements->datatarray().begin(), _mesh->elementsRegions[r]->elements->datatarray().end(), _mesh->elements->distribution[t]);
 			auto end = std::lower_bound(_mesh->elementsRegions[r]->elements->datatarray().begin(), _mesh->elementsRegions[r]->elements->datatarray().end(), _mesh->elements->distribution[t + 1]);
 			for (auto i = begin; i != end; ++i) {
@@ -579,11 +579,11 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	std::vector<eslocal> regionNodeMask(_mesh->nodes->size * bregionsBitMaskSize);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		int maskOffset = 0;
+		eslocal maskOffset = 0;
 		for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
 			if (_mesh->boundaryRegions[r]->nodes) {
 				maskOffset = r / (8 * sizeof(eslocal));
-				int bit = 1 << (r % (8 * sizeof(eslocal)));
+				eslocal bit = 1 << (r % (8 * sizeof(eslocal)));
 				auto begin = std::lower_bound(_mesh->boundaryRegions[r]->nodes->datatarray().begin(), _mesh->boundaryRegions[r]->nodes->datatarray().end(), _mesh->nodes->distribution[t]);
 				auto end = std::lower_bound(_mesh->boundaryRegions[r]->nodes->datatarray().begin(), _mesh->boundaryRegions[r]->nodes->datatarray().end(), _mesh->nodes->distribution[t + 1]);
 				for (auto i = begin; i != end; ++i) {
@@ -973,7 +973,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	elements->nodes = new serializededata<eslocal, eslocal>(elemsNodesDistribution, elemsNodesData); // global IDs
 
 	elements->regionMaskSize = eregionsBitMaskSize;
-	elements->regions = new serializededata<eslocal, int>(eregionsBitMaskSize, elemsRegions);
+	elements->regions = new serializededata<eslocal, eslocal>(eregionsBitMaskSize, elemsRegions);
 
 	elements->neighbors = new serializededata<eslocal, eslocal>(elemsNeighborsDistribution, elemsNeighborsData);
 
@@ -1008,8 +1008,8 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	}
 
 	for (size_t r = 0; r < _mesh->elementsRegions.size(); r++) {
-		int maskOffset = r / (8 * sizeof(eslocal));
-		int bit = 1 << (r % (8 * sizeof(eslocal)));
+		eslocal maskOffset = r / (8 * sizeof(eslocal));
+		eslocal bit = 1 << (r % (8 * sizeof(eslocal)));
 		delete _mesh->elementsRegions[r]->elements;
 		std::vector<std::vector<eslocal> > regionelems(threads);
 
@@ -1028,8 +1028,8 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
 		if (_mesh->boundaryRegions[r]->nodes) {
-			int maskOffset = r / (8 * sizeof(eslocal));
-			int bit = 1 << (r % (8 * sizeof(eslocal)));
+			eslocal maskOffset = r / (8 * sizeof(eslocal));
+			eslocal bit = 1 << (r % (8 * sizeof(eslocal)));
 			delete _mesh->boundaryRegions[r]->nodes;
 			std::vector<std::vector<eslocal> > regionnodes(threads);
 
@@ -1237,7 +1237,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	for (size_t t = 0; t < threads; t++) {
 		for (auto elem = nodes->elements->begin(t); elem != nodes->elements->end(t); ++elem) {
 			for (auto e = elem->begin(); e != elem->end(); ++e) {
-				auto mapit = std::lower_bound(IDMap.begin(), IDMap.end(), std::make_pair(*e, 0));
+				auto mapit = std::lower_bound(IDMap.begin(), IDMap.end(), std::make_pair(*e, (eslocal)0));
 				if (mapit == IDMap.end() || mapit->first != *e) {
 					*e = epermutation[std::lower_bound(sortedElements.begin(), sortedElements.end(), *e) - sortedElements.begin()] + eIDsNEW[environment->MPIrank];
 				} else {
@@ -1253,7 +1253,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		for (auto neighbors = elements->neighbors->begin(t); neighbors != elements->neighbors->end(t); ++neighbors) {
 			for (auto n = neighbors->begin(); n != neighbors->end(); ++n) {
 				if (*n != -1) {
-					auto mapit = std::lower_bound(IDMap.begin(), IDMap.end(), std::make_pair(*n, 0));
+					auto mapit = std::lower_bound(IDMap.begin(), IDMap.end(), std::make_pair(*n, (eslocal)0));
 					if (mapit == IDMap.end() || mapit->first != *n) {
 						*n = epermutation[std::lower_bound(sortedElements.begin(), sortedElements.end(), *n) - sortedElements.begin()] + eIDsNEW[environment->MPIrank];
 					} else {
@@ -1413,7 +1413,7 @@ void MeshPreprocessing::permuteElements(const std::vector<eslocal> &permutation,
 						if (source == environment->MPIrank) {
 							*n = IDBoundaries[environment->MPIrank] + backpermutation[*n - IDBoundaries[environment->MPIrank]];
 						} else {
-							*n = std::lower_bound(rHalo[n2i(source)].begin(), rHalo[n2i(source)].end(), std::make_pair(*n, 0))->second;
+							*n = std::lower_bound(rHalo[n2i(source)].begin(), rHalo[n2i(source)].end(), std::make_pair(*n, (eslocal)0))->second;
 						}
 					}
 				}
