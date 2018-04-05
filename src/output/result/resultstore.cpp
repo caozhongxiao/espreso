@@ -72,8 +72,10 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 	}
 
 	// TODO: optimize
-	executor->addResultStore(new CollectedEnSightWithDecomposition(Logging::name, executor->mesh(), configuration));
-	if (configuration.monitoring.size()) {
+	if (configuration.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
+		executor->addResultStore(new CollectedEnSightWithDecomposition(Logging::name, executor->mesh(), configuration));
+	}
+	if (configuration.monitors_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER && configuration.monitoring.size()) {
 		executor->addResultStore(new Monitoring(executor->mesh(), configuration, true));
 	}
 	if (configuration.catalyst) {
@@ -163,14 +165,14 @@ bool ResultStore::storeStep(const Step &step)
 
 void ResultStore::updateMesh()
 {
-	if (_async) _async->updateMesh();
-	if (_direct) _direct->updateMesh();
+	if (_async && _async->hasStore()) _async->updateMesh();
+	if (_direct && _async->hasStore()) _direct->updateMesh();
 }
 
 void ResultStore::updateSolution(const Step &step)
 {
-	if (_async) _async->updateSolution(step);
-	if (_direct) _direct->updateSolution(step);
+	if (_async && storeStep(step)) _async->updateSolution(step);
+	if (_direct && storeStep(step)) _direct->updateSolution(step);
 }
 
 ResultStore::ResultStore(): _async(NULL), _direct(NULL)

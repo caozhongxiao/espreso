@@ -128,9 +128,8 @@ Factory::Factory(const ECFRoot &configuration, Mesh &mesh, ResultStore &store)
 	_loader->preprocessMesh();
 	mesh.initNodeData();
 
-	if (configuration.output.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
-		_store->updateMesh();
-	}
+
+	_store->updateMesh();
 
 	mesh.preprocessing->finishPreprocessing();
 }
