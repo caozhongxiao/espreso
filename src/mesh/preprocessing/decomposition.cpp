@@ -17,6 +17,7 @@
 #include "../../basis/utilities/utils.h"
 #include "../../basis/utilities/parser.h"
 #include "../../basis/logging/logging.h"
+#include "../../basis/logging/timeeval.h"
 
 #include "../../config/ecf/root.h"
 #include "../../config/ecf/decomposition.h"
@@ -37,8 +38,6 @@ void MeshPreprocessing::reclusterize()
 		return;
 	}
 
-	start("re-distribution of the mesh to processes");
-
 	if (_mesh->elements->neighbors == NULL) {
 		this->computeElementsNeighbors();
 	}
@@ -46,6 +45,8 @@ void MeshPreprocessing::reclusterize()
 	if (_mesh->halo->IDs == NULL) {
 		exchangeHalo();
 	}
+
+	start("compute global dual graph");
 
 	bool separateRegions = _mesh->configuration.decomposition.separate_regions;
 	bool separateMaterials = _mesh->configuration.decomposition.separate_materials;
@@ -118,6 +119,9 @@ void MeshPreprocessing::reclusterize()
 
 	std::vector<eslocal> edistribution = _mesh->elements->gatherElementsProcDistribution();
 	std::vector<eslocal> partition(_mesh->elements->size), permutation(_mesh->elements->size);
+
+	finish("compute global dual graph");
+
 	start("ParMETIS::KWay");
 	eslocal edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_PartKway,
 		edistribution.data(),
@@ -145,18 +149,16 @@ void MeshPreprocessing::reclusterize()
 	}
 
 	this->exchangeElements(partition);
-
-	finish("re-distribution of the mesh to processes");
 }
 
 void MeshPreprocessing::partitiate(eslocal parts)
 {
-	start("decomposition of the mesh");
-
-	size_t threads = environment->OMP_NUM_THREADS;
-
 	std::vector<eslocal> dualDist, dualData;
 	this->computeDecomposedDual(dualDist, dualData);
+
+	start("check continuity");
+
+	size_t threads = environment->OMP_NUM_THREADS;
 
 	std::vector<int> partID(_mesh->elements->size, -1);
 
@@ -182,7 +184,13 @@ void MeshPreprocessing::partitiate(eslocal parts)
 
 	std::vector<int> clusters;
 	std::vector<eslocal> partition(_mesh->elements->size);
+
+	finish("check continuity");
+
 	if (nextID == 1) {
+		start("process non-continuous dual graph");
+		finish("process non-continuous dual graph");
+
 		start("METIS::KWay");
 		METIS::call(
 				_mesh->configuration.decomposition.metis_options,
@@ -194,7 +202,12 @@ void MeshPreprocessing::partitiate(eslocal parts)
 		clusters.resize(parts, 0);
 		_mesh->elements->nclusters = 1;
 
+		start("reindex METIS output");
+		finish("reindex METIS output");
+
 	} else { // non-continuous dual graph
+		start("process non-continuous dual graph");
+
 		// thread x part x elements
 		std::vector<std::vector<std::vector<eslocal> > > tdecomposition(threads, std::vector<std::vector<eslocal> >(nextID));
 		std::vector<std::vector<eslocal> > tdualsize(threads, std::vector<eslocal>(nextID));
@@ -266,6 +279,8 @@ void MeshPreprocessing::partitiate(eslocal parts)
 		}
 		_mesh->elements->nclusters = nextID;
 
+		finish("process non-continuous dual graph");
+
 		start("METIS::KWay");
 		#pragma omp parallel for
 		for (int p = 0; p < nextID; p++) {
@@ -278,6 +293,8 @@ void MeshPreprocessing::partitiate(eslocal parts)
 		}
 		finish("METIS::KWay");
 
+		start("reindex METIS output");
+
 		std::vector<eslocal> ppartition = partition;
 		nextID = 0;
 		for (size_t p = 0; p < tdecomposition[0].size(); p++) {
@@ -286,7 +303,11 @@ void MeshPreprocessing::partitiate(eslocal parts)
 			}
 			nextID += pparts[p];
 		}
+
+		finish("reindex METIS output");
 	}
+
+	start("post-process domains");
 
 	std::vector<eslocal> permutation(partition.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
@@ -375,27 +396,16 @@ void MeshPreprocessing::partitiate(eslocal parts)
 		}
 	}
 
+	finish("post-process domains");
+
 	arrangeElementsPermutation(permutation);
 	this->permuteElements(permutation, tdistribution);
 
 	arrangeNodes();
-//	arrangeRegions();
-
-	finish("decomposition of the mesh");
 }
 
 void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 {
-	start("exchanging elements");
-
-	// 0. Compute targets
-	// 1. Serialize element data
-	// 2. Serialize node data
-	// 3. Send serialized data to target (new MPI processes)
-	// 4. Deserialize data
-	// 5. Balance nodes data to threads
-	// 6. Re-index elements (IDs have to be always increasing)
-
 	if (_mesh->nodes->elements == NULL) {
 		// need for correctly update nodes ranks
 		this->linkNodesAndElements();
@@ -404,6 +414,21 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	if (_mesh->elements->neighbors == NULL) {
 		this->computeElementsNeighbors();
 	}
+
+	start("exchanging elements");
+
+	TimeEval timing("EXCHANGE ELEMENTS");
+	timing.totalTime.startWithBarrier();
+
+	TimeEvent e1("COMPUTE TARGETS"); e1.start();
+
+	// 0. Compute targets
+	// 1. Serialize element data
+	// 2. Serialize node data
+	// 3. Send serialized data to target (new MPI processes)
+	// 4. Deserialize data
+	// 5. Balance nodes data to threads
+	// 6. Re-index elements (IDs have to be always increasing)
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -481,6 +506,10 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	// threads x target x boundary(prefix, (code, nodes))
 	std::vector<std::vector<std::vector<eslocal> > > sBoundary(threads, std::vector<std::vector<eslocal> >(targets.size(), std::vector<eslocal>(_mesh->boundaryRegions.size())));
 	std::vector<std::vector<eslocal> > rBoundary;
+
+	e1.end(); timing.addEvent(e1);
+
+	TimeEvent e2("SERIALIZE ELEMENTS"); e2.start();
 
 	// Step 1: Serialize element data
 
@@ -574,6 +603,10 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		sElements[t].swap(tsElements);
 	}
 
+	e2.end(); timing.addEvent(e2);
+
+	TimeEvent e3("SERIALIZE NODES"); e3.start();
+
 	// Step 2: Serialize node data
 
 	std::vector<eslocal> regionNodeMask(_mesh->nodes->size * bregionsBitMaskSize);
@@ -655,6 +688,10 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		sNodes[t].swap(tsNodes);
 	}
 
+	e3.end(); timing.addEvent(e3);
+
+	TimeEvent e4("SERIALIZE BOUNDARY"); e4.start();
+
 	// Step 2.1: Serialize boundary regions data
 
 	std::vector<eslocal> emembership;
@@ -735,6 +772,10 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		}
 	}
 
+	e4.end(); timing.addEvent(e4);
+
+	TimeEvent e5("EXCHANGE DATA"); e5.start();
+
 	// Step 3: Send data to target processes
 
 	#pragma omp parallel for
@@ -761,6 +802,10 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	if (!Communication::sendVariousTargets(sBoundary[0], rBoundary, targets)) {
 		ESINFO(ERROR) << "ESPRESO internal error: exchange boundary data.";
 	}
+
+	e5.end(); timing.addEvent(e5);
+
+	TimeEvent e6("DESERIALIZE ELEMENTS"); e6.start();
 
 	// Step 4: Deserialize element data
 	for (size_t i = 0; i < rElements.size(); i++) {
@@ -832,6 +877,10 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 			elemsRegions[t].insert(elemsRegions[t].end(), telemsRegions.begin(), telemsRegions.end());
 		}
 	}
+
+	e6.end(); timing.addEvent(e6);
+
+	TimeEvent e7("DESERIALIZE NODES"); e7.start();
 
 	// Step 4: Deserialize node data
 	std::vector<eslocal> nodeset;
@@ -916,6 +965,10 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	Esutils::threadDistributionToFullDistribution(elemsNeighborsDistribution);
 	Esutils::threadDistributionToFullDistribution(nodesElemsDistribution);
 
+	e7.end(); timing.addEvent(e7);
+
+	TimeEvent e8("DESERIALIZE BOUNDARY"); e8.start();
+
 	// Step 4: Deserialize boundary data
 	for (size_t n = 0; n < rBoundary.size(); ++n) {
 		std::vector<std::vector<eslocal> > toffset(_mesh->boundaryRegions.size()), tsize(_mesh->boundaryRegions.size());
@@ -959,6 +1012,10 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 			}
 		}
 	}
+
+	e8.end(); timing.addEvent(e8);
+
+	TimeEvent e9("BUILD DATA STORAGES"); e9.start();
 
 	// elements are redistributed later while decomposition -> distribution is not changed now
 	std::vector<size_t> elemDistribution(threads + 1);
@@ -1046,6 +1103,10 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 			_mesh->boundaryRegions[r]->nodes = new serializededata<eslocal, eslocal>(1, regionnodes);
 		}
 	}
+
+	e9.end(); timing.addEvent(e9);
+
+	TimeEvent e10("SYNCHRONIZE ELEMENTS IDS"); e10.start();
 
 	std::vector<eslocal> eIDsOLD = _mesh->elements->gatherElementsProcDistribution();
 	std::vector<eslocal> eIDsNEW = elements->gatherElementsProcDistribution();
@@ -1233,6 +1294,10 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	Esutils::sortWithInplaceMerge(IDMap, offsets);
 
+	e10.end(); timing.addEvent(e10);
+
+	TimeEvent e11("REINDEX"); e11.start();
+
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (auto elem = nodes->elements->begin(t); elem != nodes->elements->end(t); ++elem) {
@@ -1337,6 +1402,11 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	_mesh->neighboursWithMe.push_back(environment->MPIrank);
 	std::sort(_mesh->neighboursWithMe.begin(), _mesh->neighboursWithMe.end());
 
+	e11.end(); timing.addEvent(e11);
+
+	timing.totalTime.endWithBarrier();
+	timing.printStatsMPI();
+
 	delete elements;
 	delete nodes;
 
@@ -1345,11 +1415,11 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 void MeshPreprocessing::permuteElements(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution)
 {
-	start("permutation of elements");
-
 	if (_mesh->nodes->elements == NULL) {
 		this->linkNodesAndElements();
 	}
+
+	start("permutation of elements");
 
 	std::vector<eslocal> backpermutation(permutation.size());
 	std::iota(backpermutation.begin(), backpermutation.end(), 0);

@@ -36,14 +36,14 @@ void MeshPreprocessing::arrangeNodes()
 		return;
 	}
 
-	start("arrange nodes");
-
 	if (_mesh->nodes->elements == NULL) {
 		this->linkNodesAndElements();
 	}
 
 	std::vector<eslocal> externalBoundary, internalBoundary;
 	this->computeBoundaryNodes(externalBoundary, internalBoundary);
+
+	start("arrange nodes");
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -499,8 +499,6 @@ void MeshPreprocessing::arrangeElementsPermutation(std::vector<eslocal> &permuta
 
 void MeshPreprocessing::arrangeRegions()
 {
-	start("arrange regions");
-
 	if (_mesh->nodes->elements == NULL) {
 		this->linkNodesAndElements();
 	}
@@ -509,9 +507,7 @@ void MeshPreprocessing::arrangeRegions()
 		fillRegionMask();
 	}
 
-	auto n2i = [ & ] (int neighbour) -> int {
-		return std::lower_bound(_mesh->neighbours.begin(), _mesh->neighbours.end(), neighbour) - _mesh->neighbours.begin();
-	};
+	start("arrange regions");
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -982,10 +978,6 @@ void MeshPreprocessing::synchronizeRegionNodes(const std::string &name, serializ
 
 void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion, int elementDimension)
 {
-	start("compute boundary elements from nodes of region '" + bregion->name + "'");
-
-	size_t threads = environment->OMP_NUM_THREADS;
-
 	if (_mesh->nodes->elements == NULL) {
 		linkNodesAndElements();
 	}
@@ -993,6 +985,10 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 	if (_mesh->elements->neighbors == NULL) {
 		computeElementsNeighbors();
 	}
+
+	start("compute boundary elements from nodes of region '" + bregion->name + "'");
+
+	size_t threads = environment->OMP_NUM_THREADS;
 
 	std::vector<std::vector<std::pair<eslocal, eslocal> > > elements(threads);
 

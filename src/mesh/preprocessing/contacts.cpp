@@ -24,11 +24,11 @@ using namespace espreso;
 
 void MeshPreprocessing::computeBodiesSurface()
 {
-	start("computation surface");
-
 	if (_mesh->elements->neighbors == NULL) {
 		this->computeElementsNeighbors();
 	}
+
+	start("computation surface");
 
 	size_t threads = environment->OMP_NUM_THREADS;
 

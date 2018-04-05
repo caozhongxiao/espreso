@@ -34,11 +34,11 @@ using namespace espreso;
 
 void MeshPreprocessing::computeSharedFaceNodes()
 {
-	start("computation of shared face nodes");
-
 	if (_mesh->nodes->elements == NULL) {
 		linkNodesAndElements();
 	}
+
+	start("computation of shared face nodes");
 
 	size_t threads = environment->OMP_NUM_THREADS;
 	eslocal eoffset = _mesh->elements->IDs->datatarray().front();
@@ -367,11 +367,11 @@ void MeshPreprocessing::computeFixPoints()
 
 void MeshPreprocessing::computeFixPointsOnSurface()
 {
-	start("computation of fix points on surface");
-
 	if (_mesh->domainsSurface == NULL || _mesh->domainsSurface->elements == NULL) {
 		computeDomainsSurface();
 	}
+
+	start("computation of fix points on surface");
 
 	if (_mesh->FETIData == NULL) {
 		_mesh->FETIData = new FETIDataStore();
@@ -405,11 +405,11 @@ void MeshPreprocessing::computeFixPointsOnSurface()
 
 void MeshPreprocessing::computeDomainsSurface()
 {
-	start("computation domains surface");
-
 	if (_mesh->elements->neighbors == NULL) {
 		this->computeElementsNeighbors();
 	}
+
+	start("computation domains surface");
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -587,11 +587,11 @@ void MeshPreprocessing::computeDomainsSurface()
 
 void MeshPreprocessing::triangularizeDomainSurface()
 {
-	start("triangularize domain surface");
-
 	if (_mesh->domainsSurface->elements == NULL) {
 		computeDomainsSurface();
 	}
+
+	start("triangularize domain surface");
 
 	size_t threads = environment->OMP_NUM_THREADS;
 

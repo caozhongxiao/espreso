@@ -83,7 +83,7 @@ void MeshPreprocessing::finish(const std::string &message)
 		_timeStatistics->addPointerToEvent(event);
 	}
 
-	event->endWithBarrier();
+	event->end();
 
 	--level;
 	ESINFO(VERBOSITY(level)) << std::string(2 * level, ' ') << "Mesh preprocessing :: " << message << " finished.";
@@ -93,11 +93,16 @@ void MeshPreprocessing::linkNodesAndElements()
 {
 	start("link nodes and elements");
 
+	TimeEval timing("LINK NODES AND ELEMENTS");
+	timing.totalTime.startWithBarrier();
+
 	if (_mesh->elements == NULL || _mesh->nodes == NULL) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: fill both elements and nodes.";
 	}
 
 	size_t threads = environment->OMP_NUM_THREADS;
+
+	TimeEvent e1("LOCAL LINKS"); e1.start();
 
 	// thread x neighbor x vector(from, to)
 	std::vector<std::vector<std::vector<std::pair<eslocal, eslocal> > > > sBuffer(threads);
@@ -119,6 +124,10 @@ void MeshPreprocessing::linkNodesAndElements()
 	}
 
 	Esutils::sortWithInplaceMerge(localLinks, _mesh->elements->nodes->datatarray().distribution());
+
+	e1.end(); timing.addEvent(e1);
+
+	TimeEvent e2("COMPUTE DATA TO NEIGHBORS"); e2.start();
 
 	std::vector<size_t> tbegin(threads);
 	for (size_t t = 1; t < threads; t++) {
@@ -168,9 +177,17 @@ void MeshPreprocessing::linkNodesAndElements()
 		}
 	}
 
+	e2.end(); timing.addEvent(e2);
+
+	TimeEvent e3("EXCHANGE DATA"); e3.start();
+
 	if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, _mesh->neighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: addLinkFromTo - exchangeUnknownSize.";
 	}
+
+	e3.end(); timing.addEvent(e3);
+
+	TimeEvent e4("ADD NEIGHBORS DATA"); e4.start();
 
 	std::vector<size_t> boundaries = { 0, localLinks.size() };
 	for (size_t r = 0; r < rBuffer.size(); r++) {
@@ -179,6 +196,10 @@ void MeshPreprocessing::linkNodesAndElements()
 	}
 
 	Esutils::mergeAppendedData(localLinks, boundaries);
+
+	e4.end(); timing.addEvent(e4);
+
+	TimeEvent e5("BUILD LINKS"); e5.start();
 
 	std::vector<std::vector<eslocal> > linksBoundaries(threads);
 	std::vector<std::vector<eslocal> > linksData(threads);
@@ -223,14 +244,17 @@ void MeshPreprocessing::linkNodesAndElements()
 
 	_mesh->nodes->elements = new serializededata<eslocal, eslocal>(linksBoundaries, linksData);
 
+	e5.end(); timing.addEvent(e5);
+
+	timing.totalTime.endWithBarrier();
+	timing.printStatsMPI();
+
 	finish("link nodes and elements");
 }
 
 void MeshPreprocessing::exchangeHalo()
 {
 	// halo elements are all elements that have some shared node
-	start("exchanging halo");
-
 	if (_mesh->nodes->elements == NULL) {
 		this->linkNodesAndElements();
 	}
@@ -238,6 +262,13 @@ void MeshPreprocessing::exchangeHalo()
 	if (_mesh->elements->regions == NULL) {
 		fillRegionMask();
 	}
+
+	start("exchanging halo");
+
+	TimeEval timing("EXCHANGE HALO");
+	timing.totalTime.startWithBarrier();
+
+	TimeEvent e1("COMPUTE HALO ELEMENTS"); e1.start();
 
 	std::vector<eslocal> eDistribution = _mesh->elements->gatherElementsProcDistribution();
 
@@ -272,7 +303,11 @@ void MeshPreprocessing::exchangeHalo()
 		hElements[t].swap(telements);
 	}
 
-	eslocal rsize = _mesh->elements->regionMaskSize;
+	e1.end(); timing.addEvent(e1);
+
+	TimeEvent e2("SORT AND REMOVE DUPLICITY"); e2.start();
+
+	int rsize = _mesh->elements->regionMaskSize;
 
 	std::vector<std::vector<size_t> > tdist(_mesh->neighbours.size());
 	for (size_t n = 0; n < _mesh->neighbours.size(); ++n) {
@@ -294,6 +329,10 @@ void MeshPreprocessing::exchangeHalo()
 		sBuffer[n].resize((4 + rsize) * hElements[0][n].size());
 	}
 
+	e2.end(); timing.addEvent(e2);
+
+	TimeEvent e3("SBUFFER"); e3.start();
+
 	eslocal offset = eDistribution[environment->MPIrank];
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -312,6 +351,10 @@ void MeshPreprocessing::exchangeHalo()
 			}
 		}
 	}
+
+	e3.end(); timing.addEvent(e3);
+
+	TimeEvent e4("EXCHANGE DATA"); e4.start();
 
 	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, _mesh->neighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: exchange halo elements.";
@@ -335,6 +378,10 @@ void MeshPreprocessing::exchangeHalo()
 		}
 	}
 
+	e4.end(); timing.addEvent(e4);
+
+	TimeEvent e5("BUILD HALO"); e5.start();
+
 	_mesh->halo->IDs = new serializededata<eslocal, eslocal>(1, hid);
 	_mesh->halo->body = new serializededata<eslocal, int>(1, hbody);
 	_mesh->halo->material = new serializededata<eslocal, int>(1, hmaterial);
@@ -350,17 +397,22 @@ void MeshPreprocessing::exchangeHalo()
 	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return hIDs[i] < hIDs[j]; });
 	_mesh->halo->permute(permutation);
 
+	e5.end(); timing.addEvent(e5);
+
+	timing.totalTime.endWithBarrier();
+	timing.printStatsMPI();
+
 	finish("exchanging halo");
 }
 
 
 void MeshPreprocessing::computeElementsNeighbors()
 {
-	start("computation of elements neighbors");
-
 	if (_mesh->nodes->elements == NULL) {
 		this->linkNodesAndElements();
 	}
+
+	start("computation of elements neighbors");
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -424,8 +476,6 @@ void MeshPreprocessing::computeElementsNeighbors()
 
 void MeshPreprocessing::computeDecomposedDual(std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData)
 {
-	start("computation of clusters dual graphs");
-
 	bool separateRegions = _mesh->configuration.decomposition.separate_regions;
 	bool separateMaterials = _mesh->configuration.decomposition.separate_materials;
 	bool separateEtypes = _mesh->configuration.decomposition.separate_etypes;
@@ -437,6 +487,8 @@ void MeshPreprocessing::computeDecomposedDual(std::vector<eslocal> &dualDist, st
 	if (separateRegions && _mesh->elements->regions == NULL) {
 		this->fillRegionMask();
 	}
+
+	start("computation of local dual graph");
 
 	size_t threads = environment->OMP_NUM_THREADS;
 	eslocal eBegin = _mesh->elements->gatherElementsProcDistribution()[environment->MPIrank];
@@ -487,7 +539,7 @@ void MeshPreprocessing::computeDecomposedDual(std::vector<eslocal> &dualDist, st
 	dualDist.swap(dDistribution);
 	dualData.swap(dData[0]);
 
-	finish("computation of clusters dual graphs");
+	finish("computation of local dual graph");
 }
 
 void MeshPreprocessing::computeRegionsSurface()
@@ -685,11 +737,11 @@ void MeshPreprocessing::triangularizeBoundary(BoundaryRegionStore *boundary)
 
 void MeshPreprocessing::computeBoundaryNodes(std::vector<eslocal> &externalBoundary, std::vector<eslocal> &internalBoundary)
 {
-	start("computation of boundary nodes");
-
 	if (_mesh->elements->neighbors == NULL) {
 		this->computeElementsNeighbors();
 	}
+
+	start("computation of boundary nodes");
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
