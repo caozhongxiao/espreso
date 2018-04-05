@@ -105,7 +105,7 @@ HEAT_TRANSFER_2D {
       }
 
       TRANSLATION_MOTIONS {
-        ALL_ELEMENTS   X 10 - 20 * X , Y 10 - 20 * Y;
+        ALL_ELEMENTS  { X 10 - 20 * X; Y 10 - 20 * Y; }
       }
 
       CONVECTION {

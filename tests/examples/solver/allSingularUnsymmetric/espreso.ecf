@@ -103,7 +103,7 @@ HEAT_TRANSFER_2D {
       }
 
       TRANSLATION_MOTIONS {
-        ALL_ELEMENTS   X Y , Y -X;
+        ALL_ELEMENTS   { X Y; Y -X; }
       }
     }
   }
