@@ -1,11 +1,18 @@
 variables:
-  GIT_STRATEGY: fetch
+  GIT_STRATEGY: none
 
 stages:
   - tests
   - release
 
 before_script:
+  - if ! git remote | grep origin > /dev/null; then
+      git remote add origin git@code.it4i.cz:mec059/espreso.git;
+    fi
+
+  - git fetch origin
+  - git checkout origin/$CI_COMMIT_REF_NAME
+
   - source /opt/intel/bin/compilervars.sh intel64
   - . env/paths.default
   - . env/threading.default 5
