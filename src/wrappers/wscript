@@ -45,10 +45,7 @@ def configure(ctx):
     else:
         metis = "metis"
 
-    if ctx.env.LIBTYPE == "SHARED":
-        ctx.env.append_unique("LIB", [ "parmetis", metis ])
-    if ctx.env.LIBTYPE == "STATIC":
-        ctx.env.append_unique("STLIB", [ "parmetis" ])
+    ctx.env.append_unique("LIB", [ "parmetis", metis ])
 
     env.append_unique("LIBPATH", ctx.env["LIBPATH"])
     env.append_unique("LIB", ctx.env["LIB"])
