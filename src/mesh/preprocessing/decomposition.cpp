@@ -420,7 +420,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	TimeEval timing("EXCHANGE ELEMENTS");
 	timing.totalTime.startWithBarrier();
 
-	TimeEvent e1("COMPUTE TARGETS"); e1.start();
+	TimeEvent e1("EE COMPUTE TARGETS"); e1.start();
 
 	// 0. Compute targets
 	// 1. Serialize element data
@@ -509,7 +509,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	e1.end(); timing.addEvent(e1);
 
-	TimeEvent e2("SERIALIZE ELEMENTS"); e2.start();
+	TimeEvent e2("EE SERIALIZE ELEMENTS"); e2.start();
 
 	// Step 1: Serialize element data
 
@@ -605,7 +605,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	e2.end(); timing.addEvent(e2);
 
-	TimeEvent e3("SERIALIZE NODES"); e3.start();
+	TimeEvent e3("EE SERIALIZE NODES"); e3.start();
 
 	// Step 2: Serialize node data
 
@@ -690,7 +690,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	e3.end(); timing.addEvent(e3);
 
-	TimeEvent e4("SERIALIZE BOUNDARY"); e4.start();
+	TimeEvent e4("EE SERIALIZE BOUNDARY"); e4.start();
 
 	// Step 2.1: Serialize boundary regions data
 
@@ -774,7 +774,21 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	e4.end(); timing.addEvent(e4);
 
-	TimeEvent e5("EXCHANGE DATA"); e5.start();
+	int avgneighs, nneighs = targets.size();
+	double allavgsize, avgsize = 0;
+	for (size_t i = 0; i < targets.size(); i++) {
+		avgsize += sElements[0][i].size();
+		avgsize += sNodes[0][i].size();
+		avgsize += sBoundary[0][i].size();
+	}
+	avgsize /= nneighs;
+
+	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
+	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_SUM, 0, environment->MPICommunicator);
+
+	ESINFO(PROGRESS1) << "EE 3 x AVGNEIGHS: " << avgneighs / environment->MPIsize << ", AVGSIZE: " << allavgsize / environment->MPIsize << "\n";
+
+	TimeEvent e5("EE EXCHANGE DATA"); e5.start();
 
 	// Step 3: Send data to target processes
 
@@ -805,7 +819,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	e5.end(); timing.addEvent(e5);
 
-	TimeEvent e6("DESERIALIZE ELEMENTS"); e6.start();
+	TimeEvent e6("EE DESERIALIZE ELEMENTS"); e6.start();
 
 	// Step 4: Deserialize element data
 	for (size_t i = 0; i < rElements.size(); i++) {
@@ -880,7 +894,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	e6.end(); timing.addEvent(e6);
 
-	TimeEvent e7("DESERIALIZE NODES"); e7.start();
+	TimeEvent e7("EE DESERIALIZE NODES"); e7.start();
 
 	// Step 4: Deserialize node data
 	std::vector<eslocal> nodeset;
@@ -967,7 +981,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	e7.end(); timing.addEvent(e7);
 
-	TimeEvent e8("DESERIALIZE BOUNDARY"); e8.start();
+	TimeEvent e8("EE DESERIALIZE BOUNDARY"); e8.start();
 
 	// Step 4: Deserialize boundary data
 	for (size_t n = 0; n < rBoundary.size(); ++n) {
@@ -1015,7 +1029,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	e8.end(); timing.addEvent(e8);
 
-	TimeEvent e9("BUILD DATA STORAGES"); e9.start();
+	TimeEvent e9("EE BUILD DATA STORAGES"); e9.start();
 
 	// elements are redistributed later while decomposition -> distribution is not changed now
 	std::vector<size_t> elemDistribution(threads + 1);
@@ -1106,7 +1120,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	e9.end(); timing.addEvent(e9);
 
-	TimeEvent e10("SYNCHRONIZE ELEMENTS IDS"); e10.start();
+	TimeEvent e10("EE SYNCHRONIZE ELEMENTS IDS"); e10.start();
 
 	std::vector<eslocal> eIDsOLD = _mesh->elements->gatherElementsProcDistribution();
 	std::vector<eslocal> eIDsNEW = elements->gatherElementsProcDistribution();
@@ -1296,7 +1310,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	e10.end(); timing.addEvent(e10);
 
-	TimeEvent e11("REINDEX"); e11.start();
+	TimeEvent e11("EE REINDEX"); e11.start();
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {

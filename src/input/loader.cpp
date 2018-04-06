@@ -568,7 +568,7 @@ void Loader::fillCoordinates()
 	TimeEval timing("FILL COORDINATES");
 	timing.totalTime.startWithBarrier();
 
-	TimeEvent e1("SORT ENODES"); e1.start();
+	TimeEvent e1("FC SORT ENODES"); e1.start();
 	std::vector<std::vector<eslocal> > nodes(threads);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -581,7 +581,7 @@ void Loader::fillCoordinates()
 
 	e1.end(); timing.addEvent(e1);
 
-	TimeEvent e2("SBUFFER"); e2.start();
+	TimeEvent e2("FC SBUFFER"); e2.start();
 
 	std::vector<std::vector<eslocal> > sBuffer;
 	std::vector<int> sRanks;
@@ -597,7 +597,29 @@ void Loader::fillCoordinates()
 
 	e2.end(); timing.addEvent(e2);
 
-	TimeEvent e3("EXCHANGE"); e3.start();
+	int avgneighs, nneighs = sRanks.size();
+	double allavgsize, avgsize = 0;
+	for (size_t i = 0; i < sRanks.size(); i++) {
+		avgsize += sBuffer[i].size();
+	}
+	avgsize /= nneighs;
+
+	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
+	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_SUM, 0, environment->MPICommunicator);
+
+	ESINFO(PROGRESS1) << "FC AVGNEIGHS: " << (double)avgneighs / environment->MPIsize << ", AVGSIZE: " << allavgsize / environment->MPIsize;
+
+	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MIN, 0, environment->MPICommunicator);
+	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MIN, 0, environment->MPICommunicator);
+
+	ESINFO(PROGRESS1) << "FC MINNEIGHS: " << avgneighs << ", MINSIZE: " << allavgsize;
+
+	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MAX, 0, environment->MPICommunicator);
+	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MAX, 0, environment->MPICommunicator);
+
+	ESINFO(PROGRESS1) << "FC MAXNEIGHS: " << avgneighs << ", MAXSIZE: " << allavgsize;
+
+	TimeEvent e3("FC EXCHANGE"); e3.start();
 
 	if (!Communication::sendVariousTargets(sBuffer, _rankNodeMap, sRanks, _targetRanks)) {
 		ESINFO(ERROR) << "ESPRESO internal error: exchange neighbors.";
@@ -605,7 +627,7 @@ void Loader::fillCoordinates()
 
 	e3.end(); timing.addEvent(e3);
 
-	TimeEvent e4("COMPUTE BACKED"); e4.start();
+	TimeEvent e4("FC COMPUTE BACKED"); e4.start();
 
 	std::vector<size_t> ndistribution = tarray<Point>::distribute(threads, _dMesh.coordinates.size());
 	std::vector<std::vector<std::vector<eslocal> > > backedData(threads, std::vector<std::vector<eslocal> >(_targetRanks.size()));
@@ -647,7 +669,7 @@ void Loader::fillCoordinates()
 		}
 	}
 
-	TimeEvent e5("COMPUTE BACKED COORDINATES"); e5.start();
+	TimeEvent e5("FC COMPUTE BACKED COORDINATES"); e5.start();
 
 	std::vector<std::vector<Point> > backedCoordinates(_targetRanks.size());
 	#pragma omp parallel for
@@ -667,7 +689,7 @@ void Loader::fillCoordinates()
 
 	e5.end(); timing.addEvent(e5);
 
-	TimeEvent e6("RETURN BACKED"); e6.start();
+	TimeEvent e6("FC RETURN BACKED"); e6.start();
 
 	std::vector<std::vector<eslocal> > nodeRanks(sRanks.size()), allnodes(threads);
 	std::vector<std::vector<Point> > coordinates(sRanks.size());
@@ -681,7 +703,7 @@ void Loader::fillCoordinates()
 
 	e6.end(); timing.addEvent(e6);
 
-	TimeEvent e7("RANK DATA"); e7.start();
+	TimeEvent e7("FC RANK DATA"); e7.start();
 
 	size_t csize = 0;
 	for (size_t i = 0; i < coordinates.size(); i++) {
@@ -731,7 +753,7 @@ void Loader::fillCoordinates()
 
 	e7.end(); timing.addEvent(e7);
 
-	TimeEvent e8("BUILD TARRRAY"); e8.start();
+	TimeEvent e8("FC BUILD TARRRAY"); e8.start();
 
 	_mesh.nodes->size = distribution.back();
 	_mesh.nodes->distribution = distribution;
@@ -741,7 +763,7 @@ void Loader::fillCoordinates()
 
 	e8.end(); timing.addEvent(e8);
 
-	TimeEvent e9("NEIGHBORS"); e9.start();
+	TimeEvent e9("FC NEIGHBORS"); e9.start();
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -766,7 +788,7 @@ void Loader::fillCoordinates()
 
 	e9.end(); timing.addEvent(e9);
 
-	TimeEvent e10("REINDEX"); e10.start();
+	TimeEvent e10("FC REINDEX"); e10.start();
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -931,7 +953,7 @@ void Loader::addBoundaryRegions()
 	TimeEval timing("BOUNDARY REGIONS");
 	timing.totalTime.startWithBarrier();
 
-	TimeEvent e1("LINK NODES AND ELEMENTS"); e1.start();
+	TimeEvent e1("BR LINK NODES AND ELEMENTS"); e1.start();
 
 	if (_dMesh.bregions.size()) {
 		_mesh.preprocessing->linkNodesAndElements();
@@ -943,7 +965,7 @@ void Loader::addBoundaryRegions()
 
 	for (size_t i = 0; i < _dMesh.bregions.size(); i++) {
 
-		TimeEvent e2("PREPARE"); e2.start();
+		TimeEvent e2("BR PREPARE"); e2.start();
 
 		std::vector<eslocal> edist = { 0 };
 		edist.reserve(_dMesh.bregions[i].esize.size() + 1);
@@ -959,7 +981,7 @@ void Loader::addBoundaryRegions()
 
 		e2.end(); timing.addEvent(e2);
 
-		TimeEvent e3("SRANKS"); e3.start();
+		TimeEvent e3("BR SRANKS"); e3.start();
 
 		std::vector<std::vector<eslocal> > sBuffer, rBuffer;
 		std::vector<int> sRanks, tRanks;
@@ -975,7 +997,7 @@ void Loader::addBoundaryRegions()
 
 		e3.end(); timing.addEvent(e3);
 
-		TimeEvent e4("SBUFFER"); e4.start();
+		TimeEvent e4("BR SBUFFER"); e4.start();
 
 		for (size_t r = 0; r < sRanks.size(); r++) {
 			auto begin = std::lower_bound(permutation.begin(), permutation.end(), _nDistribution[sRanks[r]], [&] (eslocal e, eslocal n) { return _dMesh.bregions[i].enodes[edist[e]] < n; });
@@ -1010,7 +1032,29 @@ void Loader::addBoundaryRegions()
 
 		e4.end(); timing.addEvent(e4);
 
-		TimeEvent e5("EXCHANGE SBUFFER"); e5.start();
+		int avgneighs, nneighs = sRanks.size();
+		double allavgsize, avgsize = 0;
+		for (size_t j = 0; j < sRanks.size(); j++) {
+			avgsize += sBuffer[j].size();
+		}
+		avgsize /= nneighs;
+
+		MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
+		MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_SUM, 0, environment->MPICommunicator);
+
+		ESINFO(PROGRESS1) << "BR AVGNEIGHS: " << (double)avgneighs / environment->MPIsize << ", AVGSIZE: " << allavgsize / environment->MPIsize;
+
+		MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MIN, 0, environment->MPICommunicator);
+		MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MIN, 0, environment->MPICommunicator);
+
+		ESINFO(PROGRESS1) << "BR MINNEIGHS: " << avgneighs << ", MINSIZE: " << allavgsize;
+
+		MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MAX, 0, environment->MPICommunicator);
+		MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MAX, 0, environment->MPICommunicator);
+
+		ESINFO(PROGRESS1) << "BR MAXNEIGHS: " << avgneighs << ", MAXSIZE: " << allavgsize;
+
+		TimeEvent e5("BR EXCHANGE SBUFFER"); e5.start();
 
 		if (!Communication::sendVariousTargets(sBuffer, rBuffer, sRanks)) {
 			ESINFO(ERROR) << "ESPRESO internal error: exchange node region.";
@@ -1018,7 +1062,35 @@ void Loader::addBoundaryRegions()
 
 		e5.end(); timing.addEvent(e5);
 
-		TimeEvent e6("PROCESS RBUFFER"); e6.start();
+
+		nneighs = rBuffer.size();
+		avgsize = 0;
+		for (size_t j = 0; j < rBuffer.size(); j++) {
+			avgsize += rBuffer[j].size();
+		}
+		avgsize /= nneighs;
+
+		MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
+		MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_SUM, 0, environment->MPICommunicator);
+
+		ESINFO(PROGRESS1) << "AVGNEIGHS: " << (double)avgneighs / environment->MPIsize << ", AVGSIZE: " << allavgsize / environment->MPIsize;
+
+		MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MIN, 0, environment->MPICommunicator);
+		MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MIN, 0, environment->MPICommunicator);
+
+		ESINFO(PROGRESS1) << "MINNEIGHS: " << avgneighs << ", MINSIZE: " << allavgsize;
+
+		MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MAX, 0, environment->MPICommunicator);
+		MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MAX, 0, environment->MPICommunicator);
+
+		ESINFO(PROGRESS1) << "MAXNEIGHS: " << avgneighs << ", MAXSIZE: " << allavgsize;
+
+		nneighs = _targetRanks.size();
+
+		MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MAX, 0, environment->MPICommunicator);
+		ESINFO(PROGRESS1) << "AVGTARGETS: " << (double)avgneighs / environment->MPIsize;
+
+		TimeEvent e6("BR PROCESS RBUFFER"); e6.start();
 
 		sBuffer.clear();
 		sBuffer.resize(_targetRanks.size());
@@ -1073,7 +1145,7 @@ void Loader::addBoundaryRegions()
 
 		e6.end(); timing.addEvent(e6);
 
-		TimeEvent e7("SEND DATA TO POTENTIAL OWNERS"); e7.start();
+		TimeEvent e7("BR SEND DATA TO POTENTIAL OWNERS"); e7.start();
 
 		for (size_t t = 0; t < _targetRanks.size(); t++) {
 			if (sBuffer[t].size()) {
@@ -1093,7 +1165,7 @@ void Loader::addBoundaryRegions()
 
 		e7.end(); timing.addEvent(e7);
 
-		TimeEvent e8("BUILD FACES"); e8.start();
+		TimeEvent e8("BR BUILD FACES"); e8.start();
 
 		std::vector<std::vector<eslocal> > tedist(threads), tnodes(threads);
 		std::vector<std::vector<Element*> > epointers(threads);
@@ -1160,7 +1232,7 @@ void Loader::addBoundaryRegions()
 
 		e8.end(); timing.addEvent(e8);
 
-		TimeEvent e10("CREATE ARRAYS"); e10.start();
+		TimeEvent e10("BR CREATE ARRAYS"); e10.start();
 
 		Esutils::threadDistributionToFullDistribution(tedist);
 

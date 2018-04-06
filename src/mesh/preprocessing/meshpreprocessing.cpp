@@ -102,7 +102,7 @@ void MeshPreprocessing::linkNodesAndElements()
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	TimeEvent e1("LOCAL LINKS"); e1.start();
+	TimeEvent e1("LN LOCAL LINKS"); e1.start();
 
 	// thread x neighbor x vector(from, to)
 	std::vector<std::vector<std::vector<std::pair<eslocal, eslocal> > > > sBuffer(threads);
@@ -127,7 +127,7 @@ void MeshPreprocessing::linkNodesAndElements()
 
 	e1.end(); timing.addEvent(e1);
 
-	TimeEvent e2("COMPUTE DATA TO NEIGHBORS"); e2.start();
+	TimeEvent e2("LN COMPUTE DATA TO NEIGHBORS"); e2.start();
 
 	std::vector<size_t> tbegin(threads);
 	for (size_t t = 1; t < threads; t++) {
@@ -179,7 +179,29 @@ void MeshPreprocessing::linkNodesAndElements()
 
 	e2.end(); timing.addEvent(e2);
 
-	TimeEvent e3("EXCHANGE DATA"); e3.start();
+	int avgneighs, nneighs = _mesh->neighbours.size();
+	double allavgsize, avgsize = 0;
+	for (size_t i = 0; i < _mesh->neighbours.size(); i++) {
+		avgsize += sBuffer[0][i].size();
+	}
+	avgsize /= nneighs;
+
+	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
+	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_SUM, 0, environment->MPICommunicator);
+
+	ESINFO(PROGRESS1) << "LN AVGNEIGHS: " << (double)avgneighs / environment->MPIsize << ", AVGSIZE: " << allavgsize / environment->MPIsize;
+
+	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MIN, 0, environment->MPICommunicator);
+	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MIN, 0, environment->MPICommunicator);
+
+	ESINFO(PROGRESS1) << "LN MINNEIGHS: " << avgneighs << ", MINSIZE: " << allavgsize;
+
+	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MAX, 0, environment->MPICommunicator);
+	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MAX, 0, environment->MPICommunicator);
+
+	ESINFO(PROGRESS1) << "LN MAXNEIGHS: " << avgneighs << ", MAXSIZE: " << allavgsize;
+
+	TimeEvent e3("LN EXCHANGE DATA"); e3.start();
 
 	if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, _mesh->neighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: addLinkFromTo - exchangeUnknownSize.";
@@ -187,7 +209,7 @@ void MeshPreprocessing::linkNodesAndElements()
 
 	e3.end(); timing.addEvent(e3);
 
-	TimeEvent e4("ADD NEIGHBORS DATA"); e4.start();
+	TimeEvent e4("LN ADD NEIGHBORS DATA"); e4.start();
 
 	std::vector<size_t> boundaries = { 0, localLinks.size() };
 	for (size_t r = 0; r < rBuffer.size(); r++) {
@@ -199,7 +221,7 @@ void MeshPreprocessing::linkNodesAndElements()
 
 	e4.end(); timing.addEvent(e4);
 
-	TimeEvent e5("BUILD LINKS"); e5.start();
+	TimeEvent e5("LN BUILD LINKS"); e5.start();
 
 	std::vector<std::vector<eslocal> > linksBoundaries(threads);
 	std::vector<std::vector<eslocal> > linksData(threads);
@@ -268,7 +290,7 @@ void MeshPreprocessing::exchangeHalo()
 	TimeEval timing("EXCHANGE HALO");
 	timing.totalTime.startWithBarrier();
 
-	TimeEvent e1("COMPUTE HALO ELEMENTS"); e1.start();
+	TimeEvent e1("EH COMPUTE HALO ELEMENTS"); e1.start();
 
 	std::vector<eslocal> eDistribution = _mesh->elements->gatherElementsProcDistribution();
 
@@ -305,7 +327,7 @@ void MeshPreprocessing::exchangeHalo()
 
 	e1.end(); timing.addEvent(e1);
 
-	TimeEvent e2("SORT AND REMOVE DUPLICITY"); e2.start();
+	TimeEvent e2("EH SORT AND REMOVE DUPLICITY"); e2.start();
 
 	int rsize = _mesh->elements->regionMaskSize;
 
@@ -331,7 +353,7 @@ void MeshPreprocessing::exchangeHalo()
 
 	e2.end(); timing.addEvent(e2);
 
-	TimeEvent e3("SBUFFER"); e3.start();
+	TimeEvent e3("EH SBUFFER"); e3.start();
 
 	eslocal offset = eDistribution[environment->MPIrank];
 	#pragma omp parallel for
@@ -354,7 +376,29 @@ void MeshPreprocessing::exchangeHalo()
 
 	e3.end(); timing.addEvent(e3);
 
-	TimeEvent e4("EXCHANGE DATA"); e4.start();
+	int avgneighs, nneighs = _mesh->neighbours.size();
+	double allavgsize, avgsize = 0;
+	for (size_t i = 0; i < _mesh->neighbours.size(); i++) {
+		avgsize += sBuffer[i].size();
+	}
+	avgsize /= nneighs;
+
+	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
+	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_SUM, 0, environment->MPICommunicator);
+
+	ESINFO(PROGRESS1) << "EH AVGNEIGHS: " << (double)avgneighs / environment->MPIsize << ", AVGSIZE: " << allavgsize / environment->MPIsize;
+
+	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MIN, 0, environment->MPICommunicator);
+	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MIN, 0, environment->MPICommunicator);
+
+	ESINFO(PROGRESS1) << "EH MINNEIGHS: " << avgneighs << ", MINSIZE: " << allavgsize;
+
+	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MAX, 0, environment->MPICommunicator);
+	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MAX, 0, environment->MPICommunicator);
+
+	ESINFO(PROGRESS1) << "EH MAXNEIGHS: " << avgneighs << ", MAXSIZE: " << allavgsize;
+
+	TimeEvent e4("EH EXCHANGE DATA"); e4.start();
 
 	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, _mesh->neighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: exchange halo elements.";
@@ -362,6 +406,9 @@ void MeshPreprocessing::exchangeHalo()
 
 	std::vector<std::vector<eslocal> > hid(threads), hregions(threads);
 	std::vector<std::vector<int> > hbody(threads), hmaterial(threads);
+
+	e4.end(); timing.addEvent(e4);
+
 	std::vector<std::vector<Element*> > hcode(threads);
 
 	for (size_t n = 0; n < rBuffer.size(); ++n) {
@@ -378,9 +425,7 @@ void MeshPreprocessing::exchangeHalo()
 		}
 	}
 
-	e4.end(); timing.addEvent(e4);
-
-	TimeEvent e5("BUILD HALO"); e5.start();
+	TimeEvent e5("EH BUILD HALO"); e5.start();
 
 	_mesh->halo->IDs = new serializededata<eslocal, eslocal>(1, hid);
 	_mesh->halo->body = new serializededata<eslocal, int>(1, hbody);
