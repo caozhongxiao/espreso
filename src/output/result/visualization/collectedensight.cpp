@@ -279,6 +279,7 @@ void CollectedEnSight::storeDecomposition()
 {
 	_casevariables << "scalar per element:\tDOMAINS\t\t" << _directory << "DOMAINS" << "\n";
 	_casevariables << "scalar per element:\tCLUSTERS\t" << _directory << "CLUSTERS" << "\n";
+	_casevariables << "scalar per element:\tMPI\t" << _directory << "MPI" << "\n";
 
 	auto iterateElements = [&] (std::stringstream &os, const std::vector<ElementsInterval> &intervals, const std::vector<eslocal> &ecounters, std::function<double(eslocal domain)> fnc) {
 		for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
@@ -347,6 +348,27 @@ void CollectedEnSight::storeDecomposition()
 		for (size_t r = 1; r < _mesh.elementsRegions.size(); r++) {
 			storePartHeader(os);
 			iterateElements(os, _mesh.elementsRegions[r]->eintervals, _mesh.elementsRegions[r]->ecounters, [&] (eslocal domain)->double { return _mesh.elements->clusters[domain - _mesh.elements->firstDomain] + cluster; });
+		}
+
+		storeIntervals(name, os.str(), commitIntervals());
+	}
+
+	{ // MPI
+		std::string filename = _directory + "MPI";
+		std::string name = _path + filename;
+
+		std::stringstream os;
+		os << std::showpos << std::scientific << std::setprecision(5);
+
+		if (environment->MPIrank == 0) {
+			_writer.storeDescriptionLine(os, "MPI");
+		}
+
+		part = 1;
+		clearIntervals();
+		for (size_t r = 1; r < _mesh.elementsRegions.size(); r++) {
+			storePartHeader(os);
+			iterateElements(os, _mesh.elementsRegions[r]->eintervals, _mesh.elementsRegions[r]->ecounters, [&] (eslocal domain)->double { return environment->MPIrank; });
 		}
 
 		storeIntervals(name, os.str(), commitIntervals());
