@@ -102,20 +102,25 @@ void HeatTransfer::analyticRegularization(size_t domain, bool ortogonalCluster)
 		ESINFO(ERROR) << "Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set FETI_REGULARIZATION = ALGEBRAIC";
 	}
 
-	if (_configuration.load_steps_settings.at(_step->step + 1).convection.size()) {
-		for (auto it = _configuration.load_steps_settings.at(_step->step + 1).convection.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).convection.end(); ++it) {
-			BoundaryRegionStore *region = _mesh->bregion(it->first);
-			if (region->eintervalsDistribution[domain] != region->eintervalsDistribution[domain + 1]) {
-				return;
+	if (
+			_configuration.load_steps_settings.at(_step->step + 1).feti.conjugate_projector != FETI_CONJ_PROJECTOR::CONJ ||
+			_configuration.load_steps_settings.at(_step->step + 1).type != LoadStepConfiguration::TYPE::TRANSIENT) {
+
+		if (_configuration.load_steps_settings.at(_step->step + 1).convection.size()) {
+			for (auto it = _configuration.load_steps_settings.at(_step->step + 1).convection.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).convection.end(); ++it) {
+				BoundaryRegionStore *region = _mesh->bregion(it->first);
+				if (region->eintervalsDistribution[domain] != region->eintervalsDistribution[domain + 1]) {
+					return;
+				}
 			}
 		}
-	}
 
-	if (_configuration.load_steps_settings.at(_step->step + 1).diffuse_radiation.size()) {
-		for (auto it = _configuration.load_steps_settings.at(_step->step + 1).diffuse_radiation.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).diffuse_radiation.end(); ++it) {
-			BoundaryRegionStore *region = _mesh->bregion(it->first);
-			if (region->eintervalsDistribution[domain] != region->eintervalsDistribution[domain + 1]) {
-				return;
+		if (_configuration.load_steps_settings.at(_step->step + 1).diffuse_radiation.size()) {
+			for (auto it = _configuration.load_steps_settings.at(_step->step + 1).diffuse_radiation.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).diffuse_radiation.end(); ++it) {
+				BoundaryRegionStore *region = _mesh->bregion(it->first);
+				if (region->eintervalsDistribution[domain] != region->eintervalsDistribution[domain + 1]) {
+					return;
+				}
 			}
 		}
 	}
