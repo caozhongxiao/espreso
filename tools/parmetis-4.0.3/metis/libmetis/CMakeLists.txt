@@ -8,9 +8,7 @@ if(UNIX)
   target_link_libraries(metis m)
 endif()
 
-if(SHARED)
-  install(TARGETS metis
-    LIBRARY DESTINATION lib/lib${IDXTYPEWIDTH}
-    RUNTIME DESTINATION lib/lib${IDXTYPEWIDTH}
-    ARCHIVE DESTINATION lib/lib${IDXTYPEWIDTH})
-endif()
+install(TARGETS metis
+  LIBRARY DESTINATION lib/lib${IDXTYPEWIDTH}
+  RUNTIME DESTINATION lib/lib${IDXTYPEWIDTH}
+  ARCHIVE DESTINATION lib/lib${IDXTYPEWIDTH})
