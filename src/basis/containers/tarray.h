@@ -38,7 +38,7 @@ public:
 	TType* begin()               { return _data; }
 	TType* end()                 { return _data + _size; }
 	TType* begin(size_t t)       { return _data + _distribution[t]; }
-	TType* end(size_t t)         { return _data + _distribution[t] + _size; }
+	TType* end(size_t t)         { return _data + _distribution[t + 1]; }
 
 	const TType& operator[] (size_t n) const { return _data[n]; }
 	const TType* data()                const { return _data; }
@@ -49,7 +49,7 @@ public:
 	const TType* cbegin()              const { return _data; }
 	const TType* cend()                const { return _data + _size; }
 	const TType* cbegin(size_t t)      const { return _data + _distribution[t]; }
-	const TType* cend(size_t t)        const { return _data + _distribution[t] + _size; }
+	const TType* cend(size_t t)        const { return _data + _distribution[t + 1]; }
 
 	size_t packedSize() const;
 	void pack(char* &p) const;
