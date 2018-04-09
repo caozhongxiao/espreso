@@ -20,6 +20,8 @@
 #include "../../output/result/resultstore.h"
 #include "../../output/data/espresobinaryformat.h"
 #include "../../solver/generic/FETISolver.h"
+#include "../../linearsolver/multigrid/MultigridSolver.h"
+
 
 
 namespace espreso {
@@ -166,6 +168,8 @@ LinearSolver* FactoryLoader::getLinearSolver(const LoadStepConfiguration &settin
 	switch (settings.solver) {
 	case LoadStepConfiguration::SOLVER::FETI:
 		return new FETISolver(instance, settings.feti);
+	case LoadStepConfiguration::SOLVER::MULTIGRID:
+		return new MultigridSolver(instance, settings.multigrid);
 	default:
 		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
 		return NULL;
