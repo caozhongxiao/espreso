@@ -75,6 +75,9 @@ struct Communication {
 	static bool balance(std::vector<Ttype> &buffer, const std::vector<size_t> &currentDistribution, const std::vector<size_t> &targetDistribution);
 
 	template <typename Ttype>
+	static bool allToAllV(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, const std::vector<int> &ssize, const std::vector<int> &rsize);
+
+	template <typename Ttype>
 	static Ttype exscan(Ttype &value, MPI_Op &operation);
 
 	template <typename Ttype>

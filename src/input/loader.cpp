@@ -585,6 +585,7 @@ void Loader::fillCoordinates()
 
 	std::vector<std::vector<eslocal> > sBuffer;
 	std::vector<int> sRanks;
+	std::vector<int> ssize(environment->MPIsize), rsize(environment->MPIsize);
 
 	for (int t = 0; t < environment->MPIsize; t++) {
 		auto begin = std::lower_bound(nodes[0].begin(), nodes[0].end(), _nDistribution[t]);
@@ -593,12 +594,38 @@ void Loader::fillCoordinates()
 			sBuffer.push_back(std::vector<eslocal>(begin, end));
 			sRanks.push_back(t);
 		}
+		ssize[t] = end - begin;
 	}
 
 	e2.end(); timing.addEvent(e2);
 
-	int avgneighs, nneighs = sRanks.size();
-	double allavgsize, avgsize = 0;
+	////////
+
+	std::vector<eslocal> rrIDs;
+
+	TimeEvent ee2("FCXX GET RBUFFER SIZES"); ee2.start();
+
+	MPI_Alltoall(ssize.data(), 1, MPI_INT, rsize.data(), 1, MPI_INT, environment->MPICommunicator);
+
+	ee2.end(); timing.addEvent(ee2);
+
+	size_t rrsize = 0;
+	for (int t = 0; t < environment->MPIsize; t++) {
+		rrsize += rsize[t];
+	}
+	rrIDs.resize(rrsize);
+
+	TimeEvent ee3("FCXX GET DATA"); ee3.start();
+
+	Communication::allToAllV(nodes[0], rrIDs, ssize, rsize);
+
+	ee3.end(); timing.addEvent(ee3);
+
+	////////
+
+	int avgneighs = 0, nneighs = sRanks.size();
+	double allavgsize = 0, avgsize = 0;
+
 	for (size_t i = 0; i < sRanks.size(); i++) {
 		avgsize += sBuffer[i].size();
 	}
@@ -626,6 +653,16 @@ void Loader::fillCoordinates()
 	}
 
 	e3.end(); timing.addEvent(e3);
+
+	{
+		size_t rnodesize = 0;
+		for (size_t t = 0; t < _targetRanks.size(); t++) {
+			rnodesize += _rankNodeMap[t].size();
+		}
+		if (rnodesize != rrIDs.size()) {
+			ESINFO(ERROR) << "INVALID ALL TO ALL EXCHANGE";
+		}
+	}
 
 	TimeEvent e4("FC COMPUTE BACKED"); e4.start();
 
@@ -1032,8 +1069,8 @@ void Loader::addBoundaryRegions()
 
 		e4.end(); timing.addEvent(e4);
 
-		int avgneighs, nneighs = sRanks.size();
-		double allavgsize, avgsize = 0;
+		int avgneighs = 0, nneighs = sRanks.size();
+		double allavgsize = 0, avgsize = 0;
 		for (size_t j = 0; j < sRanks.size(); j++) {
 			avgsize += sBuffer[j].size();
 		}

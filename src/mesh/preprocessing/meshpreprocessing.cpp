@@ -179,8 +179,8 @@ void MeshPreprocessing::linkNodesAndElements()
 
 	e2.end(); timing.addEvent(e2);
 
-	int avgneighs, nneighs = _mesh->neighbours.size();
-	double allavgsize, avgsize = 0;
+	int avgneighs = 0, nneighs = _mesh->neighbours.size();
+	double allavgsize = 0, avgsize = 0;
 	for (size_t i = 0; i < _mesh->neighbours.size(); i++) {
 		avgsize += sBuffer[0][i].size();
 	}
@@ -376,8 +376,8 @@ void MeshPreprocessing::exchangeHalo()
 
 	e3.end(); timing.addEvent(e3);
 
-	int avgneighs, nneighs = _mesh->neighbours.size();
-	double allavgsize, avgsize = 0;
+	int avgneighs = 0, nneighs = _mesh->neighbours.size();
+	double allavgsize = 0, avgsize = 0;
 	for (size_t i = 0; i < _mesh->neighbours.size(); i++) {
 		avgsize += sBuffer[i].size();
 	}

@@ -774,8 +774,8 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	e4.end(); timing.addEvent(e4);
 
-	int avgneighs, nneighs = targets.size();
-	double allavgsize, avgsize = 0;
+	int avgneighs = 0, nneighs = targets.size();
+	double allavgsize = 0, avgsize = 0;
 	for (size_t i = 0; i < targets.size(); i++) {
 		avgsize += sElements[0][i].size();
 		avgsize += sNodes[0][i].size();
