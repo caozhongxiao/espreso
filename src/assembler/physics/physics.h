@@ -63,6 +63,7 @@ struct Physics {
 
 	virtual void assembleB1(bool withRedundantMultipliers, bool withGluing, bool withScaling);
 	virtual void updateDirichletInB1(bool withRedundantMultipliers);
+	virtual void updateDuplicity();
 	virtual void assembleB0FromCorners();
 	virtual void assembleB0FromKernels(const std::vector<SparseMatrix> &kernels);
 

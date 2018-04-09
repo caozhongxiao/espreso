@@ -23,7 +23,8 @@ Matrices SteadyStateSolver::updateStructuralMatrices(Matrices matrices)
 
 Matrices SteadyStateSolver::reassembleStructuralMatrices(Matrices matrices)
 {
-	_assembler.updateMatrices(matrices);
+	_assembler.updateStructuralMatrices(matrices);
+	_assembler.updateGluingMatrices(matrices);
 	return matrices;
 }
 

@@ -27,7 +27,8 @@ public:
 	~Assembler();
 
 	void preprocessData();
-	void updateMatrices(Matrices matrices);
+	void updateStructuralMatrices(Matrices matrices);
+	void updateGluingMatrices(Matrices matrices);
 	void processSolution();
 
 	void setRegularizationCallback();

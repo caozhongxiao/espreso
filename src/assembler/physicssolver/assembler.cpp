@@ -59,22 +59,20 @@ void Assembler::preprocessData()
 	});
 }
 
-void Assembler::updateMatrices(Matrices matrices)
+void Assembler::updateStructuralMatrices(Matrices matrices)
 {
-	if (!matrices) {
-		return;
-	}
+	Matrices updated = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R);
 
-	Matrices structural = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R);
-
-	if (structural) {
-		timeWrapper("update " + mNames(structural), [&] () {
-			physics.updateMatrix(structural);
+	if (updated) {
+		timeWrapper("update " + mNames(updated), [&] () {
+			physics.updateMatrix(updated);
 		});
 	}
+}
 
-	// TODO: create a function to update only B1 duplicity
-	if (matrices & (Matrices::B1 | Matrices::B1duplicity)) {
+void Assembler::updateGluingMatrices(Matrices matrices)
+{
+	if (matrices & Matrices::B1) {
 		timeWrapper("update " + mNames(Matrices::B1), [&] () {
 			// TODO: create update method
 			instance.B1.clear();
@@ -100,14 +98,22 @@ void Assembler::updateMatrices(Matrices matrices)
 			VTKLegacyDebugInfo::dirichlet(mesh, instance);
 			VTKLegacyDebugInfo::gluing(mesh, instance);
 		}
+		return;
 	}
 
-	if (!(matrices & (Matrices::B1 | Matrices::B1duplicity)) && (matrices & Matrices::B1c)) {
+	if (matrices & Matrices::B1c) {
 		timeWrapper("update " + mNames(Matrices::B1c), [&] () {
 			physics.updateDirichletInB1(linearSolver.applyB1LagrangeRedundancy());
 		});
 	}
+
+	if (matrices & Matrices::B1duplicity) {
+		timeWrapper("update " + mNames(Matrices::B1duplicity), [&] () {
+			physics.updateDuplicity();
+		});
+	}
 }
+
 
 void Assembler::processSolution()
 {

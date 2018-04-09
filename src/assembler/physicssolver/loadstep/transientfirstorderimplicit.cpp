@@ -49,7 +49,7 @@ Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Matrices matrices
 
 Matrices TransientFirstOrderImplicit::reassembleStructuralMatrices(Matrices matrices)
 {
-	_assembler.updateMatrices(matrices);
+	_assembler.updateStructuralMatrices(matrices);
 	if (matrices & (Matrices::K | Matrices::M)) {
 		_assembler.keepK();
 		_assembler.sum(
@@ -57,6 +57,8 @@ Matrices TransientFirstOrderImplicit::reassembleStructuralMatrices(Matrices matr
 				1 / (_alpha * _assembler.step.timeStep), _assembler.instance.M,
 				"K += (1 / alpha * delta T) * M");
 	}
+
+	_assembler.updateGluingMatrices(matrices);
 
 	if (matrices & (Matrices::K | Matrices::M | Matrices::f)) {
 		_assembler.sum(

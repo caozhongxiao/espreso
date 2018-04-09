@@ -413,6 +413,11 @@ void Physics::updateDirichletInB1(bool withRedundantMultipliers)
 	_equalityConstraints->B1DirichletUpdate(*_step);
 }
 
+void Physics::updateDuplicity()
+{
+	_equalityConstraints->B1DuplicityUpdate();
+}
+
 void Physics::assembleB0FromCorners()
 {
 	_equalityConstraints->B0Corners();

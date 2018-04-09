@@ -30,7 +30,8 @@ Matrices PseudoTimeStepping::updateStructuralMatrices(Matrices matrices)
 
 Matrices PseudoTimeStepping::reassembleStructuralMatrices(Matrices matrices)
 {
-	_assembler.updateMatrices(matrices);
+	_assembler.updateStructuralMatrices(matrices);
+	_assembler.updateGluingMatrices(matrices);
 	return matrices;
 }
 
