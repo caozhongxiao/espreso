@@ -12,6 +12,8 @@ namespace espreso {
 
 template <typename TEBoundaries, typename TEData> class serializededata;
 
+struct SurfaceStore;
+
 struct ElementsRegionStore {
 
 	std::string name;
@@ -30,6 +32,8 @@ struct ElementsRegionStore {
 	eslocal uniqueTotalSize;
 
 	std::vector<eslocal> ecounters;
+
+	SurfaceStore *surface;
 
 	size_t packedSize() const;
 	void pack(char* &p) const;

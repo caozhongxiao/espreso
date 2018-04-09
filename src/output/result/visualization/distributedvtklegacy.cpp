@@ -19,6 +19,7 @@
 #include "../../../mesh/store/fetidatastore.h"
 #include "../../../mesh/store/surfacestore.h"
 #include "../../../mesh/store/contactstore.h"
+#include "../../../mesh/store/elementsregionstore.h"
 
 #include "../../../solver/generic/SparseMatrix.h"
 
@@ -364,10 +365,6 @@ void DistributedVTKLegacy::sharedInterface(const std::string &name)
 
 void DistributedVTKLegacy::surface(const std::string &name)
 {
-	if (_mesh.surface == NULL) {
-		return;
-	}
-
 	auto surface = [&] (const std::string &suffix, serializededata<eslocal, eslocal>* elements, serializededata<eslocal, Element*>* epointers) {
 		std::ofstream os(name + "." + suffix + std::to_string(environment->MPIrank) + ".vtk");
 
@@ -411,9 +408,20 @@ void DistributedVTKLegacy::surface(const std::string &name)
 		}
 	};
 
-	surface("elements", _mesh.surface->elements, _mesh.surface->epointers);
-	if (_mesh.surface->triangles != NULL) {
-		surface("triangles",  _mesh.surface->triangles, NULL);
+	if (_mesh.surface != NULL) {
+		surface("elements", _mesh.surface->elements, _mesh.surface->epointers);
+		if (_mesh.surface->triangles != NULL) {
+			surface("triangles",  _mesh.surface->triangles, NULL);
+		}
+	}
+
+	for (size_t r = 0; r < _mesh.elementsRegions.size(); r++) {
+		if (_mesh.elementsRegions[r]->surface != NULL) {
+			surface(_mesh.elementsRegions[r]->name, _mesh.elementsRegions[r]->surface->elements, _mesh.elementsRegions[r]->surface->epointers);
+			if (_mesh.elementsRegions[r]->surface->triangles != NULL) {
+				surface(_mesh.elementsRegions[r]->name + ".triangles",  _mesh.elementsRegions[r]->surface->triangles, NULL);
+			}
+		}
 	}
 }
 

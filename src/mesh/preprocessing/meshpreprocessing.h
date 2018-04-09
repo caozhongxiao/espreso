@@ -20,6 +20,7 @@ struct Element;
 struct NodeData;
 struct ProcessInterval;
 struct BoundaryRegionStore;
+struct SurfaceStore;
 template <typename TEBoundaries, typename TEData> class serializededata;
 struct RBFTargetConfiguration;
 struct RBFTargetTransformationConfiguration;
@@ -51,6 +52,9 @@ public:
 	void computeDomainsSurface();
 	void triangularizeDomainSurface();
 
+	void triangularizeSurface(SurfaceStore *surface);
+
+	void computeRegionsSurface();
 	void computeBodiesSurface();
 	void computeSurfaceLocations();
 	void searchContactInterfaces();

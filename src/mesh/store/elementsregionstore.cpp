@@ -1,6 +1,8 @@
 
 #include "elementsregionstore.h"
 
+#include "surfacestore.h"
+
 #include "../elements/element.h"
 
 #include "../../basis/containers/serializededata.h"
@@ -21,7 +23,9 @@ ElementsRegionStore::ElementsRegionStore(const std::string &name)
   uniqueSize(0),
   uniqueTotalSize(0),
 
-  ecounters(static_cast<int>(Element::CODE::SIZE))
+  ecounters(static_cast<int>(Element::CODE::SIZE)),
+
+  surface(NULL)
 {
 
 }
@@ -31,6 +35,9 @@ ElementsRegionStore::~ElementsRegionStore()
 	if (elements == NULL) { delete elements; }
 	if (uniqueElements != NULL && uniqueElements != elements) {
 		delete uniqueElements;
+	}
+	if (surface != NULL) {
+		delete surface;
 	}
 }
 

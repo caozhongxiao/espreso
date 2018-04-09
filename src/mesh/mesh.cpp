@@ -514,9 +514,17 @@ void Mesh::update()
 
 	preprocessing->arrangeRegions();
 
-	if (is3D() && (hasBEM(getPhysics()) || _withGUI)) {
+	if (is3D() && (hasBEM(getPhysics()))) {
 		preprocessing->computeDomainsSurface();
 		preprocessing->triangularizeDomainSurface();
+	}
+
+
+	if (is3D() && _withGUI) {
+		preprocessing->computeRegionsSurface();
+		for (size_t r = 0; r < elementsRegions.size(); r++) {
+			preprocessing->triangularizeSurface(elementsRegions[r]->surface);
+		}
 	}
 
 	if (forEachSteps([] (const LoadStepConfiguration &step) {

@@ -8,6 +8,7 @@
 #include "../store/nodestore.h"
 #include "../store/elementsregionstore.h"
 #include "../store/boundaryregionstore.h"
+#include "../store/surfacestore.h"
 #include "../elements/element.h"
 
 #include "../../basis/containers/point.h"
@@ -487,6 +488,156 @@ void MeshPreprocessing::computeDecomposedDual(std::vector<eslocal> &dualDist, st
 	dualData.swap(dData[0]);
 
 	finish("computation of clusters dual graphs");
+}
+
+void MeshPreprocessing::computeRegionsSurface()
+{
+	if (_mesh->elements->neighbors == NULL) {
+		this->computeElementsNeighbors();
+	}
+	if (_mesh->halo->IDs == NULL) {
+		this->exchangeHalo();
+	}
+
+	start("computation of region surface");
+
+	size_t threads = environment->OMP_NUM_THREADS;
+	eslocal eBegin = _mesh->elements->gatherElementsProcDistribution()[environment->MPIrank];
+	eslocal eEnd = eBegin + _mesh->elements->size;
+
+	for (size_t r = 0; r < _mesh->elementsRegions.size(); r++) {
+		std::vector<std::vector<eslocal> > faces(threads), facesDistribution(threads), ecounters(threads, std::vector<eslocal>((int)Element::CODE::SIZE));
+		std::vector<std::vector<Element*> > fpointers(threads);
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			eslocal hindex, addFace = 0;
+			int rsize = _mesh->elements->regionMaskSize;
+			auto nodes = _mesh->elements->nodes->cbegin();
+			auto neighs = _mesh->elements->neighbors->cbegin();
+			const auto &regions = _mesh->elements->regions->datatarray();
+			const auto &epointers = _mesh->elements->epointers->datatarray();
+
+			std::vector<eslocal> fdist, fdata, ecounter((int)Element::CODE::SIZE);
+			std::vector<Element*> fpointer;
+			if (t == 0) {
+				fdist.push_back(0);
+			}
+
+			eslocal prev = 0;
+			for (auto e = _mesh->elementsRegions[r]->elements->datatarray().cbegin(t); e != _mesh->elementsRegions[r]->elements->datatarray().cend(t); prev = *e++) {
+				nodes += *e - prev;
+				neighs += *e - prev;
+				for (size_t n = 0; n < neighs->size(); ++n) {
+					if (neighs->at(n) != -1 && r) {
+						if (neighs->at(n) < eBegin || eEnd <= neighs->at(n)) {
+							hindex = std::lower_bound(_mesh->halo->IDs->datatarray().begin(), _mesh->halo->IDs->datatarray().end(), neighs->at(n)) - _mesh->halo->IDs->datatarray().begin();
+							addFace = memcmp(regions.data() + *e * rsize, _mesh->halo->regions->datatarray().data() + hindex * rsize, sizeof(eslocal) * rsize);
+						} else {
+							addFace = memcmp(regions.data() + *e * rsize, regions.data() + (neighs->at(n) - eBegin) * rsize, sizeof(eslocal) * rsize);
+						}
+					} else {
+						addFace = neighs->at(n) == -1;
+					}
+					if (addFace) {
+						auto face = epointers[*e]->faces->begin() + n;
+						for (auto f = face->begin(); f != face->end(); ++f) {
+							fdata.push_back(nodes->at(*f));
+						}
+						fdist.push_back(fdata.size());
+						fpointer.push_back(epointers[*e]->facepointers->datatarray()[n]);
+						++ecounter[(int)fpointer.back()->code];
+						addFace = 0;
+					}
+				}
+			}
+
+			facesDistribution[t].swap(fdist);
+			faces[t].swap(fdata);
+			fpointers[t].swap(fpointer);
+			ecounters[t].swap(ecounter);
+		}
+
+		if (_mesh->elementsRegions[r]->surface == NULL) {
+			_mesh->elementsRegions[r]->surface = new SurfaceStore();
+		}
+
+		for (size_t t = 1; t < threads; t++) {
+			for (size_t e = 0; e < ecounters[0].size(); e++) {
+				ecounters[0][e] += ecounters[t][e];
+			}
+		}
+
+		serializededata<eslocal, Element*>::balance(1, fpointers);
+		_mesh->elementsRegions[r]->surface->epointers = new serializededata<eslocal, Element*>(1, fpointers);
+		_mesh->elementsRegions[r]->surface->ecounters = ecounters[0];
+
+		_mesh->elementsRegions[r]->surface->edistribution = _mesh->elementsRegions[r]->surface->epointers->datatarray().distribution();
+
+		if (
+				_mesh->elementsRegions[r]->surface->edistribution.back() &&
+				_mesh->elementsRegions[r]->surface->ecounters[(int)Element::CODE::TRIANGLE3] == _mesh->elementsRegions[r]->surface->edistribution.back()) {
+
+			serializededata<eslocal, eslocal>::balance(3, faces, &_mesh->elementsRegions[r]->surface->edistribution);
+			_mesh->elementsRegions[r]->surface->elements = new serializededata<eslocal, eslocal>(3, faces);
+			_mesh->elementsRegions[r]->surface->triangles = _mesh->elementsRegions[r]->surface->elements;
+			_mesh->elementsRegions[r]->surface->tdistribution = _mesh->elementsRegions[r]->surface->edistribution;
+		} else {
+			Esutils::threadDistributionToFullDistribution(facesDistribution);
+			serializededata<eslocal, eslocal>::balance(facesDistribution, faces, &_mesh->elementsRegions[r]->surface->edistribution);
+			_mesh->elementsRegions[r]->surface->elements = new serializededata<eslocal, eslocal>(facesDistribution, faces);
+		}
+	}
+
+	finish("computation of region surface");
+}
+
+void MeshPreprocessing::triangularizeSurface(SurfaceStore *surface)
+{
+	if (surface == NULL) {
+		return;
+	}
+
+	start("triangularize surface");
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	if (surface->triangles == NULL) {
+
+		std::vector<std::vector<eslocal> > triangles(threads);
+		std::vector<std::vector<size_t> > intervals(threads);
+
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			std::vector<eslocal> ttriangles;
+			std::vector<size_t> tintervals;
+			if (t == 0) {
+				tintervals.push_back(0);
+			}
+
+			auto elements = surface->elements->cbegin(t);
+			const auto &epointers = surface->epointers->datatarray().begin();
+
+			for (size_t e = surface->edistribution[t]; e < surface->edistribution[t + 1]; ++e, ++elements) {
+				for (auto n = epointers[e]->triangles->datatarray().cbegin(); n != epointers[e]->triangles->datatarray().cend(); ++n) {
+					ttriangles.push_back(elements->at(*n));
+				}
+			}
+			tintervals.push_back(ttriangles.size() / 3);
+
+			intervals[t].swap(tintervals);
+			triangles[t].swap(ttriangles);
+		}
+
+		Esutils::threadDistributionToFullDistribution(intervals);
+		Esutils::mergeThreadedUniqueData(intervals);
+
+		surface->tdistribution = intervals[0];
+		surface->triangles = new serializededata<eslocal, eslocal>(3, triangles);
+	}
+
+	finish("triangularize surface");
 }
 
 void MeshPreprocessing::computeBoundaryNodes(std::vector<eslocal> &externalBoundary, std::vector<eslocal> &internalBoundary)
