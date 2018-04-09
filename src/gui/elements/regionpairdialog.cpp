@@ -23,7 +23,7 @@ RegionPairDialog::RegionPairDialog(ECFDataType value, ECFObject* map,
 {
     ui->setupUi(this);
 
-    this->m_first = ECFDataType::REGION;
+    this->m_first = ECFDataType::BOUNDARY_REGION;
     this->m_second = value;
 
     this->m_map = map;
@@ -73,7 +73,7 @@ RegionPairDialog::RegionPairDialog(ECFObject *map, Mesh *mesh, QWidget *parent) 
 {
     ui->setupUi(this);
 
-    this->m_first = ECFDataType::REGION;
+    this->m_first = ECFDataType::BOUNDARY_REGION;
     this->m_second = ECFDataType::LOAD_STEP;
 
     this->m_map = map;
@@ -95,7 +95,7 @@ RegionPairDialog::RegionPairDialog(ECFObject *pair, ECFObject *map, Mesh *mesh, 
 {
     ui->setupUi(this);
 
-    this->m_first = ECFDataType::REGION;
+    this->m_first = ECFDataType::BOUNDARY_REGION;
     this->m_second = ECFDataType::LOAD_STEP;
 
     this->m_map = map;
@@ -147,7 +147,7 @@ QWidget* RegionPairDialog::uiValue(ECFDataType type, QLayout* layout)
 {
     QWidget* ret;
 
-    if (type == ECFDataType::REGION)
+    if (type == ECFDataType::BOUNDARY_REGION)
     {
         layout->addWidget(new QLabel(tr("Region:"), this));
         QComboBox* cmb = new QComboBox(this);
@@ -280,7 +280,7 @@ QString RegionPairDialog::region()
 
 std::string RegionPairDialog::getKey()
 {
-    if (this->m_first == ECFDataType::REGION)
+    if (this->m_first == ECFDataType::BOUNDARY_REGION)
     {
         QComboBox* cmb = static_cast<QComboBox*>(this->m_first_widget);
         return cmb->currentText().toStdString();

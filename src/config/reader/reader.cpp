@@ -508,7 +508,7 @@ static void printECF(const ECFObject &configuration, std::ostream &os, size_t in
 			printindent(space + 3);
 			if (
 					parameter->metadata.datatype.front() == ECFDataType::STRING ||
-					parameter->metadata.datatype.front() == ECFDataType::REGION ||
+					parameter->metadata.datatype.front() == ECFDataType::BOUNDARY_REGION ||
 					parameter->metadata.datatype.front() == ECFDataType::MATERIAL) {
 				os << value << ";\n";
 			} else {

@@ -203,7 +203,7 @@ void ECFObjectWidget::processParameters(ECFObject* obj, QWidget* widget)
             {
                 tableWidget = this->processPositiveInteger(*parameter, tableWidget, widget);
             }
-            else if (type == ECFDataType::REGION)
+            else if (type == ECFDataType::BOUNDARY_REGION)
             {
                 tableWidget = this->processRegion(*parameter, tableWidget, widget);
             }

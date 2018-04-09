@@ -43,7 +43,7 @@ void ECFValueTableWidget::add(ECFValue *value)
 
     switch(value->metadata.datatype.at(0))
     {
-    case ECFDataType::REGION:
+    case ECFDataType::BOUNDARY_REGION:
     case ECFDataType::STRING:
         this->addString(value);
         break;

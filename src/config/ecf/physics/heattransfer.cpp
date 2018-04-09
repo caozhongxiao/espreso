@@ -98,38 +98,38 @@ espreso::HeatTransferLoadStepConfiguration::HeatTransferLoadStepConfiguration(DI
 {
 	REGISTER(temperature, ECFMetaData()
 			.setdescription({ "The name of a region.", "Temperature of a given region." })
-			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
+			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "273.15" }),
 			ECFMetaData::getboundaryconditionvariables());
 	REGISTER(heat_source, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat source of a given region." })
-			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
+			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "273.15" }),
 			ECFMetaData::getboundaryconditionvariables());
 	REGISTER(translation_motions, ECFMetaData()
 			.setdescription({ "The name of a region.", "Translation motion of a given region." })
-			.setdatatype({ ECFDataType::REGION })
+			.setdatatype({ ECFDataType::ELEMENTS_REGION })
 			.setpattern({ "MY_REGION" }),
 			dimension, ECFMetaData::getboundaryconditionvariables(), "0");
 
 	REGISTER(heat_flux, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat flux on a given region." })
-			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
+			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "500" }),
 			ECFMetaData::getboundaryconditionvariables());
 	REGISTER(heat_flow, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat flow on a given region." })
-			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
+			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "500" }),
 			ECFMetaData::getboundaryconditionvariables());
 
 	REGISTER(convection, ECFMetaData()
 			.setdescription({ "The name of a region.", "Convection on a given region." })
-			.setdatatype({ ECFDataType::REGION })
+			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION" }));
 	REGISTER(diffuse_radiation, ECFMetaData()
 			.setdescription({ "The name of a region.", "Radiation on a given region." })
-			.setdatatype({ ECFDataType::REGION })
+			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION" }));
 }
 

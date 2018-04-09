@@ -7,42 +7,42 @@ espreso::StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepCo
 {
 	REGISTER(temperature, ECFMetaData()
 			.setdescription({ "The name of a region.", "Temperature of a given region." })
-			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
+			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "275.15" }),
 			ECFMetaData::getboundaryconditionvariables());
 	REGISTER(normal_pressure, ECFMetaData()
 			.setdescription({ "The name of a region.", "Normal pressure on a given region." })
-			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
+			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "0" }),
 			ECFMetaData::getboundaryconditionvariables());
 	REGISTER(obstacle, ECFMetaData()
 			.setdescription({ "The name of a region.", "Obstacle for a given region." })
-			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
+			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "1" }),
 			ECFMetaData::getboundaryconditionvariables());
 
 	REGISTER(angular_velocity, ECFMetaData()
 			.setdescription({ "The name of a region.", "Angular velocity of a given region." })
-			.setdatatype({ ECFDataType::REGION })
+			.setdatatype({ ECFDataType::ELEMENTS_REGION })
 			.setpattern({ "MY_REGION" }),
 			dimension, ECFMetaData::getboundaryconditionvariables());
 
 	REGISTER(normal_direction, ECFMetaData()
 			.setdescription({ "The name of a region.", "Normal direction of a given region." })
-			.setdatatype({ ECFDataType::REGION })
+			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION" }),
 			dimension, ECFMetaData::getboundaryconditionvariables());
 
 	REGISTER(acceleration, ECFMetaData()
 			.setdescription({ "The name of a region.", "Acceleration of a given region." })
-			.setdatatype({ ECFDataType::REGION })
+			.setdatatype({ ECFDataType::ELEMENTS_REGION })
 			.setpattern({ "MY_REGION" }),
 			dimension, ECFMetaData::getboundaryconditionvariables(), "0");
 
 
 	REGISTER(displacement, ECFMetaData()
 			.setdescription({ "The name of a region.", "Fixed displacement of a given region." })
-			.setdatatype({ ECFDataType::REGION })
+			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION" }),
 			dimension, ECFMetaData::getboundaryconditionvariables());
 }

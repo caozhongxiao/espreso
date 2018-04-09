@@ -134,11 +134,11 @@ espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECFRoot *ECFRoot)
 
 	REGISTER(target, ECFMetaData()
 		.setdescription({ "Set of morphed elements." })
-		.setdatatype({ ECFDataType::REGION }));
+		.setdatatype({ ECFDataType::BOUNDARY_REGION }));
 
 	REGISTER(morphers , ECFMetaData()
 		.setdescription({ "Morphed region name.", "Target configuration." })
-		.setdatatype({ ECFDataType::REGION })
+		.setdatatype({ ECFDataType::BOUNDARY_REGION })
 		.setpattern({ "REGION" }),
 		ECFRoot);
 
@@ -168,7 +168,7 @@ espreso::ExternalFFDConfiguration::ExternalFFDConfiguration(ECFRoot *ECFRoot)
 
 	REGISTER(morphers , ECFMetaData()
 			.setdescription({ "Morphed region name.", "Target configuration." })
-			.setdatatype({ ECFDataType::REGION })
+			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "REGION" }),
 			ECFRoot);
 }
