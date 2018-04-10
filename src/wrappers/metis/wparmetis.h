@@ -9,7 +9,8 @@ struct ParMETIS {
 	enum class METHOD {
 		ParMETIS_V3_PartKway,
 		ParMETIS_V3_RefineKway,
-		ParMETIS_V3_AdaptiveRepart
+		ParMETIS_V3_AdaptiveRepart,
+		ParMETIS_V3_PartGeom
 	};
 
 	static eslocal call(

@@ -96,6 +96,19 @@ eslocal ParMETIS::call(
 		}
 		break;
 
+	case ParMETIS::METHOD::ParMETIS_V3_PartGeom:
+		if (coordinates == NULL) {
+			ESINFO(ERROR) << "PARMETIS_ERROR:: PartGeom needs coordinates.";
+		}
+		if (METIS_OK != ParMETIS_V3_PartGeom(
+				edistribution,
+				&dimensions, coordinates,
+				partition,
+				&communication)) {
+
+			ESINFO(ERROR) << "PARMETIS_ERROR while refine mesh partition to MPI processes by KWay.";
+		}
+
 	}
 
 	return edgecut;
