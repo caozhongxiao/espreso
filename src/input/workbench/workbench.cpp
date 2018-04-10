@@ -45,7 +45,7 @@ WorkbenchLoader::WorkbenchLoader(const ECFRoot &configuration, Mesh &mesh)
 	timing.totalTime.endWithBarrier();
 	timing.printStatsMPI();
 
-	Loader::loadDistributedMesh(configuration, dMesh, mesh);
+	BalancedLoader::loadDistributedMesh(configuration, dMesh, mesh);
 }
 
 void WorkbenchLoader::readData()

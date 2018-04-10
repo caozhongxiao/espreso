@@ -77,6 +77,35 @@ protected:
 	std::vector<std::vector<eslocal> > _rankNodeMap;
 };
 
+class BalancedLoader {
+
+public:
+	static void load(const ECFRoot &configuration, Mesh &mesh, int MPIrank, int MPIsize);
+	static void loadDistributedMesh(const ECFRoot &configuration, DistributedMesh &dMesh, Mesh &mesh);
+
+protected:
+	BalancedLoader(const ECFRoot &configuration, DistributedMesh &dMesh, Mesh &mesh);
+
+	void distributeMesh();
+	void checkERegions();
+
+	void sortElements();
+
+	void fillElements();
+	void fillCoordinates();
+	void addNodeRegions();
+	void addBoundaryRegions();
+	void addElementRegions();
+
+	const ECFRoot &_configuration;
+	DistributedMesh &_dMesh;
+	Mesh &_mesh;
+
+	std::vector<size_t> _nDistribution, _eDistribution;
+	std::vector<int> _targetRanks;
+	std::vector<std::vector<eslocal> > _rankNodeMap;
+};
+
 }
 
 #endif /* SRC_INPUT_LOADER_H_ */

@@ -101,7 +101,7 @@ Factory::Factory(const ECFRoot &configuration, Mesh &mesh, ResultStore &store)
 {
 	_step = new Step();
 	Logging::step = _step;
-	Loader::load(configuration, mesh, configuration.environment.MPIrank, configuration.environment.MPIsize);
+	BalancedLoader::load(configuration, mesh, configuration.environment.MPIrank, configuration.environment.MPIsize);
 
 	// LOAD PHYSICS
 	switch (configuration.physics) {
