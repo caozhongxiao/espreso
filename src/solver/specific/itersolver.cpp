@@ -74,7 +74,9 @@ void IterSolverBase::Preprocessing ( SuperCluster & cluster )
 	 TimeEvent createGGT_time("Time to create GGt");createGGT_time.start();
 
 	if (USE_GGtINV == 1) {
-		if (configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ)
+		if (
+				configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ_R ||
+				configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ_K)
 			CreateConjGGt_Inv( cluster );
 		else
 			CreateGGt_Inv( cluster );
@@ -101,7 +103,9 @@ void IterSolverBase::Solve ( SuperCluster & cluster,
 
 	switch (configuration.iterative_solver) {
 	case FETI_ITERATIVE_SOLVER::PCG:
-		if (configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ)
+		if (
+				configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ_R ||
+				configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ_K)
 			Solve_RegCG_ConjProj( cluster, in_right_hand_side_primal );
 		else
 			Solve_RegCG ( cluster, in_right_hand_side_primal );
