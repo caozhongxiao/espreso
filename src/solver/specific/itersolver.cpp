@@ -2358,17 +2358,42 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( SuperCluster & cluster,
 	SEQ_VECTOR <double> _Gamma_l  (CG_max_iter, 0);
 	SEQ_VECTOR <double> WtAW_l(CG_max_iter, 0);
 
-	if (USE_GGtINV == 1) {
-		Projector_Inv( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
-	} else {
-		Projector	 ( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
-	}
 
+	if (
+				configuration.conjugate_projector != FETI_CONJ_PROJECTOR::CONJ_R ||
+				configuration.conjugate_projector != FETI_CONJ_PROJECTOR::CONJ_K)	{
+
+		if (USE_GGtINV == 1) {
+			Projector_Inv( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
+		} else {
+			Projector	 ( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
+		}
+	}
 	// *** Combine vectors b from all clusters ************************************
 	All_Reduce_lambdas_compB(cluster, cluster.vec_b_compressed, b_l);
 
+
+
+	if (
+				configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ_R ||
+				configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ_K)	{
+			if (USE_GGtINV == 1) {
+				//Projector_Inv( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
+				ConjProjector_Inv3( timeEvalProj, cluster, b_l, x_l, 0 );
+			} else {
+				Projector	 ( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
+			}
+	}
+
+
+
 	// *** Ax = apply_A(CLUSTER,Bt,x); ********************************************
 	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
+
+
+
+
+
 
 	double norm_prim_fl = 0.0;
 	double norm_prim_fg = 0.0;
@@ -2385,11 +2410,27 @@ for (size_t i = 0; i < g_l.size(); i++){
 		g_l[i] = Ax_l[i] - b_l[i];
   }
 
-	if (USE_GGtINV == 1) {
-		Projector_Inv( timeEvalProj, cluster, g_l, Pg_l , 0);
-	} else {
-		Projector    ( timeEvalProj, cluster, g_l, Pg_l , 0);
+if (
+			configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ_R ||
+			configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ_K)	{
+
+		if (USE_GGtINV == 1) {
+			ConjProjector_Inv( timeEvalProj, cluster,g_l, Pg_l , 0);
+		} else {
+			Projector    ( timeEvalProj, cluster, g_l, Pg_l , 0);
+		}
+
+    }else{
+
+		if (USE_GGtINV == 1) {
+			Projector_Inv( timeEvalProj, cluster, g_l, Pg_l , 0);
+		} else {
+			Projector    ( timeEvalProj, cluster, g_l, Pg_l , 0);
+		}
+
 	}
+
+
 	// *** Calculate the stop condition *******************************************
 	tol = precision * parallel_norm_compressed(cluster, Pg_l);
 
@@ -2468,28 +2509,70 @@ for (size_t i = 0; i < x_l.size(); i++) {
     case FETI_PRECONDITIONER::DIRICHLET:
 	  case FETI_PRECONDITIONER::SUPER_DIRICHLET:
     case FETI_PRECONDITIONER::MAGIC:
-      proj1_time.start();
-      if (USE_GGtINV == 1) {
-        Projector_Inv( timeEvalProj, cluster, g_l, Pg_l, 0 );
-      } else {
-        Projector		  ( timeEvalProj, cluster, g_l, Pg_l, 0 );
-      }
-      proj1_time.end();
 
-      // Scale
-      prec_time.start();
-      Apply_Prec(timeEvalPrec, cluster, Pg_l, MPg_l);
-      prec_time.end();
-      // Re-Scale
 
-      proj2_time.start();
-      if (USE_GGtINV == 1) {
-        Projector_Inv( timeEvalProj, cluster, MPg_l, z_l, 0 );
-      } else {
-        Projector		  ( timeEvalProj, cluster, MPg_l, z_l, 0 );
-      }
-      proj2_time.end();
+
+    	if (
+    				configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ_R ||
+    				configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ_K)	{
+
+			proj1_time.start();
+			if (USE_GGtINV == 1) {
+				ConjProjector_Inv2( timeEvalProj, cluster, g_l, Pg_l, 0 );
+			} else {
+				Projector		  ( timeEvalProj, cluster,  g_l, Pg_l, 0 );
+			}
+			proj1_time.end();
+
+			// Scale
+			prec_time.start();
+			Apply_Prec(timeEvalPrec, cluster,  Pg_l, MPg_l);
+			prec_time.end();
+			// Re-Scale
+
+			proj2_time.start();
+			if (USE_GGtINV == 1) {
+				ConjProjector_Inv( timeEvalProj, cluster,  MPg_l, z_l, 0 );
+			} else {
+				Projector		  ( timeEvalProj, cluster,  MPg_l, z_l, 0 );
+			}
+			proj2_time.end();
+
+    	    }else{
+
+				  proj1_time.start();
+				  if (USE_GGtINV == 1) {
+					Projector_Inv( timeEvalProj, cluster, g_l, Pg_l, 0 );
+				  } else {
+					Projector		  ( timeEvalProj, cluster, g_l, Pg_l, 0 );
+				  }
+				  proj1_time.end();
+
+				  // Scale
+				  prec_time.start();
+				  Apply_Prec(timeEvalPrec, cluster, Pg_l, MPg_l);
+				  prec_time.end();
+				  // Re-Scale
+
+				  proj2_time.start();
+				  if (USE_GGtINV == 1) {
+					Projector_Inv( timeEvalProj, cluster, MPg_l, z_l, 0 );
+				  } else {
+					Projector		  ( timeEvalProj, cluster, MPg_l, z_l, 0 );
+				  }
+				  proj2_time.end();
+
+
+    	    }
       break;
+
+
+
+
+
+
+
+
     case FETI_PRECONDITIONER::NONE:
       proj_time.start();
       if (USE_GGtINV == 1) {
@@ -2500,6 +2583,10 @@ for (size_t i = 0; i < x_l.size(); i++) {
       Pg_l = z_l;
       proj_time.end();
       break;
+
+
+
+
     default:
       ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
     }
@@ -2581,13 +2668,24 @@ for (size_t i = 0; i < x_l.size(); i++) {
   dual_soultion_compressed_parallel   = x_l;
 	dual_residuum_compressed_parallel   = g_l;
 
+	if (
+	    				configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ_R ||
+	    				configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ_K)	{
 
+		if (USE_GGtINV == 1) {
+			ConjProjector_Inv ( timeEvalProj, cluster, g_l, amplitudes, 2 );
+		} else {
+			Projector	  ( timeEvalProj, cluster, g_l, amplitudes, 2 );
+		}
 
-
-	if (USE_GGtINV == 1) {
-		Projector_Inv ( timeEvalProj, cluster, g_l, amplitudes, 2 );
 	} else {
-		Projector	  ( timeEvalProj, cluster, g_l, amplitudes, 2 );
+
+		if (USE_GGtINV == 1) {
+			Projector_Inv ( timeEvalProj, cluster, g_l, amplitudes, 2 );
+		} else {
+			Projector	  ( timeEvalProj, cluster, g_l, amplitudes, 2 );
+		}
+
 	}
 	// *** end - save solution - in dual and amplitudes ***************************************
 
