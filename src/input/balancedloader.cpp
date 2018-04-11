@@ -19,6 +19,8 @@
 #include "../mesh/store/boundaryregionstore.h"
 #include "../old/input/loader.h"
 
+#include "../wrappers/metis/wparmetis.h"
+
 #include <numeric>
 #include <algorithm>
 
@@ -357,6 +359,103 @@ void BalancedLoader::sortElements()
 			sEData.back().push_back(_dMesh.edata[permutation[n]]);
 			sNodes.back().insert(sNodes.back().end(), _dMesh.enodes.begin() + edist[permutation[n]], _dMesh.enodes.begin() + edist[permutation[n] + 1]);
 		}
+	}
+
+	if (!Communication::sendVariousTargets(sSize, rSize, targets)) {
+		ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted elements sizes.";
+	}
+	if (!Communication::sendVariousTargets(sEData, rEData, targets)) {
+		ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted element data.";
+	}
+	if (!Communication::sendVariousTargets(sNodes, rNodes, targets)) {
+		ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted element nodes.";
+	}
+
+	for (size_t r = 1; r < rSize.size(); r++) {
+		rSize[0].insert(rSize[0].end(), rSize[r].begin(), rSize[r].end());
+		rEData[0].insert(rEData[0].end(), rEData[r].begin(), rEData[r].end());
+		rNodes[0].insert(rNodes[0].end(), rNodes[r].begin(), rNodes[r].end());
+	}
+
+	permutation.resize(rSize[0].size());
+	std::iota(permutation.begin(), permutation.end(), 0);
+	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return rEData[0][i].id < rEData[0][j].id; });
+
+	edist = std::vector<eslocal>({ 0 });
+	edist.reserve(rSize[0].size() + 1);
+	for (size_t e = 0; e < rSize[0].size(); e++) {
+		edist.push_back(edist.back() + rSize[0][e]);
+	}
+
+	_dMesh.esize.clear();
+	_dMesh.enodes.clear();
+	_dMesh.edata.clear();
+	_dMesh.esize.reserve(permutation.size());
+	_dMesh.edata.reserve(permutation.size());
+	_dMesh.enodes.reserve(rNodes[0].size());
+	for (size_t n = 0; n < permutation.size(); n++) {
+		_dMesh.esize.push_back(rSize[0][permutation[n]]);
+		_dMesh.edata.push_back(rEData[0][permutation[n]]);
+		_dMesh.enodes.insert(_dMesh.enodes.end(), rNodes[0].begin() + edist[permutation[n]], rNodes[0].begin() + edist[permutation[n] + 1]);
+	}
+
+	_eDistribution = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
+
+	eslocal dimension = 0;
+	switch (_configuration.physics) {
+	case PHYSICS::HEAT_TRANSFER_2D:
+	case PHYSICS::STRUCTURAL_MECHANICS_2D:
+	case PHYSICS::SHALLOW_WATER_2D:
+		dimension = 2;
+		break;
+	case PHYSICS::HEAT_TRANSFER_3D:
+	case PHYSICS::STRUCTURAL_MECHANICS_3D:
+		dimension = 3;
+		break;
+	}
+
+	eslocal node;
+	std::vector<double> coordinates(_dMesh.esize.size() * dimension);
+	std::vector<eslocal> partition(_dMesh.esize.size()), frames(_eDistribution.begin(), _eDistribution.end());
+
+	for (size_t e = 0, eoffset = 0; e < _dMesh.esize.size(); eoffset += _dMesh.esize[e++]) {
+		node = _dMesh.enodes[eoffset] - _nDistribution[environment->MPIrank];
+		coordinates[dimension * e + 0] = _dMesh.coordinates[node].x;
+		coordinates[dimension * e + 1] = _dMesh.coordinates[node].y;
+		if (dimension == 3) {
+			coordinates[dimension * e + 2] = _dMesh.coordinates[node].z;
+		}
+	}
+
+	ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_PartGeom, frames.data(), NULL, NULL, dimension, coordinates.data(), 0, NULL, NULL, partition.data());
+
+	permutation.resize(partition.size());
+	std::iota(permutation.begin(), permutation.end(), 0);
+	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return partition[i] < partition[j]; });
+
+
+	edist = std::vector<eslocal>({ 0 });
+	edist.reserve(_dMesh.esize.size() + 1);
+	for (size_t e = 0; e < _dMesh.esize.size(); e++) {
+		edist.push_back(edist.back() + _dMesh.esize[e]);
+	}
+
+	sSize.clear(), sNodes.clear(), rSize.clear(), rNodes.clear();
+	sEData.clear(), rEData.clear();
+	targets.clear();
+
+	eslocal prevID = -1;
+	for (auto e = permutation.begin(); e != permutation.end(); ++e) {
+		if (partition[*e] != prevID) {
+			sSize.push_back({});
+			sNodes.push_back({});
+			sEData.push_back({});
+			targets.push_back(partition[*e]);
+			prevID = partition[*e];
+		}
+		sSize.back().push_back(_dMesh.esize[*e]);
+		sEData.back().push_back(_dMesh.edata[*e]);
+		sNodes.back().insert(sNodes.back().end(), _dMesh.enodes.begin() + edist[*e], _dMesh.enodes.begin() + edist[*e + 1]);
 	}
 
 	if (!Communication::sendVariousTargets(sSize, rSize, targets)) {
