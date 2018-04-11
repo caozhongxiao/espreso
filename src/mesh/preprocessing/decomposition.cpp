@@ -342,11 +342,15 @@ void MeshPreprocessing::partitiate(eslocal parts)
 			tdistribution.push_back(0);
 			for (size_t t = 0; t < threads - 1; t++) {
 				auto more = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution.back() + averageThreadSize);
-				auto less = more - 1;
-				if (std::fabs(*less - averageThreadSize * (t + 1)) < std::fabs(*more - averageThreadSize * (t + 1))) {
-					tdistribution.push_back(*less);
+				if (more == domainDistribution.end()) {
+					tdistribution.push_back(domainDistribution.back());
 				} else {
-					tdistribution.push_back(*more);
+					auto less = more - 1;
+					if (std::fabs(*less - averageThreadSize * (t + 1)) < std::fabs(*more - averageThreadSize * (t + 1))) {
+						tdistribution.push_back(*less);
+					} else {
+						tdistribution.push_back(*more);
+					}
 				}
 			}
 			tdistribution.push_back(permutation.size());
