@@ -51,8 +51,6 @@ STATIC_LIBRARY:
   script:
     - ./waf configure --LIBTYPE=STATIC
     - ./waf install -j8
-    - python tests/benchmarks.py
-    - python tests/solver.py
 
 CATALYST:
   stage: tests
