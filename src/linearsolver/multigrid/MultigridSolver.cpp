@@ -8,6 +8,10 @@
 #include "../../basis/utilities/utils.h"
 #include "MultigridSolver.h"
 
+#include "../../wrappers/hypre/hypre.h"
+
+#include "../../config/ecf/environment.h"
+
 using namespace espreso;
 
 MultigridSolver::MultigridSolver(Instance *instance, const MultigridConfiguration &configuration)
@@ -25,6 +29,7 @@ MultigridSolver::~MultigridSolver() {
 // make partial initialization according to updated matrices
 void MultigridSolver::update(Matrices matrices)
 {
+	HYPRE::Solve(environment->MPIrank, environment->MPIsize, environment->MPICommunicator );
 	ESINFO(GLOBAL_ERROR) << "Multigrid UPDATE not implemented.";
 }
 

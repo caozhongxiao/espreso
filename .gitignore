@@ -23,6 +23,7 @@ build-espreso-gui-Desktop_Qt_5_9_1_GCC_64bit-Profile/
 # also skip tools - new tools are added by 'git add -f'
 # TODO: move building of tools to build directory
 tools/*
+src/wrappers/hypre/include/*
 
 # ignore ESPRESO results (default location)
 **/results/

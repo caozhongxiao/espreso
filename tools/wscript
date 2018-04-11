@@ -27,14 +27,16 @@ def create_symlink(ctx, lib, suffix=""):
             name   = "create symlink to {0}".format(lib)
         )
 def build_hypre(ctx):
-	
-    create_symlink(ctx, "HYPRE")
-    
+	    
     if check_libraries(ctx, ["HYPRE-2.11.2"]):
         return
 
+	create_symlink(ctx, "HYPRE")
+    create_symlink(ctx, "HYPRE-2.11.2")
+
     path = ctx.ROOT + "/tools/hypre-2.11.2"
-    params = "--libdir={0}/lib/lib{1} --includedir={2} ".format(ctx.ROOT, ctx.env.INT_WIDTH, path+"/include")
+    include_path = ctx.ROOT + "/src/wrappers/hypre/include"
+    params = "--libdir={0}/lib/lib{1} --includedir={2} ".format(ctx.ROOT, ctx.env.INT_WIDTH, include_path)
     
     if ctx.env.LIBTYPE == "SHARED":
         params += " --enable-shared "
