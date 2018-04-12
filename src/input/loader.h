@@ -91,6 +91,8 @@ protected:
 
 	void sortElements();
 
+	void SFC();
+
 	void fillElements();
 	void fillCoordinates();
 	void addNodeRegions();
