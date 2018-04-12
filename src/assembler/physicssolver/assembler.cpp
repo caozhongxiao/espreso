@@ -481,6 +481,7 @@ template<typename TType>
 void storeData(TType &data, size_t domain, const std::string &name)
 {
 	std::ofstream os(Logging::prepareFile(domain, name));
+	os.precision(10);
 	os << data;
 	os.close();
 }
