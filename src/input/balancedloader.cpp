@@ -530,6 +530,8 @@ void BalancedLoader::SFC()
 	}
 
 	_eDistribution = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
+
+	ESINFO(PROGRESS1) << _eDistribution;
 }
 
 void BalancedLoader::sortElements()
@@ -581,14 +583,20 @@ void BalancedLoader::sortElements()
 		rNodes[0].insert(rNodes[0].end(), rNodes[r].begin(), rNodes[r].end());
 	}
 
-	permutation.resize(rSize[0].size());
-	std::iota(permutation.begin(), permutation.end(), 0);
-	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return rEData[0][i].id < rEData[0][j].id; });
+	size_t enodes = 0;
+	if (rSize.size()) {
+		enodes = rNodes[0].size();
+		permutation.resize(rSize[0].size());
+		std::iota(permutation.begin(), permutation.end(), 0);
+		std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return rEData[0][i].id < rEData[0][j].id; });
 
-	edist = std::vector<eslocal>({ 0 });
-	edist.reserve(rSize[0].size() + 1);
-	for (size_t e = 0; e < rSize[0].size(); e++) {
-		edist.push_back(edist.back() + rSize[0][e]);
+		edist = std::vector<eslocal>({ 0 });
+		edist.reserve(rSize[0].size() + 1);
+		for (size_t e = 0; e < rSize[0].size(); e++) {
+			edist.push_back(edist.back() + rSize[0][e]);
+		}
+	} else {
+		permutation.resize(0);
 	}
 
 	_dMesh.esize.clear();
@@ -596,7 +604,7 @@ void BalancedLoader::sortElements()
 	_dMesh.edata.clear();
 	_dMesh.esize.reserve(permutation.size());
 	_dMesh.edata.reserve(permutation.size());
-	_dMesh.enodes.reserve(rNodes[0].size());
+	_dMesh.enodes.reserve(enodes);
 	for (size_t n = 0; n < permutation.size(); n++) {
 		_dMesh.esize.push_back(rSize[0][permutation[n]]);
 		_dMesh.edata.push_back(rEData[0][permutation[n]]);
@@ -604,6 +612,8 @@ void BalancedLoader::sortElements()
 	}
 
 	_eDistribution = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
+
+	ESINFO(PROGRESS1) << _eDistribution;
 
 //	eslocal dimension = 0;
 //	switch (_configuration.physics) {
