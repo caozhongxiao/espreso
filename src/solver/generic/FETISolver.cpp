@@ -129,16 +129,16 @@ void FETISolver::solve()
 	Solve(instance->f, instance->primalSolution, instance->dualSolution);
 
 	double mmax = std::numeric_limits<double>::min(), gmax = std::numeric_limits<double>::min();
-	#pragma omp parallel for
+	#pragma omp parallel for reduction(max:mmax)
 	for (size_t d = 0; d < instance->primalSolution.size(); d++) {
 		for (size_t i = 0; i < instance->primalSolution[d].size(); i++) {
-			mmax = std::max(mmax, instance->primalSolution[d][i]);
+			mmax= std::max(mmax, std::fabs(instance->primalSolution[d][i]));
 		}
 	}
 
 	MPI_Allreduce(&mmax, &gmax, 1, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
 
-	double dplaces = 1 / configuration.precision / pow(10, std::ceil(std::log10(mmax)));
+	double dplaces = 1 / configuration.precision / std::max(1., pow(10, std::ceil(std::log10(gmax))));
 
 	#pragma omp parallel for
 	for (size_t d = 0; d < instance->primalSolution.size(); d++) {
