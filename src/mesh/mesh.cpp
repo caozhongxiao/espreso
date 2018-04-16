@@ -589,7 +589,8 @@ void Mesh::update()
 		preprocessing->searchContactInterfaces();
 	}
 
-	printStatistics();
+	printMeshStatistics();
+	printDecompositionStatistics();
 }
 
 void Mesh::initNodeData()
@@ -842,7 +843,7 @@ void Mesh::computeElementStatistic(const ElementData *data, const ElementsRegion
 	}
 }
 
-void Mesh::printStatistics()
+void Mesh::printMeshStatistics()
 {
 	size_t namesize = 25;
 
@@ -948,16 +949,72 @@ void Mesh::printStatistics()
 		}
 	}
 
+	ESINFO(OVERVIEW) << "============================================\n";
+}
+
+void Mesh::printDecompositionStatistics()
+{
+	size_t namesize = 20;
+
+	auto header = [&] (const std::string &name) {
+		return name + std::string(namesize - name.size(), ' ') + " : ";
+	};
+
+	ESINFO(OVERVIEW) << "========= Decomposition statistics =========";
+
+	ESINFO(OVERVIEW) << header(" Number of processes") << environment->MPIsize;
+
 	ESINFO(OVERVIEW);
 
-	int totalClusters = 0, clusters = elements->nclusters;
+	int totalNeighbors = 0, minNeighbors = 0, maxNeighbors = 0, neighbors = neighbours.size();
+	MPI_Reduce(&neighbors, &minNeighbors, 1, MPI_INT, MPI_MIN, 0, environment->MPICommunicator);
+	MPI_Reduce(&neighbors, &totalNeighbors, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
+	MPI_Reduce(&neighbors, &maxNeighbors, 1, MPI_INT, MPI_MAX, 0, environment->MPICommunicator);
+	ESINFO(OVERVIEW) << header(" Number of neigbors") << totalNeighbors;
+	ESINFO(OVERVIEW) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
+			<< minNeighbors << ", " << maxNeighbors << " (" << totalNeighbors / (double)environment->MPIsize << ")";
+	ESINFO(OVERVIEW) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNeighbors / (double)minNeighbors;
+
+	ESINFO(OVERVIEW);
+
+	int totalClusters = 0, minClusters = 0, maxClusters = 0, clusters = elements->nclusters;
+	MPI_Reduce(&clusters, &minClusters, 1, MPI_INT, MPI_MIN, 0, environment->MPICommunicator);
 	MPI_Reduce(&clusters, &totalClusters, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
+	MPI_Reduce(&clusters, &maxClusters, 1, MPI_INT, MPI_MAX, 0, environment->MPICommunicator);
 	ESINFO(OVERVIEW) << header(" Number of clusters") << totalClusters;
+	ESINFO(OVERVIEW) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
+			<< minClusters << ", " << maxClusters << " (" << totalClusters / (double)environment->MPIsize << ")";
+	ESINFO(OVERVIEW) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxClusters / (double)minClusters;
 
-	int totalDomains = 0, domains = elements->ndomains;
+	ESINFO(OVERVIEW);
+
+	int totalDomains = 0, minDomains = 0, maxDomains = 0, domains = elements->ndomains;
+	MPI_Reduce(&domains, &minDomains, 1, MPI_INT, MPI_MIN, 0, environment->MPICommunicator);
 	MPI_Reduce(&domains, &totalDomains, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
+	MPI_Reduce(&domains, &maxDomains, 1, MPI_INT, MPI_MAX, 0, environment->MPICommunicator);
 	ESINFO(OVERVIEW) << header(" Number of domains") << totalDomains;
+	ESINFO(OVERVIEW) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
+			<< minDomains << ", " << maxDomains << " (" << totalDomains / (double)environment->MPIsize << ")";
+	ESINFO(OVERVIEW) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxDomains / (double)minDomains;
 
-	ESINFO(OVERVIEW) << "============================================";
+	ESINFO(OVERVIEW);
+
+	int totalElements = 0, minElements = 0, maxElements = 0;
+	int minelements = elements->elementsDistribution[1], maxelements = 0, avgelements = 0;
+	for (eslocal d = 0; d < elements->ndomains; d++) {
+		minelements = std::min(minelements, elements->elementsDistribution[d + 1] - elements->elementsDistribution[d]);
+		maxelements = std::max(maxelements, elements->elementsDistribution[d + 1] - elements->elementsDistribution[d]);
+		avgelements += elements->elementsDistribution[d + 1] - elements->elementsDistribution[d];
+	}
+
+	MPI_Reduce(&minelements, &minElements, 1, MPI_INT, MPI_MIN, 0, environment->MPICommunicator);
+	MPI_Reduce(&avgelements, &totalElements, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
+	MPI_Reduce(&maxelements, &maxElements, 1, MPI_INT, MPI_MAX, 0, environment->MPICommunicator);
+	ESINFO(OVERVIEW) << header(" Number of elements") << totalElements;
+	ESINFO(OVERVIEW) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
+			<< minElements << ", " << maxElements << " (" << totalElements / (double)totalDomains << ")";
+	ESINFO(OVERVIEW) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
+
+	ESINFO(OVERVIEW) << "============================================\n";
 }
 

@@ -88,7 +88,8 @@ public:
 	bool _withGUI;
 
 private:
-	void printStatistics();
+	void printMeshStatistics();
+	void printDecompositionStatistics();
 };
 
 }
