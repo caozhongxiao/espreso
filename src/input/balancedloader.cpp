@@ -370,13 +370,16 @@ void BalancedLoader::SFC()
 		n = n << 1;
 		nn = nn << 1;
 	}
+	n = n << 2;
+	nn = nn << 2;
 
 	std::vector<eslocal> scounts(pow(n, dimension)), rcounts(pow(n, dimension)), bounds(environment->MPIsize + 1);
-	std::vector<eslocal> partition(_dMesh.esize.size());
+	std::vector<long> partition(_dMesh.esize.size());
 
 	if (dimension == 2) {
 		auto c2d = [&] (eslocal n, eslocal x, eslocal y) {
-			int rx, ry, d = 0;
+			int rx, ry;
+			long d = 0;
 			for (eslocal s = n / 2; s > 0; s /= 2) {
 				rx = (x & s) > 0;
 				ry = (y & s) > 0;
@@ -401,10 +404,10 @@ void BalancedLoader::SFC()
 	}
 
 	if (dimension == 3) {
-		auto c2d = [&] (eslocal n, eslocal x, eslocal y, eslocal z) {
-			int rx, ry, rz, d = 0;
+		auto c2d = [&] (long n, long x, long y, long z) {
+			long rx, ry, rz, d = 0;
 
-			for (eslocal s = n / 2; s > 0; s /= 2) {
+			for (long s = n / 2; s > 0; s /= 2) {
 				rx = (x & s) > 0;
 				ry = (y & s) > 0;
 				rz = (z & s) > 0;
@@ -507,14 +510,20 @@ void BalancedLoader::SFC()
 		rNodes[0].insert(rNodes[0].end(), rNodes[r].begin(), rNodes[r].end());
 	}
 
-	permutation.resize(rSize[0].size());
-	std::iota(permutation.begin(), permutation.end(), 0);
-	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return rEData[0][i].id < rEData[0][j].id; });
+	size_t enodes = 0;
+	if (rSize.size()) {
+		enodes = rNodes[0].size();
+		permutation.resize(rSize[0].size());
+		std::iota(permutation.begin(), permutation.end(), 0);
+		std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return rEData[0][i].id < rEData[0][j].id; });
 
-	edist = std::vector<eslocal>({ 0 });
-	edist.reserve(rSize[0].size() + 1);
-	for (size_t e = 0; e < rSize[0].size(); e++) {
-		edist.push_back(edist.back() + rSize[0][e]);
+		edist = std::vector<eslocal>({ 0 });
+		edist.reserve(rSize[0].size() + 1);
+		for (size_t e = 0; e < rSize[0].size(); e++) {
+			edist.push_back(edist.back() + rSize[0][e]);
+		}
+	} else {
+		permutation.clear();
 	}
 
 	_dMesh.esize.clear();
@@ -522,7 +531,7 @@ void BalancedLoader::SFC()
 	_dMesh.edata.clear();
 	_dMesh.esize.reserve(permutation.size());
 	_dMesh.edata.reserve(permutation.size());
-	_dMesh.enodes.reserve(rNodes[0].size());
+	_dMesh.enodes.reserve(enodes);
 	for (size_t n = 0; n < permutation.size(); n++) {
 		_dMesh.esize.push_back(rSize[0][permutation[n]]);
 		_dMesh.edata.push_back(rEData[0][permutation[n]]);
@@ -530,8 +539,6 @@ void BalancedLoader::SFC()
 	}
 
 	_eDistribution = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
-
-	ESINFO(PROGRESS1) << _eDistribution;
 }
 
 void BalancedLoader::sortElements()
@@ -612,8 +619,6 @@ void BalancedLoader::sortElements()
 	}
 
 	_eDistribution = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
-
-	ESINFO(PROGRESS1) << _eDistribution;
 
 //	eslocal dimension = 0;
 //	switch (_configuration.physics) {
@@ -889,7 +894,9 @@ void BalancedLoader::fillCoordinates()
 	std::vector<size_t> distribution = tarray<Point>::distribute(threads, csize);
 	std::vector<std::vector<eslocal> > tIDs(threads), rankDistribution(sRanks.size());
 	std::vector<std::vector<int> > rankData(sRanks.size());
-	rankDistribution.front().push_back(0);
+	if (rankDistribution.size()) {
+		rankDistribution.front().push_back(0);
+	}
 
 	#pragma omp parallel for
 	for (size_t r = 0; r < sRanks.size(); r++) {

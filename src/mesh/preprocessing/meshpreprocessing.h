@@ -65,6 +65,7 @@ public:
 
 	void morphRBF(const std::string &name, const RBFTargetConfiguration &configuration, int dimension);
 
+	void startPreprocessing();
 	void finishPreprocessing();
 
 protected:

@@ -404,6 +404,7 @@ void Mesh::update()
 		}
 	};
 
+	preprocessing->startPreprocessing();
 
 	ESINFO(OVERVIEW) << "Preprocess mesh data.";
 	materials.clear();

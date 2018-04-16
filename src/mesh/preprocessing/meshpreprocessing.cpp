@@ -35,7 +35,7 @@ size_t MeshPreprocessing::level = 0;
 MeshPreprocessing::MeshPreprocessing(Mesh *mesh)
 : _mesh(mesh), _morphing(NULL), _timeStatistics(new TimeEval("Mesh preprocessing timing"))
 {
-	_timeStatistics->totalTime.startWithBarrier();
+//	_timeStatistics->totalTime.startWithBarrier();
 }
 
 MeshPreprocessing::~MeshPreprocessing()
@@ -44,6 +44,11 @@ MeshPreprocessing::~MeshPreprocessing()
 	for (auto it = _timeEvents.begin(); it != _timeEvents.end(); ++it) {
 		delete it->second;
 	}
+}
+
+void MeshPreprocessing::startPreprocessing()
+{
+	_timeStatistics->totalTime.startWithBarrier();
 }
 
 void MeshPreprocessing::finishPreprocessing()
