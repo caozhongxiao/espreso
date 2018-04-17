@@ -25,19 +25,28 @@ static void _mergeStatistics(void *in, void *out, int *len, MPI_Datatype *dataty
 template<typename Ttype>
 static void _max(void *in, void *out, int *len, MPI_Datatype *datatype)
 {
-	*(static_cast<Ttype*>(out)) = std::max(*(static_cast<Ttype*>(in)), *(static_cast<Ttype*>(out)));
+	int size = *len / sizeof(Ttype);
+	for (int i = 0; i < size; i++) {
+		*(static_cast<Ttype*>(out) + i) = std::max(*(static_cast<Ttype*>(in) + i), *(static_cast<Ttype*>(out) + i));
+	}
 }
 
 template<typename Ttype>
 static void _min(void *in, void *out, int *len, MPI_Datatype *datatype)
 {
-	*(static_cast<Ttype*>(out)) = std::min(*(static_cast<Ttype*>(in)), *(static_cast<Ttype*>(out)));
+	int size = *len / sizeof(Ttype);
+	for (int i = 0; i < size; i++) {
+		*(static_cast<Ttype*>(out) + i) = std::min(*(static_cast<Ttype*>(in) + i), *(static_cast<Ttype*>(out) + i));
+	}
 }
 
 template<typename Ttype>
 static void _sum(void *in, void *out, int *len, MPI_Datatype *datatype)
 {
-	*(static_cast<Ttype*>(out)) += *(static_cast<Ttype*>(in));
+	int size = *len / sizeof(Ttype);
+	for (int i = 0; i < size; i++) {
+		*(static_cast<Ttype*>(out) + i) += *(static_cast<Ttype*>(in) + i);
+	}
 }
 
 MPITools::Operations::Operations()
