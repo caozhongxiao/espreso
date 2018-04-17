@@ -365,118 +365,148 @@ void BalancedLoader::SFC()
 		break;
 	}
 
-	size_t n = 1, nn = n << 4;
+	auto D2toD1 = [&] (size_t n, size_t x, size_t y) {
+		int rx, ry;
+		double d = 0;
+		for (size_t s = n / 2, depth = 2; s > 0; s /= 2, depth = depth << 1) {
+			rx = (x & s) > 0;
+			ry = (y & s) > 0;
+			d += 1. / (depth * depth) * ((3 * rx) ^ ry);
+
+			if (ry == 0) {
+				if (rx == 1) {
+					x = n - 1 - x;
+					y = n - 1 - y;
+				}
+				std::swap(x, y);
+			}
+		}
+		return d;
+	};
+
+	auto D3toD1 = [&] (size_t n, size_t x, size_t y, size_t z) {
+		int rx, ry, rz;
+		double d = 0;
+
+		for (size_t s = n / 2, depth = 2; s > 0; s /= 2, depth = depth << 1) {
+			rx = (x & s) > 0;
+			ry = (y & s) > 0;
+			rz = (z & s) > 0;
+			d += 1. / (depth * depth * depth) * (4 * ry + (3 * (ry ^ rx)) ^ rz);
+
+			if (rz == 0) {
+				if (rx == 1) {
+					std::swap(x, z);
+					x = n - 1 - x;
+					z = n - 1 - z;
+				} else {
+					if (ry == 1) {
+						y = n - 1 - y;
+						z = n - 1 - z;
+					}
+					std::swap(y, z);
+				}
+			} else {
+				std::swap(x, y);
+				if (ry == 1) {
+					x = n - 1 - x;
+					y = n - 1 - y;
+				}
+			}
+		}
+		return d;
+	};
+
+	size_t n = 1;
 	while (pow(n, dimension) < environment->MPIsize) {
 		n = n << 1;
-		nn = nn << 1;
 	}
-//	n = n << 3;
-//	nn = nn << 3;
 
-	std::vector<eslocal> scounts(pow(n, dimension)), rcounts(pow(n, dimension)), obounds(environment->MPIsize + 1);
+	size_t depth = 1;
+	std::vector<eslocal> toimprove, nextimprove = { 0 };
+	std::vector<eslocal> sumoffset, nextsumoffset = { 0 };
+	std::vector<eslocal> scounts(pow(n, dimension)), rcounts(pow(n, dimension));
 	std::vector<double> partition(_dMesh.esize.size()), bounds(environment->MPIsize + 1);
-
-	if (dimension == 2) {
-		auto c2d = [&] (size_t n, size_t x, size_t y) {
-			int rx, ry;
-			double d = 0;
-			for (size_t s = n / 2, deep = 2; s > 0; s /= 2, deep = deep << 1) {
-				rx = (x & s) > 0;
-				ry = (y & s) > 0;
-				d += 1. / (deep * deep) * ((3 * rx) ^ ry);
-
-				if (ry == 0) {
-					if (rx == 1) {
-						x = n - 1 - x;
-						y = n - 1 - y;
-					}
-					std::swap(x, y);
-				}
-			}
-			return d;
-		};
-
-		for (size_t i = 0, offset = 0; i < _dMesh.esize.size(); offset += _dMesh.esize[i++]) {
-			size_t x = std::floor(nn * (_dMesh.coordinates[_dMesh.enodes[offset] - _nDistribution[environment->MPIrank]].x - origin.x) / size.x);
-			size_t y = std::floor(nn * (_dMesh.coordinates[_dMesh.enodes[offset] - _nDistribution[environment->MPIrank]].y - origin.y) / size.y);
-			++scounts[(partition[i] = c2d(nn, x, y)) / (1. / (n * n))];
-		}
-	}
-
-	if (dimension == 3) {
-		auto c2d = [&] (size_t n, size_t x, size_t y, size_t z) {
-			int rx, ry, rz;
-			double d = 0;
-
-			for (size_t s = n / 2, deep = 2; s > 0; s /= 2, deep = deep << 1) {
-				rx = (x & s) > 0;
-				ry = (y & s) > 0;
-				rz = (z & s) > 0;
-				d += 1. / (deep * deep * deep) * (4 * ry + (3 * (ry ^ rx)) ^ rz);
-
-				if (rz == 0) {
-					if (rx == 1) {
-						std::swap(x, z);
-						x = n - 1 - x;
-						z = n - 1 - z;
-					} else {
-						if (ry == 1) {
-							y = n - 1 - y;
-							z = n - 1 - z;
-						}
-						std::swap(y, z);
-					}
-				} else {
-					std::swap(x, y);
-					if (ry == 1) {
-						x = n - 1 - x;
-						y = n - 1 - y;
-					}
-				}
-			}
-			return d;
-		};
-
-		for (size_t i = 0, offset = 0; i < _dMesh.esize.size(); offset += _dMesh.esize[i++]) {
-			const Point &p = _dMesh.coordinates[_dMesh.enodes[offset] - _nDistribution[environment->MPIrank]];
-			size_t x = std::floor(nn * (p.x - origin.x) / size.x);
-			size_t y = std::floor(nn * (p.y - origin.y) / size.y);
-			size_t z = std::floor(nn * (p.z - origin.z) / size.z);
-			++scounts[(partition[i] = c2d(nn, x, y, z)) / (1. / (n * n * n))];
-		}
-	}
-
-	std::vector<size_t> asum, ideal = tarray<size_t>::distribute(environment->MPIsize, _eDistribution.back());
-
-	MPI_Reduce(scounts.data(), rcounts.data(), sizeof(eslocal) * scounts.size(), MPI_BYTE, MPITools::operations().sum, 0, environment->MPICommunicator);
-
-	asum.push_back(0);
-	for (size_t i = 0; i < rcounts.size(); i++) {
-		asum.push_back(asum.back() + rcounts[i]);
-	}
-
-	for (size_t i = 1; i + 1 < ideal.size(); i++) {
-		auto up = std::lower_bound(asum.begin(), asum.end(), ideal[i]);
-		auto bottom = up - 1;
-		double scale = (double)(ideal[i] - *bottom) / (*up - *bottom);
-		bounds[i] = 1. / pow(n, dimension) * (bottom - asum.begin()) + scale * 1. / pow(n, dimension);
-		obounds[i] = ((bottom - asum.begin()) * pow(nn / n, dimension)) + scale * pow(nn / n, dimension);
-	}
-	obounds.back() = pow(nn, dimension);
-	bounds.back() = 1;
-
-	ESINFO(PROGRESS1) << "IDEAL: " << ideal << "ASUM: " << asum << "BOUNDS: " << bounds << "OBOUNDS: " << obounds;
-
-	MPI_Bcast(bounds.data(), bounds.size(), MPI_DOUBLE, 0, environment->MPICommunicator);
-
+	std::vector<size_t> asum(pow(n, dimension) + 1), ideal = tarray<size_t>::distribute(environment->MPIsize, _eDistribution.back());
 	std::vector<eslocal> permutation(partition.size());
+
+	bounds.back() = 1;
 	std::iota(permutation.begin(), permutation.end(), 0);
-	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return partition[i] < partition[j]; });
 
 	std::vector<eslocal> edist({ 0 });
 	edist.reserve(_dMesh.esize.size() + 1);
 	for (size_t e = 0; e < _dMesh.esize.size(); e++) {
 		edist.push_back(edist.back() + _dMesh.esize[e]);
+	}
+
+	while (nextimprove.size()) {
+		toimprove.swap(nextimprove);
+		sumoffset.swap(nextsumoffset);
+		nextimprove.clear();
+		nextsumoffset.clear();
+
+		auto begin = permutation.begin();
+		auto end = permutation.begin();
+		for (auto q = toimprove.begin(), offset = sumoffset.begin(); q != toimprove.end(); ++q, ++offset) {
+			std::fill(scounts.begin(), scounts.end(), 0);
+
+			double lower = *q * 1. / pow(n / 2, dimension);
+			double upper = lower + 1. / pow(n / 2, dimension);
+			if (depth == 1) {
+				lower = 0;
+				upper = 1;
+			}
+
+			begin = std::lower_bound(end, permutation.end(), lower, [&] (eslocal i, double b) { return partition[i] < b; });
+			end = std::lower_bound(begin, permutation.end(), upper, [&] (eslocal i, double b) { return partition[i] < b; });
+
+			if (dimension == 2) {
+				for (auto i = begin; i != end; ++i) {
+					size_t x = std::floor(n * (_dMesh.coordinates[_dMesh.enodes[edist[*i]] - _nDistribution[environment->MPIrank]].x - origin.x) / size.x);
+					size_t y = std::floor(n * (_dMesh.coordinates[_dMesh.enodes[edist[*i]] - _nDistribution[environment->MPIrank]].y - origin.y) / size.y);
+					++scounts[((partition[*i] = D2toD1(n << 2, x, y)) - lower) / (1. / pow(n, dimension))];
+				}
+			}
+
+			if (dimension == 3) {
+				for (auto i = begin; i != end; ++i) {
+					const Point &p = _dMesh.coordinates[_dMesh.enodes[edist[*i]] - _nDistribution[environment->MPIrank]];
+					size_t x = std::floor(n * (p.x - origin.x) / size.x);
+					size_t y = std::floor(n * (p.y - origin.y) / size.y);
+					size_t z = std::floor(n * (p.z - origin.z) / size.z);
+					++scounts[((partition[*i] = D3toD1(n << 2, x, y, z)) - lower) / (1. / pow(n, dimension))];
+				}
+			}
+
+			std::sort(begin, end, [&] (eslocal i, eslocal j) { return partition[i] < partition[j]; });
+
+			MPI_Allreduce(scounts.data(), rcounts.data(), sizeof(eslocal) * scounts.size(), MPI_BYTE, MPITools::operations().sum, environment->MPICommunicator);
+
+			asum[0] = *offset;
+			for (size_t i = 0; i < rcounts.size(); i++) {
+				asum[i + 1] = asum[i] + rcounts[i];
+			}
+
+			auto ibegin = std::lower_bound(ideal.begin(), ideal.end(), asum.front());
+			auto iend = std::lower_bound(ideal.begin(), ideal.end(), asum.back());
+			for (auto i = ibegin; i != iend; ++i) {
+				auto up = std::lower_bound(asum.begin(), asum.end(), *i);
+					if (up != asum.begin()) {
+					auto bottom = up - 1;
+					double scale = (double)(*i - *bottom) / (*up - *bottom);
+					bounds[i - ideal.begin()] = 1. / pow(n, dimension) * ((*q * pow(2, dimension)) + bottom - asum.begin()) + scale * 1. / pow(n, dimension);
+					if (*up - *bottom > 0.05 * (_eDistribution.back() / environment->MPIsize)) {
+						nextimprove.push_back((*q * pow(2, dimension)) + bottom - asum.begin());
+						nextsumoffset.push_back(*bottom);
+					}
+				}
+			}
+		}
+		++depth;
+		n = n << 1;
+		scounts.resize(pow(2, dimension));
+		rcounts.resize(pow(2, dimension));
+		asum.resize(pow(2, dimension) + 1);
 	}
 
 	std::vector<std::vector<eslocal> > sSize, sNodes, rSize, rNodes;
@@ -544,16 +574,6 @@ void BalancedLoader::SFC()
 	}
 
 	_eDistribution = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
-
-	if (environment->MPIrank == 0) {
-		size_t min = _eDistribution[1], max = 0;
-		for (int r = 0; r < environment->MPIsize; r++) {
-			std::cout << r << ": " << _eDistribution[r + 1] - _eDistribution[r] << "\n";
-			min = std::min(min, _eDistribution[r + 1] - _eDistribution[r]);
-			max = std::max(max, _eDistribution[r + 1] - _eDistribution[r]);
-		}
-		std::cout << "ratio: " << max / (double)min << "\n";
-	}
 }
 
 void BalancedLoader::sortElements()
