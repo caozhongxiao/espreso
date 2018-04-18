@@ -92,6 +92,7 @@ protected:
 	void sortElements();
 
 	void SFC();
+	void polishSFC();
 
 	void fillElements();
 	void fillCoordinates();
@@ -104,6 +105,7 @@ protected:
 	Mesh &_mesh;
 
 	std::vector<size_t> _nDistribution, _eDistribution;
+	std::vector<double> _sfcbounds;
 	std::vector<int> _targetRanks;
 	std::vector<std::vector<eslocal> > _rankNodeMap;
 };

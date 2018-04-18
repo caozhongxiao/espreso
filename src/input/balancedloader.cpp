@@ -73,6 +73,11 @@ BalancedLoader::BalancedLoader(const ECFRoot &configuration, DistributedMesh &dM
 	tcoordinates.end(); timing.addEvent(tcoordinates);
 	ESINFO(PROGRESS2) << "Balanced loader:: coordinates filled.";
 
+//	TimeEvent tpolish("polishing of decomposition"); tpolish.start();
+//	polishSFC();
+//	tpolish.end(); timing.addEvent(tpolish);
+//	ESINFO(PROGRESS2) << "Balanced loader:: decomposition polished.";
+
 	timing.totalTime.endWithBarrier();
 	timing.printStatsMPI();
 }
@@ -329,6 +334,58 @@ void BalancedLoader::distributeMesh()
 	}
 }
 
+static double D2toD1(size_t n, size_t x, size_t y) {
+	int rx, ry;
+	double d = 0;
+	for (size_t s = n / 2, depth = 2; s > 0; s /= 2, depth = depth << 1) {
+		rx = (x & s) > 0;
+		ry = (y & s) > 0;
+		d += 1. / (depth * depth) * ((3 * rx) ^ ry);
+
+		if (ry == 0) {
+			if (rx == 1) {
+				x = n - 1 - x;
+				y = n - 1 - y;
+			}
+			std::swap(x, y);
+		}
+	}
+	return d;
+};
+
+static double D3toD1(size_t n, size_t x, size_t y, size_t z) {
+	int rx, ry, rz;
+	double d = 0;
+
+	for (size_t s = n / 2, depth = 2; s > 0; s /= 2, depth = depth << 1) {
+		rx = (x & s) > 0;
+		ry = (y & s) > 0;
+		rz = (z & s) > 0;
+		d += 1. / (depth * depth * depth) * (4 * ry + (3 * (ry ^ rx)) ^ rz);
+
+		if (rz == 0) {
+			if (rx == 1) {
+				std::swap(x, z);
+				x = n - 1 - x;
+				z = n - 1 - z;
+			} else {
+				if (ry == 1) {
+					y = n - 1 - y;
+					z = n - 1 - z;
+				}
+				std::swap(y, z);
+			}
+		} else {
+			std::swap(x, y);
+			if (ry == 1) {
+				x = n - 1 - x;
+				y = n - 1 - y;
+			}
+		}
+	}
+	return d;
+};
+
 void BalancedLoader::SFC()
 {
 	Point min = _dMesh.coordinates.front(), max = _dMesh.coordinates.front();
@@ -350,6 +407,9 @@ void BalancedLoader::SFC()
 	MPI_Allreduce(&max.y, &size.y, 1, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
 	MPI_Allreduce(&max.z, &size.z, 1, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
 
+	_mesh.nodes->min = origin;
+	_mesh.nodes->max = size;
+
 	size -= origin - Point(1e-6, 1e-6, 1e-6);
 
 	eslocal dimension = 0;
@@ -365,58 +425,6 @@ void BalancedLoader::SFC()
 		break;
 	}
 
-	auto D2toD1 = [&] (size_t n, size_t x, size_t y) {
-		int rx, ry;
-		double d = 0;
-		for (size_t s = n / 2, depth = 2; s > 0; s /= 2, depth = depth << 1) {
-			rx = (x & s) > 0;
-			ry = (y & s) > 0;
-			d += 1. / (depth * depth) * ((3 * rx) ^ ry);
-
-			if (ry == 0) {
-				if (rx == 1) {
-					x = n - 1 - x;
-					y = n - 1 - y;
-				}
-				std::swap(x, y);
-			}
-		}
-		return d;
-	};
-
-	auto D3toD1 = [&] (size_t n, size_t x, size_t y, size_t z) {
-		int rx, ry, rz;
-		double d = 0;
-
-		for (size_t s = n / 2, depth = 2; s > 0; s /= 2, depth = depth << 1) {
-			rx = (x & s) > 0;
-			ry = (y & s) > 0;
-			rz = (z & s) > 0;
-			d += 1. / (depth * depth * depth) * (4 * ry + (3 * (ry ^ rx)) ^ rz);
-
-			if (rz == 0) {
-				if (rx == 1) {
-					std::swap(x, z);
-					x = n - 1 - x;
-					z = n - 1 - z;
-				} else {
-					if (ry == 1) {
-						y = n - 1 - y;
-						z = n - 1 - z;
-					}
-					std::swap(y, z);
-				}
-			} else {
-				std::swap(x, y);
-				if (ry == 1) {
-					x = n - 1 - x;
-					y = n - 1 - y;
-				}
-			}
-		}
-		return d;
-	};
-
 	size_t n = 1;
 	while (pow(n, dimension) < environment->MPIsize) {
 		n = n << 1;
@@ -426,11 +434,12 @@ void BalancedLoader::SFC()
 	std::vector<eslocal> toimprove, nextimprove = { 0 };
 	std::vector<eslocal> sumoffset, nextsumoffset = { 0 };
 	std::vector<eslocal> scounts(pow(n, dimension)), rcounts(pow(n, dimension));
-	std::vector<double> partition(_dMesh.esize.size()), bounds(environment->MPIsize + 1);
+	std::vector<double> partition(_dMesh.esize.size());
 	std::vector<size_t> asum(pow(n, dimension) + 1), ideal = tarray<size_t>::distribute(environment->MPIsize, _eDistribution.back());
 	std::vector<eslocal> permutation(partition.size());
 
-	bounds.back() = 1;
+	_sfcbounds.resize(environment->MPIsize + 1);
+	_sfcbounds.back() = 1;
 	std::iota(permutation.begin(), permutation.end(), 0);
 
 	std::vector<eslocal> edist({ 0 });
@@ -464,7 +473,7 @@ void BalancedLoader::SFC()
 				for (auto i = begin; i != end; ++i) {
 					size_t x = std::floor(n * (_dMesh.coordinates[_dMesh.enodes[edist[*i]] - _nDistribution[environment->MPIrank]].x - origin.x) / size.x);
 					size_t y = std::floor(n * (_dMesh.coordinates[_dMesh.enodes[edist[*i]] - _nDistribution[environment->MPIrank]].y - origin.y) / size.y);
-					++scounts[((partition[*i] = D2toD1(n << 2, x, y)) - lower) / (1. / pow(n, dimension))];
+					++scounts[((partition[*i] = D2toD1(n, x, y)) - lower) / (1. / pow(n, dimension))];
 				}
 			}
 
@@ -474,7 +483,7 @@ void BalancedLoader::SFC()
 					size_t x = std::floor(n * (p.x - origin.x) / size.x);
 					size_t y = std::floor(n * (p.y - origin.y) / size.y);
 					size_t z = std::floor(n * (p.z - origin.z) / size.z);
-					++scounts[((partition[*i] = D3toD1(n << 2, x, y, z)) - lower) / (1. / pow(n, dimension))];
+					++scounts[((partition[*i] = D3toD1(n, x, y, z)) - lower) / (1. / pow(n, dimension))];
 				}
 			}
 
@@ -494,7 +503,7 @@ void BalancedLoader::SFC()
 					if (up != asum.begin()) {
 					auto bottom = up - 1;
 					double scale = (double)(*i - *bottom) / (*up - *bottom);
-					bounds[i - ideal.begin()] = 1. / pow(n, dimension) * ((*q * pow(2, dimension)) + bottom - asum.begin()) + scale * 1. / pow(n, dimension);
+					_sfcbounds[i - ideal.begin()] = 1. / pow(n, dimension) * ((*q * pow(2, dimension)) + bottom - asum.begin()) + scale * 1. / pow(n, dimension);
 					if (*up - *bottom > 0.05 * (_eDistribution.back() / environment->MPIsize)) {
 						nextimprove.push_back((*q * pow(2, dimension)) + bottom - asum.begin());
 						nextsumoffset.push_back(*bottom);
@@ -514,8 +523,8 @@ void BalancedLoader::SFC()
 	std::vector<int> targets;
 
 	for (int r = 0; r < environment->MPIsize; r++) {
-		auto begin = std::lower_bound(permutation.begin(), permutation.end(), bounds[r], [&] (eslocal i, double b) { return partition[i] < b; });
-		auto end = std::lower_bound(permutation.begin(), permutation.end(), bounds[r + 1], [&] (eslocal i, double b) { return partition[i] < b; });
+		auto begin = std::lower_bound(permutation.begin(), permutation.end(), _sfcbounds[r], [&] (eslocal i, double b) { return partition[i] < b; });
+		auto end = std::lower_bound(permutation.begin(), permutation.end(), _sfcbounds[r + 1], [&] (eslocal i, double b) { return partition[i] < b; });
 		if (begin != end) {
 			sSize.push_back({});
 			sNodes.push_back({});
@@ -574,6 +583,69 @@ void BalancedLoader::SFC()
 	}
 
 	_eDistribution = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
+}
+
+void BalancedLoader::polishSFC()
+{
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	Point origin = _mesh.nodes->min, size = _mesh.nodes->max - _mesh.nodes->min + Point(1e-6, 1e-6, 1e-6);
+	Communication::serialize([&] () {
+		std::cout << _sfcbounds;
+	});
+	size_t N = 1 << (size_t)std::ceil(std::log2(environment->MPIsize));
+
+	std::vector<eslocal> toexchange;
+	std::vector<std::vector<double> > centers(threads);
+
+//	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		centers[t].resize(_mesh.elements->dimension * (_mesh.elements->distribution[t + 1] - _mesh.elements->distribution[t]));
+		Point center;
+		size_t eindex = 0;
+		double D1;
+		size_t ncount;
+		for (auto e = _mesh.elements->nodes->cbegin(t); e != _mesh.elements->nodes->cend(t); ++e, ++eindex) {
+			center = Point();
+			ncount = 0;
+			size_t NN = N;
+			while (true) {
+				const Point &p = _mesh.nodes->coordinates->datatarray()[e->front()];
+				size_t x = std::floor(NN * (p.x - origin.x) / size.x);
+				size_t y = std::floor(NN * (p.y - origin.y) / size.y);
+				D1 = D2toD1(NN, x, y);
+				if (_sfcbounds[environment->MPIrank] <= D1 && D1 < _sfcbounds[environment->MPIrank + 1]) {
+					break;
+				}
+				NN = NN << 1;
+			}
+			for (auto n = e->begin(); n != e->end(); ++n) {
+				const Point &p = _mesh.nodes->coordinates->datatarray()[*n];
+				center += p;
+				size_t x = std::floor(NN * (p.x - origin.x) / size.x);
+				size_t y = std::floor(NN * (p.y - origin.y) / size.y);
+				D1 = D2toD1(NN, x, y);
+				if (_sfcbounds[environment->MPIrank] <= D1 && D1 < _sfcbounds[environment->MPIrank + 1]) {
+					++ncount;
+				}
+			}
+			if (ncount < _mesh.elements->dimension) {
+				toexchange.push_back(eindex);
+			}
+			center /= e->size();
+			centers[t][_mesh.elements->dimension * eindex + 0] = center.x;
+			centers[t][_mesh.elements->dimension * eindex + 1] = center.y;
+			if (_mesh.elements->dimension == 3) {
+				centers[t][_mesh.elements->dimension * eindex + 2] = center.z;
+			}
+		}
+	}
+
+	Communication::serialize([&] () {
+		std::cout << "TO EXCHANGE: " << environment->MPIrank << " -> " << toexchange.size() << "\n";
+	});
+
+	_mesh.elements->centers = new serializededata<eslocal, double>(_mesh.elements->dimension, centers);
 }
 
 void BalancedLoader::sortElements()
@@ -655,6 +727,7 @@ void BalancedLoader::sortElements()
 
 	_eDistribution = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
 
+//	DISTRIBUTION BY METIS GEOM
 //	eslocal dimension = 0;
 //	switch (_configuration.physics) {
 //	case PHYSICS::HEAT_TRANSFER_2D:
@@ -680,7 +753,7 @@ void BalancedLoader::sortElements()
 //			coordinates[dimension * e + 2] = _dMesh.coordinates[node].z;
 //		}
 //	}
-
+//
 //	ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_PartGeom, frames.data(), NULL, NULL, dimension, coordinates.data(), 0, NULL, NULL, partition.data());
 //
 //	permutation.resize(partition.size());
@@ -801,6 +874,16 @@ void BalancedLoader::fillElements()
 		}
 	}
 
+	switch (_mesh.configuration.physics) {
+	case PHYSICS::HEAT_TRANSFER_2D:
+	case PHYSICS::STRUCTURAL_MECHANICS_2D:
+	case PHYSICS::SHALLOW_WATER_2D:
+		_mesh.elements->dimension = 2;
+		break;
+	case PHYSICS::HEAT_TRANSFER_3D:
+	case PHYSICS::STRUCTURAL_MECHANICS_3D:
+		_mesh.elements->dimension = 3;
+	}
 	_mesh.elements->size = _dMesh.esize.size();
 	_mesh.elements->distribution = edistribution;
 	_mesh.elements->IDs = new serializededata<eslocal, eslocal>(1, eIDs);
