@@ -119,6 +119,10 @@ void MeshPreprocessing::reclusterize()
 
 	std::vector<eslocal> edistribution = _mesh->elements->gatherElementsProcDistribution();
 	std::vector<eslocal> partition(_mesh->elements->size), permutation(_mesh->elements->size);
+	double* ecenters = NULL;
+	if (_mesh->elements->centers != NULL) {
+		ecenters = _mesh->elements->centers->datatarray().data();
+	}
 
 	finish("compute global dual graph");
 
@@ -126,7 +130,7 @@ void MeshPreprocessing::reclusterize()
 	eslocal edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_PartKway,
 		edistribution.data(),
 		dDistribution.data(), dData[0].data(),
-		0, NULL,
+		_mesh->elements->dimension, ecenters,
 		0, NULL, NULL,
 		partition.data()
 	);
@@ -140,7 +144,7 @@ void MeshPreprocessing::reclusterize()
 			edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_AdaptiveRepart,
 				edistribution.data(),
 				dDistribution.data(), dData[0].data(),
-				0, NULL, // 3, _mesh->elements->coordinates->datatarray(),
+				_mesh->elements->dimension, ecenters,
 				0, NULL, NULL,
 				partition.data()
 			);
