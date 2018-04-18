@@ -954,7 +954,7 @@ void Mesh::printMeshStatistics()
 
 void Mesh::printDecompositionStatistics()
 {
-	size_t namesize = 20;
+	size_t namesize = 25;
 
 	auto header = [&] (const std::string &name) {
 		return name + std::string(namesize - name.size(), ' ') + " : ";
@@ -962,58 +962,239 @@ void Mesh::printDecompositionStatistics()
 
 	ESINFO(OVERVIEW) << "========= Decomposition statistics =========";
 
-	ESINFO(OVERVIEW) << header(" Number of processes") << environment->MPIsize;
+	ESINFO(OVERVIEW) << header(" NUMBER OF PROCESSES") << environment->MPIsize;
 
 	ESINFO(OVERVIEW);
 
-	int totalNeighbors = 0, minNeighbors = 0, maxNeighbors = 0, neighbors = neighbours.size();
-	MPI_Reduce(&neighbors, &minNeighbors, 1, MPI_INT, MPI_MIN, 0, environment->MPICommunicator);
-	MPI_Reduce(&neighbors, &totalNeighbors, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
-	MPI_Reduce(&neighbors, &maxNeighbors, 1, MPI_INT, MPI_MAX, 0, environment->MPICommunicator);
-	ESINFO(OVERVIEW) << header(" Number of neigbors") << totalNeighbors;
+	eslocal totalNeighbors = 0, minNeighbors = 0, maxNeighbors = 0, neighbors = neighbours.size();
+	MPI_Reduce(&neighbors, &minNeighbors, sizeof(eslocal), MPI_BYTE, MPITools::operations().min, 0, environment->MPICommunicator);
+	MPI_Reduce(&neighbors, &totalNeighbors, sizeof(eslocal), MPI_BYTE, MPITools::operations().sum, 0, environment->MPICommunicator);
+	MPI_Reduce(&neighbors, &maxNeighbors, sizeof(eslocal), MPI_BYTE, MPITools::operations().max, 0, environment->MPICommunicator);
+	ESINFO(OVERVIEW) << header(" NUMBER OF NEIGHBORS") << totalNeighbors;
 	ESINFO(OVERVIEW) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
 			<< minNeighbors << ", " << maxNeighbors << " (" << totalNeighbors / (double)environment->MPIsize << ")";
 	ESINFO(OVERVIEW) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNeighbors / (double)minNeighbors;
 
 	ESINFO(OVERVIEW);
 
-	int totalClusters = 0, minClusters = 0, maxClusters = 0, clusters = elements->nclusters;
-	MPI_Reduce(&clusters, &minClusters, 1, MPI_INT, MPI_MIN, 0, environment->MPICommunicator);
-	MPI_Reduce(&clusters, &totalClusters, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
-	MPI_Reduce(&clusters, &maxClusters, 1, MPI_INT, MPI_MAX, 0, environment->MPICommunicator);
-	ESINFO(OVERVIEW) << header(" Number of clusters") << totalClusters;
+	eslocal totalClusters = 0, minClusters = 0, maxClusters = 0, clusters = elements->nclusters;
+	MPI_Reduce(&clusters, &minClusters, sizeof(eslocal), MPI_BYTE, MPITools::operations().min, 0, environment->MPICommunicator);
+	MPI_Reduce(&clusters, &totalClusters, sizeof(eslocal), MPI_BYTE, MPITools::operations().sum, 0, environment->MPICommunicator);
+	MPI_Reduce(&clusters, &maxClusters, sizeof(eslocal), MPI_BYTE, MPITools::operations().max, 0, environment->MPICommunicator);
+	ESINFO(OVERVIEW) << header(" NUMBER OF CLUSTERS") << totalClusters;
+	ESINFO(OVERVIEW) << header(" clusters per MPI");
 	ESINFO(OVERVIEW) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
 			<< minClusters << ", " << maxClusters << " (" << totalClusters / (double)environment->MPIsize << ")";
 	ESINFO(OVERVIEW) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxClusters / (double)minClusters;
 
 	ESINFO(OVERVIEW);
 
-	int totalDomains = 0, minDomains = 0, maxDomains = 0, domains = elements->ndomains;
-	MPI_Reduce(&domains, &minDomains, 1, MPI_INT, MPI_MIN, 0, environment->MPICommunicator);
-	MPI_Reduce(&domains, &totalDomains, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
-	MPI_Reduce(&domains, &maxDomains, 1, MPI_INT, MPI_MAX, 0, environment->MPICommunicator);
-	ESINFO(OVERVIEW) << header(" Number of domains") << totalDomains;
+	eslocal totalDomains = 0, minDomains = 0, maxDomains = 0, domains = elements->ndomains;
+	MPI_Reduce(&domains, &minDomains, sizeof(eslocal), MPI_BYTE, MPITools::operations().min, 0, environment->MPICommunicator);
+	MPI_Reduce(&domains, &totalDomains, sizeof(eslocal), MPI_BYTE, MPITools::operations().sum, 0, environment->MPICommunicator);
+	MPI_Reduce(&domains, &maxDomains, sizeof(eslocal), MPI_BYTE, MPITools::operations().max, 0, environment->MPICommunicator);
+	ESINFO(OVERVIEW) << header(" NUMBER OF DOMAINS") << totalDomains;
+	ESINFO(OVERVIEW) << header(" domains per MPI");
 	ESINFO(OVERVIEW) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
 			<< minDomains << ", " << maxDomains << " (" << totalDomains / (double)environment->MPIsize << ")";
-	ESINFO(OVERVIEW) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxDomains / (double)minDomains;
+	if (maxDomains / (double)minDomains > 3) {
+		ESINFO(OVERVIEW) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxDomains / (double)minDomains;
+	} else {
+		ESINFO(OVERVIEW) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxDomains / (double)minDomains;
+	}
+
+	ESINFO(OVERVIEW) << header(" domains per cluster");
+
+	eslocal cdomains = elements->ndomains;
+	for (eslocal c = 0; c < elements->nclusters; c++) {
+		domains = 0;
+		for (eslocal d = 0; d < elements->ndomains; d++) {
+			if (elements->clusters[d] == c) {
+				++domains;
+			}
+		}
+		cdomains = std::min(domains, cdomains);
+	}
+	MPI_Reduce(&domains, &minDomains, sizeof(eslocal), MPI_BYTE, MPITools::operations().min, 0, environment->MPICommunicator);
+	for (eslocal c = 0; c < elements->nclusters; c++) {
+		domains = 0;
+		for (eslocal d = 0; d < elements->ndomains; d++) {
+			if (elements->clusters[d] == c) {
+				++domains;
+			}
+		}
+		cdomains = std::max(domains, cdomains);
+	}
+	MPI_Reduce(&domains, &maxDomains, sizeof(eslocal), MPI_BYTE, MPITools::operations().max, 0, environment->MPICommunicator);
+
+	ESINFO(OVERVIEW) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
+			<< minDomains << ", " << maxDomains << " (" << totalDomains / (double)totalClusters << ")";
+	if (maxDomains / (double)minDomains > 3) {
+		ESINFO(OVERVIEW) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxDomains / (double)minDomains;
+	} else {
+		ESINFO(OVERVIEW) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxDomains / (double)minDomains;
+	}
 
 	ESINFO(OVERVIEW);
 
-	int totalElements = 0, minElements = 0, maxElements = 0;
-	int minelements = elements->elementsDistribution[1], maxelements = 0, avgelements = 0;
+	eslocal totalElements = 0, minElements = 0, maxElements = 0;
+	eslocal minelements = elements->elementsDistribution[1], maxelements = 0, avgelements = elements->size;
+	MPI_Reduce(&avgelements, &minElements, sizeof(eslocal), MPI_BYTE, MPITools::operations().min, 0, environment->MPICommunicator);
+	MPI_Reduce(&avgelements, &totalElements, sizeof(eslocal), MPI_BYTE, MPITools::operations().sum, 0, environment->MPICommunicator);
+	MPI_Reduce(&avgelements, &maxElements, sizeof(eslocal), MPI_BYTE, MPITools::operations().max, 0, environment->MPICommunicator);
+	ESINFO(OVERVIEW) << header(" NUMBER OF ELEMENTS") << totalElements;
+	ESINFO(OVERVIEW) << header(" elements per MPI");
+	ESINFO(OVERVIEW) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
+			<< minElements << ", " << maxElements << " (" << totalElements / (double)environment->MPIsize << ")";
+	if (maxElements / (double)minElements > 1.5) {
+		ESINFO(OVERVIEW) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
+	} else {
+		ESINFO(OVERVIEW) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
+	}
+
+
+	ESINFO(OVERVIEW) << header(" elements per cluster");
+
+	eslocal celements = elements->size;
+	for (eslocal c = 0; c < elements->nclusters; c++) {
+		avgelements = 0;
+		for (eslocal d = 0; d < elements->ndomains; d++) {
+			if (elements->clusters[d] == c) {
+				avgelements += elements->elementsDistribution[d + 1] - elements->elementsDistribution[d];
+			}
+		}
+		celements = std::min(avgelements, celements);
+	}
+	MPI_Reduce(&celements, &minElements, sizeof(eslocal), MPI_BYTE, MPITools::operations().min, 0, environment->MPICommunicator);
+	for (eslocal c = 0; c < elements->nclusters; c++) {
+		avgelements = 0;
+		for (eslocal d = 0; d < elements->ndomains; d++) {
+			if (elements->clusters[d] == c) {
+				avgelements += elements->elementsDistribution[d + 1] - elements->elementsDistribution[d];
+			}
+		}
+		celements = std::max(avgelements, celements);
+	}
+	MPI_Reduce(&celements, &maxelements, sizeof(eslocal), MPI_BYTE, MPITools::operations().max, 0, environment->MPICommunicator);
+	ESINFO(OVERVIEW) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
+			<< minElements << ", " << maxElements << " (" << totalElements / (double)totalClusters << ")";
+
+	if (maxElements / (double)minElements > 2) {
+		ESINFO(OVERVIEW) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
+	} else {
+		ESINFO(OVERVIEW) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
+	}
+
+	ESINFO(OVERVIEW) << header(" elements per domain");
+
+	minelements = maxelements = elements->elementsDistribution[1];
+	avgelements = 0;
 	for (eslocal d = 0; d < elements->ndomains; d++) {
 		minelements = std::min(minelements, elements->elementsDistribution[d + 1] - elements->elementsDistribution[d]);
 		maxelements = std::max(maxelements, elements->elementsDistribution[d + 1] - elements->elementsDistribution[d]);
 		avgelements += elements->elementsDistribution[d + 1] - elements->elementsDistribution[d];
 	}
-
-	MPI_Reduce(&minelements, &minElements, 1, MPI_INT, MPI_MIN, 0, environment->MPICommunicator);
-	MPI_Reduce(&avgelements, &totalElements, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
-	MPI_Reduce(&maxelements, &maxElements, 1, MPI_INT, MPI_MAX, 0, environment->MPICommunicator);
-	ESINFO(OVERVIEW) << header(" Number of elements") << totalElements;
+	MPI_Reduce(&minelements, &minElements, sizeof(eslocal), MPI_BYTE, MPITools::operations().min, 0, environment->MPICommunicator);
+	MPI_Reduce(&avgelements, &totalElements, sizeof(eslocal), MPI_BYTE, MPITools::operations().sum, 0, environment->MPICommunicator);
+	MPI_Reduce(&maxelements, &maxElements, sizeof(eslocal), MPI_BYTE, MPITools::operations().max, 0, environment->MPICommunicator);
 	ESINFO(OVERVIEW) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
 			<< minElements << ", " << maxElements << " (" << totalElements / (double)totalDomains << ")";
-	ESINFO(OVERVIEW) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
+
+	if (maxElements / (double)minElements > 1.5) {
+		ESINFO(OVERVIEW) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
+	} else {
+		ESINFO(OVERVIEW) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
+	}
+
+	eslocal totalNodes = 0, minNodes = 0, maxNodes = 0;
+	eslocal minnodes = nodes->size, maxnodes = nodes->size, avgnodes = nodes->size;
+	MPI_Reduce(&minnodes, &minNodes, sizeof(eslocal), MPI_BYTE, MPITools::operations().min, 0, environment->MPICommunicator);
+	MPI_Reduce(&avgnodes, &totalNodes, sizeof(eslocal), MPI_BYTE, MPITools::operations().sum, 0, environment->MPICommunicator);
+	MPI_Reduce(&maxnodes, &maxNodes, sizeof(eslocal), MPI_BYTE, MPITools::operations().max, 0, environment->MPICommunicator);
+
+	ESINFO(OVERVIEW);
+
+	ESINFO(OVERVIEW) << header(" NUMBER OF NODES") << nodes->uniqueTotalSize;
+	ESINFO(OVERVIEW) << header(" nodes per MPI") << totalNodes;
+	ESINFO(OVERVIEW) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
+			<< minNodes << ", " << maxNodes << " (" << totalNodes / (double)environment->MPIsize << ")";
+	ESINFO(OVERVIEW) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNodes / (double)minNodes;
+	if (maxNodes / (double)minNodes > 1.5) {
+		ESINFO(OVERVIEW) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNodes / (double)minNodes;
+	} else {
+		ESINFO(OVERVIEW) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNodes / (double)minNodes;
+	}
+
+
+	minnodes = maxnodes = avgnodes = nodes->dintervals[0].back().DOFOffset + nodes->dintervals[0].back().end - nodes->dintervals[0].back().begin;
+	for (eslocal d = 1; d < elements->ndomains; d++) {
+		minnodes = std::min(minnodes, nodes->dintervals[d].back().DOFOffset + nodes->dintervals[d].back().end - nodes->dintervals[d].back().begin);
+		maxnodes = std::max(maxnodes, nodes->dintervals[d].back().DOFOffset + nodes->dintervals[d].back().end - nodes->dintervals[d].back().begin);
+		avgnodes += nodes->dintervals[d].back().DOFOffset + nodes->dintervals[d].back().end - nodes->dintervals[d].back().begin;
+	}
+	MPI_Reduce(&minnodes, &minNodes, sizeof(eslocal), MPI_BYTE, MPITools::operations().min, 0, environment->MPICommunicator);
+	MPI_Reduce(&avgnodes, &totalNodes, sizeof(eslocal), MPI_BYTE, MPITools::operations().sum, 0, environment->MPICommunicator);
+	MPI_Reduce(&maxnodes, &maxNodes, sizeof(eslocal), MPI_BYTE, MPITools::operations().max, 0, environment->MPICommunicator);
+
+	ESINFO(OVERVIEW) << header(" nodes per domain") << totalNodes;
+	ESINFO(OVERVIEW) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
+			<< minNodes << ", " << maxNodes << " (" << totalNodes / (double)totalDomains << ")";
+	if (maxNodes / (double)minNodes > 1.5) {
+		ESINFO(OVERVIEW) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNodes / (double)minNodes;
+	} else {
+		ESINFO(OVERVIEW) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNodes / (double)minNodes;
+	}
+
+	eslocal minUnique = 0, maxUnique = 0;
+	MPI_Reduce(&nodes->uniqueSize, &minUnique, sizeof(eslocal), MPI_BYTE, MPITools::operations().min, 0, environment->MPICommunicator);
+	MPI_Reduce(&nodes->uniqueSize, &maxUnique, sizeof(eslocal), MPI_BYTE, MPITools::operations().max, 0, environment->MPICommunicator);
+
+	ESINFO(OVERVIEW) << header(" unique nodes per MPI");
+	ESINFO(OVERVIEW) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
+			<< minUnique << ", " << maxUnique << " (" << maxUnique / (double)nodes->uniqueTotalSize << ")";
+	ESINFO(OVERVIEW) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxUnique / (double)minUnique;
+
+
+	ESINFO(OVERVIEW);
+
+	eslocal maxduplicity = 0, maxDuplicity = 0;
+	for (auto d = nodes->idomains->cbegin(); d != nodes->idomains->cend(); ++d) {
+		maxduplicity = std::max(maxduplicity, (eslocal)d->size());
+	}
+
+	MPI_Reduce(&maxduplicity, &maxDuplicity, sizeof(eslocal), MPI_BYTE, MPITools::operations().max, 0, environment->MPICommunicator);
+	ESINFO(OVERVIEW) << header(" MAX NODE DUPLICITY") << maxDuplicity;
+
+	ESINFO(OVERVIEW) << header(" COMMUNICATION VOLUME") << "BOUNDARY, INNER (RATIO)";
+	eslocal inner = 0, boundary = 0, totalInner = 0, totalBoundary = 0;
+	auto iranks = nodes->iranks->cbegin();
+	for (size_t i = 0; i < nodes->pintervals.size(); ++i, ++iranks) {
+		if (iranks->front() != environment->MPIrank || iranks->back() != environment->MPIrank) {
+			if (nodes->pintervals[i].sourceProcess == environment->MPIrank)
+			boundary += nodes->pintervals[i].end - nodes->pintervals[i].begin;
+		} else {
+			inner += nodes->pintervals[i].end - nodes->pintervals[i].begin;
+		}
+	}
+	MPI_Reduce(&inner, &totalInner, sizeof(eslocal), MPI_BYTE, MPITools::operations().sum, 0, environment->MPICommunicator);
+	MPI_Reduce(&boundary, &totalBoundary, sizeof(eslocal), MPI_BYTE, MPITools::operations().sum, 0, environment->MPICommunicator);
+	ESINFO(OVERVIEW) << std::string(namesize - 7, ' ') << "per MPI : " << totalBoundary << ", " << totalInner << " (" << totalBoundary / (double)totalInner << ")";
+
+	inner = 0, boundary = 0, totalInner = 0, totalBoundary = 0;
+	for (eslocal d = 0; d < elements->ndomains; d++) {
+		for (size_t i = 0; i < nodes->dintervals[d].size(); i++) {
+			if ((nodes->idomains->cbegin() + nodes->dintervals[d][i].pindex)->size() > 1) {
+				if ((nodes->idomains->cbegin() + nodes->dintervals[d][i].pindex)->front() == d + elements->firstDomain) {
+					boundary += nodes->dintervals[d][i].end - nodes->dintervals[d][i].begin;
+				}
+			} else {
+				inner += nodes->dintervals[d][i].end - nodes->dintervals[d][i].begin;
+			}
+		}
+	}
+	MPI_Reduce(&inner, &totalInner, sizeof(eslocal), MPI_BYTE, MPITools::operations().sum, 0, environment->MPICommunicator);
+	MPI_Reduce(&boundary, &totalBoundary, sizeof(eslocal), MPI_BYTE, MPITools::operations().sum, 0, environment->MPICommunicator);
+	ESINFO(OVERVIEW) << std::string(namesize - 10, ' ') << "per domain : " << totalBoundary << ", " << totalInner << " (" << totalBoundary / (double)totalInner << ")";
 
 	ESINFO(OVERVIEW) << "============================================\n";
 }
