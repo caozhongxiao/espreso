@@ -62,7 +62,7 @@ void MeshPreprocessing::arrangeNodes()
 				domain = std::lower_bound(domain, eDist.end(), *e + 1) - 1;
 				if (prev != domain) {
 					domainsData[t].push_back(domain - eDist.begin());
-					domainsProcs[t].push_back(std::lower_bound(dProcDist.begin(), dProcDist.end(), domainsData[t].back() + 1) - dProcDist.begin()  -1);
+					domainsProcs[t].push_back(std::lower_bound(dProcDist.begin(), dProcDist.end(), domainsData[t].back() + 1) - dProcDist.begin() - 1);
 				}
 				prev = domain;
 			}

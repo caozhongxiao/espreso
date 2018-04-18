@@ -241,6 +241,17 @@ void Mesh::load()
 
 		Esutils::threadDistributionToFullDistribution(boundaries);
 
+		switch (configuration.physics) {
+		case PHYSICS::HEAT_TRANSFER_2D:
+		case PHYSICS::STRUCTURAL_MECHANICS_2D:
+		case PHYSICS::SHALLOW_WATER_2D:
+			elements->dimension = 2;
+			break;
+		case PHYSICS::HEAT_TRANSFER_3D:
+		case PHYSICS::STRUCTURAL_MECHANICS_3D:
+			elements->dimension = 3;
+		}
+
 		elements->size = mesh->elements().size();
 		elements->distribution = distribution;
 

@@ -1052,6 +1052,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	elements->neighbors = new serializededata<eslocal, eslocal>(elemsNeighborsDistribution, elemsNeighborsData);
 
+	elements->dimension = _mesh->elements->dimension;
 	elements->size = elements->IDs->structures();
 	elements->distribution = elements->IDs->datatarray().distribution();
 

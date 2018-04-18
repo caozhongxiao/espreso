@@ -4,17 +4,20 @@
 
 #include "../elements/element.h"
 
+#include "../../basis/containers/point.h"
 #include "../../basis/containers/serializededata.h"
 #include "../../config/ecf/environment.h"
 
 using namespace espreso;
 
 ElementStore::ElementStore(std::vector<Element*> &eclasses)
-: size(0),
+: dimension(3),
+  size(0),
   distribution({0, 0}),
 
   IDs(NULL),
   nodes(NULL),
+  centers(NULL),
 
   body(NULL),
   material(NULL),
@@ -174,6 +177,7 @@ ElementStore::~ElementStore()
 {
 	if (IDs == NULL) { delete IDs; }
 	if (nodes == NULL) { delete nodes; }
+	if (centers == NULL) { delete centers; }
 
 	if (body == NULL) { delete body; }
 	if (material == NULL) { delete material; }
@@ -189,6 +193,7 @@ void ElementStore::store(const std::string &file)
 
 	Store::storedata(os, "IDs", IDs);
 	Store::storedata(os, "nodes", nodes);
+	Store::storedata(os, "centers", centers);
 
 	Store::storedata(os, "body", body);
 	Store::storedata(os, "material", material);
@@ -203,8 +208,8 @@ void ElementStore::permute(const std::vector<eslocal> &permutation, const std::v
 	this->distribution = distribution;
 
 	if (IDs != NULL) { IDs->permute(permutation, distribution); }
-
 	if (nodes != NULL) { nodes->permute(permutation, distribution); }
+	if (centers != NULL) { centers->permute(permutation, distribution); }
 
 	if (body != NULL) { body->permute(permutation, distribution); }
 	if (material != NULL) { material->permute(permutation, distribution); }

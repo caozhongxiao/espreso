@@ -10,6 +10,7 @@
 
 namespace espreso {
 
+struct Point;
 template <typename TEBoundaries, typename TEData> class serializededata;
 struct Element;
 
@@ -51,16 +52,19 @@ struct ElementStore {
 
 	std::vector<eslocal> gatherClustersDistribution();
 
+	eslocal dimension;
 	eslocal size;
 	std::vector<size_t> distribution;
 
 	serializededata<eslocal, eslocal>* IDs;
 	serializededata<eslocal, eslocal>* nodes;
+	serializededata<eslocal, double>* centers;
 
 	serializededata<eslocal, int>* body;
 	serializededata<eslocal, int>* material;
 	serializededata<eslocal, eslocal>* regions;
 	serializededata<eslocal, Element*>* epointers;
+
 
 	serializededata<eslocal, eslocal>* neighbors;
 
