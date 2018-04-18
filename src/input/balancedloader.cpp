@@ -58,7 +58,8 @@ BalancedLoader::BalancedLoader(const ECFRoot &configuration, DistributedMesh &dM
 	ESINFO(PROGRESS2) << "Balanced loader:: data balanced.";
 
 	TimeEvent tesort("sort elements accordint to the first node"); tesort.start();
-	sortElements();
+//	sortElementsVariousTargets();
+	sortElementsAllToAllv();
 	SFC();
 	tesort.end(); timing.addEvent(tesort);
 	ESINFO(PROGRESS2) << "Balanced loader:: elements sorted.";
@@ -590,9 +591,6 @@ void BalancedLoader::polishSFC()
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	Point origin = _mesh.nodes->min, size = _mesh.nodes->max - _mesh.nodes->min + Point(1e-6, 1e-6, 1e-6);
-	Communication::serialize([&] () {
-		std::cout << _sfcbounds;
-	});
 	size_t N = 1 << (size_t)std::ceil(std::log2(environment->MPIsize));
 
 	std::vector<eslocal> toexchange;
@@ -641,14 +639,10 @@ void BalancedLoader::polishSFC()
 		}
 	}
 
-	Communication::serialize([&] () {
-		std::cout << "TO EXCHANGE: " << environment->MPIrank << " -> " << toexchange.size() << "\n";
-	});
-
 	_mesh.elements->centers = new serializededata<eslocal, double>(_mesh.elements->dimension, centers);
 }
 
-void BalancedLoader::sortElements()
+void BalancedLoader::sortElementsVariousTargets()
 {
 	std::vector<eslocal> edist = { 0 };
 	edist.reserve(_dMesh.esize.size() + 1);
@@ -656,7 +650,6 @@ void BalancedLoader::sortElements()
 		edist.push_back(edist.back() + _dMesh.esize[e]);
 	}
 
-	eslocal myMaxID = 0;
 	std::vector<eslocal> permutation(_dMesh.edata.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
 	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return _dMesh.enodes[edist[i]] < _dMesh.enodes[edist[j]]; });
@@ -698,31 +691,22 @@ void BalancedLoader::sortElements()
 	}
 
 	size_t enodes = 0;
+	size_t esize = 0;
 	if (rSize.size()) {
 		enodes = rNodes[0].size();
-		permutation.resize(rSize[0].size());
-		std::iota(permutation.begin(), permutation.end(), 0);
-		std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return rEData[0][i].id < rEData[0][j].id; });
-
-		edist = std::vector<eslocal>({ 0 });
-		edist.reserve(rSize[0].size() + 1);
-		for (size_t e = 0; e < rSize[0].size(); e++) {
-			edist.push_back(edist.back() + rSize[0][e]);
-		}
-	} else {
-		permutation.resize(0);
+		esize = rSize[0].size();
 	}
 
 	_dMesh.esize.clear();
 	_dMesh.enodes.clear();
 	_dMesh.edata.clear();
-	_dMesh.esize.reserve(permutation.size());
-	_dMesh.edata.reserve(permutation.size());
+	_dMesh.esize.reserve(esize);
+	_dMesh.edata.reserve(esize);
 	_dMesh.enodes.reserve(enodes);
-	for (size_t n = 0; n < permutation.size(); n++) {
-		_dMesh.esize.push_back(rSize[0][permutation[n]]);
-		_dMesh.edata.push_back(rEData[0][permutation[n]]);
-		_dMesh.enodes.insert(_dMesh.enodes.end(), rNodes[0].begin() + edist[permutation[n]], rNodes[0].begin() + edist[permutation[n] + 1]);
+	for (size_t n = 0, offset = 0; n < esize; offset += rSize[0][n++]) {
+		_dMesh.esize.push_back(rSize[0][n]);
+		_dMesh.edata.push_back(rEData[0][n]);
+		_dMesh.enodes.insert(_dMesh.enodes.end(), rNodes[0].begin() + offset, rNodes[0].begin() + offset + rSize[0][n]);
 	}
 
 	_eDistribution = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
@@ -824,6 +808,77 @@ void BalancedLoader::sortElements()
 //	}
 //
 //	_eDistribution = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
+}
+
+void BalancedLoader::sortElementsAllToAll()
+{
+
+}
+
+void BalancedLoader::sortElementsAllToAllv()
+{
+	std::vector<eslocal> edist = { 0 };
+	edist.reserve(_dMesh.esize.size() + 1);
+	for (size_t e = 0; e < _dMesh.esize.size(); e++) {
+		edist.push_back(edist.back() + _dMesh.esize[e]);
+	}
+
+	std::vector<eslocal> permutation(_dMesh.edata.size());
+	std::iota(permutation.begin(), permutation.end(), 0);
+	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return _dMesh.enodes[edist[i]] < _dMesh.enodes[edist[j]]; });
+
+	std::vector<eslocal> sSize, sNodes;
+	std::vector<EData> sEData;
+
+	std::vector<int> ssize(environment->MPIsize), rsize(environment->MPIsize);
+	std::vector<int> snsize(environment->MPIsize), rnsize(environment->MPIsize);
+
+	for (int r = 0; r < environment->MPIsize; r++) {
+		auto begin = std::lower_bound(permutation.begin(), permutation.end(), _nDistribution[r], [&] (eslocal i, const size_t &ID) { return _dMesh.enodes[edist[i]] < ID; });
+		auto end = std::lower_bound(permutation.begin(), permutation.end(), _nDistribution[r + 1], [&] (eslocal i, const size_t &ID) { return _dMesh.enodes[edist[i]] < ID; });
+		ssize[r] = end - begin;
+		snsize[r] = sNodes.size();
+
+		for (size_t n = begin - permutation.begin(); n < end - permutation.begin(); ++n) {
+			sSize.push_back(_dMesh.esize[permutation[n]]);
+			sEData.push_back(_dMesh.edata[permutation[n]]);
+			sNodes.insert(sNodes.end(), _dMesh.enodes.begin() + edist[permutation[n]], _dMesh.enodes.begin() + edist[permutation[n] + 1]);
+		}
+		snsize[r] = sNodes.size() - snsize[r];
+	}
+
+	MPI_Alltoall(ssize.data(), 1, MPI_INT, rsize.data(), 1, MPI_INT, environment->MPICommunicator);
+	MPI_Alltoall(snsize.data(), 1, MPI_INT, rnsize.data(), 1, MPI_INT, environment->MPICommunicator);
+
+	size_t rrsize = 0;
+	for (int t = 0; t < environment->MPIsize; t++) {
+		rrsize += rsize[t];
+	}
+	size_t rrnsize = 0;
+	for (int t = 0; t < environment->MPIsize; t++) {
+		rrnsize += rnsize[t];
+	}
+
+	_dMesh.esize.resize(rrsize);
+	_dMesh.edata.resize(rrsize);
+	_dMesh.enodes.resize(rrnsize);
+
+	if (!Communication::allToAllV(sSize, _dMesh.esize, ssize, rsize)) {
+		ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted elements sizes.";
+	}
+	if (!Communication::allToAllV(sEData, _dMesh.edata, ssize, rsize)) {
+		ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted element data.";
+	}
+	if (!Communication::allToAllV(sNodes, _dMesh.enodes, snsize, rnsize)) {
+		ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted element nodes.";
+	}
+
+	_eDistribution = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
+}
+
+void BalancedLoader::sortElementsManual()
+{
+
 }
 
 void BalancedLoader::fillElements()

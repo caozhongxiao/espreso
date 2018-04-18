@@ -89,7 +89,10 @@ protected:
 	void distributeMesh();
 	void checkERegions();
 
-	void sortElements();
+	void sortElementsVariousTargets();
+	void sortElementsAllToAll();
+	void sortElementsAllToAllv();
+	void sortElementsManual();
 
 	void SFC();
 	void polishSFC();

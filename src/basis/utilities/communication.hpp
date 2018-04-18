@@ -283,12 +283,17 @@ bool Communication::balance(std::vector<Ttype> &buffer, const std::vector<size_t
 template <typename Ttype>
 bool Communication::allToAllV(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, const std::vector<int> &ssize, const std::vector<int> &rsize)
 {
+	std::vector<int> _ssize = ssize, _rsize = rsize;
 	std::vector<int> sdisp(environment->MPIsize), rdisp(environment->MPIsize);
-	for (int r = 1; r < environment->MPIsize; r++) {
-		sdisp[r] = sdisp[r - 1] + ssize[r - 1];
-		rdisp[r] = rdisp[r - 1] + rsize[r - 1];
+	for (int r = 0; r < environment->MPIsize; r++) {
+		_ssize[r] *= sizeof(Ttype);
+		_rsize[r] *= sizeof(Ttype);
 	}
-	MPI_Alltoallv(sBuffer.data(), ssize.data(), sdisp.data(), MPI_BYTE, rBuffer.data(), rsize.data(), rdisp.data(), MPI_BYTE, environment->MPICommunicator);
+	for (int r = 1; r < environment->MPIsize; r++) {
+		sdisp[r] = sdisp[r - 1] + _ssize[r - 1];
+		rdisp[r] = rdisp[r - 1] + _rsize[r - 1];
+	}
+	MPI_Alltoallv(sBuffer.data(), _ssize.data(), sdisp.data(), MPI_BYTE, rBuffer.data(), _rsize.data(), rdisp.data(), MPI_BYTE, environment->MPICommunicator);
 	return true;
 }
 
