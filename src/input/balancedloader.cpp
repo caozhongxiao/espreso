@@ -644,6 +644,12 @@ void BalancedLoader::polishSFC()
 
 void BalancedLoader::sortElementsVariousTargets()
 {
+	TimeEval time("SORT BY VARIOUS TARGETS");
+	time.totalTime.startWithBarrier();
+
+	TimeEvent e1("PREPARE");
+	e1.start();
+
 	std::vector<eslocal> edist = { 0 };
 	edist.reserve(_dMesh.esize.size() + 1);
 	for (size_t e = 0; e < _dMesh.esize.size(); e++) {
@@ -674,6 +680,12 @@ void BalancedLoader::sortElementsVariousTargets()
 		}
 	}
 
+	e1.end();
+	time.addEvent(e1);
+
+	TimeEvent e2("EXCHANGE");
+	e2.start();
+
 	if (!Communication::sendVariousTargets(sSize, rSize, targets)) {
 		ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted elements sizes.";
 	}
@@ -689,6 +701,12 @@ void BalancedLoader::sortElementsVariousTargets()
 		rEData[0].insert(rEData[0].end(), rEData[r].begin(), rEData[r].end());
 		rNodes[0].insert(rNodes[0].end(), rNodes[r].begin(), rNodes[r].end());
 	}
+
+	e2.end();
+	time.addEvent(e2);
+
+	TimeEvent e3("POSTPROCESS");
+	e3.start();
 
 	size_t enodes = 0;
 	size_t esize = 0;
@@ -710,6 +728,12 @@ void BalancedLoader::sortElementsVariousTargets()
 	}
 
 	_eDistribution = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
+
+	e3.end();
+	time.addEvent(e3);
+
+	time.totalTime.endWithBarrier();
+	time.printStatsMPI();
 
 //	DISTRIBUTION BY METIS GEOM
 //	eslocal dimension = 0;
@@ -817,6 +841,12 @@ void BalancedLoader::sortElementsAllToAll()
 
 void BalancedLoader::sortElementsAllToAllv()
 {
+	TimeEval time("SORT BY ALLTOALLV");
+	time.totalTime.startWithBarrier();
+
+	TimeEvent e1("PREPARE");
+	e1.start();
+
 	std::vector<eslocal> edist = { 0 };
 	edist.reserve(_dMesh.esize.size() + 1);
 	for (size_t e = 0; e < _dMesh.esize.size(); e++) {
@@ -847,6 +877,12 @@ void BalancedLoader::sortElementsAllToAllv()
 		snsize[r] = sNodes.size() - snsize[r];
 	}
 
+	e1.end();
+	time.addEvent(e1);
+
+	TimeEvent e2("EXCHANGE SIZES");
+	e2.start();
+
 	MPI_Alltoall(ssize.data(), 1, MPI_INT, rsize.data(), 1, MPI_INT, environment->MPICommunicator);
 	MPI_Alltoall(snsize.data(), 1, MPI_INT, rnsize.data(), 1, MPI_INT, environment->MPICommunicator);
 
@@ -863,6 +899,12 @@ void BalancedLoader::sortElementsAllToAllv()
 	_dMesh.edata.resize(rrsize);
 	_dMesh.enodes.resize(rrnsize);
 
+	e2.end();
+	time.addEvent(e2);
+
+	TimeEvent e3("EXCHANGE DATA");
+	e3.start();
+
 	if (!Communication::allToAllV(sSize, _dMesh.esize, ssize, rsize)) {
 		ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted elements sizes.";
 	}
@@ -872,6 +914,12 @@ void BalancedLoader::sortElementsAllToAllv()
 	if (!Communication::allToAllV(sNodes, _dMesh.enodes, snsize, rnsize)) {
 		ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted element nodes.";
 	}
+
+	e3.end();
+	time.addEvent(e3);
+
+	time.totalTime.endWithBarrier();
+	time.printStatsMPI();
 
 	_eDistribution = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
 }
