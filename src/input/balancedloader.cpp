@@ -24,6 +24,8 @@
 #include <numeric>
 #include <algorithm>
 
+#include <unistd.h>
+
 using namespace espreso;
 
 void BalancedLoader::load(const ECFRoot &configuration, Mesh &mesh, int MPIrank, int MPIsize)
@@ -59,7 +61,7 @@ BalancedLoader::BalancedLoader(const ECFRoot &configuration, DistributedMesh &dM
 
 	TimeEvent tesort("sort elements accordint to the first node"); tesort.start();
 //	sortElementsVariousTargets();
-	sortElementsAllToAllv();
+	sortElementsManual();
 	SFC();
 	tesort.end(); timing.addEvent(tesort);
 	ESINFO(PROGRESS2) << "Balanced loader:: elements sorted.";
@@ -926,7 +928,193 @@ void BalancedLoader::sortElementsAllToAllv()
 
 void BalancedLoader::sortElementsManual()
 {
+	TimeEval time("MANUAL SORT");
+	time.totalTime.startWithBarrier();
 
+	TimeEvent e1("MS PREPARE");
+	e1.start();
+
+	std::vector<eslocal> edist = { 0 };
+	edist.reserve(_dMesh.esize.size() + 1);
+	for (size_t e = 0; e < _dMesh.esize.size(); e++) {
+		edist.push_back(edist.back() + _dMesh.esize[e]);
+	}
+
+	std::vector<eslocal> permutation(_dMesh.edata.size());
+	std::iota(permutation.begin(), permutation.end(), 0);
+	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return _dMesh.enodes[edist[i]] < _dMesh.enodes[edist[j]]; });
+
+	std::vector<eslocal> sBuffer, rBuffer;
+	std::vector<int> ssize(environment->MPIsize), rsize(environment->MPIsize);
+
+	size_t prevsize;
+	for (int r = 0; r < environment->MPIsize; r++) {
+		auto begin = std::lower_bound(permutation.begin(), permutation.end(), _nDistribution[r], [&] (eslocal i, const size_t &ID) { return _dMesh.enodes[edist[i]] < ID; });
+		auto end = std::lower_bound(permutation.begin(), permutation.end(), _nDistribution[r + 1], [&] (eslocal i, const size_t &ID) { return _dMesh.enodes[edist[i]] < ID; });
+		prevsize = sBuffer.size();
+		sBuffer.push_back(0);
+		sBuffer.push_back(end - begin);
+		sBuffer.push_back(0);
+
+		for (size_t n = begin - permutation.begin(); n < end - permutation.begin(); ++n) {
+			sBuffer.push_back(_dMesh.esize[permutation[n]]);
+			sBuffer.insert(sBuffer.end(), reinterpret_cast<const eslocal*>(_dMesh.edata.data() + permutation[n]), reinterpret_cast<const eslocal*>(_dMesh.edata.data() + permutation[n] + 1));
+			sBuffer.insert(sBuffer.end(), _dMesh.enodes.begin() + edist[permutation[n]], _dMesh.enodes.begin() + edist[permutation[n] + 1]);
+			sBuffer[prevsize + 2] += edist[permutation[n] + 1] - edist[permutation[n]];
+		}
+		sBuffer[prevsize] = sBuffer.size() - prevsize;
+		ssize[r] = sBuffer.size() - prevsize;
+	}
+
+	e1.end();
+	time.addEvent(e1);
+
+	TimeEvent e2("MS EXCHANGE SIZES");
+	e2.start();
+
+	MPI_Alltoall(ssize.data(), 1, MPI_INT, rsize.data(), 1, MPI_INT, environment->MPICommunicator);
+
+	size_t rrsize = 0;
+	for (int t = 0; t < environment->MPIsize; t++) {
+		rrsize += rsize[t];
+	}
+	rBuffer.resize(rrsize);
+
+	e2.end();
+	time.addEvent(e2);
+
+	TimeEvent e3("MS EXCHANGE DATA");
+	e3.start();
+
+	std::vector<eslocal> data(environment->MPIsize), send, recv, final;
+	std::iota(data.begin(), data.end(), 0);
+	recv.reserve(data.size());
+	size_t levels = std::ceil(std::log2(environment->MPIsize));
+
+	send = data;
+
+	MPI_Status status;
+	int msgsize, prevmsgsize;
+
+	final.push_back(data[environment->MPIrank]);
+
+	int left = 0, right = environment->MPIsize, mid;
+	for (size_t l = 0; l < levels && left + 1 < right; l++) {
+		mid = left + (right - left) / 2 + (right - left) % 2;
+		if (environment->MPIrank < mid) {
+			if (environment->MPIrank + (mid - left) >= right) {
+				int sindex = std::lower_bound(send.begin(), send.end(), mid) - send.begin();
+				MPI_Send(send.data() + sindex, send.size() - sindex, MPI_INT, mid, 0, environment->MPICommunicator);
+
+				send.resize(std::lower_bound(send.begin(), send.end(), environment->MPIrank) - send.begin());
+			} else {
+				int sindex = std::lower_bound(send.begin(), send.end(), mid) - send.begin();
+				MPI_Send(send.data() + sindex, send.size() - sindex, MPI_INT, environment->MPIrank + (mid - left), 0, environment->MPICommunicator);
+				data.resize(2 * sindex);
+				MPI_Probe(environment->MPIrank + (mid - left), 0, environment->MPICommunicator, &status);
+				MPI_Get_count(&status, MPI_INT, &msgsize);
+				recv.resize(msgsize);
+				MPI_Recv(recv.data(), msgsize, MPI_INT, environment->MPIrank + (mid - left), 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
+
+				send.swap(data);
+				send.clear();
+				auto dbegin = data.begin(), dend = data.end();
+				for (size_t i = 0; i < recv.size(); i++) {
+					if (recv[i] == environment->MPIrank) {
+						final.push_back(recv[i]);
+					} else {
+						send.push_back(recv[i]);
+						dbegin = std::lower_bound(dbegin, data.end(), recv[i]);
+						dend = std::lower_bound(dbegin, data.end(), recv[i] + 1);
+						for (auto it = dbegin; it != dend; ++it) {
+							send.push_back(*it);
+							++dbegin;
+						}
+					}
+				}
+			}
+			right = mid;
+		} else {
+			int sindex = std::lower_bound(send.begin(), send.end(), mid) - send.begin();
+			MPI_Probe(environment->MPIrank - (mid - left), 0, environment->MPICommunicator, &status);
+			MPI_Get_count(&status, MPI_INT, &msgsize);
+			recv.resize(msgsize);
+			MPI_Recv(recv.data(), msgsize, MPI_INT, environment->MPIrank - (mid - left), 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
+			MPI_Send(send.data(), sindex, MPI_INT, environment->MPIrank - (mid - left), 0, environment->MPICommunicator);
+
+			prevmsgsize = msgsize;
+			if (mid - left > right - mid && environment->MPIrank == mid) {
+				MPI_Probe(mid - 1, 0, environment->MPICommunicator, &status);
+				MPI_Get_count(&status, MPI_INT, &msgsize);
+				recv.resize(recv.size() + msgsize);
+				MPI_Recv(recv.data() + prevmsgsize, msgsize, MPI_INT, mid - 1, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
+				msgsize += prevmsgsize;
+			}
+
+			send.swap(data);
+			send.clear();
+			auto dbegin = data.begin(), dend = data.end();
+			for (int i = 0; i < prevmsgsize; i++) {
+				if (recv[i] == environment->MPIrank) {
+					final.push_back(recv[i]);
+				} else {
+					send.push_back(recv[i]);
+					if ((i + 1 == prevmsgsize || recv[i] != recv[i + 1]) && msgsize > prevmsgsize) {
+						auto rbegin = std::lower_bound(recv.begin() + prevmsgsize, recv.end(), recv[i]);
+						auto rend = std::lower_bound(recv.begin() + prevmsgsize, recv.end(), recv[i] + 1);
+						for (auto it = rbegin; it != rend; ++it) {
+							send.push_back(*it);
+						}
+					}
+					dbegin = std::lower_bound(dbegin, data.end(), recv[i]);
+					dend = std::lower_bound(dbegin, data.end(), recv[i] + 1);
+					for (auto it = dbegin; it != dend; ++it) {
+						send.push_back(*it);
+						++dbegin;
+					}
+				}
+			}
+			for (int i = prevmsgsize; i < msgsize; i++) {
+				if (recv[i] == environment->MPIrank) {
+					final.push_back(recv[i]);
+				}
+			}
+
+			left = mid;
+		}
+	}
+
+	if (!Communication::allToAllV(sBuffer, rBuffer, ssize, rsize)) {
+		ESINFO(ERROR) << "ESPRESO internal error: sort elements according to the first node.";
+	}
+
+	e3.end();
+	time.addEvent(e3);
+
+	_dMesh.esize.clear();
+	_dMesh.edata.clear();
+	_dMesh.enodes.clear();
+
+	size_t offset = 0;
+	EData edata;
+	for (int r = 0; r < environment->MPIsize; r++) {
+		size_t esize = rBuffer[++offset];
+		size_t enodes = rBuffer[++offset];
+		++offset;
+		for (size_t e = 0; e < esize; ++e) {
+			_dMesh.esize.push_back(rBuffer[offset++]);
+			memcpy(&edata, rBuffer.data() + offset, sizeof(EData));
+			_dMesh.edata.push_back(edata);
+			offset += sizeof(EData) / sizeof(eslocal);
+			_dMesh.enodes.insert(_dMesh.enodes.end(), rBuffer.begin() + offset, rBuffer.begin() + offset + _dMesh.esize.back());
+			offset += _dMesh.esize.back();
+		}
+	}
+
+	time.totalTime.endWithBarrier();
+	time.printStatsMPI();
+
+	_eDistribution = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
 }
 
 void BalancedLoader::fillElements()
