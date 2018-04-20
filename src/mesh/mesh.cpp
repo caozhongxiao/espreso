@@ -519,11 +519,13 @@ void Mesh::update()
 		preprocessing->triangularizeDomainSurface();
 	}
 
-
 	if (is3D() && _withGUI) {
 		preprocessing->computeRegionsSurface();
 		for (size_t r = 0; r < elementsRegions.size(); r++) {
 			preprocessing->triangularizeSurface(elementsRegions[r]->surface);
+		}
+		for (size_t r = 0; r < boundaryRegions.size(); r++) {
+			preprocessing->triangularizeBoundary(boundaryRegions[r]);
 		}
 	}
 

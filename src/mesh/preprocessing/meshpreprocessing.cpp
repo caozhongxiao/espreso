@@ -640,6 +640,49 @@ void MeshPreprocessing::triangularizeSurface(SurfaceStore *surface)
 	finish("triangularize surface");
 }
 
+void MeshPreprocessing::triangularizeBoundary(BoundaryRegionStore *boundary)
+{
+	start("triangularize boundary");
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	if (boundary->dimension == 2) {
+
+		std::vector<std::vector<eslocal> > triangles(threads);
+		std::vector<std::vector<size_t> > intervals(threads);
+
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			std::vector<eslocal> ttriangles;
+			std::vector<size_t> tintervals;
+			if (t == 0) {
+				tintervals.push_back(0);
+			}
+
+			auto elements = boundary->elements->cbegin(t);
+			const auto &epointers = boundary->epointers->datatarray().begin();
+
+			for (size_t e = boundary->distribution[t]; e < boundary->distribution[t + 1]; ++e, ++elements) {
+				for (auto n = epointers[e]->triangles->datatarray().cbegin(); n != epointers[e]->triangles->datatarray().cend(); ++n) {
+					ttriangles.push_back(elements->at(*n));
+				}
+			}
+			tintervals.push_back(ttriangles.size() / 3);
+
+			intervals[t].swap(tintervals);
+			triangles[t].swap(ttriangles);
+		}
+
+		Esutils::threadDistributionToFullDistribution(intervals);
+		Esutils::mergeThreadedUniqueData(intervals);
+
+		boundary->triangles = new serializededata<eslocal, eslocal>(3, triangles);
+	}
+
+	finish("triangularize boundary");
+}
+
 void MeshPreprocessing::computeBoundaryNodes(std::vector<eslocal> &externalBoundary, std::vector<eslocal> &internalBoundary)
 {
 	start("computation of boundary nodes");

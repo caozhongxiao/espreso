@@ -53,6 +53,7 @@ public:
 	void triangularizeDomainSurface();
 
 	void triangularizeSurface(SurfaceStore *surface);
+	void triangularizeBoundary(BoundaryRegionStore *boundary);
 
 	void computeRegionsSurface();
 	void computeBodiesSurface();
