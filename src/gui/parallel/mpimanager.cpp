@@ -138,7 +138,7 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
         return ( (coordinate - old_axis_min + ( (max_axis - old_axis_len) / 2.0f ) ) / max_axis ) * new_axis_len + new_axis_min;
     };
 
-    for (auto region = m_mesh->elementsRegions.begin();
+    for (auto region = m_mesh->elementsRegions.begin() + 1;
          region != m_mesh->elementsRegions.end();
          region++)
     {
@@ -152,7 +152,7 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
                 ++t) {
 
             for (int i = 0; i < 3; ++i) {
-                Point p = surface->coordinates->datatarray()[t->at(i)];
+                Point p = m_mesh->nodes->coordinates->datatarray()[t->at(i)];
                 float _x = transform(p.x, m_mesh->nodes->min.x, x_len, max_axis_len, axis_len, axis_min);
                 float _y = transform(p.y, m_mesh->nodes->min.y, y_len, max_axis_len, axis_len, axis_min);
                 float _z = transform(p.z, m_mesh->nodes->min.z, z_len, max_axis_len, axis_len, axis_min);
