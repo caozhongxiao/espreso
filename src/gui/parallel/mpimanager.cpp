@@ -8,6 +8,7 @@
 #include "../../mesh/store/elementstore.h"
 #include "../../mesh/store/nodestore.h"
 #include "../../mesh/store/surfacestore.h"
+#include "../../mesh/store/elementsregionstore.h"
 
 #include <QDebug>
 #include "../../input/sortedinput.h"
@@ -118,17 +119,7 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
 
 	Input::load(*m_ecf, *m_mesh, environment->MPIrank, environment->MPIsize);
 
-	auto shrink = [&] (const Point &p, eslocal domain) {
-		Point point = m_mesh->nodes->center + (p - m_mesh->nodes->center) * 0.95;
-		point = m_mesh->nodes->dcenter[domain] + (point - m_mesh->nodes->dcenter[domain]) * 0.9;
-		return point;
-	};
-
 	QMap<QString, QVector<float> > regions;
-
-	QVector<float> &mesh = regions["ALL_ELEMENTS"];
-
-	SurfaceStore *surface = m_mesh->domainsSurface;
 
     float axis_min = -1.0f;
     float axis_max = 1.0f;
@@ -147,95 +138,102 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
         return ( (coordinate - old_axis_min + ( (max_axis - old_axis_len) / 2.0f ) ) / max_axis ) * new_axis_len + new_axis_min;
     };
 
+    for (auto region = m_mesh->elementsRegions.begin();
+         region != m_mesh->elementsRegions.end();
+         region++)
+    {
+        QVector<float> &mesh = regions[QString::fromStdString((*region)->name)];
 
-	for (size_t d = 0; d < m_mesh->elements->ndomains; ++d) {
-		for (
-				auto t = surface->triangles->cbegin() + surface->tdistribution[d];
-				t != surface->triangles->cbegin() + surface->tdistribution[d + 1];
-				++t) {
+        SurfaceStore *surface = (*region)->surface;
 
-			for (int i = 0; i < 3; ++i) {
-				Point p = shrink(surface->coordinates->datatarray()[t->at(i) + surface->cdistribution[d]], d);
+        for (
+                auto t = surface->triangles->cbegin();
+                t != surface->triangles->cend();
+                ++t) {
+
+            for (int i = 0; i < 3; ++i) {
+                Point p = surface->coordinates->datatarray()[t->at(i)];
                 float _x = transform(p.x, m_mesh->nodes->min.x, x_len, max_axis_len, axis_len, axis_min);
                 float _y = transform(p.y, m_mesh->nodes->min.y, y_len, max_axis_len, axis_len, axis_min);
                 float _z = transform(p.z, m_mesh->nodes->min.z, z_len, max_axis_len, axis_len, axis_min);
                 mesh.push_back( _x );
                 mesh.push_back( _y );
                 mesh.push_back( _z );
-				mesh.push_back(0);
                 mesh.push_back(0);
-				mesh.push_back(0);
-			}
-		}
-	}
-
-    struct vertex
-    {
-        QVector<float*> locations;
-        QVector<QVector3D> triangle_normals;
-    };
-
-    QHash<QString, vertex> vertices;
-
-    // COMPUTE TRIANGLE NORMALS
-    for (int t = 0; t < mesh.size(); t += 18)
-    {
-        QVector3D v1(mesh[t], mesh[t + 1], mesh[t + 2]);
-        QVector3D v2(mesh[t + 6], mesh[t + 7], mesh[t + 8]);
-        QVector3D v3(mesh[t + 12], mesh[t + 13], mesh[t + 14]);
-
-        QVector3D edge1 = v2 - v1;
-        QVector3D edge2 = v3 - v1;
-
-        QVector3D normal = QVector3D::crossProduct(edge1, edge2).normalized();
-
-        for (int v = 0; v < 3; v++)
-        {
-            mesh[t + 3 + 6*v] = normal.x();
-            mesh[t + 3 + 6*v + 1] = normal.y();
-            mesh[t + 3 + 6*v + 2] = normal.z();
-        }
-
-        QVector<QVector3D> vs;
-        vs << v1 << v2 << v3;
-
-        for (int i = 0; i < vs.size(); i++)
-        {
-            QString v_key;
-            QDebug(&v_key) << v1;
-            if (vertices.find(v_key) == vertices.end())
-            {
-                struct vertex v;
-                vertices[v_key] = v;
-            }
-            vertices[v_key].locations.append(&mesh.data()[t + 3 + 6*i]);
-            vertices[v_key].triangle_normals.append(normal);
-        }
-    }
-
-    // COMPUTE VERTEX NORMAL FROM SURROUNDING TRIANGLES AND USE IT WHEN angle IS BELOW m_threshold
-    QHashIterator<QString, vertex> i(vertices);
-    while (i.hasNext()) {
-        i.next();
-        QVector3D normal;
-        foreach (QVector3D n, i.value().triangle_normals) {
-            normal += n;
-        }
-        normal.normalize();
-
-
-        for (int v = 0; v < i.value().locations.size(); v++)
-        {
-            float cos_angle = QVector3D::dotProduct(normal, i.value().triangle_normals[v]) /
-                    ( normal.length() * i.value().triangle_normals[v].length() );
-            float angle = qRadiansToDegrees(qAcos(cos_angle));
-            if (angle < m_threshold)
-            {
-                i.value().locations[v][0] = normal.x();
-                i.value().locations[v][1] = normal.y();
-                i.value().locations[v][2] = normal.z();
+                mesh.push_back(0);
+                mesh.push_back(0);
             }
         }
+
+        struct vertex
+        {
+            QVector<float*> locations;
+            QVector<QVector3D> triangle_normals;
+        };
+
+        QHash<QString, vertex> vertices;
+
+        // COMPUTE TRIANGLE NORMALS
+        for (int t = 0; t < mesh.size(); t += 18)
+        {
+            QVector3D v1(mesh[t], mesh[t + 1], mesh[t + 2]);
+            QVector3D v2(mesh[t + 6], mesh[t + 7], mesh[t + 8]);
+            QVector3D v3(mesh[t + 12], mesh[t + 13], mesh[t + 14]);
+
+            QVector3D edge1 = v2 - v1;
+            QVector3D edge2 = v3 - v1;
+
+            QVector3D normal = QVector3D::crossProduct(edge1, edge2).normalized();
+
+            for (int v = 0; v < 3; v++)
+            {
+                mesh[t + 3 + 6*v] = normal.x();
+                mesh[t + 3 + 6*v + 1] = normal.y();
+                mesh[t + 3 + 6*v + 2] = normal.z();
+            }
+
+            QVector<QVector3D> vs;
+            vs << v1 << v2 << v3;
+
+            for (int i = 0; i < vs.size(); i++)
+            {
+                QString v_key;
+                QDebug(&v_key) << v1;
+                if (vertices.find(v_key) == vertices.end())
+                {
+                    struct vertex v;
+                    vertices[v_key] = v;
+                }
+                vertices[v_key].locations.append(&mesh.data()[t + 3 + 6*i]);
+                vertices[v_key].triangle_normals.append(normal);
+            }
+        }
+
+        // COMPUTE VERTEX NORMAL FROM SURROUNDING TRIANGLES AND USE IT WHEN angle IS BELOW m_threshold
+        QHashIterator<QString, vertex> i(vertices);
+        while (i.hasNext()) {
+            i.next();
+            QVector3D normal;
+            foreach (QVector3D n, i.value().triangle_normals) {
+                normal += n;
+            }
+            normal.normalize();
+
+
+            for (int v = 0; v < i.value().locations.size(); v++)
+            {
+                float cos_angle = QVector3D::dotProduct(normal, i.value().triangle_normals[v]) /
+                        ( normal.length() * i.value().triangle_normals[v].length() );
+                float angle = qRadiansToDegrees(qAcos(cos_angle));
+                if (angle < m_threshold)
+                {
+                    i.value().locations[v][0] = normal.x();
+                    i.value().locations[v][1] = normal.y();
+                    i.value().locations[v][2] = normal.z();
+                }
+            }
+        }
+
     }
 
 //    for (size_t e = 0; e < m_mesh->elements().size(); e++) {
