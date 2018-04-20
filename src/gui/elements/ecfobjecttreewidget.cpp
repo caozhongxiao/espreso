@@ -55,6 +55,7 @@ void ECFObjectTreeWidget::add(ECFObject *obj)
 
     for (auto it = obj->parameters.begin(); it != obj->parameters.end(); ++it)
     {
+        if ((*it)->name.compare("INTERSECTION") == 0) continue;
         group->appendRow(new QStandardItem(QString::fromStdString((*it)->name)));
     }
 }
