@@ -138,17 +138,14 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
         return ( (coordinate - old_axis_min + ( (max_axis - old_axis_len) / 2.0f ) ) / max_axis ) * new_axis_len + new_axis_min;
     };
 
-    for (auto region = m_mesh->elementsRegions.begin() + 1;
-         region != m_mesh->elementsRegions.end();
-         region++)
+    auto createRegion = [&] (QString name, auto triangles)
     {
-        QVector<float> &mesh = regions[QString::fromStdString((*region)->name)];
 
-        SurfaceStore *surface = (*region)->surface;
+        QVector<float> &mesh = regions[name];
 
         for (
-                auto t = surface->triangles->cbegin();
-                t != surface->triangles->cend();
+                auto t = triangles->cbegin();
+                t != triangles->cend();
                 ++t) {
 
             for (int i = 0; i < 3; ++i) {
@@ -233,6 +230,25 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
                 }
             }
         }
+
+    };
+
+    for (auto region = m_mesh->elementsRegions.begin() + 1;
+         region != m_mesh->elementsRegions.end();
+         region++)
+    {
+        createRegion(QString::fromStdString((*region)->name),
+                     (*region)->surface->triangles);
+
+    }
+
+    for (auto region = m_mesh->boundaryRegions.begin();
+         region != m_mesh->boundaryRegions.end();
+         region++)
+    {
+        if ((*region)->dimension < 2) continue;
+        createRegion(QString::fromStdString((*region)->name),
+                     (*region)->triangles);
 
     }
 
