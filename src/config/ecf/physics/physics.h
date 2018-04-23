@@ -19,6 +19,11 @@ enum class DISCRETIZATION {
 		BEM
 };
 
+enum class ASSEMBLER {
+	ELEMENTS,
+	FACES
+};
+
 struct PhysicsConfiguration: public ECFObject {
 
 	enum class INTERPOLATION {
@@ -29,6 +34,7 @@ struct PhysicsConfiguration: public ECFObject {
 	size_t load_steps;
 
 	INTERPOLATION interpolation;
+	ASSEMBLER assembler;
 	std::map<std::string, DISCRETIZATION> discretization;
 	DIMENSION dimension;
 	MaterialConfiguration::PHYSICAL_MODEL physical_model;

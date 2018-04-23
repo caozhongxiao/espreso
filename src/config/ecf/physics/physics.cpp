@@ -19,6 +19,13 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension, Materia
 			.addoption(ECFOption().setname("LINEAR").setdescription("Linear interpolation."))
 			.addoption(ECFOption().setname("QUADRATIC").setdescription("Quadratic interpolation.")));
 
+	assembler = ASSEMBLER::ELEMENTS;
+	REGISTER(assembler, ECFMetaData()
+			.setdescription({ "The type of assembler." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("ELEMENTS").setdescription("Element based."))
+			.addoption(ECFOption().setname("FACES").setdescription("Face based.")));
+
 	REGISTER(discretization, ECFMetaData()
 			.setdescription({ "Discretization settings for regions.", "Discretization of stiffness matrices." })
 		.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::OPTION })

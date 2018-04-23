@@ -4,6 +4,7 @@
 #include "../../config/ecf/physics/structuralmechanics.h"
 #include "../../assembler/physics/structuralmechanics2d.h"
 #include "../../assembler/physics/structuralmechanics3d.h"
+#include "../../assembler/physics/structuralmechanicstdnns3d.h"
 
 #include "../../assembler/physicssolver/assembler.h"
 #include "../../assembler/physicssolver/timestep/linear.h"
@@ -25,7 +26,15 @@ StructuralMechanicsFactory::StructuralMechanicsFactory(Step *step, const Structu
 		_physics.push_back(new StructuralMechanics2D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
 		break;
 	case DIMENSION::D3:
-		_physics.push_back(new StructuralMechanics3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
+		switch (_configuration.assembler) {
+		case ASSEMBLER::ELEMENTS:
+			_physics.push_back(new StructuralMechanics3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
+			break;
+		case ASSEMBLER::FACES:
+			_physics.push_back(new StructuralMechanicsTDNNS3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
+			break;
+		}
+
 		break;
 	}
 
