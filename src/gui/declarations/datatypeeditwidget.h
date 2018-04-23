@@ -68,6 +68,7 @@ namespace espreso
 		QString m_text;
 
         QComboBox* m_cmb;
+        QComboBox* m_external_cmb = nullptr;
 
         ExpressionEdit* uiExpression;
         TableTypeWidget* uiTable;

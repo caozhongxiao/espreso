@@ -138,7 +138,7 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
         return ( (coordinate - old_axis_min + ( (max_axis - old_axis_len) / 2.0f ) ) / max_axis ) * new_axis_len + new_axis_min;
     };
 
-    auto createRegion = [&] (QString name, auto triangles)
+    auto createRegion = [&] (QString name, serializededata<eslocal, eslocal>* triangles)
     {
 
         QVector<float> &mesh = regions[name];

@@ -162,6 +162,8 @@ QComboBox* DataTypeEditWidget::createComboBox(QWidget *parent)
     connect(box, SIGNAL(currentIndexChanged(int)),
             this, SLOT(changeType(int)));
 
+    this->m_external_cmb = box;
+
     return box;
 }
 
@@ -253,6 +255,8 @@ void DataTypeEditWidget::setText(const QString &text)
         this->m_shared->valid = this->isValid();
         this->m_shared->error_message = this->errorMessage();
     }
+
+    if (this->m_external_cmb != nullptr) this->m_external_cmb->setCurrentIndex(this->activeType);
 }
 
 QString DataTypeEditWidget::text()

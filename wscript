@@ -176,6 +176,8 @@ def build(ctx):
 #        print ctx.env
 #        ctx.env = ctx.all_envs["gui"]
 #        ctx.recurse("src/gui")
+    ctx.env = ctx.all_envs["gui"]
+    ctx.recurse("src/gui")
 
 def options(opt):
     opt.parser.formatter.max_help_position = 32
