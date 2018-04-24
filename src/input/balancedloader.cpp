@@ -945,7 +945,6 @@ void BalancedLoader::sortElementsManual()
 	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return _dMesh.enodes[edist[i]] < _dMesh.enodes[edist[j]]; });
 
 	std::vector<eslocal> sBuffer, rBuffer;
-	std::vector<int> ssize(environment->MPIsize), rsize(environment->MPIsize);
 
 	size_t prevsize;
 	for (int r = 0; r < environment->MPIsize; r++) {
@@ -964,7 +963,6 @@ void BalancedLoader::sortElementsManual()
 			sBuffer[prevsize + 3] += edist[permutation[n] + 1] - edist[permutation[n]];
 		}
 		sBuffer[prevsize] = sBuffer.size() - prevsize;
-		ssize[r] = sBuffer.size() - prevsize;
 	}
 
 	e1.end();
@@ -973,148 +971,8 @@ void BalancedLoader::sortElementsManual()
 	TimeEvent e3("MS EXCHANGE DATA");
 	e3.start();
 
-	std::vector<eslocal> send, recv, final;
-	recv.reserve(sBuffer.size());
-	size_t levels = std::ceil(std::log2(environment->MPIsize));
-
-	send = sBuffer;
-
-	MPI_Status status;
-	int recvsize, recvmidsize;
-
-	auto movebefore = [&] (std::vector<eslocal> &data, int rank, size_t begin, size_t end) {
-		size_t pos = begin;
-		while (pos < end && data[pos + 1] < rank) {
-			pos += data[pos];
-		}
-		return pos;
-	};
-
-	size_t mybegin = movebefore(send, environment->MPIrank, 0, send.size());
-	size_t myend = movebefore(send, environment->MPIrank + 1, mybegin, send.size());
-	rBuffer.insert(rBuffer.end(), send.begin() + mybegin, send.begin() + myend);
-
-	int left = 0, right = environment->MPIsize, mid;
-	for (size_t l = 0; l < levels && left + 1 < right; l++) {
-		mid = left + (right - left) / 2 + (right - left) % 2;
-		if (environment->MPIrank < mid) {
-			// LOWER half to UPPER half
-			if (environment->MPIrank + (mid - left) >= right) {
-				// PRE :
-				// send: l1, l2, l3, ME, u1, u2, u3
-
-				// POST:
-				// SEND: ME -> u1
-				// RECV:
-
-				// send: l1, l2, l3
-				size_t my = movebefore(send, environment->MPIrank, 0, send.size());
-				size_t upper = movebefore(send, mid, my, send.size());
-
-				MPI_Send(send.data() + upper, send.size() - upper, MPI_INT, mid, 0, environment->MPICommunicator);
-				send.resize(my);
-			} else {
-				// PRE :
-				// send: l1, l2(ME), l3, l4, u1, u2, u3
-
-
-				// POST:
-				// SEND: u1, u2, u3 -> u2;
-				// RECV: l1, l2, l3, l4 <- u2
-
-				// sBuffer: l1, l2, l3, l4, u1, u2, u3
-				// send: l1, l1, l2, l2, l3, l3, l4, l4
-
-				size_t upper = movebefore(send, mid, 0, send.size());
-				MPI_Send(send.data() + upper, send.size() - upper, MPI_INT, environment->MPIrank + (mid - left), 0, environment->MPICommunicator);
-
-				MPI_Probe(environment->MPIrank + (mid - left), 0, environment->MPICommunicator, &status);
-				MPI_Get_count(&status, MPI_INT, &recvsize);
-				recv.resize(recvsize);
-				MPI_Recv(recv.data(), recvsize, MPI_INT, environment->MPIrank + (mid - left), 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
-
-				send.swap(sBuffer);
-				send.clear();
-
-				size_t recvbegin = 0;
-				size_t recvend = recvbegin;
-				size_t sendbegin = 0;
-				size_t sendend = sendbegin;
-				for (int r = left; r < mid; r++) {
-					recvbegin = recvend;
-					recvend = movebefore(recv, r + 1, recvbegin, recv.size());
-					sendbegin = sendend;
-					sendend = movebefore(sBuffer, r + 1, sendbegin, sBuffer.size());
-					if (r == environment->MPIrank) {
-						rBuffer.insert(rBuffer.end(), recv.begin() + recvbegin, recv.begin() + recvend);
-					} else {
-						send.insert(send.end(), recv.begin() + recvbegin, recv.begin() + recvend);
-						send.insert(send.end(), sBuffer.begin() + sendbegin, sBuffer.begin() + sendend);
-					}
-				}
-			}
-			right = mid;
-		} else {
-			// UPPER half to LOWER half
-
-			size_t upper = movebefore(send, mid, 0, send.size());
-
-			MPI_Probe(environment->MPIrank - (mid - left), 0, environment->MPICommunicator, &status);
-			MPI_Get_count(&status, MPI_INT, &recvsize);
-			recv.resize(recvsize);
-			MPI_Recv(recv.data(), recvsize, MPI_INT, environment->MPIrank - (mid - left), 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
-			MPI_Send(send.data(), upper, MPI_INT, environment->MPIrank - (mid - left), 0, environment->MPICommunicator);
-
-			recvmidsize = recvsize;
-			if (mid - left > right - mid && environment->MPIrank == mid) {
-				// l1, l2, l3, l4, u1(ME), u2, u3
-				// RECV: l4
-				MPI_Probe(mid - 1, 0, environment->MPICommunicator, &status);
-				MPI_Get_count(&status, MPI_INT, &recvsize);
-				recv.resize(recv.size() + recvsize);
-				MPI_Recv(recv.data() + recvmidsize, recvsize, MPI_INT, mid - 1, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
-				recvsize += recvmidsize;
-			}
-
-			// PRE :
-			// send: l1, l2, l3, l4, u1(ME), u2, u3
-
-			// POST:
-			// SEND: l1, l2, l3, l4 -> l1;
-			// RECV: u1, u2, u3 <- l1
-			// RECV: u1, u2, u3 <- l4 (recvsize > recvmidsize)
-
-			// sBuffer: l1, l2, l3, l4, u1, u2, u3
-			// send: l1, l1, l2, l2, l3, l3, l4, l4
-
-			send.swap(sBuffer);
-			send.clear();
-
-			size_t recvbegin = 0;
-			size_t recvend = recvbegin;
-			size_t recvmidbegin = recvmidsize;
-			size_t recvmidend = recvmidbegin;
-			size_t sendbegin = movebefore(sBuffer, mid, 0, sBuffer.size());
-			size_t sendend = sendbegin;
-			for (int r = mid; r < right; r++) {
-				recvbegin = recvend;
-				recvend = movebefore(recv, r + 1, recvbegin, recvmidsize);
-				recvmidbegin = recvmidend;
-				recvmidend = movebefore(recv, r + 1, recvmidbegin, recv.size());
-				sendbegin = sendend;
-				sendend = movebefore(sBuffer, r + 1, sendbegin, sBuffer.size());
-				if (r == environment->MPIrank) {
-					rBuffer.insert(rBuffer.end(), recv.begin() + recvbegin, recv.begin() + recvend);
-					rBuffer.insert(rBuffer.end(), recv.begin() + recvmidbegin, recv.begin() + recvmidend);
-				} else {
-					send.insert(send.end(), recv.begin() + recvbegin, recv.begin() + recvend);
-					send.insert(send.end(), recv.begin() + recvmidbegin, recv.begin() + recvmidend);
-					send.insert(send.end(), sBuffer.begin() + sendbegin, sBuffer.begin() + sendend);
-				}
-			}
-
-			left = mid;
-		}
+	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
+		ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted elements sizes.";
 	}
 
 	e3.end();

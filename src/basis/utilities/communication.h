@@ -93,6 +93,9 @@ struct Communication {
 	template <typename Ttype>
 	static bool sendVariousTargets(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &targets, std::vector<int> &sources);
 
+	template <typename Ttype>
+	static bool allToAllWithDataSizeAndTarget(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer);
+
 	static void serialize(std::function<void(void)> fnc);
 };
 
