@@ -19,6 +19,7 @@
 #include "../../mesh/preprocessing/meshpreprocessing.h"
 #include "../../input/loader.h"
 #include "../../output/result/resultstore.h"
+#include "../../output/data/espresobinaryformat.h"
 #include "../../solver/generic/FETISolver.h"
 
 
@@ -91,6 +92,8 @@ void ESPRESO::run(int *argc, char ***argv)
 		Factory factory(configuration, mesh, *solutionStore);
 		if (computeSolution()) {
 			factory.solve();
+		} else {
+			ESPRESOBinaryFormat::store(mesh, configuration);
 		}
 	}
 	ResultStore::destroyAsynchronizedStore();
@@ -127,7 +130,6 @@ Factory::Factory(const ECFRoot &configuration, Mesh &mesh, ResultStore &store)
 
 	_loader->preprocessMesh();
 	mesh.initNodeData();
-
 
 	_store->updateMesh();
 
