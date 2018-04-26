@@ -337,6 +337,16 @@ void BalancedLoader::distributeMesh()
 	}
 }
 
+static void rotateD2(size_t n, size_t &x, size_t &y, int rx, int ry) {
+	if (ry == 0) {
+		if (rx == 1) {
+			x = n - 1 - x;
+			y = n - 1 - y;
+		}
+		std::swap(x, y);
+	}
+}
+
 static double D2toD1(size_t n, size_t x, size_t y) {
 	int rx, ry;
 	double d = 0;
@@ -345,13 +355,7 @@ static double D2toD1(size_t n, size_t x, size_t y) {
 		ry = (y & s) > 0;
 		d += 1. / (depth * depth) * ((3 * rx) ^ ry);
 
-		if (ry == 0) {
-			if (rx == 1) {
-				x = n - 1 - x;
-				y = n - 1 - y;
-			}
-			std::swap(x, y);
-		}
+		rotateD2(n, x, y, rx, ry);
 	}
 	return d;
 };
@@ -389,6 +393,20 @@ static double D3toD1(size_t n, size_t x, size_t y, size_t z) {
 	return d;
 };
 
+static void D1toD2(size_t n, size_t d, size_t &x, size_t &y) {
+	int rx, ry;
+	x = y = 0;
+	for (size_t s = 1, t = d; s < n; s *= 2, t /= 4) {
+		rx = 1 & (t / 2);
+		ry = 1 & (t ^ rx);
+
+		rotateD2(s, x, y, rx, ry);
+
+		x += s * rx;
+		y += s * ry;
+	}
+};
+
 void BalancedLoader::SFC()
 {
 	Point min = _dMesh.coordinates.front(), max = _dMesh.coordinates.front();
@@ -403,12 +421,8 @@ void BalancedLoader::SFC()
 	}
 
 	Point origin, size;
-	MPI_Allreduce(&min.x, &origin.x, 1, MPI_DOUBLE, MPI_MIN, environment->MPICommunicator);
-	MPI_Allreduce(&min.y, &origin.y, 1, MPI_DOUBLE, MPI_MIN, environment->MPICommunicator);
-	MPI_Allreduce(&min.z, &origin.z, 1, MPI_DOUBLE, MPI_MIN, environment->MPICommunicator);
-	MPI_Allreduce(&max.x, &size.x, 1, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
-	MPI_Allreduce(&max.y, &size.y, 1, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
-	MPI_Allreduce(&max.z, &size.z, 1, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
+	MPI_Allreduce(&min.x, &origin.x, 3, MPI_DOUBLE, MPI_MIN, environment->MPICommunicator);
+	MPI_Allreduce(&max.x, &size.x, 3, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
 
 	_mesh.nodes->min = origin;
 	_mesh.nodes->max = size;
@@ -428,17 +442,17 @@ void BalancedLoader::SFC()
 		break;
 	}
 
-	size_t n = 1;
-	while (pow(n, dimension) < environment->MPIsize) {
-		n = n << 1;
+	size_t N = 1, NN;
+	while (pow(N, dimension) < environment->MPIsize) {
+		N = N << 1;
 	}
+	NN = N;
 
-	size_t depth = 1;
-	std::vector<eslocal> toimprove, nextimprove = { 0 };
-	std::vector<eslocal> sumoffset, nextsumoffset = { 0 };
-	std::vector<eslocal> scounts(pow(n, dimension)), rcounts(pow(n, dimension));
+	std::vector<size_t> sumoffset, nextsumoffset = { 0 };
+	std::vector<std::vector<size_t> > refined = { {0} }, refinedxy = { {0} };
+	std::vector<eslocal> scounts(pow(N, dimension)), rcounts(pow(N, dimension));
 	std::vector<double> partition(_dMesh.esize.size());
-	std::vector<size_t> asum(pow(n, dimension) + 1), ideal = tarray<size_t>::distribute(environment->MPIsize, _eDistribution.back());
+	std::vector<size_t> asum(pow(N, dimension) + 1), ideal = tarray<size_t>::distribute(environment->MPIsize, _eDistribution.back());
 	std::vector<eslocal> permutation(partition.size());
 
 	_sfcbounds.resize(environment->MPIsize + 1);
@@ -451,20 +465,22 @@ void BalancedLoader::SFC()
 		edist.push_back(edist.back() + _dMesh.esize[e]);
 	}
 
-	while (nextimprove.size()) {
-		toimprove.swap(nextimprove);
+	std::vector<std::pair<size_t, size_t> > sfcboundary(environment->MPIsize + 1);
+	sfcboundary.back().first = sfcboundary.front().first = N;
+	sfcboundary.back().second = N * N - 1;
+	while (refined.back().size()) {
 		sumoffset.swap(nextsumoffset);
-		nextimprove.clear();
 		nextsumoffset.clear();
+		refined.push_back({});
 
 		auto begin = permutation.begin();
 		auto end = permutation.begin();
-		for (auto q = toimprove.begin(), offset = sumoffset.begin(); q != toimprove.end(); ++q, ++offset) {
+		for (auto q = refined[refined.size() - 2].begin(), offset = sumoffset.begin(); q != refined[refined.size() - 2].end(); ++q, ++offset) {
 			std::fill(scounts.begin(), scounts.end(), 0);
 
-			double lower = *q * 1. / pow(n / 2, dimension);
-			double upper = lower + 1. / pow(n / 2, dimension);
-			if (depth == 1) {
+			double lower = *q * 1. / pow(N / 2, dimension);
+			double upper = lower + 1. / pow(N / 2, dimension);
+			if (N == NN) {
 				lower = 0;
 				upper = 1;
 			}
@@ -474,19 +490,19 @@ void BalancedLoader::SFC()
 
 			if (dimension == 2) {
 				for (auto i = begin; i != end; ++i) {
-					size_t x = std::floor(n * (_dMesh.coordinates[_dMesh.enodes[edist[*i]] - _nDistribution[environment->MPIrank]].x - origin.x) / size.x);
-					size_t y = std::floor(n * (_dMesh.coordinates[_dMesh.enodes[edist[*i]] - _nDistribution[environment->MPIrank]].y - origin.y) / size.y);
-					++scounts[((partition[*i] = D2toD1(n, x, y)) - lower) / (1. / pow(n, dimension))];
+					size_t x = std::floor(N * (_dMesh.coordinates[_dMesh.enodes[edist[*i]] - _nDistribution[environment->MPIrank]].x - origin.x) / size.x);
+					size_t y = std::floor(N * (_dMesh.coordinates[_dMesh.enodes[edist[*i]] - _nDistribution[environment->MPIrank]].y - origin.y) / size.y);
+					++scounts[((partition[*i] = D2toD1(N, x, y)) - lower) / (1. / pow(N, dimension))];
 				}
 			}
 
 			if (dimension == 3) {
 				for (auto i = begin; i != end; ++i) {
 					const Point &p = _dMesh.coordinates[_dMesh.enodes[edist[*i]] - _nDistribution[environment->MPIrank]];
-					size_t x = std::floor(n * (p.x - origin.x) / size.x);
-					size_t y = std::floor(n * (p.y - origin.y) / size.y);
-					size_t z = std::floor(n * (p.z - origin.z) / size.z);
-					++scounts[((partition[*i] = D3toD1(n, x, y, z)) - lower) / (1. / pow(n, dimension))];
+					size_t x = std::floor(N * (p.x - origin.x) / size.x);
+					size_t y = std::floor(N * (p.y - origin.y) / size.y);
+					size_t z = std::floor(N * (p.z - origin.z) / size.z);
+					++scounts[((partition[*i] = D3toD1(N, x, y, z)) - lower) / (1. / pow(N, dimension))];
 				}
 			}
 
@@ -506,20 +522,203 @@ void BalancedLoader::SFC()
 					if (up != asum.begin()) {
 					auto bottom = up - 1;
 					double scale = (double)(*i - *bottom) / (*up - *bottom);
-					_sfcbounds[i - ideal.begin()] = 1. / pow(n, dimension) * ((*q * pow(2, dimension)) + bottom - asum.begin()) + scale * 1. / pow(n, dimension);
+					_sfcbounds[i - ideal.begin()] = 1. / pow(N, dimension) * ((*q * pow(2, dimension)) + bottom - asum.begin()) + scale * 1. / pow(N, dimension);
+					sfcboundary[i - ideal.begin()].first = N;
+					sfcboundary[i - ideal.begin()].second = (*q * pow(2, dimension)) + bottom - asum.begin();
 					if (*up - *bottom > 0.05 * (_eDistribution.back() / environment->MPIsize)) {
-						nextimprove.push_back((*q * pow(2, dimension)) + bottom - asum.begin());
-						nextsumoffset.push_back(*bottom);
+						if (refined.back().size() == 0 || refined.back().back() != (*q * pow(2, dimension)) + bottom - asum.begin()) {
+							refined.back().push_back((*q * pow(2, dimension)) + bottom - asum.begin());
+							nextsumoffset.push_back(*bottom);
+						}
+					}
+					if ((*q * pow(2, dimension)) + bottom - asum.begin() == N * N - 1) {
+						sfcboundary.back().first = N << 1;
+						sfcboundary.back().second = (N << 1) * (N << 1) - 1;
 					}
 				}
 			}
 		}
-		++depth;
-		n = n << 1;
+		if (refined.back().size()) {
+			N = N << 1;
+		}
 		scounts.resize(pow(2, dimension));
 		rcounts.resize(pow(2, dimension));
 		asum.resize(pow(2, dimension) + 1);
 	}
+
+	size_t x, y, xx, yy, depth;
+	for (size_t i = 1; i < refined.size(); i++) {
+		refinedxy.push_back({});
+		for (size_t j = 0; j < refined[i].size(); j++) {
+			D1toD2(NN << (i - 1), refined[i][j], x, y);
+			refinedxy[i].push_back(y * (NN << (i - 1)) + x);
+		}
+		std::sort(refinedxy[i].begin(), refinedxy[i].end());
+	}
+
+	if (environment->MPIrank == 0) {
+//		std::cout << "NN: " << NN << ", N: " << N << "\n";
+//		for (size_t i = 0; i < refined.size(); i++) {
+//			std::cout << refined[i];
+//		}
+//		for (size_t i = 0; i < refinedxy.size(); i++) {
+//			std::cout << refinedxy[i];
+//		}
+		std::cout << _sfcbounds;
+//
+//		for (size_t i = 0; i < sfcboundary.size(); i++) {
+//			D1toD2(sfcboundary[i].first, sfcboundary[i].second, x, y);
+////			std::cout << sfcboundary[i].first << "::" << sfcboundary[i].second << " -> [" << x << "," << y << "]\n";
+//		}
+	}
+
+	std::vector<std::pair<size_t, size_t> > neighbors, potential;
+	std::vector<std::pair<double, double> > intervals;
+
+	Communication::serialize([&] () {
+//		std::cout << " --- " << environment->MPIrank << " -- \n";
+		size_t n = sfcboundary[environment->MPIrank].first;
+		size_t cell = sfcboundary[environment->MPIrank].second;
+		size_t level = 1;
+		while ((NN << level) <= n) ++level;
+		std::vector<std::vector<size_t>::const_iterator> its = { refined.front().begin() };
+
+//		std::cout << "n: " << n << ", cell: " << cell << ", level: " << level << "\n";
+		cell *= pow(N / n, dimension);
+		for (size_t i = 1; i < refined.size(); i++) {
+			its.push_back(std::lower_bound(refined[i].begin(), refined[i].end(), cell / (size_t)pow(1 << (refined.size() - i - 1), dimension)));
+		}
+		cell = sfcboundary[environment->MPIrank].second;
+		while (n != sfcboundary[environment->MPIrank + 1].first || cell <= sfcboundary[environment->MPIrank + 1].second) {
+			while (its[level] != refined[level].end() && *its[level] == cell) {
+				++level;
+				n = n << 1;
+				cell *= pow(2, dimension);
+			}
+
+			while (n > NN && its[level - 1] != refined[level - 1].end() && *its[level - 1] < cell / (size_t)pow(2, dimension)) {
+//				std::cout << "DOWN: " << *its[level - 1] << " != " << cell / (size_t)pow(2, dimension) << "\n";
+				++its[level - 1];
+				if (its[level - 1] == refined[level - 1].end() || *its[level - 1] != cell / (size_t)pow(2, dimension)) {
+					--level;
+//					std::cout << "l: " << level << ", its: " << *its[level] << "\n";
+					n = n >> 1;
+					cell /= pow(2, dimension);
+				}
+			}
+
+
+			D1toD2(n, cell, x, y);
+//			std::cout << "-----------------\n";
+//			std::cout << "level: " << level << ", n: " << n << ", cell: " << cell << "\n";// << " - " << y * n + x << "\n";
+
+
+			auto addNeighbors = [&] (size_t xx, size_t yy, size_t xs, size_t xe, size_t ys, size_t ye) {
+				xx = xx * (1 << (refinedxy.size() - level - 1));
+				yy = yy * (1 << (refinedxy.size() - level - 1));
+
+				size_t l = 1;
+				size_t ll = 1 << (refinedxy.size() - 2);
+				while (l < level && std::binary_search(refinedxy[l].begin(), refinedxy[l].end(), (yy / ll) * (1 << l) + xx / ll)) {
+					++l;
+					ll = ll >> 1;
+				}
+
+				potential.clear();
+				potential.push_back(std::make_pair((NN << l - 1), (yy / ll) * (1 << l) + xx / ll));
+				size_t nbegin = 0;
+				size_t nend = 1;
+				size_t xoffset = 0;
+				size_t yoffset = 0;
+				while (l < refinedxy.size()) {
+					ll = ll >> 1;
+					for (size_t nn = nbegin; nn < nend; ++nn) {
+						if (std::binary_search(refinedxy[l].begin(), refinedxy[l].end(), potential[nn].second)) {
+							xoffset = 2 * (potential[nn].second % (1 << l)) - xx / ll;
+							yoffset = 2 * (potential[nn].second / (1 << l)) - yy / ll;
+//							std::cout << potential[nn].second << " is IN with offset " << xoffset << ", " << yoffset << "\n";
+							for (size_t i = xs + xoffset; i < xe + xoffset; i++) {
+								for (size_t j = ys + yoffset; j < ye + yoffset; j++) {
+//									std::cout << "pushback: " << std::make_pair((NN << l), (yy / ll + j) * (2 << l) + xx / ll + i) << "\n";
+									potential.push_back(std::make_pair((NN << l), (yy / ll + j) * (2 << l) + xx / ll + i));
+								}
+							}
+						} else {
+							neighbors.push_back(potential[nn]);
+						}
+					}
+					nbegin = nend;
+					nend = potential.size();
+					++l;
+				}
+			};
+
+
+			if (x + 1 < n) {
+				addNeighbors(x + 1, y, 0, 1, 0, 2);
+				if (y + 1 < n) {
+					addNeighbors(x + 1, y + 1, 0, 1, 0, 1);
+				}
+				if (y) {
+					addNeighbors(x + 1, y - 1, 0, 1, 1, 2);
+				}
+			}
+			if (x) {
+				addNeighbors(x - 1, y, 1, 2, 0, 2);
+				if (y + 1 < n) {
+					addNeighbors(x - 1, y + 1, 1, 2, 0, 1);
+				}
+				if (y) {
+					addNeighbors(x - 1, y - 1, 1, 2, 1, 2);
+				}
+			}
+			if (y + 1 < n) {
+				addNeighbors(x, y + 1, 0, 2, 0, 1);
+			}
+			if (y) {
+				addNeighbors(x, y - 1, 0, 2, 1, 2);
+			}
+
+			++cell;
+		}
+		Esutils::sortAndRemoveDuplicity(neighbors);
+//		std::cout << neighbors;
+
+		intervals.resize(neighbors.size());
+		for (size_t i = 0; i < neighbors.size(); i++) {
+			intervals[i].first = D2toD1(neighbors[i].first, neighbors[i].second % neighbors[i].first, neighbors[i].second / neighbors[i].first);
+			intervals[i].second = intervals[i].first + 1. / (neighbors[i].first * neighbors[i].first);
+		}
+
+		std::sort(intervals.begin(), intervals.end());
+//		std::cout << intervals;
+
+		size_t unique = 0;
+		for (size_t i = 1; i < intervals.size(); i++) {
+			if (intervals[i].first <= intervals[unique].second + 1e-6) {
+				intervals[unique].second = intervals[i].second;
+			} else {
+				intervals[++unique] = intervals[i];
+			}
+		}
+
+		intervals.resize(unique + 1);
+		std::cout << intervals;
+	});
+
+	std::vector<int> nranks;
+	for (size_t i = 0; i < intervals.size(); i++) {
+		int begin = std::lower_bound(_sfcbounds.begin() + 1, _sfcbounds.end(), intervals[i].first) - _sfcbounds.begin();
+		int end = std::lower_bound(_sfcbounds.begin() + 1, _sfcbounds.end(), intervals[i].second) - _sfcbounds.begin();
+		for (int r = begin; r <= end; r++) {
+			if (r - 1 != environment->MPIrank) {
+				nranks.push_back(r - 1);
+			}
+		}
+	}
+	Esutils::sortAndRemoveDuplicity(nranks);
+	std::cout << nranks;
+
 
 	std::vector<std::vector<eslocal> > sSize, sNodes, rSize, rNodes;
 	std::vector<std::vector<EData> > sEData, rEData;
@@ -1256,6 +1455,10 @@ void BalancedLoader::fillCoordinates()
 			*n = std::lower_bound(_mesh.nodes->IDs->datatarray().begin(), _mesh.nodes->IDs->datatarray().end(), *n) - _mesh.nodes->IDs->datatarray().begin();
 		}
 	}
+
+	Communication::serialize([&] () {
+		std::cout << environment->MPIrank << ": " << _mesh.neighbours;
+	});
 }
 
 void BalancedLoader::checkERegions()
