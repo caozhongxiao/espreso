@@ -572,6 +572,69 @@ void BalancedLoader::SFC()
 //		}
 	}
 
+	if (environment->MPIrank == 0) {
+		std::ofstream os("SFC.vtk");
+		os << "# vtk DataFile Version 2.0\n";
+		os << "EXAMPLE\n";
+		os << "ASCII\n";
+		os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+		os << "POINTS " << (N + 1) * (N + 1) << " float\n";
+
+		for (size_t i = 0; i <= N; i++) {
+			for (size_t j = 0; j <= N; j++) {
+				os << j * 1. / N << " " << i * 1. / N << " 0\n";
+			}
+		}
+		os << "\n";
+
+		size_t cells = 0, prev = NN * NN;
+		std::cout << "NN: " << NN << ", N: " << N << "\n";
+		for (size_t d = 1; d < refinedxy.size(); d++) {
+			std::cout << "prev: " << prev << ", xy: " << refinedxy[d].size() << "\n";
+			cells += prev - refinedxy[d].size();
+			prev = 4 * refinedxy[d].size();
+		}
+
+		os << "CELLS " << cells << " " << cells + cells * 4 << "\n";
+		for (size_t d = 1; d < refinedxy.size(); d++) {
+			size_t depth = NN << d - 1;
+			size_t m = N / depth;
+			size_t row = depth * m + 1;
+			std::cout << "depth: " << depth << ", m: " << m << "\n";
+			for (size_t i = 0, ii = 0; i < depth; i++) {
+				for (size_t j = 0; j < depth; j++, ii++) {
+					bool draw = true;
+					for (size_t dd = 1; draw && dd < d; dd++) {
+						std::cout << (NN << dd - 1) << " * " << (i / (1 << d - dd)) << " + " << j / (1 << d - dd) << " = " << (NN << dd - 1) * (i / (1 << d - dd)) + j / (1 << d - dd) << "\n";
+						draw &= std::binary_search(refinedxy[dd].begin(), refinedxy[dd].end(), (NN << dd - 1) * (i / (1 << d - dd)) + j / (1 << d - dd));
+					}
+					if (draw && !std::binary_search(refinedxy[d].begin(), refinedxy[d].end(), ii)) {
+						std::cout << "d: " << d << ", ii: " << ii << "\n";
+						os << "4 ";
+						os << m * i * row + m * j << " ";
+						os << m * i * row + m * j + m << " ";
+						os << m * i * row + m * j + m + m * row << " ";
+						os << m * i * row + m * j + m * row << "\n";
+					}
+				}
+			}
+		}
+		os << "\n";
+
+		os << "CELL_TYPES " << cells << "\n";
+		for (size_t i = 0; i < cells; i++) {
+			os << "9\n";
+		}
+		os << "\n";
+
+		os.close();
+
+		for (size_t i = 0; i < refinedxy.size(); i++) {
+			std::cout << refinedxy[i];
+		}
+	}
+
 	std::vector<std::pair<size_t, size_t> > neighbors, potential;
 	std::vector<std::pair<double, double> > intervals;
 
@@ -610,7 +673,7 @@ void BalancedLoader::SFC()
 
 			D1toD2(n, cell, x, y);
 //			std::cout << "-----------------\n";
-//			std::cout << "level: " << level << ", n: " << n << ", cell: " << cell << "\n";// << " - " << y * n + x << "\n";
+			std::cout << "level: " << level << ", n: " << n << ", cell: " << cell << " - " << y * n + x << "\n";
 
 
 			auto addNeighbors = [&] (size_t xx, size_t yy, size_t xs, size_t xe, size_t ys, size_t ye) {
