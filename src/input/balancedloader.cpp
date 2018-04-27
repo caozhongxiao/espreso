@@ -347,6 +347,28 @@ static void rotateD2(size_t n, size_t &x, size_t &y, int rx, int ry) {
 	}
 }
 
+static void rotateD3(size_t n, size_t &x, size_t &y, size_t &z, int rx, int ry, int rz) {
+	if (rz == 0) {
+		if (rx == 1) {
+			std::swap(x, z);
+			x = n - 1 - x;
+			z = n - 1 - z;
+		} else {
+			if (ry == 1) {
+				y = n - 1 - y;
+				z = n - 1 - z;
+			}
+			std::swap(y, z);
+		}
+	} else {
+		std::swap(x, y);
+		if (ry == 1) {
+			x = n - 1 - x;
+			y = n - 1 - y;
+		}
+	}
+}
+
 static double D2toD1(size_t n, size_t x, size_t y) {
 	int rx, ry;
 	double d = 0;
@@ -370,25 +392,7 @@ static double D3toD1(size_t n, size_t x, size_t y, size_t z) {
 		rz = (z & s) > 0;
 		d += 1. / (depth * depth * depth) * (4 * ry + (3 * (ry ^ rx)) ^ rz);
 
-		if (rz == 0) {
-			if (rx == 1) {
-				std::swap(x, z);
-				x = n - 1 - x;
-				z = n - 1 - z;
-			} else {
-				if (ry == 1) {
-					y = n - 1 - y;
-					z = n - 1 - z;
-				}
-				std::swap(y, z);
-			}
-		} else {
-			std::swap(x, y);
-			if (ry == 1) {
-				x = n - 1 - x;
-				y = n - 1 - y;
-			}
-		}
+		rotateD3(n, x, y, z, rx, ry, rz);
 	}
 	return d;
 };
@@ -406,6 +410,23 @@ static void D1toD2(size_t n, size_t d, size_t &x, size_t &y) {
 		y += s * ry;
 	}
 };
+
+static void D1toD3(size_t n, size_t d, size_t &x, size_t &y, size_t &z) {
+	int rx, ry, rz;
+	x = y = z = 0;
+	for (size_t s = 1, t = d; s < n; s *= 2, t /= 8) {
+		rx = (1 & (t / 4)) ^ (1 & (t / 2));
+		ry = (1 & (t / 4));
+		rz = (1 & (t / 2)) ^ (1 & t);
+
+		rotateD3(s, x, y, z, rx, ry, rz);
+
+		x += s * rx;
+		y += s * ry;
+		z += s * rz;
+	}
+};
+
 
 void BalancedLoader::SFC()
 {
@@ -446,10 +467,11 @@ void BalancedLoader::SFC()
 	while (pow(N, dimension) < environment->MPIsize) {
 		N = N << 1;
 	}
+	N = 2;
 	NN = N;
 
 	std::vector<size_t> sumoffset, nextsumoffset = { 0 };
-	std::vector<std::vector<size_t> > refined = { {0} }, refinedxy = { {0} };
+	std::vector<std::vector<size_t> > refined = { {0} }, refinedxyz = { {0} };
 	std::vector<eslocal> scounts(pow(N, dimension)), rcounts(pow(N, dimension));
 	std::vector<double> partition(_dMesh.esize.size());
 	std::vector<size_t> asum(pow(N, dimension) + 1), ideal = tarray<size_t>::distribute(environment->MPIsize, _eDistribution.back());
@@ -465,9 +487,11 @@ void BalancedLoader::SFC()
 		edist.push_back(edist.back() + _dMesh.esize[e]);
 	}
 
+	double PRECISION = 0.02 * std::log2(environment->MPIsize);
+
 	std::vector<std::pair<size_t, size_t> > sfcboundary(environment->MPIsize + 1);
 	sfcboundary.back().first = sfcboundary.front().first = N;
-	sfcboundary.back().second = N * N - 1;
+	sfcboundary.back().second = pow(N, dimension) - 1;
 	while (refined.back().size()) {
 		sumoffset.swap(nextsumoffset);
 		nextsumoffset.clear();
@@ -525,15 +549,15 @@ void BalancedLoader::SFC()
 					_sfcbounds[i - ideal.begin()] = 1. / pow(N, dimension) * ((*q * pow(2, dimension)) + bottom - asum.begin()) + scale * 1. / pow(N, dimension);
 					sfcboundary[i - ideal.begin()].first = N;
 					sfcboundary[i - ideal.begin()].second = (*q * pow(2, dimension)) + bottom - asum.begin();
-					if (*up - *bottom > 0.05 * (_eDistribution.back() / environment->MPIsize)) {
+					if (*up - *bottom > PRECISION * (_eDistribution.back() / environment->MPIsize)) {
 						if (refined.back().size() == 0 || refined.back().back() != (*q * pow(2, dimension)) + bottom - asum.begin()) {
 							refined.back().push_back((*q * pow(2, dimension)) + bottom - asum.begin());
 							nextsumoffset.push_back(*bottom);
 						}
 					}
-					if ((*q * pow(2, dimension)) + bottom - asum.begin() == N * N - 1) {
+					if ((*q * pow(2, dimension)) + bottom - asum.begin() == pow(N, dimension) - 1) {
 						sfcboundary.back().first = N << 1;
-						sfcboundary.back().second = (N << 1) * (N << 1) - 1;
+						sfcboundary.back().second = pow(N << 1, dimension) - 1;
 					}
 				}
 			}
@@ -546,25 +570,31 @@ void BalancedLoader::SFC()
 		asum.resize(pow(2, dimension) + 1);
 	}
 
-	size_t x, y, xx, yy, depth;
+	size_t x, y, z = 0, xx, yy, zz, depth;
 	for (size_t i = 1; i < refined.size(); i++) {
-		refinedxy.push_back({});
+		refinedxyz.push_back({});
 		for (size_t j = 0; j < refined[i].size(); j++) {
-			D1toD2(NN << (i - 1), refined[i][j], x, y);
-			refinedxy[i].push_back(y * (NN << (i - 1)) + x);
+			if (dimension == 2) {
+				D1toD2(NN << (i - 1), refined[i][j], x, y);
+				refinedxyz[i].push_back(y * (NN << (i - 1)) + x);
+			}
+			if (dimension == 3) {
+				D1toD3(NN << (i - 1), refined[i][j], x, y, z);
+				refinedxyz[i].push_back(z * (NN << (i - 1)) * (NN << (i - 1)) + y * (NN << (i - 1)) + x);
+			}
 		}
-		std::sort(refinedxy[i].begin(), refinedxy[i].end());
+		std::sort(refinedxyz[i].begin(), refinedxyz[i].end());
 	}
 
 	if (environment->MPIrank == 0) {
-//		std::cout << "NN: " << NN << ", N: " << N << "\n";
-//		for (size_t i = 0; i < refined.size(); i++) {
-//			std::cout << refined[i];
+		std::cout << "NN: " << NN << ", N: " << N << "\n";
+		for (size_t i = 0; i < refined.size(); i++) {
+			std::cout << refined[i];
+		}
+//		for (size_t i = 0; i < refinedxyz.size(); i++) {
+//			std::cout << refinedxyz[i];
 //		}
-//		for (size_t i = 0; i < refinedxy.size(); i++) {
-//			std::cout << refinedxy[i];
-//		}
-		std::cout << _sfcbounds;
+//		std::cout << _sfcbounds;
 //
 //		for (size_t i = 0; i < sfcboundary.size(); i++) {
 //			D1toD2(sfcboundary[i].first, sfcboundary[i].second, x, y);
@@ -579,60 +609,121 @@ void BalancedLoader::SFC()
 		os << "ASCII\n";
 		os << "DATASET UNSTRUCTURED_GRID\n\n";
 
-		os << "POINTS " << (N + 1) * (N + 1) << " float\n";
+		os << "POINTS " << pow(N + 1, dimension) << " float\n";
 
-		for (size_t i = 0; i <= N; i++) {
+		for (size_t k = 0; k <= N; k++) {
 			for (size_t j = 0; j <= N; j++) {
-				os << j * 1. / N << " " << i * 1. / N << " 0\n";
-			}
-		}
-		os << "\n";
-
-		size_t cells = 0, prev = NN * NN;
-		std::cout << "NN: " << NN << ", N: " << N << "\n";
-		for (size_t d = 1; d < refinedxy.size(); d++) {
-			std::cout << "prev: " << prev << ", xy: " << refinedxy[d].size() << "\n";
-			cells += prev - refinedxy[d].size();
-			prev = 4 * refinedxy[d].size();
-		}
-
-		os << "CELLS " << cells << " " << cells + cells * 4 << "\n";
-		for (size_t d = 1; d < refinedxy.size(); d++) {
-			size_t depth = NN << d - 1;
-			size_t m = N / depth;
-			size_t row = depth * m + 1;
-			std::cout << "depth: " << depth << ", m: " << m << "\n";
-			for (size_t i = 0, ii = 0; i < depth; i++) {
-				for (size_t j = 0; j < depth; j++, ii++) {
-					bool draw = true;
-					for (size_t dd = 1; draw && dd < d; dd++) {
-						std::cout << (NN << dd - 1) << " * " << (i / (1 << d - dd)) << " + " << j / (1 << d - dd) << " = " << (NN << dd - 1) * (i / (1 << d - dd)) + j / (1 << d - dd) << "\n";
-						draw &= std::binary_search(refinedxy[dd].begin(), refinedxy[dd].end(), (NN << dd - 1) * (i / (1 << d - dd)) + j / (1 << d - dd));
-					}
-					if (draw && !std::binary_search(refinedxy[d].begin(), refinedxy[d].end(), ii)) {
-						std::cout << "d: " << d << ", ii: " << ii << "\n";
-						os << "4 ";
-						os << m * i * row + m * j << " ";
-						os << m * i * row + m * j + m << " ";
-						os << m * i * row + m * j + m + m * row << " ";
-						os << m * i * row + m * j + m * row << "\n";
-					}
+				for (size_t i = 0; i <= N; i++) {
+					os << i * size.x / N << " " << j * size.y / N << " " << k * size.z / N << " \n";
 				}
 			}
 		}
 		os << "\n";
 
+		std::vector<size_t> ccount = { 0 };
+		size_t cells = 0, prev = pow(NN, dimension);
+		for (size_t d = 1; d < refinedxyz.size(); d++) {
+			std::cout << "prev: " << prev << ", xy: " << refinedxyz[d].size() << "\n";
+			cells += prev - refinedxyz[d].size();
+			prev = pow(2, dimension) * refinedxyz[d].size();
+		}
+		os << "CELLS " << cells << " " << cells + pow(2, dimension) * cells << "\n";
+
+		std::cout << sfcboundary;
+		size_t n = sfcboundary[environment->MPIrank].first;
+		size_t cell = sfcboundary[environment->MPIrank].second;
+		size_t level = 1;
+		while ((NN << level) <= n) ++level;
+		std::vector<std::vector<size_t>::const_iterator> its = { refined.front().begin() };
+
+//		std::cout << "n: " << n << ", cell: " << cell << ", level: " << level << "\n";
+		cell *= pow(N / n, dimension);
+		for (size_t i = 1; i < refined.size(); i++) {
+			its.push_back(std::lower_bound(refined[i].begin(), refined[i].end(), cell / (size_t)pow(1 << (refined.size() - i - 1), dimension)));
+		}
+		cell = sfcboundary[environment->MPIrank].second;
+
+		size_t index = 0;
+		for (int r = 0; r < environment->MPIsize; r++) {
+			while (n != sfcboundary[r + 1].first || cell <= sfcboundary[r + 1].second) {
+				while (its[level] != refined[level].end() && *its[level] == cell) {
+					++level;
+					n = n << 1;
+					cell *= pow(2, dimension);
+				}
+
+				while (n > NN && its[level - 1] != refined[level - 1].end() && *its[level - 1] < cell / (size_t)pow(2, dimension)) {
+					++its[level - 1];
+					if (its[level - 1] == refined[level - 1].end() || *its[level - 1] != cell / (size_t)pow(2, dimension)) {
+						--level;
+						n = n >> 1;
+						cell /= pow(2, dimension);
+					}
+				}
+
+				if (dimension == 2) {
+					D1toD2(n, cell, x, y);
+				}
+				if (dimension == 3) {
+					D1toD3(n, cell, x, y, z);
+				}
+
+//				std::cout << "level: " << level << ", n: " << n << ", cell: " << cell << " - " << z * n * n + y * n + x << "\n";
+
+				size_t row = N + 1;
+//				std::cout << "ROW: " << row << "\n";
+				if (dimension == 2) {
+					os << "4 ";
+					os << row * (N / n) * (y + 0) + (N / n) * (x + 0) << " ";
+					os << row * (N / n) * (y + 0) + (N / n) * (x + 1) << " ";
+					os << row * (N / n) * (y + 1) + (N / n) * (x + 1) << " ";
+					os << row * (N / n) * (y + 1) + (N / n) * (x + 0) << "\n";
+				}
+
+				if (dimension == 3) {
+//					std::cout << "x: " << x << ", y: " << y << ", z: " << z << ", N / n: " << N / n << "\n";
+					os << "8 ";
+					os << row * row * (N / n) * (z + 0) + row * (N / n) * (y + 0) + (N / n) * (x + 0) << " ";
+					os << row * row * (N / n) * (z + 0) + row * (N / n) * (y + 0) + (N / n) * (x + 1) << " ";
+					os << row * row * (N / n) * (z + 0) + row * (N / n) * (y + 1) + (N / n) * (x + 1) << " ";
+					os << row * row * (N / n) * (z + 0) + row * (N / n) * (y + 1) + (N / n) * (x + 0) << " ";
+					os << row * row * (N / n) * (z + 1) + row * (N / n) * (y + 0) + (N / n) * (x + 0) << " ";
+					os << row * row * (N / n) * (z + 1) + row * (N / n) * (y + 0) + (N / n) * (x + 1) << " ";
+					os << row * row * (N / n) * (z + 1) + row * (N / n) * (y + 1) + (N / n) * (x + 1) << " ";
+					os << row * row * (N / n) * (z + 1) + row * (N / n) * (y + 1) + (N / n) * (x + 0) << "\n";
+				}
+
+				++cell;
+				++index;
+			}
+			ccount.push_back(index);
+		}
+		std::cout << ccount;
+
+		os << "\n";
+
 		os << "CELL_TYPES " << cells << "\n";
 		for (size_t i = 0; i < cells; i++) {
-			os << "9\n";
+			if (dimension == 2) {
+				os << "9\n";
+			}
+			if (dimension == 3) {
+				os << "12\n";
+			}
+		}
+		os << "\n";
+
+		os << "CELL_DATA " << cells << "\n";
+		os << "SCALARS MPI int 1\n";
+		os << "LOOKUP_TABLE default\n";
+		for (int r = 0; r < environment->MPIsize; r++) {
+			for (size_t i = ccount[r]; i < ccount[r + 1]; i++) {
+				os << r << "\n";
+			}
 		}
 		os << "\n";
 
 		os.close();
-
-		for (size_t i = 0; i < refinedxy.size(); i++) {
-			std::cout << refinedxy[i];
-		}
 	}
 
 	std::vector<std::pair<size_t, size_t> > neighbors, potential;
@@ -670,40 +761,72 @@ void BalancedLoader::SFC()
 				}
 			}
 
+			if (dimension == 2) {
+				D1toD2(n, cell, x, y);
+			}
+			if (dimension == 3) {
+				D1toD3(n, cell, x, y, z);
+			}
 
-			D1toD2(n, cell, x, y);
 //			std::cout << "-----------------\n";
-			std::cout << "level: " << level << ", n: " << n << ", cell: " << cell << " - " << y * n + x << "\n";
+//			std::cout << "level: " << level << ", n: " << n << ", cell: " << cell << " - " << z * n * n + y * n + x << "\n";
+//			std::cout << "-----\n" << n << ":" << z * n * n + y * n + x << " -> ";
 
+			size_t xs, xe, ys, ye, zs, ze;
+//			auto addNeighbors = [&] (size_t xx, size_t yy, size_t zz, size_t xs, size_t xe, size_t ys, size_t ye, size_t zs, size_t ze) {
+			auto addNeighbors = [&] (size_t xx, size_t yy, size_t zz, int x, int y, int z) {
+				// xx, yy -> index in deeper level
+				xx = xx * (1 << (refinedxyz.size() - level - 1));
+				yy = yy * (1 << (refinedxyz.size() - level - 1));
+				zz = zz * (1 << (refinedxyz.size() - level - 1));
+				xs = ys = zs = 0;
+				xe = ye = ze = 2;
+				if (x == -1) { xs = 1; }
+				if (y == -1) { ys = 1; }
+				if (z == -1) { zs = 1; }
+				if (x == 1) { xe = 1; }
+				if (y == 1) { ye = 1; }
+				if (z == 1) { ze = 1; }
+//				std::cout << "xx: " << xx << ", yy: " << yy << "\n";
 
-			auto addNeighbors = [&] (size_t xx, size_t yy, size_t xs, size_t xe, size_t ys, size_t ye) {
-				xx = xx * (1 << (refinedxy.size() - level - 1));
-				yy = yy * (1 << (refinedxy.size() - level - 1));
-
+				// l -> level, ll = divisor
+				// go deeper up to my level
 				size_t l = 1;
-				size_t ll = 1 << (refinedxy.size() - 2);
-				while (l < level && std::binary_search(refinedxy[l].begin(), refinedxy[l].end(), (yy / ll) * (1 << l) + xx / ll)) {
+				size_t ll = N / NN;
+//				std::cout << "l: " << l << ", ll: " << ll << "\n";
+				while (l < level && std::binary_search(refinedxyz[l].begin(), refinedxyz[l].end(), (zz / ll) * (NN << l - 1) * (NN << l - 1) + (yy / ll) * (NN << l - 1) + xx / ll)) {
 					++l;
 					ll = ll >> 1;
 				}
 
 				potential.clear();
-				potential.push_back(std::make_pair((NN << l - 1), (yy / ll) * (1 << l) + xx / ll));
+				potential.push_back(std::make_pair((NN << l - 1), (zz / ll) * (NN << l - 1) * (NN << l - 1) + (yy / ll) * (NN << l - 1) + xx / ll));
+//				std::cout << "first: NN: " << NN << ", l: " << l << ", ll: " << ll << " == " << potential.back() << "\n";
 				size_t nbegin = 0;
 				size_t nend = 1;
 				size_t xoffset = 0;
 				size_t yoffset = 0;
-				while (l < refinedxy.size()) {
+				size_t zoffset = 0;
+				// there should be more deeper levels
+				while (l < refinedxyz.size()) {
 					ll = ll >> 1;
 					for (size_t nn = nbegin; nn < nend; ++nn) {
-						if (std::binary_search(refinedxy[l].begin(), refinedxy[l].end(), potential[nn].second)) {
-							xoffset = 2 * (potential[nn].second % (1 << l)) - xx / ll;
-							yoffset = 2 * (potential[nn].second / (1 << l)) - yy / ll;
-//							std::cout << potential[nn].second << " is IN with offset " << xoffset << ", " << yoffset << "\n";
+//						std::cout << "l: " << l << ", ll: " << ll << "\n";
+						if (std::binary_search(refinedxyz[l].begin(), refinedxyz[l].end(), potential[nn].second)) {
+							xoffset = 2 * (potential[nn].second % (potential[nn].first)) - xx / ll;
+							yoffset = 2 * (potential[nn].second % (potential[nn].first * potential[nn].first) / (potential[nn].first)) - yy / ll;
+							zoffset = 2 * (potential[nn].second / (potential[nn].first * potential[nn].first)) - zz / ll;
+//							std::cout << 2 << " * " << potential[nn].second % (potential[nn].first) << " - " << xx / ll << " = " << xoffset << "\n";
+//							std::cout << potential[nn] << " is IN with offset " << xoffset << ", " << yoffset << ", " << zoffset << "\n";
 							for (size_t i = xs + xoffset; i < xe + xoffset; i++) {
 								for (size_t j = ys + yoffset; j < ye + yoffset; j++) {
-//									std::cout << "pushback: " << std::make_pair((NN << l), (yy / ll + j) * (2 << l) + xx / ll + i) << "\n";
-									potential.push_back(std::make_pair((NN << l), (yy / ll + j) * (2 << l) + xx / ll + i));
+									for (size_t k = zs + zoffset; k < ze + zoffset; k++) {
+//										std::cout << (zz / ll + k) << " * " << (NN << l) * (NN << l) << " = " << (zz / ll + k) * (NN << l) * (NN << l) << "\n";
+//										std::cout << (yy / ll + j) << " * " << (NN << l) << " = " << (yy / ll + j) * (NN << l) << "\n";
+//										std::cout << " = " << xx / ll + i << "\n";
+//										std::cout << "pushback: " << std::make_pair((NN << l), (zz / ll + k) * (NN << l) * (NN << l) + (yy / ll + j) * (NN << l) + xx / ll + i) << "\n";
+										potential.push_back(std::make_pair((NN << l), (zz / ll + k) * (NN << l) * (NN << l) + (yy / ll + j) * (NN << l) + xx / ll + i));
+									}
 								}
 							}
 						} else {
@@ -717,30 +840,38 @@ void BalancedLoader::SFC()
 			};
 
 
-			if (x + 1 < n) {
-				addNeighbors(x + 1, y, 0, 1, 0, 2);
-				if (y + 1 < n) {
-					addNeighbors(x + 1, y + 1, 0, 1, 0, 1);
-				}
-				if (y) {
-					addNeighbors(x + 1, y - 1, 0, 1, 1, 2);
-				}
-			}
-			if (x) {
-				addNeighbors(x - 1, y, 1, 2, 0, 2);
-				if (y + 1 < n) {
-					addNeighbors(x - 1, y + 1, 1, 2, 0, 1);
-				}
-				if (y) {
-					addNeighbors(x - 1, y - 1, 1, 2, 1, 2);
+			size_t nsize = neighbors.size();
+
+			if (dimension == 2) {
+//				D1toD2(n, cell, x, y);
+				for (int ox = -1; ox <= 1; ox++) {
+					for (int oy = -1; oy <= 1; oy++) {
+						if (x + ox < n && y + oy < n) {
+//							std::cout << x << ", " << y << ", " << z << "::" << ox << ", " << oy << ", " << 1 << "\n";
+							addNeighbors(x + ox, y + oy, z, ox, oy, 1);
+						}
+					}
 				}
 			}
-			if (y + 1 < n) {
-				addNeighbors(x, y + 1, 0, 2, 0, 1);
+			if (dimension == 3) {
+//				D1toD3(n, cell, x, y, z);
+				for (int ox = -1; ox <= 1; ox++) {
+					for (int oy = -1; oy <= 1; oy++) {
+						for (int oz = -1; oz <= 1; oz++) {
+							if (x + ox < n && y + oy < n && z + oz < n) {
+//								std::cout << x << ", " << y << ", " << z << "::" << ox << ", " << oy << ", " << oz << "\n";
+								addNeighbors(x + ox, y + oy, z + oz, ox, oy, oz);
+							}
+						}
+					}
+				}
 			}
-			if (y) {
-				addNeighbors(x, y - 1, 0, 2, 1, 2);
-			}
+
+
+//			for (size_t i = nsize; i < neighbors.size(); i++) {
+//				std::cout << neighbors[i] << " ";
+//			}
+//			std::cout << "\n";
 
 			++cell;
 		}
@@ -749,12 +880,25 @@ void BalancedLoader::SFC()
 
 		intervals.resize(neighbors.size());
 		for (size_t i = 0; i < neighbors.size(); i++) {
-			intervals[i].first = D2toD1(neighbors[i].first, neighbors[i].second % neighbors[i].first, neighbors[i].second / neighbors[i].first);
-			intervals[i].second = intervals[i].first + 1. / (neighbors[i].first * neighbors[i].first);
+			if (dimension == 2) {
+				intervals[i].first = D2toD1(neighbors[i].first,
+						neighbors[i].second % neighbors[i].first,
+						neighbors[i].second / neighbors[i].first);
+			}
+			if (dimension == 3) {
+				intervals[i].first = D3toD1(neighbors[i].first,
+						neighbors[i].second % neighbors[i].first,
+						neighbors[i].second % (neighbors[i].first * neighbors[i].first) / neighbors[i].first,
+						neighbors[i].second / (neighbors[i].first * neighbors[i].first));
+			}
+			intervals[i].second = intervals[i].first + 1. / pow(neighbors[i].first, dimension);
 		}
 
 		std::sort(intervals.begin(), intervals.end());
 //		std::cout << intervals;
+//		for (size_t i = 0; i < intervals.size(); i++) {
+//			std::cout << neighbors[i] << " -> " << intervals[i] << "\n";
+//		}
 
 		size_t unique = 0;
 		for (size_t i = 1; i < intervals.size(); i++) {
@@ -766,7 +910,7 @@ void BalancedLoader::SFC()
 		}
 
 		intervals.resize(unique + 1);
-		std::cout << intervals;
+//		std::cout << intervals;
 	});
 
 	std::vector<int> nranks;
@@ -780,7 +924,9 @@ void BalancedLoader::SFC()
 		}
 	}
 	Esutils::sortAndRemoveDuplicity(nranks);
-	std::cout << nranks;
+	Communication::serialize([&] () {
+		std::cout << environment->MPIrank << "-> " << nranks;
+	});
 
 
 	std::vector<std::vector<eslocal> > sSize, sNodes, rSize, rNodes;
