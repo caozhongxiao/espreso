@@ -95,7 +95,6 @@ protected:
 	void sortElementsManual();
 
 	void SFC();
-	void polishSFC();
 
 	void fillElements();
 	void fillCoordinates();

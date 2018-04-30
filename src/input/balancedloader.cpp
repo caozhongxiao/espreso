@@ -586,332 +586,266 @@ void BalancedLoader::SFC()
 		std::sort(refinedxyz[i].begin(), refinedxyz[i].end());
 	}
 
-	if (environment->MPIrank == 0) {
-		std::cout << "NN: " << NN << ", N: " << N << "\n";
-		for (size_t i = 0; i < refined.size(); i++) {
-			std::cout << refined[i];
-		}
-//		for (size_t i = 0; i < refinedxyz.size(); i++) {
-//			std::cout << refinedxyz[i];
-//		}
-//		std::cout << _sfcbounds;
+
+//	PRINT SFC
+//	if (environment->MPIrank == 0) {
+//		std::ofstream os("SFC.vtk");
+//		os << "# vtk DataFile Version 2.0\n";
+//		os << "EXAMPLE\n";
+//		os << "ASCII\n";
+//		os << "DATASET UNSTRUCTURED_GRID\n\n";
 //
-//		for (size_t i = 0; i < sfcboundary.size(); i++) {
-//			D1toD2(sfcboundary[i].first, sfcboundary[i].second, x, y);
-////			std::cout << sfcboundary[i].first << "::" << sfcboundary[i].second << " -> [" << x << "," << y << "]\n";
+//		os << "POINTS " << pow(N + 1, dimension) << " float\n";
+//
+//		for (size_t k = 0; k <= N; k++) {
+//			for (size_t j = 0; j <= N; j++) {
+//				for (size_t i = 0; i <= N; i++) {
+//					os << origin.x + i * size.x / N << " " << origin.y + j * size.y / N << " " << origin.z + k * size.z / N << " \n";
+//				}
+//			}
 //		}
-	}
-
-	if (environment->MPIrank == 0) {
-		std::ofstream os("SFC.vtk");
-		os << "# vtk DataFile Version 2.0\n";
-		os << "EXAMPLE\n";
-		os << "ASCII\n";
-		os << "DATASET UNSTRUCTURED_GRID\n\n";
-
-		os << "POINTS " << pow(N + 1, dimension) << " float\n";
-
-		for (size_t k = 0; k <= N; k++) {
-			for (size_t j = 0; j <= N; j++) {
-				for (size_t i = 0; i <= N; i++) {
-					os << i * size.x / N << " " << j * size.y / N << " " << k * size.z / N << " \n";
-				}
-			}
-		}
-		os << "\n";
-
-		std::vector<size_t> ccount = { 0 };
-		size_t cells = 0, prev = pow(NN, dimension);
-		for (size_t d = 1; d < refinedxyz.size(); d++) {
-			std::cout << "prev: " << prev << ", xy: " << refinedxyz[d].size() << "\n";
-			cells += prev - refinedxyz[d].size();
-			prev = pow(2, dimension) * refinedxyz[d].size();
-		}
-		os << "CELLS " << cells << " " << cells + pow(2, dimension) * cells << "\n";
-
-		std::cout << sfcboundary;
-		size_t n = sfcboundary[environment->MPIrank].first;
-		size_t cell = sfcboundary[environment->MPIrank].second;
-		size_t level = 1;
-		while ((NN << level) <= n) ++level;
-		std::vector<std::vector<size_t>::const_iterator> its = { refined.front().begin() };
-
-//		std::cout << "n: " << n << ", cell: " << cell << ", level: " << level << "\n";
-		cell *= pow(N / n, dimension);
-		for (size_t i = 1; i < refined.size(); i++) {
-			its.push_back(std::lower_bound(refined[i].begin(), refined[i].end(), cell / (size_t)pow(1 << (refined.size() - i - 1), dimension)));
-		}
-		cell = sfcboundary[environment->MPIrank].second;
-
-		size_t index = 0;
-		for (int r = 0; r < environment->MPIsize; r++) {
-			while (n != sfcboundary[r + 1].first || cell <= sfcboundary[r + 1].second) {
-				while (its[level] != refined[level].end() && *its[level] == cell) {
-					++level;
-					n = n << 1;
-					cell *= pow(2, dimension);
-				}
-
-				while (n > NN && its[level - 1] != refined[level - 1].end() && *its[level - 1] < cell / (size_t)pow(2, dimension)) {
-					++its[level - 1];
-					if (its[level - 1] == refined[level - 1].end() || *its[level - 1] != cell / (size_t)pow(2, dimension)) {
-						--level;
-						n = n >> 1;
-						cell /= pow(2, dimension);
-					}
-				}
-
-				if (dimension == 2) {
-					D1toD2(n, cell, x, y);
-				}
-				if (dimension == 3) {
-					D1toD3(n, cell, x, y, z);
-				}
-
-//				std::cout << "level: " << level << ", n: " << n << ", cell: " << cell << " - " << z * n * n + y * n + x << "\n";
-
-				size_t row = N + 1;
-//				std::cout << "ROW: " << row << "\n";
-				if (dimension == 2) {
-					os << "4 ";
-					os << row * (N / n) * (y + 0) + (N / n) * (x + 0) << " ";
-					os << row * (N / n) * (y + 0) + (N / n) * (x + 1) << " ";
-					os << row * (N / n) * (y + 1) + (N / n) * (x + 1) << " ";
-					os << row * (N / n) * (y + 1) + (N / n) * (x + 0) << "\n";
-				}
-
-				if (dimension == 3) {
-//					std::cout << "x: " << x << ", y: " << y << ", z: " << z << ", N / n: " << N / n << "\n";
-					os << "8 ";
-					os << row * row * (N / n) * (z + 0) + row * (N / n) * (y + 0) + (N / n) * (x + 0) << " ";
-					os << row * row * (N / n) * (z + 0) + row * (N / n) * (y + 0) + (N / n) * (x + 1) << " ";
-					os << row * row * (N / n) * (z + 0) + row * (N / n) * (y + 1) + (N / n) * (x + 1) << " ";
-					os << row * row * (N / n) * (z + 0) + row * (N / n) * (y + 1) + (N / n) * (x + 0) << " ";
-					os << row * row * (N / n) * (z + 1) + row * (N / n) * (y + 0) + (N / n) * (x + 0) << " ";
-					os << row * row * (N / n) * (z + 1) + row * (N / n) * (y + 0) + (N / n) * (x + 1) << " ";
-					os << row * row * (N / n) * (z + 1) + row * (N / n) * (y + 1) + (N / n) * (x + 1) << " ";
-					os << row * row * (N / n) * (z + 1) + row * (N / n) * (y + 1) + (N / n) * (x + 0) << "\n";
-				}
-
-				++cell;
-				++index;
-			}
-			ccount.push_back(index);
-		}
-		std::cout << ccount;
-
-		os << "\n";
-
-		os << "CELL_TYPES " << cells << "\n";
-		for (size_t i = 0; i < cells; i++) {
-			if (dimension == 2) {
-				os << "9\n";
-			}
-			if (dimension == 3) {
-				os << "12\n";
-			}
-		}
-		os << "\n";
-
-		os << "CELL_DATA " << cells << "\n";
-		os << "SCALARS MPI int 1\n";
-		os << "LOOKUP_TABLE default\n";
-		for (int r = 0; r < environment->MPIsize; r++) {
-			for (size_t i = ccount[r]; i < ccount[r + 1]; i++) {
-				os << r << "\n";
-			}
-		}
-		os << "\n";
-
-		os.close();
-	}
+//		os << "\n";
+//
+//		std::vector<size_t> ccount = { 0 };
+//		size_t cells = 0, prev = pow(NN, dimension);
+//		for (size_t d = 1; d < refinedxyz.size(); d++) {
+//			std::cout << "prev: " << prev << ", xy: " << refinedxyz[d].size() << "\n";
+//			cells += prev - refinedxyz[d].size();
+//			prev = pow(2, dimension) * refinedxyz[d].size();
+//		}
+//		os << "CELLS " << cells << " " << cells + pow(2, dimension) * cells << "\n";
+//
+//		std::cout << sfcboundary;
+//		size_t n = sfcboundary[environment->MPIrank].first;
+//		size_t cell = sfcboundary[environment->MPIrank].second;
+//		size_t level = 1;
+//		while ((NN << level) <= n) ++level;
+//		std::vector<std::vector<size_t>::const_iterator> its = { refined.front().begin() };
+//
+//		cell *= pow(N / n, dimension);
+//		for (size_t i = 1; i < refined.size(); i++) {
+//			its.push_back(std::lower_bound(refined[i].begin(), refined[i].end(), cell / (size_t)pow(1 << (refined.size() - i - 1), dimension)));
+//		}
+//		cell = sfcboundary[environment->MPIrank].second;
+//
+//		size_t index = 0;
+//		for (int r = 0; r < environment->MPIsize; r++) {
+//			while (n != sfcboundary[r + 1].first || cell <= sfcboundary[r + 1].second) {
+//				while (its[level] != refined[level].end() && *its[level] == cell) {
+//					++level;
+//					n = n << 1;
+//					cell *= pow(2, dimension);
+//				}
+//
+//				while (n > NN && its[level - 1] != refined[level - 1].end() && *its[level - 1] < cell / (size_t)pow(2, dimension)) {
+//					++its[level - 1];
+//					if (its[level - 1] == refined[level - 1].end() || *its[level - 1] != cell / (size_t)pow(2, dimension)) {
+//						--level;
+//						n = n >> 1;
+//						cell /= pow(2, dimension);
+//					}
+//				}
+//
+//				if (dimension == 2) {
+//					D1toD2(n, cell, x, y);
+//				}
+//				if (dimension == 3) {
+//					D1toD3(n, cell, x, y, z);
+//				}
+//
+//				size_t row = N + 1;
+//				if (dimension == 2) {
+//					os << "4 ";
+//					os << row * (N / n) * (y + 0) + (N / n) * (x + 0) << " ";
+//					os << row * (N / n) * (y + 0) + (N / n) * (x + 1) << " ";
+//					os << row * (N / n) * (y + 1) + (N / n) * (x + 1) << " ";
+//					os << row * (N / n) * (y + 1) + (N / n) * (x + 0) << "\n";
+//				}
+//
+//				if (dimension == 3) {
+//					os << "8 ";
+//					os << row * row * (N / n) * (z + 0) + row * (N / n) * (y + 0) + (N / n) * (x + 0) << " ";
+//					os << row * row * (N / n) * (z + 0) + row * (N / n) * (y + 0) + (N / n) * (x + 1) << " ";
+//					os << row * row * (N / n) * (z + 0) + row * (N / n) * (y + 1) + (N / n) * (x + 1) << " ";
+//					os << row * row * (N / n) * (z + 0) + row * (N / n) * (y + 1) + (N / n) * (x + 0) << " ";
+//					os << row * row * (N / n) * (z + 1) + row * (N / n) * (y + 0) + (N / n) * (x + 0) << " ";
+//					os << row * row * (N / n) * (z + 1) + row * (N / n) * (y + 0) + (N / n) * (x + 1) << " ";
+//					os << row * row * (N / n) * (z + 1) + row * (N / n) * (y + 1) + (N / n) * (x + 1) << " ";
+//					os << row * row * (N / n) * (z + 1) + row * (N / n) * (y + 1) + (N / n) * (x + 0) << "\n";
+//				}
+//
+//				++cell;
+//				++index;
+//			}
+//			ccount.push_back(index);
+//		}
+//
+//		os << "\n";
+//
+//		os << "CELL_TYPES " << cells << "\n";
+//		for (size_t i = 0; i < cells; i++) {
+//			if (dimension == 2) {
+//				os << "9\n";
+//			}
+//			if (dimension == 3) {
+//				os << "12\n";
+//			}
+//		}
+//		os << "\n";
+//
+//		os << "CELL_DATA " << cells << "\n";
+//		os << "SCALARS MPI int 1\n";
+//		os << "LOOKUP_TABLE default\n";
+//		for (int r = 0; r < environment->MPIsize; r++) {
+//			for (size_t i = ccount[r]; i < ccount[r + 1]; i++) {
+//				os << r << "\n";
+//			}
+//		}
+//		os << "\n";
+//
+//		os.close();
+//	}
 
 	std::vector<std::pair<size_t, size_t> > neighbors, potential;
 	std::vector<std::pair<double, double> > intervals;
 
-	Communication::serialize([&] () {
-//		std::cout << " --- " << environment->MPIrank << " -- \n";
-		size_t n = sfcboundary[environment->MPIrank].first;
-		size_t cell = sfcboundary[environment->MPIrank].second;
-		size_t level = 1;
-		while ((NN << level) <= n) ++level;
-		std::vector<std::vector<size_t>::const_iterator> its = { refined.front().begin() };
+	size_t n = sfcboundary[environment->MPIrank].first;
+	size_t cell = sfcboundary[environment->MPIrank].second;
+	size_t level = 1;
+	while ((NN << level) <= n) ++level;
+	std::vector<std::vector<size_t>::const_iterator> its = { refined.front().begin() };
 
-//		std::cout << "n: " << n << ", cell: " << cell << ", level: " << level << "\n";
-		cell *= pow(N / n, dimension);
-		for (size_t i = 1; i < refined.size(); i++) {
-			its.push_back(std::lower_bound(refined[i].begin(), refined[i].end(), cell / (size_t)pow(1 << (refined.size() - i - 1), dimension)));
+	cell *= pow(N / n, dimension);
+	for (size_t i = 1; i < refined.size(); i++) {
+		its.push_back(std::lower_bound(refined[i].begin(), refined[i].end(), cell / (size_t)pow(1 << (refined.size() - i - 1), dimension)));
+	}
+	cell = sfcboundary[environment->MPIrank].second;
+	while (n != sfcboundary[environment->MPIrank + 1].first || cell <= sfcboundary[environment->MPIrank + 1].second) {
+		while (its[level] != refined[level].end() && *its[level] == cell) {
+			++level;
+			n = n << 1;
+			cell *= pow(2, dimension);
 		}
-		cell = sfcboundary[environment->MPIrank].second;
-		while (n != sfcboundary[environment->MPIrank + 1].first || cell <= sfcboundary[environment->MPIrank + 1].second) {
-			while (its[level] != refined[level].end() && *its[level] == cell) {
-				++level;
-				n = n << 1;
-				cell *= pow(2, dimension);
+
+		while (n > NN && its[level - 1] != refined[level - 1].end() && *its[level - 1] < cell / (size_t)pow(2, dimension)) {
+			++its[level - 1];
+			if (its[level - 1] == refined[level - 1].end() || *its[level - 1] != cell / (size_t)pow(2, dimension)) {
+				--level;
+				n = n >> 1;
+				cell /= pow(2, dimension);
+			}
+		}
+
+		size_t xs, xe, ys, ye, zs, ze;
+		auto addNeighbors = [&] (size_t xx, size_t yy, size_t zz, int x, int y, int z) {
+			// xx, yy -> index in deeper level
+			xx = xx * (1 << (refinedxyz.size() - level - 1));
+			yy = yy * (1 << (refinedxyz.size() - level - 1));
+			zz = zz * (1 << (refinedxyz.size() - level - 1));
+			xs = ys = zs = 0;
+			xe = ye = ze = 2;
+			if (x == -1) { xs = 1; }
+			if (y == -1) { ys = 1; }
+			if (z == -1) { zs = 1; }
+			if (x == 1) { xe = 1; }
+			if (y == 1) { ye = 1; }
+			if (z == 1) { ze = 1; }
+
+			// l -> level, ll = divisor
+			// go deeper up to my level
+			size_t l = 1;
+			size_t ll = N / NN;
+			while (l < level && std::binary_search(refinedxyz[l].begin(), refinedxyz[l].end(), (zz / ll) * (NN << l - 1) * (NN << l - 1) + (yy / ll) * (NN << l - 1) + xx / ll)) {
+				++l;
+				ll = ll >> 1;
 			}
 
-			while (n > NN && its[level - 1] != refined[level - 1].end() && *its[level - 1] < cell / (size_t)pow(2, dimension)) {
-//				std::cout << "DOWN: " << *its[level - 1] << " != " << cell / (size_t)pow(2, dimension) << "\n";
-				++its[level - 1];
-				if (its[level - 1] == refined[level - 1].end() || *its[level - 1] != cell / (size_t)pow(2, dimension)) {
-					--level;
-//					std::cout << "l: " << level << ", its: " << *its[level] << "\n";
-					n = n >> 1;
-					cell /= pow(2, dimension);
-				}
-			}
-
-			if (dimension == 2) {
-				D1toD2(n, cell, x, y);
-			}
-			if (dimension == 3) {
-				D1toD3(n, cell, x, y, z);
-			}
-
-//			std::cout << "-----------------\n";
-//			std::cout << "level: " << level << ", n: " << n << ", cell: " << cell << " - " << z * n * n + y * n + x << "\n";
-//			std::cout << "-----\n" << n << ":" << z * n * n + y * n + x << " -> ";
-
-			size_t xs, xe, ys, ye, zs, ze;
-//			auto addNeighbors = [&] (size_t xx, size_t yy, size_t zz, size_t xs, size_t xe, size_t ys, size_t ye, size_t zs, size_t ze) {
-			auto addNeighbors = [&] (size_t xx, size_t yy, size_t zz, int x, int y, int z) {
-				// xx, yy -> index in deeper level
-				xx = xx * (1 << (refinedxyz.size() - level - 1));
-				yy = yy * (1 << (refinedxyz.size() - level - 1));
-				zz = zz * (1 << (refinedxyz.size() - level - 1));
-				xs = ys = zs = 0;
-				xe = ye = ze = 2;
-				if (x == -1) { xs = 1; }
-				if (y == -1) { ys = 1; }
-				if (z == -1) { zs = 1; }
-				if (x == 1) { xe = 1; }
-				if (y == 1) { ye = 1; }
-				if (z == 1) { ze = 1; }
-//				std::cout << "xx: " << xx << ", yy: " << yy << "\n";
-
-				// l -> level, ll = divisor
-				// go deeper up to my level
-				size_t l = 1;
-				size_t ll = N / NN;
-//				std::cout << "l: " << l << ", ll: " << ll << "\n";
-				while (l < level && std::binary_search(refinedxyz[l].begin(), refinedxyz[l].end(), (zz / ll) * (NN << l - 1) * (NN << l - 1) + (yy / ll) * (NN << l - 1) + xx / ll)) {
-					++l;
-					ll = ll >> 1;
-				}
-
-				potential.clear();
-				potential.push_back(std::make_pair((NN << l - 1), (zz / ll) * (NN << l - 1) * (NN << l - 1) + (yy / ll) * (NN << l - 1) + xx / ll));
-//				std::cout << "first: NN: " << NN << ", l: " << l << ", ll: " << ll << " == " << potential.back() << "\n";
-				size_t nbegin = 0;
-				size_t nend = 1;
-				size_t xoffset = 0;
-				size_t yoffset = 0;
-				size_t zoffset = 0;
-				// there should be more deeper levels
-				while (l < refinedxyz.size()) {
-					ll = ll >> 1;
-					for (size_t nn = nbegin; nn < nend; ++nn) {
-//						std::cout << "l: " << l << ", ll: " << ll << "\n";
-						if (std::binary_search(refinedxyz[l].begin(), refinedxyz[l].end(), potential[nn].second)) {
-							xoffset = 2 * (potential[nn].second % (potential[nn].first)) - xx / ll;
-							yoffset = 2 * (potential[nn].second % (potential[nn].first * potential[nn].first) / (potential[nn].first)) - yy / ll;
-							zoffset = 2 * (potential[nn].second / (potential[nn].first * potential[nn].first)) - zz / ll;
-//							std::cout << 2 << " * " << potential[nn].second % (potential[nn].first) << " - " << xx / ll << " = " << xoffset << "\n";
-//							std::cout << potential[nn] << " is IN with offset " << xoffset << ", " << yoffset << ", " << zoffset << "\n";
-							for (size_t i = xs + xoffset; i < xe + xoffset; i++) {
-								for (size_t j = ys + yoffset; j < ye + yoffset; j++) {
-									for (size_t k = zs + zoffset; k < ze + zoffset; k++) {
-//										std::cout << (zz / ll + k) << " * " << (NN << l) * (NN << l) << " = " << (zz / ll + k) * (NN << l) * (NN << l) << "\n";
-//										std::cout << (yy / ll + j) << " * " << (NN << l) << " = " << (yy / ll + j) * (NN << l) << "\n";
-//										std::cout << " = " << xx / ll + i << "\n";
-//										std::cout << "pushback: " << std::make_pair((NN << l), (zz / ll + k) * (NN << l) * (NN << l) + (yy / ll + j) * (NN << l) + xx / ll + i) << "\n";
-										potential.push_back(std::make_pair((NN << l), (zz / ll + k) * (NN << l) * (NN << l) + (yy / ll + j) * (NN << l) + xx / ll + i));
-									}
+			potential.clear();
+			potential.push_back(std::make_pair((NN << l - 1), (zz / ll) * (NN << l - 1) * (NN << l - 1) + (yy / ll) * (NN << l - 1) + xx / ll));
+			size_t nbegin = 0;
+			size_t nend = 1;
+			size_t xoffset = 0;
+			size_t yoffset = 0;
+			size_t zoffset = 0;
+			// there should be more deeper levels
+			while (l < refinedxyz.size()) {
+				ll = ll >> 1;
+				for (size_t nn = nbegin; nn < nend; ++nn) {
+					if (std::binary_search(refinedxyz[l].begin(), refinedxyz[l].end(), potential[nn].second)) {
+						xoffset = 2 * (potential[nn].second % (potential[nn].first)) - xx / ll;
+						yoffset = 2 * (potential[nn].second % (potential[nn].first * potential[nn].first) / (potential[nn].first)) - yy / ll;
+						zoffset = 2 * (potential[nn].second / (potential[nn].first * potential[nn].first)) - zz / ll;
+						for (size_t i = xs + xoffset; i < xe + xoffset; i++) {
+							for (size_t j = ys + yoffset; j < ye + yoffset; j++) {
+								for (size_t k = zs + zoffset; k < ze + zoffset; k++) {
+									potential.push_back(std::make_pair((NN << l), (zz / ll + k) * (NN << l) * (NN << l) + (yy / ll + j) * (NN << l) + xx / ll + i));
 								}
 							}
-						} else {
-							neighbors.push_back(potential[nn]);
 						}
+					} else {
+						neighbors.push_back(potential[nn]);
 					}
-					nbegin = nend;
-					nend = potential.size();
-					++l;
 				}
-			};
+				nbegin = nend;
+				nend = potential.size();
+				++l;
+			}
+		};
 
-
-			size_t nsize = neighbors.size();
-
-			if (dimension == 2) {
-//				D1toD2(n, cell, x, y);
-				for (int ox = -1; ox <= 1; ox++) {
-					for (int oy = -1; oy <= 1; oy++) {
-						if (x + ox < n && y + oy < n) {
-//							std::cout << x << ", " << y << ", " << z << "::" << ox << ", " << oy << ", " << 1 << "\n";
-							addNeighbors(x + ox, y + oy, z, ox, oy, 1);
-						}
+		if (dimension == 2) {
+			D1toD2(n, cell, x, y);
+			for (int ox = -1; ox <= 1; ox++) {
+				for (int oy = -1; oy <= 1; oy++) {
+					if (x + ox < n && y + oy < n) {
+						addNeighbors(x + ox, y + oy, z, ox, oy, 1);
 					}
 				}
 			}
-			if (dimension == 3) {
-//				D1toD3(n, cell, x, y, z);
-				for (int ox = -1; ox <= 1; ox++) {
-					for (int oy = -1; oy <= 1; oy++) {
-						for (int oz = -1; oz <= 1; oz++) {
-							if (x + ox < n && y + oy < n && z + oz < n) {
-//								std::cout << x << ", " << y << ", " << z << "::" << ox << ", " << oy << ", " << oz << "\n";
-								addNeighbors(x + ox, y + oy, z + oz, ox, oy, oz);
-							}
+		}
+		if (dimension == 3) {
+			D1toD3(n, cell, x, y, z);
+			for (int ox = -1; ox <= 1; ox++) {
+				for (int oy = -1; oy <= 1; oy++) {
+					for (int oz = -1; oz <= 1; oz++) {
+						if (x + ox < n && y + oy < n && z + oz < n) {
+							addNeighbors(x + ox, y + oy, z + oz, ox, oy, oz);
 						}
 					}
 				}
 			}
-
-
-//			for (size_t i = nsize; i < neighbors.size(); i++) {
-//				std::cout << neighbors[i] << " ";
-//			}
-//			std::cout << "\n";
-
-			++cell;
 		}
-		Esutils::sortAndRemoveDuplicity(neighbors);
-//		std::cout << neighbors;
+		++cell;
+	}
+	Esutils::sortAndRemoveDuplicity(neighbors);
 
-		intervals.resize(neighbors.size());
-		for (size_t i = 0; i < neighbors.size(); i++) {
-			if (dimension == 2) {
-				intervals[i].first = D2toD1(neighbors[i].first,
-						neighbors[i].second % neighbors[i].first,
-						neighbors[i].second / neighbors[i].first);
-			}
-			if (dimension == 3) {
-				intervals[i].first = D3toD1(neighbors[i].first,
-						neighbors[i].second % neighbors[i].first,
-						neighbors[i].second % (neighbors[i].first * neighbors[i].first) / neighbors[i].first,
-						neighbors[i].second / (neighbors[i].first * neighbors[i].first));
-			}
-			intervals[i].second = intervals[i].first + 1. / pow(neighbors[i].first, dimension);
+	intervals.resize(neighbors.size());
+	for (size_t i = 0; i < neighbors.size(); i++) {
+		if (dimension == 2) {
+			intervals[i].first = D2toD1(neighbors[i].first,
+					neighbors[i].second % neighbors[i].first,
+					neighbors[i].second / neighbors[i].first);
 		}
-
-		std::sort(intervals.begin(), intervals.end());
-//		std::cout << intervals;
-//		for (size_t i = 0; i < intervals.size(); i++) {
-//			std::cout << neighbors[i] << " -> " << intervals[i] << "\n";
-//		}
-
-		size_t unique = 0;
-		for (size_t i = 1; i < intervals.size(); i++) {
-			if (intervals[i].first <= intervals[unique].second + 1e-6) {
-				intervals[unique].second = intervals[i].second;
-			} else {
-				intervals[++unique] = intervals[i];
-			}
+		if (dimension == 3) {
+			intervals[i].first = D3toD1(neighbors[i].first,
+					neighbors[i].second % neighbors[i].first,
+					neighbors[i].second % (neighbors[i].first * neighbors[i].first) / neighbors[i].first,
+					neighbors[i].second / (neighbors[i].first * neighbors[i].first));
 		}
+		intervals[i].second = intervals[i].first + 1. / pow(neighbors[i].first, dimension);
+	}
 
-		intervals.resize(unique + 1);
-//		std::cout << intervals;
-	});
+	std::sort(intervals.begin(), intervals.end());
+
+	size_t unique = 0;
+	for (size_t i = 1; i < intervals.size(); i++) {
+		if (intervals[i].first <= intervals[unique].second + 1e-6) {
+			intervals[unique].second = intervals[i].second;
+		} else {
+			intervals[++unique] = intervals[i];
+		}
+	}
+
+	intervals.resize(unique + 1);
 
 	std::vector<int> nranks;
 	for (size_t i = 0; i < intervals.size(); i++) {
@@ -924,9 +858,6 @@ void BalancedLoader::SFC()
 		}
 	}
 	Esutils::sortAndRemoveDuplicity(nranks);
-	Communication::serialize([&] () {
-		std::cout << environment->MPIrank << "-> " << nranks;
-	});
 
 
 	std::vector<std::vector<eslocal> > sSize, sNodes, rSize, rNodes;
@@ -994,62 +925,6 @@ void BalancedLoader::SFC()
 	}
 
 	_eDistribution = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
-}
-
-void BalancedLoader::polishSFC()
-{
-	size_t threads = environment->OMP_NUM_THREADS;
-
-	Point origin = _mesh.nodes->min, size = _mesh.nodes->max - _mesh.nodes->min + Point(1e-6, 1e-6, 1e-6);
-	size_t N = 1 << (size_t)std::ceil(std::log2(environment->MPIsize));
-
-	std::vector<eslocal> toexchange;
-	std::vector<std::vector<double> > centers(threads);
-
-//	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		centers[t].resize(_mesh.elements->dimension * (_mesh.elements->distribution[t + 1] - _mesh.elements->distribution[t]));
-		Point center;
-		size_t eindex = 0;
-		double D1;
-		size_t ncount;
-		for (auto e = _mesh.elements->nodes->cbegin(t); e != _mesh.elements->nodes->cend(t); ++e, ++eindex) {
-			center = Point();
-			ncount = 0;
-			size_t NN = N;
-			while (true) {
-				const Point &p = _mesh.nodes->coordinates->datatarray()[e->front()];
-				size_t x = std::floor(NN * (p.x - origin.x) / size.x);
-				size_t y = std::floor(NN * (p.y - origin.y) / size.y);
-				D1 = D2toD1(NN, x, y);
-				if (_sfcbounds[environment->MPIrank] <= D1 && D1 < _sfcbounds[environment->MPIrank + 1]) {
-					break;
-				}
-				NN = NN << 1;
-			}
-			for (auto n = e->begin(); n != e->end(); ++n) {
-				const Point &p = _mesh.nodes->coordinates->datatarray()[*n];
-				center += p;
-				size_t x = std::floor(NN * (p.x - origin.x) / size.x);
-				size_t y = std::floor(NN * (p.y - origin.y) / size.y);
-				D1 = D2toD1(NN, x, y);
-				if (_sfcbounds[environment->MPIrank] <= D1 && D1 < _sfcbounds[environment->MPIrank + 1]) {
-					++ncount;
-				}
-			}
-			if (ncount < _mesh.elements->dimension) {
-				toexchange.push_back(eindex);
-			}
-			center /= e->size();
-			centers[t][_mesh.elements->dimension * eindex + 0] = center.x;
-			centers[t][_mesh.elements->dimension * eindex + 1] = center.y;
-			if (_mesh.elements->dimension == 3) {
-				centers[t][_mesh.elements->dimension * eindex + 2] = center.z;
-			}
-		}
-	}
-
-	_mesh.elements->centers = new serializededata<eslocal, double>(_mesh.elements->dimension, centers);
 }
 
 void BalancedLoader::sortElementsVariousTargets()
@@ -1664,10 +1539,6 @@ void BalancedLoader::fillCoordinates()
 			*n = std::lower_bound(_mesh.nodes->IDs->datatarray().begin(), _mesh.nodes->IDs->datatarray().end(), *n) - _mesh.nodes->IDs->datatarray().begin();
 		}
 	}
-
-	Communication::serialize([&] () {
-		std::cout << environment->MPIrank << ": " << _mesh.neighbours;
-	});
 }
 
 void BalancedLoader::checkERegions()
