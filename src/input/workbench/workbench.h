@@ -38,7 +38,7 @@ protected:
 
 	std::vector<NBlock> _NBlocks;
 	std::vector<EBlock> _EBlocks;
-	std::vector<EBlock> _BBlocks;
+//	std::vector<EBlock> _BBlocks;
 	std::vector<CMBlock> _CMBlocks;
 	std::vector<ET> _ET;
 	std::vector<ESel> _ESel;

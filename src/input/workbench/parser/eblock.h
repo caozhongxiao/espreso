@@ -25,8 +25,7 @@ struct EBlock: public WorkbenchParser {
 	bool solidBlock();
 
 	void fixOffsets(std::vector<size_t> &dataOffsets);
-	bool readSolid(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &data);
-	bool readBoundary(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &edata);
+	bool readData(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &data);
 
 protected:
 	bool solid(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &data);

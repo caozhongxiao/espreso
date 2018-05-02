@@ -118,20 +118,14 @@ void EBlock::fixOffsets(std::vector<size_t> &dataOffsets)
 	}
 }
 
-bool EBlock::readSolid(const std::vector<ET> &et, std::vector<eslocal> &edist, std::vector<eslocal> &enodes, std::vector<EData> &edata)
-{
-	if (!Solkey) {
-		ESINFO(ERROR) << "Workbench parser internal error: EBLOCK is not solid.";
-	}
-	return solid(et, edist, enodes, edata);
-}
-
-bool EBlock::readBoundary(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &enodes, std::vector<EData> &edata)
+bool EBlock::readData(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &enodes, std::vector<EData> &edata)
 {
 	if (Solkey) {
-		ESINFO(ERROR) << "Workbench parser internal error: EBLOCK is not boundary.";
+		return solid(et, esize, enodes, edata);
+	} else {
+		return true;
+		return boundary(et, esize, enodes, edata);
 	}
-	return boundary(et, esize, enodes, edata);
 }
 
 bool EBlock::solid(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &enodes, std::vector<EData> &edata)
@@ -140,7 +134,6 @@ bool EBlock::solid(const std::vector<ET> &et, std::vector<eslocal> &esize, std::
 
 	const char *first = getFirst(), *last = getLast();
 	size_t size = (last - first) / elementSize;
-	size_t offset = esize.size();
 
 	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, size);
 
@@ -312,8 +305,6 @@ bool EBlock::boundary(const std::vector<ET> &et, std::vector<eslocal> &esize, st
 
 	const char *first = getFirst(), *last = getLast();
 	eslocal size = (last - first) / elementSize;
-
-	size_t offset = esize.size();
 
 	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, size);
 

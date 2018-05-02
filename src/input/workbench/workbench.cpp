@@ -294,12 +294,12 @@ void WorkbenchLoader::prepareData()
 	}
 
 	// EBlock without SOLID key are boundary blocks
-	for (size_t i = _EBlocks.size() - 1; i < _EBlocks.size(); i--) {
-		if (!_EBlocks[i].Solkey) {
-			_BBlocks.push_back(_EBlocks[i]);
-			_EBlocks.erase(_EBlocks.begin() + i);
-		}
-	}
+//	for (size_t i = _EBlocks.size() - 1; i < _EBlocks.size(); i--) {
+//		if (!_EBlocks[i].Solkey) {
+//			_BBlocks.push_back(_EBlocks[i]);
+//			_EBlocks.erase(_EBlocks.begin() + i);
+//		}
+//	}
 }
 
 void WorkbenchLoader::parseData(DistributedMesh &dMesh)
@@ -326,22 +326,22 @@ void WorkbenchLoader::parseData(DistributedMesh &dMesh)
 	}
 
 	for (size_t i = 0; i < _EBlocks.size(); i++) {
-		if (!_EBlocks[i].readSolid(_ET, dMesh.esize, dMesh.enodes, dMesh.edata)) {
+		if (!_EBlocks[i].readData(_ET, dMesh.esize, dMesh.enodes, dMesh.edata)) {
 			ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
 		}
 	}
 
-	for (size_t i = 0; i < _BBlocks.size(); i++) {
-		dMesh.bregions.push_back(MeshBRegion());
-		dMesh.bregions.back().name = "NAMELESS_SET_" + std::to_string(i + 1);
-		if (!_BBlocks[i].readBoundary(_ET, dMesh.bregions.back().esize, dMesh.bregions.back().enodes, dMesh.bregions.back().edata)) {
-			ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
-		}
-		dMesh.bregions.back().min = dMesh.bregions.back().edata.size() ? dMesh.bregions.back().edata.front().id : 0;
-		dMesh.bregions.back().max = dMesh.bregions.back().edata.size() ? dMesh.bregions.back().edata.back().id : 0;
-		MPI_Bcast(&dMesh.bregions.back().min, sizeof(eslocal), MPI_BYTE, _BBlocks[i].fRank, environment->MPICommunicator);
-		MPI_Bcast(&dMesh.bregions.back().max, sizeof(eslocal), MPI_BYTE, _BBlocks[i].lRank, environment->MPICommunicator);
-	}
+//	for (size_t i = 0; i < _BBlocks.size(); i++) {
+//		dMesh.bregions.push_back(MeshBRegion());
+//		dMesh.bregions.back().name = "NAMELESS_SET_" + std::to_string(i + 1);
+//		if (!_BBlocks[i].readData(_ET, dMesh.bregions.back().esize, dMesh.bregions.back().enodes, dMesh.bregions.back().edata)) {
+//			ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
+//		}
+//		dMesh.bregions.back().min = dMesh.bregions.back().edata.size() ? dMesh.bregions.back().edata.front().id : 0;
+//		dMesh.bregions.back().max = dMesh.bregions.back().edata.size() ? dMesh.bregions.back().edata.back().id : 0;
+//		MPI_Bcast(&dMesh.bregions.back().min, sizeof(eslocal), MPI_BYTE, _BBlocks[i].fRank, environment->MPICommunicator);
+//		MPI_Bcast(&dMesh.bregions.back().max, sizeof(eslocal), MPI_BYTE, _BBlocks[i].lRank, environment->MPICommunicator);
+//	}
 
 	for (size_t i = 0; i < _CMBlocks.size(); i++) {
 		switch (_CMBlocks[i].entity) {
