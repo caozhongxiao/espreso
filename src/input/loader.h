@@ -95,6 +95,9 @@ protected:
 	void sortElementsManual();
 
 	void SFC();
+	void printSFC();
+
+	void fillSFCCoordinates();
 
 	void fillElements();
 	void fillCoordinates();
@@ -102,12 +105,17 @@ protected:
 	void addBoundaryRegions();
 	void addElementRegions();
 
+	size_t _dimension;
 	const ECFRoot &_configuration;
 	DistributedMesh &_dMesh;
 	Mesh &_mesh;
 
 	std::vector<size_t> _nDistribution, _eDistribution;
+	size_t _coarseGridSize, _refinedGridSize;
+	std::vector<std::vector<size_t> > _refined;
+	std::vector<std::pair<size_t, size_t> > _sfcboundary;
 	std::vector<double> _sfcbounds;
+
 	std::vector<int> _targetRanks;
 	std::vector<std::vector<eslocal> > _rankNodeMap;
 };
