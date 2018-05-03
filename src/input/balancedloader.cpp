@@ -446,7 +446,7 @@ void BalancedLoader::printSFC() {
 	Point origin = _mesh.nodes->min, size = _mesh.nodes->max;
 	size -= origin - Point(1e-6, 1e-6, 1e-6);
 
-	std::ofstream os("SFC.vtk");
+	std::ofstream os(Esutils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" }) + "SFC.vtk");
 	os << "# vtk DataFile Version 2.0\n";
 	os << "EXAMPLE\n";
 	os << "ASCII\n";
@@ -457,7 +457,12 @@ void BalancedLoader::printSFC() {
 	for (size_t k = 0; k <= _refinedGridSize; k++) {
 		for (size_t j = 0; j <= _refinedGridSize; j++) {
 			for (size_t i = 0; i <= _refinedGridSize; i++) {
-				os << origin.x + i * size.x / _refinedGridSize << " " << origin.y + j * size.y / _refinedGridSize << " " << origin.z + k * size.z / _refinedGridSize << " \n";
+				if (_dimension == 3) {
+					os << origin.x + i * size.x / _refinedGridSize << " " << origin.y + j * size.y / _refinedGridSize << " " << origin.z + k * size.z / _refinedGridSize << " \n";
+				}
+				if (k == 0 && _dimension == 2) {
+					os << origin.x + i * size.x / _refinedGridSize << " " << origin.y + j * size.y / _refinedGridSize << " 0\n";
+				}
 			}
 		}
 	}
@@ -471,8 +476,8 @@ void BalancedLoader::printSFC() {
 	}
 	os << "CELLS " << cells << " " << cells + pow(2, _dimension) * cells << "\n";
 
-	size_t n = _sfcboundary[environment->MPIrank].first;
-	size_t cell = _sfcboundary[environment->MPIrank].second;
+	size_t n = _sfcboundary[0].first;
+	size_t cell = _sfcboundary[0].second;
 	size_t level = 1;
 	while ((_coarseGridSize << level) <= n) ++level;
 	std::vector<std::vector<size_t>::const_iterator> its = { _refined.front().begin() };
@@ -481,7 +486,7 @@ void BalancedLoader::printSFC() {
 	for (size_t i = 1; i < _refined.size(); i++) {
 		its.push_back(std::lower_bound(_refined[i].begin(), _refined[i].end(), cell / (size_t)pow(1 << (_refined.size() - i - 1), _dimension)));
 	}
-	cell = _sfcboundary[environment->MPIrank].second;
+	cell = _sfcboundary[0].second;
 
 	size_t index = 0, x, y, z = 0;
 	for (int r = 0; r < environment->MPIsize; r++) {
@@ -565,6 +570,9 @@ void BalancedLoader::printSFC() {
 void BalancedLoader::SFC()
 {
 	double PRECISION = 0.02 * std::log2(environment->MPIsize);
+	while (PRECISION * (_eDistribution.back() / environment->MPIsize) < 2) {
+		PRECISION *= 2;
+	}
 
 	Point min = _dMesh.coordinates.front(), max = _dMesh.coordinates.front();
 
@@ -688,6 +696,8 @@ void BalancedLoader::SFC()
 					_sfcboundary[i - ideal.begin()].first = _refinedGridSize;
 					_sfcboundary[i - ideal.begin()].second = (*q * pow(2, _dimension)) + bottom - asum.begin();
 					if (*up - *bottom > PRECISION * (_eDistribution.back() / environment->MPIsize)) {
+						_sfcboundary[i - ideal.begin()].first = 2 * _refinedGridSize;
+						_sfcboundary[i - ideal.begin()].second = pow(2, _dimension) * (*q * pow(2, _dimension) + bottom - asum.begin() + 1) - 1;
 						if (_refined.back().size() == 0 || _refined.back().back() != (*q * pow(2, _dimension)) + bottom - asum.begin()) {
 							_refined.back().push_back((*q * pow(2, _dimension)) + bottom - asum.begin());
 							nextsumoffset.push_back(*bottom);
