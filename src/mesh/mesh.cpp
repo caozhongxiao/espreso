@@ -337,6 +337,18 @@ void Mesh::load()
 
 void Mesh::update()
 {
+	int isEmpty = 0, quit;
+	if (elements->size == 0) {
+		isEmpty = 1;
+	}
+
+	MPI_Allreduce(&isEmpty, &quit, 1, MPI_INT, MPI_MAX, environment->MPICommunicator);
+	if (quit) {
+		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW << "ESPRESO quit computation. There is a process with no elements.";
+		MPI_Barrier(environment->MPICommunicator);
+		exit(EXIT_SUCCESS);
+	}
+
 	auto hasBEM = [] (const PhysicsConfiguration &physics) {
 		for (auto it = physics.discretization.begin(); it != physics.discretization.end(); ++it) {
 			if (it->second == DISCRETIZATION::BEM) {
