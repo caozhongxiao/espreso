@@ -110,6 +110,7 @@ protected:
 	DistributedMesh &_dMesh;
 	Mesh &_mesh;
 
+private:
 	std::vector<size_t> _nDistribution, _eDistribution;
 	size_t _coarseGridSize, _refinedGridSize;
 	std::vector<std::vector<size_t> > _refined;
@@ -118,6 +119,8 @@ protected:
 
 	std::vector<int> _targetRanks;
 	std::vector<std::vector<eslocal> > _rankNodeMap;
+	std::vector<eslocal> _nIDs;
+	std::vector<double> _cpartition;
 };
 
 }
