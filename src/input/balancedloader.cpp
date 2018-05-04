@@ -903,6 +903,12 @@ void BalancedLoader::fillSFCCoordinates()
 	}
 	cell = _sfcboundary[environment->MPIrank].second;
 
+	while (n > _coarseGridSize && (its[level - 1] == _refined[level - 1].end() || *its[level - 1] != cell / (size_t)pow(2, _dimension))) {
+		--level;
+		n = n >> 1;
+		cell /= pow(2, _dimension);
+	}
+
 	while (n != _sfcboundary[environment->MPIrank + 1].first || cell < _sfcboundary[environment->MPIrank + 1].second) {
 		while (its[level] != _refined[level].end() && *its[level] == cell) {
 			++level;
