@@ -1,6 +1,6 @@
 
 #include "workbench.h"
-#include "../loader.h"
+#include "../converter.h"
 
 #include "../../basis/containers/tarray.h"
 #include "../../basis/logging/logging.h"
@@ -45,7 +45,7 @@ WorkbenchLoader::WorkbenchLoader(const ECFRoot &configuration, Mesh &mesh)
 	timing.totalTime.endWithBarrier();
 	timing.printStatsMPI();
 
-	BalancedLoader::loadDistributedMesh(configuration, dMesh, mesh);
+	Converter::loadDistributedMesh(configuration, dMesh, mesh);
 }
 
 void WorkbenchLoader::readData()

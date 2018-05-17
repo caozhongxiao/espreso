@@ -55,6 +55,8 @@ public:
 	BoundaryRegionStore* bregion(const std::string &name);
 	BoundaryRegionsIntersectionStore* ibregion(const std::string &name);
 
+	size_t dimension;
+
 	ElementStore* elements;
 	NodeStore* nodes;
 

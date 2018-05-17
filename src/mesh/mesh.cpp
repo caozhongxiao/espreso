@@ -53,6 +53,19 @@ Mesh::Mesh(const ECFRoot &configuration, bool withGUI)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
+	dimension = 0;
+	switch (configuration.physics) {
+	case PHYSICS::HEAT_TRANSFER_2D:
+	case PHYSICS::STRUCTURAL_MECHANICS_2D:
+	case PHYSICS::SHALLOW_WATER_2D:
+		dimension = 2;
+		break;
+	case PHYSICS::HEAT_TRANSFER_3D:
+	case PHYSICS::STRUCTURAL_MECHANICS_3D:
+		dimension = 3;
+		break;
+	}
+
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<Element> eclasses;
