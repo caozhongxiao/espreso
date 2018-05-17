@@ -26,7 +26,7 @@ struct SpaceFillingCurve {
 	void recurce(size_t index) { _refinedsfc.back().push_back(index); }
 	void finishLevel(size_t depth);
 
-	const std::vector<size_t>& scfRefined(size_t depth) { return _refinedsfc[depth]; }
+	const std::vector<size_t>& sfcRefined(size_t depth) { return _refinedsfc[depth]; }
 	const std::vector<size_t>& xyzRefined(size_t depth) { return _refinedxyz[depth]; }
 
 	void SCFToXYZ();

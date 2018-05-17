@@ -473,8 +473,23 @@ void Converter::clusterize()
 	// allowed difference to the perfect distribution
 	size_t ETOLERANCE = PRECISION * _eDistribution.back() / environment->MPIsize;
 
+	std::vector<eslocal> edist({ 0 });
+	edist.reserve(_dMesh.esize.size() + 1);
+	for (size_t e = 0; e < _dMesh.esize.size(); e++) {
+		edist.push_back(edist.back() + _dMesh.esize[e]);
+	}
+
+	std::vector<eslocal> npermutation(_nBuckets.size()), epermutation(_eBuckets.size());
+	std::iota(npermutation.begin(), npermutation.end(), 0);
+	std::sort(npermutation.begin(), npermutation.end(), [&] (eslocal i, eslocal j) { return _nBuckets[i] < _nBuckets[j]; });
+	std::iota(epermutation.begin(), epermutation.end(), 0);
+	std::sort(epermutation.begin(), epermutation.end(), [&] (eslocal i, eslocal j) { return _eBuckets[i] < _eBuckets[j]; });
+
 	// PREPROCESS BUCKET SIZES
-	size_t DEPTH = 5;
+	size_t DEPTH = 1;
+	while (_sfc.buckets(DEPTH++) < (size_t)environment->MPIsize);
+	ESINFO(DETAILS) << "SFC DEPTH: " << DEPTH;
+
 	size_t buckets = _sfc.buckets(DEPTH);
 	uint bstep = _sfc.buckets(_sfc.depth()) / buckets;
 
@@ -484,7 +499,7 @@ void Converter::clusterize()
 	}
 
 	for (auto e = _eBuckets.begin(); e != _eBuckets.end(); ++e) {
-		++bucketSum.back()[(*e / bstep)];
+		++bucketSum.back()[*e / bstep];
 	}
 	Esutils::sizesToOffsets(bucketSum.back());
 
@@ -503,11 +518,11 @@ void Converter::clusterize()
 	size_t coarsenig = _sfc.buckets(_sfc.depth());
 	do {
 		coarsenig /= bsize;
-		scounts.resize(_sfc.scfRefined(LEVEL).size() * (bsize + 1));
-		rcounts.resize(_sfc.scfRefined(LEVEL).size() * (bsize + 1));
-		for (size_t b = 0, index = 0; b < _sfc.scfRefined(LEVEL).size(); b++) {
+		scounts.resize(_sfc.sfcRefined(LEVEL).size() * (bsize + 1));
+		rcounts.resize(_sfc.sfcRefined(LEVEL).size() * (bsize + 1));
+		for (size_t b = 0, index = 0; b < _sfc.sfcRefined(LEVEL).size(); b++) {
 			for (size_t i = 0; i <= bsize; i++, index++) {
-				scounts[index] = bucketSum[LEVEL][bsize * _sfc.scfRefined(LEVEL)[b] + i];
+				scounts[index] = bucketSum[LEVEL][bsize * _sfc.sfcRefined(LEVEL)[b] + i];
 			}
 		}
 
@@ -515,7 +530,7 @@ void Converter::clusterize()
 
 		_sfc.setLevel(LEVEL + 1);
 
-		for (size_t b = 0; b < _sfc.scfRefined(LEVEL).size(); b++) {
+		for (size_t b = 0; b < _sfc.sfcRefined(LEVEL).size(); b++) {
 			size_t boffset = b * (bsize + 1);
 			size_t rbegin = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), rcounts[boffset]) - _eDistribution.begin();
 			size_t rend = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), rcounts[boffset + bsize]) - _eDistribution.begin();
@@ -524,27 +539,73 @@ void Converter::clusterize()
 				while (i <= bsize && rcounts[boffset + i] < _eDistribution[r] && _eDistribution[r] - rcounts[boffset + i] >= ETOLERANCE) {
 					++i;
 				}
-				_bucketsBorders[r] = coarsenig * (bsize * _sfc.scfRefined(LEVEL)[b] + i);
+				_bucketsBorders[r] = coarsenig * (bsize * _sfc.sfcRefined(LEVEL)[b] + i);
 				if (rcounts[boffset + i] > _eDistribution[r] && rcounts[boffset + i] - _eDistribution[r] > ETOLERANCE) {
-					_sfc.recurce(bsize * _sfc.scfRefined(LEVEL)[b] + i - 1);
+					_sfc.recurce(bsize * _sfc.sfcRefined(LEVEL)[b] + i - 1);
 				}
 			}
 		}
 		_sfc.finishLevel(LEVEL + 1);
 
-	} while (LEVEL < DEPTH && _sfc.hasLevel(++LEVEL));
+	} while (++LEVEL < DEPTH && _sfc.hasLevel(LEVEL));
 
-	std::vector<eslocal> edist({ 0 });
-	edist.reserve(_dMesh.esize.size() + 1);
-	for (size_t e = 0; e < _dMesh.esize.size(); e++) {
-		edist.push_back(edist.back() + _dMesh.esize[e]);
+	// Go deeper if needed
+	scounts.resize(_sfc.sfcRefined(LEVEL).size() * (bsize + 1));
+	std::fill(scounts.begin(), scounts.end(), 0);
+	for (size_t b = 0, index = 0; b < _sfc.sfcRefined(LEVEL).size(); b++, index += bsize + 1) {
+		scounts[index] = bucketSum[LEVEL - 1][_sfc.sfcRefined(LEVEL)[b]];
+	}
+	rcounts.resize(scounts.size());
+	std::vector<eslocal> refinedindices;
+
+	while (LEVEL < SFCDEPTH && _sfc.hasLevel(LEVEL)) {
+		coarsenig /= bsize;
+		bstep /= buckets;
+		for (size_t b = 0, index = 0; b < _sfc.sfcRefined(LEVEL).size(); b++, index++) {
+			auto e = std::lower_bound(epermutation.begin(), epermutation.end(), coarsenig * bsize * _sfc.sfcRefined(LEVEL)[b], [&] (eslocal i, eslocal bound) { return _eBuckets[i] < bound; });
+			for (size_t i = 0; i < bsize; i++, index++) {
+				while (e != epermutation.end() && _eBuckets[*e] < coarsenig * bsize * _sfc.sfcRefined(LEVEL)[b] + (i + 1) * bstep) {
+					++scounts[index + 1];
+					++e;
+				}
+				scounts[index + 1] += scounts[index];
+			}
+		}
+
+		MPI_Allreduce(scounts.data(), rcounts.data(), sizeof(eslocal) * scounts.size(), MPI_BYTE, MPITools::operations().sum, environment->MPICommunicator);
+
+		_sfc.setLevel(LEVEL + 1);
+
+		for (size_t b = 0; b < _sfc.sfcRefined(LEVEL).size(); b++) {
+			size_t boffset = b * (bsize + 1);
+			size_t rbegin = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), rcounts[boffset]) - _eDistribution.begin();
+			size_t rend = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), rcounts[boffset + bsize]) - _eDistribution.begin();
+
+			for (size_t r = rbegin, i = 0; r < rend; r++) {
+				while (i <= bsize && rcounts[boffset + i] < _eDistribution[r] && _eDistribution[r] - rcounts[boffset + i] >= ETOLERANCE) {
+					++i;
+				}
+				_bucketsBorders[r] = coarsenig * (bsize * _sfc.sfcRefined(LEVEL)[b] + i);
+				if (rcounts[boffset + i] > _eDistribution[r] && rcounts[boffset + i] - _eDistribution[r] > ETOLERANCE) {
+					_sfc.recurce(bsize * _sfc.sfcRefined(LEVEL)[b] + i - 1);
+					refinedindices.push_back(boffset + i - 1);
+				}
+			}
+		}
+		_sfc.finishLevel(++LEVEL);
+		Esutils::sortAndRemoveDuplicity(refinedindices);
+
+		rcounts.swap(scounts);
+		scounts.resize(_sfc.sfcRefined(LEVEL).size() * (bsize + 1));
+		std::fill(scounts.begin(), scounts.end(), 0);
+		for (size_t b = 0, index = 0; b < _sfc.sfcRefined(LEVEL).size(); b++, index += bsize + 1) {
+			scounts[index] = rcounts[refinedindices[b]];
+		}
+		rcounts.resize(scounts.size());
+		refinedindices.clear();
 	}
 
-	std::vector<eslocal> npermutation(_nBuckets.size()), epermutation(_eBuckets.size());
-	std::iota(npermutation.begin(), npermutation.end(), 0);
-	std::sort(npermutation.begin(), npermutation.end(), [&] (eslocal i, eslocal j) { return _nBuckets[i] < _nBuckets[j]; });
-	std::iota(epermutation.begin(), epermutation.end(), 0);
-	std::sort(epermutation.begin(), epermutation.end(), [&] (eslocal i, eslocal j) { return _eBuckets[i] < _eBuckets[j]; });
+	ESINFO(DETAILS) << "RECURSION DEPTH: " << LEVEL;
 
 	std::vector<eslocal> sBuffer, rBuffer;
 	sBuffer.reserve(
@@ -754,18 +815,17 @@ void Converter::linkup()
 
 	std::vector<std::pair<size_t, size_t> > neighbors;
 
-	Communication::serialize([&] () {
-		_sfc.iterateBuckets(_bucketsBorders[environment->MPIrank], _bucketsBorders[environment->MPIrank + 1], [&] (size_t depth, size_t index) {
-			_sfc.addSFCNeighbors(depth, index, neighbors);
-		});
-		Esutils::sortAndRemoveDuplicity(neighbors);
-
-		for (size_t i = 0; i < neighbors.size(); i++) {
-			size_t bstep = _sfc.buckets(_sfc.depth()) / _sfc.buckets(neighbors[i].first);
-			neighbors[i].first = neighbors[i].second * bstep;
-			neighbors[i].second = neighbors[i].second * bstep + bstep;
-		}
+	_sfc.iterateBuckets(_bucketsBorders[environment->MPIrank], _bucketsBorders[environment->MPIrank + 1], [&] (size_t depth, size_t index) {
+		_sfc.addSFCNeighbors(depth, index, neighbors);
 	});
+	Esutils::sortAndRemoveDuplicity(neighbors);
+
+	for (size_t i = 0; i < neighbors.size(); i++) {
+		size_t bstep = _sfc.buckets(_sfc.depth()) / _sfc.buckets(neighbors[i].first);
+		neighbors[i].first = neighbors[i].second * bstep;
+		neighbors[i].second = neighbors[i].second * bstep + bstep;
+	}
+
 
 	if (_configuration.output.debug) {
 		printSFC();
