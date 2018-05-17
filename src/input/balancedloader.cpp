@@ -380,30 +380,30 @@ static void rotateD3(size_t n, size_t &x, size_t &y, size_t &z, int rx, int ry, 
 
 static double D2toD1(size_t n, size_t x, size_t y) {
 	int rx, ry;
-	double d = 0;
-	for (size_t s = n / 2, depth = 2; s > 0; s /= 2, depth = depth << 1) {
+	size_t d = 0;
+	for (size_t s = n / 2; s > 0; s /= 2) {
 		rx = (x & s) > 0;
 		ry = (y & s) > 0;
-		d += 1. / (depth * depth) * ((3 * rx) ^ ry);
+		d += s * s * ((3 * rx) ^ ry);
 
-		rotateD2(n, x, y, rx, ry);
+		rotateD2(s, x, y, rx, ry);
 	}
-	return d;
+	return (double)d / (n * n);
 };
 
 static double D3toD1(size_t n, size_t x, size_t y, size_t z) {
 	int rx, ry, rz;
-	double d = 0;
+	size_t d = 0;
 
-	for (size_t s = n / 2, depth = 2; s > 0; s /= 2, depth = depth << 1) {
+	for (size_t s = n / 2; s > 0; s /= 2) {
 		rx = (x & s) > 0;
 		ry = (y & s) > 0;
 		rz = (z & s) > 0;
-		d += 1. / (depth * depth * depth) * (4 * ry + (3 * (ry ^ rx)) ^ rz);
+		d += s * s * s * (4 * ry + (3 * (ry ^ rx)) ^ rz);
 
-		rotateD3(n, x, y, z, rx, ry, rz);
+		rotateD3(s, x, y, z, rx, ry, rz);
 	}
-	return d;
+	return (double)d / (n * n * n);
 };
 
 static void D1toD2(size_t n, size_t d, size_t &x, size_t &y) {
@@ -569,26 +569,53 @@ void BalancedLoader::printSFC() {
 
 void BalancedLoader::SFC()
 {
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	TimeEval time("SFC");
+	time.totalTime.startWithBarrier();
+
+	TimeEvent e1("SFC PREPROCESS SIZE");
+	e1.start();
+
 	double PRECISION = 0.02 * std::log2(environment->MPIsize);
 	while (PRECISION * (_eDistribution.back() / environment->MPIsize) < 2) {
 		PRECISION *= 2;
 	}
 
-	Point min(std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
-	Point max(-std::numeric_limits<double>::max(), -std::numeric_limits<double>::max(), -std::numeric_limits<double>::max());
+	double dmax = std::numeric_limits<double>::max();
 
-	for (size_t i = 0; i < _dMesh.coordinates.size(); i++) {
-		min.x = std::min(min.x, _dMesh.coordinates[i].x);
-		min.y = std::min(min.y, _dMesh.coordinates[i].y);
-		min.z = std::min(min.z, _dMesh.coordinates[i].z);
-		max.x = std::max(max.x, _dMesh.coordinates[i].x);
-		max.y = std::max(max.y, _dMesh.coordinates[i].y);
-		max.z = std::max(max.z, _dMesh.coordinates[i].z);
+	std::vector<Point> mins(threads, Point(dmax, dmax, dmax)), maxs(threads, Point(-dmax, -dmax, -dmax));
+
+	std::vector<size_t> cdistribution = tarray<Point>::distribute(threads, _dMesh.coordinates.size());
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		Point tmin = Point(dmax, dmax, dmax), tmax = Point(-dmax, -dmax, -dmax);
+		for (size_t i = cdistribution[t]; i < cdistribution[t + 1]; i++) {
+			tmin.x = std::min(tmin.x, _dMesh.coordinates[i].x);
+			tmin.y = std::min(tmin.y, _dMesh.coordinates[i].y);
+			tmin.z = std::min(tmin.z, _dMesh.coordinates[i].z);
+			tmax.x = std::max(tmax.x, _dMesh.coordinates[i].x);
+			tmax.y = std::max(tmax.y, _dMesh.coordinates[i].y);
+			tmax.z = std::max(tmax.z, _dMesh.coordinates[i].z);
+		}
+
+		mins[t] = tmin;
+		maxs[t] = tmax;
+	}
+
+	for (size_t t = 1; t < threads; t++) {
+		mins[0].x = std::min(mins[t].x, maxs[0].x);
+		mins[0].y = std::min(mins[t].y, maxs[0].y);
+		mins[0].z = std::min(mins[t].z, maxs[0].z);
+		maxs[0].x = std::max(maxs[t].x, maxs[0].x);
+		maxs[0].y = std::max(maxs[t].y, maxs[0].y);
+		maxs[0].z = std::max(maxs[t].z, maxs[0].z);
 	}
 
 	Point origin, size;
-	MPI_Allreduce(&min.x, &origin.x, 3, MPI_DOUBLE, MPI_MIN, environment->MPICommunicator);
-	MPI_Allreduce(&max.x, &size.x, 3, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
+	MPI_Allreduce(&mins[0].x, &origin.x, 3, MPI_DOUBLE, MPI_MIN, environment->MPICommunicator);
+	MPI_Allreduce(&maxs[0].x, &size.x, 3, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
 
 	_mesh.nodes->min = origin;
 	_mesh.nodes->max = size;
@@ -602,18 +629,8 @@ void BalancedLoader::SFC()
 	_refinedGridSize = 2;
 	_coarseGridSize = _refinedGridSize;
 
-	std::vector<size_t> sumoffset, nextsumoffset = { 0 };
-	std::vector<eslocal> scounts(pow(_refinedGridSize, _dimension)), rcounts(pow(_refinedGridSize, _dimension));
-	std::vector<double> epartition(_dMesh.esize.size());
-	_cpartition.resize(_dMesh.coordinates.size());
-	std::vector<size_t> asum(pow(_refinedGridSize, _dimension) + 1), ideal = tarray<size_t>::distribute(environment->MPIsize, _eDistribution.back());
-	std::vector<eslocal> epermutation(epartition.size()), cpermutation(_cpartition.size());
-
-	_refined = { {0} };
-	_sfcbounds.resize(environment->MPIsize + 1, 1);
-	_sfcbounds.front() = 0;
-	std::iota(epermutation.begin(), epermutation.end(), 0);
-	std::iota(cpermutation.begin(), cpermutation.end(), 0);
+	e1.end();
+	time.addEvent(e1);
 
 	std::vector<eslocal> edist({ 0 });
 	edist.reserve(_dMesh.esize.size() + 1);
@@ -621,9 +638,153 @@ void BalancedLoader::SFC()
 		edist.push_back(edist.back() + _dMesh.esize[e]);
 	}
 
+//	TimeEvent e12("SFC OPTIMIZED PREPROCESS STRUCTURES");
+//	e12.start();
+//
+//	std::vector<double> evalue(_dMesh.esize.size()), cvalue(_dMesh.coordinates.size());
+//	std::vector<eslocal> eperm(_dMesh.esize.size()), cperm(_dMesh.coordinates.size());
+//	std::vector<size_t> edistribution = tarray<eslocal>::distribute(threads, _dMesh.esize.size());
+//
+//	size_t blocks = 1 << 9;
+//
+//	#pragma omp parallel for
+//	for (size_t t = 0; t < threads; t++) {
+//		for (size_t n = cdistribution[t]; n < cdistribution[t + 1]; ++n) {
+//			const Point &p = _dMesh.coordinates[n];
+//			size_t x = std::floor(blocks * (p.x - origin.x) / size.x);
+//			size_t y = std::floor(blocks * (p.y - origin.y) / size.y);
+//
+//			if (_dimension == 2) {
+//				cvalue[n] = D2toD1(blocks, x, y);
+//			}
+//			if (_dimension == 3) {
+//				size_t z = std::floor(blocks * (p.z - origin.z) / size.z);
+//				cvalue[n] = D3toD1(blocks, x, y, z);
+//			}
+//		}
+//
+////		for (size_t e = edistribution[t]; e < edistribution[t + 1]; ++e) {
+////			const Point &p = _dMesh.coordinates[_dMesh.enodes[edist[e]] - _nDistribution[environment->MPIrank]];
+////			size_t x = std::floor(buckets * (p.x - origin.x) / size.x);
+////			size_t y = std::floor(buckets * (p.y - origin.y) / size.y);
+////
+////			if (_dimension == 2) {
+////				evalue[e] = D2toD1(buckets, x, y);
+////			}
+////			if (_dimension == 3) {
+////				size_t z = std::floor(buckets * (p.z - origin.z) / size.z);
+////				evalue[e] = D3toD1(buckets, x, y, z);
+////			}
+////		}
+//	}
+//
+//	std::iota(cperm.begin(), cperm.end(), 0);
+//	std::sort(cperm.begin(), cperm.end(), [&] (eslocal i, eslocal j) { return cvalue[i] < cvalue[j]; });
+//	std::sort(cvalue.begin(), cvalue.end(), [&] (eslocal i, eslocal j) { return cperm[i] < cperm[j]; });
+//
+////	std::iota(eperm.begin(), eperm.end(), 0);
+////	std::sort(eperm.begin(), eperm.end(), [&] (eslocal i, eslocal j) { return evalue[i] < evalue[j]; });
+//
+//	e12.end();
+//	time.addEvent(e12);
+//
+//	TimeEvent e13("SFC HISTOGRAM");
+//	e13.start();
+//
+//	size_t depth = 5;
+//	size_t buckets = std::pow(1 << depth, _dimension);
+//	std::vector<size_t> bdistribution = tarray<size_t>::distribute(threads, buckets);
+//	std::vector<size_t> pdistribution = tarray<size_t>::distribute(threads, environment->MPIsize);
+//
+//	std::vector<eslocal> myhistogram(buckets), fullhistogram(buckets);
+//	std::vector<eslocal> recursion, hoffset(threads);
+//	std::vector<size_t> targetdistribution = tarray<size_t>::distribute(environment->MPIsize, _nDistribution.back()), sfcbound(environment->MPIsize + 1);
+//
+//	if (environment->MPIrank == 0) {
+//		std::cout << "TARGET: " << targetdistribution;
+//	}
+//
+//	do { // histogram recursion
+//
+//		recursion.clear();
+//
+//		#pragma omp parallel for
+//		for (size_t t = 0; t < threads; t++) {
+//			double bstep = 1. / buckets;
+//			auto begin = std::lower_bound(cvalue.begin(), cvalue.end(), bdistribution[t] * bstep);
+//			auto end = std::lower_bound(cvalue.begin(), cvalue.end(), bdistribution[t + 1] * bstep);
+//			for (auto it = begin; it != end; ++it) {
+//				++myhistogram[std::floor(*it / bstep)];
+//			}
+//
+//			hoffset[t] = end - begin;
+//		}
+//
+//		Esutils::sizesToOffsets(hoffset);
+//
+//		#pragma omp parallel for
+//		for (size_t t = 0; t < threads; t++) {
+//			size_t toffset = hoffset[t];
+//			for (size_t b = bdistribution[t]; b < bdistribution[t + 1]; b++) {
+//				myhistogram[b] += toffset;
+//				toffset += myhistogram[b] - toffset;
+//			}
+//		}
+//
+//		MPI_Allreduce(myhistogram.data(), fullhistogram.data(), sizeof(eslocal) * myhistogram.size(), MPI_BYTE, MPITools::operations().sum, environment->MPICommunicator);
+//
+//		#pragma omp parallel for
+//		for (size_t t = 0; t < threads; t++) {
+//			auto hit = std::lower_bound(fullhistogram.begin(), fullhistogram.end(), targetdistribution[pdistribution[t]]);
+//			for (size_t p = pdistribution[t]; p < pdistribution[t + 1]; ++p) {
+//				while (*hit < targetdistribution[p]) {
+//					++hit;
+//				}
+//				sfcbound[p] = hit - fullhistogram.begin();
+//			}
+//		}
+//
+//	} while (recursion.size());
+//
+//	sfcbound.front() = 0;
+//	sfcbound.back() = fullhistogram.size() - 1;
+//
+//	e13.end();
+//	time.addEvent(e13);
+//
+//	if (environment->MPIrank == 0) {
+//		for (int r = 0; r < environment->MPIsize; r++) {
+//			std::cout << r << ": " << fullhistogram[sfcbound[r + 1]] << " (" << fullhistogram[sfcbound[r + 1]] - fullhistogram[sfcbound[r]] << ")\n";
+//		}
+//	}
+
+	TimeEvent e2("SFC PREPROCESS STRUCTURES");
+	e2.start();
+
+	std::vector<size_t> sumoffset, nextsumoffset = { 0 };
+	std::vector<eslocal> scounts(pow(_refinedGridSize, _dimension)), rcounts(pow(_refinedGridSize, _dimension));
+	std::vector<double> epartition(_dMesh.esize.size());
+	_cpartition.resize(_dMesh.coordinates.size());
+	std::vector<size_t> asum(pow(_refinedGridSize, _dimension) + 1), ideal = tarray<size_t>::distribute(environment->MPIsize, _eDistribution.back());
+	std::vector<eslocal> epermutation(epartition.size()), cpermutation(_cpartition.size());
+
+	std::iota(epermutation.begin(), epermutation.end(), 0);
+	std::iota(cpermutation.begin(), cpermutation.end(), 0);
+
+	_refined = { {0} };
+	_sfcbounds.resize(environment->MPIsize + 1, 1);
+	_sfcbounds.front() = 0;
+
 	_sfcboundary.resize(environment->MPIsize + 1);
 	_sfcboundary.back().first = _sfcboundary.front().first = _refinedGridSize;
 	_sfcboundary.back().second = pow(_refinedGridSize, _dimension) - 1;
+
+	e2.end();
+	time.addEvent(e2);
+
+	TimeEvent e3("SFC RECURSION");
+	e3.start();
+
 	while (_refined.back().size()) {
 		sumoffset.swap(nextsumoffset);
 		nextsumoffset.clear();
@@ -650,8 +811,14 @@ void BalancedLoader::SFC()
 
 			if (_dimension == 2) {
 				for (auto i = ebegin; i != eend; ++i) {
-					size_t x = std::floor(_refinedGridSize * (_dMesh.coordinates[_dMesh.enodes[edist[*i]] - _nDistribution[environment->MPIrank]].x - origin.x) / size.x);
-					size_t y = std::floor(_refinedGridSize * (_dMesh.coordinates[_dMesh.enodes[edist[*i]] - _nDistribution[environment->MPIrank]].y - origin.y) / size.y);
+//					eslocal node = edist[*i];
+//					while (_dMesh.enodes[node] < _nDistribution[environment->MPIrank] || _dMesh.enodes[node] >= _nDistribution[environment->MPIrank + 1]) {
+//						++node;
+//					}
+//					const Point &p = _dMesh.coordinates[_dMesh.enodes[node] - _nDistribution[environment->MPIrank]];
+					const Point &p = _ecoordinates[*i];
+					size_t x = std::floor(_refinedGridSize * (p.x - origin.x) / size.x);
+					size_t y = std::floor(_refinedGridSize * (p.y - origin.y) / size.y);
 					++scounts[((epartition[*i] = D2toD1(_refinedGridSize, x, y)) - lower) / (1. / pow(_refinedGridSize, _dimension))];
 				}
 				for (auto i = cbegin; i != cend; ++i) {
@@ -663,7 +830,12 @@ void BalancedLoader::SFC()
 
 			if (_dimension == 3) {
 				for (auto i = ebegin; i != eend; ++i) {
-					const Point &p = _dMesh.coordinates[_dMesh.enodes[edist[*i]] - _nDistribution[environment->MPIrank]];
+//					eslocal node = edist[*i];
+//					while (_dMesh.enodes[node] < _nDistribution[environment->MPIrank] || _dMesh.enodes[node] >= _nDistribution[environment->MPIrank + 1]) {
+//						++node;
+//					}
+//					const Point &p = _dMesh.coordinates[_dMesh.enodes[node] - _nDistribution[environment->MPIrank]];
+					const Point &p = _ecoordinates[*i];
 					size_t x = std::floor(_refinedGridSize * (p.x - origin.x) / size.x);
 					size_t y = std::floor(_refinedGridSize * (p.y - origin.y) / size.y);
 					size_t z = std::floor(_refinedGridSize * (p.z - origin.z) / size.z);
@@ -727,9 +899,15 @@ void BalancedLoader::SFC()
 		asum.resize(pow(2, _dimension) + 1);
 	}
 
+	e3.end();
+	time.addEvent(e3);
+
 	if (_configuration.output.debug) {
 		printSFC();
 	}
+
+	TimeEvent e4("SFC PREPARE BUFFERS");
+	e4.start();
 
 	std::vector<eslocal> sBuffer, rBuffer;
 
@@ -759,9 +937,21 @@ void BalancedLoader::SFC()
 		sBuffer[prevsize] = sBuffer.size() - prevsize;
 	}
 
+	e4.end();
+	time.addEvent(e4);
+
+	TimeEvent e5("SFC EXCHANGE DATA");
+	e5.start();
+
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
 		ESINFO(ERROR) << "ESPRESO internal error: distribute elements accordind to SFC.";
 	}
+
+	e5.end();
+	time.addEvent(e5);
+
+	TimeEvent e6("SFC POSTPROCESS");
+	e6.start();
 
 	_dMesh.esize.clear();
 	_dMesh.edata.clear();
@@ -815,6 +1005,13 @@ void BalancedLoader::SFC()
 	}
 	_dMesh.coordinates.swap(newCoordinates);
 
+	e6.end();
+	time.addEvent(e6);
+
+	time.totalTime.endWithBarrier();
+	time.printStatsMPI();
+//	MPI_Barrier(environment->MPICommunicator);
+//	exit(0);
 
 //	_nDistribution = Communication::getDistribution(_dMesh.nIDs.size(), MPITools::operations().sizeToOffsetsSize_t);
 	_eDistribution = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
@@ -822,6 +1019,12 @@ void BalancedLoader::SFC()
 
 void BalancedLoader::fillSFCCoordinates()
 {
+	TimeEval time("FILL COORDINATES");
+	time.totalTime.startWithBarrier();
+
+	TimeEvent e1("FCOORS PREPROCESS");
+	e1.start();
+
 	size_t x, y, z = 0;
 	std::vector<std::vector<size_t> > refinedxyz = { { 0 } };
 	for (size_t i = 1; i < _refined.size(); i++) {
@@ -838,7 +1041,6 @@ void BalancedLoader::fillSFCCoordinates()
 		}
 		std::sort(refinedxyz[i].begin(), refinedxyz[i].end());
 	}
-
 
 	std::vector<std::pair<size_t, size_t> > neighbors, potential;
 	std::vector<std::pair<double, double> > intervals;
@@ -909,6 +1111,12 @@ void BalancedLoader::fillSFCCoordinates()
 		cell /= pow(2, _dimension);
 	}
 
+	e1.end();
+	time.addEvent(e1);
+
+	TimeEvent e2("FCOORS GET NEIGHBORS");
+	e2.start();
+
 	while (n != _sfcboundary[environment->MPIrank + 1].first || cell < _sfcboundary[environment->MPIrank + 1].second) {
 		while (its[level] != _refined[level].end() && *its[level] == cell) {
 			++level;
@@ -951,6 +1159,13 @@ void BalancedLoader::fillSFCCoordinates()
 		}
 		++cell;
 	}
+
+	e2.end();
+	time.addEvent(e2);
+
+	TimeEvent e3("FCOORS PROCESS NEIGHBORS");
+	e3.start();
+
 	Esutils::sortAndRemoveDuplicity(neighbors);
 
 	intervals.resize(neighbors.size());
@@ -998,6 +1213,12 @@ void BalancedLoader::fillSFCCoordinates()
 	}
 	Esutils::sortAndRemoveDuplicity(nranks);
 
+	e3.end();
+	time.addEvent(e3);
+
+	TimeEvent e4("FCOORS EXCHANGE");
+	e4.start();
+
 	std::vector<std::vector<eslocal> > sNodes(nranks.size()), rNodes(nranks.size()), fNodes(nranks.size());
 	std::vector<std::vector<Point> > fCoords(nranks.size()), rCoors(nranks.size());
 
@@ -1036,6 +1257,12 @@ void BalancedLoader::fillSFCCoordinates()
 	if (!Communication::exchangeUnknownSize(fCoords, rCoors, nranks)) {
 		ESINFO(ERROR) << "ESPRESO internal error: return requested coordinates.";
 	}
+
+	e4.end();
+	time.addEvent(e4);
+
+	TimeEvent e5("FCOORS UNKNOWN");
+	e5.start();
 
 	// THERE IS POSSIBILITY THAT NEIGHBORS HAVE NOT MY NODES -> ASK ORIGIN
 	size_t nodeSize = 0;
@@ -1107,6 +1334,7 @@ void BalancedLoader::fillSFCCoordinates()
 
 	urNodes.clear();
 	originsources.clear();
+
 	if (!Communication::sendVariousTargets(sNodes, urNodes, origintargets, originsources)) {
 		ESINFO(ERROR) << "ESPRESO internal error: request for unknown nodes.";
 	}
@@ -1141,6 +1369,12 @@ void BalancedLoader::fillSFCCoordinates()
 		rCoors.insert(rCoors.begin() + (it - nranks.begin()), std::vector<Point>());
 		fNodes.insert(fNodes.begin() + (it - nranks.begin()), urNodes[i]);
 	}
+
+	e5.end();
+	time.addEvent(e5);
+
+	TimeEvent e6("FCOORS NRANKS");
+	e6.start();
 
 	nranks.push_back(environment->MPIrank);
 	std::sort(nranks.begin(), nranks.end());
@@ -1206,6 +1440,12 @@ void BalancedLoader::fillSFCCoordinates()
 		ESINFO(ERROR) << "ESPRESO internal error: exchange ranks data.";
 	}
 
+	e6.end();
+	time.addEvent(e6);
+
+	TimeEvent e7("FCOORS POSTPROCESS");
+	e7.start();
+
 	for (size_t t = 0, i = 0; t < nranks.size(); t++) {
 		if (nranks[t] != environment->MPIrank) {
 			_dMesh.nIDs.insert(_dMesh.nIDs.end(), rNodes[i].begin(), rNodes[i].end());
@@ -1257,9 +1497,21 @@ void BalancedLoader::fillSFCCoordinates()
 	_mesh.boundaryRegions.push_back(new BoundaryRegionStore("ALL_NODES", _mesh._eclasses));
 	_mesh.boundaryRegions.back()->nodes = new serializededata<eslocal, eslocal>(1, _dMesh.nIDs);
 
+	e7.end();
+	time.addEvent(e7);
+
+	TimeEvent e8("FCOORS REINDEX");
+	e8.start();
+
 	for (auto n = _mesh.elements->nodes->begin()->begin(); n != _mesh.elements->nodes->end()->begin(); ++n) {
 		*n = std::lower_bound(_mesh.nodes->IDs->datatarray().begin(), _mesh.nodes->IDs->datatarray().end(), *n) - _mesh.nodes->IDs->datatarray().begin();
 	}
+
+	e8.end();
+	time.addEvent(e8);
+
+	time.totalTime.endWithBarrier();
+	time.printStatsMPI();
 }
 
 void BalancedLoader::sortElementsVariousTargets()
@@ -1540,75 +1792,174 @@ void BalancedLoader::sortElementsManual()
 	TimeEvent e1("MS PREPARE");
 	e1.start();
 
-	std::vector<eslocal> edist = { 0 };
-	edist.reserve(_dMesh.esize.size() + 1);
-	for (size_t e = 0; e < _dMesh.esize.size(); e++) {
-		edist.push_back(edist.back() + _dMesh.esize[e]);
+	std::vector<eslocal> closest(_dMesh.esize.size());
+
+	eslocal nbegin = _nDistribution[environment->MPIrank];
+	eslocal nend = _nDistribution[environment->MPIrank + 1];
+
+	for (size_t e = 0, offset = 0; e < _dMesh.esize.size(); offset += _dMesh.esize[e++]) {
+		closest[e] = _dMesh.enodes[offset];
+		for (eslocal n = 1; n < _dMesh.esize[e]; n++) {
+			if (nbegin <= _dMesh.enodes[offset + n] && _dMesh.enodes[offset + n] < nend) {
+				if (closest[e] > _dMesh.enodes[offset + n] || closest[e] < nbegin) {
+					closest[e] = _dMesh.enodes[offset + n];
+				}
+			} else {
+				if (std::abs(closest[e] - nbegin) > std::abs(_dMesh.enodes[offset + n] - nbegin)) {
+					closest[e] = _dMesh.enodes[offset + n];
+				}
+			}
+		}
 	}
 
-	std::vector<eslocal> permutation(_dMesh.edata.size());
+	std::vector<eslocal> permutation(_dMesh.esize.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
-	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return _dMesh.enodes[edist[i]] < _dMesh.enodes[edist[j]]; });
+	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return closest[i] < closest[j]; });
 
-	std::vector<eslocal> sBuffer, rBuffer;
+	std::vector<std::vector<eslocal> > sBuffer, rBuffer;
+	std::vector<std::vector<Point> > sCoords, rCoords;
+	std::vector<int> targets, sources;
 
-	size_t prevsize;
 	for (int r = 0; r < environment->MPIsize; r++) {
-		auto begin = std::lower_bound(permutation.begin(), permutation.end(), _nDistribution[r], [&] (eslocal i, const size_t &ID) { return _dMesh.enodes[edist[i]] < ID; });
-		auto end = std::lower_bound(permutation.begin(), permutation.end(), _nDistribution[r + 1], [&] (eslocal i, const size_t &ID) { return _dMesh.enodes[edist[i]] < ID; });
-		prevsize = sBuffer.size();
-		sBuffer.push_back(0);
-		sBuffer.push_back(r);
-		sBuffer.push_back(end - begin);
-		sBuffer.push_back(0);
-
-		for (size_t n = begin - permutation.begin(); n < end - permutation.begin(); ++n) {
-			sBuffer.push_back(_dMesh.esize[permutation[n]]);
-			sBuffer.insert(sBuffer.end(), reinterpret_cast<const eslocal*>(_dMesh.edata.data() + permutation[n]), reinterpret_cast<const eslocal*>(_dMesh.edata.data() + permutation[n] + 1));
-			sBuffer.insert(sBuffer.end(), _dMesh.enodes.begin() + edist[permutation[n]], _dMesh.enodes.begin() + edist[permutation[n] + 1]);
-			sBuffer[prevsize + 3] += edist[permutation[n] + 1] - edist[permutation[n]];
+		auto begin = std::lower_bound(permutation.begin(), permutation.end(), _nDistribution[r], [&] (eslocal i, const size_t &ID) { return closest[i] < ID; });
+		auto end = std::lower_bound(permutation.begin(), permutation.end(), _nDistribution[r + 1], [&] (eslocal i, const size_t &ID) { return closest[i] < ID; });
+		if (begin != end) {
+			sBuffer.push_back({});
+			targets.push_back(r);
 		}
-		sBuffer[prevsize] = sBuffer.size() - prevsize;
+		for (auto n = begin; n < end; ++n) {
+			sBuffer.back().push_back(closest[*n]);
+		}
 	}
 
 	e1.end();
 	time.addEvent(e1);
 
+
+	int avgneighs = 0, nneighs = targets.size();
+
+	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
+
+	ESINFO(PROGRESS1) << "LN AVGNEIGHS: " << (double)avgneighs / environment->MPIsize << "\n";
+
 	TimeEvent e3("MS EXCHANGE DATA");
 	e3.start();
 
-	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
-		ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted elements sizes.";
+	if (!Communication::sendVariousTargets(sBuffer, rBuffer, targets, sources)) {
+		ESINFO(ERROR) << "ESPRESO internal error: send coordinate requests.";
 	}
 
 	e3.end();
 	time.addEvent(e3);
 
-	_dMesh.esize.clear();
-	_dMesh.edata.clear();
-	_dMesh.enodes.clear();
+	TimeEvent e4("MS GET COORDS");
+	e4.start();
 
-	size_t offset = 0;
-	EData edata;
-	for (int r = 0; r < environment->MPIsize; r++) {
-		++offset;
-		size_t esize = rBuffer[++offset];
-		size_t enodes = rBuffer[++offset];
-		++offset;
-		for (size_t e = 0; e < esize; ++e) {
-			_dMesh.esize.push_back(rBuffer[offset++]);
-			memcpy(&edata, rBuffer.data() + offset, sizeof(EData));
-			_dMesh.edata.push_back(edata);
-			offset += sizeof(EData) / sizeof(eslocal);
-			_dMesh.enodes.insert(_dMesh.enodes.end(), rBuffer.begin() + offset, rBuffer.begin() + offset + _dMesh.esize.back());
-			offset += _dMesh.esize.back();
+	for (size_t r = 0; r < sources.size(); r++) {
+		sCoords.push_back({});
+		sCoords.back().resize(rBuffer[r].size());
+		for (size_t n = 0; n < rBuffer[r].size(); n++) {
+			sCoords.back()[n] = _dMesh.coordinates[rBuffer[r][n] - nbegin];
 		}
 	}
+
+	e4.end();
+	time.addEvent(e4);
+
+	TimeEvent e5("MS BACK DATA");
+	e5.start();
+
+	if (!Communication::sendVariousTargets(sCoords, rCoords, sources)) {
+		ESINFO(ERROR) << "ESPRESO internal error: return requested coordinates.";
+	}
+
+	e5.end();
+	time.addEvent(e5);
+
+	TimeEvent e6("MS ECOORDINATES");
+	e6.start();
+
+	for (size_t r = 1; r < rCoords.size(); r++) {
+		rCoords[0].insert(rCoords[0].end(), rCoords[r].begin(), rCoords[r].end());
+	}
+
+	_ecoordinates.resize(permutation.size());
+	for (size_t i = 0; i < permutation.size(); i++) {
+		_ecoordinates[permutation[i]] = rCoords[0][i];
+	}
+
+	e6.end();
+	time.addEvent(e6);
+
+//	std::vector<eslocal> edist = { 0 };
+//	edist.reserve(_dMesh.esize.size() + 1);
+//	for (size_t e = 0; e < _dMesh.esize.size(); e++) {
+//		edist.push_back(edist.back() + _dMesh.esize[e]);
+//	}
+//
+//	std::vector<eslocal> permutation(_dMesh.edata.size());
+//	std::iota(permutation.begin(), permutation.end(), 0);
+//	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return _dMesh.enodes[edist[i]] < _dMesh.enodes[edist[j]]; });
+//
+//	std::vector<eslocal> sBuffer, rBuffer;
+//
+//	size_t prevsize;
+//	for (int r = 0; r < environment->MPIsize; r++) {
+//		auto begin = std::lower_bound(permutation.begin(), permutation.end(), _nDistribution[r], [&] (eslocal i, const size_t &ID) { return _dMesh.enodes[edist[i]] < ID; });
+//		auto end = std::lower_bound(permutation.begin(), permutation.end(), _nDistribution[r + 1], [&] (eslocal i, const size_t &ID) { return _dMesh.enodes[edist[i]] < ID; });
+//		prevsize = sBuffer.size();
+//		sBuffer.push_back(0);
+//		sBuffer.push_back(r);
+//		sBuffer.push_back(end - begin);
+//		sBuffer.push_back(0);
+//
+//		for (size_t n = begin - permutation.begin(); n < end - permutation.begin(); ++n) {
+//			sBuffer.push_back(_dMesh.esize[permutation[n]]);
+//			sBuffer.insert(sBuffer.end(), reinterpret_cast<const eslocal*>(_dMesh.edata.data() + permutation[n]), reinterpret_cast<const eslocal*>(_dMesh.edata.data() + permutation[n] + 1));
+//			sBuffer.insert(sBuffer.end(), _dMesh.enodes.begin() + edist[permutation[n]], _dMesh.enodes.begin() + edist[permutation[n] + 1]);
+//			sBuffer[prevsize + 3] += edist[permutation[n] + 1] - edist[permutation[n]];
+//		}
+//		sBuffer[prevsize] = sBuffer.size() - prevsize;
+//	}
+//
+//	e1.end();
+//	time.addEvent(e1);
+//
+//	TimeEvent e3("MS EXCHANGE DATA");
+//	e3.start();
+//
+//	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
+//		ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted elements sizes.";
+//	}
+//
+//	e3.end();
+//	time.addEvent(e3);
+//
+//	_dMesh.esize.clear();
+//	_dMesh.edata.clear();
+//	_dMesh.enodes.clear();
+//
+//	size_t offset = 0;
+//	EData edata;
+//	for (int r = 0; r < environment->MPIsize; r++) {
+//		++offset;
+//		size_t esize = rBuffer[++offset];
+//		size_t enodes = rBuffer[++offset];
+//		++offset;
+//		for (size_t e = 0; e < esize; ++e) {
+//			_dMesh.esize.push_back(rBuffer[offset++]);
+//			memcpy(&edata, rBuffer.data() + offset, sizeof(EData));
+//			_dMesh.edata.push_back(edata);
+//			offset += sizeof(EData) / sizeof(eslocal);
+//			_dMesh.enodes.insert(_dMesh.enodes.end(), rBuffer.begin() + offset, rBuffer.begin() + offset + _dMesh.esize.back());
+//			offset += _dMesh.esize.back();
+//		}
+//	}
 
 	time.totalTime.endWithBarrier();
 	time.printStatsMPI();
 
-	_eDistribution = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
+//	_eDistribution = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
 }
 
 void BalancedLoader::fillElements()

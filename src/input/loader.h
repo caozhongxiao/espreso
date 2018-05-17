@@ -121,6 +121,8 @@ private:
 	std::vector<std::vector<eslocal> > _rankNodeMap;
 	std::vector<eslocal> _nIDs;
 	std::vector<double> _cpartition;
+
+	std::vector<Point> _ecoordinates;
 };
 
 }

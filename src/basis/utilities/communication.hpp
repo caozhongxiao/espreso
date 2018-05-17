@@ -396,7 +396,7 @@ bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype> &sBuf
 	MPI_Status status;
 	int recvsize, recvmidsize;
 
-	auto movebefore = [&] (std::vector<eslocal> &data, int rank, size_t begin, size_t end) {
+	auto movebefore = [&] (std::vector<Ttype> &data, int rank, size_t begin, size_t end) {
 		size_t pos = begin;
 		while (pos < end && data[pos + 1] < rank) {
 			pos += data[pos];
