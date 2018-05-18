@@ -19,6 +19,8 @@
 #include "../mesh/store/boundaryregionstore.h"
 #include "../old/input/loader.h"
 
+#include "../output/result/visualization/distributedvtklegacy.h"
+
 #include <numeric>
 #include <algorithm>
 #include <fstream>
@@ -707,99 +709,6 @@ void Converter::clusterize()
 	_eDistribution = Communication::getDistribution(_dMesh.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
 }
 
-void Converter::printSFC() {
-	if (environment->MPIrank) {
-		return;
-	}
-
-	std::ofstream os(Esutils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" }) + "SFC.vtk");
-	os << "# vtk DataFile Version 2.0\n";
-	os << "EXAMPLE\n";
-	os << "ASCII\n";
-	os << "DATASET UNSTRUCTURED_GRID\n\n";
-
-	size_t maxdepth = 0, n;
-	while (_sfc.hasLevel(maxdepth)) {
-		++maxdepth;
-	}
-	n = 1 << maxdepth;
-
-	os << "POINTS " << pow(n + 1, _mesh.dimension) << " float\n";
-
-	for (size_t k = 0; k <= n; k++) {
-		for (size_t j = 0; j <= n; j++) {
-			for (size_t i = 0; i <= n; i++) {
-				if (_mesh.dimension == 3) {
-					os << _sfc.origin().x + i * _sfc.size().x / n << " " << _sfc.origin().y + j * _sfc.size().y / n << " " << _sfc.origin().z + k * _sfc.size().z / n << " \n";
-				}
-				if (k == 0 && _mesh.dimension == 2) {
-					os << _sfc.origin().x + i * _sfc.size().x / n << " " << _sfc.origin().y + j * _sfc.size().y / n << " 0\n";
-				}
-			}
-		}
-	}
-	os << "\n";
-
-	size_t cells = 0;
-	_sfc.iterateBuckets(_bucketsBorders.front(), _bucketsBorders.back(), [&] (size_t depth, size_t index) {
-		++cells;
-	});
-
-	os << "CELLS " << cells << " " << cells + _sfc.bucketSize() * cells << "\n";
-
-	size_t bstep, x, y, z;
-	if (_mesh.dimension == 2) {
-		_sfc.iterateBuckets(_bucketsBorders.front(), _bucketsBorders.back(), [&] (size_t depth, size_t x, size_t y) {
-			bstep = 1 << (maxdepth - depth);
-			os << "4 ";
-			os << (n + 1) * bstep * (y + 0) + bstep * (x + 0) << " ";
-			os << (n + 1) * bstep * (y + 0) + bstep * (x + 1) << " ";
-			os << (n + 1) * bstep * (y + 1) + bstep * (x + 1) << " ";
-			os << (n + 1) * bstep * (y + 1) + bstep * (x + 0) << "\n";
-		});
-	}
-
-	if (_mesh.dimension == 3) {
-		_sfc.iterateBuckets(_bucketsBorders.front(), _bucketsBorders.back(), [&] (size_t depth, size_t x, size_t y, size_t z) {
-			bstep = 1 << (maxdepth - depth);
-			os << "8 ";
-			os << (n + 1) * (n + 1) * bstep * (z + 0) + (n + 1) * bstep * (y + 0) + bstep * (x + 0) << " ";
-			os << (n + 1) * (n + 1) * bstep * (z + 0) + (n + 1) * bstep * (y + 0) + bstep * (x + 1) << " ";
-			os << (n + 1) * (n + 1) * bstep * (z + 0) + (n + 1) * bstep * (y + 1) + bstep * (x + 1) << " ";
-			os << (n + 1) * (n + 1) * bstep * (z + 0) + (n + 1) * bstep * (y + 1) + bstep * (x + 0) << " ";
-			os << (n + 1) * (n + 1) * bstep * (z + 1) + (n + 1) * bstep * (y + 0) + bstep * (x + 0) << " ";
-			os << (n + 1) * (n + 1) * bstep * (z + 1) + (n + 1) * bstep * (y + 0) + bstep * (x + 1) << " ";
-			os << (n + 1) * (n + 1) * bstep * (z + 1) + (n + 1) * bstep * (y + 1) + bstep * (x + 1) << " ";
-			os << (n + 1) * (n + 1) * bstep * (z + 1) + (n + 1) * bstep * (y + 1) + bstep * (x + 0) << "\n";
-		});
-	}
-
-	os << "\n";
-
-	os << "CELL_TYPES " << cells << "\n";
-	for (size_t i = 0; i < cells; i++) {
-		if (_mesh.dimension == 2) {
-			os << "9\n";
-		}
-		if (_mesh.dimension == 3) {
-			os << "12\n";
-		}
-	}
-	os << "\n";
-
-	os << "CELL_DATA " << cells << "\n";
-	os << "SCALARS MPI int 1\n";
-	os << "LOOKUP_TABLE default\n";
-	for (int r = 0; r < environment->MPIsize; r++) {
-		_sfc.iterateBuckets(_bucketsBorders[r], _bucketsBorders[r + 1], [&] (size_t depth, size_t index) {
-			os << r << "\n";
-		});
-	}
-	os << "\n";
-
-	os.close();
-}
-
 void Converter::linkup()
 {
 	// 1. Compute neighbors buckets
@@ -827,10 +736,9 @@ void Converter::linkup()
 	}
 
 
-	if (_configuration.output.debug) {
-		printSFC();
+	if (_configuration.output.debug && environment->MPIrank == 0) {
+		VTKLegacyDebugInfo::spaceFillingCurve(_sfc, _bucketsBorders);
 	}
-
 
 	std::sort(neighbors.begin(), neighbors.end());
 

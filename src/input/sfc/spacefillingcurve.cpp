@@ -81,12 +81,12 @@ void SpaceFillingCurve::SCFToXYZ()
 	}
 }
 
-size_t SpaceFillingCurve::buckets(size_t depth)
+size_t SpaceFillingCurve::buckets(size_t depth) const
 {
 	return std::pow(1 << depth, _dimension);
 }
 
-void SpaceFillingCurve::iterateBuckets(size_t begin, size_t end, std::function<void(size_t depth, size_t index)> callback)
+void SpaceFillingCurve::iterateBuckets(size_t begin, size_t end, std::function<void(size_t depth, size_t index)> callback) const
 {
 	std::vector<std::vector<size_t>::const_iterator> rindices;
 

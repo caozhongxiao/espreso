@@ -10,6 +10,7 @@
 namespace espreso {
 
 struct Instance;
+struct SpaceFillingCurve;
 
 struct DistributedVTKLegacy: public DistributedVisualization {
 
@@ -41,6 +42,8 @@ struct VTKLegacyDebugInfo: public DistributedVTKLegacy {
 
 	static void dirichlet(const Mesh &mesh, const Instance &instance);
 	static void gluing(const Mesh &mesh, const Instance &instance);
+
+	static void spaceFillingCurve(const SpaceFillingCurve &sfc, const std::vector<uint> &bucketsBorders);
 
 	void updateMesh()
 	{

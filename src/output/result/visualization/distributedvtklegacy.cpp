@@ -12,6 +12,8 @@
 
 #include "../../../assembler/instance.h"
 
+#include "../../../input/sfc/spacefillingcurve.h"
+
 #include "../../../mesh/mesh.h"
 #include "../../../mesh/elements/element.h"
 #include "../../../mesh/store/nodestore.h"
@@ -1193,6 +1195,96 @@ void VTKLegacyDebugInfo::gluing(const Mesh &mesh, const Instance &instance)
 		}
 	}
 	os << "\n";
+}
+
+void VTKLegacyDebugInfo::spaceFillingCurve(const SpaceFillingCurve &sfc, const std::vector<uint> &bucketsBorders)
+{
+	std::ofstream os(Esutils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" }) + "SFC.vtk");
+	os << "# vtk DataFile Version 2.0\n";
+	os << "EXAMPLE\n";
+	os << "ASCII\n";
+	os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+	size_t maxdepth = 0, n;
+	while (sfc.hasLevel(maxdepth)) {
+		++maxdepth;
+	}
+	n = 1 << maxdepth;
+
+	os << "POINTS " << pow(n + 1, sfc.dimension()) << " float\n";
+
+	for (size_t k = 0; k <= n; k++) {
+		for (size_t j = 0; j <= n; j++) {
+			for (size_t i = 0; i <= n; i++) {
+				if (sfc.dimension() == 3) {
+					os << sfc.origin().x + i * sfc.size().x / n << " " << sfc.origin().y + j * sfc.size().y / n << " " << sfc.origin().z + k * sfc.size().z / n << " \n";
+				}
+				if (k == 0 && sfc.dimension() == 2) {
+					os << sfc.origin().x + i * sfc.size().x / n << " " << sfc.origin().y + j * sfc.size().y / n << " 0\n";
+				}
+			}
+		}
+	}
+	os << "\n";
+
+	size_t cells = 0;
+	sfc.iterateBuckets(bucketsBorders.front(), bucketsBorders.back(), [&] (size_t depth, size_t index) {
+		++cells;
+	});
+
+	os << "CELLS " << cells << " " << cells + sfc.bucketSize() * cells << "\n";
+
+	size_t bstep, x, y, z;
+	if (sfc.dimension() == 2) {
+		sfc.iterateBuckets(bucketsBorders.front(), bucketsBorders.back(), [&] (size_t depth, size_t x, size_t y) {
+			bstep = 1 << (maxdepth - depth);
+			os << "4 ";
+			os << (n + 1) * bstep * (y + 0) + bstep * (x + 0) << " ";
+			os << (n + 1) * bstep * (y + 0) + bstep * (x + 1) << " ";
+			os << (n + 1) * bstep * (y + 1) + bstep * (x + 1) << " ";
+			os << (n + 1) * bstep * (y + 1) + bstep * (x + 0) << "\n";
+		});
+	}
+
+	if (sfc.dimension() == 3) {
+		sfc.iterateBuckets(bucketsBorders.front(), bucketsBorders.back(), [&] (size_t depth, size_t x, size_t y, size_t z) {
+			bstep = 1 << (maxdepth - depth);
+			os << "8 ";
+			os << (n + 1) * (n + 1) * bstep * (z + 0) + (n + 1) * bstep * (y + 0) + bstep * (x + 0) << " ";
+			os << (n + 1) * (n + 1) * bstep * (z + 0) + (n + 1) * bstep * (y + 0) + bstep * (x + 1) << " ";
+			os << (n + 1) * (n + 1) * bstep * (z + 0) + (n + 1) * bstep * (y + 1) + bstep * (x + 1) << " ";
+			os << (n + 1) * (n + 1) * bstep * (z + 0) + (n + 1) * bstep * (y + 1) + bstep * (x + 0) << " ";
+			os << (n + 1) * (n + 1) * bstep * (z + 1) + (n + 1) * bstep * (y + 0) + bstep * (x + 0) << " ";
+			os << (n + 1) * (n + 1) * bstep * (z + 1) + (n + 1) * bstep * (y + 0) + bstep * (x + 1) << " ";
+			os << (n + 1) * (n + 1) * bstep * (z + 1) + (n + 1) * bstep * (y + 1) + bstep * (x + 1) << " ";
+			os << (n + 1) * (n + 1) * bstep * (z + 1) + (n + 1) * bstep * (y + 1) + bstep * (x + 0) << "\n";
+		});
+	}
+
+	os << "\n";
+
+	os << "CELL_TYPES " << cells << "\n";
+	for (size_t i = 0; i < cells; i++) {
+		if (sfc.dimension() == 2) {
+			os << "9\n";
+		}
+		if (sfc.dimension() == 3) {
+			os << "12\n";
+		}
+	}
+	os << "\n";
+
+	os << "CELL_DATA " << cells << "\n";
+	os << "SCALARS MPI int 1\n";
+	os << "LOOKUP_TABLE default\n";
+	for (int r = 0; r < environment->MPIsize; r++) {
+		sfc.iterateBuckets(bucketsBorders[r], bucketsBorders[r + 1], [&] (size_t depth, size_t index) {
+			os << r << "\n";
+		});
+	}
+	os << "\n";
+
+	os.close();
 }
 
 

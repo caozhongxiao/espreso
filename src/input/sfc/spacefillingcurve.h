@@ -15,13 +15,14 @@ struct SpaceFillingCurve {
 	SpaceFillingCurve(size_t dimension, size_t depth, std::vector<Point> &coordinates);
 	virtual ~SpaceFillingCurve() {}
 
-	size_t depth() { return _depth; }
-	size_t buckets(size_t depth);
-	size_t bucketSize() { return _dimension == 2 ? 4 : 8; }
+	size_t depth() const { return _depth; }
+	size_t dimension() const { return _dimension; }
+	size_t buckets(size_t depth) const;
+	size_t bucketSize() const { return _dimension == 2 ? 4 : 8; }
 
 	// depth 0 = full grid (1 x 1 x 1)
 	void setLevel(size_t depth) { _refinedsfc.resize(depth + 1); }
-	bool hasLevel(size_t depth) { return depth < _refinedsfc.size() && _refinedsfc[depth].size(); }
+	bool hasLevel(size_t depth) const { return depth < _refinedsfc.size() && _refinedsfc[depth].size(); }
 
 	void recurce(size_t index) { _refinedsfc.back().push_back(index); }
 	void finishLevel(size_t depth);
@@ -31,8 +32,8 @@ struct SpaceFillingCurve {
 
 	void SCFToXYZ();
 
-	void iterateBuckets(size_t begin, size_t end, std::function<void(size_t depth, size_t index)> callback);
-	void iterateBuckets(size_t begin, size_t end, std::function<void(size_t depth, size_t x, size_t y)> callback)
+	void iterateBuckets(size_t begin, size_t end, std::function<void(size_t depth, size_t index)> callback) const;
+	void iterateBuckets(size_t begin, size_t end, std::function<void(size_t depth, size_t x, size_t y)> callback) const
 	{
 		size_t x, y;
 		iterateBuckets(begin, end, [&] (size_t depth, size_t index) {
@@ -40,7 +41,7 @@ struct SpaceFillingCurve {
 			callback(depth, x, y);
 		});
 	}
-	void iterateBuckets(size_t begin, size_t end, std::function<void(size_t depth, size_t x, size_t y, size_t z)> callback)
+	void iterateBuckets(size_t begin, size_t end, std::function<void(size_t depth, size_t x, size_t y, size_t z)> callback) const
 	{
 		size_t x, y, z;
 		iterateBuckets(begin, end, [&] (size_t depth, size_t index) {
@@ -55,8 +56,8 @@ struct SpaceFillingCurve {
 
 	size_t getBucket(const Point &p) const { return _dimension == 2 ? D2toD1(p) : D3toD1(p); }
 
-	const Point& origin() { return _origin; }
-	const Point& size() { return _size; }
+	const Point& origin() const { return _origin; }
+	const Point& size() const { return _size; }
 
 protected:
 	size_t D2toD1(const Point &p) const

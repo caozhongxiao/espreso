@@ -77,8 +77,6 @@ protected:
 
 	void fillElements();
 
-	void printSFC();
-
 	const ECFRoot &_configuration;
 	DistributedMesh &_dMesh;
 	Mesh &_mesh;
