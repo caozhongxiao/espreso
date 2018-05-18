@@ -1,16 +1,12 @@
 
-#ifndef SRC_INPUT_CONVERTER_H_
-#define SRC_INPUT_CONVERTER_H_
+#ifndef SRC_INPUT_INPUT_H_
+#define SRC_INPUT_INPUT_H_
 
-#include "sfc/hilbertcurve.h"
 #include "../basis/containers/point.h"
 
 #include <cstddef>
 #include <string>
 #include <vector>
-
-// if SFCDEPTH > 10 => set buckets to size_t
-#define SFCDEPTH 9
 
 namespace espreso {
 
@@ -42,7 +38,7 @@ struct MeshNRegion {
 	std::vector<eslocal> nodes;
 };
 
-struct DistributedMesh {
+struct PlainMeshData {
 	std::vector<eslocal> nIDs;
 	std::vector<Point> coordinates;
 
@@ -54,14 +50,14 @@ struct DistributedMesh {
 	std::vector<MeshNRegion> nregions;
 };
 
-class Converter {
+class Input {
 
 public:
 	static void load(const ECFRoot &configuration, Mesh &mesh, int MPIrank, int MPIsize);
-	static void loadDistributedMesh(const ECFRoot &configuration, DistributedMesh &dMesh, Mesh &mesh);
 
 protected:
-	Converter(const ECFRoot &configuration, DistributedMesh &dMesh, Mesh &mesh);
+	Input(const ECFRoot &configuration, PlainMeshData &meshData, Mesh &mesh)
+	: _configuration(configuration), _meshData(meshData), _mesh(mesh) {}
 
 	void balance();
 	void balanceNodes();
@@ -69,30 +65,15 @@ protected:
 	void balanceElements();
 	void balancePermutedElements();
 
-	void assignNBuckets();
-	void assignEBuckets();
-
-	void clusterize();
-	void linkup();
-
-	void fillElements();
-
 	const ECFRoot &_configuration;
-	DistributedMesh &_dMesh;
+	PlainMeshData &_meshData;
 	Mesh &_mesh;
 
-	HilbertCurve _sfc;
-
 	std::vector<size_t> _nDistribution, _eDistribution;
-	std::vector<eslocal> _nIDs;
-	std::vector<uint> _nBuckets, _eBuckets;
-
-	// distribution across processes
-	std::vector<uint> _bucketsBorders;
 };
 
 }
 
 
 
-#endif /* SRC_INPUT_CONVERTER_H_ */
+#endif /* SRC_INPUT_INPUT_H_ */

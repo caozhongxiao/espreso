@@ -4,8 +4,6 @@
 #include "esel.h"
 #include "nsel.h"
 
-#include "../../loader.h"
-
 #include "../../../basis/containers/tarray.h"
 #include "../../../basis/utilities/parser.h"
 #include "../../../basis/logging/logging.h"
@@ -14,6 +12,7 @@
 #include <cstring>
 #include <functional>
 #include <algorithm>
+#include "../../input.h"
 
 using namespace espreso;
 

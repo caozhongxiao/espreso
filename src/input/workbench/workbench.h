@@ -17,7 +17,7 @@
 namespace espreso {
 
 struct Point;
-struct DistributedMesh;
+struct PlainMeshData;
 class ECFRoot;
 class Mesh;
 
@@ -31,7 +31,7 @@ protected:
 
 	void readData();
 	void prepareData();
-	void parseData(DistributedMesh &dMesh);
+	void parseData(PlainMeshData &dMesh);
 
 	const ECFRoot &_configuration;
 	Mesh &_mesh;

@@ -1,7 +1,5 @@
 
 #include "workbench.h"
-#include "../converter.h"
-
 #include "../../basis/containers/tarray.h"
 #include "../../basis/logging/logging.h"
 #include "../../basis/logging/timeeval.h"
@@ -10,6 +8,7 @@
 #include "../../config/ecf/root.h"
 
 #include "../../mesh/mesh.h"
+#include "../randominput.h"
 
 using namespace espreso;
 
@@ -36,16 +35,16 @@ WorkbenchLoader::WorkbenchLoader(const ECFRoot &configuration, Mesh &mesh)
 	tprepare.end(); timing.addEvent(tprepare);
 	ESINFO(PROGRESS2) << "Workbench:: data prepared for parsing.";
 
-	DistributedMesh dMesh;
+	PlainMeshData meshData;
 	TimeEvent tparse("parsing data"); tparse.start();
-	parseData(dMesh);
+	parseData(meshData);
 	tparse.end(); timing.addEvent(tparse);
 	ESINFO(PROGRESS2) << "Workbench:: data parsed.";
 
 	timing.totalTime.endWithBarrier();
 	timing.printStatsMPI();
 
-	Converter::loadDistributedMesh(configuration, dMesh, mesh);
+	RandomInput::buildMesh(configuration, meshData, mesh);
 }
 
 void WorkbenchLoader::readData()
@@ -302,7 +301,7 @@ void WorkbenchLoader::prepareData()
 //	}
 }
 
-void WorkbenchLoader::parseData(DistributedMesh &dMesh)
+void WorkbenchLoader::parseData(PlainMeshData &meshData)
 {
 	std::vector<ET> et;
 	eslocal maxet = 0;
@@ -320,48 +319,48 @@ void WorkbenchLoader::parseData(DistributedMesh &dMesh)
 	_ET.swap(et);
 
 	for (size_t i = 0; i < _NBlocks.size(); i++) {
-		if (!_NBlocks[i].readData(dMesh.nIDs, dMesh.coordinates, _configuration.workbench.scale_factor)) {
+		if (!_NBlocks[i].readData(meshData.nIDs, meshData.coordinates, _configuration.workbench.scale_factor)) {
 			ESINFO(ERROR) << "Workbench parser: something wrong happens while read NBLOCK.";
 		}
 	}
 
 	for (size_t i = 0; i < _EBlocks.size(); i++) {
-		if (!_EBlocks[i].readData(_ET, dMesh.esize, dMesh.enodes, dMesh.edata)) {
+		if (!_EBlocks[i].readData(_ET, meshData.esize, meshData.enodes, meshData.edata)) {
 			ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
 		}
 	}
 
 //	for (size_t i = 0; i < _BBlocks.size(); i++) {
-//		dMesh.bregions.push_back(MeshBRegion());
-//		dMesh.bregions.back().name = "NAMELESS_SET_" + std::to_string(i + 1);
-//		if (!_BBlocks[i].readData(_ET, dMesh.bregions.back().esize, dMesh.bregions.back().enodes, dMesh.bregions.back().edata)) {
+//		meshData.bregions.push_back(MeshBRegion());
+//		meshData.bregions.back().name = "NAMELESS_SET_" + std::to_string(i + 1);
+//		if (!_BBlocks[i].readData(_ET, meshData.bregions.back().esize, meshData.bregions.back().enodes, meshData.bregions.back().edata)) {
 //			ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
 //		}
-//		dMesh.bregions.back().min = dMesh.bregions.back().edata.size() ? dMesh.bregions.back().edata.front().id : 0;
-//		dMesh.bregions.back().max = dMesh.bregions.back().edata.size() ? dMesh.bregions.back().edata.back().id : 0;
-//		MPI_Bcast(&dMesh.bregions.back().min, sizeof(eslocal), MPI_BYTE, _BBlocks[i].fRank, environment->MPICommunicator);
-//		MPI_Bcast(&dMesh.bregions.back().max, sizeof(eslocal), MPI_BYTE, _BBlocks[i].lRank, environment->MPICommunicator);
+//		meshData.bregions.back().min = meshData.bregions.back().edata.size() ? meshData.bregions.back().edata.front().id : 0;
+//		meshData.bregions.back().max = meshData.bregions.back().edata.size() ? meshData.bregions.back().edata.back().id : 0;
+//		MPI_Bcast(&meshData.bregions.back().min, sizeof(eslocal), MPI_BYTE, _BBlocks[i].fRank, environment->MPICommunicator);
+//		MPI_Bcast(&meshData.bregions.back().max, sizeof(eslocal), MPI_BYTE, _BBlocks[i].lRank, environment->MPICommunicator);
 //	}
 
 	for (size_t i = 0; i < _CMBlocks.size(); i++) {
 		switch (_CMBlocks[i].entity) {
 		case CMBlock::Entity::NODE: {
-			dMesh.nregions.push_back(MeshNRegion());
-			dMesh.nregions.back().name = _CMBlocks[i].name;
-			if (!_CMBlocks[i].readData(dMesh.nregions.back().nodes)) {
+			meshData.nregions.push_back(MeshNRegion());
+			meshData.nregions.back().name = _CMBlocks[i].name;
+			if (!_CMBlocks[i].readData(meshData.nregions.back().nodes)) {
 				ESINFO(ERROR) << "Workbench parser: something wrong happens while read CMBLOCK.";
 			}
 		} break;
 		case CMBlock::Entity::ELEMENT: {
-			dMesh.eregions.push_back(MeshERegion());
-			dMesh.eregions.back().name = _CMBlocks[i].name;
-			if (!_CMBlocks[i].readData(dMesh.eregions.back().elements)) {
+			meshData.eregions.push_back(MeshERegion());
+			meshData.eregions.back().name = _CMBlocks[i].name;
+			if (!_CMBlocks[i].readData(meshData.eregions.back().elements)) {
 				ESINFO(ERROR) << "Workbench parser: something wrong happens while read CMBLOCK.";
 			}
-			dMesh.eregions.back().min = dMesh.eregions.back().elements.size() ? dMesh.eregions.back().elements.front() : 0;
-			dMesh.eregions.back().max = dMesh.eregions.back().elements.size() ? dMesh.eregions.back().elements.back() : 0;
-			MPI_Bcast(&dMesh.eregions.back().min, sizeof(eslocal), MPI_BYTE, _CMBlocks[i].fRank, environment->MPICommunicator);
-			MPI_Bcast(&dMesh.eregions.back().max, sizeof(eslocal), MPI_BYTE, _CMBlocks[i].lRank, environment->MPICommunicator);
+			meshData.eregions.back().min = meshData.eregions.back().elements.size() ? meshData.eregions.back().elements.front() : 0;
+			meshData.eregions.back().max = meshData.eregions.back().elements.size() ? meshData.eregions.back().elements.back() : 0;
+			MPI_Bcast(&meshData.eregions.back().min, sizeof(eslocal), MPI_BYTE, _CMBlocks[i].fRank, environment->MPICommunicator);
+			MPI_Bcast(&meshData.eregions.back().max, sizeof(eslocal), MPI_BYTE, _CMBlocks[i].lRank, environment->MPICommunicator);
 		} break;
 		default:
 			ESINFO(ERROR) << "ESPRESO Workbench parser: unknown CMBLOCK type.";
@@ -369,10 +368,10 @@ void WorkbenchLoader::parseData(DistributedMesh &dMesh)
 	}
 
 	for (size_t i = 0; i < _CM.size(); i++) {
-		_CM[i].addRegion(_ESel, dMesh.edata, dMesh.eregions, _NSel, dMesh.nregions);
-		dMesh.eregions.back().min = dMesh.eregions.back().elements.size() ? dMesh.eregions.back().elements.front() : 0;
-		dMesh.eregions.back().max = dMesh.eregions.back().elements.size() ? dMesh.eregions.back().elements.back() : 0;
-		MPI_Bcast(&dMesh.eregions.back().min, sizeof(eslocal), MPI_BYTE, _CM[i].fRank, environment->MPICommunicator);
-		MPI_Bcast(&dMesh.eregions.back().max, sizeof(eslocal), MPI_BYTE, _CM[i].lRank, environment->MPICommunicator);
+		_CM[i].addRegion(_ESel, meshData.edata, meshData.eregions, _NSel, meshData.nregions);
+		meshData.eregions.back().min = meshData.eregions.back().elements.size() ? meshData.eregions.back().elements.front() : 0;
+		meshData.eregions.back().max = meshData.eregions.back().elements.size() ? meshData.eregions.back().elements.back() : 0;
+		MPI_Bcast(&meshData.eregions.back().min, sizeof(eslocal), MPI_BYTE, _CM[i].fRank, environment->MPICommunicator);
+		MPI_Bcast(&meshData.eregions.back().max, sizeof(eslocal), MPI_BYTE, _CM[i].lRank, environment->MPICommunicator);
 	}
 }

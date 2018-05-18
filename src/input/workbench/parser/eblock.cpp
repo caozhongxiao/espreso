@@ -1,14 +1,13 @@
 
 #include "eblock.h"
 #include "et.h"
-#include "../../loader.h"
-
 #include "../../../basis/containers/tarray.h"
 #include "../../../basis/utilities/parser.h"
 #include "../../../basis/utilities/communication.h"
 #include "../../../basis/utilities/utils.h"
 
 #include "../../../mesh/elements/element.h"
+#include "../../input.h"
 
 using namespace espreso;
 

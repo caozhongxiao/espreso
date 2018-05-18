@@ -4,7 +4,6 @@
 
 #include "../../config/ecf/root.h"
 
-#include "../../input/loader.h"
 #include "../../mesh/mesh.h"
 #include "../../mesh/store/elementstore.h"
 #include "../../mesh/store/nodestore.h"
@@ -12,6 +11,7 @@
 
 
 #include <QDebug>
+#include "../../input/sortedinput.h"
 
 using namespace espreso;
 
@@ -115,7 +115,7 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
 	if (this->m_mesh != nullptr) delete this->m_mesh;
 	this->m_mesh = new Mesh(*m_ecf, true);
 
-	Loader::load(*m_ecf, *m_mesh, environment->MPIrank, environment->MPIsize);
+	Input::load(*m_ecf, *m_mesh, environment->MPIrank, environment->MPIsize);
 
 	auto shrink = [&] (const Point &p, eslocal domain) {
 		Point point = m_mesh->nodes->center + (p - m_mesh->nodes->center) * 0.95;
