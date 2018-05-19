@@ -90,7 +90,13 @@ void RandomInput::assignNBuckets()
 }
 
 void RandomInput::assignEBuckets()
-{ // we needs to ask a neighbor process to get bucket of (arbitrary) node -- now the closest process
+{ // we needs to ask a neighbor process to get bucket of (arbitrary) node -- now the closest process is chosen
+
+	TimeEval timing("ASSIGN ELEMENTS BUCKETS");
+	timing.totalTime.startWithBarrier();
+
+	TimeEvent e1("AEB GET CLOSEST PROCESS");
+	e1.start();
 
 	std::vector<eslocal> closest(_meshData.esize.size());
 	_eBuckets.resize(_meshData.esize.size());
@@ -112,6 +118,12 @@ void RandomInput::assignEBuckets()
 			}
 		}
 	}
+
+	e1.end();
+	timing.addEvent(e1);
+
+	TimeEvent e2("AEB PREPARE SBUFFER");
+	e2.start();
 
 	std::vector<eslocal> permutation(_meshData.esize.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
@@ -139,9 +151,21 @@ void RandomInput::assignEBuckets()
 		begin = n;
 	}
 
+	e2.end();
+	timing.addEvent(e2);
+
+	TimeEvent e3("AEB REQUEST NODES");
+	e3.start();
+
 	if (!Communication::allToAllWithDataSizeAndTarget(sNodes, rNodes)) {
 		ESINFO(ERROR) << "ESPRESO internal error: ask neighbors for nodes buckets.";
 	}
+
+	e3.end();
+	timing.addEvent(e3);
+
+	TimeEvent e4("AEB COMPUTE BUCKETS");
+	e4.start();
 
 	std::vector<eslocal> boundaries(environment->MPIsize);
 	size_t offset = 0;
@@ -168,9 +192,21 @@ void RandomInput::assignEBuckets()
 		}
 	}
 
+	e4.end();
+	timing.addEvent(e4);
+
+	TimeEvent e5("AEB RETURN BUCKETS");
+	e5.start();
+
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuckets, rBuckets)) {
 		ESINFO(ERROR) << "ESPRESO internal error: return nodes buckets.";
 	}
+
+	e5.end();
+	timing.addEvent(e5);
+
+	TimeEvent e6("AEB STORE BUCKETS");
+	e6.start();
 
 	boundaries[0] = offset = 0;
 	for (int r = 1; r < environment->MPIsize; r++, offset += rBuckets[offset]) {
@@ -191,10 +227,22 @@ void RandomInput::assignEBuckets()
 			_eBuckets[permutation[e++]] = rBuckets[offset];
 		}
 	}
+
+	e6.end();
+	timing.addEvent(e6);
+
+	timing.totalTime.end();
+	timing.printStatsMPI();
 }
 
 void RandomInput::clusterize()
 {
+	TimeEval timing("CLUSTERIZE ELEMENTS");
+	timing.totalTime.startWithBarrier();
+
+	TimeEvent e1("CE PREPROCESS DATA");
+	e1.start();
+
 	double PRECISION = 0.02 * std::log2(environment->MPIsize);
 	while (PRECISION * (_eDistribution.back() / environment->MPIsize) < 2) {
 		PRECISION *= 2;
@@ -214,10 +262,16 @@ void RandomInput::clusterize()
 	std::iota(epermutation.begin(), epermutation.end(), 0);
 	std::sort(epermutation.begin(), epermutation.end(), [&] (eslocal i, eslocal j) { return _eBuckets[i] < _eBuckets[j]; });
 
+	e1.end();
+	timing.addEvent(e1);
+
 	// PREPROCESS BUCKET SIZES
 	size_t DEPTH = 1;
 	while (_sfc.buckets(DEPTH++) < (size_t)environment->MPIsize);
 	ESINFO(DETAILS) << "SFC DEPTH: " << DEPTH;
+
+	TimeEvent e2("CE COMPUTE LOCAL HISTOGRAM");
+	e2.start();
 
 	size_t buckets = _sfc.buckets(DEPTH);
 	uint bstep = _sfc.buckets(_sfc.depth()) / buckets;
@@ -241,6 +295,12 @@ void RandomInput::clusterize()
 	std::vector<eslocal> scounts, rcounts;
 	_bucketsBorders.resize(environment->MPIsize + 1, _sfc.buckets(_sfc.depth()));
 	_bucketsBorders.front() = 0;
+
+	e2.end();
+	timing.addEvent(e2);
+
+	TimeEvent e3("CE PREPROCESSED RECURSION");
+	e3.start();
 
 	size_t LEVEL = 0;
 	size_t bsize = _sfc.bucketSize();
@@ -277,6 +337,12 @@ void RandomInput::clusterize()
 		_sfc.finishLevel(LEVEL + 1);
 
 	} while (++LEVEL < DEPTH && _sfc.hasLevel(LEVEL));
+
+	e3.end();
+	timing.addEvent(e3);
+
+	TimeEvent e4("CE ADHOC RECURSION");
+	e4.start();
 
 	// Go deeper if needed
 	scounts.resize(_sfc.sfcRefined(LEVEL).size() * (bsize + 1));
@@ -334,7 +400,13 @@ void RandomInput::clusterize()
 		refinedindices.clear();
 	}
 
+	e4.end();
+	timing.addEvent(e4);
+
 	ESINFO(DETAILS) << "RECURSION DEPTH: " << LEVEL;
+
+	TimeEvent e5("CE COMPUTE SBUFFER");
+	e5.start();
 
 	std::vector<eslocal> sBuffer, rBuffer;
 	sBuffer.reserve(
@@ -377,9 +449,21 @@ void RandomInput::clusterize()
 		sBuffer[prevsize] = sBuffer.size() - prevsize;
 	}
 
+	e5.end();
+	timing.addEvent(e5);
+
+	TimeEvent e6("CE EXCHANGE DATA");
+	e6.start();
+
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
 		ESINFO(ERROR) << "ESPRESO internal error: distribute elements according to SFC.";
 	}
+
+	e6.end();
+	timing.addEvent(e6);
+
+	TimeEvent e7("CE POST-PROCESS DATA");
+	e7.start();
 
 	_meshData.esize.clear();
 	_meshData.edata.clear();
@@ -434,6 +518,12 @@ void RandomInput::clusterize()
 	_meshData.coordinates.swap(newCoordinates);
 
 	_eDistribution = Communication::getDistribution(_meshData.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
+
+	e7.end();
+	timing.addEvent(e7);
+
+	timing.totalTime.endWithBarrier();
+	timing.printStatsMPI();
 }
 
 void RandomInput::linkup()
@@ -445,9 +535,24 @@ void RandomInput::linkup()
 	// 6. Get real neighbors
 	// 7. Re-index
 
+	TimeEval timing("LINK UP");
+	timing.totalTime.startWithBarrier();
+
+	TimeEvent e1("LU SFC to XYZ");
+	e1.start();
 
 	// 1. Compute neighbors buckets
 	_sfc.SCFToXYZ();
+
+	e1.end();
+	timing.addEvent(e1);
+
+	if (_configuration.output.debug && environment->MPIrank == 0) {
+		VTKLegacyDebugInfo::spaceFillingCurve(_sfc, _bucketsBorders);
+	}
+
+	TimeEvent e2("LU GET NEIGHBORS");
+	e2.start();
 
 	std::vector<std::pair<size_t, size_t> > neighbors;
 
@@ -460,11 +565,6 @@ void RandomInput::linkup()
 		size_t bstep = _sfc.buckets(_sfc.depth()) / _sfc.buckets(neighbors[i].first);
 		neighbors[i].first = neighbors[i].second * bstep;
 		neighbors[i].second = neighbors[i].second * bstep + bstep;
-	}
-
-
-	if (_configuration.output.debug && environment->MPIrank == 0) {
-		VTKLegacyDebugInfo::spaceFillingCurve(_sfc, _bucketsBorders);
 	}
 
 	std::sort(neighbors.begin(), neighbors.end());
@@ -499,6 +599,12 @@ void RandomInput::linkup()
 	}
 	Esutils::sortAndRemoveDuplicity(nranks);
 
+	e2.end();
+	timing.addEvent(e2);
+
+	TimeEvent e3("LU COMPUTE NODES FOR NEIGHBORS");
+	e3.start();
+
 	// 2. Exchange elements having only one node on here
 
 	// 3. Ask neighbors for coordinates
@@ -523,9 +629,21 @@ void RandomInput::linkup()
 		sNodes[t] = sNodes[0];
 	}
 
+	e3.end();
+	timing.addEvent(e3);
+
+	TimeEvent e4("LU REQUEST NODES");
+	e4.start();
+
 	if (!Communication::exchangeUnknownSize(sNodes, rNodes, nranks)) {
 		ESINFO(ERROR) << "ESPRESO internal error: request for coordinates.";
 	}
+
+	e4.end();
+	timing.addEvent(e4);
+
+	TimeEvent e5("LU GET COORDINATES");
+	e5.start();
 
 	for (size_t t = 0; t < nranks.size(); t++) {
 		for (size_t n = 0; n < rNodes[t].size(); n++) {
@@ -537,12 +655,24 @@ void RandomInput::linkup()
 		}
 	}
 
+	e5.end();
+	timing.addEvent(e5);
+
+	TimeEvent e6("LU RETURN COORDINATES");
+	e6.start();
+
 	if (!Communication::exchangeUnknownSize(fNodes, rNodes, nranks)) {
 		ESINFO(ERROR) << "ESPRESO internal error: return requested IDs.";
 	}
 	if (!Communication::exchangeUnknownSize(fCoords, rCoors, nranks)) {
 		ESINFO(ERROR) << "ESPRESO internal error: return requested coordinates.";
 	}
+
+	e6.end();
+	timing.addEvent(e6);
+
+	TimeEvent e7("LU REQUEST FOR UNKNOWN NODES");
+	e7.start();
 
 	// 3.1 Check if all nodes are found
 
@@ -665,6 +795,12 @@ void RandomInput::linkup()
 	nranks.push_back(environment->MPIrank);
 	std::sort(nranks.begin(), nranks.end());
 
+	e7.end();
+	timing.addEvent(e7);
+
+	TimeEvent e8("LU COMPUTE NODES TO RANK MAP");
+	e8.start();
+
 	std::vector<std::vector<eslocal> > sRanks(nranks.size()), rRanks(nranks.size());
 
 
@@ -724,9 +860,21 @@ void RandomInput::linkup()
 	_meshData.nIDs.resize(unique);
 	_meshData.coordinates.resize(unique);
 
+	e8.end();
+	timing.addEvent(e8);
+
+	TimeEvent e9("LU EXCHANGE NODE TO RANK MAP");
+	e9.start();
+
 	if (!Communication::exchangeUnknownSize(sRanks, rRanks, nranks)) {
 		ESINFO(ERROR) << "ESPRESO internal error: exchange ranks data.";
 	}
+
+	e9.end();
+	timing.addEvent(e9);
+
+	TimeEvent e10("LU POST-PROCESS DATA");
+	e10.start();
 
 	for (size_t t = 0, i = 0; t < nranks.size(); t++) {
 		if (nranks[t] != environment->MPIrank) {
@@ -779,6 +927,12 @@ void RandomInput::linkup()
 
 	_mesh.boundaryRegions.push_back(new BoundaryRegionStore("ALL_NODES", _mesh._eclasses));
 	_mesh.boundaryRegions.back()->nodes = new serializededata<eslocal, eslocal>(1, _meshData.nIDs);
+
+	e10.end();
+	timing.addEvent(e10);
+
+	timing.totalTime.endWithBarrier();
+	timing.printStatsMPI();
 }
 
 void RandomInput::fillElements()

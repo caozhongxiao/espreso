@@ -16,7 +16,7 @@
 
 using namespace espreso;
 
-void Input::load(const ECFRoot &configuration, Mesh &mesh, int MPIrank, int MPIsize)
+void Input::load(const ECFRoot &configuration, Mesh &mesh)
 {
 	switch (configuration.input) {
 	case INPUT_FORMAT::WORKBENCH:
@@ -24,7 +24,7 @@ void Input::load(const ECFRoot &configuration, Mesh &mesh, int MPIrank, int MPIs
 		mesh.update();
 		break;
 	default:
-		input::OldLoader::load(configuration, *mesh.mesh, MPIrank, MPIsize);
+		input::OldLoader::load(configuration, *mesh.mesh, environment->MPIrank, environment->MPIsize);
 		mesh.load();
 		break;
 	}

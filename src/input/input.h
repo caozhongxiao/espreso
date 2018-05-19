@@ -53,7 +53,7 @@ struct PlainMeshData {
 class Input {
 
 public:
-	static void load(const ECFRoot &configuration, Mesh &mesh, int MPIrank, int MPIsize);
+	static void load(const ECFRoot &configuration, Mesh &mesh);
 
 protected:
 	Input(const ECFRoot &configuration, PlainMeshData &meshData, Mesh &mesh)

@@ -14,10 +14,9 @@
 #include "../../assembler/step.h"
 #include "../../assembler/instance.h"
 #include "../../config/ecf/root.h"
-#include "../../input/randominput.h"
+#include "../../input/input.h"
 #include "../../mesh/mesh.h"
 #include "../../mesh/preprocessing/meshpreprocessing.h"
-//#include "../../input/loader.h"
 #include "../../output/result/resultstore.h"
 #include "../../output/data/espresobinaryformat.h"
 #include "../../solver/generic/FETISolver.h"
@@ -104,8 +103,7 @@ Factory::Factory(const ECFRoot &configuration, Mesh &mesh, ResultStore &store)
 {
 	_step = new Step();
 	Logging::step = _step;
-	// BalancedLoader::load(configuration, mesh, configuration.environment.MPIrank, configuration.environment.MPIsize);
-	RandomInput::load(configuration, mesh, configuration.environment.MPIrank, configuration.environment.MPIsize);
+	Input::load(configuration, mesh);
 
 	// LOAD PHYSICS
 	switch (configuration.physics) {

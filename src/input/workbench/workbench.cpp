@@ -29,7 +29,6 @@ WorkbenchLoader::WorkbenchLoader(const ECFRoot &configuration, Mesh &mesh)
 	tread.end(); timing.addEvent(tread);
 	ESINFO(PROGRESS2) << "Workbench:: data copied from file.";
 
-
 	TimeEvent tprepare("prepare data for parsing"); tprepare.start();
 	prepareData();
 	tprepare.end(); timing.addEvent(tprepare);
@@ -49,6 +48,12 @@ WorkbenchLoader::WorkbenchLoader(const ECFRoot &configuration, Mesh &mesh)
 
 void WorkbenchLoader::readData()
 {
+	TimeEval timing("Read data from file");
+	timing.totalTime.startWithBarrier();
+
+	TimeEvent e1("prepare");
+	e1.start();
+
 	MPI_File MPIfile;
 
 	if (MPI_File_open(environment->MPICommunicator, _configuration.workbench.path.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &MPIfile)) {
@@ -79,7 +84,21 @@ void WorkbenchLoader::readData()
 	_data.resize(block * length.front() + MAX_LINE_STEP * MAX_LINE_SIZE);
 
 	MPI_File_set_view(MPIfile, 0, chunk, fDataDistribution, "native", MPI_INFO_NULL);
+
+	e1.end();
+	timing.addEvent(e1);
+
+	TimeEvent e2("read file");
+	e2.start();
+
 	MPI_File_read_all(MPIfile, _data.data(), length.front(), chunk, MPI_STATUS_IGNORE);
+
+	e2.end();
+	timing.addEvent(e2);
+
+	TimeEvent e3("post-process");
+	e3.start();
+
 	MPI_File_close(&MPIfile);
 
 	MPI_Type_free(&chunk);
@@ -128,6 +147,12 @@ void WorkbenchLoader::readData()
 	WorkbenchParser::offset = _dataOffset[environment->MPIrank];
 	WorkbenchParser::begin = _begin;
 	WorkbenchParser::end = _end;
+
+	e3.end();
+	timing.addEvent(e3);
+
+	timing.totalTime.endWithBarrier();
+	timing.printStatsMPI();
 }
 
 void WorkbenchLoader::prepareData()
