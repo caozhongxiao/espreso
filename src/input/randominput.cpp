@@ -531,6 +531,8 @@ void RandomInput::linkup()
 	// 6. Get real neighbors
 	// 7. Re-index
 
+	size_t threads = environment->OMP_NUM_THREADS;
+
 	TimeEval timing("LINK UP");
 	timing.totalTime.startWithBarrier();
 
@@ -903,9 +905,11 @@ void RandomInput::linkup()
 	}
 
 	_mesh.nodes->size = _meshData.nIDs.size();
-	_mesh.nodes->distribution = { 0, _mesh.nodes->size };
-	_mesh.nodes->IDs = new serializededata<eslocal, eslocal>(1, _meshData.nIDs);
-	_mesh.nodes->coordinates = new serializededata<eslocal, Point>(1, _meshData.coordinates);
+	_mesh.nodes->distribution = tarray<eslocal>::distribute(threads, _mesh.nodes->size);
+	_mesh.nodes->IDs = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(_mesh.nodes->distribution, _meshData.nIDs));
+	_mesh.nodes->coordinates = new serializededata<eslocal, Point>(1, tarray<Point>(_mesh.nodes->distribution, _meshData.coordinates));
+
+	serializededata<eslocal, eslocal>::balance(rankDistribution, rankData);
 	_mesh.nodes->ranks = new serializededata<eslocal, int>(rankDistribution, rankData);
 
 	_mesh.nodes->permute(permutation);
