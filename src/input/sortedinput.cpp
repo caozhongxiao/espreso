@@ -1,7 +1,6 @@
 
 #include "sortedinput.h"
 
-#include "../basis/containers/point.h"
 #include "../basis/containers/serializededata.h"
 #include "../basis/utilities/utils.h"
 #include "../basis/utilities/communication.h"
@@ -21,7 +20,6 @@
 #include <numeric>
 #include <algorithm>
 #include <fstream>
-
 
 using namespace espreso;
 

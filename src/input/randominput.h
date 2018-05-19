@@ -24,8 +24,6 @@ protected:
 	void clusterize();
 	void linkup();
 
-	void fillElements();
-
 	HilbertCurve _sfc;
 
 	std::vector<eslocal> _nIDs;
@@ -36,7 +34,6 @@ protected:
 };
 
 }
-
 
 
 #endif /* SRC_INPUT_RANDOMINPUT_H_ */

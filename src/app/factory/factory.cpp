@@ -130,9 +130,9 @@ Factory::Factory(const ECFRoot &configuration, Mesh &mesh, ResultStore &store)
 	_loader->preprocessMesh();
 	mesh.initNodeData();
 
-	_store->updateMesh();
-
 	mesh.preprocessing->finishPreprocessing();
+
+	_store->updateMesh();
 }
 
 void Factory::solve()

@@ -9,6 +9,7 @@
 
 #include "../../mesh/mesh.h"
 #include "../randominput.h"
+#include "../sequentialinput.h"
 
 using namespace espreso;
 
@@ -43,7 +44,11 @@ WorkbenchLoader::WorkbenchLoader(const ECFRoot &configuration, Mesh &mesh)
 	timing.totalTime.endWithBarrier();
 	timing.printStatsMPI();
 
-	RandomInput::buildMesh(configuration, meshData, mesh);
+	if (environment->MPIsize > 1) {
+		RandomInput::buildMesh(configuration, meshData, mesh);
+	} else {
+		SequentialInput::buildMesh(configuration, meshData, mesh);
+	}
 }
 
 void WorkbenchLoader::readData()

@@ -1,9 +1,6 @@
 
 #include "randominput.h"
 
-#include "workbench/workbench.h"
-
-#include "../basis/containers/point.h"
 #include "../basis/containers/serializededata.h"
 #include "../basis/utilities/utils.h"
 #include "../basis/utilities/communication.h"
@@ -13,10 +10,8 @@
 
 #include "../mesh/mesh.h"
 #include "../mesh/preprocessing/meshpreprocessing.h"
-#include "../mesh/elements/element.h"
 #include "../mesh/store/nodestore.h"
 #include "../mesh/store/elementstore.h"
-#include "../mesh/store/elementsregionstore.h"
 #include "../mesh/store/boundaryregionstore.h"
 #include "../old/input/loader.h"
 
@@ -67,6 +62,7 @@ RandomInput::RandomInput(const ECFRoot &configuration, PlainMeshData &meshData, 
 
 	TimeEvent telements("fill elements"); telements.start();
 	fillElements();
+	_mesh.elements->reindex(_mesh.nodes->IDs);
 	telements.end(); timing.addEvent(telements);
 	ESINFO(PROGRESS2) << "Balanced loader:: elements filled.";
 
@@ -933,73 +929,6 @@ void RandomInput::linkup()
 
 	timing.totalTime.endWithBarrier();
 	timing.printStatsMPI();
-}
-
-void RandomInput::fillElements()
-{
-	size_t threads = environment->OMP_NUM_THREADS;
-
-	std::vector<std::vector<eslocal> > tedist(threads);
-	std::vector<std::vector<eslocal> > tnodes(threads);
-	std::vector<std::vector<eslocal> > eIDs(threads), rData(threads);
-	std::vector<std::vector<int> > eMat(threads), eBody(threads);
-	std::vector<std::vector<Element*> > epointers(threads);
-
-	std::vector<eslocal> edist = { 0 };
-	edist.reserve(_meshData.esize.size() + 1);
-	for (size_t e = 0; e < _meshData.esize.size(); e++) {
-		edist.push_back(edist.back() + _meshData.esize[e]);
-	}
-
-	std::vector<size_t> edistribution = tarray<Point>::distribute(threads, _meshData.esize.size());
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		if(t == 0) {
-			tedist[t].insert(tedist[t].end(), edist.begin() + edistribution[t], edist.begin() + edistribution[t + 1] + 1);
-		} else {
-			tedist[t].insert(tedist[t].end(), edist.begin() + edistribution[t] + 1, edist.begin() + edistribution[t + 1] + 1);
-		}
-		tnodes[t].insert(tnodes[t].end(), _meshData.enodes.begin() + edist[edistribution[t]], _meshData.enodes.begin() + edist[edistribution[t + 1]]);
-		eIDs[t].resize(edistribution[t + 1] - edistribution[t]);
-		std::iota(eIDs[t].begin(), eIDs[t].end(), _eDistribution[environment->MPIrank] + edistribution[t]);
-		epointers[t].reserve(edistribution[t + 1] - edistribution[t]);
-		eBody[t].reserve(edistribution[t + 1] - edistribution[t]);
-
-		for (size_t e = edistribution[t]; e < edistribution[t + 1]; ++e) {
-			epointers[t].push_back(&_mesh._eclasses[t][_meshData.edata[e].etype]);
-			eBody[t].push_back(_meshData.edata[e].body);
-		}
-
-		if (_configuration.input == INPUT_FORMAT::WORKBENCH && _configuration.workbench.keep_material_sets) {
-			eMat[t].reserve(edistribution[t + 1] - edistribution[t]);
-			for (size_t e = edistribution[t]; e < edistribution[t + 1]; ++e) {
-				eMat[t].push_back(_meshData.edata[e].material);
-			}
-		} else {
-			eMat[t].resize(edistribution[t + 1] - edistribution[t]);
-		}
-	}
-
-	_mesh.elements->dimension = _mesh.dimension;
-	_mesh.elements->size = _meshData.esize.size();
-	_mesh.elements->distribution = edistribution;
-	_mesh.elements->IDs = new serializededata<eslocal, eslocal>(1, eIDs);
-	_mesh.elements->nodes = new serializededata<eslocal, eslocal>(tedist, tnodes);
-	_mesh.elements->epointers = new serializededata<eslocal, Element*>(1, epointers);
-	_mesh.elements->material = new serializededata<eslocal, int>(1, eMat);
-	_mesh.elements->body = new serializededata<eslocal, int>(1, eBody);
-
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		rData[t].resize(edistribution[t + 1] - edistribution[t]);
-		std::iota(rData[t].begin(), rData[t].end(), edistribution[t]);
-	}
-	_mesh.elementsRegions.push_back(new ElementsRegionStore("ALL_ELEMENTS"));
-	_mesh.elementsRegions.back()->elements = new serializededata<eslocal, eslocal>(1, rData);
-
-	for (auto n = _mesh.elements->nodes->begin()->begin(); n != _mesh.elements->nodes->end()->begin(); ++n) {
-		*n = std::lower_bound(_mesh.nodes->IDs->datatarray().begin(), _mesh.nodes->IDs->datatarray().end(), *n) - _mesh.nodes->IDs->datatarray().begin();
-	}
 }
 
 

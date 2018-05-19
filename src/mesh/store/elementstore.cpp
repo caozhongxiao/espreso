@@ -241,6 +241,18 @@ void ElementStore::permute(const std::vector<eslocal> &permutation, const std::v
 	if (neighbors != NULL) { neighbors->permute(permutation, distribution); }
 }
 
+void ElementStore::reindex(const serializededata<eslocal, eslocal> *nIDs)
+{
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (auto n = nodes->begin(t)->begin(); n != nodes->end(t)->begin(); ++n) {
+			*n = std::lower_bound(nIDs->datatarray().begin(), nIDs->datatarray().end(), *n) - nIDs->datatarray().begin();
+		}
+	}
+}
+
 ElementData* ElementStore::appendData(int dimension, const std::vector<std::string> &names)
 {
 	data.push_back(new ElementData(dimension, names));

@@ -65,6 +65,8 @@ protected:
 	void balanceElements();
 	void balancePermutedElements();
 
+	void fillElements();
+
 	const ECFRoot &_configuration;
 	PlainMeshData &_meshData;
 	Mesh &_mesh;

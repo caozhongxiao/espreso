@@ -41,6 +41,8 @@ struct ElementStore {
 	void permute(const std::vector<eslocal> &permutation) { permute(permutation, distribution); }
 	void permute(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
 
+	void reindex(const serializededata<eslocal, eslocal> *nIDs);
+
 	ElementData* appendData(int dimension, const std::vector<std::string> &names);
 	ElementData* appendData(int dimension, const std::vector<std::string> &names, std::vector<double> &data);
 
