@@ -194,17 +194,17 @@ void MeshPreprocessing::linkNodesAndElements()
 	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
 	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_SUM, 0, environment->MPICommunicator);
 
-	ESINFO(PROGRESS1) << "LN AVGNEIGHS: " << (double)avgneighs / environment->MPIsize << ", AVGSIZE: " << allavgsize / environment->MPIsize;
+	ESINFO(PROGRESS3) << "LN AVGNEIGHS: " << (double)avgneighs / environment->MPIsize << ", AVGSIZE: " << allavgsize / environment->MPIsize;
 
 	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MIN, 0, environment->MPICommunicator);
 	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MIN, 0, environment->MPICommunicator);
 
-	ESINFO(PROGRESS1) << "LN MINNEIGHS: " << avgneighs << ", MINSIZE: " << allavgsize;
+	ESINFO(PROGRESS3) << "LN MINNEIGHS: " << avgneighs << ", MINSIZE: " << allavgsize;
 
 	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MAX, 0, environment->MPICommunicator);
 	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MAX, 0, environment->MPICommunicator);
 
-	ESINFO(PROGRESS1) << "LN MAXNEIGHS: " << avgneighs << ", MAXSIZE: " << allavgsize;
+	ESINFO(PROGRESS3) << "LN MAXNEIGHS: " << avgneighs << ", MAXSIZE: " << allavgsize;
 
 	TimeEvent e3("LN EXCHANGE DATA"); e3.start();
 
