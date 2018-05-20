@@ -66,6 +66,11 @@ RandomInput::RandomInput(const ECFRoot &configuration, PlainMeshData &meshData, 
 	telements.end(); timing.addEvent(telements);
 	ESINFO(PROGRESS2) << "Balanced loader:: elements filled.";
 
+	TimeEvent tpolish("polish decomposition"); tpolish.start();
+	polish();
+	tpolish.end(); timing.addEvent(tpolish);
+	ESINFO(PROGRESS2) << "Balanced loader:: decomposition polished.";
+
 	timing.totalTime.endWithBarrier();
 	timing.printStatsMPI();
 }
@@ -934,7 +939,29 @@ void RandomInput::linkup()
 	timing.printStatsMPI();
 }
 
+void RandomInput::polish()
+{
+	size_t threads = environment->OMP_NUM_THREADS;
 
+	_mesh.preprocessing->computeElementsCenters();
+
+	std::vector<eslocal> partition(_mesh.elements->size);
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		Point p;
+		for (size_t e = _mesh.elements->distribution[t]; e < _mesh.elements->distribution[t + 1]; e++) {
+			p.x = _mesh.elements->centers->datatarray()[_mesh.dimension * e + 0];
+			p.y = _mesh.elements->centers->datatarray()[_mesh.dimension * e + 1];
+			if (_mesh.dimension == 3) {
+				p.z = _mesh.elements->centers->datatarray()[_mesh.dimension * e + 2];
+			}
+			partition[e] = std::lower_bound(_bucketsBorders.begin(), _bucketsBorders.end(), _sfc.getBucket(p) + 1) - _bucketsBorders.begin() - 1;
+		}
+	}
+
+	_mesh.preprocessing->exchangeElements(partition);
+}
 
 
 

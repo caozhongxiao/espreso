@@ -34,6 +34,7 @@ public:
 
 	void linkNodesAndElements();
 	void exchangeHalo();
+	void exchangeElements(const std::vector<eslocal> &partition);
 
 	void computeElementsNeighbors();
 	void computeElementsCenters();
@@ -82,7 +83,6 @@ protected:
 	std::map<std::string, TimeEvent*> _timeEvents;
 
 private:
-	void exchangeElements(const std::vector<eslocal> &partition);
 	void permuteElements(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
 	void arrangeElementsPermutation(std::vector<eslocal> &permutation);
 	void computeBoundaryNodes(std::vector<eslocal> &externalBoundary, std::vector<eslocal> &internalBoundary);

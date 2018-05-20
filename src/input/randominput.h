@@ -24,6 +24,8 @@ protected:
 	void clusterize();
 	void linkup();
 
+	void polish();
+
 	HilbertCurve _sfc;
 
 	std::vector<eslocal> _nIDs;
