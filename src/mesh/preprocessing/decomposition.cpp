@@ -46,6 +46,10 @@ void MeshPreprocessing::reclusterize()
 		exchangeHalo();
 	}
 
+	if (_mesh->elements->centers == NULL) {
+//		computeElementsCenters();
+	}
+
 	start("compute global dual graph");
 
 	bool separateRegions = _mesh->configuration.decomposition.separate_regions;

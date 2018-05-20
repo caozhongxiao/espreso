@@ -36,6 +36,7 @@ public:
 	void exchangeHalo();
 
 	void computeElementsNeighbors();
+	void computeElementsCenters();
 	void computeDecomposedDual(std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData);
 
 	void reclusterize();

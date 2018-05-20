@@ -524,6 +524,34 @@ void MeshPreprocessing::computeElementsNeighbors()
 	finish("computation of elements neighbors");
 }
 
+void MeshPreprocessing::computeElementsCenters()
+{
+	start("computation of elements centers");
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	_mesh->elements->centers = new serializededata<eslocal, double>(_mesh->dimension, tarray<double>(threads, _mesh->dimension * _mesh->elements->size));
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		Point center;
+		size_t eindex = _mesh->elements->distribution[t];
+		for (auto e = _mesh->elements->nodes->cbegin(t); e != _mesh->elements->nodes->cend(t); ++e, ++eindex) {
+			center.x = center.y = center.z = 0;
+			for (auto n = e->begin(); n != e->end(); ++n) {
+				center += _mesh->nodes->coordinates->datatarray()[*n];
+			}
+			center /= e->size();
+			_mesh->elements->centers->datatarray()[_mesh->dimension * eindex + 0] = center.x;
+			_mesh->elements->centers->datatarray()[_mesh->dimension * eindex + 1] = center.y;
+			if (_mesh->dimension == 3) {
+				_mesh->elements->centers->datatarray()[_mesh->dimension * eindex + 2] = center.z;
+			}
+		}
+	}
+	finish("computation of elements centers");
+}
+
 void MeshPreprocessing::computeDecomposedDual(std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData)
 {
 	bool separateRegions = _mesh->configuration.decomposition.separate_regions;

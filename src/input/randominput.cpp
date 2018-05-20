@@ -799,10 +799,9 @@ void RandomInput::linkup()
 	TimeEvent e8("LU COMPUTE NODES TO RANK MAP");
 	e8.start();
 
+	// 5. Compute nodes neighbors
 	std::vector<std::vector<eslocal> > sRanks(nranks.size()), rRanks(nranks.size());
 
-
-	// 5. Compute nodes neighbors
 	size_t rankindex;
 	std::vector<std::vector<eslocal> > nodeRequests(nranks.size());
 	for (size_t r = 0, i = 0; r < nranks.size(); r++) {
