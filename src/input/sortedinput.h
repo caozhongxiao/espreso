@@ -9,7 +9,6 @@ namespace espreso {
 class SortedInput: public Input {
 
 public:
-	static void load(const ECFRoot &configuration, Mesh &mesh, int MPIrank, int MPIsize);
 	static void buildMesh(const ECFRoot &configuration, PlainMeshData &meshData, Mesh &mesh);
 
 protected:
@@ -17,7 +16,6 @@ protected:
 
 	void checkERegions();
 
-	void fillElements();
 	void fillCoordinates();
 	void addNodeRegions();
 	void addBoundaryRegions();
