@@ -931,6 +931,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 			std::vector<eslocal>  tnodesElemsData;
 			std::vector<eslocal>  tnodesRegions;
 			std::vector<eslocal>  tnodeSet;
+			std::vector<eslocal>  tnpermutation;
 
 			tnodesIDs.reserve(rdistribution[t + 1] - rdistribution[t]);
 			tnodesCoordinates.reserve(rdistribution[t + 1] - rdistribution[t]);
@@ -952,23 +953,30 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 				nodesetit = std::lower_bound(nodeset.begin(), nodeset.end(), rNodes[i][rdistribution[t] + 1]);
 			}
 			for (size_t n = rdistribution[t] + 1; n < rdistribution[t + 1]; ) {
-				while (nodesetit != nodeset.end() && *nodesetit < rNodes[i][n]) ++nodesetit;
-				if (nodesetit == nodeset.end() || *nodesetit != rNodes[i][n]) {
-					tnodesIDs.push_back(rNodes[i][n]);
-					tnodeSet.push_back(rNodes[i][n]);
-					n += 1; //ID
-					memcpy(&point, rNodes[i].data() + n, sizeof(Point));
+				tnpermutation.push_back(n);
+				n += 1 + sizeof(Point) / sizeof(eslocal); // id, Point
+				n += 1 + rNodes[i][n]; // linksize, links
+				n += bregionsBitMaskSize; // region mask
+			}
+			std::sort(tnpermutation.begin(), tnpermutation.end(), [&] (eslocal n1, eslocal n2) {
+				return rNodes[i][n1] < rNodes[i][n2];
+			});
+			size_t index;
+			for (size_t n = 0; n < tnpermutation.size(); n++) {
+				index = tnpermutation[n];
+				while (nodesetit != nodeset.end() && *nodesetit < rNodes[i][index]) ++nodesetit;
+				if (nodesetit == nodeset.end() || *nodesetit != rNodes[i][index]) {
+					tnodesIDs.push_back(rNodes[i][index]);
+					tnodeSet.push_back(rNodes[i][index]);
+					index += 1; //ID
+					memcpy(&point, rNodes[i].data() + index, sizeof(Point));
 					tnodesCoordinates.push_back(point);
-					n += sizeof(Point) / sizeof(eslocal); // points
-					tnodesElemsData.insert(tnodesElemsData.end(), rNodes[i].begin() + n + 1, rNodes[i].begin() + n + 1 + rNodes[i][n]);
+					index += sizeof(Point) / sizeof(eslocal); // points
+					tnodesElemsData.insert(tnodesElemsData.end(), rNodes[i].begin() + index + 1, rNodes[i].begin() + index + 1 + rNodes[i][index]);
 					tnodesElemsDistribution.push_back(tnodesElemsData.size() + distOffset);
-					n += rNodes[i][n] + 1; // linksize + links
-					tnodesRegions.insert(tnodesRegions.end(), rNodes[i].begin() + n, rNodes[i].begin() + n + bregionsBitMaskSize);
-					n += bregionsBitMaskSize; // region mask
-				} else {
-					n += 1 + sizeof(Point) / sizeof(eslocal); // id, Point
-					n += 1 + rNodes[i][n]; // linksize, links
-					n += bregionsBitMaskSize; // region mask
+					index += rNodes[i][index] + 1; // linksize + links
+					tnodesRegions.insert(tnodesRegions.end(), rNodes[i].begin() + index, rNodes[i].begin() + index + bregionsBitMaskSize);
+					index += bregionsBitMaskSize; // region mask
 				}
 			}
 
