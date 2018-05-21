@@ -79,7 +79,7 @@ void RandomInput::assignNBuckets()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<size_t> cdistribution = tarray<Point>::distribute(threads, _meshData.coordinates.size());
+	std::vector<size_t> cdistribution = tarray<eslocal>::distribute(threads, _meshData.nIDs.size());
 
 	_nBuckets.resize(_meshData.coordinates.size());
 	#pragma omp parallel for
@@ -892,7 +892,7 @@ void RandomInput::linkup()
 	std::iota(permutation.begin(), permutation.end(), 0);
 	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return _meshData.nIDs[i] < _meshData.nIDs[j]; });
 
-	std::vector<std::vector<eslocal> > rankData(1), rankDistribution(1);
+	std::vector<std::vector<eslocal> > rankData(threads), rankDistribution(threads);
 
 	rankDistribution.front().push_back(0);
 	for (size_t n = 0; n < rRanks[rankindex].size(); n += rRanks[rankindex][n] + 1) {
@@ -913,21 +913,29 @@ void RandomInput::linkup()
 	_mesh.nodes->IDs = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(_mesh.nodes->distribution, _meshData.nIDs));
 	_mesh.nodes->coordinates = new serializededata<eslocal, Point>(1, tarray<Point>(_mesh.nodes->distribution, _meshData.coordinates));
 
-	serializededata<eslocal, eslocal>::balance(rankDistribution, rankData);
+
+	serializededata<eslocal, eslocal>::balance(rankDistribution, rankData, &_mesh.nodes->distribution);
 	_mesh.nodes->ranks = new serializededata<eslocal, int>(rankDistribution, rankData);
 
 	_mesh.nodes->permute(permutation);
 
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		Esutils::sortAndRemoveDuplicity(rankData[t]);
+	}
+
+	_mesh.neighboursWithMe.clear();
+	for (size_t t = 0; t < threads; t++) {
+		_mesh.neighboursWithMe.insert(_mesh.neighboursWithMe.end(), rankData[t].begin(), rankData[t].end());
+	}
+	Esutils::sortAndRemoveDuplicity(_mesh.neighboursWithMe);
+
 	_mesh.neighbours.clear();
-	Esutils::sortAndRemoveDuplicity(rankData);
-	for (size_t r = 0; r < rankData[0].size(); r++) {
-		if (rankData[0][r] != environment->MPIrank) {
-			_mesh.neighbours.push_back(rankData[0][r]);
+	for (size_t n = 0; n < _mesh.neighboursWithMe.size(); n++) {
+		if (_mesh.neighboursWithMe[n] != environment->MPIrank) {
+			_mesh.neighbours.push_back(_mesh.neighboursWithMe[n]);
 		}
 	}
-	_mesh.neighboursWithMe = _mesh.neighbours;
-	_mesh.neighboursWithMe.push_back(environment->MPIrank);
-	std::sort(_mesh.neighboursWithMe.begin(), _mesh.neighboursWithMe.end());
 
 	_mesh.boundaryRegions.push_back(new BoundaryRegionStore("ALL_NODES", _mesh._eclasses));
 	_mesh.boundaryRegions.back()->nodes = new serializededata<eslocal, eslocal>(1, _meshData.nIDs);

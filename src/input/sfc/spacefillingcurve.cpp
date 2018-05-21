@@ -43,9 +43,9 @@ SpaceFillingCurve::SpaceFillingCurve(size_t dimension, size_t depth, std::vector
 	}
 
 	for (size_t t = 1; t < threads; t++) {
-		mins[0].x = std::min(mins[t].x, maxs[0].x);
-		mins[0].y = std::min(mins[t].y, maxs[0].y);
-		mins[0].z = std::min(mins[t].z, maxs[0].z);
+		mins[0].x = std::min(mins[t].x, mins[0].x);
+		mins[0].y = std::min(mins[t].y, mins[0].y);
+		mins[0].z = std::min(mins[t].z, mins[0].z);
 		maxs[0].x = std::max(maxs[t].x, maxs[0].x);
 		maxs[0].y = std::max(maxs[t].y, maxs[0].y);
 		maxs[0].z = std::max(maxs[t].z, maxs[0].z);
