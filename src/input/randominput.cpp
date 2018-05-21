@@ -66,10 +66,10 @@ RandomInput::RandomInput(const ECFRoot &configuration, PlainMeshData &meshData, 
 	telements.end(); timing.addEvent(telements);
 	ESINFO(PROGRESS2) << "Balanced loader:: elements filled.";
 
-	TimeEvent tpolish("polish decomposition"); tpolish.start();
-	polish();
-	tpolish.end(); timing.addEvent(tpolish);
-	ESINFO(PROGRESS2) << "Balanced loader:: decomposition polished.";
+//	TimeEvent tpolish("polish decomposition"); tpolish.start();
+//	polish();
+//	tpolish.end(); timing.addEvent(tpolish);
+//	ESINFO(PROGRESS2) << "Balanced loader:: decomposition polished.";
 
 	timing.totalTime.endWithBarrier();
 	timing.printStatsMPI();
