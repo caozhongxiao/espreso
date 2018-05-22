@@ -6,7 +6,7 @@
 #include "sfc/hilbertcurve.h"
 
 // if SFCDEPTH > 10 => set buckets to size_t
-#define SFCDEPTH 9
+#define SFCDEPTH 10
 
 namespace espreso {
 

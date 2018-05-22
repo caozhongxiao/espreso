@@ -106,7 +106,7 @@ void SpaceFillingCurve::iterateBuckets(size_t begin, size_t end, std::function<v
 		}
 		depth = 0;
 		step = coarsenig;
-		while (rindices[depth] != _refinedsfc[depth].end() && *rindices[depth] == bucket / step) {
+		while (depth < _depth && rindices[depth] != _refinedsfc[depth].end() && *rindices[depth] == bucket / step) {
 			++depth;
 			step /= bsize;
 		}
