@@ -244,9 +244,9 @@ void RandomInput::clusterize()
 	TimeEvent e1("CE PREPROCESS DATA");
 	e1.start();
 
-	double PRECISION = 0.02 * std::log2(environment->MPIsize);
-	while (PRECISION * (_eDistribution.back() / environment->MPIsize) < 2) {
-		PRECISION *= 2;
+	double PRECISION = 0.005 * std::log2(environment->MPIsize);
+	if (PRECISION * (_eDistribution.back() / environment->MPIsize) < 2) {
+		PRECISION = 2.01 / (_eDistribution.back() / environment->MPIsize);
 	}
 	// allowed difference to the perfect distribution
 	size_t ETOLERANCE = PRECISION * _eDistribution.back() / environment->MPIsize;
@@ -360,7 +360,7 @@ void RandomInput::clusterize()
 		for (size_t b = 0, index = 0; b < _sfc.sfcRefined(LEVEL).size(); b++, index++) {
 			auto e = std::lower_bound(epermutation.begin(), epermutation.end(), coarsenig * bsize * _sfc.sfcRefined(LEVEL)[b], [&] (eslocal i, eslocal bound) { return _eBuckets[i] < bound; });
 			for (size_t i = 0; i < bsize; i++, index++) {
-				while (e != epermutation.end() && _eBuckets[*e] < coarsenig * bsize * _sfc.sfcRefined(LEVEL)[b] + (i + 1) * bstep) {
+				while (e != epermutation.end() && _eBuckets[*e] < coarsenig * bsize * _sfc.sfcRefined(LEVEL)[b] + (i + 1) * coarsenig) {
 					++scounts[index + 1];
 					++e;
 				}
