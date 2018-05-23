@@ -244,7 +244,7 @@ void RandomInput::clusterize()
 	TimeEvent e1("CE PREPROCESS DATA");
 	e1.start();
 
-	double PRECISION = 0.005 * std::log2(environment->MPIsize);
+	double PRECISION = 0.001 * std::log2(environment->MPIsize);
 	if (PRECISION * (_eDistribution.back() / environment->MPIsize) < 2) {
 		PRECISION = 2.01 / (_eDistribution.back() / environment->MPIsize);
 	}
