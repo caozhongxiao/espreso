@@ -15,7 +15,7 @@ using namespace espreso;
 
 FETISolver::FETISolver(Instance *instance, const FETISolverConfiguration &configuration)
 : instance(instance),
-  timeEvalMain("ESPRESO Solver Overal Timing"),
+  timeEvalMain("ESPRESO Solver Overall Timing"),
   cluster(NULL),
   solver(NULL)
 {

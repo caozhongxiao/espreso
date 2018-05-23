@@ -9,7 +9,7 @@
 #include "MultigridSolver.h"
 
 #include "../../wrappers/hypre/hypre.h"
-
+#include "../../solver/generic/SparseMatrix.h"
 #include "../../config/ecf/environment.h"
 
 using namespace espreso;
@@ -29,18 +29,39 @@ MultigridSolver::~MultigridSolver() {
 // make partial initialization according to updated matrices
 void MultigridSolver::update(Matrices matrices)
 {
-	HYPRE::Solve(environment->MPIrank, environment->MPIsize, environment->MPICommunicator );
-	ESINFO(GLOBAL_ERROR) << "Multigrid UPDATE not implemented.";
+
 }
 
 
 // run solver and store primal and dual solution
 void MultigridSolver::solve()
 {
-	ESINFO(GLOBAL_ERROR) << "Multigrid SOLVE not implemented.";
+	SparseMatrix& k = instance->K[0];
+
+	HypreRegion region;
+	region.nrows = k.rows;
+	for (eslocal i = 0; i < k.rows; i++) {
+		region.ncols.push_back(k.CSR_I_row_indices[i + 1]-k.CSR_I_row_indices[i]);
+		region.rows.push_back(i+1);
+	}
+	region.cols = k.CSR_J_col_indices.data();
+	region.values = k.CSR_V_values.data();
+
+	std::vector<HypreRegion> values;
+	values.push_back(region);
+
+	//TODO: repair this
+	instance->f[0][0]=1;
+	instance->f[0][15]=2;
+
+	HYPRE::Solve(this->configuration,
+			environment->MPIrank, environment->MPIsize, environment->MPICommunicator,
+			1, instance->K[0].rows, values,
+			instance->f[0].data(),
+			instance->primalSolution[0].data());
+
 }
 
 void MultigridSolver::finalize()
 {
-	ESINFO(GLOBAL_ERROR) << "Multigrid FINALIZE not implemented.";
 }
