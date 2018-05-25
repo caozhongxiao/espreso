@@ -56,7 +56,7 @@ void WorkbenchLoader::readData()
 	TimeEval timing("Read data from file");
 	timing.totalTime.startWithBarrier();
 
-	TimeEvent e1("prepare");
+	TimeEvent e1("FILE OPEN");
 	e1.start();
 
 	MPI_File MPIfile;
@@ -65,8 +65,20 @@ void WorkbenchLoader::readData()
 		ESINFO(ERROR) << "MPI cannot load file '" << _configuration.workbench.path << "'";
 	}
 
+	e1.end();
+	timing.addEvent(e1);
+
+	TimeEvent e2("GET SIZE");
+	e2.start();
+
 	MPI_Offset size;
 	MPI_File_get_size(MPIfile, &size);
+
+	e2.end();
+	timing.addEvent(e2);
+
+	TimeEvent e3("STD VECTORS");
+	e3.start();
 
 	size_t block = 1;
 	while (size / (1L << (block - 1)) > (1L << 31)) {
@@ -78,31 +90,43 @@ void WorkbenchLoader::readData()
 	std::vector<MPI_Aint> displacement = { (MPI_Aint)(block * fdistribution[environment->MPIrank]) };
 	std::vector<int> length = { (int)(fdistribution[environment->MPIrank + 1] - fdistribution[environment->MPIrank]) };
 
+	_data.resize(block * length.front() + MAX_LINE_STEP * MAX_LINE_SIZE);
+
 	MPI_Datatype chunk;
 	MPI_Datatype fDataDistribution;
+
+	e3.end();
+	timing.addEvent(e3);
+
+	TimeEvent e4("COMMIT DATATYPES");
+	e4.start();
 
 	MPI_Type_contiguous(block, MPI_BYTE, &chunk);
 	MPI_Type_commit(&chunk);
 	MPI_Type_create_hindexed(1, length.data(), displacement.data(), chunk, &fDataDistribution);
 	MPI_Type_commit(&fDataDistribution);
 
-	_data.resize(block * length.front() + MAX_LINE_STEP * MAX_LINE_SIZE);
+	e4.end();
+	timing.addEvent(e4);
+
+	TimeEvent e5("SET VIEW");
+	e5.start();
 
 	MPI_File_set_view(MPIfile, 0, chunk, fDataDistribution, "native", MPI_INFO_NULL);
 
-	e1.end();
-	timing.addEvent(e1);
+	e5.end();
+	timing.addEvent(e5);
 
-	TimeEvent e2("read file");
-	e2.start();
+	TimeEvent e6("READ ALL");
+	e6.start();
 
 	MPI_File_read_all(MPIfile, _data.data(), length.front(), chunk, MPI_STATUS_IGNORE);
 
-	e2.end();
-	timing.addEvent(e2);
+	e6.end();
+	timing.addEvent(e6);
 
-	TimeEvent e3("post-process");
-	e3.start();
+	TimeEvent e7("post-process");
+	e7.start();
 
 	MPI_File_close(&MPIfile);
 
@@ -153,8 +177,8 @@ void WorkbenchLoader::readData()
 	WorkbenchParser::begin = _begin;
 	WorkbenchParser::end = _end;
 
-	e3.end();
-	timing.addEvent(e3);
+	e7.end();
+	timing.addEvent(e7);
 
 	timing.totalTime.endWithBarrier();
 	timing.printStatsMPI();
