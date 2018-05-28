@@ -8,22 +8,26 @@ ROOT = os.path.dirname(ESPRESO_TESTS)
 sys.path.append(os.path.join(ESPRESO_TESTS, "utils"))
 
 from testing import *
+from snailwatch import *
 import unittest
 
 class ESPRESOBenchmarks(unittest.TestCase):
 
     espreso = Espreso()
+    snailwatch = SnailWatch()
 
-    def benchmark(self, path, file, args, report):
+    def benchmark(self, name, path, file, args, report):
         arguments = args.values()
         for key in args:
             arguments[int(key[3:])] = args[key]
-        self.espreso.run(
+        self.espreso.output(
             self.espreso.get_processes(os.path.join(path, file)),
             path,
-            { "config": os.path.join(path, file), "ENV::VERBOSE_LEVEL": 0, "ENV::MEASURE_LEVEL": 0, "OUTPUT::RESULTS_STORE_FREQUENCY": "NEVER" },
+            { "config": os.path.join(path, file), "ENV::VERBOSE_LEVEL": 1, "ENV::MEASURE_LEVEL": 1, "OUTPUT::RESULTS_STORE_FREQUENCY": "NEVER" },
             arguments
         )
+
+        self.snailwatch.push(name, os.path.join(path, "results", "last", file.replace(".ecf", ".log")))
 
         self.espreso.compare_monitors(
             os.path.join(path, report),
@@ -41,7 +45,7 @@ if __name__ == '__main__':
             report = ".".join([ args[var] for var in vars ])
             if len(report) == 0:
                 report = "espreso"
-            TestCaseCreator.create_test(ESPRESOBenchmarks, ESPRESOBenchmarks.benchmark, name + "." + report, path, file, args, report + ".emr")
+            TestCaseCreator.create_test(ESPRESOBenchmarks, ESPRESOBenchmarks.benchmark, name + "." + report, name, path, file, args, report + ".emr")
 
         TestCaseCreator.iterate(call, range)
 
