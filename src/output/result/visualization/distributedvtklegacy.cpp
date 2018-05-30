@@ -1211,7 +1211,13 @@ void VTKLegacyDebugInfo::spaceFillingCurve(const SpaceFillingCurve &sfc, const s
 	}
 	n = 1 << maxdepth;
 
-	os << "POINTS " << pow(n + 1, sfc.dimension()) << " float\n";
+	size_t points = pow(n + 1, sfc.dimension());
+	size_t cells = 0;
+	sfc.iterateBuckets(bucketsBorders.front(), bucketsBorders.back(), [&] (size_t depth, size_t index) {
+		++cells;
+	});
+
+	os << "POINTS " << points + cells << " float\n";
 
 	for (size_t k = 0; k <= n; k++) {
 		for (size_t j = 0; j <= n; j++) {
@@ -1225,16 +1231,47 @@ void VTKLegacyDebugInfo::spaceFillingCurve(const SpaceFillingCurve &sfc, const s
 			}
 		}
 	}
-	os << "\n";
 
-	size_t cells = 0;
-	sfc.iterateBuckets(bucketsBorders.front(), bucketsBorders.back(), [&] (size_t depth, size_t index) {
-		++cells;
-	});
-
-	os << "CELLS " << cells << " " << cells + sfc.bucketSize() * cells << "\n";
+	Point step;
+	step.x = sfc.size().x / n;
+	step.y = sfc.size().y / n;
+	step.z = sfc.size().z / n;
 
 	size_t bstep, x, y, z;
+	if (sfc.dimension() == 2) {
+		sfc.iterateBuckets(bucketsBorders.front(), bucketsBorders.back(), [&] (size_t depth, size_t x, size_t y) {
+			bstep = 1 << (maxdepth - depth);
+
+			Point center;
+			center.x += 2 * (sfc.origin().x + bstep * (x + 0) * step.x);
+			center.x += 2 * (sfc.origin().x + bstep * (x + 1) * step.x);
+			center.y += 2 * (sfc.origin().y + bstep * (y + 0) * step.y);
+			center.y += 2 * (sfc.origin().y + bstep * (y + 1) * step.y);
+			center /= 4;
+			os << center.x << " " << center.y << " 0\n";
+		});
+	}
+
+	if (sfc.dimension() == 3) {
+		sfc.iterateBuckets(bucketsBorders.front(), bucketsBorders.back(), [&] (size_t depth, size_t x, size_t y, size_t z) {
+			bstep = 1 << (maxdepth - depth);
+
+			Point center;
+			center.x += 4 * (sfc.origin().x + bstep * (x + 0) * step.x);
+			center.x += 4 * (sfc.origin().x + bstep * (x + 1) * step.x);
+			center.y += 4 * (sfc.origin().y + bstep * (y + 0) * step.y);
+			center.y += 4 * (sfc.origin().y + bstep * (y + 1) * step.y);
+			center.z += 4 * (sfc.origin().z + bstep * (z + 0) * step.z);
+			center.z += 4 * (sfc.origin().z + bstep * (z + 1) * step.z);
+			center /= 8;
+			os << center.x << " " << center.y << " " << center.z << "\n";
+		});
+	}
+
+	os << "\n";
+
+	os << "CELLS " << 2 * cells - 1 << " " << cells + sfc.bucketSize() * cells + 3 * (cells - 1) << "\n";
+
 	if (sfc.dimension() == 2) {
 		sfc.iterateBuckets(bucketsBorders.front(), bucketsBorders.back(), [&] (size_t depth, size_t x, size_t y) {
 			bstep = 1 << (maxdepth - depth);
@@ -1261,9 +1298,16 @@ void VTKLegacyDebugInfo::spaceFillingCurve(const SpaceFillingCurve &sfc, const s
 		});
 	}
 
+	size_t i = 0;
+	sfc.iterateBuckets(bucketsBorders.front(), bucketsBorders.back(), [&] (size_t depth, size_t x, size_t y, size_t z) {
+		if (++i < cells) {
+			os << "2 " << points + i - 1 << " " << points + i << "\n";
+		}
+	});
+
 	os << "\n";
 
-	os << "CELL_TYPES " << cells << "\n";
+	os << "CELL_TYPES " << 2 * cells - 1 << "\n";
 	for (size_t i = 0; i < cells; i++) {
 		if (sfc.dimension() == 2) {
 			os << "9\n";
@@ -1272,15 +1316,21 @@ void VTKLegacyDebugInfo::spaceFillingCurve(const SpaceFillingCurve &sfc, const s
 			os << "12\n";
 		}
 	}
+	for (size_t i = 1; i < cells; i++) {
+		os << "3\n";
+	}
 	os << "\n";
 
-	os << "CELL_DATA " << cells << "\n";
+	os << "CELL_DATA " << 2 * cells - 1 << "\n";
 	os << "SCALARS MPI int 1\n";
 	os << "LOOKUP_TABLE default\n";
 	for (int r = 0; r < environment->MPIsize; r++) {
 		sfc.iterateBuckets(bucketsBorders[r], bucketsBorders[r + 1], [&] (size_t depth, size_t index) {
 			os << r << "\n";
 		});
+	}
+	for (size_t i = 1; i < cells; i++) {
+		os << environment->MPIsize << "\n";
 	}
 	os << "\n";
 
