@@ -413,7 +413,7 @@ void RandomInput::clusterize()
 	sBuffer.reserve(
 			5 * environment->MPIsize +
 			_meshData.esize.size() +
-			_meshData.edata.size() * sizeof(EData) / sizeof(eslocal) +
+			_meshData.edata.size() * sizeof(PlainElement) / sizeof(eslocal) +
 			_meshData.enodes.size() +
 			_meshData.nIDs.size() +
 			_meshData.coordinates.size() * sizeof(Point) / sizeof(eslocal));
@@ -474,7 +474,7 @@ void RandomInput::clusterize()
 	_meshData.coordinates.clear();
 
 	size_t offset = 0;
-	EData edata;
+	PlainElement edata;
 	Point point;
 	for (int r = 0; r < environment->MPIsize; r++) {
 		++offset;
@@ -485,9 +485,9 @@ void RandomInput::clusterize()
 
 		for (size_t e = 0; e < esize; ++e) {
 			_meshData.esize.push_back(rBuffer[offset++]);
-			memcpy(&edata, rBuffer.data() + offset, sizeof(EData));
+			memcpy(&edata, rBuffer.data() + offset, sizeof(PlainElement));
 			_meshData.edata.push_back(edata);
-			offset += sizeof(EData) / sizeof(eslocal);
+			offset += sizeof(PlainElement) / sizeof(eslocal);
 			_meshData.enodes.insert(_meshData.enodes.end(), rBuffer.begin() + offset, rBuffer.begin() + offset + _meshData.esize.back());
 			offset += _meshData.esize.back();
 		}

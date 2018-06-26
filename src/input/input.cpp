@@ -50,7 +50,7 @@ void Input::balance()
 		balancePermutedNodes();
 	}
 
-	sorted = std::is_sorted(_meshData.edata.begin(), _meshData.edata.end(), [] (const EData &e1, const EData &e2) { return e1.id < e2.id; });
+	sorted = std::is_sorted(_meshData.edata.begin(), _meshData.edata.end(), [] (const PlainElement &e1, const PlainElement &e2) { return e1.id < e2.id; });
 	MPI_Allreduce(&sorted, &allSorted, 1, MPI_INT, MPI_MIN, environment->MPICommunicator);
 
 	if (allSorted) {
@@ -183,7 +183,7 @@ void Input::balancePermutedElements()
 
 	_eDistribution = tarray<eslocal>::distribute(environment->MPIsize, maxID + 1);
 	std::vector<std::vector<eslocal> > sSize, sNodes, rSize, rNodes;
-	std::vector<std::vector<EData> > sEData, rEData;
+	std::vector<std::vector<PlainElement> > sEData, rEData;
 	std::vector<int> targets;
 	std::vector<eslocal> edist = { 0 };
 	edist.reserve(_meshData.esize.size() + 1);

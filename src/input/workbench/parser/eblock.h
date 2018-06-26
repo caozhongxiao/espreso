@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-struct EData;
+struct PlainElement;
 struct ET;
 
 struct EBlock: public WorkbenchParser {
@@ -25,11 +25,11 @@ struct EBlock: public WorkbenchParser {
 	bool solidBlock();
 
 	void fixOffsets(std::vector<size_t> &dataOffsets);
-	bool readData(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &data);
+	bool readData(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<PlainElement> &data);
 
 protected:
-	bool solid(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &data);
-	bool boundary(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<EData> &edata);
+	bool solid(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<PlainElement> &data);
+	bool boundary(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &nodes, std::vector<PlainElement> &edata);
 };
 
 }

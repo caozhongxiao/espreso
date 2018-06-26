@@ -399,22 +399,14 @@ void WorkbenchLoader::parseData(PlainMeshData &meshData)
 	for (size_t i = 0; i < _CMBlocks.size(); i++) {
 		switch (_CMBlocks[i].entity) {
 		case CMBlock::Entity::NODE: {
-			meshData.nregions.push_back(MeshNRegion());
-			meshData.nregions.back().name = _CMBlocks[i].name;
-			if (!_CMBlocks[i].readData(meshData.nregions.back().nodes)) {
+			if (!_CMBlocks[i].readData(meshData.nregions[_CMBlocks[i].name])) {
 				ESINFO(ERROR) << "Workbench parser: something wrong happens while read CMBLOCK.";
 			}
 		} break;
 		case CMBlock::Entity::ELEMENT: {
-			meshData.eregions.push_back(MeshERegion());
-			meshData.eregions.back().name = _CMBlocks[i].name;
-			if (!_CMBlocks[i].readData(meshData.eregions.back().elements)) {
+			if (!_CMBlocks[i].readData(meshData.eregions[_CMBlocks[i].name])) {
 				ESINFO(ERROR) << "Workbench parser: something wrong happens while read CMBLOCK.";
 			}
-			meshData.eregions.back().min = meshData.eregions.back().elements.size() ? meshData.eregions.back().elements.front() : 0;
-			meshData.eregions.back().max = meshData.eregions.back().elements.size() ? meshData.eregions.back().elements.back() : 0;
-			MPI_Bcast(&meshData.eregions.back().min, sizeof(eslocal), MPI_BYTE, _CMBlocks[i].fRank, environment->MPICommunicator);
-			MPI_Bcast(&meshData.eregions.back().max, sizeof(eslocal), MPI_BYTE, _CMBlocks[i].lRank, environment->MPICommunicator);
 		} break;
 		default:
 			ESINFO(ERROR) << "ESPRESO Workbench parser: unknown CMBLOCK type.";
@@ -422,10 +414,6 @@ void WorkbenchLoader::parseData(PlainMeshData &meshData)
 	}
 
 	for (size_t i = 0; i < _CM.size(); i++) {
-		_CM[i].addRegion(_ESel, meshData.edata, meshData.eregions, _NSel, meshData.nregions);
-		meshData.eregions.back().min = meshData.eregions.back().elements.size() ? meshData.eregions.back().elements.front() : 0;
-		meshData.eregions.back().max = meshData.eregions.back().elements.size() ? meshData.eregions.back().elements.back() : 0;
-		MPI_Bcast(&meshData.eregions.back().min, sizeof(eslocal), MPI_BYTE, _CM[i].fRank, environment->MPICommunicator);
-		MPI_Bcast(&meshData.eregions.back().max, sizeof(eslocal), MPI_BYTE, _CM[i].lRank, environment->MPICommunicator);
+		_CM[i].addRegion(meshData.edata, _ESel, meshData.eregions, _NSel, meshData.nregions);
 	}
 }

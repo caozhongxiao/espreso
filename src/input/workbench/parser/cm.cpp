@@ -68,12 +68,13 @@ CM& CM::parse(const char* begin)
 }
 
 bool CM::addRegion(
-		const std::vector<ESel> &esel, const std::vector<EData> &elements, std::vector<MeshERegion> &eregions,
-		const std::vector<NSel> &nsel, std::vector<MeshNRegion> &nregions)
+		const std::vector<PlainElement> &elements,
+		const std::vector<ESel> &esel, std::map<std::string, std::vector<eslocal> > &eregions,
+		const std::vector<NSel> &nsel, std::map<std::string, std::vector<eslocal> > &nregions)
 {
 	switch (entity) {
 	case Entity::ELEMENTS:
-		return addElementRegion(esel, elements, eregions);
+		return addElementRegion(elements, esel, eregions);
 	case Entity::NODES:
 		return addNodeRegion(nsel, nregions);
 	default:
@@ -81,7 +82,7 @@ bool CM::addRegion(
 	}
 }
 
-bool CM::addElementRegion(const std::vector<ESel> &esel, const std::vector<EData> &elements, std::vector<MeshERegion> &eregions)
+bool CM::addElementRegion(const std::vector<PlainElement> &elements, const std::vector<ESel> &esel, std::map<std::string, std::vector<eslocal> > &eregions)
 {
 	// clear relevant set means all elements
 	std::vector<ESel> relevant;
@@ -123,8 +124,7 @@ bool CM::addElementRegion(const std::vector<ESel> &esel, const std::vector<EData
 		}
 	};
 
-	eregions.push_back(MeshERegion());
-	eregions.back().name = name;
+	std::vector<eslocal> &data = eregions[name];
 	for (size_t i = 0; i < relevant.size(); i++) {
 		switch (relevant[i].item) {
 
@@ -184,14 +184,14 @@ bool CM::addElementRegion(const std::vector<ESel> &esel, const std::vector<EData
 	}
 
 	for (size_t t = 0; t < threads; t++) {
-		eregions.back().elements.insert(eregions.back().elements.end(), eid[t].begin(), eid[t].end());
+		data.insert(data.end(), eid[t].begin(), eid[t].end());
 	}
-	std::sort(eregions.back().elements.begin(), eregions.back().elements.end());
+	std::sort(data.begin(), data.end());
 
 	return true;
 }
 
-bool CM::addNodeRegion(const std::vector<NSel> &nsel, std::vector<MeshNRegion> &nregions)
+bool CM::addNodeRegion(const std::vector<NSel> &nsel, std::map<std::string, std::vector<eslocal> > &nregions)
 {
 	return false;
 }

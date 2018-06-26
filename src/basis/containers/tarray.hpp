@@ -95,6 +95,11 @@ tarray<TType>::tarray(size_t threads, size_t size)
 }
 
 template <typename TType>
+tarray<TType>::tarray(size_t threads, const std::vector<TType> &data)
+: tarray<TType>(tarray<TType>::distribute(threads, data.size()), data)
+{ }
+
+template <typename TType>
 tarray<TType>::tarray(const std::vector<std::vector<TType> > &data)
 : _size(0), _data(NULL)
 {

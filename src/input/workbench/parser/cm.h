@@ -4,10 +4,12 @@
 
 #include "../parser/parser.h"
 
+#include <map>
+
 namespace espreso {
 
 struct ESel;
-struct EData;
+struct PlainElement;
 struct MeshERegion;
 
 struct NSel;
@@ -34,12 +36,13 @@ struct CM: public WorkbenchParser {
 	CM& parse(const char* begin);
 
 	bool addRegion(
-			const std::vector<ESel> &esel, const std::vector<EData> &elements, std::vector<MeshERegion> &eregions,
-			const std::vector<NSel> &nsel, std::vector<MeshNRegion> &nregions);
+			const std::vector<PlainElement> &elements,
+			const std::vector<ESel> &esel, std::map<std::string, std::vector<eslocal> > &eregions,
+			const std::vector<NSel> &nsel, std::map<std::string, std::vector<eslocal> > &nregions);
 
 protected:
-	bool addElementRegion(const std::vector<ESel> &esel, const std::vector<EData> &elements, std::vector<MeshERegion> &eregions);
-	bool addNodeRegion(const std::vector<NSel> &nsel, std::vector<MeshNRegion> &nregions);
+	bool addElementRegion(const std::vector<PlainElement> &elements, const std::vector<ESel> &esel, std::map<std::string, std::vector<eslocal> > &eregions);
+	bool addNodeRegion(const std::vector<NSel> &nsel, std::map<std::string, std::vector<eslocal> > &nregions);
 };
 
 }

@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-struct EData;
+struct PlainElement;
 
 struct ET: public WorkbenchParser {
 	static size_t size;

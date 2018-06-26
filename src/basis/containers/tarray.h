@@ -19,6 +19,7 @@ public:
 	static std::vector<size_t> distribute(size_t threads, size_t size);
 
 	tarray(size_t threads, size_t size);
+	tarray(size_t threads, const std::vector<TType> &data);
 	tarray(const std::vector<std::vector<TType> > &data);
 	tarray(const std::vector<TType> &data);
 	tarray(const std::vector<size_t> &distribution, const std::vector<TType> &data);

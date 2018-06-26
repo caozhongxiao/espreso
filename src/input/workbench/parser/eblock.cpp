@@ -117,17 +117,16 @@ void EBlock::fixOffsets(std::vector<size_t> &dataOffsets)
 	}
 }
 
-bool EBlock::readData(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &enodes, std::vector<EData> &edata)
+bool EBlock::readData(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &enodes, std::vector<PlainElement> &edata)
 {
 	if (Solkey) {
 		return solid(et, esize, enodes, edata);
 	} else {
-		return true;
 		return boundary(et, esize, enodes, edata);
 	}
 }
 
-bool EBlock::solid(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &enodes, std::vector<EData> &edata)
+bool EBlock::solid(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &enodes, std::vector<PlainElement> &edata)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -137,7 +136,7 @@ bool EBlock::solid(const std::vector<ET> &et, std::vector<eslocal> &esize, std::
 	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, size);
 
 	std::vector<std::vector<eslocal> > tesize(threads), tnodes(threads);
-	std::vector<std::vector<EData> > tdata(threads);
+	std::vector<std::vector<PlainElement> > tdata(threads);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -146,7 +145,7 @@ bool EBlock::solid(const std::vector<ET> &et, std::vector<eslocal> &esize, std::
 		int nnodes;
 
 		for (auto element = first + elementSize * tdistribution[t]; element < first + elementSize * tdistribution[t + 1];) {
-			tdata[t].push_back(EData());
+			tdata[t].push_back(PlainElement());
 			tdata[t].back().body = 0;
 			tdata[t].back().material = atoi(element) - 1; element += valueLength; // material
 			tdata[t].back().etype = atoi(element) - 1; element += valueLength; // etype
@@ -298,7 +297,7 @@ bool EBlock::solid(const std::vector<ET> &et, std::vector<eslocal> &esize, std::
 	return true;
 }
 
-bool EBlock::boundary(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &enodes, std::vector<EData> &edata)
+bool EBlock::boundary(const std::vector<ET> &et, std::vector<eslocal> &esize, std::vector<eslocal> &enodes, std::vector<PlainElement> &edata)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -308,7 +307,7 @@ bool EBlock::boundary(const std::vector<ET> &et, std::vector<eslocal> &esize, st
 	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, size);
 
 	std::vector<std::vector<eslocal> > tesize(threads), tnodes(threads);
-	std::vector<std::vector<EData> > tdata(threads);
+	std::vector<std::vector<PlainElement> > tdata(threads);
 	int nodes = valueSize - 5;
 
 	if (nodes != 4 && nodes != 8 && nodes != 2 && nodes != 3) {
@@ -321,7 +320,7 @@ bool EBlock::boundary(const std::vector<ET> &et, std::vector<eslocal> &esize, st
 		std::vector<eslocal> nindices(20);
 
 		for (auto element = first + elementSize * tdistribution[t]; element < first + elementSize * tdistribution[t + 1];) {
-			tdata[t].push_back(EData());
+			tdata[t].push_back(PlainElement());
 			tdata[t].back().id = atoi(element) - 1; element += valueLength; // element ID
 			element += valueLength; // section ID
 			element += valueLength; // real constant

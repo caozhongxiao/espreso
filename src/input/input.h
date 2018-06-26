@@ -7,35 +7,18 @@
 #include <cstddef>
 #include <string>
 #include <vector>
+#include <map>
 
 namespace espreso {
 
 class ECFRoot;
 class Mesh;
 
-struct EData {
+struct PlainElement {
 	eslocal id;
 	int etype;
 	int body;
 	int material;
-};
-
-struct MeshERegion {
-	std::string name;
-	std::vector<eslocal> elements;
-	eslocal min, max;
-};
-
-struct MeshBRegion {
-	std::string name;
-	std::vector<eslocal> esize, enodes;
-	std::vector<EData> edata;
-	eslocal min, max;
-};
-
-struct MeshNRegion {
-	std::string name;
-	std::vector<eslocal> nodes;
 };
 
 struct PlainMeshData {
@@ -43,11 +26,10 @@ struct PlainMeshData {
 	std::vector<Point> coordinates;
 
 	std::vector<eslocal> esize, enodes;
-	std::vector<EData> edata;
+	std::vector<PlainElement> edata;
 
-	std::vector<MeshERegion> eregions;
-	std::vector<MeshBRegion> bregions;
-	std::vector<MeshNRegion> nregions;
+	std::map<std::string, std::vector<eslocal> > eregions;
+	std::map<std::string, std::vector<eslocal> > nregions;
 };
 
 class Input {
