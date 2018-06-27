@@ -591,8 +591,12 @@ void Mesh::update()
 		preprocessing->searchContactInterfaces();
 	}
 
-	printMeshStatistics();
-	printDecompositionStatistics();
+	if (environment->verbose_level > 0) {
+		printMeshStatistics();
+	}
+	if (environment->verbose_level > 1) {
+		printDecompositionStatistics();
+	}
 }
 
 void Mesh::initNodeData()
