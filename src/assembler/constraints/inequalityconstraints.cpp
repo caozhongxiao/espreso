@@ -1,13 +1,5 @@
 
-#include "inequalityconstraints.h"
-
-#include "../../basis/utilities/utils.h"
-
-#include "../../config/ecf/environment.h"
-
-#include "../../solver/generic/SparseMatrix.h"
-
-#include <numeric>
+#include "constraints.h"
 
 using namespace espreso;
 //

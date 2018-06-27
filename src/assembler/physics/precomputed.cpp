@@ -4,7 +4,7 @@
 #include "../step.h"
 #include "../instance.h"
 
-#include "../constraints/equalityconstraints.h"
+#include "../constraints/constraints.h"
 
 #include "../../basis/matrices/sparseVVPMatrix.h"
 #include "../../basis/matrices/sparseCSRMatrix.h"

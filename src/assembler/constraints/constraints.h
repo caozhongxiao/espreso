@@ -1,6 +1,6 @@
 
-#ifndef SRC_ASSEMBLER_CONSTRAINTS_EQUALITYCONSTRAINTS_H_
-#define SRC_ASSEMBLER_CONSTRAINTS_EQUALITYCONSTRAINTS_H_
+#ifndef SRC_ASSEMBLER_CONSTRAINTS_CONSTRAINTS_H_
+#define SRC_ASSEMBLER_CONSTRAINTS_CONSTRAINTS_H_
 
 #include <utility>
 #include <vector>
@@ -22,10 +22,10 @@ class SparseMatrix;
 struct BoundaryRegionStore;
 class Evaluator;
 
-struct EqualityConstraints
+struct Constraints
 {
-	EqualityConstraints(Instance &instance, Mesh &mesh, const RegionMap<ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling);
-	EqualityConstraints(Instance &instance, Mesh &mesh, const RegionMap<ECFExpressionOptionalVector> &dirichlet, int DOFs, bool withRedundantMultiplier, bool withScaling);
+	Constraints(Instance &instance, Mesh &mesh, const RegionMap<ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling);
+	Constraints(Instance &instance, Mesh &mesh, const RegionMap<ECFExpressionOptionalVector> &dirichlet, int DOFs, bool withRedundantMultiplier, bool withScaling);
 	void update(const RegionMap<ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling);
 	void update(const RegionMap<ECFExpressionOptionalVector> &dirichlet, bool withRedundantMultiplier, bool withScaling);
 
@@ -66,4 +66,4 @@ protected:
 
 
 
-#endif /* SRC_ASSEMBLER_CONSTRAINTS_EQUALITYCONSTRAINTS_H_ */
+#endif /* SRC_ASSEMBLER_CONSTRAINTS_CONSTRAINTS_H_ */

@@ -8,14 +8,14 @@
 #include "../instance.h"
 #include "../step.h"
 
+#include "../constraints/constraints.h"
+
 #include "../../mesh/mesh.h"
 #include "../../mesh/elements/element.h"
 #include "../../mesh/store/nodestore.h"
 #include "../../mesh/store/elementstore.h"
 #include "../../mesh/store/boundaryregionstore.h"
 #include "../../mesh/store/elementsregionstore.h"
-
-#include "../constraints/equalityconstraints.h"
 
 #include "../../solver/generic/SparseMatrix.h"
 #include "../../basis/matrices/sparseVVPMatrix.h"
@@ -31,13 +31,13 @@
 using namespace espreso;
 
 Physics::Physics()
-: _name(""), _mesh(NULL), _instance(NULL), _step(NULL), _equalityConstraints(NULL), _configuration(NULL), _DOFs(0), _invalidElements(0)
+: _name(""), _mesh(NULL), _instance(NULL), _step(NULL), _constraints(NULL), _configuration(NULL), _DOFs(0), _invalidElements(0)
 {
 
 }
 
 Physics::Physics(const std::string &name, Mesh *mesh, Instance *instance, Step *step, const PhysicsConfiguration *configuration, int DOFs)
-: _name(name), _mesh(mesh), _instance(instance), _step(step), _equalityConstraints(NULL), _configuration(configuration), _DOFs(DOFs), _invalidElements(0) // initialized in a particular physics
+: _name(name), _mesh(mesh), _instance(instance), _step(step), _constraints(NULL), _configuration(configuration), _DOFs(DOFs), _invalidElements(0) // initialized in a particular physics
 {
 	std::vector<int> BEMRegions(_mesh->elements->regionMaskSize);
 	for (auto it = configuration->discretization.begin(); it != configuration->discretization.end(); ++it) {
@@ -66,8 +66,8 @@ Physics::Physics(const std::string &name, Mesh *mesh, Instance *instance, Step *
 
 Physics::~Physics()
 {
-	if (_equalityConstraints != NULL) {
-		delete _equalityConstraints;
+	if (_constraints != NULL) {
+		delete _constraints;
 	}
 #ifdef BEM4I
 	for (size_t i = 0; i < _BEMData.size(); i++) {
@@ -402,30 +402,30 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumRes
 
 void Physics::assembleB1(bool withRedundantMultipliers, bool withGluing, bool withScaling)
 {
-	_equalityConstraints->B1DirichletInsert(*_step);
+	_constraints->B1DirichletInsert(*_step);
 	if (withGluing) {
-		_equalityConstraints->B1GlueElements();
+		_constraints->B1GlueElements();
 	}
 }
 
 void Physics::updateDirichletInB1(bool withRedundantMultipliers)
 {
-	_equalityConstraints->B1DirichletUpdate(*_step);
+	_constraints->B1DirichletUpdate(*_step);
 }
 
 void Physics::updateDuplicity()
 {
-	_equalityConstraints->B1DuplicityUpdate();
+	_constraints->B1DuplicityUpdate();
 }
 
 void Physics::assembleB0FromCorners()
 {
-	_equalityConstraints->B0Corners();
+	_constraints->B0Corners();
 }
 
 void Physics::assembleB0FromKernels(const std::vector<SparseMatrix> &kernels)
 {
-	_equalityConstraints->B0Kernels(kernels);
+	_constraints->B0Kernels(kernels);
 }
 
 void Physics::smoothstep(double &smoothStep, double &derivation, double edge0, double edge1, double value, size_t order)

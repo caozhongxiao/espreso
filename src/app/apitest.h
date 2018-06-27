@@ -9,7 +9,7 @@
 #include "../mesh/mesh.h"
 #include "../assembler/step.h"
 #include "../assembler/instance.h"
-#include "../assembler/constraints/equalityconstraints.h"
+#include "../assembler/constraints/constraints.h"
 #include "../assembler/physics/physics.h"
 #include "../assembler/physicssolver/assembler.h"
 #include "../config/ecf/root.h"
@@ -79,7 +79,7 @@ public:
 
 	void fillDirichlet(std::vector<FETI4IInt> &dirichlet_indices, std::vector<FETI4IReal> &dirichlet_values)
 	{
-		factory._loader->_physics[0]->_equalityConstraints->B1DirichletInsert(step);
+		factory._loader->_physics[0]->_constraints->B1DirichletInsert(step);
 		for (auto it = factory._loader->_instances[0]->B1[0].J_col_indices.begin(); it != factory._loader->_instances[0]->B1[0].J_col_indices.end(); ++it) {
 			dirichlet_indices.push_back(*it - 1);
 		}

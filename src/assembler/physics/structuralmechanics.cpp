@@ -4,7 +4,7 @@
 #include "../instance.h"
 #include "../step.h"
 
-#include "../constraints/equalityconstraints.h"
+#include "../constraints/constraints.h"
 
 #include "../../basis/matrices/denseMatrix.h"
 #include "../../basis/evaluator/evaluator.h"
@@ -35,7 +35,7 @@ StructuralMechanics::StructuralMechanics(const StructuralMechanicsConfiguration 
 		}
 	}
 
-	_equalityConstraints = new EqualityConstraints(
+	_constraints = new Constraints(
 			*_instance,
 			*_mesh,
 			configuration.load_steps_settings.at(1).displacement, DOFs,
@@ -59,7 +59,7 @@ StructuralMechanics::StructuralMechanics(const StructuralMechanicsConfiguration 
 void StructuralMechanics::setDirichlet()
 {
 	if (_step->step) {
-		_equalityConstraints->update(
+		_constraints->update(
 				_configuration.load_steps_settings.at(_step->step + 1).displacement,
 				_configuration.load_steps_settings.at(_step->step + 1).feti.redundant_lagrange,
 				_configuration.load_steps_settings.at(_step->step + 1).feti.scaling);

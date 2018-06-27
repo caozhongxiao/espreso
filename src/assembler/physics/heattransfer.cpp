@@ -4,7 +4,7 @@
 #include "../instance.h"
 #include "../step.h"
 
-#include "../constraints/equalityconstraints.h"
+#include "../constraints/constraints.h"
 
 #include "../../basis/containers/point.h"
 #include "../../basis/containers/serializededata.h"
@@ -38,7 +38,7 @@ HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration, const
 		}
 	}
 
-	_equalityConstraints = new EqualityConstraints(
+	_constraints = new Constraints(
 			*_instance,
 			*_mesh,
 			configuration.load_steps_settings.at(1).temperature,
@@ -65,7 +65,7 @@ HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration, const
 void HeatTransfer::setDirichlet()
 {
 	if (_step->step) {
-		_equalityConstraints->update(
+		_constraints->update(
 				_configuration.load_steps_settings.at(_step->step + 1).temperature,
 				_configuration.load_steps_settings.at(_step->step + 1).feti.redundant_lagrange,
 				_configuration.load_steps_settings.at(_step->step + 1).feti.scaling);

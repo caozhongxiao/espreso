@@ -1,5 +1,5 @@
 
-#include "equalityconstraints.h"
+#include "constraints.h"
 
 #include "../instance.h"
 #include "../step.h"
@@ -14,21 +14,14 @@
 #include "../../mesh/mesh.h"
 #include "../../mesh/store/elementstore.h"
 #include "../../mesh/store/nodestore.h"
-#include "../../mesh/store/boundaryregionstore.h"
 #include "../../mesh/store/fetidatastore.h"
 #include "../../config/ecf/environment.h"
-#include "../../config/ecf/physics/physics.h"
 
 #include <numeric>
 #include <algorithm>
 
 using namespace espreso;
 
-EqualityConstraints::EqualityConstraints(Instance &instance, Mesh &mesh, const RegionMap<ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling)
-: _instance(instance), _mesh(mesh), _DOFs(1)
-{
-	update(dirichlet, withRedundantMultiplier, withScaling);
-}
 
 EqualityConstraints::EqualityConstraints(Instance &instance, Mesh &mesh, const RegionMap<ECFExpressionOptionalVector> &dirichlet, int DOFs, bool withRedundantMultiplier, bool withScaling)
 : _instance(instance), _mesh(mesh), _DOFs(DOFs)
@@ -346,7 +339,7 @@ void EqualityConstraints::B1DirichletInsert(const Step &step)
 	}
 }
 
-void EqualityConstraints::B1DirichletUpdate(const Step &step)
+void Constraints::B1DirichletUpdate(const Step &step)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -387,7 +380,7 @@ void EqualityConstraints::B1DirichletUpdate(const Step &step)
 	}
 }
 
-void EqualityConstraints::B1GlueElements()
+void Constraints::B1GlueElements()
 {
 	auto redundantglue = [&] (eslocal d, size_t i, eslocal begin, eslocal end, eslocal &LMcounter, int dof) {
 		const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
@@ -526,7 +519,7 @@ void EqualityConstraints::B1GlueElements()
 	}
 }
 
-void EqualityConstraints::B1DuplicityUpdate()
+void Constraints::B1DuplicityUpdate()
 {
 	if (!_withScaling || !_withRedundantMultipliers) {
 		return;
@@ -664,7 +657,7 @@ void EqualityConstraints::B1DuplicityUpdate()
 	}
 }
 
-void EqualityConstraints::B0Kernels(const std::vector<SparseMatrix> &kernels)
+void Constraints::B0Kernels(const std::vector<SparseMatrix> &kernels)
 {
 	std::vector<eslocal> rowIndex(_mesh.FETIData->inodesDomains.size());
 	std::vector<eslocal> rCounters(*std::max_element(_mesh.elements->clusters.begin(), _mesh.elements->clusters.end()) + 1);
@@ -743,7 +736,7 @@ void EqualityConstraints::B0Kernels(const std::vector<SparseMatrix> &kernels)
 	}
 }
 
-void EqualityConstraints::B0Corners()
+void Constraints::B0Corners()
 {
 	for (size_t d = 0; d < _instance.domains; d++) {
 		_instance.B0[d].cols = _instance.K[d].cols;
@@ -793,9 +786,10 @@ void EqualityConstraints::B0Corners()
 	}
 }
 
+
 #ifndef HAVE_MORTAR
 
-void EqualityConstraints::insertMortarGluingToB1(const Step &step, const std::string &master, const std::string &slave)
+void Constraints::insertMortarGluingToB1(const Step &step, const std::string &master, const std::string &slave)
 {
 	ESINFO(GLOBAL_ERROR) << "Link 'mortarc' library.";
 }
@@ -804,7 +798,7 @@ void EqualityConstraints::insertMortarGluingToB1(const Step &step, const std::st
 
 #include "mortar.h"
 
-void EqualityConstraints::insertMortarGluingToB1(const Step &step, const std::string &master, const std::string &slave)
+void Constraints::insertMortarGluingToB1(const Step &step, const std::string &master, const std::string &slave)
 {
 
 	std::vector<int> rows;
@@ -915,4 +909,3 @@ void EqualityConstraints::insertMortarGluingToB1(const Step &step, const std::st
 }
 
 #endif
-

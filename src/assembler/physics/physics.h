@@ -17,7 +17,7 @@ template<typename TIndices> class SparseVVPMatrix;
 class DenseMatrix;
 class Mesh;
 class Instance;
-class EqualityConstraints;
+class Constraints;
 class SparseMatrix;
 struct PhysicsConfiguration;
 
@@ -89,7 +89,7 @@ protected:
 	Mesh *_mesh;
 	Instance *_instance;
 	Step *_step;
-	EqualityConstraints *_equalityConstraints;
+	Constraints *_constraints;
 
 	const PhysicsConfiguration *_configuration;
 
