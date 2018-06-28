@@ -1,23 +1,23 @@
 
-#ifndef SRC_OUTPUT_RESULT_VISUALIZATION_DISTRIBUTEDVTKLEGACY_H_
-#define SRC_OUTPUT_RESULT_VISUALIZATION_DISTRIBUTEDVTKLEGACY_H_
+#ifndef SRC_OUTPUT_RESULT_VISUALIZATION_SEPARATED_VTKLEGACY_H_
+#define SRC_OUTPUT_RESULT_VISUALIZATION_SEPARATED_VTKLEGACY_H_
 
 #include <string>
 #include <vector>
 
-#include "distributedvisualization.h"
+#include "separatedvisualization.h"
 
 namespace espreso {
 
 struct Instance;
 struct SpaceFillingCurve;
 
-struct DistributedVTKLegacy: public DistributedVisualization {
+struct VTKLegacy: public SeparatedVisualization {
 
 	static double clusterShrinkRatio, domainShrinkRatio;
 
 protected:
-	DistributedVTKLegacy(const Mesh &mesh, const OutputConfiguration &configuration);
+	VTKLegacy(const Mesh &mesh, const OutputConfiguration &configuration);
 
 	void mesh(const std::string &name);
 	void solution(const std::string &name);
@@ -36,7 +36,7 @@ protected:
 	void points(const std::string &name, const std::vector<eslocal> &points, const std::vector<eslocal> &distribution);
 };
 
-struct VTKLegacyDebugInfo: public DistributedVTKLegacy {
+struct VTKLegacyDebugInfo: public VTKLegacy {
 
 	VTKLegacyDebugInfo(const Mesh &mesh, const OutputConfiguration &configuration);
 
@@ -72,4 +72,4 @@ protected:
 }
 
 
-#endif /* SRC_OUTPUT_RESULT_VISUALIZATION_DISTRIBUTEDVTKLEGACY_H_ */
+#endif /* SRC_OUTPUT_RESULT_VISUALIZATION_SEPARATED_VTKLEGACY_H_ */

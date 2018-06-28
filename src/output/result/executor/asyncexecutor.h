@@ -69,7 +69,7 @@ public:
 	virtual const Mesh& mesh() const { return _executor.mesh(); }
 
 	bool isCollected();
-	bool isDistributed();
+	bool isSeparated();
 
 	void addResultStore(ResultStoreBase *resultStore);
 	bool hasStore();

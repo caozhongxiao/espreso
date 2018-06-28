@@ -11,9 +11,9 @@
 #include "async/Dispatcher.h"
 
 #include "monitors/monitoring.h"
-#include "visualization/collectedensight.h"
-#include "visualization/distributedvtklegacy.h"
-#include "visualization/insituvisualization.h"
+#include "visualization/collected/ensight.h"
+#include "visualization/separated/insitu.h"
+#include "visualization/separated/vtklegacy.h"
 
 
 using namespace espreso;
@@ -73,13 +73,13 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 
 	// TODO: optimize
 	if (configuration.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
-		executor->addResultStore(new CollectedEnSightWithDecomposition(Logging::name, executor->mesh(), configuration));
+		executor->addResultStore(new EnSightWithDecomposition(Logging::name, executor->mesh(), configuration));
 	}
 	if (configuration.monitors_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER && configuration.monitoring.size()) {
 		executor->addResultStore(new Monitoring(executor->mesh(), configuration, true));
 	}
 	if (configuration.catalyst) {
-		_asyncStore->_direct->addResultStore(new InSituVisualization(mesh, configuration));
+		_asyncStore->_direct->addResultStore(new InSitu(mesh, configuration));
 	}
 	if (configuration.debug) {
 		_asyncStore->_direct->addResultStore(new VTKLegacyDebugInfo(mesh, configuration));
@@ -147,11 +147,11 @@ bool ResultStore::isCollected()
 	return store;
 }
 
-bool ResultStore::isDistributed()
+bool ResultStore::isSeparated()
 {
 	bool store = false;
-	if (_async) store |= _async->isDistributed();
-	if (_direct) store |= _direct->isDistributed();
+	if (_async) store |= _async->isSeparated();
+	if (_direct) store |= _direct->isSeparated();
 	return store;
 }
 

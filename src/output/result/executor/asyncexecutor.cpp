@@ -70,10 +70,10 @@ void AsyncStore::updateSolution(const Step &step)
 {
 	wait();
 
-	prepareBuffer(AsyncBufferManager::NODEDATA, sizeof(Step) + _mesh.nodes->packedDataSize(isCollected(), isDistributed()));
+	prepareBuffer(AsyncBufferManager::NODEDATA, sizeof(Step) + _mesh.nodes->packedDataSize(isCollected(), isSeparated()));
 	_buffer = managedBuffer<char*>(AsyncBufferManager::buffer(AsyncBufferManager::NODEDATA));
 	Esutils::pack(step, _buffer);
-	_mesh.nodes->packData(_buffer, isCollected(), isDistributed());
+	_mesh.nodes->packData(_buffer, isCollected(), isSeparated());
 
 	prepareBuffer(AsyncBufferManager::ELEMENTDATA, sizeof(Step) + _mesh.elements->packedDataSize());
 	_buffer = managedBuffer<char*>(AsyncBufferManager::buffer(AsyncBufferManager::ELEMENTDATA));
@@ -95,9 +95,9 @@ bool AsyncStore::isCollected()
 	return _executor.isCollected();
 }
 
-bool AsyncStore::isDistributed()
+bool AsyncStore::isSeparated()
 {
-	return _executor.isDistributed();
+	return _executor.isSeparated();
 }
 
 void AsyncStore::addResultStore(ResultStoreBase *resultStore)
@@ -166,7 +166,7 @@ void AsyncExecutor::exec(const async::ExecInfo &info, const ExecParameters &para
 	if (parameters.updatedBuffers & 1 << AsyncBufferManager::NODEDATA) {
 		_buffer = static_cast<const char*>(info.buffer(AsyncBufferManager::buffer(AsyncBufferManager::NODEDATA)));
 		Esutils::unpack(step, _buffer);
-		_mesh.nodes->unpackData(_buffer, isCollected(), isDistributed());
+		_mesh.nodes->unpackData(_buffer, isCollected(), isSeparated());
 	}
 
 	if (parameters.updatedBuffers & 1 << AsyncBufferManager::ELEMENTDATA) {

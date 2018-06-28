@@ -17,7 +17,7 @@ class ResultStoreBase {
 
 public:
 	virtual bool isCollected() =0;
-	virtual bool isDistributed() =0;
+	virtual bool isSeparated() =0;
 
 	virtual void updateMesh() =0;
 	virtual void updateSolution(const Step &step) =0;
@@ -44,7 +44,7 @@ public:
 	static bool isComputeNode();
 
 	bool isCollected();
-	bool isDistributed();
+	bool isSeparated();
 	bool storeStep(const Step &step);
 
 	void updateMesh();

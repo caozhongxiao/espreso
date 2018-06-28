@@ -6,8 +6,8 @@
 #include "../../../assembler/step.h"
 #include "../../../mesh/mesh.h"
 
-#include "../visualization/distributedvtklegacy.h"
 #include "../monitors/monitoring.h"
+#include "../visualization/separated/vtklegacy.h"
 
 using namespace espreso;
 
@@ -33,10 +33,10 @@ bool ResultStoreExecutor::isCollected()
 	return false;
 }
 
-bool ResultStoreExecutor::isDistributed()
+bool ResultStoreExecutor::isSeparated()
 {
 	for (size_t i = 0; i < _resultStore.size(); i++) {
-		if (_resultStore[i]->isDistributed()) {
+		if (_resultStore[i]->isSeparated()) {
 			return true;
 		}
 	}

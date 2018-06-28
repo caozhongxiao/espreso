@@ -1,11 +1,11 @@
 
-#ifndef SRC_OUTPUT_RESULT_VISUALIZATION_COLLECTEDVISUALIZATION_H_
-#define SRC_OUTPUT_RESULT_VISUALIZATION_COLLECTEDVISUALIZATION_H_
+#ifndef SRC_OUTPUT_RESULT_VISUALIZATION_COLLECTED_COLLECTEDVISUALIZATION_H_
+#define SRC_OUTPUT_RESULT_VISUALIZATION_COLLECTED_COLLECTEDVISUALIZATION_H_
 
 #include "mpi.h"
 #include <vector>
 
-#include "visualization.h"
+#include "../visualization.h"
 
 namespace espreso {
 
@@ -15,7 +15,7 @@ struct CollectedVisualization: public Visualization {
 	~CollectedVisualization();
 
 	virtual bool isCollected() { return true; }
-	virtual bool isDistributed() { return false; }
+	virtual bool isSeparated() { return false; }
 
 protected:
 	void clearIntervals();
@@ -36,4 +36,4 @@ protected:
 
 
 
-#endif /* SRC_OUTPUT_RESULT_VISUALIZATION_COLLECTEDVISUALIZATION_H_ */
+#endif /* SRC_OUTPUT_RESULT_VISUALIZATION_COLLECTED_COLLECTEDVISUALIZATION_H_ */

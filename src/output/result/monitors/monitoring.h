@@ -34,7 +34,7 @@ public:
 	static bool storeStep(const OutputConfiguration &configuration, const Step &step);
 
 	virtual bool isCollected() { return true; }
-	virtual bool isDistributed() { return false; }
+	virtual bool isSeparated() { return false; }
 
 	void updateMesh();
 	void updateSolution(const Step &step);

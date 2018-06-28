@@ -1,24 +1,23 @@
 
-#include "collectedensight.h"
-#include "ensightwriter.h"
+#include "ensight.h"
 
-#include "../../../basis/containers/point.h"
-#include "../../../basis/containers/serializededata.h"
-#include "../../../basis/logging/logging.h"
-#include "../../../basis/utilities/communication.h"
-#include "../../../basis/utilities/utils.h"
-#include "../../../basis/utilities/parser.h"
+#include "../../../../basis/containers/point.h"
+#include "../../../../basis/containers/serializededata.h"
+#include "../../../../basis/logging/logging.h"
+#include "../../../../basis/utilities/communication.h"
+#include "../../../../basis/utilities/utils.h"
+#include "../../../../basis/utilities/parser.h"
 
-#include "../../../config/ecf/environment.h"
+#include "../../../../config/ecf/environment.h"
 
-#include "../../../assembler/step.h"
+#include "../../../../assembler/step.h"
 
-#include "../../../mesh/elements/element.h"
-#include "../../../mesh/mesh.h"
-#include "../../../mesh/store/nodestore.h"
-#include "../../../mesh/store/elementstore.h"
-#include "../../../mesh/store/elementsregionstore.h"
-#include "../../../mesh/store/boundaryregionstore.h"
+#include "../../../../mesh/elements/element.h"
+#include "../../../../mesh/mesh.h"
+#include "../../../../mesh/store/nodestore.h"
+#include "../../../../mesh/store/elementstore.h"
+#include "../../../../mesh/store/elementsregionstore.h"
+#include "../../../../mesh/store/boundaryregionstore.h"
 
 #include <algorithm>
 #include <functional>
@@ -26,7 +25,7 @@
 
 using namespace espreso;
 
-CollectedEnSight::CollectedEnSight(const std::string &name, const Mesh &mesh, const OutputConfiguration &configuration)
+EnSight::EnSight(const std::string &name, const Mesh &mesh, const OutputConfiguration &configuration)
 : CollectedVisualization(mesh, configuration), _path(Logging::outputRoot() + "/"), _name(name), _variableCounter(0)
 {
 	_caseheader << "#\n";
@@ -41,12 +40,12 @@ CollectedEnSight::CollectedEnSight(const std::string &name, const Mesh &mesh, co
 	_casevariables << "VARIABLE\n\n";
 }
 
-CollectedEnSight::~CollectedEnSight()
+EnSight::~EnSight()
 {
 
 }
 
-void CollectedEnSight::storecasefile()
+void EnSight::storecasefile()
 {
 	if (environment->MPIrank == 0) {
 		std::ofstream os(_path + _name + ".case");
@@ -65,7 +64,7 @@ void CollectedEnSight::storecasefile()
 	}
 }
 
-std::string CollectedEnSight::codetotype(int code)
+std::string EnSight::codetotype(int code)
 {
 	switch (static_cast<Element::CODE>(code)) {
 
@@ -97,7 +96,7 @@ std::string CollectedEnSight::codetotype(int code)
 	}
 }
 
-void CollectedEnSight::updateMesh()
+void EnSight::updateMesh()
 {
 	_casegeometry << "model:\t" << _directory << _name << ".geo\n\n";
 
@@ -241,7 +240,7 @@ void CollectedEnSight::updateMesh()
 	storecasefile();
 }
 
-void CollectedEnSight::setvariables()
+void EnSight::setvariables()
 {
 	auto tabs = [] (size_t size) {
 		return size < 8 ? 2 : 1;
@@ -275,7 +274,7 @@ void CollectedEnSight::setvariables()
 	}
 }
 
-void CollectedEnSight::storeDecomposition()
+void EnSight::storeDecomposition()
 {
 	_casevariables << "scalar per element:\tDOMAINS\t\t" << _directory << "DOMAINS" << "\n";
 	_casevariables << "scalar per element:\tCLUSTERS\t" << _directory << "CLUSTERS" << "\n";
@@ -377,7 +376,7 @@ void CollectedEnSight::storeDecomposition()
 	storecasefile();
 }
 
-void CollectedEnSight::updateSolution(const Step &step)
+void EnSight::updateSolution(const Step &step)
 {
 	if (!Visualization::storeStep(_configuration, step)) {
 		return;
