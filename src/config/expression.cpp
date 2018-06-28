@@ -161,34 +161,53 @@ void ECFExpressionVector::init()
 			.allowonly([&] () { return dimension == DIMENSION::Z || dimension == DIMENSION::D3; }));
 }
 
+ECFExpressionVector::ECFExpressionVector(const ECFExpressionVector &other)
+: data{other.data[0], other.data[1], other.data[2]}, dimension(other.dimension)
+{
+
+}
+
+ECFExpressionVector& ECFExpressionVector::operator=(const ECFExpressionVector &other)
+{
+	if (this != &other) {
+		data[0] = other.data[0];
+		data[1] = other.data[1];
+		data[2] = other.data[2];
+		dimension = other.dimension;
+	}
+	return *this;
+}
+
 ECFExpressionVector::ECFExpressionVector(DIMENSION dimension, const std::vector<std::string> &variables)
-: x(variables), y(variables), z(variables), dimension(dimension)
+: data{variables, variables, variables}, dimension(dimension)
 {
 	init();
 }
 
 ECFExpressionVector::ECFExpressionVector(DIMENSION dimension, const std::vector<std::string> &variables, const std::string &initialValue)
-: x(variables, initialValue), y(variables, initialValue), z(variables, initialValue), dimension(dimension)
+: data{ {variables,initialValue}, {variables,initialValue}, {variables,initialValue}}, dimension(dimension)
 {
 	init();
 }
 
 ECFExpressionVector::ECFExpressionVector(RegionMapBase::RegionIntersection intersection, std::vector<std::string> &regions, const std::map<std::string, ECFExpressionVector> &values)
-: x(intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionVector>::const_iterator it) { return it->second.x; })),
-  y(intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionVector>::const_iterator it) { return it->second.y; })),
-  z(intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionVector>::const_iterator it) { return it->second.z; })),
-  dimension(values.begin()->second.dimension)
+: data{
+	{intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionVector>::const_iterator it) { return it->second.x; })},
+	{intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionVector>::const_iterator it) { return it->second.y; })},
+	{intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionVector>::const_iterator it) { return it->second.z; })}
+}, dimension(values.begin()->second.dimension)
 {
-
+	init();
 }
 
 ECFExpressionVector::ECFExpressionVector(RegionMapBase::RegionIntersection intersection, std::vector<std::string> &regions, const std::map<std::string, ECFExpressionOptionalVector> &values)
-: x(intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionOptionalVector>::const_iterator it) { return it->second.x; })),
-  y(intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionOptionalVector>::const_iterator it) { return it->second.y; })),
-  z(intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionOptionalVector>::const_iterator it) { return it->second.z; })),
-  dimension(values.begin()->second.dimension)
+: data{
+	{intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionOptionalVector>::const_iterator it) { return it->second.x; })},
+	{intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionOptionalVector>::const_iterator it) { return it->second.y; })},
+	{intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionOptionalVector>::const_iterator it) { return it->second.z; })}
+}, dimension(values.begin()->second.dimension)
 {
-
+	init();
 }
 
 ECFExpressionOptionalVector::ECFExpressionOptionalVector(DIMENSION dimension, const std::vector<std::string> &variables)

@@ -30,9 +30,12 @@ struct ECFExpression {
 struct ECFExpressionOptionalVector;
 
 struct ECFExpressionVector: public ECFObject {
-	ECFExpression x, y, z;
+	ECFExpression data[3];
+	ECFExpression &x = data[0], &y = data[1], &z = data[2];
 	DIMENSION dimension;
 
+	ECFExpressionVector(const ECFExpressionVector &other);
+	ECFExpressionVector& operator=(const ECFExpressionVector &other);
 	ECFExpressionVector(DIMENSION dimension, const std::vector<std::string> &variables);
 	ECFExpressionVector(DIMENSION dimension, const std::vector<std::string> &variables, const std::string &initialValue);
 
