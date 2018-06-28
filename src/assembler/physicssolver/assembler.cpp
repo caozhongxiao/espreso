@@ -16,7 +16,7 @@
 #include "mpi.h"
 
 #include "../../output/result/resultstore.h"
-#include "../../output/result/visualization/distributedvtklegacy.h"
+#include "../../output/result/visualization/separated/vtklegacy.h"
 
 using namespace espreso;
 

@@ -19,6 +19,8 @@ struct StructuralMechanics: public virtual Physics
 	virtual void preprocessData();
 	virtual void setDirichlet();
 
+	virtual void assembleB1(bool withRedundantMultipliers, bool withGluing, bool withScaling);
+
 protected:
 	const StructuralMechanicsConfiguration &_configuration;
 	const ResultsSelectionConfiguration &_propertiesConfiguration;

@@ -261,6 +261,25 @@ void StructuralMechanics::preprocessData()
 
 }
 
+void StructuralMechanics::assembleB1(bool withRedundantMultipliers, bool withGluing, bool withScaling)
+{
+	Physics::assembleB1(withRedundantMultipliers, withGluing, withScaling);
+	if (_configuration.load_steps_settings.at(_step->step + 1).normal_direction.size() && _configuration.load_steps_settings.at(_step->step + 1).obstacle.size()) {
+		for (
+				auto it = _configuration.load_steps_settings.at(_step->step + 1).normal_direction.begin();
+				it != _configuration.load_steps_settings.at(_step->step + 1).normal_direction.end();
+				++it) {
+
+			if (_mesh->bregion(it->first)->nodes->structures()) {
+				_constraints->B1ContactInsert(*_step,
+						_mesh->bregion(it->first),
+						_configuration.load_steps_settings.at(_step->step + 1).normal_direction.at(it->first),
+						_configuration.load_steps_settings.at(_step->step + 1).obstacle.at(it->first));
+			}
+		}
+	}
+}
+
 
 
 

@@ -16,6 +16,8 @@ struct ECFExpression {
 	std::vector<std::string> variables;
 	Evaluator *evaluator;
 
+	bool isSet() const { return value.size(); }
+
 	ECFExpression(const std::vector<std::string> &variables);
 	ECFExpression(const std::vector<std::string> &variables, const std::string &initialValue);
 	ECFExpression(const ECFExpression &other);

@@ -14,6 +14,7 @@ class Instance;
 class Mesh;
 template <typename TValue> struct RegionMap;
 struct ECFExpression;
+struct ECFExpressionVector;
 struct ECFExpressionOptionalVector;
 
 class Region;
@@ -37,6 +38,8 @@ struct Constraints
 	void B0Kernels(const std::vector<SparseMatrix> &kernels);
 	void B0Corners();
 
+	void B1ContactInsert(const Step &step, BoundaryRegionStore *region, const ECFExpressionVector &normals, const ECFExpressionVector &gap);
+
 	void insertMortarGluingToB1(const Step &step, const std::string &master, const std::string &slave);
 
 protected:
@@ -45,7 +48,7 @@ protected:
 
 	Instance &_instance;
 	Mesh &_mesh;
-	esglobal _dirichletSize, _gluingSize;
+	esglobal _dirichletSize, _gluingSize, _contactSize;
 	bool _withRedundantMultipliers, _withScaling;
 
 	int _DOFs;

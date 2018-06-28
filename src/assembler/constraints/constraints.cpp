@@ -24,13 +24,13 @@
 using namespace espreso;
 
 Constraints::Constraints(Instance &instance, Mesh &mesh, const RegionMap<ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling)
-: _instance(instance), _mesh(mesh), _DOFs(1)
+: _instance(instance), _mesh(mesh), _contactSize(0), _DOFs(1)
 {
 	update(dirichlet, withRedundantMultiplier, withScaling);
 }
 
 Constraints::Constraints(Instance &instance, Mesh &mesh, const RegionMap<ECFExpressionOptionalVector> &dirichlet, int DOFs, bool withRedundantMultiplier, bool withScaling)
-: _instance(instance), _mesh(mesh), _DOFs(DOFs)
+: _instance(instance), _mesh(mesh), _contactSize(0), _DOFs(DOFs)
 {
 	update(dirichlet, withRedundantMultiplier, withScaling);
 }
