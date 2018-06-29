@@ -14,19 +14,12 @@ namespace espreso {
 class ECFRoot;
 class Mesh;
 
-struct PlainElement {
-	eslocal id;
-	int etype;
-	int body;
-	int material;
-};
-
 struct PlainMeshData {
 	std::vector<eslocal> nIDs;
 	std::vector<Point> coordinates;
 
-	std::vector<eslocal> esize, enodes;
-	std::vector<PlainElement> edata;
+	std::vector<eslocal> eIDs, esize, enodes;
+	std::vector<int> etype, body, material;
 
 	std::map<std::string, std::vector<eslocal> > eregions;
 	std::map<std::string, std::vector<eslocal> > nregions;

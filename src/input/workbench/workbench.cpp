@@ -379,7 +379,7 @@ void WorkbenchLoader::parseData(PlainMeshData &meshData)
 	}
 
 	for (size_t i = 0; i < _EBlocks.size(); i++) {
-		if (!_EBlocks[i].readData(_ET, meshData.esize, meshData.enodes, meshData.edata)) {
+		if (!_EBlocks[i].readData(_ET, meshData)) {
 			ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
 		}
 	}
@@ -414,6 +414,6 @@ void WorkbenchLoader::parseData(PlainMeshData &meshData)
 	}
 
 	for (size_t i = 0; i < _CM.size(); i++) {
-		_CM[i].addRegion(meshData.edata, _ESel, meshData.eregions, _NSel, meshData.nregions);
+		_CM[i].addRegion(meshData, _ESel, meshData.eregions, _NSel, meshData.nregions);
 	}
 }

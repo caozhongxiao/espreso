@@ -4,6 +4,8 @@
 #include "esel.h"
 #include "nsel.h"
 
+#include "../../input.h"
+
 #include "../../../basis/containers/tarray.h"
 #include "../../../basis/utilities/parser.h"
 #include "../../../basis/logging/logging.h"
@@ -12,7 +14,6 @@
 #include <cstring>
 #include <functional>
 #include <algorithm>
-#include "../../input.h"
 
 using namespace espreso;
 
@@ -68,13 +69,13 @@ CM& CM::parse(const char* begin)
 }
 
 bool CM::addRegion(
-		const std::vector<PlainElement> &elements,
+		const PlainMeshData &mesh,
 		const std::vector<ESel> &esel, std::map<std::string, std::vector<eslocal> > &eregions,
 		const std::vector<NSel> &nsel, std::map<std::string, std::vector<eslocal> > &nregions)
 {
 	switch (entity) {
 	case Entity::ELEMENTS:
-		return addElementRegion(elements, esel, eregions);
+		return addElementRegion(mesh, esel, eregions);
 	case Entity::NODES:
 		return addNodeRegion(nsel, nregions);
 	default:
@@ -82,7 +83,7 @@ bool CM::addRegion(
 	}
 }
 
-bool CM::addElementRegion(const std::vector<PlainElement> &elements, const std::vector<ESel> &esel, std::map<std::string, std::vector<eslocal> > &eregions)
+bool CM::addElementRegion(const PlainMeshData &mesh, const std::vector<ESel> &esel, std::map<std::string, std::vector<eslocal> > &eregions)
 {
 	// clear relevant set means all elements
 	std::vector<ESel> relevant;
@@ -112,7 +113,7 @@ bool CM::addElementRegion(const std::vector<PlainElement> &elements, const std::
 	}
 
 	size_t threads = environment->OMP_NUM_THREADS;
-	std::vector<size_t> edistribution = tarray<eslocal>::distribute(threads, elements.size());
+	std::vector<size_t> edistribution = tarray<eslocal>::distribute(threads, mesh.esize.size());
 	std::vector<std::vector<eslocal> > eid(threads);
 
 	auto checkElements = [&] (std::function<void(size_t, eslocal)> chck) {
@@ -131,24 +132,24 @@ bool CM::addElementRegion(const std::vector<PlainElement> &elements, const std::
 		case ESel::Item::TYPE:
 			if (relevant[i].VMIN == relevant[i].VMAX) {
 				checkElements([&] (size_t t, eslocal e) {
-					if (elements[e].etype == relevant[i].VMIN) {
-						eid[t].push_back(elements[e].id);
+					if (mesh.etype[e] == relevant[i].VMIN) {
+						eid[t].push_back(mesh.eIDs[e]);
 					}
 				});
 				break;
 			}
 			if (relevant[i].VINC == 1) {
 				checkElements([&] (size_t t, eslocal e) {
-					if (relevant[i].VMIN <= elements[e].etype && elements[e].etype <= relevant[i].VMAX) {
-						eid[t].push_back(elements[e].id);
+					if (relevant[i].VMIN <= mesh.etype[e] && mesh.etype[e] <= relevant[i].VMAX) {
+						eid[t].push_back(mesh.eIDs[e]);
 					}
 				});
 				break;
 			}
 			checkElements([&] (size_t t, eslocal e) {
 				eslocal value = relevant[i].VMIN;
-				if (relevant[i].VMIN <= elements[e].etype && elements[e].etype <= relevant[i].VMAX && (elements[e].etype - relevant[i].VMIN) % relevant[i].VINC == 0) {
-					eid[t].push_back(elements[e].id);
+				if (relevant[i].VMIN <= mesh.etype[e] && mesh.etype[e] <= relevant[i].VMAX && (mesh.etype[e] - relevant[i].VMIN) % relevant[i].VINC == 0) {
+					eid[t].push_back(mesh.eIDs[e]);
 				}
 			});
 			break;
@@ -156,24 +157,24 @@ bool CM::addElementRegion(const std::vector<PlainElement> &elements, const std::
 		case ESel::Item::MAT:
 			if (relevant[i].VMIN == relevant[i].VMAX) {
 				checkElements([&] (size_t t, eslocal e) {
-					if (elements[e].material == relevant[i].VMIN) {
-						eid[t].push_back(elements[e].id);
+					if (mesh.material[e] == relevant[i].VMIN) {
+						eid[t].push_back(mesh.eIDs[e]);
 					}
 				});
 				break;
 			}
 			if (relevant[i].VINC == 1) {
 				checkElements([&] (size_t t, eslocal e) {
-					if (relevant[i].VMIN <= elements[e].material && elements[e].material <= relevant[i].VMAX) {
-						eid[t].push_back(elements[e].id);
+					if (relevant[i].VMIN <= mesh.material[e] && mesh.material[e] <= relevant[i].VMAX) {
+						eid[t].push_back(mesh.eIDs[e]);
 					}
 				});
 				break;
 			}
 			checkElements([&] (size_t t, eslocal e) {
 				eslocal value = relevant[i].VMIN;
-				if (relevant[i].VMIN <= elements[e].material && elements[e].material <= relevant[i].VMAX && (elements[e].material - relevant[i].VMIN) % relevant[i].VINC == 0) {
-					eid[t].push_back(elements[e].id);
+				if (relevant[i].VMIN <= mesh.material[e] && mesh.material[e] <= relevant[i].VMAX && (mesh.material[e] - relevant[i].VMIN) % relevant[i].VINC == 0) {
+					eid[t].push_back(mesh.eIDs[e]);
 				}
 			});
 			break;

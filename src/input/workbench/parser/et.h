@@ -6,8 +6,6 @@
 
 namespace espreso {
 
-struct PlainElement;
-
 struct ET: public WorkbenchParser {
 	static size_t size;
 	static const char* upper;

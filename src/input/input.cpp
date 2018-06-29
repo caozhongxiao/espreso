@@ -50,7 +50,7 @@ void Input::balance()
 		balancePermutedNodes();
 	}
 
-	sorted = std::is_sorted(_meshData.edata.begin(), _meshData.edata.end(), [] (const PlainElement &e1, const PlainElement &e2) { return e1.id < e2.id; });
+	sorted = std::is_sorted(_meshData.eIDs.begin(), _meshData.eIDs.end());
 	MPI_Allreduce(&sorted, &allSorted, 1, MPI_INT, MPI_MIN, environment->MPICommunicator);
 
 	if (allSorted) {
@@ -154,14 +154,23 @@ void Input::balanceElements()
 	Communication::allGatherUnknownSize(nTarget);
 	nTarget.resize(environment->MPIsize + 1, nTarget.back());
 
+	if (!Communication::balance(_meshData.enodes, nCurrent, nTarget)) {
+		ESINFO(ERROR) << "ESPRESO internal error: balance element nodes.";
+	}
 	if (!Communication::balance(_meshData.esize, eCurrent, eTarget)) {
 		ESINFO(ERROR) << "ESPRESO internal error: balance element sizes.";
 	}
-	if (!Communication::balance(_meshData.edata, eCurrent, eTarget)) {
-		ESINFO(ERROR) << "ESPRESO internal error: balance element data.";
+	if (!Communication::balance(_meshData.eIDs, eCurrent, eTarget)) {
+		ESINFO(ERROR) << "ESPRESO internal error: balance element IDs.";
 	}
-	if (!Communication::balance(_meshData.enodes, nCurrent, nTarget)) {
-		ESINFO(ERROR) << "ESPRESO internal error: balance element nodes.";
+	if (!Communication::balance(_meshData.body, eCurrent, eTarget)) {
+		ESINFO(ERROR) << "ESPRESO internal error: balance element bodies.";
+	}
+	if (!Communication::balance(_meshData.etype, eCurrent, eTarget)) {
+		ESINFO(ERROR) << "ESPRESO internal error: balance element types.";
+	}
+	if (!Communication::balance(_meshData.material, eCurrent, eTarget)) {
+		ESINFO(ERROR) << "ESPRESO internal error: balance element material.";
 	}
 
 	_eDistribution = eTarget;
@@ -172,18 +181,18 @@ void Input::balancePermutedElements()
 	// TODO: optimize all to all
 
 	eslocal myMaxID = 0, maxID;
-	std::vector<eslocal> permutation(_meshData.edata.size());
+	std::vector<eslocal> permutation(_meshData.esize.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
-	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return _meshData.edata[i].id < _meshData.edata[j].id; });
+	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return _meshData.eIDs[i] < _meshData.eIDs[j]; });
 
 	if (_meshData.esize.size()) {
-		myMaxID = _meshData.edata[permutation.back()].id;
+		myMaxID = _meshData.eIDs[permutation.back()];
 	}
 	MPI_Allreduce(&myMaxID, &maxID, sizeof(eslocal), MPI_BYTE, MPITools::operations().max, environment->MPICommunicator);
 
 	_eDistribution = tarray<eslocal>::distribute(environment->MPIsize, maxID + 1);
-	std::vector<std::vector<eslocal> > sSize, sNodes, rSize, rNodes;
-	std::vector<std::vector<PlainElement> > sEData, rEData;
+	std::vector<std::vector<eslocal> > sSize, sNodes, rSize, rNodes, sIDs, rIDs;
+	std::vector<std::vector<int> > sType, rType, sMat, rMat, sBody, rBody;
 	std::vector<int> targets;
 	std::vector<eslocal> edist = { 0 };
 	edist.reserve(_meshData.esize.size() + 1);
@@ -192,17 +201,23 @@ void Input::balancePermutedElements()
 	}
 
 	for (int r = 0; r < environment->MPIsize; r++) {
-		auto begin = std::lower_bound(permutation.begin(), permutation.end(), _eDistribution[r], [&] (eslocal i, const size_t &ID) { return _meshData.edata[i].id < ID; });
-		auto end = std::lower_bound(permutation.begin(), permutation.end(), _eDistribution[r + 1], [&] (eslocal i, const size_t &ID) { return _meshData.edata[i].id < ID; });
+		auto begin = std::lower_bound(permutation.begin(), permutation.end(), _eDistribution[r], [&] (eslocal i, const size_t &ID) { return _meshData.eIDs[i] < ID; });
+		auto end = std::lower_bound(permutation.begin(), permutation.end(), _eDistribution[r + 1], [&] (eslocal i, const size_t &ID) { return _meshData.eIDs[i] < ID; });
 		if (begin != end) {
 			sSize.push_back({});
 			sNodes.push_back({});
-			sEData.push_back({});
+			sIDs.push_back({});
+			sType.push_back({});
+			sMat.push_back({});
+			sBody.push_back({});
 			targets.push_back(r);
 		}
 		for (size_t n = begin - permutation.begin(); n < end - permutation.begin(); ++n) {
 			sSize.back().push_back(_meshData.esize[permutation[n]]);
-			sEData.back().push_back(_meshData.edata[permutation[n]]);
+			sIDs.back().push_back(_meshData.eIDs[permutation[n]]);
+			sType.back().push_back(_meshData.etype[permutation[n]]);
+			sMat.back().push_back(_meshData.material[permutation[n]]);
+			sBody.back().push_back(_meshData.body[permutation[n]]);
 			sNodes.back().insert(sNodes.back().end(), _meshData.enodes.begin() + edist[permutation[n]], _meshData.enodes.begin() + edist[permutation[n] + 1]);
 		}
 	}
@@ -210,7 +225,16 @@ void Input::balancePermutedElements()
 	if (!Communication::sendVariousTargets(sSize, rSize, targets)) {
 		ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted elements sizes.";
 	}
-	if (!Communication::sendVariousTargets(sEData, rEData, targets)) {
+	if (!Communication::sendVariousTargets(sIDs, rIDs, targets)) {
+		ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted element data.";
+	}
+	if (!Communication::sendVariousTargets(sType, rType, targets)) {
+		ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted element data.";
+	}
+	if (!Communication::sendVariousTargets(sMat, rMat, targets)) {
+		ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted element data.";
+	}
+	if (!Communication::sendVariousTargets(sBody, rBody, targets)) {
 		ESINFO(ERROR) << "ESPRESO internal error: distribute not sorted element data.";
 	}
 	if (!Communication::sendVariousTargets(sNodes, rNodes, targets)) {
@@ -219,13 +243,16 @@ void Input::balancePermutedElements()
 
 	for (size_t r = 1; r < rSize.size(); r++) {
 		rSize[0].insert(rSize[0].end(), rSize[r].begin(), rSize[r].end());
-		rEData[0].insert(rEData[0].end(), rEData[r].begin(), rEData[r].end());
+		rIDs[0].insert(rIDs[0].end(), rIDs[r].begin(), rIDs[r].end());
+		rType[0].insert(rType[0].end(), rType[r].begin(), rType[r].end());
+		rMat[0].insert(rMat[0].end(), rMat[r].begin(), rMat[r].end());
+		rBody[0].insert(rBody[0].end(), rBody[r].begin(), rBody[r].end());
 		rNodes[0].insert(rNodes[0].end(), rNodes[r].begin(), rNodes[r].end());
 	}
 
 	permutation.resize(rSize[0].size());
 	std::iota(permutation.begin(), permutation.end(), 0);
-	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return rEData[0][i].id < rEData[0][j].id; });
+	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return rIDs[0][i] < rIDs[0][j]; });
 
 	edist = std::vector<eslocal>({ 0 });
 	edist.reserve(rSize[0].size() + 1);
@@ -235,13 +262,22 @@ void Input::balancePermutedElements()
 
 	_meshData.esize.clear();
 	_meshData.enodes.clear();
-	_meshData.edata.clear();
+	_meshData.eIDs.clear();
+	_meshData.etype.clear();
+	_meshData.material.clear();
+	_meshData.body.clear();
 	_meshData.esize.reserve(permutation.size());
-	_meshData.edata.reserve(permutation.size());
+	_meshData.eIDs.reserve(permutation.size());
+	_meshData.etype.reserve(permutation.size());
+	_meshData.material.reserve(permutation.size());
+	_meshData.body.reserve(permutation.size());
 	_meshData.enodes.reserve(rNodes[0].size());
 	for (size_t n = 0; n < permutation.size(); n++) {
 		_meshData.esize.push_back(rSize[0][permutation[n]]);
-		_meshData.edata.push_back(rEData[0][permutation[n]]);
+		_meshData.eIDs.push_back(rIDs[0][permutation[n]]);
+		_meshData.etype.push_back(rType[0][permutation[n]]);
+		_meshData.material.push_back(rMat[0][permutation[n]]);
+		_meshData.body.push_back(rBody[0][permutation[n]]);
 		_meshData.enodes.insert(_meshData.enodes.end(), rNodes[0].begin() + edist[permutation[n]], rNodes[0].begin() + edist[permutation[n] + 1]);
 	}
 }
@@ -271,20 +307,22 @@ void Input::fillElements()
 			tedist[t].insert(tedist[t].end(), edist.begin() + edistribution[t] + 1, edist.begin() + edistribution[t + 1] + 1);
 		}
 		tnodes[t].insert(tnodes[t].end(), _meshData.enodes.begin() + edist[edistribution[t]], _meshData.enodes.begin() + edist[edistribution[t + 1]]);
+
+		// till now, IDs are irelevant
 		eIDs[t].resize(edistribution[t + 1] - edistribution[t]);
 		std::iota(eIDs[t].begin(), eIDs[t].end(), _eDistribution[environment->MPIrank] + edistribution[t]);
+
 		epointers[t].reserve(edistribution[t + 1] - edistribution[t]);
 		eBody[t].reserve(edistribution[t + 1] - edistribution[t]);
-
 		for (size_t e = edistribution[t]; e < edistribution[t + 1]; ++e) {
-			epointers[t].push_back(&_mesh._eclasses[t][_meshData.edata[e].etype]);
-			eBody[t].push_back(_meshData.edata[e].body);
+			epointers[t].push_back(&_mesh._eclasses[t][_meshData.etype[e]]);
+			eBody[t].push_back(_meshData.body[e]);
 		}
 
 		if (_configuration.input == INPUT_FORMAT::WORKBENCH && _configuration.workbench.keep_material_sets) {
 			eMat[t].reserve(edistribution[t + 1] - edistribution[t]);
 			for (size_t e = edistribution[t]; e < edistribution[t + 1]; ++e) {
-				eMat[t].push_back(_meshData.edata[e].material);
+				eMat[t].push_back(_meshData.material[e]);
 			}
 		} else {
 			eMat[t].resize(edistribution[t + 1] - edistribution[t]);

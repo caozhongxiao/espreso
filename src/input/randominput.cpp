@@ -412,8 +412,8 @@ void RandomInput::clusterize()
 	std::vector<eslocal> sBuffer, rBuffer;
 	sBuffer.reserve(
 			5 * environment->MPIsize +
-			_meshData.esize.size() +
-			_meshData.edata.size() * sizeof(PlainElement) / sizeof(eslocal) +
+			// esize, eID, etype, body, material
+			5 * _meshData.esize.size() +
 			_meshData.enodes.size() +
 			_meshData.nIDs.size() +
 			_meshData.coordinates.size() * sizeof(Point) / sizeof(eslocal));
@@ -432,7 +432,10 @@ void RandomInput::clusterize()
 		auto e = ebegin;
 		for ( ; e != epermutation.end() && _eBuckets[*e] < _bucketsBorders[r + 1]; ++e) {
 			sBuffer.push_back(_meshData.esize[*e]);
-			sBuffer.insert(sBuffer.end(), reinterpret_cast<const eslocal*>(_meshData.edata.data() + *e), reinterpret_cast<const eslocal*>(_meshData.edata.data() + *e + 1));
+			sBuffer.push_back(_meshData.eIDs[*e]);
+			sBuffer.push_back(_meshData.etype[*e]);
+			sBuffer.push_back(_meshData.body[*e]);
+			sBuffer.push_back(_meshData.material[*e]);
 			sBuffer.insert(sBuffer.end(), _meshData.enodes.begin() + edist[*e], _meshData.enodes.begin() + edist[*e + 1]);
 			sBuffer[prevsize + 3] += edist[*e + 1] - edist[*e];
 		}
@@ -467,14 +470,16 @@ void RandomInput::clusterize()
 	e7.start();
 
 	_meshData.esize.clear();
-	_meshData.edata.clear();
+	_meshData.eIDs.clear();
+	_meshData.etype.clear();
+	_meshData.body.clear();
+	_meshData.material.clear();
 	_meshData.enodes.clear();
 
 	_meshData.nIDs.swap(_nIDs); // keep for later usage in linkup phase
 	_meshData.coordinates.clear();
 
 	size_t offset = 0;
-	PlainElement edata;
 	Point point;
 	for (int r = 0; r < environment->MPIsize; r++) {
 		++offset;
@@ -485,9 +490,10 @@ void RandomInput::clusterize()
 
 		for (size_t e = 0; e < esize; ++e) {
 			_meshData.esize.push_back(rBuffer[offset++]);
-			memcpy(&edata, rBuffer.data() + offset, sizeof(PlainElement));
-			_meshData.edata.push_back(edata);
-			offset += sizeof(PlainElement) / sizeof(eslocal);
+			_meshData.eIDs.push_back(rBuffer[offset++]);
+			_meshData.etype.push_back(rBuffer[offset++]);
+			_meshData.body.push_back(rBuffer[offset++]);
+			_meshData.material.push_back(rBuffer[offset++]);
 			_meshData.enodes.insert(_meshData.enodes.end(), rBuffer.begin() + offset, rBuffer.begin() + offset + _meshData.esize.back());
 			offset += _meshData.esize.back();
 		}
