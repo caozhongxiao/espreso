@@ -162,10 +162,10 @@ void SequentialInput::fillElementRegions()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion) {
-		_mesh.elementsRegions.push_back(new ElementsRegionStore(eregion->first));
-		_mesh.elementsRegions.back()->elements = new serializededata<eslocal, eslocal>(1, { threads, eregion->second });
-	}
+//	for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion) {
+//		_mesh.elementsRegions.push_back(new ElementsRegionStore(eregion->first));
+//		_mesh.elementsRegions.back()->elements = new serializededata<eslocal, eslocal>(1, { threads, eregion->second });
+//	}
 }
 
 

@@ -286,19 +286,41 @@ void Input::fillElements()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<std::vector<eslocal> > tedist(threads);
-	std::vector<std::vector<eslocal> > tnodes(threads);
-	std::vector<std::vector<eslocal> > eIDs(threads), rData(threads);
+	std::vector<std::vector<eslocal> > tedist(threads), tnodes(threads), eIDs(threads), rData(threads);
 	std::vector<std::vector<int> > eMat(threads), eBody(threads);
 	std::vector<std::vector<Element*> > epointers(threads);
 
-	std::vector<eslocal> edist = { 0 };
-	edist.reserve(_meshData.esize.size() + 1);
-	for (size_t e = 0; e < _meshData.esize.size(); e++) {
-		edist.push_back(edist.back() + _meshData.esize[e]);
+	std::vector<eslocal> epermutation(_meshData.esize.size());
+	std::iota(epermutation.begin(), epermutation.end(), 0);
+	std::sort(epermutation.begin(), epermutation.end(), [&] (eslocal i, eslocal j) {
+		if (static_cast<int>(_mesh._eclasses[0][_meshData.etype[i]].type) != static_cast<int>(_mesh._eclasses[0][_meshData.etype[j]].type)) {
+			return static_cast<int>(_mesh._eclasses[0][_meshData.etype[i]].type) > static_cast<int>(_mesh._eclasses[0][_meshData.etype[j]].type);
+		} else {
+			return i < j;
+		}
+	});
+
+	auto eprefix = epermutation.size();
+	if (epermutation.size()) {
+		eprefix = std::lower_bound(epermutation.begin(), epermutation.end(), static_cast<int>(_mesh._eclasses[0][_meshData.etype[epermutation.front()]].type), [&] (eslocal e, int type) {
+			return static_cast<int>(_mesh._eclasses[0][_meshData.etype[e]].type) >= type;
+		}) - epermutation.begin();
 	}
 
-	std::vector<size_t> edistribution = tarray<Point>::distribute(threads, _meshData.esize.size());
+	std::cout << "SIZE: " << epermutation.size() << " vs. " << eprefix << "\n";
+
+	std::vector<size_t> edistribution = tarray<Point>::distribute(threads, eprefix);
+
+	std::vector<eslocal> edist = { 0 }, efulldist = { 0 };
+	edist.reserve(eprefix + 1);
+	edist.reserve(_meshData.esize.size() + 1);
+	for (size_t e = 0; e < eprefix; e++) {
+		edist.push_back(edist.back() + _meshData.esize[epermutation[e]]);
+	}
+	for (size_t e = 0; e < _meshData.esize.size(); e++) {
+		efulldist.push_back(efulldist.back() + _meshData.esize[e]);
+	}
+
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		if(t == 0) {
@@ -306,31 +328,34 @@ void Input::fillElements()
 		} else {
 			tedist[t].insert(tedist[t].end(), edist.begin() + edistribution[t] + 1, edist.begin() + edistribution[t + 1] + 1);
 		}
-		tnodes[t].insert(tnodes[t].end(), _meshData.enodes.begin() + edist[edistribution[t]], _meshData.enodes.begin() + edist[edistribution[t + 1]]);
 
 		// till now, IDs are irelevant
 		eIDs[t].resize(edistribution[t + 1] - edistribution[t]);
 		std::iota(eIDs[t].begin(), eIDs[t].end(), _eDistribution[environment->MPIrank] + edistribution[t]);
 
-		epointers[t].reserve(edistribution[t + 1] - edistribution[t]);
-		eBody[t].reserve(edistribution[t + 1] - edistribution[t]);
-		for (size_t e = edistribution[t]; e < edistribution[t + 1]; ++e) {
-			epointers[t].push_back(&_mesh._eclasses[t][_meshData.etype[e]]);
-			eBody[t].push_back(_meshData.body[e]);
+		eBody[t].resize(edistribution[t + 1] - edistribution[t]);
+		eMat[t].resize(edistribution[t + 1] - edistribution[t]);
+		epointers[t].resize(edistribution[t + 1] - edistribution[t]);
+		tnodes[t].resize(edist[edistribution[t + 1]] - edist[edistribution[t]]);
+
+		for (size_t e = edistribution[t], i = 0; e < edistribution[t + 1]; ++e, ++i) {
+			epointers[t][i] = &_mesh._eclasses[t][_meshData.etype[epermutation[e]]];
+			eBody[t][i] = _meshData.body[epermutation[e]];
+
+			if (_configuration.input == INPUT_FORMAT::WORKBENCH && _configuration.workbench.keep_material_sets) {
+				eMat[t][i] = _meshData.material[epermutation[e]];
+			}
 		}
 
-		if (_configuration.input == INPUT_FORMAT::WORKBENCH && _configuration.workbench.keep_material_sets) {
-			eMat[t].reserve(edistribution[t + 1] - edistribution[t]);
-			for (size_t e = edistribution[t]; e < edistribution[t + 1]; ++e) {
-				eMat[t].push_back(_meshData.material[e]);
+		for (size_t e = edistribution[t], i = 0; e < edistribution[t + 1]; ++e) {
+			for (size_t n = efulldist[epermutation[e]]; n < efulldist[epermutation[e] + 1]; ++n, ++i) {
+				tnodes[t][i] = _meshData.enodes[n];
 			}
-		} else {
-			eMat[t].resize(edistribution[t + 1] - edistribution[t]);
 		}
 	}
 
 	_mesh.elements->dimension = _mesh.dimension;
-	_mesh.elements->size = _meshData.esize.size();
+	_mesh.elements->size = eprefix;
 	_mesh.elements->distribution = edistribution;
 	_mesh.elements->IDs = new serializededata<eslocal, eslocal>(1, eIDs);
 	_mesh.elements->nodes = new serializededata<eslocal, eslocal>(tedist, tnodes);
