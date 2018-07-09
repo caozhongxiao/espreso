@@ -11,6 +11,7 @@
 #include "../config/ecf/root.h"
 #include "../mesh/mesh.h"
 #include "../mesh/elements/element.h"
+#include "../mesh/store/nodestore.h"
 #include "../mesh/store/elementstore.h"
 #include "../mesh/store/elementsregionstore.h"
 
@@ -307,13 +308,11 @@ void Input::fillElements()
 		}) - epermutation.begin();
 	}
 
-	std::cout << "SIZE: " << epermutation.size() << " vs. " << eprefix << "\n";
-
 	std::vector<size_t> edistribution = tarray<Point>::distribute(threads, eprefix);
 
 	std::vector<eslocal> edist = { 0 }, efulldist = { 0 };
 	edist.reserve(eprefix + 1);
-	edist.reserve(_meshData.esize.size() + 1);
+	efulldist.reserve(_meshData.esize.size() + 1);
 	for (size_t e = 0; e < eprefix; e++) {
 		edist.push_back(edist.back() + _meshData.esize[epermutation[e]]);
 	}
@@ -370,6 +369,73 @@ void Input::fillElements()
 	}
 	_mesh.elementsRegions.push_back(new ElementsRegionStore("ALL_ELEMENTS"));
 	_mesh.elementsRegions.back()->elements = new serializededata<eslocal, eslocal>(1, rData);
+
+
+//	auto eprefix = epermutation.size();
+//	if (epermutation.size()) {
+//		eprefix = std::lower_bound(epermutation.begin(), epermutation.end(), static_cast<int>(_mesh._eclasses[0][_meshData.etype[epermutation.front()]].type), [&] (eslocal e, int type) {
+//			return static_cast<int>(_mesh._eclasses[0][_meshData.etype[e]].type) >= type;
+//		}) - epermutation.begin();
+//	}
+
+	if (eprefix == epermutation.size()) {
+		return;
+	}
+
+	// the rest elements are boundary elements
+	_mesh.boundaryRegions.push_back(new BoundaryRegionStore("UNNAMED BOUNDARY REGION", _mesh._eclasses));
+	_mesh.boundaryRegions.back()->distribution = tarray<Point>::distribute(threads, epermutation.size() - eprefix);
+	edistribution = _mesh.boundaryRegions.back()->distribution;
+
+	edist.resize(1);
+	edist.reserve(epermutation.size() - eprefix + 1);
+	for (size_t e = eprefix; e < epermutation.size(); e++) {
+		edist.push_back(edist.back() + _meshData.esize[epermutation[e]]);
+	}
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		tedist[t].clear();
+		if(t == 0) {
+			tedist[t].insert(tedist[t].end(), edist.begin() + edistribution[t], edist.begin() + edistribution[t + 1] + 1);
+		} else {
+			tedist[t].insert(tedist[t].end(), edist.begin() + edistribution[t] + 1, edist.begin() + edistribution[t + 1] + 1);
+		}
+
+		epointers[t].resize(edistribution[t + 1] - edistribution[t]);
+		tnodes[t].resize(edist[edistribution[t + 1]] - edist[edistribution[t]]);
+
+		for (size_t e = edistribution[t], i = 0; e < edistribution[t + 1]; ++e, ++i) {
+			epointers[t][i] = &_mesh._eclasses[t][_meshData.etype[epermutation[eprefix + e]]];
+		}
+
+		for (size_t e = edistribution[t], i = 0; e < edistribution[t + 1]; ++e) {
+			for (size_t n = efulldist[epermutation[eprefix + e]]; n < efulldist[epermutation[eprefix + e] + 1]; ++n, ++i) {
+				tnodes[t][i] = _meshData.enodes[n];
+			}
+		}
+	}
+
+	switch (epointers.front().front()->type) {
+	case Element::TYPE::PLANE:
+		_mesh.boundaryRegions.back()->dimension = 2;
+		break;
+	case Element::TYPE::LINE:
+		_mesh.boundaryRegions.back()->dimension = 1;
+		break;
+	default:
+		ESINFO(ERROR) << "ESPRESO Workbench parser: invalid boundary region type. Have to be 3D plane or 2D line.";
+	}
+
+	_mesh.boundaryRegions.back()->elements = new serializededata<eslocal, eslocal>(tedist, tnodes);
+	_mesh.boundaryRegions.back()->epointers = new serializededata<eslocal, Element*>(1, epointers);
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (auto n = _mesh.boundaryRegions.back()->elements->begin(t)->begin(); n != _mesh.boundaryRegions.back()->elements->end(t)->begin(); ++n) {
+			*n = std::lower_bound(_mesh.nodes->IDs->datatarray().begin(), _mesh.nodes->IDs->datatarray().end(), *n) - _mesh.nodes->IDs->datatarray().begin();
+		}
+	}
 }
 
 
