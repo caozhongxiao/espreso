@@ -373,13 +373,15 @@ void Input::fillSortedElements()
 		);
 	}
 
+	size_t estart = _mesh.dimension == 3 ? 0 : 1;
+
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	std::vector<std::vector<eslocal> > tedist(threads), tnodes(threads), eIDs(threads), rData(threads);
 	std::vector<std::vector<int> > eMat(threads), eBody(threads);
 	std::vector<std::vector<Element*> > epointers(threads);
 
-	std::vector<size_t> edistribution = tarray<Point>::distribute(threads, _etypeDistribution.front());
+	std::vector<size_t> edistribution = tarray<Point>::distribute(threads, _etypeDistribution[estart]);
 
 	std::vector<eslocal> edist = { 0 };
 	edist.reserve(_meshData.esize.size() + 1);
@@ -415,7 +417,7 @@ void Input::fillSortedElements()
 	}
 
 	_mesh.elements->dimension = _mesh.dimension;
-	_mesh.elements->size = _etypeDistribution.front();
+	_mesh.elements->size = _etypeDistribution[estart];
 	_mesh.elements->distribution = edistribution;
 	_mesh.elements->IDs = new serializededata<eslocal, eslocal>(1, eIDs);
 	_mesh.elements->nodes = new serializededata<eslocal, eslocal>(tedist, tnodes);
@@ -432,15 +434,35 @@ void Input::fillSortedElements()
 	_mesh.elementsRegions.back()->elements = new serializededata<eslocal, eslocal>(1, rData);
 
 	for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion) {
-		if (eregion->second.size() && eregion->second.front() < _etypeDistribution.front()) {
+		if (eregion->second.size() && eregion->second.front() < _etypeDistribution[estart]) {
 			_mesh.elementsRegions.push_back(new ElementsRegionStore(eregion->first));
 			_mesh.elementsRegions.back()->elements = new serializededata<eslocal, eslocal>(1, { threads, eregion->second });
 		}
 	}
 
-	for (int i = 0; i < 2; i++) {
+	for (int i = estart; i < 2; i++) {
+		std::vector<eslocal> named;
 		for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion) {
-			if (eregion->second.size() && _etypeDistribution.front() <= eregion->second.front()) {
+			if (eregion->second.size() && _etypeDistribution[estart] <= eregion->second.front()) {
+				if (_etypeDistribution[i] <= eregion->second.front() && eregion->second.front() < _etypeDistribution[i + 1]) {
+					named.insert(named.end(), eregion->second.begin(), eregion->second.end());
+				}
+			}
+		}
+		Esutils::sortAndRemoveDuplicity(named);
+		if (named.size() < (size_t)(_etypeDistribution[i + 1] - _etypeDistribution[i])) {
+			std::vector<eslocal> &unnamed = i == 1 ? _meshData.eregions["NAMELESS_FACE_SET"] : _meshData.eregions["NAMELESS_EDGE_SET"];
+			for (eslocal index = _etypeDistribution[i], j = 0; index < _etypeDistribution[i + 1]; ++index, ++j) {
+				while (named.size() < (size_t)j || index < named[j]) {
+					unnamed.push_back(index++);
+				}
+			}
+		}
+	}
+
+	for (int i = estart; i < 2; i++) {
+		for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion) {
+			if (eregion->second.size() && _etypeDistribution[estart] <= eregion->second.front()) {
 				if (_etypeDistribution[i] <= eregion->second.front() && eregion->second.front() < _etypeDistribution[i + 1]) {
 					_mesh.boundaryRegions.push_back(new BoundaryRegionStore(eregion->first, _mesh._eclasses));
 					_mesh.boundaryRegions.back()->dimension = 2 - i;
