@@ -68,6 +68,16 @@ Ttype Esutils::sizesToOffsets(std::vector<Ttype> &sizes)
 	return sum;
 }
 
+template<typename Ttype, typename Tpermutation>
+void Esutils::permute(std::vector<Ttype> &data, const std::vector<Tpermutation> &permutation)
+{
+	std::vector<Ttype> _data(data.size());
+	_data.swap(data);
+	for (size_t i = 0; i < permutation.size(); i++) {
+		data[i] = _data[permutation[i]];
+	}
+}
+
 template<typename Ttype>
 void Esutils::threadDistributionToFullDistribution(std::vector<std::vector<Ttype> > &distribution)
 {

@@ -15,7 +15,7 @@ class ECFRoot;
 class Mesh;
 
 struct PlainMeshData {
-	std::vector<eslocal> nIDs;
+	std::vector<eslocal> nIDs, ndist, nranks;
 	std::vector<Point> coordinates;
 
 	std::vector<eslocal> eIDs, esize, enodes;
@@ -40,13 +40,19 @@ protected:
 	void balanceElements();
 	void balancePermutedElements();
 
-	void fillElements();
+	void sortNodes();
+	void sortElements();
+
+	void fillSortedNodes();
+	void fillSortedElements();
+
+	void reindexElementNodes();
 
 	const ECFRoot &_configuration;
 	PlainMeshData &_meshData;
 	Mesh &_mesh;
 
-	std::vector<size_t> _nDistribution, _eDistribution;
+	std::vector<size_t> _nDistribution, _eDistribution, _etypeDistribution;
 };
 
 }

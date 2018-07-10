@@ -61,7 +61,7 @@ RandomInput::RandomInput(const ECFRoot &configuration, PlainMeshData &meshData, 
 	ESINFO(PROGRESS2) << "Balanced loader:: neighbors linked up.";
 
 	TimeEvent telements("fill elements"); telements.start();
-	fillElements();
+	fillSortedElements();
 	_mesh.elements->reindex(_mesh.nodes->IDs);
 	telements.end(); timing.addEvent(telements);
 	ESINFO(PROGRESS2) << "Balanced loader:: elements filled.";

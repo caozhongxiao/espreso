@@ -27,6 +27,9 @@ struct Esutils
 	template<typename Ttype>
 	static Ttype sizesToOffsets(std::vector<Ttype> &sizes);
 
+	template<typename Ttype, typename Tpermutation>
+	static void permute(std::vector<Ttype> &data, const std::vector<Tpermutation> &permutation);
+
 	template<typename Ttype>
 	static void threadDistributionToFullDistribution(std::vector<std::vector<Ttype> > &distribution);
 

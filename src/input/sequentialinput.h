@@ -14,11 +14,7 @@ public:
 protected:
 	SequentialInput(const ECFRoot &configuration, PlainMeshData &dMesh, Mesh &mesh);
 
-	void fillNodes();
-
-	void fillNodeRegions();
-	void fillBoundaryRegions();
-	void fillElementRegions();
+	void prepareRegions();
 };
 
 }

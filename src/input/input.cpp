@@ -283,41 +283,108 @@ void Input::balancePermutedElements()
 	}
 }
 
-void Input::fillElements()
+void Input::sortNodes()
 {
+	if (std::is_sorted(_meshData.nIDs.begin(), _meshData.nIDs.end())) {
+		return;
+	}
+
+	std::vector<eslocal> permutation(_meshData.nIDs.size());
+	std::iota(permutation.begin(), permutation.end(), 0);
+	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return _meshData.nIDs[i] < _meshData.nIDs[j]; });
+
+	std::sort(_meshData.nIDs.begin(), _meshData.nIDs.end());
+	Esutils::permute(_meshData.coordinates, permutation);
+}
+
+void Input::sortElements()
+{
+	auto ecomp = [&] (eslocal i, eslocal j) {
+		if (static_cast<int>(_mesh._eclasses[0][_meshData.etype[i]].type) != static_cast<int>(_mesh._eclasses[0][_meshData.etype[j]].type)) {
+			return static_cast<int>(_mesh._eclasses[0][_meshData.etype[i]].type) > static_cast<int>(_mesh._eclasses[0][_meshData.etype[j]].type);
+		} else {
+			return _meshData.eIDs[i] < _meshData.eIDs[j];
+		}
+	};
+
+	if (!std::is_sorted(_meshData.eIDs.begin(), _meshData.eIDs.end(), ecomp)) {
+		std::vector<eslocal> permutation(_meshData.eIDs.size());
+		std::iota(permutation.begin(), permutation.end(), 0);
+		std::sort(permutation.begin(), permutation.end(), ecomp);
+
+		std::vector<eslocal> edist = std::vector<eslocal>({ 0 });
+		edist.reserve(_meshData.eIDs.size() + 1);
+		for (size_t e = 0; e < _meshData.eIDs.size(); e++) {
+			edist.push_back(edist.back() + _meshData.esize[e]);
+		}
+
+		std::sort(_meshData.eIDs.begin(), _meshData.eIDs.end());
+
+		Esutils::permute(_meshData.esize, permutation);
+		Esutils::permute(_meshData.body, permutation);
+		Esutils::permute(_meshData.etype, permutation);
+		Esutils::permute(_meshData.material, permutation);
+
+		std::vector<eslocal> npermutation(_meshData.enodes.size());
+		for (size_t i = 0, index = 0; i < permutation.size(); i++) {
+			for (size_t n = 0; n < _meshData.esize[i]; ++n, ++index) {
+				npermutation[index] = edist[permutation[i]] + n;
+			}
+		}
+
+		Esutils::permute(_meshData.enodes, npermutation);
+	}
+}
+
+void Input::fillSortedNodes()
+{
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	_mesh.nodes->size = _meshData.coordinates.size();
+	_mesh.nodes->distribution = tarray<Point>::distribute(threads, _meshData.coordinates.size());
+
+	_mesh.nodes->IDs = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(_mesh.nodes->distribution, _meshData.nIDs));
+	_mesh.nodes->coordinates = new serializededata<eslocal, Point>(1, tarray<Point>(_mesh.nodes->distribution, _meshData.coordinates));
+
+	std::vector<size_t> rdistribution = _mesh.nodes->distribution, rdatadistribution = _mesh.nodes->distribution;
+	for (size_t t = 1; t < threads; t++) {
+		++rdistribution[t];
+		rdatadistribution[t] = _meshData.ndist[rdistribution[t]];
+	}
+	++rdistribution[threads];
+	rdatadistribution[threads] = _meshData.ndist[rdistribution[threads] - 1];
+
+	_mesh.nodes->ranks = new serializededata<eslocal, int>(tarray<eslocal>(rdistribution, _meshData.ndist), tarray<int>(rdatadistribution, _meshData.nranks));
+
+	_mesh.boundaryRegions.push_back(new BoundaryRegionStore("ALL_NODES", _mesh._eclasses));
+	_mesh.boundaryRegions.back()->nodes = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(threads, _meshData.nIDs));
+
+	for (auto nregion = _meshData.nregions.begin(); nregion != _meshData.nregions.end(); ++nregion) {
+		_mesh.boundaryRegions.push_back(new BoundaryRegionStore(nregion->first, _mesh._eclasses));
+		_mesh.boundaryRegions.back()->nodes = new serializededata<eslocal, eslocal>(1, { threads, nregion->second });
+	}
+}
+
+void Input::fillSortedElements()
+{
+	for (int type = static_cast<int>(Element::TYPE::VOLUME); type > static_cast<int>(Element::TYPE::POINT); --type) {
+		_etypeDistribution.push_back(std::lower_bound(_meshData.etype.begin(), _meshData.etype.end(), type, [&] (int e, int type) {
+			return static_cast<int>(_mesh._eclasses[0][e].type) >= type; }) - _meshData.etype.begin()
+		);
+	}
+
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	std::vector<std::vector<eslocal> > tedist(threads), tnodes(threads), eIDs(threads), rData(threads);
 	std::vector<std::vector<int> > eMat(threads), eBody(threads);
 	std::vector<std::vector<Element*> > epointers(threads);
 
-	std::vector<eslocal> epermutation(_meshData.esize.size());
-	std::iota(epermutation.begin(), epermutation.end(), 0);
-	std::sort(epermutation.begin(), epermutation.end(), [&] (eslocal i, eslocal j) {
-		if (static_cast<int>(_mesh._eclasses[0][_meshData.etype[i]].type) != static_cast<int>(_mesh._eclasses[0][_meshData.etype[j]].type)) {
-			return static_cast<int>(_mesh._eclasses[0][_meshData.etype[i]].type) > static_cast<int>(_mesh._eclasses[0][_meshData.etype[j]].type);
-		} else {
-			return i < j;
-		}
-	});
+	std::vector<size_t> edistribution = tarray<Point>::distribute(threads, _etypeDistribution.front());
 
-	auto eprefix = epermutation.size();
-	if (epermutation.size()) {
-		eprefix = std::lower_bound(epermutation.begin(), epermutation.end(), static_cast<int>(_mesh._eclasses[0][_meshData.etype[epermutation.front()]].type), [&] (eslocal e, int type) {
-			return static_cast<int>(_mesh._eclasses[0][_meshData.etype[e]].type) >= type;
-		}) - epermutation.begin();
-	}
-
-	std::vector<size_t> edistribution = tarray<Point>::distribute(threads, eprefix);
-
-	std::vector<eslocal> edist = { 0 }, efulldist = { 0 };
-	edist.reserve(eprefix + 1);
-	efulldist.reserve(_meshData.esize.size() + 1);
-	for (size_t e = 0; e < eprefix; e++) {
-		edist.push_back(edist.back() + _meshData.esize[epermutation[e]]);
-	}
+	std::vector<eslocal> edist = { 0 };
+	edist.reserve(_meshData.esize.size() + 1);
 	for (size_t e = 0; e < _meshData.esize.size(); e++) {
-		efulldist.push_back(efulldist.back() + _meshData.esize[e]);
+		edist.push_back(edist.back() + _meshData.esize[e]);
 	}
 
 	#pragma omp parallel for
@@ -332,29 +399,23 @@ void Input::fillElements()
 		eIDs[t].resize(edistribution[t + 1] - edistribution[t]);
 		std::iota(eIDs[t].begin(), eIDs[t].end(), _eDistribution[environment->MPIrank] + edistribution[t]);
 
-		eBody[t].resize(edistribution[t + 1] - edistribution[t]);
-		eMat[t].resize(edistribution[t + 1] - edistribution[t]);
-		epointers[t].resize(edistribution[t + 1] - edistribution[t]);
-		tnodes[t].resize(edist[edistribution[t + 1]] - edist[edistribution[t]]);
+		eBody[t].insert(eBody[t].end(), _meshData.body.begin() + edistribution[t], _meshData.body.begin() + edistribution[t + 1]);
+		tnodes[t].insert(tnodes[t].end(), _meshData.enodes.begin() + edist[edistribution[t]], _meshData.enodes.begin() + edist[edistribution[t + 1]]);
 
-		for (size_t e = edistribution[t], i = 0; e < edistribution[t + 1]; ++e, ++i) {
-			epointers[t][i] = &_mesh._eclasses[t][_meshData.etype[epermutation[e]]];
-			eBody[t][i] = _meshData.body[epermutation[e]];
-
-			if (_configuration.input == INPUT_FORMAT::WORKBENCH && _configuration.workbench.keep_material_sets) {
-				eMat[t][i] = _meshData.material[epermutation[e]];
-			}
+		if (_configuration.input == INPUT_FORMAT::WORKBENCH && _configuration.workbench.keep_material_sets) {
+			eMat[t].insert(eMat[t].end(), _meshData.material.begin() + edistribution[t], _meshData.material.begin() + edistribution[t + 1]);
+		} else {
+			eMat[t].resize(edistribution[t + 1] - edistribution[t]);
 		}
 
-		for (size_t e = edistribution[t], i = 0; e < edistribution[t + 1]; ++e) {
-			for (size_t n = efulldist[epermutation[e]]; n < efulldist[epermutation[e] + 1]; ++n, ++i) {
-				tnodes[t][i] = _meshData.enodes[n];
-			}
+		epointers[t].resize(edistribution[t + 1] - edistribution[t]);
+		for (size_t e = edistribution[t], i = 0; e < edistribution[t + 1]; ++e, ++i) {
+			epointers[t][i] = &_mesh._eclasses[t][_meshData.etype[e]];
 		}
 	}
 
 	_mesh.elements->dimension = _mesh.dimension;
-	_mesh.elements->size = eprefix;
+	_mesh.elements->size = _etypeDistribution.front();
 	_mesh.elements->distribution = edistribution;
 	_mesh.elements->IDs = new serializededata<eslocal, eslocal>(1, eIDs);
 	_mesh.elements->nodes = new serializededata<eslocal, eslocal>(tedist, tnodes);
@@ -370,70 +431,75 @@ void Input::fillElements()
 	_mesh.elementsRegions.push_back(new ElementsRegionStore("ALL_ELEMENTS"));
 	_mesh.elementsRegions.back()->elements = new serializededata<eslocal, eslocal>(1, rData);
 
-
-//	auto eprefix = epermutation.size();
-//	if (epermutation.size()) {
-//		eprefix = std::lower_bound(epermutation.begin(), epermutation.end(), static_cast<int>(_mesh._eclasses[0][_meshData.etype[epermutation.front()]].type), [&] (eslocal e, int type) {
-//			return static_cast<int>(_mesh._eclasses[0][_meshData.etype[e]].type) >= type;
-//		}) - epermutation.begin();
-//	}
-
-	if (eprefix == epermutation.size()) {
-		return;
+	for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion) {
+		if (eregion->second.size() && eregion->second.front() < _etypeDistribution.front()) {
+			_mesh.elementsRegions.push_back(new ElementsRegionStore(eregion->first));
+			_mesh.elementsRegions.back()->elements = new serializededata<eslocal, eslocal>(1, { threads, eregion->second });
+		}
 	}
 
-	// the rest elements are boundary elements
-	_mesh.boundaryRegions.push_back(new BoundaryRegionStore("UNNAMED BOUNDARY REGION", _mesh._eclasses));
-	_mesh.boundaryRegions.back()->distribution = tarray<Point>::distribute(threads, epermutation.size() - eprefix);
-	edistribution = _mesh.boundaryRegions.back()->distribution;
+	for (int i = 0; i < 2; i++) {
+		for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion) {
+			if (eregion->second.size() && _etypeDistribution.front() <= eregion->second.front()) {
+				if (_etypeDistribution[i] <= eregion->second.front() && eregion->second.front() < _etypeDistribution[i + 1]) {
+					_mesh.boundaryRegions.push_back(new BoundaryRegionStore(eregion->first, _mesh._eclasses));
+					_mesh.boundaryRegions.back()->dimension = 2 - i;
 
-	edist.resize(1);
-	edist.reserve(epermutation.size() - eprefix + 1);
-	for (size_t e = eprefix; e < epermutation.size(); e++) {
-		edist.push_back(edist.back() + _meshData.esize[epermutation[e]]);
-	}
+					edistribution = tarray<Point>::distribute(threads, eregion->second.size());
+					std::vector<eslocal> eregiondist(eregion->second.size() + 1);
+					for (size_t e = 0; e < eregion->second.size(); e++) {
+						eregiondist[e + 1] = eregiondist[e] + _meshData.esize[eregion->second[e]];
+					}
 
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		tedist[t].clear();
-		if(t == 0) {
-			tedist[t].insert(tedist[t].end(), edist.begin() + edistribution[t], edist.begin() + edistribution[t + 1] + 1);
-		} else {
-			tedist[t].insert(tedist[t].end(), edist.begin() + edistribution[t] + 1, edist.begin() + edistribution[t + 1] + 1);
-		}
+					#pragma omp parallel for
+					for (size_t t = 0; t < threads; t++) {
+						tedist[t].clear();
+						if (t == 0) {
+							tedist[t].insert(tedist[t].end(), eregiondist.begin() + edistribution[t], eregiondist.begin() + edistribution[t + 1] + 1);
+						} else {
+							tedist[t].insert(tedist[t].end(), eregiondist.begin() + edistribution[t] + 1, eregiondist.begin() + edistribution[t + 1] + 1);
+						}
 
-		epointers[t].resize(edistribution[t + 1] - edistribution[t]);
-		tnodes[t].resize(edist[edistribution[t + 1]] - edist[edistribution[t]]);
+						tnodes[t].resize(eregiondist[edistribution[t + 1]] - eregiondist[edistribution[t]]);
+						for (size_t e = edistribution[t], index = 0; e < edistribution[t + 1]; ++e) {
+							for (size_t n = 0; n < _meshData.esize[eregion->second[e]]; ++n, ++index) {
+								tnodes[t][index] = _meshData.enodes[edist[eregion->second[e]] + n];
+							}
+						}
 
-		for (size_t e = edistribution[t], i = 0; e < edistribution[t + 1]; ++e, ++i) {
-			epointers[t][i] = &_mesh._eclasses[t][_meshData.etype[epermutation[eprefix + e]]];
-		}
+						epointers[t].resize(edistribution[t + 1] - edistribution[t]);
+						for (size_t e = edistribution[t], i = 0; e < edistribution[t + 1]; ++e, ++i) {
+							epointers[t][i] = &_mesh._eclasses[t][_meshData.etype[eregion->second[e]]];
+						}
+					}
 
-		for (size_t e = edistribution[t], i = 0; e < edistribution[t + 1]; ++e) {
-			for (size_t n = efulldist[epermutation[eprefix + e]]; n < efulldist[epermutation[eprefix + e] + 1]; ++n, ++i) {
-				tnodes[t][i] = _meshData.enodes[n];
+					_mesh.boundaryRegions.back()->elements = new serializededata<eslocal, eslocal>(tedist, tnodes);
+					_mesh.boundaryRegions.back()->epointers = new serializededata<eslocal, Element*>(1, epointers);
+				}
 			}
 		}
 	}
+}
 
-	switch (epointers.front().front()->type) {
-	case Element::TYPE::PLANE:
-		_mesh.boundaryRegions.back()->dimension = 2;
-		break;
-	case Element::TYPE::LINE:
-		_mesh.boundaryRegions.back()->dimension = 1;
-		break;
-	default:
-		ESINFO(ERROR) << "ESPRESO Workbench parser: invalid boundary region type. Have to be 3D plane or 2D line.";
-	}
-
-	_mesh.boundaryRegions.back()->elements = new serializededata<eslocal, eslocal>(tedist, tnodes);
-	_mesh.boundaryRegions.back()->epointers = new serializededata<eslocal, Element*>(1, epointers);
+void Input::reindexElementNodes()
+{
+	size_t threads = environment->OMP_NUM_THREADS;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (auto n = _mesh.boundaryRegions.back()->elements->begin(t)->begin(); n != _mesh.boundaryRegions.back()->elements->end(t)->begin(); ++n) {
+		for (auto n = _mesh.elements->nodes->begin(t)->begin(); n != _mesh.elements->nodes->end(t)->begin(); ++n) {
 			*n = std::lower_bound(_mesh.nodes->IDs->datatarray().begin(), _mesh.nodes->IDs->datatarray().end(), *n) - _mesh.nodes->IDs->datatarray().begin();
+		}
+	}
+
+	for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
+		if (_mesh.boundaryRegions[r]->dimension) {
+			#pragma omp parallel for
+			for (size_t t = 0; t < threads; t++) {
+				for (auto n = _mesh.boundaryRegions[r]->elements->begin(t)->begin(); n != _mesh.boundaryRegions[r]->elements->end(t)->begin(); ++n) {
+					*n = std::lower_bound(_mesh.nodes->IDs->datatarray().begin(), _mesh.nodes->IDs->datatarray().end(), *n) - _mesh.nodes->IDs->datatarray().begin();
+				}
+			}
 		}
 	}
 }

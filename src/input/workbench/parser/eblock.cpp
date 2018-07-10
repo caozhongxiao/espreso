@@ -287,9 +287,9 @@ bool EBlock::solid(const std::vector<ET> &et, PlainMeshData &mesh)
 	}
 
 	for (size_t t = 0; t < threads; t++) {
+		mesh.eIDs.insert(mesh.eIDs.end(), tIDs[t].begin(), tIDs[t].end());
 		mesh.esize.insert(mesh.esize.end(), tesize[t].begin(), tesize[t].end());
 		mesh.enodes.insert(mesh.enodes.end(), tnodes[t].begin(), tnodes[t].end());
-		mesh.eIDs.insert(mesh.eIDs.end(), tIDs[t].begin(), tIDs[t].end());
 		mesh.etype.insert(mesh.etype.end(), ttype[t].begin(), ttype[t].end());
 		mesh.body.insert(mesh.body.end(), tbody[t].begin(), tbody[t].end());
 		mesh.material.insert(mesh.material.end(), tmat[t].begin(), tmat[t].end());
@@ -376,6 +376,7 @@ bool EBlock::boundary(const std::vector<ET> &et, PlainMeshData &mesh)
 	}
 
 	for (size_t t = 0; t < threads; t++) {
+		mesh.eIDs.insert(mesh.eIDs.end(), tIDs[t].begin(), tIDs[t].end());
 		mesh.esize.insert(mesh.esize.end(), tesize[t].begin(), tesize[t].end());
 		mesh.enodes.insert(mesh.enodes.end(), tnodes[t].begin(), tnodes[t].end());
 		mesh.etype.insert(mesh.etype.end(), ttype[t].begin(), ttype[t].end());
