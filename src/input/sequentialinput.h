@@ -13,8 +13,6 @@ public:
 
 protected:
 	SequentialInput(const ECFRoot &configuration, PlainMeshData &dMesh, Mesh &mesh);
-
-	void prepareRegions();
 };
 
 }

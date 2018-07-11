@@ -42,7 +42,7 @@ SortedInput::SortedInput(const ECFRoot &configuration, PlainMeshData &meshData, 
 	ESINFO(PROGRESS2) << "Distributed loader:: data balanced.";
 
 	TimeEvent telements("fill elements"); telements.start();
-	fillSortedElements();
+	fillElements();
 	telements.end(); timing.addEvent(telements);
 	ESINFO(PROGRESS2) << "Distributed loader:: elements filled.";
 

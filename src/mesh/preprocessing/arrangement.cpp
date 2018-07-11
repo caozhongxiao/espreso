@@ -529,8 +529,8 @@ void MeshPreprocessing::arrangeRegions()
 		for (size_t t = 0; t < threads; t++) {
 			const auto &regions = _mesh->elements->regions->datatarray();
 			int maskSize = _mesh->elements->regionMaskSize;
-			int maskOffset = r / (8 * sizeof(eslocal));
-			int bit = 1 << (r % (8 * sizeof(eslocal)));
+			eslocal maskOffset = r / (8 * sizeof(eslocal));
+			eslocal bit = 1 << (r % (8 * sizeof(eslocal)));
 			std::vector<eslocal> mask(maskSize);
 			mask[maskOffset] = bit;
 
@@ -1166,8 +1166,8 @@ void MeshPreprocessing::computeRegionsIntersection(RegionMapBase &map)
 		std::iota(permutation.begin(), permutation.end(), 0);
 
 		for (size_t r = 0; r < bregions.size(); r++) {
-			int maskOffset = r / (8 * sizeof(eslocal));
-			int bit = 1 << (r % (8 * sizeof(eslocal)));
+			eslocal maskOffset = r / (8 * sizeof(eslocal));
+			eslocal bit = 1 << (r % (8 * sizeof(eslocal)));
 
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
@@ -1206,8 +1206,8 @@ void MeshPreprocessing::computeRegionsIntersection(RegionMapBase &map)
 		for (size_t i = 0; i < disjunkt.size(); offset += disjunkt[i++].size()) {
 			std::vector<BoundaryRegionStore*> regions;
 			for (size_t r = 0; r < bregions.size(); r++) {
-				int maskOffset = r / (8 * sizeof(eslocal));
-				int bit = 1 << (r % (8 * sizeof(eslocal)));
+				eslocal maskOffset = r / (8 * sizeof(eslocal));
+				eslocal bit = 1 << (r % (8 * sizeof(eslocal)));
 				if (mask[permutation[offset] * maskSize + maskOffset] & bit) {
 					regions.push_back(bregions[r]);
 				}

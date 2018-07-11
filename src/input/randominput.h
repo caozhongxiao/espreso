@@ -31,6 +31,9 @@ protected:
 	std::vector<eslocal> _nIDs;
 	std::vector<uint> _nBuckets, _eBuckets;
 
+	std::vector<eslocal> _eregions, _nregions;
+	size_t _eregsize, _nregsize;
+
 	// distribution across processes
 	std::vector<uint> _bucketsBorders;
 };

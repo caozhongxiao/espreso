@@ -69,12 +69,14 @@ Ttype Esutils::sizesToOffsets(std::vector<Ttype> &sizes)
 }
 
 template<typename Ttype, typename Tpermutation>
-void Esutils::permute(std::vector<Ttype> &data, const std::vector<Tpermutation> &permutation)
+void Esutils::permute(std::vector<Ttype> &data, const std::vector<Tpermutation> &permutation, size_t elementsize)
 {
 	std::vector<Ttype> _data(data.size());
 	_data.swap(data);
-	for (size_t i = 0; i < permutation.size(); i++) {
-		data[i] = _data[permutation[i]];
+	for (size_t e = 0; e < elementsize; e++) {
+		for (size_t i = 0; i < permutation.size(); i++) {
+			data[elementsize * i + e] = _data[elementsize * permutation[i] + e];
+		}
 	}
 }
 

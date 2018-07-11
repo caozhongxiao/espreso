@@ -42,6 +42,11 @@ SequentialInput::SequentialInput(const ECFRoot &configuration, PlainMeshData &me
 	tesort.end(); timing.addEvent(tesort);
 	ESINFO(PROGRESS2) << "Sequential loader:: elements sorted.";
 
+	TimeEvent tpost("reindex regions"); tpost.start();
+	reindexRegions();
+	tpost.end(); timing.addEvent(tpost);
+	ESINFO(PROGRESS2) << "Sequential loader:: regions reindexed.";
+
 	TimeEvent tranks("fill ranks"); tranks.start();
 	_meshData.nranks.resize(_meshData.nIDs.size());
 	_meshData.ndist.resize(_meshData.nIDs.size() + 1);
@@ -50,18 +55,13 @@ SequentialInput::SequentialInput(const ECFRoot &configuration, PlainMeshData &me
 	tranks.end(); timing.addEvent(tranks);
 	ESINFO(PROGRESS2) << "Sequential loader:: ranks filled.";
 
-	TimeEvent tpost("regions prepared"); tpost.start();
-	prepareRegions();
-	tpost.end(); timing.addEvent(tpost);
-	ESINFO(PROGRESS2) << "Sequential loader:: regions prepared.";
-
 	TimeEvent tnodes("fill nodes"); tnodes.start();
-	fillSortedNodes();
+	fillNodes();
 	tnodes.end(); timing.addEvent(tnodes);
 	ESINFO(PROGRESS2) << "Sequential loader:: nodes filled.";
 
 	TimeEvent telements("fill elements"); telements.start();
-	fillSortedElements();
+	fillElements();
 	telements.end(); timing.addEvent(telements);
 	ESINFO(PROGRESS2) << "Sequential loader:: elements filled.";
 
@@ -77,41 +77,6 @@ SequentialInput::SequentialInput(const ECFRoot &configuration, PlainMeshData &me
 
 	timing.totalTime.endWithBarrier();
 	timing.printStatsMPI();
-}
-
-void SequentialInput::prepareRegions()
-{
-	size_t threads = environment->OMP_NUM_THREADS;
-
-	for (auto nregion = _meshData.nregions.begin(); nregion != _meshData.nregions.end(); ++nregion) {
-		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, nregion->second.size());
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			auto n = nregion->second.begin();
-			if (n != nregion->second.end()) {
-				auto nit = std::lower_bound(_meshData.nIDs.begin(), _meshData.nIDs.end(), *n);
-				for ( ; n != nregion->second.end(); ++n, ++nit) {
-					while (*n != *nit) { ++nit; }
-					*n = nit - _meshData.nIDs.begin();
-				}
-			}
-		}
-	}
-
-	for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion) {
-		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, eregion->second.size());
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			auto e = eregion->second.begin();
-			if (e != eregion->second.end()) {
-				auto eit = std::lower_bound(_meshData.eIDs.begin(), _meshData.eIDs.begin(), *e);
-				for ( ; e != eregion->second.end(); ++e, ++eit) {
-					while (*e != *eit) { ++eit; }
-					*e = eit - _meshData.eIDs.begin();
-				}
-			}
-		}
-	}
 }
 
 

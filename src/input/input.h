@@ -40,12 +40,18 @@ protected:
 	void balanceElements();
 	void balancePermutedElements();
 
+	void assignRegions();
+
 	void sortNodes();
+	void sortNodesWithRegion();
 	void sortElements();
 
-	void fillSortedNodes();
-	void fillSortedElements();
+	void fillNodes();
+	void fillElements();
 
+	void reindexRegions();
+	void reindexNodeRegions();
+	void reindexElementRegions();
 	void reindexElementNodes();
 
 	const ECFRoot &_configuration;
