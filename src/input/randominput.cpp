@@ -669,7 +669,7 @@ void RandomInput::linkup()
 	for (size_t i = 0; i < neighbors.size(); i++) {
 		int begin = std::lower_bound(_bucketsBorders.begin(), _bucketsBorders.end(), neighbors[i].first) - _bucketsBorders.begin();
 		int end = std::lower_bound(_bucketsBorders.begin(), _bucketsBorders.end(), neighbors[i].second) - _bucketsBorders.begin();
-		if (neighbors[i].first < _bucketsBorders[begin]) {
+		if (begin && neighbors[i].first < _bucketsBorders[begin]) {
 			--begin;
 		}
 		for (int r = begin; r < end; r++) {
@@ -824,45 +824,48 @@ void RandomInput::linkup()
 		ESINFO(ERROR) << "ESPRESO internal error: return requested unknown node targets.";
 	}
 
-	sNodes.clear();
+	uNodes.clear();
 
 	for (size_t i = 1; i < oTargets.size(); i++) {
-		uNodes[0].insert(uNodes[0].end(), uNodes[i].begin(), uNodes[i].end());
+		sNodes[0].insert(sNodes[0].end(), sNodes[i].begin(), sNodes[i].end());
 		rTargets[0].insert(rTargets[0].end(), rTargets[i].begin(), rTargets[i].end());
 	}
 
 	if (oTargets.size()) {
 		oTargets.clear();
-		std::vector<eslocal> upermutation(uNodes.front().size());
+		std::vector<eslocal> upermutation(sNodes.front().size());
 		std::iota(upermutation.begin(), upermutation.end(), 0);
 		std::sort(upermutation.begin(), upermutation.end(), [&] (eslocal i, eslocal j) { return rTargets[0][i] < rTargets[0][i]; });
 
 		for (size_t i = 0; i < upermutation.size(); i++) {
 			if (i == 0 || rTargets[0][upermutation[i]] != rTargets[0][upermutation[i - 1]]) {
 				oTargets.push_back(rTargets[0][upermutation[i]]);
-				sNodes.push_back({});
+				uNodes.push_back({});
 			}
-			sNodes.back().push_back(uNodes[0][upermutation[i]]);
+			uNodes.back().push_back(sNodes[0][upermutation[i]]);
 		}
 	}
 
-	uNodes.clear();
+	sNodes.clear();
 	oSources.clear();
+	sNodes.swap(uNodes);
 
 	if (!Communication::sendVariousTargets(sNodes, uNodes, oTargets, oSources)) {
 		ESINFO(ERROR) << "ESPRESO internal error: request for unknown nodes.";
 	}
 
 	fCoords.clear();
-	fCoords.reserve(oSources.size());
+	fCoords.resize(oSources.size());
 	fRegions.clear();
-	fRegions.reserve(oSources.size() * _nregsize);
+	fRegions.resize(oSources.size());
 	for (size_t t = 0; t < oSources.size(); t++) {
 		for (size_t n = 0; n < uNodes[t].size(); n++) {
 			auto node = std::lower_bound(_meshData.nIDs.begin(), _meshData.nIDs.end(), uNodes[t][n]);
 			if (node != _meshData.nIDs.end() && *node == uNodes[t][n]) {
 				fCoords[t].push_back(_meshData.coordinates[node - _meshData.nIDs.begin()]);
 				fRegions[t].insert(fRegions[t].end(), _nregions.begin() + _nregsize * (node - _meshData.nIDs.begin()), _nregions.begin() + _nregsize * (node - _meshData.nIDs.begin() + 1));
+			} else {
+				ESINFO(ERROR) << "ESPRESO internal error: something wrong happen during link-up phase.";
 			}
 		}
 	}
@@ -890,7 +893,7 @@ void RandomInput::linkup()
 		rNodes.insert(rNodes.begin() + (it - nranks.begin()), std::vector<eslocal>());
 		rRegions.insert(rRegions.begin() + (it - nranks.begin()), std::vector<eslocal>());
 		rCoors.insert(rCoors.begin() + (it - nranks.begin()), std::vector<Point>());
-		fNodes.insert(fNodes.begin() + (it - nranks.begin()), rNodes[i]);
+		fNodes.insert(fNodes.begin() + (it - nranks.begin()), uNodes[i]);
 	}
 
 	nranks.push_back(environment->MPIrank);
