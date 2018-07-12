@@ -389,8 +389,8 @@ void Input::assignRegions(
 		eslocal byte = r / (8 * sizeof(eslocal));
 		eslocal bit = 1 << (r % (8 * sizeof(eslocal)));
 
-		auto it = IDs.begin();
 		for (size_t t = 0; t < rBuffer.size(); t++) {
+			auto it = std::lower_bound(IDs.begin(), IDs.end(), rBuffer[t].front());
 			for (size_t i = 0; i < rBuffer[t].size(); ++i) {
 				while (rBuffer[t][i] != *it) { ++it; }
 				rbits[rsize * (it - IDs.begin()) + byte] |= bit;
