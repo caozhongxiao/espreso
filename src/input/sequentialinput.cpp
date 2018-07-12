@@ -43,7 +43,8 @@ SequentialInput::SequentialInput(const ECFRoot &configuration, PlainMeshData &me
 	ESINFO(PROGRESS2) << "Sequential loader:: elements sorted.";
 
 	TimeEvent tpost("reindex regions"); tpost.start();
-	reindexRegions();
+	reindexRegions(_meshData.eregions, _meshData.eIDs);
+	reindexRegions(_meshData.nregions, _meshData.nIDs);
 	tpost.end(); timing.addEvent(tpost);
 	ESINFO(PROGRESS2) << "Sequential loader:: regions reindexed.";
 
@@ -63,6 +64,13 @@ SequentialInput::SequentialInput(const ECFRoot &configuration, PlainMeshData &me
 	TimeEvent telements("fill elements"); telements.start();
 	fillElements();
 	telements.end(); timing.addEvent(telements);
+	ESINFO(PROGRESS2) << "Sequential loader:: elements filled.";
+
+	TimeEvent tregions("fill regions"); tregions.start();
+	fillElementRegions();
+	fillBoundaryRegions();
+	fillNodeRegions();
+	tregions.end(); timing.addEvent(tregions);
 	ESINFO(PROGRESS2) << "Sequential loader:: elements filled.";
 
 	TimeEvent treindex("reindex elements nodes"); treindex.start();

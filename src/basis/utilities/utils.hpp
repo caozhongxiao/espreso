@@ -74,7 +74,7 @@ void Esutils::permute(std::vector<Ttype> &data, const std::vector<Tpermutation> 
 	std::vector<Ttype> _data(data.size());
 	_data.swap(data);
 	for (size_t e = 0; e < elementsize; e++) {
-		for (size_t i = 0; i < permutation.size(); i++) {
+		for (size_t i = 0; i < data.size() / elementsize; i++) {
 			data[elementsize * i + e] = _data[elementsize * permutation[i] + e];
 		}
 	}

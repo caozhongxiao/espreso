@@ -9,6 +9,7 @@
 #include "../config/ecf/root.h"
 
 #include "../mesh/mesh.h"
+#include "../mesh/elements/element.h"
 #include "../mesh/preprocessing/meshpreprocessing.h"
 #include "../mesh/store/nodestore.h"
 #include "../mesh/store/elementstore.h"
@@ -29,7 +30,7 @@ void RandomInput::buildMesh(const ECFRoot &configuration, PlainMeshData &meshDat
 }
 
 RandomInput::RandomInput(const ECFRoot &configuration, PlainMeshData &meshData, Mesh &mesh)
-: Input(configuration, meshData, mesh), _sfc(_mesh.dimension, SFCDEPTH, _meshData.coordinates), _eregsize(0), _nregsize(0)
+: Input(configuration, meshData, mesh), _sfc(_mesh.dimension, SFCDEPTH, _meshData.coordinates)
 {
 	ESINFO(OVERVIEW) << "Build mesh from randomly distributed elements.";
 	TimeEval timing("Load distributed mesh");
@@ -41,14 +42,15 @@ RandomInput::RandomInput(const ECFRoot &configuration, PlainMeshData &meshData, 
 	ESINFO(PROGRESS2) << "Random data loader:: data balanced.";
 
 	TimeEvent tregions("assign regions"); tregions.start();
-	assignRegions();
+	assignRegions(_meshData.eregions, _meshData.eIDs, _eDistribution, _eregsize, _eregions);
+	assignRegions(_meshData.nregions, _meshData.nIDs, _nDistribution, _nregsize, _nregions);
 	tregions.end(); timing.addEvent(tregions);
 	ESINFO(PROGRESS2) << "Random data loader:: regions assigned.";
 
-	TimeEvent treindexregions("reindex regions"); treindexregions.start();
-	reindexRegions();
-	treindexregions.end(); timing.addEvent(treindexregions);
-	ESINFO(PROGRESS2) << "Random data loader:: regions reindexed.";
+//	TimeEvent treindexregions("reindex regions"); treindexregions.start();
+//	reindexRegions();
+//	treindexregions.end(); timing.addEvent(treindexregions);
+//	ESINFO(PROGRESS2) << "Random data loader:: regions reindexed.";
 
 	TimeEvent tnbuckets("assign nodes to buckets"); tnbuckets.start();
 	assignNBuckets();
@@ -65,20 +67,20 @@ RandomInput::RandomInput(const ECFRoot &configuration, PlainMeshData &meshData, 
 	tclusterization.end(); timing.addEvent(tclusterization);
 	ESINFO(PROGRESS2) << "Random data loader:: elements clusterized.";
 
+	TimeEvent tesort("sort elements"); tesort.start();
+	sortElements();
+	tesort.end(); timing.addEvent(tesort);
+	ESINFO(PROGRESS2) << "Random data loader:: elements sorted.";
+
 	TimeEvent tlinkup("link together"); tlinkup.start();
 	linkup();
 	tlinkup.end(); timing.addEvent(tlinkup);
 	ESINFO(PROGRESS2) << "Random data loader:: neighbors linked up.";
 
 	TimeEvent tnsort("sort nodes"); tnsort.start();
-	sortNodesWithRegion();
+	sortNodes();
 	tnsort.end(); timing.addEvent(tnsort);
 	ESINFO(PROGRESS2) << "Random data loader:: nodes sorted.";
-//
-//	TimeEvent tesort("sort elements"); tesort.start();
-//	sortElements();
-//	tesort.end(); timing.addEvent(tesort);
-//	ESINFO(PROGRESS2) << "Random data loader:: elements sorted.";
 
 	TimeEvent tnodes("fill nodes"); tnodes.start();
 	fillNodes();
@@ -89,6 +91,20 @@ RandomInput::RandomInput(const ECFRoot &configuration, PlainMeshData &meshData, 
 	fillElements();
 	telements.end(); timing.addEvent(telements);
 	ESINFO(PROGRESS2) << "Random data loader:: elements filled.";
+
+	TimeEvent texchange("exchange boundary"); texchange.start();
+	exchangeBoundary();
+	texchange.end(); timing.addEvent(texchange);
+	ESINFO(PROGRESS2) << "Random data loader:: boundary exchanged.";
+
+	TimeEvent tboundary("fill regions"); tboundary.start();
+	fillRegions(_meshData.eregions, _eregsize, _eregions);
+	fillRegions(_meshData.nregions, _nregsize, _nregions);
+	fillElementRegions();
+	fillBoundaryRegions();
+	fillNodeRegions();
+	tboundary.end(); timing.addEvent(tboundary);
+	ESINFO(PROGRESS2) << "Random data loader:: regions filled.";
 
 	TimeEvent treindex("reindex elements nodes"); treindex.start();
 	reindexElementNodes();
@@ -582,19 +598,6 @@ void RandomInput::clusterize()
 	Esutils::permute(_meshData.coordinates, npermutation);
 	Esutils::permute(_nregions, npermutation, _nregsize);
 
-	r = 0;
-	for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion, ++r) {
-		eslocal byte = r / (8 * sizeof(eslocal));
-		eslocal bit = 1 << (r % (8 * sizeof(eslocal)));
-
-		eregion->second.clear();
-		for (size_t i = 0; i < _meshData.eIDs.size(); ++i) {
-			if (_eregions[_eregsize * i + byte] & bit) {
-				eregion->second.push_back(i);
-			}
-		}
-	}
-
 	_eDistribution = Communication::getDistribution(_meshData.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
 
 	e7.end();
@@ -693,7 +696,13 @@ void RandomInput::linkup()
 	std::vector<std::vector<eslocal> > sNodes(nranks.size()), fNodes(nranks.size()), fRegions(nranks.size()), rNodes(nranks.size()), rRegions(nranks.size());
 	std::vector<std::vector<Point> > fCoords(nranks.size()), rCoors(nranks.size());
 
-	std::vector<eslocal> enodes(_meshData.enodes.begin(), _meshData.enodes.end());
+	size_t enodesize = 0;
+	size_t estart = _mesh.dimension == 3 ? 0 : 1;
+	for (size_t e = 0; e < _etypeDistribution[estart]; e++) {
+		enodesize += _meshData.esize[e];
+	}
+
+	std::vector<eslocal> enodes(_meshData.enodes.begin(), _meshData.enodes.begin() + enodesize);
 	Esutils::sortAndRemoveDuplicity(enodes);
 
 	for (size_t id = 0, node = 0; id < _meshData.nIDs.size() || node < enodes.size(); ++id) {
@@ -1027,6 +1036,189 @@ void RandomInput::linkup()
 
 	timing.totalTime.endWithBarrier();
 	timing.printStatsMPI();
+}
+
+void RandomInput::exchangeBoundary()
+{
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	if (_mesh.nodes->elements == NULL) {
+		_mesh.preprocessing->linkNodesAndElements();
+	}
+
+	size_t estart = _mesh.dimension == 3 ? 0 : 1;
+
+	std::vector<eslocal> edist = { 0 };
+	edist.reserve(_meshData.eIDs.size() - _etypeDistribution[estart] + 1);
+	for (size_t e = 0; e < _etypeDistribution[estart]; e++) {
+		edist.back() += _meshData.esize[e];
+	}
+	for (size_t e = _etypeDistribution[estart]; e < _etypeDistribution.back(); e++) {
+		edist.push_back(edist.back() + _meshData.esize[e]);
+	}
+
+	std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, _etypeDistribution.back() - _etypeDistribution[estart]);
+	std::vector<eslocal> emembership(distribution.back(), -1);
+	std::vector<std::vector<std::pair<eslocal, eslocal> > > etargets(threads);
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		std::vector<eslocal> nlinks;
+		int counter, known;
+		std::pair<eslocal, eslocal> target;
+		for (size_t e = distribution[t]; e < distribution[t + 1]; ++e) {
+			nlinks.clear();
+			known = 0;
+			for (auto n = edist[e]; n < edist[e + 1]; ++n) {
+				auto nit = std::lower_bound(_meshData.nIDs.begin(), _meshData.nIDs.end(), _meshData.enodes[n]);
+				if (nit != _meshData.nIDs.end() && *nit == _meshData.enodes[n]) {
+					auto links = _mesh.nodes->elements->cbegin() + (nit - _meshData.nIDs.begin());
+					nlinks.insert(nlinks.end(), links->begin(), links->end());
+					++known;
+				}
+			}
+			std::sort(nlinks.begin(), nlinks.end());
+			counter = 1;
+			for (size_t i = 1; i < nlinks.size(); ++i) {
+				if (nlinks[i - 1] == nlinks[i]) {
+					++counter;
+					if (counter == edist[e + 1] - edist[e]) {
+						if (_eDistribution[environment->MPIrank] <= nlinks[i] && nlinks[i] < _eDistribution[environment->MPIrank + 1]) {
+							emembership[e] = nlinks[i];
+						} else {
+							target.first = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), nlinks[i] + 1) - _eDistribution.begin() - 1;
+							target.second = e;
+							etargets[t].push_back(target);
+						}
+						break;
+					}
+				} else {
+					counter = 1;
+				}
+				if (counter == known) {
+					target.first = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), nlinks[i] + 1) - _eDistribution.begin() - 1;
+					target.second = e;
+					etargets[t].push_back(target);
+				}
+			}
+		}
+	}
+
+	for (size_t t = 1; t < threads; t++) {
+		etargets[0].insert(etargets[0].end(), etargets[t].begin(), etargets[t].end());
+	}
+
+	Esutils::sortAndRemoveDuplicity(etargets[0]);
+
+	std::vector<int> sRanks;
+	std::vector<std::vector<eslocal> > sBoundary, rBoundary;
+
+	for (size_t e = 0; e < etargets[0].size(); ++e) {
+		eslocal eindex = etargets[0][e].second + _etypeDistribution[estart];
+		if (!sRanks.size() || sRanks.back() != etargets[0][e].first) {
+			sRanks.push_back(etargets[0][e].first);
+			sBoundary.push_back({});
+		}
+		sBoundary.back().push_back(_meshData.esize[eindex]);
+		sBoundary.back().push_back(_meshData.etype[eindex]);
+		sBoundary.back().insert(sBoundary.back().end(), _eregions.begin() + eindex * _eregsize, _eregions.begin() + (eindex + 1) * _eregsize);
+		sBoundary.back().insert(sBoundary.back().end(), _meshData.enodes.begin() + edist[etargets[0][e].second], _meshData.enodes.begin() + edist[etargets[0][e].second + 1]);
+	}
+
+	if (!Communication::sendVariousTargets(sBoundary, rBoundary, sRanks)) {
+		ESINFO(ERROR) << "ESPRESO internal error: exchange boundary elements.";
+	}
+
+	for (size_t r = 1; r < rBoundary.size(); r++) {
+		rBoundary[0].insert(rBoundary[0].end(), rBoundary[r].begin(), rBoundary[r].end());
+	}
+
+	size_t newsize = 0;
+	for (size_t i = 0; rBoundary.size() && i < rBoundary[0].size(); ++newsize) {
+		_meshData.esize.push_back(rBoundary[0][i++]);
+		edist.push_back(edist.back() + _meshData.esize.back());
+		_meshData.etype.push_back(rBoundary[0][i++]);
+		_eregions.insert(_eregions.end(), rBoundary[0].begin() + i, rBoundary[0].begin() + i + _eregsize);
+		i += _eregsize;
+		_meshData.enodes.insert(_meshData.enodes.end(), rBoundary[0].begin() + i, rBoundary[0].begin() + i + _meshData.esize.back());
+		i += _meshData.esize.back();
+	}
+
+	emembership.resize(emembership.size() + newsize, -1);
+
+	{
+		std::vector<eslocal> nlinks;
+		int counter;
+		for (size_t e = distribution.back(); e < distribution.back() + newsize; ++e) {
+			nlinks.clear();
+			for (auto n = edist[e]; n < edist[e + 1]; ++n) {
+				auto nit = std::lower_bound(_meshData.nIDs.begin(), _meshData.nIDs.end(), _meshData.enodes[n]);
+				if (nit != _meshData.nIDs.end() && *nit == _meshData.enodes[n]) {
+					auto links = _mesh.nodes->elements->cbegin() + (nit - _meshData.nIDs.begin());
+					nlinks.insert(nlinks.end(), links->begin(), links->end());
+				}
+			}
+			std::sort(nlinks.begin(), nlinks.end());
+			counter = 1;
+			for (size_t i = 1; i < nlinks.size(); ++i) {
+				if (nlinks[i - 1] == nlinks[i]) {
+					++counter;
+					if (counter == edist[e + 1] - edist[e]) {
+						if (_eDistribution[environment->MPIrank] <= nlinks[i] && nlinks[i] < _eDistribution[environment->MPIrank + 1]) {
+							emembership[e] = nlinks[i];
+						}
+						break;
+					}
+				} else {
+					counter = 1;
+				}
+			}
+		}
+	}
+
+	std::vector<eslocal> esize, etype, enodes, ereg;
+
+	for (int i = estart; i < 2; i++) {
+		size_t bindex = 0;
+		for (size_t e = _etypeDistribution[estart]; e < _etypeDistribution.back(); ++e, ++bindex) {
+			if (static_cast<int>(_mesh._eclasses[0][_meshData.etype[e]].type) == 2 - i && emembership[bindex] != -1) {
+				for (auto n = edist[bindex]; n < edist[bindex + 1]; ++n) {
+					enodes.push_back(_meshData.enodes[n]);
+				}
+				esize.push_back(_meshData.esize[e]);
+				etype.push_back(_meshData.etype[e]);
+				ereg.insert(ereg.end(), _eregions.begin() + _eregsize * e, _eregions.begin() + _eregsize * (e + 1));
+			}
+		}
+
+		for (size_t e = _etypeDistribution.back(); e < _etypeDistribution.back() + newsize; ++e, ++bindex) {
+			if (static_cast<int>(_mesh._eclasses[0][_meshData.etype[e]].type) == 2 - i && emembership[bindex] != -1) {
+				for (auto n = edist[bindex]; n < edist[bindex + 1]; ++n) {
+					enodes.push_back(_meshData.enodes[n]);
+				}
+				esize.push_back(_meshData.esize[e]);
+				etype.push_back(_meshData.etype[e]);
+				ereg.insert(ereg.end(), _eregions.begin() + _eregsize * e, _eregions.begin() + _eregsize * (e + 1));
+			}
+		}
+	}
+
+	_meshData.esize.resize(_etypeDistribution[estart]);
+	_meshData.etype.resize(_etypeDistribution[estart]);
+	_meshData.enodes.resize(edist.front());
+	_eregions.resize(_etypeDistribution[estart] * _eregsize);
+
+	_meshData.esize.insert(_meshData.esize.end(), esize.begin(), esize.end());
+	_meshData.etype.insert(_meshData.etype.end(), etype.begin(), etype.end());
+	_meshData.enodes.insert(_meshData.enodes.end(), enodes.begin(), enodes.end());
+	_eregions.insert(_eregions.end(), ereg.begin(), ereg.end());
+
+	_etypeDistribution.clear();
+	for (int type = static_cast<int>(Element::TYPE::VOLUME); type > static_cast<int>(Element::TYPE::POINT); --type) {
+		_etypeDistribution.push_back(std::lower_bound(_meshData.etype.begin(), _meshData.etype.end(), type, [&] (int e, int type) {
+			return static_cast<int>(_mesh._eclasses[0][e].type) >= type; }) - _meshData.etype.begin()
+		);
+	}
 }
 
 void RandomInput::polish()

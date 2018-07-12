@@ -295,6 +295,7 @@ void Input::sortNodes()
 
 	std::sort(_meshData.nIDs.begin(), _meshData.nIDs.end());
 	Esutils::permute(_meshData.coordinates, permutation);
+	Esutils::permute(_nregions, permutation, _nregsize);
 
 	if (_meshData.nranks.size()) {
 		std::vector<eslocal> npermutation(_meshData.nranks.size());
@@ -308,23 +309,6 @@ void Input::sortNodes()
 
 		Esutils::permute(_meshData.nranks, npermutation);
 	}
-}
-
-void Input::sortNodesWithRegion()
-{
-	if (std::is_sorted(_meshData.nIDs.begin(), _meshData.nIDs.end())) {
-		return;
-	}
-
-	for (auto nregion = _meshData.nregions.begin(); nregion != _meshData.nregions.end(); ++nregion) {
-		for (size_t n = 0; n < nregion->second.size(); n++) {
-			nregion->second[n] = _meshData.nIDs[nregion->second[n]];
-		}
-		std::sort(nregion->second.begin(), nregion->second.end());
-	}
-
-	sortNodes();
-	reindexNodeRegions();
 }
 
 void Input::sortElements()
@@ -353,6 +337,7 @@ void Input::sortElements()
 		Esutils::permute(_meshData.body, permutation);
 		Esutils::permute(_meshData.etype, permutation);
 		Esutils::permute(_meshData.material, permutation);
+		Esutils::permute(_eregions, permutation, _eregsize);
 
 		std::vector<eslocal> npermutation(_meshData.enodes.size());
 		for (size_t i = 0, index = 0; i < permutation.size(); i++) {
@@ -363,19 +348,32 @@ void Input::sortElements()
 
 		Esutils::permute(_meshData.enodes, npermutation);
 	}
+
+	for (int type = static_cast<int>(Element::TYPE::VOLUME); type > static_cast<int>(Element::TYPE::POINT); --type) {
+		_etypeDistribution.push_back(std::lower_bound(_meshData.etype.begin(), _meshData.etype.end(), type, [&] (int e, int type) {
+			return static_cast<int>(_mesh._eclasses[0][e].type) >= type; }) - _meshData.etype.begin()
+		);
+	}
 }
 
-void Input::assignRegions()
+void Input::assignRegions(
+		std::map<std::string, std::vector<eslocal> > &regions, std::vector<eslocal> &IDs,
+		std::vector<size_t> &distribution,
+		size_t &rsize, std::vector<eslocal> &rbits)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	for (auto nregion = _meshData.nregions.begin(); nregion != _meshData.nregions.end(); ++nregion) {
+	rsize = regions.size() / (8 * sizeof(eslocal)) + 1;
+	rbits.resize(rsize * IDs.size());
+
+	size_t r = 0;
+	for (auto region = regions.begin(); region != regions.end(); ++region, ++r) {
 		std::vector<std::vector<eslocal> > sBuffer, rBuffer;
 		std::vector<int> sRanks;
 
 		for (int t = 0; t < environment->MPIsize; t++) {
-			auto begin = std::lower_bound(nregion->second.begin(), nregion->second.end(), _nDistribution[t]);
-			auto end = std::lower_bound(nregion->second.begin(), nregion->second.end(), _nDistribution[t + 1]);
+			auto begin = std::lower_bound(region->second.begin(), region->second.end(), distribution[t]);
+			auto end = std::lower_bound(region->second.begin(), region->second.end(), distribution[t + 1]);
 			if (end - begin) {
 				sBuffer.push_back(std::vector<eslocal>(begin, end));
 				sRanks.push_back(t);
@@ -383,35 +381,38 @@ void Input::assignRegions()
 		}
 
 		if (!Communication::sendVariousTargets(sBuffer, rBuffer, sRanks)) {
-			ESINFO(ERROR) << "ESPRESO internal error: exchange node region.";
+			ESINFO(ERROR) << "ESPRESO internal error: assign regions.";
 		}
 
-		nregion->second.clear();
-		for (size_t i = 0; i < rBuffer.size(); i++) {
-			nregion->second.insert(nregion->second.end(), rBuffer[i].begin(), rBuffer[i].end());
+		region->second.clear();
+
+		eslocal byte = r / (8 * sizeof(eslocal));
+		eslocal bit = 1 << (r % (8 * sizeof(eslocal)));
+
+		auto it = IDs.begin();
+		for (size_t t = 0; t < rBuffer.size(); t++) {
+			for (size_t i = 0; i < rBuffer[t].size(); ++i) {
+				while (rBuffer[t][i] != *it) { ++it; }
+				rbits[rsize * (it - IDs.begin()) + byte] |= bit;
+			}
 		}
 	}
+}
 
-	for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion) {
-		std::vector<std::vector<eslocal> > sBuffer, rBuffer;
-		std::vector<int> sRanks;
+void Input::fillRegions(std::map<std::string, std::vector<eslocal> > &regions, size_t &rsize, std::vector<eslocal> &rbits)
+{
+	size_t threads = environment->OMP_NUM_THREADS;
 
-		for (int t = 0; t < environment->MPIsize; t++) {
-			auto begin = std::lower_bound(eregion->second.begin(), eregion->second.end(), _eDistribution[t]);
-			auto end = std::lower_bound(eregion->second.begin(), eregion->second.end(), _eDistribution[t + 1]);
-			if (end - begin) {
-				sBuffer.push_back(std::vector<eslocal>(begin, end));
-				sRanks.push_back(t);
+	size_t r = 0;
+	for (auto region = regions.begin(); region != regions.end(); ++region, ++r) {
+		eslocal byte = r / (8 * sizeof(eslocal));
+		eslocal bit = 1 << (r % (8 * sizeof(eslocal)));
+
+		region->second.clear();
+		for (size_t i = 0; i < rbits.size() / rsize; ++i) {
+			if (rbits[rsize * i + byte] & bit) {
+				region->second.push_back(i);
 			}
-		}
-
-		if (!Communication::sendVariousTargets(sBuffer, rBuffer, sRanks)) {
-			ESINFO(ERROR) << "ESPRESO internal error: exchange element region.";
-		}
-
-		eregion->second.clear();
-		for (size_t i = 0; i < rBuffer.size(); i++) {
-			eregion->second.insert(eregion->second.end(), rBuffer[i].begin(), rBuffer[i].end());
 		}
 	}
 }
@@ -439,22 +440,13 @@ void Input::fillNodes()
 	_mesh.boundaryRegions.push_back(new BoundaryRegionStore("ALL_NODES", _mesh._eclasses));
 	_mesh.boundaryRegions.back()->nodes = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(threads, _meshData.nIDs.size()));
 	std::iota(_mesh.boundaryRegions.back()->nodes->datatarray().begin(), _mesh.boundaryRegions.back()->nodes->datatarray().end(), 0);
-
-	for (auto nregion = _meshData.nregions.begin(); nregion != _meshData.nregions.end(); ++nregion) {
-		_mesh.boundaryRegions.push_back(new BoundaryRegionStore(nregion->first, _mesh._eclasses));
-		_mesh.boundaryRegions.back()->nodes = new serializededata<eslocal, eslocal>(1, { threads, nregion->second });
-	}
 }
 
 void Input::fillElements()
 {
-	for (int type = static_cast<int>(Element::TYPE::VOLUME); type > static_cast<int>(Element::TYPE::POINT); --type) {
-		_etypeDistribution.push_back(std::lower_bound(_meshData.etype.begin(), _meshData.etype.end(), type, [&] (int e, int type) {
-			return static_cast<int>(_mesh._eclasses[0][e].type) >= type; }) - _meshData.etype.begin()
-		);
-	}
-
 	size_t estart = _mesh.dimension == 3 ? 0 : 1;
+
+	_eDistribution = Communication::getDistribution(_etypeDistribution[estart], MPITools::operations().sizeToOffsetsSize_t);
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -465,8 +457,8 @@ void Input::fillElements()
 	std::vector<size_t> edistribution = tarray<Point>::distribute(threads, _etypeDistribution[estart]);
 
 	std::vector<eslocal> edist = { 0 };
-	edist.reserve(_meshData.esize.size() + 1);
-	for (size_t e = 0; e < _meshData.esize.size(); e++) {
+	edist.reserve(_etypeDistribution[estart] + 1);
+	for (size_t e = 0; e < _etypeDistribution[estart]; e++) {
 		edist.push_back(edist.back() + _meshData.esize[e]);
 	}
 
@@ -506,25 +498,26 @@ void Input::fillElements()
 	_mesh.elements->material = new serializededata<eslocal, int>(1, eMat);
 	_mesh.elements->body = new serializededata<eslocal, int>(1, eBody);
 
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		rData[t].resize(edistribution[t + 1] - edistribution[t]);
-		std::iota(rData[t].begin(), rData[t].end(), edistribution[t]);
-	}
 	_mesh.elementsRegions.push_back(new ElementsRegionStore("ALL_ELEMENTS"));
-	_mesh.elementsRegions.back()->elements = new serializededata<eslocal, eslocal>(1, rData);
+	_mesh.elementsRegions.back()->elements = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(threads, _mesh.elements->size));
+	std::iota(_mesh.elementsRegions.back()->elements->datatarray().begin(), _mesh.elementsRegions.back()->elements->datatarray().end(), 0);
+}
 
+void Input::fillBoundaryRegions()
+{
+	size_t threads = environment->OMP_NUM_THREADS;
+	size_t estart = _mesh.dimension == 3 ? 0 : 1;
 
-	for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion) {
-		int fromelements = 0, add = 0;
-		if (eregion->second.size() && eregion->second.front() < _etypeDistribution[estart]) {
-			fromelements = 1;
-		}
-		MPI_Allreduce(&fromelements, &add, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
-		if (add) {
-			_mesh.elementsRegions.push_back(new ElementsRegionStore(eregion->first));
-			_mesh.elementsRegions.back()->elements = new serializededata<eslocal, eslocal>(1, { threads, eregion->second });
-		}
+	std::vector<std::vector<eslocal> > tedist(threads), tnodes(threads);
+	std::vector<std::vector<Element*> > epointers(threads);
+
+	std::vector<eslocal> edist = { 0 };
+	edist.reserve(_meshData.eIDs.size() - _etypeDistribution[estart] + 1);
+	for (size_t e = 0; e < _etypeDistribution[estart]; e++) {
+		edist.back() += _meshData.esize[e];
+	}
+	for (size_t e = _etypeDistribution[estart]; e < _etypeDistribution.back(); e++) {
+		edist.push_back(edist.back() + _meshData.esize[e]);
 	}
 
 	for (int i = estart; i < 2; i++) {
@@ -537,14 +530,25 @@ void Input::fillElements()
 			}
 		}
 		Esutils::sortAndRemoveDuplicity(named);
+		int hasunnamed = 0, add = 0;
 		if (named.size() < (size_t)(_etypeDistribution[i + 1] - _etypeDistribution[i])) {
-			std::vector<eslocal> &unnamed = i == 1 ? _meshData.eregions["NAMELESS_FACE_SET"] : _meshData.eregions["NAMELESS_EDGE_SET"];
-			for (eslocal index = _etypeDistribution[i], j = 0; index < _etypeDistribution[i + 1]; ++index) {
-				if (named.size() <= (size_t)j || index < named[j]) {
+			hasunnamed = 1;
+		}
+		MPI_Allreduce(&hasunnamed, &add, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
+		if (add) {
+			std::vector<eslocal> &unnamed = i == 1 ? _meshData.eregions["NAMELESS_EDGE_SET"] : _meshData.eregions["NAMELESS_FACE_SET"];
+			auto nit = named.begin();
+			for (eslocal index = _etypeDistribution[i]; index < _etypeDistribution[i + 1] && nit != named.end(); ++index) {
+				if (*nit != index) {
 					unnamed.push_back(index);
-					++j;
+				} else {
+					++nit;
 				}
 			}
+			size_t prevsize = unnamed.size();
+			eslocal last = named.size() && named.back() > _etypeDistribution[i] ? named.back() + 1 : _etypeDistribution[i];
+			unnamed.resize(_etypeDistribution[i + 1] - _etypeDistribution[i] - named.size());
+			std::iota(unnamed.begin() + prevsize, unnamed.end(), last);
 		}
 	}
 
@@ -560,7 +564,7 @@ void Input::fillElements()
 				_mesh.boundaryRegions.push_back(new BoundaryRegionStore(eregion->first, _mesh._eclasses));
 				_mesh.boundaryRegions.back()->dimension = 2 - i;
 
-				edistribution = tarray<Point>::distribute(threads, eregion->second.size());
+				std::vector<size_t> edistribution = tarray<Point>::distribute(threads, eregion->second.size());
 				std::vector<eslocal> eregiondist(eregion->second.size() + 1);
 				for (size_t e = 0; e < eregion->second.size(); e++) {
 					eregiondist[e + 1] = eregiondist[e] + _meshData.esize[eregion->second[e]];
@@ -578,7 +582,7 @@ void Input::fillElements()
 					tnodes[t].resize(eregiondist[edistribution[t + 1]] - eregiondist[edistribution[t]]);
 					for (size_t e = edistribution[t], index = 0; e < edistribution[t + 1]; ++e) {
 						for (size_t n = 0; n < _meshData.esize[eregion->second[e]]; ++n, ++index) {
-							tnodes[t][index] = _meshData.enodes[edist[eregion->second[e]] + n];
+							tnodes[t][index] = _meshData.enodes[edist[eregion->second[e] - _etypeDistribution[estart]] + n];
 						}
 					}
 
@@ -588,6 +592,7 @@ void Input::fillElements()
 					}
 				}
 
+				_mesh.boundaryRegions.back()->distribution = edistribution;
 				_mesh.boundaryRegions.back()->elements = new serializededata<eslocal, eslocal>(tedist, tnodes);
 				_mesh.boundaryRegions.back()->epointers = new serializededata<eslocal, Element*>(1, epointers);
 			}
@@ -595,50 +600,48 @@ void Input::fillElements()
 	}
 }
 
-void Input::reindexRegions()
-{
-	reindexNodeRegions();
-	reindexElementRegions();
-}
-
-void Input::reindexNodeRegions()
+void Input::fillNodeRegions()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	for (auto nregion = _meshData.nregions.begin(); nregion != _meshData.nregions.end(); ++nregion) {
-		if (!StringCompare::caseInsensitiveEq(nregion->first, "ALL_NODES")) {
-			std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, nregion->second.size());
-			#pragma omp parallel for
-			for (size_t t = 0; t < threads; t++) {
-				auto n = nregion->second.begin();
-				if (n != nregion->second.end()) {
-					auto nit = std::lower_bound(_meshData.nIDs.begin(), _meshData.nIDs.end(), *n);
-					for ( ; n != nregion->second.end(); ++n, ++nit) {
-						while (*n != *nit) { ++nit; }
-						*n = nit - _meshData.nIDs.begin();
-					}
-				}
-			}
+		_mesh.boundaryRegions.push_back(new BoundaryRegionStore(nregion->first, _mesh._eclasses));
+		_mesh.boundaryRegions.back()->nodes = new serializededata<eslocal, eslocal>(1, { threads, nregion->second });
+	}
+}
+
+void Input::fillElementRegions()
+{
+	size_t threads = environment->OMP_NUM_THREADS;
+	size_t estart = _mesh.dimension == 3 ? 0 : 1;
+
+	for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion) {
+		int fromelements = 0, add = 0;
+		if (eregion->second.size() && eregion->second.front() < _etypeDistribution[estart]) {
+			fromelements = 1;
+		}
+		MPI_Allreduce(&fromelements, &add, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
+		if (add) {
+			_mesh.elementsRegions.push_back(new ElementsRegionStore(eregion->first));
+			_mesh.elementsRegions.back()->elements = new serializededata<eslocal, eslocal>(1, { threads, eregion->second });
 		}
 	}
 }
 
-void Input::reindexElementRegions()
+void Input::reindexRegions(std::map<std::string, std::vector<eslocal> > &regions, std::vector<eslocal> &IDs)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion) {
-		if (!StringCompare::caseInsensitiveEq(eregion->first, "ALL_ELEMENTS")) {
-			std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, eregion->second.size());
-			#pragma omp parallel for
-			for (size_t t = 0; t < threads; t++) {
-				auto e = eregion->second.begin();
-				if (e != eregion->second.end()) {
-					auto eit = std::lower_bound(_meshData.eIDs.begin(), _meshData.eIDs.begin(), *e);
-					for ( ; e != eregion->second.end(); ++e, ++eit) {
-						while (*e != *eit) { ++eit; }
-						*e = eit - _meshData.eIDs.begin();
-					}
+	for (auto region = regions.begin(); region != regions.end(); ++region) {
+		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, region->second.size());
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			auto n = region->second.begin();
+			if (n != region->second.end()) {
+				auto nit = std::lower_bound(IDs.begin(), IDs.end(), *n);
+				for ( ; n != region->second.end(); ++n, ++nit) {
+					while (*n != *nit) { ++nit; }
+					*n = nit - IDs.begin();
 				}
 			}
 		}

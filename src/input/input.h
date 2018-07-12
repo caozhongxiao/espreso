@@ -32,7 +32,7 @@ public:
 
 protected:
 	Input(const ECFRoot &configuration, PlainMeshData &meshData, Mesh &mesh)
-	: _configuration(configuration), _meshData(meshData), _mesh(mesh) {}
+	: _configuration(configuration), _meshData(meshData), _mesh(mesh), _eregsize(1), _nregsize(1) {}
 
 	void balance();
 	void balanceNodes();
@@ -40,18 +40,23 @@ protected:
 	void balanceElements();
 	void balancePermutedElements();
 
-	void assignRegions();
+	void assignRegions(
+			std::map<std::string, std::vector<eslocal> > &regions, std::vector<eslocal> &IDs,
+			std::vector<size_t> &distribution,
+			size_t &rsize, std::vector<eslocal> &rbits);
+	void fillRegions(std::map<std::string, std::vector<eslocal> > &regions, size_t &rsize, std::vector<eslocal> &rbits);
 
 	void sortNodes();
-	void sortNodesWithRegion();
 	void sortElements();
 
 	void fillNodes();
 	void fillElements();
 
-	void reindexRegions();
-	void reindexNodeRegions();
-	void reindexElementRegions();
+	void fillNodeRegions();
+	void fillBoundaryRegions();
+	void fillElementRegions();
+
+	void reindexRegions(std::map<std::string, std::vector<eslocal> > &regions, std::vector<eslocal> &IDs);
 	void reindexElementNodes();
 
 	const ECFRoot &_configuration;
@@ -59,6 +64,9 @@ protected:
 	Mesh &_mesh;
 
 	std::vector<size_t> _nDistribution, _eDistribution, _etypeDistribution;
+
+	size_t _eregsize, _nregsize;
+	std::vector<eslocal> _eregions, _nregions;
 };
 
 }
