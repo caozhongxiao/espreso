@@ -34,6 +34,7 @@ protected:
 
 	// distribution across processes
 	std::vector<uint> _bucketsBorders;
+	std::vector<int> _sfcNeighbors;
 };
 
 }

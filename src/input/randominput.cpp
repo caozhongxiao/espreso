@@ -670,7 +670,6 @@ void RandomInput::linkup()
 		neighbors.resize(unique + 1);
 	}
 
-	std::vector<int> nranks;
 	for (size_t i = 0; i < neighbors.size(); i++) {
 		int begin = std::lower_bound(_bucketsBorders.begin(), _bucketsBorders.end(), neighbors[i].first) - _bucketsBorders.begin();
 		int end = std::lower_bound(_bucketsBorders.begin(), _bucketsBorders.end(), neighbors[i].second) - _bucketsBorders.begin();
@@ -680,12 +679,12 @@ void RandomInput::linkup()
 		for (int r = begin; r < end; r++) {
 			if (r != environment->MPIrank) {
 				if (_bucketsBorders[r] != _bucketsBorders[r + 1]) {
-					nranks.push_back(r);
+					_sfcNeighbors.push_back(r);
 				}
 			}
 		}
 	}
-	Esutils::sortAndRemoveDuplicity(nranks);
+	Esutils::sortAndRemoveDuplicity(_sfcNeighbors);
 
 	e2.end();
 	timing.addEvent(e2);
@@ -698,8 +697,8 @@ void RandomInput::linkup()
 	// 3. Ask neighbors for coordinates
 
 	// send, found, received
-	std::vector<std::vector<eslocal> > sNodes(nranks.size()), fNodes(nranks.size()), fRegions(nranks.size()), rNodes(nranks.size()), rRegions(nranks.size());
-	std::vector<std::vector<Point> > fCoords(nranks.size()), rCoors(nranks.size());
+	std::vector<std::vector<eslocal> > sNodes(_sfcNeighbors.size()), fNodes(_sfcNeighbors.size()), fRegions(_sfcNeighbors.size()), rNodes(_sfcNeighbors.size()), rRegions(_sfcNeighbors.size());
+	std::vector<std::vector<Point> > fCoords(_sfcNeighbors.size()), rCoors(_sfcNeighbors.size());
 
 	size_t enodesize = 0;
 	size_t estart = _mesh.dimension == 3 ? 0 : 1;
@@ -719,7 +718,7 @@ void RandomInput::linkup()
 		}
 	}
 
-	for (size_t t = 1; t < nranks.size(); t++) {
+	for (size_t t = 1; t < _sfcNeighbors.size(); t++) {
 		sNodes[t] = sNodes[0];
 	}
 
@@ -729,7 +728,7 @@ void RandomInput::linkup()
 	TimeEvent e4("LU REQUEST NODES");
 	e4.start();
 
-	if (!Communication::exchangeUnknownSize(sNodes, rNodes, nranks)) {
+	if (!Communication::exchangeUnknownSize(sNodes, rNodes, _sfcNeighbors)) {
 		ESINFO(ERROR) << "ESPRESO internal error: request for coordinates.";
 	}
 
@@ -739,9 +738,12 @@ void RandomInput::linkup()
 	TimeEvent e5("LU GET COORDINATES");
 	e5.start();
 
-	for (size_t t = 0; t < nranks.size(); t++) {
+	for (size_t t = 0; t < _sfcNeighbors.size(); t++) {
+		auto node = _meshData.nIDs.begin();
 		for (size_t n = 0; n < rNodes[t].size(); n++) {
-			auto node = std::lower_bound(_meshData.nIDs.begin(), _meshData.nIDs.end(), rNodes[t][n]);
+			while (node != _meshData.nIDs.end() && *node < rNodes[t][n]) {
+				++node;
+			}
 			if (node != _meshData.nIDs.end() && *node == rNodes[t][n]) {
 				fNodes[t].push_back(*node);
 				fRegions[t].insert(fRegions[t].end(), _nregions.begin() + _nregsize * (node - _meshData.nIDs.begin()), _nregions.begin() + _nregsize * (node - _meshData.nIDs.begin() + 1));
@@ -756,13 +758,13 @@ void RandomInput::linkup()
 	TimeEvent e6("LU RETURN COORDINATES");
 	e6.start();
 
-	if (!Communication::exchangeUnknownSize(fNodes, rNodes, nranks)) {
+	if (!Communication::exchangeUnknownSize(fNodes, rNodes, _sfcNeighbors)) {
 		ESINFO(ERROR) << "ESPRESO internal error: return requested IDs.";
 	}
-	if (!Communication::exchangeUnknownSize(fRegions, rRegions, nranks)) {
+	if (!Communication::exchangeUnknownSize(fRegions, rRegions, _sfcNeighbors)) {
 		ESINFO(ERROR) << "ESPRESO internal error: return requested node regions.";
 	}
-	if (!Communication::exchangeUnknownSize(fCoords, rCoors, nranks)) {
+	if (!Communication::exchangeUnknownSize(fCoords, rCoors, _sfcNeighbors)) {
 		ESINFO(ERROR) << "ESPRESO internal error: return requested coordinates.";
 	}
 
@@ -775,7 +777,7 @@ void RandomInput::linkup()
 	// 3.1 Check if all nodes are found
 
 	size_t nodeSize = 0;
-	for (size_t r = 0, i = 0; r < nranks.size(); r++) {
+	for (size_t r = 0, i = 0; r < _sfcNeighbors.size(); r++) {
 		nodeSize += rNodes[r].size();
 	}
 
@@ -792,7 +794,7 @@ void RandomInput::linkup()
 
 	if (sNodes.size() && nodeSize != sNodes.front().size()) {
 		std::vector<eslocal> found, unknown(sNodes.front().size() - nodeSize);
-		for (size_t r = 0, i = 0; r < nranks.size(); r++) {
+		for (size_t r = 0, i = 0; r < _sfcNeighbors.size(); r++) {
 			found.insert(found.end(), rNodes[r].begin(), rNodes[r].end());
 		}
 		Esutils::sortAndRemoveDuplicity(found);
@@ -884,25 +886,25 @@ void RandomInput::linkup()
 
 	// insert new neighbors to neighbors computed from SFC
 	for (size_t i = 0; i < oTargets.size(); i++) {
-		auto it = std::lower_bound(nranks.begin(), nranks.end(), oTargets[i]);
-		nranks.insert(it, oTargets[i]);
-		rNodes.insert(rNodes.begin() + (it - nranks.begin()), sNodes[i]);
-		rRegions.insert(rRegions.begin() + (it - nranks.begin()), uRegions[i]);
-		rCoors.insert(rCoors.begin() + (it - nranks.begin()), uCoords[i]);
-		fNodes.insert(fNodes.begin() + (it - nranks.begin()), std::vector<eslocal>());
+		auto it = std::lower_bound(_sfcNeighbors.begin(), _sfcNeighbors.end(), oTargets[i]);
+		_sfcNeighbors.insert(it, oTargets[i]);
+		rNodes.insert(rNodes.begin() + (it - _sfcNeighbors.begin()), sNodes[i]);
+		rRegions.insert(rRegions.begin() + (it - _sfcNeighbors.begin()), uRegions[i]);
+		rCoors.insert(rCoors.begin() + (it - _sfcNeighbors.begin()), uCoords[i]);
+		fNodes.insert(fNodes.begin() + (it - _sfcNeighbors.begin()), std::vector<eslocal>());
 	}
 
 	for (size_t i = 0; i < oSources.size(); i++) {
-		auto it = std::lower_bound(nranks.begin(), nranks.end(), oSources[i]);
-		nranks.insert(it, oSources[i]);
-		rNodes.insert(rNodes.begin() + (it - nranks.begin()), std::vector<eslocal>());
-		rRegions.insert(rRegions.begin() + (it - nranks.begin()), std::vector<eslocal>());
-		rCoors.insert(rCoors.begin() + (it - nranks.begin()), std::vector<Point>());
-		fNodes.insert(fNodes.begin() + (it - nranks.begin()), uNodes[i]);
+		auto it = std::lower_bound(_sfcNeighbors.begin(), _sfcNeighbors.end(), oSources[i]);
+		_sfcNeighbors.insert(it, oSources[i]);
+		rNodes.insert(rNodes.begin() + (it - _sfcNeighbors.begin()), std::vector<eslocal>());
+		rRegions.insert(rRegions.begin() + (it - _sfcNeighbors.begin()), std::vector<eslocal>());
+		rCoors.insert(rCoors.begin() + (it - _sfcNeighbors.begin()), std::vector<Point>());
+		fNodes.insert(fNodes.begin() + (it - _sfcNeighbors.begin()), uNodes[i]);
 	}
 
-	nranks.push_back(environment->MPIrank);
-	std::sort(nranks.begin(), nranks.end());
+	_sfcNeighbors.push_back(environment->MPIrank);
+	std::sort(_sfcNeighbors.begin(), _sfcNeighbors.end());
 
 	e7.end();
 	timing.addEvent(e7);
@@ -911,12 +913,12 @@ void RandomInput::linkup()
 	e8.start();
 
 	// 5. Compute nodes neighbors
-	std::vector<std::vector<eslocal> > sRanks(nranks.size()), rRanks(nranks.size());
+	std::vector<std::vector<eslocal> > sRanks(_sfcNeighbors.size()), rRanks(_sfcNeighbors.size());
 
 	size_t rankindex;
-	std::vector<std::vector<eslocal> > nodeRequests(nranks.size());
-	for (size_t r = 0, i = 0; r < nranks.size(); r++) {
-		if (nranks[r] == environment->MPIrank) {
+	std::vector<std::vector<eslocal> > nodeRequests(_sfcNeighbors.size());
+	for (size_t r = 0, i = 0; r < _sfcNeighbors.size(); r++) {
+		if (_sfcNeighbors[r] == environment->MPIrank) {
 			rankindex = r;
 			nodeRequests[r].swap(enodes);
 		} else {
@@ -937,7 +939,7 @@ void RandomInput::linkup()
 			}
 			if (rPointer[r] != nodeRequests[r].end() && *rPointer[r] == _meshData.nIDs[n]) {
 				ranksOffset.push_back(r);
-				ranks.push_back(nranks[r]);
+				ranks.push_back(_sfcNeighbors[r]);
 				++rPointer[r];
 			}
 		}
@@ -978,7 +980,7 @@ void RandomInput::linkup()
 	TimeEvent e9("LU EXCHANGE NODE TO RANK MAP");
 	e9.start();
 
-	if (!Communication::exchangeUnknownSize(sRanks, rRanks, nranks)) {
+	if (!Communication::exchangeUnknownSize(sRanks, rRanks, _sfcNeighbors)) {
 		ESINFO(ERROR) << "ESPRESO internal error: exchange ranks data.";
 	}
 
@@ -988,8 +990,8 @@ void RandomInput::linkup()
 	TimeEvent e10("LU POST-PROCESS DATA");
 	e10.start();
 
-	for (size_t t = 0, i = 0; t < nranks.size(); t++) {
-		if (nranks[t] != environment->MPIrank) {
+	for (size_t t = 0, i = 0; t < _sfcNeighbors.size(); t++) {
+		if (_sfcNeighbors[t] != environment->MPIrank) {
 			_meshData.nIDs.insert(_meshData.nIDs.end(), rNodes[i].begin(), rNodes[i].end());
 			_nregions.insert(_nregions.end(), rRegions[i].begin(), rRegions[i].end());
 			_meshData.coordinates.insert(_meshData.coordinates.end(), rCoors[i].begin(), rCoors[i].end());
@@ -1015,8 +1017,8 @@ void RandomInput::linkup()
 		_meshData.nranks.insert(_meshData.nranks.end(), rRanks[rankindex].begin() + n + 1, rRanks[rankindex].begin() + n + 1 + rRanks[rankindex][n]);
 		_meshData.ndist.push_back(_meshData.nranks.size());
 	}
-	for (size_t r = 0; r < rRanks.size(); r++) {
-		if (nranks[r] != environment->MPIrank) {
+	for (size_t r = 0; r < _sfcNeighbors.size(); r++) {
+		if (_sfcNeighbors[r] != environment->MPIrank) {
 			for (size_t n = 0; n < rRanks[r].size(); n += rRanks[r][n] + 1) {
 				_meshData.nranks.insert(_meshData.nranks.end(), rRanks[r].begin() + n + 1, rRanks[r].begin() + n + 1 + rRanks[r][n]);
 				_meshData.ndist.push_back(_meshData.nranks.size());
@@ -1068,6 +1070,7 @@ void RandomInput::exchangeBoundary()
 	std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, _etypeDistribution.back() - _etypeDistribution[estart]);
 	std::vector<eslocal> emembership(distribution.back(), -1);
 	std::vector<std::vector<std::pair<eslocal, eslocal> > > etargets(threads);
+	std::vector<std::vector<eslocal> > utargets(threads);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -1092,6 +1095,11 @@ void RandomInput::exchangeBoundary()
 				target.second = e;
 				etargets[t].push_back(target);
 			};
+
+			if (known == 0) {
+				utargets[t].push_back(e);
+				continue;
+			}
 
 			counter = 1;
 			if (known == 1) {
@@ -1120,7 +1128,152 @@ void RandomInput::exchangeBoundary()
 
 	for (size_t t = 1; t < threads; t++) {
 		etargets[0].insert(etargets[0].end(), etargets[t].begin(), etargets[t].end());
+		utargets[0].insert(utargets[0].end(), utargets[t].begin(), utargets[t].end());
 	}
+
+
+	/// FIND TARGETS FOR FACES WITH UNKNOWN NODES
+
+	std::vector<std::vector<int> > fLinks(_sfcNeighbors.size()), rLinks(_sfcNeighbors.size());
+	std::vector<std::vector<eslocal> > unodes(_sfcNeighbors.size()), rnodes(_sfcNeighbors.size());
+	for (size_t i = 0; i < utargets[0].size(); i++) {
+		unodes[0].insert(unodes[0].end(), _meshData.enodes.begin() + edist[utargets[0][i]], _meshData.enodes.begin() + edist[utargets[0][i] + 1]);
+	}
+
+	Esutils::sortAndRemoveDuplicity(unodes[0]);
+
+	for (size_t n = 1; n < _sfcNeighbors.size(); n++) {
+		unodes[n] = unodes[0];
+	}
+
+	if (!Communication::exchangeUnknownSize(unodes, rnodes, _sfcNeighbors)) {
+		ESINFO(ERROR) << "ESPRESO internal error: request for unknown boundary nodes.";
+	}
+
+	for (size_t t = 0; t < _sfcNeighbors.size(); t++) {
+		auto node = _meshData.nIDs.begin();
+		for (size_t n = 0; n < rnodes[t].size(); n++) {
+			while (node != _meshData.nIDs.end() && *node < rnodes[t][n]) {
+				++node;
+			}
+			if (node != _meshData.nIDs.end() && *node == rnodes[t][n]) {
+				auto links = _mesh.nodes->elements->cbegin() + (node - _meshData.nIDs.begin());
+				fLinks[t].push_back(links->size());
+				fLinks[t].insert(fLinks[t].end(), links->begin(), links->end());
+			} else {
+				fLinks[t].push_back(0);
+			}
+
+		}
+	}
+
+	if (!Communication::exchangeUnknownSize(fLinks, rLinks, _sfcNeighbors)) {
+		ESINFO(ERROR) << "ESPRESO internal error: return ranks of unknown boundary nodes.";
+	}
+
+	std::vector<eslocal> found(2 * unodes[0].size(), -1);
+	for (size_t n = 0; n < _sfcNeighbors.size(); n++) {
+		for (size_t i = 0, noffset = 0; i < found.size(); i += 2, noffset += rLinks[n][noffset] + 1) {
+			if (rLinks[n][noffset] && found[i] == -1) {
+				found[i] = n;
+				found[i + 1] = noffset;
+			}
+		}
+	}
+
+	std::vector<eslocal> uunodes, rrLinks;
+	for (size_t i = 0; i < found.size(); i += 2) {
+		if (found[i] == -1) {
+			uunodes.push_back(unodes[0][i / 2]);
+		}
+	}
+
+	if (!Communication::allGatherUnknownSize(uunodes)) {
+		ESINFO(ERROR) << "ESPRESO internal error: allgather unknown nodes.";
+	}
+	Esutils::sortAndRemoveDuplicity(uunodes);
+
+	for (size_t i = 0; i < uunodes.size(); i++) {
+		auto node = std::lower_bound(_meshData.nIDs.begin(), _meshData.nIDs.end(), uunodes[i]);
+		if (node != _meshData.nIDs.end() && *node == uunodes[i]) { // i have the node
+			auto ranks = _mesh.nodes->ranks->begin() + (node - _meshData.nIDs.begin());
+			if (ranks->front() == environment->MPIrank) { // i am the first rank that hold the node
+				auto links = _mesh.nodes->elements->cbegin() + (node - _meshData.nIDs.begin());
+				rrLinks.push_back(uunodes[i]);
+				rrLinks.push_back(links->size());
+				rrLinks.insert(rrLinks.end(), links->begin(), links->end());
+			}
+		}
+	}
+
+	if (!Communication::allGatherUnknownSize(rrLinks)) {
+		ESINFO(ERROR) << "ESPRESO internal error: allgather unknown nodes links.";
+	}
+
+	std::vector<eslocal> permutation(uunodes.size());
+	for (size_t i = 0, noffset = 0; i < uunodes.size(); ++i, noffset += rrLinks[noffset + 1] + 2) {
+		permutation[i] = noffset;
+	}
+	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return rrLinks[i] < rrLinks[j]; });
+
+	for (size_t i = 0, j = 0; i < unodes[0].size(); ++i) {
+		while (j < uunodes.size() && uunodes[j] < unodes[0][i]) {
+			++j;
+		}
+		if (j < uunodes.size() && unodes[0][i] == uunodes[j]) {
+			if (found[2 * i] == -1) {
+				found[2 * i + 1] = permutation[j] + 1;
+			}
+			++j;
+		}
+	}
+
+	std::vector<eslocal> linkDist = { 0 }, linkData;
+	for (size_t i = 0; i < unodes[0].size(); i++) {
+		if (found[2 * i] != -1) {
+			eslocal lindex = found[2 * i];
+			eslocal loffset = found[2 * i + 1];
+			eslocal lsize = rLinks[lindex][loffset];
+			linkDist.push_back(linkDist.back() + lsize);
+			linkData.insert(linkData.end(), rLinks[lindex].begin() + loffset + 1, rLinks[lindex].begin() + loffset + 1 + lsize);
+		} else {
+			eslocal loffset = found[2 * i + 1];
+			eslocal lsize = rrLinks[loffset];
+			linkDist.push_back(linkDist.back() + lsize);
+			linkData.insert(linkData.end(), rrLinks.begin() + loffset + 1, rrLinks.begin() + loffset + 1 + lsize);
+		}
+	}
+
+	{
+		std::vector<eslocal> nlinks;
+		int counter;
+		for (size_t e = 0; e < utargets[0].size(); ++e) {
+			nlinks.clear();
+			for (auto n = edist[utargets[0][e]]; n < edist[utargets[0][e] + 1]; ++n) {
+				auto nit = std::lower_bound(unodes[0].begin(), unodes[0].end(), _meshData.enodes[n]);
+				if (nit != unodes[0].end() && *nit == _meshData.enodes[n]) {
+					nlinks.insert(nlinks.end(), linkData.begin() + linkDist[nit - unodes[0].begin()], linkData.begin() + linkDist[nit - unodes[0].begin() + 1]);
+				}
+			}
+			std::sort(nlinks.begin(), nlinks.end());
+
+			counter = 1;
+			for (size_t i = 1; i < nlinks.size(); ++i) {
+				if (nlinks[i - 1] == nlinks[i]) {
+					++counter;
+					if (counter == edist[utargets[0][e] + 1] - edist[utargets[0][e]]) {
+						eslocal rank = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), nlinks[i] + 1) - _eDistribution.begin() - 1;
+						etargets[0].push_back(std::make_pair(rank, utargets[0][e]));
+						break;
+					}
+				} else {
+					counter = 1;
+				}
+			}
+		}
+	}
+
+
 
 	Esutils::sortAndRemoveDuplicity(etargets[0]);
 
