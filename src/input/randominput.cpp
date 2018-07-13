@@ -92,6 +92,11 @@ RandomInput::RandomInput(const ECFRoot &configuration, PlainMeshData &meshData, 
 	telements.end(); timing.addEvent(telements);
 	ESINFO(PROGRESS2) << "Random data loader:: elements filled.";
 
+	TimeEvent treindex("reindex elements nodes"); treindex.start();
+	reindexElementNodes();
+	treindex.end(); timing.addEvent(treindex);
+	ESINFO(PROGRESS2) << "Random data loader:: elements nodes reindexed.";
+
 	TimeEvent texchange("exchange boundary"); texchange.start();
 	exchangeBoundary();
 	texchange.end(); timing.addEvent(texchange);
@@ -106,10 +111,10 @@ RandomInput::RandomInput(const ECFRoot &configuration, PlainMeshData &meshData, 
 	tboundary.end(); timing.addEvent(tboundary);
 	ESINFO(PROGRESS2) << "Random data loader:: regions filled.";
 
-	TimeEvent treindex("reindex elements nodes"); treindex.start();
-	reindexElementNodes();
-	treindex.end(); timing.addEvent(treindex);
-	ESINFO(PROGRESS2) << "Random data loader:: elements nodes reindexed.";
+	TimeEvent treindexbondary("reindex boundary nodes"); treindexbondary.start();
+	reindexBoundaryNodes();
+	treindexbondary.end(); timing.addEvent(treindexbondary);
+	ESINFO(PROGRESS2) << "Random data loader:: boundary nodes reindexed.";
 
 //	TimeEvent tpolish("polish decomposition"); tpolish.start();
 //	polish();
@@ -1081,7 +1086,17 @@ void RandomInput::exchangeBoundary()
 				}
 			}
 			std::sort(nlinks.begin(), nlinks.end());
+
+			auto push = [&] (eslocal eID) {
+				target.first = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), eID + 1) - _eDistribution.begin() - 1;
+				target.second = e;
+				etargets[t].push_back(target);
+			};
+
 			counter = 1;
+			if (known == 1) {
+				push(nlinks.front());
+			}
 			for (size_t i = 1; i < nlinks.size(); ++i) {
 				if (nlinks[i - 1] == nlinks[i]) {
 					++counter;
@@ -1089,9 +1104,7 @@ void RandomInput::exchangeBoundary()
 						if (_eDistribution[environment->MPIrank] <= nlinks[i] && nlinks[i] < _eDistribution[environment->MPIrank + 1]) {
 							emembership[e] = nlinks[i];
 						} else {
-							target.first = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), nlinks[i] + 1) - _eDistribution.begin() - 1;
-							target.second = e;
-							etargets[t].push_back(target);
+							push(nlinks[i]);
 						}
 						break;
 					}
@@ -1099,9 +1112,7 @@ void RandomInput::exchangeBoundary()
 					counter = 1;
 				}
 				if (counter == known) {
-					target.first = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), nlinks[i] + 1) - _eDistribution.begin() - 1;
-					target.second = e;
-					etargets[t].push_back(target);
+					push(nlinks[i]);
 				}
 			}
 		}

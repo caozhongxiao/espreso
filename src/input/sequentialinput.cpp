@@ -79,6 +79,7 @@ SequentialInput::SequentialInput(const ECFRoot &configuration, PlainMeshData &me
 			!_mesh.nodes->IDs->datatarray().back() != _mesh.nodes->IDs->datatarray().size()) {
 
 		reindexElementNodes();
+		reindexBoundaryNodes();
 	}
 	treindex.end(); timing.addEvent(treindex);
 	ESINFO(PROGRESS2) << "Sequential loader:: elements nodes reindexed.";

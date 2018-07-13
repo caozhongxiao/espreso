@@ -58,6 +58,7 @@ protected:
 
 	void reindexRegions(std::map<std::string, std::vector<eslocal> > &regions, std::vector<eslocal> &IDs);
 	void reindexElementNodes();
+	void reindexBoundaryNodes();
 
 	const ECFRoot &_configuration;
 	PlainMeshData &_meshData;

@@ -658,6 +658,11 @@ void Input::reindexElementNodes()
 			*n = std::lower_bound(_mesh.nodes->IDs->datatarray().begin(), _mesh.nodes->IDs->datatarray().end(), *n) - _mesh.nodes->IDs->datatarray().begin();
 		}
 	}
+}
+
+void Input::reindexBoundaryNodes()
+{
+	size_t threads = environment->OMP_NUM_THREADS;
 
 	for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
 		if (_mesh.boundaryRegions[r]->dimension) {
