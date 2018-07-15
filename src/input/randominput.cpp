@@ -97,6 +97,10 @@ RandomInput::RandomInput(const ECFRoot &configuration, PlainMeshData &meshData, 
 	treindex.end(); timing.addEvent(treindex);
 	ESINFO(PROGRESS2) << "Random data loader:: elements nodes reindexed.";
 
+	if (_mesh.nodes->elements == NULL) {
+		_mesh.preprocessing->linkNodesAndElements();
+	}
+
 	TimeEvent texchange("exchange boundary"); texchange.start();
 	exchangeBoundary();
 	texchange.end(); timing.addEvent(texchange);
@@ -1051,10 +1055,6 @@ void RandomInput::linkup()
 void RandomInput::exchangeBoundary()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
-
-	if (_mesh.nodes->elements == NULL) {
-		_mesh.preprocessing->linkNodesAndElements();
-	}
 
 	size_t estart = _mesh.dimension == 3 ? 0 : 1;
 
