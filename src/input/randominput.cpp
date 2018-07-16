@@ -891,23 +891,25 @@ void RandomInput::linkup()
 	// insert new neighbors to neighbors computed from SFC
 	for (size_t i = 0; i < oTargets.size(); i++) {
 		auto it = std::lower_bound(_sfcNeighbors.begin(), _sfcNeighbors.end(), oTargets[i]);
+		size_t offset = it - _sfcNeighbors.begin();
 		_sfcNeighbors.insert(it, oTargets[i]);
-		rNodes.insert(rNodes.begin() + (it - _sfcNeighbors.begin()), sNodes[i]);
-		rRegions.insert(rRegions.begin() + (it - _sfcNeighbors.begin()), uRegions[i]);
-		rCoors.insert(rCoors.begin() + (it - _sfcNeighbors.begin()), uCoords[i]);
-		fNodes.insert(fNodes.begin() + (it - _sfcNeighbors.begin()), std::vector<eslocal>());
+		rNodes.insert(rNodes.begin() + offset, sNodes[i]);
+		rRegions.insert(rRegions.begin() + offset, uRegions[i]);
+		rCoors.insert(rCoors.begin() + offset, uCoords[i]);
+		fNodes.insert(fNodes.begin() + offset, std::vector<eslocal>());
 	}
 
 	for (size_t i = 0; i < oSources.size(); i++) {
 		auto it = std::lower_bound(_sfcNeighbors.begin(), _sfcNeighbors.end(), oSources[i]);
+		size_t offset = it - _sfcNeighbors.begin();
 		if (it != _sfcNeighbors.end() && *it == oSources[i]) {
-			fNodes[it - _sfcNeighbors.begin()].swap(uNodes[i]);
+			fNodes[offset].swap(uNodes[i]);
 		} else {
 			_sfcNeighbors.insert(it, oSources[i]);
-			rNodes.insert(rNodes.begin() + (it - _sfcNeighbors.begin()), std::vector<eslocal>());
-			rRegions.insert(rRegions.begin() + (it - _sfcNeighbors.begin()), std::vector<eslocal>());
-			rCoors.insert(rCoors.begin() + (it - _sfcNeighbors.begin()), std::vector<Point>());
-			fNodes.insert(fNodes.begin() + (it - _sfcNeighbors.begin()), uNodes[i]);
+			rNodes.insert(rNodes.begin() + offset, std::vector<eslocal>());
+			rRegions.insert(rRegions.begin() + offset, std::vector<eslocal>());
+			rCoors.insert(rCoors.begin() + offset, std::vector<Point>());
+			fNodes.insert(fNodes.begin() + offset, uNodes[i]);
 		}
 	}
 
