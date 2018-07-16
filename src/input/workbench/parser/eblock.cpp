@@ -7,7 +7,7 @@
 #include "../../../basis/utilities/utils.h"
 
 #include "../../../mesh/elements/element.h"
-#include "../../input.h"
+#include "../workbench.h"
 
 using namespace espreso;
 
@@ -117,7 +117,7 @@ void EBlock::fixOffsets(std::vector<size_t> &dataOffsets)
 	}
 }
 
-bool EBlock::readData(const std::vector<ET> &et, PlainMeshData &mesh)
+bool EBlock::readData(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 {
 	if (Solkey) {
 		return solid(et, mesh);
@@ -126,7 +126,7 @@ bool EBlock::readData(const std::vector<ET> &et, PlainMeshData &mesh)
 	}
 }
 
-bool EBlock::solid(const std::vector<ET> &et, PlainMeshData &mesh)
+bool EBlock::solid(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -136,7 +136,7 @@ bool EBlock::solid(const std::vector<ET> &et, PlainMeshData &mesh)
 	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, size);
 
 	std::vector<std::vector<eslocal> > tesize(threads), tnodes(threads), tIDs(threads);
-	std::vector<std::vector<int> > ttype(threads), tbody(threads), tmat(threads);
+	std::vector<std::vector<int> > ttype(threads), tet(threads), tbody(threads), tmat(threads);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -147,7 +147,8 @@ bool EBlock::solid(const std::vector<ET> &et, PlainMeshData &mesh)
 		for (auto element = first + elementSize * tdistribution[t]; element < first + elementSize * tdistribution[t + 1];) {
 			tbody[t].push_back(0);
 			tmat[t].push_back(atoi(element) - 1); element += valueLength; // material
-			ttype[t].push_back(atoi(element) - 1); element += valueLength; // etype
+			tet[t].push_back(atoi(element) - 1); element += valueLength; // etype
+			ttype[t].push_back(0);
 			element += valueLength; // real constant
 			element += valueLength; // section ID
 			element += valueLength; // element coordinate system
@@ -175,7 +176,7 @@ bool EBlock::solid(const std::vector<ET> &et, PlainMeshData &mesh)
 				element += lineEndSize;
 			};
 
-			switch (et[ttype[t].back()].etype()) {
+			switch (et[tet[t].back()].etype()) {
 			case ET::ETYPE::D2SOLID_4NODES:
 				if (nindices[2] == nindices[3]) { // triangle3
 					tesize[t].push_back(3);
@@ -291,6 +292,7 @@ bool EBlock::solid(const std::vector<ET> &et, PlainMeshData &mesh)
 		mesh.esize.insert(mesh.esize.end(), tesize[t].begin(), tesize[t].end());
 		mesh.enodes.insert(mesh.enodes.end(), tnodes[t].begin(), tnodes[t].end());
 		mesh.etype.insert(mesh.etype.end(), ttype[t].begin(), ttype[t].end());
+		mesh.et.insert(mesh.et.end(), tet[t].begin(), tet[t].end());
 		mesh.body.insert(mesh.body.end(), tbody[t].begin(), tbody[t].end());
 		mesh.material.insert(mesh.material.end(), tmat[t].begin(), tmat[t].end());
 	}
@@ -298,7 +300,7 @@ bool EBlock::solid(const std::vector<ET> &et, PlainMeshData &mesh)
 	return true;
 }
 
-bool EBlock::boundary(const std::vector<ET> &et, PlainMeshData &mesh)
+bool EBlock::boundary(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -308,7 +310,7 @@ bool EBlock::boundary(const std::vector<ET> &et, PlainMeshData &mesh)
 	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, size);
 
 	std::vector<std::vector<eslocal> > tesize(threads), tnodes(threads), tIDs(threads);
-	std::vector<std::vector<int> > ttype(threads), tbody(threads), tmat(threads);
+	std::vector<std::vector<int> > ttype(threads), tet(threads), tbody(threads), tmat(threads);
 	int nodes = valueSize - 5;
 
 	if (nodes != 4 && nodes != 8 && nodes != 2 && nodes != 3) {
@@ -324,6 +326,7 @@ bool EBlock::boundary(const std::vector<ET> &et, PlainMeshData &mesh)
 			tIDs[t].push_back(atoi(element) - 1); element += valueLength; // element ID
 			tbody[t].push_back(0);
 			ttype[t].push_back(0);
+			tet[t].push_back(0);
 			element += valueLength; // section ID
 			element += valueLength; // real constant
 			tmat[t].push_back(atoi(element) - 1); element += valueLength; // material
@@ -380,6 +383,7 @@ bool EBlock::boundary(const std::vector<ET> &et, PlainMeshData &mesh)
 		mesh.esize.insert(mesh.esize.end(), tesize[t].begin(), tesize[t].end());
 		mesh.enodes.insert(mesh.enodes.end(), tnodes[t].begin(), tnodes[t].end());
 		mesh.etype.insert(mesh.etype.end(), ttype[t].begin(), ttype[t].end());
+		mesh.et.insert(mesh.et.end(), tet[t].begin(), tet[t].end());
 		mesh.body.insert(mesh.body.end(), tbody[t].begin(), tbody[t].end());
 		mesh.material.insert(mesh.material.end(), tmat[t].begin(), tmat[t].end());
 	}

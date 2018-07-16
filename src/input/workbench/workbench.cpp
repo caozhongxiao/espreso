@@ -35,7 +35,7 @@ WorkbenchLoader::WorkbenchLoader(const ECFRoot &configuration, Mesh &mesh)
 	tprepare.end(); timing.addEvent(tprepare);
 	ESINFO(PROGRESS2) << "Workbench:: data prepared for parsing.";
 
-	PlainMeshData meshData;
+	PlainWorkbenchData meshData;
 	TimeEvent tparse("parsing data"); tparse.start();
 	parseData(meshData);
 	tparse.end(); timing.addEvent(tparse);
@@ -345,17 +345,9 @@ void WorkbenchLoader::prepareData()
 		_begin = WorkbenchParser::begin;
 		_end = WorkbenchParser::end;
 	}
-
-	// EBlock without SOLID key are boundary blocks
-//	for (size_t i = _EBlocks.size() - 1; i < _EBlocks.size(); i--) {
-//		if (!_EBlocks[i].Solkey) {
-//			_BBlocks.push_back(_EBlocks[i]);
-//			_EBlocks.erase(_EBlocks.begin() + i);
-//		}
-//	}
 }
 
-void WorkbenchLoader::parseData(PlainMeshData &meshData)
+void WorkbenchLoader::parseData(PlainWorkbenchData &meshData)
 {
 	std::vector<ET> et;
 	eslocal maxet = 0;
@@ -383,18 +375,6 @@ void WorkbenchLoader::parseData(PlainMeshData &meshData)
 			ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
 		}
 	}
-
-//	for (size_t i = 0; i < _BBlocks.size(); i++) {
-//		meshData.bregions.push_back(MeshBRegion());
-//		meshData.bregions.back().name = "NAMELESS_SET_" + std::to_string(i + 1);
-//		if (!_BBlocks[i].readData(_ET, meshData.bregions.back().esize, meshData.bregions.back().enodes, meshData.bregions.back().edata)) {
-//			ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
-//		}
-//		meshData.bregions.back().min = meshData.bregions.back().edata.size() ? meshData.bregions.back().edata.front().id : 0;
-//		meshData.bregions.back().max = meshData.bregions.back().edata.size() ? meshData.bregions.back().edata.back().id : 0;
-//		MPI_Bcast(&meshData.bregions.back().min, sizeof(eslocal), MPI_BYTE, _BBlocks[i].fRank, environment->MPICommunicator);
-//		MPI_Bcast(&meshData.bregions.back().max, sizeof(eslocal), MPI_BYTE, _BBlocks[i].lRank, environment->MPICommunicator);
-//	}
 
 	for (size_t i = 0; i < _CMBlocks.size(); i++) {
 		switch (_CMBlocks[i].entity) {

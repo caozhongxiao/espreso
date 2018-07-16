@@ -2,28 +2,16 @@
 #ifndef SRC_INPUT_INPUT_H_
 #define SRC_INPUT_INPUT_H_
 
-#include "../basis/containers/point.h"
+#include "plaindata.h"
 
 #include <cstddef>
 #include <string>
 #include <vector>
-#include <map>
 
 namespace espreso {
 
 class ECFRoot;
 class Mesh;
-
-struct PlainMeshData {
-	std::vector<eslocal> nIDs, ndist, nranks;
-	std::vector<Point> coordinates;
-
-	std::vector<eslocal> eIDs, esize, enodes;
-	std::vector<int> etype, body, material;
-
-	std::map<std::string, std::vector<eslocal> > eregions;
-	std::map<std::string, std::vector<eslocal> > nregions;
-};
 
 class Input {
 

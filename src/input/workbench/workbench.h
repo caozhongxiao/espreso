@@ -2,6 +2,8 @@
 #ifndef SRC_INPUT_WORKBENCH_WORKBENCH_H_
 #define SRC_INPUT_WORKBENCH_WORKBENCH_H_
 
+#include "../plaindata.h"
+
 #include "parser/nblock.h"
 #include "parser/eblock.h"
 #include "parser/cmblock.h"
@@ -17,9 +19,12 @@
 namespace espreso {
 
 struct Point;
-struct PlainMeshData;
 class ECFRoot;
 class Mesh;
+
+struct PlainWorkbenchData: public PlainMeshData {
+	std::vector<int> et;
+};
 
 class WorkbenchLoader {
 
@@ -31,7 +36,7 @@ protected:
 
 	void readData();
 	void prepareData();
-	void parseData(PlainMeshData &dMesh);
+	void parseData(PlainWorkbenchData &dMesh);
 
 	const ECFRoot &_configuration;
 	Mesh &_mesh;

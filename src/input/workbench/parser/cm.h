@@ -9,7 +9,7 @@
 namespace espreso {
 
 struct ESel;
-struct PlainMeshData;
+struct PlainWorkbenchData;
 struct MeshERegion;
 
 struct NSel;
@@ -36,12 +36,12 @@ struct CM: public WorkbenchParser {
 	CM& parse(const char* begin);
 
 	bool addRegion(
-			const PlainMeshData &mesh,
+			const PlainWorkbenchData &mesh,
 			const std::vector<ESel> &esel, std::map<std::string, std::vector<eslocal> > &eregions,
 			const std::vector<NSel> &nsel, std::map<std::string, std::vector<eslocal> > &nregions);
 
 protected:
-	bool addElementRegion(const PlainMeshData &mesh, const std::vector<ESel> &esel, std::map<std::string, std::vector<eslocal> > &eregions);
+	bool addElementRegion(const PlainWorkbenchData &mesh, const std::vector<ESel> &esel, std::map<std::string, std::vector<eslocal> > &eregions);
 	bool addNodeRegion(const std::vector<NSel> &nsel, std::map<std::string, std::vector<eslocal> > &nregions);
 };
 

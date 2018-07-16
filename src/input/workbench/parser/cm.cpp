@@ -4,7 +4,7 @@
 #include "esel.h"
 #include "nsel.h"
 
-#include "../../input.h"
+#include "../workbench.h"
 
 #include "../../../basis/containers/tarray.h"
 #include "../../../basis/utilities/parser.h"
@@ -69,7 +69,7 @@ CM& CM::parse(const char* begin)
 }
 
 bool CM::addRegion(
-		const PlainMeshData &mesh,
+		const PlainWorkbenchData &mesh,
 		const std::vector<ESel> &esel, std::map<std::string, std::vector<eslocal> > &eregions,
 		const std::vector<NSel> &nsel, std::map<std::string, std::vector<eslocal> > &nregions)
 {
@@ -83,7 +83,7 @@ bool CM::addRegion(
 	}
 }
 
-bool CM::addElementRegion(const PlainMeshData &mesh, const std::vector<ESel> &esel, std::map<std::string, std::vector<eslocal> > &eregions)
+bool CM::addElementRegion(const PlainWorkbenchData &mesh, const std::vector<ESel> &esel, std::map<std::string, std::vector<eslocal> > &eregions)
 {
 	// clear relevant set means all elements
 	std::vector<ESel> relevant;
@@ -132,7 +132,7 @@ bool CM::addElementRegion(const PlainMeshData &mesh, const std::vector<ESel> &es
 		case ESel::Item::TYPE:
 			if (relevant[i].VMIN == relevant[i].VMAX) {
 				checkElements([&] (size_t t, eslocal e) {
-					if (mesh.etype[e] == relevant[i].VMIN) {
+					if (mesh.et[e] == relevant[i].VMIN) {
 						eid[t].push_back(mesh.eIDs[e]);
 					}
 				});
@@ -140,7 +140,7 @@ bool CM::addElementRegion(const PlainMeshData &mesh, const std::vector<ESel> &es
 			}
 			if (relevant[i].VINC == 1) {
 				checkElements([&] (size_t t, eslocal e) {
-					if (relevant[i].VMIN <= mesh.etype[e] && mesh.etype[e] <= relevant[i].VMAX) {
+					if (relevant[i].VMIN <= mesh.et[e] && mesh.et[e] <= relevant[i].VMAX) {
 						eid[t].push_back(mesh.eIDs[e]);
 					}
 				});
@@ -148,7 +148,7 @@ bool CM::addElementRegion(const PlainMeshData &mesh, const std::vector<ESel> &es
 			}
 			checkElements([&] (size_t t, eslocal e) {
 				eslocal value = relevant[i].VMIN;
-				if (relevant[i].VMIN <= mesh.etype[e] && mesh.etype[e] <= relevant[i].VMAX && (mesh.etype[e] - relevant[i].VMIN) % relevant[i].VINC == 0) {
+				if (relevant[i].VMIN <= mesh.et[e] && mesh.et[e] <= relevant[i].VMAX && (mesh.et[e] - relevant[i].VMIN) % relevant[i].VINC == 0) {
 					eid[t].push_back(mesh.eIDs[e]);
 				}
 			});
