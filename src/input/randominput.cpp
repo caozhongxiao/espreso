@@ -900,11 +900,15 @@ void RandomInput::linkup()
 
 	for (size_t i = 0; i < oSources.size(); i++) {
 		auto it = std::lower_bound(_sfcNeighbors.begin(), _sfcNeighbors.end(), oSources[i]);
-		_sfcNeighbors.insert(it, oSources[i]);
-		rNodes.insert(rNodes.begin() + (it - _sfcNeighbors.begin()), std::vector<eslocal>());
-		rRegions.insert(rRegions.begin() + (it - _sfcNeighbors.begin()), std::vector<eslocal>());
-		rCoors.insert(rCoors.begin() + (it - _sfcNeighbors.begin()), std::vector<Point>());
-		fNodes.insert(fNodes.begin() + (it - _sfcNeighbors.begin()), uNodes[i]);
+		if (it != _sfcNeighbors.end() && *it == oSources[i]) {
+			fNodes[it - _sfcNeighbors.begin()].swap(uNodes[i]);
+		} else {
+			_sfcNeighbors.insert(it, oSources[i]);
+			rNodes.insert(rNodes.begin() + (it - _sfcNeighbors.begin()), std::vector<eslocal>());
+			rRegions.insert(rRegions.begin() + (it - _sfcNeighbors.begin()), std::vector<eslocal>());
+			rCoors.insert(rCoors.begin() + (it - _sfcNeighbors.begin()), std::vector<Point>());
+			fNodes.insert(fNodes.begin() + (it - _sfcNeighbors.begin()), uNodes[i]);
+		}
 	}
 
 	_sfcNeighbors.push_back(environment->MPIrank);
