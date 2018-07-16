@@ -846,7 +846,7 @@ void RandomInput::linkup()
 		oTargets.clear();
 		std::vector<eslocal> upermutation(sNodes.front().size());
 		std::iota(upermutation.begin(), upermutation.end(), 0);
-		std::sort(upermutation.begin(), upermutation.end(), [&] (eslocal i, eslocal j) { return rTargets[0][i] < rTargets[0][i]; });
+		std::sort(upermutation.begin(), upermutation.end(), [&] (eslocal i, eslocal j) { return rTargets[0][i] < rTargets[0][j]; });
 
 		for (size_t i = 0; i < upermutation.size(); i++) {
 			if (i == 0 || rTargets[0][upermutation[i]] != rTargets[0][upermutation[i - 1]]) {
