@@ -389,7 +389,7 @@ void MeshPreprocessing::partitiate(eslocal parts)
 
 	_mesh->elements->ndomains = Esutils::sizesToOffsets(domainCounter);
 	_mesh->elements->firstDomain = _mesh->elements->ndomains;
-	Communication::exscan(_mesh->elements->firstDomain, MPITools::operations().sizeToOffsetsEslocal);
+	Communication::exscan(_mesh->elements->firstDomain);
 	domainCounter.push_back(_mesh->elements->ndomains);
 	_mesh->elements->domainDistribution = domainCounter;
 

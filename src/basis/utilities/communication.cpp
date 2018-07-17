@@ -6,7 +6,7 @@
 namespace espreso {
 
 template<typename Ttype>
-static void _sizeToOffsets(void *in, void *out, int *len, MPI_Datatype *datatype)
+static void _scan(void *in, void *out, int *len, MPI_Datatype *datatype)
 {
 	*(static_cast<Ttype*>(out)) += *(static_cast<Ttype*>(in));
 }
@@ -51,12 +51,17 @@ static void _sum(void *in, void *out, int *len, MPI_Datatype *datatype)
 
 MPITools::Operations::Operations()
 {
-	MPI_Op_create(_sizeToOffsets<eslocal>, 1, &sizeToOffsetsEslocal);
-	MPI_Op_create(_sizeToOffsets<size_t>, 1, &sizeToOffsetsSize_t);
 	MPI_Op_create(_mergeStatistics, 1, &mergeStatistics);
-	MPI_Op_create(_max<eslocal>, 1, &max);
-	MPI_Op_create(_min<eslocal>, 1, &min);
-	MPI_Op_create(_sum<eslocal>, 1, &sum);
+
+	MPI_Op_create(_scan<size_t>, 1, &SIZET.scan);
+	MPI_Op_create(_max<size_t>, 1, &SIZET.max);
+	MPI_Op_create(_min<size_t>, 1, &SIZET.min);
+	MPI_Op_create(_sum<size_t>, 1, &SIZET.sum);
+
+	MPI_Op_create(_scan<eslocal>, 1, &ESLOCAL.scan);
+	MPI_Op_create(_max<eslocal>, 1, &ESLOCAL.max);
+	MPI_Op_create(_min<eslocal>, 1, &ESLOCAL.min);
+	MPI_Op_create(_sum<eslocal>, 1, &ESLOCAL.sum);
 }
 
 }

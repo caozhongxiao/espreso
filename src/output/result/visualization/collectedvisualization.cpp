@@ -36,7 +36,7 @@ void CollectedVisualization::pushInterval(eslocal size)
 	_lsize = size;
 
 	_goffset = _gsize;
-	_gsize += Communication::exscan(_loffset, MPITools::operations().sizeToOffsetsEslocal);
+	_gsize += Communication::exscan(_loffset);
 	_displacement.push_back(_goffset + _loffset);
 }
 

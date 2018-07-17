@@ -171,7 +171,7 @@ void WorkbenchLoader::readData()
 		_end -= block * fdistribution.back() - size;
 	}
 	_begin = _current;
-	_dataOffset = Communication::getDistribution<size_t>(_end - _current, MPITools::operations().sizeToOffsetsSize_t);
+	_dataOffset = Communication::getDistribution<size_t>(_end - _current);
 
 	WorkbenchParser::offset = _dataOffset[environment->MPIrank];
 	WorkbenchParser::begin = _begin;

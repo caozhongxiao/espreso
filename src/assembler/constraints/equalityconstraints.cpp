@@ -47,8 +47,8 @@ eslocal EqualityConstraints::computeIntervalsOffsets(std::function<eslocal(esloc
 		return std::lower_bound(domainsProcDistribution.begin(), domainsProcDistribution.end(), d + 1) - domainsProcDistribution.begin() - 1;
 	};
 
-	std::vector<std::vector<esglobal> > sGlobalOffset(_mesh.neighbours.size()), rGlobalOffset(_mesh.neighbours.size());
-	esglobal offset = 0;
+	std::vector<std::vector<eslocal> > sGlobalOffset(_mesh.neighbours.size()), rGlobalOffset(_mesh.neighbours.size());
+	eslocal offset = 0;
 
 	auto domains = _mesh.nodes->idomains->cbegin();
 	for (size_t i = 0; i < _mesh.nodes->pintervals.size(); ++i, ++domains) {
@@ -67,7 +67,7 @@ eslocal EqualityConstraints::computeIntervalsOffsets(std::function<eslocal(esloc
 		}
 	}
 
-	Communication::exscan(offset, MPITools::operations().sizeToOffsetsEslocal);
+	Communication::exscan(offset);
 	for (size_t n = 0; n < sGlobalOffset.size(); n++) {
 		for (size_t i = 0; i < sGlobalOffset[n].size(); i++) {
 			sGlobalOffset[n][i] += offset;
@@ -89,7 +89,7 @@ eslocal EqualityConstraints::computeIntervalsOffsets(std::function<eslocal(esloc
 		}
 	}
 
-	MPI_Bcast(&offset, sizeof(esglobal), MPI_BYTE, environment->MPIsize - 1, environment->MPICommunicator);
+	MPI_Bcast(&offset, sizeof(eslocal), MPI_BYTE, environment->MPIsize - 1, environment->MPICommunicator);
 
 	return offset;
 }

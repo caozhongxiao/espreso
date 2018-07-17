@@ -17,10 +17,13 @@ class MPITools
 	class Operations {
 		friend class MPITools;
 	public:
-		MPI_Op sizeToOffsetsEslocal;
-		MPI_Op sizeToOffsetsSize_t;
+		struct TypedOperations {
+			MPI_Op scan;
+			MPI_Op max, min, sum;
+		};
+
 		MPI_Op mergeStatistics;
-		MPI_Op max, min, sum;
+		TypedOperations SIZET, ESLOCAL;
 
 	private:
 		Operations();
@@ -35,6 +38,10 @@ public:
 		static Operations instance;
 		return instance;
 	}
+
+	static Operations::TypedOperations& sizetOperations() { return operations().SIZET; }
+	static Operations::TypedOperations& eslocalOperations() { return operations().ESLOCAL; }
+
 private:
 	MPITools() = delete;
 };
@@ -78,10 +85,10 @@ struct Communication {
 	static bool allToAllV(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, const std::vector<int> &ssize, const std::vector<int> &rsize);
 
 	template <typename Ttype>
-	static Ttype exscan(Ttype &value, MPI_Op &operation);
+	static Ttype exscan(Ttype &value);
 
 	template <typename Ttype>
-	static std::vector<Ttype> getDistribution(Ttype size, MPI_Op operation);
+	static std::vector<Ttype> getDistribution(Ttype size);
 
 	template <typename Ttype>
 	static bool sendVariousTargets(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &targets)
@@ -97,6 +104,13 @@ struct Communication {
 	static bool allToAllWithDataSizeAndTarget(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer);
 
 	static void serialize(std::function<void(void)> fnc);
+
+private:
+	template <typename Ttype>
+	static Ttype exscan(Ttype &value, MPI_Op &operation);
+
+	template <typename Ttype>
+	static std::vector<Ttype> getDistribution(Ttype size, MPI_Op &operation);
 };
 
 

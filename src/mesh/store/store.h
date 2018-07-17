@@ -58,7 +58,7 @@ struct Store {
 	{
 		std::vector<eslocal> result(environment->MPIsize + 1);
 		eslocal esize = size;
-		Communication::exscan(esize, MPITools::operations().sizeToOffsetsEslocal);
+		Communication::exscan(esize);
 
 		MPI_Allgather(&esize, sizeof(eslocal), MPI_BYTE, result.data(), sizeof(eslocal), MPI_BYTE, environment->MPICommunicator);
 		result.back() = esize + size;
