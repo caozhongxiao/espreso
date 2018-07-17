@@ -335,7 +335,7 @@ Ttype Communication::exscan(Ttype &value, MPI_Op &operation)
 template <>
 std::vector<size_t> Communication::getDistribution(size_t size)
 {
-	return getDistribution(size, MPITools::eslocalOperations().scan);
+	return getDistribution(size, MPITools::sizetOperations().scan);
 }
 
 template <>
