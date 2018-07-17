@@ -32,6 +32,10 @@ void RandomInput::buildMesh(const ECFRoot &configuration, PlainMeshData &meshDat
 RandomInput::RandomInput(const ECFRoot &configuration, PlainMeshData &meshData, Mesh &mesh)
 : Input(configuration, meshData, mesh), _sfc(_mesh.dimension, SFCDEPTH, _meshData.coordinates)
 {
+	if (environment->MPIsize == 1) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: use the sequential input for building mesh on 1 MPI process.";
+	}
+
 	ESINFO(OVERVIEW) << "Build mesh from randomly distributed elements.";
 	TimeEval timing("Load distributed mesh");
 	timing.totalTime.startWithBarrier();
@@ -242,8 +246,13 @@ void RandomInput::assignEBuckets()
 		sBuckets.push_back(3 + size);
 		sBuckets.push_back(r);
 		sBuckets.push_back(environment->MPIrank);
+		auto it = _meshData.nIDs.begin();
 		for (size_t n = 0; n < size; ++n, ++offset) {
-			sBuckets.push_back(_nBuckets[rNodes[offset] - _nDistribution[environment->MPIrank]]);
+			while (*it < rNodes[offset]) { ++it; }
+			if (rNodes[offset] != *it) {
+				ESINFO(ERROR) << "rNodes[offset] != *it" << rNodes[offset] << " != " << *it;
+			}
+			sBuckets.push_back(_nBuckets[it - _meshData.nIDs.begin()]);
 		}
 	}
 
@@ -298,12 +307,16 @@ void RandomInput::clusterize()
 	TimeEvent e1("CE PREPROCESS DATA");
 	e1.start();
 
+	size_t esize = _meshData.eIDs.size();
+	esize = Communication::exscan(esize);
+	std::vector<size_t> targetDistribution = Esutils::getDistribution(environment->MPIsize, esize);
+
 	double PRECISION = 0.001 * std::log2(environment->MPIsize);
-	if (PRECISION * (_eDistribution.back() / environment->MPIsize) < 2) {
-		PRECISION = 2.01 / (_eDistribution.back() / environment->MPIsize);
+	if (PRECISION * (targetDistribution.back() / environment->MPIsize) < 2) {
+		PRECISION = 2.01 / (targetDistribution.back() / environment->MPIsize);
 	}
 	// allowed difference to the perfect distribution
-	size_t ETOLERANCE = PRECISION * _eDistribution.back() / environment->MPIsize;
+	size_t ETOLERANCE = PRECISION * targetDistribution.back() / environment->MPIsize;
 
 	std::vector<eslocal> edist({ 0 });
 	edist.reserve(_meshData.esize.size() + 1);
@@ -370,21 +383,21 @@ void RandomInput::clusterize()
 			}
 		}
 
-		MPI_Allreduce(scounts.data(), rcounts.data(), sizeof(eslocal) * scounts.size(), MPI_BYTE, MPITools::operations().sum, environment->MPICommunicator);
+		MPI_Allreduce(scounts.data(), rcounts.data(), sizeof(eslocal) * scounts.size(), MPI_BYTE, MPITools::eslocalOperations().sum, environment->MPICommunicator);
 
 		_sfc.setLevel(LEVEL + 1);
 
 		for (size_t b = 0; b < _sfc.sfcRefined(LEVEL).size(); b++) {
 			size_t boffset = b * (bsize + 1);
-			size_t rbegin = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), rcounts[boffset]) - _eDistribution.begin();
-			size_t rend = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), rcounts[boffset + bsize]) - _eDistribution.begin();
+			size_t rbegin = std::lower_bound(targetDistribution.begin(), targetDistribution.end(), rcounts[boffset]) - targetDistribution.begin();
+			size_t rend = std::lower_bound(targetDistribution.begin(), targetDistribution.end(), rcounts[boffset + bsize]) - targetDistribution.begin();
 
 			for (size_t r = rbegin, i = 0; r < rend; r++) {
-				while (i <= bsize && rcounts[boffset + i] < _eDistribution[r] && _eDistribution[r] - rcounts[boffset + i] >= ETOLERANCE) {
+				while (i <= bsize && rcounts[boffset + i] < targetDistribution[r] && targetDistribution[r] - rcounts[boffset + i] >= ETOLERANCE) {
 					++i;
 				}
 				_bucketsBorders[r] = coarsenig * (bsize * _sfc.sfcRefined(LEVEL)[b] + i);
-				if (rcounts[boffset + i] > _eDistribution[r] && rcounts[boffset + i] - _eDistribution[r] > ETOLERANCE) {
+				if (rcounts[boffset + i] > targetDistribution[r] && rcounts[boffset + i] - targetDistribution[r] > ETOLERANCE) {
 					_sfc.recurce(bsize * _sfc.sfcRefined(LEVEL)[b] + i - 1);
 				}
 			}
@@ -422,21 +435,21 @@ void RandomInput::clusterize()
 			}
 		}
 
-		MPI_Allreduce(scounts.data(), rcounts.data(), sizeof(eslocal) * scounts.size(), MPI_BYTE, MPITools::operations().sum, environment->MPICommunicator);
+		MPI_Allreduce(scounts.data(), rcounts.data(), sizeof(eslocal) * scounts.size(), MPI_BYTE, MPITools::eslocalOperations().sum, environment->MPICommunicator);
 
 		_sfc.setLevel(LEVEL + 1);
 
 		for (size_t b = 0; b < _sfc.sfcRefined(LEVEL).size(); b++) {
 			size_t boffset = b * (bsize + 1);
-			size_t rbegin = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), rcounts[boffset]) - _eDistribution.begin();
-			size_t rend = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), rcounts[boffset + bsize]) - _eDistribution.begin();
+			size_t rbegin = std::lower_bound(targetDistribution.begin(), targetDistribution.end(), rcounts[boffset]) - targetDistribution.begin();
+			size_t rend = std::lower_bound(targetDistribution.begin(), targetDistribution.end(), rcounts[boffset + bsize]) - targetDistribution.begin();
 
 			for (size_t r = rbegin, i = 0; r < rend; r++) {
-				while (i <= bsize && rcounts[boffset + i] < _eDistribution[r] && _eDistribution[r] - rcounts[boffset + i] >= ETOLERANCE) {
+				while (i <= bsize && rcounts[boffset + i] < targetDistribution[r] && targetDistribution[r] - rcounts[boffset + i] >= ETOLERANCE) {
 					++i;
 				}
 				_bucketsBorders[r] = coarsenig * (bsize * _sfc.sfcRefined(LEVEL)[b] + i);
-				if (rcounts[boffset + i] > _eDistribution[r] && rcounts[boffset + i] - _eDistribution[r] > ETOLERANCE) {
+				if (rcounts[boffset + i] > targetDistribution[r] && rcounts[boffset + i] - targetDistribution[r] > ETOLERANCE) {
 					_sfc.recurce(bsize * _sfc.sfcRefined(LEVEL)[b] + i - 1);
 					refinedindices.push_back(boffset + i - 1);
 				}
@@ -599,15 +612,17 @@ void RandomInput::clusterize()
 		}
 	}
 
-	npermutation.resize(_meshData.nIDs.size());
-	std::iota(npermutation.begin(), npermutation.end(), 0);
-	std::sort(npermutation.begin(), npermutation.end(), [&] (eslocal i, eslocal j) { return _meshData.nIDs[i] < _meshData.nIDs[j]; });
+	if (!_meshData.eIDs.size()) {
+		ESINFO(ERROR) << "ESPRESO internal error: a process without elements -- re-run with smaller number of MPI.";
+	}
 
-	Esutils::permute(_meshData.nIDs, npermutation);
-	Esutils::permute(_meshData.coordinates, npermutation);
-	Esutils::permute(_nregions, npermutation, _nregsize);
+	size_t back = _meshData.eIDs.back();
+	MPI_Allgather(&back, sizeof(size_t), MPI_BYTE, _eDistribution.data() + 1, sizeof(size_t), MPI_BYTE, environment->MPICommunicator);
+	for (size_t i = 1; i < _eDistribution.size(); i++) {
+		++_eDistribution[i];
+	}
 
-	_eDistribution = Communication::getDistribution(_meshData.esize.size(), MPITools::operations().sizeToOffsetsSize_t);
+	sortNodes();
 
 	e7.end();
 	timing.addEvent(e7);

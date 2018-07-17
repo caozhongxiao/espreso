@@ -23,6 +23,9 @@ protected:
 	: _configuration(configuration), _meshData(meshData), _mesh(mesh), _eregsize(1), _nregsize(1) {}
 
 	void balance();
+
+	std::vector<size_t> getDistribution(const std::vector<eslocal> &IDs, const std::vector<eslocal> &permutation);
+
 	void balanceNodes();
 	void balancePermutedNodes();
 	void balanceElements();
@@ -36,6 +39,7 @@ protected:
 
 	void sortNodes();
 	void sortElements();
+	void sortElements(const std::vector<eslocal> &permutation);
 
 	void fillNodes();
 	void fillElements();
