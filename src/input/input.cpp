@@ -175,7 +175,7 @@ void Input::balancePermutedNodes()
 void Input::balanceElements()
 {
 	std::vector<size_t> eCurrent = Communication::getDistribution(_meshData.esize.size());
-	std::vector<size_t> eTarget = tarray<eslocal>::distribute(environment->MPIsize, eCurrent.back());
+	_eDistribution = tarray<size_t>::distribute(environment->MPIsize, eCurrent.back());
 
 	std::vector<size_t> nCurrent = Communication::getDistribution(_meshData.enodes.size());
 	std::vector<size_t> nTarget;
@@ -185,10 +185,10 @@ void Input::balanceElements()
 	}
 
 	size_t nodeOffset = nCurrent[environment->MPIrank];
-	size_t eTargetIndex = std::lower_bound(eTarget.begin(), eTarget.end(), eCurrent[environment->MPIrank] + 1) - eTarget.begin();
+	size_t eTargetIndex = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), eCurrent[environment->MPIrank] + 1) - _eDistribution.begin();
 	for (size_t n = 0; n < _meshData.esize.size(); ++n) {
 		nodeOffset += _meshData.esize[n];
-		if (eCurrent[environment->MPIrank] + n + 1 == eTarget[eTargetIndex]) {
+		if (eCurrent[environment->MPIrank] + n + 1 == _eDistribution[eTargetIndex]) {
 			nTarget.push_back(nodeOffset);
 			++eTargetIndex;
 		}
@@ -199,19 +199,19 @@ void Input::balanceElements()
 	if (!Communication::balance(_meshData.enodes, nCurrent, nTarget)) {
 		ESINFO(ERROR) << "ESPRESO internal error: balance element nodes.";
 	}
-	if (!Communication::balance(_meshData.esize, eCurrent, eTarget)) {
+	if (!Communication::balance(_meshData.esize, eCurrent, _eDistribution)) {
 		ESINFO(ERROR) << "ESPRESO internal error: balance element sizes.";
 	}
-	if (!Communication::balance(_meshData.eIDs, eCurrent, eTarget)) {
+	if (!Communication::balance(_meshData.eIDs, eCurrent, _eDistribution)) {
 		ESINFO(ERROR) << "ESPRESO internal error: balance element IDs.";
 	}
-	if (!Communication::balance(_meshData.body, eCurrent, eTarget)) {
+	if (!Communication::balance(_meshData.body, eCurrent, _eDistribution)) {
 		ESINFO(ERROR) << "ESPRESO internal error: balance element bodies.";
 	}
-	if (!Communication::balance(_meshData.etype, eCurrent, eTarget)) {
+	if (!Communication::balance(_meshData.etype, eCurrent, _eDistribution)) {
 		ESINFO(ERROR) << "ESPRESO internal error: balance element types.";
 	}
-	if (!Communication::balance(_meshData.material, eCurrent, eTarget)) {
+	if (!Communication::balance(_meshData.material, eCurrent, _eDistribution)) {
 		ESINFO(ERROR) << "ESPRESO internal error: balance element material.";
 	}
 
