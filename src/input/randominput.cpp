@@ -249,9 +249,6 @@ void RandomInput::assignEBuckets()
 		auto it = _meshData.nIDs.begin();
 		for (size_t n = 0; n < size; ++n, ++offset) {
 			while (*it < rNodes[offset]) { ++it; }
-			if (rNodes[offset] != *it) {
-				ESINFO(ERROR) << "rNodes[offset] != *it" << rNodes[offset] << " != " << *it;
-			}
 			sBuckets.push_back(_nBuckets[it - _meshData.nIDs.begin()]);
 		}
 	}
@@ -334,9 +331,8 @@ void RandomInput::clusterize()
 	timing.addEvent(e1);
 
 	// PREPROCESS BUCKET SIZES
-	size_t DEPTH = 1;
+	size_t DEPTH = 2;
 	while (_sfc.buckets(DEPTH++) < (size_t)environment->MPIsize);
-	ESINFO(DETAILS) << "SFC DEPTH: " << DEPTH;
 
 	TimeEvent e2("CE COMPUTE LOCAL HISTOGRAM");
 	e2.start();
@@ -470,8 +466,6 @@ void RandomInput::clusterize()
 
 	e4.end();
 	timing.addEvent(e4);
-
-	ESINFO(DETAILS) << "RECURSION DEPTH: " << LEVEL;
 
 	TimeEvent e41("CE COMPUTE REGIONDATA");
 	e41.start();

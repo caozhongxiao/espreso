@@ -184,28 +184,6 @@ void MeshPreprocessing::linkNodesAndElements()
 
 	e2.end(); timing.addEvent(e2);
 
-	int avgneighs = 0, nneighs = _mesh->neighbours.size();
-	double allavgsize = 0, avgsize = 0;
-	for (size_t i = 0; i < _mesh->neighbours.size(); i++) {
-		avgsize += sBuffer[0][i].size();
-	}
-	avgsize /= nneighs;
-
-	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
-	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_SUM, 0, environment->MPICommunicator);
-
-	ESINFO(PROGRESS3) << "LN AVGNEIGHS: " << (double)avgneighs / environment->MPIsize << ", AVGSIZE: " << allavgsize / environment->MPIsize;
-
-	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MIN, 0, environment->MPICommunicator);
-	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MIN, 0, environment->MPICommunicator);
-
-	ESINFO(PROGRESS3) << "LN MINNEIGHS: " << avgneighs << ", MINSIZE: " << allavgsize;
-
-	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MAX, 0, environment->MPICommunicator);
-	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MAX, 0, environment->MPICommunicator);
-
-	ESINFO(PROGRESS3) << "LN MAXNEIGHS: " << avgneighs << ", MAXSIZE: " << allavgsize;
-
 	TimeEvent e3("LN EXCHANGE DATA"); e3.start();
 
 	if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, _mesh->neighbours)) {
@@ -380,28 +358,6 @@ void MeshPreprocessing::exchangeHalo()
 	}
 
 	e3.end(); timing.addEvent(e3);
-
-	int avgneighs = 0, nneighs = _mesh->neighbours.size();
-	double allavgsize = 0, avgsize = 0;
-	for (size_t i = 0; i < _mesh->neighbours.size(); i++) {
-		avgsize += sBuffer[i].size();
-	}
-	avgsize /= nneighs;
-
-	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
-	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_SUM, 0, environment->MPICommunicator);
-
-	ESINFO(PROGRESS1) << "EH AVGNEIGHS: " << (double)avgneighs / environment->MPIsize << ", AVGSIZE: " << allavgsize / environment->MPIsize;
-
-	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MIN, 0, environment->MPICommunicator);
-	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MIN, 0, environment->MPICommunicator);
-
-	ESINFO(PROGRESS1) << "EH MINNEIGHS: " << avgneighs << ", MINSIZE: " << allavgsize;
-
-	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MAX, 0, environment->MPICommunicator);
-	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MAX, 0, environment->MPICommunicator);
-
-	ESINFO(PROGRESS1) << "EH MAXNEIGHS: " << avgneighs << ", MAXSIZE: " << allavgsize;
 
 	TimeEvent e4("EH EXCHANGE DATA"); e4.start();
 

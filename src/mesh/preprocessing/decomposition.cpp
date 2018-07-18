@@ -786,20 +786,6 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	e4.end(); timing.addEvent(e4);
 
-	int avgneighs = 0, nneighs = targets.size();
-	double allavgsize = 0, avgsize = 0;
-	for (size_t i = 0; i < targets.size(); i++) {
-		avgsize += sElements[0][i].size();
-		avgsize += sNodes[0][i].size();
-		avgsize += sBoundary[0][i].size();
-	}
-	avgsize /= nneighs;
-
-	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
-	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_SUM, 0, environment->MPICommunicator);
-
-	ESINFO(PROGRESS1) << "EE 3 x AVGNEIGHS: " << avgneighs / environment->MPIsize << ", AVGSIZE: " << allavgsize / environment->MPIsize << "\n";
-
 	TimeEvent e5("EE EXCHANGE DATA"); e5.start();
 
 	// Step 3: Send data to target processes

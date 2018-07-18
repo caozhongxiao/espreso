@@ -71,7 +71,6 @@ void Input::balance()
 	if (isSorted(_meshData.nIDs)) {
 		balanceNodes();
 	} else {
-		ESINFO(OVERVIEW) << "Input: permuted nodes detected.";
 		balancePermutedNodes();
 		sortNodes();
 	}
@@ -79,7 +78,6 @@ void Input::balance()
 	if (isSorted(_meshData.eIDs)) {
 		balanceElements();
 	} else {
-		ESINFO(OVERVIEW) << "Input: permuted elements detected.";
 		balancePermutedElements();
 		std::vector<eslocal> permutation(_meshData.esize.size());
 		std::iota(permutation.begin(), permutation.end(), 0);
