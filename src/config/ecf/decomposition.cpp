@@ -12,9 +12,9 @@ espreso::METISConfiguration::METISConfiguration()
 			.addoption(ECFOption().setname("EDGECUT").setdescription("METIS tries to minimize edgecut.")));
 
 
-	adaptive_refinement = false;
-	REGISTER(adaptive_refinement, ECFMetaData()
-			.setdescription({ "Decomposition respect materials." })
+	refinement = false;
+	REGISTER(refinement, ECFMetaData()
+			.setdescription({ "Apply refinement." })
 			.setdatatype({ ECFDataType::BOOL }));
 }
 

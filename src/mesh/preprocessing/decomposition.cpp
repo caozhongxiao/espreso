@@ -47,7 +47,7 @@ void MeshPreprocessing::reclusterize()
 	}
 
 	if (_mesh->elements->centers == NULL) {
-//		computeElementsCenters();
+		computeElementsCenters();
 	}
 
 	start("compute global dual graph");
@@ -122,7 +122,7 @@ void MeshPreprocessing::reclusterize()
 	}
 
 	std::vector<eslocal> edistribution = _mesh->elements->gatherElementsProcDistribution();
-	std::vector<eslocal> partition(_mesh->elements->size), permutation(_mesh->elements->size);
+	std::vector<eslocal> partition(_mesh->elements->size, environment->MPIrank);
 	double* ecenters = NULL;
 	if (_mesh->elements->centers != NULL) {
 		ecenters = _mesh->elements->centers->datatarray().data();
@@ -140,12 +140,12 @@ void MeshPreprocessing::reclusterize()
 	);
 	finish("ParMETIS::KWay");
 
-	if (_mesh->configuration.decomposition.metis_options.adaptive_refinement) {
+	if (_mesh->configuration.decomposition.metis_options.refinement) {
 		start("ParMETIS::AdaptiveRepart");
 		eslocal prev = 2 * edgecut;
 		while (1.01 * edgecut < prev) {
 			prev = edgecut;
-			edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_AdaptiveRepart,
+			edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_RefineKway,
 				edistribution.data(),
 				dDistribution.data(), dData[0].data(),
 				_mesh->elements->dimension, ecenters,

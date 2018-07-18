@@ -1098,7 +1098,10 @@ void Mesh::printDecompositionStatistics()
 
 	ESINFO(DETAILS) << header(" elements per cluster");
 
+	eslocal coffset = elements->gatherClustersDistribution()[environment->MPIrank];
+
 	eslocal celements = elements->size;
+	eslocal mincindex, gmincindex;
 	for (eslocal c = 0; c < elements->nclusters; c++) {
 		avgelements = 0;
 		for (eslocal d = 0; d < elements->ndomains; d++) {
@@ -1107,8 +1110,15 @@ void Mesh::printDecompositionStatistics()
 			}
 		}
 		celements = std::min(avgelements, celements);
+		if (avgelements == celements) {
+			mincindex = coffset + c;
+		}
 	}
-	MPI_Reduce(&celements, &minElements, sizeof(eslocal), MPI_BYTE, MPITools::eslocalOperations().min, 0, environment->MPICommunicator);
+	MPI_Allreduce(&celements, &minElements, sizeof(eslocal), MPI_BYTE, MPITools::eslocalOperations().min, environment->MPICommunicator);
+	if (minElements != celements) {
+		mincindex = 0;
+	}
+	MPI_Reduce(&mincindex, &gmincindex, sizeof(eslocal), MPI_BYTE, MPITools::eslocalOperations().max, 0, environment->MPICommunicator);
 	for (eslocal c = 0; c < elements->nclusters; c++) {
 		avgelements = 0;
 		for (eslocal d = 0; d < elements->ndomains; d++) {
@@ -1119,8 +1129,8 @@ void Mesh::printDecompositionStatistics()
 		celements = std::max(avgelements, celements);
 	}
 	MPI_Reduce(&celements, &maxelements, sizeof(eslocal), MPI_BYTE, MPITools::eslocalOperations().max, 0, environment->MPICommunicator);
-	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
-			<< minElements << ", " << maxElements << " (" << totalElements / (double)totalClusters << ")";
+	ESINFO(DETAILS) << std::string(namesize - 18, ' ') << "MIN[#n], MAX (AVG)" << " : "
+			<< minElements << "[" << gmincindex << "], " << maxElements << " (" << totalElements / (double)totalClusters << ")";
 
 	if (maxElements / (double)minElements > 2) {
 		ESINFO(DETAILS) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;

@@ -71,6 +71,7 @@ void Input::balance()
 	if (isSorted(_meshData.nIDs)) {
 		balanceNodes();
 	} else {
+		ESINFO(OVERVIEW) << "Input: permuted nodes detected.";
 		balancePermutedNodes();
 		sortNodes();
 	}
@@ -78,6 +79,7 @@ void Input::balance()
 	if (isSorted(_meshData.eIDs)) {
 		balanceElements();
 	} else {
+		ESINFO(OVERVIEW) << "Input: permuted elements detected.";
 		balancePermutedElements();
 		std::vector<eslocal> permutation(_meshData.esize.size());
 		std::iota(permutation.begin(), permutation.end(), 0);
@@ -350,27 +352,26 @@ void Input::sortElements()
 void Input::sortElements(const std::vector<eslocal> &permutation)
 {
 	std::vector<eslocal> edist = std::vector<eslocal>({ 0 });
-		edist.reserve(_meshData.eIDs.size() + 1);
-		for (size_t e = 0; e < _meshData.eIDs.size(); e++) {
-			edist.push_back(edist.back() + _meshData.esize[e]);
+	edist.reserve(_meshData.eIDs.size() + 1);
+	for (size_t e = 0; e < _meshData.eIDs.size(); e++) {
+		edist.push_back(edist.back() + _meshData.esize[e]);
+	}
+
+	Esutils::permute(_meshData.eIDs, permutation);
+	Esutils::permute(_meshData.esize, permutation);
+	Esutils::permute(_meshData.body, permutation);
+	Esutils::permute(_meshData.etype, permutation);
+	Esutils::permute(_meshData.material, permutation);
+	Esutils::permute(_eregions, permutation, _eregsize);
+
+	std::vector<eslocal> npermutation(_meshData.enodes.size());
+	for (size_t i = 0, index = 0; i < permutation.size(); i++) {
+		for (size_t n = 0; n < _meshData.esize[i]; ++n, ++index) {
+			npermutation[index] = edist[permutation[i]] + n;
 		}
+	}
 
-		std::sort(_meshData.eIDs.begin(), _meshData.eIDs.end());
-
-		Esutils::permute(_meshData.esize, permutation);
-		Esutils::permute(_meshData.body, permutation);
-		Esutils::permute(_meshData.etype, permutation);
-		Esutils::permute(_meshData.material, permutation);
-		Esutils::permute(_eregions, permutation, _eregsize);
-
-		std::vector<eslocal> npermutation(_meshData.enodes.size());
-		for (size_t i = 0, index = 0; i < permutation.size(); i++) {
-			for (size_t n = 0; n < _meshData.esize[i]; ++n, ++index) {
-				npermutation[index] = edist[permutation[i]] + n;
-			}
-		}
-
-		Esutils::permute(_meshData.enodes, npermutation);
+	Esutils::permute(_meshData.enodes, npermutation);
 }
 
 void Input::assignRegions(

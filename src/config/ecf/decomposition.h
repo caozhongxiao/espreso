@@ -13,7 +13,7 @@ struct METISConfiguration: public ECFObject {
 	};
 
 	OBJECTIVE_TYPE objective_type;
-	bool adaptive_refinement;
+	bool refinement;
 
 	METISConfiguration();
 };

@@ -20,8 +20,8 @@ eslocal ParMETIS::call(
 	eslocal wgtflag = 0;
 	eslocal numflag = 0;
 	eslocal parts = environment->MPIsize;
-	std::vector<double> partFraction(verticesWeightCount * parts, 1.0 / (verticesWeightCount * parts));
-	std::vector<double> unbalanceTolerance(verticesWeightCount, 1.02);
+	std::vector<double> partFraction(verticesWeightCount * parts, 1.0 / parts);
+	std::vector<double> unbalanceTolerance(verticesWeightCount, 1.1);
 	eslocal options[4] = { 0, 0, 0, PARMETIS_PSR_UNCOUPLED };
 	double itr = 1e6;
 	eslocal edgecut;
