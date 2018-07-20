@@ -299,13 +299,13 @@ bool Communication::allToAllV(const std::vector<Ttype> &sBuffer, std::vector<Tty
 }
 
 template <>
-size_t Communication::exscan(size_t &value)
+inline size_t Communication::exscan(size_t &value)
 {
 	return exscan(value, MPITools::sizetOperations().scan);
 }
 
 template <>
-eslocal Communication::exscan(eslocal &value)
+inline eslocal Communication::exscan(eslocal &value)
 {
 	return exscan(value, MPITools::eslocalOperations().scan);
 }
@@ -333,13 +333,13 @@ Ttype Communication::exscan(Ttype &value, MPI_Op &operation)
 }
 
 template <>
-std::vector<size_t> Communication::getDistribution(size_t size)
+inline std::vector<size_t> Communication::getDistribution(size_t size)
 {
 	return getDistribution(size, MPITools::sizetOperations().scan);
 }
 
 template <>
-std::vector<eslocal> Communication::getDistribution(eslocal size)
+inline std::vector<eslocal> Communication::getDistribution(eslocal size)
 {
 	return getDistribution(size, MPITools::eslocalOperations().scan);
 }
