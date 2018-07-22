@@ -58,10 +58,15 @@ MPITools::Operations::Operations()
 	MPI_Op_create(_min<size_t>, 1, &SIZET.min);
 	MPI_Op_create(_sum<size_t>, 1, &SIZET.sum);
 
-	MPI_Op_create(_scan<eslocal>, 1, &ESLOCAL.scan);
-	MPI_Op_create(_max<eslocal>, 1, &ESLOCAL.max);
-	MPI_Op_create(_min<eslocal>, 1, &ESLOCAL.min);
-	MPI_Op_create(_sum<eslocal>, 1, &ESLOCAL.sum);
+	MPI_Op_create(_scan<int>, 1, &INT.scan);
+	MPI_Op_create(_max<int>, 1, &INT.max);
+	MPI_Op_create(_min<int>, 1, &INT.min);
+	MPI_Op_create(_sum<int>, 1, &INT.sum);
+
+	MPI_Op_create(_scan<long>, 1, &LONG.scan);
+	MPI_Op_create(_max<long>, 1, &LONG.max);
+	MPI_Op_create(_min<long>, 1, &LONG.min);
+	MPI_Op_create(_sum<long>, 1, &LONG.sum);
 }
 
 }

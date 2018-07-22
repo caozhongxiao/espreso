@@ -305,11 +305,16 @@ inline size_t Communication::exscan(size_t &value)
 }
 
 template <>
-inline eslocal Communication::exscan(eslocal &value)
+inline int Communication::exscan(int &value)
 {
-	return exscan(value, MPITools::eslocalOperations().scan);
+	return exscan(value, MPITools::intOperations().scan);
 }
 
+template <>
+inline long Communication::exscan(long &value)
+{
+	return exscan(value, MPITools::longOperations().scan);
+}
 
 template <typename Ttype>
 Ttype Communication::exscan(Ttype &value, MPI_Op &operation)
@@ -339,9 +344,15 @@ inline std::vector<size_t> Communication::getDistribution(size_t size)
 }
 
 template <>
-inline std::vector<eslocal> Communication::getDistribution(eslocal size)
+inline std::vector<int> Communication::getDistribution(int size)
 {
-	return getDistribution(size, MPITools::eslocalOperations().scan);
+	return getDistribution(size, MPITools::intOperations().scan);
+}
+
+template <>
+inline std::vector<long> Communication::getDistribution(long size)
+{
+	return getDistribution(size, MPITools::longOperations().scan);
 }
 
 template <typename Ttype>

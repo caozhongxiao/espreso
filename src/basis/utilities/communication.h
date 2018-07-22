@@ -23,7 +23,7 @@ class MPITools
 		};
 
 		MPI_Op mergeStatistics;
-		TypedOperations SIZET, ESLOCAL;
+		TypedOperations SIZET, INT, LONG;
 
 	private:
 		Operations();
@@ -40,7 +40,12 @@ public:
 	}
 
 	static Operations::TypedOperations& sizetOperations() { return operations().SIZET; }
-	static Operations::TypedOperations& eslocalOperations() { return operations().ESLOCAL; }
+	static Operations::TypedOperations& intOperations() { return operations().INT; }
+	static Operations::TypedOperations& longOperations() { return operations().LONG; }
+	static Operations::TypedOperations& eslocalOperations()
+	{
+			return sizeof(eslocal) == sizeof(int) ? operations().INT : operations().LONG;
+	}
 
 private:
 	MPITools() = delete;
