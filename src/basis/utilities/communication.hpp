@@ -6,6 +6,42 @@
 
 namespace espreso {
 
+template <>
+inline MPITools::MPIType MPITools::getType<int>()
+{
+	return { MPI_INT, sizeof(int) };
+}
+
+template <>
+inline MPITools::MPIType MPITools::getType<long>()
+{
+	return { MPI_LONG, sizeof(long) };
+}
+
+template <>
+inline MPITools::MPIType MPITools::getType<size_t>()
+{
+	return { MPI_UNSIGNED_LONG, sizeof(size_t) };
+}
+
+template <>
+inline MPITools::MPIType MPITools::getType<float>()
+{
+	return { MPI_FLOAT, sizeof(float) };
+}
+
+template <>
+inline MPITools::MPIType MPITools::getType<double>()
+{
+	return { MPI_DOUBLE, sizeof(double) };
+}
+
+template <typename Ttype>
+inline MPITools::MPIType MPITools::getType()
+{
+	return { MPI_BYTE, 1 };
+}
+
 template <typename Ttype>
 bool Communication::exchangeKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours)
 {

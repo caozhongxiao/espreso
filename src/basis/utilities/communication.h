@@ -32,7 +32,15 @@ class MPITools
 		void operator=(Operations const&) = delete;
 	};
 
+	struct MPIType {
+		MPI_Datatype type;
+		int size;
+	};
+
 public:
+	template <typename Ttype>
+	static MPITools::MPIType getType();
+
 	static Operations& operations()
 	{
 		static Operations instance;
