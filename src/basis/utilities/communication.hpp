@@ -9,6 +9,14 @@ namespace espreso {
 template <typename Ttype>
 bool Communication::exchangeKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours)
 {
+	for (size_t n = 0; n < neighbours.size(); n++) {
+		if (sizeof(Ttype) * sBuffer[n].size() > 1 << 30) {
+			return false;
+		}
+		if (sizeof(Ttype) * rBuffer[n].size() > 1 << 30) {
+			return false;
+		}
+	}
 	std::vector<MPI_Request> req(2 * neighbours.size());
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		// bullxmpi violate MPI standard (cast away constness)
@@ -31,6 +39,12 @@ bool Communication::exchangeUnknownSize(const std::vector<std::vector<Ttype> > &
 	auto n2i = [ & ] (size_t neighbour) {
 		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
 	};
+
+	for (size_t n = 0; n < neighbours.size(); n++) {
+		if (sizeof(Ttype) * sBuffer[n].size() > 1 << 30) {
+			return false;
+		}
+	}
 
 	std::vector<MPI_Request> req(neighbours.size());
 	for (size_t n = 0; n < neighbours.size(); n++) {
@@ -63,6 +77,9 @@ bool Communication::exchangeUnknownSize(const std::vector<Ttype> &sBuffer, std::
 	auto n2i = [ & ] (size_t neighbour) {
 		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
 	};
+	if (sizeof(Ttype) * sBuffer.size() > 1 << 30) {
+		return false;
+	}
 
 	std::vector<MPI_Request> req(neighbours.size());
 	for (size_t n = 0; n < neighbours.size(); n++) {
@@ -92,6 +109,18 @@ bool Communication::exchangeUnknownSize(const std::vector<Ttype> &sBuffer, std::
 template <typename Ttype>
 bool Communication::receiveLowerKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours)
 {
+	for (size_t n = 0; n < neighbours.size(); n++) {
+		if (neighbours[n] > environment->MPIrank) {
+			if (sizeof(Ttype) * sBuffer[n].size() > 1 << 30) {
+				return false;
+			}
+		} else {
+			if (sizeof(Ttype) * rBuffer[n].size() > 1 << 30) {
+				return false;
+			}
+		}
+	}
+
 	std::vector<MPI_Request> req(neighbours.size());
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		if (neighbours[n] > environment->MPIrank) {
@@ -110,6 +139,18 @@ bool Communication::receiveLowerKnownSize(const std::vector<std::vector<Ttype> >
 template <typename Ttype>
 bool Communication::receiveUpperKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours)
 {
+	for (size_t n = 0; n < neighbours.size(); n++) {
+		if (neighbours[n] < environment->MPIrank) {
+			if (sizeof(Ttype) * sBuffer[n].size() > 1 << 30) {
+				return false;
+			}
+		} else {
+			if (sizeof(Ttype) * rBuffer[n].size() > 1 << 30) {
+				return false;
+			}
+		}
+	}
+
 	std::vector<MPI_Request> req(neighbours.size());
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		if (neighbours[n] < environment->MPIrank) {
@@ -128,6 +169,12 @@ bool Communication::receiveUpperKnownSize(const std::vector<std::vector<Ttype> >
 template <typename Ttype>
 bool Communication::receiveUpperUnknownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours)
 {
+	for (size_t n = 0; n < neighbours.size() && neighbours[n] < environment->MPIrank; n++) {
+		if (sizeof(Ttype) * sBuffer[n].size() > 1 << 30) {
+			return false;
+		}
+	}
+
 	auto n2i = [ & ] (size_t neighbour) {
 		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
 	};
@@ -193,6 +240,9 @@ bool Communication::gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::ve
 template <typename Ttype>
 bool Communication::allGatherUnknownSize(std::vector<Ttype> &data)
 {
+	if (sizeof(Ttype) * data.size() > 1 << 30) {
+		return false;
+	}
 	int size = sizeof(Ttype) * data.size();
 	std::vector<int> rSizes(environment->MPIsize), rOffsets(environment->MPIsize);
 	MPI_Allgather(&size, sizeof(int), MPI_BYTE, rSizes.data(), sizeof(int), MPI_BYTE, environment->MPICommunicator);
@@ -214,6 +264,9 @@ bool Communication::allGatherUnknownSize(std::vector<Ttype> &data)
 template <typename Ttype>
 bool Communication::broadcastUnknownSize(std::vector<Ttype> &buffer)
 {
+	if (sizeof(Ttype) * buffer.size() > 1 << 30) {
+		return false;
+	}
 	int size = buffer.size();
 	MPI_Bcast(&size, sizeof(int), MPI_BYTE, 0, environment->MPICommunicator);
 	buffer.resize(size);
@@ -224,6 +277,10 @@ bool Communication::broadcastUnknownSize(std::vector<Ttype> &buffer)
 template <typename Ttype>
 bool Communication::balance(std::vector<Ttype> &buffer, const std::vector<size_t> &currentDistribution, const std::vector<size_t> &targetDistribution)
 {
+	if (sizeof(Ttype) * buffer.size() > 1 << 30) {
+		return false;
+	}
+
 	std::vector<Ttype> result(targetDistribution[environment->MPIrank + 1] - targetDistribution[environment->MPIrank]);
 	std::vector<int> ssize(environment->MPIsize), sdisp(environment->MPIsize), rsize(environment->MPIsize), rdisp(environment->MPIsize);
 
@@ -284,6 +341,9 @@ bool Communication::balance(std::vector<Ttype> &buffer, const std::vector<size_t
 template <typename Ttype>
 bool Communication::allToAllV(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, const std::vector<int> &ssize, const std::vector<int> &rsize)
 {
+	if (sizeof(Ttype) * sBuffer.size() > 1 << 30) {
+		return false;
+	}
 	std::vector<int> _ssize = ssize, _rsize = rsize;
 	std::vector<int> sdisp(environment->MPIsize), rdisp(environment->MPIsize);
 	for (int r = 0; r < environment->MPIsize; r++) {
@@ -371,6 +431,12 @@ std::vector<Ttype> Communication::getDistribution(Ttype size, MPI_Op &operation)
 template <typename Ttype>
 bool Communication::sendVariousTargets(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &targets, std::vector<int> &sources)
 {
+	for (size_t n = 0; n < targets.size(); n++) {
+		if (sizeof(Ttype) * sBuffer[n].size() > 1 << 30) {
+			return false;
+		}
+	}
+
 	std::vector<int> smsgcounter(environment->MPIsize);
 	std::vector<int> rmsgcounter(environment->MPIsize);
 	for (size_t n = 0; n < targets.size(); n++) {
@@ -446,6 +512,9 @@ bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype> &sBuf
 
 	int left = 0, right = environment->MPIsize, mid;
 	for (size_t l = 0; l < levels && left + 1 < right; l++) {
+		if (sizeof(Ttype) * send.size() > 1 << 30) {
+			return false;
+		}
 		mid = left + (right - left) / 2 + (right - left) % 2;
 		if (environment->MPIrank < mid) {
 			// LOWER half to UPPER half
