@@ -5,6 +5,7 @@
 
 #include "../basis/containers/serializededata.h"
 #include "../basis/logging/logging.h"
+#include "../basis/logging/timeeval.h"
 #include "../basis/utilities/communication.h"
 #include "../basis/utilities/utils.h"
 
@@ -121,6 +122,13 @@ void Input::balanceNodes()
 
 void Input::balancePermutedNodes()
 {
+	TimeEval time("BALANCE PERMUTED NODES");
+	time.totalTime.startWithBarrier();
+
+
+	TimeEvent e1("BPN PREPARE DATA");
+	e1.start();
+
 	std::vector<eslocal> permutation(_meshData.nIDs.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
 	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return _meshData.nIDs[i] < _meshData.nIDs[j]; });
@@ -149,9 +157,21 @@ void Input::balancePermutedNodes()
 		sBuffer[prevsize] = sBuffer.size() - prevsize;
 	}
 
+	e1.end();
+	time.addEvent(e1);
+
+	TimeEvent e2("BPN EXCHANGE DATA");
+	e2.start();
+
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
 		ESINFO(ERROR) << "ESPRESO internal error: distribute permuted nodes.";
 	}
+
+	e2.end();
+	time.addEvent(e2);
+
+	TimeEvent e3("BPN POST PROCESS");
+	e3.start();
 
 	_meshData.nIDs.clear();
 	_meshData.coordinates.clear();
@@ -170,6 +190,12 @@ void Input::balancePermutedNodes()
 			offset += sizeof(Point) / sizeof(eslocal);
 		}
 	}
+
+	e3.end();
+	time.addEvent(e3);
+
+	time.totalTime.endWithBarrier();
+	time.printStatsMPI();
 }
 
 void Input::balanceElements()
@@ -224,6 +250,12 @@ void Input::balanceElements()
 
 void Input::balancePermutedElements()
 {
+	TimeEval time("BALANCE PERMUTED ELEMENTS");
+	time.totalTime.startWithBarrier();
+
+	TimeEvent e1("BPE PREPROCESS");
+	e1.start();
+
 	std::vector<eslocal> permutation(_meshData.eIDs.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
 	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return _meshData.eIDs[i] < _meshData.eIDs[j]; });
@@ -265,9 +297,21 @@ void Input::balancePermutedElements()
 		sBuffer[prevsize] = sBuffer.size() - prevsize;
 	}
 
+	e1.end();
+	time.addEvent(e1);
+
+	TimeEvent e2("BPE EXCHANGE");
+	e2.start();
+
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
 		ESINFO(ERROR) << "ESPRESO internal error: distribute permuted elements.";
 	}
+
+	e2.end();
+	time.addEvent(e2);
+
+	TimeEvent e3("BPE POST PROCESS");
+	e3.start();
 
 	_meshData.esize.clear();
 	_meshData.eIDs.clear();
@@ -293,6 +337,12 @@ void Input::balancePermutedElements()
 			offset += _meshData.esize.back();
 		}
 	}
+
+	e3.end();
+	time.addEvent(e3);
+
+	time.totalTime.endWithBarrier();
+	time.printStatsMPI();
 }
 
 void Input::sortNodes()
