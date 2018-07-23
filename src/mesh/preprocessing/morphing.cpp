@@ -173,7 +173,7 @@ void MeshPreprocessing::readExternalFile(
 		return token;
 	};
 	auto myExpectToken =
-			[] (Tokenizer &tokenizer, Tokenizer::Token real, Tokenizer::Token expected, char* expectedToken) -> void {
+			[] (Tokenizer &tokenizer, Tokenizer::Token real, Tokenizer::Token expected, const std::string &expectedToken) -> void {
 				if (real!=expected) {
 					ESINFO(GLOBAL_ERROR) << "Line: " << tokenizer.line() << ", unexpected symbol, was expecting "<<expectedToken;
 				}
