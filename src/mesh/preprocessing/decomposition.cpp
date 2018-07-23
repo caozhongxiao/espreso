@@ -47,7 +47,7 @@ void MeshPreprocessing::reclusterize()
 	}
 
 	if (_mesh->elements->centers == NULL) {
-		computeElementsCenters();
+//		computeElementsCenters();
 	}
 
 	start("compute global dual graph");
