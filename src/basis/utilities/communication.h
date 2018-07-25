@@ -32,6 +32,7 @@ class MPITools
 		void operator=(Operations const&) = delete;
 	};
 
+public:
 	struct MPIType {
 		MPI_Datatype type;
 		size_t multiplier;
@@ -40,7 +41,6 @@ class MPITools
 		MPIType(MPI_Datatype type, size_t multiplier): type(type), multiplier(multiplier) {}
 	};
 
-public:
 	template <typename Ttype>
 	static MPITools::MPIType getType();
 
