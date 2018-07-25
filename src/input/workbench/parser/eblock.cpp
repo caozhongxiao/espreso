@@ -142,149 +142,165 @@ bool EBlock::solid(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<char> value(valueLength + 1);
 		std::vector<eslocal> nindices(20);
+
+		std::vector<eslocal> esize, nodes, IDs;
+		std::vector<int> type, ansystype, body, mat;
+
+		auto skip = [&] (const char* &data) {
+			data += valueLength;
+		};
+
+		auto parse = [&] (const char* &data) {
+			memcpy(value.data(), data, valueLength);
+			skip(data);
+			return atol(value.data());
+		};
+
 		int nnodes;
 
 		for (auto element = first + elementSize * tdistribution[t]; element < first + elementSize * tdistribution[t + 1];) {
-			tbody[t].push_back(0);
-			tmat[t].push_back(atoi(element) - 1); element += valueLength; // material
-			tet[t].push_back(atoi(element) - 1); element += valueLength; // etype
-			ttype[t].push_back(0);
-			element += valueLength; // real constant
-			element += valueLength; // section ID
-			element += valueLength; // element coordinate system
-			element += valueLength; // birth / death
-			element += valueLength; // solid model reference number
-			element += valueLength; // element shape flag
-			nnodes = atoi(element); element += valueLength; // number of nodes
-			element += valueLength; // not used
-			tIDs[t].push_back(atoi(element) - 1); element += valueLength; // element ID
+			body.push_back(0);
+			mat.push_back(parse(element) - 1); // material
+			ansystype.push_back(parse(element) - 1); // etype
+			type.push_back(0);
+			skip(element); // real constant
+			skip(element); // section ID
+			skip(element); // element coordinate system
+			skip(element); // birth / death
+			skip(element); // solid model reference number
+			skip(element); // element shape flag
+			nnodes = parse(element); // number of nodes
+			skip(element); // not used
+			IDs.push_back(parse(element) - 1); // element ID
 
 			for (int i = 0; i < 8 && i < nnodes; i++) {
-				memcpy(value.data(), element, valueLength);
-				element += valueLength; // element ID
-				nindices[i] = atol(value.data()) - 1;
+				nindices[i] = parse(element) - 1;
 			}
 			element += lineEndSize;
 
-
 			auto readNextNodes = [&] () {
 				for (int i = 0; i < nnodes - 8; i++) {
-					memcpy(value.data(), element, valueLength);
-					element += valueLength;
-					nindices[i + 8] = atol(value.data()) - 1;
+					nindices[i + 8] = parse(element) - 1;
 				}
 				element += lineEndSize;
 			};
 
-			switch (et[tet[t].back()].etype()) {
+			switch (et[ansystype.back()].etype()) {
 			case ET::ETYPE::D2SOLID_4NODES:
 				if (nindices[2] == nindices[3]) { // triangle3
-					tesize[t].push_back(3);
-					ttype[t].back() = (eslocal)Element::CODE::TRIANGLE3;
-					tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 3);
+					esize.push_back(3);
+					type.back() = (eslocal)Element::CODE::TRIANGLE3;
+					nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 3);
 				} else { // square4
-					tesize[t].push_back(4);
-					ttype[t].back() = (eslocal)Element::CODE::SQUARE4;
-					tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 4);
+					esize.push_back(4);
+					type.back() = (eslocal)Element::CODE::SQUARE4;
+					nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 4);
 				}
 				break;
 			case ET::ETYPE::D2SOLID_6NODES:
-				tesize[t].push_back(6);
-				ttype[t].back() = (eslocal)Element::CODE::TRIANGLE6;
-				tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 6);
+				esize.push_back(6);
+				type.back() = (eslocal)Element::CODE::TRIANGLE6;
+				nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 6);
 				break;
 			case ET::ETYPE::D2SOLID_8NODES:
 				if (nindices[2] == nindices[3]) { // triangle6
-					tesize[t].push_back(6);
-					ttype[t].back() = (eslocal)Element::CODE::TRIANGLE6;
-					tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 3);
-					tnodes[t].insert(tnodes[t].end(), nindices.begin() + 4, nindices.begin() + 6);
-					tnodes[t].push_back(nindices[7]);
+					esize.push_back(6);
+					type.back() = (eslocal)Element::CODE::TRIANGLE6;
+					nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 3);
+					nodes.insert(nodes.end(), nindices.begin() + 4, nindices.begin() + 6);
+					nodes.push_back(nindices[7]);
 				} else { // square8
-					tesize[t].push_back(8);
-					ttype[t].back() = (eslocal)Element::CODE::SQUARE8;
-					tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 8);
+					esize.push_back(8);
+					type.back() = (eslocal)Element::CODE::SQUARE8;
+					nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 8);
 				}
 				break;
 
 			case ET::ETYPE::D3SOLID_4NODES:
-				tesize[t].push_back(4);
-				ttype[t].back() = (eslocal)Element::CODE::TETRA4;
-				tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 4);
+				esize.push_back(4);
+				type.back() = (eslocal)Element::CODE::TETRA4;
+				nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 4);
 				break;
 			case ET::ETYPE::D3SOLID_8NODES:
 				if (nindices[2] == nindices[3]) {
 					if (nindices[4] == nindices[5]) { // tetra4
-						tesize[t].push_back(4);
-						ttype[t].back() = (eslocal)Element::CODE::TETRA4;
-						tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 3);
-						tnodes[t].push_back(nindices[4]);
+						esize.push_back(4);
+						type.back() = (eslocal)Element::CODE::TETRA4;
+						nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 3);
+						nodes.push_back(nindices[4]);
 					} else { // prisma6
-						tesize[t].push_back(6);
-						ttype[t].back() = (eslocal)Element::CODE::PRISMA6;
-						tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 3);
-						tnodes[t].insert(tnodes[t].end(), nindices.begin() + 4, nindices.begin() + 7);
+						esize.push_back(6);
+						type.back() = (eslocal)Element::CODE::PRISMA6;
+						nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 3);
+						nodes.insert(nodes.end(), nindices.begin() + 4, nindices.begin() + 7);
 					}
 				} else {
 					if (nindices[4] == nindices[5]) { // pyramid5
-						tesize[t].push_back(5);
-						ttype[t].back() = (eslocal)Element::CODE::PYRAMID5;
-						tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 5);
+						esize.push_back(5);
+						type.back() = (eslocal)Element::CODE::PYRAMID5;
+						nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 5);
 					} else { // hexa8
-						tesize[t].push_back(8);
-						ttype[t].back() = (eslocal)Element::CODE::HEXA8;
-						tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 8);
+						esize.push_back(8);
+						type.back() = (eslocal)Element::CODE::HEXA8;
+						nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 8);
 					}
 				}
 				break;
 			case ET::ETYPE::D3SOLID_10NODES:
 				readNextNodes();
-				tesize[t].push_back(10);
-				ttype[t].back() = (eslocal)Element::CODE::TETRA10;
-				tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 10);
+				esize.push_back(10);
+				type.back() = (eslocal)Element::CODE::TETRA10;
+				nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 10);
 				break;
 			case ET::ETYPE::D3SOLID_20NODES:
 				readNextNodes();
 				if (nindices[2] == nindices[3]) {
 					if (nindices[4] == nindices[5]) { // tetra10
-						tesize[t].push_back(10);
-						ttype[t].back() = (eslocal)Element::CODE::TETRA10;
-						tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 3);
-						tnodes[t].push_back(nindices[4]);
+						esize.push_back(10);
+						type.back() = (eslocal)Element::CODE::TETRA10;
+						nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 3);
+						nodes.push_back(nindices[4]);
 
-						tnodes[t].insert(tnodes[t].end(), nindices.begin() + 8, nindices.begin() + 10);
-						tnodes[t].push_back(nindices[11]);
-						tnodes[t].insert(tnodes[t].end(), nindices.begin() + 16, nindices.begin() + 19);
+						nodes.insert(nodes.end(), nindices.begin() + 8, nindices.begin() + 10);
+						nodes.push_back(nindices[11]);
+						nodes.insert(nodes.end(), nindices.begin() + 16, nindices.begin() + 19);
 					} else { // prisma15
-						tesize[t].push_back(15);
-						ttype[t].back() = (eslocal)Element::CODE::PRISMA15;
-						tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 3);
-						tnodes[t].insert(tnodes[t].end(), nindices.begin() + 4, nindices.begin() + 7);
+						esize.push_back(15);
+						type.back() = (eslocal)Element::CODE::PRISMA15;
+						nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 3);
+						nodes.insert(nodes.end(), nindices.begin() + 4, nindices.begin() + 7);
 
-						tnodes[t].insert(tnodes[t].end(), nindices.begin() + 8, nindices.begin() + 10);
-						tnodes[t].push_back(nindices[11]);
-						tnodes[t].insert(tnodes[t].end(), nindices.begin() + 12, nindices.begin() + 14);
-						tnodes[t].push_back(nindices[15]);
-						tnodes[t].insert(tnodes[t].end(), nindices.begin() + 16, nindices.begin() + 19);
+						nodes.insert(nodes.end(), nindices.begin() + 8, nindices.begin() + 10);
+						nodes.push_back(nindices[11]);
+						nodes.insert(nodes.end(), nindices.begin() + 12, nindices.begin() + 14);
+						nodes.push_back(nindices[15]);
+						nodes.insert(nodes.end(), nindices.begin() + 16, nindices.begin() + 19);
 					}
 				} else {
 					if (nindices[4] == nindices[5]) { // pyramid13
-						tesize[t].push_back(13);
-						ttype[t].back() = (eslocal)Element::CODE::PYRAMID13;
-						tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 5);
-						tnodes[t].insert(tnodes[t].end(), nindices.begin() + 8, nindices.begin() + 12);
-						tnodes[t].insert(tnodes[t].end(), nindices.begin() + 16, nindices.begin() + 20);
+						esize.push_back(13);
+						type.back() = (eslocal)Element::CODE::PYRAMID13;
+						nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 5);
+						nodes.insert(nodes.end(), nindices.begin() + 8, nindices.begin() + 12);
+						nodes.insert(nodes.end(), nindices.begin() + 16, nindices.begin() + 20);
 					} else { // hexa20
-						tesize[t].push_back(20);
-						ttype[t].back() = (eslocal)Element::CODE::HEXA20;
-						tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 20);
+						esize.push_back(20);
+						type.back() = (eslocal)Element::CODE::HEXA20;
+						nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 20);
 					}
 				}
 				break;
 			default:
-				ESINFO(ERROR) << "ESPRESO Workbench parser: not implemented parsing of etype: " << ttype[t].back() << " = type " << et[ttype[t].back()].type;
+				ESINFO(ERROR) << "ESPRESO Workbench parser: not implemented parsing of etype: " << type.back() << " = type " << et[type.back()].type;
 			}
 		}
+		tIDs[t].swap(IDs);
+		tesize[t].swap(esize);
+		tnodes[t].swap(nodes);
+		ttype[t].swap(type);
+		tet[t].swap(ansystype);
+		tbody[t].swap(body);
+		tmat[t].swap(mat);
 	}
 
 	for (size_t t = 0; t < threads; t++) {
@@ -311,10 +327,10 @@ bool EBlock::boundary(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 
 	std::vector<std::vector<eslocal> > tesize(threads), tnodes(threads), tIDs(threads);
 	std::vector<std::vector<int> > ttype(threads), tet(threads), tbody(threads), tmat(threads);
-	int nodes = valueSize - 5;
+	int enodes = valueSize - 5;
 
-	if (nodes != 4 && nodes != 8 && nodes != 2 && nodes != 3) {
-		ESINFO(ERROR) << "ESPRESO Workbench parser: uknown format of EBLOCK. Nodes = " << nodes;
+	if (enodes != 4 && enodes != 8 && enodes != 2 && enodes != 3) {
+		ESINFO(ERROR) << "ESPRESO Workbench parser: uknown format of EBLOCK. Nodes = " << enodes;
 	}
 
 	#pragma omp parallel for
@@ -322,60 +338,79 @@ bool EBlock::boundary(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 		std::vector<char> value(valueLength + 1);
 		std::vector<eslocal> nindices(20);
 
-		for (auto element = first + elementSize * tdistribution[t]; element < first + elementSize * tdistribution[t + 1];) {
-			tIDs[t].push_back(atoi(element) - 1); element += valueLength; // element ID
-			tbody[t].push_back(0);
-			ttype[t].push_back(0);
-			tet[t].push_back(0);
-			element += valueLength; // section ID
-			element += valueLength; // real constant
-			tmat[t].push_back(atoi(element) - 1); element += valueLength; // material
-			element += valueLength; // element coordinate system
+		std::vector<eslocal> esize, nodes, IDs;
+		std::vector<int> type, ansystype, body, mat;
 
-			for (int i = 0; i < nodes; i++) {
-				memcpy(value.data(), element, valueLength);
-				element += valueLength; // element node
-				nindices[i] = atol(value.data()) - 1;
+		auto skip = [&] (const char* &data) {
+			data += valueLength;
+		};
+
+		auto parse = [&] (const char* &data) {
+			memcpy(value.data(), data, valueLength);
+			skip(data);
+			return atol(value.data());
+		};
+
+		for (auto element = first + elementSize * tdistribution[t]; element < first + elementSize * tdistribution[t + 1];) {
+			IDs.push_back(parse(element) - 1); // element ID
+			body.push_back(0);
+			type.push_back(0);
+			ansystype.push_back(0);
+			skip(element); // section ID
+			skip(element); // real constant
+			mat.push_back(parse(element) - 1); // material
+			skip(element); // element coordinate system
+
+			for (int i = 0; i < enodes; i++) {
+				nindices[i] = parse(element) - 1;
 			}
 			element += lineEndSize;
 
-			if (nodes == 2) { // line2
-				tesize[t].push_back(2);
-				ttype[t].back() = (eslocal)Element::CODE::LINE2;
-				tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 2);
+			if (enodes == 2) { // line2
+				esize.push_back(2);
+				type.back() = (eslocal)Element::CODE::LINE2;
+				nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 2);
 			}
 
-			if (nodes == 3) { // line3
-				tesize[t].push_back(3);
-				ttype[t].back() = (eslocal)Element::CODE::LINE3;
-				tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 3);
+			if (enodes == 3) { // line3
+				esize.push_back(3);
+				type.back() = (eslocal)Element::CODE::LINE3;
+				nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 3);
 			}
 
-			if (nodes == 4) {
+			if (enodes == 4) {
 				if (nindices[2] == nindices[3]) { // triangle3
-					tesize[t].push_back(3);
-					ttype[t].back() = (eslocal)Element::CODE::TRIANGLE3;
-					tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 3);
+					esize.push_back(3);
+					type.back() = (eslocal)Element::CODE::TRIANGLE3;
+					nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 3);
 				} else { // square4
-					tesize[t].push_back(4);
-					ttype[t].back() = (eslocal)Element::CODE::SQUARE4;
-					tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 4);
+					esize.push_back(4);
+					type.back() = (eslocal)Element::CODE::SQUARE4;
+					nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 4);
 				}
 			}
-			if (nodes == 8) {
+			if (enodes == 8) {
 				if (nindices[2] == nindices[3]) { // triangle6
-					tesize[t].push_back(6);
-					ttype[t].back() = (eslocal)Element::CODE::TRIANGLE6;
-					tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 3);
-					tnodes[t].insert(tnodes[t].end(), nindices.begin() + 4, nindices.begin() + 6);
-					tnodes[t].push_back(nindices[7]);
+					esize.push_back(6);
+					type.back() = (eslocal)Element::CODE::TRIANGLE6;
+					nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 3);
+					nodes.insert(nodes.end(), nindices.begin() + 4, nindices.begin() + 6);
+					nodes.push_back(nindices[7]);
 				} else { // square8
-					tesize[t].push_back(8);
-					ttype[t].back() = (eslocal)Element::CODE::SQUARE8;
-					tnodes[t].insert(tnodes[t].end(), nindices.begin(), nindices.begin() + 8);
+					esize.push_back(8);
+					type.back() = (eslocal)Element::CODE::SQUARE8;
+					nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 8);
 				}
 			}
 		}
+
+		tIDs[t].swap(IDs);
+		tesize[t].swap(esize);
+		tnodes[t].swap(nodes);
+		ttype[t].swap(type);
+		tet[t].swap(ansystype);
+		tbody[t].swap(body);
+		tmat[t].swap(mat);
 	}
 
 	for (size_t t = 0; t < threads; t++) {
