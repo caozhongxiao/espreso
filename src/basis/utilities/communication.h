@@ -34,7 +34,10 @@ class MPITools
 
 	struct MPIType {
 		MPI_Datatype type;
-		int size;
+		size_t multiplier;
+
+		MPIType(MPI_Datatype type): type(type), multiplier(1) {}
+		MPIType(MPI_Datatype type, size_t multiplier): type(type), multiplier(multiplier) {}
 	};
 
 public:
@@ -101,7 +104,7 @@ struct Communication {
 	static Ttype exscan(Ttype &value);
 
 	template <typename Ttype>
-	static std::vector<Ttype> getDistribution(Ttype size);
+	static std::vector<Ttype> getDistribution(Ttype multiplir);
 
 	template <typename Ttype>
 	static bool sendVariousTargets(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &targets)
@@ -123,7 +126,7 @@ private:
 	static Ttype exscan(Ttype &value, MPI_Op &operation);
 
 	template <typename Ttype>
-	static std::vector<Ttype> getDistribution(Ttype size, MPI_Op &operation);
+	static std::vector<Ttype> getDistribution(Ttype multiplir, MPI_Op &operation);
 };
 
 

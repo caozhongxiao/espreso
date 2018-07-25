@@ -9,59 +9,68 @@ namespace espreso {
 template <>
 inline MPITools::MPIType MPITools::getType<int>()
 {
-	return { MPI_INT, sizeof(int) };
+	return { MPI_INT };
+}
+
+template <>
+inline MPITools::MPIType MPITools::getType<uint>()
+{
+	return { MPI_UNSIGNED };
 }
 
 template <>
 inline MPITools::MPIType MPITools::getType<long>()
 {
-	return { MPI_LONG, sizeof(long) };
+	return { MPI_LONG };
 }
 
 template <>
 inline MPITools::MPIType MPITools::getType<size_t>()
 {
-	return { MPI_UNSIGNED_LONG, sizeof(size_t) };
+	return { MPI_UNSIGNED_LONG };
 }
 
 template <>
 inline MPITools::MPIType MPITools::getType<float>()
 {
-	return { MPI_FLOAT, sizeof(float) };
+	return { MPI_FLOAT };
 }
 
 template <>
 inline MPITools::MPIType MPITools::getType<double>()
 {
-	return { MPI_DOUBLE, sizeof(double) };
+	return { MPI_DOUBLE, };
 }
 
 template <typename Ttype>
 inline MPITools::MPIType MPITools::getType()
 {
-	return { MPI_BYTE, 1 };
+	return { MPI_BYTE, sizeof(Ttype) };
 }
 
 template <typename Ttype>
 bool Communication::exchangeKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours)
 {
+	MPITools::MPIType type = MPITools::getType<Ttype>();
+
 	for (size_t n = 0; n < neighbours.size(); n++) {
-		if (sizeof(Ttype) * sBuffer[n].size() > 1 << 30) {
+		if (type.multiplier * sBuffer[n].size() > 1 << 30) {
 			return false;
 		}
-		if (sizeof(Ttype) * rBuffer[n].size() > 1 << 30) {
+		if (type.multiplier * rBuffer[n].size() > 1 << 30) {
 			return false;
 		}
 	}
 	std::vector<MPI_Request> req(2 * neighbours.size());
+
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		// bullxmpi violate MPI standard (cast away constness)
-		MPI_Isend(const_cast<Ttype*>(sBuffer[n].data()), sizeof(Ttype) * sBuffer[n].size(), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + 2 * n);
+		MPI_Isend(const_cast<Ttype*>(sBuffer[n].data()), type.multiplier * sBuffer[n].size(), type.type, neighbours[n], 0, environment->MPICommunicator, req.data() + 2 * n);
 	}
 
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		// bullxmpi violate MPI standard (cast away constness)
-		MPI_Irecv(const_cast<Ttype*>(rBuffer[n].data()), sizeof(Ttype) * rBuffer[n].size(), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + 2 * n + 1);
+		MPI_Irecv(const_cast<Ttype*>(rBuffer[n].data()), type.multiplier * rBuffer[n].size(), type.type, neighbours[n], 0, environment->MPICommunicator, req.data() + 2 * n + 1);
 	}
 
 	MPI_Waitall(2 * neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
@@ -76,8 +85,10 @@ bool Communication::exchangeUnknownSize(const std::vector<std::vector<Ttype> > &
 		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
 	};
 
+	MPITools::MPIType type = MPITools::getType<Ttype>();
+
 	for (size_t n = 0; n < neighbours.size(); n++) {
-		if (sizeof(Ttype) * sBuffer[n].size() > 1 << 30) {
+		if (type.multiplier * sBuffer[n].size() > 1 << 30) {
 			return false;
 		}
 	}
@@ -85,7 +96,7 @@ bool Communication::exchangeUnknownSize(const std::vector<std::vector<Ttype> > &
 	std::vector<MPI_Request> req(neighbours.size());
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		// bullxmpi violate MPI standard (cast away constness)
-		MPI_Isend(const_cast<Ttype*>(sBuffer[n].data()), sizeof(Ttype) * sBuffer[n].size(), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + n);
+		MPI_Isend(const_cast<Ttype*>(sBuffer[n].data()), type.multiplier * sBuffer[n].size(), type.type, neighbours[n], 0, environment->MPICommunicator, req.data() + n);
 	}
 
 	int flag;
@@ -95,9 +106,9 @@ bool Communication::exchangeUnknownSize(const std::vector<std::vector<Ttype> > &
 		MPI_Iprobe(MPI_ANY_SOURCE, 0, environment->MPICommunicator, &flag, &status);
 		if (flag) {
 			int count;
-			MPI_Get_count(&status, MPI_BYTE, &count);
-			rBuffer[n2i(status.MPI_SOURCE)].resize(count / sizeof(Ttype));
-			MPI_Recv(rBuffer[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
+			MPI_Get_count(&status, type.type, &count);
+			rBuffer[n2i(status.MPI_SOURCE)].resize(count / type.multiplier);
+			MPI_Recv(rBuffer[n2i(status.MPI_SOURCE)].data(), count, type.type, status.MPI_SOURCE, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
 			counter++;
 		}
 	}
@@ -113,14 +124,16 @@ bool Communication::exchangeUnknownSize(const std::vector<Ttype> &sBuffer, std::
 	auto n2i = [ & ] (size_t neighbour) {
 		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
 	};
-	if (sizeof(Ttype) * sBuffer.size() > 1 << 30) {
+
+	MPITools::MPIType type = MPITools::getType<Ttype>();
+	if (type.multiplier * sBuffer.size() > 1 << 30) {
 		return false;
 	}
 
 	std::vector<MPI_Request> req(neighbours.size());
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		// bullxmpi violate MPI standard (cast away constness)
-		MPI_Isend(const_cast<Ttype*>(sBuffer.data()), sizeof(Ttype) * sBuffer.size(), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + n);
+		MPI_Isend(const_cast<Ttype*>(sBuffer.data()), type.multiplier * sBuffer.size(), type.type, neighbours[n], 0, environment->MPICommunicator, req.data() + n);
 	}
 
 	int flag;
@@ -130,9 +143,9 @@ bool Communication::exchangeUnknownSize(const std::vector<Ttype> &sBuffer, std::
 		MPI_Iprobe(MPI_ANY_SOURCE, 0, environment->MPICommunicator, &flag, &status);
 		if (flag) {
 			int count;
-			MPI_Get_count(&status, MPI_BYTE, &count);
-			rBuffer[n2i(status.MPI_SOURCE)].resize(count / sizeof(Ttype));
-			MPI_Recv(rBuffer[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
+			MPI_Get_count(&status, type.type, &count);
+			rBuffer[n2i(status.MPI_SOURCE)].resize(count / type.multiplier);
+			MPI_Recv(rBuffer[n2i(status.MPI_SOURCE)].data(), count, type.type, status.MPI_SOURCE, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
 			counter++;
 		}
 	}
@@ -145,13 +158,15 @@ bool Communication::exchangeUnknownSize(const std::vector<Ttype> &sBuffer, std::
 template <typename Ttype>
 bool Communication::receiveLowerKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours)
 {
+	MPITools::MPIType type = MPITools::getType<Ttype>();
+
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		if (neighbours[n] > environment->MPIrank) {
-			if (sizeof(Ttype) * sBuffer[n].size() > 1 << 30) {
+			if (type.multiplier * sBuffer[n].size() > 1 << 30) {
 				return false;
 			}
 		} else {
-			if (sizeof(Ttype) * rBuffer[n].size() > 1 << 30) {
+			if (type.multiplier * rBuffer[n].size() > 1 << 30) {
 				return false;
 			}
 		}
@@ -161,10 +176,10 @@ bool Communication::receiveLowerKnownSize(const std::vector<std::vector<Ttype> >
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		if (neighbours[n] > environment->MPIrank) {
 			// bullxmpi violate MPI standard (cast away constness)
-			MPI_Isend(const_cast<Ttype*>(sBuffer[n].data()), sizeof(Ttype) * sBuffer[n].size(), MPI_BYTE, neighbours[n], 1, environment->MPICommunicator, req.data() + n);
+			MPI_Isend(const_cast<Ttype*>(sBuffer[n].data()), type.multiplier * sBuffer[n].size(), type.type, neighbours[n], 1, environment->MPICommunicator, req.data() + n);
 		}
 		if (neighbours[n] < environment->MPIrank) {
-			MPI_Irecv(rBuffer[n].data(), sizeof(Ttype) * rBuffer[n].size(), MPI_BYTE, neighbours[n], 1, environment->MPICommunicator, req.data() + n);
+			MPI_Irecv(rBuffer[n].data(), type.multiplier * rBuffer[n].size(), type.type, neighbours[n], 1, environment->MPICommunicator, req.data() + n);
 		}
 	}
 
@@ -175,13 +190,14 @@ bool Communication::receiveLowerKnownSize(const std::vector<std::vector<Ttype> >
 template <typename Ttype>
 bool Communication::receiveUpperKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours)
 {
+	MPITools::MPIType type = MPITools::getType<Ttype>();
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		if (neighbours[n] < environment->MPIrank) {
-			if (sizeof(Ttype) * sBuffer[n].size() > 1 << 30) {
+			if (type.multiplier * sBuffer[n].size() > 1 << 30) {
 				return false;
 			}
 		} else {
-			if (sizeof(Ttype) * rBuffer[n].size() > 1 << 30) {
+			if (type.multiplier * rBuffer[n].size() > 1 << 30) {
 				return false;
 			}
 		}
@@ -191,10 +207,10 @@ bool Communication::receiveUpperKnownSize(const std::vector<std::vector<Ttype> >
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		if (neighbours[n] < environment->MPIrank) {
 			// bullxmpi violate MPI standard (cast away constness)
-			MPI_Isend(const_cast<Ttype*>(sBuffer[n].data()), sizeof(Ttype) * sBuffer[n].size(), MPI_BYTE, neighbours[n], 1, environment->MPICommunicator, req.data() + n);
+			MPI_Isend(const_cast<Ttype*>(sBuffer[n].data()), type.multiplier * sBuffer[n].size(), type.type, neighbours[n], 1, environment->MPICommunicator, req.data() + n);
 		}
 		if (neighbours[n] > environment->MPIrank) {
-			MPI_Irecv(rBuffer[n].data(), sizeof(Ttype) * rBuffer[n].size(), MPI_BYTE, neighbours[n], 1, environment->MPICommunicator, req.data() + n);
+			MPI_Irecv(rBuffer[n].data(), type.multiplier * rBuffer[n].size(), type.type, neighbours[n], 1, environment->MPICommunicator, req.data() + n);
 		}
 	}
 
@@ -205,8 +221,9 @@ bool Communication::receiveUpperKnownSize(const std::vector<std::vector<Ttype> >
 template <typename Ttype>
 bool Communication::receiveUpperUnknownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours)
 {
+	MPITools::MPIType type = MPITools::getType<Ttype>();
 	for (size_t n = 0; n < neighbours.size() && neighbours[n] < environment->MPIrank; n++) {
-		if (sizeof(Ttype) * sBuffer[n].size() > 1 << 30) {
+		if (type.multiplier * sBuffer[n].size() > 1 << 30) {
 			return false;
 		}
 	}
@@ -219,7 +236,7 @@ bool Communication::receiveUpperUnknownSize(const std::vector<std::vector<Ttype>
 	std::vector<MPI_Request> req(neighbours.size());
 	for (size_t n = 0; n < neighbours.size() && neighbours[n] < environment->MPIrank; n++) {
 		// bullxmpi violate MPI standard (cast away constness)
-		MPI_Isend(const_cast<Ttype*>(sBuffer[n].data()), sizeof(Ttype) * sBuffer[n].size(), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + rSize++);
+		MPI_Isend(const_cast<Ttype*>(sBuffer[n].data()), type.multiplier * sBuffer[n].size(), type.type, neighbours[n], 0, environment->MPICommunicator, req.data() + rSize++);
 	}
 
 	int flag;
@@ -229,9 +246,9 @@ bool Communication::receiveUpperUnknownSize(const std::vector<std::vector<Ttype>
 		MPI_Iprobe(MPI_ANY_SOURCE, 0, environment->MPICommunicator, &flag, &status);
 		if (flag) {
 			int count;
-			MPI_Get_count(&status, MPI_BYTE, &count);
-			rBuffer[n2i(status.MPI_SOURCE)].resize(count / sizeof(Ttype));
-			MPI_Recv(rBuffer[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
+			MPI_Get_count(&status, type.type, &count);
+			rBuffer[n2i(status.MPI_SOURCE)].resize(count / type.multiplier);
+			MPI_Recv(rBuffer[n2i(status.MPI_SOURCE)].data(), count, type.type, status.MPI_SOURCE, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
 			counter++;
 		}
 	}
@@ -251,9 +268,11 @@ bool Communication::gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::ve
 template <typename Ttype>
 bool Communication::gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, std::vector<size_t> &offsets)
 {
-	int size = sizeof(Ttype) * sBuffer.size();
+	MPITools::MPIType type = MPITools::getType<Ttype>();
+
+	int size = type.multiplier * sBuffer.size();
 	std::vector<int> rSizes(environment->MPIsize), rOffsets(environment->MPIsize);
-	MPI_Gather(&size, sizeof(int), MPI_BYTE, rSizes.data(), sizeof(int), MPI_BYTE, 0, environment->MPICommunicator);
+	MPI_Gather(&size, 1, MPI_INT, rSizes.data(), 1, MPI_INT, 0, environment->MPICommunicator);
 
 	if (!environment->MPIrank) {
 		size = 0;
@@ -261,27 +280,28 @@ bool Communication::gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::ve
 			rOffsets[i] = size;
 			size += rSizes[i];
 		}
-		rBuffer.resize(size / sizeof(Ttype));
+		rBuffer.resize(size / type.multiplier);
 	}
 
 	// bullxmpi violate MPI standard (cast away constness)
-	MPI_Gatherv(const_cast<Ttype*>(sBuffer.data()), sBuffer.size() * sizeof(Ttype), MPI_BYTE, rBuffer.data(), rSizes.data(), rOffsets.data(), MPI_BYTE, 0, environment->MPICommunicator);
+	MPI_Gatherv(const_cast<Ttype*>(sBuffer.data()), type.multiplier * sBuffer.size(), type.type, rBuffer.data(), rSizes.data(), rOffsets.data(), type.type, 0, environment->MPICommunicator);
 
 	offsets.resize(environment->MPIsize);
 	for (size_t i = 0; i < rOffsets.size(); i++) {
-		offsets[i] = rOffsets[i] / sizeof(Ttype);
+		offsets[i] = rOffsets[i] / type.multiplier;
 	}
 	return true;
 }
 template <typename Ttype>
 bool Communication::allGatherUnknownSize(std::vector<Ttype> &data)
 {
-	if (sizeof(Ttype) * data.size() > 1 << 30) {
+	MPITools::MPIType type = MPITools::getType<Ttype>();
+	if (type.multiplier * data.size() > 1 << 30) {
 		return false;
 	}
-	int size = sizeof(Ttype) * data.size();
+	int size = type.multiplier * data.size();
 	std::vector<int> rSizes(environment->MPIsize), rOffsets(environment->MPIsize);
-	MPI_Allgather(&size, sizeof(int), MPI_BYTE, rSizes.data(), sizeof(int), MPI_BYTE, environment->MPICommunicator);
+	MPI_Allgather(&size, 1, MPI_INT, rSizes.data(), 1, MPI_INT, environment->MPICommunicator);
 
 	std::vector<Ttype> rdata;
 	size = 0;
@@ -289,9 +309,9 @@ bool Communication::allGatherUnknownSize(std::vector<Ttype> &data)
 		rOffsets[i] = size;
 		size += rSizes[i];
 	}
-	rdata.resize(size / sizeof(Ttype));
+	rdata.resize(size / type.multiplier);
 
-	MPI_Allgatherv(data.data(), data.size() * sizeof(Ttype), MPI_BYTE, rdata.data(), rSizes.data(), rOffsets.data(), MPI_BYTE, environment->MPICommunicator);
+	MPI_Allgatherv(data.data(), type.multiplier * data.size(), type.type, rdata.data(), rSizes.data(), rOffsets.data(), type.type, environment->MPICommunicator);
 
 	rdata.swap(data);
 	return true;
@@ -300,20 +320,22 @@ bool Communication::allGatherUnknownSize(std::vector<Ttype> &data)
 template <typename Ttype>
 bool Communication::broadcastUnknownSize(std::vector<Ttype> &buffer)
 {
-	if (sizeof(Ttype) * buffer.size() > 1 << 30) {
+	MPITools::MPIType type = MPITools::getType<Ttype>();
+	if (type.multiplier * buffer.size() > 1 << 30) {
 		return false;
 	}
 	int size = buffer.size();
-	MPI_Bcast(&size, sizeof(int), MPI_BYTE, 0, environment->MPICommunicator);
+	MPI_Bcast(&size, 1, MPI_INT, 0, environment->MPICommunicator);
 	buffer.resize(size);
-	MPI_Bcast(buffer.data(), sizeof(Ttype) * size, MPI_BYTE, 0, environment->MPICommunicator);
+	MPI_Bcast(buffer.data(), type.multiplier * size, type.type, 0, environment->MPICommunicator);
 	return true;
 }
 
 template <typename Ttype>
 bool Communication::balance(std::vector<Ttype> &buffer, const std::vector<size_t> &currentDistribution, const std::vector<size_t> &targetDistribution)
 {
-	if (sizeof(Ttype) * buffer.size() > 1 << 30) {
+	MPITools::MPIType type = MPITools::getType<Ttype>();
+	if (type.multiplier * buffer.size() > 1 << 30) {
 		return false;
 	}
 
@@ -357,13 +379,13 @@ bool Communication::balance(std::vector<Ttype> &buffer, const std::vector<size_t
 
 	for (int r = 0; r < environment->MPIsize; ++r) {
 		if (rsize[r]) {
-			MPI_Irecv(result.data() + rdisp[r], rsize[r] * sizeof(Ttype), MPI_BYTE, r, 0, environment->MPICommunicator, requests.data() + nrequests++);
+			MPI_Irecv(result.data() + rdisp[r], type.multiplier * rsize[r], type.type, r, 0, environment->MPICommunicator, requests.data() + nrequests++);
 		}
 	}
 
 	for (int r = 0; r < environment->MPIsize; ++r) {
 		if (ssize[r]) {
-			MPI_Isend(buffer.data() + sdisp[r], ssize[r] * sizeof(Ttype), MPI_BYTE, r, 0, environment->MPICommunicator, requests.data() + nrequests++);
+			MPI_Isend(buffer.data() + sdisp[r], type.multiplier * ssize[r], type.type, r, 0, environment->MPICommunicator, requests.data() + nrequests++);
 		}
 	}
 
@@ -377,20 +399,21 @@ bool Communication::balance(std::vector<Ttype> &buffer, const std::vector<size_t
 template <typename Ttype>
 bool Communication::allToAllV(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, const std::vector<int> &ssize, const std::vector<int> &rsize)
 {
-	if (sizeof(Ttype) * sBuffer.size() > 1 << 30) {
+	MPITools::MPIType type = MPITools::getType<Ttype>();
+	if (type.multiplier * sBuffer.size() > 1 << 30) {
 		return false;
 	}
 	std::vector<int> _ssize = ssize, _rsize = rsize;
 	std::vector<int> sdisp(environment->MPIsize), rdisp(environment->MPIsize);
 	for (int r = 0; r < environment->MPIsize; r++) {
-		_ssize[r] *= sizeof(Ttype);
-		_rsize[r] *= sizeof(Ttype);
+		_ssize[r] *= type.multiplier;
+		_rsize[r] *= type.multiplier;
 	}
 	for (int r = 1; r < environment->MPIsize; r++) {
 		sdisp[r] = sdisp[r - 1] + _ssize[r - 1];
 		rdisp[r] = rdisp[r - 1] + _rsize[r - 1];
 	}
-	MPI_Alltoallv(sBuffer.data(), _ssize.data(), sdisp.data(), MPI_BYTE, rBuffer.data(), _rsize.data(), rdisp.data(), MPI_BYTE, environment->MPICommunicator);
+	MPI_Alltoallv(sBuffer.data(), _ssize.data(), sdisp.data(), type.type, rBuffer.data(), _rsize.data(), rdisp.data(), type.type, environment->MPICommunicator);
 	return true;
 }
 
@@ -467,8 +490,9 @@ std::vector<Ttype> Communication::getDistribution(Ttype size, MPI_Op &operation)
 template <typename Ttype>
 bool Communication::sendVariousTargets(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &targets, std::vector<int> &sources)
 {
+	MPITools::MPIType type = MPITools::getType<Ttype>();
 	for (size_t n = 0; n < targets.size(); n++) {
-		if (sizeof(Ttype) * sBuffer[n].size() > 1 << 30) {
+		if (type.multiplier * sBuffer[n].size() > 1 << 30) {
 			return false;
 		}
 	}
@@ -483,7 +507,7 @@ bool Communication::sendVariousTargets(const std::vector<std::vector<Ttype> > &s
 
 	std::vector<MPI_Request> req(targets.size());
 	for (size_t t = 0; t < targets.size(); t++) {
-		MPI_Isend(const_cast<Ttype*>(sBuffer[t].data()), sizeof(Ttype) * sBuffer[t].size(), MPI_BYTE, targets[t], 0, environment->MPICommunicator, req.data() + t);
+		MPI_Isend(const_cast<Ttype*>(sBuffer[t].data()), type.multiplier * sBuffer[t].size(), type.type, targets[t], 0, environment->MPICommunicator, req.data() + t);
 	}
 
 	int flag;
@@ -496,9 +520,9 @@ bool Communication::sendVariousTargets(const std::vector<std::vector<Ttype> > &s
 		MPI_Iprobe(MPI_ANY_SOURCE, 0, environment->MPICommunicator, &flag, &status);
 		if (flag) {
 			int count;
-			MPI_Get_count(&status, MPI_BYTE, &count);
-			tmpBuffer.push_back(std::vector<Ttype>(count / sizeof(Ttype)));
-			MPI_Recv(tmpBuffer.back().data(), count, MPI_BYTE, status.MPI_SOURCE, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
+			MPI_Get_count(&status, type.type, &count);
+			tmpBuffer.push_back(std::vector<Ttype>(count / type.multiplier));
+			MPI_Recv(tmpBuffer.back().data(), count, type.type, status.MPI_SOURCE, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
 			sources.push_back(status.MPI_SOURCE);
 			counter++;
 		}
@@ -524,6 +548,7 @@ bool Communication::sendVariousTargets(const std::vector<std::vector<Ttype> > &s
 template <typename Ttype>
 bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer)
 {
+	MPITools::MPIType type = MPITools::getType<Ttype>();
 	size_t levels = std::ceil(std::log2(environment->MPIsize));
 
 	std::vector<Ttype> prevsend, send, recv;
@@ -548,9 +573,6 @@ bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype> &sBuf
 
 	int left = 0, right = environment->MPIsize, mid;
 	for (size_t l = 0; l < levels && left + 1 < right; l++) {
-		if (sizeof(Ttype) * send.size() > 1 << 30) {
-			return false;
-		}
 		mid = left + (right - left) / 2 + (right - left) % 2;
 		if (environment->MPIrank < mid) {
 			// LOWER half to UPPER half
@@ -566,7 +588,10 @@ bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype> &sBuf
 				size_t my = movebefore(send, environment->MPIrank, 0, send.size());
 				size_t upper = movebefore(send, mid, my, send.size());
 
-				MPI_Send(send.data() + upper, send.size() - upper, MPI_INT, mid, 0, environment->MPICommunicator);
+				if (type.multiplier * (send.size() - upper) > 1 << 30) {
+					return false;
+				}
+				MPI_Send(send.data() + upper, type.multiplier * (send.size() - upper), type.type, mid, 0, environment->MPICommunicator);
 				send.resize(my);
 			} else {
 				// PRE :
@@ -581,12 +606,15 @@ bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype> &sBuf
 				// send: l1, l1, l2, l2, l3, l3, l4, l4
 
 				size_t upper = movebefore(send, mid, 0, send.size());
-				MPI_Send(send.data() + upper, send.size() - upper, MPI_INT, environment->MPIrank + (mid - left), 0, environment->MPICommunicator);
+				if (type.multiplier * (send.size() - upper) > 1 << 30) {
+					return false;
+				}
+				MPI_Send(send.data() + upper, type.multiplier * (send.size() - upper), type.type, environment->MPIrank + (mid - left), 0, environment->MPICommunicator);
 
 				MPI_Probe(environment->MPIrank + (mid - left), 0, environment->MPICommunicator, &status);
-				MPI_Get_count(&status, MPI_INT, &recvsize);
-				recv.resize(recvsize);
-				MPI_Recv(recv.data(), recvsize, MPI_INT, environment->MPIrank + (mid - left), 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
+				MPI_Get_count(&status, type.type, &recvsize);
+				recv.resize(recvsize / type.multiplier);
+				MPI_Recv(recv.data(), recvsize, type.type, environment->MPIrank + (mid - left), 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
 
 				send.swap(prevsend);
 				send.clear();
@@ -615,20 +643,22 @@ bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype> &sBuf
 			size_t upper = movebefore(send, mid, 0, send.size());
 
 			MPI_Probe(environment->MPIrank - (mid - left), 0, environment->MPICommunicator, &status);
-			MPI_Get_count(&status, MPI_INT, &recvsize);
-			recv.resize(recvsize);
-			MPI_Recv(recv.data(), recvsize, MPI_INT, environment->MPIrank - (mid - left), 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
-			MPI_Send(send.data(), upper, MPI_INT, environment->MPIrank - (mid - left), 0, environment->MPICommunicator);
+			MPI_Get_count(&status, type.type, &recvsize);
+			recv.resize(recvsize / type.multiplier);
+			MPI_Recv(recv.data(), recvsize, type.type, environment->MPIrank - (mid - left), 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
+			if (type.multiplier * upper > 1 << 30) {
+				return false;
+			}
+			MPI_Send(send.data(), type.multiplier * upper, type.type, environment->MPIrank - (mid - left), 0, environment->MPICommunicator);
 
-			recvmidsize = recvsize;
+			recvmidsize = recvsize / type.multiplier;
 			if (mid - left > right - mid && environment->MPIrank == mid) {
 				// l1, l2, l3, l4, u1(ME), u2, u3
 				// RECV: l4
 				MPI_Probe(mid - 1, 0, environment->MPICommunicator, &status);
-				MPI_Get_count(&status, MPI_INT, &recvsize);
-				recv.resize(recv.size() + recvsize);
-				MPI_Recv(recv.data() + recvmidsize, recvsize, MPI_INT, mid - 1, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
-				recvsize += recvmidsize;
+				MPI_Get_count(&status, type.type, &recvsize);
+				recv.resize(recv.size() + recvsize / type.multiplier);
+				MPI_Recv(recv.data() + recvmidsize, recvsize, type.type, mid - 1, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
 			}
 
 			// PRE :
