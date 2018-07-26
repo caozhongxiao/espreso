@@ -824,6 +824,8 @@ void RandomInput::linkup()
 			sNodes.back().push_back(unknown[i]);
 		}
 		uNodes.resize(sNodes.size());
+	} else {
+		sNodes.clear();
 	}
 
 	if (!Communication::sendVariousTargets(sNodes, uNodes, oTargets, oSources)) {
@@ -834,8 +836,10 @@ void RandomInput::linkup()
 	for (size_t t = 0; t < oSources.size(); t++) {
 		for (size_t n = 0; n < uNodes[t].size(); n++) {
 			auto node = std::lower_bound(_nIDs.begin(), _nIDs.end(), uNodes[t][n]);
-			if (node != _meshData.nIDs.end() && *node == uNodes[t][n]) {
-				sTargets[t].push_back(std::lower_bound(_bucketsBorders.begin(), _bucketsBorders.end(), _nBuckets[node - _nIDs.begin()]) - _bucketsBorders.begin() - 1);
+			if (node != _nIDs.end() && *node == uNodes[t][n]) {
+				sTargets[t].push_back(std::lower_bound(_bucketsBorders.begin(), _bucketsBorders.end(), _nBuckets[node - _nIDs.begin()] + 1) - _bucketsBorders.begin() - 1);
+			} else {
+				ESINFO(ERROR) << "ESPRESO internal error: something wrong happen during link-up phase (request for unknown node).";
 			}
 		}
 	}
