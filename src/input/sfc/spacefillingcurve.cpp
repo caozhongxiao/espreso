@@ -213,7 +213,7 @@ void SpaceFillingCurve::addXYZNeighbors(size_t depth, size_t x, size_t y, size_t
 					potential.push_back(getXYZBucket(depth, x + ox, y + oy, z + oz));
 
 					for (size_t i = 0; i < potential.size(); i++) {
-						if (potential[i].first < _refinedxyz.size() && std::binary_search(_refinedxyz[potential[i].first].begin(), _refinedxyz[potential[i].first].end(), potential[i].second)) {
+						if (potential[i].first + 1 < _refinedxyz.size() && std::binary_search(_refinedxyz[potential[i].first].begin(), _refinedxyz[potential[i].first].end(), potential[i].second)) {
 							nn = 1 << potential[i].first;
 							xx = potential[i].second % nn;
 							yy = potential[i].second % (nn * nn) / nn;
