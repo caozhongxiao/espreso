@@ -6,6 +6,7 @@
 #include <functional>
 #include <regex>
 #include <unistd.h>
+#include <fstream>
 
 #include "mpi.h"
 
@@ -213,8 +214,14 @@ ECFRedParameters ECFReader::_read(
 		const std::map<std::string, std::string> &variables)
 {
 	ECFRedParameters redParameters;
-	std::ifstream ecffile(file);
-	redParameters.hadValidECF = ecffile.good();
+	if (environment->MPIrank == 0) {
+		std::ifstream ecffile(file);
+		redParameters.hadValidECF = ecffile.good();
+	}
+	int valid = redParameters.hadValidECF;
+	MPI_Bcast(&valid, 1, MPI_INT, 0, environment->MPICommunicator);
+	redParameters.hadValidECF = valid;
+
 	if (!redParameters.hadValidECF) {
 		return redParameters;
 	}

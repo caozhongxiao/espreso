@@ -1,108 +1,129 @@
 #include "tokenizer.h"
 
+#include "mpi.h"
+
 #include <queue>
 #include <sstream>
 #include <iomanip>
+#include <fstream>
 
 #include "../../basis/logging/logging.h"
+#include "../../config/ecf/environment.h"
 
 using namespace espreso;
 
+FullFile::FullFile(const std::string &file): _p(0)
+{
+	if (environment->MPIrank == 0) {
+		std::ifstream data(file, std::ifstream::in);
+		if (!data.good()) {
+			ESINFO(GLOBAL_ERROR) << "Cannot read file '" << file << "'";
+		}
+
+		data.seekg(0, data.end);
+		_data.resize(data.tellg());
+		data.seekg(0, data.beg);
+
+		data.read(_data.data(), _data.size());
+		data.close();
+	}
+
+	size_t filesize = _data.size();
+	MPI_Bcast(&filesize, sizeof(size_t), MPI_BYTE, 0, environment->MPICommunicator);
+	_data.resize(filesize);
+	MPI_Bcast(_data.data(), _data.size(), MPI_CHAR, 0, environment->MPICommunicator);
+}
+
+
 Tokenizer::Tokenizer(const std::string &file): _file(file), _token(Token::END), _line(1)
 {
-	if (!_file.good()) {
-		ESINFO(GLOBAL_ERROR) << "Cannot read file '" << file << "'";
-	}
 	_buffer.reserve(80);
 }
 
-static bool isWhiteSpace(int c)
+static bool isWhiteSpace(char c)
 {
 	return c == ' ' || c == '\t' || c == '\r';
 }
 
-static bool isDelimiter(int c)
+static bool isDelimiter(char c)
 {
 	return c == ',';
 }
 
-static bool isAssign(int c)
+static bool isAssign(char c)
 {
 	return c == '=';
 }
 
-static bool isExpressionEnd(int c)
+static bool isExpressionEnd(char c)
 {
 	return c == ';';
 }
 
-static bool isLineEnd(int c)
+static bool isLineEnd(char c)
 {
 	return c == '\n';
 }
 
-static bool isObjectOpen(int c)
+static bool isObjectOpen(char c)
 {
 	return c == '{';
 }
 
-static bool isObjectClose(int c)
+static bool isObjectClose(char c)
 {
 	return c == '}';
 }
 
-static bool isLinkStart(int c)
+static bool isLinkStart(char c)
 {
 	return c == '[';
 }
 
-static bool isLinkEnd(int c)
+static bool isLinkEnd(char c)
 {
 	return c == ']';
 }
 
-static bool isStringStart(int c)
+static bool isStringStart(char c)
 {
 	return c == '"' || c == '\'';
 }
 
-static bool isStringEnd(int c)
+static bool isStringEnd(char c)
 {
 	return c == '"' || c == '\'';
 }
 
-static bool isSingleCommentChar(int c)
+static bool isSingleCommentChar(char c)
 {
 	return c == '#';
 }
 
-static bool isLineComment(int last, int currect)
+static bool isLineComment(char last, char currect)
 {
 	return last == '/' && currect == '/';
 }
 
-static bool isMultiLineCommentStart(int last, int currect)
+static bool isMultiLineCommentStart(char last, char currect)
 {
 	return last == '/' && currect == '*';
 }
 
-static bool isMultiLineCommentEnd(int last, int currect)
+static bool isMultiLineCommentEnd(char last, char currect)
 {
 	return last == '*' && currect == '/';
 }
 
-static void skipWhiteSpaces(std::ifstream &is)
+static void skipWhiteSpaces(FullFile &file)
 {
-	while (isWhiteSpace(is.peek()) && !is.eof()) {
-		is.get();
+	while (isWhiteSpace(file.peek()) && !file.eof()) {
+		file.get();
 	}
 }
 
 Tokenizer::Token Tokenizer::_next()
 {
-	if (!_file.is_open()) {
-		return Token::END;
-	}
 	if (_file.eof()) {
 		return Token::END;
 	}
@@ -236,13 +257,14 @@ Tokenizer::Token Tokenizer::_next()
 
 std::string Tokenizer::lastLines(size_t number)
 {
-	std::streampos current = _file.tellg();
+	size_t current = _file.position();
 	std::queue<std::string> lines;
 	size_t line = 1;
-	_file.seekg(0, _file.beg);
-	while (_file.tellg() < current) {
-		lines.push("");
-		getline(_file, lines.back());
+	_file.move(0);
+	while (_file.position() < current) {
+		size_t begin = _file.position();
+		while(_file.peek() != '\n');
+		lines.push(_file.get(begin, _file.position()));
 		if (lines.size() > number) {
 			lines.pop();
 		}
@@ -256,10 +278,10 @@ std::string Tokenizer::lastLines(size_t number)
 		lines.pop();
 	}
 	ss << std::setw(4) << line++ << ":";
-	if (_file.tellg() > current) {
+	if (_file.position() > current) {
 		return ss.str();
 	}
-	for (size_t i = 0; i < current - _file.tellg() + lines.size() ? lines.back().size() : 0 && i < 200; i++) {
+	for (size_t i = 0; i < (current - _file.position()) + lines.size() ? lines.back().size() : 0 && i < 200; i++) {
 		ss << " ";
 	}
 	ss << "^";

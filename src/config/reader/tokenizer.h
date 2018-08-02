@@ -4,10 +4,28 @@
 
 #include <string>
 #include <vector>
-#include <fstream>
-#include <iostream>
 
 namespace espreso {
+
+class FullFile {
+
+public:
+	FullFile(const std::string &file);
+
+	size_t position() const { return _p; }
+	void move(size_t position) { _p = position; }
+
+	char get() { return _data[_p++]; }
+	char peek() { return _data[_p]; }
+
+	std::string get(size_t begin, size_t end) { return std::string(_data.begin() + begin, _data.begin() + end); }
+
+	bool eof() const { return _p == _data.size(); }
+
+protected:
+	std::vector<char> _data;
+	size_t _p;
+};
 
 class Tokenizer {
 public:
@@ -25,8 +43,6 @@ public:
 
 	Tokenizer(const std::string &file);
 
-	~Tokenizer() { _file.close(); }
-
 	Token next() { return _token = _next(); }
 	Token token() { return _token; }
 	std::string value()
@@ -39,7 +55,8 @@ public:
 
 protected:
 	Token _next();
-	std::ifstream _file;
+
+	FullFile _file;
 	Token _token;
 	std::vector<int> _buffer;
 	size_t _line;
