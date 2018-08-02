@@ -951,7 +951,7 @@ void RandomInput::linkup()
 	std::vector<eslocal> ranks, ranksOffset;
 	std::vector<std::vector<eslocal>::const_iterator> rPointer(nodeRequests.size());
 	for (size_t r = 0; r < nodeRequests.size(); r++) {
-		rPointer[r] = std::lower_bound(nodeRequests[r].begin(), nodeRequests[r].end(), _meshData.nIDs.front());
+		rPointer[r] = nodeRequests[r].begin();
 	}
 	for (size_t n = 0; n < _meshData.nIDs.size(); ++n) {
 		ranks.clear();
