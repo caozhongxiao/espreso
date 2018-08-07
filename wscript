@@ -122,12 +122,12 @@ def configure(ctx):
 
     check_environment(ctx)
 
-    if not ctx.options.disable_gui:
-        ctx.setenv("gui", ctx.all_envs["espreso"].derive());
-        ctx.recurse("src/gui")
+#    if not ctx.options.disable_gui:
+#        ctx.setenv("gui", ctx.all_envs["espreso"].derive());
+#        ctx.recurse("src/gui")
 
     optional_libraries = [
-        (ctx.env.QT, "QT5", "GUI"),
+#        (ctx.env.QT, "QT5", "GUI"),
         (ctx.env.CATALYST, "Paraview Catalyst", "in situ visualization"),
         (ctx.env.HYPRE, "HYPRE", "multigrid linear solver"),
         (ctx.env.MORTAR, "MORTAR", "gluing of non-matching grids"),
@@ -172,10 +172,10 @@ def build(ctx):
     ctx.recurse("src/output")
     ctx.recurse("src/app")
 
-    if ctx.env.QT:
-        print ctx.env
-        ctx.env = ctx.all_envs["gui"]
-        ctx.recurse("src/gui")
+#    if ctx.env.QT:
+#        print ctx.env
+#        ctx.env = ctx.all_envs["gui"]
+#        ctx.recurse("src/gui")
 
 def options(opt):
     opt.parser.formatter.max_help_position = 32
