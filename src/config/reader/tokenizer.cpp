@@ -27,7 +27,10 @@ FullFile::FullFile(const std::string &file): _p(0)
 		data.read(_data.data(), _data.size());
 		data.close();
 	}
+}
 
+void FullFile::synchronize()
+{
 	size_t filesize = _data.size();
 	MPI_Bcast(&filesize, sizeof(size_t), MPI_BYTE, 0, environment->MPICommunicator);
 	_data.resize(filesize);

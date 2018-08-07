@@ -22,6 +22,8 @@ public:
 
 	bool eof() const { return _p == _data.size(); }
 
+	void synchronize();
+
 protected:
 	std::vector<char> _data;
 	size_t _p;
@@ -60,6 +62,14 @@ protected:
 	Token _token;
 	std::vector<int> _buffer;
 	size_t _line;
+};
+
+class CollectiveTokenizer: public Tokenizer {
+public:
+	CollectiveTokenizer(const std::string &file): Tokenizer(file)
+	{
+		_file.synchronize();
+	}
 };
 
 }

@@ -237,7 +237,7 @@ ECFRedParameters ECFReader::_read(
 	std::string link;
 	ECFParameter *parameter;
 	confStack.push(&configuration);
-	tokenStack.push(new Tokenizer(file));
+	tokenStack.push(new CollectiveTokenizer(file));
 	while (tokenStack.size()) {
 		switch (tokenStack.top()->next()) {
 		case Tokenizer::Token::END:
@@ -258,7 +258,7 @@ ECFRedParameters ECFReader::_read(
 				}
 			}
 			if (value.size() > 4 && StringCompare::caseInsensitiveSuffix(value, ".ecf")) {
-				tokenStack.push(new Tokenizer(value));
+				tokenStack.push(new CollectiveTokenizer(value));
 				break;
 			}
 			if (value.size() > 2 && StringCompare::caseInsensitivePreffix("ARG", value)) {
@@ -292,7 +292,7 @@ ECFRedParameters ECFReader::_read(
 				break;
 			}
 			if (value.size() > 4 && StringCompare::caseInsensitiveSuffix(value, ".csv")) {
-				Tokenizer csv(value);
+				CollectiveTokenizer csv(value);
 				bool run = true;
 				while(run) {
 					switch (csv.next()) {
