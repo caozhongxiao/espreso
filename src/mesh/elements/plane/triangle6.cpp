@@ -1,70 +1,72 @@
 
-#include <cstring>
-#include <fstream>
-
 #include "triangle6.h"
-#include "../line/line3.h"
+
+#include "../../../basis/containers/serializededata.h"
 #include "../../../basis/matrices/denseMatrix.h"
 
 using namespace espreso;
 
-std::vector<Property> Triangle6::_DOFElement;
-std::vector<Property> Triangle6::_DOFFace;
-std::vector<Property> Triangle6::_DOFEdge;
-std::vector<Property> Triangle6::_DOFPoint;
-std::vector<Property> Triangle6::_DOFMidPoint;
-
-std::vector<std::vector<eslocal> > Triangle6::_edgesNodes = {
-	{ 0, 1, 3 },
-	{ 1, 2, 4 },
-	{ 2, 0, 5 },
-};
-
-static std::vector<std::vector<double> > get_st()
+Element Triangle6::fill(Element e, Element* begin)
 {
-	std::vector< std::vector<double> > st(2, std::vector<double>(Triangle6GPCount));
+	std::vector<Element*> edgepointers(3, begin + static_cast<int>(Element::CODE::LINE3));
 
-	switch (Triangle6GPCount) {
-	case 6: {
-		st[0] = {
-			0.091576213509771,
-			0.816847572980459,
-			0.091576213509771,
-			0.445948490915965,
-			0.108103018168070,
-			0.445948490915965
-		};
+	std::vector<int> data = {
+		0, 1, 3,
+		1, 2, 4,
+		2, 0, 5
+	};
 
-		st[1] =  {
-			0.091576213509771,
-			0.091576213509771,
-			0.816847572980459,
-			0.445948490915965,
-			0.445948490915965,
-			0.108103018168070
-		};
-		return st;
+	std::vector<int> tringles = {
+		0, 3, 5,
+		3, 1, 4,
+		4, 2, 5,
+		5, 0, 3,
+		3, 4, 5
+	};
+
+	e.edges = new serializededata<int, int>(3, data);
+	e.edgepointers = new serializededata<int, Element*>(1, edgepointers);
+	e.faces = new serializededata<int, int>(3, data);
+	e.facepointers = new serializededata<int, Element*>(1, edgepointers);
+	e.triangles = new serializededata<int, int>(3, tringles);
+
+	size_t GPCount = 6, nodeCount = 6;
+
+	e.N = new std::vector<DenseMatrix>(GPCount, DenseMatrix(1, nodeCount));
+	e.dN = new std::vector<DenseMatrix>(GPCount, DenseMatrix(2, nodeCount));
+	e.weighFactor = new std::vector<double>(
+		{ 0.109951743655322 / 2.0, 0.109951743655322 / 2.0, 0.109951743655322 / 2.0,
+		  0.223381589678011 / 2.0, 0.223381589678011 / 2.0, 0.223381589678011 / 2.0 });
+
+	const std::vector<double> s = {
+		0.091576213509771,
+		0.816847572980459,
+		0.091576213509771,
+		0.445948490915965,
+		0.108103018168070,
+		0.445948490915965
+	};
+	const std::vector<double> t = {
+		0.091576213509771,
+		0.091576213509771,
+		0.816847572980459,
+		0.445948490915965,
+		0.445948490915965,
+		0.108103018168070
+	};
+
+	for (size_t i = 0; i < GPCount; i++) {
+		(*e.N)[i](0, 0) = (1.0 - s[i] - t[i]) * (1.0 - 2.0 * (s[i] + t[i]));
+		(*e.N)[i](0, 1) = -(s[i]) * (1.0 - 2.0 * s[i]);
+		(*e.N)[i](0, 2) = -(t[i]) * (1.0 - 2.0 * t[i]);
+		(*e.N)[i](0, 3) = 4.0 * (s[i]) * (1.0 - s[i] - t[i]);
+		(*e.N)[i](0, 4) = 4.0 * (s[i]) * (t[i]);
+		(*e.N)[i](0, 5) = 4.0 * (t[i]) * (1.0 - s[i] - t[i]);
 	}
-	default:
-		ESINFO(ERROR) << "Unknown number of Triangle3 GP count.";
-		exit(EXIT_FAILURE);
-	}
-}
 
-static std::vector<DenseMatrix> get_dN()
-{
-	std::vector<DenseMatrix> dN(
-			Triangle6GPCount,
-		DenseMatrix(2, Triangle6NodesCount)
-	);
-
-	std::vector<std::vector<double> > st = get_st();
-	const std::vector<double> &s = st[0];
-	const std::vector<double> &t = st[1];
-
-	for (unsigned int i = 0; i < Triangle6GPCount; i++) {
-		///dN contains [dNr, dNs, dNt]
-		DenseMatrix &m = dN[i];
+	for (size_t i = 0; i < GPCount; i++) {
+		///dN contains [dNs, dNt]
+		DenseMatrix &m = (*e.dN)[i];
 
 		// dNs - derivation of basis function
 		m(0, 0) = -3.0 + 4.0 * s[i] + 4.0 * t[i];
@@ -83,119 +85,5 @@ static std::vector<DenseMatrix> get_dN()
 		m(1, 5) = 4.0 - 4.0 * s[i] - 8.0 * t[i];
 	}
 
-	return dN;
+	return e;
 }
-
-static std::vector<DenseMatrix> get_N() {
-	std::vector<DenseMatrix> N(
-			Triangle6GPCount,
-		DenseMatrix(1, Triangle6NodesCount)
-	);
-
-	std::vector<std::vector<double> > st = get_st();
-	const std::vector<double> &s = st[0];
-	const std::vector<double> &t = st[1];
-
-	for (unsigned int i = 0; i < Triangle6GPCount; i++) {
-		N[i](0, 0) = (1.0 - s[i] - t[i]) * (1.0 - 2.0 * (s[i] + t[i]));
-		N[i](0, 1) = -(s[i]) * (1.0 - 2.0 * s[i]);
-		N[i](0, 2) = -(t[i]) * (1.0 - 2.0 * t[i]);
-		N[i](0, 3) = 4.0 * (s[i]) * (1.0 - s[i] - t[i]);
-		N[i](0, 4) = 4.0 * (s[i]) * (t[i]);
-		N[i](0, 5) = 4.0 * (t[i]) * (1.0 - s[i] - t[i]);
-	}
-
-	return N;
-}
-
-std::vector<DenseMatrix> Triangle6::_dN = get_dN();
-std::vector<DenseMatrix> Triangle6::_N = get_N();
-std::vector<double> Triangle6::_weighFactor = { 0.109951743655322 / 2.0, 0.109951743655322 / 2.0,  0.109951743655322 / 2.0, 0.223381589678011 / 2.0, 0.223381589678011 / 2.0, 0.223381589678011 / 2.0 };
-
-bool Triangle6::match(const eslocal *indices, const eslocal n)
-{
-	if (n != 6) {
-		return false;
-	}
-
-	for (eslocal i = 0; i < Triangle6NodesCount - 1; i++) {
-		for (eslocal j = i + 1; j < Triangle6NodesCount; j++) {
-			if (Element::match(indices, i, j)) {
-				return false;
-			}
-		}
-	}
-
-	return true;
-}
-
-std::vector<eslocal> Triangle6::getNeighbours(size_t nodeIndex) const
-{
-	std::vector<eslocal> result(2);
-
-	if (nodeIndex < 3) {
-		result[0] = _indices[nodeIndex + 3];
-		result[1] = _indices[(nodeIndex + 2) % 3 + 3];
-	} else {
-		result[0] = _indices[(nodeIndex + 1) % 3];
-		result[1] = _indices[nodeIndex - 3];
-	}
-
-	return result;
-}
-
-std::vector<std::vector<eslocal> > Triangle6::triangularize() const
-{
-	std::vector<std::vector<eslocal> > triangles;
-
-	triangles.push_back({ _indices[0], _indices[3], _indices[5] });
-	triangles.push_back({ _indices[1], _indices[4], _indices[3] });
-	triangles.push_back({ _indices[2], _indices[5], _indices[4] });
-	triangles.push_back({ _indices[3], _indices[4], _indices[5] });
-
-	return triangles;
-}
-
-size_t Triangle6::fillEdges()
-{
-	eslocal line[Line3NodesCount];
-
-	if (_edges.size() == Triangle6EdgeCount) {
-		return Triangle6EdgeCount;
-	}
-	_edges.reserve(Triangle6EdgeCount);
-
-	size_t filled = _edges.size();
-
-	for (size_t e = 0; e < Triangle6EdgeCount; e++) {
-		for (size_t n = 0; n < Line3NodesCount; n++) {
-			line[n] = _indices[_edgesNodes[e][n]];
-		}
-		addUniqueEdge<Line3>(line, filled, Line2NodesCount);
-	}
-
-	return filled;
-}
-
-Triangle6::Triangle6(const eslocal *indices)
-{
-	memcpy(_indices, indices, Triangle6NodesCount * sizeof(eslocal));
-}
-
-Triangle6::Triangle6(const eslocal *indices, const eslocal *params)
-{
-	memcpy(_indices, indices, Triangle6NodesCount * sizeof(eslocal));
-	_params.insert(_params.end(), params, params + PARAMS_SIZE);
-}
-
-Triangle6::Triangle6(std::ifstream &is)
-{
-	eslocal params;
-	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * nodes());
-	is.read(reinterpret_cast<char *>(&params), sizeof(eslocal));
-	if (params) {
-		_params.resize(params);
-		is.read(reinterpret_cast<char *>(_params.data()), sizeof(eslocal) * params);
-	}
-}
-

@@ -13,9 +13,9 @@ LinearTimeStep::LinearTimeStep(Assembler &assembler)
 
 }
 
-void LinearTimeStep::solve(Step &step, LoadStepSolver &loadStepSolver)
+void LinearTimeStep::solve(LoadStepSolver &loadStepSolver)
 {
-	_assembler.solve(step, loadStepSolver.updateStructuralMatrices(step, Matrices::K | Matrices::M | Matrices::f | Matrices::B1));
+	_assembler.solve(loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::B1));
 }
 
 

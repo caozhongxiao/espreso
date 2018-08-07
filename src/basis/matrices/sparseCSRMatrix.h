@@ -2,15 +2,12 @@
 #define SPARSECSRMATRIX_H_
 
 #include "matrix.h"
-#include "sparseDOKMatrix.h"
-#include "sparseIJVMatrix.h"
 #include "sparseVVPMatrix.h"
+#include "denseMatrix.h"
 
 namespace espreso {
 
 class DenseMatrix;
-template<typename Tindices> class SparseDOKMatrix;
-template<typename Tindices> class SparseIJVMatrix;
 template<typename Tindices> class SparseVVPMatrix;
 
 #define CSRMatrixIndexing Matrix::OneBased
@@ -28,16 +25,13 @@ public:
 	SparseCSRMatrix(size_t rows, size_t columns);
 
 	SparseCSRMatrix(const DenseMatrix &other);
-	SparseCSRMatrix(const SparseDOKMatrix<Tindices> &other);
-	SparseCSRMatrix(const SparseIJVMatrix<Tindices> &other);
 	SparseCSRMatrix(SparseVVPMatrix<Tindices> &other);
 
 	SparseCSRMatrix& operator=(const DenseMatrix &other);
-	SparseCSRMatrix<Tindices>& operator=(const SparseDOKMatrix<Tindices> &other);
-	SparseCSRMatrix<Tindices>& operator=(const SparseIJVMatrix<Tindices> &other);
 	SparseCSRMatrix<Tindices>& operator=(SparseVVPMatrix<Tindices> &other);
 
 	void multiply(SparseCSRMatrix<Tindices> &A, SparseCSRMatrix<Tindices> &B, bool transposeA = false);
+	int gmresSolve(double *rhs, double *computed_solution, double tolerance, int maxiter);
 
 	void resize(size_t rows, size_t values);
 	void transpose();

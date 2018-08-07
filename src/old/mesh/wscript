@@ -1,0 +1,19 @@
+
+
+def configure(ctx):
+    if ctx.env.BUILD_TOOLS == "0":
+        metis = ctx.env.METISLIB[0]
+    else:
+        metis = "metis"
+
+    if ctx.env.LIBTYPE == "SHARED":
+        ctx.env.append_unique("LIB", [ "parmetis", metis ])
+    if ctx.env.LIBTYPE == "STATIC":
+        ctx.env.append_unique("STLIB", [ "parmetis" ])
+
+def build(ctx):
+    ctx.objects(
+        source = ctx.path.ant_glob('**/*.cpp'),
+        target = "oldmesh",
+        use    = "espreso_includes",
+    )

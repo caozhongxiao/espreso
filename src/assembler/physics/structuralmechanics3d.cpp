@@ -1,48 +1,35 @@
 
-#include "../../config/ecf/physics/structuralmechanics.h"
 #include "structuralmechanics3d.h"
 
-#include "../../basis/evaluators/evaluator.h"
 #include "../step.h"
 #include "../instance.h"
-#include "../constraints/equalityconstraints.h"
 
-#include "../../mesh/settings/property.h"
-#include "../../mesh/elements/element.h"
-#include "../../mesh/structures/mesh.h"
-#include "../../mesh/structures/coordinates.h"
-#include "../../mesh/structures/elementtypes.h"
-
+#include "../../basis/containers/serializededata.h"
+#include "../../basis/evaluator/evaluator.h"
 #include "../../basis/matrices/denseMatrix.h"
+
+#include "../../config/ecf/physics/structuralmechanics.h"
+#include "../../config/ecf/output.h"
+
+#include "../../mesh/mesh.h"
+#include "../../mesh/elements/element.h"
+#include "../../mesh/store/elementstore.h"
+#include "../../mesh/store/nodestore.h"
+#include "../../mesh/store/fetidatastore.h"
+#include "../../mesh/store/boundaryregionstore.h"
+#include "../../mesh/store/elementsregionstore.h"
+#include "../../mesh/store/surfacestore.h"
+
+#include "../../solver/generic/SparseMatrix.h"
 #include "../../solver/specific/sparsesolvers.h"
 
 using namespace espreso;
 
-StructuralMechanics3D::StructuralMechanics3D(Mesh *mesh, Instance *instance, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
-: Physics("STRUCTURAL MECHANICS 3D", mesh, instance, &configuration), StructuralMechanics(configuration, propertiesConfiguration)
+StructuralMechanics3D::StructuralMechanics3D(Mesh *mesh, Instance *instance, Step *step, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
+: Physics("STRUCTURAL MECHANICS 3D", mesh, instance, step, &configuration, 3), StructuralMechanics(configuration, propertiesConfiguration, 3)
 {
-	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, _mesh->nodes(), _mesh->faces(), pointDOFs(), pointDOFsOffsets());
+
 }
-
-void StructuralMechanics3D::prepare()
-{
-	for (size_t loadStep = 0; loadStep < _configuration.load_steps; loadStep++) {
-		_mesh->loadProperty(_configuration.load_steps_settings.at(loadStep + 1).displacement, { "X", "Y", "Z" }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z }, loadStep);
-		_mesh->loadProperty(_configuration.load_steps_settings.at(loadStep + 1).acceleration, { "X", "Y", "Z" }, { Property::ACCELERATION_X, Property::ACCELERATION_Y, Property::ACCELERATION_Z }, loadStep);
-	}
-
-	for (size_t loadStep = 0; loadStep < _configuration.load_steps; loadStep++) {
-		if (_configuration.load_steps_settings.at(loadStep + 1).solver == LoadStepConfiguration::SOLVER::FETI &&
-			_configuration.load_steps_settings.at(loadStep + 1).feti.regularization == FETI_REGULARIZATION::ANALYTIC) {
-
-				_mesh->computeFixPoints(8);
-				break;
-		}
-	}
-
-	StructuralMechanics::prepare();
-}
-
 
 void StructuralMechanics3D::analyticRegularization(size_t domain, bool ortogonalCluster)
 {
@@ -50,14 +37,12 @@ void StructuralMechanics3D::analyticRegularization(size_t domain, bool ortogonal
 		ESINFO(ERROR) << "Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set FETI_REGULARIZATION = ALGEBRAIC";
 	}
 
-	ESTEST(MANDATORY) << "Too few FIX POINTS: " << _mesh->fixPoints(domain).size() << (_mesh->fixPoints(domain).size() > 3 ? TEST_PASSED : TEST_FAILED);
-
 	Point center = _dCenter[domain], norm = _dNorm[domain];
 	double r44 = _dr44[domain], r45 = _dr45[domain], r46 = _dr46[domain], r55 = _dr55[domain], r56 = _dr56[domain];
 	size_t np = _dNp[domain];
 
 	if (ortogonalCluster) {
-		size_t cluster = _mesh->getContinuityPartition()[domain];
+		size_t cluster = _mesh->elements->clusters[domain];
 		center = _cCenter[cluster], norm = _cNorm[cluster];
 		r44 = _cr44[cluster], r45 = _cr45[cluster], r46 = _cr46[cluster], r55 = _cr55[cluster], r56 = _cr56[cluster];
 		np = _cNp[cluster];
@@ -67,7 +52,7 @@ void StructuralMechanics3D::analyticRegularization(size_t domain, bool ortogonal
 		np = _dNp[domain];
 	}
 
-	_instance->N1[domain].rows = 3 * _mesh->coordinates().localSize(domain);
+	_instance->N1[domain].rows = _instance->domainDOFCount[domain];
 	_instance->N1[domain].cols = 6;
 	_instance->N1[domain].nnz = _instance->N1[domain].rows * _instance->N1[domain].cols;
 	_instance->N1[domain].type = 'G';
@@ -77,36 +62,53 @@ void StructuralMechanics3D::analyticRegularization(size_t domain, bool ortogonal
 	for (size_t c = 0; c < 3; c++) {
 		std::vector<double> kernel = { 0, 0, 0 };
 		kernel[c] = 1 / std::sqrt(np);
-		for (size_t i = 0; i < _mesh->coordinates().localSize(domain); i++) {
+		for (size_t i = 0; i < _instance->domainDOFCount[domain] / 3; i++) {
 			_instance->N1[domain].dense_values.insert(_instance->N1[domain].dense_values.end(), kernel.begin(), kernel.end());
 		}
 	}
 
-	for (size_t i = 0; i < _mesh->coordinates().localSize(domain); i++) {
-		Point p = _mesh->coordinates().get(i, domain) - center;
-		_instance->N1[domain].dense_values.push_back(-p.y / norm.x);
-		_instance->N1[domain].dense_values.push_back( p.x / norm.x);
-		_instance->N1[domain].dense_values.push_back(             0);
+	for (size_t i = 0; i < _mesh->nodes->dintervals[domain].size(); i++) {
+		for (eslocal n = _mesh->nodes->dintervals[domain][i].begin; n < _mesh->nodes->dintervals[domain][i].end; ++n) {
+			Point p = _mesh->nodes->coordinates->datatarray()[n] - center;
+			_instance->N1[domain].dense_values.push_back(-p.y / norm.x);
+			_instance->N1[domain].dense_values.push_back( p.x / norm.x);
+			_instance->N1[domain].dense_values.push_back(             0);
+		}
 	}
 
-	for (size_t i = 0; i < _mesh->coordinates().localSize(domain); i++) {
-		Point p = _mesh->coordinates().get(i, domain) - center;
-		_instance->N1[domain].dense_values.push_back((-p.z - r45 / r44 * (-p.y / norm.x)) / norm.y);
-		_instance->N1[domain].dense_values.push_back((   0 - r45 / r44 * ( p.x / norm.x)) / norm.y);
-		_instance->N1[domain].dense_values.push_back(( p.x - r45 / r44 * (   0 / norm.x)) / norm.y);
+	for (size_t i = 0; i < _mesh->nodes->dintervals[domain].size(); i++) {
+		for (eslocal n = _mesh->nodes->dintervals[domain][i].begin; n < _mesh->nodes->dintervals[domain][i].end; ++n) {
+			Point p = _mesh->nodes->coordinates->datatarray()[n] - center;
+			_instance->N1[domain].dense_values.push_back((-p.z - r45 / r44 * (-p.y / norm.x)) / norm.y);
+			_instance->N1[domain].dense_values.push_back((   0 - r45 / r44 * ( p.x / norm.x)) / norm.y);
+			_instance->N1[domain].dense_values.push_back(( p.x - r45 / r44 * (   0 / norm.x)) / norm.y);
+		}
 	}
 
-	for (size_t i = 0; i < _mesh->coordinates().localSize(domain); i++) {
-		Point p = _mesh->coordinates().get(i, domain) - center;
-		_instance->N1[domain].dense_values.push_back((   0 - r56 / r55 * ((-p.z - r45 / r44 * (-p.y / norm.x)) / norm.y) - r46 / r44 * (-p.y / norm.x)) / norm.z);
-		_instance->N1[domain].dense_values.push_back((-p.z - r56 / r55 * ((   0 - r45 / r44 * ( p.x / norm.x)) / norm.y) - r46 / r44 * ( p.x / norm.x)) / norm.z);
-		_instance->N1[domain].dense_values.push_back(( p.y - r56 / r55 * (( p.x - r45 / r44 * (   0 / norm.x)) / norm.y) - r46 / r44 * (   0 / norm.x)) / norm.z);
+	for (size_t i = 0; i < _mesh->nodes->dintervals[domain].size(); i++) {
+		for (eslocal n = _mesh->nodes->dintervals[domain][i].begin; n < _mesh->nodes->dintervals[domain][i].end; ++n) {
+			Point p = _mesh->nodes->coordinates->datatarray()[n] - center;
+			_instance->N1[domain].dense_values.push_back((   0 - r56 / r55 * ((-p.z - r45 / r44 * (-p.y / norm.x)) / norm.y) - r46 / r44 * (-p.y / norm.x)) / norm.z);
+			_instance->N1[domain].dense_values.push_back((-p.z - r56 / r55 * ((   0 - r45 / r44 * ( p.x / norm.x)) / norm.y) - r46 / r44 * ( p.x / norm.x)) / norm.z);
+			_instance->N1[domain].dense_values.push_back(( p.y - r56 / r55 * (( p.x - r45 / r44 * (   0 / norm.x)) / norm.y) - r46 / r44 * (   0 / norm.x)) / norm.z);
+		}
+	}
+
+	std::vector<eslocal> fixPoints;
+	if (_BEMDomain[domain]) {
+		fixPoints = std::vector<eslocal>(
+				_mesh->FETIData->surfaceFixPoints.begin() + _mesh->FETIData->sFixPointsDistribution[domain],
+				_mesh->FETIData->surfaceFixPoints.begin() + _mesh->FETIData->sFixPointsDistribution[domain + 1]);
+	} else {
+		fixPoints = std::vector<eslocal>(
+				_mesh->FETIData->innerFixPoints.begin() + _mesh->FETIData->iFixPointsDistribution[domain],
+				_mesh->FETIData->innerFixPoints.begin() + _mesh->FETIData->iFixPointsDistribution[domain + 1]);
 	}
 
 	SparseMatrix Nt; // CSR matice s DOFY
 	Nt.rows = 6;
 	Nt.cols = _instance->K[domain].cols;
-	Nt.nnz  = 9 * _mesh->fixPoints(domain).size();
+	Nt.nnz  = 9 * fixPoints.size();
 	Nt.type = 'G';
 
 	std::vector<eslocal> &ROWS = Nt.CSR_I_row_indices;
@@ -118,40 +120,46 @@ void StructuralMechanics3D::analyticRegularization(size_t domain, bool ortogonal
 	VALS.reserve(Nt.nnz);
 
 	ROWS.push_back(1);
-	ROWS.push_back(ROWS.back() + _mesh->fixPoints(domain).size());
-	ROWS.push_back(ROWS.back() + _mesh->fixPoints(domain).size());
-	ROWS.push_back(ROWS.back() + _mesh->fixPoints(domain).size());
-	ROWS.push_back(ROWS.back() + 2 * _mesh->fixPoints(domain).size());
-	ROWS.push_back(ROWS.back() + 2 * _mesh->fixPoints(domain).size());
-	ROWS.push_back(ROWS.back() + 2 * _mesh->fixPoints(domain).size());
+	ROWS.push_back(ROWS.back() + fixPoints.size());
+	ROWS.push_back(ROWS.back() + fixPoints.size());
+	ROWS.push_back(ROWS.back() + fixPoints.size());
+	ROWS.push_back(ROWS.back() + 2 * fixPoints.size());
+	ROWS.push_back(ROWS.back() + 2 * fixPoints.size());
+	ROWS.push_back(ROWS.back() + 2 * fixPoints.size());
+
+	auto n2DOF = [&] (eslocal node) {
+		auto dit = _mesh->nodes->dintervals[domain].begin();
+		while (dit->end < node) { ++dit; }
+		return dit->DOFOffset + node - dit->begin;
+	};
 
 	for (size_t c = 0; c < 3; c++) {
-		for (size_t i = 0; i < _mesh->fixPoints(domain).size(); i++) {
-			COLS.push_back(_mesh->fixPoints(domain)[i]->DOFIndex(domain, c) + 1);
+		for (size_t i = 0; i < fixPoints.size(); i++) {
+			COLS.push_back(3 * n2DOF(fixPoints[i]) + c + 1);
 		}
 	}
-	VALS.insert(VALS.end(), 3 * _mesh->fixPoints(domain).size(), 1);
+	VALS.insert(VALS.end(), 3 * fixPoints.size(), 1);
 
-	for (size_t i = 0; i < _mesh->fixPoints(domain).size(); i++) {
-		const Point &p = _mesh->coordinates()[_mesh->fixPoints(domain)[i]->node(0)];
-		COLS.push_back(_mesh->fixPoints(domain)[i]->DOFIndex(domain, 0) + 1);
-		COLS.push_back(_mesh->fixPoints(domain)[i]->DOFIndex(domain, 1) + 1);
+	for (size_t i = 0; i < fixPoints.size(); i++) {
+		const Point &p = _mesh->nodes->coordinates->datatarray()[fixPoints[i]];
+		COLS.push_back(3 * n2DOF(fixPoints[i]) + 0 + 1);
+		COLS.push_back(3 * n2DOF(fixPoints[i]) + 1 + 1);
 		VALS.push_back(-p.y);
 		VALS.push_back( p.x);
 	}
 
-	for (size_t i = 0; i < _mesh->fixPoints(domain).size(); i++) {
-		const Point &p = _mesh->coordinates()[_mesh->fixPoints(domain)[i]->node(0)];
-		COLS.push_back(_mesh->fixPoints(domain)[i]->DOFIndex(domain, 0) + 1);
-		COLS.push_back(_mesh->fixPoints(domain)[i]->DOFIndex(domain, 2) + 1);
+	for (size_t i = 0; i < fixPoints.size(); i++) {
+		const Point &p = _mesh->nodes->coordinates->datatarray()[fixPoints[i]];
+		COLS.push_back(3 * n2DOF(fixPoints[i]) + 0 + 1);
+		COLS.push_back(3 * n2DOF(fixPoints[i]) + 2 + 1);
 		VALS.push_back(-p.z);
 		VALS.push_back( p.x);
 	}
 
-	for (size_t i = 0; i < _mesh->fixPoints(domain).size(); i++) {
-		const Point &p = _mesh->coordinates()[_mesh->fixPoints(domain)[i]->node(0)];
-		COLS.push_back(_mesh->fixPoints(domain)[i]->DOFIndex(domain, 1) + 1);
-		COLS.push_back(_mesh->fixPoints(domain)[i]->DOFIndex(domain, 2) + 1);
+	for (size_t i = 0; i < fixPoints.size(); i++) {
+		const Point &p = _mesh->nodes->coordinates->datatarray()[fixPoints[i]];
+		COLS.push_back(3 * n2DOF(fixPoints[i]) + 1 + 1);
+		COLS.push_back(3 * n2DOF(fixPoints[i]) + 2 + 1);
 		VALS.push_back(-p.z);
 		VALS.push_back( p.y);
 	}
@@ -175,22 +183,20 @@ void StructuralMechanics3D::analyticRegularization(size_t domain, bool ortogonal
 	_instance->RegMat[domain].MatScale(_instance->K[domain].getDiagonalMaximum());
 }
 
-std::vector<std::pair<ElementType, Property> > StructuralMechanics3D::propertiesToStore() const
+void StructuralMechanics3D::processBEM(eslocal domain, Matrices matrices)
 {
-	return {};
+
 }
 
-
-void StructuralMechanics3D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K) const
+void StructuralMechanics3D::assembleMaterialMatrix(eslocal node, const Point &p, const MaterialBaseConfiguration *mat, double temp, DenseMatrix &K) const
 {
-	const MaterialConfiguration* material = _mesh->materials()[e->param(Element::MATERIAL)];
 	double Ex, Ey, Ez, miXY, miXZ, miYZ, Gx, Gy, Gz;
 
-	switch (material->linear_elastic_properties.model) {
+	switch (mat->linear_elastic_properties.model) {
 
 	case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC: {
-		Ex = Ey = Ez = material->linear_elastic_properties.young_modulus.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		miXY = miXZ = miYZ = material->linear_elastic_properties.poisson_ratio.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		Ex = Ey = Ez = mat->linear_elastic_properties.young_modulus.get(0, 0).evaluator->evaluate(p, _step->currentTime, temp);
+		miXY = miXZ = miYZ = mat->linear_elastic_properties.poisson_ratio.get(0, 0).evaluator->evaluate(p, _step->currentTime, temp);
 
 		double EE = Ex / ((1 + miXY) * (1 - 2 * miXY));
 
@@ -234,28 +240,28 @@ void StructuralMechanics3D::assembleMaterialMatrix(const Step &step, const Eleme
 	} break;
 
 	case LinearElasticPropertiesConfiguration::MODEL::ANISOTROPIC: {
-		K(node,  0) = material->linear_elastic_properties.anisotropic.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
-		K(node,  1) = material->linear_elastic_properties.anisotropic.get(1, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
-		K(node,  2) = material->linear_elastic_properties.anisotropic.get(2, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
-		K(node,  3) = material->linear_elastic_properties.anisotropic.get(3, 3).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
-		K(node,  4) = material->linear_elastic_properties.anisotropic.get(4, 4).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
-		K(node,  5) = material->linear_elastic_properties.anisotropic.get(5, 5).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node,  0) = mat->linear_elastic_properties.anisotropic.get(0, 0).evaluator->evaluate(p, _step->currentTime, temp);
+		K(node,  1) = mat->linear_elastic_properties.anisotropic.get(1, 1).evaluator->evaluate(p, _step->currentTime, temp);
+		K(node,  2) = mat->linear_elastic_properties.anisotropic.get(2, 2).evaluator->evaluate(p, _step->currentTime, temp);
+		K(node,  3) = mat->linear_elastic_properties.anisotropic.get(3, 3).evaluator->evaluate(p, _step->currentTime, temp);
+		K(node,  4) = mat->linear_elastic_properties.anisotropic.get(4, 4).evaluator->evaluate(p, _step->currentTime, temp);
+		K(node,  5) = mat->linear_elastic_properties.anisotropic.get(5, 5).evaluator->evaluate(p, _step->currentTime, temp);
 
-		K(node,  6) = material->linear_elastic_properties.anisotropic.get(0, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
-		K(node,  7) = material->linear_elastic_properties.anisotropic.get(0, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
-		K(node,  8) = material->linear_elastic_properties.anisotropic.get(0, 3).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
-		K(node,  9) = material->linear_elastic_properties.anisotropic.get(0, 4).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
-		K(node, 10) = material->linear_elastic_properties.anisotropic.get(0, 5).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
-		K(node, 11) = material->linear_elastic_properties.anisotropic.get(1, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
-		K(node, 12) = material->linear_elastic_properties.anisotropic.get(1, 3).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
-		K(node, 13) = material->linear_elastic_properties.anisotropic.get(1, 4).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
-		K(node, 14) = material->linear_elastic_properties.anisotropic.get(1, 5).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
-		K(node, 15) = material->linear_elastic_properties.anisotropic.get(2, 3).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
-		K(node, 16) = material->linear_elastic_properties.anisotropic.get(2, 4).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
-		K(node, 17) = material->linear_elastic_properties.anisotropic.get(2, 5).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
-		K(node, 18) = material->linear_elastic_properties.anisotropic.get(3, 4).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
-		K(node, 19) = material->linear_elastic_properties.anisotropic.get(3, 5).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
-		K(node, 20) = material->linear_elastic_properties.anisotropic.get(4, 5).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);;
+		K(node,  6) = mat->linear_elastic_properties.anisotropic.get(0, 1).evaluator->evaluate(p, _step->currentTime, temp);
+		K(node,  7) = mat->linear_elastic_properties.anisotropic.get(0, 2).evaluator->evaluate(p, _step->currentTime, temp);
+		K(node,  8) = mat->linear_elastic_properties.anisotropic.get(0, 3).evaluator->evaluate(p, _step->currentTime, temp);
+		K(node,  9) = mat->linear_elastic_properties.anisotropic.get(0, 4).evaluator->evaluate(p, _step->currentTime, temp);
+		K(node, 10) = mat->linear_elastic_properties.anisotropic.get(0, 5).evaluator->evaluate(p, _step->currentTime, temp);
+		K(node, 11) = mat->linear_elastic_properties.anisotropic.get(1, 2).evaluator->evaluate(p, _step->currentTime, temp);
+		K(node, 12) = mat->linear_elastic_properties.anisotropic.get(1, 3).evaluator->evaluate(p, _step->currentTime, temp);
+		K(node, 13) = mat->linear_elastic_properties.anisotropic.get(1, 4).evaluator->evaluate(p, _step->currentTime, temp);
+		K(node, 14) = mat->linear_elastic_properties.anisotropic.get(1, 5).evaluator->evaluate(p, _step->currentTime, temp);
+		K(node, 15) = mat->linear_elastic_properties.anisotropic.get(2, 3).evaluator->evaluate(p, _step->currentTime, temp);
+		K(node, 16) = mat->linear_elastic_properties.anisotropic.get(2, 4).evaluator->evaluate(p, _step->currentTime, temp);
+		K(node, 17) = mat->linear_elastic_properties.anisotropic.get(2, 5).evaluator->evaluate(p, _step->currentTime, temp);
+		K(node, 18) = mat->linear_elastic_properties.anisotropic.get(3, 4).evaluator->evaluate(p, _step->currentTime, temp);
+		K(node, 19) = mat->linear_elastic_properties.anisotropic.get(3, 5).evaluator->evaluate(p, _step->currentTime, temp);
+		K(node, 20) = mat->linear_elastic_properties.anisotropic.get(4, 5).evaluator->evaluate(p, _step->currentTime, temp);
 
 		K(node, 21) = K(node,  6);
 		K(node, 22) = K(node,  7);
@@ -275,17 +281,17 @@ void StructuralMechanics3D::assembleMaterialMatrix(const Step &step, const Eleme
 	} break;
 
 	case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC: {
-		Ex = material->linear_elastic_properties.young_modulus.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		Ey = material->linear_elastic_properties.young_modulus.get(1, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		Ez = material->linear_elastic_properties.young_modulus.get(2, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		Ex = mat->linear_elastic_properties.young_modulus.get(0, 0).evaluator->evaluate(p, _step->currentTime, temp);
+		Ey = mat->linear_elastic_properties.young_modulus.get(1, 1).evaluator->evaluate(p, _step->currentTime, temp);
+		Ez = mat->linear_elastic_properties.young_modulus.get(2, 2).evaluator->evaluate(p, _step->currentTime, temp);
 
-		miXY = material->linear_elastic_properties.poisson_ratio.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		miXZ = material->linear_elastic_properties.poisson_ratio.get(1, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		miYZ = material->linear_elastic_properties.poisson_ratio.get(2, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		miXY = mat->linear_elastic_properties.poisson_ratio.get(0, 0).evaluator->evaluate(p, _step->currentTime, temp);
+		miXZ = mat->linear_elastic_properties.poisson_ratio.get(1, 1).evaluator->evaluate(p, _step->currentTime, temp);
+		miYZ = mat->linear_elastic_properties.poisson_ratio.get(2, 2).evaluator->evaluate(p, _step->currentTime, temp);
 
-		Gx = material->linear_elastic_properties.shear_modulus.get(0, 0).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		Gy = material->linear_elastic_properties.shear_modulus.get(1, 1).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
-		Gz = material->linear_elastic_properties.shear_modulus.get(2, 2).evaluate(_mesh->coordinates()[e->node(node)], step.currentTime, temp);
+		Gx = mat->linear_elastic_properties.shear_modulus.get(0, 0).evaluator->evaluate(p, _step->currentTime, temp);
+		Gy = mat->linear_elastic_properties.shear_modulus.get(1, 1).evaluator->evaluate(p, _step->currentTime, temp);
+		Gz = mat->linear_elastic_properties.shear_modulus.get(2, 2).evaluator->evaluate(p, _step->currentTime, temp);
 
 		double miYX = miXY * Ey / Ex;
 		double miZY = miYZ * Ez / Ey;
@@ -344,42 +350,82 @@ void StructuralMechanics3D::assembleMaterialMatrix(const Step &step, const Eleme
 	}
 }
 
-void StructuralMechanics3D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics3D::processElement(eslocal domain, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
-	DenseMatrix Ce(6, 6), coordinates(e->nodes(), 3), J, invJ(3, 3), dND, B, precision, rhsT;
-	DenseMatrix K(e->nodes(), 36), TE(e->nodes(), 3), inertia(e->nodes(), 3), dens(e->nodes(), 1);
-	DenseMatrix gpK(e->nodes(), 36), gpTE(1, 3), gpInertia(1, 3), gpDens(1, 1);
-	double detJ, temp, initTemp, CP = 1;
+	auto nodes = _mesh->elements->nodes->cbegin() + eindex;
+	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
+	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
+	const ECFExpressionVector *acceleration = NULL;
+	for (auto it = _configuration.load_steps_settings.at(_step->step + 1).acceleration.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).acceleration.end(); ++it) {
+		ElementsRegionStore *region = _mesh->eregion(it->first);
+		if (std::binary_search(region->elements->datatarray().cbegin(), region->elements->datatarray().cend(), eindex)) {
+			acceleration = &it->second;
+			break;
+		}
+	}
 
-	const MaterialConfiguration* material = _mesh->materials()[e->param(Element::MATERIAL)];
+	Evaluator *initial_temperature = NULL, *temperature = NULL;
+	for (auto it = _configuration.load_steps_settings.at(_step->step + 1).temperature.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).temperature.end(); ++it) {
+		ElementsRegionStore *region = _mesh->eregion(it->first);
+		if (std::binary_search(region->elements->datatarray().cbegin(), region->elements->datatarray().cend(), eindex)) {
+			temperature = it->second.evaluator;
+			break;
+		}
+	}
+	for (auto it = _configuration.initial_temperature.begin(); it != _configuration.initial_temperature.end(); ++it) {
+		ElementsRegionStore *region = _mesh->eregion(it->first);
+		if (std::binary_search(region->elements->datatarray().cbegin(), region->elements->datatarray().cend(), eindex)) {
+			initial_temperature = it->second.evaluator;
+			break;
+		}
+	}
 
-	for (size_t i = 0; i < e->nodes(); i++) {
-		initTemp = e->getProperty(Property::INITIAL_TEMPERATURE, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, 0, 0);
-		temp = e->getProperty(Property::TEMPERATURE, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, 0, initTemp);
-		inertia(i, 0) = e->sumProperty(Property::ACCELERATION_X, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp, 0);
-		inertia(i, 1) = e->sumProperty(Property::ACCELERATION_Y, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp, 0);
-		inertia(i, 2) = e->sumProperty(Property::ACCELERATION_Z, step.step, _mesh->coordinates()[e->node(i)], step.currentTime, temp, 0);
-		coordinates(i, 0) = _mesh->coordinates()[e->node(i)].x;
-		coordinates(i, 1) = _mesh->coordinates()[e->node(i)].y;
-		coordinates(i, 2) = _mesh->coordinates()[e->node(i)].z;
-		dens(i, 0) = material->density.evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
+
+	const std::vector<DenseMatrix> &N = *(epointer->N);
+	const std::vector<DenseMatrix> &dN = *(epointer->dN);
+	const std::vector<double> &weighFactor = *(epointer->weighFactor);
+
+	DenseMatrix Ce(6, 6), coordinates(nodes->size(), 3), J, invJ(3, 3), dND, B, precision, rhsT;
+	DenseMatrix K(nodes->size(), 36), TE(nodes->size(), 3), inertia(nodes->size(), 3), dens(nodes->size(), 1);
+	DenseMatrix gpK(nodes->size(), 36), gpTE(1, 3), gpInertia(1, 3), gpDens(1, 1);
+	double detJ, temp = 275.15, initTemp = 275.15, CP = 1;
+
+	const MaterialConfiguration* material = _mesh->materials[_mesh->elements->material->datatarray()[eindex]];
+
+	for (size_t i = 0; i < nodes->size(); i++) {
+		const Point &p = _mesh->nodes->coordinates->datatarray()[nodes->at(i)];
+		if (initial_temperature != NULL) {
+			initTemp = initial_temperature->evaluate(p, _step->currentTime, 0);
+		}
+		if (temperature != NULL) {
+			temp = temperature->evaluate(p, _step->currentTime, 0);
+		}
+		if (acceleration != NULL) {
+			inertia(i, 0) = acceleration->x.evaluator->evaluate(p, _step->currentTime, temp);
+			inertia(i, 1) = acceleration->y.evaluator->evaluate(p, _step->currentTime, temp);
+			inertia(i, 2) = acceleration->z.evaluator->evaluate(p, _step->currentTime, temp);
+		}
+		coordinates(i, 0) = p.x;
+		coordinates(i, 1) = p.y;
+		coordinates(i, 2) = p.z;
+		dens(i, 0) = material->density.evaluator->evaluate(p, _step->currentTime, temp);
 		switch (material->linear_elastic_properties.model) {
 		case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
-			TE(i, 0) = TE(i, 1) = TE(i, 2) = (temp - initTemp) * material->linear_elastic_properties.thermal_expansion.get(0, 0).evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
+			TE(i, 0) = TE(i, 1) = TE(i, 2) = (temp - initTemp) * material->linear_elastic_properties.thermal_expansion.get(0, 0).evaluator->evaluate(p, _step->currentTime, temp);
 			break;
 		case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC:
 		case LinearElasticPropertiesConfiguration::MODEL::ANISOTROPIC:
-			TE(i, 0) = (temp - initTemp) * material->linear_elastic_properties.thermal_expansion.get(0, 0).evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
-			TE(i, 1) = (temp - initTemp) * material->linear_elastic_properties.thermal_expansion.get(1, 1).evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
-			TE(i, 2) = (temp - initTemp) * material->linear_elastic_properties.thermal_expansion.get(2, 2).evaluate(_mesh->coordinates()[e->node(i)], step.currentTime, temp);
+			TE(i, 0) = (temp - initTemp) * material->linear_elastic_properties.thermal_expansion.get(0, 0).evaluator->evaluate(p, _step->currentTime, temp);
+			TE(i, 1) = (temp - initTemp) * material->linear_elastic_properties.thermal_expansion.get(1, 1).evaluator->evaluate(p, _step->currentTime, temp);
+			TE(i, 2) = (temp - initTemp) * material->linear_elastic_properties.thermal_expansion.get(2, 2).evaluator->evaluate(p, _step->currentTime, temp);
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Invalid LINEAR ELASTIC model.";
 		}
-		assembleMaterialMatrix(step, e, i, temp, K);
+		assembleMaterialMatrix(i, p, material, temp, K);
 	}
 
-	eslocal Ksize = pointDOFs().size() * e->nodes();
+	eslocal Ksize = 3 * nodes->size();
 
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
@@ -402,22 +448,26 @@ void StructuralMechanics3D::processElement(const Step &step, Matrices matrices, 
 		fe = 0;
 	}
 
-	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
-		J.multiply(e->dN()[gp], coordinates);
+	for (size_t gp = 0; gp < N.size(); gp++) {
+		J.multiply(dN[gp], coordinates);
 		detJ = determinant3x3(J.values());
+		if (detJ <= 0) {
+			printInvalidElement(eindex);
+			ESINFO(ERROR) << "Invalid element detected - check input data.";
+		}
 		inverse3x3(J.values(), invJ.values(), detJ);
 
-		gpK.multiply(e->N()[gp], K);
-		dND.multiply(invJ, e->dN()[gp]);
-		gpDens.multiply(e->N()[gp], dens);
+		gpK.multiply(N[gp], K);
+		dND.multiply(invJ, dN[gp]);
+		gpDens.multiply(N[gp], dens);
 
 		if (matrices & Matrices::f) {
-			gpTE.multiply(e->N()[gp], TE);
-			gpInertia.multiply(e->N()[gp], inertia);
+			gpTE.multiply(N[gp], TE);
+			gpInertia.multiply(N[gp], inertia);
 		}
 
 		if (matrices & Matrices::M) {
-			Me.multiply(e->N()[gp], e->N()[gp], gpDens(0, 0) * detJ * e->weighFactor()[gp] * CP, 1, true);
+			Me.multiply(N[gp], N[gp], gpDens(0, 0) * detJ * weighFactor[gp] * CP, 1, true);
 		}
 
 		Ce.resize(6, 6);
@@ -440,7 +490,7 @@ void StructuralMechanics3D::processElement(const Step &step, Matrices matrices, 
 		distribute6x3(B.values(), dND.values(), dND.rows(), dND.columns());
 
 		if (matrices & Matrices::K) {
-			Ke.multiply(B, Ce * B, detJ * e->weighFactor()[gp], 1, true);
+			Ke.multiply(B, Ce * B, detJ * weighFactor[gp], 1, true);
 		}
 
 		if (matrices & Matrices::f) {
@@ -450,18 +500,24 @@ void StructuralMechanics3D::processElement(const Step &step, Matrices matrices, 
 			precision(2, 0) = gpTE(0, 2);
 			precision(3, 0) = precision(4, 0) = precision(5, 0) = 0;
 
-			rhsT.multiply(B, Ce * precision, detJ * e->weighFactor()[gp], 0, true, false);
+			rhsT.multiply(B, Ce * precision, detJ * weighFactor[gp], 0, true, false);
 			for (eslocal i = 0; i < Ksize; i++) {
-				fe(i, 0) += gpDens(0, 0) * detJ * e->weighFactor()[gp] * e->N()[gp](0, i % e->nodes()) * gpInertia(0, i / e->nodes());
+				fe(i, 0) += gpDens(0, 0) * detJ * weighFactor[gp] * N[gp](0, i % nodes->size()) * gpInertia(0, i / nodes->size());
 				fe(i, 0) += rhsT(i, 0);
 			}
 		}
 	}
 }
 
-void StructuralMechanics3D::processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics3D::processFace(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
-	if (!e->hasProperty(Property::PRESSURE, step.step)) {
+	const Evaluator *pressure = NULL;
+	auto it = _configuration.load_steps_settings.at(_step->step + 1).normal_pressure.find(region->name);
+	if (it != _configuration.load_steps_settings.at(_step->step + 1).normal_pressure.end()) {
+		pressure = it->second.evaluator;
+	}
+
+	if (pressure == NULL) {
 		Ke.resize(0, 0);
 		Me.resize(0, 0);
 		Re.resize(0, 0);
@@ -476,10 +532,18 @@ void StructuralMechanics3D::processFace(const Step &step, Matrices matrices, con
 		return;
 	}
 
-	DenseMatrix coordinates(e->nodes(), 3), dND(1, 3), P(e->nodes(), 1), normal(1, 3);
+	auto nodes = region->elements->cbegin() + findex;
+	auto epointer = region->epointers->datatarray()[findex];
+	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
+
+	const std::vector<DenseMatrix> &N = *(epointer->N);
+	const std::vector<DenseMatrix> &dN = *(epointer->dN);
+	const std::vector<double> &weighFactor = *(epointer->weighFactor);
+
+	DenseMatrix coordinates(nodes->size(), 3), dND(1, 3), P(nodes->size(), 1), normal(1, 3);
 	DenseMatrix gpP(1, 1), gpQ(1, 3);
 
-	eslocal Ksize = pointDOFs().size() * e->nodes();
+	eslocal Ksize = 3 * nodes->size();
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
 	Re.resize(0, 0);
@@ -490,34 +554,35 @@ void StructuralMechanics3D::processFace(const Step &step, Matrices matrices, con
 		fe = 0;
 	}
 
-	for (size_t n = 0; n < e->nodes(); n++) {
-		coordinates(n, 0) = _mesh->coordinates()[e->node(n)].x;
-		coordinates(n, 1) = _mesh->coordinates()[e->node(n)].y;
-		coordinates(n, 2) = _mesh->coordinates()[e->node(n)].z;
-		P(n, 0) = e->getProperty(Property::PRESSURE, step.step, _mesh->coordinates()[e->node(n)], step.currentTime, 0, 0);
+	for (size_t n = 0; n < nodes->size(); n++) {
+		const Point &p = _mesh->nodes->coordinates->datatarray()[nodes->at(n)];
+		coordinates(n, 0) = p.x;
+		coordinates(n, 1) = p.y;
+		coordinates(n, 2) = p.z;
+		P(n, 0) += pressure->evaluate(p, 0, _step->currentTime);
 	}
 
-	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
-		dND.multiply(e->dN()[gp], coordinates);
+	for (size_t gp = 0; gp < N.size(); gp++) {
+		dND.multiply(dN[gp], coordinates);
 		Point v2(dND(0, 0), dND(0, 1), dND(0, 2));
 		Point v1(dND(1, 0), dND(1, 1), dND(1, 2));
 		Point va = Point::cross(v1, v2);
-		e->rotateOutside(e->parentElements()[0], _mesh->coordinates(), va);
+		// e->rotateOutside(e->parentElements()[0], _mesh->coordinates(), va);
 		double J = va.norm();
 		normal(0, 0) = va.x / va.norm();
 		normal(0, 1) = va.y / va.norm();
 		normal(0, 2) = va.z / va.norm();
 
-		gpP.multiply(e->N()[gp], P);
+		gpP.multiply(N[gp], P);
 		gpQ.multiply(normal, gpP, 1, 0, true);
 
 		for (eslocal i = 0; i < Ksize; i++) {
-			fe(i, 0) += J * e->weighFactor()[gp] * e->N()[gp](0, i % e->nodes()) * gpQ(0, i / e->nodes());
+			fe(i, 0) += J * weighFactor[gp] * N[gp](0, i % nodes->size()) * gpQ(0, i / nodes->size());
 		}
 	}
 }
 
-void StructuralMechanics3D::processEdge(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics3D::processEdge(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
@@ -525,35 +590,35 @@ void StructuralMechanics3D::processEdge(const Step &step, Matrices matrices, con
 	fe.resize(0, 0);
 }
 
-void StructuralMechanics3D::processNode(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void StructuralMechanics3D::processNode(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
-	if (
-			e->hasProperty(Property::FORCE_X, step.step) ||
-			e->hasProperty(Property::FORCE_Y, step.step) ||
-			e->hasProperty(Property::FORCE_Z, step.step)) {
-
-		Ke.resize(0, 0);
-		Me.resize(0, 0);
-		Re.resize(0, 0);
-		fe.resize(pointDOFs().size(), 0);
-
-		fe(0, 0) = e->sumProperty(Property::FORCE_X, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
-		fe(1, 0) = e->sumProperty(Property::FORCE_Y, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
-		fe(2, 0) = e->sumProperty(Property::FORCE_Z, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
-		return;
-	}
+//	if (
+//			e->hasProperty(Property::FORCE_X, step.step) ||
+//			e->hasProperty(Property::FORCE_Y, step.step) ||
+//			e->hasProperty(Property::FORCE_Z, step.step)) {
+//
+//		Ke.resize(0, 0);
+//		Me.resize(0, 0);
+//		Re.resize(0, 0);
+//		fe.resize(pointDOFs().size(), 0);
+//
+////		fe(0, 0) = e->sumProperty(Property::FORCE_X, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
+////		fe(1, 0) = e->sumProperty(Property::FORCE_Y, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
+////		fe(2, 0) = e->sumProperty(Property::FORCE_Z, step.step, _mesh->coordinates()[e->node(0)], step.currentTime, 0, 0);
+//		return;
+//	}
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
 	Re.resize(0, 0);
 	fe.resize(0, 0);
 }
 
-void StructuralMechanics3D::postProcessElement(const Step &step, const Element *e, std::vector<Solution*> &solution)
+void StructuralMechanics3D::postProcessElement(eslocal eindex)
 {
 
 }
 
-void StructuralMechanics3D::processSolution(const Step &step)
+void StructuralMechanics3D::processSolution()
 {
 }
 

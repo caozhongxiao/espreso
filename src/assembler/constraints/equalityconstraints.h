@@ -2,56 +2,64 @@
 #ifndef SRC_ASSEMBLER_CONSTRAINTS_EQUALITYCONSTRAINTS_H_
 #define SRC_ASSEMBLER_CONSTRAINTS_EQUALITYCONSTRAINTS_H_
 
+#include <utility>
 #include <vector>
+#include <map>
 #include <cstddef>
 #include <functional>
 
 namespace espreso {
 
-class Element;
-class Region;
-class Mesh;
-enum class Property;
 class Instance;
+class Mesh;
+template <typename TValue> struct RegionMap;
+struct ECFExpression;
+struct ECFExpressionOptionalVector;
+
+class Region;
 struct Step;
 class SparseMatrix;
+struct BoundaryRegionStore;
+class Evaluator;
 
 struct EqualityConstraints
 {
-	EqualityConstraints(
-			Instance &instance,
-			const Mesh &mesh,
-			const std::vector<Element*> &gluedElements,
-			const std::vector<Element*> &gluedInterfaceElements,
-			const std::vector<Property> &gluedDOFs,
-			const std::vector<size_t> &gluedDOFsMeshOffsets,
-			bool interfaceElementContainsGluedDOFs = false,
-			bool dirichletSetByArrayEvaluator = false);
+	EqualityConstraints(Instance &instance, Mesh &mesh, const RegionMap<ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling);
+	EqualityConstraints(Instance &instance, Mesh &mesh, const RegionMap<ECFExpressionOptionalVector> &dirichlet, int DOFs, bool withRedundantMultiplier, bool withScaling);
+	void update(const RegionMap<ECFExpression> &dirichlet, bool withRedundantMultiplier, bool withScaling);
+	void update(const RegionMap<ECFExpressionOptionalVector> &dirichlet, bool withRedundantMultiplier, bool withScaling);
 
-	void insertDirichletToB1(const Step &step, bool withRedundantMultiplier);
-	void updateDirichletValuesInB1(const Step &step, bool withRedundantMultiplier);
-	void insertElementGluingToB1(const Step &step, bool withRedundantMultiplier, bool withScaling);
+	void B1DirichletInsert(const Step &step);
+	void B1DirichletUpdate(const Step &step);
+	void B1GlueElements();
+	void B1DuplicityUpdate();
+
+	void B0Kernels(const std::vector<SparseMatrix> &kernels);
+	void B0Corners();
 
 	void insertMortarGluingToB1(const Step &step, const std::string &master, const std::string &slave);
 
-	void insertCornersGluingToB0();
-	void insertKernelsGluingToB0(const std::vector<SparseMatrix> &kernels);
-
 protected:
-	void goThroughDirichlet(
-			size_t threads, const std::vector<size_t> &distribution,
-			const Step &step, bool withRedundantMultiplier,
-			std::function<void(size_t thread, eslocal domain, eslocal DOF, double value)> fnc);
-	std::vector<esglobal> computeLambdasID(const Step &step, bool withRedundantMultiplier);
+	eslocal computeIntervalsOffsets(std::function<eslocal(eslocal)> getsize, std::function<void(eslocal, eslocal)> setsize);
+	void update(bool withRedundantMultiplier, bool withScaling);
 
 	Instance &_instance;
-	const Mesh &_mesh;
-	const std::vector<Element*> &_gluedElements;
-	const std::vector<Element*> &_gluedInterfaceElements;
-	const std::vector<Property> &_gluedDOFs;
-	const std::vector<size_t> &_gluedDOFsMeshOffsets;
-	bool _interfaceElementContainsGluedDOFs;
-	bool _dirichletSetByArrayEvaluator;
+	Mesh &_mesh;
+	esglobal _dirichletSize, _gluingSize;
+	bool _withRedundantMultipliers, _withScaling;
+
+	int _DOFs;
+
+	// DOF x CONDITIONS
+	std::vector<std::vector<std::pair<BoundaryRegionStore*, Evaluator*> > > _dirichlet;
+
+	// DOF x INTERVAL x NODES
+	std::vector<std::vector<std::vector<eslocal> > > _intervalDirichletNodes;
+
+	std::vector<eslocal> _domainDirichletSize;
+
+	std::vector<eslocal> _intervalDirichletOffset;
+	std::vector<eslocal> _intervalGluingOffset;
 };
 
 }

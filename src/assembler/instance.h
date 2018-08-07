@@ -9,9 +9,7 @@
 
 namespace espreso {
 
-enum class Property;
 class SparseMatrix;
-class Solution;
 class Mesh;
 enum class FETI_REGULARIZATION;
 enum class FETI_B0_TYPE;
@@ -47,10 +45,9 @@ struct Instance {
 
 	size_t domains;
 	std::vector<size_t> &domainDOFCount;
-	std::vector<Property> &properties;
 	std::vector<int> neighbours;
 
-	std::vector<eslocal> clustersMap;
+	std::vector<int> clustersMap;
 
 	std::vector<SparseMatrix> &origK, &K, &origKN1, &origKN2, &origRegMat, &N1, &N2, &RegMat;
 	std::vector<SparseMatrix> &M;
@@ -79,11 +76,8 @@ struct Instance {
 
 	std::vector<size_t> &block;
 
-
 	std::vector<std::vector<double> > primalSolution;
 	std::vector<std::vector<double> > dualSolution;
-
-	std::vector<Solution*> solutions;
 
 	std::function<void(FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster)> computeKernelsCallback;
 	std::function<void(FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster)> computeKernelsFromOrigKCallback;
@@ -100,7 +94,6 @@ private:
 	std::vector<std::vector<esglobal> > _B0subdomainsMap, _B1subdomainsMap, _B1clustersMap;
 
 	std::vector<size_t> _domainDOFCount, _block;
-	std::vector<Property> _properties;
 };
 
 inline Matrices operator~(Matrices m)

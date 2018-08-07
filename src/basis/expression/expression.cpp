@@ -29,9 +29,9 @@ void Expression::parse()
 		ESINFO(GLOBAL_ERROR) << "Invalid expression: '" << _str << "'";
 	}
 
-	_values.resize(_variables.size());
+	values.resize(_variables.size());
 	for (size_t i = 0; i < _variables.size(); i++) {
-		_symbol_table->add_variable(_variables[i], _values[i]);
+		_symbol_table->add_variable(_variables[i], values[i]);
 	}
 	_symbol_table->add_constants();
 	_expression->register_symbol_table(*_symbol_table);
@@ -74,14 +74,8 @@ Expression& Expression::operator=(const Expression &other)
 	return *this;
 }
 
-double Expression::operator()(const std::vector<double> &values) const
+double Expression::evaluate() const
 {
-	return evaluate(values);
-}
-
-double Expression::evaluate(const std::vector<double> &values) const
-{
-	_values = values;
 	return _expression->value();
 }
 

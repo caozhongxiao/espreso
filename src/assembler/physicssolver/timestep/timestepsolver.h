@@ -19,7 +19,7 @@ public:
 	TimeStepSolver(const std::string &description, Assembler &assembler);
 	virtual ~TimeStepSolver() {}
 
-	virtual void solve(Step &step, LoadStepSolver &loadStepSolver) =0;
+	virtual void solve(LoadStepSolver &loadStepSolver) =0;
 
 	std::string description() const;
 

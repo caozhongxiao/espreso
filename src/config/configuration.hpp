@@ -17,9 +17,9 @@ namespace espreso {
 /////////// PARAMETER ///////////
 /////////////////////////////////
 
-// CLASS - STD::STRING - ECFExpression (has to inherit from ECFObject)
+// Child of ECFObject
 template <typename Ttype>
-typename std::enable_if<std::is_class<Ttype>::value && !std::is_same<Ttype, std::string>::value && !std::is_same<Ttype, ECFExpression>::value, ECFParameter*>::type
+typename std::enable_if<std::is_class<Ttype>::value && std::is_base_of<ECFObject, Ttype>::value, ECFParameter*>::type
 ECFObject::registerParameter(const std::string &name, Ttype &parameter, const ECFMetaData &metadata)
 {
 	metadata.checkdescription(name, 1);
@@ -46,7 +46,7 @@ ECFObject::registerParameter(const std::string &name, Ttype &parameter, const EC
 
 // REST
 template <typename Ttype>
-typename std::enable_if<(!std::is_class<Ttype>::value && !std::is_enum<Ttype>::value) || std::is_same<Ttype, std::string>::value || std::is_same<Ttype, ECFExpression>::value, ECFParameter*>::type
+typename std::enable_if<(!std::is_class<Ttype>::value && !std::is_enum<Ttype>::value) || (std::is_class<Ttype>::value && !std::is_base_of<ECFObject, Ttype>::value), ECFParameter*>::type
 ECFObject::registerParameter(const std::string &name, Ttype &parameter, const ECFMetaData &metadata)
 {
 	metadata.checkdescription(name, 1);
@@ -59,9 +59,9 @@ ECFObject::registerParameter(const std::string &name, Ttype &parameter, const EC
 ////////////// MAP //////////////
 /////////////////////////////////
 
-// TYPE2 = CLASS - STD::STRING (has to inherit from ECFObject)
+// TYPE2 = Child of ECFObject
 template<typename Ttype1, typename Ttype2, typename... TArgs>
-typename std::enable_if<std::is_class<Ttype2>::value && !std::is_same<Ttype2, std::string>::value, ECFParameter*>::type
+typename std::enable_if<std::is_class<Ttype2>::value && std::is_base_of<ECFObject, Ttype2>::value, ECFParameter*>::type
 ECFObject::registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata, TArgs... args)
 {
 	metadata.checkdescription(name, 2);
@@ -71,24 +71,36 @@ ECFObject::registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &
 	return registerParameter(name, new ECFObjectMap<Ttype1, Ttype2, TArgs...>(parameter, args...), metadata);
 }
 
-// TYPE2 = REST
+// TYPE2 = ENUM
 template<typename Ttype1, typename Ttype2>
-typename std::enable_if<!std::is_class<Ttype2>::value || std::is_same<Ttype2, std::string>::value, ECFParameter*>::type
+typename std::enable_if<std::is_enum<Ttype2>::value, ECFParameter*>::type
 ECFObject::registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata)
 {
 	metadata.checkdescription(name, 2);
 	metadata.checkdatatype(name, 2);
 	metadata.checkpattern(name, 2);
 
-	return registerParameter(name, new ECFValueMap<Ttype1, Ttype2>(parameter), metadata);
+	return registerParameter(name, new ECFEnumMap<Ttype1, Ttype2>(parameter), metadata);
+}
+
+// TYPE2 = REST
+template<typename Ttype1, typename Ttype2, typename... TArgs>
+typename std::enable_if<(!std::is_class<Ttype2>::value && !std::is_enum<Ttype2>::value) || (std::is_class<Ttype2>::value && !std::is_base_of<ECFObject, Ttype2>::value), ECFParameter*>::type
+ECFObject::registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata, TArgs... args)
+{
+	metadata.checkdescription(name, 2);
+	metadata.checkdatatype(name, 2);
+	metadata.checkpattern(name, 2);
+
+	return registerParameter(name, new ECFValueMap<Ttype1, Ttype2, TArgs...>(parameter, args...), metadata);
 }
 
 //////////// MAP MAP ////////////
 /////////////////////////////////
 
-// TYPE3 = CLASS - STD::STRING (has to inherit from ECFObject)
+// TYPE3 = Child of ECFObject
 template<typename Ttype1, typename Ttype2, typename Ttype3, typename... TArgs>
-typename std::enable_if<std::is_class<Ttype3>::value && !std::is_same<Ttype3, std::string>::value, ECFParameter*>::type
+typename std::enable_if<std::is_class<Ttype3>::value && std::is_base_of<ECFObject, Ttype3>::value, ECFParameter*>::type
 ECFObject::registerParameter(const std::string &name, std::map<Ttype1, std::map<Ttype2, Ttype3> > &parameter, const ECFMetaData &metadata, TArgs... args)
 {
 	metadata.checkdescription(name, 3);
@@ -100,7 +112,7 @@ ECFObject::registerParameter(const std::string &name, std::map<Ttype1, std::map<
 
 // TYPE3 = REST
 template<typename Ttype1, typename Ttype2, typename Ttype3>
-typename std::enable_if<!std::is_class<Ttype3>::value || std::is_same<Ttype3, std::string>::value, ECFParameter*>::type
+typename std::enable_if<!std::is_class<Ttype3>::value || (std::is_class<Ttype3>::value && !std::is_base_of<ECFObject, Ttype3>::value), ECFParameter*>::type
 ECFObject::registerParameter(const std::string &name, std::map<Ttype1, std::map<Ttype2, Ttype3> > &parameter, const ECFMetaData &metadata)
 {
 	metadata.checkdescription(name, 3);
@@ -108,6 +120,33 @@ ECFObject::registerParameter(const std::string &name, std::map<Ttype1, std::map<
 	metadata.checkpattern(name, 3);
 
 	return registerParameter(name, new ECFValueMapMap<Ttype1, Ttype2, Ttype3>(parameter), metadata);
+}
+
+////////// REGION MAP ///////////
+/////////////////////////////////
+
+template<typename Ttype, typename... TArgs>
+ECFParameter* ECFObject::registerParameter(const std::string &name, RegionMap<Ttype> &parameter, ECFMetaData &metadata, TArgs... args)
+{
+	static_assert(
+			std::is_base_of<ECFExpression, Ttype>::value ||
+			std::is_base_of<ECFExpressionVector, Ttype>::value ||
+			std::is_base_of<ECFExpressionOptionalVector, Ttype>::value,
+			"RegionMap accept only following parameters: ECFExpression, ECFExpressionVector, ECFExpressionOptionalVector");
+
+	ECFParameter* p = registerParameter(name, parameter.regions, metadata.setRegionMap(parameter), args...);
+	p->addListener(Event::PARAMETER_GET, [&] (const std::string &name) {
+		parameter.addRegion(name);
+	});
+	p->registerAdditionalParameter(registerParameter("INTERSECTION", parameter.regions_intersection, ECFMetaData()
+			.setdescription({ "Treating with intersected region." })
+			.setdatatype( { ECFDataType::OPTION })
+			.addoption(ECFOption().setname("FIRST").setdescription("Setting from the first region is used."))
+			.addoption(ECFOption().setname("LAST").setdescription("Setting from the last region is used."))
+			.addoption(ECFOption().setname("SUM").setdescription("Setting from all regions is summed."))
+			.addoption(ECFOption().setname("AVERAGE").setdescription("Setting from all regions is averaged."))
+			.addoption(ECFOption().setname("ERROR").setdescription("Region intersection is not allowed."))));
+	return p;
 }
 
 }

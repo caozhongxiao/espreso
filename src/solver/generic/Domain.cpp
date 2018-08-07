@@ -102,7 +102,8 @@ void Domain::SetDomain() {
 		Kplus.ImportMatrix_wo_Copy(K);
 		Kplus.Factorization ("K matrix");
 
-		if (configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ)
+		if (	configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ_R ||
+				configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ_K)
 			instance->computeKernelFromOrigK(configuration.regularization, configuration.sc_size, domain_global_index, configuration.method == FETI_METHOD::HYBRID_FETI);
 
 	} else {
@@ -117,7 +118,8 @@ void Domain::SetDomain() {
 		Kplus.ImportMatrix_wo_Copy(K);
 		Kplus.Factorization ("K matrix");
 
-		if (configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ)
+		if (	configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ_R ||
+				configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ_K)
 			instance->computeKernelFromOrigK(configuration.regularization, configuration.sc_size, domain_global_index, configuration.method == FETI_METHOD::HYBRID_FETI);
 
 	}

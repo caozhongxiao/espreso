@@ -1,57 +1,69 @@
 
-#include <cstring>
-#include <fstream>
-
 #include "square8.h"
-#include "../line/line3.h"
+
+#include "../../../basis/containers/serializededata.h"
 #include "../../../basis/matrices/denseMatrix.h"
 
 using namespace espreso;
 
-std::vector<Property> Square8::_DOFElement;
-std::vector<Property> Square8::_DOFFace;
-std::vector<Property> Square8::_DOFEdge;
-std::vector<Property> Square8::_DOFPoint;
-std::vector<Property> Square8::_DOFMidPoint;
-
-std::vector<std::vector<eslocal> > Square8::_edgesNodes = {
-	{ 0, 1, 4 },
-	{ 1, 2, 5 },
-	{ 2, 3, 6 },
-	{ 3, 0, 7 }
-};
-
-static std::vector<std::vector<double> > get_st()
+Element Square8::fill(Element e, Element* begin)
 {
-	std::vector< std::vector<double> > st(2, std::vector<double>(Square8GPCount));
+	std::vector<Element*> edgepointers(4, begin + static_cast<int>(Element::CODE::LINE3));
 
-	switch (Square8GPCount) {
-	case 9: {
-		double v = sqrt(0.6);
-		st[0] = { -v,  v,  v, -v,  0,  v,  0, -v, 0 };
-		st[1] = { -v, -v,  v,  v, -v,  0,  v,  0, 0 };
-		return st;
+	std::vector<int> data = {
+		0, 1, 4,
+		1, 2, 5,
+		2, 3, 6,
+		3, 0, 7
+	};
+
+	std::vector<int> tringles = {
+		0, 4, 7,
+		4, 1, 5,
+		5, 2, 6,
+		6, 3, 7,
+		4, 5, 6,
+		4, 6, 7
+	};
+
+	e.edges = new serializededata<int, int>(3, data);
+	e.edgepointers = new serializededata<int, Element*>(1, edgepointers);
+	e.faces = new serializededata<int, int>(3, data);
+	e.facepointers = new serializededata<int, Element*>(1, edgepointers);
+	e.triangles = new serializededata<int, int>(3, tringles);
+
+	size_t GPCount = 9, nodeCount = 8;
+
+	e.N = new std::vector<DenseMatrix>(GPCount, DenseMatrix(1, nodeCount));
+	e.dN = new std::vector<DenseMatrix>(GPCount, DenseMatrix(2, nodeCount));
+	e.weighFactor = new std::vector<double>({
+			25 / 81.0, 25 / 81.0, 25 / 81.0, 25 / 81.0,
+			40 / 81.0, 40 / 81.0, 40 / 81.0, 40 / 81.0,
+			64 / 81.0 });
+
+	std::vector< std::vector<double> > st(2, std::vector<double>(GPCount));
+	double v = sqrt(0.6);
+	st[0] = { -v,  v,  v, -v,  0,  v,  0, -v, 0 };
+	st[1] = { -v, -v,  v,  v, -v,  0,  v,  0, 0 };
+
+	for (size_t i = 0; i < GPCount; i++) {
+		const std::vector<double> &s = st[0];
+		const std::vector<double> &t = st[1];
+
+		(*e.N)[i](0, 0) = -.25 * (s[i] - 1) * (t[i] - 1) * (s[i] + t[i] + 1);
+		(*e.N)[i](0, 1) =  .25 * (t[i] - 1) * (-s[i] * s[i] + t[i] * s[i] + t[i] + 1);
+		(*e.N)[i](0, 2) =  .25 * (s[i] + 1) * (t[i] + 1) * (s[i] + t[i] - 1);
+		(*e.N)[i](0, 3) =  .25 * (s[i] - 1) * (s[i] - t[i] + 1) * (t[i] + 1);
+		(*e.N)[i](0, 4) =  .5  * (s[i] * s[i] - 1) * (t[i] - 1);
+		(*e.N)[i](0, 5) = -.5  * (s[i] + 1) * (t[i] * t[i] - 1);
+		(*e.N)[i](0, 6) = -.5  * (s[i] * s[i] - 1) * (t[i] + 1);
+		(*e.N)[i](0, 7) =  .5  * (s[i] - 1) * (t[i] * t[i] - 1);
 	}
-	default:
-		ESINFO(ERROR) << "Unknown number of Square8 GP count.";
-		exit(EXIT_FAILURE);
-	}
-}
 
-static std::vector<DenseMatrix> get_dN()
-{
-	std::vector<DenseMatrix> dN(
-		Square8GPCount,
-		DenseMatrix(2, Square8NodesCount)
-	);
-
-	std::vector<std::vector<double> > st = get_st();
-	const std::vector<double> &s = st[0];
-	const std::vector<double> &t = st[1];
-
-	for (unsigned int i = 0; i < Square8GPCount; i++) {
-		///dN contains [dNr, dNs, dNt]
-		DenseMatrix &m = dN[i];
+	for (size_t i = 0; i < GPCount; i++) {
+		DenseMatrix &m = (*e.dN)[i];
+		const std::vector<double> &s = st[0];
+		const std::vector<double> &t = st[1];
 
 		// dNs - derivation of basis function
 		m(0, 0) = -((2 * s[i] + t[i]) * (t[i] - 1)) / 4;
@@ -74,128 +86,9 @@ static std::vector<DenseMatrix> get_dN()
 		m(1, 7) = t[i] * (s[i] - 1);
 	}
 
-	return dN;
+	return e;
 }
 
-static std::vector<DenseMatrix> get_N() {
-	std::vector<DenseMatrix> N(
-		Square8GPCount,
-		DenseMatrix(1, Square8NodesCount)
-	);
 
-
-	std::vector<std::vector<double> > st = get_st();
-	const std::vector<double> &s = st[0];
-	const std::vector<double> &t = st[1];
-
-	for (unsigned int i = 0; i < Square8GPCount; i++) {
-		N[i](0, 0) = -.25 * (s[i] - 1) * (t[i] - 1) * (s[i] + t[i] + 1);
-		N[i](0, 1) =  .25 * (t[i] - 1) * (-s[i] * s[i] + t[i] * s[i] + t[i] + 1);
-		N[i](0, 2) =  .25 * (s[i] + 1) * (t[i] + 1) * (s[i] + t[i] - 1);
-		N[i](0, 3) =  .25 * (s[i] - 1) * (s[i] - t[i] + 1) * (t[i] + 1);
-		N[i](0, 4) =  .5  * (s[i] * s[i] - 1) * (t[i] - 1);
-		N[i](0, 5) = -.5  * (s[i] + 1) * (t[i] * t[i] - 1);
-		N[i](0, 6) = -.5  * (s[i] * s[i] - 1) * (t[i] + 1);
-		N[i](0, 7) =  .5  * (s[i] - 1) * (t[i] * t[i] - 1);
-	}
-
-	return N;
-}
-
-std::vector<DenseMatrix> Square8::_dN = get_dN();
-std::vector<DenseMatrix> Square8::_N = get_N();
-std::vector<double> Square8::_weighFactor = {
-		25 / 81.0, 25 / 81.0, 25 / 81.0, 25 / 81.0,
-		40 / 81.0, 40 / 81.0, 40 / 81.0, 40 / 81.0,
-		64 / 81.0 };
-
-bool Square8::match(const eslocal *indices, eslocal n)
-{
-	if (n != 8) {
-		return false;
-	}
-
-	for (eslocal i = 0; i < Square8NodesCount - 1; i++) {
-		for (eslocal j = i + 1; j < Square8NodesCount; j++) {
-			if (Element::match(indices, i, j)) {
-				return false;
-			}
-		}
-	}
-
-	return true;
-}
-
-std::vector<eslocal> Square8::getNeighbours(size_t nodeIndex) const
-{
-	std::vector<eslocal> result(2);
-
-	if (nodeIndex < 4) {
-		result[0] = _indices[nodeIndex + 4];
-		result[1] = _indices[(nodeIndex + 3) % 4 + 4];
-	} else {
-		result[0] = _indices[(nodeIndex + 5) % 4];
-		result[1] = _indices[nodeIndex - 4];
-	}
-
-	return result;
-}
-
-std::vector<std::vector<eslocal> > Square8::triangularize() const
-{
-	std::vector<std::vector<eslocal> > triangles;
-
-	triangles.push_back({ _indices[0], _indices[4], _indices[7] });
-	triangles.push_back({ _indices[1], _indices[5], _indices[4] });
-	triangles.push_back({ _indices[2], _indices[6], _indices[5] });
-	triangles.push_back({ _indices[3], _indices[7], _indices[6] });
-	triangles.push_back({ _indices[4], _indices[5], _indices[6] });
-	triangles.push_back({ _indices[4], _indices[6], _indices[7] });
-
-	return triangles;
-}
-
-size_t Square8::fillEdges()
-{
-	eslocal line[Line3NodesCount];
-
-	if (_edges.size() == Square8EdgeCount) {
-		return Square8EdgeCount;
-	}
-	_edges.reserve(Square8EdgeCount);
-
-	size_t filled = _edges.size();
-
-	for (size_t e = 0 ; e < Square8EdgeCount; e++) {
-		for (size_t n = 0; n < Line3NodesCount; n++) {
-			line[n] = _indices[_edgesNodes[e][n]];
-		}
-		addUniqueEdge<Line3>(line, filled, Line2NodesCount);
-	}
-
-	return filled;
-}
-
-Square8::Square8(const eslocal *indices)
-{
-	memcpy(_indices, indices, Square8NodesCount * sizeof(eslocal));
-}
-
-Square8::Square8(const eslocal *indices, const eslocal *params)
-{
-	memcpy(_indices, indices, Square8NodesCount * sizeof(eslocal));
-	_params.insert(_params.end(), params, params + PARAMS_SIZE);
-}
-
-Square8::Square8(std::ifstream &is)
-{
-	eslocal params;
-	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * nodes());
-	is.read(reinterpret_cast<char *>(&params), sizeof(eslocal));
-	if (params) {
-		_params.resize(params);
-		is.read(reinterpret_cast<char *>(_params.data()), sizeof(eslocal) * params);
-	}
-}
 
 

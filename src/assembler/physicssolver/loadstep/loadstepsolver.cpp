@@ -12,7 +12,7 @@ using namespace espreso;
 
 LoadStepSolver::LoadStepSolver(const std::string &description, TimeStepSolver &timeStepSolver, double duration)
 : _description(description), _timeStepSolver(timeStepSolver), _assembler(timeStepSolver._assembler), _duration(duration),
-  _startTime(0), _precision(1e-8), _timeDependent(true), _tempDependent(true)
+  _startTime(0), _precision(1e-8)
 {
 
 }
@@ -27,42 +27,40 @@ double LoadStepSolver::duration() const
 	return _duration;
 }
 
-void LoadStepSolver::initLoadStep(Step &step)
+void LoadStepSolver::initLoadStep()
 {
-	if (step.step == 0) {
-		_assembler.preprocessData(step);
+	if (_assembler.step.step == 0) {
+		_assembler.preprocessData();
 	}
+	_assembler.physics.setDirichlet();
 	_assembler.setRegularizationCallback();
 	_assembler.setB0Callback();
-
-	_timeDependent = _assembler.physics.isMatrixTimeDependent(step);
-	_timeDependent = _assembler.physics.isMatrixTemperatureDependent(step);
 }
 
-bool LoadStepSolver::hasNextTimeStep(Step &step)
+bool LoadStepSolver::hasNextTimeStep()
 {
-	return step.currentTime + _precision < _startTime + _duration;
+	return _assembler.step.currentTime + _precision < _startTime + _duration;
 }
 
-void LoadStepSolver::finalizeLoadStep(Step &step)
+void LoadStepSolver::finalizeLoadStep()
 {
 	_assembler.finalize();
 }
 
-void LoadStepSolver::run(Step &step)
+void LoadStepSolver::run()
 {
-	ESINFO(PROGRESS1) << "Solve LOAD STEP " << step.step + 1 << ": " << description() << " with " << _timeStepSolver.description() << " time step(s).";
+	ESINFO(PROGRESS1) << "Solve LOAD STEP " << _assembler.step.step + 1 << ": " << description() << " with " << _timeStepSolver.description() << " time step(s).";
 
-	_startTime = step.currentTime;
-	step.substep = 0;
-	step.iteration = 0;
+	_startTime = _assembler.step.currentTime;
+	_assembler.step.substep = 0;
+	_assembler.step.iteration = 0;
 
-	initLoadStep(step);
-	while (hasNextTimeStep(step)) {
-		runNextTimeStep(step);
-		ESINFO(PROGRESS1) << description() << " SOLVER: load step " << step.step + 1 << ", time step " << step.substep + 1 << " [" << step.currentTime << "s] finished.";
-		step.substep++;
-		step.iteration = 0;
+	initLoadStep();
+	while (hasNextTimeStep()) {
+		runNextTimeStep();
+		ESINFO(PROGRESS1) << description() << " SOLVER: load step " << _assembler.step.step + 1 << ", time step " << _assembler.step.substep + 1 << " [" << _assembler.step.currentTime << "s] finished.";
+		_assembler.step.substep++;
+		_assembler.step.iteration = 0;
 	}
-	finalizeLoadStep(step);
+	finalizeLoadStep();
 }

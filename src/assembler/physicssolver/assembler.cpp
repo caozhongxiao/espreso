@@ -1,20 +1,22 @@
 
 #include "assembler.h"
 
+#include "../step.h"
 #include "../instance.h"
-#include "../solution.h"
 #include "../physics/physics.h"
-#include "../../output/store.h"
 #include "../../linearsolver/linearsolver.h"
 
-#include "../../config/ecf/environment.h"
+#include "../../config/ecf/root.h"
 #include "../../solver/generic/SparseMatrix.h"
 #include "../../basis/logging/timeeval.h"
 #include "../../basis/logging/logging.h"
 #include "../../basis/utilities/utils.h"
-#include "../../mesh/structures/elementtypes.h"
+#include "../../mesh/mesh.h"
 
 #include "mpi.h"
+
+#include "../../output/result/resultstore.h"
+#include "../../output/result/visualization/distributedvtklegacy.h"
 
 using namespace espreso;
 
@@ -36,8 +38,8 @@ static std::string mNames(espreso::Matrices matrices, const std::string &prefix 
 	std::string(matrices & espreso::Matrices::dual        ? prefix + "Dual "        : "");
 }
 
-Assembler::Assembler(Instance &instance, Physics &physics, Mesh &mesh, Store &store, LinearSolver &linearSolver)
-: instance(instance), physics(physics), mesh(mesh), store(store), linearSolver(linearSolver), _timeStatistics(new TimeEval("Physics solver timing"))
+Assembler::Assembler(Instance &instance, Physics &physics, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver)
+: instance(instance), physics(physics), mesh(mesh), step(step), store(store), linearSolver(linearSolver), _timeStatistics(new TimeEval("Physics solver timing"))
 {
 	_timeStatistics->totalTime.startWithBarrier();
 }
@@ -50,29 +52,27 @@ Assembler::~Assembler()
 	}
 }
 
-void Assembler::preprocessData(const Step &step)
+void Assembler::preprocessData()
 {
 	timeWrapper("pre-process data", [&] () {
-		physics.preprocessData(step);
+		physics.preprocessData();
 	});
 }
 
-void Assembler::updateMatrices(const Step &step, Matrices matrices)
+void Assembler::updateStructuralMatrices(Matrices matrices)
 {
-	if (!matrices) {
-		return;
-	}
+	Matrices updated = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R);
 
-	Matrices structural = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R);
-
-	if (structural) {
-		timeWrapper("update " + mNames(structural), [&] () {
-			physics.updateMatrix(step, structural, instance.solutions);
+	if (updated) {
+		timeWrapper("update " + mNames(updated), [&] () {
+			physics.updateMatrix(updated);
 		});
 	}
+}
 
-	// TODO: create a function to update only B1 duplicity
-	if (matrices & (Matrices::B1 | Matrices::B1duplicity)) {
+void Assembler::updateGluingMatrices(Matrices matrices)
+{
+	if (matrices & Matrices::B1) {
 		timeWrapper("update " + mNames(Matrices::B1), [&] () {
 			// TODO: create update method
 			instance.B1.clear();
@@ -82,6 +82,7 @@ void Assembler::updateMatrices(const Step &step, Matrices matrices)
 			instance.B1clustersMap.clear();
 			for (size_t d = 0; d < instance.domains; d++) {
 				instance.B1[d].type = 'G';
+				instance.B1[d].cols = instance.domainDOFCount[d];
 				instance.B1c[d].clear();
 				instance.LB[d].clear();
 				instance.B1duplicity[d].clear();
@@ -90,29 +91,40 @@ void Assembler::updateMatrices(const Step &step, Matrices matrices)
 			}
 			instance.block.clear();
 			instance.block.resize(3, 0);
-			physics.assembleB1(step, linearSolver.applyB1LagrangeRedundancy(), linearSolver.glueDomainsByLagrangeMultipliers(), linearSolver.applyB1Scaling());
-
+			physics.assembleB1(linearSolver.applyB1LagrangeRedundancy(), linearSolver.glueDomainsByLagrangeMultipliers(), linearSolver.applyB1Scaling());
 		});
+
+		if (mesh.configuration.output.debug) {
+			VTKLegacyDebugInfo::dirichlet(mesh, instance);
+			VTKLegacyDebugInfo::gluing(mesh, instance);
+		}
+		return;
 	}
 
 	if (matrices & Matrices::B1c) {
 		timeWrapper("update " + mNames(Matrices::B1c), [&] () {
-			physics.updateDirichletInB1(step, linearSolver.applyB1LagrangeRedundancy());
+			physics.updateDirichletInB1(linearSolver.applyB1LagrangeRedundancy());
+		});
+	}
+
+	if (matrices & Matrices::B1duplicity) {
+		timeWrapper("update " + mNames(Matrices::B1duplicity), [&] () {
+			physics.updateDuplicity();
 		});
 	}
 }
 
-void Assembler::processSolution(const Step &step)
+
+void Assembler::processSolution()
 {
 	timeWrapper("post-processing", [&] () {
-		physics.processSolution(step);
+		physics.processSolution();
 	});
 	storeWrapper(mNames(Matrices::primal), Matrices::primal);
 }
 
-void Assembler::solve(const Step &step, Matrices updatedMatrices)
+void Assembler::solve(Matrices updatedMatrices)
 {
-	store.storeFETIData(step, instance);
 	Matrices solverMatrices = Matrices::K | Matrices::M | Matrices::f | Matrices::B1;
 	storeWrapper(mNames(solverMatrices), solverMatrices);
 
@@ -125,25 +137,23 @@ void Assembler::solve(const Step &step, Matrices updatedMatrices)
 	});
 }
 
-void Assembler::storeSolution(const Step &step)
+void Assembler::storeSolution()
 {
-	timeWrapper("store solution", [&] () {
-		std::vector<Solution*> solutions;
-		for (size_t i = 0; i < physics.solutionsIndicesToStore().size(); i++) {
-			solutions.push_back(instance.solutions[physics.solutionsIndicesToStore()[i]]);
+	if (store.storeStep(step)) {
+		if (store.isCollected()) {
+			mesh.gatherNodeData();
 		}
-		store.storeSolution(step, solutions, physics.propertiesToStore());
-	});
+		timeWrapper("store solution", [&] () {
+			store.updateSolution(step);
+		});
+	}
 }
 
-void Assembler::storeSubSolution(const Step &step)
+void Assembler::storeSubSolution()
 {
 	timeWrapper("store solution", [&] () {
-		std::vector<Solution*> solutions;
-		for (size_t i = 0; i < physics.solutionsIndicesToStore().size(); i++) {
-			solutions.push_back(instance.solutions[physics.solutionsIndicesToStore()[i]]);
-		}
-		store.storeSubSolution(step, solutions, {});
+		// TODO: MESH
+		// store.storeSubSolution(step, solutions, {});
 	});
 }
 
@@ -156,27 +166,7 @@ void Assembler::finalize()
 	_timeStatistics->printStatsMPI();
 }
 
-Solution* Assembler::addSolution(const std::string &name, ElementType eType)
-{
-	switch (eType) {
-	case ElementType::NODES:
-		instance.solutions.push_back(new Solution(mesh, name, eType, physics.pointDOFs()));
-		break;
-	case ElementType::EDGES:
-		instance.solutions.push_back(new Solution(mesh, name, eType, physics.edgeDOFs()));
-		break;
-	case ElementType::FACES:
-		instance.solutions.push_back(new Solution(mesh, name, eType, physics.faceDOFs()));
-		break;
-	case ElementType::ELEMENTS:
-		instance.solutions.push_back(new Solution(mesh, name, eType, physics.elementDOFs()));
-		break;
-	}
-
-	return instance.solutions.back();
-}
-
-void Assembler::keepK(const Step &step)
+void Assembler::keepK()
 {
 	timeWrapper("copy K to origK", [&] () {
 		#pragma omp parallel for
@@ -257,11 +247,11 @@ double Assembler::multiply(std::vector<std::vector<double> > &x, std::vector<std
 	return sum;
 }
 
-double Assembler::sumSquares(const Step &step, const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction, const std::string &description)
+double Assembler::sumSquares(const std::vector<std::vector<double> > &data, SumRestriction restriction, const std::string &description)
 {
 	double result;
 	timeWrapper(description, [&] () {
-		result = physics.sumSquares(data, operation, restriction, step.step);
+		result = physics.sumSquares(data, restriction);
 	});
 	return result;
 }
@@ -295,7 +285,7 @@ double Assembler::maxAbsValue(const std::vector<std::vector<double> > &v, const 
 	return gmax;
 }
 
-double Assembler::lineSearch(const Step &step, const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext)
+double Assembler::lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext)
 {
 	double alpha = 1;
 	timeWrapper("line search", [&] () {
@@ -325,7 +315,7 @@ double Assembler::lineSearch(const Step &step, const std::vector<std::vector<dou
 			sum(solution, 1, U, alpha, deltaU, "U = U + alpha * delta U (line search)");
 
 			solution.swap(instance.primalSolution);
-			physics.updateMatrix(step, Matrices::R, instance.solutions);
+			physics.updateMatrix(Matrices::R);
 			solution.swap(instance.primalSolution);
 
 			if (i == 0) {
@@ -491,6 +481,7 @@ template<typename TType>
 void storeData(TType &data, size_t domain, const std::string &name)
 {
 	std::ofstream os(Logging::prepareFile(domain, name));
+	os.precision(10);
 	os << data;
 	os.close();
 }

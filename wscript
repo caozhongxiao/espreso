@@ -36,7 +36,7 @@ solvers = [ "MKL", "PARDISO", "CUDA", "CUDA_7", "MIC", "MUMPS", "DISSECTION" ]
 
 third_party = [
     ("HYPRE", "multigrid external solver.", "string", "PATH", [ "INCLUDE", "LIBPATH" ]),
-    ("CATALYST", "Catalyst. Allows real-time visualization.", "string", "PATH", [ "INCLUDE", "LIBPATH" ]),
+    ("CATALYST", "Catalyst. Allows in situ visualization.", "string", "PATH", [ "INCLUDE", "LIBPATH" ]),
     ("MORTAR", "assembler for mortar interface.", "string", "PATH", [ "INCLUDE", "LIBPATH" ]),
     ("BEM4I", "assembler for boundary element discretization.", "string", "PATH", [ "PATH" ]),
 ]
@@ -101,14 +101,18 @@ def configure(ctx):
         ctx.check_header(header)
 
     # recurse to basic parts
-    ctx.recurse("src/config")
     ctx.recurse("src/basis")
+    ctx.recurse("src/config")
+    ctx.recurse("src/wrappers")
 
     # recurse to ESPRESO solver
     ctx.setenv("solver", ctx.env.derive());
     append_solver_attributes(ctx, compiler_attributes)
+    ctx.recurse("src/old/mesh")
+    ctx.recurse("src/old/oldevaluators")
     ctx.recurse("src/mesh")
     ctx.recurse("src/input")
+    ctx.recurse("src/old/input")
     ctx.recurse("src/solver")
     ctx.recurse("src/assembler")
 
@@ -118,12 +122,13 @@ def configure(ctx):
 
     check_environment(ctx)
 
-    ctx.setenv("gui", ctx.all_envs["espreso"].derive());
-    ctx.recurse("src/gui")
+    if not ctx.options.disable_gui:
+        ctx.setenv("gui", ctx.all_envs["espreso"].derive());
+        ctx.recurse("src/gui")
 
     optional_libraries = [
         (ctx.env.QT, "QT5", "GUI"),
-        (ctx.env.CATALYST, "Paraview Catalyst", "real-time visualization"),
+        (ctx.env.CATALYST, "Paraview Catalyst", "in situ visualization"),
         (ctx.env.HYPRE, "HYPRE", "multigrid linear solver"),
         (ctx.env.MORTAR, "MORTAR", "gluing of non-matching grids"),
         (ctx.env.BEM4I, "BEM4I", "boundary element discretization")
@@ -140,7 +145,7 @@ def configure(ctx):
 def build(ctx):
 
     ctx(
-        export_includes = "src/include tools/bem4i/src tools/ASYNC",
+        export_includes = "tools/bem4i/src tools/ASYNC",
         name            = "espreso_includes"
     )
 
@@ -152,10 +157,14 @@ def build(ctx):
 
     ctx.recurse("src/basis")
     ctx.recurse("src/config")
+    ctx.recurse("src/wrappers")
 
     ctx.env = ctx.all_envs["solver"]
+    ctx.recurse("src/old/mesh")
+    ctx.recurse("src/old/oldevaluators")
     ctx.recurse("src/mesh")
     ctx.recurse("src/input")
+    ctx.recurse("src/old/input")
     ctx.recurse("src/solver")
     ctx.recurse("src/assembler")
 
@@ -163,8 +172,10 @@ def build(ctx):
     ctx.recurse("src/output")
     ctx.recurse("src/app")
 
-    ctx.env = ctx.all_envs["gui"]
-    ctx.recurse("src/gui")
+    if ctx.env.QT:
+        print ctx.env
+        ctx.env = ctx.all_envs["gui"]
+        ctx.recurse("src/gui")
 
 def options(opt):
     opt.parser.formatter.max_help_position = 32
@@ -240,6 +251,13 @@ def options(opt):
         action="store_true",
         default=False,
         help="Build ESPRESO without thread support and optimizations"
+    )
+
+    system.add_option(
+        "--disable-gui",
+        action="store_true",
+        default=False,
+        help="Build ESPRESO without GUI"
     )
 
 

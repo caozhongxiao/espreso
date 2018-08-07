@@ -1,163 +1,67 @@
 
-#include <cstring>
-#include <fstream>
-
 #include "square4.h"
-#include "../line/line2.h"
+
+#include "../../../basis/containers/serializededata.h"
 #include "../../../basis/matrices/denseMatrix.h"
 
 using namespace espreso;
 
-std::vector<Property> Square4::_DOFElement;
-std::vector<Property> Square4::_DOFFace;
-std::vector<Property> Square4::_DOFEdge;
-std::vector<Property> Square4::_DOFPoint;
-std::vector<Property> Square4::_DOFMidPoint;
+Element Square4::fill(Element e, Element* begin)
+{
+	std::vector<Element*> edgepointers(4, begin + static_cast<int>(Element::CODE::LINE2));
 
-std::vector<std::vector<eslocal> > Square4::_edgesNodes = {
-	{ 0, 1 },
-	{ 1, 2 },
-	{ 2, 3 },
-	{ 3, 0 }
-};
+	std::vector<int> lines = {
+		0, 1,
+		1, 2,
+		2, 3,
+		3, 0
+	};
 
-static std::vector<DenseMatrix> get_dN(double CsQ_scale) {
-	std::vector<DenseMatrix> dN(
-		Square4GPCount,
-		DenseMatrix(2, Square4NodesCount)
-	);
+	std::vector<int> tringles = {
+		0, 1, 2,
+		0, 2, 3
+	};
+
+	e.edges = new serializededata<int, int>(2, lines);
+	e.edgepointers = new serializededata<int, Element*>(1, edgepointers);
+	e.faces = new serializededata<int, int>(2, lines);
+	e.facepointers = new serializededata<int, Element*>(1, edgepointers);
+	e.triangles = new serializededata<int, int>(3, tringles);
+
+	size_t GPCount = 4, nodeCount = 4;
+
+	e.N = new std::vector<DenseMatrix>(GPCount, DenseMatrix(1, nodeCount));
+	e.dN = new std::vector<DenseMatrix>(GPCount, DenseMatrix(2, nodeCount));
+	e.weighFactor = new std::vector<double>(GPCount, 1);
+
+	double CsQ_scale = 0.577350269189626;
 
 	std::vector<double> s = { -CsQ_scale,  CsQ_scale,  CsQ_scale, -CsQ_scale };
 	std::vector<double> t = { -CsQ_scale, -CsQ_scale,  CsQ_scale,  CsQ_scale };
-	for (unsigned int i = 0; i < Square4GPCount; i++) {
-		///dN contains [dNr, dNs, dNt]
-		DenseMatrix &m = dN[i];
 
+	for (unsigned int i = 0; i < GPCount; i++) {
+		(*e.N)[i](0, 0) = 0.25 * (1 - s[i]) * (1 - t[i]);
+		(*e.N)[i](0, 1) = 0.25 * (s[i] + 1) * (1 - t[i]);
+		(*e.N)[i](0, 2) = 0.25 * (s[i] + 1) * (t[i] + 1);
+		(*e.N)[i](0, 3) = 0.25 * (1 - s[i]) * (t[i] + 1);
+	}
+
+	for (unsigned int i = 0; i < GPCount; i++) {
 		// dNs - derivation of basis function
-		m(0, 0) = 0.25 * ( t[i] - 1);
-		m(0, 1) = 0.25 * (-t[i] + 1);
-		m(0, 2) = 0.25 * ( t[i] + 1);
-		m(0, 3) = 0.25 * (-t[i] - 1);
+		(*e.dN)[i](0, 0) = 0.25 * ( t[i] - 1);
+		(*e.dN)[i](0, 1) = 0.25 * (-t[i] + 1);
+		(*e.dN)[i](0, 2) = 0.25 * ( t[i] + 1);
+		(*e.dN)[i](0, 3) = 0.25 * (-t[i] - 1);
 
 		// dNt - derivation of basis function
-		m(1, 0) = 0.25 * ( s[i] - 1);
-		m(1, 1) = 0.25 * (-s[i] - 1);
-		m(1, 2) = 0.25 * ( s[i] + 1);
-		m(1, 3) = 0.25 * (-s[i] + 1);
-
-//		m(2, 0) = 0;
-//		m(2, 1) = 0;
-//		m(2, 2) = 0;
-//		m(2, 3) = 0;
+		(*e.dN)[i](1, 0) = 0.25 * ( s[i] - 1);
+		(*e.dN)[i](1, 1) = 0.25 * (-s[i] - 1);
+		(*e.dN)[i](1, 2) = 0.25 * ( s[i] + 1);
+		(*e.dN)[i](1, 3) = 0.25 * (-s[i] + 1);
 	}
 
-	return dN;
+	return e;
 }
 
-static std::vector<DenseMatrix> get_N(double CsQ_scale) {
-	std::vector<DenseMatrix> N(
-		Square4GPCount,
-		DenseMatrix(1, Square4NodesCount)
-	);
 
-	std::vector<double> s = { -CsQ_scale,  CsQ_scale,  CsQ_scale, -CsQ_scale };
-	std::vector<double> t = { -CsQ_scale, -CsQ_scale,  CsQ_scale,  CsQ_scale };
-	for (unsigned int i = 0; i < Square4GPCount; i++) {
-		// basis function
-		N[i](0, 0) = 0.25 * (1 - s[i]) * (1 - t[i]);
-		N[i](0, 1) = 0.25 * (s[i] + 1) * (1 - t[i]);
-		N[i](0, 2) = 0.25 * (s[i] + 1) * (t[i] + 1);
-		N[i](0, 3) = 0.25 * (1 - s[i]) * (t[i] + 1);
-	}
-
-	return N;
-}
-
-std::vector<DenseMatrix> Square4::_dN = get_dN(0.577350269189626);
-std::vector<DenseMatrix> Square4::_N = get_N(0.577350269189626);
-std::vector<double> Square4::_weighFactor(Square4GPCount, 1);
-
-std::vector<DenseMatrix> Square4::_v_dN = get_dN(1);
-std::vector<DenseMatrix> Square4::_v_N = get_N(1);
-std::vector<double> Square4::_v_weighFactor(Square4GPCount, 1);
-
-bool Square4::match(const eslocal *indices, eslocal n)
-{
-	if (n != 4) {
-		return false;
-	}
-
-	for (eslocal i = 0; i < Square4NodesCount - 1; i++) {
-		for (eslocal j = i + 1; j < Square4NodesCount; j++) {
-			if (Element::match(indices, i, j)) {
-				return false;
-			}
-		}
-	}
-
-	return true;
-}
-
-std::vector<eslocal> Square4::getNeighbours(size_t nodeIndex) const
-{
-	std::vector<eslocal> result(2);
-
-	result[0] = _indices[(nodeIndex + 1) % 4];
-	result[1] = _indices[(nodeIndex + 3) % 4];
-
-	return result;
-}
-
-std::vector<std::vector<eslocal> > Square4::triangularize() const
-{
-	std::vector<std::vector<eslocal> > triangles;
-
-	triangles.push_back({ _indices[0], _indices[1], _indices[2] });
-	triangles.push_back({ _indices[0], _indices[2], _indices[3] });
-
-	return triangles;
-}
-
-size_t Square4::fillEdges()
-{
-	eslocal line[Line2NodesCount];
-
-	if (_edges.size() == Square4EdgeCount) {
-		return Square4EdgeCount;
-	}
-	_edges.reserve(Square4EdgeCount);
-
-	size_t filled = _edges.size();
-
-	for (size_t e = 0 ; e < Square4EdgeCount; e++) {
-		for (size_t n = 0; n < Line2NodesCount; n++) {
-			line[n] = _indices[_edgesNodes[e][n]];
-		}
-		addUniqueEdge<Line2>(line, filled, Line2NodesCount);
-	}
-
-	return filled;
-}
-
-Square4::Square4(const eslocal *indices)
-{
-	memcpy(_indices, indices, Square4NodesCount * sizeof(eslocal));
-}
-
-Square4::Square4(const eslocal *indices, const eslocal *params)
-{
-	memcpy(_indices, indices, Square4NodesCount * sizeof(eslocal));
-	_params.insert(_params.end(), params, params + PARAMS_SIZE);
-}
-
-Square4::Square4(std::ifstream &is)
-{
-	eslocal params;
-	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * nodes());
-	is.read(reinterpret_cast<char *>(&params), sizeof(eslocal));
-	if (params) {
-		_params.resize(params);
-		is.read(reinterpret_cast<char *>(_params.data()), sizeof(eslocal) * params);
-	}
-}
 

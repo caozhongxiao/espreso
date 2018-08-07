@@ -14,7 +14,6 @@
 
 namespace espreso {
 
-size_t Test::outputLevel = 0;
 size_t Info::outputLevel = 0;
 size_t Info::testLevel = 0;
 size_t Measure::outputLevel = 0;
@@ -66,15 +65,6 @@ std::string Logging::prepareFile(size_t subdomain, const std::string &name)
 	std::stringstream ss;
 	ss << name << subdomain;
 	return prepareFile(ss.str());
-}
-
-Test::~Test()
-{
-	if (!error) {
-		return;
-	}
-
-	ESINFO(ERROR) << "ESPRESO INTERNAL TEST FAILED: "<< os.str();
 }
 
 

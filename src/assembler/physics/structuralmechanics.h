@@ -2,8 +2,8 @@
 #ifndef SRC_ASSEMBLER_PHYSICS_STRUCTURALMECHANICS_H_
 #define SRC_ASSEMBLER_PHYSICS_STRUCTURALMECHANICS_H_
 
+#include "../../basis/containers/point.h"
 #include "physics.h"
-#include "../../basis/point/point.h"
 
 namespace espreso {
 
@@ -12,43 +12,18 @@ struct ResultsSelectionConfiguration;
 
 struct StructuralMechanics: public virtual Physics
 {
-	StructuralMechanics(const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
+	StructuralMechanics(const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, int DOFs);
 
-	virtual std::vector<size_t> solutionsIndicesToStore() const;
-
-	virtual MatrixType getMatrixType(const Step &step, size_t domain) const;
-	virtual bool isMatrixTimeDependent(const Step &step) const;
-	virtual bool isMatrixTemperatureDependent(const Step &step) const;
+	virtual MatrixType getMatrixType(size_t domain) const;
 	virtual void prepare();
-	virtual void preprocessData(const Step &step);
-
-	const std::vector<Property>& edgeDOFs() const
-	{
-		static std::vector<Property> edgeDOFs = { };
-		return edgeDOFs;
-	}
-	const std::vector<Property>& faceDOFs() const
-	{
-		static std::vector<Property> faceDOFs = { };
-		return faceDOFs;
-	}
-	const std::vector<Property>& elementDOFs() const
-	{
-		static std::vector<Property> elementDOFs = { };
-		return elementDOFs;
-	}
+	virtual void preprocessData();
+	virtual void setDirichlet();
 
 protected:
-	enum SolutionIndex: size_t {
-		DISPLACEMENT = 0,
-
-		SIZE         = 1
-	};
-
-	static size_t offset;
-
 	const StructuralMechanicsConfiguration &_configuration;
 	const ResultsSelectionConfiguration &_propertiesConfiguration;
+
+	NodeData *_displacement;
 
 	// to handle with non-continuous partition
 	std::vector<Point> _cCenter, _cNorm;

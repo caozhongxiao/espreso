@@ -16,7 +16,11 @@ enum class INPUT_FORMAT {
 struct InputConfiguration: public ECFObject {
 
 	std::string path;
-	size_t domains;
+
+	bool keep_material_sets;
+	bool convert_database;
+
+	double scale_factor;
 
 	InputConfiguration();
 };

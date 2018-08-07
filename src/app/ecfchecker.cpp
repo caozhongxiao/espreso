@@ -1,19 +1,19 @@
 
 #include "mpi.h"
 
-#include "../config/ecf/ecf.h"
 #include "../config/reader/reader.h"
 #include "../basis/logging/logging.h"
 
 #include <iostream>
 #include <fstream>
+#include "../config/ecf/root.h"
 
 using namespace espreso;
 
 int main(int argc, char **argv)
 {
 	MPI_Init(&argc, &argv);
-	ECFConfiguration ecf;
+	ECFRoot ecf;
 	ECFRedParameters redParameters = ECFReader::read(ecf, &argc, &argv, ecf.default_args, ecf.variables);
 	ECFReader::set(ecf.environment, ecf.output);
 
@@ -118,11 +118,6 @@ int main(int argc, char **argv)
 	redParameters.parameters.push_back(ecf.output.getParameter(&ecf.output.store_results));
 	redParameters.parameters.push_back(ecf.output.getParameter(&ecf.output.results_selection));
 	eachProperties(ecf.output.results_selection);
-	redParameters.parameters.push_back(ecf.output.getParameter(&ecf.output.collected));
-	redParameters.parameters.push_back(ecf.output.getParameter(&ecf.output.separate_bodies));
-	redParameters.parameters.push_back(ecf.output.getParameter(&ecf.output.separate_materials));
-	redParameters.parameters.push_back(ecf.output.getParameter(&ecf.output.domain_shrink_ratio));
-	redParameters.parameters.push_back(ecf.output.getParameter(&ecf.output.cluster_shrink_ratio));
 
 	std::ofstream os(ECFReader::configurationFile);
 	ECFReader::store(ecf, os, true, false, redParameters);

@@ -16,36 +16,32 @@ struct LinearSolver;
 class TimeEval;
 class TimeEvent;
 class SparseMatrix;
-class Solution;
-class Store;
+class ResultStore;
 enum Matrices: int;
-enum class ElementType;
-enum class SumOperation;
 enum class SumRestriction;
 
 class Assembler {
 
 public:
-	Assembler(Instance &instance, Physics &physics, Mesh &mesh, Store &store, LinearSolver &linearSolver);
+	Assembler(Instance &instance, Physics &physics, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver);
 	~Assembler();
 
-	void preprocessData(const Step &step);
-	void updateMatrices(const Step &step, Matrices matrices);
-	void processSolution(const Step &step);
+	void preprocessData();
+	void updateStructuralMatrices(Matrices matrices);
+	void updateGluingMatrices(Matrices matrices);
+	void processSolution();
 
 	void setRegularizationCallback();
 	void setRegularizationFromOrigKCallback();
 	void setEmptyRegularizationCallback();
 	void setB0Callback();
 
-	void solve(const Step &step, Matrices updatedMatrices);
+	void solve(Matrices updatedMatrices);
 
-	void storeSolution(const Step &step);
-	void storeSubSolution(const Step &step);
+	void storeSolution();
+	void storeSubSolution();
 
 	void finalize();
-
-	Solution* addSolution(const std::string &name, ElementType eType);
 
 	/// z = a * x + b + y
 	void sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::string &description);
@@ -59,16 +55,17 @@ public:
 	/// a = x * y
 	double multiply(std::vector<std::vector<double> > &x, std::vector<std::vector<double> > &y, const std::string &description);
 
-	double sumSquares(const Step &step, const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction, const std::string &description);
+	double sumSquares(const std::vector<std::vector<double> > &data, SumRestriction restriction, const std::string &description);
 	void addToDirichletInB1(double a, const std::vector<std::vector<double> > &x);
 	double maxAbsValue(const std::vector<std::vector<double> > &v, const std::string &description);
-	double lineSearch(const Step &step, const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext);
-	void keepK(const Step &step);
+	double lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext);
+	void keepK();
 
 	Instance &instance;
 	Physics &physics;
 	Mesh &mesh;
-	Store &store;
+	Step &step;
+	ResultStore &store;
 	LinearSolver &linearSolver;
 
 protected:

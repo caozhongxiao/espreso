@@ -7,7 +7,7 @@
 using namespace espreso;
 
 TensorConfiguration::TensorConfiguration(size_t size)
-: size(size), values(size * size)
+: size(size), values(size * size, ECFExpression(ECFMetaData().getmaterialvariables()))
 {
 
 }

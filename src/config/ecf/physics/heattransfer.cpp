@@ -3,6 +3,16 @@
 #include "heattransfer.h"
 
 espreso::ConvectionConfiguration::ConvectionConfiguration()
+: heat_transfer_coefficient(ECFMetaData::getboundaryconditionvariables()),
+  external_temperature(ECFMetaData::getboundaryconditionvariables()),
+  wall_height(ECFMetaData::getboundaryconditionvariables()),
+  tilt_angle(ECFMetaData::getboundaryconditionvariables()),
+  diameter(ECFMetaData::getboundaryconditionvariables()),
+  plate_length(ECFMetaData::getboundaryconditionvariables()),
+  fluid_velocity(ECFMetaData::getboundaryconditionvariables()),
+  plate_distance(ECFMetaData::getboundaryconditionvariables()),
+  length(ECFMetaData::getboundaryconditionvariables()),
+  absolute_pressure(ECFMetaData::getboundaryconditionvariables())
 {
 	type = TYPE::USER;
 	REGISTER(type, ECFMetaData()
@@ -38,7 +48,6 @@ espreso::ConvectionConfiguration::ConvectionConfiguration()
 			.addoption(ECFOption().setname("ENGINE_OIL").setdescription("Engine oil."))
 			.addoption(ECFOption().setname("TRANSFORMER_OIL").setdescription("Tranformer oil.")));
 
-	heat_transfer_coefficient = external_temperature = "0";
 	REGISTER(heat_transfer_coefficient, ECFMetaData()
 			.setdescription({ "Heat transfer coefficient." })
 			.setdatatype({ ECFDataType::EXPRESSION }));
@@ -46,7 +55,6 @@ espreso::ConvectionConfiguration::ConvectionConfiguration()
 			.setdescription({ "External temperature." })
 			.setdatatype({ ECFDataType::EXPRESSION }));
 
-	wall_height = tilt_angle = diameter = plate_length = fluid_velocity = plate_distance = length = absolute_pressure = "0";
 	REGISTER(wall_height, ECFMetaData()
 			.setdescription({ "Wall height." })
 			.setdatatype({ ECFDataType::EXPRESSION }));
@@ -74,8 +82,9 @@ espreso::ConvectionConfiguration::ConvectionConfiguration()
 }
 
 espreso::RadiationConfiguration::RadiationConfiguration()
+: emissivity(ECFMetaData::getboundaryconditionvariables()),
+  external_temperature(ECFMetaData::getboundaryconditionvariables())
 {
-	emissivity = external_temperature = "0";
 	REGISTER(emissivity, ECFMetaData()
 			.setdescription({ "Emissivity." })
 			.setdatatype({ ECFDataType::EXPRESSION }));
@@ -89,32 +98,38 @@ espreso::HeatTransferLoadStepConfiguration::HeatTransferLoadStepConfiguration(DI
 {
 	REGISTER(temperature, ECFMetaData()
 			.setdescription({ "The name of a region.", "Temperature of a given region." })
-			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "MY_REGION", "273.15" }));
+			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
+			.setpattern({ "MY_REGION", "273.15" }),
+			ECFMetaData::getboundaryconditionvariables());
 	REGISTER(heat_source, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat source of a given region." })
-			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "MY_REGION", "273.15" }));
+			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
+			.setpattern({ "MY_REGION", "273.15" }),
+			ECFMetaData::getboundaryconditionvariables());
 	REGISTER(translation_motions, ECFMetaData()
 			.setdescription({ "The name of a region.", "Translation motion of a given region." })
-			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "MY_REGION", dimension == DIMENSION::D2 ? "X 0, Y 0" : "X 0, Y 0, Z 0" }));
+			.setdatatype({ ECFDataType::ELEMENTS_REGION })
+			.setpattern({ "MY_REGION" }),
+			dimension, ECFMetaData::getboundaryconditionvariables(), "0");
+
 	REGISTER(heat_flux, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat flux on a given region." })
-			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "MY_REGION", "500" }));
+			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
+			.setpattern({ "MY_REGION", "500" }),
+			ECFMetaData::getboundaryconditionvariables());
 	REGISTER(heat_flow, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat flow on a given region." })
-			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "MY_REGION", "500" }));
+			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
+			.setpattern({ "MY_REGION", "500" }),
+			ECFMetaData::getboundaryconditionvariables());
 
 	REGISTER(convection, ECFMetaData()
 			.setdescription({ "The name of a region.", "Convection on a given region." })
-			.setdatatype({ ECFDataType::REGION })
+			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION" }));
 	REGISTER(diffuse_radiation, ECFMetaData()
 			.setdescription({ "The name of a region.", "Radiation on a given region." })
-			.setdatatype({ ECFDataType::REGION })
+			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION" }));
 }
 
@@ -126,7 +141,7 @@ espreso::HeatTransferConfiguration::HeatTransferConfiguration(DIMENSION dimensio
 			ECFMetaData()
 				.setdescription({ "The name of a material.", "Material description." })
 				.setdatatype({ ECFDataType::STRING })
-				.setpattern({ "MY_MATERIAL" }),
+                .setpattern({ "MY_MATERIAL" }),
 			dimension, MaterialConfiguration::PHYSICAL_MODEL::THERMAL);
 	moveLastBefore(PNAME(material_set));
 
@@ -141,6 +156,16 @@ espreso::HeatTransferConfiguration::HeatTransferConfiguration(DIMENSION dimensio
 	REGISTER(sigma, ECFMetaData()
 			.setdescription({ "Inconsistent stabilization parameter." })
 			.setdatatype({ ECFDataType::FLOAT }));
+
+	init_temp_respect_bc = true;
+	REGISTER(init_temp_respect_bc, ECFMetaData()
+			.setdescription({ "Initial temperature is set according to boundary condition." })
+			.setdatatype({ ECFDataType::BOOL }));
+
+	diffusion_split = false;
+	REGISTER(diffusion_split, ECFMetaData()
+			.setdescription({ "Turn on to fix temperature shock." })
+			.setdatatype({ ECFDataType::BOOL }));
 
 	REGISTER(
 			load_steps_settings,

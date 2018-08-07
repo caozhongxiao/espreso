@@ -3,84 +3,10 @@
 
 #include "../basis/logging/logging.h"
 #include "../basis/utilities/parser.h"
-#include "../basis/evaluators/evaluator.h"
-
 #include <iostream>
 #include <algorithm>
 
 using namespace espreso;
-
-ECFExpression::ECFExpression()
-: evaluator(NULL)
-{
-
-}
-
-ECFExpression::~ECFExpression()
-{
-	if (evaluator) {
-		delete evaluator;
-	}
-}
-
-ECFExpression::ECFExpression(const ECFExpression &other)
-{
-	value = other.value;
-	if (other.evaluator != NULL) {
-		evaluator = other.evaluator->copy();
-	}
-}
-
-ECFExpression& ECFExpression::operator=(const ECFExpression &other)
-{
-	if (this != &other) {
-		value = other.value;
-		if (evaluator != NULL) {
-			delete evaluator;
-			evaluator = NULL;
-		}
-		if (other.evaluator != NULL) {
-			evaluator = other.evaluator->copy();
-		}
-	}
-	return *this;
-}
-
-bool ECFExpression::createEvaluator(const std::vector<std::string> &variables)
-{
-	if (evaluator != NULL) {
-		delete evaluator;
-	}
-	if (StringCompare::contains(this->value, { "TABULAR" })) {
-		std::string value = Parser::strip(this->value.substr(this->value.find_first_of("[")));
-		value = value.substr(1, value.size() - 3);
-		std::vector<std::string> lines = Parser::split(value, ";");
-		std::vector<std::pair<double, double> > table;
-
-		for (size_t i = 0; i < lines.size(); i++) {
-			if (lines[i].size() == 0) {
-				continue;
-			}
-			std::vector<std::string> line = Parser::split(lines[i], ",");
-			if (line.size() != 2) {
-				ESINFO(GLOBAL_ERROR) << "Invalid TABULAR data: " << value;
-			}
-			table.push_back(std::make_pair(std::stod(line[0]), std::stod(line[1])));
-		}
-		evaluator = new TableInterpolationEvaluator(table);
-		return true;
-	}
-	if (Expression::isValid(this->value, variables)) {
-		evaluator = new ExpressionEvaluator(this->value, variables);
-		return true;
-	}
-	return false;
-}
-
-double ECFExpression::evaluate(const Point &p, double time, double temperature, double pressure, double velocity) const
-{
-	return evaluator->evaluate(p, time, temperature, pressure, velocity);
-}
 
 void ECFMetaData::checkdescription(const std::string &name, size_t size) const
 {
@@ -114,30 +40,66 @@ static std::vector<TType> getsuffix(size_t start, const std::vector<TType> &data
 
 ECFMetaData ECFMetaData::suffix(size_t start) const
 {
-	return ECFMetaData()
-			.setdescription(getsuffix(start, description))
-			.setdatatype(getsuffix(start, datatype))
-			.setpattern(getsuffix(start, pattern));
+	ECFMetaData ret(*this);
+	ret.setdescription(getsuffix(start, description));
+	ret.setdatatype(getsuffix(start, datatype));
+	ret.setpattern(getsuffix(start, pattern));
+	ret.tensor = NULL;
+	ret.regionMap = NULL;
+	return ret;
 }
 
 bool ECFParameter::setValue(const std::string &value)
 {
 	if (_setValue(value)) {
 		for (size_t i = 0; i < _setValueListeners.size(); i++) {
-			_setValueListeners[i]();
+			_setValueListeners[i](value);
 		}
 		return true;
 	}
 	return false;
 }
 
-void ECFParameter::addListener(Event event, std::function<void()> listener)
+ECFParameter* ECFParameter::_triggerParameterGet(ECFParameter* parameter)
+{
+	if (parameter != NULL) {
+		for (size_t i = 0; i < _parameterGetListeners.size(); i++) {
+			_parameterGetListeners[i](parameter->name);
+		}
+	}
+	return parameter;
+}
+
+ECFParameter* ECFParameter::getParameter(const std::string &name)
+{
+	return _triggerParameterGet(_getParameter(name));
+}
+
+ECFParameter* ECFParameter::getParameter(const char* name)
+{
+	return _triggerParameterGet(_getParameter(std::string(name)));
+}
+
+ECFParameter* ECFParameter::getParameter(const void* data)
+{
+	return _triggerParameterGet(_getParameter(data));
+}
+
+void ECFParameter::addListener(Event event, std::function<void(const std::string &value)> listener)
 {
 	switch (event) {
 	case Event::VALUE_SET:
 		_setValueListeners.push_back(listener);
 		break;
+	case Event::PARAMETER_GET:
+		_parameterGetListeners.push_back(listener);
 	}
+}
+
+ECFParameter* ECFParameter::registerAdditionalParameter(ECFParameter* parameter)
+{
+	ESINFO(ERROR) << "ESPRESO internal error: parameter '" << name << "' cannot have additional parameters.";
+	return NULL;
 }
 
 std::string ECFObject::getValue() const
@@ -152,7 +114,7 @@ bool ECFObject::_setValue(const std::string &value)
 	return false;
 }
 
-ECFParameter* ECFObject::getParameter(const std::string &name)
+ECFParameter* ECFObject::_getParameter(const std::string &name)
 {
 	for (size_t i = 0; i < parameters.size(); i++) {
 		if (StringCompare::caseInsensitiveEq(name, parameters[i]->name)) {
@@ -162,12 +124,7 @@ ECFParameter* ECFObject::getParameter(const std::string &name)
 	return NULL;
 }
 
-ECFParameter* ECFObject::getParameter(const char* name)
-{
-	return getParameter(std::string(name));
-}
-
-ECFParameter* ECFObject::getParameter(const void* data)
+ECFParameter* ECFObject::_getParameter(const void* data)
 {
 	for (size_t i = 0; i < parameters.size(); i++) {
 		if (data == parameters[i]->data()) {
@@ -179,10 +136,16 @@ ECFParameter* ECFObject::getParameter(const void* data)
 
 ECFParameter* ECFObject::getWithError(const std::string &name)
 {
-	if (getParameter(name) == NULL) {
+	if (_getParameter(name) == NULL) {
 		ESINFO(GLOBAL_ERROR) << "ECF ERROR: Object " << this->name << " has no parameter '" << name << "'";
 	}
-	return getParameter(name);
+	return _getParameter(name);
+}
+
+ECFParameter* ECFObject::registerAdditionalParameter(ECFParameter* parameter)
+{
+	parameters.push_back(parameter);
+	return parameter;
 }
 
 void ECFObject::dropParameter(ECFParameter *parameter)
@@ -194,6 +157,11 @@ void ECFObject::dropParameter(ECFParameter *parameter)
 		}
 	}
 	ESINFO(GLOBAL_ERROR) << "ECF ERROR: Object cannot drop parameter '" << parameter->name << "'";
+}
+
+void ECFObject::dropAllParameters()
+{
+    parameters.clear();
 }
 
 ECFParameter* ECFObject::addSeparator()
@@ -240,6 +208,7 @@ void ECFObject::forEachParameters(std::function<void(const ECFParameter*)> fnc, 
 			continue;
 		}
 		if (parameters[i]->isObject()) {
+			fnc(parameters[i]);
 			dynamic_cast<const ECFObject*>(parameters[i])->forEachParameters(fnc, onlyAllowed);
 		}
 		if (parameters[i]->isValue()) {

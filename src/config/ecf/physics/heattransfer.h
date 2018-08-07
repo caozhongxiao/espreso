@@ -41,22 +41,24 @@ struct ConvectionConfiguration: public ECFObject {
 	VARIANT variant;
 	FLUID fluid;
 
-	std::string heat_transfer_coefficient, external_temperature;
-	std::string wall_height, tilt_angle, diameter, plate_length, fluid_velocity, plate_distance, length, absolute_pressure;
+	ECFExpression heat_transfer_coefficient, external_temperature;
+	ECFExpression wall_height, tilt_angle, diameter, plate_length, fluid_velocity, plate_distance, length, absolute_pressure;
 
 	ConvectionConfiguration();
 };
 
 struct RadiationConfiguration: public ECFObject {
 
-	std::string emissivity, external_temperature;
+	ECFExpression emissivity, external_temperature;
 
 	RadiationConfiguration();
 };
 
 struct HeatTransferLoadStepConfiguration: public LoadStepConfiguration {
 
-	std::map<std::string, std::string> temperature, heat_source, translation_motions, heat_flux, heat_flow, thickness;
+	RegionMap<ECFExpression> temperature;
+	std::map<std::string, ECFExpression> heat_source, heat_flux, heat_flow, thickness;
+	std::map<std::string, ECFExpressionVector> translation_motions;
 	std::map<std::string, ConvectionConfiguration> convection;
 	std::map<std::string, RadiationConfiguration> diffuse_radiation;
 
@@ -72,6 +74,7 @@ struct HeatTransferConfiguration: public PhysicsConfiguration {
 
 	STABILIZATION stabilization;
 	double sigma;
+	bool init_temp_respect_bc, diffusion_split;
 
 	std::map<size_t, HeatTransferLoadStepConfiguration> load_steps_settings;
 

@@ -19,10 +19,9 @@ enum class DISCRETIZATION {
 		BEM
 };
 
-struct MortarConfiguration: public ECFObject {
-	std::string master, slave;
-
-	MortarConfiguration();
+enum class ASSEMBLER {
+	ELEMENTS,
+	FACES
 };
 
 struct PhysicsConfiguration: public ECFObject {
@@ -35,16 +34,17 @@ struct PhysicsConfiguration: public ECFObject {
 	size_t load_steps;
 
 	INTERPOLATION interpolation;
-	DISCRETIZATION discretization;
+	ASSEMBLER assembler;
+	std::map<std::string, DISCRETIZATION> discretization;
 	DIMENSION dimension;
 	MaterialConfiguration::PHYSICAL_MODEL physical_model;
 
 	std::map<std::string, MaterialConfiguration> materials;
 	std::map<std::string, std::string> material_set;
 
-	std::map<std::string, std::string> initial_temperature, thickness;
+	std::map<std::string, ECFExpression> initial_temperature, thickness;
 
-	MortarConfiguration mortar;
+	bool contact_interfaces;
 
 	PhysicsConfiguration(DIMENSION dimension, MaterialConfiguration::PHYSICAL_MODEL physicalModel);
 };

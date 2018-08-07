@@ -1,0 +1,6 @@
+
+         ;         ;         ;    ALL_NODES   ;    ALL_NODES   ;    ALL_NODES   ;
+    step ; substep ;    time ;  DISPLACEMENT  ;  DISPLACEMENT  ;  DISPLACEMENT  ;
+         ;         ;         ;      <MIN>     ;      <MAX>     ;    <AVERAGE>   ;
+
+       1 ;       1 ;  1.0000 ;  2.016549e-08  ;  1.801382e-01  ;  1.130902e-01  ;

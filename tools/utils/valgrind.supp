@@ -200,3 +200,66 @@
    ...
 }
 
+{
+   MPI init thread
+   Memcheck:Cond
+   ...
+   fun:PMPI_Init_thread
+   ...
+}
+
+{
+   MPI IO
+   Memcheck:Cond
+   fun:__I_MPI___intel_sse2_strncmp
+   ...
+}
+
+{
+   MPI IO
+   Memcheck:Cond
+   fun:__I_MPI___intel_sse2_strchr
+   ...
+}
+
+{
+   MPI IO
+   Memcheck:Cond
+   fun:__I_MPI___intel_sse2_strrchr
+   ...
+}
+
+{
+   MPI IO
+   Memcheck:Value8
+   fun:ADIO_FileSysType_parentdir
+}
+
+{
+   MPI IO
+   Memcheck:Cond
+   fun:ADIO_FileSysType_parentdir
+   ...
+}
+
+{
+   MPI IO
+   Memcheck:Cond
+   fun:ADIOI_Shfp_fname
+   ...
+}
+
+{
+   MPI IO
+   Memcheck:Value8
+   fun:ADIOI_Strncpy
+   ...
+}
+
+{
+   MPI IO
+   Memcheck:Cond
+   fun:ADIOI_Strncpy
+   ...
+}
+

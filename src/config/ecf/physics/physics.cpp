@@ -2,17 +2,6 @@
 #include "physics.h"
 #include "../../configuration.hpp"
 
-espreso::MortarConfiguration::MortarConfiguration()
-{
-	REGISTER(master, ECFMetaData()
-			.setdescription({ "Master region." })
-			.setdatatype({ ECFDataType::REGION }));
-
-	REGISTER(slave, ECFMetaData()
-			.setdescription({ "Slave region." })
-			.setdatatype({ ECFDataType::REGION }));
-}
-
 espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension, MaterialConfiguration::PHYSICAL_MODEL physicalModel)
 : dimension(dimension), physical_model(physicalModel)
 {
@@ -30,10 +19,17 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension, Materia
 			.addoption(ECFOption().setname("LINEAR").setdescription("Linear interpolation."))
 			.addoption(ECFOption().setname("QUADRATIC").setdescription("Quadratic interpolation.")));
 
-	discretization = DISCRETIZATION::FEM;
+	assembler = ASSEMBLER::ELEMENTS;
+	REGISTER(assembler, ECFMetaData()
+			.setdescription({ "The type of assembler." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("ELEMENTS").setdescription("Element based."))
+			.addoption(ECFOption().setname("FACES").setdescription("Face based.")));
+
 	REGISTER(discretization, ECFMetaData()
-			.setdescription({ "Discretization of stiffness matrices." })
-		.setdatatype({ ECFDataType::OPTION })
+			.setdescription({ "Discretization settings for regions.", "Discretization of stiffness matrices." })
+		.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::OPTION })
+		.setpattern({ "MY_REGION", "FEM" })
 		.addoption(ECFOption().setname("FEM").setdescription("Finite elements."))
 		.addoption(ECFOption().setname("BEM").setdescription("Boundary elements.")));
 
@@ -41,27 +37,31 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension, Materia
 
 	REGISTER(material_set, ECFMetaData()
 			.setdescription({ "The name of a region.", "The name of a material." })
-			.setdatatype({ ECFDataType::REGION, ECFDataType::MATERIAL })
+			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::MATERIAL })
 			.setpattern({ "MY_REGION", "MY_MATERIAL" }));
 
 	addSeparator();
 
 	REGISTER(initial_temperature, ECFMetaData()
 			.setdescription({ "The name of a region.", "Initial temperature of a given region." })
-			.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "MY_REGION", "273.15" }));
+			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
+			.setpattern({ "MY_REGION", "273.15" }),
+			ECFMetaData().getboundaryconditionvariables(), "273.15");
 
 	if (dimension == DIMENSION::D2) {
 		REGISTER(thickness, ECFMetaData()
 				.setdescription({ "The name of a region.", "Thickness of a given region." })
-				.setdatatype({ ECFDataType::REGION, ECFDataType::EXPRESSION })
-				.setpattern({ "MY_REGION", "1" }));
+				.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
+				.setpattern({ "MY_REGION", "1" }),
+				ECFMetaData().getboundaryconditionvariables(), "1");
 	}
 
 	addSeparator();
 
-	REGISTER(mortar, ECFMetaData()
-			.setdescription({ "Mortar interface." }));
+	contact_interfaces = false;
+	REGISTER(contact_interfaces, ECFMetaData()
+			.setdescription({ "Check contacts." })
+			.setdatatype({ ECFDataType::BOOL }));
 }
 
 

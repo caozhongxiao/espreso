@@ -7,18 +7,15 @@
 #include "../../assembler/physicssolver/timestep/linear.h"
 #include "../../assembler/physicssolver/loadstep/steadystate.h"
 #include "../../assembler/step.h"
-#include "../../assembler/solution.h"
 
-#include "../../output/resultstorelist.h"
-
-#include "../../config/ecf/ecf.h"
 #include "../../input/api/api.h"
 
-#include "../../mesh/structures/mesh.h"
+#include "../../mesh/mesh.h"
+#include "../../output/result/resultstore.h"
 #include "../../solver/generic/FETISolver.h"
 
 
-espreso::ECFConfiguration* espreso::DataHolder::configuration = NULL;
+espreso::ECFRoot* espreso::DataHolder::configuration = NULL;
 std::list<FETI4IStructMatrix*> espreso::DataHolder::matrices;
 std::list<FETI4IStructInstance*> espreso::DataHolder::instances;
 espreso::TimeEval espreso::DataHolder::timeStatistics("API total time");
@@ -28,8 +25,9 @@ using namespace espreso;
 FETI4IStructInstance::FETI4IStructInstance(FETI4IStructMatrix &matrix, eslocal *l2g, size_t size)
 : instance(NULL), physics(NULL), linearSolver(NULL), assembler(NULL), timeStepSolver(NULL), loadStepSolver(NULL)
 {
-	store = new ResultStoreList(configuration.output);
-	mesh = new APIMesh(l2g, size);
+	store = new ResultStore();
+	// TODO: MESH
+	//mesh = new APIMesh(l2g, size);
 }
 
 FETI4IStructInstance::~FETI4IStructInstance()
@@ -37,6 +35,7 @@ FETI4IStructInstance::~FETI4IStructInstance()
 	if (instance != NULL) { delete instance; }
 	if (physics != NULL) { delete physics; }
 	if (linearSolver != NULL) { delete linearSolver; }
+	if (step != NULL) { delete step; }
 	if (assembler != NULL) { delete assembler; }
 	if (timeStepSolver != NULL) { delete timeStepSolver; }
 	if (loadStepSolver != NULL) { delete loadStepSolver; }
@@ -48,7 +47,7 @@ FETI4IStructInstance::~FETI4IStructInstance()
 static void checkConfiguration()
 {
 	if (espreso::DataHolder::configuration == NULL) {
-		espreso::DataHolder::configuration = new ECFConfiguration();
+		espreso::DataHolder::configuration = new ECFRoot();
 		std::ifstream is("espreso.ecf");
 		if (is.good()) {
 			espreso::ECFReader::read(*espreso::DataHolder::configuration, "espreso.ecf", espreso::DataHolder::configuration->default_args, espreso::DataHolder::configuration->variables);
@@ -60,7 +59,7 @@ static void checkConfiguration()
 void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 {
 	checkConfiguration();
-	ECFConfiguration &ecf = *espreso::DataHolder::configuration;
+	ECFRoot &ecf = *espreso::DataHolder::configuration;
 
 	options[FETI4I_SUBDOMAINS] = ecf.feti4ilibrary.domains;
 
@@ -79,11 +78,11 @@ void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 void FETI4ISetDefaultRealOptions(FETI4IReal* options)
 {
 	checkConfiguration();
-	ECFConfiguration &ecf = *espreso::DataHolder::configuration;
+	ECFRoot &ecf = *espreso::DataHolder::configuration;
 	options[FETI4I_PRECISION] = ecf.feti4ilibrary.solver.precision;
 }
 
-static void FETI4ISetIntegerOptions(ECFConfiguration &configuration, FETI4IInt* options)
+static void FETI4ISetIntegerOptions(ECFRoot &configuration, FETI4IInt* options)
 {
 	if (!configuration.feti4ilibrary.getParameter(&configuration.feti4ilibrary.domains)->setValue(std::to_string(options[FETI4I_SUBDOMAINS]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'SUBDOMAINS' to " << options[FETI4I_SUBDOMAINS];
@@ -119,7 +118,7 @@ static void FETI4ISetIntegerOptions(ECFConfiguration &configuration, FETI4IInt* 
 	configuration.feti4ilibrary.solver.regularization = FETI_REGULARIZATION::ALGEBRAIC;
 }
 
-static void FETI4ISetRealOptions(espreso::ECFConfiguration &configuration, FETI4IReal* options)
+static void FETI4ISetRealOptions(espreso::ECFRoot &configuration, FETI4IReal* options)
 {
 	configuration.feti4ilibrary.solver.precision = options[FETI4I_PRECISION];
 }
@@ -203,25 +202,17 @@ void FETI4ICreateInstance(
 	DataHolder::instances.back()->instance = new Instance(*DataHolder::instances.back()->mesh);
 	DataHolder::instances.back()->physics = new Precomputed(DataHolder::instances.back()->mesh, DataHolder::instances.back()->instance, (espreso::MatrixType)matrix->type, rhs, size);
 	DataHolder::instances.back()->linearSolver = new FETISolver(DataHolder::instances.back()->instance, DataHolder::instances.back()->configuration.feti4ilibrary.solver);
+	DataHolder::instances.back()->step = new Step();
 	DataHolder::instances.back()->assembler = new Assembler(
 			*DataHolder::instances.back()->instance,
 			*DataHolder::instances.back()->physics,
 			*DataHolder::instances.back()->mesh,
+			*DataHolder::instances.back()->step,
 			*DataHolder::instances.back()->store,
 			*DataHolder::instances.back()->linearSolver);
 	DataHolder::instances.back()->timeStepSolver = new LinearTimeStep(*DataHolder::instances.back()->assembler);
 	DataHolder::instances.back()->loadStepSolver = new SteadyStateSolver(*DataHolder::instances.back()->timeStepSolver, 1);
-
-	switch (DataHolder::instances.back()->configuration.feti4ilibrary.solver.method) {
-	case FETI_METHOD::TOTAL_FETI:
-		DataHolder::instances.back()->physics->prepare();
-		break;
-	case FETI_METHOD::HYBRID_FETI:
-		DataHolder::instances.back()->physics->prepareHybridTotalFETIWithKernels();
-		break;
-	default:
-		ESINFO(ERROR) << "API request unknown FETI method.";
-	}
+	DataHolder::instances.back()->physics->prepare();
 
 	event.endWithBarrier(); DataHolder::timeStatistics.addEvent(event);
 }
@@ -234,11 +225,11 @@ void FETI4ISolve(
 	checkConfiguration();
 	TimeEvent event("Solve FETI4I instance"); event.startWithBarrier();
 
-	Step step;
-	Logging::step = &step;
-	instance->loadStepSolver->run(step);
+	Logging::step = instance->step;
+	instance->loadStepSolver->run();
 
-	memcpy(solution, instance->instance->solutions[espreso::Precomputed::SolutionIndex::MERGED]->data[0].data(), solution_size * sizeof(double));
+	// TODO: MESH
+	// memcpy(solution, instance->instance->solutions[espreso::Precomputed::SolutionIndex::MERGED]->data[0].data(), solution_size * sizeof(double));
 
 	event.endWithBarrier(); DataHolder::timeStatistics.addEvent(event);
 	DataHolder::timeStatistics.totalTime.endWithBarrier();

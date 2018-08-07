@@ -4,11 +4,9 @@
 
 #include "loadstepsolver.h"
 
-#include <vector>
-
 namespace espreso {
 
-class Solution;
+class NodeData;
 class TransientSolverConfiguration;
 
 class TransientFirstOrderImplicit: public LoadStepSolver {
@@ -16,23 +14,21 @@ class TransientFirstOrderImplicit: public LoadStepSolver {
 public:
 	TransientFirstOrderImplicit(TimeStepSolver &timeStepSolver, const TransientSolverConfiguration &configuration, double duration);
 
-	Matrices updateStructuralMatrices(Step &step, Matrices matrices);
-	Matrices reassembleStructuralMatrices(Step &step, Matrices matrices);
+	Matrices updateStructuralMatrices(Matrices matrices);
+	Matrices reassembleStructuralMatrices(Matrices matrices);
 
 protected:
-	void initLoadStep(Step &step);
-	void runNextTimeStep(Step &step);
-	void processTimeStep(Step &step);
+	void initLoadStep();
+	void runNextTimeStep();
+	void processTimeStep();
 
 	const TransientSolverConfiguration &_configuration;
 	double _alpha;
 	double _nTimeStep;
 
 	static size_t loadStep;
-	static std::vector<Solution*> solutions;
 
-private:
-	enum SolutionIndex { U, dU, V, X, Y, dTK };
+	NodeData *U, *dU, *V, *X, *Y, *dTK;
 };
 
 }

@@ -3,24 +3,22 @@
 #define APP_FACTORY_FACTORY_H_
 
 #include <vector>
+#include <string>
 #include <map>
-#include "async/Dispatcher.h"
 
 namespace espreso {
 
+class Mesh;
 struct Instance;
+struct Step;
 struct Physics;
 class LinearSolver;
 class Assembler;
 class TimeStepSolver;
 class LoadStepSolver;
-class Mesh;
-class Store;
-class AsyncStore;
-class ResultStoreList;
+class ResultStore;
 
-struct ECFConfiguration;
-struct OutputConfiguration;
+struct ECFRoot;
 struct LoadStepConfiguration;
 
 class FactoryLoader {
@@ -32,7 +30,7 @@ public:
 	void preprocessMesh();
 	virtual size_t loadSteps() const =0;
 
-	virtual LoadStepSolver* getLoadStepSolver(size_t step, Mesh *mesh, Store *store) =0;
+	virtual LoadStepSolver* getLoadStepSolver(size_t step, Mesh *mesh, ResultStore *store) =0;
 
 	template<class TLoadStepSettings>
 	const TLoadStepSettings& getLoadStepsSettings(size_t step, const std::map<size_t, TLoadStepSettings> &setting) const
@@ -59,37 +57,29 @@ protected:
 
 class Factory {
 
+	friend class ESPRESO;
 	friend class APITestESPRESODataProvider;
-public:
-	Factory(const ECFConfiguration &configuration);
+
+protected:
+	Factory(const ECFRoot &configuration, Mesh &mesh, ResultStore &store);
 	~Factory();
 
 	void solve();
-	void finalize();
 
-protected:
-	Factory(const ECFConfiguration &configuration, size_t domains);
-
-	void initAsync(const OutputConfiguration &configuration);
-	void loadPhysics(const ECFConfiguration &configuration);
-	void setOutput(const OutputConfiguration &configuration);
-
-	FactoryLoader* createFactoryLoader(const ECFConfiguration &configuration);
+	FactoryLoader* createFactoryLoader(const ECFRoot &configuration);
 
 	Mesh *_mesh;
-	ResultStoreList* _storeList;
+	ResultStore *_store;
+	Step *_step;
+
 	FactoryLoader *_loader;
 	std::vector<LoadStepSolver*> _loadSteps;
+};
 
-	/**
-	 * We always create the async store (even if the output is not enabled).
-	 * This is a drawback of the ASYNC library but required to get synchronization
-	 * right.
-	 */
-	AsyncStore* _asyncStore;
+class ESPRESO {
 
-	/** The dispatcher for the I/O ranks */
-	async::Dispatcher _dispatcher;
+public:
+	static void run(int *argc, char ***argv);
 };
 
 

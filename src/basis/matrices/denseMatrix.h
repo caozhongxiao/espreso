@@ -5,8 +5,6 @@
 #include <algorithm>
 
 #include "matrix.h"
-template<typename Tindices> class SparseDOKMatrix;
-template<typename Tindices> class SparseIJVMatrix;
 template<typename Tindices> class SparseCSRMatrix;
 template<typename Tindices> class SparseVVPMatrix;
 
@@ -24,13 +22,9 @@ public:
 	DenseMatrix(size_t rows, size_t columns)
 		: Matrix(rows, columns, DenseMatrixIndexing), _values(rows * columns, 0) {};
 
-	template<typename Tindices> DenseMatrix(const SparseDOKMatrix<Tindices> &other);
 	template<typename Tindices> DenseMatrix(const SparseCSRMatrix<Tindices> &other);
-	template<typename Tindices> DenseMatrix(const SparseIJVMatrix<Tindices> &other);
 
-	template<typename Tindices> DenseMatrix& operator=(const SparseDOKMatrix<Tindices> &other);
 	template<typename Tindices> DenseMatrix& operator=(const SparseCSRMatrix<Tindices> &other);
-	template<typename Tindices> DenseMatrix& operator=(const SparseIJVMatrix<Tindices> &other);
 
 	DenseMatrix& operator=(double value);
 	DenseMatrix& operator+=(const DenseMatrix &other);

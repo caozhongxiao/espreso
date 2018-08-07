@@ -1,6 +1,8 @@
 
 #include "../logging/logging.h"
 #include <cmath>
+#include <algorithm>
+#include <cstring>
 
 #include "utils.h"
 
@@ -66,20 +68,208 @@ Ttype Esutils::sizesToOffsets(std::vector<Ttype> &sizes)
 	return sum;
 }
 
-template<typename Ttype>
-void Esutils::removeDuplicity(std::vector<Ttype> &elements)
+template<typename Ttype, typename Tpermutation>
+void Esutils::permute(std::vector<Ttype> &data, const std::vector<Tpermutation> &permutation, size_t elementsize)
 {
-	if (elements.size() == 0) {
+	std::vector<Ttype> _data(data.size());
+	_data.swap(data);
+	for (size_t e = 0; e < elementsize; e++) {
+		for (size_t i = 0; i < data.size() / elementsize; i++) {
+			data[elementsize * i + e] = _data[elementsize * permutation[i] + e];
+		}
+	}
+}
+
+template<typename Ttype>
+void Esutils::threadDistributionToFullDistribution(std::vector<std::vector<Ttype> > &distribution)
+{
+	std::vector<size_t> offsets;
+	for (size_t t = 0; t < distribution.size(); t++) {
+		offsets.push_back(distribution[t].size() ? distribution[t].back() : 0);
+	}
+	Esutils::sizesToOffsets(offsets);
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < distribution.size(); t++) {
+		size_t offset = offsets[t];
+		for (size_t i = 0; i < distribution[t].size(); i++) {
+			distribution[t][i] += offset;
+		}
+	}
+}
+
+template<typename Ttype>
+void Esutils::threadDistributionToFullDistribution(std::vector<Ttype> &data, const std::vector<size_t> &distribution)
+{
+	size_t threads = distribution.size() - 1;
+	std::vector<size_t> offsets(distribution.size());
+	for (size_t t = 0; t < threads; t++) {
+		if (distribution[t] != distribution[t + 1]) {
+			offsets[t] = data[distribution[t + 1]];
+		}
+	}
+	Esutils::sizesToOffsets(offsets);
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		size_t offset = offsets[t];
+		for (size_t i = distribution[t] + 1; i < distribution[t + 1] + 1; i++) {
+			data[i] += offset;
+		}
+	}
+}
+
+template<typename Ttype>
+void Esutils::removeDuplicity(std::vector<Ttype> &data, size_t begin)
+{
+	if (data.size() == begin) {
 		return;
 	}
-	size_t unique = 0;
-	for (size_t d = 1; d < elements.size(); d++) {
-		if (elements[unique] != elements[d]) {
-			elements[++unique] = elements[d];
+	size_t unique = begin;
+	for (size_t d = begin + 1; d < data.size(); d++) {
+		if (data[unique] != data[d]) {
+			data[++unique] = data[d];
 		}
 	}
 
-	elements.resize(unique + 1);
+	data.resize(unique + 1);
+}
+
+template<typename Ttype>
+void Esutils::sortAndRemoveDuplicity(std::vector<Ttype> &data, size_t begin)
+{
+	std::sort(data.begin() + begin, data.end());
+	Esutils::removeDuplicity(data, begin);
+}
+
+template<typename Ttype>
+void Esutils::sortAndRemoveDuplicity(std::vector<std::vector<Ttype> > &data)
+{
+	for (size_t n = 0; n < data.size(); n++) {
+		sortAndRemoveDuplicity(data[n]);
+	}
+}
+
+template<typename Ttype>
+void Esutils::mergeThreadedUniqueData(std::vector<std::vector<Ttype> > &data)
+{
+	for (size_t t = 1; t < data.size(); t++) {
+		data[0].insert(data[0].end(), data[t].begin(), data[t].end());
+	}
+	sortAndRemoveDuplicity(data[0]);
+}
+
+template<typename Ttype>
+void Esutils::mergeThreadedUniqueData(std::vector<std::vector<std::vector<Ttype> > > &data)
+{
+	#pragma omp parallel for
+	for (size_t n = 0; n < data[0].size(); n++) {
+		for (size_t t = 1; t < data.size(); t++) {
+			data[0][n].insert(data[0][n].end(), data[t][n].begin(), data[t][n].end());
+		}
+		sortAndRemoveDuplicity(data[0][n]);
+	}
+}
+
+template<typename Ttype>
+void Esutils::inplaceMerge(std::vector<Ttype> &data, const std::vector<size_t> &distribution)
+{
+	size_t size = distribution.size() - 1;
+
+	size_t align = 1;
+	while (align < distribution.size()) align = align << 1;
+
+	std::vector<size_t> _distribution = distribution;
+	_distribution.insert(_distribution.end(), align - size, _distribution.back());
+
+	for (size_t i = 2; i <= align; i *= 2) {
+		#pragma omp parallel for
+		for (size_t t = 0; t < align / i; t++) {
+			std::inplace_merge(
+					data.data() + _distribution[i * t],
+					data.data() + _distribution[i * t + i / 2],
+					data.data() + _distribution[i * t + i]);
+		}
+	}
+}
+
+template<typename Ttype>
+void Esutils::sortWithInplaceMerge(std::vector<Ttype> &data, const std::vector<size_t> &distribution)
+{
+	size_t size = distribution.size() - 1;
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < size; t++) {
+		std::sort(
+				data.data() + distribution[t],
+				data.data() + distribution[t + 1]);
+	}
+
+	Esutils::inplaceMerge(data, distribution);
+}
+
+template<typename Ttype>
+void Esutils::inplaceMerge(std::vector<std::vector<Ttype> > &data)
+{
+	std::vector<size_t> distribution = { 0, data[0].size() };
+	for (size_t t = 1; t < data.size(); t++) {
+		data[0].insert(data[0].end(), data[t].begin(), data[t].end());
+		distribution.push_back(data[0].size());
+	}
+	Esutils::inplaceMerge(data[0], distribution);
+}
+
+template<typename Ttype>
+void Esutils::sortWithInplaceMerge(std::vector<std::vector<Ttype> > &data)
+{
+	std::vector<size_t> distribution = { 0, data[0].size() };
+	for (size_t t = 1; t < data.size(); t++) {
+		data[0].insert(data[0].end(), data[t].begin(), data[t].end());
+		distribution.push_back(data[0].size());
+	}
+	Esutils::sortWithInplaceMerge(data[0], distribution);
+}
+
+template<typename Ttype>
+void Esutils::sortWithUniqueMerge(std::vector<std::vector<Ttype> > &data)
+{
+	#pragma omp parallel for
+	for (size_t t = 0; t < data.size(); t++) {
+		Esutils::sortAndRemoveDuplicity(data[t]);
+	}
+	std::vector<size_t> distribution = { 0, data[0].size() };
+	for (size_t t = 1; t < data.size(); t++) {
+		data[0].insert(data[0].end(), data[t].begin(), data[t].end());
+		distribution.push_back(data[0].size());
+	}
+	Esutils::inplaceMerge(data[0], distribution);
+	Esutils::sortAndRemoveDuplicity(data[0]);
+}
+
+template<typename Ttype>
+void Esutils::mergeAppendedData(std::vector<Ttype> &data, const std::vector<size_t> &distribution)
+{
+	std::vector<size_t> _distribution(distribution.begin() + 1, distribution.end());
+
+	size_t align = 1;
+	while (align < _distribution.size()) align = align << 1;
+
+	_distribution.insert(_distribution.end(), align - distribution.size() + 2, _distribution.back());
+
+	for (size_t i = 2; i <= align; i *= 2) {
+		#pragma omp parallel for
+		for (size_t t = 0; t < align / i; t++) {
+			std::inplace_merge(
+					data.data() + _distribution[i * t],
+					data.data() + _distribution[i * t + i / 2],
+					data.data() + _distribution[i * t + i]);
+		}
+	}
+
+	std::inplace_merge(
+			data.data(),
+			data.data() + _distribution.front(),
+			data.data() + _distribution.back());
 }
 
 template<typename Ttype>
@@ -92,6 +282,124 @@ typename std::vector<Ttype>::const_iterator Esutils::max_element(const std::vect
 		}
 	}
 	return max;
+}
+
+template<>
+inline size_t Esutils::packedSize(const std::string &data)
+{
+	return sizeof(size_t) + data.size();
+}
+
+template<typename Ttype>
+inline size_t Esutils::packedSize(const Ttype &data)
+{
+	return sizeof(Ttype);
+}
+
+template<>
+inline size_t Esutils::packedSize(const std::vector<std::string> &data)
+{
+	size_t size = sizeof(size_t);
+	for (size_t i = 0; i < data.size(); i++) {
+		size += packedSize(data[i]);
+	}
+	return size;
+}
+
+template<typename Ttype>
+inline size_t Esutils::packedSize(const std::vector<Ttype> &data)
+{
+	return data.size() * sizeof(Ttype) + sizeof(size_t);
+}
+
+template<>
+inline void Esutils::pack(const std::string &data, char* &p)
+{
+	size_t size = data.size();
+	memcpy(p, &size, packedSize(size));
+	p += packedSize(size);
+
+	memcpy(p, data.data(), data.size());
+	p += data.size();
+}
+
+template<typename Ttype>
+inline void Esutils::pack(const Ttype &data, char* &p)
+{
+	memcpy(p, &data, packedSize(data));
+	p += packedSize(data);
+}
+
+template<>
+inline void Esutils::pack(const std::vector<std::string> &data, char* &p)
+{
+	size_t size = data.size();
+	memcpy(p, &size, packedSize(size));
+	p += packedSize(size);
+
+	for (size_t i = 0; i < data.size(); i++) {
+		pack(data[i], p);
+	}
+}
+
+template<typename Ttype>
+inline void Esutils::pack(const std::vector<Ttype> &data, char* &p)
+{
+	size_t size = data.size();
+
+	memcpy(p, &size, packedSize(size));
+	p += packedSize(size);
+
+	if (size) {
+		memcpy(p, data.data(), data.size() * sizeof(Ttype));
+		p += data.size() * sizeof(Ttype);
+	}
+}
+
+template<>
+inline void Esutils::unpack(std::string &data, const char* &p)
+{
+	size_t size;
+	memcpy(&size, p, packedSize(size));
+	p += packedSize(size);
+	data = std::string(p, size);
+	p += size;
+}
+
+template<typename Ttype>
+inline void Esutils::unpack(Ttype &data, const char* &p)
+{
+	memcpy(&data, p, packedSize(data));
+	p += packedSize(data);
+}
+
+template<>
+inline void Esutils::unpack(std::vector<std::string> &data, const char* &p)
+{
+	size_t size;
+	memcpy(&size, p, packedSize(size));
+	p += packedSize(size);
+
+	if (size) {
+		data.resize(size);
+		for (size_t i = 0; i < data.size(); i++) {
+			unpack(data[i], p);
+		}
+	}
+}
+
+template<typename Ttype>
+inline void Esutils::unpack(std::vector<Ttype> &data, const char* &p)
+{
+	size_t size;
+	memcpy(&size, p, packedSize(size));
+	p += packedSize(size);
+
+	if (size) {
+		data.resize(size);
+		memcpy(data.data(), p, data.size() * sizeof(Ttype));
+		p += data.size() * sizeof(Ttype);
+	}
 }
 
 }

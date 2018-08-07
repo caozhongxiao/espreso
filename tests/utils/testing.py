@@ -211,6 +211,38 @@ class Espreso:
         result, error = self.waf(["install"])
         check(result, error, "install")
 
+    @staticmethod
+    def get_instances(ecf):
+        ranges = {}
+        variables = {}
+        variable = False
+        default_arg = False
+        for line in open(ecf, 'r'):
+            if "#BENCHMARK" in line:
+                ranges[line.split()[1].strip()] = map(lambda x: x.strip(), line[line.find("[") + 1:line.find("]")].split(","))
+
+            if variable and "}" in line:
+                variable = False
+            if variable:
+                variables["[" + line.split()[0].strip() + "]"] = line.split()[1].strip()
+            if "VARIABLES" in line.upper():
+                variable = True
+
+            if default_arg and "}" in line:
+                default_arg = False
+            if default_arg and len(line.strip()):
+                variables["ARG" + line.split()[0].strip()] = line.split()[1].strip(";")
+            if "DEFAULT_ARGS" in line.upper():
+                default_arg = True
+
+        for var in variables:
+            if var in ranges:
+                variables[var] = ranges[var]
+            else:
+                variables[var] = [ variables[var] ]
+
+        return ranges.keys(), variables
+
     def get_processes(self, ecf):
         def get_path(section):
             in_section = False

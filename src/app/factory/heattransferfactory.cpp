@@ -1,8 +1,6 @@
 
 #include "../../config/ecf/physics/heattransfer.h"
 
-#include "../../assembler/physics/laplacesteklovpoincare3d.h"
-
 #include "../../assembler/physicssolver/assembler.h"
 #include "../../assembler/physicssolver/timestep/linear.h"
 #include "../../assembler/physicssolver/timestep/newtonraphson.h"
@@ -13,41 +11,29 @@
 #include "../../assembler/instance.h"
 #include "../../assembler/physics/heattransfer2d.h"
 #include "../../assembler/physics/heattransfer3d.h"
-#include "../../mesh/structures/mesh.h"
 #include "../../basis/logging/logging.h"
 #include "heattransferfactory.h"
 
 using namespace espreso;
 
-HeatTransferFactory::HeatTransferFactory(const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh)
-: _configuration(configuration), _propertiesConfiguration(propertiesConfiguration), _bem(false)
+HeatTransferFactory::HeatTransferFactory(Step *step, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh)
+: _step(step), _configuration(configuration), _propertiesConfiguration(propertiesConfiguration), _bem(false)
 {
 	_instances.push_back(new Instance(*mesh));
 
-	switch (configuration.discretization) {
-	case DISCRETIZATION::FEM:
-		switch (configuration.dimension) {
-		case DIMENSION::D2:
-			_physics.push_back(new HeatTransfer2D(mesh, _instances.front(), configuration, propertiesConfiguration));
-			break;
-		case DIMENSION::D3:
-			_physics.push_back(new HeatTransfer3D(mesh, _instances.front(), configuration, propertiesConfiguration));
-			break;
-		}
+	switch (configuration.dimension) {
+	case DIMENSION::D2:
+		_physics.push_back(new HeatTransfer2D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
 		break;
-	case DISCRETIZATION::BEM:
-		_bem = true;
-		switch (configuration.dimension) {
-		case DIMENSION::D2:
-			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: cannot solve HEAT TRANSFER 2D with BEM discretization.";
-			break;
-		case DIMENSION::D3:
-			_physics.push_back(new LaplaceSteklovPoincare3D(mesh, _instances.front(), configuration, propertiesConfiguration));
-			break;
-		}
+	case DIMENSION::D3:
+		_physics.push_back(new HeatTransfer3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
 		break;
-	default:
-		ESINFO(GLOBAL_ERROR) << "Unknown DISCRETIZATION for HeatTransfer3D";
+	}
+
+	for (auto it = _configuration.discretization.begin(); it != _configuration.discretization.end(); ++it) {
+		if (it->second == DISCRETIZATION::BEM) {
+			_bem = true;
+		}
 	}
 }
 
@@ -56,12 +42,12 @@ size_t HeatTransferFactory::loadSteps() const
 	return _configuration.load_steps;
 }
 
-LoadStepSolver* HeatTransferFactory::getLoadStepSolver(size_t step, Mesh *mesh, Store *store)
+LoadStepSolver* HeatTransferFactory::getLoadStepSolver(size_t step, Mesh *mesh, ResultStore *store)
 {
 	const HeatTransferLoadStepConfiguration &settings = getLoadStepsSettings(step, _configuration.load_steps_settings);
 
 	_linearSolvers.push_back(getLinearSolver(settings, _instances.front()));
-	_assemblers.push_back(new Assembler(*_instances.front(), *_physics.front(), *mesh, *store, *_linearSolvers.back()));
+	_assemblers.push_back(new Assembler(*_instances.front(), *_physics.front(), *mesh, *_step, *store, *_linearSolvers.back()));
 
 	switch (settings.mode) {
 	case LoadStepConfiguration::MODE::LINEAR:

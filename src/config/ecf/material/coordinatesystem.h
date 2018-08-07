@@ -3,13 +3,9 @@
 #define SRC_CONFIG_ECF_MATERIAL_COORDINATESYSTEM_H_
 
 #include "../../configuration.h"
+#include "../../expression.h"
 
 namespace espreso {
-
-enum class DIMENSION {
-	D2,
-	D3
-};
 
 struct CoordinateSystemConfiguration: public ECFObject {
 
@@ -22,10 +18,21 @@ struct CoordinateSystemConfiguration: public ECFObject {
 	TYPE type;
 	DIMENSION dimension;
 
-	ECFExpression rotation_x, rotation_y, rotation_z;
-	ECFExpression center_x, center_y, center_z;
+	ECFExpressionVector rotation;
+	ECFExpressionVector center;
 
 	CoordinateSystemConfiguration();
+
+	void createScalingMatrix(std::vector<double> &m, double x, double y, double z=0) const;
+
+	void createTranslationMatrixToCenter(std::vector<double> &m) const;
+	void createTranslationMatrixToZero(std::vector<double> &m) const;
+	void createTranslationMatrix(std::vector<double> &m, double x, double y, double z=0) const;
+	void createRotationMatrix(std::vector<double> &m) const;
+
+	void multiplyTransformationMatrices(std::vector<double> &left, std::vector<double> &result) const;
+	Point applyTransformation(std::vector<double> &m, const Point &p) const;
+
 };
 
 

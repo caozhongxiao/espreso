@@ -6,6 +6,7 @@
 #include <functional>
 #include <regex>
 #include <unistd.h>
+#include <fstream>
 
 #include "mpi.h"
 
@@ -213,8 +214,14 @@ ECFRedParameters ECFReader::_read(
 		const std::map<std::string, std::string> &variables)
 {
 	ECFRedParameters redParameters;
-	std::ifstream ecffile(file);
-	redParameters.hadValidECF = ecffile.good();
+	if (environment->MPIrank == 0) {
+		std::ifstream ecffile(file);
+		redParameters.hadValidECF = ecffile.good();
+	}
+	int valid = redParameters.hadValidECF;
+	MPI_Bcast(&valid, 1, MPI_INT, 0, environment->MPICommunicator);
+	redParameters.hadValidECF = valid;
+
 	if (!redParameters.hadValidECF) {
 		return redParameters;
 	}
@@ -350,6 +357,9 @@ ECFRedParameters ECFReader::_read(
 				values.clear();
 				break;
 			}
+			if (values.size() == 0) {
+				break;
+			}
 			if (values.size() == 1) {
 				// allow to read an empty value
 				values.push_back("");
@@ -366,6 +376,9 @@ ECFRedParameters ECFReader::_read(
 			if (parameter == NULL) {
 				prefix.push_back(values[0]);
 				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Unexpected parameter '" << prefix << "'\n" << tokenStack.top()->lastLines(2);
+			}
+			if (parameter->isObject()) {
+				ESINFO(GLOBAL_ERROR) << "Invalid ECF configuration. Parameter '" << prefix << "::" << parameter->name << "' is an object. Expected '{' instead of '" << ss.str() << "'";
 			}
 			if (!parameter->setValue(ss.str())) {
 				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Parameter '" << values[0] << "' has wrong value '" << ss.str() << "'";
@@ -416,7 +429,6 @@ ECFRedParameters ECFReader::_read(
 
 void ECFReader::set(const Environment &env, const OutputConfiguration &output)
 {
-	Test::setLevel(env.testing_level);
 	Info::setLevel(env.verbose_level, env.testing_level);
 	Measure::setLevel(env.measure_level);
 	Logging::path = output.path;
@@ -503,7 +515,7 @@ static void printECF(const ECFObject &configuration, std::ostream &os, size_t in
 			printindent(space + 3);
 			if (
 					parameter->metadata.datatype.front() == ECFDataType::STRING ||
-					parameter->metadata.datatype.front() == ECFDataType::REGION ||
+					parameter->metadata.datatype.front() == ECFDataType::BOUNDARY_REGION ||
 					parameter->metadata.datatype.front() == ECFDataType::MATERIAL) {
 				os << value << ";\n";
 			} else {

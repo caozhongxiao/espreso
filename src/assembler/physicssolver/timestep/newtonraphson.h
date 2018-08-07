@@ -15,7 +15,7 @@ class NewtonRaphson: public TimeStepSolver {
 public:
 	NewtonRaphson(Assembler &assembler, const NonLinearSolverConfiguration &configuration);
 
-	void solve(Step &step, LoadStepSolver &loadStepSolver);
+	void solve(LoadStepSolver &loadStepSolver);
 
 protected:
 	const NonLinearSolverConfiguration &_configuration;

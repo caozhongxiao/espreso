@@ -6,7 +6,7 @@
 using namespace espreso;
 
 MaterialBaseConfiguration::MaterialBaseConfiguration()
-: _phase_change(NULL), _physical_model(NULL)
+: density(ECFMetaData::getmaterialvariables()), heat_capacity(ECFMetaData::getmaterialvariables()), _phase_change(NULL), _physical_model(NULL)
 {
 	REGISTER(coordinate_system, ECFMetaData()
 			.setdescription({ "Coordinate system" })
@@ -17,14 +17,12 @@ MaterialBaseConfiguration::MaterialBaseConfiguration()
 			.setdescription({ "Density" })
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.setunit("kg/m^3")
-			.setmaterialvariables()
 			.allowonly([&] () { return _phase_change == NULL || !*_phase_change; }));
 
 	registerParameter("CP", heat_capacity, ECFMetaData()
 			.setdescription({ "Heat capacity" })
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.setunit("J / (kg * K)")
-			.setmaterialvariables()
 			.allowonly([&] () { return _phase_change == NULL || !*_phase_change; }));
 
 	REGISTER(thermal_conductivity, ECFMetaData()
@@ -69,18 +67,19 @@ MaterialConfiguration::MaterialConfiguration()
   phase_change(false),
   _allowed_physical_models(static_cast<PHYSICAL_MODEL>(~0))
 {
-	name = "MATERIAL_NAME";
+    name = "";
 	REGISTER(name, ECFMetaData()
 			 .setdescription({ "Name" })
 			 .setdatatype( { ECFDataType::STRING } ));
 
-	description = "MATERIAL_DESCRIPTION";
+    description = "";
 	REGISTER(description, ECFMetaData()
 			 .setdescription({ "Description" })
 			 .setdatatype( { ECFDataType::STRING } ));
 
 	addSpace();
 
+    physical_model = PHYSICAL_MODEL::THERMAL;
 	REGISTER(physical_model, ECFMetaData()
 			.setdescription({ "Physical model" })
 			.setdatatype({ ECFDataType::ENUM_FLAGS })
@@ -90,7 +89,7 @@ MaterialConfiguration::MaterialConfiguration()
 					.allowonly([&] () { return _allowed_physical_models & PHYSICAL_MODEL::LINEAR_ELASTIC; })));
 
 	REGISTER(phase_change, ECFMetaData()
-			.setdescription({ "Turn on/off phase change." })
+            .setdescription({ "Phase change" })
 			.setdatatype({ ECFDataType::BOOL }));
 
 	addSeparator();

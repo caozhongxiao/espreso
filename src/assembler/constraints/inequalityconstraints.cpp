@@ -3,15 +3,11 @@
 
 #include "../../basis/utilities/utils.h"
 
-#include "../../solver/generic/SparseMatrix.h"
-
-#include "../../mesh/elements/element.h"
-#include "../../mesh/structures/mesh.h"
-#include "../../mesh/structures/region.h"
 #include "../../config/ecf/environment.h"
 
+#include "../../solver/generic/SparseMatrix.h"
+
 #include <numeric>
-#include "../../basis/evaluators/evaluator.h"
 
 using namespace espreso;
 //

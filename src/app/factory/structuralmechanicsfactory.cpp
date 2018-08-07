@@ -2,10 +2,9 @@
 #include "structuralmechanicsfactory.h"
 
 #include "../../config/ecf/physics/structuralmechanics.h"
-
 #include "../../assembler/physics/structuralmechanics2d.h"
 #include "../../assembler/physics/structuralmechanics3d.h"
-#include "../../assembler/physics/lamesteklovpoincare3d.h"
+#include "../../assembler/physics/structuralmechanicstdnns3d.h"
 
 #include "../../assembler/physicssolver/assembler.h"
 #include "../../assembler/physicssolver/timestep/linear.h"
@@ -13,40 +12,36 @@
 #include "../../assembler/physicssolver/loadstep/steadystate.h"
 
 #include "../../assembler/instance.h"
-#include "../../mesh/structures/mesh.h"
 #include "../../basis/logging/logging.h"
 
 using namespace espreso;
 
-StructuralMechanicsFactory::StructuralMechanicsFactory(const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh)
-: _configuration(configuration), _propertiesConfiguration(propertiesConfiguration), _bem(false)
+StructuralMechanicsFactory::StructuralMechanicsFactory(Step *step, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh)
+: _step(step), _configuration(configuration), _propertiesConfiguration(propertiesConfiguration), _bem(false)
 {
 	_instances.push_back(new Instance(*mesh));
 
-	switch (configuration.discretization) {
-	case DISCRETIZATION::FEM:
-		switch (configuration.dimension) {
-		case DIMENSION::D2:
-			_physics.push_back(new StructuralMechanics2D(mesh, _instances.front(), configuration, propertiesConfiguration));
+	switch (configuration.dimension) {
+	case DIMENSION::D2:
+		_physics.push_back(new StructuralMechanics2D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
+		break;
+	case DIMENSION::D3:
+		switch (_configuration.assembler) {
+		case ASSEMBLER::ELEMENTS:
+			_physics.push_back(new StructuralMechanics3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
 			break;
-		case DIMENSION::D3:
-			_physics.push_back(new StructuralMechanics3D(mesh, _instances.front(), configuration, propertiesConfiguration));
+		case ASSEMBLER::FACES:
+			_physics.push_back(new StructuralMechanicsTDNNS3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
 			break;
 		}
+
 		break;
-	case DISCRETIZATION::BEM:
-		_bem = true;
-		switch (configuration.dimension) {
-		case DIMENSION::D2:
-			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: cannot solve STRUCTURAL MECHANICS 2D with BEM discretization.";
-			break;
-		case DIMENSION::D3:
-			_physics.push_back(new LameSteklovPoincare3D(mesh, _instances.front(), configuration, propertiesConfiguration));
-			break;
+	}
+
+	for (auto it = _configuration.discretization.begin(); it != _configuration.discretization.end(); ++it) {
+		if (it->second == DISCRETIZATION::BEM) {
+			_bem = true;
 		}
-		break;
-	default:
-		ESINFO(GLOBAL_ERROR) << "Unknown DISCRETIZATION for StructuralMechanics3D";
 	}
 }
 
@@ -55,12 +50,12 @@ size_t StructuralMechanicsFactory::loadSteps() const
 	return _configuration.load_steps;
 }
 
-LoadStepSolver* StructuralMechanicsFactory::getLoadStepSolver(size_t step, Mesh *mesh, Store *store)
+LoadStepSolver* StructuralMechanicsFactory::getLoadStepSolver(size_t step, Mesh *mesh, ResultStore *store)
 {
 	const StructuralMechanicsLoadStepConfiguration &settings = getLoadStepsSettings(step, _configuration.load_steps_settings);
 
 	_linearSolvers.push_back(getLinearSolver(settings, _instances.front()));
-	_assemblers.push_back(new Assembler(*_instances.front(), *_physics.front(), *mesh, *store, *_linearSolvers.back()));
+	_assemblers.push_back(new Assembler(*_instances.front(), *_physics.front(), *mesh, *_step, *store, *_linearSolvers.back()));
 
 	switch (settings.mode) {
 	case LoadStepConfiguration::MODE::LINEAR:

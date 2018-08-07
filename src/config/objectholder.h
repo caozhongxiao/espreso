@@ -7,20 +7,23 @@
 
 namespace espreso {
 
-template <typename TParameter, typename TValue>
+template <typename TParameter, typename TValue, typename... TArgs>
 struct ECFValueMap: public ECFObject {
 	std::map<TParameter, TValue> &value;
+	std::tuple<TArgs...> args;
 
-	ECFValueMap(std::map<TParameter, TValue> &value): value(value) {}
+	ECFValueMap(std::map<TParameter, TValue> &value, TArgs... args): value(value), args(args...) {}
+	ECFValueMap(std::map<TParameter, TValue> &value, std::tuple<TArgs...> &args): value(value), args(args) {}
 
-	virtual ECFParameter* getParameter(const std::string &name)
+	virtual ECFParameter* _getParameter(const std::string &name)
 	{
-		if (ECFObject::getParameter(name) != NULL) {
-			return ECFObject::getParameter(name);
+		if (ECFObject::_getParameter(name) != NULL) {
+			return ECFObject::_getParameter(name);
 		}
 		TParameter key;
 		if (ECFValueHolder<TParameter>(key).setValue(name)) {
-			return registerParameter(name, new ECFValueHolder<TValue>(value[key]), metadata.suffix(1));
+			value.emplace(std::piecewise_construct, std::forward_as_tuple(key), args);
+			return registerParameter(name, new ECFValueHolder<TValue>(value.at(key)), metadata.suffix(1));
 		} else {
 			return NULL;
 		}
@@ -34,9 +37,54 @@ struct ECFValueMap: public ECFObject {
 		ECFObject::dropParameter(parameter);
 	}
 
-	virtual const ECFParameter* getPattern() const
+	virtual ECFParameter* getPattern() const
 	{
-		ECFParameter *parameter = new ECFValueHolder<TValue>(_patternValue);
+		TParameter key{};
+		if (_pattern.size() == 0) {
+			_pattern.emplace(std::piecewise_construct, std::forward_as_tuple(key), args);
+		}
+		ECFParameter *parameter = new ECFValueHolder<TValue>(_pattern.at(key));
+		parameter->setValue(metadata.pattern[1]);
+		return registerPatternParameter(parameter);
+	}
+
+	virtual const void* data() const { return &value; }
+
+private:
+	mutable std::map<TParameter, TValue> _pattern;
+};
+
+template <typename TParameter, typename TValue>
+struct ECFEnumMap: public ECFObject {
+	std::map<TParameter, TValue> &value;
+
+	ECFEnumMap(std::map<TParameter, TValue> &value): value(value) {}
+
+	virtual ECFParameter* _getParameter(const std::string &name)
+	{
+		if (ECFObject::_getParameter(name) != NULL) {
+			return ECFObject::_getParameter(name);
+		}
+		TParameter key;
+		if (ECFValueHolder<TParameter>(key).setValue(name)) {
+			return registerParameter(name, new ECFEnumHolder<TValue>(value[key]), metadata.suffix(1));
+		} else {
+			return NULL;
+		}
+	}
+
+	virtual void dropParameter(ECFParameter *parameter)
+	{
+		TParameter key;
+		ECFValueHolder<TParameter>(key).setValue(parameter->name);
+		value.erase(key);
+		ECFObject::dropParameter(parameter);
+	}
+
+	virtual ECFParameter* getPattern() const
+	{
+		ECFParameter *parameter = new ECFEnumHolder<TValue>(_patternValue);
+		parameter->metadata = metadata.suffix(1);
 		parameter->setValue(metadata.pattern[1]);
 		return registerPatternParameter(parameter);
 	}
@@ -55,10 +103,10 @@ struct ECFObjectMap: public ECFObject {
 	ECFObjectMap(std::map<TParameter, TObject> &value, TArgs... args): value(value), args(args...) {}
 	ECFObjectMap(std::map<TParameter, TObject> &value, std::tuple<TArgs...> &args): value(value), args(args) {}
 
-	virtual ECFParameter* getParameter(const std::string &name)
+	virtual ECFParameter* _getParameter(const std::string &name)
 	{
-		if (ECFObject::getParameter(name) != NULL) {
-			return ECFObject::getParameter(name);
+		if (ECFObject::_getParameter(name) != NULL) {
+			return ECFObject::_getParameter(name);
 		}
 		TParameter key;
 		if (ECFValueHolder<TParameter>(key).setValue(name)) {
@@ -80,7 +128,13 @@ struct ECFObjectMap: public ECFObject {
 		ECFObject::dropParameter(parameter);
 	}
 
-	virtual const ECFParameter* getPattern() const
+	virtual void dropAllParameters()
+	{
+		value.clear();
+		ECFObject::dropAllParameters();
+	}
+
+	virtual ECFParameter* getPattern() const
 	{
 		std::map<TParameter, TObject*> dummy;
 		auto it = value.emplace(std::piecewise_construct, std::forward_as_tuple(TParameter{}), args);
@@ -96,10 +150,10 @@ struct ECFValueMapMap: public ECFObject {
 
 	ECFValueMapMap(std::map<TParameter1, std::map<TParameter2, TValue> > &value): value(value) {}
 
-	virtual ECFParameter* getParameter(const std::string &name)
+	virtual ECFParameter* _getParameter(const std::string &name)
 	{
-		if (ECFObject::getParameter(name) != NULL) {
-			return ECFObject::getParameter(name);
+		if (ECFObject::_getParameter(name) != NULL) {
+			return ECFObject::_getParameter(name);
 		}
 		TParameter1 key;
 		if (ECFValueHolder<TParameter1>(key).setValue(name)) {
@@ -117,7 +171,13 @@ struct ECFValueMapMap: public ECFObject {
 		ECFObject::dropParameter(parameter);
 	}
 
-	virtual const ECFParameter* getPattern() const
+	virtual void dropAllParameters()
+	{
+		value.clear();
+		ECFObject::dropAllParameters();
+	}
+
+	virtual ECFParameter* getPattern() const
 	{
 		return registerPatternParameter(new ECFValueMap<TParameter2, TValue>(_patternValue));
 	}
@@ -136,10 +196,10 @@ struct ECFObjectMapMap: public ECFObject {
 
 	ECFObjectMapMap(std::map<TParameter1, std::map<TParameter2, TObject> > &value, TArgs... args): value(value), args(args...) {}
 
-	virtual ECFParameter* getParameter(const std::string &name)
+	virtual ECFParameter* _getParameter(const std::string &name)
 	{
-		if (ECFObject::getParameter(name) != NULL) {
-			return ECFObject::getParameter(name);
+		if (ECFObject::_getParameter(name) != NULL) {
+			return ECFObject::_getParameter(name);
 		}
 		TParameter1 key;
 		if (ECFValueHolder<TParameter1>(key).setValue(name)) {
@@ -157,7 +217,13 @@ struct ECFObjectMapMap: public ECFObject {
 		ECFObject::dropParameter(parameter);
 	}
 
-	virtual const ECFParameter* getPattern() const
+	virtual void dropAllParameters()
+	{
+		value.clear();
+		ECFObject::dropAllParameters();
+	}
+
+	virtual ECFParameter* getPattern() const
 	{
 		return registerPatternParameter(new ECFObjectMap<TParameter2, TObject>(_patternValue));
 	}

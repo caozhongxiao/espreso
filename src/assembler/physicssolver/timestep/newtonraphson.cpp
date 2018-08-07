@@ -21,7 +21,7 @@ NewtonRaphson::NewtonRaphson(Assembler &assembler, const NonLinearSolverConfigur
 
 }
 
-void NewtonRaphson::solve(Step &step, LoadStepSolver &loadStepSolver)
+void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 {
 	if (!_configuration.check_first_residual && !_configuration.check_second_residual) {
 		ESINFO(GLOBAL_ERROR) << "Turn on at least one convergence parameter for NONLINEAR solver.";
@@ -42,30 +42,30 @@ void NewtonRaphson::solve(Step &step, LoadStepSolver &loadStepSolver)
 	double alpha, maxSolutionValue;
 
 
-	step.iteration = 0;
-	step.tangentMatrixCorrection = false;
-	_assembler.solve(step, loadStepSolver.updateStructuralMatrices(step, Matrices::K | Matrices::M | Matrices::f | Matrices::B1));
-	_assembler.processSolution(step);
-	_assembler.storeSubSolution(step);
+	_assembler.step.iteration = 0;
+	_assembler.step.tangentMatrixCorrection = false;
+	_assembler.solve(loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::B1));
+	_assembler.processSolution();
+	_assembler.storeSubSolution();
 
-	step.tangentMatrixCorrection = _configuration.tangent_matrix_correction;
-	while (step.iteration++ < _configuration.max_iterations) {
+	_assembler.step.tangentMatrixCorrection = _configuration.tangent_matrix_correction;
+	while (_assembler.step.iteration++ < _configuration.max_iterations) {
 		if (!_configuration.check_second_residual) {
-			ESINFO(CONVERGENCE) << "\n >> EQUILIBRIUM ITERATION " << step.iteration + 1 << " IN SUBSTEP "  << step.substep + 1;
+			ESINFO(CONVERGENCE) << "\n >> EQUILIBRIUM ITERATION " << _assembler.step.iteration + 1 << " IN SUBSTEP "  << _assembler.step.substep + 1;
 		}
 
 		_solution = _assembler.instance.primalSolution;
 		if (_configuration.method == NonLinearSolverConfiguration::METHOD::NEWTON_RAPHSON) {
-			updatedMatrices = loadStepSolver.updateStructuralMatrices(step, Matrices::K | Matrices::M | Matrices::f | Matrices::R);
+			updatedMatrices = loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::R);
 		} else {
-			updatedMatrices = loadStepSolver.updateStructuralMatrices(step, Matrices::f | Matrices::R);
+			updatedMatrices = loadStepSolver.updateStructuralMatrices(Matrices::f | Matrices::R);
 		}
 		if (_configuration.line_search) {
 			_f_ext = _assembler.instance.f;
 		}
 		if (_configuration.check_second_residual) {
-			heatResidual_second = _assembler.sumSquares(step, _assembler.instance.f, SumOperation::SUM, SumRestriction::NON_DIRICHLET, "norm of f not on DIRICHLET");
-			heatResidual_second += _assembler.sumSquares(step, _assembler.instance.R, SumOperation::SUM, SumRestriction::DIRICHLET, "norm of R on DIRICHLET");
+			heatResidual_second = _assembler.sumSquares(_assembler.instance.f, SumRestriction::NON_DIRICHLET, "norm of f not on DIRICHLET");
+			heatResidual_second += _assembler.sumSquares(_assembler.instance.R, SumRestriction::DIRICHLET, "norm of R on DIRICHLET");
 			heatResidual_second = sqrt(heatResidual_second);
 			if (heatResidual_second < 1e-3) {
 				heatResidual_second = 1e-3;
@@ -83,12 +83,12 @@ void NewtonRaphson::solve(Step &step, LoadStepSolver &loadStepSolver)
 					_f_R_BtLambda,
 					1, _assembler.instance.f,
 					-1, _assembler.instance.dualSolution,
-					"(f - R) * Bt * Lambda");
+					"(f - R) - Bt * Lambda");
 
-			heatResidual_first = sqrt(_assembler.sumSquares(step, _f_R_BtLambda, SumOperation::SUM, SumRestriction::NONE, "norm of (f - R) * Bt * Lambda"));
+			heatResidual_first = sqrt(_assembler.sumSquares(_f_R_BtLambda, SumRestriction::NONE, "norm of (f - R) - Bt * Lambda"));
 			heatResidual = heatResidual_first / heatResidual_second;
 
-			if (heatResidual < _configuration.requested_second_residual && step.iteration > 1 ) {
+			if (heatResidual < _configuration.requested_second_residual && _assembler.step.iteration > 1 ) {
 				ESINFO(CONVERGENCE) << "    HEAT_CONVERGENCE_VALUE =  " <<  heatResidual_first << "  CRITERION_VALUE = " << heatResidual_second * _configuration.requested_second_residual << " <<< CONVERGED >>>";
 				if (_configuration.check_first_residual) {
 					if (temperatureResidual < _configuration.requested_first_residual) {
@@ -98,36 +98,36 @@ void NewtonRaphson::solve(Step &step, LoadStepSolver &loadStepSolver)
 					break;
 				}
 			} else {
-				ESINFO(CONVERGENCE) << " >> EQUILIBRIUM ITERATION " << step.iteration + 1 << " IN SUBSTEP "  << step.substep + 1;
+				ESINFO(CONVERGENCE) << " >> EQUILIBRIUM ITERATION " << _assembler.step.iteration + 1 << " IN SUBSTEP "  << _assembler.step.substep + 1;
 				ESINFO(CONVERGENCE) << "    HEAT_CONVERGENCE_VALUE =  " <<  heatResidual_first << "  CRITERION_VALUE = " << heatResidual_second * _configuration.requested_second_residual;
 			}
 		}
 
 		if (updatedMatrices & Matrices::K) {
-			updatedMatrices |= loadStepSolver.reassembleStructuralMatrices(step, Matrices::B1c | Matrices::B1duplicity);
+			updatedMatrices |= loadStepSolver.reassembleStructuralMatrices(Matrices::B1c | Matrices::B1duplicity);
 		} else {
-			updatedMatrices |= loadStepSolver.reassembleStructuralMatrices(step, Matrices::B1c);
+			updatedMatrices |= loadStepSolver.reassembleStructuralMatrices(Matrices::B1c);
 		}
 		_assembler.addToDirichletInB1(-1, _assembler.instance.primalSolution);
 
 		if (_configuration.adaptive_precision) {
-			if (step.iteration > 1) {
+			if (_assembler.step.iteration > 1) {
 				solverPrecisionError = temperatureResidual_first / temperatureResidual_second;
 				solverPrecision = std::min(_configuration.r_tol * solverPrecisionError, _configuration.c_fact * solverPrecision);
 			}
 			ESINFO(CONVERGENCE) << "    ADAPTIVE PRECISION = " << solverPrecision << " EPS_ERR = " << solverPrecisionError;
 		}
 
-		_assembler.solve(step, updatedMatrices);
+		_assembler.solve(updatedMatrices);
 		ESINFO(CONVERGENCE) <<  "    LINEAR_SOLVER_OUTPUT: SOLVER = " << "PCG" <<   " N_MAX_ITERATIONS = " << "1" << "  " ;
 
 		if (_configuration.line_search) {
 			maxSolutionValue =_assembler.maxAbsValue(_assembler.instance.primalSolution, "max = |solution|");
-			alpha = _assembler.lineSearch(step, _solution, _assembler.instance.primalSolution, _f_ext);
+			alpha = _assembler.lineSearch(_solution, _assembler.instance.primalSolution, _f_ext);
 			ESINFO(CONVERGENCE) << "    LINE_SEARCH_OUTPUT: " << "PARAMETER = " << alpha << "  MAX_DOF_INCREMENT = " << maxSolutionValue << "  SCALED_MAX_INCREMENT = " << alpha * maxSolutionValue;
 		}
 		if (_configuration.check_first_residual) {
-			temperatureResidual_first = sqrt(_assembler.sumSquares(step, _assembler.instance.primalSolution, SumOperation::AVERAGE, SumRestriction::NONE, "|delta U|"));
+			temperatureResidual_first = sqrt(_assembler.sumSquares(_assembler.instance.primalSolution, SumRestriction::NONE, "|delta U|"));
 		}
 		_assembler.sum(
 				_assembler.instance.primalSolution,
@@ -135,7 +135,7 @@ void NewtonRaphson::solve(Step &step, LoadStepSolver &loadStepSolver)
 				1, _solution, "U = delta U + U");
 
 		if (_configuration.check_first_residual) {
-			 temperatureResidual_second = sqrt(_assembler.sumSquares(step, _assembler.instance.primalSolution, SumOperation::AVERAGE, SumRestriction::NONE, "|U|"));
+			temperatureResidual_second = sqrt(_assembler.sumSquares(_assembler.instance.primalSolution, SumRestriction::NONE, "|U|"));
 			if (temperatureResidual_second < 1e-3) {
 				temperatureResidual_second = 1e-3;
 			}
@@ -151,14 +151,14 @@ void NewtonRaphson::solve(Step &step, LoadStepSolver &loadStepSolver)
 			}
 		}
 
-		_assembler.processSolution(step);
-		_assembler.storeSubSolution(step);
+		_assembler.processSolution();
+		_assembler.storeSubSolution();
 	}
 
 	if (_configuration.check_second_residual) {
-		ESINFO(CONVERGENCE) <<  " >> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION " << step.iteration ;
+		ESINFO(CONVERGENCE) <<  " >> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION " << _assembler.step.iteration ;
 	} else {
-		ESINFO(CONVERGENCE) <<  " >> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION " << step.iteration + 1 ;
+		ESINFO(CONVERGENCE) <<  " >> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION " << _assembler.step.iteration + 1 ;
 	}
 }
 

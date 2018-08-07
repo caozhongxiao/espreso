@@ -1,19 +1,18 @@
 
 #include "instance.h"
 
-#include "../mesh/structures/mesh.h"
+#include "../mesh/mesh.h"
+#include "../mesh/store/elementstore.h"
 #include "../solver/generic/SparseMatrix.h"
-#include "solution.h"
 #include "../basis/logging/logging.h"
 
 using namespace espreso;
 
 Instance::Instance(const Mesh &mesh)
-: domains(mesh.parts()),
+: domains(mesh.elements->ndomains),
   domainDOFCount(_domainDOFCount),
-  properties(_properties),
-  neighbours(mesh.neighbours()),
-  clustersMap(mesh.getContinuityPartition()),
+  neighbours(mesh.neighbours),
+  clustersMap(mesh.elements->clusters),
   origK(_origK), K(_K),
   origKN1(_origKN1), origKN2(_origKN2), origRegMat(_origRegMat),
   N1(_N1), N2(_N2), RegMat(_RegMat),
@@ -75,7 +74,7 @@ Instance::Instance(const Mesh &mesh)
 	};
 
 	computeKernelFromOrigKCallback = [] (FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster) {
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernel is empty function. Fill it in assembler.";
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernelFromOrigK is empty function. Fill it in assembler.";
 	};
 
 	computeKernelsFromOrigKCallback = [] (FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
@@ -94,7 +93,6 @@ Instance::Instance(const Mesh &mesh)
 Instance::Instance(Instance &other, Matrices &share)
 : domains(other.domains),
   domainDOFCount(share & Matrices::K ? other.domainDOFCount :_domainDOFCount),
-  properties(other.properties),
   neighbours(other.neighbours),
   clustersMap(other.clustersMap),
 
@@ -264,9 +262,7 @@ void Instance::clear()
 
 Instance::~Instance()
 {
-	for (size_t i = 0; i < solutions.size(); i++) {
-		delete solutions[i];
-	}
+
 }
 
 
