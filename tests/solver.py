@@ -25,19 +25,21 @@ class ESPRESOSolver(unittest.TestCase):
 
 if __name__ == '__main__':
 
-    test_cases = TestCaseCreator.select(os.path.join(ROOT, "examples", "solver"))
+    print "solver benchmarks are not working - try benchmarks using: nosetests"
 
-    for subdirectory in test_cases:
-        for name, path, file in TestCaseCreator.gather(subdirectory, ".test"):
-            def create_test(*args):
-                args = [ arg.values()[0] for arg in args ]
-                suffix = os.path.relpath(path, subdirectory).replace('/', '_')
-                TestCaseCreator.create_test(ESPRESOSolver, ESPRESOSolver.solver, "_".join([suffix] + args), path, file, args)
-
-            ranges = []
-            for parameter, values in [ line.split("=") for line in open(os.path.join(path, file)) ]:
-                ranges.append({ parameter.strip(): values.split() })
-
-            TestCaseCreator.iterate(create_test, *ranges)
-
-    unittest.main()
+#     test_cases = TestCaseCreator.select(os.path.join(ROOT, "examples", "solver"))
+# 
+#     for subdirectory in test_cases:
+#         for name, path, file in TestCaseCreator.gather(subdirectory, ".test"):
+#             def create_test(*args):
+#                 args = [ arg.values()[0] for arg in args ]
+#                 suffix = os.path.relpath(path, subdirectory).replace('/', '_')
+#                 TestCaseCreator.create_test(ESPRESOSolver, ESPRESOSolver.solver, "_".join([suffix] + args), path, file, args)
+# 
+#             ranges = []
+#             for parameter, values in [ line.split("=") for line in open(os.path.join(path, file)) ]:
+#                 ranges.append({ parameter.strip(): values.split() })
+# 
+#             TestCaseCreator.iterate(create_test, *ranges)
+# 
+#     unittest.main()

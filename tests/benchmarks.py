@@ -38,20 +38,22 @@ class ESPRESOBenchmarks(unittest.TestCase):
 
 if __name__ == '__main__':
 
-    benchmarks = TestCaseCreator.select(os.path.join(ROOT, "benchmarks"))
+    print "the benchmarks script is not working - run benchmarks using: nosetests"
 
-    def run(vars, range, name, path, file):
-        def call(args):
-            report = ".".join([ args[var] for var in vars ])
-            if len(report) == 0:
-                report = "espreso"
-            TestCaseCreator.create_test(ESPRESOBenchmarks, ESPRESOBenchmarks.benchmark, name + "." + report, name, path, file, args, report + ".emr")
-
-        TestCaseCreator.iterate(call, range)
-
-    for subdirectory in benchmarks:
-        for name, path, file in TestCaseCreator.gather(subdirectory, ".ecf"):
-            vars, range = Espreso.get_instances(os.path.join(path, file))
-            run(vars, range, name, path, file)
-
-    unittest.main()
+#     benchmarks = TestCaseCreator.select(os.path.join(ROOT, "benchmarks"))
+# 
+#     def run(vars, range, name, path, file):
+#         def call(args):
+#             report = ".".join([ args[var] for var in vars ])
+#             if len(report) == 0:
+#                 report = "espreso"
+#             TestCaseCreator.create_test(ESPRESOBenchmarks, ESPRESOBenchmarks.benchmark, name + "." + report, name, path, file, args, report + ".emr")
+# 
+#         TestCaseCreator.iterate(call, range)
+# 
+#     for subdirectory in benchmarks:
+#         for name, path, file in TestCaseCreator.gather(subdirectory, ".ecf"):
+#             vars, range = Espreso.get_instances(os.path.join(path, file))
+#             run(vars, range, name, path, file)
+# 
+#     unittest.main()

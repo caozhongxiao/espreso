@@ -1,7 +1,5 @@
 # ESPRESO Configuration File
 
-#BENCHMARK ARG0 [ TETRA4, TETRA10, PYRAMID5, PYRAMID13, PRISMA6, PRISMA15, HEXA8, HEXA20 ]
-
 DEFAULT_ARGS {
   0   HEXA20;
 
@@ -9,13 +7,13 @@ DEFAULT_ARGS {
   2        2;
   3        1;
 
-  4        3;
-  5        1;
+  4        1;
+  5        2;
   6        2;
 
-  7        2;
-  8        6;
-  9        6;
+  7        5;
+  8        5;
+  9        5;
 }
 
 INPUT                   GENERATOR;

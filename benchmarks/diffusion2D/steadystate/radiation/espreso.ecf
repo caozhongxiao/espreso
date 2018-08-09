@@ -1,7 +1,5 @@
 # ESPRESO Configuration File
 
-#BENCHMARK ARG0 [ SQUARE4, TRIANGLE3 ]
-
 DEFAULT_ARGS {
   0   SQUARE4;
 

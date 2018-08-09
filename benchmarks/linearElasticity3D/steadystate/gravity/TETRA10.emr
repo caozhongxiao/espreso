@@ -3,4 +3,4 @@
     step ; substep ;    time ;  DISPLACEMENT  ;  DISPLACEMENT  ;  DISPLACEMENT  ;
          ;         ;         ;      <MIN>     ;      <MAX>     ;    <AVERAGE>   ;
 
-       1 ;       1 ;  1.0000 ;  7.261381e-09  ;  1.801313e-01  ;  1.136712e-01  ;
+       1 ;       1 ;  1.0000 ;  0.000000e+00  ;  1.800903e-01  ;  1.133880e-01  ;

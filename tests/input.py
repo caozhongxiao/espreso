@@ -32,22 +32,24 @@ class ESPRESOInput(unittest.TestCase):
 
 if __name__ == '__main__':
 
-    openfoam, workbench, espresoBinary = TestCaseCreator.select(
-        os.path.join(ROOT, "examples", "input", "openfoam"),
-        os.path.join(ROOT, "examples", "input", "workbench"),
-        os.path.join(ROOT, "examples", "input", "espresoBinaryFormat")
-    )
+    print "input benchmarks are not working - try benchmarks using: nosetests"
 
-    for subdirectory in openfoam:
-        for name, path, file in TestCaseCreator.gather(subdirectory, ".ecf"):
-            TestCaseCreator.create_test(ESPRESOInput, ESPRESOInput.openfoam, "openfoam_" + name, path, file)
-
-    for subdirectory in workbench:
-        for name, path, file in TestCaseCreator.gather(subdirectory, ".ecf"):
-            TestCaseCreator.create_test(ESPRESOInput, ESPRESOInput.workbench, "workbench_" + name, path, file)
-
-    for subdirectory in espresoBinary:
-        for name, path, file in TestCaseCreator.gather(subdirectory, ".ecf", "decomposer.ecf"):
-            TestCaseCreator.create_test(ESPRESOInput, ESPRESOInput.espresoBinary, "espresoBinary_" + name, path, file)
-
-    unittest.main()
+#     openfoam, workbench, espresoBinary = TestCaseCreator.select(
+#         os.path.join(ROOT, "examples", "input", "openfoam"),
+#         os.path.join(ROOT, "examples", "input", "workbench"),
+#         os.path.join(ROOT, "examples", "input", "espresoBinaryFormat")
+#     )
+# 
+#     for subdirectory in openfoam:
+#         for name, path, file in TestCaseCreator.gather(subdirectory, ".ecf"):
+#             TestCaseCreator.create_test(ESPRESOInput, ESPRESOInput.openfoam, "openfoam_" + name, path, file)
+# 
+#     for subdirectory in workbench:
+#         for name, path, file in TestCaseCreator.gather(subdirectory, ".ecf"):
+#             TestCaseCreator.create_test(ESPRESOInput, ESPRESOInput.workbench, "workbench_" + name, path, file)
+# 
+#     for subdirectory in espresoBinary:
+#         for name, path, file in TestCaseCreator.gather(subdirectory, ".ecf", "decomposer.ecf"):
+#             TestCaseCreator.create_test(ESPRESOInput, ESPRESOInput.espresoBinary, "espresoBinary_" + name, path, file)
+# 
+#     unittest.main()
