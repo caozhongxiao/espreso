@@ -117,7 +117,7 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
 	if (this->m_mesh != nullptr) delete this->m_mesh;
 	this->m_mesh = new Mesh(*m_ecf, true);
 
-	Input::load(*m_ecf, *m_mesh, environment->MPIrank, environment->MPIsize);
+    Input::load(*m_ecf, *m_mesh);
 
 	QMap<QString, QVector<float> > regions;
 

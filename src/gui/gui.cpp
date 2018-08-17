@@ -17,8 +17,6 @@
 
 #include "../mesh/mesh.h"
 
-#include "../input/loader.h"
-
 #include "mpi.h"
 
 #include <locale>
