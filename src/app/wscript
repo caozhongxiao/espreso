@@ -56,6 +56,13 @@ def build(ctx):
         install_path = ctx.ROOT + "/bin"
     )
 
+    ctx.program(
+        source       = "ecfexport.cpp",
+        target       = "ecfexport",
+        use          = "basis config wrappers",
+        install_path = ctx.ROOT + "/bin"
+    )
+
     return
     ctx.program(
         source       = "ecfchecker.cpp",
