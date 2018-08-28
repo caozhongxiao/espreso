@@ -136,12 +136,19 @@ struct ECFObjectMap: public ECFObject {
 
 	virtual ECFParameter* getPattern() const
 	{
-		std::map<TParameter, TObject*> dummy;
-		auto it = value.emplace(std::piecewise_construct, std::forward_as_tuple(TParameter{}), args);
-		return registerPatternParameter(&it.first->second);
+		TParameter key{};
+		if (_pattern.size() == 0) {
+			_pattern.emplace(std::piecewise_construct, std::forward_as_tuple(key), args);
+		}
+		ECFParameter *parameter = &_pattern.at(key);
+		parameter->metadata = metadata.suffix(1);
+		return parameter;
 	}
 
 	virtual const void* data() const { return &value; }
+
+private:
+	mutable std::map<TParameter, TObject> _pattern;
 };
 
 template <typename TParameter1, typename TParameter2, typename TValue>
