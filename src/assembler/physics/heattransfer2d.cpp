@@ -29,7 +29,7 @@ using namespace espreso;
 HeatTransfer2D::HeatTransfer2D(Mesh *mesh, Instance *instance, Step *step, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
 : Physics("HEAT TRANSFER 2D", mesh, instance, step, &configuration, 1), HeatTransfer(configuration, propertiesConfiguration)
 {
-	if (_propertiesConfiguration.gradient) {
+	if (_propertiesConfiguration.gradient || _configuration.diffusion_split) {
 		_gradient = _mesh->elements->appendData(2, { "GRADIENT", "GRADIENT_X", "GRADIENT_Y" });
 	}
 
@@ -289,7 +289,7 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 	DenseMatrix g(1, 2), u(1, 2), v(1, 2), re(1, nodes->size());
 	double normGradN = 0;
 
-	if (_configuration.diffusion_split) {
+	if ((matrices & Matrices::M) && _configuration.diffusion_split) {
 		g(0, 0) = (*_gradient->data)[2 * eindex + 0];
 		g(0, 1) = (*_gradient->data)[2 * eindex + 1];
 	}
@@ -419,7 +419,7 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 		}
 	}
 
-	if (_configuration.diffusion_split) {
+	if ((matrices & Matrices::M) && _configuration.diffusion_split) {
 		DenseMatrix T1, T2;
 		T1.multiply(Ke, T, 1, 0);
 		T2.multiply(gKe, T, 1, 0);

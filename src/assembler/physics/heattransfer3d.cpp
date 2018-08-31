@@ -33,7 +33,7 @@ using namespace espreso;
 HeatTransfer3D::HeatTransfer3D(Mesh *mesh, Instance *instance, Step *step, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
 : Physics("HEAT TRANSFER 3D", mesh, instance, step, &configuration, 1), HeatTransfer(configuration, propertiesConfiguration)
 {
-	if (_propertiesConfiguration.gradient) {
+	if (_propertiesConfiguration.gradient || _configuration.diffusion_split) {
 		_gradient = _mesh->elements->appendData(3, { "GRADIENT", "GRADIENT_X", "GRADIENT_Y", "GRADIENT_Z" });
 	}
 
