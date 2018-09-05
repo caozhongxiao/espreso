@@ -15,7 +15,6 @@
 #include "../mesh/store/elementstore.h"
 #include "../mesh/store/elementsregionstore.h"
 #include "../mesh/store/boundaryregionstore.h"
-#include "../old/input/loader.h"
 
 #include <numeric>
 #include <algorithm>
@@ -23,13 +22,13 @@
 
 using namespace espreso;
 
-void SortedInput::buildMesh(const ECFRoot &configuration, PlainMeshData &meshData, Mesh &mesh)
+void SortedInput::buildMesh(PlainMeshData &meshData, Mesh &mesh)
 {
-	SortedInput(configuration, meshData, mesh);
+	SortedInput(meshData, mesh);
 }
 
-SortedInput::SortedInput(const ECFRoot &configuration, PlainMeshData &meshData, Mesh &mesh)
-: Input(configuration, meshData, mesh)
+SortedInput::SortedInput(PlainMeshData &meshData, Mesh &mesh)
+: Input(meshData, mesh)
 {
 	ESINFO(OVERVIEW) << "Build mesh from sorted elements.";
 	TimeEval timing("Load distributed mesh");

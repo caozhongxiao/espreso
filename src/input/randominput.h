@@ -13,10 +13,10 @@ namespace espreso {
 class RandomInput: public Input {
 
 public:
-	static void buildMesh(const ECFRoot &configuration, PlainMeshData &meshData, Mesh &mesh);
+	static void buildMesh(PlainMeshData &meshData, Mesh &mesh);
 
 protected:
-	RandomInput(const ECFRoot &configuration, PlainMeshData &dMesh, Mesh &mesh);
+	RandomInput(PlainMeshData &dMesh, Mesh &mesh);
 
 	void assignNBuckets();
 	void assignEBuckets();

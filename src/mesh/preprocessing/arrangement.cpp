@@ -747,19 +747,19 @@ void MeshPreprocessing::arrangeRegions()
 			store->uniqueTotalSize = _mesh->nodes->uniqueTotalSize;
 		}
 
-		_mesh->boundaryRegions[r]->uniqueNodes = _mesh->boundaryRegions[r]->nodes;
-		_mesh->boundaryRegions[r]->unintervals = _mesh->boundaryRegions[r]->nintervals;
-		if (_mesh->boundaryRegions[r]->dimension == 0) {
-			_mesh->boundaryRegions[r]->elements = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(threads, 0));
-			_mesh->boundaryRegions[r]->epointers = new serializededata<eslocal, Element*>(1, tarray<Element*>(threads, 0));
+		store->uniqueNodes = store->nodes;
+		store->unintervals = store->nintervals;
+		if (store->dimension == 0) {
+			store->elements = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(threads, 0));
+			store->epointers = new serializededata<eslocal, Element*>(1, tarray<Element*>(threads, 0));
 		} else {
-			std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, _mesh->boundaryRegions[r]->elements->structures());
+			std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, store->elements->structures());
 			std::vector<eslocal> &eDomainDistribution = _mesh->elements->elementsDistribution;
 			std::vector<eslocal> emembership(distribution.back()), edomain(distribution.back());
 
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
-				auto enodes = _mesh->boundaryRegions[r]->elements->cbegin() + distribution[t];
+				auto enodes = store->elements->cbegin() + distribution[t];
 				std::vector<eslocal> nlinks;
 				int counter;
 				for (size_t e = distribution[t]; e < distribution[t + 1]; ++e, ++enodes) {
@@ -785,14 +785,14 @@ void MeshPreprocessing::arrangeRegions()
 				}
 			}
 
-			std::vector<eslocal> permutation(_mesh->boundaryRegions[r]->elements->structures());
+			std::vector<eslocal> permutation(store->elements->structures());
 			std::iota(permutation.begin(), permutation.end(), 0);
 			std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) {
 				if (edomain[i] == edomain[j]) {
-					if (_mesh->boundaryRegions[r]->epointers->datatarray()[i] == _mesh->boundaryRegions[r]->epointers->datatarray()[j]) {
+					if (store->epointers->datatarray()[i] == store->epointers->datatarray()[j]) {
 						return emembership[i] < emembership[j];
 					}
-					return _mesh->boundaryRegions[r]->epointers->datatarray()[i] < _mesh->boundaryRegions[r]->epointers->datatarray()[j];
+					return store->epointers->datatarray()[i] < store->epointers->datatarray()[j];
 				}
 				return edomain[i] < edomain[j];
 			});
@@ -808,7 +808,7 @@ void MeshPreprocessing::arrangeRegions()
 				tdistribution.push_back(edistribution[_mesh->elements->domainDistribution[t]]);
 			}
 
-			_mesh->boundaryRegions[r]->permute(permutation, tdistribution);
+			store->permute(permutation, tdistribution);
 
 			std::vector<std::vector<eslocal> > iboundaries(threads);
 
@@ -817,7 +817,7 @@ void MeshPreprocessing::arrangeRegions()
 				for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
 					iboundaries[t].push_back(edistribution[d]);
 					for (eslocal e = edistribution[d] + 1; e < edistribution[d + 1]; ++e) {
-						if (_mesh->boundaryRegions[r]->epointers->datatarray()[e]->code != _mesh->boundaryRegions[r]->epointers->datatarray()[e - 1]->code) {
+						if (store->epointers->datatarray()[e]->code != store->epointers->datatarray()[e - 1]->code) {
 							iboundaries[t].push_back(e);
 						}
 					}
@@ -826,29 +826,29 @@ void MeshPreprocessing::arrangeRegions()
 			iboundaries.back().push_back(edistribution.back());
 			Esutils::mergeThreadedUniqueData(iboundaries);
 
-			_mesh->boundaryRegions[r]->eintervalsDistribution.push_back(0);
+			store->eintervalsDistribution.push_back(0);
 			eslocal lastDomain = 0;
 			for (size_t i = 0; i < iboundaries[0].size() - 1; i++) {
-				_mesh->boundaryRegions[r]->eintervals.push_back(ElementsInterval(iboundaries[0][i], iboundaries[0][i + 1]));
-				_mesh->boundaryRegions[r]->eintervals.back().code = static_cast<int>(_mesh->boundaryRegions[r]->epointers->datatarray()[iboundaries[0][i]]->code);
-				_mesh->boundaryRegions[r]->eintervals.back().domain = edomain[permutation[iboundaries[0][i]]];
-				if (_mesh->boundaryRegions[r]->eintervals.back().domain != lastDomain) {
-					_mesh->boundaryRegions[r]->eintervalsDistribution.insert(
-							_mesh->boundaryRegions[r]->eintervalsDistribution.end(),
-							_mesh->boundaryRegions[r]->eintervals.back().domain - lastDomain,
-							_mesh->boundaryRegions[r]->eintervals.size() - 1);
+				store->eintervals.push_back(ElementsInterval(iboundaries[0][i], iboundaries[0][i + 1]));
+				store->eintervals.back().code = static_cast<int>(store->epointers->datatarray()[iboundaries[0][i]]->code);
+				store->eintervals.back().domain = edomain[permutation[iboundaries[0][i]]];
+				if (store->eintervals.back().domain != lastDomain) {
+					store->eintervalsDistribution.insert(
+							store->eintervalsDistribution.end(),
+							store->eintervals.back().domain - lastDomain,
+							store->eintervals.size() - 1);
 				}
-				lastDomain = _mesh->boundaryRegions[r]->eintervals.back().domain;
+				lastDomain = store->eintervals.back().domain;
 			}
-			_mesh->boundaryRegions[r]->eintervalsDistribution.insert(
-					_mesh->boundaryRegions[r]->eintervalsDistribution.end(),
+			store->eintervalsDistribution.insert(
+					store->eintervalsDistribution.end(),
 					_mesh->elements->ndomains - lastDomain,
-					_mesh->boundaryRegions[r]->eintervals.size());
+					store->eintervals.size());
 
 			int codes = 0;
-			for (size_t i = 0; i < _mesh->boundaryRegions[r]->eintervals.size(); ++i) {
-				_mesh->boundaryRegions[r]->ecounters[_mesh->boundaryRegions[r]->eintervals[i].code] += _mesh->boundaryRegions[r]->eintervals[i].end - _mesh->boundaryRegions[r]->eintervals[i].begin;
-				codes |= 1 << _mesh->boundaryRegions[r]->eintervals[i].code;
+			for (size_t i = 0; i < store->eintervals.size(); ++i) {
+				store->ecounters[store->eintervals[i].code] += store->eintervals[i].end - store->eintervals[i].begin;
+				codes |= 1 << store->eintervals[i].code;
 			}
 
 			int allcodes = 0;
@@ -856,7 +856,7 @@ void MeshPreprocessing::arrangeRegions()
 
 			for (int i = 0, bitmask = 1; i < _mesh->elements->ecounters.size(); i++, bitmask = bitmask << 1) {
 				if (allcodes & bitmask) {
-					_mesh->boundaryRegions[r]->ecounters[i] = Communication::exscan(_mesh->boundaryRegions[r]->ecounters[i]);
+					store->ecounters[i] = Communication::exscan(store->ecounters[i]);
 				}
 			}
 		}

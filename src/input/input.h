@@ -19,8 +19,8 @@ public:
 	static void load(const ECFRoot &configuration, Mesh &mesh);
 
 protected:
-	Input(const ECFRoot &configuration, PlainMeshData &meshData, Mesh &mesh)
-	: _configuration(configuration), _meshData(meshData), _mesh(mesh), _eregsize(1), _nregsize(1) {}
+	Input(PlainMeshData &meshData, Mesh &mesh)
+	: _meshData(meshData), _mesh(mesh), _eregsize(1), _nregsize(1) {}
 
 	void balance();
 
@@ -37,12 +37,13 @@ protected:
 			size_t &rsize, std::vector<eslocal> &rbits);
 	void fillRegions(std::map<std::string, std::vector<eslocal> > &regions, size_t &rsize, std::vector<eslocal> &rbits);
 
-	void sortNodes();
+	void sortNodes(bool withElementNodes = false);
 	void sortElements();
 	void sortElements(const std::vector<eslocal> &permutation);
 
 	void fillNodes();
 	void fillElements();
+	void fillNeighbors();
 
 	void fillNodeRegions();
 	void fillBoundaryRegions();
@@ -52,7 +53,6 @@ protected:
 	void reindexElementNodes();
 	void reindexBoundaryNodes();
 
-	const ECFRoot &_configuration;
 	PlainMeshData &_meshData;
 	Mesh &_mesh;
 

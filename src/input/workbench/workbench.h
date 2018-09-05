@@ -19,7 +19,7 @@
 namespace espreso {
 
 struct Point;
-class ECFRoot;
+class InputConfiguration;
 class Mesh;
 
 struct PlainWorkbenchData: public PlainMeshData {
@@ -29,16 +29,16 @@ struct PlainWorkbenchData: public PlainMeshData {
 class WorkbenchLoader {
 
 public:
-	static void load(const ECFRoot &configuration, Mesh &mesh);
+	static void load(const InputConfiguration &configuration, Mesh &mesh);
 
 protected:
-	WorkbenchLoader(const ECFRoot &configuration, Mesh &mesh);
+	WorkbenchLoader(const InputConfiguration &configuration, Mesh &mesh);
 
 	void readData();
 	void prepareData();
 	void parseData(PlainWorkbenchData &dMesh);
 
-	const ECFRoot &_configuration;
+	const InputConfiguration &_configuration;
 	Mesh &_mesh;
 
 	std::vector<NBlock> _NBlocks;

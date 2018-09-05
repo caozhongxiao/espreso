@@ -56,7 +56,7 @@ GENERATOR {
         LENGTH_Z                   1;
 
         NODES {
-          TOP      <0 , 1> <0 , 1> <1 , 1>;
+          TOP      <0 , 1> <0 , 1> <2 , 2>;
         }
 
         ELEMENT_TYPE          [ARG0];

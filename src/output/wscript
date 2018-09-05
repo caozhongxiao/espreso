@@ -9,5 +9,5 @@ def build(ctx):
     ctx.objects(
         source = ctx.path.ant_glob('**/*.cpp'),
         use    = "espreso_includes",
-        target = "store"
+        target = "output"
     )

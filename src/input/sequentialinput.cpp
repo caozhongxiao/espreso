@@ -4,27 +4,22 @@
 #include "../basis/containers/serializededata.h"
 #include "../basis/logging/logging.h"
 #include "../basis/logging/timeeval.h"
-#include "../basis/utilities/utils.h"
-
-#include "../config/ecf/environment.h"
 
 #include "../mesh/mesh.h"
 #include "../mesh/store/nodestore.h"
-#include "../mesh/store/elementstore.h"
-#include "../mesh/store/boundaryregionstore.h"
 
 #include <algorithm>
 #include <numeric>
 
 using namespace espreso;
 
-void SequentialInput::buildMesh(const ECFRoot &configuration, PlainMeshData &meshData, Mesh &mesh)
+void SequentialInput::buildMesh(PlainMeshData &meshData, Mesh &mesh)
 {
-	SequentialInput(configuration, meshData, mesh);
+	SequentialInput(meshData, mesh);
 }
 
-SequentialInput::SequentialInput(const ECFRoot &configuration, PlainMeshData &meshData, Mesh &mesh)
-: Input(configuration, meshData, mesh)
+SequentialInput::SequentialInput(PlainMeshData &meshData, Mesh &mesh)
+: Input(meshData, mesh)
 {
 	ESINFO(OVERVIEW) << "Build mesh.";
 	TimeEval timing("Load sequential mesh");
@@ -74,10 +69,7 @@ SequentialInput::SequentialInput(const ECFRoot &configuration, PlainMeshData &me
 	ESINFO(PROGRESS2) << "Sequential loader:: elements filled.";
 
 	TimeEvent treindex("reindex elements nodes"); treindex.start();
-	if (
-			!std::is_sorted(_mesh.nodes->IDs->datatarray().begin(), _mesh.nodes->IDs->datatarray().end()) ||
-			!_mesh.nodes->IDs->datatarray().back() != _mesh.nodes->IDs->datatarray().size()) {
-
+	if (!_mesh.nodes->IDs->datatarray().back() != _mesh.nodes->IDs->datatarray().size()) {
 		reindexElementNodes();
 		reindexBoundaryNodes();
 	}

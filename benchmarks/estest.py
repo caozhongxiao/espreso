@@ -30,7 +30,8 @@ class ESPRESOTest:
 
     @staticmethod
     def clean():
-        shutil.rmtree(os.path.join(ESPRESOTest.path, "results"), ignore_errors=True)
+        pass
+        #shutil.rmtree(os.path.join(ESPRESOTest.path, "results"), ignore_errors=True)
 
     @staticmethod
     def run_program(program):
@@ -48,7 +49,7 @@ class ESPRESOTest:
         program = copy.deepcopy(ESPRESOTest.mpirun)
         program.append(str(ESPRESOTest.processes))
         program.append(ESPRESOTest.espreso)
-        program.extend([ "-c", ESPRESOTest.ecf ])
+        program.extend([ "-c", os.path.join(ESPRESOTest.path, ESPRESOTest.ecf) ])
         program.extend(map(str, ESPRESOTest.args))
 
         output, error = ESPRESOTest.run_program(program)

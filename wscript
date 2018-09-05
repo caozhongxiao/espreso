@@ -91,8 +91,8 @@ def configure(ctx):
     ctx.env.append_unique("CXXFLAGS", [ "-I" + include for include in ctx.env.INCLUDES ])
     ctx.env.INCLUDES = []
 
-    if ctx.env.LIBTYPE == "SHARED":
-        ctx.env.append_unique("CXXFLAGS", "-fPIC")
+#    if ctx.env.LIBTYPE == "SHARED":
+#        ctx.env.append_unique("CXXFLAGS", "-fPIC")
 
     if ctx.env.BUILD_TOOLS == "1":
         ctx.recurse("tools")
@@ -108,11 +108,8 @@ def configure(ctx):
     # recurse to ESPRESO solver
     ctx.setenv("solver", ctx.env.derive());
     append_solver_attributes(ctx, compiler_attributes)
-    ctx.recurse("src/old/mesh")
-    ctx.recurse("src/old/oldevaluators")
     ctx.recurse("src/mesh")
     ctx.recurse("src/input")
-    ctx.recurse("src/old/input")
     ctx.recurse("src/solver")
     ctx.recurse("src/assembler")
 
@@ -160,11 +157,8 @@ def build(ctx):
     ctx.recurse("src/wrappers")
 
     ctx.env = ctx.all_envs["solver"]
-    ctx.recurse("src/old/mesh")
-    ctx.recurse("src/old/oldevaluators")
     ctx.recurse("src/mesh")
     ctx.recurse("src/input")
-    ctx.recurse("src/old/input")
     ctx.recurse("src/solver")
     ctx.recurse("src/assembler")
 

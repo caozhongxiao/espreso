@@ -19,12 +19,6 @@
 
 #include "../assembler/step.h"
 
-#include "../old/mesh/structures/mesh.h"
-#include "../old/mesh/structures/coordinates.h"
-#include "../old/mesh/structures/region.h"
-#include "../old/mesh/structures/elementtypes.h"
-#include "../old/mesh/elements/element.h"
-
 #include <iostream>
 #include <vector>
 #include <numeric>
@@ -48,7 +42,6 @@ Mesh::Mesh(const ECFRoot &configuration, bool withGUI)
 
   configuration(configuration),
   _eclasses(environment->OMP_NUM_THREADS),
-  mesh(new OldMesh()),
   _withGUI(withGUI)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
@@ -65,6 +58,9 @@ Mesh::Mesh(const ECFRoot &configuration, bool withGUI)
 		dimension = 3;
 		break;
 	}
+
+	preferedDomains = 1;
+	uniformDecomposition = true;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -139,214 +135,6 @@ BoundaryRegionsIntersectionStore* Mesh::ibregion(const std::string &name)
 	ESINFO(ERROR) << "ESPRESO internal error: request for unknown intersection of boundary regions '" << name << "'.";
 	return NULL;
 }
-
-void Mesh::load()
-{
-	size_t threads = environment->OMP_NUM_THREADS;
-
-	neighbours = mesh->neighbours();
-	neighboursWithMe = neighbours;
-	neighboursWithMe.push_back(environment->MPIrank);
-	std::sort(neighboursWithMe.begin(), neighboursWithMe.end());
-
-	std::vector<eslocal> shrink(mesh->nodes().size());
-	// LOAD NODES
-	{
-		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, mesh->nodes().size());
-		std::vector<std::vector<Point> > coordinates(threads);
-		std::vector<std::vector<eslocal> > IDs(threads);
-		std::vector<std::vector<eslocal> > ranksBoundaries(threads);
-		std::vector<std::vector<int> > ranksData(threads);
-		std::vector<eslocal> tempty(threads);
-
-		ranksBoundaries.front().push_back(0);
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			size_t offset = 0;
-			eslocal empty = 0;
-			for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
-				if (mesh->nodes()[n]->parentElements().size()) {
-					coordinates[t].push_back(mesh->coordinates()[n]);
-					IDs[t].push_back(mesh->coordinates().globalIndex(n));
-					ranksBoundaries[t].push_back(offset = offset + mesh->nodes()[n]->clusters().size());
-					for (size_t c = 0; c < mesh->nodes()[n]->clusters().size(); c++) {
-						ranksData[t].push_back(mesh->nodes()[n]->clusters()[c]);
-					}
-					shrink[n] = empty;
-				} else {
-					++empty;
-					shrink[n] = -1;
-				}
-
-			}
-			tempty[t] = empty;
-		}
-
-		Esutils::sizesToOffsets(tempty);
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
-				if (shrink[n] != -1 ) {
-					shrink[n] += tempty[t];
-				}
-			}
-		}
-
-		Esutils::threadDistributionToFullDistribution(ranksBoundaries);
-
-		nodes->IDs = new serializededata<eslocal, esglobal>(1, IDs);
-
-		nodes->size = nodes->IDs->structures();
-		nodes->distribution = nodes->IDs->datatarray().distribution();
-
-		nodes->coordinates = new serializededata<eslocal, Point>(1, coordinates);
-		nodes->ranks = new serializededata<eslocal, int>(ranksBoundaries, ranksData);
-	}
-
-	auto geteoffset = [] (eslocal vtkCode) {
-		switch (vtkCode) {
-		case  3: return static_cast<int>(Element::CODE::LINE2);
-		case  4: return static_cast<int>(Element::CODE::LINE3);
-
-		case  5: return static_cast<int>(Element::CODE::TRIANGLE3);
-		case  9: return static_cast<int>(Element::CODE::SQUARE4);
-		case 22: return static_cast<int>(Element::CODE::TRIANGLE6);
-		case 23: return static_cast<int>(Element::CODE::SQUARE8);
-
-		case 10: return static_cast<int>(Element::CODE::TETRA4);
-		case 12: return static_cast<int>(Element::CODE::HEXA8);
-		case 13: return static_cast<int>(Element::CODE::PRISMA6);
-		case 14: return static_cast<int>(Element::CODE::PYRAMID5);
-
-		case 24: return static_cast<int>(Element::CODE::TETRA10);
-		case 25: return static_cast<int>(Element::CODE::HEXA20);
-		case 26: return static_cast<int>(Element::CODE::PRISMA15);
-		case 27: return static_cast<int>(Element::CODE::PYRAMID13);
-		}
-		return -1;
-	};
-
-	{
-		size_t esize = mesh->elements().size();
-		Communication::exscan(esize);
-		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, mesh->elements().size());
-		std::vector<std::vector<eslocal> > boundaries(threads), indices(threads);
-		std::vector<std::vector<Element*> > epointers(threads);
-		std::vector<std::vector<eslocal> > eIDs(threads);
-		std::vector<std::vector<int> > body(threads), material(threads);
-
-		boundaries.front().push_back(0);
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			size_t offset = 0;
-			for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
-				epointers[t].push_back(&_eclasses[t][geteoffset(mesh->elements()[e]->vtkCode())]);
-				boundaries[t].push_back(offset = offset + mesh->elements()[e]->nodes());
-				for (size_t n = 0; n < mesh->elements()[e]->nodes(); n++) {
-					indices[t].push_back(mesh->elements()[e]->node(n) - shrink[mesh->elements()[e]->node(n)]);
-				}
-
-				eIDs[t].push_back(e + esize);
-				body[t].push_back(mesh->elements()[e]->param(OldElement::Params::BODY));
-				material[t].push_back(mesh->elements()[e]->param(OldElement::Params::MATERIAL));
-			}
-		}
-
-		Esutils::threadDistributionToFullDistribution(boundaries);
-
-		switch (configuration.physics) {
-		case PHYSICS::HEAT_TRANSFER_2D:
-		case PHYSICS::STRUCTURAL_MECHANICS_2D:
-		case PHYSICS::SHALLOW_WATER_2D:
-			elements->dimension = 2;
-			break;
-		case PHYSICS::HEAT_TRANSFER_3D:
-		case PHYSICS::STRUCTURAL_MECHANICS_3D:
-			elements->dimension = 3;
-		}
-
-		elements->size = mesh->elements().size();
-		elements->distribution = distribution;
-
-		elements->IDs = new serializededata<eslocal, eslocal>(1, eIDs);
-		elements->nodes = new serializededata<eslocal, eslocal>(std::move(tarray<eslocal>(boundaries)), std::move(tarray<eslocal>(indices)));
-
-		elements->body = new serializededata<eslocal, int>(1, body);
-		elements->material = new serializededata<eslocal, int>(1, material);
-		elements->epointers = new serializededata<eslocal, Element*>(1, std::move(tarray<Element*>(epointers)));
-	}
-
-	for (size_t r = 0; r < mesh->regions().size(); r++) {
-		std::vector<size_t> tdistributions = tarray<size_t>::distribute(threads, mesh->regions()[r]->elements().size());
-		std::vector<std::vector<eslocal> > rdistribution(threads), rdata(threads);
-		std::vector<std::vector<Element*> > epointers(threads);
-
-		switch (mesh->regions()[r]->eType) {
-		case ElementType::ELEMENTS:
-			elementsRegions.push_back(new ElementsRegionStore(mesh->regions()[r]->name));
-			if (mesh->regions()[r]->elements().size() == mesh->elements().size()) {
-				#pragma omp parallel for
-				for (size_t t = 0; t < threads; t++) {
-					rdata[t].resize(tdistributions[t + 1] - tdistributions[t]);
-					std::iota(rdata[t].begin(), rdata[t].end(), tdistributions[t]);
-				}
-			} else {
-				#pragma omp parallel for
-				for (size_t t = 0; t < threads; t++) {
-					for (size_t e = tdistributions[t]; e < tdistributions[t + 1]; e++) {
-						rdata[t].push_back(std::find(mesh->elements().begin(), mesh->elements().end(), mesh->regions()[r]->elements()[e]) - mesh->elements().begin());
-					}
-				}
-			}
-			elementsRegions.back()->elements = new serializededata<eslocal, eslocal>(1, rdata);
-			std::sort(elementsRegions.back()->elements->datatarray().begin(), elementsRegions.back()->elements->datatarray().end());
-			break;
-		case ElementType::FACES:
-		case ElementType::EDGES:
-			rdistribution[0].push_back(0);
-			#pragma omp parallel for
-			for (size_t t = 0; t < threads; t++) {
-				for (size_t e = tdistributions[t]; e < tdistributions[t + 1]; e++) {
-					for (size_t n = 0; n < mesh->regions()[r]->elements()[e]->nodes(); n++) {
-						rdata[t].push_back(mesh->regions()[r]->elements()[e]->node(n) - shrink[mesh->regions()[r]->elements()[e]->node(n)]);
-					}
-					epointers[t].push_back(&_eclasses[t][geteoffset(mesh->regions()[r]->elements()[e]->vtkCode())]);
-					rdistribution[t].push_back(rdata[t].size());
-				}
-			}
-			Esutils::threadDistributionToFullDistribution(rdistribution);
-
-			boundaryRegions.push_back(new BoundaryRegionStore(mesh->regions()[r]->name, _eclasses));
-			boundaryRegions.back()->distribution = tdistributions;
-			boundaryRegions.back()->elements = new serializededata<eslocal, eslocal>(rdistribution, rdata);
-			boundaryRegions.back()->epointers = new serializededata<eslocal, Element*>(1, epointers);
-			if (mesh->regions()[r]->eType == ElementType::FACES) {
-				boundaryRegions.back()->dimension = 2;
-			} else {
-				boundaryRegions.back()->dimension = 1;
-			}
-			break;
-		case ElementType::NODES:
-
-			#pragma omp parallel for
-			for (size_t t = 0; t < threads; t++) {
-				for (size_t e = tdistributions[t]; e < tdistributions[t + 1]; e++) {
-					if (shrink[mesh->regions()[r]->elements()[e]->node(0)] != -1) {
-						rdata[t].push_back(mesh->regions()[r]->elements()[e]->node(0) - shrink[mesh->regions()[r]->elements()[e]->node(0)]);
-					}
-				}
-			}
-
-			boundaryRegions.push_back(new BoundaryRegionStore(mesh->regions()[r]->name, _eclasses));
-			boundaryRegions.back()->nodes = new serializededata<eslocal, eslocal>(1, rdata);
-			std::sort(boundaryRegions.back()->nodes->datatarray().begin(), boundaryRegions.back()->nodes->datatarray().end());
-			break;
-		}
-	}
-
-	update();
-}
-
 
 void Mesh::update()
 {
@@ -461,29 +249,6 @@ void Mesh::update()
 		}
 	}
 
-	bool uniformDecomposition = false;
-	if (configuration.input == INPUT_FORMAT::GENERATOR) {
-		switch (configuration.generator.shape) {
-		case INPUT_GENERATOR_SHAPE::GRID:
-			if (configuration.generator.grid.uniform_decomposition) {
-				uniformDecomposition = true;
-			}
-			break;
-		case INPUT_GENERATOR_SHAPE::GRID_TOWER:
-			uniformDecomposition = true;
-			for (auto it = configuration.generator.grid_tower.grids.begin(); it != configuration.generator.grid_tower.grids.end(); ++it) {
-				if (!it->second.uniform_decomposition) {
-					uniformDecomposition = false;
-				}
-			}
-			break;
-		case INPUT_GENERATOR_SHAPE::SPHERE:
-			if (configuration.generator.sphere.uniform_decomposition) {
-				uniformDecomposition = true;
-			}
-			break;
-		}
-	}
 	if (
 			configuration.decomposition.separate_materials ||
 			configuration.decomposition.separate_regions ||
@@ -499,7 +264,7 @@ void Mesh::update()
 	if (uniformDecomposition) {
 		// implement uniform decomposition
 	} else {
-		preprocessing->partitiate(configuration.decomposition.domains ? configuration.decomposition.domains : mesh->parts());
+		preprocessing->partitiate(preferedDomains);
 	}
 
 	if (configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_2D || configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {

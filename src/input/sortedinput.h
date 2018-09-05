@@ -9,10 +9,10 @@ namespace espreso {
 class SortedInput: public Input {
 
 public:
-	static void buildMesh(const ECFRoot &configuration, PlainMeshData &meshData, Mesh &mesh);
+	static void buildMesh(PlainMeshData &meshData, Mesh &mesh);
 
 protected:
-	SortedInput(const ECFRoot &configuration, PlainMeshData &dMesh, Mesh &mesh);
+	SortedInput(PlainMeshData &dMesh, Mesh &mesh);
 
 	void checkERegions();
 

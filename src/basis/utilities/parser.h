@@ -97,10 +97,6 @@ class Parser {
 public:
 	static std::string getLine(const char* begin);
 
-	static std::string getParameter(const std::string &line, const std::string &separator = "=");
-	static std::string getValue(const std::string &line, const std::string &separator = "=");
-	static bool contains(const std::string &line, const std::string &separator);
-
 	static std::string uppercase(const std::string &str);
 
 	static std::string strip(const std::string &line);

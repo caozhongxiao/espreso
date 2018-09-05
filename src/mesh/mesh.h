@@ -31,14 +31,11 @@ struct ContactStore;
 class MeshPreprocessing;
 class Element;
 
-class OldMesh;
-
 class Mesh {
 
 	friend class MeshPreprocessing;
 public:
 	Mesh(const ECFRoot &configuration, bool withGUI = false);
-	void load();
 	void update();
 
 	void initNodeData();
@@ -56,6 +53,8 @@ public:
 	BoundaryRegionsIntersectionStore* ibregion(const std::string &name);
 
 	size_t dimension;
+	size_t preferedDomains;
+	size_t uniformDecomposition;
 
 	ElementStore* elements;
 	NodeStore* nodes;
@@ -85,7 +84,6 @@ public:
 //protected:
 	const ECFRoot &configuration;
 	std::vector<Element*> _eclasses;
-	OldMesh *mesh;
 
 	bool _withGUI;
 

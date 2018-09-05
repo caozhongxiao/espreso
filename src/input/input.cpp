@@ -1,7 +1,7 @@
 
 #include "input.h"
 #include "workbench/workbench.h"
-#include "../old/input/loader.h"
+#include "meshgenerator/meshgenerator.h"
 
 #include "../basis/containers/serializededata.h"
 #include "../basis/logging/logging.h"
@@ -25,12 +25,13 @@ void Input::load(const ECFRoot &configuration, Mesh &mesh)
 {
 	switch (configuration.input) {
 	case INPUT_FORMAT::WORKBENCH:
-		WorkbenchLoader::load(configuration, mesh);
+		WorkbenchLoader::load(configuration.workbench, mesh);
 		mesh.update();
 		break;
+	case INPUT_FORMAT::GENERATOR:
 	default:
-		input::OldLoader::load(configuration, *mesh.mesh, environment->MPIrank, environment->MPIsize);
-		mesh.load();
+		MeshGenerator::generate(configuration.generator, mesh);
+		mesh.update();
 		break;
 	}
 }
@@ -345,7 +346,7 @@ void Input::balancePermutedElements()
 	time.printStatsMPI();
 }
 
-void Input::sortNodes()
+void Input::sortNodes(bool withElementNodes)
 {
 	if (std::is_sorted(_meshData.nIDs.begin(), _meshData.nIDs.end())) {
 		return;
@@ -370,6 +371,15 @@ void Input::sortNodes()
 		}
 
 		Esutils::permute(_meshData.nranks, npermutation);
+	}
+
+	if (withElementNodes) {
+		std::vector<eslocal> backpermutation(_meshData.nIDs.size());
+		std::iota(backpermutation.begin(), backpermutation.end(), 0);
+		std::sort(backpermutation.begin(), backpermutation.end(), [&] (eslocal i, eslocal j) { return permutation[i] < permutation[j]; });
+		for (size_t n = 0; n < _meshData.enodes.size(); n++) {
+			_meshData.enodes[n] = backpermutation[_meshData.enodes[n]];
+		}
 	}
 }
 
@@ -512,6 +522,14 @@ void Input::fillElements()
 {
 	size_t estart = _mesh.dimension == 3 ? 0 : 1;
 
+	if (!_etypeDistribution.size()) {
+		for (int type = static_cast<int>(Element::TYPE::VOLUME); type > static_cast<int>(Element::TYPE::POINT); --type) {
+			_etypeDistribution.push_back(std::lower_bound(_meshData.etype.begin(), _meshData.etype.end(), type, [&] (int e, int type) {
+				return static_cast<int>(_mesh._eclasses[0][e].type) >= type; }) - _meshData.etype.begin()
+			);
+		}
+	}
+
 	_eDistribution = Communication::getDistribution(_etypeDistribution[estart]);
 
 	size_t threads = environment->OMP_NUM_THREADS;
@@ -542,12 +560,7 @@ void Input::fillElements()
 
 		eBody[t].insert(eBody[t].end(), _meshData.body.begin() + edistribution[t], _meshData.body.begin() + edistribution[t + 1]);
 		tnodes[t].insert(tnodes[t].end(), _meshData.enodes.begin() + edist[edistribution[t]], _meshData.enodes.begin() + edist[edistribution[t + 1]]);
-
-		if (_configuration.input == INPUT_FORMAT::WORKBENCH && _configuration.workbench.keep_material_sets) {
-			eMat[t].insert(eMat[t].end(), _meshData.material.begin() + edistribution[t], _meshData.material.begin() + edistribution[t + 1]);
-		} else {
-			eMat[t].resize(edistribution[t + 1] - edistribution[t]);
-		}
+		eMat[t].insert(eMat[t].end(), _meshData.material.begin() + edistribution[t], _meshData.material.begin() + edistribution[t + 1]);
 
 		epointers[t].resize(edistribution[t + 1] - edistribution[t]);
 		for (size_t e = edistribution[t], i = 0; e < edistribution[t + 1]; ++e, ++i) {
@@ -569,6 +582,22 @@ void Input::fillElements()
 	std::iota(_mesh.elementsRegions.back()->elements->datatarray().begin(), _mesh.elementsRegions.back()->elements->datatarray().end(), 0);
 }
 
+void Input::fillNeighbors()
+{
+	std::vector<int> realnranks = _meshData.nranks;
+	Esutils::sortAndRemoveDuplicity(realnranks);
+
+	_mesh.neighboursWithMe.clear();
+	_mesh.neighboursWithMe.insert(_mesh.neighboursWithMe.end(), realnranks.begin(), realnranks.end());
+
+	_mesh.neighbours.clear();
+	for (size_t n = 0; n < _mesh.neighboursWithMe.size(); n++) {
+		if (_mesh.neighboursWithMe[n] != environment->MPIrank) {
+			_mesh.neighbours.push_back(_mesh.neighboursWithMe[n]);
+		}
+	}
+}
+
 void Input::fillBoundaryRegions()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
@@ -578,7 +607,7 @@ void Input::fillBoundaryRegions()
 	std::vector<std::vector<Element*> > epointers(threads);
 
 	std::vector<eslocal> edist = { 0 };
-	edist.reserve(_meshData.eIDs.size() - _etypeDistribution[estart] + 1);
+	edist.reserve(_meshData.etype.size() - _etypeDistribution[estart] + 1);
 	for (size_t e = 0; e < _etypeDistribution[estart]; e++) {
 		edist.back() += _meshData.esize[e];
 	}

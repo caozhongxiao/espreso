@@ -49,29 +49,6 @@ std::vector<std::string> Parser::split(const std::string &line, const std::strin
 	return result;
 }
 
-bool Parser::contains(const std::string &line, const std::string &separators)
-{
-	for (size_t i = 0; i < separators.size(); i++) {
-		if (line.find(separators[i]) != std::string::npos) {
-			return true;
-		}
-	}
-	return false;
-}
-
-std::string Parser::getParameter(const std::string &line, const std::string &separator)
-{
-	return strip(split(strip(line), separator)[0]);
-}
-
-std::string Parser::getValue(const std::string &line, const std::string &separator)
-{
-	if (split(strip(line), separator).size() > 1) {
-		return strip(split(strip(line), separator)[1]);
-	}
-	return "";
-}
-
 
 
 

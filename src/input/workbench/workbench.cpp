@@ -5,7 +5,7 @@
 #include "../../basis/logging/timeeval.h"
 #include "../../basis/utilities/communication.h"
 #include "../../basis/utilities/utils.h"
-#include "../../config/ecf/root.h"
+#include "../../config/ecf/input/input.h"
 
 #include "../../mesh/mesh.h"
 #include "../randominput.h"
@@ -13,17 +13,17 @@
 
 using namespace espreso;
 
-void WorkbenchLoader::load(const ECFRoot &configuration, Mesh &mesh)
+void WorkbenchLoader::load(const InputConfiguration &configuration, Mesh &mesh)
 {
 	WorkbenchLoader(configuration, mesh);
 }
 
-WorkbenchLoader::WorkbenchLoader(const ECFRoot &configuration, Mesh &mesh)
+WorkbenchLoader::WorkbenchLoader(const InputConfiguration &configuration, Mesh &mesh)
 : _configuration(configuration), _mesh(mesh)
 {
 	TimeEval timing("Parsing Workbench data");
 	timing.totalTime.startWithBarrier();
-	ESINFO(OVERVIEW) << "Load ANSYS Workbench data from '" << configuration.workbench.path << "'.";
+	ESINFO(OVERVIEW) << "Load ANSYS Workbench data from '" << _configuration.path << "'.";
 
 	TimeEvent tread("read data from file"); tread.start();
 	readData();
@@ -44,10 +44,14 @@ WorkbenchLoader::WorkbenchLoader(const ECFRoot &configuration, Mesh &mesh)
 	timing.totalTime.endWithBarrier();
 	timing.printStatsMPI();
 
+	if (!_configuration.keep_material_sets) {
+		std::fill(meshData.material.begin(), meshData.material.end(), 0);
+	}
+
 	if (environment->MPIsize > 1) {
-		RandomInput::buildMesh(configuration, meshData, mesh);
+		RandomInput::buildMesh(meshData, mesh);
 	} else {
-		SequentialInput::buildMesh(configuration, meshData, mesh);
+		SequentialInput::buildMesh(meshData, mesh);
 	}
 }
 
@@ -61,8 +65,8 @@ void WorkbenchLoader::readData()
 
 	MPI_File MPIfile;
 
-	if (MPI_File_open(environment->MPICommunicator, _configuration.workbench.path.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &MPIfile)) {
-		ESINFO(ERROR) << "MPI cannot load file '" << _configuration.workbench.path << "'";
+	if (MPI_File_open(environment->MPICommunicator, _configuration.path.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &MPIfile)) {
+		ESINFO(ERROR) << "MPI cannot load file '" << _configuration.path << "'";
 	}
 
 	e1.end();
@@ -365,7 +369,7 @@ void WorkbenchLoader::parseData(PlainWorkbenchData &meshData)
 	_ET.swap(et);
 
 	for (size_t i = 0; i < _NBlocks.size(); i++) {
-		if (!_NBlocks[i].readData(meshData.nIDs, meshData.coordinates, _configuration.workbench.scale_factor)) {
+		if (!_NBlocks[i].readData(meshData.nIDs, meshData.coordinates, _configuration.scale_factor)) {
 			ESINFO(ERROR) << "Workbench parser: something wrong happens while read NBLOCK.";
 		}
 	}

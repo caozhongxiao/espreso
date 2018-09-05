@@ -52,7 +52,7 @@ def build(ctx):
     ctx.program(
         source       = "espreso.cpp",
         target       = "espreso",
-        use          = "basis config wrappers mesh oldmesh loader oldloader oldeval generator ansys_in espreso_in openfoam_in resultstore store bem assembler factory solver",
+        use          = "basis config wrappers input mesh output bem assembler factory solver",
         install_path = ctx.ROOT + "/bin"
     )
 
@@ -74,7 +74,7 @@ def build(ctx):
     ctx.program(
         source       = "apitest.cpp",
         target       = "apitest",
-        use          = "feti4i factory loader oldloader generator ansys_in espreso_in openfoam_in",
+        use          = "feti4i factory",
         install_path = ctx.ROOT + "/bin"
     )
 
@@ -83,7 +83,7 @@ def build(ctx):
     ctx.lib(
         source       = "apiwrapper/wrapper.cpp",
         target       = "feti4i",
-        use          = "basis config wrappers mesh oldmesh oldeval api_in solver assembler resultstore store bem",
+        use          = "basis config wrappers input mesh solver assembler output bem",
         install_path = ctx.ROOT + "/lib"
     )
 

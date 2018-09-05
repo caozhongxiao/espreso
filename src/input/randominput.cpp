@@ -14,7 +14,6 @@
 #include "../mesh/store/nodestore.h"
 #include "../mesh/store/elementstore.h"
 #include "../mesh/store/boundaryregionstore.h"
-#include "../old/input/loader.h"
 
 #include "../output/result/visualization/distributedvtklegacy.h"
 
@@ -24,13 +23,13 @@
 
 using namespace espreso;
 
-void RandomInput::buildMesh(const ECFRoot &configuration, PlainMeshData &meshData, Mesh &mesh)
+void RandomInput::buildMesh(PlainMeshData &meshData, Mesh &mesh)
 {
-	RandomInput(configuration, meshData, mesh);
+	RandomInput(meshData, mesh);
 }
 
-RandomInput::RandomInput(const ECFRoot &configuration, PlainMeshData &meshData, Mesh &mesh)
-: Input(configuration, meshData, mesh), _sfc(_mesh.dimension, SFCDEPTH, _meshData.coordinates)
+RandomInput::RandomInput(PlainMeshData &meshData, Mesh &mesh)
+: Input(meshData, mesh), _sfc(_mesh.dimension, SFCDEPTH, _meshData.coordinates)
 {
 	if (environment->MPIsize == 1) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: use the sequential input for building mesh on 1 MPI process.";
@@ -78,6 +77,7 @@ RandomInput::RandomInput(const ECFRoot &configuration, PlainMeshData &meshData, 
 
 	TimeEvent tlinkup("link together"); tlinkup.start();
 	linkup();
+	fillNeighbors();
 	tlinkup.end(); timing.addEvent(tlinkup);
 	ESINFO(PROGRESS2) << "Random data loader:: neighbors linked up.";
 
@@ -648,9 +648,7 @@ void RandomInput::linkup()
 	e1.end();
 	timing.addEvent(e1);
 
-	if (_configuration.output.debug && environment->MPIrank == 0) {
-		VTKLegacyDebugInfo::spaceFillingCurve(_sfc, _bucketsBorders);
-	}
+//	VTKLegacyDebugInfo::spaceFillingCurve(_sfc, _bucketsBorders);
 
 	TimeEvent e2("LU GET NEIGHBORS");
 	e2.start();
@@ -1051,21 +1049,6 @@ void RandomInput::linkup()
 				_meshData.nranks.insert(_meshData.nranks.end(), rRanks[r].begin() + n + 1, rRanks[r].begin() + n + 1 + rRanks[r][n]);
 				_meshData.ndist.push_back(_meshData.nranks.size());
 			}
-		}
-	}
-
-	// 6. Sort and re-index
-
-	std::vector<int> realnranks = _meshData.nranks;
-	Esutils::sortAndRemoveDuplicity(realnranks);
-
-	_mesh.neighboursWithMe.clear();
-	_mesh.neighboursWithMe.insert(_mesh.neighboursWithMe.end(), realnranks.begin(), realnranks.end());
-
-	_mesh.neighbours.clear();
-	for (size_t n = 0; n < _mesh.neighboursWithMe.size(); n++) {
-		if (_mesh.neighboursWithMe[n] != environment->MPIrank) {
-			_mesh.neighbours.push_back(_mesh.neighboursWithMe[n]);
 		}
 	}
 
