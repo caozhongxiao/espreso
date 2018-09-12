@@ -15,8 +15,6 @@
 #include "../mesh/store/elementstore.h"
 #include "../mesh/store/boundaryregionstore.h"
 
-#include "../output/result/visualization/distributedvtklegacy.h"
-
 #include <numeric>
 #include <algorithm>
 #include <fstream>

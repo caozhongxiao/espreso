@@ -66,7 +66,7 @@ eslocal Constraints::computeIntervalsOffsets(std::function<eslocal(eslocal)> get
 		}
 	}
 
-	Communication::exscan(offset, MPITools::operations().sizeToOffsetsEslocal);
+	Communication::exscan(offset);
 	for (size_t n = 0; n < sGlobalOffset.size(); n++) {
 		for (size_t i = 0; i < sGlobalOffset[n].size(); i++) {
 			sGlobalOffset[n][i] += offset;

@@ -22,6 +22,8 @@
 #include "../../../../mesh/store/contactstore.h"
 #include "../../../../mesh/store/elementsregionstore.h"
 
+#include "../../../../input/sfc/spacefillingcurve.h"
+
 #include "../../../../solver/generic/SparseMatrix.h"
 
 #include <fstream>
