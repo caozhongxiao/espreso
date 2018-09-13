@@ -182,11 +182,5 @@ OUTPUT {
       STATISTICS        MAX;
       PROPERTY        PHASE;
     }
-
-    5 {
-      REGION      ALL_NODES;
-      STATISTICS        MAX;
-      PROPERTY  LATENT_HEAT;
-    }
   }
 }
