@@ -9,9 +9,6 @@ from compiler.syntax import check
 PATH = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(PATH)
 RUNDIR = os.getcwd()
-sys.path.append(os.path.join(PATH, "utils"))
-
-from testing import *
 
 class ECFParser:
 
