@@ -1,66 +1,32 @@
-variables:
-  GIT_STRATEGY: none
 
 stages:
-  - tests
+  - benchmarks
   - release
 
 before_script:
-  - if ! git remote | grep origin > /dev/null; then
-      git remote add origin git@code.it4i.cz:mec059/espreso.git;
-    fi
-
-  - git fetch origin
-  - git checkout origin/$CI_COMMIT_REF_NAME
-
-  - source /opt/intel/bin/compilervars.sh intel64
+  - export SPACK_ROOT=/opt/spack
+  - . $SPACK_ROOT/share/spack/setup-env.sh
   - . env/paths.default
-  - . env/threading.default 5
-  - cp install/build.config.icpc build.config
-
-after_script:
-  - ./waf distclean
-  - rm -fr libs*
-  - rm -f espreso
-  - rm -f decomposer
+  - ml gcc openmpi intel-mkl cmake
+  - cp install/build.config.gcc build.config
 
 MKL32:
-  stage: tests
+  stage: benchmarks
   only:
     - triggers
   script:
     - ./waf configure --SOLVER=MKL --INT_WIDTH=32
     - ./waf install -j8
-    - python tests/benchmarks.py --snailwatch
-    - python tests/solver.py
+    - nosetests -vx
 
 MKL64:
-  stage: tests
+  stage: benchmarks
   only:
     - triggers
   script:
     - ./waf configure --SOLVER=MKL --INT_WIDTH=64
     - ./waf install -j8
-    - python tests/benchmarks.py
-    - python tests/solver.py
-
-STATIC_LIBRARY:
-  stage: tests
-  only:
-    - triggers
-  script:
-    - ./waf configure --LIBTYPE=STATIC
-    - ./waf install -j8
-
-CATALYST:
-  stage: tests
-  only:
-    - triggers
-  script:
-    - ./waf configure --CATALYST::INCLUDE=/opt/vtk/include/vtk-7.1 --CATALYST::LIBPATH=/opt/vtk/lib
-    - ./waf install -j8
-    - export LD_LIBRARY_PATH=/opt/vtk/lib/:$LD_LIBRARY_PATH
-
+    - nosetests -vx
 
 GITHUB:
   stage: release

@@ -5,7 +5,7 @@ class ESPRESOTest:
 
     root = os.path.dirname(os.path.dirname(__file__))
     espreso = os.path.join(root, "bin", "espreso")
-    mpirun = [ "mpirun", "--map-by", "core", "-n" ]
+    mpirun = [ "mpirun", "--map-by", "socket:pe=2", "--bind-to", "core", "-n" ]
 
     env = dict(os.environ)
     env["MKL_NUM_THREADS"] = "1"
