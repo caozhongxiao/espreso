@@ -30,8 +30,7 @@ class ESPRESOTest:
 
     @staticmethod
     def clean():
-        pass
-        #shutil.rmtree(os.path.join(ESPRESOTest.path, "results"), ignore_errors=True)
+        shutil.rmtree(os.path.join(ESPRESOTest.path, "results"), ignore_errors=True)
 
     @staticmethod
     def run_program(program):
