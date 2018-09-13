@@ -14,7 +14,7 @@ struct LinearVolumeGenerator: public ElementGenerator {
 	void pushTriangleNodes(std::vector<eslocal> &nodes, const std::vector<eslocal> &indices, CubeFace face) const;
 	void pushSquareNodes(std::vector<eslocal> &nodes, const std::vector<eslocal> &indices, CubeFace face) const;
 
-	void pushEdge(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<eslocal> &etype, const std::vector<eslocal> &indices, CubeEdge edge) const;
+	void pushEdge(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeEdge edge) const;
 };
 
 }

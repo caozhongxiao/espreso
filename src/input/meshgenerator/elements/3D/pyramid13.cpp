@@ -182,19 +182,19 @@ void Pyramid13Generator::pushNodes(std::vector<eslocal> &nodes, const std::vecto
 	}
 }
 
-void Pyramid13Generator::pushEdge(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<eslocal> &etype, const std::vector<eslocal> &indices, CubeEdge edge) const
+void Pyramid13Generator::pushEdge(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeEdge edge) const
 {
 	return
 	pushNodes(elements, indices, edge);
 	esize.push_back(3);
-	etype.push_back((eslocal)Element::CODE::LINE3);
+	etype.push_back((int)Element::CODE::LINE3);
 }
 
-void Pyramid13Generator::pushFace(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<eslocal> &etype, const std::vector<eslocal> &indices, CubeFace face) const
+void Pyramid13Generator::pushFace(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeFace face) const
 {
 	pushNodes(elements, indices, face);
 	esize.push_back(8);
-	etype.push_back((eslocal)Element::CODE::SQUARE8);
+	etype.push_back((int)Element::CODE::SQUARE8);
 }
 
 

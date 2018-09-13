@@ -66,12 +66,12 @@ void LinearVolumeGenerator::pushNodes(std::vector<eslocal> &nodes, const std::ve
 //	}
 }
 
-void LinearVolumeGenerator::pushEdge(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<eslocal> &etype, const std::vector<eslocal> &indices, CubeEdge edge) const
+void LinearVolumeGenerator::pushEdge(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeEdge edge) const
 {
 	return;
 	pushNodes(elements, indices, edge);
 	esize.push_back(2);
-	etype.push_back((eslocal)Element::CODE::LINE2);
+	etype.push_back((int)Element::CODE::LINE2);
 }
 
 void LinearVolumeGenerator::pushSquareNodes(std::vector<eslocal> &nodes, const std::vector<eslocal> &indices, CubeFace face) const

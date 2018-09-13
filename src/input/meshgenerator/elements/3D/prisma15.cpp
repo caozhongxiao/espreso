@@ -64,7 +64,7 @@ void Prisma15Generator::pushNodes(std::vector<eslocal> &nodes, const std::vector
 	}
 }
 
-void Prisma15Generator::pushFace(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<eslocal> &etype, const std::vector<eslocal> &indices, CubeFace face) const
+void Prisma15Generator::pushFace(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeFace face) const
 {
 	pushNodes(elements, indices, face);
 	switch (face) {
@@ -73,14 +73,14 @@ void Prisma15Generator::pushFace(std::vector<eslocal> &elements, std::vector<esl
 	case CubeFace::Y_0:
 	case CubeFace::Y_1:
 		esize.push_back(8);
-		etype.push_back((eslocal)Element::CODE::SQUARE8);
+		etype.push_back((int)Element::CODE::SQUARE8);
 		break;
 	case CubeFace::Z_0:
 	case CubeFace::Z_1:
 		esize.push_back(6);
 		esize.push_back(6);
-		etype.push_back((eslocal)Element::CODE::TRIANGLE6);
-		etype.push_back((eslocal)Element::CODE::TRIANGLE6);
+		etype.push_back((int)Element::CODE::TRIANGLE6);
+		etype.push_back((int)Element::CODE::TRIANGLE6);
 		break;
 	}
 }

@@ -90,13 +90,13 @@ void Tetrahedron10Generator::pushElements(std::vector<eslocal> &elements, const 
 	elements.push_back(indices[ 7]);
 }
 
-void Tetrahedron10Generator::pushFace(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<eslocal> &etype, const std::vector<eslocal> &indices, CubeFace face) const
+void Tetrahedron10Generator::pushFace(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeFace face) const
 {
 	pushTriangleNodes(elements, indices, face);
 	esize.push_back(6);
 	esize.push_back(6);
-	etype.push_back((eslocal)Element::CODE::TRIANGLE6);
-	etype.push_back((eslocal)Element::CODE::TRIANGLE6);
+	etype.push_back((int)Element::CODE::TRIANGLE6);
+	etype.push_back((int)Element::CODE::TRIANGLE6);
 }
 
 

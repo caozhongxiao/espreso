@@ -77,7 +77,8 @@ void GeneratedInput::removeDanglingNodes()
 	Esutils::sortAndRemoveDuplicity(usedNodes);
 
 	std::vector<Point> coordinates;
-	std::vector<eslocal> nIDs, ndist, nranks, noffset(_meshData.nIDs.size());
+	std::vector<eslocal> nIDs, ndist, noffset(_meshData.nIDs.size());
+	std::vector<int> nranks;
 
 	ndist.push_back(0);
 	for (size_t i = 0; i < usedNodes.size(); i++) {

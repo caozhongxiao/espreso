@@ -10,7 +10,8 @@
 namespace espreso {
 
 struct PlainMeshData {
-	std::vector<eslocal> nIDs, ndist, nranks;
+	std::vector<eslocal> nIDs, ndist;
+	std::vector<int> nranks;
 	std::vector<Point> coordinates;
 
 	std::vector<eslocal> eIDs, esize, enodes;

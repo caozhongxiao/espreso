@@ -22,11 +22,11 @@ void Hexahedron8Generator::pushElements(std::vector<eslocal> &elements, const st
 	elements.push_back(indices[6]);
 }
 
-void Hexahedron8Generator::pushFace(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<eslocal> &etype, const std::vector<eslocal> &indices, CubeFace face) const
+void Hexahedron8Generator::pushFace(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeFace face) const
 {
 	pushNodes(elements, indices, face);
 	esize.push_back(4);
-	etype.push_back((eslocal)Element::CODE::SQUARE4);
+	etype.push_back((int)Element::CODE::SQUARE4);
 }
 
 

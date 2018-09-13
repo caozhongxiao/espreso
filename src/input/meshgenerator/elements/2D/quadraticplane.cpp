@@ -38,11 +38,11 @@ void QuadraticPlaneGenerator::pushNodes(std::vector<eslocal> &nodes, const std::
 	}
 }
 
-void QuadraticPlaneGenerator::pushEdge(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<eslocal> &etype, const std::vector<eslocal> &indices, CubeEdge edge) const
+void QuadraticPlaneGenerator::pushEdge(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeEdge edge) const
 {
 	pushNodes(elements, indices, edge);
 	esize.push_back(3);
-	etype.push_back((eslocal)Element::CODE::LINE3);
+	etype.push_back((int)Element::CODE::LINE3);
 }
 
 void QuadraticPlaneGenerator::pushNodes(std::vector<eslocal> &nodes, const std::vector<eslocal> &indices, CubeFace face) const
@@ -50,7 +50,7 @@ void QuadraticPlaneGenerator::pushNodes(std::vector<eslocal> &nodes, const std::
 	return;
 }
 
-void QuadraticPlaneGenerator::pushFace(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<eslocal> &etype, const std::vector<eslocal> &indices, CubeFace face) const
+void QuadraticPlaneGenerator::pushFace(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeFace face) const
 {
 	return;
 }
