@@ -266,7 +266,7 @@ std::string Tokenizer::lastLines(size_t number)
 	_file.move(0);
 	while (_file.position() < current) {
 		size_t begin = _file.position();
-		while(_file.peek() != '\n');
+		while(_file.get() != '\n');
 		lines.push(_file.get(begin, _file.position()));
 		if (lines.size() > number) {
 			lines.pop();
