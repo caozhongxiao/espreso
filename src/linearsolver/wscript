@@ -6,6 +6,5 @@ def configure(ctx):
 def build(ctx):
     ctx.objects(
         source = ctx.path.ant_glob('**/*.cpp'),
-        target = "linearsolver",
-        use    = "espreso_includes",
+        target = "multigrid",
     )

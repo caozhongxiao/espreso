@@ -26,12 +26,13 @@ def create_symlink(ctx, lib, suffix=""):
             always = True,
             name   = "create symlink to {0}".format(lib)
         )
+
 def build_hypre(ctx):
-	    
-    if check_libraries(ctx, ["HYPRE-2.11.2"]):
+
+    if check_libraries(ctx, [ "HYPRE-2.11.2" ]):
         return
 
-	create_symlink(ctx, "HYPRE")
+    create_symlink(ctx, "HYPRE")
     create_symlink(ctx, "HYPRE-2.11.2")
 
     path = ctx.ROOT + "/tools/hypre-2.11.2"
@@ -43,14 +44,13 @@ def build_hypre(ctx):
     
     if ctx.env.INT_WIDTH == "64":
         params += " --enable-bigint "
-    
-    
+
     ctx(
-        rule    = "cd {0}; make clean; ./configure {1}; make install".format(path+"/src", params),
+        rule    = "cd {0}; make clean; ./configure {1}; make install".format(path + "/src", params),
         always  = True,
         name    = "build HYPRE library"
     )
-    
+
 def build_metis(ctx):
     create_symlink(ctx, "parmetis")
     create_symlink(ctx, "metis")

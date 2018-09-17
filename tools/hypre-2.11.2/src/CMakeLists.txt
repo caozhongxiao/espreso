@@ -23,7 +23,7 @@ set (HYPRE_BUILD_TYPE "Release" CACHE STRING
 set (CMAKE_BUILD_TYPE "${HYPRE_BUILD_TYPE}" CACHE INTERNAL "" FORCE)
 
 # Configuration options
-option(HYPRE_SHARED               "Build a shared library" OFF)
+option(HYPRE_SHARED               "Build a shared library" ON)
 option(HYPRE_BIGINT               "Use long long int for HYPRE_Int" OFF)
 option(HYPRE_SEQUENTIAL           "Compile without MPI" OFF)
 option(HYPRE_TIMING               "Use HYPRE timing routines" OFF)
@@ -31,8 +31,8 @@ option(HYPRE_USING_HYPRE_BLAS     "Use internal BLAS library" ON)
 option(HYPRE_USING_HYPRE_LAPACK   "Use internal LAPACK library" ON)
 option(HYPRE_NO_GLOBAL_PARTITION  "Use assumed partition" ON)
 option(HYPRE_PRINT_ERRORS         "Print HYPRE errors" OFF)
-option(HYPRE_USING_OPENMP         "Use OpenMP" OFF)
-option(HYPRE_USING_FEI            "Use FEI" ON)
+option(HYPRE_USING_OPENMP         "Use OpenMP" ON)
+option(HYPRE_USING_FEI            "Use FEI" OFF)
 option(HYPRE_USING_CALIPER        "Use Caliper" OFF)  # TODO: Finish this cmake feature
 
 if (HYPRE_SHARED)

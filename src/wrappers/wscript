@@ -45,7 +45,7 @@ def configure(ctx):
     else:
         metis = "metis"
 
-    ctx.env.append_unique("LIB", [ "parmetis", metis ])
+    ctx.env.append_unique("LIB", [ "parmetis", metis, "HYPRE" ])
 
     env.append_unique("LIBPATH", ctx.env["LIBPATH"])
     env.append_unique("LIB", ctx.env["LIB"])

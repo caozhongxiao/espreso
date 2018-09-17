@@ -146,7 +146,6 @@ def build(ctx):
 
     ctx.objects(
         source = sources,
-        target = "solver",
-        use    = "espreso_includes"
+        target = "feti"
     )
 

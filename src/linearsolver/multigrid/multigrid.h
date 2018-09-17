@@ -1,12 +1,6 @@
-/*
- * MultigridSolver.h
- *
- *  Created on: Apr 9, 2018
- *      Author: beh01
- */
 
-#ifndef SRC_LINEARSOLVER_MULTIGRID_MULTIGRIDSOLVER_H_
-#define SRC_LINEARSOLVER_MULTIGRID_MULTIGRIDSOLVER_H_
+#ifndef SRC_LINEARSOLVER_MULTIGRID_MULTIGRID_H_
+#define SRC_LINEARSOLVER_MULTIGRID_MULTIGRID_H_
 
 #include "../linearsolver.h"
 #include "../../assembler/instance.h"
@@ -39,4 +33,4 @@ private:
 
 }
 
-#endif /* SRC_LINEARSOLVER_MULTIGRID_MULTIGRIDSOLVER_H_ */
+#endif /* SRC_LINEARSOLVER_MULTIGRID_MULTIGRID_H_ */

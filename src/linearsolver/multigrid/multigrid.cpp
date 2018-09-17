@@ -1,16 +1,9 @@
-/*
- * MultigridSolver.cpp
- *
- *  Created on: Apr 9, 2018
- *      Author: beh01
- */
 
 #include "../../basis/utilities/utils.h"
-#include "MultigridSolver.h"
-
 #include "../../wrappers/hypre/hypre.h"
 #include "../../solver/generic/SparseMatrix.h"
 #include "../../config/ecf/environment.h"
+#include "multigrid.h"
 
 using namespace espreso;
 

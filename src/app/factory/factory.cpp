@@ -15,12 +15,12 @@
 #include "../../assembler/instance.h"
 #include "../../config/ecf/root.h"
 #include "../../input/input.h"
+#include "../../linearsolver/multigrid/multigrid.h"
 #include "../../mesh/mesh.h"
 #include "../../mesh/preprocessing/meshpreprocessing.h"
 #include "../../output/result/resultstore.h"
 #include "../../output/data/espresobinaryformat.h"
 #include "../../solver/generic/FETISolver.h"
-#include "../../linearsolver/multigrid/MultigridSolver.h"
 
 
 

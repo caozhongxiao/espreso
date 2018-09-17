@@ -1,9 +1,3 @@
-/*
- * hypre.h
- *
- *  Created on: Apr 9, 2018
- *      Author: beh01
- */
 
 #ifndef SRC_WRAPPERS_HYPRE_HYPRE_H_
 #define SRC_WRAPPERS_HYPRE_HYPRE_H_

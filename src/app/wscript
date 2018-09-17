@@ -52,7 +52,7 @@ def build(ctx):
     ctx.program(
         source       = "espreso.cpp",
         target       = "espreso",
-        use          = "basis config wrappers input mesh output bem assembler factory solver",
+        use          = "basis config wrappers input mesh output bem assembler factory feti multigrid",
         install_path = ctx.ROOT + "/bin"
     )
 
@@ -83,7 +83,7 @@ def build(ctx):
     ctx.lib(
         source       = "apiwrapper/wrapper.cpp",
         target       = "feti4i",
-        use          = "basis config wrappers input mesh solver assembler output bem",
+        use          = "basis config wrappers input mesh feti multigrid assembler output bem",
         install_path = ctx.ROOT + "/lib"
     )
 

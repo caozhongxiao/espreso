@@ -1,9 +1,3 @@
-/*
- * hypre.cpp
- *
- *  Created on: Apr 9, 2018
- *      Author: beh01
- */
 
 #include "hypre.h"
 
