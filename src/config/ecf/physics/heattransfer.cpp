@@ -12,6 +12,8 @@ espreso::ConvectionConfiguration::ConvectionConfiguration()
   fluid_velocity(ECFMetaData::getboundaryconditionvariables()),
   plate_distance(ECFMetaData::getboundaryconditionvariables()),
   length(ECFMetaData::getboundaryconditionvariables()),
+  experimental_constant(ECFMetaData::getboundaryconditionvariables()),
+  volume_fraction(ECFMetaData::getboundaryconditionvariables()),
   absolute_pressure(ECFMetaData::getboundaryconditionvariables())
 {
 	type = TYPE::USER;
@@ -37,7 +39,8 @@ espreso::ConvectionConfiguration::ConvectionConfiguration()
 			.addoption(ECFOption().setname("AVERAGE_PLATE").setdescription("Average plate."))
 			.addoption(ECFOption().setname("PARALLEL_PLATES").setdescription("Parallel plates."))
 			.addoption(ECFOption().setname("CIRCULAR_TUBE").setdescription("Circular tube."))
-			.addoption(ECFOption().setname("TUBE").setdescription("Tube.")));
+			.addoption(ECFOption().setname("TUBE").setdescription("Tube."))
+			.addoption(ECFOption().setname("QUENCH").setdescription("Quench.")));
 
 	fluid = FLUID::AIR;
 	REGISTER(fluid, ECFMetaData()
@@ -46,7 +49,8 @@ espreso::ConvectionConfiguration::ConvectionConfiguration()
 			.addoption(ECFOption().setname("AIR").setdescription("Air."))
 			.addoption(ECFOption().setname("WATER").setdescription("Water."))
 			.addoption(ECFOption().setname("ENGINE_OIL").setdescription("Engine oil."))
-			.addoption(ECFOption().setname("TRANSFORMER_OIL").setdescription("Tranformer oil.")));
+			.addoption(ECFOption().setname("TRANSFORMER_OIL").setdescription("Tranformer oil."))
+			.addoption(ECFOption().setname("STEAM").setdescription("Steam.")));
 
 	REGISTER(heat_transfer_coefficient, ECFMetaData()
             .setdescription({ "Heat transfer coefficient" })
@@ -75,6 +79,12 @@ espreso::ConvectionConfiguration::ConvectionConfiguration()
 			.setdatatype({ ECFDataType::EXPRESSION }));
 	REGISTER(length, ECFMetaData()
             .setdescription({ "Length" })
+			.setdatatype({ ECFDataType::EXPRESSION }));
+	REGISTER(experimental_constant, ECFMetaData()
+            .setdescription({ "Experimental constant" })
+			.setdatatype({ ECFDataType::EXPRESSION }));
+	REGISTER(volume_fraction, ECFMetaData()
+            .setdescription({ "Warer volume fraction" })
 			.setdatatype({ ECFDataType::EXPRESSION }));
 	REGISTER(absolute_pressure, ECFMetaData()
             .setdescription({ "Absolute pressure" })

@@ -252,6 +252,8 @@ void HeatTransfer::convectionMatParameters(
 		double &rho, double &dynamic_viscosity, double &dynamic_viscosity_T, double &heat_capacity, double &thermal_conductivity) const
 {
 	double  gas_constant;
+	double R;
+	double M;
 
 	switch (convection->fluid) {
 	case ConvectionConfiguration::FLUID::AIR:{
@@ -454,6 +456,35 @@ void HeatTransfer::convectionMatParameters(
 		}
 
 	}break;
+
+	case ConvectionConfiguration::FLUID::STEAM:{
+		
+
+		R = 8314.4598;
+		M = 18.02;
+		gas_constant = R/M;
+		
+		rho = convection->absolute_pressure.evaluator->evaluate(p, T_EXT, _step->currentTime) / (gas_constant * T_EXT);
+
+		if (T_EXT >=100){
+			heat_capacity = gas_constant * ( 3.38684 + 34.7498e-4 * T_EXT - 6.3547E-06 * pow(T_EXT,2.0) + 6.96858E-9 * pow(T_EXT,3.0) - 2.50659E-12 * pow(T_EXT,4.0) );		
+		}else if (T_EXT < 100){
+			heat_capacity = 2044;
+		}
+
+		if (T_EXT >=100 ){
+			thermal_conductivity = 5.0225E-8 * pow(T_EXT,2.0) + 4.724E-05 *T_EXT + 1.2445E-4;
+		}else if (T_EXT < 100){
+			thermal_conductivity = 0.0248;
+		}
+
+		if (T_EXT >=100 ){
+			dynamic_viscosity = (4.0718E-2 * T_EXT - 2.9895)* 1E-6;
+		}else if (T_EXT < 100){
+			dynamic_viscosity = 12E-6;				
+		}
+	}break;
+
 	default:
 		ESINFO(ERROR) << "Invalid convection fluid type.";
 	}
@@ -644,7 +675,7 @@ double HeatTransfer::computeHTC(const ConvectionConfiguration *convection, const
 				double T_EXT, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity;
 
 				T_EXT = convection->external_temperature.evaluator->evaluate(p, temp, _step->currentTime);
-
+		
 				convectionMatParameters(convection, p, temp, T_EXT, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity);
 
 				double Re = rho * convection->fluid_velocity.evaluator->evaluate(p, temp, _step->currentTime) * convection->diameter.evaluator->evaluate(p, temp, _step->currentTime) / dynamic_viscosity;
@@ -657,6 +688,41 @@ double HeatTransfer::computeHTC(const ConvectionConfiguration *convection, const
 					htc *= 0.027 * pow(Re, .8) * pow(Pr, n)	* pow(dynamic_viscosity / dynamic_viscosity_T, 0.14);
 				}
 			}break;
+
+			case ConvectionConfiguration::VARIANT::QUENCH: {
+
+				double text, press, VFRAC, C, g, T_AVG, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity;
+
+		        press = convection->absolute_pressure.evaluator->evaluate(p, temp, _step->currentTime);
+				text = convection->external_temperature.evaluator->evaluate(p, temp, _step->currentTime);
+				C = convection->experimental_constant.evaluator->evaluate(p, temp, _step->currentTime);
+				T_AVG = (text + temp) / 2;
+				g = 9.81;
+
+		        convectionMatParameters(convection, p, temp, T_AVG, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity);
+				htc = C * 0.424 * pow((pow(thermal_conductivity,3.0) * rho * g * (958.35 - rho) * (2257600 + 0.4 * heat_capacity * (temp - (27.952 * log(press) - 222.5304))))/( dynamic_viscosity* (temp - ( 27.952 * log(press) - 222.5304 ) ) * pow( 0.06/(g*( 958.35 - rho )) ,0.5)) ,0.25);
+				VFRAC =  convection->volume_fraction.evaluator->evaluate(p, temp, _step->currentTime);
+				
+				ConvectionConfiguration convectionAIR;
+				convectionAIR.fluid=ConvectionConfiguration::FLUID::AIR;
+				convectionAIR.absolute_pressure=convection->absolute_pressure;
+
+				convectionMatParameters(&convectionAIR, p, temp, T_AVG, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
+
+
+				double length = convection->length.evaluator->evaluate(p, temp, _step->currentTime);
+
+				double Re = rho * convection->fluid_velocity.evaluator->evaluate(p, temp, _step->currentTime) * length / dynamic_viscosity;
+				double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
+				if (Re <= 5e5) {
+					htc =  VFRAC * htc + (1-VFRAC) *2 * (thermal_conductivity / length) * ((0.3387 * pow(Pr, 1.0 / 3.0) * pow(Re, 0.5)) / (pow(1 + pow(0.0468 / Pr, 2.0 / 3.0), 0.25)));
+				} else {
+					htc =  VFRAC * htc + (1-VFRAC) *2 * (thermal_conductivity / length) * pow(Pr, 1.0 / 3.0)	* (0.037 * pow(Re, 0.8) - 871);
+				}
+
+			
+			}break;
+
 			default:
 				ESINFO(ERROR) << "Invalid convection variant for EXTERNAL_FORCED.";
 			}
