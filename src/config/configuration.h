@@ -54,6 +54,18 @@ struct ECFOption {
 	ECFOption() { isallowed = [] () { return true; }; }
 };
 
+struct SIUnit {
+	int metre, kilogram, second, ampere, kelvin, mole, candela;
+
+	SIUnit(): metre(0), kilogram(0), second(0), ampere(0), kelvin(0), mole(0), candela(0) {}
+
+	SIUnit(int metre, int kilogram, int second, int ampere, int kelvin, int mole, int candela)
+	: metre(metre), kilogram(kilogram), second(second), ampere(ampere), kelvin(kelvin), mole(mole), candela(candela)
+	{}
+
+	std::string unit() const;
+};
+
 struct ECFMetaData {
 	std::vector<std::string> description;
 	std::vector<ECFDataType> datatype;
@@ -62,7 +74,7 @@ struct ECFMetaData {
 	std::vector<std::string> variables;
 	TensorConfiguration *tensor;
 	RegionMapBase *regionMap;
-	std::string unit;
+	SIUnit unit;
 
 	std::function<bool(void)> isallowed;
 	std::function<bool(void)> ismandatory;
@@ -73,7 +85,7 @@ struct ECFMetaData {
 	ECFMetaData& setvariables(const std::vector<std::string> &variables) { this->variables = variables; return *this; }
 	ECFMetaData& settensor(TensorConfiguration &tensor) { this->tensor = &tensor; return *this; }
 	ECFMetaData& setRegionMap(RegionMapBase &rMap) { this->regionMap = &rMap; return *this; }
-	ECFMetaData& setunit(const std::string &unit) { this->unit = unit; return *this; }
+	ECFMetaData& setunit(const SIUnit &unit) { this->unit = unit; return *this; }
 	ECFMetaData& allowonly(std::function<bool(void)> isallowed) { this->isallowed = isallowed; return *this; }
 	ECFMetaData& mandatoryonly(std::function<bool(void)> ismandatory) { this->ismandatory = ismandatory; return *this; }
 

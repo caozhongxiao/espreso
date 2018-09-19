@@ -8,6 +8,25 @@
 
 using namespace espreso;
 
+std::string SIUnit::unit() const
+{
+	auto exponent = [] (const std::string &value, int exponent) {
+		if (exponent == 0) {
+			return std::string();
+		}
+		return value + std::to_string(exponent);
+	};
+
+	return
+			exponent("m", metre) +
+			exponent("kg", kilogram) +
+			exponent("s", second) +
+			exponent("A", ampere) +
+			exponent("K", kelvin) +
+			exponent("mol", mole) +
+			exponent("cd", candela);
+}
+
 void ECFMetaData::checkdescription(const std::string &name, size_t size) const
 {
 	if (description.size() != size) {

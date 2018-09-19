@@ -104,7 +104,7 @@ void printMetaData(ECFMetaData *md, const int indent = 0)
 
     std::cout << "," << std::endl;
     
-    printKeyValuePair("unit", md->unit, ind);
+    printKeyValuePair("unit", md->unit.unit(), ind);
 }
 
 

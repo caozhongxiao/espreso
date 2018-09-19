@@ -16,13 +16,12 @@ MaterialBaseConfiguration::MaterialBaseConfiguration()
 	registerParameter("dens", density, ECFMetaData()
 			.setdescription({ "Density" })
 			.setdatatype({ ECFDataType::EXPRESSION })
-			.setunit("kg/m^3")
+			.setunit(SIUnit(-3, 1, 0, 0, 0, 0, 0))
 			.allowonly([&] () { return _phase_change == NULL || !*_phase_change; }));
 
 	registerParameter("CP", heat_capacity, ECFMetaData()
 			.setdescription({ "Heat capacity" })
 			.setdatatype({ ECFDataType::EXPRESSION })
-			.setunit("J / (kg * K)")
 			.allowonly([&] () { return _phase_change == NULL || !*_phase_change; }));
 
 	REGISTER(thermal_conductivity, ECFMetaData()
@@ -67,19 +66,19 @@ MaterialConfiguration::MaterialConfiguration()
   phase_change(false),
   _allowed_physical_models(static_cast<PHYSICAL_MODEL>(~0))
 {
-    name = "";
+	name = "";
 	REGISTER(name, ECFMetaData()
 			 .setdescription({ "Name" })
 			 .setdatatype( { ECFDataType::STRING } ));
 
-    description = "";
+	description = "";
 	REGISTER(description, ECFMetaData()
 			 .setdescription({ "Description" })
 			 .setdatatype( { ECFDataType::STRING } ));
 
 	addSpace();
 
-    physical_model = PHYSICAL_MODEL::THERMAL;
+	physical_model = PHYSICAL_MODEL::THERMAL;
 	REGISTER(physical_model, ECFMetaData()
 			.setdescription({ "Physical model" })
 			.setdatatype({ ECFDataType::ENUM_FLAGS })
@@ -89,7 +88,7 @@ MaterialConfiguration::MaterialConfiguration()
 					.allowonly([&] () { return _allowed_physical_models & PHYSICAL_MODEL::LINEAR_ELASTIC; })));
 
 	REGISTER(phase_change, ECFMetaData()
-            .setdescription({ "Phase change" })
+			.setdescription({ "Phase change" })
 			.setdatatype({ ECFDataType::BOOL }));
 
 	addSeparator();
@@ -103,26 +102,26 @@ MaterialConfiguration::MaterialConfiguration()
 
 	smooth_step_order = 1;
 	REGISTER(smooth_step_order, ECFMetaData()
-            .setdescription({ "Smooth step order" })
+			.setdescription({ "Smooth step order" })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER })
 			.allowonly([&] () { return phase_change; }));
 
 	latent_heat = transition_interval = phase_change_temperature = 0;
 	REGISTER(latent_heat, ECFMetaData()
-            .setdescription({ "Latent heat" })
+			.setdescription({ "Latent heat" })
 			.setdatatype({ ECFDataType::FLOAT })
 			.allowonly([&] () { return phase_change; }));
 	REGISTER(transition_interval, ECFMetaData()
-                .setdescription({ "Transition interval" })
+				.setdescription({ "Transition interval" })
 				.setdatatype({ ECFDataType::FLOAT })
 				.allowonly([&] () { return phase_change; }));
 	REGISTER(phase_change_temperature, ECFMetaData()
-                .setdescription({ "Phase change temperature" })
+				.setdescription({ "Phase change temperature" })
 				.setdatatype({ ECFDataType::FLOAT })
 				.allowonly([&] () { return phase_change; }));
 
 	REGISTER(phases, ECFMetaData()
-            .setdescription({ "Phase change settings.", "Phase settings" })
+			.setdescription({ "Phase change settings.", "Phase settings" })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER })
 			.setpattern({ "1" })
 			.allowonly([&] () { return phase_change; }),
