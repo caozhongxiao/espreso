@@ -68,6 +68,24 @@ ECFMetaData ECFMetaData::suffix(size_t start) const
 	return ret;
 }
 
+void ECFParameter::defaultName()
+{
+	if (!metadata.name.size()) {
+		metadata.name = name;
+
+		for (size_t i = 0, up = 1; i < metadata.name.size(); i++) {
+			if (up && 'a' <= metadata.name[i] && metadata.name[i] <= 'z') {
+				metadata.name[i] += 'A' - 'a';
+			}
+			up = 0;
+			if (metadata.name[i] == '_') {
+				metadata.name[i] = ' ';
+				up = 1;
+			}
+		}
+	}
+}
+
 bool ECFParameter::setValue(const std::string &value)
 {
 	if (_setValue(value)) {
@@ -209,6 +227,7 @@ ECFParameter* ECFObject::registerParameter(const std::string &name, ECFParameter
 	parameters.push_back(parameter);
 	parameters.back()->name = name;
 	parameters.back()->metadata = metadata;
+	parameters.back()->defaultName();
 	return parameters.back();
 }
 
@@ -217,6 +236,7 @@ ECFParameter* ECFObject::registerPatternParameter(ECFParameter *parameter) const
 	registeredParameters.push_back(parameter);
 	parameter->name = metadata.pattern.front();
 	parameter->metadata = metadata.suffix(1);
+	parameters.back()->defaultName();
 	return parameter;
 }
 

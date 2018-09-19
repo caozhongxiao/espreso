@@ -67,6 +67,7 @@ struct SIUnit {
 };
 
 struct ECFMetaData {
+	std::string name;
 	std::vector<std::string> description;
 	std::vector<ECFDataType> datatype;
 	std::vector<std::string> pattern;
@@ -79,6 +80,7 @@ struct ECFMetaData {
 	std::function<bool(void)> isallowed;
 	std::function<bool(void)> ismandatory;
 
+	ECFMetaData& setname(const std::string &name) { this->name = name; return *this; }
 	ECFMetaData& setdescription(const std::vector<std::string> &description) { this->description = description; return *this; }
 	ECFMetaData& setdatatype(const std::vector<ECFDataType> &datatype) { this->datatype = datatype; return *this; }
 	ECFMetaData& setpattern(const std::vector<std::string> &pattern) { this->pattern = pattern; return *this; }
@@ -131,6 +133,7 @@ struct ECFParameter {
 
 	virtual void addListener(Event event, std::function<void(const std::string &value)> listener);
 
+	virtual void defaultName();
 	virtual ECFParameter* registerAdditionalParameter(ECFParameter* parameter);
 
 	virtual ~ECFParameter() {};

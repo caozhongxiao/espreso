@@ -20,6 +20,7 @@ MaterialBaseConfiguration::MaterialBaseConfiguration()
 			.allowonly([&] () { return _phase_change == NULL || !*_phase_change; }));
 
 	registerParameter("CP", heat_capacity, ECFMetaData()
+			.setname("Heat capacity")
 			.setdescription({ "Heat capacity" })
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.allowonly([&] () { return _phase_change == NULL || !*_phase_change; }));
