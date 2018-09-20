@@ -13,6 +13,7 @@ namespace espreso {
 
 struct Point;
 struct TensorConfiguration;
+struct ECFParameter;
 
 enum class ECFDataType {
 	BOOL,
@@ -66,6 +67,104 @@ struct SIUnit {
 	std::string unit() const;
 };
 
+struct GeneralValue {
+	virtual bool equal(const void *data) const { return true; }
+	virtual std::string tostring() const { return "TRUE"; }
+
+	virtual ~GeneralValue() {}
+	virtual GeneralValue* copy() const { return new GeneralValue(); }
+};
+
+struct EnumValue: public GeneralValue {
+	virtual int index() const =0;
+};
+
+template <typename TValue>
+struct EnumValueHolder: public EnumValue {
+	TValue value;
+
+	bool equal(const void *data) const { return *static_cast<const TValue*>(data) == value; }
+	int index() const { return static_cast<int>(value); }
+
+	EnumValueHolder(const TValue &value): value(value) {}
+	GeneralValue* copy() const { return new EnumValueHolder<TValue>(value); }
+};
+
+template <typename TValue>
+struct GeneralValueHolder: public GeneralValue {
+	TValue value;
+
+	bool equal(const void *data) const { return *static_cast<const TValue*>(data) == value; }
+	std::string tostring() const { return std::to_string(value); }
+
+	GeneralValueHolder(const TValue &value): value(value) {}
+	GeneralValue* copy() const { return new GeneralValueHolder<TValue>(value); }
+};
+
+class ECFCondition {
+
+protected:
+	const void *parameter;
+	const GeneralValue *value;
+
+public:
+	virtual bool evaluate() const { return !parameter || value->equal(parameter); }
+
+	bool isset() const { return parameter; }
+	virtual bool match(const void* parameter) const { return this->parameter == parameter; }
+	virtual std::string compose(const ECFParameter* parameter) const;
+
+	ECFCondition()
+	: parameter(NULL), value(new GeneralValue()) {}
+
+	template <typename TValue>
+	typename std::enable_if<std::is_enum<TValue>::value, const GeneralValue*>::type
+	init(const TValue &value) { return new EnumValueHolder<TValue>(value); }
+
+	template <typename TValue>
+	typename std::enable_if<!std::is_enum<TValue>::value, const GeneralValue*>::type
+	init(const TValue &value) { return new GeneralValueHolder<TValue>(value); }
+
+	template <typename TParemeter, typename TValue>
+	ECFCondition(const TParemeter &parameter, const TValue &value)
+	: parameter(&parameter), value(init<TValue>(value)) {}
+
+	ECFCondition(const ECFCondition &other)
+	: parameter(other.parameter), value(other.value->copy()) {}
+
+	ECFCondition(ECFCondition &&other)
+	: parameter(std::move(other.parameter)), value(other.value->copy()) {}
+
+	virtual ECFCondition* copy() const { return new ECFCondition(*this); }
+
+	virtual ~ECFCondition() { delete value; }
+};
+
+class ECFNotCondition: public ECFCondition {
+
+public:
+	virtual bool evaluate() const { return !parameter || !value->equal(parameter); }
+
+	ECFNotCondition() {}
+
+	template <typename TParemeter, typename TValue>
+	ECFNotCondition(const TParemeter &parameter, const TValue &value)
+	: ECFCondition(parameter, value) {}
+
+	ECFNotCondition(const ECFCondition &other)
+	: ECFCondition(other) {}
+
+	ECFNotCondition(const ECFNotCondition &other)
+	: ECFCondition(other) {}
+
+	ECFNotCondition(ECFCondition &&other)
+	: ECFCondition(std::move(other)) {}
+
+	virtual ECFCondition* copy() const { return new ECFNotCondition(*this); }
+};
+
+inline ECFNotCondition operator!(const ECFCondition &other) { return other; }
+
 struct ECFMetaData {
 	std::string name;
 	std::vector<std::string> description;
@@ -76,6 +175,8 @@ struct ECFMetaData {
 	TensorConfiguration *tensor;
 	RegionMapBase *regionMap;
 	SIUnit unit;
+
+	ECFCondition *condition;
 
 	std::function<bool(void)> isallowed;
 	std::function<bool(void)> ismandatory;
@@ -90,6 +191,7 @@ struct ECFMetaData {
 	ECFMetaData& setunit(const SIUnit &unit) { this->unit = unit; return *this; }
 	ECFMetaData& allowonly(std::function<bool(void)> isallowed) { this->isallowed = isallowed; return *this; }
 	ECFMetaData& mandatoryonly(std::function<bool(void)> ismandatory) { this->ismandatory = ismandatory; return *this; }
+	ECFMetaData& addconstraint(const ECFCondition &condition) { delete this->condition; this->condition = condition.copy(); return *this; }
 
 	ECFMetaData& addoption(const ECFOption &option) { options.push_back(option); return *this; }
 
@@ -105,8 +207,55 @@ struct ECFMetaData {
 
 	ECFMetaData(): tensor(NULL), regionMap(NULL)
 	{
+		condition = new ECFCondition();
 		isallowed = [] () { return true; };
 		ismandatory = [] () { return true; };
+	}
+
+	ECFMetaData(const ECFMetaData &other)
+	: name(other.name), description(other.description),
+	  datatype(other.datatype), pattern(other.pattern),
+	  options(other.options), variables(other.variables),
+	  tensor(other.tensor), regionMap(other.regionMap),
+	  unit(other.unit), isallowed(other.isallowed),
+	  ismandatory(other.ismandatory), condition(other.condition->copy())
+	{
+
+	}
+
+	ECFMetaData(ECFMetaData &&other)
+	: name(std::move(other.name)), description(std::move(other.description)),
+	  datatype(std::move(other.datatype)), pattern(std::move(other.pattern)),
+	  options(std::move(other.options)), variables(std::move(other.variables)),
+	  tensor(std::move(other.tensor)), regionMap(std::move(other.regionMap)),
+	  unit(std::move(other.unit)), isallowed(std::move(other.isallowed)),
+	  ismandatory(std::move(other.ismandatory)), condition(other.condition->copy())
+	{
+
+	}
+
+	ECFMetaData& operator=(const ECFMetaData &other)
+	{
+		if (this != &other) {
+			name = other.name;
+			description = other.description;
+			datatype = other.datatype;
+			pattern = other.pattern;
+			options = other.options;
+			variables = other.variables;
+			tensor = other.tensor;
+			regionMap = other.regionMap;
+			unit = other.unit;
+			isallowed = other.isallowed;
+			ismandatory = other.ismandatory;
+			condition = other.condition->copy();
+		}
+		return *this;
+	}
+
+	~ECFMetaData()
+	{
+		delete condition;
 	}
 };
 
@@ -134,6 +283,7 @@ struct ECFParameter {
 	virtual void addListener(Event event, std::function<void(const std::string &value)> listener);
 
 	virtual void defaultName();
+	virtual bool isvisible() { return metadata.condition->evaluate(); }
 	virtual ECFParameter* registerAdditionalParameter(ECFParameter* parameter);
 
 	virtual ~ECFParameter() {};

@@ -181,11 +181,22 @@ int main(int argc, char **argv)
 	ECFDatatypes[ECFDataType::SPACE] = "space";
 	ECFDatatypes[ECFDataType::SEPARATOR] = "separator";
 
-    // ECFRoot ecf("benchmarks/diffusion2D/steadystate/simple/espreso.ecf");
-    ECFRoot ecf;
+    ECFRoot ecf("benchmarks/diffusion2D/steadystate/simple/espreso.ecf");
     if (rank == 0)
         printParameter(&ecf);
         // printParameter(&ecf.heat_transfer_3d.materials["material"]);
+
+    ecf.forEachParameters([&] (const ECFParameter *parameter) {
+		if (parameter->metadata.condition->isset()) {
+			std::cout << parameter->name << ": ";
+			ecf.forEachParameters([&] (const ECFParameter *conditionalParameter) {
+				if (parameter->metadata.condition->match(conditionalParameter->data())) {
+					std::cout << parameter->metadata.condition->compose(conditionalParameter);
+				}
+			}, false);
+			std::cout << "\n";
+		}
+	}, false);
 
     MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
