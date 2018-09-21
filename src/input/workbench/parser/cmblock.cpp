@@ -1,5 +1,5 @@
 
-#include "../parser/cmblock.h"
+#include "cmblock.h"
 
 #include "../../../basis/containers/tarray.h"
 #include "../../../basis/utilities/parser.h"

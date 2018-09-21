@@ -1,5 +1,5 @@
 
-#include "../parser/nblock.h"
+#include "nblock.h"
 
 #include "../../../basis/containers/point.h"
 #include "../../../basis/containers/tarray.h"

@@ -2,7 +2,7 @@
 #ifndef SRC_INPUT_WORKBENCH_PARSER_EBLOCK_H_
 #define SRC_INPUT_WORKBENCH_PARSER_EBLOCK_H_
 
-#include "../parser/parser.h"
+#include "parser.h"
 
 namespace espreso {
 

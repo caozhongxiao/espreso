@@ -1,5 +1,5 @@
 
-#include "../parser/blockend.h"
+#include "blockend.h"
 
 using namespace espreso;
 

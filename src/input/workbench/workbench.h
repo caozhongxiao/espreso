@@ -19,7 +19,6 @@
 
 namespace espreso {
 
-struct Point;
 class InputConfiguration;
 class Mesh;
 
