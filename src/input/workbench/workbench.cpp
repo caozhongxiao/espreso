@@ -8,7 +8,6 @@
 #include "../../basis/utilities/utils.h"
 #include "../../config/ecf/input/input.h"
 
-#include "../../mesh/mesh.h"
 #include "../randominput.h"
 #include "../sequentialinput.h"
 

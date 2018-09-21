@@ -1,6 +1,7 @@
 
 #include "input.h"
 #include "workbench/workbench.h"
+#include "openfoam/openfoam.h"
 #include "meshgenerator/meshgenerator.h"
 
 #include "../basis/containers/serializededata.h"
@@ -26,6 +27,10 @@ void Input::load(const ECFRoot &configuration, Mesh &mesh)
 	switch (configuration.input) {
 	case INPUT_FORMAT::WORKBENCH:
 		WorkbenchLoader::load(configuration.workbench, mesh);
+		mesh.update();
+		break;
+	case INPUT_FORMAT::OPENFOAM:
+		OpenFOAMLoader::load(configuration.openfoam, mesh);
 		mesh.update();
 		break;
 	case INPUT_FORMAT::GENERATOR:
