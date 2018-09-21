@@ -39,7 +39,6 @@ protected:
 	void parseData(PlainWorkbenchData &dMesh);
 
 	const InputConfiguration &_configuration;
-	Mesh &_mesh;
 
 	std::vector<NBlock> _NBlocks;
 	std::vector<EBlock> _EBlocks;

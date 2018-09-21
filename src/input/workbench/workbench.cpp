@@ -19,7 +19,7 @@ void WorkbenchLoader::load(const InputConfiguration &configuration, Mesh &mesh)
 }
 
 WorkbenchLoader::WorkbenchLoader(const InputConfiguration &configuration, Mesh &mesh)
-: _configuration(configuration), _mesh(mesh)
+: _configuration(configuration)
 {
 	TimeEval timing("Parsing Workbench data");
 	timing.totalTime.startWithBarrier();
