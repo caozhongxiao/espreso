@@ -3,6 +3,7 @@
 #define SRC_INPUT_WORKBENCH_WORKBENCH_H_
 
 #include "../plaindata.h"
+#include "../mpiloader/mpiloader.h"
 
 #include "parser/nblock.h"
 #include "parser/eblock.h"
@@ -49,9 +50,7 @@ protected:
 	std::vector<CM> _CM;
 	std::vector<BlockEnd> _blockEnds;
 
-	const char *_begin, *_current, *_end;
-	std::vector<char> _data;
-	std::vector<size_t> _dataOffset;
+	ParallelFile pfile;
 };
 
 }

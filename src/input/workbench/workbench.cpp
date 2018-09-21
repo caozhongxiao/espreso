@@ -1,5 +1,6 @@
 
 #include "workbench.h"
+
 #include "../../basis/containers/tarray.h"
 #include "../../basis/logging/logging.h"
 #include "../../basis/logging/timeeval.h"
@@ -57,142 +58,22 @@ WorkbenchLoader::WorkbenchLoader(const InputConfiguration &configuration, Mesh &
 
 void WorkbenchLoader::readData()
 {
-	TimeEval timing("Read data from file");
-	timing.totalTime.startWithBarrier();
-
-	TimeEvent e1("FILE OPEN");
-	e1.start();
-
-	MPI_File MPIfile;
-
-	if (MPI_File_open(environment->MPICommunicator, _configuration.path.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &MPIfile)) {
+	if (!MPILoader::read(_configuration.path, pfile, MAX_LINE_STEP * MAX_LINE_SIZE)) {
 		ESINFO(ERROR) << "MPI cannot load file '" << _configuration.path << "'";
 	}
 
-	e1.end();
-	timing.addEvent(e1);
+	MPILoader::align(pfile, MAX_LINE_STEP);
 
-	TimeEvent e2("GET SIZE");
-	e2.start();
-
-	MPI_Offset size;
-	MPI_File_get_size(MPIfile, &size);
-
-	e2.end();
-	timing.addEvent(e2);
-
-	TimeEvent e3("STD VECTORS");
-	e3.start();
-
-	size_t block = 1;
-	while (size / (1L << (block - 1)) > (1L << 31)) {
-		++block;
-	}
-	block = 1L << block;
-
-	std::vector<size_t> fdistribution = tarray<int>::distribute(environment->MPIsize, size / block + ((size % block) ? 1 : 0));
-	std::vector<MPI_Aint> displacement = { (MPI_Aint)(block * fdistribution[environment->MPIrank]) };
-	std::vector<int> length = { (int)(fdistribution[environment->MPIrank + 1] - fdistribution[environment->MPIrank]) };
-
-	_data.resize(block * length.front() + MAX_LINE_STEP * MAX_LINE_SIZE);
-
-	MPI_Datatype chunk;
-	MPI_Datatype fDataDistribution;
-
-	e3.end();
-	timing.addEvent(e3);
-
-	TimeEvent e4("COMMIT DATATYPES");
-	e4.start();
-
-	MPI_Type_contiguous(block, MPI_BYTE, &chunk);
-	MPI_Type_commit(&chunk);
-	MPI_Type_create_hindexed(1, length.data(), displacement.data(), chunk, &fDataDistribution);
-	MPI_Type_commit(&fDataDistribution);
-
-	e4.end();
-	timing.addEvent(e4);
-
-	TimeEvent e5("SET VIEW");
-	e5.start();
-
-	MPI_File_set_view(MPIfile, 0, chunk, fDataDistribution, "native", MPI_INFO_NULL);
-
-	e5.end();
-	timing.addEvent(e5);
-
-	TimeEvent e6("READ ALL");
-	e6.start();
-
-	MPI_File_read_all(MPIfile, _data.data(), length.front(), chunk, MPI_STATUS_IGNORE);
-
-	e6.end();
-	timing.addEvent(e6);
-
-	TimeEvent e7("post-process");
-	e7.start();
-
-	MPI_File_close(&MPIfile);
-
-	MPI_Type_free(&chunk);
-
-	_current = _data.data();
-	if (environment->MPIsize > 1) { // align to line end, TODO: fix for tiny files
-		const char *exchangeStart = _current;
-		if (environment->MPIrank) {
-			while (*_current++ != '\n');
-			exchangeStart = _current;
-			for (int i = 1; i < MAX_LINE_STEP; i++) {
-				while (*exchangeStart++ != '\n');
-			}
-		}
-
-		std::vector<std::vector<char> > sBuffer(1, std::vector<char>(const_cast<const char*>(_data.data()), exchangeStart)), rBuffer;
-
-		std::vector<int> neighs;
-		if (environment->MPIrank) {
-			neighs.push_back(environment->MPIrank - 1);
-		}
-		if (environment->MPIrank + 1 < environment->MPIsize) {
-			neighs.push_back(environment->MPIrank + 1);
-		}
-		rBuffer.resize(neighs.size());
-		Communication::receiveUpperUnknownSize(sBuffer, rBuffer, neighs);
-
-		if (rBuffer.back().size() > MAX_LINE_STEP * MAX_LINE_SIZE) {
-			ESINFO(ERROR) << "ESPRESO internal error: increase max line size in Ansys file.";
-		}
-		memcpy(_data.data() + _data.size() - MAX_LINE_STEP * MAX_LINE_SIZE, rBuffer.back().data(), rBuffer.back().size());
-		char* firstLineEnd = rBuffer.back().data();
-		if (rBuffer.back().size()) {
-			while (*firstLineEnd++ != '\n');
-		}
-		_end = _data.data() + _data.size() - MAX_LINE_STEP * MAX_LINE_SIZE + (firstLineEnd - rBuffer.back().data());
-	} else {
-		_end = _data.data() + _data.size() - MAX_LINE_STEP * MAX_LINE_SIZE;
-	}
-	if (environment->MPIrank + 1 == environment->MPIsize) {
-		_end -= block * fdistribution.back() - size;
-	}
-	_begin = _current;
-	_dataOffset = Communication::getDistribution<size_t>(_end - _current);
-
-	WorkbenchParser::offset = _dataOffset[environment->MPIrank];
-	WorkbenchParser::begin = _begin;
-	WorkbenchParser::end = _end;
-
-	e7.end();
-	timing.addEvent(e7);
-
-	timing.totalTime.endWithBarrier();
-	timing.printStatsMPI();
+	WorkbenchParser::offset = pfile.offsets[environment->MPIrank];
+	WorkbenchParser::begin = pfile.begin;
+	WorkbenchParser::end = pfile.end;
 }
 
 void WorkbenchLoader::prepareData()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<size_t> tdistribution = tarray<char>::distribute(threads, _end - _begin);
+	std::vector<size_t> tdistribution = tarray<char>::distribute(threads, pfile.end - pfile.begin);
 	std::vector<std::vector<NBlock> > tNBlocks(threads);
 	std::vector<std::vector<EBlock> > tEBlocks(threads);
 	std::vector<std::vector<CMBlock> > tCMBlocks(threads);
@@ -204,16 +85,16 @@ void WorkbenchLoader::prepareData()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		const char* tbegin = _begin + tdistribution[t];
+		const char* tbegin = pfile.begin + tdistribution[t];
 		if (t && *(tbegin - 1) != '\n') {
-			while (tbegin < _end && *tbegin++ != '\n'); // start at new line
+			while (tbegin < pfile.end && *tbegin++ != '\n'); // start at new line
 		}
 
-		while (tbegin < _begin + tdistribution[t + 1]) {
-			if (tbegin != _begin + tdistribution[t] && memcmp(tbegin - BlockEnd::unixSize, BlockEnd::unixEnd, BlockEnd::unixSize) == 0) {
+		while (tbegin < pfile.begin + tdistribution[t + 1]) {
+			if (tbegin != pfile.begin + tdistribution[t] && memcmp(tbegin - BlockEnd::unixSize, BlockEnd::unixEnd, BlockEnd::unixSize) == 0) {
 				tBlockEnds[t].push_back(BlockEnd().parse(tbegin - BlockEnd::unixSize));
 			}
-			if (tbegin != _begin + tdistribution[t] && memcmp(tbegin - BlockEnd::winSize, BlockEnd::winEnd, BlockEnd::winSize) == 0) {
+			if (tbegin != pfile.begin + tdistribution[t] && memcmp(tbegin - BlockEnd::winSize, BlockEnd::winEnd, BlockEnd::winSize) == 0) {
 				tBlockEnds[t].push_back(BlockEnd().parse(tbegin - BlockEnd::winSize));
 			}
 			if (memcmp(tbegin, NBlock::upper, NBlock::size) == 0) {
@@ -265,7 +146,7 @@ void WorkbenchLoader::prepareData()
 			if (memcmp(tbegin, BlockEnd::nLower, BlockEnd::nSize) == 0) {
 				tBlockEnds[t].push_back(BlockEnd().parse(tbegin));
 			}
-			while (tbegin < _end && *tbegin++ != '\n');
+			while (tbegin < pfile.end && *tbegin++ != '\n');
 		}
 		if (t == threads - 1) {
 			if (memcmp(tbegin - BlockEnd::unixSize, BlockEnd::unixEnd, BlockEnd::unixSize) == 0) {
@@ -293,25 +174,25 @@ void WorkbenchLoader::prepareData()
 	}
 
 	for (size_t i = 0; i < _NBlocks.size(); i++) {
-		_NBlocks[i].fillDistribution(_blockEnds, _dataOffset);
+		_NBlocks[i].fillDistribution(_blockEnds, pfile.offsets);
 	}
 	for (size_t i = 0; i < _EBlocks.size(); i++) {
-		_EBlocks[i].fillDistribution(_blockEnds, _dataOffset);
+		_EBlocks[i].fillDistribution(_blockEnds, pfile.offsets);
 	}
 	for (size_t i = 0; i < _CMBlocks.size(); i++) {
-		_CMBlocks[i].fillDistribution(_blockEnds, _dataOffset);
+		_CMBlocks[i].fillDistribution(_blockEnds, pfile.offsets);
 	}
 	for (size_t i = 0; i < _ET.size(); i++) {
-		_ET[i].fillDistribution(_blockEnds, _dataOffset);
+		_ET[i].fillDistribution(_blockEnds, pfile.offsets);
 	}
 	for (size_t i = 0; i < _ESel.size(); i++) {
-		_ESel[i].fillDistribution(_blockEnds, _dataOffset);
+		_ESel[i].fillDistribution(_blockEnds, pfile.offsets);
 	}
 	for (size_t i = 0; i < _NSel.size(); i++) {
-		_NSel[i].fillDistribution(_blockEnds, _dataOffset);
+		_NSel[i].fillDistribution(_blockEnds, pfile.offsets);
 	}
 	for (size_t i = 0; i < _CM.size(); i++) {
-		_CM[i].fillDistribution(_blockEnds, _dataOffset);
+		_CM[i].fillDistribution(_blockEnds, pfile.offsets);
 	}
 
 	if (!Communication::allGatherUnknownSize(_NBlocks)) {
@@ -339,15 +220,15 @@ void WorkbenchLoader::prepareData()
 
 	// fix distribution if EBlocks are across more processes and elements data have more lines
 	for (size_t i = 0; i < _EBlocks.size(); i++) {
-		_EBlocks[i].fixOffsets(_dataOffset);
-		if (_begin != WorkbenchParser::begin) {
-			_dataOffset[environment->MPIrank] += _begin - WorkbenchParser::begin;
+		_EBlocks[i].fixOffsets(pfile.offsets);
+		if (pfile.begin != WorkbenchParser::begin) {
+			pfile.offsets[environment->MPIrank] += pfile.begin - WorkbenchParser::begin;
 		}
-		if (_end != WorkbenchParser::end) {
-			_dataOffset[environment->MPIrank + 1] += _end - WorkbenchParser::end;
+		if (pfile.end != WorkbenchParser::end) {
+			pfile.offsets[environment->MPIrank + 1] += pfile.end - WorkbenchParser::end;
 		}
-		_begin = WorkbenchParser::begin;
-		_end = WorkbenchParser::end;
+		pfile.begin = WorkbenchParser::begin;
+		pfile.end = WorkbenchParser::end;
 	}
 }
 
