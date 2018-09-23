@@ -2,21 +2,27 @@
 #ifndef SRC_INPUT_OPENFOAM_PARSER_BOUNDARY_H_
 #define SRC_INPUT_OPENFOAM_PARSER_BOUNDARY_H_
 
-#include <string>
-#include <vector>
-#include <map>
-
 #include "parser.h"
+
+#include <vector>
 
 namespace espreso {
 
-struct PlainOpenFOAMData;
+#define MAX_NAME_SIZE 80
+
+struct OpenFOAMBoundaryData {
+	char name[MAX_NAME_SIZE];
+	size_t startFace, nFaces;
+
+	OpenFOAMBoundaryData();
+	OpenFOAMBoundaryData(const std::string &name, size_t startFace, size_t nFaces);
+};
 
 struct OpenFOAMBoundary: public OpenFOAMParser {
 
 	OpenFOAMBoundary(const char *begin, const char *end): OpenFOAMParser(begin, end) {}
 
-	bool readData(std::map<std::string, std::vector<eslocal> > &eregions);
+	bool readData(std::vector<OpenFOAMBoundaryData> &boundaries);
 };
 
 }

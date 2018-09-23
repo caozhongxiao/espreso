@@ -12,6 +12,7 @@ namespace espreso {
 
 class InputConfiguration;
 class Mesh;
+struct OpenFOAMBoundaryData;
 
 struct PlainOpenFOAMData: public PlainMeshData {
 	std::vector<eslocal> fsize, fnodes, owner, neighbour;
@@ -28,10 +29,14 @@ protected:
 	void readData();
 	void parseData(PlainOpenFOAMData &mesh);
 	void buildElements(PlainOpenFOAMData &mesh);
+	void buildFaces(PlainOpenFOAMData &mesh);
 
 	const InputConfiguration &_configuration;
 
-	ParallelFile points, faces, owner, neighbour, boundary;
+	ParallelFile _points, _faces, _owner, _neighbour, _boundary;
+
+	std::vector<OpenFOAMBoundaryData> _boundaryData;
+	std::vector<eslocal> _fdist;
 };
 
 }

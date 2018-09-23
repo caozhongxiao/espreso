@@ -1,14 +1,27 @@
 
 #include "boundary.h"
-#include "../openfoam.h"
 
 #include "../../../basis/utilities/parser.h"
 
+#include <cstring>
 #include <numeric>
 
 using namespace espreso;
 
-bool OpenFOAMBoundary::readData(std::map<std::string, std::vector<eslocal> > &eregions)
+OpenFOAMBoundaryData::OpenFOAMBoundaryData()
+: startFace(0), nFaces(0)
+{
+	memset(name, '\0', MAX_NAME_SIZE);
+}
+
+OpenFOAMBoundaryData::OpenFOAMBoundaryData(const std::string &name, size_t startFace, size_t nFaces)
+: startFace(startFace), nFaces(nFaces)
+{
+	memset(this->name, '\0', MAX_NAME_SIZE);
+	memcpy(this->name, name.data(), name.size() < MAX_NAME_SIZE ? name.size() : MAX_NAME_SIZE);
+}
+
+bool OpenFOAMBoundary::readData(std::vector<OpenFOAMBoundaryData> &boundaries)
 {
 	current = begin;
 
@@ -32,9 +45,7 @@ bool OpenFOAMBoundary::readData(std::map<std::string, std::vector<eslocal> > &er
 		++current;
 		while (isEmpty()) { ++current; }
 
-//		std::vector<eslocal> &elements = eregions[name];
-//		elements.resize(nFaces);
-//		std::iota(elements.begin(), elements.end(), startFace);
+		boundaries.push_back({name, startFace, nFaces});
 	}
 	return true;
 }
