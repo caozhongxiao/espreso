@@ -5,15 +5,6 @@
 #include "../plaindata.h"
 #include "../mpiloader/mpiloader.h"
 
-#include "parser/nblock.h"
-#include "parser/eblock.h"
-#include "parser/cmblock.h"
-#include "parser/et.h"
-#include "parser/esel.h"
-#include "parser/nsel.h"
-#include "parser/cm.h"
-#include "parser/blockend.h"
-
 #include <cstddef>
 #include <vector>
 
@@ -21,6 +12,15 @@ namespace espreso {
 
 class InputConfiguration;
 class Mesh;
+
+struct NBlock;
+struct EBlock;
+struct CMBlock;
+struct ET;
+struct ESel;
+struct NSel;
+struct CM;
+struct BlockEnd;
 
 struct PlainWorkbenchData: public PlainMeshData {
 	std::vector<int> et;

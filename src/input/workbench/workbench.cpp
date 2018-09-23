@@ -1,6 +1,15 @@
 
 #include "workbench.h"
 
+#include "parser/nblock.h"
+#include "parser/eblock.h"
+#include "parser/cmblock.h"
+#include "parser/et.h"
+#include "parser/esel.h"
+#include "parser/nsel.h"
+#include "parser/cm.h"
+#include "parser/blockend.h"
+
 #include "../../basis/containers/tarray.h"
 #include "../../basis/logging/logging.h"
 #include "../../basis/logging/timeeval.h"
