@@ -49,7 +49,7 @@ protected:
 	std::vector<CM> _CM;
 	std::vector<BlockEnd> _blockEnds;
 
-	ParallelFile pfile;
+	ParallelFile _pfile;
 };
 
 }

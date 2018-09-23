@@ -66,22 +66,22 @@ WorkbenchLoader::WorkbenchLoader(const InputConfiguration &configuration, Mesh &
 
 void WorkbenchLoader::readData()
 {
-	if (!MPILoader::read(_configuration.path, pfile, MAX_LINE_STEP * MAX_LINE_SIZE)) {
+	if (!MPILoader::read(_configuration.path, _pfile, MAX_LINE_STEP * MAX_LINE_SIZE)) {
 		ESINFO(ERROR) << "MPI cannot load file '" << _configuration.path << "'";
 	}
 
-	MPILoader::align(pfile, MAX_LINE_STEP);
+	MPILoader::align(_pfile, MAX_LINE_STEP);
 
-	WorkbenchParser::offset = pfile.offsets[environment->MPIrank];
-	WorkbenchParser::begin = pfile.begin;
-	WorkbenchParser::end = pfile.end;
+	WorkbenchParser::offset = _pfile.offsets[environment->MPIrank];
+	WorkbenchParser::begin = _pfile.begin;
+	WorkbenchParser::end = _pfile.end;
 }
 
 void WorkbenchLoader::prepareData()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<size_t> tdistribution = tarray<char>::distribute(threads, pfile.end - pfile.begin);
+	std::vector<size_t> tdistribution = tarray<char>::distribute(threads, _pfile.end - _pfile.begin);
 	std::vector<std::vector<NBlock> > tNBlocks(threads);
 	std::vector<std::vector<EBlock> > tEBlocks(threads);
 	std::vector<std::vector<CMBlock> > tCMBlocks(threads);
@@ -93,16 +93,16 @@ void WorkbenchLoader::prepareData()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		const char* tbegin = pfile.begin + tdistribution[t];
+		const char* tbegin = _pfile.begin + tdistribution[t];
 		if (t && *(tbegin - 1) != '\n') {
-			while (tbegin < pfile.end && *tbegin++ != '\n'); // start at new line
+			while (tbegin < _pfile.end && *tbegin++ != '\n'); // start at new line
 		}
 
-		while (tbegin < pfile.begin + tdistribution[t + 1]) {
-			if (tbegin != pfile.begin + tdistribution[t] && memcmp(tbegin - BlockEnd::unixSize, BlockEnd::unixEnd, BlockEnd::unixSize) == 0) {
+		while (tbegin < _pfile.begin + tdistribution[t + 1]) {
+			if (tbegin != _pfile.begin + tdistribution[t] && memcmp(tbegin - BlockEnd::unixSize, BlockEnd::unixEnd, BlockEnd::unixSize) == 0) {
 				tBlockEnds[t].push_back(BlockEnd().parse(tbegin - BlockEnd::unixSize));
 			}
-			if (tbegin != pfile.begin + tdistribution[t] && memcmp(tbegin - BlockEnd::winSize, BlockEnd::winEnd, BlockEnd::winSize) == 0) {
+			if (tbegin != _pfile.begin + tdistribution[t] && memcmp(tbegin - BlockEnd::winSize, BlockEnd::winEnd, BlockEnd::winSize) == 0) {
 				tBlockEnds[t].push_back(BlockEnd().parse(tbegin - BlockEnd::winSize));
 			}
 			if (memcmp(tbegin, NBlock::upper, NBlock::size) == 0) {
@@ -154,7 +154,7 @@ void WorkbenchLoader::prepareData()
 			if (memcmp(tbegin, BlockEnd::nLower, BlockEnd::nSize) == 0) {
 				tBlockEnds[t].push_back(BlockEnd().parse(tbegin));
 			}
-			while (tbegin < pfile.end && *tbegin++ != '\n');
+			while (tbegin < _pfile.end && *tbegin++ != '\n');
 		}
 		if (t == threads - 1) {
 			if (memcmp(tbegin - BlockEnd::unixSize, BlockEnd::unixEnd, BlockEnd::unixSize) == 0) {
@@ -182,25 +182,25 @@ void WorkbenchLoader::prepareData()
 	}
 
 	for (size_t i = 0; i < _NBlocks.size(); i++) {
-		_NBlocks[i].fillDistribution(_blockEnds, pfile.offsets);
+		_NBlocks[i].fillDistribution(_blockEnds, _pfile.offsets);
 	}
 	for (size_t i = 0; i < _EBlocks.size(); i++) {
-		_EBlocks[i].fillDistribution(_blockEnds, pfile.offsets);
+		_EBlocks[i].fillDistribution(_blockEnds, _pfile.offsets);
 	}
 	for (size_t i = 0; i < _CMBlocks.size(); i++) {
-		_CMBlocks[i].fillDistribution(_blockEnds, pfile.offsets);
+		_CMBlocks[i].fillDistribution(_blockEnds, _pfile.offsets);
 	}
 	for (size_t i = 0; i < _ET.size(); i++) {
-		_ET[i].fillDistribution(_blockEnds, pfile.offsets);
+		_ET[i].fillDistribution(_blockEnds, _pfile.offsets);
 	}
 	for (size_t i = 0; i < _ESel.size(); i++) {
-		_ESel[i].fillDistribution(_blockEnds, pfile.offsets);
+		_ESel[i].fillDistribution(_blockEnds, _pfile.offsets);
 	}
 	for (size_t i = 0; i < _NSel.size(); i++) {
-		_NSel[i].fillDistribution(_blockEnds, pfile.offsets);
+		_NSel[i].fillDistribution(_blockEnds, _pfile.offsets);
 	}
 	for (size_t i = 0; i < _CM.size(); i++) {
-		_CM[i].fillDistribution(_blockEnds, pfile.offsets);
+		_CM[i].fillDistribution(_blockEnds, _pfile.offsets);
 	}
 
 	if (!Communication::allGatherUnknownSize(_NBlocks)) {
@@ -228,15 +228,15 @@ void WorkbenchLoader::prepareData()
 
 	// fix distribution if EBlocks are across more processes and elements data have more lines
 	for (size_t i = 0; i < _EBlocks.size(); i++) {
-		_EBlocks[i].fixOffsets(pfile.offsets);
-		if (pfile.begin != WorkbenchParser::begin) {
-			pfile.offsets[environment->MPIrank] += pfile.begin - WorkbenchParser::begin;
+		_EBlocks[i].fixOffsets(_pfile.offsets);
+		if (_pfile.begin != WorkbenchParser::begin) {
+			_pfile.offsets[environment->MPIrank] += _pfile.begin - WorkbenchParser::begin;
 		}
-		if (pfile.end != WorkbenchParser::end) {
-			pfile.offsets[environment->MPIrank + 1] += pfile.end - WorkbenchParser::end;
+		if (_pfile.end != WorkbenchParser::end) {
+			_pfile.offsets[environment->MPIrank + 1] += _pfile.end - WorkbenchParser::end;
 		}
-		pfile.begin = WorkbenchParser::begin;
-		pfile.end = WorkbenchParser::end;
+		_pfile.begin = WorkbenchParser::begin;
+		_pfile.end = WorkbenchParser::end;
 	}
 }
 
