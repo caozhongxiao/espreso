@@ -5,7 +5,11 @@
 #include <string>
 #include <vector>
 
+#include "../../basis/utilities/communication.h"
+
 namespace espreso {
+
+struct LoaderConfiguration;
 
 struct ParallelFile {
 	const char *begin, *end;
@@ -15,8 +19,10 @@ struct ParallelFile {
 
 struct MPILoader {
 
-	static bool read(const std::string &file, ParallelFile &pfile, size_t align);
-	static void align(ParallelFile &pfile, size_t lines);
+	static bool open(MPITools::MPIGroup &group, MPI_File &MPIfile, const std::string &file);
+	static void read(MPITools::MPIGroup &group, MPI_File &MPIfile, ParallelFile &pfile, size_t alignment);
+	static void scatter(MPITools::MPIGroup &group, ParallelFile &pfile, size_t alignment);
+	static void align(MPITools::MPIGroup &group, ParallelFile &pfile, size_t lines);
 };
 
 }

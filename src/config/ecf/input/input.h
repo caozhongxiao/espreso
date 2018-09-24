@@ -2,6 +2,7 @@
 #ifndef SRC_CONFIG_ECF_INPUT_INPUT_H_
 #define SRC_CONFIG_ECF_INPUT_INPUT_H_
 
+#include "loaderconfiguration.h"
 #include "../../configuration.h"
 
 namespace espreso {
@@ -13,7 +14,8 @@ enum class INPUT_FORMAT {
 	GENERATOR
 };
 
-struct InputConfiguration: public ECFObject {
+
+struct InputConfiguration: public LoaderConfiguration, public ECFObject {
 
 	std::string path;
 

@@ -65,11 +65,17 @@ OpenFOAMLoader::OpenFOAMLoader(const InputConfiguration &configuration, Mesh &me
 
 void OpenFOAMLoader::readData()
 {
+	if (MPITools::nodes().within.rank) {
+		return;
+	}
+
 	auto read = [&] (const std::string &file, ParallelFile &pfile) {
-		if (!MPILoader::read(_configuration.path + "/constant/polyMesh/" + file, pfile, 80)) {
+		MPI_File MPIFile;
+		if (!MPILoader::open(MPITools::nodes().across, MPIFile, _configuration.path + "/constant/polyMesh/" + file)) {
 			ESINFO(ERROR) << "MPI cannot load file '" << _configuration.path + "/constant/polyMesh/" + file << "'";
 		}
-		MPILoader::align(pfile, 0);
+		MPILoader::read(MPITools::nodes().across, MPIFile, pfile, 80);
+		MPILoader::align(MPITools::nodes().across, pfile, 0);
 	};
 
 	read("points", _points);
@@ -81,6 +87,10 @@ void OpenFOAMLoader::readData()
 
 void OpenFOAMLoader::parseData(PlainOpenFOAMData &mesh)
 {
+	if (MPITools::nodes().within.rank) {
+		return;
+	}
+
 	if (!OpenFOAMPoints(_points.begin, _points.end).readData(mesh.nIDs, mesh.coordinates, _configuration.scale_factor)) {
 		ESINFO(ERROR) << "OpenFOAM loader: cannot parse points.";
 	}
@@ -119,7 +129,7 @@ void OpenFOAMLoader::buildElements(PlainOpenFOAMData &mesh)
 	sortIDs(owner, mesh.owner);
 	sortIDs(neighbour, mesh.neighbour);
 
-	eslocal nelements = mesh.owner[owner.back()] + 1;
+	eslocal nelements = owner.size() ? mesh.owner[owner.back()] + 1 : 0;
 	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, nelements);
 
 	std::vector<std::vector<eslocal> > esize(threads), enodes(threads);
@@ -235,9 +245,16 @@ void OpenFOAMLoader::buildElements(PlainOpenFOAMData &mesh)
 
 void OpenFOAMLoader::buildFaces(PlainOpenFOAMData &mesh)
 {
-//	if (!Communication::broadcastUnknownSize(_boundaryData)) {
-//		ESINFO(ERROR) << "ESPRESO internal error: exchange OpenFOAM boundary data.";
-//	}
+	if (!Communication::broadcastUnknownSize(_boundaryData)) {
+		ESINFO(ERROR) << "ESPRESO internal error: exchange OpenFOAM boundary data.";
+	}
+
+	if (MPITools::nodes().within.rank) {
+		for (size_t i = 0; i < _boundaryData.size(); i++) {
+			mesh.eregions[_boundaryData[i].name];
+		}
+		return;
+	}
 
 	for (size_t i = 0; i < _boundaryData.size(); i++) {
 		mesh.esize.insert(mesh.esize.end(),
