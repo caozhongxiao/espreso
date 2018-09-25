@@ -11,9 +11,9 @@ bool MPILoader::open(MPIGroup &group, MPI_File &MPIfile, const std::string &file
 	MPI_Info_create(&info);
 	MPI_Info_set(info, "access_style", "read_once");
 	MPI_Info_set(info, "collective_buffering", "true");
-	MPI_Info_set(info, "romio_cb_write", "enable");
+	MPI_Info_set(info, "romio_cb_read", "enable");
 
-	if (MPI_File_open(group.communicator, file.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &MPIfile)) {
+	if (MPI_File_open(group.communicator, file.c_str(), MPI_MODE_RDONLY, info, &MPIfile)) {
 		return false;
 	}
 
@@ -46,9 +46,16 @@ void MPILoader::read(MPIGroup &group, MPI_File &MPIfile, ParallelFile &pfile, si
 	MPI_Type_create_hindexed(1, length.data(), displacement.data(), chunk, &fDataDistribution);
 	MPI_Type_commit(&fDataDistribution);
 
-	MPI_File_set_view(MPIfile, 0, chunk, fDataDistribution, "native", MPI_INFO_NULL);
+	MPI_Info info;
+	MPI_Info_create(&info);
+	MPI_Info_set(info, "access_style", "read_once");
+	MPI_Info_set(info, "collective_buffering", "true");
+	MPI_Info_set(info, "romio_cb_read", "enable");
+
+	MPI_File_set_view(MPIfile, 0, chunk, fDataDistribution, "native", info);
 	MPI_File_read_all(MPIfile, pfile.data.data(), length.front(), chunk, MPI_STATUS_IGNORE);
 
+	MPI_Info_free(&info);
 	MPI_File_close(&MPIfile);
 	MPI_Type_free(&chunk);
 
