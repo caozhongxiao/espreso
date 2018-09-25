@@ -4,7 +4,6 @@
 
 #include "environment.hpp"
 #include "output.h"
-#include "decomposer.h"
 #include "decomposition.h"
 
 #include "pythontestgenerator.h"
@@ -56,8 +55,6 @@ struct ECFRoot: public ECFObject {
 	StructuralMechanicsConfiguration structural_mechanics_3d;
 
 	OutputConfiguration output;
-
-	DecomposerConfiguration decomposer;
 
 	ECFRoot();
 	ECFRoot(const std::string &file);
