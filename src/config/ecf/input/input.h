@@ -2,8 +2,8 @@
 #ifndef SRC_CONFIG_ECF_INPUT_INPUT_H_
 #define SRC_CONFIG_ECF_INPUT_INPUT_H_
 
-#include "loaderconfiguration.h"
 #include "../../configuration.h"
+#include "../processesreduction.h"
 
 namespace espreso {
 
@@ -15,7 +15,7 @@ enum class INPUT_FORMAT {
 };
 
 
-struct InputConfiguration: public LoaderConfiguration, public ECFObject {
+struct InputConfiguration: public ProcessesReduction, public ECFObject {
 
 	std::string path;
 

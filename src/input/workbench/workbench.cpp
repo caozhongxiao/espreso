@@ -67,8 +67,8 @@ WorkbenchLoader::WorkbenchLoader(const InputConfiguration &configuration, Mesh &
 
 void WorkbenchLoader::readData()
 {
-	MPITools::MPICommunicator comm;
-	Communication::createCommunicator(_configuration, comm);
+	MPITools::MPISubset loaders;
+	Communication::createSubset(_configuration, loaders);
 
 	TimeEval timing("Read data from file");
 	timing.totalTime.startWithBarrier();
@@ -77,8 +77,8 @@ void WorkbenchLoader::readData()
 	e1.start();
 
 	MPI_File MPIFile;
-	if (comm.within.rank == 0) {
-		if (!MPILoader::open(comm.across, MPIFile, _configuration.path)) {
+	if (loaders.within.rank == 0) {
+		if (!MPILoader::open(loaders.across, MPIFile, _configuration.path)) {
 			ESINFO(ERROR) << "MPI cannot load file '" << _configuration.path << "'";
 		}
 	}
@@ -89,8 +89,8 @@ void WorkbenchLoader::readData()
 	TimeEvent e2("FILE READ");
 	e2.start();
 
-	if (comm.within.rank == 0) {
-		MPILoader::read(comm.across, MPIFile, _pfile, MAX_LINE_STEP * MAX_LINE_SIZE);
+	if (loaders.within.rank == 0) {
+		MPILoader::read(loaders.across, MPIFile, _pfile, MAX_LINE_STEP * MAX_LINE_SIZE);
 	}
 
 	e2.end();
@@ -99,7 +99,7 @@ void WorkbenchLoader::readData()
 	TimeEvent e3("FILE SCATTER");
 	e3.start();
 
-	MPILoader::scatter(comm.within, _pfile, MAX_LINE_STEP * MAX_LINE_SIZE);
+	MPILoader::scatter(loaders.within, _pfile, MAX_LINE_STEP * MAX_LINE_SIZE);
 	MPILoader::align(MPITools::procs(), _pfile, MAX_LINE_STEP);
 
 	WorkbenchParser::offset = _pfile.offsets[environment->MPIrank];

@@ -29,20 +29,23 @@ InputConfiguration::InputConfiguration()
 
 	addSeparator();
 
-	REGISTER(load_by, ECFMetaData()
-			.setdescription({ "Load by. " })
+	granularity = ProcessesReduction::Granularity::PROCESSES;
+	REGISTER(granularity, ECFMetaData()
+			.setdescription({ "A granularity of loaders. " })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("NODES").setdescription("Computation nodes."))
 			.addoption(ECFOption().setname("PROCESSES").setdescription("MPI processes.")));
 
-	REGISTER(load_pattern, ECFMetaData()
-			.setdescription({ "Load pattern. " })
-			.setdatatype({ ECFDataType::OPTION })
-			.addoption(ECFOption().setname("PREFIX").setdescription("Only the first subset loads data."))
-			.addoption(ECFOption().setname("SUBSET").setdescription("Each n-th node(process) loads data.")));
+	pattern = ProcessesReduction::Pattern::SUBSET;
+//	REGISTER(pattern, ECFMetaData()
+//			.setdescription({ "A pattern for grouping processes. " })
+//			.setdatatype({ ECFDataType::OPTION })
+//			.addoption(ECFOption().setname("PREFIX").setdescription("Only the first subset loads data."))
+//			.addoption(ECFOption().setname("SUBSET").setdescription("Each n-th node(process) loads data.")));
 
-	REGISTER(pattern_value, ECFMetaData()
-			.setdescription({ "Define the fist n-process / each n-th process that loads data." })
+	reduction_ratio = 1;
+	REGISTER(reduction_ratio, ECFMetaData()
+			.setdescription({ "Defines the reduction ratio." })
 			.setdatatype({ ECFDataType::INTEGER }));
 }
 

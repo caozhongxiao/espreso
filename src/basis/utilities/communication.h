@@ -10,7 +10,7 @@
 
 namespace espreso {
 
-struct LoaderConfiguration;
+struct ProcessesReduction;
 
 class MPITools
 {
@@ -65,21 +65,21 @@ public:
 		MPIGroup();
 	};
 
-	class MPICommunicator {
+	class MPISubset {
 		friend class MPITools;
 
 	public:
 		MPIGroup within, across;
 
-		MPICommunicator();
+		MPISubset();
 	private:
-		MPICommunicator(Operations const&) = delete;
-		void operator=(MPICommunicator const&) = delete;
+		MPISubset(MPISubset const&) = delete;
+		void operator=(MPISubset const&) = delete;
 	};
 
-	static MPICommunicator& nodes()
+	static MPISubset& nodes()
 	{
-		static MPICommunicator instance;
+		static MPISubset instance;
 		return instance;
 	}
 
@@ -89,6 +89,15 @@ public:
 		return instance;
 	}
 
+	static MPIGroup& acrossNodes()
+	{
+		return nodes().across;
+	}
+
+	static MPIGroup& withinNodes()
+	{
+		return nodes().within;
+	}
 
 private:
 	MPITools() = delete;
@@ -153,7 +162,7 @@ struct Communication {
 
 	static void serialize(std::function<void(void)> fnc, MPITools::MPIGroup &group = MPITools::procs());
 
-	static void createCommunicator(const LoaderConfiguration &configuration, MPITools::MPICommunicator &communicator);
+	static void createSubset(const ProcessesReduction &reduction, MPITools::MPISubset &subset);
 
 private:
 	template <typename Ttype>

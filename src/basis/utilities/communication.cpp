@@ -2,11 +2,11 @@
 #include "communication.h"
 
 #include "../../config/ecf/environment.h"
-#include "../../config/ecf/input/loaderconfiguration.h"
 #include "../../mesh/store/statisticsstore.h"
 
 #include <string>
 #include <map>
+#include "../../config/ecf/processesreduction.h"
 
 using namespace espreso;
 
@@ -81,7 +81,7 @@ MPITools::MPIGroup::MPIGroup()
 	size = environment->MPIsize;
 }
 
-MPITools::MPICommunicator::MPICommunicator()
+MPITools::MPISubset::MPISubset()
 {
 	int color, length;
 	std::vector<char> name(MPI_MAX_PROCESSOR_NAME);
@@ -120,41 +120,35 @@ MPITools::MPICommunicator::MPICommunicator()
 	MPI_Comm_size(across.communicator, &across.size);
 }
 
-void Communication::createCommunicator(const LoaderConfiguration &configuration, MPITools::MPICommunicator &communicator)
+void Communication::createSubset(const ProcessesReduction &reduction, MPITools::MPISubset &subset)
 {
 	int color;
 	MPITools::MPIGroup *group;
 
-	switch (configuration.load_by) {
-	case LoaderConfiguration::LoadBy::NODES:
+	switch (reduction.granularity) {
+	case ProcessesReduction::Granularity::NODES:
 		group = &MPITools::nodes().across;
 		break;
-	case LoaderConfiguration::LoadBy::PROCESSES:
+	case ProcessesReduction::Granularity::PROCESSES:
 		group = &MPITools::procs();
 		break;
 	}
 
-	switch (configuration.load_pattern) {
-	case LoaderConfiguration::LoadPattern::PREFIX:
-		color = group->rank < configuration.pattern_value;
-		MPI_Comm_split(environment->MPICommunicator, color, environment->MPIrank, &communicator.within.communicator);
-		MPI_Comm_rank(communicator.within.communicator, &communicator.within.rank);
-		MPI_Comm_size(communicator.within.communicator, &communicator.within.size);
-
-		MPI_Comm_split(MPI_COMM_WORLD, communicator.within.rank, environment->MPIrank, &communicator.across.communicator);
-		MPI_Comm_rank(communicator.across.communicator, &communicator.across.rank);
-		MPI_Comm_size(communicator.across.communicator, &communicator.across.size);
+	switch (reduction.pattern) {
+	case ProcessesReduction::Pattern::PREFIX:
+		color = group->rank % reduction.reduction_ratio;
 		break;
-	case LoaderConfiguration::LoadPattern::SUBSET:
-		color = group->rank / configuration.pattern_value;
-		MPI_Comm_split(environment->MPICommunicator, color, environment->MPIrank, &communicator.within.communicator);
-		MPI_Comm_rank(communicator.within.communicator, &communicator.within.rank);
-		MPI_Comm_size(communicator.within.communicator, &communicator.within.size);
-
-		MPI_Comm_split(MPI_COMM_WORLD, communicator.within.rank, environment->MPIrank, &communicator.across.communicator);
-		MPI_Comm_rank(communicator.across.communicator, &communicator.across.rank);
-		MPI_Comm_size(communicator.across.communicator, &communicator.across.size);
+	case ProcessesReduction::Pattern::SUBSET:
+		color = group->rank / reduction.reduction_ratio;
 		break;
 	}
+
+	MPI_Comm_split(environment->MPICommunicator, color, environment->MPIrank, &subset.within.communicator);
+	MPI_Comm_rank(subset.within.communicator, &subset.within.rank);
+	MPI_Comm_size(subset.within.communicator, &subset.within.size);
+
+	MPI_Comm_split(MPI_COMM_WORLD, subset.within.rank, environment->MPIrank, &subset.across.communicator);
+	MPI_Comm_rank(subset.across.communicator, &subset.across.rank);
+	MPI_Comm_size(subset.across.communicator, &subset.across.size);
 }
 
