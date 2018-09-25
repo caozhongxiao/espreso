@@ -67,7 +67,7 @@ WorkbenchLoader::WorkbenchLoader(const InputConfiguration &configuration, Mesh &
 
 void WorkbenchLoader::readData()
 {
-	MPITools::MPISubset loaders;
+	MPISubset loaders;
 	Communication::createSubset(_configuration, loaders);
 
 	TimeEval timing("Read data from file");

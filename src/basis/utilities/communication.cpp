@@ -2,11 +2,12 @@
 #include "communication.h"
 
 #include "../../config/ecf/environment.h"
+#include "../../config/ecf/processesreduction.h"
 #include "../../mesh/store/statisticsstore.h"
 
 #include <string>
 #include <map>
-#include "../../config/ecf/processesreduction.h"
+
 
 using namespace espreso;
 
@@ -54,7 +55,7 @@ static void _sum(void *in, void *out, int *len, MPI_Datatype *datatype)
 	}
 }
 
-MPITools::Operations::Operations()
+MPIOperations::MPIOperations()
 {
 	MPI_Op_create(_mergeStatistics, 1, &mergeStatistics);
 
@@ -74,14 +75,14 @@ MPITools::Operations::Operations()
 	MPI_Op_create(_sum<long>, 1, &LONG.sum);
 }
 
-MPITools::MPIGroup::MPIGroup()
+MPIGroup::MPIGroup()
 {
 	MPI_Comm_dup(environment->MPICommunicator, &communicator);
 	rank = environment->MPIrank;
 	size = environment->MPIsize;
 }
 
-MPITools::MPISubset::MPISubset()
+MPISubset::MPISubset()
 {
 	int color, length;
 	std::vector<char> name(MPI_MAX_PROCESSOR_NAME);
@@ -120,10 +121,10 @@ MPITools::MPISubset::MPISubset()
 	MPI_Comm_size(across.communicator, &across.size);
 }
 
-void Communication::createSubset(const ProcessesReduction &reduction, MPITools::MPISubset &subset)
+void Communication::createSubset(const ProcessesReduction &reduction, MPISubset &subset)
 {
 	int color;
-	MPITools::MPIGroup *group;
+	MPIGroup *group;
 
 	switch (reduction.granularity) {
 	case ProcessesReduction::Granularity::NODES:

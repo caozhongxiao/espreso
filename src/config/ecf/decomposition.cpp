@@ -16,6 +16,27 @@ espreso::METISConfiguration::METISConfiguration()
 	REGISTER(refinement, ECFMetaData()
 			.setdescription({ "Apply refinement." })
 			.setdatatype({ ECFDataType::BOOL }));
+
+	addSeparator();
+
+	granularity = ProcessesReduction::Granularity::PROCESSES;
+	REGISTER(granularity, ECFMetaData()
+			.setdescription({ "A decomposer granularity. " })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("NODES").setdescription("Computation nodes."))
+			.addoption(ECFOption().setname("PROCESSES").setdescription("MPI processes.")));
+
+	pattern = ProcessesReduction::Pattern::SUBSET;
+//	REGISTER(pattern, ECFMetaData()
+//			.setdescription({ "A pattern for grouping processes. " })
+//			.setdatatype({ ECFDataType::OPTION })
+//			.addoption(ECFOption().setname("PREFIX").setdescription("Only the first subset loads data."))
+//			.addoption(ECFOption().setname("SUBSET").setdescription("Each n-th node(process) loads data.")));
+
+	reduction_ratio = 1;
+	REGISTER(reduction_ratio, ECFMetaData()
+			.setdescription({ "Defines the reduction ratio." })
+			.setdatatype({ ECFDataType::INTEGER }));
 }
 
 espreso::DecompositionConfiguration::DecompositionConfiguration()

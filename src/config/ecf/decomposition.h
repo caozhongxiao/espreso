@@ -3,10 +3,11 @@
 #define SRC_CONFIG_ECF_DECOMPOSITION_H_
 
 #include "../configuration.h"
+#include "processesreduction.h"
 
 namespace espreso {
 
-struct METISConfiguration: public ECFObject {
+struct METISConfiguration: public ProcessesReduction, public ECFObject {
 
 	enum class OBJECTIVE_TYPE {
 		VOLUME, EDGECUT

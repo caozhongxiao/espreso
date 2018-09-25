@@ -7,51 +7,51 @@
 namespace espreso {
 
 template <>
-inline MPITools::MPIType MPITools::getType<int>()
+inline MPIType MPITools::getType<int>()
 {
 	return { MPI_INT };
 }
 
 template <>
-inline MPITools::MPIType MPITools::getType<uint>()
+inline MPIType MPITools::getType<uint>()
 {
 	return { MPI_UNSIGNED };
 }
 
 template <>
-inline MPITools::MPIType MPITools::getType<long>()
+inline MPIType MPITools::getType<long>()
 {
 	return { MPI_LONG };
 }
 
 template <>
-inline MPITools::MPIType MPITools::getType<size_t>()
+inline MPIType MPITools::getType<size_t>()
 {
 	return { MPI_UNSIGNED_LONG };
 }
 
 template <>
-inline MPITools::MPIType MPITools::getType<float>()
+inline MPIType MPITools::getType<float>()
 {
 	return { MPI_FLOAT };
 }
 
 template <>
-inline MPITools::MPIType MPITools::getType<double>()
+inline MPIType MPITools::getType<double>()
 {
 	return { MPI_DOUBLE, };
 }
 
 template <typename Ttype>
-inline MPITools::MPIType MPITools::getType()
+inline MPIType MPITools::getType()
 {
 	return { MPI_BYTE, sizeof(Ttype) };
 }
 
 template <typename Ttype>
-bool Communication::exchangeKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPITools::MPIGroup &group)
+bool Communication::exchangeKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup &group)
 {
-	MPITools::MPIType type = MPITools::getType<Ttype>();
+	MPIType type = MPITools::getType<Ttype>();
 
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		if (type.multiplier * sBuffer[n].size() > 1 << 30) {
@@ -79,13 +79,13 @@ bool Communication::exchangeKnownSize(const std::vector<std::vector<Ttype> > &sB
 
 
 template <typename Ttype>
-bool Communication::exchangeUnknownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPITools::MPIGroup &group)
+bool Communication::exchangeUnknownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup &group)
 {
 	auto n2i = [ & ] (size_t neighbour) {
 		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
 	};
 
-	MPITools::MPIType type = MPITools::getType<Ttype>();
+	MPIType type = MPITools::getType<Ttype>();
 
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		if (type.multiplier * sBuffer[n].size() > 1 << 30) {
@@ -119,13 +119,13 @@ bool Communication::exchangeUnknownSize(const std::vector<std::vector<Ttype> > &
 }
 
 template <typename Ttype>
-bool Communication::exchangeUnknownSize(const std::vector<Ttype> &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPITools::MPIGroup &group)
+bool Communication::exchangeUnknownSize(const std::vector<Ttype> &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup &group)
 {
 	auto n2i = [ & ] (size_t neighbour) {
 		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
 	};
 
-	MPITools::MPIType type = MPITools::getType<Ttype>();
+	MPIType type = MPITools::getType<Ttype>();
 	if (type.multiplier * sBuffer.size() > 1 << 30) {
 		return false;
 	}
@@ -156,9 +156,9 @@ bool Communication::exchangeUnknownSize(const std::vector<Ttype> &sBuffer, std::
 }
 
 template <typename Ttype>
-bool Communication::receiveLowerKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPITools::MPIGroup &group)
+bool Communication::receiveLowerKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup &group)
 {
-	MPITools::MPIType type = MPITools::getType<Ttype>();
+	MPIType type = MPITools::getType<Ttype>();
 
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		if (neighbours[n] > group.rank) {
@@ -188,9 +188,9 @@ bool Communication::receiveLowerKnownSize(const std::vector<std::vector<Ttype> >
 }
 
 template <typename Ttype>
-bool Communication::receiveUpperKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPITools::MPIGroup &group)
+bool Communication::receiveUpperKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup &group)
 {
-	MPITools::MPIType type = MPITools::getType<Ttype>();
+	MPIType type = MPITools::getType<Ttype>();
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		if (neighbours[n] < group.rank) {
 			if (type.multiplier * sBuffer[n].size() > 1 << 30) {
@@ -219,9 +219,9 @@ bool Communication::receiveUpperKnownSize(const std::vector<std::vector<Ttype> >
 }
 
 template <typename Ttype>
-bool Communication::receiveUpperUnknownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPITools::MPIGroup &group)
+bool Communication::receiveUpperUnknownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup &group)
 {
-	MPITools::MPIType type = MPITools::getType<Ttype>();
+	MPIType type = MPITools::getType<Ttype>();
 	for (size_t n = 0; n < neighbours.size() && neighbours[n] < group.rank; n++) {
 		if (type.multiplier * sBuffer[n].size() > 1 << 30) {
 			return false;
@@ -259,16 +259,16 @@ bool Communication::receiveUpperUnknownSize(const std::vector<std::vector<Ttype>
 }
 
 template <typename Ttype>
-bool Communication::gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, MPITools::MPIGroup &group)
+bool Communication::gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, MPIGroup &group)
 {
 	std::vector<size_t> offsets;
 	return gatherUnknownSize(sBuffer, rBuffer, offsets);
 }
 
 template <typename Ttype>
-bool Communication::gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, std::vector<size_t> &offsets, MPITools::MPIGroup &group)
+bool Communication::gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, std::vector<size_t> &offsets, MPIGroup &group)
 {
-	MPITools::MPIType type = MPITools::getType<Ttype>();
+	MPIType type = MPITools::getType<Ttype>();
 
 	int size = type.multiplier * sBuffer.size();
 	std::vector<int> rSizes(group.size), rOffsets(group.size);
@@ -293,9 +293,9 @@ bool Communication::gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::ve
 	return true;
 }
 template <typename Ttype>
-bool Communication::allGatherUnknownSize(std::vector<Ttype> &data, MPITools::MPIGroup &group)
+bool Communication::allGatherUnknownSize(std::vector<Ttype> &data, MPIGroup &group)
 {
-	MPITools::MPIType type = MPITools::getType<Ttype>();
+	MPIType type = MPITools::getType<Ttype>();
 	if (type.multiplier * data.size() > 1 << 30) {
 		return false;
 	}
@@ -318,9 +318,9 @@ bool Communication::allGatherUnknownSize(std::vector<Ttype> &data, MPITools::MPI
 }
 
 template <typename Ttype>
-bool Communication::broadcastUnknownSize(std::vector<Ttype> &buffer, MPITools::MPIGroup &group)
+bool Communication::broadcastUnknownSize(std::vector<Ttype> &buffer, MPIGroup &group)
 {
-	MPITools::MPIType type = MPITools::getType<Ttype>();
+	MPIType type = MPITools::getType<Ttype>();
 	if (type.multiplier * buffer.size() > 1 << 30) {
 		return false;
 	}
@@ -332,9 +332,9 @@ bool Communication::broadcastUnknownSize(std::vector<Ttype> &buffer, MPITools::M
 }
 
 template <typename Ttype>
-bool Communication::balance(std::vector<Ttype> &buffer, const std::vector<size_t> &currentDistribution, const std::vector<size_t> &targetDistribution, MPITools::MPIGroup &group)
+bool Communication::balance(std::vector<Ttype> &buffer, const std::vector<size_t> &currentDistribution, const std::vector<size_t> &targetDistribution, MPIGroup &group)
 {
-	MPITools::MPIType type = MPITools::getType<Ttype>();
+	MPIType type = MPITools::getType<Ttype>();
 	if (type.multiplier * buffer.size() > 1 << 30) {
 		return false;
 	}
@@ -397,9 +397,9 @@ bool Communication::balance(std::vector<Ttype> &buffer, const std::vector<size_t
 }
 
 template <typename Ttype>
-bool Communication::allToAllV(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, const std::vector<int> &ssize, const std::vector<int> &rsize, MPITools::MPIGroup &group)
+bool Communication::allToAllV(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, const std::vector<int> &ssize, const std::vector<int> &rsize, MPIGroup &group)
 {
-	MPITools::MPIType type = MPITools::getType<Ttype>();
+	MPIType type = MPITools::getType<Ttype>();
 	if (type.multiplier * sBuffer.size() > 1 << 30) {
 		return false;
 	}
@@ -418,25 +418,25 @@ bool Communication::allToAllV(const std::vector<Ttype> &sBuffer, std::vector<Tty
 }
 
 template <>
-inline size_t Communication::exscan(size_t &value, MPITools::MPIGroup &group)
+inline size_t Communication::exscan(size_t &value, MPIGroup &group)
 {
 	return exscan(value, MPITools::sizetOperations().scan, group);
 }
 
 template <>
-inline int Communication::exscan(int &value, MPITools::MPIGroup &group)
+inline int Communication::exscan(int &value, MPIGroup &group)
 {
 	return exscan(value, MPITools::intOperations().scan, group);
 }
 
 template <>
-inline long Communication::exscan(long &value, MPITools::MPIGroup &group)
+inline long Communication::exscan(long &value, MPIGroup &group)
 {
 	return exscan(value, MPITools::longOperations().scan, group);
 }
 
 template <typename Ttype>
-Ttype Communication::exscan(Ttype &value, MPI_Op &operation, MPITools::MPIGroup &group)
+Ttype Communication::exscan(Ttype &value, MPI_Op &operation, MPIGroup &group)
 {
 	Ttype size = value;
 	if (group.size == 1) {
@@ -457,25 +457,25 @@ Ttype Communication::exscan(Ttype &value, MPI_Op &operation, MPITools::MPIGroup 
 }
 
 template <>
-inline std::vector<size_t> Communication::getDistribution(size_t size, MPITools::MPIGroup &group)
+inline std::vector<size_t> Communication::getDistribution(size_t size, MPIGroup &group)
 {
 	return getDistribution(size, MPITools::sizetOperations().scan, group);
 }
 
 template <>
-inline std::vector<int> Communication::getDistribution(int size, MPITools::MPIGroup &group)
+inline std::vector<int> Communication::getDistribution(int size, MPIGroup &group)
 {
 	return getDistribution(size, MPITools::intOperations().scan, group);
 }
 
 template <>
-inline std::vector<long> Communication::getDistribution(long size, MPITools::MPIGroup &group)
+inline std::vector<long> Communication::getDistribution(long size, MPIGroup &group)
 {
 	return getDistribution(size, MPITools::longOperations().scan, group);
 }
 
 template <typename Ttype>
-std::vector<Ttype> Communication::getDistribution(Ttype size, MPI_Op &operation, MPITools::MPIGroup &group)
+std::vector<Ttype> Communication::getDistribution(Ttype size, MPI_Op &operation, MPIGroup &group)
 {
 	std::vector<Ttype> result(group.size + 1);
 	Ttype esize = size;
@@ -488,9 +488,9 @@ std::vector<Ttype> Communication::getDistribution(Ttype size, MPI_Op &operation,
 }
 
 template <typename Ttype>
-bool Communication::sendVariousTargets(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &targets, std::vector<int> &sources, MPITools::MPIGroup &group)
+bool Communication::sendVariousTargets(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &targets, std::vector<int> &sources, MPIGroup &group)
 {
-	MPITools::MPIType type = MPITools::getType<Ttype>();
+	MPIType type = MPITools::getType<Ttype>();
 	for (size_t n = 0; n < targets.size(); n++) {
 		if (type.multiplier * sBuffer[n].size() > 1 << 30) {
 			return false;
@@ -546,9 +546,9 @@ bool Communication::sendVariousTargets(const std::vector<std::vector<Ttype> > &s
 }
 
 template <typename Ttype>
-bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, MPITools::MPIGroup &group)
+bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, MPIGroup &group)
 {
-	MPITools::MPIType type = MPITools::getType<Ttype>();
+	MPIType type = MPITools::getType<Ttype>();
 	size_t levels = std::ceil(std::log2(group.size));
 
 	std::vector<Ttype> prevsend, send, recv;
@@ -704,7 +704,7 @@ bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype> &sBuf
 	return true;
 }
 
-inline void Communication::serialize(std::function<void(void)> fnc, MPITools::MPIGroup &group)
+inline void Communication::serialize(std::function<void(void)> fnc, MPIGroup &group)
 {
 	for (int r = 0; r < group.size; ++r) {
 		if (r == group.rank) {

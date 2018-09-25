@@ -19,10 +19,10 @@ struct ParallelFile {
 
 struct MPILoader {
 
-	static bool open(MPITools::MPIGroup &group, MPI_File &MPIfile, const std::string &file);
-	static void read(MPITools::MPIGroup &group, MPI_File &MPIfile, ParallelFile &pfile, size_t alignment);
-	static void scatter(MPITools::MPIGroup &group, ParallelFile &pfile, size_t alignment);
-	static void align(MPITools::MPIGroup &group, ParallelFile &pfile, size_t lines);
+	static bool open(MPIGroup &group, MPI_File &MPIfile, const std::string &file);
+	static void read(MPIGroup &group, MPI_File &MPIfile, ParallelFile &pfile, size_t alignment);
+	static void scatter(MPIGroup &group, ParallelFile &pfile, size_t alignment);
+	static void align(MPIGroup &group, ParallelFile &pfile, size_t lines);
 };
 
 }

@@ -5,7 +5,7 @@
 
 using namespace espreso;
 
-bool MPILoader::open(MPITools::MPIGroup &group, MPI_File &MPIfile, const std::string &file)
+bool MPILoader::open(MPIGroup &group, MPI_File &MPIfile, const std::string &file)
 {
 	MPI_Info info;
 	MPI_Info_create(&info);
@@ -22,7 +22,7 @@ bool MPILoader::open(MPITools::MPIGroup &group, MPI_File &MPIfile, const std::st
 	return true;
 }
 
-void MPILoader::read(MPITools::MPIGroup &group, MPI_File &MPIfile, ParallelFile &pfile, size_t alignment)
+void MPILoader::read(MPIGroup &group, MPI_File &MPIfile, ParallelFile &pfile, size_t alignment)
 {
 	MPI_Offset size;
 	MPI_File_get_size(MPIfile, &size);
@@ -60,7 +60,7 @@ void MPILoader::read(MPITools::MPIGroup &group, MPI_File &MPIfile, ParallelFile 
 	pfile.offsets = Communication::getDistribution<size_t>(pfile.end - pfile.begin, group);
 }
 
-void MPILoader::scatter(MPITools::MPIGroup &group, ParallelFile &pfile, size_t alignment)
+void MPILoader::scatter(MPIGroup &group, ParallelFile &pfile, size_t alignment)
 {
 	if (group.size == 1) {
 		return;
@@ -87,7 +87,7 @@ void MPILoader::scatter(MPITools::MPIGroup &group, ParallelFile &pfile, size_t a
 	pfile.offsets = Communication::getDistribution<size_t>(pfile.end - pfile.begin);
 }
 
-void MPILoader::align(MPITools::MPIGroup &group, ParallelFile &pfile, size_t lines)
+void MPILoader::align(MPIGroup &group, ParallelFile &pfile, size_t lines)
 {
 	const char *_current = pfile.data.data();
 	if (group.size > 1) {
