@@ -49,7 +49,7 @@ class MPISubset {
 	friend class MPITools;
 
 public:
-	MPIGroup within, across;
+	MPIGroup within, across, &origin;
 
 	MPISubset();
 private:

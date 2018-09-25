@@ -2,7 +2,11 @@
 #ifndef SRC_WRAPPERS_METIS_WPARMETIS_H_
 #define SRC_WRAPPERS_METIS_WPARMETIS_H_
 
+#include <vector>
+
 namespace espreso {
+
+struct MPISubset;
 
 struct ParMETIS {
 
@@ -15,6 +19,13 @@ struct ParMETIS {
 
 	static eslocal call(
 			METHOD method,
+			MPISubset &subset,
+			std::vector<eslocal> &eframes, std::vector<eslocal> &eneighbors,
+			std::vector<eslocal> &partition);
+
+	static eslocal call(
+			METHOD method,
+			MPISubset &subset,
 			eslocal *edistribution,
 			eslocal *eframes, eslocal *eneighbors,
 			eslocal dimensions, double *coordinates,

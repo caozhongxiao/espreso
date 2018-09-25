@@ -3,12 +3,68 @@
 #include "parmetis.h"
 
 #include "../../basis/logging/logging.h"
-#include "../../config/ecf/environment.h"
+#include "../../basis/utilities/communication.h"
 
 using namespace espreso;
 
 eslocal ParMETIS::call(
+			METHOD method,
+			MPISubset &subset,
+			std::vector<eslocal> &eframes, std::vector<eslocal> &eneighbors,
+			std::vector<eslocal> &partition)
+{
+	eslocal edgecut;
+
+	if (subset.within.size == 1) {
+		std::vector<eslocal> edistribution = Communication::getDistribution<eslocal>(partition.size(), subset.across);
+		edgecut = ParMETIS::call(method, subset,
+					edistribution.data(), eframes.data(), eneighbors.data(),
+					0, NULL, 0, NULL, NULL,
+					partition.data());
+	} else {
+		MPIType type = MPITools::getType<eslocal>();
+		std::vector<eslocal> gframes, gneighbors, gpartition;
+		std::vector<size_t> offsets;
+
+		Communication::gatherUnknownSize(eframes, gframes, subset.within);
+		Communication::gatherUnknownSize(eneighbors, gneighbors, subset.within);
+		Communication::gatherUnknownSize(partition, gpartition, offsets, subset.within);
+
+		std::vector<int> disp(subset.within.size), count(subset.within.size);
+
+		if (subset.within.rank == 0) {
+			for (size_t i = 1, j = 1, offset = 0; j < gframes.size(); i++, j++) {
+				if (gframes[j] == 0) {
+					offset += gframes[j++ - 1];
+				}
+				gframes[i] = gframes[j] + offset;
+			}
+			gframes.resize(gframes.size() - subset.within.size + 1);
+
+			disp = std::vector<int>(offsets.begin(), offsets.end());
+			for (size_t i = 1; i < offsets.size(); i++) {
+				count[i - 1] = offsets[i] - offsets[i - 1];
+			}
+			count.back() = gpartition.size() - offsets.back();
+
+			std::vector<eslocal> edistribution = Communication::getDistribution<eslocal>(gpartition.size(), subset.across);
+
+			edgecut = ParMETIS::call(method, subset,
+					edistribution.data(), gframes.data(), gneighbors.data(),
+					0, NULL, 0, NULL, NULL,
+					gpartition.data());
+		}
+
+		MPI_Scatterv(gpartition.data(), count.data(), disp.data(), type.type, partition.data(), partition.size(), type.type, 0, subset.within.communicator);
+		MPI_Bcast(&edgecut, 1, type.type, 0, subset.within.communicator);
+	}
+
+	return edgecut;
+}
+
+eslocal ParMETIS::call(
 			ParMETIS::METHOD method,
+			MPISubset &subset,
 			eslocal *edistribution,
 			eslocal *eframes, eslocal *eneighbors,
 			eslocal dimensions, double *coordinates,
@@ -19,13 +75,12 @@ eslocal ParMETIS::call(
 
 	eslocal wgtflag = 0;
 	eslocal numflag = 0;
-	eslocal parts = environment->MPIsize;
+	eslocal parts = subset.origin.size;
 	std::vector<double> partFraction(verticesWeightCount * parts, 1.0 / parts);
 	std::vector<double> unbalanceTolerance(verticesWeightCount, 1.02);
 	eslocal options[4] = { 0, 0, 0, PARMETIS_PSR_UNCOUPLED };
 	double itr = 1e6;
 	eslocal edgecut;
-	MPI_Comm communication = environment->MPICommunicator;
 
 	if (verticesWeights != NULL) {
 		wgtflag += 2;
@@ -46,7 +101,7 @@ eslocal ParMETIS::call(
 					&parts, partFraction.data(), unbalanceTolerance.data(),
 					options,
 					&edgecut, partition,
-					&communication)) {
+					&subset.across.communicator)) {
 
 				ESINFO(ERROR) << "PARMETIS_ERROR while partitiate mesh to MPI processes by KWay utilizing coordinates.";
 			}
@@ -59,7 +114,7 @@ eslocal ParMETIS::call(
 					&parts, partFraction.data(), unbalanceTolerance.data(),
 					options,
 					&edgecut, partition,
-					&communication)) {
+					&subset.across.communicator)) {
 
 				ESINFO(ERROR) << "PARMETIS_ERROR while partitiate mesh to MPI processes by KWay utilizing coordinates.";
 			}
@@ -75,7 +130,7 @@ eslocal ParMETIS::call(
 				&parts, partFraction.data(), unbalanceTolerance.data(),
 				options,
 				&edgecut, partition,
-				&communication)) {
+				&subset.across.communicator)) {
 
 			ESINFO(ERROR) << "PARMETIS_ERROR while refine mesh partition to MPI processes by KWay.";
 		}
@@ -90,7 +145,7 @@ eslocal ParMETIS::call(
 				&parts, partFraction.data(), unbalanceTolerance.data(), &itr,
 				options,
 				&edgecut, partition,
-				&communication)) {
+				&subset.across.communicator)) {
 
 			ESINFO(ERROR) << "PARMETIS_ERROR while adaptive repartition mesh to MPI processes by KWay.";
 		}
@@ -104,7 +159,7 @@ eslocal ParMETIS::call(
 				edistribution,
 				&dimensions, coordinates,
 				partition,
-				&communication)) {
+				&subset.across.communicator)) {
 
 			ESINFO(ERROR) << "PARMETIS_ERROR while refine mesh partition to MPI processes by KWay.";
 		}

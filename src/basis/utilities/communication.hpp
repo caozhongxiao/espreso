@@ -262,7 +262,7 @@ template <typename Ttype>
 bool Communication::gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, MPIGroup &group)
 {
 	std::vector<size_t> offsets;
-	return gatherUnknownSize(sBuffer, rBuffer, offsets);
+	return gatherUnknownSize(sBuffer, rBuffer, offsets, group);
 }
 
 template <typename Ttype>

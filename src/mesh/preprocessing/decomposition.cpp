@@ -46,9 +46,10 @@ void MeshPreprocessing::reclusterize()
 		exchangeHalo();
 	}
 
-	if (_mesh->elements->centers == NULL) {
+	// Disable due to horible scalability
+//	if (_mesh->elements->centers == NULL) {
 //		computeElementsCenters();
-	}
+//	}
 
 	start("compute global dual graph");
 
@@ -121,22 +122,17 @@ void MeshPreprocessing::reclusterize()
 		dData[0].insert(dData[0].end(), dData[t].begin(), dData[t].end());
 	}
 
-	std::vector<eslocal> edistribution = _mesh->elements->gatherElementsProcDistribution();
 	std::vector<eslocal> partition(_mesh->elements->size, environment->MPIrank);
-	double* ecenters = NULL;
-	if (_mesh->elements->centers != NULL) {
-		ecenters = _mesh->elements->centers->datatarray().data();
-	}
 
 	finish("compute global dual graph");
 
+	MPISubset subset;
+	Communication::createSubset(_mesh->configuration.decomposition.metis_options, subset);
+
 	start("ParMETIS::KWay");
-	eslocal edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_PartKway,
-		edistribution.data(),
-		dDistribution.data(), dData[0].data(),
-		_mesh->elements->dimension, ecenters,
-		0, NULL, NULL,
-		partition.data()
+	eslocal edgecut = ParMETIS::call(
+			ParMETIS::METHOD::ParMETIS_V3_PartKway, subset,
+			dDistribution, dData.front(), partition
 	);
 	finish("ParMETIS::KWay");
 
@@ -145,12 +141,9 @@ void MeshPreprocessing::reclusterize()
 		eslocal prev = 2 * edgecut;
 		while (1.01 * edgecut < prev) {
 			prev = edgecut;
-			edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_RefineKway,
-				edistribution.data(),
-				dDistribution.data(), dData[0].data(),
-				_mesh->elements->dimension, ecenters,
-				0, NULL, NULL,
-				partition.data()
+			edgecut = ParMETIS::call(
+					ParMETIS::METHOD::ParMETIS_V3_RefineKway, subset,
+					dDistribution, dData.front(), partition
 			);
 		}
 		finish("ParMETIS::AdaptiveRepart");
