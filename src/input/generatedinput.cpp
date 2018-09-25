@@ -6,6 +6,7 @@
 #include "../basis/logging/timeeval.h"
 #include "../basis/utilities/communication.h"
 #include "../basis/utilities/utils.h"
+#include "../config/ecf/environment.h"
 
 #include "../mesh/mesh.h"
 #include "../mesh/store/nodestore.h"

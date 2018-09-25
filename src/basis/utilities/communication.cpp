@@ -1,6 +1,7 @@
 
 #include "communication.h"
 
+#include "../../config/ecf/environment.h"
 #include "../../config/ecf/input/loaderconfiguration.h"
 #include "../../mesh/store/statisticsstore.h"
 

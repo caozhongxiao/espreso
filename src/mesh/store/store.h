@@ -9,6 +9,7 @@
 
 #include "../../basis/utilities/communication.h"
 #include "../../basis/utilities/utils.h"
+#include "../../config/ecf/environment.h"
 
 #include "../elements/element.h"
 

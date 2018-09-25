@@ -5,6 +5,7 @@
 #include "../../../basis/utilities/parser.h"
 #include "../../../basis/utilities/communication.h"
 #include "../../../basis/utilities/utils.h"
+#include "../../../config/ecf/environment.h"
 
 #include "../../../mesh/elements/element.h"
 #include "../workbench.h"

@@ -4,8 +4,6 @@
 
 #include "mpi.h"
 
-#include "../../config/ecf/environment.h"
-
 #include <cstddef>
 #include <vector>
 #include <functional>
@@ -138,7 +136,7 @@ struct Communication {
 	static Ttype exscan(Ttype &value, MPITools::MPIGroup &group = MPITools::procs());
 
 	template <typename Ttype>
-	static std::vector<Ttype> getDistribution(Ttype multiplir, MPITools::MPIGroup &group = MPITools::procs());
+	static std::vector<Ttype> getDistribution(Ttype size, MPITools::MPIGroup &group = MPITools::procs());
 
 	template <typename Ttype>
 	static bool sendVariousTargets(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &targets, MPITools::MPIGroup &group = MPITools::procs())
@@ -162,7 +160,7 @@ private:
 	static Ttype exscan(Ttype &value, MPI_Op &operation, MPITools::MPIGroup &group);
 
 	template <typename Ttype>
-	static std::vector<Ttype> getDistribution(Ttype multiplir, MPI_Op &operation, MPITools::MPIGroup &group);
+	static std::vector<Ttype> getDistribution(Ttype size, MPI_Op &operation, MPITools::MPIGroup &group);
 };
 
 
