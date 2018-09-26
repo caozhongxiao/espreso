@@ -149,11 +149,23 @@ void RandomInput::assignNBuckets()
 void RandomInput::assignEBuckets()
 { // we needs to ask a neighbor process to get bucket of (arbitrary) node -- now the closest process is chosen
 
+	size_t threads = environment->OMP_NUM_THREADS;
+
 	TimeEval timing("ASSIGN ELEMENTS BUCKETS");
 	timing.totalTime.startWithBarrier();
 
 	TimeEvent e1("AEB GET CLOSEST PROCESS");
 	e1.start();
+
+	std::vector<size_t> edistribution = tarray<eslocal>::distribute(threads, _meshData.esize.size());
+
+	if (!_meshData._edist.size()) {
+		_meshData._edist = { 0 };
+		_meshData._edist.reserve(_meshData.esize.size() + 1);
+		for (size_t e = 0; e < _meshData.esize.size(); e++) {
+			_meshData._edist.push_back(_meshData._edist.back() + _meshData.esize[e]);
+		}
+	}
 
 	std::vector<eslocal> closest(_meshData.esize.size());
 	_eBuckets.resize(_meshData.esize.size());
@@ -161,16 +173,19 @@ void RandomInput::assignEBuckets()
 	eslocal nbegin = _nDistribution[environment->MPIrank];
 	eslocal nend = _nDistribution[environment->MPIrank + 1];
 
-	for (size_t e = 0, offset = 0; e < _meshData.esize.size(); offset += _meshData.esize[e++]) {
-		closest[e] = _meshData.enodes[offset];
-		for (eslocal n = 1; n < _meshData.esize[e]; n++) {
-			if (nbegin <= _meshData.enodes[offset + n] && _meshData.enodes[offset + n] < nend) {
-				if (closest[e] > _meshData.enodes[offset + n] || closest[e] < nbegin) {
-					closest[e] = _meshData.enodes[offset + n];
-				}
-			} else {
-				if (std::abs(closest[e] - nbegin) > std::abs(_meshData.enodes[offset + n] - nbegin)) {
-					closest[e] = _meshData.enodes[offset + n];
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (size_t e = edistribution[t], offset = _meshData._edist[edistribution[t]]; e < edistribution[t + 1]; offset += _meshData.esize[e++]) {
+			closest[e] = _meshData.enodes[offset];
+			for (eslocal n = 1; n < _meshData.esize[e]; n++) {
+				if (nbegin <= _meshData.enodes[offset + n] && _meshData.enodes[offset + n] < nend) {
+					if (closest[e] > _meshData.enodes[offset + n] || closest[e] < nbegin) {
+						closest[e] = _meshData.enodes[offset + n];
+					}
+				} else {
+					if (std::abs(closest[e] - nbegin) > std::abs(_meshData.enodes[offset + n] - nbegin)) {
+						closest[e] = _meshData.enodes[offset + n];
+					}
 				}
 			}
 		}
@@ -296,6 +311,8 @@ void RandomInput::assignEBuckets()
 
 void RandomInput::clusterize()
 {
+	size_t threads = environment->OMP_NUM_THREADS;
+
 	TimeEval timing("CLUSTERIZE ELEMENTS");
 	timing.totalTime.startWithBarrier();
 
@@ -313,10 +330,12 @@ void RandomInput::clusterize()
 	// allowed difference to the perfect distribution
 	size_t ETOLERANCE = PRECISION * targetDistribution.back() / environment->MPIsize;
 
-	std::vector<eslocal> edist({ 0 });
-	edist.reserve(_meshData.esize.size() + 1);
-	for (size_t e = 0; e < _meshData.esize.size(); e++) {
-		edist.push_back(edist.back() + _meshData.esize[e]);
+	if (!_meshData._edist.size()) {
+		_meshData._edist = { 0 };
+		_meshData._edist.reserve(_meshData.esize.size() + 1);
+		for (size_t e = 0; e < _meshData.esize.size(); e++) {
+			_meshData._edist.push_back(_meshData._edist.back() + _meshData.esize[e]);
+		}
 	}
 
 	std::vector<eslocal> npermutation(_nBuckets.size()), epermutation(_eBuckets.size());
@@ -479,8 +498,12 @@ void RandomInput::clusterize()
 		eslocal byte = r / (8 * sizeof(eslocal));
 		eslocal bit = 1 << (r % (8 * sizeof(eslocal)));
 
-		for (size_t i = 0; i < nregion->second.size(); ++i) {
-			_nregions[_nregsize * nregion->second[i] + byte] |= bit;
+		std::vector<size_t> rdistribution = tarray<size_t>::distribute(threads, nregion->second.size());
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			for (size_t i = rdistribution[t]; i < rdistribution[t + 1]; ++i) {
+				_nregions[_nregsize * nregion->second[i] + byte] |= bit;
+			}
 		}
 	}
 	r = 0;
@@ -488,8 +511,12 @@ void RandomInput::clusterize()
 		eslocal byte = r / (8 * sizeof(eslocal));
 		eslocal bit = 1 << (r % (8 * sizeof(eslocal)));
 
-		for (size_t i = 0; i < eregion->second.size(); ++i) {
-			_eregions[_eregsize * eregion->second[i] + byte] |= bit;
+		std::vector<size_t> rdistribution = tarray<size_t>::distribute(threads, eregion->second.size());
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			for (size_t i = rdistribution[t]; i < rdistribution[t + 1]; ++i) {
+				_eregions[_eregsize * eregion->second[i] + byte] |= bit;
+			}
 		}
 	}
 
@@ -527,8 +554,8 @@ void RandomInput::clusterize()
 			sBuffer.push_back(_meshData.body[*e]);
 			sBuffer.push_back(_meshData.material[*e]);
 			sBuffer.insert(sBuffer.end(), _eregions.begin() + *e * _eregsize, _eregions.begin() + (*e + 1) * _eregsize);
-			sBuffer.insert(sBuffer.end(), _meshData.enodes.begin() + edist[*e], _meshData.enodes.begin() + edist[*e + 1]);
-			sBuffer[prevsize + 3] += edist[*e + 1] - edist[*e];
+			sBuffer.insert(sBuffer.end(), _meshData.enodes.begin() + _meshData._edist[*e], _meshData.enodes.begin() + _meshData._edist[*e + 1]);
+			sBuffer[prevsize + 3] += _meshData._edist[*e + 1] - _meshData._edist[*e];
 		}
 		sBuffer[prevsize + 2] = e - ebegin;
 		ebegin = e;
@@ -567,6 +594,7 @@ void RandomInput::clusterize()
 	_meshData.body.clear();
 	_meshData.material.clear();
 	_meshData.enodes.clear();
+	_meshData._edist.clear();
 	_eregions.clear();
 
 	_meshData.nIDs.swap(_nIDs); // keep for later usage in linkup phase
@@ -629,10 +657,6 @@ void RandomInput::linkup()
 	// 3. Ask neighbors for coordinates
 	// 4. Ask original coordinate holders for the rest nodes (for unknown nodes)
 	// 5. Compute nodes neighbors
-	// 6. Get real neighbors
-	// 7. Re-index
-
-	size_t threads = environment->OMP_NUM_THREADS;
 
 	TimeEval timing("LINK UP");
 	timing.totalTime.startWithBarrier();
@@ -1063,6 +1087,7 @@ void RandomInput::exchangeBoundary()
 
 	size_t estart = _mesh.dimension == 3 ? 0 : 1;
 
+	_meshData._edist.clear();
 	std::vector<eslocal> edist = { 0 };
 	edist.reserve(_meshData.eIDs.size() - _etypeDistribution[estart] + 1);
 	for (size_t e = 0; e < _etypeDistribution[estart]; e++) {
