@@ -365,17 +365,17 @@ void Input::sortNodes(bool withElementNodes)
 	Esutils::permute(_meshData.coordinates, permutation);
 	Esutils::permute(_nregions, permutation, _nregsize);
 
-	if (_meshData.nranks.size()) {
-		std::vector<eslocal> npermutation(_meshData.nranks.size());
-		std::vector<eslocal> ndist = _meshData.ndist;
+	if (_meshData._nranks.size()) {
+		std::vector<eslocal> npermutation(_meshData._nranks.size());
+		std::vector<eslocal> ndist = _meshData._nrankdist;
 		for (size_t i = 0, index = 0; i < permutation.size(); i++) {
-			_meshData.ndist[i + 1] = _meshData.ndist[i] + ndist[permutation[i] + 1] - ndist[permutation[i]];
+			_meshData._nrankdist[i + 1] = _meshData._nrankdist[i] + ndist[permutation[i] + 1] - ndist[permutation[i]];
 			for (size_t n = 0; n < ndist[permutation[i] + 1] - ndist[permutation[i]]; ++n, ++index) {
 				npermutation[index] = ndist[permutation[i]] + n;
 			}
 		}
 
-		Esutils::permute(_meshData.nranks, npermutation);
+		Esutils::permute(_meshData._nranks, npermutation);
 	}
 
 	if (withElementNodes) {
@@ -511,12 +511,12 @@ void Input::fillNodes()
 	std::vector<size_t> rdistribution = _mesh.nodes->distribution, rdatadistribution = _mesh.nodes->distribution;
 	for (size_t t = 1; t < threads; t++) {
 		++rdistribution[t];
-		rdatadistribution[t] = _meshData.ndist[rdistribution[t]];
+		rdatadistribution[t] = _meshData._nrankdist[rdistribution[t]];
 	}
 	++rdistribution[threads];
-	rdatadistribution[threads] = _meshData.ndist[rdistribution[threads] - 1];
+	rdatadistribution[threads] = _meshData._nrankdist[rdistribution[threads] - 1];
 
-	_mesh.nodes->ranks = new serializededata<eslocal, int>(tarray<eslocal>(rdistribution, _meshData.ndist), tarray<int>(rdatadistribution, _meshData.nranks));
+	_mesh.nodes->ranks = new serializededata<eslocal, int>(tarray<eslocal>(rdistribution, _meshData._nrankdist), tarray<int>(rdatadistribution, _meshData._nranks));
 
 	_mesh.boundaryRegions.push_back(new BoundaryRegionStore("ALL_NODES", _mesh._eclasses));
 	_mesh.boundaryRegions.back()->nodes = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(threads, _meshData.nIDs.size()));
@@ -589,7 +589,7 @@ void Input::fillElements()
 
 void Input::fillNeighbors()
 {
-	std::vector<int> realnranks = _meshData.nranks;
+	std::vector<int> realnranks = _meshData._nranks;
 	Esutils::sortAndRemoveDuplicity(realnranks);
 
 	_mesh.neighboursWithMe.clear();

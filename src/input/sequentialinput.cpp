@@ -44,9 +44,9 @@ SequentialInput::SequentialInput(PlainMeshData &meshData, Mesh &mesh)
 	ESINFO(PROGRESS2) << "Sequential loader:: regions reindexed.";
 
 	TimeEvent tranks("fill ranks"); tranks.start();
-	_meshData.nranks.resize(_meshData.nIDs.size());
-	_meshData.ndist.resize(_meshData.nIDs.size() + 1);
-	std::iota(_meshData.ndist.begin(), _meshData.ndist.end(), 0);
+	_meshData._nranks.resize(_meshData.nIDs.size());
+	_meshData._nrankdist.resize(_meshData.nIDs.size() + 1);
+	std::iota(_meshData._nrankdist.begin(), _meshData._nrankdist.end(), 0);
 	_mesh.neighboursWithMe.push_back(0);
 	tranks.end(); timing.addEvent(tranks);
 	ESINFO(PROGRESS2) << "Sequential loader:: ranks filled.";

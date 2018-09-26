@@ -86,7 +86,7 @@ void GeneratedInput::removeDanglingNodes()
 		noffset[usedNodes[i]] = i;
 		coordinates.push_back(_meshData.coordinates[usedNodes[i]]);
 		nIDs.push_back(_meshData.nIDs[usedNodes[i]]);
-		nranks.insert(nranks.end(), _meshData.nranks.begin() + _meshData.ndist[usedNodes[i]], _meshData.nranks.begin() + _meshData.ndist[usedNodes[i] + 1]);
+		nranks.insert(nranks.end(), _meshData._nranks.begin() + _meshData._nrankdist[usedNodes[i]], _meshData._nranks.begin() + _meshData._nrankdist[usedNodes[i] + 1]);
 		ndist.push_back(nranks.size());
 	}
 
@@ -102,8 +102,8 @@ void GeneratedInput::removeDanglingNodes()
 
 	_meshData.nIDs.swap(nIDs);
 	_meshData.coordinates.swap(coordinates);
-	_meshData.ndist.swap(ndist);
-	_meshData.nranks.swap(nranks);
+	_meshData._nrankdist.swap(ndist);
+	_meshData._nranks.swap(nranks);
 }
 
 struct __Point__ {
@@ -146,13 +146,13 @@ void GeneratedInput::synchronizeGlobalIndices()
 	std::vector<std::vector<__Point__> > rBuffer(_mesh.neighbours.size());
 
 	for (size_t n = 0; n < _meshData.nIDs.size(); ++n) {
-		if (_meshData.ndist[n + 1] - _meshData.ndist[n] > 1) {
-			if (_meshData.nranks[_meshData.ndist[n]] == environment->MPIrank) {
-				for (eslocal r = _meshData.ndist[n] + 1; r < _meshData.ndist[n + 1]; ++r) {
-					sBuffer[n2i(_meshData.nranks[r])].push_back(__Point__(_meshData.coordinates[n], _meshData.nIDs[n]));
+		if (_meshData._nrankdist[n + 1] - _meshData._nrankdist[n] > 1) {
+			if (_meshData._nranks[_meshData._nrankdist[n]] == environment->MPIrank) {
+				for (eslocal r = _meshData._nrankdist[n] + 1; r < _meshData._nrankdist[n + 1]; ++r) {
+					sBuffer[n2i(_meshData._nranks[r])].push_back(__Point__(_meshData.coordinates[n], _meshData.nIDs[n]));
 				}
 			} else {
-				sBuffer[n2i(_meshData.nranks[_meshData.ndist[n]])].push_back(__Point__(_meshData.coordinates[n], n));
+				sBuffer[n2i(_meshData._nranks[_meshData._nrankdist[n]])].push_back(__Point__(_meshData.coordinates[n], n));
 			}
 		}
 	}

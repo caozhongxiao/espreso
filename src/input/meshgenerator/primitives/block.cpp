@@ -202,16 +202,16 @@ void BlockGenerator::neighbors(const std::vector<int> &surroundings, PlainMeshDa
 
 	std::sort(neighs.begin(), neighs.end());
 
-	mesh.ndist.reserve(mesh.nIDs.size() + 1);
-	mesh.ndist.push_back(0);
-	mesh.nranks.reserve(neighs.size());
+	mesh._nrankdist.reserve(mesh.nIDs.size() + 1);
+	mesh._nrankdist.push_back(0);
+	mesh._nranks.reserve(neighs.size());
 	for (size_t i = 0; i < neighs.size(); i++) {
 		if (i && neighs[i - 1].first != neighs[i].first) {
-			mesh.ndist.push_back(mesh.nranks.size());
+			mesh._nrankdist.push_back(mesh._nranks.size());
 		}
-		mesh.nranks.push_back(neighs[i].second);
+		mesh._nranks.push_back(neighs[i].second);
 	}
-	mesh.ndist.push_back(mesh.nranks.size());
+	mesh._nrankdist.push_back(mesh._nranks.size());
 }
 
 bool BlockGenerator::region(

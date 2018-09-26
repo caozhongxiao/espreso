@@ -1036,16 +1036,16 @@ void RandomInput::linkup()
 		}
 	}
 
-	_meshData.ndist.push_back(0);
+	_meshData._nrankdist.push_back(0);
 	for (size_t n = 0; n < rRanks[rankindex].size(); n += rRanks[rankindex][n] + 1) {
-		_meshData.nranks.insert(_meshData.nranks.end(), rRanks[rankindex].begin() + n + 1, rRanks[rankindex].begin() + n + 1 + rRanks[rankindex][n]);
-		_meshData.ndist.push_back(_meshData.nranks.size());
+		_meshData._nranks.insert(_meshData._nranks.end(), rRanks[rankindex].begin() + n + 1, rRanks[rankindex].begin() + n + 1 + rRanks[rankindex][n]);
+		_meshData._nrankdist.push_back(_meshData._nranks.size());
 	}
 	for (size_t r = 0; r < _sfcNeighbors.size(); r++) {
 		if (_sfcNeighbors[r] != environment->MPIrank) {
 			for (size_t n = 0; n < rRanks[r].size(); n += rRanks[r][n] + 1) {
-				_meshData.nranks.insert(_meshData.nranks.end(), rRanks[r].begin() + n + 1, rRanks[r].begin() + n + 1 + rRanks[r][n]);
-				_meshData.ndist.push_back(_meshData.nranks.size());
+				_meshData._nranks.insert(_meshData._nranks.end(), rRanks[r].begin() + n + 1, rRanks[r].begin() + n + 1 + rRanks[r][n]);
+				_meshData._nrankdist.push_back(_meshData._nranks.size());
 			}
 		}
 	}
