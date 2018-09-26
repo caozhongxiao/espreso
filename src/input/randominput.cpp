@@ -1391,6 +1391,8 @@ void RandomInput::exchangeBoundary()
 			return static_cast<int>(_mesh._eclasses[0][e].type) >= type; }) - _meshData.etype.begin()
 		);
 	}
+
+	_meshData._edist.clear();
 }
 
 void RandomInput::polish()

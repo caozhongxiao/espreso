@@ -414,10 +414,15 @@ void Input::sortElements()
 
 void Input::sortElements(const std::vector<eslocal> &permutation)
 {
-	std::vector<eslocal> edist = std::vector<eslocal>({ 0 });
-	edist.reserve(_meshData.eIDs.size() + 1);
-	for (size_t e = 0; e < _meshData.eIDs.size(); e++) {
-		edist.push_back(edist.back() + _meshData.esize[e]);
+	std::vector<eslocal> edist;
+	if (_meshData._edist.size()) {
+		edist.swap(_meshData._edist);
+	} else {
+		edist = std::vector<eslocal>({ 0 });
+		edist.reserve(_meshData.eIDs.size() + 1);
+		for (size_t e = 0; e < _meshData.eIDs.size(); e++) {
+			edist.push_back(edist.back() + _meshData.esize[e]);
+		}
 	}
 
 	Esutils::permute(_meshData.eIDs, permutation);
@@ -545,18 +550,20 @@ void Input::fillElements()
 
 	std::vector<size_t> edistribution = tarray<Point>::distribute(threads, _etypeDistribution[estart]);
 
-	std::vector<eslocal> edist = { 0 };
-	edist.reserve(_etypeDistribution[estart] + 1);
-	for (size_t e = 0; e < _etypeDistribution[estart]; e++) {
-		edist.push_back(edist.back() + _meshData.esize[e]);
+	if (!_meshData._edist.size()) {
+		_meshData._edist = { 0 };
+		_meshData._edist.reserve(_meshData.esize.size() + 1);
+		for (size_t e = 0; e < _meshData.esize.size(); e++) {
+			_meshData._edist.push_back(_meshData._edist.back() + _meshData.esize[e]);
+		}
 	}
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		if(t == 0) {
-			tedist[t].insert(tedist[t].end(), edist.begin() + edistribution[t], edist.begin() + edistribution[t + 1] + 1);
+			tedist[t].insert(tedist[t].end(), _meshData._edist.begin() + edistribution[t], _meshData._edist.begin() + edistribution[t + 1] + 1);
 		} else {
-			tedist[t].insert(tedist[t].end(), edist.begin() + edistribution[t] + 1, edist.begin() + edistribution[t + 1] + 1);
+			tedist[t].insert(tedist[t].end(), _meshData._edist.begin() + edistribution[t] + 1, _meshData._edist.begin() + edistribution[t + 1] + 1);
 		}
 
 		// till now, IDs are irelevant
@@ -564,7 +571,7 @@ void Input::fillElements()
 		std::iota(eIDs[t].begin(), eIDs[t].end(), _eDistribution[environment->MPIrank] + edistribution[t]);
 
 		eBody[t].insert(eBody[t].end(), _meshData.body.begin() + edistribution[t], _meshData.body.begin() + edistribution[t + 1]);
-		tnodes[t].insert(tnodes[t].end(), _meshData.enodes.begin() + edist[edistribution[t]], _meshData.enodes.begin() + edist[edistribution[t + 1]]);
+		tnodes[t].insert(tnodes[t].end(), _meshData.enodes.begin() + _meshData._edist[edistribution[t]], _meshData.enodes.begin() + _meshData._edist[edistribution[t + 1]]);
 		eMat[t].insert(eMat[t].end(), _meshData.material.begin() + edistribution[t], _meshData.material.begin() + edistribution[t + 1]);
 
 		epointers[t].resize(edistribution[t + 1] - edistribution[t]);
@@ -611,13 +618,12 @@ void Input::fillBoundaryRegions()
 	std::vector<std::vector<eslocal> > tedist(threads), tnodes(threads);
 	std::vector<std::vector<Element*> > epointers(threads);
 
-	std::vector<eslocal> edist = { 0 };
-	edist.reserve(_meshData.etype.size() - _etypeDistribution[estart] + 1);
-	for (size_t e = 0; e < _etypeDistribution[estart]; e++) {
-		edist.back() += _meshData.esize[e];
-	}
-	for (size_t e = _etypeDistribution[estart]; e < _etypeDistribution.back(); e++) {
-		edist.push_back(edist.back() + _meshData.esize[e]);
+	if (!_meshData._edist.size()) {
+		_meshData._edist = { 0 };
+		_meshData._edist.reserve(_meshData.esize.size() + 1);
+		for (size_t e = 0; e < _meshData.esize.size(); e++) {
+			_meshData._edist.push_back(_meshData._edist.back() + _meshData.esize[e]);
+		}
 	}
 
 	for (int i = estart; i < 2; i++) {
@@ -682,7 +688,7 @@ void Input::fillBoundaryRegions()
 					tnodes[t].resize(eregiondist[edistribution[t + 1]] - eregiondist[edistribution[t]]);
 					for (size_t e = edistribution[t], index = 0; e < edistribution[t + 1]; ++e) {
 						for (size_t n = 0; n < _meshData.esize[eregion->second[e]]; ++n, ++index) {
-							tnodes[t][index] = _meshData.enodes[edist[eregion->second[e] - _etypeDistribution[estart]] + n];
+							tnodes[t][index] = _meshData.enodes[_meshData._edist[eregion->second[e]] + n];
 						}
 					}
 
