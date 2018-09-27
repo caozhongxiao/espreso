@@ -83,7 +83,9 @@ void MPILoader::scatter(MPIGroup &group, ParallelFile &pfile, size_t alignment)
 		pfile.data.resize(group.size * chunk);
 	}
 
-	MPI_Scatter(pfile.data.data(), chunk, MPI_BYTE, pfile.data.data(), chunk, MPI_BYTE, 0, group.communicator);
+	std::vector<char> data(chunk + alignment);
+	MPI_Scatter(pfile.data.data(), chunk, MPI_BYTE, data.data(), chunk, MPI_BYTE, 0, group.communicator);
+	pfile.data.swap(data);
 
 	pfile.begin = pfile.data.data();
 	pfile.end = pfile.data.data() + chunk;
