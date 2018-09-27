@@ -67,11 +67,11 @@ WorkbenchLoader::WorkbenchLoader(const InputConfiguration &configuration, Mesh &
 
 void WorkbenchLoader::readData()
 {
-	MPISubset loaders;
-	Communication::createSubset(_configuration, loaders);
-
 	TimeEval timing("Read data from file");
 	timing.totalTime.startWithBarrier();
+
+	MPISubset loaders;
+	Communication::createSubset(_configuration, loaders);
 
 	TimeEvent e1("FILE OPEN");
 	e1.start();

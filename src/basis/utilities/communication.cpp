@@ -85,7 +85,7 @@ MPIGroup::MPIGroup()
 MPISubset::MPISubset()
 : origin(MPITools::procs())
 {
-	int color, length;
+/*	int color, length;
 	std::vector<char> name(MPI_MAX_PROCESSOR_NAME);
 	MPI_Get_processor_name(name.data(), &length);
 
@@ -119,31 +119,31 @@ MPISubset::MPISubset()
 
 	MPI_Comm_split(origin.communicator, within.rank, origin.rank, &across.communicator);
 	MPI_Comm_rank(across.communicator, &across.rank);
-	MPI_Comm_size(across.communicator, &across.size);
+	MPI_Comm_size(across.communicator, &across.size);*/
 }
 
 void Communication::createSubset(const ProcessesReduction &reduction, MPISubset &subset)
 {
 	int color;
-	MPIGroup *group;
+//	MPIGroup *group;
 
-	switch (reduction.granularity) {
-	case ProcessesReduction::Granularity::NODES:
-		group = &MPITools::nodes().across;
-		break;
-	case ProcessesReduction::Granularity::PROCESSES:
-		group = &MPITools::procs();
-		break;
-	}
+//	switch (reduction.granularity) {
+//	case ProcessesReduction::Granularity::NODES:
+//		group = &MPITools::nodes().across;
+//		break;
+//	case ProcessesReduction::Granularity::PROCESSES:
+//		group = &MPITools::procs();
+//		break;
+//	}
 
-	switch (reduction.pattern) {
-	case ProcessesReduction::Pattern::PREFIX:
-		color = group->rank % reduction.reduction_ratio;
-		break;
-	case ProcessesReduction::Pattern::SUBSET:
-		color = group->rank / reduction.reduction_ratio;
-		break;
-	}
+//	switch (reduction.pattern) {
+//	case ProcessesReduction::Pattern::PREFIX:
+//		color = group->rank % reduction.reduction_ratio;
+//		break;
+//	case ProcessesReduction::Pattern::SUBSET:
+		color = MPITools::procs().rank / reduction.reduction_ratio;
+//		break;
+//	}
 
 	MPI_Comm_split(subset.origin.communicator, color, subset.origin.rank, &subset.within.communicator);
 	MPI_Comm_rank(subset.within.communicator, &subset.within.rank);
