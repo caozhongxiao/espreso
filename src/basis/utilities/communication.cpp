@@ -6,10 +6,13 @@
 #include "../../mesh/store/statisticsstore.h"
 
 #include <string>
-#include <map>
-
+#include <cstring>
+#include <algorithm>
+#include <numeric>
 
 using namespace espreso;
+
+int MPISubset::nodeRank = -1;
 
 template<typename Ttype>
 static void _scan(void *in, void *out, int *len, MPI_Datatype *datatype)
@@ -82,36 +85,60 @@ MPIGroup::MPIGroup()
 	size = environment->MPIsize;
 }
 
-MPISubset::MPISubset()
-: origin(MPITools::procs())
+void MPISubset::fillNodeColor()
 {
-/*	int color, length;
+	int length, maxlength;
 	std::vector<char> name(MPI_MAX_PROCESSOR_NAME);
 	MPI_Get_processor_name(name.data(), &length);
 
-	std::vector<int> rCounts(origin.size), rDispl(origin.size), colors(origin.size);
-	std::vector<char> names;
-	MPI_Gather(&length, 1, MPI_INT, rCounts.data(), 1, MPI_INT, 0, origin.communicator);
+	MPI_Allreduce(&length, &maxlength, 1, MPI_INT, MPI_MAX, environment->MPICommunicator);
 
-	for (size_t i = 1; i < rCounts.size(); i++) {
-		rDispl[i] += rDispl[i - 1] + rCounts[i - 1];
-	}
-	names.resize(rDispl.back() + rCounts.back());
+	std::vector<char> names(environment->MPIsize * maxlength);
 
-	MPI_Gatherv(name.data(), length * sizeof(char), MPI_BYTE, names.data(), rCounts.data(), rDispl.data(), MPI_BYTE, 0, origin.communicator);
+	MPI_Gather(name.data(), maxlength * sizeof(char), MPI_CHAR, names.data(), maxlength * sizeof(char), MPI_BYTE, 0, environment->MPICommunicator);
 
-	std::map<std::string, size_t> nodes;
-	for (int i = 0; i < origin.size; i++) {
-		std::string str(names.begin() + rDispl[i], names.begin() + rDispl[i] + rCounts[i]);
-		auto it = nodes.find(str);
-		if (it == nodes.end()) {
-			size_t s = nodes.size();
-			nodes[str] = s;
+	std::vector<int> permutation(environment->MPIsize), colors(environment->MPIsize);
+
+	std::iota(permutation.begin(), permutation.end(), 0);
+	std::sort(permutation.begin(), permutation.end(), [&] (int i, int j) {
+		return std::lexicographical_compare(
+				names.begin() + maxlength * i, names.begin() + maxlength * (i + 1),
+				names.begin() + maxlength * j, names.begin() + maxlength * (j + 1));
+	});
+	for (size_t i = 1; i < colors.size(); i++) {
+		if (memcmp(names.data() + maxlength * i, names.data() + maxlength * (i - 1), maxlength) ){
+			colors[i] = colors[i - 1] + 1;
+		} else {
+			colors[i] = colors[i - 1];
 		}
-		colors[i] = nodes[str];
 	}
 
-	MPI_Scatter(colors.data(), 1, MPI_INT, &color, 1, MPI_INT, 0, origin.communicator);
+	MPI_Scatter(colors.data(), 1, MPI_INT, &nodeRank, 1, MPI_INT, 0, environment->MPICommunicator);
+}
+
+MPISubset::MPISubset(const ProcessesReduction &reduction, MPIGroup &origin)
+: origin(origin)
+{
+	int rank, color;
+
+	switch (reduction.granularity) {
+	case ProcessesReduction::Granularity::NODES:
+		fillNodeColor();
+		rank = nodeRank;
+		break;
+	case ProcessesReduction::Granularity::PROCESSES:
+		rank = origin.rank;
+		break;
+	}
+
+	switch (reduction.pattern) {
+	case ProcessesReduction::Pattern::PREFIX:
+		color = rank % reduction.reduction_ratio;
+		break;
+	case ProcessesReduction::Pattern::SUBSET:
+		color = rank / reduction.reduction_ratio;
+		break;
+	}
 
 	MPI_Comm_split(origin.communicator, color, origin.rank, &within.communicator);
 	MPI_Comm_rank(within.communicator, &within.rank);
@@ -119,7 +146,18 @@ MPISubset::MPISubset()
 
 	MPI_Comm_split(origin.communicator, within.rank, origin.rank, &across.communicator);
 	MPI_Comm_rank(across.communicator, &across.rank);
-	MPI_Comm_size(across.communicator, &across.size);*/
+	MPI_Comm_size(across.communicator, &across.size);
+}
+
+MPISubset& MPITools::nodes()
+{
+	ProcessesReduction reduction;
+	reduction.granularity = ProcessesReduction::Granularity::NODES;
+	reduction.pattern = ProcessesReduction::Pattern::SUBSET;
+	reduction.reduction_ratio = 1;
+
+	static MPISubset instance(reduction, MPITools::procs());
+	return instance;
 }
 
 void Communication::createSubset(const ProcessesReduction &reduction, MPISubset &subset)

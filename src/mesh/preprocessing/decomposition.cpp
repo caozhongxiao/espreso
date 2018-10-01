@@ -126,8 +126,7 @@ void MeshPreprocessing::reclusterize()
 
 	finish("compute global dual graph");
 
-	MPISubset subset;
-	Communication::createSubset(_mesh->configuration.decomposition.metis_options, subset);
+	MPISubset subset(_mesh->configuration.decomposition.metis_options, MPITools::procs());
 
 	start("ParMETIS::KWay");
 	eslocal edgecut = ParMETIS::call(

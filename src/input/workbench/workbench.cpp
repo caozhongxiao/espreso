@@ -70,8 +70,7 @@ void WorkbenchLoader::readData()
 	TimeEval timing("Read data from file");
 	timing.totalTime.startWithBarrier();
 
-	MPISubset loaders;
-	Communication::createSubset(_configuration, loaders);
+	MPISubset loaders(_configuration, MPITools::procs());
 
 	TimeEvent e1("FILE OPEN");
 	e1.start();

@@ -51,10 +51,14 @@ class MPISubset {
 public:
 	MPIGroup within, across, &origin;
 
-	MPISubset();
+	MPISubset(const ProcessesReduction &reduction, MPIGroup &origin);
 private:
 	MPISubset(MPISubset const&) = delete;
 	void operator=(MPISubset const&) = delete;
+
+	static void fillNodeColor();
+
+	static int nodeRank;
 };
 
 class MPITools
@@ -78,11 +82,7 @@ public:
 			return sizeof(eslocal) == sizeof(int) ? operations().INT : operations().LONG;
 	}
 
-	static MPISubset& nodes()
-	{
-		static MPISubset instance;
-		return instance;
-	}
+	static MPISubset& nodes();
 
 	static MPIGroup& procs()
 	{
