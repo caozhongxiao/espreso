@@ -66,7 +66,7 @@ SequentialInput::SequentialInput(PlainMeshData &meshData, Mesh &mesh)
 	fillBoundaryRegions();
 	fillNodeRegions();
 	tregions.end(); timing.addEvent(tregions);
-	ESINFO(PROGRESS2) << "Sequential loader:: elements filled.";
+	ESINFO(PROGRESS2) << "Sequential loader:: regions filled.";
 
 	TimeEvent treindex("reindex elements nodes"); treindex.start();
 	if (!_mesh.nodes->IDs->datatarray().back() != _mesh.nodes->IDs->datatarray().size()) {
