@@ -5,6 +5,38 @@ import sys
 ESPRESO_TESTS = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
+class Iterator:
+
+    def __init__(self, items):
+        self.items = items
+        self.keys = items.keys()
+        self.pointers = [ 0 for i in items ]
+
+    def next(self):
+        self.pointers[-1] += 1
+        for i in xrange(1, len(self.pointers)):
+            if self.pointers[-i] == len(self.items[self.keys[-i]]):
+                self.pointers[-i] = 0
+                self.pointers[-i - 1] += 1
+
+        if self.pointers[0] == len(self.items[self.keys[0]]):
+            self.pointers[0] = 0
+            return False
+
+        return True
+
+    def __getitem__(self, i):
+        return self.get()[i]
+
+    def values(self):
+        return self.get().values()
+
+    def get(self):
+        result = {}
+        for i in xrange(0, len(self.pointers)):
+            result[self.keys[i]] = self.items[self.keys[i]][self.pointers[i]]
+        return result
+
 class ESPRESOTestEvaluator:
 
     def __init__(self, root):
@@ -13,6 +45,18 @@ class ESPRESOTestEvaluator:
         self.levels = []
         self.table = {}
         self.load()
+
+    @staticmethod
+    def iterate(function, *args):
+        next = [ True for arg in args]
+        iterators = [ Iterator(arg) for arg in args ]
+
+        while reduce(lambda x, y: x or y, next):
+            function(*[ it.get() for it in iterators ])
+            for i in range(0, len(next)):
+                next[i] = iterators[i].next()
+                if next[i]:
+                    break
 
     def get_values(self, table, position):
         if len(position):
@@ -108,7 +152,7 @@ class ESPRESOTestEvaluator:
             tables[name] = { "file": open(os.path.join(stats, name + ".csv"), "w") }
 
         if len(freevars):
-            TestCaseCreator.iterate(create_table, *freevars)
+            ESPRESOTestEvaluator.iterate(create_table, *freevars)
         else:
             tables[tablename] = { "file": open(os.path.join(stats, tablename + ".csv"), "w") }
 
@@ -118,8 +162,8 @@ class ESPRESOTestEvaluator:
             tablesrows.append(".".join([ arg.values()[0].replace(" ", "_") for arg in args ]))
         def add_column(*args):
             tablescolumns.append(".".join([ arg.values()[0].replace(" ", "_") for arg in args ]))
-        TestCaseCreator.iterate(add_row, *trows)
-        TestCaseCreator.iterate(add_column, *tcolumns)
+        ESPRESOTestEvaluator.iterate(add_row, *trows)
+        ESPRESOTestEvaluator.iterate(add_column, *tcolumns)
 
         for table in tables:
             tables[table]["data"] = {}
@@ -142,7 +186,7 @@ class ESPRESOTestEvaluator:
             column = ".".join([arg.replace(" ", "_") for i, arg in enumerate(args) if iscolumnvar[i]])
             tables[table]["data"][row][column] = value
 
-        TestCaseCreator.iterate(write_value, *ranges)
+        ESPRESOTestEvaluator.iterate(write_value, *ranges)
 
 
         cwidth = len(max(tablescolumns, key=lambda x: len(x)))
