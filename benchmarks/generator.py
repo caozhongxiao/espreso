@@ -275,7 +275,7 @@ class ESPRESOTestGenerator:
 
         evaluate_file.write("import os\n")
         evaluate_file.write("import sys\n\n")
-        evaluate_file.write("sys.path.append(os.path.join(\"{0}\", \"tests\"))\n\n".format(self.ROOT))
+        evaluate_file.write("sys.path.append(os.path.join(\"{0}\", \"benchmarks\"))\n\n".format(self.ROOT))
         evaluate_file.write("from evaluator import *\n\n")
         evaluate_file.write("if __name__ == '__main__':\n")
         evaluate_file.write("    evaluator = ESPRESOTestEvaluator('{0}')\n".format(os.path.dirname(evaluate_file.name)))
