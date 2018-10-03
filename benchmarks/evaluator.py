@@ -41,7 +41,6 @@ class ESPRESOTestEvaluator:
 
     def __init__(self, root):
         self.ROOT = root
-        self.repetition = 0
         self.levels = []
         self.table = {}
         self.load()
@@ -77,32 +76,32 @@ class ESPRESOTestEvaluator:
         self.levels = []
         for path, dirs, files in os.walk(run):
             if any([file.endswith(".ecf") for file in files]):
-                self.repetitions = len([file for file in files if file.endswith(".ecf")])
                 break
             else:
                 self.levels.append(dirs)
 
         fill_values(self.table, self.levels)
 
+        repetitions = max([int(file.split(".")[-2]) for file in os.listdir(log)]) + 1
+
         files = len(os.listdir(log))
         for file in os.listdir(log):
             position = file.split(".")[0:len(self.levels)]
+            repetition = int(file.split(".")[-2])
             data = {}
             for line in open(os.path.join(log, file), "r"):
                 if "avg.:" in line:
                     key = line.split("avg.:")[0]
-                    if key in data:
-                        data[key].append(float(" ".join(line.split()).split("avg.: ")[1].split()[0]))
-                    else:
-                        data[key] = [ float(" ".join(line.split()).split("avg.: ")[1].split()[0]) ]
+                    if key not in data:
+                        data[key] = []
+                    data[key].append(float(" ".join(line.split()).split("avg.: ")[1].split()[0]))
 
             values = self.get_values(self.table, position)
             for key in data:
                 value = sum(data[key]) / len(data[key])
-                if key in values:
-                    values[key].append(value)
-                else:
-                    values[key] = [ value ]
+                if key not in values:
+                    values[key] = [None] * repetitions
+                values[key][repetition] = value
 
         def average(table, levels):
             if len(levels):
@@ -110,7 +109,15 @@ class ESPRESOTestEvaluator:
                     average(table[value], levels[1:])
             else:
                 for value in table:
-                    table[value] = sum(table[value]) / len(table[value])
+                    first = table[value][0]
+                    rest = [v for v in table[value][1:] if v is not None]
+                    table[value] = {
+                        "first": first,
+                        "rest": (sum(rest) / len(rest), None)[len(rest) == 0],
+                        "count": len(rest),
+                        "min": min(rest),
+                        "max": max(rest),
+                        "ratio": max(rest) / min(rest)}
         average(self.table, self.levels)
 
     def evaluate(self, tablename, rows, columns, **kwargs):
@@ -146,15 +153,25 @@ class ESPRESOTestEvaluator:
                     isargfree.append(True)
 
         tables = {}
+        def add_files(tablename, stats):
+            tables[tablename] = {}
+            tables[tablename]["file"] = {}
+            tables[tablename]["file"]["rest"] = open(os.path.join(stats, tablename + ".sum.csv"), "w")
+            tables[tablename]["file"]["first"] = open(os.path.join(stats, tablename + ".first.csv"), "w")
+            tables[tablename]["file"]["min"] = open(os.path.join(stats, tablename + ".min.csv"), "w")
+            tables[tablename]["file"]["max"] = open(os.path.join(stats, tablename + ".max.csv"), "w")
+            tables[tablename]["file"]["ratio"] = open(os.path.join(stats, tablename + ".ratio.csv"), "w")
+            tables[tablename]["file"]["count"] = open(os.path.join(stats, tablename + ".count.csv"), "w")
+
         def create_table(*args):
             args = [ arg.values()[0].replace(" ", "_") for arg in args ]
             name = "{0}.{1}".format(tablename, ".".join(args))
-            tables[name] = { "file": open(os.path.join(stats, name + ".csv"), "w") }
+            add_files(name, stats)
 
         if len(freevars):
             ESPRESOTestEvaluator.iterate(create_table, *freevars)
         else:
-            tables[tablename] = { "file": open(os.path.join(stats, tablename + ".csv"), "w") }
+            add_files(tablename, stats)
 
         tablesrows = []
         tablescolumns = []
@@ -188,20 +205,20 @@ class ESPRESOTestEvaluator:
 
         ESPRESOTestEvaluator.iterate(write_value, *ranges)
 
-
         cwidth = len(max(tablescolumns, key=lambda x: len(x)))
         rwidth = len(max(tablesrows, key=lambda x: len(x)))
-        for table in tables:
-            tables[table]["file"].write("{0:{width}} ; ".format("", width=rwidth))
-            for column in sorted(tablescolumns):
-                tables[table]["file"].write("{0:^{width}} ; ".format(column, width=cwidth))
-            tables[table]["file"].write("\n")
-            for row in sorted(tablesrows):
-                tables[table]["file"].write("{0:<{width}} ; ".format(row, width=rwidth))
+        for stat in [ "rest", "first", "min", "max", "count", "ratio" ]:
+            for table in tables:
+                tables[table]["file"][stat].write("{0:{width}} ; ".format("", width=rwidth))
                 for column in sorted(tablescolumns):
-                    if tables[table]["data"][row][column] is not None:
-                        tables[table]["file"].write("{0:>{width}.3f} ; ".format(tables[table]["data"][row][column], width=cwidth))
-                    else:
-                        tables[table]["file"].write("{0:>{width}} ; ".format("", width=cwidth))
-                tables[table]["file"].write("\n")
+                    tables[table]["file"][stat].write("{0:^{width}} ; ".format(column, width=cwidth))
+                tables[table]["file"][stat].write("\n")
+                for row in sorted(tablesrows):
+                    tables[table]["file"][stat].write("{0:<{width}} ; ".format(row, width=rwidth))
+                    for column in sorted(tablescolumns):
+                        if tables[table]["data"][row][column] is not None and tables[table]["data"][row][column][stat] is not None:
+                            tables[table]["file"][stat].write("{0:>{width}.3f} ; ".format(tables[table]["data"][row][column][stat], width=cwidth))
+                        else:
+                            tables[table]["file"][stat].write("{0:>{width}} ; ".format("", width=cwidth))
+                    tables[table]["file"][stat].write("\n")
 
