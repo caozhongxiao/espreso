@@ -28,6 +28,7 @@ protected:
 
 	void readData();
 	void parseData(PlainOpenFOAMData &mesh);
+	void collectFaces(PlainOpenFOAMData &mesh);
 	void buildElements(PlainOpenFOAMData &mesh);
 	void buildFaces(PlainOpenFOAMData &mesh);
 
@@ -36,7 +37,7 @@ protected:
 	ParallelFile _points, _faces, _owner, _neighbour, _boundary;
 
 	std::vector<OpenFOAMBoundaryData> _boundaryData;
-	std::vector<eslocal> _fdist;
+	std::vector<eslocal> _fdist, _edist;
 };
 
 }

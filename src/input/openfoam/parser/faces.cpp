@@ -12,7 +12,7 @@ bool OpenFOAMFaces::readFaces(PlainOpenFOAMData &data)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, end - begin);
+	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, end - begin);
 
 	std::vector<std::vector<eslocal> > fsize(threads), fnodes(threads);
 
@@ -20,15 +20,15 @@ bool OpenFOAMFaces::readFaces(PlainOpenFOAMData &data)
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<eslocal> tsize, tnodes;
 
-		current = begin + tdistribution[t];
-		while (*(current + 1) != '(') { ++current; }
-		while (current < begin + tdistribution[t + 1]) {
-			tsize.push_back(readInteger());
-			current += 1; // skip '('
+		const char *c = begin + tdistribution[t];
+		while (c < end && *(c + 1) != '(') { ++c; }
+		while (c < begin + tdistribution[t + 1]) {
+			tsize.push_back(readInteger(c));
+			c += 1; // skip '('
 			for (eslocal i = 0; i < tsize.back(); ++i) {
-				tnodes.push_back(readInteger());
+				tnodes.push_back(readInteger(c));
 			}
-			current += 2; // skip ')\n'
+			c += 2; // skip ')\n'
 		}
 
 		fsize[t].swap(tsize);
@@ -47,7 +47,7 @@ bool OpenFOAMFaces::readParents(std::vector<eslocal> &data)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, end - begin);
+	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, end - begin);
 
 	std::vector<std::vector<eslocal> > elements(threads);
 
@@ -55,10 +55,13 @@ bool OpenFOAMFaces::readParents(std::vector<eslocal> &data)
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<eslocal> telements;
 
-		current = begin + tdistribution[t];
-		while (current < begin + tdistribution[t + 1]) {
-			telements.push_back(readInteger());
-			current += 1; // skip '\n'
+		const char *c = begin + tdistribution[t];
+		if (tdistribution[t]) {
+			--c; toNext(c);
+		}
+		while (c < begin + tdistribution[t + 1]) {
+			telements.push_back(readInteger(c));
+			c += 1; // skip '\n'
 		}
 
 		elements[t].swap(telements);

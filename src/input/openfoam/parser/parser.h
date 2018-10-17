@@ -9,40 +9,48 @@ namespace espreso {
 
 struct OpenFOAMParser {
 
-	const char *begin, *end, *current;
-	char *endptr;
+	const char *begin, *end;;
 
 	OpenFOAMParser(const char *begin, const char *end);
 
-	double readDouble()
+	double readDouble(const char* &c)
 	{
-		double value = strtod(current, &endptr);
-		current = endptr;
+		char *endptr;
+		double value = strtod(c, &endptr);
+		c = endptr;
 		return value;
 	}
 
-	double readInteger()
+	double readInteger(const char* &c)
 	{
-		eslocal value = strtol(current, &endptr, 10);
-		current = endptr;
+		char *endptr;
+		eslocal value = strtol(c, &endptr, 10);
+		c = endptr;
 		return value;
 	}
 
-	bool isEmpty()
+	bool isEmpty(const char* &c)
 	{
 		return
-				*current == ' ' ||
-				*current == '\n' ||
-				*current == '\r' ||
-				*current == '\t';
+				*c == ' ' ||
+				*c == '\n' ||
+				*c == '\r' ||
+				*c == '\t';
 	}
 
-	std::string readString()
+	void toNext(const char* &c)
 	{
-		while (isEmpty()) { ++current; }
-		const char *s = current;
-		while (!isEmpty()) { ++current; }
-		return std::string(s, current);
+		while (!isEmpty(c)) {
+			++c;
+		}
+	}
+
+	std::string readString(const char* &c)
+	{
+		while (isEmpty(c)) { ++c; }
+		const char *s = c;
+		while (!isEmpty(c)) { ++c; }
+		return std::string(s, c);
 	}
 };
 }

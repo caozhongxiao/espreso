@@ -23,27 +23,27 @@ OpenFOAMBoundaryData::OpenFOAMBoundaryData(const std::string &name, size_t start
 
 bool OpenFOAMBoundary::readData(std::vector<OpenFOAMBoundaryData> &boundaries)
 {
-	current = begin;
+	const char *c = begin;
 
 	size_t nFaces, startFace;
 	std::string name, parameter;
 
-	while (*current != ')') {
-		name = readString();
+	while (*c != ')') {
+		name = readString(c);
 
-		while (*current++ != '{');
-		while (*current != '}') {
-			parameter = readString();
+		while (*c++ != '{');
+		while (*c != '}') {
+			parameter = readString(c);
 			if (StringCompare::caseSensitiveEq(parameter, "nFaces")) {
-				nFaces = readInteger();
+				nFaces = readInteger(c);
 			}
 			if (StringCompare::caseSensitiveEq(parameter, "startFace")) {
-				startFace = readInteger();
+				startFace = readInteger(c);
 			}
-			while (*current == ';' || isEmpty()) { ++current; }
+			while (*c == ';' || isEmpty(c)) { ++c; }
 		}
-		++current;
-		while (isEmpty()) { ++current; }
+		++c;
+		while (isEmpty(c)) { ++c; }
 
 		boundaries.push_back({name, startFace, nFaces});
 	}

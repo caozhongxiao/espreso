@@ -1,6 +1,7 @@
 
 #include "../../../basis/containers/point.h"
 #include "../../../basis/containers/tarray.h"
+#include "../../../basis/utilities/communication.h"
 #include "../../../config/ecf/environment.h"
 
 #include <numeric>
@@ -12,7 +13,7 @@ bool OpenFOAMPoints::readData(std::vector<eslocal> &nIDs, std::vector<Point> &co
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, end - begin);
+	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, end - begin);
 
 	std::vector<std::vector<Point> > points(threads);
 
@@ -20,16 +21,16 @@ bool OpenFOAMPoints::readData(std::vector<eslocal> &nIDs, std::vector<Point> &co
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<Point> tpoints;
 
-		current = begin + tdistribution[t];
-		while (*current != '(') { ++current; }
-		while (current < begin + tdistribution[t + 1]) {
-			tpoints.push_back(Point(1, 1, 1));
+		const char *c = begin + tdistribution[t];
+		while (c < end && *c != '(') { ++c; }
+		while (c < begin + tdistribution[t + 1]) {
+			tpoints.push_back({});
 
-			current += 1; // skip '('
-			tpoints.back().x = scaleFactor * readDouble();
-			tpoints.back().y = scaleFactor * readDouble();
-			tpoints.back().z = scaleFactor * readDouble();
-			current += 2; // skip ')\n'
+			c += 1; // skip '('
+			tpoints.back().x = scaleFactor * readDouble(c);
+			tpoints.back().y = scaleFactor * readDouble(c);
+			tpoints.back().z = scaleFactor * readDouble(c);
+			c += 2; // skip ')\n'
 		}
 
 		points[t].swap(tpoints);
@@ -40,7 +41,10 @@ bool OpenFOAMPoints::readData(std::vector<eslocal> &nIDs, std::vector<Point> &co
 	}
 
 	nIDs.resize(coordinates.size());
-	std::iota(nIDs.begin(), nIDs.end(), 0);
+
+	eslocal offset = coordinates.size();
+	Communication::exscan(offset);
+	std::iota(nIDs.begin(), nIDs.end(), offset);
 	return true;
 }
 

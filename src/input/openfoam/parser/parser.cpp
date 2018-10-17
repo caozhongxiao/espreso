@@ -1,22 +1,46 @@
 
 #include "parser.h"
 
+#include "mpi.h"
+#include "../../../config/ecf/environment.h"
+#include "../../../basis/utilities/communication.h"
+
 using namespace espreso;
 
 OpenFOAMParser::OpenFOAMParser(const char* begin, const char* end)
-: begin(begin), end(end), current(begin), endptr(0)
+: begin(begin), end(end)
 {
-	// TODO: parallel version
+	int found, min, max;
+	const char *p;
 
-	while (*this->begin++ != '(');// { ++this->begin; }
-//	if (*(this->begin + 1) == '\n' || *(this->begin + 1) == '\r') {
-//		++this->begin;
-//	}
+	p = begin;
+	while (*p != '(' && p < end) { ++p; };
+	if (p == end) {
+		found = environment->MPIsize;
+	} else {
+		found = environment->MPIrank;
+	}
 
-	while (*this->end != ')') { --this->end; }
-//	if (*(this->end + 1) == '\n' || *(this->end + 1) == '\r') {
-//		--this->end;
-//	}
+	MPI_Allreduce(&found, &min, 1, MPI_INT, MPI_MIN, environment->MPICommunicator);
+	if (environment->MPIrank == min) {
+		this->begin = p + 1;
+	}
+	if (environment->MPIrank < min) {
+		this->begin = p;
+	}
+
+	p = end;
+	while (*p != ')' && begin < p) { --p; }
+	if (p == begin) {
+		found = 0;
+	} else {
+		found = environment->MPIrank;
+	}
+
+	MPI_Allreduce(&found, &max, 1, MPI_INT, MPI_MAX, environment->MPICommunicator);
+	if (max <= environment->MPIrank) {
+		this->end = p;
+	}
 }
 
 
