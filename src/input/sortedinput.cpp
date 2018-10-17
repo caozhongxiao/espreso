@@ -171,7 +171,7 @@ void SortedInput::fillCoordinates()
 		std::vector<std::vector<Point> > tcoordinates(threads);
 		std::vector<std::vector<eslocal> > nIDs(threads), rData(threads);
 
-		std::vector<size_t> cdistribution = tarray<Point>::distribute(threads, _meshData.coordinates.size());
+		std::vector<size_t> cdistribution = tarray<size_t>::distribute(threads, _meshData.coordinates.size());
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			tcoordinates[t].insert(tcoordinates[t].end(), _meshData.coordinates.begin() + cdistribution[t], _meshData.coordinates.begin() + cdistribution[t + 1]);
@@ -297,7 +297,7 @@ void SortedInput::fillCoordinates()
 
 	TimeEvent e4("FC COMPUTE BACKED"); e4.start();
 
-	std::vector<size_t> ndistribution = tarray<Point>::distribute(threads, _meshData.coordinates.size());
+	std::vector<size_t> ndistribution = tarray<size_t>::distribute(threads, _meshData.coordinates.size());
 	std::vector<std::vector<std::vector<eslocal> > > backedData(threads, std::vector<std::vector<eslocal> >(_targetRanks.size()));
 
 	#pragma omp parallel for
@@ -346,7 +346,7 @@ void SortedInput::fillCoordinates()
 	}
 
 	for (size_t r = 0; r < _targetRanks.size(); r++) {
-		std::vector<size_t> rdistribution = tarray<eslocal>::distribute(threads, _rankNodeMap[r].size());
+		std::vector<size_t> rdistribution = tarray<size_t>::distribute(threads, _rankNodeMap[r].size());
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			for (size_t n = rdistribution[t]; n < rdistribution[t + 1]; ++n) {
@@ -378,7 +378,7 @@ void SortedInput::fillCoordinates()
 		csize += coordinates[i].size();
 	}
 
-	std::vector<size_t> distribution = tarray<Point>::distribute(threads, csize);
+	std::vector<size_t> distribution = tarray<size_t>::distribute(threads, csize);
 	std::vector<std::vector<eslocal> > rankDistribution(sRanks.size());
 	std::vector<std::vector<int> > rankData(sRanks.size());
 

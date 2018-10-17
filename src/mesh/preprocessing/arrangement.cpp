@@ -753,7 +753,7 @@ void MeshPreprocessing::arrangeRegions()
 			store->elements = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(threads, 0));
 			store->epointers = new serializededata<eslocal, Element*>(1, tarray<Element*>(threads, 0));
 		} else {
-			std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, store->elements->structures());
+			std::vector<size_t> distribution = tarray<size_t>::distribute(threads, store->elements->structures());
 			std::vector<eslocal> &eDomainDistribution = _mesh->elements->elementsDistribution;
 			std::vector<eslocal> emembership(distribution.back()), edomain(distribution.back());
 
@@ -1019,7 +1019,7 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 	auto end = std::lower_bound(elements[0].begin(), elements[0].end(), eend,
 			[] (const std::pair<eslocal, eslocal> &p, eslocal e) { return p.first < e; });
 
-	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, end - begin);
+	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, end - begin);
 	for (size_t t = 1; t < threads; t++) {
 		while (
 				begin + tdistribution[t] < end && begin <= begin + tdistribution[t] - 1 &&

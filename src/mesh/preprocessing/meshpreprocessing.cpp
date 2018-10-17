@@ -330,7 +330,7 @@ void MeshPreprocessing::exchangeHalo()
 	#pragma omp parallel for
 	for (size_t n = 0; n < _mesh->neighbours.size(); ++n) {
 		Esutils::removeDuplicity(hElements[0][n]);
-		tdist[n] = tarray<eslocal>::distribute(threads, hElements[0][n].size());
+		tdist[n] = tarray<size_t>::distribute(threads, hElements[0][n].size());
 		sBuffer[n].resize((4 + rsize) * hElements[0][n].size());
 	}
 
@@ -373,7 +373,7 @@ void MeshPreprocessing::exchangeHalo()
 	std::vector<std::vector<Element*> > hcode(threads);
 
 	for (size_t n = 0; n < rBuffer.size(); ++n) {
-		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, rBuffer[n].size() / (4 + rsize));
+		std::vector<size_t> distribution = tarray<size_t>::distribute(threads, rBuffer[n].size() / (4 + rsize));
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			for (size_t e = distribution[t]; e < distribution[t + 1]; ++e) {

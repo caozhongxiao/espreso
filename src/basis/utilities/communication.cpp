@@ -160,35 +160,3 @@ MPISubset& MPITools::nodes()
 	return instance;
 }
 
-void Communication::createSubset(const ProcessesReduction &reduction, MPISubset &subset)
-{
-	int color;
-//	MPIGroup *group;
-
-//	switch (reduction.granularity) {
-//	case ProcessesReduction::Granularity::NODES:
-//		group = &MPITools::nodes().across;
-//		break;
-//	case ProcessesReduction::Granularity::PROCESSES:
-//		group = &MPITools::procs();
-//		break;
-//	}
-
-//	switch (reduction.pattern) {
-//	case ProcessesReduction::Pattern::PREFIX:
-//		color = group->rank % reduction.reduction_ratio;
-//		break;
-//	case ProcessesReduction::Pattern::SUBSET:
-		color = MPITools::procs().rank / reduction.reduction_ratio;
-//		break;
-//	}
-
-	MPI_Comm_split(subset.origin.communicator, color, subset.origin.rank, &subset.within.communicator);
-	MPI_Comm_rank(subset.within.communicator, &subset.within.rank);
-	MPI_Comm_size(subset.within.communicator, &subset.within.size);
-
-	MPI_Comm_split(subset.origin.communicator, subset.within.rank, subset.origin.rank, &subset.across.communicator);
-	MPI_Comm_rank(subset.across.communicator, &subset.across.rank);
-	MPI_Comm_size(subset.across.communicator, &subset.across.size);
-}
-

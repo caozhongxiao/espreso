@@ -324,7 +324,7 @@ bool EBlock::boundary(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 	const char *first = getFirst(), *last = getLast();
 	eslocal size = (last - first) / elementSize;
 
-	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, size);
+	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, size);
 
 	std::vector<std::vector<eslocal> > tesize(threads), tnodes(threads), tIDs(threads);
 	std::vector<std::vector<int> > ttype(threads), tet(threads), tbody(threads), tmat(threads);

@@ -22,6 +22,7 @@ struct MPILoader {
 	static bool open(MPIGroup &group, MPI_File &MPIfile, const std::string &file);
 	static void read(MPIGroup &group, MPI_File &MPIfile, ParallelFile &pfile, size_t alignment);
 	static void scatter(MPIGroup &group, ParallelFile &pfile, size_t alignment);
+	static void bcast(MPIGroup &group, ParallelFile &pfile);
 	static void align(MPIGroup &group, ParallelFile &pfile, size_t lines);
 };
 

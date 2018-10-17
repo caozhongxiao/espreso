@@ -137,7 +137,7 @@ bool NBlock::index_solid_line_x_y_z(std::vector<eslocal> &nIDs, std::vector<Poin
 	size_t offset = coordinates.size();
 	nIDs.resize(offset + size);
 	coordinates.resize(offset + size);
-	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, size);
+	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, size);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {

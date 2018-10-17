@@ -290,7 +290,7 @@ void MeshPreprocessing::computeSurfaceLocations()
 	TimeEvent event3("sparse structure");
 	event3.start();
 
-	std::vector<size_t> distribution = tarray<std::pair<eslocal, eslocal> >::distribute(threads, grids[0].size());
+	std::vector<size_t> distribution = tarray<size_t>::distribute(threads, grids[0].size());
 
 	for (size_t t = 1; t < threads; t++) {
 		while (distribution[t] != distribution[t + 1] && grids[0][distribution[t]].first == grids[0][distribution[t] - 1].first) {
@@ -425,7 +425,7 @@ void MeshPreprocessing::searchContactInterfaces()
 
 		auto begin = std::lower_bound(_mesh->contacts->filledCells.begin(), _mesh->contacts->filledCells.end(), xsize * ysize * zmin);
 		auto end   = std::lower_bound(_mesh->contacts->filledCells.begin(), _mesh->contacts->filledCells.end(), xsize * ysize * zmax);
-		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, end - begin);
+		std::vector<size_t> distribution = tarray<size_t>::distribute(threads, end - begin);
 		for (size_t t = 0; t <= threads; t++) {
 			distribution[t] += begin - _mesh->contacts->filledCells.begin();
 		}
@@ -460,7 +460,7 @@ void MeshPreprocessing::searchContactInterfaces()
 	TimeEvent eventx("compose returned data");
 	eventx.start();
 	for (size_t n = 0; n < _mesh->contacts->neighbors.size(); n++) {
-		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, sFilled[n].size());
+		std::vector<size_t> distribution = tarray<size_t>::distribute(threads, sFilled[n].size());
 		sBlock[n].resize(sFilled[n].size() + 1);
 
 		std::vector<std::vector<eslocal> > tIDs(threads);
@@ -509,7 +509,7 @@ void MeshPreprocessing::searchContactInterfaces()
 			}
 		}
 
-		distribution = tarray<eslocal>::distribute(threads, _mesh->contacts->nsurface[n].size());
+		distribution = tarray<size_t>::distribute(threads, _mesh->contacts->nsurface[n].size());
 
 		std::vector<std::vector<eslocal> > dist(threads);
 		std::vector<std::vector<Point> > data(threads);
@@ -655,7 +655,7 @@ void MeshPreprocessing::searchContactInterfaces()
 
 	_mesh->contacts->ncloseElements.resize(_mesh->contacts->neighbors.size());
 	for (size_t n = 0; n < _mesh->contacts->neighbors.size(); n++) {
-		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, _mesh->contacts->nsurface[n].size());
+		std::vector<size_t> distribution = tarray<size_t>::distribute(threads, _mesh->contacts->nsurface[n].size());
 		std::vector<std::vector<eslocal> > ncloseElementsDist(threads), ncloseElementsData(threads);
 
 		double nboxsize = _mesh->contacts->eps * rGroupSize[n].front();

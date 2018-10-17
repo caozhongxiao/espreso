@@ -24,7 +24,7 @@ SpaceFillingCurve::SpaceFillingCurve(size_t dimension, size_t depth, std::vector
 	double dmax = std::numeric_limits<double>::max();
 	std::vector<Point> mins(threads, Point(dmax, dmax, dmax)), maxs(threads, Point(-dmax, -dmax, -dmax));
 
-	std::vector<size_t> cdistribution = tarray<Point>::distribute(threads, coordinates.size());
+	std::vector<size_t> cdistribution = tarray<size_t>::distribute(threads, coordinates.size());
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {

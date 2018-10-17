@@ -110,7 +110,7 @@ std::vector<size_t> Input::getDistribution(const std::vector<eslocal> &IDs, cons
 void Input::balanceNodes()
 {
 	std::vector<size_t> cCurrent = Communication::getDistribution(_meshData.nIDs.size());
-	_nDistribution = tarray<eslocal>::distribute(environment->MPIsize, cCurrent.back());
+	_nDistribution = tarray<size_t>::distribute(environment->MPIsize, cCurrent.back());
 
 	if (!Communication::balance(_meshData.nIDs, cCurrent, _nDistribution)) {
 		ESINFO(ERROR) << "ESPRESO internal error: balance node IDs.";
@@ -508,7 +508,7 @@ void Input::fillNodes()
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	_mesh.nodes->size = _meshData.coordinates.size();
-	_mesh.nodes->distribution = tarray<Point>::distribute(threads, _meshData.coordinates.size());
+	_mesh.nodes->distribution = tarray<size_t>::distribute(threads, _meshData.coordinates.size());
 
 	_mesh.nodes->IDs = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(_mesh.nodes->distribution, _meshData.nIDs));
 	_mesh.nodes->coordinates = new serializededata<eslocal, Point>(1, tarray<Point>(_mesh.nodes->distribution, _meshData.coordinates));
@@ -548,7 +548,7 @@ void Input::fillElements()
 	std::vector<std::vector<int> > eMat(threads), eBody(threads);
 	std::vector<std::vector<Element*> > epointers(threads);
 
-	std::vector<size_t> edistribution = tarray<Point>::distribute(threads, _etypeDistribution[estart]);
+	std::vector<size_t> edistribution = tarray<size_t>::distribute(threads, _etypeDistribution[estart]);
 
 	if (!_meshData._edist.size()) {
 		_meshData._edist = { 0 };
@@ -670,7 +670,7 @@ void Input::fillBoundaryRegions()
 				_mesh.boundaryRegions.push_back(new BoundaryRegionStore(eregion->first, _mesh._eclasses));
 				_mesh.boundaryRegions.back()->dimension = 2 - i;
 
-				std::vector<size_t> edistribution = tarray<Point>::distribute(threads, eregion->second.size());
+				std::vector<size_t> edistribution = tarray<size_t>::distribute(threads, eregion->second.size());
 				std::vector<eslocal> eregiondist(eregion->second.size() + 1);
 				for (size_t e = 0; e < eregion->second.size(); e++) {
 					eregiondist[e + 1] = eregiondist[e] + _meshData.esize[eregion->second[e]];
@@ -739,7 +739,7 @@ void Input::reindexRegions(std::map<std::string, std::vector<eslocal> > &regions
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	for (auto region = regions.begin(); region != regions.end(); ++region) {
-		std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, region->second.size());
+		std::vector<size_t> distribution = tarray<size_t>::distribute(threads, region->second.size());
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			auto n = region->second.begin();

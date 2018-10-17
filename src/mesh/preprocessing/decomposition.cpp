@@ -336,7 +336,7 @@ void MeshPreprocessing::partitiate(eslocal parts)
 		tdistribution = std::vector<size_t>(domainDistribution.begin(), domainDistribution.end());
 	} else {
 		if (domainDistribution.size() < threads + 1) {
-			tdistribution = tarray<eslocal>::distribute(threads, permutation.size());
+			tdistribution = tarray<size_t>::distribute(threads, permutation.size());
 		} else {
 			double averageThreadSize = _mesh->elements->size / (double)threads;
 			tdistribution.push_back(0);
@@ -1147,7 +1147,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	std::vector<std::vector<int> > IDtargets(threads);
 	std::vector<int> sources;
 
-	std::vector<size_t> rdistribution = tarray<int>::distribute(threads, environment->MPIsize);
+	std::vector<size_t> rdistribution = tarray<size_t>::distribute(threads, environment->MPIsize);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; ++t) {

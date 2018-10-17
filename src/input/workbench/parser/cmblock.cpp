@@ -79,7 +79,7 @@ bool CMBlock::readData(std::vector<eslocal> &indices)
 	const char *first = getFirst(), *last = getLast();
 	eslocal size = (last - first) / lineSize;
 
-	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, size);
+	std::vector<eslocal> tdistribution = tarray<eslocal>::distribute(threads, size);
 	std::vector<std::vector<eslocal> > tindices(threads);
 
 	#pragma omp parallel for

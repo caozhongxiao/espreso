@@ -135,7 +135,7 @@ void RandomInput::assignNBuckets()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<size_t> cdistribution = tarray<eslocal>::distribute(threads, _meshData.nIDs.size());
+	std::vector<size_t> cdistribution = tarray<size_t>::distribute(threads, _meshData.nIDs.size());
 
 	_nBuckets.resize(_meshData.coordinates.size());
 	#pragma omp parallel for
@@ -157,7 +157,7 @@ void RandomInput::assignEBuckets()
 	TimeEvent e1("AEB GET CLOSEST PROCESS");
 	e1.start();
 
-	std::vector<size_t> edistribution = tarray<eslocal>::distribute(threads, _meshData.esize.size());
+	std::vector<size_t> edistribution = tarray<size_t>::distribute(threads, _meshData.esize.size());
 
 	if (!_meshData._edist.size()) {
 		_meshData._edist = { 0 };
@@ -1097,7 +1097,7 @@ void RandomInput::exchangeBoundary()
 		edist.push_back(edist.back() + _meshData.esize[e]);
 	}
 
-	std::vector<size_t> distribution = tarray<eslocal>::distribute(threads, _etypeDistribution.back() - _etypeDistribution[estart]);
+	std::vector<size_t> distribution = tarray<size_t>::distribute(threads, _etypeDistribution.back() - _etypeDistribution[estart]);
 	std::vector<eslocal> emembership(distribution.back(), -1);
 	std::vector<std::vector<std::pair<eslocal, eslocal> > > etargets(threads);
 	std::vector<std::vector<eslocal> > utargets(threads);

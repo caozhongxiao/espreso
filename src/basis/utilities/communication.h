@@ -163,8 +163,6 @@ struct Communication {
 
 	static void serialize(std::function<void(void)> fnc, MPIGroup &group = MPITools::procs());
 
-	static void createSubset(const ProcessesReduction &reduction, MPISubset &subset);
-
 private:
 	template <typename Ttype>
 	static Ttype exscan(Ttype &value, MPI_Op &operation, MPIGroup &group);

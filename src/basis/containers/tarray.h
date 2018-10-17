@@ -16,7 +16,7 @@ template <typename TType>
 class tarray {
 
 public:
-	static std::vector<size_t> distribute(size_t threads, size_t size);
+	static std::vector<TType> distribute(size_t threads, size_t size);
 
 	tarray(size_t threads, size_t size);
 	tarray(size_t threads, const std::vector<TType> &data);

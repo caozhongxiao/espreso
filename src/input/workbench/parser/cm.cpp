@@ -113,13 +113,13 @@ bool CM::addElementRegion(const PlainWorkbenchData &mesh, const std::vector<ESel
 	}
 
 	size_t threads = environment->OMP_NUM_THREADS;
-	std::vector<size_t> edistribution = tarray<eslocal>::distribute(threads, mesh.esize.size());
+	std::vector<eslocal> edistribution = tarray<eslocal>::distribute(threads, mesh.esize.size());
 	std::vector<std::vector<eslocal> > eid(threads);
 
 	auto checkElements = [&] (std::function<void(size_t, eslocal)> chck) {
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			for (size_t e = edistribution[t]; e < edistribution[t + 1]; ++e) {
+			for (eslocal e = edistribution[t]; e < edistribution[t + 1]; ++e) {
 				chck(t, e);
 			}
 		}

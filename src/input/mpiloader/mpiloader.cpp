@@ -33,7 +33,7 @@ void MPILoader::read(MPIGroup &group, MPI_File &MPIfile, ParallelFile &pfile, si
 	}
 	block = 1L << block;
 
-	std::vector<size_t> fdistribution = tarray<int>::distribute(group.size, size / block + ((size % block) ? 1 : 0));
+	std::vector<int> fdistribution = tarray<int>::distribute(group.size, size / block + ((size % block) ? 1 : 0));
 	std::vector<MPI_Aint> displacement = { (MPI_Aint)(block * fdistribution[group.rank]) };
 	std::vector<int> length = { (int)(fdistribution[group.rank + 1] - fdistribution[group.rank]) };
 
@@ -94,6 +94,14 @@ void MPILoader::scatter(MPIGroup &group, ParallelFile &pfile, size_t alignment)
 	}
 
 	pfile.offsets = Communication::getDistribution<size_t>(pfile.end - pfile.begin);
+}
+
+void MPILoader::bcast(MPIGroup &group, ParallelFile &pfile)
+{
+	size_t size = pfile.data.size();
+	MPI_Bcast(&size, sizeof(size_t), MPI_BYTE, 0, group.communicator);
+	pfile.data.resize(size);
+	MPI_Bcast(pfile.data.data(), pfile.data.size(), MPI_BYTE, 0, group.communicator);
 }
 
 void MPILoader::align(MPIGroup &group, ParallelFile &pfile, size_t lines)

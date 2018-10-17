@@ -7,11 +7,11 @@
 namespace espreso {
 
 template <typename TType>
-std::vector<size_t> tarray<TType>::distribute(size_t threads, size_t size)
+std::vector<TType> tarray<TType>::distribute(size_t threads, size_t size)
 {
-	std::vector<size_t> distribution(threads + 1);
+	std::vector<TType> distribution(threads + 1);
 
-	size_t chunkSize = std::ceil(size / (double)threads);
+	TType chunkSize = std::ceil(size / (double)threads);
 	for (size_t t = 1; t < threads; t++) {
 		distribution[t] = t * chunkSize;
 		if (distribution[t] > size) {
@@ -81,7 +81,7 @@ template <typename TType>
 tarray<TType>::tarray(size_t threads, size_t size)
 :  _size(size), _data(NULL)
 {
-	_distribution = distribute(threads, size);
+	_distribution = tarray<size_t>::distribute(threads, size);
 
 	if (_size) {
 		_data = new TType[_size];
@@ -96,7 +96,7 @@ tarray<TType>::tarray(size_t threads, size_t size)
 
 template <typename TType>
 tarray<TType>::tarray(size_t threads, const std::vector<TType> &data)
-: tarray<TType>(tarray<TType>::distribute(threads, data.size()), data)
+: tarray<TType>(tarray<size_t>::distribute(threads, data.size()), data)
 { }
 
 template <typename TType>

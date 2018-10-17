@@ -116,7 +116,7 @@ void WorkbenchLoader::prepareData()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<size_t> tdistribution = tarray<char>::distribute(threads, _pfile.end - _pfile.begin);
+	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, _pfile.end - _pfile.begin);
 	std::vector<std::vector<NBlock> > tNBlocks(threads);
 	std::vector<std::vector<EBlock> > tEBlocks(threads);
 	std::vector<std::vector<CMBlock> > tCMBlocks(threads);

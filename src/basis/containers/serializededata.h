@@ -23,7 +23,7 @@ public:
 				size += data[t].size();
 			}
 
-			_distribution = tarray<TEBoundaries>::distribute(data.size(), size);
+			_distribution = tarray<size_t>::distribute(data.size(), size);
 		} else {
 			_distribution = *distribution;
 		}
@@ -63,7 +63,7 @@ public:
 
 		std::vector<size_t> _distribution;
 		if (distribution == NULL) {
-			_distribution = tarray<TEBoundaries>::distribute(data.size(), size - 1);
+			_distribution = tarray<size_t>::distribute(data.size(), size - 1);
 		} else {
 			_distribution = *distribution;
 		}
