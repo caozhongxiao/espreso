@@ -12,6 +12,7 @@
 
 #include "monitors/monitoring.h"
 #include "visualization/collected/ensight.h"
+#include "visualization/collected/stl.h"
 #include "visualization/separated/insitu.h"
 #include "visualization/separated/vtklegacy.h"
 
@@ -73,7 +74,17 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 
 	// TODO: optimize
 	if (configuration.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
-		executor->addResultStore(new EnSightWithDecomposition(Logging::name, executor->mesh(), configuration));
+		switch (configuration.format) {
+		case OutputConfiguration::FORMAT::ENSIGHT:
+			executor->addResultStore(new EnSightWithDecomposition(Logging::name, executor->mesh(), configuration));
+			break;
+		case OutputConfiguration::FORMAT::STL_SURFACE:
+			executor->addResultStore(new STL(Logging::name, mesh, configuration));
+			break;
+		default:
+			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement the selected output format.";
+		}
+
 	}
 	if (configuration.monitors_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER && configuration.monitoring.size()) {
 		executor->addResultStore(new Monitoring(executor->mesh(), configuration, true));

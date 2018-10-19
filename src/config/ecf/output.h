@@ -48,7 +48,8 @@ struct OutputConfiguration: public ECFObject {
 		VTK_LEGACY = 0,
 		VTK_XML_ASCII = 1,
 		VTK_XML_BINARY = 2,
-		ENSIGHT = 3
+		ENSIGHT = 3,
+		STL_SURFACE = 4
 	};
 
 	enum class MODE {

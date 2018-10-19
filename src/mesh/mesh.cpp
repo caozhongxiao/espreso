@@ -331,6 +331,11 @@ void Mesh::update()
 		}
 	}
 
+	if (is3D() && configuration.output.format == OutputConfiguration::FORMAT::STL_SURFACE) {
+		preprocessing->computeBodiesSurface();
+		preprocessing->triangularizeSurface(surface);
+	}
+
 	if (forEachSteps([] (const LoadStepConfiguration &step) {
 		return step.solver == LoadStepConfiguration::SOLVER::FETI && step.feti.method == FETI_METHOD::HYBRID_FETI && step.feti.B0_type == FETI_B0_TYPE::KERNELS;
 	})) {

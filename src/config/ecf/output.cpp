@@ -7,12 +7,12 @@ espreso::MonitorConfiguration::MonitorConfiguration(const PHYSICS &physics)
 : _physics(physics)
 {
 	REGISTER(region, ECFMetaData()
-            .setdescription({ "Region" })
+			.setdescription({ "Region" })
 			.setdatatype({ ECFDataType::REGION }));
 
 	statistics = STATISTICS::AVG;
 	REGISTER(statistics, ECFMetaData()
-            .setdescription({ "Statistics" })
+			.setdescription({ "Statistics" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("MIN").setdescription("Minimum."))
 			.addoption(ECFOption().setname("MAX").setdescription("Maximum."))
@@ -36,7 +36,7 @@ espreso::MonitorConfiguration::MonitorConfiguration(const PHYSICS &physics)
 	};
 
 	REGISTER(property, ECFMetaData()
-            .setdescription({ "Result" })
+			.setdescription({ "Result" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("TEMPERATURE").setdescription("Minimum.").allowonly(temperature))
 
@@ -116,21 +116,22 @@ espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
 {
 	path = "results";
 	REGISTER(path, ECFMetaData()
-            .setdescription({ "Path" })
+			.setdescription({ "Path" })
 			.setdatatype({ ECFDataType::STRING }));
 
-	format = FORMAT::VTK_XML_ASCII;
+	format = FORMAT::ENSIGHT;
 	REGISTER(format, ECFMetaData()
-            .setdescription({ "Format" })
+			.setdescription({ "Format" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("VTK_LEGACY").setdescription("VTK legacy format."))
 			.addoption(ECFOption().setname("VTK_XML_ASCII").setdescription("VTK XML ASCII format."))
 			.addoption(ECFOption().setname("VTK_XML_BINARY").setdescription("VTK XML binary format."))
-			.addoption(ECFOption().setname("ENSIGHT").setdescription("EnSight format.")));
+			.addoption(ECFOption().setname("ENSIGHT").setdescription("EnSight format."))
+			.addoption(ECFOption().setname("STL_SURFACE").setdescription("Surface of bodies in STL format.")));
 
 	mode = MODE::THREAD;
 	REGISTER(mode, ECFMetaData()
-            .setdescription({ "ASYNC library mode" })
+			.setdescription({ "ASYNC library mode" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("SYNC").setdescription("Output is synchronized."))
 			.addoption(ECFOption().setname("THREAD").setdescription("Output is done by asynchronous thread.")));
@@ -146,7 +147,7 @@ espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
 	results_store_frequency = monitors_store_frequency = STORE_FREQUENCY::EVERY_TIMESTEP;
 	results_nth_stepping = monitors_nth_stepping = 10;
 	REGISTER(results_store_frequency, ECFMetaData()
-            .setdescription({ "Results store frequency" })
+			.setdescription({ "Results store frequency" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("NEVER").setdescription("Storing is turned off."))
 			.addoption(ECFOption().setname("EVERY_TIMESTEP").setdescription("Results are stored after each time step."))
@@ -154,7 +155,7 @@ espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
 			.addoption(ECFOption().setname("LAST_TIMESTEP").setdescription("Only last results are stored."))
 			.addoption(ECFOption().setname("DEBUG").setdescription("Storing also iteration results.")));
 	REGISTER(monitors_store_frequency, ECFMetaData()
-            .setdescription({ "Monitoring store frequency" })
+			.setdescription({ "Monitoring store frequency" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("NEVER").setdescription("Storing is turned off."))
 			.addoption(ECFOption().setname("EVERY_TIMESTEP").setdescription("Monitors are stored after each time step."))
@@ -162,11 +163,11 @@ espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
 			.addoption(ECFOption().setname("LAST_TIMESTEP").setdescription("Only last monitors are stored.")));
 
 	REGISTER(results_nth_stepping, ECFMetaData()
-            .setdescription({ "Write results" })
+			.setdescription({ "Write results" })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER })
 			.allowonly([&] () { return results_store_frequency == STORE_FREQUENCY::EVERY_NTH_TIMESTEP; }));
 	REGISTER(monitors_nth_stepping, ECFMetaData()
-            .setdescription({ "Monitors store stepping" })
+			.setdescription({ "Monitors store stepping" })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER})
 			.allowonly([&] () { return monitors_store_frequency == STORE_FREQUENCY::EVERY_NTH_TIMESTEP; }));
 
@@ -174,7 +175,7 @@ espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
 
 	store_results = STORE_RESULTS::BASIC;
 	REGISTER(store_results, ECFMetaData()
-            .setdescription({ "Stored properties" })
+			.setdescription({ "Stored properties" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("BASIC").setdescription("Basic properties."))
 			.addoption(ECFOption().setname("ALL").setdescription("All properties."))
@@ -193,7 +194,7 @@ espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
 	});
 
 	REGISTER(results_selection, ECFMetaData()
-            .setdescription({ "Properties selection" })
+			.setdescription({ "Properties selection" })
 			.allowonly([&] () { return store_results == STORE_RESULTS::USER; }));
 
 	addSeparator();
@@ -202,23 +203,23 @@ espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
 	catalyst = false;
 	catalyst_sleep_time = 0;
 	REGISTER(settings, ECFMetaData()
-            .setdescription({ "Store settings" })
+			.setdescription({ "Store settings" })
 			.setdatatype({ ECFDataType::BOOL }));
 	REGISTER(debug, ECFMetaData()
-            .setdescription({ "Store FETI related data" })
+			.setdescription({ "Store FETI related data" })
 			.setdatatype({ ECFDataType::BOOL }));
 	REGISTER(catalyst, ECFMetaData()
-            .setdescription({ "In-situ visualization by Catalyst" })
+			.setdescription({ "In-situ visualization by Catalyst" })
 			.setdatatype({ ECFDataType::BOOL }));
 	REGISTER(catalyst_sleep_time, ECFMetaData()
-            .setdescription({ "The sleep time between each time steps when catalyst is used" })
+			.setdescription({ "The sleep time between each time steps when catalyst is used" })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
 
 	addSpace();
 
 	collected = true;
 	REGISTER(collected, ECFMetaData()
-            .setdescription({ "Collected results" })
+			.setdescription({ "Collected results" })
 			.setdatatype({ ECFDataType::BOOL }));
 
 	addSpace();
@@ -226,7 +227,7 @@ espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
 	REGISTER(
 			monitoring,
 			ECFMetaData()
-                .setdescription({ "List of monitors", "Monitor" })
+				.setdescription({ "List of monitors", "Monitor" })
 				.setdatatype({ ECFDataType::POSITIVE_INTEGER })
 				.setpattern({ "1" }),
 			_physics);

@@ -5,11 +5,10 @@
 #include <cstddef>
 #include <vector>
 
-#include "../../basis/containers/point.h"
-
 namespace espreso {
 
 template <typename TEBoundaries, typename TEData> class serializededata;
+struct Point;
 struct Element;
 
 struct SurfaceStore {
