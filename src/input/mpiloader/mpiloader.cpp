@@ -102,6 +102,8 @@ void MPILoader::bcast(MPIGroup &group, ParallelFile &pfile)
 	MPI_Bcast(&size, sizeof(size_t), MPI_BYTE, 0, group.communicator);
 	pfile.data.resize(size);
 	MPI_Bcast(pfile.data.data(), pfile.data.size(), MPI_BYTE, 0, group.communicator);
+	pfile.begin = pfile.data.data();
+	pfile.end = pfile.data.data() + pfile.data.size();
 }
 
 void MPILoader::align(MPIGroup &group, ParallelFile &pfile, size_t lines)

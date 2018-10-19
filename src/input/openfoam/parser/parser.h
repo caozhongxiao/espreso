@@ -53,6 +53,18 @@ struct OpenFOAMParser {
 		return std::string(s, c);
 	}
 };
+
+struct OpenFOAMSeparateParser: public OpenFOAMParser {
+
+	OpenFOAMSeparateParser(const char *begin, const char *end);
+};
+
+struct OpenFOAMCollectiveParser: public OpenFOAMParser {
+
+
+	OpenFOAMCollectiveParser(const char *begin, const char *end);
+};
+
 }
 
 

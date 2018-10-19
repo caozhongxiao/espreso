@@ -10,9 +10,9 @@ namespace espreso {
 
 struct PlainOpenFOAMData;
 
-struct OpenFOAMFaces: public OpenFOAMParser {
+struct OpenFOAMFaces: public OpenFOAMCollectiveParser {
 
-	OpenFOAMFaces(const char *begin, const char *end): OpenFOAMParser(begin, end) {}
+	OpenFOAMFaces(const char *begin, const char *end): OpenFOAMCollectiveParser(begin, end) {}
 
 	bool readFaces(PlainOpenFOAMData &data);
 	bool readParents(std::vector<eslocal> &data);

@@ -2,6 +2,7 @@
 #include "boundary.h"
 
 #include "../../../basis/utilities/parser.h"
+#include "../../../basis/utilities/communication.h"
 
 #include <cstring>
 #include <numeric>
@@ -23,12 +24,16 @@ OpenFOAMBoundaryData::OpenFOAMBoundaryData(const std::string &name, size_t start
 
 bool OpenFOAMBoundary::readData(std::vector<OpenFOAMBoundaryData> &boundaries)
 {
-	const char *c = begin;
-
 	size_t nFaces, startFace;
 	std::string name, parameter;
 
-	while (*c != ')') {
+	const char *c = begin - 3;
+	while (*c != '\n') { c--; } // go before number of boundaries
+
+	int n = readInteger(c);
+	while (*c++ != '('); // skip '('
+
+	for (int i = 0; i < n; i++) {
 		name = readString(c);
 
 		while (*c++ != '{');

@@ -15,7 +15,7 @@ class Mesh;
 struct OpenFOAMBoundaryData;
 
 struct PlainOpenFOAMData: public PlainMeshData {
-	std::vector<eslocal> fsize, fnodes, owner, neighbour;
+	std::vector<eslocal> fID, fsize, fnodes, owner, neighbour;
 };
 
 class OpenFOAMLoader {

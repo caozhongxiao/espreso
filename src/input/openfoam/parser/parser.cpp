@@ -10,6 +10,19 @@ using namespace espreso;
 OpenFOAMParser::OpenFOAMParser(const char* begin, const char* end)
 : begin(begin), end(end)
 {
+
+}
+
+OpenFOAMSeparateParser::OpenFOAMSeparateParser(const char *begin, const char *end)
+: OpenFOAMParser(begin, end)
+{
+	while (*this->begin++ != '(');
+	while (*this->end-- != ')');
+}
+
+OpenFOAMCollectiveParser::OpenFOAMCollectiveParser(const char *begin, const char *end)
+: OpenFOAMParser(begin, end)
+{
 	int found, min, max;
 	const char *p;
 

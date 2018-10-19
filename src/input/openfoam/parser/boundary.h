@@ -18,9 +18,9 @@ struct OpenFOAMBoundaryData {
 	OpenFOAMBoundaryData(const std::string &name, size_t startFace, size_t nFaces);
 };
 
-struct OpenFOAMBoundary: public OpenFOAMParser {
+struct OpenFOAMBoundary: public OpenFOAMSeparateParser {
 
-	OpenFOAMBoundary(const char *begin, const char *end): OpenFOAMParser(begin, end) {}
+	OpenFOAMBoundary(const char *begin, const char *end): OpenFOAMSeparateParser(begin, end) {}
 
 	bool readData(std::vector<OpenFOAMBoundaryData> &boundaries);
 };

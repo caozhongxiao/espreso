@@ -55,10 +55,10 @@ OpenFOAMLoader::OpenFOAMLoader(const InputConfiguration &configuration, Mesh &me
 	tbuild.end(); timing.addEvent(tbuild);
 	ESINFO(PROGRESS2) << "OpenFOAM:: elements builded.";
 
-//	TimeEvent tfaces("building of faces"); tfaces.start();
-//	buildFaces(meshData);
-//	tfaces.end(); timing.addEvent(tfaces);
-//	ESINFO(PROGRESS2) << "OpenFOAM:: faces builded.";
+	TimeEvent tfaces("building of faces"); tfaces.start();
+	buildFaces(meshData);
+	tfaces.end(); timing.addEvent(tfaces);
+	ESINFO(PROGRESS2) << "OpenFOAM:: faces builded.";
 
 	timing.totalTime.endWithBarrier();
 	timing.printStatsMPI();
@@ -75,7 +75,7 @@ void OpenFOAMLoader::readData()
 	ProcessesReduction onlyroot;
 	onlyroot.granularity = ProcessesReduction::Granularity::PROCESSES;
 	onlyroot.pattern = ProcessesReduction::Pattern::PREFIX;
-	onlyroot.reduction_ratio = MPITools::procs().size;
+	onlyroot.reduction_ratio = 1;
 
 	MPISubset subset(_configuration, MPITools::procs()), singleton(onlyroot, MPITools::procs());
 
@@ -125,9 +125,9 @@ void OpenFOAMLoader::parseData(PlainOpenFOAMData &mesh)
 		ESINFO(ERROR) << "OpenFOAM loader: cannot parse owner.";
 	}
 
-//	if (!OpenFOAMBoundary(_boundary.begin, _boundary.end).readData(_boundaryData)) {
-//		ESINFO(ERROR) << "OpenFOAM loader: cannot parse boundary.";
-//	}
+	if (!OpenFOAMBoundary(_boundary.begin, _boundary.end).readData(_boundaryData)) {
+		ESINFO(ERROR) << "OpenFOAM loader: cannot parse boundary.";
+	}
 }
 
 void OpenFOAMLoader::collectFaces(PlainOpenFOAMData &mesh)
@@ -153,6 +153,9 @@ void OpenFOAMLoader::collectFaces(PlainOpenFOAMData &mesh)
 	eslocal maxID = 0, gmaxID;
 	if (mesh.owner.size()) {
 		maxID = *std::max_element(mesh.owner.begin(), mesh.owner.end());
+	}
+	if (mesh.neighbour.size()) {
+		maxID = std::max(*std::max_element(mesh.neighbour.begin(), mesh.neighbour.end()), maxID);
 	}
 
 	MPI_Allreduce(&maxID, &gmaxID, sizeof(eslocal), MPI_BYTE, MPITools::eslocalOperations().max, environment->MPICommunicator);
@@ -197,7 +200,6 @@ void OpenFOAMLoader::collectFaces(PlainOpenFOAMData &mesh)
 
 		auto o = obegin;
 		for ( ; o != oPermutation.end() && mesh.owner[*o] < _edist[r + 1]; ++o) {
-			size_t xx = sBuffer.size();
 			sBuffer.push_back(firstID + *o);
 			sBuffer.push_back(mesh.owner[*o]);
 			sBuffer.push_back(mesh.fsize[*o]);
@@ -205,7 +207,6 @@ void OpenFOAMLoader::collectFaces(PlainOpenFOAMData &mesh)
 		}
 		auto n = nbegin;
 		for ( ; n != nPermutation.end() && mesh.neighbour[*n] < _edist[r + 1]; ++n) {
-			size_t xx = sBuffer.size();
 			sBuffer.push_back(firstID + *n);
 			sBuffer.push_back(-mesh.neighbour[*n] - 1);
 			sBuffer.push_back(mesh.fsize[*n]);
@@ -261,6 +262,7 @@ void OpenFOAMLoader::collectFaces(PlainOpenFOAMData &mesh)
 		for (auto i = fpermutation.begin(); i != fpermutation.end() - 1; ++i) {
 			if (fIDs[*i] == fIDs[*(i + 1)]) {
 				mesh.fsize.push_back(fsize[*i]);
+				mesh.fID.push_back(fIDs[*i]);
 				if (owners[*i] >= 0) {
 					mesh.owner.push_back(owners[*i]);
 					mesh.neighbour.push_back(-owners[*(i + 1)] - 1);
@@ -281,6 +283,7 @@ void OpenFOAMLoader::collectFaces(PlainOpenFOAMData &mesh)
 
 		for (auto i = fpermutation.begin(); i != fpermutation.begin() + rest; ++i) {
 			mesh.fsize.push_back(fsize[*i]);
+			mesh.fID.push_back(fIDs[*i]);
 			if (owners[*i] >= 0) {
 				mesh.owner.push_back(owners[*i]);
 				mesh.fnodes.insert(mesh.fnodes.end(), fnodes.begin() + fdist[*i], fnodes.begin() + fdist[*i + 1]);
@@ -351,6 +354,29 @@ void OpenFOAMLoader::buildElements(PlainOpenFOAMData &mesh)
 		return std::pair<eslocal, eslocal>(index, -1);
 	};
 
+	auto getUnknown = [&] (eslocal *kbegin, eslocal *kend, eslocal *ubegin, eslocal *uend) {
+		for (auto i = ubegin, j = kbegin; i != uend; ++i) {
+			for (j = kbegin; j != kend; ++j) {
+				if (*i == *j) {
+					break;
+				}
+			}
+			if (j == kend) {
+				return *i;
+			}
+		}
+	};
+
+	auto findElementWithSize = [&] (const std::vector<eslocal> &perm, size_t &index, size_t &max, size_t size) {
+		while (index < max) { // there is at least one owner
+			if (mesh.fsize[perm[index]] == size) {
+				break;
+			} else {
+				++index;
+			}
+		}
+	};
+
 	size_t eoffset = _edist[environment->MPIrank];
 
 	#pragma omp parallel for
@@ -389,25 +415,138 @@ void OpenFOAMLoader::buildElements(PlainOpenFOAMData &mesh)
 
 				index = getFace(mesh.owner, owner, obegin, e, tnodes[ebegin + 1], tnodes[ebegin]);
 				if (index.first < oindex) {
-					tnodes[ebegin + 2] = mesh.fnodes[_fdist[owner[index.first]] + (index.second + 3) % mesh.fsize[index.first]];
-					tnodes[ebegin + 3] = mesh.fnodes[_fdist[owner[index.first]] + (index.second + 2) % mesh.fsize[index.first]];
+					tnodes[ebegin + 2] = mesh.fnodes[_fdist[owner[index.first]] + (index.second + 3) % mesh.fsize[owner[index.first]]];
+					tnodes[ebegin + 3] = mesh.fnodes[_fdist[owner[index.first]] + (index.second + 2) % mesh.fsize[owner[index.first]]];
 				} else {
 					index = getFace(mesh.neighbour, neighbour, nbegin, e, tnodes[ebegin], tnodes[ebegin + 1]);
-					tnodes[ebegin + 2] = mesh.fnodes[_fdist[neighbour[index.first]] + (index.second + 2) % mesh.fsize[index.first]];
-					tnodes[ebegin + 3] = mesh.fnodes[_fdist[neighbour[index.first]] + (index.second + 3) % mesh.fsize[index.first]];
+					tnodes[ebegin + 2] = mesh.fnodes[_fdist[neighbour[index.first]] + (index.second + 2) % mesh.fsize[neighbour[index.first]]];
+					tnodes[ebegin + 3] = mesh.fnodes[_fdist[neighbour[index.first]] + (index.second + 3) % mesh.fsize[neighbour[index.first]]];
 				}
 				index = getFace(mesh.owner, owner, obegin, e, tnodes[ebegin + 4], tnodes[ebegin + 5]);
 				if (index.first < oindex) {
-					tnodes[ebegin + 6] = mesh.fnodes[_fdist[owner[index.first]] + (index.second + 2) % mesh.fsize[index.first]];
-					tnodes[ebegin + 7] = mesh.fnodes[_fdist[owner[index.first]] + (index.second + 3) % mesh.fsize[index.first]];
+					tnodes[ebegin + 6] = mesh.fnodes[_fdist[owner[index.first]] + (index.second + 2) % mesh.fsize[owner[index.first]]];
+					tnodes[ebegin + 7] = mesh.fnodes[_fdist[owner[index.first]] + (index.second + 3) % mesh.fsize[owner[index.first]]];
 				} else {
 					index = getFace(mesh.neighbour, neighbour, nbegin, e, tnodes[ebegin + 5], tnodes[ebegin + 4]);
-					tnodes[ebegin + 6] = mesh.fnodes[_fdist[neighbour[index.first]] + (index.second + 3) % mesh.fsize[index.first]];
-					tnodes[ebegin + 7] = mesh.fnodes[_fdist[neighbour[index.first]] + (index.second + 2) % mesh.fsize[index.first]];
+					tnodes[ebegin + 6] = mesh.fnodes[_fdist[neighbour[index.first]] + (index.second + 3) % mesh.fsize[neighbour[index.first]]];
+					tnodes[ebegin + 7] = mesh.fnodes[_fdist[neighbour[index.first]] + (index.second + 2) % mesh.fsize[neighbour[index.first]]];
 				}
 				continue;
 			}
-			ESINFO(ERROR) << "OpenFOAM parser: an unknown element type with " << triangles << " triangles and " << squares << " squares.";
+
+			if (squares == 0 && triangles == 4) {
+				size_t ebegin = tnodes.size();
+				ttype.push_back((int)Element::CODE::TETRA4);
+				tsize.push_back(4);
+				tnodes.insert(tnodes.end(), 4, -1);
+				if (obegin < oindex) {
+					tnodes[ebegin + 0] = mesh.fnodes[_fdist[owner[obegin]] + 0];
+					tnodes[ebegin + 1] = mesh.fnodes[_fdist[owner[obegin]] + 2];
+					tnodes[ebegin + 2] = mesh.fnodes[_fdist[owner[obegin]] + 1];
+					++obegin;
+				} else {
+					tnodes[ebegin + 0] = mesh.fnodes[_fdist[neighbour[nbegin]] + 0];
+					tnodes[ebegin + 1] = mesh.fnodes[_fdist[neighbour[nbegin]] + 1];
+					tnodes[ebegin + 2] = mesh.fnodes[_fdist[neighbour[nbegin]] + 2];
+					++nbegin;
+				}
+
+				if (obegin < oindex) {
+					tnodes[ebegin + 3] = getUnknown(
+							tnodes.data() + ebegin, tnodes.data() + ebegin + 3,
+							mesh.fnodes.data() + _fdist[owner[obegin]], mesh.fnodes.data() + _fdist[owner[obegin] + 1]);
+				} else {
+					tnodes[ebegin + 3] = getUnknown(
+							tnodes.data() + ebegin, tnodes.data() + ebegin + 3,
+							mesh.fnodes.data() + _fdist[neighbour[nbegin]], mesh.fnodes.data() + _fdist[neighbour[nbegin] + 1]);
+				}
+				continue;
+			}
+
+			if (squares == 3 && triangles == 2) {
+				size_t ebegin = tnodes.size();
+				ttype.push_back((int)Element::CODE::PRISMA6);
+				tsize.push_back(6);
+				tnodes.insert(tnodes.end(), 6, -1);
+				size_t otria = obegin, ntria = nbegin;
+				findElementWithSize(owner, otria, oindex, 3);
+				findElementWithSize(neighbour, ntria, nindex, 3);
+
+				if (otria < oindex) {
+					tnodes[ebegin + 0] = mesh.fnodes[_fdist[owner[otria]] + 0];
+					tnodes[ebegin + 1] = mesh.fnodes[_fdist[owner[otria]] + 1];
+					tnodes[ebegin + 2] = mesh.fnodes[_fdist[owner[otria]] + 2];
+					findElementWithSize(owner, ++otria, oindex, 3);
+				} else {
+					tnodes[ebegin + 0] = mesh.fnodes[_fdist[neighbour[ntria]] + 0];
+					tnodes[ebegin + 1] = mesh.fnodes[_fdist[neighbour[ntria]] + 2];
+					tnodes[ebegin + 2] = mesh.fnodes[_fdist[neighbour[ntria]] + 1];
+					findElementWithSize(neighbour, ++ntria, nindex, 3);
+				}
+
+				index = getFace(mesh.owner, owner, obegin, e, tnodes[ebegin + 1], tnodes[ebegin]);
+				if (mesh.fsize[owner[index.first]] == 3) {
+					index = getFace(mesh.owner, owner, ++obegin, e, tnodes[ebegin + 1], tnodes[ebegin]);
+				}
+				if (index.first < oindex) {
+					tnodes[ebegin + 3] = mesh.fnodes[_fdist[owner[index.first]] + (index.second + 2) % mesh.fsize[owner[index.first]]];
+					tnodes[ebegin + 4] = mesh.fnodes[_fdist[owner[index.first]] + (index.second + 3) % mesh.fsize[owner[index.first]]];
+				} else {
+					index = getFace(mesh.neighbour, neighbour, nbegin, e, tnodes[ebegin], tnodes[ebegin + 1]);
+					if (mesh.fsize[neighbour[index.first]] == 3) {
+						index = getFace(mesh.neighbour, neighbour, ++nbegin, e, tnodes[ebegin], tnodes[ebegin + 1]);
+					}
+					tnodes[ebegin + 3] = mesh.fnodes[_fdist[neighbour[index.first]] + (index.second + 3) % mesh.fsize[neighbour[index.first]]];
+					tnodes[ebegin + 4] = mesh.fnodes[_fdist[neighbour[index.first]] + (index.second + 2) % mesh.fsize[neighbour[index.first]]];
+				}
+
+				if (otria < oindex) {
+					tnodes[ebegin + 5] = getUnknown(
+							tnodes.data() + ebegin, tnodes.data() + ebegin + 5,
+							mesh.fnodes.data() + _fdist[owner[otria]], mesh.fnodes.data() + _fdist[owner[otria] + 1]);
+				} else {
+					tnodes[ebegin + 5] = getUnknown(
+							tnodes.data() + ebegin, tnodes.data() + ebegin + 5,
+							mesh.fnodes.data() + _fdist[neighbour[ntria]], mesh.fnodes.data() + _fdist[neighbour[ntria] + 1]);
+				}
+				continue;
+			}
+
+			if (squares == 1 && triangles == 4) {
+				size_t ebegin = tnodes.size();
+				ttype.push_back((int)Element::CODE::PYRAMID5);
+				tsize.push_back(5);
+				tnodes.insert(tnodes.end(), 5, -1);
+				size_t osquare = obegin, nsquare = nbegin, otria = obegin, ntria = nbegin;
+				findElementWithSize(owner, osquare, oindex, 4);
+				findElementWithSize(neighbour, nsquare, nindex, 4);
+				findElementWithSize(owner, otria, oindex, 3);
+				findElementWithSize(neighbour, ntria, nindex, 3);
+
+				if (osquare < oindex) {
+					tnodes[ebegin + 0] = mesh.fnodes[_fdist[owner[osquare]] + 0];
+					tnodes[ebegin + 1] = mesh.fnodes[_fdist[owner[osquare]] + 1];
+					tnodes[ebegin + 2] = mesh.fnodes[_fdist[owner[osquare]] + 2];
+					tnodes[ebegin + 3] = mesh.fnodes[_fdist[owner[osquare]] + 3];
+				} else {
+					tnodes[ebegin + 0] = mesh.fnodes[_fdist[neighbour[nsquare]] + 0];
+					tnodes[ebegin + 1] = mesh.fnodes[_fdist[neighbour[nsquare]] + 3];
+					tnodes[ebegin + 2] = mesh.fnodes[_fdist[neighbour[nsquare]] + 2];
+					tnodes[ebegin + 3] = mesh.fnodes[_fdist[neighbour[nsquare]] + 1];
+				}
+
+				if (otria < oindex) {
+					tnodes[ebegin + 4] = getUnknown(
+							tnodes.data() + ebegin, tnodes.data() + ebegin + 4,
+							mesh.fnodes.data() + _fdist[owner[otria]], mesh.fnodes.data() + _fdist[owner[otria] + 1]);
+				} else {
+					tnodes[ebegin + 4] = getUnknown(
+							tnodes.data() + ebegin, tnodes.data() + ebegin + 4,
+							mesh.fnodes.data() + _fdist[neighbour[ntria]], mesh.fnodes.data() + _fdist[neighbour[ntria] + 1]);
+				}
+				continue;
+			}
+			ESINFO(ERROR) << "OpenFOAM parser: an unknown element type with " << triangles << " triangles and " << squares << " squares [ID=" << e << "].";
 		}
 
 		esize[t].swap(tsize);
@@ -428,40 +567,24 @@ void OpenFOAMLoader::buildElements(PlainOpenFOAMData &mesh)
 
 void OpenFOAMLoader::buildFaces(PlainOpenFOAMData &mesh)
 {
-	if (!Communication::broadcastUnknownSize(_boundaryData)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange OpenFOAM boundary data.";
-	}
-
-	if (MPITools::nodes().within.rank) {
-		for (size_t i = 0; i < _boundaryData.size(); i++) {
-			mesh.eregions[_boundaryData[i].name];
-		}
-		return;
-	}
-
 	for (size_t i = 0; i < _boundaryData.size(); i++) {
-		mesh.esize.insert(mesh.esize.end(),
-				mesh.fsize.begin() + _boundaryData[i].startFace,
-				mesh.fsize.begin() + _boundaryData[i].startFace + _boundaryData[i].nFaces);
-		mesh.enodes.insert(mesh.enodes.end(),
-				mesh.fnodes.begin() + _fdist[_boundaryData[i].startFace],
-				mesh.fnodes.begin() + _fdist[_boundaryData[i].startFace + _boundaryData[i].nFaces]);
 		auto &indices = mesh.eregions[_boundaryData[i].name];
-		indices.resize(_boundaryData[i].nFaces);
-		std::iota(indices.begin(), indices.end(), mesh.esize.size() - _boundaryData[i].nFaces);
+		for (size_t f = 0; f < mesh.fID.size(); f++) {
+			if (_boundaryData[i].startFace <= mesh.fID[f] && mesh.fID[f] < _boundaryData[i].startFace + _boundaryData[i].nFaces) {
+				indices.push_back(_edist.back() + mesh.fID[f]);
+				mesh.eIDs.push_back(_edist.back() + mesh.fID[f]);
+				mesh.esize.push_back(mesh.fsize[f]);
+				if (mesh.fsize[f] == 3) {
+					mesh.etype.push_back((int)Element::CODE::TRIANGLE3);
+				}
+				if (mesh.fsize[f] == 4) {
+					mesh.etype.push_back((int)Element::CODE::SQUARE4);
+				}
+				mesh.enodes.insert(mesh.enodes.end(), mesh.fnodes.begin() + _fdist[f], mesh.fnodes.begin() + _fdist[f + 1]);
+			}
+		}
 	}
 
-	mesh.eIDs.reserve(mesh.esize.size());
-	mesh.etype.reserve(mesh.esize.size());
-	for (size_t e = mesh.eIDs.size(); e < mesh.esize.size(); e++) {
-		mesh.eIDs.push_back(e);
-		if (mesh.esize[e] == 3) {
-			mesh.etype.push_back((int)Element::CODE::TRIANGLE3);
-		}
-		if (mesh.esize[e] == 4) {
-			mesh.etype.push_back((int)Element::CODE::SQUARE4);
-		}
-	}
 	mesh.body.resize(mesh.esize.size(), 0);
 	mesh.material.resize(mesh.esize.size(), 0);
 }

@@ -10,9 +10,9 @@ namespace espreso {
 
 struct Point;
 
-struct OpenFOAMPoints: public OpenFOAMParser {
+struct OpenFOAMPoints: public OpenFOAMCollectiveParser {
 
-	OpenFOAMPoints(const char *begin, const char *end): OpenFOAMParser(begin, end) {}
+	OpenFOAMPoints(const char *begin, const char *end): OpenFOAMCollectiveParser(begin, end) {}
 
 	bool readData(std::vector<eslocal> &nIDs, std::vector<Point> &coordinates, double scaleFactor);
 };
