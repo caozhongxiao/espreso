@@ -1,28 +1,13 @@
 
 #include "boundary.h"
 
-#include "../../../basis/utilities/parser.h"
-#include "../../../basis/utilities/communication.h"
+#include "../openfoam.h"
 
-#include <cstring>
-#include <numeric>
+#include "../../../basis/utilities/parser.h"
 
 using namespace espreso;
 
-OpenFOAMBoundaryData::OpenFOAMBoundaryData()
-: startFace(0), nFaces(0)
-{
-	memset(name, '\0', MAX_NAME_SIZE);
-}
-
-OpenFOAMBoundaryData::OpenFOAMBoundaryData(const std::string &name, size_t startFace, size_t nFaces)
-: startFace(startFace), nFaces(nFaces)
-{
-	memset(this->name, '\0', MAX_NAME_SIZE);
-	memcpy(this->name, name.data(), name.size() < MAX_NAME_SIZE ? name.size() : MAX_NAME_SIZE);
-}
-
-bool OpenFOAMBoundary::readData(std::vector<OpenFOAMBoundaryData> &boundaries)
+bool OpenFOAMBoundary::readData(PlainOpenFOAMData &data)
 {
 	size_t nFaces, startFace;
 	std::string name, parameter;
@@ -50,8 +35,14 @@ bool OpenFOAMBoundary::readData(std::vector<OpenFOAMBoundaryData> &boundaries)
 		++c;
 		while (isEmpty(c)) { ++c; }
 
-		boundaries.push_back({name, startFace, nFaces});
+		auto &indices = data.eregions[data.boundaryprefix + name];
+		for (size_t f = 0; f < data.fIDs.size(); f++) {
+			if (startFace <= data.fIDs[f] && data.fIDs[f] < startFace + nFaces) {
+				indices.push_back(data.fIDs[f]);
+			}
+		}
 	}
+
 	return true;
 }
 

@@ -29,6 +29,9 @@ struct PlainMeshData {
 
 	std::vector<eslocal> _edist;     // elements nodes distribution [0, 4, 8, ...]
 
+	// in the case that boundary and elements regions can have the same name, use the following prefixes
+	std::string elementprefix = "__e__";
+	std::string boundaryprefix = "__b__";
 
 	std::map<std::string, std::vector<eslocal> > eregions; // elements regions <name, list of IDs>
 	std::map<std::string, std::vector<eslocal> > nregions; // nodes regions <name, list of IDs>

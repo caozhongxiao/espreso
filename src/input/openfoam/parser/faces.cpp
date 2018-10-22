@@ -4,7 +4,10 @@
 #include "../openfoam.h"
 
 #include "../../../basis/containers/tarray.h"
+#include "../../../basis/utilities/communication.h"
 #include "../../../config/ecf/environment.h"
+
+#include <numeric>
 
 using namespace espreso;
 
@@ -39,6 +42,11 @@ bool OpenFOAMFaces::readFaces(PlainOpenFOAMData &data)
 		data.fsize.insert(data.fsize.end(), fsize[t].begin(), fsize[t].end());
 		data.fnodes.insert(data.fnodes.end(), fnodes[t].begin(), fnodes[t].end());
 	}
+
+	size_t offset = data.fsize.size();
+	Communication::exscan(offset);
+	data.fIDs.resize(data.fsize.size());
+	std::iota(data.fIDs.begin(), data.fIDs.end(), offset);
 
 	return true;
 }

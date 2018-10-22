@@ -487,8 +487,6 @@ void Input::assignRegions(
 
 void Input::fillRegions(std::map<std::string, std::vector<eslocal> > &regions, size_t &rsize, std::vector<eslocal> &rbits)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
-
 	size_t r = 0;
 	for (auto region = regions.begin(); region != regions.end(); ++region, ++r) {
 		eslocal byte = r / (8 * sizeof(eslocal));
@@ -660,6 +658,10 @@ void Input::fillBoundaryRegions()
 
 	for (int i = estart; i < 2; i++) {
 		for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion) {
+			std::string rname = eregion->first;
+			if (StringCompare::caseInsensitivePreffix(_meshData.boundaryprefix, rname)) {
+				rname = std::string(rname.begin() + _meshData.boundaryprefix.size(), rname.end());
+			}
 			int frominterval = 0, add = 0;
 			if (eregion->second.size() && _etypeDistribution[i] <= eregion->second.front() && eregion->second.front() < _etypeDistribution[i + 1]) {
 				frominterval = 1;
@@ -667,7 +669,7 @@ void Input::fillBoundaryRegions()
 			MPI_Allreduce(&frominterval, &add, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
 
 			if (add) {
-				_mesh.boundaryRegions.push_back(new BoundaryRegionStore(eregion->first, _mesh._eclasses));
+				_mesh.boundaryRegions.push_back(new BoundaryRegionStore(rname, _mesh._eclasses));
 				_mesh.boundaryRegions.back()->dimension = 2 - i;
 
 				std::vector<size_t> edistribution = tarray<size_t>::distribute(threads, eregion->second.size());
@@ -728,7 +730,11 @@ void Input::fillElementRegions()
 		}
 		MPI_Allreduce(&fromelements, &add, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
 		if (add) {
-			_mesh.elementsRegions.push_back(new ElementsRegionStore(eregion->first));
+			std::string rname = eregion->first;
+			if (StringCompare::caseInsensitivePreffix(_meshData.elementprefix, rname)) {
+				rname = std::string(rname.begin() + _meshData.elementprefix.size(), rname.end());
+			}
+			_mesh.elementsRegions.push_back(new ElementsRegionStore(rname));
 			_mesh.elementsRegions.back()->elements = new serializededata<eslocal, eslocal>(1, { threads, eregion->second });
 		}
 	}
@@ -736,19 +742,13 @@ void Input::fillElementRegions()
 
 void Input::reindexRegions(std::map<std::string, std::vector<eslocal> > &regions, std::vector<eslocal> &IDs)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
-
 	for (auto region = regions.begin(); region != regions.end(); ++region) {
-		std::vector<size_t> distribution = tarray<size_t>::distribute(threads, region->second.size());
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			auto n = region->second.begin();
-			if (n != region->second.end()) {
-				auto nit = std::lower_bound(IDs.begin(), IDs.end(), *n);
-				for ( ; n != region->second.end(); ++n, ++nit) {
-					while (*n != *nit) { ++nit; }
-					*n = nit - IDs.begin();
-				}
+		auto n = region->second.begin();
+		if (n != region->second.end()) {
+			auto nit = std::lower_bound(IDs.begin(), IDs.end(), *n);
+			for ( ; n != region->second.end(); ++n, ++nit) {
+				while (*n != *nit) { ++nit; }
+				*n = nit - IDs.begin();
 			}
 		}
 	}

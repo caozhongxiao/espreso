@@ -16,8 +16,8 @@ OpenFOAMParser::OpenFOAMParser(const char* begin, const char* end)
 OpenFOAMSeparateParser::OpenFOAMSeparateParser(const char *begin, const char *end)
 : OpenFOAMParser(begin, end)
 {
-	while (*this->begin++ != '(');
-	while (*this->end-- != ')');
+	while (this->begin != this->end && *this->begin++ != '(');
+	while (this->end != this->begin && *(--this->end) != ')');
 }
 
 OpenFOAMCollectiveParser::OpenFOAMCollectiveParser(const char *begin, const char *end)

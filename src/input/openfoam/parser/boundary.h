@@ -8,21 +8,13 @@
 
 namespace espreso {
 
-#define MAX_NAME_SIZE 80
-
-struct OpenFOAMBoundaryData {
-	char name[MAX_NAME_SIZE];
-	size_t startFace, nFaces;
-
-	OpenFOAMBoundaryData();
-	OpenFOAMBoundaryData(const std::string &name, size_t startFace, size_t nFaces);
-};
+struct PlainOpenFOAMData;
 
 struct OpenFOAMBoundary: public OpenFOAMSeparateParser {
 
 	OpenFOAMBoundary(const char *begin, const char *end): OpenFOAMSeparateParser(begin, end) {}
 
-	bool readData(std::vector<OpenFOAMBoundaryData> &boundaries);
+	bool readData(PlainOpenFOAMData &data);
 };
 
 }

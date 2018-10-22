@@ -69,7 +69,7 @@ void MPILoader::read(MPIGroup &group, MPI_File &MPIfile, ParallelFile &pfile, si
 
 void MPILoader::scatter(MPIGroup &group, ParallelFile &pfile, size_t alignment)
 {
-	if (group.size == 1) {
+	if (group.size == 1 || pfile.offsets.back() == 0) {
 		return;
 	}
 
@@ -108,6 +108,9 @@ void MPILoader::bcast(MPIGroup &group, ParallelFile &pfile)
 
 void MPILoader::align(MPIGroup &group, ParallelFile &pfile, size_t lines)
 {
+	if (pfile.offsets.back() == 0) {
+		return;
+	}
 	const char *_current = pfile.data.data();
 	if (group.size > 1) {
 		const char *exchangeStart = _current;

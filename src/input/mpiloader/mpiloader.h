@@ -12,6 +12,8 @@ namespace espreso {
 struct LoaderConfiguration;
 
 struct ParallelFile {
+	ParallelFile(): begin(NULL), end(NULL), offsets{0} {}
+
 	const char *begin, *end;
 	std::vector<char> data;
 	std::vector<size_t> offsets;

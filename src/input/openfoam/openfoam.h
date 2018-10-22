@@ -6,16 +6,18 @@
 #include "../mpiloader/mpiloader.h"
 
 #include <cstddef>
+#include <string>
 #include <vector>
 
 namespace espreso {
 
 class InputConfiguration;
 class Mesh;
-struct OpenFOAMBoundaryData;
+struct OpenFOAMSet;
 
 struct PlainOpenFOAMData: public PlainMeshData {
-	std::vector<eslocal> fID, fsize, fnodes, owner, neighbour;
+	eslocal nelements;
+	std::vector<eslocal> fIDs, fsize, fnodes, owner, neighbour;
 };
 
 class OpenFOAMLoader {
@@ -26,18 +28,25 @@ public:
 protected:
 	OpenFOAMLoader(const InputConfiguration &configuration, Mesh &mesh);
 
+	void distributedReader(const std::string &file, ParallelFile &pfile, bool isMandatory);
+
 	void readData();
 	void parseData(PlainOpenFOAMData &mesh);
+
+	void buildFaces(PlainOpenFOAMData &mesh);
+
 	void collectFaces(PlainOpenFOAMData &mesh);
 	void buildElements(PlainOpenFOAMData &mesh);
-	void buildFaces(PlainOpenFOAMData &mesh);
 
 	const InputConfiguration &_configuration;
 
 	ParallelFile _points, _faces, _owner, _neighbour, _boundary;
+	ParallelFile _pointZones, _faceZones, _cellZones;
 
-	std::vector<OpenFOAMBoundaryData> _boundaryData;
+	std::vector<OpenFOAMSet> _sets;
 	std::vector<eslocal> _fdist, _edist;
+
+	MPISubset _loaders;
 };
 
 }
