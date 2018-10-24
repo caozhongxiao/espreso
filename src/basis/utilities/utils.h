@@ -19,12 +19,6 @@ struct Esutils
 	static void setFromEnv(Ttype &value, const std::string &name);
 
 	template<typename Ttype>
-	static std::vector<Ttype> getDistribution(size_t parts, Ttype size);
-
-	template<typename Ttype>
-	static std::vector<Ttype> getDistribution(size_t parts, Ttype start, Ttype end);
-
-	template<typename Ttype>
 	static Ttype sizesToOffsets(std::vector<Ttype> &sizes);
 
 	template<typename Ttype, typename Tpermutation>

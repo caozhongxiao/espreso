@@ -31,7 +31,7 @@ void Constraints::B1DirichletInsert(const Step &step)
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (size_t d = _mesh.elements->domainDistribution[t]; d < _mesh.elements->domainDistribution[t + 1]; d++) {
+		for (eslocal d = _mesh.elements->domainDistribution[t]; d < _mesh.elements->domainDistribution[t + 1]; d++) {
 			for (size_t i = 0; i < _mesh.nodes->gintervals[d].size(); ++i) {
 				eslocal LMoffset = 0;
 				const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
@@ -110,14 +110,14 @@ void Constraints::B1DirichletUpdate(const Step &step)
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (size_t d = _mesh.elements->domainDistribution[t]; d < _mesh.elements->domainDistribution[t + 1]; d++) {
+		for (eslocal d = _mesh.elements->domainDistribution[t]; d < _mesh.elements->domainDistribution[t + 1]; d++) {
 			eslocal offset = 0;
 			for (size_t i = 0; i < _mesh.nodes->gintervals[d].size(); ++i) {
 				const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
 				for (int dof = 0; dof < _DOFs; dof++) {
 					if (_withRedundantMultipliers || interval.dindex == 0) {
 						for (size_t r = 0; r < _dirichlet[dof].size(); r++) {
-							size_t isize = _dirichlet[dof][r].first->unintervals[interval.pindex].end - _dirichlet[dof][r].first->unintervals[interval.pindex].begin;
+							eslocal isize = _dirichlet[dof][r].first->unintervals[interval.pindex].end - _dirichlet[dof][r].first->unintervals[interval.pindex].begin;
 							if (_dirichlet[dof][r].second->isTemperatureDependent()) {
 								ESINFO(ERROR) << "Dirichlet boundary condition cannot be dependent on TEMPERATURE.";
 							}
@@ -203,7 +203,7 @@ void Constraints::B1GlueElements()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (size_t d = _mesh.elements->domainDistribution[t]; d < _mesh.elements->domainDistribution[t + 1]; d++) {
+		for (eslocal d = _mesh.elements->domainDistribution[t]; d < _mesh.elements->domainDistribution[t + 1]; d++) {
 			for (size_t i = 0; i < _mesh.nodes->gintervals[d].size(); ++i) {
 				eslocal LMcounter = 0;
 				const GluingInterval &interval = _mesh.nodes->gintervals[d][i];
@@ -343,7 +343,7 @@ void Constraints::B1DuplicityUpdate()
 			if (idomain->size() > 1) {
 				eslocal isize = _mesh.nodes->pintervals[i].end - _mesh.nodes->pintervals[i].begin;
 				diagonals[i].resize(_DOFs * isize * idomain->size());
-				for (int r = 0; r < irank->size(); ++r) {
+				for (size_t r = 0; r < irank->size(); ++r) {
 					if (irank->at(r) != environment->MPIrank) {
 						eslocal target = n2i(irank->at(r));
 						for (eslocal n = 0; n < isize; ++n) {
@@ -400,7 +400,7 @@ void Constraints::B1DuplicityUpdate()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (size_t d = _mesh.elements->domainDistribution[t]; d < _mesh.elements->domainDistribution[t + 1]; d++) {
+		for (eslocal d = _mesh.elements->domainDistribution[t]; d < _mesh.elements->domainDistribution[t + 1]; d++) {
 			for (size_t i = 0; i < _mesh.nodes->gintervals[d].size(); ++i) {
 				if (_mesh.nodes->gintervals[d][i].ndomains > 1) {
 					eslocal LMcounter = 0;
@@ -461,7 +461,7 @@ void Constraints::B0Kernels(const std::vector<SparseMatrix> &kernels)
 						for (eslocal c = 0; c < cols; c++) {
 							auto dit = _mesh.nodes->dintervals[d].begin();
 							auto masterit = _mesh.nodes->dintervals[master].begin();
-							for (size_t n = _mesh.FETIData->inodesDistribution[i]; n < _mesh.FETIData->inodesDistribution[i + 1]; n++) {
+							for (eslocal n = _mesh.FETIData->inodesDistribution[i]; n < _mesh.FETIData->inodesDistribution[i + 1]; n++) {
 								while (dit->end < nodes[n]) {
 									++dit;
 								}
@@ -477,7 +477,7 @@ void Constraints::B0Kernels(const std::vector<SparseMatrix> &kernels)
 						}
 					} else {
 						auto dit = _mesh.nodes->dintervals[d].begin();
-						for (size_t n = _mesh.FETIData->inodesDistribution[i]; n < _mesh.FETIData->inodesDistribution[i + 1]; n++) {
+						for (eslocal n = _mesh.FETIData->inodesDistribution[i]; n < _mesh.FETIData->inodesDistribution[i + 1]; n++) {
 							while (dit->end < nodes[n]) {
 								++dit;
 							}

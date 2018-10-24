@@ -83,8 +83,9 @@ void ESPRESO::run(int *argc, char ***argv)
 			return !configuration.workbench.convert_database;
 		case INPUT_FORMAT::OPENFOAM:
 			return !configuration.openfoam.convert_database;
+		default:
+			return true;
 		}
-		return true;
 	};
 
 	if (ResultStore::isComputeNode()) {

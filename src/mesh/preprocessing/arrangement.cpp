@@ -121,7 +121,7 @@ void MeshPreprocessing::arrangeNodes()
 		if (isize != jsize) {
 			return false;
 		}
-		for (size_t n = 0; n < isize; ++n) {
+		for (eslocal n = 0; n < isize; ++n) {
 			if (domainsData[0][di + n] != domainsData[0][dj + n]) {
 				return false;
 			}
@@ -761,7 +761,7 @@ void MeshPreprocessing::arrangeRegions()
 			for (size_t t = 0; t < threads; t++) {
 				auto enodes = store->elements->cbegin() + distribution[t];
 				std::vector<eslocal> nlinks;
-				int counter;
+				size_t counter;
 				for (size_t e = distribution[t]; e < distribution[t + 1]; ++e, ++enodes) {
 					nlinks.clear();
 					for (auto n = enodes->begin(); n != enodes->end(); ++n) {
@@ -816,7 +816,7 @@ void MeshPreprocessing::arrangeRegions()
 			for (size_t t = 0; t < threads; t++) {
 				for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
 					iboundaries[t].push_back(edistribution[d]);
-					for (eslocal e = edistribution[d] + 1; e < edistribution[d + 1]; ++e) {
+					for (size_t e = edistribution[d] + 1; e < edistribution[d + 1]; ++e) {
 						if (store->epointers->datatarray()[e]->code != store->epointers->datatarray()[e - 1]->code) {
 							iboundaries[t].push_back(e);
 						}
@@ -854,7 +854,7 @@ void MeshPreprocessing::arrangeRegions()
 			int allcodes = 0;
 			MPI_Allreduce(&codes, &allcodes, 1, MPI_INT, MPI_BOR, environment->MPICommunicator);
 
-			for (int i = 0, bitmask = 1; i < _mesh->elements->ecounters.size(); i++, bitmask = bitmask << 1) {
+			for (size_t i = 0, bitmask = 1; i < _mesh->elements->ecounters.size(); i++, bitmask = bitmask << 1) {
 				if (allcodes & bitmask) {
 					store->ecounters[i] = Communication::exscan(store->ecounters[i]);
 				}
@@ -926,7 +926,7 @@ void MeshPreprocessing::synchronizeRegionNodes(const std::string &name, serializ
 
 		prevRank = -1;
 		eslocal isize = nintervals[i].end - nintervals[i].begin;
-		for (auto rank = iranks->begin(), prev = rank; rank != iranks->end(); ++rank) {
+		for (auto rank = iranks->begin(); rank != iranks->end(); ++rank) {
 			if (*rank != environment->MPIrank && *rank != prevRank) {
 				sBuffer[n2i(*rank)].push_back(_mesh->nodes->pintervals[i].globalOffset);
 				sBuffer[n2i(*rank)].push_back(isize);
@@ -1072,7 +1072,7 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 						tcode.push_back((eslocal)(*f)->code);
 					};
 
-					if (nodes.size() >= (*f)->nodes) {
+					if ((int)nodes.size() >= (*f)->nodes) {
 						for (auto n = fnodes->begin(); n != fnodes->end(); ++n) {
 							facenodes.push_back(enodes->at(*n));
 						}

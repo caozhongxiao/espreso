@@ -83,7 +83,7 @@ void MeshPreprocessing::computeBodiesSurface()
 
 	_mesh->surface->edistribution = _mesh->surface->epointers->datatarray().distribution();
 
-	if (_mesh->surface->ecounters[(int)Element::CODE::TRIANGLE3] == _mesh->surface->edistribution.back()) {
+	if (_mesh->surface->ecounters[(int)Element::CODE::TRIANGLE3] == (eslocal)_mesh->surface->edistribution.back()) {
 		serializededata<eslocal, eslocal>::balance(3, faces, &_mesh->surface->edistribution);
 		_mesh->surface->elements = new serializededata<eslocal, eslocal>(3, faces);
 		_mesh->surface->triangles = _mesh->surface->elements;
@@ -225,7 +225,6 @@ void MeshPreprocessing::computeSurfaceLocations()
 	double boxsize = _mesh->contacts->eps * _mesh->contacts->groupsize;
 	size_t xsize = std::ceil((_mesh->contacts->boundingBox[1].x - _mesh->contacts->boundingBox[0].x) / boxsize);
 	size_t ysize = std::ceil((_mesh->contacts->boundingBox[1].y - _mesh->contacts->boundingBox[0].y) / boxsize);
-	size_t zsize = std::ceil((_mesh->contacts->boundingBox[1].z - _mesh->contacts->boundingBox[0].z) / boxsize);
 
 	// 2. map into grid
 	///////////////////
@@ -438,7 +437,7 @@ void MeshPreprocessing::searchContactInterfaces()
 			for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 				y = _mesh->contacts->filledCells[i] % (xsize * ysize) / xsize;
 				x = _mesh->contacts->filledCells[i] % xsize;
-				if (xmin <= x && x < xmax && ymin <= y < ymax) {
+				if (xmin <= x && x < xmax && ymin <= y && y < ymax) {
 					tfilled.push_back(i);
 				}
 			}
@@ -471,7 +470,6 @@ void MeshPreprocessing::searchContactInterfaces()
 
 			if (distribution[t] < distribution[t + 1]) {
 				eslocal prevBlock = sFilled[n][distribution[t]];
-				eslocal prevFace = 0;
 				auto cell = _mesh->contacts->grid->cbegin() + prevBlock;
 				for (size_t i = distribution[t]; i < distribution[t + 1]; ++i) {
 					cell += sFilled[n][i] - prevBlock;

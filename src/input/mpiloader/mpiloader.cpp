@@ -117,7 +117,7 @@ void MPILoader::align(MPIGroup &group, ParallelFile &pfile, size_t lines)
 		if (group.rank) {
 			while (*_current++ != '\n');
 			exchangeStart = _current;
-			for (int i = 1; i < lines; i++) {
+			for (size_t i = 1; i < lines; i++) {
 				while (*exchangeStart++ != '\n');
 			}
 		}

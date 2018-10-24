@@ -354,7 +354,6 @@ void StructuralMechanics3D::processElement(eslocal domain, Matrices matrices, es
 {
 	auto nodes = _mesh->elements->nodes->cbegin() + eindex;
 	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
-	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
 	const ECFExpressionVector *acceleration = NULL;
 	for (auto it = _configuration.load_steps_settings.at(_step->step + 1).acceleration.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).acceleration.end(); ++it) {
 		ElementsRegionStore *region = _mesh->eregion(it->first);
@@ -534,7 +533,6 @@ void StructuralMechanics3D::processFace(eslocal domain, const BoundaryRegionStor
 
 	auto nodes = region->elements->cbegin() + findex;
 	auto epointer = region->epointers->datatarray()[findex];
-	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
 
 	const std::vector<DenseMatrix> &N = *(epointer->N);
 	const std::vector<DenseMatrix> &dN = *(epointer->dN);

@@ -3,10 +3,10 @@
 #include "root.h"
 
 espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfiguration(ECFRoot *ECFRoot)
-: _ECFRoot(ECFRoot),
-  offset(ECFMetaData::getboundaryconditionvariables()),
+: offset(ECFMetaData::getboundaryconditionvariables()),
+  scaling(DIMENSION::D3, { "TIME" }, "100"),
   translation(DIMENSION::D3, ECFMetaData::getboundaryconditionvariables(), "0"),
-  scaling(DIMENSION::D3, { "TIME" }, "100")
+  _ECFRoot(ECFRoot)
 {
 	transformation = MORPHING_TRANSFORMATION::TRANSLATION;
 	REGISTER(transformation, ECFMetaData()
@@ -55,55 +55,6 @@ espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfigurat
 		}
 	});
 }
-std::ostream& espreso::operator<<(std::ostream& os, const espreso::RBFTargetTransformationConfiguration &t)
-{
-	os<<"\t\tTRANSFORMATION\t\t:";
-	switch (t.transformation) {
-			case MORPHING_TRANSFORMATION::FIXED: {
-				os<<" FIXED\n";
-			} break;
-
-			case MORPHING_TRANSFORMATION::TRANSLATION: {
-				os<<" TRANSLATION\n";
-				os<<"\t\t\tX\t\t: "<<t.translation.x.value<<"\n";
-				os<<"\t\t\tY\t\t: "<<t.translation.y.value<<"\n";
-				os<<"\t\t\tZ\t\t: "<<t.translation.z.value<<"\n";
-			} break;
-
-			case MORPHING_TRANSFORMATION::OFFSET: {
-				os<<" OFFSET\n";
-			} break;
-
-			case MORPHING_TRANSFORMATION::SCALING: {
-				os<<" SCALING\n";
-				os<<"\t\t\tSCALING X\t: "<<t.scaling.x.value<<"\n";
-				os<<"\t\t\tSCALING Y\t: "<<t.scaling.y.value<<"\n";
-				os<<"\t\t\tSCALING Z\t: "<<t.scaling.z.value<<"\n";
-				os<<"\n";
-				os<<"\t\t\tCENTER X\t: "<<t.coordinate_system.center.x.value<<"\n";
-				os<<"\t\t\tCENTER Y\t: "<<t.coordinate_system.center.y.value<<"\n";
-				os<<"\t\t\tCENTER Z\t: "<<t.coordinate_system.center.z.value<<"\n";
-
-			} break;
-
-			case MORPHING_TRANSFORMATION::ROTATION: {
-				os<<" ROTATION\n";
-				os<<"\t\t\tROTATION X\t: "<<t.coordinate_system.rotation.x.value<<"\n";
-				os<<"\t\t\tROTATION Y\t: "<<t.coordinate_system.rotation.y.value<<"\n";
-				os<<"\t\t\tROTATION Z\t: "<<t.coordinate_system.rotation.z.value<<"\n";
-				os<<"\n";
-				os<<"\t\t\tCENTER X\t: "<<t.coordinate_system.center.x.value<<"\n";
-				os<<"\t\t\tCENTER Y\t: "<<t.coordinate_system.center.y.value<<"\n";
-				os<<"\t\t\tCENTER Z\t: "<<t.coordinate_system.center.z.value<<"\n";
-
-			}break;
-		 	 default:
-		 		 ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement mesh morphing tranformation.";
-		}
-
-	return os;
-}
-
 
 espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECFRoot *ECFRoot)
 : function({ "R" }, "R"),
@@ -143,21 +94,9 @@ espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECFRoot *ECFRoot)
 		ECFRoot);
 
 	REGISTER(external_ffd, ECFMetaData()
-			.setdescription({ "Configurations defined by an external FFD file." }));
+		.setdescription({ "Configurations defined by an external FFD file." }));
 }
 
-std::ostream& espreso::operator<<(std::ostream& os, const espreso::RBFTargetConfiguration &t)
-{
-	os<<"\tTARGET REGION\t\t\t: "<<t.target<<"\n";
-	os<<"\tSOLVER\t\t\t\t: ";
-	if (t.solver==espreso::MORPHING_RBF_SOLVER::DIRECT) os<<"DIRECT\n";
-	else {
-		os<<"ITERATIVE (prec. "<<t.solver_precision<<", max. iter. "<<t.solver_max_iter<<")\n";
-	}
-	os<<"\tRADIAL BASIS FUNCTION\t\t: "<<t.function.value<<"\n";
-
-	return os;
-}
 
 espreso::ExternalFFDConfiguration::ExternalFFDConfiguration(ECFRoot *ECFRoot)
 {

@@ -21,10 +21,8 @@ using namespace espreso;
 
 void Constraints::B1ContactInsert(const Step &step, BoundaryRegionStore *region, const ECFExpressionVector &normals, const ECFExpressionVector &gap)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
-
-	size_t LMOffset = _dirichletSize + _gluingSize;
-	size_t d = 0;
+	eslocal LMOffset = _dirichletSize + _gluingSize;
+	eslocal d = 0;
 
 	for (int dof = 0; dof < _DOFs; dof++) {
 		if (normals.data[dof].isSet()) {
@@ -40,7 +38,7 @@ void Constraints::B1ContactInsert(const Step &step, BoundaryRegionStore *region,
 				_instance.B1duplicity[d].push_back(0.5);
 				_instance.B1c[d].push_back(gap.data[dof].evaluator->evaluate(_mesh.nodes->coordinates->datatarray()[*n], step.timeStep, 0));
 			}
-			for (eslocal n = LMOffset; n < LMOffset + region->nodes->datatarray().size(); n++) {
+			for (eslocal n = LMOffset; n < LMOffset + (eslocal)region->nodes->datatarray().size(); n++) {
 				_instance.B1clustersMap.push_back({ n, environment->MPIrank, (environment->MPIrank + 1) % 2 });
 			}
 			LMOffset += region->nodes->datatarray().size();

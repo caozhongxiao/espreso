@@ -76,7 +76,7 @@ void ECFRoot::init()
 
 	physics = PHYSICS::HEAT_TRANSFER_3D;
 	REGISTER(physics, ECFMetaData()
-            .setdescription({ "Physics" })
+			.setdescription({ "Physics" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("HEAT_TRANSFER_2D").setdescription("Heat transfer 2D."))
 			.addoption(ECFOption().setname("HEAT_TRANSFER_3D").setdescription("Heat transfer 3D."))
@@ -103,16 +103,16 @@ void ECFRoot::init()
 			.setdescription({ "Settings for mesh morphing." }));
 
 	REGISTER(heat_transfer_2d, ECFMetaData()
-            .setdescription({ "Heat transfer 2D" })
+			.setdescription({ "Heat transfer 2D" })
 			.allowonly([&] () { return physics == PHYSICS::HEAT_TRANSFER_2D; }));
 	REGISTER(heat_transfer_3d, ECFMetaData()
-            .setdescription({ "Heat transfer 3D" })
+			.setdescription({ "Heat transfer 3D" })
 			.allowonly([&] () { return physics == PHYSICS::HEAT_TRANSFER_3D; }));
 	REGISTER(structural_mechanics_2d, ECFMetaData()
-            .setdescription({ "Structural mechanics 2D" })
+			.setdescription({ "Structural mechanics 2D" })
 			.allowonly([&] () { return physics == PHYSICS::STRUCTURAL_MECHANICS_2D; }));
 	REGISTER(structural_mechanics_3d, ECFMetaData()
-            .setdescription({ "Structural mechanics 3D" })
+			.setdescription({ "Structural mechanics 3D" })
 			.allowonly([&] () { return physics == PHYSICS::STRUCTURAL_MECHANICS_3D; }));
 
 	registerParameter("env", environment, ECFMetaData()
@@ -123,11 +123,11 @@ void ECFRoot::init()
 }
 
 ECFRoot::ECFRoot()
-: heat_transfer_2d(DIMENSION::D2),
+: mesh_morphing(this),
+  heat_transfer_2d(DIMENSION::D2),
   heat_transfer_3d(DIMENSION::D3),
   structural_mechanics_2d(DIMENSION::D2),
   structural_mechanics_3d(DIMENSION::D3),
-  mesh_morphing(this),
   output(physics)
 {
 	init();

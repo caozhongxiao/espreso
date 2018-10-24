@@ -436,9 +436,7 @@ void EnSight::updateSolution(const Step &step)
 			if (size == 2) {
 				for (size_t i = 0; i < intervals.size(); i++) {
 					if (intervals[i].sourceProcess == environment->MPIrank) {
-						eslocal offset = _mesh.nodes->pintervals[i].globalOffset - _mesh.nodes->uniqueOffset;
 						for (eslocal n = intervals[i].begin; n < intervals[i].end; ++n) {
-							eslocal index = offset + nodes[n] - _mesh.nodes->pintervals[i].begin;
 							_writer.storeFloat(os, .0);
 						}
 					}

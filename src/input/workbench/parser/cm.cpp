@@ -147,7 +147,6 @@ bool CM::addElementRegion(const PlainWorkbenchData &mesh, const std::vector<ESel
 				break;
 			}
 			checkElements([&] (size_t t, eslocal e) {
-				eslocal value = relevant[i].VMIN;
 				if (relevant[i].VMIN <= mesh.et[e] && mesh.et[e] <= relevant[i].VMAX && (mesh.et[e] - relevant[i].VMIN) % relevant[i].VINC == 0) {
 					eid[t].push_back(mesh.eIDs[e]);
 				}
@@ -172,7 +171,6 @@ bool CM::addElementRegion(const PlainWorkbenchData &mesh, const std::vector<ESel
 				break;
 			}
 			checkElements([&] (size_t t, eslocal e) {
-				eslocal value = relevant[i].VMIN;
 				if (relevant[i].VMIN <= mesh.material[e] && mesh.material[e] <= relevant[i].VMAX && (mesh.material[e] - relevant[i].VMIN) % relevant[i].VINC == 0) {
 					eid[t].push_back(mesh.eIDs[e]);
 				}

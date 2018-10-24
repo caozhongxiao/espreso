@@ -779,10 +779,10 @@ void HeatTransfer3D::postProcessElement(eslocal domain, eslocal eindex)
 
 	const std::vector<DenseMatrix> &N = *(epointer->N);
 	const std::vector<DenseMatrix> &dN = *(epointer->dN);
-	const std::vector<double> &weighFactor = *(epointer->weighFactor);
+//	const std::vector<double> &weighFactor = *(epointer->weighFactor);
 
 	DenseMatrix Ce(3, 3), coordinates, J(3, 3), invJ(3, 3), dND, temp(nodes->size(), 1);
-	double detJ, m, norm_u_e, h_e;
+	double detJ, norm_u_e, h_e;
 	DenseMatrix U(nodes->size(), 3), K(nodes->size(), 9), gpK(1, 9), CD;
 	DenseMatrix u(1, 3), matFlux(3, 1), matGradient(3, 1);
 
@@ -808,13 +808,6 @@ void HeatTransfer3D::postProcessElement(eslocal domain, eslocal eindex)
 			smoothstep(phase, derivation, material->phase_change_temperature - material->transition_interval / 2, material->phase_change_temperature + material->transition_interval / 2, temp(i, 0), material->smooth_step_order);
 			assembleMaterialMatrix(i, p, phase1, phase, temp(i, 0), K, CD, false);
 			assembleMaterialMatrix(i, p, phase2, (1 - phase), temp(i, 0), K, CD, false);
-			m =
-					(    phase  * phase1->density.evaluator->evaluate(p, _step->currentTime, temp(i, 0)) +
-					(1 - phase) * phase2->density.evaluator->evaluate(p, _step->currentTime, temp(i, 0))) *
-
-					(    phase  * phase1->heat_capacity.evaluator->evaluate(p, _step->currentTime, temp(i, 0)) +
-					(1 - phase) * phase2->heat_capacity.evaluator->evaluate(p, _step->currentTime, temp(i, 0)) +
-					material->latent_heat * derivation);
 
 			if (_phaseChange) {
 				(*_phaseChange->decomposedData)[domain][it->DOFOffset + nodes->at(i) - it->begin] = phase;
@@ -822,9 +815,6 @@ void HeatTransfer3D::postProcessElement(eslocal domain, eslocal eindex)
 			}
 		} else {
 			assembleMaterialMatrix(i, p, material, 1, temp(i, 0), K, CD, false);
-			m =
-					material->density.evaluator->evaluate(p, _step->currentTime, temp(i, 0)) *
-					material->heat_capacity.evaluator->evaluate(p, _step->currentTime, temp(i, 0));
 		}
 
 		if (translation_motion) {

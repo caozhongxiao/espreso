@@ -193,7 +193,7 @@ void TimeEvent::evaluate() {
 		E += (eventTime[i] - avgTime) * (eventTime[i] - avgTime);
 	}
 
-	if (eventCount * E) {
+	if (eventCount * E > 0) {
 		stdDev = sqrt(1 / eventCount * E);
 	} else {
 		stdDev = 0;

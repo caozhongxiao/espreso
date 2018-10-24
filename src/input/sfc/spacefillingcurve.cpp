@@ -142,7 +142,6 @@ std::pair<size_t, size_t> SpaceFillingCurve::getXYZBucket(size_t depth, size_t x
 {
 	std::pair<size_t, size_t> bucket;
 
-	size_t bsize = bucketSize();
 	size_t coarsenig = 1 << depth;
 	size_t cx, cy, cz;
 

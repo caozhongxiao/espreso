@@ -26,13 +26,13 @@ SequentialInput::SequentialInput(PlainMeshData &meshData, Mesh &mesh)
 	timing.totalTime.startWithBarrier();
 
 	TimeEvent tnsort("sort nodes"); tnsort.start();
-	_nDistribution = { 0, _meshData.nIDs.size() };
+	_nDistribution = { 0, (eslocal)_meshData.nIDs.size() };
 	sortNodes();
 	tnsort.end(); timing.addEvent(tnsort);
 	ESINFO(PROGRESS2) << "Sequential loader:: nodes sorted.";
 
 	TimeEvent tesort("sort elements"); tesort.start();
-	_eDistribution = { 0, _meshData.eIDs.size() };
+	_eDistribution = { 0, (eslocal)_meshData.eIDs.size() };
 	sortElements();
 	tesort.end(); timing.addEvent(tesort);
 	ESINFO(PROGRESS2) << "Sequential loader:: elements sorted.";
@@ -69,7 +69,7 @@ SequentialInput::SequentialInput(PlainMeshData &meshData, Mesh &mesh)
 	ESINFO(PROGRESS2) << "Sequential loader:: regions filled.";
 
 	TimeEvent treindex("reindex elements nodes"); treindex.start();
-	if (!_mesh.nodes->IDs->datatarray().back() != _mesh.nodes->IDs->datatarray().size()) {
+	if (!(_mesh.nodes->IDs->datatarray().back() != (eslocal)_mesh.nodes->IDs->datatarray().size())) {
 		reindexElementNodes();
 		reindexBoundaryNodes();
 	}

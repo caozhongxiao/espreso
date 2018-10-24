@@ -28,10 +28,10 @@ void GridTowerGenerator::generate(const GridTowerGeneratorConfiguration &configu
 
 size_t GridTowerGenerator::gridIndex(const GridTowerGeneratorConfiguration &configuration)
 {
-	size_t clusters = 0;
+	int clusters = 0;
 	for (auto grid = configuration.grids.begin(); grid != configuration.grids.end(); ++grid) {
 		size_t maxclusters = grid->second.clusters_x * grid->second.clusters_y * grid->second.clusters_z;
-		size_t gclusters = maxclusters;
+		int gclusters = maxclusters;
 		for (auto it = grid->second.blocks.begin(); it != grid->second.blocks.end(); ++it) {
 			if (it->first >= maxclusters) {
 				ESINFO(GLOBAL_ERROR) << "Block index is out of range.";

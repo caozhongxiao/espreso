@@ -161,7 +161,7 @@ void SphereGenerator::neighbors(PlainMeshData &mesh)
 	for (int i = -1; i <= 1; i++) {
 		for (int j = -1; j <= 1; j++) {
 			if (cross[mid + j * 3 * _settings.clusters.x + i] != -1) {
-				if (cross[mid + j * 3 * _settings.clusters.x + i] + _layer * 6 * _settings.clusters.x * _settings.clusters.y < environment->MPIsize) {
+				if (cross[mid + j * 3 * _settings.clusters.x + i] + _layer * 6 * _settings.clusters.x * _settings.clusters.y < (size_t)environment->MPIsize) {
 					map[13 + i * 3 + j] = cross[mid + j * 3 * _settings.clusters.x + i] + _layer * 6 * _settings.clusters.x * _settings.clusters.y;
 				}
 			}

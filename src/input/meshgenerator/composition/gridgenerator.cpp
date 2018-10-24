@@ -43,7 +43,7 @@ void GridGenerator::init()
 {
 	Triple<size_t> clusters = _settings.blocks * _settings.clusters;
 
-	size_t cluster = 0;
+	int cluster = 0;
 	Triple<size_t> offset;
 	for (offset.z = 0; offset.z < clusters.z; offset.z++) {
 		for (offset.y = 0; offset.y < clusters.y; offset.y++) {

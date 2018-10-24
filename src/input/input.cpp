@@ -93,7 +93,7 @@ void Input::balance()
 	}
 }
 
-std::vector<size_t> Input::getDistribution(const std::vector<eslocal> &IDs, const std::vector<eslocal> &permutation)
+std::vector<eslocal> Input::getDistribution(const std::vector<eslocal> &IDs, const std::vector<eslocal> &permutation)
 {
 	eslocal myMaxID = 0, maxID;
 
@@ -102,15 +102,15 @@ std::vector<size_t> Input::getDistribution(const std::vector<eslocal> &IDs, cons
 	}
 	MPI_Allreduce(&myMaxID, &maxID, sizeof(eslocal), MPI_BYTE, MPITools::eslocalOperations().max, environment->MPICommunicator);
 
-	std::vector<size_t> distribution = Esutils::getDistribution<size_t>(environment->MPIsize, maxID + 1);
+	std::vector<eslocal> distribution = tarray<eslocal>::distribute(environment->MPIsize, maxID + 1);
 
 	return distribution;
 }
 
 void Input::balanceNodes()
 {
-	std::vector<size_t> cCurrent = Communication::getDistribution(_meshData.nIDs.size());
-	_nDistribution = tarray<size_t>::distribute(environment->MPIsize, cCurrent.back());
+	std::vector<eslocal> cCurrent = Communication::getDistribution<eslocal>(_meshData.nIDs.size());
+	_nDistribution = tarray<eslocal>::distribute(environment->MPIsize, cCurrent.back());
 
 	if (!Communication::balance(_meshData.nIDs, cCurrent, _nDistribution)) {
 		ESINFO(ERROR) << "ESPRESO internal error: balance node IDs.";
@@ -119,8 +119,8 @@ void Input::balanceNodes()
 		ESINFO(ERROR) << "ESPRESO internal error: balance coordinates.";
 	}
 
-	size_t back = _meshData.nIDs.back();
-	MPI_Allgather(&back, sizeof(size_t), MPI_BYTE, _nDistribution.data() + 1, sizeof(size_t), MPI_BYTE, environment->MPICommunicator);
+	eslocal back = _meshData.nIDs.back();
+	MPI_Allgather(&back, sizeof(eslocal), MPI_BYTE, _nDistribution.data() + 1, sizeof(eslocal), MPI_BYTE, environment->MPICommunicator);
 	for (size_t i = 1; i < _nDistribution.size(); i++) {
 		++_nDistribution[i];
 	}
@@ -206,21 +206,21 @@ void Input::balancePermutedNodes()
 
 void Input::balanceElements()
 {
-	std::vector<size_t> eCurrent = Communication::getDistribution(_meshData.esize.size());
-	_eDistribution = tarray<size_t>::distribute(environment->MPIsize, eCurrent.back());
+	std::vector<eslocal> eCurrent = Communication::getDistribution<eslocal>(_meshData.esize.size());
+	_eDistribution = tarray<eslocal>::distribute(environment->MPIsize, eCurrent.back());
 
-	std::vector<size_t> nCurrent = Communication::getDistribution(_meshData.enodes.size());
-	std::vector<size_t> nTarget;
+	std::vector<eslocal> nCurrent = Communication::getDistribution<eslocal>(_meshData.enodes.size());
+	std::vector<eslocal> nTarget;
 
 	if (environment->MPIrank == 0) {
 		nTarget.push_back(0);
 	}
 
-	size_t nodeOffset = nCurrent[environment->MPIrank];
+	eslocal nodeOffset = nCurrent[environment->MPIrank];
 	size_t eTargetIndex = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), eCurrent[environment->MPIrank] + 1) - _eDistribution.begin();
 	for (size_t n = 0; n < _meshData.esize.size(); ++n) {
 		nodeOffset += _meshData.esize[n];
-		if (eCurrent[environment->MPIrank] + n + 1 == _eDistribution[eTargetIndex]) {
+		if (eCurrent[environment->MPIrank] + (eslocal)n + 1 == _eDistribution[eTargetIndex]) {
 			nTarget.push_back(nodeOffset);
 			++eTargetIndex;
 		}
@@ -330,7 +330,7 @@ void Input::balancePermutedElements()
 	for (int r = 0; r < environment->MPIsize; r++) {
 		++offset;
 		size_t esize = rBuffer[++offset];
-		size_t enodes = rBuffer[++offset];
+		++offset;
 		++offset;
 
 		for (size_t e = 0; e < esize; ++e) {
@@ -370,7 +370,7 @@ void Input::sortNodes(bool withElementNodes)
 		std::vector<eslocal> ndist = _meshData._nrankdist;
 		for (size_t i = 0, index = 0; i < permutation.size(); i++) {
 			_meshData._nrankdist[i + 1] = _meshData._nrankdist[i] + ndist[permutation[i] + 1] - ndist[permutation[i]];
-			for (size_t n = 0; n < ndist[permutation[i] + 1] - ndist[permutation[i]]; ++n, ++index) {
+			for (eslocal n = 0; n < ndist[permutation[i] + 1] - ndist[permutation[i]]; ++n, ++index) {
 				npermutation[index] = ndist[permutation[i]] + n;
 			}
 		}
@@ -434,7 +434,7 @@ void Input::sortElements(const std::vector<eslocal> &permutation)
 
 	std::vector<eslocal> npermutation(_meshData.enodes.size());
 	for (size_t i = 0, index = 0; i < permutation.size(); i++) {
-		for (size_t n = 0; n < _meshData.esize[i]; ++n, ++index) {
+		for (eslocal n = 0; n < _meshData.esize[i]; ++n, ++index) {
 			npermutation[index] = edist[permutation[i]] + n;
 		}
 	}
@@ -444,11 +444,9 @@ void Input::sortElements(const std::vector<eslocal> &permutation)
 
 void Input::assignRegions(
 		std::map<std::string, std::vector<eslocal> > &regions, std::vector<eslocal> &IDs,
-		std::vector<size_t> &distribution,
+		std::vector<eslocal> &distribution,
 		size_t &rsize, std::vector<eslocal> &rbits)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
-
 	rsize = regions.size() / (8 * sizeof(eslocal)) + 1;
 	rbits.resize(rsize * IDs.size());
 
@@ -689,7 +687,7 @@ void Input::fillBoundaryRegions()
 
 					tnodes[t].resize(eregiondist[edistribution[t + 1]] - eregiondist[edistribution[t]]);
 					for (size_t e = edistribution[t], index = 0; e < edistribution[t + 1]; ++e) {
-						for (size_t n = 0; n < _meshData.esize[eregion->second[e]]; ++n, ++index) {
+						for (eslocal n = 0; n < _meshData.esize[eregion->second[e]]; ++n, ++index) {
 							tnodes[t][index] = _meshData.enodes[_meshData._edist[eregion->second[e]] + n];
 						}
 					}

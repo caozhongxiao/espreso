@@ -5450,8 +5450,9 @@ void IterSolverBase::apply_A_l_Mat( TimeEval & time_eval, SuperCluster & cluster
 
 		apply_A_l_comp_dom_B_P(timeEvalAppa, cluster, tmp_pr_in, tmp_pr_out);
 
-		if (i % 10 == 0)
+		if (i % 10 == 0) {
 			ESINFO(PROGRESS3) << "\r" << i + 1 << " out of " << X_in.cols << " columns processed" <<Info::plain();
+		}
 
 		Y_out.dense_values.insert(Y_out.dense_values.end(), tmp_pr_out.begin(), tmp_pr_out.end());
 	}
@@ -5477,8 +5478,9 @@ void IterSolverBase::apply_A_l_Mat_local( TimeEval & time_eval, SuperCluster & c
 
 		apply_A_l_comp_dom_B_P_local(timeEvalAppa, cluster, tmp_pr_in, tmp_pr_out);
 
-		if (i % 10 == 0)
+		if (i % 10 == 0) {
 			ESINFO(PROGRESS3) << "\r" << i + 1 << " out of " << X_in.cols << " columns processed" <<Info::plain();
+		}
 
 		Y_out.dense_values.insert(Y_out.dense_values.end(), tmp_pr_out.begin(), tmp_pr_out.end());
 	}
@@ -5523,8 +5525,9 @@ void IterSolverBase::apply_A_l_Mat_local_sparse( TimeEval & time_eval, SuperClus
 
 		Y_out.CSR_I_row_indices.push_back(Y_out.CSR_J_col_indices.size() + 1);
 
-		if (i % 1 == 0)
+		if (i % 1 == 0) {
 			ESINFO(PROGRESS3) << "\r" << "Processing ApplyA on SPARSE matrix: " << i+1 << " out of " << X_in.rows << " columns processed" <<Info::plain();
+		}
 
 
 	}

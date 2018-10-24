@@ -36,9 +36,7 @@ void GMRESolverInternal(SOLVER_INTERNAL_TYPE type,
 		//---------------------------------------------------------------------------
 		// Some additional variables to use with the RCI (P)FGMRES solver
 		//---------------------------------------------------------------------------
-		eslocal ierr = 0;
 		eslocal RCI_request, ivar;
-		double dvar;
 		ivar = cols;
 
 		char uplo = 'U';

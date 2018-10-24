@@ -467,7 +467,7 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 					}
 				}
 
-			} while (iter_lm != cluster.domains[d]->lambda_map_sub.size() && iter_in != in_indices.size() );
+			} while (iter_lm != (eslocal)cluster.domains[d]->lambda_map_sub.size() && iter_in != (eslocal)in_indices.size() );
 
 			if (!is_empty[d])
 				cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'T');

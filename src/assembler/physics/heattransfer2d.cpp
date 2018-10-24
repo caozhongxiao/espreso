@@ -596,7 +596,7 @@ void HeatTransfer2D::postProcessElement(eslocal domain, eslocal eindex)
 	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
 	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
 	const ECFExpressionVector *translation_motion = NULL;
-	Evaluator *heat_source = NULL;
+//	Evaluator *heat_source = NULL;
 	Evaluator *thick = NULL;
 	for (auto it = _configuration.load_steps_settings.at(_step->step + 1).translation_motions.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).translation_motions.end(); ++it) {
 		ElementsRegionStore *region = _mesh->eregion(it->first);
@@ -605,13 +605,13 @@ void HeatTransfer2D::postProcessElement(eslocal domain, eslocal eindex)
 			break;
 		}
 	}
-	for (auto it = _configuration.load_steps_settings.at(_step->step + 1).heat_source.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).heat_source.end(); ++it) {
-		ElementsRegionStore *region = _mesh->eregion(it->first);
-		if (std::binary_search(region->elements->datatarray().cbegin(), region->elements->datatarray().cend(), eindex)) {
-			heat_source = it->second.evaluator;
-			break;
-		}
-	}
+//	for (auto it = _configuration.load_steps_settings.at(_step->step + 1).heat_source.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).heat_source.end(); ++it) {
+//		ElementsRegionStore *region = _mesh->eregion(it->first);
+//		if (std::binary_search(region->elements->datatarray().cbegin(), region->elements->datatarray().cend(), eindex)) {
+//			heat_source = it->second.evaluator;
+//			break;
+//		}
+//	}
 	for (auto it = _configuration.thickness.begin(); it != _configuration.thickness.end(); ++it) {
 		ElementsRegionStore *region = _mesh->eregion(it->first);
 		if (std::binary_search(region->elements->datatarray().cbegin(), region->elements->datatarray().cend(), eindex)) {
@@ -622,7 +622,7 @@ void HeatTransfer2D::postProcessElement(eslocal domain, eslocal eindex)
 
 	const std::vector<DenseMatrix> &N = *(epointer->N);
 	const std::vector<DenseMatrix> &dN = *(epointer->dN);
-	const std::vector<double> &weighFactor = *(epointer->weighFactor);
+//	const std::vector<double> &weighFactor = *(epointer->weighFactor);
 
 	DenseMatrix Ce(2, 2), coordinates, J(2, 2), invJ(2, 2), dND, temp(nodes->size(), 1);
 	double detJ, m, norm_u_e, h_e;
@@ -673,6 +673,9 @@ void HeatTransfer2D::postProcessElement(eslocal domain, eslocal eindex)
 			U(n, 0) = translation_motion->x.evaluator->evaluate(p, _step->currentTime, temp(n, 0)) * m;
 			U(n, 1) = translation_motion->y.evaluator->evaluate(p, _step->currentTime, temp(n, 0)) * m;
 		}
+//		if (heat_source) {
+//			f(n, 0) = heat_source->evaluate(p, _step->currentTime, temp(n, 0));
+//		}
 	}
 
 	for (size_t gp = 0; gp < N.size(); gp++) {

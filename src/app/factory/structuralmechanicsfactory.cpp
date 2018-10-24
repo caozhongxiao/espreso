@@ -36,6 +36,8 @@ StructuralMechanicsFactory::StructuralMechanicsFactory(Step *step, const Structu
 		}
 
 		break;
+	default:
+			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: invalid dimension.";
 	}
 
 	for (auto it = _configuration.discretization.begin(); it != _configuration.discretization.end(); ++it) {

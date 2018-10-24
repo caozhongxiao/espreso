@@ -136,7 +136,7 @@ void MeshPreprocessing::linkNodesAndElements()
 
 	std::vector<size_t> tbegin(threads);
 	for (size_t t = 1; t < threads; t++) {
-		tbegin[t] = std::lower_bound(localLinks.begin() + tbegin[t - 1], localLinks.end(), _mesh->nodes->distribution[t], [] (std::pair<eslocal, eslocal> &p, size_t n) { return p.first < n; }) - localLinks.begin();
+		tbegin[t] = std::lower_bound(localLinks.begin() + tbegin[t - 1], localLinks.end(), _mesh->nodes->distribution[t], [] (std::pair<eslocal, eslocal> &p, eslocal n) { return p.first < n; }) - localLinks.begin();
 	}
 
 	#pragma omp parallel for
@@ -212,7 +212,7 @@ void MeshPreprocessing::linkNodesAndElements()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		if (_mesh->nodes->distribution[t] != _mesh->nodes->distribution[t + 1]) {
-			auto llink = std::lower_bound(localLinks.begin(), localLinks.end(), _mesh->nodes->IDs->datatarray()[_mesh->nodes->distribution[t]], [] (std::pair<eslocal, eslocal> &p, size_t n) { return p.first < n; });
+			auto llink = std::lower_bound(localLinks.begin(), localLinks.end(), _mesh->nodes->IDs->datatarray()[_mesh->nodes->distribution[t]], [] (std::pair<eslocal, eslocal> &p, eslocal n) { return p.first < n; });
 			eslocal current;
 
 			std::vector<eslocal> tBoundaries, tData;
@@ -459,7 +459,7 @@ void MeshPreprocessing::computeElementsNeighbors()
 				auto begin = fdata.begin(), end = begin;
 				while (begin != fdata.end()) {
 					while (end != fdata.end() && *end == *begin) { ++end; }
-					if (*begin != IDs[e] && end - begin == face->size()) {
+					if (*begin != IDs[e] && end - begin == (eslocal)face->size()) {
 						tdata.back() = *begin;
 						break;
 					}
@@ -536,7 +536,6 @@ void MeshPreprocessing::computeDecomposedDual(std::vector<eslocal> &dualDist, st
 		std::vector<eslocal> tdata;
 		int mat1 = 0, mat2 = 0, reg = 0, etype1 = 0, etype2 = 0;
 		int rsize = _mesh->elements->regionMaskSize;
-		eslocal hindex;
 
 		auto neighs = _mesh->elements->neighbors->cbegin(t);
 		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++neighs) {
@@ -662,7 +661,7 @@ void MeshPreprocessing::computeRegionsSurface()
 
 		if (
 				_mesh->elementsRegions[r]->surface->edistribution.back() &&
-				_mesh->elementsRegions[r]->surface->ecounters[(int)Element::CODE::TRIANGLE3] == _mesh->elementsRegions[r]->surface->edistribution.back()) {
+				_mesh->elementsRegions[r]->surface->ecounters[(int)Element::CODE::TRIANGLE3] == (eslocal)_mesh->elementsRegions[r]->surface->edistribution.back()) {
 
 			serializededata<eslocal, eslocal>::balance(3, faces, &_mesh->elementsRegions[r]->surface->edistribution);
 			_mesh->elementsRegions[r]->surface->elements = new serializededata<eslocal, eslocal>(3, faces);

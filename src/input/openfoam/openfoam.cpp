@@ -181,7 +181,7 @@ void OpenFOAMLoader::buildFaces(PlainOpenFOAMData &mesh)
 
 	_edist = tarray<eslocal>::distribute(environment->MPIsize, mesh.nelements);
 
-	std::vector<size_t> fDistribution = Communication::getDistribution(mesh.fsize.size());
+	std::vector<eslocal> fDistribution = Communication::getDistribution<eslocal>(mesh.fsize.size());
 
 	// 2. Add sets that are not in any zone or boundary
 
@@ -312,7 +312,6 @@ void OpenFOAMLoader::buildFaces(PlainOpenFOAMData &mesh)
 		_fdist.push_back(_fdist.back() + mesh.fsize[f]);
 	}
 
-	eslocal firstID = fDistribution[environment->MPIrank];
 	for (size_t i = 0; i < usedfaces.size(); i++) {
 		eslocal findex = usedfaces[i] - fDistribution[environment->MPIrank];
 
@@ -536,16 +535,16 @@ void OpenFOAMLoader::buildElements(PlainOpenFOAMData &mesh)
 		}
 	};
 
-	auto getFace = [&] (const std::vector<eslocal> &data, const std::vector<eslocal> &perm, eslocal index, eslocal element, eslocal n1, eslocal n2) {
+	auto getFace = [&] (const std::vector<eslocal> &data, const std::vector<eslocal> &perm, size_t index, eslocal element, eslocal n1, eslocal n2) {
 		while (index < perm.size() && data[perm[index]] == element) {
 			for (eslocal f = 0; f < mesh.fsize[perm[index]]; f++) {
 				if (n1 == mesh.fnodes[_fdist[perm[index]] + f] && n2 == mesh.fnodes[_fdist[perm[index]] + (f + 1) % mesh.fsize[perm[index]]]) {
-					return std::pair<eslocal, eslocal>(index, f);
+					return std::pair<size_t, eslocal>(index, f);
 				}
 			}
 			++index;
 		}
-		return std::pair<eslocal, eslocal>(index, -1);
+		return std::pair<size_t, eslocal>(index, -1);
 	};
 
 	auto getUnknown = [&] (eslocal *kbegin, eslocal *kend, eslocal *ubegin, eslocal *uend) {
@@ -559,9 +558,10 @@ void OpenFOAMLoader::buildElements(PlainOpenFOAMData &mesh)
 				return *i;
 			}
 		}
+		return -1;
 	};
 
-	auto findElementWithSize = [&] (const std::vector<eslocal> &perm, size_t &index, size_t &max, size_t size) {
+	auto findElementWithSize = [&] (const std::vector<eslocal> &perm, size_t &index, size_t &max, int size) {
 		while (index < max) { // there is at least one owner
 			if (mesh.fsize[perm[index]] == size) {
 				break;
@@ -583,7 +583,7 @@ void OpenFOAMLoader::buildElements(PlainOpenFOAMData &mesh)
 
 		for (size_t e = tdistribution[t] + eoffset; e < tdistribution[t + 1] + eoffset; e++) {
 			size_t obegin = oindex, nbegin = nindex;
-			std::pair<eslocal, eslocal> index;
+			std::pair<size_t, eslocal> index;
 			size_t triangles = 0, squares = 0;
 			addFaces(mesh.owner, owner, triangles, squares, oindex, e);
 			addFaces(mesh.neighbour, neighbour, triangles, squares, nindex, e);

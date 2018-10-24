@@ -117,7 +117,7 @@ AsyncStore::~AsyncStore()
 }
 
 AsyncExecutor::AsyncExecutor(const ECFRoot &configuration)
-: _mesh(configuration), DirectExecutor(_mesh, configuration.output), _buffer(NULL)
+: DirectExecutor(_mesh, configuration.output), _mesh(configuration), _buffer(NULL)
 {
 
 }

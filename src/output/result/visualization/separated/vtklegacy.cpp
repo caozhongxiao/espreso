@@ -59,13 +59,13 @@ void VTKLegacy::mesh(const std::string &name)
 	size_t nsize = 0;
 	std::vector<eslocal> doffset(_mesh.elements->ndomains);
 
-	for (size_t d = 0; d < _mesh.elements->ndomains; d++) {
+	for (eslocal d = 0; d < _mesh.elements->ndomains; d++) {
 		doffset[d] = nsize;
 		nsize += _mesh.nodes->dintervals[d].back().DOFOffset + _mesh.nodes->dintervals[d].back().end - _mesh.nodes->dintervals[d].back().begin;
 	}
 
 	os << "POINTS " << nsize << " float\n";
-	for (size_t d = 0; d < _mesh.elements->ndomains; d++) {
+	for (eslocal d = 0; d < _mesh.elements->ndomains; d++) {
 		const auto &coordinates = _mesh.nodes->coordinates->datatarray();
 		Point p;
 		for (size_t i = 0; i < _mesh.nodes->dintervals[d].size(); ++i) {
@@ -100,7 +100,7 @@ void VTKLegacy::mesh(const std::string &name)
 	os << "CELL_DATA " << _mesh.elements->size << "\n";
 	os << "SCALARS cluster int 1\n";
 	os << "LOOKUP_TABLE default\n";
-	for (size_t e = 0; e < _mesh.elements->size; e++) {
+	for (eslocal e = 0; e < _mesh.elements->size; e++) {
 		os << environment->MPIrank << "\n";
 	}
 	os << "\n";
@@ -128,13 +128,13 @@ void VTKLegacy::solution(const std::string &name)
 	size_t nsize = 0;
 	std::vector<eslocal> doffset(_mesh.elements->ndomains);
 
-	for (size_t d = 0; d < _mesh.elements->ndomains; d++) {
+	for (eslocal d = 0; d < _mesh.elements->ndomains; d++) {
 		doffset[d] = nsize;
 		nsize += _mesh.nodes->dintervals[d].back().DOFOffset + _mesh.nodes->dintervals[d].back().end - _mesh.nodes->dintervals[d].back().begin;
 	}
 
 	os << "POINTS " << nsize << " float\n";
-	for (size_t d = 0; d < _mesh.elements->ndomains; d++) {
+	for (eslocal d = 0; d < _mesh.elements->ndomains; d++) {
 		const auto &coordinates = _mesh.nodes->coordinates->datatarray();
 		Point p;
 		for (size_t i = 0; i < _mesh.nodes->dintervals[d].size(); ++i) {
@@ -216,9 +216,9 @@ void VTKLegacy::solution(const std::string &name)
 		}
 	}
 
-	for (size_t d = 0; d < _mesh.elements->ndomains; d++) {
+	for (eslocal d = 0; d < _mesh.elements->ndomains; d++) {
 		for (size_t i = 0; i < _mesh.nodes->dintervals[d].size(); ++i) {
-			for (size_t n = 0; n < _mesh.nodes->dintervals[d][i].end - _mesh.nodes->dintervals[d][i].begin; n++) {
+			for (eslocal n = 0; n < _mesh.nodes->dintervals[d][i].end - _mesh.nodes->dintervals[d][i].begin; n++) {
 				os << (*solution->decomposedData)[d][_mesh.nodes->dintervals[d][i].DOFOffset + n] << "\n";
 			}
 		}
@@ -241,13 +241,13 @@ void VTKLegacy::nodesIntervals(const std::string &name)
 	os << "\n";
 
 	os << "CELLS " << _mesh.nodes->size << " " << 2 * _mesh.nodes->size << "\n";
-	for (size_t n = 0; n < _mesh.nodes->size; ++n) {
+	for (eslocal n = 0; n < _mesh.nodes->size; ++n) {
 		os << "1 " << n << "\n";
 	}
 	os << "\n";
 
 	os << "CELL_TYPES " << _mesh.nodes->size << "\n";
-	for (size_t n = 0; n < _mesh.nodes->size; ++n) {
+	for (eslocal n = 0; n < _mesh.nodes->size; ++n) {
 		os << "1\n";
 	}
 	os << "\n";
@@ -256,7 +256,7 @@ void VTKLegacy::nodesIntervals(const std::string &name)
 	os << "SCALARS interval int 1\n";
 	os << "LOOKUP_TABLE default\n";
 	int interval = 0;
-	for (eslocal i = 0; i < _mesh.nodes->pintervals.size(); i++) {
+	for (size_t i = 0; i < _mesh.nodes->pintervals.size(); i++) {
 		for (eslocal n = _mesh.nodes->pintervals[i].begin; n < _mesh.nodes->pintervals[i].end; n++) {
 			os << interval << "\n";
 		}
@@ -264,7 +264,7 @@ void VTKLegacy::nodesIntervals(const std::string &name)
 	}
 	os << "SCALARS sourceProcess int 1\n";
 	os << "LOOKUP_TABLE default\n";
-	for (eslocal i = 0; i < _mesh.nodes->pintervals.size(); i++) {
+	for (size_t i = 0; i < _mesh.nodes->pintervals.size(); i++) {
 		for (eslocal n = _mesh.nodes->pintervals[i].begin; n < _mesh.nodes->pintervals[i].end; n++) {
 			os << _mesh.nodes->pintervals[i].sourceProcess << "\n";
 		}
@@ -288,13 +288,13 @@ void VTKLegacy::externalIntervals(const std::string &name)
 	os << "\n";
 
 	eslocal csize = 0;
-	for (eslocal i = 0; i < _mesh.nodes->externalIntervals.size(); i++) {
+	for (size_t i = 0; i < _mesh.nodes->externalIntervals.size(); i++) {
 		eslocal ii = _mesh.nodes->externalIntervals[i];
 		csize += _mesh.nodes->pintervals[ii].end - _mesh.nodes->pintervals[ii].begin;
 	}
 
 	os << "CELLS " << csize << " " << 2 * csize << "\n";
-	for (eslocal i = 0; i < _mesh.nodes->externalIntervals.size(); i++) {
+	for (size_t i = 0; i < _mesh.nodes->externalIntervals.size(); i++) {
 		eslocal ii = _mesh.nodes->externalIntervals[i];
 		for (eslocal n = _mesh.nodes->pintervals[ii].begin; n < _mesh.nodes->pintervals[ii].end; n++) {
 			os << "1 " << n << "\n";
@@ -303,7 +303,7 @@ void VTKLegacy::externalIntervals(const std::string &name)
 	os << "\n";
 
 	os << "CELL_TYPES " << csize << "\n";
-	for (size_t n = 0; n < csize; ++n) {
+	for (eslocal n = 0; n < csize; ++n) {
 		os << "1\n";
 	}
 	os << "\n";
@@ -312,7 +312,7 @@ void VTKLegacy::externalIntervals(const std::string &name)
 	os << "SCALARS interval int 1\n";
 	os << "LOOKUP_TABLE default\n";
 	int interval = 0;
-	for (eslocal i = 0; i < _mesh.nodes->externalIntervals.size(); i++) {
+	for (size_t i = 0; i < _mesh.nodes->externalIntervals.size(); i++) {
 		eslocal ii = _mesh.nodes->externalIntervals[i];
 		for (eslocal n = _mesh.nodes->pintervals[ii].begin; n < _mesh.nodes->pintervals[ii].end; n++) {
 			os << interval << "\n";
@@ -358,7 +358,7 @@ void VTKLegacy::sharedInterface(const std::string &name)
 	os << "CELL_DATA " << points << "\n";
 	os << "SCALARS distribution int 1\n";
 	os << "LOOKUP_TABLE default\n";
-	for (eslocal i = 0; i < _mesh.FETIData->inodesDistribution.size() - 1; i++) {
+	for (size_t i = 0; i < _mesh.FETIData->inodesDistribution.size() - 1; i++) {
 		for (eslocal n = _mesh.FETIData->inodesDistribution[i]; n < _mesh.FETIData->inodesDistribution[i + 1]; n++) {
 			os << i << "\n";
 		}
@@ -380,7 +380,7 @@ void VTKLegacy::surface(const std::string &name)
 		Esutils::sortAndRemoveDuplicity(nodes);
 
 		os << "POINTS " << nodes.size() << " float\n";
-		for (eslocal n = 0; n < nodes.size(); ++n) {
+		for (size_t n = 0; n < nodes.size(); ++n) {
 			const Point &p = _mesh.nodes->coordinates->datatarray()[nodes[n]];
 			os << p.x << " " << p.y << " " << p.z << "\n";
 		}
@@ -443,8 +443,8 @@ void VTKLegacy::domainSurface(const std::string &name)
 		os << "DATASET UNSTRUCTURED_GRID\n\n";
 
 		os << "POINTS " << _mesh.domainsSurface->coordinates->datatarray().size() << " float\n";
-		for (size_t d = 0; d < _mesh.elements->ndomains; ++d) {
-			for (eslocal n = _mesh.domainsSurface->cdistribution[d]; n < _mesh.domainsSurface->cdistribution[d + 1]; ++n) {
+		for (eslocal d = 0; d < _mesh.elements->ndomains; ++d) {
+			for (size_t n = _mesh.domainsSurface->cdistribution[d]; n < _mesh.domainsSurface->cdistribution[d + 1]; ++n) {
 				Point p = shrink(_mesh.domainsSurface->coordinates->datatarray()[n], _mesh.nodes->center, _mesh.nodes->dcenter[d], clusterShrinkRatio, domainShrinkRatio);
 				os << p.x << " " << p.y << " " << p.z << "\n";
 			}
@@ -452,7 +452,7 @@ void VTKLegacy::domainSurface(const std::string &name)
 		os << "\n";
 
 		os << "CELLS " << elements->structures() << " " << elements->structures() + elements->datatarray().size() << "\n";
-		for (size_t d = 0; d < _mesh.elements->ndomains; ++d) {
+		for (eslocal d = 0; d < _mesh.elements->ndomains; ++d) {
 			for (auto element = elements->cbegin() + distribution[d]; element != elements->cbegin() + distribution[d + 1]; ++element) {
 				os << element->size() << " ";
 				for (auto n = element->begin(); n != element->end(); ++n) {
@@ -487,7 +487,7 @@ void VTKLegacy::points(const std::string &name, const std::vector<eslocal> &poin
 
 	os << "POINTS " << points.size() << " float\n";
 	for (size_t d = 0; d < distribution.size() - 1; d++) {
-		for (size_t i = distribution[d]; i < distribution[d + 1]; i++) {
+		for (eslocal i = distribution[d]; i < distribution[d + 1]; i++) {
 			Point n = shrink(_mesh.nodes->coordinates->datatarray()[points[i]], _mesh.nodes->center, _mesh.nodes->dcenter[d], clusterShrinkRatio, domainShrinkRatio);
 			os << n.x << " " << n.y << " " << n.z << "\n";
 		}
@@ -536,13 +536,13 @@ void VTKLegacy::corners(const std::string &name)
 	os << "\n";
 
 	os << "CELLS " << points << " " << 2 * points << "\n";
-	for (size_t n = 0; n < points; ++n) {
+	for (eslocal n = 0; n < points; ++n) {
 		os << "1 " << n << "\n";
 	}
 	os << "\n";
 
 	os << "CELL_TYPES " << points << "\n";
-	for (size_t n = 0; n < points; ++n) {
+	for (eslocal n = 0; n < points; ++n) {
 		os << "1\n";
 	}
 	os << "\n";
@@ -862,7 +862,7 @@ void VTKLegacy::closeElements(const std::string &name)
 	}
 
 	os << "CELLS " << cells << " " << 3 * cells << "\n";
-	size_t eindex = 0, noffset;
+	eslocal eindex = 0, noffset;
 	for (auto e = _mesh.contacts->closeElements->cbegin(); e != _mesh.contacts->closeElements->cend(); ++e) {
 		noffset = 1;
 		for (auto n = e->begin(); n != e->end(); ++n, ++noffset) {
@@ -1238,7 +1238,7 @@ void VTKLegacyDebugInfo::spaceFillingCurve(const SpaceFillingCurve &sfc, const s
 	step.y = sfc.size().y / n;
 	step.z = sfc.size().z / n;
 
-	size_t bstep, x, y, z;
+	size_t bstep;
 	if (sfc.dimension() == 2) {
 		sfc.iterateBuckets(bucketsBorders.front(), bucketsBorders.back(), [&] (size_t depth, size_t x, size_t y) {
 			bstep = 1 << (maxdepth - depth);

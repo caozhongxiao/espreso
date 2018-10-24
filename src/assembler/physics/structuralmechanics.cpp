@@ -87,7 +87,7 @@ void StructuralMechanics::prepare()
 
 	// Get center
 	#pragma omp parallel for
-	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
+	for (eslocal p = 0; p < _mesh->elements->ndomains; p++) {
 		Point center;
 		for (size_t i = 0; i < _mesh->nodes->dintervals[p].size(); i++) {
 			for (eslocal n = _mesh->nodes->dintervals[p][i].begin; n < _mesh->nodes->dintervals[p][i].end; ++n) {
@@ -97,7 +97,7 @@ void StructuralMechanics::prepare()
 		_dCenter[p] = center;
 	}
 
-	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
+	for (eslocal p = 0; p < _mesh->elements->ndomains; p++) {
 		_cCenter[_mesh->elements->clusters[p]] += _dCenter[p];
 		_dNp[p] = _mesh->nodes->dintervals[p].back().DOFOffset + _mesh->nodes->dintervals[p].back().end - _mesh->nodes->dintervals[p].back().begin;
 		_dCenter[p] = _dCenter[p] / _dNp[p];
@@ -109,7 +109,7 @@ void StructuralMechanics::prepare()
 
 	// Compute norm of column 4 (norm.x)
 	#pragma omp parallel for
-	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
+	for (eslocal p = 0; p < _mesh->elements->ndomains; p++) {
 		double pnorm = 0, pcnorm = 0;
 		for (size_t i = 0; i < _mesh->nodes->dintervals[p].size(); i++) {
 			for (eslocal n = _mesh->nodes->dintervals[p][i].begin; n < _mesh->nodes->dintervals[p][i].end; ++n) {
@@ -122,7 +122,7 @@ void StructuralMechanics::prepare()
 		_dNorm[p].x = std::sqrt(pnorm);
 		cbuffer1[p] += pcnorm;
 	}
-	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
+	for (eslocal p = 0; p < _mesh->elements->ndomains; p++) {
 		_cNorm[_mesh->elements->clusters[p]].x += cbuffer1[p];
 	}
 	for (size_t c = 0; c < clusters; c++) {
@@ -132,7 +132,7 @@ void StructuralMechanics::prepare()
 	// Compute coefficient r44, r45
 	cbuffer1 = cbuffer2 = std::vector<double>(_mesh->elements->ndomains, 0);
 	#pragma omp parallel for
-	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
+	for (eslocal p = 0; p < _mesh->elements->ndomains; p++) {
 		size_t c = _mesh->elements->clusters[p];
 		for (size_t i = 0; i < _mesh->nodes->dintervals[p].size(); i++) {
 			for (eslocal n = _mesh->nodes->dintervals[p][i].begin; n < _mesh->nodes->dintervals[p][i].end; ++n) {
@@ -146,7 +146,7 @@ void StructuralMechanics::prepare()
 			}
 		}
 	}
-	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
+	for (eslocal p = 0; p < _mesh->elements->ndomains; p++) {
 		_cr44[_mesh->elements->clusters[p]] += cbuffer1[p];
 		_cr45[_mesh->elements->clusters[p]] += cbuffer2[p];
 	}
@@ -154,7 +154,7 @@ void StructuralMechanics::prepare()
 	// Compute norm of column 5 (norm.y)
 	cbuffer1 = std::vector<double>(_mesh->elements->ndomains, 0);
 	#pragma omp parallel for
-	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
+	for (eslocal p = 0; p < _mesh->elements->ndomains; p++) {
 		double dnorm = 0, cnorm = 0;
 		size_t c = _mesh->elements->clusters[p];
 		for (size_t i = 0; i < _mesh->nodes->dintervals[p].size(); i++) {
@@ -173,7 +173,7 @@ void StructuralMechanics::prepare()
 		_dNorm[p].y = std::sqrt(dnorm);
 		cbuffer1[p] = cnorm;
 	}
-	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
+	for (eslocal p = 0; p < _mesh->elements->ndomains; p++) {
 		_cNorm[_mesh->elements->clusters[p]].y += cbuffer1[p];
 	}
 	for (size_t c = 0; c < clusters; c++) {
@@ -183,7 +183,7 @@ void StructuralMechanics::prepare()
 	// Compute coefficient r46, r55, r56
 	cbuffer1 = cbuffer2 = cbuffer3 = std::vector<double>(_mesh->elements->ndomains, 0);
 	#pragma omp parallel for
-	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
+	for (eslocal p = 0; p < _mesh->elements->ndomains; p++) {
 		double c5;
 		size_t c = _mesh->elements->clusters[p];
 		for (size_t i = 0; i < _mesh->nodes->dintervals[p].size(); i++) {
@@ -214,7 +214,7 @@ void StructuralMechanics::prepare()
 			}
 		}
 	}
-	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
+	for (eslocal p = 0; p < _mesh->elements->ndomains; p++) {
 		_cr46[_mesh->elements->clusters[p]] += cbuffer1[p];
 		_cr55[_mesh->elements->clusters[p]] += cbuffer2[p];
 		_cr56[_mesh->elements->clusters[p]] += cbuffer3[p];
@@ -223,7 +223,7 @@ void StructuralMechanics::prepare()
 	// Compute norm of column 6 (norm.z)
 	cbuffer1 = std::vector<double>(_mesh->elements->ndomains, 0);
 	#pragma omp parallel for
-	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
+	for (eslocal p = 0; p < _mesh->elements->ndomains; p++) {
 		double dnorm = 0, cnorm = 0, c6;
 		size_t c = _mesh->elements->clusters[p];
 		for (size_t i = 0; i < _mesh->nodes->dintervals[p].size(); i++) {
@@ -248,7 +248,7 @@ void StructuralMechanics::prepare()
 		_dNorm[p].z = std::sqrt(dnorm);
 		cbuffer1[p] = cnorm;
 	}
-	for (size_t p = 0; p < _mesh->elements->ndomains; p++) {
+	for (eslocal p = 0; p < _mesh->elements->ndomains; p++) {
 		_cNorm[_mesh->elements->clusters[p]].z += cbuffer1[p];
 	}
 	for (size_t c = 0; c < clusters; c++) {

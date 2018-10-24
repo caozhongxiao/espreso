@@ -136,8 +136,8 @@ struct Communication {
 	template <typename Ttype>
 	static bool broadcastUnknownSize(std::vector<Ttype> &buffer, MPIGroup &group = MPITools::procs());
 
-	template <typename Ttype>
-	static bool balance(std::vector<Ttype> &buffer, const std::vector<size_t> &currentDistribution, const std::vector<size_t> &targetDistribution, MPIGroup &group = MPITools::procs());
+	template <typename Ttype, typename Tdistribution>
+	static bool balance(std::vector<Ttype> &buffer, const std::vector<Tdistribution> &currentDistribution, const std::vector<Tdistribution> &targetDistribution, MPIGroup &group = MPITools::procs());
 
 	template <typename Ttype>
 	static bool allToAllV(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, const std::vector<int> &ssize, const std::vector<int> &rsize, MPIGroup &group = MPITools::procs());

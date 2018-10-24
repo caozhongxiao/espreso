@@ -165,7 +165,6 @@ void Physics::updateMatrix(Matrices matrix)
 	}
 	ESINFO(PROGRESS3);
 
-	size_t invalid;
 	int my = _invalidElements, all = 0;
 	MPI_Reduce(&my, &all, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
 	if (all) {
@@ -286,7 +285,7 @@ void Physics::fillDOFsIndices(edata<const eslocal> &nodes, eslocal domain, std::
 	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
 	DOFs.resize(_DOFs * nodes.size());
 	size_t i = 0;
-	for (size_t dof = 0; dof < _DOFs; dof++) {
+	for (int dof = 0; dof < _DOFs; dof++) {
 		for (auto n = nodes.begin(); n != nodes.end(); n++) {
 			auto it = std::lower_bound(intervals.begin(), intervals.end(), *n, [] (const DomainInterval &interval, eslocal node) { return interval.end <= node; });
 			DOFs[i++] = _DOFs * (it->DOFOffset + *n - it->begin) + dof;

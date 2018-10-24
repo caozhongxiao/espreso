@@ -122,7 +122,7 @@ void ElementStore::unpack(const char* &p)
 			delete epointers;
 		}
 		epointers = new serializededata<eslocal, Element*>(1, tarray<Element*>(1, size));
-		for (size_t i = 0; i < size; ++i) {
+		for (eslocal i = 0; i < size; ++i) {
 			epointers->datatarray()[i] = &_eclasses[0][eindices[i]];
 		}
 	}

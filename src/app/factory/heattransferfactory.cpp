@@ -28,6 +28,8 @@ HeatTransferFactory::HeatTransferFactory(Step *step, const HeatTransferConfigura
 	case DIMENSION::D3:
 		_physics.push_back(new HeatTransfer3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
 		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: invalid dimension.";
 	}
 
 	for (auto it = _configuration.discretization.begin(); it != _configuration.discretization.end(); ++it) {

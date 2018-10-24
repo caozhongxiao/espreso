@@ -11,14 +11,15 @@ std::vector<TType> tarray<TType>::distribute(size_t threads, size_t size)
 {
 	std::vector<TType> distribution(threads + 1);
 
-	TType chunkSize = std::ceil(size / (double)threads);
+	TType _size = size;
+	TType chunkSize = std::ceil(_size / (double)threads);
 	for (size_t t = 1; t < threads; t++) {
 		distribution[t] = t * chunkSize;
-		if (distribution[t] > size) {
-			distribution[t] = size;
+		if (distribution[t] > _size) {
+			distribution[t] = _size;
 		}
 	}
-	distribution[threads] = size;
+	distribution[threads] = _size;
 
 	return distribution;
 }

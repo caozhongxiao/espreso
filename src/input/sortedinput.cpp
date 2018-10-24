@@ -297,7 +297,7 @@ void SortedInput::fillCoordinates()
 
 	TimeEvent e4("FC COMPUTE BACKED"); e4.start();
 
-	std::vector<size_t> ndistribution = tarray<size_t>::distribute(threads, _meshData.coordinates.size());
+	std::vector<eslocal> ndistribution = tarray<eslocal>::distribute(threads, _meshData.coordinates.size());
 	std::vector<std::vector<std::vector<eslocal> > > backedData(threads, std::vector<std::vector<eslocal> >(_targetRanks.size()));
 
 	#pragma omp parallel for
@@ -309,7 +309,7 @@ void SortedInput::fillCoordinates()
 		for (size_t r = 0; r < _targetRanks.size(); r++) {
 			rPointer[r] = std::lower_bound(_rankNodeMap[r].begin(), _rankNodeMap[r].end(), _nDistribution[environment->MPIrank] + ndistribution[t]);
 		}
-		for (size_t n = ndistribution[t]; n < ndistribution[t + 1]; ++n) {
+		for (eslocal n = ndistribution[t]; n < ndistribution[t + 1]; ++n) {
 			ranks.clear();
 			ranksOffset.clear();
 			for (size_t r = 0; r < _targetRanks.size(); r++) {
@@ -923,8 +923,6 @@ void SortedInput::addBoundaryRegions()
 
 void SortedInput::addElementRegions()
 {
-	size_t threads = environment->OMP_NUM_THREADS;
-
 //	if (environment->MPIsize == 1) {
 //		for (size_t i = 0; i < _meshData.eregions.size(); i++) {
 //			_mesh.elementsRegions.push_back(new ElementsRegionStore(_meshData.eregions[i].name));

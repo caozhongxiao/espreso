@@ -51,7 +51,7 @@ const char* WorkbenchParser::getLast() const
 
 void WorkbenchParser::fillDistribution(std::vector<BlockEnd> &blocksEnds, std::vector<size_t> &distribution)
 {
-	if (last == -1) {
+	if (last == (size_t)-1) {
 		last = std::lower_bound(blocksEnds.begin(), blocksEnds.end(), first, [] (BlockEnd &b, size_t first) { return b.first < first; })->first;
 	}
 

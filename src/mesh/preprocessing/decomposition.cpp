@@ -710,7 +710,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 			for (size_t t = 0; t < threads; t++) {
 				auto enodes = _mesh->boundaryRegions[r]->elements->cbegin() + distribution[t];
 				std::vector<eslocal> nlinks;
-				int counter;
+				size_t counter;
 				for (size_t e = distribution[t]; e < distribution[t + 1]; ++e, ++enodes) {
 					nlinks.clear();
 					for (auto n = enodes->begin(); n != enodes->end(); ++n) {

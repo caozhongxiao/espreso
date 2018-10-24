@@ -61,7 +61,7 @@ size_t HilbertCurve::D3toD1(size_t n, size_t x, size_t y, size_t z) const
 		rx = (x & s) > 0;
 		ry = (y & s) > 0;
 		rz = (z & s) > 0;
-		d += s * s * s * (4 * ry + (3 * (ry ^ rx)) ^ rz);
+		d += s * s * s * (4 * ry + ((3 * (ry ^ rx)) ^ rz));
 
 		rotateD3(s, x, y, z, rx, ry, rz);
 	}

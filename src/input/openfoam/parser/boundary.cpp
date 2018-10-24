@@ -9,7 +9,7 @@ using namespace espreso;
 
 bool OpenFOAMBoundary::readData(PlainOpenFOAMData &data)
 {
-	size_t nFaces, startFace;
+	eslocal nFaces, startFace;
 	std::string name, parameter;
 
 	const char *c = begin - 3;

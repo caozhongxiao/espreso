@@ -331,8 +331,8 @@ bool Communication::broadcastUnknownSize(std::vector<Ttype> &buffer, MPIGroup &g
 	return true;
 }
 
-template <typename Ttype>
-bool Communication::balance(std::vector<Ttype> &buffer, const std::vector<size_t> &currentDistribution, const std::vector<size_t> &targetDistribution, MPIGroup &group)
+template <typename Ttype, typename Tdistribution>
+bool Communication::balance(std::vector<Ttype> &buffer, const std::vector<Tdistribution> &currentDistribution, const std::vector<Tdistribution> &targetDistribution, MPIGroup &group)
 {
 	MPIType type = MPITools::getType<Ttype>();
 	if (type.multiplier * buffer.size() > 1 << 30) {
@@ -343,13 +343,13 @@ bool Communication::balance(std::vector<Ttype> &buffer, const std::vector<size_t
 	std::vector<int> ssize(group.size), sdisp(group.size), rsize(group.size), rdisp(group.size);
 
 	auto fill = [&] (
-			const std::vector<size_t> &from, const std::vector<size_t> &to,
+			const std::vector<Tdistribution> &from, const std::vector<Tdistribution> &to,
 			std::vector<int> &size, std::vector<int> &disp) {
 
-		size_t offset = 0;
-		size_t restSize = from[group.rank + 1] - from[group.rank];
-		size_t tIndex = std::lower_bound(to.begin(), to.end(), from[group.rank] + 1) - to.begin() - 1;
-		size_t tOffset = from[group.rank] - to[tIndex];
+		Tdistribution offset = 0;
+		Tdistribution restSize = from[group.rank + 1] - from[group.rank];
+		Tdistribution tIndex = std::lower_bound(to.begin(), to.end(), from[group.rank] + 1) - to.begin() - 1;
+		Tdistribution tOffset = from[group.rank] - to[tIndex];
 		while (restSize) {
 			if (restSize < to[tIndex + 1] - to[tIndex] - tOffset) {
 				size[tIndex] = restSize;
@@ -561,8 +561,8 @@ bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype> &sBuf
 
 	auto movebefore = [&] (std::vector<Ttype> &data, int rank, size_t begin, size_t end) {
 		size_t pos = begin;
-		while (pos < end && data[pos + 1] < rank) {
-			pos += data[pos];
+		while (pos < end && (int)data[pos + 1] < rank) {
+			pos += (size_t)data[pos];
 		}
 		return pos;
 	};

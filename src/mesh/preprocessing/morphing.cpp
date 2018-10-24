@@ -247,8 +247,6 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 	start("processing morphing '" + name + "'");
 
 	start("preparing data for morphing '" + name + "'");
-	ESINFO(OVERVIEW) << "============= Morphing data ================";
-	ESINFO(OVERVIEW)<<"Processing morphing			: "<<name<<"\n"<<configuration;
 
 	if (_mesh->nodes->originCoordinates == NULL) {
 		_mesh->nodes->originCoordinates = new serializededata<eslocal, Point>(*_mesh->nodes->coordinates);
@@ -280,23 +278,13 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 			}
 		}
 		processMorpher(it->second, dimension, sPoints, prevsize, sDisplacement);
-
-		ESINFO(OVERVIEW)<<"\tProcessing region: "<<it->first<<"\n"<<it->second<<Info::plain();
-		ESINFO(OVERVIEW)<<"\t\t\tSIZE\t\t: "<<region->uniqueTotalSize<<" nodes\n";
 	}
 
 	if (environment->MPIrank == 0) {
 		if (configuration.external_ffd.path!="") {
-			ESINFO(OVERVIEW)<<"\tExternal FFD file\t\t: "<<configuration.external_ffd.path;
-
 			std::map<std::string, std::vector<Point>> external_data;
 
 			readExternalFile(configuration, dimension, external_data);
-
-			for(auto it = external_data.begin(); it!=external_data.end(); ++it) {
-				ESINFO(OVERVIEW)<<"\t\tREGION\t\t\t: "<<it->first<<" ("<<it->second.size()<<" points)";
-			}
-			ESINFO(OVERVIEW)<<"";
 
 			for(auto it = configuration.external_ffd.morphers.begin(); it != configuration.external_ffd.morphers.end(); ++it) {
 				size_t prevsize = sPoints.size();
@@ -308,8 +296,6 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 					sPoints.push_back(*n);
 				}
 				processMorpher(it->second, dimension, sPoints, prevsize, sDisplacement);
-
-				ESINFO(OVERVIEW)<<"\tProcessing region: "<<it->first<<"\n"<<it->second;
 			}
 		}
 	}
@@ -327,7 +313,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 	if (!Communication::gatherUnknownSize(sDisplacement, rDisplacement)) {
 		ESINFO(ERROR) << "ESPRESO internal error: gather morphed displacement";
 	}
-	ESINFO(OVERVIEW)<<"\tGathered "<<rPoints.size()<<" points in morphing and their displacements on process 0.";
+
 	finish("transmitting data for morphing '" + name + "'");
 
 	start("solving data for morphing '" + name + "'");
@@ -340,15 +326,12 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 		std::vector<double> M_values;
 		//eslocal rowsFromCoordinates = rPoints.size();
-		int M_size = rPoints.size() + dimension + 1;
+		size_t M_size = rPoints.size() + dimension + 1;
 
-		eslocal realSize = prepareMatrixM(rPoints, rDisplacement, dimension, configuration, M_values);
+		size_t realSize = prepareMatrixM(rPoints, rDisplacement, dimension, configuration, M_values);
 
 		if (realSize != M_size) {
-			ESINFO(GLOBAL_ERROR)
-					<< "ESPRESO internal error: error while building matrix M.";
-		}else {
-			ESINFO(OVERVIEW)<<"\tSolving system: M["<<M_size<<","<<M_size<<"] * X = Y["<<M_size<<","<<dimension<<"].";
+			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: error while building matrix M.";
 		}
 
 		switch (configuration.solver) {
@@ -362,7 +345,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 				wq_values.resize(M_size*dimension);
 
 				for (int d = 0; d < dimension; d++) {
-					eslocal r;
+					size_t r;
 					for (r = 0; r < rPoints.size(); r++) {
 						rhs_values[M_size*d + r] = rDisplacement[r * dimension + d];
 					}
@@ -375,7 +358,6 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 			std::vector<eslocal> iterations;
 
 			if (environment->MPIrank == 0 && environment->MPIsize < dimension) {
-				eslocal itercount;
 				for(eslocal d = 0 ; d < dimension; d++) {
 					eslocal itercount;
 					MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
@@ -428,12 +410,6 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 				}
 
 			}
-			if (environment->MPIrank == 0)  {
-				ESINFO(OVERVIEW) << "\tSystem solved by iterative solver.";
-				for(int d=0;d<dimension;d++) {
-					ESINFO(OVERVIEW) << "\tNumber of iterations to solve "<<d<<". column = "<<iterations[d];
-				}
-			}
 
 		} break;
 
@@ -442,7 +418,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 			wq_values.resize(M_size*dimension);
 
 			for (int d = 0; d < dimension; d++) {
-				eslocal r;
+				size_t r;
 				for (r = 0; r < rPoints.size(); r++) {
 					wq_values[M_size*d + r] = rDisplacement[r * dimension + d];
 				}
@@ -468,12 +444,10 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 			if (result!=0) {
 
-				ESINFO(OVERVIEW) << "\tDense solver error: trying to repair matrix M.";
-
 				bool use_x = true,use_y = true,use_z = true;
 
 				std::vector<double> xs(rPoints.size()), ys(rPoints.size()), zs(rPoints.size());
-				for(int i=0; i<rPoints.size(); i++) {
+				for(size_t i=0; i<rPoints.size(); i++) {
 					Point &p = rPoints[i];
 					xs[i] = p.x;
 					ys[i] = p.y;
@@ -493,16 +467,13 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 				};
 
 				if (checkAllSame(xs)) {
-					ESINFO(OVERVIEW) << "\tDense solver error: removing row containing X row from coordinates.";
 					use_x=false;
 				}
 				if (checkAllSame(ys)) {
-					ESINFO(OVERVIEW) << "\tDense solver error: removing row containing Y row from coordinates.";
 					use_y=false;
 				}
 				if (dimension == 3) {
 					if (checkAllSame(zs)) {
-						ESINFO(OVERVIEW) << "\tDense solver error: removing row containing Z row from coordinates.";
 						use_z=false;
 					}
 				}
@@ -514,7 +485,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 				wq_values.resize(realSize*dimension);
 
 				for (int d = 0; d < dimension; d++) {
-					eslocal r;
+					size_t r;
 					for (r = 0; r < rPoints.size(); r++) {
 						wq_values[realSize*d + r] = rDisplacement[r * dimension + d];
 					}
@@ -566,7 +537,6 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 				if (dimension == 3 && !use_z) insertRowInWQ(rPoints.size()+2);
 
 			}
-			ESINFO(OVERVIEW) << "\tSystem solved by direct solver.";
 		} break;
 
 		default:
@@ -580,7 +550,6 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 	if (!Communication::broadcastUnknownSize(wq_values)) {
 		ESINFO(ERROR) << "ESPRESO internal error: broadcast WQ.";
 	}
-	ESINFO(OVERVIEW) << "\tSolution broadcasted to all processes.";
 	finish("transmitting results for morphing '" + name + "'");
 
 
@@ -635,7 +604,6 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 		}
 	}
-	ESINFO(OVERVIEW) << "\tSolution applied to region\t:"<<configuration.target<<".";
 	finish("applying morphing '" + name + "'");
 
 
@@ -658,7 +626,6 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		}
 	}
 
-	//ESINFO(OVERVIEW) << "============================================";
 	finish("processing morphing '" + name + "'");
 
 	MATH::setNumberOfThreads(1);

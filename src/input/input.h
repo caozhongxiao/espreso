@@ -24,7 +24,7 @@ protected:
 
 	void balance();
 
-	std::vector<size_t> getDistribution(const std::vector<eslocal> &IDs, const std::vector<eslocal> &permutation);
+	std::vector<eslocal> getDistribution(const std::vector<eslocal> &IDs, const std::vector<eslocal> &permutation);
 
 	void balanceNodes();
 	void balancePermutedNodes();
@@ -33,7 +33,7 @@ protected:
 
 	void assignRegions(
 			std::map<std::string, std::vector<eslocal> > &regions, std::vector<eslocal> &IDs,
-			std::vector<size_t> &distribution,
+			std::vector<eslocal> &distribution,
 			size_t &rsize, std::vector<eslocal> &rbits);
 	void fillRegions(std::map<std::string, std::vector<eslocal> > &regions, size_t &rsize, std::vector<eslocal> &rbits);
 
@@ -56,7 +56,7 @@ protected:
 	PlainMeshData &_meshData;
 	Mesh &_mesh;
 
-	std::vector<size_t> _nDistribution, _eDistribution, _etypeDistribution;
+	std::vector<eslocal> _nDistribution, _eDistribution, _etypeDistribution;
 
 	size_t _eregsize, _nregsize;
 	std::vector<eslocal> _eregions, _nregions;

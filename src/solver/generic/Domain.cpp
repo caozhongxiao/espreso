@@ -1,3 +1,4 @@
+
 #include "Domain.h"
 #include "../../basis/logging/logging.h"
 
@@ -43,16 +44,17 @@ Domain::Domain(const FETISolverConfiguration &configuration, Instance *instance_
 
 		Kplus_R(instance_in->N1[domain_index_in]),
 		Kplus_R2(instance_in->N2[domain_index_in]),
+
+		Kplus_origR(instance_in->origKN1[domain_index_in]),
+		Kplus_origR2(instance_in->origKN2[domain_index_in]),
+
 		_RegMat(instance_in->RegMat[domain_index_in]),
 
 		f(instance_in->f[domain_index_in]),
 
 		B0(instance_in->B0[domain_index_in]),
 		vec_c(instance_in->B1c[domain_index_in]),
-		vec_lb(instance_in->LB[domain_index_in]),
-
-		Kplus_origR(instance_in->origKN1[domain_index_in]),
-		Kplus_origR2(instance_in->origKN2[domain_index_in])
+		vec_lb(instance_in->LB[domain_index_in])
 
 
 {

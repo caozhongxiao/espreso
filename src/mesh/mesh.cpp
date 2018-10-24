@@ -711,7 +711,7 @@ void Mesh::printMeshStatistics()
 
 	auto totalesize = [] (std::vector<eslocal> &ecounters) {
 		eslocal size = 0;
-		for (int etype = 0; etype < ecounters.size(); etype++) {
+		for (size_t etype = 0; etype < ecounters.size(); etype++) {
 			size += ecounters[etype];
 		}
 		return size;

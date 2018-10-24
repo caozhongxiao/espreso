@@ -217,8 +217,8 @@ struct ECFMetaData {
 	  datatype(other.datatype), pattern(other.pattern),
 	  options(other.options), variables(other.variables),
 	  tensor(other.tensor), regionMap(other.regionMap),
-	  unit(other.unit), isallowed(other.isallowed),
-	  ismandatory(other.ismandatory), condition(other.condition->copy())
+	  unit(other.unit), condition(other.condition->copy()),
+	  isallowed(other.isallowed), ismandatory(other.ismandatory)
 	{
 
 	}
@@ -228,8 +228,8 @@ struct ECFMetaData {
 	  datatype(std::move(other.datatype)), pattern(std::move(other.pattern)),
 	  options(std::move(other.options)), variables(std::move(other.variables)),
 	  tensor(std::move(other.tensor)), regionMap(std::move(other.regionMap)),
-	  unit(std::move(other.unit)), isallowed(std::move(other.isallowed)),
-	  ismandatory(std::move(other.ismandatory)), condition(other.condition->copy())
+	  unit(std::move(other.unit)), condition(other.condition->copy()),
+	  isallowed(std::move(other.isallowed)), ismandatory(std::move(other.ismandatory))
 	{
 
 	}

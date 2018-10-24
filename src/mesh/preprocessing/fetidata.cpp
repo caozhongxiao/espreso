@@ -158,11 +158,11 @@ void MeshPreprocessing::computeCornerNodes()
 		if (domains->size() == 1) {
 			continue;
 		}
-		if (ei < _mesh->nodes->externalIntervals.size() && _mesh->nodes->externalIntervals[ei] == i) {
+		if (ei < _mesh->nodes->externalIntervals.size() && _mesh->nodes->externalIntervals[ei] == (eslocal)i) {
 			++ei;
 			eslocal inc = (_mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin) / 3;
 			inc = inc ? inc : 1;
-			for (size_t n = _mesh->nodes->pintervals[i].begin; n < _mesh->nodes->pintervals[i].end; n += inc) {
+			for (eslocal n = _mesh->nodes->pintervals[i].begin; n < _mesh->nodes->pintervals[i].end; n += inc) {
 				_mesh->FETIData->corners.push_back(n);
 				for (auto d = domains->begin(); d != domains->end(); ++d) {
 					if (_mesh->elements->firstDomain <= *d && *d < _mesh->elements->firstDomain + _mesh->elements->ndomains) {
@@ -252,6 +252,9 @@ void MeshPreprocessing::addFixPoints(const serializededata<eslocal, eslocal>* el
 		case Element::CODE::LINE3:
 			neighs.push_back(nodes[(node + 1) % 2]);
 			return 1;
+		case Element::CODE::POINT1:
+		default:
+			return 0;
 		}
 		return 0;
 	};
@@ -304,7 +307,7 @@ void MeshPreprocessing::addFixPoints(const serializededata<eslocal, eslocal>* el
 		eslocal p = partition[i];
 		for (eslocal j = dist[i]; j < dist[i + 1]; j++) {
 			if (partition[data[j]] == p) {
-				eslocal index = std::lower_bound(pids[p].begin(), pids[p].end(), data[j]) - pids[p].begin();
+				size_t index = std::lower_bound(pids[p].begin(), pids[p].end(), data[j]) - pids[p].begin();
 				if (pdist[p].size() <= index) {
 					pdata[p].push_back(index);
 				}
@@ -495,7 +498,7 @@ void MeshPreprocessing::computeDomainsSurface()
 		tdistribution.push_back(_mesh->domainsSurface->edistribution[_mesh->elements->domainDistribution[t + 1]]);
 	}
 
-	if (ecounter[0][(int)Element::CODE::TRIANGLE3] == _mesh->domainsSurface->edistribution.back()) {
+	if (ecounter[0][(int)Element::CODE::TRIANGLE3] == (eslocal)_mesh->domainsSurface->edistribution.back()) {
 		serializededata<eslocal, eslocal>::balance(3, faces, &tdistribution);
 		_mesh->domainsSurface->elements = new serializededata<eslocal, eslocal>(3, faces);
 		_mesh->domainsSurface->triangles = _mesh->domainsSurface->elements;
@@ -607,7 +610,7 @@ void MeshPreprocessing::triangularizeDomainSurface()
 				auto elements = _mesh->domainsSurface->elements->cbegin() + _mesh->domainsSurface->edistribution[d];
 				auto epointer = _mesh->domainsSurface->epointers->datatarray().begin() + _mesh->domainsSurface->edistribution[d];
 
-				for (eslocal e = _mesh->domainsSurface->edistribution[d]; e < _mesh->domainsSurface->edistribution[d + 1]; ++e, ++elements, ++epointer) {
+				for (size_t e = _mesh->domainsSurface->edistribution[d]; e < _mesh->domainsSurface->edistribution[d + 1]; ++e, ++elements, ++epointer) {
 					for (auto n = (*epointer)->triangles->datatarray().cbegin(); n != (*epointer)->triangles->datatarray().cend(); ++n) {
 						triangles[t].push_back(elements->at(*n));
 					}
