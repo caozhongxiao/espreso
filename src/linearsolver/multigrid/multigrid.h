@@ -3,13 +3,14 @@
 #define SRC_LINEARSOLVER_MULTIGRID_MULTIGRID_H_
 
 #include "../linearsolver.h"
-#include "../../assembler/instance.h"
-#include "../../basis/logging/timeeval.h"
 #include "../../config/ecf/solver/multigrid.h"
 
 namespace espreso {
 
-class MultigridSolver : public LinearSolver {
+class Instance;
+class HypreData;
+
+class MultigridSolver: public LinearSolver {
 public:
 
 	MultigridSolver(Instance *instance, const MultigridConfiguration &configuration);
@@ -23,12 +24,13 @@ public:
 	bool applyB1Scaling() const {return false;}
 	bool applyB1LagrangeRedundancy()const { return false;}
 
-	double& precision() { return configuration.precision; }
+	double& precision();
 
-private:
-	Instance *instance;
-	MultigridConfiguration configuration;
-	TimeEval timeEvalMain;
+protected:
+	Instance *_instance;
+	MultigridConfiguration _configuration;
+
+	HypreData *_hypreData;
 };
 
 }

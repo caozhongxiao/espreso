@@ -1,126 +1,173 @@
 
 #include "hypre.h"
 
+#include "../../basis/logging/logging.h"
+#include "../../basis/utilities/communication.h"
+#include "../../basis/utilities/utils.h"
+
+#include "../../config/ecf/solver/multigrid.h"
+
 #include "include/HYPRE_krylov.h"
 #include "include/HYPRE.h"
 #include "include/HYPRE_parcsr_ls.h"
 
+#include <vector>
+#include <numeric>
+
 using namespace espreso;
 
-void HYPRE::Solve(MultigridConfiguration &configuration, int rank,
-		int processes, MPI_Comm communicator,
-		esglobal start_row, eslocal num_rows, std::vector<HypreRegion> values,
-		double* f_data, double* result_data) {
+HypreData::HypreData(MPI_Comm &comm, eslocal nrows)
+: _comm(comm), _roffset(nrows), _nrows(nrows), _finalized(false)
+{
+	std::cout << "nrows: " << nrows << "\n";
+	eslocal totalsize = Communication::exscan(_roffset);
+	HYPRE_IJMatrixCreate(comm, _roffset + 1, _roffset + _nrows, 1, totalsize, &_K);
+	HYPRE_IJVectorCreate(comm, _roffset + 1, _roffset + _nrows, &_f);
+	HYPRE_IJVectorCreate(comm, _roffset + 1, _roffset + _nrows, &_x);
 
-	esglobal end_row = start_row + num_rows-1;
+	HYPRE_IJMatrixSetObjectType(_K, HYPRE_PARCSR);
+	HYPRE_IJVectorSetObjectType(_f, HYPRE_PARCSR);
+	HYPRE_IJVectorSetObjectType(_x, HYPRE_PARCSR);
 
+	HYPRE_IJMatrixInitialize(_K);
+	HYPRE_IJVectorInitialize(_f);
+	HYPRE_IJVectorInitialize(_x);
+}
 
-	/* Create the matrix.
-	 Note that this is a square matrix, so we indicate the row partition
-	 size twice (since number of rows = number of cols) */
-	HYPRE_IJMatrix K;
-
-	HYPRE_IJMatrixCreate(communicator, start_row, end_row, start_row, end_row, &K);
-
-	/* Choose a parallel csr format storage (see the User's Manual) */
-	HYPRE_IJMatrixSetObjectType(K, HYPRE_PARCSR);
-
-	/* Initialize before setting coefficients */
-	HYPRE_IJMatrixInitialize(K);
-
-	/*HYPRE IJMatrixSetValues (HYPRE IJMatrix matrix, int nrows, int* ncols,
-	 const int* rows, const int* cols, const HYPRE Complex* values)*/
-
-	for (auto region = values.begin(); region != values.end(); region++) {
-		HYPRE_IJMatrixSetValues(K, region->nrows, region->ncols.data(),
-				region->rows.data(), region->cols, region->values);
-	}
-	HYPRE_IJMatrixAssemble(K);
-
-	/* Create the rhs and solution */
-	HYPRE_IJVector f;
-	HYPRE_IJVectorCreate(communicator, start_row, end_row, &f);
-	HYPRE_IJVectorSetObjectType(f, HYPRE_PARCSR);
-	HYPRE_IJVectorInitialize(f);
-
-	HYPRE_IJVector result;
-	HYPRE_IJVectorCreate(communicator, start_row, end_row, &result);
-	HYPRE_IJVectorSetObjectType(result, HYPRE_PARCSR);
-	HYPRE_IJVectorInitialize(result);
-
-	int rows[num_rows];
-	for (int i = 0; i < num_rows; i++) {
-		result_data[i] = 0.0;
-		rows[i] = start_row + i;
+void HypreData::insertCSR(eslocal nrows, eslocal offset, eslocal *rowPrts, eslocal *colIndices, double *values, double *rhsValues)
+{
+	std::vector<eslocal> ncols, rows;
+	ncols.reserve(nrows);
+	rows.reserve(nrows);
+	for (eslocal r = 0; r < nrows; r++) {
+		ncols.push_back(rowPrts[r + 1] - rowPrts[r]);
+		rows.push_back(_roffset + offset + r + 1);
 	}
 
-	HYPRE_IJVectorSetValues(f, num_rows, rows, f_data);
-	HYPRE_IJVectorSetValues(result, num_rows, rows, result_data);
+//	std::cout << nrows << ": " << rows;
+//	std::cout << ncols;
 
-	HYPRE_IJVectorAssemble(f);
-	HYPRE_IJVectorAssemble(result);
+//	for (eslocal i = 0, offset = 0; i < nrows; i++) {
+//		for (eslocal j = 0; j < ncols[i]; j++, offset++) {
+//			std::cout << i << ":" << colIndices[offset] << " = " << values[offset] << "\n";
+//		}
+//	}
 
-//	HYPRE_IJMatrixPrint(K, "test.K");
-//	HYPRE_IJVectorPrint(f, "test.f");
-//	HYPRE_IJVectorPrint(result, "test.result");
+	HYPRE_IJMatrixSetValues(_K, nrows, ncols.data(), rows.data(), colIndices, values);
+	HYPRE_IJVectorSetValues(_f, nrows, rows.data(), rhsValues);
 
-	HYPRE_ParCSRMatrix parcsr_K;
-	HYPRE_ParVector par_f;
-	HYPRE_ParVector par_result;
-	HYPRE_IJMatrixGetObject(K, (void**) &parcsr_K);
-	HYPRE_IJVectorGetObject(f, (void **) &par_f);
-	HYPRE_IJVectorGetObject(result, (void **) &par_result);
+	_finalized = false;
+}
 
-	int num_iterations;
-	double final_res_norm;
-	HYPRE_Solver solver, precond;
+void HypreData::insertIJV(eslocal nrows, eslocal offset, eslocal size, eslocal *rowIndices, eslocal *colIndices, double *values, double *rhsValues)
+{
+	std::vector<eslocal> ncols, rows;
+	ncols.reserve(nrows);
+	rows.reserve(nrows);
+	for (eslocal i = 0; i < size; i++) {
+		if (ncols.size() == 0 || ncols.back() != colIndices[i]) {
+			ncols.push_back(1);
+		} else {
+			++ncols.back();
+		}
+		rows.push_back(_roffset + offset + rowIndices[i]);
+	}
 
-	/* Create solver */
-	HYPRE_ParCSRPCGCreate(communicator, &solver);
+	HYPRE_IJMatrixSetValues(_K, nrows, ncols.data(), rows.data(), colIndices, values);
+	HYPRE_IJVectorSetValues(_f, nrows, rows.data(), rhsValues);
+	_finalized = false;
+}
 
-	/* Set some parameters (See Reference Manual for more parameters) */
-	HYPRE_PCGSetMaxIter(solver, 1000); /* max iterations */
-	HYPRE_PCGSetTol(solver, 1e-7); /* conv. tolerance */
-	HYPRE_PCGSetTwoNorm(solver, 1); /* use the two norm as the stopping criteria */
-	HYPRE_PCGSetPrintLevel(solver, 2); /* print solve info */
-	HYPRE_PCGSetLogging(solver, 1); /* needed to get run info later */
+void HypreData::finalizePattern()
+{
+	HYPRE_IJMatrixAssemble(_K);
+	HYPRE_IJVectorAssemble(_f);
+	HYPRE_IJVectorAssemble(_x);
+	_finalized = true;
+}
 
-	/* Now set up the AMG preconditioner and specify any parameters */
-	HYPRE_BoomerAMGCreate(&precond);
-	HYPRE_BoomerAMGSetPrintLevel(precond, 1); /* print amg solution info */
-	HYPRE_BoomerAMGSetCoarsenType(precond, 6);
-	HYPRE_BoomerAMGSetOldDefault(precond);
-	HYPRE_BoomerAMGSetRelaxType(precond, 6); /* Sym G.S./Jacobi hybrid */
-	HYPRE_BoomerAMGSetNumSweeps(precond, 1);
-	HYPRE_BoomerAMGSetTol(precond, 0.0); /* conv. tolerance zero */
-	HYPRE_BoomerAMGSetMaxIter(precond, 1); /* do only one iteration! */
+HypreData::~HypreData()
+{
+	HYPRE_IJMatrixDestroy(_K);
+	HYPRE_IJVectorDestroy(_f);
+	HYPRE_IJVectorDestroy(_x);
+}
 
-	/* Set the PCG preconditioner */
-	HYPRE_PCGSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSolve,
-			(HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSetup, precond);
+void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, eslocal nrows, double *solution)
+{
+	if (!data._finalized) {
+		data.finalizePattern();
+	}
 
-	/* Now setup and solve! */
-	HYPRE_ParCSRPCGSetup(solver, parcsr_K, par_f, par_result);
-	HYPRE_ParCSRPCGSolve(solver, parcsr_K, par_f, par_result);
+	HYPRE_ParCSRMatrix K;
+	HYPRE_ParVector f, x;
+	HYPRE_IJMatrixGetObject(data._K, (void**) &K);
+	HYPRE_IJVectorGetObject(data._f, (void**) &f);
+	HYPRE_IJVectorGetObject(data._x, (void**) &x);
 
-	/* Run info - needed logging turned on */
-	HYPRE_PCGGetNumIterations(solver, &num_iterations);
-	HYPRE_PCGGetFinalRelativeResidualNorm(solver, &final_res_norm);
+	HYPRE_Solver solver;
+	switch (configuration.solver) {
+	case MultigridConfiguration::SOLVER::CG:
+		HYPRE_ParCSRPCGCreate(data._comm, &solver);
 
-	printf("\n");
-	printf("Iterations = %d\n", num_iterations);
-	printf("Final Relative Residual Norm = %e\n", final_res_norm);
-	printf("\n");
+		HYPRE_PCGSetMaxIter(solver, configuration.max_iterations);
+		HYPRE_PCGSetTol(solver, configuration.precision);
+		HYPRE_PCGSetTwoNorm(solver, 1);
+		HYPRE_PCGSetPrintLevel(solver, 0);
+		HYPRE_PCGSetLogging(solver, 0);
+		break;
+	case MultigridConfiguration::SOLVER::GMRES:
+	case MultigridConfiguration::SOLVER::FGMRES:
+	case MultigridConfiguration::SOLVER::BICGS:
+	case MultigridConfiguration::SOLVER::BICGSTAB:
+	case MultigridConfiguration::SOLVER::TFQMR:
+	case MultigridConfiguration::SOLVER::SYMQMR:
+	case MultigridConfiguration::SOLVER::SUPERLU:
+	case MultigridConfiguration::SOLVER::SUPERLUX:
+	default:
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
+	}
 
-	/* Destroy solver and preconditioner */
-	HYPRE_ParCSRPCGDestroy(solver);
-	HYPRE_BoomerAMGDestroy(precond);
+	HYPRE_Solver preconditioner;
+	switch (configuration.preconditioner) {
+	case MultigridConfiguration::PRECONDITIONER::DIAGONAL:
+	case MultigridConfiguration::PRECONDITIONER::PILUT:
+	case MultigridConfiguration::PRECONDITIONER::EUCLID:
+	case MultigridConfiguration::PRECONDITIONER::PARASAILS:
+	case MultigridConfiguration::PRECONDITIONER::BOOMERAMG:
+		HYPRE_BoomerAMGCreate(&preconditioner);
+		HYPRE_BoomerAMGSetPrintLevel(preconditioner, 0);
+		HYPRE_BoomerAMGSetCoarsenType(preconditioner, 6);
+		HYPRE_BoomerAMGSetOldDefault(preconditioner);
+		HYPRE_BoomerAMGSetRelaxType(preconditioner, 6);
+		HYPRE_BoomerAMGSetNumSweeps(preconditioner, 1);
+		HYPRE_BoomerAMGSetTol(preconditioner, 0.0);
+		HYPRE_BoomerAMGSetMaxIter(preconditioner, 1);
 
-//	HYPRE_IJVectorPrint(result, "test.result");
+		HYPRE_PCGSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSolve, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSetup, preconditioner);
+		break;
+	case MultigridConfiguration::PRECONDITIONER::POLY:
+	case MultigridConfiguration::PRECONDITIONER::MLI:
+	default:
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
+	}
 
-	HYPRE_IJVectorGetValues(result, num_rows, rows, result_data);
+	HYPRE_IJMatrixPrint(data._K, "test.K");
+	HYPRE_IJVectorPrint(data._f, "test.f");
 
-	HYPRE_IJMatrixDestroy(K);
-	HYPRE_IJVectorDestroy(f);
-	HYPRE_IJVectorDestroy(result);
+	HYPRE_ParCSRPCGSetup(solver, K, f, x);
+	HYPRE_ParCSRPCGSolve(solver, K, f, x);
+
+	HYPRE_IJVectorPrint(data._x, "test.x");
+
+	eslocal iterations;
+	double norm;
+	HYPRE_PCGGetNumIterations(solver, &iterations);
+	HYPRE_PCGGetFinalRelativeResidualNorm(solver, &norm);
+
+	ESINFO(CONVERGENCE) << "Final Relative Residual Norm " << norm << " in " << iterations << " iteration.";
+
+	std::vector<eslocal> rows(nrows);
+	std::iota(rows.begin(), rows.end(), data._roffset + 1);
+	HYPRE_IJVectorGetValues(data._x, data._nrows, rows.data(), solution);
 }

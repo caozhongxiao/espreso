@@ -4,40 +4,36 @@
 
 #include "mpi.h"
 
-#include "../../config/ecf/solver/multigrid.h"
+#include "include/HYPRE_IJ_mv.h"
 
 namespace espreso {
 
 class SparseMatrix;
+struct MultigridConfiguration;
 
-class HypreRegion {
-public :
-	/* number of rows to be changed */
-	int nrows;
-	/* number of elements to be set for each row */
-	std::vector<int> ncols;
-	/* indices of rows in which values are to be set */
-	std::vector<int> rows;
-	/* column indices of the values to be set */
-	const int* cols;
-	/* values to be set */
-	const double* values;
+class HypreData {
+	friend class HYPRE;
+public:
+	HypreData(MPI_Comm &comm, eslocal nrows);
 
-	HypreRegion() {
+	void insertCSR(eslocal nrows, eslocal offset, eslocal *rowPrts, eslocal *colIndices, double *values, double *rhsValues);
+	void insertIJV(eslocal nrows, eslocal offset, eslocal size, eslocal *rowIndices, eslocal *colIndices, double *values, double *rhsValues);
+	void finalizePattern();
 
-	}
+	~HypreData();
+
+protected:
+	MPI_Comm &_comm;
+	eslocal _roffset, _nrows;
+
+	HYPRE_IJMatrix _K;
+	HYPRE_IJVector _f, _x;
+
+	bool _finalized;
 };
 
-struct  HYPRE {
-
-public:
-
-	static void Solve(MultigridConfiguration &configuration,
-			int rank, int processes, MPI_Comm communicator,
-			esglobal start_row, eslocal num_rows,
-			std::vector<HypreRegion> values,
-			double* f_data,
-			double* result);
+struct HYPRE {
+	static void solve(const MultigridConfiguration &configuration, HypreData &data, eslocal nrows, double *solution);
 };
 
 }
