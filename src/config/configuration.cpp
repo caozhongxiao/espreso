@@ -247,7 +247,7 @@ ECFParameter* ECFObject::registerPatternParameter(ECFParameter *parameter) const
 	registeredParameters.push_back(parameter);
 	parameter->name = metadata.pattern.front();
 	parameter->metadata = metadata.suffix(1);
-	parameters.back()->defaultName();
+	registeredParameters.back()->defaultName();
 	return parameter;
 }
 
