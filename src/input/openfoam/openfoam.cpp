@@ -558,7 +558,7 @@ void OpenFOAMLoader::buildElements(PlainOpenFOAMData &mesh)
 				return *i;
 			}
 		}
-		return -1;
+		return (eslocal)-1;
 	};
 
 	auto findElementWithSize = [&] (const std::vector<eslocal> &perm, size_t &index, size_t &max, int size) {
