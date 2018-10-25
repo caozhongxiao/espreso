@@ -1,6 +1,12 @@
 
 import shutil, os, subprocess, copy
 
+try:
+    import requests, git
+    snailwatch = True
+except ImportError:
+    snailwatch = False
+
 class ESPRESOTest:
 
     root = os.path.dirname(os.path.dirname(__file__))
@@ -24,6 +30,10 @@ class ESPRESOTest:
     _program = []
 
     @staticmethod
+    def has_snailwatch():
+        return snailwatch and "SNAILWATCH_URL" in os.environ and "SNAILWATCH_TOKEN"in os.environ
+
+    @staticmethod
     def raise_error(error):
         raise Exception("\n {3} \n\nPath: {2}\nProgram: {1}\n{0}\n\n {3} \n".format(
                 error, " ".join(ESPRESOTest._program), ESPRESOTest.path, "#" * 80))
@@ -37,6 +47,8 @@ class ESPRESOTest:
         ESPRESOTest._program = copy.deepcopy(program)
         if not ESPRESOTest.store_results:
             program.append("--OUTPUT::RESULTS_STORE_FREQUENCY=NEVER")
+            if ESPRESOTest.has_snailwatch():
+                program.append("-m")
 
         return subprocess.Popen(program,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -83,5 +95,40 @@ class ESPRESOTest:
 
     @staticmethod
     def report(timereport):
-        #TODO
-        pass
+        if not ESPRESOTest.has_snailwatch():
+            return
+
+        header = {
+            "Content-Type": "application/json",
+            "Authorization": os.environ['SNAILWATCH_TOKEN']
+        }
+
+        path = os.path.relpath(ESPRESOTest.path, os.path.dirname(__file__))
+
+        benchmark = "-".join(path.split("/") + map(str, ESPRESOTest.args))
+        commit = git.Repo(search_parent_directories=True).head.object.hexsha
+        processes = str(ESPRESOTest.processes)
+        threads = ESPRESOTest.env["OMP_NUM_THREADS"]
+
+        log = os.path.join(ESPRESOTest.path, "results", "last", ESPRESOTest.ecf.replace(".ecf", ".log"))
+
+        results = { }
+        regions = ["Mesh preprocessing timing- Total", "Physics solver timing- Total"]
+        with open(log, 'r') as file:
+            for line in file:
+                for region in regions:
+                    if line.startswith(region):
+                        results[region.replace(" ", "_")] = { "type": "time", "value": line.split("avg.:")[1].split()[0] }
+
+        response = requests.post(
+            os.environ['SNAILWATCH_URL'],
+            headers=header,
+            json={
+                "benchmark": benchmark,
+                "environment": { "commit": commit, "processes": processes, "threads": threads },
+                "result": results
+            })
+
+        if response.status_code != 201:
+            ESPRESOTest.raise_error("Cannot push to snailwatch")
+
