@@ -637,8 +637,8 @@ void RandomInput::clusterize()
 		ESINFO(ERROR) << "ESPRESO internal error: a process without elements -- re-run with smaller number of MPI.";
 	}
 
-	size_t back = _meshData.eIDs.back();
-	MPI_Allgather(&back, sizeof(size_t), MPI_BYTE, _eDistribution.data() + 1, sizeof(size_t), MPI_BYTE, environment->MPICommunicator);
+	auto back = _meshData.eIDs.back();
+	MPI_Allgather(&back, sizeof(back), MPI_BYTE, _eDistribution.data() + 1, sizeof(back), MPI_BYTE, environment->MPICommunicator);
 	for (size_t i = 1; i < _eDistribution.size(); i++) {
 		++_eDistribution[i];
 	}

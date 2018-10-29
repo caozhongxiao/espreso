@@ -17,7 +17,10 @@ int MPISubset::nodeRank = -1;
 template<typename Ttype>
 static void _scan(void *in, void *out, int *len, MPI_Datatype *datatype)
 {
-	*(static_cast<Ttype*>(out)) += *(static_cast<Ttype*>(in));
+	int size = *len / sizeof(Ttype);
+	for (int i = 0; i < size; i++) {
+		*(static_cast<Ttype*>(out) + i) += *(static_cast<Ttype*>(in) + i);
+	}
 }
 
 static void _mergeStatistics(void *in, void *out, int *len, MPI_Datatype *datatype)
