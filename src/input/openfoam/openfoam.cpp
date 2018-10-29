@@ -30,7 +30,9 @@ void OpenFOAMLoader::load(const InputConfiguration &configuration, Mesh &mesh)
 }
 
 OpenFOAMLoader::OpenFOAMLoader(const InputConfiguration &configuration, Mesh &mesh)
-: _configuration(configuration), _loaders(_configuration, MPITools::procs())
+: _configuration(configuration), _loaders(_configuration, MPITools::procs()),
+	_points(80), _faces(80), _owner(80), _neighbour(80), _boundary(80),
+	_pointZones(80), _faceZones(80), _cellZones(80)
 {
 	TimeEval timing("Parsing OpenFOAM data");
 	timing.totalTime.startWithBarrier();
@@ -81,11 +83,11 @@ void OpenFOAMLoader::distributedReader(const std::string &file, ParallelFile &pf
 				ESINFO(ERROR) << "MPI cannot load file '" << _configuration.path + "/constant/polyMesh/" + file << "'";
 			}
 		} else {
-			MPILoader::read(_loaders.across, MPIFile, pfile, 80);
+			MPILoader::read(_loaders.across, MPIFile, pfile);
 		}
 	}
 
-	MPILoader::scatter(_loaders.within, pfile, 80);
+	MPILoader::scatter(_loaders.within, pfile);
 	MPILoader::align(MPITools::procs(), pfile, 0);
 }
 
@@ -104,7 +106,7 @@ void OpenFOAMLoader::readData()
 			if (!MPILoader::open(singleton.across, MPIFile, _configuration.path + "/constant/polyMesh/" + file)) {
 				ESINFO(ERROR) << "MPI cannot load file '" << _configuration.path + "/constant/polyMesh/" + file << "'";
 			}
-			MPILoader::read(singleton.across, MPIFile, pfile, 80);
+			MPILoader::read(singleton.across, MPIFile, pfile);
 		}
 		MPILoader::bcast(singleton.within, pfile);
 	};
@@ -219,21 +221,21 @@ void OpenFOAMLoader::buildFaces(PlainOpenFOAMData &mesh)
 		std::string name = std::string(_sets[i].name);
 		switch (_sets[i].type) {
 		case OpenFOAMSet::SetType::CELL_SET: {
-			ParallelFile file;
+			ParallelFile file(80);
 			distributedReader("/sets/" + name, file, true);
 			if (!OpenFOAMSets(file.begin, file.end).readData(_sets[i], mesh.eregions[mesh.elementprefix + name])) {
 				ESINFO(ERROR) << "OpenFOAM loader: cannot parse set '" << name << "'";
 			}
 		} break;
 		case OpenFOAMSet::SetType::FACE_SET: {
-			ParallelFile file;
+			ParallelFile file(80);
 			distributedReader("/sets/" + name, file, true);
 			if (!OpenFOAMSets(file.begin, file.end).readData(_sets[i], mesh.eregions[mesh.boundaryprefix + name])) {
 				ESINFO(ERROR) << "OpenFOAM loader: cannot parse set '" << name << "'";
 			}
 		} break;
 		case OpenFOAMSet::SetType::POINT_SET: {
-			ParallelFile file;
+			ParallelFile file(80);
 			distributedReader("/sets/" + name, file, true);
 			if (!OpenFOAMSets(file.begin, file.end).readData(_sets[i], mesh.nregions[name])) {
 				ESINFO(ERROR) << "OpenFOAM loader: cannot parse set '" << name << "'";

@@ -29,7 +29,7 @@ void WorkbenchLoader::load(const InputConfiguration &configuration, Mesh &mesh)
 }
 
 WorkbenchLoader::WorkbenchLoader(const InputConfiguration &configuration, Mesh &mesh)
-: _configuration(configuration)
+: _configuration(configuration), _pfile(MAX_LINE_STEP * MAX_LINE_SIZE)
 {
 	TimeEval timing("Parsing Workbench data");
 	timing.totalTime.startWithBarrier();
@@ -89,7 +89,7 @@ void WorkbenchLoader::readData()
 	e2.start();
 
 	if (loaders.within.rank == 0) {
-		MPILoader::read(loaders.across, MPIFile, _pfile, MAX_LINE_STEP * MAX_LINE_SIZE);
+		MPILoader::read(loaders.across, MPIFile, _pfile);
 	}
 
 	e2.end();
@@ -98,7 +98,7 @@ void WorkbenchLoader::readData()
 	TimeEvent e3("FILE SCATTER");
 	e3.start();
 
-	MPILoader::scatter(loaders.within, _pfile, MAX_LINE_STEP * MAX_LINE_SIZE);
+	MPILoader::scatter(loaders.within, _pfile);
 	MPILoader::align(MPITools::procs(), _pfile, MAX_LINE_STEP);
 
 	WorkbenchParser::offset = _pfile.offsets[environment->MPIrank];

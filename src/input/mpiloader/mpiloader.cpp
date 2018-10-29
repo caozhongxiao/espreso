@@ -22,7 +22,7 @@ bool MPILoader::open(MPIGroup &group, MPI_File &MPIfile, const std::string &file
 	return true;
 }
 
-void MPILoader::read(MPIGroup &group, MPI_File &MPIfile, ParallelFile &pfile, size_t alignment)
+void MPILoader::read(MPIGroup &group, MPI_File &MPIfile, ParallelFile &pfile)
 {
 	MPI_Offset size;
 	MPI_File_get_size(MPIfile, &size);
@@ -37,7 +37,7 @@ void MPILoader::read(MPIGroup &group, MPI_File &MPIfile, ParallelFile &pfile, si
 	std::vector<MPI_Aint> displacement = { (MPI_Aint)(block * fdistribution[group.rank]) };
 	std::vector<int> length = { (int)(fdistribution[group.rank + 1] - fdistribution[group.rank]) };
 
-	pfile.data.resize(block * length.front() + alignment);
+	pfile.data.resize(block * length.front() + pfile.align);
 
 	MPI_Datatype chunk, fDataDistribution;
 
@@ -67,23 +67,23 @@ void MPILoader::read(MPIGroup &group, MPI_File &MPIfile, ParallelFile &pfile, si
 	pfile.offsets = Communication::getDistribution<size_t>(pfile.end - pfile.begin, group);
 }
 
-void MPILoader::scatter(MPIGroup &group, ParallelFile &pfile, size_t alignment)
+void MPILoader::scatter(MPIGroup &group, ParallelFile &pfile)
 {
-	if (group.size == 1 || pfile.offsets.back() == 0) {
+	if (group.size == 1) {
 		return;
 	}
 
-	size_t datasize = pfile.data.size() - alignment;
+	size_t datasize = pfile.data.size() - pfile.align;
 	MPI_Bcast(&datasize, sizeof(size_t), MPI_BYTE, 0, group.communicator);
 	size_t chunk = std::ceil((double)datasize / group.size);
 
 	if (group.rank) {
-		pfile.data.resize(chunk + alignment);
+		pfile.data.resize(chunk + pfile.align);
 	} else if (pfile.data.size() < group.size * chunk) {
 		pfile.data.resize(group.size * chunk);
 	}
 
-	std::vector<char> data(chunk + alignment);
+	std::vector<char> data(chunk + pfile.align);
 	MPI_Scatter(pfile.data.data(), chunk, MPI_BYTE, data.data(), chunk, MPI_BYTE, 0, group.communicator);
 	pfile.data.swap(data);
 
