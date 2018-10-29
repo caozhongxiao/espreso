@@ -89,6 +89,13 @@ void OpenFOAMZones::readData(std::vector<eslocal> &indices, size_t begin, size_t
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
+	if (begin + 1 > _pfile.offsets[environment->MPIrank + 1]) {
+		return;
+	}
+	if (end - 1 < _pfile.offsets[environment->MPIrank]) {
+		return;
+	}
+
 	begin = std::max(begin + 1, _pfile.offsets[environment->MPIrank]);
 	end = std::min(end - 1, _pfile.offsets[environment->MPIrank + 1]);
 	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, end - begin);
