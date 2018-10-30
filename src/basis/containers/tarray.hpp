@@ -146,6 +146,25 @@ tarray<TType>::tarray(const std::vector<size_t> &distribution, const std::vector
 }
 
 template <typename TType>
+tarray<TType>::tarray(const std::vector<size_t> &distribution, size_t duplicity)
+: _size(duplicity * distribution.back()), _data(NULL), _distribution(distribution)
+{
+	for (size_t t = 1; t < _distribution.size(); t++) {
+		_distribution[t] *= duplicity;
+	}
+
+	if (_size) {
+		_data = new TType[_size];
+		#pragma omp parallel for
+		for (size_t t = 0; t < _distribution.size() - 1; t++) {
+			for (size_t i = _distribution[t]; i < _distribution[t + 1]; i++) {
+				_data[i] = TType{};
+			}
+		}
+	}
+}
+
+template <typename TType>
 size_t tarray<TType>::packedSize() const
 {
 	return sizeof(size_t) + _size * sizeof(TType);

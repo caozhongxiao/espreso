@@ -23,6 +23,7 @@ public:
 	tarray(const std::vector<std::vector<TType> > &data);
 	tarray(const std::vector<TType> &data);
 	tarray(const std::vector<size_t> &distribution, const std::vector<TType> &data);
+	tarray(const std::vector<size_t> &distribution, size_t duplicity);
 
 	tarray(const tarray<TType> &other);
 	tarray(tarray<TType> &&other);
@@ -30,6 +31,7 @@ public:
 	tarray<TType>& operator=(tarray<TType> &&other);
 
 	size_t                     size()         const { return _size; }
+	size_t                     size(size_t t) const { return _distribution[t + 1] - _distribution[t]; }
 	size_t                     threads()      const { return _distribution.size() - 1; }
 	const std::vector<size_t>& distribution() const { return _distribution; }
 

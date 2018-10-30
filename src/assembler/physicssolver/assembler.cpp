@@ -18,7 +18,7 @@
 #include "../../output/result/resultstore.h"
 #include "../../output/result/visualization/separated/vtklegacy.h"
 
-#include "../physicsinvectors/physicsinvectors.h"
+#include "../physicsinvectors/heat.h"
 
 using namespace espreso;
 
@@ -73,9 +73,11 @@ void Assembler::updateStructuralMatrices(Matrices matrices)
 		});
 	}
 
-	PhysicsInVectors vectors("fast", mesh, instance, step, *physics._configuration);
+	Heat vectors(mesh, instance, step, *dynamic_cast<const HeatTransferConfiguration*>(physics._configuration));
 
 	vectors.buildCSRPattern();
+	vectors.initData();
+	vectors.computeValues();
 }
 
 void Assembler::updateGluingMatrices(Matrices matrices)

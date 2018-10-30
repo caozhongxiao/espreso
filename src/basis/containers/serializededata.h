@@ -200,6 +200,9 @@ public:
 	serializededata(size_t edatasize, tarray<TEData> &&edata)
 	: _eboundaries(0, 0), _edata(std::move(edata)), _edatasize(edatasize) { inititerators(edatasize); }
 
+	serializededata(size_t edatasize, const std::vector<size_t> &distribution)
+	: _eboundaries(0, 0), _edata(distribution, edatasize), _edatasize(edatasize) { inititerators(edatasize); }
+
 	// data are non-uniform
 	serializededata(tarray<TEBoundaries> &&eboundaries, tarray<TEData> &&edata)
 	: _eboundaries(std::move(eboundaries)), _edata(std::move(edata)), _edatasize(-1) { inititerators(); }
