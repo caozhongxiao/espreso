@@ -101,7 +101,7 @@ void MeshPreprocessing::computeSharedFaceNodes()
 
 				dnodes.clear();
 				for (size_t e = 0; e < elements.size(); ++e) {
-					auto nodes = _mesh->elements->nodes->cbegin() + elements[e];
+					auto nodes = _mesh->elements->procNodes->cbegin() + elements[e];
 					for (auto f = epointers[elements[e]]->faces->cbegin(); f != epointers[elements[e]]->faces->cend(); ++f) {
 						size_t size = 0;
 						for (auto fn = f->begin(); fn != f->end(); ++fn) {
@@ -352,7 +352,7 @@ void MeshPreprocessing::computeFixPoints()
 		std::vector<eslocal> dist, data, partition;
 		for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
 			size_t size = fixPoints[t].size();
-			addFixPoints(_mesh->elements->nodes, _mesh->elements->elementsDistribution[d], _mesh->elements->elementsDistribution[d + 1], _mesh->elements->epointers, fixPoints[t]);
+			addFixPoints(_mesh->elements->procNodes, _mesh->elements->elementsDistribution[d], _mesh->elements->elementsDistribution[d + 1], _mesh->elements->epointers, fixPoints[t]);
 			Esutils::sortAndRemoveDuplicity(fixPoints[t], size);
 			fixPointsDist[t].push_back(fixPoints[t].size());
 		}
@@ -433,7 +433,7 @@ void MeshPreprocessing::computeDomainsSurface()
 		}
 
 		auto neighbors = _mesh->elements->neighbors->cbegin(t);
-		auto enodes = _mesh->elements->nodes->cbegin(t);
+		auto enodes = _mesh->elements->procNodes->cbegin(t);
 		for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
 			eslocal dbegin = _mesh->elements->elementsDistribution[d];
 			eslocal dend = _mesh->elements->elementsDistribution[d + 1];

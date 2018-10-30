@@ -71,7 +71,7 @@ struct Physics {
 
 	virtual ~Physics();
 
-protected:
+//protected:
 	virtual void fillDOFsIndices(edata<const eslocal> &nodes, eslocal domain, std::vector<eslocal> &DOFs) const;
 	virtual void insertElementToDomain(
 			SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M,

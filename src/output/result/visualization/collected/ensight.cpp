@@ -158,7 +158,7 @@ void EnSight::updateMesh()
 
 				for (size_t i = 0; i < eintervals.size(); i++) {
 					if (eintervals[i].code == etype) {
-						auto enodes = _mesh.elements->nodes->cbegin() + eintervals[i].begin;
+						auto enodes = _mesh.elements->procNodes->cbegin() + eintervals[i].begin;
 						eslocal prev = eintervals[i].begin;
 						for (eslocal e = eintervals[i].begin; e < eintervals[i].end; prev = elements[e++]) {
 							enodes += elements[e] - prev;

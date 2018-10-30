@@ -580,7 +580,7 @@ void Input::fillElements()
 	_mesh.elements->size = _etypeDistribution[estart];
 	_mesh.elements->distribution = edistribution;
 	_mesh.elements->IDs = new serializededata<eslocal, eslocal>(1, eIDs);
-	_mesh.elements->nodes = new serializededata<eslocal, eslocal>(tedist, tnodes);
+	_mesh.elements->procNodes = new serializededata<eslocal, eslocal>(tedist, tnodes);
 	_mesh.elements->epointers = new serializededata<eslocal, Element*>(1, epointers);
 	_mesh.elements->material = new serializededata<eslocal, int>(1, eMat);
 	_mesh.elements->body = new serializededata<eslocal, int>(1, eBody);
@@ -758,7 +758,7 @@ void Input::reindexElementNodes()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (auto n = _mesh.elements->nodes->begin(t)->begin(); n != _mesh.elements->nodes->end(t)->begin(); ++n) {
+		for (auto n = _mesh.elements->procNodes->begin(t)->begin(); n != _mesh.elements->procNodes->end(t)->begin(); ++n) {
 			*n = std::lower_bound(_mesh.nodes->IDs->datatarray().begin(), _mesh.nodes->IDs->datatarray().end(), *n) - _mesh.nodes->IDs->datatarray().begin();
 		}
 	}

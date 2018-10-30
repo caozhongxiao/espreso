@@ -393,7 +393,7 @@ void MeshPreprocessing::arrangeNodes()
 		}
 	};
 
-	localremap(_mesh->elements->nodes);
+	localremap(_mesh->elements->procNodes);
 
 	for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
 		if (_mesh->boundaryRegions[r]->elements != NULL) {
@@ -573,10 +573,10 @@ void MeshPreprocessing::arrangeRegions()
 							if (eintervals[i].end - eintervals[i].begin == _mesh->elements->eintervals[i].end - _mesh->elements->eintervals[i].begin) {
 								nodes[t].insert(
 										nodes[t].end(),
-										(_mesh->elements->nodes->cbegin() + _mesh->elements->eintervals[i].begin)->begin(),
-										(_mesh->elements->nodes->cbegin() + _mesh->elements->eintervals[i].end)->begin());
+										(_mesh->elements->procNodes->cbegin() + _mesh->elements->eintervals[i].begin)->begin(),
+										(_mesh->elements->procNodes->cbegin() + _mesh->elements->eintervals[i].end)->begin());
 							} else {
-								auto enodes = _mesh->elements->nodes->cbegin() + _mesh->elements->eintervals[i].begin;
+								auto enodes = _mesh->elements->procNodes->cbegin() + _mesh->elements->eintervals[i].begin;
 								eslocal prev = _mesh->elements->eintervals[i].begin;
 								for (eslocal e = eintervals[i].begin; e < eintervals[i].end; prev = elements[e++]) {
 									enodes += elements[e] - prev;
@@ -1044,7 +1044,7 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 
 		int nface;
 		eslocal element, neighbor, prev = 0;
-		auto enodes = _mesh->elements->nodes->cbegin();
+		auto enodes = _mesh->elements->procNodes->cbegin();
 		auto neighbors = _mesh->elements->neighbors->cbegin();
 		const auto &regions = _mesh->elements->regions->datatarray();
 

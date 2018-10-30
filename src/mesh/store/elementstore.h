@@ -59,7 +59,7 @@ struct ElementStore {
 	std::vector<size_t> distribution;
 
 	serializededata<eslocal, eslocal>* IDs;
-	serializededata<eslocal, eslocal>* nodes;
+	serializededata<eslocal, eslocal>* procNodes;
 	serializededata<eslocal, double>* centers;
 
 	serializededata<eslocal, int>* body;

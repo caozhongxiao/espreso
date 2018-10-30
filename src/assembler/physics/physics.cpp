@@ -81,7 +81,7 @@ Physics::~Physics()
 void Physics::printInvalidElement(eslocal eindex) const
 {
 	if (_invalidElements++ == 0) {
-		auto nodes = _mesh->elements->nodes->begin() + eindex;
+		auto nodes = _mesh->elements->procNodes->begin() + eindex;
 
 		std::ofstream os("invalidElement.vtk");
 		os << "# vtk DataFile Version 2.0\n";
@@ -206,7 +206,7 @@ void Physics::updateMatrix(Matrices matrices, size_t domain)
 		std::vector<eslocal> DOFs;
 		DenseMatrix Ke, Me, Re, fe;
 
-		auto nodes = _mesh->elements->nodes->cbegin() + _mesh->elements->elementsDistribution[domain];
+		auto nodes = _mesh->elements->procNodes->cbegin() + _mesh->elements->elementsDistribution[domain];
 		for (eslocal e = _mesh->elements->elementsDistribution[domain]; e < (eslocal)_mesh->elements->elementsDistribution[domain + 1]; ++e, ++nodes) {
 			processElement(domain, matrices, e, Ke, Me, Re, fe);
 			fillDOFsIndices(*nodes, domain, DOFs);

@@ -352,7 +352,7 @@ void StructuralMechanicsTDNNS3D::assembleMaterialMatrix(eslocal node, const Poin
 
 void StructuralMechanicsTDNNS3D::processElement(eslocal domain, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
-	auto nodes = _mesh->elements->nodes->cbegin() + eindex;
+	auto nodes = _mesh->elements->procNodes->cbegin() + eindex;
 	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
 	const ECFExpressionVector *acceleration = NULL;
 	for (auto it = _configuration.load_steps_settings.at(_step->step + 1).acceleration.begin(); it != _configuration.load_steps_settings.at(_step->step + 1).acceleration.end(); ++it) {

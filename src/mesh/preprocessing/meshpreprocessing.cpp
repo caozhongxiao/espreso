@@ -114,11 +114,11 @@ void MeshPreprocessing::linkNodesAndElements()
 	std::vector<std::vector<std::pair<eslocal, eslocal> > > rBuffer(_mesh->neighbours.size());
 	std::vector<std::pair<eslocal, eslocal> > localLinks;
 
-	localLinks.resize(_mesh->elements->nodes->cend()->begin() - _mesh->elements->nodes->cbegin()->begin());
+	localLinks.resize(_mesh->elements->procNodes->cend()->begin() - _mesh->elements->procNodes->cbegin()->begin());
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto tnodes = _mesh->elements->nodes->cbegin(t);
-		size_t offset = _mesh->elements->nodes->cbegin(t)->begin() - _mesh->elements->nodes->cbegin()->begin();
+		auto tnodes = _mesh->elements->procNodes->cbegin(t);
+		size_t offset = _mesh->elements->procNodes->cbegin(t)->begin() - _mesh->elements->procNodes->cbegin()->begin();
 
 		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++tnodes) {
 			for (auto n = tnodes->begin(); n != tnodes->end(); ++n, ++offset) {
@@ -128,7 +128,7 @@ void MeshPreprocessing::linkNodesAndElements()
 		}
 	}
 
-	Esutils::sortWithInplaceMerge(localLinks, _mesh->elements->nodes->datatarray().distribution());
+	Esutils::sortWithInplaceMerge(localLinks, _mesh->elements->procNodes->datatarray().distribution());
 
 	e1.end(); timing.addEvent(e1);
 
@@ -428,7 +428,7 @@ void MeshPreprocessing::computeElementsNeighbors()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		const auto &IDs = _mesh->elements->IDs->datatarray();
-		auto nodes = _mesh->elements->nodes->cbegin(t);
+		auto nodes = _mesh->elements->procNodes->cbegin(t);
 		const auto &epointers = _mesh->elements->epointers->datatarray();
 
 		std::vector<eslocal> ndist = { 0 }, ndata, fdata, tdist, tdata;
@@ -492,7 +492,7 @@ void MeshPreprocessing::computeElementsCenters()
 	for (size_t t = 0; t < threads; t++) {
 		Point center;
 		size_t eindex = _mesh->elements->distribution[t];
-		for (auto e = _mesh->elements->nodes->cbegin(t); e != _mesh->elements->nodes->cend(t); ++e, ++eindex) {
+		for (auto e = _mesh->elements->procNodes->cbegin(t); e != _mesh->elements->procNodes->cend(t); ++e, ++eindex) {
 			center.x = center.y = center.z = 0;
 			for (auto n = e->begin(); n != e->end(); ++n) {
 				center += _mesh->nodes->coordinates->datatarray()[*n];
@@ -598,7 +598,7 @@ void MeshPreprocessing::computeRegionsSurface()
 		for (size_t t = 0; t < threads; t++) {
 			eslocal hindex, addFace = 0;
 			int rsize = _mesh->elements->regionMaskSize;
-			auto nodes = _mesh->elements->nodes->cbegin();
+			auto nodes = _mesh->elements->procNodes->cbegin();
 			auto neighs = _mesh->elements->neighbors->cbegin();
 			const auto &regions = _mesh->elements->regions->datatarray();
 			const auto &epointers = _mesh->elements->epointers->datatarray();
@@ -787,7 +787,7 @@ void MeshPreprocessing::computeBoundaryNodes(std::vector<eslocal> &externalBound
 		std::vector<eslocal> texternal, tinternal;
 
 		auto neighbors = _mesh->elements->neighbors->cbegin() + _mesh->elements->elementsDistribution[_mesh->elements->domainDistribution[t]];
-		auto enodes = _mesh->elements->nodes->cbegin() + _mesh->elements->elementsDistribution[_mesh->elements->domainDistribution[t]];
+		auto enodes = _mesh->elements->procNodes->cbegin() + _mesh->elements->elementsDistribution[_mesh->elements->domainDistribution[t]];
 		for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
 			eslocal dbegin = _mesh->elements->elementsDistribution[d];
 			eslocal dend = _mesh->elements->elementsDistribution[d + 1];

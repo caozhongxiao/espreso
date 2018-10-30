@@ -16,7 +16,7 @@ ElementStore::ElementStore(std::vector<Element*> &eclasses)
   distribution({0, 0}),
 
   IDs(NULL),
-  nodes(NULL),
+  procNodes(NULL),
   centers(NULL),
 
   body(NULL),
@@ -40,7 +40,7 @@ ElementStore::ElementStore(std::vector<Element*> &eclasses)
 
 size_t ElementStore::packedSize() const
 {
-	if (nodes == NULL || epointers == NULL) {
+	if (procNodes == NULL || epointers == NULL) {
 		ESINFO(ERROR) << "ESPRESO internal error: invalid request for packedSize.";
 	}
 
@@ -53,7 +53,7 @@ size_t ElementStore::packedSize() const
 
 	return
 			Esutils::packedSize(size) +
-			nodes->packedSize() +
+			procNodes->packedSize() +
 			sizeof(size_t) + epointers->datatarray().size() * sizeof(int) +
 			Esutils::packedSize(firstDomain) +
 			Esutils::packedSize(ndomains) +
@@ -68,7 +68,7 @@ size_t ElementStore::packedSize() const
 void ElementStore::pack(char* &p) const
 {
 	Esutils::pack(size, p);
-	nodes->pack(p);
+	procNodes->pack(p);
 	if (epointers != NULL) {
 		std::vector<int> eindices;
 		eindices.reserve(epointers->datatarray().size());
@@ -106,15 +106,15 @@ void ElementStore::pack(char* &p) const
 
 void ElementStore::unpack(const char* &p)
 {
-	if (nodes == NULL) {
-		nodes = new serializededata<eslocal, eslocal>(tarray<eslocal>(1, 0), tarray<eslocal>(1, 0));
+	if (procNodes == NULL) {
+		procNodes = new serializededata<eslocal, eslocal>(tarray<eslocal>(1, 0), tarray<eslocal>(1, 0));
 	}
 	if (epointers == NULL) {
 		epointers = new serializededata<eslocal, Element*>(1, tarray<Element*>(1, 0));
 	}
 
 	Esutils::unpack(size, p);
-	nodes->unpack(p);
+	procNodes->unpack(p);
 	if (epointers != NULL) {
 		std::vector<int> eindices;
 		Esutils::unpack(eindices, p);
@@ -176,7 +176,7 @@ void ElementStore::unpackData(const char* &p)
 ElementStore::~ElementStore()
 {
 	if (IDs == NULL) { delete IDs; }
-	if (nodes == NULL) { delete nodes; }
+	if (procNodes == NULL) { delete procNodes; }
 	if (centers == NULL) { delete centers; }
 
 	if (body == NULL) { delete body; }
@@ -192,7 +192,7 @@ void ElementStore::store(const std::string &file)
 	std::ofstream os(file + std::to_string(environment->MPIrank) + ".txt");
 
 	Store::storedata(os, "IDs", IDs);
-	Store::storedata(os, "nodes", nodes);
+	Store::storedata(os, "nodes", procNodes);
 	Store::storedata(os, "centers", centers);
 
 	Store::storedata(os, "body", body);
@@ -208,7 +208,7 @@ void ElementStore::permute(const std::vector<eslocal> &permutation, const std::v
 	this->distribution = distribution;
 
 	if (IDs != NULL) { IDs->permute(permutation, distribution); }
-	if (nodes != NULL) { nodes->permute(permutation, distribution); }
+	if (procNodes != NULL) { procNodes->permute(permutation, distribution); }
 	if (centers != NULL) { centers->permute(permutation, distribution); }
 
 	if (body != NULL) { body->permute(permutation, distribution); }
@@ -247,7 +247,7 @@ void ElementStore::reindex(const serializededata<eslocal, eslocal> *nIDs)
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (auto n = nodes->begin(t)->begin(); n != nodes->end(t)->begin(); ++n) {
+		for (auto n = procNodes->begin(t)->begin(); n != procNodes->end(t)->begin(); ++n) {
 			*n = std::lower_bound(nIDs->datatarray().begin(), nIDs->datatarray().end(), *n) - nIDs->datatarray().begin();
 		}
 	}

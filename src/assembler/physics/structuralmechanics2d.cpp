@@ -256,7 +256,7 @@ void StructuralMechanics2D::assembleMaterialMatrix(eslocal node, const Point &p,
 
 void StructuralMechanics2D::processElement(eslocal domain, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
-	auto nodes = _mesh->elements->nodes->cbegin() + eindex;
+	auto nodes = _mesh->elements->procNodes->cbegin() + eindex;
 	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
 	const ECFExpressionVector *acceleration = NULL, *angular_velocity = NULL;
 	Evaluator *thick = NULL;

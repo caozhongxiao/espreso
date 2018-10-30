@@ -248,7 +248,7 @@ void HeatTransfer3D::assembleMaterialMatrix(eslocal node, const Point &p, const 
 
 void HeatTransfer3D::processElement(eslocal domain, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
-	auto nodes = _mesh->elements->nodes->cbegin() + eindex;
+	auto nodes = _mesh->elements->procNodes->cbegin() + eindex;
 	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
 	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
 	const ECFExpressionVector *translation_motion = NULL;
@@ -765,7 +765,7 @@ void HeatTransfer3D::processNode(eslocal domain, const BoundaryRegionStore *regi
 
 void HeatTransfer3D::postProcessElement(eslocal domain, eslocal eindex)
 {
-	auto nodes = _mesh->elements->nodes->cbegin() + eindex;
+	auto nodes = _mesh->elements->procNodes->cbegin() + eindex;
 	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
 	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
 	const ECFExpressionVector *translation_motion = NULL;
@@ -884,9 +884,9 @@ void HeatTransfer3D::processBEMSolution(eslocal domain)
 				reinterpret_cast<double*>(_mesh->domainsSurface->coordinates->datatarray().data() + _mesh->domainsSurface->cdistribution[domain]),
 				_mesh->domainsSurface->tdistribution[domain + 1] - _mesh->domainsSurface->tdistribution[domain],
 				_mesh->domainsSurface->triangles->datatarray().data() + 3 * _mesh->domainsSurface->tdistribution[domain],
-				_mesh->nodes->dintervals[domain].back().end - _mesh->nodes->dintervals[domain].back().begin,
-				reinterpret_cast<double*>(_mesh->nodes->coordinates->datatarray().data() + _mesh->nodes->dintervals[domain].back().begin),
-				(*_temperature->decomposedData)[domain].data() + _mesh->nodes->dintervals[domain].back().DOFOffset,
+				_mesh->procNodes->dintervals[domain].back().end - _mesh->procNodes->dintervals[domain].back().begin,
+				reinterpret_cast<double*>(_mesh->procNodes->coordinates->datatarray().data() + _mesh->procNodes->dintervals[domain].back().begin),
+				(*_temperature->decomposedData)[domain].data() + _mesh->procNodes->dintervals[domain].back().DOFOffset,
 				(*_temperature->decomposedData)[domain].data(),
 				4,
 				_BEMData[domain],

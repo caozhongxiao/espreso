@@ -157,7 +157,7 @@ void HeatTransfer2D::assembleMaterialMatrix(eslocal node, const Point &p, const 
 
 void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
-	auto nodes = _mesh->elements->nodes->cbegin() + eindex;
+	auto nodes = _mesh->elements->procNodes->cbegin() + eindex;
 	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
 	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
 	const ECFExpressionVector *translation_motion = NULL;
@@ -592,7 +592,7 @@ void HeatTransfer2D::processNode(eslocal domain, const BoundaryRegionStore *regi
 
 void HeatTransfer2D::postProcessElement(eslocal domain, eslocal eindex)
 {
-	auto nodes = _mesh->elements->nodes->cbegin() + eindex;
+	auto nodes = _mesh->elements->procNodes->cbegin() + eindex;
 	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
 	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
 	const ECFExpressionVector *translation_motion = NULL;

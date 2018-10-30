@@ -37,7 +37,7 @@ void MeshPreprocessing::computeBodiesSurface()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto nodes = _mesh->elements->nodes->cbegin(t);
+		auto nodes = _mesh->elements->procNodes->cbegin(t);
 		auto neighs = _mesh->elements->neighbors->cbegin(t);
 		const auto &epointers = _mesh->elements->epointers->datatarray();
 

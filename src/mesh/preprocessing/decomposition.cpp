@@ -538,7 +538,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 		auto body = _mesh->elements->body->datatarray().data();
 		auto material = _mesh->elements->material->datatarray().data();
 		auto code = _mesh->elements->epointers->datatarray().data();
-		auto enodes = _mesh->elements->nodes->cbegin(t);
+		auto enodes = _mesh->elements->procNodes->cbegin(t);
 		auto eneighbors = _mesh->elements->neighbors->cbegin(t);
 		auto nIDs = _mesh->nodes->IDs->datatarray().data();
 
@@ -1039,7 +1039,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 	elements->body = new serializededata<eslocal, int>(1, elemsBody);
 	elements->material = new serializededata<eslocal, int>(1, elemsMaterial);
 	elements->epointers = new serializededata<eslocal, Element*>(1, elemsEpointer);
-	elements->nodes = new serializededata<eslocal, eslocal>(elemsNodesDistribution, elemsNodesData); // global IDs
+	elements->procNodes = new serializededata<eslocal, eslocal>(elemsNodesDistribution, elemsNodesData); // global IDs
 
 	elements->regionMaskSize = eregionsBitMaskSize;
 	elements->regions = new serializededata<eslocal, eslocal>(eregionsBitMaskSize, elemsRegions);
@@ -1349,7 +1349,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<eslocal> &partition)
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (auto n = elements->nodes->begin(t)->begin(); n != elements->nodes->end(t)->begin(); ++n) {
+		for (auto n = elements->procNodes->begin(t)->begin(); n != elements->procNodes->end(t)->begin(); ++n) {
 			*n = *std::lower_bound(permutation.begin(), permutation.end(), *n, [&] (eslocal i, eslocal val) {
 				return nodes->IDs->datatarray()[i] < val;
 			});

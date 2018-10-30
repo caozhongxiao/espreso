@@ -77,8 +77,8 @@ void VTKLegacy::mesh(const std::string &name)
 	}
 	os << "\n";
 
-	os << "CELLS " << _mesh.elements->size << " " << _mesh.elements->size + _mesh.elements->nodes->datatarray().size() << "\n";
-	auto enodes = _mesh.elements->nodes->cbegin();
+	os << "CELLS " << _mesh.elements->size << " " << _mesh.elements->size + _mesh.elements->procNodes->datatarray().size() << "\n";
+	auto enodes = _mesh.elements->procNodes->cbegin();
 	for (eslocal d = 0; d < _mesh.elements->ndomains; d++) {
 		for (eslocal e = _mesh.elements->elementsDistribution[d]; e < _mesh.elements->elementsDistribution[d + 1]; ++e, ++enodes) {
 			os << enodes->size() << " ";
@@ -146,8 +146,8 @@ void VTKLegacy::solution(const std::string &name)
 	}
 	os << "\n";
 
-	os << "CELLS " << _mesh.elements->size << " " << _mesh.elements->size + _mesh.elements->nodes->datatarray().size() << "\n";
-	auto enodes = _mesh.elements->nodes->cbegin();
+	os << "CELLS " << _mesh.elements->size << " " << _mesh.elements->size + _mesh.elements->procNodes->datatarray().size() << "\n";
+	auto enodes = _mesh.elements->procNodes->cbegin();
 	for (eslocal d = 0; d < _mesh.elements->ndomains; d++) {
 		for (eslocal e = _mesh.elements->elementsDistribution[d]; e < _mesh.elements->elementsDistribution[d + 1]; ++e, ++enodes) {
 			os << enodes->size() << " ";
@@ -931,7 +931,7 @@ void VTKLegacy::neighbors(const std::string &name)
 	std::vector<std::vector<Point> > sCenters(_mesh.neighbours.size()), rCenters(_mesh.neighbours.size());
 
 	auto neighbors = _mesh.elements->neighbors->cbegin();
-	auto element = _mesh.elements->nodes->cbegin();
+	auto element = _mesh.elements->procNodes->cbegin();
 	for (eslocal e = 0; e < _mesh.elements->size; ++e, ++element, ++neighbors) {
 		Point center;
 		for (auto n = element->begin(); n != element->end(); ++n) {
@@ -964,7 +964,7 @@ void VTKLegacy::neighbors(const std::string &name)
 	os << "POINTS " << points << " float\n";
 
 	neighbors = _mesh.elements->neighbors->cbegin();
-	element = _mesh.elements->nodes->cbegin();
+	element = _mesh.elements->procNodes->cbegin();
 	for (eslocal e = 0; e < _mesh.elements->size; ++e, ++element, ++neighbors) {
 		Point center;
 		for (auto n = element->begin(); n != element->end(); ++n) {
@@ -990,7 +990,7 @@ void VTKLegacy::neighbors(const std::string &name)
 				os << center + (rCenters[tindex][offset] - center) / 2.1 << "\n";
 			} else {
 				Point ncenter;
-				auto nelement = _mesh.elements->nodes->cbegin() + (*n - ebegin);
+				auto nelement = _mesh.elements->procNodes->cbegin() + (*n - ebegin);
 				for (auto nn = nelement->begin(); nn != nelement->end(); ++nn) {
 					ncenter += _mesh.nodes->coordinates->datatarray()[*nn];
 				}

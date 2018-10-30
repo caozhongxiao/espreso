@@ -18,6 +18,8 @@
 #include "../../output/result/resultstore.h"
 #include "../../output/result/visualization/separated/vtklegacy.h"
 
+#include "../physicsinvectors/physicsinvectors.h"
+
 using namespace espreso;
 
 static std::string mNames(espreso::Matrices matrices, const std::string &prefix = "")
@@ -63,11 +65,17 @@ void Assembler::updateStructuralMatrices(Matrices matrices)
 {
 	Matrices updated = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R);
 
+	std::cout << "update\n";
+
 	if (updated) {
 		timeWrapper("update " + mNames(updated), [&] () {
 			physics.updateMatrix(updated);
 		});
 	}
+
+	PhysicsInVectors vectors("fast", mesh, instance, step, *physics._configuration);
+
+	vectors.buildCSRPattern();
 }
 
 void Assembler::updateGluingMatrices(Matrices matrices)
