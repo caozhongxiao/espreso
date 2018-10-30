@@ -65,8 +65,6 @@ void Assembler::updateStructuralMatrices(Matrices matrices)
 {
 	Matrices updated = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R);
 
-	std::cout << "update\n";
-
 	if (updated) {
 		timeWrapper("update " + mNames(updated), [&] () {
 			physics.updateMatrix(updated);
@@ -78,6 +76,7 @@ void Assembler::updateStructuralMatrices(Matrices matrices)
 	vectors.buildCSRPattern();
 	vectors.initData();
 	vectors.computeValues();
+	vectors.setDirichlet();
 }
 
 void Assembler::updateGluingMatrices(Matrices matrices)

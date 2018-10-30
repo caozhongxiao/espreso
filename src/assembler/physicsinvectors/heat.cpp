@@ -6,19 +6,24 @@
 #include "../../basis/containers/serializededata.h"
 #include "../../basis/evaluator/evaluator.h"
 #include "../../basis/matrices/denseMatrix.h"
+#include "../../basis/utilities/utils.h"
 
 #include "../../mesh/mesh.h"
 #include "../../mesh/elements/element.h"
 #include "../../mesh/store/elementstore.h"
 #include "../../mesh/store/nodestore.h"
+#include "../../mesh/store/boundaryregionstore.h"
 
 #include "../../config/ecf/environment.h"
 #include "../../config/ecf/physics/heattransfer.h"
+
+#include "../../solver/generic/SparseMatrix.h"
 
 using namespace espreso;
 
 Heat::Heat(Mesh &mesh, Instance &instance, Step &step, const HeatTransferConfiguration &configuration)
 : PhysicsInVectors("HEAT", mesh, instance, step, configuration),
+  _configuration(configuration),
   _coordinates(NULL), _K(NULL),
   _area(NULL),
   _temperature(NULL)
@@ -81,7 +86,7 @@ static inline void inverse2x2(const double *m, double *inv, double det)
 	inv[3] =   detJx * m[0];
 }
 
-void Heat::processElement(eslocal domain, eslocal eindex, DenseMatrix &Ke, DenseMatrix &fe)
+eslocal Heat::processElement(eslocal domain, eslocal eindex, eslocal nindex, DenseMatrix &Ke, DenseMatrix &fe)
 {
 	auto epointer = _mesh.elements->epointers->datatarray()[eindex];
 
@@ -94,12 +99,12 @@ void Heat::processElement(eslocal domain, eslocal eindex, DenseMatrix &Ke, Dense
 	DenseMatrix gpK(1, 4);
 
 	for (int n = 0; n < epointer->nodes; n++) {
-		coordinates(n, 0) = (_coordinates->begin() + n)->at(0);
-		coordinates(n, 1) = (_coordinates->begin() + n)->at(1);
-		K(n, 0) = (_K->begin() + n)->at(0);
-		K(n, 1) = (_K->begin() + n)->at(1);
-		K(n, 2) = (_K->begin() + n)->at(2);
-		K(n, 3) = (_K->begin() + n)->at(3);
+		coordinates(n, 0) = (_coordinates->begin() + nindex + n)->at(0);
+		coordinates(n, 1) = (_coordinates->begin() + nindex + n)->at(1);
+		K(n, 0) = (_K->begin() + nindex + n)->at(0);
+		K(n, 1) = (_K->begin() + nindex + n)->at(1);
+		K(n, 2) = (_K->begin() + nindex + n)->at(2);
+		K(n, 3) = (_K->begin() + nindex + n)->at(3);
 	}
 
 	eslocal Ksize = epointer->nodes;
@@ -108,6 +113,9 @@ void Heat::processElement(eslocal domain, eslocal eindex, DenseMatrix &Ke, Dense
 	fe.resize(Ksize, 1);
 	Ke = 0;
 	fe = 0;
+
+//	std::cout << "C: " << coordinates;
+//	std::cout << "K: " << K;
 
 	for (size_t gp = 0; gp < N.size(); gp++) {
 		J.multiply(dN[gp], coordinates);
@@ -124,11 +132,44 @@ void Heat::processElement(eslocal domain, eslocal eindex, DenseMatrix &Ke, Dense
 		dND.multiply(invJ, dN[gp]);
 
 		Ke.multiply(dND, Ce * dND, detJ * weighFactor[gp], 1, true);
+	}
 
-		for (eslocal i = 0; i < Ksize; i++) {
-			fe(i, 0) += detJ * weighFactor[gp] * N[gp](0, i);
+//	std::cout << Ke << fe;
+	return epointer->nodes;
+}
+
+void Heat::setDirichlet()
+{
+//	std::cout << _instance.K.front();
+//	std::cout << _instance.f.front();
+//
+	auto dirichlet = _configuration.load_steps_settings.at(1).temperature;
+	for (auto it = dirichlet.regions.begin(); it != dirichlet.regions.end(); ++it) {
+		BoundaryRegionStore *region = _mesh.bregion(it->first);
+		ECFExpression &expression = it->second;
+
+		auto &ROW = _instance.K.front().CSR_I_row_indices;
+		auto &COL = _instance.K.front().CSR_J_col_indices;
+		auto &VAL = _instance.K.front().CSR_V_values;
+		auto &RHS = _instance.f.front();
+
+		for (auto r = region->nodes->datatarray().begin(); r != region->nodes->datatarray().end(); ++r) {
+			for (eslocal i = ROW[*r]; i < ROW[*r + 1]; i++) {
+				RHS[*r] = expression.evaluator->evaluate(_mesh.nodes->coordinates->datatarray()[*r], 0, 0);
+				if (COL[i - 1] - 1 == *r) {
+					VAL[i - 1] = 1;
+				} else {
+					VAL[i - 1] = 0;
+					for (eslocal c = ROW[COL[i - 1] - 1]; c < ROW[COL[i - 1]]; c++) {
+						if (COL[c - 1] - 1 == *r) {
+							VAL[c - 1] = 0;
+						}
+					}
+				}
+			}
 		}
 	}
 
-	std::cout << Ke << fe;
+//	std::cout << _instance.K.front();
+//	std::cout << _instance.f.front();
 }

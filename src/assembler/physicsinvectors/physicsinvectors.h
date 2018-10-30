@@ -30,10 +30,12 @@ struct PhysicsInVectors {
 	virtual void initData() =0;
 	virtual void updateData() = 0;
 
+	virtual void setDirichlet() =0;
+
 	virtual ~PhysicsInVectors() {};
 
 	// deprecated functions
-	virtual void processElement(eslocal domain, eslocal eindex, DenseMatrix &Ke, DenseMatrix &fe) =0;
+	virtual eslocal processElement(eslocal domain, eslocal eindex, eslocal nindex, DenseMatrix &Ke, DenseMatrix &fe) =0;
 
 protected:
 	std::string _name;

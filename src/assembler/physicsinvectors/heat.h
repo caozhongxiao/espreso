@@ -18,7 +18,11 @@ struct Heat: public PhysicsInVectors
 	void initData();
 	void updateData();
 
-	void processElement(eslocal domain, eslocal eindex, DenseMatrix &Ke, DenseMatrix &fe);
+	void setDirichlet();
+
+	eslocal processElement(eslocal domain, eslocal eindex, eslocal nindex, DenseMatrix &Ke, DenseMatrix &fe);
+
+	const HeatTransferConfiguration &_configuration;
 
 	// node values
 	serializededata<eslocal, double> *_coordinates, *_K;

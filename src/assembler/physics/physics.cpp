@@ -154,8 +154,8 @@ void Physics::updateMatrix(Matrices matrix)
 		switch (_instance->K[d].mtype) {
 		case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		case MatrixType::REAL_SYMMETRIC_INDEFINITE:
-			_instance->K[d].RemoveLower();
-			_instance->M[d].RemoveLower();
+//			_instance->K[d].RemoveLower();
+//			_instance->M[d].RemoveLower();
 			break;
 		case MatrixType::REAL_UNSYMMETRIC:
 			break;

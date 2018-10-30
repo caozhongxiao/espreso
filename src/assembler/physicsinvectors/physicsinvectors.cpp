@@ -78,11 +78,17 @@ void PhysicsInVectors::buildCSRPattern()
 			}
 
 			for (auto e = ebegin; e != eend; ++e) {
-				for (auto nr = e->begin(), cbegin = e->begin(); nr != e->end(); ++nr, ++cbegin) {
-					for (auto nc = cbegin; nc != e->end(); ++nc) {
-						pattern.push_back(*nr <= *nc ? IJ{*nr, *nc} : IJ{*nc, *nr});
+				for (auto nr = e->begin(); nr != e->end(); ++nr) {
+					for (auto nc = e->begin(); nc != e->end(); ++nc) {
+						pattern.push_back({*nr, *nc});
 					}
 				}
+
+//				for (auto nr = e->begin(), cbegin = e->begin(); nr != e->end(); ++nr, ++cbegin) {
+//					for (auto nc = cbegin; nc != e->end(); ++nc) {
+//						pattern.push_back(*nr <= *nc ? IJ{*nr, *nc} : IJ{*nc, *nr});
+//					}
+//				}
 			}
 			std::vector<eslocal> permutation(pattern.size());
 			std::iota(permutation.begin(), permutation.end(), 0);
@@ -107,7 +113,25 @@ void PhysicsInVectors::buildCSRPattern()
 
 void PhysicsInVectors::computeValues()
 {
-	DenseMatrix Ke, fe;
-	processElement(0, 0, Ke, fe);
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	eslocal eindex = 0, nindex = 0, vindex = 0;
+//	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		DenseMatrix Ke, fe;
+		for (eslocal d = _mesh.elements->domainDistribution[t]; d != _mesh.elements->domainDistribution[t + 1]; ++d) {
+			std::fill(_instance.K[d].CSR_V_values.begin(), _instance.K[d].CSR_V_values.end(), 0);
+			for (eslocal e = _mesh.elements->elementsDistribution[d]; e < _mesh.elements->elementsDistribution[d + 1]; ++e) {
+				eslocal nsize = processElement(d, eindex++, nindex, Ke, fe);
+
+				for (auto r = 0, cbegin = 0; r < nsize; ++r, ++cbegin) {
+					for (auto c = cbegin; c < nsize; ++c, ++vindex) {
+						_instance.K[d].CSR_V_values[_DOFsPermutation[d][vindex]] += Ke(r, c);
+					}
+				}
+				nindex += nsize;
+			}
+		}
+	}
 }
 

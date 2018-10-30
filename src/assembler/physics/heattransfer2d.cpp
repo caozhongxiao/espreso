@@ -294,6 +294,9 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 		g(0, 1) = (*_gradient->data)[2 * eindex + 1];
 	}
 
+//	std::cout << "C: " << coordinates;
+//	std::cout << "K: " << K;
+
 	for (size_t gp = 0; gp < N.size(); gp++) {
 		u.multiply(N[gp], U, 1, 0);
 
@@ -442,6 +445,8 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 	if (tangentCorrection) {
 		Ke += tangentK;
 	}
+
+//	std::cout << Ke << fe;
 }
 
 void HeatTransfer2D::processFace(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
