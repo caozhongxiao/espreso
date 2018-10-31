@@ -441,6 +441,11 @@ void Mesh::gatherNodeData()
 	for (auto datait = nodes->data.begin(); datait != nodes->data.end(); ++datait) {
 		NodeData* data = *datait;
 		if (data->names.size() && data->decomposedData != NULL) {
+			if (data->decomposedData->front().size() == data->gatheredData.size()) {
+				data->gatheredData = data->decomposedData->front();
+				continue;
+			}
+
 			for (size_t i = 0; i < data->sBuffer.size(); i++) {
 				std::fill(data->sBuffer[i].begin(), data->sBuffer[i].end(), 0);
 			}

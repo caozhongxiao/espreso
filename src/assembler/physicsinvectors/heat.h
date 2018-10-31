@@ -20,7 +20,7 @@ struct Heat: public PhysicsInVectors
 
 	void setDirichlet();
 
-	eslocal processElement(eslocal domain, eslocal eindex, eslocal nindex, DenseMatrix &Ke, DenseMatrix &fe);
+	eslocal processElement(eslocal eindex, eslocal nindex, DenseMatrix &Ke, DenseMatrix &fe);
 
 	const HeatTransferConfiguration &_configuration;
 

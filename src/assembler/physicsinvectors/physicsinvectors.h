@@ -25,7 +25,10 @@ struct PhysicsInVectors {
 	const std::string& name() const { return _name; }
 
 	void buildCSRPattern();
+	void buildGlobalCSRPattern();
+
 	void computeValues();
+	void computeGlobalValues();
 
 	virtual void initData() =0;
 	virtual void updateData() = 0;
@@ -35,7 +38,7 @@ struct PhysicsInVectors {
 	virtual ~PhysicsInVectors() {};
 
 	// deprecated functions
-	virtual eslocal processElement(eslocal domain, eslocal eindex, eslocal nindex, DenseMatrix &Ke, DenseMatrix &fe) =0;
+	virtual eslocal processElement(eslocal eindex, eslocal nindex, DenseMatrix &Ke, DenseMatrix &fe) =0;
 
 protected:
 	std::string _name;
@@ -50,6 +53,7 @@ protected:
 	std::vector<size_t> _nDistribution;
 	serializededata<eslocal, eslocal>* _domainNodes;
 	std::vector<std::vector<eslocal> > _DOFsPermutation;
+	std::vector<eslocal> _globalDOFsPermutation;
 };
 
 }

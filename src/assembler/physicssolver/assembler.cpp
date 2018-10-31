@@ -73,9 +73,17 @@ void Assembler::updateStructuralMatrices(Matrices matrices)
 
 	Heat vectors(mesh, instance, step, *dynamic_cast<const HeatTransferConfiguration*>(physics._configuration));
 
-	vectors.buildCSRPattern();
+	if (instance.K.size() == 1) {
+		vectors.buildCSRPattern();
+	} else {
+		vectors.buildGlobalCSRPattern();
+	}
 	vectors.initData();
-	vectors.computeValues();
+	if (instance.K.size() == 1) {
+		vectors.computeValues();
+	} else {
+		vectors.computeGlobalValues();
+	}
 	vectors.setDirichlet();
 }
 

@@ -5,6 +5,7 @@
 
 #include "../../mesh/mesh.h"
 #include "../../mesh/store/elementstore.h"
+#include "../../mesh/store/nodestore.h"
 #include "../../basis/containers/serializededata.h"
 #include "../../basis/matrices/denseMatrix.h"
 #include "../../basis/utilities/utils.h"
@@ -108,7 +109,55 @@ void PhysicsInVectors::buildCSRPattern()
 	}
 
 //	std::cout << *_domainNodes << "\n";
-//	std::cout << _DOFsPermutation.front();
+	std::cout << _DOFsPermutation.front();
+}
+
+void PhysicsInVectors::buildGlobalCSRPattern()
+{
+	std::vector<IJ> pattern;
+
+	for (auto e = _mesh.elements->procNodes->begin(); e != _mesh.elements->procNodes->end(); ++e) {
+		for (auto nr = e->begin(); nr != e->end(); ++nr) {
+			for (auto nc = e->begin(); nc != e->end(); ++nc) {
+				pattern.push_back({*nr, *nc});
+			}
+		}
+	}
+	std::vector<eslocal> permutation(pattern.size());
+	std::iota(permutation.begin(), permutation.end(), 0);
+	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) {
+		return pattern[i].row == pattern[j].row ? pattern[i].column < pattern[j].column : pattern[i].row < pattern[j].row;
+	});
+
+	_globalDOFsPermutation.resize(pattern.size());
+	_instance.K.front().rows = _mesh.nodes->size;
+	_instance.K.front().cols = _mesh.nodes->size;
+	_instance.K.front().CSR_I_row_indices.resize(1);
+	_instance.K.front().CSR_J_col_indices.resize(1);
+	_instance.K.front().CSR_I_row_indices.reserve(_mesh.nodes->size + 1);
+	_instance.K.front().CSR_J_col_indices.reserve(pattern.size());
+
+	_instance.K.front().CSR_I_row_indices.front() = 1;
+	_instance.K.front().CSR_J_col_indices.front() = pattern[permutation.front()].column + 1;
+	for (size_t i = 1, nonzeros = 0; i < permutation.size(); i++) {
+		if (pattern[permutation[i]] != pattern[permutation[i - 1]]) {
+			++nonzeros;
+			_instance.K.front().CSR_J_col_indices.push_back(pattern[permutation[i]].column + 1);
+			if (pattern[permutation[i - 1]].row != pattern[permutation[i]].row) {
+				_instance.K.front().CSR_I_row_indices.push_back(nonzeros + 1);
+			}
+		}
+		_globalDOFsPermutation[permutation[i]] = nonzeros;
+	}
+	_instance.K.front().CSR_I_row_indices.push_back(_instance.K.front().CSR_J_col_indices.size() + 1);
+	_instance.K.front().CSR_V_values.resize(_instance.K.front().CSR_J_col_indices.size());
+	_instance.K.front().nnz =_instance.K.front().CSR_J_col_indices.size() + 1;
+
+	_instance.f.front().resize(_instance.K.front().rows);
+	_instance.primalSolution.front().resize(_instance.K.front().rows);
+
+
+//	std::cout << _globalDOFsPermutation;
 }
 
 void PhysicsInVectors::computeValues()
@@ -122,7 +171,7 @@ void PhysicsInVectors::computeValues()
 		for (eslocal d = _mesh.elements->domainDistribution[t]; d != _mesh.elements->domainDistribution[t + 1]; ++d) {
 			std::fill(_instance.K[d].CSR_V_values.begin(), _instance.K[d].CSR_V_values.end(), 0);
 			for (eslocal e = _mesh.elements->elementsDistribution[d]; e < _mesh.elements->elementsDistribution[d + 1]; ++e) {
-				eslocal nsize = processElement(d, eindex++, nindex, Ke, fe);
+				eslocal nsize = processElement(eindex++, nindex, Ke, fe);
 
 //				for (auto r = 0, cbegin = 0; r < nsize; ++r, ++cbegin) {
 //					for (auto c = cbegin; c < nsize; ++c, ++vindex) {
@@ -137,6 +186,23 @@ void PhysicsInVectors::computeValues()
 				nindex += nsize;
 			}
 		}
+	}
+}
+
+void PhysicsInVectors::computeGlobalValues()
+{
+	eslocal nindex = 0, vindex = 0;
+	DenseMatrix Ke, fe;
+	std::fill(_instance.K.front().CSR_V_values.begin(), _instance.K.front().CSR_V_values.end(), 0);
+	std::fill(_instance.f.front().begin(), _instance.f.front().end(), 0);
+	for (eslocal e = 0; e < _mesh.elements->size; ++e) {
+		eslocal nsize = processElement(e, nindex, Ke, fe);
+		for (auto r = 0; r < nsize; ++r) {
+			for (auto c = 0; c < nsize; ++c, ++vindex) {
+				_instance.K.front().CSR_V_values[_globalDOFsPermutation[vindex]] += Ke(r, c);
+			}
+		}
+		nindex += nsize;
 	}
 }
 

@@ -86,7 +86,7 @@ static inline void inverse2x2(const double *m, double *inv, double det)
 	inv[3] =   detJx * m[0];
 }
 
-eslocal Heat::processElement(eslocal domain, eslocal eindex, eslocal nindex, DenseMatrix &Ke, DenseMatrix &fe)
+eslocal Heat::processElement(eslocal eindex, eslocal nindex, DenseMatrix &Ke, DenseMatrix &fe)
 {
 	auto epointer = _mesh.elements->epointers->datatarray()[eindex];
 
@@ -114,8 +114,10 @@ eslocal Heat::processElement(eslocal domain, eslocal eindex, eslocal nindex, Den
 	Ke = 0;
 	fe = 0;
 
-//	std::cout << "C: " << coordinates;
-//	std::cout << "K: " << K;
+//	if (eindex == 0) {
+//		std::cout << "C: " << coordinates;
+//		std::cout << "K: " << K;
+//	}
 
 	for (size_t gp = 0; gp < N.size(); gp++) {
 		J.multiply(dN[gp], coordinates);
@@ -134,7 +136,9 @@ eslocal Heat::processElement(eslocal domain, eslocal eindex, eslocal nindex, Den
 		Ke.multiply(dND, Ce * dND, detJ * weighFactor[gp], 1, true);
 	}
 
-//	std::cout << Ke << fe;
+//	if (eindex == 0) {
+//		std::cout << " xx " << eindex << " xx \n" << Ke << fe;
+//	}
 	return epointer->nodes;
 }
 
@@ -153,7 +157,8 @@ void Heat::setDirichlet()
 		auto &VAL = _instance.K.front().CSR_V_values;
 		auto &RHS = _instance.f.front();
 
-		for (auto r = region->nodes->datatarray().begin(); r != region->nodes->datatarray().end(); ++r) {
+		for (auto r = region->uniqueNodes->datatarray().begin(); r != region->uniqueNodes->datatarray().end(); ++r) {
+//			std::cout << "r: " << *r << "\n";
 			for (eslocal i = ROW[*r]; i < ROW[*r + 1]; i++) {
 				RHS[*r] = expression.evaluator->evaluate(_mesh.nodes->coordinates->datatarray()[*r], 0, 0);
 				if (COL[i - 1] - 1 == *r) {
