@@ -142,7 +142,7 @@ void Heat::setDirichlet()
 {
 //	std::cout << _instance.K.front();
 //	std::cout << _instance.f.front();
-//
+
 	auto dirichlet = _configuration.load_steps_settings.at(1).temperature;
 	for (auto it = dirichlet.regions.begin(); it != dirichlet.regions.end(); ++it) {
 		BoundaryRegionStore *region = _mesh.bregion(it->first);
@@ -162,6 +162,7 @@ void Heat::setDirichlet()
 					VAL[i - 1] = 0;
 					for (eslocal c = ROW[COL[i - 1] - 1]; c < ROW[COL[i - 1]]; c++) {
 						if (COL[c - 1] - 1 == *r) {
+							RHS[COL[i - 1] - 1] -= VAL[c - 1] * RHS[*r];
 							VAL[c - 1] = 0;
 						}
 					}

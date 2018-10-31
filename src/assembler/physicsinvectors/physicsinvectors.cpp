@@ -124,8 +124,13 @@ void PhysicsInVectors::computeValues()
 			for (eslocal e = _mesh.elements->elementsDistribution[d]; e < _mesh.elements->elementsDistribution[d + 1]; ++e) {
 				eslocal nsize = processElement(d, eindex++, nindex, Ke, fe);
 
-				for (auto r = 0, cbegin = 0; r < nsize; ++r, ++cbegin) {
-					for (auto c = cbegin; c < nsize; ++c, ++vindex) {
+//				for (auto r = 0, cbegin = 0; r < nsize; ++r, ++cbegin) {
+//					for (auto c = cbegin; c < nsize; ++c, ++vindex) {
+//						_instance.K[d].CSR_V_values[_DOFsPermutation[d][vindex]] += Ke(r, c);
+//					}
+//				}
+				for (auto r = 0; r < nsize; ++r) {
+					for (auto c = 0; c < nsize; ++c, ++vindex) {
 						_instance.K[d].CSR_V_values[_DOFsPermutation[d][vindex]] += Ke(r, c);
 					}
 				}
