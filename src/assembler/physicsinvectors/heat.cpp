@@ -147,6 +147,8 @@ void Heat::setDirichlet()
 //	std::cout << _instance.K.front();
 //	std::cout << _instance.f.front();
 
+	eslocal halosize = _instance.K.front().haloRows;
+
 	auto dirichlet = _configuration.load_steps_settings.at(1).temperature;
 	for (auto it = dirichlet.regions.begin(); it != dirichlet.regions.end(); ++it) {
 		BoundaryRegionStore *region = _mesh.bregion(it->first);
@@ -159,15 +161,18 @@ void Heat::setDirichlet()
 
 		for (auto r = region->uniqueNodes->datatarray().begin(); r != region->uniqueNodes->datatarray().end(); ++r) {
 //			std::cout << "r: " << *r << "\n";
-			for (eslocal i = ROW[*r]; i < ROW[*r + 1]; i++) {
-				RHS[*r] = expression.evaluator->evaluate(_mesh.nodes->coordinates->datatarray()[*r], 0, 0);
-				if (COL[i - 1] - 1 == *r) {
+			eslocal row = _globalIndices[*r] - _mesh.nodes->uniqueOffset + halosize;
+			for (eslocal i = ROW[row]; i < ROW[row + 1]; i++) {
+				RHS[row] = expression.evaluator->evaluate(_mesh.nodes->coordinates->datatarray()[*r], 0, 0);
+				if (COL[i - 1] - 1 == _globalIndices[*r]) {
 					VAL[i - 1] = 1;
 				} else {
 					VAL[i - 1] = 0;
-					for (eslocal c = ROW[COL[i - 1] - 1]; c < ROW[COL[i - 1]]; c++) {
-						if (COL[c - 1] - 1 == *r) {
-							RHS[COL[i - 1] - 1] -= VAL[c - 1] * RHS[*r];
+					eslocal col = std::lower_bound(_globalIndices.begin(), _globalIndices.end(), COL[i - 1] - 1) - _globalIndices.begin();
+//					printf("%d col: %d -> %d\n", environment->MPIrank, COL[i - 1], col);
+					for (eslocal c = ROW[col]; c < ROW[col + 1]; c++) {
+						if (COL[c - 1] - 1 == _globalIndices[*r]) {
+//							RHS[col] -= VAL[c - 1] * RHS[row];
 							VAL[c - 1] = 0;
 						}
 					}

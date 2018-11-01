@@ -34,16 +34,17 @@ double& MultigridSolver::precision()
 void MultigridSolver::update(Matrices matrices)
 {
 	if (_hypreData == NULL) {
-		_hypreData = new HypreData(environment->MPICommunicator, _instance->K[0].rows);
+		_hypreData = new HypreData(environment->MPICommunicator, _instance->K[0].rows - _instance->K[0].haloRows);
 	}
 
 	if (matrices & Matrices::K) {
+		size_t prefix = _instance->K[0].CSR_I_row_indices[_instance->K[0].haloRows] - 1;
 		_hypreData->insertCSR(
-				_instance->K[0].rows, 0,
-				_instance->K[0].CSR_I_row_indices.data(),
-				_instance->K[0].CSR_J_col_indices.data(),
-				_instance->K[0].CSR_V_values.data(),
-				_instance->f[0].data());
+				_instance->K[0].rows - _instance->K[0].haloRows, 0,
+				_instance->K[0].CSR_I_row_indices.data() + _instance->K[0].haloRows,
+				_instance->K[0].CSR_J_col_indices.data() + prefix,
+				_instance->K[0].CSR_V_values.data() + prefix,
+				_instance->f[0].data() + _instance->K[0].haloRows);
 	}
 
 //	if (matrices & Matrices::B1) {
@@ -62,7 +63,9 @@ void MultigridSolver::update(Matrices matrices)
 // run solver and store primal and dual solution
 void MultigridSolver::solve()
 {
-	HYPRE::solve(_configuration, *_hypreData, _instance->primalSolution[0].size(), _instance->primalSolution[0].data());
+	HYPRE::solve(_configuration, *_hypreData,
+			_instance->K[0].rows - _instance->K[0].haloRows,
+			_instance->primalSolution[0].data() + _instance->K[0].haloRows);
 }
 
 void MultigridSolver::finalize()

@@ -163,6 +163,7 @@ SparseMatrix::SparseMatrix() {
 	nnz  = 0;
 	cols = 0;
 	rows = 0;
+	haloRows = 0;
 	type = 0;
 	mtype = MatrixType::REAL_UNSYMMETRIC;
 	uplo = 0;
@@ -194,6 +195,7 @@ SparseMatrix::SparseMatrix( const SparseMatrix &A_in) {
 	rows = A_in.rows;
 	cols = A_in.cols;
 	nnz  = A_in.nnz;
+	haloRows = A_in.haloRows;
 	type = A_in.type;
 	mtype = A_in.mtype;
 
@@ -234,6 +236,7 @@ SparseMatrix& SparseMatrix::operator= ( const SparseCSRMatrix<eslocal> &A_in ) {
 	rows = A_in.rows();
 	cols = A_in.columns();
 	nnz  = A_in.rowPtrs()[rows];
+	haloRows = 0;
 	type = 'G';
 	mtype = MatrixType::REAL_UNSYMMETRIC;
 
@@ -293,6 +296,7 @@ void SparseMatrix::swap ( SparseMatrix &A_in) {
 	tmp = rows; rows = A_in.rows; A_in.rows = tmp;
 	tmp = cols; cols = A_in.cols; A_in.cols = tmp;
 	tmp = nnz;  nnz  = A_in.nnz;  A_in.nnz  = tmp;
+	std::swap(haloRows, A_in.haloRows);
 	ttype = type; type = A_in.type; A_in.type = ttype;
 	tmtype = mtype; mtype = A_in.mtype; A_in.mtype = tmtype;
 
@@ -339,6 +343,7 @@ SparseMatrix::SparseMatrix( const SparseCSRMatrix<eslocal> &A_in, char type_in )
 	rows = A_in.rows();
 	cols = A_in.columns();
 	nnz  = A_in.rowPtrs()[rows];
+	haloRows = 0;
 	type = type_in;
 	mtype = MatrixType::REAL_UNSYMMETRIC;
 
@@ -399,6 +404,7 @@ SparseMatrix& SparseMatrix::operator= (const SparseMatrix &A_in) {
 		rows = A_in.rows;
 		cols = A_in.cols;
 		nnz  = A_in.nnz;
+		haloRows = A_in.haloRows;
 		type = A_in.type;
 		mtype = A_in.mtype;
 
@@ -446,6 +452,7 @@ void SparseMatrix::Clear() {
 	rows = 0;
 	cols = 0;
 	nnz  = 0;
+	haloRows = 0;
 	type = 0;
 	uplo = 0;
 	extern_lda = 0;

@@ -54,6 +54,7 @@ public:
 	eslocal  rows;		// number of rows
 	eslocal  cols;		// number of columns
 	eslocal  nnz;		// number of non zero elements
+	eslocal  haloRows;	// number of rows that have to be skipped in the case of direct solver
 	char type;		// 'G' for general or 'S' for symmetric
 	MatrixType mtype;
 	char uplo; 		// 'L' for lower or 'U' for upper

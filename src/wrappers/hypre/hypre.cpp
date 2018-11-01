@@ -19,9 +19,8 @@ using namespace espreso;
 HypreData::HypreData(MPI_Comm &comm, eslocal nrows)
 : _comm(comm), _roffset(nrows), _nrows(nrows), _finalized(false)
 {
-	std::cout << "nrows: " << nrows << "\n";
 	eslocal totalsize = Communication::exscan(_roffset);
-	HYPRE_IJMatrixCreate(comm, _roffset + 1, _roffset + _nrows, 1, totalsize, &_K);
+	HYPRE_IJMatrixCreate(comm, _roffset + 1, _roffset + _nrows, _roffset + 1, _roffset + _nrows, &_K);
 	HYPRE_IJVectorCreate(comm, _roffset + 1, _roffset + _nrows, &_f);
 	HYPRE_IJVectorCreate(comm, _roffset + 1, _roffset + _nrows, &_x);
 
@@ -43,18 +42,11 @@ void HypreData::insertCSR(eslocal nrows, eslocal offset, eslocal *rowPrts, esloc
 		ncols.push_back(rowPrts[r + 1] - rowPrts[r]);
 		rows.push_back(_roffset + offset + r + 1);
 	}
-
-//	std::cout << nrows << ": " << rows;
-//	std::cout << ncols;
-
-//	for (eslocal i = 0, offset = 0; i < nrows; i++) {
-//		for (eslocal j = 0; j < ncols[i]; j++, offset++) {
-//			std::cout << i << ":" << colIndices[offset] << " = " << values[offset] << "\n";
-//		}
-//	}
+	std::vector<double> x(nrows);
 
 	HYPRE_IJMatrixSetValues(_K, nrows, ncols.data(), rows.data(), colIndices, values);
 	HYPRE_IJVectorSetValues(_f, nrows, rows.data(), rhsValues);
+	HYPRE_IJVectorSetValues(_x, nrows, rows.data(), x.data());
 
 	_finalized = false;
 }
@@ -72,9 +64,11 @@ void HypreData::insertIJV(eslocal nrows, eslocal offset, eslocal size, eslocal *
 		}
 		rows.push_back(_roffset + offset + rowIndices[i]);
 	}
+	std::vector<double> x(nrows);
 
 	HYPRE_IJMatrixSetValues(_K, nrows, ncols.data(), rows.data(), colIndices, values);
 	HYPRE_IJVectorSetValues(_f, nrows, rows.data(), rhsValues);
+	HYPRE_IJVectorSetValues(_x, nrows, rows.data(), x.data());
 	_finalized = false;
 }
 

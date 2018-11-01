@@ -29,6 +29,7 @@ struct PhysicsInVectors {
 
 	void computeValues();
 	void computeGlobalValues();
+	void synchronize();
 
 	virtual void initData() =0;
 	virtual void updateData() = 0;
@@ -53,7 +54,9 @@ protected:
 	std::vector<size_t> _nDistribution;
 	serializededata<eslocal, eslocal>* _domainNodes;
 	std::vector<std::vector<eslocal> > _DOFsPermutation;
-	std::vector<eslocal> _globalDOFsPermutation;
+
+	size_t _localK, _localRHS;
+	std::vector<eslocal> _pK, _pRHS, _neighRHSSize, _globalIndices;
 };
 
 }

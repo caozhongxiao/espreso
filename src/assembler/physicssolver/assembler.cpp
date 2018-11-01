@@ -73,18 +73,24 @@ void Assembler::updateStructuralMatrices(Matrices matrices)
 
 	Heat vectors(mesh, instance, step, *dynamic_cast<const HeatTransferConfiguration*>(physics._configuration));
 
-	if (instance.K.size() == 1) {
-		vectors.buildCSRPattern();
-	} else {
-		vectors.buildGlobalCSRPattern();
-	}
+//	if (instance.K.size() == 1) {
+//		vectors.buildCSRPattern();
+//	} else {
+//		vectors.buildGlobalCSRPattern();
+//	}
+//	vectors.initData();
+//	if (instance.K.size() == 1) {
+//		vectors.computeValues();
+//	} else {
+//		vectors.computeGlobalValues();
+//	}
+//	vectors.setDirichlet();
+
+	vectors.buildGlobalCSRPattern();
 	vectors.initData();
-	if (instance.K.size() == 1) {
-		vectors.computeValues();
-	} else {
-		vectors.computeGlobalValues();
-	}
+	vectors.computeGlobalValues();
 	vectors.setDirichlet();
+	vectors.synchronize();
 }
 
 void Assembler::updateGluingMatrices(Matrices matrices)
