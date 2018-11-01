@@ -32,6 +32,11 @@ bool operator!=(const IJ &left, const IJ &right)
 	return !(left == right);
 }
 
+bool operator<(const IJ &left, const IJ &right)
+{
+	return left.row == right.row ? left.column < right.column : left.row < right.row;
+}
+
 PhysicsInVectors::PhysicsInVectors(const std::string &name, Mesh &mesh, Instance &instance, Step &step, const PhysicsConfiguration &configuration)
 : _name(name), _mesh(mesh), _instance(instance), _step(step), _configuration(configuration), _DOFs{0, 0, 0, 1, 1}, _domainNodes(NULL),
   _localK(0), _localRHS(0)
@@ -96,7 +101,7 @@ void PhysicsInVectors::buildCSRPattern()
 			std::vector<eslocal> permutation(pattern.size());
 			std::iota(permutation.begin(), permutation.end(), 0);
 			std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) {
-				return pattern[i].row == pattern[j].row ? pattern[i].column < pattern[j].column : pattern[i].row < pattern[j].row;
+				return pattern[i] < pattern[j];
 			});
 
 			DOFs.resize(pattern.size());
@@ -165,7 +170,7 @@ void PhysicsInVectors::buildGlobalCSRPattern()
 	std::vector<eslocal> pK(KPattern.size());
 	std::iota(pK.begin(), pK.end(), 0);
 	std::sort(pK.begin(), pK.end(), [&] (eslocal i, eslocal j) {
-		return KPattern[i].row == KPattern[j].row ? KPattern[i].column < KPattern[j].column : KPattern[i].row < KPattern[j].row;
+		return KPattern[i] < KPattern[j];
 	});
 
 	std::vector<eslocal> pRHS(RHSPattern.size());
@@ -177,6 +182,14 @@ void PhysicsInVectors::buildGlobalCSRPattern()
 	std::vector<std::vector<IJ> > sKBuffer(_mesh.neighbours.size()), rKBuffer(_mesh.neighbours.size());
 	std::vector<std::vector<eslocal> > sRHSBuffer(_mesh.neighbours.size()), rRHSBuffer(_mesh.neighbours.size());
 
+//	Communication::serialize([&] () {
+//		printf(" -- %d -- \n", environment->MPIrank);
+//		for (auto kk = pK.begin(); kk != pK.end(); ++kk) {
+//			std::cout << KPattern[*kk].row << ":" << KPattern[*kk].column << " ";
+//		}
+//		std::cout << "\n";
+//	});
+
 	auto iK = pK.begin();
 	auto iRHS = pRHS.begin();
 	size_t n = 0;
@@ -184,13 +197,19 @@ void PhysicsInVectors::buildGlobalCSRPattern()
 		if (_mesh.neighbours[n] < it->sourceProcess) {
 			++n;
 		}
-		while (RHSPattern[*iRHS] < it->end) {
-			sRHSBuffer[0].push_back(RHSPattern[*iRHS++]);
+		while (RHSPattern[*iRHS] < _globalIndices[it->end]) {
+			sRHSBuffer[n].push_back(RHSPattern[*iRHS++]);
 		}
-		while (KPattern[*iK].row < it->end) {
+		while (KPattern[*iK].row < _globalIndices[it->end]) {
 			sKBuffer[n].push_back(KPattern[*iK++]);
 		}
 		_instance.K.front().haloRows = it->end;
+	}
+
+	for (size_t n = 0; n < _mesh.neighbours.size(); ++n) {
+		Esutils::sortAndRemoveDuplicity(sRHSBuffer[n]);
+		Esutils::sortAndRemoveDuplicity(sKBuffer[n]);
+//		printf("%d to %d -> size = %ld\n", environment->MPIrank, _mesh.neighbours[n], sKBuffer[n].size());
 	}
 
 	if (!Communication::receiveUpperUnknownSize(sKBuffer, rKBuffer, _mesh.neighbours)) {
@@ -205,7 +224,6 @@ void PhysicsInVectors::buildGlobalCSRPattern()
 	}
 	for (size_t i = 0; i < rRHSBuffer.size(); i++) {
 		RHSPattern.insert(RHSPattern.end(), rRHSBuffer[i].begin(), rRHSBuffer[i].end());
-		Esutils::sortAndRemoveDuplicity(rRHSBuffer[i]);
 		_neighRHSSize.push_back(rRHSBuffer[i].size());
 	}
 
@@ -216,7 +234,7 @@ void PhysicsInVectors::buildGlobalCSRPattern()
 	std::iota(pK.begin() + _localK, pK.end(), _localK);
 	std::iota(pRHS.begin() + _localRHS, pRHS.end(), _localRHS);
 	std::sort(pK.begin(), pK.end(), [&] (eslocal i, eslocal j) {
-		return KPattern[i].row == KPattern[j].row ? KPattern[i].column < KPattern[j].column : KPattern[i].row < KPattern[j].row;
+		return KPattern[i] < KPattern[j];
 	});
 	std::sort(pRHS.begin(), pRHS.end(), [&] (eslocal i, eslocal j) {
 		return RHSPattern[i] < RHSPattern[j];
@@ -285,20 +303,20 @@ void PhysicsInVectors::synchronize()
 //	std::cout << _instance.K.front();
 //	std::cout << _instance.f.front();
 
-	auto &COL = _instance.K.front().CSR_J_col_indices;
-	auto &VAL = _instance.K.front().CSR_V_values;
-	auto &RHS = _instance.f.front();
-
-	std::vector<eslocal> ROW;
-	for (size_t r = 0; r < _instance.K.front().CSR_I_row_indices.size() - 1; r++) {
-		ROW.insert(ROW.end(), _instance.K.front().CSR_I_row_indices[r + 1] - _instance.K.front().CSR_I_row_indices[r], _globalIndices[r] + 1);
-	}
-
+//	auto &COL = _instance.K.front().CSR_J_col_indices;
+//	auto &VAL = _instance.K.front().CSR_V_values;
+//	auto &RHS = _instance.f.front();
+//
+//	std::vector<eslocal> ROW;
+//	for (size_t r = 0; r < _instance.K.front().CSR_I_row_indices.size() - 1; r++) {
+//		ROW.insert(ROW.end(), _instance.K.front().CSR_I_row_indices[r + 1] - _instance.K.front().CSR_I_row_indices[r], _globalIndices[r] + 1);
+//	}
+//
 //	Communication::serialize([&] () {
 //		printf(" -- %d -- \n", environment->MPIrank);
-//		for (eslocal r = 0, i = 0; r < _mesh.nodes->uniqueTotalSize; r++) {
+//		for (eslocal r = 0, i = 0, f = 0; r < _mesh.nodes->uniqueTotalSize; r++) {
 //			for (eslocal c = 0; c < _mesh.nodes->uniqueTotalSize; c++) {
-//				if (ROW[i] == r + 1 && COL[i] == c + 1) {
+//				if (i < ROW.size() && ROW[i] == r + 1 && COL[i] == c + 1) {
 //					if (VAL[i] > -0.00001) {
 //						if (VAL[i] > 10) {
 //							printf(" %3.1f ", VAL[i++]);
@@ -312,7 +330,11 @@ void PhysicsInVectors::synchronize()
 //					printf("      ");
 //				}
 //			}
-//			printf("\n");
+//			if (f < _globalIndices.size() && _globalIndices[f] == r) {
+//				printf(" = %3.2f\n", RHS[f++]);
+//			} else {
+//				printf(" =\n");
+//			}
 //		}
 //	});
 
@@ -326,6 +348,10 @@ void PhysicsInVectors::synchronize()
 		sBuffer[n].insert(sBuffer[n].end(), _instance.f.front().begin() + it->begin, _instance.f.front().begin() + it->end);
 	}
 
+//	for (size_t n = 0; n < _mesh.neighbours.size(); n++) {
+//		printf("RHS %d to %d -> size = %ld\n", environment->MPIrank, _mesh.neighbours[n], sBuffer[n].size());
+//	}
+
 	n = 0;
 	for (auto it = _mesh.nodes->pintervals.begin(); it != _mesh.nodes->pintervals.end() && it->sourceProcess < environment->MPIrank; ++it) {
 		if (_mesh.neighbours[n] < it->sourceProcess) {
@@ -336,13 +362,21 @@ void PhysicsInVectors::synchronize()
 		sBuffer[n].insert(sBuffer[n].end(), _instance.K.front().CSR_V_values.begin() + begin, _instance.K.front().CSR_V_values.begin() + end);
 	}
 
+//	for (size_t n = 0; n < _mesh.neighbours.size(); n++) {
+//		printf("%d to %d -> size = %ld\n", environment->MPIrank, _mesh.neighbours[n], sBuffer[n].size());
+//	}
+
 	if (!Communication::receiveUpperUnknownSize(sBuffer, rBuffer, _mesh.neighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: exchange CSR pattern.";
 	}
 
-//	if (environment->MPIrank == 0) {
-//		std::cout << rBuffer.front();
-//	}
+//	Communication::serialize([&] () {
+//		std::cout << " -- " << environment->MPIrank << " --\n";
+//		for (size_t i = 0; i < rBuffer.size(); i++) {
+//			std::cout << rBuffer[i];
+//		}
+//		std::cout << std::vector<eslocal>(_pK.begin() + _localK, _pK.end());
+//	});
 
 	size_t KIndex = _localK, RHSIndex = _localRHS;
 	for (size_t i = 0, j = 0; i < rBuffer.size(); ++i, j = 0) {
@@ -356,9 +390,9 @@ void PhysicsInVectors::synchronize()
 
 //	Communication::serialize([&] () {
 //		printf(" XX %d XX \n", environment->MPIrank);
-//		for (eslocal r = 0, i = 0; r < _mesh.nodes->uniqueTotalSize; r++) {
+//		for (eslocal r = 0, i = 0, f = 0; r < _mesh.nodes->uniqueTotalSize; r++) {
 //			for (eslocal c = 0; c < _mesh.nodes->uniqueTotalSize; c++) {
-//				if (ROW[i] == r + 1 && COL[i] == c + 1) {
+//				if (i < ROW.size() && ROW[i] == r + 1 && COL[i] == c + 1) {
 //					if (VAL[i] > -0.00001) {
 //						if (VAL[i] > 10) {
 //							printf(" %3.1f ", VAL[i++]);
@@ -372,7 +406,11 @@ void PhysicsInVectors::synchronize()
 //					printf("      ");
 //				}
 //			}
-//			printf("\n");
+//			if (f < _globalIndices.size() && _globalIndices[f] == r) {
+//				printf(" = %3.2f\n", RHS[f++]);
+//			} else {
+//				printf(" =\n");
+//			}
 //		}
 //	});
 

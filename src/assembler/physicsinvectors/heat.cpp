@@ -7,6 +7,7 @@
 #include "../../basis/evaluator/evaluator.h"
 #include "../../basis/matrices/denseMatrix.h"
 #include "../../basis/utilities/utils.h"
+#include "../../basis/utilities/communication.h"
 
 #include "../../mesh/mesh.h"
 #include "../../mesh/elements/element.h"
@@ -147,6 +148,46 @@ void Heat::setDirichlet()
 //	std::cout << _instance.K.front();
 //	std::cout << _instance.f.front();
 
+//	{
+//		auto &COL = _instance.K.front().CSR_J_col_indices;
+//		auto &VAL = _instance.K.front().CSR_V_values;
+//		auto &RHS = _instance.f.front();
+//
+//		std::vector<eslocal> ROW;
+//		for (size_t r = 0; r < _instance.K.front().CSR_I_row_indices.size() - 1; r++) {
+//			ROW.insert(ROW.end(), _instance.K.front().CSR_I_row_indices[r + 1] - _instance.K.front().CSR_I_row_indices[r], _globalIndices[r] + 1);
+//		}
+//
+//		Communication::serialize([&] () {
+//			for (size_t i = 0; i < _globalIndices.size(); i++) {
+//				printf("%d ", _globalIndices[i]);
+//			}
+//			printf("\n");
+//			printf(" // %d \\\\ \n", environment->MPIrank);
+//			for (eslocal r = 0, i = 0, f = 0; r < _mesh.nodes->uniqueTotalSize; r++) {
+//				for (eslocal c = 0; c < _mesh.nodes->uniqueTotalSize; c++) {
+//					if (i < ROW.size() && ROW[i] == r + 1 && COL[i] == c + 1) {
+//						if (VAL[i] > -0.00001) {
+//							if (VAL[i] > 10) {
+//								printf(" %3.1f ", VAL[i++]);
+//							} else {
+//								printf(" %3.2f ", VAL[i++]);
+//							}
+//						} else {
+//							printf("%3.2f ", VAL[i++]);
+//						}
+//					} else {
+//						printf("      ");
+//					}
+//				}
+//				if (f < _globalIndices.size() && _globalIndices[f] == r) {
+//					printf(" = %3.2f\n", RHS[f++]);
+//				} else {
+//					printf(" =\n");
+//				}
+//			}
+//		});
+//	}
 	eslocal halosize = _instance.K.front().haloRows;
 
 	auto dirichlet = _configuration.load_steps_settings.at(1).temperature;
@@ -161,19 +202,25 @@ void Heat::setDirichlet()
 
 		for (auto r = region->uniqueNodes->datatarray().begin(); r != region->uniqueNodes->datatarray().end(); ++r) {
 //			std::cout << "r: " << *r << "\n";
-			eslocal row = _globalIndices[*r] - _mesh.nodes->uniqueOffset + halosize;
+//			eslocal row = _globalIndices[*r] - _mesh.nodes->uniqueOffset + halosize;
+//			printf("%d *r=%d, global=%d, offset=%d halo=%d, row=%d\n", environment->MPIrank, *r, _globalIndices[*r], _mesh.nodes->uniqueOffset, halosize, row);
+			eslocal row = std::lower_bound(_globalIndices.begin(), _globalIndices.end(), _globalIndices[*r]) - _globalIndices.begin();
+//			printf("%d, *r=%d, row=%d\n", environment->MPIrank, *r, row);
 			for (eslocal i = ROW[row]; i < ROW[row + 1]; i++) {
 				RHS[row] = expression.evaluator->evaluate(_mesh.nodes->coordinates->datatarray()[*r], 0, 0);
 				if (COL[i - 1] - 1 == _globalIndices[*r]) {
 					VAL[i - 1] = 1;
 				} else {
 					VAL[i - 1] = 0;
-					eslocal col = std::lower_bound(_globalIndices.begin(), _globalIndices.end(), COL[i - 1] - 1) - _globalIndices.begin();
-//					printf("%d col: %d -> %d\n", environment->MPIrank, COL[i - 1], col);
-					for (eslocal c = ROW[col]; c < ROW[col + 1]; c++) {
-						if (COL[c - 1] - 1 == _globalIndices[*r]) {
-//							RHS[col] -= VAL[c - 1] * RHS[row];
-							VAL[c - 1] = 0;
+					auto gindex = std::lower_bound(_globalIndices.begin(), _globalIndices.end(), COL[i - 1] - 1);
+					if (gindex != _globalIndices.end() && *gindex == COL[i - 1] - 1) {
+						eslocal col = gindex - _globalIndices.begin();
+//						printf("%d, COL[i - 1]=%d, col=%d\n", environment->MPIrank, COL[i - 1] - 1, col);
+						for (eslocal c = ROW[col]; c < ROW[col + 1]; c++) {
+							if (COL[c - 1] - 1 == _globalIndices[*r]) {
+								RHS[col] -= VAL[c - 1] * RHS[row];
+								VAL[c - 1] = 0;
+							}
 						}
 					}
 				}
