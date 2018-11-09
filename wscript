@@ -112,7 +112,7 @@ def configure(ctx):
     ctx.recurse("src/input")
     ctx.recurse("src/linearsolver")
     ctx.recurse("src/solver")
-    ctx.recurse("src/assembler")
+    ctx.recurse("src/physics")
 
     ctx.setenv("espreso", ctx.env.derive());
     ctx.recurse("src/output")
@@ -162,7 +162,7 @@ def build(ctx):
     ctx.recurse("src/input")
     ctx.recurse("src/linearsolver")
     ctx.recurse("src/solver")
-    ctx.recurse("src/assembler")
+    ctx.recurse("src/physics")
 
     ctx.env = ctx.all_envs["espreso"]
     ctx.recurse("src/output")

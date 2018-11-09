@@ -3,7 +3,7 @@
 
 #include "../../config/ecf/environment.h"
 
-#include "../../assembler/instance.h"
+#include "../../physics/instance.h"
 
 #include "../../wrappers/hypre/hypre.h"
 #include "../../solver/generic/SparseMatrix.h"

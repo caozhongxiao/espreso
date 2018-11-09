@@ -2,7 +2,7 @@
 #include "visualization.h"
 
 #include "../../../config/ecf/output.h"
-#include "../../../assembler/step.h"
+#include "../../../physics/step.h"
 
 using namespace espreso;
 

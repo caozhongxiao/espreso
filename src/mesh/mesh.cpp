@@ -17,8 +17,6 @@
 #include "../basis/utilities/communication.h"
 #include "../basis/utilities/parser.h"
 
-#include "../assembler/step.h"
-
 #include <iostream>
 #include <vector>
 #include <numeric>

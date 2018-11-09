@@ -3,7 +3,7 @@
 
 #include "clustercpu.h"
 
-#include "../../../assembler/instance.h"
+#include "../../../physics/instance.h"
 #include "../../../basis/logging/logging.h"
 
 using namespace espreso;

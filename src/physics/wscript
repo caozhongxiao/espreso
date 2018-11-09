@@ -1,0 +1,69 @@
+
+import os
+import sys
+import glob
+from inspect import getsourcefile
+
+def configure(ctx):
+    ctx.env.append_unique("CXXFLAGS", [ "-I" + include for include in ctx.env["HYPRE::INCLUDE"] ])
+    ctx.env.append_unique("LIBPATH", ctx.env["HYPRE::LIBPATH"])
+
+    ctx.env.HYPRE = ctx.check_cc(
+        fragment    = "#include \"LLNL_FEI_Impl.h\"\nint main() {{ return 0; }}\n",
+        mandatory   = False,
+        execute     = False,
+        msg         = "Checking for HYPRE headers",
+        errmsg      = "not found - set path to HYPRE headers (parameter HYPRE::INCLUDE)",
+        okmsg       = "found"
+    )
+
+    hyprelibs = []
+    if len(ctx.env["HYPRE::LIBPATH"]) == 1:
+        hyprelibs = [ lib.split('/')[-1][3:-3] for lib in glob.glob(ctx.env["HYPRE::LIBPATH"][0] + "/*.so") ]
+
+    ctx.start_msg("Checking for HYPRE libraries")
+    if len(hyprelibs):
+        ctx.end_msg("found")
+    else:
+        ctx.end_msg("not found - set path to HYPRE libraries (parameter HYPRE::LIBPATH)", color='YELLOW')
+        ctx.env.HYPRE = False
+
+    ctx.env.append_unique("LIB", hyprelibs)
+
+    if ctx.env.HYPRE:
+        ctx.env.append_unique("DEFINES", [ "HAVE_HYPRE" ])
+
+    ctx.env.append_unique("CXXFLAGS", [ "-I" + include for include in ctx.env["MORTAR::INCLUDE"] ])
+    ctx.env.append_unique("LIBPATH", ctx.env["MORTAR::LIBPATH"])
+
+    ctx.env.MORTAR = ctx.check_cc(
+        fragment    = "#include \"mortar.h\"\nint main() {{ return 0; }}\n",
+        mandatory   = False,
+        execute     = False,
+        msg         = "Checking for MORTAR headers",
+        errmsg      = "not found - set path to MORTAR headers (parameter MORTAR::INCLUDE)",
+        okmsg       = "found"
+    )
+
+    mortarlibs = []
+    if len(ctx.env["MORTAR::LIBPATH"]) == 1:
+        mortarlibs = [ lib.split('/')[-1][3:-3] for lib in glob.glob(ctx.env["MORTAR::LIBPATH"][0] + "/*.so") ]
+
+    ctx.start_msg("Checking for MORTAR libraries")
+    if len(mortarlibs):
+        ctx.end_msg("found")
+    else:
+        ctx.end_msg("not found - set path to MORTAR libraries (parameter MORTAR::LIBPATH)", color='YELLOW')
+        ctx.env.MORTAR = False
+
+    ctx.env.append_unique("LIB", mortarlibs)
+
+    if ctx.env.MORTAR:
+        ctx.env.append_unique("DEFINES", [ "HAVE_MORTAR" ])
+
+def build(ctx):
+    ctx.objects(
+        source = ctx.path.ant_glob('**/*.cpp'),
+        target = "assembler",
+        use    = "espreso_includes"
+    )

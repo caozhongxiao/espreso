@@ -1,7 +1,7 @@
 
 #include "../specific/cluster.h"
 
-#include "../../assembler/instance.h"
+#include "../../physics/instance.h"
 #include "../../basis/utilities/utils.h"
 
 //#define SPARSE_SA

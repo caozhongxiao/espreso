@@ -23,7 +23,7 @@ using std::map;
 using std::make_pair;
 
 #include "../generic/utils.h"
-#include "../../assembler/instance.h"
+#include "../../physics/instance.h"
 
 
 #pragma once

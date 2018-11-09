@@ -11,7 +11,7 @@
 #include "../../../../config/ecf/environment.h"
 #include "../../../../config/ecf/output.h"
 
-#include "../../../../assembler/instance.h"
+#include "../../../../physics/instance.h"
 
 #include "../../../../mesh/mesh.h"
 #include "../../../../mesh/elements/element.h"

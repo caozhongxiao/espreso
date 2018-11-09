@@ -1,16 +1,16 @@
 
 #include "../../config/ecf/physics/heattransfer.h"
 
-#include "../../assembler/physicssolver/assembler.h"
-#include "../../assembler/physicssolver/timestep/linear.h"
-#include "../../assembler/physicssolver/timestep/newtonraphson.h"
-#include "../../assembler/physicssolver/loadstep/steadystate.h"
-#include "../../assembler/physicssolver/loadstep/pseudotimestepping.h"
-#include "../../assembler/physicssolver/loadstep/transientfirstorderimplicit.h"
+#include "../../physics/solver/assembler.h"
+#include "../../physics/solver/timestep/linear.h"
+#include "../../physics/solver/timestep/newtonraphson.h"
+#include "../../physics/solver/loadstep/steadystate.h"
+#include "../../physics/solver/loadstep/pseudotimestepping.h"
+#include "../../physics/solver/loadstep/transientfirstorderimplicit.h"
 
-#include "../../assembler/instance.h"
-#include "../../assembler/physics/heattransfer2d.h"
-#include "../../assembler/physics/heattransfer3d.h"
+#include "../../physics/instance.h"
+#include "../../physics/assembler/heattransfer2d.h"
+#include "../../physics/assembler/heattransfer3d.h"
 #include "../../basis/logging/logging.h"
 #include "heattransferfactory.h"
 

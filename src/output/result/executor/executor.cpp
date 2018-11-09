@@ -3,7 +3,6 @@
 
 #include "../../../basis/utilities/utils.h"
 #include "../../../config/ecf/output.h"
-#include "../../../assembler/step.h"
 #include "../../../mesh/mesh.h"
 
 #include "../monitors/monitoring.h"

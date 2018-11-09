@@ -12,7 +12,7 @@
 #include "../specific/itersolvers.h"
 //#include "../specific/superclusters.h"
 
-#include "../../assembler/instance.h"
+#include "../../physics/instance.h"
 
 
 namespace espreso {

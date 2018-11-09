@@ -2,16 +2,16 @@
 #include "structuralmechanicsfactory.h"
 
 #include "../../config/ecf/physics/structuralmechanics.h"
-#include "../../assembler/physics/structuralmechanics2d.h"
-#include "../../assembler/physics/structuralmechanics3d.h"
-#include "../../assembler/physics/structuralmechanicstdnns3d.h"
+#include "../../physics/assembler/structuralmechanics2d.h"
+#include "../../physics/assembler/structuralmechanics3d.h"
+#include "../../physics/assembler/structuralmechanicstdnns3d.h"
 
-#include "../../assembler/physicssolver/assembler.h"
-#include "../../assembler/physicssolver/timestep/linear.h"
-#include "../../assembler/physicssolver/timestep/newtonraphson.h"
-#include "../../assembler/physicssolver/loadstep/steadystate.h"
+#include "../../physics/solver/assembler.h"
+#include "../../physics/solver/timestep/linear.h"
+#include "../../physics/solver/timestep/newtonraphson.h"
+#include "../../physics/solver/loadstep/steadystate.h"
 
-#include "../../assembler/instance.h"
+#include "../../physics/instance.h"
 #include "../../basis/logging/logging.h"
 
 using namespace espreso;
