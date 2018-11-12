@@ -208,6 +208,9 @@ Tokenizer::Token Tokenizer::_next()
 		if (isObjectClose(_file.peek())) {
 			return specialToken(Token::OBJECT_CLOSE);
 		}
+		if (isLinkStart(_file.peek()) && _buffer.size()) {
+			return Token::STRING;
+		}
 		if (isLinkStart(_file.peek())) {
 			_file.get();
 			size_t stacked = 0;
