@@ -9,7 +9,7 @@
 
 #include "../../physics/solver/timestep/timestepsolver.h"
 #include "../../physics/solver/loadstep/loadstepsolver.h"
-#include "../../physics/solver/assembler.h"
+#include "../../physics/composer/composer.h"
 #include "../../physics/assembler/physics.h"
 #include "../../physics/step.h"
 #include "../../physics/instance.h"
@@ -158,7 +158,7 @@ FactoryLoader::~FactoryLoader()
 	clear(_instances);
 	clear(_physics);
 	clear(_linearSolvers);
-	clear(_assemblers);
+	clear(_composers);
 	clear(_timeStepSolvers);
 	clear(_loadStepSolvers);
 }

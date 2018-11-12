@@ -14,7 +14,7 @@
 #include <cmath>
 
 #include "../../assembler/physics.h"
-#include "../../solver/assembler.h"
+#include "../../composer/composer.h"
 #include "../../solver/timestep/timestepsolver.h"
 
 using namespace espreso;
@@ -28,19 +28,19 @@ TransientFirstOrderImplicit::TransientFirstOrderImplicit(TimeStepSolver &timeSte
 		ESINFO(GLOBAL_ERROR) << "Set time step for TRANSIENT solver greater than 1e-7.";
 	}
 
-	U = _assembler.mesh.nodes->appendData(1, {});
-	dU = _assembler.mesh.nodes->appendData(1, {});
-	V = _assembler.mesh.nodes->appendData(1, {});
-	X = _assembler.mesh.nodes->appendData(1, {});
-	Y = _assembler.mesh.nodes->appendData(1, {});
-	dTK = _assembler.mesh.nodes->appendData(1, {});
+	U = _composer.mesh.nodes->appendData(1, {});
+	dU = _composer.mesh.nodes->appendData(1, {});
+	V = _composer.mesh.nodes->appendData(1, {});
+	X = _composer.mesh.nodes->appendData(1, {});
+	Y = _composer.mesh.nodes->appendData(1, {});
+	dTK = _composer.mesh.nodes->appendData(1, {});
 }
 
 Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Matrices matrices)
 {
 	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R | Matrices::B1);
 
-//	if (_assembler.step.substep) {
+//	if (_composer.step.substep) {
 //		updatedMatrices &= (Matrices::f | Matrices::B1c);
 //	}
 
@@ -49,31 +49,31 @@ Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Matrices matrices
 
 Matrices TransientFirstOrderImplicit::reassembleStructuralMatrices(Matrices matrices)
 {
-	_assembler.updateStructuralMatrices(matrices);
+	_composer.updateStructuralMatrices(matrices);
 	if (matrices & (Matrices::K | Matrices::M)) {
-		_assembler.keepK();
-		_assembler.sum(
-				_assembler.instance.K,
-				1 / (_alpha * _assembler.step.timeStep), _assembler.instance.M,
+		_composer.keepK();
+		_composer.sum(
+				_composer.instance.K,
+				1 / (_alpha * _composer.step.timeStep), _composer.instance.M,
 				"K += (1 / alpha * delta T) * M");
 	}
 
-	_assembler.updateGluingMatrices(matrices);
+	_composer.updateGluingMatrices(matrices);
 
 	if (matrices & (Matrices::K | Matrices::M | Matrices::f)) {
-		_assembler.sum(
+		_composer.sum(
 				*X->decomposedData,
-				1 / (_alpha * _assembler.step.timeStep), *U->decomposedData,
+				1 / (_alpha * _composer.step.timeStep), *U->decomposedData,
 				(1 - _alpha) / _alpha, *V->decomposedData,
 				"x = (1 / alpha * delta T) * U + (1 - alpha) / alpha * V");
 
-		_assembler.multiply(
+		_composer.multiply(
 				*Y->decomposedData,
-				_assembler.instance.M, *X->decomposedData,
+				_composer.instance.M, *X->decomposedData,
 				"y = M * x");
 
-		_assembler.sum(_assembler.instance.f,
-				1, _assembler.instance.f,
+		_composer.sum(_composer.instance.f,
+				1, _composer.instance.f,
 				1, *Y->decomposedData,
 				"f += y");
 	}
@@ -85,9 +85,9 @@ void TransientFirstOrderImplicit::initLoadStep()
 {
 	LoadStepSolver::initLoadStep();
 
-	_assembler.setEmptyRegularizationCallback();
-	_assembler.setRegularizationFromOrigKCallback();
-	_assembler.setB0Callback();
+	_composer.setEmptyRegularizationCallback();
+	_composer.setRegularizationFromOrigKCallback();
+	_composer.setB0Callback();
 
 	switch (_configuration.method) {
 	case TransientSolverConfiguration::METHOD::CRANK_NICOLSON:
@@ -109,65 +109,65 @@ void TransientFirstOrderImplicit::initLoadStep()
 		ESINFO(GLOBAL_ERROR) << "Not supported first order implicit solver method.";
 	}
 
-	if (loadStep + 1 != _assembler.step.step) {
+	if (loadStep + 1 != _composer.step.step) {
 		for (size_t i = 0; i < V->decomposedData->size(); i++) {
 			std::fill((*V->decomposedData)[i].begin(), (*V->decomposedData)[i].end(), 0);
 		}
 	}
-	loadStep = _assembler.step.step;
-	(*U->decomposedData) = _assembler.instance.primalSolution;
+	loadStep = _composer.step.step;
+	(*U->decomposedData) = _composer.instance.primalSolution;
 }
 
 void TransientFirstOrderImplicit::runNextTimeStep()
 {
-	double last = _assembler.step.currentTime;
-	_assembler.step.currentTime += _nTimeStep;
-	if (_assembler.step.currentTime + _precision >= _startTime + _duration) {
-		_assembler.step.currentTime = _startTime + _duration;
+	double last = _composer.step.currentTime;
+	_composer.step.currentTime += _nTimeStep;
+	if (_composer.step.currentTime + _precision >= _startTime + _duration) {
+		_composer.step.currentTime = _startTime + _duration;
 	}
-	_assembler.step.timeStep = _assembler.step.currentTime - last;
+	_composer.step.timeStep = _composer.step.currentTime - last;
 	processTimeStep();
 }
 
 void TransientFirstOrderImplicit::processTimeStep()
 {
-	_assembler.step.internalForceReduction = 1;
-	_assembler.step.timeIntegrationConstantK = 1;
-	_assembler.step.timeIntegrationConstantM = 1 / (_alpha * _assembler.step.timeStep);
+	_composer.step.internalForceReduction = 1;
+	_composer.step.timeIntegrationConstantK = 1;
+	_composer.step.timeIntegrationConstantM = 1 / (_alpha * _composer.step.timeStep);
 
 	_timeStepSolver.solve(*this);
 
-	_assembler.sum(
+	_composer.sum(
 			*dU->decomposedData,
-			1, _assembler.instance.primalSolution,
+			1, _composer.instance.primalSolution,
 			-1, *U->decomposedData,
 			"delta U = U_i - U_i_1");
 
-	_nTimeStep = _assembler.step.timeStep;
+	_nTimeStep = _composer.step.timeStep;
 
-	if (_configuration.auto_time_stepping.allowed && _assembler.step.currentTime < _startTime + _duration) {
+	if (_configuration.auto_time_stepping.allowed && _composer.step.currentTime < _startTime + _duration) {
 		double resFreq, oscilationLimit;
 
 		double norm =
-				sqrt(_assembler.sumSquares(*dU->decomposedData, SumRestriction::NONE, "|dU|")) /
-				sqrt(_assembler.sumSquares(*U->decomposedData, SumRestriction::NONE, "|U|"));
+				sqrt(_composer.sumSquares(*dU->decomposedData, SumRestriction::NONE, "|dU|")) /
+				sqrt(_composer.sumSquares(*U->decomposedData, SumRestriction::NONE, "|U|"));
 
 		if (norm < 1e-5) {
-			_nTimeStep = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * _assembler.step.timeStep);
+			_nTimeStep = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * _composer.step.timeStep);
 		} else {
-			_assembler.multiply(
+			_composer.multiply(
 					*dTK->decomposedData,
-					_assembler.instance.origK,
+					_composer.instance.origK,
 					*dU->decomposedData,
 					"dTK = delta T * K");
-			double TKT = _assembler.multiply(*dTK->decomposedData, *dU->decomposedData, "res. freq. = dTK * delta T");
+			double TKT = _composer.multiply(*dTK->decomposedData, *dU->decomposedData, "res. freq. = dTK * delta T");
 
-			_assembler.multiply(
+			_composer.multiply(
 					*dTK->decomposedData,
-					_assembler.instance.M,
+					_composer.instance.M,
 					*dU->decomposedData,
 					"dTM = delta T * M");
-			double TMT = _assembler.multiply(*dTK->decomposedData, *dU->decomposedData, "res. freq. = dTM * delta T");
+			double TMT = _composer.multiply(*dTK->decomposedData, *dU->decomposedData, "res. freq. = dTM * delta T");
 
 
 			double gTKT, gTMT;
@@ -176,18 +176,18 @@ void TransientFirstOrderImplicit::processTimeStep()
 
 			resFreq = gTKT / gTMT;
 
-			oscilationLimit = _assembler.step.timeStep * resFreq;
+			oscilationLimit = _composer.step.timeStep * resFreq;
 
 			double t1 = _configuration.auto_time_stepping.oscilation_limit / resFreq;
 
-			if (_assembler.step.timeStep != t1) {
-				if (_assembler.step.timeStep < t1) {
-					if (_configuration.auto_time_stepping.IDFactor * _assembler.step.timeStep < t1) {
-						_nTimeStep = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * _assembler.step.timeStep);
+			if (_composer.step.timeStep != t1) {
+				if (_composer.step.timeStep < t1) {
+					if (_configuration.auto_time_stepping.IDFactor * _composer.step.timeStep < t1) {
+						_nTimeStep = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * _composer.step.timeStep);
 					}
 				} else {
-					if (_assembler.step.timeStep / _configuration.auto_time_stepping.IDFactor > t1) {
-						_nTimeStep = std::max(_configuration.auto_time_stepping.min_time_step, _assembler.step.timeStep / _configuration.auto_time_stepping.IDFactor);
+					if (_composer.step.timeStep / _configuration.auto_time_stepping.IDFactor > t1) {
+						_nTimeStep = std::max(_configuration.auto_time_stepping.min_time_step, _composer.step.timeStep / _configuration.auto_time_stepping.IDFactor);
 					}
 				}
 			}
@@ -195,26 +195,26 @@ void TransientFirstOrderImplicit::processTimeStep()
 			ESINFO(CONVERGENCE) << "AUTOMATIC TIME STEPPING INFO: RESPONSE EIGENVALUE(" << resFreq << "), OSCILLATION LIMIT(" << oscilationLimit << ")";
 		}
 
-		if (std::fabs(_assembler.step.timeStep - _nTimeStep) / _assembler.step.timeStep < _precision) {
+		if (std::fabs(_composer.step.timeStep - _nTimeStep) / _composer.step.timeStep < _precision) {
 			ESINFO(CONVERGENCE) << "TIME STEP UNCHANGED (" << _nTimeStep << ")";
 		} else {
-			ESINFO(CONVERGENCE) << "NEW TIME STEP " << (_assembler.step.timeStep < _nTimeStep ? "INCREASED " : "DECREASED ") << "TO VALUE: " << _nTimeStep;
+			ESINFO(CONVERGENCE) << "NEW TIME STEP " << (_composer.step.timeStep < _nTimeStep ? "INCREASED " : "DECREASED ") << "TO VALUE: " << _nTimeStep;
 		}
 	}
 
-	if (_assembler.step.timeStep - _precision < _nTimeStep) {
-		_assembler.sum(
+	if (_composer.step.timeStep - _precision < _nTimeStep) {
+		_composer.sum(
 				*V->decomposedData,
-				1 / (_alpha * _assembler.step.timeStep), *dU->decomposedData,
+				1 / (_alpha * _composer.step.timeStep), *dU->decomposedData,
 				- (1 - _alpha) / _alpha, *V->decomposedData,
 				"V = (1 / alpha * delta T) * delta U - (1 - alpha) / alpha * V");
 
-		*U->decomposedData = _assembler.instance.primalSolution;
-		_assembler.processSolution();
-		_assembler.storeSolution();
+		*U->decomposedData = _composer.instance.primalSolution;
+		_composer.processSolution();
+		_composer.storeSolution();
 	} else {
-		_assembler.step.currentTime -= _assembler.step.timeStep;
-		--_assembler.step.substep;
+		_composer.step.currentTime -= _composer.step.timeStep;
+		--_composer.step.substep;
 	}
 }
 

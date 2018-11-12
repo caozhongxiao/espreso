@@ -8,7 +8,7 @@ namespace espreso {
 
 struct Step;
 class TimeStepSolver;
-class Assembler;
+class Composer;
 enum Matrices: int;
 
 class LoadStepSolver {
@@ -37,7 +37,7 @@ protected:
 
 	std::string _description;
 	TimeStepSolver &_timeStepSolver;
-	Assembler &_assembler;
+	Composer &_composer;
 	double _duration;
 
 	double _startTime;

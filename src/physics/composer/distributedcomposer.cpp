@@ -1,5 +1,5 @@
 
-#include "../solver/assembler.h"
+#include "distributedcomposer.h"
 
 #include "../step.h"
 #include "../instance.h"
@@ -20,46 +20,26 @@
 
 using namespace espreso;
 
-static std::string mNames(espreso::Matrices matrices, const std::string &prefix = "")
+
+DistributedComposer::DistributedComposer(Instance &instance, Physics &physics, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver)
+: Composer(instance, physics, mesh, step, store, linearSolver)
 {
-	return
-	std::string(matrices & espreso::Matrices::K           ? prefix + "K "           : "") +
-	std::string(matrices & espreso::Matrices::N           ? prefix + "N1 "          : "") +
-	std::string(matrices & espreso::Matrices::N           ? prefix + "N2 "          : "") +
-	std::string(matrices & espreso::Matrices::N           ? prefix + "RegMat "      : "") +
-	std::string(matrices & espreso::Matrices::M           ? prefix + "M "           : "") +
-	std::string(matrices & espreso::Matrices::R           ? prefix + "R "           : "") +
-	std::string(matrices & espreso::Matrices::f           ? prefix + "f "           : "") +
-	std::string(matrices & espreso::Matrices::B0          ? prefix + "B0 "          : "") +
-	std::string(matrices & espreso::Matrices::B1          ? prefix + "B1 "          : "") +
-	std::string(matrices & espreso::Matrices::B1c         ? prefix + "B1c "         : "") +
-	std::string(matrices & espreso::Matrices::B1duplicity ? prefix + "B1duplicity " : "") +
-	std::string(matrices & espreso::Matrices::primal      ? prefix + "Primal "      : "") +
-	std::string(matrices & espreso::Matrices::dual        ? prefix + "Dual "        : "");
+
 }
 
-Assembler::Assembler(Instance &instance, Physics &physics, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver)
-: instance(instance), physics(physics), mesh(mesh), step(step), store(store), linearSolver(linearSolver), _timeStatistics(new TimeEval("Physics solver timing"))
+DistributedComposer::~DistributedComposer()
 {
-	_timeStatistics->totalTime.startWithBarrier();
+
 }
 
-Assembler::~Assembler()
-{
-	delete _timeStatistics;
-	for (auto it = _timeEvents.begin(); it != _timeEvents.end(); ++it) {
-		delete it->second;
-	}
-}
-
-void Assembler::preprocessData()
+void DistributedComposer::preprocessData()
 {
 	timeWrapper("pre-process data", [&] () {
 		physics.preprocessData();
 	});
 }
 
-void Assembler::updateStructuralMatrices(Matrices matrices)
+void DistributedComposer::updateStructuralMatrices(Matrices matrices)
 {
 	Matrices updated = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R);
 
@@ -70,7 +50,7 @@ void Assembler::updateStructuralMatrices(Matrices matrices)
 	}
 }
 
-void Assembler::updateGluingMatrices(Matrices matrices)
+void DistributedComposer::updateGluingMatrices(Matrices matrices)
 {
 	if (matrices & Matrices::B1) {
 		timeWrapper("update " + mNames(Matrices::B1), [&] () {
@@ -115,7 +95,7 @@ void Assembler::updateGluingMatrices(Matrices matrices)
 }
 
 
-void Assembler::processSolution()
+void DistributedComposer::processSolution()
 {
 	timeWrapper("post-processing", [&] () {
 		physics.processSolution();
@@ -123,7 +103,7 @@ void Assembler::processSolution()
 	storeWrapper(mNames(Matrices::primal), Matrices::primal);
 }
 
-void Assembler::solve(Matrices updatedMatrices)
+void DistributedComposer::solve(Matrices updatedMatrices)
 {
 	Matrices solverMatrices = Matrices::K | Matrices::M | Matrices::f | Matrices::B1;
 	storeWrapper(mNames(solverMatrices), solverMatrices);
@@ -137,7 +117,7 @@ void Assembler::solve(Matrices updatedMatrices)
 	});
 }
 
-void Assembler::storeSolution()
+void DistributedComposer::storeSolution()
 {
 	if (store.storeStep(step)) {
 		if (store.isCollected()) {
@@ -149,7 +129,7 @@ void Assembler::storeSolution()
 	}
 }
 
-void Assembler::storeSubSolution()
+void DistributedComposer::storeSubSolution()
 {
 	timeWrapper("store solution", [&] () {
 		// TODO: MESH
@@ -157,16 +137,7 @@ void Assembler::storeSubSolution()
 	});
 }
 
-void Assembler::finalize()
-{
-	timeWrapper("finalize", [&] () {
-		linearSolver.finalize();
-	});
-	_timeStatistics->totalTime.endWithBarrier();
-	_timeStatistics->printStatsMPI();
-}
-
-void Assembler::keepK()
+void DistributedComposer::keepK()
 {
 	timeWrapper("copy K to origK", [&] () {
 		#pragma omp parallel for
@@ -176,7 +147,7 @@ void Assembler::keepK()
 	});
 }
 
-void Assembler::sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::string &description)
+void DistributedComposer::sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::string &description)
 {
 	std::vector<size_t> prefix(x.size());
 	for (size_t i = 0; i < x.size(); i++) {
@@ -185,7 +156,7 @@ void Assembler::sum(std::vector<std::vector<double> > &z, double a, const std::v
 	sum(z, a, x, b, y, prefix, description);
 }
 
-void Assembler::sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::vector<size_t> &prefix, const std::string &description)
+void DistributedComposer::sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::vector<size_t> &prefix, const std::string &description)
 {
 	timeWrapper("compute: " + description, [&] () {
 		if (z.size() == 0) {
@@ -206,7 +177,7 @@ void Assembler::sum(std::vector<std::vector<double> > &z, double a, const std::v
 	});
 }
 
-void Assembler::sum(std::vector<SparseMatrix> &A, double beta, std::vector<SparseMatrix> &B, const std::string &description)
+void DistributedComposer::sum(std::vector<SparseMatrix> &A, double beta, std::vector<SparseMatrix> &B, const std::string &description)
 {
 	timeWrapper("compute: " + description, [&] () {
 		#pragma omp parallel for
@@ -217,7 +188,7 @@ void Assembler::sum(std::vector<SparseMatrix> &A, double beta, std::vector<Spars
 }
 
 /// y = A * x
-void Assembler::multiply(std::vector<std::vector<double> > &y, std::vector<SparseMatrix> &A, std::vector<std::vector<double> > &x, const std::string &description)
+void DistributedComposer::multiply(std::vector<std::vector<double> > &y, std::vector<SparseMatrix> &A, std::vector<std::vector<double> > &x, const std::string &description)
 {
 	timeWrapper("compute: " + description, [&] () {
 		#pragma omp parallel for
@@ -228,7 +199,7 @@ void Assembler::multiply(std::vector<std::vector<double> > &y, std::vector<Spars
 }
 
 // v = x * y
-double Assembler::multiply(std::vector<std::vector<double> > &x, std::vector<std::vector<double> > &y, const std::string &description)
+double DistributedComposer::multiply(std::vector<std::vector<double> > &x, std::vector<std::vector<double> > &y, const std::string &description)
 {
 	double sum = 0;
 	timeWrapper("compute: " + description, [&] () {
@@ -247,7 +218,7 @@ double Assembler::multiply(std::vector<std::vector<double> > &x, std::vector<std
 	return sum;
 }
 
-double Assembler::sumSquares(const std::vector<std::vector<double> > &data, SumRestriction restriction, const std::string &description)
+double DistributedComposer::sumSquares(const std::vector<std::vector<double> > &data, SumRestriction restriction, const std::string &description)
 {
 	double result;
 	timeWrapper(description, [&] () {
@@ -256,7 +227,7 @@ double Assembler::sumSquares(const std::vector<std::vector<double> > &data, SumR
 	return result;
 }
 
-void Assembler::addToDirichletInB1(double a, const std::vector<std::vector<double> > &x)
+void DistributedComposer::addToDirichletInB1(double a, const std::vector<std::vector<double> > &x)
 {
 	timeWrapper("subtract primal solution from dirichlet", [&] () {
 		#pragma omp parallel for
@@ -271,7 +242,7 @@ void Assembler::addToDirichletInB1(double a, const std::vector<std::vector<doubl
 	});
 }
 
-double Assembler::maxAbsValue(const std::vector<std::vector<double> > &v, const std::string &description)
+double DistributedComposer::maxAbsValue(const std::vector<std::vector<double> > &v, const std::string &description)
 {
 	double gmax;
 	timeWrapper(description, [&] () {
@@ -285,7 +256,7 @@ double Assembler::maxAbsValue(const std::vector<std::vector<double> > &v, const 
 	return gmax;
 }
 
-double Assembler::lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext)
+double DistributedComposer::lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext)
 {
 	double alpha = 1;
 	timeWrapper("line search", [&] () {
@@ -360,7 +331,7 @@ double Assembler::lineSearch(const std::vector<std::vector<double> > &U, std::ve
 	return alpha;
 }
 
-void Assembler::setRegularizationCallback()
+void DistributedComposer::setRegularizationCallback()
 {
 	instance.computeKernelsCallback = [&] (FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
 
@@ -378,7 +349,7 @@ void Assembler::setRegularizationCallback()
 	};
 }
 
-void Assembler::setRegularizationFromOrigKCallback()
+void DistributedComposer::setRegularizationFromOrigKCallback()
 {
 	instance.computeKernelsFromOrigKCallback = [&] (FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
 		instance.K.swap(instance.origK);
@@ -411,7 +382,7 @@ void Assembler::setRegularizationFromOrigKCallback()
 	};
 }
 
-void Assembler::setEmptyRegularizationCallback()
+void DistributedComposer::setEmptyRegularizationCallback()
 {
 	instance.N1.clear();
 	instance.N2.clear();
@@ -430,7 +401,7 @@ void Assembler::setEmptyRegularizationCallback()
 	};
 }
 
-void Assembler::setB0Callback()
+void DistributedComposer::setB0Callback()
 {
 	instance.assembleB0Callback = [&] (FETI_B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
 		timeWrapper("compute B0", [&] () {
@@ -458,105 +429,6 @@ void Assembler::setB0Callback()
 
 
 
-void Assembler::timeWrapper(const std::string &action, std::function<void(void)> operations)
-{
-	std::string fulldesc(physics.name() + ": " + action);
 
-	ESINFO(PROGRESS2) << fulldesc;
-
-	TimeEvent *event;
-	if (_timeEvents.find(fulldesc) != _timeEvents.end()) {
-		event = _timeEvents[fulldesc];
-	} else {
-		_timeEvents[fulldesc] = event = new TimeEvent(fulldesc);
-		_timeStatistics->addPointerToEvent(event);
-	}
-
-	event->start();
-	operations();
-	event->endWithBarrier();
-}
-
-template<typename TType>
-void storeData(TType &data, size_t domain, const std::string &name)
-{
-	std::ofstream os(Logging::prepareFile(domain, name));
-	os.precision(10);
-	os << data;
-	os.close();
-}
-
-
-bool Assembler::checkForStore(const std::string &name)
-{
-	if (environment->print_matrices) {
-		std::string fulldesc(physics.name() + ": store " + name);
-		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << fulldesc;
-	}
-	return environment->print_matrices;
-}
-
-void Assembler::storeMatrices(Matrices matrices, size_t domain)
-{
-	auto storeMatrix = [&] (std::vector<SparseMatrix> &data, Matrices matrix, const std::string &name) {
-		if (matrices & matrix) {
-			storeData(data[domain], domain, name);
-		}
-	};
-
-	auto storeVector = [&] (std::vector<std::vector<double> > &data, Matrices matrix, const std::string &name) {
-		if (matrices & matrix) {
-			storeData(data[domain], domain, name);
-		}
-	};
-
-	storeMatrix(instance.K, Matrices::K, "K");
-	storeMatrix(instance.N1, Matrices::N, "N1");
-	storeMatrix(instance.N2, Matrices::N, "N2");
-	storeMatrix(instance.RegMat, Matrices::N, "RegMat");
-	storeMatrix(instance.M, Matrices::M, "M");
-	storeVector(instance.R, Matrices::R, "R");
-	storeVector(instance.f, Matrices::f, "f");
-	storeMatrix(instance.B0, Matrices::B0, "B0");
-	storeMatrix(instance.B1, Matrices::B1, "B1");
-	storeVector(instance.B1c, (Matrices::B1 | Matrices::B1c), "B1c");
-	storeVector(instance.B1duplicity, (Matrices::B1 | Matrices::B1duplicity), "B1duplicity");
-	storeVector(instance.primalSolution, Matrices::primal, "solution");
-	storeVector(instance.dualSolution, Matrices::dual, "dualSolution");
-}
-
-void Assembler::storeWrapper(const std::string &name, Matrices matrices)
-{
-	if (checkForStore(name)) {
-		for (size_t d = 0; d < instance.domains; d++) {
-			storeMatrices(matrices, d);
-		}
-	}
-}
-
-void Assembler::storeWrapper(const std::string &name, Matrices matrices, size_t domain)
-{
-	if (checkForStore(name)) {
-		storeMatrices(matrices, domain);
-	}
-}
-
-void Assembler::storeWrapper(const std::string &name, std::vector<SparseMatrix> &matrices)
-{
-	if (checkForStore(name)) {
-		for (size_t d = 0; d < matrices.size(); d++) {
-			storeData(matrices[d], d, name);
-		}
-	}
-}
-
-void Assembler::storeWrapper(const std::string &name, std::vector<std::vector<double> > &data)
-{
-	if (checkForStore(name)) {
-		for (size_t d = 0; d < data.size(); d++) {
-			storeData(data[d], d, name);
-		}
-	}
-}
 
 

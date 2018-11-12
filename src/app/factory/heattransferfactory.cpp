@@ -1,7 +1,7 @@
 
 #include "../../config/ecf/physics/heattransfer.h"
 
-#include "../../physics/solver/assembler.h"
+#include "../../physics/composer/distributedcomposer.h"
 #include "../../physics/solver/timestep/linear.h"
 #include "../../physics/solver/timestep/newtonraphson.h"
 #include "../../physics/solver/loadstep/steadystate.h"
@@ -49,11 +49,11 @@ LoadStepSolver* HeatTransferFactory::getLoadStepSolver(size_t step, Mesh *mesh, 
 	const HeatTransferLoadStepConfiguration &settings = getLoadStepsSettings(step, _configuration.load_steps_settings);
 
 	_linearSolvers.push_back(getLinearSolver(settings, _instances.front()));
-	_assemblers.push_back(new Assembler(*_instances.front(), *_physics.front(), *mesh, *_step, *store, *_linearSolvers.back()));
+	_composers.push_back(new DistributedComposer(*_instances.front(), *_physics.front(), *mesh, *_step, *store, *_linearSolvers.back()));
 
 	switch (settings.mode) {
 	case LoadStepConfiguration::MODE::LINEAR:
-		_timeStepSolvers.push_back(new LinearTimeStep(*_assemblers.back()));
+		_timeStepSolvers.push_back(new LinearTimeStep(*_composers.back()));
 		break;
 	case LoadStepConfiguration::MODE::NONLINEAR:
 		if (_bem) {
@@ -62,7 +62,7 @@ LoadStepSolver* HeatTransferFactory::getLoadStepSolver(size_t step, Mesh *mesh, 
 		switch (settings.nonlinear_solver.method) {
 		case NonLinearSolverConfiguration::METHOD::NEWTON_RAPHSON:
 		case NonLinearSolverConfiguration::METHOD::MODIFIED_NEWTON_RAPHSON:
-			_timeStepSolvers.push_back(new NewtonRaphson(*_assemblers.back(), settings.nonlinear_solver));
+			_timeStepSolvers.push_back(new NewtonRaphson(*_composers.back(), settings.nonlinear_solver));
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented NONLINEAR SOLVER METHOD for LOAD STEP=" << step;

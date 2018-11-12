@@ -9,7 +9,7 @@ namespace espreso {
 class LinearTimeStep: public TimeStepSolver {
 
 public:
-	LinearTimeStep(Assembler &assembler);
+	LinearTimeStep(Composer &composer);
 
 	void solve(LoadStepSolver &loadStepSolver);
 

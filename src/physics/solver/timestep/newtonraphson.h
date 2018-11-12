@@ -12,7 +12,7 @@ class NonLinearSolverConfiguration;
 class NewtonRaphson: public TimeStepSolver {
 
 public:
-	NewtonRaphson(Assembler &assembler, const NonLinearSolverConfiguration &configuration);
+	NewtonRaphson(Composer &composer, const NonLinearSolverConfiguration &configuration);
 
 	void solve(LoadStepSolver &loadStepSolver);
 

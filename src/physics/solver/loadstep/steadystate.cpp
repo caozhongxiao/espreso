@@ -3,7 +3,7 @@
 
 #include "../../step.h"
 #include "../../instance.h"
-#include "../../solver/assembler.h"
+#include "../../composer/composer.h"
 #include "../../solver/timestep/timestepsolver.h"
 
 using namespace espreso;
@@ -23,28 +23,28 @@ Matrices SteadyStateSolver::updateStructuralMatrices(Matrices matrices)
 
 Matrices SteadyStateSolver::reassembleStructuralMatrices(Matrices matrices)
 {
-	_assembler.updateStructuralMatrices(matrices);
-	_assembler.updateGluingMatrices(matrices);
+	_composer.updateStructuralMatrices(matrices);
+	_composer.updateGluingMatrices(matrices);
 	return matrices;
 }
 
 void SteadyStateSolver::runNextTimeStep()
 {
-	_assembler.step.currentTime += _duration;
-	_assembler.step.timeStep = _duration;
+	_composer.step.currentTime += _duration;
+	_composer.step.timeStep = _duration;
 	processTimeStep();
 }
 
 
 void SteadyStateSolver::processTimeStep()
 {
-	_assembler.step.internalForceReduction = 1;
-	_assembler.step.timeIntegrationConstantK = 1;
-	_assembler.step.timeIntegrationConstantM = 0;
+	_composer.step.internalForceReduction = 1;
+	_composer.step.timeIntegrationConstantK = 1;
+	_composer.step.timeIntegrationConstantM = 0;
 
 	_timeStepSolver.solve(*this);
 
-	_assembler.processSolution();
-	_assembler.storeSolution();
+	_composer.processSolution();
+	_composer.storeSolution();
 }
 

@@ -41,6 +41,10 @@ struct Physics {
 	Physics(const std::string &name, Mesh *mesh, Instance *instance, Step *step, const PhysicsConfiguration *configuration, int DOFs);
 	const std::string& name() const { return _name; }
 
+	virtual void initData();
+
+	// OLD METHODS
+
 	virtual void prepare() {};
 	virtual void preprocessData() =0;
 	virtual void setDirichlet() =0;

@@ -440,12 +440,12 @@ void Mesh::gatherNodeData()
 		NodeData* data = *datait;
 		if (data->names.size() && data->decomposedData != NULL) {
 			size_t n = 0;
-			auto it = nodes->pintervals.begin();
-			while (it->sourceProcess < environment->MPIrank) {
-				++it;
-			}
-			memcpy(data->gatheredData.data(), data->decomposedData->front().data() + it->begin, nodes->uniqueSize * sizeof(double));
-			continue;
+//			auto it = nodes->pintervals.begin();
+//			while (it->sourceProcess < environment->MPIrank) {
+//				++it;
+//			}
+//			memcpy(data->gatheredData.data(), data->decomposedData->front().data() + it->begin, nodes->uniqueSize * sizeof(double));
+//			continue;
 
 			for (size_t i = 0; i < data->sBuffer.size(); i++) {
 				std::fill(data->sBuffer[i].begin(), data->sBuffer[i].end(), 0);

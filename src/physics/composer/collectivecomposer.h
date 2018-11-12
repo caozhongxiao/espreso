@@ -1,30 +1,16 @@
 
-#ifndef SRC_ASSEMBLER_PHYSICSSOLVER_ASSEMBLER_H_
-#define SRC_ASSEMBLER_PHYSICSSOLVER_ASSEMBLER_H_
+#ifndef SRC_PHYSICS_COMPOSER_COLLECTIVECOMPOSER_H_
+#define SRC_PHYSICS_COMPOSER_COLLECTIVECOMPOSER_H_
 
-#include <functional>
-#include <vector>
-#include <map>
+#include "composer.h"
 
 namespace espreso {
 
-struct Step;
-struct Instance;
-struct Physics;
-class Mesh;
-struct LinearSolver;
-class TimeEval;
-class TimeEvent;
-class SparseMatrix;
-class ResultStore;
-enum Matrices: int;
-enum class SumRestriction;
-
-class Assembler {
+class CollectiveComposer: public Composer {
 
 public:
-	Assembler(Instance &instance, Physics &physics, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver);
-	~Assembler();
+	CollectiveComposer(Instance &instance, Physics &physics, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver);
+	~CollectiveComposer();
 
 	void preprocessData();
 	void updateStructuralMatrices(Matrices matrices);
@@ -40,8 +26,6 @@ public:
 
 	void storeSolution();
 	void storeSubSolution();
-
-	void finalize();
 
 	/// z = a * x + b + y
 	void sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::string &description);
@@ -60,30 +44,9 @@ public:
 	double maxAbsValue(const std::vector<std::vector<double> > &v, const std::string &description);
 	double lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext);
 	void keepK();
-
-	Instance &instance;
-	Physics &physics;
-	Mesh &mesh;
-	Step &step;
-	ResultStore &store;
-	LinearSolver &linearSolver;
-
-protected:
-	void timeWrapper(const std::string &action, std::function<void(void)> operations);
-
-	bool checkForStore(const std::string &name);
-	void storeMatrices(Matrices matrices, size_t domain);
-	void storeWrapper(const std::string &name, Matrices matrices);
-	void storeWrapper(const std::string &name, Matrices matrices, size_t domain);
-	void storeWrapper(const std::string &name, std::vector<SparseMatrix> &matrices);
-	void storeWrapper(const std::string &name, std::vector<std::vector<double> > &data);
-
-	TimeEval *_timeStatistics;
-	std::map<std::string, TimeEvent*> _timeEvents;
 };
 
 }
 
 
-
-#endif /* SRC_ASSEMBLER_PHYSICSSOLVER_ASSEMBLER_H_ */
+#endif /* SRC_PHYSICS_COMPOSER_COLLECTIVECOMPOSER_H_ */

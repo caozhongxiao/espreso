@@ -1,0 +1,51 @@
+
+#ifndef SRC_PHYSICS_COMPOSER_DISTRIBUTEDCOMPOSER_H_
+#define SRC_PHYSICS_COMPOSER_DISTRIBUTEDCOMPOSER_H_
+
+#include "composer.h"
+
+namespace espreso {
+
+class DistributedComposer: public Composer {
+
+public:
+	DistributedComposer(Instance &instance, Physics &physics, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver);
+	~DistributedComposer();
+
+	void preprocessData();
+	void updateStructuralMatrices(Matrices matrices);
+	void updateGluingMatrices(Matrices matrices);
+	void processSolution();
+
+	void setRegularizationCallback();
+	void setRegularizationFromOrigKCallback();
+	void setEmptyRegularizationCallback();
+	void setB0Callback();
+
+	void solve(Matrices updatedMatrices);
+
+	void storeSolution();
+	void storeSubSolution();
+
+	/// z = a * x + b + y
+	void sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::string &description);
+	/// z = a * x + b + y (prefix variant)
+	void sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::vector<size_t> &prefix, const std::string &description);
+	/// A += beta * B
+	void sum(std::vector<SparseMatrix> &A, double beta, std::vector<SparseMatrix> &B, const std::string &description);
+
+	/// y = A * x
+	void multiply(std::vector<std::vector<double> > &y, std::vector<SparseMatrix> &A, std::vector<std::vector<double> > &x, const std::string &description);
+	/// a = x * y
+	double multiply(std::vector<std::vector<double> > &x, std::vector<std::vector<double> > &y, const std::string &description);
+
+	double sumSquares(const std::vector<std::vector<double> > &data, SumRestriction restriction, const std::string &description);
+	void addToDirichletInB1(double a, const std::vector<std::vector<double> > &x);
+	double maxAbsValue(const std::vector<std::vector<double> > &v, const std::string &description);
+	double lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext);
+	void keepK();
+};
+
+}
+
+#endif /* SRC_PHYSICS_COMPOSER_DISTRIBUTEDCOMPOSER_H_ */

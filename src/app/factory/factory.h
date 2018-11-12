@@ -13,7 +13,7 @@ struct Instance;
 struct Step;
 struct Physics;
 class LinearSolver;
-class Assembler;
+class Composer;
 class TimeStepSolver;
 class LoadStepSolver;
 class ResultStore;
@@ -49,7 +49,7 @@ protected:
 	std::vector<Instance*> _instances;
 	std::vector<Physics*> _physics;
 	std::vector<LinearSolver*> _linearSolvers;
-	std::vector<Assembler*> _assemblers;
+	std::vector<Composer*> _composers;
 	std::vector<TimeStepSolver*> _timeStepSolvers;
 	std::vector<LoadStepSolver*> _loadStepSolvers;
 };

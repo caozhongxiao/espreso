@@ -2,20 +2,20 @@
 #include "../../solver/timestep/linear.h"
 
 #include "../../instance.h"
-#include "../../solver/assembler.h"
+#include "../../composer/composer.h"
 #include "../../solver/loadstep/loadstepsolver.h"
 
 using namespace espreso;
 
-LinearTimeStep::LinearTimeStep(Assembler &assembler)
-: TimeStepSolver("LINEAR", assembler)
+LinearTimeStep::LinearTimeStep(Composer &composer)
+: TimeStepSolver("LINEAR", composer)
 {
 
 }
 
 void LinearTimeStep::solve(LoadStepSolver &loadStepSolver)
 {
-	_assembler.solve(loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::B1));
+	_composer.solve(loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::B1));
 }
 
 
