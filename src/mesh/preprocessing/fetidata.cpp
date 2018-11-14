@@ -32,6 +32,31 @@
 
 using namespace espreso;
 
+void MeshPreprocessing::computeLocalIndices()
+{
+	start("computation local indices");
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	_mesh->elements->domainNodes = new serializededata<eslocal, eslocal>(*_mesh->elements->procNodes);
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (eslocal d = _mesh->elements->domainDistribution[t]; d != _mesh->elements->domainDistribution[t + 1]; ++d) {
+			eslocal dbegin = (_mesh->elements->procNodes->begin() + _mesh->elements->elementsDistribution[d])->begin() - _mesh->elements->procNodes->datatarray().begin();
+			eslocal dend = (_mesh->elements->procNodes->begin() + _mesh->elements->elementsDistribution[d + 1])->begin() - _mesh->elements->procNodes->datatarray().begin();
+
+			std::vector<eslocal> dnodes(_mesh->elements->domainNodes->datatarray().begin() + dbegin, _mesh->elements->domainNodes->datatarray().begin() + dend);
+			Esutils::sortAndRemoveDuplicity(dnodes);
+			for (auto n = _mesh->elements->domainNodes->datatarray().begin() + dbegin; n != _mesh->elements->domainNodes->datatarray().begin() + dend; ++n) {
+				*n = std::lower_bound(dnodes.begin(), dnodes.end(), *n) - dnodes.begin();
+			}
+		}
+	}
+
+	finish("computation local indices");
+}
+
 void MeshPreprocessing::computeSharedFaceNodes()
 {
 	if (_mesh->nodes->elements == NULL) {

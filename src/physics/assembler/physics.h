@@ -22,6 +22,7 @@ class SparseMatrix;
 struct PhysicsConfiguration;
 
 template <typename TType> class edata;
+template <typename TEBoundaries, typename TEData> class serializededata;
 struct NodeData;
 struct ElementData;
 struct BoundaryRegionStore;
@@ -41,7 +42,26 @@ struct Physics {
 	Physics(const std::string &name, Mesh *mesh, Instance *instance, Step *step, const PhysicsConfiguration *configuration, int DOFs);
 	const std::string& name() const { return _name; }
 
-	virtual void initData();
+
+//public:
+	virtual void initLocalDOFs(std::vector<eslocal> &offsets) {}
+	virtual void initGlobalDOFs(eslocal &offset) {}
+
+	virtual void buildLocalCSRPattern() {}
+	virtual void buildGlobalCSRPattern() {}
+
+	virtual void initData() {}
+
+//protected:
+
+	virtual void initLocalNodeUniformDOFs(std::vector<eslocal> &offsets, eslocal multiplier);
+	virtual void initGlobalNodeUniformDOFs(eslocal &offset, eslocal multiplier);
+
+	virtual void buildLocalNodeUniformCSRPattern(eslocal multiplier);
+	virtual void buildGlobalNodeUniformCSRPattern(eslocal multiplier);
+
+	serializededata<eslocal, eslocal> *_DOF;
+	std::vector<std::vector<eslocal> > _KPermutation, _RHSPermutation;
 
 	// OLD METHODS
 

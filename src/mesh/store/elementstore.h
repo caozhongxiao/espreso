@@ -60,6 +60,7 @@ struct ElementStore {
 
 	serializededata<eslocal, eslocal>* IDs;
 	serializededata<eslocal, eslocal>* procNodes;
+	serializededata<eslocal, eslocal>* domainNodes;
 	serializededata<eslocal, double>* centers;
 
 	serializededata<eslocal, int>* body;

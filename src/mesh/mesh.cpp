@@ -314,6 +314,13 @@ void Mesh::update()
 
 	preprocessing->arrangeRegions();
 
+	if (forEachSteps([] (const LoadStepConfiguration &step) {
+		return step.solver == LoadStepConfiguration::SOLVER::FETI;
+	})) {
+
+		preprocessing->computeLocalIndices();
+	}
+
 	if (is3D() && (hasBEM(getPhysics()))) {
 		preprocessing->computeDomainsSurface();
 		preprocessing->triangularizeDomainSurface();

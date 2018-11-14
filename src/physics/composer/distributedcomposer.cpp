@@ -11,6 +11,7 @@
 #include "../../basis/logging/logging.h"
 #include "../../basis/utilities/utils.h"
 #include "../../mesh/mesh.h"
+#include "../../mesh/store/elementstore.h"
 
 #include "mpi.h"
 
@@ -24,7 +25,9 @@ using namespace espreso;
 DistributedComposer::DistributedComposer(Instance &instance, Physics &physics, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver)
 : Composer(instance, physics, mesh, step, store, linearSolver)
 {
-
+	std::vector<eslocal> offsets(mesh.elements->ndomains);
+	physics.initLocalDOFs(offsets);
+	physics.buildLocalCSRPattern();
 }
 
 DistributedComposer::~DistributedComposer()

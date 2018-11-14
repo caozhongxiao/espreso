@@ -40,6 +40,20 @@ Ttype Esutils::sizesToOffsets(std::vector<Ttype> &sizes)
 	return sum;
 }
 
+template<typename Ttype>
+std::vector<Ttype> Esutils::sizesToOffsets(std::vector<std::vector<Ttype> > &sizes, const std::vector<Ttype> &offsets)
+{
+	std::vector<Ttype> sum(offsets);
+	for (size_t i = 0; i < sizes.front().size(); i++) {
+		for (size_t t = 0; t < sizes.size(); t++) {
+			Ttype tmp = sizes[t][i];
+			sizes[t][i] = sum[i];
+			sum[i] += tmp;
+		}
+	}
+	return sum;
+}
+
 template<typename Ttype, typename Tpermutation>
 void Esutils::permute(std::vector<Ttype> &data, const std::vector<Tpermutation> &permutation, size_t elementsize)
 {

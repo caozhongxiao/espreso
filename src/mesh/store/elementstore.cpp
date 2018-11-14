@@ -17,6 +17,7 @@ ElementStore::ElementStore(std::vector<Element*> &eclasses)
 
   IDs(NULL),
   procNodes(NULL),
+  domainNodes(NULL),
   centers(NULL),
 
   body(NULL),
@@ -177,6 +178,7 @@ ElementStore::~ElementStore()
 {
 	if (IDs == NULL) { delete IDs; }
 	if (procNodes == NULL) { delete procNodes; }
+	if (domainNodes == NULL) { delete domainNodes; }
 	if (centers == NULL) { delete centers; }
 
 	if (body == NULL) { delete body; }
@@ -193,6 +195,7 @@ void ElementStore::store(const std::string &file)
 
 	Store::storedata(os, "IDs", IDs);
 	Store::storedata(os, "nodes", procNodes);
+	Store::storedata(os, "nodes", domainNodes);
 	Store::storedata(os, "centers", centers);
 
 	Store::storedata(os, "body", body);
@@ -209,6 +212,7 @@ void ElementStore::permute(const std::vector<eslocal> &permutation, const std::v
 
 	if (IDs != NULL) { IDs->permute(permutation, distribution); }
 	if (procNodes != NULL) { procNodes->permute(permutation, distribution); }
+	if (domainNodes != NULL) { domainNodes->permute(permutation, distribution); }
 	if (centers != NULL) { centers->permute(permutation, distribution); }
 
 	if (body != NULL) { body->permute(permutation, distribution); }

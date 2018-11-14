@@ -47,6 +47,7 @@ public:
 	void arrangeElements();
 	void arrangeRegions();
 
+	void computeLocalIndices();
 	void computeSharedFaceNodes();
 	void computeCornerNodes();
 	void computeFixPoints();

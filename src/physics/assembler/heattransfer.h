@@ -10,10 +10,17 @@ struct HeatTransferConfiguration;
 struct ConvectionConfiguration;
 struct ResultsSelectionConfiguration;
 struct Point;
+struct BoundaryRegionStore;
 
 struct HeatTransfer: public virtual Physics
 {
 	HeatTransfer(const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
+
+	virtual void initLocalDOFs(std::vector<eslocal> &offsets) { initLocalNodeUniformDOFs(offsets, 1); }
+	virtual void initGlobalDOFs(eslocal &offset) { initGlobalNodeUniformDOFs(offset, 1); }
+
+	virtual void buildLocalCSRPattern() { buildLocalNodeUniformCSRPattern(1); }
+	virtual void buildGlobalCSRPattern() { buildGlobalNodeUniformCSRPattern(1); }
 
 	virtual MatrixType getMatrixType(size_t domain) const;
 	virtual void prepare();
