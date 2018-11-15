@@ -10,7 +10,6 @@
 #include "../../basis/containers/serializededata.h"
 #include "../../basis/evaluator/evaluator.h"
 #include "../../basis/matrices/denseMatrix.h"
-#include "../../basis/matrices/sparseCSRMatrix.h"
 #include "../../basis/utilities/communication.h"
 #include "../../basis/utilities/utils.h"
 #include "../../basis/logging/logging.h"

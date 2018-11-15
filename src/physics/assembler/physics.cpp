@@ -18,9 +18,7 @@
 #include "../../mesh/store/elementsregionstore.h"
 
 #include "../../solver/generic/SparseMatrix.h"
-#include "../../basis/matrices/sparseVVPMatrix.h"
 #include "../../basis/matrices/denseMatrix.h"
-#include "../../basis/matrices/sparseCSRMatrix.h"
 #include "../../config/ecf/environment.h"
 #include "../../config/ecf/solver/feti.h"
 #include "../../config/ecf/physics/physics.h"

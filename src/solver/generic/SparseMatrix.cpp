@@ -2,7 +2,7 @@
 
 #include "../specific/sparsesolvers.h"
 
-#include "../../basis/matrices/sparseCSRMatrix.h"
+#include "../../basis/logging/logging.h"
 
 namespace espreso {
 
@@ -231,62 +231,6 @@ SparseMatrix::SparseMatrix( const SparseMatrix &A_in) {
 
 }
 
-SparseMatrix& SparseMatrix::operator= ( const SparseCSRMatrix<eslocal> &A_in ) {
-
-	rows = A_in.rows();
-	cols = A_in.columns();
-	nnz  = A_in.rowPtrs()[rows];
-	haloRows = 0;
-	type = 'G';
-	mtype = MatrixType::REAL_UNSYMMETRIC;
-
-	USE_FLOAT = false;
-
-	eslocal offset = (A_in.rowPtrs()[0]) ? 0 : 1;
-	nnz -= A_in.rowPtrs()[0];
-
-	CSR_I_row_indices.resize(rows+1);
-	CSR_J_col_indices.resize(nnz);
-	CSR_V_values	 .resize(nnz);
-
-	// Sparse CSR data
-	//copy(rows, rows + n_cols + 1, K.CSR_I_row_indices.begin());
-	for (size_t i = 0; i < CSR_I_row_indices.size(); i++)
-		CSR_I_row_indices[i] = A_in.rowPtrs()[i] + offset;
-
-	//copy(cols, cols + nnz, K.CSR_J_col_indices.begin());
-	for (size_t i = 0; i < CSR_J_col_indices.size(); i++)
-		CSR_J_col_indices[i] = A_in.columnIndices()[i] + offset;
-
-	copy(A_in.values(), A_in.values() + nnz, CSR_V_values.begin());
-
-//	// Sparse COO data
-//	I_row_indices = NULL;
-//	J_col_indices = NULL;
-//	V_values	  = NULL;
-//
-//	// Dense data
-//	dense_values	  = NULL;
-//	dense_values_fl   = NULL;
-
-	// GPU
-	d_dense_values = NULL;
-	d_x_in		   = NULL;
-	d_y_out		   = NULL;
-
-	d_dense_values_fl = NULL;
-	d_x_in_fl		  = NULL;
-	d_y_out_fl		  = NULL;
-
-#ifdef CUDA
-	handle		    = NULL;
-	stream          = NULL;
-#endif
-
-	// return the existing object
-	return *this;
-}
-
 void SparseMatrix::swap ( SparseMatrix &A_in) {
 
 	eslocal tmp;
@@ -334,60 +278,6 @@ void SparseMatrix::swap ( SparseMatrix &A_in) {
 
 	thandle = handle; handle = A_in.handle; A_in.handle = thandle;
 	tstream = stream; stream = A_in.stream; A_in.stream = tstream;
-#endif
-
-}
-
-SparseMatrix::SparseMatrix( const SparseCSRMatrix<eslocal> &A_in, char type_in ) {
-
-	rows = A_in.rows();
-	cols = A_in.columns();
-	nnz  = A_in.rowPtrs()[rows];
-	haloRows = 0;
-	type = type_in;
-	mtype = MatrixType::REAL_UNSYMMETRIC;
-
-	USE_FLOAT = false;
-
-	eslocal offset = (A_in.rowPtrs()[0]) ? 0 : 1;
-	nnz -= A_in.rowPtrs()[0];
-
-	CSR_I_row_indices.resize(rows+1);
-	CSR_J_col_indices.resize(nnz);
-	CSR_V_values	 .resize(nnz);
-
-	// Sparse CSR data
-	//copy(rows, rows + n_cols + 1, K.CSR_I_row_indices.begin());
-	for (size_t i = 0; i < CSR_I_row_indices.size(); i++)
-		CSR_I_row_indices[i] = A_in.rowPtrs()[i] + offset;
-
-	//copy(cols, cols + nnz, K.CSR_J_col_indices.begin());
-	for (size_t i = 0; i < CSR_J_col_indices.size(); i++)
-		CSR_J_col_indices[i] = A_in.columnIndices()[i] + offset;
-
-	copy(A_in.values(), A_in.values() + nnz, CSR_V_values.begin());
-
-//	// Sparse COO data
-//	I_row_indices = NULL;
-//	J_col_indices = NULL;
-//	V_values	  = NULL;
-//
-//	// Dense data
-//	dense_values	  = NULL;
-//	dense_values_fl   = NULL;
-
-	// GPU
-	d_dense_values = NULL;
-	d_x_in		   = NULL;
-	d_y_out		   = NULL;
-
-	d_dense_values_fl = NULL;
-	d_x_in_fl		  = NULL;
-	d_y_out_fl		  = NULL;
-
-#ifdef CUDA
-	handle		    = NULL;
-	stream          = NULL;
 #endif
 
 }

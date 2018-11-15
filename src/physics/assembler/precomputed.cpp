@@ -1,13 +1,13 @@
 
-#include "../assembler/precomputed.h"
+#include "precomputed.h"
 
 #include "../step.h"
 #include "../instance.h"
 
 #include "../constraints/constraints.h"
 
-#include "../../basis/matrices/sparseVVPMatrix.h"
-#include "../../basis/matrices/sparseCSRMatrix.h"
+#include "../../basis/logging/logging.h"
+
 #include "../../solver/generic/SparseMatrix.h"
 
 using namespace espreso;
