@@ -285,7 +285,12 @@ void Physics::buildLocalNodeUniformCSRPattern(eslocal multiplier)
 					while (*DOFs != d + _mesh->elements->firstDomain) {
 						DOFs += 1 + multiplier;
 					}
-					RHSPattern.insert(RHSPattern.end(), DOFs + 1, DOFs + 1 + multiplier);
+					RHSPattern.push_back(*(DOFs + 1));
+				}
+				for (eslocal dof = 1; dof < multiplier; ++dof) {
+					for (size_t n = 0; n < enodes->size(); ++n) {
+						RHSPattern.push_back(RHSPattern[size + n] + dof);
+					}
 				}
 				for (auto row = RHSPattern.begin() + size; row != RHSPattern.end(); ++row) {
 					for (auto col = RHSPattern.begin() + size; col != RHSPattern.end(); ++col) {
@@ -301,7 +306,12 @@ void Physics::buildLocalNodeUniformCSRPattern(eslocal multiplier)
 					while (*DOFs != d + _mesh->elements->firstDomain) {
 						DOFs += 1 + multiplier;
 					}
-					RHSPattern.insert(RHSPattern.end(), DOFs + 1, DOFs + 1 + multiplier);
+					RHSPattern.insert(RHSPattern.end(), DOFs + 1, DOFs + 2);
+				}
+				for (eslocal dof = 1; dof < multiplier; ++dof) {
+					for (size_t n = 0; n < enodes->size(); ++n) {
+						RHSPattern.push_back(RHSPattern[size + n] + dof);
+					}
 				}
 				for (auto row = RHSPattern.begin() + size, colbegin = RHSPattern.begin() + size; row != RHSPattern.end(); ++row, ++colbegin) {
 					for (auto col = colbegin; col != RHSPattern.end(); ++col) {
@@ -518,7 +528,7 @@ void Physics::updateMatrix(Matrices matrices, size_t domain)
 	}
 
 	auto fullInsert = [&] (serializededata<eslocal, eslocal>::const_iterator &enodes, const double &Kreduction) {
-		for (auto r = 0; r < enodes->size(); ++r, ++RHSIndex) {
+		for (auto r = 0; r < enodes->size() * _DOFs; ++r, ++RHSIndex) {
 			if ((matrices & Matrices::f) && fe.rows()) {
 				_instance->f[domain][_RHSPermutation[domain][RHSIndex]] += _step->internalForceReduction * fe(r, 0);
 			}
@@ -526,7 +536,7 @@ void Physics::updateMatrix(Matrices matrices, size_t domain)
 				_instance->R[domain][_RHSPermutation[domain][RHSIndex]] += Re(r, 0);
 			}
 
-			for (auto c = 0; c < enodes->size(); ++c, ++KIndex) {
+			for (auto c = 0; c < enodes->size() * _DOFs; ++c, ++KIndex) {
 				if ((matrices & Matrices::K) && Ke.rows()) {
 					_instance->K[domain].CSR_V_values[_KPermutation[domain][KIndex]] += Kreduction * Ke(r, c);
 				}
@@ -538,7 +548,7 @@ void Physics::updateMatrix(Matrices matrices, size_t domain)
 	};
 
 	auto upperInsert = [&] (serializededata<eslocal, eslocal>::const_iterator &enodes, const double &Kreduction) {
-		for (auto r = 0; r < enodes->size(); ++r, ++RHSIndex) {
+		for (auto r = 0; r < enodes->size() * _DOFs; ++r, ++RHSIndex) {
 			if ((matrices & Matrices::f) && fe.rows()) {
 				_instance->f[domain][_RHSPermutation[domain][RHSIndex]] += _step->internalForceReduction * fe(r, 0);
 			}
@@ -546,7 +556,7 @@ void Physics::updateMatrix(Matrices matrices, size_t domain)
 				_instance->R[domain][_RHSPermutation[domain][RHSIndex]] += Re(r, 0);
 			}
 
-			for (auto c = r; c < enodes->size(); ++c, ++KIndex) {
+			for (auto c = r; c < enodes->size() * _DOFs; ++c, ++KIndex) {
 				if ((matrices & Matrices::K) && Ke.rows()) {
 					_instance->K[domain].CSR_V_values[_KPermutation[domain][KIndex]] += Kreduction * Ke(r, c);
 				}

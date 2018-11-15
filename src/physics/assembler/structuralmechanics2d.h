@@ -13,6 +13,12 @@ struct StructuralMechanics2D: public StructuralMechanics, public Physics2D
 {
 	StructuralMechanics2D(Mesh *mesh, Instance *instance, Step *step, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
 
+	virtual void initLocalDOFs(std::vector<eslocal> &offsets) { initLocalNodeUniformDOFs(offsets, 2); }
+	virtual void initGlobalDOFs(eslocal &offset) { initGlobalNodeUniformDOFs(offset, 2); }
+
+	virtual void buildLocalCSRPattern() { buildLocalNodeUniformCSRPattern(2); }
+	virtual void buildGlobalCSRPattern() { buildGlobalNodeUniformCSRPattern(2); }
+
 	void analyticRegularization(size_t domain, bool ortogonalCluster);
 
 	void processBEM(eslocal domain, Matrices matrices);

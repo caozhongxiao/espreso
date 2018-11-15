@@ -13,6 +13,12 @@ struct StructuralMechanics3D: public StructuralMechanics, public Physics3D
 {
 	StructuralMechanics3D(Mesh *mesh, Instance *instance, Step *step, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration);
 
+	virtual void initLocalDOFs(std::vector<eslocal> &offsets) { initLocalNodeUniformDOFs(offsets, 3); }
+	virtual void initGlobalDOFs(eslocal &offset) { initGlobalNodeUniformDOFs(offset, 3); }
+
+	virtual void buildLocalCSRPattern() { buildLocalNodeUniformCSRPattern(3); }
+	virtual void buildGlobalCSRPattern() { buildGlobalNodeUniformCSRPattern(3); }
+
 	void analyticRegularization(size_t domain, bool ortogonalCluster);
 
 	void processBEM(eslocal domain, Matrices matrices);
