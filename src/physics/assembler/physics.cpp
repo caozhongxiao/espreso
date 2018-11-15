@@ -262,11 +262,15 @@ void Physics::buildLocalNodeUniformCSRPattern(eslocal multiplier)
 	_RHSPermutation.resize(_mesh->elements->ndomains);
 
 	_instance->K.resize(_mesh->elements->ndomains);
+	_instance->M.resize(_mesh->elements->ndomains);
 	_instance->f.resize(_mesh->elements->ndomains);
+	_instance->R.resize(_mesh->elements->ndomains);
 	_instance->primalSolution.resize(_mesh->elements->ndomains);
 	for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
 		_instance->K[d].rows = _instance->domainDOFCount[d];
 		_instance->K[d].cols = _instance->domainDOFCount[d];
+		_instance->f[d].resize(_instance->domainDOFCount[d]);
+		_instance->R[d].resize(_instance->domainDOFCount[d]);
 	}
 
 	#pragma omp parallel for
@@ -276,7 +280,7 @@ void Physics::buildLocalNodeUniformCSRPattern(eslocal multiplier)
 			std::vector<IJ> KPattern;
 			std::vector<eslocal> RHSPattern, ROW, COL;
 
-			auto insert = [&] (serializededata<eslocal, eslocal>::const_iterator &enodes) {
+			auto fullInsert = [&] (serializededata<eslocal, eslocal>::const_iterator &enodes) {
 				size_t size = RHSPattern.size();
 				for (auto n = enodes->begin(); n != enodes->end(); ++n) {
 					auto DOFs = (_DOF->begin() + *n)->begin();
@@ -292,11 +296,31 @@ void Physics::buildLocalNodeUniformCSRPattern(eslocal multiplier)
 				}
 			};
 
+			auto upperInsert = [&] (serializededata<eslocal, eslocal>::const_iterator &enodes) {
+				size_t size = RHSPattern.size();
+				for (auto n = enodes->begin(); n != enodes->end(); ++n) {
+					auto DOFs = (_DOF->begin() + *n)->begin();
+					while (*DOFs != d + _mesh->elements->firstDomain) {
+						DOFs += 1 + multiplier;
+					}
+					RHSPattern.insert(RHSPattern.end(), DOFs + 1, DOFs + 1 + multiplier);
+				}
+				for (auto row = RHSPattern.begin() + size, colbegin = RHSPattern.begin() + size; row != RHSPattern.end(); ++row, ++colbegin) {
+					for (auto col = colbegin; col != RHSPattern.end(); ++col) {
+						KPattern.push_back(*row <= *col ? IJ{*row, *col} : IJ{*col, *row});
+					}
+				}
+			};
+
 			auto ebegin = _mesh->elements->procNodes->cbegin() + _mesh->elements->elementsDistribution[d];
 			auto eend = _mesh->elements->procNodes->cbegin() + _mesh->elements->elementsDistribution[d + 1];
 
+
 			for (auto e = ebegin; e != eend; ++e) {
-				insert(e);
+				switch (getMatrixType(d)) {
+				case MatrixType::REAL_UNSYMMETRIC: fullInsert(e); break;
+				default: upperInsert(e);
+				}
 			}
 
 			for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
@@ -309,7 +333,10 @@ void Physics::buildLocalNodeUniformCSRPattern(eslocal multiplier)
 					auto enodes = _mesh->boundaryRegions[r]->procNodes->cbegin() + begin;
 
 					for (eslocal i = begin; i < end; ++i, ++enodes) {
-						insert(enodes);
+						switch (getMatrixType(d)) {
+						case MatrixType::REAL_UNSYMMETRIC: fullInsert(enodes); break;
+						default: upperInsert(enodes);
+						}
 					}
 				}
 			}
@@ -357,9 +384,17 @@ void Physics::buildLocalNodeUniformCSRPattern(eslocal multiplier)
 			ROW.push_back(COL.size() + 1);
 
 			_instance->K[d].nnz = COL.size();
+			_instance->K[d].mtype = getMatrixType(d);
+			switch (_instance->K[d].mtype) {
+			case MatrixType::REAL_UNSYMMETRIC: _instance->K[d].type = 'G'; break;
+			default: _instance->K[d].type = 'S';
+			}
 			_instance->K[d].CSR_V_values.resize(COL.size());
 			_instance->K[d].CSR_I_row_indices.swap(ROW);
 			_instance->K[d].CSR_J_col_indices.swap(COL);
+			_instance->M[d] = _instance->K[d];
+			_instance->M[d].mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+			_instance->M[d].type = 'S';
 		}
 	}
 
@@ -445,15 +480,15 @@ void Physics::updateMatrix(Matrices matrix)
 
 		updateMatrix(matrix, d);
 
-		switch (_instance->K[d].mtype) {
-		case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-		case MatrixType::REAL_SYMMETRIC_INDEFINITE:
-			_instance->K[d].RemoveLower();
-			_instance->M[d].RemoveLower();
-			break;
-		case MatrixType::REAL_UNSYMMETRIC:
-			break;
-		}
+//		switch (_instance->K[d].mtype) {
+//		case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+//		case MatrixType::REAL_SYMMETRIC_INDEFINITE:
+//			_instance->K[d].RemoveLower();
+//			_instance->M[d].RemoveLower();
+//			break;
+//		case MatrixType::REAL_UNSYMMETRIC:
+//			break;
+//		}
 
 		ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
@@ -484,7 +519,7 @@ void Physics::updateMatrix(Matrices matrices, size_t domain)
 		std::fill(_instance->R[domain].begin(), _instance->R[domain].end(), 0);
 	}
 
-	auto insert = [&] (serializededata<eslocal, eslocal>::const_iterator &enodes, const double &Kreduction) {
+	auto fullInsert = [&] (serializededata<eslocal, eslocal>::const_iterator &enodes, const double &Kreduction) {
 		for (auto r = 0; r < enodes->size(); ++r, ++RHSIndex) {
 			if ((matrices & Matrices::f) && fe.rows()) {
 				_instance->f[domain][_RHSPermutation[domain][RHSIndex]] += _step->internalForceReduction * fe(r, 0);
@@ -504,6 +539,26 @@ void Physics::updateMatrix(Matrices matrices, size_t domain)
 		}
 	};
 
+	auto upperInsert = [&] (serializededata<eslocal, eslocal>::const_iterator &enodes, const double &Kreduction) {
+		for (auto r = 0; r < enodes->size(); ++r, ++RHSIndex) {
+			if ((matrices & Matrices::f) && fe.rows()) {
+				_instance->f[domain][_RHSPermutation[domain][RHSIndex]] += _step->internalForceReduction * fe(r, 0);
+			}
+			if ((matrices & Matrices::R) && Re.rows()) {
+				_instance->R[domain][_RHSPermutation[domain][RHSIndex]] += Re(r, 0);
+			}
+
+			for (auto c = r; c < enodes->size(); ++c, ++KIndex) {
+				if ((matrices & Matrices::K) && Ke.rows()) {
+					_instance->K[domain].CSR_V_values[_KPermutation[domain][KIndex]] += Kreduction * Ke(r, c);
+				}
+				if ((matrices & Matrices::M) && Me.rows()) {
+					_instance->M[domain].CSR_V_values[_KPermutation[domain][KIndex]] += Me(r, c);
+				}
+			}
+		}
+	};
+
 	auto boundary = [&] (Matrices restriction) {
 		for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
 			if (_mesh->boundaryRegions[r]->dimension == 2) {
@@ -513,7 +568,10 @@ void Physics::updateMatrix(Matrices matrices, size_t domain)
 					auto nodes = _mesh->boundaryRegions[r]->procNodes->cbegin() + begin;
 					for (eslocal i = begin; i < end; ++i, ++nodes) {
 						processFace(domain, _mesh->boundaryRegions[r], restriction, i, Ke, Me, Re, fe);
-						insert(nodes, _step->internalForceReduction);
+						switch (getMatrixType(domain)) {
+						case MatrixType::REAL_UNSYMMETRIC: fullInsert(nodes, _step->internalForceReduction); break;
+						default: upperInsert(nodes, _step->internalForceReduction);
+						}
 					}
 				}
 			}
@@ -524,7 +582,10 @@ void Physics::updateMatrix(Matrices matrices, size_t domain)
 					auto nodes = _mesh->boundaryRegions[r]->procNodes->cbegin() + begin;
 					for (eslocal i = begin; i < end; ++i, ++nodes) {
 						processEdge(domain, _mesh->boundaryRegions[r], restriction, i, Ke, Me, Re, fe);
-						insert(nodes, _step->internalForceReduction);
+						switch (getMatrixType(domain)) {
+						case MatrixType::REAL_UNSYMMETRIC: fullInsert(nodes, _step->internalForceReduction); break;
+						default: upperInsert(nodes, _step->internalForceReduction);
+						}
 					}
 				}
 			}
@@ -540,12 +601,16 @@ void Physics::updateMatrix(Matrices matrices, size_t domain)
 		}
 		processBEM(domain, matrices);
 		_instance->K[domain].ConvertDenseToCSR(1);
+		_instance->K[domain].RemoveLower();
 		boundary(matrices & Matrices::f);
 	} else {
 		auto enodes = _mesh->elements->procNodes->cbegin() + _mesh->elements->elementsDistribution[domain];
 		for (eslocal e = _mesh->elements->elementsDistribution[domain]; e < _mesh->elements->elementsDistribution[domain + 1]; ++e, ++enodes) {
 			processElement(domain, matrices, e, Ke, Me, Re, fe);
-			insert(enodes, 1);
+			switch (getMatrixType(domain)) {
+			case MatrixType::REAL_UNSYMMETRIC: fullInsert(enodes, 1); break;
+			default: upperInsert(enodes, 1);
+			}
 		}
 
 		boundary(matrices);
