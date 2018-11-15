@@ -27,7 +27,7 @@ struct BoundaryRegionStore {
 	eslocal uniqueSize;
 	eslocal uniqueTotalSize;
 
-	serializededata<eslocal, eslocal>* elements;
+	serializededata<eslocal, eslocal>* procNodes;
 	serializededata<eslocal, eslocal>* triangles;
 	serializededata<eslocal, eslocal>* nodes;
 	serializededata<eslocal, eslocal>* uniqueNodes;

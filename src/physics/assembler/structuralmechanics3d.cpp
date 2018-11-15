@@ -531,7 +531,7 @@ void StructuralMechanics3D::processFace(eslocal domain, const BoundaryRegionStor
 		return;
 	}
 
-	auto nodes = region->elements->cbegin() + findex;
+	auto nodes = region->procNodes->cbegin() + findex;
 	auto epointer = region->epointers->datatarray()[findex];
 
 	const std::vector<DenseMatrix> &N = *(epointer->N);

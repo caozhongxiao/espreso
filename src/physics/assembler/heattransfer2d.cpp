@@ -510,7 +510,7 @@ void HeatTransfer2D::processEdge(eslocal domain, const BoundaryRegionStore *regi
 		return;
 	}
 
-	auto nodes = region->elements->cbegin() + eindex;
+	auto nodes = region->procNodes->cbegin() + eindex;
 	auto epointer = region->epointers->datatarray()[eindex];
 	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
 

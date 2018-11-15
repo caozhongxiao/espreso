@@ -396,8 +396,8 @@ void MeshPreprocessing::arrangeNodes()
 	localremap(_mesh->elements->procNodes);
 
 	for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
-		if (_mesh->boundaryRegions[r]->elements != NULL) {
-			localremap(_mesh->boundaryRegions[r]->elements);
+		if (_mesh->boundaryRegions[r]->procNodes != NULL) {
+			localremap(_mesh->boundaryRegions[r]->procNodes);
 		}
 		if (!StringCompare::caseInsensitiveEq(_mesh->boundaryRegions[r]->name, "ALL_NODES")) {
 			if (_mesh->boundaryRegions[r]->nodes != NULL) {
@@ -731,7 +731,7 @@ void MeshPreprocessing::arrangeRegions()
 	for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
 		if (_mesh->boundaryRegions[r]->nodes == NULL) {
 			std::vector<std::vector<eslocal> > nodes(threads);
-			nodes[0] = std::vector<eslocal>(_mesh->boundaryRegions[r]->elements->datatarray().begin(), _mesh->boundaryRegions[r]->elements->datatarray().end());
+			nodes[0] = std::vector<eslocal>(_mesh->boundaryRegions[r]->procNodes->datatarray().begin(), _mesh->boundaryRegions[r]->procNodes->datatarray().end());
 			Esutils::sortAndRemoveDuplicity(nodes[0]);
 			serializededata<eslocal, eslocal>::balance(1, nodes);
 			_mesh->boundaryRegions[r]->nodes = new serializededata<eslocal, eslocal>(1, nodes);
@@ -750,16 +750,16 @@ void MeshPreprocessing::arrangeRegions()
 		store->uniqueNodes = store->nodes;
 		store->unintervals = store->nintervals;
 		if (store->dimension == 0) {
-			store->elements = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(threads, 0));
+			store->procNodes = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(threads, 0));
 			store->epointers = new serializededata<eslocal, Element*>(1, tarray<Element*>(threads, 0));
 		} else {
-			std::vector<size_t> distribution = tarray<size_t>::distribute(threads, store->elements->structures());
+			std::vector<size_t> distribution = tarray<size_t>::distribute(threads, store->procNodes->structures());
 			std::vector<eslocal> &eDomainDistribution = _mesh->elements->elementsDistribution;
 			std::vector<eslocal> emembership(distribution.back()), edomain(distribution.back());
 
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
-				auto enodes = store->elements->cbegin() + distribution[t];
+				auto enodes = store->procNodes->cbegin() + distribution[t];
 				std::vector<eslocal> nlinks;
 				size_t counter;
 				for (size_t e = distribution[t]; e < distribution[t + 1]; ++e, ++enodes) {
@@ -785,7 +785,7 @@ void MeshPreprocessing::arrangeRegions()
 				}
 			}
 
-			std::vector<eslocal> permutation(store->elements->structures());
+			std::vector<eslocal> permutation(store->procNodes->structures());
 			std::iota(permutation.begin(), permutation.end(), 0);
 			std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) {
 				if (edomain[i] == edomain[j]) {
@@ -1115,7 +1115,7 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 		}
 	}
 
-	bregion->elements = new serializededata<eslocal, eslocal>(edist, edata);
+	bregion->procNodes = new serializededata<eslocal, eslocal>(edist, edata);
 	bregion->epointers = new serializededata<eslocal, Element*>(1, epointers);
 	bregion->dimension = elementDimension;
 

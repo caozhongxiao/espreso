@@ -184,7 +184,7 @@ void EnSight::updateMesh()
 
 				for (size_t i = 0; i < region->eintervals.size(); i++) {
 					if (region->eintervals[i].code == etype) {
-						auto enodes = region->elements->cbegin() + region->eintervals[i].begin;
+						auto enodes = region->procNodes->cbegin() + region->eintervals[i].begin;
 						for (eslocal e = region->eintervals[i].begin; e < region->eintervals[i].end; ++e, ++enodes) {
 							for (auto n = enodes->begin(); n != enodes->end(); ++n) {
 								_writer.eIndex(os, storeNodeRegionIndex(*n, region->nintervals, region->nodes->datatarray()) + 1);

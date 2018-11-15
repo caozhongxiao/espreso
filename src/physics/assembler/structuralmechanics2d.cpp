@@ -518,7 +518,7 @@ void StructuralMechanics2D::processEdge(eslocal domain, const BoundaryRegionStor
 		return;
 	}
 
-	auto nodes = region->elements->cbegin() + eindex;
+	auto nodes = region->procNodes->cbegin() + eindex;
 	auto epointer = region->epointers->datatarray()[eindex];
 
 	const std::vector<DenseMatrix> &N = *(epointer->N);

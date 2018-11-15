@@ -54,7 +54,7 @@ void HeatTransfer3D::processBEM(eslocal domain, Matrices matrices)
 #ifndef BEM4I
 	ESINFO(GLOBAL_ERROR) << "BEM4I is not linked!";
 #else
-	const MaterialConfiguration* material = _mesh->materials[_mesh->elements->material->datatarray()[_mesh->elements->elementsDistribution[domain]]];
+	const MaterialConfiguration* material = _mesh->materials[_mesh->procNodes->material->datatarray()[_mesh->procNodes->elementsDistribution[domain]]];
 
 	bem4i::getLaplaceSteklovPoincare(
 			_instance->K[domain].dense_values.data(),
@@ -577,7 +577,7 @@ void HeatTransfer3D::processFace(eslocal domain, const BoundaryRegionStore *regi
 		return;
 	}
 
-	auto nodes = region->elements->cbegin() + findex;
+	auto nodes = region->procNodes->cbegin() + findex;
 	auto epointer = region->epointers->datatarray()[findex];
 	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
 

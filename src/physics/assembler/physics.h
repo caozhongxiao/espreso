@@ -96,14 +96,6 @@ struct Physics {
 	virtual ~Physics();
 
 //protected:
-	virtual void fillDOFsIndices(edata<const eslocal> &nodes, eslocal domain, std::vector<eslocal> &DOFs) const;
-	virtual void insertElementToDomain(
-			SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M,
-			const std::vector<eslocal> &DOFs,
-			const DenseMatrix &Ke, const DenseMatrix &Me, const DenseMatrix &Re, const DenseMatrix &fe,
-			size_t domain, bool isBoundaryCondition);
-
-	virtual void assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, Matrices matrices, size_t domain);
 
 	void printInvalidElement(eslocal eindex) const;
 

@@ -272,15 +272,13 @@ void Physics::buildLocalNodeUniformCSRPattern(eslocal multiplier)
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (eslocal d = _mesh->elements->domainDistribution[t]; d != _mesh->elements->domainDistribution[t + 1]; ++d) {
-			auto ebegin = _mesh->elements->procNodes->begin() + _mesh->elements->elementsDistribution[d];
-			auto eend = _mesh->elements->procNodes->begin() + _mesh->elements->elementsDistribution[d + 1];
 			std::vector<eslocal> permK, permRHS;
 			std::vector<IJ> KPattern;
 			std::vector<eslocal> RHSPattern, ROW, COL;
 
-			for (auto e = ebegin; e != eend; ++e) {
+			auto insert = [&] (serializededata<eslocal, eslocal>::const_iterator &enodes) {
 				size_t size = RHSPattern.size();
-				for (auto n = e->begin(); n != e->end(); ++n) {
+				for (auto n = enodes->begin(); n != enodes->end(); ++n) {
 					auto DOFs = (_DOF->begin() + *n)->begin();
 					while (*DOFs != d + _mesh->elements->firstDomain) {
 						DOFs += 1 + multiplier;
@@ -292,16 +290,30 @@ void Physics::buildLocalNodeUniformCSRPattern(eslocal multiplier)
 						KPattern.push_back({*row, *col});
 					}
 				}
+			};
+
+			auto ebegin = _mesh->elements->procNodes->cbegin() + _mesh->elements->elementsDistribution[d];
+			auto eend = _mesh->elements->procNodes->cbegin() + _mesh->elements->elementsDistribution[d + 1];
+
+			for (auto e = ebegin; e != eend; ++e) {
+				insert(e);
 			}
 
-			// only upper triangle
-//			for (auto e = ebegin; e != eend; ++e) {
-//				for (auto nr = e->begin(), cbegin = e->begin(); nr != e->end(); ++nr, ++cbegin) {
-//					for (auto nc = cbegin; nc != e->end(); ++nc) {
-//						pattern.push_back(*nr <= *nc ? IJ{*nr, *nc} : IJ{*nc, *nr});
-//					}
-//				}
-//			}
+			for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
+				if (
+						_mesh->boundaryRegions[r]->dimension &&
+						_mesh->boundaryRegions[r]->eintervalsDistribution[d] < _mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]) {
+
+					eslocal begin = _mesh->boundaryRegions[r]->eintervals[_mesh->boundaryRegions[r]->eintervalsDistribution[d]].begin;
+					eslocal end = _mesh->boundaryRegions[r]->eintervals[_mesh->boundaryRegions[r]->eintervalsDistribution[d + 1] - 1].end;
+					auto enodes = _mesh->boundaryRegions[r]->procNodes->cbegin() + begin;
+
+					for (eslocal i = begin; i < end; ++i, ++enodes) {
+						insert(enodes);
+					}
+				}
+			}
+
 			std::vector<eslocal> pK(KPattern.size());
 			std::iota(pK.begin(), pK.end(), 0);
 			std::sort(pK.begin(), pK.end(), [&] (eslocal i, eslocal j) {
@@ -456,12 +468,68 @@ void Physics::updateMatrix(Matrices matrix)
 
 void Physics::updateMatrix(Matrices matrices, size_t domain)
 {
-	SparseVVPMatrix<eslocal> _K, _M;
+	DenseMatrix Ke, Me, Re, fe;
+	eslocal KIndex = 0, RHSIndex = 0;
 
-	if (matrices & Matrices::f) {
-		_instance->f[domain].clear();
-		_instance->f[domain].resize(_instance->domainDOFCount[domain]);
+	if (matrices & Matrices::K) {
+		std::fill(_instance->K[domain].CSR_V_values.begin(), _instance->K[domain].CSR_V_values.end(), 0);
 	}
+	if (matrices & Matrices::M) {
+		std::fill(_instance->M[domain].CSR_V_values.begin(), _instance->M[domain].CSR_V_values.end(), 0);
+	}
+	if (matrices & Matrices::f) {
+		std::fill(_instance->f[domain].begin(), _instance->f[domain].end(), 0);
+	}
+	if (matrices & Matrices::R) {
+		std::fill(_instance->R[domain].begin(), _instance->R[domain].end(), 0);
+	}
+
+	auto insert = [&] (serializededata<eslocal, eslocal>::const_iterator &enodes, const double &Kreduction) {
+		for (auto r = 0; r < enodes->size(); ++r, ++RHSIndex) {
+			if ((matrices & Matrices::f) && fe.rows()) {
+				_instance->f[domain][_RHSPermutation[domain][RHSIndex]] += _step->internalForceReduction * fe(r, 0);
+			}
+			if ((matrices & Matrices::R) && Re.rows()) {
+				_instance->R[domain][_RHSPermutation[domain][RHSIndex]] += Re(r, 0);
+			}
+
+			for (auto c = 0; c < enodes->size(); ++c, ++KIndex) {
+				if ((matrices & Matrices::K) && Ke.rows()) {
+					_instance->K[domain].CSR_V_values[_KPermutation[domain][KIndex]] += Kreduction * Ke(r, c);
+				}
+				if ((matrices & Matrices::M) && Me.rows()) {
+					_instance->M[domain].CSR_V_values[_KPermutation[domain][KIndex]] += Me(r, c);
+				}
+			}
+		}
+	};
+
+	auto boundary = [&] (Matrices restriction) {
+		for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
+			if (_mesh->boundaryRegions[r]->dimension == 2) {
+				if (_mesh->boundaryRegions[r]->eintervalsDistribution[domain] < _mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]) {
+					eslocal begin = _mesh->boundaryRegions[r]->eintervals[_mesh->boundaryRegions[r]->eintervalsDistribution[domain]].begin;
+					eslocal end = _mesh->boundaryRegions[r]->eintervals[_mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1] - 1].end;
+					auto nodes = _mesh->boundaryRegions[r]->procNodes->cbegin() + begin;
+					for (eslocal i = begin; i < end; ++i, ++nodes) {
+						processFace(domain, _mesh->boundaryRegions[r], restriction, i, Ke, Me, Re, fe);
+						insert(nodes, _step->internalForceReduction);
+					}
+				}
+			}
+			if (_mesh->boundaryRegions[r]->dimension == 1) {
+				if (_mesh->boundaryRegions[r]->eintervalsDistribution[domain] < _mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]) {
+					eslocal begin = _mesh->boundaryRegions[r]->eintervals[_mesh->boundaryRegions[r]->eintervalsDistribution[domain]].begin;
+					eslocal end = _mesh->boundaryRegions[r]->eintervals[_mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1] - 1].end;
+					auto nodes = _mesh->boundaryRegions[r]->procNodes->cbegin() + begin;
+					for (eslocal i = begin; i < end; ++i, ++nodes) {
+						processEdge(domain, _mesh->boundaryRegions[r], restriction, i, Ke, Me, Re, fe);
+						insert(nodes, _step->internalForceReduction);
+					}
+				}
+			}
+		}
+	};
 
 	if (_BEMDomain[domain]) {
 		if (matrices & Matrices::M) {
@@ -472,201 +540,18 @@ void Physics::updateMatrix(Matrices matrices, size_t domain)
 		}
 		processBEM(domain, matrices);
 		_instance->K[domain].ConvertDenseToCSR(1);
-		assembleBoundaryConditions(_K, _M, matrices & Matrices::f, domain);
+		boundary(matrices & Matrices::f);
 	} else {
-		if (matrices & Matrices::K) {
-			_K.resize(_instance->domainDOFCount[domain], _instance->domainDOFCount[domain]);
-		}
-		if (matrices & Matrices::M) {
-			_M.resize(_instance->domainDOFCount[domain], _instance->domainDOFCount[domain]);
-		}
-		if (matrices & Matrices::R) {
-			_instance->R[domain].clear();
-			_instance->R[domain].resize(_instance->domainDOFCount[domain]);
-		}
-
-//		std::vector<eslocal> DOFs;
-		DenseMatrix Ke, Me, Re, fe;
-
-		if (matrices & Matrices::K) {
-			std::fill(_instance->K[domain].CSR_V_values.begin(), _instance->K[domain].CSR_V_values.end(), 0);
-		}
-		if (matrices & Matrices::M) {
-			std::fill(_instance->M[domain].CSR_V_values.begin(), _instance->M[domain].CSR_V_values.end(), 0);
-		}
-		if (matrices & Matrices::f) {
-			std::fill(_instance->f[domain].begin(), _instance->f[domain].end(), 0);
-		}
-		if (matrices & Matrices::R) {
-			std::fill(_instance->R[domain].begin(), _instance->R[domain].end(), 0);
-		}
-
-		auto nodes = _mesh->elements->procNodes->cbegin() + _mesh->elements->elementsDistribution[domain];
-		eslocal KIndex = 0, RHSIndex = 0;
-		for (eslocal e = _mesh->elements->elementsDistribution[domain]; e < _mesh->elements->elementsDistribution[domain + 1]; ++e, ++nodes) {
+		auto enodes = _mesh->elements->procNodes->cbegin() + _mesh->elements->elementsDistribution[domain];
+		for (eslocal e = _mesh->elements->elementsDistribution[domain]; e < _mesh->elements->elementsDistribution[domain + 1]; ++e, ++enodes) {
 			processElement(domain, matrices, e, Ke, Me, Re, fe);
-//			fillDOFsIndices(*nodes, domain, DOFs);
-//			insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, domain, false);
-
-			for (auto r = 0; r < nodes->size(); ++r, ++RHSIndex) {
-				if (matrices & Matrices::f) {
-					_instance->f[domain][_RHSPermutation[domain][RHSIndex]] += _step->internalForceReduction * fe(r, 0);
-				}
-				if (matrices & Matrices::R) {
-					_instance->R[domain][_RHSPermutation[domain][RHSIndex]] += Re(r, 0);
-				}
-
-				for (auto c = 0; c < nodes->size(); ++c, ++KIndex) {
-					if (matrices & Matrices::K) {
-						_instance->K[domain].CSR_V_values[_KPermutation[domain][KIndex]] += Ke(r, c);
-					}
-					if (matrices & Matrices::M) {
-						_instance->M[domain].CSR_V_values[_KPermutation[domain][KIndex]] += Me(r, c);
-					}
-				}
-			}
+			insert(enodes, 1);
 		}
+
+		boundary(matrices);
 
 		_instance->K[domain].mtype = getMatrixType(domain);
-//		assembleBoundaryConditions(_K, _M, matrices, domain);
-//		// TODO: make it direct
-//		std::cout << _instance->K[domain] << "\n";
-//		if (matrices & Matrices::K) {
-//			SparseCSRMatrix<eslocal> csrK = _K;
-//			_instance->K[domain] = csrK;
-//			_instance->K[domain].mtype = getMatrixType(domain);
-//		}
-//		std::cout << _instance->K[domain] << "\n";
-//		if (matrices & Matrices::M) {
-//			SparseCSRMatrix<eslocal> csrM = _M;
-//			_instance->M[domain] = csrM;
-//			_instance->M[domain].mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-//		}
-	}
-}
-
-void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, Matrices matrices, size_t domain)
-{
-	DenseMatrix Ke, fe, Me(0, 0), Re(0, 0);
-	std::vector<eslocal> DOFs;
-
-	for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
-		if (_mesh->boundaryRegions[r]->dimension == 2) {
-			if (_mesh->boundaryRegions[r]->eintervalsDistribution[domain] < _mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]) {
-				eslocal begin = _mesh->boundaryRegions[r]->eintervals[_mesh->boundaryRegions[r]->eintervalsDistribution[domain]].begin;
-				eslocal end = _mesh->boundaryRegions[r]->eintervals[_mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1] - 1].end;
-				auto nodes = _mesh->boundaryRegions[r]->elements->cbegin() + begin;
-				for (eslocal i = begin; i < end; ++i, ++nodes) {
-					processFace(domain, _mesh->boundaryRegions[r], matrices, i, Ke, Me, Re, fe);
-					fillDOFsIndices(*nodes, domain, DOFs);
-					insertElementToDomain(K, M, DOFs, Ke, Me, Re, fe, domain, true);
-				}
-			}
-		}
-		if (_mesh->boundaryRegions[r]->dimension == 1) {
-			if (_mesh->boundaryRegions[r]->eintervalsDistribution[domain] < _mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]) {
-				eslocal begin = _mesh->boundaryRegions[r]->eintervals[_mesh->boundaryRegions[r]->eintervalsDistribution[domain]].begin;
-				eslocal end = _mesh->boundaryRegions[r]->eintervals[_mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1] - 1].end;
-				auto nodes = _mesh->boundaryRegions[r]->elements->cbegin() + begin;
-				for (eslocal i = begin; i < end; ++i, ++nodes) {
-					processEdge(domain, _mesh->boundaryRegions[r], matrices, i, Ke, Me, Re, fe);
-					fillDOFsIndices(*nodes, domain, DOFs);
-					insertElementToDomain(K, M, DOFs, Ke, Me, Re, fe, domain, true);
-				}
-			}
-		}
-		// TODO: process NODE
-//		if (_mesh->boundaryRegions[r]->dimension == 0) {
-//			if (_mesh->boundaryRegions[r]->eintervalsDistribution[domain] < _mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]) {
-//				eslocal begin = _mesh->boundaryRegions[r]->eintervals[_mesh->boundaryRegions[r]->eintervalsDistribution[domain]].begin;
-//				eslocal end = _mesh->boundaryRegions[r]->eintervals[_mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1] - 1].end;
-//				auto nodes = _mesh->boundaryRegions[r]->elements->cbegin() + begin;
-//				for (eslocal i = begin; i < end; ++i, ++nodes) {
-//					processEdge(domain, _mesh->boundaryRegions[r], matrices, i, Ke, Me, Re, fe);
-//					fillDOFsIndices(*nodes, domain, DOFs);
-//					insertElementToDomain(K, M, DOFs, Ke, Me, Re, fe, domain, true);
-//				}
-//			}
-//		}
-	}
-}
-
-/**
- *
- * The method assumed that element matrix is composed in the following order:
- * x1, x2, x3, ..., y1, y2, y3, ..., z1, z2, z3,...
- *
- */
-void Physics::fillDOFsIndices(edata<const eslocal> &nodes, eslocal domain, std::vector<eslocal> &DOFs) const
-{
-	// TODO: improve performance
-	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
-	DOFs.resize(_DOFs * nodes.size());
-	size_t i = 0;
-	for (int dof = 0; dof < _DOFs; dof++) {
-		for (auto n = nodes.begin(); n != nodes.end(); n++) {
-			auto it = std::lower_bound(intervals.begin(), intervals.end(), *n, [] (const DomainInterval &interval, eslocal node) { return interval.end <= node; });
-			DOFs[i++] = _DOFs * (it->DOFOffset + *n - it->begin) + dof;
-		}
-	}
-}
-
-void Physics::insertElementToDomain(
-		SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M,
-		const std::vector<eslocal> &DOFs,
-		const DenseMatrix &Ke, const DenseMatrix &Me, const DenseMatrix &Re, const DenseMatrix &fe,
-		size_t domain, bool isBOundaryCondition)
-{
-	double RHSreduction = _step->internalForceReduction;
-	double Kreduction = isBOundaryCondition ? RHSreduction : 1;
-
-	if (Ke.rows() == DOFs.size() && Ke.columns() == DOFs.size()) {
-		for (size_t r = 0; r < DOFs.size(); r++) {
-			for (size_t c = 0; c < DOFs.size(); c++) {
-				K(DOFs[r], DOFs[c]) = Kreduction * Ke(r, c);
-			}
-		}
-	} else {
-		if (Ke.rows() != 0 || Ke.columns() != 0) {
-			ESINFO(ERROR) << "ESPRESO internal error: something wrong happens while assembling stiffness matrix K(" << Ke.rows() << "," << Ke.columns() << ").";
-		}
-	}
-
-	if (Me.rows() && Me.columns() && DOFs.size() % Me.rows() == 0 && DOFs.size() % Me.columns() == 0) {
-		size_t multiplicity = DOFs.size() / Me.rows();
-		for (size_t m = 0; m < multiplicity; m++) {
-			for (size_t r = 0; r < Me.rows(); r++) {
-				for (size_t c = 0; c < Me.columns(); c++) {
-					M(DOFs[r * multiplicity + m], DOFs[c * multiplicity + m]) = Me(r, c);
-				}
-			}
-		}
-	} else {
-		if (Me.rows() != 0 || Me.columns() != 0) {
-			ESINFO(ERROR) << "ESPRESO internal error: something wrong happens while assembling mass matrix M(" << Me.rows() << "," << Me.columns() << ").";
-		}
-	}
-
-
-	if (Re.rows() == DOFs.size() && Re.columns() == 1) {
-		for (size_t r = 0; r < DOFs.size(); r++) {
-			_instance->R[domain][DOFs[r]] += Re(r, 0);
-		}
-	} else {
-		if (Re.rows() != 0 || Re.columns() != 0) {
-			std::cout << DOFs;
-			ESINFO(ERROR) << "ESPRESO internal error: something wrong happens while assembling matrix R(" << Re.rows() << "," << Re.columns() << ") with residual forces.";
-		}
-	}
-
-	if (fe.rows() == DOFs.size() && fe.columns() == 1) {
-		for (size_t r = 0; r < DOFs.size(); r++) {
-			_instance->f[domain][DOFs[r]] += RHSreduction * fe(r, 0);
-		}
-	} else {
-		if (fe.rows() != 0 || fe.columns() != 0) {
-			ESINFO(ERROR) << "ESPRESO internal error: something wrong happens while assembling right-hand side vector f(" << fe.rows() << "," << fe.columns() << ").";
-		}
+		_instance->M[domain].mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 	}
 }
 

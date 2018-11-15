@@ -19,7 +19,7 @@ BoundaryRegionStore::BoundaryRegionStore(const std::string &name, std::vector<El
   uniqueSize(0),
   uniqueTotalSize(0),
 
-  elements(NULL),
+  procNodes(NULL),
   triangles(NULL),
   nodes(NULL),
   uniqueNodes(NULL),
@@ -33,8 +33,8 @@ BoundaryRegionStore::BoundaryRegionStore(const std::string &name, std::vector<El
 
 BoundaryRegionStore::~BoundaryRegionStore()
 {
-	if (elements == NULL) { delete elements; }
-	if (triangles != NULL && triangles != elements) { delete triangles; }
+	if (procNodes == NULL) { delete procNodes; }
+	if (triangles != NULL && triangles != procNodes) { delete triangles; }
 	if (nodes == NULL) { delete nodes; }
 	if (uniqueNodes != NULL && uniqueNodes != nodes) { delete uniqueNodes; }
 
@@ -45,8 +45,8 @@ void BoundaryRegionStore::permute(const std::vector<eslocal> &permutation, const
 {
 	this->distribution = distribution;
 
-	if (elements != NULL) {
-		elements->permute(permutation, distribution);
+	if (procNodes != NULL) {
+		procNodes->permute(permutation, distribution);
 	}
 
 	if (epointers != NULL) {
@@ -83,7 +83,7 @@ size_t BoundaryRegionStore::packedSize() const
 			Esutils::packedSize(uniqueOffset) +
 			Esutils::packedSize(uniqueSize) +
 			Esutils::packedSize(uniqueTotalSize) +
-			elements->packedSize() +
+			procNodes->packedSize() +
 			sizeof(size_t) + epointers->datatarray().size() * sizeof(int) +
 			Esutils::packedSize(ecounters) +
 			Esutils::packedSize(eintervals) +
@@ -98,7 +98,7 @@ void BoundaryRegionStore::pack(char* &p) const
 	Esutils::pack(uniqueOffset, p);
 	Esutils::pack(uniqueSize, p);
 	Esutils::pack(uniqueTotalSize, p);
-	elements->pack(p);
+	procNodes->pack(p);
 	std::vector<int> eindices;
 	eindices.reserve(epointers->datatarray().size());
 
@@ -122,11 +122,11 @@ void BoundaryRegionStore::unpack(const char* &p)
 	Esutils::unpack(uniqueOffset, p);
 	Esutils::unpack(uniqueSize, p);
 	Esutils::unpack(uniqueTotalSize, p);
-	if (elements == NULL) {
-		elements = new serializededata<eslocal, eslocal>(tarray<eslocal>(1, 0), tarray<eslocal>(1, 0));
+	if (procNodes == NULL) {
+		procNodes = new serializededata<eslocal, eslocal>(tarray<eslocal>(1, 0), tarray<eslocal>(1, 0));
 		epointers = new serializededata<eslocal, Element*>(1, tarray<Element*>(1, 0));
 	}
-	elements->unpack(p);
+	procNodes->unpack(p);
 	std::vector<int> eindices;
 	Esutils::unpack(eindices, p);
 	if (epointers != NULL) {

@@ -745,7 +745,7 @@ void MeshPreprocessing::triangularizeBoundary(BoundaryRegionStore *boundary)
 				tintervals.push_back(0);
 			}
 
-			auto elements = boundary->elements->cbegin(t);
+			auto elements = boundary->procNodes->cbegin(t);
 			const auto &epointers = boundary->epointers->datatarray().begin();
 
 			for (size_t e = boundary->distribution[t]; e < boundary->distribution[t + 1]; ++e, ++elements) {
@@ -878,10 +878,10 @@ void MeshPreprocessing::computeBoundaryNodes(std::vector<eslocal> &externalBound
 void MeshPreprocessing::computeRegionArea(BoundaryRegionStore *store)
 {
 	double A = 0;
-	auto nodes = store->elements->cbegin();
+	auto nodes = store->procNodes->cbegin();
 	const auto &epointers = store->epointers->datatarray();
 	const auto &coordinates = _mesh->nodes->coordinates->datatarray();
-	for (size_t e = 0; e < store->elements->structures(); ++e, ++nodes) {
+	for (size_t e = 0; e < store->procNodes->structures(); ++e, ++nodes) {
 
 		DenseMatrix coords(nodes->size(), 3), dND(1, 3);
 
