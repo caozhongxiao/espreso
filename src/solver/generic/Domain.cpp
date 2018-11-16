@@ -62,6 +62,9 @@ Domain::Domain(const FETISolverConfiguration &configuration, Instance *instance_
 		domain_global_index = domain_index_in;
 		USE_HFETI 		 	= USE_HTFETI_in;
 		isOnACC          	= 0;
+
+		// TODO: this is broken (ask Lubos)
+		norm_f = 0;
 }
 
 void Domain::SetDomain() {

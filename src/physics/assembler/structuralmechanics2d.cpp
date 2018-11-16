@@ -307,7 +307,7 @@ void StructuralMechanics2D::processElement(eslocal domain, Matrices matrices, es
 	DenseMatrix Ce(4, 4), XY(1, 2), coordinates(nodes->size(), 2), J, invJ(2, 2), dND, B, precision, rhsT;
 	DenseMatrix K(nodes->size(), 9), TE(nodes->size(), 2), thickness(nodes->size(), 1), inertia(nodes->size(), 2), dens(nodes->size(), 1), angvel(1, 3);
 	DenseMatrix gpK(nodes->size(), 9), gpTE(1, 2), gpThickness(1, 1), gpInertia(1, 2), gpDens(1, 1);
-	double detJ, temp, initTemp, CP = 1;
+	double detJ, temp = 275.15, initTemp = 275.15, CP = 1;
 	Point center;
 
 	const MaterialConfiguration* material = _mesh->materials[_mesh->elements->material->datatarray()[eindex]];
