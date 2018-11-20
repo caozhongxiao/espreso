@@ -1,16 +1,16 @@
 
-#ifndef SRC_PHYSICS_COMPOSER_DISTRIBUTEDCOMPOSER_H_
-#define SRC_PHYSICS_COMPOSER_DISTRIBUTEDCOMPOSER_H_
+#ifndef SRC_PHYSICS_PROVIDER_COLLECTIVEPROVIDER_H_
+#define SRC_PHYSICS_PROVIDER_COLLECTIVEPROVIDER_H_
 
-#include "composer.h"
+#include "provider.h"
 
 namespace espreso {
 
-class DistributedComposer: public Composer {
+class CollectiveProvider: public Provider {
 
 public:
-	DistributedComposer(Instance &instance, Physics &physics, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver);
-	~DistributedComposer();
+	CollectiveProvider(Instance &instance, Physics &physics, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver);
+	~CollectiveProvider();
 
 	void preprocessData();
 	void updateStructuralMatrices(Matrices matrices);
@@ -48,4 +48,5 @@ public:
 
 }
 
-#endif /* SRC_PHYSICS_COMPOSER_DISTRIBUTEDCOMPOSER_H_ */
+
+#endif /* SRC_PHYSICS_PROVIDER_COLLECTIVEPROVIDER_H_ */

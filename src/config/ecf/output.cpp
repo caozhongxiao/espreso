@@ -100,14 +100,13 @@ espreso::ResultsSelectionConfiguration::ResultsSelectionConfiguration(const PHYS
 
 void espreso::ResultsSelectionConfiguration::basic()
 {
-	temperature = true;
-	gradient = flux = phase = latent_heat = false;
+	HeatTransferOutputSettings::basic();
 	displacement = true;
 }
 
 void espreso::ResultsSelectionConfiguration::all()
 {
-	temperature = gradient = flux = phase = latent_heat = true;
+	HeatTransferOutputSettings::all();
 	displacement = true;
 }
 

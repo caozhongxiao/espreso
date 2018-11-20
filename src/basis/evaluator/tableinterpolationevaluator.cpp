@@ -13,7 +13,7 @@ TableInterpolationEvaluator::TableInterpolationEvaluator(const std::vector<std::
 	}
 }
 
-void TableInterpolationEvaluator::evaluate(eslocal size, eslocal increment, const Point* cbegin, const double* tbegin, double time, double *results) const
+void TableInterpolationEvaluator::evaluate(eslocal size, eslocal increment, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
 {
 	for (eslocal i = 0; i < size; ++i) {
 		if (tbegin[i] < _table[0].first) {
@@ -29,6 +29,27 @@ void TableInterpolationEvaluator::evaluate(eslocal size, eslocal increment, cons
 			}
 		}
 		results[i * increment] = _table.back().second;
+	}
+}
+
+void TableInterpolationEvaluator::evaluate(eslocal size, eslocal increment, eslocal *elements, eslocal *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+{
+	for (eslocal i = 0; i < size; ++i) {
+		for (eslocal e = distribution[elements[i]]; e < distribution[elements[i] + 1]; ++e) {
+			if (tbegin[e] < _table[0].first) {
+				results[e] = _table[0].second;
+				break;
+			}
+			for (size_t j = 0; j < _table.size() - 1; j++) {
+				if (_table[j].first < tbegin[i] && tbegin[i] < _table[j + 1].first) {
+					double a = _table[j].first, b = _table[j + 1].first;
+					double va = _table[j].second, vb = _table[j + 1].second;
+					results[e] = va + (vb - va) * (tbegin[i] - a) / (b - a);
+					break;
+				}
+			}
+			results[e * increment] = _table.back().second;
+		}
 	}
 }
 

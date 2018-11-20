@@ -22,6 +22,12 @@ struct Esutils
 	static Ttype sizesToOffsets(std::vector<Ttype> &sizes);
 
 	template<typename Ttype>
+	static std::vector<Ttype> sizesToOffsets(std::vector<std::vector<Ttype> > &sizes)
+	{
+		return sizesToOffsets(sizes, std::vector<Ttype>(sizes.front().size()));
+	}
+
+	template<typename Ttype>
 	static std::vector<Ttype> sizesToOffsets(std::vector<std::vector<Ttype> > &sizes, const std::vector<Ttype> &offsets);
 
 	template<typename Ttype, typename Tpermutation>

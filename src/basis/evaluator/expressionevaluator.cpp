@@ -42,20 +42,39 @@ ExpressionEvaluator::ExpressionEvaluator(const ExpressionEvaluator &other)
 	_temperatureDependency = other._temperatureDependency;
 }
 
-void ExpressionEvaluator::evaluate(eslocal size, eslocal increment, const Point* cbegin, const double* tbegin, double time, double *results) const
+void ExpressionEvaluator::evaluate(eslocal size, eslocal increment, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
 {
 	int thread = omp_get_thread_num();
 	for (eslocal i = 0; i < size; ++i) {
 		if (cbegin != NULL) {
-			_expressions[thread]->values[0] = cbegin[i].x;
-			_expressions[thread]->values[1] = cbegin[i].y;
-			_expressions[thread]->values[2] = cbegin[i].z;
+			_expressions[thread]->values[0] = cbegin[i * csize + 0];
+			_expressions[thread]->values[1] = cbegin[i * csize + 1];
+			_expressions[thread]->values[2] = csize == 3 ? cbegin[i * csize + 2] : 0;
 		}
 		if (tbegin != NULL) {
 			_expressions[thread]->values[3] = tbegin[i];
 		}
 		_expressions[thread]->values[4] = time;
 		results[i * increment] = _expressions[thread]->evaluate();
+	}
+}
+
+void ExpressionEvaluator::evaluate(eslocal size, eslocal increment, eslocal *elements, eslocal *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+{
+	int thread = omp_get_thread_num();
+	for (eslocal i = 0; i < size; ++i) {
+		for (eslocal e = distribution[elements[i]]; e < distribution[elements[i] + 1]; ++e) {
+			if (cbegin != NULL) {
+				_expressions[thread]->values[0] = cbegin[e * csize + 0];
+				_expressions[thread]->values[1] = cbegin[e * csize + 1];
+				_expressions[thread]->values[2] = csize == 3 ? cbegin[e * csize + 2] : 0;
+			}
+			if (tbegin != NULL) {
+				_expressions[thread]->values[3] = tbegin[e];
+			}
+			_expressions[thread]->values[4] = time;
+			results[e * increment] = _expressions[thread]->evaluate();
+		}
 	}
 }
 

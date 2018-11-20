@@ -3,7 +3,7 @@
 
 using namespace espreso;
 
-TimeStepSolver::TimeStepSolver(const std::string &description, Composer &composer)
+TimeStepSolver::TimeStepSolver(const std::string &description, Provider &composer)
 : _description(description), _composer(composer)
 {
 

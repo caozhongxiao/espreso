@@ -79,7 +79,7 @@ tarray<TType>& tarray<TType>::operator=(tarray<TType> &&other)
 }
 
 template <typename TType>
-tarray<TType>::tarray(size_t threads, size_t size)
+tarray<TType>::tarray(size_t threads, size_t size, TType init)
 :  _size(size), _data(NULL)
 {
 	_distribution = tarray<size_t>::distribute(threads, size);
@@ -89,7 +89,7 @@ tarray<TType>::tarray(size_t threads, size_t size)
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			for (size_t i = _distribution[t]; i < _distribution[t + 1]; i++) {
-				_data[i] = TType{};
+				_data[i] = init;
 			}
 		}
 	}
@@ -146,7 +146,7 @@ tarray<TType>::tarray(const std::vector<size_t> &distribution, const std::vector
 }
 
 template <typename TType>
-tarray<TType>::tarray(const std::vector<size_t> &distribution, size_t duplicity)
+tarray<TType>::tarray(const std::vector<size_t> &distribution, size_t duplicity, TType init)
 : _size(duplicity * distribution.back()), _data(NULL), _distribution(distribution)
 {
 	for (size_t t = 1; t < _distribution.size(); t++) {
@@ -158,7 +158,7 @@ tarray<TType>::tarray(const std::vector<size_t> &distribution, size_t duplicity)
 		#pragma omp parallel for
 		for (size_t t = 0; t < _distribution.size() - 1; t++) {
 			for (size_t i = _distribution[t]; i < _distribution[t + 1]; i++) {
-				_data[i] = TType{};
+				_data[i] = init;
 			}
 		}
 	}

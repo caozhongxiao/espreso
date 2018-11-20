@@ -90,9 +90,9 @@ void CoordinateSystemConfiguration::createTranslationMatrixToCenter(std::vector<
 		case DIMENSION::D3: {
 			double x,y,z;
 
-			center.x.evaluator->evaluate(1, NULL, NULL, 0, &x);
-			center.y.evaluator->evaluate(1, NULL, NULL, 0, &y);
-			center.z.evaluator->evaluate(1, NULL, NULL, 0, &z);
+			center.x.evaluator->evaluate(1, 0, NULL, NULL, 0, &x);
+			center.y.evaluator->evaluate(1, 0, NULL, NULL, 0, &y);
+			center.z.evaluator->evaluate(1, 0, NULL, NULL, 0, &z);
 
 			createTranslationMatrix(m,-x,-y,-z);
 
@@ -101,8 +101,8 @@ void CoordinateSystemConfiguration::createTranslationMatrixToCenter(std::vector<
 		case DIMENSION::D2: {
 			double x,y;
 
-			center.x.evaluator->evaluate(1, NULL, NULL, 0, &x);
-			center.y.evaluator->evaluate(1, NULL, NULL, 0, &y);
+			center.x.evaluator->evaluate(1, 0, NULL, NULL, 0, &x);
+			center.y.evaluator->evaluate(1, 0, NULL, NULL, 0, &y);
 
 			createTranslationMatrix(m,x,y,0);
 		} break;
@@ -118,9 +118,9 @@ void CoordinateSystemConfiguration::createTranslationMatrixToZero(std::vector<do
 		case DIMENSION::D3: {
 			double x,y,z;
 
-			center.x.evaluator->evaluate(1, NULL, NULL, 0, &x);
-			center.y.evaluator->evaluate(1, NULL, NULL, 0, &y);
-			center.z.evaluator->evaluate(1, NULL, NULL, 0, &z);
+			center.x.evaluator->evaluate(1, 0, NULL, NULL, 0, &x);
+			center.y.evaluator->evaluate(1, 0, NULL, NULL, 0, &y);
+			center.z.evaluator->evaluate(1, 0, NULL, NULL, 0, &z);
 
 			createTranslationMatrix(m,x,y,z);
 		} break;
@@ -128,8 +128,8 @@ void CoordinateSystemConfiguration::createTranslationMatrixToZero(std::vector<do
 		case DIMENSION::D2: {
 			double x,y;
 
-			center.x.evaluator->evaluate(1, NULL, NULL, 0, &x);
-			center.y.evaluator->evaluate(1, NULL, NULL, 0, &y);
+			center.x.evaluator->evaluate(1, 0, NULL, NULL, 0, &x);
+			center.y.evaluator->evaluate(1, 0, NULL, NULL, 0, &y);
 
 			createTranslationMatrix(m,x,y,0);
 		} break;
@@ -187,14 +187,14 @@ void CoordinateSystemConfiguration::createRotationMatrix(std::vector<double> &m)
 	Point rPoint;
 	switch (dimension) {
 		case DIMENSION::D3: {
-			rotation.x.evaluator->evaluate(1, NULL, NULL, 0, &(rPoint.x));
-			rotation.y.evaluator->evaluate(1, NULL, NULL, 0, &(rPoint.y));
-			rotation.z.evaluator->evaluate(1, NULL, NULL, 0, &(rPoint.z));
+			rotation.x.evaluator->evaluate(1, 0, NULL, NULL, 0, &(rPoint.x));
+			rotation.y.evaluator->evaluate(1, 0, NULL, NULL, 0, &(rPoint.y));
+			rotation.z.evaluator->evaluate(1, 0, NULL, NULL, 0, &(rPoint.z));
 
 		} break;
 		case DIMENSION::Z:
 		case DIMENSION::D2: {
-			rotation.z.evaluator->evaluate(1, NULL, NULL, 0, &(rPoint.z));
+			rotation.z.evaluator->evaluate(1, 0, NULL, NULL, 0, &(rPoint.z));
 		} break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: unsupported operation.";

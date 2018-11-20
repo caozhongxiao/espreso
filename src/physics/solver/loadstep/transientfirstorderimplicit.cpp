@@ -14,7 +14,7 @@
 #include <cmath>
 
 #include "../../assembler/physics.h"
-#include "../../composer/composer.h"
+#include "../../provider/provider.h"
 #include "../../solver/timestep/timestepsolver.h"
 
 using namespace espreso;

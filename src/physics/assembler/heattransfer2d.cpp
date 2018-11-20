@@ -451,9 +451,7 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 		Ke += tangentK;
 	}
 
-//	if (eindex == 0) {
-//		std::cout << " -- " << eindex << " -- \n" << Ke << fe;
-//	}
+//	std::cout << " -- " << eindex << " -- \n" << Ke << fe;
 }
 
 void HeatTransfer2D::processFace(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const

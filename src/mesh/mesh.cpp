@@ -134,6 +134,11 @@ BoundaryRegionsIntersectionStore* Mesh::ibregion(const std::string &name)
 	return NULL;
 }
 
+bool Mesh::onAllElements(const std::string &eregion) const
+{
+	return StringCompare::caseInsensitiveEq(eregion, "ALL_ELEMENTS");
+}
+
 void Mesh::update()
 {
 	int isEmpty = 0, quit;

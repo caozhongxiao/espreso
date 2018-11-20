@@ -8,7 +8,7 @@ namespace espreso {
 
 class LinearSolver;
 class LoadStepSolver;
-class Composer;
+class Provider;
 struct Step;
 
 class TimeStepSolver {
@@ -16,7 +16,7 @@ class TimeStepSolver {
 	friend class LoadStepSolver;
 
 public:
-	TimeStepSolver(const std::string &description, Composer &assembler);
+	TimeStepSolver(const std::string &description, Provider &assembler);
 	virtual ~TimeStepSolver() {}
 
 	virtual void solve(LoadStepSolver &loadStepSolver) =0;
@@ -25,7 +25,7 @@ public:
 
 protected:
 	std::string _description;
-	Composer &_composer;
+	Provider &_composer;
 };
 
 }

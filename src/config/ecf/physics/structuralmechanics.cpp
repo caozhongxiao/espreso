@@ -70,6 +70,20 @@ espreso::StructuralMechanicsConfiguration::StructuralMechanicsConfiguration(DIME
 			.addoption(ECFOption().setname("PLANE_STRESS_WITH_THICKNESS").setdescription("Plane stress with thickness.")));
 	moveLastBefore(PNAME(materials));
 
+	REGISTER(initial_temperature, ECFMetaData()
+			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
+			.setdescription({ "The name of a region.", "Initial temperature" })
+			.setpattern({ "MY_REGION", "273.15" }),
+			ECFMetaData().getboundaryconditionvariables(), "273.15");
+
+	if (dimension == DIMENSION::D2) {
+		REGISTER(thickness, ECFMetaData()
+				.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
+				.setdescription({ "The name of a region.", "Thickness" })
+				.setpattern({ "MY_REGION", "1" }),
+				ECFMetaData().getboundaryconditionvariables(), "1");
+	}
+
 	REGISTER(
 			load_steps_settings,
 			ECFMetaData()

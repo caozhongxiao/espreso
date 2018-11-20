@@ -1,6 +1,4 @@
 
-#include "distributedcomposer.h"
-
 #include "../step.h"
 #include "../instance.h"
 #include "../../linearsolver/linearsolver.h"
@@ -18,42 +16,48 @@
 #include "../../output/result/resultstore.h"
 #include "../../output/result/visualization/separated/vtklegacy.h"
 #include "../assembler/physics.h"
+#include "../assembler/composer/composer.h"
+#include "distributedprovider.h"
 
 using namespace espreso;
 
 
-DistributedComposer::DistributedComposer(Instance &instance, Physics &physics, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver)
-: Composer(instance, physics, mesh, step, store, linearSolver)
+DistributedProvider::DistributedProvider(Instance &instance, Physics &physics, Composer &composer, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver)
+: Provider(instance, physics, composer, mesh, step, store, linearSolver)
 {
 	std::vector<eslocal> offsets(mesh.elements->ndomains);
 	physics.initLocalDOFs(offsets);
 	physics.buildLocalCSRPattern();
+//	composer.initDOFs();
+//	composer.buildPatterns();
 }
 
-DistributedComposer::~DistributedComposer()
+DistributedProvider::~DistributedProvider()
 {
 
 }
 
-void DistributedComposer::preprocessData()
+void DistributedProvider::preprocessData()
 {
 	timeWrapper("pre-process data", [&] () {
 		physics.preprocessData();
+//		composer.initData();
 	});
 }
 
-void DistributedComposer::updateStructuralMatrices(Matrices matrices)
+void DistributedProvider::updateStructuralMatrices(Matrices matrices)
 {
 	Matrices updated = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R);
 
 	if (updated) {
 		timeWrapper("update " + mNames(updated), [&] () {
 			physics.updateMatrix(updated);
+//			composer.assemble(updated);
 		});
 	}
 }
 
-void DistributedComposer::updateGluingMatrices(Matrices matrices)
+void DistributedProvider::updateGluingMatrices(Matrices matrices)
 {
 	if (matrices & Matrices::B1) {
 		timeWrapper("update " + mNames(Matrices::B1), [&] () {
@@ -98,7 +102,7 @@ void DistributedComposer::updateGluingMatrices(Matrices matrices)
 }
 
 
-void DistributedComposer::processSolution()
+void DistributedProvider::processSolution()
 {
 	timeWrapper("post-processing", [&] () {
 		physics.processSolution();
@@ -106,7 +110,7 @@ void DistributedComposer::processSolution()
 	storeWrapper(mNames(Matrices::primal), Matrices::primal);
 }
 
-void DistributedComposer::solve(Matrices updatedMatrices)
+void DistributedProvider::solve(Matrices updatedMatrices)
 {
 	Matrices solverMatrices = Matrices::K | Matrices::M | Matrices::f | Matrices::B1;
 	storeWrapper(mNames(solverMatrices), solverMatrices);
@@ -120,7 +124,7 @@ void DistributedComposer::solve(Matrices updatedMatrices)
 	});
 }
 
-void DistributedComposer::storeSolution()
+void DistributedProvider::storeSolution()
 {
 	if (store.storeStep(step)) {
 		if (store.isCollected()) {
@@ -132,7 +136,7 @@ void DistributedComposer::storeSolution()
 	}
 }
 
-void DistributedComposer::storeSubSolution()
+void DistributedProvider::storeSubSolution()
 {
 	timeWrapper("store solution", [&] () {
 		// TODO: MESH
@@ -140,7 +144,7 @@ void DistributedComposer::storeSubSolution()
 	});
 }
 
-void DistributedComposer::keepK()
+void DistributedProvider::keepK()
 {
 	timeWrapper("copy K to origK", [&] () {
 		#pragma omp parallel for
@@ -150,7 +154,7 @@ void DistributedComposer::keepK()
 	});
 }
 
-void DistributedComposer::sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::string &description)
+void DistributedProvider::sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::string &description)
 {
 	std::vector<size_t> prefix(x.size());
 	for (size_t i = 0; i < x.size(); i++) {
@@ -159,7 +163,7 @@ void DistributedComposer::sum(std::vector<std::vector<double> > &z, double a, co
 	sum(z, a, x, b, y, prefix, description);
 }
 
-void DistributedComposer::sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::vector<size_t> &prefix, const std::string &description)
+void DistributedProvider::sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::vector<size_t> &prefix, const std::string &description)
 {
 	timeWrapper("compute: " + description, [&] () {
 		if (z.size() == 0) {
@@ -180,7 +184,7 @@ void DistributedComposer::sum(std::vector<std::vector<double> > &z, double a, co
 	});
 }
 
-void DistributedComposer::sum(std::vector<SparseMatrix> &A, double beta, std::vector<SparseMatrix> &B, const std::string &description)
+void DistributedProvider::sum(std::vector<SparseMatrix> &A, double beta, std::vector<SparseMatrix> &B, const std::string &description)
 {
 	timeWrapper("compute: " + description, [&] () {
 		#pragma omp parallel for
@@ -191,7 +195,7 @@ void DistributedComposer::sum(std::vector<SparseMatrix> &A, double beta, std::ve
 }
 
 /// y = A * x
-void DistributedComposer::multiply(std::vector<std::vector<double> > &y, std::vector<SparseMatrix> &A, std::vector<std::vector<double> > &x, const std::string &description)
+void DistributedProvider::multiply(std::vector<std::vector<double> > &y, std::vector<SparseMatrix> &A, std::vector<std::vector<double> > &x, const std::string &description)
 {
 	timeWrapper("compute: " + description, [&] () {
 		#pragma omp parallel for
@@ -202,7 +206,7 @@ void DistributedComposer::multiply(std::vector<std::vector<double> > &y, std::ve
 }
 
 // v = x * y
-double DistributedComposer::multiply(std::vector<std::vector<double> > &x, std::vector<std::vector<double> > &y, const std::string &description)
+double DistributedProvider::multiply(std::vector<std::vector<double> > &x, std::vector<std::vector<double> > &y, const std::string &description)
 {
 	double sum = 0;
 	timeWrapper("compute: " + description, [&] () {
@@ -221,7 +225,7 @@ double DistributedComposer::multiply(std::vector<std::vector<double> > &x, std::
 	return sum;
 }
 
-double DistributedComposer::sumSquares(const std::vector<std::vector<double> > &data, SumRestriction restriction, const std::string &description)
+double DistributedProvider::sumSquares(const std::vector<std::vector<double> > &data, SumRestriction restriction, const std::string &description)
 {
 	double result;
 	timeWrapper(description, [&] () {
@@ -230,7 +234,7 @@ double DistributedComposer::sumSquares(const std::vector<std::vector<double> > &
 	return result;
 }
 
-void DistributedComposer::addToDirichletInB1(double a, const std::vector<std::vector<double> > &x)
+void DistributedProvider::addToDirichletInB1(double a, const std::vector<std::vector<double> > &x)
 {
 	timeWrapper("subtract primal solution from dirichlet", [&] () {
 		#pragma omp parallel for
@@ -245,7 +249,7 @@ void DistributedComposer::addToDirichletInB1(double a, const std::vector<std::ve
 	});
 }
 
-double DistributedComposer::maxAbsValue(const std::vector<std::vector<double> > &v, const std::string &description)
+double DistributedProvider::maxAbsValue(const std::vector<std::vector<double> > &v, const std::string &description)
 {
 	double gmax;
 	timeWrapper(description, [&] () {
@@ -259,7 +263,7 @@ double DistributedComposer::maxAbsValue(const std::vector<std::vector<double> > 
 	return gmax;
 }
 
-double DistributedComposer::lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext)
+double DistributedProvider::lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext)
 {
 	double alpha = 1;
 	timeWrapper("line search", [&] () {
@@ -334,7 +338,7 @@ double DistributedComposer::lineSearch(const std::vector<std::vector<double> > &
 	return alpha;
 }
 
-void DistributedComposer::setRegularizationCallback()
+void DistributedProvider::setRegularizationCallback()
 {
 	instance.computeKernelsCallback = [&] (FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
 
@@ -352,7 +356,7 @@ void DistributedComposer::setRegularizationCallback()
 	};
 }
 
-void DistributedComposer::setRegularizationFromOrigKCallback()
+void DistributedProvider::setRegularizationFromOrigKCallback()
 {
 	instance.computeKernelsFromOrigKCallback = [&] (FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
 		instance.K.swap(instance.origK);
@@ -385,7 +389,7 @@ void DistributedComposer::setRegularizationFromOrigKCallback()
 	};
 }
 
-void DistributedComposer::setEmptyRegularizationCallback()
+void DistributedProvider::setEmptyRegularizationCallback()
 {
 	instance.N1.clear();
 	instance.N2.clear();
@@ -404,7 +408,7 @@ void DistributedComposer::setEmptyRegularizationCallback()
 	};
 }
 
-void DistributedComposer::setB0Callback()
+void DistributedProvider::setB0Callback()
 {
 	instance.assembleB0Callback = [&] (FETI_B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
 		timeWrapper("compute B0", [&] () {

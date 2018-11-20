@@ -6,13 +6,13 @@
 #include "../../physics/assembler/structuralmechanics3d.h"
 #include "../../physics/assembler/structuralmechanicstdnns3d.h"
 
-#include "../../physics/composer/distributedcomposer.h"
 #include "../../physics/solver/timestep/linear.h"
 #include "../../physics/solver/timestep/newtonraphson.h"
 #include "../../physics/solver/loadstep/steadystate.h"
 
 #include "../../physics/instance.h"
 #include "../../basis/logging/logging.h"
+#include "../../physics/provider/distributedprovider.h"
 
 using namespace espreso;
 
@@ -57,11 +57,11 @@ LoadStepSolver* StructuralMechanicsFactory::getLoadStepSolver(size_t step, Mesh 
 	const StructuralMechanicsLoadStepConfiguration &settings = getLoadStepsSettings(step, _configuration.load_steps_settings);
 
 	_linearSolvers.push_back(getLinearSolver(settings, _instances.front()));
-	_composers.push_back(new DistributedComposer(*_instances.front(), *_physics.front(), *mesh, *_step, *store, *_linearSolvers.back()));
+	_provider.push_back(new DistributedProvider(*_instances.front(), *_physics.front(), *_composer.front(), *mesh, *_step, *store, *_linearSolvers.back()));
 
 	switch (settings.mode) {
 	case LoadStepConfiguration::MODE::LINEAR:
-		_timeStepSolvers.push_back(new LinearTimeStep(*_composers.back()));
+		_timeStepSolvers.push_back(new LinearTimeStep(*_provider.back()));
 		break;
 	case LoadStepConfiguration::MODE::NONLINEAR:
 		if (_bem) {
@@ -70,7 +70,7 @@ LoadStepSolver* StructuralMechanicsFactory::getLoadStepSolver(size_t step, Mesh 
 		switch (settings.nonlinear_solver.method) {
 		case NonLinearSolverConfiguration::METHOD::NEWTON_RAPHSON:
 		case NonLinearSolverConfiguration::METHOD::MODIFIED_NEWTON_RAPHSON:
-			_timeStepSolvers.push_back(new NewtonRaphson(*_composers.back(), settings.nonlinear_solver));
+			_timeStepSolvers.push_back(new NewtonRaphson(*_provider.back(), settings.nonlinear_solver));
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented NONLINEAR SOLVER METHOD for LOAD STEP=" << step;

@@ -198,7 +198,7 @@ void HeatTransfer::computeInitialTemperature(std::vector<std::vector<double> > &
 		const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[d];
 		data[d].resize(intervals.back().DOFOffset + intervals.back().end - intervals.back().begin, 273.15 + 20);
 		if (itemp != _configuration.initial_temperature.end()) {
-			itemp->second.evaluator->evaluate(data[d].size(), NULL, NULL, _step->currentTime, data[d].data());
+			itemp->second.evaluator->evaluate(data[d].size(), 0, NULL, NULL, _step->currentTime, data[d].data());
 		}
 	}
 

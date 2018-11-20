@@ -1,12 +1,11 @@
 
 
-#include "composer.h"
-
 #include "mpi.h"
 
 #include "../step.h"
 #include "../instance.h"
 #include "../assembler/physics.h"
+#include "../assembler/composer/composer.h"
 
 #include "../../config/ecf/root.h"
 #include "../../solver/generic/SparseMatrix.h"
@@ -19,10 +18,11 @@
 #include "../../output/result/visualization/separated/vtklegacy.h"
 
 #include "../../linearsolver/linearsolver.h"
+#include "provider.h"
 
 using namespace espreso;
 
-std::string Composer::mNames(espreso::Matrices matrices, const std::string &prefix)
+std::string Provider::mNames(espreso::Matrices matrices, const std::string &prefix)
 {
 	return
 	std::string(matrices & espreso::Matrices::K           ? prefix + "K "           : "") +
@@ -40,13 +40,13 @@ std::string Composer::mNames(espreso::Matrices matrices, const std::string &pref
 	std::string(matrices & espreso::Matrices::dual        ? prefix + "Dual "        : "");
 }
 
-Composer::Composer(Instance &instance, Physics &physics, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver)
-: instance(instance), physics(physics), mesh(mesh), step(step), store(store), linearSolver(linearSolver), _timeStatistics(new TimeEval("Physics solver timing"))
+Provider::Provider(Instance &instance, Physics &physics, Composer &composer, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver)
+: instance(instance), physics(physics), composer(composer), mesh(mesh), step(step), store(store), linearSolver(linearSolver), _timeStatistics(new TimeEval("Physics solver timing"))
 {
 	_timeStatistics->totalTime.startWithBarrier();
 }
 
-Composer::~Composer()
+Provider::~Provider()
 {
 	delete _timeStatistics;
 	for (auto it = _timeEvents.begin(); it != _timeEvents.end(); ++it) {
@@ -54,7 +54,7 @@ Composer::~Composer()
 	}
 }
 
-void Composer::finalize()
+void Provider::finalize()
 {
 	timeWrapper("finalize", [&] () {
 		linearSolver.finalize();
@@ -63,7 +63,7 @@ void Composer::finalize()
 	_timeStatistics->printStatsMPI();
 }
 
-void Composer::timeWrapper(const std::string &action, std::function<void(void)> operations)
+void Provider::timeWrapper(const std::string &action, std::function<void(void)> operations)
 {
 	std::string fulldesc(physics.name() + ": " + action);
 
@@ -92,7 +92,7 @@ static void storeData(TType &data, size_t domain, const std::string &name)
 }
 
 
-bool Composer::checkForStore(const std::string &name)
+bool Provider::checkForStore(const std::string &name)
 {
 	if (environment->print_matrices) {
 		std::string fulldesc(physics.name() + ": store " + name);
@@ -101,7 +101,7 @@ bool Composer::checkForStore(const std::string &name)
 	return environment->print_matrices;
 }
 
-void Composer::storeMatrices(Matrices matrices, size_t domain)
+void Provider::storeMatrices(Matrices matrices, size_t domain)
 {
 	auto storeMatrix = [&] (std::vector<SparseMatrix> &data, Matrices matrix, const std::string &name) {
 		if (matrices & matrix) {
@@ -130,7 +130,7 @@ void Composer::storeMatrices(Matrices matrices, size_t domain)
 	storeVector(instance.dualSolution, Matrices::dual, "dualSolution");
 }
 
-void Composer::storeWrapper(const std::string &name, Matrices matrices)
+void Provider::storeWrapper(const std::string &name, Matrices matrices)
 {
 	if (checkForStore(name)) {
 		for (size_t d = 0; d < instance.domains; d++) {
@@ -139,14 +139,14 @@ void Composer::storeWrapper(const std::string &name, Matrices matrices)
 	}
 }
 
-void Composer::storeWrapper(const std::string &name, Matrices matrices, size_t domain)
+void Provider::storeWrapper(const std::string &name, Matrices matrices, size_t domain)
 {
 	if (checkForStore(name)) {
 		storeMatrices(matrices, domain);
 	}
 }
 
-void Composer::storeWrapper(const std::string &name, std::vector<SparseMatrix> &matrices)
+void Provider::storeWrapper(const std::string &name, std::vector<SparseMatrix> &matrices)
 {
 	if (checkForStore(name)) {
 		for (size_t d = 0; d < matrices.size(); d++) {
@@ -155,7 +155,7 @@ void Composer::storeWrapper(const std::string &name, std::vector<SparseMatrix> &
 	}
 }
 
-void Composer::storeWrapper(const std::string &name, std::vector<std::vector<double> > &data)
+void Provider::storeWrapper(const std::string &name, std::vector<std::vector<double> > &data)
 {
 	if (checkForStore(name)) {
 		for (size_t d = 0; d < data.size(); d++) {

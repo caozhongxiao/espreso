@@ -52,6 +52,8 @@ public:
 	BoundaryRegionStore* bregion(const std::string &name);
 	BoundaryRegionsIntersectionStore* ibregion(const std::string &name);
 
+	bool onAllElements(const std::string &eregion) const;
+
 	size_t dimension;
 	size_t preferedDomains;
 	size_t uniformDecomposition;

@@ -9,8 +9,8 @@
 
 #include "../../physics/solver/timestep/timestepsolver.h"
 #include "../../physics/solver/loadstep/loadstepsolver.h"
-#include "../../physics/composer/composer.h"
 #include "../../physics/assembler/physics.h"
+#include "../../physics/assembler/composer/composer.h"
 #include "../../physics/step.h"
 #include "../../physics/instance.h"
 #include "../../config/ecf/root.h"
@@ -20,6 +20,7 @@
 #include "../../mesh/preprocessing/meshpreprocessing.h"
 #include "../../output/result/resultstore.h"
 #include "../../output/data/espresobinaryformat.h"
+#include "../../physics/provider/provider.h"
 #include "../../solver/generic/FETISolver.h"
 
 
@@ -158,7 +159,8 @@ FactoryLoader::~FactoryLoader()
 	clear(_instances);
 	clear(_physics);
 	clear(_linearSolvers);
-	clear(_composers);
+	clear(_provider);
+	clear(_composer);
 	clear(_timeStepSolvers);
 	clear(_loadStepSolvers);
 }

@@ -14,7 +14,9 @@ public:
 	Type type() { return Type::CONST; }
 	virtual Evaluator* copy() const { return new ConstEvaluator(*this); }
 
-	void evaluate(eslocal size, eslocal increment, const Point* cbegin, const double* tbegin, double time, double *results) const;
+	void evaluate(eslocal size, eslocal increment, int csize, const double* cbegin, const double* tbegin, double time, double *results) const;
+	void evaluate(eslocal size, eslocal increment, eslocal *elements, eslocal *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const;
+
 	double evaluate(double r) const { return _value; }
 
 	std::string getEXPRTKForm() const { return std::to_string(_value); }

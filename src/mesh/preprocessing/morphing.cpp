@@ -38,10 +38,10 @@ void MeshPreprocessing::processMorpher(const RBFTargetTransformationConfiguratio
 		case MORPHING_TRANSFORMATION::TRANSLATION: {
 
 			sDisplacement.resize(sDisplacement.size() + dimension * pointsToProcess);
-			target.translation.x.evaluator->evaluate(pointsToProcess, dimension, sPoints.data() + startPoint, NULL, 0, sDisplacement.data() + dimension * startPoint + 0);
-			target.translation.y.evaluator->evaluate(pointsToProcess, dimension, sPoints.data() + startPoint, NULL, 0, sDisplacement.data() + dimension * startPoint + 1);
+			target.translation.x.evaluator->evaluate(pointsToProcess, dimension, 3, reinterpret_cast<double*>(sPoints.data() + startPoint), NULL, 0, sDisplacement.data() + dimension * startPoint + 0);
+			target.translation.y.evaluator->evaluate(pointsToProcess, dimension, 3, reinterpret_cast<double*>(sPoints.data() + startPoint), NULL, 0, sDisplacement.data() + dimension * startPoint + 1);
 			if (dimension == 3) {
-				target.translation.z.evaluator->evaluate(pointsToProcess, dimension, sPoints.data() + startPoint, NULL, 0, sDisplacement.data() + dimension * startPoint + 2);
+				target.translation.z.evaluator->evaluate(pointsToProcess, dimension, 3, reinterpret_cast<double*>(sPoints.data() + startPoint), NULL, 0, sDisplacement.data() + dimension * startPoint + 2);
 			}
 		} break;
 
@@ -54,9 +54,9 @@ void MeshPreprocessing::processMorpher(const RBFTargetTransformationConfiguratio
 			target.coordinate_system.createTranslationMatrixToCenter(result);
 			std::vector<double> scaling;
 			std::vector<double> sv(3);
-			target.scaling.x.evaluator->evaluate(1, NULL, NULL, 0, &sv[0]);
-			target.scaling.y.evaluator->evaluate(1, NULL, NULL, 0, &sv[1]);
-			target.scaling.z.evaluator->evaluate(1, NULL, NULL, 0, &sv[2]);
+			target.scaling.x.evaluator->evaluate(1, 0, NULL, NULL, 0, &sv[0]);
+			target.scaling.y.evaluator->evaluate(1, 0, NULL, NULL, 0, &sv[1]);
+			target.scaling.z.evaluator->evaluate(1, 0, NULL, NULL, 0, &sv[2]);
 			target.coordinate_system.createScalingMatrix(scaling, sv[0]/100.0, sv[1]/100.0, sv[2]/100.0);
 			std::vector<double> TtoZero;
 			target.coordinate_system.createTranslationMatrixToZero(TtoZero);

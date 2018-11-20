@@ -1,6 +1,6 @@
 
-#ifndef SRC_PHYSICS_COMPOSER_COMPOSER_H_
-#define SRC_PHYSICS_COMPOSER_COMPOSER_H_
+#ifndef SRC_PHYSICS_PROVIDER_PROVIDER_H_
+#define SRC_PHYSICS_PROVIDER_PROVIDER_H_
 
 #include <functional>
 #include <vector>
@@ -11,6 +11,7 @@ namespace espreso {
 struct Step;
 struct Instance;
 struct Physics;
+struct Composer;
 class Mesh;
 struct LinearSolver;
 class TimeEval;
@@ -20,11 +21,13 @@ class ResultStore;
 enum Matrices: int;
 enum class SumRestriction;
 
-class Composer {
+class GeneralHeatTransfer2D;
+
+class Provider {
 
 public:
-	Composer(Instance &instance, Physics &physics, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver);
-	virtual ~Composer();
+	Provider(Instance &instance, Physics &physics, Composer &composer, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver);
+	virtual ~Provider();
 
 	virtual void preprocessData() {}
 	virtual void updateStructuralMatrices(Matrices matrices) {}
@@ -63,10 +66,13 @@ public:
 
 	Instance &instance;
 	Physics &physics;
+	Composer &composer;
 	Mesh &mesh;
 	Step &step;
 	ResultStore &store;
 	LinearSolver &linearSolver;
+
+	GeneralHeatTransfer2D *ttt;
 
 protected:
 	std::string mNames(espreso::Matrices matrices, const std::string &prefix = "");
@@ -86,4 +92,4 @@ protected:
 }
 
 
-#endif /* SRC_PHYSICS_COMPOSER_COMPOSER_H_ */
+#endif /* SRC_PHYSICS_PROVIDER_PROVIDER_H_ */

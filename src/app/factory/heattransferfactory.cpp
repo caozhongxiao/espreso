@@ -1,7 +1,8 @@
 
+#include "heattransferfactory.h"
+
 #include "../../config/ecf/physics/heattransfer.h"
 
-#include "../../physics/composer/distributedcomposer.h"
 #include "../../physics/solver/timestep/linear.h"
 #include "../../physics/solver/timestep/newtonraphson.h"
 #include "../../physics/solver/loadstep/steadystate.h"
@@ -9,10 +10,12 @@
 #include "../../physics/solver/loadstep/transientfirstorderimplicit.h"
 
 #include "../../physics/instance.h"
+#include "../../physics/assembler/assembler.h"
 #include "../../physics/assembler/heattransfer2d.h"
 #include "../../physics/assembler/heattransfer3d.h"
 #include "../../basis/logging/logging.h"
-#include "heattransferfactory.h"
+
+#include "../../physics/provider/distributedprovider.h"
 
 using namespace espreso;
 
@@ -24,6 +27,8 @@ HeatTransferFactory::HeatTransferFactory(Step *step, const HeatTransferConfigura
 	switch (configuration.dimension) {
 	case DIMENSION::D2:
 		_physics.push_back(new HeatTransfer2D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
+		_composer.push_back(new DomainsHeatTransfer2D(
+				*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1)));
 		break;
 	case DIMENSION::D3:
 		_physics.push_back(new HeatTransfer3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
@@ -49,11 +54,11 @@ LoadStepSolver* HeatTransferFactory::getLoadStepSolver(size_t step, Mesh *mesh, 
 	const HeatTransferLoadStepConfiguration &settings = getLoadStepsSettings(step, _configuration.load_steps_settings);
 
 	_linearSolvers.push_back(getLinearSolver(settings, _instances.front()));
-	_composers.push_back(new DistributedComposer(*_instances.front(), *_physics.front(), *mesh, *_step, *store, *_linearSolvers.back()));
+	_provider.push_back(new DistributedProvider(*_instances.front(), *_physics.front(), *_composer.front(), *mesh, *_step, *store, *_linearSolvers.back()));
 
 	switch (settings.mode) {
 	case LoadStepConfiguration::MODE::LINEAR:
-		_timeStepSolvers.push_back(new LinearTimeStep(*_composers.back()));
+		_timeStepSolvers.push_back(new LinearTimeStep(*_provider.back()));
 		break;
 	case LoadStepConfiguration::MODE::NONLINEAR:
 		if (_bem) {
@@ -62,7 +67,7 @@ LoadStepSolver* HeatTransferFactory::getLoadStepSolver(size_t step, Mesh *mesh, 
 		switch (settings.nonlinear_solver.method) {
 		case NonLinearSolverConfiguration::METHOD::NEWTON_RAPHSON:
 		case NonLinearSolverConfiguration::METHOD::MODIFIED_NEWTON_RAPHSON:
-			_timeStepSolvers.push_back(new NewtonRaphson(*_composers.back(), settings.nonlinear_solver));
+			_timeStepSolvers.push_back(new NewtonRaphson(*_provider.back(), settings.nonlinear_solver));
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented NONLINEAR SOLVER METHOD for LOAD STEP=" << step;

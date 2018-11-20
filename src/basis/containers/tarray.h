@@ -18,12 +18,12 @@ class tarray {
 public:
 	static std::vector<TType> distribute(size_t threads, size_t size);
 
-	tarray(size_t threads, size_t size);
+	tarray(size_t threads, size_t size, TType init = TType{});
 	tarray(size_t threads, const std::vector<TType> &data);
 	tarray(const std::vector<std::vector<TType> > &data);
 	tarray(const std::vector<TType> &data);
 	tarray(const std::vector<size_t> &distribution, const std::vector<TType> &data);
-	tarray(const std::vector<size_t> &distribution, size_t duplicity);
+	tarray(const std::vector<size_t> &distribution, size_t duplicity, TType init = TType{});
 
 	tarray(const tarray<TType> &other);
 	tarray(tarray<TType> &&other);

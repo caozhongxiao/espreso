@@ -11,12 +11,12 @@
 #include <cmath>
 
 #include "../../assembler/physics.h"
-#include "../../composer/composer.h"
+#include "../../provider/provider.h"
 #include "../../solver/loadstep/loadstepsolver.h"
 
 using namespace espreso;
 
-NewtonRaphson::NewtonRaphson(Composer &composer, const NonLinearSolverConfiguration &configuration)
+NewtonRaphson::NewtonRaphson(Provider &composer, const NonLinearSolverConfiguration &configuration)
 : TimeStepSolver("Newton Raphson", composer), _configuration(configuration)
 {
 

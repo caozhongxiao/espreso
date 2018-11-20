@@ -26,17 +26,37 @@ public:
 
 	virtual ~Evaluator() {};
 
-	virtual void evaluate(eslocal size, const Point* cbegin, const double* tbegin, double time, double *results) const
+	virtual void evaluate(eslocal size, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
 	{
-		evaluate(size, 1, cbegin, tbegin, time, results);
+		evaluate(size, 1, csize, cbegin, tbegin, time, results);
 	}
-	virtual void evaluate(eslocal size, eslocal increment, const Point* cbegin, const double* tbegin, double time, double *results) const {};
+	virtual void evaluate(eslocal size, eslocal increment, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+	{
+		for (eslocal i = 0; i < size; ++i) {
+			results[i * increment] = 0;
+		}
+	};
+
+	virtual void evaluate(eslocal size, eslocal *elements, eslocal *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+	{
+		evaluate(size, 1, elements, distribution, csize, cbegin, tbegin, time, results);
+	}
+
+	virtual void evaluate(eslocal size, eslocal increment, eslocal *elements, eslocal *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+	{
+		for (eslocal i = 0; i < size; ++i) {
+			for (eslocal e = distribution[elements[i]]; e < distribution[elements[i] + 1]; ++e) {
+				results[e * increment] = 0;
+			}
+		}
+	}
 
 	virtual double evaluate(double r) const { return 0; }
 
 	// TODO: remove
 	double evaluate(const Point &p, double time, double temperature) const;
 
+	virtual bool isConstant() const { return true; }
 	virtual bool isCoordinateDependent() const { return false; }
 	virtual bool isTimeDependent() const { return false; }
 	virtual bool isTemperatureDependent() const { return false; }

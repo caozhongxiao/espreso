@@ -42,8 +42,6 @@ struct PhysicsConfiguration: public ECFObject {
 	std::map<std::string, MaterialConfiguration> materials;
 	std::map<std::string, std::string> material_set;
 
-	std::map<std::string, ECFExpression> initial_temperature, thickness;
-
 	bool contact_interfaces;
 
 	PhysicsConfiguration(DIMENSION dimension, MaterialConfiguration::PHYSICAL_MODEL physicalModel);

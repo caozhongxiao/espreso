@@ -2,12 +2,12 @@
 #include "../../solver/timestep/linear.h"
 
 #include "../../instance.h"
-#include "../../composer/composer.h"
+#include "../../provider/provider.h"
 #include "../../solver/loadstep/loadstepsolver.h"
 
 using namespace espreso;
 
-LinearTimeStep::LinearTimeStep(Composer &composer)
+LinearTimeStep::LinearTimeStep(Provider &composer)
 : TimeStepSolver("LINEAR", composer)
 {
 

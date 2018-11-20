@@ -17,8 +17,10 @@ public:
 	Type type() { return Type::TABLE_INTERPOLATION; }
 	Evaluator* copy() const { return new TableInterpolationEvaluator(*this); }
 
-	void evaluate(eslocal size, eslocal increment, const Point* cbegin, const double* tbegin, double time, double *results) const;
+	void evaluate(eslocal size, eslocal increment, int csize, const double* cbegin, const double* tbegin, double time, double *results) const;
+	void evaluate(eslocal size, eslocal increment, eslocal *elements, eslocal *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const;
 
+	bool isConstant() const { return false; }
 	bool isCoordinateDependent() const { return false; }
 	bool isTimeDependent() const { return false; }
 	bool isTemperatureDependent() const { return true; }

@@ -54,18 +54,7 @@ struct RadiationConfiguration: public ECFObject {
 	RadiationConfiguration();
 };
 
-struct HeatTransferLoadStepConfiguration: public LoadStepConfiguration {
-
-	RegionMap<ECFExpression> temperature;
-	std::map<std::string, ECFExpression> heat_source, heat_flux, heat_flow, thickness;
-	std::map<std::string, ECFExpressionVector> translation_motions;
-	std::map<std::string, ConvectionConfiguration> convection;
-	std::map<std::string, RadiationConfiguration> diffuse_radiation;
-
-	HeatTransferLoadStepConfiguration(DIMENSION dimension);
-};
-
-struct HeatTransferConfiguration: public PhysicsConfiguration {
+struct HeatTransferGlobalSettings {
 
 	enum class STABILIZATION {
 		SUPG = 0,
@@ -75,6 +64,40 @@ struct HeatTransferConfiguration: public PhysicsConfiguration {
 	STABILIZATION stabilization;
 	double sigma;
 	bool init_temp_respect_bc, diffusion_split;
+
+	std::map<std::string, ECFExpression> initial_temperature, thickness;
+};
+
+struct HeatTransferStepSettings {
+
+	RegionMap<ECFExpression> temperature;
+	std::map<std::string, ECFExpression> heat_source, heat_flux, heat_flow;
+	std::map<std::string, ECFExpressionVector> translation_motions;
+	std::map<std::string, ConvectionConfiguration> convection;
+	std::map<std::string, RadiationConfiguration> diffuse_radiation;
+};
+
+struct HeatTransferOutputSettings {
+
+	bool temperature, gradient, flux, phase, latent_heat;
+
+	void basic() {
+		temperature = true;
+		gradient = flux = phase = latent_heat = false;
+	}
+	void all() {
+		gradient = flux = phase = latent_heat = temperature = true;
+	}
+
+	HeatTransferOutputSettings() { basic(); }
+};
+
+struct HeatTransferLoadStepConfiguration: public LoadStepConfiguration, public HeatTransferStepSettings {
+
+	HeatTransferLoadStepConfiguration(DIMENSION dimension);
+};
+
+struct HeatTransferConfiguration: public PhysicsConfiguration, public HeatTransferGlobalSettings {
 
 	std::map<size_t, HeatTransferLoadStepConfiguration> load_steps_settings;
 

@@ -28,6 +28,8 @@ struct StructuralMechanicsConfiguration: public PhysicsConfiguration {
 
 	ELEMENT_BEHAVIOUR element_behaviour;
 
+	std::map<std::string, ECFExpression> initial_temperature, thickness;
+
 	std::map<size_t, StructuralMechanicsLoadStepConfiguration> load_steps_settings;
 
 	StructuralMechanicsConfiguration(DIMENSION dimension);
