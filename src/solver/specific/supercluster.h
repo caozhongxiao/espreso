@@ -118,21 +118,37 @@ public:
 //				domain_list[i] = i;
 //			}
 
+		int unsym = 0, gunsym = 0;
+		for (eslocal d = 0; d < instance->K.size(); d++) {
+			if (instance->K[d].mtype == MatrixType::REAL_UNSYMMETRIC) {
+				unsym = 1;
+			}
+		}
 
-		mtype 	  = instance->K[0].mtype; // TODO: WARNING - Needs to be fixed
+		MPI_Allreduce(&unsym, &gunsym, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
 
-		switch (mtype) {
-		case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-			SYMMETRIC_SYSTEM = true;
-			break;
-		case MatrixType::REAL_SYMMETRIC_INDEFINITE:
-			SYMMETRIC_SYSTEM = true;
-			break;
-		case MatrixType::REAL_UNSYMMETRIC:
-			SYMMETRIC_SYSTEM = false;
-			break;
-		default:
-			ESINFO(GLOBAL_ERROR) << "Unknown matrix type";
+//		mtype 	  = instance->K[0].mtype; // TODO: WARNING - Needs to be fixed
+//
+//		switch (mtype) {
+//		case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+//			SYMMETRIC_SYSTEM = true;
+//			break;
+//		case MatrixType::REAL_SYMMETRIC_INDEFINITE:
+//			SYMMETRIC_SYSTEM = true;
+//			break;
+//		case MatrixType::REAL_UNSYMMETRIC:
+//			SYMMETRIC_SYSTEM = false;
+//			break;
+//		default:
+//			ESINFO(GLOBAL_ERROR) << "Unknown matrix type";
+//		}
+
+		// TODO: indefinite system
+		SYMMETRIC_SYSTEM = gunsym == 0;
+		if (!SYMMETRIC_SYSTEM) {
+			mtype = MatrixType::REAL_UNSYMMETRIC;
+		} else {
+			mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 		}
 
 
@@ -159,20 +175,21 @@ public:
 			clusters[c].cluster_local_index  = c;
 			//clusters[c]->my_neighs = std::vector<eslocal>(instance->neighbours.begin(), instance->neighbours.end());
 			clusters[c].mtype = mtype; // TODO: WARNING - Needs to be fixed
+			clusters[c].SYMMETRIC_SYSTEM = SYMMETRIC_SYSTEM;
 
-			switch (clusters[c].mtype) {
-			case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-				clusters[c].SYMMETRIC_SYSTEM = true;
-				break;
-			case MatrixType::REAL_SYMMETRIC_INDEFINITE:
-				clusters[c].SYMMETRIC_SYSTEM = true;
-				break;
-			case MatrixType::REAL_UNSYMMETRIC:
-				clusters[c].SYMMETRIC_SYSTEM = false;
-				break;
-			default:
-				ESINFO(GLOBAL_ERROR) << "Unknown matrix type";
-			}
+//			switch (clusters[c].mtype) {
+//			case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+//				clusters[c].SYMMETRIC_SYSTEM = true;
+//				break;
+//			case MatrixType::REAL_SYMMETRIC_INDEFINITE:
+//				clusters[c].SYMMETRIC_SYSTEM = true;
+//				break;
+//			case MatrixType::REAL_UNSYMMETRIC:
+//				clusters[c].SYMMETRIC_SYSTEM = false;
+//				break;
+//			default:
+//				ESINFO(GLOBAL_ERROR) << "Unknown matrix type";
+//			}
 
 			// Init all compute clusters - communication layer and respective buffers are not allocated
 			clusters[c].InitClusterPC(&domain_list[0], number_of_subdomains_per_cluster);
