@@ -41,8 +41,8 @@ using namespace espreso;
 
 using namespace espreso;
 
-HeatTransfer2DKernel::HeatTransfer2DKernel(const HeatTransferGlobalSettings &settings)
-: _settings(settings)
+HeatTransfer2DKernel::HeatTransfer2DKernel(const HeatTransferGlobalSettings &settings, const HeatTransferOutputSettings &output)
+: _settings(settings), _output(output)
 {
 
 }
@@ -212,9 +212,7 @@ void HeatTransfer2DKernel::processElement(Matrices matrices, const Iterator &ite
 		U(n, 0) = iterator.motion[2 * n + 0];
 		U(n, 1) = iterator.motion[2 * n + 1];
 		f(n, 0) = iterator.heat[n];
-		printf("[%5.2f,%5.2f] ", U(n, 0), U(n, 1));
 	}
-	printf("\n");
 
 	Ke.resize(0, 0);
 	Me.resize(0, 0);

@@ -1,6 +1,7 @@
 
 #include "heattransferfactory.h"
 
+#include "../../config/ecf/output.h"
 #include "../../config/ecf/physics/heattransfer.h"
 
 #include "../../physics/solver/timestep/linear.h"
@@ -28,7 +29,7 @@ HeatTransferFactory::HeatTransferFactory(Step *step, const HeatTransferConfigura
 	case DIMENSION::D2:
 		_physics.push_back(new HeatTransfer2D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
 		_composer.push_back(new DomainsHeatTransfer2D(
-				*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1)));
+				*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
 		break;
 	case DIMENSION::D3:
 		_physics.push_back(new HeatTransfer3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));

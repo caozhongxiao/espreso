@@ -483,6 +483,7 @@ void Physics::printInvalidElement(eslocal eindex) const
 
 void Physics::updateMatrix(Matrices matrix)
 {
+	return;
 	#pragma omp parallel for
 	for  (size_t d = 0; d < _instance->domains; d++) {
 

@@ -74,6 +74,10 @@ espreso::ResultsSelectionConfiguration::ResultsSelectionConfiguration(const PHYS
 			.setdescription({ "Temperature." })
 			.setdatatype({ ECFDataType::BOOL })
 			.allowonly(thermal));
+	REGISTER(translation_motions, ECFMetaData()
+			.setdescription({ "Translation motions." })
+			.setdatatype({ ECFDataType::BOOL })
+			.allowonly(thermal));
 	REGISTER(gradient, ECFMetaData()
 			.setdescription({ "Temperature gradient." })
 			.setdatatype({ ECFDataType::BOOL })

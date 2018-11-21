@@ -16,18 +16,18 @@ struct DomainsHeatTransfer2D: public HeatTransfer2DControler, public UniformNode
 
 	DomainsHeatTransfer2D(
 			Mesh &mesh, Instance &instance, Step &step,
-			const HeatTransferGlobalSettings &gSettings, const HeatTransferStepSettings &sSettings)
+			const HeatTransferGlobalSettings &gSettings, const HeatTransferStepSettings &sSettings, const HeatTransferOutputSettings &oSettings)
 
-	: HeatTransfer2DControler(mesh, step, gSettings, sSettings), UniformNodeDomainsComposer(mesh, step, instance, *this, 1) {}
+	: HeatTransfer2DControler(mesh, step, gSettings, sSettings, oSettings), UniformNodeDomainsComposer(mesh, step, instance, *this, 1) {}
 };
 
 struct GlobalHeatTransfer2D: public HeatTransfer2DControler, public UniformNodesComposer {
 
 	GlobalHeatTransfer2D(
 			Mesh &mesh, Instance &instance, Step &step,
-			const HeatTransferGlobalSettings &gSettings, const HeatTransferStepSettings &sSettings)
+			const HeatTransferGlobalSettings &gSettings, const HeatTransferStepSettings &sSettings, const HeatTransferOutputSettings &oSettings)
 
-	: HeatTransfer2DControler(mesh, step, gSettings, sSettings), UniformNodesComposer(mesh, step, instance, *this, 1) {}
+	: HeatTransfer2DControler(mesh, step, gSettings, sSettings, oSettings), UniformNodesComposer(mesh, step, instance, *this, 1) {}
 };
 
 

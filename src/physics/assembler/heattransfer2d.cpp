@@ -37,15 +37,15 @@ HeatTransfer2D::HeatTransfer2D(Mesh *mesh, Instance *instance, Step *step, const
 		_flux = _mesh->elements->appendData(2, { "FLUX", "FLUX_X", "FLUX_Y" });
 	}
 
-	bool translationMotion = false;
-	for (auto ls = _configuration.load_steps_settings.begin(); ls != _configuration.load_steps_settings.end(); ++ls) {
-		if (ls->second.translation_motions.size()) {
-			translationMotion = true;
-		}
-	}
-	if (translationMotion) {
-		_translationMotion = _mesh->elements->appendData(2, { "TRANSLATION_MOTION", "TRANSLATION_MOTION_X", "TRANSLATION_MOTION_Y" });
-	}
+//	bool translationMotion = false;
+//	for (auto ls = _configuration.load_steps_settings.begin(); ls != _configuration.load_steps_settings.end(); ++ls) {
+//		if (ls->second.translation_motions.size()) {
+//			translationMotion = true;
+//		}
+//	}
+//	if (translationMotion) {
+//		_translationMotion = _mesh->elements->appendData(2, { "TRANSLATION_MOTION", "TRANSLATION_MOTION_X", "TRANSLATION_MOTION_Y" });
+//	}
 }
 
 void HeatTransfer2D::processBEM(eslocal domain, Matrices matrices)

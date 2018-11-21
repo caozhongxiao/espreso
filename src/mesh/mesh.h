@@ -54,6 +54,8 @@ public:
 
 	bool onAllElements(const std::string &eregion) const;
 
+	bool hasPhaseChange() const;
+
 	size_t dimension;
 	size_t preferedDomains;
 	size_t uniformDecomposition;

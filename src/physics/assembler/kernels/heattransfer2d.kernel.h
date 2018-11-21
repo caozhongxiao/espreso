@@ -10,6 +10,7 @@ struct DenseMatrix;
 struct Element;
 struct Step;
 struct HeatTransferGlobalSettings;
+struct HeatTransferOutputSettings;
 struct MaterialBaseConfiguration;
 struct MaterialConfiguration;
 enum Matrices: int;
@@ -29,7 +30,7 @@ struct HeatTransfer2DKernel: public Kernel
 		const MaterialConfiguration *material;
 	};
 
-	HeatTransfer2DKernel(const HeatTransferGlobalSettings &settings);
+	HeatTransfer2DKernel(const HeatTransferGlobalSettings &settings, const HeatTransferOutputSettings &output);
 
 	void processElement(Matrices matrices, const Iterator &iterator, const Step &step, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const;
 //	void processFace(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal findex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const;
@@ -42,6 +43,7 @@ protected:
 //	void postProcessElement(eslocal domain, eslocal eindex);
 
 	const HeatTransferGlobalSettings &_settings;
+	const HeatTransferOutputSettings &_output;
 };
 
 }

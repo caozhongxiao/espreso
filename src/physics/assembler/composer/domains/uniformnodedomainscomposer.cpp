@@ -328,6 +328,8 @@ void UniformNodeDomainsComposer::buildPatterns()
 
 void UniformNodeDomainsComposer::assemble(Matrices matrices)
 {
+	_controler.updateData();
+
 //	#pragma omp parallel for
 	for  (size_t d = 0; d < _instance.domains; d++) {
 
@@ -379,9 +381,9 @@ void UniformNodeDomainsComposer::assemble(Matrices matrices)
 		}
 
 		clearMatrices(matrices, d);
-
 		filler.begin = _mesh.elements->elementsDistribution[d];
 		filler.end = _mesh.elements->elementsDistribution[d + 1];
+
 		_controler.processElements(matrices, filler);
 
 //		KReduction = _step.internalForceReduction;

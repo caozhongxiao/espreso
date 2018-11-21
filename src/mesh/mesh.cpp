@@ -139,6 +139,16 @@ bool Mesh::onAllElements(const std::string &eregion) const
 	return StringCompare::caseInsensitiveEq(eregion, "ALL_ELEMENTS");
 }
 
+bool Mesh::hasPhaseChange() const
+{
+	for (size_t m = 0; m < materials.size(); m++) {
+		if (materials[m]->phase_change) {
+			return true;
+		}
+	}
+	return false;
+}
+
 void Mesh::update()
 {
 	int isEmpty = 0, quit;

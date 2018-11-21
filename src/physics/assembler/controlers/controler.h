@@ -18,6 +18,7 @@ class ECFExpression;
 class ECFExpressionVector;
 enum Matrices: int;
 template <typename TEBoundaries, typename TEData> class serializededata;
+template <typename TEData> class tarray;
 
 class Controler
 {
@@ -35,6 +36,8 @@ public:
 	virtual MatrixType getMatrixType(size_t domain) const = 0;
 
 	virtual void initData() = 0;
+	virtual void updateData() = 0;
+
 	virtual void processElements(Matrices matrices, InstanceFiller &filler) = 0;
 	virtual void processBoundary(Matrices matrices, InstanceFiller &filler) = 0;
 
@@ -44,6 +47,15 @@ protected:
 
 	bool tryElementConstness(const std::map<std::string, ECFExpression> &values, double &defaultValue);
 	bool tryElementConstness(const std::map<std::string, ECFExpressionVector> &values, Point &defaultValue);
+
+	void evaluate(
+			const std::map<std::string, ECFExpression> &settings, tarray<double> &data,
+			eslocal csize, double *cbegin);
+	void evaluate(
+			const std::map<std::string, ECFExpressionVector> &settings, tarray<double> &data,
+			eslocal csize, double *cbegin);
+
+	void nodeValuesToElements(tarray<double> &nodeData, std::vector<double> &elementData);
 
 	struct Parameter {
 		serializededata<eslocal, double> *data;

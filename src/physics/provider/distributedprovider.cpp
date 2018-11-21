@@ -26,10 +26,10 @@ DistributedProvider::DistributedProvider(Instance &instance, Physics &physics, C
 : Provider(instance, physics, composer, mesh, step, store, linearSolver)
 {
 	std::vector<eslocal> offsets(mesh.elements->ndomains);
-	physics.initLocalDOFs(offsets);
-	physics.buildLocalCSRPattern();
-//	composer.initDOFs();
-//	composer.buildPatterns();
+//	physics.initLocalDOFs(offsets);
+//	physics.buildLocalCSRPattern();
+	composer.initDOFs();
+	composer.buildPatterns();
 }
 
 DistributedProvider::~DistributedProvider()
@@ -40,8 +40,8 @@ DistributedProvider::~DistributedProvider()
 void DistributedProvider::preprocessData()
 {
 	timeWrapper("pre-process data", [&] () {
-		physics.preprocessData();
-//		composer.initData();
+//		physics.preprocessData();
+		composer.initData();
 	});
 }
 
@@ -51,8 +51,8 @@ void DistributedProvider::updateStructuralMatrices(Matrices matrices)
 
 	if (updated) {
 		timeWrapper("update " + mNames(updated), [&] () {
-			physics.updateMatrix(updated);
-//			composer.assemble(updated);
+//			physics.updateMatrix(updated);
+			composer.assemble(updated);
 		});
 	}
 }

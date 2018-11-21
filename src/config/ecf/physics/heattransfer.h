@@ -79,14 +79,14 @@ struct HeatTransferStepSettings {
 
 struct HeatTransferOutputSettings {
 
-	bool temperature, gradient, flux, phase, latent_heat;
+	bool temperature, translation_motions, gradient, flux, phase, latent_heat;
 
 	void basic() {
-		temperature = true;
+		temperature = translation_motions = true;
 		gradient = flux = phase = latent_heat = false;
 	}
 	void all() {
-		gradient = flux = phase = latent_heat = temperature = true;
+		temperature = translation_motions = gradient = flux = phase = latent_heat = temperature = true;
 	}
 
 	HeatTransferOutputSettings() { basic(); }
