@@ -20,6 +20,9 @@ public:
 	MatrixType getMatrixType() const;
 	MatrixType getMatrixType(size_t domain) const;
 
+	void dirichletIndices(std::vector<std::vector<eslocal> > &indices);
+	void dirichletValues(std::vector<double> &values);
+
 protected:
 	HeatTransferControler(Mesh &mesh, const Step &step,
 			const HeatTransferGlobalSettings &gSettings,

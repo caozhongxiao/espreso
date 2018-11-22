@@ -17,7 +17,7 @@ TableEvaluator::TableEvaluator(
 	_timeDependency = std::any_of(_properties.begin(), _properties.end(), [] (const TableProperty &p) { return p == TableProperty::TIME; });
 }
 
-void TableEvaluator::evaluate(eslocal size, eslocal increment, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+void TableEvaluator::evalVector(eslocal size, eslocal increment, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
 {
 	std::vector<size_t> cell(_dimension);
 
@@ -37,7 +37,7 @@ void TableEvaluator::evaluate(eslocal size, eslocal increment, int csize, const 
 	}
 }
 
-void TableEvaluator::evaluate(eslocal size, eslocal increment, eslocal *elements, eslocal *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+void TableEvaluator::evalFiltered(eslocal size, eslocal increment, eslocal *elements, eslocal *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
 {
 	std::vector<size_t> cell(_dimension);
 
@@ -56,6 +56,26 @@ void TableEvaluator::evaluate(eslocal size, eslocal increment, eslocal *elements
 			}
 			results[e * increment] = _table[_dimension > 0 ? cell[0] : 0][_dimension > 1 ? cell[1] : 0][_dimension > 2 ? cell[2] : 0];
 		}
+	}
+}
+
+void TableEvaluator::evalSelected(eslocal size, eslocal increment, eslocal *selection, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+{
+	std::vector<size_t> cell(_dimension);
+
+	for (eslocal j = 0; j < size; ++j) {
+		for (size_t i = 0; i < _dimension; i++) {
+			switch (_properties[i]) {
+			case TableProperty::TEMPERATURE:
+				cell[i] = std::find(_axis[i].begin(), _axis[i].end(), tbegin[selection[j]]) - _axis[i].begin();
+				break;
+			case TableProperty::TIME:
+				cell[i] = std::find(_axis[i].begin(), _axis[i].end(), time) - _axis[i].begin();
+				break;
+
+			}
+		}
+		results[j * increment] = _table[_dimension > 0 ? cell[0] : 0][_dimension > 1 ? cell[1] : 0][_dimension > 2 ? cell[2] : 0];
 	}
 }
 

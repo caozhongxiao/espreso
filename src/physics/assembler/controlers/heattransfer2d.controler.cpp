@@ -93,7 +93,9 @@ void HeatTransfer2DControler::initData()
 	evaluate(_stepSettings.heat_source, _nheat.data->datatarray());
 	evaluate(_stepSettings.translation_motions, _nmotion.data->datatarray());
 
-	nodeValuesToElements(_nmotion.data->datatarray(), *_motion->data);
+	if (_motion != NULL) {
+		nodeValuesToElements(_nmotion.data->datatarray(), *_motion->data);
+	}
 }
 
 void HeatTransfer2DControler::updateData()

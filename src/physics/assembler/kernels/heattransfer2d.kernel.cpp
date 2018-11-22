@@ -195,17 +195,17 @@ void HeatTransfer2DKernel::processElement(Matrices matrices, const Iterator &ite
 			assembleMaterialMatrix(n, iterator.coordinates + 2 * n, phase1, phase, step.currentTime, T(n, 0), K, CD, tangentCorrection);
 			assembleMaterialMatrix(n, iterator.coordinates + 2 * n, phase2, (1 - phase), step.currentTime, T(n, 0), K, CD, tangentCorrection);
 			double dens1, dens2, hc1, hc2;
-			phase1->density.evaluator->evaluate(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &dens1);
-			phase2->density.evaluator->evaluate(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &dens2);
-			phase1->heat_capacity.evaluator->evaluate(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &hc1);
-			phase2->heat_capacity.evaluator->evaluate(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &hc2);
+			phase1->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &dens1);
+			phase2->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &dens2);
+			phase1->heat_capacity.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &hc1);
+			phase2->heat_capacity.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &hc2);
 
 			m(n, 0) = (phase * dens1 + (1 - phase) * dens2) * (phase * hc1 + (1 - phase) * hc2 + iterator.material->latent_heat * derivation) * iterator.thickness[0];
 		} else {
 			assembleMaterialMatrix(n, iterator.coordinates + 2 * n, iterator.material, 1, step.currentTime, T(n, 0), K, CD, tangentCorrection);
 			double dens, hc;
-			iterator.material->density.evaluator->evaluate(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &dens);
-			iterator.material->heat_capacity.evaluator->evaluate(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &hc);
+			iterator.material->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &dens);
+			iterator.material->heat_capacity.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &hc);
 			m(n, 0) = dens * hc * thickness(n, 0);
 		}
 

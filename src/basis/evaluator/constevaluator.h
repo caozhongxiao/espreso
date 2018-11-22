@@ -14,8 +14,13 @@ public:
 	Type type() { return Type::CONST; }
 	virtual Evaluator* copy() const { return new ConstEvaluator(*this); }
 
-	void evaluate(eslocal size, eslocal increment, int csize, const double* cbegin, const double* tbegin, double time, double *results) const;
-	void evaluate(eslocal size, eslocal increment, eslocal *elements, eslocal *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const;
+	void evalVector(eslocal size, eslocal increment, int csize, const double* cbegin, const double* tbegin, double time, double *results) const;
+	void evalFiltered(eslocal size, eslocal increment, eslocal *elements, eslocal *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const;
+
+	void evalSelected(eslocal size, eslocal increment, eslocal *selection, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+	{
+		evalVector(size, increment, csize, cbegin, tbegin, time, results);
+	}
 
 	double evaluate(double r) const { return _value; }
 

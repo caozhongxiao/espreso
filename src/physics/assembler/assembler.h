@@ -16,16 +16,17 @@ struct DomainsHeatTransfer2D: public HeatTransfer2DControler, public UniformNode
 
 	DomainsHeatTransfer2D(
 			Mesh &mesh, Instance &instance, Step &step,
-			const HeatTransferGlobalSettings &gSettings, const HeatTransferStepSettings &sSettings, const HeatTransferOutputSettings &oSettings)
+			const HeatTransferGlobalSettings &gSettings, const HeatTransferLoadStepConfiguration &sSettings, const HeatTransferOutputSettings &oSettings)
 
-	: HeatTransfer2DControler(mesh, step, gSettings, sSettings, oSettings), UniformNodeDomainsComposer(mesh, step, instance, *this, 1) {}
+	: HeatTransfer2DControler(mesh, step, gSettings, sSettings, oSettings),
+	  UniformNodeDomainsComposer(mesh, step, instance, *this, 1, sSettings.feti.redundant_lagrange, sSettings.feti.scaling) {}
 };
 
 struct GlobalHeatTransfer2D: public HeatTransfer2DControler, public UniformNodesComposer {
 
 	GlobalHeatTransfer2D(
 			Mesh &mesh, Instance &instance, Step &step,
-			const HeatTransferGlobalSettings &gSettings, const HeatTransferStepSettings &sSettings, const HeatTransferOutputSettings &oSettings)
+			const HeatTransferGlobalSettings &gSettings, const HeatTransferLoadStepConfiguration &sSettings, const HeatTransferOutputSettings &oSettings)
 
 	: HeatTransfer2DControler(mesh, step, gSettings, sSettings, oSettings), UniformNodesComposer(mesh, step, instance, *this, 1) {}
 };

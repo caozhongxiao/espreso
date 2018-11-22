@@ -13,6 +13,7 @@ public:
 	: GlobalComposer(mesh, step, instance, controler), _DOFs(DOFs) {}
 
 	void initDOFs();
+	void initDirichlet();
 	void buildPatterns();
 
 	void assemble(Matrices matrices);

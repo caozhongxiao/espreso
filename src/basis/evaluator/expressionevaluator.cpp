@@ -42,7 +42,7 @@ ExpressionEvaluator::ExpressionEvaluator(const ExpressionEvaluator &other)
 	_temperatureDependency = other._temperatureDependency;
 }
 
-void ExpressionEvaluator::evaluate(eslocal size, eslocal increment, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+void ExpressionEvaluator::evalVector(eslocal size, eslocal increment, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
 {
 	int thread = omp_get_thread_num();
 	for (eslocal i = 0; i < size; ++i) {
@@ -59,7 +59,7 @@ void ExpressionEvaluator::evaluate(eslocal size, eslocal increment, int csize, c
 	}
 }
 
-void ExpressionEvaluator::evaluate(eslocal size, eslocal increment, eslocal *elements, eslocal *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+void ExpressionEvaluator::evalFiltered(eslocal size, eslocal increment, eslocal *elements, eslocal *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
 {
 	int thread = omp_get_thread_num();
 	for (eslocal i = 0; i < size; ++i) {
@@ -75,6 +75,23 @@ void ExpressionEvaluator::evaluate(eslocal size, eslocal increment, eslocal *ele
 			_expressions[thread]->values[4] = time;
 			results[e * increment] = _expressions[thread]->evaluate();
 		}
+	}
+}
+
+void ExpressionEvaluator::evalSelected(eslocal size, eslocal increment, eslocal *selection, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+{
+	int thread = omp_get_thread_num();
+	for (eslocal i = 0; i < size; ++i) {
+		if (cbegin != NULL) {
+			_expressions[thread]->values[0] = cbegin[selection[i] * csize + 0];
+			_expressions[thread]->values[1] = cbegin[selection[i] * csize + 1];
+			_expressions[thread]->values[2] = csize == 3 ? cbegin[selection[i] * csize + 2] : 0;
+		}
+		if (tbegin != NULL) {
+			_expressions[thread]->values[3] = tbegin[selection[i]];
+		}
+		_expressions[thread]->values[4] = time;
+		results[i * increment] = _expressions[thread]->evaluate();
 	}
 }
 

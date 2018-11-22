@@ -127,9 +127,9 @@ void Constraints::B1DirichletUpdate(const Step &step)
 								for (eslocal n = _dirichlet[dof][r].first->unintervals[interval.pindex].begin; n < _dirichlet[dof][r].first->unintervals[interval.pindex].end; ++n) {
 									points.push_back(_mesh.nodes->coordinates->datatarray()[_dirichlet[dof][r].first->uniqueNodes->datatarray()[n]]);
 								}
-								_dirichlet[dof][r].second->evaluate(isize, 3, reinterpret_cast<double*>(points.data()), NULL, step.currentTime, _instance.B1c[d].data() + offset);
+								_dirichlet[dof][r].second->evalVector(isize, 3, reinterpret_cast<double*>(points.data()), NULL, step.currentTime, _instance.B1c[d].data() + offset);
 							} else {
-								_dirichlet[dof][r].second->evaluate(isize, 0, NULL, NULL, step.currentTime, _instance.B1c[d].data() + offset);
+								_dirichlet[dof][r].second->evalVector(isize, 0, NULL, NULL, step.currentTime, _instance.B1c[d].data() + offset);
 							}
 							if (step.internalForceReduction != 1) {
 								for (eslocal i = 0; i < isize; i++) {

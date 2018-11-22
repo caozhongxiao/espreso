@@ -1,7 +1,6 @@
 
 #include "uniformnodedomainscomposer.h"
 
-#include "../matrixindex.h"
 #include "../../controlers/controler.h"
 
 #include "../../../instance.h"
@@ -35,6 +34,8 @@ void UniformNodeDomainsComposer::initDOFs()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
+		std::vector<std::pair<eslocal, eslocal> > tdata;
+
 		for (eslocal d = _mesh.elements->domainDistribution[t]; d != _mesh.elements->domainDistribution[t + 1]; ++d) {
 			std::vector<eslocal> dnodes(
 					(_mesh.elements->procNodes->begin() + _mesh.elements->elementsDistribution[d])->begin(),
@@ -42,9 +43,11 @@ void UniformNodeDomainsComposer::initDOFs()
 
 			Esutils::sortAndRemoveDuplicity(dnodes);
 			for (size_t i = 0; i < dnodes.size(); i++) {
-				ntodomains[t].push_back(std::pair<eslocal, eslocal>(dnodes[i], d));
+				tdata.push_back(std::pair<eslocal, eslocal>(dnodes[i], d));
 			}
 		}
+
+		ntodomains[t].swap(tdata);
 	}
 
 	for (size_t t = 1; t < threads; t++) {
@@ -168,6 +171,31 @@ void UniformNodeDomainsComposer::initDOFs()
 			tarray<eslocal>(datadistribution, DOFData));
 }
 
+void UniformNodeDomainsComposer::initDirichlet()
+{
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	std::vector<std::vector<eslocal> > dIndices;
+	_controler.dirichletIndices(dIndices);
+
+	if (dIndices.size() != (size_t)_DOFs) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: invalid number of DOFs per node in Dirichlet.";
+	}
+
+	if (_DOFs > 1) {
+		#pragma omp parallel for
+		for (int dof = 0; dof < _DOFs; ++dof) {
+			for (size_t i = 0; i < dIndices[dof].size(); ++i) {
+				dIndices[dof][i] = _DOFs * dIndices[dof][i] + dof;
+			}
+		}
+	}
+	for (int dof = 0; dof < _DOFs; ++dof) {
+		_dirichletMap.insert(_dirichletMap.end(), dIndices[dof].begin(), dIndices[dof].end());
+	}
+	std::sort(_dirichletMap.begin(), _dirichletMap.end());
+}
+
 void UniformNodeDomainsComposer::buildPatterns()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
@@ -187,64 +215,18 @@ void UniformNodeDomainsComposer::buildPatterns()
 		_instance.R[d].resize(_instance.domainDOFCount[d]);
 	}
 
-//	#pragma omp parallel for
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (eslocal d = _mesh.elements->domainDistribution[t]; d != _mesh.elements->domainDistribution[t + 1]; ++d) {
-			std::vector<eslocal> permK, permRHS;
-			std::vector<IJ> KPattern;
-			std::vector<eslocal> RHSPattern, ROW, COL;
-
-			auto fullInsert = [&] (serializededata<eslocal, eslocal>::const_iterator &enodes) {
-				size_t size = RHSPattern.size();
-				for (auto n = enodes->begin(); n != enodes->end(); ++n) {
-					auto DOFs = (_DOFMap->begin() + *n)->begin();
-					while (*DOFs != d + _mesh.elements->firstDomain) {
-						DOFs += 1 + _DOFs;
-					}
-					RHSPattern.push_back(*(DOFs + 1));
-				}
-				for (eslocal dof = 1; dof < _DOFs; ++dof) {
-					for (size_t n = 0; n < enodes->size(); ++n) {
-						RHSPattern.push_back(RHSPattern[size + n] + dof);
-					}
-				}
-				for (auto row = RHSPattern.begin() + size; row != RHSPattern.end(); ++row) {
-					for (auto col = RHSPattern.begin() + size; col != RHSPattern.end(); ++col) {
-						KPattern.push_back({*row, *col});
-					}
-				}
-			};
-
-			auto upperInsert = [&] (serializededata<eslocal, eslocal>::const_iterator &enodes) {
-				size_t size = RHSPattern.size();
-				for (auto n = enodes->begin(); n != enodes->end(); ++n) {
-					auto DOFs = (_DOFMap->begin() + *n)->begin();
-					while (*DOFs != d + _mesh.elements->firstDomain) {
-						DOFs += 1 + _DOFs;
-					}
-					RHSPattern.insert(RHSPattern.end(), DOFs + 1, DOFs + 2);
-				}
-				for (eslocal dof = 1; dof < _DOFs; ++dof) {
-					for (size_t n = 0; n < enodes->size(); ++n) {
-						RHSPattern.push_back(RHSPattern[size + n] + dof);
-					}
-				}
-				for (auto row = RHSPattern.begin() + size, colbegin = RHSPattern.begin() + size; row != RHSPattern.end(); ++row, ++colbegin) {
-					for (auto col = colbegin; col != RHSPattern.end(); ++col) {
-						KPattern.push_back(*row <= *col ? IJ{*row, *col} : IJ{*col, *row});
-					}
-				}
-			};
+			MatrixType mtype = _controler.getMatrixType(d);
 
 			auto ebegin = _mesh.elements->procNodes->cbegin() + _mesh.elements->elementsDistribution[d];
 			auto eend = _mesh.elements->procNodes->cbegin() + _mesh.elements->elementsDistribution[d + 1];
 
-
+			eslocal Ksize = 0, RHSsize = 0;
 			for (auto e = ebegin; e != eend; ++e) {
-				switch (_controler.getMatrixType(d)) {
-				case MatrixType::REAL_UNSYMMETRIC: fullInsert(e); break;
-				default: upperInsert(e);
-				}
+				RHSsize += e->size() * _DOFs;
+				Ksize += getMatrixSize(e->size() * _DOFs, mtype);
 			}
 
 			for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
@@ -257,10 +239,53 @@ void UniformNodeDomainsComposer::buildPatterns()
 					auto enodes = _mesh.boundaryRegions[r]->procNodes->cbegin() + begin;
 
 					for (eslocal i = begin; i < end; ++i, ++enodes) {
-						switch (_controler.getMatrixType(d)) {
-						case MatrixType::REAL_UNSYMMETRIC: fullInsert(enodes); break;
-						default: upperInsert(enodes);
-						}
+						RHSsize += enodes->size() * _DOFs;
+						Ksize += getMatrixSize(enodes->size() * _DOFs, mtype);;
+					}
+				}
+			}
+
+			std::vector<eslocal> permK(Ksize), permRHS(RHSsize);
+			std::vector<IJ> KPattern(Ksize);
+			std::vector<eslocal> RHSPattern(RHSsize), ROW, COL;
+
+			IJ *Koffset = KPattern.data();
+			eslocal *RHSoffset = RHSPattern.data();
+
+			auto insert = [&] (serializededata<eslocal, eslocal>::const_iterator &enodes) {
+				eslocal *_RHS = RHSoffset;
+				for (auto n = enodes->begin(); n != enodes->end(); ++n, ++RHSoffset) {
+					auto DOFs = (_DOFMap->begin() + *n)->begin();
+					while (*DOFs != d + _mesh.elements->firstDomain) {
+						DOFs += 1 + _DOFs;
+					}
+					*RHSoffset = *(DOFs + 1);
+				}
+				for (eslocal dof = 1; dof < _DOFs; ++dof) {
+					for (size_t n = 0; n < enodes->size(); ++n, ++RHSoffset) {
+						*RHSoffset = *(_RHS + n) + dof;
+					}
+				}
+				insertKPattern(Koffset, _RHS, RHSoffset, mtype);
+			};
+
+			for (auto e = ebegin; e != eend; ++e) {
+				insert(e);
+				Koffset += getMatrixSize(e->size() * _DOFs, mtype);
+			}
+
+			for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
+				if (
+						_mesh.boundaryRegions[r]->dimension &&
+						_mesh.boundaryRegions[r]->eintervalsDistribution[d] < _mesh.boundaryRegions[r]->eintervalsDistribution[d + 1]) {
+
+					eslocal begin = _mesh.boundaryRegions[r]->eintervals[_mesh.boundaryRegions[r]->eintervalsDistribution[d]].begin;
+					eslocal end = _mesh.boundaryRegions[r]->eintervals[_mesh.boundaryRegions[r]->eintervalsDistribution[d + 1] - 1].end;
+					auto enodes = _mesh.boundaryRegions[r]->procNodes->cbegin() + begin;
+
+					for (eslocal i = begin; i < end; ++i, ++enodes) {
+						insert(enodes);
+						Koffset += getMatrixSize(enodes->size() * _DOFs, mtype);
 					}
 				}
 			}
@@ -281,7 +306,6 @@ void UniformNodeDomainsComposer::buildPatterns()
 			COL.reserve(KPattern.size());
 			ROW.push_back(1);
 			COL.push_back(KPattern[pK.front()].column + 1);
-			permK.resize(KPattern.size());
 			permK[pK.front()] = 0;
 			for (size_t i = 1, nonzeros = 0; i < pK.size(); i++) {
 				if (KPattern[pK[i]] != KPattern[pK[i - 1]]) {
@@ -293,7 +317,6 @@ void UniformNodeDomainsComposer::buildPatterns()
 				}
 				permK[pK[i]] = nonzeros;
 			}
-			permRHS.resize(RHSPattern.size());
 			permRHS[pRHS.front()] = 0;
 			for (size_t i = 1, nonzeros = 0; i < pRHS.size(); i++) {
 				if (RHSPattern[pRHS[i]] != RHSPattern[pRHS[i - 1]]) {
@@ -330,7 +353,7 @@ void UniformNodeDomainsComposer::assemble(Matrices matrices)
 {
 	_controler.updateData();
 
-//	#pragma omp parallel for
+	#pragma omp parallel for
 	for  (size_t d = 0; d < _instance.domains; d++) {
 
 		size_t KIndex = 0, RHSIndex = 0;

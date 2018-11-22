@@ -17,6 +17,7 @@
 #include "../../basis/logging/logging.h"
 
 #include "../../physics/provider/distributedprovider.h"
+#include "../../physics/provider/collectiveprovider.h"
 
 using namespace espreso;
 
@@ -28,8 +29,17 @@ HeatTransferFactory::HeatTransferFactory(Step *step, const HeatTransferConfigura
 	switch (configuration.dimension) {
 	case DIMENSION::D2:
 		_physics.push_back(new HeatTransfer2D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
-		_composer.push_back(new DomainsHeatTransfer2D(
-				*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
+		switch (configuration.load_steps_settings.at(1).solver) {
+		case LoadStepConfiguration::SOLVER::FETI:
+			_composer.push_back(new DomainsHeatTransfer2D(
+							*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
+			break;
+		case LoadStepConfiguration::SOLVER::MULTIGRID:
+			_composer.push_back(new GlobalHeatTransfer2D(
+							*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
+			break;
+		}
+
 		break;
 	case DIMENSION::D3:
 		_physics.push_back(new HeatTransfer3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
@@ -55,7 +65,15 @@ LoadStepSolver* HeatTransferFactory::getLoadStepSolver(size_t step, Mesh *mesh, 
 	const HeatTransferLoadStepConfiguration &settings = getLoadStepsSettings(step, _configuration.load_steps_settings);
 
 	_linearSolvers.push_back(getLinearSolver(settings, _instances.front()));
-	_provider.push_back(new DistributedProvider(*_instances.front(), *_physics.front(), *_composer.front(), *mesh, *_step, *store, *_linearSolvers.back()));
+	switch (_configuration.load_steps_settings.at(1).solver) {
+	case LoadStepConfiguration::SOLVER::FETI:
+		_provider.push_back(new DistributedProvider(*_instances.front(), *_physics.front(), *_composer.front(), *mesh, *_step, *store, *_linearSolvers.back()));
+		break;
+	case LoadStepConfiguration::SOLVER::MULTIGRID:
+		_provider.push_back(new CollectiveProvider(*_instances.front(), *_physics.front(), *_composer.front(), *mesh, *_step, *store, *_linearSolvers.back()));
+		break;
+	}
+
 
 	switch (settings.mode) {
 	case LoadStepConfiguration::MODE::LINEAR:

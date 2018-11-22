@@ -38,6 +38,9 @@ public:
 	virtual void initData() = 0;
 	virtual void updateData() = 0;
 
+	virtual void dirichletIndices(std::vector<std::vector<eslocal> > &indices) = 0;
+	virtual void dirichletValues(std::vector<double> &values) = 0;
+
 	virtual void processElements(Matrices matrices, InstanceFiller &filler) = 0;
 	virtual void processBoundary(Matrices matrices, InstanceFiller &filler) = 0;
 
@@ -68,6 +71,7 @@ protected:
 	Mesh &_mesh;
 	const Step &_step;
 
+	size_t _dirichletSize;
 	std::vector<size_t> _nDistribution;
 };
 

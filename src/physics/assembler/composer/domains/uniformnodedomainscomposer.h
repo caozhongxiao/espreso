@@ -9,10 +9,11 @@ namespace espreso {
 class UniformNodeDomainsComposer: public DomainsComposer {
 
 public:
-	UniformNodeDomainsComposer(Mesh &mesh, Step &step, Instance &instance, Controler &controler, int DOFs)
-	: DomainsComposer(mesh, step, instance, controler), _DOFs(DOFs) {}
+	UniformNodeDomainsComposer(Mesh &mesh, Step &step, Instance &instance, Controler &controler, int DOFs, bool redundantLagrange, bool scaling)
+	: DomainsComposer(mesh, step, instance, controler), _DOFs(DOFs), _redundantLagrange(redundantLagrange), _scaling(scaling) {}
 
 	void initDOFs();
+	void initDirichlet();
 	void buildPatterns();
 
 	void assemble(Matrices matrices);
@@ -22,6 +23,7 @@ public:
 
 protected:
 	eslocal _DOFs;
+	bool _redundantLagrange, _scaling;
 };
 
 }

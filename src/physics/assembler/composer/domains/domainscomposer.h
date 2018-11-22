@@ -15,12 +15,9 @@ class DomainsComposer: public Composer {
 
 public:
 	DomainsComposer(Mesh &mesh, Step &step, Instance &instance, Controler &controler)
-	: Composer(mesh, step, instance, controler), _DOFMap(NULL) {}
+	: Composer(mesh, step, instance, controler) {}
 
 protected:
-	void clearMatrices(Matrices matrices, eslocal domain);
-
-	serializededata<eslocal, eslocal> *_DOFMap;
 	std::vector<std::vector<eslocal> > _KPermutation, _RHSPermutation;
 };
 

@@ -16,7 +16,7 @@ using namespace espreso;
 
 
 Controler::Controler(Mesh &mesh, const Step &step)
-: _mesh(mesh), _step(step)
+: _mesh(mesh), _step(step), _dirichletSize(0)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 	_nDistribution.resize(threads + 1);
@@ -47,7 +47,7 @@ bool Controler::tryElementConstness(const std::map<std::string, ECFExpression> &
 		return false;
 	}
 	if (_mesh.onAllElements(values.begin()->first) && values.begin()->second.evaluator->isConstant()) {
-		values.begin()->second.evaluator->evaluate(1, 0, NULL, NULL, 0, &defaultValue);
+		values.begin()->second.evaluator->evalVector(1, 0, NULL, NULL, 0, &defaultValue);
 		return true;
 	}
 	return false;
@@ -67,9 +67,9 @@ bool Controler::tryElementConstness(const std::map<std::string, ECFExpressionVec
 				values.begin()->second.y.evaluator->isConstant() &&
 				values.begin()->second.z.evaluator->isConstant()) {
 
-			values.begin()->second.x.evaluator->evaluate(1, 0, NULL, NULL, 0, &defaultValue.x);
-			values.begin()->second.y.evaluator->evaluate(1, 0, NULL, NULL, 0, &defaultValue.y);
-			values.begin()->second.z.evaluator->evaluate(1, 0, NULL, NULL, 0, &defaultValue.z);
+			values.begin()->second.x.evaluator->evalVector(1, 0, NULL, NULL, 0, &defaultValue.x);
+			values.begin()->second.y.evaluator->evalVector(1, 0, NULL, NULL, 0, &defaultValue.y);
+			values.begin()->second.z.evaluator->evalVector(1, 0, NULL, NULL, 0, &defaultValue.z);
 			return true;
 		}
 	}
@@ -86,7 +86,7 @@ void Controler::evaluate(
 	for (size_t t = 0; t < threads; t++) {
 		for (auto it = settings.begin(); it != settings.end(); ++it) {
 			ElementsRegionStore *region = _mesh.eregion(it->first);
-			it->second.evaluator->evaluate(
+			it->second.evaluator->evalFiltered(
 					region->elements->datatarray().size(t),
 					region->elements->datatarray().begin(t),
 					_mesh.elements->procNodes->boundarytarray().begin(t),
@@ -106,13 +106,13 @@ void Controler::evaluate(
 	for (size_t t = 0; t < threads; t++) {
 		for (auto it = settings.begin(); it != settings.end(); ++it) {
 			ElementsRegionStore *region = _mesh.eregion(it->first);
-			it->second.x.evaluator->evaluate(
+			it->second.x.evaluator->evalFiltered(
 					region->elements->datatarray().size(t), 2,
 					region->elements->datatarray().begin(t),
 					_mesh.elements->procNodes->boundarytarray().begin(t),
 					2, cbegin, NULL, 0, data.data()
 			);
-			it->second.y.evaluator->evaluate(
+			it->second.y.evaluator->evalFiltered(
 					region->elements->datatarray().size(t), 2,
 					region->elements->datatarray().begin(t),
 					_mesh.elements->procNodes->boundarytarray().begin(t),

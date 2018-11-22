@@ -29,6 +29,7 @@ DistributedProvider::DistributedProvider(Instance &instance, Physics &physics, C
 //	physics.initLocalDOFs(offsets);
 //	physics.buildLocalCSRPattern();
 	composer.initDOFs();
+	composer.initDirichlet();
 	composer.buildPatterns();
 }
 
