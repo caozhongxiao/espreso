@@ -15,8 +15,10 @@ public:
 
 protected:
 	eslocal _localKOffset, _localRHSOffset;
+	std::vector<eslocal> _nKSize, _nRHSSize;
 	std::vector<eslocal> _tKOffsets, _tRHSOffsets;
 	std::vector<eslocal> _KPermutation, _RHSPermutation;
+	std::vector<eslocal> _nDistribution;
 };
 
 }

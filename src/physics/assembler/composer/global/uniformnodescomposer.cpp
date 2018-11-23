@@ -129,8 +129,6 @@ void UniformNodesComposer::initDOFs()
 	Esutils::threadDistributionToFullDistribution(DOFDistribution);
 
 	_DOFMap = new serializededata<eslocal, eslocal>(DOFDistribution, DOFData);
-
-//	std::cout << environment->MPIrank << ": " << *_DOFMap << "\n";
 }
 
 void UniformNodesComposer::initDirichlet()
@@ -168,6 +166,11 @@ void UniformNodesComposer::buildPatterns()
 	size_t threads = environment->OMP_NUM_THREADS;
 	// MatrixType mtype = _controler.getMatrixType();
 	MatrixType mtype = MatrixType::REAL_UNSYMMETRIC; // HYPRE not support symmetric systems
+
+	_nDistribution = _mesh.nodes->gatherUniqueNodeDistribution();
+	for (size_t n = 0; n < _nDistribution.size(); ++n) {
+		_nDistribution[n] *= _DOFs;
+	}
 
 	std::vector<std::vector<eslocal> > RHSsize(threads), Ksize(threads);
 
@@ -259,22 +262,20 @@ void UniformNodesComposer::buildPatterns()
 	std::vector<std::vector<IJ> > sKBuffer(_mesh.neighbours.size()), rKBuffer(_mesh.neighbours.size());
 	std::vector<std::vector<eslocal> > sRHSBuffer(_mesh.neighbours.size()), rRHSBuffer(_mesh.neighbours.size());
 
-	std::vector<eslocal> ndistribution = _mesh.nodes->gatherUniqueNodeDistribution();
-	for (size_t n = 0; n < ndistribution.size(); ++n) {
-		ndistribution[n] *= _DOFs;
-	}
 	auto iK = pK.begin();
 	auto iRHS = pRHS.begin();
-	for (size_t n = 0; n < _mesh.neighbours.size(); ++n) {
-		while (KPattern[*iK].row + _mesh.nodes->uniqueOffset < ndistribution[_mesh.neighbours[n]]) {
+	for (size_t n = 0; n < _mesh.neighbours.size() && _mesh.neighbours[n] < environment->MPIrank; ++n) {
+		while (KPattern[*iK].row < _nDistribution[_mesh.neighbours[n] + 1]) {
 			if (iK == pK.begin() || KPattern[*iK] != KPattern[*(iK - 1)]) {
-				sKBuffer[n].push_back(KPattern[*iK++]);
+				sKBuffer[n].push_back(KPattern[*iK]);
 			}
+			++iK;
 		}
-		while (RHSPattern[*iRHS] + _mesh.nodes->uniqueOffset < ndistribution[_mesh.neighbours[n]]) {
+		while (RHSPattern[*iRHS] < _nDistribution[_mesh.neighbours[n] + 1]) {
 			if (iRHS == pRHS.begin() || RHSPattern[*iRHS] != RHSPattern[*(iRHS - 1)]) {
-				sRHSBuffer[n].push_back(RHSPattern[*iRHS++]);
+				sRHSBuffer[n].push_back(RHSPattern[*iRHS]);
 			}
+			++iRHS;
 		}
 	}
 
@@ -285,11 +286,15 @@ void UniformNodesComposer::buildPatterns()
 		ESINFO(ERROR) << "ESPRESO internal error: exchange RHS pattern.";
 	}
 
+	_nKSize.clear();
+	_nRHSSize.clear();
 	for (size_t i = 0; i < rKBuffer.size(); i++) {
 		KPattern.insert(KPattern.end(), rKBuffer[i].begin(), rKBuffer[i].end());
+		_nKSize.push_back(rKBuffer[i].size());
 	}
 	for (size_t i = 0; i < rRHSBuffer.size(); i++) {
 		RHSPattern.insert(RHSPattern.end(), rRHSBuffer[i].begin(), rRHSBuffer[i].end());
+		_nRHSSize.push_back(rRHSBuffer[i].size());
 	}
 
 	size_t localK = pK.size(), localRHS = pRHS.size();
@@ -479,16 +484,25 @@ void UniformNodesComposer::setDirichlet()
 	std::vector<double> values(_dirichletMap.size());
 	_controler.dirichletValues(values);
 
+	auto ndofbegin = _DOFMap->datatarray().begin();
+	auto ndofend = (_DOFMap->begin() + _mesh.nodes->uniqueOffset)->begin();
+
 	for (size_t i = 0; i < _dirichletMap.size(); ++i) {
 		RHS[_dirichletMap[i]] = values[_dirichletPermutation[i]];
+		eslocal col = _DOFMap->datatarray()[_dirichletMap[i]];
 		for (eslocal j = ROW[_dirichletMap[i]]; j < ROW[_dirichletMap[i]+ 1]; j++) {
-			if (COL[j - 1] - 1 == _dirichletMap[i]) {
+			if (COL[j - 1] - 1 == col) {
 				VAL[j - 1] = 1;
 			} else {
 				VAL[j - 1] = 0;
-				eslocal r = COL[j - 1] - 1 - _mesh.nodes->uniqueOffset;
+				eslocal r = COL[j - 1] - 1;
+				if (r < _instance.K.front().haloRows) {
+					r = std::lower_bound(ndofbegin, ndofend, r) - ndofbegin;
+				} else {
+					r -= _mesh.nodes->uniqueOffset * _DOFs;
+				}
 				for (eslocal c = ROW[r]; c < ROW[r + 1]; c++) {
-					if (COL[c - 1] - 1 == _dirichletMap[i] + _mesh.nodes->uniqueOffset) {
+					if (COL[c - 1] - 1 == col) {
 						RHS[r] -= VAL[c - 1] * RHS[_dirichletMap[i]];
 						VAL[c - 1] = 0;
 					}
@@ -502,32 +516,37 @@ void UniformNodesComposer::synchronize()
 {
 	std::vector<std::vector<double> > sBuffer(_mesh.neighbours.size()), rBuffer(_mesh.neighbours.size());
 
-	size_t n = 0;
-	for (auto it = _mesh.nodes->pintervals.begin(); it != _mesh.nodes->pintervals.end() && it->sourceProcess < environment->MPIrank; ++it) {
-		if (_mesh.neighbours[n] < it->sourceProcess) {
-			++n;
+	auto nranks = _mesh.nodes->ranks->begin();
+	auto DOFs = _DOFMap->begin();
+	for (eslocal n = 0; n < _mesh.nodes->size && DOFs->front() < _nDistribution[environment->MPIrank]; ++n, ++nranks, ++DOFs) {
+		eslocal r = 0;
+		while (_mesh.neighbours[r] < nranks->front()) {
+			++r;
 		}
-		sBuffer[n].push_back(it->end - it->begin);
-		sBuffer[n].insert(sBuffer[n].end(), _instance.f.front().begin() + it->begin, _instance.f.front().begin() + it->end);
+		for (int dof = 0; dof < _DOFs; ++dof) {
+			sBuffer[r].push_back(_instance.f.front()[n * _DOFs + dof]);
+		}
 	}
 
-	n = 0;
-	for (auto it = _mesh.nodes->pintervals.begin(); it != _mesh.nodes->pintervals.end() && it->sourceProcess < environment->MPIrank; ++it) {
-		if (_mesh.neighbours[n] < it->sourceProcess) {
-			++n;
+	nranks = _mesh.nodes->ranks->begin();
+	DOFs = _DOFMap->begin();
+	for (eslocal n = 0; n < _mesh.nodes->size && DOFs->front() < _nDistribution[environment->MPIrank]; ++n, ++nranks, ++DOFs) {
+		eslocal r = 0;
+		while (_mesh.neighbours[r] < nranks->front()) {
+			++r;
 		}
-		auto begin = _instance.K.front().CSR_I_row_indices[it->begin] - 1;
-		auto end = _instance.K.front().CSR_I_row_indices[it->end] - 1;
-		sBuffer[n].insert(sBuffer[n].end(), _instance.K.front().CSR_V_values.begin() + begin, _instance.K.front().CSR_V_values.begin() + end);
+		auto begin = _instance.K.front().CSR_I_row_indices[DOFs->front()] - 1;
+		auto end = _instance.K.front().CSR_I_row_indices[DOFs->back() + 1] - 1;
+		sBuffer[r].insert(sBuffer[r].end(), _instance.K.front().CSR_V_values.begin() + begin, _instance.K.front().CSR_V_values.begin() + end);
 	}
 
 	if (!Communication::receiveUpperUnknownSize(sBuffer, rBuffer, _mesh.neighbours)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange CSR pattern.";
+		ESINFO(ERROR) << "ESPRESO internal error: synchronize assembled data.";
 	}
 
 	size_t KIndex = _localKOffset, RHSIndex = _localRHSOffset;
-	for (size_t i = 0, j = 1; i < rBuffer.size(); ++i, j = 0) {
-		for (; j < rBuffer[i].front(); ++j, ++RHSIndex) {
+	for (size_t i = 0, j = 0; i < rBuffer.size(); ++i, j = 0) {
+		for (; rBuffer[i].size() && j < _nRHSSize[i]; ++j, ++RHSIndex) {
 			_instance.f.front()[_RHSPermutation[RHSIndex]] += rBuffer[i][j];
 		}
 		for (; j < rBuffer[i].size(); ++j, ++KIndex) {
