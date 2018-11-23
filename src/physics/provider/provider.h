@@ -29,8 +29,8 @@ public:
 	Provider(Instance &instance, Physics &physics, Composer &composer, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver);
 	virtual ~Provider();
 
-	virtual void preprocessData() {}
-	virtual void updateStructuralMatrices(Matrices matrices) {}
+	virtual void preprocessData();
+	virtual void updateStructuralMatrices(Matrices matrices);
 	virtual void updateGluingMatrices(Matrices matrices) {}
 	virtual void processSolution() {}
 
@@ -39,7 +39,7 @@ public:
 	virtual void setEmptyRegularizationCallback() {}
 	virtual void setB0Callback() {}
 
-	virtual void solve(Matrices updatedMatrices) {}
+	virtual void solve(Matrices updatedMatrices);
 
 	virtual void storeSolution() {}
 	virtual void storeSubSolution() {}
@@ -71,8 +71,6 @@ public:
 	Step &step;
 	ResultStore &store;
 	LinearSolver &linearSolver;
-
-	GeneralHeatTransfer2D *ttt;
 
 protected:
 	std::string mNames(espreso::Matrices matrices, const std::string &prefix = "");

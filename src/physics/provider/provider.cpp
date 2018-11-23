@@ -44,6 +44,43 @@ Provider::Provider(Instance &instance, Physics &physics, Composer &composer, Mes
 : instance(instance), physics(physics), composer(composer), mesh(mesh), step(step), store(store), linearSolver(linearSolver), _timeStatistics(new TimeEval("Physics solver timing"))
 {
 	_timeStatistics->totalTime.startWithBarrier();
+
+	composer.initDOFs();
+	composer.initDirichlet();
+	composer.buildPatterns();
+}
+
+void Provider::preprocessData()
+{
+	timeWrapper("pre-process data", [&] () {
+		composer.initData();
+	});
+}
+
+void Provider::updateStructuralMatrices(Matrices matrices)
+{
+	Matrices updated = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R);
+
+	if (updated) {
+		timeWrapper("update " + mNames(updated), [&] () {
+//			physics.updateMatrix(updated);
+			composer.assemble(updated);
+		});
+	}
+}
+
+void Provider::solve(Matrices updatedMatrices)
+{
+	Matrices solverMatrices = Matrices::K | Matrices::M | Matrices::f | Matrices::B1;
+	storeWrapper(mNames(solverMatrices), solverMatrices);
+
+	timeWrapper("update linear solver: " + mNames(updatedMatrices), [&] () {
+		linearSolver.update(updatedMatrices);
+	});
+
+	timeWrapper("run linear solver", [&] () {
+		linearSolver.solve();
+	});
 }
 
 Provider::~Provider()

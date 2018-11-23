@@ -25,37 +25,12 @@ using namespace espreso;
 DistributedProvider::DistributedProvider(Instance &instance, Physics &physics, Composer &composer, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver)
 : Provider(instance, physics, composer, mesh, step, store, linearSolver)
 {
-	std::vector<eslocal> offsets(mesh.elements->ndomains);
-//	physics.initLocalDOFs(offsets);
-//	physics.buildLocalCSRPattern();
-	composer.initDOFs();
-	composer.initDirichlet();
-	composer.buildPatterns();
+
 }
 
 DistributedProvider::~DistributedProvider()
 {
 
-}
-
-void DistributedProvider::preprocessData()
-{
-	timeWrapper("pre-process data", [&] () {
-//		physics.preprocessData();
-		composer.initData();
-	});
-}
-
-void DistributedProvider::updateStructuralMatrices(Matrices matrices)
-{
-	Matrices updated = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R);
-
-	if (updated) {
-		timeWrapper("update " + mNames(updated), [&] () {
-//			physics.updateMatrix(updated);
-			composer.assemble(updated);
-		});
-	}
 }
 
 void DistributedProvider::updateGluingMatrices(Matrices matrices)
@@ -109,20 +84,6 @@ void DistributedProvider::processSolution()
 		physics.processSolution();
 	});
 	storeWrapper(mNames(Matrices::primal), Matrices::primal);
-}
-
-void DistributedProvider::solve(Matrices updatedMatrices)
-{
-	Matrices solverMatrices = Matrices::K | Matrices::M | Matrices::f | Matrices::B1;
-	storeWrapper(mNames(solverMatrices), solverMatrices);
-
-	timeWrapper("update linear solver: " + mNames(updatedMatrices), [&] () {
-		linearSolver.update(updatedMatrices);
-	});
-
-	timeWrapper("run linear solver", [&] () {
-		linearSolver.solve();
-	});
 }
 
 void DistributedProvider::storeSolution()
