@@ -26,7 +26,7 @@ HeatTransfer2DControler::HeatTransfer2DControler(
 	_kernel = new HeatTransfer2DKernel(_globalSettings, _outputSettings);
 
 	Point defaultMotion(0, 0, 0);
-	double defaultHeat = 273.15;
+	double defaultHeat = 0; //273.15;
 	double defaultThickness = 1;
 
 	_ntemperature.data = new serializededata<eslocal, double>(1, _nDistribution);
@@ -41,7 +41,7 @@ HeatTransfer2DControler::HeatTransfer2DControler(
 	_nthickness.isConts = tryElementConstness(gSettings.thickness, defaultThickness);
 	_nthickness.data = new serializededata<eslocal, double>(1, _nDistribution, defaultThickness);
 
-//	_temperature = _mesh.nodes->appendData(1, { "TEMPERATURE" });
+	_temperature = _mesh.nodes->appendData(1, { "TEMPERATURE" });
 	if (_mesh.hasPhaseChange()) {
 		_phaseChange = _mesh.nodes->appendData(1, { "PHASE" });
 		_latentHeat = _mesh.nodes->appendData(1, { "LATENT_HEAT" });

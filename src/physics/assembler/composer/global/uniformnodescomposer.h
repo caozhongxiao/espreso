@@ -21,6 +21,8 @@ public:
 	void setDirichlet();
 	void synchronize();
 
+	void fillSolution();
+
 protected:
 	int _DOFs;
 };

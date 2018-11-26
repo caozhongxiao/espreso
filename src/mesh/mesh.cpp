@@ -428,114 +428,114 @@ void Mesh::update()
 
 void Mesh::initNodeData()
 {
-	for (auto datait = nodes->data.begin(); datait != nodes->data.end(); ++datait) {
-		NodeData* data = *datait;
-		if (data->names.size() && data->decomposedData != NULL) {
-			data->gatheredData.resize(data->dimension * nodes->uniqueSize);
-			data->sBuffer.resize(neighbours.size());
-			data->rBuffer.resize(neighbours.size());
-
-			for (size_t n = 0; n < neighbours.size(); ++n) {
-				if (neighbours[n] < environment->MPIrank) {
-					data->sBuffer[n].resize(data->dimension * nodes->scouters[n]);
-				} else {
-					data->rBuffer[n].resize(data->dimension * nodes->scouters[n + 1]);
-				}
-			}
-		}
-	}
+//	for (auto datait = nodes->data.begin(); datait != nodes->data.end(); ++datait) {
+//		NodeData* data = *datait;
+//		if (data->names.size() && data->decomposedData != NULL) {
+//			data->data.resize(data->dimension * nodes->uniqueSize);
+//			data->sBuffer.resize(neighbours.size());
+//			data->rBuffer.resize(neighbours.size());
+//
+//			for (size_t n = 0; n < neighbours.size(); ++n) {
+//				if (neighbours[n] < environment->MPIrank) {
+//					data->sBuffer[n].resize(data->dimension * nodes->scouters[n]);
+//				} else {
+//					data->rBuffer[n].resize(data->dimension * nodes->scouters[n + 1]);
+//				}
+//			}
+//		}
+//	}
 }
 
 void Mesh::gatherNodeData()
 {
-	// TODO: NUMA + load balancing
-
-	auto n2i = [ & ] (int neighbour) {
-		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
-	};
-
-	auto doffset = [&] (eslocal d, eslocal i) {
-		return std::lower_bound(nodes->dintervals[d].begin(), nodes->dintervals[d].end(), i, [] (const DomainInterval &interval, eslocal i) { return interval.pindex < i; })->DOFOffset;
-	};
-
-	for (auto datait = nodes->data.begin(); datait != nodes->data.end(); ++datait) {
-		NodeData* data = *datait;
-		if (data->names.size() && data->decomposedData != NULL) {
-			size_t n = 0;
-//			auto it = nodes->pintervals.begin();
-//			while (it->sourceProcess < environment->MPIrank) {
-//				++it;
+//	// TODO: NUMA + load balancing
+//
+//	auto n2i = [ & ] (int neighbour) {
+//		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
+//	};
+//
+//	auto doffset = [&] (eslocal d, eslocal i) {
+//		return std::lower_bound(nodes->dintervals[d].begin(), nodes->dintervals[d].end(), i, [] (const DomainInterval &interval, eslocal i) { return interval.pindex < i; })->DOFOffset;
+//	};
+//
+//	for (auto datait = nodes->data.begin(); datait != nodes->data.end(); ++datait) {
+//		NodeData* data = *datait;
+//		if (data->names.size() && data->decomposedData != NULL) {
+//			size_t n = 0;
+////			auto it = nodes->pintervals.begin();
+////			while (it->sourceProcess < environment->MPIrank) {
+////				++it;
+////			}
+////			memcpy(data->gatheredData.data(), data->decomposedData->front().data() + it->begin, nodes->uniqueSize * sizeof(double));
+////			continue;
+//
+//			for (size_t i = 0; i < data->sBuffer.size(); i++) {
+//				std::fill(data->sBuffer[i].begin(), data->sBuffer[i].end(), 0);
 //			}
-//			memcpy(data->gatheredData.data(), data->decomposedData->front().data() + it->begin, nodes->uniqueSize * sizeof(double));
-//			continue;
-
-			for (size_t i = 0; i < data->sBuffer.size(); i++) {
-				std::fill(data->sBuffer[i].begin(), data->sBuffer[i].end(), 0);
-			}
-			std::fill(data->gatheredData.begin(), data->gatheredData.end(), 0);
-
-			#pragma omp parallel for
-			for (size_t i = 0; i < nodes->pintervals.size(); ++i) {
-				auto domains = nodes->idomains->cbegin() + i;
-				eslocal offset, soffset, noffset;
-
-				if (nodes->pintervals[i].sourceProcess < environment->MPIrank) {
-					noffset = n2i(nodes->pintervals[i].sourceProcess);
-					for (auto d = domains->begin(); d != domains->end(); ++d) {
-						if (elements->firstDomain <= *d && *d < elements->firstDomain + elements->ndomains) {
-							offset = data->dimension * doffset(*d - elements->firstDomain, i);
-							soffset = data->dimension * nodes->soffsets[i];
-							for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n) {
-								for (int dof = 0; dof < data->dimension; ++dof, ++soffset, ++offset) {
-									data->sBuffer[noffset][soffset] += (*data->decomposedData)[*d - elements->firstDomain][offset];
-								}
-							}
-						}
-					}
-				}
-			}
-
-			if (!Communication::receiveUpperKnownSize(data->sBuffer, data->rBuffer, neighbours)) {
-				ESINFO(ERROR) << "ESPRESO internal error: gather results\n";
-			}
-
-			#pragma omp parallel for
-			for (size_t i = 0; i < nodes->pintervals.size(); ++i) {
-				auto idomains = nodes->idomains->cbegin() + i;
-				auto ineighbors = nodes->ineighborOffsets->cbegin() + i;
-
-				eslocal offset, goffset, noffset;
-
-				if (nodes->pintervals[i].sourceProcess == environment->MPIrank) {
-					for (auto d = idomains->begin(); d != idomains->end() && *d < elements->firstDomain + elements->ndomains; ++d) {
-						goffset = data->dimension * (nodes->pintervals[i].globalOffset - nodes->uniqueOffset);
-						offset = data->dimension * doffset(*d - elements->firstDomain, i);
-						for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n) {
-							for (int dof = 0; dof < data->dimension; ++dof, ++goffset, ++offset) {
-								data->gatheredData[goffset] += (*data->decomposedData)[*d - elements->firstDomain][offset];
-							}
-						}
-					}
-					for (auto neigh = ineighbors->begin(); neigh != ineighbors->end(); ++neigh) {
-						goffset = data->dimension * (nodes->pintervals[i].globalOffset - nodes->uniqueOffset);
-						offset = data->dimension * neigh->offset;
-						noffset = n2i(neigh->process);
-						for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n) {
-							for (int dof = 0; dof < data->dimension; ++dof, ++goffset, ++offset) {
-								data->gatheredData[goffset] += data->rBuffer[noffset][offset];
-							}
-						}
-					}
-					goffset = data->dimension * (nodes->pintervals[i].globalOffset - nodes->uniqueOffset);
-					for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n) {
-						for (int dof = 0; dof < data->dimension; ++dof, ++goffset) {
-							data->gatheredData[goffset] /= idomains->size();
-						}
-					}
-				}
-			}
-		}
-	}
+//			std::fill(data->data.begin(), data->data.end(), 0);
+//
+//			#pragma omp parallel for
+//			for (size_t i = 0; i < nodes->pintervals.size(); ++i) {
+//				auto domains = nodes->idomains->cbegin() + i;
+//				eslocal offset, soffset, noffset;
+//
+//				if (nodes->pintervals[i].sourceProcess < environment->MPIrank) {
+//					noffset = n2i(nodes->pintervals[i].sourceProcess);
+//					for (auto d = domains->begin(); d != domains->end(); ++d) {
+//						if (elements->firstDomain <= *d && *d < elements->firstDomain + elements->ndomains) {
+//							offset = data->dimension * doffset(*d - elements->firstDomain, i);
+//							soffset = data->dimension * nodes->soffsets[i];
+//							for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n) {
+//								for (int dof = 0; dof < data->dimension; ++dof, ++soffset, ++offset) {
+//									data->sBuffer[noffset][soffset] += (*data->decomposedData)[*d - elements->firstDomain][offset];
+//								}
+//							}
+//						}
+//					}
+//				}
+//			}
+//
+//			if (!Communication::receiveUpperKnownSize(data->sBuffer, data->rBuffer, neighbours)) {
+//				ESINFO(ERROR) << "ESPRESO internal error: gather results\n";
+//			}
+//
+//			#pragma omp parallel for
+//			for (size_t i = 0; i < nodes->pintervals.size(); ++i) {
+//				auto idomains = nodes->idomains->cbegin() + i;
+//				auto ineighbors = nodes->ineighborOffsets->cbegin() + i;
+//
+//				eslocal offset, goffset, noffset;
+//
+//				if (nodes->pintervals[i].sourceProcess == environment->MPIrank) {
+//					for (auto d = idomains->begin(); d != idomains->end() && *d < elements->firstDomain + elements->ndomains; ++d) {
+//						goffset = data->dimension * (nodes->pintervals[i].globalOffset - nodes->uniqueOffset);
+//						offset = data->dimension * doffset(*d - elements->firstDomain, i);
+//						for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n) {
+//							for (int dof = 0; dof < data->dimension; ++dof, ++goffset, ++offset) {
+//								data->data[goffset] += (*data->decomposedData)[*d - elements->firstDomain][offset];
+//							}
+//						}
+//					}
+//					for (auto neigh = ineighbors->begin(); neigh != ineighbors->end(); ++neigh) {
+//						goffset = data->dimension * (nodes->pintervals[i].globalOffset - nodes->uniqueOffset);
+//						offset = data->dimension * neigh->offset;
+//						noffset = n2i(neigh->process);
+//						for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n) {
+//							for (int dof = 0; dof < data->dimension; ++dof, ++goffset, ++offset) {
+//								data->data[goffset] += data->rBuffer[noffset][offset];
+//							}
+//						}
+//					}
+//					goffset = data->dimension * (nodes->pintervals[i].globalOffset - nodes->uniqueOffset);
+//					for (eslocal n = nodes->pintervals[i].begin; n < nodes->pintervals[i].end; ++n) {
+//						for (int dof = 0; dof < data->dimension; ++dof, ++goffset) {
+//							data->data[goffset] /= idomains->size();
+//						}
+//					}
+//				}
+//			}
+//		}
+//	}
 }
 
 double Mesh::sumSquares(const std::vector<std::vector<double> > &data, const BoundaryRegionStore* region)
@@ -579,10 +579,10 @@ static void _computeGatheredNodeStatistics(const Mesh *mesh, const NodeData *dat
 				goffset = mesh->nodes->pintervals[i].globalOffset - offset;
 				for (auto n = nodes.cbegin() + intervals[i].begin; n != nodes.cbegin() + intervals[i].end; ++n) {
 					index = goffset + *n - mesh->nodes->pintervals[i].begin;
-					statistics->min = std::min(statistics->min, data->gatheredData[index]);
-					statistics->max = std::max(statistics->max, data->gatheredData[index]);
-					statistics->avg += data->gatheredData[index];
-					statistics->norm += data->gatheredData[index] * data->gatheredData[index];
+					statistics->min = std::min(statistics->min, data->data[index]);
+					statistics->max = std::max(statistics->max, data->data[index]);
+					statistics->avg += data->data[index];
+					statistics->norm += data->data[index] * data->data[index];
 				}
 			}
 		}
@@ -599,11 +599,11 @@ static void _computeGatheredNodeStatistics(const Mesh *mesh, const NodeData *dat
 					value = 0;
 					index = goffset + *n - mesh->nodes->pintervals[i].begin;
 					for (int d = 0; d < data->dimension; d++) {
-						value +=  data->gatheredData[index * data->dimension + d] * data->gatheredData[index * data->dimension + d];
-						(statistics + d + 1)->min = std::min((statistics + d + 1)->min, data->gatheredData[index * data->dimension + d]);
-						(statistics + d + 1)->max = std::max((statistics + d + 1)->max, data->gatheredData[index * data->dimension + d]);
-						(statistics + d + 1)->avg += data->gatheredData[index * data->dimension + d];
-						(statistics + d + 1)->norm += data->gatheredData[index * data->dimension + d] * data->gatheredData[index * data->dimension + d];
+						value +=  data->data[index * data->dimension + d] * data->data[index * data->dimension + d];
+						(statistics + d + 1)->min = std::min((statistics + d + 1)->min, data->data[index * data->dimension + d]);
+						(statistics + d + 1)->max = std::max((statistics + d + 1)->max, data->data[index * data->dimension + d]);
+						(statistics + d + 1)->avg += data->data[index * data->dimension + d];
+						(statistics + d + 1)->norm += data->data[index * data->dimension + d] * data->data[index * data->dimension + d];
 					}
 					value = std::sqrt(value);
 					statistics->min = std::min(statistics->min, value);

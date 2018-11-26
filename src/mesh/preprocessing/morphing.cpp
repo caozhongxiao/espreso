@@ -607,8 +607,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 
 	if (_morphing == NULL) {
-		_morphing = _mesh->nodes->appendData(3, { "RBF_MORPHING", "RBF_MORPHING_X", "RBF_MORPHING_Y", "RBF_MORPHING_Z" }, true);
-		_morphing->gatheredData.resize(3 * _mesh->nodes->uniqueSize);
+		_morphing = _mesh->nodes->appendData(3, { "RBF_MORPHING", "RBF_MORPHING_X", "RBF_MORPHING_Y", "RBF_MORPHING_Z" });
 	}
 
 	#pragma omp parallel for
@@ -616,11 +615,10 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		const auto &origin = _mesh->nodes->originCoordinates->datatarray();
 		const auto &morphed = _mesh->nodes->coordinates->datatarray();
 		if (_mesh->nodes->pintervals[i].sourceProcess == environment->MPIrank) {
-			eslocal offset = _mesh->nodes->pintervals[i].globalOffset - _mesh->nodes->uniqueOffset;
-			for (eslocal n = _mesh->nodes->pintervals[i].begin; n < _mesh->nodes->pintervals[i].end; ++n, ++offset) {
-				_morphing->gatheredData[3 * offset + 0] = (morphed[n] - origin[n]).x;
-				_morphing->gatheredData[3 * offset + 1] = (morphed[n] - origin[n]).y;
-				_morphing->gatheredData[3 * offset + 2] = (morphed[n] - origin[n]).z;
+			for (eslocal n = _mesh->nodes->pintervals[i].begin; n < _mesh->nodes->pintervals[i].end; ++n) {
+				_morphing->data[3 * n + 0] = (morphed[n] - origin[n]).x;
+				_morphing->data[3 * n + 1] = (morphed[n] - origin[n]).y;
+				_morphing->data[3 * n + 2] = (morphed[n] - origin[n]).z;
 			}
 		}
 	}

@@ -39,15 +39,19 @@ class Composer {
 public:
 	Composer(Mesh &mesh, Step &step, Instance &instance, Controler &controler);
 
+	std::vector<double>& getSolutionStore();
+
 	virtual void initDOFs() = 0;
 	virtual void buildPatterns() = 0;
 
-	void initData();
-	virtual void initDirichlet() =0;
+	virtual void initData();
+	virtual void initDirichlet() = 0;
 	virtual void assemble(Matrices matrices) = 0;
 
 	virtual void setDirichlet() = 0;
 	virtual void synchronize() = 0;
+
+	virtual void fillSolution() = 0;
 
 	virtual ~Composer() {}
 

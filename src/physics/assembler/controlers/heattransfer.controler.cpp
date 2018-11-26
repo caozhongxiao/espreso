@@ -51,6 +51,11 @@ MatrixType HeatTransferControler::getMatrixType(size_t domain) const
 	return MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 }
 
+std::vector<double>& HeatTransferControler::getSolutionStore()
+{
+	return _temperature->data;
+}
+
 void HeatTransferControler::dirichletIndices(std::vector<std::vector<eslocal> > &indices)
 {
 	indices.resize(1); // heat has only one DOF

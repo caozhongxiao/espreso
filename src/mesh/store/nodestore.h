@@ -25,22 +25,13 @@ struct NodeData {
 	int dimension;
 	std::vector<std::string> names;
 
-	std::vector<std::vector<double> > *decomposedData;
+	std::vector<double> data;
 
-	std::vector<double> gatheredData;
-
-	NodeData(int dimension, bool alreadyGathered = false);
-	NodeData(int dimension, const std::vector<std::string> &names, bool alreadyGathered = false, std::vector<std::vector<double> > *data = NULL);
-
-	NodeData(NodeData &&other);
-	NodeData(const NodeData &other);
-	NodeData& operator=(const NodeData&other);
-	~NodeData();
+	NodeData(int dimension);
+	NodeData(int dimension, const std::vector<std::string> &names);
 
 protected:
 	std::vector<std::vector<double> > sBuffer, rBuffer;
-
-	bool _delete;
 };
 
 struct TNeighborOffset {
@@ -61,8 +52,7 @@ struct NodeStore {
 	void permute(const std::vector<eslocal> &permutation) { permute(permutation, distribution); }
 	void permute(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
 
-	NodeData* appendData(int dimension, const std::vector<std::string> &names, bool alreadyGathered = false);
-	NodeData* appendData(int dimension, const std::vector<std::string> &names, std::vector<std::vector<double> > &data);
+	NodeData* appendData(int dimension, const std::vector<std::string> &names);
 
 	std::vector<eslocal> gatherNodeDistribution();
 	std::vector<eslocal> gatherUniqueNodeDistribution();

@@ -21,6 +21,8 @@ public:
 	void setDirichlet();
 	void synchronize();
 
+	void fillSolution();
+
 protected:
 	eslocal _DOFs;
 	bool _redundantLagrange, _scaling;

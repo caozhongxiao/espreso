@@ -132,18 +132,9 @@ void NodeStore::unpack(const char* &p)
 size_t NodeStore::packedDataSize(bool collected, bool distributed) const
 {
 	size_t size = 0;
-	if (collected) {
-		for (size_t i = 0; i < data.size(); i++) {
-			if (data[i]->names.size()) {
-				size += Esutils::packedSize(data[i]->gatheredData);
-			}
-		}
-	}
-	if (distributed) {
-		for (size_t i = 0; i < data.size(); i++) {
-			if (data[i]->names.size()) {
-				size += Esutils::packedSize(*data[i]->decomposedData);
-			}
+	for (size_t i = 0; i < data.size(); i++) {
+		if (data[i]->names.size()) {
+			size += Esutils::packedSize(data[i]->data);
 		}
 	}
 	return size;
@@ -151,35 +142,17 @@ size_t NodeStore::packedDataSize(bool collected, bool distributed) const
 
 void NodeStore::packData(char* &p, bool collected, bool distributed) const
 {
-	if (collected) {
-		for (size_t i = 0; i < data.size(); i++) {
-			if (data[i]->names.size()) {
-				Esutils::pack(data[i]->gatheredData, p);
-			}
-		}
-	}
-	if (distributed) {
-		for (size_t i = 0; i < data.size(); i++) {
-			if (data[i]->names.size()) {
-				Esutils::pack(*data[i]->decomposedData, p);
-			}
+	for (size_t i = 0; i < data.size(); i++) {
+		if (data[i]->names.size()) {
+			Esutils::pack(data[i]->data, p);
 		}
 	}
 }
 
 void NodeStore::unpackData(const char* &p, bool collected, bool distributed)
 {
-	if (collected) {
-		for (size_t i = 0; i < data.size(); i++) {
-			Esutils::unpack(data[i]->gatheredData, p);
-		}
-	}
-	if (distributed) {
-		for (size_t i = 0; i < data.size(); i++) {
-			if (data[i]->names.size()) {
-				Esutils::unpack(*data[i]->decomposedData, p);
-			}
-		}
+	for (size_t i = 0; i < data.size(); i++) {
+		Esutils::unpack(data[i]->data, p);
 	}
 }
 
@@ -234,77 +207,23 @@ std::vector<eslocal> NodeStore::gatherUniqueNodeDistribution()
 	return Store::gatherDistribution(uniqueSize);
 }
 
-NodeData* NodeStore::appendData(int dimension, const std::vector<std::string> &names, bool alreadyGathered)
+NodeData* NodeStore::appendData(int dimension, const std::vector<std::string> &names)
 {
-	data.push_back(new NodeData(dimension, names, alreadyGathered));
-	if (!alreadyGathered) {
-		data.back()->decomposedData->resize(dintervals.size());
-		for (size_t d = 0; d < dintervals.size(); d++) {
-			(*data.back()->decomposedData)[d].resize(dimension * (dintervals[d].back().DOFOffset + dintervals[d].back().end - dintervals[d].back().begin));
-		}
-	}
+	data.push_back(new NodeData(dimension, names));
+	data.back()->data.resize(dimension * size);
 	return data.back();
 }
 
-NodeData* NodeStore::appendData(int dimension, const std::vector<std::string> &names, std::vector<std::vector<double> > &data)
+NodeData::NodeData(int dimension)
+: dimension(dimension)
 {
-	this->data.push_back(new NodeData(dimension, names, false, &data));
-	return this->data.back();
+
 }
 
-NodeData::NodeData(int dimension, bool alreadyGathered)
-: dimension(dimension), decomposedData(NULL), _delete(!alreadyGathered)
+NodeData::NodeData(int dimension, const std::vector<std::string> &names)
+: dimension(dimension), names(names)
 {
-	if (!alreadyGathered) {
-		decomposedData = new std::vector<std::vector<double> >();
-	}
-}
 
-NodeData::NodeData(int dimension, const std::vector<std::string> &names, bool alreadyGathered, std::vector<std::vector<double> > *data)
-: dimension(dimension), names(names), decomposedData(data), _delete(!alreadyGathered)
-{
-	if (decomposedData == NULL && !alreadyGathered) {
-		decomposedData = new std::vector<std::vector<double> >();
-	}
-}
-
-NodeData::NodeData(NodeData &&other)
-: dimension(std::move(other.dimension)), names(std::move(other.names)), decomposedData(other.decomposedData), gatheredData(std::move(other.gatheredData)),
-  _delete(std::move(other._delete))
-{
-	other.decomposedData = NULL;
-	other._delete = false;
-}
-
-NodeData::NodeData(const NodeData &other)
-: dimension(other.dimension), names(other.names), decomposedData(other.decomposedData), gatheredData(other.gatheredData),
-  _delete(other._delete)
-{
-	if (_delete && other.decomposedData != NULL) {
-		decomposedData = new std::vector<std::vector<double> >(*other.decomposedData);
-	}
-}
-
-NodeData& NodeData::operator=(const NodeData &other)
-{
-	if (this != &other) {
-		dimension = other.dimension;
-		names = other.names;
-		decomposedData = other.decomposedData;
-		_delete = other._delete;
-		if (_delete && other.decomposedData != NULL) {
-			decomposedData = new std::vector<std::vector<double> >(*other.decomposedData);
-		}
-		gatheredData = other.gatheredData;
-	}
-	return *this;
-}
-
-NodeData::~NodeData()
-{
-	if (_delete && decomposedData != NULL) {
-		delete decomposedData;
-	}
 }
 
 

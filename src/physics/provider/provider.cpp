@@ -81,6 +81,10 @@ void Provider::solve(Matrices updatedMatrices)
 	timeWrapper("run linear solver", [&] () {
 		linearSolver.solve();
 	});
+
+	timeWrapper("fill solution", [&] () {
+		composer.fillSolution();
+	});
 }
 
 Provider::~Provider()

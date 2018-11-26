@@ -44,11 +44,11 @@ HeatTransfer::HeatTransfer(const HeatTransferConfiguration &configuration, const
 			configuration.load_steps_settings.at(1).feti.redundant_lagrange,
 			configuration.load_steps_settings.at(1).feti.scaling);
 
-	if (_hasBEM) {
-		_temperature = _mesh->nodes->appendData(1, { "TEMPERATURE" });
-	} else {
-		_temperature = _mesh->nodes->appendData(1, { "TEMPERATURE" }, _instance->primalSolution);
-	}
+//	if (_hasBEM) {
+//		_temperature = _mesh->nodes->appendData(1, { "TEMPERATURE" });
+//	} else {
+//		_temperature = _mesh->nodes->appendData(1, { "TEMPERATURE" }, _instance->primalSolution);
+//	}
 
 	bool phaseChange = false;
 	for (size_t m = 0; m < _mesh->materials.size(); m++) {

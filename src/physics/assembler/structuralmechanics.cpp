@@ -48,11 +48,11 @@ StructuralMechanics::StructuralMechanics(const StructuralMechanicsConfiguration 
 	if (DOFs == 3) {
 		datanames = { "DISPLACEMENT", "DISPLACEMENT_X", "DISPLACEMENT_Y", "DISPLACEMENT_Z" };
 	}
-	if (_hasBEM) {
-		_displacement = _mesh->nodes->appendData(DOFs, datanames);
-	} else {
-		_displacement = _mesh->nodes->appendData(DOFs, datanames, _instance->primalSolution);
-	}
+//	if (_hasBEM) {
+//		_displacement = _mesh->nodes->appendData(DOFs, datanames);
+//	} else {
+//		_displacement = _mesh->nodes->appendData(DOFs, datanames, _instance->primalSolution);
+//	}
 }
 
 void StructuralMechanics::setDirichlet()

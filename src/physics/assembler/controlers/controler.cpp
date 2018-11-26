@@ -18,17 +18,7 @@ using namespace espreso;
 Controler::Controler(Mesh &mesh, const Step &step)
 : _mesh(mesh), _step(step), _dirichletSize(0)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
-	_nDistribution.resize(threads + 1);
-
-	for (size_t t = 0; t < threads; t++) {
-		_nDistribution[t + 1] = _nDistribution[t];
-		for (eslocal d = _mesh.elements->domainDistribution[t]; d != _mesh.elements->domainDistribution[t + 1]; ++d) {
-			eslocal dbegin = _mesh.elements->elementsDistribution[d];
-			eslocal dend = _mesh.elements->elementsDistribution[d + 1];
-			_nDistribution[t + 1] += (_mesh.elements->procNodes->begin() + dend)->begin() - (_mesh.elements->procNodes->begin() + dbegin)->begin();
-		}
-	}
+	_nDistribution = _mesh.elements->procNodes->datatarray().distribution();
 }
 
 Controler::Parameter::~Parameter()
@@ -89,7 +79,7 @@ void Controler::evaluate(
 			it->second.evaluator->evalFiltered(
 					region->elements->datatarray().size(t),
 					region->elements->datatarray().begin(t),
-					_mesh.elements->procNodes->boundarytarray().begin(t),
+					_mesh.elements->procNodes->boundarytarray().begin(),
 					2, cbegin, NULL, 0, data.data()
 			);
 		}

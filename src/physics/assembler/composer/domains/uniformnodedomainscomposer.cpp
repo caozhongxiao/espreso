@@ -463,3 +463,9 @@ void UniformNodeDomainsComposer::synchronize()
 
 }
 
+void UniformNodeDomainsComposer::fillSolution()
+{
+	std::vector<double> &solution = _controler.getSolutionStore();
+
+}
+

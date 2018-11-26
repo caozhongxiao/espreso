@@ -301,7 +301,7 @@ void HeatTransfer3D::processElement(eslocal domain, Matrices matrices, eslocal e
 
 	for (size_t n = 0; n < nodes->size(); n++) {
 		auto it = std::lower_bound(intervals.begin(), intervals.end(), nodes->at(n), [] (const DomainInterval &interval, eslocal node) { return interval.end < node; });
-		temp = (*_temperature->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin];
+//		temp = (*_temperature->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin];
 		const Point &p = _mesh->nodes->coordinates->datatarray()[nodes->at(n)];
 		T(n, 0) = temp;
 		coordinates(n, 0) = p.x;
@@ -607,7 +607,7 @@ void HeatTransfer3D::processFace(eslocal domain, const BoundaryRegionStore *regi
 
 	for (size_t n = 0; n < nodes->size(); n++) {
 		auto it = std::lower_bound(intervals.begin(), intervals.end(), nodes->at(n), [] (const DomainInterval &interval, eslocal node) { return interval.end < node; });
-		temp = (*_temperature->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin];
+//		temp = (*_temperature->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin];
 		const Point &p = _mesh->nodes->coordinates->datatarray()[nodes->at(n)];
 		coordinates(n, 0) = p.x;
 		coordinates(n, 1) = p.y;
@@ -798,7 +798,7 @@ void HeatTransfer3D::postProcessElement(eslocal domain, eslocal eindex)
 
 	for (size_t i = 0; i < nodes->size(); i++) {
 		auto it = std::lower_bound(intervals.begin(), intervals.end(), nodes->at(i), [] (const DomainInterval &interval, eslocal node) { return interval.end < node; });
-		temp(i, 0) = (*_temperature->decomposedData)[domain][it->DOFOffset + nodes->at(i) - it->begin];
+//		temp(i, 0) = (*_temperature->decomposedData)[domain][it->DOFOffset + nodes->at(i) - it->begin];
 		const Point &p = _mesh->nodes->coordinates->datatarray()[nodes->at(i)];
 		coordinates(i, 0) = p.x;
 		coordinates(i, 1) = p.y;
@@ -810,8 +810,8 @@ void HeatTransfer3D::postProcessElement(eslocal domain, eslocal eindex)
 			assembleMaterialMatrix(i, p, phase2, (1 - phase), temp(i, 0), K, CD, false);
 
 			if (_phaseChange) {
-				(*_phaseChange->decomposedData)[domain][it->DOFOffset + nodes->at(i) - it->begin] = phase;
-				(*_latentHeat->decomposedData)[domain][it->DOFOffset + nodes->at(i) - it->begin] = material->latent_heat * derivation;
+//				(*_phaseChange->decomposedData)[domain][it->DOFOffset + nodes->at(i) - it->begin] = phase;
+//				(*_latentHeat->decomposedData)[domain][it->DOFOffset + nodes->at(i) - it->begin] = material->latent_heat * derivation;
 			}
 		} else {
 			assembleMaterialMatrix(i, p, material, 1, temp(i, 0), K, CD, false);
@@ -900,7 +900,7 @@ void HeatTransfer3D::processSolution()
 	if (_hasBEM) {
 		#pragma omp parallel for
 		for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
-			memcpy((*_temperature->decomposedData)[d].data(), _instance->primalSolution[d].data(), _instance->primalSolution[d].size() * sizeof(double));
+//			memcpy((*_temperature->decomposedData)[d].data(), _instance->primalSolution[d].data(), _instance->primalSolution[d].size() * sizeof(double));
 			if (_BEMDomain[d]) {
 				processBEMSolution(d);
 			}

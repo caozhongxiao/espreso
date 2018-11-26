@@ -397,6 +397,9 @@ void EnSight::updateSolution(const Step &step)
 		if (_mesh.nodes->data[di]->names.size() == 0) {
 			continue;
 		}
+//		Communication::serialize([&] () {
+//			std::cout << _mesh.nodes->data[di]->data;
+//		});
 		eslocal size = _mesh.nodes->data[di]->dimension;
 
 		std::string filename = _directory + _mesh.nodes->data[di]->names.front();
@@ -424,10 +427,10 @@ void EnSight::updateSolution(const Step &step)
 			for (eslocal s = 0; s < size; s++) {
 				for (size_t i = 0; i < intervals.size(); i++) {
 					if (intervals[i].sourceProcess == environment->MPIrank) {
-						eslocal offset = _mesh.nodes->pintervals[i].globalOffset - _mesh.nodes->uniqueOffset;
+						eslocal offset = _mesh.nodes->pintervals[i].globalOffset - _mesh.nodes->uniqueOffset + (_mesh.nodes->size - _mesh.nodes->uniqueSize);
 						for (eslocal n = intervals[i].begin; n < intervals[i].end; ++n) {
 							eslocal index = offset + nodes[n] - _mesh.nodes->pintervals[i].begin;
-							_writer.storeFloat(os, _mesh.nodes->data[di]->gatheredData[size * index + s]);
+							_writer.storeFloat(os, _mesh.nodes->data[di]->data[size * index + s]);
 						}
 					}
 				}

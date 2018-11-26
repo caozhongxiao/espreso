@@ -49,6 +49,11 @@ void Composer::insertKPattern(IJ *target, eslocal *begin, eslocal *end, MatrixTy
 	}
 }
 
+std::vector<double>& Composer::getSolutionStore()
+{
+	return _controler.getSolutionStore();
+}
+
 void Composer::clearMatrices(Matrices matrices, eslocal domain)
 {
 	if (matrices & Matrices::K) {

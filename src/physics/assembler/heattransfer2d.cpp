@@ -219,7 +219,7 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 
 	for (size_t n = 0; n < nodes->size(); n++) {
 		auto it = std::lower_bound(intervals.begin(), intervals.end(), nodes->at(n), [] (const DomainInterval &interval, eslocal node) { return interval.end < node; });
-		T(n, 0) = (*_temperature->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin];
+//		T(n, 0) = (*_temperature->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin];
 		const Point &p = _mesh->nodes->coordinates->datatarray()[nodes->at(n)];
 		coordinates(n, 0) = p.x;
 		coordinates(n, 1) = p.y;
@@ -538,7 +538,7 @@ void HeatTransfer2D::processEdge(eslocal domain, const BoundaryRegionStore *regi
 
 	for (size_t n = 0; n < nodes->size(); n++) {
 		auto it = std::lower_bound(intervals.begin(), intervals.end(), nodes->at(n), [] (const DomainInterval &interval, eslocal node) { return interval.end < node; });
-		temp = (*_temperature->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin];
+//		temp = (*_temperature->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin];
 		const Point &p = _mesh->nodes->coordinates->datatarray()[nodes->at(n)];
 		coordinates(n, 0) = p.x;
 		coordinates(n, 1) = p.y;
@@ -651,7 +651,7 @@ void HeatTransfer2D::postProcessElement(eslocal domain, eslocal eindex)
 
 	for (size_t n = 0; n < nodes->size(); n++) {
 		auto it = std::lower_bound(intervals.begin(), intervals.end(), nodes->at(n), [] (const DomainInterval &interval, eslocal node) { return interval.end < node; });
-		temp(n, 0) = (*_temperature->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin];
+//		temp(n, 0) = (*_temperature->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin];
 		const Point &p = _mesh->nodes->coordinates->datatarray()[nodes->at(n)];
 		coordinates(n, 0) = p.x;
 		coordinates(n, 1) = p.y;
@@ -669,8 +669,8 @@ void HeatTransfer2D::postProcessElement(eslocal domain, eslocal eindex)
 					(1 - phase) * phase2->heat_capacity.evaluator->evaluate(p, _step->currentTime, temp(n, 0)) +
 					material->latent_heat * derivation) * thickness(n, 0);
 			if (_phaseChange) {
-				(*_phaseChange->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin] = phase;
-				(*_latentHeat->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin] = material->latent_heat * derivation;
+//				(*_phaseChange->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin] = phase;
+//				(*_latentHeat->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin] = material->latent_heat * derivation;
 			}
 		} else {
 			assembleMaterialMatrix(n, p, material, 1, temp(n, 0), K, CD, false);
