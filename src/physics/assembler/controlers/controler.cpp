@@ -9,6 +9,7 @@
 #include "../../../config/expression.h"
 
 #include "../../../mesh/mesh.h"
+#include "../../../mesh/store/nodestore.h"
 #include "../../../mesh/store/elementstore.h"
 #include "../../../mesh/store/elementsregionstore.h"
 
@@ -66,9 +67,9 @@ bool Controler::tryElementConstness(const std::map<std::string, ECFExpressionVec
 	return false;
 }
 
-void Controler::evaluate(
+void Controler::evaluateERegions(
 		const std::map<std::string, ECFExpression> &settings, tarray<double> &data,
-		eslocal csize, double *cbegin)
+		eslocal csize, double *cbegin, double *tbegin, double time)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -80,15 +81,15 @@ void Controler::evaluate(
 					region->elements->datatarray().size(t),
 					region->elements->datatarray().begin(t),
 					_mesh.elements->procNodes->boundarytarray().begin(),
-					2, cbegin, NULL, 0, data.data()
+					csize, cbegin, tbegin, time, data.data()
 			);
 		}
 	}
 }
 
-void Controler::evaluate(
+void Controler::evaluateERegions(
 		const std::map<std::string, ECFExpressionVector> &settings, tarray<double> &data,
-		eslocal csize, double *cbegin)
+		eslocal csize, double *cbegin, double *tbegin, double time)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -97,18 +98,58 @@ void Controler::evaluate(
 		for (auto it = settings.begin(); it != settings.end(); ++it) {
 			ElementsRegionStore *region = _mesh.eregion(it->first);
 			it->second.x.evaluator->evalFiltered(
-					region->elements->datatarray().size(t), 2,
+					region->elements->datatarray().size(t), csize,
 					region->elements->datatarray().begin(t),
 					_mesh.elements->procNodes->boundarytarray().begin(t),
-					2, cbegin, NULL, 0, data.data()
+					csize, cbegin, tbegin, time, data.data() + 0
 			);
 			it->second.y.evaluator->evalFiltered(
-					region->elements->datatarray().size(t), 2,
+					region->elements->datatarray().size(t), csize,
 					region->elements->datatarray().begin(t),
 					_mesh.elements->procNodes->boundarytarray().begin(t),
-					2, cbegin, NULL, 0, data.data() + 1
+					csize, cbegin, tbegin, time, data.data() + 1
 			);
+			if (csize == 3) {
+				it->second.z.evaluator->evalFiltered(
+						region->elements->datatarray().size(t), csize,
+						region->elements->datatarray().begin(t),
+						_mesh.elements->procNodes->boundarytarray().begin(t),
+						csize, cbegin, tbegin, time, data.data() + 2
+				);
+			}
 		}
+	}
+}
+
+void Controler::evaluateBRegions(
+		const ECFExpression &expression, Parameter &parameter, const std::vector<size_t> &distribution,
+		eslocal csize, double *cbegin, double *tbegin, double time)
+{
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	parameter.data = new serializededata<eslocal, double>(1, distribution);
+	parameter.isConts = expression.evaluator->isConstant();
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		cbegin += distribution[t] * csize;
+		tbegin += distribution[t];
+		double *tresults = parameter.data->datatarray().begin(t);
+
+		expression.evaluator->evalVector(parameter.data->datatarray().size(t), 2, cbegin, tbegin, time, tresults);
+	}
+}
+
+void Controler::averageNodeInitilization(tarray<double> &initData, std::vector<double> &averagedData)
+{
+	auto i = initData.begin();
+	for (auto n = _mesh.elements->procNodes->datatarray().cbegin(); n != _mesh.elements->procNodes->datatarray().cend(); ++n, ++i) {
+		averagedData[*n] += *i;
+	}
+
+	auto &nelements = _mesh.nodes->elements->boundarytarray();
+	for (size_t i = 0; i < averagedData.size(); i++) {
+		averagedData[i] /= nelements[i + 1] - nelements[i];
 	}
 }
 

@@ -19,6 +19,7 @@ class ECFExpressionVector;
 enum Matrices: int;
 template <typename TEBoundaries, typename TEData> class serializededata;
 template <typename TEData> class tarray;
+class ElementsRegionStore;
 
 class Controler
 {
@@ -44,23 +45,11 @@ public:
 	virtual void dirichletValues(std::vector<double> &values) = 0;
 
 	virtual void processElements(Matrices matrices, InstanceFiller &filler) = 0;
-	virtual void processBoundary(Matrices matrices, InstanceFiller &filler) = 0;
+	virtual void processBoundary(Matrices matrices, size_t rindex, InstanceFiller &filler) = 0;
 
 	virtual ~Controler() {}
 protected:
 	Controler(Mesh &mesh, const Step &step);
-
-	bool tryElementConstness(const std::map<std::string, ECFExpression> &values, double &defaultValue);
-	bool tryElementConstness(const std::map<std::string, ECFExpressionVector> &values, Point &defaultValue);
-
-	void evaluate(
-			const std::map<std::string, ECFExpression> &settings, tarray<double> &data,
-			eslocal csize, double *cbegin);
-	void evaluate(
-			const std::map<std::string, ECFExpressionVector> &settings, tarray<double> &data,
-			eslocal csize, double *cbegin);
-
-	void nodeValuesToElements(tarray<double> &nodeData, std::vector<double> &elementData);
 
 	struct Parameter {
 		serializededata<eslocal, double> *data;
@@ -69,6 +58,22 @@ protected:
 		Parameter(): data(NULL), isConts(false) {}
 		~Parameter();
 	};
+
+	bool tryElementConstness(const std::map<std::string, ECFExpression> &values, double &defaultValue);
+	bool tryElementConstness(const std::map<std::string, ECFExpressionVector> &values, Point &defaultValue);
+
+	void evaluateERegions(
+			const std::map<std::string, ECFExpression> &settings, tarray<double> &data,
+			eslocal csize, double *cbegin, double *tbegin, double time);
+	void evaluateERegions(
+			const std::map<std::string, ECFExpressionVector> &settings, tarray<double> &data,
+			eslocal csize, double *cbegin, double *tbegin, double time);
+	void evaluateBRegions(
+			const ECFExpression &expression, Parameter &parameter, const std::vector<size_t> &distribution,
+			eslocal csize, double *cbegin, double *tbegin, double time);
+
+	void averageNodeInitilization(tarray<double> &initData, std::vector<double> &averagedData);
+	void nodeValuesToElements(tarray<double> &nodeData, std::vector<double> &elementData);
 
 	Mesh &_mesh;
 	const Step &_step;

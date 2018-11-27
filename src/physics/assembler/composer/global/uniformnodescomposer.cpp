@@ -370,7 +370,7 @@ void UniformNodesComposer::assemble(Matrices matrices)
 	_controler.updateData();
 	clearMatrices(matrices, 0);
 
-	#pragma omp parallel for
+//	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		size_t KIndex = _tKOffsets[t], RHSIndex = _tRHSOffsets[t];
 		double KReduction = 1, RHSReduction = _step.internalForceReduction;
@@ -428,47 +428,15 @@ void UniformNodesComposer::assemble(Matrices matrices)
 
 		_controler.processElements(matrices, filler);
 
-	//		KReduction = _step.internalForceReduction;
-	//
-	//		for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
-	//			if (_mesh.boundaryRegions[r]->eintervalsDistribution[d] < _mesh.boundaryRegions[r]->eintervalsDistribution[d + 1]) {
-	//				filler.begin = _mesh.elements->elementsDistribution[d];
-	//				filler.end = _mesh.elements->elementsDistribution[d + 1];
-	//			}
-	//		}
+		KReduction = _step.internalForceReduction;
 
-	//		auto boundary = [&] (Matrices restriction) {
-	//			for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
-	//				if (_mesh.boundaryRegions[r]->dimension == 2) {
-	//					if (_mesh.boundaryRegions[r]->eintervalsDistribution[d] < _mesh.boundaryRegions[r]->eintervalsDistribution[d + 1]) {
-	//						eslocal begin = _mesh.boundaryRegions[r]->eintervals[_mesh.boundaryRegions[r]->eintervalsDistribution[d]].begin;
-	//						eslocal end = _mesh.boundaryRegions[r]->eintervals[_mesh.boundaryRegions[r]->eintervalsDistribution[d + 1] - 1].end;
-	//						auto nodes = _mesh.boundaryRegions[r]->procNodes->cbegin() + begin;
-	//						for (eslocal i = begin; i < end; ++i, ++nodes) {
-	//							processFace(d, _mesh.boundaryRegions[r], restriction, i, Ke, Me, Re, fe);
-	//							switch (getMatrixType(domain)) {
-	//							case MatrixType::REAL_UNSYMMETRIC: fullInsert(nodes, _step.internalForceReduction); break;
-	//							default: upperInsert(nodes, _step.internalForceReduction);
-	//							}
-	//						}
-	//					}
-	//				}
-	//				if (_mesh.boundaryRegions[r]->dimension == 1) {
-	//					if (_mesh.boundaryRegions[r]->eintervalsDistribution[d] < _mesh.boundaryRegions[r]->eintervalsDistribution[d + 1]) {
-	//						eslocal begin = _mesh.boundaryRegions[r]->eintervals[_mesh.boundaryRegions[r]->eintervalsDistribution[d]].begin;
-	//						eslocal end = _mesh.boundaryRegions[r]->eintervals[_mesh.boundaryRegions[r]->eintervalsDistribution[d + 1] - 1].end;
-	//						auto nodes = _mesh.boundaryRegions[r]->procNodes->cbegin() + begin;
-	//						for (eslocal i = begin; i < end; ++i, ++nodes) {
-	//							processEdge(d, _mesh.boundaryRegions[r], restriction, i, Ke, Me, Re, fe);
-	//							switch (getMatrixType(domain)) {
-	//							case MatrixType::REAL_UNSYMMETRIC: fullInsert(nodes, _step.internalForceReduction); break;
-	//							default: upperInsert(nodes, _step.internalForceReduction);
-	//							}
-	//						}
-	//					}
-	//				}
-	//			}
-	//		};
+		for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
+			if (_mesh.boundaryRegions[r]->distribution.size()) {
+				filler.begin = _mesh.boundaryRegions[r]->distribution[t];
+				filler.end = _mesh.boundaryRegions[r]->distribution[t + 1];
+				_controler.processBoundary(matrices, r, filler);
+			}
+		}
 	}
 }
 

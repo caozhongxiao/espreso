@@ -11,38 +11,15 @@
 
 #include "../../../mesh/elements/element.h"
 
-
 using namespace espreso;
 
-//#include "../assembler/heattransfer2d.h"
-//
-//#include "../step.h"
-//#include "../instance.h"
-//
-//#include "../../basis/containers/serializededata.h"
-//#include "../../basis/evaluator/evaluator.h"
-//#include "../../basis/matrices/denseMatrix.h"
-//
-//#include "../../config/ecf/physics/heattransfer.h"
-//#include "../../config/ecf/output.h"
-//
-//#include "../../mesh/mesh.h"
-//#include "../../mesh/elements/element.h"
-//#include "../../mesh/store/elementstore.h"
-//#include "../../mesh/store/nodestore.h"
-//#include "../../mesh/store/boundaryregionstore.h"
-//#include "../../mesh/store/elementsregionstore.h"
-//
-//#include "../../solver/generic/SparseMatrix.h"
-
-
 // TODO: create file with constants
-//#define CONST_Stefan_Boltzmann 5.6703e-8
+#define CONST_Stefan_Boltzmann 5.6703e-8
 
 using namespace espreso;
 
 HeatTransfer2DKernel::HeatTransfer2DKernel(const HeatTransferGlobalSettings &settings, const HeatTransferOutputSettings &output)
-: _settings(settings), _output(output)
+: HeatTransferKernel(settings, output)
 {
 
 }
@@ -151,7 +128,7 @@ void HeatTransfer2DKernel::assembleMaterialMatrix(eslocal node, double *coordina
 	K(node, 3) += phase * TCT(1, 0);
 }
 
-void HeatTransfer2DKernel::processElement(Matrices matrices, const Iterator &iterator, const Step &step, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void HeatTransfer2DKernel::processElement(Matrices matrices, const ElementIterator &iterator, const Step &step, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	eslocal size = iterator.element->nodes;
 
@@ -397,146 +374,95 @@ void HeatTransfer2DKernel::processElement(Matrices matrices, const Iterator &ite
 	}
 }
 
-//void HeatTransfer2DKernel::processEdge(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal eindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
-//{
-//	const ConvectionConfiguration *convection = NULL;
-//	const RadiationConfiguration *radiation = NULL;
-//	const Evaluator *heatFlow = NULL, *heatFlux = NULL, *thick = NULL;
-//
-//	auto itc = _configuration.load_steps_settings.at(step.step + 1).convection.find(region->name);
-//	if (itc != _configuration.load_steps_settings.at(step.step + 1).convection.end()) {
-//		convection = &itc->second;
-//	}
-//
-//	auto itr = _configuration.load_steps_settings.at(step.step + 1).diffuse_radiation.find(region->name);
-//	if (itr != _configuration.load_steps_settings.at(step.step + 1).diffuse_radiation.end()) {
-//		radiation = &itr->second;
-//	}
-//
-//	auto it = _configuration.load_steps_settings.at(step.step + 1).heat_flow.find(region->name);
-//	if (it != _configuration.load_steps_settings.at(step.step + 1).heat_flow.end()) {
-//		heatFlow = it->second.evaluator;
-//	}
-//	it = _configuration.load_steps_settings.at(step.step + 1).heat_flux.find(region->name);
-//	if (it != _configuration.load_steps_settings.at(step.step + 1).heat_flux.end()) {
-//		heatFlux = it->second.evaluator;
-//	}
-//
-//	for (auto it = _configuration.thickness.begin(); it != _configuration.thickness.end(); ++it) {
-//		ElementsRegionStore *region = _mesh->eregion(it->first);
-//		if (std::binary_search(region->elements->datatarray().cbegin(), region->elements->datatarray().cend(), eindex)) {
-//			thick = it->second.evaluator;
-//			break;
-//		}
-//	}
-//
-//	if (convection == NULL && heatFlow == NULL && heatFlux == NULL && radiation == NULL) {
-//		Ke.resize(0, 0);
-//		Me.resize(0, 0);
-//		Re.resize(0, 0);
-//		fe.resize(0, 0);
-//		return;
-//	}
-//	if (!(matrices & (Matrices::K | Matrices::f))) {
-//		Ke.resize(0, 0);
-//		Me.resize(0, 0);
-//		Re.resize(0, 0);
-//		fe.resize(0, 0);
-//		return;
-//	}
-//
-//	auto nodes = region->procNodes->cbegin() + eindex;
-//	auto epointer = region->epointers->datatarray()[eindex];
-//	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
-//
-//	const std::vector<DenseMatrix> &N = *(epointer->N);
-//	const std::vector<DenseMatrix> &dN = *(epointer->dN);
-//	const std::vector<double> &weighFactor = *(epointer->weighFactor);
-//
-//	DenseMatrix coordinates(size, 2), dND(1, 2), q(size, 1), htc(size, 1), thickness(size, 1), flow(size, 1), emiss(size, 1);
-//	DenseMatrix gpQ(1, 1), gpHtc(1, 1), gpThickness(1, 1), gpFlow(1, 1), gpEmiss(1, 1);
-//
-//	double area = region->area, temp, text;
-//	eslocal Ksize = size;
-//	Ke.resize(0, 0);
-//	Me.resize(0, 0);
-//	Re.resize(0, 0);
-//	fe.resize(0, 0);
-//
-//	if (matrices & Matrices::f) {
-//		fe.resize(Ksize, 1);
-//		fe = 0;
-//	}
-//
-//	if (convection != NULL || radiation != NULL) {
-//		Ke.resize(Ksize, Ksize);
-//		Ke = 0;
-//	}
-//
-//	for (size_t n = 0; n < size; n++) {
-//		auto it = std::lower_bound(intervals.begin(), intervals.end(), nodes->at(n), [] (const DomainInterval &interval, eslocal node) { return interval.end < node; });
-//		temp = (*_temperature->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin];
-//		const Point &p = _mesh->nodes->coordinates->datatarray()[nodes->at(n)];
-//		coordinates(n, 0) = p.x;
-//		coordinates(n, 1) = p.y;
-//
-//		if (convection != NULL) {
-//			text = convection->external_temperature.evaluator->evaluate(p, temp, step.currentTime);
-//			htc(n, 0) = computeHTC(convection, p, temp);
-//
-//			if (step.iteration) {
-//				q(n, 0) += htc(n, 0) * (text - temp);
-//			} else {
-//				q(n, 0) += htc(n, 0) * (text);
-//			}
-//		}
-//
-//		if (radiation != NULL) {
-//			emiss(n, 0) = CONST_Stefan_Boltzmann * radiation->emissivity.evaluator->evaluate(p, temp, step.currentTime);
-//			q(n, 0) += emiss(n, 0) * (pow(radiation->external_temperature.evaluator->evaluate(p, temp, step.currentTime), 4) - pow(temp, 4));
-//			emiss(n, 0) *= 4 * temp * temp * temp;
-//		}
-//		if (heatFlow) {
-//			q(n, 0) += heatFlow->evaluate(p, temp, step.currentTime) / area;
-//		}
-//		if (heatFlux) {
-//			q(n, 0) += heatFlux->evaluate(p, temp, step.currentTime);
-//		}
-//
-//		thickness(n, 0) = thick != NULL ? thick->evaluate(p, temp, step.currentTime) : 1;
-//		q(n, 0) *= thickness(n, 0);
-//	}
-//
-//	for (size_t gp = 0; gp < N.size(); gp++) {
-//		dND.multiply(dN[gp], coordinates);
-//		double J = dND.norm();
-//		gpQ.multiply(N[gp], q);
-//
-//		if (convection != NULL || radiation != NULL) {
-//			gpThickness.multiply(N[gp], thickness);
-//		}
-//		if (convection != NULL) {
-//			gpHtc.multiply(N[gp], htc);
-//			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpHtc(0, 0), 1, true);
-//		}
-//		if (radiation != NULL) {
-//			gpEmiss.multiply(N[gp], emiss);
-//			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpEmiss(0, 0), 1, true);
-//		}
-//		for (eslocal i = 0; i < Ksize; i++) {
-//			fe(i, 0) += J * weighFactor[gp] * N[gp](0, i % size) * gpQ(0, 0);
-//		}
-//	}
-//}
-//
-//void HeatTransfer2DKernel::processNode(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
-//{
-//	Ke.resize(0, 0);
-//	Me.resize(0, 0);
-//	Re.resize(0, 0);
-//	fe.resize(0, 0);
-//}
-//
+void HeatTransfer2DKernel::processEdge(Matrices matrices, const BoundaryIterator &iterator, const Step &step, DenseMatrix &Ke, DenseMatrix &fe) const
+{
+	if (!iterator.convection && !iterator.heatFlow && !iterator.heatFlux && !iterator.radiation) {
+		Ke.resize(0, 0);
+		fe.resize(0, 0);
+		return;
+	}
+	if (!(matrices & (Matrices::K | Matrices::f))) {
+		Ke.resize(0, 0);
+		fe.resize(0, 0);
+		return;
+	}
+
+	eslocal size = iterator.element->nodes;
+
+	const std::vector<DenseMatrix> &N = *(iterator.element->N);
+	const std::vector<DenseMatrix> &dN = *(iterator.element->dN);
+	const std::vector<double> &weighFactor = *(iterator.element->weighFactor);
+
+	DenseMatrix coordinates(size, 2), dND(1, 2), q(size, 1), htc(size, 1), thickness(size, 1), emiss(size, 1);
+	DenseMatrix gpQ(1, 1), gpHtc(1, 1), gpThickness(1, 1), gpEmiss(1, 1);
+
+	Ke.resize(0, 0);
+	fe.resize(0, 0);
+
+	if (matrices & Matrices::f) {
+		fe.resize(size, 1);
+		fe = 0;
+	}
+
+	if (iterator.convection || iterator.radiation) {
+		Ke.resize(size, size);
+		Ke = 0;
+	}
+
+	for (size_t n = 0; n < size; n++) {
+		double temp = iterator.temperature[n];
+		coordinates(n, 0) = iterator.coordinates[2 * n + 0];
+		coordinates(n, 1) = iterator.coordinates[2 * n + 1];
+		thickness(n, 0) = iterator.thickness[n];
+
+		if (iterator.convection) {
+			double text = iterator.externalTemperature[n];
+			htc(n, 0) = iterator.htc[n];
+
+			if (step.iteration) {
+				q(n, 0) += htc(n, 0) * (text - temp);
+			} else {
+				q(n, 0) += htc(n, 0) * (text);
+			}
+		}
+
+		if (iterator.radiation) {
+			emiss(n, 0) = CONST_Stefan_Boltzmann * iterator.emissivity[n];
+			q(n, 0) += emiss(n, 0) * (pow(iterator.externalTemperature[n], 4) - pow(temp, 4));
+			emiss(n, 0) *= 4 * temp * temp * temp;
+		}
+		if (iterator.heatFlow) {
+			q(n, 0) += iterator.heatFlow[n] / iterator.regionArea;
+		}
+		if (iterator.heatFlux) {
+			q(n, 0) += iterator.heatFlux[n];
+		}
+
+		q(n, 0) *= thickness(n, 0);
+	}
+
+	for (size_t gp = 0; gp < N.size(); gp++) {
+		dND.multiply(dN[gp], coordinates);
+		double J = dND.norm();
+		gpQ.multiply(N[gp], q);
+
+		if (iterator.convection || iterator.radiation) {
+			gpThickness.multiply(N[gp], thickness);
+		}
+		if (iterator.convection) {
+			gpHtc.multiply(N[gp], htc);
+			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpHtc(0, 0), 1, true);
+		}
+		if (iterator.radiation) {
+			gpEmiss.multiply(N[gp], emiss);
+			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpEmiss(0, 0), 1, true);
+		}
+		for (eslocal i = 0; i < size; i++) {
+			fe(i, 0) += J * weighFactor[gp] * N[gp](0, i % size) * gpQ(0, 0);
+		}
+	}
+}
+
 //void HeatTransfer2DKernel::postProcessElement(eslocal domain, eslocal eindex)
 //{
 //	auto nodes = _mesh->elements->procNodes->cbegin() + eindex;

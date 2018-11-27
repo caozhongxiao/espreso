@@ -24,12 +24,9 @@ public:
 	void updateData();
 
 	void processElements(Matrices matrices, InstanceFiller &filler);
-	void processBoundary(Matrices matrices, InstanceFiller &filler);
+	void processBoundary(Matrices matrices, size_t rindex, InstanceFiller &filler);
 
 protected:
-	void evaluate(const std::map<std::string, ECFExpression> &settings, tarray<double> &data);
-	void evaluate(const std::map<std::string, ECFExpressionVector> &settings, tarray<double> &data);
-
 	HeatTransfer2DKernel *_kernel;
 };
 

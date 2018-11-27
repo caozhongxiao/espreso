@@ -33,16 +33,24 @@ protected:
 
 	: Controler(mesh, step),
 	  _globalSettings(gSettings), _stepSettings(sSettings), _outputSettings(oSettings),
-	  _temperature(NULL), _phaseChange(NULL), _latentHeat(NULL),
+	  _temperature(NULL), _phaseChange(NULL), _latentHeat(NULL), _avgThickness(NULL),
 	  _gradient(NULL), _flux(NULL), _motion(NULL), _thickness(NULL) {}
 
 	const HeatTransferGlobalSettings &_globalSettings;
 	const HeatTransferStepSettings &_stepSettings;
 	const HeatTransferOutputSettings &_outputSettings;
 
-	Parameter _ntemperature, _ncoordinate, _nmotion, _nheat, _nthickness;
+	struct BoundaryParameters {
+		Parameter temperature, coordinate, thickness;
+		Parameter htc, emissivity, externalTemperature, heatFlow, heatFlux;
 
-	NodeData *_temperature, *_phaseChange, *_latentHeat;
+		double regionArea;
+	};
+
+	Parameter _ntemperature, _ncoordinate, _nmotion, _nheat, _nthickness;
+	std::vector<BoundaryParameters> _boundaries;
+
+	NodeData *_temperature, *_phaseChange, *_latentHeat, *_avgThickness;
 	ElementData *_gradient, *_flux, *_motion, *_thickness;
 };
 
