@@ -351,7 +351,7 @@ void UniformNodeDomainsComposer::buildPatterns()
 
 void UniformNodeDomainsComposer::assemble(Matrices matrices)
 {
-	_controler.updateData();
+	_controler.nextTime();
 
 	#pragma omp parallel for
 	for  (size_t d = 0; d < _instance.domains; d++) {
@@ -466,6 +466,5 @@ void UniformNodeDomainsComposer::synchronize()
 void UniformNodeDomainsComposer::fillSolution()
 {
 	std::vector<double> &solution = _controler.getSolutionStore();
-
 }
 

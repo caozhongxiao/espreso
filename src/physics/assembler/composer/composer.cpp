@@ -21,6 +21,21 @@ void Composer::initData()
 	_controler.initData();
 }
 
+void Composer::nextTime()
+{
+	_controler.nextTime();
+}
+
+void Composer::parametersChanged()
+{
+	_controler.parametersChanged();
+}
+
+void Composer::processSolution()
+{
+	_controler.processSolution();
+}
+
 void Composer::insertKPattern(IJ *target, eslocal *begin, eslocal *end, MatrixType mtype)
 {
 	switch (mtype) {

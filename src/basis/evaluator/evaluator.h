@@ -8,6 +8,13 @@ namespace espreso {
 
 struct Point;
 
+enum EvaluatorParameters: int {
+	VALUE       = 0, // never const
+	COORDINATE  = 1 << 0,
+	TIME        = 1 << 1,
+	TEMPERATURE = 1 << 2
+};
+
 class Evaluator {
 
 protected:
@@ -72,6 +79,15 @@ public:
 	virtual bool isCoordinateDependent() const { return false; }
 	virtual bool isTimeDependent() const { return false; }
 	virtual bool isTemperatureDependent() const { return false; }
+
+	virtual bool isConstant(EvaluatorParameters parameters) const
+	{
+		return
+				(parameters != EvaluatorParameters::VALUE) &&
+				(!(parameters & EvaluatorParameters::COORDINATE) || !isCoordinateDependent()) &&
+				(!(parameters & EvaluatorParameters::TIME) || !isTimeDependent()) &&
+				(!(parameters & EvaluatorParameters::TEMPERATURE) || !isTemperatureDependent());
+	}
 
 	virtual std::string getEXPRTKForm() const { return "0"; }
 };

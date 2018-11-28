@@ -362,15 +362,16 @@ void UniformNodesComposer::buildPatterns()
 
 void UniformNodesComposer::assemble(Matrices matrices)
 {
+	_controler.nextTime();
+
 	size_t threads = environment->OMP_NUM_THREADS;
 
 //	MatrixType mtype = _controler.getMatrixType();
 	MatrixType mtype = MatrixType::REAL_UNSYMMETRIC; // HYPRE not support symmetric systems
 
-	_controler.updateData();
 	clearMatrices(matrices, 0);
 
-//	#pragma omp parallel for
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		size_t KIndex = _tKOffsets[t], RHSIndex = _tRHSOffsets[t];
 		double KReduction = 1, RHSReduction = _step.internalForceReduction;

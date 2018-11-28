@@ -367,9 +367,9 @@ void HeatTransfer3D::processElement(eslocal domain, Matrices matrices, eslocal e
 	double normGradN = 0;
 
 	if ((matrices & Matrices::M) && _configuration.diffusion_split) {
-		g(0, 0) = (*_gradient->data)[3 * eindex + 0];
-		g(0, 1) = (*_gradient->data)[3 * eindex + 1];
-		g(0, 2) = (*_gradient->data)[3 * eindex + 2];
+		g(0, 0) = _gradient->data[3 * eindex + 0];
+		g(0, 1) = _gradient->data[3 * eindex + 1];
+		g(0, 2) = _gradient->data[3 * eindex + 2];
 	}
 
 	for (size_t gp = 0; gp < N.size(); gp++) {
@@ -863,15 +863,15 @@ void HeatTransfer3D::postProcessElement(eslocal domain, eslocal eindex)
 	}
 
 	if (_propertiesConfiguration.gradient) {
-		(*_gradient->data)[3 * eindex + 0] = matGradient(0, 0) / N.size();
-		(*_gradient->data)[3 * eindex + 1] = matGradient(1, 0) / N.size();
-		(*_gradient->data)[3 * eindex + 2] = matGradient(2, 0) / N.size();
+		_gradient->data[3 * eindex + 0] = matGradient(0, 0) / N.size();
+		_gradient->data[3 * eindex + 1] = matGradient(1, 0) / N.size();
+		_gradient->data[3 * eindex + 2] = matGradient(2, 0) / N.size();
 	}
 
 	if (_propertiesConfiguration.flux) {
-		(*_flux->data)[3 * eindex + 0] = matFlux(0, 0) / N.size();
-		(*_flux->data)[3 * eindex + 1] = matFlux(1, 0) / N.size();
-		(*_flux->data)[3 * eindex + 2] = matFlux(2, 0) / N.size();
+		_flux->data[3 * eindex + 0] = matFlux(0, 0) / N.size();
+		_flux->data[3 * eindex + 1] = matFlux(1, 0) / N.size();
+		_flux->data[3 * eindex + 2] = matFlux(2, 0) / N.size();
 	}
 }
 

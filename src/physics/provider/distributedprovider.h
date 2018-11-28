@@ -13,15 +13,11 @@ public:
 	~DistributedProvider();
 
 	void updateGluingMatrices(Matrices matrices);
-	void processSolution();
 
 	void setRegularizationCallback();
 	void setRegularizationFromOrigKCallback();
 	void setEmptyRegularizationCallback();
 	void setB0Callback();
-
-	void storeSolution();
-	void storeSubSolution();
 
 	/// z = a * x + b + y
 	void sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::string &description);

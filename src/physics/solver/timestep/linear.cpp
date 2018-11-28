@@ -15,7 +15,11 @@ LinearTimeStep::LinearTimeStep(Provider &composer)
 
 void LinearTimeStep::solve(LoadStepSolver &loadStepSolver)
 {
+	_composer.nextTime();
 	_composer.solve(loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::B1));
+	_composer.parametersChanged();
+	_composer.processSolution();
+	_composer.storeSolution();
 }
 
 

@@ -5,7 +5,6 @@
 
 using namespace espreso;
 
-
 double Evaluator::evaluate(const Point &p, double time, double temperature) const
 {
 	double result;

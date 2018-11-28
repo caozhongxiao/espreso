@@ -152,7 +152,7 @@ size_t ElementStore::packedDataSize() const
 	size_t size = 0;
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {
-			size += Esutils::packedSize(*data[i]->data);
+			size += Esutils::packedSize(data[i]->data);
 		}
 	}
 	return size;
@@ -162,7 +162,7 @@ void ElementStore::packData(char* &p) const
 {
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {
-			Esutils::pack(*data[i]->data, p);
+			Esutils::pack(data[i]->data, p);
 		}
 	}
 }
@@ -170,7 +170,7 @@ void ElementStore::packData(char* &p) const
 void ElementStore::unpackData(const char* &p)
 {
 	for (size_t i = 0; i < data.size(); i++) {
-		Esutils::unpack(*data[i]->data, p);
+		Esutils::unpack(data[i]->data, p);
 	}
 }
 
@@ -243,6 +243,8 @@ void ElementStore::permute(const std::vector<eslocal> &permutation, const std::v
 	}
 
 	if (neighbors != NULL) { neighbors->permute(permutation, distribution); }
+
+	// TODO: permute data
 }
 
 void ElementStore::reindex(const serializededata<eslocal, eslocal> *nIDs)
@@ -259,18 +261,8 @@ void ElementStore::reindex(const serializededata<eslocal, eslocal> *nIDs)
 
 ElementData* ElementStore::appendData(int dimension, const std::vector<std::string> &names)
 {
-	data.push_back(new ElementData(dimension, names));
-	if (names.size() < 2) {
-		data.back()->data->resize(size);
-	} else {
-		data.back()->data->resize((names.size() - 1) * size);
-	}
-	return data.back();
-}
-
-ElementData* ElementStore::appendData(int dimension, const std::vector<std::string> &names, std::vector<double> &data)
-{
-	this->data.push_back(new ElementData(dimension, names, &data));
+	this->data.push_back(new ElementData(dimension, names));
+	data.back()->data.resize(size * dimension);
 	return this->data.back();
 }
 
@@ -301,53 +293,13 @@ std::vector<eslocal> ElementStore::gatherClustersDistribution()
 
 
 ElementData::ElementData(int dimension)
-: dimension(dimension), _delete(true)
+: dimension(dimension)
 {
-	data = new std::vector<double>();
+
 }
 
-ElementData::ElementData(int dimension, const std::vector<std::string> &names, std::vector<double> *data)
-: dimension(dimension), names(names), data(data), _delete(false)
+ElementData::ElementData(int dimension, const std::vector<std::string> &names)
+: dimension(dimension), names(names)
 {
-	if (data == NULL) {
-		this->data = new std::vector<double>();
-	}
-}
 
-ElementData::ElementData(ElementData &&other)
-: dimension(std::move(dimension)), names(std::move(other.names)), data(other.data),
-  _delete(std::move(other._delete))
-{
-	other.data = NULL;
-	other._delete = false;
-}
-
-ElementData::ElementData(const ElementData &other)
-: dimension(std::move(dimension)), names(other.names), data(other.data),
-  _delete(other._delete)
-{
-	if (_delete) {
-		data = new std::vector<double>(*other.data);
-	}
-}
-
-ElementData& ElementData::operator=(const ElementData &other)
-{
-	if (this != &other) {
-		dimension = other.dimension;
-		names = other.names;
-		data = other.data;
-		_delete = other._delete;
-		if (_delete) {
-			data = new std::vector<double>(*other.data);
-		}
-	}
-	return *this;
-}
-
-ElementData::~ElementData()
-{
-	if (_delete && data != NULL) {
-		delete data;
-	}
 }

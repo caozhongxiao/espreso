@@ -186,8 +186,8 @@ void HeatTransfer2DKernel::processElement(Matrices matrices, const ElementIterat
 			m(n, 0) = dens * hc * thickness(n, 0);
 		}
 
-		U(n, 0) = iterator.motion[2 * n + 0];
-		U(n, 1) = iterator.motion[2 * n + 1];
+		U(n, 0) = iterator.motion[2 * n + 0] * m(n, 0);
+		U(n, 1) = iterator.motion[2 * n + 1] * m(n, 0);
 		f(n, 0) = iterator.heat[n];
 	}
 
@@ -463,153 +463,103 @@ void HeatTransfer2DKernel::processEdge(Matrices matrices, const BoundaryIterator
 	}
 }
 
-//void HeatTransfer2DKernel::postProcessElement(eslocal domain, eslocal eindex)
-//{
-//	auto nodes = _mesh->elements->procNodes->cbegin() + eindex;
-//	auto epointer = _mesh->elements->epointers->datatarray()[eindex];
-//	const std::vector<DomainInterval> &intervals = _mesh->nodes->dintervals[domain];
-//	const ECFExpressionVector *translation_motion = NULL;
-////	Evaluator *heat_source = NULL;
-//	Evaluator *thick = NULL;
-//	for (auto it = _configuration.load_steps_settings.at(step.step + 1).translation_motions.begin(); it != _configuration.load_steps_settings.at(step.step + 1).translation_motions.end(); ++it) {
-//		ElementsRegionStore *region = _mesh->eregion(it->first);
-//		if (std::binary_search(region->elements->datatarray().cbegin(), region->elements->datatarray().cend(), eindex)) {
-//			translation_motion = &it->second;
-//			break;
-//		}
-//	}
-////	for (auto it = _configuration.load_steps_settings.at(step.step + 1).heat_source.begin(); it != _configuration.load_steps_settings.at(step.step + 1).heat_source.end(); ++it) {
-////		ElementsRegionStore *region = _mesh->eregion(it->first);
-////		if (std::binary_search(region->elements->datatarray().cbegin(), region->elements->datatarray().cend(), eindex)) {
-////			heat_source = it->second.evaluator;
-////			break;
-////		}
-////	}
-//	for (auto it = _configuration.thickness.begin(); it != _configuration.thickness.end(); ++it) {
-//		ElementsRegionStore *region = _mesh->eregion(it->first);
-//		if (std::binary_search(region->elements->datatarray().cbegin(), region->elements->datatarray().cend(), eindex)) {
-//			thick = it->second.evaluator;
-//			break;
-//		}
-//	}
-//
-//	const std::vector<DenseMatrix> &N = *(epointer->N);
-//	const std::vector<DenseMatrix> &dN = *(epointer->dN);
-////	const std::vector<double> &weighFactor = *(epointer->weighFactor);
-//
-//	DenseMatrix Ce(2, 2), coordinates, J(2, 2), invJ(2, 2), dND, temp(size, 1);
-//	double detJ, m, norm_u_e, h_e;
-//	DenseMatrix thickness(size, 1), U(size, 2), K(size, 4), gpK(1, 4), CD;
-//	DenseMatrix u(1, 2), matFlux(2, 1), matGradient(2, 1);
-//
-//	const MaterialConfiguration* material = _mesh->materials[_mesh->elements->material->datatarray()[eindex]];
-//
-//	const MaterialBaseConfiguration *phase1, *phase2;
-//	if (material->phase_change) {
-//		phase1 = &material->phases.find(1)->second;
-//		phase2 = &material->phases.find(2)->second;
-//	}
-//
-//	coordinates.resize(size, 2);
-//
-//	for (size_t n = 0; n < size; n++) {
-//		auto it = std::lower_bound(intervals.begin(), intervals.end(), nodes->at(n), [] (const DomainInterval &interval, eslocal node) { return interval.end < node; });
-//		temp(n, 0) = (*_temperature->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin];
-//		const Point &p = _mesh->nodes->coordinates->datatarray()[nodes->at(n)];
-//		coordinates(n, 0) = p.x;
-//		coordinates(n, 1) = p.y;
-//		thickness(n, 0) = thick != NULL ? thick->evaluate(p, temp(n, 0), step.currentTime) : 1;
-//		if (material->phase_change) {
-//			double phase, derivation;
-//			smoothstep(phase, derivation, material->phase_change_temperature - material->transition_interval / 2, material->phase_change_temperature + material->transition_interval / 2, temp(n, 0), material->smooth_step_order);
-//			assembleMaterialMatrix(n, p, phase1, phase, temp(n, 0), K, CD, false);
-//			assembleMaterialMatrix(n, p, phase2, (1 - phase), temp(n, 0), K, CD, false);
-//			m =
-//					(    phase  * phase1->density.evaluator->evaluate(p, step.currentTime, temp(n, 0)) +
-//					(1 - phase) * phase2->density.evaluator->evaluate(p, step.currentTime, temp(n, 0))) *
-//
-//					(    phase  * phase1->heat_capacity.evaluator->evaluate(p, step.currentTime, temp(n, 0)) +
-//					(1 - phase) * phase2->heat_capacity.evaluator->evaluate(p, step.currentTime, temp(n, 0)) +
-//					material->latent_heat * derivation) * thickness(n, 0);
-//			if (_phaseChange) {
-//				(*_phaseChange->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin] = phase;
-//				(*_latentHeat->decomposedData)[domain][it->DOFOffset + nodes->at(n) - it->begin] = material->latent_heat * derivation;
-//			}
-//		} else {
-//			assembleMaterialMatrix(n, p, material, 1, temp(n, 0), K, CD, false);
-//			m =
-//					material->density.evaluator->evaluate(p, step.currentTime, temp(n, 0)) *
-//					material->heat_capacity.evaluator->evaluate(p, step.currentTime, temp(n, 0)) * thickness(n, 0);
-//		}
-//
-//		if (translation_motion) {
-//			U(n, 0) = translation_motion->x.evaluator->evaluate(p, step.currentTime, temp(n, 0)) * m;
-//			U(n, 1) = translation_motion->y.evaluator->evaluate(p, step.currentTime, temp(n, 0)) * m;
-//		}
-////		if (heat_source) {
-////			f(n, 0) = heat_source->evaluate(p, step.currentTime, temp(n, 0));
-////		}
-//	}
-//
-//	for (size_t gp = 0; gp < N.size(); gp++) {
-//		u.multiply(N[gp], U, 1, 0);
-//
-//		J.multiply(dN[gp], coordinates);
-//		detJ = determinant2x2(J.values());
-//		inverse2x2(J.values(), invJ.values(), detJ);
-//
-//		gpK.multiply(N[gp], K);
-//
-//		Ce(0, 0) = gpK(0, 0);
-//		Ce(1, 1) = gpK(0, 1);
-//		Ce(0, 1) = gpK(0, 2);
-//		Ce(1, 0) = gpK(0, 3);
-//
-//		dND.multiply(invJ, dN[gp]);
-//
-//		norm_u_e = u.norm();
-//		h_e = 0;
-//
-//		if (norm_u_e != 0) {
-//			DenseMatrix b_e(1, size);
-//			b_e.multiply(u, dND, 1, 0);
-//			h_e = 2 * norm_u_e / b_e.norm();
-//		}
-//
-//		Ce(0, 0) += _configuration.sigma * h_e * norm_u_e;
-//		Ce(1, 1) += _configuration.sigma * h_e * norm_u_e;
-//
-//		if (_propertiesConfiguration.gradient) {
-//			matGradient.multiply(dND, temp, 1, 1);
-//		}
-//		if (_propertiesConfiguration.flux) {
-//			matFlux.multiply(Ce, dND * temp, 1, 1);
-//		}
-//	}
-//
-//	if (_propertiesConfiguration.gradient) {
-//		(*_gradient->data)[2 * eindex + 0] = matGradient(0, 0) / N.size();
-//		(*_gradient->data)[2 * eindex + 1] = matGradient(1, 0) / N.size();
-//	}
-//
-//	if (_propertiesConfiguration.flux) {
-//		(*_flux->data)[2 * eindex + 0] = matFlux(0, 0) / N.size();
-//		(*_flux->data)[2 * eindex + 1] = matFlux(1, 0) / N.size();
-//	}
-//}
-//
-//void HeatTransfer2DKernel::processSolution()
-//{
-//	if (_gradient || _flux || _phaseChange) {
-//		#pragma omp parallel for
-//		for (eslocal d = 0; d < _mesh->elements->ndomains; d++) {
-//			for (eslocal e = _mesh->elements->elementsDistribution[d]; e < (eslocal)_mesh->elements->elementsDistribution[d + 1]; e++) {
-//				postProcessElement(d, e);
-//			}
-//		}
-//	}
-//}
+void HeatTransfer2DKernel::processSolution(const SolutionIterator &iterator, const Step &step)
+{
+	eslocal size = iterator.element->nodes;
 
+	const std::vector<DenseMatrix> &N = *(iterator.element->N);
+	const std::vector<DenseMatrix> &dN = *(iterator.element->dN);
+
+	DenseMatrix Ce(2, 2), coordinates(size, 2), J(2, 2), invJ(2, 2), dND, T(size, 1);
+	double detJ, m, norm_u_e, h_e;
+	DenseMatrix thickness(size, 1), U(size, 2), K(size, 4), gpK(1, 4), CD;
+	DenseMatrix u(1, 2), matFlux(2, 1), matGradient(2, 1);
+
+	const MaterialBaseConfiguration *phase1, *phase2;
+	if (iterator.material->phase_change) {
+		phase1 = &iterator.material->phases.find(1)->second;
+		phase2 = &iterator.material->phases.find(2)->second;
+	}
+
+	for (size_t n = 0; n < size; n++) {
+		T(n, 0) = iterator.temperature[n];
+		coordinates(n, 0) = iterator.coordinates[2 * n + 0];
+		coordinates(n, 1) = iterator.coordinates[2 * n + 1];
+		thickness(n, 0) = iterator.thickness[n];
+		if (iterator.material->phase_change) {
+			double phase, derivation;
+			smoothstep(phase, derivation, iterator.material->phase_change_temperature - iterator.material->transition_interval / 2, iterator.material->phase_change_temperature + iterator.material->transition_interval / 2, T(n, 0), iterator.material->smooth_step_order);
+			assembleMaterialMatrix(n, iterator.coordinates + 2 * n, phase1, phase, step.currentTime, T(n, 0), K, CD, false);
+			assembleMaterialMatrix(n, iterator.coordinates + 2 * n, phase2, (1 - phase), step.currentTime, T(n, 0), K, CD, false);
+			double dens1, dens2, hc1, hc2;
+			phase1->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &dens1);
+			phase2->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &dens2);
+			phase1->heat_capacity.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &hc1);
+			phase2->heat_capacity.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &hc2);
+
+			m = (phase * dens1 + (1 - phase) * dens2) * (phase * hc1 + (1 - phase) * hc2 + iterator.material->latent_heat * derivation) * iterator.thickness[0];
+			if (iterator.material->phase_change) {
+				*iterator.phase = phase;
+				*iterator.latentHeat = iterator.material->latent_heat * derivation;
+			}
+		} else {
+			assembleMaterialMatrix(n, iterator.coordinates + 2 * n, iterator.material, 1, step.currentTime, T(n, 0), K, CD, false);
+			double dens, hc;
+			iterator.material->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &dens);
+			iterator.material->heat_capacity.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &hc);
+			m = dens * hc * thickness(n, 0);
+		}
+
+		U(n, 0) = iterator.motion[2 * n + 0] * m;
+		U(n, 1) = iterator.motion[2 * n + 1] * m;
+	}
+
+	for (size_t gp = 0; gp < N.size(); gp++) {
+		u.multiply(N[gp], U, 1, 0);
+
+		J.multiply(dN[gp], coordinates);
+		detJ = determinant2x2(J.values());
+		inverse2x2(J.values(), invJ.values(), detJ);
+
+		gpK.multiply(N[gp], K);
+
+		Ce(0, 0) = gpK(0, 0);
+		Ce(1, 1) = gpK(0, 1);
+		Ce(0, 1) = gpK(0, 2);
+		Ce(1, 0) = gpK(0, 3);
+
+		dND.multiply(invJ, dN[gp]);
+
+		norm_u_e = u.norm();
+		h_e = 0;
+
+		if (norm_u_e != 0) {
+			DenseMatrix b_e(1, size);
+			b_e.multiply(u, dND, 1, 0);
+			h_e = 2 * norm_u_e / b_e.norm();
+		}
+
+		Ce(0, 0) += _settings.sigma * h_e * norm_u_e;
+		Ce(1, 1) += _settings.sigma * h_e * norm_u_e;
+
+		if (_output.gradient) {
+			matGradient.multiply(dND, T, 1, 1);
+		}
+		if (_output.flux) {
+			matFlux.multiply(Ce, dND * T, 1, 1);
+		}
+	}
+
+	if (_output.gradient) {
+		*(iterator.gradient + 0) = matGradient(0, 0) / N.size();
+		*(iterator.gradient + 1) = matGradient(1, 0) / N.size();
+	}
+
+	if (_output.flux) {
+		*(iterator.flux + 0) = matFlux(0, 0) / N.size();
+		*(iterator.flux+ 1) = matFlux(1, 0) / N.size();
+	}
+}
 
 
 

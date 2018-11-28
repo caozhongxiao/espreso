@@ -21,7 +21,10 @@ public:
 	~HeatTransfer2DControler();
 
 	void initData();
-	void updateData();
+	void processSolution();
+
+	void nextTime();
+	void parametersChanged();
 
 	void processElements(Matrices matrices, InstanceFiller &filler);
 	void processBoundary(Matrices matrices, size_t rindex, InstanceFiller &filler);

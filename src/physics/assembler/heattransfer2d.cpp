@@ -29,13 +29,13 @@ using namespace espreso;
 HeatTransfer2D::HeatTransfer2D(Mesh *mesh, Instance *instance, Step *step, const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration)
 : Physics("HEAT TRANSFER 2D", mesh, instance, step, &configuration, 1), HeatTransfer(configuration, propertiesConfiguration)
 {
-	if (_propertiesConfiguration.gradient || _configuration.diffusion_split) {
-		_gradient = _mesh->elements->appendData(2, { "GRADIENT", "GRADIENT_X", "GRADIENT_Y" });
-	}
-
-	if (_propertiesConfiguration.flux) {
-		_flux = _mesh->elements->appendData(2, { "FLUX", "FLUX_X", "FLUX_Y" });
-	}
+//	if (_propertiesConfiguration.gradient || _configuration.diffusion_split) {
+//		_gradient = _mesh->elements->appendData(2, { "GRADIENT", "GRADIENT_X", "GRADIENT_Y" });
+//	}
+//
+//	if (_propertiesConfiguration.flux) {
+//		_flux = _mesh->elements->appendData(2, { "FLUX", "FLUX_X", "FLUX_Y" });
+//	}
 
 //	bool translationMotion = false;
 //	for (auto ls = _configuration.load_steps_settings.begin(); ls != _configuration.load_steps_settings.end(); ++ls) {
@@ -255,8 +255,8 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 
 	center /= nodes->size();
 	if (translation_motion) {
-		(*_translationMotion->data)[2 * eindex + 0] = translation_motion->x.evaluator->evaluate(center, _step->currentTime, 0);
-		(*_translationMotion->data)[2 * eindex + 1] = translation_motion->y.evaluator->evaluate(center, _step->currentTime, 0);
+		_translationMotion->data[2 * eindex + 0] = translation_motion->x.evaluator->evaluate(center, _step->currentTime, 0);
+		_translationMotion->data[2 * eindex + 1] = translation_motion->y.evaluator->evaluate(center, _step->currentTime, 0);
 	}
 
 	eslocal Ksize = nodes->size();
@@ -290,8 +290,8 @@ void HeatTransfer2D::processElement(eslocal domain, Matrices matrices, eslocal e
 	double normGradN = 0;
 
 	if ((matrices & Matrices::M) && _configuration.diffusion_split) {
-		g(0, 0) = (*_gradient->data)[2 * eindex + 0];
-		g(0, 1) = (*_gradient->data)[2 * eindex + 1];
+		g(0, 0) = _gradient->data[2 * eindex + 0];
+		g(0, 1) = _gradient->data[2 * eindex + 1];
 	}
 
 //	std::cout << "C: " << coordinates;
@@ -725,13 +725,13 @@ void HeatTransfer2D::postProcessElement(eslocal domain, eslocal eindex)
 	}
 
 	if (_propertiesConfiguration.gradient) {
-		(*_gradient->data)[2 * eindex + 0] = matGradient(0, 0) / N.size();
-		(*_gradient->data)[2 * eindex + 1] = matGradient(1, 0) / N.size();
+		_gradient->data[2 * eindex + 0] = matGradient(0, 0) / N.size();
+		_gradient->data[2 * eindex + 1] = matGradient(1, 0) / N.size();
 	}
 
 	if (_propertiesConfiguration.flux) {
-		(*_flux->data)[2 * eindex + 0] = matFlux(0, 0) / N.size();
-		(*_flux->data)[2 * eindex + 1] = matFlux(1, 0) / N.size();
+		_flux->data[2 * eindex + 0] = matFlux(0, 0) / N.size();
+		_flux->data[2 * eindex + 1] = matFlux(1, 0) / N.size();
 	}
 }
 

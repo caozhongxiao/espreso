@@ -123,7 +123,7 @@ void NodeStore::unpack(const char* &p)
 	for (size_t i = 0; i < datasize; i++) {
 		if (i >= data.size()) {
 			Esutils::unpack(dimension, p);
-			data.push_back(new NodeData(dimension));
+			data.push_back(new NodeData(dimension, {}));
 		}
 		Esutils::unpack(data[i]->names, p);
 	}
@@ -212,12 +212,6 @@ NodeData* NodeStore::appendData(int dimension, const std::vector<std::string> &n
 	data.push_back(new NodeData(dimension, names));
 	data.back()->data.resize(dimension * size);
 	return data.back();
-}
-
-NodeData::NodeData(int dimension)
-: dimension(dimension)
-{
-
 }
 
 NodeData::NodeData(int dimension, const std::vector<std::string> &names)

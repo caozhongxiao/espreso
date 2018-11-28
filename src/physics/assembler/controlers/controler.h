@@ -17,6 +17,7 @@ struct Step;
 class ECFExpression;
 class ECFExpressionVector;
 enum Matrices: int;
+enum EvaluatorParameters: int;
 template <typename TEBoundaries, typename TEData> class serializededata;
 template <typename TEData> class tarray;
 class ElementsRegionStore;
@@ -39,7 +40,10 @@ public:
 	virtual std::vector<double>& getSolutionStore() = 0;
 
 	virtual void initData() = 0;
-	virtual void updateData() = 0;
+	virtual void processSolution() = 0;
+
+	virtual void nextTime() = 0;
+	virtual void parametersChanged() = 0;
 
 	virtual void dirichletIndices(std::vector<std::vector<eslocal> > &indices) = 0;
 	virtual void dirichletValues(std::vector<double> &values) = 0;
@@ -59,18 +63,21 @@ protected:
 		~Parameter();
 	};
 
-	bool tryElementConstness(const std::map<std::string, ECFExpression> &values, double &defaultValue);
-	bool tryElementConstness(const std::map<std::string, ECFExpressionVector> &values, Point &defaultValue);
+	bool setDefault(const std::map<std::string, ECFExpression> &values, double &defaultValue);
+	bool setDefault(const std::map<std::string, ECFExpressionVector> &values, Point &defaultValue);
 
-	void evaluateERegions(
+	void updateERegions(
 			const std::map<std::string, ECFExpression> &settings, tarray<double> &data,
-			eslocal csize, double *cbegin, double *tbegin, double time);
-	void evaluateERegions(
+			eslocal csize, double *cbegin, double *tbegin, double time,
+			EvaluatorParameters updatedParams = static_cast<EvaluatorParameters>(0));
+	void updateERegions(
 			const std::map<std::string, ECFExpressionVector> &settings, tarray<double> &data,
-			eslocal csize, double *cbegin, double *tbegin, double time);
-	void evaluateBRegions(
+			eslocal csize, double *cbegin, double *tbegin, double time,
+			EvaluatorParameters updatedParams = static_cast<EvaluatorParameters>(0));
+	void updateBRegions(
 			const ECFExpression &expression, Parameter &parameter, const std::vector<size_t> &distribution,
-			eslocal csize, double *cbegin, double *tbegin, double time);
+			eslocal csize, double *cbegin, double *tbegin, double time,
+			EvaluatorParameters updatedParams = static_cast<EvaluatorParameters>(0));
 
 	void averageNodeInitilization(tarray<double> &initData, std::vector<double> &averagedData);
 	void nodeValuesToElements(tarray<double> &nodeData, std::vector<double> &elementData);

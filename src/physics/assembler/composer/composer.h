@@ -48,10 +48,14 @@ public:
 	virtual void initDirichlet() = 0;
 	virtual void assemble(Matrices matrices) = 0;
 
+	virtual void nextTime();
+	virtual void parametersChanged();
+
 	virtual void setDirichlet() = 0;
 	virtual void synchronize() = 0;
 
 	virtual void fillSolution() = 0;
+	virtual void processSolution();
 
 	virtual ~Composer() {}
 

@@ -644,10 +644,10 @@ void Mesh::computeElementStatistic(const ElementData *data, const ElementsRegion
 		statistics->reset();
 		for (size_t i = 0; i < region->eintervals.size(); i++) {
 			for (auto e = region->elements->datatarray().cbegin() + region->eintervals[i].begin; e != region->elements->datatarray().cbegin() + region->eintervals[i].end; ++e) {
-				statistics->min = std::min(statistics->min, (*data->data)[*e]);
-				statistics->max = std::max(statistics->max, (*data->data)[*e]);
-				statistics->avg += (*data->data)[*e];
-				statistics->norm += (*data->data)[*e] * (*data->data)[*e];
+				statistics->min = std::min(statistics->min, data->data[*e]);
+				statistics->max = std::max(statistics->max, data->data[*e]);
+				statistics->avg += data->data[*e];
+				statistics->norm += data->data[*e] * data->data[*e];
 			}
 		}
 	} else {
@@ -660,11 +660,11 @@ void Mesh::computeElementStatistic(const ElementData *data, const ElementsRegion
 			for (auto e = region->elements->datatarray().cbegin() + region->eintervals[i].begin; e != region->elements->datatarray().cbegin() + region->eintervals[i].end; ++e) {
 				value = 0;
 				for (int d = 0; d < data->dimension; d++) {
-					value += (*data->data)[*e * data->dimension + d] * (*data->data)[*e * data->dimension + d];
-					(statistics + d + 1)->min = std::min((statistics + d + 1)->min, (*data->data)[*e * data->dimension + d]);
-					(statistics + d + 1)->max = std::max((statistics + d + 1)->max, (*data->data)[*e * data->dimension + d]);
-					(statistics + d + 1)->avg += (*data->data)[*e * data->dimension + d];
-					(statistics + d + 1)->norm += (*data->data)[*e * data->dimension + d] * (*data->data)[*e * data->dimension + d];
+					value += data->data[*e * data->dimension + d] * data->data[*e * data->dimension + d];
+					(statistics + d + 1)->min = std::min((statistics + d + 1)->min, data->data[*e * data->dimension + d]);
+					(statistics + d + 1)->max = std::max((statistics + d + 1)->max, data->data[*e * data->dimension + d]);
+					(statistics + d + 1)->avg += data->data[*e * data->dimension + d];
+					(statistics + d + 1)->norm += data->data[*e * data->dimension + d] * data->data[*e * data->dimension + d];
 				}
 				value = std::sqrt(value);
 				statistics->min = std::min(statistics->min, value);

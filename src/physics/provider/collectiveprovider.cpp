@@ -40,35 +40,6 @@ void CollectiveProvider::updateGluingMatrices(Matrices matrices)
 	composer.synchronize();
 }
 
-
-void CollectiveProvider::processSolution()
-{
-	timeWrapper("post-processing", [&] () {
-		physics.processSolution();
-	});
-	storeWrapper(mNames(Matrices::primal), Matrices::primal);
-}
-
-void CollectiveProvider::storeSolution()
-{
-	if (store.storeStep(step)) {
-		if (store.isCollected()) {
-			mesh.gatherNodeData();
-		}
-		timeWrapper("store solution", [&] () {
-			store.updateSolution(step);
-		});
-	}
-}
-
-void CollectiveProvider::storeSubSolution()
-{
-	timeWrapper("store solution", [&] () {
-		// TODO: MESH
-		// store.storeSubSolution(step, solutions, {});
-	});
-}
-
 void CollectiveProvider::keepK()
 {
 	timeWrapper("copy K to origK", [&] () {

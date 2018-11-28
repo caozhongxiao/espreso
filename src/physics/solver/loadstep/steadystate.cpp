@@ -43,8 +43,5 @@ void SteadyStateSolver::processTimeStep()
 	_composer.step.timeIntegrationConstantM = 0;
 
 	_timeStepSolver.solve(*this);
-
-	_composer.processSolution();
-	_composer.storeSolution();
 }
 

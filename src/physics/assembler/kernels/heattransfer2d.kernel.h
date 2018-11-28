@@ -34,6 +34,18 @@ struct HeatTransfer2DKernel: public HeatTransferKernel
 		  material(NULL) {}
 	};
 
+	struct SolutionIterator: public ElementIterator {
+		double *phase;
+		double *latentHeat;
+		double *gradient;
+		double *flux;
+
+		SolutionIterator()
+		: ElementIterator(),
+		  phase(NULL), latentHeat(NULL),
+		  gradient(NULL), flux(NULL) {}
+	};
+
 	struct BoundaryIterator {
 		Element *element;
 
@@ -65,12 +77,12 @@ struct HeatTransfer2DKernel: public HeatTransferKernel
 
 	void processElement(Matrices matrices, const ElementIterator &iterator, const Step &step, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const;
 	void processEdge(Matrices matrices, const BoundaryIterator &iterator, const Step &step, DenseMatrix &Ke, DenseMatrix &fe) const;
-//	void processNode(eslocal domain, const BoundaryRegionStore *region, Matrices matrices, eslocal nindex, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const;
-//	void processSolution();
+
+	void processSolution(const SolutionIterator &iterator, const Step &step);
 
 protected:
 	void assembleMaterialMatrix(eslocal node, double *coordinates, const MaterialBaseConfiguration *mat, double phase, double time, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const;
-//	void postProcessElement(eslocal domain, eslocal eindex);
+
 };
 
 }

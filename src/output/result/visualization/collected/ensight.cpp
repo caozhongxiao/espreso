@@ -493,7 +493,7 @@ void EnSight::updateSolution(const Step &step)
 				for (size_t i = 0; i < eintervals.size(); i++) {
 					if (eintervals[i].code == etype) {
 						for (eslocal e = eintervals[i].begin; e < eintervals[i].end; ++e) {
-							_writer.storeFloat(os, (*_mesh.elements->data[di]->data)[size * elements[e] + s]);
+							_writer.storeFloat(os, _mesh.elements->data[di]->data[size * elements[e] + s]);
 						}
 					}
 				}

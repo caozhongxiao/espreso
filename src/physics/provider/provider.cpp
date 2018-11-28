@@ -87,6 +87,37 @@ void Provider::solve(Matrices updatedMatrices)
 	});
 }
 
+void Provider::nextTime()
+{
+	timeWrapper("update time", [&] () {
+		composer.nextTime();
+	});
+}
+
+void Provider::parametersChanged()
+{
+	timeWrapper("update parameters", [&] () {
+		composer.parametersChanged();
+	});
+}
+
+void Provider::processSolution()
+{
+	timeWrapper("post-processing", [&] () {
+		composer.processSolution();
+	});
+	storeWrapper(mNames(Matrices::primal), Matrices::primal);
+}
+
+void Provider::storeSolution()
+{
+	if (store.storeStep(step)) {
+		timeWrapper("store solution", [&] () {
+			store.updateSolution(step);
+		});
+	}
+}
+
 Provider::~Provider()
 {
 	delete _timeStatistics;

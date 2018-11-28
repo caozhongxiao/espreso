@@ -20,18 +20,10 @@ struct ElementData {
 	int dimension;
 	std::vector<std::string> names;
 
-	std::vector<double> *data;
+	std::vector<double> data;
 
 	ElementData(int dimension);
-	ElementData(int dimension, const std::vector<std::string> &names, std::vector<double> *data = NULL);
-
-	ElementData(ElementData &&other);
-	ElementData(const ElementData &other);
-	ElementData& operator=(const ElementData&other);
-	~ElementData();
-
-protected:
-	bool _delete;
+	ElementData(int dimension, const std::vector<std::string> &names);
 };
 
 struct ElementStore {
@@ -43,8 +35,7 @@ struct ElementStore {
 
 	void reindex(const serializededata<eslocal, eslocal> *nIDs);
 
-	ElementData* appendData(int dimension, const std::vector<std::string> &names);
-	ElementData* appendData(int dimension, const std::vector<std::string> &names, std::vector<double> &data);
+	ElementData* appendData(int dimension, const std::vector<std::string> &names = {});
 
 	std::vector<eslocal> gatherElementsDistribution();
 	std::vector<eslocal> gatherElementsProcDistribution();

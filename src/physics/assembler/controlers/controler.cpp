@@ -29,7 +29,7 @@ Controler::Parameter::~Parameter()
 	}
 }
 
-bool Controler::tryElementConstness(const std::map<std::string, ECFExpression> &values, double &defaultValue)
+bool Controler::setDefault(const std::map<std::string, ECFExpression> &values, double &defaultValue)
 {
 	if (values.size() == 0) {
 		return true;
@@ -44,7 +44,7 @@ bool Controler::tryElementConstness(const std::map<std::string, ECFExpression> &
 	return false;
 }
 
-bool Controler::tryElementConstness(const std::map<std::string, ECFExpressionVector> &values, Point &defaultValue)
+bool Controler::setDefault(const std::map<std::string, ECFExpressionVector> &values, Point &defaultValue)
 {
 	if (values.size() == 0) {
 		return true;
@@ -67,9 +67,10 @@ bool Controler::tryElementConstness(const std::map<std::string, ECFExpressionVec
 	return false;
 }
 
-void Controler::evaluateERegions(
+void Controler::updateERegions(
 		const std::map<std::string, ECFExpression> &settings, tarray<double> &data,
-		eslocal csize, double *cbegin, double *tbegin, double time)
+		eslocal csize, double *cbegin, double *tbegin, double time,
+		EvaluatorParameters updatedParams)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -87,9 +88,10 @@ void Controler::evaluateERegions(
 	}
 }
 
-void Controler::evaluateERegions(
+void Controler::updateERegions(
 		const std::map<std::string, ECFExpressionVector> &settings, tarray<double> &data,
-		eslocal csize, double *cbegin, double *tbegin, double time)
+		eslocal csize, double *cbegin, double *tbegin, double time,
+		EvaluatorParameters updatedParams)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -121,9 +123,10 @@ void Controler::evaluateERegions(
 	}
 }
 
-void Controler::evaluateBRegions(
+void Controler::updateBRegions(
 		const ECFExpression &expression, Parameter &parameter, const std::vector<size_t> &distribution,
-		eslocal csize, double *cbegin, double *tbegin, double time)
+		eslocal csize, double *cbegin, double *tbegin, double time,
+		EvaluatorParameters updatedParams)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 

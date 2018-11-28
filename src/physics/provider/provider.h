@@ -32,7 +32,7 @@ public:
 	virtual void preprocessData();
 	virtual void updateStructuralMatrices(Matrices matrices);
 	virtual void updateGluingMatrices(Matrices matrices) {}
-	virtual void processSolution() {}
+	virtual void processSolution();
 
 	virtual void setRegularizationCallback() {}
 	virtual void setRegularizationFromOrigKCallback() {}
@@ -41,7 +41,10 @@ public:
 
 	virtual void solve(Matrices updatedMatrices);
 
-	virtual void storeSolution() {}
+	virtual void nextTime();
+	virtual void parametersChanged();
+
+	virtual void storeSolution();
 	virtual void storeSubSolution() {}
 
 	void finalize();

@@ -28,6 +28,8 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 		ESINFO(GLOBAL_ERROR) << "Turn on at least one convergence parameter for NONLINEAR solver.";
 	}
 
+	_composer.nextTime();
+
 	Matrices updatedMatrices;
 	double &solverPrecision = _composer.linearSolver.precision();
 	double solverPrecisionError = 1;
@@ -46,6 +48,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 	_composer.step.iteration = 0;
 	_composer.step.tangentMatrixCorrection = false;
 	_composer.solve(loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::B1));
+	_composer.parametersChanged();
 	_composer.processSolution();
 	_composer.storeSubSolution();
 
@@ -152,6 +155,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 			}
 		}
 
+		_composer.parametersChanged();
 		_composer.processSolution();
 		_composer.storeSubSolution();
 	}
@@ -161,6 +165,10 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 	} else {
 		ESINFO(CONVERGENCE) <<  " >> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION " << _composer.step.iteration + 1 ;
 	}
+
+	_composer.parametersChanged();
+	_composer.processSolution();
+	_composer.storeSubSolution();
 }
 
 
