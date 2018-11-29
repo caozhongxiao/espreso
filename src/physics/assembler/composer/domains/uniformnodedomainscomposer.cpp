@@ -107,7 +107,7 @@ void UniformNodeDomainsComposer::initDOFs()
 				tBuffer[noffset].push_back(n - begin);
 				for (size_t i = begin; i < n; i++) {
 					tBuffer[noffset].push_back(_mesh.elements->firstDomain + ntodomains[0][i].second);
-					for (size_t dof = 0; dof < _DOFs; ++dof) {
+					for (int dof = 0; dof < _DOFs; ++dof) {
 						tBuffer[noffset].push_back(DOFs[t][ntodomains[0][i].second] + dof);
 					}
 				}
@@ -149,7 +149,7 @@ void UniformNodeDomainsComposer::initDOFs()
 			eslocal domains = rBuffer[noffset][roffset[noffset]++];
 			for (eslocal d = 0; d < domains; ++d) {
 				DOFData.push_back(rBuffer[noffset][roffset[noffset]++]);
-				for (size_t dof = 0; dof < _DOFs; ++dof) {
+				for (int dof = 0; dof < _DOFs; ++dof) {
 					DOFData.push_back(rBuffer[noffset][roffset[noffset]++]);
 				}
 			}
@@ -173,8 +173,6 @@ void UniformNodeDomainsComposer::initDOFs()
 
 void UniformNodeDomainsComposer::initDirichlet()
 {
-	size_t threads = environment->OMP_NUM_THREADS;
-
 	std::vector<std::vector<eslocal> > dIndices;
 	_controler.dirichletIndices(dIndices);
 
@@ -261,7 +259,7 @@ void UniformNodeDomainsComposer::buildPatterns()
 					}
 					*RHSoffset = *(DOFs + 1);
 				}
-				for (eslocal dof = 1; dof < _DOFs; ++dof) {
+				for (int dof = 1; dof < _DOFs; ++dof) {
 					for (size_t n = 0; n < enodes->size(); ++n, ++RHSoffset) {
 						*RHSoffset = *(_RHS + n) + dof;
 					}
@@ -363,7 +361,7 @@ void UniformNodeDomainsComposer::assemble(Matrices matrices)
 		switch (_controler.getMatrixType(d)) {
 		case MatrixType::REAL_UNSYMMETRIC:
 			filler.insert = [&] (size_t size) {
-				for (auto r = 0; r < size; ++r, ++RHSIndex) {
+				for (size_t r = 0; r < size; ++r, ++RHSIndex) {
 					if ((matrices & Matrices::f) && filler.fe.rows()) {
 						_instance.f[d][_RHSPermutation[d][RHSIndex]] += RHSReduction * filler.fe(r, 0);
 					}
@@ -371,7 +369,7 @@ void UniformNodeDomainsComposer::assemble(Matrices matrices)
 						_instance.R[d][_RHSPermutation[d][RHSIndex]] += filler.Re(r, 0);
 					}
 
-					for (auto c = 0; c < size; ++c, ++KIndex) {
+					for (size_t c = 0; c < size; ++c, ++KIndex) {
 						if ((matrices & Matrices::K) && filler.Ke.rows()) {
 							_instance.K[d].CSR_V_values[_KPermutation[d][KIndex]] += KReduction * filler.Ke(r, c);
 						}

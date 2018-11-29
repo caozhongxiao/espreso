@@ -19,7 +19,7 @@ using namespace espreso;
 HypreData::HypreData(MPI_Comm &comm, eslocal nrows)
 : _comm(comm), _roffset(nrows), _nrows(nrows), _finalized(false)
 {
-	eslocal totalsize = Communication::exscan(_roffset);
+	Communication::exscan(_roffset);
 	HYPRE_IJMatrixCreate(comm, _roffset + 1, _roffset + _nrows, _roffset + 1, _roffset + _nrows, &_K);
 	HYPRE_IJVectorCreate(comm, _roffset + 1, _roffset + _nrows, &_f);
 	HYPRE_IJVectorCreate(comm, _roffset + 1, _roffset + _nrows, &_x);

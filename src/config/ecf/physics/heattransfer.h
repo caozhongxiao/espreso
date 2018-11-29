@@ -86,7 +86,7 @@ struct HeatTransferOutputSettings {
 		gradient = flux = phase = latent_heat = false;
 	}
 	void all() {
-		temperature = translation_motions = gradient = flux = phase = latent_heat = temperature = true;
+		temperature = translation_motions = gradient = flux = phase = latent_heat = true;
 	}
 
 	HeatTransferOutputSettings() { basic(); }

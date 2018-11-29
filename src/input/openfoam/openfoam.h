@@ -39,14 +39,13 @@ protected:
 	void buildElements(PlainOpenFOAMData &mesh);
 
 	const InputConfiguration &_configuration;
+	MPISubset _loaders;
 
 	ParallelFile _points, _faces, _owner, _neighbour, _boundary;
 	ParallelFile _pointZones, _faceZones, _cellZones;
 
 	std::vector<OpenFOAMSet> _sets;
 	std::vector<eslocal> _fdist, _edist;
-
-	MPISubset _loaders;
 };
 
 }

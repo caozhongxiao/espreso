@@ -119,7 +119,7 @@ public:
 //			}
 
 		int unsym = 0, gunsym = 0;
-		for (eslocal d = 0; d < instance->K.size(); d++) {
+		for (size_t d = 0; d < instance->K.size(); d++) {
 			if (instance->K[d].mtype == MatrixType::REAL_UNSYMMETRIC) {
 				unsym = 1;
 			}

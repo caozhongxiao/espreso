@@ -351,7 +351,7 @@ void HeatTransfer2DControler::processSolution()
 			iterator.flux = _flux->data.data() + _mesh.elements->distribution[t] * 2;
 		}
 
-		for (eslocal e = _mesh.elements->distribution[t]; e < _mesh.elements->distribution[t + 1]; ++e, ++enodes) {
+		for (size_t e = _mesh.elements->distribution[t]; e < _mesh.elements->distribution[t + 1]; ++e, ++enodes) {
 			iterator.element = _mesh.elements->epointers->datatarray()[e];
 			iterator.material = _mesh.materials[_mesh.elements->material->datatarray()[e]];
 

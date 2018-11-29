@@ -38,7 +38,7 @@ void UniformNodesComposer::initDOFs()
 		eslocal dsize = 0;
 		std::vector<eslocal> troffset(_mesh.neighbours.size());
 
-		for (eslocal n = _mesh.nodes->distribution[t]; n < _mesh.nodes->distribution[t + 1]; ++n, ++ranks) {
+		for (size_t n = _mesh.nodes->distribution[t]; n < _mesh.nodes->distribution[t + 1]; ++n, ++ranks) {
 			if (ranks->front() == environment->MPIrank) {
 				dsize += _DOFs;
 			} else {
@@ -67,7 +67,7 @@ void UniformNodesComposer::initDOFs()
 		eslocal toffset = doffset[t];
 		std::vector<std::vector<eslocal> > tBuffer(_mesh.neighbours.size());
 
-		for (eslocal n = _mesh.nodes->distribution[t]; n < _mesh.nodes->distribution[t + 1]; ++n, ++ranks) {
+		for (size_t n = _mesh.nodes->distribution[t]; n < _mesh.nodes->distribution[t + 1]; ++n, ++ranks) {
 			if (ranks->front() == environment->MPIrank) {
 				eslocal noffset = 0;
 				for (auto r = ranks->begin() + 1; r != ranks->end(); ++r) {
@@ -104,7 +104,7 @@ void UniformNodesComposer::initDOFs()
 			tdist.push_back(0);
 		}
 
-		for (eslocal n = _mesh.nodes->distribution[t]; n < _mesh.nodes->distribution[t + 1]; ++n, ++ranks) {
+		for (size_t n = _mesh.nodes->distribution[t]; n < _mesh.nodes->distribution[t + 1]; ++n, ++ranks) {
 			if (ranks->front() == environment->MPIrank) {
 				for (int dof = 0; dof < _DOFs; ++dof) {
 					tdata.push_back(goffset + toffset++);
@@ -380,7 +380,7 @@ void UniformNodesComposer::assemble(Matrices matrices)
 		switch (mtype) {
 		case MatrixType::REAL_UNSYMMETRIC:
 			filler.insert = [&] (size_t size) {
-				for (auto r = 0; r < size; ++r, ++RHSIndex) {
+				for (size_t r = 0; r < size; ++r, ++RHSIndex) {
 					if ((matrices & Matrices::f) && filler.fe.rows()) {
 						#pragma omp atomic
 						_instance.f[0][_RHSPermutation[RHSIndex]] += RHSReduction * filler.fe(r, 0);
@@ -390,7 +390,7 @@ void UniformNodesComposer::assemble(Matrices matrices)
 						_instance.R[0][_RHSPermutation[RHSIndex]] += filler.Re(r, 0);
 					}
 
-					for (auto c = 0; c < size; ++c, ++KIndex) {
+					for (size_t c = 0; c < size; ++c, ++KIndex) {
 						if ((matrices & Matrices::K) && filler.Ke.rows()) {
 							#pragma omp atomic
 							_instance.K[0].CSR_V_values[_KPermutation[KIndex]] += KReduction * filler.Ke(r, c);
@@ -663,7 +663,7 @@ void UniformNodesComposer::synchronize()
 
 	size_t KIndex = _localKOffset, RHSIndex = _localRHSOffset;
 	for (size_t i = 0, j = 0; i < rBuffer.size(); ++i, j = 0) {
-		for (; rBuffer[i].size() && j < _nRHSSize[i]; ++j, ++RHSIndex) {
+		for (; rBuffer[i].size() && j < (size_t)_nRHSSize[i]; ++j, ++RHSIndex) {
 			_instance.f.front()[_RHSPermutation[RHSIndex]] += rBuffer[i][j];
 		}
 		for (; j < rBuffer[i].size(); ++j, ++KIndex) {

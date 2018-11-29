@@ -161,7 +161,7 @@ void HeatTransfer2DKernel::processElement(Matrices matrices, const ElementIterat
 		phase2 = &iterator.material->phases.find(2)->second;
 	}
 
-	for (size_t n = 0; n < size; n++) {
+	for (int n = 0; n < size; n++) {
 		T(n, 0) = iterator.temperature[n];
 		coordinates(n, 0) = iterator.coordinates[2 * n + 0];
 		coordinates(n, 1) = iterator.coordinates[2 * n + 1];
@@ -409,7 +409,7 @@ void HeatTransfer2DKernel::processEdge(Matrices matrices, const BoundaryIterator
 		Ke = 0;
 	}
 
-	for (size_t n = 0; n < size; n++) {
+	for (int n = 0; n < size; n++) {
 		double temp = iterator.temperature[n];
 		coordinates(n, 0) = iterator.coordinates[2 * n + 0];
 		coordinates(n, 1) = iterator.coordinates[2 * n + 1];
@@ -481,7 +481,7 @@ void HeatTransfer2DKernel::processSolution(const SolutionIterator &iterator, con
 		phase2 = &iterator.material->phases.find(2)->second;
 	}
 
-	for (size_t n = 0; n < size; n++) {
+	for (int n = 0; n < size; n++) {
 		T(n, 0) = iterator.temperature[n];
 		coordinates(n, 0) = iterator.coordinates[2 * n + 0];
 		coordinates(n, 1) = iterator.coordinates[2 * n + 1];
