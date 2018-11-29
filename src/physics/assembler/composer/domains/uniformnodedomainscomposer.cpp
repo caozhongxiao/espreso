@@ -463,6 +463,28 @@ void UniformNodeDomainsComposer::synchronize()
 
 void UniformNodeDomainsComposer::fillSolution()
 {
+	size_t threads = environment->OMP_NUM_THREADS;
+
 	std::vector<double> &solution = _controler.getSolutionStore();
+
+	std::cout << *_DOFMap << "\n";
+
+//	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		size_t i = _mesh.nodes->distribution[t];
+		for (auto map = _DOFMap->begin(t); map != _DOFMap->end(t); ++map, ++i) {
+			for (int dof = 0; dof < _DOFs; ++dof) {
+				solution[i * _DOFs + dof] = 0;
+			}
+			for (auto d = map->begin(); d != map->end(); d += 1 + _DOFs) {
+				if (_mesh.elements->firstDomain <= *d && *d < _mesh.elements->firstDomain + _mesh.elements->ndomains)
+				for (int dof = 0; dof < _DOFs; ++dof) {
+					solution[i * _DOFs + dof] += _instance.primalSolution[*d - _mesh.elements->firstDomain][*(d + 1 + dof)] / ((map->end() - map->begin()) / (1 + _DOFs));
+				}
+			}
+		}
+	}
+
+	std::cout << solution;
 }
 
