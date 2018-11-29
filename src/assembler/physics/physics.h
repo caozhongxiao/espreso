@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace bem4i { template< class LO, class SC > struct bem4iData; }
+namespace bem4i { template<class LO, class SC> struct bem4idata; }
 
 namespace espreso {
 
@@ -97,7 +97,7 @@ protected:
 
 	bool _hasBEM;
 	std::vector<int> _BEMDomain;
-	std::vector<bem4i::bem4iData<eslocal, double>* > _BEMData;
+	std::vector<bem4i::bem4idata<eslocal, double>* > _BEMData;
 
 	mutable size_t _invalidElements;
 };

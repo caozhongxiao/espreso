@@ -60,13 +60,12 @@ void HeatTransfer3D::processBEM(eslocal domain, Matrices matrices)
 			_instance->K[domain].dense_values.data(),
 			_instance->K[domain].rows,
 			reinterpret_cast<double*>(_mesh->domainsSurface->coordinates->datatarray().data() + _mesh->domainsSurface->cdistribution[domain]),
-			_mesh->domainsSurface->tdistribution[domain + 1] - _mesh->domainsSurface->tdistribution[domain],
+			(eslocal)(_mesh->domainsSurface->tdistribution[domain + 1] - _mesh->domainsSurface->tdistribution[domain]),
 			_mesh->domainsSurface->triangles->datatarray().data() + 3 * _mesh->domainsSurface->tdistribution[domain],
 			material->thermal_conductivity.values.get(0, 0).evaluator->evaluate(Point(), _step->currentTime, 0),
-			1,
-			4, 4,
-			_BEMData[domain],
-			0);
+			0,
+			5, 5,
+			_BEMData[domain]);
 #endif
 
 }
@@ -882,15 +881,14 @@ void HeatTransfer3D::processBEMSolution(eslocal domain)
 		bem4i::evaluateLaplaceRepresentationFormula(
 				_instance->K[domain].rows,
 				reinterpret_cast<double*>(_mesh->domainsSurface->coordinates->datatarray().data() + _mesh->domainsSurface->cdistribution[domain]),
-				_mesh->domainsSurface->tdistribution[domain + 1] - _mesh->domainsSurface->tdistribution[domain],
+				(eslocal)(_mesh->domainsSurface->tdistribution[domain + 1] - _mesh->domainsSurface->tdistribution[domain]),
 				_mesh->domainsSurface->triangles->datatarray().data() + 3 * _mesh->domainsSurface->tdistribution[domain],
 				_mesh->nodes->dintervals[domain].back().end - _mesh->nodes->dintervals[domain].back().begin,
 				reinterpret_cast<double*>(_mesh->nodes->coordinates->datatarray().data() + _mesh->nodes->dintervals[domain].back().begin),
 				(*_temperature->decomposedData)[domain].data() + _mesh->nodes->dintervals[domain].back().DOFOffset,
 				(*_temperature->decomposedData)[domain].data(),
 				4,
-				_BEMData[domain],
-				0);
+				_BEMData[domain]);
 	}
 #endif
 }
