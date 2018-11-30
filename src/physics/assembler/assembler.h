@@ -6,6 +6,7 @@
 #include "composer/global/uniformnodescomposer.h"
 
 #include "controllers/heattransfer2d.controller.h"
+#include "controllers/heattransfer3d.controller.h"
 
 namespace espreso {
 
@@ -31,6 +32,25 @@ struct GlobalHeatTransfer2D: public HeatTransfer2DControler, public UniformNodes
 	: HeatTransfer2DControler(mesh, step, gSettings, sSettings, oSettings), UniformNodesComposer(mesh, step, instance, *this, 1) {}
 };
 
+
+struct DomainsHeatTransfer3D: public HeatTransfer3DControler, public UniformNodeDomainsComposer {
+
+	DomainsHeatTransfer3D(
+			Mesh &mesh, Instance &instance, Step &step,
+			const HeatTransferGlobalSettings &gSettings, const HeatTransferLoadStepConfiguration &sSettings, const HeatTransferOutputSettings &oSettings)
+
+	: HeatTransfer3DControler(mesh, step, gSettings, sSettings, oSettings),
+	  UniformNodeDomainsComposer(mesh, step, instance, *this, 1, sSettings.feti.redundant_lagrange, sSettings.feti.scaling) {}
+};
+
+struct GlobalHeatTransfer3D: public HeatTransfer3DControler, public UniformNodesComposer {
+
+	GlobalHeatTransfer3D(
+			Mesh &mesh, Instance &instance, Step &step,
+			const HeatTransferGlobalSettings &gSettings, const HeatTransferLoadStepConfiguration &sSettings, const HeatTransferOutputSettings &oSettings)
+
+	: HeatTransfer3DControler(mesh, step, gSettings, sSettings, oSettings), UniformNodesComposer(mesh, step, instance, *this, 1) {}
+};
 
 }
 

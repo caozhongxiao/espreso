@@ -43,6 +43,16 @@ HeatTransferFactory::HeatTransferFactory(Step *step, const HeatTransferConfigura
 		break;
 	case DIMENSION::D3:
 		_physics.push_back(new HeatTransfer3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
+		switch (configuration.load_steps_settings.at(1).solver) {
+		case LoadStepConfiguration::SOLVER::FETI:
+			_composer.push_back(new DomainsHeatTransfer3D(
+							*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
+			break;
+		case LoadStepConfiguration::SOLVER::MULTIGRID:
+			_composer.push_back(new GlobalHeatTransfer3D(
+							*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
+			break;
+		}
 		break;
 	default:
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: invalid dimension.";
