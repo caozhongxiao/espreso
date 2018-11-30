@@ -467,24 +467,72 @@ void UniformNodeDomainsComposer::fillSolution()
 
 	std::vector<double> &solution = _controler.getSolutionStore();
 
-	std::cout << *_DOFMap << "\n";
+	std::vector<std::vector<std::vector<double> > > sBuffer(threads);
+	std::vector<std::vector<double> > rBuffer(_mesh.neighbours.size());
 
-//	#pragma omp parallel for
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		size_t i = _mesh.nodes->distribution[t];
-		for (auto map = _DOFMap->begin(t); map != _DOFMap->end(t); ++map, ++i) {
+		auto nranks = _mesh.nodes->ranks->begin(t);
+
+		std::vector<std::vector<double> > tBuffer(_mesh.neighbours.size());
+
+		for (auto map = _DOFMap->begin(t); map != _DOFMap->end(t); ++map, ++i, ++nranks) {
 			for (int dof = 0; dof < _DOFs; ++dof) {
 				solution[i * _DOFs + dof] = 0;
 			}
 			for (auto d = map->begin(); d != map->end(); d += 1 + _DOFs) {
-				if (_mesh.elements->firstDomain <= *d && *d < _mesh.elements->firstDomain + _mesh.elements->ndomains)
-				for (int dof = 0; dof < _DOFs; ++dof) {
-					solution[i * _DOFs + dof] += _instance.primalSolution[*d - _mesh.elements->firstDomain][*(d + 1 + dof)] / ((map->end() - map->begin()) / (1 + _DOFs));
+				if (_mesh.elements->firstDomain <= *d && *d < _mesh.elements->firstDomain + _mesh.elements->ndomains) {
+					for (int dof = 0; dof < _DOFs; ++dof) {
+						solution[i * _DOFs + dof] += _instance.primalSolution[*d - _mesh.elements->firstDomain][*(d + 1 + dof)] / ((map->end() - map->begin()) / (1 + _DOFs));
+					}
+				}
+			}
+
+			eslocal noffset = 0;
+			for (auto r = nranks->begin(); r != nranks->end(); ++r) {
+				if (*r != environment->MPIrank) {
+					while (_mesh.neighbours[noffset] < *r) {
+						++noffset;
+					}
+
+					for (size_t dof = 0; dof < _DOFs; ++dof) {
+						tBuffer[noffset].push_back(solution[i * _DOFs + dof]);
+					}
 				}
 			}
 		}
+
+		sBuffer[t].swap(tBuffer);
 	}
 
-	std::cout << solution;
+	for (size_t n = 0; n < sBuffer[0].size(); ++n) {
+		for (size_t t = 1; t < threads; t++) {
+			sBuffer[0][n].insert(sBuffer[0][n].end(), sBuffer[t][n].begin(), sBuffer[t][n].end());
+		}
+		rBuffer[n].resize(sBuffer[0][n].size());
+	}
+
+	if (!Communication::exchangeKnownSize(sBuffer[0], rBuffer, _mesh.neighbours)) {
+		ESINFO(ERROR) << "ESPRESO internal error: synchronize solution.";
+	}
+
+	std::vector<eslocal> roffset(_mesh.neighbours.size());
+	auto nranks = _mesh.nodes->ranks->begin();
+	for (eslocal n = 0; n < _mesh.nodes->size; ++n, ++nranks) {
+		eslocal noffset = 0;
+		for (auto r = nranks->begin(); r != nranks->end(); ++r) {
+			if (*r != environment->MPIrank) {
+				while (_mesh.neighbours[noffset] < *r) {
+					++noffset;
+				}
+
+				for (size_t dof = 0; dof < _DOFs; ++dof) {
+					solution[n * _DOFs + dof] += rBuffer[noffset][roffset[noffset]];
+				}
+				++roffset[noffset];
+			}
+		}
+	}
 }
 
