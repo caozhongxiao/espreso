@@ -5,7 +5,7 @@
 #include "composer/domains/uniformnodedomainscomposer.h"
 #include "composer/global/uniformnodescomposer.h"
 
-#include "controlers/heattransfer2d.controler.h"
+#include "controllers/heattransfer2d.controller.h"
 
 namespace espreso {
 

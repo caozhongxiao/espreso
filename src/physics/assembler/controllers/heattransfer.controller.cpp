@@ -1,5 +1,5 @@
 
-#include "heattransfer2d.controler.h"
+#include "heattransfer2d.controller.h"
 
 #include "../../step.h"
 

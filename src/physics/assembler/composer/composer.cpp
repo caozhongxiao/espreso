@@ -1,12 +1,13 @@
 
 #include "composer.h"
 
-#include "../controlers/controler.h"
+#include "../controllers/controller.h"
 
 #include "../../instance.h"
 #include "../../../basis/matrices/matrixtype.h"
 
 #include "../../../solver/generic/SparseMatrix.h"
+
 
 using namespace espreso;
 

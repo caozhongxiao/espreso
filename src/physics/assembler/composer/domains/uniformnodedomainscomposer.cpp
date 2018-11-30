@@ -1,7 +1,7 @@
 
 #include "uniformnodedomainscomposer.h"
 
-#include "../../controlers/controler.h"
+#include "../../controllers/controller.h"
 
 #include "../../../instance.h"
 #include "../../../step.h"

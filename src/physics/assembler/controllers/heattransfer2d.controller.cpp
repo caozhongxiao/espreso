@@ -1,6 +1,5 @@
 
-#include "heattransfer2d.controler.h"
-
+#include "heattransfer2d.controller.h"
 #include "../kernels/heattransfer2d.kernel.h"
 
 #include "../../step.h"
