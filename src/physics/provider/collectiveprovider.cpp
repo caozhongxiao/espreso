@@ -34,12 +34,6 @@ CollectiveProvider::~CollectiveProvider()
 
 }
 
-void CollectiveProvider::updateGluingMatrices(Matrices matrices)
-{
-	composer.setDirichlet();
-	composer.synchronize();
-}
-
 void CollectiveProvider::keepK()
 {
 	timeWrapper("copy K to origK", [&] () {

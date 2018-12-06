@@ -33,50 +33,6 @@ DistributedProvider::~DistributedProvider()
 
 }
 
-void DistributedProvider::updateGluingMatrices(Matrices matrices)
-{
-	if (matrices & Matrices::B1) {
-		timeWrapper("update " + mNames(Matrices::B1), [&] () {
-			// TODO: create update method
-			instance.B1.clear();
-			instance.B1.resize(instance.domains);
-			instance.inequality.clear();
-			instance.inequality.resize(instance.domains);
-			instance.B1clustersMap.clear();
-			for (size_t d = 0; d < instance.domains; d++) {
-				instance.B1[d].type = 'G';
-				instance.B1[d].cols = instance.domainDOFCount[d];
-				instance.B1c[d].clear();
-				instance.LB[d].clear();
-				instance.B1duplicity[d].clear();
-				instance.inequalityC[d].clear();
-				instance.B1subdomainsMap[d].clear();
-			}
-			instance.block.clear();
-			instance.block.resize(3, 0);
-			physics.assembleB1(linearSolver.applyB1LagrangeRedundancy(), linearSolver.glueDomainsByLagrangeMultipliers(), linearSolver.applyB1Scaling());
-		});
-
-		if (mesh.configuration.output.debug) {
-			VTKLegacyDebugInfo::dirichlet(mesh, instance);
-			VTKLegacyDebugInfo::gluing(mesh, instance);
-		}
-		return;
-	}
-
-	if (matrices & Matrices::B1c) {
-		timeWrapper("update " + mNames(Matrices::B1c), [&] () {
-			physics.updateDirichletInB1(linearSolver.applyB1LagrangeRedundancy());
-		});
-	}
-
-	if (matrices & Matrices::B1duplicity) {
-		timeWrapper("update " + mNames(Matrices::B1duplicity), [&] () {
-			physics.updateDuplicity();
-		});
-	}
-}
-
 void DistributedProvider::keepK()
 {
 	timeWrapper("copy K to origK", [&] () {

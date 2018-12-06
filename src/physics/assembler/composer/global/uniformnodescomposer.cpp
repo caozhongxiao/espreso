@@ -448,11 +448,6 @@ void UniformNodesComposer::setDirichlet()
 	auto &VAL = _instance.K.front().CSR_V_values;
 	auto &RHS = _instance.f.front();
 
-	std::vector<eslocal> RROW;
-	for (size_t r = 0; r < _instance.K.front().CSR_I_row_indices.size() - 1; r++) {
-		RROW.insert(RROW.end(), _instance.K.front().CSR_I_row_indices[r + 1] - _instance.K.front().CSR_I_row_indices[r], _DOFMap->datatarray()[r] + 1);
-	}
-
 	std::vector<double> values(_dirichletMap.size());
 	_controler.dirichletValues(values);
 

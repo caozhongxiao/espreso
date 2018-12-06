@@ -191,10 +191,23 @@ void UniformNodeDomainsComposer::initDirichlet()
 	for (int dof = 0; dof < _DOFs; ++dof) {
 		_dirichletMap.insert(_dirichletMap.end(), dIndices[dof].begin(), dIndices[dof].end());
 	}
+
+	_dirichletPermutation.resize(_dirichletMap.size());
+	std::iota(_dirichletPermutation.begin(), _dirichletPermutation.end(), 0);
+	std::sort(_dirichletPermutation.begin(), _dirichletPermutation.end(), [&] (eslocal i, eslocal j) {
+		return _dirichletMap[i] < _dirichletMap[j];
+	});
+
 	std::sort(_dirichletMap.begin(), _dirichletMap.end());
 }
 
 void UniformNodeDomainsComposer::buildPatterns()
+{
+	buildKPattern();
+	buildB1Pattern();
+}
+
+void UniformNodeDomainsComposer::buildKPattern()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -347,6 +360,205 @@ void UniformNodeDomainsComposer::buildPatterns()
 //	std::cout << _RHSPermutation.front();
 }
 
+void UniformNodeDomainsComposer::buildB1Pattern()
+{
+	eslocal doffset = 0;
+
+	auto dmap = _DOFMap->begin();
+	for (size_t i = 0, prev = 0; i < _dirichletMap.size(); prev = _dirichletMap[i++] / _DOFs) {
+		dmap += (_dirichletMap[i] / _DOFs) - prev;
+		for (auto d = dmap->begin(); d != dmap->end(); d += 1 + _DOFs) {
+			if (_mesh.elements->firstDomain <= *d && *d < _mesh.elements->firstDomain + _mesh.elements->ndomains) {
+				++doffset;
+			}
+			if (!_redundantLagrange) {
+				break;
+			}
+		}
+	}
+
+	eslocal dsize = Communication::exscan(doffset);
+
+	dmap = _DOFMap->begin();
+	for (size_t i = 0, prev = 0; i < _dirichletMap.size(); prev = _dirichletMap[i++] / _DOFs) {
+		dmap += (_dirichletMap[i] / _DOFs) - prev;
+		for (auto d = dmap->begin(); d != dmap->end(); d += 1 + _DOFs) {
+			if (_mesh.elements->firstDomain <= *d && *d < _mesh.elements->firstDomain + _mesh.elements->ndomains) {
+				_instance.B1[*d - _mesh.elements->firstDomain].I_row_indices.push_back(doffset + 1);
+				_instance.B1[*d - _mesh.elements->firstDomain].J_col_indices.push_back(*(d + _dirichletMap[i] % _DOFs + 1) + 1);
+				_instance.B1clustersMap.push_back({ doffset, environment->MPIrank });
+				++doffset;
+			}
+			if (!_redundantLagrange) {
+				break;
+			}
+		}
+	}
+
+	_domainDirichletSize.resize(_mesh.elements->ndomains);
+	for (eslocal d = 0; d < _mesh.elements->ndomains; ++d) {
+		_instance.B1[d].V_values.resize(_instance.B1[d].I_row_indices.size(), 1);
+		_instance.B1c[d].resize(_instance.B1[d].I_row_indices.size());
+		_instance.B1duplicity[d].resize(_instance.B1[d].I_row_indices.size(), 1);
+		_domainDirichletSize[d] = _instance.B1[d].I_row_indices.size();
+	}
+
+	_instance.block[Instance::CONSTRAINT::DIRICHLET] = dsize;
+
+	eslocal goffset = 0;
+
+	dmap = _DOFMap->begin();
+	auto nranks = _mesh.nodes->ranks->begin();
+	auto exclude = _dirichletMap.begin();
+	std::vector<std::vector<eslocal> > sBuffer(_mesh.neighbours.size()), rBuffer(_mesh.neighbours.size());
+
+	auto send = [&] () {
+		eslocal noffset = 0;
+		for (auto r = nranks->begin() + 1; r != nranks->end(); ++r) {
+			while (_mesh.neighbours[noffset] < *r) {
+				++noffset;
+			}
+			sBuffer[noffset].push_back(goffset);
+		}
+	};
+
+	for (size_t n = 0; n < _mesh.nodes->size; ++n, ++dmap, ++nranks) {
+		if (dmap->size() / (1 + _DOFs) > 1) {
+			for (int dof = 0; dof < _DOFs; ++dof) {
+				eslocal ndomains = dmap->size() / (1 + _DOFs);
+				if (_redundantLagrange) {
+					while (exclude != _dirichletMap.end() && *exclude < n * _DOFs + dof) {
+						++exclude;
+					}
+					if (exclude == _dirichletMap.end() || n * _DOFs + dof != *exclude) {
+						if (*nranks->begin() == environment->MPIrank) {
+							send();
+							goffset += ndomains * (ndomains - 1) / 2;
+						}
+					}
+				} else {
+					if (*nranks->begin() == environment->MPIrank) {
+						send();
+						goffset += ndomains - 1;
+					}
+				}
+			}
+		}
+	}
+
+	eslocal gsize = Communication::exscan(goffset);
+
+	for (size_t n = 0; n < _mesh.neighbours.size(); ++n) {
+		for (size_t i = 0; i < sBuffer[n].size(); ++i) {
+			sBuffer[n][i] += goffset;
+		}
+	}
+
+	if (!Communication::receiveLowerUnknownSize(sBuffer, rBuffer, _mesh.neighbours)) {
+		ESINFO(ERROR) << "ESPRESO internal error: exchange gluing offsets";
+	}
+
+	std::vector<eslocal> dDistribution = _mesh.elements->gatherDomainsProcDistribution();
+
+	dmap = _DOFMap->begin();
+	nranks = _mesh.nodes->ranks->begin();
+	exclude = _dirichletMap.begin();
+
+	auto push = [&] (eslocal d, eslocal lambda, eslocal dof, double value, eslocal domains) {
+		d -= _mesh.elements->firstDomain;
+		_instance.B1[d].I_row_indices.push_back(lambda + 1);
+		_instance.B1[d].J_col_indices.push_back(dof + 1);
+		_instance.B1[d].V_values.push_back(value);
+		_instance.B1duplicity[d].push_back(1. / domains);
+	};
+
+	auto fill = [&] (eslocal d1, eslocal d2, eslocal lambda, eslocal dof1, eslocal dof2, eslocal domains) {
+		if (_mesh.elements->firstDomain <= d1 && d1 < _mesh.elements->firstDomain + _mesh.elements->ndomains) {
+			push(d1, lambda, dof1, 1, domains);
+		}
+		if (_mesh.elements->firstDomain <= d2 && d2 < _mesh.elements->firstDomain + _mesh.elements->ndomains) {
+			push(d2, lambda, dof2, -1, domains);
+		}
+		if (
+				(_mesh.elements->firstDomain <= d1 && d1 < _mesh.elements->firstDomain + _mesh.elements->ndomains) ||
+				(_mesh.elements->firstDomain <= d2 && d2 < _mesh.elements->firstDomain + _mesh.elements->ndomains)) {
+
+			_instance.B1clustersMap.push_back({ lambda, environment->MPIrank });
+
+			if (d1 <_mesh.elements->firstDomain || _mesh.elements->firstDomain + _mesh.elements->ndomains <= d1) {
+				_instance.B1clustersMap.back().push_back(std::lower_bound(dDistribution.begin(), dDistribution.end(), d1 + 1) - dDistribution.begin() - 1);
+			}
+			if (d2 <_mesh.elements->firstDomain || _mesh.elements->firstDomain + _mesh.elements->ndomains <= d2) {
+				_instance.B1clustersMap.back().push_back(std::lower_bound(dDistribution.begin(), dDistribution.end(), d2 + 1) - dDistribution.begin() - 1);
+			}
+		}
+	};
+
+	std::vector<eslocal> roffset(_mesh.neighbours.size());
+	for (size_t n = 0; n < _mesh.nodes->size; ++n, ++dmap, ++nranks) {
+		if (dmap->size() / (1 + _DOFs) > 1) {
+			for (int dof = 0; dof < _DOFs; ++dof) {
+				if (_redundantLagrange) {
+					while (exclude != _dirichletMap.end() && *exclude < n * _DOFs + dof) {
+						++exclude;
+					}
+				}
+				eslocal lambda = goffset;
+				eslocal ndomains = dmap->size() / (1 + _DOFs);
+				if (*nranks->begin() != environment->MPIrank) {
+					if (!_redundantLagrange || exclude == _dirichletMap.end() || n * _DOFs + dof != *exclude) {
+						eslocal noffset = 0;
+						while (_mesh.neighbours[noffset] < *nranks->begin()) {
+							++noffset;
+						}
+						lambda = rBuffer[noffset][roffset[noffset]++];
+					}
+				}
+				if (_redundantLagrange) {
+					if (exclude == _dirichletMap.end() || n * _DOFs + dof != *exclude) {
+						for (auto d1 = dmap->begin(); d1 != dmap->end(); d1 += 1 + _DOFs) {
+							for (auto d2 = d1 + 1 + _DOFs; d2 != dmap->end(); d2 += 1 + _DOFs, ++lambda) {
+								fill(*d1, *d2, dsize + lambda, *(d1 + 1 + dof), *(d2 + 1 + dof), ndomains);
+							}
+						}
+						if (*nranks->begin() == environment->MPIrank) {
+							goffset += ndomains * (ndomains - 1) / 2;
+						}
+					}
+				} else {
+					for (auto d1 = dmap->begin(), d2 = dmap->begin() + 1 + _DOFs; d2 != dmap->end(); d1 = d2, d2 += 1 + _DOFs, ++lambda) {
+						fill(*d1, *d2, dsize + lambda, *(d1 + 1 + dof), *(d2 + 1 + dof), ndomains);
+					}
+					if (*nranks->begin() == environment->MPIrank) {
+						goffset += ndomains - 1;
+					}
+				}
+			}
+		}
+	}
+
+
+	for (eslocal d = 0; d < _mesh.elements->ndomains; ++d) {
+		_instance.B1c[d].resize(_instance.B1[d].I_row_indices.size());
+
+		_instance.B1[d].nnz = _instance.B1[d].I_row_indices.size();
+		_instance.B1[d].rows = dsize + gsize;
+		_instance.LB[d].resize(_instance.B1[d].nnz, -std::numeric_limits<double>::infinity());
+
+		_instance.B1subdomainsMap[d] = _instance.B1[d].I_row_indices;
+		for (size_t i = 0; i < _instance.B1subdomainsMap[d].size(); ++i) {
+			--_instance.B1subdomainsMap[d][i];
+		}
+	}
+
+	_instance.block[Instance::CONSTRAINT::EQUALITY_CONSTRAINTS] = dsize + gsize;
+}
+
+void UniformNodeDomainsComposer::buildB0Pattern()
+{
+
+}
+
 void UniformNodeDomainsComposer::assemble(Matrices matrices)
 {
 	_controler.nextTime();
@@ -423,12 +635,128 @@ void UniformNodeDomainsComposer::assemble(Matrices matrices)
 
 void UniformNodeDomainsComposer::setDirichlet()
 {
+	std::vector<double> values(_dirichletMap.size());
+	_controler.dirichletValues(values);
 
+	std::vector<eslocal> doffset(_mesh.elements->ndomains);
+
+	auto dmap = _DOFMap->begin();
+	for (size_t i = 0, prev = 0; i < _dirichletMap.size(); prev = _dirichletMap[i++] / _DOFs) {
+		dmap += (_dirichletMap[i] / _DOFs) - prev;
+		for (auto d = dmap->begin(); d != dmap->end(); d += 1 + _DOFs) {
+			if (_mesh.elements->firstDomain <= *d && *d < _mesh.elements->firstDomain + _mesh.elements->ndomains) {
+				_instance.B1c[*d - _mesh.elements->firstDomain][doffset[*d - _mesh.elements->firstDomain]++] = values[_dirichletPermutation[i]];
+			}
+			if (!_redundantLagrange) {
+				break;
+			}
+		}
+	}
 }
 
 void UniformNodeDomainsComposer::synchronize()
 {
+	if (_scaling && _redundantLagrange) {
+		updateDuplicity();
+	}
+}
 
+void UniformNodeDomainsComposer::updateDuplicity()
+{
+	std::vector<std::vector<double> > diagonals(_mesh.elements->ndomains);
+	#pragma omp parallel for
+	for  (size_t d = 0; d < _instance.domains; d++) {
+		diagonals[d] = _instance.K[d].getDiagonal();
+	}
+
+	std::vector<std::vector<double> > sBuffer(_mesh.neighbours.size()), rBuffer(_mesh.neighbours.size());
+
+	auto dmap = _DOFMap->begin();
+	auto nranks = _mesh.nodes->ranks->begin();
+	std::vector<double> buffer;
+
+	for (eslocal n = 0; n < _mesh.nodes->size; ++n, ++dmap, ++nranks) {
+		if (nranks->size() > 1) {
+			buffer.clear();
+			for (auto d = dmap->begin(); d != dmap->end(); d += 1 + _DOFs) {
+				if (_mesh.elements->firstDomain <= *d && *d < _mesh.elements->firstDomain + _mesh.elements->ndomains) {
+					for (int dof = 0; dof < _DOFs; ++dof) {
+						buffer.push_back(diagonals[*d - _mesh.elements->firstDomain][*(d + 1 + dof)]);
+					}
+				}
+			}
+
+			eslocal noffset = 0;
+			for (auto r = nranks->begin(); r != nranks->end(); ++r) {
+				if (*r != environment->MPIrank) {
+					while (_mesh.neighbours[noffset] < *r) {
+						++noffset;
+					}
+					sBuffer[noffset].insert(sBuffer[noffset].end(), buffer.begin(), buffer.end());
+				}
+			}
+		}
+	}
+
+	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, _mesh.neighbours)) {
+		ESINFO(ERROR) << "ESPRESO internal error: exchange diagonal values";
+	}
+
+	dmap = _DOFMap->begin();
+	nranks = _mesh.nodes->ranks->begin();
+	std::vector<eslocal> roffset(_mesh.neighbours.size());
+	std::vector<eslocal> dDistribution = _mesh.elements->gatherDomainsProcDistribution();
+	auto exclude = _dirichletMap.begin();
+
+	auto push = [&] (eslocal d1, eslocal d2, double v1, double v2, double sum) {
+		if (_mesh.elements->firstDomain <= d1 && d1 < _mesh.elements->firstDomain + _mesh.elements->ndomains) {
+			_instance.B1duplicity[d1 - _mesh.elements->firstDomain].push_back(v2 / sum);
+		}
+		if (_mesh.elements->firstDomain <= d2 && d2 < _mesh.elements->firstDomain + _mesh.elements->ndomains) {
+			_instance.B1duplicity[d2 - _mesh.elements->firstDomain].push_back(v1 / sum);
+		}
+	};
+
+	for (size_t d = 0; d < _instance.B1duplicity.size(); d++) {
+		_instance.B1duplicity[d].resize(_domainDirichletSize[d]);
+	}
+	for (eslocal n = 0; n < _mesh.nodes->size; ++n, ++dmap, ++nranks) {
+		if (dmap->size() / (1 + _DOFs) > 1) {
+			for (int dof = 0; dof < _DOFs; ++dof) {
+				buffer.clear();
+
+				for (auto d = dmap->begin(); d != dmap->end(); d += 1 + _DOFs) {
+					if (_mesh.elements->firstDomain <= *d && *d < _mesh.elements->firstDomain + _mesh.elements->ndomains) {
+						buffer.push_back(diagonals[*d - _mesh.elements->firstDomain][*(d + 1 + dof)]);
+					} else {
+						eslocal r = std::lower_bound(dDistribution.begin(), dDistribution.end(), *d + 1) - dDistribution.begin() - 1;
+						eslocal noffset = 0;
+						while (_mesh.neighbours[noffset] < r) {
+							++noffset;
+						}
+						buffer.push_back(rBuffer[noffset][roffset[noffset]++]);
+					}
+				}
+
+				double sum = 0;
+				for (size_t i = 0; i < buffer.size(); i++) {
+					sum += buffer[i];
+				}
+
+				while (exclude != _dirichletMap.end() && *exclude < n * _DOFs + dof) {
+					++exclude;
+				}
+				if (exclude == _dirichletMap.end() || n * _DOFs + dof != *exclude) {
+					eslocal v1 = 0, v2 = 1;
+					for (auto d1 = dmap->begin(); d1 != dmap->end(); d1 += 1 + _DOFs, ++v1, v2 = v1 + 1) {
+						for (auto d2 = d1 + 1 + _DOFs; d2 != dmap->end(); d2 += 1 + _DOFs, ++v2) {
+							push(*d1, *d2, buffer[v1], buffer[v2], sum);
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 void UniformNodeDomainsComposer::fillSolution()

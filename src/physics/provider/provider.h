@@ -31,7 +31,7 @@ public:
 
 	virtual void preprocessData();
 	virtual void updateStructuralMatrices(Matrices matrices);
-	virtual void updateGluingMatrices(Matrices matrices) {}
+	virtual void updateGluingMatrices(Matrices matrices);
 	virtual void processSolution();
 
 	virtual void setRegularizationCallback() {}

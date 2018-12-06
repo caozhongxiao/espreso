@@ -19,6 +19,7 @@ public:
 
 protected:
 	std::vector<std::vector<eslocal> > _KPermutation, _RHSPermutation;
+	std::vector<size_t> _domainDirichletSize;
 };
 
 }

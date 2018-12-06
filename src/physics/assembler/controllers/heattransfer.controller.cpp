@@ -14,6 +14,9 @@
 #include "../../../mesh/store/elementsregionstore.h"
 #include "../../../mesh/store/boundaryregionstore.h"
 
+#include "../../../basis/utilities/communication.h"
+#include "../../../basis/utilities/utils.h"
+
 using namespace espreso;
 
 MatrixType HeatTransferControler::getMatrixType() const

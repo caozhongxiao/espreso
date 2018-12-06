@@ -12,8 +12,6 @@ public:
 	CollectiveProvider(Instance &instance, Physics &physics, Composer &composer, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver);
 	~CollectiveProvider();
 
-	void updateGluingMatrices(Matrices matrices);
-
 	void setRegularizationCallback();
 	void setRegularizationFromOrigKCallback();
 	void setEmptyRegularizationCallback();

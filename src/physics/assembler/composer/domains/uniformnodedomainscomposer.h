@@ -24,6 +24,11 @@ public:
 	void fillSolution();
 
 protected:
+	void buildKPattern();
+	void buildB1Pattern();
+	void buildB0Pattern();
+	void updateDuplicity();
+
 	eslocal _DOFs;
 	bool _redundantLagrange, _scaling;
 };

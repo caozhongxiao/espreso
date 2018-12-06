@@ -119,6 +119,9 @@ struct Communication {
 	static bool receiveLowerKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup &group = MPITools::procs());
 
 	template <typename Ttype>
+	static bool receiveLowerUnknownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup &group = MPITools::procs());
+
+	template <typename Ttype>
 	static bool receiveUpperKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup &group = MPITools::procs());
 
 	template <typename Ttype>

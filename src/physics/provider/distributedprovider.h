@@ -12,8 +12,6 @@ public:
 	DistributedProvider(Instance &instance, Physics &physics, Composer &composer, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver);
 	~DistributedProvider();
 
-	void updateGluingMatrices(Matrices matrices);
-
 	void setRegularizationCallback();
 	void setRegularizationFromOrigKCallback();
 	void setEmptyRegularizationCallback();

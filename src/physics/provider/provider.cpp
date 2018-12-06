@@ -69,6 +69,17 @@ void Provider::updateStructuralMatrices(Matrices matrices)
 	}
 }
 
+void Provider::updateGluingMatrices(Matrices matrices)
+{
+	timeWrapper("update " + mNames(Matrices::B1c), [&] () {
+		composer.setDirichlet();
+	});
+
+	timeWrapper("update " + mNames(Matrices::B1duplicity), [&] () {
+		composer.synchronize();
+	});
+}
+
 void Provider::solve(Matrices updatedMatrices)
 {
 	Matrices solverMatrices = Matrices::K | Matrices::M | Matrices::f | Matrices::B1;
