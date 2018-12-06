@@ -25,7 +25,7 @@
 #include "../../config/ecf/physics/physics.h"
 
 #ifdef BEM4I
-#include "esbem.h"
+#include "heatdtn.h"
 #endif
 
 using namespace espreso;

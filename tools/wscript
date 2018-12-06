@@ -140,7 +140,7 @@ def configure(ctx):
     ctx.env.append_unique("CXXFLAGS", [ "-I" + ctx.ROOT + "/" + include for include in ctx.env["BEM4I::PATH"] ])
 
     ctx.env.BEM4I = ctx.check_cc(
-        fragment    = "#include \"esbem.h\"\nint main() {{ return 0; }}\n",
+        fragment    = "#include \"heatdtn.h\"\nint main() {{ return 0; }}\n",
         mandatory   = False,
         execute     = False,
         msg         = "Checking for BEM4I sources",
@@ -169,7 +169,7 @@ def build(ctx):
 
     if ctx.env.BEM4I:
         ctx.objects(
-            source = ('bem4i/esbem.cpp'),
+            source = ('heatdtn/heatdtn.cpp'),
             target = "bem",
             use    = "espreso_includes"
         )

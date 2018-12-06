@@ -22,7 +22,7 @@
 #include "../../solver/generic/SparseMatrix.h"
 
 #ifdef BEM4I
-#include "esbem.h"
+#include "heatdtn.h"
 #endif
 
 // TODO: create file with constants
