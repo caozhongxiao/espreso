@@ -451,7 +451,12 @@ void UniformNodesComposer::setDirichlet()
 	std::vector<double> values(_dirichletMap.size());
 	_controler.dirichletValues(values);
 
-//	int rank = 1;
+//	std::vector<eslocal> RROW;
+//	for (size_t r = 0; r < _instance.K.front().CSR_I_row_indices.size() - 1; r++) {
+//		RROW.insert(RROW.end(), _instance.K.front().CSR_I_row_indices[r + 1] - _instance.K.front().CSR_I_row_indices[r], _DOFMap->datatarray()[r] + 1);
+//	}
+//
+//	int rank = 3;
 //
 //	Communication::serialize([&] () {
 //		if (environment->MPIrank != rank) {
@@ -496,7 +501,7 @@ void UniformNodesComposer::setDirichlet()
 //		}
 //		printf("------------------\n");
 //	});
-
+//
 //	Communication::serialize([&] () {
 //		std::cout << _instance.K.front();
 //		std::cout << _instance.f.front();
@@ -516,7 +521,7 @@ void UniformNodesComposer::setDirichlet()
 //			std::cout << "RHS[" << _DOFMap->datatarray()[_dirichletMap[i]] + 1 << "] = " << values[_dirichletPermutation[i]] << "\n";
 //		}
 		eslocal col = _DOFMap->datatarray()[_dirichletMap[i]] + 1;
-		for (eslocal j = ROW[_dirichletMap[i]]; j < ROW[_dirichletMap[i]+ 1]; j++) {
+		for (eslocal j = ROW[_dirichletMap[i]]; j < ROW[_dirichletMap[i] + 1]; j++) {
 			if (COL[j - 1] == col) {
 //				if (environment->MPIrank == rank) {
 //					std::cout << "[" << _DOFMap->datatarray()[_dirichletMap[i]] + 1 << ":" << COL[j - 1] << "] = 1\n";
@@ -527,19 +532,16 @@ void UniformNodesComposer::setDirichlet()
 //					std::cout << "[" << _DOFMap->datatarray()[_dirichletMap[i]] + 1 << ":" << COL[j - 1] << "] = 0\n";
 //				}
 				VAL[j - 1] = 0;
-				eslocal r = COL[j - 1] - 1;
-				if (r < _DOFMap->datatarray().back()) { // dirichlet shared by more processes
-					r = std::lower_bound(_DOFMap->datatarray().begin(), _DOFMap->datatarray().end(), r) - _DOFMap->datatarray().begin();
-					if (r < _DOFMap->datatarray()[_instance.K.front().haloRows]) {
-						r = std::lower_bound(ndofbegin, ndofend, r) - ndofbegin;
-					} else {
-						r -= _mesh.nodes->uniqueOffset * _DOFs - _instance.K.front().haloRows;
-					}
+				eslocal r = std::lower_bound(_DOFMap->datatarray().begin(), _DOFMap->datatarray().end(), COL[j - 1] - 1) - _DOFMap->datatarray().begin();
+				if (r < _DOFMap->datatarray().size() && _DOFMap->datatarray()[r] == COL[j - 1] - 1) {
+//					if (environment->MPIrank == rank) {
+//						std::cout << COL[j - 1] << " into " << r << "\n";
+//					}
 					for (eslocal c = ROW[r]; c < ROW[r + 1]; c++) {
 						if (COL[c - 1] == col) {
-	//						if (environment->MPIrank == rank) {
-	//							std::cout << "[" << _DOFMap->datatarray()[r] + 1 << ":" << COL[c - 1] << "] = 0; RHS[" << r + 1 << "] -= " << VAL[c - 1] << " * " << RHS[_dirichletMap[i]] << "\n";
-	//						}
+//							if (environment->MPIrank == rank) {
+//								std::cout << "[" << _DOFMap->datatarray()[r] + 1 << ":" << COL[c - 1] << "] = 0; RHS[" << _DOFMap->datatarray()[r] + 1 << "] -= " << VAL[c - 1] << " * " << RHS[_dirichletMap[i]] << "\n";
+//							}
 							RHS[r] -= VAL[c - 1] * RHS[_dirichletMap[i]];
 							VAL[c - 1] = 0;
 						}
@@ -581,14 +583,13 @@ void UniformNodesComposer::setDirichlet()
 
 
 //	Communication::serialize([&] () {
-////		for (size_t i = 0; i < _globalIndices.size(); i++) {
-////			printf("%d ", _globalIndices[i]);
-////		}
-////		printf("\n");
-//
 //		if (environment->MPIrank != rank) {
 //			return;
 //		}
+//		for (size_t i = 0; i < _dirichletMap.size(); i++) {
+//			printf("%d ", _dirichletMap[i]);
+//		}
+//		printf("\n");
 //		printf(" // %d \\\\ \n", environment->MPIrank);
 //		for (eslocal r = 0, i = 0, f = 0; r < _mesh.nodes->uniqueTotalSize; r++) {
 //			for (eslocal c = 0; c < _mesh.nodes->uniqueTotalSize; c++) {
