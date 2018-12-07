@@ -102,18 +102,6 @@ espreso::ResultsSelectionConfiguration::ResultsSelectionConfiguration(const PHYS
 			.allowonly(structuralMechanics));
 }
 
-void espreso::ResultsSelectionConfiguration::basic()
-{
-	HeatTransferOutputSettings::basic();
-	displacement = true;
-}
-
-void espreso::ResultsSelectionConfiguration::all()
-{
-	HeatTransferOutputSettings::all();
-	displacement = true;
-}
-
 espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
 : results_selection(physics), _physics(physics)
 {

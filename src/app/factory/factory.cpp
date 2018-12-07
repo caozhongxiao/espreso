@@ -9,7 +9,6 @@
 
 #include "../../physics/solver/timestep/timestepsolver.h"
 #include "../../physics/solver/loadstep/loadstepsolver.h"
-#include "../../physics/assembler/physics.h"
 #include "../../physics/assembler/composer/composer.h"
 #include "../../physics/step.h"
 #include "../../physics/instance.h"
@@ -182,9 +181,9 @@ void FactoryLoader::preprocessMesh()
 {
 	// TODO: generalize it !!
 
-	for (size_t i = 0; i < _physics.size(); i++) {
-		_physics[i]->prepare();
-	}
+//	for (size_t i = 0; i < _physics.size(); i++) {
+//		_physics[i]->prepare();
+//	}
 }
 
 Factory::~Factory()

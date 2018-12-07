@@ -3,7 +3,6 @@
 
 #include "../../step.h"
 #include "../../../basis/logging/logging.h"
-#include "../../assembler/physics.h"
 #include "../../provider/provider.h"
 #include "../../solver/timestep/timestepsolver.h"
 
@@ -31,7 +30,7 @@ void LoadStepSolver::initLoadStep()
 	if (_composer.step.step == 0) {
 		_composer.preprocessData();
 	}
-	_composer.physics.setDirichlet();
+//	_composer.physics.setDirichlet();
 	_composer.setRegularizationCallback();
 	_composer.setB0Callback();
 }

@@ -254,6 +254,28 @@ void HeatTransfer3DControler::processElements(Matrices matrices, InstanceFiller 
 		iterator.motion      += enodes->size() * 3;
 		iterator.heat        += enodes->size();
 	}
+
+//	if (BEM) {
+//		_instance->K[domain].rows = _mesh->domainsSurface->cdistribution[domain + 1] - _mesh->domainsSurface->cdistribution[domain];
+//		_instance->K[domain].cols = _instance->K[domain].rows;
+//		_instance->K[domain].nnz  = _instance->K[domain].rows * _instance->K[domain].cols;
+//		_instance->K[domain].type = 'G';
+//		_instance->K[domain].dense_values.resize(_instance->K[domain].nnz);
+//		_instance->K[domain].mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+//
+//		const MaterialConfiguration* material = _mesh->materials[_mesh->procNodes->material->datatarray()[_mesh->procNodes->elementsDistribution[domain]]];
+//
+//		bem4i::getLaplaceSteklovPoincare(
+//				_instance->K[domain].dense_values.data(),
+//				_instance->K[domain].rows,
+//				reinterpret_cast<double*>(_mesh->domainsSurface->coordinates->datatarray().data() + _mesh->domainsSurface->cdistribution[domain]),
+//				_mesh->domainsSurface->tdistribution[domain + 1] - _mesh->domainsSurface->tdistribution[domain],
+//				_mesh->domainsSurface->triangles->datatarray().data() + 3 * _mesh->domainsSurface->tdistribution[domain],
+//				material->thermal_conductivity.values.get(0, 0).evaluator->evaluate(Point(), _step->currentTime, 0),
+//				1,
+//				4, 4,
+//				_BEM
+//	}
 }
 
 void HeatTransfer3DControler::processBoundary(Matrices matrices, size_t rindex, InstanceFiller &filler)
@@ -356,6 +378,23 @@ void HeatTransfer3DControler::processSolution()
 			}
 		}
 	}
+
+//	if (BEM) {
+//		if (_instance->primalSolution[domain].size() < (*_temperature->decomposedData)[domain].size()) {
+//			bem4i::evaluateLaplaceRepresentationFormula(
+//					_instance->K[domain].rows,
+//					reinterpret_cast<double*>(_mesh->domainsSurface->coordinates->datatarray().data() + _mesh->domainsSurface->cdistribution[domain]),
+//					_mesh->domainsSurface->tdistribution[domain + 1] - _mesh->domainsSurface->tdistribution[domain],
+//					_mesh->domainsSurface->triangles->datatarray().data() + 3 * _mesh->domainsSurface->tdistribution[domain],
+//					_mesh->procNodes->dintervals[domain].back().end - _mesh->procNodes->dintervals[domain].back().begin,
+//					reinterpret_cast<double*>(_mesh->procNodes->coordinates->datatarray().data() + _mesh->procNodes->dintervals[domain].back().begin),
+//					(*_temperature->decomposedData)[domain].data() + _mesh->procNodes->dintervals[domain].back().DOFOffset,
+//					(*_temperature->decomposedData)[domain].data(),
+//					4,
+//					_BEMData[domain],
+//					0);
+//		}
+//	}
 }
 
 

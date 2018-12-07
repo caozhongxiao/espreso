@@ -49,7 +49,7 @@ espreso::StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepCo
 }
 
 espreso::StructuralMechanicsConfiguration::StructuralMechanicsConfiguration(DIMENSION dimension)
-: PhysicsConfiguration(dimension, MaterialConfiguration::PHYSICAL_MODEL::LINEAR_ELASTIC), element_behaviour(ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS)
+: PhysicsConfiguration(dimension, MaterialConfiguration::PHYSICAL_MODEL::LINEAR_ELASTIC)
 {
 	REGISTER(
 			materials,
@@ -60,6 +60,7 @@ espreso::StructuralMechanicsConfiguration::StructuralMechanicsConfiguration(DIME
 			dimension, MaterialConfiguration::PHYSICAL_MODEL::LINEAR_ELASTIC);
 	moveLastBefore(PNAME(material_set));
 
+	element_behaviour = ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS;
 	REGISTER(element_behaviour, ECFMetaData()
 			.setdescription({ "Physics solver type." })
 			.setdatatype({ ECFDataType::OPTION })

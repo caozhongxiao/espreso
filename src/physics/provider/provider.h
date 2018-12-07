@@ -10,7 +10,6 @@ namespace espreso {
 
 struct Step;
 struct Instance;
-struct Physics;
 struct Composer;
 class Mesh;
 struct LinearSolver;
@@ -26,7 +25,7 @@ class GeneralHeatTransfer2D;
 class Provider {
 
 public:
-	Provider(Instance &instance, Physics &physics, Composer &composer, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver);
+	Provider(Instance &instance, Composer &composer, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver);
 	virtual ~Provider();
 
 	virtual void preprocessData();
@@ -68,7 +67,6 @@ public:
 	virtual void keepK() {}
 
 	Instance &instance;
-	Physics &physics;
 	Composer &composer;
 	Mesh &mesh;
 	Step &step;

@@ -1,18 +1,19 @@
 
 #include "structuralmechanicsfactory.h"
 
+#include "../../config/ecf/output.h"
 #include "../../config/ecf/physics/structuralmechanics.h"
-#include "../../physics/assembler/structuralmechanics2d.h"
-#include "../../physics/assembler/structuralmechanics3d.h"
-#include "../../physics/assembler/structuralmechanicstdnns3d.h"
 
 #include "../../physics/solver/timestep/linear.h"
 #include "../../physics/solver/timestep/newtonraphson.h"
 #include "../../physics/solver/loadstep/steadystate.h"
 
 #include "../../physics/instance.h"
+#include "../../physics/assembler/assembler.h"
 #include "../../basis/logging/logging.h"
+
 #include "../../physics/provider/distributedprovider.h"
+#include "../../physics/provider/collectiveprovider.h"
 
 using namespace espreso;
 
@@ -23,21 +24,32 @@ StructuralMechanicsFactory::StructuralMechanicsFactory(Step *step, const Structu
 
 	switch (configuration.dimension) {
 	case DIMENSION::D2:
-		_physics.push_back(new StructuralMechanics2D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
-		break;
-	case DIMENSION::D3:
-		switch (_configuration.assembler) {
-		case ASSEMBLER::ELEMENTS:
-			_physics.push_back(new StructuralMechanics3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
+		switch (configuration.load_steps_settings.at(1).solver) {
+		case LoadStepConfiguration::SOLVER::FETI:
+			_composer.push_back(new DomainsStructuralMechanics2D(
+							*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
 			break;
-		case ASSEMBLER::FACES:
-			_physics.push_back(new StructuralMechanicsTDNNS3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
+		case LoadStepConfiguration::SOLVER::MULTIGRID:
+			_composer.push_back(new GlobalStructuralMechanics3D(
+							*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
 			break;
 		}
 
 		break;
+	case DIMENSION::D3:
+		switch (configuration.load_steps_settings.at(1).solver) {
+		case LoadStepConfiguration::SOLVER::FETI:
+			_composer.push_back(new DomainsStructuralMechanics3D(
+							*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
+			break;
+		case LoadStepConfiguration::SOLVER::MULTIGRID:
+			_composer.push_back(new GlobalStructuralMechanics3D(
+							*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
+			break;
+		}
+		break;
 	default:
-			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: invalid dimension.";
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: invalid dimension.";
 	}
 
 	for (auto it = _configuration.discretization.begin(); it != _configuration.discretization.end(); ++it) {
@@ -57,7 +69,14 @@ LoadStepSolver* StructuralMechanicsFactory::getLoadStepSolver(size_t step, Mesh 
 	const StructuralMechanicsLoadStepConfiguration &settings = getLoadStepsSettings(step, _configuration.load_steps_settings);
 
 	_linearSolvers.push_back(getLinearSolver(settings, _instances.front()));
-	_provider.push_back(new DistributedProvider(*_instances.front(), *_physics.front(), *_composer.front(), *mesh, *_step, *store, *_linearSolvers.back()));
+	switch (_configuration.load_steps_settings.at(1).solver) {
+	case LoadStepConfiguration::SOLVER::FETI:
+		_provider.push_back(new DistributedProvider(*_instances.front(), *_composer.front(), *mesh, *_step, *store, *_linearSolvers.back()));
+		break;
+	case LoadStepConfiguration::SOLVER::MULTIGRID:
+		_provider.push_back(new CollectiveProvider(*_instances.front(), *_composer.front(), *mesh, *_step, *store, *_linearSolvers.back()));
+		break;
+	}
 
 	switch (settings.mode) {
 	case LoadStepConfiguration::MODE::LINEAR:

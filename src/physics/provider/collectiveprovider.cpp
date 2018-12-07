@@ -17,14 +17,13 @@
 
 #include "../../output/result/resultstore.h"
 #include "../../output/result/visualization/separated/vtklegacy.h"
-#include "../assembler/physics.h"
 #include "../assembler/composer/composer.h"
 
 using namespace espreso;
 
 
-CollectiveProvider::CollectiveProvider(Instance &instance, Physics &physics, Composer &composer, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver)
-: Provider(instance, physics, composer, mesh, step, store, linearSolver)
+CollectiveProvider::CollectiveProvider(Instance &instance, Composer &composer, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver)
+: Provider(instance, composer, mesh, step, store, linearSolver)
 {
 
 }
@@ -119,7 +118,7 @@ double CollectiveProvider::sumSquares(const std::vector<std::vector<double> > &d
 {
 	double result;
 	timeWrapper(description, [&] () {
-		result = physics.sumSquares(data, restriction);
+//		result = physics.sumSquares(data, restriction);
 	});
 	return result;
 }
@@ -183,7 +182,7 @@ double CollectiveProvider::lineSearch(const std::vector<std::vector<double> > &U
 			sum(solution, 1, U, alpha, deltaU, "U = U + alpha * delta U (line search)");
 
 			solution.swap(instance.primalSolution);
-			physics.updateMatrix(Matrices::R);
+//			physics.updateMatrix(Matrices::R);
 			solution.swap(instance.primalSolution);
 
 			if (i == 0) {
@@ -233,14 +232,14 @@ void CollectiveProvider::setRegularizationCallback()
 	instance.computeKernelsCallback = [&] (FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
 
 		timeWrapper("regularize " + mNames(Matrices::K), [&] () {
-			physics.makeStiffnessMatricesRegular(regularization, scSize, ortogonalCluster);
+//			physics.makeStiffnessMatricesRegular(regularization, scSize, ortogonalCluster);
 		});
 
 		storeWrapper(mNames(Matrices::N), Matrices::N);
 	};
 
 	instance.computeKernelCallback = [&] (FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster) {
-		physics.makeStiffnessMatrixRegular(regularization, scSize, domain, ortogonalCluster);
+//		physics.makeStiffnessMatrixRegular(regularization, scSize, domain, ortogonalCluster);
 
 		storeWrapper(mNames(Matrices::N) + "[domain " + std::to_string(domain) + "]", Matrices::N, domain);
 	};
@@ -254,7 +253,7 @@ void CollectiveProvider::setRegularizationFromOrigKCallback()
 		instance.N2.swap(instance.origKN2);
 		instance.RegMat.swap(instance.origRegMat);
 		timeWrapper("regularize orig" + mNames(Matrices::K), [&] () {
-			physics.makeStiffnessMatricesRegular(regularization, scSize, ortogonalCluster);
+//			physics.makeStiffnessMatricesRegular(regularization, scSize, ortogonalCluster);
 		});
 
 		storeWrapper("orig" + mNames(Matrices::N), Matrices::N);
@@ -269,7 +268,7 @@ void CollectiveProvider::setRegularizationFromOrigKCallback()
 		instance.N1[domain].swap(instance.origKN1[domain]);
 		instance.N2[domain].swap(instance.origKN2[domain]);
 		instance.RegMat[domain].swap(instance.origRegMat[domain]);
-		physics.makeStiffnessMatrixRegular(regularization, scSize, domain, ortogonalCluster);
+//		physics.makeStiffnessMatrixRegular(regularization, scSize, domain, ortogonalCluster);
 
 		storeWrapper("orig" + mNames(Matrices::N) + "[domain " + std::to_string(domain) + "]", Matrices::N, domain);
 		instance.K[domain].swap(instance.origK[domain]);
@@ -310,10 +309,10 @@ void CollectiveProvider::setB0Callback()
 			}
 			switch (type) {
 			case FETI_B0_TYPE::CORNERS:
-				physics.assembleB0FromCorners();
+//				physics.assembleB0FromCorners();
 				break;
 			case FETI_B0_TYPE::KERNELS:
-				physics.assembleB0FromKernels(kernels);
+//				physics.assembleB0FromKernels(kernels);
 				break;
 			default:
 				ESINFO(GLOBAL_ERROR) << "Unknown type of B0";

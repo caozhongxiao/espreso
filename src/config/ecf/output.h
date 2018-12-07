@@ -6,6 +6,7 @@
 #include "physics/physics.h"
 
 #include "physics/heattransfer.h"
+#include "physics/structuralmechanics.h"
 
 namespace espreso {
 
@@ -29,12 +30,19 @@ protected:
 	const PHYSICS &_physics;
 };
 
-struct ResultsSelectionConfiguration: public HeatTransferOutputSettings, public ECFObject {
+struct ResultsSelectionConfiguration: public HeatTransferOutputSettings, public StructuralMechanicsOutputSettings, public ECFObject {
 
-	bool displacement;
+	void basic()
+	{
+		HeatTransferOutputSettings::basic();
+		StructuralMechanicsOutputSettings::basic();
+	}
 
-	void basic();
-	void all();
+	void all()
+	{
+		HeatTransferOutputSettings::all();
+		StructuralMechanicsOutputSettings::all();
+	}
 
 	ResultsSelectionConfiguration(const PHYSICS &physics);
 protected:

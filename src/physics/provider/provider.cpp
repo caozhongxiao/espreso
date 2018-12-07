@@ -4,7 +4,6 @@
 
 #include "../step.h"
 #include "../instance.h"
-#include "../assembler/physics.h"
 #include "../assembler/composer/composer.h"
 
 #include "../../config/ecf/root.h"
@@ -40,8 +39,8 @@ std::string Provider::mNames(espreso::Matrices matrices, const std::string &pref
 	std::string(matrices & espreso::Matrices::dual        ? prefix + "Dual "        : "");
 }
 
-Provider::Provider(Instance &instance, Physics &physics, Composer &composer, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver)
-: instance(instance), physics(physics), composer(composer), mesh(mesh), step(step), store(store), linearSolver(linearSolver), _timeStatistics(new TimeEval("Physics solver timing"))
+Provider::Provider(Instance &instance, Composer &composer, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver)
+: instance(instance), composer(composer), mesh(mesh), step(step), store(store), linearSolver(linearSolver), _timeStatistics(new TimeEval("Physics solver timing"))
 {
 	_timeStatistics->totalTime.startWithBarrier();
 
@@ -148,7 +147,7 @@ void Provider::finalize()
 
 void Provider::timeWrapper(const std::string &action, std::function<void(void)> operations)
 {
-	std::string fulldesc(physics.name() + ": " + action);
+	std::string fulldesc(/*physics.name() + ": " +*/ action);
 
 	ESINFO(PROGRESS2) << fulldesc;
 
@@ -178,7 +177,7 @@ static void storeData(TType &data, size_t domain, const std::string &name)
 bool Provider::checkForStore(const std::string &name)
 {
 	if (environment->print_matrices) {
-		std::string fulldesc(physics.name() + ": store " + name);
+		std::string fulldesc(/*physics.name() + ": store " +*/ name);
 		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << fulldesc;
 	}
 	return environment->print_matrices;

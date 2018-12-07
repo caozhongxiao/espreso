@@ -34,9 +34,10 @@ public:
 		std::function<void(size_t)> insert;
 	};
 
-	virtual MatrixType getMatrixType() const = 0;
 	virtual MatrixType getMatrixType(size_t domain) const = 0;
+	virtual void analyticRegularization(size_t domain, bool ortogonalCluster) = 0;
 
+	virtual MatrixType getMatrixType() const = 0;
 	virtual std::vector<double>& getSolutionStore() = 0;
 
 	virtual void initData() = 0;

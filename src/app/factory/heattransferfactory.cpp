@@ -12,8 +12,6 @@
 
 #include "../../physics/instance.h"
 #include "../../physics/assembler/assembler.h"
-#include "../../physics/assembler/heattransfer2d.h"
-#include "../../physics/assembler/heattransfer3d.h"
 #include "../../basis/logging/logging.h"
 
 #include "../../physics/provider/distributedprovider.h"
@@ -28,7 +26,6 @@ HeatTransferFactory::HeatTransferFactory(Step *step, const HeatTransferConfigura
 
 	switch (configuration.dimension) {
 	case DIMENSION::D2:
-		_physics.push_back(new HeatTransfer2D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
 		switch (configuration.load_steps_settings.at(1).solver) {
 		case LoadStepConfiguration::SOLVER::FETI:
 			_composer.push_back(new DomainsHeatTransfer2D(
@@ -42,7 +39,6 @@ HeatTransferFactory::HeatTransferFactory(Step *step, const HeatTransferConfigura
 
 		break;
 	case DIMENSION::D3:
-		_physics.push_back(new HeatTransfer3D(mesh, _instances.front(), step, configuration, propertiesConfiguration));
 		switch (configuration.load_steps_settings.at(1).solver) {
 		case LoadStepConfiguration::SOLVER::FETI:
 			_composer.push_back(new DomainsHeatTransfer3D(
@@ -77,10 +73,10 @@ LoadStepSolver* HeatTransferFactory::getLoadStepSolver(size_t step, Mesh *mesh, 
 	_linearSolvers.push_back(getLinearSolver(settings, _instances.front()));
 	switch (_configuration.load_steps_settings.at(1).solver) {
 	case LoadStepConfiguration::SOLVER::FETI:
-		_provider.push_back(new DistributedProvider(*_instances.front(), *_physics.front(), *_composer.front(), *mesh, *_step, *store, *_linearSolvers.back()));
+		_provider.push_back(new DistributedProvider(*_instances.front(), *_composer.front(), *mesh, *_step, *store, *_linearSolvers.back()));
 		break;
 	case LoadStepConfiguration::SOLVER::MULTIGRID:
-		_provider.push_back(new CollectiveProvider(*_instances.front(), *_physics.front(), *_composer.front(), *mesh, *_step, *store, *_linearSolvers.back()));
+		_provider.push_back(new CollectiveProvider(*_instances.front(), *_composer.front(), *mesh, *_step, *store, *_linearSolvers.back()));
 		break;
 	}
 

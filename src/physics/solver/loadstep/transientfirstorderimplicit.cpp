@@ -13,7 +13,6 @@
 #include <iostream>
 #include <cmath>
 
-#include "../../assembler/physics.h"
 #include "../../provider/provider.h"
 #include "../../solver/timestep/timestepsolver.h"
 

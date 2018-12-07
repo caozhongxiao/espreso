@@ -7,17 +7,7 @@
 
 namespace espreso {
 
-struct StructuralMechanicsLoadStepConfiguration: public LoadStepConfiguration {
-
-	std::map<std::string, ECFExpression> temperature, normal_pressure;
-	std::map<std::string, ECFExpressionVector> angular_velocity, acceleration, normal_direction, obstacle;
-
-	RegionMap<ECFExpressionOptionalVector> displacement;
-
-	StructuralMechanicsLoadStepConfiguration(DIMENSION dimension);
-};
-
-struct StructuralMechanicsConfiguration: public PhysicsConfiguration {
+struct StructuralMechanicsGlobalSettings {
 
 	enum class ELEMENT_BEHAVIOUR {
 		PLANE_STRAIN = 0,
@@ -29,6 +19,36 @@ struct StructuralMechanicsConfiguration: public PhysicsConfiguration {
 	ELEMENT_BEHAVIOUR element_behaviour;
 
 	std::map<std::string, ECFExpression> initial_temperature, thickness;
+};
+
+struct StructuralMechanicsStepSettings {
+
+	RegionMap<ECFExpressionOptionalVector> displacement;
+
+	std::map<std::string, ECFExpression> temperature, normal_pressure;
+	std::map<std::string, ECFExpressionVector> angular_velocity, acceleration, normal_direction, obstacle;
+};
+
+struct StructuralMechanicsOutputSettings {
+
+	bool displacement;
+
+	void basic() {
+		displacement = true;
+	}
+	void all() {
+		displacement = true;
+	}
+
+	StructuralMechanicsOutputSettings() { basic(); }
+};
+
+struct StructuralMechanicsLoadStepConfiguration: public LoadStepConfiguration, public StructuralMechanicsStepSettings {
+
+	StructuralMechanicsLoadStepConfiguration(DIMENSION dimension);
+};
+
+struct StructuralMechanicsConfiguration: public PhysicsConfiguration, public StructuralMechanicsGlobalSettings {
 
 	std::map<size_t, StructuralMechanicsLoadStepConfiguration> load_steps_settings;
 
