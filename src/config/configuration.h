@@ -168,6 +168,7 @@ inline ECFNotCondition operator!(const ECFCondition &other) { return other; }
 struct ECFMetaData {
 	std::string name;
 	std::vector<std::string> description;
+	std::vector<std::string> help;
 	std::vector<ECFDataType> datatype;
 	std::vector<std::string> pattern;
 	std::vector<ECFOption> options;
@@ -183,6 +184,7 @@ struct ECFMetaData {
 
 	ECFMetaData& setname(const std::string &name) { this->name = name; return *this; }
 	ECFMetaData& setdescription(const std::vector<std::string> &description) { this->description = description; return *this; }
+	ECFMetaData& sethelp(const std::vector<std::string> &help) { this->help = help; return *this; }
 	ECFMetaData& setdatatype(const std::vector<ECFDataType> &datatype) { this->datatype = datatype; return *this; }
 	ECFMetaData& setpattern(const std::vector<std::string> &pattern) { this->pattern = pattern; return *this; }
 	ECFMetaData& setvariables(const std::vector<std::string> &variables) { this->variables = variables; return *this; }
@@ -213,7 +215,7 @@ struct ECFMetaData {
 	}
 
 	ECFMetaData(const ECFMetaData &other)
-	: name(other.name), description(other.description),
+	: name(other.name), description(other.description), help(other.help),
 	  datatype(other.datatype), pattern(other.pattern),
 	  options(other.options), variables(other.variables),
 	  tensor(other.tensor), regionMap(other.regionMap),
@@ -224,7 +226,7 @@ struct ECFMetaData {
 	}
 
 	ECFMetaData(ECFMetaData &&other)
-	: name(std::move(other.name)), description(std::move(other.description)),
+	: name(std::move(other.name)), description(std::move(other.description)), help(std::move(other.help)),
 	  datatype(std::move(other.datatype)), pattern(std::move(other.pattern)),
 	  options(std::move(other.options)), variables(std::move(other.variables)),
 	  tensor(std::move(other.tensor)), regionMap(std::move(other.regionMap)),
@@ -239,6 +241,7 @@ struct ECFMetaData {
 		if (this != &other) {
 			name = other.name;
 			description = other.description;
+			help = other.help;
 			datatype = other.datatype;
 			pattern = other.pattern;
 			options = other.options;
