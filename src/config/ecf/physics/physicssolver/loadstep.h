@@ -2,10 +2,11 @@
 #ifndef SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_LOADSTEP_H_
 #define SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_LOADSTEP_H_
 
+#include "../../linearsolver/feti.h"
+#include "../../linearsolver/multigrid.h"
+#include "../../linearsolver/hypre/hypre.h"
 #include "transientsolver.h"
 #include "nonlinearsolver.h"
-#include "../../solver/feti.h"
-#include "../../solver/multigrid.h"
 
 namespace espreso {
 
@@ -23,7 +24,8 @@ struct LoadStepConfiguration: public ECFObject {
 
 	enum class SOLVER {
 		FETI,
-		MULTIGRID
+		MULTIGRID,
+		HYPRE
 	};
 
 	double duration_time;
@@ -37,6 +39,7 @@ struct LoadStepConfiguration: public ECFObject {
 
 	FETISolverConfiguration feti;
 	MultigridConfiguration multigrid;
+	HypreConfiguration hypre;
 
 	LoadStepConfiguration(const std::string &firstResidualName, const std::string &secondResidualName);
 };

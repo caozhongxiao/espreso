@@ -20,7 +20,7 @@
 #include "../../solver/generic/SparseMatrix.h"
 #include "../../basis/matrices/denseMatrix.h"
 #include "../../config/ecf/environment.h"
-#include "../../config/ecf/solver/feti.h"
+#include "../../config/ecf/linearsolver/feti.h"
 #include "../../config/ecf/physics/physics.h"
 
 #include <algorithm>

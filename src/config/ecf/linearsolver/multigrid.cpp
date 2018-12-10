@@ -1,5 +1,6 @@
 
-#include "multigrid.h"
+#include "../linearsolver/multigrid.h"
+
 #include "../../configuration.hpp"
 
 espreso::MultigridConfiguration::MultigridConfiguration()

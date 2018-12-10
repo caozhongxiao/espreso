@@ -1,5 +1,6 @@
 
-#include "feti.h"
+#include "../linearsolver/feti.h"
+
 #include "../../configuration.hpp"
 
 espreso::FETISolverConfiguration::FETISolverConfiguration()

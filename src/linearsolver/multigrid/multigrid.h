@@ -3,7 +3,7 @@
 #define SRC_LINEARSOLVER_MULTIGRID_MULTIGRID_H_
 
 #include "../linearsolver.h"
-#include "../../config/ecf/solver/multigrid.h"
+#include "../../config/ecf/linearsolver/multigrid.h"
 
 namespace espreso {
 

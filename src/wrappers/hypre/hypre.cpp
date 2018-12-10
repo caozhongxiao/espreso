@@ -5,14 +5,13 @@
 #include "../../basis/utilities/communication.h"
 #include "../../basis/utilities/utils.h"
 
-#include "../../config/ecf/solver/multigrid.h"
-
 #include "include/HYPRE_krylov.h"
 #include "include/HYPRE.h"
 #include "include/HYPRE_parcsr_ls.h"
 
 #include <vector>
 #include <numeric>
+#include "../../config/ecf/linearsolver/multigrid.h"
 
 using namespace espreso;
 
