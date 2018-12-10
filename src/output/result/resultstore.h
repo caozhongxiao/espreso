@@ -8,7 +8,6 @@ namespace async { class Dispatcher; }
 
 namespace espreso {
 
-struct Step;
 class Mesh;
 class OutputConfiguration;
 class ResultStoreExecutor;
@@ -20,7 +19,7 @@ public:
 	virtual bool isSeparated() =0;
 
 	virtual void updateMesh() =0;
-	virtual void updateSolution(const Step &step) =0;
+	virtual void updateSolution() =0;
 
 	virtual const Mesh& mesh() const { return _mesh; }
 
@@ -45,10 +44,10 @@ public:
 
 	bool isCollected();
 	bool isSeparated();
-	bool storeStep(const Step &step);
+	bool storeStep();
 
 	void updateMesh();
-	void updateSolution(const Step &step);
+	void updateSolution();
 
 	ResultStore();
 	~ResultStore();

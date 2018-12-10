@@ -27,9 +27,9 @@ void InSitu::updateMesh()
 	_inSitu = new InSituWrapper(_mesh);
 }
 
-void InSitu::updateSolution(const Step &step)
+void InSitu::updateSolution()
 {
-	_inSitu->update(step);
+	_inSitu->update();
 	sleep(_configuration.catalyst_sleep_time);
 }
 

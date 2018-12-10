@@ -10,7 +10,6 @@
 
 namespace espreso {
 
-struct Step;
 class Mesh;
 
 struct EnSight: public CollectedVisualization {
@@ -18,7 +17,7 @@ struct EnSight: public CollectedVisualization {
 	~EnSight();
 
 	void updateMesh();
-	void updateSolution(const Step &step);
+	void updateSolution();
 
 protected:
 	std::string codetotype(int code);

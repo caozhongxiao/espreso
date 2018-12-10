@@ -12,7 +12,6 @@ namespace espreso {
 struct ECFRoot;
 struct OutputConfiguration;
 struct MaterialConfiguration;
-struct Step;
 
 struct Statistics;
 struct ElementStore;
@@ -31,11 +30,13 @@ struct ContactStore;
 class MeshPreprocessing;
 class Element;
 
+class ResultStore;
+
 class Mesh {
 
 	friend class MeshPreprocessing;
 public:
-	Mesh(const ECFRoot &configuration, bool withGUI = false);
+	Mesh(const ECFRoot &configuration, ResultStore *store, bool withGUI = false);
 	void update();
 
 	void initNodeData();
@@ -88,6 +89,8 @@ public:
 //protected:
 	const ECFRoot &configuration;
 	std::vector<Element*> _eclasses;
+
+	ResultStore *store;
 
 	bool _withGUI;
 

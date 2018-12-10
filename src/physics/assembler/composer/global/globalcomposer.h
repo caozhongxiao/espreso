@@ -10,8 +10,8 @@ class GlobalComposer: public Composer {
 
 public:
 
-	GlobalComposer(Mesh &mesh, Step &step, Instance &instance, Controler &controler)
-	: Composer(mesh, step, instance, controler), _localKOffset(0), _localRHSOffset(0) {}
+	GlobalComposer(Mesh &mesh, DataHolder &instance, Controler &controler)
+	: Composer(mesh, instance, controler), _localKOffset(0), _localRHSOffset(0) {}
 
 protected:
 	eslocal _localKOffset, _localRHSOffset;

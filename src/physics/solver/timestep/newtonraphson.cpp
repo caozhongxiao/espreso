@@ -1,15 +1,14 @@
 
 #include "../../solver/timestep/newtonraphson.h"
 
-#include "../../instance.h"
-#include "../../step.h"
-
 #include "../../../config/ecf/physics/physicssolver/nonlinearsolver.h"
 #include "../../../basis/logging/logging.h"
 #include "../../../linearsolver/linearsolver.h"
 
 #include <cmath>
 
+#include "../../../globals/time.h"
+#include "../../dataholder.h"
 #include "../../provider/provider.h"
 #include "../../solver/loadstep/loadstepsolver.h"
 
@@ -44,17 +43,17 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 	double alpha, maxSolutionValue;
 
 
-	_composer.step.iteration = 0;
-	_composer.step.tangentMatrixCorrection = false;
+	time::iteration = 0;
+//	_composer.step.tangentMatrixCorrection = false;
 	_composer.solve(loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::B1));
 	_composer.parametersChanged();
 	_composer.processSolution();
 	_composer.storeSubSolution();
 
-	_composer.step.tangentMatrixCorrection = _configuration.tangent_matrix_correction;
-	while (_composer.step.iteration++ < _configuration.max_iterations) {
+//	_composer.step.tangentMatrixCorrection = _configuration.tangent_matrix_correction;
+	while (time::iteration++ < _configuration.max_iterations) {
 		if (!_configuration.check_second_residual) {
-			ESINFO(CONVERGENCE) << "\n >> EQUILIBRIUM ITERATION " << _composer.step.iteration + 1 << " IN SUBSTEP "  << _composer.step.substep + 1;
+			ESINFO(CONVERGENCE) << "\n >> EQUILIBRIUM ITERATION " << time::iteration + 1 << " IN SUBSTEP "  << time::substep + 1;
 		}
 
 		_solution = _composer.instance.primalSolution;
@@ -91,7 +90,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 //			heatResidual_first = sqrt(_composer.sumSquares(_f_R_BtLambda, SumRestriction::NONE, "norm of (f - R) - Bt * Lambda"));
 			heatResidual = heatResidual_first / heatResidual_second;
 
-			if (heatResidual < _configuration.requested_second_residual && _composer.step.iteration > 1 ) {
+			if (heatResidual < _configuration.requested_second_residual && time::iteration > 1 ) {
 				ESINFO(CONVERGENCE) << "    HEAT_CONVERGENCE_VALUE =  " <<  heatResidual_first << "  CRITERION_VALUE = " << heatResidual_second * _configuration.requested_second_residual << " <<< CONVERGED >>>";
 				if (_configuration.check_first_residual) {
 					if (temperatureResidual < _configuration.requested_first_residual) {
@@ -101,7 +100,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 					break;
 				}
 			} else {
-				ESINFO(CONVERGENCE) << " >> EQUILIBRIUM ITERATION " << _composer.step.iteration + 1 << " IN SUBSTEP "  << _composer.step.substep + 1;
+				ESINFO(CONVERGENCE) << " >> EQUILIBRIUM ITERATION " << time::iteration + 1 << " IN SUBSTEP "  << time::substep + 1;
 				ESINFO(CONVERGENCE) << "    HEAT_CONVERGENCE_VALUE =  " <<  heatResidual_first << "  CRITERION_VALUE = " << heatResidual_second * _configuration.requested_second_residual;
 			}
 		}
@@ -114,7 +113,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 		_composer.addToDirichletInB1(-1, _composer.instance.primalSolution);
 
 		if (_configuration.adaptive_precision) {
-			if (_composer.step.iteration > 1) {
+			if (time::iteration > 1) {
 				solverPrecisionError = temperatureResidual_first / temperatureResidual_second;
 				solverPrecision = std::min(_configuration.r_tol * solverPrecisionError, _configuration.c_fact * solverPrecision);
 			}
@@ -160,9 +159,9 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 	}
 
 	if (_configuration.check_second_residual) {
-		ESINFO(CONVERGENCE) <<  " >> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION " << _composer.step.iteration ;
+		ESINFO(CONVERGENCE) <<  " >> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION " << time::iteration;
 	} else {
-		ESINFO(CONVERGENCE) <<  " >> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION " << _composer.step.iteration + 1 ;
+		ESINFO(CONVERGENCE) <<  " >> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION " << time::iteration + 1;
 	}
 
 	_composer.parametersChanged();

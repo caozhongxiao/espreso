@@ -464,7 +464,7 @@ domains[d].Kplus.msglvl = 0;
     }
 }
 
-void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
+void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
 
     bool USE_FLOAT = ( configuration.schur_precision == FETI_FLOAT_PRECISION::SINGLE ||
         configuration.Ksolver == FETI_KSOLVER::DIRECT_SP );

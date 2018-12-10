@@ -8,15 +8,13 @@
 
 namespace espreso {
 
-struct Step;
-struct Instance;
+struct DataHolder;
 struct Composer;
 class Mesh;
 struct LinearSolver;
 class TimeEval;
 class TimeEvent;
 class SparseMatrix;
-class ResultStore;
 enum Matrices: int;
 enum class SumRestriction;
 
@@ -25,7 +23,7 @@ class GeneralHeatTransfer2D;
 class Provider {
 
 public:
-	Provider(Instance &instance, Composer &composer, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver);
+	Provider(DataHolder &instance, Composer &composer, Mesh &mesh, LinearSolver &linearSolver);
 	virtual ~Provider();
 
 	virtual void preprocessData();
@@ -66,11 +64,9 @@ public:
 	virtual double lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext) { return 0; }
 	virtual void keepK() {}
 
-	Instance &instance;
+	DataHolder &instance;
 	Composer &composer;
 	Mesh &mesh;
-	Step &step;
-	ResultStore &store;
 	LinearSolver &linearSolver;
 
 protected:

@@ -16,10 +16,10 @@ public:
 		}
 	}
 
-	void updateSolution(const Step &step)
+	void updateSolution()
 	{
 		for (size_t i = 0; i < _resultStore.size(); i++) {
-			_resultStore[i]->updateSolution(step);
+			_resultStore[i]->updateSolution();
 		}
 	}
 

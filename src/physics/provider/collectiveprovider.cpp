@@ -1,8 +1,6 @@
 
 #include "collectiveprovider.h"
 
-#include "../step.h"
-#include "../instance.h"
 #include "../../linearsolver/linearsolver.h"
 
 #include "../../config/ecf/root.h"
@@ -18,12 +16,13 @@
 #include "../../output/result/resultstore.h"
 #include "../../output/result/visualization/separated/vtklegacy.h"
 #include "../assembler/composer/composer.h"
+#include "../dataholder.h"
 
 using namespace espreso;
 
 
-CollectiveProvider::CollectiveProvider(Instance &instance, Composer &composer, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver)
-: Provider(instance, composer, mesh, step, store, linearSolver)
+CollectiveProvider::CollectiveProvider(DataHolder &instance, Composer &composer, Mesh &mesh, LinearSolver &linearSolver)
+: Provider(instance, composer, mesh, linearSolver)
 {
 
 }
@@ -129,7 +128,7 @@ void CollectiveProvider::addToDirichletInB1(double a, const std::vector<std::vec
 		#pragma omp parallel for
 		for (size_t d = 0; d < instance.domains; d++) {
 			for (size_t j = 0; j < instance.B1[d].J_col_indices.size(); j++) {
-				if (instance.B1[d].I_row_indices[j] > (eslocal)instance.block[Instance::CONSTRAINT::DIRICHLET]) {
+				if (instance.B1[d].I_row_indices[j] > (eslocal)instance.block[DataHolder::CONSTRAINT::DIRICHLET]) {
 					break;
 				}
 				instance.B1c[d][j] += a * x[d][instance.B1[d].J_col_indices[j] - 1];

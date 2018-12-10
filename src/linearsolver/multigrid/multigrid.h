@@ -7,13 +7,13 @@
 
 namespace espreso {
 
-class Instance;
+class DataHolder;
 class HypreData;
 
 class MultigridSolver: public LinearSolver {
 public:
 
-	MultigridSolver(Instance *instance, const MultigridConfiguration &configuration);
+	MultigridSolver(DataHolder *instance, const MultigridConfiguration &configuration);
 	virtual ~MultigridSolver();
 
 	void update(Matrices matrices);
@@ -27,7 +27,7 @@ public:
 	double& precision();
 
 protected:
-	Instance *_instance;
+	DataHolder *_instance;
 	MultigridConfiguration _configuration;
 
 	HypreData *_hypreData;

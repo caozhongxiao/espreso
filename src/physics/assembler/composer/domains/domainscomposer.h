@@ -14,8 +14,8 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 class DomainsComposer: public Composer {
 
 public:
-	DomainsComposer(Mesh &mesh, Step &step, Instance &instance, Controler &controler)
-	: Composer(mesh, step, instance, controler) {}
+	DomainsComposer(Mesh &mesh, DataHolder &instance, Controler &controler)
+	: Composer(mesh, instance, controler) {}
 
 protected:
 	std::vector<std::vector<eslocal> > _KPermutation, _RHSPermutation;

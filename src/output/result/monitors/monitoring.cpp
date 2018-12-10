@@ -7,7 +7,6 @@
 
 #include "../../../config/ecf/environment.h"
 #include "../../../config/ecf/output.h"
-#include "../../../physics/step.h"
 
 #include "../../../mesh/mesh.h"
 #include "../../../mesh/store/nodestore.h"
@@ -16,6 +15,7 @@
 #include "../../../mesh/store/elementsregionstore.h"
 
 #include <iomanip>
+#include "../../../globals/time.h"
 
 using namespace espreso;
 
@@ -38,7 +38,7 @@ std::string right(const std::string &value, size_t size)
 	return ret;
 }
 
-bool Monitoring::storeStep(const OutputConfiguration &configuration, const Step &step)
+bool Monitoring::storeStep(const OutputConfiguration &configuration)
 {
 	switch (configuration.monitors_store_frequency) {
 	case OutputConfiguration::STORE_FREQUENCY::NEVER:
@@ -46,9 +46,9 @@ bool Monitoring::storeStep(const OutputConfiguration &configuration, const Step 
 	case OutputConfiguration::STORE_FREQUENCY::EVERY_TIMESTEP:
 		return true;
 	case OutputConfiguration::STORE_FREQUENCY::EVERY_NTH_TIMESTEP:
-		return step.substep % configuration.monitors_nth_stepping == 0;
+		return time::substep % configuration.monitors_nth_stepping == 0;
 	case OutputConfiguration::STORE_FREQUENCY::LAST_TIMESTEP:
-		return step.isLast();
+		return time::isLast();
 	default:
 		return false;
 	}
@@ -252,9 +252,9 @@ void Monitoring::updateMesh()
 	_os.flush();
 }
 
-void Monitoring::updateSolution(const Step &step)
+void Monitoring::updateSolution()
 {
-	if (!storeStep(_configuration, step)) {
+	if (!storeStep(_configuration)) {
 		return;
 	}
 
@@ -273,9 +273,9 @@ void Monitoring::updateSolution(const Step &step)
 		return;
 	}
 
-	_os << right(std::to_string(step.step + 1), 8) << " " << delimiter;
-	_os << right(std::to_string(step.substep + 1), 8) << " " << delimiter;
-	std::stringstream time; time << std::setprecision(4) << std::fixed << step.currentTime;
+	_os << right(std::to_string(time::step + 1), 8) << " " << delimiter;
+	_os << right(std::to_string(time::substep + 1), 8) << " " << delimiter;
+	std::stringstream time; time << std::setprecision(4) << std::fixed << time::current;
 	_os << right(time.str(), 8) << " " << delimiter;
 
 	for (size_t i = 0; i < _monitors.size(); i++) {

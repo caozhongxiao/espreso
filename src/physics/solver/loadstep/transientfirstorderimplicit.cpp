@@ -1,8 +1,6 @@
 
 #include "../../solver/loadstep/transientfirstorderimplicit.h"
 
-#include "../../step.h"
-#include "../../instance.h"
 #include "../../../mesh/mesh.h"
 #include "../../../mesh/store/nodestore.h"
 
@@ -13,6 +11,8 @@
 #include <iostream>
 #include <cmath>
 
+#include "../../../globals/time.h"
+#include "../../dataholder.h"
 #include "../../provider/provider.h"
 #include "../../solver/timestep/timestepsolver.h"
 
@@ -51,10 +51,10 @@ Matrices TransientFirstOrderImplicit::reassembleStructuralMatrices(Matrices matr
 	_composer.updateStructuralMatrices(matrices);
 	if (matrices & (Matrices::K | Matrices::M)) {
 		_composer.keepK();
-		_composer.sum(
-				_composer.instance.K,
-				1 / (_alpha * _composer.step.timeStep), _composer.instance.M,
-				"K += (1 / alpha * delta T) * M");
+//		_composer.sum(
+//				_composer.instance.K,
+//				1 / (_alpha * time::shift), _composer.instance.M,
+//				"K += (1 / alpha * delta T) * M");
 	}
 
 	_composer.updateGluingMatrices(matrices);
@@ -108,31 +108,31 @@ void TransientFirstOrderImplicit::initLoadStep()
 		ESINFO(GLOBAL_ERROR) << "Not supported first order implicit solver method.";
 	}
 
-	if (loadStep + 1 != _composer.step.step) {
+	if (loadStep + 1 != time::step) {
 //		for (size_t i = 0; i < V->decomposedData->size(); i++) {
 //			std::fill((*V->decomposedData)[i].begin(), (*V->decomposedData)[i].end(), 0);
 //		}
 	}
-	loadStep = _composer.step.step;
+	loadStep = time::step;
 //	(*U->decomposedData) = _composer.instance.primalSolution;
 }
 
 void TransientFirstOrderImplicit::runNextTimeStep()
 {
-	double last = _composer.step.currentTime;
-	_composer.step.currentTime += _nTimeStep;
-	if (_composer.step.currentTime + _precision >= _startTime + _duration) {
-		_composer.step.currentTime = _startTime + _duration;
+	double last = time::current;
+	time::current += _nTimeStep;
+	if (time::current + _precision >= _startTime + _duration) {
+		time::current = _startTime + _duration;
 	}
-	_composer.step.timeStep = _composer.step.currentTime - last;
+	time::shift = time::current - last;
 	processTimeStep();
 }
 
 void TransientFirstOrderImplicit::processTimeStep()
 {
-	_composer.step.internalForceReduction = 1;
-	_composer.step.timeIntegrationConstantK = 1;
-	_composer.step.timeIntegrationConstantM = 1 / (_alpha * _composer.step.timeStep);
+//	_composer.step.internalForceReduction = 1;
+//	_composer.step.timeIntegrationConstantK = 1;
+//	_composer.step.timeIntegrationConstantM = 1 / (_alpha * _composer.step.timeStep);
 
 	_timeStepSolver.solve(*this);
 

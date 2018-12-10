@@ -1,15 +1,14 @@
 
 #include "structuralmechanics2d.kernel.h"
 
-#include "../../../config/ecf/physics/structuralmechanics.h"
 #include "../../../basis/containers/point.h"
 #include "../../../basis/matrices/denseMatrix.h"
 #include "../../../basis/evaluator/evaluator.h"
-
-#include "../../instance.h"
-#include "../../step.h"
+#include "../../../config/ecf/physics/structuralmechanics.h"
+#include "../../../globals/time.h"
 
 #include "../../../mesh/elements/element.h"
+#include "../../dataholder.h"
 
 using namespace espreso;
 
@@ -130,7 +129,7 @@ void StructuralMechanics2DKernel::assembleMaterialMatrix(eslocal node, double *c
 	}
 }
 
-void StructuralMechanics2DKernel::processElement(Matrices matrices, const ElementIterator &iterator, const Step &step, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void StructuralMechanics2DKernel::processElement(Matrices matrices, const ElementIterator &iterator, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	eslocal size = iterator.element->nodes;
 
@@ -149,24 +148,24 @@ void StructuralMechanics2DKernel::processElement(Matrices matrices, const Elemen
 		inertia(n, 1) = iterator.acceleration[2 * n + 1];
 		coordinates(n, 0) = iterator.coordinates[2 * n + 0];
 		coordinates(n, 1) = iterator.coordinates[2 * n + 1];
-		iterator.material->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &dens(n, 0));
+		iterator.material->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, time::current, &dens(n, 0));
 
 		thickness(n, 0) = iterator.thickness[n];
 		switch (iterator.material->linear_elastic_properties.model) {
 		case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
-			iterator.material->linear_elastic_properties.thermal_expansion.get(0, 0).evaluator->evalVector(1, 2, iterator.coordinates, iterator.temperature, step.currentTime, &te);
+			iterator.material->linear_elastic_properties.thermal_expansion.get(0, 0).evaluator->evalVector(1, 2, iterator.coordinates, iterator.temperature, time::current, &te);
 			TE(n, 0) = TE(n, 1) = (iterator.temperature[n] - iterator.initialTemperature[n]) * te;
 			break;
 		case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC:
-			iterator.material->linear_elastic_properties.thermal_expansion.get(0, 0).evaluator->evalVector(1, 2, iterator.coordinates, iterator.temperature, step.currentTime, &te);
+			iterator.material->linear_elastic_properties.thermal_expansion.get(0, 0).evaluator->evalVector(1, 2, iterator.coordinates, iterator.temperature, time::current, &te);
 			TE(n, 0) = (iterator.temperature[n] - iterator.initialTemperature[n]) * te;
-			iterator.material->linear_elastic_properties.thermal_expansion.get(1, 1).evaluator->evalVector(1, 2, iterator.coordinates, iterator.temperature, step.currentTime, &te);
+			iterator.material->linear_elastic_properties.thermal_expansion.get(1, 1).evaluator->evalVector(1, 2, iterator.coordinates, iterator.temperature, time::current, &te);
 			TE(n, 1) = (iterator.temperature[n] - iterator.initialTemperature[n]) * te;
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Invalid LINEAR ELASTIC model.";
 		}
-		assembleMaterialMatrix(n, iterator.coordinates, iterator.material, step.currentTime, iterator.temperature[n], K);
+		assembleMaterialMatrix(n, iterator.coordinates, iterator.material, time::current, iterator.temperature[n], K);
 	}
 
 	Ke.resize(0, 0);
@@ -299,7 +298,7 @@ void StructuralMechanics2DKernel::processElement(Matrices matrices, const Elemen
 	}
 }
 
-void StructuralMechanics2DKernel::processEdge(Matrices matrices, const BoundaryIterator &iterator, const Step &step, DenseMatrix &Ke, DenseMatrix &fe) const
+void StructuralMechanics2DKernel::processEdge(Matrices matrices, const BoundaryIterator &iterator, DenseMatrix &Ke, DenseMatrix &fe) const
 {
 	if (iterator.normalPressure == NULL) {
 		Ke.resize(0, 0);
@@ -368,7 +367,7 @@ void StructuralMechanics2DKernel::processEdge(Matrices matrices, const BoundaryI
 	}
 }
 
-void StructuralMechanics2DKernel::processSolution(const SolutionIterator &iterator, const Step &step)
+void StructuralMechanics2DKernel::processSolution(const SolutionIterator &iterator)
 {
 
 }

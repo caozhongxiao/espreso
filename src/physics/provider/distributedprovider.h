@@ -9,7 +9,7 @@ namespace espreso {
 class DistributedProvider: public Provider {
 
 public:
-	DistributedProvider(Instance &instance, Composer &composer, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver);
+	DistributedProvider(DataHolder &instance, Composer &composer, Mesh &mesh, LinearSolver &linearSolver);
 	~DistributedProvider();
 
 	void setRegularizationCallback();

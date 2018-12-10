@@ -102,6 +102,7 @@ def configure(ctx):
 
     # recurse to basic parts
     ctx.recurse("src/basis")
+    ctx.recurse("src/globals")
     ctx.recurse("src/config")
     ctx.recurse("src/wrappers")
 
@@ -154,6 +155,7 @@ def build(ctx):
     ctx.add_group()
 
     ctx.recurse("src/basis")
+    ctx.recurse("src/globals")
     ctx.recurse("src/config")
     ctx.recurse("src/wrappers")
 

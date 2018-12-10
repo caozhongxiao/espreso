@@ -9,7 +9,7 @@ namespace espreso {
 class Visualization: public ResultStoreBase {
 
 public:
-	static bool storeStep(const OutputConfiguration &configuration, const Step &step);
+	static bool storeStep(const OutputConfiguration &configuration);
 
 	Visualization(const Mesh &mesh, const OutputConfiguration &configuration);
 

@@ -26,6 +26,7 @@
 #include "vtkCPPythonScriptPipeline.h"
 #include "vtkCPInputDataDescription.h"
 #include "vtkFieldData.h"
+#include "../../../globals/run.h"
 
 using namespace espreso;
 
@@ -66,9 +67,9 @@ InSituWrapper::InSituWrapper(const Mesh &mesh)
 	_processor->CoProcess(_dataDescription);
 }
 
-void InSituWrapper::update(const Step &step)
+void InSituWrapper::update()
 {
-	_dataDescription->SetTimeData(step.currentTime, ++_timeStep);
+	_dataDescription->SetTimeData(run::time::current, ++_timeStep);
 
 	std::vector<double> data;
 	for (size_t di = 0; di < _mesh.nodes->data.size(); di++) {

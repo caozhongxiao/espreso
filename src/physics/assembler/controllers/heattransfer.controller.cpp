@@ -1,8 +1,6 @@
 
 #include "heattransfer2d.controller.h"
 
-#include "../../step.h"
-
 #include "../../../basis/containers/serializededata.h"
 #include "../../../basis/evaluator/evaluator.h"
 #include "../../../basis/matrices/matrixtype.h"
@@ -16,14 +14,15 @@
 
 #include "../../../basis/utilities/communication.h"
 #include "../../../basis/utilities/utils.h"
+#include "../../../globals/time.h"
 
 using namespace espreso;
 
 MatrixType HeatTransferControler::getMatrixType(size_t domain) const
 {
-	if (_step.tangentMatrixCorrection) {
-		return MatrixType::REAL_UNSYMMETRIC;
-	}
+//	if (_step.tangentMatrixCorrection) {
+//		return MatrixType::REAL_UNSYMMETRIC;
+//	}
 
 	if (_stepSettings.translation_motions.size()) {
 		for (auto it = _stepSettings.translation_motions.begin(); it != _stepSettings.translation_motions.end(); ++it) {
@@ -121,9 +120,9 @@ void HeatTransferControler::analyticRegularization(size_t domain, bool ortogonal
 
 MatrixType HeatTransferControler::getMatrixType() const
 {
-	if (_step.tangentMatrixCorrection) {
-		return MatrixType::REAL_UNSYMMETRIC;
-	}
+//	if (_step.tangentMatrixCorrection) {
+//		return MatrixType::REAL_UNSYMMETRIC;
+//	}
 
 	if (_stepSettings.translation_motions.size()) {
 		for (auto it = _stepSettings.translation_motions.begin(); it != _stepSettings.translation_motions.end(); ++it) {
@@ -167,7 +166,7 @@ void HeatTransferControler::dirichletValues(std::vector<double> &values)
 				region->uniqueNodes->datatarray().size(),
 				region->uniqueNodes->datatarray().data(),
 				3, reinterpret_cast<double*>(_mesh.nodes->coordinates->datatarray().data()),
-				NULL, _step.currentTime, values.data() + offset);
+				NULL, time::current, values.data() + offset);
 		offset += region->uniqueNodes->datatarray().size();
 	}
 
@@ -177,7 +176,7 @@ void HeatTransferControler::dirichletValues(std::vector<double> &values)
 				region->uniqueNodes->datatarray().size(),
 				region->uniqueNodes->datatarray().data(),
 				3, reinterpret_cast<double*>(_mesh.nodes->coordinates->datatarray().data()),
-				NULL, _step.currentTime, values.data() + offset);
+				NULL, time::current, values.data() + offset);
 		offset += region->uniqueNodes->datatarray().size();
 	}
 }

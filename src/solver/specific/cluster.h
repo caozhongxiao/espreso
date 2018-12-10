@@ -80,7 +80,7 @@ using std::make_pair;
 //        }
 
 
-        ClusterBase(const FETISolverConfiguration &configuration, Instance *instance_in):
+        ClusterBase(const FETISolverConfiguration &configuration, DataHolder *instance_in):
         	configuration(configuration),
 			instance(instance_in),
 
@@ -128,7 +128,7 @@ using std::make_pair;
 
 
         const FETISolverConfiguration &configuration;
-        Instance *instance;
+        DataHolder *instance;
 
         // Cluster specific variables
         eslocal cluster_global_index;
@@ -244,7 +244,7 @@ using std::make_pair;
 
         void Create_Kinv_perDomain();
         virtual void Create_SC_perDomain( bool USE_FLOAT ) = 0;
-        virtual void CreateDirichletPrec( Instance *instance );
+        virtual void CreateDirichletPrec( DataHolder *instance );
 
 	void B1_comp_MatVecSum(SEQ_VECTOR < SEQ_VECTOR <double> > & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_non_transpose );
 

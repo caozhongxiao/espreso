@@ -15,10 +15,10 @@
 #include "../../solver/generic/FETISolver.h"
 
 
-espreso::ECFRoot* espreso::DataHolder::configuration = NULL;
-std::list<FETI4IStructMatrix*> espreso::DataHolder::matrices;
-std::list<FETI4IStructInstance*> espreso::DataHolder::instances;
-espreso::TimeEval espreso::DataHolder::timeStatistics("API total time");
+espreso::ECFRoot* espreso::APIDataHolder::configuration = NULL;
+std::list<FETI4IStructMatrix*> espreso::APIDataHolder::matrices;
+std::list<FETI4IStructInstance*> espreso::APIDataHolder::instances;
+espreso::TimeEval espreso::APIDataHolder::timeStatistics("API total time");
 
 using namespace espreso;
 
@@ -46,12 +46,12 @@ FETI4IStructInstance::~FETI4IStructInstance()
 
 static void checkConfiguration()
 {
-	if (espreso::DataHolder::configuration == NULL) {
-		espreso::DataHolder::configuration = new ECFRoot();
+	if (espreso::APIDataHolder::configuration == NULL) {
+		espreso::APIDataHolder::configuration = new ECFRoot();
 		std::ifstream is("espreso.ecf");
 		if (is.good()) {
-			espreso::ECFReader::read(*espreso::DataHolder::configuration, "espreso.ecf", espreso::DataHolder::configuration->default_args, espreso::DataHolder::configuration->variables);
-			espreso::ECFReader::set(espreso::DataHolder::configuration->environment, espreso::DataHolder::configuration->output);
+			espreso::ECFReader::read(*espreso::APIDataHolder::configuration, "espreso.ecf", espreso::APIDataHolder::configuration->default_args, espreso::APIDataHolder::configuration->variables);
+			espreso::ECFReader::set(espreso::APIDataHolder::configuration->environment, espreso::APIDataHolder::configuration->output);
 		}
 	}
 }
@@ -59,7 +59,7 @@ static void checkConfiguration()
 void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 {
 	checkConfiguration();
-	ECFRoot &ecf = *espreso::DataHolder::configuration;
+	ECFRoot &ecf = *espreso::APIDataHolder::configuration;
 
 	options[FETI4I_SUBDOMAINS] = ecf.feti4ilibrary.domains;
 
@@ -78,7 +78,7 @@ void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 void FETI4ISetDefaultRealOptions(FETI4IReal* options)
 {
 	checkConfiguration();
-	ECFRoot &ecf = *espreso::DataHolder::configuration;
+	ECFRoot &ecf = *espreso::APIDataHolder::configuration;
 	options[FETI4I_PRECISION] = ecf.feti4ilibrary.solver.precision;
 }
 
@@ -129,12 +129,12 @@ void FETI4ICreateStiffnessMatrix(
 		FETI4IInt		indexBase)
 {
 	checkConfiguration();
-	DataHolder::timeStatistics.totalTime.startWithBarrier();
+	APIDataHolder::timeStatistics.totalTime.startWithBarrier();
 	TimeEvent event("Add element");
-	DataHolder::timeStatistics.addEvent(event);
+	APIDataHolder::timeStatistics.addEvent(event);
 
-	DataHolder::matrices.push_back(new FETI4IStructMatrix(type, indexBase));
-	*matrix = DataHolder::matrices.back();
+	APIDataHolder::matrices.push_back(new FETI4IStructMatrix(type, indexBase));
+	*matrix = APIDataHolder::matrices.back();
 }
 
 void FETI4IAddElement(
@@ -146,7 +146,7 @@ void FETI4IAddElement(
 		FETI4IInt*		dofs,
 		FETI4IReal*		values)
 {
-	espreso::DataHolder::timeStatistics.timeEvents.back().startWithoutBarrier();
+	espreso::APIDataHolder::timeStatistics.timeEvents.back().startWithoutBarrier();
 
 	if (std::all_of(values, values + dofsSize, [] (double &value) { return value == 0; })) {
 		// Skip elements with zero values
@@ -161,7 +161,7 @@ void FETI4IAddElement(
 	std::for_each(matrix->eDOFs.back().begin(), matrix->eDOFs.back().end(), [ &offset ] (eslocal &index) { index -= offset; });
 	matrix->eMatrices.push_back(std::vector<double>(values, values + dofsSize * dofsSize));
 
-	espreso::DataHolder::timeStatistics.timeEvents.back().endWithoutBarrier();
+	espreso::APIDataHolder::timeStatistics.timeEvents.back().endWithoutBarrier();
 }
 
 void FETI4ICreateInstance(
@@ -179,10 +179,10 @@ void FETI4ICreateInstance(
 		FETI4IReal*		real_options)
 {
 	checkConfiguration();
-	DataHolder::instances.push_back(new FETI4IStructInstance(*matrix, l2g, size));
+	APIDataHolder::instances.push_back(new FETI4IStructInstance(*matrix, l2g, size));
 
-	FETI4ISetIntegerOptions(DataHolder::instances.back()->configuration, integer_options);
-	FETI4ISetRealOptions(DataHolder::instances.back()->configuration, real_options);
+	FETI4ISetIntegerOptions(APIDataHolder::instances.back()->configuration, integer_options);
+	FETI4ISetRealOptions(APIDataHolder::instances.back()->configuration, real_options);
 
 	TimeEvent event("Create FETI4I instance"); event.startWithBarrier();
 
@@ -191,30 +191,30 @@ void FETI4ICreateInstance(
 	std::vector<int> neighClusters = std::vector<int>(neighbours, neighbours + neighbours_size);
 
 	input::API::load(
-			*DataHolder::instances.back()->mesh, matrix->offset, DataHolder::instances.back()->configuration.feti4ilibrary.domains,
+			*APIDataHolder::instances.back()->mesh, matrix->offset, APIDataHolder::instances.back()->configuration.feti4ilibrary.domains,
 			matrix->eType, matrix->eNodes, matrix->eDOFs, matrix->eMatrices,
 			dirichlet_size, dirichlet_indices, dirichlet_values,
 			neighClusters,
 			size, l2g);
 
-	*instance = DataHolder::instances.back();
+	*instance = APIDataHolder::instances.back();
 
-	DataHolder::instances.back()->instance = new Instance(*DataHolder::instances.back()->mesh);
-	DataHolder::instances.back()->physics = new Precomputed(DataHolder::instances.back()->mesh, DataHolder::instances.back()->instance, (espreso::MatrixType)matrix->type, rhs, size);
-	DataHolder::instances.back()->linearSolver = new FETISolver(DataHolder::instances.back()->instance, DataHolder::instances.back()->configuration.feti4ilibrary.solver);
-	DataHolder::instances.back()->step = new Step();
-	DataHolder::instances.back()->assembler = new Assembler(
-			*DataHolder::instances.back()->instance,
-			*DataHolder::instances.back()->physics,
-			*DataHolder::instances.back()->mesh,
-			*DataHolder::instances.back()->step,
-			*DataHolder::instances.back()->store,
-			*DataHolder::instances.back()->linearSolver);
-	DataHolder::instances.back()->timeStepSolver = new LinearTimeStep(*DataHolder::instances.back()->assembler);
-	DataHolder::instances.back()->loadStepSolver = new SteadyStateSolver(*DataHolder::instances.back()->timeStepSolver, 1);
-	DataHolder::instances.back()->physics->prepare();
+	APIDataHolder::instances.back()->instance = new DataHolder(*APIDataHolder::instances.back()->mesh);
+	APIDataHolder::instances.back()->physics = new Precomputed(APIDataHolder::instances.back()->mesh, APIDataHolder::instances.back()->instance, (espreso::MatrixType)matrix->type, rhs, size);
+	APIDataHolder::instances.back()->linearSolver = new FETISolver(APIDataHolder::instances.back()->instance, APIDataHolder::instances.back()->configuration.feti4ilibrary.solver);
+	APIDataHolder::instances.back()->step = new Step();
+	APIDataHolder::instances.back()->assembler = new Assembler(
+			*APIDataHolder::instances.back()->instance,
+			*APIDataHolder::instances.back()->physics,
+			*APIDataHolder::instances.back()->mesh,
+			*APIDataHolder::instances.back()->step,
+			*APIDataHolder::instances.back()->store,
+			*APIDataHolder::instances.back()->linearSolver);
+	APIDataHolder::instances.back()->timeStepSolver = new LinearTimeStep(*APIDataHolder::instances.back()->assembler);
+	APIDataHolder::instances.back()->loadStepSolver = new SteadyStateSolver(*APIDataHolder::instances.back()->timeStepSolver, 1);
+	APIDataHolder::instances.back()->physics->prepare();
 
-	event.endWithBarrier(); DataHolder::timeStatistics.addEvent(event);
+	event.endWithBarrier(); APIDataHolder::timeStatistics.addEvent(event);
 }
 
 void FETI4ISolve(
@@ -231,9 +231,9 @@ void FETI4ISolve(
 	// TODO: MESH
 	// memcpy(solution, instance->instance->solutions[espreso::Precomputed::SolutionIndex::MERGED]->data[0].data(), solution_size * sizeof(double));
 
-	event.endWithBarrier(); DataHolder::timeStatistics.addEvent(event);
-	DataHolder::timeStatistics.totalTime.endWithBarrier();
-	DataHolder::timeStatistics.printStatsMPI();
+	event.endWithBarrier(); APIDataHolder::timeStatistics.addEvent(event);
+	APIDataHolder::timeStatistics.totalTime.endWithBarrier();
+	APIDataHolder::timeStatistics.printStatsMPI();
 }
 
 template <typename TFETI4I>
@@ -250,14 +250,14 @@ static void destroy(std::list<TFETI4I*> &list, void *value)
 
 void FETI4IDestroy(void *data)
 {
-	destroy(DataHolder::matrices, data);
-	destroy(DataHolder::instances, data);
-	if (DataHolder::instances.size() == 0 && DataHolder::matrices.size() == 0) {
-		if (&DataHolder::configuration->environment == environment) {
+	destroy(APIDataHolder::matrices, data);
+	destroy(APIDataHolder::instances, data);
+	if (APIDataHolder::instances.size() == 0 && APIDataHolder::matrices.size() == 0) {
+		if (&APIDataHolder::configuration->environment == environment) {
 			environment = NULL;
 		}
-		delete DataHolder::configuration;
-		DataHolder::configuration = NULL;
+		delete APIDataHolder::configuration;
+		APIDataHolder::configuration = NULL;
 	}
 }
 

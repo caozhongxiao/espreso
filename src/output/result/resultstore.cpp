@@ -166,24 +166,24 @@ bool ResultStore::isSeparated()
 	return store;
 }
 
-bool ResultStore::storeStep(const Step &step)
+bool ResultStore::storeStep()
 {
 	bool store = false;
-	if (_async) store |= _async->storeStep(step);
-	if (_direct) store |= _direct->storeStep(step);
+	if (_async) store |= _async->storeStep();
+	if (_direct) store |= _direct->storeStep();
 	return store;
 }
 
 void ResultStore::updateMesh()
 {
 	if (_async && _async->hasStore()) _async->updateMesh();
-	if (_direct && _async->hasStore()) _direct->updateMesh();
+	if (_direct && _direct->hasStore()) _direct->updateMesh();
 }
 
-void ResultStore::updateSolution(const Step &step)
+void ResultStore::updateSolution()
 {
-	if (_async && storeStep(step)) _async->updateSolution(step);
-	if (_direct && storeStep(step)) _direct->updateSolution(step);
+	if (_async && storeStep()) _async->updateSolution();
+	if (_direct && storeStep()) _direct->updateSolution();
 }
 
 ResultStore::ResultStore(): _async(NULL), _direct(NULL)

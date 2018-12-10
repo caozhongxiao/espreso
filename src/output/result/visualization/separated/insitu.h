@@ -17,7 +17,7 @@ struct InSitu: public Visualization {
 	virtual bool isSeparated() { return true; }
 
 	void updateMesh();
-	void updateSolution(const Step &step);
+	void updateSolution();
 
 protected:
 	InSituWrapper *_inSitu;

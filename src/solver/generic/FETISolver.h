@@ -12,17 +12,17 @@
 #include "../specific/itersolvers.h"
 //#include "../specific/superclusters.h"
 
-#include "../../physics/instance.h"
+#include "../../physics/dataholder.h"
 
 
 namespace espreso {
 
-struct Instance;
+struct DataHolder;
 
 class FETISolver: public LinearSolver {
 public:
 
-	FETISolver(Instance *instance, const FETISolverConfiguration &configuration);
+	FETISolver(DataHolder *instance, const FETISolverConfiguration &configuration);
 
 	void init();
 
@@ -54,7 +54,7 @@ public:
 
 	void createCMat();
 
-	Instance *instance;
+	DataHolder *instance;
 	FETISolverConfiguration configuration;
 
 	TimeEval timeEvalMain;

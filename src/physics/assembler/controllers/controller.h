@@ -13,7 +13,6 @@ namespace espreso {
 enum class MatrixType;
 struct Point;
 class Mesh;
-struct Step;
 class ECFExpression;
 class ECFExpressionVector;
 enum Matrices: int;
@@ -54,7 +53,7 @@ public:
 
 	virtual ~Controler() {}
 protected:
-	Controler(Mesh &mesh, const Step &step);
+	Controler(Mesh &mesh);
 
 	struct Parameter {
 		serializededata<eslocal, double> *data;
@@ -84,7 +83,6 @@ protected:
 	void nodeValuesToElements(tarray<double> &nodeData, std::vector<double> &elementData);
 
 	Mesh &_mesh;
-	const Step &_step;
 
 	size_t _dirichletSize;
 	std::vector<size_t> _nDistribution;

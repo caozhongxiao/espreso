@@ -1,9 +1,9 @@
 
 #include "../../solver/loadstep/pseudotimestepping.h"
 
-#include "../../step.h"
-#include "../../instance.h"
 #include "../../../config/ecf/physics/physicssolver/nonlinearsolver.h"
+#include "../../../globals/time.h"
+#include "../../dataholder.h"
 #include "../../provider/provider.h"
 #include "../../solver/timestep/timestepsolver.h"
 
@@ -37,20 +37,20 @@ Matrices PseudoTimeStepping::reassembleStructuralMatrices(Matrices matrices)
 
 void PseudoTimeStepping::runNextTimeStep()
 {
-	double last = _composer.step.currentTime;
-	_composer.step.currentTime += _duration / _configuration.substeps;
-	if (_composer.step.currentTime + _precision >= _startTime + _duration) {
-		_composer.step.currentTime = _startTime + _duration;
+	double last = time::current;
+	time::current += _duration / _configuration.substeps;
+	if (time::current + _precision >= _startTime + _duration) {
+		time::current = _startTime + _duration;
 	}
-	_composer.step.timeStep = _composer.step.currentTime - last;
+	time::shift = time::current - last;
 	processTimeStep();
 }
 
 void PseudoTimeStepping::processTimeStep()
 {
-	_composer.step.internalForceReduction = (double)(_composer.step.substep + 1) / _configuration.substeps;
-	_composer.step.timeIntegrationConstantK = 1;
-	_composer.step.timeIntegrationConstantM = 0;
+//	_composer.step.internalForceReduction = (double)(time::substep + 1) / _configuration.substeps;
+//	_composer.step.timeIntegrationConstantK = 1;
+//	_composer.step.timeIntegrationConstantM = 0;
 
 	_timeStepSolver.solve(*this);
 }

@@ -3,17 +3,16 @@
 
 #include "../../config/ecf/environment.h"
 
-#include "../../physics/instance.h"
-
 #include "../../wrappers/hypre/hypre.h"
 #include "../../solver/generic/SparseMatrix.h"
 
 
 #include "../../basis/utilities/utils.h"
+#include "../../physics/dataholder.h"
 
 using namespace espreso;
 
-MultigridSolver::MultigridSolver(Instance *instance, const MultigridConfiguration &configuration)
+MultigridSolver::MultigridSolver(DataHolder *instance, const MultigridConfiguration &configuration)
 : _instance(instance), _hypreData(NULL)
 {
 	_configuration = configuration;

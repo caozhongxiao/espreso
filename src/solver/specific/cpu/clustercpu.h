@@ -13,11 +13,11 @@ public:
 	// Constructor
 //	ClusterCPU(const FETISolverConfiguration &configuration, eslocal cluster_index): ClusterBase(configuration, cluster_index) { };
 //	ClusterCPU(const FETISolverConfiguration &configuration): ClusterBase(configuration) {};
-	ClusterCPU(const FETISolverConfiguration &configuration, Instance *instance_in): ClusterBase(configuration, instance_in) {};
+	ClusterCPU(const FETISolverConfiguration &configuration, DataHolder *instance_in): ClusterBase(configuration, instance_in) {};
 
 	void Create_SC_perDomain( bool USE_FLOAT );
     void Create_Kinv_perDomain();
-    void CreateDirichletPrec( Instance *instance );
+    void CreateDirichletPrec( DataHolder *instance );
 	void SetupKsolvers ( );
 };
 

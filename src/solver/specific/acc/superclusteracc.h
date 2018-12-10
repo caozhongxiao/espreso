@@ -10,7 +10,7 @@ class SuperClusterAcc : public SuperClusterBase
 {
     public: 
 
-    SuperClusterAcc( const FETISolverConfiguration & configuration, Instance *instance_in ):
+    SuperClusterAcc( const FETISolverConfiguration & configuration, DataHolder *instance_in ):
         SuperClusterBase( configuration, instance_in ), 
        		cluster_time	("Cluster Timing "),
 
@@ -46,7 +46,7 @@ class SuperClusterAcc : public SuperClusterBase
     
     void SetupPreconditioner( );
 
-    void CreateDirichletPrec( Instance * instance );
+    void CreateDirichletPrec( DataHolder * instance );
 
     void multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double>* > & x_in, 
         double & CPUtime, 

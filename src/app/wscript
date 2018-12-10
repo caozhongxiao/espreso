@@ -50,16 +50,16 @@ def build(ctx):
     )
 
     ctx.program(
-        source       = "espreso.cpp",
+        source       = ("run.cpp", "espreso.cpp"),
         target       = "espreso",
-        use          = "basis config wrappers input mesh output bem assembler factory feti multigrid",
+        use          = "basis globals config wrappers input mesh output bem assembler factory feti multigrid",
         install_path = ctx.ROOT + "/bin"
     )
 
     ctx.program(
         source       = "ecfexport.cpp",
         target       = "ecfexport",
-        use          = "basis config wrappers",
+        use          = "basis globals config wrappers",
         install_path = ctx.ROOT + "/bin"
     )
 

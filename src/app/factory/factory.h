@@ -9,8 +9,7 @@
 namespace espreso {
 
 class Mesh;
-struct Instance;
-struct Step;
+struct DataHolder;
 struct Physics;
 class LinearSolver;
 class Provider;
@@ -18,7 +17,6 @@ class Composer;
 class Controler;
 class TimeStepSolver;
 class LoadStepSolver;
-class ResultStore;
 
 struct ECFRoot;
 struct LoadStepConfiguration;
@@ -32,7 +30,7 @@ public:
 	void preprocessMesh();
 	virtual size_t loadSteps() const =0;
 
-	virtual LoadStepSolver* getLoadStepSolver(size_t step, Mesh *mesh, ResultStore *store) =0;
+	virtual LoadStepSolver* getLoadStepSolver(size_t step, Mesh *mesh) =0;
 
 	template<class TLoadStepSettings>
 	const TLoadStepSettings& getLoadStepsSettings(size_t step, const std::map<size_t, TLoadStepSettings> &setting) const
@@ -43,13 +41,12 @@ public:
 		return setting.find(step + 1)->second;
 	}
 
-	LinearSolver* getLinearSolver(const LoadStepConfiguration &settings, Instance *instance) const;
+	LinearSolver* getLinearSolver(const LoadStepConfiguration &settings, DataHolder *instance) const;
 
 protected:
 	void printError(const std::string &error) const;
 
-	std::vector<Instance*> _instances;
-	std::vector<Physics*> _physics;
+	std::vector<DataHolder*> _instances;
 	std::vector<LinearSolver*> _linearSolvers;
 	std::vector<Provider*> _provider;
 	std::vector<Composer*> _composer;
@@ -64,7 +61,7 @@ class Factory {
 	friend class APITestESPRESODataProvider;
 
 protected:
-	Factory(const ECFRoot &configuration, Mesh &mesh, ResultStore &store);
+	Factory(const ECFRoot &configuration, Mesh &mesh);
 	~Factory();
 
 	void solve();
@@ -72,8 +69,6 @@ protected:
 	FactoryLoader* createFactoryLoader(const ECFRoot &configuration);
 
 	Mesh *_mesh;
-	ResultStore *_store;
-	Step *_step;
 
 	FactoryLoader *_loader;
 	std::vector<LoadStepSolver*> _loadSteps;

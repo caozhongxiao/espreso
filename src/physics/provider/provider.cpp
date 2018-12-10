@@ -2,8 +2,6 @@
 
 #include "mpi.h"
 
-#include "../step.h"
-#include "../instance.h"
 #include "../assembler/composer/composer.h"
 
 #include "../../config/ecf/root.h"
@@ -18,6 +16,7 @@
 
 #include "../../linearsolver/linearsolver.h"
 #include "provider.h"
+#include "../dataholder.h"
 
 using namespace espreso;
 
@@ -39,8 +38,8 @@ std::string Provider::mNames(espreso::Matrices matrices, const std::string &pref
 	std::string(matrices & espreso::Matrices::dual        ? prefix + "Dual "        : "");
 }
 
-Provider::Provider(Instance &instance, Composer &composer, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver)
-: instance(instance), composer(composer), mesh(mesh), step(step), store(store), linearSolver(linearSolver), _timeStatistics(new TimeEval("Physics solver timing"))
+Provider::Provider(DataHolder &instance, Composer &composer, Mesh &mesh, LinearSolver &linearSolver)
+: instance(instance), composer(composer), mesh(mesh), linearSolver(linearSolver), _timeStatistics(new TimeEval("Physics solver timing"))
 {
 	_timeStatistics->totalTime.startWithBarrier();
 
@@ -121,9 +120,9 @@ void Provider::processSolution()
 
 void Provider::storeSolution()
 {
-	if (store.storeStep(step)) {
+	if (mesh.store->storeStep()) {
 		timeWrapper("store solution", [&] () {
-			store.updateSolution(step);
+			mesh.store->updateSolution();
 		});
 	}
 }

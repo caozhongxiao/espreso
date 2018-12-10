@@ -1,6 +1,8 @@
 
 #include "ensight.h"
 
+#include "../../../../globals/time.h"
+
 #include "../../../../basis/containers/point.h"
 #include "../../../../basis/containers/serializededata.h"
 #include "../../../../basis/logging/logging.h"
@@ -9,8 +11,6 @@
 #include "../../../../basis/utilities/parser.h"
 
 #include "../../../../config/ecf/environment.h"
-
-#include "../../../../physics/step.h"
 
 #include "../../../../mesh/elements/element.h"
 #include "../../../../mesh/mesh.h"
@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <functional>
 #include <fstream>
+
 
 using namespace espreso;
 
@@ -376,9 +377,9 @@ void EnSight::storeDecomposition()
 	storecasefile();
 }
 
-void EnSight::updateSolution(const Step &step)
+void EnSight::updateSolution()
 {
-	if (!Visualization::storeStep(_configuration, step)) {
+	if (!Visualization::storeStep(_configuration)) {
 		return;
 	}
 
@@ -386,7 +387,7 @@ void EnSight::updateSolution(const Step &step)
 		setvariables();
 	}
 
-	_casetime << step.currentTime;
+	_casetime << time::current;
 	if ((++_variableCounter) % 10 == 0) {
 		_casetime << "\n                       ";
 	} else {

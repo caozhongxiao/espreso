@@ -30,7 +30,7 @@
 using namespace espreso;
 
 
-Mesh::Mesh(const ECFRoot &configuration, bool withGUI)
+Mesh::Mesh(const ECFRoot &configuration, ResultStore *store, bool withGUI)
 : elements(new ElementStore(_eclasses)), nodes(new NodeStore()),
   FETIData(NULL),
   halo(new ElementStore(_eclasses)),
@@ -40,6 +40,7 @@ Mesh::Mesh(const ECFRoot &configuration, bool withGUI)
 
   configuration(configuration),
   _eclasses(environment->OMP_NUM_THREADS),
+  store(store),
   _withGUI(withGUI)
 {
 	size_t threads = environment->OMP_NUM_THREADS;

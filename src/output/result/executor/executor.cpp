@@ -42,9 +42,9 @@ bool ResultStoreExecutor::isSeparated()
 	return false;
 }
 
-bool ResultStoreExecutor::storeStep(const Step &step)
+bool ResultStoreExecutor::storeStep()
 {
-	return Monitoring::storeStep(_configuration, step) || Visualization::storeStep(_configuration, step);
+	return Monitoring::storeStep(_configuration) || Visualization::storeStep(_configuration);
 }
 
 

@@ -13,7 +13,7 @@
 
 using namespace espreso;
 
-FETISolver::FETISolver(Instance *instance, const FETISolverConfiguration &configuration)
+FETISolver::FETISolver(DataHolder *instance, const FETISolverConfiguration &configuration)
 : instance(instance),
   timeEvalMain("ESPRESO Solver Overall Timing"),
   cluster(NULL),

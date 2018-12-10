@@ -3,7 +3,7 @@
 
 #include "clustercpu.h"
 
-#include "../../../physics/instance.h"
+#include "../../../physics/dataholder.h"
 #include "../../../basis/logging/logging.h"
 
 using namespace espreso;
@@ -164,7 +164,7 @@ void ClusterCPU::SetupKsolvers ( ) {
 }
 
 
-void ClusterCPU::CreateDirichletPrec( Instance *instance ) {
+void ClusterCPU::CreateDirichletPrec( DataHolder *instance ) {
 
 #pragma omp parallel for
 for (size_t d = 0; d < domains.size(); d++) {

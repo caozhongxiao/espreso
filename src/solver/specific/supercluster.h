@@ -37,7 +37,7 @@ namespace espreso {
 class SuperClusterBase
 {
 public:
-	SuperClusterBase(const FETISolverConfiguration &configuration, Instance *instance_in):
+	SuperClusterBase(const FETISolverConfiguration &configuration, DataHolder *instance_in):
     	configuration(configuration),
 		instance(instance_in)
 	{
@@ -55,7 +55,7 @@ public:
 	}
 
 	const FETISolverConfiguration 	&configuration;
-	Instance 				*instance;
+	DataHolder 				*instance;
 	SEQ_VECTOR <Cluster> 	clusters;
 
 	SEQ_VECTOR <Domain*> 	domains;			// vector of domains in the original numbering - for legacy purposes - only as pointers

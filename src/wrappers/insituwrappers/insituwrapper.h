@@ -8,7 +8,6 @@ class vtkCPDataDescription;
 
 namespace espreso {
 
-struct Step;
 class Mesh;
 
 class InSituWrapper {
@@ -17,7 +16,7 @@ public:
 	InSituWrapper(const Mesh &mesh);
 	~InSituWrapper();
 
-	void update(const Step &step);
+	void update();
 
 protected:
 	const Mesh &_mesh;

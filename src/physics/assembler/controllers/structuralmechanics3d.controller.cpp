@@ -2,26 +2,25 @@
 #include "structuralmechanics3d.controller.h"
 #include "../kernels/structuralmechanics3d.kernel.h"
 
-#include "../../step.h"
-#include "../../instance.h"
-
 #include "../../../basis/containers/serializededata.h"
 #include "../../../basis/evaluator/evaluator.h"
 #include "../../../config/ecf/environment.h"
 #include "../../../config/ecf/physics/structuralmechanics.h"
+#include "../../../globals/time.h"
 
 #include "../../../mesh/mesh.h"
 #include "../../../mesh/store/elementstore.h"
 #include "../../../mesh/store/nodestore.h"
+#include "../../dataholder.h"
 
 using namespace espreso;
 
 StructuralMechanics3DControler::StructuralMechanics3DControler(
-		Mesh &mesh, const Step &step,
+		Mesh &mesh,
 		const StructuralMechanicsGlobalSettings &gSettings,
 		const StructuralMechanicsStepSettings &sSettings,
 		const StructuralMechanicsOutputSettings &oSettings)
-: StructuralMechanicsControler(mesh, step, gSettings, sSettings, oSettings)
+: StructuralMechanicsControler(mesh, gSettings, sSettings, oSettings)
 {
 	_kernel = new StructuralMechanics3DKernel(_globalSettings, _outputSettings);
 
@@ -249,7 +248,7 @@ void StructuralMechanics3DControler::initData()
 
 	double *cbegin = _ncoordinate.data->datatarray().data();
 	double *tbegin = NULL;
-	double time = _step.currentTime;
+	double time = time::current;
 
 	updateERegions(_globalSettings.initial_temperature, _nInitialTemperature.data->datatarray(), 1, cbegin, tbegin, time);
 
@@ -283,7 +282,7 @@ void StructuralMechanics3DControler::initData()
 
 void StructuralMechanics3DControler::nextTime()
 {
-	if (_step.isInitial()) {
+	if (time::isInitial()) {
 		return;
 	}
 
@@ -296,7 +295,7 @@ void StructuralMechanics3DControler::parametersChanged()
 
 	double *cbegin = _ncoordinate.data->datatarray().data();
 	double *tbegin = NULL;
-	double time = _step.currentTime;
+	double time = time::current;
 
 	for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
 		BoundaryRegionStore *region = _mesh.boundaryRegions[r];
@@ -327,7 +326,7 @@ void StructuralMechanics3DControler::processElements(Matrices matrices, Instance
 		iterator.element = _mesh.elements->epointers->datatarray()[e];
 		iterator.material = _mesh.materials[_mesh.elements->material->datatarray()[e]];
 
-		_kernel->processElement(matrices, iterator, _step, filler.Ke, filler.Me, filler.Re, filler.fe);
+		_kernel->processElement(matrices, iterator, filler.Ke, filler.Me, filler.Re, filler.fe);
 		filler.insert(enodes->size());
 
 		iterator.temperature += enodes->size();
@@ -352,7 +351,7 @@ void StructuralMechanics3DControler::processBoundary(Matrices matrices, size_t r
 	for (eslocal e = filler.begin; e < filler.end; ++e, ++enodes) {
 		iterator.element = _mesh.boundaryRegions[rindex]->epointers->datatarray()[e];
 
-		_kernel->processEdge(matrices, iterator, _step, filler.Ke, filler.fe);
+		_kernel->processEdge(matrices, iterator, filler.Ke, filler.fe);
 		filler.insert(enodes->size());
 
 		if (iterator.normalPressure) {
@@ -379,7 +378,7 @@ void StructuralMechanics3DControler::processSolution()
 			iterator.element = _mesh.elements->epointers->datatarray()[e];
 			iterator.material = _mesh.materials[_mesh.elements->material->datatarray()[e]];
 
-			_kernel->processSolution(iterator, _step);
+			_kernel->processSolution(iterator);
 
 			iterator.temperature += enodes->size();
 			iterator.coordinates += enodes->size() * 3;

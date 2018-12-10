@@ -3,16 +3,16 @@
 
 #include "../controllers/controller.h"
 
-#include "../../instance.h"
 #include "../../../basis/matrices/matrixtype.h"
 
 #include "../../../solver/generic/SparseMatrix.h"
+#include "../../dataholder.h"
 
 
 using namespace espreso;
 
-Composer::Composer(Mesh &mesh, Step &step, Instance &instance, Controler &controler)
-: _mesh(mesh), _step(step), _instance(instance), _controler(controler), _DOFMap(NULL)
+Composer::Composer(Mesh &mesh, DataHolder &instance, Controler &controler)
+: _mesh(mesh), _instance(instance), _controler(controler), _DOFMap(NULL)
 {
 
 }

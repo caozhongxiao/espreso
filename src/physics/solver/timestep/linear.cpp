@@ -1,7 +1,7 @@
 
 #include "../../solver/timestep/linear.h"
 
-#include "../../instance.h"
+#include "../../dataholder.h"
 #include "../../provider/provider.h"
 #include "../../solver/loadstep/loadstepsolver.h"
 

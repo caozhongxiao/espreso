@@ -2,7 +2,6 @@
 #include "asyncexecutor.h"
 
 #include "../../../basis/utilities/utils.h"
-#include "../../../physics/step.h"
 #include "../../../config/ecf/root.h"
 
 #include "../../../mesh/mesh.h"
@@ -66,25 +65,23 @@ void AsyncStore::updateMesh()
 	call(ExecParameters(AsyncBufferManager::NODES, AsyncBufferManager::ELEMENTS, AsyncBufferManager::ELEMENTREGIONS, AsyncBufferManager::BOUNDARYREGIONS));
 }
 
-void AsyncStore::updateSolution(const Step &step)
+void AsyncStore::updateSolution()
 {
 	wait();
 
-	prepareBuffer(AsyncBufferManager::NODEDATA, sizeof(Step) + _mesh.nodes->packedDataSize(isCollected(), isSeparated()));
+	prepareBuffer(AsyncBufferManager::NODEDATA, _mesh.nodes->packedDataSize(isCollected(), isSeparated()));
 	_buffer = managedBuffer<char*>(AsyncBufferManager::buffer(AsyncBufferManager::NODEDATA));
-	Esutils::pack(step, _buffer);
 	_mesh.nodes->packData(_buffer, isCollected(), isSeparated());
 
-	prepareBuffer(AsyncBufferManager::ELEMENTDATA, sizeof(Step) + _mesh.elements->packedDataSize());
+	prepareBuffer(AsyncBufferManager::ELEMENTDATA, _mesh.elements->packedDataSize());
 	_buffer = managedBuffer<char*>(AsyncBufferManager::buffer(AsyncBufferManager::ELEMENTDATA));
-	Esutils::pack(step, _buffer);
 	_mesh.elements->packData(_buffer);
 
 	call(ExecParameters(AsyncBufferManager::NODEDATA, AsyncBufferManager::ELEMENTDATA));
 }
 
 AsyncStore::AsyncStore(const Mesh &mesh, const OutputConfiguration &configuration)
-: ResultStoreExecutor(mesh, configuration), _executor(mesh.configuration), _buffer(NULL)
+: ResultStoreExecutor(mesh, configuration), _executor(mesh.configuration, mesh.store), _buffer(NULL)
 {
 	async::Module<AsyncExecutor, InitParameters, ExecParameters>::init();
 	callInit(InitParameters());
@@ -116,8 +113,8 @@ AsyncStore::~AsyncStore()
 	async::Module<AsyncExecutor, InitParameters, ExecParameters>::finalize();
 }
 
-AsyncExecutor::AsyncExecutor(const ECFRoot &configuration)
-: DirectExecutor(_mesh, configuration.output), _mesh(configuration), _buffer(NULL)
+AsyncExecutor::AsyncExecutor(const ECFRoot &configuration, ResultStore *store)
+: DirectExecutor(_mesh, configuration.output), _mesh(configuration, store), _buffer(NULL)
 {
 
 }
@@ -162,16 +159,13 @@ void AsyncExecutor::exec(const async::ExecInfo &info, const ExecParameters &para
 		updateMesh();
 	}
 
-	Step step;
 	if (parameters.updatedBuffers & 1 << AsyncBufferManager::NODEDATA) {
 		_buffer = static_cast<const char*>(info.buffer(AsyncBufferManager::buffer(AsyncBufferManager::NODEDATA)));
-		Esutils::unpack(step, _buffer);
 		_mesh.nodes->unpackData(_buffer, isCollected(), isSeparated());
 	}
 
 	if (parameters.updatedBuffers & 1 << AsyncBufferManager::ELEMENTDATA) {
 		_buffer = static_cast<const char*>(info.buffer(AsyncBufferManager::buffer(AsyncBufferManager::ELEMENTDATA)));
-		Esutils::unpack(step, _buffer);
 		_mesh.elements->unpackData(_buffer);
 	}
 
@@ -179,6 +173,6 @@ void AsyncExecutor::exec(const async::ExecInfo &info, const ExecParameters &para
 			(parameters.updatedBuffers & 1 << AsyncBufferManager::NODEDATA) ||
 			(parameters.updatedBuffers & 1 << AsyncBufferManager::ELEMENTDATA)) {
 
-		updateSolution(step);
+		updateSolution();
 	}
 }

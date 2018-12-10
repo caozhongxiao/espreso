@@ -1,14 +1,13 @@
 
-#include "instance.h"
-
 #include "../mesh/mesh.h"
 #include "../mesh/store/elementstore.h"
 #include "../solver/generic/SparseMatrix.h"
 #include "../basis/logging/logging.h"
+#include "dataholder.h"
 
 using namespace espreso;
 
-Instance::Instance(const Mesh &mesh)
+DataHolder::DataHolder(const Mesh &mesh)
 : domains(mesh.elements->ndomains),
   domainDOFCount(_domainDOFCount),
   neighbours(mesh.neighbours),
@@ -90,7 +89,7 @@ Instance::Instance(const Mesh &mesh)
 	};
 }
 
-Instance::Instance(Instance &other, Matrices &share)
+DataHolder::DataHolder(DataHolder &other, Matrices &share)
 : domains(other.domains),
   domainDOFCount(share & Matrices::K ? other.domainDOFCount :_domainDOFCount),
   neighbours(other.neighbours),
@@ -206,7 +205,7 @@ Instance::Instance(Instance &other, Matrices &share)
 	};
 }
 
-void Instance::clear()
+void DataHolder::clear()
 {
 	K.clear();
 	K.resize(domains);
@@ -260,7 +259,7 @@ void Instance::clear()
 	}
 }
 
-Instance::~Instance()
+DataHolder::~DataHolder()
 {
 
 }

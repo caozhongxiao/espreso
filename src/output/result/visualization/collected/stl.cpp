@@ -65,7 +65,7 @@ void STL::updateMesh()
 }
 
 
-void STL::updateSolution(const Step &step)
+void STL::updateSolution()
 {
 	// TODO
 }

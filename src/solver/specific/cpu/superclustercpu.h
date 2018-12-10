@@ -10,7 +10,7 @@ class SuperClusterCPU : public SuperClusterBase
 {
     public:
 
-    SuperClusterCPU( const FETISolverConfiguration & configuration, Instance *instance_in ):
+    SuperClusterCPU( const FETISolverConfiguration & configuration, DataHolder *instance_in ):
         SuperClusterBase( configuration, instance_in ) { }
 
 	void Create_SC_perDomain(bool USE_FLOAT) {

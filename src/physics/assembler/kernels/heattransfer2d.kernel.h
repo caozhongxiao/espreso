@@ -8,7 +8,6 @@ namespace espreso {
 
 struct DenseMatrix;
 struct Element;
-struct Step;
 struct MaterialBaseConfiguration;
 struct MaterialConfiguration;
 enum Matrices: int;
@@ -75,10 +74,10 @@ struct HeatTransfer2DKernel: public HeatTransferKernel
 
 	HeatTransfer2DKernel(const HeatTransferGlobalSettings &settings, const HeatTransferOutputSettings &output);
 
-	void processElement(Matrices matrices, const ElementIterator &iterator, const Step &step, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const;
-	void processEdge(Matrices matrices, const BoundaryIterator &iterator, const Step &step, DenseMatrix &Ke, DenseMatrix &fe) const;
+	void processElement(Matrices matrices, const ElementIterator &iterator, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const;
+	void processEdge(Matrices matrices, const BoundaryIterator &iterator, DenseMatrix &Ke, DenseMatrix &fe) const;
 
-	void processSolution(const SolutionIterator &iterator, const Step &step);
+	void processSolution(const SolutionIterator &iterator);
 
 protected:
 	void assembleMaterialMatrix(eslocal node, double *coordinates, const MaterialBaseConfiguration *mat, double phase, double time, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const;

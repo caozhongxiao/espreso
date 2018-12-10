@@ -13,7 +13,7 @@ class HeatTransfer3DControler: public HeatTransferControler
 
 public:
 	HeatTransfer3DControler(
-			Mesh &mesh, const Step &step,
+			Mesh &mesh,
 			const HeatTransferGlobalSettings &gSettings,
 			const HeatTransferStepSettings &sSettings,
 			const HeatTransferOutputSettings &oSettings);

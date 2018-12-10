@@ -9,7 +9,7 @@
 
 namespace espreso {
 
-struct Instance;
+struct DataHolder;
 struct SpaceFillingCurve;
 
 struct VTKLegacy: public SeparatedVisualization {
@@ -40,8 +40,8 @@ struct VTKLegacyDebugInfo: public VTKLegacy {
 
 	VTKLegacyDebugInfo(const Mesh &mesh, const OutputConfiguration &configuration);
 
-	static void dirichlet(const Mesh &mesh, const Instance &instance);
-	static void gluing(const Mesh &mesh, const Instance &instance);
+	static void dirichlet(const Mesh &mesh, const DataHolder &instance);
+	static void gluing(const Mesh &mesh, const DataHolder &instance);
 
 	static void spaceFillingCurve(const SpaceFillingCurve &sfc, const std::vector<uint> &bucketsBorders);
 
@@ -60,7 +60,7 @@ struct VTKLegacyDebugInfo: public VTKLegacy {
 		closeElements(_path + "closeElements");
 		neighbors(_path + "eneighbors");
 	}
-	void updateSolution(const Step &step)
+	void updateSolution()
 	{
 		solution(_path + "solution");
 	}

@@ -9,7 +9,7 @@ namespace espreso {
 class CollectiveProvider: public Provider {
 
 public:
-	CollectiveProvider(Instance &instance, Composer &composer, Mesh &mesh, Step &step, ResultStore &store, LinearSolver &linearSolver);
+	CollectiveProvider(DataHolder &instance, Composer &composer, Mesh &mesh, LinearSolver &linearSolver);
 	~CollectiveProvider();
 
 	void setRegularizationCallback();

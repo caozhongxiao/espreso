@@ -14,7 +14,7 @@ class ClusterAcc: public ClusterBase
 {
 
 public:
-	ClusterAcc(const FETISolverConfiguration &configuration, Instance *instance_in): ClusterBase(configuration, instance_in)
+	ClusterAcc(const FETISolverConfiguration &configuration, DataHolder *instance_in): ClusterBase(configuration, instance_in)
 	{
 			this->deleteMatrices = false;
 			this->NUM_MICS = configuration.n_mics;
@@ -31,7 +31,7 @@ public:
 	void SetupKsolvers ( );
 
     // assembles Dirichlet preconditioner
-    void CreateDirichletPrec( Instance *instance );
+    void CreateDirichletPrec( DataHolder *instance );
 
     void multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in, 
         double & CPUtime, 

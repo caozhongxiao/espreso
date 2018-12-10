@@ -48,7 +48,7 @@ struct ExecParameters
 class AsyncExecutor: public DirectExecutor {
 
 public:
-	AsyncExecutor(const ECFRoot &configuration);
+	AsyncExecutor(const ECFRoot &configuration, ResultStore *store);
 
 	void execInit(const async::ExecInfo &info, const InitParameters &initParameters);
 	void exec(const async::ExecInfo &info, const ExecParameters &parameters);
@@ -75,7 +75,7 @@ public:
 	bool hasStore();
 
 	void updateMesh();
-	void updateSolution(const Step &step);
+	void updateSolution();
 
 protected:
 	void init();

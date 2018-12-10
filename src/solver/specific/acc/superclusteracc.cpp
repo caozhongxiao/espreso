@@ -433,7 +433,7 @@ void SuperClusterAcc::SetupPreconditioner() {
 }
 
 
-void SuperClusterAcc::CreateDirichletPrec( Instance *instance ) {
+void SuperClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
 
     bool USE_FLOAT = ( configuration.schur_precision == FETI_FLOAT_PRECISION::SINGLE ||
             configuration.Ksolver == FETI_KSOLVER::DIRECT_SP );

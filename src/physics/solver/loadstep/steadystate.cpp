@@ -1,8 +1,8 @@
 
 #include "../../solver/loadstep/steadystate.h"
 
-#include "../../step.h"
-#include "../../instance.h"
+#include "../../../globals/time.h"
+#include "../../dataholder.h"
 #include "../../provider/provider.h"
 #include "../../solver/timestep/timestepsolver.h"
 
@@ -30,17 +30,17 @@ Matrices SteadyStateSolver::reassembleStructuralMatrices(Matrices matrices)
 
 void SteadyStateSolver::runNextTimeStep()
 {
-	_composer.step.currentTime += _duration;
-	_composer.step.timeStep = _duration;
+	time::current += _duration;
+	time::shift = _duration;
 	processTimeStep();
 }
 
 
 void SteadyStateSolver::processTimeStep()
 {
-	_composer.step.internalForceReduction = 1;
-	_composer.step.timeIntegrationConstantK = 1;
-	_composer.step.timeIntegrationConstantM = 0;
+//	_composer.step.internalForceReduction = 1;
+//	_composer.step.timeIntegrationConstantK = 1;
+//	_composer.step.timeIntegrationConstantM = 0;
 
 	_timeStepSolver.solve(*this);
 }

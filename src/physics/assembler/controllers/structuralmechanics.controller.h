@@ -23,12 +23,12 @@ public:
 	std::vector<double>& getSolutionStore();
 
 protected:
-	StructuralMechanicsControler(Mesh &mesh, const Step &step,
+	StructuralMechanicsControler(Mesh &mesh,
 			const StructuralMechanicsGlobalSettings &gSettings,
 			const StructuralMechanicsStepSettings &sSettings,
 			const StructuralMechanicsOutputSettings &oSettings)
 
-	: Controler(mesh, step),
+	: Controler(mesh),
 	  _globalSettings(gSettings), _stepSettings(sSettings), _outputSettings(oSettings),
 	  _displacement(NULL), _avgThickness(NULL),
 	  _thickness(NULL) {}

@@ -9,8 +9,7 @@
 namespace espreso {
 
 class Mesh;
-class Step;
-class Instance;
+class DataHolder;
 class Controler;
 enum Matrices: int;
 template <typename TEBoundaries, typename TEData> class serializededata;
@@ -37,7 +36,7 @@ inline bool operator<(const IJ &left, const IJ &right)
 class Composer {
 
 public:
-	Composer(Mesh &mesh, Step &step, Instance &instance, Controler &controler);
+	Composer(Mesh &mesh, DataHolder &instance, Controler &controler);
 
 	std::vector<double>& getSolutionStore();
 
@@ -77,8 +76,7 @@ protected:
 	void clearMatrices(Matrices matrices, eslocal domain);
 
 	Mesh &_mesh;
-	Step &_step;
-	Instance &_instance;
+	DataHolder &_instance;
 	Controler &_controler;
 
 	serializededata<eslocal, eslocal> *_DOFMap;

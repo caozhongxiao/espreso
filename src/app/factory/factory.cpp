@@ -10,8 +10,6 @@
 #include "../../physics/solver/timestep/timestepsolver.h"
 #include "../../physics/solver/loadstep/loadstepsolver.h"
 #include "../../physics/assembler/composer/composer.h"
-#include "../../physics/step.h"
-#include "../../physics/instance.h"
 #include "../../config/ecf/root.h"
 #include "../../input/input.h"
 #include "../../linearsolver/multigrid/multigrid.h"
@@ -19,6 +17,7 @@
 #include "../../mesh/preprocessing/meshpreprocessing.h"
 #include "../../output/result/resultstore.h"
 #include "../../output/data/espresobinaryformat.h"
+#include "../../physics/dataholder.h"
 #include "../../physics/provider/provider.h"
 #include "../../solver/generic/FETISolver.h"
 
@@ -62,17 +61,17 @@ void ESPRESO::run(int *argc, char ***argv)
 	std::signal(SIGFPE, signalHandler);
 
 	ECFRoot configuration(argc, argv);
-	Mesh mesh(configuration);
-	ResultStore* solutionStore = ResultStore::createAsynchronizedStore(mesh, configuration.output);
+	Mesh mesh(configuration, NULL);
+	mesh.store = ResultStore::createAsynchronizedStore(mesh, configuration.output);
 
 	std::string processes, threads;
-	if (solutionStore->storeProcesses) {
-		processes = std::to_string(solutionStore->computeProcesses) + " + " + std::to_string(solutionStore->storeProcesses);
+	if (mesh.store->storeProcesses) {
+		processes = std::to_string(mesh.store->computeProcesses) + " + " + std::to_string(mesh.store->storeProcesses);
 	} else {
-		processes = std::to_string(solutionStore->computeProcesses);
+		processes = std::to_string(mesh.store->computeProcesses);
 	}
-	if (solutionStore->storeThreads) {
-		threads = std::to_string(environment->OMP_NUM_THREADS) + " + " + std::to_string(solutionStore->storeThreads);
+	if (mesh.store->storeThreads) {
+		threads = std::to_string(environment->OMP_NUM_THREADS) + " + " + std::to_string(mesh.store->storeThreads);
 	} else {
 		threads = std::to_string(environment->OMP_NUM_THREADS);
 	}
@@ -91,7 +90,7 @@ void ESPRESO::run(int *argc, char ***argv)
 	};
 
 	if (ResultStore::isComputeNode()) {
-		Factory factory(configuration, mesh, *solutionStore);
+		Factory factory(configuration, mesh);
 		if (computeSolution()) {
 			factory.solve();
 		} else {
@@ -101,33 +100,31 @@ void ESPRESO::run(int *argc, char ***argv)
 	ResultStore::destroyAsynchronizedStore();
 }
 
-Factory::Factory(const ECFRoot &configuration, Mesh &mesh, ResultStore &store)
-: _mesh(&mesh), _store(&store), _loader(NULL)
+Factory::Factory(const ECFRoot &configuration, Mesh &mesh)
+: _mesh(&mesh), _loader(NULL)
 {
-	_step = new Step();
-	Logging::step = _step;
 	Input::load(configuration, mesh);
 
 	// LOAD PHYSICS
 	switch (configuration.physics) {
 	case PHYSICS::HEAT_TRANSFER_2D:
-		_loader = new HeatTransferFactory(_step, configuration.heat_transfer_2d, configuration.output.results_selection, _mesh);
+		_loader = new HeatTransferFactory(configuration.heat_transfer_2d, configuration.output.results_selection, _mesh);
 		break;
 	case PHYSICS::HEAT_TRANSFER_3D:
-		_loader = new HeatTransferFactory(_step, configuration.heat_transfer_3d, configuration.output.results_selection, _mesh);
+		_loader = new HeatTransferFactory(configuration.heat_transfer_3d, configuration.output.results_selection, _mesh);
 		break;
 	case PHYSICS::STRUCTURAL_MECHANICS_2D:
-		_loader = new StructuralMechanicsFactory(_step, configuration.structural_mechanics_2d, configuration.output.results_selection, _mesh);
+		_loader = new StructuralMechanicsFactory(configuration.structural_mechanics_2d, configuration.output.results_selection, _mesh);
 		break;
 	case PHYSICS::STRUCTURAL_MECHANICS_3D:
-		_loader = new StructuralMechanicsFactory(_step, configuration.structural_mechanics_3d, configuration.output.results_selection, _mesh);
+		_loader = new StructuralMechanicsFactory(configuration.structural_mechanics_3d, configuration.output.results_selection, _mesh);
 		break;
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown PHYSICS in configuration file";
 	}
 
 	for (size_t step = 0; step < _loader->loadSteps(); step++) {
-		_loadSteps.push_back(_loader->getLoadStepSolver(step, _mesh, _store));
+		_loadSteps.push_back(_loader->getLoadStepSolver(step, _mesh));
 	}
 
 	_loader->preprocessMesh();
@@ -135,14 +132,12 @@ Factory::Factory(const ECFRoot &configuration, Mesh &mesh, ResultStore &store)
 
 	mesh.preprocessing->finishPreprocessing();
 
-	_store->updateMesh();
+	mesh.store->updateMesh();
 }
 
 void Factory::solve()
 {
-	for (_step->step = 0; _step->step < _loadSteps.size(); _step->step++) {
-		_loadSteps[_step->step]->run();
-	}
+	_loadSteps.front()->run();
 }
 
 template <class TType>
@@ -156,7 +151,6 @@ static void clear(std::vector<TType> &vector)
 FactoryLoader::~FactoryLoader()
 {
 	clear(_instances);
-	clear(_physics);
 	clear(_linearSolvers);
 	clear(_provider);
 	clear(_composer);
@@ -164,7 +158,7 @@ FactoryLoader::~FactoryLoader()
 	clear(_loadStepSolvers);
 }
 
-LinearSolver* FactoryLoader::getLinearSolver(const LoadStepConfiguration &settings, Instance *instance) const
+LinearSolver* FactoryLoader::getLinearSolver(const LoadStepConfiguration &settings, DataHolder *instance) const
 {
 	switch (settings.solver) {
 	case LoadStepConfiguration::SOLVER::FETI:

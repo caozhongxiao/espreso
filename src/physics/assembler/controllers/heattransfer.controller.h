@@ -28,12 +28,12 @@ public:
 	std::vector<double>& getSolutionStore();
 
 protected:
-	HeatTransferControler(Mesh &mesh, const Step &step,
+	HeatTransferControler(Mesh &mesh,
 			const HeatTransferGlobalSettings &gSettings,
 			const HeatTransferStepSettings &sSettings,
 			const HeatTransferOutputSettings &oSettings)
 
-	: Controler(mesh, step),
+	: Controler(mesh),
 	  _globalSettings(gSettings), _stepSettings(sSettings), _outputSettings(oSettings),
 	  _temperature(NULL), _phaseChange(NULL), _latentHeat(NULL), _avgThickness(NULL),
 	  _gradient(NULL), _flux(NULL), _motion(NULL), _thickness(NULL) {}

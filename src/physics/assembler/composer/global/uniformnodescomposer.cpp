@@ -3,8 +3,6 @@
 
 #include "../../controllers/controller.h"
 
-#include "../../../instance.h"
-#include "../../../step.h"
 #include "../../../../basis/containers/serializededata.h"
 #include "../../../../basis/matrices/matrixtype.h"
 #include "../../../../basis/utilities/communication.h"
@@ -20,6 +18,7 @@
 
 #include <algorithm>
 #include <numeric>
+#include "../../../dataholder.h"
 
 using namespace espreso;
 
@@ -374,7 +373,7 @@ void UniformNodesComposer::assemble(Matrices matrices)
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		size_t KIndex = _tKOffsets[t], RHSIndex = _tRHSOffsets[t];
-		double KReduction = 1, RHSReduction = _step.internalForceReduction;
+		double KReduction = 1, RHSReduction = 1; //_step.internalForceReduction;
 		Controler::InstanceFiller filler;
 
 		switch (mtype) {
@@ -429,7 +428,7 @@ void UniformNodesComposer::assemble(Matrices matrices)
 
 		_controler.processElements(matrices, filler);
 
-		KReduction = _step.internalForceReduction;
+		KReduction = 1; // _step.internalForceReduction;
 
 		for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
 			if (_mesh.boundaryRegions[r]->distribution.size()) {

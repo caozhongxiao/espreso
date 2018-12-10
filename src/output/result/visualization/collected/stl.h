@@ -10,7 +10,6 @@
 
 namespace espreso {
 
-struct Step;
 class Mesh;
 
 struct STL: public CollectedVisualization {
@@ -18,7 +17,7 @@ struct STL: public CollectedVisualization {
 	~STL();
 
 	void updateMesh();
-	void updateSolution(const Step &step);
+	void updateSolution();
 
 protected:
 	std::string _path;

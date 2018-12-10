@@ -11,12 +11,11 @@
 
 namespace espreso {
 struct Environment;
-class Instance;
+class DataHolder;
 class Physics;
 class TimeStepSolver;
 class LoadStepSolver;
 class Assembler;
-struct Step;
 class Mesh;
 class ECFRoot;
 class FETISolver;
@@ -39,7 +38,7 @@ struct FETI4IStructInstance {
 	FETI4IStructInstance(FETI4IStructMatrix &matrix, eslocal *l2g, size_t size);
 	~FETI4IStructInstance();
 
-	espreso::Instance *instance;
+	espreso::DataHolder *instance;
 	espreso::Physics * physics;
 	espreso::FETISolver *linearSolver;
 	espreso::ResultStore *store;
@@ -54,7 +53,7 @@ struct FETI4IStructInstance {
 
 namespace espreso {
 
-struct DataHolder {
+struct APIDataHolder {
 	static ECFRoot *configuration;
 	static std::list<FETI4IStructMatrix*> matrices;
 	static std::list<FETI4IStructInstance*> instances;

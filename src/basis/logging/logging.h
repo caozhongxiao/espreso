@@ -52,7 +52,6 @@ enum MeasureEvent {
 };
 
 struct OutputConfiguration;
-struct Step;
 
 class Info
 {
@@ -181,7 +180,6 @@ public:
 	static time_t time;
 	static std::string debug;
 	static std::ofstream log;
-	static Step *step;
 	static int rank;
 };
 }

@@ -1,7 +1,7 @@
 
 #include "../specific/cluster.h"
 
-#include "../../physics/instance.h"
+#include "../../physics/dataholder.h"
 #include "../../basis/utilities/utils.h"
 #include "../../basis/matrices/matrixtype.h"
 
@@ -2858,7 +2858,7 @@ void ClusterBase::B1_comp_MatVecSum( SEQ_VECTOR < SEQ_VECTOR <double> > & x_in, 
 
 }
 
-void ClusterBase::CreateDirichletPrec(Instance *instance)
+void ClusterBase::CreateDirichletPrec(DataHolder *instance)
 {
 	#pragma omp parallel for
 	//for (size_t d = 0; d < instance->K.size(); d++) {

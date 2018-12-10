@@ -16,8 +16,8 @@
 using namespace espreso;
 
 
-Controler::Controler(Mesh &mesh, const Step &step)
-: _mesh(mesh), _step(step), _dirichletSize(0)
+Controler::Controler(Mesh &mesh)
+: _mesh(mesh), _dirichletSize(0)
 {
 	_nDistribution = _mesh.elements->procNodes->datatarray().distribution();
 }

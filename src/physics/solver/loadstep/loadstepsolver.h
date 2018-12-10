@@ -6,7 +6,8 @@
 
 namespace espreso {
 
-struct Step;
+struct HeatTransferConfiguration;
+struct StructuralMechanicsConfiguration;
 class TimeStepSolver;
 class Provider;
 enum Matrices: int;
@@ -17,6 +18,9 @@ class LoadStepSolver {
 	friend class NewtonRaphson;
 
 public:
+//	static LoadStepSolver* create(const HeatTransferConfiguration &configuration);
+//	static LoadStepSolver* create(const StructuralMechanicsConfiguration &configuration);
+
 	LoadStepSolver(const std::string &description, TimeStepSolver &timeStepSolver, double duration);
 	virtual ~LoadStepSolver() {}
 
@@ -34,6 +38,8 @@ protected:
 	virtual void runNextTimeStep() =0;
 	virtual void processTimeStep() =0;
 	virtual void finalizeLoadStep();
+
+	TimeStepSolver *_timeStep;
 
 	std::string _description;
 	TimeStepSolver &_timeStepSolver;

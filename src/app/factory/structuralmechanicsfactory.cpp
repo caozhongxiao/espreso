@@ -8,30 +8,30 @@
 #include "../../physics/solver/timestep/newtonraphson.h"
 #include "../../physics/solver/loadstep/steadystate.h"
 
-#include "../../physics/instance.h"
 #include "../../physics/assembler/assembler.h"
 #include "../../basis/logging/logging.h"
+#include "../../physics/dataholder.h"
 
 #include "../../physics/provider/distributedprovider.h"
 #include "../../physics/provider/collectiveprovider.h"
 
 using namespace espreso;
 
-StructuralMechanicsFactory::StructuralMechanicsFactory(Step *step, const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh)
-: _step(step), _configuration(configuration), _propertiesConfiguration(propertiesConfiguration), _bem(false)
+StructuralMechanicsFactory::StructuralMechanicsFactory(const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh)
+: _configuration(configuration), _propertiesConfiguration(propertiesConfiguration), _bem(false)
 {
-	_instances.push_back(new Instance(*mesh));
+	_instances.push_back(new DataHolder(*mesh));
 
 	switch (configuration.dimension) {
 	case DIMENSION::D2:
 		switch (configuration.load_steps_settings.at(1).solver) {
 		case LoadStepConfiguration::SOLVER::FETI:
 			_composer.push_back(new DomainsStructuralMechanics2D(
-							*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
+							*mesh, *_instances.front(), configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
 			break;
 		case LoadStepConfiguration::SOLVER::MULTIGRID:
 			_composer.push_back(new GlobalStructuralMechanics3D(
-							*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
+							*mesh, *_instances.front(), configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
 			break;
 		}
 
@@ -40,11 +40,11 @@ StructuralMechanicsFactory::StructuralMechanicsFactory(Step *step, const Structu
 		switch (configuration.load_steps_settings.at(1).solver) {
 		case LoadStepConfiguration::SOLVER::FETI:
 			_composer.push_back(new DomainsStructuralMechanics3D(
-							*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
+							*mesh, *_instances.front(), configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
 			break;
 		case LoadStepConfiguration::SOLVER::MULTIGRID:
 			_composer.push_back(new GlobalStructuralMechanics3D(
-							*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
+							*mesh, *_instances.front(), configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
 			break;
 		}
 		break;
@@ -64,17 +64,17 @@ size_t StructuralMechanicsFactory::loadSteps() const
 	return _configuration.load_steps;
 }
 
-LoadStepSolver* StructuralMechanicsFactory::getLoadStepSolver(size_t step, Mesh *mesh, ResultStore *store)
+LoadStepSolver* StructuralMechanicsFactory::getLoadStepSolver(size_t step, Mesh *mesh)
 {
 	const StructuralMechanicsLoadStepConfiguration &settings = getLoadStepsSettings(step, _configuration.load_steps_settings);
 
 	_linearSolvers.push_back(getLinearSolver(settings, _instances.front()));
 	switch (_configuration.load_steps_settings.at(1).solver) {
 	case LoadStepConfiguration::SOLVER::FETI:
-		_provider.push_back(new DistributedProvider(*_instances.front(), *_composer.front(), *mesh, *_step, *store, *_linearSolvers.back()));
+		_provider.push_back(new DistributedProvider(*_instances.front(), *_composer.front(), *mesh, *_linearSolvers.back()));
 		break;
 	case LoadStepConfiguration::SOLVER::MULTIGRID:
-		_provider.push_back(new CollectiveProvider(*_instances.front(), *_composer.front(), *mesh, *_step, *store, *_linearSolvers.back()));
+		_provider.push_back(new CollectiveProvider(*_instances.front(), *_composer.front(), *mesh, *_linearSolvers.back()));
 		break;
 	}
 

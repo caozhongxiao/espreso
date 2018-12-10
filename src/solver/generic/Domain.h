@@ -23,7 +23,7 @@ using std::map;
 using std::make_pair;
 
 #include "../generic/utils.h"
-#include "../../physics/instance.h"
+#include "../../physics/dataholder.h"
 
 
 #pragma once
@@ -35,7 +35,7 @@ class Domain {
 public:
 
 	// Constructor
-	Domain(const FETISolverConfiguration &configuration, Instance *instance_in, eslocal domain_index, eslocal USE_HTFETI_in, bool copyN1toN2);
+	Domain(const FETISolverConfiguration &configuration, DataHolder *instance_in, eslocal domain_index, eslocal USE_HTFETI_in, bool copyN1toN2);
 
 	// Methods of the class
 	void SetDomain();
@@ -48,7 +48,7 @@ public:
 	void multKplusLocalCore( SEQ_VECTOR <double> & x_in_y_out);
 
     const FETISolverConfiguration &configuration;
-	Instance 		    *instance;
+	DataHolder 		    *instance;
 
 	SparseMatrix &K;
 

@@ -36,7 +36,7 @@ void storeData(vector<double> vectors, const std::string &name, const std::strin
 	}
 }
 
-Domain::Domain(const FETISolverConfiguration &configuration, Instance *instance_in, eslocal domain_index_in, eslocal USE_HTFETI_in, bool copyN1toN2):
+Domain::Domain(const FETISolverConfiguration &configuration, DataHolder *instance_in, eslocal domain_index_in, eslocal USE_HTFETI_in, bool copyN1toN2):
 		configuration(configuration),
 		instance(instance_in),
 

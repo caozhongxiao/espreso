@@ -14,7 +14,7 @@ class HeatTransfer2DControler: public HeatTransferControler
 
 public:
 	HeatTransfer2DControler(
-			Mesh &mesh, const Step &step,
+			Mesh &mesh,
 			const HeatTransferGlobalSettings &gSettings,
 			const HeatTransferStepSettings &sSettings,
 			const HeatTransferOutputSettings &oSettings);

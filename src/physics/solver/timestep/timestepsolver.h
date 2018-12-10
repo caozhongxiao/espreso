@@ -9,13 +9,15 @@ namespace espreso {
 class LinearSolver;
 class LoadStepSolver;
 class Provider;
-struct Step;
 
 class TimeStepSolver {
 
 	friend class LoadStepSolver;
 
 public:
+//	static TimeStepSolver* create(const HeatTransferConfiguration &configuration);
+//	static TimeStepSolver* create(const StructuralMechanicsConfiguration &configuration);
+
 	TimeStepSolver(const std::string &description, Provider &assembler);
 	virtual ~TimeStepSolver() {}
 

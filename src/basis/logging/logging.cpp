@@ -10,7 +10,7 @@
 #include "logging.h"
 
 #include "../../config/ecf/environment.h"
-#include "../../physics/step.h"
+#include "../../globals/time.h"
 
 namespace espreso {
 
@@ -24,7 +24,6 @@ time_t Logging::time = std::time(&time);
 std::string Logging::debug = "debug";
 std::ofstream Logging::log;
 int Logging::rank = 0;
-Step *Logging::step = NULL;
 
 std::string Logging::outputRoot()
 {
@@ -45,11 +44,7 @@ std::string Logging::prepareFile(const std::string &name)
 
 	directory << outputRoot() << "/";
 
-	if (step == NULL) {
-		directory << debug << "/" << rank << "/";
-	} else {
-		directory << debug << "/step" << step->step << "/substep" << step->substep << "/iteration" << step->iteration << "/" << rank << "/";
-	}
+	directory << debug << "/step" << time::step << "/substep" << time::substep << "/iteration" << time::iteration << "/" << rank << "/";
 	file << directory.str() << "/" << name << ".txt";
 
 	mkdir << "mkdir -p " << directory.str();

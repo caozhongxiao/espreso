@@ -31,13 +31,13 @@ struct Monitor {
 class Monitoring: public ResultStoreBase {
 
 public:
-	static bool storeStep(const OutputConfiguration &configuration, const Step &step);
+	static bool storeStep(const OutputConfiguration &configuration);
 
 	virtual bool isCollected() { return true; }
 	virtual bool isSeparated() { return false; }
 
 	void updateMesh();
-	void updateSolution(const Step &step);
+	void updateSolution();
 
 	Monitoring(const Mesh &mesh, const OutputConfiguration &configuration, bool async);
 	~Monitoring();

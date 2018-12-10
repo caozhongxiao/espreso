@@ -3,9 +3,6 @@
 
 #include "../../controllers/controller.h"
 
-#include "../../../instance.h"
-#include "../../../step.h"
-
 #include "../../../../basis/containers/serializededata.h"
 #include "../../../../basis/matrices/denseMatrix.h"
 #include "../../../../basis/logging/logging.h"
@@ -22,6 +19,7 @@
 
 #include <algorithm>
 #include <numeric>
+#include "../../../dataholder.h"
 
 using namespace espreso;
 
@@ -403,7 +401,7 @@ void UniformNodeDomainsComposer::buildB1Pattern()
 		_domainDirichletSize[d] = _instance.B1[d].I_row_indices.size();
 	}
 
-	_instance.block[Instance::CONSTRAINT::DIRICHLET] = dsize;
+	_instance.block[DataHolder::CONSTRAINT::DIRICHLET] = dsize;
 
 	eslocal goffset = 0;
 
@@ -551,7 +549,7 @@ void UniformNodeDomainsComposer::buildB1Pattern()
 		}
 	}
 
-	_instance.block[Instance::CONSTRAINT::EQUALITY_CONSTRAINTS] = dsize + gsize;
+	_instance.block[DataHolder::CONSTRAINT::EQUALITY_CONSTRAINTS] = dsize + gsize;
 }
 
 void UniformNodeDomainsComposer::buildB0Pattern()
@@ -567,7 +565,7 @@ void UniformNodeDomainsComposer::assemble(Matrices matrices)
 	for  (size_t d = 0; d < _instance.domains; d++) {
 
 		size_t KIndex = 0, RHSIndex = 0;
-		double KReduction = 1, RHSReduction = _step.internalForceReduction;
+		double KReduction = 1, RHSReduction = 1; //_step.internalForceReduction;
 		Controler::InstanceFiller filler;
 
 		switch (_controler.getMatrixType(d)) {
@@ -619,7 +617,7 @@ void UniformNodeDomainsComposer::assemble(Matrices matrices)
 
 		_controler.processElements(matrices, filler);
 
-		KReduction = _step.internalForceReduction;
+		KReduction = 1; //_step.internalForceReduction;
 
 		for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
 			if (_mesh.boundaryRegions[r]->distribution.size()) {

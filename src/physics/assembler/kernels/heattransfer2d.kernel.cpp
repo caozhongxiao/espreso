@@ -1,15 +1,15 @@
 
 #include "heattransfer2d.kernel.h"
 
-#include "../../../config/ecf/physics/heattransfer.h"
 #include "../../../basis/containers/point.h"
 #include "../../../basis/matrices/denseMatrix.h"
 #include "../../../basis/evaluator/evaluator.h"
 
-#include "../../instance.h"
-#include "../../step.h"
+#include "../../../config/ecf/physics/heattransfer.h"
+#include "../../../globals/time.h"
 
 #include "../../../mesh/elements/element.h"
+#include "../../dataholder.h"
 
 using namespace espreso;
 
@@ -128,7 +128,7 @@ void HeatTransfer2DKernel::assembleMaterialMatrix(eslocal node, double *coordina
 	K(node, 3) += phase * TCT(1, 0);
 }
 
-void HeatTransfer2DKernel::processElement(Matrices matrices, const ElementIterator &iterator, const Step &step, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void HeatTransfer2DKernel::processElement(Matrices matrices, const ElementIterator &iterator, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	eslocal size = iterator.element->nodes;
 
@@ -137,7 +137,7 @@ void HeatTransfer2DKernel::processElement(Matrices matrices, const ElementIterat
 	const std::vector<double> &weighFactor = *(iterator.element->weighFactor);
 
 	bool CAU = _settings.stabilization == HeatTransferConfiguration::STABILIZATION::CAU;
-	bool tangentCorrection = (matrices & Matrices::K) && step.tangentMatrixCorrection;
+	bool tangentCorrection = false; // (matrices & Matrices::K) && step.tangentMatrixCorrection;
 
 	DenseMatrix Ce(2, 2), coordinates(size, 2), J(2, 2), invJ(2, 2), dND;
 	double detJ, tauK, xi = 1, C1 = 1, C2 = 6;
@@ -169,20 +169,20 @@ void HeatTransfer2DKernel::processElement(Matrices matrices, const ElementIterat
 		if (iterator.material->phase_change) {
 			double phase, derivation;
 			smoothstep(phase, derivation, iterator.material->phase_change_temperature - iterator.material->transition_interval / 2, iterator.material->phase_change_temperature + iterator.material->transition_interval / 2, T(n, 0), iterator.material->smooth_step_order);
-			assembleMaterialMatrix(n, iterator.coordinates + 2 * n, phase1, phase, step.currentTime, T(n, 0), K, CD, tangentCorrection);
-			assembleMaterialMatrix(n, iterator.coordinates + 2 * n, phase2, (1 - phase), step.currentTime, T(n, 0), K, CD, tangentCorrection);
+			assembleMaterialMatrix(n, iterator.coordinates + 2 * n, phase1, phase, time::current, T(n, 0), K, CD, tangentCorrection);
+			assembleMaterialMatrix(n, iterator.coordinates + 2 * n, phase2, (1 - phase), time::current, T(n, 0), K, CD, tangentCorrection);
 			double dens1, dens2, hc1, hc2;
-			phase1->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &dens1);
-			phase2->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &dens2);
-			phase1->heat_capacity.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &hc1);
-			phase2->heat_capacity.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &hc2);
+			phase1->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, time::current, &dens1);
+			phase2->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, time::current, &dens2);
+			phase1->heat_capacity.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, time::current, &hc1);
+			phase2->heat_capacity.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, time::current, &hc2);
 
 			m(n, 0) = (phase * dens1 + (1 - phase) * dens2) * (phase * hc1 + (1 - phase) * hc2 + iterator.material->latent_heat * derivation) * iterator.thickness[0];
 		} else {
-			assembleMaterialMatrix(n, iterator.coordinates + 2 * n, iterator.material, 1, step.currentTime, T(n, 0), K, CD, tangentCorrection);
+			assembleMaterialMatrix(n, iterator.coordinates + 2 * n, iterator.material, 1, time::current, T(n, 0), K, CD, tangentCorrection);
 			double dens, hc;
-			iterator.material->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &dens);
-			iterator.material->heat_capacity.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &hc);
+			iterator.material->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, time::current, &dens);
+			iterator.material->heat_capacity.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, time::current, &hc);
 			m(n, 0) = dens * hc * thickness(n, 0);
 		}
 
@@ -195,11 +195,11 @@ void HeatTransfer2DKernel::processElement(Matrices matrices, const ElementIterat
 	Me.resize(0, 0);
 	Re.resize(0, 0);
 	fe.resize(0, 0);
-	if ((matrices & Matrices::K) || ((matrices & Matrices::R) && step.timeIntegrationConstantK != 0)) {
+	if ((matrices & Matrices::K) || ((matrices & Matrices::R))) { // && step.timeIntegrationConstantK != 0)) {
 		Ke.resize(size, size);
 		Ke = 0;
 	}
-	if ((matrices & Matrices::M) || ((matrices & Matrices::R) && step.timeIntegrationConstantM != 0)) {
+	if ((matrices & Matrices::M) || ((matrices & Matrices::R))) { // && step.timeIntegrationConstantM != 0)) {
 		Me.resize(size, size);
 		Me = 0;
 	}
@@ -276,8 +276,8 @@ void HeatTransfer2DKernel::processElement(Matrices matrices, const ElementIterat
 
 		if (_settings.diffusion_split && g.norm() != 0) {
 			gh_e = 2 * g.norm() / g_e.norm();
-			tauK = (C1 * gh_e * gh_e) / (Ce(0, 0) * C2 + gh_e * gh_e * (gpM(0, 0) / step.timeStep));
-			xi = std::max(1., 1 / (1 - tauK * gpM(0, 0) / step.timeStep));
+			tauK = (C1 * gh_e * gh_e) / (Ce(0, 0) * C2 + gh_e * gh_e * (gpM(0, 0) / time::shift));
+			xi = std::max(1., 1 / (1 - tauK * gpM(0, 0) / time::shift));
 		}
 
 		if (norm_u_e != 0) {
@@ -359,8 +359,10 @@ void HeatTransfer2DKernel::processElement(Matrices matrices, const ElementIterat
 	}
 
 	if (matrices & Matrices::R) {
-		Re.multiply(Ke, T, step.timeIntegrationConstantK, 0);
-		Re.multiply(Me, T, step.timeIntegrationConstantM, 1);
+//		Re.multiply(Ke, T, step.timeIntegrationConstantK, 0);
+//		Re.multiply(Me, T, step.timeIntegrationConstantM, 1);
+		Re.multiply(Ke, T, 1, 0);
+		Re.multiply(Me, T, 1, 1);
 		if (!(matrices & Matrices::K)) {
 			Ke.resize(0, 0);
 		}
@@ -374,7 +376,7 @@ void HeatTransfer2DKernel::processElement(Matrices matrices, const ElementIterat
 	}
 }
 
-void HeatTransfer2DKernel::processEdge(Matrices matrices, const BoundaryIterator &iterator, const Step &step, DenseMatrix &Ke, DenseMatrix &fe) const
+void HeatTransfer2DKernel::processEdge(Matrices matrices, const BoundaryIterator &iterator, DenseMatrix &Ke, DenseMatrix &fe) const
 {
 	if (!iterator.convection && !iterator.heatFlow && !iterator.heatFlux && !iterator.radiation) {
 		Ke.resize(0, 0);
@@ -419,7 +421,7 @@ void HeatTransfer2DKernel::processEdge(Matrices matrices, const BoundaryIterator
 			double text = iterator.externalTemperature[n];
 			htc(n, 0) = iterator.htc[n];
 
-			if (step.iteration) {
+			if (time::iteration) {
 				q(n, 0) += htc(n, 0) * (text - temp);
 			} else {
 				q(n, 0) += htc(n, 0) * (text);
@@ -463,7 +465,7 @@ void HeatTransfer2DKernel::processEdge(Matrices matrices, const BoundaryIterator
 	}
 }
 
-void HeatTransfer2DKernel::processSolution(const SolutionIterator &iterator, const Step &step)
+void HeatTransfer2DKernel::processSolution(const SolutionIterator &iterator)
 {
 	eslocal size = iterator.element->nodes;
 
@@ -489,13 +491,13 @@ void HeatTransfer2DKernel::processSolution(const SolutionIterator &iterator, con
 		if (iterator.material->phase_change) {
 			double phase, derivation;
 			smoothstep(phase, derivation, iterator.material->phase_change_temperature - iterator.material->transition_interval / 2, iterator.material->phase_change_temperature + iterator.material->transition_interval / 2, T(n, 0), iterator.material->smooth_step_order);
-			assembleMaterialMatrix(n, iterator.coordinates + 2 * n, phase1, phase, step.currentTime, T(n, 0), K, CD, false);
-			assembleMaterialMatrix(n, iterator.coordinates + 2 * n, phase2, (1 - phase), step.currentTime, T(n, 0), K, CD, false);
+			assembleMaterialMatrix(n, iterator.coordinates + 2 * n, phase1, phase, time::current, T(n, 0), K, CD, false);
+			assembleMaterialMatrix(n, iterator.coordinates + 2 * n, phase2, (1 - phase), time::current, T(n, 0), K, CD, false);
 			double dens1, dens2, hc1, hc2;
-			phase1->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &dens1);
-			phase2->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &dens2);
-			phase1->heat_capacity.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &hc1);
-			phase2->heat_capacity.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &hc2);
+			phase1->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, time::current, &dens1);
+			phase2->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, time::current, &dens2);
+			phase1->heat_capacity.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, time::current, &hc1);
+			phase2->heat_capacity.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, time::current, &hc2);
 
 			m = (phase * dens1 + (1 - phase) * dens2) * (phase * hc1 + (1 - phase) * hc2 + iterator.material->latent_heat * derivation) * iterator.thickness[0];
 			if (iterator.material->phase_change) {
@@ -503,10 +505,10 @@ void HeatTransfer2DKernel::processSolution(const SolutionIterator &iterator, con
 				*iterator.latentHeat = iterator.material->latent_heat * derivation;
 			}
 		} else {
-			assembleMaterialMatrix(n, iterator.coordinates + 2 * n, iterator.material, 1, step.currentTime, T(n, 0), K, CD, false);
+			assembleMaterialMatrix(n, iterator.coordinates + 2 * n, iterator.material, 1, time::current, T(n, 0), K, CD, false);
 			double dens, hc;
-			iterator.material->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &dens);
-			iterator.material->heat_capacity.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, step.currentTime, &hc);
+			iterator.material->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, time::current, &dens);
+			iterator.material->heat_capacity.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, time::current, &hc);
 			m = dens * hc * thickness(n, 0);
 		}
 

@@ -29,11 +29,11 @@ enum Matrices : int {
 	dual        = 1 << 10  // Dual solution (B1 * Lambdas)
 };
 
-struct Instance {
+struct DataHolder {
 
-	Instance(const Mesh &mesh);
-	Instance(Instance &other, Matrices &share);
-	~Instance();
+	DataHolder(const Mesh &mesh);
+	DataHolder(DataHolder &other, Matrices &share);
+	~DataHolder();
 
 	void computeKernel(FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster = false) { computeKernelCallback(regularization, scSize, domain, ortogonalCluster); }
 	void computeKernelFromOrigK(FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster = false) { computeKernelFromOrigKCallback(regularization, scSize, domain, ortogonalCluster); }
@@ -59,8 +59,8 @@ struct Instance {
 
 	// matrices for FETI constraints
 	std::vector<SparseMatrix> &B1;
-	std::vector<std::vector<esglobal> > &B1subdomainsMap; // TODO: not needed
-	std::vector<std::vector<esglobal> > &B1clustersMap; // TODO: get it directly
+	std::vector<std::vector<eslocal> > &B1subdomainsMap; // TODO: not needed
+	std::vector<std::vector<eslocal> > &B1clustersMap; // TODO: get it directly
 
 	std::vector<std::vector<double> > &B1c, &LB, &B1duplicity;
 
@@ -91,7 +91,7 @@ private:
 
 	std::vector<SparseMatrix> _B0, _B1, _inequality;
 	std::vector<std::vector<double> > _B1c, _LB, _B1duplicity, _inequalityC;
-	std::vector<std::vector<esglobal> > _B0subdomainsMap, _B1subdomainsMap, _B1clustersMap;
+	std::vector<std::vector<eslocal> > _B0subdomainsMap, _B1subdomainsMap, _B1clustersMap;
 
 	std::vector<size_t> _domainDOFCount, _block;
 };

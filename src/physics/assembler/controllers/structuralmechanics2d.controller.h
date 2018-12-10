@@ -13,7 +13,7 @@ class StructuralMechanics2DControler: public StructuralMechanicsControler
 
 public:
 	StructuralMechanics2DControler(
-			Mesh &mesh, const Step &step,
+			Mesh &mesh,
 			const StructuralMechanicsGlobalSettings &gSettings,
 			const StructuralMechanicsStepSettings &sSettings,
 			const StructuralMechanicsOutputSettings &oSettings);

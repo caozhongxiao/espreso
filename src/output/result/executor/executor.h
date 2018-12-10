@@ -13,7 +13,7 @@ class ResultStoreExecutor: public ResultStoreBase {
 public:
 	virtual bool isCollected();
 	virtual bool isSeparated();
-	bool storeStep(const Step &step);
+	bool storeStep();
 
 	virtual void addResultStore(ResultStoreBase *resultStore);
 	virtual bool hasStore() { return _resultStore.size(); }
