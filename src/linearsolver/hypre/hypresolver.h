@@ -1,20 +1,20 @@
 
-#ifndef SRC_LINEARSOLVER_MULTIGRID_MULTIGRID_H_
-#define SRC_LINEARSOLVER_MULTIGRID_MULTIGRID_H_
+#ifndef SRC_LINEARSOLVER_HYPRE_HYPRESOLVER_H_
+#define SRC_LINEARSOLVER_HYPRE_HYPRESOLVER_H_
 
 #include "../linearsolver.h"
-#include "../../config/ecf/linearsolver/multigrid.h"
+#include "../../config/ecf/linearsolver/hypre/hypre.h"
 
 namespace espreso {
 
 class Instance;
 class HypreData;
 
-class MultigridSolver: public LinearSolver {
+class HYPRESolver: public LinearSolver {
 public:
 
-	MultigridSolver(Instance *instance, const MultigridConfiguration &configuration);
-	virtual ~MultigridSolver();
+	HYPRESolver(Instance *instance, const HypreConfiguration &configuration);
+	virtual ~HYPRESolver();
 
 	void update(Matrices matrices);
 	void solve();
@@ -28,11 +28,11 @@ public:
 
 protected:
 	Instance *_instance;
-	MultigridConfiguration _configuration;
+	HypreConfiguration _configuration;
 
 	HypreData *_hypreData;
 };
 
 }
 
-#endif /* SRC_LINEARSOLVER_MULTIGRID_MULTIGRID_H_ */
+#endif /* SRC_LINEARSOLVER_HYPRE_HYPRESOLVER_H_ */

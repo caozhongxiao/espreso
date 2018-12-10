@@ -15,7 +15,7 @@
 #include "../../physics/instance.h"
 #include "../../config/ecf/root.h"
 #include "../../input/input.h"
-#include "../../linearsolver/multigrid/multigrid.h"
+#include "../../linearsolver/hypre/hypresolver.h"
 #include "../../mesh/mesh.h"
 #include "../../mesh/preprocessing/meshpreprocessing.h"
 #include "../../output/result/resultstore.h"
@@ -170,8 +170,8 @@ LinearSolver* FactoryLoader::getLinearSolver(const LoadStepConfiguration &settin
 	switch (settings.solver) {
 	case LoadStepConfiguration::SOLVER::FETI:
 		return new FETISolver(instance, settings.feti);
-	case LoadStepConfiguration::SOLVER::MULTIGRID:
-		return new MultigridSolver(instance, settings.multigrid);
+	case LoadStepConfiguration::SOLVER::HYPRE:
+		return new HYPRESolver(instance, settings.hypre);
 	default:
 		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
 		return NULL;

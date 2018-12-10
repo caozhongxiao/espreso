@@ -34,7 +34,7 @@ HeatTransferFactory::HeatTransferFactory(Step *step, const HeatTransferConfigura
 			_composer.push_back(new DomainsHeatTransfer2D(
 							*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
 			break;
-		case LoadStepConfiguration::SOLVER::MULTIGRID:
+		case LoadStepConfiguration::SOLVER::HYPRE:
 			_composer.push_back(new GlobalHeatTransfer2D(
 							*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
 			break;
@@ -48,7 +48,7 @@ HeatTransferFactory::HeatTransferFactory(Step *step, const HeatTransferConfigura
 			_composer.push_back(new DomainsHeatTransfer3D(
 							*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
 			break;
-		case LoadStepConfiguration::SOLVER::MULTIGRID:
+		case LoadStepConfiguration::SOLVER::HYPRE:
 			_composer.push_back(new GlobalHeatTransfer3D(
 							*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
 			break;
@@ -79,7 +79,7 @@ LoadStepSolver* HeatTransferFactory::getLoadStepSolver(size_t step, Mesh *mesh, 
 	case LoadStepConfiguration::SOLVER::FETI:
 		_provider.push_back(new DistributedProvider(*_instances.front(), *_physics.front(), *_composer.front(), *mesh, *_step, *store, *_linearSolvers.back()));
 		break;
-	case LoadStepConfiguration::SOLVER::MULTIGRID:
+	case LoadStepConfiguration::SOLVER::HYPRE:
 		_provider.push_back(new CollectiveProvider(*_instances.front(), *_physics.front(), *_composer.front(), *mesh, *_step, *store, *_linearSolvers.back()));
 		break;
 	}

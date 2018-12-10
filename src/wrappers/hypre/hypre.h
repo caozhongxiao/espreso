@@ -9,7 +9,7 @@
 namespace espreso {
 
 class SparseMatrix;
-struct MultigridConfiguration;
+struct HypreConfiguration;
 
 class HypreData {
 	friend class HYPRE;
@@ -33,7 +33,7 @@ protected:
 };
 
 struct HYPRE {
-	static void solve(const MultigridConfiguration &configuration, HypreData &data, eslocal nrows, double *solution);
+	static void solve(const HypreConfiguration &configuration, HypreData &data, eslocal nrows, double *solution);
 };
 
 }

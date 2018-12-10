@@ -11,7 +11,7 @@
 
 #include <vector>
 #include <numeric>
-#include "../../config/ecf/linearsolver/multigrid.h"
+#include "../../config/ecf/linearsolver/hypre/hypre.h"
 
 using namespace espreso;
 
@@ -86,7 +86,7 @@ HypreData::~HypreData()
 	HYPRE_IJVectorDestroy(_x);
 }
 
-void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, eslocal nrows, double *solution)
+void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslocal nrows, double *solution)
 {
 	if (!data._finalized) {
 		data.finalizePattern();
@@ -99,48 +99,36 @@ void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, 
 	HYPRE_IJVectorGetObject(data._x, (void**) &x);
 
 	HYPRE_Solver solver;
-	switch (configuration.solver) {
-	case MultigridConfiguration::SOLVER::CG:
+	HYPRE_Solver preconditioner;
+	switch (configuration.solver_type) {
+	case HypreConfiguration::SOLVER_TYPE::PCG:
 		HYPRE_ParCSRPCGCreate(data._comm, &solver);
 
-		HYPRE_PCGSetMaxIter(solver, configuration.max_iterations);
-		HYPRE_PCGSetTol(solver, configuration.precision);
+//		HYPRE_PCGSetMaxIter(solver, configuration.max_iterations);
+		HYPRE_PCGSetTol(solver, configuration.pcg.relative_conv_tol);
 		HYPRE_PCGSetTwoNorm(solver, 1);
 		HYPRE_PCGSetPrintLevel(solver, 0);
 		HYPRE_PCGSetLogging(solver, 0);
-		break;
-	case MultigridConfiguration::SOLVER::GMRES:
-	case MultigridConfiguration::SOLVER::FGMRES:
-	case MultigridConfiguration::SOLVER::BICGS:
-	case MultigridConfiguration::SOLVER::BICGSTAB:
-	case MultigridConfiguration::SOLVER::TFQMR:
-	case MultigridConfiguration::SOLVER::SYMQMR:
-	case MultigridConfiguration::SOLVER::SUPERLU:
-	case MultigridConfiguration::SOLVER::SUPERLUX:
-	default:
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
-	}
 
-	HYPRE_Solver preconditioner;
-	switch (configuration.preconditioner) {
-	case MultigridConfiguration::PRECONDITIONER::DIAGONAL:
-	case MultigridConfiguration::PRECONDITIONER::PILUT:
-	case MultigridConfiguration::PRECONDITIONER::EUCLID:
-	case MultigridConfiguration::PRECONDITIONER::PARASAILS:
-	case MultigridConfiguration::PRECONDITIONER::BOOMERAMG:
-		HYPRE_BoomerAMGCreate(&preconditioner);
-		HYPRE_BoomerAMGSetPrintLevel(preconditioner, 0);
-		HYPRE_BoomerAMGSetCoarsenType(preconditioner, 6);
-		HYPRE_BoomerAMGSetOldDefault(preconditioner);
-		HYPRE_BoomerAMGSetRelaxType(preconditioner, 6);
-		HYPRE_BoomerAMGSetNumSweeps(preconditioner, 1);
-		HYPRE_BoomerAMGSetTol(preconditioner, 0.0);
-		HYPRE_BoomerAMGSetMaxIter(preconditioner, 1);
+		switch (configuration.pcg.preconditioner) {
+		case HYPREPCGConfiguration::PRECONDITIONER::BoomerAMG:
+			HYPRE_BoomerAMGCreate(&preconditioner);
+			HYPRE_BoomerAMGSetPrintLevel(preconditioner, 0);
+			HYPRE_BoomerAMGSetCoarsenType(preconditioner, 6);
+			HYPRE_BoomerAMGSetOldDefault(preconditioner);
+			HYPRE_BoomerAMGSetRelaxType(preconditioner, 6);
+			HYPRE_BoomerAMGSetNumSweeps(preconditioner, 1);
+			HYPRE_BoomerAMGSetTol(preconditioner, 0.0);
+			HYPRE_BoomerAMGSetMaxIter(preconditioner, 1);
 
-		HYPRE_PCGSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSolve, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSetup, preconditioner);
+			HYPRE_PCGSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSolve, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSetup, preconditioner);
+			break;
+		case HYPREPCGConfiguration::PRECONDITIONER::Parasalis:
+		default:
+			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
+		}
+
 		break;
-	case MultigridConfiguration::PRECONDITIONER::POLY:
-	case MultigridConfiguration::PRECONDITIONER::MLI:
 	default:
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
 	}
