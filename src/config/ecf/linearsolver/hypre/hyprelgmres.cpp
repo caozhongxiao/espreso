@@ -1,11 +1,11 @@
 
-#include "hyprepcg.h"
+#include "hyprelgmres.h"
 
 #include "../../../configuration.hpp"
 
 using namespace espreso;
 
-HYPREPCGConfiguration::HYPREPCGConfiguration()
+HYPRELGMRESConfiguration::HYPRELGMRESConfiguration()
 {
 	relative_conv_tol = 1e-8;
 	REGISTER(relative_conv_tol, ECFMetaData()
@@ -17,30 +17,15 @@ HYPREPCGConfiguration::HYPREPCGConfiguration()
 			.setdescription({ "Set the absolute convergence tolerance" })
 			.setdatatype({ ECFDataType::FLOAT }));
 
-	residual_conv_tol = 1e-8;
-	REGISTER(residual_conv_tol, ECFMetaData()
-			.setdescription({ "Set a residual-based convergence tolerance which checks if ||rold −rnew|| < rtol||b||" })
-			.setdatatype({ ECFDataType::FLOAT }));
-
 	max_iterations = 1000;
 	REGISTER(max_iterations, ECFMetaData()
 			.setdescription({ "Set maximum number of iterations" })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
-    two_norm = true;
-	REGISTER(two_norm, ECFMetaData()
-			.setdescription({ "Use the two-norm in stopping criteria" })
-			.setdatatype({ ECFDataType::BOOL }));
-
-    recompute_residual_end = true;
-	REGISTER(recompute_residual_end, ECFMetaData()
-			.setdescription({ "Recompute the residual at the end to double-check convergence" })
-			.setdatatype({ ECFDataType::BOOL }));
-
-    recompute_residual_p = false;
-	REGISTER(recompute_residual_p, ECFMetaData()
-			.setdescription({ "Periodically recompute the residual while iterating" })
-			.setdatatype({ ECFDataType::BOOL }));			
+	restarts = 20;
+	REGISTER(restarts, ECFMetaData()
+			.setdescription({ "Set number of restarts" })
+			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
 	preconditioner = PRECONDITIONER::BoomerAMG;
 	REGISTER(preconditioner, ECFMetaData()

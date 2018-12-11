@@ -1,13 +1,13 @@
 
-#ifndef SRC_CONFIG_ECF_LINEARSOLVER_HYPRE_HYPREPCG_H_
-#define SRC_CONFIG_ECF_LINEARSOLVER_HYPRE_HYPREPCG_H_
+#ifndef SRC_CONFIG_ECF_LINEARSOLVER_HYPRE_HYPREBiCGSTAB_H_
+#define SRC_CONFIG_ECF_LINEARSOLVER_HYPRE_HYPREBiCGSTAB_H_
 
 #include "hypreboomeramg.h"
 #include "hypreparasalis.h"
 
 namespace espreso {
 
-struct HYPREPCGConfiguration: public ECFObject {
+struct HYPREBiCGSTABConfiguration: public ECFObject {
 
 	enum class PRECONDITIONER {
 		BoomerAMG,
@@ -19,9 +19,8 @@ struct HYPREPCGConfiguration: public ECFObject {
 	HYPREBoomerAMGConfiguration boomeramg;
 	HYPREParasalisConfiguration parasalis;
 
-	double relative_conv_tol, absolute_conv_tol, residual_conv_tol;
+	double relative_conv_tol, absolute_conv_tol;
 	int max_iterations;
-	bool two_norm, recompute_residual_end, recompute_residual_p;
 	
 	enum class SOLVER_INFO {
 		NO_INFO,
@@ -31,11 +30,9 @@ struct HYPREPCGConfiguration: public ECFObject {
 	};
 	SOLVER_INFO solver_info;
             
-	HYPREPCGConfiguration();
+	HYPREBiCGSTABConfiguration();
 };
 
 }
 
-
-
-#endif /* SRC_CONFIG_ECF_LINEARSOLVER_HYPRE_HYPREPCG_H_ */
+#endif /* SRC_CONFIG_ECF_LINEARSOLVER_HYPRE_HYPREBiCGSTAB_H_ */
