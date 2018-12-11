@@ -11,6 +11,8 @@
 
 #include "../elements/element.h"
 
+#include "../../globals/run.h"
+
 #include "../../basis/containers/point.h"
 #include "../../basis/containers/serializededata.h"
 #include "../../basis/utilities/communication.h"
@@ -53,9 +55,9 @@ void MeshPreprocessing::reclusterize()
 
 	start("compute global dual graph");
 
-	bool separateRegions = _mesh->configuration.decomposition.separate_regions;
-	bool separateMaterials = _mesh->configuration.decomposition.separate_materials;
-	bool separateEtypes = _mesh->configuration.decomposition.separate_etypes;
+	bool separateRegions = run::ecf.decomposition.separate_regions;
+	bool separateMaterials = run::ecf.decomposition.separate_materials;
+	bool separateEtypes = run::ecf.decomposition.separate_etypes;
 
 	if (separateRegions && _mesh->elements->regions == NULL) {
 		fillRegionMask();
@@ -126,7 +128,7 @@ void MeshPreprocessing::reclusterize()
 
 	finish("compute global dual graph");
 
-	MPISubset subset(_mesh->configuration.decomposition.metis_options, MPITools::procs());
+	MPISubset subset(run::ecf.decomposition.metis_options, MPITools::procs());
 
 	start("ParMETIS::KWay");
 	eslocal edgecut = ParMETIS::call(
@@ -135,7 +137,7 @@ void MeshPreprocessing::reclusterize()
 	);
 	finish("ParMETIS::KWay");
 
-	if (_mesh->configuration.decomposition.metis_options.refinement) {
+	if (run::ecf.decomposition.metis_options.refinement) {
 		start("ParMETIS::AdaptiveRepart");
 		eslocal prev = 2 * edgecut;
 		while (1.01 * edgecut < prev) {
@@ -193,7 +195,7 @@ void MeshPreprocessing::partitiate(eslocal parts)
 
 		start("METIS::KWay");
 		METIS::call(
-				_mesh->configuration.decomposition.metis_options,
+				run::ecf.decomposition.metis_options,
 				_mesh->elements->size,
 				dualDist.data(), dualData.data(),
 				0, NULL, NULL,
@@ -285,7 +287,7 @@ void MeshPreprocessing::partitiate(eslocal parts)
 		#pragma omp parallel for
 		for (int p = 0; p < nextID; p++) {
 			METIS::call(
-					_mesh->configuration.decomposition.metis_options,
+					run::ecf.decomposition.metis_options,
 					frames[p].size() - 1,
 					frames[p].data(), neighbors[p].data(),
 					0, NULL, NULL,

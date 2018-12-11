@@ -50,7 +50,7 @@ def build(ctx):
     )
 
     ctx.program(
-        source       = ("run.cpp", "espreso.cpp"),
+        source       = ("main.cpp", "espreso.cpp"),
         target       = "espreso",
         use          = "basis globals config wrappers input mesh output bem assembler factory feti multigrid",
         install_path = ctx.ROOT + "/bin"

@@ -11,6 +11,8 @@
 #include "../store/surfacestore.h"
 #include "../elements/element.h"
 
+#include "../../globals/run.h"
+
 #include "../../basis/containers/point.h"
 #include "../../basis/containers/serializededata.h"
 #include "../../basis/matrices/denseMatrix.h"
@@ -510,9 +512,9 @@ void MeshPreprocessing::computeElementsCenters()
 
 void MeshPreprocessing::computeDecomposedDual(std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData)
 {
-	bool separateRegions = _mesh->configuration.decomposition.separate_regions;
-	bool separateMaterials = _mesh->configuration.decomposition.separate_materials;
-	bool separateEtypes = _mesh->configuration.decomposition.separate_etypes;
+	bool separateRegions = run::ecf.decomposition.separate_regions;
+	bool separateMaterials = run::ecf.decomposition.separate_materials;
+	bool separateEtypes = run::ecf.decomposition.separate_etypes;
 
 	if (_mesh->elements->neighbors == NULL) {
 		this->computeElementsNeighbors();

@@ -4,7 +4,7 @@
 
 namespace espreso {
 
-int run(int *argc, char ***argv);
+int start(int *argc, char ***argv);
 
 }
 

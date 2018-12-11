@@ -31,8 +31,7 @@ enum Matrices : int {
 
 struct DataHolder {
 
-	DataHolder(const Mesh &mesh);
-	DataHolder(DataHolder &other, Matrices &share);
+	DataHolder();
 	~DataHolder();
 
 	void computeKernel(FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster = false) { computeKernelCallback(regularization, scSize, domain, ortogonalCluster); }
@@ -41,31 +40,23 @@ struct DataHolder {
 	void computeKernels(FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster = false) { computeKernelsCallback(regularization, scSize, ortogonalCluster); }
 	void assembleB0(FETI_B0_TYPE type, const std::vector<SparseMatrix> &kernels) { assembleB0Callback(type, kernels); }
 
-	void clear();
-
-	size_t domains;
-	std::vector<size_t> &domainDOFCount;
-	std::vector<int> neighbours;
-
-	std::vector<int> clustersMap;
-
-	std::vector<SparseMatrix> &origK, &K, &origKN1, &origKN2, &origRegMat, &N1, &N2, &RegMat;
-	std::vector<SparseMatrix> &M;
-	std::vector<std::vector<double> > &R, &f;
+	std::vector<SparseMatrix> origK, K, origKN1, origKN2, origRegMat, N1, N2, RegMat;
+	std::vector<SparseMatrix> M;
+	std::vector<std::vector<double> > R, f;
 
 	// matrices for Hybrid FETI constraints
-	std::vector<SparseMatrix> &B0;
-	std::vector<std::vector<esglobal> > &B0subdomainsMap; // TODO: not needed
+	std::vector<SparseMatrix> B0;
+	std::vector<std::vector<esglobal> > B0subdomainsMap; // TODO: not needed
 
 	// matrices for FETI constraints
-	std::vector<SparseMatrix> &B1;
-	std::vector<std::vector<eslocal> > &B1subdomainsMap; // TODO: not needed
-	std::vector<std::vector<eslocal> > &B1clustersMap; // TODO: get it directly
+	std::vector<SparseMatrix> B1;
+	std::vector<std::vector<eslocal> > B1subdomainsMap; // TODO: not needed
+	std::vector<std::vector<eslocal> > B1clustersMap; // TODO: get it directly
 
-	std::vector<std::vector<double> > &B1c, &LB, &B1duplicity;
+	std::vector<std::vector<double> > B1c, LB, B1duplicity;
 
-	std::vector<SparseMatrix> &inequality;
-	std::vector<std::vector<double> > &inequalityC;
+	std::vector<SparseMatrix> inequality;
+	std::vector<std::vector<double> > inequalityC;
 
 	// blocks types of B1
 	enum CONSTRAINT {
@@ -74,7 +65,7 @@ struct DataHolder {
 		INEQUALITY_CONSTRAINTS,
 	};
 
-	std::vector<size_t> &block;
+	std::vector<size_t> block;
 
 	std::vector<std::vector<double> > primalSolution;
 	std::vector<std::vector<double> > dualSolution;
@@ -84,16 +75,6 @@ struct DataHolder {
 	std::function<void(FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster)> computeKernelCallback;
 	std::function<void(FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster)> computeKernelFromOrigKCallback;
 	std::function<void(FETI_B0_TYPE type, const std::vector<SparseMatrix> &kernels)> assembleB0Callback;
-private:
-
-	std::vector<SparseMatrix> _origK, _K, _M, _origKN1, _origKN2, _origRegMat, _N1, _N2, _RegMat;
-	std::vector<std::vector<double> > _R, _f;
-
-	std::vector<SparseMatrix> _B0, _B1, _inequality;
-	std::vector<std::vector<double> > _B1c, _LB, _B1duplicity, _inequalityC;
-	std::vector<std::vector<eslocal> > _B0subdomainsMap, _B1subdomainsMap, _B1clustersMap;
-
-	std::vector<size_t> _domainDOFCount, _block;
 };
 
 inline Matrices operator~(Matrices m)

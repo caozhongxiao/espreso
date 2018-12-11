@@ -13,7 +13,7 @@
 #include "../input/input.h"
 #include "../output/result/resultstore.h"
 
-int espreso::run(int *argc, char ***argv)
+int espreso::start(int *argc, char ***argv)
 {
 	int provided;
 	MPI_Init_thread(argc, argv, MPI_THREAD_MULTIPLE, &provided);

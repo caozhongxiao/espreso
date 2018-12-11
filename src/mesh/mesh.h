@@ -36,7 +36,7 @@ class Mesh {
 
 	friend class MeshPreprocessing;
 public:
-	Mesh(const ECFRoot &configuration, ResultStore *store, bool withGUI = false);
+	Mesh();
 	void update();
 
 	void initNodeData();
@@ -87,7 +87,6 @@ public:
 	std::vector<const MaterialConfiguration*> materials;
 
 //protected:
-	const ECFRoot &configuration;
 	std::vector<Element*> _eclasses;
 
 	ResultStore *store;
