@@ -56,15 +56,17 @@ void HeatTransfer3D::processBEM(eslocal domain, Matrices matrices)
 #else
 	const MaterialConfiguration* material = _mesh->materials[_mesh->elements->material->datatarray()[_mesh->elements->elementsDistribution[domain]]];
 
+	_BEMReg = new double[_instance->K[domain].rows];
 	bem4i::getLaplaceSteklovPoincare(
 			_instance->K[domain].dense_values.data(),
+			_BEMReg, &_BEMRegConst,
 			_instance->K[domain].rows,
 			reinterpret_cast<double*>(_mesh->domainsSurface->coordinates->datatarray().data() + _mesh->domainsSurface->cdistribution[domain]),
 			(eslocal)(_mesh->domainsSurface->tdistribution[domain + 1] - _mesh->domainsSurface->tdistribution[domain]),
 			_mesh->domainsSurface->triangles->datatarray().data() + 3 * _mesh->domainsSurface->tdistribution[domain],
 			material->thermal_conductivity.values.get(0, 0).evaluator->evaluate(Point(), _step->currentTime, 0),
-			0,
-			5, 5,
+			1,
+			4, 4,
 			_BEMData[domain]);
 #endif
 

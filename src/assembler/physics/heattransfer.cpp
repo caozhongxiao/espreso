@@ -165,6 +165,7 @@ void HeatTransfer::analyticRegularization(size_t domain, bool ortogonalCluster)
 
 		_instance->N1[domain].dense_values.resize(_instance->N1[domain].nnz, value);
 
+#ifndef BEM4I
 		_instance->RegMat[domain].rows = _instance->K[domain].rows;
 		_instance->RegMat[domain].cols = _instance->K[domain].cols;
 		_instance->RegMat[domain].nnz  = 1;
@@ -174,6 +175,23 @@ void HeatTransfer::analyticRegularization(size_t domain, bool ortogonalCluster)
 		_instance->RegMat[domain].J_col_indices.push_back(1);
 		_instance->RegMat[domain].V_values.push_back(_instance->K[domain].getDiagonalMaximum());
 		_instance->RegMat[domain].ConvertToCSR(1);
+#else
+		_instance->RegMat[domain].rows = _instance->K[domain].rows;
+		_instance->RegMat[domain].cols = _instance->K[domain].cols;
+		_instance->RegMat[domain].type = _instance->K[domain].type;
+
+		_instance->RegMat[domain].CSR_I_row_indices.push_back(1);
+		for (eslocal r = 0; r < _instance->RegMat[domain].rows; r++) {
+			for (eslocal c = r; c < _instance->RegMat[domain].cols; c++) {
+				_instance->RegMat[domain].CSR_J_col_indices.push_back(c + 1);
+				_instance->RegMat[domain].CSR_V_values.push_back(_BEMRegConst * _BEMReg[r] * _BEMReg[c]);
+			}
+			_instance->RegMat[domain].CSR_I_row_indices.push_back(_instance->RegMat[domain].CSR_J_col_indices.size() + 1);
+		}
+		_instance->RegMat[domain].nnz  = _instance->RegMat[domain].CSR_I_row_indices.size();
+#endif
+
+
 	}
 }
 

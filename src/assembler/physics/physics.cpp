@@ -62,6 +62,8 @@ Physics::Physics(const std::string &name, Mesh *mesh, Instance *instance, Step *
 	}
 
 	_BEMData.resize(mesh->elements->ndomains, NULL);
+	_BEMReg = NULL;
+	_BEMRegConst = 0;
 }
 
 Physics::~Physics()

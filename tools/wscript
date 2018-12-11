@@ -149,7 +149,7 @@ def configure(ctx):
     )
 
     if ctx.env.BEM4I:
-        ctx.env.append_unique("DEFINES", [ "BEM4I" ])
+        ctx.env.append_unique("DEFINES", [ "BEM4I", "DATA_WIDTH=2" ])
 
 def build(ctx):
     if ctx.env.EXTERNAL_LIBRARIES:
