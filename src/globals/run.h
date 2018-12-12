@@ -2,17 +2,17 @@
 #ifndef SRC_GLOBALS_RUN_H_
 #define SRC_GLOBALS_RUN_H_
 
-#include "../config/ecf/root.h"
-#include "../mesh/mesh.h"
-#include "../physics/dataholder.h"
-
 namespace espreso {
+
+class ECFRoot;
+class Mesh;
+class DataHolder;
 
 struct run {
 
-	static ECFRoot ecf;
-	static Mesh mesh;
-	static DataHolder data;
+	static ECFRoot *ecf;
+	static Mesh *mesh;
+	static DataHolder *data;
 };
 
 }

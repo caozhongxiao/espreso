@@ -21,7 +21,7 @@
 #include "../../physics/provider/provider.h"
 #include "../../solver/generic/FETISolver.h"
 
-
+#include "../../globals/run.h"
 
 namespace espreso {
 
@@ -60,18 +60,18 @@ void ESPRESO::run(int *argc, char ***argv)
 	std::signal(SIGABRT, signalHandler);
 	std::signal(SIGFPE, signalHandler);
 
-	ECFRoot configuration(argc, argv);
-	Mesh mesh(configuration, NULL);
-	mesh.store = ResultStore::createAsynchronizedStore(mesh, configuration.output);
+	run::ecf = new ECFRoot(argc, argv);
+	run::mesh = new Mesh();
+	run::mesh->store = ResultStore::createAsynchronizedStore(*run::mesh, run::ecf->output);
 
 	std::string processes, threads;
-	if (mesh.store->storeProcesses) {
-		processes = std::to_string(mesh.store->computeProcesses) + " + " + std::to_string(mesh.store->storeProcesses);
+	if (run::mesh->store->storeProcesses) {
+		processes = std::to_string(run::mesh->store->computeProcesses) + " + " + std::to_string(run::mesh->store->storeProcesses);
 	} else {
-		processes = std::to_string(mesh.store->computeProcesses);
+		processes = std::to_string(run::mesh->store->computeProcesses);
 	}
-	if (mesh.store->storeThreads) {
-		threads = std::to_string(environment->OMP_NUM_THREADS) + " + " + std::to_string(mesh.store->storeThreads);
+	if (run::mesh->store->storeThreads) {
+		threads = std::to_string(environment->OMP_NUM_THREADS) + " + " + std::to_string(run::mesh->store->storeThreads);
 	} else {
 		threads = std::to_string(environment->OMP_NUM_THREADS);
 	}
@@ -79,28 +79,28 @@ void ESPRESO::run(int *argc, char ***argv)
 	ESINFO(OVERVIEW) << "Run ESPRESO SOLVER using " << processes << " MPI and " << threads << " threads.";
 
 	auto computeSolution = [&] () {
-		switch (configuration.input) {
+		switch (run::ecf->input) {
 		case INPUT_FORMAT::WORKBENCH:
-			return !configuration.workbench.convert_database;
+			return !run::ecf->workbench.convert_database;
 		case INPUT_FORMAT::OPENFOAM:
-			return !configuration.openfoam.convert_database;
+			return !run::ecf->openfoam.convert_database;
 		default:
 			return true;
 		}
 	};
 
 	if (ResultStore::isComputeNode()) {
-		Factory factory(configuration, mesh);
+		Factory factory(*run::ecf, *run::mesh);
 		if (computeSolution()) {
 			factory.solve();
 		} else {
-			ESPRESOBinaryFormat::store(mesh, configuration);
+			ESPRESOBinaryFormat::store(*run::mesh, *run::ecf);
 		}
 	}
 	ResultStore::destroyAsynchronizedStore();
 }
 
-Factory::Factory(const ECFRoot &configuration, Mesh &mesh)
+Factory::Factory(ECFRoot &configuration, Mesh &mesh)
 : _mesh(&mesh), _loader(NULL)
 {
 	Input::load(configuration, mesh);
@@ -158,13 +158,13 @@ FactoryLoader::~FactoryLoader()
 	clear(_loadStepSolvers);
 }
 
-LinearSolver* FactoryLoader::getLinearSolver(const LoadStepConfiguration &settings, DataHolder *instance) const
+LinearSolver* FactoryLoader::getLinearSolver(LoadStepConfiguration &settings, DataHolder *instance) const
 {
 	switch (settings.solver) {
 	case LoadStepConfiguration::SOLVER::FETI:
 		return new FETISolver(instance, settings.feti);
 	case LoadStepConfiguration::SOLVER::MULTIGRID:
-		return new MultigridSolver(instance, settings.multigrid);
+		return new MultigridSolver(settings.multigrid);
 	default:
 		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
 		return NULL;

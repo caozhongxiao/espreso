@@ -3,6 +3,7 @@
 
 #include "../vtkwritter.h"
 
+#include "../../../../globals/run.h"
 #include "../../../../basis/containers/point.h"
 #include "../../../../basis/containers/serializededata.h"
 #include "../../../../basis/utilities/utils.h"
@@ -1030,12 +1031,12 @@ void VTKLegacyDebugInfo::dirichlet(const Mesh &mesh, const DataHolder &instance)
 	os << "DATASET UNSTRUCTURED_GRID\n\n";
 
 	size_t points = 0;
-	for (size_t d = 0; d < instance.domains; d++) {
+	for (eslocal d = 0; d < mesh.elements->ndomains; d++) {
 		points += std::lower_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[DataHolder::CONSTRAINT::DIRICHLET] + 1) - instance.B1[d].I_row_indices.begin();
 	}
 	os << "POINTS " << points << " float\n";
 
-	for (size_t d = 0; d < instance.domains; d++) {
+	for (size_t d = 0; d < mesh.elements->ndomains; d++) {
 		for (size_t i = 0; i < instance.B1[d].I_row_indices.size() && instance.B1[d].I_row_indices[i] <= (eslocal)instance.block[DataHolder::CONSTRAINT::DIRICHLET]; i++) {
 			auto it = std::lower_bound(mesh.nodes->dintervals[d].begin(), mesh.nodes->dintervals[d].end(), instance.B1[d].J_col_indices[i], [&] (DomainInterval &d, eslocal dof) {
 				return d.DOFOffset + d.end - d.begin < dof;
@@ -1067,7 +1068,7 @@ void VTKLegacyDebugInfo::dirichlet(const Mesh &mesh, const DataHolder &instance)
 	os << "CELL_DATA " << cells << "\n";
 	os << "SCALARS value float 1\n";
 	os << "LOOKUP_TABLE default\n";
-	for (size_t d = 0; d < instance.domains; d++) {
+	for (size_t d = 0; d < mesh.elements->ndomains; d++) {
 		for (size_t i = 0; i < instance.B1[d].I_row_indices.size() && instance.B1[d].I_row_indices[i] <= (eslocal)instance.block[DataHolder::CONSTRAINT::DIRICHLET]; i++) {
 			os << instance.B1c[d][i] << "\n";
 		}
@@ -1085,7 +1086,7 @@ void VTKLegacyDebugInfo::gluing(const Mesh &mesh, const DataHolder &instance)
 
 	size_t points = 0;
 
-	for (size_t d = 0; d < instance.domains; d++) {
+	for (eslocal d = 0; d < mesh.elements->ndomains; d++) {
 		auto start = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[DataHolder::CONSTRAINT::DIRICHLET]);
 		auto end = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[DataHolder::CONSTRAINT::DIRICHLET] + instance.block[DataHolder::CONSTRAINT::EQUALITY_CONSTRAINTS]);
 		points += end - start;
@@ -1131,7 +1132,7 @@ void VTKLegacyDebugInfo::gluing(const Mesh &mesh, const DataHolder &instance)
 
 	os << "POINTS " << 2 * points << " float\n";
 
-	for (size_t d = 0, offset = 0; d < instance.domains; d++) {
+	for (eslocal d = 0, offset = 0; d < mesh.elements->ndomains; d++) {
 		auto start = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[DataHolder::CONSTRAINT::DIRICHLET]);
 		auto end = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[DataHolder::CONSTRAINT::DIRICHLET] + instance.block[DataHolder::CONSTRAINT::EQUALITY_CONSTRAINTS]);
 		for (eslocal i = start - instance.B1[d].I_row_indices.begin(); i < end - instance.B1[d].I_row_indices.begin(); i++, offset++) {
@@ -1187,7 +1188,7 @@ void VTKLegacyDebugInfo::gluing(const Mesh &mesh, const DataHolder &instance)
 	os << "CELL_DATA " << cells << "\n";
 	os << "SCALARS value float 1\n";
 	os << "LOOKUP_TABLE default\n";
-	for (size_t d = 0, offset = 0; d < instance.domains; d++) {
+	for (eslocal d = 0, offset = 0; d < mesh.elements->ndomains; d++) {
 		auto start = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[DataHolder::CONSTRAINT::DIRICHLET]);
 		auto end = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[DataHolder::CONSTRAINT::DIRICHLET] + instance.block[DataHolder::CONSTRAINT::EQUALITY_CONSTRAINTS]);
 		for (eslocal i = start - instance.B1[d].I_row_indices.begin(); i < end - instance.B1[d].I_row_indices.begin(); i++, offset++) {

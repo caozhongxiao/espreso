@@ -17,10 +17,10 @@
 
 using namespace espreso;
 
-StructuralMechanicsFactory::StructuralMechanicsFactory(const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh)
+StructuralMechanicsFactory::StructuralMechanicsFactory(StructuralMechanicsConfiguration &configuration, ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh)
 : _configuration(configuration), _propertiesConfiguration(propertiesConfiguration), _bem(false)
 {
-	_instances.push_back(new DataHolder(*mesh));
+	_instances.push_back(new DataHolder());
 
 	switch (configuration.dimension) {
 	case DIMENSION::D2:
@@ -66,7 +66,7 @@ size_t StructuralMechanicsFactory::loadSteps() const
 
 LoadStepSolver* StructuralMechanicsFactory::getLoadStepSolver(size_t step, Mesh *mesh)
 {
-	const StructuralMechanicsLoadStepConfiguration &settings = getLoadStepsSettings(step, _configuration.load_steps_settings);
+	StructuralMechanicsLoadStepConfiguration &settings = getLoadStepsSettings(step, _configuration.load_steps_settings);
 
 	_linearSolvers.push_back(getLinearSolver(settings, _instances.front()));
 	switch (_configuration.load_steps_settings.at(1).solver) {

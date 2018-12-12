@@ -12,14 +12,14 @@ struct ResultsSelectionConfiguration;
 class StructuralMechanicsFactory: public FactoryLoader {
 
 public:
-	StructuralMechanicsFactory(const StructuralMechanicsConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh);
+	StructuralMechanicsFactory(StructuralMechanicsConfiguration &configuration, ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh);
 
 	size_t loadSteps() const;
 	LoadStepSolver* getLoadStepSolver(size_t step, Mesh *mesh);
 
 protected:
-	const StructuralMechanicsConfiguration &_configuration;
-	const ResultsSelectionConfiguration &_propertiesConfiguration;
+	StructuralMechanicsConfiguration &_configuration;
+	ResultsSelectionConfiguration &_propertiesConfiguration;
 	bool _bem;
 
 };

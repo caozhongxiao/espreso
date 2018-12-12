@@ -3,17 +3,16 @@
 #define SRC_LINEARSOLVER_MULTIGRID_MULTIGRID_H_
 
 #include "../linearsolver.h"
-#include "../../config/ecf/solver/multigrid.h"
 
 namespace espreso {
 
-class DataHolder;
-class HypreData;
+struct MultigridConfiguration;
+struct HypreData;
 
 class MultigridSolver: public LinearSolver {
 public:
 
-	MultigridSolver(DataHolder *instance, const MultigridConfiguration &configuration);
+	MultigridSolver(MultigridConfiguration &configuration);
 	virtual ~MultigridSolver();
 
 	void update(Matrices matrices);
@@ -27,8 +26,7 @@ public:
 	double& precision();
 
 protected:
-	DataHolder *_instance;
-	MultigridConfiguration _configuration;
+	MultigridConfiguration &_configuration;
 
 	HypreData *_hypreData;
 };

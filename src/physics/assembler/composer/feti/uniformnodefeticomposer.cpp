@@ -1,5 +1,5 @@
 
-#include "uniformnodedomainscomposer.h"
+#include "../feti/uniformnodefeticomposer.h"
 
 #include "../../controllers/controller.h"
 
@@ -23,9 +23,11 @@
 
 using namespace espreso;
 
-void UniformNodeDomainsComposer::initDOFs()
+void UniformNodeFETIComposer::initDOFs()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
+
+	_domainDOFsSize.resize(_mesh.elements->ndomains);
 
 	// nID, domain
 	std::vector<std::vector<std::pair<eslocal, eslocal> > > ntodomains(threads);
@@ -43,6 +45,7 @@ void UniformNodeDomainsComposer::initDOFs()
 			for (size_t i = 0; i < dnodes.size(); i++) {
 				tdata.push_back(std::pair<eslocal, eslocal>(dnodes[i], d));
 			}
+			_domainDOFsSize[d] = dnodes.size() * _DOFs;
 		}
 
 		ntodomains[t].swap(tdata);
@@ -169,7 +172,7 @@ void UniformNodeDomainsComposer::initDOFs()
 			tarray<eslocal>(datadistribution, DOFData));
 }
 
-void UniformNodeDomainsComposer::initDirichlet()
+void UniformNodeFETIComposer::initDirichlet()
 {
 	std::vector<std::vector<eslocal> > dIndices;
 	_controler.dirichletIndices(dIndices);
@@ -199,13 +202,13 @@ void UniformNodeDomainsComposer::initDirichlet()
 	std::sort(_dirichletMap.begin(), _dirichletMap.end());
 }
 
-void UniformNodeDomainsComposer::buildPatterns()
+void UniformNodeFETIComposer::buildPatterns()
 {
 	buildKPattern();
 	buildB1Pattern();
 }
 
-void UniformNodeDomainsComposer::buildKPattern()
+void UniformNodeFETIComposer::buildKPattern()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -218,10 +221,10 @@ void UniformNodeDomainsComposer::buildKPattern()
 	_instance.R.resize(_mesh.elements->ndomains);
 	_instance.primalSolution.resize(_mesh.elements->ndomains);
 	for (eslocal d = 0; d < _mesh.elements->ndomains; d++) {
-		_instance.K[d].rows = _instance.domainDOFCount[d];
-		_instance.K[d].cols = _instance.domainDOFCount[d];
-		_instance.f[d].resize(_instance.domainDOFCount[d]);
-		_instance.R[d].resize(_instance.domainDOFCount[d]);
+		_instance.K[d].rows = _domainDOFsSize[d];
+		_instance.K[d].cols = _domainDOFsSize[d];
+		_instance.f[d].resize(_domainDOFsSize[d]);
+		_instance.R[d].resize(_domainDOFsSize[d]);
 	}
 
 	#pragma omp parallel for
@@ -311,7 +314,7 @@ void UniformNodeDomainsComposer::buildKPattern()
 				return RHSPattern[i] < RHSPattern[j];
 			});
 
-			ROW.reserve(_instance.domainDOFCount[d] + 1);
+			ROW.reserve(_domainDOFsSize[d] + 1);
 			COL.reserve(KPattern.size());
 			ROW.push_back(1);
 			COL.push_back(KPattern[pK.front()].column + 1);
@@ -358,7 +361,7 @@ void UniformNodeDomainsComposer::buildKPattern()
 //	std::cout << _RHSPermutation.front();
 }
 
-void UniformNodeDomainsComposer::buildB1Pattern()
+void UniformNodeFETIComposer::buildB1Pattern()
 {
 	eslocal doffset = 0;
 
@@ -552,17 +555,17 @@ void UniformNodeDomainsComposer::buildB1Pattern()
 	_instance.block[DataHolder::CONSTRAINT::EQUALITY_CONSTRAINTS] = dsize + gsize;
 }
 
-void UniformNodeDomainsComposer::buildB0Pattern()
+void UniformNodeFETIComposer::buildB0Pattern()
 {
 
 }
 
-void UniformNodeDomainsComposer::assemble(Matrices matrices)
+void UniformNodeFETIComposer::assemble(Matrices matrices)
 {
 	_controler.nextTime();
 
 	#pragma omp parallel for
-	for  (size_t d = 0; d < _instance.domains; d++) {
+	for  (eslocal d = 0; d < _mesh.elements->ndomains; d++) {
 
 		size_t KIndex = 0, RHSIndex = 0;
 		double KReduction = 1, RHSReduction = 1; //_step.internalForceReduction;
@@ -631,7 +634,7 @@ void UniformNodeDomainsComposer::assemble(Matrices matrices)
 	}
 }
 
-void UniformNodeDomainsComposer::setDirichlet()
+void UniformNodeFETIComposer::setDirichlet()
 {
 	std::vector<double> values(_dirichletMap.size());
 	_controler.dirichletValues(values);
@@ -652,18 +655,18 @@ void UniformNodeDomainsComposer::setDirichlet()
 	}
 }
 
-void UniformNodeDomainsComposer::synchronize()
+void UniformNodeFETIComposer::synchronize()
 {
 	if (_scaling && _redundantLagrange) {
 		updateDuplicity();
 	}
 }
 
-void UniformNodeDomainsComposer::updateDuplicity()
+void UniformNodeFETIComposer::updateDuplicity()
 {
 	std::vector<std::vector<double> > diagonals(_mesh.elements->ndomains);
 	#pragma omp parallel for
-	for  (size_t d = 0; d < _instance.domains; d++) {
+	for  (eslocal d = 0; d < _mesh.elements->ndomains; d++) {
 		diagonals[d] = _instance.K[d].getDiagonal();
 	}
 
@@ -757,7 +760,7 @@ void UniformNodeDomainsComposer::updateDuplicity()
 	}
 }
 
-void UniformNodeDomainsComposer::fillSolution()
+void UniformNodeFETIComposer::fillSolution()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 

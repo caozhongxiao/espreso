@@ -35,7 +35,7 @@ void DistributedProvider::keepK()
 {
 	timeWrapper("copy K to origK", [&] () {
 		#pragma omp parallel for
-		for (size_t d = 0; d < instance.domains; d++) {
+		for (size_t d = 0; d < mesh.elements->ndomains; d++) {
 			instance.origK[d] = instance.K[d];
 		}
 	});
@@ -75,7 +75,7 @@ void DistributedProvider::sum(std::vector<SparseMatrix> &A, double beta, std::ve
 {
 	timeWrapper("compute: " + description, [&] () {
 		#pragma omp parallel for
-		for (size_t d = 0; d < instance.domains; d++) {
+		for (size_t d = 0; d < mesh.elements->ndomains; d++) {
 			A[d].MatAddInPlace(B[d], 'N', beta);
 		}
 	});
@@ -86,7 +86,7 @@ void DistributedProvider::multiply(std::vector<std::vector<double> > &y, std::ve
 {
 	timeWrapper("compute: " + description, [&] () {
 		#pragma omp parallel for
-		for (size_t d = 0; d < instance.domains; d++) {
+		for (size_t d = 0; d < mesh.elements->ndomains; d++) {
 			A[d].MatVec(x[d], y[d], 'N', 0, 0, 0);
 		}
 	});
@@ -125,7 +125,7 @@ void DistributedProvider::addToDirichletInB1(double a, const std::vector<std::ve
 {
 	timeWrapper("subtract primal solution from dirichlet", [&] () {
 		#pragma omp parallel for
-		for (size_t d = 0; d < instance.domains; d++) {
+		for (size_t d = 0; d < mesh.elements->ndomains; d++) {
 			for (size_t j = 0; j < instance.B1[d].J_col_indices.size(); j++) {
 				if (instance.B1[d].I_row_indices[j] > (eslocal)instance.block[DataHolder::CONSTRAINT::DIRICHLET]) {
 					break;
@@ -282,9 +282,9 @@ void DistributedProvider::setEmptyRegularizationCallback()
 	instance.N2.clear();
 	instance.RegMat.clear();
 
-	instance.N1.resize(instance.domains);
-	instance.N2.resize(instance.domains);
-	instance.RegMat.resize(instance.domains);
+	instance.N1.resize(mesh.elements->ndomains);
+	instance.N2.resize(mesh.elements->ndomains);
+	instance.RegMat.resize(mesh.elements->ndomains);
 
 	instance.computeKernelsCallback = [&] (FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
 		storeWrapper(mNames(Matrices::N), Matrices::N);
@@ -300,8 +300,8 @@ void DistributedProvider::setB0Callback()
 	instance.assembleB0Callback = [&] (FETI_B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
 		timeWrapper("compute B0", [&] () {
 			instance.B0.clear();
-			instance.B0.resize(instance.domains);
-			for (size_t d = 0; d < instance.domains; d++) {
+			instance.B0.resize(mesh.elements->ndomains);
+			for (size_t d = 0; d < mesh.elements->ndomains; d++) {
 				instance.B0[d].type = 'G';
 				instance.B0subdomainsMap[d].clear();
 			}

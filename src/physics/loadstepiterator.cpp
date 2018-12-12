@@ -4,10 +4,10 @@
 
 #include "assembler/assembler.h"
 
-#include "../basis/logging/logging.h"
-#include "../config/ecf/physics/heattransfer.h"
-#include "../config/ecf/physics/structuralmechanics.h"
+#include "../globals/run.h"
 #include "../globals/time.h"
+#include "../basis/logging/logging.h"
+#include "../config/ecf/root.h"
 
 #include "../mesh/mesh.h"
 
@@ -16,13 +16,9 @@
 
 using namespace espreso;
 
-DataHolder* LoadStepIterator::getDataHolder(Mesh &mesh)
-{
-	return new DataHolder(mesh);
-}
 
-Composer* LoadStepIterator::getComposer(HeatTransferLoadStepConfiguration &configuration)
-{
+//Composer* LoadStepIterator::getComposer(HeatTransferLoadStepConfiguration &configuration)
+//{
 //	switch () {
 //	case DIMENSION::D2:
 //		switch (_loadStep->solver) {
@@ -52,33 +48,80 @@ Composer* LoadStepIterator::getComposer(HeatTransferLoadStepConfiguration &confi
 //	default:
 //		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: invalid dimension.";
 //	}
-}
+//}
 
-LinearSolver* LoadStepIterator::getLinearSolver()
+static LinearSolver* getLinearSolver(LoadStepConfiguration &loadStep)
 {
-	switch (_loadStep->solver) {
+	switch (loadStep.solver) {
 	case LoadStepConfiguration::SOLVER::FETI:
-		return new FETISolver(_dataHolder, _loadStep->feti);
+		return new FETISolver(run::data, loadStep.feti);
 	case LoadStepConfiguration::SOLVER::MULTIGRID:
-		return new MultigridSolver(_dataHolder, _loadStep->multigrid);
+		return new MultigridSolver(loadStep.multigrid);
 	default:
 		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
 		return NULL;
 	}
 }
 
-LoadStepIterator::LoadStepIterator(Mesh &mesh, HeatTransferConfiguration &configuration)
-{
-	_loadStep = &configuration.load_steps_settings.at(time::step + 1);
+//static Assembler* getAssembler(LoadStepConfiguration &loadStep)
+//{
+//	switch (loadStep.solver) {
+//	case LoadStepConfiguration::SOLVER::FETI:
+//		return new FETISolver(run::data, loadStep.feti);
+//	case LoadStepConfiguration::SOLVER::MULTIGRID:
+//		return new MultigridSolver(loadStep.multigrid);
+//	default:
+//		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
+//		return NULL;
+//	}
+//}
 
-	_dataHolder = getDataHolder(mesh);
-	_linearSolver = getLinearSolver();
-//	_composer = getComposer();
+LoadStepIterator::LoadStepIterator()
+: _loadStepSolver(NULL), _timeStepSolver(NULL), _assembler(NULL), _linearSolver(NULL)
+{
+	run::data = new DataHolder();
 }
 
-//LoadStepIterator::LoadStepIterator(Mesh &mesh, StructuralMechanicsConfiguration &configuration)
-//{
-//
-//}
+bool LoadStepIterator::next()
+{
+	switch (run::ecf->physics) {
+	case PHYSICS::HEAT_TRANSFER_2D:
+		next(run::ecf->heat_transfer_2d);
+		break;
+	case PHYSICS::HEAT_TRANSFER_3D:
+		next(run::ecf->heat_transfer_3d);
+		break;
+	case PHYSICS::STRUCTURAL_MECHANICS_2D:
+	case PHYSICS::STRUCTURAL_MECHANICS_3D:
+		next();
+	default:
+		ESINFO(GLOBAL_ERROR) << "Unknown physics.";
+	}
+
+	return false;
+}
+
+bool LoadStepIterator::next(HeatTransferConfiguration &configuration)
+{
+	if (time::step++ < configuration.load_steps) {
+		_linearSolver = getLinearSolver(configuration.load_steps_settings.at(time::step));
+//		_assembler = getAssembler(configuration.load_steps_settings.at(time::step));
+		_assembler = new GlobalAssembler<UniformNodesComposer, HeatTransfer2DControler>();
+	}
+
+	return time::step < configuration.load_steps;
+}
+
+bool LoadStepIterator::next(StructuralMechanicsConfiguration &configuration)
+{
+	if (time::step < configuration.load_steps) {
+
+
+
+		++time::step;
+	}
+
+	return time::step < configuration.load_steps;
+}
 
 

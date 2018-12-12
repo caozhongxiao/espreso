@@ -5,6 +5,8 @@
  *      Author: lriha
  */
 //#include <Driver/DissectionSolver.hpp>
+#include "../../globals/run.h"
+#include "../../mesh/mesh.h"
 #include "../../basis/utilities/utils.h"
 #include "FETISolver.h"
 
@@ -52,7 +54,7 @@ void FETISolver::init()
 	solver  = new IterSolver	(configuration);
 	cluster = new SuperCluster	(configuration, instance);
 
-	init(instance->neighbours);
+	init(run::mesh->neighbours);
 }
 
 // make partial initialization according to updated matrices
@@ -70,7 +72,7 @@ void FETISolver::update(Matrices matrices)
 		cluster = new SuperCluster(configuration, instance);
 		solver  = new IterSolver(configuration);
 
-		init(instance->neighbours);
+		init(run::mesh->neighbours);
 
 	} else {
 

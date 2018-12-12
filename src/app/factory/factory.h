@@ -33,7 +33,7 @@ public:
 	virtual LoadStepSolver* getLoadStepSolver(size_t step, Mesh *mesh) =0;
 
 	template<class TLoadStepSettings>
-	const TLoadStepSettings& getLoadStepsSettings(size_t step, const std::map<size_t, TLoadStepSettings> &setting) const
+	TLoadStepSettings& getLoadStepsSettings(size_t step, std::map<size_t, TLoadStepSettings> &setting) const
 	{
 		if (setting.find(step + 1) == setting.end()) {
 			printError("Missing setting for LOAD STEP " + std::to_string(step + 1));
@@ -41,7 +41,7 @@ public:
 		return setting.find(step + 1)->second;
 	}
 
-	LinearSolver* getLinearSolver(const LoadStepConfiguration &settings, DataHolder *instance) const;
+	LinearSolver* getLinearSolver(LoadStepConfiguration &settings, DataHolder *instance) const;
 
 protected:
 	void printError(const std::string &error) const;
@@ -61,12 +61,12 @@ class Factory {
 	friend class APITestESPRESODataProvider;
 
 protected:
-	Factory(const ECFRoot &configuration, Mesh &mesh);
+	Factory(ECFRoot &configuration, Mesh &mesh);
 	~Factory();
 
 	void solve();
 
-	FactoryLoader* createFactoryLoader(const ECFRoot &configuration);
+	FactoryLoader* createFactoryLoader(ECFRoot &configuration);
 
 	Mesh *_mesh;
 

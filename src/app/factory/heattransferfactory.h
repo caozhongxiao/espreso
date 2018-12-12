@@ -12,14 +12,14 @@ struct ResultsSelectionConfiguration;
 class HeatTransferFactory: public FactoryLoader {
 
 public:
-	HeatTransferFactory(const HeatTransferConfiguration &configuration, const ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh);
+	HeatTransferFactory(HeatTransferConfiguration &configuration, ResultsSelectionConfiguration &propertiesConfiguration, Mesh *mesh);
 
 	size_t loadSteps() const;
 	LoadStepSolver* getLoadStepSolver(size_t step, Mesh *mesh);
 
 protected:
-	const HeatTransferConfiguration &_configuration;
-	const ResultsSelectionConfiguration &_propertiesConfiguration;
+	HeatTransferConfiguration &_configuration;
+	ResultsSelectionConfiguration &_propertiesConfiguration;
 	bool _bem;
 
 };

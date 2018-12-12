@@ -10,6 +10,7 @@
 #include "../../basis/logging/logging.h"
 #include "../../basis/utilities/utils.h"
 #include "../../mesh/mesh.h"
+#include "../../mesh/store/elementstore.h"
 
 #include "../../output/result/resultstore.h"
 #include "../../output/result/visualization/separated/vtklegacy.h"
@@ -214,7 +215,7 @@ void Provider::storeMatrices(Matrices matrices, size_t domain)
 void Provider::storeWrapper(const std::string &name, Matrices matrices)
 {
 	if (checkForStore(name)) {
-		for (size_t d = 0; d < instance.domains; d++) {
+		for (size_t d = 0; d < mesh.elements->ndomains; d++) {
 			storeMatrices(matrices, d);
 		}
 	}

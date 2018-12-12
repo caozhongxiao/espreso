@@ -512,9 +512,9 @@ void MeshPreprocessing::computeElementsCenters()
 
 void MeshPreprocessing::computeDecomposedDual(std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData)
 {
-	bool separateRegions = run::ecf.decomposition.separate_regions;
-	bool separateMaterials = run::ecf.decomposition.separate_materials;
-	bool separateEtypes = run::ecf.decomposition.separate_etypes;
+	bool separateRegions = run::ecf->decomposition.separate_regions;
+	bool separateMaterials = run::ecf->decomposition.separate_materials;
+	bool separateEtypes = run::ecf->decomposition.separate_etypes;
 
 	if (_mesh->elements->neighbors == NULL) {
 		this->computeElementsNeighbors();

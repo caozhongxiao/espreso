@@ -6,37 +6,28 @@ namespace espreso {
 
 struct HeatTransferConfiguration;
 struct StructuralMechanicsConfiguration;
-struct LoadStepConfiguration;
-struct HeatTransferLoadStepConfiguration;
 
-class Mesh;
-
-struct DataHolder;
 class LoadStepSolver;
 class TimeStepSolver;
-class Composer;
+class Assembler;
 class LinearSolver;
-
 
 class LoadStepIterator {
 
 public:
-	LoadStepIterator(Mesh &mesh, HeatTransferConfiguration &configuration);
-//	LoadStepIterator(Mesh &mesh, StructuralMechanicsConfiguration &configuration);
+	LoadStepIterator();
+
+	bool next();
 
 protected:
-	DataHolder *_dataHolder;
+
+	bool next(HeatTransferConfiguration &configuration);
+	bool next(StructuralMechanicsConfiguration &configuration);
+
 	LoadStepSolver *_loadStepSolver;
 	TimeStepSolver *_timeStepSolver;
-	Composer *_composer;
+	Assembler *_assembler;
 	LinearSolver * _linearSolver;
-
-	LoadStepConfiguration *_loadStep;
-
-
-	DataHolder* getDataHolder(Mesh &mesh);
-	Composer* getComposer(HeatTransferLoadStepConfiguration &configuration);
-	LinearSolver* getLinearSolver();
 };
 
 }

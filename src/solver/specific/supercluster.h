@@ -26,6 +26,9 @@ using std::vector;
 using std::map;
 using std::make_pair;
 
+#include "../../globals/run.h"
+#include "../../mesh/mesh.h"
+#include "../../mesh/store/elementstore.h"
 #include "../../basis/logging/logging.h"
 #include "../generic/SparseMatrix.h"
 #include "sparsesolvers.h"
@@ -78,7 +81,7 @@ public:
 
 	void init() {
 
-		numClusters 							= 1 + *std::max_element(instance->clustersMap.begin(), instance->clustersMap.end());
+		numClusters 							= 1 + *std::max_element(run::mesh->elements->clusters.begin(), run::mesh->elements->clusters.end());
 		number_of_subdomains_per_supercluster 	= instance->K.size();
 
 		x_prim_cluster1.resize( number_of_subdomains_per_supercluster );
@@ -164,8 +167,8 @@ public:
 
 			eslocal number_of_subdomains_per_cluster = 0;
 			std::vector<eslocal> domain_list;
-			for (size_t i = 0; i < instance->clustersMap.size(); i++) {
-				if (instance->clustersMap[i] == c) {
+			for (size_t i = 0; i < run::mesh->elements->clusters.size(); i++) {
+				if (run::mesh->elements->clusters[i] == c) {
 					number_of_subdomains_per_cluster++;
 					domain_list.push_back(i);
 				}
@@ -208,7 +211,7 @@ public:
 
 		// Setup communication layer of the supercluster
 		MPIrank   = environment->MPIrank;
-		my_neighs = std::vector<eslocal>(instance->neighbours.begin(), instance->neighbours.end());
+		my_neighs = std::vector<eslocal>(run::mesh->neighbours.begin(), run::mesh->neighbours.end());
 		SetupCommunicationLayer();
 
 

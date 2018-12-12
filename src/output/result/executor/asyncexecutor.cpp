@@ -1,6 +1,7 @@
 
 #include "asyncexecutor.h"
 
+#include "../../../globals/run.h"
 #include "../../../basis/utilities/utils.h"
 #include "../../../config/ecf/root.h"
 
@@ -81,7 +82,7 @@ void AsyncStore::updateSolution()
 }
 
 AsyncStore::AsyncStore(const Mesh &mesh, const OutputConfiguration &configuration)
-: ResultStoreExecutor(mesh, configuration), _executor(mesh.configuration, mesh.store), _buffer(NULL)
+: ResultStoreExecutor(mesh, configuration), _executor(*run::ecf, mesh.store), _buffer(NULL)
 {
 	async::Module<AsyncExecutor, InitParameters, ExecParameters>::init();
 	callInit(InitParameters());
@@ -114,9 +115,9 @@ AsyncStore::~AsyncStore()
 }
 
 AsyncExecutor::AsyncExecutor(const ECFRoot &configuration, ResultStore *store)
-: DirectExecutor(_mesh, configuration.output), _mesh(configuration, store), _buffer(NULL)
+: DirectExecutor(_mesh, configuration.output), _buffer(NULL)
 {
-
+	_mesh.store = store;
 }
 
 void AsyncExecutor::execInit(const async::ExecInfo &info, const InitParameters &initParameters)
