@@ -52,10 +52,10 @@ $ nosetest benchmarks
 If all tests pass, the library is ready to use.
 
 ---
-# ESPRESO Interface
+# ESPRESO Solver Interface
 ---
 
-The library contains a simple C API that allows to utilize FETI based solvers in third party softwares. The API has been successfully tested with an open source multiphysical simulation software [Elmer FEM](https://www.csc.fi/web/elmer)  developed by [CSC - IT Center for Science](https://www.csc.fi/).
+The library contains a simple C API that allows to utilize FETI based solvers in third party softwares. The API has been successfully tested with an open source multiphysical simulation software [Elmer FEM](https://www.csc.fi/web/elmer)  developed by [CSC - IT Center for Science](https://www.csc.fi/). The interface is available via the feti4i.h header in the include directory.
 
 ### Call the library
 Usage of the library is described by the simple example. The methods documentation can be found in the library header file.
@@ -98,7 +98,7 @@ int main() {
 	FETI4ISetDefaultIntegerOptions(iopts); // set default integer options
 	FETI4ISetDefaultRealOptions(ropts); // set default real options
 
-	/* change the default values
+	/* change the default values (see the list of available parameters below)
 	iopts[FETI4IIntegerOptions::FETI4I_FETI_METHOD] = 1; // set HYBRID FETI
 	iopts[FETI4IIntegerOptions::FETI4I_PRECONDITIONER] = 3; // set Dirichlet preconditioner
 	*/
@@ -143,6 +143,68 @@ int main() {
 }
 ```
 
+### List of available configuration parameters
+
+	FETI4IIntegerOptions::FETI4I_SUBDOMAINS = 4
+        The number of subdomains per MPI process
+
+	FETI4IIntegerOptions::FETI4I_MAX_ITERATIONS = 200
+	    The maximal number of FETI Solver iterations
+
+	FETI4IIntegerOptions::FETI4I_FETI_METHOD = 0
+	    0 = TOTAL_FETI  -- The basis FETI method
+	    1 = HYBRID_FETI -- FETI with 2-level decomposition (suitable for huge examples)
+
+	FETI4IIntegerOptions::FETI4I_PRECONDITIONER = 3
+	    0 = NONE
+	    1 = LUMPED
+	    2 = WEIGHT_FUNCTION
+	    3 = DIRICHLET
+
+	FETI4IIntegerOptions::FETI4I_CGSOLVER = 0
+	    0 = PCG
+	    1 = PIPEPCG
+	    2 = ORTHOGONALPCG
+	    3 = GMRES
+	    4 = BICGSTAB
+
+	FETI4IIntegerOptions::FETI4I_N_MICS = 2
+	    The number of MIC accelerators per node
+
+	FETI4IIntegerOptions::FETI4I_VERBOSE_LEVEL = 1
+	    Verbosity of the library
+
+	FETI4IIntegerOptions::FETI4I_MEASURE_LEVEL = 0
+	    Level of time measurement
+
+	FETI4IIntegerOptions::FETI4I_PRINT_MATRICES = 0
+	    Turn on/off printing of assembler matrices
+
+    FETI4IRealOptions::FETI4I_PRECISION = 1e-5
+        The requested solver precision
+
+### Set default parameters via a configuration file
+
+The default parameters can be changed via a configuration file. The file have to be named `espreso.ecf` and should be placed at the run directory. The structure of the file corresponds with the parameters described above. The next example shows the configuration file with default parameters:
+
+```cpp
+FETI4ILIBRARY {
+  DOMAINS   4;
+
+  SOLVER {
+    #[TOTAL_FETI,HYBRID_FETI]
+    METHOD          TOTAL_FETI;
+    #[NONE,LUMPED,WEIGHT_FUNCTION,DIRICHLET]
+    PRECONDITIONER   DIRICHLET;
+    PRECISION            1E-05;
+    MAX_ITERATIONS         200;
+    #[PCG,PIPEPCG,ORTHOGONALPCG,GMRES,BICGSTAB]
+    ITERATIVE_SOLVER       PCG;
+    N_MICS                   2;
+  }
+}
+```
+
 # Licence
 
-See the LICENSE file.
+See the LICENSE file at the root directory.
