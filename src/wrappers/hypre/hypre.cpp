@@ -86,6 +86,19 @@ HypreData::~HypreData()
 	HYPRE_IJVectorDestroy(_x);
 }
 
+static void setBoomerAMG(HYPRE_Solver &boomerAMG, const HYPREBoomerAMGConfiguration &configuration)
+{
+	HYPRE_BoomerAMGCreate(&boomerAMG);
+
+	HYPRE_BoomerAMGSetPrintLevel(boomerAMG, 0);
+	HYPRE_BoomerAMGSetCoarsenType(boomerAMG, 6);
+	HYPRE_BoomerAMGSetOldDefault(boomerAMG);
+	HYPRE_BoomerAMGSetRelaxType(boomerAMG, 6);
+	HYPRE_BoomerAMGSetNumSweeps(boomerAMG, 1);
+	HYPRE_BoomerAMGSetTol(boomerAMG, 0.0);
+	HYPRE_BoomerAMGSetMaxIter(boomerAMG, 1);
+}
+
 void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslocal nrows, double *solution)
 {
 	if (!data._finalized) {
@@ -101,6 +114,9 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 	HYPRE_Solver solver;
 	HYPRE_Solver preconditioner;
 	switch (configuration.solver_type) {
+	case HypreConfiguration::SOLVER_TYPE::BoomerAMG:
+		setBoomerAMG(solver, configuration.boomeramg);
+		break;
 	case HypreConfiguration::SOLVER_TYPE::PCG:
 		HYPRE_ParCSRPCGCreate(data._comm, &solver);
 
@@ -112,14 +128,7 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 
 		switch (configuration.pcg.preconditioner) {
 		case HYPREPCGConfiguration::PRECONDITIONER::BoomerAMG:
-			HYPRE_BoomerAMGCreate(&preconditioner);
-			HYPRE_BoomerAMGSetPrintLevel(preconditioner, 0);
-			HYPRE_BoomerAMGSetCoarsenType(preconditioner, 6);
-			HYPRE_BoomerAMGSetOldDefault(preconditioner);
-			HYPRE_BoomerAMGSetRelaxType(preconditioner, 6);
-			HYPRE_BoomerAMGSetNumSweeps(preconditioner, 1);
-			HYPRE_BoomerAMGSetTol(preconditioner, 0.0);
-			HYPRE_BoomerAMGSetMaxIter(preconditioner, 1);
+			setBoomerAMG(preconditioner, configuration.pcg.boomeramg);
 
 			HYPRE_PCGSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSolve, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSetup, preconditioner);
 			break;
