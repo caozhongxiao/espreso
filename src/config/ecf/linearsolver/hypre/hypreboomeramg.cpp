@@ -4,6 +4,54 @@
 
 using namespace espreso;
 
+HYPREBoomerAMGConfiguration::HYPREBoomerAMGCycleRelaxTypeConfiguration::HYPREBoomerAMGCycleRelaxTypeConfiguration()
+{
+	relax_type = RELAX_TYPE::HGSF;
+	REGISTER(relax_type, ECFMetaData()
+			.setdescription({ "Defines the smoother to be used. It uses the given smoother on the fine grid, the up and the down cycle and sets the solver on the coarsest level to Gaussian elimination" })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("Jacobi").setdescription("Jacobi"))
+			.addoption(ECFOption().setname("GSS").setdescription("Gauss-Seidel, sequential (very slow!)"))
+			.addoption(ECFOption().setname("GSIP").setdescription("Gauss-Seidel, interior points in parallel, boundary sequential (slow!)"))
+			.addoption(ECFOption().setname("HGSF").setdescription("hybrid Gauss-Seidel or SOR, forward solve"))
+			.addoption(ECFOption().setname("HGSB").setdescription("hybrid Gauss-Seidel or SOR, backward solve"))
+			.addoption(ECFOption().setname("HCHGS").setdescription("hybrid chaotic Gauss-Seidel (works only with OpenMP)"))
+			.addoption(ECFOption().setname("HSGS").setdescription("hybrid symmetric Gauss-Seidel or SSOR"))
+			.addoption(ECFOption().setname("LSHSGS").setdescription("l1-scaled hybrid symmetric Gauss-Seidel"))
+			.addoption(ECFOption().setname("GE").setdescription("Gaussian elimination (only on coarsest level)"))
+			.addoption(ECFOption().setname("CG").setdescription("CG (warning - not a fixed smoother - may require FGMRES)"))
+			.addoption(ECFOption().setname("Chebyshev").setdescription("Chebyshev"))
+			.addoption(ECFOption().setname("FCF").setdescription("FCF-Jacobi"))
+			.addoption(ECFOption().setname("LSJ").setdescription("l1-scaled jacobi")));
+
+	relax_type_cycle = RELAX_TYPE_CYCLE::COAREST;
+	REGISTER(relax_type_cycle, ECFMetaData()
+			.setdescription({ "Defines the smoother at a given cycle" })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("DOWN").setdescription("the down cycle"))
+			.addoption(ECFOption().setname("UP").setdescription("the up cycle"))
+			.addoption(ECFOption().setname("COAREST").setdescription("the coarsest level")));
+
+}
+
+HYPREBoomerAMGConfiguration::HYPREBoomerAMGCycleSweepsConfiguration::HYPREBoomerAMGCycleSweepsConfiguration()
+{
+
+	sweeps_num_specific = 1;
+	REGISTER(sweeps_num_specific, ECFMetaData()
+			.setdescription({ "Sets the number of sweeps at a specified cycle" })
+			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
+
+	relax_type_cycle = RELAX_TYPE_CYCLE::COAREST;
+	REGISTER(relax_type_cycle, ECFMetaData()
+			.setdescription({ "Defines the smoother at a given cycle" })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("DOWN").setdescription("the down cycle"))
+			.addoption(ECFOption().setname("UP").setdescription("the up cycle"))
+			.addoption(ECFOption().setname("COAREST").setdescription("the coarsest level")));
+
+}
+
 HYPREBoomerAMGConfiguration::HYPREBoomerAMGConfiguration()
 {
 	convergence_tolerance = 1e-8;
@@ -61,7 +109,7 @@ HYPREBoomerAMGConfiguration::HYPREBoomerAMGConfiguration()
 			.addoption(ECFOption().setname("LS").setdescription("LS interpolation (for use with GSMG)"))
 			.addoption(ECFOption().setname("CLASSIC_HYPERBOLIC").setdescription("classical modified interpolation for hyperbolic PDEs"))
 			.addoption(ECFOption().setname("DIRECT").setdescription("direct interpolation (with separation of weights)"))
-			.addoption(ECFOption().setname("MITLIPASS").setdescription("multipass interpolation"))
+			.addoption(ECFOption().setname("MULTLIPASS").setdescription("multipass interpolation"))
 			.addoption(ECFOption().setname("MULTIPASSS_SEPARATION").setdescription("multipass interpolation (with separation of weights)"))
 			.addoption(ECFOption().setname("EXTENDED_I").setdescription("extended+i interpolation"))
 			.addoption(ECFOption().setname("EXTENDED_I_NO_NEIGHBOR").setdescription("extended+i (if no common C neighbor) interpolation"))
@@ -100,11 +148,6 @@ HYPREBoomerAMGConfiguration::HYPREBoomerAMGConfiguration()
 			.setdescription({ "Sets the number of sweeps" })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
-	sweep_cycle_num = 1;
-	REGISTER(sweep_cycle_num, ECFMetaData()
-			.setdescription({ " Sets the number of sweeps at a specified cycle, the down cycle if k=1, the up cycle if k=2, the coarsest level if k=3" })
-			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
-
 	relax_type = RELAX_TYPE::HGSF;
 	REGISTER(relax_type, ECFMetaData()
 			.setdescription({ "Defines the smoother to be used. It uses the given smoother on the fine grid, the up and the down cycle and sets the solver on the coarsest level to Gaussian elimination" })
@@ -123,13 +166,14 @@ HYPREBoomerAMGConfiguration::HYPREBoomerAMGConfiguration()
 			.addoption(ECFOption().setname("FCF").setdescription("FCF-Jacobi"))
 			.addoption(ECFOption().setname("LSJ").setdescription("l1-scaled jacobi")));
 
-	relax_type_cycle = RELAX_TYPE_CYCLE::COAREST;
-	REGISTER(relax_type_cycle, ECFMetaData()
-			.setdescription({ "Defines the smoother at a given cycle" })
-			.setdatatype({ ECFDataType::OPTION })
-			.addoption(ECFOption().setname("DOWN").setdescription("the down cycle"))
-			.addoption(ECFOption().setname("UP").setdescription("the up cycle"))
-			.addoption(ECFOption().setname("COAREST").setdescription("the coarsest level")));
+
+	allow_cycle_relax_type = false;
+	REGISTER(allow_cycle_relax_type, ECFMetaData()
+			.setdescription({ "Allow smoother at a given cycle definition" })
+			.setdatatype({ ECFDataType::BOOL }));
+
+	REGISTER(cycle_relax_type, ECFMetaData()
+			.setdescription({ "Defines the smoother at a given cycle"}));
 
 	relax_order = 1;
 	REGISTER(relax_order, ECFMetaData()
@@ -140,6 +184,15 @@ HYPREBoomerAMGConfiguration::HYPREBoomerAMGConfiguration()
 	REGISTER(relax_weight, ECFMetaData()
 			.setdescription({ "Defines the relaxation weight for smoothed Jacobi and hybrid SOR on all levels" })
 			.setdatatype({ ECFDataType::FLOAT }));
+
+	allow_cycle_num_sweeps = false;
+	REGISTER(allow_cycle_num_sweeps, ECFMetaData()
+			.setdescription({ "Allow smoother at a given cycle definition" })
+			.setdatatype({ ECFDataType::BOOL }));	
+
+	REGISTER(cycle_sweep_spec, ECFMetaData()
+			.setdescription({ "Sets the number of sweeps at a specified cycle"}));
+
 
 	level_relax_weight = 1.0;
 	REGISTER(level_relax_weight, ECFMetaData()

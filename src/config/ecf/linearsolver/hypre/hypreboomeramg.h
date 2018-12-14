@@ -6,6 +6,7 @@
 
 namespace espreso {
 
+
 struct HYPREBoomerAMGConfiguration: public ECFObject {
 
 	double convergence_tolerance;
@@ -28,7 +29,7 @@ struct HYPREBoomerAMGConfiguration: public ECFObject {
 		LS,
 		CLASSIC_HYPERBOLIC,
 		DIRECT,
-		MITLIPASS,
+		MULTLIPASS,
 		MULTIPASSS_SEPARATION,
 		EXTENDED_I,
 		EXTENDED_I_NO_NEIGHBOR,
@@ -51,8 +52,6 @@ struct HYPREBoomerAMGConfiguration: public ECFObject {
 	};
 	CYCLE_TYPE cycle_type;
 
-	int sweeps_num, sweep_cycle_num;
-
 	enum class RELAX_TYPE {
 		Jacobi,
 		GSS,
@@ -70,20 +69,54 @@ struct HYPREBoomerAMGConfiguration: public ECFObject {
 	};
 	RELAX_TYPE relax_type;
 
-	enum class RELAX_TYPE_CYCLE {
-		DOWN,
-		UP,
-		COAREST
-	};
-	RELAX_TYPE_CYCLE relax_type_cycle;
 
+	bool allow_cycle_relax_type;
+
+	int sweeps_num;
+	bool allow_cycle_num_sweeps;
+
+	struct HYPREBoomerAMGCycleSweepsConfiguration: public ECFObject {
+		
+		int sweeps_num_specific;
+
+		enum class RELAX_TYPE_CYCLE {
+			DOWN,
+			UP,
+			COAREST
+		};
+
+		RELAX_TYPE_CYCLE relax_type_cycle;
+	
+		HYPREBoomerAMGCycleSweepsConfiguration();
+	};
+	HYPREBoomerAMGCycleSweepsConfiguration cycle_sweep_spec;
+
+
+	struct HYPREBoomerAMGCycleRelaxTypeConfiguration: public ECFObject {
+		
+		RELAX_TYPE relax_type;
+
+		enum class RELAX_TYPE_CYCLE {
+			DOWN,
+			UP,
+			COAREST
+		};
+		RELAX_TYPE_CYCLE relax_type_cycle;
+	
+		HYPREBoomerAMGCycleRelaxTypeConfiguration();
+	};
+	HYPREBoomerAMGCycleRelaxTypeConfiguration cycle_relax_type;
+	
     int	relax_order;
 	double relax_weight;
+	
 	double level_relax_weight;
+	
 	double out_relax_weight;
 	double outer_weight_level;
 	int cheby_order;
 	double cheby_fraction;
+
 
 	enum class SMOOTH_TYPE {
 		SCHWARZ,
