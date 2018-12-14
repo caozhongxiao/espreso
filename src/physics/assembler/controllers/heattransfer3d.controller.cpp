@@ -258,7 +258,7 @@ void HeatTransfer3DControler::processElements(Matrices matrices, InstanceFiller 
 
 void HeatTransfer3DControler::processBoundary(Matrices matrices, size_t rindex, InstanceFiller &filler)
 {
-	if (_mesh.boundaryRegions[rindex]->dimension != 1) {
+	if (_mesh.boundaryRegions[rindex]->dimension != 2) {
 		return;
 	}
 
@@ -281,7 +281,7 @@ void HeatTransfer3DControler::processBoundary(Matrices matrices, size_t rindex, 
 	for (eslocal e = filler.begin; e < filler.end; ++e, ++enodes) {
 		iterator.element = _mesh.boundaryRegions[rindex]->epointers->datatarray()[e];
 
-		_kernel->processEdge(matrices, iterator, _step, filler.Ke, filler.fe);
+		_kernel->processFace(matrices, iterator, _step, filler.Ke, filler.fe);
 		filler.insert(enodes->size());
 
 		iterator.temperature += enodes->size();
