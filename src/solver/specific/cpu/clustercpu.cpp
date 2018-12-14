@@ -214,7 +214,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 	// permutations made on matrix in COO format
 	K_modif.ConvertToCOO(0);
 	eslocal I_index, J_index;
-	bool unsymmetric = K_modif.mtype == MatrixType::REAL_UNSYMMETRIC;
+	bool unsymmetric = !SYMMETRIC_SYSTEM;
 	for (eslocal i = 0; i < K_modif.nnz; i++) {
 		I_index = vec_I1_i2[K_modif.I_row_indices[i] - offset][1] + offset;
 		J_index = vec_I1_i2[K_modif.J_col_indices[i] - offset][1] + offset;
@@ -278,7 +278,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 
 			K_rs.getSubBlockmatrix_rs(K_modif, K_rs, i_start, nonsing_size, j_start, sc_size);
 
-			if (!unsymmetric) {
+			if (SYMMETRIC_SYSTEM) {
 				K_rs.MatTranspose(K_sr);
 			} else {
 				K_sr.getSubBlockmatrix_rs(K_modif, K_sr, j_start, sc_size, i_start, nonsing_size);

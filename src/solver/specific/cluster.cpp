@@ -3,7 +3,6 @@
 
 #include "../../physics/instance.h"
 #include "../../basis/utilities/utils.h"
-#include "../../basis/matrices/matrixtype.h"
 
 //#define SPARSE_SA
 
@@ -36,18 +35,9 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
 	// *** Init the vector of domains *****************************************************
 	domains_in_global_index.resize( number_of_subdomains ) ;
 
-	int unsym = 0, gunsym = 0;
-	for (eslocal d = 0; d < number_of_subdomains; d++) {
-		if (instance->K[d].mtype == MatrixType::REAL_UNSYMMETRIC) {
-			unsym = 1;
-		}
-	}
-
-	MPI_Allreduce(&unsym, &gunsym, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
-
 	domains.reserve(number_of_subdomains);
 	for (eslocal d = 0; d < number_of_subdomains; d++) {
-		domains.push_back( (Domain(configuration, instance, subdomains_global_indices[d], USE_HFETI, gunsym && instance->K[d].mtype == MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE)) );
+		domains.push_back( (Domain(configuration, instance, subdomains_global_indices[d], USE_HFETI)) );
 		domains[d].domain_index = d;
 
 		// Verbose level for K_plus

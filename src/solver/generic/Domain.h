@@ -35,7 +35,7 @@ class Domain {
 public:
 
 	// Constructor
-	Domain(const FETISolverConfiguration &configuration, Instance *instance_in, eslocal domain_index, eslocal USE_HTFETI_in, bool copyN1toN2);
+	Domain(const FETISolverConfiguration &configuration, Instance *instance_in, eslocal domain_index, eslocal USE_HTFETI_in);
 
 	// Methods of the class
 	void SetDomain();

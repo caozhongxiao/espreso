@@ -36,14 +36,14 @@ void storeData(vector<double> vectors, const std::string &name, const std::strin
 	}
 }
 
-Domain::Domain(const FETISolverConfiguration &configuration, Instance *instance_in, eslocal domain_index_in, eslocal USE_HTFETI_in, bool copyN1toN2):
+Domain::Domain(const FETISolverConfiguration &configuration, Instance *instance_in, eslocal domain_index_in, eslocal USE_HTFETI_in):
 		configuration(configuration),
 		instance(instance_in),
 
 		K(instance_in->K[domain_index_in]),
 
 		Kplus_R(instance_in->N1[domain_index_in]),
-		Kplus_R2(copyN1toN2 ? instance_in->N1[domain_index_in] : instance_in->N2[domain_index_in]),
+		Kplus_R2(instance_in->N2[domain_index_in]),
 
 		Kplus_origR(instance_in->origKN1[domain_index_in]),
 		Kplus_origR2(instance_in->origKN2[domain_index_in]),
@@ -58,17 +58,13 @@ Domain::Domain(const FETISolverConfiguration &configuration, Instance *instance_
 
 
 {
+		domain_prim_size 	= K.cols;
+		domain_global_index = domain_index_in;
+		USE_HFETI 		 	= USE_HTFETI_in;
+		isOnACC          	= 0;
 
-	if (copyN1toN2) {
-		Kplus_R2.MatTranspose();
-	}
-	domain_prim_size 	= K.cols;
-	domain_global_index = domain_index_in;
-	USE_HFETI 		 	= USE_HTFETI_in;
-	isOnACC          	= 0;
-
-	// TODO: this is broken (ask Lubos)
-	norm_f = 0;
+		// TODO: this is broken (ask Lubos)
+		norm_f = 0;
 }
 
 void Domain::SetDomain() {
