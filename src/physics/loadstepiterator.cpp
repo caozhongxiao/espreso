@@ -3,6 +3,16 @@
 #include "dataholder.h"
 
 #include "assembler/assembler.h"
+#include "solver/timestep/linear.h"
+#include "solver/timestep/newtonraphson.h"
+#include "solver/loadstep/steadystate.h"
+#include "solver/loadstep/pseudotimestepping.h"
+#include "solver/loadstep/transientfirstorderimplicit.h"
+
+#include "assembler/controllers/heattransfer2d.controller.h"
+#include "assembler/controllers/heattransfer3d.controller.h"
+#include "assembler/composer/global/uniformnodescomposer.h"
+#include "assembler/composer/feti/uniformnodesfeticomposer.h"
 
 #include "../globals/run.h"
 #include "../globals/time.h"
@@ -10,6 +20,7 @@
 #include "../config/ecf/root.h"
 
 #include "../mesh/mesh.h"
+#include "../output/result/resultstore.h"
 
 #include "../linearsolver/multigrid/multigrid.h"
 #include "../solver/generic/FETISolver.h"
@@ -63,18 +74,52 @@ static LinearSolver* getLinearSolver(LoadStepConfiguration &loadStep)
 	}
 }
 
-//static Assembler* getAssembler(LoadStepConfiguration &loadStep)
-//{
-//	switch (loadStep.solver) {
-//	case LoadStepConfiguration::SOLVER::FETI:
-//		return new FETISolver(run::data, loadStep.feti);
-//	case LoadStepConfiguration::SOLVER::MULTIGRID:
-//		return new MultigridSolver(loadStep.multigrid);
-//	default:
-//		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
-//		return NULL;
-//	}
-//}
+static Assembler* getAssembler(HeatTransferLoadStepConfiguration &loadStep)
+{
+	switch (loadStep.solver) {
+	case LoadStepConfiguration::SOLVER::FETI:
+		return new AssemblerInstance<HeatTransfer2DControler, UniformNodesFETIComposer>(loadStep, loadStep.feti, 1);
+	case LoadStepConfiguration::SOLVER::MULTIGRID:
+		return new AssemblerInstance<HeatTransfer2DControler, UniformNodesComposer>(loadStep, 1);
+	default:
+		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
+		return NULL;
+	}
+}
+
+static TimeStepSolver* getTimeStepSolver(LoadStepConfiguration &loadStep, Assembler &assembler, LinearSolver &solver)
+{
+	switch (loadStep.mode) {
+	case LoadStepConfiguration::MODE::LINEAR:
+		return new LinearTimeStep(assembler, solver);
+	case LoadStepConfiguration::MODE::NONLINEAR:
+		return new NewtonRaphson(assembler, solver, loadStep.nonlinear_solver);
+	default:
+		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
+		return NULL;
+	}
+}
+
+static LoadStepSolver* getLoadStepSolver(HeatTransferLoadStepConfiguration &loadStep, Assembler &assembler, TimeStepSolver &timeStepSolver)
+{
+	switch (loadStep.type) {
+	case LoadStepConfiguration::TYPE::STEADY_STATE:
+		switch (loadStep.mode){
+		case LoadStepConfiguration::MODE::LINEAR:
+			return new SteadyStateSolver(assembler, timeStepSolver, loadStep.duration_time);
+		case LoadStepConfiguration::MODE::NONLINEAR:
+			return new PseudoTimeStepping(assembler, timeStepSolver, loadStep.nonlinear_solver, loadStep.duration_time);
+		default:
+			ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
+			return NULL;
+		}
+	case LoadStepConfiguration::TYPE::TRANSIENT:
+		return new TransientFirstOrderImplicit(assembler, timeStepSolver, loadStep.transient_solver, loadStep.duration_time);
+	default:
+		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
+		return NULL;
+	}
+}
 
 LoadStepIterator::LoadStepIterator()
 : _loadStepSolver(NULL), _timeStepSolver(NULL), _assembler(NULL), _linearSolver(NULL)
@@ -86,14 +131,14 @@ bool LoadStepIterator::next()
 {
 	switch (run::ecf->physics) {
 	case PHYSICS::HEAT_TRANSFER_2D:
-		next(run::ecf->heat_transfer_2d);
+		return next(run::ecf->heat_transfer_2d);
 		break;
 	case PHYSICS::HEAT_TRANSFER_3D:
-		next(run::ecf->heat_transfer_3d);
+		return next(run::ecf->heat_transfer_3d);
 		break;
 	case PHYSICS::STRUCTURAL_MECHANICS_2D:
 	case PHYSICS::STRUCTURAL_MECHANICS_3D:
-		next();
+//		next();
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown physics.";
 	}
@@ -105,8 +150,13 @@ bool LoadStepIterator::next(HeatTransferConfiguration &configuration)
 {
 	if (time::step++ < configuration.load_steps) {
 		_linearSolver = getLinearSolver(configuration.load_steps_settings.at(time::step));
-//		_assembler = getAssembler(configuration.load_steps_settings.at(time::step));
-		_assembler = new GlobalAssembler<UniformNodesComposer, HeatTransfer2DControler>();
+		_assembler = getAssembler(configuration.load_steps_settings.at(time::step));
+		_timeStepSolver = getTimeStepSolver(configuration.load_steps_settings.at(time::step), *_assembler, *_linearSolver);
+		_loadStepSolver = getLoadStepSolver(configuration.load_steps_settings.at(time::step), *_assembler, *_timeStepSolver);
+
+		_assembler->init();
+		run::mesh->store->updateMesh();
+		_loadStepSolver->run();
 	}
 
 	return time::step < configuration.load_steps;

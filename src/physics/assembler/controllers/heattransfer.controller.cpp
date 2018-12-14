@@ -1,6 +1,7 @@
 
 #include "heattransfer2d.controller.h"
 
+#include "../../../globals/run.h"
 #include "../../../basis/containers/serializededata.h"
 #include "../../../basis/evaluator/evaluator.h"
 #include "../../../basis/matrices/matrixtype.h"
@@ -24,10 +25,10 @@ MatrixType HeatTransferControler::getMatrixType(size_t domain) const
 //		return MatrixType::REAL_UNSYMMETRIC;
 //	}
 
-	if (_stepSettings.translation_motions.size()) {
-		for (auto it = _stepSettings.translation_motions.begin(); it != _stepSettings.translation_motions.end(); ++it) {
-			ElementsRegionStore *region = _mesh.eregion(it->first);
-			for (eslocal i = _mesh.elements->eintervalsDistribution[domain]; i < _mesh.elements->eintervalsDistribution[domain + 1]; i++) {
+	if (_configuration.translation_motions.size()) {
+		for (auto it = _configuration.translation_motions.begin(); it != _configuration.translation_motions.end(); ++it) {
+			ElementsRegionStore *region = run::mesh->eregion(it->first);
+			for (eslocal i = run::mesh->elements->eintervalsDistribution[domain]; i < run::mesh->elements->eintervalsDistribution[domain + 1]; i++) {
 				if (region->eintervals[i].begin != region->eintervals[i].end) {
 					return MatrixType::REAL_UNSYMMETRIC;
 				}
@@ -124,9 +125,9 @@ MatrixType HeatTransferControler::getMatrixType() const
 //		return MatrixType::REAL_UNSYMMETRIC;
 //	}
 
-	if (_stepSettings.translation_motions.size()) {
-		for (auto it = _stepSettings.translation_motions.begin(); it != _stepSettings.translation_motions.end(); ++it) {
-			if (_mesh.eregion(it->first)->eintervals.back().end) {
+	if (_configuration.translation_motions.size()) {
+		for (auto it = _configuration.translation_motions.begin(); it != _configuration.translation_motions.end(); ++it) {
+			if (run::mesh->eregion(it->first)->eintervals.back().end) {
 				return MatrixType::REAL_UNSYMMETRIC;
 			}
 		}
@@ -143,13 +144,13 @@ void HeatTransferControler::dirichletIndices(std::vector<std::vector<eslocal> > 
 {
 	indices.resize(1); // heat has only one DOF
 
-	for (auto it = _stepSettings.temperature.regions.begin(); it != _stepSettings.temperature.regions.end(); ++it) {
-		BoundaryRegionStore *region = _mesh.bregion(it->first);
+	for (auto it = _configuration.temperature.regions.begin(); it != _configuration.temperature.regions.end(); ++it) {
+		BoundaryRegionStore *region = run::mesh->bregion(it->first);
 		indices[0].insert(indices[0].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
 	}
 
-	for (auto it = _stepSettings.temperature.intersections.begin(); it != _stepSettings.temperature.intersections.end(); ++it) {
-		BoundaryRegionsIntersectionStore *region = _mesh.ibregion(it->first);
+	for (auto it = _configuration.temperature.intersections.begin(); it != _configuration.temperature.intersections.end(); ++it) {
+		BoundaryRegionsIntersectionStore *region = run::mesh->ibregion(it->first);
 		indices[0].insert(indices[0].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
 	}
 	_dirichletSize = indices[0].size();
@@ -160,22 +161,22 @@ void HeatTransferControler::dirichletValues(std::vector<double> &values)
 	values.resize(_dirichletSize);
 
 	size_t offset = 0;
-	for (auto it = _stepSettings.temperature.regions.begin(); it != _stepSettings.temperature.regions.end(); ++it) {
-		BoundaryRegionStore *region = _mesh.bregion(it->first);
+	for (auto it = _configuration.temperature.regions.begin(); it != _configuration.temperature.regions.end(); ++it) {
+		BoundaryRegionStore *region = run::mesh->bregion(it->first);
 		it->second.evaluator->evalSelected(
 				region->uniqueNodes->datatarray().size(),
 				region->uniqueNodes->datatarray().data(),
-				3, reinterpret_cast<double*>(_mesh.nodes->coordinates->datatarray().data()),
+				3, reinterpret_cast<double*>(run::mesh->nodes->coordinates->datatarray().data()),
 				NULL, time::current, values.data() + offset);
 		offset += region->uniqueNodes->datatarray().size();
 	}
 
-	for (auto it = _stepSettings.temperature.intersections.begin(); it != _stepSettings.temperature.intersections.end(); ++it) {
-		BoundaryRegionsIntersectionStore *region = _mesh.ibregion(it->first);
+	for (auto it = _configuration.temperature.intersections.begin(); it != _configuration.temperature.intersections.end(); ++it) {
+		BoundaryRegionsIntersectionStore *region = run::mesh->ibregion(it->first);
 		it->second.evaluator->evalSelected(
 				region->uniqueNodes->datatarray().size(),
 				region->uniqueNodes->datatarray().data(),
-				3, reinterpret_cast<double*>(_mesh.nodes->coordinates->datatarray().data()),
+				3, reinterpret_cast<double*>(run::mesh->nodes->coordinates->datatarray().data()),
 				NULL, time::current, values.data() + offset);
 		offset += region->uniqueNodes->datatarray().size();
 	}

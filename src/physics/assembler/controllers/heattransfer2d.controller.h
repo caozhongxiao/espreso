@@ -13,11 +13,7 @@ class HeatTransfer2DControler: public HeatTransferControler
 {
 
 public:
-	HeatTransfer2DControler(
-			Mesh &mesh,
-			const HeatTransferGlobalSettings &gSettings,
-			const HeatTransferStepSettings &sSettings,
-			const HeatTransferOutputSettings &oSettings);
+	HeatTransfer2DControler(HeatTransferLoadStepConfiguration &configuration);
 	~HeatTransfer2DControler();
 
 	void initData();

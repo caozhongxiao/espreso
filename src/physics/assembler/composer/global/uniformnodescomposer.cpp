@@ -3,6 +3,7 @@
 
 #include "../../controllers/controller.h"
 
+#include "../../../../globals/run.h"
 #include "../../../../basis/containers/serializededata.h"
 #include "../../../../basis/matrices/matrixtype.h"
 #include "../../../../basis/utilities/communication.h"
@@ -33,16 +34,16 @@ void UniformNodesComposer::initDOFs()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto ranks = _mesh.nodes->ranks->begin(t);
+		auto ranks = run::mesh->nodes->ranks->begin(t);
 		eslocal dsize = 0;
-		std::vector<eslocal> troffset(_mesh.neighbours.size());
+		std::vector<eslocal> troffset(run::mesh->neighbours.size());
 
-		for (size_t n = _mesh.nodes->distribution[t]; n < _mesh.nodes->distribution[t + 1]; ++n, ++ranks) {
+		for (size_t n = run::mesh->nodes->distribution[t]; n < run::mesh->nodes->distribution[t + 1]; ++n, ++ranks) {
 			if (ranks->front() == environment->MPIrank) {
 				dsize += _DOFs;
 			} else {
 				eslocal noffset = 0;
-				while (_mesh.neighbours[noffset] < ranks->front()) {
+				while (run::mesh->neighbours[noffset] < ranks->front()) {
 					++noffset;
 				}
 				++troffset[noffset];
@@ -57,20 +58,20 @@ void UniformNodesComposer::initDOFs()
 	Communication::exscan(goffset);
 	Esutils::sizesToOffsets(roffset);
 
-	std::vector<std::vector<std::vector<eslocal> > > sBuffer(threads, std::vector<std::vector<eslocal> >(_mesh.neighbours.size()));
-	std::vector<std::vector<eslocal> > rBuffer(_mesh.neighbours.size());
+	std::vector<std::vector<std::vector<eslocal> > > sBuffer(threads, std::vector<std::vector<eslocal> >(run::mesh->neighbours.size()));
+	std::vector<std::vector<eslocal> > rBuffer(run::mesh->neighbours.size());
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto ranks = _mesh.nodes->ranks->begin(t);
+		auto ranks = run::mesh->nodes->ranks->begin(t);
 		eslocal toffset = doffset[t];
-		std::vector<std::vector<eslocal> > tBuffer(_mesh.neighbours.size());
+		std::vector<std::vector<eslocal> > tBuffer(run::mesh->neighbours.size());
 
-		for (size_t n = _mesh.nodes->distribution[t]; n < _mesh.nodes->distribution[t + 1]; ++n, ++ranks) {
+		for (size_t n = run::mesh->nodes->distribution[t]; n < run::mesh->nodes->distribution[t + 1]; ++n, ++ranks) {
 			if (ranks->front() == environment->MPIrank) {
 				eslocal noffset = 0;
 				for (auto r = ranks->begin() + 1; r != ranks->end(); ++r) {
-					while (_mesh.neighbours[noffset] < *r) {
+					while (run::mesh->neighbours[noffset] < *r) {
 						++noffset;
 					}
 					tBuffer[noffset].push_back(toffset + goffset);
@@ -87,7 +88,7 @@ void UniformNodesComposer::initDOFs()
 		}
 	}
 
-	if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, _mesh.neighbours)) {
+	if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, run::mesh->neighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: exchange uniform DOFs.";
 	}
 
@@ -95,7 +96,7 @@ void UniformNodesComposer::initDOFs()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto ranks = _mesh.nodes->ranks->begin(t);
+		auto ranks = run::mesh->nodes->ranks->begin(t);
 		eslocal toffset = doffset[t];
 		std::vector<eslocal> troffset = roffset[t];
 		std::vector<eslocal> tdist, tdata;
@@ -103,14 +104,14 @@ void UniformNodesComposer::initDOFs()
 			tdist.push_back(0);
 		}
 
-		for (size_t n = _mesh.nodes->distribution[t]; n < _mesh.nodes->distribution[t + 1]; ++n, ++ranks) {
+		for (size_t n = run::mesh->nodes->distribution[t]; n < run::mesh->nodes->distribution[t + 1]; ++n, ++ranks) {
 			if (ranks->front() == environment->MPIrank) {
 				for (int dof = 0; dof < _DOFs; ++dof) {
 					tdata.push_back(goffset + toffset++);
 				}
 			} else {
 				eslocal noffset = 0;
-				while (_mesh.neighbours[noffset] < ranks->front()) {
+				while (run::mesh->neighbours[noffset] < ranks->front()) {
 					++noffset;
 				}
 				for (int dof = 0; dof < _DOFs; ++dof) {
@@ -166,7 +167,7 @@ void UniformNodesComposer::buildPatterns()
 	// MatrixType mtype = _controler.getMatrixType();
 	MatrixType mtype = MatrixType::REAL_UNSYMMETRIC; // HYPRE not support symmetric systems
 
-	_nDistribution = _mesh.nodes->gatherUniqueNodeDistribution();
+	_nDistribution = run::mesh->nodes->gatherUniqueNodeDistribution();
 	for (size_t n = 0; n < _nDistribution.size(); ++n) {
 		_nDistribution[n] *= _DOFs;
 	}
@@ -177,14 +178,14 @@ void UniformNodesComposer::buildPatterns()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		eslocal tKsize = 0, tRHSsize = 0;
-		for (auto e = _mesh.elements->procNodes->begin(t); e != _mesh.elements->procNodes->end(t); ++e) {
+		for (auto e = run::mesh->elements->procNodes->begin(t); e != run::mesh->elements->procNodes->end(t); ++e) {
 			tRHSsize += e->size() * _DOFs;
 			tKsize += getMatrixSize(e->size() * _DOFs, mtype);
 		}
 
-		for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
-			if (_mesh.boundaryRegions[r]->dimension) {
-				for (auto e = _mesh.boundaryRegions[r]->procNodes->begin(t); e != _mesh.boundaryRegions[r]->procNodes->end(t); ++e) {
+		for (size_t r = 0; r < run::mesh->boundaryRegions.size(); r++) {
+			if (run::mesh->boundaryRegions[r]->dimension) {
+				for (auto e = run::mesh->boundaryRegions[r]->procNodes->begin(t); e != run::mesh->boundaryRegions[r]->procNodes->end(t); ++e) {
 					tRHSsize += e->size() * _DOFs;
 					tKsize += getMatrixSize(e->size() * _DOFs, mtype);;
 				}
@@ -219,14 +220,14 @@ void UniformNodesComposer::buildPatterns()
 			insertKPattern(Koffset, _RHS, RHSoffset, mtype);
 		};
 
-		for (auto e = _mesh.elements->procNodes->cbegin(t); e != _mesh.elements->procNodes->cend(t); ++e) {
+		for (auto e = run::mesh->elements->procNodes->cbegin(t); e != run::mesh->elements->procNodes->cend(t); ++e) {
 			insert(e);
 			Koffset += getMatrixSize(e->size() * _DOFs, mtype);
 		}
 
-		for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
-			if (_mesh.boundaryRegions[r]->dimension) {
-				for (auto e = _mesh.boundaryRegions[r]->procNodes->cbegin(t); e != _mesh.boundaryRegions[r]->procNodes->cend(t); ++e) {
+		for (size_t r = 0; r < run::mesh->boundaryRegions.size(); r++) {
+			if (run::mesh->boundaryRegions[r]->dimension) {
+				for (auto e = run::mesh->boundaryRegions[r]->procNodes->cbegin(t); e != run::mesh->boundaryRegions[r]->procNodes->cend(t); ++e) {
 					insert(e);
 					Koffset += getMatrixSize(e->size() * _DOFs, mtype);
 				}
@@ -251,19 +252,19 @@ void UniformNodesComposer::buildPatterns()
 		return RHSPattern[i] < RHSPattern[j];
 	});
 
-	std::vector<std::vector<IJ> > sKBuffer(_mesh.neighbours.size()), rKBuffer(_mesh.neighbours.size());
-	std::vector<std::vector<eslocal> > sRHSBuffer(_mesh.neighbours.size()), rRHSBuffer(_mesh.neighbours.size());
+	std::vector<std::vector<IJ> > sKBuffer(run::mesh->neighbours.size()), rKBuffer(run::mesh->neighbours.size());
+	std::vector<std::vector<eslocal> > sRHSBuffer(run::mesh->neighbours.size()), rRHSBuffer(run::mesh->neighbours.size());
 
 	auto iK = pK.begin();
 	auto iRHS = pRHS.begin();
-	for (size_t n = 0; n < _mesh.neighbours.size() && _mesh.neighbours[n] < environment->MPIrank; ++n) {
-		while (KPattern[*iK].row < _nDistribution[_mesh.neighbours[n] + 1]) {
+	for (size_t n = 0; n < run::mesh->neighbours.size() && run::mesh->neighbours[n] < environment->MPIrank; ++n) {
+		while (KPattern[*iK].row < _nDistribution[run::mesh->neighbours[n] + 1]) {
 			if (iK == pK.begin() || KPattern[*iK] != KPattern[*(iK - 1)]) {
 				sKBuffer[n].push_back(KPattern[*iK]);
 			}
 			++iK;
 		}
-		while (RHSPattern[*iRHS] < _nDistribution[_mesh.neighbours[n] + 1]) {
+		while (RHSPattern[*iRHS] < _nDistribution[run::mesh->neighbours[n] + 1]) {
 			if (iRHS == pRHS.begin() || RHSPattern[*iRHS] != RHSPattern[*(iRHS - 1)]) {
 				sRHSBuffer[n].push_back(RHSPattern[*iRHS]);
 			}
@@ -271,10 +272,10 @@ void UniformNodesComposer::buildPatterns()
 		}
 	}
 
-	if (!Communication::receiveUpperUnknownSize(sKBuffer, rKBuffer, _mesh.neighbours)) {
+	if (!Communication::receiveUpperUnknownSize(sKBuffer, rKBuffer, run::mesh->neighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: exchange K pattern.";
 	}
-	if (!Communication::receiveUpperUnknownSize(sRHSBuffer, rRHSBuffer, _mesh.neighbours)) {
+	if (!Communication::receiveUpperUnknownSize(sRHSBuffer, rRHSBuffer, run::mesh->neighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: exchange RHS pattern.";
 	}
 
@@ -306,23 +307,23 @@ void UniformNodesComposer::buildPatterns()
 
 	_KPermutation.resize(KPattern.size());
 	_RHSPermutation.resize(RHSPattern.size());
-	_instance.K.resize(1);
-	_instance.M.resize(1);
-	_instance.f.resize(1);
-	_instance.R.resize(1);
-	_instance.primalSolution.resize(1);
-	_instance.K.front().haloRows = (_mesh.nodes->size - _mesh.nodes->uniqueSize) * _DOFs;
-	_instance.K.front().rows = _mesh.nodes->size * _DOFs;
-	_instance.K.front().cols = _mesh.nodes->uniqueTotalSize * _DOFs;
-	_instance.f.front().resize(_mesh.nodes->size * _DOFs);
-	_instance.R.front().resize(_mesh.nodes->size * _DOFs);
-	_instance.primalSolution.front().resize(_mesh.nodes->size * _DOFs);
+	run::data->K.resize(1);
+	run::data->M.resize(1);
+	run::data->f.resize(1);
+	run::data->R.resize(1);
+	run::data->primalSolution.resize(1);
+	run::data->K.front().haloRows = (run::mesh->nodes->size - run::mesh->nodes->uniqueSize) * _DOFs;
+	run::data->K.front().rows = run::mesh->nodes->size * _DOFs;
+	run::data->K.front().cols = run::mesh->nodes->uniqueTotalSize * _DOFs;
+	run::data->f.front().resize(run::mesh->nodes->size * _DOFs);
+	run::data->R.front().resize(run::mesh->nodes->size * _DOFs);
+	run::data->primalSolution.front().resize(run::mesh->nodes->size * _DOFs);
 
-	std::vector<eslocal> &ROW = _instance.K.front().CSR_I_row_indices;
-	std::vector<eslocal> &COL = _instance.K.front().CSR_J_col_indices;
-	std::vector<double> &VAL  = _instance.K.front().CSR_V_values;
+	std::vector<eslocal> &ROW = run::data->K.front().CSR_I_row_indices;
+	std::vector<eslocal> &COL = run::data->K.front().CSR_J_col_indices;
+	std::vector<double> &VAL  = run::data->K.front().CSR_V_values;
 
-	ROW.reserve(_mesh.nodes->size * _DOFs + 1);
+	ROW.reserve(run::mesh->nodes->size * _DOFs + 1);
 	ROW.push_back(1);
 	COL.push_back(KPattern[pK.front()].column + 1);
 	_KPermutation[pK.front()] = 0;
@@ -346,17 +347,17 @@ void UniformNodesComposer::buildPatterns()
 	ROW.push_back(COL.size() + 1);
 	VAL.resize(COL.size());
 
-	_instance.K.front().nnz = COL.size();
-	_instance.K.front().mtype = mtype;
+	run::data->K.front().nnz = COL.size();
+	run::data->K.front().mtype = mtype;
 	switch (mtype) {
-	case MatrixType::REAL_UNSYMMETRIC: _instance.K.front().type = 'G'; break;
-	default: _instance.K.front().type = 'S';
+	case MatrixType::REAL_UNSYMMETRIC: run::data->K.front().type = 'G'; break;
+	default: run::data->K.front().type = 'S';
 	}
-	_instance.K.front().CSR_I_row_indices.swap(ROW);
-	_instance.K.front().CSR_J_col_indices.swap(COL);
-	_instance.M.front() = _instance.K.front();
-	_instance.M.front().mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-	_instance.M.front().type = 'S';
+	run::data->K.front().CSR_I_row_indices.swap(ROW);
+	run::data->K.front().CSR_J_col_indices.swap(COL);
+	run::data->M.front() = run::data->K.front();
+	run::data->M.front().mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+	run::data->M.front().type = 'S';
 }
 
 void UniformNodesComposer::assemble(Matrices matrices)
@@ -382,21 +383,21 @@ void UniformNodesComposer::assemble(Matrices matrices)
 				for (size_t r = 0; r < size; ++r, ++RHSIndex) {
 					if ((matrices & Matrices::f) && filler.fe.rows()) {
 						#pragma omp atomic
-						_instance.f[0][_RHSPermutation[RHSIndex]] += RHSReduction * filler.fe(r, 0);
+						run::data->f[0][_RHSPermutation[RHSIndex]] += RHSReduction * filler.fe(r, 0);
 					}
 					if ((matrices & Matrices::R) && filler.Re.rows()) {
 						#pragma omp atomic
-						_instance.R[0][_RHSPermutation[RHSIndex]] += filler.Re(r, 0);
+						run::data->R[0][_RHSPermutation[RHSIndex]] += filler.Re(r, 0);
 					}
 
 					for (size_t c = 0; c < size; ++c, ++KIndex) {
 						if ((matrices & Matrices::K) && filler.Ke.rows()) {
 							#pragma omp atomic
-							_instance.K[0].CSR_V_values[_KPermutation[KIndex]] += KReduction * filler.Ke(r, c);
+							run::data->K[0].CSR_V_values[_KPermutation[KIndex]] += KReduction * filler.Ke(r, c);
 						}
 						if ((matrices & Matrices::M) && filler.Me.rows()) {
 							#pragma omp atomic
-							_instance.M[0].CSR_V_values[_KPermutation[KIndex]] += filler.Me(r, c);
+							run::data->M[0].CSR_V_values[_KPermutation[KIndex]] += filler.Me(r, c);
 						}
 					}
 				}
@@ -405,35 +406,35 @@ void UniformNodesComposer::assemble(Matrices matrices)
 			filler.insert = [&] (size_t size) {
 				for (size_t r = 0; r < size; ++r, ++RHSIndex) {
 					if ((matrices & Matrices::f) && filler.fe.rows()) {
-						_instance.f[0][_RHSPermutation[RHSIndex]] += RHSReduction * filler.fe(r, 0);
+						run::data->f[0][_RHSPermutation[RHSIndex]] += RHSReduction * filler.fe(r, 0);
 					}
 					if ((matrices & Matrices::R) && filler.Re.rows()) {
-						_instance.R[0][_RHSPermutation[RHSIndex]] += filler.Re(r, 0);
+						run::data->R[0][_RHSPermutation[RHSIndex]] += filler.Re(r, 0);
 					}
 
 					for (size_t c = r; c < size; ++c, ++KIndex) {
 						if ((matrices & Matrices::K) && filler.Ke.rows()) {
-							_instance.K[0].CSR_V_values[_KPermutation[KIndex]] += KReduction * filler.Ke(r, c);
+							run::data->K[0].CSR_V_values[_KPermutation[KIndex]] += KReduction * filler.Ke(r, c);
 						}
 						if ((matrices & Matrices::M) && filler.Me.rows()) {
-							_instance.M[0].CSR_V_values[_KPermutation[KIndex]] += filler.Me(r, c);
+							run::data->M[0].CSR_V_values[_KPermutation[KIndex]] += filler.Me(r, c);
 						}
 					}
 				}
 			}; break;
 		}
 
-		filler.begin = _mesh.elements->distribution[t];
-		filler.end = _mesh.elements->distribution[t + 1];
+		filler.begin = run::mesh->elements->distribution[t];
+		filler.end = run::mesh->elements->distribution[t + 1];
 
 		_controler.processElements(matrices, filler);
 
 		KReduction = 1; // _step.internalForceReduction;
 
-		for (size_t r = 0; r < _mesh.boundaryRegions.size(); r++) {
-			if (_mesh.boundaryRegions[r]->distribution.size()) {
-				filler.begin = _mesh.boundaryRegions[r]->distribution[t];
-				filler.end = _mesh.boundaryRegions[r]->distribution[t + 1];
+		for (size_t r = 0; r < run::mesh->boundaryRegions.size(); r++) {
+			if (run::mesh->boundaryRegions[r]->distribution.size()) {
+				filler.begin = run::mesh->boundaryRegions[r]->distribution[t];
+				filler.end = run::mesh->boundaryRegions[r]->distribution[t + 1];
 				_controler.processBoundary(matrices, r, filler);
 			}
 		}
@@ -442,17 +443,17 @@ void UniformNodesComposer::assemble(Matrices matrices)
 
 void UniformNodesComposer::setDirichlet()
 {
-	auto &ROW = _instance.K.front().CSR_I_row_indices;
-	auto &COL = _instance.K.front().CSR_J_col_indices;
-	auto &VAL = _instance.K.front().CSR_V_values;
-	auto &RHS = _instance.f.front();
+	auto &ROW = run::data->K.front().CSR_I_row_indices;
+	auto &COL = run::data->K.front().CSR_J_col_indices;
+	auto &VAL = run::data->K.front().CSR_V_values;
+	auto &RHS = run::data->f.front();
 
 	std::vector<double> values(_dirichletMap.size());
 	_controler.dirichletValues(values);
 
 //	std::vector<eslocal> RROW;
-//	for (size_t r = 0; r < _instance.K.front().CSR_I_row_indices.size() - 1; r++) {
-//		RROW.insert(RROW.end(), _instance.K.front().CSR_I_row_indices[r + 1] - _instance.K.front().CSR_I_row_indices[r], _DOFMap->datatarray()[r] + 1);
+//	for (size_t r = 0; r < run::data->K.front().CSR_I_row_indices.size() - 1; r++) {
+//		RROW.insert(RROW.end(), run::data->K.front().CSR_I_row_indices[r + 1] - run::data->K.front().CSR_I_row_indices[r], _DOFMap->datatarray()[r] + 1);
 //	}
 //
 //	int rank = 3;
@@ -472,8 +473,8 @@ void UniformNodesComposer::setDirichlet()
 //		}
 //		printf("\n");
 //
-//		for (eslocal r = 0, i = 0, f = 0; r < _mesh.nodes->uniqueTotalSize; r++) {
-//			for (eslocal c = 0; c < _mesh.nodes->uniqueTotalSize; c++) {
+//		for (eslocal r = 0, i = 0, f = 0; r < run::mesh->nodes->uniqueTotalSize; r++) {
+//			for (eslocal c = 0; c < run::mesh->nodes->uniqueTotalSize; c++) {
 //				if (i < RROW.size() && RROW[i] == r + 1 && COL[i] == c + 1) {
 //					if (VAL[i] > -0.00001) {
 //						if (std::fabs(VAL[i]) > 10) {
@@ -502,8 +503,8 @@ void UniformNodesComposer::setDirichlet()
 //	});
 //
 //	Communication::serialize([&] () {
-//		std::cout << _instance.K.front();
-//		std::cout << _instance.f.front();
+//		std::cout << run::data->K.front();
+//		std::cout << run::data->f.front();
 //
 //		for (size_t i = 0; i < _dirichletMap.size(); i++) {
 //			std::cout << _dirichletMap[i] + 1 << " ";
@@ -512,7 +513,7 @@ void UniformNodesComposer::setDirichlet()
 //	});
 
 	auto ndofbegin = _DOFMap->datatarray().begin();
-	auto ndofend = (_DOFMap->begin() + (_mesh.nodes->size - _mesh.nodes->uniqueSize))->begin();
+	auto ndofend = (_DOFMap->begin() + (run::mesh->nodes->size - run::mesh->nodes->uniqueSize))->begin();
 
 	for (size_t i = 0; i < _dirichletMap.size(); ++i) {
 		RHS[_dirichletMap[i]] = values[_dirichletPermutation[i]];
@@ -549,8 +550,8 @@ void UniformNodesComposer::setDirichlet()
 			}
 
 //			if (environment->MPIrank == rank) {
-//				for (eslocal r = 0, i = 0, f = 0; r < _mesh.nodes->uniqueTotalSize; r++) {
-//					for (eslocal c = 0; c < _mesh.nodes->uniqueTotalSize; c++) {
+//				for (eslocal r = 0, i = 0, f = 0; r < run::mesh->nodes->uniqueTotalSize; r++) {
+//					for (eslocal c = 0; c < run::mesh->nodes->uniqueTotalSize; c++) {
 //						if (i < RROW.size() && RROW[i] == r + 1 && COL[i] == c + 1) {
 //							if (VAL[i] > -0.00001) {
 //								if (std::fabs(VAL[i]) > 10) {
@@ -590,8 +591,8 @@ void UniformNodesComposer::setDirichlet()
 //		}
 //		printf("\n");
 //		printf(" // %d \\\\ \n", environment->MPIrank);
-//		for (eslocal r = 0, i = 0, f = 0; r < _mesh.nodes->uniqueTotalSize; r++) {
-//			for (eslocal c = 0; c < _mesh.nodes->uniqueTotalSize; c++) {
+//		for (eslocal r = 0, i = 0, f = 0; r < run::mesh->nodes->uniqueTotalSize; r++) {
+//			for (eslocal c = 0; c < run::mesh->nodes->uniqueTotalSize; c++) {
 //				if (i < RROW.size() && RROW[i] == r + 1 && COL[i] == c + 1) {
 //					if (VAL[i] > -0.00001) {
 //						if (std::fabs(VAL[i]) > 10) {
@@ -619,85 +620,85 @@ void UniformNodesComposer::setDirichlet()
 //		printf("------------------\n");
 //	});
 //	Communication::serialize([&] () {
-//		std::cout << _instance.K.front();
+//		std::cout << run::data->K.front();
 //	});
 }
 
 void UniformNodesComposer::synchronize()
 {
-	std::vector<std::vector<double> > sBuffer(_mesh.neighbours.size()), rBuffer(_mesh.neighbours.size());
+	std::vector<std::vector<double> > sBuffer(run::mesh->neighbours.size()), rBuffer(run::mesh->neighbours.size());
 
-	auto nranks = _mesh.nodes->ranks->begin();
+	auto nranks = run::mesh->nodes->ranks->begin();
 	auto DOFs = _DOFMap->begin();
-	for (eslocal n = 0; n < _mesh.nodes->size && DOFs->front() < _nDistribution[environment->MPIrank]; ++n, ++nranks, ++DOFs) {
+	for (eslocal n = 0; n < run::mesh->nodes->size && DOFs->front() < _nDistribution[environment->MPIrank]; ++n, ++nranks, ++DOFs) {
 		eslocal r = 0;
-		while (_mesh.neighbours[r] < nranks->front()) {
+		while (run::mesh->neighbours[r] < nranks->front()) {
 			++r;
 		}
 		for (int dof = 0; dof < _DOFs; ++dof) {
-			sBuffer[r].push_back(_instance.f.front()[n * _DOFs + dof]);
+			sBuffer[r].push_back(run::data->f.front()[n * _DOFs + dof]);
 		}
 		_nRHSSize[r] = sBuffer[r].size();
 	}
 
-	nranks = _mesh.nodes->ranks->begin();
+	nranks = run::mesh->nodes->ranks->begin();
 	DOFs = _DOFMap->begin();
-	for (eslocal n = 0; n < _mesh.nodes->size && DOFs->front() < _nDistribution[environment->MPIrank]; ++n, ++nranks, ++DOFs) {
+	for (eslocal n = 0; n < run::mesh->nodes->size && DOFs->front() < _nDistribution[environment->MPIrank]; ++n, ++nranks, ++DOFs) {
 		eslocal r = 0;
-		while (_mesh.neighbours[r] < nranks->front()) {
+		while (run::mesh->neighbours[r] < nranks->front()) {
 			++r;
 		}
-		auto begin = _instance.K.front().CSR_I_row_indices[DOFs->begin() - _DOFMap->datatarray().begin()] - 1;
-		auto end = _instance.K.front().CSR_I_row_indices[DOFs->end() - _DOFMap->datatarray().begin()] - 1;
-		sBuffer[r].insert(sBuffer[r].end(), _instance.K.front().CSR_V_values.begin() + begin, _instance.K.front().CSR_V_values.begin() + end);
+		auto begin = run::data->K.front().CSR_I_row_indices[DOFs->begin() - _DOFMap->datatarray().begin()] - 1;
+		auto end = run::data->K.front().CSR_I_row_indices[DOFs->end() - _DOFMap->datatarray().begin()] - 1;
+		sBuffer[r].insert(sBuffer[r].end(), run::data->K.front().CSR_V_values.begin() + begin, run::data->K.front().CSR_V_values.begin() + end);
 	}
 
-	if (!Communication::receiveUpperUnknownSize(sBuffer, rBuffer, _mesh.neighbours)) {
+	if (!Communication::receiveUpperUnknownSize(sBuffer, rBuffer, run::mesh->neighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: synchronize assembled data.";
 	}
 
 	size_t KIndex = _localKOffset, RHSIndex = _localRHSOffset;
 	for (size_t i = 0, j = 0; i < rBuffer.size(); ++i, j = 0) {
 		for (; rBuffer[i].size() && j < (size_t)_nRHSSize[i]; ++j, ++RHSIndex) {
-			_instance.f.front()[_RHSPermutation[RHSIndex]] += rBuffer[i][j];
+			run::data->f.front()[_RHSPermutation[RHSIndex]] += rBuffer[i][j];
 		}
 		for (; j < rBuffer[i].size(); ++j, ++KIndex) {
-			_instance.K.front().CSR_V_values[_KPermutation[KIndex]] += rBuffer[i][j];
+			run::data->K.front().CSR_V_values[_KPermutation[KIndex]] += rBuffer[i][j];
 		}
 	}
 
-//	std::cout << _instance.K.front();
-//	std::cout << _instance.f.front();
+//	std::cout << run::data->K.front();
+//	std::cout << run::data->f.front();
 }
 
 void UniformNodesComposer::fillSolution()
 {
 	std::vector<double> &solution = _controler.getSolutionStore();
 
-	std::vector<std::vector<double> > sBuffer(_mesh.neighbours.size()), rBuffer(_mesh.neighbours.size());
+	std::vector<std::vector<double> > sBuffer(run::mesh->neighbours.size()), rBuffer(run::mesh->neighbours.size());
 
 	size_t RHSIndex = _localRHSOffset;
-	for (size_t n = 0; n < _mesh.neighbours.size(); ++n) {
-		if (_mesh.neighbours[n] < environment->MPIrank) {
+	for (size_t n = 0; n < run::mesh->neighbours.size(); ++n) {
+		if (run::mesh->neighbours[n] < environment->MPIrank) {
 			rBuffer[n].resize(_nRHSSize[n]);
 		} else {
 			sBuffer[n].reserve(_nRHSSize[n]);
 			for (eslocal i = 0; i < _nRHSSize[n]; ++i) {
-				sBuffer[n].push_back(_instance.primalSolution.front()[_RHSPermutation[RHSIndex++]]);
+				sBuffer[n].push_back(run::data->primalSolution.front()[_RHSPermutation[RHSIndex++]]);
 			}
 		}
 	}
 
-	if (!Communication::receiveLowerKnownSize(sBuffer, rBuffer, _mesh.neighbours)) {
+	if (!Communication::receiveLowerKnownSize(sBuffer, rBuffer, run::mesh->neighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: synchronize assembled data.";
 	}
 
-	std::vector<eslocal> rIndices(_mesh.neighbours.size());
-	auto nranks = _mesh.nodes->ranks->begin();
+	std::vector<eslocal> rIndices(run::mesh->neighbours.size());
+	auto nranks = run::mesh->nodes->ranks->begin();
 	auto DOFs = _DOFMap->begin();
-	for (eslocal n = 0; n < _mesh.nodes->size && DOFs->front() < _nDistribution[environment->MPIrank]; ++n, ++nranks, ++DOFs) {
+	for (eslocal n = 0; n < run::mesh->nodes->size && DOFs->front() < _nDistribution[environment->MPIrank]; ++n, ++nranks, ++DOFs) {
 		eslocal r = 0;
-		while (_mesh.neighbours[r] < nranks->front()) {
+		while (run::mesh->neighbours[r] < nranks->front()) {
 			++r;
 		}
 		for (int dof = 0; dof < _DOFs; ++dof) {
@@ -706,13 +707,13 @@ void UniformNodesComposer::fillSolution()
 	}
 
 	memcpy(
-			solution.data() + _instance.K.front().haloRows,
-			_instance.primalSolution.front().data() + _instance.K.front().haloRows,
-			sizeof(double) * (_instance.K.front().rows - _instance.K.front().haloRows));
+			solution.data() + run::data->K.front().haloRows,
+			run::data->primalSolution.front().data() + run::data->K.front().haloRows,
+			sizeof(double) * (run::data->K.front().rows - run::data->K.front().haloRows));
 
 //	Communication::serialize([&] () {
 //		std::cout << environment->MPIrank << "\n";
-//		std::cout << _instance.primalSolution.front();
+//		std::cout << run::data->primalSolution.front();
 //		std::cout << solution;
 //		std::cout << " >> <<\n";
 //	});

@@ -1,10 +1,11 @@
 
 #include "structuralmechanics2d.kernel.h"
 
+#include "../../../globals/run.h"
 #include "../../../basis/containers/point.h"
 #include "../../../basis/matrices/denseMatrix.h"
 #include "../../../basis/evaluator/evaluator.h"
-#include "../../../config/ecf/physics/structuralmechanics.h"
+#include "../../../config/ecf/root.h"
 #include "../../../globals/time.h"
 
 #include "../../../mesh/elements/element.h"
@@ -13,12 +14,6 @@
 using namespace espreso;
 
 using namespace espreso;
-
-StructuralMechanics2DKernel::StructuralMechanics2DKernel(const StructuralMechanicsGlobalSettings &settings, const StructuralMechanicsOutputSettings &output)
-: StructuralMechanicsKernel(settings, output)
-{
-
-}
 
 void StructuralMechanics2DKernel::assembleMaterialMatrix(eslocal node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, DenseMatrix &K) const
 {
@@ -51,7 +46,7 @@ void StructuralMechanics2DKernel::assembleMaterialMatrix(eslocal node, double *c
 	case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
 	{
 
-		switch (_settings.element_behaviour) {
+		switch (run::ecf->structural_mechanics_2d.element_behaviour) {
 
 		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
 		{
@@ -209,7 +204,7 @@ void StructuralMechanics2DKernel::processElement(Matrices matrices, const Elemen
 			Me.multiply(N[gp], N[gp], gpDens(0, 0) * detJ * weighFactor[gp] * CP, 1, true);
 		}
 
-		switch (_settings.element_behaviour) {
+		switch (run::ecf->structural_mechanics_2d.element_behaviour) {
 
 		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
 		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
@@ -346,7 +341,7 @@ void StructuralMechanics2DKernel::processEdge(Matrices matrices, const BoundaryI
 		gpQ.multiply(normal, gpP);
 		gpThickness.multiply(N[gp], matThickness);
 
-		switch (_settings.element_behaviour) {
+		switch (run::ecf->structural_mechanics_2d.element_behaviour) {
 
 		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
 		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:

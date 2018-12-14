@@ -1,17 +1,23 @@
 
 #include "../../solver/loadstep/steadystate.h"
+#include "../../solver/timestep/timestepsolver.h"
+#include "../../dataholder.h"
+#include "../../assembler/assembler.h"
 
 #include "../../../globals/time.h"
-#include "../../dataholder.h"
-#include "../../provider/provider.h"
-#include "../../solver/timestep/timestepsolver.h"
+
 
 using namespace espreso;
 
-SteadyStateSolver::SteadyStateSolver(TimeStepSolver &timeStepSolver, double duration)
-: LoadStepSolver("STEADY STATE", timeStepSolver, duration)
+SteadyStateSolver::SteadyStateSolver(Assembler &assembler, TimeStepSolver &timeStepSolver, double duration)
+: LoadStepSolver(assembler, timeStepSolver, duration)
 {
 
+}
+
+std::string SteadyStateSolver::name()
+{
+	return "STEADY STATE";
 }
 
 Matrices SteadyStateSolver::updateStructuralMatrices(Matrices matrices)
@@ -23,8 +29,7 @@ Matrices SteadyStateSolver::updateStructuralMatrices(Matrices matrices)
 
 Matrices SteadyStateSolver::reassembleStructuralMatrices(Matrices matrices)
 {
-	_composer.updateStructuralMatrices(matrices);
-	_composer.updateGluingMatrices(matrices);
+	_assembler.assemble(matrices);
 	return matrices;
 }
 
@@ -32,6 +37,7 @@ void SteadyStateSolver::runNextTimeStep()
 {
 	time::current += _duration;
 	time::shift = _duration;
+	_assembler.nextTime();
 	processTimeStep();
 }
 

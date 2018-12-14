@@ -6,20 +6,9 @@
 
 namespace espreso {
 
-struct StructuralMechanicsGlobalSettings;
-struct StructuralMechanicsOutputSettings;
-
 struct StructuralMechanicsKernel: public Kernel
 {
-	StructuralMechanicsKernel(const StructuralMechanicsGlobalSettings &settings, const StructuralMechanicsOutputSettings &output)
-	: _settings(settings), _output(output)
-	{
 
-	}
-
-protected:
-	const StructuralMechanicsGlobalSettings &_settings;
-	const StructuralMechanicsOutputSettings &_output;
 };
 
 }

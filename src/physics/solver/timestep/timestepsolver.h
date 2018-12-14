@@ -6,28 +6,24 @@
 
 namespace espreso {
 
-class LinearSolver;
 class LoadStepSolver;
-class Provider;
+class Assembler;
+class LinearSolver;
 
 class TimeStepSolver {
 
 	friend class LoadStepSolver;
 
 public:
-//	static TimeStepSolver* create(const HeatTransferConfiguration &configuration);
-//	static TimeStepSolver* create(const StructuralMechanicsConfiguration &configuration);
-
-	TimeStepSolver(const std::string &description, Provider &assembler);
+	TimeStepSolver(Assembler &assembler, LinearSolver &solver): _assembler(assembler), _solver(solver) {}
 	virtual ~TimeStepSolver() {}
 
 	virtual void solve(LoadStepSolver &loadStepSolver) =0;
-
-	std::string description() const;
+	virtual std::string name() =0;
 
 protected:
-	std::string _description;
-	Provider &_composer;
+	Assembler &_assembler;
+	LinearSolver &_solver;
 };
 
 }

@@ -6,9 +6,7 @@
 
 namespace espreso {
 
-struct StructuralMechanicsStepSettings;
-struct StructuralMechanicsGlobalSettings;
-struct StructuralMechanicsOutputSettings;
+struct StructuralMechanicsLoadStepConfiguration;
 struct NodeData;
 struct ElementData;
 
@@ -23,19 +21,14 @@ public:
 	std::vector<double>& getSolutionStore();
 
 protected:
-	StructuralMechanicsControler(Mesh &mesh,
-			const StructuralMechanicsGlobalSettings &gSettings,
-			const StructuralMechanicsStepSettings &sSettings,
-			const StructuralMechanicsOutputSettings &oSettings)
+	StructuralMechanicsControler(StructuralMechanicsLoadStepConfiguration &configuration)
 
-	: Controler(mesh),
-	  _globalSettings(gSettings), _stepSettings(sSettings), _outputSettings(oSettings),
+	: Controler(),
+	  _configuration(configuration),
 	  _displacement(NULL), _avgThickness(NULL),
 	  _thickness(NULL) {}
 
-	const StructuralMechanicsGlobalSettings &_globalSettings;
-	const StructuralMechanicsStepSettings &_stepSettings;
-	const StructuralMechanicsOutputSettings &_outputSettings;
+	const StructuralMechanicsLoadStepConfiguration &_configuration;
 
 	struct BoundaryParameters {
 		Parameter coordinate, thickness;

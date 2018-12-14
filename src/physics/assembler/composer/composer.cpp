@@ -3,6 +3,7 @@
 
 #include "../controllers/controller.h"
 
+#include "../../../globals/run.h"
 #include "../../../basis/matrices/matrixtype.h"
 
 #include "../../../solver/generic/SparseMatrix.h"
@@ -11,8 +12,8 @@
 
 using namespace espreso;
 
-Composer::Composer(Mesh &mesh, DataHolder &instance, Controler &controler)
-: _mesh(mesh), _instance(instance), _controler(controler), _DOFMap(NULL)
+Composer::Composer(Controler &controler)
+: _controler(controler), _DOFMap(NULL)
 {
 
 }
@@ -73,15 +74,15 @@ std::vector<double>& Composer::getSolutionStore()
 void Composer::clearMatrices(Matrices matrices, eslocal domain)
 {
 	if (matrices & Matrices::K) {
-		std::fill(_instance.K[domain].CSR_V_values.begin(), _instance.K[domain].CSR_V_values.end(), 0);
+		std::fill(run::data->K[domain].CSR_V_values.begin(), run::data->K[domain].CSR_V_values.end(), 0);
 	}
 	if (matrices & Matrices::M) {
-		std::fill(_instance.M[domain].CSR_V_values.begin(), _instance.M[domain].CSR_V_values.end(), 0);
+		std::fill(run::data->M[domain].CSR_V_values.begin(), run::data->M[domain].CSR_V_values.end(), 0);
 	}
 	if (matrices & Matrices::f) {
-		std::fill(_instance.f[domain].begin(), _instance.f[domain].end(), 0);
+		std::fill(run::data->f[domain].begin(), run::data->f[domain].end(), 0);
 	}
 	if (matrices & Matrices::R) {
-		std::fill(_instance.R[domain].begin(), _instance.R[domain].end(), 0);
+		std::fill(run::data->R[domain].begin(), run::data->R[domain].end(), 0);
 	}
 }

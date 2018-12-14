@@ -12,12 +12,13 @@ class NonLinearSolverConfiguration;
 class NewtonRaphson: public TimeStepSolver {
 
 public:
-	NewtonRaphson(Provider &composer, const NonLinearSolverConfiguration &configuration);
+	NewtonRaphson(Assembler &assembler, LinearSolver &solver, NonLinearSolverConfiguration &configuration);
 
 	void solve(LoadStepSolver &loadStepSolver);
+	std::string name();
 
 protected:
-	const NonLinearSolverConfiguration &_configuration;
+	NonLinearSolverConfiguration &_configuration;
 
 	std::vector<std::vector<double> > _solution;
 	std::vector<std::vector<double> > _f_ext;

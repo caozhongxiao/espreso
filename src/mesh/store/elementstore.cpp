@@ -149,7 +149,7 @@ void ElementStore::unpack(const char* &p)
 
 size_t ElementStore::packedDataSize() const
 {
-	size_t size = 0;
+	size_t size = 1;
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {
 			size += Esutils::packedSize(data[i]->data);
@@ -160,6 +160,7 @@ size_t ElementStore::packedDataSize() const
 
 void ElementStore::packData(char* &p) const
 {
+	char *begin;
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {
 			Esutils::pack(data[i]->data, p);

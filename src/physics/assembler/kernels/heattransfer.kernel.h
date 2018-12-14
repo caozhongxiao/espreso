@@ -7,24 +7,12 @@
 namespace espreso {
 
 struct ConvectionConfiguration;
-struct HeatTransferGlobalSettings;
-struct HeatTransferOutputSettings;
 
 struct HeatTransferKernel: public Kernel
 {
-	HeatTransferKernel(const HeatTransferGlobalSettings &settings, const HeatTransferOutputSettings &output)
-	: _settings(settings), _output(output)
-	{
-
-	}
-
 	static double convectionHTC(
 			const ConvectionConfiguration &convection,
 			eslocal csize, double *coordinates, double time, double temp);
-
-protected:
-	const HeatTransferGlobalSettings &_settings;
-	const HeatTransferOutputSettings &_output;
 };
 
 }

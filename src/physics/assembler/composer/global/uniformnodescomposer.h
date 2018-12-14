@@ -9,8 +9,8 @@ namespace espreso {
 class UniformNodesComposer: public GlobalComposer {
 
 public:
-	UniformNodesComposer(Mesh &mesh, DataHolder &instance, Controler &controler, int DOFs)
-	: GlobalComposer(mesh, instance, controler), _DOFs(DOFs) {}
+	UniformNodesComposer(Controler &controler, int DOFs)
+	: GlobalComposer(controler), _DOFs(DOFs) {}
 
 	void initDOFs();
 	void initDirichlet();

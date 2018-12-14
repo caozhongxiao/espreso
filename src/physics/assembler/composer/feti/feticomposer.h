@@ -10,14 +10,17 @@
 namespace espreso {
 
 template <typename TEBoundaries, typename TEData> class serializededata;
+struct FETISolverConfiguration;
 
 class FETIComposer: public Composer {
 
 public:
-	FETIComposer(Mesh &mesh, DataHolder &instance, Controler &controler)
-	: Composer(mesh, instance, controler) {}
+	FETIComposer(Controler &controler, FETISolverConfiguration &configuration)
+	: Composer(controler), _configuration(configuration) {}
 
 protected:
+	FETISolverConfiguration &_configuration;
+
 	std::vector<std::vector<eslocal> > _KPermutation, _RHSPermutation;
 	std::vector<size_t> _domainDOFsSize, _domainDirichletSize;
 };

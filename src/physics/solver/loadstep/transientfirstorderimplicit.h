@@ -12,7 +12,9 @@ class TransientSolverConfiguration;
 class TransientFirstOrderImplicit: public LoadStepSolver {
 
 public:
-	TransientFirstOrderImplicit(TimeStepSolver &timeStepSolver, const TransientSolverConfiguration &configuration, double duration);
+	TransientFirstOrderImplicit(Assembler &assembler, TimeStepSolver &timeStepSolver, TransientSolverConfiguration &configuration, double duration);
+
+	std::string name();
 
 	Matrices updateStructuralMatrices(Matrices matrices);
 	Matrices reassembleStructuralMatrices(Matrices matrices);
@@ -22,7 +24,7 @@ protected:
 	void runNextTimeStep();
 	void processTimeStep();
 
-	const TransientSolverConfiguration &_configuration;
+	TransientSolverConfiguration &_configuration;
 	double _alpha;
 	double _nTimeStep;
 

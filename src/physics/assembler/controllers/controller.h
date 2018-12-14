@@ -53,7 +53,7 @@ public:
 
 	virtual ~Controler() {}
 protected:
-	Controler(Mesh &mesh);
+	Controler();
 
 	struct Parameter {
 		serializededata<eslocal, double> *data;
@@ -81,8 +81,6 @@ protected:
 
 	void averageNodeInitilization(tarray<double> &initData, std::vector<double> &averagedData);
 	void nodeValuesToElements(tarray<double> &nodeData, std::vector<double> &elementData);
-
-	Mesh &_mesh;
 
 	size_t _dirichletSize;
 	std::vector<size_t> _nDistribution;

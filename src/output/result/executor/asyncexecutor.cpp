@@ -70,9 +70,9 @@ void AsyncStore::updateSolution()
 {
 	wait();
 
-	prepareBuffer(AsyncBufferManager::NODEDATA, _mesh.nodes->packedDataSize(isCollected(), isSeparated()));
+	prepareBuffer(AsyncBufferManager::NODEDATA, _mesh.nodes->packedDataSize());
 	_buffer = managedBuffer<char*>(AsyncBufferManager::buffer(AsyncBufferManager::NODEDATA));
-	_mesh.nodes->packData(_buffer, isCollected(), isSeparated());
+	_mesh.nodes->packData(_buffer);
 
 	prepareBuffer(AsyncBufferManager::ELEMENTDATA, _mesh.elements->packedDataSize());
 	_buffer = managedBuffer<char*>(AsyncBufferManager::buffer(AsyncBufferManager::ELEMENTDATA));
@@ -162,7 +162,7 @@ void AsyncExecutor::exec(const async::ExecInfo &info, const ExecParameters &para
 
 	if (parameters.updatedBuffers & 1 << AsyncBufferManager::NODEDATA) {
 		_buffer = static_cast<const char*>(info.buffer(AsyncBufferManager::buffer(AsyncBufferManager::NODEDATA)));
-		_mesh.nodes->unpackData(_buffer, isCollected(), isSeparated());
+		_mesh.nodes->unpackData(_buffer);
 	}
 
 	if (parameters.updatedBuffers & 1 << AsyncBufferManager::ELEMENTDATA) {

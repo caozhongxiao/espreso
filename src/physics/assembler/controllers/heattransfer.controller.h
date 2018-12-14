@@ -7,9 +7,7 @@
 
 namespace espreso {
 
-struct HeatTransferStepSettings;
-struct HeatTransferGlobalSettings;
-struct HeatTransferOutputSettings;
+struct HeatTransferLoadStepConfiguration;
 struct NodeData;
 struct ElementData;
 
@@ -28,19 +26,14 @@ public:
 	std::vector<double>& getSolutionStore();
 
 protected:
-	HeatTransferControler(Mesh &mesh,
-			const HeatTransferGlobalSettings &gSettings,
-			const HeatTransferStepSettings &sSettings,
-			const HeatTransferOutputSettings &oSettings)
+	HeatTransferControler(HeatTransferLoadStepConfiguration &configuration)
 
-	: Controler(mesh),
-	  _globalSettings(gSettings), _stepSettings(sSettings), _outputSettings(oSettings),
+	: Controler(),
+	  _configuration(configuration),
 	  _temperature(NULL), _phaseChange(NULL), _latentHeat(NULL), _avgThickness(NULL),
 	  _gradient(NULL), _flux(NULL), _motion(NULL), _thickness(NULL) {}
 
-	const HeatTransferGlobalSettings &_globalSettings;
-	const HeatTransferStepSettings &_stepSettings;
-	const HeatTransferOutputSettings &_outputSettings;
+	HeatTransferLoadStepConfiguration &_configuration;
 
 	struct BoundaryParameters {
 		Parameter temperature, coordinate, thickness;

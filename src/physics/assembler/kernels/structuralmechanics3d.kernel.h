@@ -50,8 +50,6 @@ struct StructuralMechanics3DKernel: public StructuralMechanicsKernel
 
 	};
 
-	StructuralMechanics3DKernel(const StructuralMechanicsGlobalSettings &settings, const StructuralMechanicsOutputSettings &output);
-
 	void processElement(Matrices matrices, const ElementIterator &iterator, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const;
 	void processFace(Matrices matrices, const BoundaryIterator &iterator, DenseMatrix &Ke, DenseMatrix &fe) const;
 	void processEdge(Matrices matrices, const BoundaryIterator &iterator, DenseMatrix &Ke, DenseMatrix &fe) const;

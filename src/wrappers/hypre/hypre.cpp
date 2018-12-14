@@ -146,13 +146,13 @@ void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, 
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
 	}
 
-//	HYPRE_IJMatrixPrint(data._K, "test.K");
-//	HYPRE_IJVectorPrint(data._f, "test.f");
+	HYPRE_IJMatrixPrint(data._K, "test.K");
+	HYPRE_IJVectorPrint(data._f, "test.f");
 
 	HYPRE_ParCSRPCGSetup(solver, K, f, x);
 	HYPRE_ParCSRPCGSolve(solver, K, f, x);
 
-//	HYPRE_IJVectorPrint(data._x, "test.x");
+	HYPRE_IJVectorPrint(data._x, "test.x");
 
 	eslocal iterations;
 	double norm;

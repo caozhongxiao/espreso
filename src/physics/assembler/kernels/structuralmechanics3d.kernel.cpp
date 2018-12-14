@@ -14,12 +14,6 @@ using namespace espreso;
 
 using namespace espreso;
 
-StructuralMechanics3DKernel::StructuralMechanics3DKernel(const StructuralMechanicsGlobalSettings &settings, const StructuralMechanicsOutputSettings &output)
-: StructuralMechanicsKernel(settings, output)
-{
-
-}
-
 void StructuralMechanics3DKernel::assembleMaterialMatrix(eslocal node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, DenseMatrix &K) const
 {
 	double Ex, Ey, Ez, miXY, miXZ, miYZ, Gx, Gy, Gz;

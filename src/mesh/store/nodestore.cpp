@@ -129,7 +129,7 @@ void NodeStore::unpack(const char* &p)
 	}
 }
 
-size_t NodeStore::packedDataSize(bool collected, bool distributed) const
+size_t NodeStore::packedDataSize() const
 {
 	size_t size = 0;
 	for (size_t i = 0; i < data.size(); i++) {
@@ -140,7 +140,7 @@ size_t NodeStore::packedDataSize(bool collected, bool distributed) const
 	return size;
 }
 
-void NodeStore::packData(char* &p, bool collected, bool distributed) const
+void NodeStore::packData(char* &p) const
 {
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {
@@ -149,7 +149,7 @@ void NodeStore::packData(char* &p, bool collected, bool distributed) const
 	}
 }
 
-void NodeStore::unpackData(const char* &p, bool collected, bool distributed)
+void NodeStore::unpackData(const char* &p)
 {
 	for (size_t i = 0; i < data.size(); i++) {
 		Esutils::unpack(data[i]->data, p);

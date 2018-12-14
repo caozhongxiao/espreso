@@ -11,7 +11,9 @@ class NonLinearSolverConfiguration;
 class PseudoTimeStepping: public LoadStepSolver {
 
 public:
-	PseudoTimeStepping(TimeStepSolver &timeStepSolver, const NonLinearSolverConfiguration &configuration, double duration);
+	PseudoTimeStepping(Assembler &assembler, TimeStepSolver &timeStepSolver, NonLinearSolverConfiguration &configuration, double duration);
+
+	std::string name();
 
 	Matrices updateStructuralMatrices(Matrices matrices);
 	Matrices reassembleStructuralMatrices(Matrices matrices);
@@ -20,7 +22,7 @@ protected:
 	void runNextTimeStep();
 	void processTimeStep();
 
-	const NonLinearSolverConfiguration &_configuration;
+	NonLinearSolverConfiguration &_configuration;
 };
 
 }

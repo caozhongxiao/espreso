@@ -12,11 +12,7 @@ class StructuralMechanics3DControler: public StructuralMechanicsControler
 {
 
 public:
-	StructuralMechanics3DControler(
-			Mesh &mesh,
-			const StructuralMechanicsGlobalSettings &gSettings,
-			const StructuralMechanicsStepSettings &sSettings,
-			const StructuralMechanicsOutputSettings &oSettings);
+	StructuralMechanics3DControler(StructuralMechanicsLoadStepConfiguration &configuration);
 	~StructuralMechanics3DControler();
 
 	void analyticRegularization(size_t domain, bool ortogonalCluster);

@@ -1,0 +1,38 @@
+
+#ifndef SRC_PHYSICS_ASSEMBLER_COMPOSER_FETI_UNIFORMNODESFETICOMPOSER_H_
+#define SRC_PHYSICS_ASSEMBLER_COMPOSER_FETI_UNIFORMNODESFETICOMPOSER_H_
+
+#include "../feti/feticomposer.h"
+
+namespace espreso {
+
+class UniformNodesFETIComposer: public FETIComposer {
+
+public:
+	UniformNodesFETIComposer(Controler &controler, FETISolverConfiguration &configuration, int DOFs)
+	: FETIComposer(controler, configuration), _DOFs(DOFs) {}
+
+	void initDOFs();
+	void initDirichlet();
+	void buildPatterns();
+
+	void assemble(Matrices matrices);
+
+	void setDirichlet();
+	void synchronize();
+
+	void fillSolution();
+
+protected:
+	void buildKPattern();
+	void buildB1Pattern();
+	void buildB0Pattern();
+	void updateDuplicity();
+
+	eslocal _DOFs;
+};
+
+}
+
+
+#endif /* SRC_PHYSICS_ASSEMBLER_COMPOSER_FETI_UNIFORMNODESFETICOMPOSER_H_ */

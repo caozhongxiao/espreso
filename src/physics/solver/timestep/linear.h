@@ -9,9 +9,10 @@ namespace espreso {
 class LinearTimeStep: public TimeStepSolver {
 
 public:
-	LinearTimeStep(Provider &composer);
+	LinearTimeStep(Assembler &assembler, LinearSolver &solver);
 
 	void solve(LoadStepSolver &loadStepSolver);
+	std::string name();
 
 };
 

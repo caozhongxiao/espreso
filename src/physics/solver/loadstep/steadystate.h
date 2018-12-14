@@ -9,7 +9,9 @@ namespace espreso {
 class SteadyStateSolver: public LoadStepSolver {
 
 public:
-	SteadyStateSolver(TimeStepSolver &timeStepSolver, double duration);
+	SteadyStateSolver(Assembler &assembler, TimeStepSolver &timeStepSolver, double duration);
+
+	std::string name();
 
 	Matrices updateStructuralMatrices(Matrices matrices);
 	Matrices reassembleStructuralMatrices(Matrices matrices);

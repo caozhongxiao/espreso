@@ -12,12 +12,7 @@ class StructuralMechanics2DControler: public StructuralMechanicsControler
 {
 
 public:
-	StructuralMechanics2DControler(
-			Mesh &mesh,
-			const StructuralMechanicsGlobalSettings &gSettings,
-			const StructuralMechanicsStepSettings &sSettings,
-			const StructuralMechanicsOutputSettings &oSettings);
-
+	StructuralMechanics2DControler(StructuralMechanicsLoadStepConfiguration &configuration);
 	~StructuralMechanics2DControler();
 
 	void dirichletIndices(std::vector<std::vector<eslocal> > &indices);

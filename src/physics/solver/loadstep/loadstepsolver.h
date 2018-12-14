@@ -6,44 +6,35 @@
 
 namespace espreso {
 
-struct HeatTransferConfiguration;
-struct StructuralMechanicsConfiguration;
 class TimeStepSolver;
-class Provider;
+class Assembler;
 enum Matrices: int;
 
 class LoadStepSolver {
 
-	friend class LinearTimeStep;
-	friend class NewtonRaphson;
-
 public:
-//	static LoadStepSolver* create(const HeatTransferConfiguration &configuration);
-//	static LoadStepSolver* create(const StructuralMechanicsConfiguration &configuration);
 
-	LoadStepSolver(const std::string &description, TimeStepSolver &timeStepSolver, double duration);
+	LoadStepSolver(Assembler &assembler, TimeStepSolver &timeStepSolver, double duration);
 	virtual ~LoadStepSolver() {}
 
 	void run();
 
-	std::string description() const;
+	virtual std::string name() =0;
 	double duration() const;
 
-protected:
 	virtual Matrices updateStructuralMatrices(Matrices matrices) =0;
 	virtual Matrices reassembleStructuralMatrices(Matrices matrices) =0;
 
+protected:
 	virtual void initLoadStep();
 	virtual bool hasNextTimeStep();
 	virtual void runNextTimeStep() =0;
 	virtual void processTimeStep() =0;
 	virtual void finalizeLoadStep();
 
-	TimeStepSolver *_timeStep;
-
-	std::string _description;
+	Assembler &_assembler;
 	TimeStepSolver &_timeStepSolver;
-	Provider &_composer;
+
 	double _duration;
 
 	double _startTime;

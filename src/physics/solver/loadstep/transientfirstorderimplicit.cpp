@@ -20,19 +20,24 @@ using namespace espreso;
 
 size_t TransientFirstOrderImplicit::loadStep = 0;
 
-TransientFirstOrderImplicit::TransientFirstOrderImplicit(TimeStepSolver &timeStepSolver, const TransientSolverConfiguration &configuration, double duration)
-: LoadStepSolver("TRANSIENT", timeStepSolver, duration), _configuration(configuration), _alpha(0), _nTimeStep(_configuration.time_step)
+TransientFirstOrderImplicit::TransientFirstOrderImplicit(Assembler &assembler, TimeStepSolver &timeStepSolver, TransientSolverConfiguration &configuration, double duration)
+: LoadStepSolver(assembler, timeStepSolver, duration), _configuration(configuration), _alpha(0), _nTimeStep(_configuration.time_step)
 {
 	if (configuration.time_step < 1e-7) {
 		ESINFO(GLOBAL_ERROR) << "Set time step for TRANSIENT solver greater than 1e-7.";
 	}
 
-	U = _composer.mesh.nodes->appendData(1, {});
-	dU = _composer.mesh.nodes->appendData(1, {});
-	V = _composer.mesh.nodes->appendData(1, {});
-	X = _composer.mesh.nodes->appendData(1, {});
-	Y = _composer.mesh.nodes->appendData(1, {});
-	dTK = _composer.mesh.nodes->appendData(1, {});
+//	U = _composer.mesh.nodes->appendData(1, {});
+//	dU = _composer.mesh.nodes->appendData(1, {});
+//	V = _composer.mesh.nodes->appendData(1, {});
+//	X = _composer.mesh.nodes->appendData(1, {});
+//	Y = _composer.mesh.nodes->appendData(1, {});
+//	dTK = _composer.mesh.nodes->appendData(1, {});
+}
+
+std::string TransientFirstOrderImplicit::name()
+{
+	return "TRANSIENT";
 }
 
 Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Matrices matrices)
@@ -48,16 +53,16 @@ Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Matrices matrices
 
 Matrices TransientFirstOrderImplicit::reassembleStructuralMatrices(Matrices matrices)
 {
-	_composer.updateStructuralMatrices(matrices);
+//	_assembler.updateStructuralMatrices(matrices);
 	if (matrices & (Matrices::K | Matrices::M)) {
-		_composer.keepK();
+//		_assembler.keepK();
 //		_composer.sum(
 //				_composer.instance.K,
 //				1 / (_alpha * time::shift), _composer.instance.M,
 //				"K += (1 / alpha * delta T) * M");
 	}
 
-	_composer.updateGluingMatrices(matrices);
+//	_assembler.updateGluingMatrices(matrices);
 
 	if (matrices & (Matrices::K | Matrices::M | Matrices::f)) {
 //		_composer.sum(
@@ -84,9 +89,9 @@ void TransientFirstOrderImplicit::initLoadStep()
 {
 	LoadStepSolver::initLoadStep();
 
-	_composer.setEmptyRegularizationCallback();
-	_composer.setRegularizationFromOrigKCallback();
-	_composer.setB0Callback();
+//	_assembler.setEmptyRegularizationCallback();
+//	_assembler.setRegularizationFromOrigKCallback();
+//	_assembler.setB0Callback();
 
 	switch (_configuration.method) {
 	case TransientSolverConfiguration::METHOD::CRANK_NICOLSON:
