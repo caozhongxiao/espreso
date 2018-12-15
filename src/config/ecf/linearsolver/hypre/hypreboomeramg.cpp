@@ -90,7 +90,7 @@ HYPREBoomerAMGConfiguration::HYPREBoomerAMGConfiguration()
 			.setdatatype({ ECFDataType::FLOAT }));
 
 	coarsening_type = COARSENING_TYPE::Falgout;
-	REGISTER(cycle_type, ECFMetaData()
+	REGISTER(coarsening_type, ECFMetaData()
 			.setdescription({ "Defines which parallel coarsening algorithm is used" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("CLJP").setdescription("CLJP-coarsening (a parallel coarsening algorithm using independent sets"))
