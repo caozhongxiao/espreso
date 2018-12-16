@@ -8,17 +8,6 @@
 
 using namespace espreso;
 
-MatrixType StructuralMechanicsControler::getMatrixType(size_t domain) const
-{
-	return MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-}
-
-
-MatrixType StructuralMechanicsControler::getMatrixType() const
-{
-	return MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-}
-
 std::vector<double>& StructuralMechanicsControler::getSolutionStore()
 {
 	return _displacement->data;

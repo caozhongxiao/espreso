@@ -34,10 +34,10 @@ struct DataHolder {
 	DataHolder();
 	~DataHolder();
 
-	void computeKernel(FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster = false) { computeKernelCallback(regularization, scSize, domain, ortogonalCluster); }
-	void computeKernelFromOrigK(FETI_REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster = false) { computeKernelFromOrigKCallback(regularization, scSize, domain, ortogonalCluster); }
-	void computeKernelsFromOrigK(FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster = false) { computeKernelsFromOrigKCallback(regularization, scSize, ortogonalCluster); }
-	void computeKernels(FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster = false) { computeKernelsCallback(regularization, scSize, ortogonalCluster); }
+	void computeKernel(FETI_REGULARIZATION regularization, int scSize, eslocal domain, bool ortogonalCluster = false) { computeKernelCallback(regularization, scSize, domain, ortogonalCluster); }
+	void computeKernelFromOrigK(FETI_REGULARIZATION regularization, int scSize, eslocal domain, bool ortogonalCluster = false) { computeKernelFromOrigKCallback(regularization, scSize, domain, ortogonalCluster); }
+	void computeKernelsFromOrigK(FETI_REGULARIZATION regularization, int scSize, bool ortogonalCluster = false) { computeKernelsFromOrigKCallback(regularization, scSize, ortogonalCluster); }
+	void computeKernels(FETI_REGULARIZATION regularization, int scSize, bool ortogonalCluster = false) { computeKernelsCallback(regularization, scSize, ortogonalCluster); }
 	void assembleB0(FETI_B0_TYPE type, const std::vector<SparseMatrix> &kernels) { assembleB0Callback(type, kernels); }
 
 	std::vector<SparseMatrix> origK, K, origKN1, origKN2, origRegMat, N1, N2, RegMat;

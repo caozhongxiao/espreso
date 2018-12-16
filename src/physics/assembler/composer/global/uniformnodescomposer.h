@@ -9,14 +9,14 @@ namespace espreso {
 class UniformNodesComposer: public GlobalComposer {
 
 public:
-	UniformNodesComposer(Controler &controler, int DOFs)
-	: GlobalComposer(controler), _DOFs(DOFs) {}
+	UniformNodesComposer(Controler &controler, GlobalProvider &provider, int DOFs)
+	: GlobalComposer(controler, provider), _DOFs(DOFs) {}
 
 	void initDOFs();
 	void initDirichlet();
 	void buildPatterns();
 
-	void assemble(Matrices matrices);
+	void assemble(Matrices matrices, const SolverParameters &parameters);
 
 	void setDirichlet();
 	void synchronize();

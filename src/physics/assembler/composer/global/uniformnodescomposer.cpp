@@ -2,6 +2,9 @@
 #include "uniformnodescomposer.h"
 
 #include "../../controllers/controller.h"
+#include "../../provider/global/globalprovider.h"
+
+#include "../../../dataholder.h"
 
 #include "../../../../globals/run.h"
 #include "../../../../basis/containers/serializededata.h"
@@ -19,7 +22,7 @@
 
 #include <algorithm>
 #include <numeric>
-#include "../../../dataholder.h"
+
 
 using namespace espreso;
 
@@ -164,8 +167,7 @@ void UniformNodesComposer::initDirichlet()
 void UniformNodesComposer::buildPatterns()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
-	// MatrixType mtype = _controler.getMatrixType();
-	MatrixType mtype = MatrixType::REAL_UNSYMMETRIC; // HYPRE not support symmetric systems
+	MatrixType mtype = _provider.getMatrixType();
 
 	_nDistribution = run::mesh->nodes->gatherUniqueNodeDistribution();
 	for (size_t n = 0; n < _nDistribution.size(); ++n) {
@@ -360,7 +362,7 @@ void UniformNodesComposer::buildPatterns()
 	run::data->M.front().type = 'S';
 }
 
-void UniformNodesComposer::assemble(Matrices matrices)
+void UniformNodesComposer::assemble(Matrices matrices, const SolverParameters &parameters)
 {
 	_controler.nextTime();
 
@@ -427,7 +429,7 @@ void UniformNodesComposer::assemble(Matrices matrices)
 		filler.begin = run::mesh->elements->distribution[t];
 		filler.end = run::mesh->elements->distribution[t + 1];
 
-		_controler.processElements(matrices, filler);
+		_controler.processElements(matrices, parameters, filler);
 
 		KReduction = 1; // _step.internalForceReduction;
 
@@ -435,7 +437,7 @@ void UniformNodesComposer::assemble(Matrices matrices)
 			if (run::mesh->boundaryRegions[r]->distribution.size()) {
 				filler.begin = run::mesh->boundaryRegions[r]->distribution[t];
 				filler.end = run::mesh->boundaryRegions[r]->distribution[t + 1];
-				_controler.processBoundary(matrices, r, filler);
+				_controler.processBoundary(matrices, parameters, r, filler);
 			}
 		}
 	}
@@ -710,11 +712,4 @@ void UniformNodesComposer::fillSolution()
 			solution.data() + run::data->K.front().haloRows,
 			run::data->primalSolution.front().data() + run::data->K.front().haloRows,
 			sizeof(double) * (run::data->K.front().rows - run::data->K.front().haloRows));
-
-//	Communication::serialize([&] () {
-//		std::cout << environment->MPIrank << "\n";
-//		std::cout << run::data->primalSolution.front();
-//		std::cout << solution;
-//		std::cout << " >> <<\n";
-//	});
 }

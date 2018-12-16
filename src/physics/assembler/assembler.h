@@ -7,25 +7,33 @@ namespace espreso {
 struct HeatTransferLoadStepConfiguration;
 struct FETISolverConfiguration;
 
+struct SolverParameters {
+	double timeIntegrationConstantK;
+	double timeIntegrationConstantM;
+	bool tangentMatrixCorrection;
+};
+
 struct Assembler {
 	virtual void init() =0;
 	virtual void nextTime() =0;
-	virtual void assemble(Matrices matrices) =0;
+	virtual void assemble(Matrices matrices, const SolverParameters &parameters) =0;
 	virtual void postProcess() =0;
 
 	virtual ~Assembler() {};
 };
 
-template <typename TController, typename TComposer>
-struct AssemblerInstance: public Assembler, public TController, public TComposer {
+template <typename TController, typename TComposer, typename TProvider>
+struct AssemblerInstance: public Assembler, public TController, public TComposer, public TProvider {
 
-	AssemblerInstance(HeatTransferLoadStepConfiguration &loadStep, int DOFs)
+	AssemblerInstance(HeatTransferLoadStepConfiguration &loadStep)
 	: TController(loadStep),
-	  TComposer(*this, DOFs) {}
+	  TComposer(*this, *this, 1),
+	  TProvider(loadStep) {}
 
-	AssemblerInstance(HeatTransferLoadStepConfiguration &loadStep, FETISolverConfiguration &solver, int DOFs)
+	AssemblerInstance(HeatTransferLoadStepConfiguration &loadStep, FETISolverConfiguration &solver)
 	: TController(loadStep),
-	  TComposer(*this, solver, DOFs) {}
+	  TComposer(*this, *this, solver, 1),
+	  TProvider(loadStep) {}
 
 	void init()
 	{
@@ -41,15 +49,17 @@ struct AssemblerInstance: public Assembler, public TController, public TComposer
 		TController::nextTime();
 	}
 
-	void assemble(Matrices matrices)
+	void assemble(Matrices matrices, const SolverParameters &parameters)
 	{
-		TComposer::assemble(matrices);
+		TComposer::assemble(matrices, parameters);
 		TComposer::setDirichlet();
 		TComposer::synchronize();
 	}
 
 	void postProcess()
 	{
+		TComposer::fillSolution();
+
 		TController::parametersChanged();
 		TController::processSolution();
 	}

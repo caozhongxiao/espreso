@@ -123,7 +123,7 @@ void HeatTransfer2DKernel::assembleMaterialMatrix(eslocal node, double *coordina
 	K(node, 3) += phase * TCT(1, 0);
 }
 
-void HeatTransfer2DKernel::processElement(Matrices matrices, const ElementIterator &iterator, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void HeatTransfer2DKernel::processElement(Matrices matrices, const SolverParameters &parameters, const ElementIterator &iterator, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	eslocal size = iterator.element->nodes;
 
@@ -371,7 +371,7 @@ void HeatTransfer2DKernel::processElement(Matrices matrices, const ElementIterat
 	}
 }
 
-void HeatTransfer2DKernel::processEdge(Matrices matrices, const BoundaryIterator &iterator, DenseMatrix &Ke, DenseMatrix &fe) const
+void HeatTransfer2DKernel::processEdge(Matrices matrices, const SolverParameters &parameters, const BoundaryIterator &iterator, DenseMatrix &Ke, DenseMatrix &fe) const
 {
 	if (!iterator.convection && !iterator.heatFlow && !iterator.heatFlux && !iterator.radiation) {
 		Ke.resize(0, 0);

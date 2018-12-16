@@ -177,7 +177,7 @@ void StructuralMechanics3DKernel::assembleMaterialMatrix(eslocal node, double *c
 	}
 }
 
-void StructuralMechanics3DKernel::processElement(Matrices matrices, const ElementIterator &iterator, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void StructuralMechanics3DKernel::processElement(Matrices matrices, const SolverParameters &parameters, const ElementIterator &iterator, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	eslocal size = iterator.element->nodes;
 
@@ -296,7 +296,7 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Elemen
 	}
 }
 
-void StructuralMechanics3DKernel::processFace(Matrices matrices, const BoundaryIterator &iterator, DenseMatrix &Ke, DenseMatrix &fe) const
+void StructuralMechanics3DKernel::processFace(Matrices matrices, const SolverParameters &parameters, const BoundaryIterator &iterator, DenseMatrix &Ke, DenseMatrix &fe) const
 {
 	if (iterator.normalPressure == NULL) {
 		Ke.resize(0, 0);
@@ -354,7 +354,7 @@ void StructuralMechanics3DKernel::processFace(Matrices matrices, const BoundaryI
 	}
 }
 
-void StructuralMechanics3DKernel::processEdge(Matrices matrices, const BoundaryIterator &iterator, DenseMatrix &Ke, DenseMatrix &fe) const
+void StructuralMechanics3DKernel::processEdge(Matrices matrices, const SolverParameters &parameters, const BoundaryIterator &iterator, DenseMatrix &Ke, DenseMatrix &fe) const
 {
 
 }

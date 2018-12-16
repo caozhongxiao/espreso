@@ -59,7 +59,7 @@ def build(ctx):
     ctx.program(
         source       = "ecfexport.cpp",
         target       = "ecfexport",
-        use          = "basis globals config wrappers",
+        use          = "basis globals config wrappers output mesh input",
         install_path = ctx.ROOT + "/bin"
     )
 

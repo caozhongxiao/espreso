@@ -1,5 +1,10 @@
 
+#include "uniformnodesfeticomposer.h"
+
 #include "../../controllers/controller.h"
+#include "../../provider/feti/fetiprovider.h"
+
+#include "../../../dataholder.h"
 
 #include "../../../../globals/run.h"
 #include "../../../../basis/containers/serializededata.h"
@@ -19,8 +24,6 @@
 
 #include <algorithm>
 #include <numeric>
-#include "../../../dataholder.h"
-#include "uniformnodesfeticomposer.h"
 
 using namespace espreso;
 
@@ -207,6 +210,7 @@ void UniformNodesFETIComposer::buildPatterns()
 {
 	buildKPattern();
 	buildB1Pattern();
+	buildB0Pattern();
 }
 
 void UniformNodesFETIComposer::buildKPattern()
@@ -231,7 +235,7 @@ void UniformNodesFETIComposer::buildKPattern()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (eslocal d = run::mesh->elements->domainDistribution[t]; d != run::mesh->elements->domainDistribution[t + 1]; ++d) {
-			MatrixType mtype = _controler.getMatrixType(d);
+			MatrixType mtype = _provider.getMatrixType(d);
 
 			auto ebegin = run::mesh->elements->procNodes->cbegin() + run::mesh->elements->elementsDistribution[d];
 			auto eend = run::mesh->elements->procNodes->cbegin() + run::mesh->elements->elementsDistribution[d + 1];
@@ -344,7 +348,7 @@ void UniformNodesFETIComposer::buildKPattern()
 			ROW.push_back(COL.size() + 1);
 
 			run::data->K[d].nnz = COL.size();
-			run::data->K[d].mtype = _controler.getMatrixType(d);
+			run::data->K[d].mtype = _provider.getMatrixType(d);
 			switch (run::data->K[d].mtype) {
 			case MatrixType::REAL_UNSYMMETRIC: run::data->K[d].type = 'G'; break;
 			default: run::data->K[d].type = 'S';
@@ -365,6 +369,13 @@ void UniformNodesFETIComposer::buildKPattern()
 void UniformNodesFETIComposer::buildB1Pattern()
 {
 	eslocal doffset = 0;
+
+	run::data->B1.resize(run::mesh->elements->ndomains);
+	run::data->B1c.resize(run::mesh->elements->ndomains);
+	run::data->B1subdomainsMap.resize(run::mesh->elements->ndomains);
+	run::data->B1duplicity.resize(run::mesh->elements->ndomains);
+	run::data->LB.resize(run::mesh->elements->ndomains);
+	run::data->block.resize(3);
 
 	auto dmap = _DOFMap->begin();
 	for (size_t i = 0, prev = 0; i < _dirichletMap.size(); prev = _dirichletMap[i++] / _DOFs) {
@@ -545,6 +556,7 @@ void UniformNodesFETIComposer::buildB1Pattern()
 
 		run::data->B1[d].nnz = run::data->B1[d].I_row_indices.size();
 		run::data->B1[d].rows = dsize + gsize;
+		run::data->B1[d].cols = _domainDOFsSize[d];
 		run::data->LB[d].resize(run::data->B1[d].nnz, -std::numeric_limits<double>::infinity());
 
 		run::data->B1subdomainsMap[d] = run::data->B1[d].I_row_indices;
@@ -558,10 +570,16 @@ void UniformNodesFETIComposer::buildB1Pattern()
 
 void UniformNodesFETIComposer::buildB0Pattern()
 {
+	run::data->B0.resize(run::mesh->elements->ndomains);
 
+	for (eslocal d = 0; d < run::mesh->elements->ndomains; ++d) {
+		run::data->B0[d].rows = 0;
+		run::data->B0[d].cols = 0;
+		run::data->B0[d].nnz = 0;
+	}
 }
 
-void UniformNodesFETIComposer::assemble(Matrices matrices)
+void UniformNodesFETIComposer::assemble(Matrices matrices, const SolverParameters &parameters)
 {
 	_controler.nextTime();
 
@@ -572,7 +590,7 @@ void UniformNodesFETIComposer::assemble(Matrices matrices)
 		double KReduction = 1, RHSReduction = 1; //_step.internalForceReduction;
 		Controler::InstanceFiller filler;
 
-		switch (_controler.getMatrixType(d)) {
+		switch (_provider.getMatrixType(d)) {
 		case MatrixType::REAL_UNSYMMETRIC:
 			filler.insert = [&] (size_t size) {
 				for (size_t r = 0; r < size; ++r, ++RHSIndex) {
@@ -619,7 +637,7 @@ void UniformNodesFETIComposer::assemble(Matrices matrices)
 		filler.begin = run::mesh->elements->elementsDistribution[d];
 		filler.end = run::mesh->elements->elementsDistribution[d + 1];
 
-		_controler.processElements(matrices, filler);
+		_controler.processElements(matrices, parameters, filler);
 
 		KReduction = 1; //_step.internalForceReduction;
 
@@ -628,7 +646,7 @@ void UniformNodesFETIComposer::assemble(Matrices matrices)
 				if (run::mesh->boundaryRegions[r]->eintervalsDistribution[d] < run::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]) {
 					filler.begin = run::mesh->boundaryRegions[r]->eintervals[run::mesh->boundaryRegions[r]->eintervalsDistribution[d]].begin;
 					filler.end = run::mesh->boundaryRegions[r]->eintervals[run::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1] - 1].end;
-					_controler.processBoundary(matrices, r, filler);
+					_controler.processBoundary(matrices, parameters, r, filler);
 				}
 			}
 		}

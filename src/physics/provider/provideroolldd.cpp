@@ -1,5 +1,7 @@
 
 
+#include "provideroolldd.h"
+
 #include "mpi.h"
 
 #include "../assembler/composer/composer.h"
@@ -16,12 +18,11 @@
 #include "../../output/result/visualization/separated/vtklegacy.h"
 
 #include "../../linearsolver/linearsolver.h"
-#include "provider.h"
 #include "../dataholder.h"
 
 using namespace espreso;
 
-std::string Provider::mNames(espreso::Matrices matrices, const std::string &prefix)
+std::string ProviderOOLLDD::mNames(espreso::Matrices matrices, const std::string &prefix)
 {
 	return
 	std::string(matrices & espreso::Matrices::K           ? prefix + "K "           : "") +
@@ -39,7 +40,7 @@ std::string Provider::mNames(espreso::Matrices matrices, const std::string &pref
 	std::string(matrices & espreso::Matrices::dual        ? prefix + "Dual "        : "");
 }
 
-Provider::Provider(DataHolder &instance, Composer &composer, Mesh &mesh, LinearSolver &linearSolver)
+ProviderOOLLDD::ProviderOOLLDD(DataHolder &instance, Composer &composer, Mesh &mesh, LinearSolver &linearSolver)
 : instance(instance), composer(composer), mesh(mesh), linearSolver(linearSolver), _timeStatistics(new TimeEval("Physics solver timing"))
 {
 	_timeStatistics->totalTime.startWithBarrier();
@@ -49,26 +50,26 @@ Provider::Provider(DataHolder &instance, Composer &composer, Mesh &mesh, LinearS
 	composer.buildPatterns();
 }
 
-void Provider::preprocessData()
+void ProviderOOLLDD::preprocessData()
 {
 	timeWrapper("pre-process data", [&] () {
 		composer.initData();
 	});
 }
 
-void Provider::updateStructuralMatrices(Matrices matrices)
+void ProviderOOLLDD::updateStructuralMatrices(Matrices matrices)
 {
 	Matrices updated = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R);
 
 	if (updated) {
 		timeWrapper("update " + mNames(updated), [&] () {
 //			physics.updateMatrix(updated);
-			composer.assemble(updated);
+//			composer.assemble(updated);
 		});
 	}
 }
 
-void Provider::updateGluingMatrices(Matrices matrices)
+void ProviderOOLLDD::updateGluingMatrices(Matrices matrices)
 {
 	timeWrapper("update " + mNames(Matrices::B1c), [&] () {
 		composer.setDirichlet();
@@ -79,7 +80,7 @@ void Provider::updateGluingMatrices(Matrices matrices)
 	});
 }
 
-void Provider::solve(Matrices updatedMatrices)
+void ProviderOOLLDD::solve(Matrices updatedMatrices)
 {
 	Matrices solverMatrices = Matrices::K | Matrices::M | Matrices::f | Matrices::B1;
 	storeWrapper(mNames(solverMatrices), solverMatrices);
@@ -97,21 +98,21 @@ void Provider::solve(Matrices updatedMatrices)
 	});
 }
 
-void Provider::nextTime()
+void ProviderOOLLDD::nextTime()
 {
 	timeWrapper("update time", [&] () {
 		composer.nextTime();
 	});
 }
 
-void Provider::parametersChanged()
+void ProviderOOLLDD::parametersChanged()
 {
 	timeWrapper("update parameters", [&] () {
 		composer.parametersChanged();
 	});
 }
 
-void Provider::processSolution()
+void ProviderOOLLDD::processSolution()
 {
 	timeWrapper("post-processing", [&] () {
 		composer.processSolution();
@@ -119,7 +120,7 @@ void Provider::processSolution()
 	storeWrapper(mNames(Matrices::primal), Matrices::primal);
 }
 
-void Provider::storeSolution()
+void ProviderOOLLDD::storeSolution()
 {
 	if (mesh.store->storeStep()) {
 		timeWrapper("store solution", [&] () {
@@ -128,7 +129,7 @@ void Provider::storeSolution()
 	}
 }
 
-Provider::~Provider()
+ProviderOOLLDD::~ProviderOOLLDD()
 {
 	delete _timeStatistics;
 	for (auto it = _timeEvents.begin(); it != _timeEvents.end(); ++it) {
@@ -136,7 +137,7 @@ Provider::~Provider()
 	}
 }
 
-void Provider::finalize()
+void ProviderOOLLDD::finalize()
 {
 	timeWrapper("finalize", [&] () {
 		linearSolver.finalize();
@@ -145,7 +146,7 @@ void Provider::finalize()
 	_timeStatistics->printStatsMPI();
 }
 
-void Provider::timeWrapper(const std::string &action, std::function<void(void)> operations)
+void ProviderOOLLDD::timeWrapper(const std::string &action, std::function<void(void)> operations)
 {
 	std::string fulldesc(/*physics.name() + ": " +*/ action);
 
@@ -174,7 +175,7 @@ static void storeData(TType &data, size_t domain, const std::string &name)
 }
 
 
-bool Provider::checkForStore(const std::string &name)
+bool ProviderOOLLDD::checkForStore(const std::string &name)
 {
 	if (environment->print_matrices) {
 		std::string fulldesc(/*physics.name() + ": store " +*/ name);
@@ -183,7 +184,7 @@ bool Provider::checkForStore(const std::string &name)
 	return environment->print_matrices;
 }
 
-void Provider::storeMatrices(Matrices matrices, size_t domain)
+void ProviderOOLLDD::storeMatrices(Matrices matrices, size_t domain)
 {
 	auto storeMatrix = [&] (std::vector<SparseMatrix> &data, Matrices matrix, const std::string &name) {
 		if (matrices & matrix) {
@@ -212,7 +213,7 @@ void Provider::storeMatrices(Matrices matrices, size_t domain)
 	storeVector(instance.dualSolution, Matrices::dual, "dualSolution");
 }
 
-void Provider::storeWrapper(const std::string &name, Matrices matrices)
+void ProviderOOLLDD::storeWrapper(const std::string &name, Matrices matrices)
 {
 	if (checkForStore(name)) {
 		for (size_t d = 0; d < mesh.elements->ndomains; d++) {
@@ -221,14 +222,14 @@ void Provider::storeWrapper(const std::string &name, Matrices matrices)
 	}
 }
 
-void Provider::storeWrapper(const std::string &name, Matrices matrices, size_t domain)
+void ProviderOOLLDD::storeWrapper(const std::string &name, Matrices matrices, size_t domain)
 {
 	if (checkForStore(name)) {
 		storeMatrices(matrices, domain);
 	}
 }
 
-void Provider::storeWrapper(const std::string &name, std::vector<SparseMatrix> &matrices)
+void ProviderOOLLDD::storeWrapper(const std::string &name, std::vector<SparseMatrix> &matrices)
 {
 	if (checkForStore(name)) {
 		for (size_t d = 0; d < matrices.size(); d++) {
@@ -237,7 +238,7 @@ void Provider::storeWrapper(const std::string &name, std::vector<SparseMatrix> &
 	}
 }
 
-void Provider::storeWrapper(const std::string &name, std::vector<std::vector<double> > &data)
+void ProviderOOLLDD::storeWrapper(const std::string &name, std::vector<std::vector<double> > &data)
 {
 	if (checkForStore(name)) {
 		for (size_t d = 0; d < data.size(); d++) {

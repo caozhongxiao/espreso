@@ -14,10 +14,6 @@ class StructuralMechanicsControler: public Controler
 {
 
 public:
-	MatrixType getMatrixType(size_t domain) const;
-
-	MatrixType getMatrixType() const;
-
 	std::vector<double>& getSolutionStore();
 
 protected:

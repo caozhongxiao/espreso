@@ -12,7 +12,7 @@ class Mesh;
 struct DataHolder;
 struct Physics;
 class LinearSolver;
-class Provider;
+class ProviderOOLLDD;
 class Composer;
 class Controler;
 class TimeStepSolver;
@@ -48,7 +48,7 @@ protected:
 
 	std::vector<DataHolder*> _instances;
 	std::vector<LinearSolver*> _linearSolvers;
-	std::vector<Provider*> _provider;
+	std::vector<ProviderOOLLDD*> _provider;
 	std::vector<Composer*> _composer;
 	std::vector<TimeStepSolver*> _timeStepSolvers;
 	std::vector<LoadStepSolver*> _loadStepSolvers;

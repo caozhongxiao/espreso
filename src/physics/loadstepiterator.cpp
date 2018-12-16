@@ -12,54 +12,20 @@
 #include "assembler/controllers/heattransfer2d.controller.h"
 #include "assembler/controllers/heattransfer3d.controller.h"
 #include "assembler/composer/global/uniformnodescomposer.h"
+#include "assembler/provider/global/heattransfer.globalprovider.h"
 #include "assembler/composer/feti/uniformnodesfeticomposer.h"
+#include "assembler/provider/feti/heattransfer.fetiprovider.h"
+
 
 #include "../globals/run.h"
 #include "../globals/time.h"
 #include "../basis/logging/logging.h"
 #include "../config/ecf/root.h"
 
-#include "../mesh/mesh.h"
-#include "../output/result/resultstore.h"
-
 #include "../linearsolver/multigrid/multigrid.h"
 #include "../solver/generic/FETISolver.h"
 
 using namespace espreso;
-
-
-//Composer* LoadStepIterator::getComposer(HeatTransferLoadStepConfiguration &configuration)
-//{
-//	switch () {
-//	case DIMENSION::D2:
-//		switch (_loadStep->solver) {
-//		case LoadStepConfiguration::SOLVER::FETI:
-//			_composer.push_back(new DomainsHeatTransfer2D(
-//							*mesh, *_dataHolder, configuration, configuration, propertiesConfiguration));
-//			break;
-//		case LoadStepConfiguration::SOLVER::MULTIGRID:
-//			_composer.push_back(new GlobalHeatTransfer2D(
-//							*mesh, *_dataHolder, configuration, configuration, propertiesConfiguration));
-//			break;
-//		}
-//
-//		break;
-//	case DIMENSION::D3:
-//		switch (_loadStep->solver) {
-//		case LoadStepConfiguration::SOLVER::FETI:
-//			_composer.push_back(new DomainsHeatTransfer3D(
-//							*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
-//			break;
-//		case LoadStepConfiguration::SOLVER::MULTIGRID:
-//			_composer.push_back(new GlobalHeatTransfer3D(
-//							*mesh, *_instances.front(), *step, configuration, configuration.load_steps_settings.at(1), propertiesConfiguration));
-//			break;
-//		}
-//		break;
-//	default:
-//		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: invalid dimension.";
-//	}
-//}
 
 static LinearSolver* getLinearSolver(LoadStepConfiguration &loadStep)
 {
@@ -78,9 +44,9 @@ static Assembler* getAssembler(HeatTransferLoadStepConfiguration &loadStep)
 {
 	switch (loadStep.solver) {
 	case LoadStepConfiguration::SOLVER::FETI:
-		return new AssemblerInstance<HeatTransfer2DControler, UniformNodesFETIComposer>(loadStep, loadStep.feti, 1);
+		return new AssemblerInstance<HeatTransfer2DControler, UniformNodesFETIComposer, HeatTransferFETIProvider>(loadStep, loadStep.feti);
 	case LoadStepConfiguration::SOLVER::MULTIGRID:
-		return new AssemblerInstance<HeatTransfer2DControler, UniformNodesComposer>(loadStep, 1);
+		return new AssemblerInstance<HeatTransfer2DControler, UniformNodesComposer, HeatTransferGlobalProvider>(loadStep);
 	default:
 		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
 		return NULL;
@@ -111,8 +77,8 @@ static LoadStepSolver* getLoadStepSolver(HeatTransferLoadStepConfiguration &load
 			return new PseudoTimeStepping(assembler, timeStepSolver, loadStep.nonlinear_solver, loadStep.duration_time);
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
-			return NULL;
 		}
+		return NULL;
 	case LoadStepConfiguration::TYPE::TRANSIENT:
 		return new TransientFirstOrderImplicit(assembler, timeStepSolver, loadStep.transient_solver, loadStep.duration_time);
 	default:
@@ -155,7 +121,7 @@ bool LoadStepIterator::next(HeatTransferConfiguration &configuration)
 		_loadStepSolver = getLoadStepSolver(configuration.load_steps_settings.at(time::step), *_assembler, *_timeStepSolver);
 
 		_assembler->init();
-		run::mesh->store->updateMesh();
+		run::storeMesh();
 		_loadStepSolver->run();
 	}
 

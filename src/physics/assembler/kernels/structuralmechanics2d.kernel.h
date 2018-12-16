@@ -11,6 +11,7 @@ struct Element;
 struct MaterialBaseConfiguration;
 struct MaterialConfiguration;
 enum Matrices: int;
+struct SolverParameters;
 
 struct StructuralMechanics2DKernel: public StructuralMechanicsKernel
 {
@@ -54,8 +55,8 @@ struct StructuralMechanics2DKernel: public StructuralMechanicsKernel
 
 	};
 
-	void processElement(Matrices matrices, const ElementIterator &iterator, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const;
-	void processEdge(Matrices matrices, const BoundaryIterator &iterator, DenseMatrix &Ke, DenseMatrix &fe) const;
+	void processElement(Matrices matrices, const SolverParameters &parameters, const ElementIterator &iterator, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const;
+	void processEdge(Matrices matrices, const SolverParameters &parameters, const BoundaryIterator &iterator, DenseMatrix &Ke, DenseMatrix &fe) const;
 
 	void processSolution(const SolutionIterator &iterator);
 

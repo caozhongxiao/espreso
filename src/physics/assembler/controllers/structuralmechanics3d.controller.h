@@ -26,8 +26,8 @@ public:
 	void nextTime();
 	void parametersChanged();
 
-	void processElements(Matrices matrices, InstanceFiller &filler);
-	void processBoundary(Matrices matrices, size_t rindex, InstanceFiller &filler);
+	void processElements(Matrices matrices, const SolverParameters &parameters, InstanceFiller &filler);
+	void processBoundary(Matrices matrices, const SolverParameters &parameters, size_t rindex, InstanceFiller &filler);
 
 protected:
 	StructuralMechanics3DKernel *_kernel;

@@ -1,6 +1,6 @@
 
-#ifndef SRC_PHYSICS_PROVIDER_PROVIDER_H_
-#define SRC_PHYSICS_PROVIDER_PROVIDER_H_
+#ifndef SRC_PHYSICS_PROVIDER_PROVIDEROOLLDD_H_
+#define SRC_PHYSICS_PROVIDER_PROVIDEROOLLDD_H_
 
 #include <functional>
 #include <vector>
@@ -20,11 +20,11 @@ enum class SumRestriction;
 
 class GeneralHeatTransfer2D;
 
-class Provider {
+class ProviderOOLLDD {
 
 public:
-	Provider(DataHolder &instance, Composer &composer, Mesh &mesh, LinearSolver &linearSolver);
-	virtual ~Provider();
+	ProviderOOLLDD(DataHolder &instance, Composer &composer, Mesh &mesh, LinearSolver &linearSolver);
+	virtual ~ProviderOOLLDD();
 
 	virtual void preprocessData();
 	virtual void updateStructuralMatrices(Matrices matrices);
@@ -87,4 +87,4 @@ protected:
 }
 
 
-#endif /* SRC_PHYSICS_PROVIDER_PROVIDER_H_ */
+#endif /* SRC_PHYSICS_PROVIDER_PROVIDEROOLLDD_H_ */

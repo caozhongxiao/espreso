@@ -239,7 +239,7 @@ void HeatTransfer2DControler::parametersChanged()
 	}
 }
 
-void HeatTransfer2DControler::processElements(Matrices matrices, InstanceFiller &filler)
+void HeatTransfer2DControler::processElements(Matrices matrices, const SolverParameters &parameters, InstanceFiller &filler)
 {
 	auto enodes = run::mesh->elements->procNodes->cbegin() + filler.begin;
 	HeatTransfer2DKernel::ElementIterator iterator;
@@ -255,7 +255,7 @@ void HeatTransfer2DControler::processElements(Matrices matrices, InstanceFiller 
 		iterator.element = run::mesh->elements->epointers->datatarray()[e];
 		iterator.material = run::mesh->materials[run::mesh->elements->material->datatarray()[e]];
 
-		_kernel->processElement(matrices, iterator, filler.Ke, filler.Me, filler.Re, filler.fe);
+		_kernel->processElement(matrices, parameters, iterator, filler.Ke, filler.Me, filler.Re, filler.fe);
 		filler.insert(enodes->size());
 
 		iterator.temperature += enodes->size();
@@ -266,7 +266,7 @@ void HeatTransfer2DControler::processElements(Matrices matrices, InstanceFiller 
 	}
 }
 
-void HeatTransfer2DControler::processBoundary(Matrices matrices, size_t rindex, InstanceFiller &filler)
+void HeatTransfer2DControler::processBoundary(Matrices matrices, const SolverParameters &parameters, size_t rindex, InstanceFiller &filler)
 {
 	if (run::mesh->boundaryRegions[rindex]->dimension != 1) {
 		return;
@@ -292,7 +292,7 @@ void HeatTransfer2DControler::processBoundary(Matrices matrices, size_t rindex, 
 	for (eslocal e = filler.begin; e < filler.end; ++e, ++enodes) {
 		iterator.element = run::mesh->boundaryRegions[rindex]->epointers->datatarray()[e];
 
-		_kernel->processEdge(matrices, iterator, filler.Ke, filler.fe);
+		_kernel->processEdge(matrices, parameters, iterator, filler.Ke, filler.fe);
 		filler.insert(enodes->size());
 
 		iterator.temperature += enodes->size();

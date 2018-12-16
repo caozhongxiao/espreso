@@ -13,6 +13,9 @@ struct run {
 	static ECFRoot *ecf;
 	static Mesh *mesh;
 	static DataHolder *data;
+
+	static void storeMesh();
+	static void storeSolution();
 };
 
 }

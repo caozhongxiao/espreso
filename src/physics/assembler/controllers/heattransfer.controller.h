@@ -15,11 +15,6 @@ class HeatTransferControler: public Controler
 {
 
 public:
-	MatrixType getMatrixType(size_t domain) const;
-	void analyticRegularization(size_t domain, bool ortogonalCluster);
-
-	MatrixType getMatrixType() const;
-
 	void dirichletIndices(std::vector<std::vector<eslocal> > &indices);
 	void dirichletValues(std::vector<double> &values);
 

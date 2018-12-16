@@ -11,6 +11,7 @@
 namespace espreso {
 
 enum class MatrixType;
+struct SolverParameters;
 struct Point;
 class Mesh;
 class ECFExpression;
@@ -33,10 +34,6 @@ public:
 		std::function<void(size_t)> insert;
 	};
 
-	virtual MatrixType getMatrixType(size_t domain) const = 0;
-	virtual void analyticRegularization(size_t domain, bool ortogonalCluster) = 0;
-
-	virtual MatrixType getMatrixType() const = 0;
 	virtual std::vector<double>& getSolutionStore() = 0;
 
 	virtual void initData() = 0;
@@ -48,8 +45,8 @@ public:
 	virtual void dirichletIndices(std::vector<std::vector<eslocal> > &indices) = 0;
 	virtual void dirichletValues(std::vector<double> &values) = 0;
 
-	virtual void processElements(Matrices matrices, InstanceFiller &filler) = 0;
-	virtual void processBoundary(Matrices matrices, size_t rindex, InstanceFiller &filler) = 0;
+	virtual void processElements(Matrices matrices, const SolverParameters &parameters, InstanceFiller &filler) = 0;
+	virtual void processBoundary(Matrices matrices, const SolverParameters &parameters, size_t rindex, InstanceFiller &filler) = 0;
 
 	virtual ~Controler() {}
 protected:

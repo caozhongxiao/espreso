@@ -22,7 +22,7 @@ using namespace espreso;
 
 
 CollectiveProvider::CollectiveProvider(DataHolder &instance, Composer &composer, Mesh &mesh, LinearSolver &linearSolver)
-: Provider(instance, composer, mesh, linearSolver)
+: ProviderOOLLDD(instance, composer, mesh, linearSolver)
 {
 
 }

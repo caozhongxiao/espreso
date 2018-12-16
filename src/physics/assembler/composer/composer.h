@@ -10,6 +10,7 @@ namespace espreso {
 
 class Controler;
 enum Matrices: int;
+struct SolverParameters;
 template <typename TEBoundaries, typename TEData> class serializededata;
 
 struct IJ {
@@ -43,7 +44,7 @@ public:
 
 	virtual void initData();
 	virtual void initDirichlet() = 0;
-	virtual void assemble(Matrices matrices) = 0;
+	virtual void assemble(Matrices matrices, const SolverParameters &parameters) = 0;
 
 	virtual void nextTime();
 	virtual void parametersChanged();

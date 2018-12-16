@@ -29,7 +29,7 @@ Matrices SteadyStateSolver::updateStructuralMatrices(Matrices matrices)
 
 Matrices SteadyStateSolver::reassembleStructuralMatrices(Matrices matrices)
 {
-	_assembler.assemble(matrices);
+	_assembler.assemble(matrices, {1, 0, false});
 	return matrices;
 }
 

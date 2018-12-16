@@ -286,7 +286,7 @@ void StructuralMechanics2DControler::parametersChanged()
 	}
 }
 
-void StructuralMechanics2DControler::processElements(Matrices matrices, InstanceFiller &filler)
+void StructuralMechanics2DControler::processElements(Matrices matrices, const SolverParameters &parameters, InstanceFiller &filler)
 {
 	auto enodes = run::mesh->elements->procNodes->cbegin() + filler.begin;
 	StructuralMechanics2DKernel::ElementIterator iterator;
@@ -300,7 +300,7 @@ void StructuralMechanics2DControler::processElements(Matrices matrices, Instance
 		iterator.element = run::mesh->elements->epointers->datatarray()[e];
 		iterator.material = run::mesh->materials[run::mesh->elements->material->datatarray()[e]];
 
-		_kernel->processElement(matrices, iterator, filler.Ke, filler.Me, filler.Re, filler.fe);
+		_kernel->processElement(matrices, parameters, iterator, filler.Ke, filler.Me, filler.Re, filler.fe);
 		filler.insert(enodes->size());
 
 		iterator.temperature += enodes->size();
@@ -309,7 +309,7 @@ void StructuralMechanics2DControler::processElements(Matrices matrices, Instance
 	}
 }
 
-void StructuralMechanics2DControler::processBoundary(Matrices matrices, size_t rindex, InstanceFiller &filler)
+void StructuralMechanics2DControler::processBoundary(Matrices matrices, const SolverParameters &parameters, size_t rindex, InstanceFiller &filler)
 {
 	if (run::mesh->boundaryRegions[rindex]->dimension != 1) {
 		return;
@@ -327,7 +327,7 @@ void StructuralMechanics2DControler::processBoundary(Matrices matrices, size_t r
 	for (eslocal e = filler.begin; e < filler.end; ++e, ++enodes) {
 		iterator.element = run::mesh->boundaryRegions[rindex]->epointers->datatarray()[e];
 
-		_kernel->processEdge(matrices, iterator, filler.Ke, filler.fe);
+		_kernel->processEdge(matrices, parameters, iterator, filler.Ke, filler.fe);
 		filler.insert(enodes->size());
 
 		iterator.coordinates += enodes->size() * 2;

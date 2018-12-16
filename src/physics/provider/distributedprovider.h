@@ -2,11 +2,11 @@
 #ifndef SRC_PHYSICS_PROVIDER_DISTRIBUTEDPROVIDER_H_
 #define SRC_PHYSICS_PROVIDER_DISTRIBUTEDPROVIDER_H_
 
-#include "provider.h"
+#include "provideroolldd.h"
 
 namespace espreso {
 
-class DistributedProvider: public Provider {
+class DistributedProvider: public ProviderOOLLDD {
 
 public:
 	DistributedProvider(DataHolder &instance, Composer &composer, Mesh &mesh, LinearSolver &linearSolver);

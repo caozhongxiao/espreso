@@ -8,8 +8,6 @@
 #include "../../../linearsolver/linearsolver.h"
 
 #include "../../../globals/run.h"
-#include "../../../mesh/mesh.h"
-#include "../../../output/result/resultstore.h"
 
 using namespace espreso;
 
@@ -29,7 +27,7 @@ void LinearTimeStep::solve(LoadStepSolver &loadStepSolver)
 	_solver.update(loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::B1));
 	_solver.solve();
 	_assembler.postProcess();
-	run::mesh->store->updateSolution();
+	run::storeSolution();
 }
 
 
