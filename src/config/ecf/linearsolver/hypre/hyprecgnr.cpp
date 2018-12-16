@@ -27,14 +27,10 @@ HYPRECGNRConfiguration::HYPRECGNRConfiguration()
 			.setdescription({ "Preconditioner" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("BoomerAMG").setdescription("Set BoomerAMG as a preconditioner"))
-			.addoption(ECFOption().setname("Parasalis").setdescription("Set Parasalis as a preconditioner"))
 			.addoption(ECFOption().setname("NONE").setdescription("Solver without preconditioner")));
 
 	REGISTER(boomeramg, ECFMetaData()
 			.setdescription({ "BoomerAMG settings." }));
-
-	REGISTER(parasalis, ECFMetaData()
-			.setdescription({ "Parasalis settings." }));
 
 	solver_info = SOLVER_INFO::SOLVE_INFO;
 	REGISTER(solver_info, ECFMetaData()
