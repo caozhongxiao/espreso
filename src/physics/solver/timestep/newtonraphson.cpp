@@ -1,14 +1,14 @@
 
-#include "../../solver/timestep/newtonraphson.h"
+#include "newtonraphson.h"
+#include "../loadstep/loadstepsolver.h"
 
+#include "../../../globals/time.h"
 #include "../../../config/ecf/physics/physicssolver/nonlinearsolver.h"
 #include "../../../basis/logging/logging.h"
+
 #include "../../../linearsolver/linearsolver.h"
 
 #include <cmath>
-
-#include "../../../globals/time.h"
-#include "../../solver/loadstep/loadstepsolver.h"
 
 using namespace espreso;
 

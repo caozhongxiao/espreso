@@ -1,6 +1,6 @@
 
-#include "../../solver/timestep/linear.h"
-#include "../../solver/loadstep/loadstepsolver.h"
+#include "linear.h"
+#include "../loadstep/loadstepsolver.h"
 
 #include "../../dataholder.h"
 #include "../../assembler/assembler.h"
@@ -24,7 +24,7 @@ std::string LinearTimeStep::name()
 
 void LinearTimeStep::solve(LoadStepSolver &loadStepSolver)
 {
-	_solver.update(loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::B1));
+	_solver.update(loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::Dirichlet));
 	_solver.solve();
 	_assembler.postProcess();
 	run::storeSolution();

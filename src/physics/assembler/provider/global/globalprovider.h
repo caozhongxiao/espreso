@@ -13,6 +13,7 @@ class GlobalProvider: public Provider {
 public:
 	virtual MatrixType getMatrixType() const =0;
 
+	bool needOriginalStiffnessMatrices() { return false; }
 };
 
 }

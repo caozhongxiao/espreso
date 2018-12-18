@@ -4,6 +4,7 @@
 #include "../../../../globals/run.h"
 #include "../../../../basis/logging/logging.h"
 #include "../../../../config/ecf/solver/feti.h"
+#include "../../../../config/ecf/physics/physicssolver/loadstep.h"
 
 #include "../../../dataholder.h"
 
@@ -14,6 +15,17 @@
 
 
 using namespace espreso;
+
+FETIProvider::FETIProvider(LoadStepConfiguration &configuration)
+: _configuration(configuration)
+{
+
+}
+
+bool FETIProvider::needOriginalStiffnessMatrices()
+{
+	return _configuration.type == LoadStepConfiguration::TYPE::TRANSIENT;
+}
 
 void FETIProvider::makeStiffnessMatricesRegular(FETI_REGULARIZATION regularization, int scSize, bool ortogonalCluster)
 {

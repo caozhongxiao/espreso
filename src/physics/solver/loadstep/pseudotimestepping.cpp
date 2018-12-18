@@ -1,12 +1,12 @@
 
-#include "../../solver/loadstep/pseudotimestepping.h"
+#include "pseudotimestepping.h"
+#include "../timestep/timestepsolver.h"
 
-#include "../../../config/ecf/physics/physicssolver/nonlinearsolver.h"
-#include "../../../globals/time.h"
 #include "../../dataholder.h"
-#include "../../provider/provideroolldd.h"
-#include "../../solver/timestep/timestepsolver.h"
+#include "../../assembler/assembler.h"
 
+#include "../../../globals/time.h"
+#include "../../../config/ecf/physics/physicssolver/nonlinearsolver.h"
 
 using namespace espreso;
 
@@ -24,19 +24,13 @@ std::string PseudoTimeStepping::name()
 
 Matrices PseudoTimeStepping::updateStructuralMatrices(Matrices matrices)
 {
-	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::f | Matrices::R | Matrices::B1 | Matrices::B1c | Matrices::B1duplicity);
+	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::f | Matrices::R | Matrices::Dirichlet);
 
-//	if (_assembler.step.iteration) {
-//		updatedMatrices &= (Matrices::f | Matrices::B1c | Matrices::R);
-//	}
+	if (time::iteration) {
+		updatedMatrices &= (Matrices::f | Matrices::Dirichlet | Matrices::R);
+	}
 
-	return reassembleStructuralMatrices(updatedMatrices);
-}
-
-Matrices PseudoTimeStepping::reassembleStructuralMatrices(Matrices matrices)
-{
-//	_assembler.updateStructuralMatrices(matrices);
-//	_assembler.updateGluingMatrices(matrices);
+	_assembler.assemble(matrices);
 	return matrices;
 }
 

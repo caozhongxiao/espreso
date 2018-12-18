@@ -76,12 +76,12 @@ void FETISolver::update(Matrices matrices)
 
 	} else {
 
-		if (matrices & Matrices::B1) { // N is kernel of matrix K
+		if (matrices & Matrices::Gluing) { // N is kernel of matrix K
 			// updateGGt();
 			setup_CreateG_GGt_CompressG();
 		}
 
-		if (matrices & (Matrices::B1c | Matrices::f)) {
+		if (matrices & (Matrices::Dirichlet | Matrices::f)) {
 			// update dual RHS
 			//for f:
 			// - updated by solve
@@ -90,7 +90,7 @@ void FETISolver::update(Matrices matrices)
 			setup_SetDirichletBoundaryConditions();
 		}
 
-		if (matrices & Matrices::B0) {
+		if (matrices & Matrices::K) {
 			// HFETI preprocessing
 			if (configuration.method == FETI_METHOD::HYBRID_FETI) {
 				instance->assembleB0(configuration.B0_type, instance->N1);
@@ -98,7 +98,7 @@ void FETISolver::update(Matrices matrices)
 			setup_HTFETI();
 		}
 
-		if (matrices & Matrices::B1duplicity) {
+		if (matrices & Matrices::K) {
 			// update duplicity vector
 			#pragma omp parallel for
 			for (size_t d = 0; d < cluster->domains.size(); d++) {

@@ -1,8 +1,8 @@
 
-#ifndef SRC_ASSEMBLER_PHYSICSSOLVER_TIMESTEP_LINEAR_H_
-#define SRC_ASSEMBLER_PHYSICSSOLVER_TIMESTEP_LINEAR_H_
+#ifndef SRC_PHYSICS_SOLVER_TIMESTEP_LINEAR_H_
+#define SRC_PHYSICS_SOLVER_TIMESTEP_LINEAR_H_
 
-#include "../../solver/timestep/timestepsolver.h"
+#include "timestepsolver.h"
 
 namespace espreso {
 
@@ -18,4 +18,4 @@ public:
 
 }
 
-#endif /* SRC_ASSEMBLER_PHYSICSSOLVER_TIMESTEP_LINEAR_H_ */
+#endif /* SRC_PHYSICS_SOLVER_TIMESTEP_LINEAR_H_ */

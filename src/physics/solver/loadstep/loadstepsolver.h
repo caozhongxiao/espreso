@@ -1,6 +1,6 @@
 
-#ifndef SRC_ASSEMBLER_PHYSICSSOLVER_LOADSTEP_LOADSTEPSOLVER_H_
-#define SRC_ASSEMBLER_PHYSICSSOLVER_LOADSTEP_LOADSTEPSOLVER_H_
+#ifndef SRC_PHYSICS_SOLVER_LOADSTEP_LOADSTEPSOLVER_H_
+#define SRC_PHYSICS_SOLVER_LOADSTEP_LOADSTEPSOLVER_H_
 
 #include <string>
 
@@ -23,7 +23,6 @@ public:
 	double duration() const;
 
 	virtual Matrices updateStructuralMatrices(Matrices matrices) =0;
-	virtual Matrices reassembleStructuralMatrices(Matrices matrices) =0;
 
 protected:
 	virtual void initLoadStep();
@@ -44,4 +43,4 @@ protected:
 }
 
 
-#endif /* SRC_ASSEMBLER_PHYSICSSOLVER_LOADSTEP_LOADSTEPSOLVER_H_ */
+#endif /* SRC_PHYSICS_SOLVER_LOADSTEP_LOADSTEPSOLVER_H_ */

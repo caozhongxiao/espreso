@@ -1,8 +1,8 @@
 
-#ifndef SRC_ASSEMBLER_PHYSICSSOLVER_LOADSTEP_STEADYSTATE_H_
-#define SRC_ASSEMBLER_PHYSICSSOLVER_LOADSTEP_STEADYSTATE_H_
+#ifndef SRC_PHYSICS_SOLVER_LOADSTEP_STEADYSTATE_H_
+#define SRC_PHYSICS_SOLVER_LOADSTEP_STEADYSTATE_H_
 
-#include "../../solver/loadstep/loadstepsolver.h"
+#include "loadstepsolver.h"
 
 namespace espreso {
 
@@ -14,7 +14,6 @@ public:
 	std::string name();
 
 	Matrices updateStructuralMatrices(Matrices matrices);
-	Matrices reassembleStructuralMatrices(Matrices matrices);
 
 protected:
 	void runNextTimeStep();
@@ -25,4 +24,4 @@ protected:
 
 
 
-#endif /* SRC_ASSEMBLER_PHYSICSSOLVER_LOADSTEP_STEADYSTATE_H_ */
+#endif /* SRC_PHYSICS_SOLVER_LOADSTEP_STEADYSTATE_H_ */

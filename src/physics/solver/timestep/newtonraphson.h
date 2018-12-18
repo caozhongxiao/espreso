@@ -1,9 +1,9 @@
 
-#ifndef SRC_ASSEMBLER_PHYSICSSOLVER_TIMESTEP_NEWTONRAPHSON_H_
-#define SRC_ASSEMBLER_PHYSICSSOLVER_TIMESTEP_NEWTONRAPHSON_H_
+#ifndef SRC_PHYSICS_SOLVER_TIMESTEP_NEWTONRAPHSON_H_
+#define SRC_PHYSICS_SOLVER_TIMESTEP_NEWTONRAPHSON_H_
 
+#include "timestepsolver.h"
 #include <vector>
-#include "../../solver/timestep/timestepsolver.h"
 
 namespace espreso {
 
@@ -29,4 +29,4 @@ protected:
 
 
 
-#endif /* SRC_ASSEMBLER_PHYSICSSOLVER_TIMESTEP_NEWTONRAPHSON_H_ */
+#endif /* SRC_PHYSICS_SOLVER_TIMESTEP_NEWTONRAPHSON_H_ */

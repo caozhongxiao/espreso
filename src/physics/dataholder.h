@@ -4,7 +4,6 @@
 
 #include <cstddef>
 #include <vector>
-#include <fstream>
 #include <functional>
 
 namespace espreso {
@@ -21,18 +20,13 @@ enum Matrices : int {
 	M           = 1 << 2, // Mass matrix (only in assembler)
 	R           = 1 << 3, // Residual forces (only in assembler)
 	f           = 1 << 4, // Right-hand side
-	B0          = 1 << 5, // Hybrid Total FETI gluing
-	B1          = 1 << 6, // Total FETI gluing
-	B1c         = 1 << 7, // Simple B1c
-	B1duplicity = 1 << 8, // Lambdas duplicity
-	primal      = 1 << 9, // Primal solution
-	dual        = 1 << 10  // Dual solution (B1 * Lambdas)
+	Dirichlet   = 1 << 5, // Dirichlet boundary condition
+	Gluing      = 1 << 6, // Contact boundary conditions
 };
 
 struct DataHolder {
 
 	DataHolder();
-	~DataHolder();
 
 	void computeKernel(FETI_REGULARIZATION regularization, int scSize, eslocal domain, bool ortogonalCluster = false) { computeKernelCallback(regularization, scSize, domain, ortogonalCluster); }
 	void computeKernelFromOrigK(FETI_REGULARIZATION regularization, int scSize, eslocal domain, bool ortogonalCluster = false) { computeKernelFromOrigKCallback(regularization, scSize, domain, ortogonalCluster); }

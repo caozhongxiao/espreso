@@ -43,16 +43,10 @@ def configure(ctx):
 
 def build(ctx):
 
-    ctx.objects(
-        source = ctx.path.ant_glob('factory/**/*.cpp'),
-        target = "factory",
-        use    = "espreso_includes"
-    )
-
     ctx.program(
-        source       = ("main.cpp", "espreso.cpp"),
+        source       = "espreso.cpp",
         target       = "espreso",
-        use          = "basis globals config wrappers input mesh output bem assembler factory feti multigrid",
+        use          = "basis globals config wrappers input mesh output bem assembler feti multigrid",
         install_path = ctx.ROOT + "/bin"
     )
 
@@ -74,7 +68,7 @@ def build(ctx):
     ctx.program(
         source       = "apitest.cpp",
         target       = "apitest",
-        use          = "feti4i factory",
+        use          = "feti4i",
         install_path = ctx.ROOT + "/bin"
     )
 

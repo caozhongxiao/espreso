@@ -1,6 +1,4 @@
 
-#include "espreso.h"
-
 #include "../basis/logging/logging.h"
 
 #include "../config/ecf/root.h"
@@ -14,15 +12,17 @@
 #include "../input/input.h"
 #include "../output/result/resultstore.h"
 
-int espreso::start(int *argc, char ***argv)
+using namespace espreso;
+
+int main(int argc, char **argv)
 {
 	int provided;
-	MPI_Init_thread(argc, argv, MPI_THREAD_MULTIPLE, &provided);
+	MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
 
 	system::setSignals();
 	env::setMPI();
 
-	run::ecf = new ECFRoot(argc, argv);
+	run::ecf = new ECFRoot(&argc, &argv);
 	run::mesh = new Mesh();
 	run::mesh->store = ResultStore::createAsynchronizedStore(*run::mesh, run::ecf->output);
 
@@ -45,7 +45,3 @@ int espreso::start(int *argc, char ***argv)
 	MPI_Finalize();
 	return 0;
 }
-
-
-
-

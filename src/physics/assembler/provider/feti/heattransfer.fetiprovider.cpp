@@ -17,7 +17,7 @@ using namespace espreso;
 
 
 HeatTransferFETIProvider::HeatTransferFETIProvider(HeatTransferLoadStepConfiguration &configuration)
-: _configuration(configuration)
+: FETIProvider(configuration), _configuration(configuration)
 {
 	run::data->N1.clear();
 	run::data->N2.clear();

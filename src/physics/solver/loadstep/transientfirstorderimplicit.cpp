@@ -1,24 +1,20 @@
 
-#include "../../solver/loadstep/transientfirstorderimplicit.h"
+#include "transientfirstorderimplicit.h"
+#include "../timestep/timestepsolver.h"
+
+#include "../../dataholder.h"
+#include "../../assembler/assembler.h"
+
+#include "../../../globals/run.h"
+#include "../../../globals/time.h"
 
 #include "../../../mesh/mesh.h"
 #include "../../../mesh/store/nodestore.h"
 
 #include "../../../basis/logging/logging.h"
 #include "../../../config/ecf/physics/physicssolver/transientsolver.h"
-#include "../../../config/ecf/environment.h"
-
-#include <iostream>
-#include <cmath>
-
-#include "../../../globals/time.h"
-#include "../../dataholder.h"
-#include "../../provider/provideroolldd.h"
-#include "../../solver/timestep/timestepsolver.h"
 
 using namespace espreso;
-
-size_t TransientFirstOrderImplicit::loadStep = 0;
 
 TransientFirstOrderImplicit::TransientFirstOrderImplicit(Assembler &assembler, TimeStepSolver &timeStepSolver, TransientSolverConfiguration &configuration, double duration)
 : LoadStepSolver(assembler, timeStepSolver, duration), _configuration(configuration), _alpha(0), _nTimeStep(_configuration.time_step)
@@ -27,12 +23,12 @@ TransientFirstOrderImplicit::TransientFirstOrderImplicit(Assembler &assembler, T
 		ESINFO(GLOBAL_ERROR) << "Set time step for TRANSIENT solver greater than 1e-7.";
 	}
 
-//	U = _composer.mesh.nodes->appendData(1, {});
-//	dU = _composer.mesh.nodes->appendData(1, {});
-//	V = _composer.mesh.nodes->appendData(1, {});
-//	X = _composer.mesh.nodes->appendData(1, {});
-//	Y = _composer.mesh.nodes->appendData(1, {});
-//	dTK = _composer.mesh.nodes->appendData(1, {});
+	U = run::mesh->nodes->appendData(1, {});
+	dU = run::mesh->nodes->appendData(1, {});
+	V = run::mesh->nodes->appendData(1, {});
+	X = run::mesh->nodes->appendData(1, {});
+	Y = run::mesh->nodes->appendData(1, {});
+	dTK = run::mesh->nodes->appendData(1, {});
 }
 
 std::string TransientFirstOrderImplicit::name()
@@ -42,18 +38,13 @@ std::string TransientFirstOrderImplicit::name()
 
 Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Matrices matrices)
 {
-	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R | Matrices::B1);
+	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R | Matrices::Dirichlet);
 
-//	if (_composer.step.substep) {
-//		updatedMatrices &= (Matrices::f | Matrices::B1c);
-//	}
+	if (time::substep) {
+		updatedMatrices &= (Matrices::f | Matrices::Dirichlet);
+	}
 
-	return reassembleStructuralMatrices(updatedMatrices);
-}
-
-Matrices TransientFirstOrderImplicit::reassembleStructuralMatrices(Matrices matrices)
-{
-//	_assembler.updateStructuralMatrices(matrices);
+	_assembler.assemble(updatedMatrices);
 	if (matrices & (Matrices::K | Matrices::M)) {
 //		_assembler.keepK();
 //		_composer.sum(
@@ -62,7 +53,7 @@ Matrices TransientFirstOrderImplicit::reassembleStructuralMatrices(Matrices matr
 //				"K += (1 / alpha * delta T) * M");
 	}
 
-//	_assembler.updateGluingMatrices(matrices);
+//	_assembler.updateGluingMatrices(updatedMatrices);
 
 	if (matrices & (Matrices::K | Matrices::M | Matrices::f)) {
 //		_composer.sum(
@@ -89,10 +80,6 @@ void TransientFirstOrderImplicit::initLoadStep()
 {
 	LoadStepSolver::initLoadStep();
 
-//	_assembler.setEmptyRegularizationCallback();
-//	_assembler.setRegularizationFromOrigKCallback();
-//	_assembler.setB0Callback();
-
 	switch (_configuration.method) {
 	case TransientSolverConfiguration::METHOD::CRANK_NICOLSON:
 		_alpha = 0.5;
@@ -113,12 +100,6 @@ void TransientFirstOrderImplicit::initLoadStep()
 		ESINFO(GLOBAL_ERROR) << "Not supported first order implicit solver method.";
 	}
 
-	if (loadStep + 1 != time::step) {
-//		for (size_t i = 0; i < V->decomposedData->size(); i++) {
-//			std::fill((*V->decomposedData)[i].begin(), (*V->decomposedData)[i].end(), 0);
-//		}
-	}
-	loadStep = time::step;
 //	(*U->decomposedData) = _composer.instance.primalSolution;
 }
 
@@ -135,9 +116,9 @@ void TransientFirstOrderImplicit::runNextTimeStep()
 
 void TransientFirstOrderImplicit::processTimeStep()
 {
-//	_composer.step.internalForceReduction = 1;
-//	_composer.step.timeIntegrationConstantK = 1;
-//	_composer.step.timeIntegrationConstantM = 1 / (_alpha * _composer.step.timeStep);
+	_assembler.parameters.internalForceReduction = 1;
+	_assembler.parameters.timeIntegrationConstantK = 1;
+	_assembler.parameters.timeIntegrationConstantM = 1 / (_alpha * time::shift);
 
 	_timeStepSolver.solve(*this);
 

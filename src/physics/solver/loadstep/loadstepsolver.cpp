@@ -1,9 +1,9 @@
 
-#include "../../solver/loadstep/loadstepsolver.h"
+#include "loadstepsolver.h"
+#include "../timestep/timestepsolver.h"
 
-#include "../../../basis/logging/logging.h"
 #include "../../../globals/time.h"
-#include "../../solver/timestep/timestepsolver.h"
+#include "../../../basis/logging/logging.h"
 
 using namespace espreso;
 

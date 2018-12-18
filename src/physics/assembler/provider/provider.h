@@ -8,6 +8,8 @@ class Provider {
 
 public:
 	virtual ~Provider() {}
+
+	virtual bool needOriginalStiffnessMatrices() =0;
 };
 
 
