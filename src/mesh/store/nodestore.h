@@ -30,16 +30,6 @@ struct NodeData {
 	NodeData(int dimension, const std::vector<std::string> &names);
 };
 
-struct TNeighborOffset {
-	eslocal process, offset;
-};
-
-inline std::ostream& operator<<(std::ostream& os, const TNeighborOffset &neighborOffset)
-{
-	os << neighborOffset.process << " " << neighborOffset.offset;
-	return os;
-}
-
 struct NodeStore {
 	friend class Mesh;
 
@@ -69,9 +59,7 @@ struct NodeStore {
 	std::vector<eslocal> externalIntervals;
 	std::vector<ProcessInterval> pintervals;
 	std::vector<std::vector<DomainInterval> > dintervals;
-	std::vector<std::vector<GluingInterval> > gintervals;
 	serializededata<eslocal, eslocal>* idomains;
-	serializededata<eslocal, TNeighborOffset>* ineighborOffsets;
 	serializededata<eslocal, int>* iranks;
 
 	Point center;

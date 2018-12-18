@@ -27,7 +27,6 @@ NodeStore::NodeStore()
   ranks(NULL),
 
   idomains(NULL),
-  ineighborOffsets(NULL),
   iranks(NULL)
 {
 
@@ -166,7 +165,6 @@ NodeStore::~NodeStore()
 	if (ranks == NULL) { delete ranks; }
 
 	if (idomains == NULL) { delete idomains; }
-	if (ineighborOffsets == NULL) { delete ineighborOffsets; }
 	if (iranks == NULL) { delete iranks; }
 }
 
@@ -181,7 +179,6 @@ void NodeStore::store(const std::string &file)
 	Store::storedata(os, "ranks", ranks);
 
 	Store::storedata(os, "idomains", idomains);
-	Store::storedata(os, "ineighborOffsets", ineighborOffsets);
 	Store::storedata(os, "iranks", iranks);
 }
 

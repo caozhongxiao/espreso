@@ -226,7 +226,6 @@ void MeshPreprocessing::arrangeNodes()
 	}
 
 	_mesh->nodes->dintervals.resize(_mesh->elements->ndomains);
-	_mesh->nodes->gintervals.resize(_mesh->elements->ndomains);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (eslocal d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
@@ -236,7 +235,6 @@ void MeshPreprocessing::arrangeNodes()
 				auto iit = std::lower_bound(domains->begin(), domains->end(), _mesh->elements->firstDomain + d);
 				if (iit != domains->end() && *iit == _mesh->elements->firstDomain + d) {
 					_mesh->nodes->dintervals[d].push_back(DomainInterval(_mesh->nodes->pintervals[i].begin, _mesh->nodes->pintervals[i].end, i, doffset));
-					_mesh->nodes->gintervals[d].push_back(GluingInterval(_mesh->nodes->dintervals[d].back(), iit - domains->begin(), domains->size()));
 					doffset += _mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin;
 				}
 			}
@@ -274,32 +272,6 @@ void MeshPreprocessing::arrangeNodes()
 	std::vector<eslocal> uniqueNodeOffsets = _mesh->nodes->gatherUniqueNodeDistribution();
 	_mesh->nodes->uniqueOffset = uniqueNodeOffsets[environment->MPIrank];
 	_mesh->nodes->uniqueTotalSize = uniqueNodeOffsets.back();
-
-	goffset = _mesh->nodes->uniqueOffset;
-	std::vector<eslocal> neighDistribution({ 0 });
-	std::vector<TNeighborOffset> neighData;
-	ranks = _mesh->nodes->iranks->cbegin();
-	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++ranks) {
-		if (_mesh->nodes->pintervals[i].sourceProcess == environment->MPIrank) {
-			_mesh->nodes->pintervals[i].globalOffset = goffset;
-			goffset += _mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin;
-		} else {
-			int nindex = n2i(_mesh->nodes->pintervals[i].sourceProcess);
-			_mesh->nodes->pintervals[i].globalOffset = rOffset[nindex][goffsets[nindex]++];
-			_mesh->nodes->pintervals[i].globalOffset += uniqueNodeOffsets[_mesh->nodes->pintervals[i].sourceProcess];
-		}
-
-		if (ranks->front() == environment->MPIrank) {
-			for (auto r = ranks->begin(), prev = r++; r != ranks->end(); prev = r++) {
-				if (*prev != *r) {
-					neighData.push_back({*r, roffsets[*r]});
-					roffsets[*r] += _mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin;
-				}
-			}
-		}
-		neighDistribution.push_back(neighData.size());
-	}
-	_mesh->nodes->ineighborOffsets = new serializededata<eslocal, TNeighborOffset>(neighDistribution, neighData);
 	_mesh->nodes->permute(finalpermutation);
 
 	auto r2i = [ & ] (int rank) {
