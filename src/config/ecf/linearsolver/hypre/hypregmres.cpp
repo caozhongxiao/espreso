@@ -33,6 +33,7 @@ HYPREGMRESConfiguration::HYPREGMRESConfiguration()
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("BoomerAMG").setdescription("Set BoomerAMG as a preconditioner"))
 			.addoption(ECFOption().setname("ParaSails").setdescription("Set ParaSails as a preconditioner"))
+			.addoption(ECFOption().setname("Euclid").setdescription("Set Euclid as a preconditioner"))
 			.addoption(ECFOption().setname("NONE").setdescription("Solver without preconditioner")));
 
 	REGISTER(boomeramg, ECFMetaData()
@@ -40,6 +41,9 @@ HYPREGMRESConfiguration::HYPREGMRESConfiguration()
 
 	REGISTER(parasails, ECFMetaData()
 			.setdescription({ "ParaSails settings." }));
+
+	REGISTER(euclid, ECFMetaData()
+			.setdescription({ "Euclid settings." }));
 
 	solver_info = SOLVER_INFO::SOLVE_INFO;
 	REGISTER(solver_info, ECFMetaData()

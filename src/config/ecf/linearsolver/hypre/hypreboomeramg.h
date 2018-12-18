@@ -121,7 +121,7 @@ struct HYPREBoomerAMGConfiguration: public ECFObject {
 	enum class SMOOTH_TYPE {
 		SCHWARZ,
 		PILUT,
-		PARASALIS,
+		PARASAILS,
 		EUCLID
 	};
 	SMOOTH_TYPE smooth_type;

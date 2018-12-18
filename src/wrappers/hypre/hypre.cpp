@@ -306,7 +306,7 @@ static void setBoomerAMG(HYPRE_Solver &boomerAMG, const HYPREBoomerAMGConfigurat
 		case HYPREBoomerAMGConfiguration::SMOOTH_TYPE::PILUT:
 			HYPRE_BoomerAMGSetSmoothType(boomerAMG, 7);
 			break;
-		case HYPREBoomerAMGConfiguration::SMOOTH_TYPE::PARASALIS:
+		case HYPREBoomerAMGConfiguration::SMOOTH_TYPE::PARASAILS:
 			HYPRE_BoomerAMGSetSmoothType(boomerAMG, 8);
 			break;
 		case HYPREBoomerAMGConfiguration::SMOOTH_TYPE::EUCLID:
@@ -325,7 +325,7 @@ static void setBoomerAMG(HYPRE_Solver &boomerAMG, const HYPREBoomerAMGConfigurat
 			case HYPREBoomerAMGConfiguration::SMOOTH_TYPE::PILUT:
 				return 7;
 				break;
-			case HYPREBoomerAMGConfiguration::SMOOTH_TYPE::PARASALIS:
+			case HYPREBoomerAMGConfiguration::SMOOTH_TYPE::PARASAILS:
 				return 8;
 				break;
 			case HYPREBoomerAMGConfiguration::SMOOTH_TYPE::EUCLID:
@@ -474,6 +474,13 @@ static void setParaSailsPreconditioner(HYPRE_Solver &parasails, const HYPREParaS
 }
 
 
+static void setEuclidPreconditioner(HYPRE_Solver &euclid, const HYPREEuclidConfiguration &configuration)
+{
+
+
+
+}
+
 void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslocal nrows, double *solution)
 {
 	if (!data._finalized) {
@@ -564,6 +571,11 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 			setParaSailsPreconditioner(preconditioner, configuration.pcg.parasails);
 			HYPRE_PCGSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSetup, preconditioner);
 			break;
+		case HYPREPCGConfiguration::PRECONDITIONER::Euclid:
+			HYPRE_EuclidCreate(data._comm, &preconditioner);
+			setEuclidPreconditioner(preconditioner, configuration.pcg.euclid);
+			HYPRE_PCGSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSolve, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSetup, preconditioner);
+			break;
 		case HYPREPCGConfiguration::PRECONDITIONER::NONE:
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
@@ -586,6 +598,9 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 		case HYPREPCGConfiguration::PRECONDITIONER::ParaSails:
 			HYPRE_ParaSailsDestroy(preconditioner);
 			break;
+		case HYPREPCGConfiguration::PRECONDITIONER::Euclid:
+			HYPRE_EuclidDestroy(preconditioner);
+			break;			
 		case HYPREPCGConfiguration::PRECONDITIONER::NONE:
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
@@ -629,6 +644,11 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 			setParaSailsPreconditioner(preconditioner, configuration.gmres.parasails);
 			HYPRE_GMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSetup, preconditioner);
 			break;
+		case HYPREGMRESConfiguration::PRECONDITIONER::Euclid:
+			HYPRE_EuclidCreate(data._comm, &preconditioner);
+			setEuclidPreconditioner(preconditioner, configuration.gmres.euclid);
+			HYPRE_GMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSolve, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSetup, preconditioner);
+			break;			
 		case HYPREGMRESConfiguration::PRECONDITIONER::NONE:
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
@@ -650,6 +670,9 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 		case HYPREGMRESConfiguration::PRECONDITIONER::ParaSails:
 			HYPRE_ParaSailsDestroy(preconditioner);
 			break;
+		case HYPREGMRESConfiguration::PRECONDITIONER::Euclid:
+			HYPRE_EuclidDestroy(preconditioner);
+			break;				
 		case HYPREGMRESConfiguration::PRECONDITIONER::NONE:
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
@@ -693,6 +716,11 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 			setParaSailsPreconditioner(preconditioner, configuration.flexgmres.parasails);
 			HYPRE_FlexGMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSetup, preconditioner);
 			break;
+		case HYPREFlexGMRESConfiguration::PRECONDITIONER::Euclid:
+			HYPRE_EuclidCreate(data._comm, &preconditioner);
+			setEuclidPreconditioner(preconditioner, configuration.flexgmres.euclid);
+			HYPRE_FlexGMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSolve, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSetup, preconditioner);
+			break;				
 		case HYPREFlexGMRESConfiguration::PRECONDITIONER::NONE:
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
@@ -714,6 +742,9 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 		case HYPREFlexGMRESConfiguration::PRECONDITIONER::ParaSails:
 			HYPRE_ParaSailsDestroy(preconditioner);
 			break;
+		case HYPREFlexGMRESConfiguration::PRECONDITIONER::Euclid:
+			HYPRE_EuclidDestroy(preconditioner);
+			break;				
 		case HYPREFlexGMRESConfiguration::PRECONDITIONER::NONE:
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
@@ -757,6 +788,11 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 			setParaSailsPreconditioner(preconditioner, configuration.lgmres.parasails);
 			HYPRE_LGMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSetup, preconditioner);
 			break;
+		case HYPRELGMRESConfiguration::PRECONDITIONER::Euclid:
+			HYPRE_EuclidCreate(data._comm, &preconditioner);
+			setEuclidPreconditioner(preconditioner, configuration.lgmres.euclid);
+			HYPRE_LGMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSolve, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSetup, preconditioner);
+			break;				
 		case HYPRELGMRESConfiguration::PRECONDITIONER::NONE:
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
@@ -778,6 +814,9 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 		case HYPRELGMRESConfiguration::PRECONDITIONER::ParaSails:
 			HYPRE_ParaSailsDestroy(preconditioner);
 			break;
+		case HYPRELGMRESConfiguration::PRECONDITIONER::Euclid:
+			HYPRE_EuclidDestroy(preconditioner);
+			break;				
 		case HYPRELGMRESConfiguration::PRECONDITIONER::NONE:
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
@@ -820,6 +859,11 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 			setParaSailsPreconditioner(preconditioner, configuration.bicgstab.parasails);
 			HYPRE_BiCGSTABSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSetup, preconditioner);
 			break;
+		case HYPREBiCGSTABConfiguration::PRECONDITIONER::Euclid:
+			HYPRE_EuclidCreate(data._comm, &preconditioner);
+			setEuclidPreconditioner(preconditioner, configuration.bicgstab.euclid);
+			HYPRE_BiCGSTABSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSolve, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSetup, preconditioner);
+			break;				
 		case HYPREBiCGSTABConfiguration::PRECONDITIONER::NONE:
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
@@ -841,6 +885,9 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 		case HYPREBiCGSTABConfiguration::PRECONDITIONER::ParaSails:
 			HYPRE_ParaSailsDestroy(preconditioner);
 			break;
+		case HYPREBiCGSTABConfiguration::PRECONDITIONER::Euclid:
+			HYPRE_EuclidDestroy(preconditioner);
+			break;					
 		case HYPREBiCGSTABConfiguration::PRECONDITIONER::NONE:
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";

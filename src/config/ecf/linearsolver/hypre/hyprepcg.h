@@ -4,6 +4,7 @@
 
 #include "hypreboomeramg.h"
 #include "hypreparasails.h"
+#include "hypreeuclid.h"
 
 namespace espreso {
 
@@ -12,13 +13,15 @@ struct HYPREPCGConfiguration: public ECFObject {
 	enum class PRECONDITIONER {
 		BoomerAMG,
 		ParaSails,
+		Euclid,
 		NONE
 	};
 	PRECONDITIONER preconditioner;
 
 	HYPREBoomerAMGConfiguration boomeramg;
 	HYPREParaSailsConfiguration parasails;
-
+	HYPREEuclidConfiguration euclid;
+	
 	double relative_conv_tol, absolute_conv_tol, residual_conv_tol;
 	int max_iterations;
 	bool two_norm, recompute_residual_end, recompute_residual_p;

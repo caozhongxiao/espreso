@@ -225,7 +225,7 @@ HYPREBoomerAMGConfiguration::HYPREBoomerAMGConfiguration()
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("SCHWARZ").setdescription("Schwarz smoothers"))
 			.addoption(ECFOption().setname("PILUT").setdescription("Pilut"))
-			.addoption(ECFOption().setname("PARASALIS").setdescription("ParaSails"))
+			.addoption(ECFOption().setname("PARASAILS").setdescription("ParaSails"))
 			.addoption(ECFOption().setname("EUCLID").setdescription("Euclid")));
 
 	smooth_level_num = 0;
