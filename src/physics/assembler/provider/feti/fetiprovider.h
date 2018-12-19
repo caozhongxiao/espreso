@@ -3,12 +3,14 @@
 #define SRC_PHYSICS_ASSEMBLER_PROVIDER_FETI_FETIPROVIDER_H_
 
 #include "../provider.h"
+#include <vector>
 
 namespace espreso {
 
 enum class MatrixType;
 enum class FETI_REGULARIZATION;
 struct LoadStepConfiguration;
+class SparseMatrix;
 
 class FETIProvider: public Provider {
 
@@ -23,6 +25,9 @@ public:
 protected:
 	void makeStiffnessMatricesRegular(FETI_REGULARIZATION regularization, int scSize, bool ortogonalCluster);
 	void makeStiffnessMatrixRegular(FETI_REGULARIZATION regularization, int scSize, eslocal domain, bool ortogonalCluster);
+
+	void assembleB0FromCorners(int DOFs);
+	void assembleB0FromKernels(const std::vector<SparseMatrix> &kernels, int DOFs);
 
 	virtual void analyticRegularization(eslocal domain, bool ortogonalCluster) =0;
 

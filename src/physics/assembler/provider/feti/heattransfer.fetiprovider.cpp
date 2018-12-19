@@ -23,9 +23,15 @@ HeatTransferFETIProvider::HeatTransferFETIProvider(HeatTransferLoadStepConfigura
 	run::data->N2.clear();
 	run::data->RegMat.clear();
 
+	run::data->B0.clear();
+	run::data->B0subdomainsMap.clear();
+
 	run::data->N1.resize(run::mesh->elements->ndomains);
 	run::data->N2.resize(run::mesh->elements->ndomains);
 	run::data->RegMat.resize(run::mesh->elements->ndomains);
+
+	run::data->B0.resize(run::mesh->elements->ndomains);
+	run::data->B0subdomainsMap.resize(run::mesh->elements->ndomains);
 
 	if (_configuration.type == LoadStepConfiguration::TYPE::TRANSIENT) {
 		run::data->computeKernelCallback = [&] (FETI_REGULARIZATION regularization, int scSize, eslocal domain, bool ortogonalCluster) {};
@@ -67,18 +73,12 @@ HeatTransferFETIProvider::HeatTransferFETIProvider(HeatTransferLoadStepConfigura
 	}
 
 	run::data->assembleB0Callback = [&] (FETI_B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
-		run::data->B0.clear();
-		run::data->B0.resize(run::mesh->elements->ndomains);
-		for (eslocal d = 0; d < run::mesh->elements->ndomains; d++) {
-			run::data->B0[d].type = 'G';
-			run::data->B0subdomainsMap[d].clear();
-		}
 		switch (type) {
 		case FETI_B0_TYPE::CORNERS:
-//				physics.assembleB0FromCorners();
+			assembleB0FromCorners(1);
 			break;
 		case FETI_B0_TYPE::KERNELS:
-//				physics.assembleB0FromKernels(kernels);
+			assembleB0FromKernels(kernels, 1);
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Unknown type of B0";
@@ -88,7 +88,9 @@ HeatTransferFETIProvider::HeatTransferFETIProvider(HeatTransferLoadStepConfigura
 
 MatrixType HeatTransferFETIProvider::getMatrixType() const
 {
-	if (_configuration.translation_motions.size()) {
+	if (	(_configuration.translation_motions.size()) ||
+			(_configuration.mode == LoadStepConfiguration::MODE::NONLINEAR && _configuration.nonlinear_solver.tangent_matrix_correction)) {
+
 		return MatrixType::REAL_UNSYMMETRIC;
 	}
 	return MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
@@ -96,9 +98,9 @@ MatrixType HeatTransferFETIProvider::getMatrixType() const
 
 MatrixType HeatTransferFETIProvider::getMatrixType(eslocal domain) const
 {
-	//	if (_step.tangentMatrixCorrection) {
-	//		return MatrixType::REAL_UNSYMMETRIC;
-	//	}
+	if (_configuration.mode == LoadStepConfiguration::MODE::NONLINEAR && _configuration.nonlinear_solver.tangent_matrix_correction) {
+		return MatrixType::REAL_UNSYMMETRIC;
+	}
 
 	if (_configuration.translation_motions.size()) {
 		for (auto it = _configuration.translation_motions.begin(); it != _configuration.translation_motions.end(); ++it) {
