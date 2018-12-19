@@ -49,6 +49,7 @@ HYPREPCGConfiguration::HYPREPCGConfiguration()
 			.addoption(ECFOption().setname("BoomerAMG").setdescription("Set BoomerAMG as a preconditioner"))
 			.addoption(ECFOption().setname("ParaSails").setdescription("Set ParaSails as a preconditioner"))
 			.addoption(ECFOption().setname("Euclid").setdescription("Set Euclid as a preconditioner"))
+			.addoption(ECFOption().setname("Pilut").setdescription("Set Pilut as a preconditioner"))
 			.addoption(ECFOption().setname("NONE").setdescription("Solver without preconditioner")));
 
 	REGISTER(boomeramg, ECFMetaData()
@@ -59,6 +60,9 @@ HYPREPCGConfiguration::HYPREPCGConfiguration()
 
 	REGISTER(euclid, ECFMetaData()
 			.setdescription({ "Euclid settings." }));
+
+	REGISTER(pilut, ECFMetaData()
+			.setdescription({ "Pilut settings." }));
 
 	solver_info = SOLVER_INFO::SOLVE_INFO;
 	REGISTER(solver_info, ECFMetaData()

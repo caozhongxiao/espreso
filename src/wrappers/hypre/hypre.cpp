@@ -476,9 +476,20 @@ static void setParaSailsPreconditioner(HYPRE_Solver &parasails, const HYPREParaS
 
 static void setEuclidPreconditioner(HYPRE_Solver &euclid, const HYPREEuclidConfiguration &configuration)
 {
+	HYPRE_EuclidSetLevel(euclid,configuration.levels);
+	HYPRE_EuclidSetBJ(euclid,configuration.set_bj);
+	HYPRE_EuclidSetStats(euclid,configuration.stats);
+	HYPRE_EuclidSetMem(euclid,configuration.memory_stats);
+	HYPRE_EuclidSetSparseA(euclid,configuration.sparse_tol);
+	HYPRE_EuclidSetRowScale(euclid,configuration.row_scale);
+	HYPRE_EuclidSetILUT(euclid,configuration.ilut_tol);
+}
 
-
-
+static void setPilutPreconditioner(HYPRE_Solver &pilut, const HYPREPilutConfiguration &configuration)
+{
+	HYPRE_ParCSRPilutSetMaxIter(pilut, configuration.max_iter);
+	HYPRE_ParCSRPilutSetDropTolerance(pilut, configuration.drop_tol);
+	HYPRE_ParCSRPilutSetFactorRowSize(pilut, configuration.row_size);
 }
 
 void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslocal nrows, double *solution)
@@ -576,6 +587,11 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 			setEuclidPreconditioner(preconditioner, configuration.pcg.euclid);
 			HYPRE_PCGSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSolve, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSetup, preconditioner);
 			break;
+		case HYPREPCGConfiguration::PRECONDITIONER::Pilut:
+			HYPRE_ParCSRPilutCreate(data._comm, &preconditioner);
+			setPilutPreconditioner(preconditioner, configuration.pcg.pilut);
+			HYPRE_PCGSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSetup, preconditioner);
+			break;
 		case HYPREPCGConfiguration::PRECONDITIONER::NONE:
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
@@ -600,6 +616,9 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 			break;
 		case HYPREPCGConfiguration::PRECONDITIONER::Euclid:
 			HYPRE_EuclidDestroy(preconditioner);
+			break;			
+		case HYPREPCGConfiguration::PRECONDITIONER::Pilut:
+			HYPRE_ParCSRPilutDestroy(preconditioner);
 			break;			
 		case HYPREPCGConfiguration::PRECONDITIONER::NONE:
 		default:
@@ -648,7 +667,12 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 			HYPRE_EuclidCreate(data._comm, &preconditioner);
 			setEuclidPreconditioner(preconditioner, configuration.gmres.euclid);
 			HYPRE_GMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSolve, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSetup, preconditioner);
-			break;			
+			break;	
+		case HYPREGMRESConfiguration::PRECONDITIONER::Pilut:
+			HYPRE_ParCSRPilutCreate(data._comm, &preconditioner);
+			setPilutPreconditioner(preconditioner, configuration.pcg.pilut);
+			HYPRE_GMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSetup, preconditioner);
+			break;					
 		case HYPREGMRESConfiguration::PRECONDITIONER::NONE:
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
@@ -672,7 +696,10 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 			break;
 		case HYPREGMRESConfiguration::PRECONDITIONER::Euclid:
 			HYPRE_EuclidDestroy(preconditioner);
-			break;				
+			break;	
+		case HYPREGMRESConfiguration::PRECONDITIONER::Pilut:
+			HYPRE_ParCSRPilutDestroy(preconditioner);
+			break;						
 		case HYPREGMRESConfiguration::PRECONDITIONER::NONE:
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
@@ -720,7 +747,12 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 			HYPRE_EuclidCreate(data._comm, &preconditioner);
 			setEuclidPreconditioner(preconditioner, configuration.flexgmres.euclid);
 			HYPRE_FlexGMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSolve, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSetup, preconditioner);
-			break;				
+			break;		
+		case HYPREFlexGMRESConfiguration::PRECONDITIONER::Pilut:
+			HYPRE_ParCSRPilutCreate(data._comm, &preconditioner);
+			setPilutPreconditioner(preconditioner, configuration.pcg.pilut);
+			HYPRE_FlexGMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSetup, preconditioner);
+			break;						
 		case HYPREFlexGMRESConfiguration::PRECONDITIONER::NONE:
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
@@ -744,7 +776,10 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 			break;
 		case HYPREFlexGMRESConfiguration::PRECONDITIONER::Euclid:
 			HYPRE_EuclidDestroy(preconditioner);
-			break;				
+			break;			
+		case HYPREFlexGMRESConfiguration::PRECONDITIONER::Pilut:
+			HYPRE_ParCSRPilutDestroy(preconditioner);
+			break;						
 		case HYPREFlexGMRESConfiguration::PRECONDITIONER::NONE:
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
@@ -792,7 +827,12 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 			HYPRE_EuclidCreate(data._comm, &preconditioner);
 			setEuclidPreconditioner(preconditioner, configuration.lgmres.euclid);
 			HYPRE_LGMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSolve, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSetup, preconditioner);
-			break;				
+			break;	
+		case HYPRELGMRESConfiguration::PRECONDITIONER::Pilut:
+			HYPRE_ParCSRPilutCreate(data._comm, &preconditioner);
+			setPilutPreconditioner(preconditioner, configuration.pcg.pilut);
+			HYPRE_LGMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSetup, preconditioner);
+			break;							
 		case HYPRELGMRESConfiguration::PRECONDITIONER::NONE:
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
@@ -816,6 +856,9 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 			break;
 		case HYPRELGMRESConfiguration::PRECONDITIONER::Euclid:
 			HYPRE_EuclidDestroy(preconditioner);
+			break;		
+		case HYPRELGMRESConfiguration::PRECONDITIONER::Pilut:
+			HYPRE_ParCSRPilutDestroy(preconditioner);
 			break;				
 		case HYPRELGMRESConfiguration::PRECONDITIONER::NONE:
 		default:
@@ -863,7 +906,12 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 			HYPRE_EuclidCreate(data._comm, &preconditioner);
 			setEuclidPreconditioner(preconditioner, configuration.bicgstab.euclid);
 			HYPRE_BiCGSTABSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSolve, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSetup, preconditioner);
-			break;				
+			break;	
+		case HYPREBiCGSTABConfiguration::PRECONDITIONER::Pilut:
+			HYPRE_ParCSRPilutCreate(data._comm, &preconditioner);
+			setPilutPreconditioner(preconditioner, configuration.pcg.pilut);
+			HYPRE_BiCGSTABSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSetup, preconditioner);
+			break;							
 		case HYPREBiCGSTABConfiguration::PRECONDITIONER::NONE:
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
@@ -887,7 +935,10 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 			break;
 		case HYPREBiCGSTABConfiguration::PRECONDITIONER::Euclid:
 			HYPRE_EuclidDestroy(preconditioner);
-			break;					
+			break;	
+		case HYPREBiCGSTABConfiguration::PRECONDITIONER::Pilut:
+			HYPRE_ParCSRPilutDestroy(preconditioner);
+			break;								
 		case HYPREBiCGSTABConfiguration::PRECONDITIONER::NONE:
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
