@@ -86,6 +86,8 @@ class ESPRESOTest:
         table1 = create_table(os.path.join(ESPRESOTest.path, preset))
         table2 = create_table(os.path.join(ESPRESOTest.path, "results", "last", ESPRESOTest.ecf.replace(".ecf", ".emr")))
 
+        if len(table1) != len(table2):
+            ESPRESOTest.raise_error("various time steps")
         if len(table1[0]) != len(table2[1]):
             ESPRESOTest.raise_error("various monitored properties")
 

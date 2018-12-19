@@ -40,17 +40,22 @@ static LinearSolver* getLinearSolver(LoadStepConfiguration &loadStep)
 	}
 }
 
-static Assembler* getAssembler(HeatTransferLoadStepConfiguration &loadStep)
+static Assembler* getAssembler(HeatTransferLoadStepConfiguration &loadStep, DIMENSION dimension)
 {
 	switch (loadStep.solver) {
 	case LoadStepConfiguration::SOLVER::FETI:
-		return new AssemblerInstance<HeatTransfer2DControler, UniformNodesFETIComposer, HeatTransferFETIProvider>(loadStep, loadStep.feti);
+		switch (dimension) {
+		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DControler, UniformNodesFETIComposer, HeatTransferFETIProvider>(loadStep, loadStep.feti);
+		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DControler, UniformNodesFETIComposer, HeatTransferFETIProvider>(loadStep, loadStep.feti);
+		} break;
 	case LoadStepConfiguration::SOLVER::MULTIGRID:
-		return new AssemblerInstance<HeatTransfer2DControler, UniformNodesComposer, HeatTransferGlobalProvider>(loadStep);
-	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
-		return NULL;
+		switch (dimension) {
+		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DControler, UniformNodesComposer, HeatTransferGlobalProvider>(loadStep);
+		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DControler, UniformNodesComposer, HeatTransferGlobalProvider>(loadStep);
+		}
 	}
+	ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
+	return NULL;
 }
 
 static TimeStepSolver* getTimeStepSolver(LoadStepConfiguration &loadStep, Assembler &assembler, LinearSolver &solver)
@@ -114,18 +119,18 @@ bool LoadStepIterator::next()
 
 bool LoadStepIterator::next(HeatTransferConfiguration &configuration)
 {
-	if (time::step++ < configuration.load_steps) {
-		_linearSolver = getLinearSolver(configuration.load_steps_settings.at(time::step));
-		_assembler = getAssembler(configuration.load_steps_settings.at(time::step));
-		_timeStepSolver = getTimeStepSolver(configuration.load_steps_settings.at(time::step), *_assembler, *_linearSolver);
-		_loadStepSolver = getLoadStepSolver(configuration.load_steps_settings.at(time::step), *_assembler, *_timeStepSolver);
+	if (time::step < configuration.load_steps) {
+		_linearSolver = getLinearSolver(configuration.load_steps_settings.at(time::step + 1));
+		_assembler = getAssembler(configuration.load_steps_settings.at(time::step + 1), configuration.dimension);
+		_timeStepSolver = getTimeStepSolver(configuration.load_steps_settings.at(time::step + 1), *_assembler, *_linearSolver);
+		_loadStepSolver = getLoadStepSolver(configuration.load_steps_settings.at(time::step + 1), *_assembler, *_timeStepSolver);
 
 		_assembler->init();
 		run::storeMesh();
 		_loadStepSolver->run();
 	}
 
-	return time::step < configuration.load_steps;
+	return ++time::step < configuration.load_steps;
 }
 
 bool LoadStepIterator::next(StructuralMechanicsConfiguration &configuration)

@@ -18,7 +18,8 @@ DEFAULT_ARGS {
   8           3;
   9           4;
 
-  10 TOTAL_FETI;
+  10       FETI;
+  11 TOTAL_FETI;
 }
 
 INPUT            GENERATOR;
@@ -101,10 +102,10 @@ HEAT_TRANSFER_3D {
       DURATION_TIME     1;
       TYPE   STEADY_STATE;
       MODE         LINEAR;
-      SOLVER         FETI;
+      SOLVER      [ARG10];
 
       FETI {
-        METHOD             [ARG10];
+        METHOD             [ARG11];
         PRECONDITIONER   DIRICHLET;
         PRECISION            1E-08;
         ITERATIVE_SOLVER       PCG;

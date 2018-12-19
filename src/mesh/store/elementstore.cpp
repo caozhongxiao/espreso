@@ -1,12 +1,16 @@
 
 #include "store.h"
 #include "elementstore.h"
+#include "statisticsstore.h"
 
+#include "../mesh.h"
 #include "../elements/element.h"
 
 #include "../../basis/containers/point.h"
 #include "../../basis/containers/serializededata.h"
 #include "../../config/ecf/environment.h"
+
+#include "../../globals/run.h"
 
 using namespace espreso;
 
@@ -297,3 +301,58 @@ ElementData::ElementData(int dimension, const std::vector<std::string> &names)
 {
 
 }
+
+void ElementData::statistics(const tarray<eslocal> &elements, eslocal totalsize, Statistics *statistics)
+{
+	for (int d = 0; d <= names.size(); d++) {
+		(statistics + d)->reset();
+	}
+
+	if (names.size() == 1) {
+		for (auto e = elements.begin(); e != elements.end(); ++e) {
+			statistics->min = std::min(statistics->min, data[*e * dimension]);
+			statistics->max = std::max(statistics->max, data[*e * dimension]);
+			statistics->avg += data[*e * dimension];
+			statistics->norm += data[*e * dimension] * data[*e * dimension];
+		}
+	} else {
+		for (auto e = elements.begin(); e != elements.end(); ++e) {
+			double value = 0;
+			for (int d = 0; d < dimension; d++) {
+				value += data[*e * dimension + d] * data[*e * dimension + d];
+				(statistics + d + 1)->min = std::min((statistics + d + 1)->min, data[*e * dimension + d]);
+				(statistics + d + 1)->max = std::max((statistics + d + 1)->max, data[*e * dimension + d]);
+				(statistics + d + 1)->avg += data[*e * dimension + d];
+				(statistics + d + 1)->norm += data[*e * dimension + d] * data[*e * dimension + d];
+			}
+			value = std::sqrt(value);
+			statistics->min = std::min(statistics->min, value);
+			statistics->max = std::max(statistics->max, value);
+			statistics->avg += value;
+			statistics->norm += value * value;
+		}
+	}
+
+	std::vector<Statistics> global(names.size());
+	MPI_Allreduce(statistics, global.data(), sizeof(Statistics) * names.size(), MPI_BYTE, MPITools::operations().mergeStatistics, environment->MPICommunicator);
+	memcpy(statistics, global.data(), sizeof(Statistics) * names.size());
+
+	for (size_t i = 0; i < names.size(); i++) {
+		(statistics + i)->avg /= totalsize;
+		(statistics + i)->norm = std::sqrt((statistics + i)->norm);
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

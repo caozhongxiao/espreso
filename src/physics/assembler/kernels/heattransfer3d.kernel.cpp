@@ -1,6 +1,9 @@
 
 #include "heattransfer3d.kernel.h"
 
+#include "../assembler.h"
+#include "../../dataholder.h"
+
 #include "../../../basis/containers/point.h"
 #include "../../../basis/matrices/denseMatrix.h"
 #include "../../../basis/evaluator/evaluator.h"
@@ -10,7 +13,6 @@
 #include "../../../globals/time.h"
 
 #include "../../../mesh/elements/element.h"
-#include "../../dataholder.h"
 
 using namespace espreso;
 
@@ -204,7 +206,7 @@ void HeatTransfer3DKernel::processElement(Matrices matrices, const SolverParamet
 	const std::vector<double> &weighFactor = *(iterator.element->weighFactor);
 
 	bool CAU = run::ecf->heat_transfer_3d.stabilization == HeatTransferConfiguration::STABILIZATION::CAU;
-	bool tangentCorrection = (matrices & Matrices::K); // && step.tangentMatrixCorrection;
+	bool tangentCorrection = parameters.tangentMatrixCorrection;
 
 	DenseMatrix Ce(3, 3), coordinates(size, 3), J(3, 3), invJ(3, 3), dND;
 	double detJ, temp, tauK, xi = 1, C1 = 1, C2 = 6;
@@ -263,11 +265,11 @@ void HeatTransfer3DKernel::processElement(Matrices matrices, const SolverParamet
 	Me.resize(0, 0);
 	Re.resize(0, 0);
 	fe.resize(0, 0);
-	if ((matrices & Matrices::K) || ((matrices & Matrices::R))) { // && step.timeIntegrationConstantK != 0)) {
+	if ((matrices & Matrices::K) || ((matrices & Matrices::R) && parameters.timeIntegrationConstantK != 0)) {
 		Ke.resize(size, size);
 		Ke = 0;
 	}
-	if ((matrices & Matrices::M) || ((matrices & Matrices::R))) { // && step.timeIntegrationConstantM != 0)) {
+	if ((matrices & Matrices::M) || ((matrices & Matrices::R) && parameters.timeIntegrationConstantM != 0)) {
 		Me.resize(size, size);
 		Me = 0;
 	}
@@ -438,8 +440,8 @@ void HeatTransfer3DKernel::processElement(Matrices matrices, const SolverParamet
 	}
 
 	if (matrices & Matrices::R) {
-//		Re.multiply(Ke, T, step.timeIntegrationConstantK, 0);
-//		Re.multiply(Me, T, step.timeIntegrationConstantM, 1);
+		Re.multiply(Ke, T, parameters.timeIntegrationConstantK, 0);
+		Re.multiply(Me, T, parameters.timeIntegrationConstantM, 1);
 		Re.multiply(Ke, T, 1, 0);
 		Re.multiply(Me, T, 1, 1);
 		if (!(matrices & Matrices::K)) {

@@ -1,11 +1,16 @@
 
 #include "store.h"
 #include "nodestore.h"
+#include "statisticsstore.h"
+
+#include "../mesh.h"
 
 #include "../../basis/containers/point.h"
 #include "../../basis/containers/serializededata.h"
 #include "../../basis/utilities/utils.h"
 #include "../../basis/utilities/communication.h"
+
+#include "../../globals/run.h"
 
 #include "../../config/ecf/environment.h"
 
@@ -215,6 +220,56 @@ NodeData::NodeData(int dimension, const std::vector<std::string> &names)
 : dimension(dimension), names(names)
 {
 
+}
+
+void NodeData::statistics(const tarray<eslocal> &nodes, eslocal totalsize, Statistics *statistics)
+{
+	for (int d = 0; d <= names.size(); d++) {
+		(statistics + d)->reset();
+	}
+
+	auto nranks = run::mesh->nodes->ranks->begin();
+	if (names.size() == 1) {
+		eslocal prev = 0;
+		for (auto n = nodes.begin(); n != nodes.end(); prev = *n++) {
+			nranks += *n - prev;
+			if (*nranks->begin() == environment->MPIrank) {
+				statistics->min = std::min(statistics->min, data[*n * dimension]);
+				statistics->max = std::max(statistics->max, data[*n * dimension]);
+				statistics->avg += data[*n * dimension];
+				statistics->norm += data[*n * dimension] * data[*n * dimension];
+			}
+		}
+	} else {
+		eslocal prev = 0;
+		for (auto n = nodes.begin(); n != nodes.end(); prev = *n++) {
+			nranks += *n - prev;
+			if (*nranks->begin() == environment->MPIrank) {
+				double value = 0;
+				for (int d = 0; d < dimension; d++) {
+					value += data[*n * dimension + d] * data[*n * dimension + d];
+					(statistics + d + 1)->min = std::min((statistics + d + 1)->min, data[*n * dimension + d]);
+					(statistics + d + 1)->max = std::max((statistics + d + 1)->max, data[*n * dimension + d]);
+					(statistics + d + 1)->avg += data[*n * dimension + d];
+					(statistics + d + 1)->norm += data[*n * dimension + d] * data[*n * dimension + d];
+				}
+				value = std::sqrt(value);
+				statistics->min = std::min(statistics->min, value);
+				statistics->max = std::max(statistics->max, value);
+				statistics->avg += value;
+				statistics->norm += value * value;
+			}
+		}
+	}
+
+	std::vector<Statistics> global(names.size());
+	MPI_Allreduce(statistics, global.data(), sizeof(Statistics) * names.size(), MPI_BYTE, MPITools::operations().mergeStatistics, environment->MPICommunicator);
+	memcpy(statistics, global.data(), sizeof(Statistics) * names.size());
+
+	for (size_t i = 0; i < names.size(); i++) {
+		(statistics + i)->avg /= totalsize;
+		(statistics + i)->norm = std::sqrt((statistics + i)->norm);
+	}
 }
 
 

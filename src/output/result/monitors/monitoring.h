@@ -2,8 +2,6 @@
 #ifndef SRC_OUTPUT_RESULT_MONITORS_MONITORING_H_
 #define SRC_OUTPUT_RESULT_MONITORS_MONITORING_H_
 
-#include "mpi.h"
-
 #include "../resultstore.h"
 #include "../../../mesh/store/statisticsstore.h"
 
@@ -39,14 +37,12 @@ public:
 	void updateMesh();
 	void updateSolution();
 
-	Monitoring(const Mesh &mesh, const OutputConfiguration &configuration, bool async);
+	Monitoring(const Mesh &mesh, const OutputConfiguration &configuration);
 	~Monitoring();
 	static char delimiter;
 
 protected:
 	const OutputConfiguration &_configuration;
-	bool _async;
-	MPI_Comm _communicator;
 	std::ofstream _os;
 
 	std::vector<Monitor> _monitors;

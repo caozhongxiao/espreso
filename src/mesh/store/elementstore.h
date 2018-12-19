@@ -11,7 +11,9 @@
 namespace espreso {
 
 struct Point;
+template <typename TData> class tarray;
 template <typename TEBoundaries, typename TEData> class serializededata;
+struct Statistics;
 struct Element;
 
 struct ElementData {
@@ -21,6 +23,8 @@ struct ElementData {
 	std::vector<double> data;
 
 	ElementData(int dimension, const std::vector<std::string> &names);
+
+	void statistics(const tarray<eslocal> &elements, eslocal totalsize, Statistics *statistics);
 };
 
 struct ElementStore {

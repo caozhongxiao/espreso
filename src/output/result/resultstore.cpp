@@ -87,7 +87,7 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 
 	}
 	if (configuration.monitors_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER && configuration.monitoring.size()) {
-		executor->addResultStore(new Monitoring(executor->mesh(), configuration, true));
+		_asyncStore->_direct->addResultStore(new Monitoring(mesh, configuration));
 	}
 	if (configuration.catalyst) {
 		_asyncStore->_direct->addResultStore(new InSitu(mesh, configuration));

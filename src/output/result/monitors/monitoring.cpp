@@ -1,6 +1,7 @@
 
 #include "monitoring.h"
 
+#include "../../../basis/containers/serializededata.h"
 #include "../../../basis/logging/logging.h"
 #include "../../../basis/utilities/utils.h"
 #include "../../../basis/utilities/parser.h"
@@ -55,15 +56,15 @@ bool Monitoring::storeStep(const OutputConfiguration &configuration)
 }
 
 
-Monitoring::Monitoring(const Mesh &mesh, const OutputConfiguration &configuration, bool async)
-: ResultStoreBase(mesh), _configuration(configuration), _async(async)
+Monitoring::Monitoring(const Mesh &mesh, const OutputConfiguration &configuration)
+: ResultStoreBase(mesh), _configuration(configuration)
 {
-	MPI_Comm_split(environment->MPICommunicator, 0, environment->MPIrank, &_communicator);
+
 }
 
 Monitoring::~Monitoring()
 {
-	MPI_Comm_free(&_communicator);
+
 }
 
 void Monitoring::updateMesh()
@@ -260,13 +261,13 @@ void Monitoring::updateSolution()
 
 	eslocal offset = 0;
 	for (size_t i = 0; i < _edata.size(); offset += _edata[i++].first->names.size()) {
-		_mesh.computeElementStatistic(_edata[i].first, _edata[i].second, _data.data() + offset, _communicator);
+		_edata[i].first->statistics(_edata[i].second->elements->datatarray(), _edata[i].second->uniqueTotalSize, _data.data() + offset);
 	}
 	for (size_t i = 0; i < _nbdata.size(); offset += _nbdata[i++].first->names.size()) {
-		_mesh.computeGatheredNodeStatistic(_nbdata[i].first, _nbdata[i].second, _data.data() + offset, _communicator);
+		_nbdata[i].first->statistics(_nbdata[i].second->nodes->datatarray(), _nbdata[i].second->uniqueTotalSize, _data.data() + offset);
 	}
 	for (size_t i = 0; i < _nedata.size(); offset += _nedata[i++].first->names.size()) {
-		_mesh.computeGatheredNodeStatistic(_nedata[i].first, _nedata[i].second, _data.data() + offset, _communicator);
+		_nedata[i].first->statistics(_nedata[i].second->nodes->datatarray(), _nedata[i].second->uniqueTotalSize, _data.data() + offset);
 	}
 
 	if (environment->MPIrank) {
