@@ -51,7 +51,7 @@ protected:
 	std::vector<std::pair<NodeData*, const BoundaryRegionStore*> > _nbdata;
 	std::vector<std::pair<ElementData*, const ElementsRegionStore*> > _edata;
 
-	std::vector<Statistics> _data;
+	std::vector<Statistics> _statistics;
 };
 
 }

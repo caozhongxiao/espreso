@@ -18,8 +18,8 @@ public:
 protected:
 	HeatTransferLoadStepConfiguration &_configuration;
 };
-}
 
+}
 
 
 #endif /* SRC_PHYSICS_ASSEMBLER_PROVIDER_GLOBAL_HEATTRANSFER_GLOBALPROVIDER_H_ */

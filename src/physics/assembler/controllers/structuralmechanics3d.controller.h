@@ -15,8 +15,6 @@ public:
 	StructuralMechanics3DControler(StructuralMechanicsLoadStepConfiguration &configuration);
 	~StructuralMechanics3DControler();
 
-	void analyticRegularization(size_t domain, bool ortogonalCluster);
-
 	void dirichletIndices(std::vector<std::vector<eslocal> > &indices);
 	void dirichletValues(std::vector<double> &values);
 

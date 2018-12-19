@@ -5,7 +5,9 @@
 #include "../../basis/utilities/communication.h"
 #include "../../basis/utilities/utils.h"
 
-#include "../../config/ecf/solver/multigrid.h"
+#include "../../globals/run.h"
+
+#include "../../config/ecf/root.h"
 
 #include "include/HYPRE_krylov.h"
 #include "include/HYPRE.h"
@@ -146,13 +148,20 @@ void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, 
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
 	}
 
-//	HYPRE_IJMatrixPrint(data._K, "test.K");
-//	HYPRE_IJVectorPrint(data._f, "test.f");
+	if (run::ecf->environment.print_matrices) {
+		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "STORE HYPRE SYSTEM";
+		{
+			std::string prefix = Logging::prepareFile("HYPRE.K");
+			HYPRE_IJMatrixPrint(data._K, prefix.c_str());
+		}
+		{
+			std::string prefix = Logging::prepareFile("HYPRE.f");
+			HYPRE_IJVectorPrint(data._f, prefix.c_str());
+		}
+	}
 
 	HYPRE_ParCSRPCGSetup(solver, K, f, x);
 	HYPRE_ParCSRPCGSolve(solver, K, f, x);
-
-//	HYPRE_IJVectorPrint(data._x, "test.x");
 
 	eslocal iterations;
 	double norm;
@@ -160,6 +169,12 @@ void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, 
 	HYPRE_PCGGetFinalRelativeResidualNorm(solver, &norm);
 
 	ESINFO(CONVERGENCE) << "Final Relative Residual Norm " << norm << " in " << iterations << " iteration.";
+
+	if (run::ecf->environment.print_matrices) {
+		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "STORE HYPRE SYSTEM SOLUTION";
+		std::string prefix = Logging::prepareFile("HYPRE.x");
+		HYPRE_IJVectorPrint(data._x, prefix.c_str());
+	}
 
 	std::vector<eslocal> rows(nrows);
 	std::iota(rows.begin(), rows.end(), data._roffset + 1);

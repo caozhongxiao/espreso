@@ -20,6 +20,7 @@ struct StructuralMechanics3DKernel: public StructuralMechanicsKernel
 
 		double *coordinates;
 		double *acceleration;
+		double *angularVelocity;
 		double *initialTemperature;
 		double *temperature;
 
@@ -29,6 +30,7 @@ struct StructuralMechanics3DKernel: public StructuralMechanicsKernel
 		: element(NULL),
 		  coordinates(NULL),
 		  acceleration(NULL),
+		  angularVelocity(NULL),
 		  initialTemperature(NULL), temperature(NULL),
 		  material(NULL) {}
 	};

@@ -19,6 +19,16 @@ public:
 protected:
 	void analyticRegularization(eslocal domain, bool ortogonalCluster);
 
+	void assembleB0FromCorners()
+	{
+		assembleUniformB0FromCorners(1);
+	}
+
+	void assembleB0FromKernels(const std::vector<SparseMatrix> &kernels)
+	{
+		assembleUniformB0FromKernels(kernels, 1);
+	}
+
 	HeatTransferLoadStepConfiguration &_configuration;
 };
 

@@ -1,6 +1,7 @@
 
 #include "uniformnodescomposer.h"
 
+#include "../../assembler.h"
 #include "../../controllers/controller.h"
 #include "../../provider/global/globalprovider.h"
 
@@ -211,12 +212,9 @@ void UniformNodesComposer::buildPatterns()
 
 		auto insert = [&] (serializededata<eslocal, eslocal>::const_iterator &e) {
 			eslocal *_RHS = RHSoffset;
-			for (auto n = e->begin(); n != e->end(); ++n, ++RHSoffset) {
-				*RHSoffset = _DOFMap->datatarray()[*n];
-			}
-			for (eslocal dof = 1; dof < _DOFs; ++dof) {
-				for (size_t n = 0; n < e->size(); ++n, ++RHSoffset) {
-					*RHSoffset = *(_RHS + n) + dof;
+			for (eslocal dof = 0; dof < _DOFs; ++dof) {
+				for (auto n = e->begin(); n != e->end(); ++n, ++RHSoffset) {
+					*RHSoffset = _DOFMap->datatarray()[*n * _DOFs + dof];
 				}
 			}
 			insertKPattern(Koffset, _RHS, RHSoffset, mtype);
@@ -304,7 +302,9 @@ void UniformNodesComposer::buildPatterns()
 		return RHSPattern[i] < RHSPattern[j];
 	});
 
-//	std::cout << KPattern;
+//	for (size_t i = 0; i < KPattern.size(); i++) {
+//		std::cout << KPattern[i].row << ":" << KPattern[i].column << "\n";
+//	}
 //	std::cout << RHSPattern;
 
 	_KPermutation.resize(KPattern.size());
@@ -364,12 +364,9 @@ void UniformNodesComposer::buildPatterns()
 
 void UniformNodesComposer::assemble(Matrices matrices, const SolverParameters &parameters)
 {
-	_controler.nextTime();
-
 	size_t threads = environment->OMP_NUM_THREADS;
 
-//	MatrixType mtype = _controler.getMatrixType();
-	MatrixType mtype = MatrixType::REAL_UNSYMMETRIC; // HYPRE not support symmetric systems
+	MatrixType mtype = _provider.getMatrixType();
 
 	clearMatrices(matrices, 0);
 
@@ -431,7 +428,7 @@ void UniformNodesComposer::assemble(Matrices matrices, const SolverParameters &p
 
 		_controler.processElements(matrices, parameters, filler);
 
-		KReduction = 1; // _step.internalForceReduction;
+		KReduction = parameters.internalForceReduction;
 
 		for (size_t r = 0; r < run::mesh->boundaryRegions.size(); r++) {
 			if (run::mesh->boundaryRegions[r]->distribution.size()) {

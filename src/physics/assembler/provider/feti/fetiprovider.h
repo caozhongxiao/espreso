@@ -26,8 +26,11 @@ protected:
 	void makeStiffnessMatricesRegular(FETI_REGULARIZATION regularization, int scSize, bool ortogonalCluster);
 	void makeStiffnessMatrixRegular(FETI_REGULARIZATION regularization, int scSize, eslocal domain, bool ortogonalCluster);
 
-	void assembleB0FromCorners(int DOFs);
-	void assembleB0FromKernels(const std::vector<SparseMatrix> &kernels, int DOFs);
+	virtual void assembleB0FromCorners() =0;
+	virtual void assembleB0FromKernels(const std::vector<SparseMatrix> &kernels) =0;
+
+	void assembleUniformB0FromCorners(int DOFs);
+	void assembleUniformB0FromKernels(const std::vector<SparseMatrix> &kernels, int DOFs);
 
 	virtual void analyticRegularization(eslocal domain, bool ortogonalCluster) =0;
 

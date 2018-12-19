@@ -4,9 +4,6 @@
 
 namespace espreso {
 
-struct HeatTransferConfiguration;
-struct StructuralMechanicsConfiguration;
-
 class LoadStepSolver;
 class TimeStepSolver;
 class Assembler;
@@ -21,8 +18,7 @@ public:
 
 protected:
 
-	bool next(HeatTransferConfiguration &configuration);
-	bool next(StructuralMechanicsConfiguration &configuration);
+	template <typename TPhysics> bool next(TPhysics &configuration);
 
 	LoadStepSolver *_loadStepSolver;
 	TimeStepSolver *_timeStepSolver;

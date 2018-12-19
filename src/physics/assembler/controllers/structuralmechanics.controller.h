@@ -24,14 +24,14 @@ protected:
 	  _displacement(NULL), _avgThickness(NULL),
 	  _thickness(NULL) {}
 
-	const StructuralMechanicsLoadStepConfiguration &_configuration;
+	StructuralMechanicsLoadStepConfiguration &_configuration;
 
 	struct BoundaryParameters {
 		Parameter coordinate, thickness;
 		Parameter normalPressure;
 	};
 
-	Parameter _ncoordinate, _ntemperature, _nInitialTemperature, _nthickness;
+	Parameter _ncoordinate, _ntemperature, _nInitialTemperature, _nacceleration, _nangularVelocity, _nthickness;
 	std::vector<BoundaryParameters> _boundaries;
 
 	NodeData *_displacement, *_avgThickness;

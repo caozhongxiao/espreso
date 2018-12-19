@@ -165,13 +165,13 @@ void Monitoring::updateMesh()
 	}
 
 	for (size_t i = 0; i < _edata.size(); i++) {
-		_data.resize(_data.size() + _edata[i].first->names.size());
+		_statistics.resize(_statistics.size() + _edata[i].first->names.size());
 	}
 	for (size_t i = 0; i < _nbdata.size(); i++) {
-		_data.resize(_data.size() + _nbdata[i].first->names.size());
+		_statistics.resize(_statistics.size() + _nbdata[i].first->names.size());
 	}
 	for (size_t i = 0; i < _nedata.size(); i++) {
-		_data.resize(_data.size() + _nedata[i].first->names.size());
+		_statistics.resize(_statistics.size() + _nedata[i].first->names.size());
 	}
 
 	for (auto it = _configuration.monitoring.begin(); it != _configuration.monitoring.end(); ++it) {
@@ -186,7 +186,7 @@ void Monitoring::updateMesh()
 						StringCompare::caseInsensitiveEq(it->second.property, _edata[i].first->names[p]) &&
 						StringCompare::caseInsensitiveEq(it->second.region, _edata[i].second->name)) {
 
-					_monitors[it->first - 1].data = (double*)(_data.data() + offset);
+					_monitors[it->first - 1].data = (double*)(_statistics.data() + offset);
 				}
 			}
 		}
@@ -196,7 +196,7 @@ void Monitoring::updateMesh()
 						StringCompare::caseInsensitiveEq(it->second.property, _nbdata[i].first->names[p]) &&
 						StringCompare::caseInsensitiveEq(it->second.region, _nbdata[i].second->name)) {
 
-					_monitors[it->first - 1].data = (double*)(_data.data() + offset);
+					_monitors[it->first - 1].data = (double*)(_statistics.data() + offset);
 				}
 			}
 		}
@@ -206,7 +206,7 @@ void Monitoring::updateMesh()
 						StringCompare::caseInsensitiveEq(it->second.property, _nedata[i].first->names[p]) &&
 						StringCompare::caseInsensitiveEq(it->second.region, _nedata[i].second->name)) {
 
-					_monitors[it->first - 1].data = (double*)(_data.data() + offset);
+					_monitors[it->first - 1].data = (double*)(_statistics.data() + offset);
 				}
 			}
 		}
@@ -261,13 +261,13 @@ void Monitoring::updateSolution()
 
 	eslocal offset = 0;
 	for (size_t i = 0; i < _edata.size(); offset += _edata[i++].first->names.size()) {
-		_edata[i].first->statistics(_edata[i].second->elements->datatarray(), _edata[i].second->uniqueTotalSize, _data.data() + offset);
+		_edata[i].first->statistics(_edata[i].second->elements->datatarray(), _edata[i].second->uniqueTotalSize, _statistics.data() + offset);
 	}
 	for (size_t i = 0; i < _nbdata.size(); offset += _nbdata[i++].first->names.size()) {
-		_nbdata[i].first->statistics(_nbdata[i].second->nodes->datatarray(), _nbdata[i].second->uniqueTotalSize, _data.data() + offset);
+		_nbdata[i].first->statistics(_nbdata[i].second->nodes->datatarray(), _nbdata[i].second->uniqueTotalSize, _statistics.data() + offset);
 	}
 	for (size_t i = 0; i < _nedata.size(); offset += _nedata[i++].first->names.size()) {
-		_nedata[i].first->statistics(_nedata[i].second->nodes->datatarray(), _nedata[i].second->uniqueTotalSize, _data.data() + offset);
+		_nedata[i].first->statistics(_nedata[i].second->nodes->datatarray(), _nedata[i].second->uniqueTotalSize, _statistics.data() + offset);
 	}
 
 	if (environment->MPIrank) {

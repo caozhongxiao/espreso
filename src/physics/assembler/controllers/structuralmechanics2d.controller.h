@@ -18,8 +18,6 @@ public:
 	void dirichletIndices(std::vector<std::vector<eslocal> > &indices);
 	void dirichletValues(std::vector<double> &values);
 
-	void analyticRegularization(size_t domain, bool ortogonalCluster);
-
 	void initData();
 	void processSolution();
 

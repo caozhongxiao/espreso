@@ -188,7 +188,7 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Solver
 	DenseMatrix Ce(6, 6), coordinates(size, 3), J, invJ(3, 3), dND, B, precision, rhsT;
 	DenseMatrix K(size, 36), TE(size, 3), inertia(size, 3), dens(size, 1);
 	DenseMatrix gpK(size, 36), gpTE(1, 3), gpInertia(1, 3), gpDens(1, 1);
-	double detJ, temp = 275.15, initTemp = 275.15, CP = 1, te;
+	double detJ, CP = 1, te;
 
 	for (size_t n = 0; n < size; n++) {
 		inertia(n, 0) = iterator.acceleration[3 * n + 0];
@@ -212,6 +212,7 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Solver
 			TE(n, 1) = (iterator.temperature[n] - iterator.initialTemperature[n]) * te;
 			iterator.material->linear_elastic_properties.thermal_expansion.get(2, 2).evaluator->evalVector(1, 3, iterator.coordinates, iterator.temperature, time::current, &te);
 			TE(n, 2) = (iterator.temperature[n] - iterator.initialTemperature[n]) * te;
+			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Invalid LINEAR ELASTIC model.";
 		}

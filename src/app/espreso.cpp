@@ -28,8 +28,8 @@ int main(int argc, char **argv)
 
 	ESINFO(OVERVIEW) <<
 			"Starting ESPRESO, " <<
-			"MPI: " << env::MPIsize << ", "
-			"OMP/MPI: " << env::OMP_NUM_THREADS;
+			"MPI: " << environment->MPIsize << ", "
+			"OMP/MPI: " << environment->OMP_NUM_THREADS;
 
 	if (ResultStore::isComputeNode()) {
 

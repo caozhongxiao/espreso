@@ -20,11 +20,22 @@ StructuralMechanics3DControler::StructuralMechanics3DControler(StructuralMechani
 {
 	_kernel = new StructuralMechanics3DKernel();
 
-	Point defaultMotion(0, 0, 0);
-	double defaultHeat = 0; //273.15;
+	double defaultTemperature = 0;
+	double defaultThickness = 1;
 
-	_ntemperature.data = new serializededata<eslocal, double>(1, _nDistribution);
 	_ncoordinate.data = new serializededata<eslocal, double>(3, _nDistribution);
+	_ntemperature.data = new serializededata<eslocal, double>(1, _nDistribution);
+
+	_nInitialTemperature.isConts = setDefault(run::ecf->structural_mechanics_3d.initial_temperature, defaultTemperature);
+	_nInitialTemperature.data = new serializededata<eslocal, double>(1, _nDistribution, defaultTemperature);
+
+	_nacceleration.isConts = false;
+	_nacceleration.data = new serializededata<eslocal, double>(3, _nDistribution);
+
+	_nangularVelocity.isConts = false;
+	_nangularVelocity.data = new serializededata<eslocal, double>(3, _nDistribution);
+
+	_displacement = run::mesh->nodes->appendData(3, { "DISPLACEMENT", "DISPLACEMENT_X", "DISPLACEMENT_Y", "DISPLACEMENT_Z" });
 
 	_boundaries.resize(run::mesh->boundaryRegions.size());
 }
@@ -34,198 +45,76 @@ StructuralMechanics3DControler::~StructuralMechanics3DControler()
 	delete _kernel;
 }
 
-void StructuralMechanics3DControler::analyticRegularization(size_t domain, bool ortogonalCluster)
-{
-//	if (_instance->K[domain].mtype != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
-//		ESINFO(ERROR) << "Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set FETI_REGULARIZATION = ALGEBRAIC";
-//	}
-//
-//	Point center = _dCenter[domain], norm = _dNorm[domain];
-//	double r44 = _dr44[domain], r45 = _dr45[domain], r46 = _dr46[domain], r55 = _dr55[domain], r56 = _dr56[domain];
-//	size_t np = _dNp[domain];
-//
-//	if (ortogonalCluster) {
-//		size_t cluster = _mesh->elements->clusters[domain];
-//		center = _cCenter[cluster], norm = _cNorm[cluster];
-//		r44 = _cr44[cluster], r45 = _cr45[cluster], r46 = _cr46[cluster], r55 = _cr55[cluster], r56 = _cr56[cluster];
-//		np = _cNp[cluster];
-//	} else {
-//		center = _dCenter[domain], norm = _dNorm[domain];
-//		r44 = _dr44[domain], r45 = _dr45[domain], r46 = _dr46[domain], r55 = _dr55[domain], r56 = _dr56[domain];
-//		np = _dNp[domain];
-//	}
-//
-//	_instance->N1[domain].rows = _instance->domainDOFCount[domain];
-//	_instance->N1[domain].cols = 6;
-//	_instance->N1[domain].nnz = _instance->N1[domain].rows * _instance->N1[domain].cols;
-//	_instance->N1[domain].type = 'G';
-//
-//	_instance->N1[domain].dense_values.reserve(_instance->N1[domain].nnz);
-//
-//	for (size_t c = 0; c < 3; c++) {
-//		std::vector<double> kernel = { 0, 0, 0 };
-//		kernel[c] = 1 / std::sqrt(np);
-//		for (size_t i = 0; i < _instance->domainDOFCount[domain] / 3; i++) {
-//			_instance->N1[domain].dense_values.insert(_instance->N1[domain].dense_values.end(), kernel.begin(), kernel.end());
-//		}
-//	}
-//
-//	for (size_t i = 0; i < _mesh->nodes->dintervals[domain].size(); i++) {
-//		for (eslocal n = _mesh->nodes->dintervals[domain][i].begin; n < _mesh->nodes->dintervals[domain][i].end; ++n) {
-//			Point p = _mesh->nodes->coordinates->datatarray()[n] - center;
-//			_instance->N1[domain].dense_values.push_back(-p.y / norm.x);
-//			_instance->N1[domain].dense_values.push_back( p.x / norm.x);
-//			_instance->N1[domain].dense_values.push_back(             0);
-//		}
-//	}
-//
-//	for (size_t i = 0; i < _mesh->nodes->dintervals[domain].size(); i++) {
-//		for (eslocal n = _mesh->nodes->dintervals[domain][i].begin; n < _mesh->nodes->dintervals[domain][i].end; ++n) {
-//			Point p = _mesh->nodes->coordinates->datatarray()[n] - center;
-//			_instance->N1[domain].dense_values.push_back((-p.z - r45 / r44 * (-p.y / norm.x)) / norm.y);
-//			_instance->N1[domain].dense_values.push_back((   0 - r45 / r44 * ( p.x / norm.x)) / norm.y);
-//			_instance->N1[domain].dense_values.push_back(( p.x - r45 / r44 * (   0 / norm.x)) / norm.y);
-//		}
-//	}
-//
-//	for (size_t i = 0; i < _mesh->nodes->dintervals[domain].size(); i++) {
-//		for (eslocal n = _mesh->nodes->dintervals[domain][i].begin; n < _mesh->nodes->dintervals[domain][i].end; ++n) {
-//			Point p = _mesh->nodes->coordinates->datatarray()[n] - center;
-//			_instance->N1[domain].dense_values.push_back((   0 - r56 / r55 * ((-p.z - r45 / r44 * (-p.y / norm.x)) / norm.y) - r46 / r44 * (-p.y / norm.x)) / norm.z);
-//			_instance->N1[domain].dense_values.push_back((-p.z - r56 / r55 * ((   0 - r45 / r44 * ( p.x / norm.x)) / norm.y) - r46 / r44 * ( p.x / norm.x)) / norm.z);
-//			_instance->N1[domain].dense_values.push_back(( p.y - r56 / r55 * (( p.x - r45 / r44 * (   0 / norm.x)) / norm.y) - r46 / r44 * (   0 / norm.x)) / norm.z);
-//		}
-//	}
-//
-//	std::vector<eslocal> fixPoints;
-//	if (_BEMDomain[domain]) {
-//		fixPoints = std::vector<eslocal>(
-//				_mesh->FETIData->surfaceFixPoints.begin() + _mesh->FETIData->sFixPointsDistribution[domain],
-//				_mesh->FETIData->surfaceFixPoints.begin() + _mesh->FETIData->sFixPointsDistribution[domain + 1]);
-//	} else {
-//		fixPoints = std::vector<eslocal>(
-//				_mesh->FETIData->innerFixPoints.begin() + _mesh->FETIData->iFixPointsDistribution[domain],
-//				_mesh->FETIData->innerFixPoints.begin() + _mesh->FETIData->iFixPointsDistribution[domain + 1]);
-//	}
-//
-//	SparseMatrix Nt; // CSR matice s DOFY
-//	Nt.rows = 6;
-//	Nt.cols = _instance->K[domain].cols;
-//	Nt.nnz  = 9 * fixPoints.size();
-//	Nt.type = 'G';
-//
-//	std::vector<eslocal> &ROWS = Nt.CSR_I_row_indices;
-//	std::vector<eslocal> &COLS = Nt.CSR_J_col_indices;
-//	std::vector<double>  &VALS = Nt.CSR_V_values;
-//
-//	ROWS.reserve(Nt.rows + 1);
-//	COLS.reserve(Nt.nnz);
-//	VALS.reserve(Nt.nnz);
-//
-//	ROWS.push_back(1);
-//	ROWS.push_back(ROWS.back() + fixPoints.size());
-//	ROWS.push_back(ROWS.back() + fixPoints.size());
-//	ROWS.push_back(ROWS.back() + fixPoints.size());
-//	ROWS.push_back(ROWS.back() + 2 * fixPoints.size());
-//	ROWS.push_back(ROWS.back() + 2 * fixPoints.size());
-//	ROWS.push_back(ROWS.back() + 2 * fixPoints.size());
-//
-//	auto n2DOF = [&] (eslocal node) {
-//		auto dit = _mesh->nodes->dintervals[domain].begin();
-//		while (dit->end < node) { ++dit; }
-//		return dit->DOFOffset + node - dit->begin;
-//	};
-//
-//	for (size_t c = 0; c < 3; c++) {
-//		for (size_t i = 0; i < fixPoints.size(); i++) {
-//			COLS.push_back(3 * n2DOF(fixPoints[i]) + c + 1);
-//		}
-//	}
-//	VALS.insert(VALS.end(), 3 * fixPoints.size(), 1);
-//
-//	for (size_t i = 0; i < fixPoints.size(); i++) {
-//		const Point &p = _mesh->nodes->coordinates->datatarray()[fixPoints[i]];
-//		COLS.push_back(3 * n2DOF(fixPoints[i]) + 0 + 1);
-//		COLS.push_back(3 * n2DOF(fixPoints[i]) + 1 + 1);
-//		VALS.push_back(-p.y);
-//		VALS.push_back( p.x);
-//	}
-//
-//	for (size_t i = 0; i < fixPoints.size(); i++) {
-//		const Point &p = _mesh->nodes->coordinates->datatarray()[fixPoints[i]];
-//		COLS.push_back(3 * n2DOF(fixPoints[i]) + 0 + 1);
-//		COLS.push_back(3 * n2DOF(fixPoints[i]) + 2 + 1);
-//		VALS.push_back(-p.z);
-//		VALS.push_back( p.x);
-//	}
-//
-//	for (size_t i = 0; i < fixPoints.size(); i++) {
-//		const Point &p = _mesh->nodes->coordinates->datatarray()[fixPoints[i]];
-//		COLS.push_back(3 * n2DOF(fixPoints[i]) + 1 + 1);
-//		COLS.push_back(3 * n2DOF(fixPoints[i]) + 2 + 1);
-//		VALS.push_back(-p.z);
-//		VALS.push_back( p.y);
-//	}
-//
-//	SparseMatrix N;
-//	Nt.MatTranspose( N );
-//
-//	_instance->RegMat[domain].MatMat(Nt, 'N', N);
-//	_instance->RegMat[domain].MatTranspose();
-//	_instance->RegMat[domain].RemoveLower();
-//
-//	SparseSolverCPU NtN;
-//	NtN.ImportMatrix(_instance->RegMat[domain]);
-//	_instance->RegMat[domain].Clear();
-//
-//	NtN.Factorization("Create RegMat");
-//	NtN.SolveMat_Sparse(Nt);
-//	NtN.Clear();
-//
-//	_instance->RegMat[domain].MatMat(N, 'N', Nt);
-//	_instance->RegMat[domain].MatScale(_instance->K[domain].getDiagonalMaximum());
-}
-
 void StructuralMechanics3DControler::dirichletIndices(std::vector<std::vector<eslocal> > &indices)
 {
 	indices.resize(3);
 
 	for (auto it = _configuration.displacement.regions.begin(); it != _configuration.displacement.regions.end(); ++it) {
 		BoundaryRegionStore *region = run::mesh->bregion(it->first);
-		indices[0].insert(indices[0].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
+		if (it->second.all.value.size() || it->second.x.value.size()) {
+			indices[0].insert(indices[0].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
+		}
+		if (it->second.all.value.size() || it->second.y.value.size()) {
+			indices[1].insert(indices[1].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
+		}
+		if (it->second.all.value.size() || it->second.z.value.size()) {
+			indices[2].insert(indices[2].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
+		}
 	}
 
 	for (auto it = _configuration.displacement.intersections.begin(); it != _configuration.displacement.intersections.end(); ++it) {
 		BoundaryRegionsIntersectionStore *region = run::mesh->ibregion(it->first);
-		indices[0].insert(indices[0].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
+		if (it->second.all.value.size() || it->second.x.value.size()) {
+			indices[0].insert(indices[0].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
+		}
+		if (it->second.all.value.size() || it->second.y.value.size()) {
+			indices[1].insert(indices[1].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
+		}
+		if (it->second.all.value.size() || it->second.z.value.size()) {
+			indices[2].insert(indices[2].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
+		}
 	}
-	_dirichletSize = indices[0].size();
+	_dirichletSize = indices[0].size() + indices[1].size() + indices[2].size();
 }
 
 void StructuralMechanics3DControler::dirichletValues(std::vector<double> &values)
 {
 	values.resize(_dirichletSize);
 
-//	size_t offset = 0;
-//	for (auto it = _stepSettings.displacement.regions.begin(); it != _stepSettings.displacement.regions.end(); ++it) {
-//		BoundaryRegionStore *region = run::mesh->bregion(it->first);
-//		it->second.evaluator->evalSelected(
-//				region->uniqueNodes->datatarray().size(),
-//				region->uniqueNodes->datatarray().data(),
-//				3, reinterpret_cast<double*>(run::mesh->nodes->coordinates->datatarray().data()),
-//				NULL, _step.currentTime, values.data() + offset);
-//		offset += region->uniqueNodes->datatarray().size();
-//	}
-//
-//	for (auto it = _stepSettings.displacement.intersections.begin(); it != _stepSettings.displacement.intersections.end(); ++it) {
-//		BoundaryRegionsIntersectionStore *region = run::mesh->ibregion(it->first);
-//		it->second.evaluator->evalSelected(
-//				region->uniqueNodes->datatarray().size(),
-//				region->uniqueNodes->datatarray().data(),
-//				3, reinterpret_cast<double*>(run::mesh->nodes->coordinates->datatarray().data()),
-//				NULL, _step.currentTime, values.data() + offset);
-//		offset += region->uniqueNodes->datatarray().size();
-//	}
+	size_t offset = 0;
+	double *coors = reinterpret_cast<double*>(run::mesh->nodes->coordinates->datatarray().data());
+	auto eval = [&] (Evaluator *evaluator, tarray<eslocal> &nodes) {
+		evaluator->evalSelected(nodes.size(), nodes.data(), 3, coors, NULL, time::current, values.data() + offset);
+		offset += nodes.size();
+	};
+
+	auto pick = [&] (ECFExpressionOptionalVector &vector, tarray<eslocal> &nodes) {
+		if (vector.all.value.size()) {
+			eval(vector.all.evaluator, nodes);
+			eval(vector.all.evaluator, nodes);
+			eval(vector.all.evaluator, nodes);
+		} else {
+			if (vector.x.value.size()) {
+				eval(vector.x.evaluator, nodes);
+			}
+			if (vector.y.value.size()) {
+				eval(vector.y.evaluator, nodes);
+			}
+			if (vector.z.value.size()) {
+				eval(vector.z.evaluator, nodes);
+			}
+		}
+	};
+
+	for (auto it = _configuration.displacement.regions.begin(); it != _configuration.displacement.regions.end(); ++it) {
+		BoundaryRegionStore *region = run::mesh->bregion(it->first);
+		pick(it->second, region->uniqueNodes->datatarray());
+	}
+
+	for (auto it = _configuration.displacement.intersections.begin(); it != _configuration.displacement.intersections.end(); ++it) {
+		BoundaryRegionsIntersectionStore *region = run::mesh->ibregion(it->first);
+		pick(it->second, region->uniqueNodes->datatarray());
+	}
 }
 
 void StructuralMechanics3DControler::initData()
@@ -247,6 +136,8 @@ void StructuralMechanics3DControler::initData()
 	double time = time::current;
 
 	updateERegions(run::ecf->structural_mechanics_3d.initial_temperature, _nInitialTemperature.data->datatarray(), 1, cbegin, tbegin, time);
+	updateERegions(_configuration.acceleration, _nacceleration.data->datatarray(), 3, cbegin, tbegin, time);
+	updateERegions(_configuration.angular_velocity, _nangularVelocity.data->datatarray(), 3, cbegin, tbegin, time);
 
 	for (size_t r = 0; r < run::mesh->boundaryRegions.size(); r++) {
 		BoundaryRegionStore *region = run::mesh->boundaryRegions[r];
@@ -270,7 +161,7 @@ void StructuralMechanics3DControler::initData()
 
 			auto pressure = _configuration.normal_pressure.find(region->name);
 			if (pressure != _configuration.normal_pressure.end()) {
-				updateBRegions(pressure->second, _boundaries[r].normalPressure, distribution, 2, cbegin, tbegin, time);
+				updateBRegions(pressure->second, _boundaries[r].normalPressure, distribution, 3, cbegin, tbegin, time);
 			}
 		}
 	}
@@ -292,6 +183,9 @@ void StructuralMechanics3DControler::parametersChanged()
 	double *cbegin = _ncoordinate.data->datatarray().data();
 	double *tbegin = NULL;
 	double time = time::current;
+
+	updateERegions(_configuration.acceleration, _nacceleration.data->datatarray(), 3, cbegin, tbegin, time);
+	updateERegions(_configuration.angular_velocity, _nangularVelocity.data->datatarray(), 3, cbegin, tbegin, time);
 
 	for (size_t r = 0; r < run::mesh->boundaryRegions.size(); r++) {
 		BoundaryRegionStore *region = run::mesh->boundaryRegions[r];
@@ -315,24 +209,31 @@ void StructuralMechanics3DControler::processElements(Matrices matrices, const So
 	StructuralMechanics3DKernel::ElementIterator iterator;
 
 	size_t noffset = enodes->begin() - run::mesh->elements->procNodes->datatarray().begin();
-	iterator.temperature = _ntemperature.data->datatarray().begin() + noffset;
-	iterator.coordinates = _ncoordinate.data->datatarray().begin() + noffset * 3;
+	iterator.temperature        = _ntemperature.data->datatarray().begin() + noffset;
+	iterator.initialTemperature = _nInitialTemperature.data->datatarray().begin() + noffset;
+	iterator.coordinates        = _ncoordinate.data->datatarray().begin() + noffset * 3;
+	iterator.acceleration       = _nacceleration.data->datatarray().begin() + noffset * 3;
+	iterator.angularVelocity    = _nangularVelocity.data->datatarray().begin() + noffset * 3;
+
 
 	for (eslocal e = filler.begin; e < filler.end; ++e, ++enodes) {
 		iterator.element = run::mesh->elements->epointers->datatarray()[e];
 		iterator.material = run::mesh->materials[run::mesh->elements->material->datatarray()[e]];
 
 		_kernel->processElement(matrices, parameters, iterator, filler.Ke, filler.Me, filler.Re, filler.fe);
-		filler.insert(enodes->size());
+		filler.insert(3 * enodes->size());
 
-		iterator.temperature += enodes->size();
-		iterator.coordinates += enodes->size() * 3;
+		iterator.temperature        += enodes->size();
+		iterator.initialTemperature += enodes->size();
+		iterator.coordinates        += enodes->size() * 3;
+		iterator.acceleration       += enodes->size() * 3;
+		iterator.angularVelocity    += enodes->size() * 3;
 	}
 }
 
 void StructuralMechanics3DControler::processBoundary(Matrices matrices, const SolverParameters &parameters, size_t rindex, InstanceFiller &filler)
 {
-	if (run::mesh->boundaryRegions[rindex]->dimension != 1) {
+	if (run::mesh->boundaryRegions[rindex]->dimension != 2) {
 		return;
 	}
 
@@ -347,8 +248,8 @@ void StructuralMechanics3DControler::processBoundary(Matrices matrices, const So
 	for (eslocal e = filler.begin; e < filler.end; ++e, ++enodes) {
 		iterator.element = run::mesh->boundaryRegions[rindex]->epointers->datatarray()[e];
 
-		_kernel->processEdge(matrices, parameters, iterator, filler.Ke, filler.fe);
-		filler.insert(enodes->size());
+		_kernel->processFace(matrices, parameters, iterator, filler.Ke, filler.fe);
+		filler.insert(3 * enodes->size());
 
 		if (iterator.normalPressure) {
 			iterator.normalPressure += enodes->size();
@@ -367,8 +268,8 @@ void StructuralMechanics3DControler::processSolution()
 		StructuralMechanics3DKernel::SolutionIterator iterator;
 
 		size_t noffset = enodes->begin() - run::mesh->elements->procNodes->datatarray().begin(t);
-		iterator.temperature = _ntemperature.data->datatarray().begin(t);
-		iterator.coordinates = _ncoordinate.data->datatarray().begin(t);
+		iterator.temperature = _ntemperature.data->datatarray().begin(t) + noffset;
+		iterator.coordinates = _ncoordinate.data->datatarray().begin(t) + noffset * 3;
 
 		for (size_t e = run::mesh->elements->distribution[t]; e < run::mesh->elements->distribution[t + 1]; ++e, ++enodes) {
 			iterator.element = run::mesh->elements->epointers->datatarray()[e];

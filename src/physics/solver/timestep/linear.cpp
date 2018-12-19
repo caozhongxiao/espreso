@@ -24,8 +24,8 @@ std::string LinearTimeStep::name()
 
 void LinearTimeStep::solve(LoadStepSolver &loadStepSolver)
 {
-	_solver.update(loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::Dirichlet));
-	_solver.solve();
+	_solver.updateData(loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::Dirichlet));
+	_solver.solveSystem();
 	_assembler.postProcess();
 	run::storeSolution();
 }

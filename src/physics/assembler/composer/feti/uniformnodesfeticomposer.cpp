@@ -4,6 +4,7 @@
 #include "../../controllers/controller.h"
 #include "../../provider/feti/fetiprovider.h"
 
+#include "../../assembler.h"
 #include "../../../dataholder.h"
 
 #include "../../../../globals/run.h"
@@ -628,7 +629,7 @@ void UniformNodesFETIComposer::assemble(Matrices matrices, const SolverParameter
 
 		_controler.processElements(matrices, parameters, filler);
 
-		KReduction = 1; //_step.internalForceReduction;
+		KReduction = parameters.internalForceReduction;
 
 		for (size_t r = 0; r < run::mesh->boundaryRegions.size(); r++) {
 			if (run::mesh->boundaryRegions[r]->distribution.size()) {
@@ -639,7 +640,7 @@ void UniformNodesFETIComposer::assemble(Matrices matrices, const SolverParameter
 				}
 			}
 		}
-	}
+	};
 }
 
 void UniformNodesFETIComposer::setDirichlet()
@@ -835,9 +836,8 @@ void UniformNodesFETIComposer::fillSolution()
 				}
 
 				for (size_t dof = 0; dof < _DOFs; ++dof) {
-					solution[n * _DOFs + dof] += rBuffer[noffset][roffset[noffset]];
+					solution[n * _DOFs + dof] += rBuffer[noffset][roffset[noffset]++];
 				}
-				++roffset[noffset];
 			}
 		}
 	}

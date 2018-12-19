@@ -19,71 +19,7 @@ using namespace espreso;
 HeatTransferFETIProvider::HeatTransferFETIProvider(HeatTransferLoadStepConfiguration &configuration)
 : FETIProvider(configuration), _configuration(configuration)
 {
-	run::data->N1.clear();
-	run::data->N2.clear();
-	run::data->RegMat.clear();
 
-	run::data->B0.clear();
-	run::data->B0subdomainsMap.clear();
-
-	run::data->N1.resize(run::mesh->elements->ndomains);
-	run::data->N2.resize(run::mesh->elements->ndomains);
-	run::data->RegMat.resize(run::mesh->elements->ndomains);
-
-	run::data->B0.resize(run::mesh->elements->ndomains);
-	run::data->B0subdomainsMap.resize(run::mesh->elements->ndomains);
-
-	if (_configuration.type == LoadStepConfiguration::TYPE::TRANSIENT) {
-		run::data->computeKernelCallback = [&] (FETI_REGULARIZATION regularization, int scSize, eslocal domain, bool ortogonalCluster) {};
-		run::data->computeKernelsCallback = [&] (FETI_REGULARIZATION regularization, int scSize, bool ortogonalCluster) {};
-
-		run::data->computeKernelsFromOrigKCallback = [&] (FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
-			run::data->K.swap(run::data->origK);
-			run::data->N1.swap(run::data->origKN1);
-			run::data->N2.swap(run::data->origKN2);
-			run::data->RegMat.swap(run::data->origRegMat);
-			makeStiffnessMatricesRegular(regularization, scSize, ortogonalCluster);
-
-			run::data->K.swap(run::data->origK);
-			run::data->N1.swap(run::data->origKN1);
-			run::data->N2.swap(run::data->origKN2);
-			run::data->RegMat.swap(run::data->origRegMat);
-		};
-
-		run::data->computeKernelFromOrigKCallback = [&] (FETI_REGULARIZATION regularization, int scSize, eslocal domain, bool ortogonalCluster) {
-			run::data->K[domain].swap(run::data->origK[domain]);
-			run::data->N1[domain].swap(run::data->origKN1[domain]);
-			run::data->N2[domain].swap(run::data->origKN2[domain]);
-			run::data->RegMat[domain].swap(run::data->origRegMat[domain]);
-			makeStiffnessMatrixRegular(regularization, scSize, domain, ortogonalCluster);
-
-			run::data->K[domain].swap(run::data->origK[domain]);
-			run::data->N1[domain].swap(run::data->origKN1[domain]);
-			run::data->N2[domain].swap(run::data->origKN2[domain]);
-			run::data->RegMat[domain].swap(run::data->origRegMat[domain]);
-		};
-	} else {
-		run::data->computeKernelsCallback = [&] (FETI_REGULARIZATION regularization, int scSize, bool ortogonalCluster) {
-			makeStiffnessMatricesRegular(regularization, scSize, ortogonalCluster);
-		};
-
-		run::data->computeKernelCallback = [&] (FETI_REGULARIZATION regularization, int scSize, eslocal domain, bool ortogonalCluster) {
-			makeStiffnessMatrixRegular(regularization, scSize, domain, ortogonalCluster);
-		};
-	}
-
-	run::data->assembleB0Callback = [&] (FETI_B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
-		switch (type) {
-		case FETI_B0_TYPE::CORNERS:
-			assembleB0FromCorners(1);
-			break;
-		case FETI_B0_TYPE::KERNELS:
-			assembleB0FromKernels(kernels, 1);
-			break;
-		default:
-			ESINFO(GLOBAL_ERROR) << "Unknown type of B0";
-		}
-	};
 }
 
 MatrixType HeatTransferFETIProvider::getMatrixType() const

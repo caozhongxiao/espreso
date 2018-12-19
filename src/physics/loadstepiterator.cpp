@@ -11,11 +11,17 @@
 
 #include "assembler/controllers/heattransfer2d.controller.h"
 #include "assembler/controllers/heattransfer3d.controller.h"
-#include "assembler/composer/global/uniformnodescomposer.h"
-#include "assembler/provider/global/heattransfer.globalprovider.h"
-#include "assembler/composer/feti/uniformnodesfeticomposer.h"
-#include "assembler/provider/feti/heattransfer.fetiprovider.h"
+#include "assembler/controllers/structuralmechanics2d.controller.h"
+#include "assembler/controllers/structuralmechanics3d.controller.h"
 
+#include "assembler/composer/global/uniformnodescomposer.h"
+#include "assembler/composer/feti/uniformnodesfeticomposer.h"
+
+#include "assembler/provider/global/heattransfer.globalprovider.h"
+#include "assembler/provider/global/structuralmechanics.globalprovider.h"
+#include "assembler/provider/feti/heattransfer.fetiprovider.h"
+#include "assembler/provider/feti/structuralmechanics2d.fetiprovider.h"
+#include "assembler/provider/feti/structuralmechanics3d.fetiprovider.h"
 
 #include "../globals/run.h"
 #include "../globals/time.h"
@@ -24,6 +30,7 @@
 
 #include "../linearsolver/multigrid/multigrid.h"
 #include "../solver/generic/FETISolver.h"
+
 
 using namespace espreso;
 
@@ -45,13 +52,31 @@ static Assembler* getAssembler(HeatTransferLoadStepConfiguration &loadStep, DIME
 	switch (loadStep.solver) {
 	case LoadStepConfiguration::SOLVER::FETI:
 		switch (dimension) {
-		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DControler, UniformNodesFETIComposer, HeatTransferFETIProvider>(loadStep, loadStep.feti);
-		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DControler, UniformNodesFETIComposer, HeatTransferFETIProvider>(loadStep, loadStep.feti);
+		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DControler, UniformNodesFETIComposer, HeatTransferFETIProvider>(loadStep, loadStep.feti, 1);
+		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DControler, UniformNodesFETIComposer, HeatTransferFETIProvider>(loadStep, loadStep.feti, 1);
 		} break;
 	case LoadStepConfiguration::SOLVER::MULTIGRID:
 		switch (dimension) {
-		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DControler, UniformNodesComposer, HeatTransferGlobalProvider>(loadStep);
-		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DControler, UniformNodesComposer, HeatTransferGlobalProvider>(loadStep);
+		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DControler, UniformNodesComposer, HeatTransferGlobalProvider>(loadStep, 1);
+		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DControler, UniformNodesComposer, HeatTransferGlobalProvider>(loadStep, 1);
+		}
+	}
+	ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
+	return NULL;
+}
+
+static Assembler* getAssembler(StructuralMechanicsLoadStepConfiguration &loadStep, DIMENSION dimension)
+{
+	switch (loadStep.solver) {
+	case LoadStepConfiguration::SOLVER::FETI:
+		switch (dimension) {
+		case DIMENSION::D2: return new AssemblerInstance<StructuralMechanics2DControler, UniformNodesFETIComposer, StructuralMechanics2DFETIProvider>(loadStep, loadStep.feti, 2);
+		case DIMENSION::D3: return new AssemblerInstance<StructuralMechanics3DControler, UniformNodesFETIComposer, StructuralMechanics3DFETIProvider>(loadStep, loadStep.feti, 3);
+		} break;
+	case LoadStepConfiguration::SOLVER::MULTIGRID:
+		switch (dimension) {
+		case DIMENSION::D2: return new AssemblerInstance<StructuralMechanics2DControler, UniformNodesComposer, StructuralMechanicsGlobalProvider>(loadStep, 2);
+		case DIMENSION::D3: return new AssemblerInstance<StructuralMechanics3DControler, UniformNodesComposer, StructuralMechanicsGlobalProvider>(loadStep, 3);
 		}
 	}
 	ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
@@ -76,21 +101,31 @@ static LoadStepSolver* getLoadStepSolver(HeatTransferLoadStepConfiguration &load
 	switch (loadStep.type) {
 	case LoadStepConfiguration::TYPE::STEADY_STATE:
 		switch (loadStep.mode){
-		case LoadStepConfiguration::MODE::LINEAR:
-			return new SteadyStateSolver(assembler, timeStepSolver, loadStep.duration_time);
-		case LoadStepConfiguration::MODE::NONLINEAR:
-			return new PseudoTimeStepping(assembler, timeStepSolver, loadStep.nonlinear_solver, loadStep.duration_time);
-		default:
-			ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
-		}
-		return NULL;
+		case LoadStepConfiguration::MODE::LINEAR: return new SteadyStateSolver(assembler, timeStepSolver, loadStep.duration_time);
+		case LoadStepConfiguration::MODE::NONLINEAR: return new PseudoTimeStepping(assembler, timeStepSolver, loadStep.nonlinear_solver, loadStep.duration_time);
+		} break;
 	case LoadStepConfiguration::TYPE::TRANSIENT:
 		return new TransientFirstOrderImplicit(assembler, timeStepSolver, loadStep.transient_solver, loadStep.duration_time);
-	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
-		return NULL;
 	}
+	ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
+	return NULL;
 }
+
+static LoadStepSolver* getLoadStepSolver(StructuralMechanicsLoadStepConfiguration &loadStep, Assembler &assembler, TimeStepSolver &timeStepSolver)
+{
+	switch (loadStep.type) {
+	case LoadStepConfiguration::TYPE::STEADY_STATE:
+		switch (loadStep.mode){
+		case LoadStepConfiguration::MODE::LINEAR: return new SteadyStateSolver(assembler, timeStepSolver, loadStep.duration_time);
+		case LoadStepConfiguration::MODE::NONLINEAR: return new PseudoTimeStepping(assembler, timeStepSolver, loadStep.nonlinear_solver, loadStep.duration_time);
+		} break;
+	case LoadStepConfiguration::TYPE::TRANSIENT: break;
+//		return new TransientFirstOrderImplicit(assembler, timeStepSolver, loadStep.transient_solver, loadStep.duration_time);
+	}
+	ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
+	return NULL;
+}
+
 
 LoadStepIterator::LoadStepIterator()
 : _loadStepSolver(NULL), _timeStepSolver(NULL), _assembler(NULL), _linearSolver(NULL)
@@ -103,13 +138,12 @@ bool LoadStepIterator::next()
 	switch (run::ecf->physics) {
 	case PHYSICS::HEAT_TRANSFER_2D:
 		return next(run::ecf->heat_transfer_2d);
-		break;
 	case PHYSICS::HEAT_TRANSFER_3D:
 		return next(run::ecf->heat_transfer_3d);
-		break;
 	case PHYSICS::STRUCTURAL_MECHANICS_2D:
+		return next(run::ecf->structural_mechanics_2d);
 	case PHYSICS::STRUCTURAL_MECHANICS_3D:
-//		next();
+		return next(run::ecf->structural_mechanics_3d);
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown physics.";
 	}
@@ -117,7 +151,8 @@ bool LoadStepIterator::next()
 	return false;
 }
 
-bool LoadStepIterator::next(HeatTransferConfiguration &configuration)
+template <typename TPhysics>
+bool LoadStepIterator::next(TPhysics &configuration)
 {
 	if (time::step < configuration.load_steps) {
 		_linearSolver = getLinearSolver(configuration.load_steps_settings.at(time::step + 1));
@@ -131,18 +166,6 @@ bool LoadStepIterator::next(HeatTransferConfiguration &configuration)
 	}
 
 	return ++time::step < configuration.load_steps;
-}
-
-bool LoadStepIterator::next(StructuralMechanicsConfiguration &configuration)
-{
-	if (time::step < configuration.load_steps) {
-
-
-
-		++time::step;
-	}
-
-	return time::step < configuration.load_steps;
 }
 
 

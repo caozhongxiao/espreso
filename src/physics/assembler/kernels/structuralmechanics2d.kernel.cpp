@@ -133,7 +133,7 @@ void StructuralMechanics2DKernel::processElement(Matrices matrices, const Solver
 	const std::vector<double> &weighFactor = *(iterator.element->weighFactor);
 
 	DenseMatrix Ce(4, 4), XY(1, 2), coordinates(size, 2), J, invJ(2, 2), dND, B, precision, rhsT;
-	DenseMatrix K(size, 9), TE(size, 2), thickness(size, 1), inertia(size, 2), dens(size, 1), angvel(1, 3);
+	DenseMatrix K(size, 9), TE(size, 2), thickness(size, 1), inertia(size, 2), dens(size, 1);
 	DenseMatrix gpK(size, 9), gpTE(1, 2), gpThickness(1, 1), gpInertia(1, 2), gpDens(1, 1);
 	double detJ, CP = 1, te;
 	Point center;
@@ -237,7 +237,7 @@ void StructuralMechanics2DKernel::processElement(Matrices matrices, const Solver
 				rhsT.multiply(B, Ce * precision, detJ * weighFactor[gp] * gpThickness(0, 0), 0, true, false);
 				for (eslocal i = 0; i < 2 * size; i++) {
 					fe(i, 0) += gpDens(0, 0) * detJ * weighFactor[gp] * gpThickness(0, 0) * N[gp](0, i % size) * gpInertia(0, i / size);
-					fe(i, 0) += gpDens(0, 0) * detJ * weighFactor[gp] * gpThickness(0, 0) * N[gp](0, i % size) * XY(0, i / size) * pow(angvel(0, 2), 2);
+					fe(i, 0) += gpDens(0, 0) * detJ * weighFactor[gp] * gpThickness(0, 0) * N[gp](0, i % size) * XY(0, i / size) * pow(iterator.angularVelocity[2], 2);
 					fe(i, 0) += rhsT(i, 0);
 				}
 			}
@@ -284,8 +284,8 @@ void StructuralMechanics2DKernel::processElement(Matrices matrices, const Solver
 					fe(i, 0) += rhsT(i, 0);
 				}
 				for (eslocal i = 0; i < size; i++) {
-					fe(i, 0) += gpDens(0, 0) * detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % size) * XY(0, 0) * pow(angvel(0, 1), 2);
-					fe(size + i, 0) += gpDens(0, 0) * detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % size) * XY(0, 1) * pow(angvel(0, 1), 2);
+					fe(i, 0) += gpDens(0, 0) * detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % size) * XY(0, 0) * pow(iterator.angularVelocity[1], 2);
+					fe(size + i, 0) += gpDens(0, 0) * detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % size) * XY(0, 1) * pow(iterator.angularVelocity[1], 2);
 				}
 			}
 			break;
@@ -325,7 +325,7 @@ void StructuralMechanics2DKernel::processEdge(Matrices matrices, const SolverPar
 	for (size_t n = 0; n < size; n++) {
 		double temp = 0;
 		coordinates(n, 0) = iterator.coordinates[2 * n + 0];
-		coordinates(n, 1) = iterator.coordinates[2 * n + 0];
+		coordinates(n, 1) = iterator.coordinates[2 * n + 1];
 		P(n, 0) = iterator.normalPressure[n];
 		matThickness(n, 0) = iterator.thickness[n];
 	}

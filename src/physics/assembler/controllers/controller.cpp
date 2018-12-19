@@ -103,20 +103,20 @@ void Controler::updateERegions(
 			it->second.x.evaluator->evalFiltered(
 					region->elements->datatarray().size(t), csize,
 					region->elements->datatarray().begin(t),
-					run::mesh->elements->procNodes->boundarytarray().begin(t),
+					run::mesh->elements->procNodes->boundarytarray().begin(),
 					csize, cbegin, tbegin, time, data.data() + 0
 			);
 			it->second.y.evaluator->evalFiltered(
 					region->elements->datatarray().size(t), csize,
 					region->elements->datatarray().begin(t),
-					run::mesh->elements->procNodes->boundarytarray().begin(t),
+					run::mesh->elements->procNodes->boundarytarray().begin(),
 					csize, cbegin, tbegin, time, data.data() + 1
 			);
 			if (csize == 3) {
 				it->second.z.evaluator->evalFiltered(
 						region->elements->datatarray().size(t), csize,
 						region->elements->datatarray().begin(t),
-						run::mesh->elements->procNodes->boundarytarray().begin(t),
+						run::mesh->elements->procNodes->boundarytarray().begin(),
 						csize, cbegin, tbegin, time, data.data() + 2
 				);
 			}

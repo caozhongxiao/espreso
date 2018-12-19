@@ -59,14 +59,16 @@ struct Assembler {
 template <typename TController, typename TComposer, typename TProvider>
 struct AssemblerInstance: public Assembler, public TController, public TComposer, public TProvider {
 
-	AssemblerInstance(HeatTransferLoadStepConfiguration &loadStep)
+	template <typename TPhysics>
+	AssemblerInstance(TPhysics &loadStep, int DOFs)
 	: TController(loadStep),
-	  TComposer(*this, *this, 1),
+	  TComposer(*this, *this, DOFs),
 	  TProvider(loadStep) {}
 
-	AssemblerInstance(HeatTransferLoadStepConfiguration &loadStep, FETISolverConfiguration &solver)
+	template <typename TPhysics>
+	AssemblerInstance(TPhysics &loadStep, FETISolverConfiguration &solver, int DOFs)
 	: TController(loadStep),
-	  TComposer(*this, *this, solver, 1),
+	  TComposer(*this, *this, solver, DOFs),
 	  TProvider(loadStep) {}
 
 	void init()
