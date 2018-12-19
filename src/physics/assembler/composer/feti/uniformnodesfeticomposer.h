@@ -26,7 +26,6 @@ public:
 protected:
 	void buildKPattern();
 	void buildB1Pattern();
-	void buildB0Pattern();
 	void updateDuplicity();
 
 	eslocal _DOFs;

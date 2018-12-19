@@ -210,7 +210,6 @@ void UniformNodesFETIComposer::buildPatterns()
 {
 	buildKPattern();
 	buildB1Pattern();
-	buildB0Pattern();
 }
 
 void UniformNodesFETIComposer::buildKPattern()
@@ -568,16 +567,6 @@ void UniformNodesFETIComposer::buildB1Pattern()
 	run::data->block[DataHolder::CONSTRAINT::EQUALITY_CONSTRAINTS] = dsize + gsize;
 }
 
-void UniformNodesFETIComposer::buildB0Pattern()
-{
-	run::data->B0.resize(run::mesh->elements->ndomains);
-
-	for (eslocal d = 0; d < run::mesh->elements->ndomains; ++d) {
-		run::data->B0[d].rows = 0;
-		run::data->B0[d].cols = 0;
-		run::data->B0[d].nnz = 0;
-	}
-}
 
 void UniformNodesFETIComposer::assemble(Matrices matrices, const SolverParameters &parameters)
 {
