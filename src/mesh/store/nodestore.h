@@ -67,7 +67,6 @@ struct NodeStore {
 	Point min, max, lmin, lmax;
 
 	std::vector<NodeData*> data;
-	std::vector<eslocal> soffsets, scouters;
 
 	size_t packedSize() const;
 	void pack(char* &p) const;
