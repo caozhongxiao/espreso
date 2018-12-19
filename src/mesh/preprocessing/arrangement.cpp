@@ -268,10 +268,23 @@ void MeshPreprocessing::arrangeNodes()
 
 	_mesh->nodes->uniqueSize = goffset;
 	std::vector<eslocal> goffsets(_mesh->neighbours.size());
-	std::vector<eslocal> roffsets(environment->MPIsize);
 	std::vector<eslocal> uniqueNodeOffsets = _mesh->nodes->gatherUniqueNodeDistribution();
 	_mesh->nodes->uniqueOffset = uniqueNodeOffsets[environment->MPIrank];
 	_mesh->nodes->uniqueTotalSize = uniqueNodeOffsets.back();
+
+	goffset = _mesh->nodes->uniqueOffset;
+	std::vector<eslocal> neighDistribution({ 0 });
+	ranks = _mesh->nodes->iranks->cbegin();
+	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++ranks) {
+		if (_mesh->nodes->pintervals[i].sourceProcess == environment->MPIrank) {
+			_mesh->nodes->pintervals[i].globalOffset = goffset;
+			goffset += _mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin;
+		} else {
+			int nindex = n2i(_mesh->nodes->pintervals[i].sourceProcess);
+			_mesh->nodes->pintervals[i].globalOffset = rOffset[nindex][goffsets[nindex]++];
+			_mesh->nodes->pintervals[i].globalOffset += uniqueNodeOffsets[_mesh->nodes->pintervals[i].sourceProcess];
+		}
+	}
 	_mesh->nodes->permute(finalpermutation);
 
 	_mesh->nodes->dcenter.resize(_mesh->elements->ndomains);

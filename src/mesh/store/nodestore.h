@@ -9,7 +9,6 @@
 
 #include "../intervals/processinterval.h"
 #include "../intervals/domaininterval.h"
-#include "../intervals/gluinginterval.h"
 
 #include "../../basis/containers/point.h"
 
@@ -20,8 +19,6 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 struct NodeStore;
 
 struct NodeData {
-	friend class Mesh;
-
 	int dimension;
 	std::vector<std::string> names;
 

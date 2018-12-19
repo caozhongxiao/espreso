@@ -141,7 +141,7 @@ void ElementStore::unpack(const char* &p)
 	for (size_t i = 0; i < datasize; i++) {
 		if (i >= data.size()) {
 			Esutils::unpack(dimension, p);
-			data.push_back(new ElementData(dimension));
+			data.push_back(new ElementData(dimension, {}));
 		}
 		Esutils::unpack(data[i]->names, p);
 	}
@@ -290,13 +290,6 @@ std::vector<eslocal> ElementStore::gatherElementsDistribution()
 std::vector<eslocal> ElementStore::gatherClustersDistribution()
 {
 	return Store::gatherDistribution(nclusters);
-}
-
-
-ElementData::ElementData(int dimension)
-: dimension(dimension)
-{
-
 }
 
 ElementData::ElementData(int dimension, const std::vector<std::string> &names)

@@ -15,14 +15,11 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 struct Element;
 
 struct ElementData {
-	friend class Mesh;
-
 	int dimension;
 	std::vector<std::string> names;
 
 	std::vector<double> data;
 
-	ElementData(int dimension);
 	ElementData(int dimension, const std::vector<std::string> &names);
 };
 
