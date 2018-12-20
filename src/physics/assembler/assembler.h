@@ -31,6 +31,7 @@ struct Assembler {
 	virtual void init() =0;
 	virtual void nextTime() =0;
 	virtual void assemble(Matrices matrices) =0;
+	virtual void setDirichlet() =0;
 	virtual void postProcess() =0;
 
 	/// z = a * x + b + y
@@ -88,6 +89,13 @@ struct AssemblerInstance: public Assembler, public TController, public TComposer
 	void assemble(Matrices matrices)
 	{
 		TComposer::assemble(matrices, parameters);
+		if (TProvider::needOriginalStiffnessMatrices()) {
+			keepK();
+		}
+	}
+
+	void setDirichlet()
+	{
 		TComposer::setDirichlet();
 		TComposer::synchronize();
 	}

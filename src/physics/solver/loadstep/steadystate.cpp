@@ -23,6 +23,7 @@ Matrices SteadyStateSolver::updateStructuralMatrices(Matrices matrices)
 {
 	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::f | Matrices::R | Matrices::Dirichlet);
 	_assembler.assemble(updatedMatrices);
+	_assembler.setDirichlet();
 	return updatedMatrices;
 }
 

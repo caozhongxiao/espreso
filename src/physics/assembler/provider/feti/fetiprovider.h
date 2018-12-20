@@ -9,7 +9,6 @@ namespace espreso {
 
 enum class MatrixType;
 enum class FETI_REGULARIZATION;
-struct LoadStepConfiguration;
 class SparseMatrix;
 
 class FETIProvider: public Provider {
@@ -33,8 +32,6 @@ protected:
 	void assembleUniformB0FromKernels(const std::vector<SparseMatrix> &kernels, int DOFs);
 
 	virtual void analyticRegularization(eslocal domain, bool ortogonalCluster) =0;
-
-	LoadStepConfiguration &_configuration;
 };
 
 }

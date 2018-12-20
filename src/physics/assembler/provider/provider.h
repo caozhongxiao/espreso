@@ -4,12 +4,18 @@
 
 namespace espreso {
 
+struct LoadStepConfiguration;
+
 class Provider {
 
 public:
+	Provider(LoadStepConfiguration &configuration);
 	virtual ~Provider() {}
 
-	virtual bool needOriginalStiffnessMatrices() =0;
+	virtual bool needOriginalStiffnessMatrices();
+
+protected:
+	LoadStepConfiguration &_configuration;
 };
 
 

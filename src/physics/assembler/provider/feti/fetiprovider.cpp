@@ -20,7 +20,7 @@
 using namespace espreso;
 
 FETIProvider::FETIProvider(LoadStepConfiguration &configuration)
-: _configuration(configuration)
+: Provider(configuration)
 {
 	run::data->N1.clear();
 	run::data->N2.clear();
@@ -91,7 +91,8 @@ FETIProvider::FETIProvider(LoadStepConfiguration &configuration)
 
 bool FETIProvider::needOriginalStiffnessMatrices()
 {
-	return _configuration.type == LoadStepConfiguration::TYPE::TRANSIENT;
+	// TODO: some solvers may need in other cases
+	return false || Provider::needOriginalStiffnessMatrices();
 }
 
 void FETIProvider::makeStiffnessMatricesRegular(FETI_REGULARIZATION regularization, int scSize, bool ortogonalCluster)

@@ -7,7 +7,7 @@
 using namespace espreso;
 
 HeatTransferGlobalProvider::HeatTransferGlobalProvider(HeatTransferLoadStepConfiguration &configuration)
-: _configuration(configuration)
+: GlobalProvider(configuration), _configuration(configuration)
 {
 
 }

@@ -11,13 +11,11 @@ enum class MatrixType;
 class GlobalProvider: public Provider {
 
 public:
-	virtual MatrixType getMatrixType() const =0;
+	GlobalProvider(LoadStepConfiguration &configuration);
 
-	bool needOriginalStiffnessMatrices() { return false; }
+	virtual MatrixType getMatrixType() const =0;
 };
 
 }
-
-
 
 #endif /* SRC_PHYSICS_ASSEMBLER_PROVIDER_GLOBAL_GLOBALPROVIDER_H_ */

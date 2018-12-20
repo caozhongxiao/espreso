@@ -7,7 +7,7 @@
 using namespace espreso;
 
 StructuralMechanicsGlobalProvider::StructuralMechanicsGlobalProvider(StructuralMechanicsLoadStepConfiguration &configuration)
-: _configuration(configuration)
+: GlobalProvider(configuration), _configuration(configuration)
 {
 
 }
