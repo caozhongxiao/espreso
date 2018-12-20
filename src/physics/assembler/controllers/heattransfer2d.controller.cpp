@@ -89,7 +89,7 @@ void HeatTransfer2DControler::initData()
 	averageNodeInitilization(_nthickness.data->datatarray(), _avgThickness->data);
 
 	if (_motion != NULL) {
-		nodeValuesToElements(_nmotion.data->datatarray(), _motion->data);
+		nodeValuesToElements(2, _nmotion.data->datatarray(), _motion->data);
 	}
 
 	for (size_t r = 0; r < run::mesh->boundaryRegions.size(); r++) {
@@ -184,7 +184,7 @@ void HeatTransfer2DControler::parametersChanged()
 	averageNodeInitilization(_nthickness.data->datatarray(), _avgThickness->data);
 
 	if (_motion != NULL) {
-		nodeValuesToElements(_nmotion.data->datatarray(), _motion->data);
+		nodeValuesToElements(2, _nmotion.data->datatarray(), _motion->data);
 	}
 
 	for (size_t r = 0; r < run::mesh->boundaryRegions.size(); r++) {

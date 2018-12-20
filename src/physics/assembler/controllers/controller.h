@@ -77,7 +77,7 @@ protected:
 			EvaluatorParameters updatedParams = static_cast<EvaluatorParameters>(0));
 
 	void averageNodeInitilization(tarray<double> &initData, std::vector<double> &averagedData);
-	void nodeValuesToElements(tarray<double> &nodeData, std::vector<double> &elementData);
+	void nodeValuesToElements(int dimension, tarray<double> &nodeData, std::vector<double> &elementData);
 
 	size_t _dirichletSize;
 	std::vector<size_t> _nDistribution;

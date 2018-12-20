@@ -83,7 +83,7 @@ void HeatTransfer3DControler::initData()
 	averageNodeInitilization(_ntemperature.data->datatarray(), _temperature->data);
 
 	if (_motion != NULL) {
-		nodeValuesToElements(_nmotion.data->datatarray(), _motion->data);
+		nodeValuesToElements(3, _nmotion.data->datatarray(), _motion->data);
 	}
 
 	for (size_t r = 0; r < run::mesh->boundaryRegions.size(); r++) {
@@ -173,7 +173,7 @@ void HeatTransfer3DControler::parametersChanged()
 	updateERegions(_configuration.translation_motions, _nmotion.data->datatarray(), 3, cbegin, tbegin, time);
 
 	if (_motion != NULL) {
-		nodeValuesToElements(_nmotion.data->datatarray(), _motion->data);
+		nodeValuesToElements(3, _nmotion.data->datatarray(), _motion->data);
 	}
 
 	for (size_t r = 0; r < run::mesh->boundaryRegions.size(); r++) {
@@ -275,7 +275,7 @@ void HeatTransfer3DControler::processElements(Matrices matrices, const SolverPar
 
 void HeatTransfer3DControler::processBoundary(Matrices matrices, const SolverParameters &parameters, size_t rindex, InstanceFiller &filler)
 {
-	if (run::mesh->boundaryRegions[rindex]->dimension != 1) {
+	if (run::mesh->boundaryRegions[rindex]->dimension != 2) {
 		return;
 	}
 
@@ -298,7 +298,7 @@ void HeatTransfer3DControler::processBoundary(Matrices matrices, const SolverPar
 	for (eslocal e = filler.begin; e < filler.end; ++e, ++enodes) {
 		iterator.element = run::mesh->boundaryRegions[rindex]->epointers->datatarray()[e];
 
-		_kernel->processEdge(matrices, parameters, iterator, filler.Ke, filler.fe);
+		_kernel->processFace(matrices, parameters, iterator, filler.Ke, filler.fe);
 		filler.insert(enodes->size());
 
 		iterator.temperature += enodes->size();

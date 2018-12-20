@@ -157,7 +157,7 @@ void Controler::averageNodeInitilization(tarray<double> &initData, std::vector<d
 	}
 }
 
-void Controler::nodeValuesToElements(tarray<double> &nodeData, std::vector<double> &elementData)
+void Controler::nodeValuesToElements(int dimension, tarray<double> &nodeData, std::vector<double> &elementData)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -165,12 +165,16 @@ void Controler::nodeValuesToElements(tarray<double> &nodeData, std::vector<doubl
 	for (size_t t = 0; t < threads; t++) {
 		size_t noffset = run::mesh->elements->procNodes->cbegin(t)->begin() - run::mesh->elements->procNodes->cbegin()->begin();
 		size_t eoffset = run::mesh->elements->distribution[t];
-		for (auto enodes = run::mesh->elements->procNodes->cbegin(t); enodes != run::mesh->elements->procNodes->cend(t); ++enodes) {
-			double sum = 0;
-			for (auto n = enodes->begin(); n != enodes->end(); ++n, ++noffset) {
-				sum += nodeData[noffset];
+		for (auto enodes = run::mesh->elements->procNodes->cbegin(t); enodes != run::mesh->elements->procNodes->cend(t); ++enodes, ++eoffset) {
+			for (int d = 0; d < dimension; d++) {
+				double sum = 0;
+				for (auto n = enodes->begin(); n != enodes->end(); ++n, ++noffset) {
+					sum += nodeData[dimension * noffset + d];
+				}
+				elementData[dimension * eoffset + d] = sum / enodes->size();
+				noffset -= enodes->size();
 			}
-			elementData[eoffset] = sum / enodes->size();
+			noffset += enodes->size();
 		}
 	}
 }

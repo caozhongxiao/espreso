@@ -479,7 +479,6 @@ void HeatTransfer3DKernel::processFace(Matrices matrices, const SolverParameters
 	DenseMatrix coordinates(size, 3), dND(1, 3), q(size, 1), htc(size, 1), flow(size, 1), emiss(size, 1);
 	DenseMatrix gpQ(1, 1), gpHtc(1, 1), gpFlow(1, 1), gpEmiss(1, 1);
 
-	double area = iterator.regionArea, temp, text;
 	Ke.resize(0, 0);
 	fe.resize(0, 0);
 

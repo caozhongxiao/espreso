@@ -13,13 +13,12 @@ using namespace espreso;
 PseudoTimeStepping::PseudoTimeStepping(Assembler &assembler, TimeStepSolver &timeStepSolver, NonLinearSolverConfiguration &configuration, double duration)
 : LoadStepSolver(assembler, timeStepSolver, duration), _configuration(configuration)
 {
-//	_assembler.setRegularizationCallback();
-//	_assembler.setB0Callback();
+
 }
 
 std::string PseudoTimeStepping::name()
 {
-	return "PSEUDO TRANSIENT";
+	return "PSEUDO TIME STEPPING";
 }
 
 Matrices PseudoTimeStepping::updateStructuralMatrices(Matrices matrices)
@@ -30,7 +29,7 @@ Matrices PseudoTimeStepping::updateStructuralMatrices(Matrices matrices)
 		updatedMatrices &= (Matrices::f | Matrices::Dirichlet | Matrices::R);
 	}
 
-	_assembler.assemble(matrices);
+	_assembler.assemble(updatedMatrices);
 	return matrices;
 }
 
@@ -47,9 +46,9 @@ void PseudoTimeStepping::runNextTimeStep()
 
 void PseudoTimeStepping::processTimeStep()
 {
-//	_composer.step.internalForceReduction = (double)(time::substep + 1) / _configuration.substeps;
-//	_composer.step.timeIntegrationConstantK = 1;
-//	_composer.step.timeIntegrationConstantM = 0;
+	_assembler.parameters.internalForceReduction = (double)(time::substep + 1) / _configuration.substeps;
+	_assembler.parameters.timeIntegrationConstantK = 1;
+	_assembler.parameters.timeIntegrationConstantM = 0;
 
 	_timeStepSolver.solve(*this);
 }
