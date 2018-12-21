@@ -104,7 +104,7 @@ void BlockGenerator::coordinates(PlainMeshData &mesh)
 void BlockGenerator::forEachElement(
 		const Triple<size_t> &begin,
 		const Triple<size_t> &end,
-		std::function<void(std::vector<eslocal> &indices)> operation,
+		std::function<void(std::vector<esint> &indices)> operation,
 		std::function<void(Triple<size_t> &offset)> restriction)
 {
 	Triple<size_t> enodes = Triple<size_t>(_element->subnodes) - 1;
@@ -121,7 +121,7 @@ void BlockGenerator::forEachElement(
 	correct(_begin.y, _end.y);
 	correct(_begin.z, _end.z);
 
-	std::vector<eslocal> indices((enodes + 1).mul());
+	std::vector<esint> indices((enodes + 1).mul());
 
 	Triple<size_t> e;
 	for (e.z = _begin.z; e.z < _end.z; e.z++) {
@@ -148,10 +148,10 @@ void BlockGenerator::forEachElement(
 void BlockGenerator::elements(PlainMeshData &mesh)
 {
 	mesh.esize.resize(_element->subelements * (_block.domains * _block.elements).mul(), _element->enodes);
-	mesh.etype.resize(_element->subelements * (_block.domains * _block.elements).mul(), (eslocal)_element->code);
+	mesh.etype.resize(_element->subelements * (_block.domains * _block.elements).mul(), (esint)_element->code);
 	mesh.enodes.reserve(mesh.etype.size() * _element->enodes);
 
-	auto add = [&] (std::vector<eslocal> &indices) {
+	auto add = [&] (std::vector<esint> &indices) {
 		_element->pushElements(mesh.enodes, indices);
 	};
 
@@ -176,7 +176,7 @@ void BlockGenerator::neighbors(const std::vector<int> &surroundings, PlainMeshDa
 	Triple<size_t> count = _block.domains * _block.elements * (Triple<size_t>(_element->subnodes) - 1);
 	Triple<size_t> size = (count + 1).toSize();
 
-	std::vector<std::pair<eslocal, eslocal> > neighs;
+	std::vector<std::pair<esint, esint> > neighs;
 
 	for (int i = 0; i < 27; i++) {
 		if (surroundings[sorted[i]] < 0) {
@@ -273,7 +273,7 @@ bool BlockGenerator::region(
 	return true;
 }
 
-void BlockGenerator::nodesRegion(const BlockBorder &border, std::vector<eslocal> &nodes)
+void BlockGenerator::nodesRegion(const BlockBorder &border, std::vector<esint> &nodes)
 {
 	BlockBorder intersection = border.intersect(_block);
 	Triple<size_t> ebegin, eend, nbegin, nend;
@@ -282,12 +282,12 @@ void BlockGenerator::nodesRegion(const BlockBorder &border, std::vector<eslocal>
 	}
 
 	CubeEdge edge;
-	auto pushEdge = [&] (std::vector<eslocal> &indices) {
+	auto pushEdge = [&] (std::vector<esint> &indices) {
 		_element->pushNodes(nodes, indices, edge);
 	};
 
 	CubeFace face;
-	auto pushFace = [&] (std::vector<eslocal> &indices) {
+	auto pushFace = [&] (std::vector<esint> &indices) {
 		_element->pushNodes(nodes, indices, face);
 	};
 
@@ -321,7 +321,7 @@ void BlockGenerator::nodesRegion(const BlockBorder &border, std::vector<eslocal>
 	}
 }
 
-void BlockGenerator::edgesRegion(const BlockBorder &border, PlainMeshData &mesh, std::vector<eslocal> &elements)
+void BlockGenerator::edgesRegion(const BlockBorder &border, PlainMeshData &mesh, std::vector<esint> &elements)
 {
 	BlockBorder intersection = border.intersect(_block);
 	Triple<size_t> ebegin, eend, nbegin, nend;
@@ -330,7 +330,7 @@ void BlockGenerator::edgesRegion(const BlockBorder &border, PlainMeshData &mesh,
 	}
 
 	CubeEdge edge = intersection.getEdge(_block);
-	auto pushEdge = [&] (std::vector<eslocal> &indices) {
+	auto pushEdge = [&] (std::vector<esint> &indices) {
 		_element->pushEdge(mesh.enodes, mesh.esize, mesh.etype, indices, edge);
 	};
 
@@ -360,7 +360,7 @@ void BlockGenerator::edgesRegion(const BlockBorder &border, PlainMeshData &mesh,
 	std::iota(elements.begin(), elements.end(), begin);
 }
 
-void BlockGenerator::facesRegion(const BlockBorder &border, PlainMeshData &mesh, std::vector<eslocal> &elements)
+void BlockGenerator::facesRegion(const BlockBorder &border, PlainMeshData &mesh, std::vector<esint> &elements)
 {
 	BlockBorder intersection = border.intersect(_block);
 	Triple<size_t> ebegin, eend, nbegin, nend;
@@ -369,7 +369,7 @@ void BlockGenerator::facesRegion(const BlockBorder &border, PlainMeshData &mesh,
 	}
 
 	CubeFace face = intersection.getFace(_block);
-	auto pushFace = [&] (std::vector<eslocal> &indices) {
+	auto pushFace = [&] (std::vector<esint> &indices) {
 		_element->pushFace(mesh.enodes, mesh.esize, mesh.etype, indices, face);
 	};
 
@@ -397,7 +397,7 @@ void BlockGenerator::facesRegion(const BlockBorder &border, PlainMeshData &mesh,
 	std::iota(elements.begin(), elements.end(), begin);
 }
 
-void BlockGenerator::elementsRegion(const BlockBorder &border, std::vector<eslocal> &elements)
+void BlockGenerator::elementsRegion(const BlockBorder &border, std::vector<esint> &elements)
 {
 	BlockBorder intersection = border.intersect(_block);
 	Triple<size_t> ebegin, eend, nbegin, nend;
@@ -448,7 +448,7 @@ void BlockGenerator::elementsRegion(const BlockBorder &border, std::vector<esloc
 	}
 }
 
-void BlockGenerator::pattern(const Triple<size_t> &offset, const Triple<size_t> &size, std::vector<eslocal> &elements, Pattern pattern, size_t psize)
+void BlockGenerator::pattern(const Triple<size_t> &offset, const Triple<size_t> &size, std::vector<esint> &elements, Pattern pattern, size_t psize)
 {
 	Triple<size_t> divisor(size * _block.elements * _block.domains / psize);
 	Triple<size_t> modulo;

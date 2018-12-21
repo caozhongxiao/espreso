@@ -25,9 +25,9 @@ public:
 	virtual Type type() { return Type::TABLE; }
 	virtual Evaluator* copy() const { return new TableEvaluator(*this); }
 
-	void evalVector(eslocal size, eslocal increment, int csize, const double* cbegin, const double* tbegin, double time, double *results) const;
-	void evalFiltered(eslocal size, eslocal increment, eslocal *elements, eslocal *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const;
-	void evalSelected(eslocal size, eslocal increment, eslocal *selection, int csize, const double* cbegin, const double* tbegin, double time, double *results) const;
+	void evalVector(esint size, esint increment, int csize, const double* cbegin, const double* tbegin, double time, double *results) const;
+	void evalFiltered(esint size, esint increment, esint *elements, esint *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const;
+	void evalSelected(esint size, esint increment, esint *selection, int csize, const double* cbegin, const double* tbegin, double time, double *results) const;
 
 	bool isConstant() const { return !_timeDependency && !_temperatureDependency; }
 	bool isCoordinateDependent() const { return false; }

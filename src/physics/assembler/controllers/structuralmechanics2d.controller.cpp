@@ -23,20 +23,20 @@ StructuralMechanics2DControler::StructuralMechanics2DControler(StructuralMechani
 	double defaultTemperature = 0;
 	double defaultThickness = 1;
 
-	_ncoordinate.data = new serializededata<eslocal, double>(2, _nDistribution);
-	_ntemperature.data = new serializededata<eslocal, double>(1, _nDistribution);
+	_ncoordinate.data = new serializededata<esint, double>(2, _nDistribution);
+	_ntemperature.data = new serializededata<esint, double>(1, _nDistribution);
 
 	_nInitialTemperature.isConts = setDefault(run::ecf->structural_mechanics_2d.initial_temperature, defaultTemperature);
-	_nInitialTemperature.data = new serializededata<eslocal, double>(1, _nDistribution, defaultTemperature);
+	_nInitialTemperature.data = new serializededata<esint, double>(1, _nDistribution, defaultTemperature);
 
 	_nacceleration.isConts = false;
-	_nacceleration.data = new serializededata<eslocal, double>(2, _nDistribution);
+	_nacceleration.data = new serializededata<esint, double>(2, _nDistribution);
 
 	_nangularVelocity.isConts = false;
-	_nangularVelocity.data = new serializededata<eslocal, double>(3, _nDistribution);
+	_nangularVelocity.data = new serializededata<esint, double>(3, _nDistribution);
 
 	_nthickness.isConts = setDefault(run::ecf->structural_mechanics_2d.thickness, defaultThickness);
-	_nthickness.data = new serializededata<eslocal, double>(1, _nDistribution, defaultThickness);
+	_nthickness.data = new serializededata<esint, double>(1, _nDistribution, defaultThickness);
 
 	_displacement = run::mesh->nodes->appendData(2, { "DISPLACEMENT", "DISPLACEMENT_X", "DISPLACEMENT_Y" });
 	_avgThickness = run::mesh->nodes->appendData(1, { }); // printed on elements
@@ -49,7 +49,7 @@ StructuralMechanics2DControler::~StructuralMechanics2DControler()
 	delete _kernel;
 }
 
-void StructuralMechanics2DControler::dirichletIndices(std::vector<std::vector<eslocal> > &indices)
+void StructuralMechanics2DControler::dirichletIndices(std::vector<std::vector<esint> > &indices)
 {
 	indices.resize(2);
 
@@ -81,12 +81,12 @@ void StructuralMechanics2DControler::dirichletValues(std::vector<double> &values
 
 	size_t offset = 0;
 	double *coors = reinterpret_cast<double*>(run::mesh->nodes->coordinates->datatarray().data());
-	auto eval = [&] (Evaluator *evaluator, tarray<eslocal> &nodes) {
+	auto eval = [&] (Evaluator *evaluator, tarray<esint> &nodes) {
 		evaluator->evalSelected(nodes.size(), nodes.data(), 3, coors, NULL, time::current, values.data() + offset);
 		offset += nodes.size();
 	};
 
-	auto pick = [&] (ECFExpressionOptionalVector &vector, tarray<eslocal> &nodes) {
+	auto pick = [&] (ECFExpressionOptionalVector &vector, tarray<esint> &nodes) {
 		if (vector.all.value.size()) {
 			eval(vector.all.evaluator, nodes);
 			eval(vector.all.evaluator, nodes);
@@ -141,8 +141,8 @@ void StructuralMechanics2DControler::initData()
 
 			auto &distribution = region->procNodes->datatarray().distribution();
 
-			_boundaries[r].coordinate.data = new serializededata<eslocal, double>(2, distribution);
-			_boundaries[r].thickness.data = new serializededata<eslocal, double>(1, distribution);
+			_boundaries[r].coordinate.data = new serializededata<esint, double>(2, distribution);
+			_boundaries[r].thickness.data = new serializededata<esint, double>(1, distribution);
 
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
@@ -226,7 +226,7 @@ void StructuralMechanics2DControler::processElements(Matrices matrices, const So
 	iterator.thickness          = _nthickness.data->datatarray().begin() + noffset;
 
 
-	for (eslocal e = filler.begin; e < filler.end; ++e, ++enodes) {
+	for (esint e = filler.begin; e < filler.end; ++e, ++enodes) {
 		iterator.element = run::mesh->elements->epointers->datatarray()[e];
 		iterator.material = run::mesh->materials[run::mesh->elements->material->datatarray()[e]];
 
@@ -257,7 +257,7 @@ void StructuralMechanics2DControler::processBoundary(Matrices matrices, const So
 
 	iterator.normalPressure = _boundaries[rindex].normalPressure.data ? _boundaries[rindex].normalPressure.data->datatarray().begin() + noffset : NULL;
 
-	for (eslocal e = filler.begin; e < filler.end; ++e, ++enodes) {
+	for (esint e = filler.begin; e < filler.end; ++e, ++enodes) {
 		iterator.element = run::mesh->boundaryRegions[rindex]->epointers->datatarray()[e];
 
 		_kernel->processEdge(matrices, parameters, iterator, filler.Ke, filler.fe);

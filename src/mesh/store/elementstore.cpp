@@ -112,10 +112,10 @@ void ElementStore::pack(char* &p) const
 void ElementStore::unpack(const char* &p)
 {
 	if (procNodes == NULL) {
-		procNodes = new serializededata<eslocal, eslocal>(tarray<eslocal>(1, 0), tarray<eslocal>(1, 0));
+		procNodes = new serializededata<esint, esint>(tarray<esint>(1, 0), tarray<esint>(1, 0));
 	}
 	if (epointers == NULL) {
-		epointers = new serializededata<eslocal, Element*>(1, tarray<Element*>(1, 0));
+		epointers = new serializededata<esint, Element*>(1, tarray<Element*>(1, 0));
 	}
 
 	Esutils::unpack(size, p);
@@ -126,8 +126,8 @@ void ElementStore::unpack(const char* &p)
 		if (epointers != NULL) {
 			delete epointers;
 		}
-		epointers = new serializededata<eslocal, Element*>(1, tarray<Element*>(1, size));
-		for (eslocal i = 0; i < size; ++i) {
+		epointers = new serializededata<esint, Element*>(1, tarray<Element*>(1, size));
+		for (esint i = 0; i < size; ++i) {
 			epointers->datatarray()[i] = &_eclasses[0][eindices[i]];
 		}
 	}
@@ -211,7 +211,7 @@ void ElementStore::store(const std::string &file)
 	Store::storedata(os, "neighbors", neighbors);
 }
 
-void ElementStore::permute(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution)
+void ElementStore::permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution)
 {
 	this->distribution = distribution;
 
@@ -252,7 +252,7 @@ void ElementStore::permute(const std::vector<eslocal> &permutation, const std::v
 	// TODO: permute data
 }
 
-void ElementStore::reindex(const serializededata<eslocal, eslocal> *nIDs)
+void ElementStore::reindex(const serializededata<esint, esint> *nIDs)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -271,27 +271,27 @@ ElementData* ElementStore::appendData(int dimension, const std::vector<std::stri
 	return this->data.back();
 }
 
-std::vector<eslocal> ElementStore::gatherElementsProcDistribution()
+std::vector<esint> ElementStore::gatherElementsProcDistribution()
 {
 	return Store::gatherDistribution(size);
 }
 
-std::vector<eslocal> ElementStore::gatherDomainsProcDistribution()
+std::vector<esint> ElementStore::gatherDomainsProcDistribution()
 {
 	return Store::gatherDistribution(ndomains);
 }
 
-std::vector<eslocal> ElementStore::gatherDomainsDistribution()
+std::vector<esint> ElementStore::gatherDomainsDistribution()
 {
 	return Store::gatherDistribution(domainDistribution, firstDomain);
 }
 
-std::vector<eslocal> ElementStore::gatherElementsDistribution()
+std::vector<esint> ElementStore::gatherElementsDistribution()
 {
 	return Store::gatherDistribution(elementsDistribution, IDs->datatarray().front());
 }
 
-std::vector<eslocal> ElementStore::gatherClustersDistribution()
+std::vector<esint> ElementStore::gatherClustersDistribution()
 {
 	return Store::gatherDistribution(nclusters);
 }
@@ -302,7 +302,7 @@ ElementData::ElementData(int dimension, const std::vector<std::string> &names)
 
 }
 
-void ElementData::statistics(const tarray<eslocal> &elements, eslocal totalsize, Statistics *statistics)
+void ElementData::statistics(const tarray<esint> &elements, esint totalsize, Statistics *statistics)
 {
 	for (int d = 0; d <= names.size(); d++) {
 		(statistics + d)->reset();

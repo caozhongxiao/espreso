@@ -10,7 +10,7 @@ Triangle3Generator::Triangle3Generator()
 	code = Element::CODE::TRIANGLE3;
 }
 
-void Triangle3Generator::pushElements(std::vector<eslocal> &elements, const std::vector<eslocal> &indices) const
+void Triangle3Generator::pushElements(std::vector<esint> &elements, const std::vector<esint> &indices) const
 {
 	elements.push_back(indices[0]);
 	elements.push_back(indices[1]);

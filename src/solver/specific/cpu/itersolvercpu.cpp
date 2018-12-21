@@ -368,7 +368,7 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local( TimeEval & time_eval, SuperClu
 
 }
 
-void IterSolverCPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<eslocal> & in_indices, SEQ_VECTOR<double> & in_values, SEQ_VECTOR<eslocal> & out_indices, SEQ_VECTOR<double> & out_values) {
+void IterSolverCPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<esint> & in_indices, SEQ_VECTOR<double> & in_values, SEQ_VECTOR<esint> & out_indices, SEQ_VECTOR<double> & out_values) {
 
 //	 time_eval.totalTime.start();
 
@@ -448,8 +448,8 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 //			for (size_t i = 0; i < cluster.domains[d]->lambda_map_sub.size(); i++)
 //				x_in_tmp[i] = x_in[ cluster.domains[d]->lambda_map_sub[i]];
 
-			eslocal iter_in = 0;
-			eslocal iter_lm = 0;
+			esint iter_in = 0;
+			esint iter_lm = 0;
 
 			do {
 
@@ -467,7 +467,7 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 					}
 				}
 
-			} while (iter_lm != (eslocal)cluster.domains[d]->lambda_map_sub.size() && iter_in != (eslocal)in_indices.size() );
+			} while (iter_lm != (esint)cluster.domains[d]->lambda_map_sub.size() && iter_in != (esint)in_indices.size() );
 
 			if (!is_empty[d])
 				cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'T');

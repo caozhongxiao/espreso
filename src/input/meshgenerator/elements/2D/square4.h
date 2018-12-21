@@ -10,7 +10,7 @@ struct Square4Generator: public LinearPlaneGenerator {
 
 	Square4Generator();
 
-	void pushElements(std::vector<eslocal> &elements, const std::vector<eslocal> &indices) const;
+	void pushElements(std::vector<esint> &elements, const std::vector<esint> &indices) const;
 };
 
 }

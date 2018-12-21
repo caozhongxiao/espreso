@@ -14,7 +14,7 @@ public:
 	StructuralMechanics3DFETIProvider(StructuralMechanicsLoadStepConfiguration &configuration);
 
 protected:
-	void analyticRegularization(eslocal domain, bool ortogonalCluster);
+	void analyticRegularization(esint domain, bool ortogonalCluster);
 
 	void assembleB0FromCorners()
 	{

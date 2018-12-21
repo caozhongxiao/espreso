@@ -242,7 +242,7 @@ void FETISolver::createCMat() {
 		PrecFull.ConvertToCOO(1);
 		PrecFull.type='G';
 
-		SEQ_VECTOR <eslocal> prec_map_vec;
+		SEQ_VECTOR <esint> prec_map_vec;
 		prec_map_vec = cluster->domains[d].B1t_Dir_perm_vec;
 
 		for (size_t i = 0; i < PrecFull.I_row_indices.size(); i++) {
@@ -264,16 +264,16 @@ void FETISolver::createCMat() {
 		//Decompress matrix
 		Ml.ConvertToCOO(0);
 
-//		eslocal dl_size = cluster->my_lamdas_indices.size();
+//		esint dl_size = cluster->my_lamdas_indices.size();
 //		Ml.rows = dl_size;
 //		Ml.cols = dl_size;
 //
 //
-//		for (eslocal i = 0; i < Ml.I_row_indices.size(); i++) {
-//			eslocal I 		= Ml.I_row_indices[i] - 1;
-//			eslocal J 		= Ml.J_col_indices[i] - 1;
-//			eslocal I_dec   = cluster->domains[d].lambda_map_sub_local[I] + 1;
-//			eslocal J_dec   = cluster->domains[d].lambda_map_sub_local[J] + 1;
+//		for (esint i = 0; i < Ml.I_row_indices.size(); i++) {
+//			esint I 		= Ml.I_row_indices[i] - 1;
+//			esint J 		= Ml.J_col_indices[i] - 1;
+//			esint I_dec   = cluster->domains[d].lambda_map_sub_local[I] + 1;
+//			esint J_dec   = cluster->domains[d].lambda_map_sub_local[J] + 1;
 //			Ml.I_row_indices[i] = I_dec;
 //			Ml.J_col_indices[i] = J_dec;
 //
@@ -284,9 +284,9 @@ void FETISolver::createCMat() {
 //
 //		Bdec[d].rows = dl_size;
 //		Btdec[d].cols = dl_size;
-//		for (eslocal i = 0; i < Bdec[d].I_row_indices.size(); i++) {
-//			eslocal I     = Bdec[d].I_row_indices[i] - 1;
-//			eslocal I_dec = cluster->domains[d].lambda_map_sub_local[I] + 1;
+//		for (esint i = 0; i < Bdec[d].I_row_indices.size(); i++) {
+//			esint I     = Bdec[d].I_row_indices[i] - 1;
+//			esint I_dec = cluster->domains[d].lambda_map_sub_local[I] + 1;
 //
 //			Bdec[d].I_row_indices[i]  = I_dec;
 //			Btdec[d].J_col_indices[i] = I_dec;
@@ -396,11 +396,11 @@ void FETISolver::createCMat() {
 
 
 		int eig_n = (iv-il+1);
-		eslocal n = A.rows;
+		esint n = A.rows;
 		SEQ_VECTOR <double> w (eig_n);				// eigen values storage
 		SEQ_VECTOR <double> eig_vectors (eig_n*n);	// eigen vectors storage
-		SEQ_VECTOR <eslocal> ifail (n);				// dummy
-		SEQ_VECTOR <eslocal> m (n);					// dummy
+		SEQ_VECTOR <esint> ifail (n);				// dummy
+		SEQ_VECTOR <esint> m (n);					// dummy
 		double tmpd = 0;							// dummy
 		double abstol = 0.0;						// dummy
 
@@ -783,7 +783,7 @@ void FETISolver::CheckSolution( vector < vector < double > > & prim_solution ) {
     // *** Solutin correctnes test **********************************************************************************************
 
 	//	double max_v = 0.0;
-//		for (eslocal i = 0; i < number_of_subdomains_per_cluster; i++)
+//		for (esint i = 0; i < number_of_subdomains_per_cluster; i++)
 //			for (size_t j = 0; j < prim_solution[i].size(); j++)
 //				if ( fabs ( prim_solution[i][j] ) > max_v) max_v = fabs( prim_solution[i][j] );
 //
@@ -798,6 +798,6 @@ void FETISolver::CheckSolution( vector < vector < double > > & prim_solution ) {
 
 }
 
-void FETISolver::Preprocessing( std::vector < std::vector < eslocal > > & lambda_map_sub) {
+void FETISolver::Preprocessing( std::vector < std::vector < esint > > & lambda_map_sub) {
 
 }

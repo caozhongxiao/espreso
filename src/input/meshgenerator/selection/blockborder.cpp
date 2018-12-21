@@ -96,7 +96,7 @@ BlockBorder BlockBorder::intersect(const BlockSettings &block) const
 
 CubeEdge BlockBorder::getEdge(const BlockSettings &block) const
 {
-	auto eq = [&] (const esglobal &a, const esglobal &b) {
+	auto eq = [&] (const esint &a, const esint &b) {
 		return a == b;
 	};
 

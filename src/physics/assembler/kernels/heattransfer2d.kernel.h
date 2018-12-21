@@ -79,7 +79,7 @@ struct HeatTransfer2DKernel: public HeatTransferKernel
 	void processSolution(const SolutionIterator &iterator);
 
 protected:
-	void assembleMaterialMatrix(eslocal node, double *coordinates, const MaterialBaseConfiguration *mat, double phase, double time, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const;
+	void assembleMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double phase, double time, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const;
 
 };
 

@@ -9,7 +9,7 @@
 
 using namespace espreso;
 
-bool OpenFOAMPoints::readData(std::vector<eslocal> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
+bool OpenFOAMPoints::readData(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -42,7 +42,7 @@ bool OpenFOAMPoints::readData(std::vector<eslocal> &nIDs, std::vector<Point> &co
 
 	nIDs.resize(coordinates.size());
 
-	eslocal offset = coordinates.size();
+	esint offset = coordinates.size();
 	Communication::exscan(offset);
 	std::iota(nIDs.begin(), nIDs.end(), offset);
 	return true;

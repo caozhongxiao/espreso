@@ -8,12 +8,12 @@ struct METISConfiguration;
 
 struct METIS {
 
-	static eslocal call(
+	static esint call(
 			const METISConfiguration &options,
-			eslocal verticesCount,
-			eslocal *eframes, eslocal *eneighbors,
-			eslocal verticesWeightCount, eslocal *verticesWeights, eslocal *edgeWeights,
-			eslocal parts, eslocal *partition);
+			esint verticesCount,
+			esint *eframes, esint *eneighbors,
+			esint verticesWeightCount, esint *verticesWeights, esint *edgeWeights,
+			esint parts, esint *partition);
 
 };
 

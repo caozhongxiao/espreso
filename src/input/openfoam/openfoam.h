@@ -16,8 +16,8 @@ class Mesh;
 struct OpenFOAMSet;
 
 struct PlainOpenFOAMData: public PlainMeshData {
-	eslocal nelements;
-	std::vector<eslocal> fIDs, fsize, fnodes, owner, neighbour;
+	esint nelements;
+	std::vector<esint> fIDs, fsize, fnodes, owner, neighbour;
 };
 
 class OpenFOAMLoader {
@@ -45,7 +45,7 @@ protected:
 	ParallelFile _pointZones, _faceZones, _cellZones;
 
 	std::vector<OpenFOAMSet> _sets;
-	std::vector<eslocal> _fdist, _edist;
+	std::vector<esint> _fdist, _edist;
 };
 
 }

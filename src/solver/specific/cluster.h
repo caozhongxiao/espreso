@@ -41,7 +41,7 @@ using std::make_pair;
 
     public:
         // Constructor
-//        ClusterBase(const FETISolverConfiguration &configuration, eslocal cluster_index):
+//        ClusterBase(const FETISolverConfiguration &configuration, esint cluster_index):
 //        	configuration(configuration),
 //            cluster_time("Cluster Timing "),
 //            vec_fill_time("Reseting vec_g0 and vec_e0"),
@@ -131,27 +131,27 @@ using std::make_pair;
         DataHolder *instance;
 
         // Cluster specific variables
-        eslocal cluster_global_index;
-        eslocal cluster_local_index;
-        eslocal min_numClusters_per_MPI;
+        esint cluster_global_index;
+        esint cluster_local_index;
+        esint min_numClusters_per_MPI;
 
 
-        eslocal USE_KINV;
-        eslocal USE_HFETI;
-        eslocal PAR_NUM_THREADS;
-        eslocal SOLVER_NUM_THREADS;
+        esint USE_KINV;
+        esint USE_HFETI;
+        esint PAR_NUM_THREADS;
+        esint SOLVER_NUM_THREADS;
         bool 	SYMMETRIC_SYSTEM;
         MatrixType mtype;
 
-        eslocal dual_size;
+        esint dual_size;
         string data_directory;
 
         // List of Domains
-        SEQ_VECTOR <eslocal> domains_in_global_index;
+        SEQ_VECTOR <esint> domains_in_global_index;
         PAR_VECTOR <Domain>  domains;
 
-        eslocal x_clust_size;
-        SEQ_VECTOR <eslocal> x_clust_domain_map_vec;
+        esint x_clust_size;
+        SEQ_VECTOR <esint> x_clust_domain_map_vec;
 
         // Global Matrices distributed per cluster
         SparseMatrix G1;
@@ -210,14 +210,14 @@ using std::make_pair;
 
         // Functions of the class
 
-        void InitClusterPC   ( eslocal * subdomains_global_indices, eslocal number_of_subdomains );
-        void SetClusterPC    (); //SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map);
+        void InitClusterPC   ( esint * subdomains_global_indices, esint number_of_subdomains );
+        void SetClusterPC    (); //SEQ_VECTOR <SEQ_VECTOR <esint> > & lambda_map);
         void SetClusterHFETI ();
 
         virtual void SetupKsolvers ( ) = 0;
         void SetupPreconditioner ( );
 
-        void multKplusGlobal     ( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, SEQ_VECTOR<eslocal> & cluster_map_vec);
+        void multKplusGlobal     ( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, SEQ_VECTOR<esint> & cluster_map_vec);
         void multKplusGlobal_l   ( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in );
 
         void multKplusGlobal_Kinv  ( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in );
@@ -252,21 +252,21 @@ using std::make_pair;
 	void compress_lambda_vector(SEQ_VECTOR <double> & decompressed_vec_lambda);
 	void decompress_lambda_vector(SEQ_VECTOR <double> & compressed_vec_lambda);
 
-	SEQ_VECTOR < SEQ_VECTOR <eslocal> >		my_comm_lambdas_indices;
+	SEQ_VECTOR < SEQ_VECTOR <esint> >		my_comm_lambdas_indices;
 	SEQ_VECTOR < SEQ_VECTOR <double> >  my_comm_lambdas;
 	SEQ_VECTOR < SEQ_VECTOR <double> >  my_recv_lambdas;
 
-	SEQ_VECTOR < SEQ_VECTOR <eslocal> >		my_comm_lambdas_indices_comp;
+	SEQ_VECTOR < SEQ_VECTOR <esint> >		my_comm_lambdas_indices_comp;
 	SEQ_VECTOR < SEQ_VECTOR <double> >  my_comm_lambdas_comp;
 	SEQ_VECTOR < SEQ_VECTOR <double> >  my_recv_lambdas_comp;
 
-	SEQ_VECTOR <eslocal> my_neighs;
-	SEQ_VECTOR <eslocal> my_lamdas_indices;
+	SEQ_VECTOR <esint> my_neighs;
+	SEQ_VECTOR <esint> my_lamdas_indices;
 
-	map <eslocal,eslocal> _my_lamdas_map_indices;
+	map <esint,esint> _my_lamdas_map_indices;
 
-	SEQ_VECTOR <eslocal> my_lamdas_ddot_filter;
-	SEQ_VECTOR <eslocal> lambdas_filter;
+	SEQ_VECTOR <esint> my_lamdas_ddot_filter;
+	SEQ_VECTOR <esint> lambdas_filter;
 
 	SEQ_VECTOR <double> compressed_tmp;
 	//SEQ_VECTOR <double> compressed_tmp2;

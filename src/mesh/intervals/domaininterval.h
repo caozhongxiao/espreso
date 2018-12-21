@@ -5,10 +5,10 @@
 namespace espreso {
 
 struct DomainInterval {
-	eslocal begin, end;
-	eslocal pindex, DOFOffset;
+	esint begin, end;
+	esint pindex, DOFOffset;
 
-	DomainInterval(eslocal begin, eslocal end, eslocal pindex, eslocal DOFOffset): begin(begin), end(end), pindex(pindex), DOFOffset(DOFOffset) {}
+	DomainInterval(esint begin, esint end, esint pindex, esint DOFOffset): begin(begin), end(end), pindex(pindex), DOFOffset(DOFOffset) {}
 };
 
 }

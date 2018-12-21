@@ -170,7 +170,7 @@ void OpenFOAMLoader::buildFaces(PlainOpenFOAMData &mesh)
 {
 	// 1. Find MAX element ID in order to be able correctly set face IDs in continuous interval
 
-	eslocal maxID = 0;
+	esint maxID = 0;
 	if (mesh.owner.size()) {
 		maxID = *std::max_element(mesh.owner.begin(), mesh.owner.end());
 	}
@@ -178,12 +178,12 @@ void OpenFOAMLoader::buildFaces(PlainOpenFOAMData &mesh)
 		maxID = std::max(*std::max_element(mesh.neighbour.begin(), mesh.neighbour.end()), maxID);
 	}
 
-	MPI_Allreduce(&maxID, &mesh.nelements, sizeof(eslocal), MPI_BYTE, MPITools::eslocalOperations().max, environment->MPICommunicator);
+	MPI_Allreduce(&maxID, &mesh.nelements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, environment->MPICommunicator);
 	mesh.nelements += 1;
 
-	_edist = tarray<eslocal>::distribute(environment->MPIsize, mesh.nelements);
+	_edist = tarray<esint>::distribute(environment->MPIsize, mesh.nelements);
 
-	std::vector<eslocal> fDistribution = Communication::getDistribution<eslocal>(mesh.fsize.size());
+	std::vector<esint> fDistribution = Communication::getDistribution<esint>(mesh.fsize.size());
 
 	// 2. Add sets that are not in any zone or boundary
 
@@ -246,7 +246,7 @@ void OpenFOAMLoader::buildFaces(PlainOpenFOAMData &mesh)
 
 	// 3. Exchange region data to processes that hold given faces
 
-	std::vector<eslocal> sBuffer, rBuffer;
+	std::vector<esint> sBuffer, rBuffer;
 
 	std::vector<size_t> rpointer(mesh.eregions.size());
 	for (int r = 0; r < environment->MPIsize; r++) {
@@ -280,7 +280,7 @@ void OpenFOAMLoader::buildFaces(PlainOpenFOAMData &mesh)
 		}
 	}
 
-	std::vector<eslocal> usedfaces;
+	std::vector<esint> usedfaces;
 	size_t offset = 0;
 	for (int r = 0; r < environment->MPIsize; r++) {
 		++offset; // skip total size
@@ -315,7 +315,7 @@ void OpenFOAMLoader::buildFaces(PlainOpenFOAMData &mesh)
 	}
 
 	for (size_t i = 0; i < usedfaces.size(); i++) {
-		eslocal findex = usedfaces[i] - fDistribution[environment->MPIrank];
+		esint findex = usedfaces[i] - fDistribution[environment->MPIrank];
 
 		mesh.esize.push_back(mesh.fsize[findex]);
 		mesh.enodes.insert(mesh.enodes.end(), mesh.fnodes.begin() + _fdist[findex], mesh.fnodes.begin() + _fdist[findex + 1]);
@@ -365,11 +365,11 @@ void OpenFOAMLoader::collectFaces(PlainOpenFOAMData &mesh)
 
 	size_t firstID = Communication::getDistribution(mesh.fsize.size())[environment->MPIrank];
 
-	auto sortIDs = [&] (std::vector<eslocal> &permutation, const std::vector<eslocal> &data) {
+	auto sortIDs = [&] (std::vector<esint> &permutation, const std::vector<esint> &data) {
 		permutation.resize(data.size());
 		std::iota(permutation.begin(), permutation.end(), 0);
 
-		std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) {
+		std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) {
 			if (data[i] == data[j]) {
 				return i < j;
 			}
@@ -377,11 +377,11 @@ void OpenFOAMLoader::collectFaces(PlainOpenFOAMData &mesh)
 		});
 	};
 
-	std::vector<eslocal> oPermutation, nPermutation;
+	std::vector<esint> oPermutation, nPermutation;
 	sortIDs(oPermutation, mesh.owner);
 	sortIDs(nPermutation, mesh.neighbour);
 
-	std::vector<eslocal> sBuffer, rBuffer;
+	std::vector<esint> sBuffer, rBuffer;
 	// ID, size, owner / -1 * neighbor, nodes
 	sBuffer.reserve(4 * environment->MPIsize + 3 * (mesh.owner.size() + mesh.neighbour.size()) + mesh.fnodes.size());
 
@@ -425,7 +425,7 @@ void OpenFOAMLoader::collectFaces(PlainOpenFOAMData &mesh)
 	mesh.owner.clear();
 	mesh.neighbour.clear();
 
-	std::vector<eslocal> fIDs, fsize, fnodes, owners;
+	std::vector<esint> fIDs, fsize, fnodes, owners;
 
 	size_t offset = 0;
 	for (int r = 0; r < environment->MPIsize; r++) {
@@ -442,9 +442,9 @@ void OpenFOAMLoader::collectFaces(PlainOpenFOAMData &mesh)
 		}
 	}
 
-	std::vector<eslocal> fpermutation(fIDs.size());
+	std::vector<esint> fpermutation(fIDs.size());
 	std::iota(fpermutation.begin(), fpermutation.end(), 0);
-	std::sort(fpermutation.begin(), fpermutation.end(), [&] (eslocal i, eslocal j) {
+	std::sort(fpermutation.begin(), fpermutation.end(), [&] (esint i, esint j) {
 		return fIDs[i] < fIDs[j];
 	});
 
@@ -494,11 +494,11 @@ void OpenFOAMLoader::buildElements(PlainOpenFOAMData &mesh)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	auto sortIDs = [&] (std::vector<eslocal> &permutation, const std::vector<eslocal> &data) {
+	auto sortIDs = [&] (std::vector<esint> &permutation, const std::vector<esint> &data) {
 		permutation.resize(data.size());
 		std::iota(permutation.begin(), permutation.end(), 0);
 
-		std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) {
+		std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) {
 			if (data[i] == data[j]) {
 				return i < j;
 			}
@@ -506,13 +506,13 @@ void OpenFOAMLoader::buildElements(PlainOpenFOAMData &mesh)
 		});
 	};
 
-	std::vector<eslocal> owner, neighbour;
+	std::vector<esint> owner, neighbour;
 	sortIDs(owner, mesh.owner);
 	sortIDs(neighbour, mesh.neighbour);
 
 	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, _edist[environment->MPIrank + 1] - _edist[environment->MPIrank]);
 
-	std::vector<std::vector<eslocal> > esize(threads), enodes(threads);
+	std::vector<std::vector<esint> > esize(threads), enodes(threads);
 	std::vector<std::vector<int> > etype(threads);
 
 	_fdist.clear();
@@ -522,13 +522,13 @@ void OpenFOAMLoader::buildElements(PlainOpenFOAMData &mesh)
 		_fdist.push_back(_fdist.back() + mesh.fsize[f]);
 	}
 
-	auto getThreadBegin = [] (const std::vector<eslocal> &data, const std::vector<eslocal> &perm, eslocal eindex) {
-		return std::lower_bound(perm.begin(), perm.end(), eindex, [&] (eslocal i, eslocal eindex) {
+	auto getThreadBegin = [] (const std::vector<esint> &data, const std::vector<esint> &perm, esint eindex) {
+		return std::lower_bound(perm.begin(), perm.end(), eindex, [&] (esint i, esint eindex) {
 			return data[i] < eindex;
 		}) - perm.begin();
 	};
 
-	auto addFaces = [&] (const std::vector<eslocal> &data, const std::vector<eslocal> &perm, size_t &triangles, size_t &squares, size_t &index, eslocal element) {
+	auto addFaces = [&] (const std::vector<esint> &data, const std::vector<esint> &perm, size_t &triangles, size_t &squares, size_t &index, esint element) {
 		while (index < perm.size() && data[perm[index]] == element) {
 			switch (mesh.fsize[perm[index++]]) {
 			case 3: ++triangles; break;
@@ -537,19 +537,19 @@ void OpenFOAMLoader::buildElements(PlainOpenFOAMData &mesh)
 		}
 	};
 
-	auto getFace = [&] (const std::vector<eslocal> &data, const std::vector<eslocal> &perm, size_t index, eslocal element, eslocal n1, eslocal n2) {
+	auto getFace = [&] (const std::vector<esint> &data, const std::vector<esint> &perm, size_t index, esint element, esint n1, esint n2) {
 		while (index < perm.size() && data[perm[index]] == element) {
-			for (eslocal f = 0; f < mesh.fsize[perm[index]]; f++) {
+			for (esint f = 0; f < mesh.fsize[perm[index]]; f++) {
 				if (n1 == mesh.fnodes[_fdist[perm[index]] + f] && n2 == mesh.fnodes[_fdist[perm[index]] + (f + 1) % mesh.fsize[perm[index]]]) {
-					return std::pair<size_t, eslocal>(index, f);
+					return std::pair<size_t, esint>(index, f);
 				}
 			}
 			++index;
 		}
-		return std::pair<size_t, eslocal>(index, -1);
+		return std::pair<size_t, esint>(index, -1);
 	};
 
-	auto getUnknown = [&] (eslocal *kbegin, eslocal *kend, eslocal *ubegin, eslocal *uend) {
+	auto getUnknown = [&] (esint *kbegin, esint *kend, esint *ubegin, esint *uend) {
 		for (auto i = ubegin, j = kbegin; i != uend; ++i) {
 			for (j = kbegin; j != kend; ++j) {
 				if (*i == *j) {
@@ -560,10 +560,10 @@ void OpenFOAMLoader::buildElements(PlainOpenFOAMData &mesh)
 				return *i;
 			}
 		}
-		return (eslocal)-1;
+		return (esint)-1;
 	};
 
-	auto findElementWithSize = [&] (const std::vector<eslocal> &perm, size_t &index, size_t &max, int size) {
+	auto findElementWithSize = [&] (const std::vector<esint> &perm, size_t &index, size_t &max, int size) {
 		while (index < max) { // there is at least one owner
 			if (mesh.fsize[perm[index]] == size) {
 				break;
@@ -577,7 +577,7 @@ void OpenFOAMLoader::buildElements(PlainOpenFOAMData &mesh)
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		std::vector<eslocal> tsize, tnodes;
+		std::vector<esint> tsize, tnodes;
 		std::vector<int> ttype;
 
 		size_t oindex = getThreadBegin(mesh.owner, owner, tdistribution[t] + eoffset);
@@ -585,7 +585,7 @@ void OpenFOAMLoader::buildElements(PlainOpenFOAMData &mesh)
 
 		for (size_t e = tdistribution[t] + eoffset; e < tdistribution[t + 1] + eoffset; e++) {
 			size_t obegin = oindex, nbegin = nindex;
-			std::pair<size_t, eslocal> index;
+			std::pair<size_t, esint> index;
 			size_t triangles = 0, squares = 0;
 			addFaces(mesh.owner, owner, triangles, squares, oindex, e);
 			addFaces(mesh.neighbour, neighbour, triangles, squares, nindex, e);

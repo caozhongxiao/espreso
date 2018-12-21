@@ -7,23 +7,23 @@
 
 using namespace espreso;
 
-eslocal ParMETIS::call(
+esint ParMETIS::call(
 			METHOD method,
 			MPISubset &subset,
-			std::vector<eslocal> &eframes, std::vector<eslocal> &eneighbors,
-			std::vector<eslocal> &partition)
+			std::vector<esint> &eframes, std::vector<esint> &eneighbors,
+			std::vector<esint> &partition)
 {
-	eslocal edgecut;
+	esint edgecut;
 
 	if (subset.within.size == 1) {
-		std::vector<eslocal> edistribution = Communication::getDistribution<eslocal>(partition.size(), subset.across);
+		std::vector<esint> edistribution = Communication::getDistribution<esint>(partition.size(), subset.across);
 		edgecut = ParMETIS::call(method, subset,
 					edistribution.data(), eframes.data(), eneighbors.data(),
 					0, NULL, 0, NULL, NULL,
 					partition.data());
 	} else {
-		MPIType type = MPITools::getType<eslocal>();
-		std::vector<eslocal> gframes, gneighbors, gpartition;
+		MPIType type = MPITools::getType<esint>();
+		std::vector<esint> gframes, gneighbors, gpartition;
 		std::vector<size_t> offsets;
 
 		Communication::gatherUnknownSize(eframes, gframes, subset.within);
@@ -47,7 +47,7 @@ eslocal ParMETIS::call(
 			}
 			count.back() = gpartition.size() - offsets.back();
 
-			std::vector<eslocal> edistribution = Communication::getDistribution<eslocal>(gpartition.size(), subset.across);
+			std::vector<esint> edistribution = Communication::getDistribution<esint>(gpartition.size(), subset.across);
 
 			edgecut = ParMETIS::call(method, subset,
 					edistribution.data(), gframes.data(), gneighbors.data(),
@@ -62,25 +62,25 @@ eslocal ParMETIS::call(
 	return edgecut;
 }
 
-eslocal ParMETIS::call(
+esint ParMETIS::call(
 			ParMETIS::METHOD method,
 			MPISubset &subset,
-			eslocal *edistribution,
-			eslocal *eframes, eslocal *eneighbors,
-			eslocal dimensions, double *coordinates,
-			eslocal verticesWeightCount, eslocal *verticesWeights, eslocal *edgeWeights,
-			eslocal *partition)
+			esint *edistribution,
+			esint *eframes, esint *eneighbors,
+			esint dimensions, double *coordinates,
+			esint verticesWeightCount, esint *verticesWeights, esint *edgeWeights,
+			esint *partition)
 {
-	verticesWeightCount = std::max((eslocal)1, verticesWeightCount);
+	verticesWeightCount = std::max((esint)1, verticesWeightCount);
 
-	eslocal wgtflag = 0;
-	eslocal numflag = 0;
-	eslocal parts = subset.origin.size;
+	esint wgtflag = 0;
+	esint numflag = 0;
+	esint parts = subset.origin.size;
 	std::vector<double> partFraction(verticesWeightCount * parts, 1.0 / parts);
 	std::vector<double> unbalanceTolerance(verticesWeightCount, 1.02);
-	eslocal options[4] = { 0, 0, 0, PARMETIS_PSR_UNCOUPLED };
+	esint options[4] = { 0, 0, 0, PARMETIS_PSR_UNCOUPLED };
 	double itr = 1e6;
-	eslocal edgecut;
+	esint edgecut;
 
 	if (verticesWeights != NULL) {
 		wgtflag += 2;

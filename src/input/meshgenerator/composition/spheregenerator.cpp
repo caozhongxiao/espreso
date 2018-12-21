@@ -40,8 +40,8 @@ SphereGenerator::SphereGenerator(const SphereGeneratorConfiguration &configurati
 	_col = ((environment->MPIrank % (_settings.clusters.x * _settings.clusters.y)) / _settings.clusters.x);
 	_layer = environment->MPIrank / (6 * _settings.clusters.x * _settings.clusters.y);
 
-	_settings.start = Triple<eslocal>( _row      / _settings.clusters.x / MeshGenerator::precision,  _col      / _settings.clusters.y / MeshGenerator::precision,  _layer      / _settings.clusters.z / MeshGenerator::precision);
-	_settings.end   = Triple<eslocal>((_row + 1) / _settings.clusters.x / MeshGenerator::precision, (_col + 1) / _settings.clusters.y / MeshGenerator::precision, (_layer + 1) / _settings.clusters.z / MeshGenerator::precision);
+	_settings.start = Triple<esint>( _row      / _settings.clusters.x / MeshGenerator::precision,  _col      / _settings.clusters.y / MeshGenerator::precision,  _layer      / _settings.clusters.z / MeshGenerator::precision);
+	_settings.end   = Triple<esint>((_row + 1) / _settings.clusters.x / MeshGenerator::precision, (_col + 1) / _settings.clusters.y / MeshGenerator::precision, (_layer + 1) / _settings.clusters.z / MeshGenerator::precision);
 
 	switch ((environment->MPIrank / (_settings.clusters.x * _settings.clusters.y)) % 6) {
 	case 0:
@@ -100,7 +100,7 @@ void SphereGenerator::nodes(PlainMeshData &mesh)
 void SphereGenerator::neighbors(PlainMeshData &mesh)
 {
 	std::vector<int> map(27, -1);
-	std::vector<eslocal> cross(9 * _settings.clusters.x * _settings.clusters.y, -1);
+	std::vector<esint> cross(9 * _settings.clusters.x * _settings.clusters.y, -1);
 
 	auto setCross = [&] (size_t offset_r, size_t offset_c, size_t row, size_t col, size_t cluster) {
 		cross[(row + offset_r * _settings.clusters.x) * 3 * _settings.clusters.y + col + offset_c * _settings.clusters.x] = cluster;

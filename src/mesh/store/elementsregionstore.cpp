@@ -80,12 +80,12 @@ void ElementsRegionStore::unpack(const char* &p)
 	Esutils::unpack(uniqueSize, p);
 	Esutils::unpack(uniqueTotalSize, p);
 	if (elements == NULL) {
-		elements = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(1, 0));
+		elements = new serializededata<esint, esint>(1, tarray<esint>(1, 0));
 	}
 	elements->unpack(p);
 	Esutils::unpack(eintervals, p);
 	if (nodes == NULL) {
-		nodes = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(1, 0));
+		nodes = new serializededata<esint, esint>(1, tarray<esint>(1, 0));
 	}
 	nodes->unpack(p);
 	Esutils::unpack(nintervals, p);

@@ -63,21 +63,21 @@ public:
 
 	SEQ_VECTOR <Domain*> 	domains;			// vector of domains in the original numbering - for legacy purposes - only as pointers
 
-	eslocal numClusters;
-	eslocal number_of_subdomains_per_supercluster;
+	esint numClusters;
+	esint number_of_subdomains_per_supercluster;
 
 	bool USE_HFETI;
 	bool USE_KINV;
 	bool SYMMETRIC_SYSTEM;
 	bool USE_FLOAT;
 
-	eslocal PAR_NUM_THREADS;
-	eslocal SOLVER_NUM_THREADS;
+	esint PAR_NUM_THREADS;
+	esint SOLVER_NUM_THREADS;
 	MatrixType mtype;
 	int MPIrank;
-	eslocal dual_size;
+	esint dual_size;
 
-	eslocal min_numClusters_per_MPI;
+	esint min_numClusters_per_MPI;
 
 	void init() {
 
@@ -89,7 +89,7 @@ public:
 		x_prim_cluster3.resize( number_of_subdomains_per_supercluster );
 
 		domains.resize(number_of_subdomains_per_supercluster);
-		for (eslocal c = 0; c < numClusters; c++) {
+		for (esint c = 0; c < numClusters; c++) {
 			clusters.push_back( Cluster(configuration, instance));
 		}
 
@@ -108,7 +108,7 @@ public:
 		PAR_NUM_THREADS 	= environment->PAR_NUM_THREADS;
 		SOLVER_NUM_THREADS  = environment->SOLVER_NUM_THREADS;
 
-		for (eslocal c = 0; c < numClusters; c++) {
+		for (esint c = 0; c < numClusters; c++) {
 			clusters[c].USE_HFETI 			= USE_HFETI;
 			clusters[c].USE_KINV 			= USE_KINV;
 			clusters[c].PAR_NUM_THREADS 	= PAR_NUM_THREADS;
@@ -116,7 +116,7 @@ public:
 		}
 
 
-//			std::vector<eslocal> domain_list(number_of_subdomains_per_supercluster, 0);
+//			std::vector<esint> domain_list(number_of_subdomains_per_supercluster, 0);
 //			for (int i = 0; i < number_of_subdomains_per_supercluster; i++) {
 //				domain_list[i] = i;
 //			}
@@ -163,10 +163,10 @@ public:
 
 		//instance->computeKernels(configuration.regularization, configuration.sc_size);
 
-		for (eslocal c = 0; c < numClusters; c++) {
+		for (esint c = 0; c < numClusters; c++) {
 
-			eslocal number_of_subdomains_per_cluster = 0;
-			std::vector<eslocal> domain_list;
+			esint number_of_subdomains_per_cluster = 0;
+			std::vector<esint> domain_list;
 			for (size_t i = 0; i < run::mesh->elements->clusters.size(); i++) {
 				if (run::mesh->elements->clusters[i] == c) {
 					number_of_subdomains_per_cluster++;
@@ -176,7 +176,7 @@ public:
 
 			clusters[c].cluster_global_index = glob_clust_index + c + 1;
 			clusters[c].cluster_local_index  = c;
-			//clusters[c]->my_neighs = std::vector<eslocal>(instance->neighbours.begin(), instance->neighbours.end());
+			//clusters[c]->my_neighs = std::vector<esint>(instance->neighbours.begin(), instance->neighbours.end());
 			clusters[c].mtype = mtype; // TODO: WARNING - Needs to be fixed
 			clusters[c].SYMMETRIC_SYSTEM = SYMMETRIC_SYSTEM;
 
@@ -211,7 +211,7 @@ public:
 
 		// Setup communication layer of the supercluster
 		MPIrank   = environment->MPIrank;
-		my_neighs = std::vector<eslocal>(run::mesh->neighbours.begin(), run::mesh->neighbours.end());
+		my_neighs = std::vector<esint>(run::mesh->neighbours.begin(), run::mesh->neighbours.end());
 		SetupCommunicationLayer();
 
 
@@ -222,7 +222,7 @@ public:
 
 		ESINFO(PROGRESS3) << "HFETI preprocessing start";
 
-//		for (eslocal c = 0; c < clusters.size(); c++) {
+//		for (esint c = 0; c < clusters.size(); c++) {
 //			clusters[c].SetClusterHFETI();
 //		}
 
@@ -264,7 +264,7 @@ public:
 			#pragma omp parallel for
 			 for (size_t d = 0; d < clusters[c].domains.size(); d++) {
 
-				 eslocal max_tmp_vec_size = clusters[c].domains[d].B0.cols;
+				 esint max_tmp_vec_size = clusters[c].domains[d].B0.cols;
 				 if (clusters[c].domains[d].B0.rows > clusters[c].domains[d].B0.cols)
 					 max_tmp_vec_size = clusters[c].domains[d].B0.rows;
 
@@ -307,7 +307,7 @@ public:
 	SparseMatrix GGtinvM;
 
 	void Create_G_perCluster() {
-		for (eslocal c = 0; c < numClusters; c++) {
+		for (esint c = 0; c < numClusters; c++) {
 			clusters[c].Create_G_perCluster();
 			G1.MatAppend(clusters[c].G1);
 			G2.MatAppend(clusters[c].G2);
@@ -355,26 +355,26 @@ public:
 
 	// *** Communication layer setup members and routines
 
-	SEQ_VECTOR < SEQ_VECTOR <eslocal> >	my_comm_lambdas_indices;
+	SEQ_VECTOR < SEQ_VECTOR <esint> >	my_comm_lambdas_indices;
 	SEQ_VECTOR < SEQ_VECTOR <double> >  my_comm_lambdas;
 	SEQ_VECTOR < SEQ_VECTOR <double> >  my_recv_lambdas;
 
-	SEQ_VECTOR < SEQ_VECTOR <eslocal> >	my_comm_lambdas_indices_comp;
+	SEQ_VECTOR < SEQ_VECTOR <esint> >	my_comm_lambdas_indices_comp;
 	SEQ_VECTOR < SEQ_VECTOR <double> >  my_comm_lambdas_comp;
 	SEQ_VECTOR < SEQ_VECTOR <double> >  my_recv_lambdas_comp;
 
-	SEQ_VECTOR <eslocal>  my_neighs;
-	SEQ_VECTOR <eslocal>  my_lamdas_indices;
-	map <eslocal,eslocal> my_lamdas_map_indices;
+	SEQ_VECTOR <esint>  my_neighs;
+	SEQ_VECTOR <esint>  my_lamdas_indices;
+	map <esint,esint> my_lamdas_map_indices;
 
-	SEQ_VECTOR <eslocal>  my_lamdas_ddot_filter;
-	SEQ_VECTOR <eslocal>  lambdas_filter;
+	SEQ_VECTOR <esint>  my_lamdas_ddot_filter;
+	SEQ_VECTOR <esint>  lambdas_filter;
 
 	SEQ_VECTOR <double> compressed_tmp;
 
 	void SetupCommunicationLayer() {
 
-		SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub = instance->B1clustersMap;
+		SEQ_VECTOR <SEQ_VECTOR <esint> > & lambda_map_sub = instance->B1clustersMap;
 
 		//// *** Detection of affinity of lag. multipliers to specific subdomains **************
 		//// *** - will be used to compress vectors and matrices for higher efficiency
@@ -388,7 +388,7 @@ public:
 			my_lamdas_indices[i] = lambda_map_sub[i][0];
 
 
-		SEQ_VECTOR< SEQ_VECTOR <eslocal> > lambdas_per_subdomain (instance->K.size() * environment->MPIsize ); // ( domains.size() * environment->MPIsize);
+		SEQ_VECTOR< SEQ_VECTOR <esint> > lambdas_per_subdomain (instance->K.size() * environment->MPIsize ); // ( domains.size() * environment->MPIsize);
 
 		my_lamdas_ddot_filter.resize( lambda_map_sub.size(), 0.0 );
 		for (size_t i = 0; i < lambda_map_sub.size(); i++) {
@@ -474,7 +474,7 @@ public:
 		vec_b_compressed.resize(dual_size, 0.0);
 
 
-		for (eslocal c = 0; c < numClusters; c++) {
+		for (esint c = 0; c < numClusters; c++) {
 			clusters[c].vec_b_compressed.clear();
 			clusters[c].vec_b_compressed.resize(dual_size, 0.0);
 			clusters[c].CreateVec_b_perCluster ( f );
@@ -490,7 +490,7 @@ public:
 		//TODO: Need check
 		vec_lb_out.clear();
 		vec_lb_out.resize(my_lamdas_indices.size(), -std::numeric_limits<double>::infinity());
-		for (eslocal c = 0; c < numClusters; c++) {
+		for (esint c = 0; c < numClusters; c++) {
 			clusters[c].CreateVec_lb_perCluster ( vec_lb_out );
 		}
 
@@ -500,7 +500,7 @@ public:
 		//TODO: Need check
 		vec_c_out.clear();
 		vec_c_out.resize(my_lamdas_indices.size(), 0.0);
-		for (eslocal c = 0; c < numClusters; c++) {
+		for (esint c = 0; c < numClusters; c++) {
 			clusters[c].CreateVec_c_perCluster ( vec_c_out );
 		}
 	}
@@ -515,7 +515,7 @@ public:
 		SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster;
 		x_prim_cluster.resize(number_of_subdomains_per_supercluster);
 
-		for (eslocal c = 0; c < numClusters; c++) {
+		for (esint c = 0; c < numClusters; c++) {
 
 			for (size_t d = 0; d < clusters[c].domains.size(); d++)
 				x_prim_cluster[d].swap( *x_in[clusters[c].domains[d].domain_global_index] );
@@ -538,7 +538,7 @@ public:
 		SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster;
 		x_prim_cluster.resize(number_of_subdomains_per_supercluster);
 
-		for (eslocal c = 0; c < numClusters; c++) {
+		for (esint c = 0; c < numClusters; c++) {
 			for (size_t d = 0; d < clusters[c].domains.size(); d++)
 				x_prim_cluster[d].swap( x_in[clusters[c].domains[d].domain_global_index] );
 
@@ -558,7 +558,7 @@ public:
 		SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster;
 		x_prim_cluster.resize(number_of_subdomains_per_supercluster);
 
-		for (eslocal c = 0; c < numClusters; c++) {
+		for (esint c = 0; c < numClusters; c++) {
 
 			for (size_t d = 0; d < clusters[c].domains.size(); d++)
 				x_prim_cluster[d].swap( *x_in[clusters[c].domains[d].domain_global_index] );
@@ -577,7 +577,7 @@ public:
 		SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster;
 		x_prim_cluster.resize(number_of_subdomains_per_supercluster);
 
-		for (eslocal c = 0; c < numClusters; c++) {
+		for (esint c = 0; c < numClusters; c++) {
 			for (size_t d = 0; d < clusters[c].domains.size(); d++)
 				x_prim_cluster[d].swap( x_in[clusters[c].domains[d].domain_global_index] );
 

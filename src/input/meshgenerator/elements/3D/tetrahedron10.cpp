@@ -10,7 +10,7 @@ Tetrahedron10Generator::Tetrahedron10Generator()
 	code = Element::CODE::TETRA10;
 }
 
-void Tetrahedron10Generator::pushElements(std::vector<eslocal> &elements, const std::vector<eslocal> &indices) const
+void Tetrahedron10Generator::pushElements(std::vector<esint> &elements, const std::vector<esint> &indices) const
 {
 	elements.push_back(indices[ 2]);
 	elements.push_back(indices[ 6]);
@@ -90,7 +90,7 @@ void Tetrahedron10Generator::pushElements(std::vector<eslocal> &elements, const 
 	elements.push_back(indices[ 7]);
 }
 
-void Tetrahedron10Generator::pushFace(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeFace face) const
+void Tetrahedron10Generator::pushFace(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeFace face) const
 {
 	pushTriangleNodes(elements, indices, face);
 	esize.push_back(6);

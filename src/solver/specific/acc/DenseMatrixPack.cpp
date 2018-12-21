@@ -58,8 +58,8 @@ namespace espreso {
         } else {
             this->matrices_fl = ( float * ) malloc( preallocSize * sizeof( float ) );
         }
-        this->rows = ( eslocal * ) malloc( maxNMatrices * sizeof( eslocal ) );
-        this->cols = ( eslocal * ) malloc( maxNMatrices * sizeof( eslocal ) );
+        this->rows = ( esint * ) malloc( maxNMatrices * sizeof( esint ) );
+        this->cols = ( esint * ) malloc( maxNMatrices * sizeof( esint ) );
         this->offsets = ( long * ) malloc( maxNMatrices * sizeof( long ) );
         this->rowOffsets = ( long * ) malloc( maxNMatrices * sizeof( long ) );
         this->colOffsets = ( long * ) malloc( maxNMatrices * sizeof( long ) );
@@ -112,8 +112,8 @@ namespace espreso {
         } else {
             this->matrices_fl = ( float * ) malloc( preallocSize * sizeof( float ) ); 
         }
-        this->rows = ( eslocal * ) malloc( maxNMatrices * sizeof( eslocal ) );
-        this->cols = ( eslocal * ) malloc( maxNMatrices * sizeof( eslocal ) );
+        this->rows = ( esint * ) malloc( maxNMatrices * sizeof( esint ) );
+        this->cols = ( esint * ) malloc( maxNMatrices * sizeof( esint ) );
         this->offsets = ( long * ) malloc( maxNMatrices * sizeof( long ) );
         this->rowOffsets = ( long * ) malloc( maxNMatrices * sizeof( long ) );
         this->colOffsets = ( long * ) malloc( maxNMatrices * sizeof( long ) );
@@ -245,21 +245,21 @@ namespace espreso {
     }
 
     double * DenseMatrixPack::getMatrixPointer(
-            eslocal matrix
+            esint matrix
             ) {
         return this->matrices + this->offsets[matrix];
     }
 
     float * DenseMatrixPack::getMatrixPointer_fl(
-            eslocal matrix
+            esint matrix
             ) {
         return this->matrices_fl + this->offsets[matrix];
     }
 
     void DenseMatrixPack::PreparePack(
-            eslocal i,
-            eslocal nRows,
-            eslocal nCols,
+            esint i,
+            esint nRows,
+            esint nCols,
             bool isPacked
             ) {
 
@@ -294,7 +294,7 @@ namespace espreso {
     }
 
     void DenseMatrixPack::AddDenseMatrix(
-            eslocal i,
+            esint i,
             double * matrixData
             ) {
 
@@ -352,7 +352,7 @@ namespace espreso {
                 memcpy( &(y[0]), this->mic_y_out + this->rowOffsets[ vector ],
                         this->rows[vector] * sizeof( double ) );
             } else {
-                for (eslocal i = 0 ; i < this->rows[vector]; ++i) {
+                for (esint i = 0 ; i < this->rows[vector]; ++i) {
                     y[i] = (double) this->mic_y_out_fl[i + this->rowOffsets[ vector ]];
                 }
             }
@@ -423,7 +423,7 @@ namespace espreso {
             double alpha,
             double beta
             ) {
-        eslocal one = 1;
+        esint one = 1;
         CBLAS_TRANSPOSE trans = CblasNoTrans;
         if (T_for_transpose_N_for_not_transpose == 'T') {
             trans = CblasTrans;
@@ -469,7 +469,7 @@ namespace espreso {
             double alpha,
             double beta
             ) {
-        eslocal one = 1;
+        esint one = 1;
         CBLAS_TRANSPOSE trans = CblasNoTrans;
         if (T_for_transpose_N_for_not_transpose == 'T') {
             trans = CblasTrans;
@@ -520,7 +520,7 @@ namespace espreso {
         long nMatrices = this->nMatrices;
         long inSize = 0;
         long outSize = 0;
-        for ( eslocal i = 0 ; i < (long) (nMatrices*MICratio); ++i ) {
+        for ( esint i = 0 ; i < (long) (nMatrices*MICratio); ++i ) {
             inSize += cols[i];
             outSize += rows[i];
         }
@@ -553,7 +553,7 @@ namespace espreso {
             out(mic_y_out : length( outSize ) alloc_if( 0 ) free_if( 0 ) ) \
             out( elapsedTime : length(1) alloc_if(0) free_if(0) )
             {
-                eslocal one = 1;
+                esint one = 1;
                 long nIters = (long) (nMatrices*MICratio);
                 double start = omp_get_wtime();
                 int nth;
@@ -601,7 +601,7 @@ namespace espreso {
             out(mic_y_out_fl : length( outSize ) alloc_if( 0 ) free_if( 0 ) ) \
             out( elapsedTime : length(1) alloc_if(0) free_if(0) )
             {
-                eslocal one = 1;
+                esint one = 1;
                 long nIters = (long) (nMatrices*MICratio);
                 double start = omp_get_wtime();
                 int nth;
@@ -637,7 +637,7 @@ namespace espreso {
         long nMatrices = this->nMatrices;
         long inSize = 0;
         long outSize =  0;
-        for ( eslocal i = 0 ; i < (long) (nMatrices*MICratio); ++i ) {
+        for ( esint i = 0 ; i < (long) (nMatrices*MICratio); ++i ) {
             inSize += cols[i];
             outSize += rows[i];
         }
@@ -670,7 +670,7 @@ namespace espreso {
             in( elapsedTime : length(0) alloc_if(0) free_if(0) ) \
                 in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) )
                 {
-                    eslocal one = 1;
+                    esint one = 1;
                     long nIters = (long) (nMatrices*MICratio);
                     double start = omp_get_wtime();
                     int nth;
@@ -710,7 +710,7 @@ namespace espreso {
             in( elapsedTime : length(0) alloc_if(0) free_if(0) ) \
                 in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) )
                 {
-                    eslocal one = 1;
+                    esint one = 1;
                     long nIters = (long) (nMatrices*MICratio);
                     double start = omp_get_wtime();
                     int nth;
@@ -740,7 +740,7 @@ namespace espreso {
 
         long inSize = 0;
         long outSize = 0;
-        for ( eslocal i = 0 ; i < (long) (nMatrices*MICratio); ++i ) {
+        for ( esint i = 0 ; i < (long) (nMatrices*MICratio); ++i ) {
             outSize += cols[i];
         }
         if (!USE_FLOAT) {

@@ -17,20 +17,20 @@ struct ParMETIS {
 		ParMETIS_V3_PartGeom
 	};
 
-	static eslocal call(
+	static esint call(
 			METHOD method,
 			MPISubset &subset,
-			std::vector<eslocal> &eframes, std::vector<eslocal> &eneighbors,
-			std::vector<eslocal> &partition);
+			std::vector<esint> &eframes, std::vector<esint> &eneighbors,
+			std::vector<esint> &partition);
 
-	static eslocal call(
+	static esint call(
 			METHOD method,
 			MPISubset &subset,
-			eslocal *edistribution,
-			eslocal *eframes, eslocal *eneighbors,
-			eslocal dimensions, double *coordinates,
-			eslocal verticesWeightCount, eslocal *verticesWeights, eslocal *edgeWeights,
-			eslocal *partition);
+			esint *edistribution,
+			esint *eframes, esint *eneighbors,
+			esint dimensions, double *coordinates,
+			esint verticesWeightCount, esint *verticesWeights, esint *edgeWeights,
+			esint *partition);
 };
 
 }

@@ -34,14 +34,14 @@ public:
 
 	void linkNodesAndElements();
 	void exchangeHalo();
-	void exchangeElements(const std::vector<eslocal> &partition);
+	void exchangeElements(const std::vector<esint> &partition);
 
 	void computeElementsNeighbors();
 	void computeElementsCenters();
-	void computeDecomposedDual(std::vector<eslocal> &dualDist, std::vector<eslocal> &dualData);
+	void computeDecomposedDual(std::vector<esint> &dualDist, std::vector<esint> &dualData);
 
 	void reclusterize();
-	void partitiate(eslocal parts);
+	void partitiate(esint parts);
 
 	void arrangeNodes();
 	void arrangeElements();
@@ -84,24 +84,24 @@ protected:
 	std::map<std::string, TimeEvent*> _timeEvents;
 
 private:
-	void permuteElements(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
-	void arrangeElementsPermutation(std::vector<eslocal> &permutation);
-	void computeBoundaryNodes(std::vector<eslocal> &externalBoundary, std::vector<eslocal> &internalBoundary);
+	void permuteElements(const std::vector<esint> &permutation, const std::vector<size_t> &distribution);
+	void arrangeElementsPermutation(std::vector<esint> &permutation);
+	void computeBoundaryNodes(std::vector<esint> &externalBoundary, std::vector<esint> &internalBoundary);
 	void fillRegionMask();
 	void computeRegionArea(BoundaryRegionStore *store);
 
-	void addFixPoints(const serializededata<eslocal, eslocal>* elements, eslocal begin, eslocal end, const serializededata<eslocal, Element*>* epointers, std::vector<eslocal> &fixPoints);
+	void addFixPoints(const serializededata<esint, esint>* elements, esint begin, esint end, const serializededata<esint, Element*>* epointers, std::vector<esint> &fixPoints);
 
-	void synchronizeRegionNodes(const std::string &name, serializededata<eslocal, eslocal>* &rnodes, std::vector<ProcessInterval> &nintervals);
-	void computeIntervalOffsets(std::vector<ProcessInterval> &intervals, eslocal &uniqueOffset, eslocal &uniqueSize, eslocal &uniqueTotalSize);
+	void synchronizeRegionNodes(const std::string &name, serializededata<esint, esint>* &rnodes, std::vector<ProcessInterval> &nintervals);
+	void computeIntervalOffsets(std::vector<ProcessInterval> &intervals, esint &uniqueOffset, esint &uniqueSize, esint &uniqueTotalSize);
 
 	void start(const std::string &message);
 	void skip(const std::string &message);
 	void finish(const std::string &message);
 
 	void processMorpher(const RBFTargetTransformationConfiguration &target, int dimension,
-		std::vector<Point> &sPoints, eslocal startPoint, std::vector<double> &sDisplacement);
-	eslocal prepareMatrixM(std::vector<Point> &rPoints,
+		std::vector<Point> &sPoints, esint startPoint, std::vector<double> &sDisplacement);
+	esint prepareMatrixM(std::vector<Point> &rPoints,
 			std::vector<double> &rDisplacement,
 			int dimension, const RBFTargetConfiguration &configuration,
 			std::vector<double> &M_values,

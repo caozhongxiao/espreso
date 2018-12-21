@@ -18,10 +18,10 @@ public:
 
 
 	//Members
-	void ImportMatrices(SparseMatrix ** A, MKL_INT nMatrices, eslocal mic = 0);
-	void ImportMatrices_fl(SparseMatrix ** A, eslocal nMatrices, eslocal mic = 0);
+	void ImportMatrices(SparseMatrix ** A, MKL_INT nMatrices, esint mic = 0);
+	void ImportMatrices_fl(SparseMatrix ** A, esint nMatrices, esint mic = 0);
 
-	void ImportMatrices_wo_Copy(SparseMatrix ** A, eslocal nMatrices, eslocal mic = 0 );
+	void ImportMatrices_wo_Copy(SparseMatrix ** A, esint nMatrices, esint mic = 0 );
 
 	void Factorization(const std::string &str);
     void Factorization(const std::string &str, SparseMatrixPack & factors_out);
@@ -43,23 +43,23 @@ public:
 	void SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, char T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed ) {};
 
 	void Create_SC( SparseMatrix & B_out, MKL_INT sc_size, bool isThreaded ) {};
-    void Create_SC( DenseMatrixPack & SC_out, MKL_INT* sc_sizes, eslocal generate_symmetric_sc_1_generate_general_sc_0 );
+    void Create_SC( DenseMatrixPack & SC_out, MKL_INT* sc_sizes, esint generate_symmetric_sc_1_generate_general_sc_0 );
 	void Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {};
-    void Create_SC_w_Mat( SparseMatrix ** K_in, SparseMatrix ** B_in, DenseMatrixPack & SC_out, eslocal nMatrices, eslocal generate_symmetric_sc_1_generate_general_sc_0, eslocal device  );
+    void Create_SC_w_Mat( SparseMatrix ** K_in, SparseMatrix ** B_in, DenseMatrixPack & SC_out, esint nMatrices, esint generate_symmetric_sc_1_generate_general_sc_0, esint device  );
 	void Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B1_in, SparseMatrix & B0_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {};
 
 	void SolveCG(SparseMatrix & A_in, std::vector <double> & rhs, std::vector <double> & sol) {};
 	void SolveCG(SparseMatrix & A_in, std::vector <double> & rhs_sol) {};
 
-    eslocal device; // which mic to use for offload
+    esint device; // which mic to use for offload
     bool isOffloaded;
 
-    eslocal nMatrices;
+    esint nMatrices;
 	bool initialized;
 	bool keep_factors;
 	bool import_with_copy;
 	bool USE_FLOAT;
-	eslocal  MPIrank;
+	esint  MPIrank;
 
 	MKL_INT* rows;
 	MKL_INT* cols;
@@ -91,11 +91,11 @@ public:
 
 	MKL_INT mtype;		/* Real symmetric matrix */
 
-	/* Internal solver memory poeslocaler pt, */
-	/* 32-bit: eslocal pt[64]; 64-bit: long eslocal pt[64] */
+	/* Internal solver memory poesinter pt, */
+	/* 32-bit: esint pt[64]; 64-bit: long esint pt[64] */
 	/* or void *pt[64] should be OK on both architectures */
 	void ***pt;
-	//eslocal * pt;
+	//esint * pt;
 
 
 	/* Pardiso control parameters. */

@@ -70,7 +70,7 @@ NBlock& NBlock::parse(const char* begin)
 	return *this;
 }
 
-bool NBlock::readData(std::vector<eslocal> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
+bool NBlock::readData(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
 {
 	if (Solkey) {
 		if (NUMFIELD == 6) {
@@ -84,7 +84,7 @@ bool NBlock::readData(std::vector<eslocal> &nIDs, std::vector<Point> &coordinate
 	return false;
 }
 
-bool NBlock::index_x_y_z(std::vector<eslocal> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
+bool NBlock::index_x_y_z(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -100,7 +100,7 @@ bool NBlock::index_x_y_z(std::vector<eslocal> &nIDs, std::vector<Point> &coordin
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<char> value(valueLength + 1);
 		std::vector<char> index(indexLength + 1);
-		eslocal i = 0;
+		esint i = 0;
 		double x, y, z;
 		for (auto data = first + lineSize * tdistribution[t]; data < first + lineSize * tdistribution[t + 1]; ++i) {
 			memcpy(index.data(), data, indexLength);
@@ -127,12 +127,12 @@ bool NBlock::index_x_y_z(std::vector<eslocal> &nIDs, std::vector<Point> &coordin
 	return true;
 }
 
-bool NBlock::index_solid_line_x_y_z(std::vector<eslocal> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
+bool NBlock::index_solid_line_x_y_z(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	const char *first = getFirst(), *last = getLast();
-	eslocal size = (last - first) / lineSize;
+	esint size = (last - first) / lineSize;
 
 	size_t offset = coordinates.size();
 	nIDs.resize(offset + size);
@@ -143,7 +143,7 @@ bool NBlock::index_solid_line_x_y_z(std::vector<eslocal> &nIDs, std::vector<Poin
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<char> value(valueLength + 1);
 		std::vector<char> index(indexLength + 1);
-		eslocal i = 0;
+		esint i = 0;
 		double x, y, z;
 		for (auto data = first + lineSize * tdistribution[t]; data < first + lineSize * tdistribution[t + 1]; ++i) {
 			memcpy(index.data(), data, indexLength);

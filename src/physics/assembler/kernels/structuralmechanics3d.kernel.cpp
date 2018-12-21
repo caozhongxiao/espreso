@@ -14,7 +14,7 @@ using namespace espreso;
 
 using namespace espreso;
 
-void StructuralMechanics3DKernel::assembleMaterialMatrix(eslocal node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, DenseMatrix &K) const
+void StructuralMechanics3DKernel::assembleMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, DenseMatrix &K) const
 {
 	double Ex, Ey, Ez, miXY, miXZ, miYZ, Gx, Gy, Gz;
 	Point p(coordinates[0], coordinates[1], coordinates[2]);
@@ -179,7 +179,7 @@ void StructuralMechanics3DKernel::assembleMaterialMatrix(eslocal node, double *c
 
 void StructuralMechanics3DKernel::processElement(Matrices matrices, const SolverParameters &parameters, const ElementIterator &iterator, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
-	eslocal size = iterator.element->nodes;
+	esint size = iterator.element->nodes;
 
 	const std::vector<DenseMatrix> &N = *(iterator.element->N);
 	const std::vector<DenseMatrix> &dN = *(iterator.element->dN);
@@ -289,7 +289,7 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Solver
 			precision(3, 0) = precision(4, 0) = precision(5, 0) = 0;
 
 			rhsT.multiply(B, Ce * precision, detJ * weighFactor[gp], 0, true, false);
-			for (eslocal i = 0; i < 3 * size; i++) {
+			for (esint i = 0; i < 3 * size; i++) {
 				fe(i, 0) += gpDens(0, 0) * detJ * weighFactor[gp] * N[gp](0, i % size) * gpInertia(0, i / size);
 				fe(i, 0) += rhsT(i, 0);
 			}
@@ -310,7 +310,7 @@ void StructuralMechanics3DKernel::processFace(Matrices matrices, const SolverPar
 		return;
 	}
 
-	eslocal size = iterator.element->nodes;
+	esint size = iterator.element->nodes;
 
 	const std::vector<DenseMatrix> &N = *(iterator.element->N);
 	const std::vector<DenseMatrix> &dN = *(iterator.element->dN);
@@ -319,7 +319,7 @@ void StructuralMechanics3DKernel::processFace(Matrices matrices, const SolverPar
 	DenseMatrix coordinates(size, 3), dND(1, 3), P(size, 1), normal(1, 3);
 	DenseMatrix gpP(1, 1), gpQ(1, 3);
 
-	eslocal Ksize = 3 * size;
+	esint Ksize = 3 * size;
 	Ke.resize(0, 0);
 	fe.resize(0, 0);
 
@@ -349,7 +349,7 @@ void StructuralMechanics3DKernel::processFace(Matrices matrices, const SolverPar
 		gpP.multiply(N[gp], P);
 		gpQ.multiply(normal, gpP, 1, 0, true);
 
-		for (eslocal i = 0; i < Ksize; i++) {
+		for (esint i = 0; i < Ksize; i++) {
 			fe(i, 0) += J * weighFactor[gp] * N[gp](0, i % size) * gpQ(0, i / size);
 		}
 	}

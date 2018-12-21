@@ -28,8 +28,8 @@ struct DataHolder {
 
 	DataHolder();
 
-	void computeKernel(FETI_REGULARIZATION regularization, int scSize, eslocal domain, bool ortogonalCluster = false) { computeKernelCallback(regularization, scSize, domain, ortogonalCluster); }
-	void computeKernelFromOrigK(FETI_REGULARIZATION regularization, int scSize, eslocal domain, bool ortogonalCluster = false) { computeKernelFromOrigKCallback(regularization, scSize, domain, ortogonalCluster); }
+	void computeKernel(FETI_REGULARIZATION regularization, int scSize, esint domain, bool ortogonalCluster = false) { computeKernelCallback(regularization, scSize, domain, ortogonalCluster); }
+	void computeKernelFromOrigK(FETI_REGULARIZATION regularization, int scSize, esint domain, bool ortogonalCluster = false) { computeKernelFromOrigKCallback(regularization, scSize, domain, ortogonalCluster); }
 	void computeKernelsFromOrigK(FETI_REGULARIZATION regularization, int scSize, bool ortogonalCluster = false) { computeKernelsFromOrigKCallback(regularization, scSize, ortogonalCluster); }
 	void computeKernels(FETI_REGULARIZATION regularization, int scSize, bool ortogonalCluster = false) { computeKernelsCallback(regularization, scSize, ortogonalCluster); }
 	void assembleB0(FETI_B0_TYPE type, const std::vector<SparseMatrix> &kernels) { assembleB0Callback(type, kernels); }
@@ -40,12 +40,12 @@ struct DataHolder {
 
 	// matrices for Hybrid FETI constraints
 	std::vector<SparseMatrix> B0;
-	std::vector<std::vector<esglobal> > B0subdomainsMap; // TODO: not needed
+	std::vector<std::vector<esint> > B0subdomainsMap; // TODO: not needed
 
 	// matrices for FETI constraints
 	std::vector<SparseMatrix> B1;
-	std::vector<std::vector<eslocal> > B1subdomainsMap; // TODO: not needed
-	std::vector<std::vector<eslocal> > B1clustersMap; // TODO: get it directly
+	std::vector<std::vector<esint> > B1subdomainsMap; // TODO: not needed
+	std::vector<std::vector<esint> > B1clustersMap; // TODO: get it directly
 
 	std::vector<std::vector<double> > B1c, LB, B1duplicity;
 

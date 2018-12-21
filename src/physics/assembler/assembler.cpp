@@ -88,7 +88,7 @@ void Assembler::addToDirichletInB1(double a, const std::vector<std::vector<doubl
 	#pragma omp parallel for
 	for (size_t d = 0; d < run::mesh->elements->ndomains; d++) {
 		for (size_t j = 0; j < run::data->B1[d].J_col_indices.size(); j++) {
-			if (run::data->B1[d].I_row_indices[j] > (eslocal)run::data->block[DataHolder::CONSTRAINT::DIRICHLET]) {
+			if (run::data->B1[d].I_row_indices[j] > (esint)run::data->block[DataHolder::CONSTRAINT::DIRICHLET]) {
 				break;
 			}
 			run::data->B1c[d][j] += a * x[d][run::data->B1[d].J_col_indices[j] - 1];

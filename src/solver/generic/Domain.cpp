@@ -36,7 +36,7 @@ void storeData(vector<double> vectors, const std::string &name, const std::strin
 	}
 }
 
-Domain::Domain(const FETISolverConfiguration &configuration, DataHolder *instance_in, eslocal domain_index_in, eslocal USE_HTFETI_in, bool copyN1toN2):
+Domain::Domain(const FETISolverConfiguration &configuration, DataHolder *instance_in, esint domain_index_in, esint USE_HTFETI_in, bool copyN1toN2):
 		configuration(configuration),
 		instance(instance_in),
 
@@ -406,7 +406,7 @@ void Domain::multKplusLocalCore(SEQ_VECTOR <double> & x_in_y_out) {
 //		Kplus.Solve(x_in_y_out, x, 0, 0);
 //		Kplus.SolveCG(K, x_in_y_out, z, x);
 //
-//		for (eslocal i = 0; i < z.size(); i++)
+//		for (esint i = 0; i < z.size(); i++)
 //			x_in_y_out[i] = z[i];
 //
 //		break;
@@ -426,7 +426,7 @@ void Domain::multKplusLocalCore(SEQ_VECTOR <double> & x_in_y_out) {
 // TODO: Obsolete functions - to be removed
 
 
-void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, eslocal x_in_vector_start_index, eslocal y_out_vector_start_index) {
+void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, esint x_in_vector_start_index, esint y_out_vector_start_index) {
 
 	ESINFO(GLOBAL_ERROR) << "MultKplus-local with 4 parameters - currently dissabled";
 
@@ -460,7 +460,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 
 
 
-//void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, eslocal x_in_vector_start_index, eslocal y_out_vector_start_index) {
+//void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, esint x_in_vector_start_index, esint y_out_vector_start_index) {
 //	switch (configuration.Ksolver) {
 //	case FETI_KSOLVER::DIRECT_DP:
 //		Kplus.Solve(x_in, y_out, x_in_vector_start_index, y_out_vector_start_index);
@@ -480,16 +480,16 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 //	//
 //	//		Kplus.Solve(x_in, x, x_in_vector_start_index, 0);
 //	//		if (enable_SP_refinement) {
-//	//			for (eslocal step = 0; step <= esconfiguration.Ksolver_SP_iter_steps; step++) {
+//	//			for (esint step = 0; step <= esconfiguration.Ksolver_SP_iter_steps; step++) {
 //	//				K.MatVec(x,r,'N');
-//	//				for (eslocal i = 0; i < r.size(); i++)
+//	//				for (esint i = 0; i < r.size(); i++)
 //	//					r[i] = x_in[i + x_in_vector_start_index] - r[i];
 //	//				Kplus.Solve(r, z, 0, 0);
-//	//				for (eslocal i = 0; i < r.size(); i++)
+//	//				for (esint i = 0; i < r.size(); i++)
 //	//					x[i] = x[i] + z[i];
 //	//
 //	//				double norm = 0.0;
-//	//				for (eslocal i = 0; i < r.size(); i++)
+//	//				for (esint i = 0; i < r.size(); i++)
 //	//					norm += r[i]*r[i];
 //	//
 //	//				norm = sqrt(norm);
@@ -503,7 +503,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 //	//			}
 //	//		}
 //	//
-//	//		for (eslocal i = 0; i < r.size(); i++)
+//	//		for (esint i = 0; i < r.size(); i++)
 //	//			y_out[y_out_vector_start_index + i] = x[i];
 //
 ////	case 1: {
@@ -641,7 +641,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 ////		Kplus.Solve(x_in_y_out, x, 0, 0);
 ////		Kplus.SolveCG(K, x_in_y_out, z, x);
 ////
-////		for (eslocal i = 0; i < z.size(); i++)
+////		for (esint i = 0; i < z.size(); i++)
 ////			x_in_y_out[i] = z[i];
 ////
 ////		break;

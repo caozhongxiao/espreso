@@ -8,11 +8,11 @@ using namespace espreso;
 
 DataHolder::DataHolder()
 {
-	computeKernelCallback = [] (FETI_REGULARIZATION regularization, int scSize, eslocal domain, bool ortogonalCluster) {
+	computeKernelCallback = [] (FETI_REGULARIZATION regularization, int scSize, esint domain, bool ortogonalCluster) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernel is empty function. Fill it in assembler.";
 	};
 
-	computeKernelFromOrigKCallback = [] (FETI_REGULARIZATION regularization, int scSize, eslocal domain, bool ortogonalCluster) {
+	computeKernelFromOrigKCallback = [] (FETI_REGULARIZATION regularization, int scSize, esint domain, bool ortogonalCluster) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernelFromOrigK is empty function. Fill it in assembler.";
 	};
 

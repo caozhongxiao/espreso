@@ -14,7 +14,7 @@ Pyramid13Generator::Pyramid13Generator()
 	code = Element::CODE::PYRAMID13;
 }
 
-void Pyramid13Generator::pushElements(std::vector<eslocal> &elements, const std::vector<eslocal> &indices) const
+void Pyramid13Generator::pushElements(std::vector<esint> &elements, const std::vector<esint> &indices) const
 {
 	elements.push_back(indices[100]);
 	elements.push_back(indices[104]);
@@ -112,12 +112,12 @@ void Pyramid13Generator::pushElements(std::vector<eslocal> &elements, const std:
 	elements.push_back(indices[ 31]);
 }
 
-void Pyramid13Generator::pushNodes(std::vector<eslocal> &nodes, const std::vector<eslocal> &indices, CubeEdge edge) const
+void Pyramid13Generator::pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeEdge edge) const
 {
 	return;
 }
 
-void Pyramid13Generator::pushNodes(std::vector<eslocal> &nodes, const std::vector<eslocal> &indices, CubeFace face) const
+void Pyramid13Generator::pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const
 {
 	switch (face) {
 	case CubeFace::X_1:
@@ -185,7 +185,7 @@ void Pyramid13Generator::pushNodes(std::vector<eslocal> &nodes, const std::vecto
 	}
 }
 
-void Pyramid13Generator::pushEdge(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeEdge edge) const
+void Pyramid13Generator::pushEdge(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeEdge edge) const
 {
 	return
 	pushNodes(elements, indices, edge);
@@ -193,7 +193,7 @@ void Pyramid13Generator::pushEdge(std::vector<eslocal> &elements, std::vector<es
 	etype.push_back((int)Element::CODE::LINE3);
 }
 
-void Pyramid13Generator::pushFace(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeFace face) const
+void Pyramid13Generator::pushFace(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeFace face) const
 {
 	pushNodes(elements, indices, face);
 	esize.push_back(8);

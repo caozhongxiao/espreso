@@ -14,7 +14,7 @@ Pyramid5Generator::Pyramid5Generator()
 	code = Element::CODE::PYRAMID5;
 }
 
-void Pyramid5Generator::pushElements(std::vector<eslocal> &elements, const std::vector<eslocal> &indices) const
+void Pyramid5Generator::pushElements(std::vector<esint> &elements, const std::vector<esint> &indices) const
 {
 	elements.push_back(indices[18]);
 	elements.push_back(indices[20]);
@@ -53,12 +53,12 @@ void Pyramid5Generator::pushElements(std::vector<eslocal> &elements, const std::
 	elements.push_back(indices[13]);
 }
 
-void Pyramid5Generator::pushNodes(std::vector<eslocal> &nodes, const std::vector<eslocal> &indices, CubeEdge edge) const
+void Pyramid5Generator::pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeEdge edge) const
 {
 	return;
 }
 
-void Pyramid5Generator::pushNodes(std::vector<eslocal> &nodes, const std::vector<eslocal> &indices, CubeFace face) const
+void Pyramid5Generator::pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const
 {
 	switch (face) {
 	case CubeFace::X_1:
@@ -102,7 +102,7 @@ void Pyramid5Generator::pushNodes(std::vector<eslocal> &nodes, const std::vector
 	}
 }
 
-void Pyramid5Generator::pushEdge(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeEdge edge) const
+void Pyramid5Generator::pushEdge(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeEdge edge) const
 {
 	return
 	pushNodes(elements, indices, edge);
@@ -110,7 +110,7 @@ void Pyramid5Generator::pushEdge(std::vector<eslocal> &elements, std::vector<esl
 	etype.push_back((int)Element::CODE::LINE2);
 }
 
-void Pyramid5Generator::pushFace(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeFace face) const
+void Pyramid5Generator::pushFace(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeFace face) const
 {
 	pushNodes(elements, indices, face);
 	esize.push_back(4);

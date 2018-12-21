@@ -38,15 +38,15 @@ namespace espreso {
 
         // prepares arrays containing offsets etc. (necessary to run in cycle before AddDenseMatrix)
         void PreparePack(
-                eslocal i,
-                eslocal nRows,
-                eslocal nCols,
+                esint i,
+                esint nRows,
+                esint nCols,
                 bool isPacked
                 );
 
         // Adds dense matrix to the pack (if there is enough space)
         void AddDenseMatrix(
-                eslocal i,
+                esint i,
                 double * matrixData
                 );
 
@@ -139,17 +139,17 @@ namespace espreso {
 
         // returns a pointer to internal matrix array
         double * getMatrixPointer( 
-                eslocal matrix
+                esint matrix
                 );
 
         // returns a pointer to internal single precision matrix array
         float * getMatrixPointer_fl( 
-                eslocal matrix
+                esint matrix
                 );
 
         // returns lenght of data
         long getDataLength(
-                eslocal matrix
+                esint matrix
                 ) {
             return this->lengths[matrix];
         }
@@ -226,10 +226,10 @@ namespace espreso {
         float * matrices_mic_fl;
 
         // array with numbers of rows of individual matrices
-        eslocal * rows;
+        esint * rows;
 
         // array with numbers of cols of individual matrices
-        eslocal * cols;
+        esint * cols;
 
         // total number of matrix rows
         long totalRows;

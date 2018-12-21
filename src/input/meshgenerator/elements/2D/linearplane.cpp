@@ -10,7 +10,7 @@ LinearPlaneGenerator::LinearPlaneGenerator()
 	subnodes[2] = 1;
 }
 
-void LinearPlaneGenerator::pushNodes(std::vector<eslocal> &nodes, const std::vector<eslocal> &indices, CubeEdge edge) const
+void LinearPlaneGenerator::pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeEdge edge) const
 {
 	switch (edge) {
 	case CubeEdge::X_0_Z_0:
@@ -34,19 +34,19 @@ void LinearPlaneGenerator::pushNodes(std::vector<eslocal> &nodes, const std::vec
 	}
 }
 
-void LinearPlaneGenerator::pushEdge(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeEdge edge) const
+void LinearPlaneGenerator::pushEdge(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeEdge edge) const
 {
 	pushNodes(elements, indices, edge);
 	esize.push_back(2);
 	etype.push_back((int)Element::CODE::LINE2);
 }
 
-void LinearPlaneGenerator::pushNodes(std::vector<eslocal> &nodes, const std::vector<eslocal> &indices, CubeFace face) const
+void LinearPlaneGenerator::pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const
 {
 	return;
 }
 
-void LinearPlaneGenerator::pushFace(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeFace face) const
+void LinearPlaneGenerator::pushFace(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeFace face) const
 {
 	return;
 }

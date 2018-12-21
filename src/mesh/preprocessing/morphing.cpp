@@ -26,7 +26,7 @@
 using namespace espreso;
 
 void MeshPreprocessing::processMorpher(const RBFTargetTransformationConfiguration &target, int dimension,
-		std::vector<Point> &sPoints, eslocal startPoint, std::vector<double> &sDisplacement) {
+		std::vector<Point> &sPoints, esint startPoint, std::vector<double> &sDisplacement) {
 
 	int pointsToProcess = sPoints.size() - startPoint;
 
@@ -102,25 +102,25 @@ void MeshPreprocessing::processMorpher(const RBFTargetTransformationConfiguratio
 	}
 }
 
-eslocal MeshPreprocessing::prepareMatrixM(std::vector<Point> &rPoints,
+esint MeshPreprocessing::prepareMatrixM(std::vector<Point> &rPoints,
 		std::vector<double> &rDisplacement,
 		int dimension, const RBFTargetConfiguration &configuration,
 		std::vector<double> &M_values,
 		bool use_x, bool use_y, bool use_z
 ) {
 
-	eslocal rowsFromCoordinates = rPoints.size();
-	eslocal realsize = rowsFromCoordinates;
+	esint rowsFromCoordinates = rPoints.size();
+	esint realsize = rowsFromCoordinates;
 
 	M_values.clear();
 
-	for (eslocal r = 0; r < rowsFromCoordinates; r++) {
-		for(eslocal rr = 0; rr <= r; rr++) {
+	for (esint r = 0; r < rowsFromCoordinates; r++) {
+		for(esint rr = 0; rr <= r; rr++) {
 			M_values.push_back(configuration.function.evaluator->evaluate((rPoints[r] - rPoints[rr]).length()));
 		}
 	}
 	if (use_x) {
-		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+		for (esint r = 0; r < rowsFromCoordinates; r++) {
 			M_values.push_back(rPoints[r].x);
 		}
 		M_values.push_back(0);
@@ -128,7 +128,7 @@ eslocal MeshPreprocessing::prepareMatrixM(std::vector<Point> &rPoints,
 	}
 
 	if (use_y) {
-		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+		for (esint r = 0; r < rowsFromCoordinates; r++) {
 			M_values.push_back(rPoints[r].y);
 		}
 		M_values.push_back(0);
@@ -137,7 +137,7 @@ eslocal MeshPreprocessing::prepareMatrixM(std::vector<Point> &rPoints,
 	}
 
 	if (dimension == 3 && use_z) {
-		for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+		for (esint r = 0; r < rowsFromCoordinates; r++) {
 			M_values.push_back(rPoints[r].z);
 		}
 		if (use_x) M_values.push_back(0);
@@ -146,7 +146,7 @@ eslocal MeshPreprocessing::prepareMatrixM(std::vector<Point> &rPoints,
 		realsize++;
 	}
 
-	for (eslocal r = 0; r < rowsFromCoordinates; r++) {
+	for (esint r = 0; r < rowsFromCoordinates; r++) {
 		M_values.push_back(1);
 	}
 	if (use_x) M_values.push_back(0);
@@ -248,7 +248,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 	start("preparing data for morphing '" + name + "'");
 
 	if (_mesh->nodes->originCoordinates == NULL) {
-		_mesh->nodes->originCoordinates = new serializededata<eslocal, Point>(*_mesh->nodes->coordinates);
+		_mesh->nodes->originCoordinates = new serializededata<esint, Point>(*_mesh->nodes->coordinates);
 	}
 
 	std::vector<Point> sPoints, rPoints;
@@ -324,7 +324,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 			 environment->MPIsize >= dimension)) {
 
 		std::vector<double> M_values;
-		//eslocal rowsFromCoordinates = rPoints.size();
+		//esint rowsFromCoordinates = rPoints.size();
 		size_t M_size = rPoints.size() + dimension + 1;
 
 		size_t realSize = prepareMatrixM(rPoints, rDisplacement, dimension, configuration, M_values);
@@ -354,11 +354,11 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 				}
 			}
 
-			std::vector<eslocal> iterations;
+			std::vector<esint> iterations;
 
 			if (environment->MPIrank == 0 && environment->MPIsize < dimension) {
-				for(eslocal d = 0 ; d < dimension; d++) {
-					eslocal itercount;
+				for(esint d = 0 ; d < dimension; d++) {
+					esint itercount;
 					MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
 							M_size, &M_values[0],
 							&rhs_values[d * M_size], &wq_values[d * M_size],
@@ -369,7 +369,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 				if (environment->MPIrank == 0) {
 
-					for(eslocal d = 1 ; d < dimension; d++) {
+					for(esint d = 1 ; d < dimension; d++) {
 						MPI_Send(&rhs_values[M_size*d], M_size, MPI_DOUBLE,
 									d, 0, environment->MPICommunicator);
 					}
@@ -383,7 +383,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 							MPI_DOUBLE, 0, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
 
 				}
-				eslocal itercount;
+				esint itercount;
 				MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
 						M_size, &M_values[0],
 						&rhs_values[0], &wq_values[0],
@@ -477,7 +477,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 					}
 				}
 
-				eslocal realSize = prepareMatrixM(rPoints, rDisplacement, dimension, configuration, M_values,
+				esint realSize = prepareMatrixM(rPoints, rDisplacement, dimension, configuration, M_values,
 						use_x, use_y, use_z);
 
 				wq_values.clear();
@@ -522,8 +522,8 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 				}
 
 				auto insertRowInWQ =
-						[&wq_values,dimension] (eslocal row) -> void {
-							eslocal size = wq_values.size()/dimension;
+						[&wq_values,dimension] (esint row) -> void {
+							esint size = wq_values.size()/dimension;
 							wq_values.insert(wq_values.begin()+row,0);
 							wq_values.insert(wq_values.begin()+ size +1 + row,0);
 							if (dimension ==3) {
@@ -554,8 +554,8 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 	start("applying morphing '" + name + "'");
 
-	eslocal wq_points = wq_values.size()/dimension;
-	eslocal points_size = rPoints.size();
+	esint wq_points = wq_values.size()/dimension;
+	esint points_size = rPoints.size();
 
 	ElementsRegionStore *tregion = _mesh->eregion(configuration.target);
 
@@ -615,7 +615,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		const auto &origin = _mesh->nodes->originCoordinates->datatarray();
 		const auto &morphed = _mesh->nodes->coordinates->datatarray();
 		if (_mesh->nodes->pintervals[i].sourceProcess == environment->MPIrank) {
-			for (eslocal n = _mesh->nodes->pintervals[i].begin; n < _mesh->nodes->pintervals[i].end; ++n) {
+			for (esint n = _mesh->nodes->pintervals[i].begin; n < _mesh->nodes->pintervals[i].end; ++n) {
 				_morphing->data[3 * n + 0] = (morphed[n] - origin[n]).x;
 				_morphing->data[3 * n + 1] = (morphed[n] - origin[n]).y;
 				_morphing->data[3 * n + 2] = (morphed[n] - origin[n]).z;

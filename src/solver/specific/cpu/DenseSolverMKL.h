@@ -31,10 +31,10 @@ public:
 
 	// DMUMPS_STRUC_C id;
 
-	eslocal m_Kplus_size;
+	esint m_Kplus_size;
 	bool keep_factors;
-	eslocal msglvl;
-	eslocal MPIrank;
+	esint msglvl;
+	esint MPIrank;
 
 
 
@@ -44,7 +44,7 @@ public:
 	// int  		MPIrank;
 	bool 		USE_FLOAT;
 
-	//eslocal           mtype;
+	//esint           mtype;
 	MatrixType        mtype;
 	//MKL_INT mtype;		/* Real symmetric matrix */
 
@@ -60,7 +60,7 @@ public:
 	MKL_INT					m_dense_values_fl_size;
 	double * 				m_dense_values;
 	float *  				m_dense_values_fl;
-	SEQ_VECTOR <eslocal>    m_ipiv;
+	SEQ_VECTOR <esint>    m_ipiv;
 
 	SEQ_VECTOR <float>		tmp_sol_fl;
 

@@ -32,7 +32,7 @@ void MeshPreprocessing::computeBodiesSurface()
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<std::vector<eslocal> > faces(threads), facesDistribution(threads), ecounters(threads, std::vector<eslocal>((int)Element::CODE::SIZE));
+	std::vector<std::vector<esint> > faces(threads), facesDistribution(threads), ecounters(threads, std::vector<esint>((int)Element::CODE::SIZE));
 	std::vector<std::vector<Element*> > fpointers(threads);
 
 	#pragma omp parallel for
@@ -41,7 +41,7 @@ void MeshPreprocessing::computeBodiesSurface()
 		auto neighs = _mesh->elements->neighbors->cbegin(t);
 		const auto &epointers = _mesh->elements->epointers->datatarray();
 
-		std::vector<eslocal> fdist, fdata, ecounter((int)Element::CODE::SIZE);
+		std::vector<esint> fdist, fdata, ecounter((int)Element::CODE::SIZE);
 		std::vector<Element*> fpointer;
 		if (t == 0) {
 			fdist.push_back(0);
@@ -77,21 +77,21 @@ void MeshPreprocessing::computeBodiesSurface()
 		}
 	}
 
-	serializededata<eslocal, Element*>::balance(1, fpointers);
-	_mesh->surface->epointers = new serializededata<eslocal, Element*>(1, fpointers);
+	serializededata<esint, Element*>::balance(1, fpointers);
+	_mesh->surface->epointers = new serializededata<esint, Element*>(1, fpointers);
 	_mesh->surface->ecounters = ecounters[0];
 
 	_mesh->surface->edistribution = _mesh->surface->epointers->datatarray().distribution();
 
-	if (_mesh->surface->ecounters[(int)Element::CODE::TRIANGLE3] == (eslocal)_mesh->surface->edistribution.back()) {
-		serializededata<eslocal, eslocal>::balance(3, faces, &_mesh->surface->edistribution);
-		_mesh->surface->elements = new serializededata<eslocal, eslocal>(3, faces);
+	if (_mesh->surface->ecounters[(int)Element::CODE::TRIANGLE3] == (esint)_mesh->surface->edistribution.back()) {
+		serializededata<esint, esint>::balance(3, faces, &_mesh->surface->edistribution);
+		_mesh->surface->elements = new serializededata<esint, esint>(3, faces);
 		_mesh->surface->triangles = _mesh->surface->elements;
 		_mesh->surface->tdistribution = _mesh->surface->edistribution;
 	} else {
 		Esutils::threadDistributionToFullDistribution(facesDistribution);
-		serializededata<eslocal, eslocal>::balance(facesDistribution, faces, &_mesh->surface->edistribution);
-		_mesh->surface->elements = new serializededata<eslocal, eslocal>(facesDistribution, faces);
+		serializededata<esint, esint>::balance(facesDistribution, faces, &_mesh->surface->edistribution);
+		_mesh->surface->elements = new serializededata<esint, esint>(facesDistribution, faces);
 	}
 
 	finish("computation surface");
@@ -122,9 +122,9 @@ void MeshPreprocessing::computeSurfaceLocations()
 	}
 
 	if (_mesh->surface->elements->boundarytarray().size()) {
-		_mesh->contacts->elements = new serializededata<eslocal, Point>(tarray<eslocal>(_mesh->surface->elements->boundarytarray()), points);
+		_mesh->contacts->elements = new serializededata<esint, Point>(tarray<esint>(_mesh->surface->elements->boundarytarray()), points);
 	} else {
-		_mesh->contacts->elements = new serializededata<eslocal, Point>(3, points);
+		_mesh->contacts->elements = new serializededata<esint, Point>(3, points);
 	}
 
 	event0.end();
@@ -154,10 +154,10 @@ void MeshPreprocessing::computeSurfaceLocations()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < _mesh->nodes->externalIntervals.size(); t++) {
-		eslocal eint = _mesh->nodes->externalIntervals[t];
+		esint eint = _mesh->nodes->externalIntervals[t];
 		Point min = _mesh->nodes->coordinates->datatarray().front();
 		Point max = _mesh->nodes->coordinates->datatarray().front();
-		for (eslocal n = _mesh->nodes->pintervals[eint].begin; n < _mesh->nodes->pintervals[eint].end; ++n) {
+		for (esint n = _mesh->nodes->pintervals[eint].begin; n < _mesh->nodes->pintervals[eint].end; ++n) {
 			min.x = std::min(min.x, _mesh->nodes->coordinates->datatarray()[n].x);
 			min.y = std::min(min.y, _mesh->nodes->coordinates->datatarray()[n].y);
 			min.z = std::min(min.z, _mesh->nodes->coordinates->datatarray()[n].z);
@@ -220,7 +220,7 @@ void MeshPreprocessing::computeSurfaceLocations()
 	TimeEvent event2("grid");
 	event2.start();
 
-	std::vector<std::vector<std::pair<eslocal, eslocal> > > grids(threads);
+	std::vector<std::vector<std::pair<esint, esint> > > grids(threads);
 
 	double boxsize = _mesh->contacts->eps * _mesh->contacts->groupsize;
 	size_t xsize = std::ceil((_mesh->contacts->boundingBox[1].x - _mesh->contacts->boundingBox[0].x) / boxsize);
@@ -230,12 +230,12 @@ void MeshPreprocessing::computeSurfaceLocations()
 	///////////////////
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		std::vector<std::pair<eslocal, eslocal> > grid;
+		std::vector<std::pair<esint, esint> > grid;
 
 		int xmin, xmax, ymin, ymax, zmin, zmax;
 		size_t gsize = 0;
 
-		auto insert = [&] (Point &min, Point &max, eslocal eindex) {
+		auto insert = [&] (Point &min, Point &max, esint eindex) {
 			xmin = std::floor((min.x - _mesh->contacts->boundingBox[0].x - epsilon) / boxsize);
 			xmax = std::ceil((max.x - _mesh->contacts->boundingBox[0].x + epsilon) / boxsize);
 			ymin = std::floor((min.y - _mesh->contacts->boundingBox[0].y - epsilon) / boxsize);
@@ -254,7 +254,7 @@ void MeshPreprocessing::computeSurfaceLocations()
 		};
 
 		Point min, max;
-		eslocal eindex = _mesh->contacts->surface->edistribution[t];
+		esint eindex = _mesh->contacts->surface->edistribution[t];
 		for (auto e = _mesh->contacts->elements->cbegin(t); e != _mesh->contacts->elements->cend(t); ++e, ++eindex) {
 			min = max = e->front();
 			for (auto n = e->begin() + 1; n != e->end(); ++n) {
@@ -297,11 +297,11 @@ void MeshPreprocessing::computeSurfaceLocations()
 		}
 	}
 
-	std::vector<std::vector<eslocal> > gdist(threads), gdata(threads), gfilled(threads);
+	std::vector<std::vector<esint> > gdist(threads), gdata(threads), gfilled(threads);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		std::vector<eslocal> dist, data, filled;
+		std::vector<esint> dist, data, filled;
 		if (t == 0) {
 			dist.push_back(0);
 		}
@@ -335,7 +335,7 @@ void MeshPreprocessing::computeSurfaceLocations()
 	gdata.resize(1);
 
 	_mesh->contacts->filledCells.swap(gfilled[0]);
-	_mesh->contacts->grid = new serializededata<eslocal, eslocal>(gdist, gdata);
+	_mesh->contacts->grid = new serializededata<esint, esint>(gdist, gdata);
 
 	event3.end();
 	eval.addEvent(event3);
@@ -405,10 +405,10 @@ void MeshPreprocessing::searchContactInterfaces()
 	TimeEvent event("get filled data to neighbors");
 	event.start();
 
-	std::vector<std::vector<eslocal> > sFilled(_mesh->contacts->neighbors.size());
-	std::vector<std::vector<eslocal> > sBlock(_mesh->contacts->neighbors.size()), rBlock(_mesh->contacts->neighbors.size());
-	std::vector<std::vector<eslocal> > sIDs(_mesh->contacts->neighbors.size()), rIDs(_mesh->contacts->neighbors.size());
-	std::vector<std::vector<eslocal> > sDist(_mesh->contacts->neighbors.size()), rDist(_mesh->contacts->neighbors.size());
+	std::vector<std::vector<esint> > sFilled(_mesh->contacts->neighbors.size());
+	std::vector<std::vector<esint> > sBlock(_mesh->contacts->neighbors.size()), rBlock(_mesh->contacts->neighbors.size());
+	std::vector<std::vector<esint> > sIDs(_mesh->contacts->neighbors.size()), rIDs(_mesh->contacts->neighbors.size());
+	std::vector<std::vector<esint> > sDist(_mesh->contacts->neighbors.size()), rDist(_mesh->contacts->neighbors.size());
 	std::vector<std::vector<Point> > sData(_mesh->contacts->neighbors.size()), rData(_mesh->contacts->neighbors.size());
 
 	for (size_t n = 0; n < _mesh->contacts->neighbors.size(); n++) {
@@ -429,11 +429,11 @@ void MeshPreprocessing::searchContactInterfaces()
 			distribution[t] += begin - _mesh->contacts->filledCells.begin();
 		}
 
-		std::vector<std::vector<eslocal> > filled(threads);
+		std::vector<std::vector<esint> > filled(threads);
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			std::vector<eslocal> tfilled;
-			eslocal y, x;
+			std::vector<esint> tfilled;
+			esint y, x;
 			for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 				y = _mesh->contacts->filledCells[i] % (xsize * ysize) / xsize;
 				x = _mesh->contacts->filledCells[i] % xsize;
@@ -462,14 +462,14 @@ void MeshPreprocessing::searchContactInterfaces()
 		std::vector<size_t> distribution = tarray<size_t>::distribute(threads, sFilled[n].size());
 		sBlock[n].resize(sFilled[n].size() + 1);
 
-		std::vector<std::vector<eslocal> > tIDs(threads);
+		std::vector<std::vector<esint> > tIDs(threads);
 
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			std::vector<eslocal> IDs;
+			std::vector<esint> IDs;
 
 			if (distribution[t] < distribution[t + 1]) {
-				eslocal prevBlock = sFilled[n][distribution[t]];
+				esint prevBlock = sFilled[n][distribution[t]];
 				auto cell = _mesh->contacts->grid->cbegin() + prevBlock;
 				for (size_t i = distribution[t]; i < distribution[t + 1]; ++i) {
 					cell += sFilled[n][i] - prevBlock;
@@ -509,12 +509,12 @@ void MeshPreprocessing::searchContactInterfaces()
 
 		distribution = tarray<size_t>::distribute(threads, _mesh->contacts->nsurface[n].size());
 
-		std::vector<std::vector<eslocal> > dist(threads);
+		std::vector<std::vector<esint> > dist(threads);
 		std::vector<std::vector<Point> > data(threads);
 
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			std::vector<eslocal> tdist;
+			std::vector<esint> tdist;
 			std::vector<Point> tdata;
 			if (t == 0) {
 				tdist.reserve(distribution[t + 1] - distribution[t] + 1);
@@ -523,7 +523,7 @@ void MeshPreprocessing::searchContactInterfaces()
 				tdist.reserve(distribution[t + 1] - distribution[t]);
 			}
 			if (distribution[t] < distribution[t + 1]) {
-				eslocal prev = _mesh->contacts->nsurface[n][distribution[t]];
+				esint prev = _mesh->contacts->nsurface[n][distribution[t]];
 				auto face = _mesh->contacts->elements->cbegin() + prev;
 				for (size_t i = distribution[t]; i < distribution[t + 1]; prev = _mesh->contacts->nsurface[n][i++]) {
 					face += _mesh->contacts->nsurface[n][i] - prev;
@@ -563,8 +563,8 @@ void MeshPreprocessing::searchContactInterfaces()
 	}
 
 	for (size_t n = 0; n < _mesh->contacts->neighbors.size(); ++n) {
-		_mesh->contacts->ngrid[n] = new serializededata<eslocal, eslocal>(rBlock[n], rIDs[n]);
-		_mesh->contacts->nelements[n] = new serializededata<eslocal, Point>(rDist[n], rData[n]);
+		_mesh->contacts->ngrid[n] = new serializededata<esint, esint>(rBlock[n], rIDs[n]);
+		_mesh->contacts->nelements[n] = new serializededata<esint, Point>(rDist[n], rData[n]);
 	}
 
 	eventx.end();
@@ -573,11 +573,11 @@ void MeshPreprocessing::searchContactInterfaces()
 	TimeEvent eventb("compute potential local contacts");
 	eventb.start();
 
-	std::vector<std::vector<eslocal> > closeElementsDist(threads), closeElementsData(threads);
+	std::vector<std::vector<esint> > closeElementsDist(threads), closeElementsData(threads);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		std::vector<eslocal> tcloseElementsDist, tcloseElementsData;
+		std::vector<esint> tcloseElementsDist, tcloseElementsData;
 		if (t == 0) {
 			tcloseElementsDist.reserve(_mesh->contacts->elements->cbegin(t)->begin() - _mesh->contacts->elements->cbegin(t)->begin() + 1);
 			tcloseElementsDist.push_back(0);
@@ -587,7 +587,7 @@ void MeshPreprocessing::searchContactInterfaces()
 		Point min, max;
 		int xmin, xmax, ymin, ymax, zmin, zmax;
 		size_t prevsize;
-		std::vector<eslocal>::const_iterator zbegin, zend, ybegin, yend, xbegin, xend;
+		std::vector<esint>::const_iterator zbegin, zend, ybegin, yend, xbegin, xend;
 		for (auto e = _mesh->contacts->elements->cbegin(t); e != _mesh->contacts->elements->cend(t); ++e) {
 			min = max = e->front();
 			for (auto n = e->begin() + 1; n != e->end(); ++n) {
@@ -643,7 +643,7 @@ void MeshPreprocessing::searchContactInterfaces()
 
 	Esutils::threadDistributionToFullDistribution(closeElementsDist);
 
-	_mesh->contacts->closeElements = new serializededata<eslocal, eslocal>(closeElementsDist, closeElementsData);
+	_mesh->contacts->closeElements = new serializededata<esint, esint>(closeElementsDist, closeElementsData);
 
 	eventb.end();
 	eval.addEvent(eventb);
@@ -654,7 +654,7 @@ void MeshPreprocessing::searchContactInterfaces()
 	_mesh->contacts->ncloseElements.resize(_mesh->contacts->neighbors.size());
 	for (size_t n = 0; n < _mesh->contacts->neighbors.size(); n++) {
 		std::vector<size_t> distribution = tarray<size_t>::distribute(threads, _mesh->contacts->nsurface[n].size());
-		std::vector<std::vector<eslocal> > ncloseElementsDist(threads), ncloseElementsData(threads);
+		std::vector<std::vector<esint> > ncloseElementsDist(threads), ncloseElementsData(threads);
 
 		double nboxsize = _mesh->contacts->eps * rGroupSize[n].front();
 		int nxsize = std::ceil((boxes[2 * _mesh->contacts->neighbors[n] + 1].x - boxes[2 * _mesh->contacts->neighbors[n]].x) / nboxsize);
@@ -666,7 +666,7 @@ void MeshPreprocessing::searchContactInterfaces()
 			Point min, max;
 			int xmin, xmax, ymin, ymax, zmin, zmax;
 			size_t prevsize;
-			std::vector<eslocal> tcloseElementsDist, tcloseElementsData;
+			std::vector<esint> tcloseElementsDist, tcloseElementsData;
 			if (t == 0) {
 				tcloseElementsDist.reserve(distribution[t + 1] - distribution[t] + 1);
 				tcloseElementsDist.push_back(0);
@@ -675,7 +675,7 @@ void MeshPreprocessing::searchContactInterfaces()
 			}
 
 			if (distribution[t] != distribution[t + 1]) {
-				eslocal prev = _mesh->contacts->nsurface[n][distribution[t]];
+				esint prev = _mesh->contacts->nsurface[n][distribution[t]];
 				auto e = _mesh->contacts->elements->cbegin() + prev;
 				for (size_t i = distribution[t]; i < distribution[t + 1]; prev = _mesh->contacts->nsurface[n][i++]) {
 					e += _mesh->contacts->nsurface[n][i] - prev;
@@ -734,7 +734,7 @@ void MeshPreprocessing::searchContactInterfaces()
 
 		Esutils::threadDistributionToFullDistribution(ncloseElementsDist);
 
-		_mesh->contacts->ncloseElements[n] = new serializededata<eslocal, eslocal>(ncloseElementsDist, ncloseElementsData);
+		_mesh->contacts->ncloseElements[n] = new serializededata<esint, esint>(ncloseElementsDist, ncloseElementsData);
 	}
 
 	eventc.end();

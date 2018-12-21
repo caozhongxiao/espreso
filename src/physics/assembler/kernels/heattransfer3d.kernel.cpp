@@ -21,7 +21,7 @@ using namespace espreso;
 
 using namespace espreso;
 
-void HeatTransfer3DKernel::assembleMaterialMatrix(eslocal node, double *coordinates, const MaterialBaseConfiguration *mat, double phase, double time, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
+void HeatTransfer3DKernel::assembleMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double phase, double time, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
 {
 	auto d2r = [] (double degree) -> double {
 		return M_PI * degree / 180;
@@ -199,7 +199,7 @@ void HeatTransfer3DKernel::assembleMaterialMatrix(eslocal node, double *coordina
 
 void HeatTransfer3DKernel::processElement(Matrices matrices, const SolverParameters &parameters, const ElementIterator &iterator, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
-	eslocal size = iterator.element->nodes;
+	esint size = iterator.element->nodes;
 
 	const std::vector<DenseMatrix> &N = *(iterator.element->N);
 	const std::vector<DenseMatrix> &dN = *(iterator.element->dN);
@@ -421,7 +421,7 @@ void HeatTransfer3DKernel::processElement(Matrices matrices, const SolverParamet
 		}
 
 		if (matrices & Matrices::f) {
-			for (eslocal i = 0; i < size; i++) {
+			for (esint i = 0; i < size; i++) {
 				fe(i, 0) += detJ * weighFactor[gp] * N[gp](0, i) * f(i, 0);
 				if (norm_u_e != 0) {
 					fe(i, 0) += detJ * weighFactor[gp] * h_e * tau_e * b_e(0, i) * f(i, 0) / (2 * norm_u_e);
@@ -434,7 +434,7 @@ void HeatTransfer3DKernel::processElement(Matrices matrices, const SolverParamet
 		DenseMatrix T1, T2;
 		T1.multiply(Ke, T, 1, 0);
 		T2.multiply(gKe, T, 1, 0);
-		for (eslocal i = 0; i < size; i++) {
+		for (esint i = 0; i < size; i++) {
 			fe(i, 0) += T1(i, 0) - T2(i, 0);
 		}
 	}
@@ -470,7 +470,7 @@ void HeatTransfer3DKernel::processFace(Matrices matrices, const SolverParameters
 		return;
 	}
 
-	eslocal size = iterator.element->nodes;
+	esint size = iterator.element->nodes;
 
 	const std::vector<DenseMatrix> &N = *(iterator.element->N);
 	const std::vector<DenseMatrix> &dN = *(iterator.element->dN);
@@ -537,7 +537,7 @@ void HeatTransfer3DKernel::processFace(Matrices matrices, const SolverParameters
 			gpEmiss.multiply(N[gp], emiss);
 			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpEmiss(0, 0), 1, true);
 		}
-		for (eslocal i = 0; i < size; i++) {
+		for (esint i = 0; i < size; i++) {
 			fe(i, 0) += J * weighFactor[gp] * N[gp](0, i % size) * gpQ(0, 0);
 		}
 	}
@@ -567,7 +567,7 @@ void HeatTransfer3DKernel::processEdge(Matrices matrices, const SolverParameters
 //	DenseMatrix gpQ(1, 1), gpHtc(1, 1), gpFlow(1, 1), gpEmiss(1, 1);
 //
 //	double area = 1, temp;
-//	eslocal Ksize = e->nodes();
+//	esint Ksize = e->nodes();
 //	Ke.resize(0, 0);
 //	Me.resize(0, 0);
 //	Re.resize(0, 0);
@@ -634,7 +634,7 @@ void HeatTransfer3DKernel::processEdge(Matrices matrices, const SolverParameters
 //			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpHtc(0, 0), 1, true);
 //			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpEmiss(0, 0), 1, true);
 //		}
-//		for (eslocal i = 0; i < Ksize; i++) {
+//		for (esint i = 0; i < Ksize; i++) {
 //			fe(i, 0) += J * weighFactor[gp] * N[gp](0, i % e->nodes()) * gpQ(0, 0);
 //		}
 //	}
@@ -642,7 +642,7 @@ void HeatTransfer3DKernel::processEdge(Matrices matrices, const SolverParameters
 
 void HeatTransfer3DKernel::processSolution(const SolutionIterator &iterator)
 {
-	eslocal size = iterator.element->nodes;
+	esint size = iterator.element->nodes;
 
 	const std::vector<DenseMatrix> &N = *(iterator.element->N);
 	const std::vector<DenseMatrix> &dN = *(iterator.element->dN);

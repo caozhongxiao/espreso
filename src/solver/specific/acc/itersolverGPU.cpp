@@ -17,7 +17,7 @@ void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
 		time_eval.timeEvents[0].start();
 
 		#pragma omp parallel for
-for (eslocal d = 0; d < cluster.domains.size(); d++) {
+for (esint d = 0; d < cluster.domains.size(); d++) {
 
 			// *** Part 1 - prepare vectors for FETI operator with SC
 			//     cluster.domains[d].compressed_tmp2 for CPU
@@ -26,18 +26,18 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
 
 			if (cluster.domains[d].isOnACC == 1) {
 				if (!cluster.domains[d].B1Kplus.USE_FLOAT) {
-					for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
+					for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
 						cluster.domains[d].cuda_pinned_buff[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 						cluster.domains[d].compressed_tmp2[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 					}
 				} else {
-					for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
+					for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
 						cluster.domains[d].cuda_pinned_buff_fl[i] = (float) x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 						cluster.domains[d].compressed_tmp2[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 					}
 				}
 			} else {
-				for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
+				for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
 					cluster.domains[d].compressed_tmp2[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 				}
 			}
@@ -49,7 +49,7 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
 
 //		// *** Part 3 - execute FETI SC operator - B1Kplus.DenseMatVec
 //		// Note: DenseMatVecCUDA_wo_Copy_start is non-blocking operation - just schedule transfers and execution of kernels and goes forward
-//		cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+//		cilk_for (esint d = 0; d < cluster.domains.size(); d++) {
 //		  	if (cluster.domains[d].isOnACC == 1) {
 //				if (!cluster.domains[d].B1Kplus.USE_FLOAT) {
 //					//cilk_spawn
@@ -61,7 +61,7 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
 //		  	}
 //		//}
 //
-//		//cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+//		//cilk_for (esint d = 0; d < cluster.domains.size(); d++) {
 //		  	if (cluster.domains[d].isOnACC == 0) {
 //				// Automatic fall-back to CPU for sub-domains, which did not fit GPU memory
 //				// Note: DenseMatVec - this is a blocking operation - it waits till its finished
@@ -85,7 +85,7 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
 
 		// *** Part 5 - Finalize transfers of the result of the FETI SC operator from GPU back to CPU
 		#pragma omp parallel for
-for (eslocal d = 0; d < cluster.domains.size(); d++) {
+for (esint d = 0; d < cluster.domains.size(); d++) {
 			if (cluster.domains[d].isOnACC == 1) {
 				cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy_sync ( );
 			}
@@ -93,19 +93,19 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
 
 		// Part 6 - Lambda values, results of the FETI SC operator, are combined back into single lambda vector per cluster - cluster.compressed_tmp
 		std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
-		for (eslocal d = 0; d < cluster.domains.size(); d++) {
+		for (esint d = 0; d < cluster.domains.size(); d++) {
 			if (cluster.domains[d].isOnACC == 1) {
 				if (!cluster.domains[d].B1Kplus.USE_FLOAT) {
-					for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
+					for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
 						cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].cuda_pinned_buff[i];
 					}
 				} else {
-					for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
+					for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
 						cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += (double)cluster.domains[d].cuda_pinned_buff_fl[i];
 					}
 				}
 			} else {
-					for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
+					for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
 						cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].compressed_tmp[i];
 					}
 			}
@@ -115,13 +115,13 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
 		//              using cluster.domains[d].B1_comp_dom gluing matrix and store them in the temp. vector y_out_tmp.
 		//				Final result is combination of lambdas achieved by the FETI operator (cluster.compressed_tmp) and HTFETI operators (y_out_tmp)
 		SEQ_VECTOR < double > y_out_tmp;
-		for (eslocal d = 0; d < cluster.domains.size(); d++) {
+		for (esint d = 0; d < cluster.domains.size(); d++) {
 			// Calculate lambdas from the HTFETI operator
 			y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
 			cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster1[d], y_out_tmp, 'N', 0, 0, 0.0);
 
 			// Sums lambdas from FETI and HFETI operator
-			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+			for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
 		}
 		time_eval.timeEvents[2].end();
@@ -131,9 +131,9 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
 	if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
 		time_eval.timeEvents[0].start();
 		//// POZOR - jen pro porovnani vykonu CPU a GPU
-		//cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+		//cilk_for (esint d = 0; d < cluster.domains.size(); d++) {
 		//	SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows );
-		//	for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+		//	for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 		//		x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 		//	cluster.domains[d].B1Kplus.DenseMatVec(x_in_tmp, cluster.domains[d].compressed_tmp);
 		//}
@@ -145,12 +145,12 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
 		cilk_spawn apply_A_FETI_SC_forFETI (cluster, x_in);
 
 		#pragma omp parallel for
-for (eslocal d = 0; d < cluster.domains.size(); d++) {
+for (esint d = 0; d < cluster.domains.size(); d++) {
 			SEQ_VECTOR < double > x_in_tmp;
 
 			if (!cluster.domains[d].isOnACC == 1) {
 				x_in_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
-				for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
+				for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
 					x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 				}
 
@@ -171,13 +171,13 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
 		time_eval.timeEvents[2].start();
 		std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
 
-		for (eslocal d = 0; d < cluster.domains.size(); d++) {
+		for (esint d = 0; d < cluster.domains.size(); d++) {
 			if (cluster.domains[d].isOnACC == 1) {
 				cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy_sync ( );
-				for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+				for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 					cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].cuda_pinned_buff[i];
 			} else {
-				for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+				for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 					cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].compressed_tmp[i];
 			}
 
@@ -191,9 +191,9 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
 
 		 time_eval.timeEvents[0].start();
 		#pragma omp parallel for
-for (eslocal d = 0; d < cluster.domains.size(); d++) {
+for (esint d = 0; d < cluster.domains.size(); d++) {
 			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
-			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+			for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 				x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
 		}
@@ -211,7 +211,7 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
 				cluster.multKplus_HF(cluster.x_prim_cluster1);
 
 				#pragma omp parallel for
-for (eslocal d = 0; d < cluster.domains.size(); d++) {
+for (esint d = 0; d < cluster.domains.size(); d++) {
 					cluster.domains[d].multKplusLocal( cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d] );
 				}
 		}
@@ -220,14 +220,14 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
 			cilk_spawn cluster.multKplus_HF_SC (cluster.x_prim_cluster1, cluster.x_prim_cluster3);
 
 			#pragma omp parallel for
-for (eslocal d = 0; d < cluster.domains.size(); d++) {
+for (esint d = 0; d < cluster.domains.size(); d++) {
 				cluster.domains[d].multKplusLocal( cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d] );
 			}
 
 			cilk_sync;
 
 			#pragma omp parallel for
-for (eslocal d = 0; d < cluster.domains.size(); d++) {
+for (esint d = 0; d < cluster.domains.size(); d++) {
 				for (int i = 0; i < cluster.domains[d].K.rows; i++) {
 					cluster.x_prim_cluster1[d][i] = cluster.x_prim_cluster2[d][i] + cluster.x_prim_cluster3[d][i];
 				}
@@ -242,11 +242,11 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
 		 time_eval.timeEvents[2].start();
 		std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
 		SEQ_VECTOR < double > y_out_tmp;
-		for (eslocal d = 0; d < cluster.domains.size(); d++) {
+		for (esint d = 0; d < cluster.domains.size(); d++) {
 			y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
 			cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster1[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
 
-			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+			for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
 		}
 		 time_eval.timeEvents[2].end();
@@ -259,9 +259,9 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
 
 		 time_eval.timeEvents[0].start();
 		#pragma omp parallel for
-for (eslocal d = 0; d < cluster.domains.size(); d++) {
+for (esint d = 0; d < cluster.domains.size(); d++) {
 			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
-			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+			for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 				x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
 		}
@@ -270,7 +270,7 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
 		 time_eval.timeEvents[1].start();
 		if (cluster.USE_HFETI == 0) {
 			#pragma omp parallel for
-for (eslocal d = 0; d < cluster.domains.size(); d++)
+for (esint d = 0; d < cluster.domains.size(); d++)
 				cluster.domains[d].multKplusLocal(cluster.x_prim_cluster1[d]);
 		} else {
 			cluster.multKplusGlobal_l(cluster.x_prim_cluster1);
@@ -281,11 +281,11 @@ for (eslocal d = 0; d < cluster.domains.size(); d++)
 		 time_eval.timeEvents[2].start();
 		std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
 		SEQ_VECTOR < double > y_out_tmp;
-		for (eslocal d = 0; d < cluster.domains.size(); d++) {
+		for (esint d = 0; d < cluster.domains.size(); d++) {
 			y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
 			cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster1[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
 
-			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+			for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
 		}
 		 time_eval.timeEvents[2].end();
@@ -306,10 +306,10 @@ for (eslocal d = 0; d < cluster.domains.size(); d++)
 
 	void IterSolverGPU::apply_A_FETI_SC_forFETI   ( Cluster & cluster, SEQ_VECTOR<double> & x_in ) {
 		//cilk_
-		for (eslocal d = 0; d < cluster.domains.size(); d++) {
+		for (esint d = 0; d < cluster.domains.size(); d++) {
 
 			if (cluster.domains[d].isOnACC == 1) {
-				for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
+				for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
 					cluster.domains[d].cuda_pinned_buff[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 				}
 
@@ -321,17 +321,17 @@ for (eslocal d = 0; d < cluster.domains.size(); d++)
 			}
 
 //			if (cluster.domains[d].isOnACC == 1 && d%2 == 0) {
-//				for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
+//				for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
 //					cluster.domains[d].cuda_pinned_buff[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 //				}
 //
 ////				cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy_start(cluster.domains[d].cuda_pinned_buff, cluster.domains[d].cuda_pinned_buff,'N',0);
 //
-//				eslocal sc1_rows = cluster.domains[d].B1Kplus.rows;
-//				eslocal sc2_rows = 0;
+//				esint sc1_rows = cluster.domains[d].B1Kplus.rows;
+//				esint sc2_rows = 0;
 //
 //				if(d+1 < cluster.domains.size()) {
-//					for (eslocal i = 0; i < cluster.domains[d+1].lambda_map_sub_local.size(); i++) {
+//					for (esint i = 0; i < cluster.domains[d+1].lambda_map_sub_local.size(); i++) {
 //						cluster.domains[d+1].cuda_pinned_buff[i] = x_in[ cluster.domains[d+1].lambda_map_sub_local[i]];
 //					}
 //					sc2_rows = cluster.domains[d+1].B1Kplus.rows;
@@ -357,7 +357,7 @@ for (eslocal d = 0; d < cluster.domains.size(); d++)
 	void IterSolverGPU::apply_A_FETI_SC_forHFETI   ( Cluster & cluster )
 	{
 		//cilk_
-		for (eslocal d = 0; d < cluster.domains.size(); d++) {
+		for (esint d = 0; d < cluster.domains.size(); d++) {
 		  	if (cluster.domains[d].isOnACC == 1) {
 				if (!cluster.domains[d].B1Kplus.USE_FLOAT) {
 					//cilk_spawn
@@ -370,7 +370,7 @@ for (eslocal d = 0; d < cluster.domains.size(); d++)
 		}
 
 		#pragma omp parallel for
-		for (eslocal d = 0; d < cluster.domains.size(); d++) {
+		for (esint d = 0; d < cluster.domains.size(); d++) {
 		  	if (!configuration.combine_sc_and_spds) {
 				if (cluster.domains[d].isOnACC == 0) {
 					// Automatic fall-back to CPU for sub-domains Schur complements, which did not fit GPU memory

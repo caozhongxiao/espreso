@@ -43,7 +43,7 @@ void Composer::processSolution()
 	run::storeSolution();
 }
 
-void Composer::insertKPattern(IJ *target, eslocal *begin, eslocal *end, MatrixType mtype)
+void Composer::insertKPattern(IJ *target, esint *begin, esint *end, MatrixType mtype)
 {
 	switch (mtype) {
 	case MatrixType::REAL_SYMMETRIC_INDEFINITE:
@@ -71,7 +71,7 @@ void Composer::insertKPattern(IJ *target, eslocal *begin, eslocal *end, MatrixTy
 	}
 }
 
-void Composer::clearMatrices(Matrices matrices, eslocal domain)
+void Composer::clearMatrices(Matrices matrices, esint domain)
 {
 	if (matrices & Matrices::K) {
 		std::fill(run::data->K[domain].CSR_V_values.begin(), run::data->K[domain].CSR_V_values.end(), 0);

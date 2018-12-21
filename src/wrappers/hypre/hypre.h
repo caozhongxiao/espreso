@@ -14,17 +14,17 @@ struct MultigridConfiguration;
 class HypreData {
 	friend class HYPRE;
 public:
-	HypreData(MPI_Comm &comm, eslocal nrows);
+	HypreData(MPI_Comm &comm, esint nrows);
 
-	void insertCSR(eslocal nrows, eslocal offset, eslocal *rowPrts, eslocal *colIndices, double *values, double *rhsValues);
-	void insertIJV(eslocal nrows, eslocal offset, eslocal size, eslocal *rowIndices, eslocal *colIndices, double *values, double *rhsValues);
+	void insertCSR(esint nrows, esint offset, esint *rowPrts, esint *colIndices, double *values, double *rhsValues);
+	void insertIJV(esint nrows, esint offset, esint size, esint *rowIndices, esint *colIndices, double *values, double *rhsValues);
 	void finalizePattern();
 
 	~HypreData();
 
 protected:
 	MPI_Comm &_comm;
-	eslocal _roffset, _nrows;
+	esint _roffset, _nrows;
 
 	HYPRE_IJMatrix _K;
 	HYPRE_IJVector _f, _x;
@@ -33,7 +33,7 @@ protected:
 };
 
 struct HYPRE {
-	static void solve(const MultigridConfiguration &configuration, HypreData &data, eslocal nrows, double *solution);
+	static void solve(const MultigridConfiguration &configuration, HypreData &data, esint nrows, double *solution);
 };
 
 }

@@ -30,7 +30,7 @@ struct OpenFOAMSets: public OpenFOAMCollectiveParser {
 
 	static void inspect(const std::string &path, std::vector<OpenFOAMSet> &sets);
 
-	bool readData(OpenFOAMSet &set, std::vector<eslocal> &indices);
+	bool readData(OpenFOAMSet &set, std::vector<esint> &indices);
 };
 
 }

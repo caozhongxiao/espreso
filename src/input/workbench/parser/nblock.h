@@ -13,19 +13,19 @@ struct NBlock: public WorkbenchParser {
 	static const char* upper;
 	static const char* lower;
 
-	eslocal NUMFIELD, Solkey, NDMAX, NDSEL;
+	esint NUMFIELD, Solkey, NDMAX, NDSEL;
 
-	eslocal lineSize, lineEndSize;
-	eslocal indexSize, indexLength, valueSize, valueLength;
+	esint lineSize, lineEndSize;
+	esint indexSize, indexLength, valueSize, valueLength;
 
 	NBlock();
 	NBlock& parse(const char* begin);
 
-	bool readData(std::vector<eslocal> &nIDs, std::vector<Point> &coordinates, double scaleFactor);
+	bool readData(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor);
 
 protected:
-	bool index_x_y_z(std::vector<eslocal> &nIDs, std::vector<Point> &coordinates, double scaleFactor);
-	bool index_solid_line_x_y_z(std::vector<eslocal> &nIDs, std::vector<Point> &coordinates, double scaleFactor);
+	bool index_x_y_z(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor);
+	bool index_solid_line_x_y_z(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor);
 };
 
 }

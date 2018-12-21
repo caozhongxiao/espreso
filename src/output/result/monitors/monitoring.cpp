@@ -179,7 +179,7 @@ void Monitoring::updateMesh()
 		_monitors[it->first - 1].property = it->second.property;
 		_monitors[it->first - 1].printSize = std::max(std::max((size_t)10, it->second.region.size()), it->second.property.size()) + 4;
 
-		eslocal offset = 0;
+		esint offset = 0;
 		for (size_t i = 0; i < _edata.size(); i++) {
 			for (size_t p = 0; p < _edata[i].first->names.size(); ++p, ++offset) {
 				if (
@@ -259,7 +259,7 @@ void Monitoring::updateSolution()
 		return;
 	}
 
-	eslocal offset = 0;
+	esint offset = 0;
 	for (size_t i = 0; i < _edata.size(); offset += _edata[i++].first->names.size()) {
 		_edata[i].first->statistics(_edata[i].second->elements->datatarray(), _edata[i].second->uniqueTotalSize, _statistics.data() + offset);
 	}

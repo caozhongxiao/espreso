@@ -28,7 +28,7 @@ protected:
 	void buildB1Pattern();
 	void updateDuplicity();
 
-	eslocal _DOFs;
+	esint _DOFs;
 };
 
 }

@@ -102,36 +102,36 @@ class SuperClusterAcc : public SuperClusterBase
     SEQ_VECTOR<SparseMatrix **> matricesPerAcc;
 
     // vector of length N_MIC of vectors of indices of subdomains on MICs
-    SEQ_VECTOR<SEQ_VECTOR<eslocal> > accDomains;
+    SEQ_VECTOR<SEQ_VECTOR<esint> > accDomains;
 
     // vector of indices of domains on the host
-    SEQ_VECTOR<eslocal> hostDomains;
+    SEQ_VECTOR<esint> hostDomains;
 
     // packed Dirichlet preconditioners
     SEQ_VECTOR<DenseMatrixPack> DirichletPacks;
 
     // vector of length N_MIC of vectors of indices of preconditioners on MICs
-    SEQ_VECTOR<SEQ_VECTOR<eslocal> > accPreconditioners;
+    SEQ_VECTOR<SEQ_VECTOR<esint> > accPreconditioners;
 
     // vector of indices of domains on the host
-    SEQ_VECTOR<eslocal> hostPreconditioners;
+    SEQ_VECTOR<esint> hostPreconditioners;
 
     // number of MPI processes per node
-    eslocal MPI_per_node;
+    esint MPI_per_node;
 
     // number of MPI processes per accelerator
-    eslocal MPI_per_acc;
+    esint MPI_per_acc;
     
     // number of accelerators per MPI process
-    eslocal acc_per_MPI;
+    esint acc_per_MPI;
 
     // id of devices to offload to
-    SEQ_VECTOR<eslocal> myTargets;
+    SEQ_VECTOR<esint> myTargets;
 
     // local rank on the accelerator
-    eslocal acc_rank;
+    esint acc_rank;
 
-    eslocal NUM_MICS;
+    esint NUM_MICS;
 
     bool deleteMatrices;
 

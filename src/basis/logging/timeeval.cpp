@@ -175,7 +175,7 @@ void TimeEvent::evaluate() {
 	maxTime = 0;
 	stdDev  = 0;
 
-	for (eslocal i = 0; i < eventCount; i++) {
+	for (esint i = 0; i < eventCount; i++) {
 		double d_time = eventTime[i];
 		sumTime += d_time;
 		if (d_time < minTime) {
@@ -189,7 +189,7 @@ void TimeEvent::evaluate() {
 	avgTime = sumTime / eventCount;
 
 	double E = 0;
-	for (eslocal i = 0; i < eventCount; i++) {
+	for (esint i = 0; i < eventCount; i++) {
 		E += (eventTime[i] - avgTime) * (eventTime[i] - avgTime);
 	}
 
@@ -308,7 +308,7 @@ void TimeEvent::printLastStatMPIPerNode(double totalTime)
 		<< (totalTime != 0 ? 100.0 * g_avgTime / totalTime : INFINITY);
 
 	std::stringstream ss;
-	for (eslocal i = 0; i < environment->MPIsize; i++) {
+	for (esint i = 0; i < environment->MPIsize; i++) {
 		ss << std::fixed << std::setw(3) << "R: " << std::setw(5) << i << std::setw(15) << d_all_times[i];
 
 		if ((i + 1) % 10 == 0) {

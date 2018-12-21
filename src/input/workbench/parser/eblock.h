@@ -14,10 +14,10 @@ struct EBlock: public WorkbenchParser {
 	static const char* upper;
 	static const char* lower;
 
-	eslocal NUM_NODES, Solkey, NDMAX, NDSEL;
+	esint NUM_NODES, Solkey, NDMAX, NDSEL;
 
-	eslocal lineSize, elementSize, lineEndSize;
-	eslocal valueSize, valueLength;
+	esint lineSize, elementSize, lineEndSize;
+	esint valueSize, valueLength;
 
 	EBlock();
 	EBlock& parse(const char* begin);

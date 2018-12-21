@@ -29,7 +29,7 @@ void CollectedVisualization::clearIntervals()
 	_lenghts.clear();
 }
 
-void CollectedVisualization::pushInterval(eslocal size)
+void CollectedVisualization::pushInterval(esint size)
 {
 	_loffset = size - _lsize;
 	_lenghts.push_back(_loffset);

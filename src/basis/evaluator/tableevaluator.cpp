@@ -17,11 +17,11 @@ TableEvaluator::TableEvaluator(
 	_timeDependency = std::any_of(_properties.begin(), _properties.end(), [] (const TableProperty &p) { return p == TableProperty::TIME; });
 }
 
-void TableEvaluator::evalVector(eslocal size, eslocal increment, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+void TableEvaluator::evalVector(esint size, esint increment, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
 {
 	std::vector<size_t> cell(_dimension);
 
-	for (eslocal j = 0; j < size; ++j) {
+	for (esint j = 0; j < size; ++j) {
 		for (size_t i = 0; i < _dimension; i++) {
 			switch (_properties[i]) {
 			case TableProperty::TEMPERATURE:
@@ -37,12 +37,12 @@ void TableEvaluator::evalVector(eslocal size, eslocal increment, int csize, cons
 	}
 }
 
-void TableEvaluator::evalFiltered(eslocal size, eslocal increment, eslocal *elements, eslocal *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+void TableEvaluator::evalFiltered(esint size, esint increment, esint *elements, esint *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
 {
 	std::vector<size_t> cell(_dimension);
 
-	for (eslocal j = 0; j < size; ++j) {
-		for (eslocal e = distribution[elements[j]]; e < distribution[elements[j] + 1]; ++e) {
+	for (esint j = 0; j < size; ++j) {
+		for (esint e = distribution[elements[j]]; e < distribution[elements[j] + 1]; ++e) {
 			for (size_t i = 0; i < _dimension; i++) {
 				switch (_properties[i]) {
 				case TableProperty::TEMPERATURE:
@@ -59,11 +59,11 @@ void TableEvaluator::evalFiltered(eslocal size, eslocal increment, eslocal *elem
 	}
 }
 
-void TableEvaluator::evalSelected(eslocal size, eslocal increment, eslocal *selection, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+void TableEvaluator::evalSelected(esint size, esint increment, esint *selection, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
 {
 	std::vector<size_t> cell(_dimension);
 
-	for (eslocal j = 0; j < size; ++j) {
+	for (esint j = 0; j < size; ++j) {
 		for (size_t i = 0; i < _dimension; i++) {
 			switch (_properties[i]) {
 			case TableProperty::TEMPERATURE:

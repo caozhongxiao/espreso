@@ -18,15 +18,15 @@ struct CMBlock: public WorkbenchParser {
 
 	char name[MAX_NAME_SIZE];
 	Entity entity;
-	eslocal NUMITEMS;
+	esint NUMITEMS;
 
-	eslocal lineSize, lineEndSize;
-	eslocal valueSize, valueLength;
+	esint lineSize, lineEndSize;
+	esint valueSize, valueLength;
 
 	CMBlock();
 	CMBlock& parse(const char* begin);
 
-	bool readData(std::vector<eslocal> &indices);
+	bool readData(std::vector<esint> &indices);
 };
 
 }

@@ -23,14 +23,14 @@ HeatTransfer3DControler::HeatTransfer3DControler(HeatTransferLoadStepConfigurati
 	Point defaultMotion(0, 0, 0);
 	double defaultHeat = 0; //273.15;
 
-	_ntemperature.data = new serializededata<eslocal, double>(1, _nDistribution);
-	_ncoordinate.data = new serializededata<eslocal, double>(3, _nDistribution);
+	_ntemperature.data = new serializededata<esint, double>(1, _nDistribution);
+	_ncoordinate.data = new serializededata<esint, double>(3, _nDistribution);
 
 	_nmotion.isConts = setDefault(_configuration.translation_motions, defaultMotion) && defaultMotion.x == defaultMotion.y && defaultMotion.x == defaultMotion.z;
-	_nmotion.data = new serializededata<eslocal, double>(3, _nDistribution, defaultMotion.x);
+	_nmotion.data = new serializededata<esint, double>(3, _nDistribution, defaultMotion.x);
 
 	_nheat.isConts = setDefault(_configuration.heat_source, defaultHeat);
-	_nheat.data = new serializededata<eslocal, double>(1, _nDistribution, defaultHeat);
+	_nheat.data = new serializededata<esint, double>(1, _nDistribution, defaultHeat);
 
 	_temperature = run::mesh->nodes->appendData(1, { "TEMPERATURE" });
 	if (run::mesh->hasPhaseChange()) {
@@ -92,8 +92,8 @@ void HeatTransfer3DControler::initData()
 
 			auto &distribution = region->procNodes->datatarray().distribution();
 
-			_boundaries[r].coordinate.data = new serializededata<eslocal, double>(3, distribution);
-			_boundaries[r].temperature.data = new serializededata<eslocal, double>(1, distribution);
+			_boundaries[r].coordinate.data = new serializededata<esint, double>(3, distribution);
+			_boundaries[r].temperature.data = new serializededata<esint, double>(1, distribution);
 
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
@@ -131,7 +131,7 @@ void HeatTransfer3DControler::initData()
 				if (_boundaries[r].externalTemperature.data == NULL) {
 					updateBRegions(convection->second.external_temperature, _boundaries[r].externalTemperature, distribution, 3, cbegin, tbegin, time);
 				}
-				_boundaries[r].htc.data = new serializededata<eslocal, double>(1, distribution);
+				_boundaries[r].htc.data = new serializededata<esint, double>(1, distribution);
 
 				#pragma omp parallel for
 				for (size_t t = 0; t < threads; t++) {
@@ -213,7 +213,7 @@ void HeatTransfer3DControler::parametersChanged()
 				if (_boundaries[r].externalTemperature.data == NULL) {
 					updateBRegions(convection->second.external_temperature, _boundaries[r].externalTemperature, distribution, 3, cbegin, tbegin, time);
 				}
-				_boundaries[r].htc.data = new serializededata<eslocal, double>(1, distribution);
+				_boundaries[r].htc.data = new serializededata<esint, double>(1, distribution);
 
 				#pragma omp parallel for
 				for (size_t t = 0; t < threads; t++) {
@@ -237,7 +237,7 @@ void HeatTransfer3DControler::processElements(Matrices matrices, const SolverPar
 	iterator.motion      = _nmotion.data->datatarray().begin() + noffset * 3;
 	iterator.heat        = _nheat.data->datatarray().begin() + noffset;
 
-	for (eslocal e = filler.begin; e < filler.end; ++e, ++enodes) {
+	for (esint e = filler.begin; e < filler.end; ++e, ++enodes) {
 		iterator.element = run::mesh->elements->epointers->datatarray()[e];
 		iterator.material = run::mesh->materials[run::mesh->elements->material->datatarray()[e]];
 
@@ -295,7 +295,7 @@ void HeatTransfer3DControler::processBoundary(Matrices matrices, const SolverPar
 	iterator.radiation = iterator.emissivity != NULL;
 	iterator.convection = iterator.htc != NULL;
 
-	for (eslocal e = filler.begin; e < filler.end; ++e, ++enodes) {
+	for (esint e = filler.begin; e < filler.end; ++e, ++enodes) {
 		iterator.element = run::mesh->boundaryRegions[rindex]->epointers->datatarray()[e];
 
 		_kernel->processFace(matrices, parameters, iterator, filler.Ke, filler.fe);

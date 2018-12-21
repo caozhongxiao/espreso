@@ -16,27 +16,27 @@ enum class SOLVER_INTERNAL_TYPE {
 };
 
 void GMRESolverInternal(SOLVER_INTERNAL_TYPE type,
-						eslocal rows, eslocal cols, eslocal *mRows, eslocal *mCols, double *mVals,
+						esint rows, esint cols, esint *mRows, esint *mCols, double *mVals,
 						double *rhsVals, double *results,
-						double tolerance, eslocal maxIterations, eslocal &itercount)
+						double tolerance, esint maxIterations, esint &itercount)
 {
 	//---------------------------------------------------------------------------
 		// Define arrays for the coefficient matrix
 		// Compressed sparse row storage is used for sparse representation
 		//---------------------------------------------------------------------------
-		eslocal size = 128;
+		esint size = 128;
 
 		//---------------------------------------------------------------------------
 		// Allocate storage for the ?par parameters and the solution/rhs/residual vectors
 		//---------------------------------------------------------------------------
-		eslocal ipar[size];
+		esint ipar[size];
 		double dpar[size];
 		std::vector<double> tmp(cols * (2 * cols + 1) + (cols * (cols + 9)) / 2 + 1);
 
 		//---------------------------------------------------------------------------
 		// Some additional variables to use with the RCI (P)FGMRES solver
 		//---------------------------------------------------------------------------
-		eslocal RCI_request, ivar;
+		esint RCI_request, ivar;
 		ivar = cols;
 
 		char uplo = 'U';
@@ -45,13 +45,13 @@ void GMRESolverInternal(SOLVER_INTERNAL_TYPE type,
 		double alpha = 1.0;
 		double beta = 0.0;
 
-		eslocal incx = 1;
-		eslocal incy = 1;
+		esint incx = 1;
+		esint incy = 1;
 
 		//---------------------------------------------------------------------------
 		// Initialize the initial guess
 		//---------------------------------------------------------------------------
-		for (eslocal i = 0; i < cols; i++) {
+		for (esint i = 0; i < cols; i++) {
 			results[i] = 0.0;
 		}
 
@@ -141,9 +141,9 @@ void GMRESolverInternal(SOLVER_INTERNAL_TYPE type,
 }
 
 void MATH::SOLVER::GMRESUpCRSMat(
-		eslocal rows, eslocal cols, eslocal *mRows, eslocal *mCols, double *mVals,
+		esint rows, esint cols, esint *mRows, esint *mCols, double *mVals,
 		double *rhsVals, double *results,
-		double tolerance, eslocal maxIterations, eslocal &itercount)
+		double tolerance, esint maxIterations, esint &itercount)
 {
 	GMRESolverInternal(SOLVER_INTERNAL_TYPE::DCSRGEMV,
 			rows, cols, mRows, mCols, mVals,
@@ -153,9 +153,9 @@ void MATH::SOLVER::GMRESUpCRSMat(
 }
 
 void MATH::SOLVER::GMRESDenseRowMajorMat(
-		eslocal rows, eslocal cols, double *mVals,
+		esint rows, esint cols, double *mVals,
 		double *rhsVals, double *results,
-		double tolerance, eslocal maxIterations, eslocal &itercount)
+		double tolerance, esint maxIterations, esint &itercount)
 {
 	GMRESolverInternal(SOLVER_INTERNAL_TYPE::DGEMV,
 							rows, cols, NULL, NULL, mVals,
@@ -165,9 +165,9 @@ void MATH::SOLVER::GMRESDenseRowMajorMat(
 
 
 void MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
-		eslocal cols, double *mVals,
+		esint cols, double *mVals,
 		double *rhsVals, double *results,
-		double tolerance, eslocal maxIterations, eslocal &itercount)
+		double tolerance, esint maxIterations, esint &itercount)
 {
 	GMRESolverInternal(SOLVER_INTERNAL_TYPE::DSPMV,
 							cols, cols, NULL, NULL, mVals,
@@ -175,13 +175,13 @@ void MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
 							tolerance, maxIterations, itercount);
 }
 
-eslocal MATH::SOLVER::directUpperSymetricIndefiniteColumnMajor(
-		eslocal cols, double *m_packed_values,
-		eslocal nrhs, double *rhsVals)
+esint MATH::SOLVER::directUpperSymetricIndefiniteColumnMajor(
+		esint cols, double *m_packed_values,
+		esint nrhs, double *rhsVals)
 {
 	char U = 'U';
-	eslocal info;
-	std::vector<eslocal>  m_ipiv(cols);
+	esint info;
+	std::vector<esint>  m_ipiv(cols);
 
 	dsptrf(&U, &cols, &m_packed_values[0], &m_ipiv[0], &info);
 

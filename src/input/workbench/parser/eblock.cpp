@@ -66,11 +66,11 @@ EBlock& EBlock::parse(const char* begin)
 void EBlock::fixOffsets(std::vector<size_t> &dataOffsets)
 {
 	if (Solkey) {
-		eslocal nodes;
+		esint nodes;
 		if (fRank == environment->MPIrank) {
 			nodes = std::stoi(Parser::split(Parser::getLine(begin + first - offset), " ")[9]);
 		}
-		MPI_Bcast(&nodes, sizeof(eslocal), MPI_BYTE, fRank, environment->MPICommunicator);
+		MPI_Bcast(&nodes, sizeof(esint), MPI_BYTE, fRank, environment->MPICommunicator);
 
 		int size1 = lineSize; // first line
 		int size2 = 0;
@@ -94,8 +94,8 @@ void EBlock::fixOffsets(std::vector<size_t> &dataOffsets)
 		if (nodes < 8) {
 			valueSize = valueSize - 8 + nodes;
 			lineSize = valueSize * valueLength + lineEndSize;
-			MPI_Bcast(&valueSize, sizeof(eslocal), MPI_BYTE, fRank, environment->MPICommunicator);
-			MPI_Bcast(&lineSize, sizeof(eslocal), MPI_BYTE, fRank, environment->MPICommunicator);
+			MPI_Bcast(&valueSize, sizeof(esint), MPI_BYTE, fRank, environment->MPICommunicator);
+			MPI_Bcast(&lineSize, sizeof(esint), MPI_BYTE, fRank, environment->MPICommunicator);
 			size1 = elementSize = lineSize;
 		}
 		if (NDSEL == -1) {
@@ -112,8 +112,8 @@ void EBlock::fixOffsets(std::vector<size_t> &dataOffsets)
 				lineSize = valueSize * valueLength + lineEndSize;
 			}
 		}
-		MPI_Bcast(&valueSize, sizeof(eslocal), MPI_BYTE, fRank, environment->MPICommunicator);
-		MPI_Bcast(&lineSize, sizeof(eslocal), MPI_BYTE, fRank, environment->MPICommunicator);
+		MPI_Bcast(&valueSize, sizeof(esint), MPI_BYTE, fRank, environment->MPICommunicator);
+		MPI_Bcast(&lineSize, sizeof(esint), MPI_BYTE, fRank, environment->MPICommunicator);
 		elementSize = lineSize;
 	}
 }
@@ -136,15 +136,15 @@ bool EBlock::solid(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 
 	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, size);
 
-	std::vector<std::vector<eslocal> > tesize(threads), tnodes(threads), tIDs(threads);
+	std::vector<std::vector<esint> > tesize(threads), tnodes(threads), tIDs(threads);
 	std::vector<std::vector<int> > ttype(threads), tet(threads), tbody(threads), tmat(threads);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<char> value(valueLength + 1);
-		std::vector<eslocal> nindices(20);
+		std::vector<esint> nindices(20);
 
-		std::vector<eslocal> esize, nodes, IDs;
+		std::vector<esint> esize, nodes, IDs;
 		std::vector<int> type, ansystype, body, mat;
 
 		auto skip = [&] (const char* &data) {
@@ -190,59 +190,59 @@ bool EBlock::solid(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 			case ET::ETYPE::D2SOLID_4NODES:
 				if (nindices[2] == nindices[3]) { // triangle3
 					esize.push_back(3);
-					type.back() = (eslocal)Element::CODE::TRIANGLE3;
+					type.back() = (esint)Element::CODE::TRIANGLE3;
 					nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 3);
 				} else { // square4
 					esize.push_back(4);
-					type.back() = (eslocal)Element::CODE::SQUARE4;
+					type.back() = (esint)Element::CODE::SQUARE4;
 					nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 4);
 				}
 				break;
 			case ET::ETYPE::D2SOLID_6NODES:
 				esize.push_back(6);
-				type.back() = (eslocal)Element::CODE::TRIANGLE6;
+				type.back() = (esint)Element::CODE::TRIANGLE6;
 				nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 6);
 				break;
 			case ET::ETYPE::D2SOLID_8NODES:
 				if (nindices[2] == nindices[3]) { // triangle6
 					esize.push_back(6);
-					type.back() = (eslocal)Element::CODE::TRIANGLE6;
+					type.back() = (esint)Element::CODE::TRIANGLE6;
 					nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 3);
 					nodes.insert(nodes.end(), nindices.begin() + 4, nindices.begin() + 6);
 					nodes.push_back(nindices[7]);
 				} else { // square8
 					esize.push_back(8);
-					type.back() = (eslocal)Element::CODE::SQUARE8;
+					type.back() = (esint)Element::CODE::SQUARE8;
 					nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 8);
 				}
 				break;
 
 			case ET::ETYPE::D3SOLID_4NODES:
 				esize.push_back(4);
-				type.back() = (eslocal)Element::CODE::TETRA4;
+				type.back() = (esint)Element::CODE::TETRA4;
 				nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 4);
 				break;
 			case ET::ETYPE::D3SOLID_8NODES:
 				if (nindices[2] == nindices[3]) {
 					if (nindices[4] == nindices[5]) { // tetra4
 						esize.push_back(4);
-						type.back() = (eslocal)Element::CODE::TETRA4;
+						type.back() = (esint)Element::CODE::TETRA4;
 						nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 3);
 						nodes.push_back(nindices[4]);
 					} else { // prisma6
 						esize.push_back(6);
-						type.back() = (eslocal)Element::CODE::PRISMA6;
+						type.back() = (esint)Element::CODE::PRISMA6;
 						nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 3);
 						nodes.insert(nodes.end(), nindices.begin() + 4, nindices.begin() + 7);
 					}
 				} else {
 					if (nindices[4] == nindices[5]) { // pyramid5
 						esize.push_back(5);
-						type.back() = (eslocal)Element::CODE::PYRAMID5;
+						type.back() = (esint)Element::CODE::PYRAMID5;
 						nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 5);
 					} else { // hexa8
 						esize.push_back(8);
-						type.back() = (eslocal)Element::CODE::HEXA8;
+						type.back() = (esint)Element::CODE::HEXA8;
 						nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 8);
 					}
 				}
@@ -250,7 +250,7 @@ bool EBlock::solid(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 			case ET::ETYPE::D3SOLID_10NODES:
 				readNextNodes();
 				esize.push_back(10);
-				type.back() = (eslocal)Element::CODE::TETRA10;
+				type.back() = (esint)Element::CODE::TETRA10;
 				nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 10);
 				break;
 			case ET::ETYPE::D3SOLID_20NODES:
@@ -258,7 +258,7 @@ bool EBlock::solid(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 				if (nindices[2] == nindices[3]) {
 					if (nindices[4] == nindices[5]) { // tetra10
 						esize.push_back(10);
-						type.back() = (eslocal)Element::CODE::TETRA10;
+						type.back() = (esint)Element::CODE::TETRA10;
 						nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 3);
 						nodes.push_back(nindices[4]);
 
@@ -267,7 +267,7 @@ bool EBlock::solid(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 						nodes.insert(nodes.end(), nindices.begin() + 16, nindices.begin() + 19);
 					} else { // prisma15
 						esize.push_back(15);
-						type.back() = (eslocal)Element::CODE::PRISMA15;
+						type.back() = (esint)Element::CODE::PRISMA15;
 						nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 3);
 						nodes.insert(nodes.end(), nindices.begin() + 4, nindices.begin() + 7);
 
@@ -280,13 +280,13 @@ bool EBlock::solid(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 				} else {
 					if (nindices[4] == nindices[5]) { // pyramid13
 						esize.push_back(13);
-						type.back() = (eslocal)Element::CODE::PYRAMID13;
+						type.back() = (esint)Element::CODE::PYRAMID13;
 						nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 5);
 						nodes.insert(nodes.end(), nindices.begin() + 8, nindices.begin() + 12);
 						nodes.insert(nodes.end(), nindices.begin() + 16, nindices.begin() + 20);
 					} else { // hexa20
 						esize.push_back(20);
-						type.back() = (eslocal)Element::CODE::HEXA20;
+						type.back() = (esint)Element::CODE::HEXA20;
 						nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 20);
 					}
 				}
@@ -322,11 +322,11 @@ bool EBlock::boundary(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	const char *first = getFirst(), *last = getLast();
-	eslocal size = (last - first) / elementSize;
+	esint size = (last - first) / elementSize;
 
 	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, size);
 
-	std::vector<std::vector<eslocal> > tesize(threads), tnodes(threads), tIDs(threads);
+	std::vector<std::vector<esint> > tesize(threads), tnodes(threads), tIDs(threads);
 	std::vector<std::vector<int> > ttype(threads), tet(threads), tbody(threads), tmat(threads);
 	int enodes = valueSize - 5;
 
@@ -337,9 +337,9 @@ bool EBlock::boundary(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<char> value(valueLength + 1);
-		std::vector<eslocal> nindices(20);
+		std::vector<esint> nindices(20);
 
-		std::vector<eslocal> esize, nodes, IDs;
+		std::vector<esint> esize, nodes, IDs;
 		std::vector<int> type, ansystype, body, mat;
 
 		auto skip = [&] (const char* &data) {
@@ -369,37 +369,37 @@ bool EBlock::boundary(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 
 			if (enodes == 2) { // line2
 				esize.push_back(2);
-				type.back() = (eslocal)Element::CODE::LINE2;
+				type.back() = (esint)Element::CODE::LINE2;
 				nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 2);
 			}
 
 			if (enodes == 3) { // line3
 				esize.push_back(3);
-				type.back() = (eslocal)Element::CODE::LINE3;
+				type.back() = (esint)Element::CODE::LINE3;
 				nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 3);
 			}
 
 			if (enodes == 4) {
 				if (nindices[2] == nindices[3]) { // triangle3
 					esize.push_back(3);
-					type.back() = (eslocal)Element::CODE::TRIANGLE3;
+					type.back() = (esint)Element::CODE::TRIANGLE3;
 					nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 3);
 				} else { // square4
 					esize.push_back(4);
-					type.back() = (eslocal)Element::CODE::SQUARE4;
+					type.back() = (esint)Element::CODE::SQUARE4;
 					nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 4);
 				}
 			}
 			if (enodes == 8) {
 				if (nindices[2] == nindices[3]) { // triangle6
 					esize.push_back(6);
-					type.back() = (eslocal)Element::CODE::TRIANGLE6;
+					type.back() = (esint)Element::CODE::TRIANGLE6;
 					nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 3);
 					nodes.insert(nodes.end(), nindices.begin() + 4, nindices.begin() + 6);
 					nodes.push_back(nindices[7]);
 				} else { // square8
 					esize.push_back(8);
-					type.back() = (eslocal)Element::CODE::SQUARE8;
+					type.back() = (esint)Element::CODE::SQUARE8;
 					nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + 8);
 				}
 			}

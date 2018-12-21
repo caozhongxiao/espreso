@@ -138,7 +138,7 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
         return ( (coordinate - old_axis_min + ( (max_axis - old_axis_len) / 2.0f ) ) / max_axis ) * new_axis_len + new_axis_min;
     };
 
-    auto createRegion = [&] (QString name, serializededata<eslocal, eslocal>* triangles)
+    auto createRegion = [&] (QString name, serializededata<esint, esint>* triangles)
     {
 
         QVector<float> &mesh = regions[name];
@@ -273,7 +273,7 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
 //                }
 //            }
 //
-//            std::vector<std::vector<eslocal> > triangles = dynamic_cast<PlaneElement*>(m_mesh->elements()[e]->face(f))->triangularize();
+//            std::vector<std::vector<esint> > triangles = dynamic_cast<PlaneElement*>(m_mesh->elements()[e]->face(f))->triangularize();
 //
 //            for (size_t t = 0; t < triangles.size(); t++) {
 //

@@ -34,7 +34,7 @@ protected:
 	FETIProvider &_provider;
 	FETISolverConfiguration &_configuration;
 
-	std::vector<std::vector<eslocal> > _KPermutation, _RHSPermutation;
+	std::vector<std::vector<esint> > _KPermutation, _RHSPermutation;
 	std::vector<size_t> _domainDOFsSize, _domainDirichletSize;
 };
 

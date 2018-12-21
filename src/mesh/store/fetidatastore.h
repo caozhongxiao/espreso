@@ -13,18 +13,18 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 struct FETIDataStore {
 
 	// B0 from kernels
-	serializededata<eslocal, eslocal>* interfaceNodes;
-	std::vector<eslocal> inodesDistribution;
-	std::vector<std::pair<eslocal, eslocal> > inodesDomains;
+	serializededata<esint, esint>* interfaceNodes;
+	std::vector<esint> inodesDistribution;
+	std::vector<std::pair<esint, esint> > inodesDomains;
 
 	// B0 from corners
 
-	std::vector<eslocal> corners;
-	serializededata<eslocal, eslocal>* cornerDomains;
+	std::vector<esint> corners;
+	serializededata<esint, esint>* cornerDomains;
 
 	// Regularization from fix points
-	std::vector<eslocal> surfaceFixPoints, sFixPointsDistribution;
-	std::vector<eslocal> innerFixPoints, iFixPointsDistribution;
+	std::vector<esint> surfaceFixPoints, sFixPointsDistribution;
+	std::vector<esint> innerFixPoints, iFixPointsDistribution;
 
 	FETIDataStore();
 	~FETIDataStore();

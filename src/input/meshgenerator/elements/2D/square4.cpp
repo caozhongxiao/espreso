@@ -10,7 +10,7 @@ Square4Generator::Square4Generator()
 	code = Element::CODE::SQUARE4;
 }
 
-void Square4Generator::pushElements(std::vector<eslocal> &elements, const std::vector<eslocal> &indices) const
+void Square4Generator::pushElements(std::vector<esint> &elements, const std::vector<esint> &indices) const
 {
 	elements.push_back(indices[0]);
 	elements.push_back(indices[1]);

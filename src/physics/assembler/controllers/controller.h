@@ -28,7 +28,7 @@ class Controler
 
 public:
 	struct InstanceFiller {
-		eslocal begin, end;
+		esint begin, end;
 
 		DenseMatrix Ke, Me, Re, fe;
 
@@ -43,7 +43,7 @@ public:
 	virtual void nextTime() = 0;
 	virtual void parametersChanged() = 0;
 
-	virtual void dirichletIndices(std::vector<std::vector<eslocal> > &indices) = 0;
+	virtual void dirichletIndices(std::vector<std::vector<esint> > &indices) = 0;
 	virtual void dirichletValues(std::vector<double> &values) = 0;
 
 	virtual void processElements(Matrices matrices, const SolverParameters &parameters, InstanceFiller &filler) = 0;
@@ -54,7 +54,7 @@ protected:
 	Controler();
 
 	struct Parameter {
-		serializededata<eslocal, double> *data;
+		serializededata<esint, double> *data;
 		bool isConts;
 
 		Parameter(): data(NULL), isConts(false) {}
@@ -66,15 +66,15 @@ protected:
 
 	void updateERegions(
 			const std::map<std::string, ECFExpression> &settings, tarray<double> &data,
-			eslocal csize, double *cbegin, double *tbegin, double time,
+			esint csize, double *cbegin, double *tbegin, double time,
 			EvaluatorParameters updatedParams = static_cast<EvaluatorParameters>(0));
 	void updateERegions(
 			const std::map<std::string, ECFExpressionVector> &settings, tarray<double> &data,
-			eslocal csize, double *cbegin, double *tbegin, double time,
+			esint csize, double *cbegin, double *tbegin, double time,
 			EvaluatorParameters updatedParams = static_cast<EvaluatorParameters>(0));
 	void updateBRegions(
 			const ECFExpression &expression, Parameter &parameter, const std::vector<size_t> &distribution,
-			eslocal csize, double *cbegin, double *tbegin, double time,
+			esint csize, double *cbegin, double *tbegin, double time,
 			EvaluatorParameters updatedParams = static_cast<EvaluatorParameters>(0));
 
 	void averageNodeInitilization(tarray<double> &initData, std::vector<double> &averagedData);

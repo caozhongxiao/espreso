@@ -14,8 +14,8 @@ BlockSettings::BlockSettings(const BlockGeneratorConfiguration &configuration)
 	domains  = Triple<size_t>(configuration.domains_x, configuration.domains_y, configuration.domains_z);
 	elements = Triple<size_t>(configuration.elements_x, configuration.elements_y, configuration.elements_z);
 
-	start = Triple<esglobal>(configuration.start_x / MeshGenerator::precision, configuration.start_y / MeshGenerator::precision, configuration.start_z / MeshGenerator::precision);
-	end   = Triple<esglobal>(
+	start = Triple<esint>(configuration.start_x / MeshGenerator::precision, configuration.start_y / MeshGenerator::precision, configuration.start_z / MeshGenerator::precision);
+	end   = Triple<esint>(
 			(configuration.start_x + configuration.length_x) / MeshGenerator::precision,
 			(configuration.start_y + configuration.length_y) / MeshGenerator::precision,
 			(configuration.start_z + configuration.length_z) / MeshGenerator::precision);

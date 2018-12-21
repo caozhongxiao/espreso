@@ -99,13 +99,13 @@ void NodeStore::pack(char* &p) const
 void NodeStore::unpack(const char* &p)
 {
 	if (IDs == NULL) {
-		IDs = new serializededata<eslocal, eslocal>(1, tarray<eslocal>(1, 0));
+		IDs = new serializededata<esint, esint>(1, tarray<esint>(1, 0));
 	}
 	if (coordinates == NULL) {
-		coordinates = new serializededata<eslocal, Point>(1, tarray<Point>(1, 0));
+		coordinates = new serializededata<esint, Point>(1, tarray<Point>(1, 0));
 	}
 	if (idomains == NULL) {
-		idomains = new serializededata<eslocal, eslocal>(tarray<eslocal>(1, 0), tarray<eslocal>(1, 0));
+		idomains = new serializededata<esint, esint>(tarray<esint>(1, 0), tarray<esint>(1, 0));
 	}
 
 	Esutils::unpack(size, p);
@@ -187,7 +187,7 @@ void NodeStore::store(const std::string &file)
 	Store::storedata(os, "iranks", iranks);
 }
 
-void NodeStore::permute(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution)
+void NodeStore::permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution)
 {
 	this->distribution = distribution;
 
@@ -199,12 +199,12 @@ void NodeStore::permute(const std::vector<eslocal> &permutation, const std::vect
 	if (ranks != NULL) { ranks->permute(permutation, distribution); }
 }
 
-std::vector<eslocal> NodeStore::gatherNodeDistribution()
+std::vector<esint> NodeStore::gatherNodeDistribution()
 {
 	return Store::gatherDistribution(size);
 }
 
-std::vector<eslocal> NodeStore::gatherUniqueNodeDistribution()
+std::vector<esint> NodeStore::gatherUniqueNodeDistribution()
 {
 	return Store::gatherDistribution(uniqueSize);
 }
@@ -222,7 +222,7 @@ NodeData::NodeData(int dimension, const std::vector<std::string> &names)
 
 }
 
-void NodeData::statistics(const tarray<eslocal> &nodes, eslocal totalsize, Statistics *statistics) const
+void NodeData::statistics(const tarray<esint> &nodes, esint totalsize, Statistics *statistics) const
 {
 	for (int d = 0; d < names.size(); d++) {
 		(statistics + d)->reset();
@@ -230,7 +230,7 @@ void NodeData::statistics(const tarray<eslocal> &nodes, eslocal totalsize, Stati
 
 	auto nranks = run::mesh->nodes->ranks->begin();
 	if (names.size() == 1) {
-		eslocal prev = 0;
+		esint prev = 0;
 		for (auto n = nodes.begin(); n != nodes.end(); prev = *n++) {
 			nranks += *n - prev;
 			if (*nranks->begin() == environment->MPIrank) {
@@ -241,7 +241,7 @@ void NodeData::statistics(const tarray<eslocal> &nodes, eslocal totalsize, Stati
 			}
 		}
 	} else {
-		eslocal prev = 0;
+		esint prev = 0;
 		for (auto n = nodes.begin(); n != nodes.end(); prev = *n++) {
 			nranks += *n - prev;
 			if (*nranks->begin() == environment->MPIrank) {

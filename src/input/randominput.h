@@ -29,7 +29,7 @@ protected:
 
 	HilbertCurve _sfc;
 
-	std::vector<eslocal> _nIDs;
+	std::vector<esint> _nIDs;
 	std::vector<uint> _nBuckets, _eBuckets;
 
 	// distribution across processes

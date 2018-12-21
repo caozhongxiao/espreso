@@ -85,7 +85,7 @@ void OpenFOAMZones::synchronize(int zones, std::vector<char> &names, std::vector
 	MPI_Allreduce(mynames.data(), names.data(), names.size(), MPI_CHAR, MPI_SUM, environment->MPICommunicator);
 }
 
-void OpenFOAMZones::readData(std::vector<eslocal> &indices, size_t begin, size_t end)
+void OpenFOAMZones::readData(std::vector<esint> &indices, size_t begin, size_t end)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
@@ -100,12 +100,12 @@ void OpenFOAMZones::readData(std::vector<eslocal> &indices, size_t begin, size_t
 	end = std::min(end - 1, _pfile.offsets[environment->MPIrank + 1]);
 	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, end - begin);
 
-	std::vector<std::vector<eslocal> > data(threads);
+	std::vector<std::vector<esint> > data(threads);
 	size_t offset = begin - _pfile.offsets[environment->MPIrank];
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		std::vector<eslocal> tdata;
+		std::vector<esint> tdata;
 
 		const char *c = _pfile.begin + offset + tdistribution[t];
 		if (c > _pfile.begin) {

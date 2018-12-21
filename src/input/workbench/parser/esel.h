@@ -51,7 +51,7 @@ struct ESel: public WorkbenchParser {
 	Type type;
 	Item item;
 	Comp comp;
-	eslocal VMIN, VMAX, VINC;
+	esint VMIN, VMAX, VINC;
 	bool KABS;
 
 	ESel();

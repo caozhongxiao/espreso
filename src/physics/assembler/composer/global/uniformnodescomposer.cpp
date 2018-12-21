@@ -33,20 +33,20 @@ void UniformNodesComposer::initDOFs()
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<eslocal> doffset(threads);
-	std::vector<std::vector<eslocal> > roffset(threads);
+	std::vector<esint> doffset(threads);
+	std::vector<std::vector<esint> > roffset(threads);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		auto ranks = run::mesh->nodes->ranks->begin(t);
-		eslocal dsize = 0;
-		std::vector<eslocal> troffset(run::mesh->neighbours.size());
+		esint dsize = 0;
+		std::vector<esint> troffset(run::mesh->neighbours.size());
 
 		for (size_t n = run::mesh->nodes->distribution[t]; n < run::mesh->nodes->distribution[t + 1]; ++n, ++ranks) {
 			if (ranks->front() == environment->MPIrank) {
 				dsize += _DOFs;
 			} else {
-				eslocal noffset = 0;
+				esint noffset = 0;
 				while (run::mesh->neighbours[noffset] < ranks->front()) {
 					++noffset;
 				}
@@ -58,22 +58,22 @@ void UniformNodesComposer::initDOFs()
 		roffset[t].swap(troffset);
 	}
 
-	eslocal goffset = Esutils::sizesToOffsets(doffset);
+	esint goffset = Esutils::sizesToOffsets(doffset);
 	Communication::exscan(goffset);
 	Esutils::sizesToOffsets(roffset);
 
-	std::vector<std::vector<std::vector<eslocal> > > sBuffer(threads, std::vector<std::vector<eslocal> >(run::mesh->neighbours.size()));
-	std::vector<std::vector<eslocal> > rBuffer(run::mesh->neighbours.size());
+	std::vector<std::vector<std::vector<esint> > > sBuffer(threads, std::vector<std::vector<esint> >(run::mesh->neighbours.size()));
+	std::vector<std::vector<esint> > rBuffer(run::mesh->neighbours.size());
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		auto ranks = run::mesh->nodes->ranks->begin(t);
-		eslocal toffset = doffset[t];
-		std::vector<std::vector<eslocal> > tBuffer(run::mesh->neighbours.size());
+		esint toffset = doffset[t];
+		std::vector<std::vector<esint> > tBuffer(run::mesh->neighbours.size());
 
 		for (size_t n = run::mesh->nodes->distribution[t]; n < run::mesh->nodes->distribution[t + 1]; ++n, ++ranks) {
 			if (ranks->front() == environment->MPIrank) {
-				eslocal noffset = 0;
+				esint noffset = 0;
 				for (auto r = ranks->begin() + 1; r != ranks->end(); ++r) {
 					while (run::mesh->neighbours[noffset] < *r) {
 						++noffset;
@@ -96,14 +96,14 @@ void UniformNodesComposer::initDOFs()
 		ESINFO(ERROR) << "ESPRESO internal error: exchange uniform DOFs.";
 	}
 
-	std::vector<std::vector<eslocal> > DOFDistribution(threads), DOFData(threads);
+	std::vector<std::vector<esint> > DOFDistribution(threads), DOFData(threads);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		auto ranks = run::mesh->nodes->ranks->begin(t);
-		eslocal toffset = doffset[t];
-		std::vector<eslocal> troffset = roffset[t];
-		std::vector<eslocal> tdist, tdata;
+		esint toffset = doffset[t];
+		std::vector<esint> troffset = roffset[t];
+		std::vector<esint> tdist, tdata;
 		if (t == 0) {
 			tdist.push_back(0);
 		}
@@ -114,7 +114,7 @@ void UniformNodesComposer::initDOFs()
 					tdata.push_back(goffset + toffset++);
 				}
 			} else {
-				eslocal noffset = 0;
+				esint noffset = 0;
 				while (run::mesh->neighbours[noffset] < ranks->front()) {
 					++noffset;
 				}
@@ -132,12 +132,12 @@ void UniformNodesComposer::initDOFs()
 
 	Esutils::threadDistributionToFullDistribution(DOFDistribution);
 
-	_DOFMap = new serializededata<eslocal, eslocal>(DOFDistribution, DOFData);
+	_DOFMap = new serializededata<esint, esint>(DOFDistribution, DOFData);
 }
 
 void UniformNodesComposer::initDirichlet()
 {
-	std::vector<std::vector<eslocal> > dIndices;
+	std::vector<std::vector<esint> > dIndices;
 	_controler.dirichletIndices(dIndices);
 
 	if (dIndices.size() != (size_t)_DOFs) {
@@ -158,7 +158,7 @@ void UniformNodesComposer::initDirichlet()
 
 	_dirichletPermutation.resize(_dirichletMap.size());
 	std::iota(_dirichletPermutation.begin(), _dirichletPermutation.end(), 0);
-	std::sort(_dirichletPermutation.begin(), _dirichletPermutation.end(), [&] (eslocal i, eslocal j) {
+	std::sort(_dirichletPermutation.begin(), _dirichletPermutation.end(), [&] (esint i, esint j) {
 		return _dirichletMap[i] < _dirichletMap[j];
 	});
 
@@ -180,7 +180,7 @@ void UniformNodesComposer::buildPatterns()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		eslocal tKsize = 0, tRHSsize = 0;
+		esint tKsize = 0, tRHSsize = 0;
 		for (auto e = run::mesh->elements->procNodes->begin(t); e != run::mesh->elements->procNodes->end(t); ++e) {
 			tRHSsize += e->size() * _DOFs;
 			tKsize += getMatrixSize(e->size() * _DOFs, mtype);
@@ -203,16 +203,16 @@ void UniformNodesComposer::buildPatterns()
 	_localRHSOffset = Esutils::sizesToOffsets(_tRHSOffsets);
 
 	std::vector<IJ> KPattern(_localKOffset);
-	std::vector<eslocal> RHSPattern(_localRHSOffset);
+	std::vector<esint> RHSPattern(_localRHSOffset);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		IJ *Koffset = KPattern.data() + _tKOffsets[t];
-		eslocal *RHSoffset = RHSPattern.data() + _tRHSOffsets[t];
+		esint *RHSoffset = RHSPattern.data() + _tRHSOffsets[t];
 
-		auto insert = [&] (serializededata<eslocal, eslocal>::const_iterator &e) {
-			eslocal *_RHS = RHSoffset;
-			for (eslocal dof = 0; dof < _DOFs; ++dof) {
+		auto insert = [&] (serializededata<esint, esint>::const_iterator &e) {
+			esint *_RHS = RHSoffset;
+			for (esint dof = 0; dof < _DOFs; ++dof) {
 				for (auto n = e->begin(); n != e->end(); ++n, ++RHSoffset) {
 					*RHSoffset = _DOFMap->datatarray()[*n * _DOFs + dof];
 				}
@@ -240,20 +240,20 @@ void UniformNodesComposer::buildPatterns()
 //	}
 //	printf("\n");
 
-	std::vector<eslocal> pK(KPattern.size());
+	std::vector<esint> pK(KPattern.size());
 	std::iota(pK.begin(), pK.end(), 0);
-	std::sort(pK.begin(), pK.end(), [&] (eslocal i, eslocal j) {
+	std::sort(pK.begin(), pK.end(), [&] (esint i, esint j) {
 		return KPattern[i] < KPattern[j];
 	});
 
-	std::vector<eslocal> pRHS(RHSPattern.size());
+	std::vector<esint> pRHS(RHSPattern.size());
 	std::iota(pRHS.begin(), pRHS.end(), 0);
-	std::sort(pRHS.begin(), pRHS.end(), [&] (eslocal i, eslocal j) {
+	std::sort(pRHS.begin(), pRHS.end(), [&] (esint i, esint j) {
 		return RHSPattern[i] < RHSPattern[j];
 	});
 
 	std::vector<std::vector<IJ> > sKBuffer(run::mesh->neighbours.size()), rKBuffer(run::mesh->neighbours.size());
-	std::vector<std::vector<eslocal> > sRHSBuffer(run::mesh->neighbours.size()), rRHSBuffer(run::mesh->neighbours.size());
+	std::vector<std::vector<esint> > sRHSBuffer(run::mesh->neighbours.size()), rRHSBuffer(run::mesh->neighbours.size());
 
 	auto iK = pK.begin();
 	auto iRHS = pRHS.begin();
@@ -295,10 +295,10 @@ void UniformNodesComposer::buildPatterns()
 	pRHS.resize(RHSPattern.size());
 	std::iota(pK.begin() + localK, pK.end(), localK);
 	std::iota(pRHS.begin() + localRHS, pRHS.end(), localRHS);
-	std::sort(pK.begin(), pK.end(), [&] (eslocal i, eslocal j) {
+	std::sort(pK.begin(), pK.end(), [&] (esint i, esint j) {
 		return KPattern[i] < KPattern[j];
 	});
-	std::sort(pRHS.begin(), pRHS.end(), [&] (eslocal i, eslocal j) {
+	std::sort(pRHS.begin(), pRHS.end(), [&] (esint i, esint j) {
 		return RHSPattern[i] < RHSPattern[j];
 	});
 
@@ -321,8 +321,8 @@ void UniformNodesComposer::buildPatterns()
 	run::data->R.front().resize(run::mesh->nodes->size * _DOFs);
 	run::data->primalSolution.front().resize(run::mesh->nodes->size * _DOFs);
 
-	std::vector<eslocal> &ROW = run::data->K.front().CSR_I_row_indices;
-	std::vector<eslocal> &COL = run::data->K.front().CSR_J_col_indices;
+	std::vector<esint> &ROW = run::data->K.front().CSR_I_row_indices;
+	std::vector<esint> &COL = run::data->K.front().CSR_J_col_indices;
 	std::vector<double> &VAL  = run::data->K.front().CSR_V_values;
 
 	ROW.reserve(run::mesh->nodes->size * _DOFs + 1);
@@ -450,7 +450,7 @@ void UniformNodesComposer::setDirichlet()
 	std::vector<double> values(_dirichletMap.size());
 	_controler.dirichletValues(values);
 
-//	std::vector<eslocal> RROW;
+//	std::vector<esint> RROW;
 //	for (size_t r = 0; r < run::data->K.front().CSR_I_row_indices.size() - 1; r++) {
 //		RROW.insert(RROW.end(), run::data->K.front().CSR_I_row_indices[r + 1] - run::data->K.front().CSR_I_row_indices[r], _DOFMap->datatarray()[r] + 1);
 //	}
@@ -472,8 +472,8 @@ void UniformNodesComposer::setDirichlet()
 //		}
 //		printf("\n");
 //
-//		for (eslocal r = 0, i = 0, f = 0; r < run::mesh->nodes->uniqueTotalSize; r++) {
-//			for (eslocal c = 0; c < run::mesh->nodes->uniqueTotalSize; c++) {
+//		for (esint r = 0, i = 0, f = 0; r < run::mesh->nodes->uniqueTotalSize; r++) {
+//			for (esint c = 0; c < run::mesh->nodes->uniqueTotalSize; c++) {
 //				if (i < RROW.size() && RROW[i] == r + 1 && COL[i] == c + 1) {
 //					if (VAL[i] > -0.00001) {
 //						if (std::fabs(VAL[i]) > 10) {
@@ -519,8 +519,8 @@ void UniformNodesComposer::setDirichlet()
 //		if (environment->MPIrank == rank) {
 //			std::cout << "RHS[" << _DOFMap->datatarray()[_dirichletMap[i]] + 1 << "] = " << values[_dirichletPermutation[i]] << "\n";
 //		}
-		eslocal col = _DOFMap->datatarray()[_dirichletMap[i]] + 1;
-		for (eslocal j = ROW[_dirichletMap[i]]; j < ROW[_dirichletMap[i] + 1]; j++) {
+		esint col = _DOFMap->datatarray()[_dirichletMap[i]] + 1;
+		for (esint j = ROW[_dirichletMap[i]]; j < ROW[_dirichletMap[i] + 1]; j++) {
 			if (COL[j - 1] == col) {
 //				if (environment->MPIrank == rank) {
 //					std::cout << "[" << _DOFMap->datatarray()[_dirichletMap[i]] + 1 << ":" << COL[j - 1] << "] = 1\n";
@@ -531,12 +531,12 @@ void UniformNodesComposer::setDirichlet()
 //					std::cout << "[" << _DOFMap->datatarray()[_dirichletMap[i]] + 1 << ":" << COL[j - 1] << "] = 0\n";
 //				}
 				VAL[j - 1] = 0;
-				eslocal r = std::lower_bound(_DOFMap->datatarray().begin(), _DOFMap->datatarray().end(), COL[j - 1] - 1) - _DOFMap->datatarray().begin();
+				esint r = std::lower_bound(_DOFMap->datatarray().begin(), _DOFMap->datatarray().end(), COL[j - 1] - 1) - _DOFMap->datatarray().begin();
 				if (r < _DOFMap->datatarray().size() && _DOFMap->datatarray()[r] == COL[j - 1] - 1) {
 //					if (environment->MPIrank == rank) {
 //						std::cout << COL[j - 1] << " into " << r << "\n";
 //					}
-					for (eslocal c = ROW[r]; c < ROW[r + 1]; c++) {
+					for (esint c = ROW[r]; c < ROW[r + 1]; c++) {
 						if (COL[c - 1] == col) {
 //							if (environment->MPIrank == rank) {
 //								std::cout << "[" << _DOFMap->datatarray()[r] + 1 << ":" << COL[c - 1] << "] = 0; RHS[" << _DOFMap->datatarray()[r] + 1 << "] -= " << VAL[c - 1] << " * " << RHS[_dirichletMap[i]] << "\n";
@@ -549,8 +549,8 @@ void UniformNodesComposer::setDirichlet()
 			}
 
 //			if (environment->MPIrank == rank) {
-//				for (eslocal r = 0, i = 0, f = 0; r < run::mesh->nodes->uniqueTotalSize; r++) {
-//					for (eslocal c = 0; c < run::mesh->nodes->uniqueTotalSize; c++) {
+//				for (esint r = 0, i = 0, f = 0; r < run::mesh->nodes->uniqueTotalSize; r++) {
+//					for (esint c = 0; c < run::mesh->nodes->uniqueTotalSize; c++) {
 //						if (i < RROW.size() && RROW[i] == r + 1 && COL[i] == c + 1) {
 //							if (VAL[i] > -0.00001) {
 //								if (std::fabs(VAL[i]) > 10) {
@@ -590,8 +590,8 @@ void UniformNodesComposer::setDirichlet()
 //		}
 //		printf("\n");
 //		printf(" // %d \\\\ \n", environment->MPIrank);
-//		for (eslocal r = 0, i = 0, f = 0; r < run::mesh->nodes->uniqueTotalSize; r++) {
-//			for (eslocal c = 0; c < run::mesh->nodes->uniqueTotalSize; c++) {
+//		for (esint r = 0, i = 0, f = 0; r < run::mesh->nodes->uniqueTotalSize; r++) {
+//			for (esint c = 0; c < run::mesh->nodes->uniqueTotalSize; c++) {
 //				if (i < RROW.size() && RROW[i] == r + 1 && COL[i] == c + 1) {
 //					if (VAL[i] > -0.00001) {
 //						if (std::fabs(VAL[i]) > 10) {
@@ -629,8 +629,8 @@ void UniformNodesComposer::synchronize()
 
 	auto nranks = run::mesh->nodes->ranks->begin();
 	auto DOFs = _DOFMap->begin();
-	for (eslocal n = 0; n < run::mesh->nodes->size && DOFs->front() < _nDistribution[environment->MPIrank]; ++n, ++nranks, ++DOFs) {
-		eslocal r = 0;
+	for (esint n = 0; n < run::mesh->nodes->size && DOFs->front() < _nDistribution[environment->MPIrank]; ++n, ++nranks, ++DOFs) {
+		esint r = 0;
 		while (run::mesh->neighbours[r] < nranks->front()) {
 			++r;
 		}
@@ -642,8 +642,8 @@ void UniformNodesComposer::synchronize()
 
 	nranks = run::mesh->nodes->ranks->begin();
 	DOFs = _DOFMap->begin();
-	for (eslocal n = 0; n < run::mesh->nodes->size && DOFs->front() < _nDistribution[environment->MPIrank]; ++n, ++nranks, ++DOFs) {
-		eslocal r = 0;
+	for (esint n = 0; n < run::mesh->nodes->size && DOFs->front() < _nDistribution[environment->MPIrank]; ++n, ++nranks, ++DOFs) {
+		esint r = 0;
 		while (run::mesh->neighbours[r] < nranks->front()) {
 			++r;
 		}
@@ -682,7 +682,7 @@ void UniformNodesComposer::fillSolution()
 			rBuffer[n].resize(_nRHSSize[n]);
 		} else {
 			sBuffer[n].reserve(_nRHSSize[n]);
-			for (eslocal i = 0; i < _nRHSSize[n]; ++i) {
+			for (esint i = 0; i < _nRHSSize[n]; ++i) {
 				sBuffer[n].push_back(run::data->primalSolution.front()[_RHSPermutation[RHSIndex++]]);
 			}
 		}
@@ -692,11 +692,11 @@ void UniformNodesComposer::fillSolution()
 		ESINFO(ERROR) << "ESPRESO internal error: synchronize assembled data.";
 	}
 
-	std::vector<eslocal> rIndices(run::mesh->neighbours.size());
+	std::vector<esint> rIndices(run::mesh->neighbours.size());
 	auto nranks = run::mesh->nodes->ranks->begin();
 	auto DOFs = _DOFMap->begin();
-	for (eslocal n = 0; n < run::mesh->nodes->size && DOFs->front() < _nDistribution[environment->MPIrank]; ++n, ++nranks, ++DOFs) {
-		eslocal r = 0;
+	for (esint n = 0; n < run::mesh->nodes->size && DOFs->front() < _nDistribution[environment->MPIrank]; ++n, ++nranks, ++DOFs) {
+		esint r = 0;
 		while (run::mesh->neighbours[r] < nranks->front()) {
 			++r;
 		}

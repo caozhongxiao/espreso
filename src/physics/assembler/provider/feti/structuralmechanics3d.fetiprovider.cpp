@@ -26,7 +26,7 @@ StructuralMechanics3DFETIProvider::StructuralMechanics3DFETIProvider(StructuralM
 
 }
 
-void StructuralMechanics3DFETIProvider::analyticRegularization(eslocal domain, bool ortogonalCluster)
+void StructuralMechanics3DFETIProvider::analyticRegularization(esint domain, bool ortogonalCluster)
 {
 	if (run::data->K[domain].mtype != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
 		ESINFO(ERROR) << "Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set FETI_REGULARIZATION = ALGEBRAIC";
@@ -63,7 +63,7 @@ void StructuralMechanics3DFETIProvider::analyticRegularization(eslocal domain, b
 	}
 
 	for (size_t i = 0; i < run::mesh->nodes->dintervals[domain].size(); i++) {
-		for (eslocal n = run::mesh->nodes->dintervals[domain][i].begin; n < run::mesh->nodes->dintervals[domain][i].end; ++n) {
+		for (esint n = run::mesh->nodes->dintervals[domain][i].begin; n < run::mesh->nodes->dintervals[domain][i].end; ++n) {
 			Point p = run::mesh->nodes->coordinates->datatarray()[n] - center;
 			run::data->N1[domain].dense_values.push_back(-p.y / norm.x);
 			run::data->N1[domain].dense_values.push_back( p.x / norm.x);
@@ -72,7 +72,7 @@ void StructuralMechanics3DFETIProvider::analyticRegularization(eslocal domain, b
 	}
 
 	for (size_t i = 0; i < run::mesh->nodes->dintervals[domain].size(); i++) {
-		for (eslocal n = run::mesh->nodes->dintervals[domain][i].begin; n < run::mesh->nodes->dintervals[domain][i].end; ++n) {
+		for (esint n = run::mesh->nodes->dintervals[domain][i].begin; n < run::mesh->nodes->dintervals[domain][i].end; ++n) {
 			Point p = run::mesh->nodes->coordinates->datatarray()[n] - center;
 			run::data->N1[domain].dense_values.push_back((-p.z - r45 / r44 * (-p.y / norm.x)) / norm.y);
 			run::data->N1[domain].dense_values.push_back((   0 - r45 / r44 * ( p.x / norm.x)) / norm.y);
@@ -81,7 +81,7 @@ void StructuralMechanics3DFETIProvider::analyticRegularization(eslocal domain, b
 	}
 
 	for (size_t i = 0; i < run::mesh->nodes->dintervals[domain].size(); i++) {
-		for (eslocal n = run::mesh->nodes->dintervals[domain][i].begin; n < run::mesh->nodes->dintervals[domain][i].end; ++n) {
+		for (esint n = run::mesh->nodes->dintervals[domain][i].begin; n < run::mesh->nodes->dintervals[domain][i].end; ++n) {
 			Point p = run::mesh->nodes->coordinates->datatarray()[n] - center;
 			run::data->N1[domain].dense_values.push_back((   0 - r56 / r55 * ((-p.z - r45 / r44 * (-p.y / norm.x)) / norm.y) - r46 / r44 * (-p.y / norm.x)) / norm.z);
 			run::data->N1[domain].dense_values.push_back((-p.z - r56 / r55 * ((   0 - r45 / r44 * ( p.x / norm.x)) / norm.y) - r46 / r44 * ( p.x / norm.x)) / norm.z);
@@ -89,13 +89,13 @@ void StructuralMechanics3DFETIProvider::analyticRegularization(eslocal domain, b
 		}
 	}
 
-	std::vector<eslocal> fixPoints;
+	std::vector<esint> fixPoints;
 //	if (_BEMDomain[domain]) {
-//		fixPoints = std::vector<eslocal>(
+//		fixPoints = std::vector<esint>(
 //				run::mesh->FETIData->surfaceFixPoints.begin() + run::mesh->FETIData->sFixPointsDistribution[domain],
 //				run::mesh->FETIData->surfaceFixPoints.begin() + run::mesh->FETIData->sFixPointsDistribution[domain + 1]);
 //	} else {
-		fixPoints = std::vector<eslocal>(
+		fixPoints = std::vector<esint>(
 				run::mesh->FETIData->innerFixPoints.begin() + run::mesh->FETIData->iFixPointsDistribution[domain],
 				run::mesh->FETIData->innerFixPoints.begin() + run::mesh->FETIData->iFixPointsDistribution[domain + 1]);
 //	}
@@ -106,8 +106,8 @@ void StructuralMechanics3DFETIProvider::analyticRegularization(eslocal domain, b
 	Nt.nnz  = 9 * fixPoints.size();
 	Nt.type = 'G';
 
-	std::vector<eslocal> &ROWS = Nt.CSR_I_row_indices;
-	std::vector<eslocal> &COLS = Nt.CSR_J_col_indices;
+	std::vector<esint> &ROWS = Nt.CSR_I_row_indices;
+	std::vector<esint> &COLS = Nt.CSR_J_col_indices;
 	std::vector<double>  &VALS = Nt.CSR_V_values;
 
 	ROWS.reserve(Nt.rows + 1);
@@ -122,7 +122,7 @@ void StructuralMechanics3DFETIProvider::analyticRegularization(eslocal domain, b
 	ROWS.push_back(ROWS.back() + 2 * fixPoints.size());
 	ROWS.push_back(ROWS.back() + 2 * fixPoints.size());
 
-	auto n2DOF = [&] (eslocal node) {
+	auto n2DOF = [&] (esint node) {
 		auto dit = run::mesh->nodes->dintervals[domain].begin();
 		while (dit->end < node) { ++dit; }
 		return dit->DOFOffset + node - dit->begin;

@@ -46,11 +46,11 @@ private:
 	void evaluateMPI();
 
 	std::string eventName;
-	eslocal eventCount;
+	esint eventCount;
 	std::vector<double> eventTime;
 
-	eslocal name_length;
-	eslocal val_length;
+	esint name_length;
+	esint val_length;
 
 	double avgTime;
 	double sumTime;

@@ -37,7 +37,7 @@ FETIProvider::FETIProvider(LoadStepConfiguration &configuration)
 	run::data->B0subdomainsMap.resize(run::mesh->elements->ndomains);
 
 	if (_configuration.type == LoadStepConfiguration::TYPE::TRANSIENT) {
-		run::data->computeKernelCallback = [&] (FETI_REGULARIZATION regularization, int scSize, eslocal domain, bool ortogonalCluster) {};
+		run::data->computeKernelCallback = [&] (FETI_REGULARIZATION regularization, int scSize, esint domain, bool ortogonalCluster) {};
 		run::data->computeKernelsCallback = [&] (FETI_REGULARIZATION regularization, int scSize, bool ortogonalCluster) {};
 
 		run::data->computeKernelsFromOrigKCallback = [&] (FETI_REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
@@ -53,7 +53,7 @@ FETIProvider::FETIProvider(LoadStepConfiguration &configuration)
 			run::data->RegMat.swap(run::data->origRegMat);
 		};
 
-		run::data->computeKernelFromOrigKCallback = [&] (FETI_REGULARIZATION regularization, int scSize, eslocal domain, bool ortogonalCluster) {
+		run::data->computeKernelFromOrigKCallback = [&] (FETI_REGULARIZATION regularization, int scSize, esint domain, bool ortogonalCluster) {
 			run::data->K[domain].swap(run::data->origK[domain]);
 			run::data->N1[domain].swap(run::data->origKN1[domain]);
 			run::data->N2[domain].swap(run::data->origKN2[domain]);
@@ -70,7 +70,7 @@ FETIProvider::FETIProvider(LoadStepConfiguration &configuration)
 			makeStiffnessMatricesRegular(regularization, scSize, ortogonalCluster);
 		};
 
-		run::data->computeKernelCallback = [&] (FETI_REGULARIZATION regularization, int scSize, eslocal domain, bool ortogonalCluster) {
+		run::data->computeKernelCallback = [&] (FETI_REGULARIZATION regularization, int scSize, esint domain, bool ortogonalCluster) {
 			makeStiffnessMatrixRegular(regularization, scSize, domain, ortogonalCluster);
 		};
 	}
@@ -102,14 +102,14 @@ double& FETIProvider::solutionPrecision()
 void FETIProvider::makeStiffnessMatricesRegular(FETI_REGULARIZATION regularization, int scSize, bool ortogonalCluster)
 {
 	#pragma omp parallel for
-	for (eslocal d = 0; d < run::mesh->elements->ndomains; d++) {
+	for (esint d = 0; d < run::mesh->elements->ndomains; d++) {
 		makeStiffnessMatrixRegular(regularization, scSize, d, ortogonalCluster);
 		ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
 	ESINFO(PROGRESS3);
 }
 
-void FETIProvider::makeStiffnessMatrixRegular(FETI_REGULARIZATION regularization, int scSize, eslocal domain, bool ortogonalCluster)
+void FETIProvider::makeStiffnessMatrixRegular(FETI_REGULARIZATION regularization, int scSize, esint domain, bool ortogonalCluster)
 {
 	switch (regularization) {
 
@@ -123,7 +123,7 @@ void FETIProvider::makeStiffnessMatrixRegular(FETI_REGULARIZATION regularization
 	case FETI_REGULARIZATION::ALGEBRAIC:
 		switch (run::data->K[domain].mtype) {
 			double norm;
-			eslocal defect;
+			esint defect;
 
 		case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 			run::data->K[domain].get_kernel_from_K(run::data->K[domain], run::data->RegMat[domain], run::data->N1[domain], norm, defect, domain, scSize);
@@ -184,7 +184,7 @@ void FETIProvider::assembleUniformB0FromCorners(int DOFs)
 		run::data->B0[p].nnz = run::data->B0[p].I_row_indices.size();
 
 		run::data->B0subdomainsMap[p].reserve(run::data->B0[p].nnz);
-		for (eslocal i = run::data->B0subdomainsMap[p].size(); i < run::data->B0[p].nnz; i++) {
+		for (esint i = run::data->B0subdomainsMap[p].size(); i < run::data->B0[p].nnz; i++) {
 			run::data->B0subdomainsMap[p].push_back(run::data->B0[p].I_row_indices[i] - 1);
 		}
 	}
@@ -192,15 +192,15 @@ void FETIProvider::assembleUniformB0FromCorners(int DOFs)
 
 void FETIProvider::assembleUniformB0FromKernels(const std::vector<SparseMatrix> &kernels, int DOFs)
 {
-	std::vector<eslocal> rowIndex(run::mesh->FETIData->inodesDomains.size());
-	std::vector<eslocal> rCounters(*std::max_element(run::mesh->elements->clusters.begin(), run::mesh->elements->clusters.end()) + 1);
+	std::vector<esint> rowIndex(run::mesh->FETIData->inodesDomains.size());
+	std::vector<esint> rCounters(*std::max_element(run::mesh->elements->clusters.begin(), run::mesh->elements->clusters.end()) + 1);
 
 	for (size_t i = 0; i < run::mesh->FETIData->inodesDomains.size(); i++) {
-		eslocal domain = run::mesh->FETIData->inodesDomains[i].first;
-		eslocal ndomain = run::mesh->FETIData->inodesDomains[i].second;
-		eslocal cluster = run::mesh->elements->clusters[domain];
+		esint domain = run::mesh->FETIData->inodesDomains[i].first;
+		esint ndomain = run::mesh->FETIData->inodesDomains[i].second;
+		esint cluster = run::mesh->elements->clusters[domain];
 		rowIndex[i] = rCounters[cluster];
-		rCounters[cluster] += std::max(kernels[domain].cols, std::max(kernels[ndomain].cols, (eslocal)1));
+		rCounters[cluster] += std::max(kernels[domain].cols, std::max(kernels[ndomain].cols, (esint)1));
 	}
 
 	size_t threads = environment->OMP_NUM_THREADS;
@@ -209,7 +209,7 @@ void FETIProvider::assembleUniformB0FromKernels(const std::vector<SparseMatrix> 
 	for (size_t t = 0; t < threads; t++) {
 		const auto &nodes = run::mesh->FETIData->interfaceNodes->datatarray();
 		int sign, cols, master;
-		for (eslocal d = run::mesh->elements->domainDistribution[t]; d < run::mesh->elements->domainDistribution[t + 1]; d++) {
+		for (esint d = run::mesh->elements->domainDistribution[t]; d < run::mesh->elements->domainDistribution[t + 1]; d++) {
 			for (size_t i = 0; i < run::mesh->FETIData->inodesDomains.size(); i++) {
 				sign = 0;
 				if (run::mesh->FETIData->inodesDomains[i].first == d) {
@@ -226,10 +226,10 @@ void FETIProvider::assembleUniformB0FromKernels(const std::vector<SparseMatrix> 
 					}
 					cols = kernels[master].cols;
 					if (cols) {
-						for (eslocal c = 0; c < cols; c++) {
+						for (esint c = 0; c < cols; c++) {
 							auto dit = run::mesh->nodes->dintervals[d].begin();
 							auto masterit = run::mesh->nodes->dintervals[master].begin();
-							for (eslocal n = run::mesh->FETIData->inodesDistribution[i]; n < run::mesh->FETIData->inodesDistribution[i + 1]; n++) {
+							for (esint n = run::mesh->FETIData->inodesDistribution[i]; n < run::mesh->FETIData->inodesDistribution[i + 1]; n++) {
 								while (dit->end < nodes[n]) {
 									++dit;
 								}
@@ -245,7 +245,7 @@ void FETIProvider::assembleUniformB0FromKernels(const std::vector<SparseMatrix> 
 						}
 					} else {
 						auto dit = run::mesh->nodes->dintervals[d].begin();
-						for (eslocal n = run::mesh->FETIData->inodesDistribution[i]; n < run::mesh->FETIData->inodesDistribution[i + 1]; n++) {
+						for (esint n = run::mesh->FETIData->inodesDistribution[i]; n < run::mesh->FETIData->inodesDistribution[i + 1]; n++) {
 							while (dit->end < nodes[n]) {
 								++dit;
 							}
@@ -262,7 +262,7 @@ void FETIProvider::assembleUniformB0FromKernels(const std::vector<SparseMatrix> 
 			run::data->B0[d].cols = run::data->K[d].cols;
 			run::data->B0[d].nnz = run::data->B0[d].I_row_indices.size();
 			run::data->B0subdomainsMap[d].reserve(run::data->B0[d].nnz);
-			for (eslocal i = run::data->B0subdomainsMap[d].size(); i < run::data->B0[d].nnz; i++) {
+			for (esint i = run::data->B0subdomainsMap[d].size(); i < run::data->B0[d].nnz; i++) {
 				run::data->B0subdomainsMap[d].push_back(run::data->B0[d].I_row_indices[i]);
 			}
 		}

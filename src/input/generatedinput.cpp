@@ -74,11 +74,11 @@ GeneratedInput::GeneratedInput(PlainMeshData &meshData, Mesh &mesh, bool needSyn
 
 void GeneratedInput::removeDanglingNodes()
 {
-	std::vector<eslocal> usedNodes = _meshData.enodes;
+	std::vector<esint> usedNodes = _meshData.enodes;
 	Esutils::sortAndRemoveDuplicity(usedNodes);
 
 	std::vector<Point> coordinates;
-	std::vector<eslocal> nIDs, ndist, noffset(_meshData.nIDs.size());
+	std::vector<esint> nIDs, ndist, noffset(_meshData.nIDs.size());
 	std::vector<int> nranks;
 
 	ndist.push_back(0);
@@ -111,7 +111,7 @@ struct __Point__ {
 	static constexpr size_t digits = 1000;
 
 	__Point__(): x(0), y(0), z(0), id(-1) {};
-	__Point__(const Point &p, esglobal id): x(p.x), y(p.y), z(p.z), id(id) {};
+	__Point__(const Point &p, esint id): x(p.x), y(p.y), z(p.z), id(id) {};
 
 	bool operator<(const __Point__ &p) const
 	{
@@ -133,7 +133,7 @@ struct __Point__ {
 	}
 
 	double x, y, z;
-	esglobal id;
+	esint id;
 };
 
 void GeneratedInput::synchronizeGlobalIndices()
@@ -148,7 +148,7 @@ void GeneratedInput::synchronizeGlobalIndices()
 	for (size_t n = 0; n < _meshData.nIDs.size(); ++n) {
 		if (_meshData._nrankdist[n + 1] - _meshData._nrankdist[n] > 1) {
 			if (_meshData._nranks[_meshData._nrankdist[n]] == environment->MPIrank) {
-				for (eslocal r = _meshData._nrankdist[n] + 1; r < _meshData._nrankdist[n + 1]; ++r) {
+				for (esint r = _meshData._nrankdist[n] + 1; r < _meshData._nrankdist[n + 1]; ++r) {
 					sBuffer[n2i(_meshData._nranks[r])].push_back(__Point__(_meshData.coordinates[n], _meshData.nIDs[n]));
 				}
 			} else {

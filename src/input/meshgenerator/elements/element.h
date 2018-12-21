@@ -43,11 +43,11 @@ struct ElementGenerator {
 	size_t enodes;
 	Element::CODE code;
 
-	virtual void pushElements(std::vector<eslocal> &elements, const std::vector<eslocal> &indices) const =0;
-	virtual void pushNodes(std::vector<eslocal> &nodes, const std::vector<eslocal> &indices, CubeEdge edge) const =0;
-	virtual void pushNodes(std::vector<eslocal> &nodes, const std::vector<eslocal> &indices, CubeFace face) const =0;
-	virtual void pushEdge(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeEdge edge) const =0;
-	virtual void pushFace(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeFace face) const =0;
+	virtual void pushElements(std::vector<esint> &elements, const std::vector<esint> &indices) const =0;
+	virtual void pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeEdge edge) const =0;
+	virtual void pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const =0;
+	virtual void pushEdge(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeEdge edge) const =0;
+	virtual void pushFace(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeFace face) const =0;
 
 	virtual ~ElementGenerator() {}
 protected:

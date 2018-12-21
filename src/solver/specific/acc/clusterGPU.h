@@ -23,7 +23,7 @@ public:
 	~ClusterGPU();
 
 	void Create_SC_perDomain( bool USE_FLOAT );
-	void GetSchurComplement( bool USE_FLOAT, eslocal i );
+	void GetSchurComplement( bool USE_FLOAT, esint i );
 
 	void SetupKsolvers ( );
 

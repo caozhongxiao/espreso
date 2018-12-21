@@ -12,7 +12,7 @@ using namespace espreso;
 
 static void convectionMaterialParameters(
 		const ConvectionConfiguration &convection,
-		eslocal csize, double *coordinates, double time, double temp, double extTemp,
+		esint csize, double *coordinates, double time, double temp, double extTemp,
 		double &rho, double &dynamicViscosity, double &dynamicViscosityTemp, double &heatCapacity, double &thermalConductivity)
 {
 	double  gas_constant;
@@ -226,7 +226,7 @@ static void convectionMaterialParameters(
 
 double HeatTransferKernel::convectionHTC(
 		const ConvectionConfiguration &convection,
-		eslocal csize, double *coordinates, double time, double temp)
+		esint csize, double *coordinates, double time, double temp)
 {
 	double htc = 0;
 	switch (convection.type) {

@@ -18,20 +18,20 @@ struct ElementsRegionStore {
 
 	std::string name;
 
-	serializededata<eslocal, eslocal>* elements;
-	serializededata<eslocal, eslocal>* uniqueElements;
+	serializededata<esint, esint>* elements;
+	serializededata<esint, esint>* uniqueElements;
 
-	serializededata<eslocal, eslocal>* nodes;
+	serializededata<esint, esint>* nodes;
 
 	std::vector<ElementsInterval> eintervals;
 	std::vector<ElementsInterval> ueintervals;
 	std::vector<ProcessInterval> nintervals;
 
-	eslocal uniqueOffset;
-	eslocal uniqueSize;
-	eslocal uniqueTotalSize;
+	esint uniqueOffset;
+	esint uniqueSize;
+	esint uniqueTotalSize;
 
-	std::vector<eslocal> ecounters;
+	std::vector<esint> ecounters;
 
 	SurfaceStore *surface;
 

@@ -244,7 +244,7 @@ public:
 		}
 	}
 
-	void permute(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution)
+	void permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution)
 	{
 		if (_eboundaries.size()) {
 			permuteNonUniformData(permutation, distribution);
@@ -274,13 +274,13 @@ public:
 
 	size_t packedSize() const
 	{
-		return sizeof(eslocal) + _eboundaries.packedSize() + _edata.packedSize();
+		return sizeof(esint) + _eboundaries.packedSize() + _edata.packedSize();
 	}
 
 	void pack(char* &p) const
 	{
-		memcpy(p, &_edatasize, sizeof(eslocal));
-		p += sizeof(eslocal);
+		memcpy(p, &_edatasize, sizeof(esint));
+		p += sizeof(esint);
 
 		_eboundaries.pack(p);
 		_edata.pack(p);
@@ -288,8 +288,8 @@ public:
 
 	void unpack(const char* &p)
 	{
-		memcpy(&_edatasize, p, sizeof(eslocal));
-		p += sizeof(eslocal);
+		memcpy(&_edatasize, p, sizeof(esint));
+		p += sizeof(esint);
 
 		_eboundaries.unpack(p);
 		_edata.unpack(p);
@@ -324,7 +324,7 @@ private:
 		}
 	}
 
-	void permuteUniformData(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution)
+	void permuteUniformData(const std::vector<esint> &permutation, const std::vector<size_t> &distribution)
 	{
 		std::vector<std::vector<TEData> > pdata(threads());
 
@@ -339,7 +339,7 @@ private:
 		inititerators(_edatasize);
 	}
 
-	void permuteNonUniformData(const std::vector<eslocal> &permutation, const std::vector<size_t> &providedDistribution)
+	void permuteNonUniformData(const std::vector<esint> &permutation, const std::vector<size_t> &providedDistribution)
 	{
 		std::vector<std::vector<TEBoundaries> > pboundaries(threads());
 		std::vector<std::vector<TEData> > pdata(threads());
@@ -393,7 +393,7 @@ private:
 	tarray<TEBoundaries> _eboundaries;
 	tarray<TEData> _edata;
 
-	eslocal _edatasize;
+	esint _edatasize;
 	std::vector<iterator> _iterator;
 	std::vector<const_iterator> _constiterator;
 };

@@ -15,7 +15,7 @@ struct SolverParameters;
 template <typename TEBoundaries, typename TEData> class serializededata;
 
 struct IJ {
-	eslocal row, column;
+	esint row, column;
 };
 
 inline bool operator==(const IJ &left, const IJ &right)
@@ -83,15 +83,15 @@ protected:
 		}
 	}
 
-	void insertKPattern(IJ *target, eslocal *begin, eslocal *end, MatrixType mtype);
-	void clearMatrices(Matrices matrices, eslocal domain);
+	void insertKPattern(IJ *target, esint *begin, esint *end, MatrixType mtype);
+	void clearMatrices(Matrices matrices, esint domain);
 
 	Controler &_controler;
 
-	serializededata<eslocal, eslocal> *_DOFMap;
-	std::vector<eslocal> _dirichletMap;
+	serializededata<esint, esint> *_DOFMap;
+	std::vector<esint> _dirichletMap;
 
-	std::vector<eslocal> _dirichletPermutation;
+	std::vector<esint> _dirichletPermutation;
 };
 
 }

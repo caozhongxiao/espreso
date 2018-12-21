@@ -15,7 +15,7 @@ struct OpenFOAMFaces: public OpenFOAMCollectiveParser {
 	OpenFOAMFaces(const char *begin, const char *end): OpenFOAMCollectiveParser(begin, end) {}
 
 	bool readFaces(PlainOpenFOAMData &data);
-	bool readParents(std::vector<eslocal> &data);
+	bool readParents(std::vector<esint> &data);
 };
 
 }

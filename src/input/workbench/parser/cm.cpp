@@ -70,8 +70,8 @@ CM& CM::parse(const char* begin)
 
 bool CM::addRegion(
 		const PlainWorkbenchData &mesh,
-		const std::vector<ESel> &esel, std::map<std::string, std::vector<eslocal> > &eregions,
-		const std::vector<NSel> &nsel, std::map<std::string, std::vector<eslocal> > &nregions)
+		const std::vector<ESel> &esel, std::map<std::string, std::vector<esint> > &eregions,
+		const std::vector<NSel> &nsel, std::map<std::string, std::vector<esint> > &nregions)
 {
 	switch (entity) {
 	case Entity::ELEMENTS:
@@ -83,7 +83,7 @@ bool CM::addRegion(
 	}
 }
 
-bool CM::addElementRegion(const PlainWorkbenchData &mesh, const std::vector<ESel> &esel, std::map<std::string, std::vector<eslocal> > &eregions)
+bool CM::addElementRegion(const PlainWorkbenchData &mesh, const std::vector<ESel> &esel, std::map<std::string, std::vector<esint> > &eregions)
 {
 	// clear relevant set means all elements
 	std::vector<ESel> relevant;
@@ -113,25 +113,25 @@ bool CM::addElementRegion(const PlainWorkbenchData &mesh, const std::vector<ESel
 	}
 
 	size_t threads = environment->OMP_NUM_THREADS;
-	std::vector<eslocal> edistribution = tarray<eslocal>::distribute(threads, mesh.esize.size());
-	std::vector<std::vector<eslocal> > eid(threads);
+	std::vector<esint> edistribution = tarray<esint>::distribute(threads, mesh.esize.size());
+	std::vector<std::vector<esint> > eid(threads);
 
-	auto checkElements = [&] (std::function<void(size_t, eslocal)> chck) {
+	auto checkElements = [&] (std::function<void(size_t, esint)> chck) {
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			for (eslocal e = edistribution[t]; e < edistribution[t + 1]; ++e) {
+			for (esint e = edistribution[t]; e < edistribution[t + 1]; ++e) {
 				chck(t, e);
 			}
 		}
 	};
 
-	std::vector<eslocal> &data = eregions[name];
+	std::vector<esint> &data = eregions[name];
 	for (size_t i = 0; i < relevant.size(); i++) {
 		switch (relevant[i].item) {
 
 		case ESel::Item::TYPE:
 			if (relevant[i].VMIN == relevant[i].VMAX) {
-				checkElements([&] (size_t t, eslocal e) {
+				checkElements([&] (size_t t, esint e) {
 					if (mesh.et[e] == relevant[i].VMIN) {
 						eid[t].push_back(mesh.eIDs[e]);
 					}
@@ -139,14 +139,14 @@ bool CM::addElementRegion(const PlainWorkbenchData &mesh, const std::vector<ESel
 				break;
 			}
 			if (relevant[i].VINC == 1) {
-				checkElements([&] (size_t t, eslocal e) {
+				checkElements([&] (size_t t, esint e) {
 					if (relevant[i].VMIN <= mesh.et[e] && mesh.et[e] <= relevant[i].VMAX) {
 						eid[t].push_back(mesh.eIDs[e]);
 					}
 				});
 				break;
 			}
-			checkElements([&] (size_t t, eslocal e) {
+			checkElements([&] (size_t t, esint e) {
 				if (relevant[i].VMIN <= mesh.et[e] && mesh.et[e] <= relevant[i].VMAX && (mesh.et[e] - relevant[i].VMIN) % relevant[i].VINC == 0) {
 					eid[t].push_back(mesh.eIDs[e]);
 				}
@@ -155,7 +155,7 @@ bool CM::addElementRegion(const PlainWorkbenchData &mesh, const std::vector<ESel
 
 		case ESel::Item::MAT:
 			if (relevant[i].VMIN == relevant[i].VMAX) {
-				checkElements([&] (size_t t, eslocal e) {
+				checkElements([&] (size_t t, esint e) {
 					if (mesh.material[e] == relevant[i].VMIN) {
 						eid[t].push_back(mesh.eIDs[e]);
 					}
@@ -163,14 +163,14 @@ bool CM::addElementRegion(const PlainWorkbenchData &mesh, const std::vector<ESel
 				break;
 			}
 			if (relevant[i].VINC == 1) {
-				checkElements([&] (size_t t, eslocal e) {
+				checkElements([&] (size_t t, esint e) {
 					if (relevant[i].VMIN <= mesh.material[e] && mesh.material[e] <= relevant[i].VMAX) {
 						eid[t].push_back(mesh.eIDs[e]);
 					}
 				});
 				break;
 			}
-			checkElements([&] (size_t t, eslocal e) {
+			checkElements([&] (size_t t, esint e) {
 				if (relevant[i].VMIN <= mesh.material[e] && mesh.material[e] <= relevant[i].VMAX && (mesh.material[e] - relevant[i].VMIN) % relevant[i].VINC == 0) {
 					eid[t].push_back(mesh.eIDs[e]);
 				}
@@ -190,7 +190,7 @@ bool CM::addElementRegion(const PlainWorkbenchData &mesh, const std::vector<ESel
 	return true;
 }
 
-bool CM::addNodeRegion(const std::vector<NSel> &nsel, std::map<std::string, std::vector<eslocal> > &nregions)
+bool CM::addNodeRegion(const std::vector<NSel> &nsel, std::map<std::string, std::vector<esint> > &nregions)
 {
 	return false;
 }

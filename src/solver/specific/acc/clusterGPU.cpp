@@ -8,7 +8,7 @@ using namespace espreso;
 ClusterGPU::~ClusterGPU() {
 	DestroyCudaStreamPool();
 
-	for(eslocal d = 0; d < domains_in_global_index.size(); d++) {
+	for(esint d = 0; d < domains_in_global_index.size(); d++) {
 		if(domains[d].isOnACC) {
 			domains[d].B1Kplus.ClearCUDA_Stream();
 #ifdef SHARE_SC
@@ -41,7 +41,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	bool GPU_full = false;
 	//GPU_full = true;
 
-	eslocal status = 0;
+	esint status = 0;
 	cudaError_t status_c;
 
 	int nDevices;
@@ -76,23 +76,23 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	size_t GPU_free_mem, GPU_total_meml;
 	cudaMemGetInfo(&GPU_free_mem, &GPU_total_meml);
 
-	eslocal domains_on_GPU = 0;
-	eslocal domains_on_CPU = 0;
-	eslocal DOFs_GPU = 0;
-	eslocal DOFs_CPU = 0;
+	esint domains_on_GPU = 0;
+	esint domains_on_CPU = 0;
+	esint DOFs_GPU = 0;
+	esint DOFs_CPU = 0;
 
 	size_t SC_total_size = 0;
-	for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
+	for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
 
 		switch (configuration.schur_type) {
 		case MATRIX_STORAGE::GENERAL:
 #ifdef SHARE_SC
 			// SC_total_size will be halved in the case of 2 symmetric SCs in 1 full matrix
 			if (d%2 == 0) {
-				eslocal sc1_rows = domains[d].B1_comp_dom.rows;
-				eslocal sc2_rows = 0;
-				eslocal SC_size = 0;
-				eslocal vec_size = domains[d].B1_comp_dom.rows;
+				esint sc1_rows = domains[d].B1_comp_dom.rows;
+				esint sc2_rows = 0;
+				esint SC_size = 0;
+				esint vec_size = domains[d].B1_comp_dom.rows;
 
 				if(d+1 < domains_in_global_index.size()) {
 					sc2_rows = domains[d+1].B1_comp_dom.rows;
@@ -175,7 +175,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	MPI_Gather(&DOFs_CPU,1,MPI_INT,&don_cpu[0],1,MPI_INT, 0, environment->MPICommunicator);
 
 
-	for (eslocal i = 0; i < environment->MPIsize; i++) {
+	for (esint i = 0; i < environment->MPIsize; i++) {
 		ESINFO(PROGRESS3) << Info::plain()
 			<< " MPI rank " << i <<
 			"\t - GPU : domains = \t" << on_gpu[i] << "\t Total DOFs = \t" << don_gpu[i] <<
@@ -184,7 +184,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 
 	// Schur complement calculation on CPU
-//	cilk_for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
+//	cilk_for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
 //		if (domains[d].isOnACC == 1 || !configuration.combine_sc_and_spds) {
 //			// Calculates SC on CPU and keeps it CPU memory
 //			GetSchurComplement(USE_FLOAT, d);
@@ -194,11 +194,11 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 
 #ifdef SHARE_SC
-	SEQ_VECTOR <eslocal> SC_dense_val_offsets(domains_in_global_index.size(), 0);
+	SEQ_VECTOR <esint> SC_dense_val_offsets(domains_in_global_index.size(), 0);
 
 	// 2 domains per iteration processed
 	#pragma omp parallel for
-for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
+for (esint d = 0; d < domains_in_global_index.size(); d += 2 ) {
 
 		if (domains[d].isOnACC == 1 || !configuration.combine_sc_and_spds) {
 			// Calculates SC on CPU and keeps it CPU memory
@@ -217,8 +217,8 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 			GetSchurComplement(USE_FLOAT, d+1);
 			ESINFO(PROGRESS3) << Info::plain() << ".";
 
-			eslocal sc1_rows = domains[d].B1Kplus.rows;
-			eslocal sc2_rows = domains[d+1].B1Kplus.rows;
+			esint sc1_rows = domains[d].B1Kplus.rows;
+			esint sc2_rows = domains[d+1].B1Kplus.rows;
 
 			// Set if Upper or Lower part is referenced
 			domains[d+1].B1Kplus.uplo = 'L';
@@ -227,12 +227,12 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 			if(sc1_rows > sc2_rows) {
 				// First SC -> U
 				if (USE_FLOAT) {
-					for(eslocal r = 0; r < sc2_rows; r++) {
+					for(esint r = 0; r < sc2_rows; r++) {
 						std::copy(&domains[d+1].B1Kplus.dense_values_fl[r*sc2_rows + r], &domains[d+1].B1Kplus.dense_values_fl[(r+1) *sc2_rows],
 						 &domains[d].B1Kplus.dense_values_fl[r*sc1_rows + r+1]);
 					}
 				} else {
-					for(eslocal r = 0; r < sc2_rows; r++) {
+					for(esint r = 0; r < sc2_rows; r++) {
 						std::copy(&domains[d+1].B1Kplus.dense_values[r*sc2_rows + r], &domains[d+1].B1Kplus.dense_values[(r+1) *sc2_rows],
 						 &domains[d].B1Kplus.dense_values[r*sc1_rows + r+1]);
 					}
@@ -248,7 +248,7 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 				if (USE_FLOAT) {
 					SEQ_VECTOR <float> sc1_tmp_fl(sc1_rows * (sc1_rows + 1));
 
-					for(eslocal r = 0; r < sc1_rows; r++) {
+					for(esint r = 0; r < sc1_rows; r++) {
 						std::copy(&domains[d+1].B1Kplus.dense_values_fl[r*sc2_rows + r], &domains[d+1].B1Kplus.dense_values_fl[(r+1) *sc2_rows],
 						 &sc1_tmp_fl[r*sc1_rows + r]);
 						std::copy(&domains[d].B1Kplus.dense_values_fl[r*sc1_rows], &domains[d].B1Kplus.dense_values_fl[r*sc1_rows + r+1],
@@ -258,7 +258,7 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 				} else {
 					SEQ_VECTOR <double> sc1_tmp(sc1_rows * (sc1_rows + 1));
 
-					for(eslocal r = 0; r < sc1_rows; r++) {
+					for(esint r = 0; r < sc1_rows; r++) {
 						std::copy(&domains[d+1].B1Kplus.dense_values[r*sc2_rows + r], &domains[d+1].B1Kplus.dense_values[(r+1) *sc2_rows],
 						 &sc1_tmp[r*sc1_rows + r]);
 						std::copy(&domains[d].B1Kplus.dense_values[r*sc1_rows], &domains[d].B1Kplus.dense_values[r*sc1_rows + r+1],
@@ -276,13 +276,13 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 			} else { // sc1_rows < sc2_rows
 				// First SC -> U
 				if (USE_FLOAT) {
-					for(eslocal r = 0; r < sc1_rows; r++) {
+					for(esint r = 0; r < sc1_rows; r++) {
 						std::copy(&domains[d].B1Kplus.dense_values_fl[r*sc1_rows], &domains[d].B1Kplus.dense_values_fl[r*sc1_rows + r + 1],
 						 &domains[d+1].B1Kplus.dense_values_fl[(r+1)*sc2_rows]);
 					}
 					domains[d].B1Kplus.dense_values_fl = std::move(domains[d+1].B1Kplus.dense_values_fl);
 				} else {
-					for(eslocal r = 0; r < sc1_rows; r++) {
+					for(esint r = 0; r < sc1_rows; r++) {
 						std::copy(&domains[d].B1Kplus.dense_values[r*sc1_rows], &domains[d].B1Kplus.dense_values[r*sc1_rows + r + 1],
 						 &domains[d+1].B1Kplus.dense_values[(r+1)*sc2_rows]);
 //						std::copy(&domains[d].B1Kplus.dense_values[r*sc1_rows + r], &domains[d].B1Kplus.dense_values[(r+1) *sc1_rows],
@@ -307,7 +307,7 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 	}
 #else
 	#pragma omp parallel for
-	for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
+	for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
 			if (domains[d].isOnACC == 1 || !configuration.combine_sc_and_spds) {
 				// Calculates SC on CPU and keeps it CPU memory
 				GetSchurComplement(USE_FLOAT, d);
@@ -321,9 +321,9 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 	CreateCudaStreamPool();
 
 	// SC transfer to GPU - now sequential
-	for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
+	for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
 
-		eslocal status = 0;
+		esint status = 0;
 
 		if (domains[d].isOnACC == 1) {
 
@@ -511,7 +511,7 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 	ESINFO(PROGRESS3) << Info::plain() << "\n Domains transfered to GPU : " << domains_on_GPU << "\n";
 	ESINFO(PROGRESS3) << Info::plain() << " Domains on CPU : " << domains_on_CPU << "\n";
 
-//	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
+//	cilk_for (esint i = 0; i < domains_in_global_index.size(); i++ ) {
 //
 ////		cudaSetDevice(1);
 //
@@ -519,7 +519,7 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 ////		if ( i == 0 && cluster_global_index == 1) tmpsps2.msglvl = 1;
 ////		tmpsps2.Create_non_sym_SC_w_Mat( domains[i].K, TmpB, domains[i].B0t_comp, domains[i].B0KplusB1_comp, false, 0 );
 //
-//		eslocal status = 0;
+//		esint status = 0;
 //		cudaError_t status_c;
 //
 //		if (!GPU_full || !configuration.combine_sc_and_spds) {
@@ -594,7 +594,7 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 
 }
 
-void ClusterGPU::GetSchurComplement( bool USE_FLOAT, eslocal i ) {
+void ClusterGPU::GetSchurComplement( bool USE_FLOAT, esint i ) {
 
 	SparseMatrix TmpB;
 	domains[i].B1_comp_dom.MatTranspose(TmpB);
@@ -623,7 +623,7 @@ void ClusterGPU::GetSchurComplement( bool USE_FLOAT, eslocal i ) {
 void ClusterGPU::SetupKsolvers ( ) {
 
 	#pragma omp parallel for
-for (eslocal d = 0; d < domains.size(); d++) {
+for (esint d = 0; d < domains.size(); d++) {
 
 		// Import of Regularized matrix K into Kplus (Sparse Solver)
 		switch (configuration.Ksolver) {
@@ -694,7 +694,7 @@ void ClusterGPU::multKplusGlobal_GPU(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 	// loop over domains in the cluster
 	loop_1_1_time.start();
 	#pragma omp parallel for
-for (eslocal d = 0; d < domains.size(); d++)
+for (esint d = 0; d < domains.size(); d++)
 	{
 		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
 		domains[d].Kplus_R.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
@@ -703,18 +703,18 @@ for (eslocal d = 0; d < domains.size(); d++)
 
 	loop_1_2_time.start();
 	#pragma omp parallel for
-for (eslocal d = 0; d < domains.size(); d++)
+for (esint d = 0; d < domains.size(); d++)
 	{
-		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+		esint e0_start	=  d	* domains[d].Kplus_R.cols;
+		esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
 
-		for (eslocal i = e0_start; i < e0_end; i++ )
+		for (esint i = e0_start; i < e0_end; i++ )
 			vec_e0[i] = - tm3[d][i - e0_start];
 	}
 
 
-	for (eslocal d = 0; d < domains.size(); d++)
-		for (eslocal i = 0; i < domains[d].B0Kplus_comp.rows; i++)
+	for (esint d = 0; d < domains.size(); d++)
+		for (esint i = 0; i < domains[d].B0Kplus_comp.rows; i++)
 			vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
 
 	// end loop over domains
@@ -737,7 +737,7 @@ for (eslocal d = 0; d < domains.size(); d++)
 	clus_G0_time.end();
 
 	#pragma omp parallel for
-for (eslocal i = 0; i < vec_e0.size(); i++)
+for (esint i = 0; i < vec_e0.size(); i++)
 		tm2[0][i] = tm2[0][i] - vec_e0[i];
 	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
@@ -746,8 +746,8 @@ for (eslocal i = 0; i < vec_e0.size(); i++)
 //	 Sa.Solve(tm2[0], vec_alfa,0,0);
 //#else
 //	char U = 'U';
-//	eslocal nrhs = 1;
-//	eslocal info = 0;
+//	esint nrhs = 1;
+//	esint info = 0;
 //	vec_alfa = tm2[0];
 //	dsptrs( &U, &SaMat.rows, &nrhs, &SaMat.dense_values[0], &SaMat.ipiv[0], &vec_alfa[0], &SaMat.rows, &info );
 //#endif
@@ -756,7 +756,7 @@ for (eslocal i = 0; i < vec_e0.size(); i++)
 ////#ifdef SPARSE_SA
 ////	Sa.Solve(tm2[0], vec_alfa,0,0);
 ////#else
-////	eslocal nrhs = 1;
+////	esint nrhs = 1;
 ////	Sa_dense.Solve(tm2[0], vec_alfa, nrhs);
 ////#endif
 
@@ -765,12 +765,12 @@ for (eslocal i = 0; i < vec_e0.size(); i++)
 	 }
 
 	 if (configuration.SAsolver == FETI_SASOLVER::CPU_DENSE) {
-			eslocal nrhs = 1;
+			esint nrhs = 1;
 			Sa_dense_cpu.Solve(tm2[0], vec_alfa, nrhs);
 	 }
 
 	 if (configuration.SAsolver == FETI_SASOLVER::ACC_DENSE) {
-			eslocal nrhs = 1;
+			esint nrhs = 1;
 			Sa_dense_acc.Solve(tm2[0], vec_alfa, nrhs);
 	 }
 
@@ -783,7 +783,7 @@ for (eslocal i = 0; i < vec_e0.size(); i++)
 	 clus_G0t_time.end();
 
 	#pragma omp parallel for
-for (eslocal i = 0; i < vec_g0.size(); i++)
+for (esint i = 0; i < vec_g0.size(); i++)
 		tm1[0][i] = vec_g0[i] - tm1[0][i];
 
 
@@ -798,44 +798,44 @@ for (eslocal i = 0; i < vec_g0.size(); i++)
 	mkl_set_num_threads(1);
 	loop_2_1_time.start();
 	#pragma omp parallel for
-for (eslocal d = 0; d < domains.size(); d++)
+for (esint d = 0; d < domains.size(); d++)
 	{
-		eslocal domain_size = domains[d].domain_prim_size;
+		esint domain_size = domains[d].domain_prim_size;
 		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0.0);
 
 		bool MIXED_SC_FACT = configuration.combine_sc_and_spds;
 
 		if (domains[d].isOnACC == 0 && MIXED_SC_FACT) {
 
-			for (eslocal i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+			for (esint i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
 				tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
 
 			domains[d].B0_comp.MatVec(tmp_vec, tm1[d], 'T');
 
-			for (eslocal i = 0; i < domain_size; i++)
+			for (esint i = 0; i < domain_size; i++)
 				tm1[d][i] = x_in[d][i] - tm1[d][i];
 
 			domains[d].multKplusLocal(tm1[d] , tm2[d]);
 
-			eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-			eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+			esint e0_start	=  d	* domains[d].Kplus_R.cols;
+			esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
 
 			domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
 
 		} else {
 
-			for (eslocal i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+			for (esint i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
 				tmp_vec[i] = -1.0 * vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
 
 			domains[d].B0Kplus_comp.DenseMatVec(tmp_vec, tm2[d], 'T' );
 
-			eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-			eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+			esint e0_start	=  d	* domains[d].Kplus_R.cols;
+			esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
 			domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
 
 		}
 
-		for (eslocal i = 0; i < domain_size; i++)
+		for (esint i = 0; i < domain_size; i++)
 			x_in[d][i] = tm2[d][i] + tm3[d][i];
 
 	}
@@ -916,21 +916,21 @@ void ClusterGPU::multKplus_HF_Loop1(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 	loop_1_1_time.end();
 	loop_1_2_time.start();
 	#pragma omp parallel for
-for (eslocal d = 0; d < domains.size(); d++)
+for (esint d = 0; d < domains.size(); d++)
 	{
 
 		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
 		domains[d].Kplus_R.     DenseMatVec(x_in[d], tm3[d], 'T');	    // e0
 
-		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+		esint e0_start	=  d	* domains[d].Kplus_R.cols;
+		esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
 
-		for (eslocal i = e0_start; i < e0_end; i++ )
+		for (esint i = e0_start; i < e0_end; i++ )
 			vec_e0[i] = - tm3[d][i - e0_start];
 	}
 
-	for (eslocal d = 0; d < domains.size(); d++)
-		for (eslocal i = 0; i < domains[d].B0Kplus_comp.rows; i++)
+	for (esint d = 0; d < domains.size(); d++)
+		for (esint i = 0; i < domains[d].B0Kplus_comp.rows; i++)
 			vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
 
 	loop_1_2_time.end();
@@ -951,7 +951,7 @@ void ClusterGPU::multKplus_HF_CP( ) {
 	 clus_G0_time.end();
 
 	#pragma omp parallel for
-for (eslocal i = 0; i < vec_e0.size(); i++)
+for (esint i = 0; i < vec_e0.size(); i++)
 		tm2[0][i] = tm2[0][i] - vec_e0[i];
 	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
@@ -962,12 +962,12 @@ for (eslocal i = 0; i < vec_e0.size(); i++)
 	}
 
 	if (configuration.SAsolver == FETI_SASOLVER::CPU_DENSE) {
-		eslocal nrhs = 1;
+		esint nrhs = 1;
 		Sa_dense_cpu.Solve(tm2[0], vec_alfa, nrhs);
 	}
 
 	if (configuration.SAsolver == FETI_SASOLVER::ACC_DENSE) {
-		eslocal nrhs = 1;
+		esint nrhs = 1;
 		Sa_dense_acc.Solve(tm2[0], vec_alfa, nrhs);// lambda
 	}
 	 clus_Sa_time.end();
@@ -978,7 +978,7 @@ for (eslocal i = 0; i < vec_e0.size(); i++)
 	 clus_G0t_time.end();
 
 	#pragma omp parallel for
-for (eslocal i = 0; i < vec_g0.size(); i++)
+for (esint i = 0; i < vec_g0.size(); i++)
 		tm1[0][i] = vec_g0[i] - tm1[0][i];
 
 
@@ -997,22 +997,22 @@ void ClusterGPU::multKplus_HF_Loop2_SC(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in, S
 	 loop_2_1_time.start();
 
 	#pragma omp parallel for
-for (eslocal d = 0; d < domains.size(); d++)
+for (esint d = 0; d < domains.size(); d++)
 	{
-		eslocal domain_size = domains[d].domain_prim_size;
+		esint domain_size = domains[d].domain_prim_size;
 		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0.0);
 
-		for (eslocal i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+		for (esint i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
 			tmp_vec[i] = -1.0 * vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
 
 		domains[d].B0Kplus_comp.DenseMatVec(tmp_vec, tm2[d], 'T' );
 
-		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+		esint e0_start	=  d	* domains[d].Kplus_R.cols;
+		esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
 
 		domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
 
-		for (eslocal i = 0; i < domain_size; i++)
+		for (esint i = 0; i < domain_size; i++)
 			y_out[d][i] = tm2[d][i] + tm3[d][i];
 
 	}
@@ -1027,28 +1027,28 @@ void ClusterGPU::multKplus_HF_Loop2_SPDS (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in
 	 loop_2_1_time.start();
 
 	#pragma omp parallel for
-for (eslocal d = 0; d < domains.size(); d++)
+for (esint d = 0; d < domains.size(); d++)
 	{
-		eslocal domain_size = domains[d].domain_prim_size;
+		esint domain_size = domains[d].domain_prim_size;
 		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0.0);
 
-		for (eslocal i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+		for (esint i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
 			tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
 
 		domains[d].B0_comp.MatVec(tmp_vec, tm1[d], 'T');
 
-		for (eslocal i = 0; i < domain_size; i++)
+		for (esint i = 0; i < domain_size; i++)
 			tm1[d][i] = x_in[d][i] - tm1[d][i];
 
 		domains[d].multKplusLocal(tm1[d] , tm2[d]);
 
-		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+		esint e0_start	=  d	* domains[d].Kplus_R.cols;
+		esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
 
 		domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
 
 
-		for (eslocal i = 0; i < domain_size; i++)
+		for (esint i = 0; i < domain_size; i++)
 			x_in[d][i] = tm2[d][i] + tm3[d][i];
 
 	}
@@ -1063,45 +1063,45 @@ void ClusterGPU::multKplus_HF_Loop2_MIX (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in)
 	 loop_2_1_time.start();
 
 	#pragma omp parallel for
-for (eslocal d = 0; d < domains.size(); d++)
+for (esint d = 0; d < domains.size(); d++)
 	{
-		eslocal domain_size = domains[d].domain_prim_size;
+		esint domain_size = domains[d].domain_prim_size;
 		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0.0);
 
 		bool MIXED_SC_FACT = configuration.combine_sc_and_spds;
 
 		if ( (domains[d].isOnACC == 0 && MIXED_SC_FACT ) || !configuration.use_schur_complement ) {
 
-			for (eslocal i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+			for (esint i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
 				tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
 
 			domains[d].B0_comp.MatVec(tmp_vec, tm1[d], 'T');
 
-			for (eslocal i = 0; i < domain_size; i++)
+			for (esint i = 0; i < domain_size; i++)
 				tm1[d][i] = x_in[d][i] - tm1[d][i];
 
 			domains[d].multKplusLocal(tm1[d] , tm2[d]);
 
-			eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-			eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+			esint e0_start	=  d	* domains[d].Kplus_R.cols;
+			esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
 
 			domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
 
 		} else {
 
-			for (eslocal i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+			for (esint i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
 				tmp_vec[i] = -1.0 * vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
 
 			domains[d].B0Kplus_comp.DenseMatVec(tmp_vec, tm2[d], 'T' );
 
-			eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-			eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+			esint e0_start	=  d	* domains[d].Kplus_R.cols;
+			esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
 
 			domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
 
 		}
 
-		for (eslocal i = 0; i < domain_size; i++)
+		for (esint i = 0; i < domain_size; i++)
 			x_in[d][i] = tm2[d][i] + tm3[d][i];
 
 	}
@@ -1117,7 +1117,7 @@ void ClusterGPU::CreateCudaStreamPool() {
 
 		cuda_stream_pool.resize(STREAM_NUM);
 
-		for(eslocal i = 0; i < STREAM_NUM; i++) {
+		for(esint i = 0; i < STREAM_NUM; i++) {
 			cudaStreamCreate(&cuda_stream_pool[i]);
 		}
 		ESINFO(VERBOSE_LEVEL3) << "CUDA stream pool created with " << STREAM_NUM << " streams per cluster";
@@ -1126,7 +1126,7 @@ void ClusterGPU::CreateCudaStreamPool() {
 }
 
 void ClusterGPU::DestroyCudaStreamPool() {
-	for(eslocal i = 0; i < cuda_stream_pool.size(); i++) {
+	for(esint i = 0; i < cuda_stream_pool.size(); i++) {
 		cudaStreamDestroy(cuda_stream_pool[i]);
 	}
 

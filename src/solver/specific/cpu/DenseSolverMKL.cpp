@@ -86,7 +86,7 @@ void DenseSolverMKL::ImportMatrix_fl(espreso::SparseMatrix & A) {
 
 	m_dense_values_fl = new float[m_dense_values_fl_size];
 
-	for (eslocal i = 0; i < m_dense_values_fl_size; i++)
+	for (esint i = 0; i < m_dense_values_fl_size; i++)
 		m_dense_values_fl[i] = (float) A.dense_values[i];
 
 	import_with_copy = true;
@@ -125,7 +125,7 @@ void DenseSolverMKL::SetThreaded() {
 
 int DenseSolverMKL::Factorization(const std::string &str) {
 
-	eslocal info;
+	esint info;
 	char U = 'U';
 
 	m_ipiv.resize(m_cols);
@@ -172,7 +172,7 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol, MKL_INT n_rhs) {
 
 	char U = 'U';
-	eslocal info = 0;
+	esint info = 0;
 	m_nRhs = n_rhs;
 
 
@@ -240,14 +240,14 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol, MKL_INT n_rhs) {
 void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT n_rhs) {
 
 	char U = 'U';
-	eslocal info = 0;
-	eslocal m_nRhs = n_rhs;
+	esint info = 0;
+	esint m_nRhs = n_rhs;
 //
 //	if (USE_FLOAT) {
 //		sol.resize(rhs.size());
 //		tmp_sol_fl.resize(rhs.size());
 //
-//		for (eslocal i = 0; i < rhs.size(); i++)
+//		for (esint i = 0; i < rhs.size(); i++)
 //			tmp_sol_fl[i] = (float)rhs[i];
 //
 //		ssptrs( &U, &m_rows, &n_rhs, &m_dense_values_fl[0], &m_ipiv[0], &tmp_sol_fl[0], &m_rows, &info );
@@ -331,12 +331,12 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol
 
 void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT rhs_start_index, MKL_INT sol_start_index) {
 
-	eslocal sol_size = this->m_cols;
+	esint sol_size = this->m_cols;
 
 	char U = 'U';
-	eslocal info = 0;
-	eslocal m_nRhs = 1;
-	eslocal n_rhs  = 1;
+	esint info = 0;
+	esint m_nRhs = 1;
+	esint n_rhs  = 1;
 
 	switch (mtype) {
 	case espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -344,17 +344,17 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol
 
 			tmp_sol_fl.resize(sol_size);
 
-			for (eslocal i = 0; i < sol_size; i++)
+			for (esint i = 0; i < sol_size; i++)
 				tmp_sol_fl[i] = (float)rhs[rhs_start_index+i];
 
 			ssptrs( &U, &m_rows, &n_rhs, &m_dense_values_fl[0], &m_ipiv[0], &tmp_sol_fl[0], &m_rows, &info );
 
-			for (eslocal i = 0; i < sol_size; i++)
+			for (esint i = 0; i < sol_size; i++)
 				sol[sol_start_index+i] = (double)tmp_sol_fl[i];
 
 		} else {
 
-			for (eslocal i = 0; i < sol_size; i++)
+			for (esint i = 0; i < sol_size; i++)
 				sol [sol_start_index + i] = rhs [rhs_start_index + i];
 
 			dsptrs( &U, &m_rows, &n_rhs, &m_dense_values[0], &m_ipiv[0], &sol[sol_start_index], &m_rows, &info );

@@ -17,18 +17,18 @@ bool OpenFOAMFaces::readFaces(PlainOpenFOAMData &data)
 
 	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, end - begin);
 
-	std::vector<std::vector<eslocal> > fsize(threads), fnodes(threads);
+	std::vector<std::vector<esint> > fsize(threads), fnodes(threads);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		std::vector<eslocal> tsize, tnodes;
+		std::vector<esint> tsize, tnodes;
 
 		const char *c = begin + tdistribution[t];
 		while (c < end && *(c + 1) != '(') { ++c; }
 		while (c < begin + tdistribution[t + 1]) {
 			tsize.push_back(readInteger(c));
 			c += 1; // skip '('
-			for (eslocal i = 0; i < tsize.back(); ++i) {
+			for (esint i = 0; i < tsize.back(); ++i) {
 				tnodes.push_back(readInteger(c));
 			}
 			c += 2; // skip ')\n'
@@ -51,17 +51,17 @@ bool OpenFOAMFaces::readFaces(PlainOpenFOAMData &data)
 	return true;
 }
 
-bool OpenFOAMFaces::readParents(std::vector<eslocal> &data)
+bool OpenFOAMFaces::readParents(std::vector<esint> &data)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, end - begin);
 
-	std::vector<std::vector<eslocal> > elements(threads);
+	std::vector<std::vector<esint> > elements(threads);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		std::vector<eslocal> telements;
+		std::vector<esint> telements;
 
 		const char *c = begin + tdistribution[t];
 		if (tdistribution[t]) {

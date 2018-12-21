@@ -22,7 +22,7 @@ protected:
 	void addElementRegions();
 
 	std::vector<int> _targetRanks;
-	std::vector<std::vector<eslocal> > _rankNodeMap;
+	std::vector<std::vector<esint> > _rankNodeMap;
 };
 
 }

@@ -95,9 +95,9 @@ def read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_att
 def set_compiler_defines(ctx):
     ctx.env.INT_WIDTH = int(ctx.env.INT_WIDTH)
     if ctx.env.INT_WIDTH == 32:
-        ctx.env.append_unique("DEFINES", [ "eslocal=int", "MKL_INT=int", "esglobal=int", "esglobal_mpi=MPI_INT", "BLAS_INT", "INT_WIDTH=32" ])
+        ctx.env.append_unique("DEFINES", [ "esint=int", "MKL_INT=int", "esint=int", "esint_mpi=MPI_INT", "BLAS_INT", "INT_WIDTH=32" ])
     elif ctx.env.INT_WIDTH == 64:
-        ctx.env.append_unique("DEFINES", [ "eslocal=long", "MKL_INT=long", "esglobal=long", "esglobal_mpi=MPI_LONG", "BLAS_LONG", "INT_WIDTH=64" ])
+        ctx.env.append_unique("DEFINES", [ "esint=long", "MKL_INT=long", "esint=long", "esint_mpi=MPI_LONG", "BLAS_LONG", "INT_WIDTH=64" ])
     else:
         ctx.fatal("ESPRESO supports only INT_WIDTH = {32, 64}.")
 

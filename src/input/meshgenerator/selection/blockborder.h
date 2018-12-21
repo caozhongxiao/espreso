@@ -13,7 +13,7 @@ struct BlockSettings;
 struct BlockBorder {
 	BlockBorder(const std::string &interval);
 
-	Triple<esglobal> start, end;
+	Triple<esint> start, end;
 	Triple<bool> excludeStart, excludeEnd;
 
 	size_t dimension() const;

@@ -18,21 +18,21 @@ struct ContactStore {
 	size_t groupsize;
 
 	SurfaceStore *surface;
-	serializededata<eslocal, Point>* elements;
+	serializededata<esint, Point>* elements;
 
-	serializededata<eslocal, eslocal>* closeElements;
+	serializededata<esint, esint>* closeElements;
 
 	Point boundingBox[2], globalBox[2];
 
-	std::vector<eslocal> filledCells;
-	serializededata<eslocal, eslocal>* grid;
+	std::vector<esint> filledCells;
+	serializededata<esint, esint>* grid;
 
 	std::vector<int> neighbors;
-	std::vector<std::vector<eslocal> > nsurface;
-	std::vector<serializededata<eslocal, Point>*> nelements;
-	std::vector<std::vector<eslocal> > nfilled;
-	std::vector<serializededata<eslocal, eslocal>*> ngrid;
-	std::vector<serializededata<eslocal, eslocal>*> ncloseElements;
+	std::vector<std::vector<esint> > nsurface;
+	std::vector<serializededata<esint, Point>*> nelements;
+	std::vector<std::vector<esint> > nfilled;
+	std::vector<serializededata<esint, esint>*> ngrid;
+	std::vector<serializededata<esint, esint>*> ncloseElements;
 
 	ContactStore(SurfaceStore *surface);
 	~ContactStore();

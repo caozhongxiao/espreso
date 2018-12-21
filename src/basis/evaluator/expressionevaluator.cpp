@@ -42,10 +42,10 @@ ExpressionEvaluator::ExpressionEvaluator(const ExpressionEvaluator &other)
 	_temperatureDependency = other._temperatureDependency;
 }
 
-void ExpressionEvaluator::evalVector(eslocal size, eslocal increment, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+void ExpressionEvaluator::evalVector(esint size, esint increment, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
 {
 	int thread = omp_get_thread_num();
-	for (eslocal i = 0; i < size; ++i) {
+	for (esint i = 0; i < size; ++i) {
 		if (cbegin != NULL) {
 			_expressions[thread]->values[0] = cbegin[i * csize + 0];
 			_expressions[thread]->values[1] = cbegin[i * csize + 1];
@@ -59,11 +59,11 @@ void ExpressionEvaluator::evalVector(eslocal size, eslocal increment, int csize,
 	}
 }
 
-void ExpressionEvaluator::evalFiltered(eslocal size, eslocal increment, eslocal *elements, eslocal *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+void ExpressionEvaluator::evalFiltered(esint size, esint increment, esint *elements, esint *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
 {
 	int thread = omp_get_thread_num();
-	for (eslocal i = 0; i < size; ++i) {
-		for (eslocal e = distribution[elements[i]]; e < distribution[elements[i] + 1]; ++e) {
+	for (esint i = 0; i < size; ++i) {
+		for (esint e = distribution[elements[i]]; e < distribution[elements[i] + 1]; ++e) {
 			if (cbegin != NULL) {
 				_expressions[thread]->values[0] = cbegin[e * csize + 0];
 				_expressions[thread]->values[1] = cbegin[e * csize + 1];
@@ -78,10 +78,10 @@ void ExpressionEvaluator::evalFiltered(eslocal size, eslocal increment, eslocal 
 	}
 }
 
-void ExpressionEvaluator::evalSelected(eslocal size, eslocal increment, eslocal *selection, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+void ExpressionEvaluator::evalSelected(esint size, esint increment, esint *selection, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
 {
 	int thread = omp_get_thread_num();
-	for (eslocal i = 0; i < size; ++i) {
+	for (esint i = 0; i < size; ++i) {
 		if (cbegin != NULL) {
 			_expressions[thread]->values[0] = cbegin[selection[i] * csize + 0];
 			_expressions[thread]->values[1] = cbegin[selection[i] * csize + 1];

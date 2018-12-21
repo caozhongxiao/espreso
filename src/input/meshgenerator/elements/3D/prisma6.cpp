@@ -11,7 +11,7 @@ Prisma6Generator::Prisma6Generator()
 	code = Element::CODE::PRISMA6;
 }
 
-void Prisma6Generator::pushElements(std::vector<eslocal> &elements, const std::vector<eslocal> &indices) const
+void Prisma6Generator::pushElements(std::vector<esint> &elements, const std::vector<esint> &indices) const
 {
 	elements.push_back(indices[0]);
 	elements.push_back(indices[1]);
@@ -28,7 +28,7 @@ void Prisma6Generator::pushElements(std::vector<eslocal> &elements, const std::v
 	elements.push_back(indices[6]);
 }
 
-void Prisma6Generator::pushNodes(std::vector<eslocal> &nodes, const std::vector<eslocal> &indices, CubeFace face) const
+void Prisma6Generator::pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const
 {
 	switch (face) {
 	case CubeFace::X_0:
@@ -46,7 +46,7 @@ void Prisma6Generator::pushNodes(std::vector<eslocal> &nodes, const std::vector<
 	}
 }
 
-void Prisma6Generator::pushFace(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeFace face) const
+void Prisma6Generator::pushFace(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeFace face) const
 {
 	pushNodes(elements, indices, face);
 	switch (face) {

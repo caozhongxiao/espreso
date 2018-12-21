@@ -23,30 +23,30 @@ struct BoundaryRegionStore {
 	int dimension;
 	double area;
 
-	eslocal uniqueOffset;
-	eslocal uniqueSize;
-	eslocal uniqueTotalSize;
+	esint uniqueOffset;
+	esint uniqueSize;
+	esint uniqueTotalSize;
 
-	serializededata<eslocal, eslocal>* procNodes;
-	serializededata<eslocal, eslocal>* triangles;
-	serializededata<eslocal, eslocal>* nodes;
-	serializededata<eslocal, eslocal>* uniqueNodes;
+	serializededata<esint, esint>* procNodes;
+	serializededata<esint, esint>* triangles;
+	serializededata<esint, esint>* nodes;
+	serializededata<esint, esint>* uniqueNodes;
 
-	serializededata<eslocal, Element*>* epointers;
+	serializededata<esint, Element*>* epointers;
 
 	std::vector<ElementsInterval> eintervals;
-	std::vector<eslocal> eintervalsDistribution;
+	std::vector<esint> eintervalsDistribution;
 	std::vector<ProcessInterval> nintervals;
 	std::vector<ProcessInterval> unintervals;
 
-	std::vector<eslocal> ecounters;
+	std::vector<esint> ecounters;
 
 	size_t packedSize() const;
 	void pack(char* &p) const;
 	void unpack(const char* &p);
 
-	void permute(const std::vector<eslocal> &permutation) { permute(permutation, distribution); }
-	void permute(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
+	void permute(const std::vector<esint> &permutation) { permute(permutation, distribution); }
+	void permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution);
 
 	BoundaryRegionStore(const std::string &name, std::vector<Element*> &eclasses);
 	~BoundaryRegionStore();

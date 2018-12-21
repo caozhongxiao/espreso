@@ -23,19 +23,19 @@ class ResultStore;
 }
 
 struct FETI4IStructMatrix {
-	FETI4IStructMatrix(eslocal type, eslocal offset): type(type), offset(offset) {};
+	FETI4IStructMatrix(esint type, esint offset): type(type), offset(offset) {};
 
-	std::vector<eslocal> eType;
-	std::vector<std::vector<eslocal> > eNodes;
-	std::vector<std::vector<eslocal> > eDOFs;
+	std::vector<esint> eType;
+	std::vector<std::vector<esint> > eNodes;
+	std::vector<std::vector<esint> > eDOFs;
 	std::vector<std::vector<double> > eMatrices;
 
-	eslocal type;
-	eslocal offset;
+	esint type;
+	esint offset;
 };
 
 struct FETI4IStructInstance {
-	FETI4IStructInstance(FETI4IStructMatrix &matrix, eslocal *l2g, size_t size);
+	FETI4IStructInstance(FETI4IStructMatrix &matrix, esint *l2g, size_t size);
 	~FETI4IStructInstance();
 
 	espreso::DataHolder *instance;

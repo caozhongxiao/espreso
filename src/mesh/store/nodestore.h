@@ -28,7 +28,7 @@ struct NodeData {
 
 	NodeData(int dimension, const std::vector<std::string> &names);
 
-	void statistics(const tarray<eslocal> &nodes, eslocal totalsize, Statistics *statistics) const;
+	void statistics(const tarray<esint> &nodes, esint totalsize, Statistics *statistics) const;
 	double norm() const;
 };
 
@@ -37,32 +37,32 @@ struct NodeStore {
 
 	void store(const std::string &file);
 
-	void permute(const std::vector<eslocal> &permutation) { permute(permutation, distribution); }
-	void permute(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
+	void permute(const std::vector<esint> &permutation) { permute(permutation, distribution); }
+	void permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution);
 
 	NodeData* appendData(int dimension, const std::vector<std::string> &names = {});
 
-	std::vector<eslocal> gatherNodeDistribution();
-	std::vector<eslocal> gatherUniqueNodeDistribution();
+	std::vector<esint> gatherNodeDistribution();
+	std::vector<esint> gatherUniqueNodeDistribution();
 
-	eslocal size;
-	eslocal uniqueOffset;
-	eslocal uniqueSize;
-	eslocal uniqueTotalSize;
+	esint size;
+	esint uniqueOffset;
+	esint uniqueSize;
+	esint uniqueTotalSize;
 	std::vector<size_t> distribution;
 
-	serializededata<eslocal, eslocal>* IDs;
-	serializededata<eslocal, eslocal>* elements;
+	serializededata<esint, esint>* IDs;
+	serializededata<esint, esint>* elements;
 
-	serializededata<eslocal, Point>* originCoordinates;
-	serializededata<eslocal, Point>* coordinates;
-	serializededata<eslocal, int>* ranks;
+	serializededata<esint, Point>* originCoordinates;
+	serializededata<esint, Point>* coordinates;
+	serializededata<esint, int>* ranks;
 
-	std::vector<eslocal> externalIntervals;
+	std::vector<esint> externalIntervals;
 	std::vector<ProcessInterval> pintervals;
 	std::vector<std::vector<DomainInterval> > dintervals;
-	serializededata<eslocal, eslocal>* idomains;
-	serializededata<eslocal, int>* iranks;
+	serializededata<esint, esint>* idomains;
+	serializededata<esint, int>* iranks;
 
 	Point center;
 	std::vector<Point> dcenter;

@@ -17,14 +17,14 @@ public:
 	FETIProvider(LoadStepConfiguration &configuration);
 
 	virtual MatrixType getMatrixType() const =0;
-	virtual MatrixType getMatrixType(eslocal domain) const =0;
+	virtual MatrixType getMatrixType(esint domain) const =0;
 
 	bool needOriginalStiffnessMatrices();
 	double& solutionPrecision();
 
 protected:
 	void makeStiffnessMatricesRegular(FETI_REGULARIZATION regularization, int scSize, bool ortogonalCluster);
-	void makeStiffnessMatrixRegular(FETI_REGULARIZATION regularization, int scSize, eslocal domain, bool ortogonalCluster);
+	void makeStiffnessMatrixRegular(FETI_REGULARIZATION regularization, int scSize, esint domain, bool ortogonalCluster);
 
 	virtual void assembleB0FromCorners() =0;
 	virtual void assembleB0FromKernels(const std::vector<SparseMatrix> &kernels) =0;
@@ -32,7 +32,7 @@ protected:
 	void assembleUniformB0FromCorners(int DOFs);
 	void assembleUniformB0FromKernels(const std::vector<SparseMatrix> &kernels, int DOFs);
 
-	virtual void analyticRegularization(eslocal domain, bool ortogonalCluster) =0;
+	virtual void analyticRegularization(esint domain, bool ortogonalCluster) =0;
 };
 
 }

@@ -278,7 +278,7 @@ void WorkbenchLoader::prepareData()
 void WorkbenchLoader::parseData(PlainWorkbenchData &meshData)
 {
 	std::vector<ET> et;
-	eslocal maxet = 0;
+	esint maxet = 0;
 	for (size_t i = 0; i < _ET.size(); i++) {
 		if (maxet < _ET[i].id) {
 			maxet = _ET[i].id;

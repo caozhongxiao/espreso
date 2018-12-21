@@ -116,7 +116,7 @@ void EnSight::updateMesh()
 		_writer.storeDescriptionLine(os, "element id off");
 	}
 
-	auto storePartHeader = [&] (const std::string &name, eslocal nodes) {
+	auto storePartHeader = [&] (const std::string &name, esint nodes) {
 		if (environment->MPIrank == 0) {
 			_writer.storeDescriptionLine(os, "part");
 			_writer.storeInt(os, part++);
@@ -127,7 +127,7 @@ void EnSight::updateMesh()
 		}
 	};
 
-	auto storeRegionNodes = [&] (const std::vector<ProcessInterval> &intervals, const serializededata<eslocal, eslocal> *nodes, std::function<double(const Point *p)> getCoordinate) {
+	auto storeRegionNodes = [&] (const std::vector<ProcessInterval> &intervals, const serializededata<esint, esint> *nodes, std::function<double(const Point *p)> getCoordinate) {
 		for (size_t i = 0; i < intervals.size(); i++) {
 			if (intervals[i].sourceProcess == environment->MPIrank) {
 				for (auto n = nodes->datatarray().cbegin() + intervals[i].begin; n != nodes->datatarray().cbegin() + intervals[i].end; ++n) {
@@ -138,17 +138,17 @@ void EnSight::updateMesh()
 		pushInterval(os.str().size());
 	};
 
-	auto storeNodeRegionIndex = [&] (eslocal n, const std::vector<ProcessInterval> &nintervals, const tarray<eslocal> &nodes) {
-		auto iit = std::lower_bound(_mesh.nodes->pintervals.begin(), _mesh.nodes->pintervals.end(), n, [] (const ProcessInterval &interval, eslocal node) { return interval.end <= node; });
+	auto storeNodeRegionIndex = [&] (esint n, const std::vector<ProcessInterval> &nintervals, const tarray<esint> &nodes) {
+		auto iit = std::lower_bound(_mesh.nodes->pintervals.begin(), _mesh.nodes->pintervals.end(), n, [] (const ProcessInterval &interval, esint node) { return interval.end <= node; });
 		size_t iindex = iit - _mesh.nodes->pintervals.begin();
-		eslocal offset = std::lower_bound(nodes.begin() + nintervals[iindex].begin, nodes.begin() + nintervals[iindex].end, n) - nodes.begin();
+		esint offset = std::lower_bound(nodes.begin() + nintervals[iindex].begin, nodes.begin() + nintervals[iindex].end, n) - nodes.begin();
 		return nintervals[iindex].globalOffset + offset - nintervals[iindex].begin;
 	};
 
 	auto storeElements = [&] (
-			const std::vector<eslocal> &ecounters,
-			const tarray<eslocal> &elements, const std::vector<ElementsInterval> &eintervals,
-			const tarray<eslocal> &nodes, const std::vector<ProcessInterval> &nintervals) {
+			const std::vector<esint> &ecounters,
+			const tarray<esint> &elements, const std::vector<ElementsInterval> &eintervals,
+			const tarray<esint> &nodes, const std::vector<ProcessInterval> &nintervals) {
 
 		for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
 			if (ecounters[etype]) {
@@ -160,8 +160,8 @@ void EnSight::updateMesh()
 				for (size_t i = 0; i < eintervals.size(); i++) {
 					if (eintervals[i].code == etype) {
 						auto enodes = _mesh.elements->procNodes->cbegin() + eintervals[i].begin;
-						eslocal prev = eintervals[i].begin;
-						for (eslocal e = eintervals[i].begin; e < eintervals[i].end; prev = elements[e++]) {
+						esint prev = eintervals[i].begin;
+						for (esint e = eintervals[i].begin; e < eintervals[i].end; prev = elements[e++]) {
 							enodes += elements[e] - prev;
 							for (auto n = enodes->begin(); n != enodes->end(); ++n) {
 								_writer.eIndex(os, storeNodeRegionIndex(*n, nintervals, nodes) + 1);
@@ -186,7 +186,7 @@ void EnSight::updateMesh()
 				for (size_t i = 0; i < region->eintervals.size(); i++) {
 					if (region->eintervals[i].code == etype) {
 						auto enodes = region->procNodes->cbegin() + region->eintervals[i].begin;
-						for (eslocal e = region->eintervals[i].begin; e < region->eintervals[i].end; ++e, ++enodes) {
+						for (esint e = region->eintervals[i].begin; e < region->eintervals[i].end; ++e, ++enodes) {
 							for (auto n = enodes->begin(); n != enodes->end(); ++n) {
 								_writer.eIndex(os, storeNodeRegionIndex(*n, region->nintervals, region->nodes->datatarray()) + 1);
 							}
@@ -219,7 +219,7 @@ void EnSight::updateMesh()
 				_writer.storeDescriptionLine(os, codetotype(static_cast<int>(Element::CODE::POINT1)));
 				_writer.storeInt(os, region->uniqueTotalSize);
 			}
-			for (eslocal i = 0; i < region->uniqueSize; ++i) {
+			for (esint i = 0; i < region->uniqueSize; ++i) {
 				_writer.storeInt(os, region->uniqueOffset + i + 1);
 			}
 			pushInterval(os.str().size());
@@ -281,7 +281,7 @@ void EnSight::storeDecomposition()
 	_casevariables << "scalar per element:\tCLUSTERS\t" << _directory << "CLUSTERS" << "\n";
 	_casevariables << "scalar per element:\tMPI\t" << _directory << "MPI" << "\n";
 
-	auto iterateElements = [&] (std::stringstream &os, const std::vector<ElementsInterval> &intervals, const std::vector<eslocal> &ecounters, std::function<double(eslocal domain)> fnc) {
+	auto iterateElements = [&] (std::stringstream &os, const std::vector<ElementsInterval> &intervals, const std::vector<esint> &ecounters, std::function<double(esint domain)> fnc) {
 		for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
 			if (ecounters[etype]) {
 				if (environment->MPIrank == 0) {
@@ -290,7 +290,7 @@ void EnSight::storeDecomposition()
 
 				for (size_t i = 0; i < intervals.size(); i++) {
 					if (intervals[i].code == etype) {
-						for (eslocal e = intervals[i].begin; e < intervals[i].end; ++e) {
+						for (esint e = intervals[i].begin; e < intervals[i].end; ++e) {
 							_writer.storeFloat(os, fnc(intervals[i].domain));
 						}
 					}
@@ -301,7 +301,7 @@ void EnSight::storeDecomposition()
 		}
 	};
 
-	eslocal part = 1;
+	esint part = 1;
 
 	auto storePartHeader = [&] (std::stringstream &os) {
 		if (environment->MPIrank == 0) {
@@ -326,7 +326,7 @@ void EnSight::storeDecomposition()
 		clearIntervals();
 		for (size_t r = 1; r < _mesh.elementsRegions.size(); r++) {
 			storePartHeader(os);
-			iterateElements(os, _mesh.elementsRegions[r]->eintervals, _mesh.elementsRegions[r]->ecounters, [&] (eslocal domain)->double { return domain; });
+			iterateElements(os, _mesh.elementsRegions[r]->eintervals, _mesh.elementsRegions[r]->ecounters, [&] (esint domain)->double { return domain; });
 		}
 		storeIntervals(name, os.str(), commitIntervals());
 	}
@@ -344,10 +344,10 @@ void EnSight::storeDecomposition()
 
 		part = 1;
 		clearIntervals();
-		eslocal cluster = _mesh.elements->gatherClustersDistribution()[environment->MPIrank];
+		esint cluster = _mesh.elements->gatherClustersDistribution()[environment->MPIrank];
 		for (size_t r = 1; r < _mesh.elementsRegions.size(); r++) {
 			storePartHeader(os);
-			iterateElements(os, _mesh.elementsRegions[r]->eintervals, _mesh.elementsRegions[r]->ecounters, [&] (eslocal domain)->double { return _mesh.elements->clusters[domain - _mesh.elements->firstDomain] + cluster; });
+			iterateElements(os, _mesh.elementsRegions[r]->eintervals, _mesh.elementsRegions[r]->ecounters, [&] (esint domain)->double { return _mesh.elements->clusters[domain - _mesh.elements->firstDomain] + cluster; });
 		}
 
 		storeIntervals(name, os.str(), commitIntervals());
@@ -368,7 +368,7 @@ void EnSight::storeDecomposition()
 		clearIntervals();
 		for (size_t r = 1; r < _mesh.elementsRegions.size(); r++) {
 			storePartHeader(os);
-			iterateElements(os, _mesh.elementsRegions[r]->eintervals, _mesh.elementsRegions[r]->ecounters, [&] (eslocal domain)->double { return environment->MPIrank; });
+			iterateElements(os, _mesh.elementsRegions[r]->eintervals, _mesh.elementsRegions[r]->ecounters, [&] (esint domain)->double { return environment->MPIrank; });
 		}
 
 		storeIntervals(name, os.str(), commitIntervals());
@@ -401,7 +401,7 @@ void EnSight::updateSolution()
 //		Communication::serialize([&] () {
 //			std::cout << _mesh.nodes->data[di]->data;
 //		});
-		eslocal size = _mesh.nodes->data[di]->dimension;
+		esint size = _mesh.nodes->data[di]->dimension;
 
 		std::string filename = _directory + _mesh.nodes->data[di]->names.front();
 		std::stringstream name;
@@ -414,7 +414,7 @@ void EnSight::updateSolution()
 			_writer.storeDescriptionLine(os, _mesh.nodes->data[di]->names.front());
 		}
 
-		eslocal part = 1;
+		esint part = 1;
 
 		auto storePartHeader = [&] () {
 			if (environment->MPIrank == 0) {
@@ -424,13 +424,13 @@ void EnSight::updateSolution()
 			}
 		};
 
-		auto iterateNodes = [&] (const std::vector<ProcessInterval> &intervals, const tarray<eslocal> &nodes) {
-			for (eslocal s = 0; s < size; s++) {
+		auto iterateNodes = [&] (const std::vector<ProcessInterval> &intervals, const tarray<esint> &nodes) {
+			for (esint s = 0; s < size; s++) {
 				for (size_t i = 0; i < intervals.size(); i++) {
 					if (intervals[i].sourceProcess == environment->MPIrank) {
-						eslocal offset = _mesh.nodes->pintervals[i].globalOffset - _mesh.nodes->uniqueOffset + (_mesh.nodes->size - _mesh.nodes->uniqueSize);
-						for (eslocal n = intervals[i].begin; n < intervals[i].end; ++n) {
-							eslocal index = offset + nodes[n] - _mesh.nodes->pintervals[i].begin;
+						esint offset = _mesh.nodes->pintervals[i].globalOffset - _mesh.nodes->uniqueOffset + (_mesh.nodes->size - _mesh.nodes->uniqueSize);
+						for (esint n = intervals[i].begin; n < intervals[i].end; ++n) {
+							esint index = offset + nodes[n] - _mesh.nodes->pintervals[i].begin;
 							_writer.storeFloat(os, _mesh.nodes->data[di]->data[size * index + s]);
 						}
 					}
@@ -440,7 +440,7 @@ void EnSight::updateSolution()
 			if (size == 2) {
 				for (size_t i = 0; i < intervals.size(); i++) {
 					if (intervals[i].sourceProcess == environment->MPIrank) {
-						for (eslocal n = intervals[i].begin; n < intervals[i].end; ++n) {
+						for (esint n = intervals[i].begin; n < intervals[i].end; ++n) {
 							_writer.storeFloat(os, .0);
 						}
 					}
@@ -467,7 +467,7 @@ void EnSight::updateSolution()
 		if (_mesh.elements->data[di]->names.size() == 0) {
 			continue;
 		}
-		eslocal size = _mesh.elements->data[di]->dimension;
+		esint size = _mesh.elements->data[di]->dimension;
 
 		std::string filename = _directory + _mesh.elements->data[di]->names.front();
 		std::stringstream name;
@@ -480,7 +480,7 @@ void EnSight::updateSolution()
 			_writer.storeDescriptionLine(os, _mesh.elements->data[di]->names.front());
 		}
 
-		eslocal part = 1;
+		esint part = 1;
 
 		auto storePartHeader = [&] () {
 			if (environment->MPIrank == 0) {
@@ -489,11 +489,11 @@ void EnSight::updateSolution()
 			}
 		};
 
-		auto iterateElements = [&] (std::stringstream &os, int etype, const tarray<eslocal> &elements, const std::vector<ElementsInterval> &eintervals) {
-			for (eslocal s = 0; s < size; s++) {
+		auto iterateElements = [&] (std::stringstream &os, int etype, const tarray<esint> &elements, const std::vector<ElementsInterval> &eintervals) {
+			for (esint s = 0; s < size; s++) {
 				for (size_t i = 0; i < eintervals.size(); i++) {
 					if (eintervals[i].code == etype) {
-						for (eslocal e = eintervals[i].begin; e < eintervals[i].end; ++e) {
+						for (esint e = eintervals[i].begin; e < eintervals[i].end; ++e) {
 							_writer.storeFloat(os, _mesh.elements->data[di]->data[size * elements[e] + s]);
 						}
 					}
@@ -503,7 +503,7 @@ void EnSight::updateSolution()
 			if (size == 2) {
 				for (size_t i = 0; i < eintervals.size(); i++) {
 					if (eintervals[i].code == etype) {
-						for (eslocal e = eintervals[i].begin; e < eintervals[i].end; ++e) {
+						for (esint e = eintervals[i].begin; e < eintervals[i].end; ++e) {
 							_writer.storeFloat(os, .0);
 						}
 					}

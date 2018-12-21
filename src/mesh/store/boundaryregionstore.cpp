@@ -41,7 +41,7 @@ BoundaryRegionStore::~BoundaryRegionStore()
 	if (epointers == NULL) { delete epointers; }
 }
 
-void BoundaryRegionStore::permute(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution)
+void BoundaryRegionStore::permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution)
 {
 	this->distribution = distribution;
 
@@ -123,8 +123,8 @@ void BoundaryRegionStore::unpack(const char* &p)
 	Esutils::unpack(uniqueSize, p);
 	Esutils::unpack(uniqueTotalSize, p);
 	if (procNodes == NULL) {
-		procNodes = new serializededata<eslocal, eslocal>(tarray<eslocal>(1, 0), tarray<eslocal>(1, 0));
-		epointers = new serializededata<eslocal, Element*>(1, tarray<Element*>(1, 0));
+		procNodes = new serializededata<esint, esint>(tarray<esint>(1, 0), tarray<esint>(1, 0));
+		epointers = new serializededata<esint, Element*>(1, tarray<Element*>(1, 0));
 	}
 	procNodes->unpack(p);
 	std::vector<int> eindices;
@@ -132,14 +132,14 @@ void BoundaryRegionStore::unpack(const char* &p)
 	if (epointers != NULL) {
 		delete epointers;
 	}
-	epointers = new serializededata<eslocal, Element*>(1, tarray<Element*>(1, eindices.size()));
+	epointers = new serializededata<esint, Element*>(1, tarray<Element*>(1, eindices.size()));
 	for (size_t i = 0; i < eindices.size(); ++i) {
 		epointers->datatarray()[i] = &_eclasses[0][eindices[i]];
 	}
 	Esutils::unpack(ecounters, p);
 	Esutils::unpack(eintervals, p);
 	if (nodes == NULL) {
-		nodes = new serializededata<eslocal, eslocal>(tarray<eslocal>(1, 0), tarray<eslocal>(1, 0));
+		nodes = new serializededata<esint, esint>(tarray<esint>(1, 0), tarray<esint>(1, 0));
 	}
 	nodes->unpack(p);
 	Esutils::unpack(nintervals, p);

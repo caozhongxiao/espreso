@@ -66,10 +66,10 @@ using std::string;
 
 namespace espreso {
 
-eslocal SaveBinVectorDouble(SEQ_VECTOR <double> & SEQ_VECTOR, string filename);
-eslocal LoadBinVectorInt(SEQ_VECTOR <eslocal> & SEQ_VECTOR, string filename);
-eslocal LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <eslocal> > & outputVecVec, string filename);
-eslocal LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <double> > & outputVecVec, string filename);
+esint SaveBinVectorDouble(SEQ_VECTOR <double> & SEQ_VECTOR, string filename);
+esint LoadBinVectorInt(SEQ_VECTOR <esint> & SEQ_VECTOR, string filename);
+esint LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <esint> > & outputVecVec, string filename);
+esint LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <double> > & outputVecVec, string filename);
 
 template <typename T>
 void PrintVec(SEQ_VECTOR <T> vec, string name);

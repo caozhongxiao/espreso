@@ -33,7 +33,7 @@ protected:
 	void closeElements(const std::string &name);
 	void neighbors(const std::string &name);
 
-	void points(const std::string &name, const std::vector<eslocal> &points, const std::vector<eslocal> &distribution);
+	void points(const std::string &name, const std::vector<esint> &points, const std::vector<esint> &distribution);
 };
 
 struct VTKLegacyDebugInfo: public VTKLegacy {

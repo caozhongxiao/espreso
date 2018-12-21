@@ -37,12 +37,12 @@ struct CM: public WorkbenchParser {
 
 	bool addRegion(
 			const PlainWorkbenchData &mesh,
-			const std::vector<ESel> &esel, std::map<std::string, std::vector<eslocal> > &eregions,
-			const std::vector<NSel> &nsel, std::map<std::string, std::vector<eslocal> > &nregions);
+			const std::vector<ESel> &esel, std::map<std::string, std::vector<esint> > &eregions,
+			const std::vector<NSel> &nsel, std::map<std::string, std::vector<esint> > &nregions);
 
 protected:
-	bool addElementRegion(const PlainWorkbenchData &mesh, const std::vector<ESel> &esel, std::map<std::string, std::vector<eslocal> > &eregions);
-	bool addNodeRegion(const std::vector<NSel> &nsel, std::map<std::string, std::vector<eslocal> > &nregions);
+	bool addElementRegion(const PlainWorkbenchData &mesh, const std::vector<ESel> &esel, std::map<std::string, std::vector<esint> > &eregions);
+	bool addNodeRegion(const std::vector<NSel> &nsel, std::map<std::string, std::vector<esint> > &nregions);
 };
 
 }

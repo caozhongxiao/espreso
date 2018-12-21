@@ -29,7 +29,7 @@ struct ET: public WorkbenchParser {
 		UNKNOWN
 	};
 
-	eslocal id, type;
+	esint id, type;
 
 	ET();
 	ET& parse(const char* begin);

@@ -8,7 +8,7 @@ using namespace espreso;
 
 ClusterAcc::~ClusterAcc() {
     if (this->deleteMatrices) {
-        for (eslocal i = 0; i < configuration.n_mics; i++) {
+        for (esint i = 0; i < configuration.n_mics; i++) {
             if (matricesPerAcc[i]) {
                 //delete [] matricesPerAcc[i];
             }
@@ -104,7 +104,7 @@ void ClusterAcc::SetAcceleratorAffinity() {
         this->MPI_per_acc = 1;
         this->acc_per_MPI = nMICs / _MPInodeSize;
         this->myTargets.reserve( this->acc_per_MPI );
-        for ( eslocal i = 0; i < acc_per_MPI ; ++i ) {
+        for ( esint i = 0; i < acc_per_MPI ; ++i ) {
             this->myTargets.push_back( _MPInodeRank * acc_per_MPI + i );    
         }
         this->acc_rank = 0;
@@ -215,7 +215,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     long *micMem = new long[ this->acc_per_MPI ];
 
     int target = 0;
-    for (eslocal i = 0; i < this->acc_per_MPI; ++i) {
+    for (esint i = 0; i < this->acc_per_MPI; ++i) {
         long currentMem = 0;
         target = this->myTargets.at(i);
 #pragma offload target(mic:target)
@@ -229,32 +229,32 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 
 
 #pragma omp parallel for
-    for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
+    for (esint i = 0; i < domains_in_global_index.size(); i++ ) {
         domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
     }
 
     // compute sizes of data to be offloaded to MIC
-    eslocal *matrixPerPack = new eslocal[this->acc_per_MPI];
+    esint *matrixPerPack = new esint[this->acc_per_MPI];
 
-    for (eslocal i = 0 ; i < this->acc_per_MPI; ++i) {
+    for (esint i = 0 ; i < this->acc_per_MPI; ++i) {
         matrixPerPack[i] = domains.size() / this->acc_per_MPI;
     }
-    for (eslocal i = 0 ; i < domains.size() % this->acc_per_MPI; ++i) {
+    for (esint i = 0 ; i < domains.size() % this->acc_per_MPI; ++i) {
         matrixPerPack[i]++;
     }
-    eslocal offset = 0;
+    esint offset = 0;
     bool symmetric = SYMMETRIC_SYSTEM;
     this->B1KplusPacks.resize( this->acc_per_MPI, DenseMatrixPack(configuration) );
     this->accDomains.resize( this->acc_per_MPI );
 
-    eslocal scalarSize = (USE_FLOAT) ? sizeof(float) : sizeof(double);
+    esint scalarSize = (USE_FLOAT) ? sizeof(float) : sizeof(double);
 
     for ( int i = 0; i < this->acc_per_MPI; i++ )
     {
         long dataSize = 0;
         long currDataSize = 0;
         bool MICFull = false;
-        eslocal numCPUDomains = 0;
+        esint numCPUDomains = 0;
 
         for ( int j = offset; j < offset + matrixPerPack[i]; j++ ) {
             if (!symmetric) {
@@ -289,7 +289,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
             this->B1KplusPacks[i].disableLoadBalancing();
         }
 
-        for ( eslocal j = 0; j < matrixPerPack[i]; ++j ) {
+        for ( esint j = 0; j < matrixPerPack[i]; ++j ) {
             this->B1KplusPacks[ i ].PreparePack( j, domains[accDomains[i].at(j)].B1t_comp_dom.cols,
                     domains[accDomains[i].at(j)].B1t_comp_dom.cols, symmetric );
         }
@@ -298,13 +298,13 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     delete [] micMem;
 
     // iterate over available MICs and assemble their domains on CPU
-    for (eslocal i = 0 ; i < this->acc_per_MPI ; ++i) {
+    for (esint i = 0 ; i < this->acc_per_MPI ; ++i) {
         target = this->myTargets.at(i);
         this->B1KplusPacks[i].AllocateVectors( );
         this->B1KplusPacks[i].SetDevice( target );
 #pragma omp parallel for
-        for (eslocal j = 0 ; j < accDomains[i].size() ; ++j) {
-            eslocal domN = accDomains[i].at(j);
+        for (esint j = 0 ; j < accDomains[i].size() ; ++j) {
+            esint domN = accDomains[i].at(j);
             SparseMatrix tmpB;
             domains[domN].B1_comp_dom.MatTranspose(tmpB);
             SparseSolverCPU tmpsps;
@@ -319,7 +319,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 
                 float * matrixPointer = this->B1KplusPacks[i].getMatrixPointer_fl(j) ;
                 domains[domN].B1Kplus.ConvertDenseToDenseFloat( 1 );
-                //for (eslocal k = 0; k << this->B1KplusPacks[i].getDataLength(j); ++k) {
+                //for (esint k = 0; k << this->B1KplusPacks[i].getDataLength(j); ++k) {
                 //    matrixPointer[k] = domains[domN].B1Kplus.dense_values_fl[k];                 
                 //    }
                 memcpy(matrixPointer, &(domains[domN].B1Kplus.dense_values_fl[0]),
@@ -337,10 +337,10 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     }
 
 #pragma omp parallel for
-    for (eslocal d = 0; d < hostDomains.size(); ++d) {
+    for (esint d = 0; d < hostDomains.size(); ++d) {
 
         ESINFO(PROGRESS3) << Info::plain() << "*";
-        eslocal domN = hostDomains.at(d);
+        esint domN = hostDomains.at(d);
         SparseMatrix TmpB;
         domains[domN].B1_comp_dom.MatTranspose(TmpB);
         SparseSolverCPU tmpsps;
@@ -362,7 +362,7 @@ void ClusterAcc::SetupKsolvers ( ) {
     // this part is for setting CPU pardiso, temporarily until everything is
     // solved on MIC
 #pragma omp parallel for
-    for (eslocal d = 0; d < domains.size(); d++) {
+    for (esint d = 0; d < domains.size(); d++) {
 
         // Import of Regularized matrix K into Kplus (Sparse Solver)
         switch (configuration.Ksolver) {
@@ -417,16 +417,16 @@ domains[d].Kplus.msglvl = 0;
     if (!USE_KINV) {
         double MICr = 0.9;
 
-        eslocal *matrixPerPack = new eslocal[ this->acc_per_MPI ];
+        esint *matrixPerPack = new esint[ this->acc_per_MPI ];
 
-        for ( eslocal i = 0; i < this->acc_per_MPI; ++i ) {
+        for ( esint i = 0; i < this->acc_per_MPI; ++i ) {
             matrixPerPack[i] = domains.size() / this->acc_per_MPI;    
         }
-        for ( eslocal i = 0 ; i < domains.size() % this->acc_per_MPI; ++i ) {
+        for ( esint i = 0 ; i < domains.size() % this->acc_per_MPI; ++i ) {
             matrixPerPack[i]++;
         }
 
-        eslocal offset = 0; 
+        esint offset = 0; 
         bool use_float = (configuration.Ksolver == FETI_KSOLVER::DIRECT_SP);
 
         this->SparseKPack.resize( this->acc_per_MPI, SparseMatrixPack(configuration, use_float) );
@@ -480,7 +480,7 @@ void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
     long *micMem = new long[this->acc_per_MPI];
 
     int target = 0;
-    for (eslocal i = 0; i < this->acc_per_MPI; ++i) {
+    for (esint i = 0; i < this->acc_per_MPI; ++i) {
         long currentMem = 0;
         target = this->myTargets.at(i);
 #pragma offload target(mic:target)
@@ -493,30 +493,30 @@ void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
     }
 
     // compute sizes of data to be offloaded to MIC
-    eslocal *matrixPerPack = new eslocal[this->acc_per_MPI];
+    esint *matrixPerPack = new esint[this->acc_per_MPI];
 
-    for (eslocal i = 0 ; i < this->acc_per_MPI; ++i) {
+    for (esint i = 0 ; i < this->acc_per_MPI; ++i) {
         matrixPerPack[i] = domains.size() / this->acc_per_MPI;
     }
-    for (eslocal i = 0 ; i < domains.size() % this->acc_per_MPI; ++i) {
+    for (esint i = 0 ; i < domains.size() % this->acc_per_MPI; ++i) {
         matrixPerPack[i]++;
     }
-    eslocal offset = 0;
+    esint offset = 0;
     bool symmetric = SYMMETRIC_SYSTEM;
     this->DirichletPacks.resize( this->acc_per_MPI, DenseMatrixPack(configuration) );
     this->accPreconditioners.resize( this->acc_per_MPI );
 
-    eslocal scalarSize = (USE_FLOAT) ? sizeof(float) : sizeof(double);
+    esint scalarSize = (USE_FLOAT) ? sizeof(float) : sizeof(double);
 
     for ( int i = 0; i < this->acc_per_MPI; i++ )
     {
         long dataSize = 0;
         long currDataSize = 0;
         bool MICFull = false;
-        eslocal numCPUDomains = 0;
+        esint numCPUDomains = 0;
 
         for ( int j = offset; j < offset + matrixPerPack[i]; j++ ) {
-            eslocal size = domains[j].B1t_Dir_perm_vec.size();
+            esint size = domains[j].B1t_Dir_perm_vec.size();
             if (!symmetric) {
                 currDataSize = size * size;
             } else {
@@ -549,7 +549,7 @@ void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
             this->DirichletPacks[i].disableLoadBalancing();
         }
 
-        for ( eslocal j = 0; j < matrixPerPack[i]; ++j ) {
+        for ( esint j = 0; j < matrixPerPack[i]; ++j ) {
             this->DirichletPacks[ i ].PreparePack( j, domains[accPreconditioners[i].at(j)].B1t_Dir_perm_vec.size(),
                     domains[accPreconditioners[i].at(j)].B1t_Dir_perm_vec.size(), symmetric );
         }
@@ -558,26 +558,26 @@ void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
     delete [] micMem;
     delete [] matrixPerPack;
 
-    for (eslocal mic = 0 ; mic < this->acc_per_MPI ; ++mic ) {
+    for (esint mic = 0 ; mic < this->acc_per_MPI ; ++mic ) {
         target = this->myTargets.at(mic);
         this->DirichletPacks[mic].AllocateVectors( );
         this->DirichletPacks[mic].SetDevice( target );        
 
 #pragma omp parallel for
-        for (eslocal j = 0; j < accPreconditioners[mic].size(); ++j ) {
-            eslocal d = accPreconditioners[mic].at(j);
-            SEQ_VECTOR <eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;
-            SEQ_VECTOR <eslocal> perm_vec_full ( instance->K[d].rows );
-            SEQ_VECTOR <eslocal> perm_vec_diff ( instance->K[d].rows );
+        for (esint j = 0; j < accPreconditioners[mic].size(); ++j ) {
+            esint d = accPreconditioners[mic].at(j);
+            SEQ_VECTOR <esint> perm_vec = domains[d].B1t_Dir_perm_vec;
+            SEQ_VECTOR <esint> perm_vec_full ( instance->K[d].rows );
+            SEQ_VECTOR <esint> perm_vec_diff ( instance->K[d].rows );
 
-            SEQ_VECTOR <eslocal> I_row_indices_p (instance->K[d].nnz);
-            SEQ_VECTOR <eslocal> J_col_indices_p (instance->K[d].nnz);
+            SEQ_VECTOR <esint> I_row_indices_p (instance->K[d].nnz);
+            SEQ_VECTOR <esint> J_col_indices_p (instance->K[d].nnz);
 
-            for (eslocal i = 0; i < perm_vec.size(); i++) {
+            for (esint i = 0; i < perm_vec.size(); i++) {
                 perm_vec[i] = perm_vec[i] - 1;
             }
 
-            for (eslocal i = 0; i < perm_vec_full.size(); i++) {
+            for (esint i = 0; i < perm_vec_full.size(); i++) {
                 perm_vec_full[i] = i;
             }
 
@@ -593,21 +593,21 @@ void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
             K_modif.MatAddInPlace(RegMatCRS,'N',-1);
             // K_modif.RemoveLower();
 
-            SEQ_VECTOR <SEQ_VECTOR<eslocal >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<eslocal >(2, 1));
-            eslocal offset = K_modif.CSR_I_row_indices[0] ? 1 : 0;
+            SEQ_VECTOR <SEQ_VECTOR<esint >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<esint >(2, 1));
+            esint offset = K_modif.CSR_I_row_indices[0] ? 1 : 0;
 
-            for (eslocal i = 0; i < K_modif.rows;i++){
+            for (esint i = 0; i < K_modif.rows;i++){
                 vec_I1_i2[i][0] = perm_vec_full[i];
                 vec_I1_i2[i][1] = i; // position to create reverse permutation
             }
 
-            std::sort(vec_I1_i2.begin(), vec_I1_i2.end(), [](const SEQ_VECTOR <eslocal >& a, const SEQ_VECTOR<eslocal>& b) { return a[0] < b[0]; });
+            std::sort(vec_I1_i2.begin(), vec_I1_i2.end(), [](const SEQ_VECTOR <esint >& a, const SEQ_VECTOR<esint>& b) { return a[0] < b[0]; });
 
             // permutations made on matrix in COO format
             K_modif.ConvertToCOO(0);
-            eslocal I_index,J_index;
+            esint I_index,J_index;
             bool unsymmetric=!SYMMETRIC_SYSTEM;
-            for (eslocal i = 0;i<K_modif.nnz;i++){
+            for (esint i = 0;i<K_modif.nnz;i++){
                 I_index = vec_I1_i2[K_modif.I_row_indices[i]-offset][1]+offset;
                 J_index = vec_I1_i2[K_modif.J_col_indices[i]-offset][1]+offset;
                 if (unsymmetric || I_index<=J_index){
@@ -619,7 +619,7 @@ void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
                     J_col_indices_p[i]=I_index;
                 }
             }
-            for (eslocal i = 0; i<K_modif.nnz;i++){
+            for (esint i = 0; i<K_modif.nnz;i++){
                 K_modif.I_row_indices[i] = I_row_indices_p[i];
                 K_modif.J_col_indices[i] = J_col_indices_p[i];
             }
@@ -645,7 +645,7 @@ void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
             //        bool diagonalized_K_rr = false
             // ------------------------------------------------------------------------------------------------------------------
 
-            eslocal sc_size = perm_vec.size();
+            esint sc_size = perm_vec.size();
 
             if (sc_size == instance->K[d].rows) {
                 domains[d].Prec = instance->K[d];
@@ -657,7 +657,7 @@ void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
                         configuration.preconditioner == FETI_PRECONDITIONER::SUPER_DIRICHLET ) {
                     SparseSolverCPU createSchur;
                     //          createSchur.msglvl=1;
-                    eslocal sc_size = perm_vec.size();
+                    esint sc_size = perm_vec.size();
                     createSchur.ImportMatrix_wo_Copy(K_modif);
                     createSchur.Create_SC(domains[d].Prec, sc_size,false);
                     domains[d].Prec.ConvertCSRToDense(1);
@@ -669,9 +669,9 @@ void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
                     SparseMatrix K_sr;
                     SparseMatrix KsrInvKrrKrs; 
 
-                    eslocal i_start = 0;
-                    eslocal nonsing_size = K_modif.rows - sc_size - i_start;
-                    eslocal j_start = nonsing_size;
+                    esint i_start = 0;
+                    esint nonsing_size = K_modif.rows - sc_size - i_start;
+                    esint j_start = nonsing_size;
 
                     K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
 
@@ -696,8 +696,8 @@ void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
                         //      K_modif = [K_rr, K_rs]
                         //                [K_sr, K_ss]
                         // 
-                        for (eslocal i = 0; i < K_rs.rows; i++) {
-                            for (eslocal j = K_rs.CSR_I_row_indices[i]; j < K_rs.CSR_I_row_indices[i + 1]; j++) {
+                        for (esint i = 0; i < K_rs.rows; i++) {
+                            for (esint j = K_rs.CSR_I_row_indices[i]; j < K_rs.CSR_I_row_indices[i + 1]; j++) {
                                 K_rs.CSR_V_values[j - offset] /= diagonals[i];
                             }
                         }
@@ -753,20 +753,20 @@ void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
 
     // finish the blocks held on CPU
 #pragma omp parallel for
-    for (eslocal j = 0; j < hostPreconditioners.size(); ++j ) {
-        eslocal d = hostPreconditioners.at(j);
-        SEQ_VECTOR <eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;
-        SEQ_VECTOR <eslocal> perm_vec_full ( instance->K[d].rows );
-        SEQ_VECTOR <eslocal> perm_vec_diff ( instance->K[d].rows );
+    for (esint j = 0; j < hostPreconditioners.size(); ++j ) {
+        esint d = hostPreconditioners.at(j);
+        SEQ_VECTOR <esint> perm_vec = domains[d].B1t_Dir_perm_vec;
+        SEQ_VECTOR <esint> perm_vec_full ( instance->K[d].rows );
+        SEQ_VECTOR <esint> perm_vec_diff ( instance->K[d].rows );
 
-        SEQ_VECTOR <eslocal> I_row_indices_p (instance->K[d].nnz);
-        SEQ_VECTOR <eslocal> J_col_indices_p (instance->K[d].nnz);
+        SEQ_VECTOR <esint> I_row_indices_p (instance->K[d].nnz);
+        SEQ_VECTOR <esint> J_col_indices_p (instance->K[d].nnz);
 
-        for (eslocal i = 0; i < perm_vec.size(); i++) {
+        for (esint i = 0; i < perm_vec.size(); i++) {
             perm_vec[i] = perm_vec[i] - 1;
         }
 
-        for (eslocal i = 0; i < perm_vec_full.size(); i++) {
+        for (esint i = 0; i < perm_vec_full.size(); i++) {
             perm_vec_full[i] = i;
         }
 
@@ -782,21 +782,21 @@ void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
         K_modif.MatAddInPlace(RegMatCRS,'N',-1);
         // K_modif.RemoveLower();
 
-        SEQ_VECTOR <SEQ_VECTOR<eslocal >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<eslocal >(2, 1));
-        eslocal offset = K_modif.CSR_I_row_indices[0] ? 1 : 0;
+        SEQ_VECTOR <SEQ_VECTOR<esint >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<esint >(2, 1));
+        esint offset = K_modif.CSR_I_row_indices[0] ? 1 : 0;
 
-        for (eslocal i = 0; i < K_modif.rows;i++){
+        for (esint i = 0; i < K_modif.rows;i++){
             vec_I1_i2[i][0] = perm_vec_full[i];
             vec_I1_i2[i][1] = i; // position to create reverse permutation
         }
 
-        std::sort(vec_I1_i2.begin(), vec_I1_i2.end(), [](const SEQ_VECTOR <eslocal >& a, const SEQ_VECTOR<eslocal>& b) { return a[0] < b[0]; });
+        std::sort(vec_I1_i2.begin(), vec_I1_i2.end(), [](const SEQ_VECTOR <esint >& a, const SEQ_VECTOR<esint>& b) { return a[0] < b[0]; });
 
         // permutations made on matrix in COO format
         K_modif.ConvertToCOO(0);
-        eslocal I_index,J_index;
+        esint I_index,J_index;
         bool unsymmetric=!SYMMETRIC_SYSTEM;
-        for (eslocal i = 0;i<K_modif.nnz;i++){
+        for (esint i = 0;i<K_modif.nnz;i++){
             I_index = vec_I1_i2[K_modif.I_row_indices[i]-offset][1]+offset;
             J_index = vec_I1_i2[K_modif.J_col_indices[i]-offset][1]+offset;
             if (unsymmetric || I_index<=J_index){
@@ -808,7 +808,7 @@ void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
                 J_col_indices_p[i]=I_index;
             }
         }
-        for (eslocal i = 0; i<K_modif.nnz;i++){
+        for (esint i = 0; i<K_modif.nnz;i++){
             K_modif.I_row_indices[i] = I_row_indices_p[i];
             K_modif.J_col_indices[i] = J_col_indices_p[i];
         }
@@ -834,7 +834,7 @@ void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
         //        bool diagonalized_K_rr = false
         // ------------------------------------------------------------------------------------------------------------------
 
-        eslocal sc_size = perm_vec.size();
+        esint sc_size = perm_vec.size();
 
         if (sc_size == instance->K[d].rows) {
             domains[d].Prec = instance->K[d];
@@ -845,7 +845,7 @@ void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
             if (configuration.preconditioner == FETI_PRECONDITIONER::DIRICHLET) {
                 SparseSolverCPU createSchur;
                 //          createSchur.msglvl=1;
-                eslocal sc_size = perm_vec.size();
+                esint sc_size = perm_vec.size();
                 createSchur.ImportMatrix_wo_Copy(K_modif);
                 createSchur.Create_SC(domains[d].Prec, sc_size,false);
                 domains[d].Prec.ConvertCSRToDense(1);
@@ -857,9 +857,9 @@ void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
                 SparseMatrix K_sr;
                 SparseMatrix KsrInvKrrKrs; 
 
-                eslocal i_start = 0;
-                eslocal nonsing_size = K_modif.rows - sc_size - i_start;
-                eslocal j_start = nonsing_size;
+                esint i_start = 0;
+                esint nonsing_size = K_modif.rows - sc_size - i_start;
+                esint j_start = nonsing_size;
 
                 K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
 
@@ -884,8 +884,8 @@ void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
                     //      K_modif = [K_rr, K_rs]
                     //                [K_sr, K_ss]
                     // 
-                    for (eslocal i = 0; i < K_rs.rows; i++) {
-                        for (eslocal j = K_rs.CSR_I_row_indices[i]; j < K_rs.CSR_I_row_indices[i + 1]; j++) {
+                    for (esint i = 0; i < K_rs.rows; i++) {
+                        for (esint j = K_rs.CSR_I_row_indices[i]; j < K_rs.CSR_I_row_indices[i + 1]; j++) {
                             K_rs.CSR_V_values[j - offset] /= diagonals[i];
                         }
                     }
@@ -961,16 +961,16 @@ void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in,
 #pragma omp parallel for
     for (size_t d = 0; d < domains.size(); d++)
     {
-        eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-        eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+        esint e0_start	=  d	* domains[d].Kplus_R.cols;
+        esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
 
-        for (eslocal i = e0_start; i < e0_end; i++ )
+        for (esint i = e0_start; i < e0_end; i++ )
             vec_e0[i] = - tm3[d][i - e0_start];
     }
 
 
     for (size_t d = 0; d < domains.size(); d++)
-        for (eslocal i = 0; i < domains[d].B0Kplus_comp.rows; i++)
+        for (esint i = 0; i < domains[d].B0Kplus_comp.rows; i++)
             vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
 
     // end loop over domains
@@ -1035,27 +1035,27 @@ void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in,
     loop_2_1_time.start();
 
     // accelerator stuff
-    eslocal maxDevNumber = this->acc_per_MPI;
+    esint maxDevNumber = this->acc_per_MPI;
 
 #pragma omp parallel for
     for (size_t d = 0; d < domains.size(); d++)
     {
-        eslocal domain_size = domains[d].domain_prim_size;
+        esint domain_size = domains[d].domain_prim_size;
 
         SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0);
         for (size_t i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
             tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
         domains[d].B0_comp.MatVec(tmp_vec, tm1[d], 'T');
 
-        for (eslocal i = 0; i < domain_size; i++)
+        for (esint i = 0; i < domain_size; i++)
             tm1[d][i] = x_in[d][i] - tm1[d][i];
     } 
 
-    for ( eslocal i = 0; i < maxDevNumber; ++i ) {
+    for ( esint i = 0; i < maxDevNumber; ++i ) {
 #pragma omp parallel for 
-        for ( eslocal d = 0 ; d < accDomains[i].size(); ++d ) {
-            eslocal domN = accDomains[i].at(d);
-            for ( eslocal j = 0 ; j < domains[domN].K.cols; ++j ) {
+        for ( esint d = 0 ; d < accDomains[i].size(); ++d ) {
+            esint domN = accDomains[i].at(d);
+            for ( esint j = 0 ; j < domains[domN].K.cols; ++j ) {
                 SparseKPack[i].SetX(d, j, tm1[domN].at(j));   
             }
         }
@@ -1075,10 +1075,10 @@ void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in,
         if ( thread < maxDevNumber ) {
             MICtime[ thread ] = Measure::time();
             SparseKPack[ thread ].SolveMIC();
-            eslocal end = (eslocal) accDomains[ thread ].size() * 
+            esint end = (esint) accDomains[ thread ].size() * 
                 SparseKPack[thread].getMICratio();
-            for (eslocal i = 0 ; i < end; ++i) {
-                eslocal domN = accDomains[ thread ].at( i );
+            for (esint i = 0 ; i < end; ++i) {
+                esint domN = accDomains[ thread ].at( i );
                 SparseKPack[thread].GetY( i, tm2[domN] );
             }
             MICtime[ thread ] = Measure::time() - MICtime[ thread ];
@@ -1087,12 +1087,12 @@ void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in,
 
             double startCPU = Measure::time();
 
-            for ( eslocal i = 0; i < maxDevNumber; ++i ) {
-                eslocal start = (eslocal) (SparseKPack[ i ].getNMatrices() * 
+            for ( esint i = 0; i < maxDevNumber; ++i ) {
+                esint start = (esint) (SparseKPack[ i ].getNMatrices() * 
                     SparseKPack[ i ].getMICratio());
 #pragma omp parallel for
-                for (eslocal d = start; d < SparseKPack[ i ].getNMatrices(); ++d ) {
-                    eslocal domN = accDomains[ i ].at( d );
+                for (esint d = start; d < SparseKPack[ i ].getNMatrices(); ++d ) {
+                    esint domN = accDomains[ i ].at( d );
                     domains[ domN ].multKplusLocal(tm1[domN], tm2[ domN ]);
                 }
             }
@@ -1100,8 +1100,8 @@ void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in,
         
 #pragma omp parallel for 
             for (size_t d = 0; d < domains.size(); d++) {
-                eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-                eslocal domain_size = domains[d].domain_prim_size;
+                esint e0_start	=  d	* domains[d].Kplus_R.cols;
+                esint domain_size = domains[d].domain_prim_size;
 
                 domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
             }
@@ -1117,9 +1117,9 @@ void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in,
 
 #pragma omp parallel for
     for (size_t d = 0; d < domains.size(); d++) {
-        eslocal domain_size = domains[d].domain_prim_size;
+        esint domain_size = domains[d].domain_prim_size;
 
-        for (eslocal i = 0; i < domain_size; i++)
+        for (esint i = 0; i < domain_size; i++)
             x_in[d][i] = tm2[d][i] + tm3[d][i];
 
     }
@@ -1157,16 +1157,16 @@ void ClusterAcc::multKplusGlobal_l_prepare_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > &
 #pragma omp parallel for
     for (size_t d = 0; d < domains.size(); d++)
     {
-        eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-        eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+        esint e0_start	=  d	* domains[d].Kplus_R.cols;
+        esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
 
-        for (eslocal i = e0_start; i < e0_end; i++ )
+        for (esint i = e0_start; i < e0_end; i++ )
             vec_e0[i] = - tm3[d][i - e0_start];
     }
 
 
     for (size_t d = 0; d < domains.size(); d++)
-        for (eslocal i = 0; i < domains[d].B0Kplus_comp.rows; i++)
+        for (esint i = 0; i < domains[d].B0Kplus_comp.rows; i++)
             vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
 
     // end loop over domains
@@ -1231,19 +1231,19 @@ void ClusterAcc::multKplusGlobal_l_prepare_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > &
     loop_2_1_time.start();
 
     // accelerator stuff
-    eslocal maxDevNumber = this->acc_per_MPI;
+    esint maxDevNumber = this->acc_per_MPI;
 
 #pragma omp parallel for
     for (size_t d = 0; d < domains.size(); d++)
     {
-        eslocal domain_size = domains[d].domain_prim_size;
+        esint domain_size = domains[d].domain_prim_size;
 
         SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0);
         for (size_t i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
             tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
         domains[d].B0_comp.MatVec(tmp_vec, tm1[d], 'T');
 
-        for (eslocal i = 0; i < domain_size; i++)
+        for (esint i = 0; i < domain_size; i++)
             tm1[d][i] = x_in[d][i] - tm1[d][i];
     } 
 }

@@ -14,10 +14,10 @@ public:
 	HeatTransferFETIProvider(HeatTransferLoadStepConfiguration &configuration);
 
 	MatrixType getMatrixType() const;
-	MatrixType getMatrixType(eslocal domain) const;
+	MatrixType getMatrixType(esint domain) const;
 
 protected:
-	void analyticRegularization(eslocal domain, bool ortogonalCluster);
+	void analyticRegularization(esint domain, bool ortogonalCluster);
 
 	void assembleB0FromCorners()
 	{

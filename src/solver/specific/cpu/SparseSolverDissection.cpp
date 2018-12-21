@@ -245,7 +245,7 @@ void SparseSolverDissection::ImportMatrix_fl(espreso::SparseMatrix & A) {
 	// copy(A.CSR_I_row_indices.begin(), A.CSR_I_row_indices.end(), CSR_I_row_indices);
 	// copy(A.CSR_J_col_indices.begin(), A.CSR_J_col_indices.end(), CSR_J_col_indices);
 
-	// for (eslocal i = 0; i < CSR_V_values_fl_size; i++)
+	// for (esint i = 0; i < CSR_V_values_fl_size; i++)
 	// 	CSR_V_values_fl[i] = (float) A.CSR_V_values[i];
 
 	// import_with_copy = true;
@@ -273,7 +273,7 @@ void SparseSolverDissection::ImportMatrix_wo_Copy_fl(espreso::SparseMatrix & A) 
 	// CSR_J_col_indices    = &A.CSR_J_col_indices[0];
 
 	// CSR_V_values_fl	  = new float  [CSR_V_values_fl_size];
-	// for (eslocal i = 0; i < CSR_V_values_fl_size; i++)
+	// for (esint i = 0; i < CSR_V_values_fl_size; i++)
 	// 	CSR_V_values_fl[i] = (float) A.CSR_V_values[i];
 
 	// import_with_copy = false;
@@ -457,7 +457,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		printf("Method Solve for float is not implemented yet - float not available in Dissection solver.\n");
 		exit(1);
 
-		// for (eslocal i = 0; i < m_Kplus_size; i++)
+		// for (esint i = 0; i < m_Kplus_size; i++)
 		// 	tmp_sol_fl1[i] = (float)rhs_sol[i];
 	}
 
@@ -467,7 +467,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		Factorization(ss.str());
 	}
 
-	eslocal n_rhs = 1;
+	esint n_rhs = 1;
 
 	if(use_dense_solver) {
 		dense_solver.Solve(rhs_sol);
@@ -506,12 +506,12 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs_sol) {
 	if( USE_FLOAT ) {
 		printf("Method Solve for float is not implemented - float not available in Dissection solver.\n");
 		exit(1);
-		// for (eslocal i = 0; i < m_Kplus_size; i++)
+		// for (esint i = 0; i < m_Kplus_size; i++)
 		// 	rhs_sol[i] = (double)tmp_sol_fl1[i];
 	}
 }
 
-void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, eslocal n_rhs) {
+void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, esint n_rhs) {
 
 	if( USE_FLOAT ) {
 		printf("Method Solve for float is not implemented yet - float not available in Dissection solver.\n");
@@ -520,7 +520,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 		// tmp_in.resize(n_rhs * m_Kplus_size);
 		// tmp_out.resize(n_rhs * m_Kplus_size);
 
-		// for (eslocal i = 0; i < n_rhs * m_Kplus_size; i++)
+		// for (esint i = 0; i < n_rhs * m_Kplus_size; i++)
 		// 	tmp_in[i] = (float)rhs[i];
 	}
 
@@ -553,7 +553,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 		sol = rhs;
 
 		// Alternative multiple RHS solve
-//		for(eslocal i=0; i< n_rhs; i++) {
+//		for(esint i=0; i< n_rhs; i++) {
 //			dslv->SolveSingle(&sol[i*rows], projection, is_trans, is_scaling);
 //		}
 
@@ -573,7 +573,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 		printf("Method Solve for float is not implemented yet - float not available in Dissection solver.\n");
 		exit(1);
 
-		// for (eslocal i = 0; i < n_rhs * m_Kplus_size; i++)
+		// for (esint i = 0; i < n_rhs * m_Kplus_size; i++)
 		// 	sol[i] = (double)tmp_out[i];
 	}
 }
@@ -584,7 +584,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 		printf("Method Solve for float is not implemented yet.\n");
 		exit(1);
 
-		// for (eslocal i = 0; i < m_Kplus_size; i++)
+		// for (esint i = 0; i < m_Kplus_size; i++)
 		// 	tmp_sol_fl1[i] = (float)rhs[rhs_start_index+ i];
 	}
 
@@ -629,7 +629,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 	if( USE_FLOAT ) {
 		printf("Method Solve for float is not implemented yet - float not available in Dissection solver.\n");
 		exit(1);
-		// for (eslocal i = 0; i < m_Kplus_size; i++)
+		// for (esint i = 0; i < m_Kplus_size; i++)
 		// 	sol[i + sol_start_index] = (double)tmp_sol_fl2[i];
 	}
 }
@@ -669,7 +669,7 @@ void SparseSolverDissection::SolveMat_Sparse( espreso::SparseMatrix & A_in, espr
 		if (tmpM.CSR_I_row_indices[row - 1] < tmpM.CSR_I_row_indices[row]) {
 			offset = rhs.size();
 			rhs.resize(rhs.size() + tmpM.cols);
-			for (eslocal col = tmpM.CSR_I_row_indices[row - 1]; col < tmpM.CSR_I_row_indices[row]; col++) {
+			for (esint col = tmpM.CSR_I_row_indices[row - 1]; col < tmpM.CSR_I_row_indices[row]; col++) {
 				rhs[offset + tmpM.CSR_J_col_indices[col - 1] - 1] = tmpM.CSR_V_values[col - 1];
 			}
 		}
@@ -682,7 +682,7 @@ void SparseSolverDissection::SolveMat_Sparse( espreso::SparseMatrix & A_in, espr
 	
 	for (size_t row = 1, offset = 0; row < tmpM.CSR_I_row_indices.size(); row++) {
 		if (tmpM.CSR_I_row_indices[row - 1] < tmpM.CSR_I_row_indices[row]) {
-			for (eslocal col = 0; col < tmpM.cols; col++, offset++){
+			for (esint col = 0; col < tmpM.cols; col++, offset++){
 				if (sol[offset] != 0.0) {
 					tmpM.I_row_indices.push_back(row);
 					tmpM.J_col_indices.push_back(col + 1);
@@ -843,9 +843,9 @@ void SparseSolverDissection::Create_SC( espreso::SparseMatrix & SC_out, MKL_INT 
 
 	ExportMatrix(K_modif); // memory inefficient
 
-	eslocal i_start = 0;
-	eslocal nonsing_size = K_modif.rows - sc_size - i_start;
-	eslocal j_start = nonsing_size;
+	esint i_start = 0;
+	esint nonsing_size = K_modif.rows - sc_size - i_start;
+	esint j_start = nonsing_size;
 
 	K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
 
@@ -968,7 +968,7 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R, SparseMatrix &R2) {
 		Factorization(ss.str());
 	}
 
-	eslocal kern_dim = dslv->kern_dimension();
+	esint kern_dim = dslv->kern_dimension();
 
 	R.dense_values.resize(kern_dim * rows);
 	dslv->GetKernelVectors(&R.dense_values.front());
@@ -1002,7 +1002,7 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R, SparseMatrix &R2) {
 	SparseMatrix K_sing;
 	ExportMatrix(K_sing);
 //
-//	for(eslocal i = 0; i < kern_dim; i++) {
+//	for(esint i = 0; i < kern_dim; i++) {
 //		K_sing.MatVec(kern_vec, r, 'N', i*rows, i*rows);
 //		double norm_r = 0.0;
 //		for(int j = i*rows; j < i*rows+rows; j++) {
@@ -1059,7 +1059,7 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R, SparseMatrix &R2) {
 
 }
 
-//void SparseSolverDissection::GetKernelVectors(SEQ_VECTOR <double> & kern_vec, eslocal & kern_dim) {
+//void SparseSolverDissection::GetKernelVectors(SEQ_VECTOR <double> & kern_vec, esint & kern_dim) {
 //
 //	// After factorization, with singular matrix
 //	if (!initialized) {
@@ -1082,7 +1082,7 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R, SparseMatrix &R2) {
 //	SparseMatrix K_sing;
 //	ExportMatrix(K_sing);
 //
-//	for(eslocal i = 0; i < kern_dim; i++) {
+//	for(esint i = 0; i < kern_dim; i++) {
 //		K_sing.MatVec(kern_vec, r, 'N', i*rows, i*rows);
 //		double norm_r = 0.0;
 //		for(int j = i*rows; j < i*rows+rows; j++) {
@@ -1135,7 +1135,7 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R, SparseMatrix &R2) {
 //#endif
 //}
 //
-//void SparseSolverDissection::GetTransKernelVectors(SEQ_VECTOR <double> & kern_t_vec, eslocal & kern_dim) {
+//void SparseSolverDissection::GetTransKernelVectors(SEQ_VECTOR <double> & kern_t_vec, esint & kern_dim) {
 //
 //	// After factorization, with singular matrix
 //	if (!initialized) {
@@ -1145,7 +1145,7 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R, SparseMatrix &R2) {
 //	}
 //
 //	// check if ComputeTransposedKernels is necessary
-//	// eslocal result = dslv->ComputeTransposedKernels();
+//	// esint result = dslv->ComputeTransposedKernels();
 //
 //	kern_dim = dslv->kern_dimension();
 //	kern_t_vec.resize(kern_dim * rows);
@@ -1170,16 +1170,16 @@ void SparseSolverDissection::SaveMatrixInCSR(string filename) {
 	if ( out.is_open() ) {
 		out.precision(9);
 		out << "I\n";
-		for(eslocal i=0; i<CSR_I_row_indices_size; i++){
+		for(esint i=0; i<CSR_I_row_indices_size; i++){
 			out << CSR_I_row_indices[i] << "\n";
 		}
 
 		out << "J\n";
-		for(eslocal i=0; i<CSR_J_col_indices_size; i++){
+		for(esint i=0; i<CSR_J_col_indices_size; i++){
 			out << CSR_J_col_indices[i] << "\n";
 		}
 		out << "V\n";
-		for(eslocal i=0; i<CSR_V_values_size; i++){
+		for(esint i=0; i<CSR_V_values_size; i++){
 			out << CSR_V_values[i] << "\n";
 		}
 		out.close();

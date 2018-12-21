@@ -61,19 +61,19 @@ public:
 	// Coarse problem variables
 	SparseMatrix	GGt_Mat;
 	SparseSolverCPU	GGt;
-	eslocal 		GGtsize;
+	esint 		GGtsize;
 
 	// *** Setup variables
-	eslocal  USE_KINV;
-	eslocal  USE_GGtINV;
-	eslocal  USE_HFETI;
+	esint  USE_KINV;
+	esint  USE_GGtINV;
+	esint  USE_HFETI;
 
 	FETI_PRECONDITIONER  USE_PREC;
 
-	eslocal  CG_max_iter;
+	esint  CG_max_iter;
 
-	eslocal PAR_NUM_THREADS;
-	eslocal SOLVER_NUM_THREADS;
+	esint PAR_NUM_THREADS;
+	esint SOLVER_NUM_THREADS;
 
 	double precision; // stop condition
 
@@ -149,13 +149,13 @@ public:
 	void CreateGGt_Inv_old( SuperCluster & cluster );
 
 	// *** Projectors
-	void Projector    ( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 ); // int mpi_rank, SparseSolverCPU & GGt,
-	void Projector_Inv( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
-	void Projector_Inv_old( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
+	void Projector    ( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, esint  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 ); // int mpi_rank, SparseSolverCPU & GGt,
+	void Projector_Inv( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, esint  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
+	void Projector_Inv_old( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, esint  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
 
-	void ConjProjector_Inv( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
-	void ConjProjector_Inv2( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
-	void ConjProjector_Inv3( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
+	void ConjProjector_Inv( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, esint  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
+	void ConjProjector_Inv2( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, esint  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
+	void ConjProjector_Inv3( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, esint  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
 
 
 	void CreateConjProjector(Cluster & cluster);
@@ -170,7 +170,7 @@ public:
 	virtual void apply_A_l_comp_dom_B        ( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) =0;
 	virtual void apply_A_l_comp_dom_B_P      ( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) =0;
 	virtual void apply_A_l_comp_dom_B_P_local( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) =0;
-	virtual void apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<eslocal> & tmp_in_indices, SEQ_VECTOR<double> & tmp_in_values, SEQ_VECTOR<eslocal> & tmp_out_indices, SEQ_VECTOR<double> & tmp_out_values) =0;
+	virtual void apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<esint> & tmp_in_indices, SEQ_VECTOR<double> & tmp_in_values, SEQ_VECTOR<esint> & tmp_out_indices, SEQ_VECTOR<double> & tmp_out_values) =0;
 
 	void apply_A_l_Mat		 ( TimeEval & time_eval, SuperCluster & cluster, SparseMatrix       & X_in, SparseMatrix       & Y_out) ;
 	void apply_A_l_Mat_local ( TimeEval & time_eval, SuperCluster & cluster, SparseMatrix       & X_in, SparseMatrix       & Y_out) ;
@@ -187,7 +187,7 @@ public:
 
 
 	// *** Power Method - Estimation of maximum eigenvalue of matrix
-	double Solve_power_method ( SuperCluster & cluster, double tol, eslocal maxit, eslocal method);
+	double Solve_power_method ( SuperCluster & cluster, double tol, esint maxit, esint method);
 
 	//  *** Projected gradient and its components
 	void proj_gradient ( SEQ_VECTOR <double> & x,SEQ_VECTOR <double> & g, SEQ_VECTOR <double> & lb,
@@ -226,19 +226,19 @@ public:
 
 //Utilities
 
-void SendMatrix  (eslocal  rank, eslocal  source_rank, SparseMatrix & A_in, eslocal  dest_rank, SparseMatrix & B_out);
+void SendMatrix  (esint  rank, esint  source_rank, SparseMatrix & A_in, esint  dest_rank, SparseMatrix & B_out);
 
-void SendMatrix2 (eslocal  rank, eslocal  source_rank, SparseMatrix & A_in, eslocal  dest_rank, SparseMatrix & B_out);
+void SendMatrix2 (esint  rank, esint  source_rank, SparseMatrix & A_in, esint  dest_rank, SparseMatrix & B_out);
 
-void RecvMatrix   ( SparseMatrix & B_out, eslocal  source_rank);
-void SendMatrix   ( SparseMatrix & A_in, eslocal  dest_rank );
+void RecvMatrix   ( SparseMatrix & B_out, esint  source_rank);
+void SendMatrix   ( SparseMatrix & A_in, esint  dest_rank );
 
-void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, SEQ_VECTOR <eslocal> neighbor_ranks );
-void ExchangeMatrices2 (SEQ_VECTOR <SparseMatrix> & A_in, SEQ_VECTOR <SparseMatrix> & B_out, SEQ_VECTOR <eslocal> neighbor_ranks );
+void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, SEQ_VECTOR <esint> neighbor_ranks );
+void ExchangeMatrices2 (SEQ_VECTOR <SparseMatrix> & A_in, SEQ_VECTOR <SparseMatrix> & B_out, SEQ_VECTOR <esint> neighbor_ranks );
 
-void ExchangeVector (SEQ_VECTOR <eslocal> & vec_in, SEQ_VECTOR <SEQ_VECTOR<eslocal>> & vec_out, SEQ_VECTOR <eslocal> neighbor_ranks );
+void ExchangeVector (SEQ_VECTOR <esint> & vec_in, SEQ_VECTOR <SEQ_VECTOR<esint>> & vec_out, SEQ_VECTOR <esint> neighbor_ranks );
 
-void BcastMatrix(eslocal  rank, eslocal  mpi_root, eslocal  source_rank, SparseMatrix & A);
+void BcastMatrix(esint  rank, esint  mpi_root, esint  source_rank, SparseMatrix & A);
 
 void All_Reduce_lambdas_compB( SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out );
 //void All_Reduce_lambdas_compB2( Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out );

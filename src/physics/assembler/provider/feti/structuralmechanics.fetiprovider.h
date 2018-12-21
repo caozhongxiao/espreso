@@ -16,7 +16,7 @@ public:
 	StructuralMechanicsFETIProvider(StructuralMechanicsLoadStepConfiguration &configuration);
 
 	MatrixType getMatrixType() const;
-	MatrixType getMatrixType(eslocal domain) const;
+	MatrixType getMatrixType(esint domain) const;
 
 protected:
 	void prepareRegularization();

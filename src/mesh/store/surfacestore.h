@@ -13,15 +13,15 @@ struct Element;
 
 struct SurfaceStore {
 
-	serializededata<eslocal, eslocal>* triangles;
-	serializededata<eslocal, eslocal>* elements;
+	serializededata<esint, esint>* triangles;
+	serializededata<esint, esint>* elements;
 
-	serializededata<eslocal, Point>* coordinates;
+	serializededata<esint, Point>* coordinates;
 
 	std::vector<size_t> tdistribution, edistribution, cdistribution;
 
-	serializededata<eslocal, Element*>* epointers;
-	std::vector<eslocal> ecounters;
+	serializededata<esint, Element*>* epointers;
+	std::vector<esint> ecounters;
 
 	SurfaceStore();
 	~SurfaceStore();

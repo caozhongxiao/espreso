@@ -28,11 +28,11 @@ public:
 protected:
 	Provider &_provider;
 
-	eslocal _localKOffset, _localRHSOffset;
-	std::vector<eslocal> _nKSize, _nRHSSize;
-	std::vector<eslocal> _tKOffsets, _tRHSOffsets;
-	std::vector<eslocal> _KPermutation, _RHSPermutation;
-	std::vector<eslocal> _nDistribution;
+	esint _localKOffset, _localRHSOffset;
+	std::vector<esint> _nKSize, _nRHSSize;
+	std::vector<esint> _tKOffsets, _tRHSOffsets;
+	std::vector<esint> _KPermutation, _RHSPermutation;
+	std::vector<esint> _nDistribution;
 };
 
 }

@@ -200,7 +200,7 @@ void SparseSolverMKL::ImportMatrix_fl(espreso::SparseMatrix & A) {
 	copy(A.CSR_I_row_indices.begin(), A.CSR_I_row_indices.end(), CSR_I_row_indices);
 	copy(A.CSR_J_col_indices.begin(), A.CSR_J_col_indices.end(), CSR_J_col_indices);
 
-	for (eslocal i = 0; i < CSR_V_values_fl_size; i++)
+	for (esint i = 0; i < CSR_V_values_fl_size; i++)
 		CSR_V_values_fl[i] = (float) A.CSR_V_values[i];
 
 
@@ -240,7 +240,7 @@ void SparseSolverMKL::ImportMatrix_wo_Copy_fl(espreso::SparseMatrix & A) {
 	CSR_J_col_indices    = &A.CSR_J_col_indices[0];
 
 	CSR_V_values_fl	  = new float  [CSR_V_values_fl_size];
-	for (eslocal i = 0; i < CSR_V_values_fl_size; i++)
+	for (esint i = 0; i < CSR_V_values_fl_size; i++)
 		CSR_V_values_fl[i] = (float) A.CSR_V_values[i];
 
 	import_with_copy = false;
@@ -343,8 +343,8 @@ int SparseSolverMKL::Factorization(const std::string &str) {
 		s.cols = cols;
 		s.type = 'S';
 		s.nnz = nnz;
-		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
-		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_I_row_indices = std::vector<esint>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<esint>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
 		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
 
 		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
@@ -378,8 +378,8 @@ int SparseSolverMKL::Factorization(const std::string &str) {
 		s.cols = cols;
 		s.type = 'S';
 		s.nnz = nnz;
-		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
-		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_I_row_indices = std::vector<esint>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<esint>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
 		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
 
 		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
@@ -404,7 +404,7 @@ int SparseSolverMKL::Factorization(const std::string &str) {
 void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	if( USE_FLOAT ) {
-		for (eslocal i = 0; i < m_Kplus_size; i++)
+		for (esint i = 0; i < m_Kplus_size; i++)
 			tmp_sol_fl1[i] = (float)rhs_sol[i];
 	}
 
@@ -445,8 +445,8 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		s.cols = cols;
 		s.type = 'S';
 		s.nnz = nnz;
-		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
-		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_I_row_indices = std::vector<esint>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<esint>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
 		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
 
 		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
@@ -470,7 +470,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 	}
 
 	if( USE_FLOAT ) {
-		for (eslocal i = 0; i < m_Kplus_size; i++)
+		for (esint i = 0; i < m_Kplus_size; i++)
 			rhs_sol[i] = (double)tmp_sol_fl1[i];
 	}
 
@@ -485,7 +485,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 		tmp_in.resize(n_rhs * m_Kplus_size);
 		tmp_out.resize(n_rhs * m_Kplus_size);
 
-		for (eslocal i = 0; i < n_rhs * m_Kplus_size; i++)
+		for (esint i = 0; i < n_rhs * m_Kplus_size; i++)
 			tmp_in[i] = (float)rhs[i];
 	}
 
@@ -519,8 +519,8 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 		s.cols = cols;
 		s.type = 'S';
 		s.nnz = nnz;
-		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
-		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_I_row_indices = std::vector<esint>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<esint>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
 		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
 
 		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
@@ -544,7 +544,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 	}
 
 	if( USE_FLOAT ) {
-		for (eslocal i = 0; i < n_rhs * m_Kplus_size; i++)
+		for (esint i = 0; i < n_rhs * m_Kplus_size; i++)
 			sol[i] = (double)tmp_out[i];
 	}
 
@@ -553,7 +553,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT rhs_start_index, MKL_INT sol_start_index) {
 
 	if( USE_FLOAT ) {
-		for (eslocal i = 0; i < m_Kplus_size; i++)
+		for (esint i = 0; i < m_Kplus_size; i++)
 			tmp_sol_fl1[i] = (float)rhs[rhs_start_index+ i];
 	}
 
@@ -587,8 +587,8 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 		s.cols = cols;
 		s.type = 'S';
 		s.nnz = nnz;
-		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
-		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_I_row_indices = std::vector<esint>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<esint>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
 		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
 
 		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
@@ -614,7 +614,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 
 	if( USE_FLOAT ) {
-		for (eslocal i = 0; i < m_Kplus_size; i++)
+		for (esint i = 0; i < m_Kplus_size; i++)
 			sol[i + sol_start_index] = (double)tmp_sol_fl2[i];
 	}
 
@@ -656,7 +656,7 @@ void SparseSolverMKL::SolveMat_Sparse( espreso::SparseMatrix & A_in, espreso::Sp
 		if (tmpM.CSR_I_row_indices[row - 1] < tmpM.CSR_I_row_indices[row]) {
 			offset = rhs.size();
 			rhs.resize(rhs.size() + tmpM.cols);
-			for (eslocal col = tmpM.CSR_I_row_indices[row - 1]; col < tmpM.CSR_I_row_indices[row]; col++) {
+			for (esint col = tmpM.CSR_I_row_indices[row - 1]; col < tmpM.CSR_I_row_indices[row]; col++) {
 				rhs[offset + tmpM.CSR_J_col_indices[col - 1] - 1] = tmpM.CSR_V_values[col - 1];
 			}
 		}
@@ -669,7 +669,7 @@ void SparseSolverMKL::SolveMat_Sparse( espreso::SparseMatrix & A_in, espreso::Sp
 	
 	for (size_t row = 1, offset = 0; row < tmpM.CSR_I_row_indices.size(); row++) {
 		if (tmpM.CSR_I_row_indices[row - 1] < tmpM.CSR_I_row_indices[row]) {
-			for (eslocal col = 0; col < tmpM.cols; col++, offset++){
+			for (esint col = 0; col < tmpM.cols; col++, offset++){
 				if (sol[offset] != 0.0) {
 					tmpM.I_row_indices.push_back(row);
 					tmpM.J_col_indices.push_back(col + 1);
@@ -932,8 +932,8 @@ void SparseSolverMKL::SolveMatF( espreso::SparseMatrix & A_in, espreso::SparseMa
 		s.cols = cols;
 		s.type = 'S';
 		s.nnz = nnz;
-		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
-		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_I_row_indices = std::vector<esint>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<esint>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
 		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
 
 		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
@@ -1149,8 +1149,8 @@ void SparseSolverMKL::Create_SC( espreso::SparseMatrix & SC_out, MKL_INT sc_size
 		s.cols = cols;
 //		s.type = 'S';
 		s.nnz = nnz;
-		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
-		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_I_row_indices = std::vector<esint>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<esint>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
 		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
 
 		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
@@ -1666,16 +1666,16 @@ void SparseSolverMKL::SaveMatrixInCSR(string filename) {
 
 	if ( out.is_open() ) {
 		out << "I\n";
-		for(eslocal i=0; i<CSR_I_row_indices_size; i++){
+		for(esint i=0; i<CSR_I_row_indices_size; i++){
 			out << CSR_I_row_indices[i] << "\n";
 		}
 
 		out << "J\n";
-		for(eslocal i=0; i<CSR_J_col_indices_size; i++){
+		for(esint i=0; i<CSR_J_col_indices_size; i++){
 			out << CSR_J_col_indices[i] << "\n";
 		}
 		out << "V\n";
-		for(eslocal i=0; i<CSR_V_values_size; i++){
+		for(esint i=0; i<CSR_V_values_size; i++){
 			out << CSR_V_values[i] << "\n";
 		}
 		out.close();

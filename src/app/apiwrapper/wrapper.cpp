@@ -22,7 +22,7 @@ espreso::TimeEval espreso::APIDataHolder::timeStatistics("API total time");
 
 using namespace espreso;
 
-FETI4IStructInstance::FETI4IStructInstance(FETI4IStructMatrix &matrix, eslocal *l2g, size_t size)
+FETI4IStructInstance::FETI4IStructInstance(FETI4IStructMatrix &matrix, esint *l2g, size_t size)
 : instance(NULL), physics(NULL), linearSolver(NULL), assembler(NULL), timeStepSolver(NULL), loadStepSolver(NULL)
 {
 	store = new ResultStore();
@@ -153,12 +153,12 @@ void FETI4IAddElement(
 		return;
 	}
 
-	eslocal offset = matrix->offset;
+	esint offset = matrix->offset;
 	matrix->eType.push_back(type);
-	matrix->eNodes.push_back(std::vector<eslocal>(nodes, nodes + nodesSize));
-	matrix->eDOFs.push_back(std::vector<eslocal>(dofs, dofs + dofsSize));
-	std::for_each(matrix->eNodes.back().begin(), matrix->eNodes.back().end(), [ &offset ] (eslocal &index) { index -= offset; });
-	std::for_each(matrix->eDOFs.back().begin(), matrix->eDOFs.back().end(), [ &offset ] (eslocal &index) { index -= offset; });
+	matrix->eNodes.push_back(std::vector<esint>(nodes, nodes + nodesSize));
+	matrix->eDOFs.push_back(std::vector<esint>(dofs, dofs + dofsSize));
+	std::for_each(matrix->eNodes.back().begin(), matrix->eNodes.back().end(), [ &offset ] (esint &index) { index -= offset; });
+	std::for_each(matrix->eDOFs.back().begin(), matrix->eDOFs.back().end(), [ &offset ] (esint &index) { index -= offset; });
 	matrix->eMatrices.push_back(std::vector<double>(values, values + dofsSize * dofsSize));
 
 	espreso::APIDataHolder::timeStatistics.timeEvents.back().endWithoutBarrier();

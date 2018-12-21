@@ -61,7 +61,7 @@ struct StructuralMechanics2DKernel: public StructuralMechanicsKernel
 	void processSolution(const SolutionIterator &iterator);
 
 protected:
-	void assembleMaterialMatrix(eslocal node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, DenseMatrix &K) const;
+	void assembleMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, DenseMatrix &K) const;
 
 };
 

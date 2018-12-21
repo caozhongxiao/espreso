@@ -10,17 +10,17 @@
 
 using namespace espreso;
 
-eslocal METIS::call(
+esint METIS::call(
 		const METISConfiguration &options,
-		eslocal verticesCount,
-		eslocal *eframes, eslocal *eneighbors,
-		eslocal verticesWeightCount, eslocal *verticesWeights, eslocal *edgeWeights,
-		eslocal parts, eslocal *partition)
+		esint verticesCount,
+		esint *eframes, esint *eneighbors,
+		esint verticesWeightCount, esint *verticesWeights, esint *edgeWeights,
+		esint parts, esint *partition)
 {
 
-	verticesWeightCount = std::max((eslocal)1, verticesWeightCount);
+	verticesWeightCount = std::max((esint)1, verticesWeightCount);
 
-	eslocal moptions[METIS_NOPTIONS];
+	esint moptions[METIS_NOPTIONS];
 	METIS_SetDefaultOptions(moptions);
 
 	// HEURISTICS
@@ -52,7 +52,7 @@ eslocal METIS::call(
 	// options[METIS_OPTION_NCUTS]     = 1;
 	// options[METIS_OPTION_SEED]      = 0;
 
-	eslocal edgecut = 0;
+	esint edgecut = 0;
 
 	if (parts > 1) {
 		if (METIS_OK != METIS_PartGraphKway(

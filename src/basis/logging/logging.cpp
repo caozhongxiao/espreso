@@ -187,7 +187,7 @@ Measure::~Measure()
 double Measure::processMemory()
 {
 	std::ifstream file("/proc/self/status");
-	eslocal result = -1;
+	esint result = -1;
 	std::string line, label("VmRSS:");
 
 	while (getline(file, line)) {

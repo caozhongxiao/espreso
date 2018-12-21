@@ -18,7 +18,7 @@ struct GridSettings: public BlockSettings {
 	Triple<size_t> blocks, clusters;
 
 	std::vector<bool> nonempty;
-	eslocal body;
+	esint body;
 };
 
 }

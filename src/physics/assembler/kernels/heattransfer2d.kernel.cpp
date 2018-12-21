@@ -22,7 +22,7 @@ using namespace espreso;
 
 using namespace espreso;
 
-void HeatTransfer2DKernel::assembleMaterialMatrix(eslocal node, double *coordinates, const MaterialBaseConfiguration *mat, double phase, double time, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
+void HeatTransfer2DKernel::assembleMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double phase, double time, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
 {
 	auto d2r = [] (double degree) -> double {
 		return M_PI * degree / 180;
@@ -128,7 +128,7 @@ void HeatTransfer2DKernel::assembleMaterialMatrix(eslocal node, double *coordina
 
 void HeatTransfer2DKernel::processElement(Matrices matrices, const SolverParameters &parameters, const ElementIterator &iterator, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
-	eslocal size = iterator.element->nodes;
+	esint size = iterator.element->nodes;
 
 	const std::vector<DenseMatrix> &N = *(iterator.element->N);
 	const std::vector<DenseMatrix> &dN = *(iterator.element->dN);
@@ -338,7 +338,7 @@ void HeatTransfer2DKernel::processElement(Matrices matrices, const SolverParamet
 		}
 
 		if (matrices & Matrices::f) {
-			for (eslocal i = 0; i < size; i++) {
+			for (esint i = 0; i < size; i++) {
 				fe(i, 0) += detJ * weighFactor[gp] * N[gp](0, i) * f(i, 0);
 				if (norm_u_e != 0) {
 					fe(i, 0) += detJ * weighFactor[gp] * h_e * tau_e * b_e(0, i) * f(i, 0) / (2 * norm_u_e);
@@ -351,7 +351,7 @@ void HeatTransfer2DKernel::processElement(Matrices matrices, const SolverParamet
 		DenseMatrix T1, T2;
 		T1.multiply(Ke, T, 1, 0);
 		T2.multiply(gKe, T, 1, 0);
-		for (eslocal i = 0; i < size; i++) {
+		for (esint i = 0; i < size; i++) {
 			fe(i, 0) += T1(i, 0) - T2(i, 0);
 		}
 	}
@@ -387,7 +387,7 @@ void HeatTransfer2DKernel::processEdge(Matrices matrices, const SolverParameters
 		return;
 	}
 
-	eslocal size = iterator.element->nodes;
+	esint size = iterator.element->nodes;
 
 	const std::vector<DenseMatrix> &N = *(iterator.element->N);
 	const std::vector<DenseMatrix> &dN = *(iterator.element->dN);
@@ -457,7 +457,7 @@ void HeatTransfer2DKernel::processEdge(Matrices matrices, const SolverParameters
 			gpEmiss.multiply(N[gp], emiss);
 			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpEmiss(0, 0), 1, true);
 		}
-		for (eslocal i = 0; i < size; i++) {
+		for (esint i = 0; i < size; i++) {
 			fe(i, 0) += J * weighFactor[gp] * N[gp](0, i % size) * gpQ(0, 0);
 		}
 	}
@@ -465,7 +465,7 @@ void HeatTransfer2DKernel::processEdge(Matrices matrices, const SolverParameters
 
 void HeatTransfer2DKernel::processSolution(const SolutionIterator &iterator)
 {
-	eslocal size = iterator.element->nodes;
+	esint size = iterator.element->nodes;
 
 	const std::vector<DenseMatrix> &N = *(iterator.element->N);
 	const std::vector<DenseMatrix> &dN = *(iterator.element->dN);

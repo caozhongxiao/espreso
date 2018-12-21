@@ -24,7 +24,7 @@ NodeData* HeatTransferControler::solution()
 	return _temperature;
 }
 
-void HeatTransferControler::dirichletIndices(std::vector<std::vector<eslocal> > &indices)
+void HeatTransferControler::dirichletIndices(std::vector<std::vector<esint> > &indices)
 {
 	indices.resize(1); // heat has only one DOF
 

@@ -57,16 +57,16 @@ void OpenFOAMSets::inspect(const std::string &path, std::vector<OpenFOAMSet> &se
 	}
 }
 
-bool OpenFOAMSets::readData(OpenFOAMSet &set, std::vector<eslocal> &indices)
+bool OpenFOAMSets::readData(OpenFOAMSet &set, std::vector<esint> &indices)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, end - begin);
-	std::vector<std::vector<eslocal> > data(threads);
+	std::vector<std::vector<esint> > data(threads);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		std::vector<eslocal> tdata;
+		std::vector<esint> tdata;
 
 		const char *c = begin + tdistribution[t];
 		if (c > begin) {

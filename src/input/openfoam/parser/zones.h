@@ -17,7 +17,7 @@ struct OpenFOAMZones: public OpenFOAMCollectiveParser {
 
 	int getZones();
 	void synchronize(int zones, std::vector<char> &names, std::vector<size_t> &offsets);
-	void readData(std::vector<eslocal> &indices, size_t begin, size_t end);
+	void readData(std::vector<esint> &indices, size_t begin, size_t end);
 
 	bool readPoints(PlainOpenFOAMData &data);
 	bool readFaces(PlainOpenFOAMData &data);

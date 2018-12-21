@@ -32,7 +32,7 @@ MatrixType HeatTransferFETIProvider::getMatrixType() const
 	return MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 }
 
-MatrixType HeatTransferFETIProvider::getMatrixType(eslocal domain) const
+MatrixType HeatTransferFETIProvider::getMatrixType(esint domain) const
 {
 	if (_configuration.mode == LoadStepConfiguration::MODE::NONLINEAR && _configuration.nonlinear_solver.tangent_matrix_correction) {
 		return MatrixType::REAL_UNSYMMETRIC;
@@ -41,7 +41,7 @@ MatrixType HeatTransferFETIProvider::getMatrixType(eslocal domain) const
 	if (_configuration.translation_motions.size()) {
 		for (auto it = _configuration.translation_motions.begin(); it != _configuration.translation_motions.end(); ++it) {
 			ElementsRegionStore *region = run::mesh->eregion(it->first);
-			for (eslocal i = run::mesh->elements->eintervalsDistribution[domain]; i < run::mesh->elements->eintervalsDistribution[domain + 1]; i++) {
+			for (esint i = run::mesh->elements->eintervalsDistribution[domain]; i < run::mesh->elements->eintervalsDistribution[domain + 1]; i++) {
 				if (region->eintervals[i].begin != region->eintervals[i].end) {
 					return MatrixType::REAL_UNSYMMETRIC;
 				}
@@ -51,7 +51,7 @@ MatrixType HeatTransferFETIProvider::getMatrixType(eslocal domain) const
 	return MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 }
 
-void HeatTransferFETIProvider::analyticRegularization(eslocal domain, bool ortogonalCluster)
+void HeatTransferFETIProvider::analyticRegularization(esint domain, bool ortogonalCluster)
 {
 	if (run::data->K[domain].mtype != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
 		ESINFO(ERROR) << "Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set FETI_REGULARIZATION = ALGEBRAIC";

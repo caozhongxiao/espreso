@@ -18,7 +18,7 @@
 
 using namespace espreso;
 
-HypreData::HypreData(MPI_Comm &comm, eslocal nrows)
+HypreData::HypreData(MPI_Comm &comm, esint nrows)
 : _comm(comm), _roffset(nrows), _nrows(nrows), _finalized(false)
 {
 	Communication::exscan(_roffset);
@@ -35,12 +35,12 @@ HypreData::HypreData(MPI_Comm &comm, eslocal nrows)
 	HYPRE_IJVectorInitialize(_x);
 }
 
-void HypreData::insertCSR(eslocal nrows, eslocal offset, eslocal *rowPrts, eslocal *colIndices, double *values, double *rhsValues)
+void HypreData::insertCSR(esint nrows, esint offset, esint *rowPrts, esint *colIndices, double *values, double *rhsValues)
 {
-	std::vector<eslocal> ncols, rows;
+	std::vector<esint> ncols, rows;
 	ncols.reserve(nrows);
 	rows.reserve(nrows);
-	for (eslocal r = 0; r < nrows; r++) {
+	for (esint r = 0; r < nrows; r++) {
 		ncols.push_back(rowPrts[r + 1] - rowPrts[r]);
 		rows.push_back(_roffset + offset + r + 1);
 	}
@@ -53,12 +53,12 @@ void HypreData::insertCSR(eslocal nrows, eslocal offset, eslocal *rowPrts, esloc
 	_finalized = false;
 }
 
-void HypreData::insertIJV(eslocal nrows, eslocal offset, eslocal size, eslocal *rowIndices, eslocal *colIndices, double *values, double *rhsValues)
+void HypreData::insertIJV(esint nrows, esint offset, esint size, esint *rowIndices, esint *colIndices, double *values, double *rhsValues)
 {
-	std::vector<eslocal> ncols, rows;
+	std::vector<esint> ncols, rows;
 	ncols.reserve(nrows);
 	rows.reserve(nrows);
-	for (eslocal i = 0; i < size; i++) {
+	for (esint i = 0; i < size; i++) {
 		if (ncols.size() == 0 || ncols.back() != colIndices[i]) {
 			ncols.push_back(1);
 		} else {
@@ -89,7 +89,7 @@ HypreData::~HypreData()
 	HYPRE_IJVectorDestroy(_x);
 }
 
-void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, eslocal nrows, double *solution)
+void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, esint nrows, double *solution)
 {
 	if (!data._finalized) {
 		data.finalizePattern();
@@ -163,7 +163,7 @@ void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, 
 	HYPRE_ParCSRPCGSetup(solver, K, f, x);
 	HYPRE_ParCSRPCGSolve(solver, K, f, x);
 
-	eslocal iterations;
+	esint iterations;
 	double norm;
 	HYPRE_PCGGetNumIterations(solver, &iterations);
 	HYPRE_PCGGetFinalRelativeResidualNorm(solver, &norm);
@@ -176,7 +176,7 @@ void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, 
 		HYPRE_IJVectorPrint(data._x, prefix.c_str());
 	}
 
-	std::vector<eslocal> rows(nrows);
+	std::vector<esint> rows(nrows);
 	std::iota(rows.begin(), rows.end(), data._roffset + 1);
 	HYPRE_IJVectorGetValues(data._x, data._nrows, rows.data(), solution);
 }

@@ -70,7 +70,7 @@ bool Controler::setDefault(const std::map<std::string, ECFExpressionVector> &val
 
 void Controler::updateERegions(
 		const std::map<std::string, ECFExpression> &settings, tarray<double> &data,
-		eslocal csize, double *cbegin, double *tbegin, double time,
+		esint csize, double *cbegin, double *tbegin, double time,
 		EvaluatorParameters updatedParams)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
@@ -91,7 +91,7 @@ void Controler::updateERegions(
 
 void Controler::updateERegions(
 		const std::map<std::string, ECFExpressionVector> &settings, tarray<double> &data,
-		eslocal csize, double *cbegin, double *tbegin, double time,
+		esint csize, double *cbegin, double *tbegin, double time,
 		EvaluatorParameters updatedParams)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
@@ -126,12 +126,12 @@ void Controler::updateERegions(
 
 void Controler::updateBRegions(
 		const ECFExpression &expression, Parameter &parameter, const std::vector<size_t> &distribution,
-		eslocal csize, double *cbegin, double *tbegin, double time,
+		esint csize, double *cbegin, double *tbegin, double time,
 		EvaluatorParameters updatedParams)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	parameter.data = new serializededata<eslocal, double>(1, distribution);
+	parameter.data = new serializededata<esint, double>(1, distribution);
 	parameter.isConts = expression.evaluator->isConstant();
 
 	#pragma omp parallel for

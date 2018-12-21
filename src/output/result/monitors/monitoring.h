@@ -20,7 +20,7 @@ struct Monitor {
 	std::string name;
 	std::string property;
 	std::string stats;
-	eslocal printSize;
+	esint printSize;
 	double *data;
 
 	Monitor(): name("---"), property("-"), printSize(5), data(NULL) {}

@@ -33,11 +33,11 @@ public:
 	void elements(PlainMeshData &mesh);
 	void neighbors(const std::vector<int> &surroundings, PlainMeshData &mesh);
 
-	void nodesRegion(const BlockBorder &border, std::vector<eslocal> &nodes);
-	void edgesRegion(const BlockBorder &border, PlainMeshData &mesh, std::vector<eslocal> &elements);
-	void facesRegion(const BlockBorder &border, PlainMeshData &mesh, std::vector<eslocal> &elements);
-	void elementsRegion(const BlockBorder &border, std::vector<eslocal> &elements);
-	void pattern(const Triple<size_t> &offset, const Triple<size_t> &size, std::vector<eslocal> &elements, Pattern pattern, size_t psize);
+	void nodesRegion(const BlockBorder &border, std::vector<esint> &nodes);
+	void edgesRegion(const BlockBorder &border, PlainMeshData &mesh, std::vector<esint> &elements);
+	void facesRegion(const BlockBorder &border, PlainMeshData &mesh, std::vector<esint> &elements);
+	void elementsRegion(const BlockBorder &border, std::vector<esint> &elements);
+	void pattern(const Triple<size_t> &offset, const Triple<size_t> &size, std::vector<esint> &elements, Pattern pattern, size_t psize);
 
 private:
 	bool region(
@@ -48,7 +48,7 @@ private:
 	void forEachElement(
 			const Triple<size_t> &begin,
 			const Triple<size_t> &end,
-			std::function<void(std::vector<eslocal> &indices)> operation,
+			std::function<void(std::vector<esint> &indices)> operation,
 			std::function<void(Triple<size_t> &offset)> restriction);
 
 	const BlockSettings &_block;

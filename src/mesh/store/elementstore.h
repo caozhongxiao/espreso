@@ -24,56 +24,56 @@ struct ElementData {
 
 	ElementData(int dimension, const std::vector<std::string> &names);
 
-	void statistics(const tarray<eslocal> &elements, eslocal totalsize, Statistics *statistics);
+	void statistics(const tarray<esint> &elements, esint totalsize, Statistics *statistics);
 };
 
 struct ElementStore {
 
 	void store(const std::string &file);
 
-	void permute(const std::vector<eslocal> &permutation) { permute(permutation, distribution); }
-	void permute(const std::vector<eslocal> &permutation, const std::vector<size_t> &distribution);
+	void permute(const std::vector<esint> &permutation) { permute(permutation, distribution); }
+	void permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution);
 
-	void reindex(const serializededata<eslocal, eslocal> *nIDs);
+	void reindex(const serializededata<esint, esint> *nIDs);
 
 	ElementData* appendData(int dimension, const std::vector<std::string> &names = {});
 
-	std::vector<eslocal> gatherElementsDistribution();
-	std::vector<eslocal> gatherElementsProcDistribution();
+	std::vector<esint> gatherElementsDistribution();
+	std::vector<esint> gatherElementsProcDistribution();
 
-	std::vector<eslocal> gatherDomainsDistribution();
-	std::vector<eslocal> gatherDomainsProcDistribution();
+	std::vector<esint> gatherDomainsDistribution();
+	std::vector<esint> gatherDomainsProcDistribution();
 
-	std::vector<eslocal> gatherClustersDistribution();
+	std::vector<esint> gatherClustersDistribution();
 
-	eslocal dimension;
-	eslocal size;
+	esint dimension;
+	esint size;
 	std::vector<size_t> distribution;
 
-	serializededata<eslocal, eslocal>* IDs;
-	serializededata<eslocal, eslocal>* procNodes;
-	serializededata<eslocal, eslocal>* domainNodes;
-	serializededata<eslocal, double>* centers;
+	serializededata<esint, esint>* IDs;
+	serializededata<esint, esint>* procNodes;
+	serializededata<esint, esint>* domainNodes;
+	serializededata<esint, double>* centers;
 
-	serializededata<eslocal, int>* body;
-	serializededata<eslocal, int>* material;
-	serializededata<eslocal, eslocal>* regions;
-	serializededata<eslocal, Element*>* epointers;
+	serializededata<esint, int>* body;
+	serializededata<esint, int>* material;
+	serializededata<esint, esint>* regions;
+	serializededata<esint, Element*>* epointers;
 
 
-	serializededata<eslocal, eslocal>* neighbors;
+	serializededata<esint, esint>* neighbors;
 
-	eslocal firstDomain;
-	eslocal ndomains;
-	std::vector<eslocal> domainDistribution;
-	std::vector<eslocal> elementsDistribution;
+	esint firstDomain;
+	esint ndomains;
+	std::vector<esint> domainDistribution;
+	std::vector<esint> elementsDistribution;
 	std::vector<int> clusters;
-	eslocal nclusters;
+	esint nclusters;
 
 	int regionMaskSize;
-	std::vector<eslocal> ecounters;
+	std::vector<esint> ecounters;
 	std::vector<ElementsInterval> eintervals;
-	std::vector<eslocal> eintervalsDistribution;
+	std::vector<esint> eintervalsDistribution;
 
 	std::vector<ElementData*> data;
 

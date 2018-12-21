@@ -35,12 +35,12 @@ class Domain {
 public:
 
 	// Constructor
-	Domain(const FETISolverConfiguration &configuration, DataHolder *instance_in, eslocal domain_index, eslocal USE_HTFETI_in, bool copyN1toN2);
+	Domain(const FETISolverConfiguration &configuration, DataHolder *instance_in, esint domain_index, esint USE_HTFETI_in, bool copyN1toN2);
 
 	// Methods of the class
 	void SetDomain();
 
-	void multKplusLocal( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, eslocal x_in_vector_start_index, eslocal y_out_vector_start_index );
+	void multKplusLocal( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, esint x_in_vector_start_index, esint y_out_vector_start_index );
 	void multKplusLocal( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out );
 	void multKplusLocal( SEQ_VECTOR <double> & x_in_y_out);
 
@@ -68,13 +68,13 @@ public:
 	SparseMatrix B1;
 
 	// Domain specific variables
-	eslocal domain_global_index;
-	eslocal domain_prim_size;
-	eslocal USE_KINV;
-	eslocal USE_HFETI;
-	eslocal isOnACC;
+	esint domain_global_index;
+	esint domain_prim_size;
+	esint USE_KINV;
+	esint USE_HFETI;
+	esint isOnACC;
 
-	eslocal domain_index;
+	esint domain_index;
 	bool	enable_SP_refinement;
 
 
@@ -82,7 +82,7 @@ public:
 	SparseMatrix B0t;
 	SparseMatrix B0_comp;
 	SparseMatrix B0t_comp;
-	SEQ_VECTOR <eslocal> B0_comp_map_vec;
+	SEQ_VECTOR <esint> B0_comp_map_vec;
 
 	SparseMatrix B0Kplus;
 	SparseMatrix B0Kplus_comp;
@@ -94,14 +94,14 @@ public:
 	SparseMatrix B1Kplus;
 	SparseMatrix B1t;
 	SparseMatrix B1t_DirPr;
-	SEQ_VECTOR <eslocal> B1t_Dir_perm_vec;
-	SEQ_VECTOR< eslocal >  lambda_map_sub;
-	map <eslocal, eslocal> my_lamdas_map_indices;
+	SEQ_VECTOR <esint> B1t_Dir_perm_vec;
+	SEQ_VECTOR< esint >  lambda_map_sub;
+	map <esint, esint> my_lamdas_map_indices;
 	SEQ_VECTOR< double >B1_scale_vec;
 
 	SparseMatrix B1_comp_dom;
 	SparseMatrix B1t_comp_dom;
-	SEQ_VECTOR <eslocal> lambda_map_sub_local;
+	SEQ_VECTOR <esint> lambda_map_sub_local;
 
 //	SparseSolverAcc Kplus;
 
@@ -126,16 +126,16 @@ public:
 	SparseMatrix M;
 	SparseMatrix Prec;
 
-	SEQ_VECTOR <eslocal>	map_vector_e0;
-	SEQ_VECTOR <eslocal>	map_vector;
+	SEQ_VECTOR <esint>	map_vector_e0;
+	SEQ_VECTOR <esint>	map_vector;
 
-	SEQ_VECTOR <eslocal> 	fix_nodes;
-	SEQ_VECTOR <eslocal> 	fix_dofs;
+	SEQ_VECTOR <esint> 	fix_nodes;
+	SEQ_VECTOR <esint> 	fix_dofs;
 
 	// variables to export results
-	SEQ_VECTOR <eslocal>	number_of_nodes_in_global0;
-	SEQ_VECTOR <eslocal>	map_vector_local2global0;
-	SEQ_VECTOR <eslocal>	nodeMulti;
+	SEQ_VECTOR <esint>	number_of_nodes_in_global0;
+	SEQ_VECTOR <esint>	map_vector_local2global0;
+	SEQ_VECTOR <esint>	nodeMulti;
 	SEQ_VECTOR <double> 	ux;
 	SEQ_VECTOR <double> 	uy;
 	SEQ_VECTOR <double> 	uz;

@@ -12,7 +12,7 @@ struct HeatTransferKernel: public Kernel
 {
 	static double convectionHTC(
 			const ConvectionConfiguration &convection,
-			eslocal csize, double *coordinates, double time, double temp);
+			esint csize, double *coordinates, double time, double temp);
 };
 
 }

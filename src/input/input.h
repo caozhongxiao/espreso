@@ -24,7 +24,7 @@ protected:
 
 	void balance();
 
-	std::vector<eslocal> getDistribution(const std::vector<eslocal> &IDs, const std::vector<eslocal> &permutation);
+	std::vector<esint> getDistribution(const std::vector<esint> &IDs, const std::vector<esint> &permutation);
 
 	void balanceNodes();
 	void balancePermutedNodes();
@@ -32,14 +32,14 @@ protected:
 	void balancePermutedElements();
 
 	void assignRegions(
-			std::map<std::string, std::vector<eslocal> > &regions, std::vector<eslocal> &IDs,
-			std::vector<eslocal> &distribution,
-			size_t &rsize, std::vector<eslocal> &rbits);
-	void fillRegions(std::map<std::string, std::vector<eslocal> > &regions, size_t &rsize, std::vector<eslocal> &rbits);
+			std::map<std::string, std::vector<esint> > &regions, std::vector<esint> &IDs,
+			std::vector<esint> &distribution,
+			size_t &rsize, std::vector<esint> &rbits);
+	void fillRegions(std::map<std::string, std::vector<esint> > &regions, size_t &rsize, std::vector<esint> &rbits);
 
 	void sortNodes(bool withElementNodes = false);
 	void sortElements();
-	void sortElements(const std::vector<eslocal> &permutation);
+	void sortElements(const std::vector<esint> &permutation);
 
 	void fillNodes();
 	void fillElements();
@@ -49,17 +49,17 @@ protected:
 	void fillBoundaryRegions();
 	void fillElementRegions();
 
-	void reindexRegions(std::map<std::string, std::vector<eslocal> > &regions, std::vector<eslocal> &IDs);
+	void reindexRegions(std::map<std::string, std::vector<esint> > &regions, std::vector<esint> &IDs);
 	void reindexElementNodes();
 	void reindexBoundaryNodes();
 
 	PlainMeshData &_meshData;
 	Mesh &_mesh;
 
-	std::vector<eslocal> _nDistribution, _eDistribution, _etypeDistribution;
+	std::vector<esint> _nDistribution, _eDistribution, _etypeDistribution;
 
 	size_t _eregsize, _nregsize;
-	std::vector<eslocal> _eregions, _nregions;
+	std::vector<esint> _eregions, _nregions;
 };
 
 }

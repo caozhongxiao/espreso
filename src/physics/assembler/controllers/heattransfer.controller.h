@@ -15,7 +15,7 @@ class HeatTransferControler: public Controler
 {
 
 public:
-	void dirichletIndices(std::vector<std::vector<eslocal> > &indices);
+	void dirichletIndices(std::vector<std::vector<esint> > &indices);
 	void dirichletValues(std::vector<double> &values);
 
 	NodeData* solution();

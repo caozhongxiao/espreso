@@ -34,24 +34,24 @@ namespace espreso {
 
         // prepares arrays containing offsets etc. (necessary to run in cycle before AddDenseMatrix)
         /*void PreparePack(
-          eslocal i,
-          eslocal nRows,
-          eslocal nCols
+          esint i,
+          esint nRows,
+          esint nCols
           bool isPacked
           );
 
         // Adds sparse matrix to the pack (if there is enough space)
         void AddSparseMatrix(
-        eslocal *rowInd,
-        eslocal *colInd,
+        esint *rowInd,
+        esint *colInd,
         double * matrixData
         );*/
 
         // adds n matrices from the array A to the matrix pack
         void AddMatrices(
                 SparseMatrix ** A,
-                eslocal n,
-                eslocal device
+                esint n,
+                esint device
                 );
 
         void AllocateVectors() {
@@ -158,25 +158,25 @@ namespace espreso {
         float * matrix_values_mic_fl;
 
         // array of indices of rows
-        eslocal * rowInd;
+        esint * rowInd;
 
         // array of indices of rows on MIC (targetptr)
-        eslocal * rowInd_mic;
+        esint * rowInd_mic;
 
         // array of indices of columns
-        eslocal * colInd;
+        esint * colInd;
 
         // array of indices of columns on MIC (targetptr)
-        eslocal * colInd_mic;
+        esint * colInd_mic;
 
         // array with numbers of rows of individual matrices
-        eslocal * rows;
+        esint * rows;
 
         // array with numbers of cols of individual matrices
-        eslocal * cols;
+        esint * cols;
 
         // number of nonzero entries of individual matrices
-        eslocal * nnz;
+        esint * nnz;
 
         // total number of matrix rows
         long totalRows;

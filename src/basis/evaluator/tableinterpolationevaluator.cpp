@@ -13,9 +13,9 @@ TableInterpolationEvaluator::TableInterpolationEvaluator(const std::vector<std::
 	}
 }
 
-void TableInterpolationEvaluator::evalVector(eslocal size, eslocal increment, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+void TableInterpolationEvaluator::evalVector(esint size, esint increment, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
 {
-	for (eslocal i = 0; i < size; ++i) {
+	for (esint i = 0; i < size; ++i) {
 		if (tbegin[i] < _table[0].first) {
 			results[i * increment] = _table[0].second;
 			break;
@@ -32,10 +32,10 @@ void TableInterpolationEvaluator::evalVector(eslocal size, eslocal increment, in
 	}
 }
 
-void TableInterpolationEvaluator::evalFiltered(eslocal size, eslocal increment, eslocal *elements, eslocal *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+void TableInterpolationEvaluator::evalFiltered(esint size, esint increment, esint *elements, esint *distribution, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
 {
-	for (eslocal i = 0; i < size; ++i) {
-		for (eslocal e = distribution[elements[i]]; e < distribution[elements[i] + 1]; ++e) {
+	for (esint i = 0; i < size; ++i) {
+		for (esint e = distribution[elements[i]]; e < distribution[elements[i] + 1]; ++e) {
 			if (tbegin[e] < _table[0].first) {
 				results[e] = _table[0].second;
 				break;
@@ -53,9 +53,9 @@ void TableInterpolationEvaluator::evalFiltered(eslocal size, eslocal increment, 
 	}
 }
 
-void TableInterpolationEvaluator::evalSelected(eslocal size, eslocal increment, eslocal *selection, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
+void TableInterpolationEvaluator::evalSelected(esint size, esint increment, esint *selection, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
 {
-	for (eslocal i = 0; i < size; ++i) {
+	for (esint i = 0; i < size; ++i) {
 		if (tbegin[selection[i]] < _table[0].first) {
 			results[i * increment] = _table[0].second;
 			break;

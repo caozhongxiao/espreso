@@ -11,7 +11,7 @@ class ClusterCPU: public ClusterBase
 
 public:
 	// Constructor
-//	ClusterCPU(const FETISolverConfiguration &configuration, eslocal cluster_index): ClusterBase(configuration, cluster_index) { };
+//	ClusterCPU(const FETISolverConfiguration &configuration, esint cluster_index): ClusterBase(configuration, cluster_index) { };
 //	ClusterCPU(const FETISolverConfiguration &configuration): ClusterBase(configuration) {};
 	ClusterCPU(const FETISolverConfiguration &configuration, DataHolder *instance_in): ClusterBase(configuration, instance_in) {};
 

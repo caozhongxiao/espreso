@@ -23,7 +23,7 @@ SparseSolverMIC::~SparseSolverMIC() {
 
 void SparseSolverMIC::Clear() {
     if (isOffloaded) {
-        for (eslocal i = 0; i<nMatrices; i++) {
+        for (esint i = 0; i<nMatrices; i++) {
             double* valPointer = CSR_V_values[i];
             MKL_INT* iPointer = CSR_I_row_indices[i];
             MKL_INT* jPointer = CSR_J_col_indices[i];
@@ -65,7 +65,7 @@ void SparseSolverMIC::Clear() {
 
         delete [] m_Kplus_size;
         delete [] error;
-        for (eslocal i = 0 ; i < nMatrices; i++) {
+        for (esint i = 0 ; i < nMatrices; i++) {
             if(import_with_copy) {
                 _mm_free(CSR_I_row_indices[i]);
                 _mm_free(CSR_J_col_indices[i]);
@@ -86,7 +86,7 @@ void SparseSolverMIC::Clear() {
 }
 
 
-void SparseSolverMIC::ImportMatrices_wo_Copy(SparseMatrix ** A, eslocal nMatrices, eslocal mic) {
+void SparseSolverMIC::ImportMatrices_wo_Copy(SparseMatrix ** A, esint nMatrices, esint mic) {
 
     USE_FLOAT = false;
     this->nMatrices = nMatrices;
@@ -113,7 +113,7 @@ void SparseSolverMIC::ImportMatrices_wo_Copy(SparseMatrix ** A, eslocal nMatrice
     m_factorized = 0;
     m_Kplus_size = new MKL_INT[nMatrices];
 
-    for (eslocal i = 0; i < nMatrices; i++) {
+    for (esint i = 0; i < nMatrices; i++) {
         rows[i] = A[i]->rows;
         cols[i] = A[i]->cols;
         nnz[i] = A[i]->nnz;
@@ -130,13 +130,13 @@ void SparseSolverMIC::ImportMatrices_wo_Copy(SparseMatrix ** A, eslocal nMatrice
         iparm[i] = new MKL_INT[65];
         dparm[i] = new double[65];
         perm[i] = (MKL_INT*) _mm_malloc(rows[i] * sizeof(MKL_INT), 64);
-        for (eslocal j = 0; j < 65; j++) {
+        for (esint j = 0; j < 65; j++) {
             iparm[i][j]=0;
         }
-        for (eslocal j = 0; j < rows[i] ; j++) {
+        for (esint j = 0; j < rows[i] ; j++) {
             perm[i][j] = 0; 
         }
-        for (eslocal j = 0 ;j < 64; j++) {
+        for (esint j = 0 ;j < 64; j++) {
             pt[i][j] = 0;
         }
     }
@@ -159,7 +159,7 @@ void SparseSolverMIC::ImportMatrices_wo_Copy(SparseMatrix ** A, eslocal nMatrice
     in(error : length(nMatrices) alloc_if(1) free_if(0)) \
     in(m_Kplus_size : length(nMatrices) alloc_if(1) free_if(0) ) \
     in(this : alloc_if(1) free_if(0))
-    for (eslocal i = 0; i<nMatrices; i++) {
+    for (esint i = 0; i<nMatrices; i++) {
         double* valPointer = CSR_V_values[i];
         MKL_INT* iPointer = CSR_I_row_indices[i];
         MKL_INT* jPointer = CSR_J_col_indices[i];
@@ -200,7 +200,7 @@ void SparseSolverMIC::ImportMatrices_wo_Copy(SparseMatrix ** A, eslocal nMatrice
 
 
 
-void SparseSolverMIC::ImportMatrices(SparseMatrix ** A, eslocal nMatrices, eslocal mic) {
+void SparseSolverMIC::ImportMatrices(SparseMatrix ** A, esint nMatrices, esint mic) {
 
     USE_FLOAT = false;
     this->nMatrices = nMatrices;
@@ -226,7 +226,7 @@ void SparseSolverMIC::ImportMatrices(SparseMatrix ** A, eslocal nMatrices, esloc
     m_factorized = 0;
     m_Kplus_size = new MKL_INT[nMatrices];
 
-    for (eslocal i = 0; i < nMatrices; i++) {
+    for (esint i = 0; i < nMatrices; i++) {
         rows[i] = A[i]->rows;
         cols[i] = A[i]->cols;
         nnz[i] = A[i]->nnz;
@@ -247,7 +247,7 @@ void SparseSolverMIC::ImportMatrices(SparseMatrix ** A, eslocal nMatrices, esloc
         iparm[i] = new MKL_INT[65];
         dparm[i] = new double[65];
         perm[i] = (MKL_INT*) _mm_malloc(rows[i] * sizeof(MKL_INT), 64);
-        for (eslocal j = 0; j < 65; j++) iparm[j]=0;
+        for (esint j = 0; j < 65; j++) iparm[j]=0;
     }
     import_with_copy = true;
 
@@ -267,7 +267,7 @@ void SparseSolverMIC::ImportMatrices(SparseMatrix ** A, eslocal nMatrices, esloc
     in(error : length(nMatrices) alloc_if(1) free_if(0)) \
     in(m_Kplus_size : length(nMatrices) alloc_if(1) free_if(0))
 
-    for (eslocal i = 0; i<nMatrices; i++) {
+    for (esint i = 0; i<nMatrices; i++) {
         double* valPointer = CSR_V_values[i];
         MKL_INT* iPointer = CSR_I_row_indices[i];
         MKL_INT* jPointer = CSR_J_col_indices[i];
@@ -297,7 +297,7 @@ void SparseSolverMIC::ImportMatrices(SparseMatrix ** A, eslocal nMatrices, esloc
 */
 }
 
-void SparseSolverMIC::ImportMatrices_fl(SparseMatrix ** A, eslocal nMatrices, eslocal mic) {
+void SparseSolverMIC::ImportMatrices_fl(SparseMatrix ** A, esint nMatrices, esint mic) {
 
     USE_FLOAT = true;
 
@@ -323,7 +323,7 @@ void SparseSolverMIC::ImportMatrices_fl(SparseMatrix ** A, eslocal nMatrices, es
     m_Kplus_size = new MKL_INT[nMatrices];
 
 
-    for (eslocal i = 0; i < nMatrices; i++) {
+    for (esint i = 0; i < nMatrices; i++) {
         rows[i] = A[i]->rows;
         cols[i] = A[i]->cols;
         nnz[i] = A[i]->nnz;
@@ -363,7 +363,7 @@ void SparseSolverMIC::ImportMatrices_fl(SparseMatrix ** A, eslocal nMatrices, es
     in(m_Kplus_size : length(nMatrices) alloc_if(1) free_if(0))
 
 
-    for (eslocal i = 0; i<nMatrices; i++) {
+    for (esint i = 0; i<nMatrices; i++) {
         double* valPointer = CSR_V_values[i];
         MKL_INT* iPointer = CSR_I_row_indices[i];
         MKL_INT* jPointer = CSR_J_col_indices[i];
@@ -425,7 +425,7 @@ void SparseSolverMIC::Factorization(const std::string &str) {
 #pragma omp parallel
             {
 #pragma omp for
-                for (eslocal i = 0; i < nMatrices; i++) {
+                for (esint i = 0; i < nMatrices; i++) {
                     iparm[i][2] = 0;
 
                     iparm[i][1-1] = 1;         /* No solver default */
@@ -454,7 +454,7 @@ void SparseSolverMIC::Factorization(const std::string &str) {
 
                 }
                 initialized = true;            
-                for (eslocal i=0; i < nMatrices; i++) {
+                for (esint i=0; i < nMatrices; i++) {
                     if (error[i] != 0) {
                         initialized = false;
                         std::cerr << "ERROR during symbolic factorization of matrix " << i <<": " << str << "\n";
@@ -465,7 +465,7 @@ void SparseSolverMIC::Factorization(const std::string &str) {
                 }
 
 #ifdef DEBUG
-                preslocalf ("\nReordering completed ... ");
+                presintf ("\nReordering completed ... ");
 #endif
 
                 /* -------------------------------------------------------------------- */
@@ -476,7 +476,7 @@ void SparseSolverMIC::Factorization(const std::string &str) {
                     phase = 22;
                 }
 #pragma omp for
-                for (eslocal i = 0; i < nMatrices; i++) {
+                for (esint i = 0; i < nMatrices; i++) {
                     if (USE_FLOAT) {
                         pardiso (pt[i], &maxfct, &mnum, &mtype, &phase,
                                 &rows[i], CSR_V_values_fl[i], CSR_I_row_indices[i], CSR_J_col_indices[i], perm[i], &m_nRhs, iparm[i], &msglvl, &ddum, &ddum, &error[i]);
@@ -485,7 +485,7 @@ void SparseSolverMIC::Factorization(const std::string &str) {
                                 &rows[i], CSR_V_values[i], CSR_I_row_indices[i], CSR_J_col_indices[i], perm[i], &m_nRhs, iparm[i], &msglvl, &ddum, &ddum, &error[i]);
                     }
                     m_factorized = 1;
-                    for (eslocal i=0; i < nMatrices; i++) {
+                    for (esint i=0; i < nMatrices; i++) {
                         if (error[i] != 0) {
                             m_factorized = 0;
                             std::cerr << "ERROR during numeric factorization of matrix " << i <<": " << str << "\n";
@@ -496,7 +496,7 @@ void SparseSolverMIC::Factorization(const std::string &str) {
                     }
 
 #ifdef DEBUG
-                    preslocalf ("\nFactorization completed ... ");
+                    presintf ("\nFactorization completed ... ");
 #endif
                 }
             }
@@ -504,7 +504,7 @@ void SparseSolverMIC::Factorization(const std::string &str) {
     if (USE_FLOAT) {
         tmp_sol_fl1 = new float*[nMatrices];
         tmp_sol_fl2 = new float*[nMatrices];
-        for (eslocal i=0; i < nMatrices; i++) {
+        for (esint i=0; i < nMatrices; i++) {
             tmp_sol_fl1[i] = (float*) _mm_malloc(m_Kplus_size[i]*sizeof(float), 64);
             tmp_sol_fl2[i] = (float*) _mm_malloc(m_Kplus_size[i]*sizeof(float), 64);
         }
@@ -513,10 +513,10 @@ void SparseSolverMIC::Factorization(const std::string &str) {
 #pragma offload_transfer target(mic:device) \
         in(tmp_sol_fl1 : length(nMatrices) alloc_if(1) free_if(0)) \
         in(tmp_sol_fl2 : length(nMatrices) alloc_if(1) free_if(0))
-        for (eslocal i = 0; i<nMatrices; i++) {
+        for (esint i = 0; i<nMatrices; i++) {
             float * tmp1 = tmp_sol_fl1[i];
             float * tmp2 = tmp_sol_fl2[i];
-            eslocal tmpLength = m_Kplus_size[i];
+            esint tmpLength = m_Kplus_size[i];
 #pragma offload target(mic:device) \
             in(tmp1 : length(tmpLength) alloc_if(1) free_if(0)) \
             in(tmp2 : length(tmpLength) alloc_if(1) free_if(0)) \
@@ -529,7 +529,7 @@ void SparseSolverMIC::Factorization(const std::string &str) {
     } else {
         tmp_sol_d1 = new double*[nMatrices];
         tmp_sol_d2 = new double*[nMatrices];
-        for (eslocal i=0; i<nMatrices; i++) {
+        for (esint i=0; i<nMatrices; i++) {
             tmp_sol_d1[i] = (double*) _mm_malloc(m_Kplus_size[i]*sizeof(double),64);
             tmp_sol_d2[i] = (double*) _mm_malloc(m_Kplus_size[i]*sizeof(double),64);
         }
@@ -539,10 +539,10 @@ void SparseSolverMIC::Factorization(const std::string &str) {
         in(tmp_sol_d1 : length(nMatrices) alloc_if(1) free_if(0)) \
         in(tmp_sol_d2 : length(nMatrices) alloc_if(1) free_if(0)) \
         in(this : length(0) alloc_if(0) free_if(0))
-        for (eslocal i = 0; i<nMatrices; i++) {
+        for (esint i = 0; i<nMatrices; i++) {
             double * tmp1 = tmp_sol_d1[i];
             double * tmp2 = tmp_sol_d2[i];
-            eslocal tmpLength = m_Kplus_size[i];
+            esint tmpLength = m_Kplus_size[i];
 #pragma offload target(mic:device) \
             in(tmp_sol_d1 : length(0) alloc_if(0) free_if(0)) \
             in(tmp_sol_d2 : length(0) alloc_if(0) free_if(0)) \
@@ -558,7 +558,7 @@ void SparseSolverMIC::Factorization(const std::string &str) {
     }
     
     int totalLength = 0;
-    for (eslocal i = 0 ; i < nMatrices; i++) {
+    for (esint i = 0 ; i < nMatrices; i++) {
         totalLength += m_Kplus_size[i];
     }
     vectors = (double*) _mm_malloc(totalLength * sizeof(double), 64);
@@ -591,9 +591,9 @@ void SparseSolverMIC::Solve( SEQ_VECTOR <double> ** rhs_sol) {
         ss << "Solve -> rank: ";// << esenvironment->MPIrank; // MPIrank link problem
         Factorization(ss.str());
     }
-    eslocal offset = 0;
+    esint offset = 0;
     
-    for (eslocal i = 0; i < nMatrices; i++) {
+    for (esint i = 0; i < nMatrices; i++) {
         memcpy(vectors + offset, &(rhs_sol[i]->at(0)), m_Kplus_size[i] * sizeof(double));
         tmp_sol_d1[i] = vectors + offset;
         offset += m_Kplus_size[i];
@@ -601,38 +601,38 @@ void SparseSolverMIC::Solve( SEQ_VECTOR <double> ** rhs_sol) {
 #pragma offload_transfer target(mic:device) in(vectors : length(offset) alloc_if(0) free_if(0)) \
     in(tmp_sol_d1 : length(nMatrices) alloc_if(0) free_if(0))
     if( USE_FLOAT ) {
-        for (eslocal i = 0; i < nMatrices; i++) {
-            for (eslocal j = 0; j < m_Kplus_size[i]; j++)
+        for (esint i = 0; i < nMatrices; i++) {
+            for (esint j = 0; j < m_Kplus_size[i]; j++)
                 tmp_sol_fl1[i][j] = (float)(rhs_sol[i])->at(j);
         }
     }
     double ** tmpVecPointers = new double*[nMatrices];
 
     if ( USE_FLOAT ) {
-        for (eslocal i = 0 ; i < nMatrices; i++) {
+        for (esint i = 0 ; i < nMatrices; i++) {
             float *tmpPointer = tmp_sol_fl1[i];
-            eslocal tmpLength = m_Kplus_size[i];
+            esint tmpLength = m_Kplus_size[i];
 #pragma offload_transfer target(mic:device) \
             in(tmpPointer : length(tmpLength) alloc_if(0) free_if(0))
             //in(tmp_sol_fl1 : length(0) alloc_if(0) free_if(0))
             //{
-            //    tmp_sol_fl1[i] = tmpPoeslocaler;
+            //    tmp_sol_fl1[i] = tmpPoesinter;
             //}
         }
     } else {
-        for (eslocal i = 0; i < nMatrices; i++) {
+        for (esint i = 0; i < nMatrices; i++) {
             tmpVecPointers[i] = &(rhs_sol[i]->at(0));
         }
         //#pragma offload_transfer taget(mic:device) \
-        //in(tmpVecPoeslocalers : length(nMatrices) alloc_if(1) free_if(0))
-        for (eslocal i = 0; i < nMatrices;i++) {
+        //in(tmpVecPoesinters : length(nMatrices) alloc_if(1) free_if(0))
+        for (esint i = 0; i < nMatrices;i++) {
             double * tmpPointer2 = tmpVecPointers[i];
-            eslocal tmpLength = m_Kplus_size[i];
+            esint tmpLength = m_Kplus_size[i];
             double * buffer = tmp_sol_d1[i];
 //#pragma offload_transfer target(mic:device) \
 //          :  in(tmpPointer2 : length(tmpLength) alloc_if(0) free_if(0) into(buffer))
             //{
-            //    tmpVecPoeslocalers[i] = tmpPoeslocaler2;
+            //    tmpVecPoesinters[i] = tmpPoesinter2;
             //}
 
         }
@@ -659,8 +659,8 @@ void SparseSolverMIC::Solve( SEQ_VECTOR <double> ** rhs_sol) {
     in(vectors_out : length(0) alloc_if(0) free_if(0)) \
     in(this : length(0) alloc_if(0) free_if(0))
     {
-        eslocal offset = 0;
-for (eslocal i = 0; i < nMatrices; i++){
+        esint offset = 0;
+for (esint i = 0; i < nMatrices; i++){
     tmp_sol_d1[i] = &vectors[offset];
     tmp_sol_d2[i] = &vectors_out[offset];
     offset+=m_Kplus_size[i];
@@ -680,9 +680,9 @@ for (eslocal i = 0; i < nMatrices; i++){
 
 #pragma omp parallel //num_threads(21)
         {
-            eslocal myPhase = 331;
+            esint myPhase = 331;
 #pragma omp for schedule(dynamic)
-            for (eslocal i = 0; i < nMatrices; i++) {
+            for (esint i = 0; i < nMatrices; i++) {
                 myPhase=331;
                 MKL_INT ip5backup = iparm[i][5];
                 iparm[i][5] = 0;
@@ -708,7 +708,7 @@ myPhase = 33;
             }
         }
         bool err = false;
-        for (eslocal i = 0; i < nMatrices; i++) {
+        for (esint i = 0; i < nMatrices; i++) {
             if (error[i]!=0) {
                 err = true;
                 //ESINFO(ERROR) << "ERROR during solution: " << error[i] << ", matrix " << i;
@@ -726,7 +726,7 @@ myPhase = 33;
             /*
                phase = -1;	 		
                MKL_INT nRhs = 1;
-               for (eslocal i =0 ; i < nMatrices; i++ ) {
+               for (esint i =0 ; i < nMatrices; i++ ) {
                pardiso (pt[i], &maxfct, &mnum, &mtype, &phase,
                &rows[i], &ddum, CSR_I_row_indices[i], CSR_J_col_indices[i], &idum, &nRhs,
                iparm[i], &msglvl, &ddum, &ddum, &error[i]);
@@ -740,11 +740,11 @@ myPhase = 33;
 
     // send data from buffers on mic back to CPU user provided arrays
     if (USE_FLOAT) {
-        for (eslocal i = 0; i < nMatrices; i++) {
+        for (esint i = 0; i < nMatrices; i++) {
             float * tmp = tmp_sol_fl2[i];
 #pragma offload_transfer target(mic:device) \
             out(tmp : length(m_Kplus_size[i]) alloc_if(0) free_if(0))
-            for (eslocal j = 0; j < m_Kplus_size[i]; j++) {
+            for (esint j = 0; j < m_Kplus_size[i]; j++) {
                 rhs_sol[i]->at(j) = (double) tmp[j];
             }
         }
@@ -752,7 +752,7 @@ myPhase = 33;
 #pragma offload_transfer target(mic:device) \
         out(vectors_out : length(offset) alloc_if(0) free_if(0))
         offset = 0;
-        for (eslocal i = 0; i < nMatrices; i++) {
+        for (esint i = 0; i < nMatrices; i++) {
             memcpy(&(rhs_sol[i]->at(0)), vectors_out + offset, m_Kplus_size[i] * sizeof(double));
             offset += m_Kplus_size[i];
    //double * tmp = tmp_sol_d2[i];
@@ -766,14 +766,14 @@ myPhase = 33;
 void SparseSolverMIC::Create_SC(
         DenseMatrixPack & SC_out,
         MKL_INT *SC_sizes,
-        eslocal generate_symmetric_sc_1_generate_general_sc_0
+        esint generate_symmetric_sc_1_generate_general_sc_0
         ) {
     //ESINFO(PROGRESS3) << "Creating Schur complements";
 
 
     // data to be transfered to MIC
-    eslocal * SC_out_rows = SC_out.rows;
-    eslocal * SC_out_cols = SC_out.cols;
+    esint * SC_out_rows = SC_out.rows;
+    esint * SC_out_cols = SC_out.cols;
     long * SC_out_lengths = SC_out.lengths;
     long * SC_out_offsets = SC_out.offsets;
     long * SC_out_rowOffsets = SC_out.rowOffsets;
@@ -781,7 +781,7 @@ void SparseSolverMIC::Create_SC(
     long SC_out_totalCols = SC_out.totalCols;
     long SC_out_totalRows = SC_out.totalRows;
     double * SC_out_matrices = SC_out.matrices;
-    eslocal matricesSize = SC_out.preallocSize - SC_out.freeSpace;
+    esint matricesSize = SC_out.preallocSize - SC_out.freeSpace;
     bool * SC_out_packed = SC_out.packed;
     int setMsglvl = Info::report(LIBRARIES) ? 1 : 0;
 
@@ -805,7 +805,7 @@ void SparseSolverMIC::Create_SC(
     {
 
         long maxSize = 0;
-        for (eslocal i = 0; i < nMatrices; i++) {
+        for (esint i = 0; i < nMatrices; i++) {
             if (SC_sizes[i]*SC_sizes[i] > maxSize) {
                 maxSize = SC_sizes[i]*SC_sizes[i];
             }
@@ -814,22 +814,22 @@ void SparseSolverMIC::Create_SC(
         double ** matrixPerThread = new double*[nMatrices];
 #pragma omp parallel
         {
-            eslocal myRank = omp_get_thread_num();
+            esint myRank = omp_get_thread_num();
             matrixPerThread[myRank] = (double*) _mm_malloc(maxSize * sizeof(double), 64);
         }
         //ESINFO(PROGRESS3) << "start";
 #pragma omp parallel
         {
-            eslocal myRank = omp_get_thread_num();
+            esint myRank = omp_get_thread_num();
 
 
 #pragma omp for //schedule(static,1)
-            for (eslocal i = 0 ; i < nMatrices; i++) {
-                for (eslocal j = 0; j < 64; j++) {
+            for (esint i = 0 ; i < nMatrices; i++) {
+                for (esint j = 0; j < 64; j++) {
                     iparm[i][j] = 0;
                 }
 
-                eslocal 	mtype = 2;
+                esint 	mtype = 2;
                 double ddum;
 
                 iparm[i][2] = 0;
@@ -851,10 +851,10 @@ void SparseSolverMIC::Create_SC(
 
 
                 // for reordering and factorization
-                for (eslocal j = 0; j < rows[i] - SC_sizes[i]; j++)
+                for (esint j = 0; j < rows[i] - SC_sizes[i]; j++)
                     perm[i][j] = 0;
 
-                for (eslocal j = rows[i] - SC_sizes[i]; j < rows[i]; j++)
+                for (esint j = rows[i] - SC_sizes[i]; j < rows[i]; j++)
                     perm[i][j] = 1;
                 m_nRhs = 0;
 
@@ -875,7 +875,7 @@ void SparseSolverMIC::Create_SC(
                         iparm[i], &msglvl, &ddum, SC_out_data, &error[i]);
 
 
-                for (eslocal j = 0; j < SC_sizes[i]*SC_sizes[i]; j++)
+                for (esint j = 0; j < SC_sizes[i]*SC_sizes[i]; j++)
                     SC_out_data[j] = (-1.0)*SC_out_data[j];
 
                 if (SC_out_packed[i]) {
@@ -899,7 +899,7 @@ void SparseSolverMIC::Create_SC(
             }
         }
         bool err=false;
-        for (eslocal i = 0; i < nMatrices; i++) {
+        for (esint i = 0; i < nMatrices; i++) {
             if (error[i]!=0) {
                 err=true;
             }
@@ -921,24 +921,24 @@ void SparseSolverMIC::Create_SC_w_Mat(
         SparseMatrix** K_in,
         SparseMatrix** B_in,
         DenseMatrixPack & SC_out,
-        eslocal nMatrices,
-        eslocal generate_symmetric_sc_1_generate_general_sc_0,
-        eslocal device ) {
+        esint nMatrices,
+        esint generate_symmetric_sc_1_generate_general_sc_0,
+        esint device ) {
     if (!SC_out.areDataOnMIC()) {
         SC_out.CopyToMIC();
     }
     // data to be transfered to MIC
-    eslocal * K_in_rows = (eslocal*) _mm_malloc(nMatrices * sizeof(eslocal), 64); //new eslocal[nMatrices];
-    eslocal * K_b_tmp_rows = (eslocal*) _mm_malloc(nMatrices * sizeof(eslocal), 64);//new eslocal[nMatrices];
-    eslocal * K_sc1_rows = (eslocal*) _mm_malloc(nMatrices * sizeof(eslocal), 64);//new eslocal[nMatrices];
-    eslocal * nnz = (eslocal*) _mm_malloc(nMatrices * sizeof(eslocal), 64);//new eslocal[nMatrices];
+    esint * K_in_rows = (esint*) _mm_malloc(nMatrices * sizeof(esint), 64); //new esint[nMatrices];
+    esint * K_b_tmp_rows = (esint*) _mm_malloc(nMatrices * sizeof(esint), 64);//new esint[nMatrices];
+    esint * K_sc1_rows = (esint*) _mm_malloc(nMatrices * sizeof(esint), 64);//new esint[nMatrices];
+    esint * nnz = (esint*) _mm_malloc(nMatrices * sizeof(esint), 64);//new esint[nMatrices];
 
     double ** K_sc1_CSR_V_values = (double**) _mm_malloc(nMatrices * sizeof(double*), 64);// new double*[nMatrices];
-    eslocal ** K_sc1_CSR_I_row_indices = (eslocal**) _mm_malloc(nMatrices * sizeof(eslocal*), 64); //new eslocal*[nMatrices];
-    eslocal ** K_sc1_CSR_J_col_indices = (eslocal**) _mm_malloc(nMatrices * sizeof(eslocal*), 64);//new eslocal*[nMatrices];
+    esint ** K_sc1_CSR_I_row_indices = (esint**) _mm_malloc(nMatrices * sizeof(esint*), 64); //new esint*[nMatrices];
+    esint ** K_sc1_CSR_J_col_indices = (esint**) _mm_malloc(nMatrices * sizeof(esint*), 64);//new esint*[nMatrices];
     //double ** SC_out_dense_values = new double*[nMatrices];
-    eslocal * SC_out_rows = SC_out.rows;
-    eslocal * SC_out_cols = SC_out.cols;
+    esint * SC_out_rows = SC_out.rows;
+    esint * SC_out_cols = SC_out.cols;
     long * SC_out_lengths = SC_out.lengths;
     long * SC_out_offsets = SC_out.offsets;
     long * SC_out_rowOffsets = SC_out.rowOffsets;
@@ -948,11 +948,11 @@ void SparseSolverMIC::Create_SC_w_Mat(
     long SC_out_totalCols = SC_out.totalCols;
     long SC_out_totalRows = SC_out.totalRows;
     double * SC_out_matrices = SC_out.matrices;
-    eslocal matricesSize = SC_out.preallocSize - SC_out.freeSpace;
+    esint matricesSize = SC_out.preallocSize - SC_out.freeSpace;
     bool * SC_out_packed = SC_out.packed;
 
     // find the biggest SC matrix and preallocate output array for PARDISO
-    for ( eslocal i = 0 ; i < nMatrices; ++i ) {
+    for ( esint i = 0 ; i < nMatrices; ++i ) {
 
 
         // assemble the whole matrix [K, B; Bt, eye]
@@ -975,11 +975,11 @@ void SparseSolverMIC::Create_SC_w_Mat(
 
         K_sc1_CSR_V_values[i] = (double*) _mm_malloc(nnz[i] * sizeof(double), 64); // new double[ nnz[i] ];
         memcpy(K_sc1_CSR_V_values[i], &K_sc1.CSR_V_values[0], nnz[i] * sizeof(double) );
-        K_sc1_CSR_I_row_indices[i] = (eslocal*) _mm_malloc( (K_sc1_rows[i] +1) * sizeof(eslocal), 64);// new eslocal[K_sc1_rows[i] + 1];
-        memcpy(K_sc1_CSR_I_row_indices[i], &K_sc1.CSR_I_row_indices[0], ( K_sc1_rows[i] + 1) * sizeof(eslocal));
+        K_sc1_CSR_I_row_indices[i] = (esint*) _mm_malloc( (K_sc1_rows[i] +1) * sizeof(esint), 64);// new esint[K_sc1_rows[i] + 1];
+        memcpy(K_sc1_CSR_I_row_indices[i], &K_sc1.CSR_I_row_indices[0], ( K_sc1_rows[i] + 1) * sizeof(esint));
         //K_sc1_CSR_I_row_indices[i][K_sc1_rows[i]] = nnz[i];
-        K_sc1_CSR_J_col_indices[i] = (eslocal*) _mm_malloc(nnz[i] * sizeof(eslocal), 64); //new eslocal[nnz[i]];
-        memcpy(K_sc1_CSR_J_col_indices[i], &K_sc1.CSR_J_col_indices[0], nnz[i] * sizeof(eslocal));
+        K_sc1_CSR_J_col_indices[i] = (esint*) _mm_malloc(nnz[i] * sizeof(esint), 64); //new esint[nnz[i]];
+        memcpy(K_sc1_CSR_J_col_indices[i], &K_sc1.CSR_J_col_indices[0], nnz[i] * sizeof(esint));
 
     }
     // transfer data
@@ -993,10 +993,10 @@ void SparseSolverMIC::Create_SC_w_Mat(
     in(K_sc1_CSR_J_col_indices : length(nMatrices) alloc_if(1) free_if(0) ) \
     in(this : alloc_if(1) free_if(0) )
     // #pragma omp parallel for num_threads(24)
-    for (eslocal i = 0 ; i < nMatrices; i++) {
+    for (esint i = 0 ; i < nMatrices; i++) {
         double * valPointer = K_sc1_CSR_V_values[i];
-        eslocal * iPointer = K_sc1_CSR_I_row_indices[i];
-        eslocal * jPointer = K_sc1_CSR_J_col_indices[i];
+        esint * iPointer = K_sc1_CSR_I_row_indices[i];
+        esint * jPointer = K_sc1_CSR_J_col_indices[i];
 #pragma offload target(mic:device) \
         in( valPointer : length(nnz[i]) alloc_if(1) free_if(0)) \
         in( iPointer : length(K_sc1_rows[i] + 1) alloc_if(1) free_if(0)) \
@@ -1031,12 +1031,12 @@ void SparseSolverMIC::Create_SC_w_Mat(
     in(SC_out_lengths : length(0) alloc_if(0) free_if(0))  in(this : length(0) alloc_if(0) free_if(0)) if(1)
     {
         long maxSize = 0;
-        for (eslocal i = 0; i < nMatrices; i++) {
+        for (esint i = 0; i < nMatrices; i++) {
             if (K_b_tmp_rows[i]*K_b_tmp_rows[i] > maxSize) {
                 maxSize = K_b_tmp_rows[i]*K_b_tmp_rows[i];
             }
         }
-        eslocal nThreads = 1;
+        esint nThreads = 1;
 #pragma omp parallel
         {
 #pragma omp single
@@ -1045,7 +1045,7 @@ void SparseSolverMIC::Create_SC_w_Mat(
         double ** matrixPerThread = new double*[nThreads];
 #pragma omp parallel
         {
-            eslocal myRank = omp_get_thread_num();
+            esint myRank = omp_get_thread_num();
             // to overcome competition among threads allocate buffer one by one
 #pragma omp critical
             matrixPerThread[myRank] = (double*) _mm_malloc(maxSize * sizeof(double), 64);
@@ -1056,15 +1056,15 @@ void SparseSolverMIC::Create_SC_w_Mat(
             void *pt[64];
 
             /* Pardiso control parameters. */
-            eslocal 	iparm[64];
+            esint 	iparm[64];
             double  dparm[65];
-            eslocal 	maxfct, mnum, phase, error;
+            esint 	maxfct, mnum, phase, error;
 
             /* Auxiliary variables. */
-            eslocal 	j;
+            esint 	j;
             double 	ddum;			/* Double dummy */
-            eslocal 	idum;			/* Integer dummy. */
-            eslocal 	solver;
+            esint 	idum;			/* Integer dummy. */
+            esint 	solver;
 
             /* -------------------------------------------------------------------- */
             /* .. Setup Pardiso control parameters. */
@@ -1074,13 +1074,13 @@ void SparseSolverMIC::Create_SC_w_Mat(
             }
 
             /* -------------------------------------------------------------------- */
-            /* .. Initialize the eslocalernal solver memory poeslocaler. This is only */
+            /* .. Initialize the esinternal solver memory poesinter. This is only */
             /* necessary for the FIRST call of the PARDISO solver. */
             /* -------------------------------------------------------------------- */
             for (j = 0; j < 64; j++)
                 pt[j] = 0;
 
-            eslocal 	mtype = 2;
+            esint 	mtype = 2;
 
             iparm[2] = 0;
 
@@ -1100,15 +1100,15 @@ void SparseSolverMIC::Create_SC_w_Mat(
             error = 0;            /* Initialize error flag */
 
 #pragma omp for //schedule(static,1)
-            for (eslocal i = 0 ; i < nMatrices; i++) {
+            for (esint i = 0 ; i < nMatrices; i++) {
                 // for reordering and factorization
-                eslocal * perm = new eslocal[K_sc1_rows[i]];
-                for (eslocal j = 0; j < K_in_rows[i]; j++)
+                esint * perm = new esint[K_sc1_rows[i]];
+                for (esint j = 0; j < K_in_rows[i]; j++)
                     perm[j] = 0;
 
-                for (eslocal j = K_in_rows[i]; j < K_sc1_rows[i]; j++)
+                for (esint j = K_in_rows[i]; j < K_sc1_rows[i]; j++)
                     perm[j] = 1;
-                eslocal nrhs = 0;
+                esint nrhs = 0;
 
                 /* -------------------------------------------------------------------- */
                 /* .. Numerical factorization. */
@@ -1129,7 +1129,7 @@ void SparseSolverMIC::Create_SC_w_Mat(
                         &perm[0], &nrhs,
                         iparm, &msglvl, &ddum, SC_out_data, &error);
 
-                for (eslocal j = 0; j < K_b_tmp_rows[i]*K_b_tmp_rows[i]; j++)
+                for (esint j = 0; j < K_b_tmp_rows[i]*K_b_tmp_rows[i]; j++)
                     SC_out_data[j] = (-1.0)*SC_out_data[j];
 
                 if (SC_out_packed[i]) {
@@ -1168,10 +1168,10 @@ void SparseSolverMIC::Create_SC_w_Mat(
         }
     }
         // remember to clear also MICs memory
-    for (eslocal i = 0 ; i < nMatrices; i++) {
+    for (esint i = 0 ; i < nMatrices; i++) {
         double * valPointer = K_sc1_CSR_V_values[i];
-        eslocal * iPointer = K_sc1_CSR_I_row_indices[i];
-        eslocal * jPointer = K_sc1_CSR_J_col_indices[i];
+        esint * iPointer = K_sc1_CSR_I_row_indices[i];
+        esint * jPointer = K_sc1_CSR_J_col_indices[i];
 #pragma offload_transfer target(mic:device) \
         nocopy( valPointer : alloc_if(0) free_if(1)) \
         nocopy( iPointer :  alloc_if(0) free_if(1)) \
@@ -1182,7 +1182,7 @@ void SparseSolverMIC::Create_SC_w_Mat(
     nocopy(K_sc1_CSR_I_row_indices :  alloc_if(0) free_if(1) ) \
     nocopy(K_sc1_CSR_J_col_indices : alloc_if(0) free_if(1) )
 
- for ( eslocal i = 0 ; i < nMatrices; ++i ) {
+ for ( esint i = 0 ; i < nMatrices; ++i ) {
         _mm_free(K_sc1_CSR_V_values[i]);
         _mm_free(K_sc1_CSR_I_row_indices[i]);
         _mm_free(K_sc1_CSR_J_col_indices[i]);

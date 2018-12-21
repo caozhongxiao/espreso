@@ -77,9 +77,9 @@ public:
 	static MPIOperations::TypedOperations& sizetOperations() { return operations().SIZET; }
 	static MPIOperations::TypedOperations& intOperations() { return operations().INT; }
 	static MPIOperations::TypedOperations& longOperations() { return operations().LONG; }
-	static MPIOperations::TypedOperations& eslocalOperations()
+	static MPIOperations::TypedOperations& esintOperations()
 	{
-			return sizeof(eslocal) == sizeof(int) ? operations().INT : operations().LONG;
+			return sizeof(esint) == sizeof(int) ? operations().INT : operations().LONG;
 	}
 
 	static MPISubset& nodes();

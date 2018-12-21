@@ -130,7 +130,7 @@ SparseSolverCUDA::SparseSolverCUDA(){
 
 	reorder = 2; // 0 - no reordering, 1 - symrcm, 2 - symamd
 
-	if(sizeof(eslocal) == 8){
+	if(sizeof(esint) == 8){
 		printf("64-bit integer in use with cuSolver - results may be inaccurate!\n");
 	}
 
@@ -255,7 +255,7 @@ void SparseSolverCUDA::Clear() {
 }
 
 void SparseSolverCUDA::ReorderMatrix(espreso::SparseMatrix & A) {
-		eslocal i;
+		esint i;
 
 		MKL_INT rows_r 						= A.rows;
 		MKL_INT nnz_r					 	= A.nnz;
@@ -365,7 +365,7 @@ void SparseSolverCUDA::ImportMatrix(espreso::SparseMatrix & A_in) {
 	espreso::SparseMatrix* A;
 	espreso::SparseMatrix A_sym;
 
-	eslocal i;
+	esint i;
 
 	#ifdef DEBUG
 		#if INT_WIDTH == 64
@@ -484,7 +484,7 @@ void SparseSolverCUDA::ImportMatrix_fl(espreso::SparseMatrix & A_in) {
 	espreso::SparseMatrix* A;
 	espreso::SparseMatrix A_sym;
 
-	eslocal i;
+	esint i;
 
 	#ifdef DEBUG
 		#if INT_WIDTH == 64
@@ -693,7 +693,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 	}
 
 	int n_rhs    = 1;
-	eslocal i;
+	esint i;
 
 	/* -------------------------------------------------------------------- */
 	/* .. Back substitution and iterative refinement. */
@@ -803,7 +803,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 		Factorization(ss.str());
 	}
 
-	eslocal i;
+	esint i;
 
 	// for (int i = 0; i < n_rhs; ++i)
 	// {
@@ -813,7 +813,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 	// 	copy(one_rhs_sol.begin(), one_rhs_sol.end(), sol.begin() + i * rows);
 	// }
 
-	eslocal total_size = rows * n_rhs; // if reorder -> rows == permutation_size
+	esint total_size = rows * n_rhs; // if reorder -> rows == permutation_size
 
 	if (USE_FLOAT){
 		if(m_Kplus_size < total_size){
@@ -944,7 +944,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 		Factorization(ss.str());
 	}
 
-	eslocal i;
+	esint i;
 
 	// SEQ_VECTOR <double> one_rhs_sol(rows);
 	// copy(&rhs[rhs_start_index], &rhs[rhs_start_index + rows], one_rhs_sol.begin());

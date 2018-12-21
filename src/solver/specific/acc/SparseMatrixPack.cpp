@@ -102,12 +102,12 @@ namespace espreso {
        this->maxNMatrices = maxNMatrices;
 
 // preallocate data structures
-this->rows = ( eslocal * ) malloc( maxNMatrices * sizeof( eslocal ) );
-this->cols = ( eslocal * ) malloc( maxNMatrices * sizeof( eslocal ) );
+this->rows = ( esint * ) malloc( maxNMatrices * sizeof( esint ) );
+this->cols = ( esint * ) malloc( maxNMatrices * sizeof( esint ) );
 this->offsets = ( long * ) malloc( maxNMatrices * sizeof( long ) );
 this->rowOffsets = ( long * ) malloc( maxNMatrices * sizeof( long ) );
 this->colOffsets = ( long * ) malloc( maxNMatrices * sizeof( long ) );
-this->nnz = ( eslocal * ) malloc( maxNMatrices * sizeof( eslocal ) );
+this->nnz = ( esint * ) malloc( maxNMatrices * sizeof( esint ) );
 
 this->nMatrices = 0;
 this->offsets[ 0 ] = 0;
@@ -222,10 +222,10 @@ void SparseMatrixPack::SetDevice(
 }
 
 /*void SparseMatrixPack::PreparePack(
-  eslocal i,
-  eslocal nRows,
-  eslocal nCols,
-  eslocal nnz
+  esint i,
+  esint nRows,
+  esint nCols,
+  esint nnz
   ) {
 
   this->rows[ i ] = nRows;
@@ -243,7 +243,7 @@ void SparseMatrixPack::SetDevice(
   }
 
   void SparseMatrixPack::AddSparseMatrix(
-  eslocal i,
+  esint i,
   double * matrixData
   ) {
 
@@ -252,7 +252,7 @@ void SparseMatrixPack::SetDevice(
   return;
   }
 
-  eslocal size = this->nnz[i];
+  esint size = this->nnz[i];
 
 
 
@@ -270,20 +270,20 @@ void SparseMatrixPack::SetDevice(
 
 void SparseMatrixPack::AddMatrices(
         SparseMatrix ** A, 
-        eslocal n,
-        eslocal device
+        esint n,
+        esint device
         ) {
 
     this->device = device;
 
-    this->rows = new eslocal[ n ];
-    this->cols = new eslocal[ n ];
+    this->rows = new esint[ n ];
+    this->cols = new esint[ n ];
     this->offsets = new long[ n ];
     this->rowOffsets = new long[ n ];
     this->colOffsets = new long[ n ];
     this->x_in_offsets = new long[ n ];
     this->y_out_offsets = new long[ n ];
-    this->nnz = new eslocal[ n ]; 
+    this->nnz = new esint[ n ]; 
 
     this->offsets[ 0 ] = 0;
     this->x_in_offsets[ 0 ] = 0;
@@ -294,7 +294,7 @@ void SparseMatrixPack::AddMatrices(
     this->y_out_dim = 0;
 
     // iterate through matrices and sum up their sizes
-    for ( eslocal i = 0; i < n ; ++i ) {
+    for ( esint i = 0; i < n ; ++i ) {
         this->rows[ i ] = A[i]->rows;
         this->cols[ i ] = A[i]->cols;
         this->rowOffsets[ i ] = this->totalRows;
@@ -320,21 +320,21 @@ void SparseMatrixPack::AddMatrices(
         this->matrix_values_fl = ( float * ) _mm_malloc( this->preallocSize * sizeof( float ), 64 ); 
     }
 
-    this->rowInd = ( eslocal * ) _mm_malloc( this->totalRows * sizeof( eslocal ), 64 );
-    this->colInd = ( eslocal * ) _mm_malloc( this->totalCols * sizeof( eslocal ), 64 );
+    this->rowInd = ( esint * ) _mm_malloc( this->totalRows * sizeof( esint ), 64 );
+    this->colInd = ( esint * ) _mm_malloc( this->totalCols * sizeof( esint ), 64 );
 
 
-    for ( eslocal i = 0 ; i < n ; ++i ) {
+    for ( esint i = 0 ; i < n ; ++i ) {
 
         if (!USE_FLOAT) {
             memcpy( this->matrix_values + this->offsets[ i ], &(A[i]->CSR_V_values[0]), A[i]->nnz * sizeof( double ) );
         } else {
-            for ( eslocal j = 0; j < A[i]->nnz; ++j ) {
+            for ( esint j = 0; j < A[i]->nnz; ++j ) {
                 this->matrix_values_fl[ this->offsets[i] + j ] = A[i]->CSR_V_values[j];
             }
         }
-        memcpy( this->rowInd + this->rowOffsets[ i ], &(A[i]->CSR_I_row_indices[0]), (A[i]->rows + 1) * sizeof( eslocal ) );   
-        memcpy( this->colInd + this->colOffsets[ i ], &(A[i]->CSR_J_col_indices[0]), A[i]->nnz * sizeof( eslocal ) );   
+        memcpy( this->rowInd + this->rowOffsets[ i ], &(A[i]->CSR_I_row_indices[0]), (A[i]->rows + 1) * sizeof( esint ) );   
+        memcpy( this->colInd + this->colOffsets[ i ], &(A[i]->CSR_J_col_indices[0]), A[i]->nnz * sizeof( esint ) );   
     }
 }
 
@@ -359,7 +359,7 @@ void SparseMatrixPack::GetY(
         memcpy( &(y[0]), this->mic_y_out + this->y_out_offsets[ vector ],
                 this->rows[vector] * sizeof( double ) );
     } else {
-        for (eslocal i = 0 ; i < this->rows[vector]; ++i ) {
+        for (esint i = 0 ; i < this->rows[vector]; ++i ) {
             y[i] = (float) this->mic_y_out_fl[ this->y_out_offsets[ vector ] + i ];
         }
     }
@@ -367,8 +367,8 @@ void SparseMatrixPack::GetY(
 
 
 void SparseMatrixPack::CopyToMIC( ) {
-    eslocal * tmp_rowInd;
-    eslocal * tmp_colInd;
+    esint * tmp_rowInd;
+    esint * tmp_colInd;
     // allocate targetptr array on MIC
 
     if (!USE_FLOAT) {
@@ -442,19 +442,19 @@ void SparseMatrixPack::FactorizeMIC( ) {
     perm = new MKL_INT*[nMatrices];
     error = new MKL_INT[nMatrices];
 
-    for (eslocal i = 0; i < nMatrices; i++) {
+    for (esint i = 0; i < nMatrices; i++) {
 
         pt[i] = new void*[64];
         iparm[i] = new MKL_INT[64];
         dparm[i] = new double[65];
         perm[i] = new MKL_INT[ rows[i] ];
-        for (eslocal j = 0; j < 64; j++) {
+        for (esint j = 0; j < 64; j++) {
             iparm[i][j]=0;
         }
-        for (eslocal j = 0; j < rows[i] ; j++) {
+        for (esint j = 0; j < rows[i] ; j++) {
             perm[i][j] = j+1; 
         }
-        for (eslocal j = 0 ;j < 64; j++) {
+        for (esint j = 0 ;j < 64; j++) {
             pt[i][j] = 0;
         }
     }
@@ -466,7 +466,7 @@ void SparseMatrixPack::FactorizeMIC( ) {
     in(perm : length(nMatrices) alloc_if(1) free_if(0)) \
     in(error : length(nMatrices) alloc_if(1) free_if(0)) \
     in(this : length(0) alloc_if(0) free_if(0))
-    for (eslocal i = 0; i<nMatrices; i++) {
+    for (esint i = 0; i<nMatrices; i++) {
         void **ptPointer = pt[i];
         MKL_INT* iparmPointer = iparm[i];
         double* dparmPointer = dparm[i];
@@ -521,7 +521,7 @@ void SparseMatrixPack::FactorizeMIC( ) {
 #pragma omp parallel
         {
 #pragma omp for 
-            for (eslocal i = 0 ; i < nMatrices ; ++i ) {
+            for (esint i = 0 ; i < nMatrices ; ++i ) {
                 iparm[i][2] = 0;
 
                 iparm[i][1-1] = 1;         /* No solver default */
@@ -555,7 +555,7 @@ void SparseMatrixPack::FactorizeMIC( ) {
                 }
             }
             bool initialized = true;
-            for (eslocal i=0; i < nMatrices; i++) {
+            for (esint i=0; i < nMatrices; i++) {
                 if (error[i] != 0) {
                     initialized = false;
                     std::cerr << "ERROR during symbolic factorization of matrix " << i << " : " << error[i] << "\n";
@@ -566,7 +566,7 @@ void SparseMatrixPack::FactorizeMIC( ) {
             }
 
 #ifdef DEBUG
-            preslocalf ("\nReordering completed ... ");
+            presintf ("\nReordering completed ... ");
 #endif
 
             /* -------------------------------------------------------------------- */
@@ -577,7 +577,7 @@ void SparseMatrixPack::FactorizeMIC( ) {
                 phase = 22;
             }
 #pragma omp for
-            for (eslocal i = 0; i < nMatrices; i++) {
+            for (esint i = 0; i < nMatrices; i++) {
                 if (!USE_FLOAT) {
                     pardiso (pt[i], &maxfct, &mnum, &mtype, &phase,
                             &rows[i], matrix_values_mic + offsets[i], 
@@ -592,7 +592,7 @@ void SparseMatrixPack::FactorizeMIC( ) {
                 }
             }
             bool m_factorized = true;
-            for (eslocal i=0; i < nMatrices; i++) {
+            for (esint i=0; i < nMatrices; i++) {
                 if (error[i] != 0) {
                     m_factorized = false;
                     std::cerr << "ERROR during numeric factorization of matrix " << i << "\n";
@@ -603,7 +603,7 @@ void SparseMatrixPack::FactorizeMIC( ) {
             }
 
 #ifdef DEBUG
-            preslocalf ("\nFactorization completed ... ");
+            presintf ("\nFactorization completed ... ");
 #endif
 
         }
@@ -616,7 +616,7 @@ void SparseMatrixPack::SolveMIC(
     long nMatrices = this->nMatrices;
     long inSize = 0;
     long outSize =  0;
-    for ( eslocal i = 0 ; i < (long) (nMatrices*MICratio); ++i ) {
+    for ( esint i = 0 ; i < (long) (nMatrices*MICratio); ++i ) {
         inSize += cols[i];
         outSize += rows[i];
     }
@@ -649,7 +649,7 @@ void SparseMatrixPack::SolveMIC(
             {
 
                 // load balancing
-                eslocal nIters = (eslocal) (nMatrices * MICratio);
+                esint nIters = (esint) (nMatrices * MICratio);
                 double start = omp_get_wtime();
 
                 double ddum     = 0;
@@ -666,9 +666,9 @@ void SparseMatrixPack::SolveMIC(
 
 #pragma omp parallel 
                 {
-                    eslocal myPhase = 33;
+                    esint myPhase = 33;
 #pragma omp for 
-                    for (eslocal i = 0; i < nIters; i++) {
+                    for (esint i = 0; i < nIters; i++) {
                         MKL_INT ip5backup = iparm[i][5];
                         iparm[i][ 6 - 1 ] = 1;
                         double * out =  mic_y_out + y_out_offsets[i]; 
@@ -681,7 +681,7 @@ void SparseMatrixPack::SolveMIC(
                     }
                 }
                 bool err = false;
-                for (eslocal i = 0; i < nIters; i++) {
+                for (esint i = 0; i < nIters; i++) {
                     if (error[i]!=0) {
                         err = true;
                     }
@@ -718,7 +718,7 @@ void SparseMatrixPack::SolveMIC(
             in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) // \ signal( mic_y_out_fl )
             {
                 // load balancing
-                eslocal nIters = (eslocal) ( nMatrices * MICratio );
+                esint nIters = (esint) ( nMatrices * MICratio );
 
                 double start = omp_get_wtime();
 
@@ -736,9 +736,9 @@ void SparseMatrixPack::SolveMIC(
 
 #pragma omp parallel 
                 {
-                    eslocal myPhase = 33;
+                    esint myPhase = 33;
 #pragma omp for 
-                    for (eslocal i = 0; i < nIters; i++) {
+                    for (esint i = 0; i < nIters; i++) {
                         MKL_INT ip5backup = iparm[i][5];
                         iparm[i][ 6 - 1 ] = 1;
                         iparm[i][28 - 1 ] = 1;
@@ -752,7 +752,7 @@ void SparseMatrixPack::SolveMIC(
                     }
                 }
                 bool err = false;
-                for (eslocal i = 0; i < nIters; i++) {
+                for (esint i = 0; i < nIters; i++) {
                     if (error[i]!=0) {
                         err = true;
                     }

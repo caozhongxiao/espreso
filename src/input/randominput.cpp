@@ -167,17 +167,17 @@ void RandomInput::assignEBuckets()
 		}
 	}
 
-	std::vector<eslocal> closest(_meshData.esize.size());
+	std::vector<esint> closest(_meshData.esize.size());
 	_eBuckets.resize(_meshData.esize.size());
 
-	eslocal nbegin = _nDistribution[environment->MPIrank];
-	eslocal nend = _nDistribution[environment->MPIrank + 1];
+	esint nbegin = _nDistribution[environment->MPIrank];
+	esint nend = _nDistribution[environment->MPIrank + 1];
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = edistribution[t], offset = _meshData._edist[edistribution[t]]; e < edistribution[t + 1]; offset += _meshData.esize[e++]) {
 			closest[e] = _meshData.enodes[offset];
-			for (eslocal n = 1; n < _meshData.esize[e]; n++) {
+			for (esint n = 1; n < _meshData.esize[e]; n++) {
 				if (nbegin <= _meshData.enodes[offset + n] && _meshData.enodes[offset + n] < nend) {
 					if (closest[e] > _meshData.enodes[offset + n] || closest[e] < nbegin) {
 						closest[e] = _meshData.enodes[offset + n];
@@ -197,11 +197,11 @@ void RandomInput::assignEBuckets()
 	TimeEvent e2("AEB PREPARE SBUFFER");
 	e2.start();
 
-	std::vector<eslocal> permutation(_meshData.esize.size());
+	std::vector<esint> permutation(_meshData.esize.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
-	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return closest[i] < closest[j]; });
+	std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) { return closest[i] < closest[j]; });
 
-	std::vector<eslocal> sNodes, rNodes;
+	std::vector<esint> sNodes, rNodes;
 	std::vector<uint> sBuckets, rBuckets;
 	std::vector<int> targets, sources;
 
@@ -239,12 +239,12 @@ void RandomInput::assignEBuckets()
 	TimeEvent e4("AEB COMPUTE BUCKETS");
 	e4.start();
 
-	std::vector<eslocal> boundaries(environment->MPIsize);
+	std::vector<esint> boundaries(environment->MPIsize);
 	size_t offset = 0;
 	for (int r = 1; r < environment->MPIsize; r++, offset += rNodes[offset]) {
 		boundaries[r] = rNodes[offset] + boundaries[r - 1];
 	}
-	std::sort(boundaries.begin(), boundaries.end(), [&] (eslocal i, eslocal j) {
+	std::sort(boundaries.begin(), boundaries.end(), [&] (esint i, esint j) {
 		return rNodes[i + 2] < rNodes[j + 2];
 	});
 
@@ -252,7 +252,7 @@ void RandomInput::assignEBuckets()
 
 	for (int r = 0; r < environment->MPIsize; r++) {
 		offset = boundaries[r];
-		eslocal size = rNodes[offset++] - 3;
+		esint size = rNodes[offset++] - 3;
 		offset++; //skip rank
 		offset++; //skip target
 
@@ -260,7 +260,7 @@ void RandomInput::assignEBuckets()
 		sBuckets.push_back(r);
 		sBuckets.push_back(environment->MPIrank);
 		auto it = _meshData.nIDs.begin();
-		for (eslocal n = 0; n < size; ++n, ++offset) {
+		for (esint n = 0; n < size; ++n, ++offset) {
 			while (*it < rNodes[offset]) { ++it; }
 			sBuckets.push_back(_nBuckets[it - _meshData.nIDs.begin()]);
 		}
@@ -286,18 +286,18 @@ void RandomInput::assignEBuckets()
 	for (int r = 1; r < environment->MPIsize; r++, offset += rBuckets[offset]) {
 		boundaries[r] = rBuckets[offset] + boundaries[r - 1];
 	}
-	std::sort(boundaries.begin(), boundaries.end(), [&] (eslocal i, eslocal j) {
+	std::sort(boundaries.begin(), boundaries.end(), [&] (esint i, esint j) {
 		return rBuckets[i + 2] < rBuckets[j + 2];
 	});
 
 	size_t e = 0;
 	for (int r = 0; r < environment->MPIsize; r++) {
 		offset = boundaries[r];
-		eslocal size = rBuckets[offset++] - 3;
+		esint size = rBuckets[offset++] - 3;
 		offset++; //skip rank
 		offset++; //skip target
 
-		for (eslocal n = 0; n < size; ++n, ++offset) {
+		for (esint n = 0; n < size; ++n, ++offset) {
 			_eBuckets[permutation[e++]] = rBuckets[offset];
 		}
 	}
@@ -319,9 +319,9 @@ void RandomInput::clusterize()
 	TimeEvent e1("CE PREPROCESS DATA");
 	e1.start();
 
-	eslocal esize = _meshData.eIDs.size();
+	esint esize = _meshData.eIDs.size();
 	esize = Communication::exscan(esize);
-	std::vector<eslocal> targetDistribution = tarray<eslocal>::distribute(environment->MPIsize, esize);
+	std::vector<esint> targetDistribution = tarray<esint>::distribute(environment->MPIsize, esize);
 
 	double PRECISION = 0.001 * std::log2(environment->MPIsize);
 	if (PRECISION * (targetDistribution.back() / environment->MPIsize) < 2) {
@@ -339,11 +339,11 @@ void RandomInput::clusterize()
 		}
 	}
 
-	std::vector<eslocal> npermutation(_nBuckets.size()), epermutation(_eBuckets.size());
+	std::vector<esint> npermutation(_nBuckets.size()), epermutation(_eBuckets.size());
 	std::iota(npermutation.begin(), npermutation.end(), 0);
-	std::sort(npermutation.begin(), npermutation.end(), [&] (eslocal i, eslocal j) { return _nBuckets[i] < _nBuckets[j]; });
+	std::sort(npermutation.begin(), npermutation.end(), [&] (esint i, esint j) { return _nBuckets[i] < _nBuckets[j]; });
 	std::iota(epermutation.begin(), epermutation.end(), 0);
-	std::sort(epermutation.begin(), epermutation.end(), [&] (eslocal i, eslocal j) { return _eBuckets[i] < _eBuckets[j]; });
+	std::sort(epermutation.begin(), epermutation.end(), [&] (esint i, esint j) { return _eBuckets[i] < _eBuckets[j]; });
 
 	e1.end();
 	timing.addEvent(e1);
@@ -358,7 +358,7 @@ void RandomInput::clusterize()
 	size_t buckets = _sfc.buckets(DEPTH);
 	uint bstep = _sfc.buckets(_sfc.depth()) / buckets;
 
-	std::vector<std::vector<eslocal> > bucketSum(DEPTH);
+	std::vector<std::vector<esint> > bucketSum(DEPTH);
 	for (size_t d = 0; d < DEPTH; d++) {
 		bucketSum[d].resize(_sfc.buckets(d + 1) + 1);
 	}
@@ -374,7 +374,7 @@ void RandomInput::clusterize()
 		}
 	}
 
-	std::vector<eslocal> scounts, rcounts;
+	std::vector<esint> scounts, rcounts;
 	_bucketsBorders.resize(environment->MPIsize + 1, _sfc.buckets(_sfc.depth()));
 	_bucketsBorders.front() = 0;
 
@@ -397,7 +397,7 @@ void RandomInput::clusterize()
 			}
 		}
 
-		MPI_Allreduce(scounts.data(), rcounts.data(), sizeof(eslocal) * scounts.size(), MPI_BYTE, MPITools::eslocalOperations().sum, environment->MPICommunicator);
+		MPI_Allreduce(scounts.data(), rcounts.data(), sizeof(esint) * scounts.size(), MPI_BYTE, MPITools::esintOperations().sum, environment->MPICommunicator);
 
 		_sfc.setLevel(LEVEL + 1);
 
@@ -433,13 +433,13 @@ void RandomInput::clusterize()
 		scounts[index] = bucketSum[LEVEL - 1][_sfc.sfcRefined(LEVEL)[b]];
 	}
 	rcounts.resize(scounts.size());
-	std::vector<eslocal> refinedindices;
+	std::vector<esint> refinedindices;
 
 	while (LEVEL < SFCDEPTH && _sfc.hasLevel(LEVEL)) {
 		coarsenig /= bsize;
 		bstep /= buckets;
 		for (size_t b = 0, index = 0; b < _sfc.sfcRefined(LEVEL).size(); b++, index++) {
-			auto e = std::lower_bound(epermutation.begin(), epermutation.end(), coarsenig * bsize * _sfc.sfcRefined(LEVEL)[b], [&] (eslocal i, uint bound) { return _eBuckets[i] < bound; });
+			auto e = std::lower_bound(epermutation.begin(), epermutation.end(), coarsenig * bsize * _sfc.sfcRefined(LEVEL)[b], [&] (esint i, uint bound) { return _eBuckets[i] < bound; });
 			for (size_t i = 0; i < bsize; i++, index++) {
 				while (e != epermutation.end() && _eBuckets[*e] < coarsenig * bsize * _sfc.sfcRefined(LEVEL)[b] + (i + 1) * coarsenig) {
 					++scounts[index + 1];
@@ -449,7 +449,7 @@ void RandomInput::clusterize()
 			}
 		}
 
-		MPI_Allreduce(scounts.data(), rcounts.data(), sizeof(eslocal) * scounts.size(), MPI_BYTE, MPITools::eslocalOperations().sum, environment->MPICommunicator);
+		MPI_Allreduce(scounts.data(), rcounts.data(), sizeof(esint) * scounts.size(), MPI_BYTE, MPITools::esintOperations().sum, environment->MPICommunicator);
 
 		_sfc.setLevel(LEVEL + 1);
 
@@ -488,16 +488,16 @@ void RandomInput::clusterize()
 	TimeEvent e41("CE COMPUTE REGIONDATA");
 	e41.start();
 
-	_nregsize = _meshData.nregions.size() / (8 * sizeof(eslocal)) + 1;
-	_eregsize = _meshData.eregions.size() / (8 * sizeof(eslocal)) + 1;
+	_nregsize = _meshData.nregions.size() / (8 * sizeof(esint)) + 1;
+	_eregsize = _meshData.eregions.size() / (8 * sizeof(esint)) + 1;
 
 	_nregions.resize(_nregsize * _meshData.nIDs.size());
 	_eregions.resize(_eregsize * _meshData.eIDs.size());
 
 	size_t r = 0;
 	for (auto nregion = _meshData.nregions.begin(); nregion != _meshData.nregions.end(); ++nregion, ++r) {
-		eslocal byte = r / (8 * sizeof(eslocal));
-		eslocal bit = 1 << (r % (8 * sizeof(eslocal)));
+		esint byte = r / (8 * sizeof(esint));
+		esint bit = 1 << (r % (8 * sizeof(esint)));
 
 		std::vector<size_t> rdistribution = tarray<size_t>::distribute(threads, nregion->second.size());
 		#pragma omp parallel for
@@ -509,8 +509,8 @@ void RandomInput::clusterize()
 	}
 	r = 0;
 	for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion, ++r) {
-		eslocal byte = r / (8 * sizeof(eslocal));
-		eslocal bit = 1 << (r % (8 * sizeof(eslocal)));
+		esint byte = r / (8 * sizeof(esint));
+		esint bit = 1 << (r % (8 * sizeof(esint)));
 
 		std::vector<size_t> rdistribution = tarray<size_t>::distribute(threads, eregion->second.size());
 		#pragma omp parallel for
@@ -527,14 +527,14 @@ void RandomInput::clusterize()
 	TimeEvent e5("CE COMPUTE SBUFFER");
 	e5.start();
 
-	std::vector<eslocal> sBuffer, rBuffer;
+	std::vector<esint> sBuffer, rBuffer;
 	sBuffer.reserve(
 			5 * environment->MPIsize +
 			// esize, eID, etype, body, material, regions
 			(5 + _eregsize) * _meshData.esize.size() +
 			_meshData.enodes.size() +
 			(1 + _nregsize) * _meshData.nIDs.size() +
-			_meshData.coordinates.size() * sizeof(Point) / sizeof(eslocal));
+			_meshData.coordinates.size() * sizeof(Point) / sizeof(esint));
 
 	size_t prevsize;
 	auto nbegin = npermutation.begin();
@@ -564,7 +564,7 @@ void RandomInput::clusterize()
 		auto n = nbegin;
 		for ( ; n != npermutation.end() && _nBuckets[*n] < _bucketsBorders[r + 1]; ++n) {
 			sBuffer.push_back(_meshData.nIDs[*n]);
-			sBuffer.insert(sBuffer.end(), reinterpret_cast<const eslocal*>(_meshData.coordinates.data() + *n), reinterpret_cast<const eslocal*>(_meshData.coordinates.data() + *n + 1));
+			sBuffer.insert(sBuffer.end(), reinterpret_cast<const esint*>(_meshData.coordinates.data() + *n), reinterpret_cast<const esint*>(_meshData.coordinates.data() + *n + 1));
 			sBuffer.insert(sBuffer.end(), _nregions.begin() + *n * _nregsize, _nregions.begin() + (*n + 1) * _nregsize);
 		}
 		sBuffer[prevsize + 4] = n - nbegin;
@@ -627,7 +627,7 @@ void RandomInput::clusterize()
 			++offset;
 			memcpy(&point, rBuffer.data() + offset, sizeof(Point));
 			_meshData.coordinates.push_back(point);
-			offset += sizeof(Point) / sizeof(eslocal);
+			offset += sizeof(Point) / sizeof(esint);
 			_nregions.insert(_nregions.end(), rBuffer.begin() + offset, rBuffer.begin() + offset + _nregsize);
 			offset += _nregsize;
 		}
@@ -731,16 +731,16 @@ void RandomInput::linkup()
 	// 3. Ask neighbors for coordinates
 
 	// send, found, received
-	std::vector<std::vector<eslocal> > sNodes(_sfcNeighbors.size()), fNodes(_sfcNeighbors.size()), fRegions(_sfcNeighbors.size()), rNodes(_sfcNeighbors.size()), rRegions(_sfcNeighbors.size());
+	std::vector<std::vector<esint> > sNodes(_sfcNeighbors.size()), fNodes(_sfcNeighbors.size()), fRegions(_sfcNeighbors.size()), rNodes(_sfcNeighbors.size()), rRegions(_sfcNeighbors.size());
 	std::vector<std::vector<Point> > fCoords(_sfcNeighbors.size()), rCoors(_sfcNeighbors.size());
 
 	size_t enodesize = 0;
 	size_t estart = _mesh.dimension == 3 ? 0 : 1;
-	for (eslocal e = 0; e < _etypeDistribution[estart]; e++) {
+	for (esint e = 0; e < _etypeDistribution[estart]; e++) {
 		enodesize += _meshData.esize[e];
 	}
 
-	std::vector<eslocal> enodes(_meshData.enodes.begin(), _meshData.enodes.begin() + enodesize);
+	std::vector<esint> enodes(_meshData.enodes.begin(), _meshData.enodes.begin() + enodesize);
 	Esutils::sortAndRemoveDuplicity(enodes);
 
 	for (size_t id = 0, node = 0; id < _meshData.nIDs.size() || node < enodes.size(); ++id) {
@@ -823,11 +823,11 @@ void RandomInput::linkup()
 	// send, received (that will be asked for coordinates)
 	std::vector<std::vector<int> > sTargets, rTargets;
 	// unknown
-	std::vector<std::vector<eslocal> > uNodes, uRegions;
+	std::vector<std::vector<esint> > uNodes, uRegions;
 	std::vector<std::vector<Point> > uCoords;
 
 	if (sNodes.size() && nodeSize != sNodes.front().size()) {
-		std::vector<eslocal> found, unknown(sNodes.front().size() - nodeSize);
+		std::vector<esint> found, unknown(sNodes.front().size() - nodeSize);
 		for (size_t r = 0; r < _sfcNeighbors.size(); r++) {
 			found.insert(found.end(), rNodes[r].begin(), rNodes[r].end());
 		}
@@ -878,9 +878,9 @@ void RandomInput::linkup()
 
 	if (oTargets.size()) {
 		oTargets.clear();
-		std::vector<eslocal> upermutation(sNodes.front().size());
+		std::vector<esint> upermutation(sNodes.front().size());
 		std::iota(upermutation.begin(), upermutation.end(), 0);
-		std::sort(upermutation.begin(), upermutation.end(), [&] (eslocal i, eslocal j) {
+		std::sort(upermutation.begin(), upermutation.end(), [&] (esint i, esint j) {
 			if (rTargets[0][i] == rTargets[0][j]) {
 				return sNodes[0][i] < sNodes[0][j];
 			}
@@ -935,7 +935,7 @@ void RandomInput::linkup()
 		rNodes.insert(rNodes.begin() + offset, sNodes[i]);
 		rRegions.insert(rRegions.begin() + offset, uRegions[i]);
 		rCoors.insert(rCoors.begin() + offset, uCoords[i]);
-		fNodes.insert(fNodes.begin() + offset, std::vector<eslocal>());
+		fNodes.insert(fNodes.begin() + offset, std::vector<esint>());
 	}
 
 	for (size_t i = 0; i < oSources.size(); i++) {
@@ -945,8 +945,8 @@ void RandomInput::linkup()
 			fNodes[offset].swap(uNodes[i]);
 		} else {
 			_sfcNeighbors.insert(it, oSources[i]);
-			rNodes.insert(rNodes.begin() + offset, std::vector<eslocal>());
-			rRegions.insert(rRegions.begin() + offset, std::vector<eslocal>());
+			rNodes.insert(rNodes.begin() + offset, std::vector<esint>());
+			rRegions.insert(rRegions.begin() + offset, std::vector<esint>());
 			rCoors.insert(rCoors.begin() + offset, std::vector<Point>());
 			fNodes.insert(fNodes.begin() + offset, uNodes[i]);
 		}
@@ -962,10 +962,10 @@ void RandomInput::linkup()
 	e8.start();
 
 	// 5. Compute nodes neighbors
-	std::vector<std::vector<eslocal> > sRanks(_sfcNeighbors.size()), rRanks(_sfcNeighbors.size());
+	std::vector<std::vector<esint> > sRanks(_sfcNeighbors.size()), rRanks(_sfcNeighbors.size());
 
 	size_t rankindex;
-	std::vector<std::vector<eslocal> > nodeRequests(_sfcNeighbors.size());
+	std::vector<std::vector<esint> > nodeRequests(_sfcNeighbors.size());
 	for (size_t r = 0, i = 0; r < _sfcNeighbors.size(); r++) {
 		if (_sfcNeighbors[r] == environment->MPIrank) {
 			rankindex = r;
@@ -974,8 +974,8 @@ void RandomInput::linkup()
 			nodeRequests[r].swap(fNodes[i++]);
 		}
 	}
-	std::vector<eslocal> ranks, ranksOffset;
-	std::vector<std::vector<eslocal>::const_iterator> rPointer(nodeRequests.size());
+	std::vector<esint> ranks, ranksOffset;
+	std::vector<std::vector<esint>::const_iterator> rPointer(nodeRequests.size());
 	for (size_t r = 0; r < nodeRequests.size(); r++) {
 		rPointer[r] = nodeRequests[r].begin();
 	}
@@ -1050,8 +1050,8 @@ void RandomInput::linkup()
 
 	size_t r = 0;
 	for (auto nregion = _meshData.nregions.begin(); nregion != _meshData.nregions.end(); ++nregion, ++r) {
-		eslocal byte = r / (8 * sizeof(eslocal));
-		eslocal bit = 1 << (r % (8 * sizeof(eslocal)));
+		esint byte = r / (8 * sizeof(esint));
+		esint bit = 1 << (r % (8 * sizeof(esint)));
 
 		nregion->second.clear();
 		for (size_t i = 0; i < _meshData.nIDs.size(); ++i) {
@@ -1089,25 +1089,25 @@ void RandomInput::exchangeBoundary()
 	size_t estart = _mesh.dimension == 3 ? 0 : 1;
 
 	_meshData._edist.clear();
-	std::vector<eslocal> edist = { 0 };
+	std::vector<esint> edist = { 0 };
 	edist.reserve(_meshData.eIDs.size() - _etypeDistribution[estart] + 1);
-	for (eslocal e = 0; e < _etypeDistribution[estart]; e++) {
+	for (esint e = 0; e < _etypeDistribution[estart]; e++) {
 		edist.back() += _meshData.esize[e];
 	}
-	for (eslocal e = _etypeDistribution[estart]; e < _etypeDistribution.back(); e++) {
+	for (esint e = _etypeDistribution[estart]; e < _etypeDistribution.back(); e++) {
 		edist.push_back(edist.back() + _meshData.esize[e]);
 	}
 
 	std::vector<size_t> distribution = tarray<size_t>::distribute(threads, _etypeDistribution.back() - _etypeDistribution[estart]);
-	std::vector<eslocal> emembership(distribution.back(), -1);
-	std::vector<std::vector<std::pair<eslocal, eslocal> > > etargets(threads);
-	std::vector<std::vector<eslocal> > utargets(threads);
+	std::vector<esint> emembership(distribution.back(), -1);
+	std::vector<std::vector<std::pair<esint, esint> > > etargets(threads);
+	std::vector<std::vector<esint> > utargets(threads);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		std::vector<eslocal> nlinks;
+		std::vector<esint> nlinks;
 		int counter, known;
-		std::pair<eslocal, eslocal> target;
+		std::pair<esint, esint> target;
 		for (size_t e = distribution[t]; e < distribution[t + 1]; ++e) {
 			nlinks.clear();
 			known = 0;
@@ -1121,7 +1121,7 @@ void RandomInput::exchangeBoundary()
 			}
 			std::sort(nlinks.begin(), nlinks.end());
 
-			auto push = [&] (eslocal eID) {
+			auto push = [&] (esint eID) {
 				target.first = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), eID + 1) - _eDistribution.begin() - 1;
 				target.second = e;
 				etargets[t].push_back(target);
@@ -1166,7 +1166,7 @@ void RandomInput::exchangeBoundary()
 	/// FIND TARGETS FOR FACES WITH UNKNOWN NODES
 
 	std::vector<std::vector<int> > fLinks(_sfcNeighbors.size()), rLinks(_sfcNeighbors.size());
-	std::vector<std::vector<eslocal> > unodes(_sfcNeighbors.size()), rnodes(_sfcNeighbors.size());
+	std::vector<std::vector<esint> > unodes(_sfcNeighbors.size()), rnodes(_sfcNeighbors.size());
 	for (size_t i = 0; i < utargets[0].size(); i++) {
 		unodes[0].insert(unodes[0].end(), _meshData.enodes.begin() + edist[utargets[0][i]], _meshData.enodes.begin() + edist[utargets[0][i] + 1]);
 	}
@@ -1202,7 +1202,7 @@ void RandomInput::exchangeBoundary()
 		ESINFO(ERROR) << "ESPRESO internal error: return ranks of unknown boundary nodes.";
 	}
 
-	std::vector<eslocal> found(2 * unodes[0].size(), -1);
+	std::vector<esint> found(2 * unodes[0].size(), -1);
 	for (size_t n = 0; n < _sfcNeighbors.size(); n++) {
 		for (size_t i = 0, noffset = 0; i < found.size(); i += 2, noffset += rLinks[n][noffset] + 1) {
 			if (rLinks[n][noffset] && found[i] == -1) {
@@ -1212,7 +1212,7 @@ void RandomInput::exchangeBoundary()
 		}
 	}
 
-	std::vector<eslocal> uunodes, rrLinks;
+	std::vector<esint> uunodes, rrLinks;
 	for (size_t i = 0; i < found.size(); i += 2) {
 		if (found[i] == -1) {
 			uunodes.push_back(unodes[0][i / 2]);
@@ -1241,11 +1241,11 @@ void RandomInput::exchangeBoundary()
 		ESINFO(ERROR) << "ESPRESO internal error: allgather unknown nodes links.";
 	}
 
-	std::vector<eslocal> permutation(uunodes.size());
+	std::vector<esint> permutation(uunodes.size());
 	for (size_t i = 0, noffset = 0; i < uunodes.size(); ++i, noffset += rrLinks[noffset + 1] + 2) {
 		permutation[i] = noffset;
 	}
-	std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return rrLinks[i] < rrLinks[j]; });
+	std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) { return rrLinks[i] < rrLinks[j]; });
 
 	for (size_t i = 0, j = 0; i < unodes[0].size(); ++i) {
 		while (j < uunodes.size() && uunodes[j] < unodes[0][i]) {
@@ -1259,24 +1259,24 @@ void RandomInput::exchangeBoundary()
 		}
 	}
 
-	std::vector<eslocal> linkDist = { 0 }, linkData;
+	std::vector<esint> linkDist = { 0 }, linkData;
 	for (size_t i = 0; i < unodes[0].size(); i++) {
 		if (found[2 * i] != -1) {
-			eslocal lindex = found[2 * i];
-			eslocal loffset = found[2 * i + 1];
-			eslocal lsize = rLinks[lindex][loffset];
+			esint lindex = found[2 * i];
+			esint loffset = found[2 * i + 1];
+			esint lsize = rLinks[lindex][loffset];
 			linkDist.push_back(linkDist.back() + lsize);
 			linkData.insert(linkData.end(), rLinks[lindex].begin() + loffset + 1, rLinks[lindex].begin() + loffset + 1 + lsize);
 		} else {
-			eslocal loffset = found[2 * i + 1];
-			eslocal lsize = rrLinks[loffset];
+			esint loffset = found[2 * i + 1];
+			esint lsize = rrLinks[loffset];
 			linkDist.push_back(linkDist.back() + lsize);
 			linkData.insert(linkData.end(), rrLinks.begin() + loffset + 1, rrLinks.begin() + loffset + 1 + lsize);
 		}
 	}
 
 	{
-		std::vector<eslocal> nlinks;
+		std::vector<esint> nlinks;
 		int counter;
 		for (size_t e = 0; e < utargets[0].size(); ++e) {
 			nlinks.clear();
@@ -1293,7 +1293,7 @@ void RandomInput::exchangeBoundary()
 				if (nlinks[i - 1] == nlinks[i]) {
 					++counter;
 					if (counter == edist[utargets[0][e] + 1] - edist[utargets[0][e]]) {
-						eslocal rank = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), nlinks[i] + 1) - _eDistribution.begin() - 1;
+						esint rank = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), nlinks[i] + 1) - _eDistribution.begin() - 1;
 						etargets[0].push_back(std::make_pair(rank, utargets[0][e]));
 						break;
 					}
@@ -1309,10 +1309,10 @@ void RandomInput::exchangeBoundary()
 	Esutils::sortAndRemoveDuplicity(etargets[0]);
 
 	std::vector<int> sRanks;
-	std::vector<std::vector<eslocal> > sBoundary, rBoundary;
+	std::vector<std::vector<esint> > sBoundary, rBoundary;
 
 	for (size_t e = 0; e < etargets[0].size(); ++e) {
-		eslocal eindex = etargets[0][e].second + _etypeDistribution[estart];
+		esint eindex = etargets[0][e].second + _etypeDistribution[estart];
 		if (!sRanks.size() || sRanks.back() != etargets[0][e].first) {
 			sRanks.push_back(etargets[0][e].first);
 			sBoundary.push_back({});
@@ -1345,7 +1345,7 @@ void RandomInput::exchangeBoundary()
 	emembership.resize(emembership.size() + newsize, -1);
 
 	{
-		std::vector<eslocal> nlinks;
+		std::vector<esint> nlinks;
 		int counter;
 		for (size_t e = distribution.back(); e < distribution.back() + newsize; ++e) {
 			nlinks.clear();
@@ -1374,11 +1374,11 @@ void RandomInput::exchangeBoundary()
 		}
 	}
 
-	std::vector<eslocal> esize, etype, enodes, ereg;
+	std::vector<esint> esize, etype, enodes, ereg;
 
 	for (int i = estart; i < 2; i++) {
 		size_t bindex = 0;
-		for (eslocal e = _etypeDistribution[estart]; e < _etypeDistribution.back(); ++e, ++bindex) {
+		for (esint e = _etypeDistribution[estart]; e < _etypeDistribution.back(); ++e, ++bindex) {
 			if (static_cast<int>(_mesh._eclasses[0][_meshData.etype[e]].type) == 2 - i && emembership[bindex] != -1) {
 				for (auto n = edist[bindex]; n < edist[bindex + 1]; ++n) {
 					enodes.push_back(_meshData.enodes[n]);
@@ -1427,7 +1427,7 @@ void RandomInput::polish()
 
 	_mesh.preprocessing->computeElementsCenters();
 
-	std::vector<eslocal> partition(_mesh.elements->size);
+	std::vector<esint> partition(_mesh.elements->size);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {

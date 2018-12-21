@@ -10,7 +10,7 @@ LinearVolumeGenerator::LinearVolumeGenerator()
 	subnodes[2] = 2;
 }
 
-void LinearVolumeGenerator::pushNodes(std::vector<eslocal> &nodes, const std::vector<eslocal> &indices, CubeEdge edge) const
+void LinearVolumeGenerator::pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeEdge edge) const
 {
 //	switch (edge) {
 //	case CubeEdge::X_0_Y_0:
@@ -66,7 +66,7 @@ void LinearVolumeGenerator::pushNodes(std::vector<eslocal> &nodes, const std::ve
 //	}
 }
 
-void LinearVolumeGenerator::pushEdge(std::vector<eslocal> &elements, std::vector<eslocal> &esize, std::vector<int> &etype, const std::vector<eslocal> &indices, CubeEdge edge) const
+void LinearVolumeGenerator::pushEdge(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeEdge edge) const
 {
 	return;
 	pushNodes(elements, indices, edge);
@@ -74,7 +74,7 @@ void LinearVolumeGenerator::pushEdge(std::vector<eslocal> &elements, std::vector
 	etype.push_back((int)Element::CODE::LINE2);
 }
 
-void LinearVolumeGenerator::pushSquareNodes(std::vector<eslocal> &nodes, const std::vector<eslocal> &indices, CubeFace face) const
+void LinearVolumeGenerator::pushSquareNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const
 {
 	switch (face) {
 	case CubeFace::X_1:
@@ -118,7 +118,7 @@ void LinearVolumeGenerator::pushSquareNodes(std::vector<eslocal> &nodes, const s
 	}
 }
 
-void LinearVolumeGenerator::pushTriangleNodes(std::vector<eslocal> &nodes, const std::vector<eslocal> &indices, CubeFace face) const
+void LinearVolumeGenerator::pushTriangleNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const
 {
 	switch (face) {
 	case CubeFace::X_0:

@@ -61,7 +61,7 @@ CMBlock& CMBlock::parse(const char* begin)
 
 	lineSize = valueSize * valueLength + lineEndSize;
 
-	eslocal lastLineSize = 0;
+	esint lastLineSize = 0;
 	if ((NUMITEMS % valueSize)) {
 		lastLineSize = (NUMITEMS % valueSize) * valueLength + lineEndSize;
 	}
@@ -72,21 +72,21 @@ CMBlock& CMBlock::parse(const char* begin)
 	return *this;
 }
 
-bool CMBlock::readData(std::vector<eslocal> &indices)
+bool CMBlock::readData(std::vector<esint> &indices)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	const char *first = getFirst(), *last = getLast();
-	eslocal size = (last - first) / lineSize;
+	esint size = (last - first) / lineSize;
 
-	std::vector<eslocal> tdistribution = tarray<eslocal>::distribute(threads, size);
-	std::vector<std::vector<eslocal> > tindices(threads);
+	std::vector<esint> tdistribution = tarray<esint>::distribute(threads, size);
+	std::vector<std::vector<esint> > tindices(threads);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<char> value(valueLength + 1);
 		for (auto data = first + lineSize * tdistribution[t]; data < first + lineSize * tdistribution[t + 1];) {
-			for (eslocal n = 0; n < valueSize; ++n) {
+			for (esint n = 0; n < valueSize; ++n) {
 				memcpy(value.data(), data, valueLength);
 				data += valueLength;
 				if (atol(value.data()) > 0) {
@@ -97,7 +97,7 @@ bool CMBlock::readData(std::vector<eslocal> &indices)
 		}
 		if (lRank == environment->MPIrank && t == threads - 1) {
 			auto data = first + lineSize * tdistribution[t + 1];
-			for (eslocal n = 0; n < NUMITEMS % valueSize; ++n) {
+			for (esint n = 0; n < NUMITEMS % valueSize; ++n) {
 				memcpy(value.data(), data, valueLength);
 				data += valueLength;
 				if (atol(value.data()) > 0) {

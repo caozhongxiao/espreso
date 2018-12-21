@@ -24,7 +24,7 @@ struct OpenFOAMParser {
 	double readInteger(const char* &c)
 	{
 		char *endptr;
-		eslocal value = strtol(c, &endptr, 10);
+		esint value = strtol(c, &endptr, 10);
 		c = endptr;
 		return value;
 	}

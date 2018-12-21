@@ -15,7 +15,7 @@ using namespace espreso;
 
 using namespace espreso;
 
-void StructuralMechanics2DKernel::assembleMaterialMatrix(eslocal node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, DenseMatrix &K) const
+void StructuralMechanics2DKernel::assembleMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, DenseMatrix &K) const
 {
 	double Ex, Ey, mi;
 	Point p(coordinates[0], coordinates[1], 0);
@@ -126,7 +126,7 @@ void StructuralMechanics2DKernel::assembleMaterialMatrix(eslocal node, double *c
 
 void StructuralMechanics2DKernel::processElement(Matrices matrices, const SolverParameters &parameters, const ElementIterator &iterator, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
 {
-	eslocal size = iterator.element->nodes;
+	esint size = iterator.element->nodes;
 
 	const std::vector<DenseMatrix> &N = *(iterator.element->N);
 	const std::vector<DenseMatrix> &dN = *(iterator.element->dN);
@@ -235,7 +235,7 @@ void StructuralMechanics2DKernel::processElement(Matrices matrices, const Solver
 				precision(1, 0) = gpTE(0, 1);
 				precision(2, 0) = 0;
 				rhsT.multiply(B, Ce * precision, detJ * weighFactor[gp] * gpThickness(0, 0), 0, true, false);
-				for (eslocal i = 0; i < 2 * size; i++) {
+				for (esint i = 0; i < 2 * size; i++) {
 					fe(i, 0) += gpDens(0, 0) * detJ * weighFactor[gp] * gpThickness(0, 0) * N[gp](0, i % size) * gpInertia(0, i / size);
 					fe(i, 0) += gpDens(0, 0) * detJ * weighFactor[gp] * gpThickness(0, 0) * N[gp](0, i % size) * XY(0, i / size) * pow(iterator.angularVelocity[2], 2);
 					fe(i, 0) += rhsT(i, 0);
@@ -279,11 +279,11 @@ void StructuralMechanics2DKernel::processElement(Matrices matrices, const Solver
 				precision(1, 0) = gpTE(0, 1);
 				precision(2, 0) = precision(3, 0) = 0;
 				rhsT.multiply(B, Ce * precision, detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0), 0, true, false);
-				for (eslocal i = 0; i < 2 * size; i++) {
+				for (esint i = 0; i < 2 * size; i++) {
 					fe(i, 0) += gpDens(0, 0) * detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % size) * gpInertia(0, i / size);
 					fe(i, 0) += rhsT(i, 0);
 				}
-				for (eslocal i = 0; i < size; i++) {
+				for (esint i = 0; i < size; i++) {
 					fe(i, 0) += gpDens(0, 0) * detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % size) * XY(0, 0) * pow(iterator.angularVelocity[1], 2);
 					fe(size + i, 0) += gpDens(0, 0) * detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % size) * XY(0, 1) * pow(iterator.angularVelocity[1], 2);
 				}
@@ -306,7 +306,7 @@ void StructuralMechanics2DKernel::processEdge(Matrices matrices, const SolverPar
 		return;
 	}
 
-	eslocal size = iterator.element->nodes;
+	esint size = iterator.element->nodes;
 
 	const std::vector<DenseMatrix> &N = *(iterator.element->N);
 	const std::vector<DenseMatrix> &dN = *(iterator.element->dN);
@@ -347,14 +347,14 @@ void StructuralMechanics2DKernel::processEdge(Matrices matrices, const SolverPar
 		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
 			gpThickness(0, 0) = 1;
 		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
-			for (eslocal i = 0; i < 2 * size; i++) {
+			for (esint i = 0; i < 2 * size; i++) {
 				fe(i, 0) += gpThickness(0, 0) * J * weighFactor[gp] * N[gp](0, i % size) * gpQ(0, i / size);
 			}
 			break;
 
 		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
 			XY.multiply(N[gp], coordinates);
-			for (eslocal i = 0; i < 2 * size; i++) {
+			for (esint i = 0; i < 2 * size; i++) {
 				fe(i, 0) += gpThickness(0, 0) * J * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % size) * gpQ(0, i / size);
 			}
 			break;

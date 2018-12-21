@@ -107,7 +107,7 @@ DenseSolverCUDA::DenseSolverCUDA(){
 	m_dense_values_fl_size = 0;
 	m_dense_values_fl = NULL;
 
-	// if(sizeof(eslocal) == 8){
+	// if(sizeof(esint) == 8){
 	// 	printf("64-bit integer in use with cuSolver - results may be inaccurate!\n");
 	// }
 
@@ -184,7 +184,7 @@ void DenseSolverCUDA::ImportMatrix(SparseMatrix & A) {
 	m_dense_values_fl_size = 0;
 
 	// cudaMalloc
-	CHECK_ERR(cudaMalloc((void**)&D_devInfo, sizeof(eslocal) * 1));
+	CHECK_ERR(cudaMalloc((void**)&D_devInfo, sizeof(esint) * 1));
 
 	CHECK_ERR(cudaMalloc((void**)&D_dense_values, sizeof(double) * m_lda * m_rows));
 
@@ -210,11 +210,11 @@ void DenseSolverCUDA::ImportMatrix_fl(SparseMatrix & A) {
 	// Cast double to float
 	m_dense_values_fl = new float[m_dense_values_fl_size];
 
-	for (eslocal i = 0; i < m_dense_values_fl_size; i++)
+	for (esint i = 0; i < m_dense_values_fl_size; i++)
 		m_dense_values_fl[i] = (float) A.dense_values[i];
 
 	// cudaMalloc
-	CHECK_ERR(cudaMalloc((void**)&D_devInfo, sizeof(eslocal) * 1));
+	CHECK_ERR(cudaMalloc((void**)&D_devInfo, sizeof(esint) * 1));
 
 	CHECK_ERR(cudaMalloc((void**)&D_dense_values_fl, sizeof(float) * m_lda * m_rows));
 
@@ -279,8 +279,8 @@ int DenseSolverCUDA::Factorization(const std::string &str) {
 	}
 
 	// devInfo handling
-	eslocal devInfo = 0;
-	CHECK_ERR_FACT(cudaMemcpy(&devInfo , D_devInfo, sizeof(eslocal) * 1, cudaMemcpyDeviceToHost));
+	esint devInfo = 0;
+	CHECK_ERR_FACT(cudaMemcpy(&devInfo , D_devInfo, sizeof(esint) * 1, cudaMemcpyDeviceToHost));
 
 	if (USE_FLOAT) {
 		if (D_B_dense_values_fl == NULL)
@@ -300,7 +300,7 @@ void DenseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 	if (USE_FLOAT) {
 		tmp_sol_fl.resize(rhs_sol.size());
 
-		for (eslocal i = 0; i < rhs_sol.size(); i++)
+		for (esint i = 0; i < rhs_sol.size(); i++)
 			tmp_sol_fl[i] = (float)rhs_sol[i];
 
 		CHECK_ERR(cudaMalloc((void**)&D_B_dense_values_fl, sizeof(float) * m_ldb * m_nRhs));
@@ -313,7 +313,7 @@ void DenseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		// Copy B DtoH
 		CHECK_ERR(cudaMemcpy(&tmp_sol_fl[0] , D_B_dense_values_fl, sizeof(float) * m_ldb * m_nRhs, cudaMemcpyDeviceToHost));
 
-		for (eslocal i = 0; i < rhs_sol.size(); i++)
+		for (esint i = 0; i < rhs_sol.size(); i++)
 			rhs_sol[i] = (double)tmp_sol_fl[i];		
 
 	} else {
@@ -335,7 +335,7 @@ void DenseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 		sol.resize(rhs.size());
 		tmp_sol_fl.resize(rhs.size());
 
-		for (eslocal i = 0; i < rhs.size(); i++)
+		for (esint i = 0; i < rhs.size(); i++)
 			tmp_sol_fl[i] = (float)rhs[i];
 
 		if (n_rhs > m_nRhs) {
@@ -351,7 +351,7 @@ void DenseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 		// Copy B DtoH
 		CHECK_ERR(cudaMemcpy(&tmp_sol_fl[0] , D_B_dense_values_fl, sizeof(float) * m_ldb * n_rhs, cudaMemcpyDeviceToHost));
 
-		for (eslocal i = 0; i < rhs.size(); i++)
+		for (esint i = 0; i < rhs.size(); i++)
 			sol[i] = (double)tmp_sol_fl[i];		
 
 	} else {
