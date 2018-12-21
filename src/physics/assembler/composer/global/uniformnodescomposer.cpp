@@ -3,7 +3,7 @@
 
 #include "../../assembler.h"
 #include "../../controllers/controller.h"
-#include "../../provider/global/globalprovider.h"
+#include "../../provider/provider.h"
 
 #include "../../../dataholder.h"
 

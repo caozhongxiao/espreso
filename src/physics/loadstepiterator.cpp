@@ -17,8 +17,6 @@
 #include "assembler/composer/global/uniformnodescomposer.h"
 #include "assembler/composer/feti/uniformnodesfeticomposer.h"
 
-#include "assembler/provider/global/heattransfer.globalprovider.h"
-#include "assembler/provider/global/structuralmechanics.globalprovider.h"
 #include "assembler/provider/feti/heattransfer.fetiprovider.h"
 #include "assembler/provider/feti/structuralmechanics2d.fetiprovider.h"
 #include "assembler/provider/feti/structuralmechanics3d.fetiprovider.h"
@@ -30,6 +28,8 @@
 
 #include "../linearsolver/multigrid/multigrid.h"
 #include "../solver/generic/FETISolver.h"
+#include "assembler/provider/hypre/heattransfer.hypreprovider.h"
+#include "assembler/provider/hypre/structuralmechanics.hypreprovider.h"
 
 
 using namespace espreso;
@@ -57,8 +57,8 @@ static Assembler* getAssembler(HeatTransferLoadStepConfiguration &loadStep, DIME
 		} break;
 	case LoadStepConfiguration::SOLVER::MULTIGRID:
 		switch (dimension) {
-		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DControler, UniformNodesComposer, HeatTransferGlobalProvider>(loadStep, 1);
-		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DControler, UniformNodesComposer, HeatTransferGlobalProvider>(loadStep, 1);
+		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DControler, UniformNodesComposer, HeatTransferHYPREProvider>(loadStep, 1);
+		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DControler, UniformNodesComposer, HeatTransferHYPREProvider>(loadStep, 1);
 		}
 	}
 	ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
@@ -75,8 +75,8 @@ static Assembler* getAssembler(StructuralMechanicsLoadStepConfiguration &loadSte
 		} break;
 	case LoadStepConfiguration::SOLVER::MULTIGRID:
 		switch (dimension) {
-		case DIMENSION::D2: return new AssemblerInstance<StructuralMechanics2DControler, UniformNodesComposer, StructuralMechanicsGlobalProvider>(loadStep, 2);
-		case DIMENSION::D3: return new AssemblerInstance<StructuralMechanics3DControler, UniformNodesComposer, StructuralMechanicsGlobalProvider>(loadStep, 3);
+		case DIMENSION::D2: return new AssemblerInstance<StructuralMechanics2DControler, UniformNodesComposer, StructuralMechanicsHYPREProvider>(loadStep, 2);
+		case DIMENSION::D3: return new AssemblerInstance<StructuralMechanics3DControler, UniformNodesComposer, StructuralMechanicsHYPREProvider>(loadStep, 3);
 		}
 	}
 	ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";

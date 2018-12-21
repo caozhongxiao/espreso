@@ -9,7 +9,7 @@ namespace espreso {
 class UniformNodesComposer: public GlobalComposer {
 
 public:
-	UniformNodesComposer(Controler &controler, GlobalProvider &provider, int DOFs)
+	UniformNodesComposer(Controler &controler, Provider &provider, int DOFs)
 	: GlobalComposer(controler, provider), _DOFs(DOFs) {}
 
 	void initDOFs();

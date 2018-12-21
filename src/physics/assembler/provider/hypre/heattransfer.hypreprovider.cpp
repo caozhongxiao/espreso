@@ -1,18 +1,17 @@
 
-#include "heattransfer.globalprovider.h"
-
 #include "../../../../basis/matrices/matrixtype.h"
 #include "../../../../config/ecf/physics/heattransfer.h"
+#include "heattransfer.hypreprovider.h"
 
 using namespace espreso;
 
-HeatTransferGlobalProvider::HeatTransferGlobalProvider(HeatTransferLoadStepConfiguration &configuration)
-: GlobalProvider(configuration), _configuration(configuration)
+HeatTransferHYPREProvider::HeatTransferHYPREProvider(HeatTransferLoadStepConfiguration &configuration)
+: Provider(configuration), _configuration(configuration)
 {
 
 }
 
-MatrixType HeatTransferGlobalProvider::getMatrixType() const
+MatrixType HeatTransferHYPREProvider::getMatrixType() const
 {
 	if (_configuration.translation_motions.size()) {
 		return MatrixType::REAL_UNSYMMETRIC;

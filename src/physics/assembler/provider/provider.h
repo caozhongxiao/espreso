@@ -4,6 +4,7 @@
 
 namespace espreso {
 
+enum class MatrixType;
 struct LoadStepConfiguration;
 
 class Provider {
@@ -11,6 +12,8 @@ class Provider {
 public:
 	Provider(LoadStepConfiguration &configuration);
 	virtual ~Provider() {}
+
+	virtual MatrixType getMatrixType() const =0;
 
 	virtual bool needOriginalStiffnessMatrices();
 
