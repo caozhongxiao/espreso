@@ -222,7 +222,7 @@ NodeData::NodeData(int dimension, const std::vector<std::string> &names)
 
 }
 
-void NodeData::statistics(const tarray<eslocal> &nodes, eslocal totalsize, Statistics *statistics)
+void NodeData::statistics(const tarray<eslocal> &nodes, eslocal totalsize, Statistics *statistics) const
 {
 	for (int d = 0; d < names.size(); d++) {
 		(statistics + d)->reset();
@@ -272,4 +272,8 @@ void NodeData::statistics(const tarray<eslocal> &nodes, eslocal totalsize, Stati
 	}
 }
 
+double NodeData::norm() const
+{
+	return 0;
+}
 

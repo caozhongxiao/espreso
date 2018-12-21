@@ -20,7 +20,6 @@ public:
 	void run();
 
 	virtual std::string name() =0;
-	double duration() const;
 
 	virtual Matrices updateStructuralMatrices(Matrices matrices) =0;
 

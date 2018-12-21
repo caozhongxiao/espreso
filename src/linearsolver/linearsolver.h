@@ -9,8 +9,7 @@ enum Matrices: int;
 class LinearSolver {
 
 public:
-	void updateData(Matrices matrices);
-	void solveSystem();
+	void solve(Matrices matrices);
 
 	virtual bool glueDomainsByLagrangeMultipliers() const =0;
 	virtual bool applyB1Scaling() const =0;

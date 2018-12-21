@@ -3,11 +3,15 @@
 
 #include "../controllers/controller.h"
 
+#include "../../dataholder.h"
+
 #include "../../../globals/run.h"
 #include "../../../basis/matrices/matrixtype.h"
 
+#include "../../../mesh/mesh.h"
+#include "../../../mesh/store/elementstore.h"
 #include "../../../solver/generic/SparseMatrix.h"
-#include "../../dataholder.h"
+
 
 
 using namespace espreso;
@@ -36,6 +40,7 @@ void Composer::parametersChanged()
 void Composer::processSolution()
 {
 	_controler.processSolution();
+	run::storeSolution();
 }
 
 void Composer::insertKPattern(IJ *target, eslocal *begin, eslocal *end, MatrixType mtype)
@@ -66,11 +71,6 @@ void Composer::insertKPattern(IJ *target, eslocal *begin, eslocal *end, MatrixTy
 	}
 }
 
-std::vector<double>& Composer::getSolutionStore()
-{
-	return _controler.getSolutionStore();
-}
-
 void Composer::clearMatrices(Matrices matrices, eslocal domain)
 {
 	if (matrices & Matrices::K) {
@@ -85,4 +85,22 @@ void Composer::clearMatrices(Matrices matrices, eslocal domain)
 	if (matrices & Matrices::R) {
 		std::fill(run::data->R[domain].begin(), run::data->R[domain].end(), 0);
 	}
+}
+
+void Composer::keepK()
+{
+	#pragma omp parallel for
+	for (size_t d = 0; d < run::mesh->elements->ndomains; d++) {
+		run::data->origK[d] = run::data->K[d];
+	}
+}
+
+void Composer::sum(NodeData *z, double alfa, NodeData* a, double beta, NodeData *b)
+{
+
+}
+
+double Composer::multiply(NodeData *x, NodeData* y)
+{
+	return 0;
 }

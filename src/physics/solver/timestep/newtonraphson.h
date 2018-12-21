@@ -8,6 +8,7 @@
 namespace espreso {
 
 class NonLinearSolverConfiguration;
+struct NodeData;
 
 class NewtonRaphson: public TimeStepSolver {
 
@@ -20,9 +21,7 @@ public:
 protected:
 	NonLinearSolverConfiguration &_configuration;
 
-	std::vector<std::vector<double> > _solution;
-	std::vector<std::vector<double> > _f_ext;
-	std::vector<std::vector<double> > _f_R_BtLambda;
+	NodeData *_solution, *_RHS;
 };
 
 }

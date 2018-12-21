@@ -19,9 +19,9 @@
 
 using namespace espreso;
 
-std::vector<double>& HeatTransferControler::getSolutionStore()
+NodeData* HeatTransferControler::solution()
 {
-	return _temperature->data;
+	return _temperature;
 }
 
 void HeatTransferControler::dirichletIndices(std::vector<std::vector<eslocal> > &indices)

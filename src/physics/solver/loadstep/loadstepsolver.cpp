@@ -14,19 +14,9 @@ LoadStepSolver::LoadStepSolver(Assembler &assembler, TimeStepSolver &timeStepSol
 
 }
 
-double LoadStepSolver::duration() const
-{
-	return _duration;
-}
-
 void LoadStepSolver::initLoadStep()
 {
-//	if (time::isInitial() == 0) {
-//		_assembler.preprocessData();
-//	}
-////	_composer.physics.setDirichlet();
-//	_assembler.setRegularizationCallback();
-//	_assembler.setB0Callback();
+
 }
 
 bool LoadStepSolver::hasNextTimeStep()
@@ -36,7 +26,7 @@ bool LoadStepSolver::hasNextTimeStep()
 
 void LoadStepSolver::finalizeLoadStep()
 {
-//	_assembler.finalize();
+
 }
 
 void LoadStepSolver::run()

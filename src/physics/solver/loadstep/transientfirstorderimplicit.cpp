@@ -13,11 +13,12 @@
 
 #include "../../../basis/logging/logging.h"
 #include "../../../config/ecf/physics/physicssolver/transientsolver.h"
+#include "../../../config/ecf/environment.h"
 
 using namespace espreso;
 
 TransientFirstOrderImplicit::TransientFirstOrderImplicit(Assembler &assembler, TimeStepSolver &timeStepSolver, TransientSolverConfiguration &configuration, double duration)
-: LoadStepSolver(assembler, timeStepSolver, duration), _configuration(configuration), _alpha(0), _nTimeStep(_configuration.time_step)
+: LoadStepSolver(assembler, timeStepSolver, duration), _configuration(configuration), _alpha(0), _nTimeShift(_configuration.time_step)
 {
 	if (configuration.time_step < 1e-7) {
 		ESINFO(GLOBAL_ERROR) << "Set time step for TRANSIENT solver greater than 1e-7.";
@@ -40,37 +41,16 @@ Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Matrices matrices
 {
 	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R | Matrices::Dirichlet);
 
-	if (time::substep) {
-		updatedMatrices &= (Matrices::f | Matrices::Dirichlet);
-	}
-
 	_assembler.assemble(updatedMatrices);
 	if (matrices & (Matrices::K | Matrices::M)) {
-//		_assembler.keepK();
-//		_composer.sum(
-//				_composer.instance.K,
-//				1 / (_alpha * time::shift), _composer.instance.M,
-//				"K += (1 / alpha * delta T) * M");
+		_assembler.KplusAlfaM(1 / (_alpha * time::shift));
 	}
 
-//	_assembler.updateGluingMatrices(updatedMatrices);
-
+	_assembler.setDirichlet();
 	if (matrices & (Matrices::K | Matrices::M | Matrices::f)) {
-//		_composer.sum(
-//				*X->decomposedData,
-//				1 / (_alpha * _composer.step.timeStep), *U->decomposedData,
-//				(1 - _alpha) / _alpha, *V->decomposedData,
-//				"x = (1 / alpha * delta T) * U + (1 - alpha) / alpha * V");
-//
-//		_composer.multiply(
-//				*Y->decomposedData,
-//				_composer.instance.M, *X->decomposedData,
-//				"y = M * x");
-//
-//		_composer.sum(_composer.instance.f,
-//				1, _composer.instance.f,
-//				1, *Y->decomposedData,
-//				"f += y");
+		_assembler.sum(X, 1 / (_alpha * time::shift), U, (1 - _alpha) / _alpha, V);
+		_assembler.applyM(Y, X);
+		_assembler.enrichRHS(1, Y);
 	}
 
 	return matrices;
@@ -100,17 +80,19 @@ void TransientFirstOrderImplicit::initLoadStep()
 		ESINFO(GLOBAL_ERROR) << "Not supported first order implicit solver method.";
 	}
 
-//	(*U->decomposedData) = _composer.instance.primalSolution;
+	U->data = _assembler.solution()->data;
 }
 
 void TransientFirstOrderImplicit::runNextTimeStep()
 {
 	double last = time::current;
-	time::current += _nTimeStep;
+	time::current += _nTimeShift;
 	if (time::current + _precision >= _startTime + _duration) {
 		time::current = _startTime + _duration;
 	}
 	time::shift = time::current - last;
+	_assembler.nextTime();
+
 	processTimeStep();
 }
 
@@ -122,85 +104,51 @@ void TransientFirstOrderImplicit::processTimeStep()
 
 	_timeStepSolver.solve(*this);
 
-//	_composer.sum(
-//			*dU->decomposedData,
-//			1, _composer.instance.primalSolution,
-//			-1, *U->decomposedData,
-//			"delta U = U_i - U_i_1");
-//
-//	_nTimeStep = _composer.step.timeStep;
-//
-//	if (_configuration.auto_time_stepping.allowed && _composer.step.currentTime < _startTime + _duration) {
-//		double resFreq, oscilationLimit;
-//
-//		double norm =
-//				sqrt(_composer.sumSquares(*dU->decomposedData, SumRestriction::NONE, "|dU|")) /
-//				sqrt(_composer.sumSquares(*U->decomposedData, SumRestriction::NONE, "|U|"));
-//
-//		if (norm < 1e-5) {
-//			_nTimeStep = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * _composer.step.timeStep);
-//		} else {
-//			_composer.multiply(
-//					*dTK->decomposedData,
-//					_composer.instance.origK,
-//					*dU->decomposedData,
-//					"dTK = delta T * K");
-//			double TKT = _composer.multiply(*dTK->decomposedData, *dU->decomposedData, "res. freq. = dTK * delta T");
-//
-//			_composer.multiply(
-//					*dTK->decomposedData,
-//					_composer.instance.M,
-//					*dU->decomposedData,
-//					"dTM = delta T * M");
-//			double TMT = _composer.multiply(*dTK->decomposedData, *dU->decomposedData, "res. freq. = dTM * delta T");
-//
-//
-//			double gTKT, gTMT;
-//			MPI_Allreduce(&TKT, &gTKT, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
-//			MPI_Allreduce(&TMT, &gTMT, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
-//
-//			resFreq = gTKT / gTMT;
-//
-//			oscilationLimit = _composer.step.timeStep * resFreq;
-//
-//			double t1 = _configuration.auto_time_stepping.oscilation_limit / resFreq;
-//
-//			if (_composer.step.timeStep != t1) {
-//				if (_composer.step.timeStep < t1) {
-//					if (_configuration.auto_time_stepping.IDFactor * _composer.step.timeStep < t1) {
-//						_nTimeStep = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * _composer.step.timeStep);
-//					}
-//				} else {
-//					if (_composer.step.timeStep / _configuration.auto_time_stepping.IDFactor > t1) {
-//						_nTimeStep = std::max(_configuration.auto_time_stepping.min_time_step, _composer.step.timeStep / _configuration.auto_time_stepping.IDFactor);
-//					}
-//				}
-//			}
-//
-//			ESINFO(CONVERGENCE) << "AUTOMATIC TIME STEPPING INFO: RESPONSE EIGENVALUE(" << resFreq << "), OSCILLATION LIMIT(" << oscilationLimit << ")";
-//		}
-//
-//		if (std::fabs(_composer.step.timeStep - _nTimeStep) / _composer.step.timeStep < _precision) {
-//			ESINFO(CONVERGENCE) << "TIME STEP UNCHANGED (" << _nTimeStep << ")";
-//		} else {
-//			ESINFO(CONVERGENCE) << "NEW TIME STEP " << (_composer.step.timeStep < _nTimeStep ? "INCREASED " : "DECREASED ") << "TO VALUE: " << _nTimeStep;
-//		}
-//	}
-//
-//	if (_composer.step.timeStep - _precision < _nTimeStep) {
-//		_composer.sum(
-//				*V->decomposedData,
-//				1 / (_alpha * _composer.step.timeStep), *dU->decomposedData,
-//				- (1 - _alpha) / _alpha, *V->decomposedData,
-//				"V = (1 / alpha * delta T) * delta U - (1 - alpha) / alpha * V");
-//
-//		*U->decomposedData = _composer.instance.primalSolution;
-//		_composer.processSolution();
-//		_composer.storeSolution();
-//	} else {
-//		_composer.step.currentTime -= _composer.step.timeStep;
-//		--_composer.step.substep;
-//	}
+	_assembler.sum(dU, 1, _assembler.solution(), -1, U);
+	_nTimeShift = time::shift;
+
+	if (_configuration.auto_time_stepping.allowed && time::current < _startTime + _duration) {
+		if (dU->norm() / U->norm() < 1e-5) {
+			_nTimeShift = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * time::shift);
+		} else {
+			_assembler.applyOriginalK(dTK, dU);
+			_assembler.applyM(dTK, dU);
+
+			double resFreq = _assembler.multiply(dTK, dU) / _assembler.multiply(dTK, dU);
+			double oscilationLimit = time::shift * resFreq;
+			double t1 = _configuration.auto_time_stepping.oscilation_limit / resFreq;
+
+			if (time::shift != t1) {
+				if (time::shift < t1) {
+					if (_configuration.auto_time_stepping.IDFactor * time::shift < t1) {
+						_nTimeShift = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * time::shift);
+					}
+				} else {
+					if (time::shift / _configuration.auto_time_stepping.IDFactor > t1) {
+						_nTimeShift = std::max(_configuration.auto_time_stepping.min_time_step, time::shift / _configuration.auto_time_stepping.IDFactor);
+					}
+				}
+			}
+
+			ESINFO(CONVERGENCE) << "AUTOMATIC TIME STEPPING INFO: RESPONSE EIGENVALUE(" << resFreq << "), OSCILLATION LIMIT(" << oscilationLimit << ")";
+		}
+
+		if (std::fabs(time::shift - _nTimeShift) / time::shift < _precision) {
+			ESINFO(CONVERGENCE) << "TIME STEP UNCHANGED (" << _nTimeShift << ")";
+		} else {
+			ESINFO(CONVERGENCE) << "NEW TIME STEP " << (time::shift < _nTimeShift ? "INCREASED " : "DECREASED ") << "TO VALUE: " << _nTimeShift;
+		}
+	}
+
+	if (time::shift - _precision < _nTimeShift) {
+		_assembler.sum(V, 1 / (_alpha * time::shift), dU, -(1 - _alpha) / _alpha, V);
+
+		U->data = _assembler.solution()->data;
+		_assembler.postProcess();
+	} else {
+		time::current -= time::shift;
+		--time::substep;
+	}
 }
 
 

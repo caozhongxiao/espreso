@@ -7,8 +7,6 @@
 
 #include "../../../linearsolver/linearsolver.h"
 
-#include "../../../globals/run.h"
-
 using namespace espreso;
 
 LinearTimeStep::LinearTimeStep(Assembler &assembler, LinearSolver &solver)
@@ -24,10 +22,8 @@ std::string LinearTimeStep::name()
 
 void LinearTimeStep::solve(LoadStepSolver &loadStepSolver)
 {
-	_solver.updateData(loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::Dirichlet));
-	_solver.solveSystem();
+	_solver.solve(loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::Dirichlet));
 	_assembler.postProcess();
-	run::storeSolution();
 }
 
 

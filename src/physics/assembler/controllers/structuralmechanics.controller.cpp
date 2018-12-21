@@ -8,9 +8,9 @@
 
 using namespace espreso;
 
-std::vector<double>& StructuralMechanicsControler::getSolutionStore()
+NodeData* StructuralMechanicsControler::solution()
 {
-	return _displacement->data;
+	return _displacement;
 }
 
 //void StructuralMechanics::prepare()

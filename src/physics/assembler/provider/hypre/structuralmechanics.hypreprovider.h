@@ -2,18 +2,16 @@
 #ifndef SRC_PHYSICS_ASSEMBLER_PROVIDER_HYPRE_STRUCTURALMECHANICS_HYPREPROVIDER_H_
 #define SRC_PHYSICS_ASSEMBLER_PROVIDER_HYPRE_STRUCTURALMECHANICS_HYPREPROVIDER_H_
 
-#include "../provider.h"
+#include "hypreprovider.h"
 
 namespace espreso {
 
 struct StructuralMechanicsLoadStepConfiguration;
 
-class StructuralMechanicsHYPREProvider: public Provider {
+class StructuralMechanicsHYPREProvider: public HYPREProvider {
 
 public:
 	StructuralMechanicsHYPREProvider(StructuralMechanicsLoadStepConfiguration &configuration);
-
-	MatrixType getMatrixType() const;
 
 protected:
 	StructuralMechanicsLoadStepConfiguration &_configuration;

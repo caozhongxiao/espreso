@@ -28,7 +28,8 @@ struct NodeData {
 
 	NodeData(int dimension, const std::vector<std::string> &names);
 
-	void statistics(const tarray<eslocal> &nodes, eslocal totalsize, Statistics *statistics);
+	void statistics(const tarray<eslocal> &nodes, eslocal totalsize, Statistics *statistics) const;
+	double norm() const;
 };
 
 struct NodeStore {

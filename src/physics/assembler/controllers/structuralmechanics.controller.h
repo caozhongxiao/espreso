@@ -14,7 +14,7 @@ class StructuralMechanicsControler: public Controler
 {
 
 public:
-	std::vector<double>& getSolutionStore();
+	NodeData* solution();
 
 protected:
 	StructuralMechanicsControler(StructuralMechanicsLoadStepConfiguration &configuration)

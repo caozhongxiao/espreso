@@ -15,6 +15,16 @@ public:
 	GlobalComposer(Controler &controler, Provider &provider)
 	: Composer(controler), _provider(provider), _localKOffset(0), _localRHSOffset(0) {}
 
+	NodeData* RHS();
+
+	void KplusAlfaM(double alfa);
+	void applyM(NodeData *y, NodeData *x);
+	void applyOriginalK(NodeData *y, NodeData *x);
+	void enrichRHS(double alfa, NodeData* a);
+	void RHSMinusR();
+	void DirichletMinusRHS();
+	double residualNorm();
+
 protected:
 	Provider &_provider;
 

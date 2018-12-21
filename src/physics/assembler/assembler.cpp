@@ -48,13 +48,6 @@ void Assembler::sum(std::vector<std::vector<double> > &z, double a, const std::v
 	}
 }
 
-void Assembler::sum(std::vector<SparseMatrix> &A, double beta, std::vector<SparseMatrix> &B, const std::string &description)
-{
-	#pragma omp parallel for
-	for (size_t d = 0; d < run::mesh->elements->ndomains; d++) {
-		A[d].MatAddInPlace(B[d], 'N', beta);
-	}
-}
 
 /// y = A * x
 void Assembler::multiply(std::vector<std::vector<double> > &y, std::vector<SparseMatrix> &A, std::vector<std::vector<double> > &x, const std::string &description)

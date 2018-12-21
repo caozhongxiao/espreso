@@ -20,6 +20,7 @@ public:
 	virtual MatrixType getMatrixType(eslocal domain) const =0;
 
 	bool needOriginalStiffnessMatrices();
+	double& solutionPrecision();
 
 protected:
 	void makeStiffnessMatricesRegular(FETI_REGULARIZATION regularization, int scSize, bool ortogonalCluster);

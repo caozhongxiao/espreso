@@ -20,6 +20,16 @@ public:
 	FETIComposer(Controler &controler, FETIProvider &provider, FETISolverConfiguration &configuration)
 	: Composer(controler), _provider(provider), _configuration(configuration) {}
 
+	NodeData* RHS();
+
+	void KplusAlfaM(double alfa);
+	void applyM(NodeData *y, NodeData *x);
+	void applyOriginalK(NodeData *y, NodeData *x);
+	void enrichRHS(double alfa, NodeData* a);
+	void RHSMinusR();
+	void DirichletMinusRHS();
+	double residualNorm();
+
 protected:
 	FETIProvider &_provider;
 	FETISolverConfiguration &_configuration;

@@ -773,7 +773,7 @@ void UniformNodesFETIComposer::fillSolution()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	std::vector<double> &solution = _controler.getSolutionStore();
+	std::vector<double> &solution = _controler.solution()->data;
 
 	std::vector<std::vector<std::vector<double> > > sBuffer(threads);
 	std::vector<std::vector<double> > rBuffer(run::mesh->neighbours.size());

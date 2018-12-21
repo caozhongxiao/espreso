@@ -10,6 +10,7 @@ namespace espreso {
 struct HeatTransferLoadStepConfiguration;
 struct FETISolverConfiguration;
 enum Matrices: int;
+struct NodeData;
 enum class SumRestriction;
 class SparseMatrix;
 
@@ -34,12 +35,25 @@ struct Assembler {
 	virtual void setDirichlet() =0;
 	virtual void postProcess() =0;
 
+	virtual NodeData* RHS() =0;
+	virtual NodeData* solution() =0;
+	virtual double& solutionPrecision() =0;
+
+	virtual void keepK() =0;
+	virtual void KplusAlfaM(double alfa) =0;
+	virtual void applyM(NodeData *y, NodeData *x) =0;
+	virtual void applyOriginalK(NodeData *y, NodeData *x) =0;
+	virtual void enrichRHS(double alfa, NodeData* a) =0;
+	virtual void RHSMinusR() =0;
+	virtual void DirichletMinusRHS() =0;
+	virtual void sum(NodeData *z, double alfa, NodeData* a, double beta, NodeData *b) =0;
+	virtual double multiply(NodeData *x, NodeData* y) =0;
+	virtual double residualNorm() =0;
+
 	/// z = a * x + b + y
 	void sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::string &description);
 	/// z = a * x + b + y (prefix variant)
 	void sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::vector<size_t> &prefix, const std::string &description);
-	/// A += beta * B
-	void sum(std::vector<SparseMatrix> &A, double beta, std::vector<SparseMatrix> &B, const std::string &description);
 
 	/// y = A * x
 	void multiply(std::vector<std::vector<double> > &y, std::vector<SparseMatrix> &A, std::vector<std::vector<double> > &x, const std::string &description);
@@ -50,7 +64,6 @@ struct Assembler {
 	void addToDirichletInB1(double a, const std::vector<std::vector<double> > &x);
 	double maxAbsValue(const std::vector<std::vector<double> > &v, const std::string &description);
 	double lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext);
-	void keepK();
 
 	virtual ~Assembler() {};
 
@@ -106,6 +119,71 @@ struct AssemblerInstance: public Assembler, public TController, public TComposer
 
 		TController::parametersChanged();
 		TController::processSolution();
+	}
+
+	NodeData* RHS()
+	{
+		return TComposer::RHS();
+	}
+
+	NodeData* solution()
+	{
+		return TController::solution();
+	}
+
+	double& solutionPrecision()
+	{
+		return TProvider::solutionPrecision();
+	}
+
+	void keepK()
+	{
+		TComposer::keepK();
+	}
+
+	void KplusAlfaM(double alfa)
+	{
+		TComposer::KplusAlfaM(alfa);
+	}
+
+	void applyM(NodeData *y, NodeData *x)
+	{
+		TComposer::applyM(y, x);
+	}
+
+	void applyOriginalK(NodeData *y, NodeData *x)
+	{
+		TComposer::applyOriginalK(y, x);
+	}
+
+	void enrichRHS(double alfa, NodeData* a)
+	{
+		TComposer::enrichRHS(alfa, a);
+	}
+
+	void RHSMinusR()
+	{
+		TComposer::RHSMinusR();
+	}
+
+	void DirichletMinusRHS()
+	{
+		TComposer::DirichletMinusRHS();
+	}
+
+	void sum(NodeData *z, double alfa, NodeData* a, double beta, NodeData *b)
+	{
+		TComposer::sum(z, alfa, a, beta, b);
+	}
+
+	double multiply(NodeData *x, NodeData* y)
+	{
+		return TComposer::multiply(x, y);
+	}
+
+	double residualNorm()
+	{
+		return TComposer::residualNorm();
 	}
 };
 

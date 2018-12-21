@@ -18,7 +18,7 @@ public:
 	void dirichletIndices(std::vector<std::vector<eslocal> > &indices);
 	void dirichletValues(std::vector<double> &values);
 
-	std::vector<double>& getSolutionStore();
+	NodeData* solution();
 
 protected:
 	HeatTransferControler(HeatTransferLoadStepConfiguration &configuration)

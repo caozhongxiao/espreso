@@ -11,11 +11,6 @@
 
 using namespace espreso;
 
-void LinearSolver::updateData(Matrices matrices)
-{
-	update(matrices);
-}
-
 template <typename TData>
 static void store(TData &data, size_t domain, const std::string &name) {
 	std::ofstream os(Logging::prepareFile(domain, name));
@@ -24,8 +19,10 @@ static void store(TData &data, size_t domain, const std::string &name) {
 	os.close();
 };
 
-void LinearSolver::solveSystem()
+void LinearSolver::solve(Matrices matrices)
 {
+	update(matrices);
+
 	if (environment->print_matrices) {
 		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "STORE ASSEMBLED LINEAR SYSTEM";
 		for (size_t d = 0; d < run::data->K.size(); d++) {

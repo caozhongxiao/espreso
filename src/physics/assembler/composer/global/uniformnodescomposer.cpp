@@ -672,7 +672,7 @@ void UniformNodesComposer::synchronize()
 
 void UniformNodesComposer::fillSolution()
 {
-	std::vector<double> &solution = _controler.getSolutionStore();
+	std::vector<double> &solution = _controler.solution()->data;
 
 	std::vector<std::vector<double> > sBuffer(run::mesh->neighbours.size()), rBuffer(run::mesh->neighbours.size());
 

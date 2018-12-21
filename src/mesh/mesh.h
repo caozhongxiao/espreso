@@ -39,6 +39,16 @@ public:
 	Mesh();
 	void update();
 
+	ElementsRegionStore* allElements()
+	{
+		return eregion("ALL_ELEMENTS");
+	}
+
+	BoundaryRegionStore* allNodes()
+	{
+		return bregion("ALL_NODES");
+	}
+
 	ElementsRegionStore* eregion(const std::string &name);
 	ElementsRegionsIntersectionStore* ieregion(const std::string &name);
 	BoundaryRegionStore* bregion(const std::string &name);

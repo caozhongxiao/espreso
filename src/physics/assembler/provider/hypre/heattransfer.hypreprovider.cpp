@@ -1,21 +1,12 @@
 
-#include "../../../../basis/matrices/matrixtype.h"
-#include "../../../../config/ecf/physics/heattransfer.h"
 #include "heattransfer.hypreprovider.h"
+
+#include "../../../../config/ecf/physics/heattransfer.h"
 
 using namespace espreso;
 
 HeatTransferHYPREProvider::HeatTransferHYPREProvider(HeatTransferLoadStepConfiguration &configuration)
-: Provider(configuration), _configuration(configuration)
+: HYPREProvider(configuration), _configuration(configuration)
 {
 
-}
-
-MatrixType HeatTransferHYPREProvider::getMatrixType() const
-{
-	if (_configuration.translation_motions.size()) {
-		return MatrixType::REAL_UNSYMMETRIC;
-	}
-	return MatrixType::REAL_UNSYMMETRIC; // Hypre always get full matrix
-	return MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 }

@@ -17,6 +17,7 @@ class Mesh;
 class ECFExpression;
 class ECFExpressionVector;
 enum Matrices: int;
+struct NodeData;
 enum EvaluatorParameters: int;
 template <typename TEBoundaries, typename TEData> class serializededata;
 template <typename TEData> class tarray;
@@ -34,7 +35,7 @@ public:
 		std::function<void(size_t)> insert;
 	};
 
-	virtual std::vector<double>& getSolutionStore() = 0;
+	virtual NodeData* solution() = 0;
 
 	virtual void initData() = 0;
 	virtual void processSolution() = 0;

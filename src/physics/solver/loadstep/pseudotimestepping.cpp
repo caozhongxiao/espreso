@@ -30,6 +30,7 @@ Matrices PseudoTimeStepping::updateStructuralMatrices(Matrices matrices)
 	}
 
 	_assembler.assemble(updatedMatrices);
+	_assembler.setDirichlet();
 	return matrices;
 }
 

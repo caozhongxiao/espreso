@@ -95,6 +95,10 @@ bool FETIProvider::needOriginalStiffnessMatrices()
 	return false || Provider::needOriginalStiffnessMatrices();
 }
 
+double& FETIProvider::solutionPrecision()
+{
+	return _configuration.feti.precision;
+}
 void FETIProvider::makeStiffnessMatricesRegular(FETI_REGULARIZATION regularization, int scSize, bool ortogonalCluster)
 {
 	#pragma omp parallel for

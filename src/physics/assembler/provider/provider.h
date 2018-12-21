@@ -16,6 +16,7 @@ public:
 	virtual MatrixType getMatrixType() const =0;
 
 	virtual bool needOriginalStiffnessMatrices();
+	virtual double& solutionPrecision() =0;
 
 protected:
 	LoadStepConfiguration &_configuration;

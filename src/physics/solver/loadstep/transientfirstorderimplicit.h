@@ -25,7 +25,7 @@ protected:
 
 	TransientSolverConfiguration &_configuration;
 	double _alpha;
-	double _nTimeStep;
+	double _nTimeShift;
 
 	NodeData *U, *dU, *V, *X, *Y, *dTK;
 };
