@@ -1,12 +1,12 @@
 
 #include "expressionevaluator.h"
-#include "../expression/expression.h"
+
+#include "basis/containers/point.h"
+#include "basis/utilities/parser.h"
+#include "basis/expression/expression.h"
+#include "config/ecf/environment.h"
 
 #include "omp.h"
-
-#include "../../basis/containers/point.h"
-#include "../../basis/utilities/parser.h"
-#include "../../config/ecf/environment.h"
 
 using namespace espreso;
 

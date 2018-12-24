@@ -145,11 +145,11 @@ void CoordinateSystemConfiguration::multiplyTransformationMatrices(std::vector<d
 	switch (dimension) {
 		case DIMENSION::D3: {
 			result.resize(16);
-			MATH::DenseMatDenseMatRowMajorProduct(1, false, 4, 4, left.data(), false, 4, right.data(), 0, result.data());
+//			MATH::DenseMatDenseMatRowMajorProduct(1, false, 4, 4, left.data(), false, 4, right.data(), 0, result.data());
 		} break;
 		case DIMENSION::D2: {
 			result.resize(9);
-			MATH::DenseMatDenseMatRowMajorProduct(1, false, 3, 4, left.data(), false, 3, right.data(), 0, result.data());
+//			MATH::DenseMatDenseMatRowMajorProduct(1, false, 3, 4, left.data(), false, 3, right.data(), 0, result.data());
 		} break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: unsupported operation.";

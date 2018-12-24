@@ -5908,6 +5908,7 @@ void   SendMatrix2  ( esint rank, esint source_rank, SparseMatrix & A_in, esint 
 		send_par_buf[2] = A_in.nnz;
 		send_par_buf[3] = A_in.type;
 
+#define XE6
 #ifdef XE6
 		MPI_Send(send_par_buf, 4, esint_mpi, dest_rank, param_tag, environment->MPICommunicator);
 		MPI_Send(&A_in.CSR_I_row_indices[0], A_in.rows + 1, esint_mpi, dest_rank, I_row_tag, environment->MPICommunicator );

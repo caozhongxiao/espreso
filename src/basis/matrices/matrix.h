@@ -12,7 +12,7 @@
 #include "mkl_lapacke.h"
 #include "mkl_trans.h"
 
-#include "../logging/logging.h"
+#include "basis/logging/logging.h"
 
 namespace espreso {
 

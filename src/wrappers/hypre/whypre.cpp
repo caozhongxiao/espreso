@@ -1,5 +1,5 @@
 
-#include "hypre.h"
+#include "whypre.h"
 
 #include "../../basis/logging/logging.h"
 #include "../../basis/utilities/communication.h"
@@ -9,30 +9,40 @@
 
 #include "../../config/ecf/root.h"
 
-#include "include/HYPRE_krylov.h"
-#include "include/HYPRE.h"
-#include "include/HYPRE_parcsr_ls.h"
+#include "HYPRE.h"
+#include "HYPRE_IJ_mv.h"
+#include "HYPRE_krylov.h"
+#include "HYPRE_parcsr_ls.h"
 
 #include <vector>
 #include <numeric>
 
+namespace espreso {
+struct HYPREData {
+	HYPRE_IJMatrix K;
+	HYPRE_IJVector f, x;
+};
+}
+
 using namespace espreso;
 
-HypreData::HypreData(MPI_Comm &comm, esint nrows)
-: _comm(comm), _roffset(nrows), _nrows(nrows), _finalized(false)
+HypreData::HypreData(esint nrows)
+: _roffset(nrows), _nrows(nrows), _finalized(false)
 {
+	_data = new HYPREData();
+
 	Communication::exscan(_roffset);
-	HYPRE_IJMatrixCreate(comm, _roffset + 1, _roffset + _nrows, _roffset + 1, _roffset + _nrows, &_K);
-	HYPRE_IJVectorCreate(comm, _roffset + 1, _roffset + _nrows, &_f);
-	HYPRE_IJVectorCreate(comm, _roffset + 1, _roffset + _nrows, &_x);
+	HYPRE_IJMatrixCreate(environment->MPICommunicator, _roffset + 1, _roffset + _nrows, _roffset + 1, _roffset + _nrows, &_data->K);
+	HYPRE_IJVectorCreate(environment->MPICommunicator, _roffset + 1, _roffset + _nrows, &_data->f);
+	HYPRE_IJVectorCreate(environment->MPICommunicator, _roffset + 1, _roffset + _nrows, &_data->x);
 
-	HYPRE_IJMatrixSetObjectType(_K, HYPRE_PARCSR);
-	HYPRE_IJVectorSetObjectType(_f, HYPRE_PARCSR);
-	HYPRE_IJVectorSetObjectType(_x, HYPRE_PARCSR);
+	HYPRE_IJMatrixSetObjectType(_data->K, HYPRE_PARCSR);
+	HYPRE_IJVectorSetObjectType(_data->f, HYPRE_PARCSR);
+	HYPRE_IJVectorSetObjectType(_data->x, HYPRE_PARCSR);
 
-	HYPRE_IJMatrixInitialize(_K);
-	HYPRE_IJVectorInitialize(_f);
-	HYPRE_IJVectorInitialize(_x);
+	HYPRE_IJMatrixInitialize(_data->K);
+	HYPRE_IJVectorInitialize(_data->f);
+	HYPRE_IJVectorInitialize(_data->x);
 }
 
 void HypreData::insertCSR(esint nrows, esint offset, esint *rowPrts, esint *colIndices, double *values, double *rhsValues)
@@ -46,9 +56,9 @@ void HypreData::insertCSR(esint nrows, esint offset, esint *rowPrts, esint *colI
 	}
 	std::vector<double> x(nrows);
 
-	HYPRE_IJMatrixSetValues(_K, nrows, ncols.data(), rows.data(), colIndices, values);
-	HYPRE_IJVectorSetValues(_f, nrows, rows.data(), rhsValues);
-	HYPRE_IJVectorSetValues(_x, nrows, rows.data(), x.data());
+	HYPRE_IJMatrixSetValues(_data->K, nrows, ncols.data(), rows.data(), colIndices, values);
+	HYPRE_IJVectorSetValues(_data->f, nrows, rows.data(), rhsValues);
+	HYPRE_IJVectorSetValues(_data->x, nrows, rows.data(), x.data());
 
 	_finalized = false;
 }
@@ -68,25 +78,26 @@ void HypreData::insertIJV(esint nrows, esint offset, esint size, esint *rowIndic
 	}
 	std::vector<double> x(nrows);
 
-	HYPRE_IJMatrixSetValues(_K, nrows, ncols.data(), rows.data(), colIndices, values);
-	HYPRE_IJVectorSetValues(_f, nrows, rows.data(), rhsValues);
-	HYPRE_IJVectorSetValues(_x, nrows, rows.data(), x.data());
+	HYPRE_IJMatrixSetValues(_data->K, nrows, ncols.data(), rows.data(), colIndices, values);
+	HYPRE_IJVectorSetValues(_data->f, nrows, rows.data(), rhsValues);
+	HYPRE_IJVectorSetValues(_data->x, nrows, rows.data(), x.data());
 	_finalized = false;
 }
 
 void HypreData::finalizePattern()
 {
-	HYPRE_IJMatrixAssemble(_K);
-	HYPRE_IJVectorAssemble(_f);
-	HYPRE_IJVectorAssemble(_x);
+	HYPRE_IJMatrixAssemble(_data->K);
+	HYPRE_IJVectorAssemble(_data->f);
+	HYPRE_IJVectorAssemble(_data->x);
 	_finalized = true;
 }
 
 HypreData::~HypreData()
 {
-	HYPRE_IJMatrixDestroy(_K);
-	HYPRE_IJVectorDestroy(_f);
-	HYPRE_IJVectorDestroy(_x);
+	HYPRE_IJMatrixDestroy(_data->K);
+	HYPRE_IJVectorDestroy(_data->f);
+	HYPRE_IJVectorDestroy(_data->x);
+	delete _data;
 }
 
 void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, esint nrows, double *solution)
@@ -97,14 +108,14 @@ void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, 
 
 	HYPRE_ParCSRMatrix K;
 	HYPRE_ParVector f, x;
-	HYPRE_IJMatrixGetObject(data._K, (void**) &K);
-	HYPRE_IJVectorGetObject(data._f, (void**) &f);
-	HYPRE_IJVectorGetObject(data._x, (void**) &x);
+	HYPRE_IJMatrixGetObject(data._data->K, (void**) &K);
+	HYPRE_IJVectorGetObject(data._data->f, (void**) &f);
+	HYPRE_IJVectorGetObject(data._data->x, (void**) &x);
 
 	HYPRE_Solver solver;
 	switch (configuration.solver) {
 	case MultigridConfiguration::SOLVER::CG:
-		HYPRE_ParCSRPCGCreate(data._comm, &solver);
+		HYPRE_ParCSRPCGCreate(environment->MPICommunicator, &solver);
 
 		HYPRE_PCGSetMaxIter(solver, configuration.max_iterations);
 		HYPRE_PCGSetTol(solver, configuration.precision);
@@ -152,11 +163,11 @@ void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, 
 		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "STORE HYPRE SYSTEM";
 		{
 			std::string prefix = Logging::prepareFile("HYPRE.K");
-			HYPRE_IJMatrixPrint(data._K, prefix.c_str());
+			HYPRE_IJMatrixPrint(data._data->K, prefix.c_str());
 		}
 		{
 			std::string prefix = Logging::prepareFile("HYPRE.f");
-			HYPRE_IJVectorPrint(data._f, prefix.c_str());
+			HYPRE_IJVectorPrint(data._data->f, prefix.c_str());
 		}
 	}
 
@@ -173,10 +184,10 @@ void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, 
 	if (run::ecf->environment.print_matrices) {
 		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "STORE HYPRE SYSTEM SOLUTION";
 		std::string prefix = Logging::prepareFile("HYPRE.x");
-		HYPRE_IJVectorPrint(data._x, prefix.c_str());
+		HYPRE_IJVectorPrint(data._data->x, prefix.c_str());
 	}
 
 	std::vector<esint> rows(nrows);
 	std::iota(rows.begin(), rows.end(), data._roffset + 1);
-	HYPRE_IJVectorGetValues(data._x, data._nrows, rows.data(), solution);
+	HYPRE_IJVectorGetValues(data._data->x, data._nrows, rows.data(), solution);
 }

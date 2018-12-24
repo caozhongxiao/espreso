@@ -1,6 +1,6 @@
 
 #include "expression.h"
-#include "../logging/logging.h"
+#include "basis/logging/logging.h"
 
 #include "exprtk.hpp"
 

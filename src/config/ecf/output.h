@@ -69,8 +69,7 @@ struct OutputConfiguration: public ECFObject {
 		NEVER,
 		EVERY_TIMESTEP,
 		EVERY_NTH_TIMESTEP,
-		LAST_TIMESTEP,
-		DEBUG
+		LAST_TIMESTEP
 	};
 
 	enum class STORE_RESULTS {

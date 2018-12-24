@@ -2,6 +2,7 @@
 #ifndef SRC_OUTPUT_RESULT_EXECUTOR_ASYNCEXECUTOR_H_
 #define SRC_OUTPUT_RESULT_EXECUTOR_ASYNCEXECUTOR_H_
 
+#define USE_MPI
 #include "async/Module.h"
 
 #include "../../../mesh/mesh.h"

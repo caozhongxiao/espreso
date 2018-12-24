@@ -9,8 +9,8 @@
 
 #include "logging.h"
 
-#include "../../config/ecf/environment.h"
-#include "../../globals/time.h"
+#include "config/ecf/environment.h"
+#include "globals/time.h"
 
 namespace espreso {
 

@@ -1,12 +1,10 @@
 
-#include "wmetis.h"
 #include "metis.h"
+#include "wmetis.h"
 
 #include "../../basis/logging/logging.h"
 #include "../../config/ecf/environment.h"
 #include "../../config/ecf/decomposition.h"
-
-#include <fstream>
 
 using namespace espreso;
 

@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-class InSituWrapper;
+class Catalyst;
 
 struct InSitu: public Visualization {
 
@@ -20,7 +20,7 @@ struct InSitu: public Visualization {
 	void updateSolution();
 
 protected:
-	InSituWrapper *_inSitu;
+	Catalyst *_catalyst;
 };
 
 }

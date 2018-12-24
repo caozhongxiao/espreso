@@ -22,12 +22,13 @@
 #include "../../config/ecf/environment.h"
 #include "../../config/ecf/decomposition.h"
 
-#include "../../wrappers/metis/wmetis.h"
 #include "../../wrappers/math/math.h"
 
 #include <algorithm>
 #include <numeric>
 #include <cstring>
+
+#include "../../wrappers/metis/wmetis.h"
 #include "../store/fetidatastore.h"
 
 using namespace espreso;

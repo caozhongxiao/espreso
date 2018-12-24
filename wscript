@@ -1,8 +1,4 @@
 
-# encoding=utf8
-
-VERSION = 15
-
 import commands
 import sys
 import os
@@ -10,255 +6,189 @@ import os
 reload(sys)
 sys.setdefaultencoding('utf8')
 
-from waflib import Logs
+from waflib.TaskGen import after_method, feature
 
-sys.path.append(os.path.abspath("src/python/waf"))
-from utils import *
-from waflib import Logs
+@feature('cxx')
+@after_method('apply_incpaths')
+def insert_srcdir(self):
+    path = os.path.join(self.bld.srcnode.abspath(), "src")
+    self.env.prepend_value('INCPATHS', path)
 
-# Each attribute has this structure: ( "attribute", "description", "data type", "choices")
+def set_compiler(ctx):
+    def trycompiler():
+        try:
+            ctx.find_program(ctx.options.mpicxx)
+        except ctx.errors.ConfigurationError:
+            return False
+        return True
 
-compilers = [
-    ("CXX", "Intel MPI/C++ compiler used to build ESPRESO.", "string", "compiler"),
-    ("CC", "C compiler for build tools used by ESPRESO.", "string", "compiler"),
-    ("FC", "Fortran compiler for build tools used by ESPRESO.", "string", "compiler")
-]
+    if not trycompiler():
+        if ctx.options.mpicxx == "mpiicpc":
+            ctx.options.mpicxx = "mpic++"
+        elif ctx.options.mpicxx == "mpic++":
+            ctx.options.mpicxx = "mpiicpc"
+        if not trycompiler():
+            ctx.fatal("Cannot found MPI compiler. Set a correct one by 'mpicxx=' parameter.")
 
-compiler_attributes = [
-    ("CXXFLAGS", "List of compilation flags for ESPRESO files.", "string", "flags"),
-    ("LINKFLAGS", "List of flags for linking ESPRESO.", "string", "flags"),
-    ("INCLUDES", "Include paths.", "string", "paths"),
-    ("LIBPATH", "List of search path for shared libraries.", "string", "paths"),
-    ("STLIBPATH", "List of search path for static libraries.", "string", "paths")
-]
+    if ctx.options.mpicxx == "mpiicpc":
+        ctx.options.cxx = "icpc"
+    if ctx.options.mpicxx == "mpic++":
+        ctx.options.cxx = "g++"
+    ctx.load(ctx.options.cxx)
+    ctx.env.CXX = ctx.env.LINK_CXX =ctx.options.mpicxx
 
-solvers = [ "MKL", "PARDISO", "CUDA", "CUDA_7", "MIC", "MUMPS", "DISSECTION" ]
+def set_openmp(ctx):
+    if ctx.options.cxx == "icpc":
+        ctx.env.append_unique("CXXFLAGS", [ "-qopenmp" ])
+        ctx.env.append_unique("LINKFLAGS", [ "-qopenmp" ])
+    if ctx.options.cxx == "g++":
+        ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
+        ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
 
-third_party = [
-    ("HYPRE", "multigrid external solver.", "string", "PATH", [ "INCLUDE", "LIBPATH" ]),
-    ("CATALYST", "Catalyst. Allows in situ visualization.", "string", "PATH", [ "INCLUDE", "LIBPATH" ]),
-    ("MORTAR", "assembler for mortar interface.", "string", "PATH", [ "INCLUDE", "LIBPATH" ]),
-    ("BEM4I", "assembler for boundary element discretization.", "string", "PATH", [ "PATH" ]),
-]
+def set_metis(ctx):
+    ctx.check_cxx(
+        header_name="metis.h parmetis.h", lib=["metis", "parmetis"], uselib_store="METIS",
+        define_name="",
+        defines=["HAVE_METIS", "IDXTYPEWIDTH=" + str(ctx.options.intwidth), "REALTYPEWIDTH=64"],
+        includes=ctx.options.parmetisroot + "/include",
+        libpath=ctx.options.parmetisroot + "/lib",
+        msg="Checking for library ParMETIS",
+        errmsg="set 'parmetisroot'.")
 
-espreso_attributes = [
-    ("CHECK_ENV", "Set to 1, if you want to test the build configuration.", "choice", [ "0", "1" ]),
-    ("INT_WIDTH", "ESPRESO integer datatype width.", "choice", [ "32", "64" ]),
-    ("LIBTYPE", "ESPRESO is built to libraries of specified type.", "choice", [ "SHARED", "STATIC" ]),
-    ("SOLVER", "ESPRESO internal solver. Default: MKL", "choice", solvers),
-    ("BUILD_TOOLS", "ESPRESO try to compile external tools. If the compilation is not successful set this attribute to 0 and build tools manually.", "choice", [ "0", "1" ]),
-    ("METISLIB", "Name of METIS library.", "string", "name")
-]
+def set_mkl(ctx):
+    if ctx.options.solver == "mkl":
+        ctx.check_cxx(header_name="mkl.h", define_name="", defines="HAVE_MKL", uselib_store="MKL")
+        if ctx.options.intwidth == 32:
+            ctx.check_cxx(lib="mkl_intel_lp64", defines="MKL_INT=int", uselib_store="MKL")
+        if ctx.options.intwidth == 64:
+            ctx.check_cxx(lib="mkl_intel_ilp64", defines="MKL_INT=long", uselib_store="MKL")
+        ctx.check_cxx(lib="mkl_core", uselib_store="MKL")
+        if ctx.options.cxx == "icpc":
+            ctx.check_cxx(lib="mkl_intel_thread", uselib_store="MKL")
+        if ctx.options.cxx == "g++":
+            ctx.check_cxx(lib="mkl_gnu_thread", uselib_store="MKL")
 
-from waflib.Configure import conf
-@conf
-def check_header(self, header):
-    self.headers += [ header ]
+def try_hypre(ctx):
+    ctx.check_cxx(
+        header_name="HYPRE.h", lib="HYPRE", uselib_store="HYPRE",
+        define_name="", defines="HAVE_HYPRE",
+        includes=ctx.options.hypreroot + "/include",
+        libpath=ctx.options.hypreroot + "/lib",
+        mandatory=False,
+        msg="Checking for library HYPRE",
+        errmsg="set 'hypreroot' to use HYPRE solver.")
 
-@conf
-def check_lib(self, library, dependencies=[]):
-    self.libs[library] = [ library ] + dependencies
+def try_catalyst(ctx):
+    pass
 
-@conf
-def check_stlib(self, library, dependencies=[]):
-    self.stlibs[library] = [ library ] + dependencies
+def set_variables(ctx):
+    if ctx.options.intwidth == 32:
+        ctx.env.append_unique("DEFINES", [ "esint=int", "esint_mpi=MPI_INT" ])
+    if ctx.options.intwidth == 64:
+        ctx.env.append_unique("DEFINES", [ "esint=long", "esint_mpi=MPI_LONG" ])
+
+    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-Wall"])
+    ctx.env.mode = ctx.options.mode
+    if ctx.options.mode == "release":
+        ctx.env.append_unique("CXXFLAGS", [ "-O3" ])
+    if ctx.options.mode == "development":
+        ctx.env.append_unique("CXXFLAGS", [ "-O2", "-g" ])
+    if ctx.options.mode == "debug":
+        ctx.env.append_unique("CXXFLAGS", [ "-O0", "-g" ])
 
 def configure(ctx):
-    ctx.headers = []
-    ctx.libs = {}
-    ctx.stlibs = {}
+    set_compiler(ctx)
+    set_openmp(ctx)
+    set_mkl(ctx)
+    set_metis(ctx)
+    try_hypre(ctx)
+    set_variables(ctx)
 
-    read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_attributes, third_party)
+    ctx.msg("Setting compiler to", ctx.options.mpicxx)
+    ctx.msg("Setting int width to", ctx.options.intwidth)
+    ctx.msg("Setting build mode to", ctx.options.mode)
+    ctx.msg("Setting solver to", ctx.options.solver)
 
-    try:
-        ctx.find_program(ctx.env.CC)
-        ctx.find_program(ctx.env.FC)
-        ctx.load(ctx.env.CXX)
-    except ctx.errors.ConfigurationError:
-        ctx.fatal("Install MPI compiler supporting icpc/gcc or load the appropriate module.")
-
-    set_compiler_defines(ctx)
-
-    ctx.ROOT = ctx.path.abspath()
-
-    if not os.path.exists(ctx.ROOT + "/lib"):
-        os.makedirs(ctx.ROOT + "/lib")
-
-    ctx.env.append_unique("LIBPATH", [ ctx.ROOT + "/lib" ])
-    ctx.env.append_unique("STLIBPATH", [ ctx.ROOT + "/lib" ])
-
-    # Waf INCLUDES policy is strange -> use export includes
-    ctx.env.append_unique("CXXFLAGS", [ "-I" + include for include in ctx.env.INCLUDES ])
-    ctx.env.INCLUDES = []
-
-#    if ctx.env.LIBTYPE == "SHARED":
-#        ctx.env.append_unique("CXXFLAGS", "-fPIC")
-
-    if ctx.env.BUILD_TOOLS == "1":
-        ctx.recurse("tools")
-
-    for header in [ "mpi.h", "mkl.h", "cilk/cilk.h", "omp.h" ]: #, "tbb/mutex.h" ]:
-        ctx.check_header(header)
-
-    # recurse to basic parts
-    ctx.recurse("src/basis")
-    ctx.recurse("src/globals")
-    ctx.recurse("src/config")
-    ctx.recurse("src/wrappers")
-
-    # recurse to ESPRESO solver
-    ctx.setenv("solver", ctx.env.derive());
-    append_solver_attributes(ctx, compiler_attributes)
-    ctx.recurse("src/mesh")
-    ctx.recurse("src/input")
-    ctx.recurse("src/linearsolver")
-    ctx.recurse("src/solver")
-    ctx.recurse("src/physics")
-
-    ctx.setenv("espreso", ctx.env.derive());
-    ctx.recurse("src/output")
-    ctx.recurse("src/app")
-
-    check_environment(ctx)
-
-#    if not ctx.options.disable_gui:
-#        ctx.setenv("gui", ctx.all_envs["espreso"].derive());
-#        ctx.recurse("src/gui")
-
-    optional_libraries = [
-#        (ctx.env.QT, "QT5", "GUI"),
-        (ctx.env.CATALYST, "Paraview Catalyst", "in situ visualization"),
-        (ctx.env.HYPRE, "HYPRE", "multigrid linear solver"),
-        (ctx.env.MORTAR, "MORTAR", "gluing of non-matching grids"),
-        (ctx.env.BEM4I, "BEM4I", "boundary element discretization")
-    ]
-
-    not_found = (lib for lib in optional_libraries if not lib[0])
-
-    if not all(lib[0] for lib in optional_libraries):
-        ctx.msg("", "")
-        ctx.msg("NOT FOUND OPTIONAL LIBRARIES", "ESPRESO does not support", color="RED")
-        for status, lib, purpose in not_found:
-            ctx.msg("  " + lib, purpose, color="NORMAL")
+fetisources= (
+   "src/solver/generic/Domain.cpp",
+   "src/solver/generic/SparseMatrix.cpp",
+   "src/solver/generic/utils.cpp",
+   "src/solver/generic/FETISolver.cpp",
+   "src/solver/specific/cluster.cpp",
+   "src/solver/specific/itersolver.cpp",
+   "src/solver/specific/cpu/SparseSolverMKL.cpp",
+   "src/solver/specific/cpu/clustercpu.cpp",
+   "src/solver/specific/cpu/itersolvercpu.cpp",
+   "src/solver/specific/cpu/DenseSolverMKL.cpp"
+)
 
 def build(ctx):
 
-    ctx(
-        export_includes = "tools/bem4i/src tools/ASYNC",
-        name            = "espreso_includes"
+    ctx.objects(source=ctx.path.ant_glob('src/basis/**/*.cpp'),target="basis")
+    ctx.objects(source=ctx.path.ant_glob('src/globals/**/*.cpp'),target="globals",defines="MODE="+ctx.env.mode.upper())
+    ctx.objects(source=ctx.path.ant_glob('src/config/**/*.cpp'),target="config")
+    ctx.objects(source=ctx.path.ant_glob('src/mesh/**/*.cpp'),target="mesh")
+    ctx.objects(source=ctx.path.ant_glob('src/input/**/*.cpp'),target="input")
+    ctx.objects(source=ctx.path.ant_glob('src/output/**/*.cpp'),target="output",includes="tools/ASYNC")
+    ctx.objects(source=ctx.path.ant_glob('src/physics/**/*.cpp'),target="physics",defines=["SOLVER_MKL"])
+    ctx.objects(source=ctx.path.ant_glob('src/linearsolver/**/*.cpp'),target="linearsolver")
+    ctx.objects(source=ctx.path.ant_glob('src/wrappers/metis/**/*.cpp'),target="metis",use="METIS")
+    ctx.objects(source=ctx.path.ant_glob('src/wrappers/math/**/*.cpp'),target="math",use="MKL")
+    ctx.objects(source=ctx.path.ant_glob('src/wrappers/hypre/**/*.cpp'),target="hypre",use="HYPRE")
+    ctx.objects(source=ctx.path.ant_glob('src/wrappers/catalyst/**/*.cpp'),target="catalyst",use="CATALYST")
+    ctx.objects(source=fetisources,target="feti",defines=["SOLVER_MKL"])
+
+    ctx.program(
+        source="src/app/espreso.cpp",target="espreso",
+        use="config basis globals mesh input output physics feti linearsolver math hypre catalyst metis",
     )
-
-    ctx.ROOT = ctx.path.abspath()
-
-    if ctx.env.BUILD_TOOLS == "1":
-        ctx.recurse("tools")
-    ctx.add_group()
-
-    ctx.recurse("src/basis")
-    ctx.recurse("src/globals")
-    ctx.recurse("src/config")
-    ctx.recurse("src/wrappers")
-
-    ctx.env = ctx.all_envs["solver"]
-    ctx.recurse("src/mesh")
-    ctx.recurse("src/input")
-    ctx.recurse("src/linearsolver")
-    ctx.recurse("src/solver")
-    ctx.recurse("src/physics")
-
-    ctx.env = ctx.all_envs["espreso"]
-    ctx.recurse("src/output")
-    ctx.recurse("src/app")
-
-#    if ctx.env.QT:
-#        print ctx.env
-#        ctx.env = ctx.all_envs["gui"]
-#        ctx.recurse("src/gui")
-#    ctx.env = ctx.all_envs["gui"]
-#    ctx.recurse("src/gui")
 
 def options(opt):
-    opt.parser.formatter.max_help_position = 32
+    espreso = opt.add_option_group("ESPRESO library options")
 
-    opt.load("compiler_cxx qt5")
+    espreso.add_option("--mpicxx",
+        action="store",
+        type="string",
+        default="mpiicpc",
+        help="MPI compiler used for building of the library [default: %default]")
 
-    def add_option(group, attribute, description, type, choices):
-        if type == "choice":
-            group.add_option("--" + attribute,
-            action="store",
-            type=type,
-            choices=choices,
-            metavar="{" + ", ".join(choices) + "}",
-            help=description)
-        else:
-            group.add_option("--" + attribute,
-            action="store",
-            default="",
-            type=type,
-            metavar=choices,
-            help=description)
+    espreso.add_option("--cxx",
+        action="store",
+        choices=["icpc", "g++"],
+        metavar="icpc,g++",
+        default="icpc",
+        help="C++ compiler (set it in the case of non-standard 'mpicxx' settings) [default: %default]")
 
-    for attribute, description, type, choices in espreso_attributes:
-        add_option(
-            opt.add_option_group("General ESPRESO parameters"),
-            attribute, description, type, choices
-        )
+    espreso.add_option("--intwidth",
+        action="store",
+        default=32,
+        choices=[32, 64],
+        metavar="32,64",
+        help="ESPRESO integer datatype width [default: %default]")
 
-    for attribute, description, type, choices in compilers:
-        add_option(
-            opt.add_option_group("Compilers"),
-            attribute, description, type, choices
-        )
+    modes=["release", "development", "debug"]
+    espreso.add_option("-m", "--mode",
+        action="store",
+        default="release",
+        choices=modes,
+        help="ESPRESO build mode: " + ", ".join(modes) + " [default: %default]")
 
-    for attribute, description, type, choices in compiler_attributes:
-        add_option(
-            opt.add_option_group("Global compiler attributes"),
-            attribute, description, type, choices
-        )
+    solvers=["mkl"]
+    espreso.add_option("--solver",
+        action="store",
+        default="mkl",
+        choices=solvers,
+        help="ESPRESO solver " + ", ".join(solvers) + " [default: %default]")
 
-    desc = (
-        "ESPRESO supports several linear solvers for various platforms. "
-        "Each solver is built independently to other ESPRESO parts. "
-        "Attributes below specify attributes only for chosen SOLVER.")
+    espreso.add_option("--parmetisroot",
+        action="store",
+        type="string",
+        default="",
+        help="Path to ParMETIS.")
 
-    for attribute, description, type, choices in compiler_attributes:
-        add_option(
-            opt.add_option_group("Solver specific compiler attributes", desc),
-            "SOLVER" + "::" + attribute,
-            description,
-            type, choices
-        )
-
-    for library, description, type, choices, params in third_party:
-        for param in params:
-            add_option(
-                opt.add_option_group("Third party libraries"),
-                library + "::" + param,
-                param + " directory for " + description,
-                type, choices
-            )
-
-    system = opt.add_option_group("Systems")
-    system.add_option(
-        "--cray",
-        action="store_true",
-        default=False,
-        help="Compile for Cray"
-    )
-
-    system.add_option(
-        "--debug",
-        action="store_true",
-        default=False,
-        help="Build ESPRESO without thread support and optimizations"
-    )
-
-    system.add_option(
-        "--disable-gui",
-        action="store_true",
-        default=False,
-        help="Build ESPRESO without GUI"
-    )
-
-
+    espreso.add_option("--hypreroot",
+        action="store",
+        type="string",
+        default="",
+        help="Path to HYPRE solver.")
 

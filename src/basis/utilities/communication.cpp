@@ -1,9 +1,9 @@
 
 #include "communication.h"
 
-#include "../../config/ecf/environment.h"
-#include "../../config/ecf/processesreduction.h"
-#include "../../mesh/store/statisticsstore.h"
+#include "config/ecf/environment.h"
+#include "config/ecf/processesreduction.h"
+#include "mesh/store/statisticsstore.h"
 
 #include <string>
 #include <cstring>

@@ -1,20 +1,16 @@
 
-#ifndef SRC_WRAPPERS_HYPRE_HYPRE_H_
-#define SRC_WRAPPERS_HYPRE_HYPRE_H_
-
-#include "mpi.h"
-
-#include "include/HYPRE_IJ_mv.h"
+#ifndef SRC_WRAPPERS_HYPRE_WHYPRE_H_
+#define SRC_WRAPPERS_HYPRE_WHYPRE_H_
 
 namespace espreso {
 
-class SparseMatrix;
 struct MultigridConfiguration;
+struct HYPREData;
 
 class HypreData {
 	friend class HYPRE;
 public:
-	HypreData(MPI_Comm &comm, esint nrows);
+	HypreData(esint nrows);
 
 	void insertCSR(esint nrows, esint offset, esint *rowPrts, esint *colIndices, double *values, double *rhsValues);
 	void insertIJV(esint nrows, esint offset, esint size, esint *rowIndices, esint *colIndices, double *values, double *rhsValues);
@@ -23,11 +19,9 @@ public:
 	~HypreData();
 
 protected:
-	MPI_Comm &_comm;
 	esint _roffset, _nrows;
 
-	HYPRE_IJMatrix _K;
-	HYPRE_IJVector _f, _x;
+	HYPREData *_data;
 
 	bool _finalized;
 };
@@ -37,4 +31,4 @@ struct HYPRE {
 };
 
 }
-#endif /* SRC_WRAPPERS_HYPRE_HYPRE_H_ */
+#endif /* SRC_WRAPPERS_HYPRE_WHYPRE_H_ */

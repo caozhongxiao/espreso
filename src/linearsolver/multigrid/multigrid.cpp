@@ -1,13 +1,13 @@
 
 #include "multigrid.h"
 
-#include "../../wrappers/hypre/hypre.h"
 #include "../../solver/generic/SparseMatrix.h"
 
 #include "../../globals/run.h"
 #include "../../basis/utilities/utils.h"
 #include "../../physics/dataholder.h"
 #include "../../config/ecf/solver/multigrid.h"
+#include "../../wrappers/hypre/whypre.h"
 
 using namespace espreso;
 
@@ -32,7 +32,7 @@ double& MultigridSolver::precision()
 void MultigridSolver::update(Matrices matrices)
 {
 	if (_hypreData == NULL) {
-		_hypreData = new HypreData(environment->MPICommunicator, run::data->K[0].rows - run::data->K[0].haloRows);
+		_hypreData = new HypreData(run::data->K[0].rows - run::data->K[0].haloRows);
 	}
 
 	if (matrices & Matrices::K) {

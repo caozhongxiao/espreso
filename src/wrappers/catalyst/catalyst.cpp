@@ -1,17 +1,9 @@
 
-#include "../insituwrapper.h"
+#include "catalyst.h"
 
-#include "../../../basis/containers/point.h"
-#include "../../../basis/containers/serializededata.h"
-#include "../../../basis/logging/logging.h"
+#include "../../basis/logging/logging.h"
 
-#include "../../../assembler/step.h"
-#include "../../../mesh/mesh.h"
-#include "../../../mesh/store/elementstore.h"
-#include "../../../mesh/store/nodestore.h"
-
-#include "../../../output/result/visualization/vtkwritter.h"
-
+#ifdef CATALYST
 #include "vtkNew.h"
 
 #include "vtkDoubleArray.h"
@@ -26,13 +18,23 @@
 #include "vtkCPPythonScriptPipeline.h"
 #include "vtkCPInputDataDescription.h"
 #include "vtkFieldData.h"
-#include "../../../globals/run.h"
+#endif
 
 using namespace espreso;
 
-InSituWrapper::InSituWrapper(const Mesh &mesh)
-: _mesh(mesh), _timeStep(0)
+constexpr bool Catalyst::islinked()
 {
+#ifdef CATALYST
+	return true;
+#else
+	return false;
+#endif
+}
+
+Catalyst::Catalyst()
+: _processor(NULL), _VTKGrid(NULL), _dataDescription(NULL)
+{
+#ifdef CATALYST
 	_processor = vtkCPProcessor::New();
 	_processor->Initialize();
 
@@ -65,10 +67,14 @@ InSituWrapper::InSituWrapper(const Mesh &mesh)
 
 	_dataDescription->GetInputDescriptionByName("input")->SetGrid(_VTKGrid);
 	_processor->CoProcess(_dataDescription);
+#else
+	ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW << "ESPRESO was built without Catalyst.";
+#endif
 }
 
-void InSituWrapper::update()
+void Catalyst::update()
 {
+#ifdef CATALYST
 	_dataDescription->SetTimeData(run::time::current, ++_timeStep);
 
 	std::vector<double> data;
@@ -87,15 +93,22 @@ void InSituWrapper::update()
 		}
 	}
 	_processor->CoProcess(_dataDescription);
+#endif
 }
 
-InSituWrapper::~InSituWrapper()
+Catalyst::~Catalyst()
 {
+#ifdef CATALYST
 	_dataDescription->Delete();
 	_processor->Finalize();
 	_processor->Delete();
 	_VTKGrid->Delete();
+#endif
 }
+
+
+
+
 
 
 

@@ -1,7 +1,7 @@
 
 #include "tableinterpolationevaluator.h"
 
-#include "../logging/logging.h"
+#include "basis/logging/logging.h"
 
 using namespace espreso;
 

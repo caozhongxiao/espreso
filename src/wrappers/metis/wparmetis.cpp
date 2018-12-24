@@ -1,6 +1,6 @@
 
-#include "wparmetis.h"
 #include "parmetis.h"
+#include "wparmetis.h"
 
 #include "../../basis/logging/logging.h"
 #include "../../basis/utilities/communication.h"

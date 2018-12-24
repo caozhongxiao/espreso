@@ -1,6 +1,6 @@
 
 #include "mpi.h"
-#include "../../config/ecf/environment.h"
+#include "config/ecf/environment.h"
 
 #include "logging.h"
 

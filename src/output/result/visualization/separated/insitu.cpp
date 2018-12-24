@@ -3,33 +3,33 @@
 
 #include "../../../../config/ecf/output.h"
 
-#include "../../../../wrappers/insituwrappers/insituwrapper.h"
+#include "../../../../wrappers/catalyst/catalyst.h"
 
 #include <unistd.h>
 
 using namespace espreso;
 
 InSitu::InSitu(const Mesh &mesh, const OutputConfiguration &configuration)
-: Visualization(mesh, configuration), _inSitu(NULL)
+: Visualization(mesh, configuration), _catalyst(NULL)
 {
 
 }
 
 InSitu::~InSitu()
 {
-	if (_inSitu != NULL) {
-		delete _inSitu;
+	if (_catalyst != NULL) {
+		delete _catalyst;
 	}
 }
 
 void InSitu::updateMesh()
 {
-	_inSitu = new InSituWrapper(_mesh);
+	_catalyst = new Catalyst();
 }
 
 void InSitu::updateSolution()
 {
-	_inSitu->update();
+	_catalyst->update();
 	sleep(_configuration.catalyst_sleep_time);
 }
 
