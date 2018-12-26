@@ -56,17 +56,27 @@ def set_metis(ctx):
         errmsg="set 'parmetisroot'.")
 
 def set_mkl(ctx):
-    if ctx.options.solver == "mkl":
-        ctx.check_cxx(header_name="mkl.h", define_name="", defines="HAVE_MKL", uselib_store="MKL")
-        if ctx.options.intwidth == 32:
-            ctx.check_cxx(lib="mkl_intel_lp64", defines="MKL_INT=int", uselib_store="MKL")
-        if ctx.options.intwidth == 64:
-            ctx.check_cxx(lib="mkl_intel_ilp64", defines="MKL_INT=long", uselib_store="MKL")
-        ctx.check_cxx(lib="mkl_core", uselib_store="MKL")
-        if ctx.options.cxx == "icpc":
-            ctx.check_cxx(lib="mkl_intel_thread", uselib_store="MKL")
-        if ctx.options.cxx == "g++":
-            ctx.check_cxx(lib="mkl_gnu_thread", uselib_store="MKL")
+    defines = [ "HAVE_MKL" ]
+    libs = []
+    if ctx.options.intwidth == 32:
+        defines.append("MKL_INT=int")
+        libs.append("mkl_intel_lp64")
+    if ctx.options.intwidth == 64:
+        defines.append("MKL_INT=long")
+        libs.append("mkl_intel_ilp64")
+    libs.append("mkl_core")
+    if ctx.options.cxx == "icpc":
+        libs.append("mkl_intel_thread")
+    if ctx.options.cxx == "g++":
+        libs.append("mkl_gnu_thread")
+
+    ctx.check_cxx(
+        header_name="mkl.h", lib=libs, uselib_store="MKL",
+        define_name="", defines=defines,
+        includes=ctx.options.mklroot + "/include",
+        libpath=ctx.options.mklroot + "/lib",
+        msg="Checking for library MKL",
+        errmsg="set 'mklroot'.")
 
 def try_hypre(ctx):
     ctx.check_cxx(
@@ -185,6 +195,12 @@ def options(opt):
         type="string",
         default="",
         help="Path to ParMETIS.")
+
+    espreso.add_option("--mklroot",
+        action="store",
+        type="string",
+        default="",
+        help="Path to MKL.")
 
     espreso.add_option("--hypreroot",
         action="store",
