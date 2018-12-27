@@ -1,9 +1,9 @@
 
 #include "parmetis.h"
-#include "wparmetis.h"
 
-#include "../../basis/logging/logging.h"
-#include "../../basis/utilities/communication.h"
+#include "parmetiswrapper.h"
+#include "basis/logging/logging.h"
+#include "basis/utilities/communication.h"
 
 using namespace espreso;
 
@@ -67,7 +67,7 @@ esint ParMETIS::call(
 			MPISubset &subset,
 			esint *edistribution,
 			esint *eframes, esint *eneighbors,
-			esint dimensions, double *coordinates,
+			esint dimensions, float *coordinates,
 			esint verticesWeightCount, esint *verticesWeights, esint *edgeWeights,
 			esint *partition)
 {
@@ -76,10 +76,10 @@ esint ParMETIS::call(
 	esint wgtflag = 0;
 	esint numflag = 0;
 	esint parts = subset.origin.size;
-	std::vector<double> partFraction(verticesWeightCount * parts, 1.0 / parts);
-	std::vector<double> unbalanceTolerance(verticesWeightCount, 1.02);
+	std::vector<float> partFraction(verticesWeightCount * parts, 1.0 / parts);
+	std::vector<float> unbalanceTolerance(verticesWeightCount, 1.02);
 	esint options[4] = { 0, 0, 0, PARMETIS_PSR_UNCOUPLED };
-	double itr = 1e6;
+	float itr = 1e6;
 	esint edgecut;
 
 	if (verticesWeights != NULL) {

@@ -488,7 +488,7 @@ void MeshPreprocessing::computeElementsCenters()
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	_mesh->elements->centers = new serializededata<esint, double>(_mesh->dimension, tarray<double>(threads, _mesh->dimension * _mesh->elements->size));
+	_mesh->elements->centers = new serializededata<esint, float>(_mesh->dimension, tarray<float>(threads, _mesh->dimension * _mesh->elements->size));
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {

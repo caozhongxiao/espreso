@@ -53,7 +53,7 @@ struct ElementStore {
 	serializededata<esint, esint>* IDs;
 	serializededata<esint, esint>* procNodes;
 	serializededata<esint, esint>* domainNodes;
-	serializededata<esint, double>* centers;
+	serializededata<esint, float>* centers;
 
 	serializededata<esint, int>* body;
 	serializededata<esint, int>* material;

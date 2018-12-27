@@ -25,8 +25,8 @@
 #include <numeric>
 #include <cstring>
 
-#include "../../wrappers/metis/wmetis.h"
-#include "../../wrappers/metis/wparmetis.h"
+#include "../../wrappers/metis/metiswrapper.h"
+#include "../../wrappers/metis/parmetiswrapper.h"
 
 using namespace espreso;
 

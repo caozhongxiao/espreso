@@ -1,6 +1,6 @@
 
-#ifndef SRC_WRAPPERS_METIS_WPARMETIS_H_
-#define SRC_WRAPPERS_METIS_WPARMETIS_H_
+#ifndef SRC_WRAPPERS_METIS_PARMETISWRAPPER_H_
+#define SRC_WRAPPERS_METIS_PARMETISWRAPPER_H_
 
 #include <vector>
 
@@ -28,7 +28,7 @@ struct ParMETIS {
 			MPISubset &subset,
 			esint *edistribution,
 			esint *eframes, esint *eneighbors,
-			esint dimensions, double *coordinates,
+			esint dimensions, float *coordinates,
 			esint verticesWeightCount, esint *verticesWeights, esint *edgeWeights,
 			esint *partition);
 };
@@ -37,4 +37,4 @@ struct ParMETIS {
 
 
 
-#endif /* SRC_WRAPPERS_METIS_WPARMETIS_H_ */
+#endif /* SRC_WRAPPERS_METIS_PARMETISWRAPPER_H_ */

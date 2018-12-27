@@ -49,11 +49,21 @@ def set_metis(ctx):
     ctx.check_cxx(
         header_name="metis.h parmetis.h", lib=["metis", "parmetis"], uselib_store="METIS",
         define_name="",
-        defines=["HAVE_METIS", "IDXTYPEWIDTH=" + str(ctx.options.intwidth), "REALTYPEWIDTH=64"],
+        defines=["HAVE_METIS", "IDXTYPEWIDTH=" + str(ctx.options.intwidth), "REALTYPEWIDTH=32"],
         includes=ctx.options.parmetisroot + "/include",
         libpath=ctx.options.parmetisroot + "/lib",
         msg="Checking for library ParMETIS",
         errmsg="set 'parmetisroot'.")
+
+    ctx.check_cxx(
+        fragment='''
+            #include <metis.h>
+            int main() {{ return IDXTYPEWIDTH != {0}; }}
+        '''.format(ctx.options.intwidth),
+        execute=True,
+        includes=ctx.options.parmetisroot + "/include",
+        libpath=ctx.options.parmetisroot + "/lib",
+        msg="Checking for METIS IDXTYPEWIDTH="+str(ctx.options.intwidth))
 
 def set_mkl(ctx):
     defines = [ "HAVE_MKL" ]

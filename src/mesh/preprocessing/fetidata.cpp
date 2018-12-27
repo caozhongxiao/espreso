@@ -28,7 +28,7 @@
 #include <numeric>
 #include <cstring>
 
-#include "../../wrappers/metis/wmetis.h"
+#include "../../wrappers/metis/metiswrapper.h"
 #include "../store/fetidatastore.h"
 
 using namespace espreso;
