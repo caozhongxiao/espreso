@@ -1,5 +1,5 @@
 
-#include "whypre.h"
+#include "hyprewrapper.h"
 
 #include "../../basis/logging/logging.h"
 #include "../../basis/utilities/communication.h"
@@ -9,13 +9,16 @@
 
 #include "../../config/ecf/root.h"
 
+#include <vector>
+#include <numeric>
+
+
+#ifdef HAVE_HYPRE
+
 #include "HYPRE.h"
 #include "HYPRE_IJ_mv.h"
 #include "HYPRE_krylov.h"
 #include "HYPRE_parcsr_ls.h"
-
-#include <vector>
-#include <numeric>
 
 namespace espreso {
 struct HYPREData {
@@ -24,11 +27,14 @@ struct HYPREData {
 };
 }
 
+#endif
+
 using namespace espreso;
 
 HypreData::HypreData(esint nrows)
-: _roffset(nrows), _nrows(nrows), _finalized(false)
+: _roffset(nrows), _nrows(nrows), _data(NULL), _finalized(false)
 {
+#ifdef HAVE_HYPRE
 	_data = new HYPREData();
 
 	Communication::exscan(_roffset);
@@ -43,10 +49,12 @@ HypreData::HypreData(esint nrows)
 	HYPRE_IJMatrixInitialize(_data->K);
 	HYPRE_IJVectorInitialize(_data->f);
 	HYPRE_IJVectorInitialize(_data->x);
+#endif
 }
 
 void HypreData::insertCSR(esint nrows, esint offset, esint *rowPrts, esint *colIndices, double *values, double *rhsValues)
 {
+#ifdef HAVE_HYPRE
 	std::vector<esint> ncols, rows;
 	ncols.reserve(nrows);
 	rows.reserve(nrows);
@@ -61,10 +69,12 @@ void HypreData::insertCSR(esint nrows, esint offset, esint *rowPrts, esint *colI
 	HYPRE_IJVectorSetValues(_data->x, nrows, rows.data(), x.data());
 
 	_finalized = false;
+#endif
 }
 
 void HypreData::insertIJV(esint nrows, esint offset, esint size, esint *rowIndices, esint *colIndices, double *values, double *rhsValues)
 {
+#ifdef HAVE_HYPRE
 	std::vector<esint> ncols, rows;
 	ncols.reserve(nrows);
 	rows.reserve(nrows);
@@ -82,26 +92,32 @@ void HypreData::insertIJV(esint nrows, esint offset, esint size, esint *rowIndic
 	HYPRE_IJVectorSetValues(_data->f, nrows, rows.data(), rhsValues);
 	HYPRE_IJVectorSetValues(_data->x, nrows, rows.data(), x.data());
 	_finalized = false;
+#endif
 }
 
 void HypreData::finalizePattern()
 {
+#ifdef HAVE_HYPRE
 	HYPRE_IJMatrixAssemble(_data->K);
 	HYPRE_IJVectorAssemble(_data->f);
 	HYPRE_IJVectorAssemble(_data->x);
 	_finalized = true;
+#endif
 }
 
 HypreData::~HypreData()
 {
+#ifdef HAVE_HYPRE
 	HYPRE_IJMatrixDestroy(_data->K);
 	HYPRE_IJVectorDestroy(_data->f);
 	HYPRE_IJVectorDestroy(_data->x);
 	delete _data;
+#endif
 }
 
 void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, esint nrows, double *solution)
 {
+#ifdef HAVE_HYPRE
 	if (!data._finalized) {
 		data.finalizePattern();
 	}
@@ -190,4 +206,5 @@ void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, 
 	std::vector<esint> rows(nrows);
 	std::iota(rows.begin(), rows.end(), data._roffset + 1);
 	HYPRE_IJVectorGetValues(data._data->x, data._nrows, rows.data(), solution);
+#endif
 }

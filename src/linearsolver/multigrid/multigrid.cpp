@@ -7,7 +7,8 @@
 #include "../../basis/utilities/utils.h"
 #include "../../physics/dataholder.h"
 #include "../../config/ecf/solver/multigrid.h"
-#include "../../wrappers/hypre/whypre.h"
+
+#include "../../wrappers/hypre/hyprewrapper.h"
 
 using namespace espreso;
 
