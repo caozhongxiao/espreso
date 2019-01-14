@@ -4,7 +4,7 @@
 #include <QtGui>
 #include <QOpenGLWidget>
 
-#include "../parallel/mpimanager.h"
+#include "parallel/mpimanager.h"
 
 namespace espreso {
 

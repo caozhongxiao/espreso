@@ -2,10 +2,10 @@
 #include "mpi.h"
 #include "spacefillingcurve.h"
 
-#include "../../basis/containers/tarray.h"
-#include "../../basis/logging/logging.h"
-#include "../../basis/utilities/utils.h"
-#include "../../config/ecf/environment.h"
+#include "basis/containers/tarray.h"
+#include "basis/logging/logging.h"
+#include "basis/utilities/utils.h"
+#include "config/ecf/environment.h"
 
 #include <utility>
 #include <limits>

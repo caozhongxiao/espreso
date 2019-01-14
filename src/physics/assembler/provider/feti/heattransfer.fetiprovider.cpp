@@ -1,16 +1,16 @@
 
 #include "heattransfer.fetiprovider.h"
 
-#include "../../../dataholder.h"
-#include "../../../../globals/run.h"
-#include "../../../../basis/logging/logging.h"
-#include "../../../../basis/matrices/matrixtype.h"
-#include "../../../../config/ecf/physics/heattransfer.h"
+#include "physics/dataholder.h"
+#include "globals/run.h"
+#include "basis/logging/logging.h"
+#include "basis/matrices/matrixtype.h"
+#include "config/ecf/physics/heattransfer.h"
 
-#include "../../../../mesh/mesh.h"
-#include "../../../../mesh/store/elementstore.h"
-#include "../../../../mesh/store/elementsregionstore.h"
-#include "../../../../solver/generic/SparseMatrix.h"
+#include "mesh/mesh.h"
+#include "mesh/store/elementstore.h"
+#include "mesh/store/elementsregionstore.h"
+#include "solver/generic/SparseMatrix.h"
 
 
 using namespace espreso;

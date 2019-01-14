@@ -8,11 +8,11 @@
 #include <QDebug>
 #include <QPushButton>
 
-#include "../declarations/datatypeeditwidget.h"
+#include "declarations/datatypeeditwidget.h"
 #include "regionobjectwidget.h"
 
-#include "../../mesh/store/elementsregionstore.h"
-#include "../../mesh/store/boundaryregionstore.h"
+#include "mesh/store/elementsregionstore.h"
+#include "mesh/store/boundaryregionstore.h"
 
 using namespace espreso;
 

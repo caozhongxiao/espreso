@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <vector>
 
-#include "../../basis/containers/point.h"
+#include "basis/containers/point.h"
 
 namespace espreso {
 

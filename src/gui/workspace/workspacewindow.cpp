@@ -5,7 +5,7 @@
 #include <QDebug>
 #include <QMessageBox>
 
-#include "../../config/reader/reader.h"
+#include "config/reader/reader.h"
 #include <iostream>
 #include <fstream>
 

@@ -1,35 +1,35 @@
 
 #include "meshpreprocessing.h"
 
-#include "../mesh.h"
+#include "mesh/mesh.h"
 
-#include "../store/store.h"
-#include "../store/elementstore.h"
-#include "../store/nodestore.h"
-#include "../store/elementsregionstore.h"
-#include "../store/boundaryregionstore.h"
-#include "../store/surfacestore.h"
-#include "../elements/element.h"
+#include "mesh/store/store.h"
+#include "mesh/store/elementstore.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/elementsregionstore.h"
+#include "mesh/store/boundaryregionstore.h"
+#include "mesh/store/surfacestore.h"
+#include "mesh/elements/element.h"
 
-#include "../../basis/containers/point.h"
-#include "../../basis/containers/serializededata.h"
-#include "../../basis/matrices/denseMatrix.h"
-#include "../../basis/utilities/communication.h"
-#include "../../basis/utilities/utils.h"
-#include "../../basis/utilities/parser.h"
-#include "../../basis/logging/logging.h"
+#include "basis/containers/point.h"
+#include "basis/containers/serializededata.h"
+#include "basis/matrices/denseMatrix.h"
+#include "basis/utilities/communication.h"
+#include "basis/utilities/utils.h"
+#include "basis/utilities/parser.h"
+#include "basis/logging/logging.h"
 
-#include "../../config/ecf/environment.h"
-#include "../../config/ecf/decomposition.h"
+#include "config/ecf/environment.h"
+#include "config/ecf/decomposition.h"
 
-#include "../../wrappers/math/math.h"
+#include "wrappers/math/math.h"
 
 #include <algorithm>
 #include <numeric>
 #include <cstring>
 
-#include "../../wrappers/metis/metiswrapper.h"
-#include "../store/fetidatastore.h"
+#include "wrappers/metis/metiswrapper.h"
+#include "mesh/store/fetidatastore.h"
 
 using namespace espreso;
 

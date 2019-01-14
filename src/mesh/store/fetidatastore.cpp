@@ -1,7 +1,7 @@
 
 #include "fetidatastore.h"
 
-#include "../../basis/containers/serializededata.h"
+#include "basis/containers/serializededata.h"
 
 using namespace espreso;
 

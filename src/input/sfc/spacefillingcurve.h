@@ -2,7 +2,7 @@
 #ifndef SRC_INPUT_SFC_SPACEFILLINGCURVE_H_
 #define SRC_INPUT_SFC_SPACEFILLINGCURVE_H_
 
-#include "../../basis/containers/point.h"
+#include "basis/containers/point.h"
 
 #include <cstddef>
 #include <vector>

@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "../../basis/utilities/communication.h"
+#include "basis/utilities/communication.h"
 
 namespace espreso {
 

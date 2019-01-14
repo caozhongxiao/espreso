@@ -1,7 +1,7 @@
 
 #include "generator.h"
 
-#include "../../configuration.hpp"
+#include "config/configuration.hpp"
 
 espreso::InputGeneratorConfiguration::InputGeneratorConfiguration()
 {

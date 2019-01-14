@@ -1,17 +1,17 @@
 
 #include "expression.h"
-#include "configuration.hpp"
+#include "config/configuration.hpp"
 
-#include "../basis/utilities/parser.h"
-#include "../basis/utilities/utils.h"
-#include "../basis/logging/logging.h"
-#include "../basis/expression/expression.h"
-#include "../basis/evaluator/constevaluator.h"
-#include "../basis/evaluator/expressionevaluator.h"
-#include "../basis/evaluator/tableinterpolationevaluator.h"
+#include "basis/utilities/parser.h"
+#include "basis/utilities/utils.h"
+#include "basis/logging/logging.h"
+#include "basis/expression/expression.h"
+#include "basis/evaluator/constevaluator.h"
+#include "basis/evaluator/expressionevaluator.h"
+#include "basis/evaluator/tableinterpolationevaluator.h"
 
-#include "../mesh/store/elementsregionstore.h"
-#include "../mesh/store/boundaryregionstore.h"
+#include "mesh/store/elementsregionstore.h"
+#include "mesh/store/boundaryregionstore.h"
 
 using namespace espreso;
 

@@ -2,7 +2,7 @@
 #ifndef SRC_CONFIG_ECF_SOLVER_MULTIGRID_H_
 #define SRC_CONFIG_ECF_SOLVER_MULTIGRID_H_
 
-#include "../../configuration.h"
+#include "config/configuration.h"
 
 namespace espreso {
 

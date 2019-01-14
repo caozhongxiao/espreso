@@ -5,8 +5,8 @@
 #include <QLabel>
 #include <QLineEdit>
 
-#include "../../validators/validatorfactory.h"
-#include "../tablewidget.h"
+#include "validators/validatorfactory.h"
+#include "tablewidget.h"
 
 using namespace espreso;
 

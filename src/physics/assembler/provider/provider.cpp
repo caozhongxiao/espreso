@@ -1,7 +1,7 @@
 
 #include "provider.h"
 
-#include "../../../config/ecf/physics/physicssolver/loadstep.h"
+#include "config/ecf/physics/physicssolver/loadstep.h"
 
 using namespace espreso;
 

@@ -2,7 +2,7 @@
 #ifndef SRC_OUTPUT_RESULT_EXECUTOR_EXECUTOR_H_
 #define SRC_OUTPUT_RESULT_EXECUTOR_EXECUTOR_H_
 
-#include "../resultstore.h"
+#include "output/result/resultstore.h"
 
 #include <vector>
 

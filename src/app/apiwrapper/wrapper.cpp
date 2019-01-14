@@ -1,18 +1,18 @@
 
 #include "wrapper.h"
-#include "../../../include/feti4i.h"
+#include "include/feti4i.h"
 
-#include "../../assembler/physics/precomputed.h"
-#include "../../assembler/physicssolver/assembler.h"
-#include "../../assembler/physicssolver/timestep/linear.h"
-#include "../../assembler/physicssolver/loadstep/steadystate.h"
-#include "../../assembler/step.h"
+#include "assembler/physics/precomputed.h"
+#include "assembler/physicssolver/assembler.h"
+#include "assembler/physicssolver/timestep/linear.h"
+#include "assembler/physicssolver/loadstep/steadystate.h"
+#include "assembler/step.h"
 
-#include "../../input/api/api.h"
+#include "input/api/api.h"
 
-#include "../../mesh/mesh.h"
-#include "../../output/result/resultstore.h"
-#include "../../solver/generic/FETISolver.h"
+#include "mesh/mesh.h"
+#include "output/result/resultstore.h"
+#include "solver/generic/FETISolver.h"
 
 
 espreso::ECFRoot* espreso::APIDataHolder::configuration = NULL;

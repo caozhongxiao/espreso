@@ -1,7 +1,7 @@
 
 #include "mpiloader.h"
 
-#include "../../basis/containers/tarray.h"
+#include "basis/containers/tarray.h"
 
 using namespace espreso;
 

@@ -1,7 +1,7 @@
 #include "tabletypewidget.h"
 
-#include "../validators/validatordelegate.h"
-#include "../validators/validatorfactory.h"
+#include "validators/validatordelegate.h"
+#include "validators/validatorfactory.h"
 
 #include <QRegExp>
 #include <QString>

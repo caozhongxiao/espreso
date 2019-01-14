@@ -6,8 +6,8 @@
 #include <QLabel>
 #include <QDebug>
 
-#include "../validators/validatorfactory.h"
-#include "../elements/spinnerhandler.h"
+#include "validators/validatorfactory.h"
+#include "elements/spinnerhandler.h"
 
 using namespace espreso;
 

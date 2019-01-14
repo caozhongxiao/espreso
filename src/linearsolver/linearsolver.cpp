@@ -1,13 +1,13 @@
 
 #include "linearsolver.h"
 
-#include "../globals/run.h"
-#include "../basis/logging/logging.h"
-#include "../basis/utilities/utils.h"
-#include "../config/ecf/environment.h"
+#include "globals/run.h"
+#include "basis/logging/logging.h"
+#include "basis/utilities/utils.h"
+#include "config/ecf/environment.h"
 
-#include "../physics/dataholder.h"
-#include "../solver/generic/SparseMatrix.h"
+#include "physics/dataholder.h"
+#include "solver/generic/SparseMatrix.h"
 
 using namespace espreso;
 

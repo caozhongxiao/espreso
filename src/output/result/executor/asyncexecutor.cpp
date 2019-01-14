@@ -1,15 +1,15 @@
 
 #include "asyncexecutor.h"
 
-#include "../../../globals/run.h"
-#include "../../../basis/utilities/utils.h"
-#include "../../../config/ecf/root.h"
+#include "globals/run.h"
+#include "basis/utilities/utils.h"
+#include "config/ecf/root.h"
 
-#include "../../../mesh/mesh.h"
-#include "../../../mesh/store/nodestore.h"
-#include "../../../mesh/store/elementstore.h"
-#include "../../../mesh/store/elementsregionstore.h"
-#include "../../../mesh/store/boundaryregionstore.h"
+#include "mesh/mesh.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/elementstore.h"
+#include "mesh/store/elementsregionstore.h"
+#include "mesh/store/boundaryregionstore.h"
 
 using namespace espreso;
 

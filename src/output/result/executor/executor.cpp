@@ -1,12 +1,12 @@
 
 #include "executor.h"
 
-#include "../../../basis/utilities/utils.h"
-#include "../../../config/ecf/output.h"
-#include "../../../mesh/mesh.h"
+#include "basis/utilities/utils.h"
+#include "config/ecf/output.h"
+#include "mesh/mesh.h"
 
-#include "../monitors/monitoring.h"
-#include "../visualization/separated/vtklegacy.h"
+#include "output/result/monitors/monitoring.h"
+#include "output/result/visualization/separated/vtklegacy.h"
 
 using namespace espreso;
 

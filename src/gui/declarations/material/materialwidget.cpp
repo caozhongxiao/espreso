@@ -8,11 +8,11 @@
 #include <QScrollArea>
 #include <QLineEdit>
 #include <QDebug>
-#include "../../elements/optionhandler.h"
-#include "../../elements/formwidget.h"
-#include "../../elements/boolhandler.h"
+#include "elements/optionhandler.h"
+#include "elements/formwidget.h"
+#include "elements/boolhandler.h"
 #include "materialpropertytablewidget.h"
-#include "../../utils/utils.h"
+#include "utils/utils.h"
 
 using namespace espreso;
 

@@ -1,8 +1,8 @@
 
-#include "../../../basis/containers/point.h"
-#include "../../../basis/containers/tarray.h"
-#include "../../../basis/utilities/communication.h"
-#include "../../../config/ecf/environment.h"
+#include "basis/containers/point.h"
+#include "basis/containers/tarray.h"
+#include "basis/utilities/communication.h"
+#include "config/ecf/environment.h"
 
 #include <numeric>
 #include "points.h"

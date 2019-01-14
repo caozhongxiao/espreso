@@ -1,7 +1,7 @@
 
 #include "block.h"
 
-#include "../../configuration.hpp"
+#include "config/configuration.hpp"
 
 espreso::BlockGeneratorConfiguration::BlockGeneratorConfiguration()
 {

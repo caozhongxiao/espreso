@@ -1,25 +1,25 @@
 
 #include "meshpreprocessing.h"
 
-#include "../mesh.h"
-#include "../store/nodestore.h"
-#include "../store/boundaryregionstore.h"
-#include "../store/elementsregionstore.h"
+#include "mesh/mesh.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/boundaryregionstore.h"
+#include "mesh/store/elementsregionstore.h"
 
-#include "../../basis/containers/point.h"
-#include "../../basis/containers/serializededata.h"
-#include "../../basis/evaluator/evaluator.h"
-#include "../../basis/matrices/denseMatrix.h"
-#include "../../basis/utilities/communication.h"
-#include "../../basis/utilities/utils.h"
-#include "../../basis/logging/logging.h"
+#include "basis/containers/point.h"
+#include "basis/containers/serializededata.h"
+#include "basis/evaluator/evaluator.h"
+#include "basis/matrices/denseMatrix.h"
+#include "basis/utilities/communication.h"
+#include "basis/utilities/utils.h"
+#include "basis/logging/logging.h"
 
-#include "../../config/ecf/environment.h"
-#include "../../config/ecf/meshmorphing.h"
+#include "config/ecf/environment.h"
+#include "config/ecf/meshmorphing.h"
 
-#include "../../wrappers/math/math.h"
+#include "wrappers/math/math.h"
 
-#include "../../config/reader/tokenizer.h"
+#include "config/reader/tokenizer.h"
 
 #include "mpi.h"
 

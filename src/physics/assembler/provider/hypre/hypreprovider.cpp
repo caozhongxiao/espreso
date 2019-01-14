@@ -1,8 +1,8 @@
 
 #include "hypreprovider.h"
 
-#include "../../../../basis/matrices/matrixtype.h"
-#include "../../../../config/ecf/physics/structuralmechanics.h"
+#include "basis/matrices/matrixtype.h"
+#include "config/ecf/physics/structuralmechanics.h"
 
 using namespace espreso;
 

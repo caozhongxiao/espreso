@@ -4,7 +4,7 @@
 #include <cusolverDn.h>
 #include <cublas_v2.h>
 
-#include "../densesolver.h"
+#include "densesolver.h"
 
 // using std::string;
 // using std::endl;

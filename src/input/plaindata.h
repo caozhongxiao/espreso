@@ -2,7 +2,7 @@
 #ifndef SRC_INPUT_PLAINDATA_H_
 #define SRC_INPUT_PLAINDATA_H_
 
-#include "../basis/containers/point.h"
+#include "basis/containers/point.h"
 
 #include <vector>
 #include <map>

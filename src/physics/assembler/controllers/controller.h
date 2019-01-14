@@ -6,7 +6,7 @@
 #include <functional>
 #include <map>
 
-#include "../../../basis/matrices/denseMatrix.h"
+#include "basis/matrices/denseMatrix.h"
 
 namespace espreso {
 

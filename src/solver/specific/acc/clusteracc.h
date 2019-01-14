@@ -2,7 +2,7 @@
 #ifndef SOLVER_SPECIFIC_ACC_CLUSTERACC_H_
 #define SOLVER_SPECIFIC_ACC_CLUSTERACC_H_
 
-#include "../cluster.h"
+#include "cluster.h"
 
 #pragma offload_attribute(push,target(mic))
 #include <unistd.h>

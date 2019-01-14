@@ -4,18 +4,18 @@
 
 #include "factory/factory.h"
 
-#include "../basis/logging/logging.h"
-#include "../basis/matrices/denseMatrix.h"
-#include "../mesh/mesh.h"
-#include "../assembler/step.h"
-#include "../assembler/instance.h"
-#include "../assembler/constraints/constraints.h"
-#include "../assembler/physics/physics.h"
-#include "../assembler/physicssolver/assembler.h"
-#include "../config/ecf/root.h"
-#include "../mesh/store/elementstore.h"
-#include "../output/result/resultstore.h"
-#include "../solver/generic/SparseMatrix.h"
+#include "basis/logging/logging.h"
+#include "basis/matrices/denseMatrix.h"
+#include "mesh/mesh.h"
+#include "assembler/step.h"
+#include "assembler/instance.h"
+#include "assembler/constraints/constraints.h"
+#include "assembler/physics/physics.h"
+#include "assembler/physicssolver/assembler.h"
+#include "config/ecf/root.h"
+#include "mesh/store/elementstore.h"
+#include "output/result/resultstore.h"
+#include "solver/generic/SparseMatrix.h"
 
 namespace espreso {
 

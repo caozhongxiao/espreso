@@ -1,23 +1,23 @@
 
 #include "ensight.h"
 
-#include "../../../../globals/time.h"
+#include "globals/time.h"
 
-#include "../../../../basis/containers/point.h"
-#include "../../../../basis/containers/serializededata.h"
-#include "../../../../basis/logging/logging.h"
-#include "../../../../basis/utilities/communication.h"
-#include "../../../../basis/utilities/utils.h"
-#include "../../../../basis/utilities/parser.h"
+#include "basis/containers/point.h"
+#include "basis/containers/serializededata.h"
+#include "basis/logging/logging.h"
+#include "basis/utilities/communication.h"
+#include "basis/utilities/utils.h"
+#include "basis/utilities/parser.h"
 
-#include "../../../../config/ecf/environment.h"
+#include "config/ecf/environment.h"
 
-#include "../../../../mesh/elements/element.h"
-#include "../../../../mesh/mesh.h"
-#include "../../../../mesh/store/nodestore.h"
-#include "../../../../mesh/store/elementstore.h"
-#include "../../../../mesh/store/elementsregionstore.h"
-#include "../../../../mesh/store/boundaryregionstore.h"
+#include "mesh/elements/element.h"
+#include "mesh/mesh.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/elementstore.h"
+#include "mesh/store/elementsregionstore.h"
+#include "mesh/store/boundaryregionstore.h"
 
 #include <algorithm>
 #include <functional>

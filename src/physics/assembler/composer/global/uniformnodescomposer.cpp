@@ -1,25 +1,25 @@
 
 #include "uniformnodescomposer.h"
 
-#include "../../assembler.h"
-#include "../../controllers/controller.h"
-#include "../../provider/provider.h"
+#include "physics/assembler/assembler.h"
+#include "physics/assembler/controllers/controller.h"
+#include "physics/assembler/provider/provider.h"
 
-#include "../../../dataholder.h"
+#include "physics/dataholder.h"
 
-#include "../../../../globals/run.h"
-#include "../../../../basis/containers/serializededata.h"
-#include "../../../../basis/matrices/matrixtype.h"
-#include "../../../../basis/utilities/communication.h"
-#include "../../../../basis/utilities/utils.h"
-#include "../../../../config/ecf/environment.h"
+#include "globals/run.h"
+#include "basis/containers/serializededata.h"
+#include "basis/matrices/matrixtype.h"
+#include "basis/utilities/communication.h"
+#include "basis/utilities/utils.h"
+#include "config/ecf/environment.h"
 
-#include "../../../../mesh/mesh.h"
-#include "../../../../mesh/store/elementstore.h"
-#include "../../../../mesh/store/nodestore.h"
-#include "../../../../mesh/store/boundaryregionstore.h"
+#include "mesh/mesh.h"
+#include "mesh/store/elementstore.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/boundaryregionstore.h"
 
-#include "../../../../solver/generic/SparseMatrix.h"
+#include "solver/generic/SparseMatrix.h"
 
 #include <algorithm>
 #include <numeric>

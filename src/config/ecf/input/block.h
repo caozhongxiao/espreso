@@ -3,7 +3,7 @@
 #define SRC_CONFIG_ECF_INPUT_BLOCK_H_
 
 #include "generatorelements.h"
-#include "../../configuration.h"
+#include "config/configuration.h"
 
 namespace espreso {
 

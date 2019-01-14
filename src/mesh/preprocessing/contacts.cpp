@@ -1,20 +1,20 @@
 
 #include "meshpreprocessing.h"
 
-#include "../mesh.h"
-#include "../elements/element.h"
+#include "mesh/mesh.h"
+#include "mesh/elements/element.h"
 
-#include "../store/elementstore.h"
-#include "../store/nodestore.h"
-#include "../store/surfacestore.h"
-#include "../store/contactstore.h"
+#include "mesh/store/elementstore.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/surfacestore.h"
+#include "mesh/store/contactstore.h"
 
-#include "../../basis/containers/serializededata.h"
-#include "../../basis/utilities/communication.h"
-#include "../../basis/utilities/utils.h"
-#include "../../basis/logging/timeeval.h"
+#include "basis/containers/serializededata.h"
+#include "basis/utilities/communication.h"
+#include "basis/utilities/utils.h"
+#include "basis/logging/timeeval.h"
 
-#include "../../config/ecf/environment.h"
+#include "config/ecf/environment.h"
 
 #include <algorithm>
 #include <numeric>

@@ -1,8 +1,8 @@
 
 #include "triangle3.h"
 
-#include "../../../basis/containers/serializededata.h"
-#include "../../../basis/matrices/denseMatrix.h"
+#include "basis/containers/serializededata.h"
+#include "basis/matrices/denseMatrix.h"
 
 using namespace espreso;
 

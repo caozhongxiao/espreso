@@ -2,7 +2,7 @@
 #ifndef SRC_CONFIG_EXPRESSION_H_
 #define SRC_CONFIG_EXPRESSION_H_
 
-#include "configuration.h"
+#include "config/configuration.h"
 #include <functional>
 
 namespace espreso {

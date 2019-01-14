@@ -6,7 +6,7 @@
 #include <sstream>
 
 #include "collectedvisualization.h"
-#include "../ensightwriter.h"
+#include "output/result/visualization/ensightwriter.h"
 
 namespace espreso {
 

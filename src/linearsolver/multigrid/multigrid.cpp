@@ -1,14 +1,14 @@
 
 #include "multigrid.h"
 
-#include "../../solver/generic/SparseMatrix.h"
+#include "solver/generic/SparseMatrix.h"
 
-#include "../../globals/run.h"
-#include "../../basis/utilities/utils.h"
-#include "../../physics/dataholder.h"
-#include "../../config/ecf/solver/multigrid.h"
+#include "globals/run.h"
+#include "basis/utilities/utils.h"
+#include "physics/dataholder.h"
+#include "config/ecf/solver/multigrid.h"
 
-#include "../../wrappers/hypre/hyprewrapper.h"
+#include "wrappers/hypre/hyprewrapper.h"
 
 using namespace espreso;
 

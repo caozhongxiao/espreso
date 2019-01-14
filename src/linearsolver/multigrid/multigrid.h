@@ -2,7 +2,7 @@
 #ifndef SRC_LINEARSOLVER_MULTIGRID_MULTIGRID_H_
 #define SRC_LINEARSOLVER_MULTIGRID_MULTIGRID_H_
 
-#include "../linearsolver.h"
+#include "linearsolver/linearsolver.h"
 
 namespace espreso {
 

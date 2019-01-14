@@ -1,8 +1,8 @@
 
 #include "et.h"
 
-#include "../../../basis/utilities/parser.h"
-#include "../../../basis/logging/logging.h"
+#include "basis/utilities/parser.h"
+#include "basis/logging/logging.h"
 
 using namespace espreso;
 

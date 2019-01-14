@@ -6,8 +6,8 @@
 #include <QStandardItem>
 #include <QItemDelegate>
 
-#include "../../config/configuration.h"
-#include "../../config/ecf/root.h"
+#include "config/configuration.h"
+#include "config/ecf/root.h"
 #include "isavableobject.h"
 #include "ivalidatableobject.h"
 

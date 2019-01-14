@@ -2,7 +2,7 @@
 #ifndef SRC_OUTPUT_RESULT_VISUALIZATION_VISUALIZATION_H_
 #define SRC_OUTPUT_RESULT_VISUALIZATION_VISUALIZATION_H_
 
-#include "../resultstore.h"
+#include "output/result/resultstore.h"
 
 namespace espreso {
 

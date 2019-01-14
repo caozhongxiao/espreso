@@ -1,6 +1,6 @@
 
 #include "decomposition.h"
-#include "../configuration.hpp"
+#include "config/configuration.hpp"
 
 espreso::METISConfiguration::METISConfiguration()
 {

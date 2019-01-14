@@ -1,21 +1,21 @@
 
 #include "heattransfer2d.controller.h"
 
-#include "../../../globals/run.h"
-#include "../../../basis/containers/serializededata.h"
-#include "../../../basis/evaluator/evaluator.h"
-#include "../../../basis/matrices/matrixtype.h"
-#include "../../../config/ecf/physics/heattransfer.h"
+#include "globals/run.h"
+#include "basis/containers/serializededata.h"
+#include "basis/evaluator/evaluator.h"
+#include "basis/matrices/matrixtype.h"
+#include "config/ecf/physics/heattransfer.h"
 
-#include "../../../mesh/mesh.h"
-#include "../../../mesh/store/nodestore.h"
-#include "../../../mesh/store/elementstore.h"
-#include "../../../mesh/store/elementsregionstore.h"
-#include "../../../mesh/store/boundaryregionstore.h"
+#include "mesh/mesh.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/elementstore.h"
+#include "mesh/store/elementsregionstore.h"
+#include "mesh/store/boundaryregionstore.h"
 
-#include "../../../basis/utilities/communication.h"
-#include "../../../basis/utilities/utils.h"
-#include "../../../globals/time.h"
+#include "basis/utilities/communication.h"
+#include "basis/utilities/utils.h"
+#include "globals/time.h"
 
 using namespace espreso;
 

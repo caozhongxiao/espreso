@@ -1,6 +1,6 @@
 
 #include "linearelasticproperties.h"
-#include "../../configuration.hpp"
+#include "config/configuration.hpp"
 
 espreso::LinearElasticPropertiesConfiguration::LinearElasticPropertiesConfiguration()
 : model(MODEL::ISOTROPIC),

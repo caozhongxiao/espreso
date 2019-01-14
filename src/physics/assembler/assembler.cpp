@@ -1,14 +1,14 @@
 
 #include "assembler.h"
 
-#include "../dataholder.h"
+#include "physics/dataholder.h"
 
-#include "../../globals/run.h"
-#include "../../basis/logging/logging.h"
-#include "../../basis/utilities/communication.h"
-#include "../../mesh/mesh.h"
-#include "../../mesh/store/elementstore.h"
-#include "../../solver/generic/SparseMatrix.h"
+#include "globals/run.h"
+#include "basis/logging/logging.h"
+#include "basis/utilities/communication.h"
+#include "mesh/mesh.h"
+#include "mesh/store/elementstore.h"
+#include "solver/generic/SparseMatrix.h"
 
 using namespace espreso;
 

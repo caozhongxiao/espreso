@@ -1,8 +1,8 @@
 
 #include "visualization.h"
 
-#include "../../../config/ecf/output.h"
-#include "../../../globals/time.h"
+#include "config/ecf/output.h"
+#include "globals/time.h"
 
 using namespace espreso;
 

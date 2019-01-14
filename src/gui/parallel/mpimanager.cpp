@@ -1,17 +1,17 @@
 #include "mpimanager.h"
 
-#include "../../basis/containers/serializededata.h"
+#include "basis/containers/serializededata.h"
 
-#include "../../config/ecf/root.h"
+#include "config/ecf/root.h"
 
-#include "../../mesh/mesh.h"
-#include "../../mesh/store/elementstore.h"
-#include "../../mesh/store/nodestore.h"
-#include "../../mesh/store/surfacestore.h"
-#include "../../mesh/store/elementsregionstore.h"
+#include "mesh/mesh.h"
+#include "mesh/store/elementstore.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/surfacestore.h"
+#include "mesh/store/elementsregionstore.h"
 
 #include <QDebug>
-#include "../../input/sortedinput.h"
+#include "input/sortedinput.h"
 #include <QtGui>
 #include <algorithm>
 

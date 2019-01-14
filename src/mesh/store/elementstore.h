@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "../intervals/elementsinterval.h"
+#include "mesh/intervals/elementsinterval.h"
 
 namespace espreso {
 

@@ -8,14 +8,14 @@
 
 #include "workspace/workspacewindow.h"
 
-#include "../config/ecf/environment.h"
-#include "../config/valueholder.h"
-#include "../config/ecf/physics/physics.h"
-#include "../config/ecf/physics/heattransfer.h"
-#include "../basis/expression/expression.h"
-#include "../config/ecf/root.h"
+#include "config/ecf/environment.h"
+#include "config/valueholder.h"
+#include "config/ecf/physics/physics.h"
+#include "config/ecf/physics/heattransfer.h"
+#include "basis/expression/expression.h"
+#include "config/ecf/root.h"
 
-#include "../mesh/mesh.h"
+#include "mesh/mesh.h"
 
 #include "mpi.h"
 

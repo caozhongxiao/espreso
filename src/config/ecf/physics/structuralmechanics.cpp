@@ -1,6 +1,6 @@
 
 #include "structuralmechanics.h"
-#include "../../configuration.hpp"
+#include "config/configuration.hpp"
 
 espreso::StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfiguration(DIMENSION dimension)
 : LoadStepConfiguration("displacement", "forces")

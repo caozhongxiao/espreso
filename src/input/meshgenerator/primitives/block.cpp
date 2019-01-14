@@ -2,29 +2,29 @@
 #include "block.h"
 #include "blocksettings.h"
 
-#include "../meshgenerator.h"
-#include "../selection/blockborder.h"
-#include "../../plaindata.h"
+#include "input/meshgenerator/meshgenerator.h"
+#include "input/meshgenerator/selection/blockborder.h"
+#include "input/plaindata.h"
 
-#include "../elements/2D/square4.h"
-#include "../elements/2D/square8.h"
-#include "../elements/2D/triangle3.h"
-#include "../elements/2D/triangle6.h"
+#include "input/meshgenerator/elements/2D/square4.h"
+#include "input/meshgenerator/elements/2D/square8.h"
+#include "input/meshgenerator/elements/2D/triangle3.h"
+#include "input/meshgenerator/elements/2D/triangle6.h"
 
-#include "../elements/3D/tetrahedron4.h"
-#include "../elements/3D/tetrahedron10.h"
-#include "../elements/3D/pyramid5.h"
-#include "../elements/3D/pyramid13.h"
-#include "../elements/3D/prisma6.h"
-#include "../elements/3D/prisma15.h"
-#include "../elements/3D/hexahedron8.h"
-#include "../elements/3D/hexahedron20.h"
+#include "input/meshgenerator/elements/3D/tetrahedron4.h"
+#include "input/meshgenerator/elements/3D/tetrahedron10.h"
+#include "input/meshgenerator/elements/3D/pyramid5.h"
+#include "input/meshgenerator/elements/3D/pyramid13.h"
+#include "input/meshgenerator/elements/3D/prisma6.h"
+#include "input/meshgenerator/elements/3D/prisma15.h"
+#include "input/meshgenerator/elements/3D/hexahedron8.h"
+#include "input/meshgenerator/elements/3D/hexahedron20.h"
 
-#include "../../../basis/containers/point.h"
-#include "../../../basis/logging/logging.h"
-#include "../../../basis/utilities/utils.h"
-#include "../../../config/ecf/input/block.h"
-#include "../../../config/ecf/input/generatorelements.h"
+#include "basis/containers/point.h"
+#include "basis/logging/logging.h"
+#include "basis/utilities/utils.h"
+#include "config/ecf/input/block.h"
+#include "config/ecf/input/generatorelements.h"
 
 #include <numeric>
 #include <algorithm>
@@ -458,7 +458,7 @@ void BlockGenerator::pattern(const Triple<size_t> &offset, const Triple<size_t> 
 	Triple<size_t> domain, element, begin, index;
 	begin = offset * _block.elements * _block.domains;
 
-	size_t color;
+	size_t color = 0;
 	switch (pattern) {
 	case Pattern::CHESSBOARD_BLACK:
 		color = 1;

@@ -2,9 +2,9 @@
 #ifndef SOLVER_SPECIFIC_CPU_SOLVERDISSECTION_H_
 #define SOLVER_SPECIFIC_CPU_SOLVERDISSECTION_H_
 
-#include "../densesolvers.h"
+#include "densesolvers.h"
 
-#include "../sparsesolver.h"
+#include "sparsesolver.h"
 
 #include "mkl_pardiso.h"
 

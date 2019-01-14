@@ -4,8 +4,8 @@
 
 #include "transientsolver.h"
 #include "nonlinearsolver.h"
-#include "../../solver/feti.h"
-#include "../../solver/multigrid.h"
+#include "config/ecf/solver/feti.h"
+#include "config/ecf/solver/multigrid.h"
 
 namespace espreso {
 

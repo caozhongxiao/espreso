@@ -2,8 +2,8 @@
 #ifndef SRC_CONFIG_ECF_INPUT_INPUT_H_
 #define SRC_CONFIG_ECF_INPUT_INPUT_H_
 
-#include "../../configuration.h"
-#include "../processesreduction.h"
+#include "config/configuration.h"
+#include "config/ecf/processesreduction.h"
 
 namespace espreso {
 

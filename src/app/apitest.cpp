@@ -1,5 +1,5 @@
 
-#include "../../include/feti4i.h"
+#include "include/feti4i.h"
 
 #include "apitest.h"
 

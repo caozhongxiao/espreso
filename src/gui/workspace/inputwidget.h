@@ -1,7 +1,7 @@
 #ifndef INPUTWIDGET_H
 #define INPUTWIDGET_H
 
-#include "../elements/fixedecfobjectwidget.h"
+#include "elements/fixedecfobjectwidget.h"
 
 namespace espreso
 {

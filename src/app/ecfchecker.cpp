@@ -1,12 +1,12 @@
 
 #include "mpi.h"
 
-#include "../config/reader/reader.h"
-#include "../basis/logging/logging.h"
+#include "config/reader/reader.h"
+#include "basis/logging/logging.h"
 
 #include <iostream>
 #include <fstream>
-#include "../config/ecf/root.h"
+#include "config/ecf/root.h"
 
 using namespace espreso;
 

@@ -1,5 +1,5 @@
 
-#include "../../configuration.hpp"
+#include "config/configuration.hpp"
 #include "heattransfer.h"
 
 espreso::ConvectionConfiguration::ConvectionConfiguration()

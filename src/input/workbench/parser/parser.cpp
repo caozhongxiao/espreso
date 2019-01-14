@@ -2,7 +2,7 @@
 #include "parser.h"
 #include "blockend.h"
 
-#include "../../../config/ecf/environment.h"
+#include "config/ecf/environment.h"
 
 #include <iostream>
 #include <algorithm>

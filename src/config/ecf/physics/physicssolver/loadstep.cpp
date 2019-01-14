@@ -1,6 +1,6 @@
 
 #include "loadstep.h"
-#include "../../../configuration.hpp"
+#include "config/configuration.hpp"
 
 espreso::LoadStepConfiguration::LoadStepConfiguration(const std::string &firstResidualName, const std::string &secondResidualName)
 : nonlinear_solver(firstResidualName, secondResidualName)

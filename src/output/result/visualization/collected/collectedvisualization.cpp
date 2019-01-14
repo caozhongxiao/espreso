@@ -1,10 +1,10 @@
 
 #include "collectedvisualization.h"
 
-#include "../../../../basis/logging/logging.h"
-#include "../../../../basis/utilities/communication.h"
+#include "basis/logging/logging.h"
+#include "basis/utilities/communication.h"
 
-#include "../../../../config/ecf/environment.h"
+#include "config/ecf/environment.h"
 
 using namespace espreso;
 

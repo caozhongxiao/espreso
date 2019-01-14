@@ -1,6 +1,6 @@
 #include "DenseMatrixPack.h"
 
-#include "../../../basis/logging/logging.h"
+#include "basis/logging/logging.h"
 
 namespace espreso {
 

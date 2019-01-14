@@ -5,7 +5,7 @@
 #include <QFormLayout>
 #include <QLineEdit>
 #include <QLabel>
-#include "../../config/configuration.h"
+#include "config/configuration.h"
 #include "isavableobject.h"
 #include "ivalidatableobject.h"
 #include "fieldhandler.h"

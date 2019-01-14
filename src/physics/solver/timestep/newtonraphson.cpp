@@ -1,20 +1,20 @@
 
 #include "newtonraphson.h"
-#include "../loadstep/loadstepsolver.h"
+#include "physics/solver/loadstep/loadstepsolver.h"
 
-#include "../../dataholder.h"
-#include "../../assembler/assembler.h"
+#include "physics/dataholder.h"
+#include "physics/assembler/assembler.h"
 
-#include "../../../globals/time.h"
-#include "../../../globals/run.h"
-#include "../../../config/ecf/physics/physicssolver/nonlinearsolver.h"
-#include "../../../basis/logging/logging.h"
-#include "../../../basis/containers/serializededata.h"
+#include "globals/time.h"
+#include "globals/run.h"
+#include "config/ecf/physics/physicssolver/nonlinearsolver.h"
+#include "basis/logging/logging.h"
+#include "basis/containers/serializededata.h"
 
-#include "../../../mesh/mesh.h"
-#include "../../../mesh/store/nodestore.h"
-#include "../../../mesh/store/statisticsstore.h"
-#include "../../../linearsolver/linearsolver.h"
+#include "mesh/mesh.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/statisticsstore.h"
+#include "linearsolver/linearsolver.h"
 
 using namespace espreso;
 

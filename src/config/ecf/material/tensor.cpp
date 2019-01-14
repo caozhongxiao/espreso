@@ -1,7 +1,7 @@
 
 #include "tensor.h"
 
-#include "../../../basis/logging/logging.h"
+#include "basis/logging/logging.h"
 #include <iostream>
 
 using namespace espreso;

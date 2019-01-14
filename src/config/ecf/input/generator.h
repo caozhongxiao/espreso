@@ -2,7 +2,7 @@
 #ifndef SRC_CONFIG_ECF_INPUT_GENERATOR_H_
 #define SRC_CONFIG_ECF_INPUT_GENERATOR_H_
 
-#include "../../configuration.h"
+#include "config/configuration.h"
 
 #include "grid.h"
 #include "gridtower.h"

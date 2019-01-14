@@ -5,9 +5,9 @@
  *      Author: lriha
  */
 //#include <Driver/DissectionSolver.hpp>
-#include "../../globals/run.h"
-#include "../../mesh/mesh.h"
-#include "../../basis/utilities/utils.h"
+#include "globals/run.h"
+#include "mesh/mesh.h"
+#include "basis/utilities/utils.h"
 #include "FETISolver.h"
 
 //#include <Eigen/Dense>

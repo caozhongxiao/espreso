@@ -8,11 +8,11 @@
 #ifndef SOLVER_GENERIC_LINEARSOLVER_H_
 #define SOLVER_GENERIC_LINEARSOLVER_H_
 
-#include "../../linearsolver/linearsolver.h"
-#include "../specific/itersolvers.h"
-//#include "../specific/superclusters.h"
+#include "linearsolver/linearsolver.h"
+#include "solver/specific/itersolvers.h"
+//#include "specific/superclusters.h"
 
-#include "../../physics/dataholder.h"
+#include "physics/dataholder.h"
 
 
 namespace espreso {

@@ -2,7 +2,7 @@
 #ifndef SRC_CONFIG_ECF_OUTPUT_H_
 #define SRC_CONFIG_ECF_OUTPUT_H_
 
-#include "../configuration.h"
+#include "config/configuration.h"
 #include "physics/physics.h"
 
 #include "physics/heattransfer.h"

@@ -5,8 +5,8 @@
 #include <vector>
 #include <string>
 
-#include "../intervals/elementsinterval.h"
-#include "../intervals/processinterval.h"
+#include "mesh/intervals/elementsinterval.h"
+#include "mesh/intervals/processinterval.h"
 
 namespace espreso {
 

@@ -26,14 +26,14 @@ using std::vector;
 using std::map;
 using std::make_pair;
 
-#include "../../globals/run.h"
-#include "../../mesh/mesh.h"
-#include "../../mesh/store/elementstore.h"
-#include "../../basis/logging/logging.h"
-#include "../generic/SparseMatrix.h"
+#include "globals/run.h"
+#include "mesh/mesh.h"
+#include "mesh/store/elementstore.h"
+#include "basis/logging/logging.h"
+#include "solver/generic/SparseMatrix.h"
 #include "sparsesolvers.h"
 #include "clusters.h"
-#include "../generic/utils.h"
+#include "solver/generic/utils.h"
 
 namespace espreso {
 

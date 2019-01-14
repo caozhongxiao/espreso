@@ -6,8 +6,8 @@
 #include <QTreeView>
 #include <QAction>
 
-#include "../../config/configuration.h"
-#include "../../config/ecf/root.h"
+#include "config/configuration.h"
+#include "config/ecf/root.h"
 
 namespace espreso
 {

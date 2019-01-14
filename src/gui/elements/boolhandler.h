@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-#include "../../config/configuration.h"
+#include "config/configuration.h"
 
 namespace espreso
 {

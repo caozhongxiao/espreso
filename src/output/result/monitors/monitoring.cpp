@@ -1,22 +1,22 @@
 
 #include "monitoring.h"
 
-#include "../../../basis/containers/serializededata.h"
-#include "../../../basis/logging/logging.h"
-#include "../../../basis/utilities/utils.h"
-#include "../../../basis/utilities/parser.h"
+#include "basis/containers/serializededata.h"
+#include "basis/logging/logging.h"
+#include "basis/utilities/utils.h"
+#include "basis/utilities/parser.h"
 
-#include "../../../config/ecf/environment.h"
-#include "../../../config/ecf/output.h"
+#include "config/ecf/environment.h"
+#include "config/ecf/output.h"
 
-#include "../../../mesh/mesh.h"
-#include "../../../mesh/store/nodestore.h"
-#include "../../../mesh/store/elementstore.h"
-#include "../../../mesh/store/boundaryregionstore.h"
-#include "../../../mesh/store/elementsregionstore.h"
+#include "mesh/mesh.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/elementstore.h"
+#include "mesh/store/boundaryregionstore.h"
+#include "mesh/store/elementsregionstore.h"
 
 #include <iomanip>
-#include "../../../globals/time.h"
+#include "globals/time.h"
 
 using namespace espreso;
 

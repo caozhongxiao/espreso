@@ -2,7 +2,7 @@
 #ifndef SOLVER_SPARSE_ACC_MUMPS_H_
 #define SOLVER_SPARSE_ACC_MUMPS_H_
 
-#include "../sparsesolver.h"
+#include "solver/specific/sparsesolver.h"
 
 using std::string;
 using std::endl;

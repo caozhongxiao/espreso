@@ -4,8 +4,8 @@
 
 #include "itersolver.h"
 
-#include "../../basis/utilities/utils.h"
-#include "../../basis/logging/logging.h"
+#include "basis/utilities/utils.h"
+#include "basis/logging/logging.h"
 
 using namespace espreso;
 

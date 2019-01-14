@@ -1,10 +1,10 @@
 
 #include "structuralmechanics.controller.h"
 
-#include "../../../basis/matrices/matrixtype.h"
-#include "../../../config/ecf/physics/structuralmechanics.h"
+#include "basis/matrices/matrixtype.h"
+#include "config/ecf/physics/structuralmechanics.h"
 
-#include "../../../mesh/store/nodestore.h"
+#include "mesh/store/nodestore.h"
 
 using namespace espreso;
 

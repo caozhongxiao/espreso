@@ -4,7 +4,7 @@
 #include <fstream>
 #include <sstream>
 
-#include "../config/ecf/root.h"
+#include "config/ecf/root.h"
 
 
 using namespace espreso;

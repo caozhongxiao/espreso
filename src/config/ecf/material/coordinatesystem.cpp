@@ -1,11 +1,11 @@
 
 #include "coordinatesystem.h"
 
-#include "../../configuration.hpp"
+#include "config/configuration.hpp"
 
-#include "../../../basis/containers/point.h"
-#include "../../../basis/evaluator/evaluator.h"
-#include "../../../wrappers/math/math.h"
+#include "basis/containers/point.h"
+#include "basis/evaluator/evaluator.h"
+#include "wrappers/math/math.h"
 
 #include <cmath>
 

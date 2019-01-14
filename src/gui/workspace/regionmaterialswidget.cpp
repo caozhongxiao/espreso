@@ -1,7 +1,7 @@
 #include "regionmaterialswidget.h"
 #include "ui_regionmaterialswidget.h"
 
-#include "../elements/regionpropertywidget.h"
+#include "elements/regionpropertywidget.h"
 
 using namespace espreso;
 

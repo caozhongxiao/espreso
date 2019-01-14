@@ -1,6 +1,6 @@
 #include "expressionedit.h"
 
-#include "../../basis/expression/expression.h"
+#include "basis/expression/expression.h"
 
 using namespace espreso;
 

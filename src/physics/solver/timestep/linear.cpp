@@ -1,11 +1,11 @@
 
 #include "linear.h"
-#include "../loadstep/loadstepsolver.h"
+#include "physics/solver/loadstep/loadstepsolver.h"
 
-#include "../../dataholder.h"
-#include "../../assembler/assembler.h"
+#include "physics/dataholder.h"
+#include "physics/assembler/assembler.h"
 
-#include "../../../linearsolver/linearsolver.h"
+#include "linearsolver/linearsolver.h"
 
 using namespace espreso;
 

@@ -5,7 +5,7 @@
 
 #include "mkl_lapack.h"
 
-#include "../densesolver.h"
+#include "solver/specific/densesolver.h"
 
 // using std::string;
 // using std::endl;

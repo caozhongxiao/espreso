@@ -1,6 +1,6 @@
 
 #include "physics.h"
-#include "../../configuration.hpp"
+#include "config/configuration.hpp"
 
 espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension, MaterialConfiguration::PHYSICAL_MODEL physicalModel)
 : dimension(dimension), physical_model(physicalModel)

@@ -1,11 +1,11 @@
 
 
 #include "blockborder.h"
-#include "../meshgenerator.h"
+#include "input/meshgenerator/meshgenerator.h"
 
-#include "../../../basis/logging/logging.h"
-#include "../../../basis/utilities/parser.h"
-#include "../primitives/blocksettings.h"
+#include "basis/logging/logging.h"
+#include "basis/utilities/parser.h"
+#include "input/meshgenerator/primitives/blocksettings.h"
 
 namespace espreso {
 

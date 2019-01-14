@@ -3,10 +3,10 @@
 
 #include <QWidget>
 
-#include "../../config/configuration.h"
-#include "../../config/ecf/root.h"
+#include "config/configuration.h"
+#include "config/ecf/root.h"
 
-#include "../../mesh/mesh.h"
+#include "mesh/mesh.h"
 
 #include "physicswidget.h"
 #include "inputwidget.h"

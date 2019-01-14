@@ -1,18 +1,18 @@
 
 #include "heattransfer2d.kernel.h"
 
-#include "../assembler.h"
-#include "../../dataholder.h"
+#include "physics/assembler/assembler.h"
+#include "physics/dataholder.h"
 
-#include "../../../basis/containers/point.h"
-#include "../../../basis/matrices/denseMatrix.h"
-#include "../../../basis/evaluator/evaluator.h"
+#include "basis/containers/point.h"
+#include "basis/matrices/denseMatrix.h"
+#include "basis/evaluator/evaluator.h"
 
-#include "../../../globals/run.h"
-#include "../../../config/ecf/root.h"
-#include "../../../globals/time.h"
+#include "globals/run.h"
+#include "config/ecf/root.h"
+#include "globals/time.h"
 
-#include "../../../mesh/elements/element.h"
+#include "mesh/elements/element.h"
 
 
 using namespace espreso;

@@ -2,9 +2,9 @@
 
 #include "sets.h"
 
-#include "../../../basis/containers/tarray.h"
-#include "../../../basis/utilities/parser.h"
-#include "../../../config/ecf/environment.h"
+#include "basis/containers/tarray.h"
+#include "basis/utilities/parser.h"
+#include "config/ecf/environment.h"
 
 #include <fstream>
 #include <glob.h>

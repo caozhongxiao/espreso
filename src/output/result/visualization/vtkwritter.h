@@ -2,7 +2,7 @@
 #ifndef SRC_OUTPUT_RESULT_VISUALIZATION_VTKWRITTER_H_
 #define SRC_OUTPUT_RESULT_VISUALIZATION_VTKWRITTER_H_
 
-#include "../../../mesh/elements/element.h"
+#include "mesh/elements/element.h"
 
 namespace espreso {
 

@@ -4,9 +4,9 @@
 #include <QPushButton>
 #include <QComboBox>
 
-#include "../elements/scrollecfobjectwidget.h"
-#include "../elements/fieldhandler.h"
-#include "../elements/regionpropertywidget.h"
+#include "elements/scrollecfobjectwidget.h"
+#include "elements/fieldhandler.h"
+#include "elements/regionpropertywidget.h"
 
 namespace espreso
 {

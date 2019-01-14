@@ -4,14 +4,14 @@
 #include <QWidget>
 #include <QStack>
 
-#include "../../config/configuration.h"
-#include "../../config/ecf/root.h"
+#include "config/configuration.h"
+#include "config/ecf/root.h"
 
 #include "isavableobject.h"
 #include "ivalidatableobject.h"
 #include "optionhandler.h"
 #include "boolhandler.h"
-#include "../declarations/material/materialpropertytablewidget.h"
+#include "declarations/material/materialpropertytablewidget.h"
 #include "formwidget.h"
 #include "regionpropertywidget.h"
 #include "ecfvaluetablewidget.h"

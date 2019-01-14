@@ -1,9 +1,9 @@
 
 #include "root.h"
 
-#include "../configuration.hpp"
+#include "config/configuration.hpp"
 
-#include "../../basis/logging/logging.h"
+#include "basis/logging/logging.h"
 
 using namespace espreso;
 

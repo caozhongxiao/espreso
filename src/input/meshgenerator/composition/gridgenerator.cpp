@@ -1,15 +1,15 @@
 
 #include "gridgenerator.h"
-#include "../meshgenerator.h"
+#include "input/meshgenerator/meshgenerator.h"
 
-#include "../selection/blockborder.h"
-#include "../../plaindata.h"
-#include "../../generatedinput.h"
-#include "../../../config/ecf/environment.h"
-#include "../../../config/ecf/input/grid.h"
-#include "../../../config/ecf/input/sphere.h"
-#include "../../../basis/utilities/communication.h"
-#include "../../../basis/logging/logging.h"
+#include "input/meshgenerator/selection/blockborder.h"
+#include "input/plaindata.h"
+#include "input/generatedinput.h"
+#include "config/ecf/environment.h"
+#include "config/ecf/input/grid.h"
+#include "config/ecf/input/sphere.h"
+#include "basis/utilities/communication.h"
+#include "basis/logging/logging.h"
 
 using namespace espreso;
 

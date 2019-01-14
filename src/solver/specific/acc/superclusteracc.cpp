@@ -1,6 +1,6 @@
 #include "superclusteracc.h"
 
-#include "../../../assembler/instance.h"
+#include "assembler/instance.h"
 
 using namespace espreso;
 

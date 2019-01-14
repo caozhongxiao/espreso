@@ -6,7 +6,7 @@
 #include <sstream>
 
 #include "collectedvisualization.h"
-#include "../stlwritter.h"
+#include "output/result/visualization/stlwritter.h"
 
 namespace espreso {
 

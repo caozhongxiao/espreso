@@ -1,8 +1,8 @@
 #ifndef MATERIALWIDGET_H
 #define MATERIALWIDGET_H
 
-#include "../../elements/scrollecfobjectwidget.h"
-#include "../../elements/formwidget.h"
+#include "elements/scrollecfobjectwidget.h"
+#include "elements/formwidget.h"
 
 namespace espreso
 {

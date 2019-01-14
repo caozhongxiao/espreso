@@ -1,9 +1,9 @@
 
 #include "heattransfer.kernel.h"
 
-#include "../../../basis/logging/logging.h"
-#include "../../../basis/evaluator/evaluator.h"
-#include "../../../config/ecf/physics/heattransfer.h"
+#include "basis/logging/logging.h"
+#include "basis/evaluator/evaluator.h"
+#include "config/ecf/physics/heattransfer.h"
 
 #include <cmath>
 #include <algorithm>

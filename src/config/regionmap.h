@@ -2,8 +2,8 @@
 #ifndef SRC_CONFIG_REGIONMAP_H_
 #define SRC_CONFIG_REGIONMAP_H_
 
-#include "../mesh/store/boundaryregionstore.h"
-#include "../basis/utilities/parser.h"
+#include "mesh/store/boundaryregionstore.h"
+#include "basis/utilities/parser.h"
 
 #include <map>
 

@@ -2,8 +2,8 @@
 #ifndef SRC_INPUT_MESHGENERATOR_COMPOSITION_GRIDSETTINGS_H_
 #define SRC_INPUT_MESHGENERATOR_COMPOSITION_GRIDSETTINGS_H_
 
-#include "../primitives/block.h"
-#include "../primitives/blocksettings.h"
+#include "block.h"
+#include "blocksettings.h"
 
 namespace espreso {
 

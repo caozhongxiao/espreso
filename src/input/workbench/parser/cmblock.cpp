@@ -1,11 +1,11 @@
 
 #include "cmblock.h"
 
-#include "../../../basis/containers/tarray.h"
-#include "../../../basis/utilities/parser.h"
-#include "../../../basis/logging/logging.h"
+#include "basis/containers/tarray.h"
+#include "basis/utilities/parser.h"
+#include "basis/logging/logging.h"
 
-#include "../../../config/ecf/environment.h"
+#include "config/ecf/environment.h"
 
 #include <algorithm>
 

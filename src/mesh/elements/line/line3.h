@@ -2,7 +2,7 @@
 #ifndef SRC_MESH_ELEMENTS_LINE_LINE3_H_
 #define SRC_MESH_ELEMENTS_LINE_LINE3_H_
 
-#include "../element.h"
+#include "mesh/elements/element.h"
 
 namespace espreso {
 

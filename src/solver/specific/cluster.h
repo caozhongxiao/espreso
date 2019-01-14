@@ -21,13 +21,13 @@ using std::vector;
 using std::map;
 using std::make_pair;
 
-#include "../generic/SparseMatrix.h"
-#include "../generic/Domain.h"
+#include "solver/generic/SparseMatrix.h"
+#include "solver/generic/Domain.h"
 #include "densesolvers.h"
 
-#include "../../basis/logging/timeeval.h"
-#include "../generic/utils.h"
-//#include "../../assembler/physics/assembler.h"
+#include "basis/logging/timeeval.h"
+#include "solver/generic/utils.h"
+//#include "assembler/physics/assembler.h"
 
     namespace espreso {
 

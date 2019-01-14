@@ -1,8 +1,8 @@
 #include "inputwidget.h"
 
-#include "../elements/maptablewidgetfactory.h"
-#include "../elements/textitemdelegate.h"
-#include "../elements/textitemwidgetfactory.h"
+#include "elements/maptablewidgetfactory.h"
+#include "elements/textitemdelegate.h"
+#include "elements/textitemwidgetfactory.h"
 
 using namespace espreso;
 

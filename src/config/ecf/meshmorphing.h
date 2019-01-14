@@ -2,9 +2,9 @@
 #ifndef SRC_CONFIGURATION_MESHMORPHING_H_
 #define SRC_CONFIGURATION_MESHMORPHING_H_
 
-#include "../configuration.h"
-#include "../expression.h"
-#include "material/coordinatesystem.h"
+#include "config/expression.h"
+#include "config/configuration.h"
+#include "config/ecf/material/coordinatesystem.h"
 
 namespace espreso {
 

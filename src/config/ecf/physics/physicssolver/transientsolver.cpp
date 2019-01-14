@@ -1,6 +1,6 @@
 
 #include "transientsolver.h"
-#include "../../../configuration.hpp"
+#include "config/configuration.hpp"
 
 espreso::AutoTimeSteppingConfiguration::AutoTimeSteppingConfiguration()
 {

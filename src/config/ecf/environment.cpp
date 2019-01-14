@@ -1,7 +1,7 @@
 
 #include "environment.hpp"
-#include "../configuration.hpp"
-#include "../../basis/utilities/utils.h"
+#include "config/configuration.hpp"
+#include "basis/utilities/utils.h"
 
 namespace espreso {
 

@@ -2,7 +2,7 @@
 #ifndef SRC_PHYSICS_ASSEMBLER_COMPOSER_FETI_UNIFORMNODESFETICOMPOSER_H_
 #define SRC_PHYSICS_ASSEMBLER_COMPOSER_FETI_UNIFORMNODESFETICOMPOSER_H_
 
-#include "../feti/feticomposer.h"
+#include "feticomposer.h"
 
 namespace espreso {
 

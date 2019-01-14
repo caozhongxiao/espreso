@@ -1,12 +1,12 @@
 
 #include "pseudotimestepping.h"
-#include "../timestep/timestepsolver.h"
+#include "physics/solver/timestep/timestepsolver.h"
 
-#include "../../dataholder.h"
-#include "../../assembler/assembler.h"
+#include "physics/dataholder.h"
+#include "physics/assembler/assembler.h"
 
-#include "../../../globals/time.h"
-#include "../../../config/ecf/physics/physicssolver/nonlinearsolver.h"
+#include "globals/time.h"
+#include "config/ecf/physics/physicssolver/nonlinearsolver.h"
 
 using namespace espreso;
 

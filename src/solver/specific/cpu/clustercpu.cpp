@@ -3,8 +3,8 @@
 
 #include "clustercpu.h"
 
-#include "../../../physics/dataholder.h"
-#include "../../../basis/logging/logging.h"
+#include "physics/dataholder.h"
+#include "basis/logging/logging.h"
 
 using namespace espreso;
 

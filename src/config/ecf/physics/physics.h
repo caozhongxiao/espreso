@@ -2,7 +2,7 @@
 #ifndef SRC_CONFIG_ECF_PHYSICS_PHYSICS_H_
 #define SRC_CONFIG_ECF_PHYSICS_PHYSICS_H_
 
-#include "../material/material.h"
+#include "config/ecf/material/material.h"
 
 namespace espreso {
 

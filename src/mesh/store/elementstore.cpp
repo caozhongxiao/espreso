@@ -3,14 +3,14 @@
 #include "elementstore.h"
 #include "statisticsstore.h"
 
-#include "../mesh.h"
-#include "../elements/element.h"
+#include "mesh/mesh.h"
+#include "mesh/elements/element.h"
 
-#include "../../basis/containers/point.h"
-#include "../../basis/containers/serializededata.h"
-#include "../../config/ecf/environment.h"
+#include "basis/containers/point.h"
+#include "basis/containers/serializededata.h"
+#include "config/ecf/environment.h"
 
-#include "../../globals/run.h"
+#include "globals/run.h"
 
 using namespace espreso;
 

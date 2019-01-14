@@ -1,9 +1,9 @@
 
 #include "boundary.h"
 
-#include "../openfoam.h"
+#include "input/openfoam/openfoam.h"
 
-#include "../../../basis/utilities/parser.h"
+#include "basis/utilities/parser.h"
 
 using namespace espreso;
 

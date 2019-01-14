@@ -2,8 +2,8 @@
 #include "ui_ecfvaluetablewidget.h"
 
 #include <QLineEdit>
-#include "../validators/validatorfactory.h"
-#include "../validators/validatordelegate.h"
+#include "validators/validatorfactory.h"
+#include "validators/validatordelegate.h"
 #include "textitemwidgetfactory.h"
 #include "textitemdelegate.h"
 

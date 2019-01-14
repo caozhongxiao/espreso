@@ -2,7 +2,7 @@
 #ifndef SRC_INPUT_MESHGENERATOR_ELEMENTS_2D_QUADRATICPLANE_H_
 #define SRC_INPUT_MESHGENERATOR_ELEMENTS_2D_QUADRATICPLANE_H_
 
-#include "../element.h"
+#include "input/meshgenerator/elements/element.h"
 
 namespace espreso {
 

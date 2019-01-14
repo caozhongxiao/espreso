@@ -2,7 +2,7 @@
 #ifndef SOLVER_SPECIFIC_CPU_ITERSOLVERCPU_H_
 #define SOLVER_SPECIFIC_CPU_ITERSOLVERCPU_H_
 
-#include "../itersolver.h"
+#include "solver/specific/itersolver.h"
 
 namespace espreso {
 

@@ -4,7 +4,7 @@
 #include <cusolverSp.h>
 #include <cusolverSp_LOWLEVEL_PREVIEW.h>
 
-#include "../sparsesolver.h"
+#include "sparsesolver.h"
 
 using std::string;
 using std::endl;

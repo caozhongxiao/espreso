@@ -7,11 +7,11 @@
 #include <QComboBox>
 #include "tabletypewidget.h"
 #include "piecewisetypewidget.h"
-#include "../../config/configuration.h"
-#include "../elements/expressionedit.h"
-#include "../elements/ivalidatableobject.h"
-#include "../elements/isavableobject.h"
-#include "../elements/textitemwidget.h"
+#include "config/configuration.h"
+#include "elements/expressionedit.h"
+#include "elements/ivalidatableobject.h"
+#include "elements/isavableobject.h"
+#include "elements/textitemwidget.h"
 
 namespace espreso
 {

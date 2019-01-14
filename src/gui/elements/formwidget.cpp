@@ -2,7 +2,7 @@
 
 #include <QLabel>
 
-#include "../validators/validatorfactory.h"
+#include "validators/validatorfactory.h"
 
 using namespace espreso;
 

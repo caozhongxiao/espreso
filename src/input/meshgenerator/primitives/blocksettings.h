@@ -3,7 +3,7 @@
 #define SRC_INPUT_GENERATOR_PRIMITIVES_BLOCKSETTING_H_
 
 #include "triple.h"
-#include "../../../basis/expression/expression.h"
+#include "basis/expression/expression.h"
 
 namespace espreso {
 

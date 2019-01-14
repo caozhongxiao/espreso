@@ -1,6 +1,6 @@
 
 #include "feti4ilibrary.h"
-#include "../../configuration.hpp"
+#include "config/configuration.hpp"
 
 espreso::FETI4ILibraryConfiguration::FETI4ILibraryConfiguration()
 {

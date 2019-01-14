@@ -1,6 +1,6 @@
 
 #include "output.h"
-#include "../configuration.hpp"
+#include "config/configuration.hpp"
 #include "root.h"
 
 espreso::MonitorConfiguration::MonitorConfiguration(const PHYSICS &physics)

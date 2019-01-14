@@ -1,7 +1,7 @@
 #include "boolmaptablewidget.h"
 
-#include "../../validators/validatordelegate.h"
-#include "../../validators/validatorfactory.h"
+#include "validators/validatordelegate.h"
+#include "validators/validatorfactory.h"
 
 using namespace espreso;
 

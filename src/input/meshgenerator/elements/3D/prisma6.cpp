@@ -1,6 +1,6 @@
 
 #include "prisma6.h"
-#include "../../../../basis/logging/logging.h"
+#include "basis/logging/logging.h"
 
 using namespace espreso;
 

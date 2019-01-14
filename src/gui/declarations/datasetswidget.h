@@ -1,7 +1,7 @@
 #ifndef DATASETSWIDGET_H
 #define DATASETSWIDGET_H
 
-#include "../elements/ecfobjecttreewidget.h"
+#include "elements/ecfobjecttreewidget.h"
 #include "material/materialdialog.h"
 
 namespace espreso

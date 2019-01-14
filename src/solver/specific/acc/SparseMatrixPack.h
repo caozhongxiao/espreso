@@ -1,6 +1,6 @@
 
-#include "../../generic/utils.h"
-#include "../../generic/SparseMatrix.h"
+#include "generic/utils.h"
+#include "generic/SparseMatrix.h"
 #include "mkl_pardiso.h"
 
 

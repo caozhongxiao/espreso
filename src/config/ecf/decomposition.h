@@ -2,7 +2,7 @@
 #ifndef SRC_CONFIG_ECF_DECOMPOSITION_H_
 #define SRC_CONFIG_ECF_DECOMPOSITION_H_
 
-#include "../configuration.h"
+#include "config/configuration.h"
 #include "processesreduction.h"
 
 namespace espreso {

@@ -2,8 +2,8 @@
 #ifndef SRC_CONFIG_ECF_MATERIAL_TENSOR_H_
 #define SRC_CONFIG_ECF_MATERIAL_TENSOR_H_
 
-#include "../../configuration.h"
-#include "../../expression.h"
+#include "config/configuration.h"
+#include "config/expression.h"
 
 namespace espreso {
 

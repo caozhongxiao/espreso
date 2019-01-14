@@ -1,7 +1,7 @@
 #ifndef MAPTABLEWIDGET_H
 #define MAPTABLEWIDGET_H
 
-#include "../declarations/tablewidget.h"
+#include "declarations/tablewidget.h"
 #include "isavableobject.h"
 
 namespace espreso

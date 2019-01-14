@@ -2,7 +2,7 @@
 #ifndef SRC_BASIS_CONTAINERS_TARRAY_HPP_
 #define SRC_BASIS_CONTAINERS_TARRAY_HPP_
 
-#include "../containers/tarray.h"
+#include "tarray.h"
 
 namespace espreso {
 

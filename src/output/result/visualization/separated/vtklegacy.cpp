@@ -1,34 +1,34 @@
 
 #include "vtklegacy.h"
 
-#include "../vtkwritter.h"
+#include "output/result/visualization/vtkwritter.h"
 
-#include "../../../../globals/run.h"
-#include "../../../../basis/containers/point.h"
-#include "../../../../basis/containers/serializededata.h"
-#include "../../../../basis/utilities/utils.h"
-#include "../../../../basis/utilities/communication.h"
+#include "globals/run.h"
+#include "basis/containers/point.h"
+#include "basis/containers/serializededata.h"
+#include "basis/utilities/utils.h"
+#include "basis/utilities/communication.h"
 
-#include "../../../../config/ecf/environment.h"
-#include "../../../../config/ecf/output.h"
+#include "config/ecf/environment.h"
+#include "config/ecf/output.h"
 
-#include "../../../../mesh/mesh.h"
-#include "../../../../mesh/elements/element.h"
-#include "../../../../mesh/store/nodestore.h"
-#include "../../../../mesh/store/elementstore.h"
-#include "../../../../mesh/store/fetidatastore.h"
-#include "../../../../mesh/store/surfacestore.h"
-#include "../../../../mesh/store/contactstore.h"
-#include "../../../../mesh/store/elementsregionstore.h"
+#include "mesh/mesh.h"
+#include "mesh/elements/element.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/elementstore.h"
+#include "mesh/store/fetidatastore.h"
+#include "mesh/store/surfacestore.h"
+#include "mesh/store/contactstore.h"
+#include "mesh/store/elementsregionstore.h"
 
-#include "../../../../input/sfc/spacefillingcurve.h"
+#include "input/sfc/spacefillingcurve.h"
 
-#include "../../../../solver/generic/SparseMatrix.h"
+#include "solver/generic/SparseMatrix.h"
 
 #include <fstream>
 #include <algorithm>
 #include <numeric>
-#include "../../../../physics/dataholder.h"
+#include "physics/dataholder.h"
 
 using namespace espreso;
 

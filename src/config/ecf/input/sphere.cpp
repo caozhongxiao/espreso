@@ -1,7 +1,7 @@
 
 #include "sphere.h"
 
-#include "../../configuration.hpp"
+#include "config/configuration.hpp"
 
 espreso::SphereGeneratorConfiguration::SphereGeneratorConfiguration()
 {

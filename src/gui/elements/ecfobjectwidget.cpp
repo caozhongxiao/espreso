@@ -5,7 +5,7 @@
 #include <QScrollArea>
 #include <QLabel>
 
-#include "../declarations/datatypeeditwidget.h"
+#include "declarations/datatypeeditwidget.h"
 
 using namespace espreso;
 

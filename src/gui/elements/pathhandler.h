@@ -4,7 +4,7 @@
 #include <QWidget>
 #include <QLabel>
 
-#include "../../config/configuration.h"
+#include "config/configuration.h"
 #include "ivalidatableobject.h"
 
 namespace espreso

@@ -1,18 +1,18 @@
 
 #include "controller.h"
 
-#include "../../../config/ecf/environment.h"
+#include "config/ecf/environment.h"
 
-#include "../../../globals/run.h"
-#include "../../../basis/containers/point.h"
-#include "../../../basis/containers/serializededata.h"
-#include "../../../basis/evaluator/evaluator.h"
-#include "../../../config/expression.h"
+#include "globals/run.h"
+#include "basis/containers/point.h"
+#include "basis/containers/serializededata.h"
+#include "basis/evaluator/evaluator.h"
+#include "config/expression.h"
 
-#include "../../../mesh/mesh.h"
-#include "../../../mesh/store/nodestore.h"
-#include "../../../mesh/store/elementstore.h"
-#include "../../../mesh/store/elementsregionstore.h"
+#include "mesh/mesh.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/elementstore.h"
+#include "mesh/store/elementsregionstore.h"
 
 using namespace espreso;
 

@@ -7,9 +7,9 @@
 #include "filepathwidget.h"
 #include "optionwidget.h"
 #include "textwidget.h"
-#include "../validators/validatorfactory.h"
+#include "validators/validatorfactory.h"
 #include "ivalidatableobject.h"
-#include "../declarations/datatypeeditwidget.h"
+#include "declarations/datatypeeditwidget.h"
 
 namespace espreso
 {

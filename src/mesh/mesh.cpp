@@ -1,5 +1,5 @@
 
-#include "mesh.h"
+#include "mesh/mesh.h"
 
 #include "store/statisticsstore.h"
 #include "store/elementstore.h"
@@ -13,19 +13,19 @@
 
 #include "elements/elements.h"
 
-#include "../globals/run.h"
-#include "../basis/utilities/utils.h"
-#include "../basis/utilities/communication.h"
-#include "../basis/utilities/parser.h"
+#include "globals/run.h"
+#include "basis/utilities/utils.h"
+#include "basis/utilities/communication.h"
+#include "basis/utilities/parser.h"
 
 #include <iostream>
 #include <vector>
 #include <numeric>
 #include <algorithm>
 
-#include "../basis/containers/serializededata.h"
-#include "../basis/containers/tarray.h"
-#include "../config/ecf/root.h"
+#include "basis/containers/serializededata.h"
+#include "basis/containers/tarray.h"
+#include "config/ecf/root.h"
 
 
 using namespace espreso;

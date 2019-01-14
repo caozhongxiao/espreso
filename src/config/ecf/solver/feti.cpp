@@ -1,6 +1,6 @@
 
 #include "feti.h"
-#include "../../configuration.hpp"
+#include "config/configuration.hpp"
 
 espreso::FETISolverConfiguration::FETISolverConfiguration()
 {

@@ -7,7 +7,7 @@
 #include <QItemDelegate>
 #include <functional>
 
-#include "../../config/configuration.h"
+#include "config/configuration.h"
 #include "isavableobject.h"
 #include "ivalidatableobject.h"
 #include "ecfparametertreedelegate.h"

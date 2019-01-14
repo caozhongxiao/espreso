@@ -2,7 +2,7 @@
 #ifndef SRC_MESH_ELEMENTS_PLANE_TRIANGLE6_H_
 #define SRC_MESH_ELEMENTS_PLANE_TRIANGLE6_H_
 
-#include "../element.h"
+#include "mesh/elements/element.h"
 
 namespace espreso {
 

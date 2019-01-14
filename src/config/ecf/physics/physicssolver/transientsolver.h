@@ -2,7 +2,7 @@
 #ifndef SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_TRANSIENTSOLVER_H_
 #define SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_TRANSIENTSOLVER_H_
 
-#include "../../../configuration.h"
+#include "config/configuration.h"
 
 namespace espreso {
 

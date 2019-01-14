@@ -1,7 +1,7 @@
 
 #include "espresobinaryformat.h"
 
-#include "../../config/ecf/environment.h"
+#include "config/ecf/environment.h"
 
 using namespace espreso;
 

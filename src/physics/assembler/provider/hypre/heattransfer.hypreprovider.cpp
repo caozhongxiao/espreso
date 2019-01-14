@@ -1,7 +1,7 @@
 
 #include "heattransfer.hypreprovider.h"
 
-#include "../../../../config/ecf/physics/heattransfer.h"
+#include "config/ecf/physics/heattransfer.h"
 
 using namespace espreso;
 

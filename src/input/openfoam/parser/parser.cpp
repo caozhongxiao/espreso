@@ -2,8 +2,8 @@
 #include "parser.h"
 
 #include "mpi.h"
-#include "../../../config/ecf/environment.h"
-#include "../../../basis/utilities/communication.h"
+#include "config/ecf/environment.h"
+#include "basis/utilities/communication.h"
 
 using namespace espreso;
 

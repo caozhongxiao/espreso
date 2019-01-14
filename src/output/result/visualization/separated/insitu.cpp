@@ -1,9 +1,9 @@
 
 #include "insitu.h"
 
-#include "../../../../config/ecf/output.h"
+#include "config/ecf/output.h"
 
-#include "../../../../wrappers/catalyst/catalyst.h"
+#include "wrappers/catalyst/catalyst.h"
 
 #include <unistd.h>
 

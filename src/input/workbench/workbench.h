@@ -2,8 +2,8 @@
 #ifndef SRC_INPUT_WORKBENCH_WORKBENCH_H_
 #define SRC_INPUT_WORKBENCH_WORKBENCH_H_
 
-#include "../plaindata.h"
-#include "../mpiloader/mpiloader.h"
+#include "input/plaindata.h"
+#include "input/mpiloader/mpiloader.h"
 
 #include <cstddef>
 #include <vector>

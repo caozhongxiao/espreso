@@ -1,12 +1,12 @@
 
 #include "boundaryregionstore.h"
 
-#include "../../basis/containers/serializededata.h"
-#include "../../basis/utilities/utils.h"
+#include "basis/containers/serializededata.h"
+#include "basis/utilities/utils.h"
 
-#include "../../config/ecf/environment.h"
+#include "config/ecf/environment.h"
 
-#include "../../mesh/elements/element.h"
+#include "mesh/elements/element.h"
 
 using namespace espreso;
 

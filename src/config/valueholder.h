@@ -2,10 +2,10 @@
 #ifndef SRC_CONFIG_VALUEHOLDER_H_
 #define SRC_CONFIG_VALUEHOLDER_H_
 
-#include "configuration.h"
+#include "config/configuration.h"
 #include "expression.h"
-#include "../basis/utilities/parser.h"
-#include "../basis/logging/logging.h"
+#include "basis/utilities/parser.h"
+#include "basis/logging/logging.h"
 #include <sstream>
 
 namespace espreso {

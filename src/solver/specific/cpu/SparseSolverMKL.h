@@ -3,7 +3,7 @@
 #define SOLVER_SPECIFIC_CPU_SOLVERMKL_H_
 
 #include "mkl_pardiso.h"
-#include "../sparsesolver.h"
+#include "solver/specific/sparsesolver.h"
 
 namespace espreso {
 

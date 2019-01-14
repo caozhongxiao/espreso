@@ -7,8 +7,8 @@
 #include <QScrollArea>
 #include <QLineEdit>
 #include <QDebug>
-#include "../../elements/optionhandler.h"
-#include "../../elements/formwidget.h"
+#include "elements/optionhandler.h"
+#include "elements/formwidget.h"
 #include "materialpropertytablewidget.h"
 
 using namespace espreso;

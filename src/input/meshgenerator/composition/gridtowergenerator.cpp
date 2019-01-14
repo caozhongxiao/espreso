@@ -1,14 +1,14 @@
 
 #include "gridtowergenerator.h"
-#include "../meshgenerator.h"
+#include "input/meshgenerator/meshgenerator.h"
 
-#include "../elements/element.h"
-#include "../../plaindata.h"
-#include "../../generatedinput.h"
-#include "../../../config/ecf/environment.h"
-#include "../../../config/ecf/input/gridtower.h"
-#include "../../../basis/logging/logging.h"
-#include "../../../basis/utilities/communication.h"
+#include "input/meshgenerator/elements/element.h"
+#include "input/plaindata.h"
+#include "input/generatedinput.h"
+#include "config/ecf/environment.h"
+#include "config/ecf/input/gridtower.h"
+#include "basis/logging/logging.h"
+#include "basis/utilities/communication.h"
 
 using namespace espreso;
 

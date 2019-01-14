@@ -1,14 +1,14 @@
 
 #include "eblock.h"
 #include "et.h"
-#include "../../../basis/containers/tarray.h"
-#include "../../../basis/utilities/parser.h"
-#include "../../../basis/utilities/communication.h"
-#include "../../../basis/utilities/utils.h"
-#include "../../../config/ecf/environment.h"
+#include "basis/containers/tarray.h"
+#include "basis/utilities/parser.h"
+#include "basis/utilities/communication.h"
+#include "basis/utilities/utils.h"
+#include "config/ecf/environment.h"
 
-#include "../../../mesh/elements/element.h"
-#include "../workbench.h"
+#include "mesh/elements/element.h"
+#include "input/workbench/workbench.h"
 
 using namespace espreso;
 

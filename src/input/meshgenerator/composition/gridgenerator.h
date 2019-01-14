@@ -2,7 +2,7 @@
 #ifndef SRC_INPUT_GENERATOR_COMPOSITION_GRIDGENERATOR_H_
 #define SRC_INPUT_GENERATOR_COMPOSITION_GRIDGENERATOR_H_
 
-#include "../primitives/gridsettings.h"
+#include "input/meshgenerator/primitives/gridsettings.h"
 
 namespace espreso {
 

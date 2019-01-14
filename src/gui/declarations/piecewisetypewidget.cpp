@@ -1,10 +1,10 @@
 #include "piecewisetypewidget.h"
 
-#include "../elements/expressioneditdelegate.h"
-#include "../elements/expressionedit.h"
-#include "../validators/validatordelegate.h"
-#include "../elements/comboboxdelegate.h"
-#include "../../basis/expression/expression.h"
+#include "elements/expressioneditdelegate.h"
+#include "elements/expressionedit.h"
+#include "validators/validatordelegate.h"
+#include "elements/comboboxdelegate.h"
+#include "basis/expression/expression.h"
 
 #include <QDebug>
 

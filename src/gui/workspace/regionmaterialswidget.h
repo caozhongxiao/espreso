@@ -1,13 +1,13 @@
 #ifndef REGIONMATERIALSWIDGET_H
 #define REGIONMATERIALSWIDGET_H
 
-#include "../../config/configuration.h"
-#include "../../config/ecf/root.h"
+#include "config/configuration.h"
+#include "config/ecf/root.h"
 
-#include "../../mesh/mesh.h"
+#include "mesh/mesh.h"
 
-#include "../elements/isavableobject.h"
-#include "../elements/ivalidatableobject.h"
+#include "elements/isavableobject.h"
+#include "elements/ivalidatableobject.h"
 
 #include <QWidget>
 

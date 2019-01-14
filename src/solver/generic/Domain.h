@@ -1,8 +1,8 @@
 
 
-#include "../generic/SparseMatrix.h"
-#include "../specific/sparsesolvers.h"
-#include "../specific/densesolvers.h"
+#include "solver/generic/SparseMatrix.h"
+#include "solver/specific/sparsesolvers.h"
+#include "solver/specific/densesolvers.h"
 
 #include <omp.h>
 #include "mpi.h"
@@ -22,8 +22,8 @@ using std::vector;
 using std::map;
 using std::make_pair;
 
-#include "../generic/utils.h"
-#include "../../physics/dataholder.h"
+#include "solver/generic/utils.h"
+#include "physics/dataholder.h"
 
 
 #pragma once

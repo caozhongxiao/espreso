@@ -1,16 +1,16 @@
 
-#include "../basis/logging/logging.h"
+#include "basis/logging/logging.h"
 
-#include "../config/ecf/root.h"
-#include "../globals/run.h"
-#include "../globals/env.h"
-#include "../globals/system.h"
+#include "config/ecf/root.h"
+#include "globals/run.h"
+#include "globals/env.h"
+#include "globals/system.h"
 
-#include "../physics/loadstepiterator.h"
+#include "physics/loadstepiterator.h"
 
-#include "../mesh/mesh.h"
-#include "../input/input.h"
-#include "../output/result/resultstore.h"
+#include "mesh/mesh.h"
+#include "input/input.h"
+#include "output/result/resultstore.h"
 
 using namespace espreso;
 

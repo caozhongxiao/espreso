@@ -2,7 +2,7 @@
 #ifndef SOLVER_SPECIFIC_CPU_CLUSTERCPU_H_
 #define SOLVER_SPECIFIC_CPU_CLUSTERCPU_H_
 
-#include "../cluster.h"
+#include "solver/specific/cluster.h"
 
 namespace espreso {
 

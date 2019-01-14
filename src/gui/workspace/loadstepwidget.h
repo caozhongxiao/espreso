@@ -1,9 +1,9 @@
 #ifndef LOADSTEPWIDGET_H
 #define LOADSTEPWIDGET_H
 
-#include "../elements/scrollecfobjectwidget.h"
-#include "../elements/fieldhandler.h"
-#include "../elements/regionpropertywidget.h"
+#include "elements/scrollecfobjectwidget.h"
+#include "elements/fieldhandler.h"
+#include "elements/regionpropertywidget.h"
 
 namespace espreso
 {

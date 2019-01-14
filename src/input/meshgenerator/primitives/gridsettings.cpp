@@ -1,9 +1,9 @@
 
 #include "gridsettings.h"
 
-#include "../../../config/ecf/input/grid.h"
-#include "../../../config/ecf/input/sphere.h"
-#include "../../../basis/logging/logging.h"
+#include "config/ecf/input/grid.h"
+#include "config/ecf/input/sphere.h"
+#include "basis/logging/logging.h"
 
 using namespace espreso;
 

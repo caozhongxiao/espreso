@@ -3,8 +3,8 @@
 #define SOLVER_SPECIFIC_DENSESOLVER_H_
 
 // #include "esbasis.h"
-// #include "../generic/utils.h"
-#include "../generic/SparseMatrix.h"
+// #include "generic/utils.h"
+#include "solver/generic/SparseMatrix.h"
 
 namespace espreso {
 

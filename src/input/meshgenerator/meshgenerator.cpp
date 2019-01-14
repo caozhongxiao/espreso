@@ -5,9 +5,9 @@
 #include "composition/gridtowergenerator.h"
 #include "composition/spheregenerator.h"
 
-#include "../../mesh/mesh.h"
-#include "../../basis/logging/logging.h"
-#include "../../config/ecf/input/generator.h"
+#include "mesh/mesh.h"
+#include "basis/logging/logging.h"
+#include "config/ecf/input/generator.h"
 
 using namespace espreso;
 

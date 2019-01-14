@@ -7,18 +7,18 @@
 #include "parser/zones.h"
 #include "parser/sets.h"
 
-#include "../plaindata.h"
-#include "../../basis/containers/tarray.h"
-#include "../../basis/logging/logging.h"
-#include "../../basis/logging/timeeval.h"
-#include "../../basis/utilities/utils.h"
-#include "../../basis/utilities/communication.h"
-#include "../../config/ecf/environment.h"
-#include "../../config/ecf/input/input.h"
+#include "input/plaindata.h"
+#include "basis/containers/tarray.h"
+#include "basis/logging/logging.h"
+#include "basis/logging/timeeval.h"
+#include "basis/utilities/utils.h"
+#include "basis/utilities/communication.h"
+#include "config/ecf/environment.h"
+#include "config/ecf/input/input.h"
 
-#include "../../mesh/elements/element.h"
-#include "../randominput.h"
-#include "../sequentialinput.h"
+#include "mesh/elements/element.h"
+#include "input/randominput.h"
+#include "input/sequentialinput.h"
 
 #include <numeric>
 

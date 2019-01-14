@@ -1,11 +1,11 @@
 
 #include "faces.h"
 
-#include "../openfoam.h"
+#include "input/openfoam/openfoam.h"
 
-#include "../../../basis/containers/tarray.h"
-#include "../../../basis/utilities/communication.h"
-#include "../../../config/ecf/environment.h"
+#include "basis/containers/tarray.h"
+#include "basis/utilities/communication.h"
+#include "config/ecf/environment.h"
 
 #include <numeric>
 

@@ -1,7 +1,7 @@
 #ifndef OUTPUTCONFIGURATIONWIDGET_H
 #define OUTPUTCONFIGURATIONWIDGET_H
 
-#include "../elements/scrollecfobjectwidget.h"
+#include "elements/scrollecfobjectwidget.h"
 
 namespace espreso
 {

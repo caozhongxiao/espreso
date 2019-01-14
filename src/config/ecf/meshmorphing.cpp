@@ -1,5 +1,5 @@
 
-#include "../configuration.hpp"
+#include "config/configuration.hpp"
 #include "root.h"
 
 espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfiguration(ECFRoot *ECFRoot)

@@ -3,15 +3,15 @@
 
 #include <QMainWindow>
 
-#include "../../config/configuration.h"
-#include "../../config/ecf/root.h"
-#include "../../input/sortedinput.h"
-#include "../declarations/datasetswidget.h"
-#include "../mesh/meshwidget.h"
-#include "../mesh/regionpickerwidget.h"
+#include "config/configuration.h"
+#include "config/ecf/root.h"
+#include "input/sortedinput.h"
+#include "declarations/datasetswidget.h"
+#include "mesh/meshwidget.h"
+#include "mesh/regionpickerwidget.h"
 #include "workflowwidget.h"
 
-#include "../parallel/mpimanager.h"
+#include "parallel/mpimanager.h"
 
 namespace espreso
 {

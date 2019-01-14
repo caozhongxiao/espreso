@@ -2,7 +2,7 @@
 #ifndef SRC_MESH_ELEMENTS_VOLUME_PRISMA6_H_
 #define SRC_MESH_ELEMENTS_VOLUME_PRISMA6_H_
 
-#include "../element.h"
+#include "mesh/elements/element.h"
 
 namespace espreso {
 

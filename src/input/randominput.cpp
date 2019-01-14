@@ -1,19 +1,19 @@
 
 #include "randominput.h"
 
-#include "../basis/containers/serializededata.h"
-#include "../basis/utilities/utils.h"
-#include "../basis/utilities/communication.h"
-#include "../basis/logging/timeeval.h"
+#include "basis/containers/serializededata.h"
+#include "basis/utilities/utils.h"
+#include "basis/utilities/communication.h"
+#include "basis/logging/timeeval.h"
 
-#include "../config/ecf/root.h"
+#include "config/ecf/root.h"
 
-#include "../mesh/mesh.h"
-#include "../mesh/elements/element.h"
-#include "../mesh/preprocessing/meshpreprocessing.h"
-#include "../mesh/store/nodestore.h"
-#include "../mesh/store/elementstore.h"
-#include "../mesh/store/boundaryregionstore.h"
+#include "mesh/mesh.h"
+#include "mesh/elements/element.h"
+#include "mesh/preprocessing/meshpreprocessing.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/elementstore.h"
+#include "mesh/store/boundaryregionstore.h"
 
 #include <numeric>
 #include <algorithm>

@@ -2,9 +2,9 @@
 #ifndef SRC_OUTPUT_RESULT_VISUALIZATION_SEPARATED_SEPARATEDVISUALIZATION_H_
 #define SRC_OUTPUT_RESULT_VISUALIZATION_SEPARATED_SEPARATEDVISUALIZATION_H_
 
-#include "../visualization.h"
+#include "output/result/visualization/visualization.h"
 
-#include "../../../../basis/containers/point.h"
+#include "basis/containers/point.h"
 
 namespace espreso {
 

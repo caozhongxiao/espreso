@@ -1,13 +1,13 @@
 
 #include "hyprewrapper.h"
 
-#include "../../basis/logging/logging.h"
-#include "../../basis/utilities/communication.h"
-#include "../../basis/utilities/utils.h"
+#include "basis/logging/logging.h"
+#include "basis/utilities/communication.h"
+#include "basis/utilities/utils.h"
 
-#include "../../globals/run.h"
+#include "globals/run.h"
 
-#include "../../config/ecf/root.h"
+#include "config/ecf/root.h"
 
 #include <vector>
 #include <numeric>

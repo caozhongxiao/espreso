@@ -23,11 +23,11 @@ using std::make_pair;
 //#include <cilk/cilk.h>
 //#include <cilk/cilk_api.h>
 
-#include "../generic/SparseMatrix.h"
+#include "solver/generic/SparseMatrix.h"
 #include "sparsesolvers.h"
 #include "clusters.h"
 #include "superclusters.h"
-#include "../generic/utils.h"
+#include "solver/generic/utils.h"
 
 namespace espreso {
 

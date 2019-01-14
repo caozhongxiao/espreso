@@ -4,18 +4,18 @@
 #include "openfoam/openfoam.h"
 #include "meshgenerator/meshgenerator.h"
 
-#include "../basis/containers/serializededata.h"
-#include "../basis/logging/logging.h"
-#include "../basis/logging/timeeval.h"
-#include "../basis/utilities/communication.h"
-#include "../basis/utilities/utils.h"
+#include "basis/containers/serializededata.h"
+#include "basis/logging/logging.h"
+#include "basis/logging/timeeval.h"
+#include "basis/utilities/communication.h"
+#include "basis/utilities/utils.h"
 
-#include "../config/ecf/root.h"
-#include "../mesh/mesh.h"
-#include "../mesh/elements/element.h"
-#include "../mesh/store/nodestore.h"
-#include "../mesh/store/elementstore.h"
-#include "../mesh/store/elementsregionstore.h"
+#include "config/ecf/root.h"
+#include "mesh/mesh.h"
+#include "mesh/elements/element.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/elementstore.h"
+#include "mesh/store/elementsregionstore.h"
 
 #include <algorithm>
 #include <numeric>

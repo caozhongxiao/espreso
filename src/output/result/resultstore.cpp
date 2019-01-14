@@ -1,10 +1,10 @@
 
 #include "resultstore.h"
 
-#include "../../config/ecf/environment.h"
-#include "../../config/ecf/output.h"
-#include "../../basis/logging/logging.h"
-#include "../../basis/utilities/utils.h"
+#include "config/ecf/environment.h"
+#include "config/ecf/output.h"
+#include "basis/logging/logging.h"
+#include "basis/utilities/utils.h"
 
 #include "executor/asyncexecutor.h"
 #include "executor/directexecutor.h"

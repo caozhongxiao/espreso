@@ -1,15 +1,15 @@
 
 #include "structuralmechanics2d.kernel.h"
 
-#include "../../../globals/run.h"
-#include "../../../basis/containers/point.h"
-#include "../../../basis/matrices/denseMatrix.h"
-#include "../../../basis/evaluator/evaluator.h"
-#include "../../../config/ecf/root.h"
-#include "../../../globals/time.h"
+#include "globals/run.h"
+#include "basis/containers/point.h"
+#include "basis/matrices/denseMatrix.h"
+#include "basis/evaluator/evaluator.h"
+#include "config/ecf/root.h"
+#include "globals/time.h"
 
-#include "../../../mesh/elements/element.h"
-#include "../../dataholder.h"
+#include "mesh/elements/element.h"
+#include "physics/dataholder.h"
 
 using namespace espreso;
 

@@ -1,6 +1,6 @@
 #include "meshwidget.h"
 
-#include "../../config/ecf/environment.h"
+#include "config/ecf/environment.h"
 #include "mpi.h"
 
 #include <QDebug>

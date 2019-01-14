@@ -3,16 +3,16 @@
 #include "nodestore.h"
 #include "statisticsstore.h"
 
-#include "../mesh.h"
+#include "mesh/mesh.h"
 
-#include "../../basis/containers/point.h"
-#include "../../basis/containers/serializededata.h"
-#include "../../basis/utilities/utils.h"
-#include "../../basis/utilities/communication.h"
+#include "basis/containers/point.h"
+#include "basis/containers/serializededata.h"
+#include "basis/utilities/utils.h"
+#include "basis/utilities/communication.h"
 
-#include "../../globals/run.h"
+#include "globals/run.h"
 
-#include "../../config/ecf/environment.h"
+#include "config/ecf/environment.h"
 
 using namespace espreso;
 

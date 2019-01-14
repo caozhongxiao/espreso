@@ -2,7 +2,7 @@
 #ifndef SRC_PHYSICS_ASSEMBLER_PROVIDER_FETI_FETIPROVIDER_H_
 #define SRC_PHYSICS_ASSEMBLER_PROVIDER_FETI_FETIPROVIDER_H_
 
-#include "../provider.h"
+#include "physics/assembler/provider/provider.h"
 #include <vector>
 
 namespace espreso {

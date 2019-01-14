@@ -1,9 +1,9 @@
 
-#include "../specific/cluster.h"
+#include "cluster.h"
 
-#include "../../physics/dataholder.h"
-#include "../../basis/utilities/utils.h"
-#include "../../basis/matrices/matrixtype.h"
+#include "physics/dataholder.h"
+#include "basis/utilities/utils.h"
+#include "basis/matrices/matrixtype.h"
 
 //#define SPARSE_SA
 

@@ -1,17 +1,17 @@
 
 #include "heattransfer2d.controller.h"
-#include "../kernels/heattransfer2d.kernel.h"
+#include "physics/assembler/kernels/heattransfer2d.kernel.h"
 
-#include "../../../globals/run.h"
-#include "../../../globals/time.h"
-#include "../../../basis/containers/serializededata.h"
-#include "../../../basis/evaluator/evaluator.h"
-#include "../../../config/ecf/root.h"
+#include "globals/run.h"
+#include "globals/time.h"
+#include "basis/containers/serializededata.h"
+#include "basis/evaluator/evaluator.h"
+#include "config/ecf/root.h"
 
-#include "../../../mesh/mesh.h"
-#include "../../../mesh/store/elementstore.h"
-#include "../../../mesh/store/nodestore.h"
-#include "../../dataholder.h"
+#include "mesh/mesh.h"
+#include "mesh/store/elementstore.h"
+#include "mesh/store/nodestore.h"
+#include "physics/dataholder.h"
 
 using namespace espreso;
 

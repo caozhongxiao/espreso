@@ -3,7 +3,7 @@
 #define SRC_CONFIG_ECF_ENVIRONMENT_HPP_
 
 #include "environment.h"
-#include "../configuration.h"
+#include "config/configuration.h"
 
 namespace espreso {
 

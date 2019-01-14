@@ -11,10 +11,10 @@
 #include "mpi.h"
 
 #include "tokenizer.h"
-#include "../ecf/output.h"
-#include "../ecf/environment.h"
-#include "../../basis/logging/logging.h"
-#include "../../basis/utilities/parser.h"
+#include "config/ecf/output.h"
+#include "config/ecf/environment.h"
+#include "basis/logging/logging.h"
+#include "basis/utilities/parser.h"
 
 using namespace espreso;
 
@@ -195,7 +195,7 @@ void ECFReader::copyInputData()
 	Logging::log.open(Logging::outputRoot() + "/" + Logging::name + ".log", std::ofstream::app);
 
 	int error = remove(std::string(Logging::path + "/" + "last").c_str());
-	error = symlink(("../" + Logging::outputRoot()).c_str(), std::string(Logging::path + "/" + "last").c_str());
+	error = symlink(("" + Logging::outputRoot()).c_str(), std::string(Logging::path + "/" + "last").c_str());
 	if (error) {
 		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW << "Something wrong happens with creating link to last output directory.";
 	}

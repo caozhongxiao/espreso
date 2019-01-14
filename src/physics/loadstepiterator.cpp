@@ -21,13 +21,13 @@
 #include "assembler/provider/feti/structuralmechanics2d.fetiprovider.h"
 #include "assembler/provider/feti/structuralmechanics3d.fetiprovider.h"
 
-#include "../globals/run.h"
-#include "../globals/time.h"
-#include "../basis/logging/logging.h"
-#include "../config/ecf/root.h"
+#include "globals/run.h"
+#include "globals/time.h"
+#include "basis/logging/logging.h"
+#include "config/ecf/root.h"
 
-#include "../linearsolver/multigrid/multigrid.h"
-#include "../solver/generic/FETISolver.h"
+#include "linearsolver/multigrid/multigrid.h"
+#include "solver/generic/FETISolver.h"
 #include "assembler/provider/hypre/heattransfer.hypreprovider.h"
 #include "assembler/provider/hypre/structuralmechanics.hypreprovider.h"
 

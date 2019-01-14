@@ -2,8 +2,8 @@
 #ifndef SOLVER_SPECIFIC_SPARSESOLVER_H_
 #define SOLVER_SPECIFIC_SPARSESOLVER_H_
 
-#include "../generic/utils.h"
-#include "../generic/SparseMatrix.h"
+#include "solver/generic/utils.h"
+#include "solver/generic/SparseMatrix.h"
 
 namespace espreso {
 

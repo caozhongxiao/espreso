@@ -15,10 +15,11 @@
 #include "meshmorphing.h"
 
 #include "physics/physics.h"
+#include "physics/heattransfer.h"
 #include "physics/structuralmechanics.h"
 
-#include "../reader/reader.h"
-#include "physics/heattransfer.h"
+#include "config/reader/reader.h"
+
 
 namespace espreso {
 

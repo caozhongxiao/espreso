@@ -1,22 +1,22 @@
 
 #include "structuralmechanics3d.fetiprovider.h"
 
-#include "../../../dataholder.h"
+#include "physics/dataholder.h"
 
-#include "../../../../globals/run.h"
+#include "globals/run.h"
 
-#include "../../../../basis/containers/serializededata.h"
-#include "../../../../basis/matrices/matrixtype.h"
-#include "../../../../basis/logging/logging.h"
-#include "../../../../config/ecf/physics/structuralmechanics.h"
+#include "basis/containers/serializededata.h"
+#include "basis/matrices/matrixtype.h"
+#include "basis/logging/logging.h"
+#include "config/ecf/physics/structuralmechanics.h"
 
-#include "../../../../mesh/mesh.h"
-#include "../../../../mesh/store/elementstore.h"
-#include "../../../../mesh/store/nodestore.h"
-#include "../../../../mesh/store/fetidatastore.h"
+#include "mesh/mesh.h"
+#include "mesh/store/elementstore.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/fetidatastore.h"
 
-#include "../../../../solver/generic/SparseMatrix.h"
-#include "../../../../solver/specific/sparsesolvers.h"
+#include "solver/generic/SparseMatrix.h"
+#include "solver/specific/sparsesolvers.h"
 
 using namespace espreso;
 

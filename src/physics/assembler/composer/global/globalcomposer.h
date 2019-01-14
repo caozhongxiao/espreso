@@ -2,7 +2,7 @@
 #ifndef SRC_PHYSICS_ASSEMBLER_COMPOSER_GLOBAL_GLOBALCOMPOSER_H_
 #define SRC_PHYSICS_ASSEMBLER_COMPOSER_GLOBAL_GLOBALCOMPOSER_H_
 
-#include "../composer.h"
+#include "physics/assembler/composer/composer.h"
 
 namespace espreso {
 

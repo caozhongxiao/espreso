@@ -6,8 +6,8 @@
 #include <QLabel>
 #include <QDebug>
 
-#include "../elements/ecfobjectwidgetfactory.h"
-#include "../elements/integertabwidget.h"
+#include "elements/ecfobjectwidgetfactory.h"
+#include "elements/integertabwidget.h"
 #include <memory>
 
 using namespace espreso;

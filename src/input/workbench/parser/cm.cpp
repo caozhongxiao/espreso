@@ -4,12 +4,12 @@
 #include "esel.h"
 #include "nsel.h"
 
-#include "../workbench.h"
+#include "input/workbench/workbench.h"
 
-#include "../../../basis/containers/tarray.h"
-#include "../../../basis/utilities/parser.h"
-#include "../../../basis/logging/logging.h"
-#include "../../../config/ecf/environment.h"
+#include "basis/containers/tarray.h"
+#include "basis/utilities/parser.h"
+#include "basis/logging/logging.h"
+#include "config/ecf/environment.h"
 
 #include <cstring>
 #include <functional>

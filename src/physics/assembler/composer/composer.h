@@ -4,7 +4,7 @@
 
 #include <vector>
 
-#include "../../../basis/matrices/matrixtype.h"
+#include "basis/matrices/matrixtype.h"
 
 namespace espreso {
 

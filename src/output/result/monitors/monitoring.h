@@ -2,8 +2,8 @@
 #ifndef SRC_OUTPUT_RESULT_MONITORS_MONITORING_H_
 #define SRC_OUTPUT_RESULT_MONITORS_MONITORING_H_
 
-#include "../resultstore.h"
-#include "../../../mesh/store/statisticsstore.h"
+#include "output/result/resultstore.h"
+#include "mesh/store/statisticsstore.h"
 
 #include <utility>
 #include <vector>

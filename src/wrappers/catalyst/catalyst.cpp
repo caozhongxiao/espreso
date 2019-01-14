@@ -1,7 +1,7 @@
 
 #include "catalyst.h"
 
-#include "../../basis/logging/logging.h"
+#include "basis/logging/logging.h"
 
 #ifdef CATALYST
 #include "vtkNew.h"

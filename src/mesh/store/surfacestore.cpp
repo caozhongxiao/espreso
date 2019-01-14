@@ -1,8 +1,8 @@
 
 #include "surfacestore.h"
 
-#include "../../basis/containers/point.h"
-#include "../../basis/containers/serializededata.h"
+#include "basis/containers/point.h"
+#include "basis/containers/serializededata.h"
 
 using namespace espreso;
 

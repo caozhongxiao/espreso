@@ -2,7 +2,7 @@
 #ifndef SRC_INPUT_MESHGENERATOR_ELEMENTS_3D_PYRAMID13_H_
 #define SRC_INPUT_MESHGENERATOR_ELEMENTS_3D_PYRAMID13_H_
 
-#include "../element.h"
+#include "input/meshgenerator/elements/element.h"
 
 namespace espreso {
 

@@ -3,10 +3,10 @@
 
 #include <QDialog>
 
-#include "../../config/configuration.h"
-#include "../../config/ecf/root.h"
+#include "config/configuration.h"
+#include "config/ecf/root.h"
 
-#include "../../mesh/mesh.h"
+#include "mesh/mesh.h"
 
 namespace espreso
 {

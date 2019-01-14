@@ -1,12 +1,12 @@
 
 #include "sequentialinput.h"
 
-#include "../basis/containers/serializededata.h"
-#include "../basis/logging/logging.h"
-#include "../basis/logging/timeeval.h"
+#include "basis/containers/serializededata.h"
+#include "basis/logging/logging.h"
+#include "basis/logging/timeeval.h"
 
-#include "../mesh/mesh.h"
-#include "../mesh/store/nodestore.h"
+#include "mesh/mesh.h"
+#include "mesh/store/nodestore.h"
 
 #include <algorithm>
 #include <numeric>

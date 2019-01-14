@@ -3,11 +3,11 @@
 
 #include "surfacestore.h"
 
-#include "../elements/element.h"
+#include "mesh/elements/element.h"
 
-#include "../../basis/containers/serializededata.h"
-#include "../../basis/utilities/parser.h"
-#include "../../basis/utilities/utils.h"
+#include "basis/containers/serializededata.h"
+#include "basis/utilities/parser.h"
+#include "basis/utilities/utils.h"
 
 using namespace espreso;
 

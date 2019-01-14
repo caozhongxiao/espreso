@@ -1,9 +1,9 @@
 #ifndef DEFAULTMAPTABLEWIDGET_H
 #define DEFAULTMAPTABLEWIDGET_H
 
-#include "../maptablewidget.h"
+#include "maptablewidget.h"
 
-#include "../../../config/configuration.h"
+#include "config/configuration.h"
 
 namespace espreso
 {

@@ -1,7 +1,7 @@
 
 #include "gridtower.h"
 
-#include "../../configuration.hpp"
+#include "config/configuration.hpp"
 
 espreso::GridTowerGeneratorConfiguration::GridTowerGeneratorConfiguration()
 {

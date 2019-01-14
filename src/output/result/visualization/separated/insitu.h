@@ -2,7 +2,7 @@
 #ifndef SRC_OUTPUT_RESULT_VISUALIZATION_SEPARATED_INSITU_H_
 #define SRC_OUTPUT_RESULT_VISUALIZATION_SEPARATED_INSITU_H_
 
-#include "../visualization.h"
+#include "output/result/visualization/visualization.h"
 
 namespace espreso {
 

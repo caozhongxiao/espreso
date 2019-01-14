@@ -7,11 +7,11 @@
 #include <vector>
 #include <fstream>
 
-#include "../../basis/utilities/communication.h"
-#include "../../basis/utilities/utils.h"
-#include "../../config/ecf/environment.h"
+#include "basis/utilities/communication.h"
+#include "basis/utilities/utils.h"
+#include "config/ecf/environment.h"
 
-#include "../elements/element.h"
+#include "mesh/elements/element.h"
 
 namespace espreso {
 

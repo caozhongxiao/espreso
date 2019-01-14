@@ -5,10 +5,10 @@
 #include <QStandardItemModel>
 #include <QStringList>
 #include <QTableView>
-#include "../validators/validatorfactory.h"
+#include "validators/validatorfactory.h"
 #include <QAction>
 #include <QMenu>
-#include "../elements/ivalidatableobject.h"
+#include "elements/ivalidatableobject.h"
 #include <memory>
 
 namespace espreso

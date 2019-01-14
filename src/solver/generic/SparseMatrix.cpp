@@ -1,8 +1,8 @@
-#include "../generic/SparseMatrix.h"
+#include "SparseMatrix.h"
 
-#include "../specific/sparsesolvers.h"
+#include "solver/specific/sparsesolvers.h"
 
-#include "../../basis/logging/logging.h"
+#include "basis/logging/logging.h"
 
 namespace espreso {
 

@@ -6,8 +6,8 @@
 #include <list>
 #include <vector>
 
-#include "../../basis/logging/timeeval.h"
-#include "../../config/ecf/root.h"
+#include "basis/logging/timeeval.h"
+#include "config/ecf/root.h"
 
 namespace espreso {
 struct Environment;

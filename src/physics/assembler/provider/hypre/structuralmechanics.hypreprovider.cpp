@@ -1,7 +1,7 @@
 
 #include "structuralmechanics.hypreprovider.h"
 
-#include "../../../../config/ecf/physics/structuralmechanics.h"
+#include "config/ecf/physics/structuralmechanics.h"
 
 using namespace espreso;
 

@@ -1,5 +1,5 @@
 
-#include "../math.h"
+#include "wrappers/math/math.h"
 
 #include "mkl.h"
 

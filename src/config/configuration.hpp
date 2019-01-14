@@ -5,7 +5,7 @@
 #include <type_traits>
 #include <iostream>
 
-#include "configuration.h"
+#include "config/configuration.h"
 #include "valueholder.h"
 #include "objectholder.h"
 

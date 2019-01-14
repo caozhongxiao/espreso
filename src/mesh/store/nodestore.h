@@ -7,10 +7,10 @@
 #include <vector>
 #include <iostream>
 
-#include "../intervals/processinterval.h"
-#include "../intervals/domaininterval.h"
+#include "mesh/intervals/processinterval.h"
+#include "mesh/intervals/domaininterval.h"
 
-#include "../../basis/containers/point.h"
+#include "basis/containers/point.h"
 
 namespace espreso {
 

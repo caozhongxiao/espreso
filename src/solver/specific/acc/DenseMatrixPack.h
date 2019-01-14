@@ -1,6 +1,6 @@
 
-#include "../../generic/utils.h"
-#include "../../../configuration/solver/espreso.h"
+#include "generic/utils.h"
+#include "configuration/solver/espreso.h"
 
 
 using std::vector;

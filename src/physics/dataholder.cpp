@@ -1,8 +1,8 @@
 
 #include "dataholder.h"
 
-#include "../basis/logging/logging.h"
-#include "../solver/generic/SparseMatrix.h"
+#include "basis/logging/logging.h"
+#include "solver/generic/SparseMatrix.h"
 
 using namespace espreso;
 

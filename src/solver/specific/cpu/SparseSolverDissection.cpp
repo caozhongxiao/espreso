@@ -1,7 +1,7 @@
 
 #include "SparseSolverDissection.h"
 
-#include "../../../basis/utilities/utils.h"
+#include "basis/utilities/utils.h"
 
 #include <Driver/DissectionSolver.hpp>
 

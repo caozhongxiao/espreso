@@ -2,7 +2,7 @@
 #ifndef SRC_SOLVER_SPECIFIC_CPU_SUPERCLUSTERCPU_H_
 #define SRC_SOLVER_SPECIFIC_CPU_SUPERCLUSTERCPU_H_
 
-#include "../supercluster.h"
+#include "solver/specific/supercluster.h"
 
 namespace espreso {
 

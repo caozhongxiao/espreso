@@ -7,8 +7,8 @@
 #include <iomanip>
 #include <fstream>
 
-#include "../../basis/logging/logging.h"
-#include "../../config/ecf/environment.h"
+#include "basis/logging/logging.h"
+#include "config/ecf/environment.h"
 
 using namespace espreso;
 

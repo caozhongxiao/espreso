@@ -1,7 +1,7 @@
 
 #include "grid.h"
 
-#include "../../configuration.hpp"
+#include "config/configuration.hpp"
 
 espreso::GridGeneratorConfiguration::GridGeneratorConfiguration()
 {

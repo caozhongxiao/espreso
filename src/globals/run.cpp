@@ -1,8 +1,8 @@
 
 #include "run.h"
 
-#include "../mesh/mesh.h"
-#include "../output/result/resultstore.h"
+#include "mesh/mesh.h"
+#include "output/result/resultstore.h"
 
 #include <cstddef>
 

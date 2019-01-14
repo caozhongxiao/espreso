@@ -1,10 +1,10 @@
 
 #include "steadystate.h"
-#include "../timestep/timestepsolver.h"
-#include "../../dataholder.h"
-#include "../../assembler/assembler.h"
+#include "physics/solver/timestep/timestepsolver.h"
+#include "physics/dataholder.h"
+#include "physics/assembler/assembler.h"
 
-#include "../../../globals/time.h"
+#include "globals/time.h"
 
 using namespace espreso;
 

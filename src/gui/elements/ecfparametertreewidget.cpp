@@ -3,11 +3,11 @@
 
 #include <QLineEdit>
 #include <QDebug>
-#include "../validators/validatorfactory.h"
-#include "../validators/validatordelegate.h"
+#include "validators/validatorfactory.h"
+#include "validators/validatordelegate.h"
 #include "textitemwidgetfactory.h"
 #include "textitemdelegate.h"
-#include "../declarations/datasetswidget.h"
+#include "declarations/datasetswidget.h"
 
 using namespace espreso;
 

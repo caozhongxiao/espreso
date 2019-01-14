@@ -1,19 +1,19 @@
 
 #include "transientfirstorderimplicit.h"
-#include "../timestep/timestepsolver.h"
+#include "physics/solver/timestep/timestepsolver.h"
 
-#include "../../dataholder.h"
-#include "../../assembler/assembler.h"
+#include "physics/dataholder.h"
+#include "physics/assembler/assembler.h"
 
-#include "../../../globals/run.h"
-#include "../../../globals/time.h"
+#include "globals/run.h"
+#include "globals/time.h"
 
-#include "../../../mesh/mesh.h"
-#include "../../../mesh/store/nodestore.h"
+#include "mesh/mesh.h"
+#include "mesh/store/nodestore.h"
 
-#include "../../../basis/logging/logging.h"
-#include "../../../config/ecf/physics/physicssolver/transientsolver.h"
-#include "../../../config/ecf/environment.h"
+#include "basis/logging/logging.h"
+#include "config/ecf/physics/physicssolver/transientsolver.h"
+#include "config/ecf/environment.h"
 
 using namespace espreso;
 

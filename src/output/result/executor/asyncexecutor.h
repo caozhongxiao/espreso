@@ -5,7 +5,7 @@
 #define USE_MPI
 #include "async/Module.h"
 
-#include "../../../mesh/mesh.h"
+#include "mesh/mesh.h"
 #include "directexecutor.h"
 
 namespace espreso {

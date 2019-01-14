@@ -5,7 +5,7 @@
 #include "mpi.h"
 #include <vector>
 
-#include "../visualization.h"
+#include "output/result/visualization/visualization.h"
 
 namespace espreso {
 

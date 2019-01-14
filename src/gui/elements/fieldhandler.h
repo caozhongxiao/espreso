@@ -5,8 +5,8 @@
 
 #include "ivalidatableobject.h"
 #include "isavableobject.h"
-#include "../validators/validatorfactory.h"
-#include "../../config/configuration.h"
+#include "validators/validatorfactory.h"
+#include "config/configuration.h"
 
 namespace espreso
 {

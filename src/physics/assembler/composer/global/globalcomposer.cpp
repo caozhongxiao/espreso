@@ -1,12 +1,12 @@
 
 #include "globalcomposer.h"
 
-#include "../../../dataholder.h"
+#include "physics/dataholder.h"
 
-#include "../../../../globals/run.h"
-#include "../../../../mesh/mesh.h"
-#include "../../../../mesh/store/elementstore.h"
-#include "../../../../solver/generic/SparseMatrix.h"
+#include "globals/run.h"
+#include "mesh/mesh.h"
+#include "mesh/store/elementstore.h"
+#include "solver/generic/SparseMatrix.h"
 
 using namespace espreso;
 
