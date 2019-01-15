@@ -5,8 +5,8 @@
 
 using namespace espreso;
 
-Provider::Provider(LoadStepConfiguration &configuration)
-: _configuration(configuration)
+Provider::Provider(DataHolder *data, LoadStepConfiguration &configuration)
+: _data(data), _configuration(configuration)
 {
 
 }

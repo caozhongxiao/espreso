@@ -29,7 +29,7 @@ struct Monitor {
 class Monitoring: public ResultStoreBase {
 
 public:
-	static bool storeStep(const OutputConfiguration &configuration);
+	static bool storeStep();
 
 	virtual bool isCollected() { return true; }
 	virtual bool isSeparated() { return false; }
@@ -37,12 +37,11 @@ public:
 	void updateMesh();
 	void updateSolution();
 
-	Monitoring(const Mesh &mesh, const OutputConfiguration &configuration);
+	Monitoring(const Mesh &mesh);
 	~Monitoring();
 	static char delimiter;
 
 protected:
-	const OutputConfiguration &_configuration;
 	std::ofstream _os;
 
 	std::vector<Monitor> _monitors;

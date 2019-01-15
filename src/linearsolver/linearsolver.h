@@ -4,11 +4,14 @@
 
 namespace espreso {
 
+struct DataHolder;
 enum Matrices: int;
 
 class LinearSolver {
 
 public:
+	LinearSolver(DataHolder *data);
+
 	void solve(Matrices matrices);
 
 	virtual bool glueDomainsByLagrangeMultipliers() const =0;
@@ -23,6 +26,8 @@ protected:
 	virtual void update(Matrices matrices) =0;
 	virtual void solve() =0;
 	virtual void finalize() =0;
+
+	DataHolder *_data;
 };
 
 }

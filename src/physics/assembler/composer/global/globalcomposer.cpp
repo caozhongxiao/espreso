@@ -1,9 +1,7 @@
 
+#include "physics/assembler/dataholder.h"
 #include "globalcomposer.h"
 
-#include "physics/dataholder.h"
-
-#include "globals/run.h"
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
 #include "solver/generic/SparseMatrix.h"
@@ -17,7 +15,7 @@ NodeData* GlobalComposer::RHS()
 
 void GlobalComposer::KplusAlfaM(double alfa)
 {
-	run::data->K[0].MatAddInPlace(run::data->M[0], 'N', alfa);
+	data->K[0].MatAddInPlace(data->M[0], 'N', alfa);
 }
 
 void GlobalComposer::applyM(NodeData *y, NodeData *x)

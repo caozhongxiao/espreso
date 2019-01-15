@@ -8,6 +8,7 @@
 
 namespace espreso {
 
+struct DataHolder;
 class Controler;
 enum Matrices: int;
 struct NodeData;
@@ -67,7 +68,9 @@ public:
 	double multiply(NodeData *x, NodeData* y);
 	virtual double residualNorm() =0;
 
-	virtual ~Composer() {}
+	virtual ~Composer();
+
+	DataHolder *data;
 
 protected:
 	static size_t getMatrixSize(size_t size, MatrixType mtype)

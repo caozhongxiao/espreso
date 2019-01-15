@@ -1,13 +1,12 @@
 
+#include "esinfo/meshinfo.h"
+#include "physics/assembler/dataholder.h"
 #include "uniformnodesfeticomposer.h"
 
 #include "physics/assembler/controllers/controller.h"
 #include "physics/assembler/provider/feti/fetiprovider.h"
 
 #include "physics/assembler/assembler.h"
-#include "physics/dataholder.h"
-
-#include "globals/run.h"
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/denseMatrix.h"
 #include "basis/logging/logging.h"
@@ -32,7 +31,7 @@ void UniformNodesFETIComposer::initDOFs()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	_domainDOFsSize.resize(run::mesh->elements->ndomains);
+	_domainDOFsSize.resize(info::mesh->elements->ndomains);
 
 	// nID, domain
 	std::vector<std::vector<std::pair<esint, esint> > > ntodomains(threads);
@@ -41,10 +40,10 @@ void UniformNodesFETIComposer::initDOFs()
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<std::pair<esint, esint> > tdata;
 
-		for (esint d = run::mesh->elements->domainDistribution[t]; d != run::mesh->elements->domainDistribution[t + 1]; ++d) {
+		for (esint d = info::mesh->elements->domainDistribution[t]; d != info::mesh->elements->domainDistribution[t + 1]; ++d) {
 			std::vector<esint> dnodes(
-					(run::mesh->elements->procNodes->begin() + run::mesh->elements->elementsDistribution[d])->begin(),
-					(run::mesh->elements->procNodes->begin() + run::mesh->elements->elementsDistribution[d + 1])->begin());
+					(info::mesh->elements->procNodes->begin() + info::mesh->elements->elementsDistribution[d])->begin(),
+					(info::mesh->elements->procNodes->begin() + info::mesh->elements->elementsDistribution[d + 1])->begin());
 
 			Esutils::sortAndRemoveDuplicity(dnodes);
 			for (size_t i = 0; i < dnodes.size(); i++) {
@@ -76,7 +75,7 @@ void UniformNodesFETIComposer::initDOFs()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		std::vector<esint> tDOFs(run::mesh->elements->ndomains);
+		std::vector<esint> tDOFs(info::mesh->elements->ndomains);
 
 		for (size_t n = ndistribution[t]; n < ndistribution[t + 1]; ++n) {
 			tDOFs[ntodomains[0][n].second] += _DOFs;
@@ -88,14 +87,14 @@ void UniformNodesFETIComposer::initDOFs()
 	Esutils::sizesToOffsets(DOFs);
 
 	std::vector<std::vector<std::vector<esint> > > sBuffer(threads);
-	std::vector<std::vector<esint> > rBuffer(run::mesh->neighboursWithMe.size());
+	std::vector<std::vector<esint> > rBuffer(info::mesh->neighboursWithMe.size());
 
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto nranks = run::mesh->nodes->ranks->begin() + ntodomains[0][ndistribution[t]].first;
+		auto nranks = info::mesh->nodes->ranks->begin() + ntodomains[0][ndistribution[t]].first;
 
-		std::vector<std::vector<esint> > tBuffer(run::mesh->neighboursWithMe.size());
+		std::vector<std::vector<esint> > tBuffer(info::mesh->neighboursWithMe.size());
 
 		size_t n = ndistribution[t];
 		while (n < ndistribution[t + 1]) {
@@ -106,13 +105,13 @@ void UniformNodesFETIComposer::initDOFs()
 
 			esint noffset = 0;
 			for (auto r = nranks->begin(); r != nranks->end(); ++r) {
-				while (run::mesh->neighboursWithMe[noffset] < *r) {
+				while (info::mesh->neighboursWithMe[noffset] < *r) {
 					++noffset;
 				}
 
 				tBuffer[noffset].push_back(n - begin);
 				for (size_t i = begin; i < n; i++) {
-					tBuffer[noffset].push_back(run::mesh->elements->firstDomain + ntodomains[0][i].second);
+					tBuffer[noffset].push_back(info::mesh->elements->firstDomain + ntodomains[0][i].second);
 					for (int dof = 0; dof < _DOFs; ++dof) {
 						tBuffer[noffset].push_back(DOFs[t][ntodomains[0][i].second] + dof);
 					}
@@ -133,7 +132,7 @@ void UniformNodesFETIComposer::initDOFs()
 		}
 	}
 
-	if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, run::mesh->neighboursWithMe)) {
+	if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, info::mesh->neighboursWithMe)) {
 		ESINFO(ERROR) << "ESPRESO internal error: exchange uniform DOFs.";
 	}
 
@@ -143,12 +142,12 @@ void UniformNodesFETIComposer::initDOFs()
 	// TODO: make it parallel
 	// parallelization is possible if node order will be kept as: boundary first!
 	// now we prefer generality
-	auto nranks = run::mesh->nodes->ranks->begin();
+	auto nranks = info::mesh->nodes->ranks->begin();
 	std::vector<esint> roffset(rBuffer.size());
-	for (esint n = 0; n < run::mesh->nodes->size; ++n, ++nranks) {
+	for (esint n = 0; n < info::mesh->nodes->size; ++n, ++nranks) {
 		esint noffset = 0;
 		for (auto r = nranks->begin(); r != nranks->end(); ++r) {
-			while (run::mesh->neighboursWithMe[noffset] < *r) {
+			while (info::mesh->neighboursWithMe[noffset] < *r) {
 				++noffset;
 			}
 
@@ -163,7 +162,7 @@ void UniformNodesFETIComposer::initDOFs()
 		DOFDistribution.push_back(DOFData.size());
 	}
 
-	std::vector<size_t> distribution = run::mesh->nodes->distribution, datadistribution(threads + 1);
+	std::vector<size_t> distribution = info::mesh->nodes->distribution, datadistribution(threads + 1);
 	for (size_t t = 1; t < threads; t++) {
 		++distribution[t];
 		datadistribution[t] = DOFDistribution[distribution[t]];
@@ -217,28 +216,28 @@ void UniformNodesFETIComposer::buildKPattern()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	_KPermutation.resize(run::mesh->elements->ndomains);
-	_RHSPermutation.resize(run::mesh->elements->ndomains);
+	_KPermutation.resize(info::mesh->elements->ndomains);
+	_RHSPermutation.resize(info::mesh->elements->ndomains);
 
-	run::data->K.resize(run::mesh->elements->ndomains);
-	run::data->M.resize(run::mesh->elements->ndomains);
-	run::data->f.resize(run::mesh->elements->ndomains);
-	run::data->R.resize(run::mesh->elements->ndomains);
-	run::data->primalSolution.resize(run::mesh->elements->ndomains);
-	for (esint d = 0; d < run::mesh->elements->ndomains; d++) {
-		run::data->K[d].rows = _domainDOFsSize[d];
-		run::data->K[d].cols = _domainDOFsSize[d];
-		run::data->f[d].resize(_domainDOFsSize[d]);
-		run::data->R[d].resize(_domainDOFsSize[d]);
+	data->K.resize(info::mesh->elements->ndomains);
+	data->M.resize(info::mesh->elements->ndomains);
+	data->f.resize(info::mesh->elements->ndomains);
+	data->R.resize(info::mesh->elements->ndomains);
+	data->primalSolution.resize(info::mesh->elements->ndomains);
+	for (esint d = 0; d < info::mesh->elements->ndomains; d++) {
+		data->K[d].rows = _domainDOFsSize[d];
+		data->K[d].cols = _domainDOFsSize[d];
+		data->f[d].resize(_domainDOFsSize[d]);
+		data->R[d].resize(_domainDOFsSize[d]);
 	}
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (esint d = run::mesh->elements->domainDistribution[t]; d != run::mesh->elements->domainDistribution[t + 1]; ++d) {
+		for (esint d = info::mesh->elements->domainDistribution[t]; d != info::mesh->elements->domainDistribution[t + 1]; ++d) {
 			MatrixType mtype = _provider.getMatrixType(d);
 
-			auto ebegin = run::mesh->elements->procNodes->cbegin() + run::mesh->elements->elementsDistribution[d];
-			auto eend = run::mesh->elements->procNodes->cbegin() + run::mesh->elements->elementsDistribution[d + 1];
+			auto ebegin = info::mesh->elements->procNodes->cbegin() + info::mesh->elements->elementsDistribution[d];
+			auto eend = info::mesh->elements->procNodes->cbegin() + info::mesh->elements->elementsDistribution[d + 1];
 
 			esint Ksize = 0, RHSsize = 0;
 			for (auto e = ebegin; e != eend; ++e) {
@@ -246,14 +245,14 @@ void UniformNodesFETIComposer::buildKPattern()
 				Ksize += getMatrixSize(e->size() * _DOFs, mtype);
 			}
 
-			for (size_t r = 0; r < run::mesh->boundaryRegions.size(); r++) {
+			for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
 				if (
-						run::mesh->boundaryRegions[r]->dimension &&
-						run::mesh->boundaryRegions[r]->eintervalsDistribution[d] < run::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]) {
+						info::mesh->boundaryRegions[r]->dimension &&
+						info::mesh->boundaryRegions[r]->eintervalsDistribution[d] < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]) {
 
-					esint begin = run::mesh->boundaryRegions[r]->eintervals[run::mesh->boundaryRegions[r]->eintervalsDistribution[d]].begin;
-					esint end = run::mesh->boundaryRegions[r]->eintervals[run::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1] - 1].end;
-					auto enodes = run::mesh->boundaryRegions[r]->procNodes->cbegin() + begin;
+					esint begin = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[d]].begin;
+					esint end = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1] - 1].end;
+					auto enodes = info::mesh->boundaryRegions[r]->procNodes->cbegin() + begin;
 
 					for (esint i = begin; i < end; ++i, ++enodes) {
 						RHSsize += enodes->size() * _DOFs;
@@ -273,7 +272,7 @@ void UniformNodesFETIComposer::buildKPattern()
 				esint *_RHS = RHSoffset;
 				for (auto n = enodes->begin(); n != enodes->end(); ++n, ++RHSoffset) {
 					auto DOFs = (_DOFMap->begin() + *n)->begin();
-					while (*DOFs != d + run::mesh->elements->firstDomain) {
+					while (*DOFs != d + info::mesh->elements->firstDomain) {
 						DOFs += 1 + _DOFs;
 					}
 					*RHSoffset = *(DOFs + 1);
@@ -291,14 +290,14 @@ void UniformNodesFETIComposer::buildKPattern()
 				Koffset += getMatrixSize(e->size() * _DOFs, mtype);
 			}
 
-			for (size_t r = 0; r < run::mesh->boundaryRegions.size(); r++) {
+			for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
 				if (
-						run::mesh->boundaryRegions[r]->dimension &&
-						run::mesh->boundaryRegions[r]->eintervalsDistribution[d] < run::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]) {
+						info::mesh->boundaryRegions[r]->dimension &&
+						info::mesh->boundaryRegions[r]->eintervalsDistribution[d] < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]) {
 
-					esint begin = run::mesh->boundaryRegions[r]->eintervals[run::mesh->boundaryRegions[r]->eintervalsDistribution[d]].begin;
-					esint end = run::mesh->boundaryRegions[r]->eintervals[run::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1] - 1].end;
-					auto enodes = run::mesh->boundaryRegions[r]->procNodes->cbegin() + begin;
+					esint begin = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[d]].begin;
+					esint end = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1] - 1].end;
+					auto enodes = info::mesh->boundaryRegions[r]->procNodes->cbegin() + begin;
 
 					for (esint i = begin; i < end; ++i, ++enodes) {
 						insert(enodes);
@@ -347,18 +346,18 @@ void UniformNodesFETIComposer::buildKPattern()
 
 			ROW.push_back(COL.size() + 1);
 
-			run::data->K[d].nnz = COL.size();
-			run::data->K[d].mtype = _provider.getMatrixType(d);
-			switch (run::data->K[d].mtype) {
-			case MatrixType::REAL_UNSYMMETRIC: run::data->K[d].type = 'G'; break;
-			default: run::data->K[d].type = 'S';
+			data->K[d].nnz = COL.size();
+			data->K[d].mtype = _provider.getMatrixType(d);
+			switch (data->K[d].mtype) {
+			case MatrixType::REAL_UNSYMMETRIC: data->K[d].type = 'G'; break;
+			default: data->K[d].type = 'S';
 			}
-			run::data->K[d].CSR_V_values.resize(COL.size());
-			run::data->K[d].CSR_I_row_indices.swap(ROW);
-			run::data->K[d].CSR_J_col_indices.swap(COL);
-			run::data->M[d] = run::data->K[d];
-			run::data->M[d].mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-			run::data->M[d].type = 'S';
+			data->K[d].CSR_V_values.resize(COL.size());
+			data->K[d].CSR_I_row_indices.swap(ROW);
+			data->K[d].CSR_J_col_indices.swap(COL);
+			data->M[d] = data->K[d];
+			data->M[d].mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+			data->M[d].type = 'S';
 		}
 	}
 
@@ -370,18 +369,18 @@ void UniformNodesFETIComposer::buildB1Pattern()
 {
 	esint doffset = 0;
 
-	run::data->B1.resize(run::mesh->elements->ndomains);
-	run::data->B1c.resize(run::mesh->elements->ndomains);
-	run::data->B1subdomainsMap.resize(run::mesh->elements->ndomains);
-	run::data->B1duplicity.resize(run::mesh->elements->ndomains);
-	run::data->LB.resize(run::mesh->elements->ndomains);
-	run::data->block.resize(3);
+	data->B1.resize(info::mesh->elements->ndomains);
+	data->B1c.resize(info::mesh->elements->ndomains);
+	data->B1subdomainsMap.resize(info::mesh->elements->ndomains);
+	data->B1duplicity.resize(info::mesh->elements->ndomains);
+	data->LB.resize(info::mesh->elements->ndomains);
+	data->block.resize(3);
 
 	auto dmap = _DOFMap->begin();
 	for (size_t i = 0, prev = 0; i < _dirichletMap.size(); prev = _dirichletMap[i++] / _DOFs) {
 		dmap += (_dirichletMap[i] / _DOFs) - prev;
 		for (auto d = dmap->begin(); d != dmap->end(); d += 1 + _DOFs) {
-			if (run::mesh->elements->firstDomain <= *d && *d < run::mesh->elements->firstDomain + run::mesh->elements->ndomains) {
+			if (info::mesh->elements->firstDomain <= *d && *d < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
 				++doffset;
 			}
 			if (!_configuration.redundant_lagrange) {
@@ -396,10 +395,10 @@ void UniformNodesFETIComposer::buildB1Pattern()
 	for (size_t i = 0, prev = 0; i < _dirichletMap.size(); prev = _dirichletMap[i++] / _DOFs) {
 		dmap += (_dirichletMap[i] / _DOFs) - prev;
 		for (auto d = dmap->begin(); d != dmap->end(); d += 1 + _DOFs) {
-			if (run::mesh->elements->firstDomain <= *d && *d < run::mesh->elements->firstDomain + run::mesh->elements->ndomains) {
-				run::data->B1[*d - run::mesh->elements->firstDomain].I_row_indices.push_back(doffset + 1);
-				run::data->B1[*d - run::mesh->elements->firstDomain].J_col_indices.push_back(*(d + _dirichletMap[i] % _DOFs + 1) + 1);
-				run::data->B1clustersMap.push_back({ doffset, environment->MPIrank });
+			if (info::mesh->elements->firstDomain <= *d && *d < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
+				data->B1[*d - info::mesh->elements->firstDomain].I_row_indices.push_back(doffset + 1);
+				data->B1[*d - info::mesh->elements->firstDomain].J_col_indices.push_back(*(d + _dirichletMap[i] % _DOFs + 1) + 1);
+				data->B1clustersMap.push_back({ doffset, environment->MPIrank });
 				++doffset;
 			}
 			if (!_configuration.redundant_lagrange) {
@@ -408,34 +407,34 @@ void UniformNodesFETIComposer::buildB1Pattern()
 		}
 	}
 
-	_domainDirichletSize.resize(run::mesh->elements->ndomains);
-	for (esint d = 0; d < run::mesh->elements->ndomains; ++d) {
-		run::data->B1[d].V_values.resize(run::data->B1[d].I_row_indices.size(), 1);
-		run::data->B1c[d].resize(run::data->B1[d].I_row_indices.size());
-		run::data->B1duplicity[d].resize(run::data->B1[d].I_row_indices.size(), 1);
-		_domainDirichletSize[d] = run::data->B1[d].I_row_indices.size();
+	_domainDirichletSize.resize(info::mesh->elements->ndomains);
+	for (esint d = 0; d < info::mesh->elements->ndomains; ++d) {
+		data->B1[d].V_values.resize(data->B1[d].I_row_indices.size(), 1);
+		data->B1c[d].resize(data->B1[d].I_row_indices.size());
+		data->B1duplicity[d].resize(data->B1[d].I_row_indices.size(), 1);
+		_domainDirichletSize[d] = data->B1[d].I_row_indices.size();
 	}
 
-	run::data->block[DataHolder::CONSTRAINT::DIRICHLET] = dsize;
+	data->block[DataHolder::CONSTRAINT::DIRICHLET] = dsize;
 
 	esint goffset = 0;
 
 	dmap = _DOFMap->begin();
-	auto nranks = run::mesh->nodes->ranks->begin();
+	auto nranks = info::mesh->nodes->ranks->begin();
 	auto exclude = _dirichletMap.begin();
-	std::vector<std::vector<esint> > sBuffer(run::mesh->neighbours.size()), rBuffer(run::mesh->neighbours.size());
+	std::vector<std::vector<esint> > sBuffer(info::mesh->neighbours.size()), rBuffer(info::mesh->neighbours.size());
 
 	auto send = [&] () {
 		esint noffset = 0;
 		for (auto r = nranks->begin() + 1; r != nranks->end(); ++r) {
-			while (run::mesh->neighbours[noffset] < *r) {
+			while (info::mesh->neighbours[noffset] < *r) {
 				++noffset;
 			}
 			sBuffer[noffset].push_back(goffset);
 		}
 	};
 
-	for (size_t n = 0; n < run::mesh->nodes->size; ++n, ++dmap, ++nranks) {
+	for (size_t n = 0; n < info::mesh->nodes->size; ++n, ++dmap, ++nranks) {
 		if (dmap->size() / (1 + _DOFs) > 1) {
 			for (int dof = 0; dof < _DOFs; ++dof) {
 				esint ndomains = dmap->size() / (1 + _DOFs);
@@ -461,54 +460,54 @@ void UniformNodesFETIComposer::buildB1Pattern()
 
 	esint gsize = Communication::exscan(goffset);
 
-	for (size_t n = 0; n < run::mesh->neighbours.size(); ++n) {
+	for (size_t n = 0; n < info::mesh->neighbours.size(); ++n) {
 		for (size_t i = 0; i < sBuffer[n].size(); ++i) {
 			sBuffer[n][i] += goffset;
 		}
 	}
 
-	if (!Communication::receiveLowerUnknownSize(sBuffer, rBuffer, run::mesh->neighbours)) {
+	if (!Communication::receiveLowerUnknownSize(sBuffer, rBuffer, info::mesh->neighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: exchange gluing offsets";
 	}
 
-	std::vector<esint> dDistribution = run::mesh->elements->gatherDomainsProcDistribution();
+	std::vector<esint> dDistribution = info::mesh->elements->gatherDomainsProcDistribution();
 
 	dmap = _DOFMap->begin();
-	nranks = run::mesh->nodes->ranks->begin();
+	nranks = info::mesh->nodes->ranks->begin();
 	exclude = _dirichletMap.begin();
 
 	auto push = [&] (esint d, esint lambda, esint dof, double value, esint domains) {
-		d -= run::mesh->elements->firstDomain;
-		run::data->B1[d].I_row_indices.push_back(lambda + 1);
-		run::data->B1[d].J_col_indices.push_back(dof + 1);
-		run::data->B1[d].V_values.push_back(value);
-		run::data->B1duplicity[d].push_back(1. / domains);
+		d -= info::mesh->elements->firstDomain;
+		data->B1[d].I_row_indices.push_back(lambda + 1);
+		data->B1[d].J_col_indices.push_back(dof + 1);
+		data->B1[d].V_values.push_back(value);
+		data->B1duplicity[d].push_back(1. / domains);
 	};
 
 	auto fill = [&] (esint d1, esint d2, esint lambda, esint dof1, esint dof2, esint domains) {
-		if (run::mesh->elements->firstDomain <= d1 && d1 < run::mesh->elements->firstDomain + run::mesh->elements->ndomains) {
+		if (info::mesh->elements->firstDomain <= d1 && d1 < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
 			push(d1, lambda, dof1, 1, domains);
 		}
-		if (run::mesh->elements->firstDomain <= d2 && d2 < run::mesh->elements->firstDomain + run::mesh->elements->ndomains) {
+		if (info::mesh->elements->firstDomain <= d2 && d2 < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
 			push(d2, lambda, dof2, -1, domains);
 		}
 		if (
-				(run::mesh->elements->firstDomain <= d1 && d1 < run::mesh->elements->firstDomain + run::mesh->elements->ndomains) ||
-				(run::mesh->elements->firstDomain <= d2 && d2 < run::mesh->elements->firstDomain + run::mesh->elements->ndomains)) {
+				(info::mesh->elements->firstDomain <= d1 && d1 < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) ||
+				(info::mesh->elements->firstDomain <= d2 && d2 < info::mesh->elements->firstDomain + info::mesh->elements->ndomains)) {
 
-			run::data->B1clustersMap.push_back({ lambda, environment->MPIrank });
+			data->B1clustersMap.push_back({ lambda, environment->MPIrank });
 
-			if (d1 <run::mesh->elements->firstDomain || run::mesh->elements->firstDomain + run::mesh->elements->ndomains <= d1) {
-				run::data->B1clustersMap.back().push_back(std::lower_bound(dDistribution.begin(), dDistribution.end(), d1 + 1) - dDistribution.begin() - 1);
+			if (d1 <info::mesh->elements->firstDomain || info::mesh->elements->firstDomain + info::mesh->elements->ndomains <= d1) {
+				data->B1clustersMap.back().push_back(std::lower_bound(dDistribution.begin(), dDistribution.end(), d1 + 1) - dDistribution.begin() - 1);
 			}
-			if (d2 <run::mesh->elements->firstDomain || run::mesh->elements->firstDomain + run::mesh->elements->ndomains <= d2) {
-				run::data->B1clustersMap.back().push_back(std::lower_bound(dDistribution.begin(), dDistribution.end(), d2 + 1) - dDistribution.begin() - 1);
+			if (d2 <info::mesh->elements->firstDomain || info::mesh->elements->firstDomain + info::mesh->elements->ndomains <= d2) {
+				data->B1clustersMap.back().push_back(std::lower_bound(dDistribution.begin(), dDistribution.end(), d2 + 1) - dDistribution.begin() - 1);
 			}
 		}
 	};
 
-	std::vector<esint> roffset(run::mesh->neighbours.size());
-	for (size_t n = 0; n < run::mesh->nodes->size; ++n, ++dmap, ++nranks) {
+	std::vector<esint> roffset(info::mesh->neighbours.size());
+	for (size_t n = 0; n < info::mesh->nodes->size; ++n, ++dmap, ++nranks) {
 		if (dmap->size() / (1 + _DOFs) > 1) {
 			for (int dof = 0; dof < _DOFs; ++dof) {
 				if (_configuration.redundant_lagrange) {
@@ -521,7 +520,7 @@ void UniformNodesFETIComposer::buildB1Pattern()
 				if (*nranks->begin() != environment->MPIrank) {
 					if (!_configuration.redundant_lagrange || exclude == _dirichletMap.end() || n * _DOFs + dof != *exclude) {
 						esint noffset = 0;
-						while (run::mesh->neighbours[noffset] < *nranks->begin()) {
+						while (info::mesh->neighbours[noffset] < *nranks->begin()) {
 							++noffset;
 						}
 						lambda = rBuffer[noffset][roffset[noffset]++];
@@ -551,21 +550,21 @@ void UniformNodesFETIComposer::buildB1Pattern()
 	}
 
 
-	for (esint d = 0; d < run::mesh->elements->ndomains; ++d) {
-		run::data->B1c[d].resize(run::data->B1[d].I_row_indices.size());
+	for (esint d = 0; d < info::mesh->elements->ndomains; ++d) {
+		data->B1c[d].resize(data->B1[d].I_row_indices.size());
 
-		run::data->B1[d].nnz = run::data->B1[d].I_row_indices.size();
-		run::data->B1[d].rows = dsize + gsize;
-		run::data->B1[d].cols = _domainDOFsSize[d];
-		run::data->LB[d].resize(run::data->B1[d].nnz, -std::numeric_limits<double>::infinity());
+		data->B1[d].nnz = data->B1[d].I_row_indices.size();
+		data->B1[d].rows = dsize + gsize;
+		data->B1[d].cols = _domainDOFsSize[d];
+		data->LB[d].resize(data->B1[d].nnz, -std::numeric_limits<double>::infinity());
 
-		run::data->B1subdomainsMap[d] = run::data->B1[d].I_row_indices;
-		for (size_t i = 0; i < run::data->B1subdomainsMap[d].size(); ++i) {
-			--run::data->B1subdomainsMap[d][i];
+		data->B1subdomainsMap[d] = data->B1[d].I_row_indices;
+		for (size_t i = 0; i < data->B1subdomainsMap[d].size(); ++i) {
+			--data->B1subdomainsMap[d][i];
 		}
 	}
 
-	run::data->block[DataHolder::CONSTRAINT::EQUALITY_CONSTRAINTS] = dsize + gsize;
+	data->block[DataHolder::CONSTRAINT::EQUALITY_CONSTRAINTS] = dsize + gsize;
 }
 
 
@@ -574,7 +573,7 @@ void UniformNodesFETIComposer::assemble(Matrices matrices, const SolverParameter
 	_controler.nextTime();
 
 	#pragma omp parallel for
-	for  (esint d = 0; d < run::mesh->elements->ndomains; d++) {
+	for  (esint d = 0; d < info::mesh->elements->ndomains; d++) {
 
 		size_t KIndex = 0, RHSIndex = 0;
 		double KReduction = 1, RHSReduction = 1; //_step.internalForceReduction;
@@ -585,18 +584,18 @@ void UniformNodesFETIComposer::assemble(Matrices matrices, const SolverParameter
 			filler.insert = [&] (size_t size) {
 				for (size_t r = 0; r < size; ++r, ++RHSIndex) {
 					if ((matrices & Matrices::f) && filler.fe.rows()) {
-						run::data->f[d][_RHSPermutation[d][RHSIndex]] += RHSReduction * filler.fe(r, 0);
+						data->f[d][_RHSPermutation[d][RHSIndex]] += RHSReduction * filler.fe(r, 0);
 					}
 					if ((matrices & Matrices::R) && filler.Re.rows()) {
-						run::data->R[d][_RHSPermutation[d][RHSIndex]] += filler.Re(r, 0);
+						data->R[d][_RHSPermutation[d][RHSIndex]] += filler.Re(r, 0);
 					}
 
 					for (size_t c = 0; c < size; ++c, ++KIndex) {
 						if ((matrices & Matrices::K) && filler.Ke.rows()) {
-							run::data->K[d].CSR_V_values[_KPermutation[d][KIndex]] += KReduction * filler.Ke(r, c);
+							data->K[d].CSR_V_values[_KPermutation[d][KIndex]] += KReduction * filler.Ke(r, c);
 						}
 						if ((matrices & Matrices::M) && filler.Me.rows()) {
-							run::data->M[d].CSR_V_values[_KPermutation[d][KIndex]] += filler.Me(r, c);
+							data->M[d].CSR_V_values[_KPermutation[d][KIndex]] += filler.Me(r, c);
 						}
 					}
 				}
@@ -605,18 +604,18 @@ void UniformNodesFETIComposer::assemble(Matrices matrices, const SolverParameter
 			filler.insert = [&] (size_t size) {
 				for (size_t r = 0; r < size; ++r, ++RHSIndex) {
 					if ((matrices & Matrices::f) && filler.fe.rows()) {
-						run::data->f[d][_RHSPermutation[d][RHSIndex]] += RHSReduction * filler.fe(r, 0);
+						data->f[d][_RHSPermutation[d][RHSIndex]] += RHSReduction * filler.fe(r, 0);
 					}
 					if ((matrices & Matrices::R) && filler.Re.rows()) {
-						run::data->R[d][_RHSPermutation[d][RHSIndex]] += filler.Re(r, 0);
+						data->R[d][_RHSPermutation[d][RHSIndex]] += filler.Re(r, 0);
 					}
 
 					for (size_t c = r; c < size; ++c, ++KIndex) {
 						if ((matrices & Matrices::K) && filler.Ke.rows()) {
-							run::data->K[d].CSR_V_values[_KPermutation[d][KIndex]] += KReduction * filler.Ke(r, c);
+							data->K[d].CSR_V_values[_KPermutation[d][KIndex]] += KReduction * filler.Ke(r, c);
 						}
 						if ((matrices & Matrices::M) && filler.Me.rows()) {
-							run::data->M[d].CSR_V_values[_KPermutation[d][KIndex]] += filler.Me(r, c);
+							data->M[d].CSR_V_values[_KPermutation[d][KIndex]] += filler.Me(r, c);
 						}
 					}
 				}
@@ -624,18 +623,18 @@ void UniformNodesFETIComposer::assemble(Matrices matrices, const SolverParameter
 		}
 
 		clearMatrices(matrices, d);
-		filler.begin = run::mesh->elements->elementsDistribution[d];
-		filler.end = run::mesh->elements->elementsDistribution[d + 1];
+		filler.begin = info::mesh->elements->elementsDistribution[d];
+		filler.end = info::mesh->elements->elementsDistribution[d + 1];
 
 		_controler.processElements(matrices, parameters, filler);
 
 		KReduction = parameters.internalForceReduction;
 
-		for (size_t r = 0; r < run::mesh->boundaryRegions.size(); r++) {
-			if (run::mesh->boundaryRegions[r]->distribution.size()) {
-				if (run::mesh->boundaryRegions[r]->eintervalsDistribution[d] < run::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]) {
-					filler.begin = run::mesh->boundaryRegions[r]->eintervals[run::mesh->boundaryRegions[r]->eintervalsDistribution[d]].begin;
-					filler.end = run::mesh->boundaryRegions[r]->eintervals[run::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1] - 1].end;
+		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
+			if (info::mesh->boundaryRegions[r]->distribution.size()) {
+				if (info::mesh->boundaryRegions[r]->eintervalsDistribution[d] < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]) {
+					filler.begin = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[d]].begin;
+					filler.end = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1] - 1].end;
 					_controler.processBoundary(matrices, parameters, r, filler);
 				}
 			}
@@ -648,14 +647,14 @@ void UniformNodesFETIComposer::setDirichlet()
 	std::vector<double> values(_dirichletMap.size());
 	_controler.dirichletValues(values);
 
-	std::vector<esint> doffset(run::mesh->elements->ndomains);
+	std::vector<esint> doffset(info::mesh->elements->ndomains);
 
 	auto dmap = _DOFMap->begin();
 	for (size_t i = 0, prev = 0; i < _dirichletMap.size(); prev = _dirichletMap[i++] / _DOFs) {
 		dmap += (_dirichletMap[i] / _DOFs) - prev;
 		for (auto d = dmap->begin(); d != dmap->end(); d += 1 + _DOFs) {
-			if (run::mesh->elements->firstDomain <= *d && *d < run::mesh->elements->firstDomain + run::mesh->elements->ndomains) {
-				run::data->B1c[*d - run::mesh->elements->firstDomain][doffset[*d - run::mesh->elements->firstDomain]++] = values[_dirichletPermutation[i]];
+			if (info::mesh->elements->firstDomain <= *d && *d < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
+				data->B1c[*d - info::mesh->elements->firstDomain][doffset[*d - info::mesh->elements->firstDomain]++] = values[_dirichletPermutation[i]];
 			}
 			if (!_configuration.redundant_lagrange) {
 				break;
@@ -673,25 +672,25 @@ void UniformNodesFETIComposer::synchronize()
 
 void UniformNodesFETIComposer::updateDuplicity()
 {
-	std::vector<std::vector<double> > diagonals(run::mesh->elements->ndomains);
+	std::vector<std::vector<double> > diagonals(info::mesh->elements->ndomains);
 	#pragma omp parallel for
-	for  (esint d = 0; d < run::mesh->elements->ndomains; d++) {
-		diagonals[d] = run::data->K[d].getDiagonal();
+	for  (esint d = 0; d < info::mesh->elements->ndomains; d++) {
+		diagonals[d] = data->K[d].getDiagonal();
 	}
 
-	std::vector<std::vector<double> > sBuffer(run::mesh->neighbours.size()), rBuffer(run::mesh->neighbours.size());
+	std::vector<std::vector<double> > sBuffer(info::mesh->neighbours.size()), rBuffer(info::mesh->neighbours.size());
 
 	auto dmap = _DOFMap->begin();
-	auto nranks = run::mesh->nodes->ranks->begin();
+	auto nranks = info::mesh->nodes->ranks->begin();
 	std::vector<double> buffer;
 
-	for (esint n = 0; n < run::mesh->nodes->size; ++n, ++dmap, ++nranks) {
+	for (esint n = 0; n < info::mesh->nodes->size; ++n, ++dmap, ++nranks) {
 		if (nranks->size() > 1) {
 			buffer.clear();
 			for (auto d = dmap->begin(); d != dmap->end(); d += 1 + _DOFs) {
-				if (run::mesh->elements->firstDomain <= *d && *d < run::mesh->elements->firstDomain + run::mesh->elements->ndomains) {
+				if (info::mesh->elements->firstDomain <= *d && *d < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
 					for (int dof = 0; dof < _DOFs; ++dof) {
-						buffer.push_back(diagonals[*d - run::mesh->elements->firstDomain][*(d + 1 + dof)]);
+						buffer.push_back(diagonals[*d - info::mesh->elements->firstDomain][*(d + 1 + dof)]);
 					}
 				}
 			}
@@ -699,7 +698,7 @@ void UniformNodesFETIComposer::updateDuplicity()
 			esint noffset = 0;
 			for (auto r = nranks->begin(); r != nranks->end(); ++r) {
 				if (*r != environment->MPIrank) {
-					while (run::mesh->neighbours[noffset] < *r) {
+					while (info::mesh->neighbours[noffset] < *r) {
 						++noffset;
 					}
 					sBuffer[noffset].insert(sBuffer[noffset].end(), buffer.begin(), buffer.end());
@@ -708,40 +707,40 @@ void UniformNodesFETIComposer::updateDuplicity()
 		}
 	}
 
-	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, run::mesh->neighbours)) {
+	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: exchange diagonal values";
 	}
 
 	dmap = _DOFMap->begin();
-	nranks = run::mesh->nodes->ranks->begin();
-	std::vector<esint> roffset(run::mesh->neighbours.size());
-	std::vector<esint> dDistribution = run::mesh->elements->gatherDomainsProcDistribution();
+	nranks = info::mesh->nodes->ranks->begin();
+	std::vector<esint> roffset(info::mesh->neighbours.size());
+	std::vector<esint> dDistribution = info::mesh->elements->gatherDomainsProcDistribution();
 	auto exclude = _dirichletMap.begin();
 
 	auto push = [&] (esint d1, esint d2, double v1, double v2, double sum) {
-		if (run::mesh->elements->firstDomain <= d1 && d1 < run::mesh->elements->firstDomain + run::mesh->elements->ndomains) {
-			run::data->B1duplicity[d1 - run::mesh->elements->firstDomain].push_back(v2 / sum);
+		if (info::mesh->elements->firstDomain <= d1 && d1 < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
+			data->B1duplicity[d1 - info::mesh->elements->firstDomain].push_back(v2 / sum);
 		}
-		if (run::mesh->elements->firstDomain <= d2 && d2 < run::mesh->elements->firstDomain + run::mesh->elements->ndomains) {
-			run::data->B1duplicity[d2 - run::mesh->elements->firstDomain].push_back(v1 / sum);
+		if (info::mesh->elements->firstDomain <= d2 && d2 < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
+			data->B1duplicity[d2 - info::mesh->elements->firstDomain].push_back(v1 / sum);
 		}
 	};
 
-	for (size_t d = 0; d < run::data->B1duplicity.size(); d++) {
-		run::data->B1duplicity[d].resize(_domainDirichletSize[d]);
+	for (size_t d = 0; d < data->B1duplicity.size(); d++) {
+		data->B1duplicity[d].resize(_domainDirichletSize[d]);
 	}
-	for (esint n = 0; n < run::mesh->nodes->size; ++n, ++dmap, ++nranks) {
+	for (esint n = 0; n < info::mesh->nodes->size; ++n, ++dmap, ++nranks) {
 		if (dmap->size() / (1 + _DOFs) > 1) {
 			for (int dof = 0; dof < _DOFs; ++dof) {
 				buffer.clear();
 
 				for (auto d = dmap->begin(); d != dmap->end(); d += 1 + _DOFs) {
-					if (run::mesh->elements->firstDomain <= *d && *d < run::mesh->elements->firstDomain + run::mesh->elements->ndomains) {
-						buffer.push_back(diagonals[*d - run::mesh->elements->firstDomain][*(d + 1 + dof)]);
+					if (info::mesh->elements->firstDomain <= *d && *d < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
+						buffer.push_back(diagonals[*d - info::mesh->elements->firstDomain][*(d + 1 + dof)]);
 					} else {
 						esint r = std::lower_bound(dDistribution.begin(), dDistribution.end(), *d + 1) - dDistribution.begin() - 1;
 						esint noffset = 0;
-						while (run::mesh->neighbours[noffset] < r) {
+						while (info::mesh->neighbours[noffset] < r) {
 							++noffset;
 						}
 						buffer.push_back(rBuffer[noffset][roffset[noffset]++]);
@@ -776,23 +775,23 @@ void UniformNodesFETIComposer::fillSolution()
 	std::vector<double> &solution = _controler.solution()->data;
 
 	std::vector<std::vector<std::vector<double> > > sBuffer(threads);
-	std::vector<std::vector<double> > rBuffer(run::mesh->neighbours.size());
+	std::vector<std::vector<double> > rBuffer(info::mesh->neighbours.size());
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		size_t i = run::mesh->nodes->distribution[t];
-		auto nranks = run::mesh->nodes->ranks->begin(t);
+		size_t i = info::mesh->nodes->distribution[t];
+		auto nranks = info::mesh->nodes->ranks->begin(t);
 
-		std::vector<std::vector<double> > tBuffer(run::mesh->neighbours.size());
+		std::vector<std::vector<double> > tBuffer(info::mesh->neighbours.size());
 
 		for (auto map = _DOFMap->begin(t); map != _DOFMap->end(t); ++map, ++i, ++nranks) {
 			for (int dof = 0; dof < _DOFs; ++dof) {
 				solution[i * _DOFs + dof] = 0;
 			}
 			for (auto d = map->begin(); d != map->end(); d += 1 + _DOFs) {
-				if (run::mesh->elements->firstDomain <= *d && *d < run::mesh->elements->firstDomain + run::mesh->elements->ndomains) {
+				if (info::mesh->elements->firstDomain <= *d && *d < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
 					for (int dof = 0; dof < _DOFs; ++dof) {
-						solution[i * _DOFs + dof] += run::data->primalSolution[*d - run::mesh->elements->firstDomain][*(d + 1 + dof)] / ((map->end() - map->begin()) / (1 + _DOFs));
+						solution[i * _DOFs + dof] += data->primalSolution[*d - info::mesh->elements->firstDomain][*(d + 1 + dof)] / ((map->end() - map->begin()) / (1 + _DOFs));
 					}
 				}
 			}
@@ -800,7 +799,7 @@ void UniformNodesFETIComposer::fillSolution()
 			esint noffset = 0;
 			for (auto r = nranks->begin(); r != nranks->end(); ++r) {
 				if (*r != environment->MPIrank) {
-					while (run::mesh->neighbours[noffset] < *r) {
+					while (info::mesh->neighbours[noffset] < *r) {
 						++noffset;
 					}
 
@@ -821,17 +820,17 @@ void UniformNodesFETIComposer::fillSolution()
 		rBuffer[n].resize(sBuffer[0][n].size());
 	}
 
-	if (!Communication::exchangeKnownSize(sBuffer[0], rBuffer, run::mesh->neighbours)) {
+	if (!Communication::exchangeKnownSize(sBuffer[0], rBuffer, info::mesh->neighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: synchronize solution.";
 	}
 
-	std::vector<esint> roffset(run::mesh->neighbours.size());
-	auto nranks = run::mesh->nodes->ranks->begin();
-	for (esint n = 0; n < run::mesh->nodes->size; ++n, ++nranks) {
+	std::vector<esint> roffset(info::mesh->neighbours.size());
+	auto nranks = info::mesh->nodes->ranks->begin();
+	for (esint n = 0; n < info::mesh->nodes->size; ++n, ++nranks) {
 		esint noffset = 0;
 		for (auto r = nranks->begin(); r != nranks->end(); ++r) {
 			if (*r != environment->MPIrank) {
-				while (run::mesh->neighbours[noffset] < *r) {
+				while (info::mesh->neighbours[noffset] < *r) {
 					++noffset;
 				}
 

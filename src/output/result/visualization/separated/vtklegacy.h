@@ -17,7 +17,7 @@ struct VTKLegacy: public SeparatedVisualization {
 	static double clusterShrinkRatio, domainShrinkRatio;
 
 protected:
-	VTKLegacy(const Mesh &mesh, const OutputConfiguration &configuration);
+	VTKLegacy(const Mesh &mesh);
 
 	void mesh(const std::string &name);
 	void solution(const std::string &name);
@@ -38,7 +38,7 @@ protected:
 
 struct VTKLegacyDebugInfo: public VTKLegacy {
 
-	VTKLegacyDebugInfo(const Mesh &mesh, const OutputConfiguration &configuration);
+	VTKLegacyDebugInfo(const Mesh &mesh);
 
 	static void dirichlet(const Mesh &mesh, const DataHolder &instance);
 	static void gluing(const Mesh &mesh, const DataHolder &instance);

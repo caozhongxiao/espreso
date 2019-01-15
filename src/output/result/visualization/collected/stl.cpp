@@ -12,8 +12,8 @@
 
 using namespace espreso;
 
-STL::STL(const std::string &name, const Mesh &mesh, const OutputConfiguration &configuration)
-: CollectedVisualization(mesh, configuration), _path(Logging::outputRoot() + "/"), _name(name)
+STL::STL(const std::string &name, const Mesh &mesh)
+: CollectedVisualization(mesh), _path(Logging::outputRoot() + "/"), _name(name)
 {
 
 }

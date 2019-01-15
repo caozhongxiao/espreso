@@ -1,5 +1,9 @@
 
+
 #include "monitoring.h"
+
+#include "esinfo/time.h"
+#include "esinfo/ecfinfo.h"
 
 #include "basis/containers/serializededata.h"
 #include "basis/logging/logging.h"
@@ -16,7 +20,6 @@
 #include "mesh/store/elementsregionstore.h"
 
 #include <iomanip>
-#include "globals/time.h"
 
 using namespace espreso;
 
@@ -39,15 +42,15 @@ std::string right(const std::string &value, size_t size)
 	return ret;
 }
 
-bool Monitoring::storeStep(const OutputConfiguration &configuration)
+bool Monitoring::storeStep()
 {
-	switch (configuration.monitors_store_frequency) {
+	switch (info::ecf->output.monitors_store_frequency) {
 	case OutputConfiguration::STORE_FREQUENCY::NEVER:
 		return false;
 	case OutputConfiguration::STORE_FREQUENCY::EVERY_TIMESTEP:
 		return true;
 	case OutputConfiguration::STORE_FREQUENCY::EVERY_NTH_TIMESTEP:
-		return time::substep % configuration.monitors_nth_stepping == 0;
+		return time::substep % info::ecf->output.monitors_nth_stepping == 0;
 	case OutputConfiguration::STORE_FREQUENCY::LAST_TIMESTEP:
 		return time::isLast();
 	default:
@@ -56,8 +59,8 @@ bool Monitoring::storeStep(const OutputConfiguration &configuration)
 }
 
 
-Monitoring::Monitoring(const Mesh &mesh, const OutputConfiguration &configuration)
-: ResultStoreBase(mesh), _configuration(configuration)
+Monitoring::Monitoring(const Mesh &mesh)
+: ResultStoreBase(mesh)
 {
 
 }
@@ -69,7 +72,7 @@ Monitoring::~Monitoring()
 
 void Monitoring::updateMesh()
 {
-	for (auto it = _configuration.monitoring.begin(); it != _configuration.monitoring.end(); ++it) {
+	for (auto it = info::ecf->output.monitoring.begin(); it != info::ecf->output.monitoring.end(); ++it) {
 		if (it->first <= 0) {
 			ESINFO(GLOBAL_ERROR) << "Invalid column index in monitoring.";
 		}
@@ -174,7 +177,7 @@ void Monitoring::updateMesh()
 		_statistics.resize(_statistics.size() + _nedata[i].first->names.size());
 	}
 
-	for (auto it = _configuration.monitoring.begin(); it != _configuration.monitoring.end(); ++it) {
+	for (auto it = info::ecf->output.monitoring.begin(); it != info::ecf->output.monitoring.end(); ++it) {
 		_monitors[it->first - 1].name = it->second.region;
 		_monitors[it->first - 1].property = it->second.property;
 		_monitors[it->first - 1].printSize = std::max(std::max((size_t)10, it->second.region.size()), it->second.property.size()) + 4;
@@ -255,7 +258,7 @@ void Monitoring::updateMesh()
 
 void Monitoring::updateSolution()
 {
-	if (!storeStep(_configuration)) {
+	if (!storeStep()) {
 		return;
 	}
 

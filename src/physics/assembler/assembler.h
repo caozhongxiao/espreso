@@ -65,6 +65,8 @@ struct Assembler {
 	double maxAbsValue(const std::vector<std::vector<double> > &v, const std::string &description);
 	double lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext);
 
+	virtual DataHolder* data() =0;
+
 	virtual ~Assembler() {};
 
 	SolverParameters parameters;
@@ -77,13 +79,15 @@ struct AssemblerInstance: public Assembler, public TController, public TComposer
 	AssemblerInstance(TPhysics &loadStep, int DOFs)
 	: TController(loadStep),
 	  TComposer(*this, *this, DOFs),
-	  TProvider(loadStep) {}
+	  TProvider(TComposer::data, loadStep) {}
 
 	template <typename TPhysics>
 	AssemblerInstance(TPhysics &loadStep, FETISolverConfiguration &solver, int DOFs)
 	: TController(loadStep),
 	  TComposer(*this, *this, solver, DOFs),
-	  TProvider(loadStep) {}
+	  TProvider(TComposer::data, loadStep) {}
+
+	DataHolder* data() { return TComposer::data; }
 
 	void init()
 	{

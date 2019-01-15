@@ -1,4 +1,5 @@
 
+#include "esinfo/ecfinfo.h"
 #include "meshpreprocessing.h"
 
 #include "mesh/mesh.h"
@@ -10,8 +11,6 @@
 #include "mesh/store/boundaryregionstore.h"
 
 #include "mesh/elements/element.h"
-
-#include "globals/run.h"
 
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
@@ -56,9 +55,9 @@ void MeshPreprocessing::reclusterize()
 
 	start("compute global dual graph");
 
-	bool separateRegions = run::ecf->decomposition.separate_regions;
-	bool separateMaterials = run::ecf->decomposition.separate_materials;
-	bool separateEtypes = run::ecf->decomposition.separate_etypes;
+	bool separateRegions = info::ecf->decomposition.separate_regions;
+	bool separateMaterials = info::ecf->decomposition.separate_materials;
+	bool separateEtypes = info::ecf->decomposition.separate_etypes;
 
 	if (separateRegions && _mesh->elements->regions == NULL) {
 		fillRegionMask();
@@ -129,7 +128,7 @@ void MeshPreprocessing::reclusterize()
 
 	finish("compute global dual graph");
 
-	MPISubset subset(run::ecf->decomposition.metis_options, MPITools::procs());
+	MPISubset subset(info::ecf->decomposition.metis_options, MPITools::procs());
 
 	start("ParMETIS::KWay");
 	esint edgecut = ParMETIS::call(
@@ -138,7 +137,7 @@ void MeshPreprocessing::reclusterize()
 	);
 	finish("ParMETIS::KWay");
 
-	if (run::ecf->decomposition.metis_options.refinement) {
+	if (info::ecf->decomposition.metis_options.refinement) {
 		start("ParMETIS::AdaptiveRepart");
 		esint prev = 2 * edgecut;
 		while (1.01 * edgecut < prev) {
@@ -196,7 +195,7 @@ void MeshPreprocessing::partitiate(esint parts)
 
 		start("METIS::KWay");
 		METIS::call(
-				run::ecf->decomposition.metis_options,
+				info::ecf->decomposition.metis_options,
 				_mesh->elements->size,
 				dualDist.data(), dualData.data(),
 				0, NULL, NULL,
@@ -288,7 +287,7 @@ void MeshPreprocessing::partitiate(esint parts)
 		#pragma omp parallel for
 		for (int p = 0; p < nextID; p++) {
 			METIS::call(
-					run::ecf->decomposition.metis_options,
+					info::ecf->decomposition.metis_options,
 					frames[p].size() - 1,
 					frames[p].data(), neighbors[p].data(),
 					0, NULL, NULL,

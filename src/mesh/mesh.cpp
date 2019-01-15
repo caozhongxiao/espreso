@@ -1,4 +1,5 @@
 
+#include "esinfo/ecfinfo.h"
 #include "mesh/mesh.h"
 
 #include "store/statisticsstore.h"
@@ -13,7 +14,6 @@
 
 #include "elements/elements.h"
 
-#include "globals/run.h"
 #include "basis/utilities/utils.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/parser.h"
@@ -46,7 +46,7 @@ Mesh::Mesh()
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	dimension = 0;
-	switch (run::ecf->physics) {
+	switch (info::ecf->physics) {
 	case PHYSICS::HEAT_TRANSFER_2D:
 	case PHYSICS::STRUCTURAL_MECHANICS_2D:
 	case PHYSICS::SHALLOW_WATER_2D:
@@ -174,15 +174,15 @@ void Mesh::update()
 	};
 
 	auto getPhysics = [&] () -> const PhysicsConfiguration& {
-		switch (run::ecf->physics) {
+		switch (info::ecf->physics) {
 		case PHYSICS::HEAT_TRANSFER_2D:
-			return run::ecf->heat_transfer_2d;
+			return info::ecf->heat_transfer_2d;
 		case PHYSICS::HEAT_TRANSFER_3D:
-			return run::ecf->heat_transfer_3d;
+			return info::ecf->heat_transfer_3d;
 		case PHYSICS::STRUCTURAL_MECHANICS_2D:
-			return run::ecf->structural_mechanics_2d;
+			return info::ecf->structural_mechanics_2d;
 		case PHYSICS::STRUCTURAL_MECHANICS_3D:
-			return run::ecf->structural_mechanics_3d;
+			return info::ecf->structural_mechanics_3d;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented physics.";
 			exit(0);
@@ -190,7 +190,7 @@ void Mesh::update()
 	};
 
 	auto is3D = [&] () {
-		switch (run::ecf->physics) {
+		switch (info::ecf->physics) {
 		case PHYSICS::HEAT_TRANSFER_2D:
 			return false;
 		case PHYSICS::HEAT_TRANSFER_3D:
@@ -207,24 +207,24 @@ void Mesh::update()
 
 	auto forEachSteps = [&] (std::function<bool(const LoadStepConfiguration &)> fnc) {
 		bool ret = false;
-		switch (run::ecf->physics) {
+		switch (info::ecf->physics) {
 		case PHYSICS::HEAT_TRANSFER_2D:
-			for (auto step = run::ecf->heat_transfer_2d.load_steps_settings.begin(); step != run::ecf->heat_transfer_2d.load_steps_settings.end(); ++step) {
+			for (auto step = info::ecf->heat_transfer_2d.load_steps_settings.begin(); step != info::ecf->heat_transfer_2d.load_steps_settings.end(); ++step) {
 				ret |= fnc(step->second);
 			}
 			break;
 		case PHYSICS::HEAT_TRANSFER_3D:
-			for (auto step = run::ecf->heat_transfer_3d.load_steps_settings.begin(); step != run::ecf->heat_transfer_3d.load_steps_settings.end(); ++step) {
+			for (auto step = info::ecf->heat_transfer_3d.load_steps_settings.begin(); step != info::ecf->heat_transfer_3d.load_steps_settings.end(); ++step) {
 				ret |= fnc(step->second);
 			}
 			break;
 		case PHYSICS::STRUCTURAL_MECHANICS_2D:
-			for (auto step = run::ecf->structural_mechanics_2d.load_steps_settings.begin(); step != run::ecf->structural_mechanics_2d.load_steps_settings.end(); ++step) {
+			for (auto step = info::ecf->structural_mechanics_2d.load_steps_settings.begin(); step != info::ecf->structural_mechanics_2d.load_steps_settings.end(); ++step) {
 				ret |= fnc(step->second);
 			}
 			break;
 		case PHYSICS::STRUCTURAL_MECHANICS_3D:
-			for (auto step = run::ecf->structural_mechanics_3d.load_steps_settings.begin(); step != run::ecf->structural_mechanics_3d.load_steps_settings.end(); ++step) {
+			for (auto step = info::ecf->structural_mechanics_3d.load_steps_settings.begin(); step != info::ecf->structural_mechanics_3d.load_steps_settings.end(); ++step) {
 				ret |= fnc(step->second);
 			}
 			break;
@@ -247,12 +247,12 @@ void Mesh::update()
 	ESINFO(OVERVIEW) << "Preprocess mesh data.";
 	materials.clear();
 	std::map<std::string, int> matindex;
-	for (auto mat = run::ecf->getPhysics()->materials.begin(); mat != run::ecf->getPhysics()->materials.end(); ++mat) {
+	for (auto mat = info::ecf->getPhysics()->materials.begin(); mat != info::ecf->getPhysics()->materials.end(); ++mat) {
 		materials.push_back(&mat->second);
 		matindex[mat->first] = materials.size() - 1;
 	}
 
-	for (auto mat = run::ecf->getPhysics()->material_set.begin(); mat != run::ecf->getPhysics()->material_set.end(); ++mat) {
+	for (auto mat = info::ecf->getPhysics()->material_set.begin(); mat != info::ecf->getPhysics()->material_set.end(); ++mat) {
 		ElementsRegionStore *region = eregion(mat->first);
 		if (matindex.find(mat->second) == matindex.end()) {
 			ESINFO(GLOBAL_ERROR) << "Unknown material '" << mat->second << "'.";
@@ -264,13 +264,13 @@ void Mesh::update()
 	}
 
 	if (
-			run::ecf->decomposition.separate_materials ||
-			run::ecf->decomposition.separate_regions ||
-			run::ecf->decomposition.separate_etypes) {
+			info::ecf->decomposition.separate_materials ||
+			info::ecf->decomposition.separate_regions ||
+			info::ecf->decomposition.separate_etypes) {
 		uniformDecomposition = false;
 	}
 
-	if (run::ecf->decomposition.balance_clusters) {
+	if (info::ecf->decomposition.balance_clusters) {
 		preprocessing->reclusterize();
 	}
 
@@ -281,15 +281,15 @@ void Mesh::update()
 		preprocessing->partitiate(preferedDomains);
 	}
 
-	if (run::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_2D || run::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {
+	if (info::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_2D || info::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {
 		const StructuralMechanicsConfiguration *sm;
 		int dimension;
-		if (run::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_2D) {
-			sm = &run::ecf->structural_mechanics_2d;
+		if (info::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_2D) {
+			sm = &info::ecf->structural_mechanics_2d;
 			dimension = 1;
 		}
-		if (run::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {
-			sm = &run::ecf->structural_mechanics_3d;
+		if (info::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {
+			sm = &info::ecf->structural_mechanics_3d;
 			dimension = 2;
 		}
 
@@ -300,15 +300,15 @@ void Mesh::update()
 		}
 	}
 
-	if (run::ecf->physics == PHYSICS::HEAT_TRANSFER_2D || run::ecf->physics == PHYSICS::HEAT_TRANSFER_3D) {
+	if (info::ecf->physics == PHYSICS::HEAT_TRANSFER_2D || info::ecf->physics == PHYSICS::HEAT_TRANSFER_3D) {
 		const HeatTransferConfiguration *ht;
 		int dimension;
-		if (run::ecf->physics == PHYSICS::HEAT_TRANSFER_2D) {
-			ht = &run::ecf->heat_transfer_2d;
+		if (info::ecf->physics == PHYSICS::HEAT_TRANSFER_2D) {
+			ht = &info::ecf->heat_transfer_2d;
 			dimension = 1;
 		}
-		if (run::ecf->physics == PHYSICS::HEAT_TRANSFER_3D) {
-			ht = &run::ecf->heat_transfer_3d;
+		if (info::ecf->physics == PHYSICS::HEAT_TRANSFER_3D) {
+			ht = &info::ecf->heat_transfer_3d;
 			dimension = 2;
 		}
 
@@ -352,7 +352,7 @@ void Mesh::update()
 		}
 	}
 
-	if (is3D() && run::ecf->output.format == OutputConfiguration::FORMAT::STL_SURFACE) {
+	if (is3D() && info::ecf->output.format == OutputConfiguration::FORMAT::STL_SURFACE) {
 		preprocessing->computeBodiesSurface();
 		preprocessing->triangularizeSurface(surface);
 	}
@@ -371,7 +371,7 @@ void Mesh::update()
 		preprocessing->computeCornerNodes();
 	}
 
-	if (run::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_2D || run::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {
+	if (info::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_2D || info::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {
 		if (forEachSteps([] (const LoadStepConfiguration &step) {
 			return step.solver == LoadStepConfiguration::SOLVER::FETI && step.feti.regularization == FETI_REGULARIZATION::ANALYTIC;
 		})) {
@@ -383,9 +383,9 @@ void Mesh::update()
 		}
 	}
 
-	if (run::ecf->mesh_morphing.type == MORPHING_TYPE::RBF) {
-		for (auto it = run::ecf->mesh_morphing.rbf.begin(); it != run::ecf->mesh_morphing.rbf.end(); ++it) {
-			switch (run::ecf->physics) {
+	if (info::ecf->mesh_morphing.type == MORPHING_TYPE::RBF) {
+		for (auto it = info::ecf->mesh_morphing.rbf.begin(); it != info::ecf->mesh_morphing.rbf.end(); ++it) {
+			switch (info::ecf->physics) {
 			case PHYSICS::HEAT_TRANSFER_2D:
 				preprocessing->morphRBF(it->first, it->second, 2);
 				break;
@@ -405,7 +405,7 @@ void Mesh::update()
 		}
 	}
 
-	run::ecf->forEachParameters([&] (const ECFParameter *parameter) {
+	info::ecf->forEachParameters([&] (const ECFParameter *parameter) {
 		if (parameter->metadata.regionMap != NULL) {
 			preprocessing->computeRegionsIntersection(*parameter->metadata.regionMap);
 		}

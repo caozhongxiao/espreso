@@ -1,11 +1,10 @@
 
+#include "esinfo/ecfinfo.h"
 #include "hyprewrapper.h"
 
 #include "basis/logging/logging.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
-
-#include "globals/run.h"
 
 #include "config/ecf/root.h"
 
@@ -175,7 +174,7 @@ void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, 
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
 	}
 
-	if (run::ecf->environment.print_matrices) {
+	if (info::ecf->environment.print_matrices) {
 		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "STORE HYPRE SYSTEM";
 		{
 			std::string prefix = Logging::prepareFile("HYPRE.K");
@@ -197,7 +196,7 @@ void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, 
 
 	ESINFO(CONVERGENCE) << "Final Relative Residual Norm " << norm << " in " << iterations << " iteration.";
 
-	if (run::ecf->environment.print_matrices) {
+	if (info::ecf->environment.print_matrices) {
 		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "STORE HYPRE SYSTEM SOLUTION";
 		std::string prefix = Logging::prepareFile("HYPRE.x");
 		HYPRE_IJVectorPrint(data._data->x, prefix.c_str());

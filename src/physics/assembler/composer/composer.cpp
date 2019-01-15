@@ -1,11 +1,10 @@
 
+#include "esinfo/meshinfo.h"
+#include "physics/assembler/dataholder.h"
 #include "composer.h"
 
 #include "physics/assembler/controllers/controller.h"
 
-#include "physics/dataholder.h"
-
-#include "globals/run.h"
 #include "basis/matrices/matrixtype.h"
 
 #include "mesh/mesh.h"
@@ -13,13 +12,17 @@
 #include "solver/generic/SparseMatrix.h"
 
 
-
 using namespace espreso;
 
 Composer::Composer(Controler &controler)
 : _controler(controler), _DOFMap(NULL)
 {
+	data = new DataHolder();
+}
 
+Composer::~Composer()
+{
+	delete data;
 }
 
 void Composer::initData()
@@ -40,7 +43,7 @@ void Composer::parametersChanged()
 void Composer::processSolution()
 {
 	_controler.processSolution();
-	run::storeSolution();
+	info::storeSolution();
 }
 
 void Composer::insertKPattern(IJ *target, esint *begin, esint *end, MatrixType mtype)
@@ -74,24 +77,24 @@ void Composer::insertKPattern(IJ *target, esint *begin, esint *end, MatrixType m
 void Composer::clearMatrices(Matrices matrices, esint domain)
 {
 	if (matrices & Matrices::K) {
-		std::fill(run::data->K[domain].CSR_V_values.begin(), run::data->K[domain].CSR_V_values.end(), 0);
+		std::fill(data->K[domain].CSR_V_values.begin(), data->K[domain].CSR_V_values.end(), 0);
 	}
 	if (matrices & Matrices::M) {
-		std::fill(run::data->M[domain].CSR_V_values.begin(), run::data->M[domain].CSR_V_values.end(), 0);
+		std::fill(data->M[domain].CSR_V_values.begin(), data->M[domain].CSR_V_values.end(), 0);
 	}
 	if (matrices & Matrices::f) {
-		std::fill(run::data->f[domain].begin(), run::data->f[domain].end(), 0);
+		std::fill(data->f[domain].begin(), data->f[domain].end(), 0);
 	}
 	if (matrices & Matrices::R) {
-		std::fill(run::data->R[domain].begin(), run::data->R[domain].end(), 0);
+		std::fill(data->R[domain].begin(), data->R[domain].end(), 0);
 	}
 }
 
 void Composer::keepK()
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < run::mesh->elements->ndomains; d++) {
-		run::data->origK[d] = run::data->K[d];
+	for (size_t d = 0; d < info::mesh->elements->ndomains; d++) {
+		data->origK[d] = data->K[d];
 	}
 }
 

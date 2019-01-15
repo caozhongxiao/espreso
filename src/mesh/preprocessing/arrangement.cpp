@@ -1,4 +1,5 @@
 
+#include <config/holders/regionmap.h>
 #include "meshpreprocessing.h"
 
 #include "mesh/mesh.h"
@@ -19,8 +20,6 @@
 #include "basis/logging/logging.h"
 
 #include "config/ecf/environment.h"
-#include "config/regionmap.h"
-
 #include <algorithm>
 #include <numeric>
 #include <cstring>

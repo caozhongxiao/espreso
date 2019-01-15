@@ -1,6 +1,7 @@
 
 #include "resultstore.h"
 
+#include "esinfo/ecfinfo.h"
 #include "config/ecf/environment.h"
 #include "config/ecf/output.h"
 #include "basis/logging/logging.h"
@@ -32,7 +33,7 @@ void ResultStoreBase::createOutputDirectory()
 	Esutils::createDirectory({ Logging::outputRoot(), _directory });
 }
 
-ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const OutputConfiguration &configuration)
+ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh)
 {
 	if (_asyncStore != NULL) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: try to create multiple ASYNC instances.";
@@ -44,14 +45,14 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 	_asyncStore->storeProcesses = 0;
 	_asyncStore->computeProcesses = environment->MPIsize;
 
-	_asyncStore->_direct = new DirectExecutor(mesh, configuration);
+	_asyncStore->_direct = new DirectExecutor(mesh);
 	ResultStoreExecutor *executor = _asyncStore->_direct;
-	switch (configuration.mode) {
+	switch (info::ecf->output.mode) {
 	case OutputConfiguration::MODE::SYNC:
 		break;
 	case OutputConfiguration::MODE::THREAD:
 		_dispatcher = new async::Dispatcher();
-		_asyncStore->_async = new AsyncStore(mesh, configuration);
+		_asyncStore->_async = new AsyncStore(mesh);
 		async::Config::setMode(async::THREAD);
 		_asyncStore->storeThreads = 1;
 		executor = _asyncStore->_async;
@@ -73,27 +74,27 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh, const Outpu
 	}
 
 	// TODO: optimize
-	if (configuration.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
-		switch (configuration.format) {
+	if (info::ecf->output.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
+		switch (info::ecf->output.format) {
 		case OutputConfiguration::FORMAT::ENSIGHT:
-			executor->addResultStore(new EnSightWithDecomposition(Logging::name, executor->mesh(), configuration));
+			executor->addResultStore(new EnSightWithDecomposition(Logging::name, executor->mesh()));
 			break;
 		case OutputConfiguration::FORMAT::STL_SURFACE:
-			executor->addResultStore(new STL(Logging::name, mesh, configuration));
+			executor->addResultStore(new STL(Logging::name, mesh));
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement the selected output format.";
 		}
 
 	}
-	if (configuration.monitors_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER && configuration.monitoring.size()) {
-		_asyncStore->_direct->addResultStore(new Monitoring(mesh, configuration));
+	if (info::ecf->output.monitors_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER && info::ecf->output.monitoring.size()) {
+		_asyncStore->_direct->addResultStore(new Monitoring(mesh));
 	}
-	if (configuration.catalyst) {
-		_asyncStore->_direct->addResultStore(new InSitu(mesh, configuration));
+	if (info::ecf->output.catalyst) {
+		_asyncStore->_direct->addResultStore(new InSitu(mesh));
 	}
-	if (configuration.debug) {
-		_asyncStore->_direct->addResultStore(new VTKLegacyDebugInfo(mesh, configuration));
+	if (info::ecf->output.debug) {
+		_asyncStore->_direct->addResultStore(new VTKLegacyDebugInfo(mesh));
 	}
 
 	if (!_asyncStore->_direct->hasStore()) {

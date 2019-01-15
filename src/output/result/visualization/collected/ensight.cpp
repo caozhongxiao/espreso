@@ -1,7 +1,6 @@
 
+#include "esinfo/time.h"
 #include "ensight.h"
-
-#include "globals/time.h"
 
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
@@ -26,8 +25,8 @@
 
 using namespace espreso;
 
-EnSight::EnSight(const std::string &name, const Mesh &mesh, const OutputConfiguration &configuration)
-: CollectedVisualization(mesh, configuration), _path(Logging::outputRoot() + "/"), _name(name), _variableCounter(0)
+EnSight::EnSight(const std::string &name, const Mesh &mesh)
+: CollectedVisualization(mesh), _path(Logging::outputRoot() + "/"), _name(name), _variableCounter(0)
 {
 	_caseheader << "#\n";
 	_caseheader << "# ESPRESO solution\n";
@@ -379,7 +378,7 @@ void EnSight::storeDecomposition()
 
 void EnSight::updateSolution()
 {
-	if (!Visualization::storeStep(_configuration)) {
+	if (!Visualization::storeStep()) {
 		return;
 	}
 

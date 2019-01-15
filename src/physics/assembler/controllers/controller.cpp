@@ -1,14 +1,13 @@
 
+#include <config/holders/expression.h>
+#include "esinfo/meshinfo.h"
 #include "controller.h"
 
 #include "config/ecf/environment.h"
 
-#include "globals/run.h"
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
 #include "basis/evaluator/evaluator.h"
-#include "config/expression.h"
-
 #include "mesh/mesh.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
@@ -20,7 +19,7 @@ using namespace espreso;
 Controler::Controler()
 : _dirichletSize(0)
 {
-	_nDistribution = run::mesh->elements->procNodes->datatarray().distribution();
+	_nDistribution = info::mesh->elements->procNodes->datatarray().distribution();
 }
 
 Controler::Parameter::~Parameter()
@@ -38,7 +37,7 @@ bool Controler::setDefault(const std::map<std::string, ECFExpression> &values, d
 	if (values.size() > 1) {
 		return false;
 	}
-	if (run::mesh->onAllElements(values.begin()->first) && values.begin()->second.evaluator->isConstant()) {
+	if (info::mesh->onAllElements(values.begin()->first) && values.begin()->second.evaluator->isConstant()) {
 		values.begin()->second.evaluator->evalVector(1, 0, NULL, NULL, 0, &defaultValue);
 		return true;
 	}
@@ -53,7 +52,7 @@ bool Controler::setDefault(const std::map<std::string, ECFExpressionVector> &val
 	if (values.size() > 1) {
 		return false;
 	}
-	if (run::mesh->onAllElements(values.begin()->first)) {
+	if (info::mesh->onAllElements(values.begin()->first)) {
 		if (
 				values.begin()->second.x.evaluator->isConstant() &&
 				values.begin()->second.y.evaluator->isConstant() &&
@@ -78,11 +77,11 @@ void Controler::updateERegions(
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (auto it = settings.begin(); it != settings.end(); ++it) {
-			ElementsRegionStore *region = run::mesh->eregion(it->first);
+			ElementsRegionStore *region = info::mesh->eregion(it->first);
 			it->second.evaluator->evalFiltered(
 					region->elements->datatarray().size(t),
 					region->elements->datatarray().begin(t),
-					run::mesh->elements->procNodes->boundarytarray().begin(),
+					info::mesh->elements->procNodes->boundarytarray().begin(),
 					csize, cbegin, tbegin, time, data.data()
 			);
 		}
@@ -99,24 +98,24 @@ void Controler::updateERegions(
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (auto it = settings.begin(); it != settings.end(); ++it) {
-			ElementsRegionStore *region = run::mesh->eregion(it->first);
+			ElementsRegionStore *region = info::mesh->eregion(it->first);
 			it->second.x.evaluator->evalFiltered(
 					region->elements->datatarray().size(t), csize,
 					region->elements->datatarray().begin(t),
-					run::mesh->elements->procNodes->boundarytarray().begin(),
+					info::mesh->elements->procNodes->boundarytarray().begin(),
 					csize, cbegin, tbegin, time, data.data() + 0
 			);
 			it->second.y.evaluator->evalFiltered(
 					region->elements->datatarray().size(t), csize,
 					region->elements->datatarray().begin(t),
-					run::mesh->elements->procNodes->boundarytarray().begin(),
+					info::mesh->elements->procNodes->boundarytarray().begin(),
 					csize, cbegin, tbegin, time, data.data() + 1
 			);
 			if (csize == 3) {
 				it->second.z.evaluator->evalFiltered(
 						region->elements->datatarray().size(t), csize,
 						region->elements->datatarray().begin(t),
-						run::mesh->elements->procNodes->boundarytarray().begin(),
+						info::mesh->elements->procNodes->boundarytarray().begin(),
 						csize, cbegin, tbegin, time, data.data() + 2
 				);
 			}
@@ -147,11 +146,11 @@ void Controler::updateBRegions(
 void Controler::averageNodeInitilization(tarray<double> &initData, std::vector<double> &averagedData)
 {
 	auto i = initData.begin();
-	for (auto n = run::mesh->elements->procNodes->datatarray().cbegin(); n != run::mesh->elements->procNodes->datatarray().cend(); ++n, ++i) {
+	for (auto n = info::mesh->elements->procNodes->datatarray().cbegin(); n != info::mesh->elements->procNodes->datatarray().cend(); ++n, ++i) {
 		averagedData[*n] += *i;
 	}
 
-	auto &nelements = run::mesh->nodes->elements->boundarytarray();
+	auto &nelements = info::mesh->nodes->elements->boundarytarray();
 	for (size_t i = 0; i < averagedData.size(); i++) {
 		averagedData[i] /= nelements[i + 1] - nelements[i];
 	}
@@ -163,9 +162,9 @@ void Controler::nodeValuesToElements(int dimension, tarray<double> &nodeData, st
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		size_t noffset = run::mesh->elements->procNodes->cbegin(t)->begin() - run::mesh->elements->procNodes->cbegin()->begin();
-		size_t eoffset = run::mesh->elements->distribution[t];
-		for (auto enodes = run::mesh->elements->procNodes->cbegin(t); enodes != run::mesh->elements->procNodes->cend(t); ++enodes, ++eoffset) {
+		size_t noffset = info::mesh->elements->procNodes->cbegin(t)->begin() - info::mesh->elements->procNodes->cbegin()->begin();
+		size_t eoffset = info::mesh->elements->distribution[t];
+		for (auto enodes = info::mesh->elements->procNodes->cbegin(t); enodes != info::mesh->elements->procNodes->cend(t); ++enodes, ++eoffset) {
 			for (int d = 0; d < dimension; d++) {
 				double sum = 0;
 				for (auto n = enodes->begin(); n != enodes->end(); ++n, ++noffset) {

@@ -14,7 +14,7 @@ class SparseMatrix;
 class FETIProvider: public Provider {
 
 public:
-	FETIProvider(LoadStepConfiguration &configuration);
+	FETIProvider(DataHolder *data, LoadStepConfiguration &configuration);
 
 	virtual MatrixType getMatrixType() const =0;
 	virtual MatrixType getMatrixType(esint domain) const =0;

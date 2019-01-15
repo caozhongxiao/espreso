@@ -5,8 +5,8 @@
 
 using namespace espreso;
 
-StructuralMechanicsHYPREProvider::StructuralMechanicsHYPREProvider(StructuralMechanicsLoadStepConfiguration &configuration)
-: HYPREProvider(configuration), _configuration(configuration)
+StructuralMechanicsHYPREProvider::StructuralMechanicsHYPREProvider(DataHolder *data, StructuralMechanicsLoadStepConfiguration &configuration)
+: HYPREProvider(data, configuration), _configuration(configuration)
 {
 
 }

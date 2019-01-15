@@ -26,7 +26,7 @@ using std::vector;
 using std::map;
 using std::make_pair;
 
-#include "globals/run.h"
+#include "esinfo/meshinfo.h"
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
 #include "basis/logging/logging.h"
@@ -81,7 +81,7 @@ public:
 
 	void init() {
 
-		numClusters 							= 1 + *std::max_element(run::mesh->elements->clusters.begin(), run::mesh->elements->clusters.end());
+		numClusters 							= 1 + *std::max_element(info::mesh->elements->clusters.begin(), info::mesh->elements->clusters.end());
 		number_of_subdomains_per_supercluster 	= instance->K.size();
 
 		x_prim_cluster1.resize( number_of_subdomains_per_supercluster );
@@ -167,8 +167,8 @@ public:
 
 			esint number_of_subdomains_per_cluster = 0;
 			std::vector<esint> domain_list;
-			for (size_t i = 0; i < run::mesh->elements->clusters.size(); i++) {
-				if (run::mesh->elements->clusters[i] == c) {
+			for (size_t i = 0; i < info::mesh->elements->clusters.size(); i++) {
+				if (info::mesh->elements->clusters[i] == c) {
 					number_of_subdomains_per_cluster++;
 					domain_list.push_back(i);
 				}
@@ -211,7 +211,7 @@ public:
 
 		// Setup communication layer of the supercluster
 		MPIrank   = environment->MPIrank;
-		my_neighs = std::vector<esint>(run::mesh->neighbours.begin(), run::mesh->neighbours.end());
+		my_neighs = std::vector<esint>(info::mesh->neighbours.begin(), info::mesh->neighbours.end());
 		SetupCommunicationLayer();
 
 

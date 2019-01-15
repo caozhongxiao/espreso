@@ -1,6 +1,8 @@
 
+#include "physics/assembler/dataholder.h"
 #include "loadstepiterator.h"
-#include "dataholder.h"
+#include "esinfo/time.h"
+#include "esinfo/ecfinfo.h"
 
 #include "assembler/assembler.h"
 #include "solver/timestep/linear.h"
@@ -21,10 +23,7 @@
 #include "assembler/provider/feti/structuralmechanics2d.fetiprovider.h"
 #include "assembler/provider/feti/structuralmechanics3d.fetiprovider.h"
 
-#include "globals/run.h"
-#include "globals/time.h"
 #include "basis/logging/logging.h"
-#include "config/ecf/root.h"
 
 #include "linearsolver/multigrid/multigrid.h"
 #include "solver/generic/FETISolver.h"
@@ -34,13 +33,13 @@
 
 using namespace espreso;
 
-static LinearSolver* getLinearSolver(LoadStepConfiguration &loadStep)
+static LinearSolver* getLinearSolver(LoadStepConfiguration &loadStep, DataHolder *data)
 {
 	switch (loadStep.solver) {
 	case LoadStepConfiguration::SOLVER::FETI:
-		return new FETISolver(run::data, loadStep.feti);
+		return new FETISolver(data, loadStep.feti);
 	case LoadStepConfiguration::SOLVER::MULTIGRID:
-		return new MultigridSolver(loadStep.multigrid);
+		return new MultigridSolver(data, loadStep.multigrid);
 	default:
 		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
 		return NULL;
@@ -130,20 +129,20 @@ static LoadStepSolver* getLoadStepSolver(StructuralMechanicsLoadStepConfiguratio
 LoadStepIterator::LoadStepIterator()
 : _loadStepSolver(NULL), _timeStepSolver(NULL), _assembler(NULL), _linearSolver(NULL)
 {
-	run::data = new DataHolder();
+
 }
 
 bool LoadStepIterator::next()
 {
-	switch (run::ecf->physics) {
+	switch (info::ecf->physics) {
 	case PHYSICS::HEAT_TRANSFER_2D:
-		return next(run::ecf->heat_transfer_2d);
+		return next(info::ecf->heat_transfer_2d);
 	case PHYSICS::HEAT_TRANSFER_3D:
-		return next(run::ecf->heat_transfer_3d);
+		return next(info::ecf->heat_transfer_3d);
 	case PHYSICS::STRUCTURAL_MECHANICS_2D:
-		return next(run::ecf->structural_mechanics_2d);
+		return next(info::ecf->structural_mechanics_2d);
 	case PHYSICS::STRUCTURAL_MECHANICS_3D:
-		return next(run::ecf->structural_mechanics_3d);
+		return next(info::ecf->structural_mechanics_3d);
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown physics.";
 	}
@@ -155,13 +154,13 @@ template <typename TPhysics>
 bool LoadStepIterator::next(TPhysics &configuration)
 {
 	if (time::step < configuration.load_steps) {
-		_linearSolver = getLinearSolver(configuration.load_steps_settings.at(time::step + 1));
 		_assembler = getAssembler(configuration.load_steps_settings.at(time::step + 1), configuration.dimension);
+		_linearSolver = getLinearSolver(configuration.load_steps_settings.at(time::step + 1), _assembler->data());
 		_timeStepSolver = getTimeStepSolver(configuration.load_steps_settings.at(time::step + 1), *_assembler, *_linearSolver);
 		_loadStepSolver = getLoadStepSolver(configuration.load_steps_settings.at(time::step + 1), *_assembler, *_timeStepSolver);
 
 		_assembler->init();
-		run::storeMesh();
+		info::storeMesh();
 		_loadStepSolver->run();
 	}
 

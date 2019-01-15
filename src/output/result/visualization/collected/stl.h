@@ -13,7 +13,7 @@ namespace espreso {
 class Mesh;
 
 struct STL: public CollectedVisualization {
-	STL(const std::string &name, const Mesh &mesh, const OutputConfiguration &configuration);
+	STL(const std::string &name, const Mesh &mesh);
 	~STL();
 
 	void updateMesh();

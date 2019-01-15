@@ -1,9 +1,10 @@
 
+#include "esinfo/meshinfo.h"
+#include "physics/assembler/dataholder.h"
 #include "vtklegacy.h"
 
 #include "output/result/visualization/vtkwritter.h"
 
-#include "globals/run.h"
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/utils.h"
@@ -28,21 +29,20 @@
 #include <fstream>
 #include <algorithm>
 #include <numeric>
-#include "physics/dataholder.h"
 
 using namespace espreso;
 
 double VTKLegacy::clusterShrinkRatio = 0.95;
 double VTKLegacy::domainShrinkRatio = 0.9;
 
-VTKLegacyDebugInfo::VTKLegacyDebugInfo(const Mesh &mesh, const OutputConfiguration &configuration)
-: VTKLegacy(mesh, configuration)
+VTKLegacyDebugInfo::VTKLegacyDebugInfo(const Mesh &mesh)
+: VTKLegacy(mesh)
 {
 	_path = Esutils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" });
 }
 
-VTKLegacy::VTKLegacy(const Mesh &mesh, const OutputConfiguration &configuration)
-: SeparatedVisualization(mesh, configuration)
+VTKLegacy::VTKLegacy(const Mesh &mesh)
+: SeparatedVisualization(mesh)
 {
 
 }

@@ -1,9 +1,8 @@
 
+#include "esinfo/meshinfo.h"
+#include "physics/assembler/dataholder.h"
+#include "physics/assembler/composer/composer.h"
 #include "structuralmechanics2d.fetiprovider.h"
-
-#include "physics/dataholder.h"
-
-#include "globals/run.h"
 
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/matrixtype.h"
@@ -22,8 +21,8 @@
 using namespace espreso;
 
 
-StructuralMechanics2DFETIProvider::StructuralMechanics2DFETIProvider(StructuralMechanicsLoadStepConfiguration &configuration)
-: StructuralMechanicsFETIProvider(configuration)
+StructuralMechanics2DFETIProvider::StructuralMechanics2DFETIProvider(DataHolder *data, StructuralMechanicsLoadStepConfiguration &configuration)
+: StructuralMechanicsFETIProvider(data, configuration)
 {
 
 }
@@ -32,52 +31,52 @@ void StructuralMechanics2DFETIProvider::analyticRegularization(esint domain, boo
 {
 	Point center; size_t np; double norm;
 	if (ortogonalCluster) {
-		center = _cCenter[run::mesh->elements->clusters[domain]];
-		np = _cNp[run::mesh->elements->clusters[domain]];
-		norm = _cNorm[run::mesh->elements->clusters[domain]].x;
+		center = _cCenter[info::mesh->elements->clusters[domain]];
+		np = _cNp[info::mesh->elements->clusters[domain]];
+		norm = _cNorm[info::mesh->elements->clusters[domain]].x;
 	} else {
 		center = _dCenter[domain];
 		np = _dNp[domain];
 		norm = _dNorm[domain].x;
 	}
 
-	run::data->N1[domain].rows = run::data->K[domain].rows;
-	run::data->N1[domain].cols = 3;
-	run::data->N1[domain].nnz = run::data->N1[domain].rows * run::data->N1[domain].cols;
-	run::data->N1[domain].type = 'G';
+	_data->N1[domain].rows = _data->K[domain].rows;
+	_data->N1[domain].cols = 3;
+	_data->N1[domain].nnz = _data->N1[domain].rows * _data->N1[domain].cols;
+	_data->N1[domain].type = 'G';
 
-	run::data->N1[domain].dense_values.reserve(run::data->N1[domain].nnz);
+	_data->N1[domain].dense_values.reserve(_data->N1[domain].nnz);
 
 	for (size_t c = 0; c < 2; c++) {
 		std::vector<double> kernel = { 0, 0 };
 		kernel[c] = 1 / std::sqrt(np);
-		for (size_t i = 0; i < run::data->K[domain].rows / 2; i++) {
-			run::data->N1[domain].dense_values.insert(run::data->N1[domain].dense_values.end(), kernel.begin(), kernel.end());
+		for (size_t i = 0; i < _data->K[domain].rows / 2; i++) {
+			_data->N1[domain].dense_values.insert(_data->N1[domain].dense_values.end(), kernel.begin(), kernel.end());
 		}
 	}
 
-	for (size_t i = 0; i < run::mesh->nodes->dintervals[domain].size(); i++) {
-		for (esint n = run::mesh->nodes->dintervals[domain][i].begin; n < run::mesh->nodes->dintervals[domain][i].end; ++n) {
-			Point p = run::mesh->nodes->coordinates->datatarray()[n] - center;
-			run::data->N1[domain].dense_values.push_back(-p.y / norm);
-			run::data->N1[domain].dense_values.push_back( p.x / norm);
+	for (size_t i = 0; i < info::mesh->nodes->dintervals[domain].size(); i++) {
+		for (esint n = info::mesh->nodes->dintervals[domain][i].begin; n < info::mesh->nodes->dintervals[domain][i].end; ++n) {
+			Point p = info::mesh->nodes->coordinates->datatarray()[n] - center;
+			_data->N1[domain].dense_values.push_back(-p.y / norm);
+			_data->N1[domain].dense_values.push_back( p.x / norm);
 		}
 	}
 
 	std::vector<esint> fixPoints;
 //	if (_BEMDomain[domain]) {
 //		fixPoints = std::vector<esint>(
-//				run::mesh->FETIData->surfaceFixPoints.begin() + run::mesh->FETIData->sFixPointsDistribution[domain],
-//				run::mesh->FETIData->surfaceFixPoints.begin() + run::mesh->FETIData->sFixPointsDistribution[domain + 1]);
+//				info::mesh->FETIData->surfaceFixPoints.begin() + info::mesh->FETIData->sFixPointsDistribution[domain],
+//				info::mesh->FETIData->surfaceFixPoints.begin() + info::mesh->FETIData->sFixPointsDistribution[domain + 1]);
 //	} else {
 		fixPoints = std::vector<esint>(
-				run::mesh->FETIData->innerFixPoints.begin() + run::mesh->FETIData->iFixPointsDistribution[domain],
-				run::mesh->FETIData->innerFixPoints.begin() + run::mesh->FETIData->iFixPointsDistribution[domain + 1]);
+				info::mesh->FETIData->innerFixPoints.begin() + info::mesh->FETIData->iFixPointsDistribution[domain],
+				info::mesh->FETIData->innerFixPoints.begin() + info::mesh->FETIData->iFixPointsDistribution[domain + 1]);
 //	}
 
 	SparseMatrix Nt; // CSR matice s DOFY
 	Nt.rows = 3;
-	Nt.cols = run::data->K[domain].cols;
+	Nt.cols = _data->K[domain].cols;
 	Nt.nnz  = 4 * fixPoints.size();
 	Nt.type = 'G';
 
@@ -95,7 +94,7 @@ void StructuralMechanics2DFETIProvider::analyticRegularization(esint domain, boo
 	ROWS.push_back(ROWS.back() + 2 * fixPoints.size());
 
 	auto n2DOF = [&] (esint node) {
-		auto dit = run::mesh->nodes->dintervals[domain].begin();
+		auto dit = info::mesh->nodes->dintervals[domain].begin();
 		while (dit->end < node) { ++dit; }
 		return dit->DOFOffset + node - dit->begin;
 	};
@@ -108,7 +107,7 @@ void StructuralMechanics2DFETIProvider::analyticRegularization(esint domain, boo
 	VALS.insert(VALS.end(), 2 * fixPoints.size(), 1);
 
 	for (size_t i = 0; i < fixPoints.size(); i++) {
-		const Point &p = run::mesh->nodes->coordinates->datatarray()[fixPoints[i]];
+		const Point &p = info::mesh->nodes->coordinates->datatarray()[fixPoints[i]];
 		COLS.push_back(2 * n2DOF(fixPoints[i]) + 0 + 1);
 		COLS.push_back(2 * n2DOF(fixPoints[i]) + 1 + 1);
 		VALS.push_back(-p.y);
@@ -118,20 +117,20 @@ void StructuralMechanics2DFETIProvider::analyticRegularization(esint domain, boo
 	SparseMatrix N;
 	Nt.MatTranspose( N );
 
-	run::data->RegMat[domain].MatMat(Nt, 'N', N);
-	run::data->RegMat[domain].MatTranspose();
-	run::data->RegMat[domain].RemoveLower();
+	_data->RegMat[domain].MatMat(Nt, 'N', N);
+	_data->RegMat[domain].MatTranspose();
+	_data->RegMat[domain].RemoveLower();
 
 	SparseSolverCPU NtN;
-	NtN.ImportMatrix(run::data->RegMat[domain]);
-	run::data->RegMat[domain].Clear();
+	NtN.ImportMatrix(_data->RegMat[domain]);
+	_data->RegMat[domain].Clear();
 
 	NtN.Factorization("Create RegMat");
 	NtN.SolveMat_Sparse(Nt);
 	NtN.Clear();
 
-	run::data->RegMat[domain].MatMat(N, 'N', Nt);
-	run::data->RegMat[domain].MatScale(run::data->K[domain].getDiagonalMaximum());
+	_data->RegMat[domain].MatMat(N, 'N', Nt);
+	_data->RegMat[domain].MatScale(_data->K[domain].getDiagonalMaximum());
 }
 
 

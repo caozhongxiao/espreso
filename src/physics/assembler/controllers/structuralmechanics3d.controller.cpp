@@ -1,17 +1,17 @@
 
+#include "physics/assembler/dataholder.h"
+#include "esinfo/time.h"
+#include "esinfo/ecfinfo.h"
+#include "esinfo/meshinfo.h"
 #include "structuralmechanics3d.controller.h"
 #include "physics/assembler/kernels/structuralmechanics3d.kernel.h"
 
-#include "globals/run.h"
 #include "basis/containers/serializededata.h"
 #include "basis/evaluator/evaluator.h"
 #include "config/ecf/root.h"
-#include "globals/time.h"
-
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
-#include "physics/dataholder.h"
 
 using namespace espreso;
 
@@ -26,7 +26,7 @@ StructuralMechanics3DControler::StructuralMechanics3DControler(StructuralMechani
 	_ncoordinate.data = new serializededata<esint, double>(3, _nDistribution);
 	_ntemperature.data = new serializededata<esint, double>(1, _nDistribution);
 
-	_nInitialTemperature.isConts = setDefault(run::ecf->structural_mechanics_3d.initial_temperature, defaultTemperature);
+	_nInitialTemperature.isConts = setDefault(info::ecf->structural_mechanics_3d.initial_temperature, defaultTemperature);
 	_nInitialTemperature.data = new serializededata<esint, double>(1, _nDistribution, defaultTemperature);
 
 	_nacceleration.isConts = false;
@@ -35,9 +35,9 @@ StructuralMechanics3DControler::StructuralMechanics3DControler(StructuralMechani
 	_nangularVelocity.isConts = false;
 	_nangularVelocity.data = new serializededata<esint, double>(3, _nDistribution);
 
-	_displacement = run::mesh->nodes->appendData(3, { "DISPLACEMENT", "DISPLACEMENT_X", "DISPLACEMENT_Y", "DISPLACEMENT_Z" });
+	_displacement = info::mesh->nodes->appendData(3, { "DISPLACEMENT", "DISPLACEMENT_X", "DISPLACEMENT_Y", "DISPLACEMENT_Z" });
 
-	_boundaries.resize(run::mesh->boundaryRegions.size());
+	_boundaries.resize(info::mesh->boundaryRegions.size());
 }
 
 StructuralMechanics3DControler::~StructuralMechanics3DControler()
@@ -50,7 +50,7 @@ void StructuralMechanics3DControler::dirichletIndices(std::vector<std::vector<es
 	indices.resize(3);
 
 	for (auto it = _configuration.displacement.regions.begin(); it != _configuration.displacement.regions.end(); ++it) {
-		BoundaryRegionStore *region = run::mesh->bregion(it->first);
+		BoundaryRegionStore *region = info::mesh->bregion(it->first);
 		if (it->second.all.value.size() || it->second.x.value.size()) {
 			indices[0].insert(indices[0].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
 		}
@@ -63,7 +63,7 @@ void StructuralMechanics3DControler::dirichletIndices(std::vector<std::vector<es
 	}
 
 	for (auto it = _configuration.displacement.intersections.begin(); it != _configuration.displacement.intersections.end(); ++it) {
-		BoundaryRegionsIntersectionStore *region = run::mesh->ibregion(it->first);
+		BoundaryRegionsIntersectionStore *region = info::mesh->ibregion(it->first);
 		if (it->second.all.value.size() || it->second.x.value.size()) {
 			indices[0].insert(indices[0].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
 		}
@@ -82,7 +82,7 @@ void StructuralMechanics3DControler::dirichletValues(std::vector<double> &values
 	values.resize(_dirichletSize);
 
 	size_t offset = 0;
-	double *coors = reinterpret_cast<double*>(run::mesh->nodes->coordinates->datatarray().data());
+	double *coors = reinterpret_cast<double*>(info::mesh->nodes->coordinates->datatarray().data());
 	auto eval = [&] (Evaluator *evaluator, tarray<esint> &nodes) {
 		evaluator->evalSelected(nodes.size(), nodes.data(), 3, coors, NULL, time::current, values.data() + offset);
 		offset += nodes.size();
@@ -107,12 +107,12 @@ void StructuralMechanics3DControler::dirichletValues(std::vector<double> &values
 	};
 
 	for (auto it = _configuration.displacement.regions.begin(); it != _configuration.displacement.regions.end(); ++it) {
-		BoundaryRegionStore *region = run::mesh->bregion(it->first);
+		BoundaryRegionStore *region = info::mesh->bregion(it->first);
 		pick(it->second, region->uniqueNodes->datatarray());
 	}
 
 	for (auto it = _configuration.displacement.intersections.begin(); it != _configuration.displacement.intersections.end(); ++it) {
-		BoundaryRegionsIntersectionStore *region = run::mesh->ibregion(it->first);
+		BoundaryRegionsIntersectionStore *region = info::mesh->ibregion(it->first);
 		pick(it->second, region->uniqueNodes->datatarray());
 	}
 }
@@ -124,10 +124,10 @@ void StructuralMechanics3DControler::initData()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		auto c = _ncoordinate.data->begin(t);
-		for (auto n = run::mesh->elements->procNodes->datatarray().begin(t); n != run::mesh->elements->procNodes->datatarray().end(t); ++n, ++c) {
-			c->at(0) = run::mesh->nodes->coordinates->datatarray()[*n].x;
-			c->at(1) = run::mesh->nodes->coordinates->datatarray()[*n].y;
-			c->at(2) = run::mesh->nodes->coordinates->datatarray()[*n].z;
+		for (auto n = info::mesh->elements->procNodes->datatarray().begin(t); n != info::mesh->elements->procNodes->datatarray().end(t); ++n, ++c) {
+			c->at(0) = info::mesh->nodes->coordinates->datatarray()[*n].x;
+			c->at(1) = info::mesh->nodes->coordinates->datatarray()[*n].y;
+			c->at(2) = info::mesh->nodes->coordinates->datatarray()[*n].z;
 		}
 	}
 
@@ -135,12 +135,12 @@ void StructuralMechanics3DControler::initData()
 	double *tbegin = NULL;
 	double time = time::current;
 
-	updateERegions(run::ecf->structural_mechanics_3d.initial_temperature, _nInitialTemperature.data->datatarray(), 1, cbegin, tbegin, time);
+	updateERegions(info::ecf->structural_mechanics_3d.initial_temperature, _nInitialTemperature.data->datatarray(), 1, cbegin, tbegin, time);
 	updateERegions(_configuration.acceleration, _nacceleration.data->datatarray(), 3, cbegin, tbegin, time);
 	updateERegions(_configuration.angular_velocity, _nangularVelocity.data->datatarray(), 3, cbegin, tbegin, time);
 
-	for (size_t r = 0; r < run::mesh->boundaryRegions.size(); r++) {
-		BoundaryRegionStore *region = run::mesh->boundaryRegions[r];
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
+		BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		if (region->dimension == 2) { // TODO: implement edge processing
 
 			auto &distribution = region->procNodes->datatarray().distribution();
@@ -151,9 +151,9 @@ void StructuralMechanics3DControler::initData()
 			for (size_t t = 0; t < threads; t++) {
 				auto c = _boundaries[r].coordinate.data->begin(t);
 				for (auto n = region->procNodes->datatarray().begin(t); n != region->procNodes->datatarray().end(t); ++n, ++c) {
-					c->at(0) = run::mesh->nodes->coordinates->datatarray()[*n].x;
-					c->at(1) = run::mesh->nodes->coordinates->datatarray()[*n].y;
-					c->at(2) = run::mesh->nodes->coordinates->datatarray()[*n].z;
+					c->at(0) = info::mesh->nodes->coordinates->datatarray()[*n].x;
+					c->at(1) = info::mesh->nodes->coordinates->datatarray()[*n].y;
+					c->at(2) = info::mesh->nodes->coordinates->datatarray()[*n].z;
 				}
 			}
 
@@ -187,8 +187,8 @@ void StructuralMechanics3DControler::parametersChanged()
 	updateERegions(_configuration.acceleration, _nacceleration.data->datatarray(), 3, cbegin, tbegin, time);
 	updateERegions(_configuration.angular_velocity, _nangularVelocity.data->datatarray(), 3, cbegin, tbegin, time);
 
-	for (size_t r = 0; r < run::mesh->boundaryRegions.size(); r++) {
-		BoundaryRegionStore *region = run::mesh->boundaryRegions[r];
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
+		BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		if (region->dimension == 2) {
 
 			auto &distribution = region->procNodes->datatarray().distribution();
@@ -205,10 +205,10 @@ void StructuralMechanics3DControler::parametersChanged()
 
 void StructuralMechanics3DControler::processElements(Matrices matrices, const SolverParameters &parameters, InstanceFiller &filler)
 {
-	auto enodes = run::mesh->elements->procNodes->cbegin() + filler.begin;
+	auto enodes = info::mesh->elements->procNodes->cbegin() + filler.begin;
 	StructuralMechanics3DKernel::ElementIterator iterator;
 
-	size_t noffset = enodes->begin() - run::mesh->elements->procNodes->datatarray().begin();
+	size_t noffset = enodes->begin() - info::mesh->elements->procNodes->datatarray().begin();
 	iterator.temperature        = _ntemperature.data->datatarray().begin() + noffset;
 	iterator.initialTemperature = _nInitialTemperature.data->datatarray().begin() + noffset;
 	iterator.coordinates        = _ncoordinate.data->datatarray().begin() + noffset * 3;
@@ -217,8 +217,8 @@ void StructuralMechanics3DControler::processElements(Matrices matrices, const So
 
 
 	for (esint e = filler.begin; e < filler.end; ++e, ++enodes) {
-		iterator.element = run::mesh->elements->epointers->datatarray()[e];
-		iterator.material = run::mesh->materials[run::mesh->elements->material->datatarray()[e]];
+		iterator.element = info::mesh->elements->epointers->datatarray()[e];
+		iterator.material = info::mesh->materials[info::mesh->elements->material->datatarray()[e]];
 
 		_kernel->processElement(matrices, parameters, iterator, filler.Ke, filler.Me, filler.Re, filler.fe);
 		filler.insert(3 * enodes->size());
@@ -233,20 +233,20 @@ void StructuralMechanics3DControler::processElements(Matrices matrices, const So
 
 void StructuralMechanics3DControler::processBoundary(Matrices matrices, const SolverParameters &parameters, size_t rindex, InstanceFiller &filler)
 {
-	if (run::mesh->boundaryRegions[rindex]->dimension != 2) {
+	if (info::mesh->boundaryRegions[rindex]->dimension != 2) {
 		return;
 	}
 
-	auto enodes = run::mesh->boundaryRegions[rindex]->procNodes->cbegin() + filler.begin;
+	auto enodes = info::mesh->boundaryRegions[rindex]->procNodes->cbegin() + filler.begin;
 	StructuralMechanics3DKernel::BoundaryIterator iterator;
 
-	size_t noffset = enodes->begin() - run::mesh->boundaryRegions[rindex]->procNodes->datatarray().begin();
+	size_t noffset = enodes->begin() - info::mesh->boundaryRegions[rindex]->procNodes->datatarray().begin();
 	iterator.coordinates = _boundaries[rindex].coordinate.data->datatarray().begin() + noffset * 3;
 
 	iterator.normalPressure = _boundaries[rindex].normalPressure.data ? _boundaries[rindex].normalPressure.data->datatarray().begin() + noffset : NULL;
 
 	for (esint e = filler.begin; e < filler.end; ++e, ++enodes) {
-		iterator.element = run::mesh->boundaryRegions[rindex]->epointers->datatarray()[e];
+		iterator.element = info::mesh->boundaryRegions[rindex]->epointers->datatarray()[e];
 
 		_kernel->processFace(matrices, parameters, iterator, filler.Ke, filler.fe);
 		filler.insert(3 * enodes->size());
@@ -264,16 +264,16 @@ void StructuralMechanics3DControler::processSolution()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 
-		auto enodes = run::mesh->elements->procNodes->cbegin(t);
+		auto enodes = info::mesh->elements->procNodes->cbegin(t);
 		StructuralMechanics3DKernel::SolutionIterator iterator;
 
-		size_t noffset = enodes->begin() - run::mesh->elements->procNodes->datatarray().begin(t);
+		size_t noffset = enodes->begin() - info::mesh->elements->procNodes->datatarray().begin(t);
 		iterator.temperature = _ntemperature.data->datatarray().begin(t) + noffset;
 		iterator.coordinates = _ncoordinate.data->datatarray().begin(t) + noffset * 3;
 
-		for (size_t e = run::mesh->elements->distribution[t]; e < run::mesh->elements->distribution[t + 1]; ++e, ++enodes) {
-			iterator.element = run::mesh->elements->epointers->datatarray()[e];
-			iterator.material = run::mesh->materials[run::mesh->elements->material->datatarray()[e]];
+		for (size_t e = info::mesh->elements->distribution[t]; e < info::mesh->elements->distribution[t + 1]; ++e, ++enodes) {
+			iterator.element = info::mesh->elements->epointers->datatarray()[e];
+			iterator.material = info::mesh->materials[info::mesh->elements->material->datatarray()[e]];
 
 			_kernel->processSolution(iterator);
 

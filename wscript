@@ -145,7 +145,7 @@ fetisources= (
 def build(ctx):
 
     ctx.objects(source=ctx.path.ant_glob('src/basis/**/*.cpp'),target="basis")
-    ctx.objects(source=ctx.path.ant_glob('src/globals/**/*.cpp'),target="globals",defines="MODE="+ctx.env.mode.upper())
+    ctx.objects(source=ctx.path.ant_glob('src/esinfo/**/*.cpp'),target="esinfo",defines="MODE="+ctx.env.mode.upper())
     ctx.objects(source=ctx.path.ant_glob('src/config/**/*.cpp'),target="config")
     ctx.objects(source=ctx.path.ant_glob('src/mesh/**/*.cpp'),target="mesh")
     ctx.objects(source=ctx.path.ant_glob('src/input/**/*.cpp'),target="input")
@@ -160,7 +160,7 @@ def build(ctx):
 
     ctx.program(
         source="src/app/espreso.cpp",target="espreso",
-        use="config basis globals mesh input output physics feti linearsolver math hypre catalyst metis",
+        use="config basis esinfo mesh input output physics feti linearsolver math hypre catalyst metis",
     )
 
 def options(opt):

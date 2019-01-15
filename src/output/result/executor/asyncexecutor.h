@@ -49,7 +49,7 @@ struct ExecParameters
 class AsyncExecutor: public DirectExecutor {
 
 public:
-	AsyncExecutor(const ECFRoot &configuration, ResultStore *store);
+	AsyncExecutor(ResultStore *store);
 
 	void execInit(const async::ExecInfo &info, const InitParameters &initParameters);
 	void exec(const async::ExecInfo &info, const ExecParameters &parameters);
@@ -64,7 +64,7 @@ protected:
 class AsyncStore: public ResultStoreExecutor, private async::Module<AsyncExecutor, InitParameters, ExecParameters> {
 
 public:
-	AsyncStore(const Mesh &mesh, const OutputConfiguration &configuration);
+	AsyncStore(const Mesh &mesh);
 	~AsyncStore();
 
 	virtual const Mesh& mesh() const { return _executor.mesh(); }

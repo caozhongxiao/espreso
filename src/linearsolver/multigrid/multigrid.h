@@ -12,7 +12,7 @@ struct HypreData;
 class MultigridSolver: public LinearSolver {
 public:
 
-	MultigridSolver(MultigridConfiguration &configuration);
+	MultigridSolver(DataHolder *data, MultigridConfiguration &configuration);
 	virtual ~MultigridSolver();
 
 	void update(Matrices matrices);

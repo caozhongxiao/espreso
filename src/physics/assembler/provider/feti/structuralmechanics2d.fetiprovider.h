@@ -11,7 +11,7 @@ struct StructuralMechanicsLoadStepConfiguration;
 class StructuralMechanics2DFETIProvider: public StructuralMechanicsFETIProvider {
 
 public:
-	StructuralMechanics2DFETIProvider(StructuralMechanicsLoadStepConfiguration &configuration);
+	StructuralMechanics2DFETIProvider(DataHolder *data, StructuralMechanicsLoadStepConfiguration &configuration);
 
 protected:
 	void analyticRegularization(esint domain, bool ortogonalCluster);

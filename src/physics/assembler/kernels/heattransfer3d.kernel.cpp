@@ -1,17 +1,15 @@
 
+#include "physics/assembler/dataholder.h"
+#include "esinfo/time.h"
+#include "esinfo/ecfinfo.h"
 #include "heattransfer3d.kernel.h"
 
 #include "physics/assembler/assembler.h"
-#include "physics/dataholder.h"
-
 #include "basis/containers/point.h"
 #include "basis/matrices/denseMatrix.h"
 #include "basis/evaluator/evaluator.h"
 
-#include "globals/run.h"
 #include "config/ecf/root.h"
-#include "globals/time.h"
-
 #include "mesh/elements/element.h"
 
 using namespace espreso;
@@ -205,7 +203,7 @@ void HeatTransfer3DKernel::processElement(Matrices matrices, const SolverParamet
 	const std::vector<DenseMatrix> &dN = *(iterator.element->dN);
 	const std::vector<double> &weighFactor = *(iterator.element->weighFactor);
 
-	bool CAU = run::ecf->heat_transfer_3d.stabilization == HeatTransferConfiguration::STABILIZATION::CAU;
+	bool CAU = info::ecf->heat_transfer_3d.stabilization == HeatTransferConfiguration::STABILIZATION::CAU;
 	bool tangentCorrection = parameters.tangentMatrixCorrection;
 
 	DenseMatrix Ce(3, 3), coordinates(size, 3), J(3, 3), invJ(3, 3), dND;
@@ -289,7 +287,7 @@ void HeatTransfer3DKernel::processElement(Matrices matrices, const SolverParamet
 	DenseMatrix g(1, 3), u(1, 3), v(1, 3), re(1, size);
 	double normGradN = 0;
 
-	if ((matrices & Matrices::M) && run::ecf->heat_transfer_3d.diffusion_split) {
+	if ((matrices & Matrices::M) && info::ecf->heat_transfer_3d.diffusion_split) {
 		g(0, 0) = iterator.gradient[0];
 		g(0, 1) = iterator.gradient[1];
 		g(0, 2) = iterator.gradient[2];
@@ -353,7 +351,7 @@ void HeatTransfer3DKernel::processElement(Matrices matrices, const SolverParamet
 		double h_e = 0, tau_e = 0, konst = 0, gh_e = 0;
 		double C_e = 0;
 
-		if ((matrices & Matrices::M) && run::ecf->heat_transfer_3d.diffusion_split && g.norm() != 0) {
+		if ((matrices & Matrices::M) && info::ecf->heat_transfer_3d.diffusion_split && g.norm() != 0) {
 			gh_e = 2 * g.norm() / g_e.norm();
 			tauK = (C1 * gh_e * gh_e) / (Ce(0, 0) * C2 + gh_e * gh_e * (gpM(0, 0) / time::shift));
 			xi = std::max(1., 1 / (1 - tauK * gpM(0, 0) / time::shift));
@@ -386,9 +384,9 @@ void HeatTransfer3DKernel::processElement(Matrices matrices, const SolverParamet
 			}
 		}
 
-		Ce(0, 0) += run::ecf->heat_transfer_3d.sigma * h_e * norm_u_e;
-		Ce(1, 1) += run::ecf->heat_transfer_3d.sigma * h_e * norm_u_e;
-		Ce(2, 2) += run::ecf->heat_transfer_3d.sigma * h_e * norm_u_e;
+		Ce(0, 0) += info::ecf->heat_transfer_3d.sigma * h_e * norm_u_e;
+		Ce(1, 1) += info::ecf->heat_transfer_3d.sigma * h_e * norm_u_e;
+		Ce(2, 2) += info::ecf->heat_transfer_3d.sigma * h_e * norm_u_e;
 
 		if (matrices & (Matrices::M | Matrices::R)) {
 			Me.multiply(N[gp], N[gp], detJ * gpM(0, 0) * weighFactor[gp], 1, true);
@@ -400,7 +398,7 @@ void HeatTransfer3DKernel::processElement(Matrices matrices, const SolverParamet
 				CDBTN.multiply(CDe, BTN);
 				tangentK.multiply(dND, CDBTN,  detJ * weighFactor[gp], 1, true);
 			}
-			if ((matrices & Matrices::M) && run::ecf->heat_transfer_3d.diffusion_split) {
+			if ((matrices & Matrices::M) && info::ecf->heat_transfer_3d.diffusion_split) {
 				gKe.multiply(dND, Ce * dND, detJ * weighFactor[gp], 1, true);
 				gKe.multiply(N[gp], b_e, detJ * weighFactor[gp], 1, true);
 				if (konst * weighFactor[gp] * detJ != 0) {
@@ -430,7 +428,7 @@ void HeatTransfer3DKernel::processElement(Matrices matrices, const SolverParamet
 		}
 	}
 
-	if ((matrices & Matrices::M) && run::ecf->heat_transfer_3d.diffusion_split) {
+	if ((matrices & Matrices::M) && info::ecf->heat_transfer_3d.diffusion_split) {
 		DenseMatrix T1, T2;
 		T1.multiply(Ke, T, 1, 0);
 		T2.multiply(gKe, T, 1, 0);
@@ -595,8 +593,8 @@ void HeatTransfer3DKernel::processEdge(Matrices matrices, const SolverParameters
 //
 //	const ConvectionConfiguration *convection = NULL;
 //	for (size_t r = 0; convection == NULL && r < e->regions().size(); r++) {
-//		auto regionit = _configuration.load_stepsrun::ecf->heat_transfer_3d.at(_step->step + 1).convection.find(e->regions()[r]->name);
-//		if (regionit != _configuration.load_stepsrun::ecf->heat_transfer_3d.at(_step->step + 1).convection.end()) {
+//		auto regionit = _configuration.load_stepsinfo::ecf->heat_transfer_3d.at(_step->step + 1).convection.find(e->regions()[r]->name);
+//		if (regionit != _configuration.load_stepsinfo::ecf->heat_transfer_3d.at(_step->step + 1).convection.end()) {
 //			convection = &regionit->second;
 //		}
 //	}
@@ -716,25 +714,25 @@ void HeatTransfer3DKernel::processSolution(const SolutionIterator &iterator)
 			h_e = 2 * norm_u_e / b_e.norm();
 		}
 
-		Ce(0, 0) += run::ecf->heat_transfer_3d.sigma * h_e * norm_u_e;
-		Ce(1, 1) += run::ecf->heat_transfer_3d.sigma * h_e * norm_u_e;
-		Ce(2, 2) += run::ecf->heat_transfer_3d.sigma * h_e * norm_u_e;
+		Ce(0, 0) += info::ecf->heat_transfer_3d.sigma * h_e * norm_u_e;
+		Ce(1, 1) += info::ecf->heat_transfer_3d.sigma * h_e * norm_u_e;
+		Ce(2, 2) += info::ecf->heat_transfer_3d.sigma * h_e * norm_u_e;
 
-		if (run::ecf->output.results_selection.gradient) {
+		if (info::ecf->output.results_selection.gradient) {
 			matGradient.multiply(dND, T, 1, 1);
 		}
-		if (run::ecf->output.results_selection.flux) {
+		if (info::ecf->output.results_selection.flux) {
 			matFlux.multiply(Ce, dND * T, 1, 1);
 		}
 	}
 
-	if (run::ecf->output.results_selection.gradient) {
+	if (info::ecf->output.results_selection.gradient) {
 		*(iterator.gradient + 0) = matGradient(0, 0) / N.size();
 		*(iterator.gradient + 1) = matGradient(1, 0) / N.size();
 		*(iterator.gradient + 2) = matGradient(2, 0) / N.size();
 	}
 
-	if (run::ecf->output.results_selection.flux) {
+	if (info::ecf->output.results_selection.flux) {
 		*(iterator.flux + 0) = matFlux(0, 0) / N.size();
 		*(iterator.flux + 1) = matFlux(1, 0) / N.size();
 		*(iterator.flux + 2) = matFlux(2, 0) / N.size();

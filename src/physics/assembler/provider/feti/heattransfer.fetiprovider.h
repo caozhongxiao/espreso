@@ -11,7 +11,7 @@ struct HeatTransferLoadStepConfiguration;
 class HeatTransferFETIProvider: public FETIProvider {
 
 public:
-	HeatTransferFETIProvider(HeatTransferLoadStepConfiguration &configuration);
+	HeatTransferFETIProvider(DataHolder *data, HeatTransferLoadStepConfiguration &configuration);
 
 	MatrixType getMatrixType() const;
 	MatrixType getMatrixType(esint domain) const;

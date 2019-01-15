@@ -5,9 +5,10 @@
  *      Author: lriha
  */
 //#include <Driver/DissectionSolver.hpp>
-#include "globals/run.h"
+#include "esinfo/meshinfo.h"
 #include "mesh/mesh.h"
 #include "basis/utilities/utils.h"
+#include "physics/assembler/dataholder.h"
 #include "FETISolver.h"
 
 //#include <Eigen/Dense>
@@ -16,7 +17,7 @@
 using namespace espreso;
 
 FETISolver::FETISolver(DataHolder *instance, const FETISolverConfiguration &configuration)
-: instance(instance),
+: LinearSolver(instance), instance(instance),
   timeEvalMain("ESPRESO Solver Overall Timing"),
   cluster(NULL),
   solver(NULL)
@@ -54,7 +55,7 @@ void FETISolver::init()
 	solver  = new IterSolver	(configuration);
 	cluster = new SuperCluster	(configuration, instance);
 
-	init(run::mesh->neighbours);
+	init(info::mesh->neighbours);
 }
 
 // make partial initialization according to updated matrices
@@ -72,7 +73,7 @@ void FETISolver::update(Matrices matrices)
 		cluster = new SuperCluster(configuration, instance);
 		solver  = new IterSolver(configuration);
 
-		init(run::mesh->neighbours);
+		init(info::mesh->neighbours);
 
 	} else {
 

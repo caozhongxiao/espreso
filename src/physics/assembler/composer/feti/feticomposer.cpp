@@ -1,9 +1,8 @@
 
+#include "esinfo/meshinfo.h"
+#include "physics/assembler/dataholder.h"
 #include "feticomposer.h"
 
-#include "physics/dataholder.h"
-
-#include "globals/run.h"
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
 #include "solver/generic/SparseMatrix.h"
@@ -18,8 +17,8 @@ NodeData* FETIComposer::RHS()
 void FETIComposer::KplusAlfaM(double alfa)
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < run::mesh->elements->ndomains; d++) {
-		run::data->K[d].MatAddInPlace(run::data->M[d], 'N', alfa);
+	for (size_t d = 0; d < info::mesh->elements->ndomains; d++) {
+		data->K[d].MatAddInPlace(data->M[d], 'N', alfa);
 	}
 }
 

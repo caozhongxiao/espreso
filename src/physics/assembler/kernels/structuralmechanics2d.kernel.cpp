@@ -1,15 +1,14 @@
 
+#include "physics/assembler/dataholder.h"
+#include "esinfo/time.h"
+#include "esinfo/ecfinfo.h"
 #include "structuralmechanics2d.kernel.h"
 
-#include "globals/run.h"
 #include "basis/containers/point.h"
 #include "basis/matrices/denseMatrix.h"
 #include "basis/evaluator/evaluator.h"
 #include "config/ecf/root.h"
-#include "globals/time.h"
-
 #include "mesh/elements/element.h"
-#include "physics/dataholder.h"
 
 using namespace espreso;
 
@@ -46,7 +45,7 @@ void StructuralMechanics2DKernel::assembleMaterialMatrix(esint node, double *coo
 	case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
 	{
 
-		switch (run::ecf->structural_mechanics_2d.element_behaviour) {
+		switch (info::ecf->structural_mechanics_2d.element_behaviour) {
 
 		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
 		{
@@ -204,7 +203,7 @@ void StructuralMechanics2DKernel::processElement(Matrices matrices, const Solver
 			Me.multiply(N[gp], N[gp], gpDens(0, 0) * detJ * weighFactor[gp] * CP, 1, true);
 		}
 
-		switch (run::ecf->structural_mechanics_2d.element_behaviour) {
+		switch (info::ecf->structural_mechanics_2d.element_behaviour) {
 
 		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
 		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
@@ -341,7 +340,7 @@ void StructuralMechanics2DKernel::processEdge(Matrices matrices, const SolverPar
 		gpQ.multiply(normal, gpP);
 		gpThickness.multiply(N[gp], matThickness);
 
-		switch (run::ecf->structural_mechanics_2d.element_behaviour) {
+		switch (info::ecf->structural_mechanics_2d.element_behaviour) {
 
 		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
 		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:

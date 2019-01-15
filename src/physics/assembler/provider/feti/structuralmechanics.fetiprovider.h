@@ -13,7 +13,7 @@ struct StructuralMechanicsLoadStepConfiguration;
 class StructuralMechanicsFETIProvider: public FETIProvider {
 
 public:
-	StructuralMechanicsFETIProvider(StructuralMechanicsLoadStepConfiguration &configuration);
+	StructuralMechanicsFETIProvider(DataHolder *data, StructuralMechanicsLoadStepConfiguration &configuration);
 
 	MatrixType getMatrixType() const;
 	MatrixType getMatrixType(esint domain) const;

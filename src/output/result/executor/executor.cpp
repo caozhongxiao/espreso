@@ -2,8 +2,6 @@
 #include "executor.h"
 
 #include "basis/utilities/utils.h"
-#include "config/ecf/output.h"
-#include "mesh/mesh.h"
 
 #include "output/result/monitors/monitoring.h"
 #include "output/result/visualization/separated/vtklegacy.h"
@@ -44,7 +42,7 @@ bool ResultStoreExecutor::isSeparated()
 
 bool ResultStoreExecutor::storeStep()
 {
-	return Monitoring::storeStep(_configuration) || Visualization::storeStep(_configuration);
+	return Monitoring::storeStep() || Visualization::storeStep();
 }
 
 

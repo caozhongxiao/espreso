@@ -1,11 +1,12 @@
 
+#include "esinfo/runinfo.h"
+#include "esinfo/mpiinfo.h"
+#include "esinfo/systeminfo.h"
+#include "esinfo/ecfinfo.h"
+#include "esinfo/meshinfo.h"
 #include "basis/logging/logging.h"
 
 #include "config/ecf/root.h"
-#include "globals/run.h"
-#include "globals/env.h"
-#include "globals/system.h"
-
 #include "physics/loadstepiterator.h"
 
 #include "mesh/mesh.h"
@@ -19,12 +20,12 @@ int main(int argc, char **argv)
 	int provided;
 	MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
 
-	system::setSignals();
-	env::setMPI();
+	info::system::setSignals();
+	info::mpi::setMPI();
 
-	run::ecf = new ECFRoot(&argc, &argv);
-	run::mesh = new Mesh();
-	run::mesh->store = ResultStore::createAsynchronizedStore(*run::mesh, run::ecf->output);
+	info::ecf = new ECFRoot(&argc, &argv);
+	info::mesh = new Mesh();
+	info::mesh->store = ResultStore::createAsynchronizedStore(*info::mesh);
 
 	ESINFO(OVERVIEW) <<
 			"Starting ESPRESO, " <<
@@ -33,7 +34,7 @@ int main(int argc, char **argv)
 
 	if (ResultStore::isComputeNode()) {
 
-		Input::load(*run::ecf, *run::mesh);
+		Input::load(*info::ecf, *info::mesh);
 
 		LoadStepIterator steps;
 		while (steps.next());

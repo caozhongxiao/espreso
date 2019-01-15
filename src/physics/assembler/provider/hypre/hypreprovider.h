@@ -9,7 +9,7 @@ namespace espreso {
 class HYPREProvider: public Provider {
 
 public:
-	HYPREProvider(LoadStepConfiguration &configuration);
+	HYPREProvider(DataHolder *data, LoadStepConfiguration &configuration);
 
 	MatrixType getMatrixType() const;
 	double& solutionPrecision();

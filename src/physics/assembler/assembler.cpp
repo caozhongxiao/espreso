@@ -1,9 +1,9 @@
 
+#include "esinfo/meshinfo.h"
+#include "physics/assembler/dataholder.h"
+#include "physics/assembler/composer/composer.h"
 #include "assembler.h"
 
-#include "physics/dataholder.h"
-
-#include "globals/run.h"
 #include "basis/logging/logging.h"
 #include "basis/utilities/communication.h"
 #include "mesh/mesh.h"
@@ -15,8 +15,8 @@ using namespace espreso;
 void Assembler::keepK()
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < run::mesh->elements->ndomains; d++) {
-		run::data->origK[d] = run::data->K[d];
+	for (size_t d = 0; d < info::mesh->elements->ndomains; d++) {
+//		info::data->origK[d] = info::data->K[d];
 	}
 }
 
@@ -53,7 +53,7 @@ void Assembler::sum(std::vector<std::vector<double> > &z, double a, const std::v
 void Assembler::multiply(std::vector<std::vector<double> > &y, std::vector<SparseMatrix> &A, std::vector<std::vector<double> > &x, const std::string &description)
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < run::mesh->elements->ndomains; d++) {
+	for (size_t d = 0; d < info::mesh->elements->ndomains; d++) {
 		A[d].MatVec(x[d], y[d], 'N', 0, 0, 0);
 	}
 }
@@ -85,15 +85,15 @@ double Assembler::sumSquares(const std::vector<std::vector<double> > &data, SumR
 
 void Assembler::addToDirichletInB1(double a, const std::vector<std::vector<double> > &x)
 {
-	#pragma omp parallel for
-	for (size_t d = 0; d < run::mesh->elements->ndomains; d++) {
-		for (size_t j = 0; j < run::data->B1[d].J_col_indices.size(); j++) {
-			if (run::data->B1[d].I_row_indices[j] > (esint)run::data->block[DataHolder::CONSTRAINT::DIRICHLET]) {
-				break;
-			}
-			run::data->B1c[d][j] += a * x[d][run::data->B1[d].J_col_indices[j] - 1];
-		}
-	}
+//	#pragma omp parallel for
+//	for (size_t d = 0; d < info::mesh->elements->ndomains; d++) {
+//		for (size_t j = 0; j < info::data->B1[d].J_col_indices.size(); j++) {
+//			if (info::data->B1[d].I_row_indices[j] > (esint)info::data->block[DataHolder::CONSTRAINT::DIRICHLET]) {
+//				break;
+//			}
+//			info::data->B1c[d][j] += a * x[d][info::data->B1[d].J_col_indices[j] - 1];
+//		}
+//	}
 }
 
 double Assembler::maxAbsValue(const std::vector<std::vector<double> > &v, const std::string &description)
@@ -133,41 +133,41 @@ double Assembler::lineSearch(const std::vector<std::vector<double> > &U, std::ve
 	std::vector<std::vector<double> > solution = deltaU;
 	std::vector<std::vector<double> > F_ext_r = F_ext;
 
-	for (size_t i = 0; i < 6; i++) {
-		sum(solution, 1, U, alpha, deltaU, "U = U + alpha * delta U (line search)");
-
-		solution.swap(run::data->primalSolution);
-//			physics.updateMatrix(Matrices::R);
-		solution.swap(run::data->primalSolution);
-
-		if (i == 0) {
-			faStart = multiply(deltaU, run::data->f);
-			sum(F_ext_r, 1, F_ext, -1, run::data->R, "F_ext - R");
-
-			fb = multiply(deltaU, F_ext_r);
-			if ((faStart < 0 && fb < 0) || (faStart >= 0 && fb >= 0)) {
-				return alpha;
-			}
-			fa = faStart;
-		} else {
-			sum(F_ext_r, 1, F_ext, -1, run::data->R, "F_ext - R");
-			fx = multiply(deltaU, F_ext_r);
-			if (fa * fx < 0) {
-				b = alpha;
-				fb = fx;
-			} else if (fb * fx < 0) {
-				a = alpha;
-				fa = fx;
-			}
-
-			if (fabs(fx) <= 0.5 * faStart) {
-				alpha = a - fa * ((b - a ) / (fb - fa));
-				break;
-			}
-		}
-
-		alpha = a - fa * ((b - a ) / (fb - fa));
-	}
+//	for (size_t i = 0; i < 6; i++) {
+//		sum(solution, 1, U, alpha, deltaU, "U = U + alpha * delta U (line search)");
+//
+//		solution.swap(info::data->primalSolution);
+////			physics.updateMatrix(Matrices::R);
+//		solution.swap(info::data->primalSolution);
+//
+//		if (i == 0) {
+//			faStart = multiply(deltaU, info::data->f);
+//			sum(F_ext_r, 1, F_ext, -1, info::data->R, "F_ext - R");
+//
+//			fb = multiply(deltaU, F_ext_r);
+//			if ((faStart < 0 && fb < 0) || (faStart >= 0 && fb >= 0)) {
+//				return alpha;
+//			}
+//			fa = faStart;
+//		} else {
+//			sum(F_ext_r, 1, F_ext, -1, info::data->R, "F_ext - R");
+//			fx = multiply(deltaU, F_ext_r);
+//			if (fa * fx < 0) {
+//				b = alpha;
+//				fb = fx;
+//			} else if (fb * fx < 0) {
+//				a = alpha;
+//				fa = fx;
+//			}
+//
+//			if (fabs(fx) <= 0.5 * faStart) {
+//				alpha = a - fa * ((b - a ) / (fb - fa));
+//				break;
+//			}
+//		}
+//
+//		alpha = a - fa * ((b - a ) / (fb - fa));
+//	}
 
 	if (alpha < 0.1) {
 		alpha = 0.1;

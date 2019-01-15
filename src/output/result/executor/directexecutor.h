@@ -23,7 +23,7 @@ public:
 		}
 	}
 
-	DirectExecutor(const Mesh &mesh, const OutputConfiguration &configuration): ResultStoreExecutor(mesh, configuration) {}
+	DirectExecutor(const Mesh &mesh): ResultStoreExecutor(mesh) {}
 };
 
 }

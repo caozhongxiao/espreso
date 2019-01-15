@@ -5,8 +5,8 @@
 
 using namespace espreso;
 
-HeatTransferHYPREProvider::HeatTransferHYPREProvider(HeatTransferLoadStepConfiguration &configuration)
-: HYPREProvider(configuration), _configuration(configuration)
+HeatTransferHYPREProvider::HeatTransferHYPREProvider(DataHolder *data, HeatTransferLoadStepConfiguration &configuration)
+: HYPREProvider(data, configuration), _configuration(configuration)
 {
 
 }

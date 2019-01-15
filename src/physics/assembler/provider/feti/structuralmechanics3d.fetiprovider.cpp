@@ -1,9 +1,8 @@
 
+#include "esinfo/meshinfo.h"
+#include "physics/assembler/dataholder.h"
+#include "physics/assembler/composer/composer.h"
 #include "structuralmechanics3d.fetiprovider.h"
-
-#include "physics/dataholder.h"
-
-#include "globals/run.h"
 
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/matrixtype.h"
@@ -20,15 +19,15 @@
 
 using namespace espreso;
 
-StructuralMechanics3DFETIProvider::StructuralMechanics3DFETIProvider(StructuralMechanicsLoadStepConfiguration &configuration)
-: StructuralMechanicsFETIProvider(configuration)
+StructuralMechanics3DFETIProvider::StructuralMechanics3DFETIProvider(DataHolder *data, StructuralMechanicsLoadStepConfiguration &configuration)
+: StructuralMechanicsFETIProvider(data, configuration)
 {
 
 }
 
 void StructuralMechanics3DFETIProvider::analyticRegularization(esint domain, bool ortogonalCluster)
 {
-	if (run::data->K[domain].mtype != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
+	if (_data->K[domain].mtype != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
 		ESINFO(ERROR) << "Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set FETI_REGULARIZATION = ALGEBRAIC";
 	}
 
@@ -37,7 +36,7 @@ void StructuralMechanics3DFETIProvider::analyticRegularization(esint domain, boo
 	size_t np = _dNp[domain];
 
 	if (ortogonalCluster) {
-		size_t cluster = run::mesh->elements->clusters[domain];
+		size_t cluster = info::mesh->elements->clusters[domain];
 		center = _cCenter[cluster], norm = _cNorm[cluster];
 		r44 = _cr44[cluster], r45 = _cr45[cluster], r46 = _cr46[cluster], r55 = _cr55[cluster], r56 = _cr56[cluster];
 		np = _cNp[cluster];
@@ -47,62 +46,62 @@ void StructuralMechanics3DFETIProvider::analyticRegularization(esint domain, boo
 		np = _dNp[domain];
 	}
 
-	run::data->N1[domain].rows = run::data->K[domain].rows;
-	run::data->N1[domain].cols = 6;
-	run::data->N1[domain].nnz = run::data->N1[domain].rows * run::data->N1[domain].cols;
-	run::data->N1[domain].type = 'G';
+	_data->N1[domain].rows = _data->K[domain].rows;
+	_data->N1[domain].cols = 6;
+	_data->N1[domain].nnz = _data->N1[domain].rows * _data->N1[domain].cols;
+	_data->N1[domain].type = 'G';
 
-	run::data->N1[domain].dense_values.reserve(run::data->N1[domain].nnz);
+	_data->N1[domain].dense_values.reserve(_data->N1[domain].nnz);
 
 	for (size_t c = 0; c < 3; c++) {
 		std::vector<double> kernel = { 0, 0, 0 };
 		kernel[c] = 1 / std::sqrt(np);
-		for (size_t i = 0; i < run::data->K[domain].rows / 3; i++) {
-			run::data->N1[domain].dense_values.insert(run::data->N1[domain].dense_values.end(), kernel.begin(), kernel.end());
+		for (size_t i = 0; i < _data->K[domain].rows / 3; i++) {
+			_data->N1[domain].dense_values.insert(_data->N1[domain].dense_values.end(), kernel.begin(), kernel.end());
 		}
 	}
 
-	for (size_t i = 0; i < run::mesh->nodes->dintervals[domain].size(); i++) {
-		for (esint n = run::mesh->nodes->dintervals[domain][i].begin; n < run::mesh->nodes->dintervals[domain][i].end; ++n) {
-			Point p = run::mesh->nodes->coordinates->datatarray()[n] - center;
-			run::data->N1[domain].dense_values.push_back(-p.y / norm.x);
-			run::data->N1[domain].dense_values.push_back( p.x / norm.x);
-			run::data->N1[domain].dense_values.push_back(             0);
+	for (size_t i = 0; i < info::mesh->nodes->dintervals[domain].size(); i++) {
+		for (esint n = info::mesh->nodes->dintervals[domain][i].begin; n < info::mesh->nodes->dintervals[domain][i].end; ++n) {
+			Point p = info::mesh->nodes->coordinates->datatarray()[n] - center;
+			_data->N1[domain].dense_values.push_back(-p.y / norm.x);
+			_data->N1[domain].dense_values.push_back( p.x / norm.x);
+			_data->N1[domain].dense_values.push_back(             0);
 		}
 	}
 
-	for (size_t i = 0; i < run::mesh->nodes->dintervals[domain].size(); i++) {
-		for (esint n = run::mesh->nodes->dintervals[domain][i].begin; n < run::mesh->nodes->dintervals[domain][i].end; ++n) {
-			Point p = run::mesh->nodes->coordinates->datatarray()[n] - center;
-			run::data->N1[domain].dense_values.push_back((-p.z - r45 / r44 * (-p.y / norm.x)) / norm.y);
-			run::data->N1[domain].dense_values.push_back((   0 - r45 / r44 * ( p.x / norm.x)) / norm.y);
-			run::data->N1[domain].dense_values.push_back(( p.x - r45 / r44 * (   0 / norm.x)) / norm.y);
+	for (size_t i = 0; i < info::mesh->nodes->dintervals[domain].size(); i++) {
+		for (esint n = info::mesh->nodes->dintervals[domain][i].begin; n < info::mesh->nodes->dintervals[domain][i].end; ++n) {
+			Point p = info::mesh->nodes->coordinates->datatarray()[n] - center;
+			_data->N1[domain].dense_values.push_back((-p.z - r45 / r44 * (-p.y / norm.x)) / norm.y);
+			_data->N1[domain].dense_values.push_back((   0 - r45 / r44 * ( p.x / norm.x)) / norm.y);
+			_data->N1[domain].dense_values.push_back(( p.x - r45 / r44 * (   0 / norm.x)) / norm.y);
 		}
 	}
 
-	for (size_t i = 0; i < run::mesh->nodes->dintervals[domain].size(); i++) {
-		for (esint n = run::mesh->nodes->dintervals[domain][i].begin; n < run::mesh->nodes->dintervals[domain][i].end; ++n) {
-			Point p = run::mesh->nodes->coordinates->datatarray()[n] - center;
-			run::data->N1[domain].dense_values.push_back((   0 - r56 / r55 * ((-p.z - r45 / r44 * (-p.y / norm.x)) / norm.y) - r46 / r44 * (-p.y / norm.x)) / norm.z);
-			run::data->N1[domain].dense_values.push_back((-p.z - r56 / r55 * ((   0 - r45 / r44 * ( p.x / norm.x)) / norm.y) - r46 / r44 * ( p.x / norm.x)) / norm.z);
-			run::data->N1[domain].dense_values.push_back(( p.y - r56 / r55 * (( p.x - r45 / r44 * (   0 / norm.x)) / norm.y) - r46 / r44 * (   0 / norm.x)) / norm.z);
+	for (size_t i = 0; i < info::mesh->nodes->dintervals[domain].size(); i++) {
+		for (esint n = info::mesh->nodes->dintervals[domain][i].begin; n < info::mesh->nodes->dintervals[domain][i].end; ++n) {
+			Point p = info::mesh->nodes->coordinates->datatarray()[n] - center;
+			_data->N1[domain].dense_values.push_back((   0 - r56 / r55 * ((-p.z - r45 / r44 * (-p.y / norm.x)) / norm.y) - r46 / r44 * (-p.y / norm.x)) / norm.z);
+			_data->N1[domain].dense_values.push_back((-p.z - r56 / r55 * ((   0 - r45 / r44 * ( p.x / norm.x)) / norm.y) - r46 / r44 * ( p.x / norm.x)) / norm.z);
+			_data->N1[domain].dense_values.push_back(( p.y - r56 / r55 * (( p.x - r45 / r44 * (   0 / norm.x)) / norm.y) - r46 / r44 * (   0 / norm.x)) / norm.z);
 		}
 	}
 
 	std::vector<esint> fixPoints;
 //	if (_BEMDomain[domain]) {
 //		fixPoints = std::vector<esint>(
-//				run::mesh->FETIData->surfaceFixPoints.begin() + run::mesh->FETIData->sFixPointsDistribution[domain],
-//				run::mesh->FETIData->surfaceFixPoints.begin() + run::mesh->FETIData->sFixPointsDistribution[domain + 1]);
+//				info::mesh->FETIData->surfaceFixPoints.begin() + info::mesh->FETIData->sFixPointsDistribution[domain],
+//				info::mesh->FETIData->surfaceFixPoints.begin() + info::mesh->FETIData->sFixPointsDistribution[domain + 1]);
 //	} else {
 		fixPoints = std::vector<esint>(
-				run::mesh->FETIData->innerFixPoints.begin() + run::mesh->FETIData->iFixPointsDistribution[domain],
-				run::mesh->FETIData->innerFixPoints.begin() + run::mesh->FETIData->iFixPointsDistribution[domain + 1]);
+				info::mesh->FETIData->innerFixPoints.begin() + info::mesh->FETIData->iFixPointsDistribution[domain],
+				info::mesh->FETIData->innerFixPoints.begin() + info::mesh->FETIData->iFixPointsDistribution[domain + 1]);
 //	}
 
 	SparseMatrix Nt; // CSR matice s DOFY
 	Nt.rows = 6;
-	Nt.cols = run::data->K[domain].cols;
+	Nt.cols = _data->K[domain].cols;
 	Nt.nnz  = 9 * fixPoints.size();
 	Nt.type = 'G';
 
@@ -123,7 +122,7 @@ void StructuralMechanics3DFETIProvider::analyticRegularization(esint domain, boo
 	ROWS.push_back(ROWS.back() + 2 * fixPoints.size());
 
 	auto n2DOF = [&] (esint node) {
-		auto dit = run::mesh->nodes->dintervals[domain].begin();
+		auto dit = info::mesh->nodes->dintervals[domain].begin();
 		while (dit->end < node) { ++dit; }
 		return dit->DOFOffset + node - dit->begin;
 	};
@@ -136,7 +135,7 @@ void StructuralMechanics3DFETIProvider::analyticRegularization(esint domain, boo
 	VALS.insert(VALS.end(), 3 * fixPoints.size(), 1);
 
 	for (size_t i = 0; i < fixPoints.size(); i++) {
-		const Point &p = run::mesh->nodes->coordinates->datatarray()[fixPoints[i]];
+		const Point &p = info::mesh->nodes->coordinates->datatarray()[fixPoints[i]];
 		COLS.push_back(3 * n2DOF(fixPoints[i]) + 0 + 1);
 		COLS.push_back(3 * n2DOF(fixPoints[i]) + 1 + 1);
 		VALS.push_back(-p.y);
@@ -144,7 +143,7 @@ void StructuralMechanics3DFETIProvider::analyticRegularization(esint domain, boo
 	}
 
 	for (size_t i = 0; i < fixPoints.size(); i++) {
-		const Point &p = run::mesh->nodes->coordinates->datatarray()[fixPoints[i]];
+		const Point &p = info::mesh->nodes->coordinates->datatarray()[fixPoints[i]];
 		COLS.push_back(3 * n2DOF(fixPoints[i]) + 0 + 1);
 		COLS.push_back(3 * n2DOF(fixPoints[i]) + 2 + 1);
 		VALS.push_back(-p.z);
@@ -152,7 +151,7 @@ void StructuralMechanics3DFETIProvider::analyticRegularization(esint domain, boo
 	}
 
 	for (size_t i = 0; i < fixPoints.size(); i++) {
-		const Point &p = run::mesh->nodes->coordinates->datatarray()[fixPoints[i]];
+		const Point &p = info::mesh->nodes->coordinates->datatarray()[fixPoints[i]];
 		COLS.push_back(3 * n2DOF(fixPoints[i]) + 1 + 1);
 		COLS.push_back(3 * n2DOF(fixPoints[i]) + 2 + 1);
 		VALS.push_back(-p.z);
@@ -162,20 +161,20 @@ void StructuralMechanics3DFETIProvider::analyticRegularization(esint domain, boo
 	SparseMatrix N;
 	Nt.MatTranspose( N );
 
-	run::data->RegMat[domain].MatMat(Nt, 'N', N);
-	run::data->RegMat[domain].MatTranspose();
-	run::data->RegMat[domain].RemoveLower();
+	_data->RegMat[domain].MatMat(Nt, 'N', N);
+	_data->RegMat[domain].MatTranspose();
+	_data->RegMat[domain].RemoveLower();
 
 	SparseSolverCPU NtN;
-	NtN.ImportMatrix(run::data->RegMat[domain]);
-	run::data->RegMat[domain].Clear();
+	NtN.ImportMatrix(_data->RegMat[domain]);
+	_data->RegMat[domain].Clear();
 
 	NtN.Factorization("Create RegMat");
 	NtN.SolveMat_Sparse(Nt);
 	NtN.Clear();
 
-	run::data->RegMat[domain].MatMat(N, 'N', Nt);
-	run::data->RegMat[domain].MatScale(run::data->K[domain].getDiagonalMaximum());
+	_data->RegMat[domain].MatMat(N, 'N', Nt);
+	_data->RegMat[domain].MatScale(_data->K[domain].getDiagonalMaximum());
 
 }
 

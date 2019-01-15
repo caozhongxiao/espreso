@@ -1,4 +1,5 @@
 
+#include "esinfo/time.h"
 #include "omp.h"
 
 #include <sys/sysinfo.h>
@@ -10,7 +11,6 @@
 #include "logging.h"
 
 #include "config/ecf/environment.h"
-#include "globals/time.h"
 
 namespace espreso {
 

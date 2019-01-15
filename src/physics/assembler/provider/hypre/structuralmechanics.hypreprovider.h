@@ -11,7 +11,7 @@ struct StructuralMechanicsLoadStepConfiguration;
 class StructuralMechanicsHYPREProvider: public HYPREProvider {
 
 public:
-	StructuralMechanicsHYPREProvider(StructuralMechanicsLoadStepConfiguration &configuration);
+	StructuralMechanicsHYPREProvider(DataHolder *data, StructuralMechanicsLoadStepConfiguration &configuration);
 
 protected:
 	StructuralMechanicsLoadStepConfiguration &_configuration;

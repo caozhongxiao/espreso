@@ -1,17 +1,16 @@
 
+#include "physics/assembler/dataholder.h"
+#include "esinfo/time.h"
+#include "esinfo/meshinfo.h"
 #include "newtonraphson.h"
 #include "physics/solver/loadstep/loadstepsolver.h"
 
-#include "physics/dataholder.h"
 #include "physics/assembler/assembler.h"
 
-#include "globals/time.h"
-#include "globals/run.h"
 #include "config/ecf/physics/physicssolver/nonlinearsolver.h"
 #include "basis/logging/logging.h"
 #include "basis/containers/serializededata.h"
 
-#include "mesh/mesh.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/statisticsstore.h"
 #include "linearsolver/linearsolver.h"
@@ -21,8 +20,8 @@ using namespace espreso;
 NewtonRaphson::NewtonRaphson(Assembler &assembler, LinearSolver &solver, NonLinearSolverConfiguration &configuration)
 : TimeStepSolver(assembler, solver), _configuration(configuration)
 {
-	_solution = run::mesh->nodes->appendData(_assembler.solution()->dimension, {});
-	_RHS = run::mesh->nodes->appendData(_assembler.solution()->dimension, {});
+	_solution = info::mesh->nodes->appendData(_assembler.solution()->dimension, {});
+	_RHS = info::mesh->nodes->appendData(_assembler.solution()->dimension, {});
 }
 
 std::string NewtonRaphson::name()
@@ -117,7 +116,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 		ESINFO(CONVERGENCE) <<  "    LINEAR_SOLVER_OUTPUT: SOLVER = " << "PCG" <<   " N_MAX_ITERATIONS = " << "1" << "  " ;
 
 		if (_configuration.line_search) {
-			_assembler.solution()->statistics(run::mesh->allNodes()->nodes->datatarray(), run::mesh->nodes->uniqueTotalSize, stats.data());
+			_assembler.solution()->statistics(info::mesh->allNodes()->nodes->datatarray(), info::mesh->nodes->uniqueTotalSize, stats.data());
 			double maxSolutionValue = std::max(std::fabs(stats[0].min), std::fabs(stats[0].max));
 //			double alpha = _assembler.lineSearch(_solution, _assembler.instance.primalSolution, _f_ext);
 //			ESINFO(CONVERGENCE) << "    LINE_SEARCH_OUTPUT: " << "PARAMETER = " << alpha << "  MAX_DOF_INCREMENT = " << maxSolutionValue << "  SCALED_MAX_INCREMENT = " << alpha * maxSolutionValue;

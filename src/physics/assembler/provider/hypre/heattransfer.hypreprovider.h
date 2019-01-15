@@ -11,7 +11,7 @@ struct HeatTransferLoadStepConfiguration;
 class HeatTransferHYPREProvider: public HYPREProvider {
 
 public:
-	HeatTransferHYPREProvider(HeatTransferLoadStepConfiguration &configuration);
+	HeatTransferHYPREProvider(DataHolder *data, HeatTransferLoadStepConfiguration &configuration);
 
 protected:
 	HeatTransferLoadStepConfiguration &_configuration;

@@ -1,7 +1,7 @@
 
 #include "insitu.h"
 
-#include "config/ecf/output.h"
+#include "esinfo/ecfinfo.h"
 
 #include "wrappers/catalyst/catalyst.h"
 
@@ -9,8 +9,8 @@
 
 using namespace espreso;
 
-InSitu::InSitu(const Mesh &mesh, const OutputConfiguration &configuration)
-: Visualization(mesh, configuration), _catalyst(NULL)
+InSitu::InSitu(const Mesh &mesh)
+: Visualization(mesh), _catalyst(NULL)
 {
 
 }
@@ -30,7 +30,7 @@ void InSitu::updateMesh()
 void InSitu::updateSolution()
 {
 	_catalyst->update();
-	sleep(_configuration.catalyst_sleep_time);
+	sleep(info::ecf->output.catalyst_sleep_time);
 }
 
 

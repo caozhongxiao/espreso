@@ -10,7 +10,7 @@ namespace espreso {
 
 struct SeparatedVisualization: public Visualization {
 
-	SeparatedVisualization(const Mesh &mesh, const OutputConfiguration &configuration): Visualization(mesh, configuration) {}
+	SeparatedVisualization(const Mesh &mesh): Visualization(mesh) {}
 
 	virtual bool isCollected() { return false; }
 	virtual bool isSeparated() { return true; }

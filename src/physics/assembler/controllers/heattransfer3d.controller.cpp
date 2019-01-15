@@ -1,9 +1,11 @@
 
+#include "physics/assembler/dataholder.h"
+#include "esinfo/time.h"
+#include "esinfo/ecfinfo.h"
+#include "esinfo/meshinfo.h"
 #include "heattransfer3d.controller.h"
 #include "physics/assembler/kernels/heattransfer3d.kernel.h"
 
-#include "globals/run.h"
-#include "globals/time.h"
 #include "basis/containers/serializededata.h"
 #include "basis/evaluator/evaluator.h"
 #include "config/ecf/root.h"
@@ -11,7 +13,6 @@
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
-#include "physics/dataholder.h"
 
 using namespace espreso;
 
@@ -32,25 +33,25 @@ HeatTransfer3DControler::HeatTransfer3DControler(HeatTransferLoadStepConfigurati
 	_nheat.isConts = setDefault(_configuration.heat_source, defaultHeat);
 	_nheat.data = new serializededata<esint, double>(1, _nDistribution, defaultHeat);
 
-	_temperature = run::mesh->nodes->appendData(1, { "TEMPERATURE" });
-	if (run::mesh->hasPhaseChange()) {
-		_phaseChange = run::mesh->nodes->appendData(1, { "PHASE" });
-		_latentHeat = run::mesh->nodes->appendData(1, { "LATENT_HEAT" });
+	_temperature = info::mesh->nodes->appendData(1, { "TEMPERATURE" });
+	if (info::mesh->hasPhaseChange()) {
+		_phaseChange = info::mesh->nodes->appendData(1, { "PHASE" });
+		_latentHeat = info::mesh->nodes->appendData(1, { "LATENT_HEAT" });
 	}
 
-	if (run::ecf->output.results_selection.translation_motions && _configuration.translation_motions.size()) {
-		_motion = run::mesh->elements->appendData(3, { "TRANSLATION_MOTION", "TRANSLATION_MOTION_X", "TRANSLATION_MOTION_Y", "TRANSLATION_MOTION_Z" });
+	if (info::ecf->output.results_selection.translation_motions && _configuration.translation_motions.size()) {
+		_motion = info::mesh->elements->appendData(3, { "TRANSLATION_MOTION", "TRANSLATION_MOTION_X", "TRANSLATION_MOTION_Y", "TRANSLATION_MOTION_Z" });
 	}
 
-	if (run::ecf->output.results_selection.gradient || run::ecf->heat_transfer_3d.diffusion_split) {
-		_gradient = run::mesh->elements->appendData(3, { "GRADIENT", "GRADIENT_X", "GRADIENT_Y", "GRADIENT_Z" });
+	if (info::ecf->output.results_selection.gradient || info::ecf->heat_transfer_3d.diffusion_split) {
+		_gradient = info::mesh->elements->appendData(3, { "GRADIENT", "GRADIENT_X", "GRADIENT_Y", "GRADIENT_Z" });
 	}
 
-	if (run::ecf->output.results_selection.flux) {
-		_flux = run::mesh->elements->appendData(3, { "FLUX", "FLUX_X", "FLUX_Y", "FLUX_Z" });
+	if (info::ecf->output.results_selection.flux) {
+		_flux = info::mesh->elements->appendData(3, { "FLUX", "FLUX_X", "FLUX_Y", "FLUX_Z" });
 	}
 
-	_boundaries.resize(run::mesh->boundaryRegions.size());
+	_boundaries.resize(info::mesh->boundaryRegions.size());
 }
 
 HeatTransfer3DControler::~HeatTransfer3DControler()
@@ -65,10 +66,10 @@ void HeatTransfer3DControler::initData()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		auto c = _ncoordinate.data->begin(t);
-		for (auto n = run::mesh->elements->procNodes->datatarray().begin(t); n != run::mesh->elements->procNodes->datatarray().end(t); ++n, ++c) {
-			c->at(0) = run::mesh->nodes->coordinates->datatarray()[*n].x;
-			c->at(1) = run::mesh->nodes->coordinates->datatarray()[*n].y;
-			c->at(2) = run::mesh->nodes->coordinates->datatarray()[*n].z;
+		for (auto n = info::mesh->elements->procNodes->datatarray().begin(t); n != info::mesh->elements->procNodes->datatarray().end(t); ++n, ++c) {
+			c->at(0) = info::mesh->nodes->coordinates->datatarray()[*n].x;
+			c->at(1) = info::mesh->nodes->coordinates->datatarray()[*n].y;
+			c->at(2) = info::mesh->nodes->coordinates->datatarray()[*n].z;
 		}
 	}
 
@@ -76,7 +77,7 @@ void HeatTransfer3DControler::initData()
 	double *tbegin = NULL;
 	double time = time::current;
 
-	updateERegions(run::ecf->heat_transfer_3d.initial_temperature, _ntemperature.data->datatarray(), 3, cbegin, tbegin, time);
+	updateERegions(info::ecf->heat_transfer_3d.initial_temperature, _ntemperature.data->datatarray(), 3, cbegin, tbegin, time);
 	updateERegions(_configuration.heat_source, _nheat.data->datatarray(), 3, cbegin, tbegin, time);
 	updateERegions(_configuration.translation_motions, _nmotion.data->datatarray(), 3, cbegin, tbegin, time);
 
@@ -86,8 +87,8 @@ void HeatTransfer3DControler::initData()
 		nodeValuesToElements(3, _nmotion.data->datatarray(), _motion->data);
 	}
 
-	for (size_t r = 0; r < run::mesh->boundaryRegions.size(); r++) {
-		BoundaryRegionStore *region = run::mesh->boundaryRegions[r];
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
+		BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		if (region->dimension == 2) { // TODO: implement edge processing
 
 			auto &distribution = region->procNodes->datatarray().distribution();
@@ -100,9 +101,9 @@ void HeatTransfer3DControler::initData()
 				auto c = _boundaries[r].coordinate.data->begin(t);
 				auto temp = _boundaries[r].temperature.data->begin(t);
 				for (auto n = region->procNodes->datatarray().begin(t); n != region->procNodes->datatarray().end(t); ++n, ++c, ++temp) {
-					c->at(0) = run::mesh->nodes->coordinates->datatarray()[*n].x;
-					c->at(1) = run::mesh->nodes->coordinates->datatarray()[*n].y;
-					c->at(2) = run::mesh->nodes->coordinates->datatarray()[*n].z;
+					c->at(0) = info::mesh->nodes->coordinates->datatarray()[*n].x;
+					c->at(1) = info::mesh->nodes->coordinates->datatarray()[*n].y;
+					c->at(2) = info::mesh->nodes->coordinates->datatarray()[*n].z;
 					temp->at(0) = _temperature->data[*n];
 				}
 			}
@@ -113,7 +114,7 @@ void HeatTransfer3DControler::initData()
 			auto flow = _configuration.heat_flow.find(region->name);
 			if (flow != _configuration.heat_flow.end()) {
 				updateBRegions(flow->second, _boundaries[r].heatFlow, distribution, 3, cbegin, tbegin, time);
-				_boundaries[r].regionArea = run::mesh->boundaryRegions[r]->area;
+				_boundaries[r].regionArea = info::mesh->boundaryRegions[r]->area;
 			}
 			auto flux = _configuration.heat_flux.find(region->name);
 			if (flux != _configuration.heat_flux.end()) {
@@ -160,7 +161,7 @@ void HeatTransfer3DControler::parametersChanged()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		auto temp = _ntemperature.data->datatarray().begin(t);
-		for (auto n = run::mesh->elements->procNodes->datatarray().cbegin(t); n != run::mesh->elements->procNodes->datatarray().cend(t); ++n, ++temp) {
+		for (auto n = info::mesh->elements->procNodes->datatarray().cbegin(t); n != info::mesh->elements->procNodes->datatarray().cend(t); ++n, ++temp) {
 			*temp = _temperature->data[*n];
 		}
 	}
@@ -176,8 +177,8 @@ void HeatTransfer3DControler::parametersChanged()
 		nodeValuesToElements(3, _nmotion.data->datatarray(), _motion->data);
 	}
 
-	for (size_t r = 0; r < run::mesh->boundaryRegions.size(); r++) {
-		BoundaryRegionStore *region = run::mesh->boundaryRegions[r];
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
+		BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		if (region->dimension == 2) {
 
 			auto &distribution = region->procNodes->datatarray().distribution();
@@ -228,18 +229,18 @@ void HeatTransfer3DControler::parametersChanged()
 
 void HeatTransfer3DControler::processElements(Matrices matrices, const SolverParameters &parameters, InstanceFiller &filler)
 {
-	auto enodes = run::mesh->elements->procNodes->cbegin() + filler.begin;
+	auto enodes = info::mesh->elements->procNodes->cbegin() + filler.begin;
 	HeatTransfer3DKernel::ElementIterator iterator;
 
-	size_t noffset = enodes->begin() - run::mesh->elements->procNodes->datatarray().begin();
+	size_t noffset = enodes->begin() - info::mesh->elements->procNodes->datatarray().begin();
 	iterator.temperature = _ntemperature.data->datatarray().begin() + noffset;
 	iterator.coordinates = _ncoordinate.data->datatarray().begin() + noffset * 3;
 	iterator.motion      = _nmotion.data->datatarray().begin() + noffset * 3;
 	iterator.heat        = _nheat.data->datatarray().begin() + noffset;
 
 	for (esint e = filler.begin; e < filler.end; ++e, ++enodes) {
-		iterator.element = run::mesh->elements->epointers->datatarray()[e];
-		iterator.material = run::mesh->materials[run::mesh->elements->material->datatarray()[e]];
+		iterator.element = info::mesh->elements->epointers->datatarray()[e];
+		iterator.material = info::mesh->materials[info::mesh->elements->material->datatarray()[e]];
 
 		_kernel->processElement(matrices, parameters, iterator, filler.Ke, filler.Me, filler.Re, filler.fe);
 		filler.insert(enodes->size());
@@ -275,14 +276,14 @@ void HeatTransfer3DControler::processElements(Matrices matrices, const SolverPar
 
 void HeatTransfer3DControler::processBoundary(Matrices matrices, const SolverParameters &parameters, size_t rindex, InstanceFiller &filler)
 {
-	if (run::mesh->boundaryRegions[rindex]->dimension != 2) {
+	if (info::mesh->boundaryRegions[rindex]->dimension != 2) {
 		return;
 	}
 
-	auto enodes = run::mesh->boundaryRegions[rindex]->procNodes->cbegin() + filler.begin;
+	auto enodes = info::mesh->boundaryRegions[rindex]->procNodes->cbegin() + filler.begin;
 	HeatTransfer3DKernel::BoundaryIterator iterator;
 
-	size_t noffset = enodes->begin() - run::mesh->boundaryRegions[rindex]->procNodes->datatarray().begin();
+	size_t noffset = enodes->begin() - info::mesh->boundaryRegions[rindex]->procNodes->datatarray().begin();
 	iterator.temperature = _boundaries[rindex].temperature.data->datatarray().begin() + noffset;
 	iterator.coordinates = _boundaries[rindex].coordinate.data->datatarray().begin() + noffset * 3;
 
@@ -296,7 +297,7 @@ void HeatTransfer3DControler::processBoundary(Matrices matrices, const SolverPar
 	iterator.convection = iterator.htc != NULL;
 
 	for (esint e = filler.begin; e < filler.end; ++e, ++enodes) {
-		iterator.element = run::mesh->boundaryRegions[rindex]->epointers->datatarray()[e];
+		iterator.element = info::mesh->boundaryRegions[rindex]->epointers->datatarray()[e];
 
 		_kernel->processFace(matrices, parameters, iterator, filler.Ke, filler.fe);
 		filler.insert(enodes->size());
@@ -328,30 +329,30 @@ void HeatTransfer3DControler::processSolution()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 
-		auto enodes = run::mesh->elements->procNodes->cbegin(t);
+		auto enodes = info::mesh->elements->procNodes->cbegin(t);
 		HeatTransfer3DKernel::SolutionIterator iterator;
 
-		size_t noffset = enodes->begin() - run::mesh->elements->procNodes->datatarray().begin(t);
+		size_t noffset = enodes->begin() - info::mesh->elements->procNodes->datatarray().begin(t);
 		iterator.temperature = _ntemperature.data->datatarray().begin(t);
 		iterator.coordinates = _ncoordinate.data->datatarray().begin(t);
 		iterator.motion      = _nmotion.data->datatarray().begin(t);
 		iterator.heat        = _nheat.data->datatarray().begin(t);
 
-		if (run::mesh->hasPhaseChange()) {
+		if (info::mesh->hasPhaseChange()) {
 			iterator.phase = _phaseChange->data.data() + noffset;
 			iterator.latentHeat = _latentHeat->data.data() + noffset;
 		}
 
-		if (run::ecf->output.results_selection.gradient) {
-			iterator.gradient = _gradient->data.data() + run::mesh->elements->distribution[t] * 3;
+		if (info::ecf->output.results_selection.gradient) {
+			iterator.gradient = _gradient->data.data() + info::mesh->elements->distribution[t] * 3;
 		}
-		if (run::ecf->output.results_selection.flux) {
-			iterator.flux = _flux->data.data() + run::mesh->elements->distribution[t] * 3;
+		if (info::ecf->output.results_selection.flux) {
+			iterator.flux = _flux->data.data() + info::mesh->elements->distribution[t] * 3;
 		}
 
-		for (size_t e = run::mesh->elements->distribution[t]; e < run::mesh->elements->distribution[t + 1]; ++e, ++enodes) {
-			iterator.element = run::mesh->elements->epointers->datatarray()[e];
-			iterator.material = run::mesh->materials[run::mesh->elements->material->datatarray()[e]];
+		for (size_t e = info::mesh->elements->distribution[t]; e < info::mesh->elements->distribution[t + 1]; ++e, ++enodes) {
+			iterator.element = info::mesh->elements->epointers->datatarray()[e];
+			iterator.material = info::mesh->materials[info::mesh->elements->material->datatarray()[e]];
 
 			_kernel->processSolution(iterator);
 
@@ -365,10 +366,10 @@ void HeatTransfer3DControler::processSolution()
 				iterator.latentHeat += 1;
 			}
 
-			if (run::ecf->output.results_selection.gradient) {
+			if (info::ecf->output.results_selection.gradient) {
 				iterator.gradient += 3;
 			}
-			if (run::ecf->output.results_selection.flux) {
+			if (info::ecf->output.results_selection.flux) {
 				iterator.flux += 3;
 			}
 		}

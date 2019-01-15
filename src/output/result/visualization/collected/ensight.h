@@ -13,7 +13,7 @@ namespace espreso {
 class Mesh;
 
 struct EnSight: public CollectedVisualization {
-	EnSight(const std::string &name, const Mesh &mesh, const OutputConfiguration &configuration);
+	EnSight(const std::string &name, const Mesh &mesh);
 	~EnSight();
 
 	void updateMesh();
@@ -40,7 +40,7 @@ protected:
 };
 
 struct EnSightWithDecomposition: public virtual EnSight {
-	EnSightWithDecomposition(const std::string &name, const Mesh &mesh, const OutputConfiguration &configuration): EnSight(name, mesh, configuration) {}
+	EnSightWithDecomposition(const std::string &name, const Mesh &mesh): EnSight(name, mesh) {}
 
 	void updateMesh()
 	{

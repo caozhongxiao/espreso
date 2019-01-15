@@ -1,4 +1,5 @@
 
+#include "esinfo/meshinfo.h"
 #include "store.h"
 #include "nodestore.h"
 #include "statisticsstore.h"
@@ -9,8 +10,6 @@
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/utils.h"
 #include "basis/utilities/communication.h"
-
-#include "globals/run.h"
 
 #include "config/ecf/environment.h"
 
@@ -228,7 +227,7 @@ void NodeData::statistics(const tarray<esint> &nodes, esint totalsize, Statistic
 		(statistics + d)->reset();
 	}
 
-	auto nranks = run::mesh->nodes->ranks->begin();
+	auto nranks = info::mesh->nodes->ranks->begin();
 	if (names.size() == 1) {
 		esint prev = 0;
 		for (auto n = nodes.begin(); n != nodes.end(); prev = *n++) {

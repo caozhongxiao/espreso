@@ -6,8 +6,8 @@
 
 using namespace espreso;
 
-HYPREProvider::HYPREProvider(LoadStepConfiguration &configuration)
-: Provider(configuration)
+HYPREProvider::HYPREProvider(DataHolder *data, LoadStepConfiguration &configuration)
+: Provider(data, configuration)
 {
 
 }
