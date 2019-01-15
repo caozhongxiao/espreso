@@ -1,9 +1,9 @@
 
-#ifndef SRC_CONFIG_OBJECTHOLDER_H_
-#define SRC_CONFIG_OBJECTHOLDER_H_
+#ifndef SRC_CONFIG_HOLDERS_OBJECTHOLDER_H_
+#define SRC_CONFIG_HOLDERS_OBJECTHOLDER_H_
 
-#include "config/configuration.h"
 #include "valueholder.h"
+#include "config/configuration.h"
 
 namespace espreso {
 
@@ -243,4 +243,4 @@ private:
 
 }
 
-#endif /* SRC_CONFIG_OBJECTHOLDER_H_ */
+#endif /* SRC_CONFIG_HOLDERS_OBJECTHOLDER_H_ */

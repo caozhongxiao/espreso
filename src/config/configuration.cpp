@@ -1,5 +1,6 @@
 
-#include "config/configuration.h"
+#include "configuration.h"
+#include "conditions.h"
 
 #include "basis/logging/logging.h"
 #include "basis/utilities/parser.h"
@@ -7,77 +8,6 @@
 #include <algorithm>
 
 using namespace espreso;
-
-std::string SIUnit::unit() const
-{
-	auto exponent = [] (const std::string &value, int exponent) {
-		if (exponent == 0) {
-			return std::string();
-		}
-		return value + std::to_string(exponent);
-	};
-
-	return
-			exponent("m", metre) +
-			exponent("kg", kilogram) +
-			exponent("s", second) +
-			exponent("A", ampere) +
-			exponent("K", kelvin) +
-			exponent("mol", mole) +
-			exponent("cd", candela);
-}
-
-void ECFMetaData::checkdescription(const std::string &name, size_t size) const
-{
-	if (description.size() != size) {
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: " << name << " has incorrect number of descriptions.";
-	}
-}
-
-void ECFMetaData::checkdatatype(const std::string &name, size_t size) const
-{
-	if (datatype.size() != size) {
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: " << name << " has incorrect number of datatypes.";
-	}
-}
-
-void ECFMetaData::checkpattern(const std::string &name, size_t size) const
-{
-	if (pattern.size() != size) {
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: " << name << " has incorrect number of pattern values.";
-	}
-}
-
-template <typename TType>
-static std::vector<TType> getsuffix(size_t start, const std::vector<TType> &data)
-{
-	if (start < data.size()) {
-		return std::vector<TType>(data.begin() + start, data.end());
-	}
-	return std::vector<TType>();
-}
-
-ECFMetaData ECFMetaData::suffix(size_t start) const
-{
-	ECFMetaData ret(*this);
-	ret.setdescription(getsuffix(start, description));
-	ret.setdatatype(getsuffix(start, datatype));
-	ret.setpattern(getsuffix(start, pattern));
-	ret.tensor = NULL;
-	ret.regionMap = NULL;
-	return ret;
-}
-
-std::string ECFCondition::compose(const ECFParameter* parameter) const
-{
-	switch (parameter->metadata.datatype.front()) {
-	case ECFDataType::ENUM_FLAGS:
-	case ECFDataType::OPTION:
-		return parameter->name + "=" + parameter->metadata.options[dynamic_cast<const EnumValue*>(value)->index()].name;
-	default:
-		return parameter->name + "=" + value->tostring();
-	}
-}
 
 void ECFParameter::defaultName()
 {
@@ -96,6 +26,12 @@ void ECFParameter::defaultName()
 		}
 	}
 }
+
+bool ECFParameter::isvisible()
+{
+	return metadata.condition->evaluate();
+}
+
 
 bool ECFParameter::setValue(const std::string &value)
 {

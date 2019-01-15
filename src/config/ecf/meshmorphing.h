@@ -2,7 +2,7 @@
 #ifndef SRC_CONFIGURATION_MESHMORPHING_H_
 #define SRC_CONFIGURATION_MESHMORPHING_H_
 
-#include "config/expression.h"
+#include <config/holders/expression.h>
 #include "config/configuration.h"
 #include "config/ecf/material/coordinatesystem.h"
 

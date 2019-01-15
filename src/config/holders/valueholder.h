@@ -1,9 +1,9 @@
 
-#ifndef SRC_CONFIG_VALUEHOLDER_H_
-#define SRC_CONFIG_VALUEHOLDER_H_
+#ifndef SRC_CONFIG_HOLDERS_VALUEHOLDER_H_
+#define SRC_CONFIG_HOLDERS_VALUEHOLDER_H_
 
-#include "config/configuration.h"
 #include "expression.h"
+#include "config/configuration.h"
 #include "basis/utilities/parser.h"
 #include "basis/logging/logging.h"
 #include <sstream>
@@ -181,4 +181,4 @@ struct ECFEnumHolder: public ECFValue {
 
 
 
-#endif /* SRC_CONFIG_VALUEHOLDER_H_ */
+#endif /* SRC_CONFIG_HOLDERS_VALUEHOLDER_H_ */

@@ -1,6 +1,6 @@
 
-#ifndef SRC_CONFIG_REGIONMAP_H_
-#define SRC_CONFIG_REGIONMAP_H_
+#ifndef SRC_CONFIG_HOLDERS_REGIONMAP_H_
+#define SRC_CONFIG_HOLDERS_REGIONMAP_H_
 
 #include "mesh/store/boundaryregionstore.h"
 #include "basis/utilities/parser.h"
@@ -52,4 +52,4 @@ struct RegionMap: public RegionMapBase {
 
 
 
-#endif /* SRC_CONFIG_REGIONMAP_H_ */
+#endif /* SRC_CONFIG_HOLDERS_REGIONMAP_H_ */

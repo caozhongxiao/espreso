@@ -2,12 +2,12 @@
 #ifndef SRC_CONFIGURATION_CONFIGURATION_HPP_
 #define SRC_CONFIGURATION_CONFIGURATION_HPP_
 
+#include "holders/objectholder.h"
+#include "holders/valueholder.h"
 #include <type_traits>
 #include <iostream>
 
-#include "config/configuration.h"
-#include "valueholder.h"
-#include "objectholder.h"
+#include "configuration.h"
 
 #define REGISTER(parameter, metadata, ...) registerParameter(#parameter, parameter, metadata, ##__VA_ARGS__)
 #define PNAME(parameter) #parameter

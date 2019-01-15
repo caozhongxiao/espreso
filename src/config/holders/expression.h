@@ -1,6 +1,6 @@
 
-#ifndef SRC_CONFIG_EXPRESSION_H_
-#define SRC_CONFIG_EXPRESSION_H_
+#ifndef SRC_CONFIG_HOLDERS_EXPRESSION_H_
+#define SRC_CONFIG_HOLDERS_EXPRESSION_H_
 
 #include "config/configuration.h"
 #include <functional>
@@ -70,4 +70,4 @@ struct ECFExpressionOptionalVector: public ECFExpressionVector {
 
 }
 
-#endif /* SRC_CONFIG_EXPRESSION_H_ */
+#endif /* SRC_CONFIG_HOLDERS_EXPRESSION_H_ */
