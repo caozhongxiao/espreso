@@ -1,5 +1,5 @@
 
-#include "esinfo/ecfinfo.h"
+#include "ecfinfo.h"
 #include <cstddef>
 
 namespace espreso {

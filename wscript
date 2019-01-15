@@ -6,14 +6,6 @@ import os
 reload(sys)
 sys.setdefaultencoding('utf8')
 
-from waflib.TaskGen import after_method, feature
-
-@feature('cxx')
-@after_method('apply_incpaths')
-def insert_srcdir(self):
-    path = os.path.join(self.bld.srcnode.abspath(), "src")
-    self.env.prepend_value('INCPATHS', path)
-
 def set_compiler(ctx):
     def trycompiler():
         try:
@@ -111,10 +103,12 @@ def set_variables(ctx):
     ctx.env.mode = ctx.options.mode
     if ctx.options.mode == "release":
         ctx.env.append_unique("CXXFLAGS", [ "-O3" ])
-    if ctx.options.mode == "development":
+    if ctx.options.mode == "devel":
         ctx.env.append_unique("CXXFLAGS", [ "-O2", "-g" ])
     if ctx.options.mode == "debug":
         ctx.env.append_unique("CXXFLAGS", [ "-O0", "-g" ])
+
+    ctx.env.append_unique("INCLUDES", "src")
 
 def configure(ctx):
     set_compiler(ctx)
@@ -186,7 +180,7 @@ def options(opt):
         metavar="32,64",
         help="ESPRESO integer datatype width [default: %default]")
 
-    modes=["release", "development", "debug"]
+    modes=["release", "devel", "debug"]
     espreso.add_option("-m", "--mode",
         action="store",
         default="release",
