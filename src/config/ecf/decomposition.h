@@ -2,12 +2,14 @@
 #ifndef SRC_CONFIG_ECF_DECOMPOSITION_H_
 #define SRC_CONFIG_ECF_DECOMPOSITION_H_
 
-#include "config/configuration.h"
+#include "config/description.h"
 #include "processesreduction.h"
+
+#include <string>
 
 namespace espreso {
 
-struct METISConfiguration: public ProcessesReduction, public ECFObject {
+struct METISConfiguration: public ProcessesReduction, public ECFDescription {
 
 	enum class OBJECTIVE_TYPE {
 		VOLUME, EDGECUT
@@ -19,7 +21,7 @@ struct METISConfiguration: public ProcessesReduction, public ECFObject {
 	METISConfiguration();
 };
 
-struct DecompositionConfiguration: public ECFObject {
+struct DecompositionConfiguration: public ECFDescription {
 
 	std::string path;
 

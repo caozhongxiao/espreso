@@ -10,7 +10,7 @@ espreso::GridGeneratorConfiguration::GridGeneratorConfiguration()
 	blocks_x = blocks_y = blocks_z = 1;
 	clusters_x = clusters_y = clusters_z = 1;
 
-	addSeparator();
+	ecfdescription->addSeparator();
 
 	REGISTER(noncontinuous, ECFMetaData()
 			.setdescription({ "A cluster ID.", "A number of pseudo non-continuous parts." })
@@ -23,7 +23,7 @@ espreso::GridGeneratorConfiguration::GridGeneratorConfiguration()
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER })
 			.allowonly([&] () { return !uniform_decomposition; }));
 
-	addSeparator();
+	ecfdescription->addSeparator();
 
 	REGISTER(nodes, ECFMetaData()
 			.setdescription({ "The name of generated region.", "A specification of a region." })
@@ -47,13 +47,13 @@ espreso::GridGeneratorConfiguration::GridGeneratorConfiguration()
 			.addoption(ECFOption().setname("CHESSBOARD_WHITE").setdescription("White parts of chess-board."))
 			.addoption(ECFOption().setname("CHESSBOARD_BLACK").setdescription("Black parts of chess-board.")));
 
-	addSpace();
+	ecfdescription->addSpace();
 
 	REGISTER(chessboard_size, ECFMetaData()
 			.setdescription({ "A number of chess-board blocks." })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
-	addSpace();
+	ecfdescription->addSpace();
 
 	REGISTER(blocks_x, ECFMetaData()
 			.setdescription({ "Number of blocks in x-direction in generated GRID." })
@@ -67,7 +67,7 @@ espreso::GridGeneratorConfiguration::GridGeneratorConfiguration()
 			.setdescription({ "Number of blocks in z-direction in generated GRID." })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
-	addSpace();
+	ecfdescription->addSpace();
 
 	REGISTER(clusters_x, ECFMetaData()
 			.setdescription({ "Number of clusters in x-direction in generated GRID." })
@@ -81,7 +81,7 @@ espreso::GridGeneratorConfiguration::GridGeneratorConfiguration()
 			.setdescription({ "Number of clusters in z-direction in generated GRID." })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
-	addSpace();
+	ecfdescription->addSpace();
 
 	REGISTER(blocks, ECFMetaData()
 			.setdescription({ "A block ID.", "Turn generation of a block on/off." })

@@ -7,7 +7,7 @@
 
 namespace espreso {
 
-struct ThermalConductivityConfiguration: public ECFObject {
+struct ThermalConductivityConfiguration: public ECFDescription {
 
 	enum class MODEL {
 		ISOTROPIC,

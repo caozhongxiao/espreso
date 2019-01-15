@@ -7,7 +7,7 @@
 
 using namespace espreso;
 
-const ECFObject* ECFRoot::_getInput() const
+const ECFDescription* ECFRoot::_getInput() const
 {
 	switch (input) {
 	case INPUT_FORMAT::GENERATOR:
@@ -44,7 +44,7 @@ const PhysicsConfiguration* ECFRoot::_getPhysics() const
 
 void ECFRoot::init()
 {
-	name = "root";
+	ecfdescription->name = "root";
 
 	REGISTER(python_test_generator, ECFMetaData()
 			.setdescription({ "Description of Python test generator (run python tests/generate.py PATH)." }));
@@ -59,7 +59,7 @@ void ECFRoot::init()
 			.setdatatype({ ECFDataType::STRING, ECFDataType::STRING })
 			.setpattern({ "MY_VARIABLE", "VALUE" }));
 
-	addSpace();
+	ecfdescription->addSpace();
 
 	REGISTER(decomposition, ECFMetaData()
 			.setdescription({ "Domains decomposition settings." }));
@@ -115,7 +115,7 @@ void ECFRoot::init()
 			.setdescription({ "Structural mechanics 3D" })
 			.allowonly([&] () { return physics == PHYSICS::STRUCTURAL_MECHANICS_3D; }));
 
-	registerParameter("env", environment, ECFMetaData()
+	ecfdescription->registerParameter("env", environment, ECFMetaData()
 			.setdescription({ "Environment related settings." }));
 
 	REGISTER(output, ECFMetaData()
@@ -153,7 +153,7 @@ ECFRoot::ECFRoot(int *argc, char ***argv)
 
 bool ECFRoot::fill(const std::string &file)
 {
-	if (ECFReader::read(*this, file, this->default_args, this->variables).hadValidECF) {
+	if (ECFReader::read(*this->ecfdescription, file, this->default_args, this->variables).hadValidECF) {
 		ECFReader::set(this->environment, this->output);
 		return true;
 	}
@@ -162,7 +162,7 @@ bool ECFRoot::fill(const std::string &file)
 
 bool ECFRoot::fill(int *argc, char ***argv)
 {
-	if (ECFReader::read(*this, argc, argv, this->default_args, this->variables).hadValidECF) {
+	if (ECFReader::read(*this->ecfdescription, argc, argv, this->default_args, this->variables).hadValidECF) {
 		ECFReader::set(this->environment, this->output);
 		return true;
 	}

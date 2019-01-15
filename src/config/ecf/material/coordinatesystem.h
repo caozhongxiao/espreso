@@ -2,12 +2,14 @@
 #ifndef SRC_CONFIG_ECF_MATERIAL_COORDINATESYSTEM_H_
 #define SRC_CONFIG_ECF_MATERIAL_COORDINATESYSTEM_H_
 
-#include <config/holders/expression.h>
-#include "config/configuration.h"
+#include "basis/containers/point.h"
+
+#include "config/holders/expression.h"
+#include "config/description.h"
 
 namespace espreso {
 
-struct CoordinateSystemConfiguration: public ECFObject {
+struct CoordinateSystemConfiguration: public ECFDescription {
 
 	enum class TYPE {
 		CARTESIAN,

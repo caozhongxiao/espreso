@@ -10,7 +10,7 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension, Materia
 			.setdescription({ "Number of loadSteps" })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
-	addSpace();
+	ecfdescription->addSpace();
 
 	interpolation = INTERPOLATION::LINEAR;
 	REGISTER(interpolation, ECFMetaData()
@@ -33,14 +33,14 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dimension, Materia
 		.addoption(ECFOption().setname("FEM").setdescription("Finite elements."))
 		.addoption(ECFOption().setname("BEM").setdescription("Boundary elements.")));
 
-	addSeparator();
+	ecfdescription->addSeparator();
 
 	REGISTER(material_set, ECFMetaData()
 			.setdescription({ "The name of a region.", "The name of a material." })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::MATERIAL })
 			.setpattern({ "MY_REGION", "MY_MATERIAL" }));
 
-	addSeparator();
+	ecfdescription->addSeparator();
 
 	contact_interfaces = false;
 	REGISTER(contact_interfaces, ECFMetaData()

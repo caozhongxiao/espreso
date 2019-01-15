@@ -9,7 +9,7 @@
 
 namespace espreso {
 
-struct LoadStepConfiguration: public ECFObject {
+struct LoadStepConfiguration: public ECFDescription {
 
 	enum class TYPE {
 		STEADY_STATE,

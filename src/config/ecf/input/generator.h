@@ -2,7 +2,7 @@
 #ifndef SRC_CONFIG_ECF_INPUT_GENERATOR_H_
 #define SRC_CONFIG_ECF_INPUT_GENERATOR_H_
 
-#include "config/configuration.h"
+#include "config/description.h"
 
 #include "grid.h"
 #include "gridtower.h"
@@ -16,7 +16,7 @@ enum class INPUT_GENERATOR_SHAPE {
 	SPHERE
 };
 
-struct InputGeneratorConfiguration: public ECFObject {
+struct InputGeneratorConfiguration: public ECFDescription {
 
 	INPUT_GENERATOR_SHAPE shape;
 

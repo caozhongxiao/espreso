@@ -18,7 +18,7 @@ espreso::SphereGeneratorConfiguration::SphereGeneratorConfiguration()
 				.setdescription({ "Outer radius of generater sphere." })
 				.setdatatype({ ECFDataType::FLOAT }));
 
-	addSeparator();
+	ecfdescription->addSeparator();
 
 	REGISTER(nodes, ECFMetaData()
 			.setdescription({ "The name of generated region.", "A specification of a region." })
@@ -42,7 +42,7 @@ espreso::SphereGeneratorConfiguration::SphereGeneratorConfiguration()
 			.addoption(ECFOption().setname("CHESSBOARD_WHITE").setdescription("White parts of chess-board."))
 			.addoption(ECFOption().setname("CHESSBOARD_BLACK").setdescription("Black parts of chess-board.")));
 
-	addSeparator();
+	ecfdescription->addSeparator();
 
 	REGISTER(clusters, ECFMetaData()
 			.setdescription({ "Number of clusters in x, y-direction in generated SPHERE." })

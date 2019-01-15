@@ -2,11 +2,14 @@
 #ifndef SRC_CONFIG_ECF_PYTHONTESTGENERATOR_H_
 #define SRC_CONFIG_ECF_PYTHONTESTGENERATOR_H_
 
-#include "config/configuration.h"
+#include "config/description.h"
+
+#include <string>
+#include <map>
 
 namespace espreso {
 
-struct PythonTestGenerator: public ECFObject {
+struct PythonTestGenerator: public ECFDescription {
 
 	std::string output, env, warmup, run, exe;
 	size_t measure_repetition, gather_level;

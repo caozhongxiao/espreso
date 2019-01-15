@@ -12,6 +12,7 @@
 #include "basis/containers/serializededata.h"
 
 #include "mesh/store/nodestore.h"
+#include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/statisticsstore.h"
 #include "linearsolver/linearsolver.h"
 

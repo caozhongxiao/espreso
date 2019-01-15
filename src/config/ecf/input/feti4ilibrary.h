@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-struct FETI4ILibraryConfiguration: public ECFObject {
+struct FETI4ILibraryConfiguration: public ECFDescription {
 
 	size_t domains;
 	FETISolverConfiguration solver;

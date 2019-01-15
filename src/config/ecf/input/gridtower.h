@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-struct GridTowerGeneratorConfiguration: public ECFObject {
+struct GridTowerGeneratorConfiguration: public ECFDescription {
 
 	enum class DIRECTION {
 		X,

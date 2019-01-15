@@ -4,6 +4,8 @@
 
 #include "block.h"
 
+#include <map>
+
 namespace espreso {
 
 struct GridGeneratorConfiguration: public BlockGeneratorConfiguration {

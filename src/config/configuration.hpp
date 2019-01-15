@@ -9,7 +9,7 @@
 
 #include "configuration.h"
 
-#define REGISTER(parameter, metadata, ...) registerParameter(#parameter, parameter, metadata, ##__VA_ARGS__)
+#define REGISTER(parameter, metadata, ...) ecfdescription->registerParameter(#parameter, parameter, metadata, ##__VA_ARGS__)
 #define PNAME(parameter) #parameter
 
 namespace espreso {
@@ -17,16 +17,16 @@ namespace espreso {
 /////////// PARAMETER ///////////
 /////////////////////////////////
 
-// Child of ECFObject
+// Child of ECFDescription
 template <typename Ttype>
-typename std::enable_if<std::is_class<Ttype>::value && std::is_base_of<ECFObject, Ttype>::value, ECFParameter*>::type
+typename std::enable_if<std::is_class<Ttype>::value && std::is_base_of<ECFDescription, Ttype>::value, ECFParameter*>::type
 ECFObject::registerParameter(const std::string &name, Ttype &parameter, const ECFMetaData &metadata)
 {
 	metadata.checkdescription(name, 1);
 	metadata.checkdatatype(name, 0);
 	metadata.checkpattern(name, 0);
 
-	parameters.push_back(&parameter);
+	parameters.push_back(parameter.ecfdescription);
 	parameters.back()->name = name;
 	parameters.back()->metadata = metadata;
 	parameters.back()->defaultName();
@@ -47,7 +47,7 @@ ECFObject::registerParameter(const std::string &name, Ttype &parameter, const EC
 
 // REST
 template <typename Ttype>
-typename std::enable_if<(!std::is_class<Ttype>::value && !std::is_enum<Ttype>::value) || (std::is_class<Ttype>::value && !std::is_base_of<ECFObject, Ttype>::value), ECFParameter*>::type
+typename std::enable_if<(!std::is_class<Ttype>::value && !std::is_enum<Ttype>::value) || (std::is_class<Ttype>::value && !std::is_base_of<ECFDescription, Ttype>::value), ECFParameter*>::type
 ECFObject::registerParameter(const std::string &name, Ttype &parameter, const ECFMetaData &metadata)
 {
 	metadata.checkdescription(name, 1);
@@ -60,9 +60,9 @@ ECFObject::registerParameter(const std::string &name, Ttype &parameter, const EC
 ////////////// MAP //////////////
 /////////////////////////////////
 
-// TYPE2 = Child of ECFObject
+// TYPE2 = Child of ECFDescription
 template<typename Ttype1, typename Ttype2, typename... TArgs>
-typename std::enable_if<std::is_class<Ttype2>::value && std::is_base_of<ECFObject, Ttype2>::value, ECFParameter*>::type
+typename std::enable_if<std::is_class<Ttype2>::value && std::is_base_of<ECFDescription, Ttype2>::value, ECFParameter*>::type
 ECFObject::registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata, TArgs... args)
 {
 	metadata.checkdescription(name, 2);
@@ -86,7 +86,7 @@ ECFObject::registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &
 
 // TYPE2 = REST
 template<typename Ttype1, typename Ttype2, typename... TArgs>
-typename std::enable_if<(!std::is_class<Ttype2>::value && !std::is_enum<Ttype2>::value) || (std::is_class<Ttype2>::value && !std::is_base_of<ECFObject, Ttype2>::value), ECFParameter*>::type
+typename std::enable_if<(!std::is_class<Ttype2>::value && !std::is_enum<Ttype2>::value) || (std::is_class<Ttype2>::value && !std::is_base_of<ECFDescription, Ttype2>::value), ECFParameter*>::type
 ECFObject::registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &parameter, const ECFMetaData &metadata, TArgs... args)
 {
 	metadata.checkdescription(name, 2);
@@ -99,9 +99,9 @@ ECFObject::registerParameter(const std::string &name, std::map<Ttype1, Ttype2> &
 //////////// MAP MAP ////////////
 /////////////////////////////////
 
-// TYPE3 = Child of ECFObject
+// TYPE3 = Child of ECFDescription
 template<typename Ttype1, typename Ttype2, typename Ttype3, typename... TArgs>
-typename std::enable_if<std::is_class<Ttype3>::value && std::is_base_of<ECFObject, Ttype3>::value, ECFParameter*>::type
+typename std::enable_if<std::is_class<Ttype3>::value && std::is_base_of<ECFDescription, Ttype3>::value, ECFParameter*>::type
 ECFObject::registerParameter(const std::string &name, std::map<Ttype1, std::map<Ttype2, Ttype3> > &parameter, const ECFMetaData &metadata, TArgs... args)
 {
 	metadata.checkdescription(name, 3);
@@ -113,7 +113,7 @@ ECFObject::registerParameter(const std::string &name, std::map<Ttype1, std::map<
 
 // TYPE3 = REST
 template<typename Ttype1, typename Ttype2, typename Ttype3>
-typename std::enable_if<!std::is_class<Ttype3>::value || (std::is_class<Ttype3>::value && !std::is_base_of<ECFObject, Ttype3>::value), ECFParameter*>::type
+typename std::enable_if<!std::is_class<Ttype3>::value || (std::is_class<Ttype3>::value && !std::is_base_of<ECFDescription, Ttype3>::value), ECFParameter*>::type
 ECFObject::registerParameter(const std::string &name, std::map<Ttype1, std::map<Ttype2, Ttype3> > &parameter, const ECFMetaData &metadata)
 {
 	metadata.checkdescription(name, 3);

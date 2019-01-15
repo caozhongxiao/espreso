@@ -111,7 +111,7 @@ struct ECFObjectMap: public ECFObject {
 		TParameter key;
 		if (ECFValueHolder<TParameter>(key).setValue(name)) {
 			auto it = value.emplace(std::piecewise_construct, std::forward_as_tuple(key), args);
-			parameters.push_back(&it.first->second);
+			parameters.push_back(it.first->second.ecfdescription);
 			parameters.back()->name = name;
 			parameters.back()->metadata = metadata.suffix(1);
 			return parameters.back();
@@ -140,7 +140,7 @@ struct ECFObjectMap: public ECFObject {
 		if (_pattern.size() == 0) {
 			_pattern.emplace(std::piecewise_construct, std::forward_as_tuple(key), args);
 		}
-		ECFParameter *parameter = &_pattern.at(key);
+		ECFParameter *parameter = _pattern.at(key).ecfdescription;
 		parameter->metadata = metadata.suffix(1);
 		return parameter;
 	}

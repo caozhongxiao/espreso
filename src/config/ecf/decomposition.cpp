@@ -17,7 +17,7 @@ espreso::METISConfiguration::METISConfiguration()
 			.setdescription({ "Apply refinement." })
 			.setdatatype({ ECFDataType::BOOL }));
 
-	addSeparator();
+	ecfdescription->addSeparator();
 
 	granularity = ProcessesReduction::Granularity::PROCESSES;
 	REGISTER(granularity, ECFMetaData()
@@ -46,7 +46,7 @@ espreso::DecompositionConfiguration::DecompositionConfiguration()
 			.setdescription({ "Path to store preprocessed mesh in ESPRESO binary format (*.ebf)." })
 			.setdatatype({ ECFDataType::STRING }));
 
-	addSpace();
+	ecfdescription->addSpace();
 
 	mpi_procs = 0;
 	domains = 0;
@@ -57,14 +57,14 @@ espreso::DecompositionConfiguration::DecompositionConfiguration()
 			.setdescription({ "Number of domains for each cluster (Keep 0 for automatic decomposition)." })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
 
-	addSpace();
+	ecfdescription->addSpace();
 
 	balance_clusters = false;
 	REGISTER(balance_clusters, ECFMetaData()
 			.setdescription({ "Balance elements among MPI processes." })
 			.setdatatype({ ECFDataType::BOOL }));
 
-	addSpace();
+	ecfdescription->addSpace();
 
 	separate_materials = false;
 	separate_regions = false;

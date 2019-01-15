@@ -3,11 +3,13 @@
 #define SRC_CONFIG_ECF_INPUT_BLOCK_H_
 
 #include "generatorelements.h"
-#include "config/configuration.h"
+#include "config/description.h"
+
+#include <string>
 
 namespace espreso {
 
-struct BlockGeneratorConfiguration: public ECFObject {
+struct BlockGeneratorConfiguration: public ECFDescription {
 
 	GENERATOR_ELEMENT_TYPE element_type;
 

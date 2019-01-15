@@ -2,7 +2,7 @@
 #ifndef SRC_CONFIG_ECF_OUTPUT_H_
 #define SRC_CONFIG_ECF_OUTPUT_H_
 
-#include "config/configuration.h"
+#include "config/description.h"
 #include "physics/physics.h"
 
 #include "physics/heattransfer.h"
@@ -12,7 +12,7 @@ namespace espreso {
 
 struct ECFRoot;
 
-struct MonitorConfiguration: public ECFObject {
+struct MonitorConfiguration: public ECFDescription {
 
 	enum class STATISTICS {
 		MIN,
@@ -30,7 +30,7 @@ protected:
 	const PHYSICS &_physics;
 };
 
-struct ResultsSelectionConfiguration: public HeatTransferOutputSettings, public StructuralMechanicsOutputSettings, public ECFObject {
+struct ResultsSelectionConfiguration: public HeatTransferOutputSettings, public StructuralMechanicsOutputSettings, public ECFDescription {
 
 	void basic()
 	{
@@ -49,7 +49,7 @@ protected:
 	const PHYSICS &_physics;
 };
 
-struct OutputConfiguration: public ECFObject {
+struct OutputConfiguration: public ECFDescription {
 
 	enum class FORMAT {
 		VTK_LEGACY = 0,

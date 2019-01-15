@@ -9,6 +9,7 @@
 #include "config/ecf/input/grid.h"
 #include "config/ecf/input/sphere.h"
 #include "basis/utilities/communication.h"
+#include "basis/utilities/parser.h"
 #include "basis/logging/logging.h"
 
 using namespace espreso;

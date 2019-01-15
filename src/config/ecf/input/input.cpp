@@ -27,7 +27,7 @@ InputConfiguration::InputConfiguration()
 			.setdescription({ "Scale factor" })
 			.setdatatype({ ECFDataType::FLOAT }));
 
-	addSeparator();
+	ecfdescription->addSeparator();
 
 	granularity = ProcessesReduction::Granularity::PROCESSES;
 	REGISTER(granularity, ECFMetaData()

@@ -51,14 +51,12 @@ espreso::StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepCo
 espreso::StructuralMechanicsConfiguration::StructuralMechanicsConfiguration(DIMENSION dimension)
 : PhysicsConfiguration(dimension, MaterialConfiguration::PHYSICAL_MODEL::LINEAR_ELASTIC)
 {
-	REGISTER(
-			materials,
-			ECFMetaData()
+	REGISTER(materials, ECFMetaData()
 				.setdescription({ "The name of a material.", "Material description." })
 				.setdatatype({ ECFDataType::STRING })
 				.setpattern({ "MY_MATERIAL" }),
-			dimension, MaterialConfiguration::PHYSICAL_MODEL::LINEAR_ELASTIC);
-	moveLastBefore(PNAME(material_set));
+				dimension, MaterialConfiguration::PHYSICAL_MODEL::LINEAR_ELASTIC);
+	ecfdescription->moveLastBefore(PNAME(material_set));
 
 	element_behaviour = ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS;
 	REGISTER(element_behaviour, ECFMetaData()
@@ -69,7 +67,7 @@ espreso::StructuralMechanicsConfiguration::StructuralMechanicsConfiguration(DIME
 			.addoption(ECFOption().setname("AXISYMMETRIC").setdescription("Axisymmetric."))
 			.addoption(ECFOption().setname("PLANE_STRESS").setdescription("Plane stress."))
 			.addoption(ECFOption().setname("PLANE_STRESS_WITH_THICKNESS").setdescription("Plane stress with thickness.")));
-	moveLastBefore(PNAME(materials));
+	ecfdescription->moveLastBefore(PNAME(materials));
 
 	REGISTER(initial_temperature, ECFMetaData()
 			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
@@ -85,12 +83,10 @@ espreso::StructuralMechanicsConfiguration::StructuralMechanicsConfiguration(DIME
 				ECFMetaData().getboundaryconditionvariables(), "1");
 	}
 
-	REGISTER(
-			load_steps_settings,
-			ECFMetaData()
-				.setdescription({ "Settings for each load step.", "Load step index." })
-				.setdatatype({ ECFDataType::LOAD_STEP })
-				.setpattern({ "1" }),
+	REGISTER(load_steps_settings, ECFMetaData()
+			.setdescription({ "Settings for each load step.", "Load step index." })
+			.setdatatype({ ECFDataType::LOAD_STEP })
+			.setpattern({ "1" }),
 			dimension);
 }
 

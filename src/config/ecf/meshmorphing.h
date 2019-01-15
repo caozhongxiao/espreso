@@ -2,8 +2,8 @@
 #ifndef SRC_CONFIGURATION_MESHMORPHING_H_
 #define SRC_CONFIGURATION_MESHMORPHING_H_
 
-#include <config/holders/expression.h>
-#include "config/configuration.h"
+#include "config/holders/expression.h"
+#include "config/description.h"
 #include "config/ecf/material/coordinatesystem.h"
 
 namespace espreso {
@@ -28,7 +28,7 @@ enum class MORPHING_TRANSFORMATION {
 	ROTATION
 };
 
-struct RBFTargetTransformationConfiguration: public ECFObject {
+struct RBFTargetTransformationConfiguration: public ECFDescription {
 
 	MORPHING_TRANSFORMATION transformation;
 
@@ -43,7 +43,7 @@ protected:
 	ECFRoot *_ECFRoot;
 };
 
-struct ExternalFFDConfiguration: public ECFObject {
+struct ExternalFFDConfiguration: public ECFDescription {
 
 	std::string path;
 	std::map<std::string, RBFTargetTransformationConfiguration> morphers;
@@ -51,7 +51,7 @@ struct ExternalFFDConfiguration: public ECFObject {
 	ExternalFFDConfiguration(ECFRoot *ECFRoot);
 };
 
-struct RBFTargetConfiguration: public ECFObject {
+struct RBFTargetConfiguration: public ECFDescription {
 
 	MORPHING_RBF_SOLVER solver;
 
@@ -67,7 +67,7 @@ struct RBFTargetConfiguration: public ECFObject {
 	RBFTargetConfiguration(ECFRoot *ECFRoot);
 };
 
-struct MeshMorphing: public ECFObject {
+struct MeshMorphing: public ECFDescription {
 
 	MORPHING_TYPE type;
 	std::map<std::string, RBFTargetConfiguration> rbf;

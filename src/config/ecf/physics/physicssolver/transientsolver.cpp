@@ -6,29 +6,29 @@ espreso::AutoTimeSteppingConfiguration::AutoTimeSteppingConfiguration()
 {
 	allowed = false;
 	REGISTER(allowed, ECFMetaData()
-            .setdescription({ "Allow" })
+			.setdescription({ "Allow" })
 			.setdatatype({ ECFDataType::BOOL }));
 
-	addSeparator();
+	ecfdescription->addSeparator();
 
 	min_time_step = 1e-3;
 	max_time_step = 1;
 	REGISTER(min_time_step, ECFMetaData()
-            .setdescription({ "Minimum time step" })
+			.setdescription({ "Minimum time step" })
 			.setdatatype({ ECFDataType::FLOAT }));
 	REGISTER(max_time_step, ECFMetaData()
-            .setdescription({ "Maximum time step" })
+			.setdescription({ "Maximum time step" })
 			.setdatatype({ ECFDataType::FLOAT }));
 
-	addSeparator();
+	ecfdescription->addSeparator();
 
 	oscilation_limit = 0.5;
 	IDFactor = 3;
 	REGISTER(oscilation_limit, ECFMetaData()
-            .setdescription({ "Oscilation limit" })
+			.setdescription({ "Oscilation limit" })
 			.setdatatype({ ECFDataType::FLOAT }));
 	REGISTER(IDFactor, ECFMetaData()
-            .setdescription({ "I/D factor" })
+			.setdescription({ "I/D factor" })
 			.setdatatype({ ECFDataType::FLOAT }));
 }
 
@@ -36,7 +36,7 @@ espreso::TransientSolverConfiguration::TransientSolverConfiguration()
 {
 	method = METHOD::CRANK_NICOLSON;
 	REGISTER(method, ECFMetaData()
-            .setdescription({ "Method" })
+			.setdescription({ "Method" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("CRANK_NICOLSON").setdescription("Alpha = 0.5."))
 			.addoption(ECFOption().setname("FORWARD_DIFF").setdescription("Alpha = ??."))
@@ -46,19 +46,19 @@ espreso::TransientSolverConfiguration::TransientSolverConfiguration()
 
 	alpha = 0.5;
 	REGISTER(alpha, ECFMetaData()
-            .setdescription({ "Alpha" })
+			.setdescription({ "Alpha" })
 			.setdatatype({ ECFDataType::FLOAT })
 			.allowonly([&] () { return method == METHOD::USER; }));
 
-	addSpace();
+	ecfdescription->addSpace();
 
 	time_step = 0.1;
 	REGISTER(time_step, ECFMetaData()
-                .setdescription({ "Time step" })
-				.setdatatype({ ECFDataType::FLOAT }));
+			.setdescription({ "Time step" })
+			.setdatatype({ ECFDataType::FLOAT }));
 
 	REGISTER(auto_time_stepping, ECFMetaData()
-            .setdescription({ "Auto time stepping" }));
+			.setdescription({ "Auto time stepping" }));
 
 
 }

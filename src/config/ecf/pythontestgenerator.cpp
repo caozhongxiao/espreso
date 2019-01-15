@@ -43,7 +43,7 @@ PythonTestGenerator::PythonTestGenerator()
 			.setdescription({ "Execution command." })
 			.setdatatype({ ECFDataType::STRING }));
 
-	addSeparator();
+	ecfdescription->addSeparator();
 
 	REGISTER(args, ECFMetaData()
 			.setdescription({ "Expressions for default values.", "Index of ARG" })

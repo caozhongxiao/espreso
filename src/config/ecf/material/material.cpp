@@ -13,13 +13,13 @@ MaterialBaseConfiguration::MaterialBaseConfiguration()
 			.allowonly([&] () { return _phase_change == NULL || !*_phase_change; }));
 
 	density.value = heat_capacity.value = "0";
-	registerParameter("dens", density, ECFMetaData()
+	ecfdescription->registerParameter("dens", density, ECFMetaData()
 			.setdescription({ "Density" })
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.setunit(SIUnit(-3, 1, 0, 0, 0, 0, 0))
 			.allowonly([&] () { return _phase_change == NULL || !*_phase_change; }));
 
-	registerParameter("CP", heat_capacity, ECFMetaData()
+	ecfdescription->registerParameter("CP", heat_capacity, ECFMetaData()
 			.setname("Heat capacity")
 			.setdescription({ "Heat capacity" })
 			.setdatatype({ ECFDataType::EXPRESSION })
@@ -51,9 +51,9 @@ MaterialBaseConfiguration::MaterialBaseConfiguration(bool *phase_change, PHYSICA
 	linear_elastic_properties.dimension = *dimension;
 
 	// DROP not allowed parameters.
-	for (size_t i = 0; i < parameters.size();) {
-		if (!parameters[i]->metadata.isallowed()) {
-			dropParameter(parameters[i]);
+	for (size_t i = 0; i < ecfdescription->parameters.size();) {
+		if (!ecfdescription->parameters[i]->metadata.isallowed()) {
+			ecfdescription->dropParameter(ecfdescription->parameters[i]);
 		} else {
 			i++;
 		}
@@ -77,7 +77,7 @@ MaterialConfiguration::MaterialConfiguration()
 			 .setdescription({ "Description" })
 			 .setdatatype( { ECFDataType::STRING } ));
 
-	addSpace();
+	ecfdescription->addSpace();
 
 	physical_model = PHYSICAL_MODEL::THERMAL;
 	REGISTER(physical_model, ECFMetaData()
@@ -92,14 +92,14 @@ MaterialConfiguration::MaterialConfiguration()
 			.setdescription({ "Phase change" })
 			.setdatatype({ ECFDataType::BOOL }));
 
-	addSeparator();
+	ecfdescription->addSeparator();
 
-	moveLastBefore(parameters.front()->name);
-	moveLastBefore(parameters.front()->name);
-	moveLastBefore(parameters.front()->name);
-	moveLastBefore(parameters.front()->name);
-	moveLastBefore(parameters.front()->name);
-	moveLastBefore(parameters.front()->name);
+	ecfdescription->moveLastBefore(ecfdescription->parameters.front()->name);
+	ecfdescription->moveLastBefore(ecfdescription->parameters.front()->name);
+	ecfdescription->moveLastBefore(ecfdescription->parameters.front()->name);
+	ecfdescription->moveLastBefore(ecfdescription->parameters.front()->name);
+	ecfdescription->moveLastBefore(ecfdescription->parameters.front()->name);
+	ecfdescription->moveLastBefore(ecfdescription->parameters.front()->name);
 
 	smooth_step_order = 1;
 	REGISTER(smooth_step_order, ECFMetaData()
@@ -128,8 +128,8 @@ MaterialConfiguration::MaterialConfiguration()
 			.allowonly([&] () { return phase_change; }),
 			static_cast<bool*>(NULL), &physical_model, &dimension);
 
-	getParameter(&phases)->getParameter("1");
-	getParameter(&phases)->getParameter("2");
+	ecfdescription->getParameter(&phases)->getParameter("1");
+	ecfdescription->getParameter(&phases)->getParameter("2");
 }
 
 MaterialConfiguration::MaterialConfiguration(DIMENSION dimension, PHYSICAL_MODEL allowedPhysicalModels)
@@ -148,11 +148,11 @@ MaterialConfiguration::MaterialConfiguration(DIMENSION dimension, PHYSICAL_MODEL
 	// DROP not allowed models
 	physical_model = allowedPhysicalModels;
 	bool phaseChange = phase_change;
-	for (size_t i = 0; i < parameters.size();) {
-		if (!parameters[i]->metadata.isallowed()) {
+	for (size_t i = 0; i < ecfdescription->parameters.size();) {
+		if (!ecfdescription->parameters[i]->metadata.isallowed()) {
 			phase_change = !phase_change;
-			if (!parameters[i]->metadata.isallowed()) {
-				dropParameter(parameters[i]);
+			if (!ecfdescription->parameters[i]->metadata.isallowed()) {
+				ecfdescription->dropParameter(ecfdescription->parameters[i]);
 			} else {
 				i++;
 			}
@@ -189,7 +189,7 @@ MaterialConfiguration& MaterialConfiguration::operator=(const MaterialConfigurat
 		*dynamic_cast<MaterialBaseConfiguration*>(this) = dynamic_cast<const MaterialBaseConfiguration&>(other);
 
 		for (auto it = other.phases.begin(); it != other.phases.end(); ++it) {
-			getParameter(&phases)->getParameter(std::to_string(it->first));
+			ecfdescription->getParameter(&phases)->getParameter(std::to_string(it->first));
 			phases[it->first] = it->second;
 		}
 	}

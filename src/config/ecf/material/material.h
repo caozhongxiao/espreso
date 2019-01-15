@@ -8,7 +8,7 @@
 
 namespace espreso {
 
-struct MaterialBaseConfiguration: public ECFObject {
+struct MaterialBaseConfiguration: public ECFDescription {
 
 	enum PHYSICAL_MODEL {
 		THERMAL        = 1 << 0,

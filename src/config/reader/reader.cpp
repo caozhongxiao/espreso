@@ -13,7 +13,9 @@
 #include "tokenizer.h"
 #include "config/ecf/output.h"
 #include "config/ecf/environment.h"
+#include "config/configuration.h"
 #include "basis/logging/logging.h"
+#include "basis/utilities/utils.h"
 #include "basis/utilities/parser.h"
 
 using namespace espreso;

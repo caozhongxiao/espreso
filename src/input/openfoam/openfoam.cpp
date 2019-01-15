@@ -9,6 +9,7 @@
 
 #include "input/plaindata.h"
 #include "basis/containers/tarray.h"
+#include "basis/utilities/parser.h"
 #include "basis/logging/logging.h"
 #include "basis/logging/timeeval.h"
 #include "basis/utilities/utils.h"

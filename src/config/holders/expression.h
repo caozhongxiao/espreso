@@ -2,7 +2,11 @@
 #ifndef SRC_CONFIG_HOLDERS_EXPRESSION_H_
 #define SRC_CONFIG_HOLDERS_EXPRESSION_H_
 
-#include "config/configuration.h"
+#include "config/metadata.h"
+#include "config/description.h"
+#include "regionmap.h"
+#include <vector>
+#include <map>
 #include <functional>
 
 namespace espreso {
@@ -31,7 +35,7 @@ struct ECFExpression {
 
 struct ECFExpressionOptionalVector;
 
-struct ECFExpressionVector: public ECFObject {
+struct ECFExpressionVector: public ECFDescription {
 	ECFExpression data[3];
 	ECFExpression &x = data[0], &y = data[1], &z = data[2];
 	DIMENSION dimension;

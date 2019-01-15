@@ -23,10 +23,10 @@
 
 namespace espreso {
 
-struct ECFRoot: public ECFObject {
+struct ECFRoot: public ECFDescription {
 
-	ECFObject* getInput() { return const_cast<ECFObject*>(_getInput()); }
-	const ECFObject* getInput() const { return _getInput(); }
+	ECFDescription* getInput() { return const_cast<ECFDescription*>(_getInput()); }
+	const ECFDescription* getInput() const { return _getInput(); }
 
 	PhysicsConfiguration* getPhysics() { return const_cast<PhysicsConfiguration*>(_getPhysics()); }
 	const PhysicsConfiguration* getPhysics() const { return _getPhysics(); }
@@ -66,7 +66,7 @@ struct ECFRoot: public ECFObject {
 protected:
 	void init();
 
-	const ECFObject* _getInput() const;
+	const ECFDescription* _getInput() const;
 	const PhysicsConfiguration* _getPhysics() const;
 };
 

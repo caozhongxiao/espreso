@@ -2,11 +2,11 @@
 #ifndef SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_TRANSIENTSOLVER_H_
 #define SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_TRANSIENTSOLVER_H_
 
-#include "config/configuration.h"
+#include "config/description.h"
 
 namespace espreso {
 
-struct AutoTimeSteppingConfiguration: public ECFObject {
+struct AutoTimeSteppingConfiguration: public ECFDescription {
 
 	bool allowed;
 
@@ -18,7 +18,7 @@ struct AutoTimeSteppingConfiguration: public ECFObject {
 };
 
 
-struct TransientSolverConfiguration: public ECFObject {
+struct TransientSolverConfiguration: public ECFDescription {
 
 	enum class METHOD {
 		CRANK_NICOLSON,

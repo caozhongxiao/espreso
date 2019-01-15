@@ -2,7 +2,9 @@
 #ifndef SRC_CONFIG_ECF_SOLVER_FETI_H_
 #define SRC_CONFIG_ECF_SOLVER_FETI_H_
 
-#include "config/configuration.h"
+#include "config/description.h"
+
+#include <cstddef>
 
 namespace espreso {
 
@@ -112,7 +114,7 @@ enum class FETI_MATRIX_STORAGE {
 	SYMMETRIC = 1
 };
 
-struct FETISolverConfiguration: public ECFObject {
+struct FETISolverConfiguration: public ECFDescription {
 
 	double precision;
 	size_t max_iterations;

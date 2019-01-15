@@ -2,12 +2,14 @@
 #ifndef SRC_CONFIG_ECF_SOLVER_MULTIGRID_H_
 #define SRC_CONFIG_ECF_SOLVER_MULTIGRID_H_
 
-#include "config/configuration.h"
+#include "config/description.h"
+
+#include <cstddef>
 
 namespace espreso {
 
 
-struct MultigridConfiguration: public ECFObject {
+struct MultigridConfiguration: public ECFDescription {
 
 	enum class SOLVER {
 		CG = 0,

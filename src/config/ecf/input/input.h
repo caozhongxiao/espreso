@@ -2,8 +2,10 @@
 #ifndef SRC_CONFIG_ECF_INPUT_INPUT_H_
 #define SRC_CONFIG_ECF_INPUT_INPUT_H_
 
-#include "config/configuration.h"
+#include "config/description.h"
 #include "config/ecf/processesreduction.h"
+
+#include <string>
 
 namespace espreso {
 
@@ -15,7 +17,7 @@ enum class INPUT_FORMAT {
 };
 
 
-struct InputConfiguration: public ProcessesReduction, public ECFObject {
+struct InputConfiguration: public ProcessesReduction, public ECFDescription {
 
 	std::string path;
 

@@ -24,7 +24,7 @@ enum class ASSEMBLER {
 	FACES
 };
 
-struct PhysicsConfiguration: public ECFObject {
+struct PhysicsConfiguration: public ECFDescription {
 
 	enum class INTERPOLATION {
 		LINEAR,

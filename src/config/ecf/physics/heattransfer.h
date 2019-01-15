@@ -7,7 +7,7 @@
 
 namespace espreso {
 
-struct ConvectionConfiguration: public ECFObject {
+struct ConvectionConfiguration: public ECFDescription {
 
 	enum class TYPE {
 		USER,
@@ -47,7 +47,7 @@ struct ConvectionConfiguration: public ECFObject {
 	ConvectionConfiguration();
 };
 
-struct RadiationConfiguration: public ECFObject {
+struct RadiationConfiguration: public ECFDescription {
 
 	ECFExpression emissivity, external_temperature;
 

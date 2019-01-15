@@ -7,7 +7,7 @@
 
 namespace espreso {
 
-struct LinearElasticPropertiesConfiguration: public ECFObject {
+struct LinearElasticPropertiesConfiguration: public ECFDescription {
 
 	enum class MODEL {
 		ISOTROPIC,

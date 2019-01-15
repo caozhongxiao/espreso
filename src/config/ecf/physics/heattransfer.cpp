@@ -141,7 +141,7 @@ espreso::HeatTransferConfiguration::HeatTransferConfiguration(DIMENSION dimensio
 			.setdatatype({ ECFDataType::STRING })
 			.setpattern({ "MY_MATERIAL" }),
 			dimension, MaterialConfiguration::PHYSICAL_MODEL::THERMAL);
-	moveLastBefore(PNAME(material_set));
+	ecfdescription->moveLastBefore(PNAME(material_set));
 
 	stabilization = STABILIZATION::SUPG;
 	REGISTER(stabilization, ECFMetaData()

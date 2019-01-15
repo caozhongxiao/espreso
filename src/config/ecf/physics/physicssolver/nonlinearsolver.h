@@ -2,11 +2,14 @@
 #ifndef SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_NONLINEARSOLVER_H_
 #define SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_NONLINEARSOLVER_H_
 
-#include "config/configuration.h"
+#include "config/description.h"
+
+#include <cstddef>
+#include <string>
 
 namespace espreso {
 
-struct NonLinearSolverConfiguration: public ECFObject {
+struct NonLinearSolverConfiguration: public ECFDescription {
 
 	enum class METHOD {
 		NEWTON_RAPHSON,

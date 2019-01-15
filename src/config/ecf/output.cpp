@@ -133,7 +133,7 @@ espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
 //			.setdescription({ "Number of MPI processes that send output data to the same storing node." })
 //			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
-	addSeparator();
+	ecfdescription->addSeparator();
 
 	results_store_frequency = monitors_store_frequency = STORE_FREQUENCY::EVERY_TIMESTEP;
 	results_nth_stepping = monitors_nth_stepping = 10;
@@ -162,7 +162,7 @@ espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER})
 			.allowonly([&] () { return monitors_store_frequency == STORE_FREQUENCY::EVERY_NTH_TIMESTEP; }));
 
-	addSpace();
+	ecfdescription->addSpace();
 
 	store_results = STORE_RESULTS::BASIC;
 	REGISTER(store_results, ECFMetaData()
@@ -188,7 +188,7 @@ espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
 			.setdescription({ "Properties selection" })
 			.allowonly([&] () { return store_results == STORE_RESULTS::USER; }));
 
-	addSeparator();
+	ecfdescription->addSeparator();
 
 	settings = debug = false;
 	catalyst = false;
@@ -206,14 +206,14 @@ espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
 			.setdescription({ "The sleep time between each time steps when catalyst is used" })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
 
-	addSpace();
+	ecfdescription->addSpace();
 
 	collected = true;
 	REGISTER(collected, ECFMetaData()
 			.setdescription({ "Collected results" })
 			.setdatatype({ ECFDataType::BOOL }));
 
-	addSpace();
+	ecfdescription->addSpace();
 
 	REGISTER(
 			monitoring,
