@@ -13,13 +13,13 @@
 
 using namespace espreso;
 
-void Assembler::keepK()
-{
-	#pragma omp parallel for
-	for (esint d = 0; d < info::mesh->elements->ndomains; d++) {
-//		info::data->origK[d] = info::data->K[d];
-	}
-}
+//void Assembler::keepK()
+//{
+//	#pragma omp parallel for
+//	for (esint d = 0; d < info::mesh->elements->ndomains; d++) {
+////		info::data->origK[d] = info::data->K[d];
+//	}
+//}
 
 void Assembler::sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::string &description)
 {

@@ -55,17 +55,16 @@ public:
 	virtual void fillSolution() = 0;
 	virtual void processSolution();
 
-	NodeData* RHS();
-
-	void keepK();
+	virtual NodeData* RHS() =0;
+	virtual void keepK();
 	virtual void KplusAlfaM(double alfa) =0;
 	virtual void applyM(NodeData *y, NodeData *x) =0;
 	virtual void applyOriginalK(NodeData *y, NodeData *x) =0;
 	virtual void enrichRHS(double alfa, NodeData* a) =0;
 	virtual void RHSMinusR() =0;
 	virtual void DirichletMinusRHS() =0;
-	void sum(NodeData *z, double alfa, NodeData* a, double beta, NodeData *b);
-	double multiply(NodeData *x, NodeData* y);
+	virtual void sum(NodeData *z, double alfa, NodeData* a, double beta, NodeData *b);
+	virtual double multiply(NodeData *x, NodeData* y);
 	virtual double residualNorm() =0;
 
 	virtual ~Composer();

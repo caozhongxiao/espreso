@@ -6,6 +6,7 @@
 #include "physics/solver/loadstep/loadstepsolver.h"
 
 #include "physics/assembler/assembler.h"
+#include "physics/assembler/composer/composer.h"
 
 #include "config/ecf/physics/physicssolver/nonlinearsolver.h"
 #include "basis/logging/logging.h"
@@ -67,16 +68,16 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 			updatedMatrices = loadStepSolver.updateStructuralMatrices(Matrices::f | Matrices::R);
 		}
 		if (_configuration.line_search) {
-			_RHS = _assembler.RHS();
+			_RHS = _assembler.composer()->RHS();
 		}
 		if (_configuration.check_second_residual) {
-			heatResidual_second = _assembler.residualNorm();
+			heatResidual_second = _assembler.composer()->residualNorm();
 			if (heatResidual_second < 1e-3) {
 				heatResidual_second = 1e-3;
 			}
 		}
 
-		_assembler.RHSMinusR();
+		_assembler.composer()->RHSMinusR();
 		if (_configuration.check_second_residual) {
 //			_assembler.sum(
 //					_f_R_BtLambda,
@@ -102,7 +103,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 		}
 
 		updatedMatrices |= loadStepSolver.updateStructuralMatrices(Matrices::Dirichlet);
-		_assembler.DirichletMinusRHS();
+		_assembler.composer()->DirichletMinusRHS();
 
 		if (_configuration.adaptive_precision) {
 			double solutionPrecisionError = 1;
@@ -125,7 +126,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 		if (_configuration.check_first_residual) {
 			temperatureResidual_first = _assembler.solution()->norm();
 		}
-		_assembler.enrichRHS(1, _solution);
+		_assembler.composer()->enrichRHS(1, _solution);
 
 		if (_configuration.check_first_residual) {
 			temperatureResidual_second = _assembler.solution()->norm();

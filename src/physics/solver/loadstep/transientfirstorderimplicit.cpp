@@ -6,6 +6,7 @@
 #include "physics/solver/timestep/timestepsolver.h"
 
 #include "physics/assembler/assembler.h"
+#include "physics/assembler/composer/composer.h"
 
 #include "mesh/mesh.h"
 #include "mesh/store/nodestore.h"
@@ -41,14 +42,14 @@ Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Matrices matrices
 
 	_assembler.assemble(updatedMatrices);
 	if (matrices & (Matrices::K | Matrices::M)) {
-		_assembler.KplusAlfaM(1 / (_alpha * time::shift));
+		_assembler.composer()->KplusAlfaM(1 / (_alpha * time::shift));
 	}
 
 	_assembler.setDirichlet();
 	if (matrices & (Matrices::K | Matrices::M | Matrices::f)) {
-		_assembler.sum(X, 1 / (_alpha * time::shift), U, (1 - _alpha) / _alpha, V);
-		_assembler.applyM(Y, X);
-		_assembler.enrichRHS(1, Y);
+		_assembler.composer()->sum(X, 1 / (_alpha * time::shift), U, (1 - _alpha) / _alpha, V);
+		_assembler.composer()->applyM(Y, X);
+		_assembler.composer()->enrichRHS(1, Y);
 	}
 
 	return matrices;
@@ -102,17 +103,17 @@ void TransientFirstOrderImplicit::processTimeStep()
 
 	_timeStepSolver.solve(*this);
 
-	_assembler.sum(dU, 1, _assembler.solution(), -1, U);
+	_assembler.composer()->sum(dU, 1, _assembler.solution(), -1, U);
 	_nTimeShift = time::shift;
 
 	if (_configuration.auto_time_stepping.allowed && time::current < _startTime + _duration) {
 		if (dU->norm() / U->norm() < 1e-5) {
 			_nTimeShift = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * time::shift);
 		} else {
-			_assembler.applyOriginalK(dTK, dU);
-			_assembler.applyM(dTK, dU);
+			_assembler.composer()->applyOriginalK(dTK, dU);
+			_assembler.composer()->applyM(dTK, dU);
 
-			double resFreq = _assembler.multiply(dTK, dU) / _assembler.multiply(dTK, dU);
+			double resFreq = _assembler.composer()->multiply(dTK, dU) / _assembler.composer()->multiply(dTK, dU);
 			double oscilationLimit = time::shift * resFreq;
 			double t1 = _configuration.auto_time_stepping.oscilation_limit / resFreq;
 
@@ -139,7 +140,7 @@ void TransientFirstOrderImplicit::processTimeStep()
 	}
 
 	if (time::shift - _precision < _nTimeShift) {
-		_assembler.sum(V, 1 / (_alpha * time::shift), dU, -(1 - _alpha) / _alpha, V);
+		_assembler.composer()->sum(V, 1 / (_alpha * time::shift), dU, -(1 - _alpha) / _alpha, V);
 
 		U->data = _assembler.solution()->data;
 		_assembler.postProcess();
