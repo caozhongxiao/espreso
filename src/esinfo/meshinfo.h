@@ -8,9 +8,6 @@ namespace espreso {
 namespace info {
 
 	extern Mesh *mesh;
-
-	void storeMesh();
-	void storeSolution();
 };
 
 }

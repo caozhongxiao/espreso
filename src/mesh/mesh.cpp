@@ -14,6 +14,8 @@
 #include "store/surfacestore.h"
 #include "store/contactstore.h"
 
+#include "output/result/resultstore.h"
+
 #include "preprocessing/meshpreprocessing.h"
 
 #include "elements/elements.h"
@@ -153,6 +155,16 @@ bool Mesh::hasPhaseChange() const
 		}
 	}
 	return false;
+}
+
+void Mesh::storeMesh()
+{
+	store->updateMesh();
+}
+
+void Mesh::storeSolution()
+{
+	store->updateSolution();
 }
 
 void Mesh::update()

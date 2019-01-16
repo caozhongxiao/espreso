@@ -164,7 +164,7 @@ bool LoadStepIterator::next(TPhysics &configuration)
 		_loadStepSolver = getLoadStepSolver(configuration.load_steps_settings.at(time::step + 1), *_assembler, *_timeStepSolver);
 
 		_assembler->init();
-		info::storeMesh();
+		info::mesh->storeMesh();
 		_loadStepSolver->run();
 	}
 

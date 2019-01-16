@@ -144,7 +144,7 @@ void TransientFirstOrderImplicit::processTimeStep()
 
 		U->data = _assembler.solution()->data;
 		_assembler.postProcess();
-		info::storeSolution();
+		info::mesh->storeSolution();
 	} else {
 		time::current -= time::shift;
 		--time::substep;

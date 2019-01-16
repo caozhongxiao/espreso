@@ -58,6 +58,9 @@ public:
 
 	bool hasPhaseChange() const;
 
+	void storeMesh();
+	void storeSolution();
+
 	size_t dimension;
 	size_t preferedDomains;
 	size_t uniformDecomposition;
