@@ -222,6 +222,7 @@ void UniformNodesFETIComposer::buildKPattern()
 	_RHSPermutation.resize(info::mesh->elements->ndomains);
 
 	data->K.resize(info::mesh->elements->ndomains);
+	data->origK.resize(info::mesh->elements->ndomains);
 	data->M.resize(info::mesh->elements->ndomains);
 	data->f.resize(info::mesh->elements->ndomains);
 	data->R.resize(info::mesh->elements->ndomains);

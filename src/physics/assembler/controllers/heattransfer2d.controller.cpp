@@ -127,7 +127,7 @@ void HeatTransfer2DControler::initData()
 			}
 			auto flux = _configuration.heat_flux.find(region->name);
 			if (flux != _configuration.heat_flux.end()) {
-				updateBRegions(flow->second, _boundaries[r].heatFlux, distribution, 2, cbegin, tbegin, time);
+				updateBRegions(flux->second, _boundaries[r].heatFlux, distribution, 2, cbegin, tbegin, time);
 			}
 
 			auto radiation = _configuration.diffuse_radiation.find(region->name);
@@ -214,7 +214,7 @@ void HeatTransfer2DControler::parametersChanged()
 			}
 			auto flux = _configuration.heat_flux.find(region->name);
 			if (flux != _configuration.heat_flux.end()) {
-				updateBRegions(flow->second, _boundaries[r].heatFlux, distribution, 2, cbegin, tbegin, time);
+				updateBRegions(flux->second, _boundaries[r].heatFlux, distribution, 2, cbegin, tbegin, time);
 			}
 
 			auto radiation = _configuration.diffuse_radiation.find(region->name);

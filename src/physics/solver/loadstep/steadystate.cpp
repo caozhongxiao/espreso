@@ -1,6 +1,7 @@
 
 #include "physics/assembler/dataholder.h"
 #include "esinfo/time.h"
+#include "esinfo/meshinfo.h"
 #include "steadystate.h"
 #include "physics/solver/timestep/timestepsolver.h"
 #include "physics/assembler/assembler.h"
@@ -43,5 +44,6 @@ void SteadyStateSolver::processTimeStep()
 	_assembler.parameters.timeIntegrationConstantM = 0;
 
 	_timeStepSolver.solve(*this);
+	info::storeSolution();
 }
 

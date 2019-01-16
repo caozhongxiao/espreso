@@ -311,6 +311,7 @@ void UniformNodesComposer::buildPatterns()
 	_KPermutation.resize(KPattern.size());
 	_RHSPermutation.resize(RHSPattern.size());
 	data->K.resize(1);
+	data->origK.resize(1);
 	data->M.resize(1);
 	data->f.resize(1);
 	data->R.resize(1);

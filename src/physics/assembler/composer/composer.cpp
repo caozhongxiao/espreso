@@ -43,7 +43,6 @@ void Composer::parametersChanged()
 void Composer::processSolution()
 {
 	_controler.processSolution();
-	info::storeSolution();
 }
 
 void Composer::insertKPattern(IJ *target, esint *begin, esint *end, MatrixType mtype)

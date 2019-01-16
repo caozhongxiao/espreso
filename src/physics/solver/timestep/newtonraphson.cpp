@@ -52,7 +52,6 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 	time::iteration = 0;
 	_assembler.parameters.tangentMatrixCorrection = false;
 	_solver.solve(loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::Dirichlet));
-
 	_assembler.postProcess();
 
 	_assembler.parameters.tangentMatrixCorrection = _configuration.tangent_matrix_correction;
@@ -153,8 +152,6 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 	} else {
 		ESINFO(CONVERGENCE) <<  " >> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION " << time::iteration + 1;
 	}
-
-	_assembler.postProcess();
 }
 
 
