@@ -53,11 +53,13 @@ static Assembler* getAssembler(HeatTransferLoadStepConfiguration &loadStep, DIME
 		switch (dimension) {
 		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DControler, UniformNodesFETIComposer, HeatTransferFETIProvider>(loadStep, loadStep.feti, 1);
 		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DControler, UniformNodesFETIComposer, HeatTransferFETIProvider>(loadStep, loadStep.feti, 1);
+		default: break;
 		} break;
 	case LoadStepConfiguration::SOLVER::MULTIGRID:
 		switch (dimension) {
 		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DControler, UniformNodesComposer, HeatTransferHYPREProvider>(loadStep, 1);
 		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DControler, UniformNodesComposer, HeatTransferHYPREProvider>(loadStep, 1);
+		default: break;
 		}
 	}
 	ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
@@ -71,11 +73,13 @@ static Assembler* getAssembler(StructuralMechanicsLoadStepConfiguration &loadSte
 		switch (dimension) {
 		case DIMENSION::D2: return new AssemblerInstance<StructuralMechanics2DControler, UniformNodesFETIComposer, StructuralMechanics2DFETIProvider>(loadStep, loadStep.feti, 2);
 		case DIMENSION::D3: return new AssemblerInstance<StructuralMechanics3DControler, UniformNodesFETIComposer, StructuralMechanics3DFETIProvider>(loadStep, loadStep.feti, 3);
+		default: break;
 		} break;
 	case LoadStepConfiguration::SOLVER::MULTIGRID:
 		switch (dimension) {
 		case DIMENSION::D2: return new AssemblerInstance<StructuralMechanics2DControler, UniformNodesComposer, StructuralMechanicsHYPREProvider>(loadStep, 2);
 		case DIMENSION::D3: return new AssemblerInstance<StructuralMechanics3DControler, UniformNodesComposer, StructuralMechanicsHYPREProvider>(loadStep, 3);
+		default: break;
 		}
 	}
 	ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";

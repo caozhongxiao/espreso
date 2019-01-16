@@ -512,9 +512,6 @@ void UniformNodesComposer::setDirichlet()
 //		std::cout << "\n";
 //	});
 
-	auto ndofbegin = _DOFMap->datatarray().begin();
-	auto ndofend = (_DOFMap->begin() + (info::mesh->nodes->size - info::mesh->nodes->uniqueSize))->begin();
-
 	for (size_t i = 0; i < _dirichletMap.size(); ++i) {
 		RHS[_dirichletMap[i]] = values[_dirichletPermutation[i]];
 //		if (info::mpi::MPIrank == rank) {
@@ -532,7 +529,7 @@ void UniformNodesComposer::setDirichlet()
 //					std::cout << "[" << _DOFMap->datatarray()[_dirichletMap[i]] + 1 << ":" << COL[j - 1] << "] = 0\n";
 //				}
 				VAL[j - 1] = 0;
-				esint r = std::lower_bound(_DOFMap->datatarray().begin(), _DOFMap->datatarray().end(), COL[j - 1] - 1) - _DOFMap->datatarray().begin();
+				size_t r = std::lower_bound(_DOFMap->datatarray().begin(), _DOFMap->datatarray().end(), COL[j - 1] - 1) - _DOFMap->datatarray().begin();
 				if (r < _DOFMap->datatarray().size() && _DOFMap->datatarray()[r] == COL[j - 1] - 1) {
 //					if (info::mpi::MPIrank == rank) {
 //						std::cout << COL[j - 1] << " into " << r << "\n";

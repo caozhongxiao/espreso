@@ -222,7 +222,7 @@ NodeData::NodeData(int dimension, const std::vector<std::string> &names)
 
 void NodeData::statistics(const tarray<esint> &nodes, esint totalsize, Statistics *statistics) const
 {
-	for (int d = 0; d < names.size(); d++) {
+	for (size_t d = 0; d < names.size(); d++) {
 		(statistics + d)->reset();
 	}
 

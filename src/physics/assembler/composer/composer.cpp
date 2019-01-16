@@ -93,7 +93,7 @@ void Composer::clearMatrices(Matrices matrices, esint domain)
 void Composer::keepK()
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < info::mesh->elements->ndomains; d++) {
+	for (esint d = 0; d < info::mesh->elements->ndomains; d++) {
 		data->origK[d] = data->K[d];
 	}
 }

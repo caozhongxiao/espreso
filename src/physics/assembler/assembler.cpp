@@ -16,7 +16,7 @@ using namespace espreso;
 void Assembler::keepK()
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < info::mesh->elements->ndomains; d++) {
+	for (esint d = 0; d < info::mesh->elements->ndomains; d++) {
 //		info::data->origK[d] = info::data->K[d];
 	}
 }
@@ -54,7 +54,7 @@ void Assembler::sum(std::vector<std::vector<double> > &z, double a, const std::v
 void Assembler::multiply(std::vector<std::vector<double> > &y, std::vector<SparseMatrix> &A, std::vector<std::vector<double> > &x, const std::string &description)
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < info::mesh->elements->ndomains; d++) {
+	for (esint d = 0; d < info::mesh->elements->ndomains; d++) {
 		A[d].MatVec(x[d], y[d], 'N', 0, 0, 0);
 	}
 }
@@ -111,29 +111,29 @@ double Assembler::maxAbsValue(const std::vector<std::vector<double> > &v, const 
 
 double Assembler::lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext)
 {
-	double alpha = 1;
-	auto multiply = [] (const std::vector<std::vector<double> > &v1, const std::vector<std::vector<double> > &v2) {
-		double cmul = 0, gmul;
-
-		#pragma omp parallel for
-		for (size_t d = 0; d < v1.size(); d++) {
-			double dmul = 0;
-			for (size_t i = 0; i < v1[d].size(); i++) {
-				dmul += v1[d][i] * v2[d][i];
-			}
-			#pragma omp atomic
-			cmul += dmul;
-		}
-		MPI_Allreduce(&cmul, &gmul, 1, MPI_DOUBLE, MPI_SUM, info::mpi::MPICommunicator);
-		return gmul;
-	};
-
-	double a = 0, b = 1;
-	double fa = 0, fb = 0, fx = 0, faStart = 0;
-
-	std::vector<std::vector<double> > solution = deltaU;
-	std::vector<std::vector<double> > F_ext_r = F_ext;
-
+//	double alpha = 1;
+//	auto multiply = [] (const std::vector<std::vector<double> > &v1, const std::vector<std::vector<double> > &v2) {
+//		double cmul = 0, gmul;
+//
+//		#pragma omp parallel for
+//		for (size_t d = 0; d < v1.size(); d++) {
+//			double dmul = 0;
+//			for (size_t i = 0; i < v1[d].size(); i++) {
+//				dmul += v1[d][i] * v2[d][i];
+//			}
+//			#pragma omp atomic
+//			cmul += dmul;
+//		}
+//		MPI_Allreduce(&cmul, &gmul, 1, MPI_DOUBLE, MPI_SUM, info::mpi::MPICommunicator);
+//		return gmul;
+//	};
+//
+//	double a = 0, b = 1;
+//	double fa = 0, fb = 0, fx = 0, faStart = 0;
+//
+//	std::vector<std::vector<double> > solution = deltaU;
+//	std::vector<std::vector<double> > F_ext_r = F_ext;
+//
 //	for (size_t i = 0; i < 6; i++) {
 //		sum(solution, 1, U, alpha, deltaU, "U = U + alpha * delta U (line search)");
 //
@@ -169,17 +169,18 @@ double Assembler::lineSearch(const std::vector<std::vector<double> > &U, std::ve
 //
 //		alpha = a - fa * ((b - a ) / (fb - fa));
 //	}
-
-	if (alpha < 0.1) {
-		alpha = 0.1;
-	}
-	if (alpha > .99) {
-		alpha = 1;
-	}
-
-	sum(solution, 0, U, alpha, deltaU, "delta U = alpha * delta U (line search)");
-	solution.swap(deltaU);
-	return alpha;
+//
+//	if (alpha < 0.1) {
+//		alpha = 0.1;
+//	}
+//	if (alpha > .99) {
+//		alpha = 1;
+//	}
+//
+//	sum(solution, 0, U, alpha, deltaU, "delta U = alpha * delta U (line search)");
+//	solution.swap(deltaU);
+//	return alpha;
+	return 0;
 }
 
 

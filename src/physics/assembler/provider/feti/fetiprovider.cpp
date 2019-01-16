@@ -143,7 +143,7 @@ void FETIProvider::makeStiffnessMatrixRegular(FETI_REGULARIZATION regularization
 
 void FETIProvider::assembleUniformB0FromCorners(int DOFs)
 {
-	for (size_t d = 0; d < info::mesh->elements->ndomains; d++) {
+	for (esint d = 0; d < info::mesh->elements->ndomains; d++) {
 		_data->B0[d].cols = _data->K[d].cols;
 	}
 
@@ -179,7 +179,7 @@ void FETIProvider::assembleUniformB0FromCorners(int DOFs)
 	}
 
 	#pragma omp parallel for
-	for  (size_t p = 0; p < info::mesh->elements->ndomains; p++) {
+	for  (esint p = 0; p < info::mesh->elements->ndomains; p++) {
 		_data->B0[p].rows = lambdas - 1;
 		_data->B0[p].cols = _data->K[p].cols;
 		_data->B0[p].nnz = _data->B0[p].I_row_indices.size();

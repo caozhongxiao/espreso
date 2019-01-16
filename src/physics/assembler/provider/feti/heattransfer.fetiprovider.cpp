@@ -106,7 +106,7 @@ void HeatTransferFETIProvider::analyticRegularization(esint domain, bool ortogon
 		double value;
 		if (ortogonalCluster) {
 			size_t nSum = 0;
-			for (size_t d = 0; d < info::mesh->elements->ndomains; d++) {
+			for (esint d = 0; d < info::mesh->elements->ndomains; d++) {
 				if (info::mesh->elements->clusters[d] == info::mesh->elements->clusters[domain]) {
 					nSum += _data->K[d].rows;
 				}

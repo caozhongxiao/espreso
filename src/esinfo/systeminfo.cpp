@@ -37,8 +37,10 @@ namespace system {
 void setSignals()
 {
 	switch (build) {
-	case BUILD::DEBUG:
 	case BUILD::RELEASE:
+	case BUILD::MEASUREMENT:
+	case BUILD::DEVEL:
+	case BUILD::DEBUG:
 		std::signal(SIGTERM, signalHandler);
 		std::signal(SIGSEGV, signalHandler);
 		std::signal(SIGINT, signalHandler);

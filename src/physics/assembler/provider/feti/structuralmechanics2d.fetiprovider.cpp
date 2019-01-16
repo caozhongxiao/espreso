@@ -47,10 +47,10 @@ void StructuralMechanics2DFETIProvider::analyticRegularization(esint domain, boo
 
 	_data->N1[domain].dense_values.reserve(_data->N1[domain].nnz);
 
-	for (size_t c = 0; c < 2; c++) {
+	for (int c = 0; c < 2; c++) {
 		std::vector<double> kernel = { 0, 0 };
 		kernel[c] = 1 / std::sqrt(np);
-		for (size_t i = 0; i < _data->K[domain].rows / 2; i++) {
+		for (esint i = 0; i < _data->K[domain].rows / 2; i++) {
 			_data->N1[domain].dense_values.insert(_data->N1[domain].dense_values.end(), kernel.begin(), kernel.end());
 		}
 	}

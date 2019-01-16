@@ -436,7 +436,7 @@ void UniformNodesFETIComposer::buildB1Pattern()
 		}
 	};
 
-	for (size_t n = 0; n < info::mesh->nodes->size; ++n, ++dmap, ++nranks) {
+	for (esint n = 0; n < info::mesh->nodes->size; ++n, ++dmap, ++nranks) {
 		if (dmap->size() / (1 + _DOFs) > 1) {
 			for (int dof = 0; dof < _DOFs; ++dof) {
 				esint ndomains = dmap->size() / (1 + _DOFs);
@@ -509,7 +509,7 @@ void UniformNodesFETIComposer::buildB1Pattern()
 	};
 
 	std::vector<esint> roffset(info::mesh->neighbours.size());
-	for (size_t n = 0; n < info::mesh->nodes->size; ++n, ++dmap, ++nranks) {
+	for (esint n = 0; n < info::mesh->nodes->size; ++n, ++dmap, ++nranks) {
 		if (dmap->size() / (1 + _DOFs) > 1) {
 			for (int dof = 0; dof < _DOFs; ++dof) {
 				if (_configuration.redundant_lagrange) {
@@ -805,7 +805,7 @@ void UniformNodesFETIComposer::fillSolution()
 						++noffset;
 					}
 
-					for (size_t dof = 0; dof < _DOFs; ++dof) {
+					for (esint dof = 0; dof < _DOFs; ++dof) {
 						tBuffer[noffset].push_back(solution[i * _DOFs + dof]);
 					}
 				}
@@ -836,7 +836,7 @@ void UniformNodesFETIComposer::fillSolution()
 					++noffset;
 				}
 
-				for (size_t dof = 0; dof < _DOFs; ++dof) {
+				for (esint dof = 0; dof < _DOFs; ++dof) {
 					solution[n * _DOFs + dof] += rBuffer[noffset][roffset[noffset]++];
 				}
 			}

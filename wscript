@@ -99,9 +99,11 @@ def set_variables(ctx):
     if ctx.options.intwidth == 64:
         ctx.env.append_unique("DEFINES", [ "esint=long", "esint_mpi=MPI_LONG" ])
 
-    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-Wall"])
+    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-Wall", "-Wno-deprecated-declarations" ])
     ctx.env.mode = ctx.options.mode
     if ctx.options.mode == "release":
+        ctx.env.append_unique("CXXFLAGS", [ "-O3" ])
+    if ctx.options.mode == "measurement":
         ctx.env.append_unique("CXXFLAGS", [ "-O3" ])
     if ctx.options.mode == "devel":
         ctx.env.append_unique("CXXFLAGS", [ "-O2", "-g" ])

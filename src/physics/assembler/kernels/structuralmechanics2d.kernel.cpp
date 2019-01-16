@@ -138,7 +138,7 @@ void StructuralMechanics2DKernel::processElement(Matrices matrices, const Solver
 	double detJ, CP = 1, te;
 	Point center;
 
-	for (size_t n = 0; n < size; n++) {
+	for (esint n = 0; n < size; n++) {
 		inertia(n, 0) = iterator.acceleration[2 * n + 0];
 		inertia(n, 1) = iterator.acceleration[2 * n + 1];
 		coordinates(n, 0) = iterator.coordinates[2 * n + 0];
@@ -322,8 +322,7 @@ void StructuralMechanics2DKernel::processEdge(Matrices matrices, const SolverPar
 		fe = 0;
 	}
 
-	for (size_t n = 0; n < size; n++) {
-		double temp = 0;
+	for (esint n = 0; n < size; n++) {
 		coordinates(n, 0) = iterator.coordinates[2 * n + 0];
 		coordinates(n, 1) = iterator.coordinates[2 * n + 1];
 		P(n, 0) = iterator.normalPressure[n];

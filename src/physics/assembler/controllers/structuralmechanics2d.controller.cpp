@@ -282,7 +282,6 @@ void StructuralMechanics2DControler::processSolution()
 		auto enodes = info::mesh->elements->procNodes->cbegin(t);
 		StructuralMechanics2DKernel::SolutionIterator iterator;
 
-		size_t noffset = enodes->begin() - info::mesh->elements->procNodes->datatarray().begin(t);
 		iterator.temperature = _ntemperature.data->datatarray().begin(t);
 		iterator.coordinates = _ncoordinate.data->datatarray().begin(t);
 		iterator.thickness   = _nthickness.data->datatarray().begin(t);

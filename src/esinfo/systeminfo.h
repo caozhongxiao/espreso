@@ -17,8 +17,9 @@ namespace system {
 
 	enum class BUILD {
 		RELEASE,
-		DEBUG,
-		MEASUREMENT
+		MEASUREMENT,
+		DEVEL,
+		DEBUG
 	};
 
 	constexpr OPERATIONSYSTEM os =
@@ -28,7 +29,7 @@ namespace system {
 		INSTRUCTIONSET::SSE;
 
 	constexpr BUILD build =
-		BUILD::DEBUG;
+		BUILD::RELEASE;
 
 	void setSignals();
 }

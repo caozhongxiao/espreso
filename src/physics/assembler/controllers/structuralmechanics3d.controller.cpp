@@ -22,7 +22,6 @@ StructuralMechanics3DControler::StructuralMechanics3DControler(StructuralMechani
 	_kernel = new StructuralMechanics3DKernel();
 
 	double defaultTemperature = 0;
-	double defaultThickness = 1;
 
 	_ncoordinate.data = new serializededata<esint, double>(3, _nDistribution);
 	_ntemperature.data = new serializededata<esint, double>(1, _nDistribution);
@@ -179,8 +178,6 @@ void StructuralMechanics3DControler::nextTime()
 
 void StructuralMechanics3DControler::parametersChanged()
 {
-	size_t threads = info::env::OMP_NUM_THREADS;
-
 	double *cbegin = _ncoordinate.data->datatarray().data();
 	double *tbegin = NULL;
 	double time = time::current;

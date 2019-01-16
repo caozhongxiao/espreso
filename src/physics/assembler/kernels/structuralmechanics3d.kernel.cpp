@@ -190,7 +190,7 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Solver
 	DenseMatrix gpK(size, 36), gpTE(1, 3), gpInertia(1, 3), gpDens(1, 1);
 	double detJ, CP = 1, te;
 
-	for (size_t n = 0; n < size; n++) {
+	for (esint n = 0; n < size; n++) {
 		inertia(n, 0) = iterator.acceleration[3 * n + 0];
 		inertia(n, 1) = iterator.acceleration[3 * n + 1];
 		inertia(n, 2) = iterator.acceleration[3 * n + 2];
@@ -328,7 +328,7 @@ void StructuralMechanics3DKernel::processFace(Matrices matrices, const SolverPar
 		fe = 0;
 	}
 
-	for (size_t n = 0; n < size; n++) {
+	for (esint n = 0; n < size; n++) {
 		coordinates(n, 0) = iterator.coordinates[3 * n + 0];
 		coordinates(n, 1) = iterator.coordinates[3 * n + 1];
 		coordinates(n, 2) = iterator.coordinates[3 * n + 2];

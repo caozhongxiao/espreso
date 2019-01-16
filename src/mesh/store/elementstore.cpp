@@ -165,7 +165,6 @@ size_t ElementStore::packedDataSize() const
 
 void ElementStore::packData(char* &p) const
 {
-	char *begin;
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {
 			Esutils::pack(data[i]->data, p);
@@ -305,7 +304,7 @@ ElementData::ElementData(int dimension, const std::vector<std::string> &names)
 
 void ElementData::statistics(const tarray<esint> &elements, esint totalsize, Statistics *statistics)
 {
-	for (int d = 0; d <= names.size(); d++) {
+	for (size_t d = 0; d <= names.size(); d++) {
 		(statistics + d)->reset();
 	}
 

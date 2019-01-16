@@ -1037,7 +1037,7 @@ void VTKLegacyDebugInfo::dirichlet(const Mesh &mesh, const DataHolder &instance)
 	}
 	os << "POINTS " << points << " float\n";
 
-	for (size_t d = 0; d < mesh.elements->ndomains; d++) {
+	for (esint d = 0; d < mesh.elements->ndomains; d++) {
 		for (size_t i = 0; i < instance.B1[d].I_row_indices.size() && instance.B1[d].I_row_indices[i] <= (esint)instance.block[DataHolder::CONSTRAINT::DIRICHLET]; i++) {
 			auto it = std::lower_bound(mesh.nodes->dintervals[d].begin(), mesh.nodes->dintervals[d].end(), instance.B1[d].J_col_indices[i], [&] (DomainInterval &d, esint dof) {
 				return d.DOFOffset + d.end - d.begin < dof;
@@ -1069,7 +1069,7 @@ void VTKLegacyDebugInfo::dirichlet(const Mesh &mesh, const DataHolder &instance)
 	os << "CELL_DATA " << cells << "\n";
 	os << "SCALARS value float 1\n";
 	os << "LOOKUP_TABLE default\n";
-	for (size_t d = 0; d < mesh.elements->ndomains; d++) {
+	for (esint d = 0; d < mesh.elements->ndomains; d++) {
 		for (size_t i = 0; i < instance.B1[d].I_row_indices.size() && instance.B1[d].I_row_indices[i] <= (esint)instance.block[DataHolder::CONSTRAINT::DIRICHLET]; i++) {
 			os << instance.B1c[d][i] << "\n";
 		}
@@ -1156,11 +1156,11 @@ void VTKLegacyDebugInfo::gluing(const Mesh &mesh, const DataHolder &instance)
 				}
 				ptarget = rPoints[(*cmapit)[2]][index];
 			} else {
-				size_t index = std::find(rLambdas[(*cmapit)[1]].begin(), rLambdas[(*cmapit)[1]].begin() + offset, cmapit->front()) - rLambdas[(*cmapit)[1]].begin();
+				esint index = std::find(rLambdas[(*cmapit)[1]].begin(), rLambdas[(*cmapit)[1]].begin() + offset, cmapit->front()) - rLambdas[(*cmapit)[1]].begin();
 				if (index == offset) {
 					index = std::find(rLambdas[(*cmapit)[1]].begin() + offset + 1, rLambdas[(*cmapit)[1]].end(), cmapit->front()) - rLambdas[(*cmapit)[1]].begin();
 				}
-				if (index == rLambdas[(*cmapit)[1]].size() || rLambdas[(*cmapit)[1]][index] != cmapit->front()) {
+				if (index == (esint)rLambdas[(*cmapit)[1]].size() || rLambdas[(*cmapit)[1]][index] != cmapit->front()) {
 					ESINFO(ERROR) << "Different Lambdas on neighbour clusters.";
 				}
 				ptarget = rPoints[(*cmapit)[1]][index];

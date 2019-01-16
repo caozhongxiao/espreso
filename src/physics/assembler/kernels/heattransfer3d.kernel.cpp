@@ -208,7 +208,7 @@ void HeatTransfer3DKernel::processElement(Matrices matrices, const SolverParamet
 	bool tangentCorrection = parameters.tangentMatrixCorrection;
 
 	DenseMatrix Ce(3, 3), coordinates(size, 3), J(3, 3), invJ(3, 3), dND;
-	double detJ, temp, tauK, xi = 1, C1 = 1, C2 = 6;
+	double detJ, tauK, xi = 1, C1 = 1, C2 = 6;
 	DenseMatrix f(size, 1);
 	DenseMatrix U(size, 3);
 	DenseMatrix m(size, 1);
@@ -491,7 +491,7 @@ void HeatTransfer3DKernel::processFace(Matrices matrices, const SolverParameters
 		Ke = 0;
 	}
 
-	for (size_t n = 0; n < size; n++) {
+	for (esint n = 0; n < size; n++) {
 		double temp = iterator.temperature[n];
 		coordinates(n, 0) = iterator.coordinates[3 * n + 0];
 		coordinates(n, 1) = iterator.coordinates[3 * n + 1];
