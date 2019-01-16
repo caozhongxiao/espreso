@@ -121,8 +121,8 @@ struct AssemblerInstance: public Assembler, public TController, public TComposer
 	{
 		TComposer::fillSolution();
 
-		TController::parametersChanged();
-		TController::processSolution();
+		TComposer::parametersChanged();
+		TComposer::processSolution();
 	}
 
 	NodeData* RHS()
