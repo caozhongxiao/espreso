@@ -5,7 +5,7 @@
 
 #include "basis/containers/tarray.h"
 #include "basis/utilities/communication.h"
-#include "config/ecf/environment.h"
+#include "esinfo/envinfo.h"
 
 #include <numeric>
 
@@ -13,7 +13,7 @@ using namespace espreso;
 
 bool OpenFOAMFaces::readFaces(PlainOpenFOAMData &data)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, end - begin);
 
@@ -53,7 +53,7 @@ bool OpenFOAMFaces::readFaces(PlainOpenFOAMData &data)
 
 bool OpenFOAMFaces::readParents(std::vector<esint> &data)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, end - begin);
 

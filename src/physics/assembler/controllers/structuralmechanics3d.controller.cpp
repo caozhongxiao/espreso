@@ -3,6 +3,7 @@
 #include "esinfo/time.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
+#include "esinfo/envinfo.h"
 #include "structuralmechanics3d.controller.h"
 #include "physics/assembler/kernels/structuralmechanics3d.kernel.h"
 
@@ -119,7 +120,7 @@ void StructuralMechanics3DControler::dirichletValues(std::vector<double> &values
 
 void StructuralMechanics3DControler::initData()
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -178,7 +179,7 @@ void StructuralMechanics3DControler::nextTime()
 
 void StructuralMechanics3DControler::parametersChanged()
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	double *cbegin = _ncoordinate.data->datatarray().data();
 	double *tbegin = NULL;
@@ -259,7 +260,7 @@ void StructuralMechanics3DControler::processBoundary(Matrices matrices, const So
 
 void StructuralMechanics3DControler::processSolution()
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {

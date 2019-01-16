@@ -5,7 +5,7 @@
 #include "input/meshgenerator/elements/element.h"
 #include "input/plaindata.h"
 #include "input/generatedinput.h"
-#include "config/ecf/environment.h"
+#include "esinfo/mpiinfo.h"
 #include "config/ecf/input/gridtower.h"
 #include "basis/logging/logging.h"
 #include "basis/utilities/communication.h"
@@ -41,7 +41,7 @@ size_t GridTowerGenerator::gridIndex(const GridTowerGeneratorConfiguration &conf
 			}
 		}
 
-		if (clusters <= environment->MPIrank && environment->MPIrank < clusters + gclusters) {
+		if (clusters <= info::mpi::MPIrank && info::mpi::MPIrank < clusters + gclusters) {
 			return grid->first;
 		}
 		clusters += gclusters;
@@ -79,7 +79,7 @@ void GridTowerGenerator::init(const GridTowerGeneratorConfiguration &configurati
 							continue;
 						}
 
-						if (cluster++ == environment->MPIrank) {
+						if (cluster++ == info::mpi::MPIrank) {
 							_clusterOffset = offset;
 							Triple<esint> start = _settings.start;
 							_settings.start = start + ((_settings.end - start) / (Triple<double>)_settings.clusters * offset).round();
@@ -91,30 +91,30 @@ void GridTowerGenerator::init(const GridTowerGeneratorConfiguration &configurati
 			nodes = (_settings.blocks * _settings.clusters * _settings.domains * _settings.elements * (Triple<size_t>(_block.element()->subnodes) - 1) + 1).mul();
 		}
 		int maxcluster = cluster, end;
-		MPI_Allreduce(&maxcluster, &cluster, 1, MPI_INT, MPI_MAX, environment->MPICommunicator);
+		MPI_Allreduce(&maxcluster, &cluster, 1, MPI_INT, MPI_MAX, info::mpi::MPICommunicator);
 		noffset += nodes;
-		MPI_Allreduce(&noffset, &nodes, sizeof(size_t), MPI_BYTE, MPITools::sizetOperations().max, environment->MPICommunicator);
+		MPI_Allreduce(&noffset, &nodes, sizeof(size_t), MPI_BYTE, MPITools::sizetOperations().max, info::mpi::MPICommunicator);
 		noffset = nodes;
 		if (grid->first + 1 == _gridIndex) {
 			_gridNodeOffset = noffset;
 		}
 		switch (configuration.direction) {
 		case GridTowerGeneratorConfiguration::DIRECTION::X:
-			MPI_Allreduce(&_settings.end.x, &end, 1, MPI_INT, MPI_MAX, environment->MPICommunicator);
+			MPI_Allreduce(&_settings.end.x, &end, 1, MPI_INT, MPI_MAX, info::mpi::MPICommunicator);
 			if (grid->first < _gridIndex) {
 				_settings.end.x += end - _settings.start.x;
 				_settings.start.x = end;
 			}
 			break;
 		case GridTowerGeneratorConfiguration::DIRECTION::Y:
-			MPI_Allreduce(&_settings.end.y, &end, 1, MPI_INT, MPI_MAX, environment->MPICommunicator);
+			MPI_Allreduce(&_settings.end.y, &end, 1, MPI_INT, MPI_MAX, info::mpi::MPICommunicator);
 			if (grid->first < _gridIndex) {
 				_settings.end.y += end - _settings.start.y;
 				_settings.start.y = end;
 			}
 			break;
 		case GridTowerGeneratorConfiguration::DIRECTION::Z:
-			MPI_Allreduce(&_settings.end.z, &end, 1, MPI_INT, MPI_MAX, environment->MPICommunicator);
+			MPI_Allreduce(&_settings.end.z, &end, 1, MPI_INT, MPI_MAX, info::mpi::MPICommunicator);
 			if (grid->first < _gridIndex) {
 				_settings.end.z += end - _settings.start.z;
 				_settings.start.z = end;
@@ -125,8 +125,8 @@ void GridTowerGenerator::init(const GridTowerGeneratorConfiguration &configurati
 
 	_settings.body = _gridIndex;
 
-	if (cluster != environment->MPIsize) {
-		ESINFO(GLOBAL_ERROR) << "Incorrect number of MPI processes (" << environment->MPIsize << "). Should be " << cluster;
+	if (cluster != info::mpi::MPIsize) {
+		ESINFO(GLOBAL_ERROR) << "Incorrect number of MPI processes (" << info::mpi::MPIsize << "). Should be " << cluster;
 	}
 }
 

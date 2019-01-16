@@ -1,6 +1,8 @@
 
 
 #include "esinfo/meshinfo.h"
+#include "esinfo/envinfo.h"
+#include "esinfo/mpiinfo.h"
 #include "uniformnodescomposer.h"
 
 #include "physics/assembler/dataholder.h"
@@ -12,7 +14,6 @@
 #include "basis/matrices/matrixtype.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
-#include "config/ecf/environment.h"
 
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
@@ -31,7 +32,7 @@ void UniformNodesComposer::initDOFs()
 {
 	// ASSUME THAT SHARED NODES ARE SORTED IN THE SAME ORDER ON ALL PROCESSES
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<esint> doffset(threads);
 	std::vector<std::vector<esint> > roffset(threads);
@@ -43,7 +44,7 @@ void UniformNodesComposer::initDOFs()
 		std::vector<esint> troffset(info::mesh->neighbours.size());
 
 		for (size_t n = info::mesh->nodes->distribution[t]; n < info::mesh->nodes->distribution[t + 1]; ++n, ++ranks) {
-			if (ranks->front() == environment->MPIrank) {
+			if (ranks->front() == info::mpi::MPIrank) {
 				dsize += _DOFs;
 			} else {
 				esint noffset = 0;
@@ -72,7 +73,7 @@ void UniformNodesComposer::initDOFs()
 		std::vector<std::vector<esint> > tBuffer(info::mesh->neighbours.size());
 
 		for (size_t n = info::mesh->nodes->distribution[t]; n < info::mesh->nodes->distribution[t + 1]; ++n, ++ranks) {
-			if (ranks->front() == environment->MPIrank) {
+			if (ranks->front() == info::mpi::MPIrank) {
 				esint noffset = 0;
 				for (auto r = ranks->begin() + 1; r != ranks->end(); ++r) {
 					while (info::mesh->neighbours[noffset] < *r) {
@@ -109,7 +110,7 @@ void UniformNodesComposer::initDOFs()
 		}
 
 		for (size_t n = info::mesh->nodes->distribution[t]; n < info::mesh->nodes->distribution[t + 1]; ++n, ++ranks) {
-			if (ranks->front() == environment->MPIrank) {
+			if (ranks->front() == info::mpi::MPIrank) {
 				for (int dof = 0; dof < _DOFs; ++dof) {
 					tdata.push_back(goffset + toffset++);
 				}
@@ -167,7 +168,7 @@ void UniformNodesComposer::initDirichlet()
 
 void UniformNodesComposer::buildPatterns()
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 	MatrixType mtype = _provider.getMatrixType();
 
 	_nDistribution = info::mesh->nodes->gatherUniqueNodeDistribution();
@@ -257,7 +258,7 @@ void UniformNodesComposer::buildPatterns()
 
 	auto iK = pK.begin();
 	auto iRHS = pRHS.begin();
-	for (size_t n = 0; n < info::mesh->neighbours.size() && info::mesh->neighbours[n] < environment->MPIrank; ++n) {
+	for (size_t n = 0; n < info::mesh->neighbours.size() && info::mesh->neighbours[n] < info::mpi::MPIrank; ++n) {
 		while (KPattern[*iK].row < _nDistribution[info::mesh->neighbours[n] + 1]) {
 			if (iK == pK.begin() || KPattern[*iK] != KPattern[*(iK - 1)]) {
 				sKBuffer[n].push_back(KPattern[*iK]);
@@ -364,7 +365,7 @@ void UniformNodesComposer::buildPatterns()
 
 void UniformNodesComposer::assemble(Matrices matrices, const SolverParameters &parameters)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	MatrixType mtype = _provider.getMatrixType();
 
@@ -458,10 +459,10 @@ void UniformNodesComposer::setDirichlet()
 //	int rank = 3;
 //
 //	Communication::serialize([&] () {
-//		if (environment->MPIrank != rank) {
+//		if (info::mpi::MPIrank != rank) {
 //			return;
 //		}
-//		printf(" // %d \\\\ \n", environment->MPIrank);
+//		printf(" // %d \\\\ \n", info::mpi::MPIrank);
 //		for (size_t i = 0; i < _dirichletMap.size(); i++) {
 //			printf("%d ", _DOFMap->datatarray()[_dirichletMap[i]] + 1);
 //		}
@@ -516,29 +517,29 @@ void UniformNodesComposer::setDirichlet()
 
 	for (size_t i = 0; i < _dirichletMap.size(); ++i) {
 		RHS[_dirichletMap[i]] = values[_dirichletPermutation[i]];
-//		if (environment->MPIrank == rank) {
+//		if (info::mpi::MPIrank == rank) {
 //			std::cout << "RHS[" << _DOFMap->datatarray()[_dirichletMap[i]] + 1 << "] = " << values[_dirichletPermutation[i]] << "\n";
 //		}
 		esint col = _DOFMap->datatarray()[_dirichletMap[i]] + 1;
 		for (esint j = ROW[_dirichletMap[i]]; j < ROW[_dirichletMap[i] + 1]; j++) {
 			if (COL[j - 1] == col) {
-//				if (environment->MPIrank == rank) {
+//				if (info::mpi::MPIrank == rank) {
 //					std::cout << "[" << _DOFMap->datatarray()[_dirichletMap[i]] + 1 << ":" << COL[j - 1] << "] = 1\n";
 //				}
 				VAL[j - 1] = 1;
 			} else {
-//				if (environment->MPIrank == rank) {
+//				if (info::mpi::MPIrank == rank) {
 //					std::cout << "[" << _DOFMap->datatarray()[_dirichletMap[i]] + 1 << ":" << COL[j - 1] << "] = 0\n";
 //				}
 				VAL[j - 1] = 0;
 				esint r = std::lower_bound(_DOFMap->datatarray().begin(), _DOFMap->datatarray().end(), COL[j - 1] - 1) - _DOFMap->datatarray().begin();
 				if (r < _DOFMap->datatarray().size() && _DOFMap->datatarray()[r] == COL[j - 1] - 1) {
-//					if (environment->MPIrank == rank) {
+//					if (info::mpi::MPIrank == rank) {
 //						std::cout << COL[j - 1] << " into " << r << "\n";
 //					}
 					for (esint c = ROW[r]; c < ROW[r + 1]; c++) {
 						if (COL[c - 1] == col) {
-//							if (environment->MPIrank == rank) {
+//							if (info::mpi::MPIrank == rank) {
 //								std::cout << "[" << _DOFMap->datatarray()[r] + 1 << ":" << COL[c - 1] << "] = 0; RHS[" << _DOFMap->datatarray()[r] + 1 << "] -= " << VAL[c - 1] << " * " << RHS[_dirichletMap[i]] << "\n";
 //							}
 							RHS[r] -= VAL[c - 1] * RHS[_dirichletMap[i]];
@@ -548,7 +549,7 @@ void UniformNodesComposer::setDirichlet()
 				}
 			}
 
-//			if (environment->MPIrank == rank) {
+//			if (info::mpi::MPIrank == rank) {
 //				for (esint r = 0, i = 0, f = 0; r < info::mesh->nodes->uniqueTotalSize; r++) {
 //					for (esint c = 0; c < info::mesh->nodes->uniqueTotalSize; c++) {
 //						if (i < RROW.size() && RROW[i] == r + 1 && COL[i] == c + 1) {
@@ -582,14 +583,14 @@ void UniformNodesComposer::setDirichlet()
 
 
 //	Communication::serialize([&] () {
-//		if (environment->MPIrank != rank) {
+//		if (info::mpi::MPIrank != rank) {
 //			return;
 //		}
 //		for (size_t i = 0; i < _dirichletMap.size(); i++) {
 //			printf("%d ", _dirichletMap[i]);
 //		}
 //		printf("\n");
-//		printf(" // %d \\\\ \n", environment->MPIrank);
+//		printf(" // %d \\\\ \n", info::mpi::MPIrank);
 //		for (esint r = 0, i = 0, f = 0; r < info::mesh->nodes->uniqueTotalSize; r++) {
 //			for (esint c = 0; c < info::mesh->nodes->uniqueTotalSize; c++) {
 //				if (i < RROW.size() && RROW[i] == r + 1 && COL[i] == c + 1) {
@@ -629,7 +630,7 @@ void UniformNodesComposer::synchronize()
 
 	auto nranks = info::mesh->nodes->ranks->begin();
 	auto DOFs = _DOFMap->begin();
-	for (esint n = 0; n < info::mesh->nodes->size && DOFs->front() < _nDistribution[environment->MPIrank]; ++n, ++nranks, ++DOFs) {
+	for (esint n = 0; n < info::mesh->nodes->size && DOFs->front() < _nDistribution[info::mpi::MPIrank]; ++n, ++nranks, ++DOFs) {
 		esint r = 0;
 		while (info::mesh->neighbours[r] < nranks->front()) {
 			++r;
@@ -642,7 +643,7 @@ void UniformNodesComposer::synchronize()
 
 	nranks = info::mesh->nodes->ranks->begin();
 	DOFs = _DOFMap->begin();
-	for (esint n = 0; n < info::mesh->nodes->size && DOFs->front() < _nDistribution[environment->MPIrank]; ++n, ++nranks, ++DOFs) {
+	for (esint n = 0; n < info::mesh->nodes->size && DOFs->front() < _nDistribution[info::mpi::MPIrank]; ++n, ++nranks, ++DOFs) {
 		esint r = 0;
 		while (info::mesh->neighbours[r] < nranks->front()) {
 			++r;
@@ -678,7 +679,7 @@ void UniformNodesComposer::fillSolution()
 
 	size_t RHSIndex = _localRHSOffset;
 	for (size_t n = 0; n < info::mesh->neighbours.size(); ++n) {
-		if (info::mesh->neighbours[n] < environment->MPIrank) {
+		if (info::mesh->neighbours[n] < info::mpi::MPIrank) {
 			rBuffer[n].resize(_nRHSSize[n]);
 		} else {
 			sBuffer[n].reserve(_nRHSSize[n]);
@@ -695,7 +696,7 @@ void UniformNodesComposer::fillSolution()
 	std::vector<esint> rIndices(info::mesh->neighbours.size());
 	auto nranks = info::mesh->nodes->ranks->begin();
 	auto DOFs = _DOFMap->begin();
-	for (esint n = 0; n < info::mesh->nodes->size && DOFs->front() < _nDistribution[environment->MPIrank]; ++n, ++nranks, ++DOFs) {
+	for (esint n = 0; n < info::mesh->nodes->size && DOFs->front() < _nDistribution[info::mpi::MPIrank]; ++n, ++nranks, ++DOFs) {
 		esint r = 0;
 		while (info::mesh->neighbours[r] < nranks->front()) {
 			++r;

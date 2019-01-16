@@ -3,12 +3,14 @@
 #include "elementstore.h"
 #include "statisticsstore.h"
 
+#include "esinfo/mpiinfo.h"
+#include "esinfo/envinfo.h"
+
 #include "mesh/mesh.h"
 #include "mesh/elements/element.h"
 
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
-#include "config/ecf/environment.h"
 
 
 using namespace espreso;
@@ -77,7 +79,7 @@ void ElementStore::pack(char* &p) const
 		std::vector<int> eindices;
 		eindices.reserve(epointers->datatarray().size());
 
-		size_t threads = environment->OMP_NUM_THREADS;
+		size_t threads = info::env::OMP_NUM_THREADS;
 		for (size_t t = 0; t < threads; t++) {
 			for (size_t i = this->distribution[t]; i < this->distribution[t + 1]; ++i) {
 				eindices.push_back(epointers->datatarray()[i] - _eclasses[t]);
@@ -195,7 +197,7 @@ ElementStore::~ElementStore()
 
 void ElementStore::store(const std::string &file)
 {
-	std::ofstream os(file + std::to_string(environment->MPIrank) + ".txt");
+	std::ofstream os(file + std::to_string(info::mpi::MPIrank) + ".txt");
 
 	Store::storedata(os, "IDs", IDs);
 	Store::storedata(os, "nodes", procNodes);
@@ -224,7 +226,7 @@ void ElementStore::permute(const std::vector<esint> &permutation, const std::vec
 	if (regions != NULL) { regions->permute(permutation, distribution); }
 
 	if (epointers != NULL) {
-		size_t threads = environment->OMP_NUM_THREADS;
+		size_t threads = info::env::OMP_NUM_THREADS;
 		if (threads > 1) {
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
@@ -253,7 +255,7 @@ void ElementStore::permute(const std::vector<esint> &permutation, const std::vec
 
 void ElementStore::reindex(const serializededata<esint, esint> *nIDs)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -333,7 +335,7 @@ void ElementData::statistics(const tarray<esint> &elements, esint totalsize, Sta
 	}
 
 	std::vector<Statistics> global(names.size());
-	MPI_Allreduce(statistics, global.data(), sizeof(Statistics) * names.size(), MPI_BYTE, MPITools::operations().mergeStatistics, environment->MPICommunicator);
+	MPI_Allreduce(statistics, global.data(), sizeof(Statistics) * names.size(), MPI_BYTE, MPITools::operations().mergeStatistics, info::mpi::MPICommunicator);
 	memcpy(statistics, global.data(), sizeof(Statistics) * names.size());
 
 	for (size_t i = 0; i < names.size(); i++) {

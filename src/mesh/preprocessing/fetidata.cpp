@@ -19,7 +19,8 @@
 #include "basis/utilities/parser.h"
 #include "basis/logging/logging.h"
 
-#include "config/ecf/environment.h"
+#include "esinfo/envinfo.h"
+#include "esinfo/mpiinfo.h"
 #include "config/ecf/decomposition.h"
 
 #include "wrappers/math/math.h"
@@ -37,7 +38,7 @@ void MeshPreprocessing::computeLocalIndices()
 {
 	start("computation local indices");
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	_mesh->elements->domainNodes = new serializededata<esint, esint>(*_mesh->elements->procNodes);
 
@@ -66,7 +67,7 @@ void MeshPreprocessing::computeSharedFaceNodes()
 
 	start("computation of shared face nodes");
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 	esint eoffset = _mesh->elements->IDs->datatarray().front();
 
 	std::vector<std::vector<esint> > inodes(threads);
@@ -368,7 +369,7 @@ void MeshPreprocessing::computeFixPoints()
 		_mesh->FETIData = new FETIDataStore();
 	}
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<std::vector<esint> > fixPoints(threads), fixPointsDist(threads);
 
@@ -406,7 +407,7 @@ void MeshPreprocessing::computeFixPointsOnSurface()
 		_mesh->FETIData = new FETIDataStore();
 	}
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<std::vector<esint> > fixPoints(threads), fixPointsDist(threads);
 
@@ -440,13 +441,13 @@ void MeshPreprocessing::computeDomainsSurface()
 
 	start("computation domains surface");
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<std::vector<esint> > faces(threads), facesDistribution(threads), ecounter(threads, std::vector<esint>((int)Element::CODE::SIZE));
 	std::vector<std::vector<Element*> > fpointer(threads);
 	std::vector<std::vector<size_t> > intervals(threads);
 
-	esint eoffset = _mesh->elements->gatherElementsProcDistribution()[environment->MPIrank];
+	esint eoffset = _mesh->elements->gatherElementsProcDistribution()[info::mpi::MPIrank];
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -622,7 +623,7 @@ void MeshPreprocessing::triangularizeDomainSurface()
 
 	start("triangularize domain surface");
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	if (_mesh->domainsSurface->triangles == NULL) {
 

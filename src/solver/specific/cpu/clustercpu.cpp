@@ -5,6 +5,7 @@
 #include "clustercpu.h"
 
 #include "basis/logging/logging.h"
+#include "esinfo/ecfinfo.h"
 
 using namespace espreso;
 
@@ -123,14 +124,14 @@ void ClusterCPU::SetupKsolvers ( ) {
 //
 //        if (configuration.keep_factors) {
 //            std::stringstream ss;
-//            ss << "init -> rank: " << environment->MPIrank << ", subdomain: " << d;
+//            ss << "init -> rank: " << info::mpi::MPIrank << ", subdomain: " << d;
 //            domains[d].Kplus.keep_factors = true;
 //            if (configuration.Ksolver != FETI_KSOLVER::ITERATIVE) {
 //                domains[d].Kplus.Factorization (ss.str());
 //            }
 //        } else {
 //            domains[d].Kplus.keep_factors = false;
-//            domains[d].Kplus.MPIrank = environment->MPIrank;
+//            domains[d].Kplus.MPIrank = info::mpi::MPIrank;
 //        }
 //
 //        //TODO: Hot Fix - needs to be done better
@@ -154,7 +155,7 @@ void ClusterCPU::SetupKsolvers ( ) {
 //        //TODO: else stokes = -2 = Real and symmetric indefinite
 //#endif
 //
-//        if ( d == 0 && environment->MPIrank == 0) {
+//        if ( d == 0 && info::mpi::MPIrank == 0) {
 //        	domains[d].Kplus.msglvl = 0;
 //        }
 //        ESINFO(PROGRESS3) << Info::plain() << ".";
@@ -232,7 +233,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 	}
 	K_modif.ConvertToCSRwithSort(1);
 	{
-		if (environment->print_matrices) {
+		if (info::ecf->output.print_matrices) {
 			std::ofstream osS(Logging::prepareFile(d, "K_modif"));
 			osS << K_modif;
 			osS.close();
@@ -318,7 +319,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 
 	}
 
-	if (environment->print_matrices) {
+	if (info::ecf->output.print_matrices) {
 		std::ofstream osS(Logging::prepareFile(domains[d].domain_global_index, "S"));
 		SparseMatrix SC = domains[d].Prec;
 		if (configuration.preconditioner == FETI_PRECONDITIONER::DIRICHLET) {

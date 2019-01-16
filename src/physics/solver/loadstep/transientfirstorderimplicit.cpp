@@ -12,7 +12,6 @@
 
 #include "basis/logging/logging.h"
 #include "config/ecf/physics/physicssolver/transientsolver.h"
-#include "config/ecf/environment.h"
 
 using namespace espreso;
 

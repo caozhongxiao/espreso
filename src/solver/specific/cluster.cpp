@@ -4,6 +4,8 @@
 
 #include "basis/utilities/utils.h"
 #include "basis/matrices/matrixtype.h"
+#include "esinfo/mpiinfo.h"
+#include "esinfo/ecfinfo.h"
 
 //#define SPARSE_SA
 
@@ -43,7 +45,7 @@ void ClusterBase::InitClusterPC( esint * subdomains_global_indices, esint number
 		}
 	}
 
-	MPI_Allreduce(&unsym, &gunsym, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
+	MPI_Allreduce(&unsym, &gunsym, 1, MPI_INT, MPI_SUM, info::mpi::MPICommunicator);
 
 	domains.reserve(number_of_subdomains);
 	for (esint d = 0; d < number_of_subdomains; d++) {
@@ -51,7 +53,7 @@ void ClusterBase::InitClusterPC( esint * subdomains_global_indices, esint number
 		domains[d].domain_index = d;
 
 		// Verbose level for K_plus
-		if ( d == 0 && environment->MPIrank == 0) {
+		if ( d == 0 && info::mpi::MPIrank == 0) {
 			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 		}
 	}
@@ -87,7 +89,7 @@ void ClusterBase::InitClusterPC( esint * subdomains_global_indices, esint number
 		domains[d].isOnACC  			= 0;
 
 		// Verbose level for K_plus
-		if ( d == 0 && environment->MPIrank == 0) {
+		if ( d == 0 && info::mpi::MPIrank == 0) {
 			domains[d].Kplus.msglvl = 0;
 		}
 
@@ -176,7 +178,7 @@ void ClusterBase::InitClusterPC( esint * subdomains_global_indices, esint number
 
 	//// *** Compression of Matrix B1 to work with compressed lambda vectors *****************
 //	ESLOG(MEMORY) << "B1 compression";
-//	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+//	ESLOG(MEMORY) << "process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 //	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	#pragma omp parallel for
@@ -224,7 +226,7 @@ void ClusterBase::InitClusterPC( esint * subdomains_global_indices, esint number
 
 
 	ESLOG(MEMORY) << "Lambdas end";
-	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 }
@@ -233,13 +235,13 @@ void ClusterBase::SetClusterPC( ) {
 
 	SEQ_VECTOR <SEQ_VECTOR <esint> > & lambda_map_sub = instance->B1clustersMap;
 
-//	int MPIrank = environment->MPIrank;
+//	int MPIrank = info::mpi::MPIrank;
 
 	//// *** Detection of affinity of lag. multipliers to specific subdomains **************
 	//// *** - will be used to compress vectors and matrices for higher efficiency
 
 	ESLOG(MEMORY) << "Setting vectors for lambdas";
-	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	my_lamdas_indices.resize( lambda_map_sub.size() );
@@ -247,7 +249,7 @@ void ClusterBase::SetClusterPC( ) {
 		my_lamdas_indices[i] = lambda_map_sub[i][0];
 
 
-	SEQ_VECTOR< SEQ_VECTOR <esint> > lambdas_per_subdomain ( domains.size() * environment->MPIsize);
+	SEQ_VECTOR< SEQ_VECTOR <esint> > lambdas_per_subdomain ( domains.size() * info::mpi::MPIsize);
 	my_lamdas_ddot_filter.resize( lambda_map_sub.size(), 0.0 );
 	for (size_t i = 0; i < lambda_map_sub.size(); i++) {
 		if ( lambda_map_sub[i].size() > 2 ) {
@@ -263,14 +265,14 @@ void ClusterBase::SetClusterPC( ) {
 	}
 
 	ESLOG(MEMORY) << "Setting vectors for lambdas communicators";
-	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	my_comm_lambdas_indices .resize(my_neighs.size());
 	my_comm_lambdas			.resize(my_neighs.size());
 	my_recv_lambdas			.resize(my_neighs.size());
 
-	//ESLOG(MEMORY) << "1 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "1 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 	#pragma omp parallel for
 	for (size_t i = 0; i < my_neighs.size(); i++) {
@@ -279,19 +281,19 @@ void ClusterBase::SetClusterPC( ) {
 		my_recv_lambdas[i].resize(my_comm_lambdas_indices[i].size());
 	}
 
-	//ESLOG(MEMORY) << "2 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "2 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 //	compressed_tmp    .resize( my_lamdas_indices.size(), 0 );
 //	//compressed_tmp2   .resize( my_lamdas_indices.size(), 0 );
 
-	//ESLOG(MEMORY) << "3 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "3 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 
 	// mapping/compression vector for cluster
 	for (size_t i = 0; i <my_lamdas_indices.size(); i++)
 		_my_lamdas_map_indices.insert(make_pair(my_lamdas_indices[i],i));
 
-	//ESLOG(MEMORY) << "5 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "5 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 //	// mapping/compression vector for domains
 //	#pragma omp parallel for
@@ -301,7 +303,7 @@ void ClusterBase::SetClusterPC( ) {
 //		}
 //	}
 
-	//ESLOG(MEMORY) << "6 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "6 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 //	#pragma omp parallel for
 //	for (size_t d = 0; d < domains.size(); d++) {
@@ -330,7 +332,7 @@ void ClusterBase::SetClusterPC( ) {
 //        }
 //	//// *** END - Detection of affinity of lag. multipliers to specific subdomains ***************
 
-	//ESLOG(MEMORY) << "7 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "7 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 
 	//// *** Create a vector of communication pattern needed for AllReduceLambdas function *******
@@ -343,12 +345,12 @@ void ClusterBase::SetClusterPC( ) {
 	}
 	//// *** END - Create a vector of communication pattern needed for AllReduceLambdas function *
 
-	//ESLOG(MEMORY) << "8 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "8 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 
 //	//// *** Compression of Matrix B1 to work with compressed lambda vectors *****************
 //	ESLOG(MEMORY) << "B1 compression";
-//	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+//	ESLOG(MEMORY) << "process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 //	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 //
 //	#pragma omp parallel for
@@ -398,7 +400,7 @@ void ClusterBase::SetClusterPC( ) {
 //
 //
 //	ESLOG(MEMORY) << "Lambdas end";
-//	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+//	ESLOG(MEMORY) << "process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 //	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 }
@@ -499,7 +501,7 @@ void ClusterBase::SetClusterHFETI () {
 		} else {
 
 			//ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW
-			std::cout << "Cluster " << cluster_global_index << " on MPI rank " << environment->MPIrank << " has only one domain -> Using TFETI" << std::endl;
+			std::cout << "Cluster " << cluster_global_index << " on MPI rank " << info::mpi::MPIrank << " has only one domain -> Using TFETI" << std::endl;
 			USE_HFETI = 0;
 
 		}
@@ -1054,7 +1056,7 @@ void ClusterBase::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in
 //void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 //
 //	//esint MPIrank;
-//	//MPI_Comm_rank (environment->MPICommunicator, &MPIrank);
+//	//MPI_Comm_rank (info::mpi::MPICommunicator, &MPIrank);
 //	//if (MPIrank == 0 ) { cout << "MultKplusGlobal - Cilk workers = " << __cilkrts_get_nworkers()      << endl; }
 //	//if (MPIrank == 0 ) { cout << "MultKplusGlobal - Cilk workers = " << __cilkrts_get_total_workers() << endl; }
 //	//
@@ -1277,7 +1279,7 @@ void ClusterBase::CreateG0() {
 			G0LocalTemp2[i].Clear();
 		}
 
-		if (environment->print_matrices) {
+		if (info::ecf->output.print_matrices) {
 			SparseMatrix tmpG02 = G02;
 			std::ofstream osG0(Logging::prepareFile("G02"));
 			osG0 <<  tmpG02;
@@ -1288,7 +1290,7 @@ void ClusterBase::CreateG0() {
 	}
 
 
-	if (environment->print_matrices) {
+	if (info::ecf->output.print_matrices) {
 		SparseMatrix tmpG01 = G0;
 		std::ofstream osG0(Logging::prepareFile("G01"));
 		osG0 <<  tmpG01;
@@ -1307,7 +1309,7 @@ void ClusterBase::CreateF0() {
 
 	mkl_set_num_threads(1);
 
-	int MPIrank; MPI_Comm_rank (environment->MPICommunicator, &MPIrank);
+	int MPIrank; MPI_Comm_rank (info::mpi::MPICommunicator, &MPIrank);
 
 	SEQ_VECTOR <SparseMatrix> tmpF0v (domains.size());
 
@@ -1333,7 +1335,7 @@ void ClusterBase::CreateF0() {
 			SparseSolverMKL Ktmp;
 			Ktmp.ImportMatrix_wo_Copy(domains[d].K);
 			std::stringstream ss;
-			ss << "Create F0 -> rank: " << environment->MPIrank << ", subdomain: " << d;
+			ss << "Create F0 -> rank: " << info::mpi::MPIrank << ", subdomain: " << d;
 			Ktmp.Factorization(ss.str());
 			Ktmp.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
 			domains[d].B0Kplus = domains[d].B0Kplus_comp;
@@ -1433,7 +1435,7 @@ void ClusterBase::CreateF0() {
 	}
 	F0_Mat = tmpF0v[0];
 
-	if (environment->print_matrices) {
+	if (info::ecf->output.print_matrices) {
 		SparseMatrix tmpF0 = F0_Mat;
 		std::ofstream osF0(Logging::prepareFile("F0"));
 		osF0 <<  tmpF0;
@@ -1462,7 +1464,7 @@ void ClusterBase::CreateF0() {
 	//F0_Mat.Clear();
 	F0.SetThreaded();
 	std::stringstream ss;
-	ss << "F0 -> rank: " << environment->MPIrank;
+	ss << "F0 -> rank: " << info::mpi::MPIrank;
 	F0.Factorization(ss.str());
 
 	mkl_set_num_threads(1);
@@ -1512,7 +1514,7 @@ void ClusterBase::CreateSa() {
 
 	 TimeEvent G0solve_Sa_time("SolveMatF with G0t as InitialCondition"); if (Measure::report(CLUSTER)) { G0solve_Sa_time.start(); }
 	SparseSolverMKL Salfa_SC_solver;
-	if (environment->MPIrank == 0) Salfa_SC_solver.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+	if (info::mpi::MPIrank == 0) Salfa_SC_solver.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 	if (SYMMETRIC_SYSTEM) {
 		Salfa_SC_solver.Create_SC_w_Mat( F0_Mat, G0t, Salfa, true, 0 );
 		Salfa.ConvertDenseToCSR(1);
@@ -1528,7 +1530,7 @@ void ClusterBase::CreateSa() {
 	Salfa.mtype = this->mtype;
 	F0_Mat.Clear();
 
-	if (environment->print_matrices) {
+	if (info::ecf->output.print_matrices) {
 		std::ofstream osSa(Logging::prepareFile("Salfa"));
 		osSa << Salfa;
 		osSa.close();
@@ -1771,13 +1773,13 @@ void ClusterBase::CreateSa() {
 		}
 		// *** END - Regularization of Sa from NULL PIVOTS
 
-		if (environment->print_matrices) {
+		if (info::ecf->output.print_matrices) {
 			std::ofstream osSa(Logging::prepareFile("Kernel_Sa"));
 			osSa << Kernel_Sa;
 			osSa.close();
 		}
 
-		if (environment->print_matrices) {
+		if (info::ecf->output.print_matrices) {
 			std::ofstream osSa(Logging::prepareFile("Kernel_Sa2"));
 			osSa << Kernel_Sa2;
 			osSa.close();
@@ -1826,7 +1828,7 @@ void ClusterBase::CreateSa() {
 				LAMN.CSR_V_values[i] *= -1;
 			}
 
-			if (environment->print_matrices) {
+			if (info::ecf->output.print_matrices) {
 				std::ofstream osSa(Logging::prepareFile("LAMN"));
 				osSa << LAMN;
 				osSa.close();
@@ -1884,7 +1886,7 @@ void ClusterBase::CreateSa() {
 				}
 
 
-				if (environment->print_matrices) {
+				if (info::ecf->output.print_matrices) {
 					std::ofstream osR(Logging::prepareFile(d, "Rb_").c_str());
 					SparseMatrix tmpR = domains[d].Kplus_Rb;
 					tmpR.ConvertDenseToCSR(0);
@@ -1893,7 +1895,7 @@ void ClusterBase::CreateSa() {
 
 				}
 
-				if (environment->print_matrices) {
+				if (info::ecf->output.print_matrices) {
 					std::ofstream osR(Logging::prepareFile(d, "Rb2_").c_str());
 					SparseMatrix tmpR = domains[d].Kplus_Rb2;
 					tmpR.ConvertDenseToCSR(0);
@@ -1948,7 +1950,7 @@ void ClusterBase::CreateSa() {
 	// *** END - Sa regularization
 
 
-	if (environment->print_matrices) {
+	if (info::ecf->output.print_matrices) {
 		std::ofstream osSa(Logging::prepareFile("Salfa_reg"));
 		osSa << Salfa;
 		osSa.close();
@@ -1976,12 +1978,12 @@ void ClusterBase::CreateSa() {
 			TimeEvent fact_Sa_time("Salfa factorization ");
 			if (Measure::report(CLUSTER)) { fact_Sa_time.start(); }
 
-			if (environment->MPIrank == 0)  {
+			if (info::mpi::MPIrank == 0)  {
 				Sa.msglvl = 1;
 			}
 			Sa.ImportMatrix(Salfa);
 			Sa.Factorization("salfa");
-			if (environment->MPIrank == 0) {
+			if (info::mpi::MPIrank == 0) {
 				Sa.msglvl = 0;
 			}
 			if (Measure::report(CLUSTER)) { fact_Sa_time.end(); } //fact_Sa_time.printStatMPI(); }
@@ -2035,7 +2037,7 @@ void ClusterBase::Create_G_perCluster() {
 	if (Measure::report(CLUSTER)) { G1_1_mem.startWithoutBarrier(GetProcessMemory_u()); }
 
 	int MPIrank;
-	MPI_Comm_rank (environment->MPICommunicator, &MPIrank);
+	MPI_Comm_rank (info::mpi::MPICommunicator, &MPIrank);
 
 	PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
 	PAR_VECTOR < SparseMatrix > tmp_Mat2 (domains.size());
@@ -2352,7 +2354,7 @@ void ClusterBase::Create_G_perSubdomain (SparseMatrix &R_in, SparseMatrix &B_in,
 //		//Gtmpt.ConvertToCOO(0);
 //
 //		int MPIrank;
-//		MPI_Comm_rank (environment->MPICommunicator, &MPIrank);
+//		MPI_Comm_rank (info::mpi::MPICommunicator, &MPIrank);
 //
 //		PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
 //		#pragma omp parallel for
@@ -2925,7 +2927,7 @@ void ClusterBase::CreateDirichletPrec(DataHolder *instance)
 		}
 		K_modif.ConvertToCSRwithSort(1);
 		{
-			if (environment->print_matrices) {
+			if (info::ecf->output.print_matrices) {
 				std::ofstream osS(Logging::prepareFile(d, "K_modif"));
 				osS << K_modif;
 				osS.close();
@@ -3067,7 +3069,7 @@ void ClusterBase::CreateDirichletPrec(DataHolder *instance)
 //		}
 //		K_modif.ConvertToCSRwithSort(1);
 //		{
-//			if (environment->print_matrices) {
+//			if (info::ecf->output.print_matrices) {
 //				std::ofstream osS(Logging::prepareFile(d, "K_modif"));
 //				osS << K_modif;
 //				osS.close();
@@ -3153,7 +3155,7 @@ void ClusterBase::CreateDirichletPrec(DataHolder *instance)
 //
 //		}
 //
-//		if (environment->print_matrices) {
+//		if (info::ecf->output.print_matrices) {
 //			std::ofstream osS(Logging::prepareFile(d, "S"));
 //			SparseMatrix SC = domains[d].Prec;
 //			if (configuration.preconditioner == FETI_PRECONDITIONER::DIRICHLET) {

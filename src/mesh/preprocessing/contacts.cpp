@@ -14,7 +14,8 @@
 #include "basis/utilities/utils.h"
 #include "basis/logging/timeeval.h"
 
-#include "config/ecf/environment.h"
+#include "esinfo/mpiinfo.h"
+#include "esinfo/envinfo.h"
 
 #include <algorithm>
 #include <numeric>
@@ -30,7 +31,7 @@ void MeshPreprocessing::computeBodiesSurface()
 
 	start("computation surface");
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<std::vector<esint> > faces(threads), facesDistribution(threads), ecounters(threads, std::vector<esint>((int)Element::CODE::SIZE));
 	std::vector<std::vector<Element*> > fpointers(threads);
@@ -101,7 +102,7 @@ void MeshPreprocessing::computeSurfaceLocations()
 {
 	start("computation surface location");
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	TimeEval eval("SURFACE");
 	eval.totalTime.startWithBarrier();
@@ -211,8 +212,8 @@ void MeshPreprocessing::computeSurfaceLocations()
 	double avgsize = (xmaxsize + ymaxsize + zmaxsize) / 3.;
 	_mesh->contacts->groupsize = std::max(avgsize / std::pow(_mesh->contacts->surface->elements->structures(), 1. / 3) / 1.5, 1.);
 
-	MPI_Allreduce(&_mesh->contacts->boundingBox[0], &_mesh->contacts->globalBox[0], 3, MPI_DOUBLE, MPI_MIN, environment->MPICommunicator);
-	MPI_Allreduce(&_mesh->contacts->boundingBox[1], &_mesh->contacts->globalBox[1], 3, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
+	MPI_Allreduce(&_mesh->contacts->boundingBox[0], &_mesh->contacts->globalBox[0], 3, MPI_DOUBLE, MPI_MIN, info::mpi::MPICommunicator);
+	MPI_Allreduce(&_mesh->contacts->boundingBox[1], &_mesh->contacts->globalBox[1], 3, MPI_DOUBLE, MPI_MAX, info::mpi::MPICommunicator);
 
 	event.end();
 	eval.addEvent(event);
@@ -350,7 +351,7 @@ void MeshPreprocessing::searchContactInterfaces()
 {
 	start("search contact interfaces");
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 	double epsilon = 1e-6;
 
 	double boxsize = _mesh->contacts->eps * _mesh->contacts->groupsize;
@@ -381,12 +382,12 @@ void MeshPreprocessing::searchContactInterfaces()
 	TimeEvent event3("compute neighbors and group sizes");
 	event3.start();
 
-	std::vector<Point> boxes(2 * environment->MPIsize);
+	std::vector<Point> boxes(2 * info::mpi::MPIsize);
 
-	MPI_Allgather(_mesh->contacts->boundingBox, 6, MPI_DOUBLE, boxes.data(), 6, MPI_DOUBLE, environment->MPICommunicator);
+	MPI_Allgather(_mesh->contacts->boundingBox, 6, MPI_DOUBLE, boxes.data(), 6, MPI_DOUBLE, info::mpi::MPICommunicator);
 
-	for (int r = 0; r < environment->MPIsize; r++) {
-		if (r != environment->MPIrank) {
+	for (int r = 0; r < info::mpi::MPIsize; r++) {
+		if (r != info::mpi::MPIrank) {
 			if (areIntersected(_mesh->contacts->boundingBox, boxes.data() + 2 * r)) {
 				_mesh->contacts->neighbors.push_back(r);
 			}

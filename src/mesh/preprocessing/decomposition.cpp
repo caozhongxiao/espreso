@@ -1,5 +1,7 @@
 
 #include "esinfo/ecfinfo.h"
+#include "esinfo/mpiinfo.h"
+#include "esinfo/envinfo.h"
 #include "meshpreprocessing.h"
 
 #include "mesh/mesh.h"
@@ -20,7 +22,6 @@
 #include "basis/logging/logging.h"
 #include "basis/logging/timeeval.h"
 
-#include "config/ecf/root.h"
 #include "config/ecf/decomposition.h"
 
 #include <algorithm>
@@ -35,7 +36,7 @@ using namespace espreso;
 
 void MeshPreprocessing::reclusterize()
 {
-	if (environment->MPIsize == 1) {
+	if (info::mpi::MPIsize == 1) {
 		skip("re-distribution of the mesh to processes");
 		return;
 	}
@@ -63,9 +64,9 @@ void MeshPreprocessing::reclusterize()
 		fillRegionMask();
 	}
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
-	esint eoffset = _mesh->elements->gatherElementsProcDistribution()[environment->MPIrank];
+	esint eoffset = _mesh->elements->gatherElementsProcDistribution()[info::mpi::MPIrank];
 
 	std::vector<esint> dDistribution(_mesh->elements->size + 1);
 	std::vector<std::vector<esint> > dData(threads);
@@ -124,7 +125,7 @@ void MeshPreprocessing::reclusterize()
 		dData[0].insert(dData[0].end(), dData[t].begin(), dData[t].end());
 	}
 
-	std::vector<esint> partition(_mesh->elements->size, environment->MPIrank);
+	std::vector<esint> partition(_mesh->elements->size, info::mpi::MPIrank);
 
 	finish("compute global dual graph");
 
@@ -160,7 +161,7 @@ void MeshPreprocessing::partitiate(esint parts)
 
 	start("check continuity");
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<int> partID(_mesh->elements->size, -1);
 
@@ -436,7 +437,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 	// 5. Balance nodes data to threads
 	// 6. Re-index elements (IDs have to be always increasing)
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	// Step 0: Compute targets
 
@@ -447,13 +448,13 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 		for (size_t t = 0; t < threads; t++) {
 
 			std::vector<int> ttt;
-			std::vector<bool> tflags(environment->MPIsize, false);
+			std::vector<bool> tflags(info::mpi::MPIsize, false);
 			for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e) {
-				if (partition[e] != environment->MPIrank) {
+				if (partition[e] != info::mpi::MPIrank) {
 					tflags[partition[e]] = true;
 				}
 			}
-			for (int r = 0; r < environment->MPIsize; r++) {
+			for (int r = 0; r < info::mpi::MPIsize; r++) {
 				if (tflags[r]) {
 					ttt.push_back(r);
 				}
@@ -571,7 +572,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 
 		size_t target;
 		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++enodes, ++eneighbors) {
-			if (partition[e] == environment->MPIrank) {
+			if (partition[e] == info::mpi::MPIrank) {
 				telemsIDs.push_back(IDs[e]);
 				telemsBody.push_back(body[e]);
 				telemsMaterial.push_back(material[e]);
@@ -632,7 +633,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 		}
 	}
 
-	esint eBegin = _mesh->elements->gatherElementsProcDistribution()[environment->MPIrank];
+	esint eBegin = _mesh->elements->gatherElementsProcDistribution()[info::mpi::MPIrank];
 	esint eEnd = eBegin + _mesh->elements->size;
 
 	#pragma omp parallel for
@@ -665,7 +666,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 			for (auto e = elems->begin(); e != elems->end(); ++e) {
 				if (eBegin <= *e && *e < eEnd) {
 					target = t2i(partition[*e - eBegin]);
-					if (!last[target] && partition[*e - eBegin] != environment->MPIrank) {
+					if (!last[target] && partition[*e - eBegin] != info::mpi::MPIrank) {
 						tsNodes[target].push_back(IDs[n]);
 						tsNodes[target].insert(tsNodes[target].end(), reinterpret_cast<const esint*>(coordinates.data() + n), reinterpret_cast<const esint*>(coordinates.data() + n + 1));
 						tsNodes[target].push_back(elems->size());
@@ -673,7 +674,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 						tsNodes[target].insert(tsNodes[target].end(), regionNodeMask.begin() + n * bregionsBitMaskSize, regionNodeMask.begin() + (n + 1) * bregionsBitMaskSize);
 						last[target] = true;
 					}
-					if (!last.back() && partition[*e - eBegin] == environment->MPIrank) {
+					if (!last.back() && partition[*e - eBegin] == info::mpi::MPIrank) {
 						tnodesIDs.push_back(IDs[n]);
 						tnodesCoordinates.push_back(coordinates[n]);
 						tnodesElemsData.insert(tnodesElemsData.end(), elems->begin(), elems->end());
@@ -753,7 +754,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 				const auto &IDs = _mesh->nodes->IDs->datatarray();
 				const auto &epointer = _mesh->boundaryRegions[r]->epointers->datatarray();
 				for (size_t e = distribution[t]; e < distribution[t + 1]; ++e, ++enodes) {
-					if (partition[emembership[e]] == environment->MPIrank) {
+					if (partition[emembership[e]] == info::mpi::MPIrank) {
 						tboundaryEPointers.push_back(epointer[e]);
 						for (auto n = enodes->begin(); n != enodes->end(); ++n) {
 							tboundaryEData.push_back(IDs[*n]);
@@ -1149,7 +1150,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 	std::vector<std::vector<int> > IDtargets(threads);
 	std::vector<int> sources;
 
-	std::vector<size_t> rdistribution = tarray<size_t>::distribute(threads, environment->MPIsize);
+	std::vector<size_t> rdistribution = tarray<size_t>::distribute(threads, info::mpi::MPIsize);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; ++t) {
@@ -1197,7 +1198,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 		for (size_t t = 0; t < threads; ++t) {
 			if (rdistribution[t] != rdistribution[t + 1]) {
 				for (size_t e = rdistribution[t]; e < rdistribution[t + 1]; ++e) {
-					IDrequests[r][e] = partition[IDrequests[r][e] - eIDsOLD[environment->MPIrank]];
+					IDrequests[r][e] = partition[IDrequests[r][e] - eIDsOLD[info::mpi::MPIrank]];
 				}
 			}
 		}
@@ -1210,7 +1211,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 	IDtargets.clear();
 	IDtargets.resize(threads);
 
-	std::vector<std::vector<bool> > newtargets(threads, std::vector<bool>(environment->MPIsize, false));
+	std::vector<std::vector<bool> > newtargets(threads, std::vector<bool>(info::mpi::MPIsize, false));
 	for (size_t r = 0; r < receivedTargets.size(); r++) {
 		rdistribution = tarray<size_t>::distribute(threads, receivedTargets[r].size());
 
@@ -1225,8 +1226,8 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; ++t) {
 		std::vector<int> ttargets;
-		for (int r = 0; r < environment->MPIsize; r++) {
-			if (r != environment->MPIrank && newtargets[t][r]) {
+		for (int r = 0; r < info::mpi::MPIsize; r++) {
+			if (r != info::mpi::MPIrank && newtargets[t][r]) {
 				ttargets.push_back(r);
 			}
 		}
@@ -1279,7 +1280,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 				auto eit = std::lower_bound(sortedElements.begin(), sortedElements.end(), IDrequests[r][rdistribution[t]]);
 				for (size_t e = rdistribution[t]; e < rdistribution[t + 1]; ++e) {
 					while (eit != sortedElements.end() && *eit < IDrequests[r][e]) ++eit;
-					IDrequests[r][e] = epermutation[eit - sortedElements.begin()] + eIDsNEW[environment->MPIrank];
+					IDrequests[r][e] = epermutation[eit - sortedElements.begin()] + eIDsNEW[info::mpi::MPIrank];
 				}
 			}
 		}
@@ -1319,7 +1320,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 			for (auto e = elem->begin(); e != elem->end(); ++e) {
 				auto mapit = std::lower_bound(IDMap.begin(), IDMap.end(), std::make_pair(*e, (esint)0));
 				if (mapit == IDMap.end() || mapit->first != *e) {
-					*e = epermutation[std::lower_bound(sortedElements.begin(), sortedElements.end(), *e) - sortedElements.begin()] + eIDsNEW[environment->MPIrank];
+					*e = epermutation[std::lower_bound(sortedElements.begin(), sortedElements.end(), *e) - sortedElements.begin()] + eIDsNEW[info::mpi::MPIrank];
 				} else {
 					*e = mapit->second;
 				}
@@ -1335,7 +1336,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 				if (*n != -1) {
 					auto mapit = std::lower_bound(IDMap.begin(), IDMap.end(), std::make_pair(*n, (esint)0));
 					if (mapit == IDMap.end() || mapit->first != *n) {
-						*n = epermutation[std::lower_bound(sortedElements.begin(), sortedElements.end(), *n) - sortedElements.begin()] + eIDsNEW[environment->MPIrank];
+						*n = epermutation[std::lower_bound(sortedElements.begin(), sortedElements.end(), *n) - sortedElements.begin()] + eIDsNEW[info::mpi::MPIrank];
 					} else {
 						*n = mapit->second;
 					}
@@ -1402,19 +1403,19 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 
 	nodes->ranks = new serializededata<esint, int>(rankBoundaries, rankData);
 
-	std::iota(elements->IDs->datatarray().begin(), elements->IDs->datatarray().end(), eIDsNEW[environment->MPIrank]);
+	std::iota(elements->IDs->datatarray().begin(), elements->IDs->datatarray().end(), eIDsNEW[info::mpi::MPIrank]);
 	std::swap(_mesh->elements, elements);
 	std::swap(_mesh->nodes, nodes);
 	delete _mesh->halo;
 	_mesh->halo = new ElementStore(_mesh->_eclasses);
 	_mesh->neighbours.clear();
 	for (size_t t = 0; t < IDtargets[0].size(); t++) {
-		if (IDtargets[0][t] != environment->MPIrank) {
+		if (IDtargets[0][t] != info::mpi::MPIrank) {
 			_mesh->neighbours.push_back(IDtargets[0][t]);
 		}
 	}
 	_mesh->neighboursWithMe = _mesh->neighbours;
-	_mesh->neighboursWithMe.push_back(environment->MPIrank);
+	_mesh->neighboursWithMe.push_back(info::mpi::MPIrank);
 	std::sort(_mesh->neighboursWithMe.begin(), _mesh->neighboursWithMe.end());
 
 	e11.end(); timing.addEvent(e11);
@@ -1440,7 +1441,7 @@ void MeshPreprocessing::permuteElements(const std::vector<esint> &permutation, c
 	std::iota(backpermutation.begin(), backpermutation.end(), 0);
 	std::sort(backpermutation.begin(), backpermutation.end(), [&] (esint i, esint j) { return permutation[i] < permutation[j]; });
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	auto n2i = [ & ] (size_t neighbor) {
 		return std::lower_bound(_mesh->neighbours.begin(), _mesh->neighbours.end(), neighbor) - _mesh->neighbours.begin();
@@ -1457,12 +1458,12 @@ void MeshPreprocessing::permuteElements(const std::vector<esint> &permutation, c
 		for (size_t t = 0; t < threads; t++) {
 			auto ranks = _mesh->nodes->ranks->cbegin(t);
 			auto elements = _mesh->nodes->elements->cbegin(t);
-			esint begine = IDBoundaries[environment->MPIrank];
-			esint ende   = IDBoundaries[environment->MPIrank + 1];
+			esint begine = IDBoundaries[info::mpi::MPIrank];
+			esint ende   = IDBoundaries[info::mpi::MPIrank + 1];
 
 			for (auto n = _mesh->nodes->distribution[t]; n < _mesh->nodes->distribution[t + 1]; ++n, ++ranks, ++elements) {
 				for (auto rank = ranks->begin(); rank != ranks->end(); ++rank) {
-					if (*rank != environment->MPIrank) {
+					if (*rank != info::mpi::MPIrank) {
 						for (auto e = elements->begin(); e != elements->end(); ++e) {
 							if (begine <= *e && *e < ende) {
 								sHalo[t][n2i(*rank)].push_back(std::make_pair(*e, backpermutation[*e - begine] + begine));
@@ -1495,8 +1496,8 @@ void MeshPreprocessing::permuteElements(const std::vector<esint> &permutation, c
 				for (auto n = e->begin(); n != e->end(); ++n) {
 					if (*n >= 0) {
 						source = std::lower_bound(IDBoundaries.begin(), IDBoundaries.end(), *n + 1) - IDBoundaries.begin() - 1;
-						if (source == environment->MPIrank) {
-							*n = IDBoundaries[environment->MPIrank] + backpermutation[*n - IDBoundaries[environment->MPIrank]];
+						if (source == info::mpi::MPIrank) {
+							*n = IDBoundaries[info::mpi::MPIrank] + backpermutation[*n - IDBoundaries[info::mpi::MPIrank]];
 						} else {
 							*n = std::lower_bound(rHalo[n2i(source)].begin(), rHalo[n2i(source)].end(), std::make_pair(*n, (esint)0))->second;
 						}

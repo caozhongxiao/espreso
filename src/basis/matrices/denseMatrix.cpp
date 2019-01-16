@@ -1,4 +1,10 @@
+
 #include "denseMatrix.h"
+
+#include "basis/logging/logging.h"
+
+#include "mkl_cblas.h"
+
 
 using namespace espreso;
 
@@ -60,11 +66,11 @@ void DenseMatrix::transpose()
 {
 	std::vector<double> copy(_values.size());
 
-	MKL_Domatcopy(
-			'r', 't',
-			_rows, _columns,
-			1, values(), _columns,
-			&copy[0], _rows);
+//	MKL_Domatcopy(
+//			'r', 't',
+//			_rows, _columns,
+//			1, values(), _columns,
+//			&copy[0], _rows);
 
 	_values.swap(copy);
 	size_t tmp = _rows;

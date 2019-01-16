@@ -4,13 +4,13 @@
 
 #include "esinfo/time.h"
 #include "esinfo/ecfinfo.h"
+#include "esinfo/mpiinfo.h"
 
 #include "basis/containers/serializededata.h"
 #include "basis/logging/logging.h"
 #include "basis/utilities/utils.h"
 #include "basis/utilities/parser.h"
 
-#include "config/ecf/environment.h"
 #include "config/ecf/output.h"
 
 #include "mesh/mesh.h"
@@ -273,7 +273,7 @@ void Monitoring::updateSolution()
 		_nedata[i].first->statistics(_nedata[i].second->nodes->datatarray(), _nedata[i].second->uniqueTotalSize, _statistics.data() + offset);
 	}
 
-	if (environment->MPIrank) {
+	if (info::mpi::MPIrank) {
 		return;
 	}
 

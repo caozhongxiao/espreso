@@ -4,14 +4,14 @@
 #include "basis/logging/logging.h"
 #include "basis/utilities/communication.h"
 
-#include "config/ecf/environment.h"
+#include "esinfo/mpiinfo.h"
 
 using namespace espreso;
 
 CollectedVisualization::CollectedVisualization(const Mesh &mesh)
 : Visualization(mesh)
 {
-	MPI_Comm_split(environment->MPICommunicator, 0, environment->MPIrank, &_storeCommunicator);
+	MPI_Comm_split(info::mpi::MPICommunicator, 0, info::mpi::MPIrank, &_storeCommunicator);
 	clearIntervals();
 }
 

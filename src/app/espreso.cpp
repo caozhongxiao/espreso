@@ -1,5 +1,5 @@
 
-#include "esinfo/runinfo.h"
+#include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/systeminfo.h"
 #include "esinfo/ecfinfo.h"
@@ -21,7 +21,9 @@ int main(int argc, char **argv)
 	MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
 
 	info::system::setSignals();
-	info::mpi::setMPI();
+	Logging::init();
+	info::env::set();
+	info::mpi::set();
 
 	info::ecf = new ECFRoot(&argc, &argv);
 	info::mesh = new Mesh();
@@ -29,8 +31,8 @@ int main(int argc, char **argv)
 
 	ESINFO(OVERVIEW) <<
 			"Starting ESPRESO, " <<
-			"MPI: " << environment->MPIsize << ", "
-			"OMP/MPI: " << environment->OMP_NUM_THREADS;
+			"MPI: " << info::mpi::MPIsize << ", "
+			"OMP/MPI: " << info::env::OMP_NUM_THREADS;
 
 	if (ResultStore::isComputeNode()) {
 
@@ -41,6 +43,8 @@ int main(int argc, char **argv)
 	}
 
 	ResultStore::destroyAsynchronizedStore();
+	delete info::ecf;
+	delete info::mesh;
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();

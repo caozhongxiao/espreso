@@ -4,7 +4,7 @@
 #include "basis/logging/logging.h"
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
-#include "config/ecf/environment.h"
+#include "esinfo/mpiinfo.h"
 
 #include "mesh/mesh.h"
 #include "mesh/store/nodestore.h"
@@ -30,12 +30,12 @@ void STL::updateMesh()
 
 	int size, gsize;
 	size = _mesh.surface->triangles->structures();
-	MPI_Reduce(&size, &gsize, 1, MPI_INT, MPI_SUM, 0, environment->MPICommunicator);
+	MPI_Reduce(&size, &gsize, 1, MPI_INT, MPI_SUM, 0, info::mpi::MPICommunicator);
 
 	std::stringstream os;
 	os << std::showpos << std::scientific << std::setprecision(5);
 
-	if (environment->MPIrank == 0) {
+	if (info::mpi::MPIrank == 0) {
 		_writer.storeHeader(os, "surface");
 		_writer.storeSize(os, gsize);
 	}
@@ -57,7 +57,7 @@ void STL::updateMesh()
 
 	pushInterval(os.str().size());
 
-	if (environment->MPIrank + 1 == environment->MPIsize) {
+	if (info::mpi::MPIrank + 1 == info::mpi::MPIsize) {
 		_writer.storeFooter(os, "surface");
 	}
 

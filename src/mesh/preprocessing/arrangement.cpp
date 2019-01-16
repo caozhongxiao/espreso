@@ -1,6 +1,9 @@
 
-#include "config/holders/regionmap.h"
 #include "meshpreprocessing.h"
+
+#include "config/holders/regionmap.h"
+#include "esinfo/mpiinfo.h"
+#include "esinfo/envinfo.h"
 
 #include "mesh/mesh.h"
 
@@ -19,7 +22,6 @@
 #include "basis/utilities/parser.h"
 #include "basis/logging/logging.h"
 
-#include "config/ecf/environment.h"
 #include <algorithm>
 #include <numeric>
 #include <cstring>
@@ -45,7 +47,7 @@ void MeshPreprocessing::arrangeNodes()
 
 	start("arrange nodes");
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<esint> eDist = _mesh->elements->gatherElementsDistribution();
 	std::vector<esint> dProcDist = _mesh->elements->gatherDomainsProcDistribution();
@@ -250,7 +252,7 @@ void MeshPreprocessing::arrangeNodes()
 	esint goffset = 0;
 	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++ranks) {
 		_mesh->nodes->pintervals[i].sourceProcess = ranks->front();
-		if (ranks->front() == environment->MPIrank) {
+		if (ranks->front() == info::mpi::MPIrank) {
 			for (auto r = ranks->begin(), prev = r++; r != ranks->end(); prev = r++) {
 				if (*prev != *r) {
 					sOffset[n2i(*r)].push_back(goffset);
@@ -269,14 +271,14 @@ void MeshPreprocessing::arrangeNodes()
 	_mesh->nodes->uniqueSize = goffset;
 	std::vector<esint> goffsets(_mesh->neighbours.size());
 	std::vector<esint> uniqueNodeOffsets = _mesh->nodes->gatherUniqueNodeDistribution();
-	_mesh->nodes->uniqueOffset = uniqueNodeOffsets[environment->MPIrank];
+	_mesh->nodes->uniqueOffset = uniqueNodeOffsets[info::mpi::MPIrank];
 	_mesh->nodes->uniqueTotalSize = uniqueNodeOffsets.back();
 
 	goffset = _mesh->nodes->uniqueOffset;
 	std::vector<esint> neighDistribution({ 0 });
 	ranks = _mesh->nodes->iranks->cbegin();
 	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); ++i, ++ranks) {
-		if (_mesh->nodes->pintervals[i].sourceProcess == environment->MPIrank) {
+		if (_mesh->nodes->pintervals[i].sourceProcess == info::mpi::MPIrank) {
 			_mesh->nodes->pintervals[i].globalOffset = goffset;
 			goffset += _mesh->nodes->pintervals[i].end - _mesh->nodes->pintervals[i].begin;
 		} else {
@@ -335,12 +337,12 @@ void MeshPreprocessing::arrangeNodes()
 	}
 	_mesh->nodes->center /= _mesh->nodes->size;
 
-	MPI_Allreduce(&_mesh->nodes->lmin.x, &_mesh->nodes->min.x, 1, MPI_DOUBLE, MPI_MIN, environment->MPICommunicator);
-	MPI_Allreduce(&_mesh->nodes->lmin.y, &_mesh->nodes->min.y, 1, MPI_DOUBLE, MPI_MIN, environment->MPICommunicator);
-	MPI_Allreduce(&_mesh->nodes->lmin.z, &_mesh->nodes->min.z, 1, MPI_DOUBLE, MPI_MIN, environment->MPICommunicator);
-	MPI_Allreduce(&_mesh->nodes->lmax.x, &_mesh->nodes->max.x, 1, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
-	MPI_Allreduce(&_mesh->nodes->lmax.y, &_mesh->nodes->max.y, 1, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
-	MPI_Allreduce(&_mesh->nodes->lmax.z, &_mesh->nodes->max.z, 1, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
+	MPI_Allreduce(&_mesh->nodes->lmin.x, &_mesh->nodes->min.x, 1, MPI_DOUBLE, MPI_MIN, info::mpi::MPICommunicator);
+	MPI_Allreduce(&_mesh->nodes->lmin.y, &_mesh->nodes->min.y, 1, MPI_DOUBLE, MPI_MIN, info::mpi::MPICommunicator);
+	MPI_Allreduce(&_mesh->nodes->lmin.z, &_mesh->nodes->min.z, 1, MPI_DOUBLE, MPI_MIN, info::mpi::MPICommunicator);
+	MPI_Allreduce(&_mesh->nodes->lmax.x, &_mesh->nodes->max.x, 1, MPI_DOUBLE, MPI_MAX, info::mpi::MPICommunicator);
+	MPI_Allreduce(&_mesh->nodes->lmax.y, &_mesh->nodes->max.y, 1, MPI_DOUBLE, MPI_MAX, info::mpi::MPICommunicator);
+	MPI_Allreduce(&_mesh->nodes->lmax.z, &_mesh->nodes->max.z, 1, MPI_DOUBLE, MPI_MAX, info::mpi::MPICommunicator);
 
 	std::vector<esint> backpermutation(permutation.size());
 	std::iota(backpermutation.begin(), backpermutation.end(), 0);
@@ -393,7 +395,7 @@ void MeshPreprocessing::arrangeElementsPermutation(std::vector<esint> &permutati
 {
 	start("arrange elements permutation");
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -452,7 +454,7 @@ void MeshPreprocessing::arrangeElementsPermutation(std::vector<esint> &permutati
 	}
 
 	int allcodes = 0;
-	MPI_Allreduce(&codes, &allcodes, 1, MPI_INT, MPI_BOR, environment->MPICommunicator);
+	MPI_Allreduce(&codes, &allcodes, 1, MPI_INT, MPI_BOR, info::mpi::MPICommunicator);
 
 	for (int i = 0, bitmask = 1; i < elementstypes; i++, bitmask = bitmask << 1) {
 		if (allcodes & bitmask) {
@@ -476,7 +478,7 @@ void MeshPreprocessing::arrangeRegions()
 
 	start("arrange regions");
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	for (size_t r = 0; r < _mesh->elementsRegions.size(); r++) {
 		const auto &elements = _mesh->elementsRegions[r]->elements->datatarray();
@@ -694,7 +696,7 @@ void MeshPreprocessing::arrangeRegions()
 		_mesh->elementsRegions.back()->nintervals = nameless->nintervals;
 	}
 
-	esint eoffset = _mesh->elements->gatherElementsProcDistribution()[environment->MPIrank];
+	esint eoffset = _mesh->elements->gatherElementsProcDistribution()[info::mpi::MPIrank];
 	for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
 		if (_mesh->boundaryRegions[r]->nodes == NULL) {
 			std::vector<std::vector<esint> > nodes(threads);
@@ -819,7 +821,7 @@ void MeshPreprocessing::arrangeRegions()
 			}
 
 			int allcodes = 0;
-			MPI_Allreduce(&codes, &allcodes, 1, MPI_INT, MPI_BOR, environment->MPICommunicator);
+			MPI_Allreduce(&codes, &allcodes, 1, MPI_INT, MPI_BOR, info::mpi::MPICommunicator);
 
 			for (size_t i = 0, bitmask = 1; i < _mesh->elements->ecounters.size(); i++, bitmask = bitmask << 1) {
 				if (allcodes & bitmask) {
@@ -842,7 +844,7 @@ void MeshPreprocessing::fillRegionMask()
 {
 	start("fill region mask");
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<std::vector<esint> > eregions(threads);
 
@@ -894,7 +896,7 @@ void MeshPreprocessing::synchronizeRegionNodes(const std::string &name, serializ
 		prevRank = -1;
 		esint isize = nintervals[i].end - nintervals[i].begin;
 		for (auto rank = iranks->begin(); rank != iranks->end(); ++rank) {
-			if (*rank != environment->MPIrank && *rank != prevRank) {
+			if (*rank != info::mpi::MPIrank && *rank != prevRank) {
 				sBuffer[n2i(*rank)].push_back(_mesh->nodes->pintervals[i].globalOffset);
 				sBuffer[n2i(*rank)].push_back(isize);
 				for (auto n = nodes.begin() + nintervals[i].begin; n != nodes.begin() + nintervals[i].end; ++n) {
@@ -955,7 +957,7 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 
 	start("compute boundary elements from nodes of region '" + bregion->name + "'");
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<std::vector<std::pair<esint, esint> > > elements(threads);
 
@@ -978,8 +980,8 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 	Esutils::sortWithInplaceMerge(elements[0], distribution);
 
 	std::vector<esint> edistribution = _mesh->elements->gatherElementsProcDistribution();
-	esint ebegin = edistribution[environment->MPIrank];
-	esint eend = edistribution[environment->MPIrank + 1];
+	esint ebegin = edistribution[info::mpi::MPIrank];
+	esint eend = edistribution[info::mpi::MPIrank + 1];
 
 	auto begin = std::lower_bound(elements[0].begin(), elements[0].end(), ebegin,
 			[] (const std::pair<esint, esint> &p, esint e) { return p.first < e; });
@@ -1091,7 +1093,7 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 
 void MeshPreprocessing::computeRegionsIntersection(RegionMapBase &map)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	if (map.order.size() < 2) {
 		return;
@@ -1235,7 +1237,7 @@ void MeshPreprocessing::computeIntervalOffsets(std::vector<ProcessInterval> &int
 	esint myoffset = 0;
 	for (size_t i = 0; i < intervals.size(); ++i, ++ranks) {
 		intervals[i].sourceProcess = ranks->front();
-		if (ranks->front() == environment->MPIrank) {
+		if (ranks->front() == info::mpi::MPIrank) {
 			for (auto r = ranks->begin(), prev = r++; r != ranks->end(); prev = r++) {
 				if (*prev != *r) {
 					sOffset[n2i(*r)].push_back(myoffset);
@@ -1253,7 +1255,7 @@ void MeshPreprocessing::computeIntervalOffsets(std::vector<ProcessInterval> &int
 
 	uniqueSize = myoffset;
 	std::vector<esint> uniqueOffsets = Store::gatherDistribution(uniqueSize);
-	uniqueOffset = uniqueOffsets[environment->MPIrank];
+	uniqueOffset = uniqueOffsets[info::mpi::MPIrank];
 	uniqueTotalSize = uniqueOffsets.back();
 
 	std::vector<esint> roffsetsIndex(_mesh->neighbours.size());
@@ -1261,7 +1263,7 @@ void MeshPreprocessing::computeIntervalOffsets(std::vector<ProcessInterval> &int
 	myoffset = uniqueOffset;
 	ranks = _mesh->nodes->iranks->cbegin();
 	for (size_t i = 0; i < intervals.size(); ++i, ++ranks) {
-		if (intervals[i].sourceProcess == environment->MPIrank) {
+		if (intervals[i].sourceProcess == info::mpi::MPIrank) {
 			intervals[i].globalOffset = myoffset;
 			myoffset += intervals[i].end - intervals[i].begin;
 		} else {

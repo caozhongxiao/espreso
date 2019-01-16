@@ -11,8 +11,9 @@
 #include "mpi.h"
 
 #include "tokenizer.h"
+#include "esinfo/mpiinfo.h"
+#include "esinfo/ecfinfo.h"
 #include "config/ecf/output.h"
-#include "config/ecf/environment.h"
 #include "config/configuration.h"
 #include "basis/logging/logging.h"
 #include "basis/utilities/utils.h"
@@ -48,9 +49,8 @@ ECFRedParameters ECFReader::_read(
 		const std::map<size_t, std::string> &defaultArgs,
 		const std::map<std::string, std::string> &variables)
 {
-	environment->executable = *argv[0];
 	int option_index, option;
-	std::string options("c:dhvtm");
+	std::string options("c:dhvm");
 
 	std::vector<struct option> opts;
 	std::vector<std::pair<std::string, ECFParameter*> > parameters;
@@ -164,13 +164,10 @@ ECFRedParameters ECFReader::_read(
 			}
 			break;
 		case 'v':
-			environment->verbose_level++;
-			break;
-		case 't':
-			environment->testing_level++;
+			info::ecf->output.verbose_level++;
 			break;
 		case 'm':
-			environment->measure_level++;
+			info::ecf->output.measure_level++;
 			break;
 		}
 	}
@@ -180,18 +177,18 @@ ECFRedParameters ECFReader::_read(
 
 void ECFReader::copyInputData()
 {
-	if (environment->MPIrank) {
-		MPI_Barrier(environment->MPICommunicator);
+	if (info::mpi::MPIrank) {
+		MPI_Barrier(info::mpi::MPICommunicator);
 		Logging::log.open(Logging::outputRoot() + "/" + Logging::name + ".log", std::ofstream::app);
 		return;
 	} else {
-		if (environment->remove_old_results && Logging::path.compare(".")) {
+		if (Logging::path.compare(".")) {
 			system(("rm -fr " + Logging::path).c_str());
 		}
 		if (system(("mkdir -p " + Logging::outputRoot()).c_str())) {
 			ESINFO(ERROR) << "Cannot create output directory\n";
 		}
-		MPI_Barrier(environment->MPICommunicator);
+		MPI_Barrier(info::mpi::MPICommunicator);
 	}
 
 	Logging::log.open(Logging::outputRoot() + "/" + Logging::name + ".log", std::ofstream::app);
@@ -216,12 +213,12 @@ ECFRedParameters ECFReader::_read(
 		const std::map<std::string, std::string> &variables)
 {
 	ECFRedParameters redParameters;
-	if (environment->MPIrank == 0) {
+	if (info::mpi::MPIrank == 0) {
 		std::ifstream ecffile(file);
 		redParameters.hadValidECF = ecffile.good();
 	}
 	int valid = redParameters.hadValidECF;
-	MPI_Bcast(&valid, 1, MPI_INT, 0, environment->MPICommunicator);
+	MPI_Bcast(&valid, 1, MPI_INT, 0, info::mpi::MPICommunicator);
 	redParameters.hadValidECF = valid;
 
 	if (!redParameters.hadValidECF) {
@@ -429,13 +426,13 @@ ECFRedParameters ECFReader::_read(
 	return redParameters;
 }
 
-void ECFReader::set(const Environment &env, const OutputConfiguration &output)
+void ECFReader::set(const OutputConfiguration &output)
 {
-	Info::setLevel(env.verbose_level, env.testing_level);
-	Measure::setLevel(env.measure_level);
+	Info::setLevel(output.verbose_level);
+	Measure::setLevel(output.measure_level);
 	Logging::path = output.path;
-	Logging::debug = env.log_dir;
-	Logging::rank = env.MPIrank;
+	Logging::debug = output.log_dir;
+	Logging::rank = info::mpi::MPIrank;
 	copyInputData();
 }
 

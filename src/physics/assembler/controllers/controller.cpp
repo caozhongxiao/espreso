@@ -3,7 +3,7 @@
 #include "esinfo/meshinfo.h"
 #include "controller.h"
 
-#include "config/ecf/environment.h"
+#include "esinfo/envinfo.h"
 
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
@@ -72,7 +72,7 @@ void Controler::updateERegions(
 		esint csize, double *cbegin, double *tbegin, double time,
 		EvaluatorParameters updatedParams)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -93,7 +93,7 @@ void Controler::updateERegions(
 		esint csize, double *cbegin, double *tbegin, double time,
 		EvaluatorParameters updatedParams)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -128,7 +128,7 @@ void Controler::updateBRegions(
 		esint csize, double *cbegin, double *tbegin, double time,
 		EvaluatorParameters updatedParams)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	parameter.data = new serializededata<esint, double>(1, distribution);
 	parameter.isConts = expression.evaluator->isConstant();
@@ -158,7 +158,7 @@ void Controler::averageNodeInitilization(tarray<double> &initData, std::vector<d
 
 void Controler::nodeValuesToElements(int dimension, tarray<double> &nodeData, std::vector<double> &elementData)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {

@@ -6,7 +6,8 @@
 #include "basis/containers/tarray.h"
 #include "basis/utilities/parser.h"
 #include "basis/utilities/communication.h"
-#include "config/ecf/environment.h"
+#include "esinfo/envinfo.h"
+#include "esinfo/mpiinfo.h"
 
 using namespace espreso;
 
@@ -23,12 +24,12 @@ int OpenFOAMZones::getZones()
 	if (*(c - 1) == '(') {
 		c -= 3;
 		while (*c != '\n') { c--; } // go before number of boundaries
-		rank = environment->MPIrank;
+		rank = info::mpi::MPIrank;
 		zones = readInteger(c);
 	}
 
-	MPI_Allreduce(&rank, &root, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
-	MPI_Bcast(&zones, 1, MPI_INT, root, environment->MPICommunicator);
+	MPI_Allreduce(&rank, &root, 1, MPI_INT, MPI_SUM, info::mpi::MPICommunicator);
+	MPI_Bcast(&zones, 1, MPI_INT, root, info::mpi::MPICommunicator);
 	return zones;
 }
 
@@ -54,7 +55,7 @@ void OpenFOAMZones::synchronize(int zones, std::vector<char> &names, std::vector
 				}
 			}
 			if (*c == '(' || *c == ')') {
-				offsets.push_back(_pfile.offsets[environment->MPIrank] + (c - _pfile.begin));
+				offsets.push_back(_pfile.offsets[info::mpi::MPIrank] + (c - _pfile.begin));
 			}
 			++c;
 		}
@@ -64,14 +65,14 @@ void OpenFOAMZones::synchronize(int zones, std::vector<char> &names, std::vector
 	}
 
 	mybrackets = brackets.size();
-	MPI_Exscan(&mybrackets, &scannedBrackets, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
+	MPI_Exscan(&mybrackets, &scannedBrackets, 1, MPI_INT, MPI_SUM, info::mpi::MPICommunicator);
 	myoffsets = offsets.size();
-	MPI_Exscan(&myoffsets, &scannedOffsets, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
+	MPI_Exscan(&myoffsets, &scannedOffsets, 1, MPI_INT, MPI_SUM, info::mpi::MPICommunicator);
 	std::vector<size_t> _offset(scannedOffsets);
 	_offset.insert(_offset.end(), offsets.begin(), offsets.end());
 	_offset.resize(2 * zones);
 	offsets.resize(2 * zones);
-	MPI_Allreduce(_offset.data(), offsets.data(), _offset.size() * sizeof(size_t), MPI_BYTE, MPITools::sizetOperations().sum, environment->MPICommunicator);
+	MPI_Allreduce(_offset.data(), offsets.data(), _offset.size() * sizeof(size_t), MPI_BYTE, MPITools::sizetOperations().sum, info::mpi::MPICommunicator);
 
 	for (size_t i = 0; i < brackets.size(); i++) {
 		const char *name = brackets[i];
@@ -82,26 +83,26 @@ void OpenFOAMZones::synchronize(int zones, std::vector<char> &names, std::vector
 		memcpy(mynames.data() + 80 * (scannedBrackets + i), zonename.data(), zonename.size());
 	}
 
-	MPI_Allreduce(mynames.data(), names.data(), names.size(), MPI_CHAR, MPI_SUM, environment->MPICommunicator);
+	MPI_Allreduce(mynames.data(), names.data(), names.size(), MPI_CHAR, MPI_SUM, info::mpi::MPICommunicator);
 }
 
 void OpenFOAMZones::readData(std::vector<esint> &indices, size_t begin, size_t end)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
-	if (begin + 1 > _pfile.offsets[environment->MPIrank + 1]) {
+	if (begin + 1 > _pfile.offsets[info::mpi::MPIrank + 1]) {
 		return;
 	}
-	if (end - 1 < _pfile.offsets[environment->MPIrank]) {
+	if (end - 1 < _pfile.offsets[info::mpi::MPIrank]) {
 		return;
 	}
 
-	begin = std::max(begin + 1, _pfile.offsets[environment->MPIrank]);
-	end = std::min(end - 1, _pfile.offsets[environment->MPIrank + 1]);
+	begin = std::max(begin + 1, _pfile.offsets[info::mpi::MPIrank]);
+	end = std::min(end - 1, _pfile.offsets[info::mpi::MPIrank + 1]);
 	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, end - begin);
 
 	std::vector<std::vector<esint> > data(threads);
-	size_t offset = begin - _pfile.offsets[environment->MPIrank];
+	size_t offset = begin - _pfile.offsets[info::mpi::MPIrank];
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {

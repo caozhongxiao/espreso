@@ -1,20 +1,19 @@
 
+#include "esinfo/envinfo.h"
 #include "expressionevaluator.h"
 
 #include "basis/containers/point.h"
 #include "basis/utilities/parser.h"
 #include "basis/expression/expression.h"
-#include "config/ecf/environment.h"
-
 #include "omp.h"
 
 using namespace espreso;
 
 ExpressionEvaluator::ExpressionEvaluator(const std::string &expression)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
-	_expressions.resize(environment->OMP_NUM_THREADS);
+	_expressions.resize(info::env::OMP_NUM_THREADS);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -28,9 +27,9 @@ ExpressionEvaluator::ExpressionEvaluator(const std::string &expression)
 
 ExpressionEvaluator::ExpressionEvaluator(const ExpressionEvaluator &other)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
-	_expressions.resize(environment->OMP_NUM_THREADS);
+	_expressions.resize(info::env::OMP_NUM_THREADS);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {

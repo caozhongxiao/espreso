@@ -49,7 +49,7 @@
 //
 //void API::points(const std::vector<std::vector<esint> > &eNodes, size_t DOFsSize)
 //{
-//	size_t threads = environment->OMP_NUM_THREADS;
+//	size_t threads = info::env::OMP_NUM_THREADS;
 //	std::vector<size_t> distribution = Esutils::getDistribution(threads, eNodes.size());
 //
 //	std::vector<esint> tMax(threads);
@@ -113,7 +113,7 @@
 //		return Info::averageValues(sizes);
 //	};
 //
-//	ESINFO(OVERVIEW) << "Mesh partitioned into " << environment->MPIsize << " * " << _mesh.parts() << " = " << _mesh.parts() * environment->MPIsize
+//	ESINFO(OVERVIEW) << "Mesh partitioned into " << info::mpi::MPIsize << " * " << _mesh.parts() << " = " << _mesh.parts() * info::mpi::MPIsize
 //			<< " parts. There is " << intervalStats(_mesh.getPartition()) << " elements in subdomain.";
 //}
 //
@@ -127,7 +127,7 @@
 //	_mesh._regions.back()->settings[0][Property::UNKNOWN].push_back(_mesh._evaluators.back());
 //	_mesh._regions.back()->elements().resize(dirichletSize);
 //
-//	size_t threads = environment->OMP_NUM_THREADS;
+//	size_t threads = info::env::OMP_NUM_THREADS;
 //	std::vector<size_t> distribution = Esutils::getDistribution(threads, dirichletSize);
 //
 //	#pragma omp parallel for
@@ -142,8 +142,8 @@
 //
 //void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const esint *l2g)
 //{
-//	auto it = std::find(neighbours.begin(), neighbours.end(), environment->MPIrank);
-//	if (it != neighbours.end() && *it == environment->MPIrank) {
+//	auto it = std::find(neighbours.begin(), neighbours.end(), info::mpi::MPIrank);
+//	if (it != neighbours.end() && *it == info::mpi::MPIrank) {
 //		neighbours.erase(it);
 //	}
 //
@@ -152,8 +152,8 @@
 //	std::vector<size_t> sizes(neighbours.size());
 //
 //	for (size_t n = 0; n < neighbours.size(); n++) {
-//		MPI_Isend(&size           , sizeof(size_t), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + 2 * n);
-//		MPI_Irecv(sizes.data() + n, sizeof(size_t), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + 2 * n + 1);
+//		MPI_Isend(&size           , sizeof(size_t), MPI_BYTE, neighbours[n], 0, info::mpi::MPICommunicator, req.data() + 2 * n);
+//		MPI_Irecv(sizes.data() + n, sizeof(size_t), MPI_BYTE, neighbours[n], 0, info::mpi::MPICommunicator, req.data() + 2 * n + 1);
 //	}
 //	MPI_Waitall(2 * neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
 //
@@ -165,16 +165,16 @@
 //	}
 //
 //	for (size_t n = 0; n < neighbours.size(); n++) {
-//		MPI_Isend(sBuffer.data(),        size * sizeof(esint), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + 2 * n);
-//		MPI_Irecv(rBuffer[n].data(), sizes[n] * sizeof(esint), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + 2 * n + 1);
+//		MPI_Isend(sBuffer.data(),        size * sizeof(esint), MPI_BYTE, neighbours[n], 0, info::mpi::MPICommunicator, req.data() + 2 * n);
+//		MPI_Irecv(rBuffer[n].data(), sizes[n] * sizeof(esint), MPI_BYTE, neighbours[n], 0, info::mpi::MPICommunicator, req.data() + 2 * n + 1);
 //	}
 //	MPI_Waitall(2 * neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
-//	MPI_Barrier(environment->MPICommunicator);
+//	MPI_Barrier(info::mpi::MPICommunicator);
 //
-//	size_t threads = environment->OMP_NUM_THREADS;
+//	size_t threads = info::env::OMP_NUM_THREADS;
 //	std::vector<size_t> distribution = Esutils::getDistribution(threads, size);
 //
-//	size_t pushMyRank = std::lower_bound(neighbours.begin(), neighbours.end(), environment->MPIrank) - neighbours.begin();
+//	size_t pushMyRank = std::lower_bound(neighbours.begin(), neighbours.end(), info::mpi::MPIrank) - neighbours.begin();
 //	std::vector<std::vector<G2L> > g2l(threads);
 //	std::vector<std::vector<esint> > dirichletDOFs(threads);
 //
@@ -184,7 +184,7 @@
 //
 //			for (size_t n = 0; n < neighbours.size(); n++) {
 //				if (n == pushMyRank) {
-//					_mesh._DOFs[i]->clusters().push_back(environment->MPIrank);
+//					_mesh._DOFs[i]->clusters().push_back(info::mpi::MPIrank);
 //				}
 //				auto it = std::lower_bound(rBuffer[n].begin(), rBuffer[n].end(), l2g[i]);
 //				if (it != rBuffer[n].end() && *it == l2g[i]) {
@@ -195,7 +195,7 @@
 //				}
 //			}
 //			if (neighbours.size() == pushMyRank) {
-//				_mesh._DOFs[i]->clusters().push_back(environment->MPIrank);
+//				_mesh._DOFs[i]->clusters().push_back(info::mpi::MPIrank);
 //			}
 //			if (_mesh._DOFs[i]->clusters().size() > 1) {
 //				g2l[t].push_back(G2L(l2g[i], i));
@@ -224,7 +224,7 @@
 //	for (size_t t = 0; t < threads; t++) {
 //		for (size_t i = 0; i < dirichletDOFs[t].size(); i++) {
 //			for (size_t c = 0; c < _mesh._DOFs[dirichletDOFs[t][i]]->clusters().size(); c++) {
-//				if (_mesh._DOFs[dirichletDOFs[t][i]]->clusters()[c] != environment->MPIrank) {
+//				if (_mesh._DOFs[dirichletDOFs[t][i]]->clusters()[c] != info::mpi::MPIrank) {
 //					sDirichlet[n2i(_mesh._DOFs[dirichletDOFs[t][i]]->clusters()[c])].push_back(
 //							std::make_pair(l2g[dirichletDOFs[t][i]], evaluator->evaluate(dirichletDOFs[t][i])));
 //				}
@@ -233,22 +233,22 @@
 //	}
 //
 //	for (size_t n = 0; n < neighbours.size(); n++) {
-//		MPI_Isend(sDirichlet[n].data(), sizeof(std::pair<esint, double>) * sDirichlet[n].size(), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, requests.data() + n);
+//		MPI_Isend(sDirichlet[n].data(), sizeof(std::pair<esint, double>) * sDirichlet[n].size(), MPI_BYTE, neighbours[n], 0, info::mpi::MPICommunicator, requests.data() + n);
 //	}
 //
 //	size_t counter = 0;
 //	MPI_Status status;
 //	while (counter < neighbours.size()) {
-//		MPI_Probe(MPI_ANY_SOURCE, 0, environment->MPICommunicator, &status);
+//		MPI_Probe(MPI_ANY_SOURCE, 0, info::mpi::MPICommunicator, &status);
 //		int count;
 //		MPI_Get_count(&status, MPI_BYTE, &count);
 //		rDirichlet[n2i(status.MPI_SOURCE)].resize(count / sizeof(std::pair<esint, double>));
-//		MPI_Recv(rDirichlet[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
+//		MPI_Recv(rDirichlet[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, info::mpi::MPICommunicator, MPI_STATUS_IGNORE);
 //		counter++;
 //	}
 //
 //	MPI_Waitall(neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
-//	MPI_Barrier(environment->MPICommunicator);
+//	MPI_Barrier(info::mpi::MPICommunicator);
 //
 //	for (size_t n = 0; n < neighbours.size(); n++) {
 //	for (size_t i = 0; i < rDirichlet[n].size(); i++) {

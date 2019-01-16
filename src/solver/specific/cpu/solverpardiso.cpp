@@ -396,7 +396,7 @@ void SparseSolverPardiso::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << environment->MPIrank;
+		ss << "Solve -> rank: " << info::mpi::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -455,7 +455,7 @@ void SparseSolverPardiso::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> 
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << environment->MPIrank;
+		ss << "Solve -> rank: " << info::mpi::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -509,7 +509,7 @@ void SparseSolverPardiso::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> 
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << environment->MPIrank;
+		ss << "Solve -> rank: " << info::mpi::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -571,7 +571,7 @@ void SparseSolverPardiso::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << environment->MPIrank;
+		ss << "Solve -> rank: " << info::mpi::MPIrank;
 		Factorization(ss.str());
 	}
 

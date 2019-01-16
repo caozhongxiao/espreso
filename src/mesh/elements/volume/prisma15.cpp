@@ -44,7 +44,7 @@ Element Prisma15::fill(Element e, Element* begin)
 		break;
 	}
 	default:
-		ESINFO(ERROR) << "Unknown number of Prisma15 GP count.";
+		exit(1);
 	}
 
 	for (unsigned int i = 0; i < GPCount; i++) {
@@ -140,7 +140,7 @@ Element Prisma15::fill(Element e, Element* begin)
 		break;
 	}
 	default:
-		ESINFO(ERROR) << "Unknown number of Prisma15 GP count.";
+		exit(1);
 	}
 
 	return e;

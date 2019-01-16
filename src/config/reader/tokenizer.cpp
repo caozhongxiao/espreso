@@ -7,14 +7,14 @@
 #include <iomanip>
 #include <fstream>
 
+#include "esinfo/mpiinfo.h"
 #include "basis/logging/logging.h"
-#include "config/ecf/environment.h"
 
 using namespace espreso;
 
 FullFile::FullFile(const std::string &file): _p(0)
 {
-	if (environment->MPIrank == 0) {
+	if (info::mpi::MPIrank == 0) {
 		std::ifstream data(file, std::ifstream::in);
 		if (!data.good()) {
 			ESINFO(GLOBAL_ERROR) << "Cannot read file '" << file << "'";
@@ -32,9 +32,9 @@ FullFile::FullFile(const std::string &file): _p(0)
 void FullFile::synchronize()
 {
 	size_t filesize = _data.size();
-	MPI_Bcast(&filesize, sizeof(size_t), MPI_BYTE, 0, environment->MPICommunicator);
+	MPI_Bcast(&filesize, sizeof(size_t), MPI_BYTE, 0, info::mpi::MPICommunicator);
 	_data.resize(filesize);
-	MPI_Bcast(_data.data(), _data.size(), MPI_CHAR, 0, environment->MPICommunicator);
+	MPI_Bcast(_data.data(), _data.size(), MPI_CHAR, 0, info::mpi::MPICommunicator);
 }
 
 

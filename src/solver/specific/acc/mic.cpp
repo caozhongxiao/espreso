@@ -588,7 +588,7 @@ void SparseSolverMIC::Solve( SEQ_VECTOR <double> ** rhs_sol) {
     if (!m_factorized) {
         //std::cout << "NOT INITIALIED\n\n"<<std::endl;
         std::stringstream ss;
-        ss << "Solve -> rank: ";// << esenvironment->MPIrank; // MPIrank link problem
+        ss << "Solve -> rank: ";// << esinfo::mpi::MPIrank; // MPIrank link problem
         Factorization(ss.str());
     }
     esint offset = 0;

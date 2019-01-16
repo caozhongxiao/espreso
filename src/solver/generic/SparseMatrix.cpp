@@ -3,6 +3,8 @@
 #include "solver/specific/sparsesolvers.h"
 
 #include "basis/logging/logging.h"
+#include "esinfo/mpiinfo.h"
+#include "esinfo/ecfinfo.h"
 
 namespace espreso {
 
@@ -3943,7 +3945,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
     if (SC_via_K_rr){
       S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
       K_rr_solver.ImportMatrix(K_rr);
-      ss << "get kerner from K -> rank: " << environment->MPIrank;
+      ss << "get kerner from K -> rank: " << info::mpi::MPIrank;
       int error_K_rr = K_rr_solver.Factorization(ss.str());
 
 
@@ -4117,7 +4119,7 @@ if (defect_K_in == 0){
     if (!SC_via_K_rr) {
       K_rr_solver.ImportMatrix(K_rr);
       K_rr.Clear();
-      ss << "get kerner from K -> rank: " << environment->MPIrank;
+      ss << "get kerner from K -> rank: " << info::mpi::MPIrank;
       K_rr_solver.Factorization(ss.str());
     }
     K_rr_solver.SolveMat_Dense(R_r); // inv(K_rr)*K_rs*R_s
@@ -4262,7 +4264,7 @@ if (defect_K_in == 0){
     NtN.ImportMatrix(NtN_Mat);
     NtN_Mat.Clear();
     std::stringstream sss;
-    sss << "get kernel from K -> rank: " << environment->MPIrank;
+    sss << "get kernel from K -> rank: " << info::mpi::MPIrank;
     NtN.Factorization(sss.str());
     NtN.SolveMat_Sparse(Nt);
     NtN.Clear();
@@ -4290,7 +4292,7 @@ if (defect_K_in == 0){
 //  SparseSolverCPU K_solver;
 //  std::stringstream ss2;
 //  K_solver.ImportMatrix(K);
-//  ss2 << "testing factorization of regularized K -> rank: " << environment->MPIrank;
+//  ss2 << "testing factorization of regularized K -> rank: " << info::mpi::MPIrank;
 //  int error_reg = K_solver.Factorization(ss2.str());
 //
 //
@@ -4982,7 +4984,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       K_rr_solver.mtype = 11;
       K_rr_solver.msglvl= 0;
 
-      ss << "get kerner from K -> rank: " << environment->MPIrank;
+      ss << "get kerner from K -> rank: " << info::mpi::MPIrank;
 
 
 //      {
@@ -5206,7 +5208,7 @@ if (defect_K_in == 0){
     if (!SC_via_K_rr) {
       K_rr_solver.ImportMatrix(K_rr);
 //      K_rr.Clear();
-      ss << "get kerner from K -> rank: " << environment->MPIrank;
+      ss << "get kerner from K -> rank: " << info::mpi::MPIrank;
       K_rr_solver.Factorization(ss.str());
     }
     K_rr_solver.SolveMat_Dense(R_r); // inv(K_rr)*K_rs*R_s
@@ -5458,7 +5460,7 @@ if (defect_K_in == 0){
     N.MatTranspose( Nt );
     SparseMatrix NtNl;
     std::stringstream sss;
-    sss << "get kernel from K -> rank: " << environment->MPIrank;
+    sss << "get kernel from K -> rank: " << info::mpi::MPIrank;
     if (use_invNtN_in_regMat){
       Nl.MatTranspose( Nlt );
       NtNl.MatMat( Nt,'N',Nl );
@@ -5482,14 +5484,14 @@ if (defect_K_in == 0){
 
 
     {
-    	if (environment->print_matrices) {
+    	if (info::ecf->output.print_matrices) {
     		std::ofstream osS(Logging::prepareFile(0, "N"));
     		osS << N;
     		osS.close();
     	}
     }
     {
-    	if (environment->print_matrices) {
+    	if (info::ecf->output.print_matrices) {
     		std::ofstream osS(Logging::prepareFile(0, "Nl"));
     		osS << Nl;
     		osS.close();
@@ -5511,7 +5513,7 @@ if (defect_K_in == 0){
 //  SparseSolverCPU K_solver;
 //  std::stringstream ss2;
 //  K_solver.ImportMatrix(K);
-//  ss2 << "testing factorization of regularized K -> rank: " << environment->MPIrank;
+//  ss2 << "testing factorization of regularized K -> rank: " << info::mpi::MPIrank;
 //  int error_reg = K_solver.Factorization(ss2.str());
 //
 //

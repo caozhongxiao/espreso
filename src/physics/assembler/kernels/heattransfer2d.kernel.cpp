@@ -5,6 +5,7 @@
 #include "heattransfer2d.kernel.h"
 
 #include "physics/assembler/assembler.h"
+#include "basis/logging/logging.h"
 #include "basis/containers/point.h"
 #include "basis/matrices/denseMatrix.h"
 #include "basis/evaluator/evaluator.h"

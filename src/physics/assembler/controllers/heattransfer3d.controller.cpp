@@ -3,6 +3,7 @@
 #include "esinfo/time.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
+#include "esinfo/envinfo.h"
 #include "heattransfer3d.controller.h"
 #include "physics/assembler/kernels/heattransfer3d.kernel.h"
 
@@ -61,7 +62,7 @@ HeatTransfer3DControler::~HeatTransfer3DControler()
 
 void HeatTransfer3DControler::initData()
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -156,7 +157,7 @@ void HeatTransfer3DControler::nextTime()
 
 void HeatTransfer3DControler::parametersChanged()
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -324,7 +325,7 @@ void HeatTransfer3DControler::processBoundary(Matrices matrices, const SolverPar
 
 void HeatTransfer3DControler::processSolution()
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {

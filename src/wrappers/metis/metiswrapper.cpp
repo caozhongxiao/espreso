@@ -3,7 +3,6 @@
 
 #include "metiswrapper.h"
 #include "basis/logging/logging.h"
-#include "config/ecf/environment.h"
 #include "config/ecf/decomposition.h"
 
 using namespace espreso;

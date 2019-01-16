@@ -3,6 +3,7 @@
 #include "esinfo/time.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
+#include "esinfo/envinfo.h"
 #include "heattransfer2d.controller.h"
 #include "physics/assembler/kernels/heattransfer2d.kernel.h"
 
@@ -66,7 +67,7 @@ HeatTransfer2DControler::~HeatTransfer2DControler()
 
 void HeatTransfer2DControler::initData()
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -164,7 +165,7 @@ void HeatTransfer2DControler::nextTime()
 
 void HeatTransfer2DControler::parametersChanged()
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -319,7 +320,7 @@ void HeatTransfer2DControler::processBoundary(Matrices matrices, const SolverPar
 
 void HeatTransfer2DControler::processSolution()
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {

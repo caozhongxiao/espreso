@@ -1,5 +1,7 @@
 
 #include "esinfo/meshinfo.h"
+#include "esinfo/envinfo.h"
+#include "esinfo/mpiinfo.h"
 #include "physics/assembler/dataholder.h"
 #include "uniformnodesfeticomposer.h"
 
@@ -13,7 +15,6 @@
 #include "basis/utilities/utils.h"
 #include "basis/utilities/communication.h"
 
-#include "config/ecf/environment.h"
 #include "config/ecf/solver/feti.h"
 
 #include "mesh/mesh.h"
@@ -30,7 +31,7 @@ using namespace espreso;
 
 void UniformNodesFETIComposer::initDOFs()
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	_domainDOFsSize.resize(info::mesh->elements->ndomains);
 
@@ -215,7 +216,7 @@ void UniformNodesFETIComposer::buildPatterns()
 
 void UniformNodesFETIComposer::buildKPattern()
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	_KPermutation.resize(info::mesh->elements->ndomains);
 	_RHSPermutation.resize(info::mesh->elements->ndomains);
@@ -399,7 +400,7 @@ void UniformNodesFETIComposer::buildB1Pattern()
 			if (info::mesh->elements->firstDomain <= *d && *d < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
 				data->B1[*d - info::mesh->elements->firstDomain].I_row_indices.push_back(doffset + 1);
 				data->B1[*d - info::mesh->elements->firstDomain].J_col_indices.push_back(*(d + _dirichletMap[i] % _DOFs + 1) + 1);
-				data->B1clustersMap.push_back({ doffset, environment->MPIrank });
+				data->B1clustersMap.push_back({ doffset, info::mpi::MPIrank });
 				++doffset;
 			}
 			if (!_configuration.redundant_lagrange) {
@@ -444,13 +445,13 @@ void UniformNodesFETIComposer::buildB1Pattern()
 						++exclude;
 					}
 					if (exclude == _dirichletMap.end() || n * _DOFs + dof != *exclude) {
-						if (*nranks->begin() == environment->MPIrank) {
+						if (*nranks->begin() == info::mpi::MPIrank) {
 							send();
 							goffset += ndomains * (ndomains - 1) / 2;
 						}
 					}
 				} else {
-					if (*nranks->begin() == environment->MPIrank) {
+					if (*nranks->begin() == info::mpi::MPIrank) {
 						send();
 						goffset += ndomains - 1;
 					}
@@ -496,7 +497,7 @@ void UniformNodesFETIComposer::buildB1Pattern()
 				(info::mesh->elements->firstDomain <= d1 && d1 < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) ||
 				(info::mesh->elements->firstDomain <= d2 && d2 < info::mesh->elements->firstDomain + info::mesh->elements->ndomains)) {
 
-			data->B1clustersMap.push_back({ lambda, environment->MPIrank });
+			data->B1clustersMap.push_back({ lambda, info::mpi::MPIrank });
 
 			if (d1 <info::mesh->elements->firstDomain || info::mesh->elements->firstDomain + info::mesh->elements->ndomains <= d1) {
 				data->B1clustersMap.back().push_back(std::lower_bound(dDistribution.begin(), dDistribution.end(), d1 + 1) - dDistribution.begin() - 1);
@@ -518,7 +519,7 @@ void UniformNodesFETIComposer::buildB1Pattern()
 				}
 				esint lambda = goffset;
 				esint ndomains = dmap->size() / (1 + _DOFs);
-				if (*nranks->begin() != environment->MPIrank) {
+				if (*nranks->begin() != info::mpi::MPIrank) {
 					if (!_configuration.redundant_lagrange || exclude == _dirichletMap.end() || n * _DOFs + dof != *exclude) {
 						esint noffset = 0;
 						while (info::mesh->neighbours[noffset] < *nranks->begin()) {
@@ -534,7 +535,7 @@ void UniformNodesFETIComposer::buildB1Pattern()
 								fill(*d1, *d2, dsize + lambda, *(d1 + 1 + dof), *(d2 + 1 + dof), ndomains);
 							}
 						}
-						if (*nranks->begin() == environment->MPIrank) {
+						if (*nranks->begin() == info::mpi::MPIrank) {
 							goffset += ndomains * (ndomains - 1) / 2;
 						}
 					}
@@ -542,7 +543,7 @@ void UniformNodesFETIComposer::buildB1Pattern()
 					for (auto d1 = dmap->begin(), d2 = dmap->begin() + 1 + _DOFs; d2 != dmap->end(); d1 = d2, d2 += 1 + _DOFs, ++lambda) {
 						fill(*d1, *d2, dsize + lambda, *(d1 + 1 + dof), *(d2 + 1 + dof), ndomains);
 					}
-					if (*nranks->begin() == environment->MPIrank) {
+					if (*nranks->begin() == info::mpi::MPIrank) {
 						goffset += ndomains - 1;
 					}
 				}
@@ -698,7 +699,7 @@ void UniformNodesFETIComposer::updateDuplicity()
 
 			esint noffset = 0;
 			for (auto r = nranks->begin(); r != nranks->end(); ++r) {
-				if (*r != environment->MPIrank) {
+				if (*r != info::mpi::MPIrank) {
 					while (info::mesh->neighbours[noffset] < *r) {
 						++noffset;
 					}
@@ -771,7 +772,7 @@ void UniformNodesFETIComposer::updateDuplicity()
 
 void UniformNodesFETIComposer::fillSolution()
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<double> &solution = _controler.solution()->data;
 
@@ -799,7 +800,7 @@ void UniformNodesFETIComposer::fillSolution()
 
 			esint noffset = 0;
 			for (auto r = nranks->begin(); r != nranks->end(); ++r) {
-				if (*r != environment->MPIrank) {
+				if (*r != info::mpi::MPIrank) {
 					while (info::mesh->neighbours[noffset] < *r) {
 						++noffset;
 					}
@@ -830,7 +831,7 @@ void UniformNodesFETIComposer::fillSolution()
 	for (esint n = 0; n < info::mesh->nodes->size; ++n, ++nranks) {
 		esint noffset = 0;
 		for (auto r = nranks->begin(); r != nranks->end(); ++r) {
-			if (*r != environment->MPIrank) {
+			if (*r != info::mpi::MPIrank) {
 				while (info::mesh->neighbours[noffset] < *r) {
 					++noffset;
 				}

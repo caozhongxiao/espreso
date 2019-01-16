@@ -6,7 +6,7 @@
 #include "basis/logging/timeeval.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
-#include "config/ecf/environment.h"
+#include "esinfo/mpiinfo.h"
 
 #include "mesh/mesh.h"
 #include "mesh/store/nodestore.h"
@@ -147,7 +147,7 @@ void GeneratedInput::synchronizeGlobalIndices()
 
 	for (size_t n = 0; n < _meshData.nIDs.size(); ++n) {
 		if (_meshData._nrankdist[n + 1] - _meshData._nrankdist[n] > 1) {
-			if (_meshData._nranks[_meshData._nrankdist[n]] == environment->MPIrank) {
+			if (_meshData._nranks[_meshData._nrankdist[n]] == info::mpi::MPIrank) {
 				for (esint r = _meshData._nrankdist[n] + 1; r < _meshData._nrankdist[n + 1]; ++r) {
 					sBuffer[n2i(_meshData._nranks[r])].push_back(__Point__(_meshData.coordinates[n], _meshData.nIDs[n]));
 				}
@@ -167,13 +167,13 @@ void GeneratedInput::synchronizeGlobalIndices()
 	}
 
 	for (size_t n = 0; n < _mesh.neighbours.size(); n++) {
-		if (_mesh.neighbours[n] < environment->MPIrank) {
+		if (_mesh.neighbours[n] < info::mpi::MPIrank) {
 			for (size_t p = 0; p < rBuffer[n].size(); p++) {
 				auto it = std::lower_bound(sBuffer[n].begin(), sBuffer[n].end(), rBuffer[n][p]);
 				if (*it == rBuffer[n][p]) {
 					_meshData.nIDs[it->id] = rBuffer[n][p].id;
 				} else {
-					ESINFO(ERROR) << "Internal ERROR while synchronization global indices: " << _mesh.neighbours[n] << " on " << environment->MPIrank;
+					ESINFO(ERROR) << "Internal ERROR while synchronization global indices: " << _mesh.neighbours[n] << " on " << info::mpi::MPIrank;
 				}
 			}
 		}

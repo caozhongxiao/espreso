@@ -9,7 +9,7 @@
 #include "basis/containers/tarray.h"
 #include "basis/utilities/parser.h"
 #include "basis/logging/logging.h"
-#include "config/ecf/environment.h"
+#include "esinfo/envinfo.h"
 
 #include <cstring>
 #include <functional>
@@ -112,7 +112,7 @@ bool CM::addElementRegion(const PlainWorkbenchData &mesh, const std::vector<ESel
 		return true;
 	}
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 	std::vector<esint> edistribution = tarray<esint>::distribute(threads, mesh.esize.size());
 	std::vector<std::vector<esint> > eid(threads);
 

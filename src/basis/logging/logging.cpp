@@ -1,5 +1,7 @@
 
 #include "esinfo/time.h"
+#include "esinfo/envinfo.h"
+#include "esinfo/mpiinfo.h"
 #include "omp.h"
 
 #include <sys/sysinfo.h>
@@ -9,8 +11,6 @@
 #include <ctime>
 
 #include "logging.h"
-
-#include "config/ecf/environment.h"
 
 namespace espreso {
 
@@ -24,6 +24,11 @@ time_t Logging::time = std::time(&time);
 std::string Logging::debug = "debug";
 std::ofstream Logging::log;
 int Logging::rank = 0;
+
+void Logging::init()
+{
+	MPI_Bcast(&Logging::time, sizeof(time_t), MPI_BYTE, 0, info::mpi::MPICommunicator);
+}
 
 std::string Logging::outputRoot()
 {
@@ -70,7 +75,7 @@ static std::string printStack()
 	char** functions = backtrace_symbols(stack.data(), size);
 
 	std::stringstream command;
-	command << "addr2line -sipfC -e $(which " << environment->executable << ")";
+	command << "addr2line -sipfC -e $(which espreso)";
 	for (size_t i = 0; i < size; i++) {
 		std::string function(functions[i]);
 		size_t begin = function.find_last_of('[') + 1;
@@ -98,7 +103,7 @@ static std::string printStack()
 Info::~Info()
 {
 	if (_plain) {
-		if (environment->MPIrank == 0) {
+		if (info::mpi::MPIrank == 0) {
 			Logging::log << os.str();
 			Logging::log.flush();
 			fprintf(stdout, "%s", os.str().c_str());
@@ -106,19 +111,17 @@ Info::~Info()
 		}
 		return;
 	}
-	if (event == ERROR || (event == GLOBAL_ERROR && environment->MPIrank == 0)) {
+	if (event == ERROR || (event == GLOBAL_ERROR && info::mpi::MPIrank == 0)) {
 		Logging::log << os.str() << "\n";
 		fprintf(stderr, "\x1b[31m%s\x1b[0m\n", os.str().c_str());
 		if (event == ERROR) {
-			Logging::log << "ESPRESO EXITED WITH AN ERROR ON PROCESS " << environment->MPIrank << ".\n\n\n";
-			fprintf(stderr, "ESPRESO EXITED WITH AN ERROR ON PROCESS %d.\n\n\n", environment->MPIrank);
+			Logging::log << "ESPRESO EXITED WITH AN ERROR ON PROCESS " << info::mpi::MPIrank << ".\n\n\n";
+			fprintf(stderr, "ESPRESO EXITED WITH AN ERROR ON PROCESS %d.\n\n\n", info::mpi::MPIrank);
 		}
 
-		if (environment->executable.size()) {
-			std::string stack = printStack();
-			Logging::log << stack;
-			fprintf(stderr, "%s", stack.c_str());
-		}
+		std::string stack = printStack();
+		Logging::log << stack;
+		fprintf(stderr, "%s", stack.c_str());
 
 		Logging::log.flush();
 		fflush(stderr);
@@ -127,7 +130,7 @@ Info::~Info()
 
 	os << std::endl;
 
-	if (event != ALWAYS && environment->MPIrank != 0) {
+	if (event != ALWAYS && info::mpi::MPIrank != 0) {
 		return; // only first process print results
 	}
 
@@ -177,7 +180,7 @@ Measure::~Measure()
 //		return;
 //	}
 
-	if (environment->MPIrank != 0) {
+	if (info::mpi::MPIrank != 0) {
 		return; // only first process print results
 	}
 

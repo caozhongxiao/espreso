@@ -6,7 +6,7 @@
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
 
-#include "config/ecf/root.h"
+#include "esinfo/mpiinfo.h"
 
 #include <vector>
 #include <numeric>
@@ -37,9 +37,9 @@ HypreData::HypreData(esint nrows)
 	_data = new HYPREData();
 
 	Communication::exscan(_roffset);
-	HYPRE_IJMatrixCreate(environment->MPICommunicator, _roffset + 1, _roffset + _nrows, _roffset + 1, _roffset + _nrows, &_data->K);
-	HYPRE_IJVectorCreate(environment->MPICommunicator, _roffset + 1, _roffset + _nrows, &_data->f);
-	HYPRE_IJVectorCreate(environment->MPICommunicator, _roffset + 1, _roffset + _nrows, &_data->x);
+	HYPRE_IJMatrixCreate(info::mpi::MPICommunicator, _roffset + 1, _roffset + _nrows, _roffset + 1, _roffset + _nrows, &_data->K);
+	HYPRE_IJVectorCreate(info::mpi::MPICommunicator, _roffset + 1, _roffset + _nrows, &_data->f);
+	HYPRE_IJVectorCreate(info::mpi::MPICommunicator, _roffset + 1, _roffset + _nrows, &_data->x);
 
 	HYPRE_IJMatrixSetObjectType(_data->K, HYPRE_PARCSR);
 	HYPRE_IJVectorSetObjectType(_data->f, HYPRE_PARCSR);
@@ -130,7 +130,7 @@ void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, 
 	HYPRE_Solver solver;
 	switch (configuration.solver) {
 	case MultigridConfiguration::SOLVER::CG:
-		HYPRE_ParCSRPCGCreate(environment->MPICommunicator, &solver);
+		HYPRE_ParCSRPCGCreate(info::mpi::MPICommunicator, &solver);
 
 		HYPRE_PCGSetMaxIter(solver, configuration.max_iterations);
 		HYPRE_PCGSetTol(solver, configuration.precision);
@@ -174,7 +174,7 @@ void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, 
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
 	}
 
-	if (info::ecf->environment.print_matrices) {
+	if (info::ecf->output.print_matrices) {
 		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "STORE HYPRE SYSTEM";
 		{
 			std::string prefix = Logging::prepareFile("HYPRE.K");
@@ -196,7 +196,7 @@ void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, 
 
 	ESINFO(CONVERGENCE) << "Final Relative Residual Norm " << norm << " in " << iterations << " iteration.";
 
-	if (info::ecf->environment.print_matrices) {
+	if (info::ecf->output.print_matrices) {
 		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "STORE HYPRE SYSTEM SOLUTION";
 		std::string prefix = Logging::prepareFile("HYPRE.x");
 		HYPRE_IJVectorPrint(data._data->x, prefix.c_str());

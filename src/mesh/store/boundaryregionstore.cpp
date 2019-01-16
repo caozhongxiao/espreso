@@ -1,10 +1,9 @@
 
 #include "boundaryregionstore.h"
 
+#include "esinfo/envinfo.h"
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/utils.h"
-
-#include "config/ecf/environment.h"
 
 #include "mesh/elements/element.h"
 
@@ -50,7 +49,7 @@ void BoundaryRegionStore::permute(const std::vector<esint> &permutation, const s
 	}
 
 	if (epointers != NULL) {
-		size_t threads = environment->OMP_NUM_THREADS;
+		size_t threads = info::env::OMP_NUM_THREADS;
 		if (threads > 1) {
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
@@ -102,7 +101,7 @@ void BoundaryRegionStore::pack(char* &p) const
 	std::vector<int> eindices;
 	eindices.reserve(epointers->datatarray().size());
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = epointers->datatarray().distribution()[t]; i < epointers->datatarray().distribution()[t + 1]; ++i) {
 			eindices.push_back(epointers->datatarray()[i] - _eclasses[t]);

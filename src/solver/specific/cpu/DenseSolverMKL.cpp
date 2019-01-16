@@ -2,6 +2,7 @@
 #include "DenseSolverMKL.h"
 
 #include "basis/utilities/utils.h"
+#include "esinfo/envinfo.h"
 
 using namespace espreso;
 
@@ -17,14 +18,7 @@ DenseSolverMKL::DenseSolverMKL(){
 	m_dense_values_fl_size = 0;
 
 	/* Numbers of processors, value of OMP_NUM_THREADS */
-	int num_procs;
-	char * var = getenv("PAR_NUM_THREADS");
-   	if(var != NULL)
-   		sscanf( var, "%d", &num_procs );
-	else {
-   		printf("Set environment PAR_NUM_THREADS to 1");
-    	exit(1);
-	}
+	int num_procs = info::env::PAR_NUM_THREADS;
 
     iparm[2]  = num_procs;
 

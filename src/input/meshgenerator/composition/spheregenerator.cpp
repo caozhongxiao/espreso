@@ -5,7 +5,7 @@
 #include "input/meshgenerator/selection/blockborder.h"
 #include "input/plaindata.h"
 #include "input/generatedinput.h"
-#include "config/ecf/environment.h"
+#include "esinfo/mpiinfo.h"
 #include "config/ecf/input/sphere.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
@@ -30,20 +30,20 @@ void SphereGenerator::generate(const SphereGeneratorConfiguration &configuration
 SphereGenerator::SphereGenerator(const SphereGeneratorConfiguration &configuration)
 : GridGenerator(configuration)
 {
-	if (environment->MPIsize % 6 != 0) {
+	if (info::mpi::MPIsize % 6 != 0) {
 		ESINFO(GLOBAL_ERROR) << "Number of MPI process should be 6 x clusters x clusters for sphere generator.";
 	}
 
 	// clusters.x == clusters.y
 
-	_row = ((environment->MPIrank % (_settings.clusters.x * _settings.clusters.y)) % _settings.clusters.x);
-	_col = ((environment->MPIrank % (_settings.clusters.x * _settings.clusters.y)) / _settings.clusters.x);
-	_layer = environment->MPIrank / (6 * _settings.clusters.x * _settings.clusters.y);
+	_row = ((info::mpi::MPIrank % (_settings.clusters.x * _settings.clusters.y)) % _settings.clusters.x);
+	_col = ((info::mpi::MPIrank % (_settings.clusters.x * _settings.clusters.y)) / _settings.clusters.x);
+	_layer = info::mpi::MPIrank / (6 * _settings.clusters.x * _settings.clusters.y);
 
 	_settings.start = Triple<esint>( _row      / _settings.clusters.x / MeshGenerator::precision,  _col      / _settings.clusters.y / MeshGenerator::precision,  _layer      / _settings.clusters.z / MeshGenerator::precision);
 	_settings.end   = Triple<esint>((_row + 1) / _settings.clusters.x / MeshGenerator::precision, (_col + 1) / _settings.clusters.y / MeshGenerator::precision, (_layer + 1) / _settings.clusters.z / MeshGenerator::precision);
 
-	switch ((environment->MPIrank / (_settings.clusters.x * _settings.clusters.y)) % 6) {
+	switch ((info::mpi::MPIrank / (_settings.clusters.x * _settings.clusters.y)) % 6) {
 	case 0:
 		_side = SIDE::UP;
 		_settings.projection = Triple<Expression>(
@@ -93,7 +93,7 @@ void SphereGenerator::nodes(PlainMeshData &mesh)
 {
 	GridGenerator::nodes(mesh);
 	for (auto n = mesh.nIDs.begin(); n != mesh.nIDs.end(); ++n) {
-		*n += environment->MPIrank * mesh.nIDs.size();
+		*n += info::mpi::MPIrank * mesh.nIDs.size();
 	}
 }
 
@@ -161,7 +161,7 @@ void SphereGenerator::neighbors(PlainMeshData &mesh)
 	for (int i = -1; i <= 1; i++) {
 		for (int j = -1; j <= 1; j++) {
 			if (cross[mid + j * 3 * _settings.clusters.x + i] != -1) {
-				if (cross[mid + j * 3 * _settings.clusters.x + i] + _layer * 6 * _settings.clusters.x * _settings.clusters.y < (size_t)environment->MPIsize) {
+				if (cross[mid + j * 3 * _settings.clusters.x + i] + _layer * 6 * _settings.clusters.x * _settings.clusters.y < (size_t)info::mpi::MPIsize) {
 					map[13 + i * 3 + j] = cross[mid + j * 3 * _settings.clusters.x + i] + _layer * 6 * _settings.clusters.x * _settings.clusters.y;
 				}
 			}

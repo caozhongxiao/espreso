@@ -2,7 +2,7 @@
 #include "parser.h"
 #include "blockend.h"
 
-#include "config/ecf/environment.h"
+#include "esinfo/mpiinfo.h"
 
 #include <iostream>
 #include <algorithm>
@@ -27,8 +27,8 @@ void WorkbenchParser::fillIndices(const char* header, const char* first, const c
 
 const char* WorkbenchParser::getFirst() const
 {
-	if (fRank <= environment->MPIrank && environment->MPIrank <= lRank) {
-		if (fRank == environment->MPIrank) {
+	if (fRank <= info::mpi::MPIrank && info::mpi::MPIrank <= lRank) {
+		if (fRank == info::mpi::MPIrank) {
 			return begin + first - offset;
 		} else {
 			return begin;
@@ -39,8 +39,8 @@ const char* WorkbenchParser::getFirst() const
 
 const char* WorkbenchParser::getLast() const
 {
-	if (fRank <= environment->MPIrank && environment->MPIrank <= lRank) {
-		if (lRank == environment->MPIrank) {
+	if (fRank <= info::mpi::MPIrank && info::mpi::MPIrank <= lRank) {
+		if (lRank == info::mpi::MPIrank) {
 			return begin + last - offset;
 		} else {
 			return end;
@@ -72,14 +72,14 @@ std::string WorkbenchParser::command() const
 void WorkbenchParser::print(const char* data)
 {
 	std::cout << first << "(" << fRank << ") -> " << last << "(" << lRank << ")\n";
-	if (fRank == environment->MPIrank) {
+	if (fRank == info::mpi::MPIrank) {
 		const char *p = data + first - offset;
 		while (*p != '\n') {
 			std::cout << *p++;
 		}
 		std::cout << "\n";
 	}
-	if (lRank == environment->MPIrank) {
+	if (lRank == info::mpi::MPIrank) {
 		const char *p = data + last - offset - 1;
 		while (*(p - 1) != '\n') { --p; }
 		while (*p != '\n') {

@@ -117,7 +117,7 @@ public:
 		}
 	};
 
-	static void setLevel(size_t level, size_t testing) { outputLevel = level; testLevel = testing; }
+	static void setLevel(size_t level) { outputLevel = level; }
 
 protected:
 	static size_t outputLevel;
@@ -174,6 +174,8 @@ public:
 	static std::string outputRoot();
 	static std::string prepareFile(const std::string &name);
 	static std::string prepareFile(size_t subdomain, const std::string &name);
+
+	static void init();
 
 	static std::string path;
 	static std::string name;

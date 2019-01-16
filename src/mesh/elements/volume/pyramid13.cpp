@@ -50,7 +50,7 @@ Element Pyramid13::fill(Element e, Element* begin)
 			break;
 		}
 		default:
-			ESINFO(ERROR) << "Unknown number of Pyramid13 GP count.";
+			exit(1);
 		}
 
 	for (unsigned int i = 0; i < GPCount; i++) {
@@ -139,7 +139,7 @@ Element Pyramid13::fill(Element e, Element* begin)
 		break;
 	}
 	default:
-		ESINFO(ERROR) << "Unknown number of Pyramid13 GP count.";
+		exit(1);
 	}
 
 	return e;

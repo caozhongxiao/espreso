@@ -4,7 +4,7 @@
 
 #include "basis/containers/tarray.h"
 #include "basis/utilities/parser.h"
-#include "config/ecf/environment.h"
+#include "esinfo/envinfo.h"
 
 #include <fstream>
 #include <glob.h>
@@ -59,7 +59,7 @@ void OpenFOAMSets::inspect(const std::string &path, std::vector<OpenFOAMSet> &se
 
 bool OpenFOAMSets::readData(OpenFOAMSet &set, std::vector<esint> &indices)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, end - begin);
 	std::vector<std::vector<esint> > data(threads);

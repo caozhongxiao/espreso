@@ -44,7 +44,7 @@ Element Tetrahedron10::fill(Element e, Element* begin)
 		break;
 	}
 	default:
-		ESINFO(ERROR) << "Unknown number of Tetrahedron10 GP count.";
+		exit(1);
 	}
 
 	e.N = new std::vector<DenseMatrix>(GPCount, DenseMatrix(1, nodeCount));
@@ -120,7 +120,7 @@ Element Tetrahedron10::fill(Element e, Element* begin)
 		break;
 	}
 	default:
-		ESINFO(ERROR) << "Unknown number of Tetrahedron10 GP count.";
+		exit(1);
 	}
 
 	return e;

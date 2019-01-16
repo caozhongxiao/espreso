@@ -1,6 +1,10 @@
 
+#include "mesh.h"
+
 #include "esinfo/ecfinfo.h"
-#include "mesh/mesh.h"
+#include "esinfo/meshinfo.h"
+#include "esinfo/envinfo.h"
+#include "esinfo/mpiinfo.h"
 
 #include "store/statisticsstore.h"
 #include "store/elementstore.h"
@@ -40,11 +44,11 @@ Mesh::Mesh()
   contacts(NULL),
   preprocessing(new MeshPreprocessing(this)),
 
-  _eclasses(environment->OMP_NUM_THREADS),
+  _eclasses(info::env::OMP_NUM_THREADS),
   store(NULL),
   _withGUI(false)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	dimension = 0;
 	switch (info::ecf->physics) {
@@ -158,10 +162,10 @@ void Mesh::update()
 		isEmpty = 1;
 	}
 
-	MPI_Allreduce(&isEmpty, &quit, 1, MPI_INT, MPI_MAX, environment->MPICommunicator);
+	MPI_Allreduce(&isEmpty, &quit, 1, MPI_INT, MPI_MAX, info::mpi::MPICommunicator);
 	if (quit) {
 		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW << "ESPRESO quit computation. There is a process with no elements.";
-		MPI_Barrier(environment->MPICommunicator);
+		MPI_Barrier(info::mpi::MPICommunicator);
 		exit(EXIT_SUCCESS);
 	}
 
@@ -420,10 +424,10 @@ void Mesh::update()
 		preprocessing->searchContactInterfaces();
 	}
 
-	if (environment->verbose_level > 0) {
+	if (info::ecf->output.verbose_level > 0) {
 		printMeshStatistics();
 	}
-	if (environment->verbose_level > 1) {
+	if (info::ecf->output.verbose_level > 1) {
 		printDecompositionStatistics();
 	}
 }
@@ -547,41 +551,41 @@ void Mesh::printDecompositionStatistics()
 
 	ESINFO(DETAILS) << "========= Decomposition statistics =========";
 
-	ESINFO(DETAILS) << header(" NUMBER OF PROCESSES") << environment->MPIsize;
+	ESINFO(DETAILS) << header(" NUMBER OF PROCESSES") << info::mpi::MPIsize;
 
 	ESINFO(DETAILS);
 
 	esint totalNeighbors = 0, minNeighbors = 0, maxNeighbors = 0, neighbors = neighbours.size();
-	MPI_Reduce(&neighbors, &minNeighbors, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, environment->MPICommunicator);
-	MPI_Reduce(&neighbors, &totalNeighbors, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, environment->MPICommunicator);
-	MPI_Reduce(&neighbors, &maxNeighbors, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, environment->MPICommunicator);
+	MPI_Reduce(&neighbors, &minNeighbors, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&neighbors, &totalNeighbors, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&neighbors, &maxNeighbors, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::MPICommunicator);
 	ESINFO(DETAILS) << header(" NUMBER OF NEIGHBORS") << totalNeighbors;
 	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
-			<< minNeighbors << ", " << maxNeighbors << " (" << totalNeighbors / (double)environment->MPIsize << ")";
+			<< minNeighbors << ", " << maxNeighbors << " (" << totalNeighbors / (double)info::mpi::MPIsize << ")";
 	ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNeighbors / (double)minNeighbors;
 
 	ESINFO(DETAILS);
 
 	esint totalClusters = 0, minClusters = 0, maxClusters = 0, clusters = elements->nclusters;
-	MPI_Reduce(&clusters, &minClusters, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, environment->MPICommunicator);
-	MPI_Reduce(&clusters, &totalClusters, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, environment->MPICommunicator);
-	MPI_Reduce(&clusters, &maxClusters, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, environment->MPICommunicator);
+	MPI_Reduce(&clusters, &minClusters, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&clusters, &totalClusters, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&clusters, &maxClusters, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::MPICommunicator);
 	ESINFO(DETAILS) << header(" NUMBER OF CLUSTERS") << totalClusters;
 	ESINFO(DETAILS) << header(" clusters per MPI");
 	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
-			<< minClusters << ", " << maxClusters << " (" << totalClusters / (double)environment->MPIsize << ")";
+			<< minClusters << ", " << maxClusters << " (" << totalClusters / (double)info::mpi::MPIsize << ")";
 	ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxClusters / (double)minClusters;
 
 	ESINFO(DETAILS);
 
 	esint totalDomains = 0, minDomains = 0, maxDomains = 0, domains = elements->ndomains;
-	MPI_Reduce(&domains, &minDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, environment->MPICommunicator);
-	MPI_Reduce(&domains, &totalDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, environment->MPICommunicator);
-	MPI_Reduce(&domains, &maxDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, environment->MPICommunicator);
+	MPI_Reduce(&domains, &minDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&domains, &totalDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&domains, &maxDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::MPICommunicator);
 	ESINFO(DETAILS) << header(" NUMBER OF DOMAINS") << totalDomains;
 	ESINFO(DETAILS) << header(" domains per MPI");
 	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
-			<< minDomains << ", " << maxDomains << " (" << totalDomains / (double)environment->MPIsize << ")";
+			<< minDomains << ", " << maxDomains << " (" << totalDomains / (double)info::mpi::MPIsize << ")";
 	if (maxDomains / (double)minDomains > 3) {
 		ESINFO(DETAILS) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxDomains / (double)minDomains;
 	} else {
@@ -600,7 +604,7 @@ void Mesh::printDecompositionStatistics()
 		}
 		cdomains = std::min(domains, cdomains);
 	}
-	MPI_Reduce(&domains, &minDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, environment->MPICommunicator);
+	MPI_Reduce(&domains, &minDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::MPICommunicator);
 	for (esint c = 0; c < elements->nclusters; c++) {
 		domains = 0;
 		for (esint d = 0; d < elements->ndomains; d++) {
@@ -610,7 +614,7 @@ void Mesh::printDecompositionStatistics()
 		}
 		cdomains = std::max(domains, cdomains);
 	}
-	MPI_Reduce(&domains, &maxDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, environment->MPICommunicator);
+	MPI_Reduce(&domains, &maxDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::MPICommunicator);
 
 	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
 			<< minDomains << ", " << maxDomains << " (" << totalDomains / (double)totalClusters << ")";
@@ -624,13 +628,13 @@ void Mesh::printDecompositionStatistics()
 
 	esint totalElements = 0, minElements = 0, maxElements = 0;
 	esint minelements = elements->elementsDistribution[1], maxelements = 0, avgelements = elements->size;
-	MPI_Reduce(&avgelements, &minElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, environment->MPICommunicator);
-	MPI_Reduce(&avgelements, &totalElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, environment->MPICommunicator);
-	MPI_Reduce(&avgelements, &maxElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, environment->MPICommunicator);
+	MPI_Reduce(&avgelements, &minElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&avgelements, &totalElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&avgelements, &maxElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::MPICommunicator);
 	ESINFO(DETAILS) << header(" NUMBER OF ELEMENTS") << totalElements;
 	ESINFO(DETAILS) << header(" elements per MPI");
 	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
-			<< minElements << ", " << maxElements << " (" << totalElements / (double)environment->MPIsize << ")";
+			<< minElements << ", " << maxElements << " (" << totalElements / (double)info::mpi::MPIsize << ")";
 	if (maxElements / (double)minElements > 1.5) {
 		ESINFO(DETAILS) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
 	} else {
@@ -640,7 +644,7 @@ void Mesh::printDecompositionStatistics()
 
 	ESINFO(DETAILS) << header(" elements per cluster");
 
-	esint coffset = elements->gatherClustersDistribution()[environment->MPIrank];
+	esint coffset = elements->gatherClustersDistribution()[info::mpi::MPIrank];
 
 	esint celements = elements->size;
 	esint mincindex, gmincindex;
@@ -656,11 +660,11 @@ void Mesh::printDecompositionStatistics()
 			mincindex = coffset + c;
 		}
 	}
-	MPI_Allreduce(&celements, &minElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, environment->MPICommunicator);
+	MPI_Allreduce(&celements, &minElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, info::mpi::MPICommunicator);
 	if (minElements != celements) {
 		mincindex = 0;
 	}
-	MPI_Reduce(&mincindex, &gmincindex, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, environment->MPICommunicator);
+	MPI_Reduce(&mincindex, &gmincindex, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::MPICommunicator);
 	for (esint c = 0; c < elements->nclusters; c++) {
 		avgelements = 0;
 		for (esint d = 0; d < elements->ndomains; d++) {
@@ -670,7 +674,7 @@ void Mesh::printDecompositionStatistics()
 		}
 		celements = std::max(avgelements, celements);
 	}
-	MPI_Reduce(&celements, &maxelements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, environment->MPICommunicator);
+	MPI_Reduce(&celements, &maxelements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::MPICommunicator);
 	ESINFO(DETAILS) << std::string(namesize - 18, ' ') << "MIN[#n], MAX (AVG)" << " : "
 			<< minElements << "[" << gmincindex << "], " << maxElements << " (" << totalElements / (double)totalClusters << ")";
 
@@ -689,9 +693,9 @@ void Mesh::printDecompositionStatistics()
 		maxelements = std::max(maxelements, elements->elementsDistribution[d + 1] - elements->elementsDistribution[d]);
 		avgelements += elements->elementsDistribution[d + 1] - elements->elementsDistribution[d];
 	}
-	MPI_Reduce(&minelements, &minElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, environment->MPICommunicator);
-	MPI_Reduce(&avgelements, &totalElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, environment->MPICommunicator);
-	MPI_Reduce(&maxelements, &maxElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, environment->MPICommunicator);
+	MPI_Reduce(&minelements, &minElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&avgelements, &totalElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&maxelements, &maxElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::MPICommunicator);
 	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
 			<< minElements << ", " << maxElements << " (" << totalElements / (double)totalDomains << ")";
 
@@ -703,16 +707,16 @@ void Mesh::printDecompositionStatistics()
 
 	esint totalNodes = 0, minNodes = 0, maxNodes = 0;
 	esint minnodes = nodes->size, maxnodes = nodes->size, avgnodes = nodes->size;
-	MPI_Reduce(&minnodes, &minNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, environment->MPICommunicator);
-	MPI_Reduce(&avgnodes, &totalNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, environment->MPICommunicator);
-	MPI_Reduce(&maxnodes, &maxNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, environment->MPICommunicator);
+	MPI_Reduce(&minnodes, &minNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&avgnodes, &totalNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&maxnodes, &maxNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::MPICommunicator);
 
 	ESINFO(DETAILS);
 
 	ESINFO(DETAILS) << header(" NUMBER OF NODES") << nodes->uniqueTotalSize;
 	ESINFO(DETAILS) << header(" nodes per MPI") << totalNodes;
 	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
-			<< minNodes << ", " << maxNodes << " (" << totalNodes / (double)environment->MPIsize << ")";
+			<< minNodes << ", " << maxNodes << " (" << totalNodes / (double)info::mpi::MPIsize << ")";
 	ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNodes / (double)minNodes;
 	if (maxNodes / (double)minNodes > 1.5) {
 		ESINFO(DETAILS) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNodes / (double)minNodes;
@@ -727,9 +731,9 @@ void Mesh::printDecompositionStatistics()
 		maxnodes = std::max(maxnodes, nodes->dintervals[d].back().DOFOffset + nodes->dintervals[d].back().end - nodes->dintervals[d].back().begin);
 		avgnodes += nodes->dintervals[d].back().DOFOffset + nodes->dintervals[d].back().end - nodes->dintervals[d].back().begin;
 	}
-	MPI_Reduce(&minnodes, &minNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, environment->MPICommunicator);
-	MPI_Reduce(&avgnodes, &totalNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, environment->MPICommunicator);
-	MPI_Reduce(&maxnodes, &maxNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, environment->MPICommunicator);
+	MPI_Reduce(&minnodes, &minNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&avgnodes, &totalNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&maxnodes, &maxNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::MPICommunicator);
 
 	ESINFO(DETAILS) << header(" nodes per domain") << totalNodes;
 	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
@@ -741,8 +745,8 @@ void Mesh::printDecompositionStatistics()
 	}
 
 	esint minUnique = 0, maxUnique = 0;
-	MPI_Reduce(&nodes->uniqueSize, &minUnique, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, environment->MPICommunicator);
-	MPI_Reduce(&nodes->uniqueSize, &maxUnique, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, environment->MPICommunicator);
+	MPI_Reduce(&nodes->uniqueSize, &minUnique, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&nodes->uniqueSize, &maxUnique, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::MPICommunicator);
 
 	ESINFO(DETAILS) << header(" unique nodes per MPI");
 	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
@@ -757,22 +761,22 @@ void Mesh::printDecompositionStatistics()
 		maxduplicity = std::max(maxduplicity, (esint)d->size());
 	}
 
-	MPI_Reduce(&maxduplicity, &maxDuplicity, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, environment->MPICommunicator);
+	MPI_Reduce(&maxduplicity, &maxDuplicity, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::MPICommunicator);
 	ESINFO(DETAILS) << header(" MAX NODE DUPLICITY") << maxDuplicity;
 
 	ESINFO(DETAILS) << header(" COMMUNICATION VOLUME") << "BOUNDARY, INNER (RATIO)";
 	esint inner = 0, boundary = 0, totalInner = 0, totalBoundary = 0;
 	auto iranks = nodes->iranks->cbegin();
 	for (size_t i = 0; i < nodes->pintervals.size(); ++i, ++iranks) {
-		if (iranks->front() != environment->MPIrank || iranks->back() != environment->MPIrank) {
-			if (nodes->pintervals[i].sourceProcess == environment->MPIrank)
+		if (iranks->front() != info::mpi::MPIrank || iranks->back() != info::mpi::MPIrank) {
+			if (nodes->pintervals[i].sourceProcess == info::mpi::MPIrank)
 			boundary += nodes->pintervals[i].end - nodes->pintervals[i].begin;
 		} else {
 			inner += nodes->pintervals[i].end - nodes->pintervals[i].begin;
 		}
 	}
-	MPI_Reduce(&inner, &totalInner, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, environment->MPICommunicator);
-	MPI_Reduce(&boundary, &totalBoundary, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, environment->MPICommunicator);
+	MPI_Reduce(&inner, &totalInner, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&boundary, &totalBoundary, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::MPICommunicator);
 	ESINFO(DETAILS) << std::string(namesize - 7, ' ') << "per MPI : " << totalBoundary << ", " << totalInner << " (" << totalBoundary / (double)totalInner << ")";
 
 	inner = 0, boundary = 0, totalInner = 0, totalBoundary = 0;
@@ -787,8 +791,8 @@ void Mesh::printDecompositionStatistics()
 			}
 		}
 	}
-	MPI_Reduce(&inner, &totalInner, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, environment->MPICommunicator);
-	MPI_Reduce(&boundary, &totalBoundary, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, environment->MPICommunicator);
+	MPI_Reduce(&inner, &totalInner, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&boundary, &totalBoundary, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::MPICommunicator);
 	ESINFO(DETAILS) << std::string(namesize - 10, ' ') << "per domain : " << totalBoundary << ", " << totalInner << " (" << totalBoundary / (double)totalInner << ")";
 
 	ESINFO(DETAILS) << "============================================\n";

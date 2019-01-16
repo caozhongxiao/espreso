@@ -2,7 +2,6 @@
 #ifndef SRC_CONFIG_ECF_ROOT_H_
 #define SRC_CONFIG_ECF_ROOT_H_
 
-#include "environment.hpp"
 #include "output.h"
 #include "decomposition.h"
 
@@ -30,9 +29,6 @@ struct ECFRoot: public ECFDescription {
 
 	PhysicsConfiguration* getPhysics() { return const_cast<PhysicsConfiguration*>(_getPhysics()); }
 	const PhysicsConfiguration* getPhysics() const { return _getPhysics(); }
-
-	// Environment has to be created first!
-	EnvironmentConfiguration environment;
 
 	PythonTestGenerator python_test_generator;
 

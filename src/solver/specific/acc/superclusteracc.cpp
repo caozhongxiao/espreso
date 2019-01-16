@@ -52,8 +52,8 @@ void SuperClusterAcc::SetAcceleratorAffinity() {
     std::string _nodeName;
     MPI_Comm _currentNode;
     MPI_Comm _storingProcs;
-    MPI_Comm_rank(environment->MPICommunicator, &_MPIglobalRank);
-    MPI_Comm_size(environment->MPICommunicator, &_MPIglobalSize);
+    MPI_Comm_rank(info::mpi::MPICommunicator, &_MPIglobalRank);
+    MPI_Comm_size(info::mpi::MPICommunicator, &_MPIglobalSize);
     int color;
     int length;
     std::vector<char> name(MPI_MAX_PROCESSOR_NAME);
@@ -63,12 +63,12 @@ void SuperClusterAcc::SetAcceleratorAffinity() {
     std::vector<int> rDispl(_MPIglobalSize);
     std::vector<int> colors(_MPIglobalSize);
     std::vector<char> names;
-    MPI_Gather(&length, sizeof(int), MPI_BYTE, rCounts.data(), sizeof(int), MPI_BYTE, 0, environment->MPICommunicator);
+    MPI_Gather(&length, sizeof(int), MPI_BYTE, rCounts.data(), sizeof(int), MPI_BYTE, 0, info::mpi::MPICommunicator);
     for (size_t i = 1; i < rCounts.size(); i++) {
         rDispl[i] += rDispl[i - 1] + rCounts[i - 1];
     }
     names.resize(rDispl.back() + rCounts.back());
-    MPI_Gatherv(name.data(), length * sizeof(char), MPI_BYTE, names.data(), rCounts.data(), rDispl.data(), MPI_BYTE, 0, environment->MPICommunicator);
+    MPI_Gatherv(name.data(), length * sizeof(char), MPI_BYTE, names.data(), rCounts.data(), rDispl.data(), MPI_BYTE, 0, info::mpi::MPICommunicator);
     std::map<std::string, size_t> nodes;
     for (size_t i = 0; i < _MPIglobalSize; i++) {
         std::string str(names.begin() + rDispl[i], names.begin() + rDispl[i] + rCounts[i]);
@@ -79,11 +79,11 @@ void SuperClusterAcc::SetAcceleratorAffinity() {
         }
         colors[i] = nodes[str];
     }
-    MPI_Scatter(colors.data(), sizeof(int), MPI_BYTE, &color, sizeof(int), MPI_BYTE, 0, environment->MPICommunicator);
-    MPI_Comm_split(environment->MPICommunicator, color, _MPIglobalRank, &_currentNode);
+    MPI_Scatter(colors.data(), sizeof(int), MPI_BYTE, &color, sizeof(int), MPI_BYTE, 0, info::mpi::MPICommunicator);
+    MPI_Comm_split(info::mpi::MPICommunicator, color, _MPIglobalRank, &_currentNode);
     MPI_Comm_rank(_currentNode, &_MPInodeRank);
     MPI_Comm_size(_currentNode, &_MPInodeSize);
-    MPI_Comm_split(environment->MPICommunicator, _MPInodeRank, _MPIglobalRank, &_storingProcs);
+    MPI_Comm_split(info::mpi::MPICommunicator, _MPInodeRank, _MPIglobalRank, &_storingProcs);
 
     this->MPI_per_node = _MPInodeSize;
     // END - detect how many MPI processes is running per node
@@ -344,14 +344,14 @@ void SuperClusterAcc::SetupKsolvers ( ) {
 
         if (configuration.keep_factors) {
             std::stringstream ss;
-            ss << "init -> rank: " << environment->MPIrank << ", subdomain: " << d;
+            ss << "init -> rank: " << info::mpi::MPIrank << ", subdomain: " << d;
             domains[d]->Kplus.keep_factors = true;
             if (configuration.Ksolver != FETI_KSOLVER::ITERATIVE) {
                 domains[d]->Kplus.Factorization (ss.str());
             }
         } else {
             domains[d]->Kplus.keep_factors = false;
-            domains[d]->Kplus.MPIrank = environment->MPIrank;
+            domains[d]->Kplus.MPIrank = info::mpi::MPIrank;
         }
 
         domains[d]->domain_prim_size = domains[d]->Kplus.cols;
@@ -365,7 +365,7 @@ void SuperClusterAcc::SetupKsolvers ( ) {
         }
         //TODO: else stokes = -2 = Real and symmetric indefinite
 
-        if ( d == 0 && environment->MPIrank == 0) {
+        if ( d == 0 && info::mpi::MPIrank == 0) {
             //    domains[d]->Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
         }
         domains[d]->Kplus.msglvl = 0;
@@ -594,7 +594,7 @@ void SuperClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
             }
             K_modif.ConvertToCSRwithSort(1);
             {
-                if (environment->print_matrices) {
+                if (info::ecf->env.print_matrices) {
                     std::ofstream osS(Logging::prepareFile(d, "K_modif"));
                     osS << K_modif;
                     osS.close();
@@ -688,7 +688,7 @@ void SuperClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
 
             }
 
-            if (environment->print_matrices) {
+            if (info::ecf->env.print_matrices) {
                 std::ofstream osS(Logging::prepareFile(d, "S"));
                 SparseMatrix SC =  domains[d]->Prec;
                 if (configuration.preconditioner == FETI_PRECONDITIONER::DIRICHLET || 
@@ -783,7 +783,7 @@ void SuperClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
         }
         K_modif.ConvertToCSRwithSort(1);
         {
-            if (environment->print_matrices) {
+            if (info::ecf->env.print_matrices) {
                 std::ofstream osS(Logging::prepareFile(d, "K_modif"));
                 osS << K_modif;
                 osS.close();
@@ -876,7 +876,7 @@ void SuperClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
 
         }
 
-        if (environment->print_matrices) {
+        if (info::ecf->env.print_matrices) {
             std::ofstream osS(Logging::prepareFile(d, "S"));
             SparseMatrix SC =  domains[d]->Prec;
             if (configuration.preconditioner == FETI_PRECONDITIONER::DIRICHLET){

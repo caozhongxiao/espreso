@@ -5,7 +5,9 @@
 #include "basis/utilities/parser.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
-#include "config/ecf/environment.h"
+
+#include "esinfo/mpiinfo.h"
+#include "esinfo/envinfo.h"
 
 #include "mesh/elements/element.h"
 #include "input/workbench/workbench.h"
@@ -67,10 +69,10 @@ void EBlock::fixOffsets(std::vector<size_t> &dataOffsets)
 {
 	if (Solkey) {
 		esint nodes;
-		if (fRank == environment->MPIrank) {
+		if (fRank == info::mpi::MPIrank) {
 			nodes = std::stoi(Parser::split(Parser::getLine(begin + first - offset), " ")[9]);
 		}
-		MPI_Bcast(&nodes, sizeof(esint), MPI_BYTE, fRank, environment->MPICommunicator);
+		MPI_Bcast(&nodes, sizeof(esint), MPI_BYTE, fRank, info::mpi::MPICommunicator);
 
 		int size1 = lineSize; // first line
 		int size2 = 0;
@@ -81,10 +83,10 @@ void EBlock::fixOffsets(std::vector<size_t> &dataOffsets)
 			for (int rank = fRank + 1; rank <= lRank; rank++) {
 				if ((dataOffsets[rank] - first) % (size1 + size2) != 0) {
 					dataOffsets[rank] += size2;
-					if (rank - 1 == environment->MPIrank) {
+					if (rank - 1 == info::mpi::MPIrank) {
 						end += size2;
 					}
-					if (rank == environment->MPIrank) {
+					if (rank == info::mpi::MPIrank) {
 						begin += size2;
 						offset += size2;
 					}
@@ -94,8 +96,8 @@ void EBlock::fixOffsets(std::vector<size_t> &dataOffsets)
 		if (nodes < 8) {
 			valueSize = valueSize - 8 + nodes;
 			lineSize = valueSize * valueLength + lineEndSize;
-			MPI_Bcast(&valueSize, sizeof(esint), MPI_BYTE, fRank, environment->MPICommunicator);
-			MPI_Bcast(&lineSize, sizeof(esint), MPI_BYTE, fRank, environment->MPICommunicator);
+			MPI_Bcast(&valueSize, sizeof(esint), MPI_BYTE, fRank, info::mpi::MPICommunicator);
+			MPI_Bcast(&lineSize, sizeof(esint), MPI_BYTE, fRank, info::mpi::MPICommunicator);
 			size1 = elementSize = lineSize;
 		}
 		if (NDSEL == -1) {
@@ -103,7 +105,7 @@ void EBlock::fixOffsets(std::vector<size_t> &dataOffsets)
 		}
 		elementSize = size1 + size2;
 	} else {
-		if (fRank == environment->MPIrank) {
+		if (fRank == info::mpi::MPIrank) {
 			const char *first = getFirst();
 			const char *next = first;
 			while (*next++ != '\n');
@@ -112,8 +114,8 @@ void EBlock::fixOffsets(std::vector<size_t> &dataOffsets)
 				lineSize = valueSize * valueLength + lineEndSize;
 			}
 		}
-		MPI_Bcast(&valueSize, sizeof(esint), MPI_BYTE, fRank, environment->MPICommunicator);
-		MPI_Bcast(&lineSize, sizeof(esint), MPI_BYTE, fRank, environment->MPICommunicator);
+		MPI_Bcast(&valueSize, sizeof(esint), MPI_BYTE, fRank, info::mpi::MPICommunicator);
+		MPI_Bcast(&lineSize, sizeof(esint), MPI_BYTE, fRank, info::mpi::MPICommunicator);
 		elementSize = lineSize;
 	}
 }
@@ -129,7 +131,7 @@ bool EBlock::readData(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 
 bool EBlock::solid(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	const char *first = getFirst(), *last = getLast();
 	size_t size = (last - first) / elementSize;
@@ -319,7 +321,7 @@ bool EBlock::solid(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 
 bool EBlock::boundary(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	const char *first = getFirst(), *last = getLast();
 	esint size = (last - first) / elementSize;

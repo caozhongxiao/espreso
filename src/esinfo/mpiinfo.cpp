@@ -5,7 +5,7 @@ int espreso::info::mpi::MPIrank = 0;
 int espreso::info::mpi::MPIsize = 1;
 MPI_Comm espreso::info::mpi::MPICommunicator = MPI_COMM_WORLD;
 
-void espreso::info::mpi::setMPI()
+void espreso::info::mpi::set()
 {
 	int initialized;
 	MPI_Initialized(&initialized);

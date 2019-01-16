@@ -78,6 +78,13 @@ struct OutputConfiguration: public ECFDescription {
 		USER
 	};
 
+	std::string log_dir;
+
+	size_t verbose_level;
+	size_t measure_level;
+
+	bool print_matrices;
+
 	FORMAT format;
 	MODE mode;
 

@@ -27,6 +27,8 @@ using std::map;
 using std::make_pair;
 
 #include "esinfo/meshinfo.h"
+#include "esinfo/envinfo.h"
+#include "esinfo/mpiinfo.h"
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
 #include "basis/logging/logging.h"
@@ -105,8 +107,8 @@ public:
 		}
 
 		USE_KINV 			= configuration.use_schur_complement ? 1 : 0;
-		PAR_NUM_THREADS 	= environment->PAR_NUM_THREADS;
-		SOLVER_NUM_THREADS  = environment->SOLVER_NUM_THREADS;
+		PAR_NUM_THREADS 	= info::env::PAR_NUM_THREADS;
+		SOLVER_NUM_THREADS  = info::env::SOLVER_NUM_THREADS;
 
 		for (esint c = 0; c < numClusters; c++) {
 			clusters[c].USE_HFETI 			= USE_HFETI;
@@ -128,7 +130,7 @@ public:
 			}
 		}
 
-		MPI_Allreduce(&unsym, &gunsym, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
+		MPI_Allreduce(&unsym, &gunsym, 1, MPI_INT, MPI_SUM, info::mpi::MPICommunicator);
 
 //		mtype 	  = instance->K[0].mtype; // TODO: WARNING - Needs to be fixed
 //
@@ -157,9 +159,9 @@ public:
 
 		// MPI calls to get total number of compute clusters - not superclusters
 		int global_numClusters = 0;
-		MPI_Allreduce(&numClusters, &global_numClusters, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
+		MPI_Allreduce(&numClusters, &global_numClusters, 1, MPI_INT, MPI_SUM, info::mpi::MPICommunicator);
 		int glob_clust_index = 0;
-		MPI_Exscan(&numClusters, &glob_clust_index, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
+		MPI_Exscan(&numClusters, &glob_clust_index, 1, MPI_INT, MPI_SUM, info::mpi::MPICommunicator);
 
 		//instance->computeKernels(configuration.regularization, configuration.sc_size);
 
@@ -210,7 +212,7 @@ public:
 
 
 		// Setup communication layer of the supercluster
-		MPIrank   = environment->MPIrank;
+		MPIrank   = info::mpi::MPIrank;
 		my_neighs = std::vector<esint>(info::mesh->neighbours.begin(), info::mesh->neighbours.end());
 		SetupCommunicationLayer();
 
@@ -229,7 +231,7 @@ public:
 		for (size_t c = 0; c < clusters.size(); c++) {
 			if (clusters[c].domains.size() == 1) {
 				//ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW
-				std::cout << "Cluster " << clusters[c].cluster_global_index << " on MPI rank " << environment->MPIrank << " has only one domain -> Using TFETI" << std::endl;
+				std::cout << "Cluster " << clusters[c].cluster_global_index << " on MPI rank " << info::mpi::MPIrank << " has only one domain -> Using TFETI" << std::endl;
 				clusters[c].USE_HFETI = 0;
 			}
 		}
@@ -380,7 +382,7 @@ public:
 		//// *** - will be used to compress vectors and matrices for higher efficiency
 
 		ESLOG(MEMORY) << "Setting vectors for lambdas";
-		ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+		ESLOG(MEMORY) << "process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		my_lamdas_indices.resize( lambda_map_sub.size() );
@@ -388,7 +390,7 @@ public:
 			my_lamdas_indices[i] = lambda_map_sub[i][0];
 
 
-		SEQ_VECTOR< SEQ_VECTOR <esint> > lambdas_per_subdomain (instance->K.size() * environment->MPIsize ); // ( domains.size() * environment->MPIsize);
+		SEQ_VECTOR< SEQ_VECTOR <esint> > lambdas_per_subdomain (instance->K.size() * info::mpi::MPIsize ); // ( domains.size() * info::mpi::MPIsize);
 
 		my_lamdas_ddot_filter.resize( lambda_map_sub.size(), 0.0 );
 		for (size_t i = 0; i < lambda_map_sub.size(); i++) {
@@ -405,7 +407,7 @@ public:
 		}
 
 		ESLOG(MEMORY) << "Setting vectors for lambdas communicators";
-		ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+		ESLOG(MEMORY) << "process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		my_comm_lambdas_indices .resize(my_neighs.size());

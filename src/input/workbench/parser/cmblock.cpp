@@ -1,11 +1,12 @@
 
 #include "cmblock.h"
 
+#include "esinfo/mpiinfo.h"
+#include "esinfo/envinfo.h"
+
 #include "basis/containers/tarray.h"
 #include "basis/utilities/parser.h"
 #include "basis/logging/logging.h"
-
-#include "config/ecf/environment.h"
 
 #include <algorithm>
 
@@ -74,7 +75,7 @@ CMBlock& CMBlock::parse(const char* begin)
 
 bool CMBlock::readData(std::vector<esint> &indices)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	const char *first = getFirst(), *last = getLast();
 	esint size = (last - first) / lineSize;
@@ -95,7 +96,7 @@ bool CMBlock::readData(std::vector<esint> &indices)
 			}
 			data += lineEndSize;
 		}
-		if (lRank == environment->MPIrank && t == threads - 1) {
+		if (lRank == info::mpi::MPIrank && t == threads - 1) {
 			auto data = first + lineSize * tdistribution[t + 1];
 			for (esint n = 0; n < NUMITEMS % valueSize; ++n) {
 				memcpy(value.data(), data, valueLength);

@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     setlocale(LC_ALL, "C");
     setlocale(LC_CTYPE, "C");
 
-    if (environment->MPIrank == 0)
+    if (info::mpi::MPIrank == 0)
     {
         ww.init();
         ww.showMaximized();
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 
     mpim.loop();
 
-    if (environment->MPIrank == 0)
+    if (info::mpi::MPIrank == 0)
     {
         a.exec();
         mpim.masterExit();

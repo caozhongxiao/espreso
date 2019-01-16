@@ -44,7 +44,7 @@ Element Hexahedron20::fill(Element e, Element* begin)
 		break;
 	}
 	default:
-		ESINFO(ERROR) << "Unknown number of Hexahedron20 GP count.";
+		exit(1);
 	}
 
 	e.N = new std::vector<DenseMatrix>(GPCount, DenseMatrix(1, nodeCount));
@@ -172,7 +172,7 @@ Element Hexahedron20::fill(Element e, Element* begin)
 		break;
 	}
 	default:
-		ESINFO(ERROR) << "Unknown number of Hexahedron20 GP count.";
+		exit(1);
 	}
 
 	return e;

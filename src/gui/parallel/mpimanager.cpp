@@ -40,12 +40,12 @@ Mesh* MpiManager::mesh()
 
 void MpiManager::loop()
 {
-    if (environment->MPIrank == 0) return;
+    if (info::mpi::MPIrank == 0) return;
 
     while (true)
     {
         int opcode = 0;
-        MPI_Bcast(&opcode, 1, MPI_INT, 0, environment->MPICommunicator);
+        MPI_Bcast(&opcode, 1, MPI_INT, 0, info::mpi::MPICommunicator);
         if (opcode == 0) break;
 
         this->performOperation(opcode);
@@ -70,14 +70,14 @@ void MpiManager::performOperation(int code)
 void MpiManager::masterOpenECF(const QString& filename)
 {
     int op = gui::MpiOperation::OPEN_ECF;
-    MPI_Bcast(&op, 1, MPI_INT, 0, environment->MPICommunicator);
+    MPI_Bcast(&op, 1, MPI_INT, 0, info::mpi::MPICommunicator);
 
     std::string fname = filename.toStdString();
     std::vector<char> fn(fname.begin(), fname.end());
     fn.push_back(0);
     int len = fname.size();
-    MPI_Bcast(&len, 1, MPI_INT, 0, environment->MPICommunicator);
-    MPI_Bcast(&fn[0], len, MPI_CHAR, 0, environment->MPICommunicator);
+    MPI_Bcast(&len, 1, MPI_INT, 0, info::mpi::MPICommunicator);
+    MPI_Bcast(&fn[0], len, MPI_CHAR, 0, info::mpi::MPICommunicator);
 
     this->_openECF(filename.toStdString());
 }
@@ -85,9 +85,9 @@ void MpiManager::masterOpenECF(const QString& filename)
 void MpiManager::slaveOpenECF()
 {
     int len = 0;
-    MPI_Bcast(&len, 1, MPI_INT, 0, environment->MPICommunicator);
+    MPI_Bcast(&len, 1, MPI_INT, 0, info::mpi::MPICommunicator);
     char fn[len + 1];
-    MPI_Bcast(fn, len, MPI_CHAR, 0, environment->MPICommunicator);
+    MPI_Bcast(fn, len, MPI_CHAR, 0, info::mpi::MPICommunicator);
     fn[len] = 0;
     this->_openECF(std::string(fn));
 }
@@ -102,7 +102,7 @@ void MpiManager::_openECF(const std::string& filename)
 QMap<QString, QVector<float> >* MpiManager::masterGatherMesh()
 {
     int op = gui::MpiOperation::GATHER_MESH;
-    MPI_Bcast(&op, 1, MPI_INT, 0, environment->MPICommunicator);
+    MPI_Bcast(&op, 1, MPI_INT, 0, info::mpi::MPICommunicator);
 
     return this->_gatherMesh();
 }
@@ -295,22 +295,22 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
 
     QMapIterator<QString, QVector<float> > it(regions);
 
-    QMap<QString, QVector<float> >* r_regions = (environment->MPIrank == 0) ? new QMap<QString, QVector<float> >() : nullptr;
+    QMap<QString, QVector<float> >* r_regions = (info::mpi::MPIrank == 0) ? new QMap<QString, QVector<float> >() : nullptr;
 
     while (it.hasNext())
     {
         it.next();
 
         int num = it.value().size();
-        int nums[environment->MPIsize];
-        MPI_Gather(&num, 1, MPI_INT, nums, 1, MPI_INT, 0, environment->MPICommunicator);
+        int nums[info::mpi::MPIsize];
+        MPI_Gather(&num, 1, MPI_INT, nums, 1, MPI_INT, 0, info::mpi::MPICommunicator);
 
         int numsum = 0;
-        int displs[environment->MPIsize];
+        int displs[info::mpi::MPIsize];
         QVector<float> coordinates;
-        if (environment->MPIrank == 0)
+        if (info::mpi::MPIrank == 0)
         {
-            for (int i = 0; i < environment->MPIsize; i++)
+            for (int i = 0; i < info::mpi::MPIsize; i++)
             {
                 displs[i] = numsum;
                 numsum += nums[i];
@@ -318,9 +318,9 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
             coordinates.resize(numsum);
         }
 
-        MPI_Gatherv(const_cast<float*>(it.value().data()), num, MPI_FLOAT, coordinates.data(), nums, displs, MPI_FLOAT, 0, environment->MPICommunicator);
+        MPI_Gatherv(const_cast<float*>(it.value().data()), num, MPI_FLOAT, coordinates.data(), nums, displs, MPI_FLOAT, 0, info::mpi::MPICommunicator);
 
-        if (environment->MPIrank == 0)
+        if (info::mpi::MPIrank == 0)
         {
             r_regions->insert(it.key(), coordinates);
         }
@@ -332,5 +332,5 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
 void MpiManager::masterExit()
 {
     int code = gui::MpiOperation::EXIT;
-    MPI_Bcast(&code, 1, MPI_INT, 0, environment->MPICommunicator);
+    MPI_Bcast(&code, 1, MPI_INT, 0, info::mpi::MPICommunicator);
 }

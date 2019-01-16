@@ -6,6 +6,7 @@
 #include "basis/containers/point.h"
 #include "basis/matrices/denseMatrix.h"
 #include "basis/evaluator/evaluator.h"
+#include "basis/logging/logging.h"
 #include "config/ecf/physics/heattransfer.h"
 #include "mesh/elements/element.h"
 

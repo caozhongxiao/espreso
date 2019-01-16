@@ -6,12 +6,11 @@
 
 #include "mesh/mesh.h"
 
+#include "esinfo/mpiinfo.h"
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/utils.h"
 #include "basis/utilities/communication.h"
-
-#include "config/ecf/environment.h"
 
 using namespace espreso;
 
@@ -174,7 +173,7 @@ NodeStore::~NodeStore()
 
 void NodeStore::store(const std::string &file)
 {
-	std::ofstream os(file + std::to_string(environment->MPIrank) + ".txt");
+	std::ofstream os(file + std::to_string(info::mpi::MPIrank) + ".txt");
 
 	Store::storedata(os, "IDs", IDs);
 	Store::storedata(os, "elements", elements);
@@ -232,7 +231,7 @@ void NodeData::statistics(const tarray<esint> &nodes, esint totalsize, Statistic
 		esint prev = 0;
 		for (auto n = nodes.begin(); n != nodes.end(); prev = *n++) {
 			nranks += *n - prev;
-			if (*nranks->begin() == environment->MPIrank) {
+			if (*nranks->begin() == info::mpi::MPIrank) {
 				statistics->min = std::min(statistics->min, data[*n * dimension]);
 				statistics->max = std::max(statistics->max, data[*n * dimension]);
 				statistics->avg += data[*n * dimension];
@@ -243,7 +242,7 @@ void NodeData::statistics(const tarray<esint> &nodes, esint totalsize, Statistic
 		esint prev = 0;
 		for (auto n = nodes.begin(); n != nodes.end(); prev = *n++) {
 			nranks += *n - prev;
-			if (*nranks->begin() == environment->MPIrank) {
+			if (*nranks->begin() == info::mpi::MPIrank) {
 				double value = 0;
 				for (int d = 0; d < dimension; d++) {
 					value += data[*n * dimension + d] * data[*n * dimension + d];
@@ -262,7 +261,7 @@ void NodeData::statistics(const tarray<esint> &nodes, esint totalsize, Statistic
 	}
 
 	std::vector<Statistics> global(names.size());
-	MPI_Allreduce(statistics, global.data(), sizeof(Statistics) * names.size(), MPI_BYTE, MPITools::operations().mergeStatistics, environment->MPICommunicator);
+	MPI_Allreduce(statistics, global.data(), sizeof(Statistics) * names.size(), MPI_BYTE, MPITools::operations().mergeStatistics, info::mpi::MPICommunicator);
 	memcpy(statistics, global.data(), sizeof(Statistics) * names.size());
 
 	for (size_t i = 0; i < names.size(); i++) {

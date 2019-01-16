@@ -1,7 +1,6 @@
 
 #include "solver/generic/utils.h"
 #include "basis/matrices/matrixtype.h"
-#include "config/ecf/environment.h"
 #include "config/ecf/solver/feti.h"
 
 //class SparseSolverCPU;

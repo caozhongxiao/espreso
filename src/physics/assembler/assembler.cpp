@@ -1,5 +1,6 @@
 
 #include "esinfo/meshinfo.h"
+#include "esinfo/mpiinfo.h"
 #include "physics/assembler/dataholder.h"
 #include "physics/assembler/composer/composer.h"
 #include "assembler.h"
@@ -104,7 +105,7 @@ double Assembler::maxAbsValue(const std::vector<std::vector<double> > &v, const 
 		max = std::max(max, std::fabs(*std::max_element(v[p].begin(), v[p].end(), [] (const double v1, const double v2) { return std::fabs(v1) < std::fabs(v2); })));
 	}
 
-	MPI_Allreduce(&max, &gmax, 1, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
+	MPI_Allreduce(&max, &gmax, 1, MPI_DOUBLE, MPI_MAX, info::mpi::MPICommunicator);
 	return gmax;
 }
 
@@ -123,7 +124,7 @@ double Assembler::lineSearch(const std::vector<std::vector<double> > &U, std::ve
 			#pragma omp atomic
 			cmul += dmul;
 		}
-		MPI_Allreduce(&cmul, &gmul, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
+		MPI_Allreduce(&cmul, &gmul, 1, MPI_DOUBLE, MPI_SUM, info::mpi::MPICommunicator);
 		return gmul;
 	};
 

@@ -105,6 +105,26 @@ espreso::ResultsSelectionConfiguration::ResultsSelectionConfiguration(const PHYS
 espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
 : results_selection(physics), _physics(physics)
 {
+	log_dir = "debug";
+	REGISTER(log_dir, ECFMetaData()
+			.setdescription({ "A name of logging directory" })
+			.setdatatype({ ECFDataType::STRING }));
+
+	verbose_level = 1;
+	REGISTER(verbose_level, ECFMetaData()
+			.setdescription({ "Verbose level [0-3]." })
+			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
+
+	measure_level = 0;
+	REGISTER(measure_level, ECFMetaData()
+			.setdescription({ "Measure level [0-3]." })
+			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
+
+	print_matrices = 0;
+	REGISTER(print_matrices, ECFMetaData()
+			.setdescription({ "Print assembler matrices for debugging." })
+			.setdatatype({ ECFDataType::BOOL }));
+
 	path = "results";
 	REGISTER(path, ECFMetaData()
 			.setdescription({ "Path" })

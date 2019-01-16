@@ -1,6 +1,7 @@
 
 #include "Domain.h"
 #include "basis/logging/logging.h"
+#include "esinfo/ecfinfo.h"
 
 #include <cmath>
 
@@ -12,7 +13,7 @@ using namespace espreso;
 
 void storeData(SparseMatrix matrices, const std::string &name, const std::string &description, int d)
 {
-	if (environment->print_matrices) {
+	if (info::ecf->output.print_matrices) {
 		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "Storing " << description;
 		//for (size_t d = 0; d < matrices.size(); d++) {
 			std::ofstream os(Logging::prepareFile(d, name));
@@ -24,7 +25,7 @@ void storeData(SparseMatrix matrices, const std::string &name, const std::string
 
 void storeData(vector<double> vectors, const std::string &name, const std::string &description, int d)
 {
-	if (environment->print_matrices) {
+	if (info::ecf->output.print_matrices) {
 		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "Storing " << description;
 		//for (size_t d = 0; d < vectors.size(); d++) {
 			std::ofstream os(Logging::prepareFile(d, name));

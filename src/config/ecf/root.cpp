@@ -4,6 +4,7 @@
 #include "config/configuration.hpp"
 
 #include "basis/logging/logging.h"
+#include "esinfo/ecfinfo.h"
 
 using namespace espreso;
 
@@ -115,9 +116,6 @@ void ECFRoot::init()
 			.setdescription({ "Structural mechanics 3D" })
 			.allowonly([&] () { return physics == PHYSICS::STRUCTURAL_MECHANICS_3D; }));
 
-	ecfdescription->registerParameter("env", environment, ECFMetaData()
-			.setdescription({ "Environment related settings." }));
-
 	REGISTER(output, ECFMetaData()
 			.setdescription({ "Output configurations." }));
 }
@@ -130,6 +128,11 @@ ECFRoot::ECFRoot()
   structural_mechanics_3d(DIMENSION::D3),
   output(physics)
 {
+	if (info::ecf == NULL) {
+		info::ecf = this;
+	} else {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: cannot create more ECFRoot instances.";
+	}
 	init();
 }
 
@@ -154,7 +157,7 @@ ECFRoot::ECFRoot(int *argc, char ***argv)
 bool ECFRoot::fill(const std::string &file)
 {
 	if (ECFReader::read(*this->ecfdescription, file, this->default_args, this->variables).hadValidECF) {
-		ECFReader::set(this->environment, this->output);
+		ECFReader::set(this->output);
 		return true;
 	}
 	return false;
@@ -163,7 +166,7 @@ bool ECFRoot::fill(const std::string &file)
 bool ECFRoot::fill(int *argc, char ***argv)
 {
 	if (ECFReader::read(*this->ecfdescription, argc, argv, this->default_args, this->variables).hadValidECF) {
-		ECFReader::set(this->environment, this->output);
+		ECFReader::set(this->output);
 		return true;
 	}
 	return false;

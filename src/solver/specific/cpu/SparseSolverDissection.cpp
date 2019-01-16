@@ -463,7 +463,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << environment->MPIrank;
+		ss << "Solve -> rank: " << info::mpi::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -526,7 +526,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << environment->MPIrank;
+		ss << "Solve -> rank: " << info::mpi::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -590,7 +590,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << environment->MPIrank;
+		ss << "Solve -> rank: " << info::mpi::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -646,7 +646,7 @@ void SparseSolverDissection::SolveMat_Sparse( espreso::SparseMatrix & A_in, espr
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << environment->MPIrank;
+		ss << "Solve -> rank: " << info::mpi::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -964,7 +964,7 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R, SparseMatrix &R2) {
 	// After factorization, with singular matrix
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Get Kernel -> rank: " << environment->MPIrank;
+		ss << "Get Kernel -> rank: " << info::mpi::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -1064,7 +1064,7 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R, SparseMatrix &R2) {
 //	// After factorization, with singular matrix
 //	if (!initialized) {
 //		std::stringstream ss;
-//		ss << "Get Kernel R -> rank: " << environment->MPIrank;
+//		ss << "Get Kernel R -> rank: " << info::mpi::MPIrank;
 //		Factorization(ss.str());
 //	}
 //
@@ -1140,7 +1140,7 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R, SparseMatrix &R2) {
 //	// After factorization, with singular matrix
 //	if (!initialized) {
 //		std::stringstream ss;
-//		ss << "Get Kernel N -> rank: " << environment->MPIrank;
+//		ss << "Get Kernel N -> rank: " << info::mpi::MPIrank;
 //		Factorization(ss.str());
 //	}
 //

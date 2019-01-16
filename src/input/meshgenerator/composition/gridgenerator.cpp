@@ -5,7 +5,7 @@
 #include "input/meshgenerator/selection/blockborder.h"
 #include "input/plaindata.h"
 #include "input/generatedinput.h"
-#include "config/ecf/environment.h"
+#include "esinfo/mpiinfo.h"
 #include "config/ecf/input/grid.h"
 #include "config/ecf/input/sphere.h"
 #include "basis/utilities/communication.h"
@@ -57,7 +57,7 @@ void GridGenerator::init()
 					continue;
 				}
 
-				if (cluster++ == environment->MPIrank) {
+				if (cluster++ == info::mpi::MPIrank) {
 					_clusterOffset = offset;
 					Triple<int> start = _settings.start;
 					_settings.start = start + ((_settings.end - start) / (Triple<double>)_settings.clusters * offset).round();
@@ -66,8 +66,8 @@ void GridGenerator::init()
 			}
 		}
 	}
-	if (cluster != environment->MPIsize) {
-		ESINFO(GLOBAL_ERROR) << "Incorrect number of MPI processes (" << environment->MPIsize << "). Should be " << cluster;
+	if (cluster != info::mpi::MPIsize) {
+		ESINFO(GLOBAL_ERROR) << "Incorrect number of MPI processes (" << info::mpi::MPIsize << "). Should be " << cluster;
 	}
 }
 

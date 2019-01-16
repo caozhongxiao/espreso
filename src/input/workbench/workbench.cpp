@@ -15,7 +15,8 @@
 #include "basis/logging/timeeval.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
-#include "config/ecf/environment.h"
+#include "esinfo/mpiinfo.h"
+#include "esinfo/envinfo.h"
 #include "config/ecf/input/input.h"
 
 #include "input/randominput.h"
@@ -58,7 +59,7 @@ WorkbenchLoader::WorkbenchLoader(const InputConfiguration &configuration, Mesh &
 		std::fill(meshData.material.begin(), meshData.material.end(), 0);
 	}
 
-	if (environment->MPIsize > 1) {
+	if (info::mpi::MPIsize > 1) {
 		RandomInput::buildMesh(meshData, mesh);
 	} else {
 		SequentialInput::buildMesh(meshData, mesh);
@@ -101,7 +102,7 @@ void WorkbenchLoader::readData()
 	MPILoader::scatter(loaders.within, _pfile);
 	MPILoader::align(MPITools::procs(), _pfile, MAX_LINE_STEP);
 
-	WorkbenchParser::offset = _pfile.offsets[environment->MPIrank];
+	WorkbenchParser::offset = _pfile.offsets[info::mpi::MPIrank];
 	WorkbenchParser::begin = _pfile.begin;
 	WorkbenchParser::end = _pfile.end;
 
@@ -114,7 +115,7 @@ void WorkbenchLoader::readData()
 
 void WorkbenchLoader::prepareData()
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, _pfile.end - _pfile.begin);
 	std::vector<std::vector<NBlock> > tNBlocks(threads);
@@ -265,10 +266,10 @@ void WorkbenchLoader::prepareData()
 	for (size_t i = 0; i < _EBlocks.size(); i++) {
 		_EBlocks[i].fixOffsets(_pfile.offsets);
 		if (_pfile.begin != WorkbenchParser::begin) {
-			_pfile.offsets[environment->MPIrank] += _pfile.begin - WorkbenchParser::begin;
+			_pfile.offsets[info::mpi::MPIrank] += _pfile.begin - WorkbenchParser::begin;
 		}
 		if (_pfile.end != WorkbenchParser::end) {
-			_pfile.offsets[environment->MPIrank + 1] += _pfile.end - WorkbenchParser::end;
+			_pfile.offsets[info::mpi::MPIrank + 1] += _pfile.end - WorkbenchParser::end;
 		}
 		_pfile.begin = WorkbenchParser::begin;
 		_pfile.end = WorkbenchParser::end;

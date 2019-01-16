@@ -11,7 +11,7 @@ namespace espreso {
 
 struct ECFParameter;
 struct ECFObject;
-struct Environment;
+struct EnvironmentConfiguration;
 struct OutputConfiguration;
 
 struct ECFRedParameters {
@@ -42,7 +42,7 @@ public:
 		return _read(configuration, argc, argv, defaultArgs, variables);
 	}
 
-	static void set(const Environment &env, const OutputConfiguration &output);
+	static void set(const OutputConfiguration &output);
 
 	static void store(const ECFObject &configuration, std::ostream &os, bool onlyAllowed = true, bool printPatterns = false, const ECFRedParameters &parameters = ECFRedParameters());
 

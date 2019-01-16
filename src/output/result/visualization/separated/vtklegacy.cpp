@@ -10,7 +10,8 @@
 #include "basis/utilities/utils.h"
 #include "basis/utilities/communication.h"
 
-#include "config/ecf/environment.h"
+#include "esinfo/mpiinfo.h"
+#include "esinfo/envinfo.h"
 #include "config/ecf/output.h"
 
 #include "mesh/mesh.h"
@@ -49,7 +50,7 @@ VTKLegacy::VTKLegacy(const Mesh &mesh)
 
 void VTKLegacy::mesh(const std::string &name)
 {
-	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+	std::ofstream os(name + std::to_string(info::mpi::MPIrank) + ".vtk");
 
 	os << "# vtk DataFile Version 2.0\n";
 	os << "EXAMPLE\n";
@@ -101,7 +102,7 @@ void VTKLegacy::mesh(const std::string &name)
 	os << "SCALARS cluster int 1\n";
 	os << "LOOKUP_TABLE default\n";
 	for (esint e = 0; e < _mesh.elements->size; e++) {
-		os << environment->MPIrank << "\n";
+		os << info::mpi::MPIrank << "\n";
 	}
 	os << "\n";
 	os << "\n";
@@ -118,7 +119,7 @@ void VTKLegacy::mesh(const std::string &name)
 
 void VTKLegacy::solution(const std::string &name)
 {
-	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+	std::ofstream os(name + std::to_string(info::mpi::MPIrank) + ".vtk");
 
 	os << "# vtk DataFile Version 2.0\n";
 	os << "EXAMPLE\n";
@@ -227,7 +228,7 @@ void VTKLegacy::solution(const std::string &name)
 
 void VTKLegacy::nodesIntervals(const std::string &name)
 {
-	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+	std::ofstream os(name + std::to_string(info::mpi::MPIrank) + ".vtk");
 
 	os << "# vtk DataFile Version 2.0\n";
 	os << "EXAMPLE\n";
@@ -274,7 +275,7 @@ void VTKLegacy::nodesIntervals(const std::string &name)
 
 void VTKLegacy::externalIntervals(const std::string &name)
 {
-	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+	std::ofstream os(name + std::to_string(info::mpi::MPIrank) + ".vtk");
 
 	os << "# vtk DataFile Version 2.0\n";
 	os << "EXAMPLE\n";
@@ -327,7 +328,7 @@ void VTKLegacy::sharedInterface(const std::string &name)
 	if (_mesh.FETIData == NULL || _mesh.FETIData->interfaceNodes == NULL) {
 		return;
 	}
-	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+	std::ofstream os(name + std::to_string(info::mpi::MPIrank) + ".vtk");
 
 	os << "# vtk DataFile Version 2.0\n";
 	os << "EXAMPLE\n";
@@ -369,7 +370,7 @@ void VTKLegacy::sharedInterface(const std::string &name)
 void VTKLegacy::surface(const std::string &name)
 {
 	auto surface = [&] (const std::string &suffix, serializededata<esint, esint>* elements, serializededata<esint, Element*>* epointers) {
-		std::ofstream os(name + "." + suffix + std::to_string(environment->MPIrank) + ".vtk");
+		std::ofstream os(name + "." + suffix + std::to_string(info::mpi::MPIrank) + ".vtk");
 
 		os << "# vtk DataFile Version 2.0\n";
 		os << "EXAMPLE\n";
@@ -435,7 +436,7 @@ void VTKLegacy::domainSurface(const std::string &name)
 	}
 
 	auto surface = [&] (const std::string &suffix, serializededata<esint, esint>* elements, std::vector<size_t> &distribution) {
-		std::ofstream os(name + "." + suffix + std::to_string(environment->MPIrank) + ".vtk");
+		std::ofstream os(name + "." + suffix + std::to_string(info::mpi::MPIrank) + ".vtk");
 
 		os << "# vtk DataFile Version 2.0\n";
 		os << "EXAMPLE\n";
@@ -478,7 +479,7 @@ void VTKLegacy::domainSurface(const std::string &name)
 
 void VTKLegacy::points(const std::string &name, const std::vector<esint> &points, const std::vector<esint> &distribution)
 {
-	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+	std::ofstream os(name + std::to_string(info::mpi::MPIrank) + ".vtk");
 
 	os << "# vtk DataFile Version 2.0\n";
 	os << "EXAMPLE\n";
@@ -513,7 +514,7 @@ void VTKLegacy::corners(const std::string &name)
 		return;
 	}
 
-	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+	std::ofstream os(name + std::to_string(info::mpi::MPIrank) + ".vtk");
 
 	os << "# vtk DataFile Version 2.0\n";
 	os << "EXAMPLE\n";
@@ -576,7 +577,7 @@ void VTKLegacy::contact(const std::string &name)
 	size_t zsize = std::ceil((_mesh.contacts->boundingBox[1].z - _mesh.contacts->boundingBox[0].z) / boxsize);
 
 	{ // BOUNDING BOX
-		std::ofstream osbb(name + std::to_string(environment->MPIrank) + ".boundingbox.vtk");
+		std::ofstream osbb(name + std::to_string(info::mpi::MPIrank) + ".boundingbox.vtk");
 
 		osbb << "# vtk DataFile Version 2.0\n";
 		osbb << "EXAMPLE\n";
@@ -606,7 +607,7 @@ void VTKLegacy::contact(const std::string &name)
 	}
 
 	{ // BOXS
-		std::ofstream osb(name + std::to_string(environment->MPIrank) + ".boxs.vtk");
+		std::ofstream osb(name + std::to_string(info::mpi::MPIrank) + ".boxs.vtk");
 
 		osb << "# vtk DataFile Version 2.0\n";
 		osb << "EXAMPLE\n";
@@ -679,7 +680,7 @@ void VTKLegacy::contact(const std::string &name)
 		size_t points = 8 * _mesh.contacts->filledCells.size();
 		Point begin, end;
 
-		std::ofstream os(name + std::to_string(environment->MPIrank) + ".filled.vtk");
+		std::ofstream os(name + std::to_string(info::mpi::MPIrank) + ".filled.vtk");
 
 		os << "# vtk DataFile Version 2.0\n";
 		os << "EXAMPLE\n";
@@ -744,10 +745,10 @@ void VTKLegacy::contact(const std::string &name)
 				(_mesh.contacts->boundingBox[0].y + _mesh.contacts->boundingBox[1].y) / 2,
 				(_mesh.contacts->boundingBox[0].z + _mesh.contacts->boundingBox[1].z) / 2);
 
-		std::vector<Point> centers(environment->MPIsize);
-		MPI_Allgather(&center, 3, MPI_DOUBLE, centers.data(), 3, MPI_DOUBLE, environment->MPICommunicator);
+		std::vector<Point> centers(info::mpi::MPIsize);
+		MPI_Allgather(&center, 3, MPI_DOUBLE, centers.data(), 3, MPI_DOUBLE, info::mpi::MPICommunicator);
 
-		std::ofstream os(name + std::to_string(environment->MPIrank) + ".neighbors.vtk");
+		std::ofstream os(name + std::to_string(info::mpi::MPIrank) + ".neighbors.vtk");
 
 		os << "# vtk DataFile Version 2.0\n";
 		os << "EXAMPLE\n";
@@ -785,7 +786,7 @@ void VTKLegacy::closeElements(const std::string &name)
 		return;
 	}
 
-	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+	std::ofstream os(name + std::to_string(info::mpi::MPIrank) + ".vtk");
 
 	os << "# vtk DataFile Version 2.0\n";
 	os << "EXAMPLE\n";
@@ -797,8 +798,8 @@ void VTKLegacy::closeElements(const std::string &name)
 		points += _mesh.contacts->nsurface[n].size() + _mesh.contacts->ncloseElements[n]->datatarray().size();
 	}
 
-	std::vector<Point> centers(environment->MPIsize);
-	MPI_Allgather(&_mesh.nodes->center, 3, MPI_DOUBLE, centers.data(), 3, MPI_DOUBLE, environment->MPICommunicator);
+	std::vector<Point> centers(info::mpi::MPIsize);
+	MPI_Allgather(&_mesh.nodes->center, 3, MPI_DOUBLE, centers.data(), 3, MPI_DOUBLE, info::mpi::MPICommunicator);
 
 	os << "POINTS " << points << " float\n";
 	auto closest = _mesh.contacts->closeElements->cbegin();
@@ -903,7 +904,7 @@ void VTKLegacy::closeElements(const std::string &name)
 	}
 	for (size_t n = 0; n < _mesh.contacts->neighbors.size(); n++) {
 		for (auto e = _mesh.contacts->ncloseElements[n]->cbegin(); e != _mesh.contacts->ncloseElements[n]->cend(); ++e, ++eindex) {
-			if (environment->MPIrank < _mesh.contacts->neighbors[n]) {
+			if (info::mpi::MPIrank < _mesh.contacts->neighbors[n]) {
 				for (auto n = e->begin(); n != e->end(); ++n) {
 					os << "1\n";
 				}
@@ -924,7 +925,7 @@ void VTKLegacy::neighbors(const std::string &name)
 	}
 
 	std::vector<esint> pdistribution = _mesh.elements->gatherElementsProcDistribution();
-	esint ebegin = pdistribution[environment->MPIrank];
+	esint ebegin = pdistribution[info::mpi::MPIrank];
 	esint eend = ebegin + _mesh.elements->size;
 
 	std::vector<std::vector<esint> > sIDs(_mesh.neighbours.size()), rIDs(_mesh.neighbours.size());
@@ -953,7 +954,7 @@ void VTKLegacy::neighbors(const std::string &name)
 	Communication::exchangeUnknownSize(sCenters, rCenters, _mesh.neighbours);
 
 
-	std::ofstream os(name + std::to_string(environment->MPIrank) + ".vtk");
+	std::ofstream os(name + std::to_string(info::mpi::MPIrank) + ".vtk");
 
 	os << "# vtk DataFile Version 2.0\n";
 	os << "EXAMPLE\n";
@@ -1023,7 +1024,7 @@ void VTKLegacy::neighbors(const std::string &name)
 
 void VTKLegacyDebugInfo::dirichlet(const Mesh &mesh, const DataHolder &instance)
 {
-	std::ofstream os(Esutils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" }) + "DIRICHLET" + std::to_string(environment->MPIrank) + ".vtk");
+	std::ofstream os(Esutils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" }) + "DIRICHLET" + std::to_string(info::mpi::MPIrank) + ".vtk");
 
 	os << "# vtk DataFile Version 2.0\n";
 	os << "EXAMPLE\n";
@@ -1078,11 +1079,11 @@ void VTKLegacyDebugInfo::dirichlet(const Mesh &mesh, const DataHolder &instance)
 
 void VTKLegacyDebugInfo::gluing(const Mesh &mesh, const DataHolder &instance)
 {
-	std::vector<int> neighbours(environment->MPIsize);
+	std::vector<int> neighbours(info::mpi::MPIsize);
 	std::iota(neighbours.begin(), neighbours.end(), 0);
 
-	std::vector<std::vector<esint> > sLambdas(environment->MPIsize), rLambdas(environment->MPIsize);
-	std::vector<std::vector<Point> > sPoints(environment->MPIsize), rPoints(environment->MPIsize);
+	std::vector<std::vector<esint> > sLambdas(info::mpi::MPIsize), rLambdas(info::mpi::MPIsize);
+	std::vector<std::vector<Point> > sPoints(info::mpi::MPIsize), rPoints(info::mpi::MPIsize);
 
 	size_t points = 0;
 
@@ -1117,13 +1118,13 @@ void VTKLegacyDebugInfo::gluing(const Mesh &mesh, const DataHolder &instance)
 	if (!Communication::exchangeUnknownSize(sPoints, rPoints, neighbours)) {
 		ESINFO(ERROR) << "problem while exchanging Points in storeLambdas.";
 	}
-	for (int i = 0; i < environment->MPIsize; i++) {
+	for (int i = 0; i < info::mpi::MPIsize; i++) {
 		if (sLambdas[i].size() != rLambdas[i].size() || sPoints[i].size() != rPoints[i].size()) {
 			ESINFO(ERROR) << "Lambda indices do not match.";
 		}
 	}
 
-	std::ofstream os(Esutils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" }) + "GLUING" + std::to_string(environment->MPIrank) + ".vtk");
+	std::ofstream os(Esutils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" }) + "GLUING" + std::to_string(info::mpi::MPIrank) + ".vtk");
 
 	os << "# vtk DataFile Version 2.0\n";
 	os << "EXAMPLE\n";
@@ -1325,13 +1326,13 @@ void VTKLegacyDebugInfo::spaceFillingCurve(const SpaceFillingCurve &sfc, const s
 	os << "CELL_DATA " << 2 * cells - 1 << "\n";
 	os << "SCALARS MPI int 1\n";
 	os << "LOOKUP_TABLE default\n";
-	for (int r = 0; r < environment->MPIsize; r++) {
+	for (int r = 0; r < info::mpi::MPIsize; r++) {
 		sfc.iterateBuckets(bucketsBorders[r], bucketsBorders[r + 1], [&] (size_t depth, size_t index) {
 			os << r << "\n";
 		});
 	}
 	for (size_t i = 1; i < cells; i++) {
-		os << environment->MPIsize << "\n";
+		os << info::mpi::MPIsize << "\n";
 	}
 	os << "\n";
 

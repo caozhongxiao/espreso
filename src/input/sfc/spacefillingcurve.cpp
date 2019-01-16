@@ -5,7 +5,8 @@
 #include "basis/containers/tarray.h"
 #include "basis/logging/logging.h"
 #include "basis/utilities/utils.h"
-#include "config/ecf/environment.h"
+#include "esinfo/mpiinfo.h"
+#include "esinfo/envinfo.h"
 
 #include <utility>
 #include <limits>
@@ -19,7 +20,7 @@ SpaceFillingCurve::SpaceFillingCurve(size_t dimension, size_t depth, std::vector
 	if (_dimension != 2 && _dimension != 3) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: incorrect mesh dimension ='" << _dimension << "'.";
 	}
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	double dmax = std::numeric_limits<double>::max();
 	std::vector<Point> mins(threads, Point(dmax, dmax, dmax)), maxs(threads, Point(-dmax, -dmax, -dmax));
@@ -51,8 +52,8 @@ SpaceFillingCurve::SpaceFillingCurve(size_t dimension, size_t depth, std::vector
 		maxs[0].z = std::max(maxs[t].z, maxs[0].z);
 	}
 
-	MPI_Allreduce(&mins[0].x, &_origin.x, 3, MPI_DOUBLE, MPI_MIN, environment->MPICommunicator);
-	MPI_Allreduce(&maxs[0].x, &_size.x, 3, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
+	MPI_Allreduce(&mins[0].x, &_origin.x, 3, MPI_DOUBLE, MPI_MIN, info::mpi::MPICommunicator);
+	MPI_Allreduce(&maxs[0].x, &_size.x, 3, MPI_DOUBLE, MPI_MAX, info::mpi::MPICommunicator);
 
 	_size -= _origin - Point(1e-6, 1e-6, 1e-6);
 }

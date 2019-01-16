@@ -11,7 +11,7 @@ namespace mpi {
 	extern int MPIsize;
 	extern MPI_Comm MPICommunicator;
 
-	void setMPI();
+	void set();
 }
 }
 }

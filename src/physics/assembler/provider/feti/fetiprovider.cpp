@@ -2,6 +2,7 @@
 #include "fetiprovider.h"
 
 #include "esinfo/meshinfo.h"
+#include "esinfo/envinfo.h"
 #include "physics/assembler/dataholder.h"
 
 #include "basis/logging/logging.h"
@@ -203,7 +204,7 @@ void FETIProvider::assembleUniformB0FromKernels(const std::vector<SparseMatrix> 
 		rCounters[cluster] += std::max(kernels[domain].cols, std::max(kernels[ndomain].cols, (esint)1));
 	}
 
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {

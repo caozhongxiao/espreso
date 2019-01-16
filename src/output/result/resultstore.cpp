@@ -2,7 +2,7 @@
 #include "resultstore.h"
 
 #include "esinfo/ecfinfo.h"
-#include "config/ecf/environment.h"
+#include "esinfo/mpiinfo.h"
 #include "config/ecf/output.h"
 #include "basis/logging/logging.h"
 #include "basis/utilities/utils.h"
@@ -43,7 +43,7 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh)
 	_asyncStore = new ResultStore();
 	_asyncStore->storeThreads = 0;
 	_asyncStore->storeProcesses = 0;
-	_asyncStore->computeProcesses = environment->MPIsize;
+	_asyncStore->computeProcesses = info::mpi::MPIsize;
 
 	_asyncStore->_direct = new DirectExecutor(mesh);
 	ResultStoreExecutor *executor = _asyncStore->_direct;
@@ -61,7 +61,7 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh)
 //		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented OUTPUT::MODE==MPI.";
 //		_dispatcher = new async::Dispatcher();
 //		_asyncStore->_async = new AsyncStore(mesh, configuration);
-//		if (environment->MPIsize == 1) {
+//		if (info::mpi::MPIsize == 1) {
 //			ESINFO(GLOBAL_ERROR) << "Invalid number of MPI processes. OUTPUT::MODE==MPI required at least two MPI processes.";
 //		}
 //		if (configuration.output_node_group_size == 0) {
@@ -117,12 +117,12 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh)
 //			int computeSize;
 //			MPI_Comm_size(_dispatcher->commWorld(), &computeSize);
 //			_asyncStore->computeProcesses = computeSize;
-//			_asyncStore->storeProcesses = environment->MPIsize - computeSize;
+//			_asyncStore->storeProcesses = info::mpi::MPIsize - computeSize;
 //		}
 
-		environment->MPICommunicator = _dispatcher->commWorld();
-		MPI_Comm_rank(environment->MPICommunicator, &environment->MPIrank);
-		MPI_Comm_size(environment->MPICommunicator, &environment->MPIsize);
+		info::mpi::MPICommunicator = _dispatcher->commWorld();
+		MPI_Comm_rank(info::mpi::MPICommunicator, &info::mpi::MPIrank);
+		MPI_Comm_size(info::mpi::MPICommunicator, &info::mpi::MPIsize);
 	}
 
 	return _asyncStore;

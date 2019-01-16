@@ -6,7 +6,7 @@
 #include "basis/utilities/parser.h"
 #include "basis/utilities/utils.h"
 
-#include "config/ecf/environment.h"
+#include "esinfo/envinfo.h"
 
 using namespace espreso;
 
@@ -86,7 +86,7 @@ bool NBlock::readData(std::vector<esint> &nIDs, std::vector<Point> &coordinates,
 
 bool NBlock::index_x_y_z(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	const char *first = getFirst(), *last = getLast();
 	size_t size = (last - first) / lineSize;
@@ -129,7 +129,7 @@ bool NBlock::index_x_y_z(std::vector<esint> &nIDs, std::vector<Point> &coordinat
 
 bool NBlock::index_solid_line_x_y_z(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	const char *first = getFirst(), *last = getLast();
 	esint size = (last - first) / lineSize;

@@ -1,6 +1,6 @@
 #include "utils.h"
 
-#include "config/ecf/environment.h"
+#include "esinfo/mpiinfo.h"
 #include "basis/utilities/utils.h"
 
 using std::endl; 
@@ -242,7 +242,7 @@ void GetProcessMemoryStat_u ( ) {
 	}
 	fclose(file);
 
-	ESLOG(MEMORY) << " - Memory used by process " << environment->MPIrank << " : " << result / 1024.0 << " MB";
+	ESLOG(MEMORY) << " - Memory used by process " << info::mpi::MPIrank << " : " << result / 1024.0 << " MB";
 
 
 #endif

@@ -4,7 +4,7 @@
 
 #include "basis/logging/logging.h"
 #include "basis/utilities/utils.h"
-#include "config/ecf/environment.h"
+#include "esinfo/ecfinfo.h"
 
 #include "solver/generic/SparseMatrix.h"
 
@@ -28,7 +28,7 @@ void LinearSolver::solve(Matrices matrices)
 {
 	update(matrices);
 
-	if (environment->print_matrices) {
+	if (info::ecf->output.print_matrices) {
 		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "STORE ASSEMBLED LINEAR SYSTEM";
 		for (size_t d = 0; d < _data->K.size(); d++) {
 			store(_data->K, d, "K");
@@ -49,7 +49,7 @@ void LinearSolver::solve(Matrices matrices)
 
 	solve();
 
-	if (environment->print_matrices) {
+	if (info::ecf->output.print_matrices) {
 		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "STORE ASSEMBLED SYSTEM SOLUTION";
 		for (size_t d = 0; d < _data->K.size(); d++) {
 			store(_data->primalSolution, d, "solution");
