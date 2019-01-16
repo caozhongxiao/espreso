@@ -25,7 +25,10 @@ ET& ET::parse(const char* begin)
 		ESINFO(ERROR) << "ESPRESO Workbench parser error: unknown et format: " << commandLine;
 	}
 
-	if (!StringCompare::caseInsensitiveEq(command[1], "tid") && !StringCompare::caseInsensitiveEq(command[1], "cid")) {
+	if (
+			!StringCompare::caseInsensitiveEq(command[1], "tid") &&
+			!StringCompare::caseInsensitiveEq(command[1], "_tid") &&
+			!StringCompare::caseInsensitiveEq(command[1], "cid")) {
 		id = std::stoi(command[1]) - 1;
 	}
 	type = std::stoi(command[2]);
