@@ -194,7 +194,7 @@ void ECFReader::copyInputData()
 	Logging::log.open(Logging::outputRoot() + "/" + Logging::name + ".log", std::ofstream::app);
 
 	int error = remove(std::string(Logging::path + "/" + "last").c_str());
-	error = symlink(("" + Logging::outputRoot()).c_str(), std::string(Logging::path + "/" + "last").c_str());
+	error = symlink(("../" + Logging::outputRoot()).c_str(), std::string(Logging::path + "/" + "last").c_str());
 	if (error) {
 		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW << "Something wrong happens with creating link to last output directory.";
 	}
