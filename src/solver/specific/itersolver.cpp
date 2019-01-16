@@ -11,7 +11,8 @@
 
 using namespace espreso;
 
-IterSolverBase::IterSolverBase(const FETISolverConfiguration &configuration):
+IterSolverBase::IterSolverBase(FETISolverConfiguration &configuration):
+	configuration(configuration),
 	timing			("Main CG loop timing "),
 	preproc_timing	("Preprocessing timing "),
 	postproc_timing	("Postprocessing timing"),
@@ -41,7 +42,6 @@ IterSolverBase::IterSolverBase(const FETISolverConfiguration &configuration):
 	ddot_alpha		("2x ddot for Alpha "),
 	ddot_beta		("2x ddot for Beta ")
 {
-	this->configuration = configuration;
 	// Timing objects
 	// Main timing object for main CG loop
 	timeEvalAppa.addEvent(apa_B1t);

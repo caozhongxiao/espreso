@@ -21,7 +21,7 @@ struct DataHolder;
 class FETISolver: public LinearSolver {
 public:
 
-	FETISolver(DataHolder *instance, const FETISolverConfiguration &configuration);
+	FETISolver(DataHolder *instance, FETISolverConfiguration &configuration);
 
 	void init();
 
@@ -54,7 +54,7 @@ public:
 	void createCMat();
 
 	DataHolder *instance;
-	FETISolverConfiguration configuration;
+	FETISolverConfiguration &configuration;
 
 	TimeEval timeEvalMain;
 

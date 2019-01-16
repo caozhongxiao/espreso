@@ -39,7 +39,7 @@ public:
 
 	// *** Variables *************
 
-	FETISolverConfiguration configuration;
+	FETISolverConfiguration &configuration;
 
 	// MPI variables
 	int  mpi_rank;
@@ -137,7 +137,7 @@ public:
 	// *** Members ***************
 
 	//Constructor
-	IterSolverBase(const FETISolverConfiguration &configuration);
+	IterSolverBase(FETISolverConfiguration &configuration);
 
 	//Destructor
 	virtual ~IterSolverBase() {};
