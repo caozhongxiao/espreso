@@ -102,7 +102,69 @@ std::vector<eslocal> Input::getDistribution(const std::vector<eslocal> &IDs, con
 	}
 	MPI_Allreduce(&myMaxID, &maxID, sizeof(eslocal), MPI_BYTE, MPITools::eslocalOperations().max, environment->MPICommunicator);
 
-	std::vector<eslocal> distribution = tarray<eslocal>::distribute(environment->MPIsize, maxID + 1);
+	eslocal size = IDs.size();
+	size = Communication::exscan(size);
+	std::vector<eslocal> targetDistribution = tarray<eslocal>::distribute(environment->MPIsize, size);
+
+	double PRECISION = 0.001 * std::log2(environment->MPIsize);
+	if (PRECISION * (targetDistribution.back() / environment->MPIsize) < 2) {
+		PRECISION = 2.01 / (targetDistribution.back() / environment->MPIsize);
+	}
+
+	// allowed difference to the perfect distribution
+	int ETOLERANCE = PRECISION * targetDistribution.back() / environment->MPIsize;
+
+	if (maxID <= size + ETOLERANCE) {
+		return targetDistribution;
+	}
+
+	size_t DEPTH = std::max(std::floor(std::log(maxID) / std::log(10)), 2.);
+
+	std::vector<eslocal> scounts, rcounts, torefine, refined = { 0 };
+	std::vector<eslocal> distribution(environment->MPIsize + 1, maxID);
+	distribution.front() = 0;
+
+	size_t LEVEL = 1, buckets = 10;
+	size_t step = std::pow(buckets, DEPTH - 1) * std::ceil(maxID / std::pow(buckets, DEPTH - 1));
+	do {
+		scounts.resize(refined.size() * (buckets + 1));
+		rcounts.resize(refined.size() * (buckets + 1));
+		step /= buckets;
+		for (size_t b = 0, index = 0; b < refined.size(); b++) {
+			for (size_t i = 0; i <= buckets; i++, index++) {
+				auto end = std::lower_bound(permutation.begin(), permutation.end(),
+						step * buckets * refined[b] + i * step,
+						[&] (eslocal p, eslocal value) { return IDs[p] < value; });
+				scounts[index] = end - permutation.begin();
+			}
+		}
+
+		MPI_Allreduce(scounts.data(), rcounts.data(), sizeof(eslocal) * scounts.size(), MPI_BYTE, MPITools::eslocalOperations().sum, environment->MPICommunicator);
+
+		for (size_t b = 0; b < refined.size(); b++) {
+			size_t boffset = b * (buckets + 1);
+			size_t rbegin = std::lower_bound(targetDistribution.begin(), targetDistribution.end(), rcounts[boffset]) - targetDistribution.begin();
+			size_t rend = std::lower_bound(targetDistribution.begin(), targetDistribution.end(), rcounts[boffset + buckets]) - targetDistribution.begin();
+
+			for (size_t r = rbegin, i = 0; r < rend; r++) {
+				while (i <= buckets && rcounts[boffset + i] < targetDistribution[r] && targetDistribution[r] - rcounts[boffset + i] >= ETOLERANCE) {
+					++i;
+				}
+				distribution[r] = step * (buckets * refined[b] + i);
+				if (rcounts[boffset + i] > targetDistribution[r] && rcounts[boffset + i] - targetDistribution[r] > ETOLERANCE) {
+					torefine.push_back(buckets * refined[b] + i - 1);
+				}
+			}
+		}
+		Esutils::sortAndRemoveDuplicity(torefine);
+
+		rcounts.swap(scounts);
+		refined.swap(torefine);
+		scounts.resize(refined.size() * (buckets + 1));
+		std::fill(scounts.begin(), scounts.end(), 0);
+		rcounts.resize(scounts.size());
+		torefine.clear();
+	} while (LEVEL++ < DEPTH && refined.size());
 
 	return distribution;
 }
