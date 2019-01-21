@@ -96,7 +96,7 @@ bool CMBlock::readData(std::vector<esint> &indices)
 			}
 			data += lineEndSize;
 		}
-		if (lRank == info::mpi::MPIrank && t == threads - 1) {
+		if (lRank == info::mpi::rank && t == threads - 1) {
 			auto data = first + lineSize * tdistribution[t + 1];
 			for (esint n = 0; n < NUMITEMS % valueSize; ++n) {
 				memcpy(value.data(), data, valueLength);

@@ -23,14 +23,16 @@ public:
 	NodeData* RHS();
 
 	void KplusAlfaM(double alfa);
-	void applyM(NodeData *y, NodeData *x);
-	void applyOriginalK(NodeData *y, NodeData *x);
-	void enrichRHS(double alfa, NodeData* a);
+	void enrichRHS(double alfa, NodeData* x);
 	void RHSMinusR();
 	void DirichletMinusRHS();
 	double residualNorm();
 
 protected:
+	void apply(std::vector<SparseMatrix> &matrices, NodeData *result, NodeData *x);
+	virtual void divide(NodeData *in, std::vector<std::vector<double> > &out) =0;
+	virtual void gather(NodeData *out, std::vector<std::vector<double> > &in) =0;
+
 	FETIProvider &_provider;
 	FETISolverConfiguration &_configuration;
 

@@ -9,11 +9,13 @@ namespace espreso {
 
 struct HeatTransferLoadStepConfiguration;
 struct FETISolverConfiguration;
+struct MultigridConfiguration;
 enum Matrices: int;
 class Composer;
 struct NodeData;
 enum class SumRestriction;
 class SparseMatrix;
+class LinearSolver;
 
 struct SolverParameters {
 	double internalForceReduction;
@@ -34,6 +36,7 @@ struct Assembler {
 	virtual void nextTime() =0;
 	virtual void assemble(Matrices matrices) =0;
 	virtual void setDirichlet() =0;
+	virtual void solve(Matrices matrices) =0;
 	virtual void postProcess() =0;
 
 	virtual NodeData* solution() =0;
@@ -60,22 +63,39 @@ struct Assembler {
 	virtual ~Assembler() {};
 
 	SolverParameters parameters;
+	LinearSolver *_solver;
+
+protected:
+	void callsolve(Matrices matrices);
 };
 
-template <typename TController, typename TComposer, typename TProvider>
+template <typename TController, typename TComposer, typename TProvider, typename TSolver>
 struct AssemblerInstance: public Assembler, public TController, public TComposer, public TProvider {
 
 	template <typename TPhysics>
-	AssemblerInstance(TPhysics &loadStep, int DOFs)
+	AssemblerInstance(TPhysics &loadStep, MultigridConfiguration &solver, int DOFs)
 	: TController(loadStep),
 	  TComposer(*this, *this, DOFs),
-	  TProvider(TComposer::data, loadStep) {}
+	  TProvider(TComposer::data, loadStep)
+	{
+		_solver = new TSolver(TComposer::data, solver);
+	}
 
 	template <typename TPhysics>
 	AssemblerInstance(TPhysics &loadStep, FETISolverConfiguration &solver, int DOFs)
 	: TController(loadStep),
 	  TComposer(*this, *this, solver, DOFs),
-	  TProvider(TComposer::data, loadStep) {}
+	  TProvider(TComposer::data, loadStep)
+	{
+		_solver = new TSolver(TComposer::data, solver);
+	}
+
+	~AssemblerInstance()
+	{
+		if (_solver != NULL) {
+			delete _solver;
+		}
+	}
 
 	DataHolder* data() { return TComposer::data; }
 	Composer* composer() { return this; }
@@ -83,7 +103,7 @@ struct AssemblerInstance: public Assembler, public TController, public TComposer
 	void init()
 	{
 		TComposer::initDOFs();
-		TComposer::initDirichlet();
+		TComposer::buildDirichlet();
 		TComposer::buildPatterns();
 
 		TController::initData();
@@ -108,10 +128,14 @@ struct AssemblerInstance: public Assembler, public TController, public TComposer
 		TComposer::synchronize();
 	}
 
+	void solve(Matrices matrices)
+	{
+		callsolve(matrices);
+		TComposer::fillSolution();
+	}
+
 	void postProcess()
 	{
-		TComposer::fillSolution();
-
 		TComposer::parametersChanged();
 		TComposer::processSolution();
 	}

@@ -33,32 +33,19 @@
 
 using namespace espreso;
 
-static LinearSolver* getLinearSolver(LoadStepConfiguration &loadStep, DataHolder *data)
-{
-	switch (loadStep.solver) {
-	case LoadStepConfiguration::SOLVER::FETI:
-		return new FETISolver(data, loadStep.feti);
-	case LoadStepConfiguration::SOLVER::MULTIGRID:
-		return new MultigridSolver(data, loadStep.multigrid);
-	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
-		return NULL;
-	}
-}
-
 static Assembler* getAssembler(HeatTransferLoadStepConfiguration &loadStep, DIMENSION dimension)
 {
 	switch (loadStep.solver) {
 	case LoadStepConfiguration::SOLVER::FETI:
 		switch (dimension) {
-		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DControler, UniformNodesFETIComposer, HeatTransferFETIProvider>(loadStep, loadStep.feti, 1);
-		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DControler, UniformNodesFETIComposer, HeatTransferFETIProvider>(loadStep, loadStep.feti, 1);
+		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DControler, UniformNodesFETIComposer, HeatTransferFETIProvider, FETISolver>(loadStep, loadStep.feti, 1);
+		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DControler, UniformNodesFETIComposer, HeatTransferFETIProvider, FETISolver>(loadStep, loadStep.feti, 1);
 		default: break;
 		} break;
 	case LoadStepConfiguration::SOLVER::MULTIGRID:
 		switch (dimension) {
-		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DControler, UniformNodesComposer, HeatTransferHYPREProvider>(loadStep, 1);
-		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DControler, UniformNodesComposer, HeatTransferHYPREProvider>(loadStep, 1);
+		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DControler, UniformNodesComposer, HeatTransferHYPREProvider, MultigridSolver>(loadStep, loadStep.multigrid, 1);
+		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DControler, UniformNodesComposer, HeatTransferHYPREProvider, MultigridSolver>(loadStep, loadStep.multigrid, 1);
 		default: break;
 		}
 	}
@@ -71,14 +58,14 @@ static Assembler* getAssembler(StructuralMechanicsLoadStepConfiguration &loadSte
 	switch (loadStep.solver) {
 	case LoadStepConfiguration::SOLVER::FETI:
 		switch (dimension) {
-		case DIMENSION::D2: return new AssemblerInstance<StructuralMechanics2DControler, UniformNodesFETIComposer, StructuralMechanics2DFETIProvider>(loadStep, loadStep.feti, 2);
-		case DIMENSION::D3: return new AssemblerInstance<StructuralMechanics3DControler, UniformNodesFETIComposer, StructuralMechanics3DFETIProvider>(loadStep, loadStep.feti, 3);
+		case DIMENSION::D2: return new AssemblerInstance<StructuralMechanics2DControler, UniformNodesFETIComposer, StructuralMechanics2DFETIProvider, FETISolver>(loadStep, loadStep.feti, 2);
+		case DIMENSION::D3: return new AssemblerInstance<StructuralMechanics3DControler, UniformNodesFETIComposer, StructuralMechanics3DFETIProvider, FETISolver>(loadStep, loadStep.feti, 3);
 		default: break;
 		} break;
 	case LoadStepConfiguration::SOLVER::MULTIGRID:
 		switch (dimension) {
-		case DIMENSION::D2: return new AssemblerInstance<StructuralMechanics2DControler, UniformNodesComposer, StructuralMechanicsHYPREProvider>(loadStep, 2);
-		case DIMENSION::D3: return new AssemblerInstance<StructuralMechanics3DControler, UniformNodesComposer, StructuralMechanicsHYPREProvider>(loadStep, 3);
+		case DIMENSION::D2: return new AssemblerInstance<StructuralMechanics2DControler, UniformNodesComposer, StructuralMechanicsHYPREProvider, MultigridSolver>(loadStep, loadStep.multigrid, 2);
+		case DIMENSION::D3: return new AssemblerInstance<StructuralMechanics3DControler, UniformNodesComposer, StructuralMechanicsHYPREProvider, MultigridSolver>(loadStep, loadStep.multigrid, 3);
 		default: break;
 		}
 	}
@@ -90,9 +77,9 @@ static TimeStepSolver* getTimeStepSolver(LoadStepConfiguration &loadStep, Assemb
 {
 	switch (loadStep.mode) {
 	case LoadStepConfiguration::MODE::LINEAR:
-		return new LinearTimeStep(assembler, solver);
+		return new LinearTimeStep(assembler);
 	case LoadStepConfiguration::MODE::NONLINEAR:
-		return new NewtonRaphson(assembler, solver, loadStep.nonlinear_solver);
+		return new NewtonRaphson(assembler, loadStep.nonlinear_solver);
 	default:
 		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
 		return NULL;
@@ -159,7 +146,6 @@ bool LoadStepIterator::next(TPhysics &configuration)
 {
 	if (time::step < configuration.load_steps) {
 		_assembler = getAssembler(configuration.load_steps_settings.at(time::step + 1), configuration.dimension);
-		_linearSolver = getLinearSolver(configuration.load_steps_settings.at(time::step + 1), _assembler->data());
 		_timeStepSolver = getTimeStepSolver(configuration.load_steps_settings.at(time::step + 1), *_assembler, *_linearSolver);
 		_loadStepSolver = getLoadStepSolver(configuration.load_steps_settings.at(time::step + 1), *_assembler, *_timeStepSolver);
 

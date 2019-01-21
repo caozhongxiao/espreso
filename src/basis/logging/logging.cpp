@@ -27,7 +27,7 @@ int Logging::rank = 0;
 
 void Logging::init()
 {
-	MPI_Bcast(&Logging::time, sizeof(time_t), MPI_BYTE, 0, info::mpi::MPICommunicator);
+	MPI_Bcast(&Logging::time, sizeof(time_t), MPI_BYTE, 0, info::mpi::comm);
 }
 
 std::string Logging::outputRoot()
@@ -103,7 +103,7 @@ static std::string printStack()
 Info::~Info()
 {
 	if (_plain) {
-		if (info::mpi::MPIrank == 0) {
+		if (info::mpi::rank == 0) {
 			Logging::log << os.str();
 			Logging::log.flush();
 			fprintf(stdout, "%s", os.str().c_str());
@@ -111,12 +111,12 @@ Info::~Info()
 		}
 		return;
 	}
-	if (event == ERROR || (event == GLOBAL_ERROR && info::mpi::MPIrank == 0)) {
+	if (event == ERROR || (event == GLOBAL_ERROR && info::mpi::rank == 0)) {
 		Logging::log << os.str() << "\n";
 		fprintf(stderr, "\x1b[31m%s\x1b[0m\n", os.str().c_str());
 		if (event == ERROR) {
-			Logging::log << "ESPRESO EXITED WITH AN ERROR ON PROCESS " << info::mpi::MPIrank << ".\n\n\n";
-			fprintf(stderr, "ESPRESO EXITED WITH AN ERROR ON PROCESS %d.\n\n\n", info::mpi::MPIrank);
+			Logging::log << "ESPRESO EXITED WITH AN ERROR ON PROCESS " << info::mpi::rank << ".\n\n\n";
+			fprintf(stderr, "ESPRESO EXITED WITH AN ERROR ON PROCESS %d.\n\n\n", info::mpi::rank);
 		}
 
 		std::string stack = printStack();
@@ -130,7 +130,7 @@ Info::~Info()
 
 	os << std::endl;
 
-	if (event != ALWAYS && info::mpi::MPIrank != 0) {
+	if (event != ALWAYS && info::mpi::rank != 0) {
 		return; // only first process print results
 	}
 
@@ -180,7 +180,7 @@ Measure::~Measure()
 //		return;
 //	}
 
-	if (info::mpi::MPIrank != 0) {
+	if (info::mpi::rank != 0) {
 		return; // only first process print results
 	}
 

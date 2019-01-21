@@ -13,6 +13,7 @@ class Controler;
 enum Matrices: int;
 struct NodeData;
 struct SolverParameters;
+class SparseMatrix;
 template <typename TEBoundaries, typename TEData> class serializededata;
 
 struct IJ {
@@ -41,9 +42,9 @@ public:
 
 	virtual void initDOFs() = 0;
 	virtual void buildPatterns() = 0;
+	virtual void buildDirichlet() = 0;
 
 	virtual void initData();
-	virtual void initDirichlet() = 0;
 	virtual void assemble(Matrices matrices, const SolverParameters &parameters) = 0;
 
 	virtual void nextTime();
@@ -58,9 +59,9 @@ public:
 	virtual NodeData* RHS() =0;
 	virtual void keepK();
 	virtual void KplusAlfaM(double alfa) =0;
-	virtual void applyM(NodeData *y, NodeData *x) =0;
-	virtual void applyOriginalK(NodeData *y, NodeData *x) =0;
-	virtual void enrichRHS(double alfa, NodeData* a) =0;
+	virtual void applyOriginalK(NodeData *result, NodeData *x);
+	virtual void applyM(NodeData *result, NodeData *x);
+	virtual void enrichRHS(double alfa, NodeData* x) =0;
 	virtual void RHSMinusR() =0;
 	virtual void DirichletMinusRHS() =0;
 	virtual void sum(NodeData *z, double alfa, NodeData* a, double beta, NodeData *b);
@@ -72,6 +73,8 @@ public:
 	DataHolder *data;
 
 protected:
+	virtual void apply(std::vector<SparseMatrix> &matrices, NodeData *result, NodeData *x) = 0;
+
 	static size_t getMatrixSize(size_t size, MatrixType mtype)
 	{
 		switch (mtype) {

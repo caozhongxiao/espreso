@@ -413,7 +413,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << info::mpi::MPIrank;
+		ss << "Solve -> rank: " << info::mpi::rank;
 		Factorization(ss.str());
 	}
 
@@ -493,7 +493,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << info::mpi::MPIrank;
+		ss << "Solve -> rank: " << info::mpi::rank;
 		Factorization(ss.str());
 	}
 
@@ -561,7 +561,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << info::mpi::MPIrank;
+		ss << "Solve -> rank: " << info::mpi::rank;
 		Factorization(ss.str());
 	}
 
@@ -635,7 +635,7 @@ void SparseSolverMKL::SolveMat_Sparse( espreso::SparseMatrix & A_in, espreso::Sp
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << info::mpi::MPIrank;
+		ss << "Solve -> rank: " << info::mpi::rank;
 		Factorization(ss.str());
 	}
 

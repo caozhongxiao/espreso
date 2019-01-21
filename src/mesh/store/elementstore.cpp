@@ -196,7 +196,7 @@ ElementStore::~ElementStore()
 
 void ElementStore::store(const std::string &file)
 {
-	std::ofstream os(file + std::to_string(info::mpi::MPIrank) + ".txt");
+	std::ofstream os(file + std::to_string(info::mpi::rank) + ".txt");
 
 	Store::storedata(os, "IDs", IDs);
 	Store::storedata(os, "nodes", procNodes);
@@ -334,7 +334,7 @@ void ElementData::statistics(const tarray<esint> &elements, esint totalsize, Sta
 	}
 
 	std::vector<Statistics> global(names.size());
-	MPI_Allreduce(statistics, global.data(), sizeof(Statistics) * names.size(), MPI_BYTE, MPITools::operations().mergeStatistics, info::mpi::MPICommunicator);
+	MPI_Allreduce(statistics, global.data(), sizeof(Statistics) * names.size(), MPI_BYTE, MPITools::operations().mergeStatistics, info::mpi::comm);
 	memcpy(statistics, global.data(), sizeof(Statistics) * names.size());
 
 	for (size_t i = 0; i < names.size(); i++) {

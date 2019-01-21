@@ -87,6 +87,9 @@ void HeatTransfer2DControler::initData()
 	updateERegions(_configuration.heat_source, _nheat.data->datatarray(), 2, cbegin, tbegin, time);
 	updateERegions(_configuration.translation_motions, _nmotion.data->datatarray(), 2, cbegin, tbegin, time);
 
+	if (info::ecf->heat_transfer_2d.init_temp_respect_bc) {
+		initDirichletData(_ntemperature.data->datatarray());
+	}
 	averageNodeInitilization(_ntemperature.data->datatarray(), _temperature->data);
 	averageNodeInitilization(_nthickness.data->datatarray(), _avgThickness->data);
 

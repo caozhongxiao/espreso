@@ -36,7 +36,7 @@ using namespace espreso;
 
 void MeshPreprocessing::reclusterize()
 {
-	if (info::mpi::MPIsize == 1) {
+	if (info::mpi::size == 1) {
 		skip("re-distribution of the mesh to processes");
 		return;
 	}
@@ -66,7 +66,7 @@ void MeshPreprocessing::reclusterize()
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
-	esint eoffset = _mesh->elements->gatherElementsProcDistribution()[info::mpi::MPIrank];
+	esint eoffset = _mesh->elements->gatherElementsProcDistribution()[info::mpi::rank];
 
 	std::vector<esint> dDistribution(_mesh->elements->size + 1);
 	std::vector<std::vector<esint> > dData(threads);
@@ -125,7 +125,7 @@ void MeshPreprocessing::reclusterize()
 		dData[0].insert(dData[0].end(), dData[t].begin(), dData[t].end());
 	}
 
-	std::vector<esint> partition(_mesh->elements->size, info::mpi::MPIrank);
+	std::vector<esint> partition(_mesh->elements->size, info::mpi::rank);
 
 	finish("compute global dual graph");
 
@@ -448,13 +448,13 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 		for (size_t t = 0; t < threads; t++) {
 
 			std::vector<int> ttt;
-			std::vector<bool> tflags(info::mpi::MPIsize, false);
+			std::vector<bool> tflags(info::mpi::size, false);
 			for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e) {
-				if (partition[e] != info::mpi::MPIrank) {
+				if (partition[e] != info::mpi::rank) {
 					tflags[partition[e]] = true;
 				}
 			}
-			for (int r = 0; r < info::mpi::MPIsize; r++) {
+			for (int r = 0; r < info::mpi::size; r++) {
 				if (tflags[r]) {
 					ttt.push_back(r);
 				}
@@ -572,7 +572,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 
 		size_t target;
 		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++enodes, ++eneighbors) {
-			if (partition[e] == info::mpi::MPIrank) {
+			if (partition[e] == info::mpi::rank) {
 				telemsIDs.push_back(IDs[e]);
 				telemsBody.push_back(body[e]);
 				telemsMaterial.push_back(material[e]);
@@ -633,7 +633,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 		}
 	}
 
-	esint eBegin = _mesh->elements->gatherElementsProcDistribution()[info::mpi::MPIrank];
+	esint eBegin = _mesh->elements->gatherElementsProcDistribution()[info::mpi::rank];
 	esint eEnd = eBegin + _mesh->elements->size;
 
 	#pragma omp parallel for
@@ -666,7 +666,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 			for (auto e = elems->begin(); e != elems->end(); ++e) {
 				if (eBegin <= *e && *e < eEnd) {
 					target = t2i(partition[*e - eBegin]);
-					if (!last[target] && partition[*e - eBegin] != info::mpi::MPIrank) {
+					if (!last[target] && partition[*e - eBegin] != info::mpi::rank) {
 						tsNodes[target].push_back(IDs[n]);
 						tsNodes[target].insert(tsNodes[target].end(), reinterpret_cast<const esint*>(coordinates.data() + n), reinterpret_cast<const esint*>(coordinates.data() + n + 1));
 						tsNodes[target].push_back(elems->size());
@@ -674,7 +674,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 						tsNodes[target].insert(tsNodes[target].end(), regionNodeMask.begin() + n * bregionsBitMaskSize, regionNodeMask.begin() + (n + 1) * bregionsBitMaskSize);
 						last[target] = true;
 					}
-					if (!last.back() && partition[*e - eBegin] == info::mpi::MPIrank) {
+					if (!last.back() && partition[*e - eBegin] == info::mpi::rank) {
 						tnodesIDs.push_back(IDs[n]);
 						tnodesCoordinates.push_back(coordinates[n]);
 						tnodesElemsData.insert(tnodesElemsData.end(), elems->begin(), elems->end());
@@ -754,7 +754,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 				const auto &IDs = _mesh->nodes->IDs->datatarray();
 				const auto &epointer = _mesh->boundaryRegions[r]->epointers->datatarray();
 				for (size_t e = distribution[t]; e < distribution[t + 1]; ++e, ++enodes) {
-					if (partition[emembership[e]] == info::mpi::MPIrank) {
+					if (partition[emembership[e]] == info::mpi::rank) {
 						tboundaryEPointers.push_back(epointer[e]);
 						for (auto n = enodes->begin(); n != enodes->end(); ++n) {
 							tboundaryEData.push_back(IDs[*n]);
@@ -1150,7 +1150,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 	std::vector<std::vector<int> > IDtargets(threads);
 	std::vector<int> sources;
 
-	std::vector<size_t> rdistribution = tarray<size_t>::distribute(threads, info::mpi::MPIsize);
+	std::vector<size_t> rdistribution = tarray<size_t>::distribute(threads, info::mpi::size);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; ++t) {
@@ -1198,7 +1198,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 		for (size_t t = 0; t < threads; ++t) {
 			if (rdistribution[t] != rdistribution[t + 1]) {
 				for (size_t e = rdistribution[t]; e < rdistribution[t + 1]; ++e) {
-					IDrequests[r][e] = partition[IDrequests[r][e] - eIDsOLD[info::mpi::MPIrank]];
+					IDrequests[r][e] = partition[IDrequests[r][e] - eIDsOLD[info::mpi::rank]];
 				}
 			}
 		}
@@ -1211,7 +1211,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 	IDtargets.clear();
 	IDtargets.resize(threads);
 
-	std::vector<std::vector<bool> > newtargets(threads, std::vector<bool>(info::mpi::MPIsize, false));
+	std::vector<std::vector<bool> > newtargets(threads, std::vector<bool>(info::mpi::size, false));
 	for (size_t r = 0; r < receivedTargets.size(); r++) {
 		rdistribution = tarray<size_t>::distribute(threads, receivedTargets[r].size());
 
@@ -1226,8 +1226,8 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; ++t) {
 		std::vector<int> ttargets;
-		for (int r = 0; r < info::mpi::MPIsize; r++) {
-			if (r != info::mpi::MPIrank && newtargets[t][r]) {
+		for (int r = 0; r < info::mpi::size; r++) {
+			if (r != info::mpi::rank && newtargets[t][r]) {
 				ttargets.push_back(r);
 			}
 		}
@@ -1280,7 +1280,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 				auto eit = std::lower_bound(sortedElements.begin(), sortedElements.end(), IDrequests[r][rdistribution[t]]);
 				for (size_t e = rdistribution[t]; e < rdistribution[t + 1]; ++e) {
 					while (eit != sortedElements.end() && *eit < IDrequests[r][e]) ++eit;
-					IDrequests[r][e] = epermutation[eit - sortedElements.begin()] + eIDsNEW[info::mpi::MPIrank];
+					IDrequests[r][e] = epermutation[eit - sortedElements.begin()] + eIDsNEW[info::mpi::rank];
 				}
 			}
 		}
@@ -1320,7 +1320,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 			for (auto e = elem->begin(); e != elem->end(); ++e) {
 				auto mapit = std::lower_bound(IDMap.begin(), IDMap.end(), std::make_pair(*e, (esint)0));
 				if (mapit == IDMap.end() || mapit->first != *e) {
-					*e = epermutation[std::lower_bound(sortedElements.begin(), sortedElements.end(), *e) - sortedElements.begin()] + eIDsNEW[info::mpi::MPIrank];
+					*e = epermutation[std::lower_bound(sortedElements.begin(), sortedElements.end(), *e) - sortedElements.begin()] + eIDsNEW[info::mpi::rank];
 				} else {
 					*e = mapit->second;
 				}
@@ -1336,7 +1336,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 				if (*n != -1) {
 					auto mapit = std::lower_bound(IDMap.begin(), IDMap.end(), std::make_pair(*n, (esint)0));
 					if (mapit == IDMap.end() || mapit->first != *n) {
-						*n = epermutation[std::lower_bound(sortedElements.begin(), sortedElements.end(), *n) - sortedElements.begin()] + eIDsNEW[info::mpi::MPIrank];
+						*n = epermutation[std::lower_bound(sortedElements.begin(), sortedElements.end(), *n) - sortedElements.begin()] + eIDsNEW[info::mpi::rank];
 					} else {
 						*n = mapit->second;
 					}
@@ -1403,19 +1403,19 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 
 	nodes->ranks = new serializededata<esint, int>(rankBoundaries, rankData);
 
-	std::iota(elements->IDs->datatarray().begin(), elements->IDs->datatarray().end(), eIDsNEW[info::mpi::MPIrank]);
+	std::iota(elements->IDs->datatarray().begin(), elements->IDs->datatarray().end(), eIDsNEW[info::mpi::rank]);
 	std::swap(_mesh->elements, elements);
 	std::swap(_mesh->nodes, nodes);
 	delete _mesh->halo;
 	_mesh->halo = new ElementStore(_mesh->_eclasses);
 	_mesh->neighbours.clear();
 	for (size_t t = 0; t < IDtargets[0].size(); t++) {
-		if (IDtargets[0][t] != info::mpi::MPIrank) {
+		if (IDtargets[0][t] != info::mpi::rank) {
 			_mesh->neighbours.push_back(IDtargets[0][t]);
 		}
 	}
 	_mesh->neighboursWithMe = _mesh->neighbours;
-	_mesh->neighboursWithMe.push_back(info::mpi::MPIrank);
+	_mesh->neighboursWithMe.push_back(info::mpi::rank);
 	std::sort(_mesh->neighboursWithMe.begin(), _mesh->neighboursWithMe.end());
 
 	e11.end(); timing.addEvent(e11);
@@ -1458,12 +1458,12 @@ void MeshPreprocessing::permuteElements(const std::vector<esint> &permutation, c
 		for (size_t t = 0; t < threads; t++) {
 			auto ranks = _mesh->nodes->ranks->cbegin(t);
 			auto elements = _mesh->nodes->elements->cbegin(t);
-			esint begine = IDBoundaries[info::mpi::MPIrank];
-			esint ende   = IDBoundaries[info::mpi::MPIrank + 1];
+			esint begine = IDBoundaries[info::mpi::rank];
+			esint ende   = IDBoundaries[info::mpi::rank + 1];
 
 			for (auto n = _mesh->nodes->distribution[t]; n < _mesh->nodes->distribution[t + 1]; ++n, ++ranks, ++elements) {
 				for (auto rank = ranks->begin(); rank != ranks->end(); ++rank) {
-					if (*rank != info::mpi::MPIrank) {
+					if (*rank != info::mpi::rank) {
 						for (auto e = elements->begin(); e != elements->end(); ++e) {
 							if (begine <= *e && *e < ende) {
 								sHalo[t][n2i(*rank)].push_back(std::make_pair(*e, backpermutation[*e - begine] + begine));
@@ -1496,8 +1496,8 @@ void MeshPreprocessing::permuteElements(const std::vector<esint> &permutation, c
 				for (auto n = e->begin(); n != e->end(); ++n) {
 					if (*n >= 0) {
 						source = std::lower_bound(IDBoundaries.begin(), IDBoundaries.end(), *n + 1) - IDBoundaries.begin() - 1;
-						if (source == info::mpi::MPIrank) {
-							*n = IDBoundaries[info::mpi::MPIrank] + backpermutation[*n - IDBoundaries[info::mpi::MPIrank]];
+						if (source == info::mpi::rank) {
+							*n = IDBoundaries[info::mpi::rank] + backpermutation[*n - IDBoundaries[info::mpi::rank]];
 						} else {
 							*n = std::lower_bound(rHalo[n2i(source)].begin(), rHalo[n2i(source)].end(), std::make_pair(*n, (esint)0))->second;
 						}

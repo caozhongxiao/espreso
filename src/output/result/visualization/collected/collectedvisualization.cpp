@@ -11,7 +11,7 @@ using namespace espreso;
 CollectedVisualization::CollectedVisualization(const Mesh &mesh)
 : Visualization(mesh)
 {
-	MPI_Comm_split(info::mpi::MPICommunicator, 0, info::mpi::MPIrank, &_storeCommunicator);
+	MPI_Comm_split(info::mpi::comm, 0, info::mpi::rank, &_storeCommunicator);
 	clearIntervals();
 }
 

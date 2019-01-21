@@ -19,8 +19,8 @@
 
 using namespace espreso;
 
-NewtonRaphson::NewtonRaphson(Assembler &assembler, LinearSolver &solver, NonLinearSolverConfiguration &configuration)
-: TimeStepSolver(assembler, solver), _configuration(configuration)
+NewtonRaphson::NewtonRaphson(Assembler &assembler, NonLinearSolverConfiguration &configuration)
+: TimeStepSolver(assembler), _configuration(configuration)
 {
 	_solution = info::mesh->nodes->appendData(_assembler.solution()->dimension, {});
 	_RHS = info::mesh->nodes->appendData(_assembler.solution()->dimension, {});
@@ -51,7 +51,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 
 	time::iteration = 0;
 	_assembler.parameters.tangentMatrixCorrection = false;
-	_solver.solve(loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::Dirichlet));
+	_assembler.solve(loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::Dirichlet));
 	_assembler.postProcess();
 
 	_assembler.parameters.tangentMatrixCorrection = _configuration.tangent_matrix_correction;
@@ -113,7 +113,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 			ESINFO(CONVERGENCE) << "    ADAPTIVE PRECISION = " << solutionPrecision << " EPS_ERR = " << solutionPrecisionError;
 		}
 
-		_solver.solve(updatedMatrices);
+		_assembler.solve(updatedMatrices);
 		ESINFO(CONVERGENCE) <<  "    LINEAR_SOLVER_OUTPUT: SOLVER = " << "PCG" <<   " N_MAX_ITERATIONS = " << "1" << "  " ;
 
 		if (_configuration.line_search) {

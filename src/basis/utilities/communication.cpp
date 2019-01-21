@@ -83,9 +83,9 @@ MPIOperations::MPIOperations()
 
 MPIGroup::MPIGroup()
 {
-	MPI_Comm_dup(info::mpi::MPICommunicator, &communicator);
-	rank = info::mpi::MPIrank;
-	size = info::mpi::MPIsize;
+	MPI_Comm_dup(info::mpi::comm, &communicator);
+	rank = info::mpi::rank;
+	size = info::mpi::size;
 }
 
 void MPISubset::fillNodeColor()
@@ -94,13 +94,13 @@ void MPISubset::fillNodeColor()
 	std::vector<char> name(MPI_MAX_PROCESSOR_NAME);
 	MPI_Get_processor_name(name.data(), &length);
 
-	MPI_Allreduce(&length, &maxlength, 1, MPI_INT, MPI_MAX, info::mpi::MPICommunicator);
+	MPI_Allreduce(&length, &maxlength, 1, MPI_INT, MPI_MAX, info::mpi::comm);
 
-	std::vector<char> names(info::mpi::MPIsize * maxlength);
+	std::vector<char> names(info::mpi::size * maxlength);
 
-	MPI_Gather(name.data(), maxlength * sizeof(char), MPI_CHAR, names.data(), maxlength * sizeof(char), MPI_BYTE, 0, info::mpi::MPICommunicator);
+	MPI_Gather(name.data(), maxlength * sizeof(char), MPI_CHAR, names.data(), maxlength * sizeof(char), MPI_BYTE, 0, info::mpi::comm);
 
-	std::vector<int> permutation(info::mpi::MPIsize), colors(info::mpi::MPIsize);
+	std::vector<int> permutation(info::mpi::size), colors(info::mpi::size);
 
 	std::iota(permutation.begin(), permutation.end(), 0);
 	std::sort(permutation.begin(), permutation.end(), [&] (int i, int j) {
@@ -116,7 +116,7 @@ void MPISubset::fillNodeColor()
 		}
 	}
 
-	MPI_Scatter(colors.data(), 1, MPI_INT, &nodeRank, 1, MPI_INT, 0, info::mpi::MPICommunicator);
+	MPI_Scatter(colors.data(), 1, MPI_INT, &nodeRank, 1, MPI_INT, 0, info::mpi::comm);
 }
 
 MPISubset::MPISubset(const ProcessesReduction &reduction, MPIGroup &origin)

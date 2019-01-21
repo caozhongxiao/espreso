@@ -65,4 +65,3 @@ void HeatTransferControler::dirichletValues(std::vector<double> &values)
 	}
 }
 
-

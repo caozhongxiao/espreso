@@ -69,7 +69,7 @@ OpenFOAMLoader::OpenFOAMLoader(const InputConfiguration &configuration, Mesh &me
 	timing.totalTime.endWithBarrier();
 	timing.printStatsMPI();
 
-	if (info::mpi::MPIsize > 1) {
+	if (info::mpi::size > 1) {
 		RandomInput::buildMesh(meshData, mesh);
 	} else {
 		SequentialInput::buildMesh(meshData, mesh);
@@ -123,16 +123,16 @@ void OpenFOAMLoader::readData()
 	distributedReader("faceZones", _faceZones, false);
 	distributedReader("cellZones", _cellZones, false);
 
-	if (info::mpi::MPIrank == 0) {
+	if (info::mpi::rank == 0) {
 		OpenFOAMSets::inspect(_configuration.path + "/constant/polyMesh/sets/*", _sets);
 		size_t size = _sets.size();
-		MPI_Bcast(&size, sizeof(size_t), MPI_BYTE, 0, info::mpi::MPICommunicator);
-		MPI_Bcast(_sets.data(), _sets.size() * sizeof(OpenFOAMSet), MPI_BYTE, 0, info::mpi::MPICommunicator);
+		MPI_Bcast(&size, sizeof(size_t), MPI_BYTE, 0, info::mpi::comm);
+		MPI_Bcast(_sets.data(), _sets.size() * sizeof(OpenFOAMSet), MPI_BYTE, 0, info::mpi::comm);
 	} else {
 		size_t size;
-		MPI_Bcast(&size, sizeof(size_t), MPI_BYTE, 0, info::mpi::MPICommunicator);
+		MPI_Bcast(&size, sizeof(size_t), MPI_BYTE, 0, info::mpi::comm);
 		_sets.resize(size);
-		MPI_Bcast(_sets.data(), _sets.size() * sizeof(OpenFOAMSet), MPI_BYTE, 0, info::mpi::MPICommunicator);
+		MPI_Bcast(_sets.data(), _sets.size() * sizeof(OpenFOAMSet), MPI_BYTE, 0, info::mpi::comm);
 	}
 }
 
@@ -180,10 +180,10 @@ void OpenFOAMLoader::buildFaces(PlainOpenFOAMData &mesh)
 		maxID = std::max(*std::max_element(mesh.neighbour.begin(), mesh.neighbour.end()), maxID);
 	}
 
-	MPI_Allreduce(&maxID, &mesh.nelements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, info::mpi::MPICommunicator);
+	MPI_Allreduce(&maxID, &mesh.nelements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, info::mpi::comm);
 	mesh.nelements += 1;
 
-	_edist = tarray<esint>::distribute(info::mpi::MPIsize, mesh.nelements);
+	_edist = tarray<esint>::distribute(info::mpi::size, mesh.nelements);
 
 	std::vector<esint> fDistribution = Communication::getDistribution<esint>(mesh.fsize.size());
 
@@ -251,7 +251,7 @@ void OpenFOAMLoader::buildFaces(PlainOpenFOAMData &mesh)
 	std::vector<esint> sBuffer, rBuffer;
 
 	std::vector<size_t> rpointer(mesh.eregions.size());
-	for (int r = 0; r < info::mpi::MPIsize; r++) {
+	for (int r = 0; r < info::mpi::size; r++) {
 		size_t prevsize = sBuffer.size();
 		sBuffer.push_back(0); // total size
 		sBuffer.push_back(r); // target
@@ -284,7 +284,7 @@ void OpenFOAMLoader::buildFaces(PlainOpenFOAMData &mesh)
 
 	std::vector<esint> usedfaces;
 	size_t offset = 0;
-	for (int r = 0; r < info::mpi::MPIsize; r++) {
+	for (int r = 0; r < info::mpi::size; r++) {
 		++offset; // skip total size
 		++offset; // skip target
 
@@ -317,7 +317,7 @@ void OpenFOAMLoader::buildFaces(PlainOpenFOAMData &mesh)
 	}
 
 	for (size_t i = 0; i < usedfaces.size(); i++) {
-		esint findex = usedfaces[i] - fDistribution[info::mpi::MPIrank];
+		esint findex = usedfaces[i] - fDistribution[info::mpi::rank];
 
 		mesh.esize.push_back(mesh.fsize[findex]);
 		mesh.enodes.insert(mesh.enodes.end(), mesh.fnodes.begin() + _fdist[findex], mesh.fnodes.begin() + _fdist[findex + 1]);
@@ -365,7 +365,7 @@ void OpenFOAMLoader::collectFaces(PlainOpenFOAMData &mesh)
 		ESINFO(ERROR) << "ESPRESO internal error: balance faces owners.";
 	}
 
-	size_t firstID = Communication::getDistribution(mesh.fsize.size())[info::mpi::MPIrank];
+	size_t firstID = Communication::getDistribution(mesh.fsize.size())[info::mpi::rank];
 
 	auto sortIDs = [&] (std::vector<esint> &permutation, const std::vector<esint> &data) {
 		permutation.resize(data.size());
@@ -385,12 +385,12 @@ void OpenFOAMLoader::collectFaces(PlainOpenFOAMData &mesh)
 
 	std::vector<esint> sBuffer, rBuffer;
 	// ID, size, owner / -1 * neighbor, nodes
-	sBuffer.reserve(4 * info::mpi::MPIsize + 3 * (mesh.owner.size() + mesh.neighbour.size()) + mesh.fnodes.size());
+	sBuffer.reserve(4 * info::mpi::size + 3 * (mesh.owner.size() + mesh.neighbour.size()) + mesh.fnodes.size());
 
 	size_t prevsize;
 	auto obegin = oPermutation.begin();
 	auto nbegin = nPermutation.begin();
-	for (int r = 0; r < info::mpi::MPIsize; r++) {
+	for (int r = 0; r < info::mpi::size; r++) {
 		prevsize = sBuffer.size();
 		sBuffer.push_back(0); // total size
 		sBuffer.push_back(r); // target
@@ -430,7 +430,7 @@ void OpenFOAMLoader::collectFaces(PlainOpenFOAMData &mesh)
 	std::vector<esint> fIDs, fsize, fnodes, owners;
 
 	size_t offset = 0;
-	for (int r = 0; r < info::mpi::MPIsize; r++) {
+	for (int r = 0; r < info::mpi::size; r++) {
 		++offset;
 		size_t size = rBuffer[++offset];
 		++offset;
@@ -512,7 +512,7 @@ void OpenFOAMLoader::buildElements(PlainOpenFOAMData &mesh)
 	sortIDs(owner, mesh.owner);
 	sortIDs(neighbour, mesh.neighbour);
 
-	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, _edist[info::mpi::MPIrank + 1] - _edist[info::mpi::MPIrank]);
+	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, _edist[info::mpi::rank + 1] - _edist[info::mpi::rank]);
 
 	std::vector<std::vector<esint> > esize(threads), enodes(threads);
 	std::vector<std::vector<int> > etype(threads);
@@ -575,7 +575,7 @@ void OpenFOAMLoader::buildElements(PlainOpenFOAMData &mesh)
 		}
 	};
 
-	size_t eoffset = _edist[info::mpi::MPIrank];
+	size_t eoffset = _edist[info::mpi::rank];
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {

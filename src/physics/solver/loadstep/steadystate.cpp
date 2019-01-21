@@ -44,6 +44,8 @@ void SteadyStateSolver::processTimeStep()
 	_assembler.parameters.timeIntegrationConstantM = 0;
 
 	_timeStepSolver.solve(*this);
+	_assembler.postProcess();
+
 	info::mesh->storeSolution();
 }
 

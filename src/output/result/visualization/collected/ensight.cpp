@@ -47,7 +47,7 @@ EnSight::~EnSight()
 
 void EnSight::storecasefile()
 {
-	if (info::mpi::MPIrank == 0) {
+	if (info::mpi::rank == 0) {
 		std::ofstream os(_path + _name + ".case");
 		os << _caseheader.str() << "\n";
 		os << _casegeometry.str() << "\n";
@@ -106,7 +106,7 @@ void EnSight::updateMesh()
 	std::stringstream os;
 	os << std::showpos << std::scientific << std::setprecision(5);
 
-	if (info::mpi::MPIrank == 0) {
+	if (info::mpi::rank == 0) {
 		_writer.storeFormat(os);
 		_writer.storeDescriptionLine(os, "EnSight Gold geometry format");
 		_writer.storeDescriptionLine(os, "----------------------------");
@@ -116,7 +116,7 @@ void EnSight::updateMesh()
 	}
 
 	auto storePartHeader = [&] (const std::string &name, esint nodes) {
-		if (info::mpi::MPIrank == 0) {
+		if (info::mpi::rank == 0) {
 			_writer.storeDescriptionLine(os, "part");
 			_writer.storeInt(os, part++);
 			_writer.storeDescriptionLine(os, name);
@@ -128,7 +128,7 @@ void EnSight::updateMesh()
 
 	auto storeRegionNodes = [&] (const std::vector<ProcessInterval> &intervals, const serializededata<esint, esint> *nodes, std::function<double(const Point *p)> getCoordinate) {
 		for (size_t i = 0; i < intervals.size(); i++) {
-			if (intervals[i].sourceProcess == info::mpi::MPIrank) {
+			if (intervals[i].sourceProcess == info::mpi::rank) {
 				for (auto n = nodes->datatarray().cbegin() + intervals[i].begin; n != nodes->datatarray().cbegin() + intervals[i].end; ++n) {
 					_writer.storeFloat(os, getCoordinate(_mesh.nodes->coordinates->datatarray().cbegin() + *n));
 				}
@@ -151,7 +151,7 @@ void EnSight::updateMesh()
 
 		for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
 			if (ecounters[etype]) {
-				if (info::mpi::MPIrank == 0) {
+				if (info::mpi::rank == 0) {
 					_writer.storeDescriptionLine(os, codetotype(etype));
 					_writer.storeInt(os, ecounters[etype]);
 				}
@@ -177,7 +177,7 @@ void EnSight::updateMesh()
 	auto storeBoundaryElements = [&] (const BoundaryRegionStore *region) {
 		for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
 			if (region->ecounters[etype]) {
-				if (info::mpi::MPIrank == 0) {
+				if (info::mpi::rank == 0) {
 					_writer.storeDescriptionLine(os, codetotype(etype));
 					_writer.storeInt(os, region->ecounters[etype]);
 				}
@@ -214,7 +214,7 @@ void EnSight::updateMesh()
 		if (region->dimension) {
 			storeBoundaryElements(region);
 		} else {
-			if (info::mpi::MPIrank == 0) {
+			if (info::mpi::rank == 0) {
 				_writer.storeDescriptionLine(os, codetotype(static_cast<int>(Element::CODE::POINT1)));
 				_writer.storeInt(os, region->uniqueTotalSize);
 			}
@@ -283,7 +283,7 @@ void EnSight::storeDecomposition()
 	auto iterateElements = [&] (std::stringstream &os, const std::vector<ElementsInterval> &intervals, const std::vector<esint> &ecounters, std::function<double(esint domain)> fnc) {
 		for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
 			if (ecounters[etype]) {
-				if (info::mpi::MPIrank == 0) {
+				if (info::mpi::rank == 0) {
 					_writer.storeDescriptionLine(os, codetotype(etype));
 				}
 
@@ -303,7 +303,7 @@ void EnSight::storeDecomposition()
 	esint part = 1;
 
 	auto storePartHeader = [&] (std::stringstream &os) {
-		if (info::mpi::MPIrank == 0) {
+		if (info::mpi::rank == 0) {
 			_writer.storeDescriptionLine(os, "part");
 			_writer.storeInt(os, part++);
 		}
@@ -317,7 +317,7 @@ void EnSight::storeDecomposition()
 		std::stringstream os;
 		os << std::showpos << std::scientific << std::setprecision(5);
 
-		if (info::mpi::MPIrank == 0) {
+		if (info::mpi::rank == 0) {
 			_writer.storeDescriptionLine(os, "DOMAINS");
 		}
 
@@ -337,13 +337,13 @@ void EnSight::storeDecomposition()
 		std::stringstream os;
 		os << std::showpos << std::scientific << std::setprecision(5);
 
-		if (info::mpi::MPIrank == 0) {
+		if (info::mpi::rank == 0) {
 			_writer.storeDescriptionLine(os, "CLUSTERS");
 		}
 
 		part = 1;
 		clearIntervals();
-		esint cluster = _mesh.elements->gatherClustersDistribution()[info::mpi::MPIrank];
+		esint cluster = _mesh.elements->gatherClustersDistribution()[info::mpi::rank];
 		for (size_t r = 1; r < _mesh.elementsRegions.size(); r++) {
 			storePartHeader(os);
 			iterateElements(os, _mesh.elementsRegions[r]->eintervals, _mesh.elementsRegions[r]->ecounters, [&] (esint domain)->double { return _mesh.elements->clusters[domain - _mesh.elements->firstDomain] + cluster; });
@@ -359,7 +359,7 @@ void EnSight::storeDecomposition()
 		std::stringstream os;
 		os << std::showpos << std::scientific << std::setprecision(5);
 
-		if (info::mpi::MPIrank == 0) {
+		if (info::mpi::rank == 0) {
 			_writer.storeDescriptionLine(os, "MPI");
 		}
 
@@ -367,7 +367,7 @@ void EnSight::storeDecomposition()
 		clearIntervals();
 		for (size_t r = 1; r < _mesh.elementsRegions.size(); r++) {
 			storePartHeader(os);
-			iterateElements(os, _mesh.elementsRegions[r]->eintervals, _mesh.elementsRegions[r]->ecounters, [&] (esint domain)->double { return info::mpi::MPIrank; });
+			iterateElements(os, _mesh.elementsRegions[r]->eintervals, _mesh.elementsRegions[r]->ecounters, [&] (esint domain)->double { return info::mpi::rank; });
 		}
 
 		storeIntervals(name, os.str(), commitIntervals());
@@ -409,14 +409,14 @@ void EnSight::updateSolution()
 		std::stringstream os;
 		os << std::showpos << std::scientific << std::setprecision(5);
 
-		if (info::mpi::MPIrank == 0) {
+		if (info::mpi::rank == 0) {
 			_writer.storeDescriptionLine(os, _mesh.nodes->data[di]->names.front());
 		}
 
 		esint part = 1;
 
 		auto storePartHeader = [&] () {
-			if (info::mpi::MPIrank == 0) {
+			if (info::mpi::rank == 0) {
 				_writer.storeDescriptionLine(os, "part");
 				_writer.storeInt(os, part++);
 				_writer.storeDescriptionLine(os, "coordinates");
@@ -426,7 +426,7 @@ void EnSight::updateSolution()
 		auto iterateNodes = [&] (const std::vector<ProcessInterval> &intervals, const tarray<esint> &nodes) {
 			for (esint s = 0; s < size; s++) {
 				for (size_t i = 0; i < intervals.size(); i++) {
-					if (intervals[i].sourceProcess == info::mpi::MPIrank) {
+					if (intervals[i].sourceProcess == info::mpi::rank) {
 						esint offset = _mesh.nodes->pintervals[i].globalOffset - _mesh.nodes->uniqueOffset + (_mesh.nodes->size - _mesh.nodes->uniqueSize);
 						for (esint n = intervals[i].begin; n < intervals[i].end; ++n) {
 							esint index = offset + nodes[n] - _mesh.nodes->pintervals[i].begin;
@@ -438,7 +438,7 @@ void EnSight::updateSolution()
 			}
 			if (size == 2) {
 				for (size_t i = 0; i < intervals.size(); i++) {
-					if (intervals[i].sourceProcess == info::mpi::MPIrank) {
+					if (intervals[i].sourceProcess == info::mpi::rank) {
 						for (esint n = intervals[i].begin; n < intervals[i].end; ++n) {
 							_writer.storeFloat(os, .0);
 						}
@@ -475,14 +475,14 @@ void EnSight::updateSolution()
 		std::stringstream os;
 		os << std::showpos << std::scientific << std::setprecision(5);
 
-		if (info::mpi::MPIrank == 0) {
+		if (info::mpi::rank == 0) {
 			_writer.storeDescriptionLine(os, _mesh.elements->data[di]->names.front());
 		}
 
 		esint part = 1;
 
 		auto storePartHeader = [&] () {
-			if (info::mpi::MPIrank == 0) {
+			if (info::mpi::rank == 0) {
 				_writer.storeDescriptionLine(os, "part");
 				_writer.storeInt(os, part++);
 			}
@@ -516,7 +516,7 @@ void EnSight::updateSolution()
 			storePartHeader();
 			for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
 				if (_mesh.elementsRegions[r]->ecounters[etype]) {
-					if (info::mpi::MPIrank == 0) {
+					if (info::mpi::rank == 0) {
 						_writer.storeDescriptionLine(os, codetotype(etype));
 					}
 					iterateElements(os, etype, _mesh.elementsRegions[r]->elements->datatarray(), _mesh.elementsRegions[r]->eintervals);

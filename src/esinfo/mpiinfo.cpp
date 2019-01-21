@@ -1,19 +1,19 @@
 
 #include "mpiinfo.h"
 
-int espreso::info::mpi::MPIrank = 0;
-int espreso::info::mpi::MPIsize = 1;
-MPI_Comm espreso::info::mpi::MPICommunicator = MPI_COMM_WORLD;
+int espreso::info::mpi::rank = 0;
+int espreso::info::mpi::size = 1;
+MPI_Comm espreso::info::mpi::comm = MPI_COMM_WORLD;
 
 void espreso::info::mpi::set()
 {
 	int initialized;
 	MPI_Initialized(&initialized);
 
-	espreso::info::mpi::MPICommunicator = MPI_COMM_WORLD;
+	espreso::info::mpi::comm = MPI_COMM_WORLD;
 	if (initialized) {
-		MPI_Comm_rank(espreso::info::mpi::MPICommunicator, &espreso::info::mpi::MPIrank);
-		MPI_Comm_size(espreso::info::mpi::MPICommunicator, &espreso::info::mpi::MPIsize);
+		MPI_Comm_rank(espreso::info::mpi::comm, &espreso::info::mpi::rank);
+		MPI_Comm_size(espreso::info::mpi::comm, &espreso::info::mpi::size);
 	}
 }
 

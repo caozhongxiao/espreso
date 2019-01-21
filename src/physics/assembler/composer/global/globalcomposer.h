@@ -18,14 +18,14 @@ public:
 	NodeData* RHS();
 
 	void KplusAlfaM(double alfa);
-	void applyM(NodeData *y, NodeData *x);
-	void applyOriginalK(NodeData *y, NodeData *x);
 	void enrichRHS(double alfa, NodeData* a);
 	void RHSMinusR();
 	void DirichletMinusRHS();
 	double residualNorm();
 
 protected:
+	void apply(std::vector<SparseMatrix> &matrices, NodeData *result, NodeData *x);
+
 	Provider &_provider;
 
 	esint _localKOffset, _localRHSOffset;

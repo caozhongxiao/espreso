@@ -178,7 +178,7 @@ void UniformNodesFETIComposer::initDOFs()
 			tarray<esint>(datadistribution, DOFData));
 }
 
-void UniformNodesFETIComposer::initDirichlet()
+void UniformNodesFETIComposer::buildDirichlet()
 {
 	std::vector<std::vector<esint> > dIndices;
 	_controler.dirichletIndices(dIndices);
@@ -401,7 +401,7 @@ void UniformNodesFETIComposer::buildB1Pattern()
 			if (info::mesh->elements->firstDomain <= *d && *d < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
 				data->B1[*d - info::mesh->elements->firstDomain].I_row_indices.push_back(doffset + 1);
 				data->B1[*d - info::mesh->elements->firstDomain].J_col_indices.push_back(*(d + _dirichletMap[i] % _DOFs + 1) + 1);
-				data->B1clustersMap.push_back({ doffset, info::mpi::MPIrank });
+				data->B1clustersMap.push_back({ doffset, info::mpi::rank });
 				++doffset;
 			}
 			if (!_configuration.redundant_lagrange) {
@@ -446,13 +446,13 @@ void UniformNodesFETIComposer::buildB1Pattern()
 						++exclude;
 					}
 					if (exclude == _dirichletMap.end() || n * _DOFs + dof != *exclude) {
-						if (*nranks->begin() == info::mpi::MPIrank) {
+						if (*nranks->begin() == info::mpi::rank) {
 							send();
 							goffset += ndomains * (ndomains - 1) / 2;
 						}
 					}
 				} else {
-					if (*nranks->begin() == info::mpi::MPIrank) {
+					if (*nranks->begin() == info::mpi::rank) {
 						send();
 						goffset += ndomains - 1;
 					}
@@ -498,7 +498,7 @@ void UniformNodesFETIComposer::buildB1Pattern()
 				(info::mesh->elements->firstDomain <= d1 && d1 < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) ||
 				(info::mesh->elements->firstDomain <= d2 && d2 < info::mesh->elements->firstDomain + info::mesh->elements->ndomains)) {
 
-			data->B1clustersMap.push_back({ lambda, info::mpi::MPIrank });
+			data->B1clustersMap.push_back({ lambda, info::mpi::rank });
 
 			if (d1 <info::mesh->elements->firstDomain || info::mesh->elements->firstDomain + info::mesh->elements->ndomains <= d1) {
 				data->B1clustersMap.back().push_back(std::lower_bound(dDistribution.begin(), dDistribution.end(), d1 + 1) - dDistribution.begin() - 1);
@@ -520,7 +520,7 @@ void UniformNodesFETIComposer::buildB1Pattern()
 				}
 				esint lambda = goffset;
 				esint ndomains = dmap->size() / (1 + _DOFs);
-				if (*nranks->begin() != info::mpi::MPIrank) {
+				if (*nranks->begin() != info::mpi::rank) {
 					if (!_configuration.redundant_lagrange || exclude == _dirichletMap.end() || n * _DOFs + dof != *exclude) {
 						esint noffset = 0;
 						while (info::mesh->neighbours[noffset] < *nranks->begin()) {
@@ -536,7 +536,7 @@ void UniformNodesFETIComposer::buildB1Pattern()
 								fill(*d1, *d2, dsize + lambda, *(d1 + 1 + dof), *(d2 + 1 + dof), ndomains);
 							}
 						}
-						if (*nranks->begin() == info::mpi::MPIrank) {
+						if (*nranks->begin() == info::mpi::rank) {
 							goffset += ndomains * (ndomains - 1) / 2;
 						}
 					}
@@ -544,7 +544,7 @@ void UniformNodesFETIComposer::buildB1Pattern()
 					for (auto d1 = dmap->begin(), d2 = dmap->begin() + 1 + _DOFs; d2 != dmap->end(); d1 = d2, d2 += 1 + _DOFs, ++lambda) {
 						fill(*d1, *d2, dsize + lambda, *(d1 + 1 + dof), *(d2 + 1 + dof), ndomains);
 					}
-					if (*nranks->begin() == info::mpi::MPIrank) {
+					if (*nranks->begin() == info::mpi::rank) {
 						goffset += ndomains - 1;
 					}
 				}
@@ -579,7 +579,7 @@ void UniformNodesFETIComposer::assemble(Matrices matrices, const SolverParameter
 	for  (esint d = 0; d < info::mesh->elements->ndomains; d++) {
 
 		size_t KIndex = 0, RHSIndex = 0;
-		double KReduction = 1, RHSReduction = 1; //_step.internalForceReduction;
+		double KReduction = parameters.timeIntegrationConstantK, RHSReduction = parameters.internalForceReduction;
 		Controler::InstanceFiller filler;
 
 		switch (_provider.getMatrixType(d)) {
@@ -632,6 +632,8 @@ void UniformNodesFETIComposer::assemble(Matrices matrices, const SolverParameter
 		_controler.processElements(matrices, parameters, filler);
 
 		KReduction = parameters.internalForceReduction;
+		filler.Me.resize(0, 0);
+		filler.Re.resize(0, 0);
 
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
 			if (info::mesh->boundaryRegions[r]->distribution.size()) {
@@ -700,7 +702,7 @@ void UniformNodesFETIComposer::updateDuplicity()
 
 			esint noffset = 0;
 			for (auto r = nranks->begin(); r != nranks->end(); ++r) {
-				if (*r != info::mpi::MPIrank) {
+				if (*r != info::mpi::rank) {
 					while (info::mesh->neighbours[noffset] < *r) {
 						++noffset;
 					}
@@ -801,7 +803,7 @@ void UniformNodesFETIComposer::fillSolution()
 
 			esint noffset = 0;
 			for (auto r = nranks->begin(); r != nranks->end(); ++r) {
-				if (*r != info::mpi::MPIrank) {
+				if (*r != info::mpi::rank) {
 					while (info::mesh->neighbours[noffset] < *r) {
 						++noffset;
 					}
@@ -832,7 +834,7 @@ void UniformNodesFETIComposer::fillSolution()
 	for (esint n = 0; n < info::mesh->nodes->size; ++n, ++nranks) {
 		esint noffset = 0;
 		for (auto r = nranks->begin(); r != nranks->end(); ++r) {
-			if (*r != info::mpi::MPIrank) {
+			if (*r != info::mpi::rank) {
 				while (info::mesh->neighbours[noffset] < *r) {
 					++noffset;
 				}
@@ -840,6 +842,31 @@ void UniformNodesFETIComposer::fillSolution()
 				for (esint dof = 0; dof < _DOFs; ++dof) {
 					solution[n * _DOFs + dof] += rBuffer[noffset][roffset[noffset]++];
 				}
+			}
+		}
+	}
+}
+
+void UniformNodesFETIComposer::divide(NodeData *in, std::vector<std::vector<double> > &out)
+{
+	size_t i = 0;
+	for (auto n = _DOFMap->begin(); n != _DOFMap->end(); ++n, ++i) {
+		for (size_t d = 0; d < n->size() / (_DOFs + 1); ++d) {
+			for (esint dof = 0; dof < _DOFs; ++dof) {
+				out[n->at(d * (_DOFs + 1))][n->at(d * (_DOFs + 1) + dof + 1)] = in->data[i];
+			}
+		}
+	}
+}
+
+void UniformNodesFETIComposer::gather(NodeData *out, std::vector<std::vector<double> > &in)
+{
+	size_t i = 0;
+	for (auto n = _DOFMap->begin(); n != _DOFMap->end(); ++n, ++i) {
+		out->data[i] = 0;
+		for (size_t d = 0; d < n->size() / (_DOFs + 1); ++d) {
+			for (esint dof = 0; dof < _DOFs; ++dof) {
+				out->data[i] += in[n->at(d * (_DOFs + 1))][n->at(d * (_DOFs + 1) + dof + 1)];
 			}
 		}
 	}

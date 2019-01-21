@@ -7,9 +7,9 @@
 namespace espreso {
 namespace info {
 namespace mpi {
-	extern int MPIrank;
-	extern int MPIsize;
-	extern MPI_Comm MPICommunicator;
+	extern int rank;
+	extern int size;
+	extern MPI_Comm comm;
 
 	void set();
 }

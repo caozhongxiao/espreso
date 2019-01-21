@@ -12,10 +12,12 @@ using namespace espreso;
 
 template <typename TData>
 static void store(TData &data, size_t domain, const std::string &name) {
-	std::ofstream os(Logging::prepareFile(domain, name));
-	os.precision(10);
-	os << data;
-	os.close();
+	if (domain < data.size()) {
+		std::ofstream os(Logging::prepareFile(domain, name));
+		os.precision(10);
+		os << data[domain];
+		os.close();
+	}
 };
 
 LinearSolver::LinearSolver(DataHolder *data)
@@ -42,8 +44,6 @@ void LinearSolver::solve(Matrices matrices)
 			store(_data->B1, d, "B1");
 			store(_data->B1c, d, "B1c");
 			store(_data->B1duplicity, d, "B1duplicity");
-			store(_data->primalSolution, d, "solution");
-			store(_data->dualSolution, d, "dualSolution");
 		}
 	}
 

@@ -273,7 +273,7 @@ void Monitoring::updateSolution()
 		_nedata[i].first->statistics(_nedata[i].second->nodes->datatarray(), _nedata[i].second->uniqueTotalSize, _statistics.data() + offset);
 	}
 
-	if (info::mpi::MPIrank) {
+	if (info::mpi::rank) {
 		return;
 	}
 

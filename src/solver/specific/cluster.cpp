@@ -45,7 +45,7 @@ void ClusterBase::InitClusterPC( esint * subdomains_global_indices, esint number
 		}
 	}
 
-	MPI_Allreduce(&unsym, &gunsym, 1, MPI_INT, MPI_SUM, info::mpi::MPICommunicator);
+	MPI_Allreduce(&unsym, &gunsym, 1, MPI_INT, MPI_SUM, info::mpi::comm);
 
 	domains.reserve(number_of_subdomains);
 	for (esint d = 0; d < number_of_subdomains; d++) {
@@ -53,7 +53,7 @@ void ClusterBase::InitClusterPC( esint * subdomains_global_indices, esint number
 		domains[d].domain_index = d;
 
 		// Verbose level for K_plus
-		if ( d == 0 && info::mpi::MPIrank == 0) {
+		if ( d == 0 && info::mpi::rank == 0) {
 			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 		}
 	}
@@ -89,7 +89,7 @@ void ClusterBase::InitClusterPC( esint * subdomains_global_indices, esint number
 		domains[d].isOnACC  			= 0;
 
 		// Verbose level for K_plus
-		if ( d == 0 && info::mpi::MPIrank == 0) {
+		if ( d == 0 && info::mpi::rank == 0) {
 			domains[d].Kplus.msglvl = 0;
 		}
 
@@ -226,7 +226,7 @@ void ClusterBase::InitClusterPC( esint * subdomains_global_indices, esint number
 
 
 	ESLOG(MEMORY) << "Lambdas end";
-	ESLOG(MEMORY) << "process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 }
@@ -241,7 +241,7 @@ void ClusterBase::SetClusterPC( ) {
 	//// *** - will be used to compress vectors and matrices for higher efficiency
 
 	ESLOG(MEMORY) << "Setting vectors for lambdas";
-	ESLOG(MEMORY) << "process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	my_lamdas_indices.resize( lambda_map_sub.size() );
@@ -249,7 +249,7 @@ void ClusterBase::SetClusterPC( ) {
 		my_lamdas_indices[i] = lambda_map_sub[i][0];
 
 
-	SEQ_VECTOR< SEQ_VECTOR <esint> > lambdas_per_subdomain ( domains.size() * info::mpi::MPIsize);
+	SEQ_VECTOR< SEQ_VECTOR <esint> > lambdas_per_subdomain ( domains.size() * info::mpi::size);
 	my_lamdas_ddot_filter.resize( lambda_map_sub.size(), 0.0 );
 	for (size_t i = 0; i < lambda_map_sub.size(); i++) {
 		if ( lambda_map_sub[i].size() > 2 ) {
@@ -265,7 +265,7 @@ void ClusterBase::SetClusterPC( ) {
 	}
 
 	ESLOG(MEMORY) << "Setting vectors for lambdas communicators";
-	ESLOG(MEMORY) << "process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	my_comm_lambdas_indices .resize(my_neighs.size());
@@ -501,7 +501,7 @@ void ClusterBase::SetClusterHFETI () {
 		} else {
 
 			//ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW
-			std::cout << "Cluster " << cluster_global_index << " on MPI rank " << info::mpi::MPIrank << " has only one domain -> Using TFETI" << std::endl;
+			std::cout << "Cluster " << cluster_global_index << " on MPI rank " << info::mpi::rank << " has only one domain -> Using TFETI" << std::endl;
 			USE_HFETI = 0;
 
 		}
@@ -1309,7 +1309,7 @@ void ClusterBase::CreateF0() {
 
 	mkl_set_num_threads(1);
 
-	int MPIrank; MPI_Comm_rank (info::mpi::MPICommunicator, &MPIrank);
+	int MPIrank; MPI_Comm_rank (info::mpi::comm, &MPIrank);
 
 	SEQ_VECTOR <SparseMatrix> tmpF0v (domains.size());
 
@@ -1335,7 +1335,7 @@ void ClusterBase::CreateF0() {
 			SparseSolverMKL Ktmp;
 			Ktmp.ImportMatrix_wo_Copy(domains[d].K);
 			std::stringstream ss;
-			ss << "Create F0 -> rank: " << info::mpi::MPIrank << ", subdomain: " << d;
+			ss << "Create F0 -> rank: " << info::mpi::rank << ", subdomain: " << d;
 			Ktmp.Factorization(ss.str());
 			Ktmp.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
 			domains[d].B0Kplus = domains[d].B0Kplus_comp;
@@ -1464,7 +1464,7 @@ void ClusterBase::CreateF0() {
 	//F0_Mat.Clear();
 	F0.SetThreaded();
 	std::stringstream ss;
-	ss << "F0 -> rank: " << info::mpi::MPIrank;
+	ss << "F0 -> rank: " << info::mpi::rank;
 	F0.Factorization(ss.str());
 
 	mkl_set_num_threads(1);
@@ -1514,7 +1514,7 @@ void ClusterBase::CreateSa() {
 
 	 TimeEvent G0solve_Sa_time("SolveMatF with G0t as InitialCondition"); if (Measure::report(CLUSTER)) { G0solve_Sa_time.start(); }
 	SparseSolverMKL Salfa_SC_solver;
-	if (info::mpi::MPIrank == 0) Salfa_SC_solver.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+	if (info::mpi::rank == 0) Salfa_SC_solver.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 	if (SYMMETRIC_SYSTEM) {
 		Salfa_SC_solver.Create_SC_w_Mat( F0_Mat, G0t, Salfa, true, 0 );
 		Salfa.ConvertDenseToCSR(1);
@@ -1978,12 +1978,12 @@ void ClusterBase::CreateSa() {
 			TimeEvent fact_Sa_time("Salfa factorization ");
 			if (Measure::report(CLUSTER)) { fact_Sa_time.start(); }
 
-			if (info::mpi::MPIrank == 0)  {
+			if (info::mpi::rank == 0)  {
 				Sa.msglvl = 1;
 			}
 			Sa.ImportMatrix(Salfa);
 			Sa.Factorization("salfa");
-			if (info::mpi::MPIrank == 0) {
+			if (info::mpi::rank == 0) {
 				Sa.msglvl = 0;
 			}
 			if (Measure::report(CLUSTER)) { fact_Sa_time.end(); } //fact_Sa_time.printStatMPI(); }
@@ -2037,7 +2037,7 @@ void ClusterBase::Create_G_perCluster() {
 	if (Measure::report(CLUSTER)) { G1_1_mem.startWithoutBarrier(GetProcessMemory_u()); }
 
 	int MPIrank;
-	MPI_Comm_rank (info::mpi::MPICommunicator, &MPIrank);
+	MPI_Comm_rank (info::mpi::comm, &MPIrank);
 
 	PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
 	PAR_VECTOR < SparseMatrix > tmp_Mat2 (domains.size());

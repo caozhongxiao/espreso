@@ -43,7 +43,7 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh)
 	_asyncStore = new ResultStore();
 	_asyncStore->storeThreads = 0;
 	_asyncStore->storeProcesses = 0;
-	_asyncStore->computeProcesses = info::mpi::MPIsize;
+	_asyncStore->computeProcesses = info::mpi::size;
 
 	_asyncStore->_direct = new DirectExecutor(mesh);
 	ResultStoreExecutor *executor = _asyncStore->_direct;
@@ -120,9 +120,9 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh)
 //			_asyncStore->storeProcesses = info::mpi::MPIsize - computeSize;
 //		}
 
-		info::mpi::MPICommunicator = _dispatcher->commWorld();
-		MPI_Comm_rank(info::mpi::MPICommunicator, &info::mpi::MPIrank);
-		MPI_Comm_size(info::mpi::MPICommunicator, &info::mpi::MPIsize);
+		info::mpi::comm = _dispatcher->commWorld();
+		MPI_Comm_rank(info::mpi::comm, &info::mpi::rank);
+		MPI_Comm_size(info::mpi::comm, &info::mpi::size);
 	}
 
 	return _asyncStore;

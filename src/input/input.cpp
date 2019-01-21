@@ -49,31 +49,31 @@ void Input::balance()
 		int sorted, allSorted;
 
 		sorted = std::is_sorted(ids.begin(), ids.end());
-		MPI_Allreduce(&sorted, &allSorted, 1, MPI_INT, MPI_MIN, info::mpi::MPICommunicator);
+		MPI_Allreduce(&sorted, &allSorted, 1, MPI_INT, MPI_MIN, info::mpi::comm);
 
 		if (!allSorted) {
 			return allSorted;
 		}
 
 		esint prev = -1, my = ids.size() ? ids.back() : -1;
-		if (info::mpi::MPIrank % 2 == 0) {
-			if (info::mpi::MPIrank + 1 < info::mpi::MPIsize) {
-				MPI_Send(&my, sizeof(esint), MPI_BYTE, info::mpi::MPIrank + 1, 0, info::mpi::MPICommunicator);
+		if (info::mpi::rank % 2 == 0) {
+			if (info::mpi::rank + 1 < info::mpi::size) {
+				MPI_Send(&my, sizeof(esint), MPI_BYTE, info::mpi::rank + 1, 0, info::mpi::comm);
 			}
-			if (info::mpi::MPIrank) {
-				MPI_Recv(&prev, sizeof(esint), MPI_BYTE, info::mpi::MPIrank - 1, 0, info::mpi::MPICommunicator, MPI_STATUS_IGNORE);
+			if (info::mpi::rank) {
+				MPI_Recv(&prev, sizeof(esint), MPI_BYTE, info::mpi::rank - 1, 0, info::mpi::comm, MPI_STATUS_IGNORE);
 			}
 		} else {
-			MPI_Recv(&prev, sizeof(esint), MPI_BYTE, info::mpi::MPIrank - 1, 0, info::mpi::MPICommunicator, MPI_STATUS_IGNORE);
-			if (info::mpi::MPIrank + 1 < info::mpi::MPIsize) {
-				MPI_Send(&my, sizeof(esint), MPI_BYTE, info::mpi::MPIrank + 1, 0, info::mpi::MPICommunicator);
+			MPI_Recv(&prev, sizeof(esint), MPI_BYTE, info::mpi::rank - 1, 0, info::mpi::comm, MPI_STATUS_IGNORE);
+			if (info::mpi::rank + 1 < info::mpi::size) {
+				MPI_Send(&my, sizeof(esint), MPI_BYTE, info::mpi::rank + 1, 0, info::mpi::comm);
 			}
 		}
 
 		if (ids.size()) {
 			sorted = prev < ids.front();
 		}
-		MPI_Allreduce(&sorted, &allSorted, 1, MPI_INT, MPI_MIN, info::mpi::MPICommunicator);
+		MPI_Allreduce(&sorted, &allSorted, 1, MPI_INT, MPI_MIN, info::mpi::comm);
 		return allSorted;
 	};
 
@@ -102,9 +102,9 @@ std::vector<esint> Input::getDistribution(const std::vector<esint> &IDs, const s
 	if (IDs.size()) {
 		myMaxID = IDs[permutation.back()];
 	}
-	MPI_Allreduce(&myMaxID, &maxID, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, info::mpi::MPICommunicator);
+	MPI_Allreduce(&myMaxID, &maxID, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, info::mpi::comm);
 
-	std::vector<esint> distribution = tarray<esint>::distribute(info::mpi::MPIsize, maxID + 1);
+	std::vector<esint> distribution = tarray<esint>::distribute(info::mpi::size, maxID + 1);
 
 	return distribution;
 }
@@ -112,7 +112,7 @@ std::vector<esint> Input::getDistribution(const std::vector<esint> &IDs, const s
 void Input::balanceNodes()
 {
 	std::vector<esint> cCurrent = Communication::getDistribution<esint>(_meshData.nIDs.size());
-	_nDistribution = tarray<esint>::distribute(info::mpi::MPIsize, cCurrent.back());
+	_nDistribution = tarray<esint>::distribute(info::mpi::size, cCurrent.back());
 
 	if (!Communication::balance(_meshData.nIDs, cCurrent, _nDistribution)) {
 		ESINFO(ERROR) << "ESPRESO internal error: balance node IDs.";
@@ -122,7 +122,7 @@ void Input::balanceNodes()
 	}
 
 	esint back = _meshData.nIDs.back();
-	MPI_Allgather(&back, sizeof(esint), MPI_BYTE, _nDistribution.data() + 1, sizeof(esint), MPI_BYTE, info::mpi::MPICommunicator);
+	MPI_Allgather(&back, sizeof(esint), MPI_BYTE, _nDistribution.data() + 1, sizeof(esint), MPI_BYTE, info::mpi::comm);
 	for (size_t i = 1; i < _nDistribution.size(); i++) {
 		++_nDistribution[i];
 	}
@@ -144,11 +144,11 @@ void Input::balancePermutedNodes()
 	_nDistribution = getDistribution(_meshData.nIDs, permutation);
 
 	std::vector<esint> sBuffer, rBuffer;
-	sBuffer.reserve(3 * info::mpi::MPIsize + _meshData.nIDs.size() + _meshData.coordinates.size() * sizeof(Point) / sizeof(esint));
+	sBuffer.reserve(3 * info::mpi::size + _meshData.nIDs.size() + _meshData.coordinates.size() * sizeof(Point) / sizeof(esint));
 
 	size_t prevsize;
 	auto nbegin = permutation.begin();
-	for (int r = 0; r < info::mpi::MPIsize; r++) {
+	for (int r = 0; r < info::mpi::size; r++) {
 		prevsize = sBuffer.size();
 		sBuffer.push_back(0); // total size
 		sBuffer.push_back(r); // target
@@ -186,7 +186,7 @@ void Input::balancePermutedNodes()
 
 	size_t offset = 0;
 	Point point;
-	for (int r = 0; r < info::mpi::MPIsize; r++) {
+	for (int r = 0; r < info::mpi::size; r++) {
 		++offset;
 		size_t csize = rBuffer[++offset]; // coordinates
 		++offset;
@@ -209,26 +209,26 @@ void Input::balancePermutedNodes()
 void Input::balanceElements()
 {
 	std::vector<esint> eCurrent = Communication::getDistribution<esint>(_meshData.esize.size());
-	_eDistribution = tarray<esint>::distribute(info::mpi::MPIsize, eCurrent.back());
+	_eDistribution = tarray<esint>::distribute(info::mpi::size, eCurrent.back());
 
 	std::vector<esint> nCurrent = Communication::getDistribution<esint>(_meshData.enodes.size());
 	std::vector<esint> nTarget;
 
-	if (info::mpi::MPIrank == 0) {
+	if (info::mpi::rank == 0) {
 		nTarget.push_back(0);
 	}
 
-	esint nodeOffset = nCurrent[info::mpi::MPIrank];
-	size_t eTargetIndex = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), eCurrent[info::mpi::MPIrank] + 1) - _eDistribution.begin();
+	esint nodeOffset = nCurrent[info::mpi::rank];
+	size_t eTargetIndex = std::lower_bound(_eDistribution.begin(), _eDistribution.end(), eCurrent[info::mpi::rank] + 1) - _eDistribution.begin();
 	for (size_t n = 0; n < _meshData.esize.size(); ++n) {
 		nodeOffset += _meshData.esize[n];
-		if (eCurrent[info::mpi::MPIrank] + (esint)n + 1 == _eDistribution[eTargetIndex]) {
+		if (eCurrent[info::mpi::rank] + (esint)n + 1 == _eDistribution[eTargetIndex]) {
 			nTarget.push_back(nodeOffset);
 			++eTargetIndex;
 		}
 	}
 	Communication::allGatherUnknownSize(nTarget);
-	nTarget.resize(info::mpi::MPIsize + 1, nTarget.back());
+	nTarget.resize(info::mpi::size + 1, nTarget.back());
 
 	if (!Communication::balance(_meshData.enodes, nCurrent, nTarget)) {
 		ESINFO(ERROR) << "ESPRESO internal error: balance element nodes.";
@@ -250,7 +250,7 @@ void Input::balanceElements()
 	}
 
 	auto back = _meshData.eIDs.back();
-	MPI_Allgather(&back, sizeof(back), MPI_BYTE, _eDistribution.data() + 1, sizeof(back), MPI_BYTE, info::mpi::MPICommunicator);
+	MPI_Allgather(&back, sizeof(back), MPI_BYTE, _eDistribution.data() + 1, sizeof(back), MPI_BYTE, info::mpi::comm);
 	for (size_t i = 1; i < _eDistribution.size(); i++) {
 		++_eDistribution[i];
 	}
@@ -278,11 +278,11 @@ void Input::balancePermutedElements()
 
 	std::vector<esint> sBuffer, rBuffer;
 	// head, esize, eID, etype, body, material, nodes
-	sBuffer.reserve(4 * info::mpi::MPIsize + 5 * _meshData.esize.size() + _meshData.enodes.size());
+	sBuffer.reserve(4 * info::mpi::size + 5 * _meshData.esize.size() + _meshData.enodes.size());
 
 	size_t prevsize;
 	auto ebegin = permutation.begin();
-	for (int r = 0; r < info::mpi::MPIsize; r++) {
+	for (int r = 0; r < info::mpi::size; r++) {
 		prevsize = sBuffer.size();
 		sBuffer.push_back(0); // total size
 		sBuffer.push_back(r); // target
@@ -329,7 +329,7 @@ void Input::balancePermutedElements()
 	_meshData.enodes.clear();
 
 	size_t offset = 0;
-	for (int r = 0; r < info::mpi::MPIsize; r++) {
+	for (int r = 0; r < info::mpi::size; r++) {
 		++offset;
 		size_t esize = rBuffer[++offset];
 		++offset;
@@ -457,7 +457,7 @@ void Input::assignRegions(
 		std::vector<std::vector<esint> > sBuffer, rBuffer;
 		std::vector<int> sRanks;
 
-		for (int t = 0; t < info::mpi::MPIsize; t++) {
+		for (int t = 0; t < info::mpi::size; t++) {
 			auto begin = std::lower_bound(region->second.begin(), region->second.end(), distribution[t]);
 			auto end = std::lower_bound(region->second.begin(), region->second.end(), distribution[t + 1]);
 			if (end - begin) {
@@ -566,7 +566,7 @@ void Input::fillElements()
 
 		// till now, IDs are irelevant
 		eIDs[t].resize(edistribution[t + 1] - edistribution[t]);
-		std::iota(eIDs[t].begin(), eIDs[t].end(), _eDistribution[info::mpi::MPIrank] + edistribution[t]);
+		std::iota(eIDs[t].begin(), eIDs[t].end(), _eDistribution[info::mpi::rank] + edistribution[t]);
 
 		eBody[t].insert(eBody[t].end(), _meshData.body.begin() + edistribution[t], _meshData.body.begin() + edistribution[t + 1]);
 		tnodes[t].insert(tnodes[t].end(), _meshData.enodes.begin() + _meshData._edist[edistribution[t]], _meshData.enodes.begin() + _meshData._edist[edistribution[t + 1]]);
@@ -602,7 +602,7 @@ void Input::fillNeighbors()
 
 	_mesh.neighbours.clear();
 	for (size_t n = 0; n < _mesh.neighboursWithMe.size(); n++) {
-		if (_mesh.neighboursWithMe[n] != info::mpi::MPIrank) {
+		if (_mesh.neighboursWithMe[n] != info::mpi::rank) {
 			_mesh.neighbours.push_back(_mesh.neighboursWithMe[n]);
 		}
 	}
@@ -638,7 +638,7 @@ void Input::fillBoundaryRegions()
 		if (named.size() < (size_t)(_etypeDistribution[i + 1] - _etypeDistribution[i])) {
 			hasunnamed = 1;
 		}
-		MPI_Allreduce(&hasunnamed, &add, 1, MPI_INT, MPI_SUM, info::mpi::MPICommunicator);
+		MPI_Allreduce(&hasunnamed, &add, 1, MPI_INT, MPI_SUM, info::mpi::comm);
 		if (add) {
 			std::vector<esint> &unnamed = i == 1 ? _meshData.eregions["NAMELESS_EDGE_SET"] : _meshData.eregions["NAMELESS_FACE_SET"];
 			auto nit = named.begin();
@@ -666,7 +666,7 @@ void Input::fillBoundaryRegions()
 			if (eregion->second.size() && _etypeDistribution[i] <= eregion->second.front() && eregion->second.front() < _etypeDistribution[i + 1]) {
 				frominterval = 1;
 			}
-			MPI_Allreduce(&frominterval, &add, 1, MPI_INT, MPI_SUM, info::mpi::MPICommunicator);
+			MPI_Allreduce(&frominterval, &add, 1, MPI_INT, MPI_SUM, info::mpi::comm);
 
 			if (add) {
 				_mesh.boundaryRegions.push_back(new BoundaryRegionStore(rname, _mesh._eclasses));
@@ -728,7 +728,7 @@ void Input::fillElementRegions()
 		if (eregion->second.size() && eregion->second.front() < _etypeDistribution[estart]) {
 			fromelements = 1;
 		}
-		MPI_Allreduce(&fromelements, &add, 1, MPI_INT, MPI_SUM, info::mpi::MPICommunicator);
+		MPI_Allreduce(&fromelements, &add, 1, MPI_INT, MPI_SUM, info::mpi::comm);
 		if (add) {
 			std::string rname = eregion->first;
 			if (StringCompare::caseInsensitivePreffix(_meshData.elementprefix, rname)) {

@@ -52,8 +52,8 @@ SpaceFillingCurve::SpaceFillingCurve(size_t dimension, size_t depth, std::vector
 		maxs[0].z = std::max(maxs[t].z, maxs[0].z);
 	}
 
-	MPI_Allreduce(&mins[0].x, &_origin.x, 3, MPI_DOUBLE, MPI_MIN, info::mpi::MPICommunicator);
-	MPI_Allreduce(&maxs[0].x, &_size.x, 3, MPI_DOUBLE, MPI_MAX, info::mpi::MPICommunicator);
+	MPI_Allreduce(&mins[0].x, &_origin.x, 3, MPI_DOUBLE, MPI_MIN, info::mpi::comm);
+	MPI_Allreduce(&maxs[0].x, &_size.x, 3, MPI_DOUBLE, MPI_MAX, info::mpi::comm);
 
 	_size -= _origin - Point(1e-6, 1e-6, 1e-6);
 }

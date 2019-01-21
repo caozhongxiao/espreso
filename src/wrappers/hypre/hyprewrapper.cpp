@@ -37,9 +37,9 @@ HypreData::HypreData(esint nrows)
 	_data = new HYPREData();
 
 	Communication::exscan(_roffset);
-	HYPRE_IJMatrixCreate(info::mpi::MPICommunicator, _roffset + 1, _roffset + _nrows, _roffset + 1, _roffset + _nrows, &_data->K);
-	HYPRE_IJVectorCreate(info::mpi::MPICommunicator, _roffset + 1, _roffset + _nrows, &_data->f);
-	HYPRE_IJVectorCreate(info::mpi::MPICommunicator, _roffset + 1, _roffset + _nrows, &_data->x);
+	HYPRE_IJMatrixCreate(info::mpi::comm, _roffset + 1, _roffset + _nrows, _roffset + 1, _roffset + _nrows, &_data->K);
+	HYPRE_IJVectorCreate(info::mpi::comm, _roffset + 1, _roffset + _nrows, &_data->f);
+	HYPRE_IJVectorCreate(info::mpi::comm, _roffset + 1, _roffset + _nrows, &_data->x);
 
 	HYPRE_IJMatrixSetObjectType(_data->K, HYPRE_PARCSR);
 	HYPRE_IJVectorSetObjectType(_data->f, HYPRE_PARCSR);
@@ -130,7 +130,7 @@ void HYPRE::solve(const MultigridConfiguration &configuration, HypreData &data, 
 	HYPRE_Solver solver;
 	switch (configuration.solver) {
 	case MultigridConfiguration::SOLVER::CG:
-		HYPRE_ParCSRPCGCreate(info::mpi::MPICommunicator, &solver);
+		HYPRE_ParCSRPCGCreate(info::mpi::comm, &solver);
 
 		HYPRE_PCGSetMaxIter(solver, configuration.max_iterations);
 		HYPRE_PCGSetTol(solver, configuration.precision);

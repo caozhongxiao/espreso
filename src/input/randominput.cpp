@@ -31,7 +31,7 @@ void RandomInput::buildMesh(PlainMeshData &meshData, Mesh &mesh)
 RandomInput::RandomInput(PlainMeshData &meshData, Mesh &mesh)
 : Input(meshData, mesh), _sfc(_mesh.dimension, SFCDEPTH, _meshData.coordinates)
 {
-	if (info::mpi::MPIsize == 1) {
+	if (info::mpi::size == 1) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: use the sequential input for building mesh on 1 MPI process.";
 	}
 
@@ -172,8 +172,8 @@ void RandomInput::assignEBuckets()
 	std::vector<esint> closest(_meshData.esize.size());
 	_eBuckets.resize(_meshData.esize.size());
 
-	esint nbegin = _nDistribution[info::mpi::MPIrank];
-	esint nend = _nDistribution[info::mpi::MPIrank + 1];
+	esint nbegin = _nDistribution[info::mpi::rank];
+	esint nend = _nDistribution[info::mpi::rank + 1];
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -207,15 +207,15 @@ void RandomInput::assignEBuckets()
 	std::vector<uint> sBuckets, rBuckets;
 	std::vector<int> targets, sources;
 
-	sNodes.reserve(permutation.size() + 2 * info::mpi::MPIsize);
+	sNodes.reserve(permutation.size() + 2 * info::mpi::size);
 
 	size_t prevsize;
 	auto begin = permutation.begin();
-	for (int r = 0; r < info::mpi::MPIsize; r++) {
+	for (int r = 0; r < info::mpi::size; r++) {
 		prevsize = sNodes.size();
 		sNodes.push_back(0);
 		sNodes.push_back(r);
-		sNodes.push_back(info::mpi::MPIrank);
+		sNodes.push_back(info::mpi::rank);
 
 		auto n = begin;
 		for ( ; n != permutation.end() && closest[*n] < _nDistribution[r + 1]; ++n) {
@@ -241,9 +241,9 @@ void RandomInput::assignEBuckets()
 	TimeEvent e4("AEB COMPUTE BUCKETS");
 	e4.start();
 
-	std::vector<esint> boundaries(info::mpi::MPIsize);
+	std::vector<esint> boundaries(info::mpi::size);
 	size_t offset = 0;
-	for (int r = 1; r < info::mpi::MPIsize; r++, offset += rNodes[offset]) {
+	for (int r = 1; r < info::mpi::size; r++, offset += rNodes[offset]) {
 		boundaries[r] = rNodes[offset] + boundaries[r - 1];
 	}
 	std::sort(boundaries.begin(), boundaries.end(), [&] (esint i, esint j) {
@@ -252,7 +252,7 @@ void RandomInput::assignEBuckets()
 
 	sBuckets.reserve(rNodes.size());
 
-	for (int r = 0; r < info::mpi::MPIsize; r++) {
+	for (int r = 0; r < info::mpi::size; r++) {
 		offset = boundaries[r];
 		esint size = rNodes[offset++] - 3;
 		offset++; //skip rank
@@ -260,7 +260,7 @@ void RandomInput::assignEBuckets()
 
 		sBuckets.push_back(3 + size);
 		sBuckets.push_back(r);
-		sBuckets.push_back(info::mpi::MPIrank);
+		sBuckets.push_back(info::mpi::rank);
 		auto it = _meshData.nIDs.begin();
 		for (esint n = 0; n < size; ++n, ++offset) {
 			while (*it < rNodes[offset]) { ++it; }
@@ -285,7 +285,7 @@ void RandomInput::assignEBuckets()
 	e6.start();
 
 	boundaries[0] = offset = 0;
-	for (int r = 1; r < info::mpi::MPIsize; r++, offset += rBuckets[offset]) {
+	for (int r = 1; r < info::mpi::size; r++, offset += rBuckets[offset]) {
 		boundaries[r] = rBuckets[offset] + boundaries[r - 1];
 	}
 	std::sort(boundaries.begin(), boundaries.end(), [&] (esint i, esint j) {
@@ -293,7 +293,7 @@ void RandomInput::assignEBuckets()
 	});
 
 	size_t e = 0;
-	for (int r = 0; r < info::mpi::MPIsize; r++) {
+	for (int r = 0; r < info::mpi::size; r++) {
 		offset = boundaries[r];
 		esint size = rBuckets[offset++] - 3;
 		offset++; //skip rank
@@ -323,15 +323,15 @@ void RandomInput::clusterize()
 
 	esint esize = _meshData.eIDs.size();
 	esize = Communication::exscan(esize);
-	std::vector<esint> targetDistribution = tarray<esint>::distribute(info::mpi::MPIsize, esize);
+	std::vector<esint> targetDistribution = tarray<esint>::distribute(info::mpi::size, esize);
 
-	double PRECISION = 0.001 * std::log2(info::mpi::MPIsize);
-	if (PRECISION * (targetDistribution.back() / info::mpi::MPIsize) < 2) {
-		PRECISION = 2.01 / (targetDistribution.back() / info::mpi::MPIsize);
+	double PRECISION = 0.001 * std::log2(info::mpi::size);
+	if (PRECISION * (targetDistribution.back() / info::mpi::size) < 2) {
+		PRECISION = 2.01 / (targetDistribution.back() / info::mpi::size);
 	}
 
 	// allowed difference to the perfect distribution
-	int ETOLERANCE = PRECISION * targetDistribution.back() / info::mpi::MPIsize;
+	int ETOLERANCE = PRECISION * targetDistribution.back() / info::mpi::size;
 
 	if (!_meshData._edist.size()) {
 		_meshData._edist = { 0 };
@@ -352,7 +352,7 @@ void RandomInput::clusterize()
 
 	// PREPROCESS BUCKET SIZES
 	size_t DEPTH = 2;
-	while (_sfc.buckets(DEPTH++) < (size_t)info::mpi::MPIsize);
+	while (_sfc.buckets(DEPTH++) < (size_t)info::mpi::size);
 
 	TimeEvent e2("CE COMPUTE LOCAL HISTOGRAM");
 	e2.start();
@@ -377,7 +377,7 @@ void RandomInput::clusterize()
 	}
 
 	std::vector<esint> scounts, rcounts;
-	_bucketsBorders.resize(info::mpi::MPIsize + 1, _sfc.buckets(_sfc.depth()));
+	_bucketsBorders.resize(info::mpi::size + 1, _sfc.buckets(_sfc.depth()));
 	_bucketsBorders.front() = 0;
 
 	e2.end();
@@ -399,7 +399,7 @@ void RandomInput::clusterize()
 			}
 		}
 
-		MPI_Allreduce(scounts.data(), rcounts.data(), sizeof(esint) * scounts.size(), MPI_BYTE, MPITools::esintOperations().sum, info::mpi::MPICommunicator);
+		MPI_Allreduce(scounts.data(), rcounts.data(), sizeof(esint) * scounts.size(), MPI_BYTE, MPITools::esintOperations().sum, info::mpi::comm);
 
 		_sfc.setLevel(LEVEL + 1);
 
@@ -451,7 +451,7 @@ void RandomInput::clusterize()
 			}
 		}
 
-		MPI_Allreduce(scounts.data(), rcounts.data(), sizeof(esint) * scounts.size(), MPI_BYTE, MPITools::esintOperations().sum, info::mpi::MPICommunicator);
+		MPI_Allreduce(scounts.data(), rcounts.data(), sizeof(esint) * scounts.size(), MPI_BYTE, MPITools::esintOperations().sum, info::mpi::comm);
 
 		_sfc.setLevel(LEVEL + 1);
 
@@ -531,7 +531,7 @@ void RandomInput::clusterize()
 
 	std::vector<esint> sBuffer, rBuffer;
 	sBuffer.reserve(
-			5 * info::mpi::MPIsize +
+			5 * info::mpi::size +
 			// esize, eID, etype, body, material, regions
 			(5 + _eregsize) * _meshData.esize.size() +
 			_meshData.enodes.size() +
@@ -541,7 +541,7 @@ void RandomInput::clusterize()
 	size_t prevsize;
 	auto nbegin = npermutation.begin();
 	auto ebegin = epermutation.begin();
-	for (int r = 0; r < info::mpi::MPIsize; r++) {
+	for (int r = 0; r < info::mpi::size; r++) {
 		prevsize = sBuffer.size();
 		sBuffer.push_back(0); // total size
 		sBuffer.push_back(r); // target
@@ -606,7 +606,7 @@ void RandomInput::clusterize()
 
 	size_t offset = 0;
 	Point point;
-	for (int r = 0; r < info::mpi::MPIsize; r++) {
+	for (int r = 0; r < info::mpi::size; r++) {
 		++offset;
 		size_t esize = rBuffer[++offset];
 		++offset;
@@ -640,7 +640,7 @@ void RandomInput::clusterize()
 	}
 
 	auto back = _meshData.eIDs.back();
-	MPI_Allgather(&back, sizeof(back), MPI_BYTE, _eDistribution.data() + 1, sizeof(back), MPI_BYTE, info::mpi::MPICommunicator);
+	MPI_Allgather(&back, sizeof(back), MPI_BYTE, _eDistribution.data() + 1, sizeof(back), MPI_BYTE, info::mpi::comm);
 	for (size_t i = 1; i < _eDistribution.size(); i++) {
 		++_eDistribution[i];
 	}
@@ -680,7 +680,7 @@ void RandomInput::linkup()
 
 	std::vector<std::pair<size_t, size_t> > neighbors;
 
-	_sfc.iterateBuckets(_bucketsBorders[info::mpi::MPIrank], _bucketsBorders[info::mpi::MPIrank + 1], [&] (size_t depth, size_t index) {
+	_sfc.iterateBuckets(_bucketsBorders[info::mpi::rank], _bucketsBorders[info::mpi::rank + 1], [&] (size_t depth, size_t index) {
 		_sfc.addSFCNeighbors(depth, index, neighbors);
 	});
 	Esutils::sortAndRemoveDuplicity(neighbors);
@@ -713,7 +713,7 @@ void RandomInput::linkup()
 			--begin;
 		}
 		for (int r = begin; r < end; r++) {
-			if (r != info::mpi::MPIrank) {
+			if (r != info::mpi::rank) {
 				if (_bucketsBorders[r] != _bucketsBorders[r + 1]) {
 					_sfcNeighbors.push_back(r);
 				}
@@ -954,7 +954,7 @@ void RandomInput::linkup()
 		}
 	}
 
-	_sfcNeighbors.push_back(info::mpi::MPIrank);
+	_sfcNeighbors.push_back(info::mpi::rank);
 	std::sort(_sfcNeighbors.begin(), _sfcNeighbors.end());
 
 	e7.end();
@@ -969,7 +969,7 @@ void RandomInput::linkup()
 	size_t rankindex;
 	std::vector<std::vector<esint> > nodeRequests(_sfcNeighbors.size());
 	for (size_t r = 0, i = 0; r < _sfcNeighbors.size(); r++) {
-		if (_sfcNeighbors[r] == info::mpi::MPIrank) {
+		if (_sfcNeighbors[r] == info::mpi::rank) {
 			rankindex = r;
 			nodeRequests[r].swap(enodes);
 		} else {
@@ -1042,7 +1042,7 @@ void RandomInput::linkup()
 	e10.start();
 
 	for (size_t t = 0, i = 0; t < _sfcNeighbors.size(); t++) {
-		if (_sfcNeighbors[t] != info::mpi::MPIrank) {
+		if (_sfcNeighbors[t] != info::mpi::rank) {
 			_meshData.nIDs.insert(_meshData.nIDs.end(), rNodes[i].begin(), rNodes[i].end());
 			_nregions.insert(_nregions.end(), rRegions[i].begin(), rRegions[i].end());
 			_meshData.coordinates.insert(_meshData.coordinates.end(), rCoors[i].begin(), rCoors[i].end());
@@ -1069,7 +1069,7 @@ void RandomInput::linkup()
 		_meshData._nrankdist.push_back(_meshData._nranks.size());
 	}
 	for (size_t r = 0; r < _sfcNeighbors.size(); r++) {
-		if (_sfcNeighbors[r] != info::mpi::MPIrank) {
+		if (_sfcNeighbors[r] != info::mpi::rank) {
 			for (size_t n = 0; n < rRanks[r].size(); n += rRanks[r][n] + 1) {
 				_meshData._nranks.insert(_meshData._nranks.end(), rRanks[r].begin() + n + 1, rRanks[r].begin() + n + 1 + rRanks[r][n]);
 				_meshData._nrankdist.push_back(_meshData._nranks.size());
@@ -1142,7 +1142,7 @@ void RandomInput::exchangeBoundary()
 				if (nlinks[i - 1] == nlinks[i]) {
 					++counter;
 					if (counter == edist[e + 1] - edist[e]) {
-						if (_eDistribution[info::mpi::MPIrank] <= nlinks[i] && nlinks[i] < _eDistribution[info::mpi::MPIrank + 1]) {
+						if (_eDistribution[info::mpi::rank] <= nlinks[i] && nlinks[i] < _eDistribution[info::mpi::rank + 1]) {
 							emembership[e] = nlinks[i];
 						} else {
 							push(nlinks[i]);
@@ -1230,7 +1230,7 @@ void RandomInput::exchangeBoundary()
 		auto node = std::lower_bound(_meshData.nIDs.begin(), _meshData.nIDs.end(), uunodes[i]);
 		if (node != _meshData.nIDs.end() && *node == uunodes[i]) { // i have the node
 			auto ranks = _mesh.nodes->ranks->begin() + (node - _meshData.nIDs.begin());
-			if (ranks->front() == info::mpi::MPIrank) { // i am the first rank that hold the node
+			if (ranks->front() == info::mpi::rank) { // i am the first rank that hold the node
 				auto links = _mesh.nodes->elements->cbegin() + (node - _meshData.nIDs.begin());
 				rrLinks.push_back(uunodes[i]);
 				rrLinks.push_back(links->size());
@@ -1364,7 +1364,7 @@ void RandomInput::exchangeBoundary()
 				if (nlinks[i - 1] == nlinks[i]) {
 					++counter;
 					if (counter == edist[e + 1] - edist[e]) {
-						if (_eDistribution[info::mpi::MPIrank] <= nlinks[i] && nlinks[i] < _eDistribution[info::mpi::MPIrank + 1]) {
+						if (_eDistribution[info::mpi::rank] <= nlinks[i] && nlinks[i] < _eDistribution[info::mpi::rank + 1]) {
 							emembership[e] = nlinks[i];
 						}
 						break;

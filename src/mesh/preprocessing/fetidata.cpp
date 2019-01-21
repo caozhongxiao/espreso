@@ -447,7 +447,7 @@ void MeshPreprocessing::computeDomainsSurface()
 	std::vector<std::vector<Element*> > fpointer(threads);
 	std::vector<std::vector<size_t> > intervals(threads);
 
-	esint eoffset = _mesh->elements->gatherElementsProcDistribution()[info::mpi::MPIrank];
+	esint eoffset = _mesh->elements->gatherElementsProcDistribution()[info::mpi::rank];
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {

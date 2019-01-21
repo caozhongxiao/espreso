@@ -156,7 +156,7 @@ void MeshPreprocessing::linkNodesAndElements()
 			}
 			size_t i = 0;
 			for (auto rank = ranks->begin(); rank != ranks->end(); ++rank) {
-				if (*rank != info::mpi::MPIrank) {
+				if (*rank != info::mpi::rank) {
 					while (_mesh->neighbours[i] < *rank) ++i;
 					tBuffer[i].insert(tBuffer[i].end(), begin, end);
 				}
@@ -297,11 +297,11 @@ void MeshPreprocessing::exchangeHalo()
 			auto end = elinks->begin();
 			if (ranks->size() > 1) {
 				i = 0;
-				while (begin != elinks->end() && *begin < eDistribution[info::mpi::MPIrank]) ++begin;
+				while (begin != elinks->end() && *begin < eDistribution[info::mpi::rank]) ++begin;
 				end = begin;
-				while (end != elinks->end() && *end < eDistribution[info::mpi::MPIrank + 1]) ++end;
+				while (end != elinks->end() && *end < eDistribution[info::mpi::rank + 1]) ++end;
 				for (auto rank = ranks->begin(); rank != ranks->end(); ++rank) {
-					if (*rank != info::mpi::MPIrank) {
+					if (*rank != info::mpi::rank) {
 						while (_mesh->neighbours[i] < *rank) ++i;
 						telements[i].insert(telements[i].end(), begin, end);
 					}
@@ -341,7 +341,7 @@ void MeshPreprocessing::exchangeHalo()
 
 	TimeEvent e3("EH SBUFFER"); e3.start();
 
-	esint offset = eDistribution[info::mpi::MPIrank];
+	esint offset = eDistribution[info::mpi::rank];
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		const auto &IDs = _mesh->elements->IDs->datatarray();
@@ -528,7 +528,7 @@ void MeshPreprocessing::computeDecomposedDual(std::vector<esint> &dualDist, std:
 	start("computation of local dual graph");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
-	esint eBegin = _mesh->elements->gatherElementsProcDistribution()[info::mpi::MPIrank];
+	esint eBegin = _mesh->elements->gatherElementsProcDistribution()[info::mpi::rank];
 	esint eEnd   = eBegin + _mesh->elements->size;
 
 	std::vector<esint> dDistribution(_mesh->elements->size + 1);
@@ -590,7 +590,7 @@ void MeshPreprocessing::computeRegionsSurface()
 	start("computation of region surface");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
-	esint eBegin = _mesh->elements->gatherElementsProcDistribution()[info::mpi::MPIrank];
+	esint eBegin = _mesh->elements->gatherElementsProcDistribution()[info::mpi::rank];
 	esint eEnd = eBegin + _mesh->elements->size;
 
 	for (size_t r = 0; r < _mesh->elementsRegions.size(); r++) {
@@ -783,7 +783,7 @@ void MeshPreprocessing::computeBoundaryNodes(std::vector<esint> &externalBoundar
 
 	std::vector<std::vector<esint> > external(threads), internal(threads);
 
-	esint eoffset = _mesh->elements->gatherElementsProcDistribution()[info::mpi::MPIrank];
+	esint eoffset = _mesh->elements->gatherElementsProcDistribution()[info::mpi::rank];
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -833,7 +833,7 @@ void MeshPreprocessing::computeBoundaryNodes(std::vector<esint> &externalBoundar
 	for (size_t i = 0; i < externalBoundary.size(); i++) {
 		auto nrank = _mesh->nodes->ranks->cbegin() + externalBoundary[i];
 		for (auto rank = nrank->begin(); rank != nrank->end(); ++rank) {
-			if (*rank != info::mpi::MPIrank) {
+			if (*rank != info::mpi::rank) {
 				sBuffer[n2i(*rank)].push_back(_mesh->nodes->IDs->datatarray()[externalBoundary[i]]);
 			}
 		}
@@ -914,5 +914,5 @@ void MeshPreprocessing::computeRegionArea(BoundaryRegionStore *store)
 		}
 	}
 
-	MPI_Allreduce(&A, &store->area, 1, MPI_DOUBLE, MPI_SUM, info::mpi::MPICommunicator);
+	MPI_Allreduce(&A, &store->area, 1, MPI_DOUBLE, MPI_SUM, info::mpi::comm);
 }

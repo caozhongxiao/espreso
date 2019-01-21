@@ -3,7 +3,7 @@
 #include "globalcomposer.h"
 
 #include "mesh/mesh.h"
-#include "mesh/store/elementstore.h"
+#include "mesh/store/nodestore.h"
 #include "solver/generic/SparseMatrix.h"
 
 using namespace espreso;
@@ -18,19 +18,16 @@ void GlobalComposer::KplusAlfaM(double alfa)
 	data->K[0].MatAddInPlace(data->M[0], 'N', alfa);
 }
 
-void GlobalComposer::applyM(NodeData *y, NodeData *x)
+void GlobalComposer::apply(std::vector<SparseMatrix> &matrices, NodeData *result, NodeData *x)
 {
-
-}
-
-void GlobalComposer::applyOriginalK(NodeData *y, NodeData *x)
-{
-
+	matrices[0].MatVec(x->data, result->data, 'N', 0, 0, 0);
 }
 
 void GlobalComposer::enrichRHS(double alfa, NodeData* a)
 {
-
+	for (size_t i = 0; i < data->f[0].size(); ++i) {
+		data->f[0][i] += alfa * a->data[i];
+	}
 }
 
 void GlobalComposer::RHSMinusR()

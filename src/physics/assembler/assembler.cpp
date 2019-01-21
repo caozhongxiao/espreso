@@ -10,8 +10,14 @@
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
 #include "solver/generic/SparseMatrix.h"
+#include "linearsolver/linearsolver.h"
 
 using namespace espreso;
+
+void Assembler::callsolve(Matrices matrices)
+{
+	_solver->solve(matrices);
+}
 
 //void Assembler::keepK()
 //{
@@ -105,7 +111,7 @@ double Assembler::maxAbsValue(const std::vector<std::vector<double> > &v, const 
 		max = std::max(max, std::fabs(*std::max_element(v[p].begin(), v[p].end(), [] (const double v1, const double v2) { return std::fabs(v1) < std::fabs(v2); })));
 	}
 
-	MPI_Allreduce(&max, &gmax, 1, MPI_DOUBLE, MPI_MAX, info::mpi::MPICommunicator);
+	MPI_Allreduce(&max, &gmax, 1, MPI_DOUBLE, MPI_MAX, info::mpi::comm);
 	return gmax;
 }
 

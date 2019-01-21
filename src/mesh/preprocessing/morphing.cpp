@@ -271,7 +271,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 		size_t prevsize = sPoints.size();
 		for (size_t i = 0; i < region->nintervals.size(); i++) {
-			if (region->nintervals[i].sourceProcess == info::mpi::MPIrank) {
+			if (region->nintervals[i].sourceProcess == info::mpi::rank) {
 				for (auto n = nodes.begin() + region->nintervals[i].begin; n != nodes.begin() + region->nintervals[i].end; ++n) {
 					sPoints.push_back(coordinates[*n]);
 				}
@@ -280,7 +280,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		processMorpher(it->second, dimension, sPoints, prevsize, sDisplacement);
 	}
 
-	if (info::mpi::MPIrank == 0) {
+	if (info::mpi::rank == 0) {
 		if (configuration.external_ffd.path!="") {
 			std::map<std::string, std::vector<Point>> external_data;
 
@@ -319,10 +319,10 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 	start("solving data for morphing '" + name + "'");
 	std::vector<double> wq_values;
 
-	if (info::mpi::MPIrank == 0 ||
+	if (info::mpi::rank == 0 ||
 			(configuration.solver == MORPHING_RBF_SOLVER::ITERATIVE &&
-			 info::mpi::MPIrank < dimension &&
-			 info::mpi::MPIsize >= dimension)) {
+			 info::mpi::rank < dimension &&
+			 info::mpi::size >= dimension)) {
 
 		std::vector<double> M_values;
 		//esint rowsFromCoordinates = rPoints.size();
@@ -339,7 +339,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 			std::vector<double> rhs_values;
 
-			if (info::mpi::MPIrank == 0) {
+			if (info::mpi::rank == 0) {
 
 				rhs_values.resize(M_size*dimension);
 				wq_values.resize(M_size*dimension);
@@ -357,7 +357,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 			std::vector<esint> iterations;
 
-			if (info::mpi::MPIrank == 0 && info::mpi::MPIsize < dimension) {
+			if (info::mpi::rank == 0 && info::mpi::size < dimension) {
 				for(esint d = 0 ; d < dimension; d++) {
 					esint itercount;
 					MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
@@ -368,11 +368,11 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 				}
 			}else {
 
-				if (info::mpi::MPIrank == 0) {
+				if (info::mpi::rank == 0) {
 
 					for(esint d = 1 ; d < dimension; d++) {
 						MPI_Send(&rhs_values[M_size*d], M_size, MPI_DOUBLE,
-									d, 0, info::mpi::MPICommunicator);
+									d, 0, info::mpi::comm);
 					}
 
 				}else{
@@ -381,7 +381,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 					wq_values.resize(M_size);
 
 					MPI_Recv(rhs_values.data(),M_size,
-							MPI_DOUBLE, 0, 0, info::mpi::MPICommunicator, MPI_STATUS_IGNORE);
+							MPI_DOUBLE, 0, 0, info::mpi::comm, MPI_STATUS_IGNORE);
 
 				}
 				esint itercount;
@@ -392,21 +392,21 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 				iterations.push_back(itercount);
 
-				if (info::mpi::MPIrank == 0) {
+				if (info::mpi::rank == 0) {
 
 					for (int d = 1; d < dimension; d++) {
 						MPI_Recv(&wq_values[d*M_size],M_size, MPI_DOUBLE,
-								d, 0, info::mpi::MPICommunicator, MPI_STATUS_IGNORE);
+								d, 0, info::mpi::comm, MPI_STATUS_IGNORE);
 						MPI_Recv(&itercount,1, MPI_INT,
-										d, 0, info::mpi::MPICommunicator, MPI_STATUS_IGNORE);
+										d, 0, info::mpi::comm, MPI_STATUS_IGNORE);
 						iterations.push_back(itercount);
 					}
 
 				}else {
 					MPI_Send(wq_values.data(), M_size, MPI_DOUBLE,
-							0, 0, info::mpi::MPICommunicator);
+							0, 0, info::mpi::comm);
 					MPI_Send(&itercount, 1, MPI_INT,
-								0, 0, info::mpi::MPICommunicator);
+								0, 0, info::mpi::comm);
 				}
 
 			}
@@ -615,7 +615,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 	for (size_t i = 0; i < _mesh->nodes->pintervals.size(); i++) {
 		const auto &origin = _mesh->nodes->originCoordinates->datatarray();
 		const auto &morphed = _mesh->nodes->coordinates->datatarray();
-		if (_mesh->nodes->pintervals[i].sourceProcess == info::mpi::MPIrank) {
+		if (_mesh->nodes->pintervals[i].sourceProcess == info::mpi::rank) {
 			for (esint n = _mesh->nodes->pintervals[i].begin; n < _mesh->nodes->pintervals[i].end; ++n) {
 				_morphing->data[3 * n + 0] = (morphed[n] - origin[n]).x;
 				_morphing->data[3 * n + 1] = (morphed[n] - origin[n]).y;

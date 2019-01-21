@@ -177,8 +177,8 @@ ECFRedParameters ECFReader::_read(
 
 void ECFReader::copyInputData()
 {
-	if (info::mpi::MPIrank) {
-		MPI_Barrier(info::mpi::MPICommunicator);
+	if (info::mpi::rank) {
+		MPI_Barrier(info::mpi::comm);
 		Logging::log.open(Logging::outputRoot() + "/" + Logging::name + ".log", std::ofstream::app);
 		return;
 	} else {
@@ -188,7 +188,7 @@ void ECFReader::copyInputData()
 		if (system(("mkdir -p " + Logging::outputRoot()).c_str())) {
 			ESINFO(ERROR) << "Cannot create output directory\n";
 		}
-		MPI_Barrier(info::mpi::MPICommunicator);
+		MPI_Barrier(info::mpi::comm);
 	}
 
 	Logging::log.open(Logging::outputRoot() + "/" + Logging::name + ".log", std::ofstream::app);
@@ -213,12 +213,12 @@ ECFRedParameters ECFReader::_read(
 		const std::map<std::string, std::string> &variables)
 {
 	ECFRedParameters redParameters;
-	if (info::mpi::MPIrank == 0) {
+	if (info::mpi::rank == 0) {
 		std::ifstream ecffile(file);
 		redParameters.hadValidECF = ecffile.good();
 	}
 	int valid = redParameters.hadValidECF;
-	MPI_Bcast(&valid, 1, MPI_INT, 0, info::mpi::MPICommunicator);
+	MPI_Bcast(&valid, 1, MPI_INT, 0, info::mpi::comm);
 	redParameters.hadValidECF = valid;
 
 	if (!redParameters.hadValidECF) {
@@ -432,7 +432,7 @@ void ECFReader::set(const OutputConfiguration &output)
 	Measure::setLevel(output.measure_level);
 	Logging::path = output.path;
 	Logging::debug = output.log_dir;
-	Logging::rank = info::mpi::MPIrank;
+	Logging::rank = info::mpi::rank;
 	copyInputData();
 }
 

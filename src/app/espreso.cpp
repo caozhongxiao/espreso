@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 
 	ESINFO(OVERVIEW) <<
 			"Starting ESPRESO, " <<
-			"MPI: " << info::mpi::MPIsize << ", "
+			"MPI: " << info::mpi::size << ", "
 			"OMP/MPI: " << info::env::OMP_NUM_THREADS;
 
 	if (ResultStore::isComputeNode()) {

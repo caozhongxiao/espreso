@@ -27,16 +27,16 @@ OpenFOAMCollectiveParser::OpenFOAMCollectiveParser(const char *begin, const char
 	p = begin;
 	while (*p != '(' && p < end) { ++p; };
 	if (p == end) {
-		found = info::mpi::MPIsize;
+		found = info::mpi::size;
 	} else {
-		found = info::mpi::MPIrank;
+		found = info::mpi::rank;
 	}
 
-	MPI_Allreduce(&found, &min, 1, MPI_INT, MPI_MIN, info::mpi::MPICommunicator);
-	if (info::mpi::MPIrank == min) {
+	MPI_Allreduce(&found, &min, 1, MPI_INT, MPI_MIN, info::mpi::comm);
+	if (info::mpi::rank == min) {
 		this->begin = p + 1;
 	}
-	if (info::mpi::MPIrank < min) {
+	if (info::mpi::rank < min) {
 		this->begin = p;
 	}
 
@@ -45,11 +45,11 @@ OpenFOAMCollectiveParser::OpenFOAMCollectiveParser(const char *begin, const char
 	if (p == begin) {
 		found = 0;
 	} else {
-		found = info::mpi::MPIrank;
+		found = info::mpi::rank;
 	}
 
-	MPI_Allreduce(&found, &max, 1, MPI_INT, MPI_MAX, info::mpi::MPICommunicator);
-	if (max <= info::mpi::MPIrank) {
+	MPI_Allreduce(&found, &max, 1, MPI_INT, MPI_MAX, info::mpi::comm);
+	if (max <= info::mpi::rank) {
 		this->end = p;
 	}
 }

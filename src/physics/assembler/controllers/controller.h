@@ -10,10 +10,8 @@
 
 namespace espreso {
 
-enum class MatrixType;
 struct SolverParameters;
 struct Point;
-class Mesh;
 class ECFExpression;
 class ECFExpressionVector;
 enum Matrices: int;
@@ -21,7 +19,6 @@ struct NodeData;
 enum EvaluatorParameters: int;
 template <typename TEBoundaries, typename TEData> class serializededata;
 template <typename TEData> class tarray;
-class ElementsRegionStore;
 
 class Controler
 {
@@ -77,6 +74,7 @@ protected:
 			esint csize, double *cbegin, double *tbegin, double time,
 			EvaluatorParameters updatedParams = static_cast<EvaluatorParameters>(0));
 
+	void initDirichletData(tarray<double> &initData);
 	void averageNodeInitilization(tarray<double> &initData, std::vector<double> &averagedData);
 	void nodeValuesToElements(int dimension, tarray<double> &nodeData, std::vector<double> &elementData);
 

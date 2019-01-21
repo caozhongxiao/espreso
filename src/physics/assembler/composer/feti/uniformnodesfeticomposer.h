@@ -13,7 +13,7 @@ public:
 	: FETIComposer(controler, provider, configuration), _DOFs(DOFs) {}
 
 	void initDOFs();
-	void initDirichlet();
+	void buildDirichlet();
 	void buildPatterns();
 
 	void assemble(Matrices matrices, const SolverParameters &parameters);
@@ -27,6 +27,9 @@ protected:
 	void buildKPattern();
 	void buildB1Pattern();
 	void updateDuplicity();
+
+	void divide(NodeData *in, std::vector<std::vector<double> > &out);
+	void gather(NodeData *out, std::vector<std::vector<double> > &in);
 
 	esint _DOFs;
 };

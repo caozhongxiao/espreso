@@ -22,7 +22,6 @@ public:
 
 protected:
 	HeatTransferControler(HeatTransferLoadStepConfiguration &configuration)
-
 	: Controler(),
 	  _configuration(configuration),
 	  _temperature(NULL), _phaseChange(NULL), _latentHeat(NULL), _avgThickness(NULL),

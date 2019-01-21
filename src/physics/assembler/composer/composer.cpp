@@ -9,6 +9,7 @@
 
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
+#include "mesh/store/nodestore.h"
 #include "solver/generic/SparseMatrix.h"
 
 
@@ -92,14 +93,26 @@ void Composer::clearMatrices(Matrices matrices, esint domain)
 void Composer::keepK()
 {
 	#pragma omp parallel for
-	for (esint d = 0; d < info::mesh->elements->ndomains; d++) {
+	for (size_t d = 0; d < data->K.size(); d++) {
 		data->origK[d] = data->K[d];
 	}
 }
 
+void Composer::applyOriginalK(NodeData *result, NodeData *x)
+{
+	apply(data->origK, result, x);
+}
+
+void Composer::applyM(NodeData *result, NodeData *x)
+{
+	apply(data->M, result, x);
+}
+
 void Composer::sum(NodeData *z, double alfa, NodeData* a, double beta, NodeData *b)
 {
-
+	for (size_t i = 0; i < z->data.size(); i++) {
+		z->data[i] = alfa * a->data[i] + beta * b->data[i];
+	}
 }
 
 double Composer::multiply(NodeData *x, NodeData* y)

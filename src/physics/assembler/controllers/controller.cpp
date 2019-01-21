@@ -1,14 +1,15 @@
 
-#include "config/holders/expression.h"
-#include "esinfo/meshinfo.h"
 #include "controller.h"
 
+#include "config/holders/expression.h"
+
+#include "esinfo/meshinfo.h"
+#include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
 
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
 #include "basis/evaluator/evaluator.h"
-#include "mesh/mesh.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/elementsregionstore.h"
@@ -143,8 +144,35 @@ void Controler::updateBRegions(
 	}
 }
 
+void Controler::initDirichletData(tarray<double> &initData)
+{
+	std::vector<std::vector<esint> > indices;
+	std::vector<double> values;
+	dirichletIndices(indices);
+	dirichletValues(values);
+
+	auto nbegin = info::mesh->elements->procNodes->begin()->begin();
+	std::vector<esint> edist = info::mesh->elements->gatherElementsProcDistribution();
+	for (size_t d = 0, vindex = 0; d < indices.size(); d++) {
+		for (size_t i = 0; i < indices[d].size(); i++, vindex++) {
+			auto elems = info::mesh->nodes->elements->begin() + indices[d][i];
+			for (auto e = elems->begin(); e != elems->end(); ++e) {
+				if (edist[info::mpi::rank] <= *e && *e < edist[info::mpi::rank + 1]) {
+					auto nodes = info::mesh->elements->procNodes->begin() + (*e - edist[info::mpi::rank]);
+					for (auto n = nodes->begin(); n != nodes->end(); ++n) {
+						if (*n == indices[d][i]) {
+							initData[indices.size() * (n - nbegin) + d] = values[vindex];
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 void Controler::averageNodeInitilization(tarray<double> &initData, std::vector<double> &averagedData)
 {
+	std::fill(averagedData.begin(), averagedData.end(), 0);
 	auto i = initData.begin();
 	for (auto n = info::mesh->elements->procNodes->datatarray().cbegin(); n != info::mesh->elements->procNodes->datatarray().cend(); ++n, ++i) {
 		averagedData[*n] += *i;

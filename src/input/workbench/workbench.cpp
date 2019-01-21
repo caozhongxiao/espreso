@@ -59,7 +59,7 @@ WorkbenchLoader::WorkbenchLoader(const InputConfiguration &configuration, Mesh &
 		std::fill(meshData.material.begin(), meshData.material.end(), 0);
 	}
 
-	if (info::mpi::MPIsize > 1) {
+	if (info::mpi::size > 1) {
 		RandomInput::buildMesh(meshData, mesh);
 	} else {
 		SequentialInput::buildMesh(meshData, mesh);
@@ -102,7 +102,7 @@ void WorkbenchLoader::readData()
 	MPILoader::scatter(loaders.within, _pfile);
 	MPILoader::align(MPITools::procs(), _pfile, MAX_LINE_STEP);
 
-	WorkbenchParser::offset = _pfile.offsets[info::mpi::MPIrank];
+	WorkbenchParser::offset = _pfile.offsets[info::mpi::rank];
 	WorkbenchParser::begin = _pfile.begin;
 	WorkbenchParser::end = _pfile.end;
 
@@ -266,10 +266,10 @@ void WorkbenchLoader::prepareData()
 	for (size_t i = 0; i < _EBlocks.size(); i++) {
 		_EBlocks[i].fixOffsets(_pfile.offsets);
 		if (_pfile.begin != WorkbenchParser::begin) {
-			_pfile.offsets[info::mpi::MPIrank] += _pfile.begin - WorkbenchParser::begin;
+			_pfile.offsets[info::mpi::rank] += _pfile.begin - WorkbenchParser::begin;
 		}
 		if (_pfile.end != WorkbenchParser::end) {
-			_pfile.offsets[info::mpi::MPIrank + 1] += _pfile.end - WorkbenchParser::end;
+			_pfile.offsets[info::mpi::rank + 1] += _pfile.end - WorkbenchParser::end;
 		}
 		_pfile.begin = WorkbenchParser::begin;
 		_pfile.end = WorkbenchParser::end;

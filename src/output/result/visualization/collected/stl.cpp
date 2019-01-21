@@ -30,12 +30,12 @@ void STL::updateMesh()
 
 	int size, gsize;
 	size = _mesh.surface->triangles->structures();
-	MPI_Reduce(&size, &gsize, 1, MPI_INT, MPI_SUM, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&size, &gsize, 1, MPI_INT, MPI_SUM, 0, info::mpi::comm);
 
 	std::stringstream os;
 	os << std::showpos << std::scientific << std::setprecision(5);
 
-	if (info::mpi::MPIrank == 0) {
+	if (info::mpi::rank == 0) {
 		_writer.storeHeader(os, "surface");
 		_writer.storeSize(os, gsize);
 	}
@@ -57,7 +57,7 @@ void STL::updateMesh()
 
 	pushInterval(os.str().size());
 
-	if (info::mpi::MPIrank + 1 == info::mpi::MPIsize) {
+	if (info::mpi::rank + 1 == info::mpi::size) {
 		_writer.storeFooter(os, "surface");
 	}
 

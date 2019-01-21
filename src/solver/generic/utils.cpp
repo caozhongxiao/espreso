@@ -242,7 +242,7 @@ void GetProcessMemoryStat_u ( ) {
 	}
 	fclose(file);
 
-	ESLOG(MEMORY) << " - Memory used by process " << info::mpi::MPIrank << " : " << result / 1024.0 << " MB";
+	ESLOG(MEMORY) << " - Memory used by process " << info::mpi::rank << " : " << result / 1024.0 << " MB";
 
 
 #endif

@@ -1,16 +1,15 @@
 
-#include "physics/assembler/dataholder.h"
 #include "linear.h"
-#include "physics/solver/loadstep/loadstepsolver.h"
-
+#include "physics/assembler/dataholder.h"
 #include "physics/assembler/assembler.h"
+#include "physics/solver/loadstep/loadstepsolver.h"
 
 #include "linearsolver/linearsolver.h"
 
 using namespace espreso;
 
-LinearTimeStep::LinearTimeStep(Assembler &assembler, LinearSolver &solver)
-: TimeStepSolver(assembler, solver)
+LinearTimeStep::LinearTimeStep(Assembler &assembler)
+: TimeStepSolver(assembler)
 {
 
 }
@@ -22,8 +21,7 @@ std::string LinearTimeStep::name()
 
 void LinearTimeStep::solve(LoadStepSolver &loadStepSolver)
 {
-	_solver.solve(loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::Dirichlet));
-	_assembler.postProcess();
+	_assembler.solve(loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f | Matrices::Dirichlet));
 }
 
 

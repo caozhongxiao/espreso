@@ -69,10 +69,10 @@ void EBlock::fixOffsets(std::vector<size_t> &dataOffsets)
 {
 	if (Solkey) {
 		esint nodes;
-		if (fRank == info::mpi::MPIrank) {
+		if (fRank == info::mpi::rank) {
 			nodes = std::stoi(Parser::split(Parser::getLine(begin + first - offset), " ")[9]);
 		}
-		MPI_Bcast(&nodes, sizeof(esint), MPI_BYTE, fRank, info::mpi::MPICommunicator);
+		MPI_Bcast(&nodes, sizeof(esint), MPI_BYTE, fRank, info::mpi::comm);
 
 		int size1 = lineSize; // first line
 		int size2 = 0;
@@ -83,10 +83,10 @@ void EBlock::fixOffsets(std::vector<size_t> &dataOffsets)
 			for (int rank = fRank + 1; rank <= lRank; rank++) {
 				if ((dataOffsets[rank] - first) % (size1 + size2) != 0) {
 					dataOffsets[rank] += size2;
-					if (rank - 1 == info::mpi::MPIrank) {
+					if (rank - 1 == info::mpi::rank) {
 						end += size2;
 					}
-					if (rank == info::mpi::MPIrank) {
+					if (rank == info::mpi::rank) {
 						begin += size2;
 						offset += size2;
 					}
@@ -96,8 +96,8 @@ void EBlock::fixOffsets(std::vector<size_t> &dataOffsets)
 		if (nodes < 8) {
 			valueSize = valueSize - 8 + nodes;
 			lineSize = valueSize * valueLength + lineEndSize;
-			MPI_Bcast(&valueSize, sizeof(esint), MPI_BYTE, fRank, info::mpi::MPICommunicator);
-			MPI_Bcast(&lineSize, sizeof(esint), MPI_BYTE, fRank, info::mpi::MPICommunicator);
+			MPI_Bcast(&valueSize, sizeof(esint), MPI_BYTE, fRank, info::mpi::comm);
+			MPI_Bcast(&lineSize, sizeof(esint), MPI_BYTE, fRank, info::mpi::comm);
 			size1 = elementSize = lineSize;
 		}
 		if (NDSEL == -1) {
@@ -105,7 +105,7 @@ void EBlock::fixOffsets(std::vector<size_t> &dataOffsets)
 		}
 		elementSize = size1 + size2;
 	} else {
-		if (fRank == info::mpi::MPIrank) {
+		if (fRank == info::mpi::rank) {
 			const char *first = getFirst();
 			const char *next = first;
 			while (*next++ != '\n');
@@ -114,8 +114,8 @@ void EBlock::fixOffsets(std::vector<size_t> &dataOffsets)
 				lineSize = valueSize * valueLength + lineEndSize;
 			}
 		}
-		MPI_Bcast(&valueSize, sizeof(esint), MPI_BYTE, fRank, info::mpi::MPICommunicator);
-		MPI_Bcast(&lineSize, sizeof(esint), MPI_BYTE, fRank, info::mpi::MPICommunicator);
+		MPI_Bcast(&valueSize, sizeof(esint), MPI_BYTE, fRank, info::mpi::comm);
+		MPI_Bcast(&lineSize, sizeof(esint), MPI_BYTE, fRank, info::mpi::comm);
 		elementSize = lineSize;
 	}
 }

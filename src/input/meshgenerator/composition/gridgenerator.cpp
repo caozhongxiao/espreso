@@ -57,7 +57,7 @@ void GridGenerator::init()
 					continue;
 				}
 
-				if (cluster++ == info::mpi::MPIrank) {
+				if (cluster++ == info::mpi::rank) {
 					_clusterOffset = offset;
 					Triple<int> start = _settings.start;
 					_settings.start = start + ((_settings.end - start) / (Triple<double>)_settings.clusters * offset).round();
@@ -66,8 +66,8 @@ void GridGenerator::init()
 			}
 		}
 	}
-	if (cluster != info::mpi::MPIsize) {
-		ESINFO(GLOBAL_ERROR) << "Incorrect number of MPI processes (" << info::mpi::MPIsize << "). Should be " << cluster;
+	if (cluster != info::mpi::size) {
+		ESINFO(GLOBAL_ERROR) << "Incorrect number of MPI processes (" << info::mpi::size << "). Should be " << cluster;
 	}
 }
 

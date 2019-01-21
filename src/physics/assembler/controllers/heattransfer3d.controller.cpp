@@ -9,7 +9,6 @@
 
 #include "basis/containers/serializededata.h"
 #include "basis/evaluator/evaluator.h"
-#include "config/ecf/root.h"
 
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
@@ -82,6 +81,9 @@ void HeatTransfer3DControler::initData()
 	updateERegions(_configuration.heat_source, _nheat.data->datatarray(), 3, cbegin, tbegin, time);
 	updateERegions(_configuration.translation_motions, _nmotion.data->datatarray(), 3, cbegin, tbegin, time);
 
+	if (info::ecf->heat_transfer_2d.init_temp_respect_bc) {
+		initDirichletData(_ntemperature.data->datatarray());
+	}
 	averageNodeInitilization(_ntemperature.data->datatarray(), _temperature->data);
 
 	if (_motion != NULL) {

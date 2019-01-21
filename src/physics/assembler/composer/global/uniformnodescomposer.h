@@ -13,7 +13,7 @@ public:
 	: GlobalComposer(controler, provider), _DOFs(DOFs) {}
 
 	void initDOFs();
-	void initDirichlet();
+	void buildDirichlet();
 	void buildPatterns();
 
 	void assemble(Matrices matrices, const SolverParameters &parameters);

@@ -44,7 +44,7 @@ void UniformNodesComposer::initDOFs()
 		std::vector<esint> troffset(info::mesh->neighbours.size());
 
 		for (size_t n = info::mesh->nodes->distribution[t]; n < info::mesh->nodes->distribution[t + 1]; ++n, ++ranks) {
-			if (ranks->front() == info::mpi::MPIrank) {
+			if (ranks->front() == info::mpi::rank) {
 				dsize += _DOFs;
 			} else {
 				esint noffset = 0;
@@ -73,7 +73,7 @@ void UniformNodesComposer::initDOFs()
 		std::vector<std::vector<esint> > tBuffer(info::mesh->neighbours.size());
 
 		for (size_t n = info::mesh->nodes->distribution[t]; n < info::mesh->nodes->distribution[t + 1]; ++n, ++ranks) {
-			if (ranks->front() == info::mpi::MPIrank) {
+			if (ranks->front() == info::mpi::rank) {
 				esint noffset = 0;
 				for (auto r = ranks->begin() + 1; r != ranks->end(); ++r) {
 					while (info::mesh->neighbours[noffset] < *r) {
@@ -110,7 +110,7 @@ void UniformNodesComposer::initDOFs()
 		}
 
 		for (size_t n = info::mesh->nodes->distribution[t]; n < info::mesh->nodes->distribution[t + 1]; ++n, ++ranks) {
-			if (ranks->front() == info::mpi::MPIrank) {
+			if (ranks->front() == info::mpi::rank) {
 				for (int dof = 0; dof < _DOFs; ++dof) {
 					tdata.push_back(goffset + toffset++);
 				}
@@ -136,7 +136,7 @@ void UniformNodesComposer::initDOFs()
 	_DOFMap = new serializededata<esint, esint>(DOFDistribution, DOFData);
 }
 
-void UniformNodesComposer::initDirichlet()
+void UniformNodesComposer::buildDirichlet()
 {
 	std::vector<std::vector<esint> > dIndices;
 	_controler.dirichletIndices(dIndices);
@@ -258,7 +258,7 @@ void UniformNodesComposer::buildPatterns()
 
 	auto iK = pK.begin();
 	auto iRHS = pRHS.begin();
-	for (size_t n = 0; n < info::mesh->neighbours.size() && info::mesh->neighbours[n] < info::mpi::MPIrank; ++n) {
+	for (size_t n = 0; n < info::mesh->neighbours.size() && info::mesh->neighbours[n] < info::mpi::rank; ++n) {
 		while (KPattern[*iK].row < _nDistribution[info::mesh->neighbours[n] + 1]) {
 			if (iK == pK.begin() || KPattern[*iK] != KPattern[*(iK - 1)]) {
 				sKBuffer[n].push_back(KPattern[*iK]);
@@ -375,7 +375,7 @@ void UniformNodesComposer::assemble(Matrices matrices, const SolverParameters &p
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		size_t KIndex = _tKOffsets[t], RHSIndex = _tRHSOffsets[t];
-		double KReduction = 1, RHSReduction = 1; //_step.internalForceReduction;
+		double KReduction = parameters.timeIntegrationConstantK, RHSReduction = parameters.internalForceReduction;
 		Controler::InstanceFiller filler;
 
 		switch (mtype) {
@@ -431,6 +431,8 @@ void UniformNodesComposer::assemble(Matrices matrices, const SolverParameters &p
 		_controler.processElements(matrices, parameters, filler);
 
 		KReduction = parameters.internalForceReduction;
+		filler.Me.resize(0, 0);
+		filler.Re.resize(0, 0);
 
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
 			if (info::mesh->boundaryRegions[r]->distribution.size()) {
@@ -628,7 +630,7 @@ void UniformNodesComposer::synchronize()
 
 	auto nranks = info::mesh->nodes->ranks->begin();
 	auto DOFs = _DOFMap->begin();
-	for (esint n = 0; n < info::mesh->nodes->size && DOFs->front() < _nDistribution[info::mpi::MPIrank]; ++n, ++nranks, ++DOFs) {
+	for (esint n = 0; n < info::mesh->nodes->size && DOFs->front() < _nDistribution[info::mpi::rank]; ++n, ++nranks, ++DOFs) {
 		esint r = 0;
 		while (info::mesh->neighbours[r] < nranks->front()) {
 			++r;
@@ -641,7 +643,7 @@ void UniformNodesComposer::synchronize()
 
 	nranks = info::mesh->nodes->ranks->begin();
 	DOFs = _DOFMap->begin();
-	for (esint n = 0; n < info::mesh->nodes->size && DOFs->front() < _nDistribution[info::mpi::MPIrank]; ++n, ++nranks, ++DOFs) {
+	for (esint n = 0; n < info::mesh->nodes->size && DOFs->front() < _nDistribution[info::mpi::rank]; ++n, ++nranks, ++DOFs) {
 		esint r = 0;
 		while (info::mesh->neighbours[r] < nranks->front()) {
 			++r;
@@ -677,7 +679,7 @@ void UniformNodesComposer::fillSolution()
 
 	size_t RHSIndex = _localRHSOffset;
 	for (size_t n = 0; n < info::mesh->neighbours.size(); ++n) {
-		if (info::mesh->neighbours[n] < info::mpi::MPIrank) {
+		if (info::mesh->neighbours[n] < info::mpi::rank) {
 			rBuffer[n].resize(_nRHSSize[n]);
 		} else {
 			sBuffer[n].reserve(_nRHSSize[n]);
@@ -694,7 +696,7 @@ void UniformNodesComposer::fillSolution()
 	std::vector<esint> rIndices(info::mesh->neighbours.size());
 	auto nranks = info::mesh->nodes->ranks->begin();
 	auto DOFs = _DOFMap->begin();
-	for (esint n = 0; n < info::mesh->nodes->size && DOFs->front() < _nDistribution[info::mpi::MPIrank]; ++n, ++nranks, ++DOFs) {
+	for (esint n = 0; n < info::mesh->nodes->size && DOFs->front() < _nDistribution[info::mpi::rank]; ++n, ++nranks, ++DOFs) {
 		esint r = 0;
 		while (info::mesh->neighbours[r] < nranks->front()) {
 			++r;

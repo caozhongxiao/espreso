@@ -8,14 +8,13 @@ namespace espreso {
 
 class LoadStepSolver;
 class Assembler;
-class LinearSolver;
 
 class TimeStepSolver {
 
 	friend class LoadStepSolver;
 
 public:
-	TimeStepSolver(Assembler &assembler, LinearSolver &solver): _assembler(assembler), _solver(solver) {}
+	TimeStepSolver(Assembler &assembler): _assembler(assembler) {}
 	virtual ~TimeStepSolver() {}
 
 	virtual void solve(LoadStepSolver &loadStepSolver) =0;
@@ -23,7 +22,6 @@ public:
 
 protected:
 	Assembler &_assembler;
-	LinearSolver &_solver;
 };
 
 }

@@ -169,7 +169,7 @@ void SortedInput::fillCoordinates()
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
 
-	if (info::mpi::MPIsize == 1) {
+	if (info::mpi::size == 1) {
 		std::vector<std::vector<Point> > tcoordinates(threads);
 		std::vector<std::vector<esint> > nIDs(threads), rData(threads);
 
@@ -194,7 +194,7 @@ void SortedInput::fillCoordinates()
 		_mesh.boundaryRegions.push_back(new BoundaryRegionStore("ALL_NODES", _mesh._eclasses));
 		_mesh.boundaryRegions.back()->nodes = new serializededata<esint, esint>(1, rData);
 
-		_mesh.neighboursWithMe.push_back(info::mpi::MPIrank);
+		_mesh.neighboursWithMe.push_back(info::mpi::rank);
 		return;
 	}
 
@@ -218,9 +218,9 @@ void SortedInput::fillCoordinates()
 
 	std::vector<std::vector<esint> > sBuffer;
 	std::vector<int> sRanks;
-	std::vector<int> ssize(info::mpi::MPIsize), rsize(info::mpi::MPIsize);
+	std::vector<int> ssize(info::mpi::size), rsize(info::mpi::size);
 
-	for (int t = 0; t < info::mpi::MPIsize; t++) {
+	for (int t = 0; t < info::mpi::size; t++) {
 		auto begin = std::lower_bound(nodes[0].begin(), nodes[0].end(), _nDistribution[t]);
 		auto end = std::lower_bound(nodes[0].begin(), nodes[0].end(), _nDistribution[t + 1]);
 		if (end - begin) {
@@ -238,12 +238,12 @@ void SortedInput::fillCoordinates()
 
 	TimeEvent ee2("FCXX GET RBUFFER SIZES"); ee2.start();
 
-	MPI_Alltoall(ssize.data(), 1, MPI_INT, rsize.data(), 1, MPI_INT, info::mpi::MPICommunicator);
+	MPI_Alltoall(ssize.data(), 1, MPI_INT, rsize.data(), 1, MPI_INT, info::mpi::comm);
 
 	ee2.end(); timing.addEvent(ee2);
 
 	size_t rrsize = 0;
-	for (int t = 0; t < info::mpi::MPIsize; t++) {
+	for (int t = 0; t < info::mpi::size; t++) {
 		rrsize += rsize[t];
 	}
 	rrIDs.resize(rrsize);
@@ -264,18 +264,18 @@ void SortedInput::fillCoordinates()
 	}
 	avgsize /= nneighs;
 
-	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_SUM, 0, info::mpi::MPICommunicator);
-	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_SUM, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_SUM, 0, info::mpi::comm);
+	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_SUM, 0, info::mpi::comm);
 
-	ESINFO(PROGRESS1) << "FC AVGNEIGHS: " << (double)avgneighs / info::mpi::MPIsize << ", AVGSIZE: " << allavgsize / info::mpi::MPIsize;
+	ESINFO(PROGRESS1) << "FC AVGNEIGHS: " << (double)avgneighs / info::mpi::size << ", AVGSIZE: " << allavgsize / info::mpi::size;
 
-	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MIN, 0, info::mpi::MPICommunicator);
-	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MIN, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MIN, 0, info::mpi::comm);
+	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MIN, 0, info::mpi::comm);
 
 	ESINFO(PROGRESS1) << "FC MINNEIGHS: " << avgneighs << ", MINSIZE: " << allavgsize;
 
-	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MAX, 0, info::mpi::MPICommunicator);
-	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MAX, 0, info::mpi::MPICommunicator);
+	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MAX, 0, info::mpi::comm);
+	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MAX, 0, info::mpi::comm);
 
 	ESINFO(PROGRESS1) << "FC MAXNEIGHS: " << avgneighs << ", MAXSIZE: " << allavgsize;
 
@@ -309,13 +309,13 @@ void SortedInput::fillCoordinates()
 		std::vector<std::vector<esint>::const_iterator> rPointer(_targetRanks.size());
 
 		for (size_t r = 0; r < _targetRanks.size(); r++) {
-			rPointer[r] = std::lower_bound(_rankNodeMap[r].begin(), _rankNodeMap[r].end(), _nDistribution[info::mpi::MPIrank] + ndistribution[t]);
+			rPointer[r] = std::lower_bound(_rankNodeMap[r].begin(), _rankNodeMap[r].end(), _nDistribution[info::mpi::rank] + ndistribution[t]);
 		}
 		for (esint n = ndistribution[t]; n < ndistribution[t + 1]; ++n) {
 			ranks.clear();
 			ranksOffset.clear();
 			for (size_t r = 0; r < _targetRanks.size(); r++) {
-				if (rPointer[r] != _rankNodeMap[r].end() && *rPointer[r] == _nDistribution[info::mpi::MPIrank] + n) {
+				if (rPointer[r] != _rankNodeMap[r].end() && *rPointer[r] == _nDistribution[info::mpi::rank] + n) {
 					ranksOffset.push_back(r);
 					ranks.push_back(_targetRanks[r]);
 					++rPointer[r];
@@ -352,7 +352,7 @@ void SortedInput::fillCoordinates()
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			for (size_t n = rdistribution[t]; n < rdistribution[t + 1]; ++n) {
-				backedCoordinates[r][n] = _meshData.coordinates[_rankNodeMap[r][n] - _nDistribution[info::mpi::MPIrank]];
+				backedCoordinates[r][n] = _meshData.coordinates[_rankNodeMap[r][n] - _nDistribution[info::mpi::rank]];
 			}
 		}
 	}
@@ -451,7 +451,7 @@ void SortedInput::fillCoordinates()
 	Esutils::sortAndRemoveDuplicity(_mesh.neighboursWithMe);
 
 	for (size_t n = 0; n < _mesh.neighboursWithMe.size(); n++) {
-		if (_mesh.neighboursWithMe[n] != info::mpi::MPIrank) {
+		if (_mesh.neighboursWithMe[n] != info::mpi::rank) {
 			_mesh.neighbours.push_back(_mesh.neighboursWithMe[n]);
 		}
 	}
@@ -482,7 +482,7 @@ void SortedInput::addNodeRegions()
 		std::vector<std::vector<esint> > sBuffer, rBuffer;
 		std::vector<int> sRanks, tRanks;
 
-		for (int t = 0; t < info::mpi::MPIsize; t++) {
+		for (int t = 0; t < info::mpi::size; t++) {
 			auto begin = std::lower_bound(nregion->second.begin(), nregion->second.end(), _nDistribution[t]);
 			auto end = std::lower_bound(nregion->second.begin(), nregion->second.end(), _nDistribution[t + 1]);
 			if (end - begin) {
