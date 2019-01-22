@@ -236,11 +236,6 @@ void UniformNodesComposer::buildPatterns()
 		}
 	}
 
-//	for (size_t i = 0; i < KPattern.size(); i++) {
-//		printf("[%d,%d] ", KPattern[i].row, KPattern[i].column);
-//	}
-//	printf("\n");
-
 	std::vector<esint> pK(KPattern.size());
 	std::iota(pK.begin(), pK.end(), 0);
 	std::sort(pK.begin(), pK.end(), [&] (esint i, esint j) {
@@ -303,11 +298,6 @@ void UniformNodesComposer::buildPatterns()
 		return RHSPattern[i] < RHSPattern[j];
 	});
 
-//	for (size_t i = 0; i < KPattern.size(); i++) {
-//		std::cout << KPattern[i].row << ":" << KPattern[i].column << "\n";
-//	}
-//	std::cout << RHSPattern;
-
 	_KPermutation.resize(KPattern.size());
 	_RHSPermutation.resize(RHSPattern.size());
 	data->K.resize(1);
@@ -318,7 +308,7 @@ void UniformNodesComposer::buildPatterns()
 	data->primalSolution.resize(1);
 	data->K.front().haloRows = (info::mesh->nodes->size - info::mesh->nodes->uniqueSize) * _DOFs;
 	data->K.front().rows = info::mesh->nodes->size * _DOFs;
-	data->K.front().cols = info::mesh->nodes->uniqueTotalSize * _DOFs;
+//	data->K.front().cols = info::mesh->nodes->uniqueTotalSize * _DOFs;
 	data->f.front().resize(info::mesh->nodes->size * _DOFs);
 	data->R.front().resize(info::mesh->nodes->size * _DOFs);
 	data->primalSolution.front().resize(info::mesh->nodes->size * _DOFs);
@@ -332,10 +322,14 @@ void UniformNodesComposer::buildPatterns()
 	COL.push_back(KPattern[pK.front()].column + 1);
 	_KPermutation[pK.front()] = 0;
 	_RHSPermutation[pRHS.front()] = 0;
+	esint maxcol = 0;
 	for (size_t i = 1, nonzeros = 0; i < pK.size(); i++) {
 		if (KPattern[pK[i]] != KPattern[pK[i - 1]]) {
 			++nonzeros;
 			COL.push_back(KPattern[pK[i]].column + 1);
+			if (maxcol < KPattern[pK[i]].column) {
+				maxcol = KPattern[pK[i]].column;
+			}
 			if (KPattern[pK[i - 1]].row != KPattern[pK[i]].row) {
 				ROW.push_back(nonzeros + 1);
 			}
@@ -351,6 +345,7 @@ void UniformNodesComposer::buildPatterns()
 	ROW.push_back(COL.size() + 1);
 	VAL.resize(COL.size());
 
+	data->K.front().cols = maxcol + 1;
 	data->K.front().nnz = COL.size();
 	data->K.front().mtype = mtype;
 	switch (mtype) {
@@ -454,174 +449,26 @@ void UniformNodesComposer::setDirichlet()
 	std::vector<double> values(_dirichletMap.size());
 	_controler.dirichletValues(values);
 
-//	std::vector<esint> RROW;
-//	for (size_t r = 0; r < data->K.front().CSR_I_row_indices.size() - 1; r++) {
-//		RROW.insert(RROW.end(), data->K.front().CSR_I_row_indices[r + 1] - data->K.front().CSR_I_row_indices[r], _DOFMap->datatarray()[r] + 1);
-//	}
-//
-//	int rank = 3;
-//
-//	Communication::serialize([&] () {
-//		if (info::mpi::MPIrank != rank) {
-//			return;
-//		}
-//		printf(" // %d \\\\ \n", info::mpi::MPIrank);
-//		for (size_t i = 0; i < _dirichletMap.size(); i++) {
-//			printf("%d ", _DOFMap->datatarray()[_dirichletMap[i]] + 1);
-//		}
-//		printf("\n");
-//
-//		for (size_t i = 0; i < _DOFMap->datatarray().size(); i++) {
-//			printf("%d ", _DOFMap->datatarray()[i] + 1);
-//		}
-//		printf("\n");
-//
-//		for (esint r = 0, i = 0, f = 0; r < info::mesh->nodes->uniqueTotalSize; r++) {
-//			for (esint c = 0; c < info::mesh->nodes->uniqueTotalSize; c++) {
-//				if (i < RROW.size() && RROW[i] == r + 1 && COL[i] == c + 1) {
-//					if (VAL[i] > -0.00001) {
-//						if (std::fabs(VAL[i]) > 10) {
-//							printf(" %3.1f ", VAL[i++]);
-//						} else {
-//							printf(" %3.2f ", VAL[i++]);
-//						}
-//					} else {
-//						if (std::fabs(VAL[i]) > 10) {
-//							printf("%3.1f ", VAL[i++]);
-//						} else {
-//							printf("%3.2f ", VAL[i++]);
-//						}
-//					}
-//				} else {
-//					printf("      ");
-//				}
-//			}
-//			if (f < _DOFMap->datatarray().size() && _DOFMap->datatarray()[f] == r) {
-//				printf(" = %3.2f\n", RHS[f++]);
-//			} else {
-//				printf(" =\n");
-//			}
-//		}
-//		printf("------------------\n");
-//	});
-//
-//	Communication::serialize([&] () {
-//		std::cout << data->K.front();
-//		std::cout << data->f.front();
-//
-//		for (size_t i = 0; i < _dirichletMap.size(); i++) {
-//			std::cout << _dirichletMap[i] + 1 << " ";
-//		}
-//		std::cout << "\n";
-//	});
-
 	for (size_t i = 0; i < _dirichletMap.size(); ++i) {
 		RHS[_dirichletMap[i]] = values[_dirichletPermutation[i]];
-//		if (info::mpi::MPIrank == rank) {
-//			std::cout << "RHS[" << _DOFMap->datatarray()[_dirichletMap[i]] + 1 << "] = " << values[_dirichletPermutation[i]] << "\n";
-//		}
 		esint col = _DOFMap->datatarray()[_dirichletMap[i]] + 1;
 		for (esint j = ROW[_dirichletMap[i]]; j < ROW[_dirichletMap[i] + 1]; j++) {
 			if (COL[j - 1] == col) {
-//				if (info::mpi::MPIrank == rank) {
-//					std::cout << "[" << _DOFMap->datatarray()[_dirichletMap[i]] + 1 << ":" << COL[j - 1] << "] = 1\n";
-//				}
 				VAL[j - 1] = 1;
 			} else {
-//				if (info::mpi::MPIrank == rank) {
-//					std::cout << "[" << _DOFMap->datatarray()[_dirichletMap[i]] + 1 << ":" << COL[j - 1] << "] = 0\n";
-//				}
 				VAL[j - 1] = 0;
 				size_t r = std::lower_bound(_DOFMap->datatarray().begin(), _DOFMap->datatarray().end(), COL[j - 1] - 1) - _DOFMap->datatarray().begin();
 				if (r < _DOFMap->datatarray().size() && _DOFMap->datatarray()[r] == COL[j - 1] - 1) {
-//					if (info::mpi::MPIrank == rank) {
-//						std::cout << COL[j - 1] << " into " << r << "\n";
-//					}
 					for (esint c = ROW[r]; c < ROW[r + 1]; c++) {
 						if (COL[c - 1] == col) {
-//							if (info::mpi::MPIrank == rank) {
-//								std::cout << "[" << _DOFMap->datatarray()[r] + 1 << ":" << COL[c - 1] << "] = 0; RHS[" << _DOFMap->datatarray()[r] + 1 << "] -= " << VAL[c - 1] << " * " << RHS[_dirichletMap[i]] << "\n";
-//							}
 							RHS[r] -= VAL[c - 1] * RHS[_dirichletMap[i]];
 							VAL[c - 1] = 0;
 						}
 					}
 				}
 			}
-
-//			if (info::mpi::MPIrank == rank) {
-//				for (esint r = 0, i = 0, f = 0; r < info::mesh->nodes->uniqueTotalSize; r++) {
-//					for (esint c = 0; c < info::mesh->nodes->uniqueTotalSize; c++) {
-//						if (i < RROW.size() && RROW[i] == r + 1 && COL[i] == c + 1) {
-//							if (VAL[i] > -0.00001) {
-//								if (std::fabs(VAL[i]) > 10) {
-//									printf(" %3.1f ", VAL[i++]);
-//								} else {
-//									printf(" %3.2f ", VAL[i++]);
-//								}
-//							} else {
-//								if (std::fabs(VAL[i]) > 10) {
-//									printf("%3.1f ", VAL[i++]);
-//								} else {
-//									printf("%3.2f ", VAL[i++]);
-//								}
-//							}
-//						} else {
-//							printf("      ");
-//						}
-//					}
-//					if (f < _DOFMap->datatarray().size() && _DOFMap->datatarray()[f] == r) {
-//						printf(" = %3.2f\n", RHS[f++]);
-//					} else {
-//						printf(" =\n");
-//					}
-//				}
-//				printf("------------------\n");
-//			}
 		}
 	}
-
-
-//	Communication::serialize([&] () {
-//		if (info::mpi::MPIrank != rank) {
-//			return;
-//		}
-//		for (size_t i = 0; i < _dirichletMap.size(); i++) {
-//			printf("%d ", _dirichletMap[i]);
-//		}
-//		printf("\n");
-//		printf(" // %d \\\\ \n", info::mpi::MPIrank);
-//		for (esint r = 0, i = 0, f = 0; r < info::mesh->nodes->uniqueTotalSize; r++) {
-//			for (esint c = 0; c < info::mesh->nodes->uniqueTotalSize; c++) {
-//				if (i < RROW.size() && RROW[i] == r + 1 && COL[i] == c + 1) {
-//					if (VAL[i] > -0.00001) {
-//						if (std::fabs(VAL[i]) > 10) {
-//							printf(" %3.1f ", VAL[i++]);
-//						} else {
-//							printf(" %3.2f ", VAL[i++]);
-//						}
-//					} else {
-//						if (std::fabs(VAL[i]) > 10) {
-//							printf("%3.1f ", VAL[i++]);
-//						} else {
-//							printf("%3.2f ", VAL[i++]);
-//						}
-//					}
-//				} else {
-//					printf("      ");
-//				}
-//			}
-//			if (f < _DOFMap->datatarray().size() && _DOFMap->datatarray()[f] == r) {
-//				printf(" = %3.2f\n", RHS[f++]);
-//			} else {
-//				printf(" =\n");
-//			}
-//		}
-//		printf("------------------\n");
-//	});
-//	Communication::serialize([&] () {
-//		std::cout << data->K.front();
-//	});
 }
 
 void UniformNodesComposer::synchronize()
@@ -666,9 +513,6 @@ void UniformNodesComposer::synchronize()
 			data->K.front().CSR_V_values[_KPermutation[KIndex]] += rBuffer[i][j];
 		}
 	}
-
-//	std::cout << data->K.front();
-//	std::cout << data->f.front();
 }
 
 void UniformNodesComposer::fillSolution()
