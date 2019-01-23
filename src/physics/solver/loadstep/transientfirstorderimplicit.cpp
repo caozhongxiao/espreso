@@ -14,6 +14,8 @@
 #include "basis/logging/logging.h"
 #include "config/ecf/physics/physicssolver/transientsolver.h"
 
+#include <cmath>
+
 using namespace espreso;
 
 TransientFirstOrderImplicit::TransientFirstOrderImplicit(Assembler &assembler, TimeStepSolver &timeStepSolver, TransientSolverConfiguration &configuration, double duration)
