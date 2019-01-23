@@ -272,6 +272,15 @@ void NodeData::statistics(const tarray<esint> &nodes, esint totalsize, Statistic
 
 double NodeData::norm() const
 {
-	return 0;
+	esint foreignPrefix = info::mesh->nodes->size - info::mesh->nodes->uniqueSize;
+	double square = 0;
+	for (size_t i = foreignPrefix * dimension; i < data.size(); ++i) {
+		square += data[i] * data[i];
+	}
+
+	double sum = 0;
+	MPI_Allreduce(&square, &sum, 1, MPI_DOUBLE, MPI_SUM, info::mpi::comm);
+
+	return std::sqrt(sum);
 }
 

@@ -66,7 +66,7 @@ public:
 	virtual void RHSMinusR() =0;
 	virtual void DirichletMinusRHS() =0;
 	virtual void sum(NodeData *z, double alfa, NodeData* a, double beta, NodeData *b);
-	virtual double multiply(NodeData *x, NodeData* y);
+	virtual double norm(NodeData *x, NodeData* y);
 	virtual double residualNorm() =0;
 
 	virtual ~Composer();

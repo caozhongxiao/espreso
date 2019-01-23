@@ -1,11 +1,13 @@
 
 #include "esinfo/meshinfo.h"
+#include "esinfo/mpiinfo.h"
 #include "physics/assembler/dataholder.h"
 #include "composer.h"
 
 #include "physics/assembler/controllers/controller.h"
 
 #include "basis/matrices/matrixtype.h"
+#include "basis/utilities/communication.h"
 
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
@@ -115,7 +117,16 @@ void Composer::sum(NodeData *z, double alfa, NodeData* a, double beta, NodeData 
 	}
 }
 
-double Composer::multiply(NodeData *x, NodeData* y)
+double Composer::norm(NodeData *x, NodeData* y)
 {
-	return 0;
+	esint foreignPrefix = info::mesh->nodes->size - info::mesh->nodes->uniqueSize;
+	double square = 0;
+	for (size_t i = foreignPrefix * x->dimension; i < x->data.size(); ++i) {
+		square += x->data[i] * y->data[i];
+	}
+
+	double sum = 0;
+	MPI_Allreduce(&square, &sum, 1, MPI_DOUBLE, MPI_SUM, info::mpi::comm);
+
+	return std::sqrt(sum);
 }

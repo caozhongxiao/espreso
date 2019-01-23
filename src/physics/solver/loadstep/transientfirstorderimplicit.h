@@ -27,7 +27,7 @@ protected:
 	double _alpha;
 	double _nTimeShift;
 
-	NodeData *U, *dU, *V, *X, *Y, *dTK;
+	NodeData *U, *dU, *V, *X, *Y, *dTK, *dTM;
 };
 
 }

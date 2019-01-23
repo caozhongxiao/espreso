@@ -31,6 +31,7 @@ TransientFirstOrderImplicit::TransientFirstOrderImplicit(Assembler &assembler, T
 	X = info::mesh->nodes->appendData(1, {});
 	Y = info::mesh->nodes->appendData(1, {});
 	dTK = info::mesh->nodes->appendData(1, {});
+	dTM = info::mesh->nodes->appendData(1, {});
 }
 
 std::string TransientFirstOrderImplicit::name()
@@ -115,9 +116,9 @@ void TransientFirstOrderImplicit::processTimeStep()
 			_nTimeShift = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * time::shift);
 		} else {
 			_assembler.composer()->applyOriginalK(dTK, dU);
-			_assembler.composer()->applyM(dTK, dU);
+			_assembler.composer()->applyM(dTM, dU);
 
-			double resFreq = _assembler.composer()->multiply(dTK, dU) / _assembler.composer()->multiply(dTK, dU);
+			double resFreq = _assembler.composer()->norm(dU, dTK) / _assembler.composer()->norm(dU, dTM);
 			double oscilationLimit = time::shift * resFreq;
 			double t1 = _configuration.auto_time_stepping.oscilation_limit / resFreq;
 
