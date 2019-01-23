@@ -125,7 +125,6 @@ struct AssemblerInstance: public Assembler, public TController, public TComposer
 	void setDirichlet()
 	{
 		TComposer::setDirichlet();
-		TComposer::synchronize();
 	}
 
 	void solve(Matrices matrices)

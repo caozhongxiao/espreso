@@ -50,6 +50,7 @@ public:
 	esint  cols;		// number of columns
 	esint  nnz;		// number of non zero elements
 	esint  haloRows;	// number of rows that have to be skipped in the case of direct solver
+	esint  minCol, maxCol;
 	char type;		// 'G' for general or 'S' for symmetric
 	MatrixType mtype;
 	char uplo; 		// 'L' for lower or 'U' for upper

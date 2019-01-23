@@ -43,6 +43,7 @@ public:
 	virtual void initDOFs() = 0;
 	virtual void buildPatterns() = 0;
 	virtual void buildDirichlet() = 0;
+	virtual void buildMVData() = 0;
 
 	virtual void initData();
 	virtual void assemble(Matrices matrices, const SolverParameters &parameters) = 0;
@@ -51,7 +52,7 @@ public:
 	virtual void parametersChanged();
 
 	virtual void setDirichlet() = 0;
-	virtual void synchronize() = 0;
+//	virtual void synchronize() = 0;
 
 	virtual void fillSolution() = 0;
 	virtual void processSolution();

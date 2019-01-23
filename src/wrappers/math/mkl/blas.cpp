@@ -1,5 +1,6 @@
 
 #include "wrappers/math/math.h"
+#include "esinfo/mpiinfo.h"
 
 #include "mkl.h"
 
@@ -63,4 +64,9 @@ void MATH::DenseMatDenseMatRowMajorProduct(
 	cblas_dgemm(CblasRowMajor,
 			transposeA ? CblasTrans : CblasNoTrans, transposeB ? CblasTrans : CblasNoTrans,
 			aRows, bCols, aCols, alpha, aVals, aRows, bVals, aCols, beta, cVals, aRows);
+}
+
+void MATH::CSRMatVecProduct(esint rows, esint cols, esint *mRows, esint *mCols, double *mVals, double *vVals, double *result)
+{
+	mkl_dcsrgemv("N", &rows, mVals, mRows, mCols, vVals, result);
 }

@@ -15,11 +15,10 @@ public:
 	void initDOFs();
 	void buildDirichlet();
 	void buildPatterns();
+	void buildMVData() {} // no data are needed
 
 	void assemble(Matrices matrices, const SolverParameters &parameters);
-
 	void setDirichlet();
-	void synchronize();
 
 	void fillSolution();
 
@@ -29,6 +28,7 @@ protected:
 	void updateDuplicity();
 
 	void divide(NodeData *in, std::vector<std::vector<double> > &out);
+	void duply(NodeData *in, std::vector<std::vector<double> > &out);
 	void gather(NodeData *out, std::vector<std::vector<double> > &in);
 
 	esint _DOFs;

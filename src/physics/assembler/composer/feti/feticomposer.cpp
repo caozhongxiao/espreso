@@ -31,7 +31,7 @@ void FETIComposer::apply(std::vector<SparseMatrix> &matrices, NodeData *result, 
 		_x[i].resize(matrices[i].rows);
 	}
 
-	divide(x, _x);
+	duply(x, _x);
 
 	#pragma omp parallel for
 	for (esint d = 0; d < info::mesh->elements->ndomains; d++) {

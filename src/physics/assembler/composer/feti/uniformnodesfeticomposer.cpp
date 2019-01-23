@@ -666,14 +666,11 @@ void UniformNodesFETIComposer::setDirichlet()
 			}
 		}
 	}
-}
-
-void UniformNodesFETIComposer::synchronize()
-{
 	if (_configuration.scaling && _configuration.redundant_lagrange) {
 		updateDuplicity();
 	}
 }
+
 
 void UniformNodesFETIComposer::updateDuplicity()
 {
@@ -850,10 +847,36 @@ void UniformNodesFETIComposer::fillSolution()
 void UniformNodesFETIComposer::divide(NodeData *in, std::vector<std::vector<double> > &out)
 {
 	size_t i = 0;
+	esint dbegin = info::mesh->elements->firstDomain;
+	esint dend = info::mesh->elements->firstDomain + info::mesh->elements->ndomains;
 	for (auto n = _DOFMap->begin(); n != _DOFMap->end(); ++n, ++i) {
-		for (size_t d = 0; d < n->size() / (_DOFs + 1); ++d) {
+		esint domains = n->size() / (_DOFs + 1);
+		for (esint d = 0; d < domains; ++d) {
 			for (esint dof = 0; dof < _DOFs; ++dof) {
-				out[n->at(d * (_DOFs + 1))][n->at(d * (_DOFs + 1) + dof + 1)] = in->data[i];
+				esint domain = n->at(d * (_DOFs + 1));
+				esint index = n->at(d * (_DOFs + 1) + dof + 1);
+				if (dbegin <= domain && domain < dend) {
+					out[domain - dbegin][index] = in->data[i] / domains;
+				}
+			}
+		}
+	}
+}
+
+void UniformNodesFETIComposer::duply(NodeData *in, std::vector<std::vector<double> > &out)
+{
+	size_t i = 0;
+	esint dbegin = info::mesh->elements->firstDomain;
+	esint dend = info::mesh->elements->firstDomain + info::mesh->elements->ndomains;
+	for (auto n = _DOFMap->begin(); n != _DOFMap->end(); ++n, ++i) {
+		esint domains = n->size() / (_DOFs + 1);
+		for (esint d = 0; d < domains; ++d) {
+			for (esint dof = 0; dof < _DOFs; ++dof) {
+				esint domain = n->at(d * (_DOFs + 1));
+				esint index = n->at(d * (_DOFs + 1) + dof + 1);
+				if (dbegin <= domain && domain < dend) {
+					out[domain - dbegin][index] = in->data[i];
+				}
 			}
 		}
 	}
@@ -861,12 +884,71 @@ void UniformNodesFETIComposer::divide(NodeData *in, std::vector<std::vector<doub
 
 void UniformNodesFETIComposer::gather(NodeData *out, std::vector<std::vector<double> > &in)
 {
-	size_t i = 0;
-	for (auto n = _DOFMap->begin(); n != _DOFMap->end(); ++n, ++i) {
-		out->data[i] = 0;
-		for (size_t d = 0; d < n->size() / (_DOFs + 1); ++d) {
-			for (esint dof = 0; dof < _DOFs; ++dof) {
-				out->data[i] += in[n->at(d * (_DOFs + 1))][n->at(d * (_DOFs + 1) + dof + 1)];
+	size_t threads = info::env::OMP_NUM_THREADS;
+
+	std::vector<std::vector<std::vector<double> > > sBuffer(threads);
+	std::vector<std::vector<double> > rBuffer(info::mesh->neighbours.size());
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		size_t i = info::mesh->nodes->distribution[t];
+		auto nranks = info::mesh->nodes->ranks->begin(t);
+
+		std::vector<std::vector<double> > tBuffer(info::mesh->neighbours.size());
+
+		for (auto map = _DOFMap->begin(t); map != _DOFMap->end(t); ++map, ++i, ++nranks) {
+			for (int dof = 0; dof < _DOFs; ++dof) {
+				out->data[i * _DOFs + dof] = 0;
+			}
+			for (auto d = map->begin(); d != map->end(); d += 1 + _DOFs) {
+				if (info::mesh->elements->firstDomain <= *d && *d < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
+					for (int dof = 0; dof < _DOFs; ++dof) {
+						out->data[i * _DOFs + dof] += in[*d - info::mesh->elements->firstDomain][*(d + 1 + dof)];
+					}
+				}
+			}
+
+			esint noffset = 0;
+			for (auto r = nranks->begin(); r != nranks->end(); ++r) {
+				if (*r != info::mpi::rank) {
+					while (info::mesh->neighbours[noffset] < *r) {
+						++noffset;
+					}
+
+					for (esint dof = 0; dof < _DOFs; ++dof) {
+						tBuffer[noffset].push_back(out->data[i * _DOFs + dof]);
+					}
+				}
+			}
+		}
+
+		sBuffer[t].swap(tBuffer);
+	}
+
+	for (size_t n = 0; n < sBuffer[0].size(); ++n) {
+		for (size_t t = 1; t < threads; t++) {
+			sBuffer[0][n].insert(sBuffer[0][n].end(), sBuffer[t][n].begin(), sBuffer[t][n].end());
+		}
+		rBuffer[n].resize(sBuffer[0][n].size());
+	}
+
+	if (!Communication::exchangeKnownSize(sBuffer[0], rBuffer, info::mesh->neighbours)) {
+		ESINFO(ERROR) << "ESPRESO internal error: synchronize solution.";
+	}
+
+	std::vector<esint> roffset(info::mesh->neighbours.size());
+	auto nranks = info::mesh->nodes->ranks->begin();
+	for (esint n = 0; n < info::mesh->nodes->size; ++n, ++nranks) {
+		esint noffset = 0;
+		for (auto r = nranks->begin(); r != nranks->end(); ++r) {
+			if (*r != info::mpi::rank) {
+				while (info::mesh->neighbours[noffset] < *r) {
+					++noffset;
+				}
+
+				for (esint dof = 0; dof < _DOFs; ++dof) {
+					out->data[n * _DOFs + dof] += rBuffer[noffset][roffset[noffset]++];
+				}
 			}
 		}
 	}

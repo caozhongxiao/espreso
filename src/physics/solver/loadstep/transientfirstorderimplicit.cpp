@@ -45,12 +45,13 @@ Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Matrices matrices
 		_assembler.composer()->KplusAlfaM(1 / (_alpha * time::shift));
 	}
 
-	_assembler.setDirichlet();
 	if (matrices & (Matrices::K | Matrices::M | Matrices::f)) {
 		_assembler.composer()->sum(X, 1 / (_alpha * time::shift), U, (1 - _alpha) / _alpha, V);
 		_assembler.composer()->applyM(Y, X);
 		_assembler.composer()->enrichRHS(1, Y);
 	}
+
+	_assembler.setDirichlet();
 
 	return matrices;
 }
@@ -79,6 +80,7 @@ void TransientFirstOrderImplicit::initLoadStep()
 		ESINFO(GLOBAL_ERROR) << "Not supported first order implicit solver method.";
 	}
 
+	_assembler.composer()->buildMVData();
 	U->data = _assembler.solution()->data;
 }
 

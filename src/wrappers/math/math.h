@@ -4,46 +4,48 @@
 
 namespace espreso {
 
-struct MATH {
+namespace MATH {
 
-	static void setNumberOfThreads(int numberOfThreads);
+	void setNumberOfThreads(int numberOfThreads);
 
-	static void upCSRMatVecProduct(esint rows, esint cols, esint *mRows, esint *mCols, float *mVals, float *vVals, float *result);
-	static void upCSRMatVecProduct(esint rows, esint cols, esint *mRows, esint *mCols, double *mVals, double *vVals, double *result);
+	void upCSRMatVecProduct(esint rows, esint cols, esint *mRows, esint *mCols, float *mVals, float *vVals, float *result);
+	void upCSRMatVecProduct(esint rows, esint cols, esint *mRows, esint *mCols, double *mVals, double *vVals, double *result);
 
-	static void vecScale(esint size, float alpha, float *vVals);
-	static void vecScale(esint size, double alpha, double *vVals);
+	void vecScale(esint size, float alpha, float *vVals);
+	void vecScale(esint size, double alpha, double *vVals);
 
-	static double vecNorm(esint size, float *vVals);
-	static double vecNorm(esint size, double *vVals);
+	double vecNorm(esint size, float *vVals);
+	double vecNorm(esint size, double *vVals);
 
-	static esint vecNormMaxIndex(esint size, float *vVals);
-	static esint vecNormMaxIndex(esint size, double *vVals);
+	esint vecNormMaxIndex(esint size, float *vVals);
+	esint vecNormMaxIndex(esint size, double *vVals);
 
 	// C = alpha * A * B + beta * C
-	static void DenseMatDenseMatRowMajorProduct(
+	void DenseMatDenseMatRowMajorProduct(
 			double alpha, bool transposeA, esint aRows, esint aCols, double* aVals,
 			bool transposeB, esint bCols, double* bVals,
 			double beta, double* cVals);
 
-	struct SOLVER {
+	void CSRMatVecProduct(esint rows, esint cols, esint *mRows, esint *mCols, double *mVals, double *vVals, double *result);
 
-		static void GMRESUpCRSMat(
+	namespace SOLVER {
+
+		void GMRESUpCRSMat(
 				esint rows, esint cols, esint *mRows, esint *mCols, double *mVals,
 				double *rhsVals, double *results,
 				double tolerance, esint maxIterations, esint &itercount);
 
-		static void GMRESDenseRowMajorMat(
+		void GMRESDenseRowMajorMat(
 				esint rows, esint cols, double *mVals,
 				double *rhsVals, double *results,
 				double tolerance, esint maxIterations, esint &itercount);
 
-		static void GMRESUpperSymetricColumnMajorMat(
+		void GMRESUpperSymetricColumnMajorMat(
 				esint cols, double *mVals,
 				double *rhsVals, double *results,
 				double tolerance, esint maxIterations, esint &itercount);
 
-		static esint directUpperSymetricIndefiniteColumnMajor(
+		esint directUpperSymetricIndefiniteColumnMajor(
 				esint cols, double *m_packed_values,
 				esint nrhs, double *rhsVals);
 	};

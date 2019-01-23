@@ -166,6 +166,8 @@ SparseMatrix::SparseMatrix() {
 	cols = 0;
 	rows = 0;
 	haloRows = 0;
+	minCol = 0;
+	maxCol = 0;
 	type = 0;
 	mtype = MatrixType::REAL_UNSYMMETRIC;
 	uplo = 0;
@@ -198,6 +200,8 @@ SparseMatrix::SparseMatrix( const SparseMatrix &A_in) {
 	cols = A_in.cols;
 	nnz  = A_in.nnz;
 	haloRows = A_in.haloRows;
+	minCol = A_in.minCol;
+	maxCol = A_in.maxCol;
 	type = A_in.type;
 	mtype = A_in.mtype;
 

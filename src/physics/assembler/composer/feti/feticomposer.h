@@ -31,6 +31,7 @@ public:
 protected:
 	void apply(std::vector<SparseMatrix> &matrices, NodeData *result, NodeData *x);
 	virtual void divide(NodeData *in, std::vector<std::vector<double> > &out) =0;
+	virtual void duply(NodeData *in, std::vector<std::vector<double> > &out) =0;
 	virtual void gather(NodeData *out, std::vector<std::vector<double> > &in) =0;
 
 	FETIProvider &_provider;

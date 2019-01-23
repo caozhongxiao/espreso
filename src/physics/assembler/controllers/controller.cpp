@@ -9,6 +9,8 @@
 
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
+#include "basis/logging/logging.h"
+#include "basis/utilities/communication.h"
 #include "basis/evaluator/evaluator.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
@@ -181,6 +183,47 @@ void Controler::averageNodeInitilization(tarray<double> &initData, std::vector<d
 	auto &nelements = info::mesh->nodes->elements->boundarytarray();
 	for (size_t i = 0; i < averagedData.size(); i++) {
 		averagedData[i] /= nelements[i + 1] - nelements[i];
+	}
+
+	std::vector<std::vector<double> > sBuffer(info::mesh->neighbours.size()), rBuffer(info::mesh->neighbours.size());
+
+	auto nranks = info::mesh->nodes->ranks->begin();
+	for (esint n = 0; n < info::mesh->nodes->size; ++n, ++nranks) {
+		if (nranks->size() > 1) {
+			esint noffset = 0;
+			for (auto r = nranks->begin(); r != nranks->end(); ++r) {
+				if (*r != info::mpi::rank) {
+					while (info::mesh->neighbours[noffset] < *r) {
+						++noffset;
+					}
+					sBuffer[noffset].push_back(averagedData[n]);
+				}
+			}
+		}
+	}
+
+	for (size_t n = 0; n < info::mesh->neighbours.size(); n++) {
+		rBuffer[n].resize(sBuffer[n].size());
+	}
+
+	if (!Communication::exchangeKnownSize(sBuffer, rBuffer, info::mesh->neighbours)) {
+		ESINFO(ERROR) << "ESPRESO internal error: exchange diagonal values";
+	}
+
+	nranks = info::mesh->nodes->ranks->begin();
+	std::vector<esint> nindex(info::mesh->neighbours.size());
+	for (esint n = 0; n < info::mesh->nodes->size; ++n, ++nranks) {
+		if (nranks->size() > 1) {
+			esint noffset = 0;
+			for (auto r = nranks->begin(); r != nranks->end(); ++r) {
+				if (*r != info::mpi::rank) {
+					while (info::mesh->neighbours[noffset] < *r) {
+						++noffset;
+					}
+					averagedData[n] += rBuffer[noffset][nindex[noffset]++];
+				}
+			}
+		}
 	}
 }
 
