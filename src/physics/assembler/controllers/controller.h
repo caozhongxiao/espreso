@@ -20,7 +20,7 @@ enum EvaluatorParameters: int;
 template <typename TEBoundaries, typename TEData> class serializededata;
 template <typename TEData> class tarray;
 
-class Controler
+class Controller
 {
 
 public:
@@ -46,9 +46,9 @@ public:
 	virtual void processElements(Matrices matrices, const SolverParameters &parameters, InstanceFiller &filler) = 0;
 	virtual void processBoundary(Matrices matrices, const SolverParameters &parameters, size_t rindex, InstanceFiller &filler) = 0;
 
-	virtual ~Controler() {}
+	virtual ~Controller() {}
 protected:
-	Controler();
+	Controller();
 
 	struct Parameter {
 		serializededata<esint, double> *data;

@@ -17,6 +17,17 @@ MatrixType HYPREProvider::getMatrixType() const
 	return MatrixType::REAL_UNSYMMETRIC; // Hypre always get full matrix
 }
 
+bool HYPREProvider::needMatrixVectorProduct()
+{
+	return Provider::needMatrixVectorProduct() || _configuration.mode == LoadStepConfiguration::MODE::NONLINEAR;
+}
+
+bool HYPREProvider::needOriginalStiffnessMatrices()
+{
+	return true;
+//	return Provider::needOriginalStiffnessMatrices() || _configuration.mode == LoadStepConfiguration::MODE::NONLINEAR;
+}
+
 double& HYPREProvider::solutionPrecision()
 {
 	return _configuration.multigrid.precision;

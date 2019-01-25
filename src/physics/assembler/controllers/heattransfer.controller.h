@@ -11,7 +11,7 @@ struct HeatTransferLoadStepConfiguration;
 struct NodeData;
 struct ElementData;
 
-class HeatTransferControler: public Controler
+class HeatTransferController: public Controller
 {
 
 public:
@@ -21,8 +21,8 @@ public:
 	NodeData* solution();
 
 protected:
-	HeatTransferControler(HeatTransferLoadStepConfiguration &configuration)
-	: Controler(),
+	HeatTransferController(HeatTransferLoadStepConfiguration &configuration)
+	: Controller(),
 	  _configuration(configuration),
 	  _temperature(NULL), _phaseChange(NULL), _latentHeat(NULL), _avgThickness(NULL),
 	  _gradient(NULL), _flux(NULL), _motion(NULL), _thickness(NULL) {}

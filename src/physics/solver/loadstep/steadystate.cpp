@@ -22,10 +22,9 @@ std::string SteadyStateSolver::name()
 
 Matrices SteadyStateSolver::updateStructuralMatrices(Matrices matrices)
 {
-	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::f | Matrices::R | Matrices::Dirichlet);
-	_assembler.assemble(updatedMatrices);
-	_assembler.setDirichlet();
-	return updatedMatrices;
+	matrices &= (Matrices::K | Matrices::f | Matrices::R);
+	_assembler.assemble(matrices);
+	return matrices;
 }
 
 void SteadyStateSolver::runNextTimeStep()
@@ -45,7 +44,5 @@ void SteadyStateSolver::processTimeStep()
 
 	_timeStepSolver.solve(*this);
 	_assembler.postProcess();
-
-	info::mesh->storeSolution();
 }
 

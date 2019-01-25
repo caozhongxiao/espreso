@@ -12,6 +12,10 @@ public:
 	HYPREProvider(DataHolder *data, LoadStepConfiguration &configuration);
 
 	MatrixType getMatrixType() const;
+
+	virtual bool needMatrixVectorProduct();
+	virtual bool needOriginalStiffnessMatrices();
+
 	double& solutionPrecision();
 };
 

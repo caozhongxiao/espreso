@@ -212,6 +212,8 @@ void UniformNodesFETIComposer::buildPatterns()
 {
 	buildKPattern();
 	buildB1Pattern();
+
+	_foreignDOFs = _DOFs * (info::mesh->nodes->size - info::mesh->nodes->uniqueSize);
 }
 
 void UniformNodesFETIComposer::buildKPattern()
@@ -222,7 +224,6 @@ void UniformNodesFETIComposer::buildKPattern()
 	_RHSPermutation.resize(info::mesh->elements->ndomains);
 
 	data->K.resize(info::mesh->elements->ndomains);
-	data->origK.resize(info::mesh->elements->ndomains);
 	data->M.resize(info::mesh->elements->ndomains);
 	data->f.resize(info::mesh->elements->ndomains);
 	data->R.resize(info::mesh->elements->ndomains);
@@ -363,9 +364,6 @@ void UniformNodesFETIComposer::buildKPattern()
 			data->M[d].type = 'S';
 		}
 	}
-
-//	std::cout << _KPermutation.front();
-//	std::cout << _RHSPermutation.front();
 }
 
 void UniformNodesFETIComposer::buildB1Pattern()
@@ -573,14 +571,16 @@ void UniformNodesFETIComposer::buildB1Pattern()
 
 void UniformNodesFETIComposer::assemble(Matrices matrices, const SolverParameters &parameters)
 {
-	_controler.nextTime();
+	if (!(matrices & (Matrices::K | Matrices::M | Matrices::R | Matrices::f))) {
+		return;
+	}
 
 	#pragma omp parallel for
 	for  (esint d = 0; d < info::mesh->elements->ndomains; d++) {
 
 		size_t KIndex = 0, RHSIndex = 0;
 		double KReduction = parameters.timeIntegrationConstantK, RHSReduction = parameters.internalForceReduction;
-		Controler::InstanceFiller filler;
+		Controller::InstanceFiller filler;
 
 		switch (_provider.getMatrixType(d)) {
 		case MatrixType::REAL_UNSYMMETRIC:
@@ -647,10 +647,16 @@ void UniformNodesFETIComposer::assemble(Matrices matrices, const SolverParameter
 	};
 }
 
-void UniformNodesFETIComposer::setDirichlet()
+void UniformNodesFETIComposer::setDirichlet(Matrices matrices, const std::vector<double> &subtraction)
 {
 	std::vector<double> values(_dirichletMap.size());
 	_controler.dirichletValues(values);
+
+	if (subtraction.size()) {
+		for (size_t i = 0; i < _dirichletMap.size(); i++) {
+			values[_dirichletPermutation[i]] -= subtraction[_dirichletMap[i]];
+		}
+	}
 
 	std::vector<esint> doffset(info::mesh->elements->ndomains);
 
@@ -844,8 +850,12 @@ void UniformNodesFETIComposer::fillSolution()
 	}
 }
 
-void UniformNodesFETIComposer::divide(NodeData *in, std::vector<std::vector<double> > &out)
+void UniformNodesFETIComposer::divide(std::vector<double> &in, std::vector<std::vector<double> > &out)
 {
+	out.resize(info::mesh->elements->ndomains);
+	for (esint d = 0; d < info::mesh->elements->ndomains; d++) {
+		out[d].resize(_domainDOFsSize[d]);
+	}
 	size_t i = 0;
 	esint dbegin = info::mesh->elements->firstDomain;
 	esint dend = info::mesh->elements->firstDomain + info::mesh->elements->ndomains;
@@ -856,15 +866,19 @@ void UniformNodesFETIComposer::divide(NodeData *in, std::vector<std::vector<doub
 				esint domain = n->at(d * (_DOFs + 1));
 				esint index = n->at(d * (_DOFs + 1) + dof + 1);
 				if (dbegin <= domain && domain < dend) {
-					out[domain - dbegin][index] = in->data[i] / domains;
+					out[domain - dbegin][index] = in[i] / domains;
 				}
 			}
 		}
 	}
 }
 
-void UniformNodesFETIComposer::duply(NodeData *in, std::vector<std::vector<double> > &out)
+void UniformNodesFETIComposer::duply(std::vector<double> &in, std::vector<std::vector<double> > &out)
 {
+	out.resize(info::mesh->elements->ndomains);
+	for (esint d = 0; d < info::mesh->elements->ndomains; d++) {
+		out[d].resize(_domainDOFsSize[d]);
+	}
 	size_t i = 0;
 	esint dbegin = info::mesh->elements->firstDomain;
 	esint dend = info::mesh->elements->firstDomain + info::mesh->elements->ndomains;
@@ -875,16 +889,18 @@ void UniformNodesFETIComposer::duply(NodeData *in, std::vector<std::vector<doubl
 				esint domain = n->at(d * (_DOFs + 1));
 				esint index = n->at(d * (_DOFs + 1) + dof + 1);
 				if (dbegin <= domain && domain < dend) {
-					out[domain - dbegin][index] = in->data[i];
+					out[domain - dbegin][index] = in[i];
 				}
 			}
 		}
 	}
 }
 
-void UniformNodesFETIComposer::gather(NodeData *out, std::vector<std::vector<double> > &in)
+void UniformNodesFETIComposer::gather(std::vector<double> &out, std::vector<std::vector<double> > &in)
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
+
+	out.resize(_DOFs * info::mesh->nodes->size);
 
 	std::vector<std::vector<std::vector<double> > > sBuffer(threads);
 	std::vector<std::vector<double> > rBuffer(info::mesh->neighbours.size());
@@ -898,12 +914,12 @@ void UniformNodesFETIComposer::gather(NodeData *out, std::vector<std::vector<dou
 
 		for (auto map = _DOFMap->begin(t); map != _DOFMap->end(t); ++map, ++i, ++nranks) {
 			for (int dof = 0; dof < _DOFs; ++dof) {
-				out->data[i * _DOFs + dof] = 0;
+				out[i * _DOFs + dof] = 0;
 			}
 			for (auto d = map->begin(); d != map->end(); d += 1 + _DOFs) {
 				if (info::mesh->elements->firstDomain <= *d && *d < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
 					for (int dof = 0; dof < _DOFs; ++dof) {
-						out->data[i * _DOFs + dof] += in[*d - info::mesh->elements->firstDomain][*(d + 1 + dof)];
+						out[i * _DOFs + dof] += in[*d - info::mesh->elements->firstDomain][*(d + 1 + dof)];
 					}
 				}
 			}
@@ -916,7 +932,7 @@ void UniformNodesFETIComposer::gather(NodeData *out, std::vector<std::vector<dou
 					}
 
 					for (esint dof = 0; dof < _DOFs; ++dof) {
-						tBuffer[noffset].push_back(out->data[i * _DOFs + dof]);
+						tBuffer[noffset].push_back(out[i * _DOFs + dof]);
 					}
 				}
 			}
@@ -947,7 +963,7 @@ void UniformNodesFETIComposer::gather(NodeData *out, std::vector<std::vector<dou
 				}
 
 				for (esint dof = 0; dof < _DOFs; ++dof) {
-					out->data[n * _DOFs + dof] += rBuffer[noffset][roffset[noffset]++];
+					out[n * _DOFs + dof] += rBuffer[noffset][roffset[noffset]++];
 				}
 			}
 		}

@@ -36,7 +36,7 @@ struct DataHolder {
 
 	std::vector<SparseMatrix> origK, K, origKN1, origKN2, origRegMat, N1, N2, RegMat;
 	std::vector<SparseMatrix> M;
-	std::vector<std::vector<double> > R, f;
+	std::vector<std::vector<double> > R, f, origF;
 
 	// matrices for Hybrid FETI constraints
 	std::vector<SparseMatrix> B0;
@@ -59,7 +59,7 @@ struct DataHolder {
 		INEQUALITY_CONSTRAINTS,
 	};
 
-	std::vector<size_t> block;
+	std::vector<esint> block;
 
 	std::vector<std::vector<double> > primalSolution;
 	std::vector<std::vector<double> > dualSolution;

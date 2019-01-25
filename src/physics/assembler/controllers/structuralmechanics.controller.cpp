@@ -8,7 +8,7 @@
 
 using namespace espreso;
 
-NodeData* StructuralMechanicsControler::solution()
+NodeData* StructuralMechanicsController::solution()
 {
 	return _displacement;
 }

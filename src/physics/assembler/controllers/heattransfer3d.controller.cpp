@@ -16,8 +16,8 @@
 
 using namespace espreso;
 
-HeatTransfer3DControler::HeatTransfer3DControler(HeatTransferLoadStepConfiguration &configuration)
-: HeatTransferControler(configuration)
+HeatTransfer3DController::HeatTransfer3DController(HeatTransferLoadStepConfiguration &configuration)
+: HeatTransferController(configuration)
 {
 	_kernel = new HeatTransfer3DKernel();
 
@@ -54,12 +54,12 @@ HeatTransfer3DControler::HeatTransfer3DControler(HeatTransferLoadStepConfigurati
 	_boundaries.resize(info::mesh->boundaryRegions.size());
 }
 
-HeatTransfer3DControler::~HeatTransfer3DControler()
+HeatTransfer3DController::~HeatTransfer3DController()
 {
 	delete _kernel;
 }
 
-void HeatTransfer3DControler::initData()
+void HeatTransfer3DController::initData()
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -148,7 +148,7 @@ void HeatTransfer3DControler::initData()
 	}
 }
 
-void HeatTransfer3DControler::nextTime()
+void HeatTransfer3DController::nextTime()
 {
 	if (time::isInitial()) {
 		return;
@@ -157,7 +157,7 @@ void HeatTransfer3DControler::nextTime()
 	parametersChanged();
 }
 
-void HeatTransfer3DControler::parametersChanged()
+void HeatTransfer3DController::parametersChanged()
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -230,7 +230,7 @@ void HeatTransfer3DControler::parametersChanged()
 	}
 }
 
-void HeatTransfer3DControler::processElements(Matrices matrices, const SolverParameters &parameters, InstanceFiller &filler)
+void HeatTransfer3DController::processElements(Matrices matrices, const SolverParameters &parameters, InstanceFiller &filler)
 {
 	auto enodes = info::mesh->elements->procNodes->cbegin() + filler.begin;
 	HeatTransfer3DKernel::ElementIterator iterator;
@@ -277,7 +277,7 @@ void HeatTransfer3DControler::processElements(Matrices matrices, const SolverPar
 //	}
 }
 
-void HeatTransfer3DControler::processBoundary(Matrices matrices, const SolverParameters &parameters, size_t rindex, InstanceFiller &filler)
+void HeatTransfer3DController::processBoundary(Matrices matrices, const SolverParameters &parameters, size_t rindex, InstanceFiller &filler)
 {
 	if (info::mesh->boundaryRegions[rindex]->dimension != 2) {
 		return;
@@ -325,7 +325,7 @@ void HeatTransfer3DControler::processBoundary(Matrices matrices, const SolverPar
 	}
 }
 
-void HeatTransfer3DControler::processSolution()
+void HeatTransfer3DController::processSolution()
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
 

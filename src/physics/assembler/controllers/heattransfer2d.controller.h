@@ -9,12 +9,12 @@ namespace espreso {
 
 struct HeatTransfer2DKernel;
 
-class HeatTransfer2DControler: public HeatTransferControler
+class HeatTransfer2DController: public HeatTransferController
 {
 
 public:
-	HeatTransfer2DControler(HeatTransferLoadStepConfiguration &configuration);
-	~HeatTransfer2DControler();
+	HeatTransfer2DController(HeatTransferLoadStepConfiguration &configuration);
+	~HeatTransfer2DController();
 
 	void initData();
 	void processSolution();

@@ -38,14 +38,14 @@ static Assembler* getAssembler(HeatTransferLoadStepConfiguration &loadStep, DIME
 	switch (loadStep.solver) {
 	case LoadStepConfiguration::SOLVER::FETI:
 		switch (dimension) {
-		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DControler, UniformNodesFETIComposer, HeatTransferFETIProvider, FETISolver>(loadStep, loadStep.feti, 1);
-		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DControler, UniformNodesFETIComposer, HeatTransferFETIProvider, FETISolver>(loadStep, loadStep.feti, 1);
+		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DController, UniformNodesFETIComposer, HeatTransferFETIProvider, FETISolver>(loadStep, loadStep.feti, 1);
+		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DController, UniformNodesFETIComposer, HeatTransferFETIProvider, FETISolver>(loadStep, loadStep.feti, 1);
 		default: break;
 		} break;
 	case LoadStepConfiguration::SOLVER::MULTIGRID:
 		switch (dimension) {
-		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DControler, UniformNodesComposer, HeatTransferHYPREProvider, MultigridSolver>(loadStep, loadStep.multigrid, 1);
-		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DControler, UniformNodesComposer, HeatTransferHYPREProvider, MultigridSolver>(loadStep, loadStep.multigrid, 1);
+		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DController, UniformNodesComposer, HeatTransferHYPREProvider, MultigridSolver>(loadStep, loadStep.multigrid, 1);
+		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DController, UniformNodesComposer, HeatTransferHYPREProvider, MultigridSolver>(loadStep, loadStep.multigrid, 1);
 		default: break;
 		}
 	}
@@ -58,14 +58,14 @@ static Assembler* getAssembler(StructuralMechanicsLoadStepConfiguration &loadSte
 	switch (loadStep.solver) {
 	case LoadStepConfiguration::SOLVER::FETI:
 		switch (dimension) {
-		case DIMENSION::D2: return new AssemblerInstance<StructuralMechanics2DControler, UniformNodesFETIComposer, StructuralMechanics2DFETIProvider, FETISolver>(loadStep, loadStep.feti, 2);
-		case DIMENSION::D3: return new AssemblerInstance<StructuralMechanics3DControler, UniformNodesFETIComposer, StructuralMechanics3DFETIProvider, FETISolver>(loadStep, loadStep.feti, 3);
+		case DIMENSION::D2: return new AssemblerInstance<StructuralMechanics2DController, UniformNodesFETIComposer, StructuralMechanics2DFETIProvider, FETISolver>(loadStep, loadStep.feti, 2);
+		case DIMENSION::D3: return new AssemblerInstance<StructuralMechanics3DController, UniformNodesFETIComposer, StructuralMechanics3DFETIProvider, FETISolver>(loadStep, loadStep.feti, 3);
 		default: break;
 		} break;
 	case LoadStepConfiguration::SOLVER::MULTIGRID:
 		switch (dimension) {
-		case DIMENSION::D2: return new AssemblerInstance<StructuralMechanics2DControler, UniformNodesComposer, StructuralMechanicsHYPREProvider, MultigridSolver>(loadStep, loadStep.multigrid, 2);
-		case DIMENSION::D3: return new AssemblerInstance<StructuralMechanics3DControler, UniformNodesComposer, StructuralMechanicsHYPREProvider, MultigridSolver>(loadStep, loadStep.multigrid, 3);
+		case DIMENSION::D2: return new AssemblerInstance<StructuralMechanics2DController, UniformNodesComposer, StructuralMechanicsHYPREProvider, MultigridSolver>(loadStep, loadStep.multigrid, 2);
+		case DIMENSION::D3: return new AssemblerInstance<StructuralMechanics3DController, UniformNodesComposer, StructuralMechanicsHYPREProvider, MultigridSolver>(loadStep, loadStep.multigrid, 3);
 		default: break;
 		}
 	}

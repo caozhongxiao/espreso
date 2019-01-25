@@ -16,7 +16,10 @@ public:
 
 	virtual MatrixType getMatrixType() const =0;
 
+	virtual bool needMatrixVectorProduct();
 	virtual bool needOriginalStiffnessMatrices();
+	virtual bool needOriginalRHS();
+	virtual bool needReactionForces();
 	virtual double& solutionPrecision() =0;
 
 protected:

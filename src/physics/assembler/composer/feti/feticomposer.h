@@ -17,22 +17,19 @@ struct FETISolverConfiguration;
 class FETIComposer: public Composer {
 
 public:
-	FETIComposer(Controler &controler, FETIProvider &provider, FETISolverConfiguration &configuration)
+	FETIComposer(Controller &controler, FETIProvider &provider, FETISolverConfiguration &configuration)
 	: Composer(controler), _provider(provider), _configuration(configuration) {}
 
-	NodeData* RHS();
-
 	void KplusAlfaM(double alfa);
-	void enrichRHS(double alfa, NodeData* x);
-	void RHSMinusR();
-	void DirichletMinusRHS();
-	double residualNorm();
+	void computeReactionForces() {} // returned by FETI solver
+	double residualNormNumerator();
+	double residualNormDenominator();
 
 protected:
-	void apply(std::vector<SparseMatrix> &matrices, NodeData *result, NodeData *x);
-	virtual void divide(NodeData *in, std::vector<std::vector<double> > &out) =0;
-	virtual void duply(NodeData *in, std::vector<std::vector<double> > &out) =0;
-	virtual void gather(NodeData *out, std::vector<std::vector<double> > &in) =0;
+	void apply(std::vector<SparseMatrix> &matrices, std::vector<double> &result, std::vector<double> &x);
+	virtual void divide(std::vector<double> &in, std::vector<std::vector<double> > &out) =0;
+	virtual void duply(std::vector<double> &in, std::vector<std::vector<double> > &out) =0;
+	virtual void gather(std::vector<double> &out, std::vector<std::vector<double> > &in) =0;
 
 	FETIProvider &_provider;
 	FETISolverConfiguration &_configuration;

@@ -17,8 +17,8 @@
 
 using namespace espreso;
 
-Composer::Composer(Controler &controler)
-: _controler(controler), _DOFMap(NULL)
+Composer::Composer(Controller &controler)
+: _controler(controler), _foreignDOFs(0), _DOFMap(NULL)
 {
 	data = new DataHolder();
 }
@@ -46,6 +46,7 @@ void Composer::parametersChanged()
 void Composer::processSolution()
 {
 	_controler.processSolution();
+	info::mesh->storeSolution();
 }
 
 void Composer::insertKPattern(IJ *target, esint *begin, esint *end, MatrixType mtype)
@@ -94,20 +95,47 @@ void Composer::clearMatrices(Matrices matrices, esint domain)
 
 void Composer::keepK()
 {
+	data->origK.resize(data->K.size());
 	#pragma omp parallel for
 	for (size_t d = 0; d < data->K.size(); d++) {
 		data->origK[d] = data->K[d];
 	}
 }
 
-void Composer::applyOriginalK(NodeData *result, NodeData *x)
+void Composer::keepRHS()
 {
-	apply(data->origK, result, x);
+	data->origF.resize(data->f.size());
+	#pragma omp parallel for
+	for (size_t d = 0; d < data->f.size(); d++) {
+		data->origF[d] = data->f[d];
+	}
 }
 
-void Composer::applyM(NodeData *result, NodeData *x)
+void Composer::enrichSolution(double alfa, NodeData* x)
 {
-	apply(data->M, result, x);
+	for (size_t i = 0; i < _controler.solution()->data.size(); i++) {
+		_controler.solution()->data[i] += alfa * x->data[i];
+	}
+}
+
+void Composer::RHSMinusR()
+{
+	#pragma omp parallel for
+	for (size_t d = 0; d < data->f.size(); d++) {
+		for (size_t i = 0; i < data->f[d].size(); i++) {
+			data->f[d][i] -= data->R[d][i];
+		}
+	}
+}
+
+void Composer::applyOriginalK(NodeData* result, NodeData* x)
+{
+	apply(data->origK, result->data, x->data);
+}
+
+void Composer::applyM(NodeData* result, NodeData* x)
+{
+	apply(data->M, result->data, x->data);
 }
 
 void Composer::sum(NodeData *z, double alfa, NodeData* a, double beta, NodeData *b)

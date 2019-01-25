@@ -16,8 +16,8 @@
 
 using namespace espreso;
 
-StructuralMechanics2DControler::StructuralMechanics2DControler(StructuralMechanicsLoadStepConfiguration &configuration)
-: StructuralMechanicsControler(configuration)
+StructuralMechanics2DController::StructuralMechanics2DController(StructuralMechanicsLoadStepConfiguration &configuration)
+: StructuralMechanicsController(configuration)
 {
 	_kernel = new StructuralMechanics2DKernel();
 
@@ -45,12 +45,12 @@ StructuralMechanics2DControler::StructuralMechanics2DControler(StructuralMechani
 	_boundaries.resize(info::mesh->boundaryRegions.size());
 }
 
-StructuralMechanics2DControler::~StructuralMechanics2DControler()
+StructuralMechanics2DController::~StructuralMechanics2DController()
 {
 	delete _kernel;
 }
 
-void StructuralMechanics2DControler::dirichletIndices(std::vector<std::vector<esint> > &indices)
+void StructuralMechanics2DController::dirichletIndices(std::vector<std::vector<esint> > &indices)
 {
 	indices.resize(2);
 
@@ -76,7 +76,7 @@ void StructuralMechanics2DControler::dirichletIndices(std::vector<std::vector<es
 	_dirichletSize = indices[0].size() + indices[1].size();
 }
 
-void StructuralMechanics2DControler::dirichletValues(std::vector<double> &values)
+void StructuralMechanics2DController::dirichletValues(std::vector<double> &values)
 {
 	values.resize(_dirichletSize);
 
@@ -112,7 +112,7 @@ void StructuralMechanics2DControler::dirichletValues(std::vector<double> &values
 	}
 }
 
-void StructuralMechanics2DControler::initData()
+void StructuralMechanics2DController::initData()
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -166,7 +166,7 @@ void StructuralMechanics2DControler::initData()
 	}
 }
 
-void StructuralMechanics2DControler::nextTime()
+void StructuralMechanics2DController::nextTime()
 {
 	if (time::isInitial()) {
 		return;
@@ -175,7 +175,7 @@ void StructuralMechanics2DControler::nextTime()
 	parametersChanged();
 }
 
-void StructuralMechanics2DControler::parametersChanged()
+void StructuralMechanics2DController::parametersChanged()
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -213,7 +213,7 @@ void StructuralMechanics2DControler::parametersChanged()
 	}
 }
 
-void StructuralMechanics2DControler::processElements(Matrices matrices, const SolverParameters &parameters, InstanceFiller &filler)
+void StructuralMechanics2DController::processElements(Matrices matrices, const SolverParameters &parameters, InstanceFiller &filler)
 {
 	auto enodes = info::mesh->elements->procNodes->cbegin() + filler.begin;
 	StructuralMechanics2DKernel::ElementIterator iterator;
@@ -243,7 +243,7 @@ void StructuralMechanics2DControler::processElements(Matrices matrices, const So
 	}
 }
 
-void StructuralMechanics2DControler::processBoundary(Matrices matrices, const SolverParameters &parameters, size_t rindex, InstanceFiller &filler)
+void StructuralMechanics2DController::processBoundary(Matrices matrices, const SolverParameters &parameters, size_t rindex, InstanceFiller &filler)
 {
 	if (info::mesh->boundaryRegions[rindex]->dimension != 1) {
 		return;
@@ -272,7 +272,7 @@ void StructuralMechanics2DControler::processBoundary(Matrices matrices, const So
 	}
 }
 
-void StructuralMechanics2DControler::processSolution()
+void StructuralMechanics2DController::processSolution()
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
 

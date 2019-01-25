@@ -310,11 +310,11 @@ void UniformNodesComposer::buildPatterns()
 	_KPermutation.resize(KPattern.size());
 	_RHSPermutation.resize(RHSPattern.size());
 	data->K.resize(1);
-	data->origK.resize(1);
 	data->M.resize(1);
 	data->f.resize(1);
 	data->R.resize(1);
 	data->primalSolution.resize(1);
+	data->dualSolution.resize(1);
 	data->K.front().haloRows = (info::mesh->nodes->size - info::mesh->nodes->uniqueSize) * _DOFs;
 	data->K.front().rows = info::mesh->nodes->size * _DOFs;
 	data->K.front().cols = info::mesh->nodes->uniqueTotalSize * _DOFs;
@@ -399,6 +399,10 @@ void UniformNodesComposer::buildMVData()
 
 void UniformNodesComposer::assemble(Matrices matrices, const SolverParameters &parameters)
 {
+	if (!(matrices & (Matrices::K | Matrices::M | Matrices::R | Matrices::f))) {
+		return;
+	}
+
 	size_t threads = info::env::OMP_NUM_THREADS;
 
 	MatrixType mtype = _provider.getMatrixType();
@@ -409,7 +413,7 @@ void UniformNodesComposer::assemble(Matrices matrices, const SolverParameters &p
 	for (size_t t = 0; t < threads; t++) {
 		size_t KIndex = _tKOffsets[t], RHSIndex = _tRHSOffsets[t];
 		double KReduction = parameters.timeIntegrationConstantK, RHSReduction = parameters.internalForceReduction;
-		Controler::InstanceFiller filler;
+		Controller::InstanceFiller filler;
 
 		switch (mtype) {
 		case MatrixType::REAL_UNSYMMETRIC:
@@ -483,15 +487,25 @@ struct __Dirichlet__ {
 	esint row, column;
 };
 
-void UniformNodesComposer::setDirichlet()
+void UniformNodesComposer::setDirichlet(Matrices matrices, const std::vector<double> &subtraction)
 {
+	if (!(matrices & (Matrices::K | Matrices::M))) {
+		return;
+	}
+
 	auto &ROW = data->K.front().CSR_I_row_indices;
 	auto &COL = data->K.front().CSR_J_col_indices;
 	auto &VAL = data->K.front().CSR_V_values;
+	auto &ORIGVAL = data->origK.front().CSR_V_values;
 	auto &RHS = data->f.front();
 
 	std::vector<double> values(_dirichletMap.size());
 	_controler.dirichletValues(values);
+	if (subtraction.size()) {
+		for (size_t i = 0; i < _dirichletMap.size(); i++) {
+			values[_dirichletPermutation[i]] -= subtraction[_dirichletMap[i]];
+		}
+	}
 
 	std::vector<__Dirichlet__> dirichlet;
 
@@ -504,14 +518,17 @@ void UniformNodesComposer::setDirichlet()
 			} else {
 				VAL[j - 1] = 0;
 				auto dit = std::lower_bound(_DOFMap->datatarray().begin(), _DOFMap->datatarray().end(), COL[j - 1] - 1);
-				if (dit != _DOFMap->datatarray().end() && *dit == COL[j - 1] - 1) {
+				if (
+						(dit != _DOFMap->datatarray().end() && *dit == COL[j - 1] - 1) &&
+						!std::binary_search(_dirichletMap.begin(), _dirichletMap.end(), dit - _DOFMap->datatarray().begin())
+						) {
 					esint r = dit - _DOFMap->datatarray().begin();
 					for (esint c = ROW[r]; c < ROW[r + 1]; c++) {
 						if (COL[c - 1] == col) {
 							if (r < _foreignDOFs) {
-								dirichlet.push_back({VAL[c - 1] * RHS[_dirichletMap[i]], *dit, COL[c - 1] - 1});
+								dirichlet.push_back({ORIGVAL[c - 1] * RHS[_dirichletMap[i]], *dit, COL[c - 1] - 1});
 							}
-							RHS[r] -= VAL[c - 1] * RHS[_dirichletMap[i]];
+							RHS[r] -= ORIGVAL[c - 1] * RHS[_dirichletMap[i]];
 							VAL[c - 1] = 0;
 						}
 					}
@@ -664,10 +681,10 @@ void UniformNodesComposer::fillSolution()
 			data->primalSolution.front().data() + data->K.front().haloRows,
 			sizeof(double) * (data->K.front().rows - data->K.front().haloRows));
 
-	gather(_controler.solution());
+	gather(_controler.solution()->data);
 }
 
-void UniformNodesComposer::gather(NodeData *data)
+void UniformNodesComposer::gather(std::vector<double> &data)
 {
 	std::vector<std::vector<double> > sBuffer(info::mesh->neighbours.size()), rBuffer(info::mesh->neighbours.size());
 
@@ -678,7 +695,7 @@ void UniformNodesComposer::gather(NodeData *data)
 		} else {
 			sBuffer[n].reserve(_nRHSSize[n]);
 			for (esint i = 0; i < _nRHSSize[n]; ++i) {
-				sBuffer[n].push_back(data->data[_RHSPermutation[RHSIndex++]]);
+				sBuffer[n].push_back(data[_RHSPermutation[RHSIndex++]]);
 			}
 		}
 	}
@@ -696,7 +713,7 @@ void UniformNodesComposer::gather(NodeData *data)
 			++r;
 		}
 		for (int dof = 0; dof < _DOFs; ++dof) {
-			data->data[n * _DOFs + dof] = rBuffer[r][rIndices[r]++];
+			data[n * _DOFs + dof] = rBuffer[r][rIndices[r]++];
 		}
 	}
 }

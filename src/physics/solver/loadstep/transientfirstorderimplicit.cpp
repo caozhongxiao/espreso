@@ -7,6 +7,7 @@
 
 #include "physics/assembler/assembler.h"
 #include "physics/assembler/composer/composer.h"
+#include "physics/assembler/controllers/controller.h"
 
 #include "mesh/mesh.h"
 #include "mesh/store/nodestore.h"
@@ -41,9 +42,7 @@ std::string TransientFirstOrderImplicit::name()
 
 Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Matrices matrices)
 {
-	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R | Matrices::Dirichlet);
-
-	_assembler.assemble(updatedMatrices);
+	_assembler.assemble(matrices);
 	if (matrices & (Matrices::K | Matrices::M)) {
 		_assembler.composer()->KplusAlfaM(1 / (_alpha * time::shift));
 	}
@@ -51,10 +50,8 @@ Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Matrices matrices
 	if (matrices & (Matrices::K | Matrices::M | Matrices::f)) {
 		_assembler.composer()->sum(X, 1 / (_alpha * time::shift), U, (1 - _alpha) / _alpha, V);
 		_assembler.composer()->applyM(Y, X);
-		_assembler.composer()->enrichRHS(1, Y);
+		_assembler.composer()->enrichSolution(1, Y);
 	}
-
-	_assembler.setDirichlet();
 
 	return matrices;
 }
@@ -83,8 +80,7 @@ void TransientFirstOrderImplicit::initLoadStep()
 		ESINFO(GLOBAL_ERROR) << "Not supported first order implicit solver method.";
 	}
 
-	_assembler.composer()->buildMVData();
-	U->data = _assembler.solution()->data;
+	U->data = _assembler.controller()->solution()->data;
 }
 
 void TransientFirstOrderImplicit::runNextTimeStep()
@@ -108,7 +104,7 @@ void TransientFirstOrderImplicit::processTimeStep()
 
 	_timeStepSolver.solve(*this);
 
-	_assembler.composer()->sum(dU, 1, _assembler.solution(), -1, U);
+	_assembler.composer()->sum(dU, 1, _assembler.controller()->solution(), -1, U);
 	_nTimeShift = time::shift;
 
 	if (_configuration.auto_time_stepping.allowed && time::current < _startTime + _duration) {
@@ -147,9 +143,8 @@ void TransientFirstOrderImplicit::processTimeStep()
 	if (time::shift - _precision < _nTimeShift) {
 		_assembler.composer()->sum(V, 1 / (_alpha * time::shift), dU, -(1 - _alpha) / _alpha, V);
 
-		U->data = _assembler.solution()->data;
+		U->data = _assembler.controller()->solution()->data;
 		_assembler.postProcess();
-		info::mesh->storeSolution();
 	} else {
 		time::current -= time::shift;
 		--time::substep;

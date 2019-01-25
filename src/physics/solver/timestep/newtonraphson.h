@@ -21,7 +21,7 @@ public:
 protected:
 	NonLinearSolverConfiguration &_configuration;
 
-	NodeData *_solution, *_RHS;
+	NodeData *_solution;
 };
 
 }

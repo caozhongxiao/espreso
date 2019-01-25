@@ -9,7 +9,7 @@ namespace espreso {
 class UniformNodesFETIComposer: public FETIComposer {
 
 public:
-	UniformNodesFETIComposer(Controler &controler, FETIProvider &provider, FETISolverConfiguration &configuration, int DOFs)
+	UniformNodesFETIComposer(Controller &controler, FETIProvider &provider, FETISolverConfiguration &configuration, int DOFs)
 	: FETIComposer(controler, provider, configuration), _DOFs(DOFs) {}
 
 	void initDOFs();
@@ -18,7 +18,7 @@ public:
 	void buildMVData() {} // no data are needed
 
 	void assemble(Matrices matrices, const SolverParameters &parameters);
-	void setDirichlet();
+	void setDirichlet(Matrices matrices, const std::vector<double> &subtraction);
 
 	void fillSolution();
 
@@ -27,9 +27,9 @@ protected:
 	void buildB1Pattern();
 	void updateDuplicity();
 
-	void divide(NodeData *in, std::vector<std::vector<double> > &out);
-	void duply(NodeData *in, std::vector<std::vector<double> > &out);
-	void gather(NodeData *out, std::vector<std::vector<double> > &in);
+	void divide(std::vector<double> &in, std::vector<std::vector<double> > &out);
+	void duply(std::vector<double> &in, std::vector<std::vector<double> > &out);
+	void gather(std::vector<double> &out, std::vector<std::vector<double> > &in);
 
 	esint _DOFs;
 };

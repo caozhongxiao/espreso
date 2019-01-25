@@ -19,20 +19,20 @@
 using namespace espreso;
 
 
-Controler::Controler()
+Controller::Controller()
 : _dirichletSize(0)
 {
 	_nDistribution = info::mesh->elements->procNodes->datatarray().distribution();
 }
 
-Controler::Parameter::~Parameter()
+Controller::Parameter::~Parameter()
 {
 	if (data != NULL) {
 		delete data;
 	}
 }
 
-bool Controler::setDefault(const std::map<std::string, ECFExpression> &values, double &defaultValue)
+bool Controller::setDefault(const std::map<std::string, ECFExpression> &values, double &defaultValue)
 {
 	if (values.size() == 0) {
 		return true;
@@ -47,7 +47,7 @@ bool Controler::setDefault(const std::map<std::string, ECFExpression> &values, d
 	return false;
 }
 
-bool Controler::setDefault(const std::map<std::string, ECFExpressionVector> &values, Point &defaultValue)
+bool Controller::setDefault(const std::map<std::string, ECFExpressionVector> &values, Point &defaultValue)
 {
 	if (values.size() == 0) {
 		return true;
@@ -70,7 +70,7 @@ bool Controler::setDefault(const std::map<std::string, ECFExpressionVector> &val
 	return false;
 }
 
-void Controler::updateERegions(
+void Controller::updateERegions(
 		const std::map<std::string, ECFExpression> &settings, tarray<double> &data,
 		esint csize, double *cbegin, double *tbegin, double time,
 		EvaluatorParameters updatedParams)
@@ -91,7 +91,7 @@ void Controler::updateERegions(
 	}
 }
 
-void Controler::updateERegions(
+void Controller::updateERegions(
 		const std::map<std::string, ECFExpressionVector> &settings, tarray<double> &data,
 		esint csize, double *cbegin, double *tbegin, double time,
 		EvaluatorParameters updatedParams)
@@ -126,7 +126,7 @@ void Controler::updateERegions(
 	}
 }
 
-void Controler::updateBRegions(
+void Controller::updateBRegions(
 		const ECFExpression &expression, Parameter &parameter, const std::vector<size_t> &distribution,
 		esint csize, double *cbegin, double *tbegin, double time,
 		EvaluatorParameters updatedParams)
@@ -146,7 +146,7 @@ void Controler::updateBRegions(
 	}
 }
 
-void Controler::initDirichletData(tarray<double> &initData)
+void Controller::initDirichletData(tarray<double> &initData)
 {
 	std::vector<std::vector<esint> > indices;
 	std::vector<double> values;
@@ -172,7 +172,7 @@ void Controler::initDirichletData(tarray<double> &initData)
 	}
 }
 
-void Controler::averageNodeInitilization(tarray<double> &initData, std::vector<double> &averagedData)
+void Controller::averageNodeInitilization(tarray<double> &initData, std::vector<double> &averagedData)
 {
 	std::fill(averagedData.begin(), averagedData.end(), 0);
 	auto i = initData.begin();
@@ -227,7 +227,7 @@ void Controler::averageNodeInitilization(tarray<double> &initData, std::vector<d
 	}
 }
 
-void Controler::nodeValuesToElements(int dimension, tarray<double> &nodeData, std::vector<double> &elementData)
+void Controller::nodeValuesToElements(int dimension, tarray<double> &nodeData, std::vector<double> &elementData)
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
 

@@ -10,16 +10,16 @@ struct StructuralMechanicsLoadStepConfiguration;
 struct NodeData;
 struct ElementData;
 
-class StructuralMechanicsControler: public Controler
+class StructuralMechanicsController: public Controller
 {
 
 public:
 	NodeData* solution();
 
 protected:
-	StructuralMechanicsControler(StructuralMechanicsLoadStepConfiguration &configuration)
+	StructuralMechanicsController(StructuralMechanicsLoadStepConfiguration &configuration)
 
-	: Controler(),
+	: Controller(),
 	  _configuration(configuration),
 	  _displacement(NULL), _avgThickness(NULL),
 	  _thickness(NULL) {}

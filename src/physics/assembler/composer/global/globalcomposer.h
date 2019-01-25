@@ -12,24 +12,21 @@ class GlobalComposer: public Composer {
 
 public:
 
-	GlobalComposer(Controler &controler, Provider &provider)
-	: Composer(controler), _provider(provider), _localKOffset(0), _localRHSOffset(0), _foreignDOFs(0) {}
-
-	NodeData* RHS();
+	GlobalComposer(Controller &controler, Provider &provider)
+	: Composer(controler), _provider(provider), _localKOffset(0), _localRHSOffset(0) {}
 
 	void KplusAlfaM(double alfa);
-	void enrichRHS(double alfa, NodeData* a);
-	void RHSMinusR();
-	void DirichletMinusRHS();
-	double residualNorm();
+	void computeReactionForces();
+	double residualNormNumerator();
+	double residualNormDenominator();
 
 protected:
-	void apply(std::vector<SparseMatrix> &matrices, NodeData *result, NodeData *x);
-	virtual void gather(NodeData *data) =0;
+	void apply(std::vector<SparseMatrix> &matrices, std::vector<double> &result, std::vector<double> &x);
+	virtual void gather(std::vector<double> &data) =0;
 
 	Provider &_provider;
 
-	esint _localKOffset, _localRHSOffset, _foreignDOFs;
+	esint _localKOffset, _localRHSOffset;
 	std::vector<esint> _nKSize, _nRHSSize;
 	std::vector<esint> _tKOffsets, _tRHSOffsets;
 	std::vector<esint> _KPermutation, _RHSPermutation;

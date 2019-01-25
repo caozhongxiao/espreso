@@ -23,14 +23,8 @@ std::string PseudoTimeStepping::name()
 
 Matrices PseudoTimeStepping::updateStructuralMatrices(Matrices matrices)
 {
-	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::f | Matrices::R | Matrices::Dirichlet);
-
-	if (time::iteration) {
-		updatedMatrices &= (Matrices::f | Matrices::Dirichlet | Matrices::R);
-	}
-
-	_assembler.assemble(updatedMatrices);
-	_assembler.setDirichlet();
+	matrices &= (Matrices::K | Matrices::f | Matrices::R);
+	_assembler.assemble(matrices);
 	return matrices;
 }
 
@@ -52,6 +46,7 @@ void PseudoTimeStepping::processTimeStep()
 	_assembler.parameters.timeIntegrationConstantM = 0;
 
 	_timeStepSolver.solve(*this);
+	_assembler.postProcess();
 }
 
 

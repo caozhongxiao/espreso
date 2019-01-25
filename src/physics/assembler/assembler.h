@@ -12,6 +12,8 @@ struct FETISolverConfiguration;
 struct MultigridConfiguration;
 enum Matrices: int;
 class Composer;
+class Controller;
+class Provider;
 struct NodeData;
 enum class SumRestriction;
 class SparseMatrix;
@@ -34,31 +36,20 @@ struct SolverParameters {
 struct Assembler {
 	virtual void init() =0;
 	virtual void nextTime() =0;
+	virtual void parametersChanged() =0;
 	virtual void assemble(Matrices matrices) =0;
-	virtual void setDirichlet() =0;
+	virtual void setDirichlet(Matrices matrices, const std::vector<double> &subtraction = {}) =0;
 	virtual void solve(Matrices matrices) =0;
 	virtual void postProcess() =0;
 
-	virtual NodeData* solution() =0;
 	virtual double& solutionPrecision() =0;
 
-	/// z = a * x + b + y
-	void sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::string &description);
-	/// z = a * x + b + y (prefix variant)
-	void sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::vector<size_t> &prefix, const std::string &description);
-
-	/// y = A * x
-	void multiply(std::vector<std::vector<double> > &y, std::vector<SparseMatrix> &A, std::vector<std::vector<double> > &x, const std::string &description);
-	/// a = x * y
-	double multiply(std::vector<std::vector<double> > &x, std::vector<std::vector<double> > &y, const std::string &description);
-
-	double sumSquares(const std::vector<std::vector<double> > &data, SumRestriction restriction, const std::string &description);
-	void addToDirichletInB1(double a, const std::vector<std::vector<double> > &x);
-	double maxAbsValue(const std::vector<std::vector<double> > &v, const std::string &description);
 	double lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext);
 
 	virtual DataHolder* data() =0;
 	virtual Composer* composer() =0;
+	virtual Controller* controller() =0;
+	virtual Provider* provider() =0;
 
 	virtual ~Assembler() {};
 
@@ -99,12 +90,17 @@ struct AssemblerInstance: public Assembler, public TController, public TComposer
 
 	DataHolder* data() { return TComposer::data; }
 	Composer* composer() { return this; }
+	Controller* controller() { return this; }
+	Provider* provider() { return this; }
 
 	void init()
 	{
 		TComposer::initDOFs();
 		TComposer::buildDirichlet();
 		TComposer::buildPatterns();
+		if (TProvider::needMatrixVectorProduct()) {
+			TComposer::buildMVData();
+		}
 
 		TController::initData();
 	}
@@ -114,34 +110,39 @@ struct AssemblerInstance: public Assembler, public TController, public TComposer
 		TController::nextTime();
 	}
 
+	void parametersChanged()
+	{
+		TController::parametersChanged();
+	}
+
 	void assemble(Matrices matrices)
 	{
 		TComposer::assemble(matrices, parameters);
-		if (TProvider::needOriginalStiffnessMatrices()) {
+		if ((matrices & Matrices::K) && TProvider::needOriginalStiffnessMatrices()) {
 			TComposer::keepK();
+		}
+		if ((matrices & Matrices::f) && TProvider::needOriginalRHS()) {
+			TComposer::keepRHS();
 		}
 	}
 
-	void setDirichlet()
+	void setDirichlet(Matrices matrices, const std::vector<double> &subtraction = {})
 	{
-		TComposer::setDirichlet();
+		TComposer::setDirichlet(matrices, subtraction);
 	}
 
 	void solve(Matrices matrices)
 	{
 		callsolve(matrices);
 		TComposer::fillSolution();
+		if (TProvider::needReactionForces()) {
+			TComposer::computeReactionForces();
+		}
 	}
 
 	void postProcess()
 	{
-		TComposer::parametersChanged();
 		TComposer::processSolution();
-	}
-
-	NodeData* solution()
-	{
-		return TController::solution();
 	}
 
 	double& solutionPrecision()

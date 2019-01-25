@@ -18,12 +18,12 @@
 
 using namespace espreso;
 
-NodeData* HeatTransferControler::solution()
+NodeData* HeatTransferController::solution()
 {
 	return _temperature;
 }
 
-void HeatTransferControler::dirichletIndices(std::vector<std::vector<esint> > &indices)
+void HeatTransferController::dirichletIndices(std::vector<std::vector<esint> > &indices)
 {
 	indices.resize(1); // heat has only one DOF
 
@@ -39,7 +39,7 @@ void HeatTransferControler::dirichletIndices(std::vector<std::vector<esint> > &i
 	_dirichletSize = indices[0].size();
 }
 
-void HeatTransferControler::dirichletValues(std::vector<double> &values)
+void HeatTransferController::dirichletValues(std::vector<double> &values)
 {
 	values.resize(_dirichletSize);
 

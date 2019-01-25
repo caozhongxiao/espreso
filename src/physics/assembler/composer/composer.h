@@ -9,7 +9,7 @@
 namespace espreso {
 
 struct DataHolder;
-class Controler;
+class Controller;
 enum Matrices: int;
 struct NodeData;
 struct SolverParameters;
@@ -38,7 +38,7 @@ inline bool operator<(const IJ &left, const IJ &right)
 class Composer {
 
 public:
-	Composer(Controler &controler);
+	Composer(Controller &controler);
 
 	virtual void initDOFs() = 0;
 	virtual void buildPatterns() = 0;
@@ -47,34 +47,33 @@ public:
 
 	virtual void initData();
 	virtual void assemble(Matrices matrices, const SolverParameters &parameters) = 0;
+	virtual void setDirichlet(Matrices matrices, const std::vector<double> &subtraction) = 0;
 
 	virtual void nextTime();
 	virtual void parametersChanged();
 
-	virtual void setDirichlet() = 0;
-//	virtual void synchronize() = 0;
-
 	virtual void fillSolution() = 0;
+	virtual void computeReactionForces() = 0;
 	virtual void processSolution();
 
-	virtual NodeData* RHS() =0;
 	virtual void keepK();
+	virtual void keepRHS();
 	virtual void KplusAlfaM(double alfa) =0;
-	virtual void applyOriginalK(NodeData *result, NodeData *x);
-	virtual void applyM(NodeData *result, NodeData *x);
-	virtual void enrichRHS(double alfa, NodeData* x) =0;
-	virtual void RHSMinusR() =0;
-	virtual void DirichletMinusRHS() =0;
+	virtual void applyOriginalK(NodeData* result, NodeData* x);
+	virtual void applyM(NodeData* result, NodeData* x);
+	virtual void enrichSolution(double alfa, NodeData* x);
+	virtual void RHSMinusR();
 	virtual void sum(NodeData *z, double alfa, NodeData* a, double beta, NodeData *b);
 	virtual double norm(NodeData *x, NodeData* y);
-	virtual double residualNorm() =0;
+	virtual double residualNormNumerator() =0;
+	virtual double residualNormDenominator() =0;
 
 	virtual ~Composer();
 
 	DataHolder *data;
 
 protected:
-	virtual void apply(std::vector<SparseMatrix> &matrices, NodeData *result, NodeData *x) = 0;
+	virtual void apply(std::vector<SparseMatrix> &matrices, std::vector<double> &result, std::vector<double> &x) = 0;
 
 	static size_t getMatrixSize(size_t size, MatrixType mtype)
 	{
@@ -92,8 +91,9 @@ protected:
 	void insertKPattern(IJ *target, esint *begin, esint *end, MatrixType mtype);
 	void clearMatrices(Matrices matrices, esint domain);
 
-	Controler &_controler;
+	Controller &_controler;
 
+	esint _foreignDOFs;
 	serializededata<esint, esint> *_DOFMap;
 	std::vector<esint> _dirichletMap;
 

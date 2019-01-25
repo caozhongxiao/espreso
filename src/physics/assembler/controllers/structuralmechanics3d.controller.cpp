@@ -16,8 +16,8 @@
 
 using namespace espreso;
 
-StructuralMechanics3DControler::StructuralMechanics3DControler(StructuralMechanicsLoadStepConfiguration &configuration)
-: StructuralMechanicsControler(configuration)
+StructuralMechanics3DController::StructuralMechanics3DController(StructuralMechanicsLoadStepConfiguration &configuration)
+: StructuralMechanicsController(configuration)
 {
 	_kernel = new StructuralMechanics3DKernel();
 
@@ -40,12 +40,12 @@ StructuralMechanics3DControler::StructuralMechanics3DControler(StructuralMechani
 	_boundaries.resize(info::mesh->boundaryRegions.size());
 }
 
-StructuralMechanics3DControler::~StructuralMechanics3DControler()
+StructuralMechanics3DController::~StructuralMechanics3DController()
 {
 	delete _kernel;
 }
 
-void StructuralMechanics3DControler::dirichletIndices(std::vector<std::vector<esint> > &indices)
+void StructuralMechanics3DController::dirichletIndices(std::vector<std::vector<esint> > &indices)
 {
 	indices.resize(3);
 
@@ -77,7 +77,7 @@ void StructuralMechanics3DControler::dirichletIndices(std::vector<std::vector<es
 	_dirichletSize = indices[0].size() + indices[1].size() + indices[2].size();
 }
 
-void StructuralMechanics3DControler::dirichletValues(std::vector<double> &values)
+void StructuralMechanics3DController::dirichletValues(std::vector<double> &values)
 {
 	values.resize(_dirichletSize);
 
@@ -117,7 +117,7 @@ void StructuralMechanics3DControler::dirichletValues(std::vector<double> &values
 	}
 }
 
-void StructuralMechanics3DControler::initData()
+void StructuralMechanics3DController::initData()
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -167,7 +167,7 @@ void StructuralMechanics3DControler::initData()
 	}
 }
 
-void StructuralMechanics3DControler::nextTime()
+void StructuralMechanics3DController::nextTime()
 {
 	if (time::isInitial()) {
 		return;
@@ -176,7 +176,7 @@ void StructuralMechanics3DControler::nextTime()
 	parametersChanged();
 }
 
-void StructuralMechanics3DControler::parametersChanged()
+void StructuralMechanics3DController::parametersChanged()
 {
 	double *cbegin = _ncoordinate.data->datatarray().data();
 	double *tbegin = NULL;
@@ -201,7 +201,7 @@ void StructuralMechanics3DControler::parametersChanged()
 	}
 }
 
-void StructuralMechanics3DControler::processElements(Matrices matrices, const SolverParameters &parameters, InstanceFiller &filler)
+void StructuralMechanics3DController::processElements(Matrices matrices, const SolverParameters &parameters, InstanceFiller &filler)
 {
 	auto enodes = info::mesh->elements->procNodes->cbegin() + filler.begin;
 	StructuralMechanics3DKernel::ElementIterator iterator;
@@ -229,7 +229,7 @@ void StructuralMechanics3DControler::processElements(Matrices matrices, const So
 	}
 }
 
-void StructuralMechanics3DControler::processBoundary(Matrices matrices, const SolverParameters &parameters, size_t rindex, InstanceFiller &filler)
+void StructuralMechanics3DController::processBoundary(Matrices matrices, const SolverParameters &parameters, size_t rindex, InstanceFiller &filler)
 {
 	if (info::mesh->boundaryRegions[rindex]->dimension != 2) {
 		return;
@@ -255,7 +255,7 @@ void StructuralMechanics3DControler::processBoundary(Matrices matrices, const So
 	}
 }
 
-void StructuralMechanics3DControler::processSolution()
+void StructuralMechanics3DController::processSolution()
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
 

@@ -8,12 +8,12 @@ namespace espreso {
 
 struct StructuralMechanics2DKernel;
 
-class StructuralMechanics2DControler: public StructuralMechanicsControler
+class StructuralMechanics2DController: public StructuralMechanicsController
 {
 
 public:
-	StructuralMechanics2DControler(StructuralMechanicsLoadStepConfiguration &configuration);
-	~StructuralMechanics2DControler();
+	StructuralMechanics2DController(StructuralMechanicsLoadStepConfiguration &configuration);
+	~StructuralMechanics2DController();
 
 	void dirichletIndices(std::vector<std::vector<esint> > &indices);
 	void dirichletValues(std::vector<double> &values);
