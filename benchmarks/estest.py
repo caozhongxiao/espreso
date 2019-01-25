@@ -10,7 +10,7 @@ except ImportError:
 class ESPRESOTest:
 
     root = os.path.dirname(os.path.dirname(__file__))
-    espreso = os.path.join(root, "bin", "espreso")
+    espreso = os.path.join(root, "build", "espreso")
     mpirun = [ "mpirun", "--map-by", "socket:pe=2", "--bind-to", "core", "-n" ]
 
     env = dict(os.environ)

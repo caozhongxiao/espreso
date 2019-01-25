@@ -478,20 +478,20 @@ static void setBoomerAMGPreconditioner(HYPRE_Solver &boomerAMG, const HYPREBoome
 }
 
 
-void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslocal nrows, double *solution)
+void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, esint nrows, double *solution)
 {
 	if (!data._finalized) {
 		data.finalizePattern();
 	}
 
-	eslocal iterations;
+	esint iterations;
 	double norm;
 
 	HYPRE_ParCSRMatrix K;
 	HYPRE_ParVector f, x;
-	HYPRE_IJMatrixGetObject(data._K, (void**) &K);
-	HYPRE_IJVectorGetObject(data._f, (void**) &f);
-	HYPRE_IJVectorGetObject(data._x, (void**) &x);
+	HYPRE_IJMatrixGetObject(data._data->K, (void**) &K);
+	HYPRE_IJVectorGetObject(data._data->f, (void**) &f);
+	HYPRE_IJVectorGetObject(data._data->x, (void**) &x);
 
 	HYPRE_Solver solver;
 	HYPRE_Solver preconditioner;
@@ -517,19 +517,19 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver options.";
 		}
 
-    	HYPRE_BoomerAMGSetup(solver, K, f, x);
-    	HYPRE_BoomerAMGSolve(solver, K, f, x);
+		HYPRE_BoomerAMGSetup(solver, K, f, x);
+		HYPRE_BoomerAMGSolve(solver, K, f, x);
 
 		HYPRE_BoomerAMGGetNumIterations(solver, &iterations);
 		HYPRE_BoomerAMGGetFinalRelativeResidualNorm(solver, &norm);
 
 		ESINFO(CONVERGENCE) << "Final Relative Residual Norm " << norm << " in " << iterations << " iteration.";
 
-    	HYPRE_BoomerAMGDestroy(solver);
+		HYPRE_BoomerAMGDestroy(solver);
 
 		break;
 	case HypreConfiguration::SOLVER_TYPE::PCG:
-		HYPRE_ParCSRPCGCreate(data._comm, &solver);
+		HYPRE_ParCSRPCGCreate(info::mpi::comm, &solver);
 
 		HYPRE_PCGSetMaxIter(solver, configuration.pcg.max_iterations);
 		HYPRE_PCGSetTol(solver, configuration.pcg.relative_conv_tol);
@@ -577,7 +577,7 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 
 		ESINFO(CONVERGENCE) << "Final Relative Residual Norm " << norm << " in " << iterations << " iteration.";
 
-        HYPRE_ParCSRPCGDestroy(solver);
+		HYPRE_ParCSRPCGDestroy(solver);
 
 		switch (configuration.pcg.preconditioner) {
 		case HYPREPCGConfiguration::PRECONDITIONER::BoomerAMG:
@@ -593,7 +593,7 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 		break;
 
 	case HypreConfiguration::SOLVER_TYPE::GMRES:
-		HYPRE_ParCSRGMRESCreate(data._comm, &solver);
+		HYPRE_ParCSRGMRESCreate(info::mpi::comm, &solver);
 
 		HYPRE_GMRESSetMaxIter(solver, configuration.gmres.max_iterations);
 		HYPRE_GMRESSetTol(solver, configuration.gmres.relative_conv_tol);
@@ -654,7 +654,7 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 		break;
 
 	case HypreConfiguration::SOLVER_TYPE::FlexGMRES:
-		HYPRE_ParCSRFlexGMRESCreate(data._comm, &solver);
+		HYPRE_ParCSRFlexGMRESCreate(info::mpi::comm, &solver);
 
 		HYPRE_FlexGMRESSetMaxIter(solver, configuration.flexgmres.max_iterations);
 		HYPRE_FlexGMRESSetTol(solver, configuration.flexgmres.relative_conv_tol);
@@ -716,7 +716,7 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 		break;
 
 	case HypreConfiguration::SOLVER_TYPE::LGMRES:
-		HYPRE_ParCSRLGMRESCreate(data._comm, &solver);
+		HYPRE_ParCSRLGMRESCreate(info::mpi::comm, &solver);
 
 		HYPRE_LGMRESSetMaxIter(solver, configuration.lgmres.max_iterations);
 		HYPRE_LGMRESSetTol(solver, configuration.lgmres.relative_conv_tol);
@@ -776,7 +776,7 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 		break;
 
 	case HypreConfiguration::SOLVER_TYPE::BiCGSTAB:
-		HYPRE_ParCSRBiCGSTABCreate(data._comm, &solver);
+		HYPRE_ParCSRBiCGSTABCreate(info::mpi::comm, &solver);
 
 		HYPRE_BiCGSTABSetMaxIter(solver, configuration.bicgstab.max_iterations);
 		HYPRE_BiCGSTABSetTol(solver, configuration.bicgstab.relative_conv_tol);
@@ -835,7 +835,7 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 		break;
 
 	case HypreConfiguration::SOLVER_TYPE::CGNR:
-		HYPRE_ParCSRCGNRCreate(data._comm, &solver);
+		HYPRE_ParCSRCGNRCreate(info::mpi::comm, &solver);
 
 		HYPRE_CGNRSetMaxIter(solver, configuration.cgnr.max_iterations);
 		HYPRE_CGNRSetTol(solver, configuration.cgnr.relative_conv_tol);
@@ -880,7 +880,7 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, eslo
 	}
 
 
-	std::vector<eslocal> rows(nrows);
+	std::vector<esint> rows(nrows);
 	std::iota(rows.begin(), rows.end(), data._roffset + 1);
-	HYPRE_IJVectorGetValues(data._x, data._nrows, rows.data(), solution);
+	HYPRE_IJVectorGetValues(data._data->x, data._nrows, rows.data(), solution);
 }

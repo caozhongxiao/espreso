@@ -1,7 +1,7 @@
 
 #include "hyprepcg.h"
 
-#include "../../../configuration.hpp"
+#include "config/configuration.hpp"
 
 using namespace espreso;
 
@@ -27,20 +27,20 @@ HYPREPCGConfiguration::HYPREPCGConfiguration()
 			.setdescription({ "Set maximum number of iterations" })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
-    two_norm = true;
+	two_norm = true;
 	REGISTER(two_norm, ECFMetaData()
 			.setdescription({ "Use the two-norm in stopping criteria" })
 			.setdatatype({ ECFDataType::BOOL }));
 
-    recompute_residual_end = true;
+	recompute_residual_end = true;
 	REGISTER(recompute_residual_end, ECFMetaData()
 			.setdescription({ "Recompute the residual at the end to double-check convergence" })
 			.setdatatype({ ECFDataType::BOOL }));
 
-    recompute_residual_p = false;
+	recompute_residual_p = false;
 	REGISTER(recompute_residual_p, ECFMetaData()
 			.setdescription({ "Periodically recompute the residual while iterating" })
-			.setdatatype({ ECFDataType::BOOL }));			
+			.setdatatype({ ECFDataType::BOOL }));
 
 	preconditioner = PRECONDITIONER::BoomerAMG;
 	REGISTER(preconditioner, ECFMetaData()
@@ -64,6 +64,4 @@ HYPREPCGConfiguration::HYPREPCGConfiguration()
 			.addoption(ECFOption().setname("SETUP_INFO").setdescription("print setup information"))
 			.addoption(ECFOption().setname("SOLVE_INFO").setdescription("print solve information"))
 			.addoption(ECFOption().setname("SETUP_SOLVE_INFO").setdescription("print both setup and solve information")));
-
-
 }

@@ -7,7 +7,7 @@
 
 #include "basis/logging/logging.h"
 #include "basis/containers/serializededata.h"
-#include "config/ecf/solver/feti.h"
+#include "config/ecf/linearsolver/feti.h"
 #include "config/ecf/physics/physicssolver/loadstep.h"
 
 #include "mesh/mesh.h"

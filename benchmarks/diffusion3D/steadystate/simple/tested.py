@@ -14,7 +14,7 @@ def teardown():
 @istest
 def by():
     for etype in [ "HEXA8", "HEXA20", "TETRA4", "TETRA10", "PRISMA6", "PRISMA15", "PYRAMID5", "PYRAMID13" ]:
-        yield run, etype, "MULTIGRID", "0"
+        yield run, etype, "HYPRE", "0"
         for method in [ "TOTAL_FETI", "HYBRID_FETI" ]:
             yield run, etype, "FETI", method
 

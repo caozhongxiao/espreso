@@ -9,7 +9,7 @@ namespace espreso {
 
 struct HeatTransferLoadStepConfiguration;
 struct FETISolverConfiguration;
-struct MultigridConfiguration;
+struct HypreConfiguration;
 enum Matrices: int;
 class Composer;
 class Controller;
@@ -64,7 +64,7 @@ template <typename TController, typename TComposer, typename TProvider, typename
 struct AssemblerInstance: public Assembler, public TController, public TComposer, public TProvider {
 
 	template <typename TPhysics>
-	AssemblerInstance(TPhysics &loadStep, MultigridConfiguration &solver, int DOFs)
+	AssemblerInstance(TPhysics &loadStep, HypreConfiguration &solver, int DOFs)
 	: TController(loadStep),
 	  TComposer(*this, *this, DOFs),
 	  TProvider(TComposer::data, loadStep)

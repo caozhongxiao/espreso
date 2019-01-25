@@ -1,17 +1,16 @@
 
+#include "hypresolver.h"
 #include "physics/assembler/dataholder.h"
-#include "multigrid.h"
-
-#include "solver/generic/SparseMatrix.h"
 
 #include "basis/utilities/utils.h"
-#include "config/ecf/solver/multigrid.h"
+#include "config/ecf/linearsolver/hypre/hypre.h"
 
+#include "solver/generic/SparseMatrix.h"
 #include "wrappers/hypre/hyprewrapper.h"
 
 using namespace espreso;
 
-MultigridSolver::MultigridSolver(DataHolder *data, MultigridConfiguration &configuration)
+HYPRESolver::HYPRESolver(DataHolder *data, HypreConfiguration &configuration)
 : LinearSolver(data), _configuration(configuration), _hypreData(NULL)
 {
 

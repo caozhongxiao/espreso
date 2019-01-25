@@ -1,6 +1,7 @@
 
-#include "../../../configuration.hpp"
 #include "hypreparasalis.h"
+
+#include "config/configuration.hpp"
 
 using namespace espreso;
 

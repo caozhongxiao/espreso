@@ -2,7 +2,7 @@
 #ifndef SRC_CONFIG_ECF_INPUT_FETI4ILIBRARY_H_
 #define SRC_CONFIG_ECF_INPUT_FETI4ILIBRARY_H_
 
-#include "config/ecf/solver/feti.h"
+#include "config/ecf/linearsolver/feti.h"
 
 namespace espreso {
 

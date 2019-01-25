@@ -12,15 +12,15 @@
 
 namespace espreso {
 
-struct HypreConfiguration: public ECFObject {
+struct HypreConfiguration: public ECFDescription {
 
 	enum class SOLVER_TYPE {
 		BoomerAMG,
 		PCG,
 		GMRES,
-		FlexGMRES, 
-		LGMRES, 
-		BiCGSTAB, 
+		FlexGMRES,
+		LGMRES,
+		BiCGSTAB,
 		CGNR
 	};
 

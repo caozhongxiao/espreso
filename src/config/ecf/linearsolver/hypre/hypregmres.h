@@ -7,7 +7,7 @@
 
 namespace espreso {
 
-struct HYPREGMRESConfiguration: public ECFObject {
+struct HYPREGMRESConfiguration: public ECFDescription {
 
 	enum class PRECONDITIONER {
 		BoomerAMG,
@@ -29,7 +29,7 @@ struct HYPREGMRESConfiguration: public ECFObject {
 		SETUP_SOLVE_INFO
 	};
 	SOLVER_INFO solver_info;
-            
+
 	HYPREGMRESConfiguration();
 };
 

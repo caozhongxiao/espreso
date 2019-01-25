@@ -7,7 +7,7 @@
 
 namespace espreso {
 
-struct HYPREBiCGSTABConfiguration: public ECFObject {
+struct HYPREBiCGSTABConfiguration: public ECFDescription {
 
 	enum class PRECONDITIONER {
 		BoomerAMG,

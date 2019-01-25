@@ -30,7 +30,8 @@ bool HYPREProvider::needOriginalStiffnessMatrices()
 
 double& HYPREProvider::solutionPrecision()
 {
-	return _configuration.multigrid.precision;
+	// TODO: other solvers
+	return _configuration.hypre.boomeramg.convergence_tolerance;
 }
 
 

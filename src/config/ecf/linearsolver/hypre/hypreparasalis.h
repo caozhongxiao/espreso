@@ -2,11 +2,11 @@
 #ifndef SRC_CONFIG_ECF_LINEARSOLVER_HYPRE_HYPREPARASALIS_H_
 #define SRC_CONFIG_ECF_LINEARSOLVER_HYPRE_HYPREPARASALIS_H_
 
-#include "../../../configuration.h"
+#include "config/description.h"
 
 namespace espreso {
 
-struct HYPREParasalisConfiguration: public ECFObject {
+struct HYPREParasalisConfiguration: public ECFDescription {
 
 	double convergence_tolerance;
 

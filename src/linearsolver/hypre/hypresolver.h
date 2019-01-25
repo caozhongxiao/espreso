@@ -6,14 +6,14 @@
 
 namespace espreso {
 
-struct MultigridConfiguration;
+struct HypreConfiguration;
 struct HypreData;
 
 class HYPRESolver: public LinearSolver {
 public:
 
-	MultigridSolver(DataHolder *data, MultigridConfiguration &configuration);
-	virtual ~MultigridSolver();
+	HYPRESolver(DataHolder *data, HypreConfiguration &configuration);
+	virtual ~HYPRESolver();
 
 	void update(Matrices matrices);
 	void solve();
@@ -26,7 +26,7 @@ public:
 	double& precision();
 
 protected:
-	MultigridConfiguration &_configuration;
+	HypreConfiguration &_configuration;
 
 	HypreData *_hypreData;
 };

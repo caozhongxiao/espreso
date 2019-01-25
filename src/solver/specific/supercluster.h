@@ -124,7 +124,7 @@ public:
 //			}
 
 
-		MPI_Allreduce(&unsym, &gunsym, 1, MPI_INT, MPI_SUM, info::mpi::comm);
+		mtype 	  = instance->K[0].mtype; // TODO: WARNING - Needs to be fixed
 
 		switch (mtype) {
 		case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:

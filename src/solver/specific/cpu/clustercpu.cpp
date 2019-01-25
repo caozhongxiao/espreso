@@ -215,7 +215,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 	// permutations made on matrix in COO format
 	K_modif.ConvertToCOO(0);
 	esint I_index, J_index;
-	bool unsymmetric = K_modif.mtype == MatrixType::REAL_UNSYMMETRIC;
+	bool unsymmetric = !SYMMETRIC_SYSTEM;
 	for (esint i = 0; i < K_modif.nnz; i++) {
 		I_index = vec_I1_i2[K_modif.I_row_indices[i] - offset][1] + offset;
 		J_index = vec_I1_i2[K_modif.J_col_indices[i] - offset][1] + offset;

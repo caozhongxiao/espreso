@@ -15,7 +15,7 @@
 #include "basis/utilities/utils.h"
 #include "basis/utilities/communication.h"
 
-#include "config/ecf/solver/feti.h"
+#include "config/ecf/linearsolver/feti.h"
 
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"

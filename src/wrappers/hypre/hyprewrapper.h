@@ -4,7 +4,7 @@
 
 namespace espreso {
 
-struct MultigridConfiguration;
+struct HypreConfiguration;
 struct HYPREData;
 
 class HypreData {
@@ -27,7 +27,7 @@ protected:
 };
 
 struct HYPRE {
-	static void solve(const MultigridConfiguration &configuration, HypreData &data, esint nrows, double *solution);
+	static void solve(const HypreConfiguration &configuration, HypreData &data, esint nrows, double *solution);
 };
 
 }

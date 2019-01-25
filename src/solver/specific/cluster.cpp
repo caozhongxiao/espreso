@@ -38,18 +38,9 @@ void ClusterBase::InitClusterPC( esint * subdomains_global_indices, esint number
 	// *** Init the vector of domains *****************************************************
 	domains_in_global_index.resize( number_of_subdomains ) ;
 
-	int unsym = 0, gunsym = 0;
-	for (esint d = 0; d < number_of_subdomains; d++) {
-		if (instance->K[d].mtype == MatrixType::REAL_UNSYMMETRIC) {
-			unsym = 1;
-		}
-	}
-
-	MPI_Allreduce(&unsym, &gunsym, 1, MPI_INT, MPI_SUM, info::mpi::comm);
-
 	domains.reserve(number_of_subdomains);
 	for (esint d = 0; d < number_of_subdomains; d++) {
-		domains.push_back( (Domain(configuration, instance, subdomains_global_indices[d], USE_HFETI, gunsym && instance->K[d].mtype == MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE)) );
+		domains.push_back( (Domain(configuration, instance, subdomains_global_indices[d], USE_HFETI)) );
 		domains[d].domain_index = d;
 
 		// Verbose level for K_plus

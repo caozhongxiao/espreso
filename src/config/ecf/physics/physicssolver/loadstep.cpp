@@ -29,7 +29,6 @@ espreso::LoadStepConfiguration::LoadStepConfiguration(const std::string &firstRe
 			.setdescription({ "Linear solver" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("FETI").setdescription("Use ESPRESO as linear solver."))
-			.addoption(ECFOption().setname("MULTIGRID").setdescription("Use hypre library as MULTIGRID solver."))
 			.addoption(ECFOption().setname("HYPRE").setdescription("Use hypre library.")));
 
 	REGISTER(nonlinear_solver, ECFMetaData()
@@ -42,9 +41,6 @@ espreso::LoadStepConfiguration::LoadStepConfiguration(const std::string &firstRe
 	REGISTER(feti, ECFMetaData()
 			.setdescription({ "FETI solver settings" })
 			.allowonly([&] () { return solver == SOLVER::FETI; }));
-	REGISTER(multigrid, ECFMetaData()
-			.setdescription({ "HYPRE multigrid solver settings" })
-			.allowonly([&] () { return solver == SOLVER::MULTIGRID; }));
 	REGISTER(hypre, ECFMetaData()
 			.setdescription({ "HYPRE multigrid solver settings" })
 			.allowonly([&] () { return solver == SOLVER::HYPRE; }));

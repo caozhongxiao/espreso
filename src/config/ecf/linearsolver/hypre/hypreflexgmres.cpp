@@ -1,7 +1,7 @@
 
 #include "hypreflexgmres.h"
 
-#include "../../../configuration.hpp"
+#include "config/configuration.hpp"
 
 using namespace espreso;
 

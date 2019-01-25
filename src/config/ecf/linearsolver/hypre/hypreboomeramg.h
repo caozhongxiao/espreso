@@ -2,24 +2,23 @@
 #ifndef SRC_CONFIG_ECF_LINEARSOLVER_HYPRE_HYPREBOOMERAMG_H_
 #define SRC_CONFIG_ECF_LINEARSOLVER_HYPRE_HYPREBOOMERAMG_H_
 
-#include "../../../configuration.h"
+#include "config/description.h"
 
 namespace espreso {
 
-
-struct HYPREBoomerAMGConfiguration: public ECFObject {
+struct HYPREBoomerAMGConfiguration: public ECFDescription {
 
 	double convergence_tolerance;
 	int min_iterations, max_iterations, max_coarest_grid_size, min_coarest_grid_size;
-    int max_multigrid_levels;
+	int max_multigrid_levels;
 
 	enum class COARSENING_TYPE {
-		CLJP, 
-		Ruge_Stuben, 
-		Falgout, 
-		PMIS, 
-		HMIS, 
-		CGC, 
+		CLJP,
+		Ruge_Stuben,
+		Falgout,
+		PMIS,
+		HMIS,
+		CGC,
 		CGC_E
 	};
 	COARSENING_TYPE coarsening_type;
@@ -44,7 +43,7 @@ struct HYPREBoomerAMGConfiguration: public ECFObject {
 	INTERPOLATION_TYPE interpolation_type;
 
 	double interp_trunc_factor;
- 	int max_element_per_row, weight_separation; 
+	int max_element_per_row, weight_separation;
 
 	enum class CYCLE_TYPE {
 		V_CYCLE,
@@ -75,7 +74,7 @@ struct HYPREBoomerAMGConfiguration: public ECFObject {
 	int sweeps_num;
 	bool allow_cycle_num_sweeps;
 
-	struct HYPREBoomerAMGCycleSweepsConfiguration: public ECFObject {
+	struct HYPREBoomerAMGCycleSweepsConfiguration: public ECFDescription {
 		
 		int sweeps_num_specific;
 
@@ -92,7 +91,7 @@ struct HYPREBoomerAMGConfiguration: public ECFObject {
 	HYPREBoomerAMGCycleSweepsConfiguration cycle_sweep_spec;
 
 
-	struct HYPREBoomerAMGCycleRelaxTypeConfiguration: public ECFObject {
+	struct HYPREBoomerAMGCycleRelaxTypeConfiguration: public ECFDescription {
 		
 		RELAX_TYPE relax_type;
 
@@ -107,7 +106,7 @@ struct HYPREBoomerAMGConfiguration: public ECFObject {
 	};
 	HYPREBoomerAMGCycleRelaxTypeConfiguration cycle_relax_type;
 	
-    int	relax_order;
+	int relax_order;
 	double relax_weight;
 	
 	double level_relax_weight;
@@ -116,7 +115,6 @@ struct HYPREBoomerAMGConfiguration: public ECFObject {
 	double outer_weight_level;
 	int cheby_order;
 	double cheby_fraction;
-
 
 	enum class SMOOTH_TYPE {
 		SCHWARZ,
@@ -160,23 +158,23 @@ struct HYPREBoomerAMGConfiguration: public ECFObject {
 		SUM_ABSOLUTE_BLOCK,
 		LARGEST_ELEM_BLOCK,
 		SUM_ROW,
-		ALL_BLOC_SUM 
+		ALL_BLOC_SUM
 	};
 	NODAL_SYS_COARSENING nodal_sys_coarsening;
 
-	int cgc_pathes, aggressive_coarsening_levels, aggressive_coarsening_degree; 
+	int cgc_pathes, aggressive_coarsening_levels, aggressive_coarsening_degree;
 
 	enum class AGGRESSIVE_COARSENING_INTERP {
 		TWO_STAGE_IEXTENDED,
 		TWO_STAGE_STANDARD,
-		TWO_STAGE_EXTENDED, 
-		MULTIPASS 
+		TWO_STAGE_EXTENDED,
+		MULTIPASS
 	};
 	AGGRESSIVE_COARSENING_INTERP aggressive_coarsening_interp;
 
 	int nodal_diag_treatment;  
-	double aggressive_coarsening_trunc_factor, aggressive_coarsening_p12_trunc_fact;		  
-    int aggressive_coarsening_p_max_elements, aggressive_coarsening_p12_max_elements;
+	double aggressive_coarsening_trunc_factor, aggressive_coarsening_p12_trunc_fact;
+	int aggressive_coarsening_p_max_elements, aggressive_coarsening_p12_max_elements;
 
 	HYPREBoomerAMGConfiguration();
 };

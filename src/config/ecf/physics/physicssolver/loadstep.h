@@ -4,8 +4,8 @@
 
 #include "transientsolver.h"
 #include "nonlinearsolver.h"
-#include "config/ecf/solver/feti.h"
-#include "config/ecf/solver/multigrid.h"
+#include "config/ecf/linearsolver/feti.h"
+#include "config/ecf/linearsolver/hypre/hypre.h"
 
 namespace espreso {
 
@@ -23,7 +23,6 @@ struct LoadStepConfiguration: public ECFDescription {
 
 	enum class SOLVER {
 		FETI,
-		MULTIGRID,
 		HYPRE
 	};
 
@@ -37,7 +36,6 @@ struct LoadStepConfiguration: public ECFDescription {
 	TransientSolverConfiguration transient_solver;
 
 	FETISolverConfiguration feti;
-	MultigridConfiguration multigrid;
 	HypreConfiguration hypre;
 
 	LoadStepConfiguration(const std::string &firstResidualName, const std::string &secondResidualName);

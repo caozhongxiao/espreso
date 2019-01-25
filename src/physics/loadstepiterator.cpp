@@ -25,7 +25,7 @@
 
 #include "basis/logging/logging.h"
 
-#include "linearsolver/multigrid/multigrid.h"
+#include "linearsolver/hypre/hypresolver.h"
 #include "solver/generic/FETISolver.h"
 #include "assembler/provider/hypre/heattransfer.hypreprovider.h"
 #include "assembler/provider/hypre/structuralmechanics.hypreprovider.h"
@@ -42,10 +42,10 @@ static Assembler* getAssembler(HeatTransferLoadStepConfiguration &loadStep, DIME
 		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DController, UniformNodesFETIComposer, HeatTransferFETIProvider, FETISolver>(loadStep, loadStep.feti, 1);
 		default: break;
 		} break;
-	case LoadStepConfiguration::SOLVER::MULTIGRID:
+	case LoadStepConfiguration::SOLVER::HYPRE:
 		switch (dimension) {
-		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DController, UniformNodesComposer, HeatTransferHYPREProvider, MultigridSolver>(loadStep, loadStep.multigrid, 1);
-		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DController, UniformNodesComposer, HeatTransferHYPREProvider, MultigridSolver>(loadStep, loadStep.multigrid, 1);
+		case DIMENSION::D2: return new AssemblerInstance<HeatTransfer2DController, UniformNodesComposer, HeatTransferHYPREProvider, HYPRESolver>(loadStep, loadStep.hypre, 1);
+		case DIMENSION::D3: return new AssemblerInstance<HeatTransfer3DController, UniformNodesComposer, HeatTransferHYPREProvider, HYPRESolver>(loadStep, loadStep.hypre, 1);
 		default: break;
 		}
 	}
@@ -62,10 +62,10 @@ static Assembler* getAssembler(StructuralMechanicsLoadStepConfiguration &loadSte
 		case DIMENSION::D3: return new AssemblerInstance<StructuralMechanics3DController, UniformNodesFETIComposer, StructuralMechanics3DFETIProvider, FETISolver>(loadStep, loadStep.feti, 3);
 		default: break;
 		} break;
-	case LoadStepConfiguration::SOLVER::MULTIGRID:
+	case LoadStepConfiguration::SOLVER::HYPRE:
 		switch (dimension) {
-		case DIMENSION::D2: return new AssemblerInstance<StructuralMechanics2DController, UniformNodesComposer, StructuralMechanicsHYPREProvider, MultigridSolver>(loadStep, loadStep.multigrid, 2);
-		case DIMENSION::D3: return new AssemblerInstance<StructuralMechanics3DController, UniformNodesComposer, StructuralMechanicsHYPREProvider, MultigridSolver>(loadStep, loadStep.multigrid, 3);
+		case DIMENSION::D2: return new AssemblerInstance<StructuralMechanics2DController, UniformNodesComposer, StructuralMechanicsHYPREProvider, HYPRESolver>(loadStep, loadStep.hypre, 2);
+		case DIMENSION::D3: return new AssemblerInstance<StructuralMechanics3DController, UniformNodesComposer, StructuralMechanicsHYPREProvider, HYPRESolver>(loadStep, loadStep.hypre, 3);
 		default: break;
 		}
 	}
