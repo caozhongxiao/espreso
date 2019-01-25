@@ -1,6 +1,6 @@
 
-#ifndef SRC_CONFIG_ECF_SOLVER_MULTIGRID_H_
-#define SRC_CONFIG_ECF_SOLVER_MULTIGRID_H_
+#ifndef SRC_CONFIG_ECF_LINEARSOLVER_MULTIGRID_H_
+#define SRC_CONFIG_ECF_LINEARSOLVER_MULTIGRID_H_
 
 #include "config/description.h"
 
@@ -44,4 +44,4 @@ struct MultigridConfiguration: public ECFDescription {
 
 }
 
-#endif /* SRC_CONFIG_ECF_SOLVER_MULTIGRID_H_ */
+#endif /* SRC_CONFIG_ECF_LINEARSOLVER_MULTIGRID_H_ */

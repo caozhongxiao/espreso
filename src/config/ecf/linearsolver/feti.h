@@ -1,6 +1,6 @@
 
-#ifndef SRC_CONFIG_ECF_SOLVER_FETI_H_
-#define SRC_CONFIG_ECF_SOLVER_FETI_H_
+#ifndef SRC_CONFIG_ECF_LINEARSOLVER_FETI_H_
+#define SRC_CONFIG_ECF_LINEARSOLVER_FETI_H_
 
 #include "config/description.h"
 
@@ -154,4 +154,4 @@ struct FETISolverConfiguration: public ECFDescription {
 
 
 
-#endif /* SRC_CONFIG_ECF_SOLVER_FETI_H_ */
+#endif /* SRC_CONFIG_ECF_LINEARSOLVER_FETI_H_ */

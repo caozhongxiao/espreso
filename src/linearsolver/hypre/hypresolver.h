@@ -1,6 +1,6 @@
 
-#ifndef SRC_LINEARSOLVER_MULTIGRID_MULTIGRID_H_
-#define SRC_LINEARSOLVER_MULTIGRID_MULTIGRID_H_
+#ifndef SRC_LINEARSOLVER_HYPRE_HYPRESOLVER_H_
+#define SRC_LINEARSOLVER_HYPRE_HYPRESOLVER_H_
 
 #include "linearsolver/linearsolver.h"
 
@@ -9,7 +9,7 @@ namespace espreso {
 struct MultigridConfiguration;
 struct HypreData;
 
-class MultigridSolver: public LinearSolver {
+class HYPRESolver: public LinearSolver {
 public:
 
 	MultigridSolver(DataHolder *data, MultigridConfiguration &configuration);
@@ -33,4 +33,4 @@ protected:
 
 }
 
-#endif /* SRC_LINEARSOLVER_MULTIGRID_MULTIGRID_H_ */
+#endif /* SRC_LINEARSOLVER_HYPRE_HYPRESOLVER_H_ */

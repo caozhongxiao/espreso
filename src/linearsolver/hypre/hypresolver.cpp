@@ -17,19 +17,19 @@ MultigridSolver::MultigridSolver(DataHolder *data, MultigridConfiguration &confi
 
 }
 
-MultigridSolver::~MultigridSolver()
+HYPRESolver::~HYPRESolver()
 {
 	if (_hypreData) {
 		delete _hypreData;
 	}
 }
 
-double& MultigridSolver::precision()
+double& HYPRESolver::precision()
 {
-	return _configuration.precision;
+	return _configuration.pcg.relative_conv_tol;
 }
 
-void MultigridSolver::update(Matrices matrices)
+void HYPRESolver::update(Matrices matrices)
 {
 	if (_hypreData == NULL) {
 		_hypreData = new HypreData(_data->K[0].rows - _data->K[0].haloRows);
@@ -59,14 +59,14 @@ void MultigridSolver::update(Matrices matrices)
 }
 
 // run solver and store primal and dual solution
-void MultigridSolver::solve()
+void HYPRESolver::solve()
 {
 	HYPRE::solve(_configuration, *_hypreData,
 			_data->K[0].rows - _data->K[0].haloRows,
 			_data->primalSolution[0].data() + _data->K[0].haloRows);
 }
 
-void MultigridSolver::finalize()
+void HYPRESolver::finalize()
 {
 
 }

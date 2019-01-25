@@ -23,7 +23,8 @@ struct LoadStepConfiguration: public ECFDescription {
 
 	enum class SOLVER {
 		FETI,
-		MULTIGRID
+		MULTIGRID,
+		HYPRE
 	};
 
 	double duration_time;
@@ -37,6 +38,7 @@ struct LoadStepConfiguration: public ECFDescription {
 
 	FETISolverConfiguration feti;
 	MultigridConfiguration multigrid;
+	HypreConfiguration hypre;
 
 	LoadStepConfiguration(const std::string &firstResidualName, const std::string &secondResidualName);
 };

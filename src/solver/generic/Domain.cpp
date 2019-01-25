@@ -44,7 +44,7 @@ Domain::Domain(const FETISolverConfiguration &configuration, DataHolder *instanc
 		K(instance_in->K[domain_index_in]),
 
 		Kplus_R(instance_in->N1[domain_index_in]),
-		Kplus_R2(copyN1toN2 ? instance_in->N1[domain_index_in] : instance_in->N2[domain_index_in]),
+		Kplus_R2(instance_in->N2[domain_index_in]),
 
 		Kplus_origR(instance_in->origKN1[domain_index_in]),
 		Kplus_origR2(instance_in->origKN2[domain_index_in]),
@@ -59,17 +59,13 @@ Domain::Domain(const FETISolverConfiguration &configuration, DataHolder *instanc
 
 
 {
+		domain_prim_size 	= K.cols;
+		domain_global_index = domain_index_in;
+		USE_HFETI 		 	= USE_HTFETI_in;
+		isOnACC          	= 0;
 
-	if (copyN1toN2) {
-		Kplus_R2.MatTranspose();
-	}
-	domain_prim_size 	= K.cols;
-	domain_global_index = domain_index_in;
-	USE_HFETI 		 	= USE_HTFETI_in;
-	isOnACC          	= 0;
-
-	// TODO: this is broken (ask Lubos)
-	norm_f = 0;
+		// TODO: this is broken (ask Lubos)
+		norm_f = 0;
 }
 
 void Domain::SetDomain() {

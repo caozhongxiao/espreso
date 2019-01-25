@@ -279,7 +279,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 
 			K_rs.getSubBlockmatrix_rs(K_modif, K_rs, i_start, nonsing_size, j_start, sc_size);
 
-			if (!unsymmetric) {
+			if (SYMMETRIC_SYSTEM) {
 				K_rs.MatTranspose(K_sr);
 			} else {
 				K_sr.getSubBlockmatrix_rs(K_modif, K_sr, j_start, sc_size, i_start, nonsing_size);
