@@ -77,6 +77,13 @@ FETIProvider::FETIProvider(DataHolder *data, LoadStepConfiguration &configuratio
 	}
 
 	_data->assembleB0Callback = [&] (FETI_B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
+		for (size_t d = 0; d < _data->B0.size(); d++) {
+			_data->B0[d].I_row_indices.clear();
+			_data->B0[d].J_col_indices.clear();
+			_data->B0[d].V_values.clear();
+			_data->B0[d].type = 'G';
+			_data->B0subdomainsMap[d].clear();
+		}
 		switch (type) {
 		case FETI_B0_TYPE::CORNERS:
 			assembleB0FromCorners();
