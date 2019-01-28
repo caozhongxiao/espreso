@@ -62,6 +62,13 @@ void GlobalComposer::apply(std::vector<SparseMatrix> &matrices, std::vector<doub
 	gather(result);
 }
 
+void GlobalComposer::enrichRHS(double alfa, NodeData* x)
+{
+	for (size_t i = 0; i < data->f[0].size(); ++i) {
+		data->f[0][i] += alfa * x->data[i];
+	}
+}
+
 void GlobalComposer::computeReactionForces()
 {
 	apply(data->origK, data->dualSolution.front(), _controler.solution()->data);

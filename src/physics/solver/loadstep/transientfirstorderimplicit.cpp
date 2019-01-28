@@ -50,7 +50,7 @@ Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Matrices matrices
 	if (matrices & (Matrices::K | Matrices::M | Matrices::f)) {
 		_assembler.composer()->sum(X, 1 / (_alpha * time::shift), U, (1 - _alpha) / _alpha, V);
 		_assembler.composer()->applyM(Y, X);
-		_assembler.composer()->enrichSolution(1, Y);
+		_assembler.composer()->enrichRHS(1, Y);
 	}
 
 	return matrices;

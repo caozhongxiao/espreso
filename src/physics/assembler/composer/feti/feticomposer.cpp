@@ -39,6 +39,23 @@ void FETIComposer::apply(std::vector<SparseMatrix> &matrices, std::vector<double
 	gather(result, _res);
 }
 
+void FETIComposer::enrichRHS(double alfa, NodeData* x)
+{
+	std::vector<std::vector<double> > _x(data->f.size());
+
+	for (size_t i = 0; i < data->f.size(); i++) {
+		_x[i].resize(data->f[i].size());
+	}
+	divide(x->data, _x);
+
+	#pragma omp parallel for
+	for (size_t d = 0; d < data->f.size(); d++) {
+		for (size_t i = 0; i < data->f[d].size(); ++i) {
+			data->f[d][i] += _x[d][i];
+		}
+	}
+}
+
 //void FETIComposer::DirichletMinusSolution()
 //{
 //	std::vector<std::vector<double> > solution;

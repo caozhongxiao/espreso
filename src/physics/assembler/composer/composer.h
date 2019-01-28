@@ -62,6 +62,7 @@ public:
 	virtual void KplusAlfaM(double alfa) =0;
 	virtual void applyOriginalK(NodeData* result, NodeData* x);
 	virtual void applyM(NodeData* result, NodeData* x);
+	virtual void enrichRHS(double alfa, NodeData* x) =0;
 	virtual void enrichSolution(double alfa, NodeData* x);
 	virtual void RHSMinusR();
 	virtual void sum(NodeData *z, double alfa, NodeData* a, double beta, NodeData *b);

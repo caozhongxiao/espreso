@@ -21,6 +21,7 @@ public:
 	: Composer(controler), _provider(provider), _configuration(configuration) {}
 
 	void KplusAlfaM(double alfa);
+	void enrichRHS(double alfa, NodeData* x);
 	void computeReactionForces() {} // returned by FETI solver
 	double residualNormNumerator();
 	double residualNormDenominator();

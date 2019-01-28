@@ -16,6 +16,7 @@ public:
 	: Composer(controler), _provider(provider), _localKOffset(0), _localRHSOffset(0) {}
 
 	void KplusAlfaM(double alfa);
+	void enrichRHS(double alfa, NodeData* x);
 	void computeReactionForces();
 	double residualNormNumerator();
 	double residualNormDenominator();
