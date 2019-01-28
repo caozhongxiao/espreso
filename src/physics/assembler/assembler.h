@@ -128,6 +128,9 @@ struct AssemblerInstance: public Assembler, public TController, public TComposer
 
 	void setDirichlet(Matrices matrices, const std::vector<double> &subtraction = {})
 	{
+		if ((matrices & Matrices::f) && TProvider::needOriginalRHS()) {
+			TComposer::keepSolverRHS();
+		}
 		TComposer::setDirichlet(matrices, subtraction);
 	}
 

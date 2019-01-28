@@ -58,6 +58,7 @@ public:
 
 	virtual void keepK();
 	virtual void keepRHS();
+	virtual void keepSolverRHS();
 	virtual void KplusAlfaM(double alfa) =0;
 	virtual void applyOriginalK(NodeData* result, NodeData* x);
 	virtual void applyM(NodeData* result, NodeData* x);

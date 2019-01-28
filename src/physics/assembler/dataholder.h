@@ -36,7 +36,7 @@ struct DataHolder {
 
 	std::vector<SparseMatrix> origK, K, origKN1, origKN2, origRegMat, N1, N2, RegMat;
 	std::vector<SparseMatrix> M;
-	std::vector<std::vector<double> > R, f, origF;
+	std::vector<std::vector<double> > R, f, origF, solverF;
 
 	// matrices for Hybrid FETI constraints
 	std::vector<SparseMatrix> B0;

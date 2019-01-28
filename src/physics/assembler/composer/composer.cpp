@@ -111,6 +111,15 @@ void Composer::keepRHS()
 	}
 }
 
+void Composer::keepSolverRHS()
+{
+	data->solverF.resize(data->f.size());
+	#pragma omp parallel for
+	for (size_t d = 0; d < data->f.size(); d++) {
+		data->solverF[d] = data->f[d];
+	}
+}
+
 void Composer::enrichSolution(double alfa, NodeData* x)
 {
 	for (size_t i = 0; i < _controler.solution()->data.size(); i++) {
