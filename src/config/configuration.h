@@ -4,7 +4,6 @@
 
 #include "description.h"
 #include "metadata.h"
-#include "holders/regionmap.h"
 
 #include <map>
 
@@ -172,12 +171,6 @@ struct ECFObject: public ECFParameter {
 	template<typename Ttype1, typename Ttype2, typename Ttype3>
 	typename std::enable_if<!std::is_class<Ttype3>::value || (std::is_class<Ttype3>::value && !std::is_base_of<ECFDescription, Ttype3>::value), ECFParameter*>::type
 	registerParameter(const std::string &name, std::map<Ttype1, std::map<Ttype2, Ttype3> > &parameter, const ECFMetaData &metadata);
-
-
-	////////// REGION MAP ///////////
-	/////////////////////////////////
-	template<typename Ttype, typename... TArgs>
-	ECFParameter* registerParameter(const std::string &name, RegionMap<Ttype> &parameter, ECFMetaData &metadata, TArgs... args);
 
 	/////////////////////////////////
 	ECFParameter* getWithError(const std::string &name);

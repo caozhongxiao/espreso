@@ -123,33 +123,6 @@ ECFObject::registerParameter(const std::string &name, std::map<Ttype1, std::map<
 	return registerParameter(name, new ECFValueMapMap<Ttype1, Ttype2, Ttype3>(parameter), metadata);
 }
 
-////////// REGION MAP ///////////
-/////////////////////////////////
-
-template<typename Ttype, typename... TArgs>
-ECFParameter* ECFObject::registerParameter(const std::string &name, RegionMap<Ttype> &parameter, ECFMetaData &metadata, TArgs... args)
-{
-	static_assert(
-			std::is_base_of<ECFExpression, Ttype>::value ||
-			std::is_base_of<ECFExpressionVector, Ttype>::value ||
-			std::is_base_of<ECFExpressionOptionalVector, Ttype>::value,
-			"RegionMap accept only following parameters: ECFExpression, ECFExpressionVector, ECFExpressionOptionalVector");
-
-	ECFParameter* p = registerParameter(name, parameter.regions, metadata.setRegionMap(parameter), args...);
-	p->addListener(Event::PARAMETER_GET, [&] (const std::string &name) {
-		parameter.addRegion(name);
-	});
-	p->registerAdditionalParameter(registerParameter("INTERSECTION", parameter.regions_intersection, ECFMetaData()
-			.setdescription({ "Treating with intersected region" })
-			.setdatatype( { ECFDataType::OPTION })
-			.addoption(ECFOption().setname("FIRST").setdescription("Setting from the first region is used."))
-			.addoption(ECFOption().setname("LAST").setdescription("Setting from the last region is used."))
-			.addoption(ECFOption().setname("SUM").setdescription("Setting from all regions is summed."))
-			.addoption(ECFOption().setname("AVERAGE").setdescription("Setting from all regions is averaged."))
-			.addoption(ECFOption().setname("ERROR").setdescription("Region intersection is not allowed."))));
-	return p;
-}
-
 }
 
 

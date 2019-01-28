@@ -1,10 +1,11 @@
 
-#include "physics/assembler/dataholder.h"
 #include "esinfo/time.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/envinfo.h"
 #include "structuralmechanics3d.controller.h"
+
+#include "physics/assembler/dataholder.h"
 #include "physics/assembler/kernels/structuralmechanics3d.kernel.h"
 
 #include "basis/containers/serializededata.h"
@@ -13,6 +14,7 @@
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
+#include "mesh/store/boundaryregionstore.h"
 
 using namespace espreso;
 
@@ -49,29 +51,16 @@ void StructuralMechanics3DController::dirichletIndices(std::vector<std::vector<e
 {
 	indices.resize(3);
 
-	for (auto it = _configuration.displacement.regions.begin(); it != _configuration.displacement.regions.end(); ++it) {
+	for (auto it = _configuration.displacement.begin(); it != _configuration.displacement.end(); ++it) {
 		BoundaryRegionStore *region = info::mesh->bregion(it->first);
 		if (it->second.all.value.size() || it->second.x.value.size()) {
-			indices[0].insert(indices[0].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
+			indices[0].insert(indices[0].end(), region->nodes->datatarray().begin(), region->nodes->datatarray().end());
 		}
 		if (it->second.all.value.size() || it->second.y.value.size()) {
-			indices[1].insert(indices[1].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
+			indices[1].insert(indices[1].end(), region->nodes->datatarray().begin(), region->nodes->datatarray().end());
 		}
 		if (it->second.all.value.size() || it->second.z.value.size()) {
-			indices[2].insert(indices[2].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
-		}
-	}
-
-	for (auto it = _configuration.displacement.intersections.begin(); it != _configuration.displacement.intersections.end(); ++it) {
-		BoundaryRegionsIntersectionStore *region = info::mesh->ibregion(it->first);
-		if (it->second.all.value.size() || it->second.x.value.size()) {
-			indices[0].insert(indices[0].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
-		}
-		if (it->second.all.value.size() || it->second.y.value.size()) {
-			indices[1].insert(indices[1].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
-		}
-		if (it->second.all.value.size() || it->second.z.value.size()) {
-			indices[2].insert(indices[2].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
+			indices[2].insert(indices[2].end(), region->nodes->datatarray().begin(), region->nodes->datatarray().end());
 		}
 	}
 	_dirichletSize = indices[0].size() + indices[1].size() + indices[2].size();
@@ -106,14 +95,9 @@ void StructuralMechanics3DController::dirichletValues(std::vector<double> &value
 		}
 	};
 
-	for (auto it = _configuration.displacement.regions.begin(); it != _configuration.displacement.regions.end(); ++it) {
+	for (auto it = _configuration.displacement.begin(); it != _configuration.displacement.end(); ++it) {
 		BoundaryRegionStore *region = info::mesh->bregion(it->first);
-		pick(it->second, region->uniqueNodes->datatarray());
-	}
-
-	for (auto it = _configuration.displacement.intersections.begin(); it != _configuration.displacement.intersections.end(); ++it) {
-		BoundaryRegionsIntersectionStore *region = info::mesh->ibregion(it->first);
-		pick(it->second, region->uniqueNodes->datatarray());
+		pick(it->second, region->nodes->datatarray());
 	}
 }
 

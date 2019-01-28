@@ -379,6 +379,7 @@ void UniformNodesFETIComposer::buildB1Pattern()
 
 	auto dmap = _DOFMap->begin();
 	for (size_t i = 0, prev = 0; i < _dirichletMap.size(); prev = _dirichletMap[i++] / _DOFs) {
+		while (i + 1 < _dirichletMap.size() && _dirichletMap[i + 1] == _dirichletMap[i]) { ++i; }
 		dmap += (_dirichletMap[i] / _DOFs) - prev;
 		for (auto d = dmap->begin(); d != dmap->end(); d += 1 + _DOFs) {
 			if (info::mesh->elements->firstDomain <= *d && *d < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
@@ -394,6 +395,7 @@ void UniformNodesFETIComposer::buildB1Pattern()
 
 	dmap = _DOFMap->begin();
 	for (size_t i = 0, prev = 0; i < _dirichletMap.size(); prev = _dirichletMap[i++] / _DOFs) {
+		while (i + 1 < _dirichletMap.size() && _dirichletMap[i + 1] == _dirichletMap[i]) { ++i; }
 		dmap += (_dirichletMap[i] / _DOFs) - prev;
 		for (auto d = dmap->begin(); d != dmap->end(); d += 1 + _DOFs) {
 			if (info::mesh->elements->firstDomain <= *d && *d < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
@@ -647,10 +649,14 @@ void UniformNodesFETIComposer::assemble(Matrices matrices, const SolverParameter
 	};
 }
 
-void UniformNodesFETIComposer::setDirichlet(Matrices matrices, const std::vector<double> &subtraction)
+void UniformNodesFETIComposer::setDirichlet(Matrices matrices, double reduction, const std::vector<double> &subtraction)
 {
 	std::vector<double> values(_dirichletMap.size());
 	_controler.dirichletValues(values);
+
+	for (size_t i = 0; i < values.size(); i++) {
+		values[i] *= reduction;
+	}
 
 	if (subtraction.size()) {
 		for (size_t i = 0; i < _dirichletMap.size(); i++) {
@@ -661,11 +667,16 @@ void UniformNodesFETIComposer::setDirichlet(Matrices matrices, const std::vector
 	std::vector<esint> doffset(info::mesh->elements->ndomains);
 
 	auto dmap = _DOFMap->begin();
-	for (size_t i = 0, prev = 0; i < _dirichletMap.size(); prev = _dirichletMap[i++] / _DOFs) {
+	for (size_t i = 0, j = 0, prev = 0; i < _dirichletMap.size(); prev = _dirichletMap[i] / _DOFs, i = j) {
+		double value = 0;
+		while (j < _dirichletMap.size() && _dirichletMap[j] == _dirichletMap[i]) {
+			value += values[_dirichletPermutation[j++]];
+		}
+		value /= j - i;
 		dmap += (_dirichletMap[i] / _DOFs) - prev;
 		for (auto d = dmap->begin(); d != dmap->end(); d += 1 + _DOFs) {
 			if (info::mesh->elements->firstDomain <= *d && *d < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
-				data->B1c[*d - info::mesh->elements->firstDomain][doffset[*d - info::mesh->elements->firstDomain]++] = values[_dirichletPermutation[i]];
+				data->B1c[*d - info::mesh->elements->firstDomain][doffset[*d - info::mesh->elements->firstDomain]++] = value;
 			}
 			if (!_configuration.redundant_lagrange) {
 				break;

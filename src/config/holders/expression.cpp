@@ -27,49 +27,49 @@ ECFExpression::ECFExpression(const std::vector<std::string> &variables, const st
 	createEvaluator();
 }
 
-ECFExpression::ECFExpression(RegionMapBase::RegionIntersection intersection, std::vector<std::string> &regions, const std::map<std::string, ECFExpression> &values)
-: variables(values.begin()->second.variables), evaluator(NULL)
-{
-	std::vector<std::string> filled;
-	for (size_t i = 0; i < regions.size(); i++) {
-		if (values.at(regions[i]).evaluator != NULL) {
-			filled.push_back(regions[i]);
-		}
-	}
-	if (filled.size() == 0) {
-		return;
-	}
-
-	std::string expression = "(";
-	for (size_t i = 0; i + 1 < filled.size(); i++) {
-		expression += values.at(filled[i]).evaluator->getEXPRTKForm() + " + ";
-	}
-	expression += values.at(filled.back()).evaluator->getEXPRTKForm() + ")";
-
-	switch (intersection) {
-	case RegionMapBase::RegionIntersection::FIRST:
-		value = values.at(filled.front()).value;
-		evaluator = values.at(filled.front()).evaluator->copy();
-		break;
-	case RegionMapBase::RegionIntersection::LAST:
-		value = values.at(filled.back()).value;
-		evaluator = values.at(filled.back()).evaluator->copy();
-		break;
-	case RegionMapBase::RegionIntersection::AVERAGE:
-		value = expression + " / " + std::to_string(filled.size());
-		createEvaluator();
-		break;
-	case RegionMapBase::RegionIntersection::SUM:
-		value = expression;
-		createEvaluator();
-		break;
-	case RegionMapBase::RegionIntersection::ERROR:
-		ESINFO(ERROR) << "The following regions intersect: " << regions;
-		break;
-	default:
-		ESINFO(ERROR) << "ESPRESO internal error: not implemented region intersection type.";
-	}
-}
+//ECFExpression::ECFExpression(RegionMapBase::RegionIntersection intersection, std::vector<std::string> &regions, const std::map<std::string, ECFExpression> &values)
+//: variables(values.begin()->second.variables), evaluator(NULL)
+//{
+//	std::vector<std::string> filled;
+//	for (size_t i = 0; i < regions.size(); i++) {
+//		if (values.at(regions[i]).evaluator != NULL) {
+//			filled.push_back(regions[i]);
+//		}
+//	}
+//	if (filled.size() == 0) {
+//		return;
+//	}
+//
+//	std::string expression = "(";
+//	for (size_t i = 0; i + 1 < filled.size(); i++) {
+//		expression += values.at(filled[i]).evaluator->getEXPRTKForm() + " + ";
+//	}
+//	expression += values.at(filled.back()).evaluator->getEXPRTKForm() + ")";
+//
+//	switch (intersection) {
+//	case RegionMapBase::RegionIntersection::FIRST:
+//		value = values.at(filled.front()).value;
+//		evaluator = values.at(filled.front()).evaluator->copy();
+//		break;
+//	case RegionMapBase::RegionIntersection::LAST:
+//		value = values.at(filled.back()).value;
+//		evaluator = values.at(filled.back()).evaluator->copy();
+//		break;
+//	case RegionMapBase::RegionIntersection::AVERAGE:
+//		value = expression + " / " + std::to_string(filled.size());
+//		createEvaluator();
+//		break;
+//	case RegionMapBase::RegionIntersection::SUM:
+//		value = expression;
+//		createEvaluator();
+//		break;
+//	case RegionMapBase::RegionIntersection::ERROR:
+//		ESINFO(ERROR) << "The following regions intersect: " << regions;
+//		break;
+//	default:
+//		ESINFO(ERROR) << "ESPRESO internal error: not implemented region intersection type.";
+//	}
+//}
 
 ECFExpression::~ECFExpression()
 {
@@ -190,25 +190,25 @@ ECFExpressionVector::ECFExpressionVector(DIMENSION dimension, const std::vector<
 	init();
 }
 
-ECFExpressionVector::ECFExpressionVector(RegionMapBase::RegionIntersection intersection, std::vector<std::string> &regions, const std::map<std::string, ECFExpressionVector> &values)
-: data{
-	{intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionVector>::const_iterator it) { return it->second.x; })},
-	{intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionVector>::const_iterator it) { return it->second.y; })},
-	{intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionVector>::const_iterator it) { return it->second.z; })}
-}, dimension(values.begin()->second.dimension)
-{
-	init();
-}
-
-ECFExpressionVector::ECFExpressionVector(RegionMapBase::RegionIntersection intersection, std::vector<std::string> &regions, const std::map<std::string, ECFExpressionOptionalVector> &values)
-: data{
-	{intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionOptionalVector>::const_iterator it) { return it->second.x; })},
-	{intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionOptionalVector>::const_iterator it) { return it->second.y; })},
-	{intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionOptionalVector>::const_iterator it) { return it->second.z; })}
-}, dimension(values.begin()->second.dimension)
-{
-	init();
-}
+//ECFExpressionVector::ECFExpressionVector(RegionMapBase::RegionIntersection intersection, std::vector<std::string> &regions, const std::map<std::string, ECFExpressionVector> &values)
+//: data{
+//	{intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionVector>::const_iterator it) { return it->second.x; })},
+//	{intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionVector>::const_iterator it) { return it->second.y; })},
+//	{intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionVector>::const_iterator it) { return it->second.z; })}
+//}, dimension(values.begin()->second.dimension)
+//{
+//	init();
+//}
+//
+//ECFExpressionVector::ECFExpressionVector(RegionMapBase::RegionIntersection intersection, std::vector<std::string> &regions, const std::map<std::string, ECFExpressionOptionalVector> &values)
+//: data{
+//	{intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionOptionalVector>::const_iterator it) { return it->second.x; })},
+//	{intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionOptionalVector>::const_iterator it) { return it->second.y; })},
+//	{intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionOptionalVector>::const_iterator it) { return it->second.z; })}
+//}, dimension(values.begin()->second.dimension)
+//{
+//	init();
+//}
 
 ECFExpressionOptionalVector::ECFExpressionOptionalVector(DIMENSION dimension, const std::vector<std::string> &variables)
 : ECFExpressionVector(dimension, variables), all(variables)
@@ -218,11 +218,11 @@ ECFExpressionOptionalVector::ECFExpressionOptionalVector(DIMENSION dimension, co
 			.setdatatype({ ECFDataType::EXPRESSION }));
 }
 
-ECFExpressionOptionalVector::ECFExpressionOptionalVector(RegionMapBase::RegionIntersection intersection, std::vector<std::string> &regions, const std::map<std::string, ECFExpressionOptionalVector> &values)
-: ECFExpressionVector(intersection, regions, values),
-  all(intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionOptionalVector>::const_iterator it) { return it->second.all; }))
-{
-
-}
+//ECFExpressionOptionalVector::ECFExpressionOptionalVector(RegionMapBase::RegionIntersection intersection, std::vector<std::string> &regions, const std::map<std::string, ECFExpressionOptionalVector> &values)
+//: ECFExpressionVector(intersection, regions, values),
+//  all(intersection, regions, getComponent(values, [] (std::map<std::string, ECFExpressionOptionalVector>::const_iterator it) { return it->second.all; }))
+//{
+//
+//}
 
 

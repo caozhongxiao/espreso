@@ -131,7 +131,7 @@ struct AssemblerInstance: public Assembler, public TController, public TComposer
 		if ((matrices & Matrices::f) && TProvider::needOriginalRHS()) {
 			TComposer::keepSolverRHS();
 		}
-		TComposer::setDirichlet(matrices, subtraction);
+		TComposer::setDirichlet(matrices, parameters.internalForceReduction, subtraction);
 	}
 
 	void solve(Matrices matrices)

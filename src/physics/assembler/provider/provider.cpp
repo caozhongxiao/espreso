@@ -28,9 +28,7 @@ bool Provider::needReactionForces()
 
 bool Provider::needOriginalRHS()
 {
-	return
-			_configuration.mode == LoadStepConfiguration::MODE::NONLINEAR &&
-			(_configuration.nonlinear_solver.line_search || _configuration.nonlinear_solver.check_second_residual);
+	return needReactionForces();
 }
 
 

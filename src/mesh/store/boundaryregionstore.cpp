@@ -21,7 +21,6 @@ BoundaryRegionStore::BoundaryRegionStore(const std::string &name, std::vector<El
   procNodes(NULL),
   triangles(NULL),
   nodes(NULL),
-  uniqueNodes(NULL),
 
   epointers(NULL),
   ecounters(static_cast<int>(Element::CODE::SIZE)),
@@ -35,7 +34,6 @@ BoundaryRegionStore::~BoundaryRegionStore()
 	if (procNodes == NULL) { delete procNodes; }
 	if (triangles != NULL && triangles != procNodes) { delete triangles; }
 	if (nodes == NULL) { delete nodes; }
-	if (uniqueNodes != NULL && uniqueNodes != nodes) { delete uniqueNodes; }
 
 	if (epointers == NULL) { delete epointers; }
 }

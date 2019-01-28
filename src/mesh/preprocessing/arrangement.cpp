@@ -1,7 +1,6 @@
 
 #include "meshpreprocessing.h"
 
-#include "config/holders/regionmap.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
 
@@ -716,8 +715,6 @@ void MeshPreprocessing::arrangeRegions()
 			store->uniqueTotalSize = _mesh->nodes->uniqueTotalSize;
 		}
 
-		store->uniqueNodes = store->nodes;
-		store->unintervals = store->nintervals;
 		if (store->dimension == 0) {
 			store->procNodes = new serializededata<esint, esint>(1, tarray<esint>(threads, 0));
 			store->epointers = new serializededata<esint, Element*>(1, tarray<Element*>(threads, 0));
@@ -1089,141 +1086,6 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 	bregion->dimension = elementDimension;
 
 	finish("compute boundary elements from nodes of region '" + bregion->name + "'");
-}
-
-void MeshPreprocessing::computeRegionsIntersection(RegionMapBase &map)
-{
-	size_t threads = info::env::OMP_NUM_THREADS;
-
-	if (map.order.size() < 2) {
-		return;
-	}
-
-	std::vector<ElementsRegionStore*> eregions;
-	std::vector<BoundaryRegionStore*> bregions;
-
-	for (size_t i = 0; i < map.order.size(); i++) {
-		for (size_t r = 0; r < _mesh->elementsRegions.size(); r++) {
-			if (StringCompare::caseSensitiveEq(_mesh->elementsRegions[r]->name, map.order[i])) {
-				eregions.push_back(_mesh->elementsRegions[r]);
-				break;
-			}
-		}
-	}
-
-	for (size_t i = 0; i < map.order.size(); i++) {
-		for (size_t r = 0; r < _mesh->boundaryRegions.size(); r++) {
-			if (StringCompare::caseSensitiveEq(_mesh->boundaryRegions[r]->name, map.order[i])) {
-				bregions.push_back(_mesh->boundaryRegions[r]);
-				break;
-			}
-		}
-	}
-
-	if (bregions.size() && eregions.size()) {
-		ESINFO(ERROR) << "ESPRESO internal error: RegionMap contains both region types: element, boundary.";
-	}
-
-	if (eregions.size()) {
-		// implement element regions intersection
-	}
-
-	if (bregions.size()) {
-		int maskSize = bregions.size() / (8 * sizeof(esint)) + bregions.size() % (8 * sizeof(esint)) ? 1 : 0;
-		std::vector<esint> mask(_mesh->nodes->size * maskSize), empty(maskSize);
-		std::vector<esint> permutation(_mesh->nodes->size);
-		std::iota(permutation.begin(), permutation.end(), 0);
-
-		for (size_t r = 0; r < bregions.size(); r++) {
-			esint maskOffset = r / (8 * sizeof(esint));
-			esint bit = 1 << (r % (8 * sizeof(esint)));
-
-			#pragma omp parallel for
-			for (size_t t = 0; t < threads; t++) {
-				for (size_t n = bregions[r]->nodes->datatarray().distribution()[t]; n < bregions[r]->nodes->datatarray().distribution()[t + 1]; ++n) {
-					mask[bregions[r]->nodes->datatarray()[n] * maskSize + maskOffset] |= bit;
-				}
-			}
-		}
-
-		std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) {
-			return memcmp(mask.data() + i * maskSize, mask.data() + j * maskSize, maskSize) < 0;
-		});
-
-		size_t offset = 0;
-		std::vector<std::vector<esint> > disjunkt;
-		auto begin = permutation.begin();
-		auto end = permutation.begin();
-		while ((begin = end) != permutation.end()) {
-			end = std::upper_bound(begin, permutation.end(), *begin, [&] (esint i, esint j) {
-				return memcmp(mask.data() + i * maskSize, mask.data() + j * maskSize, maskSize) < 0;
-			});
-			if (memcmp(mask.data() + *begin * maskSize, empty.data(), maskSize)) {
-				disjunkt.push_back(std::vector<esint>(begin, end));
-			} else {
-				offset = end - permutation.begin();
-			}
-		}
-
-		for (size_t r = 0; r < bregions.size(); r++) {
-			bregions[r]->uniqueNodes = new serializededata<esint, esint>(1, tarray<esint>(1, 0));
-			for (size_t i = 0; i < bregions[r]->unintervals.size(); i++) {
-				bregions[r]->unintervals[i].begin = 0;
-				bregions[r]->unintervals[i].end = 0;
-			}
-		}
-		for (size_t i = 0; i < disjunkt.size(); offset += disjunkt[i++].size()) {
-			std::vector<BoundaryRegionStore*> regions;
-			for (size_t r = 0; r < bregions.size(); r++) {
-				esint maskOffset = r / (8 * sizeof(esint));
-				esint bit = 1 << (r % (8 * sizeof(esint)));
-				if (mask[permutation[offset] * maskSize + maskOffset] & bit) {
-					regions.push_back(bregions[r]);
-				}
-			}
-
-			if (regions.size() == 1) {
-				if (regions.front()->nodes->datatarray().size() != disjunkt[i].size()) {
-					std::sort(disjunkt[i].begin(), disjunkt[i].end());
-					regions.front()->uniqueNodes = new serializededata<esint, esint>(1, disjunkt[i]);
-					regions.front()->unintervals = _mesh->nodes->pintervals;
-					for (size_t n = 0; n < regions.front()->unintervals.size(); n++) {
-						regions.front()->unintervals[n].begin = std::lower_bound(disjunkt[i].begin(), disjunkt[i].end(), _mesh->nodes->pintervals[n].begin) - disjunkt[i].begin();
-						regions.front()->unintervals[n].end = std::lower_bound(disjunkt[i].begin(), disjunkt[i].end(), _mesh->nodes->pintervals[n].end) - disjunkt[i].begin();
-					}
-				} else {
-					delete regions.front()->uniqueNodes;
-					regions.front()->uniqueNodes = regions.front()->nodes;
-					regions.front()->unintervals = regions.front()->nintervals;
-				}
-			}
-
-			if (regions.size() > 1) {
-				BoundaryRegionsIntersectionStore *iregion = new BoundaryRegionsIntersectionStore("_", _mesh->_eclasses);
-				std::vector<std::string> rnames;
-				_mesh->boundaryRegionsIntersections.push_back(iregion);
-				std::sort(regions.begin(), regions.end(), [&] (BoundaryRegionStore *r1, BoundaryRegionStore *r2) {
-					auto it1 = std::find(bregions.begin(), bregions.end(), r1);
-					auto it2 = std::find(bregions.begin(), bregions.end(), r2);
-					return it1 < it2;
-				});
-				for (size_t r = 0; r < regions.size(); r++) {
-					rnames.push_back(regions[r]->name);
-					_mesh->boundaryRegionsIntersections.back()->name += regions[r]->name + "_";
-					_mesh->boundaryRegionsIntersections.back()->regions.push_back(regions[r]);
-				}
-
-				std::sort(disjunkt[i].begin(), disjunkt[i].end());
-				iregion->uniqueNodes = new serializededata<esint, esint>(1, disjunkt[i]);
-				iregion->unintervals = _mesh->nodes->pintervals;
-				for (size_t n = 0; n < regions.front()->unintervals.size(); n++) {
-					iregion->unintervals[n].begin = std::lower_bound(disjunkt[i].begin(), disjunkt[i].end(), _mesh->nodes->pintervals[n].begin) - disjunkt[i].begin();
-					iregion->unintervals[n].end = std::lower_bound(disjunkt[i].begin(), disjunkt[i].end(), _mesh->nodes->pintervals[n].end) - disjunkt[i].begin();
-				}
-				map.addIntersection(_mesh->boundaryRegionsIntersections.back()->name, rnames);
-			}
-		}
-	}
 }
 
 void MeshPreprocessing::computeIntervalOffsets(std::vector<ProcessInterval> &intervals, esint &uniqueOffset, esint &uniqueSize, esint &uniqueTotalSize)

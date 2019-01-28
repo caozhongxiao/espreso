@@ -31,9 +31,6 @@
 
 #include "basis/containers/serializededata.h"
 #include "basis/containers/tarray.h"
-#include "config/ecf/root.h"
-#include "config/configuration.h"
-
 
 using namespace espreso;
 
@@ -421,13 +418,6 @@ void Mesh::update()
 			}
 		}
 	}
-
-	info::ecf->ecfdescription->forEachParameters([&] (const ECFParameter *parameter) {
-		if (parameter->metadata.regionMap != NULL) {
-			preprocessing->computeRegionsIntersection(*parameter->metadata.regionMap);
-		}
-	});
-
 
 	if (getPhysics().contact_interfaces) {
 		preprocessing->computeBodiesSurface();

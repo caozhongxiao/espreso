@@ -76,7 +76,7 @@ void MeshPreprocessing::reclusterize()
 		std::vector<esint> tdata;
 		int mat1 = 0, mat2 = 0, reg = 0, etype1 = 0, etype2 = 0;
 		int rsize = _mesh->elements->regionMaskSize;
-		esint hindex;
+		esint hindex = 0;
 
 		auto neighs = _mesh->elements->neighbors->cbegin(t);
 		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++neighs) {

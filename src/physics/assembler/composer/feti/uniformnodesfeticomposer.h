@@ -18,7 +18,7 @@ public:
 	void buildMVData() {} // no data are needed
 
 	void assemble(Matrices matrices, const SolverParameters &parameters);
-	void setDirichlet(Matrices matrices, const std::vector<double> &subtraction);
+	void setDirichlet(Matrices matrices, double reduction, const std::vector<double> &subtraction);
 
 	void fillSolution();
 

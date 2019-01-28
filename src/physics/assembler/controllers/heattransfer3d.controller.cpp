@@ -13,6 +13,7 @@
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
+#include "mesh/store/boundaryregionstore.h"
 
 using namespace espreso;
 

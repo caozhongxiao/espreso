@@ -9,6 +9,7 @@
 #include "basis/logging/timeeval.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
+#include "basis/utilities/parser.h"
 
 #include "config/ecf/root.h"
 #include "esinfo/mpiinfo.h"
@@ -18,6 +19,7 @@
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/elementsregionstore.h"
+#include "mesh/store/boundaryregionstore.h"
 
 #include <algorithm>
 #include <numeric>

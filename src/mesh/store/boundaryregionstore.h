@@ -30,14 +30,12 @@ struct BoundaryRegionStore {
 	serializededata<esint, esint>* procNodes;
 	serializededata<esint, esint>* triangles;
 	serializededata<esint, esint>* nodes;
-	serializededata<esint, esint>* uniqueNodes;
 
 	serializededata<esint, Element*>* epointers;
 
 	std::vector<ElementsInterval> eintervals;
 	std::vector<esint> eintervalsDistribution;
 	std::vector<ProcessInterval> nintervals;
-	std::vector<ProcessInterval> unintervals;
 
 	std::vector<esint> ecounters;
 

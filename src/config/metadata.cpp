@@ -67,11 +67,10 @@ ECFMetaData ECFMetaData::suffix(size_t start) const
 	ret.setdatatype(getsuffix(start, datatype));
 	ret.setpattern(getsuffix(start, pattern));
 	ret.tensor = NULL;
-	ret.regionMap = NULL;
 	return ret;
 }
 
-ECFMetaData::ECFMetaData(): tensor(NULL), regionMap(NULL)
+ECFMetaData::ECFMetaData(): tensor(NULL)
 {
 	condition = new ECFCondition();
 	isallowed = [] () { return true; };
@@ -82,7 +81,7 @@ ECFMetaData::ECFMetaData(const ECFMetaData &other)
 : name(other.name), description(other.description),
   datatype(other.datatype), pattern(other.pattern),
   options(other.options), variables(other.variables),
-  tensor(other.tensor), regionMap(other.regionMap),
+  tensor(other.tensor),
   unit(other.unit), condition(other.condition->copy()),
   isallowed(other.isallowed), ismandatory(other.ismandatory)
 {
@@ -93,7 +92,7 @@ ECFMetaData::ECFMetaData(ECFMetaData &&other)
 : name(std::move(other.name)), description(std::move(other.description)),
   datatype(std::move(other.datatype)), pattern(std::move(other.pattern)),
   options(std::move(other.options)), variables(std::move(other.variables)),
-  tensor(std::move(other.tensor)), regionMap(std::move(other.regionMap)),
+  tensor(std::move(other.tensor)),
   unit(std::move(other.unit)), condition(other.condition->copy()),
   isallowed(std::move(other.isallowed)), ismandatory(std::move(other.ismandatory))
 {
@@ -110,7 +109,6 @@ ECFMetaData& ECFMetaData::operator=(const ECFMetaData &other)
 		options = other.options;
 		variables = other.variables;
 		tensor = other.tensor;
-		regionMap = other.regionMap;
 		unit = other.unit;
 		isallowed = other.isallowed;
 		ismandatory = other.ismandatory;

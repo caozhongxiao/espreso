@@ -487,7 +487,7 @@ struct __Dirichlet__ {
 	esint row, column;
 };
 
-void UniformNodesComposer::setDirichlet(Matrices matrices, const std::vector<double> &subtraction)
+void UniformNodesComposer::setDirichlet(Matrices matrices, double reduction, const std::vector<double> &subtraction)
 {
 	if (!(matrices & (Matrices::K | Matrices::M))) {
 		return;
@@ -501,6 +501,11 @@ void UniformNodesComposer::setDirichlet(Matrices matrices, const std::vector<dou
 
 	std::vector<double> values(_dirichletMap.size());
 	_controler.dirichletValues(values);
+
+	for (size_t i = 0; i < values.size(); i++) {
+		values[i] *= reduction;
+	}
+
 	if (subtraction.size()) {
 		for (size_t i = 0; i < _dirichletMap.size(); i++) {
 			values[_dirichletPermutation[i]] -= subtraction[_dirichletMap[i]];
@@ -509,8 +514,13 @@ void UniformNodesComposer::setDirichlet(Matrices matrices, const std::vector<dou
 
 	std::vector<__Dirichlet__> dirichlet;
 
-	for (size_t i = 0; i < _dirichletMap.size(); ++i) {
-		RHS[_dirichletMap[i]] = values[_dirichletPermutation[i]];
+	for (size_t i = 0, j = 0; i < _dirichletMap.size(); i = j) {
+		double value = 0;
+		while (j < _dirichletMap.size() && _dirichletMap[j] == _dirichletMap[i]) {
+			value += values[_dirichletPermutation[j++]];
+		}
+		value /= j - i;
+		RHS[_dirichletMap[i]] = value;
 		esint col = _DOFMap->datatarray()[_dirichletMap[i]] + 1;
 		for (esint j = ROW[_dirichletMap[i]]; j < ROW[_dirichletMap[i] + 1]; j++) {
 			if (COL[j - 1] == col) {

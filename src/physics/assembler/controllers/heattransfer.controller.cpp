@@ -27,15 +27,11 @@ void HeatTransferController::dirichletIndices(std::vector<std::vector<esint> > &
 {
 	indices.resize(1); // heat has only one DOF
 
-	for (auto it = _configuration.temperature.regions.begin(); it != _configuration.temperature.regions.end(); ++it) {
+	for (auto it = _configuration.temperature.begin(); it != _configuration.temperature.end(); ++it) {
 		BoundaryRegionStore *region = info::mesh->bregion(it->first);
-		indices[0].insert(indices[0].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
+		indices[0].insert(indices[0].end(), region->nodes->datatarray().begin(), region->nodes->datatarray().end());
 	}
 
-	for (auto it = _configuration.temperature.intersections.begin(); it != _configuration.temperature.intersections.end(); ++it) {
-		BoundaryRegionsIntersectionStore *region = info::mesh->ibregion(it->first);
-		indices[0].insert(indices[0].end(), region->uniqueNodes->datatarray().begin(), region->uniqueNodes->datatarray().end());
-	}
 	_dirichletSize = indices[0].size();
 }
 
@@ -44,24 +40,14 @@ void HeatTransferController::dirichletValues(std::vector<double> &values)
 	values.resize(_dirichletSize);
 
 	size_t offset = 0;
-	for (auto it = _configuration.temperature.regions.begin(); it != _configuration.temperature.regions.end(); ++it) {
+	for (auto it = _configuration.temperature.begin(); it != _configuration.temperature.end(); ++it) {
 		BoundaryRegionStore *region = info::mesh->bregion(it->first);
 		it->second.evaluator->evalSelected(
-				region->uniqueNodes->datatarray().size(),
-				region->uniqueNodes->datatarray().data(),
+				region->nodes->datatarray().size(),
+				region->nodes->datatarray().data(),
 				3, reinterpret_cast<double*>(info::mesh->nodes->coordinates->datatarray().data()),
 				NULL, time::current, values.data() + offset);
-		offset += region->uniqueNodes->datatarray().size();
-	}
-
-	for (auto it = _configuration.temperature.intersections.begin(); it != _configuration.temperature.intersections.end(); ++it) {
-		BoundaryRegionsIntersectionStore *region = info::mesh->ibregion(it->first);
-		it->second.evaluator->evalSelected(
-				region->uniqueNodes->datatarray().size(),
-				region->uniqueNodes->datatarray().data(),
-				3, reinterpret_cast<double*>(info::mesh->nodes->coordinates->datatarray().data()),
-				NULL, time::current, values.data() + offset);
-		offset += region->uniqueNodes->datatarray().size();
+		offset += region->nodes->datatarray().size();
 	}
 }
 

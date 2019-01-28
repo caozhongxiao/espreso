@@ -9,7 +9,6 @@
 namespace espreso {
 
 struct TensorConfiguration;
-struct RegionMapBase;
 struct ECFCondition;
 
 enum class ECFDataType {
@@ -73,7 +72,6 @@ struct ECFMetaData {
 	std::vector<ECFOption> options;
 	std::vector<std::string> variables;
 	TensorConfiguration *tensor;
-	RegionMapBase *regionMap;
 	SIUnit unit;
 
 	ECFCondition *condition;
@@ -87,7 +85,6 @@ struct ECFMetaData {
 	ECFMetaData& setpattern(const std::vector<std::string> &pattern) { this->pattern = pattern; return *this; }
 	ECFMetaData& setvariables(const std::vector<std::string> &variables) { this->variables = variables; return *this; }
 	ECFMetaData& settensor(TensorConfiguration &tensor) { this->tensor = &tensor; return *this; }
-	ECFMetaData& setRegionMap(RegionMapBase &rMap) { this->regionMap = &rMap; return *this; }
 	ECFMetaData& setunit(const SIUnit &unit) { this->unit = unit; return *this; }
 	ECFMetaData& allowonly(std::function<bool(void)> isallowed) { this->isallowed = isallowed; return *this; }
 	ECFMetaData& mandatoryonly(std::function<bool(void)> ismandatory) { this->ismandatory = ismandatory; return *this; }
