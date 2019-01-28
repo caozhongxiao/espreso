@@ -6,6 +6,12 @@ import os
 reload(sys)
 sys.setdefaultencoding('utf8')
 
+from waflib import Logs
+from waflib.Build import BuildContext
+class ShowConfiguration(BuildContext):
+    cmd = "show"
+    fun = "show"
+
 def set_compiler(ctx):
     def trycompiler():
         try:
@@ -103,8 +109,12 @@ def set_variables(ctx):
     ctx.env.mode = ctx.options.mode
     if ctx.options.mode == "release":
         ctx.env.append_unique("CXXFLAGS", [ "-O3" ])
+        if ctx.options.debug:
+            ctx.env.append_unique("CXXFLAGS", [ "-g" ])
     if ctx.options.mode == "measurement":
         ctx.env.append_unique("CXXFLAGS", [ "-O3" ])
+        if ctx.options.debug:
+            ctx.env.append_unique("CXXFLAGS", [ "-g" ])
     if ctx.options.mode == "devel":
         ctx.env.append_unique("CXXFLAGS", [ "-O2", "-g" ])
     if ctx.options.mode == "debug":
@@ -124,6 +134,16 @@ def configure(ctx):
     ctx.msg("Setting int width to", ctx.options.intwidth)
     ctx.msg("Setting build mode to", ctx.options.mode)
     ctx.msg("Setting solver to", ctx.options.solver)
+
+def show(ctx):
+    ctx.logger=Logs.make_logger("sss",'cfg')
+    ctx.msg("CXX", ctx.env.CXX)
+    ctx.msg("MODE", ctx.env.mode)
+    ctx.msg("DEFINES", " ".join(ctx.env.DEFINES))
+    ctx.msg("CXXFLAGS", " ".join(ctx.env.CXXFLAGS))
+    ctx.msg("MKL", "HAVE_MKL" in ctx.env.DEFINES_MKL)
+    ctx.msg("METIS", "HAVE_METIS" in ctx.env.DEFINES_METIS)
+    ctx.msg("HYPRE", "HAVE_HYPRE" in ctx.env.DEFINES_HYPRE)
 
 fetisources= (
    "src/solver/generic/Domain.cpp",
@@ -188,6 +208,11 @@ def options(opt):
         default="release",
         choices=modes,
         help="ESPRESO build mode: " + ", ".join(modes) + " [default: %default]")
+
+    espreso.add_option("--debug",
+        action="store_true",
+        default=False,
+        help="Build with debug information independently on the mode.")
 
     solvers=["mkl"]
     espreso.add_option("--solver",
