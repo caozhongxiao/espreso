@@ -13,6 +13,8 @@ DEFAULT_ARGS {
 
   5          10;
   6          15;
+
+  7        FETI;
 }
 
 INPUT            GENERATOR;
@@ -93,7 +95,7 @@ HEAT_TRANSFER_2D {
       DURATION_TIME   .01;
       TYPE      TRANSIENT;
       MODE      NONLINEAR;
-      SOLVER         FETI;
+      SOLVER       [ARG7];
 
       TRANSIENT_SOLVER {
         METHOD   CRANK_NICOLSON;

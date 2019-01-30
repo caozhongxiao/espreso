@@ -30,6 +30,7 @@ struct NodeData {
 
 	void statistics(const tarray<esint> &nodes, esint totalsize, Statistics *statistics) const;
 	double norm() const;
+	double maxabs() const;
 };
 
 struct NodeStore {

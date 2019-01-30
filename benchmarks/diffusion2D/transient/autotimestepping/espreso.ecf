@@ -11,6 +11,8 @@ DEFAULT_ARGS {
 
   5        15;
   6        10;
+
+  7     HYPRE;
 }
 
 INPUT            GENERATOR;
@@ -76,10 +78,10 @@ HEAT_TRANSFER_2D {
 
   LOAD_STEPS_SETTINGS {
     1 {
-      DURATION_TIME  10;
+      DURATION_TIME  20;
       TYPE    TRANSIENT;
       MODE       LINEAR;
-      SOLVER       FETI;
+      SOLVER     [ARG7];
 
       TRANSIENT_SOLVER {
         METHOD   CRANK_NICOLSON;
@@ -95,10 +97,34 @@ HEAT_TRANSFER_2D {
 
       FETI {
         METHOD          TOTAL_FETI;
+        PRECISION            1E-12;
         PRECONDITIONER   DIRICHLET;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
         B0_TYPE            CORNERS;
+      }
+
+      HYPRE {
+        SOLVER_TYPE   BOOMERAMG;
+
+        PCG {
+          RELATIVE_CONV_TOL       1E-12;
+          ABSOLUTE_CONV_TOL           0;
+          RESIDUAL_CONV_TOL       1E-12;
+          MAX_ITERATIONS           1000;
+          TWO_NORM                 TRUE;
+          RECOMPUTE_RESIDUAL_END   TRUE;
+          RECOMPUTE_RESIDUAL_P    FALSE;
+          PRECONDITIONER      BOOMERAMG;
+
+          BOOMERAMG {
+            CONVERGENCE_TOLERANCE                1E-08;
+          }
+        }
+
+        BOOMERAMG {
+          CONVERGENCE_TOLERANCE                1E-09;
+        }
       }
 
       TEMPERATURE {

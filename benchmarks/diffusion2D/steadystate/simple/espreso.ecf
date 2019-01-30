@@ -103,9 +103,18 @@ HEAT_TRANSFER_2D {
       FETI {
         METHOD              [ARG8];
         PRECONDITIONER      LUMPED;
-        PRECISION            1E-08;
+        PRECISION            1E-09;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
+      }
+
+      HYPRE {
+        SOLVER_TYPE   BOOMERAMG;
+
+        BOOMERAMG {
+          CONVERGENCE_TOLERANCE                1E-09;
+          SOLVER_INFO                        NO_INFO;
+        }
       }
 
       TEMPERATURE {

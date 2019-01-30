@@ -12,7 +12,8 @@ DEFAULT_ARGS {
   5          20;
   6          30;
 
-  7  TOTAL_FETI;
+  7        FETI;
+  8  TOTAL_FETI;
 }
 
 INPUT            GENERATOR;
@@ -93,7 +94,7 @@ HEAT_TRANSFER_2D {
       DURATION_TIME     1;
       TYPE   STEADY_STATE;
       MODE      NONLINEAR;
-      SOLVER         FETI;
+      SOLVER       [ARG7];
 
       NONLINEAR_SOLVER {
         METHOD                   NEWTON_RAPHSON;
@@ -112,7 +113,7 @@ HEAT_TRANSFER_2D {
       }
 
       FETI {
-        METHOD              [ARG7];
+        METHOD              [ARG8];
         PRECONDITIONER   DIRICHLET;
         PRECISION            1E-08;
         ITERATIVE_SOLVER       PCG;

@@ -14,7 +14,7 @@ DEFAULT_ARGS {
   5          10;
   6          15;
   
-  7  TOTAL_FETI;
+  7        FETI;
 }
 
 INPUT            GENERATOR;
@@ -96,14 +96,37 @@ HEAT_TRANSFER_2D {
       DURATION_TIME    10;
       TYPE      TRANSIENT;
       MODE         LINEAR;
-      SOLVER         FETI;
+      SOLVER       [ARG7];
 
       FETI {
         METHOD                TOTAL_FETI;
-        PRECONDITIONER            LUMPED;
-        PRECISION                  1E-08;
-        ITERATIVE_SOLVER   ORTHOGONALPCG;
-        REGULARIZATION         ALGEBRAIC;
+        PRECONDITIONER         DIRICHLET;
+        PRECISION                  1E-09;
+        ITERATIVE_SOLVER             PCG;
+        REGULARIZATION          ANALYTIC;
+      }
+
+      HYPRE {
+        SOLVER_TYPE   PCG;
+
+        PCG {
+          RELATIVE_CONV_TOL       1E-09;
+          ABSOLUTE_CONV_TOL           0;
+          RESIDUAL_CONV_TOL       1E-09;
+          MAX_ITERATIONS           1000;
+          TWO_NORM                 TRUE;
+          RECOMPUTE_RESIDUAL_END   TRUE;
+          RECOMPUTE_RESIDUAL_P    FALSE;
+          PRECONDITIONER      BOOMERAMG;
+
+          BOOMERAMG {
+            CONVERGENCE_TOLERANCE                1E-08;
+          }
+        }
+
+        BOOMERAMG {
+          CONVERGENCE_TOLERANCE                1E-09;
+        }
       }
 
       TRANSIENT_SOLVER {

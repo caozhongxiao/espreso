@@ -284,3 +284,17 @@ double NodeData::norm() const
 	return std::sqrt(sum);
 }
 
+double NodeData::maxabs() const
+{
+	esint foreignPrefix = info::mesh->nodes->size - info::mesh->nodes->uniqueSize;
+	double max = 0;
+	for (size_t i = foreignPrefix * dimension; i < data.size(); ++i) {
+		max = std::max(std::fabs(data[i]), max);
+	}
+
+	double gmax = 0;
+	MPI_Allreduce(&max, &gmax, 1, MPI_DOUBLE, MPI_MAX, info::mpi::comm);
+
+	return gmax;
+}
+
