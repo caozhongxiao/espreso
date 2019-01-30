@@ -57,6 +57,7 @@ public:
 	virtual void processSolution();
 
 	virtual void keepK();
+	virtual void keepSolverK();
 	virtual void keepRHS();
 	virtual void keepSolverRHS();
 	virtual void KplusAlfaM(double alfa) =0;
@@ -66,7 +67,8 @@ public:
 	virtual void enrichSolution(double alfa, NodeData* x);
 	virtual void RHSMinusR();
 	virtual void sum(NodeData *z, double alfa, NodeData* a, double beta, NodeData *b);
-	virtual double norm(NodeData *x, NodeData* y);
+	virtual double lineSearch(NodeData *U, const SolverParameters &parameters);
+	virtual double mult(NodeData *x, NodeData* y);
 	virtual double residualNormNumerator() =0;
 	virtual double residualNormDenominator() =0;
 
@@ -76,6 +78,7 @@ public:
 
 protected:
 	virtual void apply(std::vector<SparseMatrix> &matrices, std::vector<double> &result, std::vector<double> &x) = 0;
+	virtual void gather(std::vector<double> &out, std::vector<std::vector<double> > &in) = 0;
 
 	static size_t getMatrixSize(size_t size, MatrixType mtype)
 	{

@@ -102,6 +102,15 @@ void Composer::keepK()
 	}
 }
 
+void Composer::keepSolverK()
+{
+	data->solverK.resize(data->K.size());
+	#pragma omp parallel for
+	for (size_t d = 0; d < data->K.size(); d++) {
+		data->solverK[d] = data->K[d];
+	}
+}
+
 void Composer::keepRHS()
 {
 	data->origF.resize(data->f.size());
@@ -154,7 +163,67 @@ void Composer::sum(NodeData *z, double alfa, NodeData* a, double beta, NodeData 
 	}
 }
 
-double Composer::norm(NodeData *x, NodeData* y)
+double Composer::lineSearch(NodeData *U, const SolverParameters &parameters)
+{
+	double alpha = 1;
+
+	double a = 0, b = 1;
+	double fa = 0, fb = 0, fx = 0, faStart = 0;
+
+	NodeData solution = *_controler.solution(), delta = *_controler.solution();
+	NodeData rhs = solution, currentrhs = solution, residual = solution, R = solution;
+	gather(rhs.data, data->origF);
+	gather(currentrhs.data, data->f);
+
+	for (size_t i = 0; i < 6; i++) {
+		sum(&solution, 1, U, alpha, &delta);
+		solution.data.swap(_controler.solution()->data);
+		parametersChanged();
+		assemble(Matrices::R, parameters);
+		solution.data.swap(_controler.solution()->data);
+
+		gather(R.data, data->R);
+		sum(&residual, 1, &rhs, - 1, &R);
+
+		if (i == 0) {
+			faStart = mult(&delta, &currentrhs);
+			fb = mult(&delta, &residual);
+			if ((faStart < 0 && fb < 0) || (faStart >= 0 && fb >= 0)) {
+				return alpha;
+			}
+			fa = faStart;
+		} else {
+			fx = mult(&delta, &residual);
+			if (fa * fx < 0) {
+				b = alpha;
+				fb = fx;
+			} else if (fb * fx < 0) {
+				a = alpha;
+				fa = fx;
+			}
+
+			if (fabs(fx) <= 0.5 * faStart) {
+				alpha = a - fa * ((b - a ) / (fb - fa));
+				break;
+			}
+		}
+
+		alpha = a - fa * ((b - a ) / (fb - fa));
+	}
+
+	if (alpha < 0.1) {
+		alpha = 0.1;
+	}
+	if (alpha > .99) {
+		alpha = 1;
+	}
+
+	sum(&solution, 0, U, alpha, &delta);
+	solution.data.swap(_controler.solution()->data);
+	return alpha;
+}
+
+double Composer::mult(NodeData *x, NodeData* y)
 {
 	esint foreignPrefix = info::mesh->nodes->size - info::mesh->nodes->uniqueSize;
 	double square = 0;
@@ -165,5 +234,5 @@ double Composer::norm(NodeData *x, NodeData* y)
 	double sum = 0;
 	MPI_Allreduce(&square, &sum, 1, MPI_DOUBLE, MPI_SUM, info::mpi::comm);
 
-	return std::sqrt(sum);
+	return sum;
 }

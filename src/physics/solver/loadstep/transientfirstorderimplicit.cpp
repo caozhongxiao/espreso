@@ -114,7 +114,7 @@ void TransientFirstOrderImplicit::processTimeStep()
 			_assembler.composer()->applyOriginalK(dTK, dU);
 			_assembler.composer()->applyM(dTM, dU);
 
-			double resFreq = _assembler.composer()->norm(dU, dTK) / _assembler.composer()->norm(dU, dTM);
+			double resFreq = std::sqrt(_assembler.composer()->mult(dU, dTK)) / std::sqrt(_assembler.composer()->mult(dU, dTM));
 			double oscilationLimit = time::shift * resFreq;
 			double t1 = _configuration.auto_time_stepping.oscilation_limit / resFreq;
 
