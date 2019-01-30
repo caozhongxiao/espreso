@@ -3,7 +3,9 @@
 #define SRC_CONFIG_ECF_LINEARSOLVER_HYPRE_HYPREBiCGSTAB_H_
 
 #include "hypreboomeramg.h"
-#include "hypreparasalis.h"
+#include "hypreparasails.h"
+#include "hypreeuclid.h"
+#include "hyprepilut.h"
 
 namespace espreso {
 
@@ -11,14 +13,18 @@ struct HYPREBiCGSTABConfiguration: public ECFDescription {
 
 	enum class PRECONDITIONER {
 		BoomerAMG,
-		Parasalis,
+		ParaSails,
+		Euclid,
+		Pilut,
 		NONE
 	};
 	PRECONDITIONER preconditioner;
 
 	HYPREBoomerAMGConfiguration boomeramg;
-	HYPREParasalisConfiguration parasalis;
-
+	HYPREParaSailsConfiguration parasails;
+	HYPREEuclidConfiguration euclid;
+	HYPREPilutConfiguration pilut;
+	
 	double relative_conv_tol, absolute_conv_tol;
 	int max_iterations;
 	

@@ -3,7 +3,6 @@
 #define SRC_CONFIG_ECF_LINEARSOLVER_HYPRE_HYPRECGNR_H_
 
 #include "hypreboomeramg.h"
-#include "hypreparasalis.h"
 
 namespace espreso {
 
@@ -11,13 +10,12 @@ struct HYPRECGNRConfiguration: public ECFDescription {
 
 	enum class PRECONDITIONER {
 		BoomerAMG,
-		Parasalis,
+	
 		NONE
 	};
 	PRECONDITIONER preconditioner;
 
 	HYPREBoomerAMGConfiguration boomeramg;
-	HYPREParasalisConfiguration parasalis;
 
 	double relative_conv_tol, absolute_conv_tol;
 	int max_iterations;

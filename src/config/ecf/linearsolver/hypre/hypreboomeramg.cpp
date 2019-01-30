@@ -91,7 +91,7 @@ HYPREBoomerAMGConfiguration::HYPREBoomerAMGConfiguration()
 			.setdatatype({ ECFDataType::FLOAT }));
 
 	coarsening_type = COARSENING_TYPE::Falgout;
-	REGISTER(cycle_type, ECFMetaData()
+	REGISTER(coarsening_type, ECFMetaData()
 			.setdescription({ "Defines which parallel coarsening algorithm is used" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("CLJP").setdescription("CLJP-coarsening (a parallel coarsening algorithm using independent sets"))
@@ -226,7 +226,7 @@ HYPREBoomerAMGConfiguration::HYPREBoomerAMGConfiguration()
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("SCHWARZ").setdescription("Schwarz smoothers"))
 			.addoption(ECFOption().setname("PILUT").setdescription("Pilut"))
-			.addoption(ECFOption().setname("PARASALIS").setdescription("ParaSails"))
+			.addoption(ECFOption().setname("PARASAILS").setdescription("ParaSails"))
 			.addoption(ECFOption().setname("EUCLID").setdescription("Euclid")));
 
 	smooth_level_num = 0;
