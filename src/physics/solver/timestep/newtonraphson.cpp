@@ -62,12 +62,12 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 		} else {
 			updatedMatrices = loadStepSolver.updateStructuralMatrices(Matrices::f | Matrices::R);
 		}
+		_assembler.composer()->keepRHS();
 		_assembler.composer()->RHSMinusR();
 
 		if (_configuration.check_second_residual) {
 			double residualNumerator = _assembler.composer()->residualNormNumerator();
 			double residualDenominator = std::max(_assembler.composer()->residualNormDenominator(), 1e-3);
-			printf("heat residual: %7.5f / %7.5f\n", residualNumerator, residualDenominator);
 			if (residualNumerator / residualDenominator < _configuration.requested_second_residual && time::iteration > 1 ) {
 				ESINFO(CONVERGENCE) << "    HEAT_CONVERGENCE_VALUE =  " <<  residualNumerator << "  CRITERION_VALUE = " << residualDenominator * _configuration.requested_second_residual << " <<< CONVERGED >>>";
 				if (_configuration.check_first_residual) {
@@ -98,10 +98,9 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 		ESINFO(CONVERGENCE) <<  "    LINEAR_SOLVER_OUTPUT: SOLVER = " << "PCG" <<   " N_MAX_ITERATIONS = " << "1" << "  " ;
 
 		if (_configuration.line_search) {
-//			_assembler.controller()->solution()->statistics(info::mesh->allNodes()->nodes->datatarray(), info::mesh->nodes->uniqueTotalSize, stats.data());
-//			double maxSolutionValue = std::max(std::fabs(stats[0].min), std::fabs(stats[0].max));
-//			double alpha = _assembler.lineSearch(_solution, _assembler.instance.primalSolution, _f_ext);
-//			ESINFO(CONVERGENCE) << "    LINE_SEARCH_OUTPUT: " << "PARAMETER = " << alpha << "  MAX_DOF_INCREMENT = " << maxSolutionValue << "  SCALED_MAX_INCREMENT = " << alpha * maxSolutionValue;
+			double maxSolutionValue = _assembler.controller()->solution()->maxabs();
+			double alpha = _assembler.composer()->lineSearch(_solution, _assembler.parameters);
+			ESINFO(CONVERGENCE) << "    LINE_SEARCH_OUTPUT: " << "PARAMETER = " << alpha << "  MAX_DOF_INCREMENT = " << maxSolutionValue << "  SCALED_MAX_INCREMENT = " << alpha * maxSolutionValue;
 		}
 
 		if (!_configuration.check_first_residual) {

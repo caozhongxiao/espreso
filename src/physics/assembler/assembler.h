@@ -16,6 +16,7 @@ class Controller;
 class Provider;
 struct NodeData;
 enum class SumRestriction;
+struct DataHolder;
 class SparseMatrix;
 class LinearSolver;
 
@@ -43,8 +44,6 @@ struct Assembler {
 	virtual void postProcess() =0;
 
 	virtual double& solutionPrecision() =0;
-
-	double lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext);
 
 	virtual DataHolder* data() =0;
 	virtual Composer* composer() =0;
@@ -121,15 +120,15 @@ struct AssemblerInstance: public Assembler, public TController, public TComposer
 		if ((matrices & Matrices::K) && TProvider::needOriginalStiffnessMatrices()) {
 			TComposer::keepK();
 		}
-		if ((matrices & Matrices::f) && TProvider::needOriginalRHS()) {
-			TComposer::keepRHS();
-		}
 	}
 
 	void setDirichlet(Matrices matrices, const std::vector<double> &subtraction = {})
 	{
-		if ((matrices & Matrices::f) && TProvider::needOriginalRHS()) {
+		if ((matrices & Matrices::f) && TProvider::needSolverRHS()) {
 			TComposer::keepSolverRHS();
+		}
+		if ((matrices & Matrices::K) && TProvider::needSolverStiffnessMatrices()) {
+			TComposer::keepSolverK();
 		}
 		TComposer::setDirichlet(matrices, parameters.internalForceReduction, subtraction);
 	}

@@ -21,15 +21,19 @@ bool Provider::needOriginalStiffnessMatrices()
 	return _configuration.type == LoadStepConfiguration::TYPE::TRANSIENT;
 }
 
+bool Provider::needSolverStiffnessMatrices()
+{
+	return needReactionForces();
+}
+
 bool Provider::needReactionForces()
 {
 	return _configuration.mode == LoadStepConfiguration::MODE::NONLINEAR;
 }
 
-bool Provider::needOriginalRHS()
+bool Provider::needSolverRHS()
 {
 	return needReactionForces();
 }
-
 
 

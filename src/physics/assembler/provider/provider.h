@@ -18,7 +18,8 @@ public:
 
 	virtual bool needMatrixVectorProduct();
 	virtual bool needOriginalStiffnessMatrices();
-	virtual bool needOriginalRHS();
+	virtual bool needSolverStiffnessMatrices();
+	virtual bool needSolverRHS();
 	virtual bool needReactionForces();
 	virtual double& solutionPrecision() =0;
 
