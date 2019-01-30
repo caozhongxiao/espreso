@@ -880,6 +880,22 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, esin
 	}
 
 
+	if (info::ecf->output.print_matrices) {
+		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "STORE HYPRE SYSTEM";
+		{
+			std::string prefix = Logging::prepareFile("HYPRE.K");
+			HYPRE_IJMatrixPrint(data._data->K, prefix.c_str());
+		}
+		{
+			std::string prefix = Logging::prepareFile("HYPRE.f");
+			HYPRE_IJVectorPrint(data._data->f, prefix.c_str());
+		}
+		{
+			std::string prefix = Logging::prepareFile("HYPRE.x");
+			HYPRE_IJVectorPrint(data._data->x, prefix.c_str());
+		}
+	}
+
 	std::vector<esint> rows(nrows);
 	std::iota(rows.begin(), rows.end(), data._roffset + 1);
 	HYPRE_IJVectorGetValues(data._data->x, data._nrows, rows.data(), solution);
