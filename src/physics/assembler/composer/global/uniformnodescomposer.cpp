@@ -489,14 +489,13 @@ struct __Dirichlet__ {
 
 void UniformNodesComposer::setDirichlet(Matrices matrices, double reduction, const std::vector<double> &subtraction)
 {
-	if (!(matrices & (Matrices::K | Matrices::M))) {
-		return;
+	if (matrices & (Matrices::K | Matrices::M)) {
+		_KDirichletValues.clear();
 	}
 
 	auto &ROW = data->K.front().CSR_I_row_indices;
 	auto &COL = data->K.front().CSR_J_col_indices;
 	auto &VAL = data->K.front().CSR_V_values;
-	auto &ORIGVAL = data->origK.front().CSR_V_values;
 	auto &RHS = data->f.front();
 
 	std::vector<double> values(_dirichletMap.size());
@@ -514,7 +513,7 @@ void UniformNodesComposer::setDirichlet(Matrices matrices, double reduction, con
 
 	std::vector<__Dirichlet__> dirichlet;
 
-	for (size_t i = 0, j = 0; i < _dirichletMap.size(); i = j) {
+	for (size_t i = 0, j = 0, v = 0; i < _dirichletMap.size(); i = j) {
 		double value = 0;
 		while (j < _dirichletMap.size() && _dirichletMap[j] == _dirichletMap[i]) {
 			value += values[_dirichletPermutation[j++]];
@@ -535,10 +534,18 @@ void UniformNodesComposer::setDirichlet(Matrices matrices, double reduction, con
 					esint r = dit - _DOFMap->datatarray().begin();
 					for (esint c = ROW[r]; c < ROW[r + 1]; c++) {
 						if (COL[c - 1] == col) {
-							if (r < _foreignDOFs) {
-								dirichlet.push_back({ORIGVAL[c - 1] * RHS[_dirichletMap[i]], *dit, COL[c - 1] - 1});
+							double val;
+							if (v == _KDirichletValues.size()) {
+								val = VAL[c - 1];
+								_KDirichletValues.push_back(val);
+							} else {
+								val = _KDirichletValues[v];
 							}
-							RHS[r] -= ORIGVAL[c - 1] * RHS[_dirichletMap[i]];
+							++v;
+							if (r < _foreignDOFs && _foreignDOFs <= _dirichletMap[i]) {
+								dirichlet.push_back({val * RHS[_dirichletMap[i]], *dit, COL[c - 1] - 1});
+							}
+							RHS[r] -= val * RHS[_dirichletMap[i]];
 							VAL[c - 1] = 0;
 						}
 					}

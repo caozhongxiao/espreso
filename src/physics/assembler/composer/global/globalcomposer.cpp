@@ -71,7 +71,7 @@ void GlobalComposer::enrichRHS(double alfa, NodeData* x)
 
 void GlobalComposer::computeReactionForces()
 {
-	apply(data->origK, data->dualSolution.front(), _controler.solution()->data);
+	apply(data->solverK, data->dualSolution.front(), _controler.solution()->data);
 	for (size_t i = 0; i < data->dualSolution.front().size(); i++) {
 		data->dualSolution.front()[i] = data->solverF.front()[i] - data->dualSolution.front()[i];
 	}

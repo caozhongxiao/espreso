@@ -34,7 +34,7 @@ struct DataHolder {
 	void computeKernels(FETI_REGULARIZATION regularization, int scSize, bool ortogonalCluster = false) { computeKernelsCallback(regularization, scSize, ortogonalCluster); }
 	void assembleB0(FETI_B0_TYPE type, const std::vector<SparseMatrix> &kernels) { assembleB0Callback(type, kernels); }
 
-	std::vector<SparseMatrix> origK, K, origKN1, origKN2, origRegMat, N1, N2, RegMat;
+	std::vector<SparseMatrix> origK, solverK, K, origKN1, origKN2, origRegMat, N1, N2, RegMat;
 	std::vector<SparseMatrix> M;
 	std::vector<std::vector<double> > R, f, origF, solverF;
 

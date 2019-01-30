@@ -24,6 +24,11 @@ public:
 protected:
 	void apply(std::vector<SparseMatrix> &matrices, std::vector<double> &result, std::vector<double> &x);
 	virtual void gather(std::vector<double> &data) =0;
+	void gather(std::vector<double> &out, std::vector<std::vector<double> > &in)
+	{
+		out = in[0];
+		gather(out);
+	}
 
 	Provider &_provider;
 
@@ -37,6 +42,9 @@ protected:
 	std::vector<esint> _MVCols;
 	std::vector<double> _MVVec;
 	std::vector<std::vector<esint> > _MVSend, _MVRecv;
+
+	// data for dirichlet
+	std::vector<double> _KDirichletValues;
 };
 
 }
