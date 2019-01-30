@@ -56,19 +56,6 @@ void FETIComposer::enrichRHS(double alfa, NodeData* x)
 	}
 }
 
-//void FETIComposer::DirichletMinusSolution()
-//{
-//	std::vector<std::vector<double> > solution;
-//	duply(_controler.solution()->data, solution);
-//	#pragma omp parallel for
-//	for (esint d = 0; d < info::mesh->elements->ndomains; d++) {
-//		const std::vector<esint> &ROWS = data->B1[d].I_row_indices;
-//		for (size_t j = 0; j < ROWS.size() && ROWS[j] <= data->block[DataHolder::CONSTRAINT::DIRICHLET]; j++) {
-//			data->B1c[d][j] -= solution[d][data->B1[d].J_col_indices[j] - 1];
-//		}
-//	}
-//}
-
 double FETIComposer::residualNormNumerator()
 {
 	double square = 0;

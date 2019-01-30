@@ -36,8 +36,8 @@ HeatTransfer3DController::HeatTransfer3DController(HeatTransferLoadStepConfigura
 
 	_temperature = info::mesh->nodes->appendData(1, { "TEMPERATURE" });
 	if (info::mesh->hasPhaseChange()) {
-		_phaseChange = info::mesh->nodes->appendData(1, { "PHASE" });
-		_latentHeat = info::mesh->nodes->appendData(1, { "LATENT_HEAT" });
+		_phaseChange = info::mesh->elements->appendData(1, { "PHASE" });
+		_latentHeat = info::mesh->elements->appendData(1, { "LATENT_HEAT" });
 	}
 
 	if (info::ecf->output.results_selection.translation_motions && _configuration.translation_motions.size()) {
@@ -343,8 +343,8 @@ void HeatTransfer3DController::processSolution()
 		iterator.heat        = _nheat.data->datatarray().begin(t);
 
 		if (info::mesh->hasPhaseChange()) {
-			iterator.phase = _phaseChange->data.data() + noffset;
-			iterator.latentHeat = _latentHeat->data.data() + noffset;
+			iterator.phase = _phaseChange->data.data() + info::mesh->elements->distribution[t];
+			iterator.latentHeat = _latentHeat->data.data() + info::mesh->elements->distribution[t];
 		}
 
 		if (info::ecf->output.results_selection.gradient) {

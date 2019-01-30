@@ -24,8 +24,9 @@ protected:
 	HeatTransferController(HeatTransferLoadStepConfiguration &configuration)
 	: Controller(),
 	  _configuration(configuration),
-	  _temperature(NULL), _phaseChange(NULL), _latentHeat(NULL), _avgThickness(NULL),
-	  _gradient(NULL), _flux(NULL), _motion(NULL), _thickness(NULL) {}
+	  _temperature(NULL), _avgThickness(NULL),
+	  _gradient(NULL), _flux(NULL), _motion(NULL), _thickness(NULL),
+	  _phaseChange(NULL), _latentHeat(NULL){}
 
 	HeatTransferLoadStepConfiguration &_configuration;
 
@@ -39,8 +40,8 @@ protected:
 	Parameter _ntemperature, _ncoordinate, _nmotion, _nheat, _nthickness;
 	std::vector<BoundaryParameters> _boundaries;
 
-	NodeData *_temperature, *_phaseChange, *_latentHeat, *_avgThickness;
-	ElementData *_gradient, *_flux, *_motion, *_thickness;
+	NodeData *_temperature, *_avgThickness;
+	ElementData *_gradient, *_flux, *_motion, *_thickness, *_phaseChange, *_latentHeat;
 };
 
 }

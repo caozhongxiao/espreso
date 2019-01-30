@@ -358,8 +358,6 @@ void HeatTransfer2DKernel::processElement(Matrices matrices, const SolverParamet
 	if (matrices & Matrices::R) {
 		Re.multiply(Ke, T, parameters.timeIntegrationConstantK, 0);
 		Re.multiply(Me, T, parameters.timeIntegrationConstantM, 1);
-		Re.multiply(Ke, T, 1, 0);
-		Re.multiply(Me, T, 1, 1);
 		if (!(matrices & Matrices::K)) {
 			Ke.resize(0, 0);
 		}
@@ -478,6 +476,8 @@ void HeatTransfer2DKernel::processSolution(const SolutionIterator &iterator)
 	if (iterator.material->phase_change) {
 		phase1 = &iterator.material->phases.find(1)->second;
 		phase2 = &iterator.material->phases.find(2)->second;
+		*iterator.phase = 0;
+		*iterator.latentHeat = 0;
 	}
 
 	for (int n = 0; n < size; n++) {
@@ -497,10 +497,8 @@ void HeatTransfer2DKernel::processSolution(const SolutionIterator &iterator)
 			phase2->heat_capacity.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, time::current, &hc2);
 
 			m = (phase * dens1 + (1 - phase) * dens2) * (phase * hc1 + (1 - phase) * hc2 + iterator.material->latent_heat * derivation) * iterator.thickness[0];
-			if (iterator.material->phase_change) {
-				*iterator.phase = phase;
-				*iterator.latentHeat = iterator.material->latent_heat * derivation;
-			}
+			*iterator.phase += phase;
+			*iterator.latentHeat += iterator.material->latent_heat * derivation;
 		} else {
 			assembleMaterialMatrix(n, iterator.coordinates + 2 * n, iterator.material, 1, time::current, T(n, 0), K, CD, false);
 			double dens, hc;
@@ -511,6 +509,10 @@ void HeatTransfer2DKernel::processSolution(const SolutionIterator &iterator)
 
 		U(n, 0) = iterator.motion[2 * n + 0] * m;
 		U(n, 1) = iterator.motion[2 * n + 1] * m;
+	}
+	if (iterator.material->phase_change) {
+		*iterator.phase /= size;
+		*iterator.latentHeat /= size;
 	}
 
 	for (size_t gp = 0; gp < N.size(); gp++) {
