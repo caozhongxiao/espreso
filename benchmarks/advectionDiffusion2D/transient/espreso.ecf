@@ -1,7 +1,5 @@
 # ESPRESO Configuration File
 
-#BENCHMARK ARG0 [ SQUARE4, TRIANGLE3 ]
-
 DEFAULT_ARGS {
   0     SQUARE4;
 
@@ -14,7 +12,7 @@ DEFAULT_ARGS {
   5          20;
   6          30;
 
-  7  TOTAL_FETI;
+  7        FETI;
 }
 
 INPUT            GENERATOR;
@@ -99,7 +97,7 @@ HEAT_TRANSFER_2D {
       DURATION_TIME   .03;
       TYPE      TRANSIENT;
       MODE         LINEAR;
-      SOLVER         FETI;
+      SOLVER       [ARG7];
 
       TRANSIENT_SOLVER {
         METHOD   CRANK_NICOLSON;
@@ -114,6 +112,22 @@ HEAT_TRANSFER_2D {
         ITERATIVE_SOLVER     GMRES;
         REGULARIZATION   ALGEBRAIC;
         B0_TYPE            CORNERS;
+      }
+
+      HYPRE {
+        SOLVER_TYPE  GMRES;
+
+        GMRES {
+          RELATIVE_CONV_TOL    1E-10;
+          ABSOLUTE_CONV_TOL        0;
+          PRECONDITIONER   BOOMERAMG;
+          SOLVER_INFO                        NO_INFO;
+
+          BOOMERAMG {
+            CONVERGENCE_TOLERANCE                1E-08;
+            
+          }
+        }
       }
 
       TRANSLATION_MOTIONS {
@@ -134,10 +148,6 @@ HEAT_TRANSFER_2D {
       }
     }
   }
-}
-
-ENV {
-  PRINT_MATRICES 0;
 }
 
 OUTPUT {

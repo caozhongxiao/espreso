@@ -14,7 +14,7 @@ DEFAULT_ARGS {
   5          20;
   6          30;
 
-  7  TOTAL_FETI;
+  7        FETI;
 }
 
 INPUT            GENERATOR;
@@ -99,7 +99,7 @@ HEAT_TRANSFER_2D {
       DURATION_TIME     1;
       TYPE   STEADY_STATE;
       MODE         LINEAR;
-      SOLVER         FETI;
+      SOLVER       [ARG7];
 
       FETI {
         METHOD          TOTAL_FETI;
@@ -108,6 +108,23 @@ HEAT_TRANSFER_2D {
         ITERATIVE_SOLVER     GMRES;
         REGULARIZATION   ALGEBRAIC;
         B0_TYPE            CORNERS;
+      }
+
+      HYPRE {
+        SOLVER_TYPE  FLEXGMRES;
+
+        FLEXGMRES {
+          RELATIVE_CONV_TOL    1E-06;
+          ABSOLUTE_CONV_TOL        0;
+          MAX_ITERATIONS       10000;
+          RESTARTS               100;
+          PRECONDITIONER        NONE;
+          SOLVER_INFO                        NO_INFO;
+
+          BOOMERAMG {
+            CONVERGENCE_TOLERANCE                1E-10;
+          }
+        }
       }
 
       TRANSLATION_MOTIONS {
@@ -128,10 +145,6 @@ HEAT_TRANSFER_2D {
       }
     }
   }
-}
-
-ENV {
-  PRINT_MATRICES 0;
 }
 
 OUTPUT {

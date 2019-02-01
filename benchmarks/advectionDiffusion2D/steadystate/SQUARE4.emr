@@ -3,4 +3,4 @@
     step ; substep ;    time ;  TEMPERATURE  ;  TEMPERATURE  ;  TRANSLATION_MOTION  ;  -  ;   TEMPERATURE  ;
          ;         ;         ;     <MAX>     ;     <MIN>     ;         <MAX>        ;     ;    <AVERAGE>   ;
 
-       1 ;       1 ;  1.0000 ;  2.500001e+02 ;  2.499999e+02 ;     4.479876e+02     ;     ;  5.598494e+02  ;
+       1 ;       1 ;  1.0000 ;  2.500000e+02 ;  2.500000e+02 ;     4.479876e+02     ;     ;  3.260585e+02  ;

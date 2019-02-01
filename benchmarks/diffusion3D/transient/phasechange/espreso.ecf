@@ -1,21 +1,21 @@
 # ESPRESO Configuration File
 
-#BENCHMARK ARG0 [ TETRA10, PYRAMID13, HEXA20 ]
-
 DEFAULT_ARGS {
-  0  0;
+  0      0;
 
-  1  4;
-  2  1;
-  3  1;
+  1      4;
+  2      1;
+  3      1;
 
-  4  3;
-  5  1;
-  6  1;
+  4      3;
+  5      1;
+  6      1;
 
-  7  4;
-  8  4;
-  9  4;
+  7      4;
+  8      4;
+  9      4;
+
+  10  FETI;
 }
 
 INPUT            GENERATOR;
@@ -107,10 +107,10 @@ HEAT_TRANSFER_3D {
 
   LOAD_STEPS_SETTINGS {
     1 {
-      DURATION_TIME   10;
+      DURATION_TIME     5;
       TYPE      TRANSIENT;
       MODE      NONLINEAR;
-      SOLVER         FETI;
+      SOLVER      [ARG10];
 
       NONLINEAR_SOLVER {
         METHOD                  NEWTON_RAPHSON;
@@ -140,6 +140,30 @@ HEAT_TRANSFER_3D {
         PRECISION                  1E-08;
         MAX_ITERATIONS              1000;
         ITERATIVE_SOLVER   ORTHOGONALPCG;
+      }
+
+      HYPRE {
+        SOLVER_TYPE   PCG;
+
+        PCG {
+          RELATIVE_CONV_TOL       1E-12;
+          ABSOLUTE_CONV_TOL           0;
+          RESIDUAL_CONV_TOL       1E-12;
+          MAX_ITERATIONS           1000;
+          TWO_NORM                 TRUE;
+          RECOMPUTE_RESIDUAL_END   TRUE;
+          RECOMPUTE_RESIDUAL_P    FALSE;
+          PRECONDITIONER           NONE;
+          SOLVER_INFO           NO_INFO;
+
+          BOOMERAMG {
+            CONVERGENCE_TOLERANCE                1E-12;
+          }
+        }
+
+        BOOMERAMG {
+          CONVERGENCE_TOLERANCE                1E-09;
+        }
       }
 
       TEMPERATURE {
@@ -172,14 +196,8 @@ OUTPUT {
     }
 
     3 {
-      REGION          RIGHT;
-      STATISTICS        MIN;
-      PROPERTY        PHASE;
-    }
-
-    4 {
-      REGION      ALL_NODES;
-      STATISTICS        MAX;
+      REGION   ALL_ELEMENTS;
+      STATISTICS        AVG;
       PROPERTY        PHASE;
     }
   }

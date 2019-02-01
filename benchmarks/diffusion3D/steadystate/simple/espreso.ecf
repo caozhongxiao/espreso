@@ -112,6 +112,18 @@ HEAT_TRANSFER_3D {
         REGULARIZATION    ANALYTIC;
       }
 
+      HYPRE {
+        SOLVER_TYPE   PCG;
+
+        PCG {
+          RELATIVE_CONV_TOL       1E-09;
+          ABSOLUTE_CONV_TOL           0;
+          RESIDUAL_CONV_TOL       1E-09;
+          MAX_ITERATIONS           1000;
+          PRECONDITIONER           NONE;
+        }
+      }
+
       TEMPERATURE {
         TOP      100;
         BOTTOM   300;

@@ -173,19 +173,19 @@ OUTPUT {
     }
 
     3 {
-      REGION          RIGHT;
+      REGION   ALL_ELEMENTS;
       STATISTICS        MIN;
       PROPERTY        PHASE;
     }
 
     4 {
-      REGION      ALL_NODES;
+      REGION   ALL_ELEMENTS;
       STATISTICS        MAX;
       PROPERTY        PHASE;
     }
 
     5 {
-      REGION      ALL_NODES;
+      REGION   ALL_ELEMENTS;
       STATISTICS        MAX;
       PROPERTY  LATENT_HEAT;
     }
