@@ -106,17 +106,17 @@ std::vector<esint> Input::getDistribution(const std::vector<esint> &IDs, const s
 	}
 	MPI_Allreduce(&myMaxID, &maxID, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, info::mpi::comm);
 
-	eslocal size = IDs.size();
+	esint size = IDs.size();
 	size = Communication::exscan(size);
-	std::vector<eslocal> targetDistribution = tarray<eslocal>::distribute(environment->MPIsize, size);
+	std::vector<esint> targetDistribution = tarray<esint>::distribute(info::mpi::size, size);
 
-	double PRECISION = 0.001 * std::log2(environment->MPIsize);
-	if (PRECISION * (targetDistribution.back() / environment->MPIsize) < 2) {
-		PRECISION = 2.01 / (targetDistribution.back() / environment->MPIsize);
+	double PRECISION = 0.001 * std::log2(info::mpi::size);
+	if (PRECISION * (targetDistribution.back() / info::mpi::size) < 2) {
+		PRECISION = 2.01 / (targetDistribution.back() / info::mpi::size);
 	}
 
 	// allowed difference to the perfect distribution
-	int ETOLERANCE = PRECISION * targetDistribution.back() / environment->MPIsize;
+	int ETOLERANCE = PRECISION * targetDistribution.back() / info::mpi::size;
 
 	if (maxID <= size + ETOLERANCE) {
 		return targetDistribution;
@@ -124,8 +124,8 @@ std::vector<esint> Input::getDistribution(const std::vector<esint> &IDs, const s
 
 	size_t DEPTH = std::max(std::floor(std::log(maxID) / std::log(10)), 2.);
 
-	std::vector<eslocal> scounts, rcounts, torefine, refined = { 0 };
-	std::vector<eslocal> distribution(environment->MPIsize + 1, maxID);
+	std::vector<esint> scounts, rcounts, torefine, refined = { 0 };
+	std::vector<esint> distribution(info::mpi::size + 1, maxID);
 	distribution.front() = 0;
 
 	size_t LEVEL = 1, buckets = 10;
@@ -138,12 +138,12 @@ std::vector<esint> Input::getDistribution(const std::vector<esint> &IDs, const s
 			for (size_t i = 0; i <= buckets; i++, index++) {
 				auto end = std::lower_bound(permutation.begin(), permutation.end(),
 						step * buckets * refined[b] + i * step,
-						[&] (eslocal p, eslocal value) { return IDs[p] < value; });
+						[&] (esint p, esint value) { return IDs[p] < value; });
 				scounts[index] = end - permutation.begin();
 			}
 		}
 
-		MPI_Allreduce(scounts.data(), rcounts.data(), sizeof(eslocal) * scounts.size(), MPI_BYTE, MPITools::eslocalOperations().sum, environment->MPICommunicator);
+		MPI_Allreduce(scounts.data(), rcounts.data(), sizeof(esint) * scounts.size(), MPI_BYTE, MPITools::esintOperations().sum, info::mpi::comm);
 
 		for (size_t b = 0; b < refined.size(); b++) {
 			size_t boffset = b * (buckets + 1);
