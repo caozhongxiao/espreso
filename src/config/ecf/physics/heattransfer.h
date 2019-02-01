@@ -27,7 +27,8 @@ struct ConvectionConfiguration: public ECFDescription {
 		AVERAGE_PLATE,
 		PARALLEL_PLATES,
 		CIRCULAR_TUBE,
-		TUBE
+		TUBE,
+		QUENCH
 	};
 
 	enum class FLUID {
@@ -35,6 +36,7 @@ struct ConvectionConfiguration: public ECFDescription {
 		WATER,
 		ENGINE_OIL,
 		TRANSFORMER_OIL,
+		STEAM
 	};
 
 	TYPE type;
@@ -42,7 +44,7 @@ struct ConvectionConfiguration: public ECFDescription {
 	FLUID fluid;
 
 	ECFExpression heat_transfer_coefficient, external_temperature;
-	ECFExpression wall_height, tilt_angle, diameter, plate_length, fluid_velocity, plate_distance, length, absolute_pressure;
+	ECFExpression wall_height, tilt_angle, diameter, plate_length, fluid_velocity, plate_distance, length, experimental_constant, volume_fraction, absolute_pressure;
 
 	ConvectionConfiguration();
 };

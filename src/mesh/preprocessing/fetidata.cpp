@@ -561,8 +561,8 @@ void MeshPreprocessing::computeDomainsSurface()
 		for (esint d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
 			auto sit = sintervals.begin();
 			for (size_t i = 0; i < _mesh->nodes->dintervals[d].size(); ++i) {
-				while (*sit < _mesh->nodes->dintervals[d][i].pindex) { ++sit; }
-				if (*sit == _mesh->nodes->dintervals[d][i].pindex) {
+				while (sit != sintervals.end() && *sit < _mesh->nodes->dintervals[d][i].pindex) { ++sit; }
+				if (sit != sintervals.end() && *sit == _mesh->nodes->dintervals[d][i].pindex) {
 					nsize += _mesh->nodes->dintervals[d][i].end - _mesh->nodes->dintervals[d][i].begin;
 				}
 			}
@@ -571,8 +571,8 @@ void MeshPreprocessing::computeDomainsSurface()
 		for (esint d = _mesh->elements->domainDistribution[t]; d < _mesh->elements->domainDistribution[t + 1]; d++) {
 			auto sit = sintervals.begin();
 			for (size_t i = 0; i < _mesh->nodes->dintervals[d].size(); ++i) {
-				while (*sit < _mesh->nodes->dintervals[d][i].pindex) { ++sit; }
-				if (*sit == _mesh->nodes->dintervals[d][i].pindex) {
+				while (sit != sintervals.end() && *sit < _mesh->nodes->dintervals[d][i].pindex) { ++sit; }
+				if (sit != sintervals.end() && *sit == _mesh->nodes->dintervals[d][i].pindex) {
 					tcoordinates.insert(tcoordinates.end(),
 							_mesh->nodes->coordinates->datatarray().data() + _mesh->nodes->dintervals[d][i].begin,
 							_mesh->nodes->coordinates->datatarray().data() + _mesh->nodes->dintervals[d][i].end);
@@ -586,8 +586,8 @@ void MeshPreprocessing::computeDomainsSurface()
 			ibounds.clear();
 			ioffset = { 0 };
 			for (size_t i = 0; i < _mesh->nodes->dintervals[d].size(); ++i) {
-				while (*sit < _mesh->nodes->dintervals[d][i].pindex) { ++sit; }
-				if (*sit == _mesh->nodes->dintervals[d][i].pindex) {
+				while (sit != sintervals.end() && *sit < _mesh->nodes->dintervals[d][i].pindex) { ++sit; }
+				if (sit != sintervals.end() && *sit == _mesh->nodes->dintervals[d][i].pindex) {
 					ibounds.push_back(_mesh->nodes->dintervals[d][i].begin);
 					ioffset.push_back(ioffset.back() + _mesh->nodes->dintervals[d][i].end - _mesh->nodes->dintervals[d][i].begin);
 				}

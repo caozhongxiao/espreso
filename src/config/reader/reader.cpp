@@ -230,7 +230,7 @@ ECFRedParameters ECFReader::_read(
 	std::stack<ECFObject*> confStack;
 	std::stack<Tokenizer*> tokenStack;
 
-	bool correctlyLoaded = true;
+	bool correctlyLoaded = true, unfinishedLine = false;
 	std::map<size_t, std::vector<std::string> > arguments;
 
 	std::string link;
@@ -245,6 +245,9 @@ ECFRedParameters ECFReader::_read(
 			break;
 		case Tokenizer::Token::STRING:
 			values.push_back(tokenStack.top()->value());
+			if (unfinishedLine && confStack.top()->getParameter(values.back()) != NULL) {
+				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Expected ';' before " << values.back() << "\n" << tokenStack.top()->lastLines(2);
+			}
 			break;
 		case Tokenizer::Token::LINK:
 		{
@@ -352,6 +355,7 @@ ECFRedParameters ECFReader::_read(
 			break;
 		case Tokenizer::Token::EXPRESSION_END:
 		{
+			unfinishedLine = false;
 			if (!correctlyLoaded) {
 				values.clear();
 				break;
@@ -392,7 +396,7 @@ ECFRedParameters ECFReader::_read(
 		}
 		case Tokenizer::Token::LINE_END:
 			if (values.size() > 1) {
-				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Expected ';' at the end of each expression.\n" << tokenStack.top()->lastLines(1);
+				unfinishedLine = true;
 			}
 			break;
 		default:
