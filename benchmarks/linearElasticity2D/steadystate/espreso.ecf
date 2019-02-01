@@ -12,7 +12,8 @@ DEFAULT_ARGS {
   5        20;
   6        30;
 
-  7  TOTAL_FETI;
+  7        FETI;
+  8  TOTAL_FETI;
 }
 
 INPUT                   GENERATOR;
@@ -87,13 +88,28 @@ STRUCTURAL_MECHANICS_2D {
       DURATION_TIME     1;
       TYPE   STEADY_STATE;
       MODE         LINEAR;
-      SOLVER         FETI;
+      SOLVER       [ARG7];
 
       FETI {
-        METHOD              [ARG7];
+        METHOD              [ARG8];
         PRECONDITIONER      LUMPED;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION   ALGEBRAIC;
+      }
+
+      HYPRE {
+        SOLVER_TYPE   BOOMERAMG;
+
+        BOOMERAMG {
+          CONVERGENCE_TOLERANCE                1E-09;
+          SOLVER_INFO                        NO_INFO;
+          MIN_ITERATIONS                           1;
+          MAX_ITERATIONS                        1000;
+          MAX_COAREST_GRID_SIZE                    9;
+          MIN_COAREST_GRID_SIZE                    1;
+          MAX_MULTIGRID_LEVELS                    25;
+          AMG_STRENGTH_TRESHOLD                  0.8;
+        }
       }
 
       DISPLACEMENT {

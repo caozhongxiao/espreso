@@ -14,6 +14,8 @@ DEFAULT_ARGS {
   7        5;
   8        5;
   9        5;
+
+  10   HYPRE;
 }
 
 INPUT                   GENERATOR;
@@ -79,7 +81,7 @@ STRUCTURAL_MECHANICS_3D {
       DURATION_TIME     1;
       TYPE   STEADY_STATE;
       MODE         LINEAR;
-      SOLVER         FETI;
+      SOLVER       [ARG10];
 
       FETI {
         METHOD         HYBRID_FETI;
@@ -87,6 +89,21 @@ STRUCTURAL_MECHANICS_3D {
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
         B0_TYPE            KERNELS;
+      }
+
+      HYPRE {
+        SOLVER_TYPE   BOOMERAMG;
+
+        BOOMERAMG {
+          CONVERGENCE_TOLERANCE                1E-09;
+          SOLVER_INFO                        NO_INFO;
+          MIN_ITERATIONS                           1;
+          MAX_ITERATIONS                        1000;
+          MAX_COAREST_GRID_SIZE                    9;
+          MIN_COAREST_GRID_SIZE                    1;
+          MAX_MULTIGRID_LEVELS                    25;
+          AMG_STRENGTH_TRESHOLD                  0.8;
+        }
       }
 
       DISPLACEMENT {
