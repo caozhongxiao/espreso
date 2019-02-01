@@ -43,7 +43,7 @@ struct ECFRoot: public ECFObject {
 
 	DecompositionConfiguration decomposition;
 
-	InputConfiguration workbench, openfoam, esdata;
+	InputConfiguration workbench, openfoam, abaqus, esdata;
 	InputGeneratorConfiguration generator;
 	FETI4ILibraryConfiguration feti4ilibrary;
 

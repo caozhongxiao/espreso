@@ -14,6 +14,8 @@ const ECFObject* ECFRoot::_getInput() const
 		return &generator;
 	case INPUT_FORMAT::WORKBENCH:
 		return &workbench;
+	case INPUT_FORMAT::ABAQUS:
+		return &abaqus;
 	case INPUT_FORMAT::OPENFOAM:
 		return &openfoam;
 	case INPUT_FORMAT::ESDATA:
@@ -71,6 +73,7 @@ void ECFRoot::init()
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("WORKBENCH").setdescription("Ansys WorkBench format."))
 			.addoption(ECFOption().setname("OPENFOAM").setdescription("OpenFOAM format."))
+			.addoption(ECFOption().setname("ABAQUS").setdescription("ABAQUS format."))
 			.addoption(ECFOption().setname("ESDATA").setdescription("ESPRESO internal binary format."))
 			.addoption(ECFOption().setname("GENERATOR").setdescription("ESPRESO internal generator.")));
 
@@ -89,6 +92,9 @@ void ECFRoot::init()
 	REGISTER(openfoam, ECFMetaData()
 			.setdescription({ "Description of OpenFoam format." })
 			.allowonly([&] () { return input == INPUT_FORMAT::OPENFOAM; }));
+	REGISTER(abaqus, ECFMetaData()
+			.setdescription({ "Description of ABAQUS format." })
+			.allowonly([&] () { return input == INPUT_FORMAT::ABAQUS; }));
 	REGISTER(esdata, ECFMetaData()
 			.setdescription({ "Description of ESDATA format." })
 			.allowonly([&] () { return input == INPUT_FORMAT::ESDATA; }));

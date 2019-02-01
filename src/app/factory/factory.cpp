@@ -83,6 +83,8 @@ void ESPRESO::run(int *argc, char ***argv)
 			return !configuration.workbench.convert_database;
 		case INPUT_FORMAT::OPENFOAM:
 			return !configuration.openfoam.convert_database;
+		case INPUT_FORMAT::ABAQUS:
+			return !configuration.abaqus.convert_database;
 		}
 		return true;
 	};
