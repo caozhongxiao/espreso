@@ -17,7 +17,7 @@ using namespace espreso;
 
 void StructuralMechanics2DKernel::assembleMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, DenseMatrix &K) const
 {
-	double Ex, Ey, mi;
+	double Ex = 0, Ey = 0, mi = 0;
 	Point p(coordinates[0], coordinates[1], 0);
 
 	switch (mat->linear_elastic_properties.model) {
@@ -295,13 +295,12 @@ void StructuralMechanics2DKernel::processElement(Matrices matrices, const Solver
 
 void StructuralMechanics2DKernel::processEdge(Matrices matrices, const SolverParameters &parameters, const BoundaryIterator &iterator, DenseMatrix &Ke, DenseMatrix &fe) const
 {
+	Ke.resize(0, 0);
 	if (iterator.normalPressure == NULL) {
-		Ke.resize(0, 0);
 		fe.resize(0, 0);
 		return;
 	}
 	if (!(matrices & (Matrices::K | Matrices::f))) {
-		Ke.resize(0, 0);
 		fe.resize(0, 0);
 		return;
 	}

@@ -299,13 +299,12 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Solver
 
 void StructuralMechanics3DKernel::processFace(Matrices matrices, const SolverParameters &parameters, const BoundaryIterator &iterator, DenseMatrix &Ke, DenseMatrix &fe) const
 {
+	Ke.resize(0, 0);
 	if (iterator.normalPressure == NULL) {
-		Ke.resize(0, 0);
 		fe.resize(0, 0);
 		return;
 	}
 	if (!(matrices & (Matrices::K | Matrices::f))) {
-		Ke.resize(0, 0);
 		fe.resize(0, 0);
 		return;
 	}
