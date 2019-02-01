@@ -223,7 +223,7 @@ void HeatTransfer3DKernel::processElement(Matrices matrices, const SolverParamet
 		CDe.resize(3, 3);
 	}
 
-	const MaterialBaseConfiguration *phase1, *phase2;
+	const MaterialBaseConfiguration *phase1 = NULL, *phase2 = NULL;
 	if (iterator.material->phase_change) {
 		phase1 = &iterator.material->phases.find(1)->second;
 		phase2 = &iterator.material->phases.find(2)->second;
@@ -649,7 +649,7 @@ void HeatTransfer3DKernel::processSolution(const SolutionIterator &iterator)
 	DenseMatrix U(size, 3), K(size, 9), gpK(1, 9), CD;
 	DenseMatrix u(1, 3), matFlux(3, 1), matGradient(3, 1);
 
-	const MaterialBaseConfiguration *phase1, *phase2;
+	const MaterialBaseConfiguration *phase1 = NULL, *phase2 = NULL;
 	if (iterator.material->phase_change) {
 		phase1 = &iterator.material->phases.find(1)->second;
 		phase2 = &iterator.material->phases.find(2)->second;

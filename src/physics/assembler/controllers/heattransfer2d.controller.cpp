@@ -332,7 +332,6 @@ void HeatTransfer2DController::processSolution()
 		auto enodes = info::mesh->elements->procNodes->cbegin(t);
 		HeatTransfer2DKernel::SolutionIterator iterator;
 
-		size_t noffset = enodes->begin() - info::mesh->elements->procNodes->datatarray().begin(t);
 		iterator.temperature = _ntemperature.data->datatarray().begin(t);
 		iterator.coordinates = _ncoordinate.data->datatarray().begin(t);
 		iterator.motion      = _nmotion.data->datatarray().begin(t);

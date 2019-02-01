@@ -542,7 +542,7 @@ void UniformNodesComposer::setDirichlet(Matrices matrices, double reduction, con
 								val = _KDirichletValues[v];
 							}
 							++v;
-							if (r < _foreignDOFs && _foreignDOFs <= _dirichletMap[i]) {
+							if (r < _foreignDOFs) {
 								dirichlet.push_back({val * RHS[_dirichletMap[i]], *dit, COL[c - 1] - 1});
 							}
 							RHS[r] -= val * RHS[_dirichletMap[i]];
@@ -565,7 +565,7 @@ void UniformNodesComposer::setDirichlet(Matrices matrices, double reduction, con
 
 	std::vector<std::vector<__Dirichlet__> > sBuffer(info::mesh->neighbours.size()), rBuffer(info::mesh->neighbours.size());
 	for (size_t n = 0, i = 0; n < info::mesh->neighbours.size(); n++) {
-		while (i < dirichlet.size() && dirichlet[i].row < _nDistribution[n + 1]) {
+		while (i < dirichlet.size() && dirichlet[i].row < _nDistribution[info::mesh->neighbours[n] + 1]) {
 			sBuffer[n].push_back(dirichlet[i++]);
 		}
 	}
@@ -576,10 +576,12 @@ void UniformNodesComposer::setDirichlet(Matrices matrices, double reduction, con
 
 	for (size_t n = 0; n < info::mesh->neighbours.size(); n++) {
 		for (size_t i = 0; i < rBuffer[n].size(); i++) {
-			esint r = std::lower_bound(_DOFMap->datatarray().begin(), _DOFMap->datatarray().end(), rBuffer[n][i].row) - _DOFMap->datatarray().begin();
-			RHS[r] -= rBuffer[n][i].value;
-			esint c = std::lower_bound(COL.begin() + ROW[r] - 1, COL.begin() + ROW[r + 1] - 1, rBuffer[n][i].column + 1) - COL.begin();
-			VAL[c] = 0;
+			if (!std::binary_search(_DOFMap->datatarray().begin(), _DOFMap->datatarray().end(), rBuffer[n][i].column)) {
+				esint r = std::lower_bound(_DOFMap->datatarray().begin(), _DOFMap->datatarray().end(), rBuffer[n][i].row) - _DOFMap->datatarray().begin();
+				RHS[r] -= rBuffer[n][i].value;
+				esint c = std::lower_bound(COL.begin() + ROW[r] - 1, COL.begin() + ROW[r + 1] - 1, rBuffer[n][i].column + 1) - COL.begin();
+				VAL[c] = 0;
+			}
 		}
 	}
 }
