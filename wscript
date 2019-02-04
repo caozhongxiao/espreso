@@ -44,14 +44,19 @@ def set_openmp(ctx):
         ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
 
 def set_metis(ctx):
+    includes = []
+    libpath = []
+    if ctx.options.parmetis:
+        includes = [ ctx.options.parmetis + "/includes" ]
+        libpath = [ ctx.options.parmetis + "/lib" ]
+
     ctx.check_cxx(
         header_name="metis.h parmetis.h", lib=["metis", "parmetis"], uselib_store="METIS",
         define_name="",
-        defines=["HAVE_METIS", "IDXTYPEWIDTH=" + str(ctx.options.intwidth), "REALTYPEWIDTH=32"],
-        includes=ctx.options.parmetisroot + "/include",
-        libpath=ctx.options.parmetisroot + "/lib",
+        defines=["HAVE_METIS", "IDXTYPEWIDTH=" + ctx.options.intwidth, "REALTYPEWIDTH=32"],
+        includes=includes, libpath=libpath,
         msg="Checking for library ParMETIS",
-        errmsg="set 'parmetisroot'.")
+        errmsg="set 'parmetis'.")
 
     ctx.check_cxx(
         fragment='''
@@ -59,17 +64,22 @@ def set_metis(ctx):
             int main() {{ return IDXTYPEWIDTH != {0}; }}
         '''.format(ctx.options.intwidth),
         execute=True,
-        includes=ctx.options.parmetisroot + "/include",
-        libpath=ctx.options.parmetisroot + "/lib",
-        msg="Checking for METIS IDXTYPEWIDTH="+str(ctx.options.intwidth))
+        includes=includes, libpath=libpath,
+        msg="Checking for METIS IDXTYPEWIDTH="+ctx.options.intwidth)
 
 def set_mkl(ctx):
+    includes = []
+    libpath = []
+    if ctx.options.mkl:
+        includes = [ ctx.options.mkl + "/includes" ]
+        libpath = [ ctx.options.mkl + "/lib" ]
+
     defines = [ "HAVE_MKL" ]
     libs = []
-    if ctx.options.intwidth == 32:
+    if ctx.options.intwidth == "32":
         defines.append("MKL_INT=int")
         libs.append("mkl_intel_lp64")
-    if ctx.options.intwidth == 64:
+    if ctx.options.intwidth == "64":
         defines.append("MKL_INT=long")
         libs.append("mkl_intel_ilp64")
     libs.append("mkl_core")
@@ -81,28 +91,47 @@ def set_mkl(ctx):
     ctx.check_cxx(
         header_name="mkl.h", lib=libs, uselib_store="MKL",
         define_name="", defines=defines,
-        includes=ctx.options.mklroot + "/include",
-        libpath=ctx.options.mklroot + "/lib",
+        includes=includes, libpath=libpath,
         msg="Checking for library MKL",
-        errmsg="set 'mklroot'.")
+        errmsg="set 'mkl'.")
 
 def try_hypre(ctx):
+    includes = []
+    libpath = []
+    if ctx.options.hypre:
+        includes = [ ctx.options.hypre + "/includes" ]
+        libpath = [ ctx.options.hypre + "/lib" ]
+
     ctx.check_cxx(
         header_name="HYPRE.h", lib="HYPRE", uselib_store="HYPRE",
         define_name="", defines="HAVE_HYPRE",
-        includes=ctx.options.hypreroot + "/include",
-        libpath=ctx.options.hypreroot + "/lib",
+        includes=includes, libpath=libpath,
         mandatory=False,
         msg="Checking for library HYPRE",
-        errmsg="set 'hypreroot' to use HYPRE solver.")
+        errmsg="set 'hypre' to use HYPRE solver.")
+
+def try_bem(ctx):
+    includes = []
+    libpath = []
+    if ctx.options.bem:
+        includes = [ ctx.options.bem + "/include" ]
+        libpath = [ ctx.options.bem + "/lib" ]
+
+    ctx.check_cxx(
+        header_name="heatdtn.h", lib="heatdtn_int"+ctx.options.intwidth, uselib_store="BEM",
+        define_name="", defines="HAVE_BEM",
+        includes=includes, libpath=libpath,
+        mandatory=False,
+        msg="Checking for library HeatDTN",
+        errmsg="set 'bem' to use BEM assembler.")
 
 def try_catalyst(ctx):
     pass
 
 def set_variables(ctx):
-    if ctx.options.intwidth == 32:
+    if ctx.options.intwidth == "32":
         ctx.env.append_unique("DEFINES", [ "esint=int", "esint_mpi=MPI_INT" ])
-    if ctx.options.intwidth == 64:
+    if ctx.options.intwidth == "64":
         ctx.env.append_unique("DEFINES", [ "esint=long", "esint_mpi=MPI_LONG" ])
 
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-Wall", "-Wno-deprecated-declarations" ])
@@ -128,6 +157,7 @@ def configure(ctx):
     set_mkl(ctx)
     set_metis(ctx)
     try_hypre(ctx)
+    try_bem(ctx)
     set_variables(ctx)
 
     ctx.msg("Setting compiler to", ctx.options.mpicxx)
@@ -144,6 +174,7 @@ def show(ctx):
     ctx.msg("MKL", "HAVE_MKL" in ctx.env.DEFINES_MKL)
     ctx.msg("METIS", "HAVE_METIS" in ctx.env.DEFINES_METIS)
     ctx.msg("HYPRE", "HAVE_HYPRE" in ctx.env.DEFINES_HYPRE)
+    ctx.msg("BEM4I", "HAVE_BEM" in ctx.env.DEFINES_BEM)
 
 fetisources= (
    "src/solver/generic/Domain.cpp",
@@ -171,12 +202,13 @@ def build(ctx):
     ctx.objects(source=ctx.path.ant_glob('src/wrappers/metis/**/*.cpp'),target="metis",use="METIS")
     ctx.objects(source=ctx.path.ant_glob('src/wrappers/math/**/*.cpp'),target="math",use="MKL")
     ctx.objects(source=ctx.path.ant_glob('src/wrappers/hypre/**/*.cpp'),target="hypre",use="HYPRE")
+    ctx.objects(source=ctx.path.ant_glob('src/wrappers/bem/**/*.cpp'),target="bem",use="BEM")
     ctx.objects(source=ctx.path.ant_glob('src/wrappers/catalyst/**/*.cpp'),target="catalyst",use="CATALYST")
     ctx.objects(source=fetisources,target="feti",defines=["SOLVER_MKL"])
 
     ctx.program(
         source="src/app/espreso.cpp",target="espreso",
-        use="config basis esinfo mesh input output physics feti linearsolver math hypre catalyst metis",
+        use="config basis esinfo mesh input output physics feti linearsolver math hypre catalyst metis bem",
     )
 
 def options(opt):
@@ -197,8 +229,8 @@ def options(opt):
 
     espreso.add_option("--intwidth",
         action="store",
-        default=32,
-        choices=[32, 64],
+        default="32",
+        choices=["32", "64"],
         metavar="32,64",
         help="ESPRESO integer datatype width [default: %default]")
 
@@ -221,21 +253,30 @@ def options(opt):
         choices=solvers,
         help="ESPRESO solver " + ", ".join(solvers) + " [default: %default]")
 
-    espreso.add_option("--parmetisroot",
+    espreso.add_option("--parmetis",
         action="store",
         type="string",
+        metavar="ParMETIS_ROOT",
         default="",
         help="Path to ParMETIS.")
 
-    espreso.add_option("--mklroot",
+    espreso.add_option("--mkl",
         action="store",
         type="string",
+        metavar="MKL_ROOT",
         default="",
         help="Path to MKL.")
 
-    espreso.add_option("--hypreroot",
+    espreso.add_option("--hypre",
         action="store",
         type="string",
+        metavar="HYPRE_ROOT",
         default="",
         help="Path to HYPRE solver.")
 
+    espreso.add_option("--bem",
+        action="store",
+        type="string",
+        metavar="BEM4I_ROOT",
+        default="",
+        help="Path to BEM4I assembler.")
