@@ -40,7 +40,7 @@ public:
 	void computeDecomposedDual(std::vector<esint> &dualDist, std::vector<esint> &dualData);
 
 	void reclusterize();
-	void partitiate(esint parts);
+	void partitiate(esint parts, bool uniformDecomposition);
 
 	void arrangeNodes();
 	void arrangeElements();

@@ -62,8 +62,8 @@ Mesh::Mesh()
 		break;
 	}
 
-	preferedDomains = 1;
-	uniformDecomposition = true;
+	preferedDomains = info::ecf->decomposition.domains;
+	uniformDecomposition = false;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -286,14 +286,10 @@ void Mesh::update()
 
 	if (info::ecf->decomposition.balance_clusters) {
 		preprocessing->reclusterize();
+		uniformDecomposition = false;
 	}
 
-	uniformDecomposition = false;
-	if (uniformDecomposition) {
-		// implement uniform decomposition
-	} else {
-		preprocessing->partitiate(preferedDomains);
-	}
+	preprocessing->partitiate(preferedDomains, uniformDecomposition);
 
 	if (info::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_2D || info::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {
 		const StructuralMechanicsConfiguration *sm;

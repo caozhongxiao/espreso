@@ -33,7 +33,6 @@
 
 using namespace espreso;
 
-
 void MeshPreprocessing::reclusterize()
 {
 	if (info::mpi::size == 1) {
@@ -154,7 +153,7 @@ void MeshPreprocessing::reclusterize()
 	this->exchangeElements(partition);
 }
 
-void MeshPreprocessing::partitiate(esint parts)
+void MeshPreprocessing::partitiate(esint parts, bool uniformDecomposition)
 {
 	std::vector<esint> dualDist, dualData;
 	this->computeDecomposedDual(dualDist, dualData);
@@ -194,19 +193,26 @@ void MeshPreprocessing::partitiate(esint parts)
 		start("process non-continuous dual graph");
 		finish("process non-continuous dual graph");
 
-		start("METIS::KWay");
-		METIS::call(
-				info::ecf->decomposition.metis_options,
-				_mesh->elements->size,
-				dualDist.data(), dualData.data(),
-				0, NULL, NULL,
-				parts, partition.data());
-		finish("METIS::KWay");
+		if (uniformDecomposition) {
+			esint psize = _mesh->elements->size / parts;
+			for (esint p = 0, offset = 0; p < parts; ++p, offset += psize) {
+				std::fill(partition.begin() + offset, partition.begin() + offset + psize, p);
+			}
+		} else {
+			start("METIS::KWay");
+			METIS::call(
+					info::ecf->decomposition.metis_options,
+					_mesh->elements->size,
+					dualDist.data(), dualData.data(),
+					0, NULL, NULL,
+					parts, partition.data());
+			finish("METIS::KWay");
+
+			start("reindex METIS output");
+			finish("reindex METIS output");
+		}
 		clusters.resize(parts, 0);
 		_mesh->elements->nclusters = 1;
-
-		start("reindex METIS output");
-		finish("reindex METIS output");
 
 	} else { // non-continuous dual graph
 		start("process non-continuous dual graph");
