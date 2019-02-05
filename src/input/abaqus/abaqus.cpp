@@ -59,18 +59,21 @@ AbaqusLoader::AbaqusLoader(const InputConfiguration &configuration, Mesh &mesh)
 	tparse.end(); timing.addEvent(tparse);
 	ESINFO(PROGRESS2) << "Abaqus:: data parsed.";
 
+	timing.totalTime.endWithBarrier();
+	timing.printStatsMPI();
+
 	if (!_configuration.keep_material_sets) {
 		std::fill(meshData.material.begin(), meshData.material.end(), 0);
 	}
 
-	Communication::serialize([&] () {
-		std::cout << info::mpi::rank << "\n";
-		std::cout << "nIDs: " << meshData.nIDs;
-		std::cout << "coordinates: " << meshData.coordinates;
-		std::cout << "eIDs: " << meshData.eIDs;
-		std::cout << "esize: " << meshData.esize;
-		std::cout << "enodes: " << meshData.enodes;
-	});
+//	Communication::serialize([&] () {
+//		std::cout << info::mpi::rank << "\n";
+//		std::cout << "nIDs: " << meshData.nIDs;
+//		std::cout << "coordinates: " << meshData.coordinates;
+//		std::cout << "eIDs: " << meshData.eIDs;
+//		std::cout << "esize: " << meshData.esize;
+//		std::cout << "enodes: " << meshData.enodes;
+//	});
 
 	meshData.eregions.clear();
 	meshData.nregions.clear();
