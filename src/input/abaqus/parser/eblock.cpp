@@ -147,9 +147,9 @@ bool EList::solid( PlainAbaqusData &mesh)
 				type.back() = (esint)Element::CODE::LINE3;
 				std::string element_line = Parser::getLine(element);
 				std::vector<std::string> element_data = Parser::split(element_line, ",");
-				IDs.push_back(atol(element_data[0].data()) - 1);
+				IDs.push_back(atol(element_data[0].data()));
 				for (size_t ii = 1; ii < element_data.size(); ii++){
-					nodes.push_back(atol(element_data[ii].data()) - 1);
+					nodes.push_back(atol(element_data[ii].data()));
 				}
 				//element += elementSize;
 				if (*(element ) != '\n') {  while (*element++ != '\n');  }  //element += lineEndSize;
@@ -175,9 +175,9 @@ bool EList::solid( PlainAbaqusData &mesh)
 				type.back() = (esint)Element::CODE::HEXA8;
 				std::string element_line = Parser::getLine(element);
 				std::vector<std::string> element_data = Parser::split(element_line, ",");
-				IDs.push_back(atol(element_data[0].data()) - 1);
+				IDs.push_back(atol(element_data[0].data()));
 				for (size_t ii  =1; ii < element_data.size(); ii++){
-					nodes.push_back(atol(element_data[ii].data()) - 1);
+					nodes.push_back(atol(element_data[ii].data()));
 				}
 				if (*(element ) != '\n') {  while (*element++ != '\n');  } // start at new line
 
@@ -203,9 +203,9 @@ bool EList::solid( PlainAbaqusData &mesh)
 				type.back() = (esint)Element::CODE::TETRA10;
 				std::string element_line = Parser::getLine(element);
 				std::vector<std::string> element_data = Parser::split(element_line, ",");
-				IDs.push_back(atol(element_data[0].data()) - 1);
+				IDs.push_back(atol(element_data[0].data()));
 				for (size_t ii = 1; ii < element_data.size(); ii++){
-					nodes.push_back(atol(element_data[ii].data()) - 1);
+					nodes.push_back(atol(element_data[ii].data()));
 				}
 				if (*(element ) != '\n') {  while (*element++ != '\n');  } // start at new line
 
@@ -231,7 +231,7 @@ bool EList::solid( PlainAbaqusData &mesh)
 				type.back() = (esint)Element::CODE::HEXA20;
 				std::string element_line = Parser::getLine(element);
 				std::vector<std::string> element_data = Parser::split(element_line, ",");
-				IDs.push_back(atol(element_data[0].data()) - 1);
+				IDs.push_back(atol(element_data[0].data()));
 				for (size_t ii = 1; ii < element_data.size() - 1; ii++){
 					nodes.push_back(atol(element_data[ii].data()));
 				}
@@ -240,7 +240,7 @@ bool EList::solid( PlainAbaqusData &mesh)
 				element_line = Parser::getLine(element);
 				element_data = Parser::split(element_line, ",");
 				for (size_t ii = 0; ii < element_data.size(); ii++){
-					nodes.push_back(atol(element_data[ii].data() - 1));
+					nodes.push_back(atol(element_data[ii].data()));
 				}
 				if (*(element ) != '\n') {  while (*element++ != '\n');  } // start at new line
 

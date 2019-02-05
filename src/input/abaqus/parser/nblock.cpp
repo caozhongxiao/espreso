@@ -76,7 +76,7 @@ bool NList::index_x_y_z(std::vector<esint> &nIDs, std::vector<Point> &coordinate
 		for (auto data = first + lineSize * tdistribution[t]; data < first + lineSize * tdistribution[t + 1]; ++i) {
 			memcpy(index.data(), data, indexLength);
 			data += indexLength;
-			nIDs[offset + tdistribution[t] + i] = atol(index.data()) - 1;
+			nIDs[offset + tdistribution[t] + i] = atol(index.data());
 
 			memcpy(value.data(), data, valueLength);
 			data += valueLength;
@@ -121,7 +121,7 @@ bool NList::index_solid_line_x_y_z(std::vector<esint> &nIDs, std::vector<Point> 
 			std::string node_line = Parser::getLine(data);
 			std::vector<std::string> node_data = Parser::split(node_line, ",");
 
-			nIDs[offset + tdistribution[t] + i] = atol(node_data[0].data()) - 1;
+			nIDs[offset + tdistribution[t] + i] = atol(node_data[0].data());
 
 			x=atof(node_data[1].data());
 			y=atof(node_data[2].data());
