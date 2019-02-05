@@ -12,6 +12,7 @@ namespace espreso {
 enum class INPUT_FORMAT {
 	WORKBENCH,
 	OPENFOAM,
+	ABAQUS,
 	ESDATA,
 	GENERATOR
 };
