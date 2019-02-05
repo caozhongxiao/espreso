@@ -2,8 +2,8 @@
 #ifndef SRC_INPUT_ABAQUS_ABAQUS_H_
 #define SRC_INPUT_ABAQUS_ABAQUS_H_
 
-#include "../plaindata.h"
-#include "../mpiloader/mpiloader.h"
+#include "input/plaindata.h"
+#include "input/mpiloader/mpiloader.h"
 
 #include <cstddef>
 #include <vector>
@@ -40,6 +40,7 @@ protected:
 	void readData();
 	void prepareData();
 	void parseData(PlainAbaqusData &dMesh);
+
 	const InputConfiguration &_configuration;
 
 	std::vector<NList> _NLists;
@@ -47,9 +48,9 @@ protected:
 	std::vector<BlockFinish> _blockFinishs;
 	std::vector<Eset> _Esets;
 	std::vector<SSection> _SSections;
-    std::vector<Materials> _Materials;
-    std::vector<Elemat> _Elemats;
-    std::vector<Nset> _Nsets;
+	std::vector<Materials> _Materials;
+	std::vector<Elemat> _Elemats;
+	std::vector<Nset> _Nsets;
 	ParallelFile _pfile;
 };
 

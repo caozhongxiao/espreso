@@ -2,7 +2,8 @@
 #include "parser.h"
 #include "blockend.h"
 
-#include "../../../config/ecf/environment.h"
+#include "esinfo/envinfo.h"
+#include "esinfo/mpiinfo.h"
 
 #include <iostream>
 #include <algorithm>
@@ -27,8 +28,8 @@ void AbaqusParser::fillIndices(const char* header, const char* first, const char
 
 const char* AbaqusParser::getFirst() const
 {
-	if (fRank <= environment->MPIrank && environment->MPIrank <= lRank) {
-		if (fRank == environment->MPIrank) {
+	if (fRank <= info::mpi::rank && info::mpi::rank <= lRank) {
+		if (fRank == info::mpi::rank) {
 			return begin + first - offset;
 		} else {
 			return begin;
@@ -39,8 +40,8 @@ const char* AbaqusParser::getFirst() const
 
 const char* AbaqusParser::getLast() const
 {
-	if (fRank <= environment->MPIrank && environment->MPIrank <= lRank) {
-		if (lRank == environment->MPIrank) {
+	if (fRank <= info::mpi::rank && info::mpi::rank <= lRank) {
+		if (lRank == info::mpi::rank) {
 			return begin + last - offset;
 		} else {
 			return end;
@@ -72,14 +73,14 @@ std::string AbaqusParser::command() const
 void AbaqusParser::print(const char* data)
 {
 	std::cout << first << "(" << fRank << ") -> " << last << "(" << lRank << ")\n";
-	if (fRank == environment->MPIrank) {
+	if (fRank == info::mpi::rank) {
 		const char *p = data + first - offset;
 		while (*p != '\n') {
 			std::cout << *p++;
 		}
 		std::cout << "\n";
 	}
-	if (lRank == environment->MPIrank) {
+	if (lRank == info::mpi::rank) {
 		const char *p = data + last - offset - 1;
 		while (*(p - 1) != '\n') { --p; }
 		while (*p != '\n') {

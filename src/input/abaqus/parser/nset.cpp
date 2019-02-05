@@ -1,12 +1,13 @@
 
 #include "nset.h"
 
-#include "../../../basis/containers/point.h"
-#include "../../../basis/containers/tarray.h"
-#include "../../../basis/utilities/parser.h"
-#include "../../../basis/utilities/utils.h"
+#include "basis/containers/point.h"
+#include "basis/containers/tarray.h"
+#include "basis/utilities/parser.h"
+#include "basis/utilities/utils.h"
 
-#include "../../../config/ecf/environment.h"
+#include "esinfo/envinfo.h"
+#include "esinfo/mpiinfo.h"
 
 using namespace espreso;
 
@@ -24,24 +25,21 @@ Nset::Nset()
 
 Nset& Nset::parse(const char* begin)
 {
-	auto error = [&] (std::string &line) {
-		ESINFO(ERROR) << "Abaqus parse error: unknown format of NBLOCK: " << line;
-	};
-
 	std::string commandLine = Parser::getLine(begin);
-        
-        std::vector<std::string> command = Parser::split(commandLine, ",", false);
-        for (int i=0; i<command.size();i++)
-        {
-        	std::vector<std::string> nset_name = Parser::split(command[i], "=", false);
-        	nset_name[0] = Parser::strip(nset_name[0]);
-        	if ( StringCompare::caseInsensitiveEq(nset_name[0], "NSET")||
-        		 StringCompare::caseInsensitiveEq(nset_name[0], "Nset")||
-				 StringCompare::caseInsensitiveEq(nset_name[0], "nset")) {
-        		nset_name[1] = Parser::strip(nset_name[1]);
-        		memcpy(NAME,nset_name[1].data(),nset_name[1].size());
-        	}
-        }
+
+	std::vector<std::string> command = Parser::split(commandLine, ",", false);
+	for (size_t i = 0; i < command.size(); i++)
+	{
+		std::vector<std::string> nset_name = Parser::split(command[i], "=", false);
+		nset_name[0] = Parser::strip(nset_name[0]);
+		if (StringCompare::caseInsensitiveEq(nset_name[0], "NSET")||
+			StringCompare::caseInsensitiveEq(nset_name[0], "Nset")||
+			StringCompare::caseInsensitiveEq(nset_name[0], "nset")) {
+
+			nset_name[1] = Parser::strip(nset_name[1]);
+			memcpy(NAME,nset_name[1].data(),nset_name[1].size());
+		}
+	}
 
 	lineEndSize = (*(commandLine.end() - 2) == '\r') ? 2 : 1;
 
@@ -49,45 +47,45 @@ Nset& Nset::parse(const char* begin)
 	if (*(linebegin ) != '\n') {while (*linebegin++ != '\n');} // start at new line
 
 	if (*(linebegin ) != '\n') {
-				while (*linebegin++ != '\n')
-                                      {lineSize +=1;}; // start at new line
-			}
+		while (*linebegin++ != '\n') {
+			lineSize +=1; // start at new line
+		}
+	}
 	std::string nodeLine = Parser::getLine(linebegin);
 	std::vector<std::string> nodeData = Parser::split(nodeLine, ",");
 
 	indexSize = 1;
-    indexLength = nodeData[0].size();
+	indexLength = nodeData[0].size();
 	valueSize = nodeData.size()-1;
 	valueLength = nodeData[1].size();
 
-    lineSize = lineSize+1;
+	lineSize = lineSize+1;
 	AbaqusParser::fillIndices(begin, begin + commandLine.size() );
 	return *this;
 }
 
-bool Nset::readData(std::vector<eslocal> &indices)
+bool Nset::readData(std::vector<esint> &indices)
 {
-
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	const char *first = getFirst(), *last = getLast();
-	eslocal size = (last - first) / lineSize;
+	esint size = (last - first) / lineSize;
 
-	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, size);
-	std::vector<std::vector<eslocal> > tindices(threads);
+	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, size);
+	std::vector<std::vector<esint> > tindices(threads);
 
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-
 		for (auto data = first + lineSize * tdistribution[t]; data < first + lineSize * tdistribution[t + 1];) {
 
 			std::string nset_line = Parser::getLine(data);
 			std::vector<std::string> element_data = Parser::split(nset_line, ",");
 
-			for (int ii=0; ii<element_data.size();ii++){
+			for (size_t ii = 0; ii < element_data.size(); ii++){
 				if (atol(element_data[ii].data()) != 0) {
-				tindices[t].push_back(atol(element_data[ii].data()));}
+					tindices[t].push_back(atol(element_data[ii].data()));
+				}
 			}
 
 
@@ -95,18 +93,16 @@ bool Nset::readData(std::vector<eslocal> &indices)
 				while (*data++ != '\n'); // start at new line
 			}
 		}//auto
-		if (lRank == environment->MPIrank && t == threads - 1) {
+		if (lRank == info::mpi::rank && t == threads - 1) {
 			auto data = first + lineSize * tdistribution[t + 1];
 			std::string eleset_line = Parser::getLine(data);
 			std::vector<std::string> element_data = Parser::split(eleset_line, ",");
 
-			for (int ii=0; ii<element_data.size();ii++){
+			for (size_t ii = 0; ii < element_data.size(); ii++){
 				if (atol(element_data[ii].data()) != 0) {
 				tindices[t].push_back(atol(element_data[ii].data()));}
 			}
 		}
-
-
 	}
 
 	for (size_t t = 0; t < threads; t++) {

@@ -25,14 +25,13 @@ struct SSection: public AbaqusParser {
 	char Elset[MAX_NAME_SIZE];
 	char Material[MAX_NAME_SIZE];
 
-
 	SSection();
 	SSection& parse(const char* begin);
 
 protected:
-	std :: unordered_map <std::string , std::string> elset_mat_dict;
-	std :: unordered_map <std::string, int   > mat_index_dict;
-	std :: unordered_map <std::string, Entry   > elset_data_dict;
+	std::unordered_map<std::string, std::string> elset_mat_dict;
+	std::unordered_map<std::string, int> mat_index_dict;
+	std::unordered_map<std::string, Entry> elset_data_dict;
 
 };
 

@@ -1,12 +1,12 @@
 
 #include "nblock.h"
 
-#include "../../../basis/containers/point.h"
-#include "../../../basis/containers/tarray.h"
-#include "../../../basis/utilities/parser.h"
-#include "../../../basis/utilities/utils.h"
+#include "basis/containers/point.h"
+#include "basis/containers/tarray.h"
+#include "basis/utilities/parser.h"
+#include "basis/utilities/utils.h"
 
-#include "../../../config/ecf/environment.h"
+#include "esinfo/envinfo.h"
 
 using namespace espreso;
 
@@ -24,54 +24,40 @@ NList::NList()
 
 NList& NList::parse(const char* begin)
 {
-	auto error = [&] (std::string &line) {
-		ESINFO(ERROR) << "Abaqus parse error: unknown format of NBLOCK: " << line;
-	};
-
 	std::string commandLine = Parser::getLine(begin);
 
 	lineEndSize = (*(commandLine.end() - 2) == '\r') ? 2 : 1;
 
 	const char* linebegin = begin ;
 	if (*(linebegin ) != '\n') {
-				while (*linebegin++ != '\n'); // start at new line
-			}
-
-
+		while (*linebegin++ != '\n'); // start at new line
+	}
 
 	if (*(linebegin ) != '\n') {
-				while (*linebegin++ != '\n')
-                                      {
-
-
-
-					lineSize +=1;}; // start at new line
-			}
+		while (*linebegin++ != '\n') {
+			lineSize +=1;}; // start at new line
+	}
 	std::string nodeLine = Parser::getLine(linebegin);
 	std::vector<std::string> nodeData = Parser::split(nodeLine, ",");
 
 	indexSize = 1;
-    indexLength = nodeData[0].size();
+	indexLength = nodeData[0].size();
 	valueSize = nodeData.size()-1;
 	valueLength = nodeData[1].size();
 
-        lineSize = lineSize+1;//lineEndSize;
+	lineSize = lineSize+1;//lineEndSize;
 	AbaqusParser::fillIndices(begin, begin + commandLine.size() );
 	return *this;
 }
 
-bool NList::readData(std::vector<eslocal> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
+bool NList::readData(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
 {
-
-			return index_solid_line_x_y_z(nIDs, coordinates, scaleFactor);
-
-
-	return false;
+	return index_solid_line_x_y_z(nIDs, coordinates, scaleFactor);
 }
 
-bool NList::index_x_y_z(std::vector<eslocal> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
+bool NList::index_x_y_z(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	const char *first = getFirst(), *last = getLast();
 	size_t size = (last - first) / lineSize;
@@ -85,7 +71,7 @@ bool NList::index_x_y_z(std::vector<eslocal> &nIDs, std::vector<Point> &coordina
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<char> value(valueLength + 1);
 		std::vector<char> index(indexLength + 1);
-		eslocal i = 0;
+		esint i = 0;
 		double x, y, z;
 		for (auto data = first + lineSize * tdistribution[t]; data < first + lineSize * tdistribution[t + 1]; ++i) {
 			memcpy(index.data(), data, indexLength);
@@ -112,23 +98,23 @@ bool NList::index_x_y_z(std::vector<eslocal> &nIDs, std::vector<Point> &coordina
 	return true;
 }
 
-bool NList::index_solid_line_x_y_z(std::vector<eslocal> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
+bool NList::index_solid_line_x_y_z(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	const char *first = getFirst(), *last = getLast();
-	eslocal size = (last - first) / lineSize;
+	esint size = (last - first) / lineSize;
 
 	size_t offset = coordinates.size();
 	nIDs.resize(offset + size);
 	coordinates.resize(offset + size);
-	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, size);
+	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, size);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		const char *data_end =  first + lineSize * tdistribution[t + 1];
 
-		eslocal i = 0;
+		esint i = 0;
 		double x, y, z;
 		for (auto data = first + lineSize * tdistribution[t]; data < first + lineSize * tdistribution[t + 1]; ++i) {
 

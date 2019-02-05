@@ -1,12 +1,12 @@
 
 #include "ssection.h"
 
-#include "../../../basis/containers/point.h"
-#include "../../../basis/containers/tarray.h"
-#include "../../../basis/utilities/parser.h"
-#include "../../../basis/utilities/utils.h"
+#include "basis/containers/point.h"
+#include "basis/containers/tarray.h"
+#include "basis/utilities/parser.h"
+#include "basis/utilities/utils.h"
 
-#include "../../../config/ecf/environment.h"
+#include "esinfo/envinfo.h"
 
 using namespace espreso;
 
@@ -27,42 +27,40 @@ SSection& SSection::parse(const char* begin)
 	};
 
 	std::string commandLine = Parser::getLine(begin);
-        
-        std::vector<std::string> command = Parser::split(commandLine, ",", false);
-        for (int i=0; i<command.size();i++)
-        {
-        	std::vector<std::string> ssection_line = Parser::split(command[i], "=", false);
-        	ssection_line[0] = Parser::strip(ssection_line[0]);
 
-        	if ( StringCompare::caseInsensitiveEq(ssection_line[0], "ELSET")||
-        		 StringCompare::caseInsensitiveEq(ssection_line[0], "Elset")||
-				 StringCompare::caseInsensitiveEq(ssection_line[0], "elset")) {
-        		ssection_line[1] = Parser::strip(ssection_line[1]);
-        		memcpy(Elset,ssection_line[1].data(),ssection_line[1].size());
-        	}
+	std::vector<std::string> command = Parser::split(commandLine, ",", false);
+	for (int i=0; i<command.size();i++)
+	{
+		std::vector<std::string> ssection_line = Parser::split(command[i], "=", false);
+		ssection_line[0] = Parser::strip(ssection_line[0]);
 
-        	if ( StringCompare::caseInsensitiveEq(ssection_line[0], "MATERIAL")||
-        		 StringCompare::caseInsensitiveEq(ssection_line[0], "material")||
-				 StringCompare::caseInsensitiveEq(ssection_line[0], "Material")) {
-        		ssection_line[1] = Parser::strip(ssection_line[1]);
-        		memcpy(Material,ssection_line[1].data(),ssection_line[1].size());
-        	}
-        }
+		if ( StringCompare::caseInsensitiveEq(ssection_line[0], "ELSET")||
+			 StringCompare::caseInsensitiveEq(ssection_line[0], "Elset")||
+			 StringCompare::caseInsensitiveEq(ssection_line[0], "elset")) {
+			ssection_line[1] = Parser::strip(ssection_line[1]);
+			memcpy(Elset,ssection_line[1].data(),ssection_line[1].size());
+		}
 
-
+		if ( StringCompare::caseInsensitiveEq(ssection_line[0], "MATERIAL")||
+			 StringCompare::caseInsensitiveEq(ssection_line[0], "material")||
+			 StringCompare::caseInsensitiveEq(ssection_line[0], "Material")) {
+			ssection_line[1] = Parser::strip(ssection_line[1]);
+			memcpy(Material,ssection_line[1].data(),ssection_line[1].size());
+		}
+	}
 	return *this;
 }
 /*
-bool Eset::readData(std::vector<eslocal> &indices)
+bool Eset::readData(std::vector<esint> &indices)
 {
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	const char *first = getFirst(), *last = getLast();
-	eslocal size = (last - first) / lineSize;
+	esint size = (last - first) / lineSize;
 
-	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, size);
-	std::vector<std::vector<eslocal> > tindices(threads);
+	std::vector<size_t> tdistribution = tarray<esint>::distribute(threads, size);
+	std::vector<std::vector<esint> > tindices(threads);
 
 
 	#pragma omp parallel for
@@ -98,7 +96,7 @@ bool Eset::readData(std::vector<eslocal> &indices)
 	size_t adjustment = 0;
 	nIDs.resize(offset + size);
 	coordinates.resize(offset + size);
-	std::vector<size_t> tdistribution = tarray<eslocal>::distribute(threads, size);
+	std::vector<size_t> tdistribution = tarray<esint>::distribute(threads, size);
 
 	const char *adjustment_data;
     if (first + lineSize * tdistribution[threads] < last) {
@@ -110,7 +108,7 @@ bool Eset::readData(std::vector<eslocal> &indices)
 	for (size_t t = 0; t < threads; t++) {
 		const char *data_end =  first + lineSize * tdistribution[t + 1];
 		if (t==threads) {data_end+=adjustment;}
-		eslocal i = 0;
+		esint i = 0;
 		double x, y, z;
 		for (auto data = first + lineSize * tdistribution[t]; data < data_end; ++i) {
 

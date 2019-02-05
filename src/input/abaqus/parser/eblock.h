@@ -3,7 +3,6 @@
 #define SRC_INPUT_ABAQUS_PARSER_EBLOCK_H_
 
 #include "parser.h"
-//#include <map>
 #include <string>
 
 namespace espreso {
@@ -41,13 +40,13 @@ struct EList: public AbaqusParser {
 	static const char* lower;
 	static const char* sentence;
 	//std::vector<std::string> TYPE;
-	 char TYPE[MAX_NAME_SIZE];
-	eslocal NUM_NODES, Solkey, NDMAX, NDSEL;
+	char TYPE[MAX_NAME_SIZE];
+	esint NUM_NODES, Solkey, NDMAX, NDSEL;
 
-	eslocal lineSize, elementSize, lineEndSize;
-	eslocal indexSize, indexLength, valueSize, valueLength;
+	esint lineSize, elementSize, lineEndSize;
+	esint indexSize, indexLength, valueSize, valueLength;
 
-	eslocal NUM_NODES_LINE1,NUM_NODE_LINE2;
+	esint NUM_NODES_LINE1,NUM_NODE_LINE2;
 	EList();
 	EList& parse(const char* begin);
 	bool readData(PlainAbaqusData &mesh);
