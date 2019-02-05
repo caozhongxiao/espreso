@@ -263,7 +263,7 @@ static void setBoomerAMG(HYPRE_Solver &boomerAMG, const HYPREBoomerAMGConfigurat
 		}
 	};
 
-    HYPRE_BoomerAMGSetRelaxType(boomerAMG, getRelaxType(configuration.relax_type));
+	HYPRE_BoomerAMGSetRelaxType(boomerAMG, getRelaxType(configuration.relax_type));
 
 	if (configuration.allow_cycle_relax_type){
 		auto getCycleTypeNum = [] (HYPREBoomerAMGConfiguration::HYPREBoomerAMGCycleRelaxTypeConfiguration::RELAX_TYPE_CYCLE type) {
@@ -365,7 +365,7 @@ static void setBoomerAMG(HYPRE_Solver &boomerAMG, const HYPREBoomerAMGConfigurat
 		}
 	};
 
- 	HYPRE_BoomerAMGSetSmoothType(boomerAMG, getSmoothType(configuration.smooth_type));
+	HYPRE_BoomerAMGSetSmoothType(boomerAMG, getSmoothType(configuration.smooth_type));
 
 	HYPRE_BoomerAMGSetSmoothNumLevels(boomerAMG, configuration.smooth_level_num);
 	HYPRE_BoomerAMGSetSmoothNumSweeps(boomerAMG, configuration.smooth_sweep_num);
@@ -373,7 +373,7 @@ static void setBoomerAMG(HYPRE_Solver &boomerAMG, const HYPREBoomerAMGConfigurat
 	if (getSmoothType(configuration.smooth_type)==6){
 		HYPRE_BoomerAMGSetVariant(boomerAMG, configuration.schwarz_variant);
 
-	    HYPRE_BoomerAMGSetOverlap(boomerAMG, configuration.schwarz_overlap);
+		HYPRE_BoomerAMGSetOverlap(boomerAMG, configuration.schwarz_overlap);
 		HYPRE_BoomerAMGSetDomainType(boomerAMG, configuration.schwarz_doamin);
 		HYPRE_BoomerAMGSetSchwarzUseNonSymm(boomerAMG, configuration.schwarz_use_nonsym);
 	}
@@ -689,7 +689,7 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, esin
 			HYPRE_GMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSolve, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSetup, preconditioner);
 			break;
 		case HYPREGMRESConfiguration::PRECONDITIONER::ParaSails:
-		    HYPRE_ParaSailsCreate(info::mpi::comm, &preconditioner);
+			HYPRE_ParaSailsCreate(info::mpi::comm, &preconditioner);
 			setParaSailsPreconditioner(preconditioner, configuration.gmres.parasails);
 			HYPRE_GMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSetup, preconditioner);
 			break;
@@ -852,7 +852,7 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, esin
 			HYPRE_LGMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSolve, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSetup, preconditioner);
 			break;
 		case HYPRELGMRESConfiguration::PRECONDITIONER::ParaSails:
-		    HYPRE_ParaSailsCreate(info::mpi::comm, &preconditioner);
+			HYPRE_ParaSailsCreate(info::mpi::comm, &preconditioner);
 			setParaSailsPreconditioner(preconditioner, configuration.lgmres.parasails);
 			HYPRE_LGMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSetup, preconditioner);
 			break;
@@ -860,7 +860,7 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, esin
 			HYPRE_EuclidCreate(info::mpi::comm, &preconditioner);
 			setEuclidPreconditioner(preconditioner, configuration.lgmres.euclid);
 			HYPRE_LGMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSolve, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSetup, preconditioner);
-			break;	
+			break;
 		case HYPRELGMRESConfiguration::PRECONDITIONER::Pilut:
 			HYPRE_ParCSRPilutCreate(info::mpi::comm, &preconditioner);
 			setPilutPreconditioner(preconditioner, configuration.pcg.pilut);
@@ -931,7 +931,7 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, esin
 			HYPRE_BiCGSTABSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSolve, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSetup, preconditioner);
 			break;
 		case HYPREBiCGSTABConfiguration::PRECONDITIONER::ParaSails:
-		    HYPRE_ParaSailsCreate(info::mpi::comm, &preconditioner);
+			HYPRE_ParaSailsCreate(info::mpi::comm, &preconditioner);
 			setParaSailsPreconditioner(preconditioner, configuration.bicgstab.parasails);
 			HYPRE_BiCGSTABSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSetup, preconditioner);
 			break;
@@ -939,12 +939,12 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, esin
 			HYPRE_EuclidCreate(info::mpi::comm, &preconditioner);
 			setEuclidPreconditioner(preconditioner, configuration.bicgstab.euclid);
 			HYPRE_BiCGSTABSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSolve, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSetup, preconditioner);
-			break;	
+			break;
 		case HYPREBiCGSTABConfiguration::PRECONDITIONER::Pilut:
 			HYPRE_ParCSRPilutCreate(info::mpi::comm, &preconditioner);
 			setPilutPreconditioner(preconditioner, configuration.pcg.pilut);
 			HYPRE_BiCGSTABSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSetup, preconditioner);
-			break;							
+			break;
 		case HYPREBiCGSTABConfiguration::PRECONDITIONER::NONE:
 			break;
 		default:
@@ -969,10 +969,10 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, esin
 			break;
 		case HYPREBiCGSTABConfiguration::PRECONDITIONER::Euclid:
 			HYPRE_EuclidDestroy(preconditioner);
-			break;	
+			break;
 		case HYPREBiCGSTABConfiguration::PRECONDITIONER::Pilut:
 			HYPRE_ParCSRPilutDestroy(preconditioner);
-			break;								
+			break;
 		case HYPREBiCGSTABConfiguration::PRECONDITIONER::NONE:
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: not implemented interface to the required solver.";
