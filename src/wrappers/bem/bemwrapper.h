@@ -4,9 +4,9 @@
 
 namespace espreso {
 
-namespace BEM4I {
-
 struct BEMData;
+
+namespace BEM4I {
 
 bool isLinked();
 

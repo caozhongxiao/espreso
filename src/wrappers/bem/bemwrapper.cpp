@@ -2,14 +2,15 @@
 #include "bemwrapper.h"
 
 #include <cstddef>
+#include <cstdio>
 
 #ifdef HAVE_BEM
 #include "heatdtn.h"
 #endif
 
 namespace espreso {
-namespace BEM4I {
 
+#ifdef HAVE_BEM
 struct BEMData
 {
 	bem4i::bem4idata<esint, double> * data;
@@ -18,19 +19,26 @@ struct BEMData
 	int orderNear = 4; // 5 for Steinbach, 3-4 for Sauter-Schwab
 	int orderFar  = 4; // 0 for none, else 3-4
 };
+#endif
+
+namespace BEM4I {
 
 bool isLinked()
 {
 #ifdef HAVE_BEM
 	return true;
-#elif
+#else
 	return false;
 #endif
 }
 
 void deleteData(BEMData* &bem)
 {
+#ifdef HAVE_BEM
 	bem4i::deleteBem4iData(bem->data);
+	delete bem;
+	bem = NULL;
+#endif
 }
 
 void getLaplace(
@@ -41,6 +49,15 @@ void getLaplace(
 {
 #ifdef HAVE_BEM
 
+	for (esint n = 0; n < nNodes; n++) {
+		printf("%3.2f, %3.2f, %3.2f\n", nodes[3 * n + 0], nodes[3 * n + 1], nodes[3 * n + 2]);
+	}
+	for (esint n = 0; n < nElements; n++) {
+		printf("%d %d %d\n", elements[3 * n + 0], elements[3 * n + 1], elements[3 * n + 2]);
+	}
+	printf("cond: %5.4f\n", conductivity);
+
+	bem = new BEMData();
 	bool nonsymmetric = false, verbose = false;
 	bem4i::getLaplaceSteklovPoincare<esint, double>(
 			K,
