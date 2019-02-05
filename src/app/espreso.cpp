@@ -35,11 +35,12 @@ int main(int argc, char **argv)
 			"OMP/MPI: " << info::env::OMP_NUM_THREADS;
 
 	if (ResultStore::isComputeNode()) {
-
-		Input::load(*info::ecf, *info::mesh);
-
-		LoadStepIterator steps;
-		while (steps.next());
+		if (Input::load(*info::ecf, *info::mesh)) {
+			LoadStepIterator steps;
+			while (steps.next());
+		} else {
+			info::mesh->storeMesh();
+		}
 	}
 
 	ResultStore::destroyAsynchronizedStore();

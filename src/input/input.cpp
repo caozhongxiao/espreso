@@ -12,7 +12,7 @@
 #include "basis/utilities/utils.h"
 #include "basis/utilities/parser.h"
 
-#include "config/ecf/root.h"
+#include "esinfo/ecfinfo.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
 #include "mesh/mesh.h"
@@ -27,26 +27,26 @@
 
 using namespace espreso;
 
-void Input::load(const ECFRoot &configuration, Mesh &mesh)
+bool Input::load(const ECFRoot &configuration, Mesh &mesh)
 {
 	switch (configuration.input) {
 	case INPUT_FORMAT::WORKBENCH:
 		WorkbenchLoader::load(configuration.workbench, mesh);
 		mesh.update();
-		break;
-        case INPUT_FORMAT::ABAQUS:
-                AbaqusLoader::load(configuration.abaqus,mesh);
-                mesh.update();
-             break;
+		return !configuration.workbench.convert_database;
+	case INPUT_FORMAT::ABAQUS:
+		AbaqusLoader::load(configuration.abaqus,mesh);
+		mesh.update();
+		return !configuration.abaqus.convert_database;
 	case INPUT_FORMAT::OPENFOAM:
 		OpenFOAMLoader::load(configuration.openfoam, mesh);
 		mesh.update();
-		break;
+		return !configuration.openfoam.convert_database;
 	case INPUT_FORMAT::GENERATOR:
 	default:
 		MeshGenerator::generate(configuration.generator, mesh);
 		mesh.update();
-		break;
+		return true;
 	}
 }
 
