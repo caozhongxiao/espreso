@@ -4,7 +4,6 @@
 
 #include "config/description.h"
 
-#include <cstddef>
 #include <string>
 
 namespace espreso {
@@ -25,7 +24,7 @@ struct NonLinearSolverConfiguration: public ECFDescription {
 	METHOD method;
 	STEPPINGG stepping;
 
-	size_t max_iterations, substeps;
+	int max_iterations, substeps;
 	bool line_search, tangent_matrix_correction, adaptive_precision;
 
 	bool check_first_residual, check_second_residual;

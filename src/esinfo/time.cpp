@@ -1,9 +1,9 @@
 
-#include "esinfo/time.h"
+#include "time.h"
 
-size_t espreso::time::step = 0;
-size_t espreso::time::substep = 0;
-size_t espreso::time::iteration = 0;
+int espreso::time::step = 0;
+int espreso::time::substep = 0;
+int espreso::time::iteration = 0;
 
 double espreso::time::current = 0;
 double espreso::time::shift = 1;

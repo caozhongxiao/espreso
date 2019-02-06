@@ -31,7 +31,7 @@ struct PhysicsConfiguration: public ECFDescription {
 		QUADRATIC
 	};
 
-	size_t load_steps;
+	int load_steps;
 
 	// TODO: case insensitive compare
 	INTERPOLATION interpolation;

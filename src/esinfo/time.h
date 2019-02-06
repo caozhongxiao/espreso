@@ -2,13 +2,12 @@
 #ifndef SRC_ESINFO_TIME_H_
 #define SRC_ESINFO_TIME_H_
 
-#include <cstddef>
-
 namespace espreso {
 namespace time {
-	extern size_t step;
-	extern size_t substep;
-	extern size_t iteration;
+
+	extern int step;
+	extern int substep;
+	extern int iteration;
 
 	extern double current;
 	extern double shift; // difference between current and previous time
