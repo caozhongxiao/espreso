@@ -114,6 +114,7 @@ HypreData::~HypreData()
 #endif
 }
 
+#ifdef HAVE_HYPRE
 static void setBoomerAMG(HYPRE_Solver &boomerAMG, const HYPREBoomerAMGConfiguration &configuration)
 {
 	HYPRE_BoomerAMGCreate(&boomerAMG);
@@ -479,8 +480,8 @@ static void setBoomerAMGPreconditioner(HYPRE_Solver &boomerAMG, const HYPREBoome
 
 static void setParaSailsPreconditioner(HYPRE_Solver &parasails, const HYPREParaSailsConfiguration &configuration)
 {
-    HYPRE_ParaSailsSetParams(parasails, configuration.threshold, configuration.n_levels);
-    HYPRE_ParaSailsSetFilter(parasails, configuration.filter);
+	HYPRE_ParaSailsSetParams(parasails, configuration.threshold, configuration.n_levels);
+	HYPRE_ParaSailsSetFilter(parasails, configuration.filter);
 
 	switch (configuration.symmetry) {
 		case HYPREParaSailsConfiguration::SYMMETRY::NON_INF:
@@ -498,7 +499,7 @@ static void setParaSailsPreconditioner(HYPRE_Solver &parasails, const HYPREParaS
 
 	HYPRE_ParaSailsSetLoadbal(parasails, configuration.loadbal);
 	HYPRE_ParaSailsSetReuse(parasails, configuration.reuse);
-    HYPRE_ParaSailsSetLogging(parasails, configuration.logging);
+	HYPRE_ParaSailsSetLogging(parasails, configuration.logging);
 }
 
 
@@ -519,9 +520,11 @@ static void setPilutPreconditioner(HYPRE_Solver &pilut, const HYPREPilutConfigur
 	HYPRE_ParCSRPilutSetDropTolerance(pilut, configuration.drop_tol);
 	HYPRE_ParCSRPilutSetFactorRowSize(pilut, configuration.row_size);
 }
+#endif
 
 void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, esint nrows, double *solution)
 {
+#ifdef HAVE_HYPRE
 	if (!data._finalized) {
 		data.finalizePattern();
 	}
@@ -1040,4 +1043,5 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, esin
 	std::vector<esint> rows(nrows);
 	std::iota(rows.begin(), rows.end(), data._roffset + 1);
 	HYPRE_IJVectorGetValues(data._data->x, data._nrows, rows.data(), solution);
+#endif
 }

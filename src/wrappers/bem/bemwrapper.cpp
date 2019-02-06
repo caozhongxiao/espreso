@@ -15,7 +15,7 @@ struct BEMData
 {
 	bem4i::bem4idata<esint, double> * data;
 
-	int qType     = 0; // 0 ... Steinbach, 1 ... Sauter-Schwab
+	int qType     = 1; // 0 ... Steinbach, 1 ... Sauter-Schwab
 	int orderNear = 4; // 5 for Steinbach, 3-4 for Sauter-Schwab
 	int orderFar  = 4; // 0 for none, else 3-4
 };

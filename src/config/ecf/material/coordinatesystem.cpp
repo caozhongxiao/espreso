@@ -229,7 +229,7 @@ void CoordinateSystemConfiguration::createRotationMatrix(std::vector<double> &m)
 
 		case DIMENSION::Z:
 		case DIMENSION::D2: {
-			double cos, sin;
+			double cos = 0, sin = 0;
 			m.clear();
 			m.resize(9,0);
 

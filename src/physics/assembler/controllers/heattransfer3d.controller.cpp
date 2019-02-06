@@ -256,6 +256,7 @@ void HeatTransfer3DController::processBEMdomain(esint domain, double *values)
 	esint eoffset = info::mesh->domainsSurface->tdistribution[domain];
 	auto mat = info::mesh->materials[info::mesh->elements->material->datatarray()[info::mesh->elements->elementsDistribution[domain]]];
 	std::vector<double> K(nodes * nodes);
+
 	BEM4I::getLaplace(
 			_bem[domain], K.data(),
 			nodes, reinterpret_cast<double*>((info::mesh->domainsSurface->coordinates->begin() + noffset)->begin()),

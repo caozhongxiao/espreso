@@ -122,7 +122,7 @@ void MPISubset::fillNodeColor()
 MPISubset::MPISubset(const ProcessesReduction &reduction, MPIGroup &origin)
 : origin(origin)
 {
-	int rank, color;
+	int rank = 0, color = 0;
 
 	switch (reduction.granularity) {
 	case ProcessesReduction::Granularity::NODES:

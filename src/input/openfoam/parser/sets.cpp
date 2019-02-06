@@ -31,7 +31,7 @@ void OpenFOAMSets::inspect(const std::string &path, std::vector<OpenFOAMSet> &se
 	glob(path.c_str(), GLOB_TILDE,NULL, &glob_result);
 	for(size_t i = 0; i < glob_result.gl_pathc; ++i){
 		std::string parameter, value, name;
-		OpenFOAMSet::SetType type;
+		OpenFOAMSet::SetType type = OpenFOAMSet::SetType::CELL_SET;
 		std::ifstream is(glob_result.gl_pathv[i]);
 		while (is.get() != '{');
 		while (is.peek() != '}') {
