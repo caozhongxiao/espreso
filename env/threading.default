@@ -17,11 +17,11 @@ if [ "$#" -eq 1 ]; then
  export PAR_NUM_THREADS=$1
 
 
- export OMP_DISPLAY_ENV=false
- export OMP_PLACES=cores #sockets #cores, threads
+# export OMP_DISPLAY_ENV=false
+# export OMP_PLACES=cores #sockets #cores, threads
  #export OMP_PLACES="{4},{5},{6},{7}"
 
- export OMP_PROC_BIND=close #true #spread, close, master
+# export OMP_PROC_BIND=close #true #spread, close, master
 
 
  echo "ESPRESO is configured for" $1 "threads at each MPI process."
