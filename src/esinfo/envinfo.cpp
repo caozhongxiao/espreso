@@ -1,16 +1,18 @@
 
 #include "envinfo.h"
+
 #include <sstream>
 #include <cstdlib>
+#include <omp.h>
 
-size_t espreso::info::env::MKL_NUM_THREADS = 1;
-size_t espreso::info::env::OMP_NUM_THREADS = 1;
-size_t espreso::info::env::SOLVER_NUM_THREADS = 1;
-size_t espreso::info::env::PAR_NUM_THREADS = 1;
+int espreso::info::env::MKL_NUM_THREADS = 1;
+int espreso::info::env::OMP_NUM_THREADS = 1;
+int espreso::info::env::SOLVER_NUM_THREADS = 1;
+int espreso::info::env::PAR_NUM_THREADS = 1;
 
 void espreso::info::env::set()
 {
-	auto getEnv = [](size_t &value, const char *name)
+	auto getEnv = [] (int &value, const char *name)
 	{
 		char *var = getenv(name);
 		if (var != NULL) {
@@ -23,6 +25,8 @@ void espreso::info::env::set()
 	getEnv(OMP_NUM_THREADS   , "OMP_NUM_THREADS");
 	getEnv(SOLVER_NUM_THREADS, "SOLVER_NUM_THREADS");
 	getEnv(PAR_NUM_THREADS   , "PAR_NUM_THREADS");
+
+	omp_set_num_threads(OMP_NUM_THREADS);
 }
 
 
