@@ -17,8 +17,7 @@ struct FETISolverConfiguration;
 class FETIComposer: public Composer {
 
 public:
-	FETIComposer(Controller &controler, FETIProvider &provider, FETISolverConfiguration &configuration)
-	: Composer(controler), _provider(provider), _configuration(configuration) {}
+	FETIComposer(Controller &controler, FETIProvider &provider, FETISolverConfiguration &configuration);
 
 	void KplusAlfaM(double alfa);
 	void enrichRHS(double alfa, NodeData* x);
@@ -27,9 +26,12 @@ public:
 	double residualNormDenominator();
 
 protected:
+	bool isBEMDomain(esint domain);
+
 	void apply(std::vector<SparseMatrix> &matrices, std::vector<double> &result, std::vector<double> &x);
 	virtual void divide(std::vector<double> &in, std::vector<std::vector<double> > &out) =0;
 	virtual void duply(std::vector<double> &in, std::vector<std::vector<double> > &out) =0;
+	virtual void avgGather(std::vector<double> &out, std::vector<std::vector<double> > &in) =0;
 	virtual void gather(std::vector<double> &out, std::vector<std::vector<double> > &in) =0;
 
 	FETIProvider &_provider;
@@ -37,6 +39,7 @@ protected:
 
 	std::vector<std::vector<esint> > _KPermutation, _RHSPermutation;
 	std::vector<size_t> _domainDOFsSize, _domainDirichletSize;
+	std::vector<int> _BEMDomain;
 };
 
 }

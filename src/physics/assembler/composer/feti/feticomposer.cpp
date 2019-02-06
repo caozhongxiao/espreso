@@ -1,16 +1,32 @@
 
 #include "esinfo/meshinfo.h"
 #include "esinfo/mpiinfo.h"
+#include "config/ecf/physics/physics.h"
+#include "basis/containers/serializededata.h"
 #include "physics/assembler/dataholder.h"
 #include "physics/assembler/controllers/controller.h"
 #include "feticomposer.h"
 
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
+#include "mesh/store/elementsregionstore.h"
 #include "mesh/store/nodestore.h"
 #include "solver/generic/SparseMatrix.h"
 
+#include "wrappers/bem/bemwrapper.h"
+
 using namespace espreso;
+
+FETIComposer::FETIComposer(Controller &controler, FETIProvider &provider, FETISolverConfiguration &configuration)
+: Composer(controler), _provider(provider), _configuration(configuration)
+{
+	_BEMDomain.resize(info::mesh->elements->ndomains);
+	if (BEM4I::isLinked()) {
+		for (esint d = 0; d < info::mesh->elements->ndomains; ++d) {
+			_BEMDomain[d] = isBEMDomain(d);
+		}
+	}
+}
 
 void FETIComposer::KplusAlfaM(double alfa)
 {
@@ -19,6 +35,23 @@ void FETIComposer::KplusAlfaM(double alfa)
 		data->K[d].MatAddInPlace(data->M[d], 'N', alfa);
 	}
 }
+
+bool FETIComposer::isBEMDomain(esint domain)
+{
+	auto eregions = (info::mesh->elements->regions->begin() + info::mesh->elements->elementsDistribution[domain])->begin();
+	for (int byte = 0; byte < info::mesh->elements->regionMaskSize; ++byte) {
+		for (size_t bit = 0; bit < sizeof(esint); bit++) {
+			if (eregions[byte] & 1 << bit) {
+				auto region = info::mesh->elementsRegions[byte * sizeof(esint) + bit];
+				if (_controler.configuration().discretization.find(region->name) != _controler.configuration().discretization.end()) {
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
 
 void FETIComposer::apply(std::vector<SparseMatrix> &matrices, std::vector<double> &result, std::vector<double> &x)
 {

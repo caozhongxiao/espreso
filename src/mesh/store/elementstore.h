@@ -60,7 +60,6 @@ struct ElementStore {
 	serializededata<esint, esint>* regions;
 	serializededata<esint, Element*>* epointers;
 
-
 	serializededata<esint, esint>* neighbors;
 
 	esint firstDomain;

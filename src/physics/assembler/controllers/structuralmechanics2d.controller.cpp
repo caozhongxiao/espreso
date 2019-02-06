@@ -51,6 +51,12 @@ StructuralMechanics2DController::~StructuralMechanics2DController()
 	delete _kernel;
 }
 
+const PhysicsConfiguration& StructuralMechanics2DController::configuration() const
+{
+	return info::ecf->structural_mechanics_2d;
+}
+
+
 void StructuralMechanics2DController::dirichletIndices(std::vector<std::vector<esint> > &indices)
 {
 	indices.resize(2);

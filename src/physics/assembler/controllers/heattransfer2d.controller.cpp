@@ -66,6 +66,11 @@ HeatTransfer2DController::~HeatTransfer2DController()
 	delete _kernel;
 }
 
+const PhysicsConfiguration& HeatTransfer2DController::configuration() const
+{
+	return info::ecf->heat_transfer_2d;
+}
+
 void HeatTransfer2DController::initData()
 {
 	size_t threads = info::env::OMP_NUM_THREADS;

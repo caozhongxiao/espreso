@@ -70,6 +70,16 @@ bool Controller::setDefault(const std::map<std::string, ECFExpressionVector> &va
 	return false;
 }
 
+void Controller::processBEMdomain(esint domain, double *values)
+{
+	ESINFO(ERROR) << "ESPRESO internal error: BEM is not implemented for the requested physics.";
+}
+
+void Controller::fillBEMInterior(esint domain, double *values)
+{
+	ESINFO(ERROR) << "ESPRESO internal error: BEM is not implemented for the requested physics.";
+}
+
 void Controller::updateERegions(
 		const std::map<std::string, ECFExpression> &settings, tarray<double> &data,
 		esint csize, double *cbegin, double *tbegin, double time,

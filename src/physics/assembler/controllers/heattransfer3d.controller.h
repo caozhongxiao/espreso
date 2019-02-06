@@ -7,6 +7,7 @@
 namespace espreso {
 
 struct HeatTransfer3DKernel;
+struct BEMData;
 
 class HeatTransfer3DController: public HeatTransferController
 {
@@ -15,17 +16,23 @@ public:
 	HeatTransfer3DController(HeatTransferLoadStepConfiguration &configuration);
 	~HeatTransfer3DController();
 
+	const PhysicsConfiguration& configuration() const;
+
 	void initData();
 	void processSolution();
 
 	void nextTime();
 	void parametersChanged();
 
+	void processBEMdomain(esint domain, double *values);
+	void fillBEMInterior(esint domain, double *values);
+
 	void processElements(Matrices matrices, const SolverParameters &parameters, InstanceFiller &filler);
 	void processBoundary(Matrices matrices, const SolverParameters &parameters, size_t rindex, InstanceFiller &filler);
 
 protected:
 	HeatTransfer3DKernel *_kernel;
+	std::vector<BEMData*> _bem;
 };
 
 }

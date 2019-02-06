@@ -10,6 +10,7 @@
 
 namespace espreso {
 
+struct PhysicsConfiguration;
 struct SolverParameters;
 struct Point;
 class ECFExpression;
@@ -33,6 +34,7 @@ public:
 	};
 
 	virtual NodeData* solution() = 0;
+	virtual const PhysicsConfiguration& configuration() const =0;
 
 	virtual void initData() = 0;
 	virtual void processSolution() = 0;
@@ -42,6 +44,9 @@ public:
 
 	virtual void dirichletIndices(std::vector<std::vector<esint> > &indices) = 0;
 	virtual void dirichletValues(std::vector<double> &values) = 0;
+
+	virtual void processBEMdomain(esint domain, double *values);
+	virtual void fillBEMInterior(esint domain, double *values);
 
 	virtual void processElements(Matrices matrices, const SolverParameters &parameters, InstanceFiller &filler) = 0;
 	virtual void processBoundary(Matrices matrices, const SolverParameters &parameters, size_t rindex, InstanceFiller &filler) = 0;

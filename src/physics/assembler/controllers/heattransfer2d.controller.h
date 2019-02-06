@@ -16,6 +16,8 @@ public:
 	HeatTransfer2DController(HeatTransferLoadStepConfiguration &configuration);
 	~HeatTransfer2DController();
 
+	const PhysicsConfiguration& configuration() const;
+
 	void initData();
 	void processSolution();
 

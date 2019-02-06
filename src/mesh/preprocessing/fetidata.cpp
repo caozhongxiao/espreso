@@ -481,7 +481,6 @@ void MeshPreprocessing::computeDomainsSurface()
 					}
 				}
 			}
-
 			tintervals.push_back(tfacesDistribution.size());
 		}
 
@@ -536,6 +535,7 @@ void MeshPreprocessing::computeDomainsSurface()
 		_mesh->domainsSurface->elements = new serializededata<esint, esint>(facesDistribution, faces);
 	}
 
+	std::vector<std::vector<esint> > nodes(threads);
 	std::vector<std::vector<Point> > coordinates(threads);
 	std::vector<std::vector<size_t> > cdistribution(threads);
 
@@ -550,6 +550,7 @@ void MeshPreprocessing::computeDomainsSurface()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
+		std::vector<esint> tnodes;
 		std::vector<Point> tcoordinates;
 		std::vector<size_t> tcdistribution;
 		std::vector<esint> ibounds, ioffset;
@@ -576,6 +577,9 @@ void MeshPreprocessing::computeDomainsSurface()
 					tcoordinates.insert(tcoordinates.end(),
 							_mesh->nodes->coordinates->datatarray().data() + _mesh->nodes->dintervals[d][i].begin,
 							_mesh->nodes->coordinates->datatarray().data() + _mesh->nodes->dintervals[d][i].end);
+					for (esint n = _mesh->nodes->dintervals[d][i].begin; n < _mesh->nodes->dintervals[d][i].end; n++) {
+						tnodes.push_back(n);
+					}
 				}
 			}
 			tcdistribution.push_back(tcoordinates.size());
@@ -604,11 +608,13 @@ void MeshPreprocessing::computeDomainsSurface()
 		}
 
 		cdistribution[t].swap(tcdistribution);
+		nodes[t].swap(tnodes);
 		coordinates[t].swap(tcoordinates);
 	}
 	Esutils::threadDistributionToFullDistribution(cdistribution);
 	Esutils::mergeThreadedUniqueData(cdistribution);
 
+	_mesh->domainsSurface->nodes = new serializededata<esint, esint>(1, nodes);
 	_mesh->domainsSurface->coordinates = new serializededata<esint, Point>(1, coordinates);
 	_mesh->domainsSurface->cdistribution = cdistribution[0];
 

@@ -48,15 +48,6 @@ void getLaplace(
 		double conductivity)
 {
 #ifdef HAVE_BEM
-
-	for (esint n = 0; n < nNodes; n++) {
-		printf("%3.2f, %3.2f, %3.2f\n", nodes[3 * n + 0], nodes[3 * n + 1], nodes[3 * n + 2]);
-	}
-	for (esint n = 0; n < nElements; n++) {
-		printf("%d %d %d\n", elements[3 * n + 0], elements[3 * n + 1], elements[3 * n + 2]);
-	}
-	printf("cond: %5.4f\n", conductivity);
-
 	bem = new BEMData();
 	bool nonsymmetric = false, verbose = false;
 	bem4i::getLaplaceSteklovPoincare<esint, double>(
@@ -79,7 +70,6 @@ void evaluateLaplace(
 		double conductivity, double *dirichlet)
 {
 #ifdef HAVE_BEM
-
 	bool verbose = false;
 	bem4i::evaluateLaplaceRepresentationFormula<esint, double>(
 			results,

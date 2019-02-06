@@ -33,6 +33,7 @@ struct PhysicsConfiguration: public ECFDescription {
 
 	size_t load_steps;
 
+	// TODO: case insensitive compare
 	INTERPOLATION interpolation;
 	ASSEMBLER assembler;
 	std::map<std::string, DISCRETIZATION> discretization;

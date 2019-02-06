@@ -47,6 +47,11 @@ StructuralMechanics3DController::~StructuralMechanics3DController()
 	delete _kernel;
 }
 
+const PhysicsConfiguration& StructuralMechanics3DController::configuration() const
+{
+	return info::ecf->structural_mechanics_3d;
+}
+
 void StructuralMechanics3DController::dirichletIndices(std::vector<std::vector<esint> > &indices)
 {
 	indices.resize(3);

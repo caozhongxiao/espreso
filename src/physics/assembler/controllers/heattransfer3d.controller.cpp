@@ -1,10 +1,12 @@
 
-#include "physics/assembler/dataholder.h"
+#include "heattransfer3d.controller.h"
+
 #include "esinfo/time.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/envinfo.h"
-#include "heattransfer3d.controller.h"
+
+#include "physics/assembler/dataholder.h"
 #include "physics/assembler/kernels/heattransfer3d.kernel.h"
 
 #include "basis/containers/serializededata.h"
@@ -14,12 +16,17 @@
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/boundaryregionstore.h"
+#include "mesh/store/surfacestore.h"
+
+#include "wrappers/bem/bemwrapper.h"
 
 using namespace espreso;
 
 HeatTransfer3DController::HeatTransfer3DController(HeatTransferLoadStepConfiguration &configuration)
-: HeatTransferController(configuration)
+: HeatTransferController(configuration), _bem(info::mesh->elements->ndomains, NULL)
 {
+	// TODO: optimize controllel when only BEM is needed
+
 	_kernel = new HeatTransfer3DKernel();
 
 	Point defaultMotion(0, 0, 0);
@@ -58,6 +65,16 @@ HeatTransfer3DController::HeatTransfer3DController(HeatTransferLoadStepConfigura
 HeatTransfer3DController::~HeatTransfer3DController()
 {
 	delete _kernel;
+	for (size_t i = 0; i < _bem.size(); i++) {
+		if (_bem[i] != NULL) {
+			BEM4I::deleteData(_bem[i]);
+		}
+	}
+}
+
+const PhysicsConfiguration& HeatTransfer3DController::configuration() const
+{
+	return info::ecf->heat_transfer_3d;
 }
 
 void HeatTransfer3DController::initData()
@@ -231,6 +248,50 @@ void HeatTransfer3DController::parametersChanged()
 	}
 }
 
+void HeatTransfer3DController::processBEMdomain(esint domain, double *values)
+{
+	esint nodes = info::mesh->domainsSurface->cdistribution[domain + 1] - info::mesh->domainsSurface->cdistribution[domain];
+	esint noffset = info::mesh->domainsSurface->cdistribution[domain];
+	esint elements = info::mesh->domainsSurface->tdistribution[domain + 1] - info::mesh->domainsSurface->tdistribution[domain];
+	esint eoffset = info::mesh->domainsSurface->tdistribution[domain];
+	auto mat = info::mesh->materials[info::mesh->elements->material->datatarray()[info::mesh->elements->elementsDistribution[domain]]];
+	std::vector<double> K(nodes * nodes);
+	BEM4I::getLaplace(
+			_bem[domain], K.data(),
+			nodes, reinterpret_cast<double*>((info::mesh->domainsSurface->coordinates->begin() + noffset)->begin()),
+			elements, (info::mesh->domainsSurface->triangles->begin() + eoffset)->begin(),
+			mat->thermal_conductivity.values.get(0, 0).evaluator->evaluate(Point(0, 0, 0), time::current, 0));
+
+	for (esint r = 0, i = 0; r < nodes; r++) {
+		for (esint c = r; c < nodes; c++, i++) {
+			values[i] = K[r * nodes + c];
+		}
+	}
+}
+
+void HeatTransfer3DController::fillBEMInterior(esint domain, double *values)
+{
+	esint nodes = info::mesh->domainsSurface->cdistribution[domain + 1] - info::mesh->domainsSurface->cdistribution[domain];
+	esint noffset = info::mesh->domainsSurface->cdistribution[domain];
+	esint points = info::mesh->nodes->dintervals[domain].back().end - info::mesh->nodes->dintervals[domain].back().begin;
+	esint poffset = info::mesh->nodes->dintervals[domain].back().begin;
+	esint elements = info::mesh->domainsSurface->tdistribution[domain + 1] - info::mesh->domainsSurface->tdistribution[domain];
+	esint eoffset = info::mesh->domainsSurface->tdistribution[domain];
+	auto mat = info::mesh->materials[info::mesh->elements->material->datatarray()[info::mesh->elements->elementsDistribution[domain]]];
+
+	if (nodes == info::mesh->nodes->dintervals[domain].back().DOFOffset + points) {
+		return; // no interior nodes
+	}
+
+	BEM4I::evaluateLaplace(
+			_bem[domain], values + nodes,
+			nodes, reinterpret_cast<double*>((info::mesh->domainsSurface->coordinates->begin() + noffset)->begin()),
+			elements, (info::mesh->domainsSurface->triangles->begin() + eoffset)->begin(),
+			points, reinterpret_cast<double*>(info::mesh->nodes->coordinates->datatarray().data() + poffset),
+			mat->thermal_conductivity.values.get(0, 0).evaluator->evaluate(Point(0, 0, 0), time::current, 0),
+			values);
+}
+
 void HeatTransfer3DController::processElements(Matrices matrices, const SolverParameters &parameters, InstanceFiller &filler)
 {
 	auto enodes = info::mesh->elements->procNodes->cbegin() + filler.begin;
@@ -254,28 +315,6 @@ void HeatTransfer3DController::processElements(Matrices matrices, const SolverPa
 		iterator.motion      += enodes->size() * 3;
 		iterator.heat        += enodes->size();
 	}
-
-//	if (BEM) {
-//		_instance->K[domain].rows = _mesh->domainsSurface->cdistribution[domain + 1] - _mesh->domainsSurface->cdistribution[domain];
-//		_instance->K[domain].cols = _instance->K[domain].rows;
-//		_instance->K[domain].nnz  = _instance->K[domain].rows * _instance->K[domain].cols;
-//		_instance->K[domain].type = 'G';
-//		_instance->K[domain].dense_values.resize(_instance->K[domain].nnz);
-//		_instance->K[domain].mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-//
-//		const MaterialConfiguration* material = _mesh->materials[_mesh->procNodes->material->datatarray()[_mesh->procNodes->elementsDistribution[domain]]];
-//
-//		bem4i::getLaplaceSteklovPoincare(
-//				_instance->K[domain].dense_values.data(),
-//				_instance->K[domain].rows,
-//				reinterpret_cast<double*>(_mesh->domainsSurface->coordinates->datatarray().data() + _mesh->domainsSurface->cdistribution[domain]),
-//				_mesh->domainsSurface->tdistribution[domain + 1] - _mesh->domainsSurface->tdistribution[domain],
-//				_mesh->domainsSurface->triangles->datatarray().data() + 3 * _mesh->domainsSurface->tdistribution[domain],
-//				material->thermal_conductivity.values.get(0, 0).evaluator->evaluate(Point(), _step->currentTime, 0),
-//				1,
-//				4, 4,
-//				_BEM
-//	}
 }
 
 void HeatTransfer3DController::processBoundary(Matrices matrices, const SolverParameters &parameters, size_t rindex, InstanceFiller &filler)

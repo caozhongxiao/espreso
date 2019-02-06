@@ -277,6 +277,12 @@ void Mesh::update()
 		}
 	}
 
+	if (hasBEM(getPhysics())) {
+		// TODO: BEM does not always need reparate regions
+		info::ecf->decomposition.separate_materials = true;
+		info::ecf->decomposition.separate_regions = true;
+	}
+
 	if (
 			info::ecf->decomposition.separate_materials ||
 			info::ecf->decomposition.separate_regions ||

@@ -15,6 +15,8 @@ public:
 	StructuralMechanics2DController(StructuralMechanicsLoadStepConfiguration &configuration);
 	~StructuralMechanics2DController();
 
+	const PhysicsConfiguration& configuration() const;
+
 	void dirichletIndices(std::vector<std::vector<esint> > &indices);
 	void dirichletValues(std::vector<double> &values);
 
