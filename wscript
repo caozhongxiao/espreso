@@ -2,6 +2,7 @@
 import commands
 import sys
 import os
+import logging
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -33,7 +34,7 @@ def set_compiler(ctx):
     if ctx.options.mpicxx == "mpic++":
         ctx.options.cxx = "g++"
     ctx.load(ctx.options.cxx)
-    ctx.env.CXX = ctx.env.LINK_CXX =ctx.options.mpicxx
+    ctx.env.CXX = ctx.env.LINK_CXX = ctx.options.mpicxx
 
 def set_openmp(ctx):
     if ctx.options.cxx == "icpc":
@@ -135,6 +136,7 @@ def set_variables(ctx):
         ctx.env.append_unique("DEFINES", [ "esint=long", "esint_mpi=MPI_LONG" ])
 
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-Wall", "-Wno-deprecated-declarations" ])
+    ctx.env.append_unique("CXXFLAGS", ctx.options.cxxflags.split())
     ctx.env.mode = ctx.options.mode
     if ctx.options.mode == "release":
         ctx.env.append_unique("CXXFLAGS", [ "-O3" ])
@@ -166,7 +168,9 @@ def configure(ctx):
     ctx.msg("Setting solver to", ctx.options.solver)
 
 def show(ctx):
-    ctx.logger=Logs.make_logger("sss",'cfg')
+    ctx.logger = logging.getLogger('show')
+    ctx.logger.handlers = Logs.log_handler()
+
     ctx.msg("CXX", ctx.env.CXX)
     ctx.msg("MODE", ctx.env.mode)
     ctx.msg("DEFINES", " ".join(ctx.env.DEFINES))
@@ -226,6 +230,12 @@ def options(opt):
         metavar="icpc,g++",
         default="icpc",
         help="C++ compiler (set it in the case of non-standard 'mpicxx' settings) [default: %default]")
+
+    espreso.add_option("--cxxflags",
+        action="store",
+        type="string",
+        default="",
+        help="C++ compiler flags (space separated list)")
 
     espreso.add_option("--intwidth",
         action="store",
