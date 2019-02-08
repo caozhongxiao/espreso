@@ -190,6 +190,10 @@ ElementStore::~ElementStore()
 	if (epointers != NULL) { delete epointers; }
 
 	if (neighbors != NULL) { delete neighbors; }
+
+	for (size_t i = 0; i < data.size(); i++) {
+		delete data[i];
+	}
 }
 
 void ElementStore::store(const std::string &file)

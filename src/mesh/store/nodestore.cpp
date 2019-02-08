@@ -169,6 +169,10 @@ NodeStore::~NodeStore()
 
 	if (idomains != NULL) { delete idomains; }
 	if (iranks != NULL) { delete iranks; }
+
+	for (size_t i = 0; i < data.size(); i++) {
+		delete data[i];
+	}
 }
 
 void NodeStore::store(const std::string &file)
