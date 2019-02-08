@@ -13,6 +13,7 @@ class LoadStepIterator {
 
 public:
 	LoadStepIterator();
+	~LoadStepIterator();
 
 	bool next();
 

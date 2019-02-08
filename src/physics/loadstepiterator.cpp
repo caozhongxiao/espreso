@@ -123,6 +123,14 @@ LoadStepIterator::LoadStepIterator()
 
 }
 
+LoadStepIterator::~LoadStepIterator()
+{
+	if (_loadStepSolver != NULL) { delete _loadStepSolver; }
+	if (_timeStepSolver != NULL) { delete _timeStepSolver; }
+	if (_assembler != NULL) { delete _assembler; }
+	if (_linearSolver != NULL) { delete _linearSolver; }
+}
+
 bool LoadStepIterator::next()
 {
 	switch (info::ecf->physics) {
@@ -144,7 +152,7 @@ bool LoadStepIterator::next()
 template <typename TPhysics>
 bool LoadStepIterator::next(TPhysics &configuration)
 {
-	if (time::step < configuration.load_steps) {
+	if (time::isInitial()) {
 		_assembler = getAssembler(configuration.load_steps_settings.at(time::step + 1), configuration.dimension);
 		_timeStepSolver = getTimeStepSolver(configuration.load_steps_settings.at(time::step + 1), *_assembler, *_linearSolver);
 		_loadStepSolver = getLoadStepSolver(configuration.load_steps_settings.at(time::step + 1), *_assembler, *_timeStepSolver);
@@ -152,6 +160,12 @@ bool LoadStepIterator::next(TPhysics &configuration)
 		_assembler->init();
 		info::mesh->storeMesh();
 		_loadStepSolver->run();
+	} else if (time::step < configuration.load_steps) {
+//		_assembler = getAssembler(configuration.load_steps_settings.at(time::step + 1), configuration.dimension);
+//		_timeStepSolver = getTimeStepSolver(configuration.load_steps_settings.at(time::step + 1), *_assembler, *_linearSolver);
+//		_loadStepSolver = getLoadStepSolver(configuration.load_steps_settings.at(time::step + 1), *_assembler, *_timeStepSolver);
+//
+//		_loadStepSolver->run();
 	}
 
 	return ++time::step < configuration.load_steps;
