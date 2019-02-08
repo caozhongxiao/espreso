@@ -6,6 +6,7 @@
 
 #include "physics/assembler/controllers/controller.h"
 
+#include "basis/containers/serializededata.h"
 #include "basis/matrices/matrixtype.h"
 #include "basis/utilities/communication.h"
 
@@ -25,6 +26,7 @@ Composer::Composer(Controller &controler)
 
 Composer::~Composer()
 {
+	if (_DOFMap) { delete _DOFMap; }
 	delete data;
 }
 
