@@ -64,7 +64,7 @@ void MPILoader::read(MPIGroup &group, MPI_File &MPIfile, ParallelFile &pfile)
 	if (group.rank + 1 == group.size) {
 		pfile.end -= block * fdistribution.back() - size;
 	}
-	pfile.offsets = Communication::getDistribution<size_t>(pfile.end - pfile.begin, group);
+	pfile.offsets = Communication::getDistribution<size_t>(pfile.end - pfile.begin, &group);
 }
 
 void MPILoader::scatter(MPIGroup &group, ParallelFile &pfile)
@@ -132,7 +132,7 @@ void MPILoader::align(MPIGroup &group, ParallelFile &pfile, size_t lines)
 			neighs.push_back(group.rank + 1);
 		}
 		rBuffer.resize(neighs.size());
-		Communication::receiveUpperUnknownSize(sBuffer, rBuffer, neighs, group);
+		Communication::receiveUpperUnknownSize(sBuffer, rBuffer, neighs, &group);
 
 		if (rBuffer.back().size() > pfile.data.size() - (pfile.end - pfile.begin)) {
 			pfile.data.resize((pfile.end - pfile.begin) + rBuffer.back().size());
@@ -145,6 +145,6 @@ void MPILoader::align(MPIGroup &group, ParallelFile &pfile, size_t lines)
 		pfile.end += firstLineEnd - rBuffer.back().data();
 	}
 	pfile.begin = _current;
-	pfile.offsets = Communication::getDistribution<size_t>(pfile.end - pfile.begin, group);
+	pfile.offsets = Communication::getDistribution<size_t>(pfile.end - pfile.begin, &group);
 }
 

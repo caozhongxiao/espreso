@@ -12,6 +12,8 @@
 
 using namespace espreso;
 
+MPIOperations* MPITools::operations = NULL;
+MPIGroup* MPITools::procs = NULL;
 int MPISubset::nodeRank = -1;
 
 template<typename Ttype>
@@ -81,11 +83,36 @@ MPIOperations::MPIOperations()
 	MPI_Op_create(_sum<long>, 1, &LONG.sum);
 }
 
+MPIOperations::~MPIOperations()
+{
+	MPI_Op_free(&mergeStatistics);
+
+	MPI_Op_free(&SIZET.scan);
+	MPI_Op_free(&SIZET.max);
+	MPI_Op_free(&SIZET.min);
+	MPI_Op_free(&SIZET.sum);
+
+	MPI_Op_free(&INT.scan);
+	MPI_Op_free(&INT.max);
+	MPI_Op_free(&INT.min);
+	MPI_Op_free(&INT.sum);
+
+	MPI_Op_free(&LONG.scan);
+	MPI_Op_free(&LONG.max);
+	MPI_Op_free(&LONG.min);
+	MPI_Op_free(&LONG.sum);
+}
+
 MPIGroup::MPIGroup()
 {
 	MPI_Comm_dup(info::mpi::comm, &communicator);
 	rank = info::mpi::rank;
 	size = info::mpi::size;
+}
+
+MPIGroup::~MPIGroup()
+{
+	MPI_Comm_free(&communicator);
 }
 
 void MPISubset::fillNodeColor()
@@ -152,14 +179,26 @@ MPISubset::MPISubset(const ProcessesReduction &reduction, MPIGroup &origin)
 	MPI_Comm_size(across.communicator, &across.size);
 }
 
-MPISubset& MPITools::nodes()
+void MPITools::init()
 {
-	ProcessesReduction reduction;
-	reduction.granularity = ProcessesReduction::Granularity::NODES;
-	reduction.pattern = ProcessesReduction::Pattern::SUBSET;
-	reduction.reduction_ratio = 1;
+	operations = new MPIOperations();
+	procs = new MPIGroup();
 
-	static MPISubset instance(reduction, MPITools::procs());
-	return instance;
+//	ProcessesReduction reduction;
+//	reduction.granularity = ProcessesReduction::Granularity::NODES;
+//	reduction.pattern = ProcessesReduction::Pattern::SUBSET;
+//	reduction.reduction_ratio = 1;
+//
+//	nodes = new MPIGroup(reduction, MPITools::procs());
+}
+
+void MPITools::destroy()
+{
+	if (operations) {
+		delete operations;
+	}
+	if (procs) {
+		delete procs;
+	}
 }
 

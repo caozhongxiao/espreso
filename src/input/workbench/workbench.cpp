@@ -71,7 +71,7 @@ void WorkbenchLoader::readData()
 	TimeEval timing("Read data from file");
 	timing.totalTime.startWithBarrier();
 
-	MPISubset loaders(_configuration, MPITools::procs());
+	MPISubset loaders(_configuration, *MPITools::procs);
 
 	TimeEvent e1("FILE OPEN");
 	e1.start();
@@ -100,7 +100,7 @@ void WorkbenchLoader::readData()
 	e3.start();
 
 	MPILoader::scatter(loaders.within, _pfile);
-	MPILoader::align(MPITools::procs(), _pfile, MAX_LINE_STEP);
+	MPILoader::align(*MPITools::procs, _pfile, MAX_LINE_STEP);
 
 	WorkbenchParser::offset = _pfile.offsets[info::mpi::rank];
 	WorkbenchParser::begin = _pfile.begin;

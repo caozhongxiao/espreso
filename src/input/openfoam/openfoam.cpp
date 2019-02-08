@@ -32,7 +32,7 @@ void OpenFOAMLoader::load(const InputConfiguration &configuration, Mesh &mesh)
 }
 
 OpenFOAMLoader::OpenFOAMLoader(const InputConfiguration &configuration, Mesh &mesh)
-: _configuration(configuration), _loaders(_configuration, MPITools::procs()),
+: _configuration(configuration), _loaders(_configuration, *MPITools::procs),
 	_points(80), _faces(80), _owner(80), _neighbour(80), _boundary(80),
 	_pointZones(80), _faceZones(80), _cellZones(80)
 {
@@ -90,7 +90,7 @@ void OpenFOAMLoader::distributedReader(const std::string &file, ParallelFile &pf
 	}
 
 	MPILoader::scatter(_loaders.within, pfile);
-	MPILoader::align(MPITools::procs(), pfile, 0);
+	MPILoader::align(*MPITools::procs, pfile, 0);
 }
 
 void OpenFOAMLoader::readData()
@@ -100,7 +100,7 @@ void OpenFOAMLoader::readData()
 	onlyroot.pattern = ProcessesReduction::Pattern::PREFIX;
 	onlyroot.reduction_ratio = 1;
 
-	MPISubset singleton(onlyroot, MPITools::procs());
+	MPISubset singleton(onlyroot, *MPITools::procs);
 
 	auto singletonReader = [&] (const std::string &file, ParallelFile &pfile) {
 		if (singleton.within.rank == 0) {

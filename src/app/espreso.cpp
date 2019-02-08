@@ -4,6 +4,7 @@
 #include "esinfo/systeminfo.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
+#include "basis/utilities/communication.h"
 #include "basis/logging/logging.h"
 
 #include "config/ecf/root.h"
@@ -23,6 +24,7 @@ int main(int argc, char **argv)
 	info::system::setSignals();
 	Logging::init();
 	Mesh::init();
+	MPITools::init();
 	info::env::set();
 	info::mpi::set();
 
@@ -46,6 +48,7 @@ int main(int argc, char **argv)
 
 	ResultStore::destroyAsynchronizedStore();
 	Mesh::destroy();
+	MPITools::destroy();
 	delete info::ecf;
 	delete info::mesh;
 

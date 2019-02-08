@@ -25,6 +25,7 @@ public:
 
 private:
 	MPIOperations();
+	~MPIOperations();
 public:
 	MPIOperations(MPIOperations const&) = delete;
 	void operator=(MPIOperations const&) = delete;
@@ -43,6 +44,7 @@ struct MPIGroup {
 	int rank, size;
 
 	MPIGroup();
+	~MPIGroup();
 };
 
 class MPISubset {
@@ -65,39 +67,22 @@ class MPITools
 {
 
 public:
+	static MPIOperations *operations;
+	static MPIGroup *procs;
+//	static MPIGroup *nodes;
+
 	template <typename Ttype>
 	static MPIType getType();
 
-	static MPIOperations& operations()
-	{
-		static MPIOperations instance;
-		return instance;
-	}
+	static void init();
+	static void destroy();
 
-	static MPIOperations::TypedOperations& sizetOperations() { return operations().SIZET; }
-	static MPIOperations::TypedOperations& intOperations() { return operations().INT; }
-	static MPIOperations::TypedOperations& longOperations() { return operations().LONG; }
+	static MPIOperations::TypedOperations& sizetOperations() { return operations->SIZET; }
+	static MPIOperations::TypedOperations& intOperations() { return operations->INT; }
+	static MPIOperations::TypedOperations& longOperations() { return operations->LONG; }
 	static MPIOperations::TypedOperations& esintOperations()
 	{
-			return sizeof(esint) == sizeof(int) ? operations().INT : operations().LONG;
-	}
-
-	static MPISubset& nodes();
-
-	static MPIGroup& procs()
-	{
-		static MPIGroup instance;
-		return instance;
-	}
-
-	static MPIGroup& acrossNodes()
-	{
-		return nodes().across;
-	}
-
-	static MPIGroup& withinNodes()
-	{
-		return nodes().within;
+			return sizeof(esint) == sizeof(int) ? operations->INT : operations->LONG;
 	}
 
 private:
@@ -107,71 +92,71 @@ private:
 struct Communication {
 
 	template <typename Ttype>
-	static bool exchangeKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup &group = MPITools::procs());
+	static bool exchangeKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
-	static bool exchangeUnknownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup &group = MPITools::procs());
+	static bool exchangeUnknownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
-	static bool exchangeUnknownSize(const std::vector<Ttype> &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup &group = MPITools::procs());
+	static bool exchangeUnknownSize(const std::vector<Ttype> &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
-	static bool receiveLowerKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup &group = MPITools::procs());
+	static bool receiveLowerKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
-	static bool receiveLowerUnknownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup &group = MPITools::procs());
+	static bool receiveLowerUnknownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
-	static bool receiveUpperKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup &group = MPITools::procs());
+	static bool receiveUpperKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
-	static bool receiveUpperUnknownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup &group = MPITools::procs());
+	static bool receiveUpperUnknownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
-	static bool gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, MPIGroup &group = MPITools::procs());
+	static bool gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
-	static bool gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, std::vector<size_t> &offsets, MPIGroup &group = MPITools::procs());
+	static bool gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, std::vector<size_t> &offsets, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
-	static bool allGatherUnknownSize(std::vector<Ttype> &data, MPIGroup &group = MPITools::procs());
+	static bool allGatherUnknownSize(std::vector<Ttype> &data, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
-	static bool broadcastUnknownSize(std::vector<Ttype> &buffer, MPIGroup &group = MPITools::procs());
+	static bool broadcastUnknownSize(std::vector<Ttype> &buffer, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype, typename Tdistribution>
-	static bool balance(std::vector<Ttype> &buffer, const std::vector<Tdistribution> &currentDistribution, const std::vector<Tdistribution> &targetDistribution, MPIGroup &group = MPITools::procs());
+	static bool balance(std::vector<Ttype> &buffer, const std::vector<Tdistribution> &currentDistribution, const std::vector<Tdistribution> &targetDistribution, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
-	static bool allToAllV(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, const std::vector<int> &ssize, const std::vector<int> &rsize, MPIGroup &group = MPITools::procs());
+	static bool allToAllV(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, const std::vector<int> &ssize, const std::vector<int> &rsize, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
-	static Ttype exscan(Ttype &value, MPIGroup &group = MPITools::procs());
+	static Ttype exscan(Ttype &value, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
-	static std::vector<Ttype> getDistribution(Ttype size, MPIGroup &group = MPITools::procs());
+	static std::vector<Ttype> getDistribution(Ttype size, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
-	static bool sendVariousTargets(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &targets, MPIGroup &group = MPITools::procs())
+	static bool sendVariousTargets(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &targets, MPIGroup *group = MPITools::procs)
 	{
 		std::vector<int> sources;
 		return sendVariousTargets(sBuffer, rBuffer, targets, sources, group);
 	}
 
 	template <typename Ttype>
-	static bool sendVariousTargets(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &targets, std::vector<int> &sources, MPIGroup &group = MPITools::procs());
+	static bool sendVariousTargets(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &targets, std::vector<int> &sources, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
-	static bool allToAllWithDataSizeAndTarget(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, MPIGroup &group = MPITools::procs());
+	static bool allToAllWithDataSizeAndTarget(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, MPIGroup *group = MPITools::procs);
 
-	static void serialize(std::function<void(void)> fnc, MPIGroup &group = MPITools::procs());
+	static void serialize(std::function<void(void)> fnc, MPIGroup *group = MPITools::procs);
 
 private:
 	template <typename Ttype>
-	static Ttype exscan(Ttype &value, MPI_Op &operation, MPIGroup &group);
+	static Ttype exscan(Ttype &value, MPI_Op &operation, MPIGroup *group);
 
 	template <typename Ttype>
-	static std::vector<Ttype> getDistribution(Ttype size, MPI_Op &operation, MPIGroup &group);
+	static std::vector<Ttype> getDistribution(Ttype size, MPI_Op &operation, MPIGroup *group);
 };
 
 

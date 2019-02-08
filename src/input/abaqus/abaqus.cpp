@@ -90,7 +90,7 @@ void AbaqusLoader::readData()
 	TimeEval timing("Read data from file");
 	timing.totalTime.startWithBarrier();
 
-	MPISubset loaders(_configuration, MPITools::procs());
+	MPISubset loaders(_configuration, *MPITools::procs);
 
 	TimeEvent e1("FILE OPEN");
 	e1.start();
@@ -119,7 +119,7 @@ void AbaqusLoader::readData()
 	e3.start();
 
 	MPILoader::scatter(loaders.within, _pfile);
-	MPILoader::align(MPITools::procs(), _pfile, MAX_LINE_STEP);
+	MPILoader::align(*MPITools::procs, _pfile, MAX_LINE_STEP);
 
 	AbaqusParser::offset = _pfile.offsets[info::mpi::rank];
 	AbaqusParser::begin = _pfile.begin;

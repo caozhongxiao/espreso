@@ -579,7 +579,6 @@ void Input::fillNodes()
 
 	_mesh.nodes->IDs = new serializededata<esint, esint>(1, tarray<esint>(_mesh.nodes->distribution, _meshData.nIDs));
 	_mesh.nodes->coordinates = new serializededata<esint, Point>(1, tarray<Point>(_mesh.nodes->distribution, _meshData.coordinates));
-	printf("COORDINATES %p\n", _mesh.nodes->coordinates);
 
 	std::vector<size_t> rdistribution = _mesh.nodes->distribution, rdatadistribution = _mesh.nodes->distribution;
 	for (size_t t = 1; t < threads; t++) {

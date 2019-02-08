@@ -16,7 +16,7 @@ esint ParMETIS::call(
 	esint edgecut;
 
 	if (subset.within.size == 1) {
-		std::vector<esint> edistribution = Communication::getDistribution<esint>(partition.size(), subset.across);
+		std::vector<esint> edistribution = Communication::getDistribution<esint>(partition.size(), &subset.across);
 		edgecut = ParMETIS::call(method, subset,
 					edistribution.data(), eframes.data(), eneighbors.data(),
 					0, NULL, 0, NULL, NULL,
@@ -26,9 +26,9 @@ esint ParMETIS::call(
 		std::vector<esint> gframes, gneighbors, gpartition;
 		std::vector<size_t> offsets;
 
-		Communication::gatherUnknownSize(eframes, gframes, subset.within);
-		Communication::gatherUnknownSize(eneighbors, gneighbors, subset.within);
-		Communication::gatherUnknownSize(partition, gpartition, offsets, subset.within);
+		Communication::gatherUnknownSize(eframes, gframes, &subset.within);
+		Communication::gatherUnknownSize(eneighbors, gneighbors, &subset.within);
+		Communication::gatherUnknownSize(partition, gpartition, offsets, &subset.within);
 
 		std::vector<int> disp(subset.within.size), count(subset.within.size);
 
@@ -47,7 +47,7 @@ esint ParMETIS::call(
 			}
 			count.back() = gpartition.size() - offsets.back();
 
-			std::vector<esint> edistribution = Communication::getDistribution<esint>(gpartition.size(), subset.across);
+			std::vector<esint> edistribution = Communication::getDistribution<esint>(gpartition.size(), &subset.across);
 
 			edgecut = ParMETIS::call(method, subset,
 					edistribution.data(), gframes.data(), gneighbors.data(),
