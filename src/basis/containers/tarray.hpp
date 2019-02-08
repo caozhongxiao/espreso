@@ -52,9 +52,7 @@ tarray<TType>& tarray<TType>::operator=(const tarray<TType> &other)
 		_size = other._size;
 		_distribution = other._distribution;
 
-		if (_data != NULL) {
-			delete[] _data;
-		}
+		if (_data) { delete[] _data; }
 		_data = new TType[_size];
 		#pragma omp parallel for
 		for (size_t t = 0; t < other.threads(); t++) {
@@ -69,6 +67,7 @@ tarray<TType>& tarray<TType>::operator=(tarray<TType> &&other)
 {
 	if (this != &other) {
 		_size = std::move(other._size);
+		if (_data) { delete[] _data; }
 		_data = std::move(other._data);
 		_distribution = std::move(other._distribution);
 
