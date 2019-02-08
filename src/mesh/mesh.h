@@ -36,7 +36,12 @@ class Mesh {
 
 	friend class MeshPreprocessing;
 public:
+	static Element* edata;
+	static void init();
+	static void destroy();
+
 	Mesh();
+	~Mesh();
 	void update();
 
 	ElementsRegionStore* allElements()
@@ -89,9 +94,6 @@ public:
 	std::vector<int> neighboursWithMe;
 
 	std::vector<const MaterialConfiguration*> materials;
-
-//protected:
-	std::vector<Element*> _eclasses;
 
 	ResultStore *store;
 

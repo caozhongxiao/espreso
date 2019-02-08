@@ -163,6 +163,7 @@ NodeStore::~NodeStore()
 	if (IDs == NULL) { delete IDs; }
 	if (elements == NULL) { delete elements; }
 
+	printf("COORDINATES %p\n", coordinates);
 	if (originCoordinates == NULL) { delete originCoordinates; }
 	if (coordinates == NULL) { delete coordinates; }
 	if (ranks == NULL) { delete ranks; }

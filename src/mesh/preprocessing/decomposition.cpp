@@ -477,7 +477,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 		return std::lower_bound(targets.begin(), targets.end(), target) - targets.begin();
 	};
 
-	ElementStore *elements = new ElementStore(_mesh->_eclasses);
+	ElementStore *elements = new ElementStore();
 
 	std::vector<std::vector<esint> >  elemsIDs(threads);
 	std::vector<std::vector<int> >      elemsBody(threads);
@@ -592,7 +592,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 				telemsRegions.insert(telemsRegions.end(), regionElementMask.begin() + e * eregionsBitMaskSize, regionElementMask.begin() + (e + 1) * eregionsBitMaskSize);
 			} else {
 				target = t2i(partition[e]);
-				tsElements[target].insert(tsElements[target].end(), { IDs[e], body[e], material[e], static_cast<esint>(code[e] - _mesh->_eclasses[t]) });
+				tsElements[target].insert(tsElements[target].end(), { IDs[e], body[e], material[e], static_cast<esint>(code[e] - _mesh->edata) });
 				tsElements[target].push_back(enodes->size());
 				for (auto n = enodes->begin(); n != enodes->end(); ++n) {
 					tsElements[target].push_back(nIDs[*n]);
@@ -868,7 +868,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 				telemsIDs.push_back(rElements[i][e++]);
 				telemsBody.push_back(rElements[i][e++]);
 				telemsMaterial.push_back(rElements[i][e++]);
-				telemsEpointer.push_back(_mesh->_eclasses[t] + rElements[i][e++]);
+				telemsEpointer.push_back(_mesh->edata + rElements[i][e++]);
 				telemsNodesData.insert(telemsNodesData.end(), rElements[i].begin() + e + 1, rElements[i].begin() + e + 1 + rElements[i][e]);
 				telemsNodesDistribution.push_back(telemsNodesData.size() + distOffset);
 				e += rElements[i][e++]; // nodes + nodes size
@@ -1021,7 +1021,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 				}
 
 				for (esint i = toffset[r][t]; i < toffset[r][t] + tsize[r][t];) {
-					tboundaryEPointers.push_back(&_mesh->_eclasses[t][rBoundary[n][i++]]);
+					tboundaryEPointers.push_back(&_mesh->edata[rBoundary[n][i++]]);
 					tboundaryEData.insert(tboundaryEData.end(), rBoundary[n].begin() + i, rBoundary[n].begin() + i + tboundaryEPointers.back()->nodes);
 					tboundaryEDistribution.push_back(tboundaryEData.size() + distOffset);
 					i += tboundaryEPointers.back()->nodes;
@@ -1413,7 +1413,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 	std::swap(_mesh->elements, elements);
 	std::swap(_mesh->nodes, nodes);
 	delete _mesh->halo;
-	_mesh->halo = new ElementStore(_mesh->_eclasses);
+	_mesh->halo = new ElementStore();
 	_mesh->neighbours.clear();
 	for (size_t t = 0; t < IDtargets[0].size(); t++) {
 		if (IDtargets[0][t] != info::mpi::rank) {

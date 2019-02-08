@@ -191,7 +191,7 @@ void SortedInput::fillCoordinates()
 			rData[t].resize(cdistribution[t + 1] - cdistribution[t]);
 			std::iota(rData[t].begin(), rData[t].end(), cdistribution[t]);
 		}
-		_mesh.boundaryRegions.push_back(new BoundaryRegionStore("ALL_NODES", _mesh._eclasses));
+		_mesh.boundaryRegions.push_back(new BoundaryRegionStore("ALL_NODES"));
 		_mesh.boundaryRegions.back()->nodes = new serializededata<esint, esint>(1, rData);
 
 		_mesh.neighboursWithMe.push_back(info::mpi::rank);
@@ -442,7 +442,7 @@ void SortedInput::fillCoordinates()
 		Esutils::sortAndRemoveDuplicity(rankData[t]);
 	}
 
-	_mesh.boundaryRegions.push_back(new BoundaryRegionStore("ALL_NODES", _mesh._eclasses));
+	_mesh.boundaryRegions.push_back(new BoundaryRegionStore("ALL_NODES"));
 	_mesh.boundaryRegions.back()->nodes = new serializededata<esint, esint>(1, allnodes);
 
 	for (size_t t = 0; t < threads; t++) {
@@ -531,7 +531,7 @@ void SortedInput::addNodeRegions()
 		rBuffer.resize(threads);
 		serializededata<esint, esint>::balance(1, rBuffer);
 
-		_mesh.boundaryRegions.push_back(new BoundaryRegionStore(nregion->first, _mesh._eclasses));
+		_mesh.boundaryRegions.push_back(new BoundaryRegionStore(nregion->first));
 		_mesh.boundaryRegions.back()->nodes = new serializededata<esint, esint>(1, rBuffer);
 
 		#pragma omp parallel for

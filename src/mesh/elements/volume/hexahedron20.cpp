@@ -1,14 +1,23 @@
 
-#include "hexahedron20.h"
+#include "mesh/elements/element.h"
+#include "mesh/mesh.h"
 
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/denseMatrix.h"
 
 using namespace espreso;
 
-Element Hexahedron20::fill(Element e, Element* begin)
+template<>
+void Element::set<Element::CODE::HEXA20>()
 {
-	std::vector<Element*> facepointers(6, begin + static_cast<int>(Element::CODE::SQUARE8));
+	type = Element::TYPE::VOLUME;
+	code = Element::CODE::HEXA20;
+	nodes = 20;
+	coarseNodes = 8;
+	nCommonFace = 4;
+	nCommonEdge = 3;
+
+	std::vector<Element*> fpointers(6, &Mesh::edata[static_cast<int>(Element::CODE::SQUARE8)]);
 
 	std::vector<int> data = {
 		0, 1, 5, 4,  8, 17, 12, 16,
@@ -19,8 +28,8 @@ Element Hexahedron20::fill(Element e, Element* begin)
 		3, 0, 4, 7, 11, 16, 15, 19
 	};
 
-	e.faces = new serializededata<int, int>(8, data);
-	e.facepointers = new serializededata<int, Element*>(1, facepointers);
+	faces = new serializededata<int, int>(8, data);
+	facepointers = new serializededata<int, Element*>(1, fpointers);
 
 	size_t GPCount = 8, nodeCount = 20;
 
@@ -47,12 +56,12 @@ Element Hexahedron20::fill(Element e, Element* begin)
 		exit(1);
 	}
 
-	e.N = new std::vector<DenseMatrix>(GPCount, DenseMatrix(1, nodeCount));
-	e.dN = new std::vector<DenseMatrix>(GPCount, DenseMatrix(3, nodeCount));
-	e.weighFactor = new std::vector<double>();
+	N = new std::vector<DenseMatrix>(GPCount, DenseMatrix(1, nodeCount));
+	dN = new std::vector<DenseMatrix>(GPCount, DenseMatrix(3, nodeCount));
+	weighFactor = new std::vector<double>();
 
 	for (unsigned int i = 0; i < GPCount; i++) {
-		DenseMatrix &m = (*e.N)[i];
+		DenseMatrix &m = (*N)[i];
 
 		double r = rst[0][i];
 		double s = rst[1][i];
@@ -83,7 +92,7 @@ Element Hexahedron20::fill(Element e, Element* begin)
 	}
 
 	for (unsigned int i = 0; i < GPCount; i++) {
-		DenseMatrix &m = (*e.dN)[i];
+		DenseMatrix &m = (*dN)[i];
 
 		double r = rst[0][i];
 		double s = rst[1][i];
@@ -163,19 +172,17 @@ Element Hexahedron20::fill(Element e, Element* begin)
 
 	switch (GPCount) {
 	case 8: {
-		e.weighFactor->resize(8, 1.0);
+		weighFactor->resize(8, 1.0);
 		break;
 	}
 	case 14: {
-		e.weighFactor->resize(8, 0.335180055401662);
-		e.weighFactor->resize(14, 0.886426592797784);
+		weighFactor->resize(8, 0.335180055401662);
+		weighFactor->resize(14, 0.886426592797784);
 		break;
 	}
 	default:
 		exit(1);
 	}
-
-	return e;
 }
 
 

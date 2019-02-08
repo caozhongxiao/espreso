@@ -1,16 +1,25 @@
 
-#include "pyramid5.h"
+#include "mesh/elements/element.h"
+#include "mesh/mesh.h"
 
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/denseMatrix.h"
 
 using namespace espreso;
 
-Element Pyramid5::fill(Element e, Element* begin)
+template<>
+void Element::set<Element::CODE::PYRAMID5>()
 {
-	std::vector<Element*> facepointers;
-	facepointers.resize(1, begin + static_cast<int>(Element::CODE::SQUARE4));
-	facepointers.resize(5, begin + static_cast<int>(Element::CODE::TRIANGLE3));
+	type = Element::TYPE::VOLUME;
+	code = Element::CODE::PYRAMID5;
+	nodes = 5;
+	coarseNodes = 5;
+	nCommonFace = 3;
+	nCommonEdge = 2;
+
+	std::vector<Element*> fpointers;
+	fpointers.resize(1, &Mesh::edata[static_cast<int>(Element::CODE::SQUARE4)]);
+	fpointers.resize(5, &Mesh::edata[static_cast<int>(Element::CODE::TRIANGLE3)]);
 
 	std::vector<int> dist = { 0, 4, 7, 10, 13, 16 };
 	std::vector<int> data = {
@@ -21,14 +30,14 @@ Element Pyramid5::fill(Element e, Element* begin)
 		3, 0, 4
 	};
 
-	e.faces = new serializededata<int, int>(dist, data);
-	e.facepointers = new serializededata<int, Element*>(1, facepointers);
+	faces = new serializededata<int, int>(dist, data);
+	facepointers = new serializededata<int, Element*>(1, fpointers);
 
 	size_t GPCount = 8, nodeCount = 5;
 
-	e.N = new std::vector<DenseMatrix>(GPCount, DenseMatrix(1, nodeCount));
-	e.dN = new std::vector<DenseMatrix>(GPCount, DenseMatrix(3, nodeCount));
-	e.weighFactor = new std::vector<double>();
+	N = new std::vector<DenseMatrix>(GPCount, DenseMatrix(1, nodeCount));
+	dN = new std::vector<DenseMatrix>(GPCount, DenseMatrix(3, nodeCount));
+	weighFactor = new std::vector<double>();
 
 	std::vector< std::vector<double> > rst(3, std::vector<double>(GPCount));
 
@@ -45,7 +54,7 @@ Element Pyramid5::fill(Element e, Element* begin)
 	}
 
 	for (unsigned int i = 0; i < GPCount; i++) {
-		DenseMatrix &m = (*e.N)[i];
+		DenseMatrix &m = (*N)[i];
 
 		double r = rst[0][i];
 		double s = rst[1][i];
@@ -61,7 +70,7 @@ Element Pyramid5::fill(Element e, Element* begin)
 
 	for (unsigned int i = 0; i < GPCount; i++) {
 		///dN contains [dNr, dNs, dNt]
-		DenseMatrix &m = (*e.dN)[i];
+		DenseMatrix &m = (*dN)[i];
 
 		double r = rst[0][i];
 		double s = rst[1][i];
@@ -91,14 +100,12 @@ Element Pyramid5::fill(Element e, Element* begin)
 
 	switch (GPCount) {
 	case 8: {
-		(*e.weighFactor) = std::vector<double> (8, 1.0);
+		(*weighFactor) = std::vector<double> (8, 1.0);
 		break;
 	}
 	default:
 		exit(1);
 	}
-
-	return e;
 }
 
 

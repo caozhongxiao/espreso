@@ -5,11 +5,12 @@
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/utils.h"
 
+#include "mesh/mesh.h"
 #include "mesh/elements/element.h"
 
 using namespace espreso;
 
-BoundaryRegionStore::BoundaryRegionStore(const std::string &name, std::vector<Element*> &eclasses)
+BoundaryRegionStore::BoundaryRegionStore(const std::string &name)
 : name(name),
   dimension(0),
   area(0),
@@ -23,8 +24,7 @@ BoundaryRegionStore::BoundaryRegionStore(const std::string &name, std::vector<El
   nodes(NULL),
 
   epointers(NULL),
-  ecounters(static_cast<int>(Element::CODE::SIZE)),
-  _eclasses(eclasses)
+  ecounters(static_cast<int>(Element::CODE::SIZE))
 {
 
 }
@@ -47,26 +47,7 @@ void BoundaryRegionStore::permute(const std::vector<esint> &permutation, const s
 	}
 
 	if (epointers != NULL) {
-		size_t threads = info::env::OMP_NUM_THREADS;
-		if (threads > 1) {
-			#pragma omp parallel for
-			for (size_t t = 0; t < threads; t++) {
-				for (size_t i = epointers->datatarray().distribution()[t]; i < epointers->datatarray().distribution()[t + 1]; ++i) {
-					epointers->datatarray()[i] = _eclasses[0] + (epointers->datatarray()[i] - _eclasses[t]);
-				}
-			}
-
-			epointers->permute(permutation, distribution);
-
-			#pragma omp parallel for
-			for (size_t t = 0; t < threads; t++) {
-				for (size_t i = this->distribution[t]; i < this->distribution[t + 1]; ++i) {
-					epointers->datatarray()[i] = _eclasses[t] + (epointers->datatarray()[i] - _eclasses[0]);
-				}
-			}
-		} else {
-			epointers->permute(permutation, distribution);
-		}
+		epointers->permute(permutation, distribution);
 	}
 
 	eintervals.clear();
@@ -102,7 +83,7 @@ void BoundaryRegionStore::pack(char* &p) const
 	size_t threads = info::env::OMP_NUM_THREADS;
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = epointers->datatarray().distribution()[t]; i < epointers->datatarray().distribution()[t + 1]; ++i) {
-			eindices.push_back(epointers->datatarray()[i] - _eclasses[t]);
+			eindices.push_back(epointers->datatarray()[i] - Mesh::edata);
 		}
 	}
 	Esutils::pack(eindices, p);
@@ -131,7 +112,7 @@ void BoundaryRegionStore::unpack(const char* &p)
 	}
 	epointers = new serializededata<esint, Element*>(1, tarray<Element*>(1, eindices.size()));
 	for (size_t i = 0; i < eindices.size(); ++i) {
-		epointers->datatarray()[i] = &_eclasses[0][eindices[i]];
+		epointers->datatarray()[i] = Mesh::edata + eindices[i];
 	}
 	Esutils::unpack(ecounters, p);
 	Esutils::unpack(eintervals, p);

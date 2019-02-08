@@ -1,14 +1,23 @@
 
-#include "triangle6.h"
+#include "mesh/elements/element.h"
+#include "mesh/mesh.h"
 
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/denseMatrix.h"
 
 using namespace espreso;
 
-Element Triangle6::fill(Element e, Element* begin)
+template<>
+void Element::set<Element::CODE::TRIANGLE6>()
 {
-	std::vector<Element*> edgepointers(3, begin + static_cast<int>(Element::CODE::LINE3));
+	type = Element::TYPE::PLANE;
+	code = Element::CODE::TRIANGLE6;
+	nodes = 6;
+	coarseNodes = 3;
+	nCommonFace = 3;
+	nCommonEdge = 2;
+
+	std::vector<Element*> epointers(3, &Mesh::edata[static_cast<int>(Element::CODE::LINE3)]);
 
 	std::vector<int> data = {
 		0, 1, 3,
@@ -24,17 +33,17 @@ Element Triangle6::fill(Element e, Element* begin)
 		3, 4, 5
 	};
 
-	e.edges = new serializededata<int, int>(3, data);
-	e.edgepointers = new serializededata<int, Element*>(1, edgepointers);
-	e.faces = new serializededata<int, int>(3, data);
-	e.facepointers = new serializededata<int, Element*>(1, edgepointers);
-	e.triangles = new serializededata<int, int>(3, tringles);
+	edges = new serializededata<int, int>(3, data);
+	edgepointers = new serializededata<int, Element*>(1, epointers);
+	faces = new serializededata<int, int>(3, data);
+	facepointers = new serializededata<int, Element*>(1, epointers);
+	triangles = new serializededata<int, int>(3, tringles);
 
 	size_t GPCount = 6, nodeCount = 6;
 
-	e.N = new std::vector<DenseMatrix>(GPCount, DenseMatrix(1, nodeCount));
-	e.dN = new std::vector<DenseMatrix>(GPCount, DenseMatrix(2, nodeCount));
-	e.weighFactor = new std::vector<double>(
+	N = new std::vector<DenseMatrix>(GPCount, DenseMatrix(1, nodeCount));
+	dN = new std::vector<DenseMatrix>(GPCount, DenseMatrix(2, nodeCount));
+	weighFactor = new std::vector<double>(
 		{ 0.109951743655322 / 2.0, 0.109951743655322 / 2.0, 0.109951743655322 / 2.0,
 		  0.223381589678011 / 2.0, 0.223381589678011 / 2.0, 0.223381589678011 / 2.0 });
 
@@ -56,17 +65,17 @@ Element Triangle6::fill(Element e, Element* begin)
 	};
 
 	for (size_t i = 0; i < GPCount; i++) {
-		(*e.N)[i](0, 0) = (1.0 - s[i] - t[i]) * (1.0 - 2.0 * (s[i] + t[i]));
-		(*e.N)[i](0, 1) = -(s[i]) * (1.0 - 2.0 * s[i]);
-		(*e.N)[i](0, 2) = -(t[i]) * (1.0 - 2.0 * t[i]);
-		(*e.N)[i](0, 3) = 4.0 * (s[i]) * (1.0 - s[i] - t[i]);
-		(*e.N)[i](0, 4) = 4.0 * (s[i]) * (t[i]);
-		(*e.N)[i](0, 5) = 4.0 * (t[i]) * (1.0 - s[i] - t[i]);
+		(*N)[i](0, 0) = (1.0 - s[i] - t[i]) * (1.0 - 2.0 * (s[i] + t[i]));
+		(*N)[i](0, 1) = -(s[i]) * (1.0 - 2.0 * s[i]);
+		(*N)[i](0, 2) = -(t[i]) * (1.0 - 2.0 * t[i]);
+		(*N)[i](0, 3) = 4.0 * (s[i]) * (1.0 - s[i] - t[i]);
+		(*N)[i](0, 4) = 4.0 * (s[i]) * (t[i]);
+		(*N)[i](0, 5) = 4.0 * (t[i]) * (1.0 - s[i] - t[i]);
 	}
 
 	for (size_t i = 0; i < GPCount; i++) {
 		///dN contains [dNs, dNt]
-		DenseMatrix &m = (*e.dN)[i];
+		DenseMatrix &m = (*dN)[i];
 
 		// dNs - derivation of basis function
 		m(0, 0) = -3.0 + 4.0 * s[i] + 4.0 * t[i];
@@ -84,6 +93,4 @@ Element Triangle6::fill(Element e, Element* begin)
 		m(1, 4) = 4.0 * s[i];
 		m(1, 5) = 4.0 - 4.0 * s[i] - 8.0 * t[i];
 	}
-
-	return e;
 }

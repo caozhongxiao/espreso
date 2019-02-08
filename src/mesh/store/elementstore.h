@@ -84,11 +84,8 @@ struct ElementStore {
 	void packData(char* &p) const;
 	void unpackData(const char* &p);
 
-	ElementStore(std::vector<Element*> &eclasses);
+	ElementStore();
 	~ElementStore();
-
-private:
-	std::vector<Element*> &_eclasses;
 };
 
 }

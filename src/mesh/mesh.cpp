@@ -13,12 +13,13 @@
 #include "store/boundaryregionstore.h"
 #include "store/surfacestore.h"
 #include "store/contactstore.h"
+#include "store/fetidatastore.h"
 
 #include "output/result/resultstore.h"
 
 #include "preprocessing/meshpreprocessing.h"
 
-#include "elements/elements.h"
+#include "elements/element.h"
 
 #include "basis/utilities/utils.h"
 #include "basis/utilities/communication.h"
@@ -34,21 +35,45 @@
 
 using namespace espreso;
 
+Element* Mesh::edata = NULL;
+
+void Mesh::init()
+{
+	edata = new Element[static_cast<int>(Element::CODE::SIZE)];
+	edata[static_cast<int>(Element::CODE::POINT1)].set<Element::CODE::POINT1>();
+	edata[static_cast<int>(Element::CODE::LINE2)].set<Element::CODE::LINE2>();
+	edata[static_cast<int>(Element::CODE::TRIANGLE3)].set<Element::CODE::TRIANGLE3>();
+	edata[static_cast<int>(Element::CODE::SQUARE4)].set<Element::CODE::SQUARE4>();
+	edata[static_cast<int>(Element::CODE::TETRA4)].set<Element::CODE::TETRA4>();
+	edata[static_cast<int>(Element::CODE::PYRAMID5)].set<Element::CODE::PYRAMID5>();
+	edata[static_cast<int>(Element::CODE::PRISMA6)].set<Element::CODE::PRISMA6>();
+	edata[static_cast<int>(Element::CODE::HEXA8)].set<Element::CODE::HEXA8>();
+	edata[static_cast<int>(Element::CODE::LINE3)].set<Element::CODE::LINE3>();
+	edata[static_cast<int>(Element::CODE::TRIANGLE6)].set<Element::CODE::TRIANGLE6>();
+	edata[static_cast<int>(Element::CODE::SQUARE8)].set<Element::CODE::SQUARE8>();
+	edata[static_cast<int>(Element::CODE::TETRA10)].set<Element::CODE::TETRA10>();
+	edata[static_cast<int>(Element::CODE::PYRAMID13)].set<Element::CODE::PYRAMID13>();
+	edata[static_cast<int>(Element::CODE::PRISMA15)].set<Element::CODE::PRISMA15>();
+	edata[static_cast<int>(Element::CODE::HEXA20)].set<Element::CODE::HEXA20>();
+}
+
+void Mesh::destroy()
+{
+	delete[] edata;
+	edata = NULL;
+}
 
 Mesh::Mesh()
-: elements(new ElementStore(_eclasses)), nodes(new NodeStore()),
+: elements(new ElementStore()), nodes(new NodeStore()),
   FETIData(NULL),
-  halo(new ElementStore(_eclasses)),
+  halo(new ElementStore()),
   surface(NULL), domainsSurface(NULL),
   contacts(NULL),
   preprocessing(new MeshPreprocessing(this)),
 
-  _eclasses(info::env::OMP_NUM_THREADS),
   store(NULL),
   _withGUI(false)
 {
-	size_t threads = info::env::OMP_NUM_THREADS;
-
 	dimension = 0;
 	switch (info::ecf->physics) {
 	case PHYSICS::HEAT_TRANSFER_2D:
@@ -64,35 +89,18 @@ Mesh::Mesh()
 
 	preferedDomains = info::ecf->decomposition.domains;
 	uniformDecomposition = false;
+}
 
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		std::vector<Element> eclasses;
-		_eclasses[t] = new Element[static_cast<int>(Element::CODE::SIZE)];
-
-		eclasses.push_back(Point1::create(_eclasses[t]));
-
-		eclasses.push_back(Line2::create(_eclasses[t]));
-		eclasses.push_back(Line3::create(_eclasses[t]));
-
-		eclasses.push_back(Triangle3::create(_eclasses[t]));
-		eclasses.push_back(Triangle6::create(_eclasses[t]));
-		eclasses.push_back(Square4::create(_eclasses[t]));
-		eclasses.push_back(Square8::create(_eclasses[t]));
-
-		eclasses.push_back(Tetrahedron4::create(_eclasses[t]));
-		eclasses.push_back(Tetrahedron10::create(_eclasses[t]));
-		eclasses.push_back(Pyramid5::create(_eclasses[t]));
-		eclasses.push_back(Pyramid13::create(_eclasses[t]));
-		eclasses.push_back(Prisma6::create(_eclasses[t]));
-		eclasses.push_back(Prisma15::create(_eclasses[t]));
-		eclasses.push_back(Hexahedron8::create(_eclasses[t]));
-		eclasses.push_back(Hexahedron20::create(_eclasses[t]));
-
-		std::sort(eclasses.begin(), eclasses.end(), [] (const Element &e1, const Element &e2) { return e1.code < e2.code; });
-
-		memcpy(_eclasses[t], eclasses.data(), eclasses.size() * sizeof(Element));
-	}
+Mesh::~Mesh()
+{
+	if (elements != NULL) { delete elements; }
+	if (nodes != NULL) { delete nodes; }
+	if (FETIData != NULL) { delete FETIData; }
+	if (halo != NULL) { delete halo; }
+	if (surface != NULL) { delete surface; }
+	if (domainsSurface != NULL) { delete domainsSurface; }
+	if (contacts != NULL) { delete contacts; }
+	if (preprocessing != NULL) { delete preprocessing; }
 }
 
 ElementsRegionStore* Mesh::eregion(const std::string &name)

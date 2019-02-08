@@ -462,8 +462,8 @@ void Input::sortNodes(bool withElementNodes)
 void Input::sortElements()
 {
 	auto ecomp = [&] (esint i, esint j) {
-		if (static_cast<int>(_mesh._eclasses[0][_meshData.etype[i]].type) != static_cast<int>(_mesh._eclasses[0][_meshData.etype[j]].type)) {
-			return static_cast<int>(_mesh._eclasses[0][_meshData.etype[i]].type) > static_cast<int>(_mesh._eclasses[0][_meshData.etype[j]].type);
+		if (static_cast<int>(_mesh.edata[_meshData.etype[i]].type) != static_cast<int>(_mesh.edata[_meshData.etype[j]].type)) {
+			return static_cast<int>(_mesh.edata[_meshData.etype[i]].type) > static_cast<int>(_mesh.edata[_meshData.etype[j]].type);
 		} else {
 			return _meshData.eIDs[i] < _meshData.eIDs[j];
 		}
@@ -478,7 +478,7 @@ void Input::sortElements()
 
 	for (int type = static_cast<int>(Element::TYPE::VOLUME); type > static_cast<int>(Element::TYPE::POINT); --type) {
 		_etypeDistribution.push_back(std::lower_bound(_meshData.etype.begin(), _meshData.etype.end(), type, [&] (int e, int type) {
-			return static_cast<int>(_mesh._eclasses[0][e].type) >= type; }) - _meshData.etype.begin()
+			return static_cast<int>(_mesh.edata[e].type) >= type; }) - _meshData.etype.begin()
 		);
 	}
 }
@@ -579,6 +579,7 @@ void Input::fillNodes()
 
 	_mesh.nodes->IDs = new serializededata<esint, esint>(1, tarray<esint>(_mesh.nodes->distribution, _meshData.nIDs));
 	_mesh.nodes->coordinates = new serializededata<esint, Point>(1, tarray<Point>(_mesh.nodes->distribution, _meshData.coordinates));
+	printf("COORDINATES %p\n", _mesh.nodes->coordinates);
 
 	std::vector<size_t> rdistribution = _mesh.nodes->distribution, rdatadistribution = _mesh.nodes->distribution;
 	for (size_t t = 1; t < threads; t++) {
@@ -590,7 +591,7 @@ void Input::fillNodes()
 
 	_mesh.nodes->ranks = new serializededata<esint, int>(tarray<esint>(rdistribution, _meshData._nrankdist), tarray<int>(rdatadistribution, _meshData._nranks));
 
-	_mesh.boundaryRegions.push_back(new BoundaryRegionStore("ALL_NODES", _mesh._eclasses));
+	_mesh.boundaryRegions.push_back(new BoundaryRegionStore("ALL_NODES"));
 	_mesh.boundaryRegions.back()->nodes = new serializededata<esint, esint>(1, tarray<esint>(threads, _meshData.nIDs.size()));
 	std::iota(_mesh.boundaryRegions.back()->nodes->datatarray().begin(), _mesh.boundaryRegions.back()->nodes->datatarray().end(), 0);
 }
@@ -602,7 +603,7 @@ void Input::fillElements()
 	if (!_etypeDistribution.size()) {
 		for (int type = static_cast<int>(Element::TYPE::VOLUME); type > static_cast<int>(Element::TYPE::POINT); --type) {
 			_etypeDistribution.push_back(std::lower_bound(_meshData.etype.begin(), _meshData.etype.end(), type, [&] (int e, int type) {
-				return static_cast<int>(_mesh._eclasses[0][e].type) >= type; }) - _meshData.etype.begin()
+				return static_cast<int>(_mesh.edata[e].type) >= type; }) - _meshData.etype.begin()
 			);
 		}
 	}
@@ -643,7 +644,7 @@ void Input::fillElements()
 
 		epointers[t].resize(edistribution[t + 1] - edistribution[t]);
 		for (size_t e = edistribution[t], i = 0; e < edistribution[t + 1]; ++e, ++i) {
-			epointers[t][i] = &_mesh._eclasses[t][_meshData.etype[e]];
+			epointers[t][i] = &_mesh.edata[_meshData.etype[e]];
 		}
 	}
 
@@ -738,7 +739,7 @@ void Input::fillBoundaryRegions()
 			MPI_Allreduce(&frominterval, &add, 1, MPI_INT, MPI_SUM, info::mpi::comm);
 
 			if (add) {
-				_mesh.boundaryRegions.push_back(new BoundaryRegionStore(rname, _mesh._eclasses));
+				_mesh.boundaryRegions.push_back(new BoundaryRegionStore(rname));
 				_mesh.boundaryRegions.back()->dimension = 2 - i;
 
 				std::vector<size_t> edistribution = tarray<size_t>::distribute(threads, eregion->second.size());
@@ -765,7 +766,7 @@ void Input::fillBoundaryRegions()
 
 					epointers[t].resize(edistribution[t + 1] - edistribution[t]);
 					for (size_t e = edistribution[t], i = 0; e < edistribution[t + 1]; ++e, ++i) {
-						epointers[t][i] = &_mesh._eclasses[t][_meshData.etype[eregion->second[e]]];
+						epointers[t][i] = &_mesh.edata[_meshData.etype[eregion->second[e]]];
 					}
 				}
 
@@ -782,7 +783,7 @@ void Input::fillNodeRegions()
 	size_t threads = info::env::OMP_NUM_THREADS;
 
 	for (auto nregion = _meshData.nregions.begin(); nregion != _meshData.nregions.end(); ++nregion) {
-		_mesh.boundaryRegions.push_back(new BoundaryRegionStore(nregion->first, _mesh._eclasses));
+		_mesh.boundaryRegions.push_back(new BoundaryRegionStore(nregion->first));
 		_mesh.boundaryRegions.back()->nodes = new serializededata<esint, esint>(1, { threads, nregion->second });
 	}
 }

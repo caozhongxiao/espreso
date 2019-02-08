@@ -1,14 +1,23 @@
 
-#include "square8.h"
+#include "mesh/elements/element.h"
+#include "mesh/mesh.h"
 
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/denseMatrix.h"
 
 using namespace espreso;
 
-Element Square8::fill(Element e, Element* begin)
+template<>
+void Element::set<Element::CODE::SQUARE8>()
 {
-	std::vector<Element*> edgepointers(4, begin + static_cast<int>(Element::CODE::LINE3));
+	type = Element::TYPE::PLANE;
+	code = Element::CODE::SQUARE8;
+	nodes = 8;
+	coarseNodes = 4;
+	nCommonFace = 3;
+	nCommonEdge = 2;
+
+	std::vector<Element*> epointers(4, &Mesh::edata[static_cast<int>(Element::CODE::LINE3)]);
 
 	std::vector<int> data = {
 		0, 1, 4,
@@ -26,17 +35,17 @@ Element Square8::fill(Element e, Element* begin)
 		4, 6, 7
 	};
 
-	e.edges = new serializededata<int, int>(3, data);
-	e.edgepointers = new serializededata<int, Element*>(1, edgepointers);
-	e.faces = new serializededata<int, int>(3, data);
-	e.facepointers = new serializededata<int, Element*>(1, edgepointers);
-	e.triangles = new serializededata<int, int>(3, tringles);
+	edges = new serializededata<int, int>(3, data);
+	edgepointers = new serializededata<int, Element*>(1, epointers);
+	faces = new serializededata<int, int>(3, data);
+	facepointers = new serializededata<int, Element*>(1, epointers);
+	triangles = new serializededata<int, int>(3, tringles);
 
 	size_t GPCount = 9, nodeCount = 8;
 
-	e.N = new std::vector<DenseMatrix>(GPCount, DenseMatrix(1, nodeCount));
-	e.dN = new std::vector<DenseMatrix>(GPCount, DenseMatrix(2, nodeCount));
-	e.weighFactor = new std::vector<double>({
+	N = new std::vector<DenseMatrix>(GPCount, DenseMatrix(1, nodeCount));
+	dN = new std::vector<DenseMatrix>(GPCount, DenseMatrix(2, nodeCount));
+	weighFactor = new std::vector<double>({
 			25 / 81.0, 25 / 81.0, 25 / 81.0, 25 / 81.0,
 			40 / 81.0, 40 / 81.0, 40 / 81.0, 40 / 81.0,
 			64 / 81.0 });
@@ -50,18 +59,18 @@ Element Square8::fill(Element e, Element* begin)
 		const std::vector<double> &s = st[0];
 		const std::vector<double> &t = st[1];
 
-		(*e.N)[i](0, 0) = -.25 * (s[i] - 1) * (t[i] - 1) * (s[i] + t[i] + 1);
-		(*e.N)[i](0, 1) =  .25 * (t[i] - 1) * (-s[i] * s[i] + t[i] * s[i] + t[i] + 1);
-		(*e.N)[i](0, 2) =  .25 * (s[i] + 1) * (t[i] + 1) * (s[i] + t[i] - 1);
-		(*e.N)[i](0, 3) =  .25 * (s[i] - 1) * (s[i] - t[i] + 1) * (t[i] + 1);
-		(*e.N)[i](0, 4) =  .5  * (s[i] * s[i] - 1) * (t[i] - 1);
-		(*e.N)[i](0, 5) = -.5  * (s[i] + 1) * (t[i] * t[i] - 1);
-		(*e.N)[i](0, 6) = -.5  * (s[i] * s[i] - 1) * (t[i] + 1);
-		(*e.N)[i](0, 7) =  .5  * (s[i] - 1) * (t[i] * t[i] - 1);
+		(*N)[i](0, 0) = -.25 * (s[i] - 1) * (t[i] - 1) * (s[i] + t[i] + 1);
+		(*N)[i](0, 1) =  .25 * (t[i] - 1) * (-s[i] * s[i] + t[i] * s[i] + t[i] + 1);
+		(*N)[i](0, 2) =  .25 * (s[i] + 1) * (t[i] + 1) * (s[i] + t[i] - 1);
+		(*N)[i](0, 3) =  .25 * (s[i] - 1) * (s[i] - t[i] + 1) * (t[i] + 1);
+		(*N)[i](0, 4) =  .5  * (s[i] * s[i] - 1) * (t[i] - 1);
+		(*N)[i](0, 5) = -.5  * (s[i] + 1) * (t[i] * t[i] - 1);
+		(*N)[i](0, 6) = -.5  * (s[i] * s[i] - 1) * (t[i] + 1);
+		(*N)[i](0, 7) =  .5  * (s[i] - 1) * (t[i] * t[i] - 1);
 	}
 
 	for (size_t i = 0; i < GPCount; i++) {
-		DenseMatrix &m = (*e.dN)[i];
+		DenseMatrix &m = (*dN)[i];
 		const std::vector<double> &s = st[0];
 		const std::vector<double> &t = st[1];
 
@@ -85,8 +94,6 @@ Element Square8::fill(Element e, Element* begin)
 		m(1, 6) = 1. / 2 - s[i] * s[i] / 2;
 		m(1, 7) = t[i] * (s[i] - 1);
 	}
-
-	return e;
 }
 
 

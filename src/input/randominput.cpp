@@ -1381,7 +1381,7 @@ void RandomInput::exchangeBoundary()
 	for (int i = estart; i < 2; i++) {
 		size_t bindex = 0;
 		for (esint e = _etypeDistribution[estart]; e < _etypeDistribution.back(); ++e, ++bindex) {
-			if (static_cast<int>(_mesh._eclasses[0][_meshData.etype[e]].type) == 2 - i && emembership[bindex] != -1) {
+			if (static_cast<int>(_mesh.edata[_meshData.etype[e]].type) == 2 - i && emembership[bindex] != -1) {
 				for (auto n = edist[bindex]; n < edist[bindex + 1]; ++n) {
 					enodes.push_back(_meshData.enodes[n]);
 				}
@@ -1392,7 +1392,7 @@ void RandomInput::exchangeBoundary()
 		}
 
 		for (size_t e = _etypeDistribution.back(); e < _etypeDistribution.back() + newsize; ++e, ++bindex) {
-			if (static_cast<int>(_mesh._eclasses[0][_meshData.etype[e]].type) == 2 - i && emembership[bindex] != -1) {
+			if (static_cast<int>(_mesh.edata[_meshData.etype[e]].type) == 2 - i && emembership[bindex] != -1) {
 				for (auto n = edist[bindex]; n < edist[bindex + 1]; ++n) {
 					enodes.push_back(_meshData.enodes[n]);
 				}
@@ -1416,7 +1416,7 @@ void RandomInput::exchangeBoundary()
 	_etypeDistribution.clear();
 	for (int type = static_cast<int>(Element::TYPE::VOLUME); type > static_cast<int>(Element::TYPE::POINT); --type) {
 		_etypeDistribution.push_back(std::lower_bound(_meshData.etype.begin(), _meshData.etype.end(), type, [&] (int e, int type) {
-			return static_cast<int>(_mesh._eclasses[0][e].type) >= type; }) - _meshData.etype.begin()
+			return static_cast<int>(_mesh.edata[e].type) >= type; }) - _meshData.etype.begin()
 		);
 	}
 

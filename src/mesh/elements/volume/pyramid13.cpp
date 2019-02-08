@@ -1,16 +1,25 @@
 
-#include "pyramid13.h"
+#include "mesh/elements/element.h"
+#include "mesh/mesh.h"
 
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/denseMatrix.h"
 
 using namespace espreso;
 
-Element Pyramid13::fill(Element e, Element* begin)
+template<>
+void Element::set<Element::CODE::PYRAMID13>()
 {
-	std::vector<Element*> facepointers;
-	facepointers.resize(1, begin + static_cast<int>(Element::CODE::SQUARE8));
-	facepointers.resize(5, begin + static_cast<int>(Element::CODE::TRIANGLE6));
+	type = Element::TYPE::VOLUME;
+	code = Element::CODE::PYRAMID13;
+	nodes = 13;
+	coarseNodes = 5;
+	nCommonFace = 4;
+	nCommonEdge = 3;
+
+	std::vector<Element*> fpointers;
+	fpointers.resize(1, &Mesh::edata[static_cast<int>(Element::CODE::SQUARE8)]);
+	fpointers.resize(5, &Mesh::edata[static_cast<int>(Element::CODE::TRIANGLE6)]);
 
 	std::vector<int> dist = { 0, 8, 14, 20, 26, 32 };
 	std::vector<int> data = {
@@ -21,14 +30,14 @@ Element Pyramid13::fill(Element e, Element* begin)
 		3, 0, 4, 8,  9, 12
 	};
 
-	e.faces = new serializededata<int, int>(dist, data);
-	e.facepointers = new serializededata<int, Element*>(1, facepointers);
+	faces = new serializededata<int, int>(dist, data);
+	facepointers = new serializededata<int, Element*>(1, fpointers);
 
 	size_t GPCount = 14, nodeCount = 13;
 
-	e.N = new std::vector<DenseMatrix>(GPCount, DenseMatrix(1, nodeCount));
-	e.dN = new std::vector<DenseMatrix>(GPCount, DenseMatrix(3, nodeCount));
-	e.weighFactor = new std::vector<double>();
+	N = new std::vector<DenseMatrix>(GPCount, DenseMatrix(1, nodeCount));
+	dN = new std::vector<DenseMatrix>(GPCount, DenseMatrix(3, nodeCount));
+	weighFactor = new std::vector<double>();
 
 	std::vector< std::vector<double> > rst(3, std::vector<double>(GPCount));
 
@@ -54,7 +63,7 @@ Element Pyramid13::fill(Element e, Element* begin)
 		}
 
 	for (unsigned int i = 0; i < GPCount; i++) {
-		DenseMatrix &m = (*e.N)[i];
+		DenseMatrix &m = (*N)[i];
 
 		double r = rst[0][i];
 		double s = rst[1][i];
@@ -78,7 +87,7 @@ Element Pyramid13::fill(Element e, Element* begin)
 
 	for (unsigned int i = 0; i < GPCount; i++) {
 		///dN contains [dNr, dNs, dNt]
-		DenseMatrix &m = (*e.dN)[i];
+		DenseMatrix &m = (*dN)[i];
 
 		double r = rst[0][i];
 		double s = rst[1][i];
@@ -130,19 +139,17 @@ Element Pyramid13::fill(Element e, Element* begin)
 
 	switch (GPCount) {
 	case 8: {
-		(*e.weighFactor) = std::vector<double> (8, 1.0);
+		(*weighFactor) = std::vector<double> (8, 1.0);
 		break;
 	}
 	case 14: {
-		(*e.weighFactor).resize(8, 0.335180055401662);
-		(*e.weighFactor).resize(14, 0.886426592797784);
+		(*weighFactor).resize(8, 0.335180055401662);
+		(*weighFactor).resize(14, 0.886426592797784);
 		break;
 	}
 	default:
 		exit(1);
 	}
-
-	return e;
 }
 
 

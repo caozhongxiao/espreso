@@ -1,14 +1,23 @@
 
-#include "hexahedron8.h"
+#include "mesh/elements/element.h"
+#include "mesh/mesh.h"
 
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/denseMatrix.h"
 
 using namespace espreso;
 
-Element Hexahedron8::fill(Element e, Element* begin)
+template<>
+void Element::set<Element::CODE::HEXA8>()
 {
-	std::vector<Element*> facepointers(6, begin + static_cast<int>(Element::CODE::SQUARE4));
+	type = Element::TYPE::VOLUME;
+	code = Element::CODE::HEXA8;
+	nodes = 8;
+	coarseNodes = 8;
+	nCommonFace = 3;
+	nCommonEdge = 2;
+
+	std::vector<Element*> fpointers(6, &Mesh::edata[static_cast<int>(Element::CODE::SQUARE4)]);
 
 	std::vector<int> data = {
 		0, 1, 5, 4,
@@ -19,14 +28,14 @@ Element Hexahedron8::fill(Element e, Element* begin)
 		3, 0, 4, 7
 	};
 
-	e.faces = new serializededata<int, int>(4, data);
-	e.facepointers = new serializededata<int, Element*>(1, facepointers);
+	faces = new serializededata<int, int>(4, data);
+	facepointers = new serializededata<int, Element*>(1, fpointers);
 
 	size_t GPCount = 8, nodeCount = 8;
 
-	e.N = new std::vector<DenseMatrix>(GPCount, DenseMatrix(1, nodeCount));
-	e.dN = new std::vector<DenseMatrix>(GPCount, DenseMatrix(3, nodeCount));
-	e.weighFactor = new std::vector<double>(GPCount, 1);
+	N = new std::vector<DenseMatrix>(GPCount, DenseMatrix(1, nodeCount));
+	dN = new std::vector<DenseMatrix>(GPCount, DenseMatrix(3, nodeCount));
+	weighFactor = new std::vector<double>(GPCount, 1);
 
 	double CsQ_scale = 0.577350269189626;
 
@@ -36,14 +45,14 @@ Element Hexahedron8::fill(Element e, Element* begin)
 		double t = (i & 1) ? CsQ_scale : -CsQ_scale;
 
 		// basis function
-		(*e.N)[i](0, 0) = 0.125 * (1 - r) * (1 - s) * (1 - t);
-		(*e.N)[i](0, 1) = 0.125 * (r + 1) * (1 - s) * (1 - t);
-		(*e.N)[i](0, 2) = 0.125 * (r + 1) * (s + 1) * (1 - t);
-		(*e.N)[i](0, 3) = 0.125 * (1 - r) * (s + 1) * (1 - t);
-		(*e.N)[i](0, 4) = 0.125 * (1 - r) * (1 - s) * (t + 1);
-		(*e.N)[i](0, 5) = 0.125 * (r + 1) * (1 - s) * (t + 1);
-		(*e.N)[i](0, 6) = 0.125 * (r + 1) * (s + 1) * (t + 1);
-		(*e.N)[i](0, 7) = 0.125 * (1 - r) * (s + 1) * (t + 1);
+		(*N)[i](0, 0) = 0.125 * (1 - r) * (1 - s) * (1 - t);
+		(*N)[i](0, 1) = 0.125 * (r + 1) * (1 - s) * (1 - t);
+		(*N)[i](0, 2) = 0.125 * (r + 1) * (s + 1) * (1 - t);
+		(*N)[i](0, 3) = 0.125 * (1 - r) * (s + 1) * (1 - t);
+		(*N)[i](0, 4) = 0.125 * (1 - r) * (1 - s) * (t + 1);
+		(*N)[i](0, 5) = 0.125 * (r + 1) * (1 - s) * (t + 1);
+		(*N)[i](0, 6) = 0.125 * (r + 1) * (s + 1) * (t + 1);
+		(*N)[i](0, 7) = 0.125 * (1 - r) * (s + 1) * (t + 1);
 	}
 
 	for (unsigned int i = 0; i < GPCount; i++) {
@@ -52,37 +61,35 @@ Element Hexahedron8::fill(Element e, Element* begin)
 		double t = (i & 1) ? CsQ_scale : -CsQ_scale;
 
 		// dNr - derivation of basis function
-		(*e.dN)[i](0, 0) = 0.125 * (-(1 - s) * (1 - t));
-		(*e.dN)[i](0, 1) = 0.125 * ( (1 - s) * (1 - t));
-		(*e.dN)[i](0, 2) = 0.125 * ( (1 + s) * (1 - t));
-		(*e.dN)[i](0, 3) = 0.125 * (-(1 + s) * (1 - t));
-		(*e.dN)[i](0, 4) = 0.125 * (-(1 - s) * (1 + t));
-		(*e.dN)[i](0, 5) = 0.125 * ( (1 - s) * (1 + t));
-		(*e.dN)[i](0, 6) = 0.125 * ( (1 + s) * (1 + t));
-		(*e.dN)[i](0, 7) = 0.125 * (-(1 + s) * (1 + t));
+		(*dN)[i](0, 0) = 0.125 * (-(1 - s) * (1 - t));
+		(*dN)[i](0, 1) = 0.125 * ( (1 - s) * (1 - t));
+		(*dN)[i](0, 2) = 0.125 * ( (1 + s) * (1 - t));
+		(*dN)[i](0, 3) = 0.125 * (-(1 + s) * (1 - t));
+		(*dN)[i](0, 4) = 0.125 * (-(1 - s) * (1 + t));
+		(*dN)[i](0, 5) = 0.125 * ( (1 - s) * (1 + t));
+		(*dN)[i](0, 6) = 0.125 * ( (1 + s) * (1 + t));
+		(*dN)[i](0, 7) = 0.125 * (-(1 + s) * (1 + t));
 
 		// dNs - derivation of basis function
-		(*e.dN)[i](1, 0)  = 0.125 * (-(1 - r) * (1 - t));
-		(*e.dN)[i](1, 1)  = 0.125 * (-(1 + r) * (1 - t));
-		(*e.dN)[i](1, 2) = 0.125 * ( (1 + r) * (1 - t));
-		(*e.dN)[i](1, 3) = 0.125 * ( (1 - r) * (1 - t));
-		(*e.dN)[i](1, 4) = 0.125 * (-(1 - r) * (1 + t));
-		(*e.dN)[i](1, 5) = 0.125 * (-(1 + r) * (1 + t));
-		(*e.dN)[i](1, 6) = 0.125 * ( (1 + r) * (1 + t));
-		(*e.dN)[i](1, 7) = 0.125 * ( (1 - r) * (1 + t));
+		(*dN)[i](1, 0)  = 0.125 * (-(1 - r) * (1 - t));
+		(*dN)[i](1, 1)  = 0.125 * (-(1 + r) * (1 - t));
+		(*dN)[i](1, 2) = 0.125 * ( (1 + r) * (1 - t));
+		(*dN)[i](1, 3) = 0.125 * ( (1 - r) * (1 - t));
+		(*dN)[i](1, 4) = 0.125 * (-(1 - r) * (1 + t));
+		(*dN)[i](1, 5) = 0.125 * (-(1 + r) * (1 + t));
+		(*dN)[i](1, 6) = 0.125 * ( (1 + r) * (1 + t));
+		(*dN)[i](1, 7) = 0.125 * ( (1 - r) * (1 + t));
 
 		// dNt - derivation of basis function
-		(*e.dN)[i](2, 0) = 0.125 * (-(1 - r) * (1 - s));
-		(*e.dN)[i](2, 1) = 0.125 * (-(1 + r) * (1 - s));
-		(*e.dN)[i](2, 2) = 0.125 * (-(1 + r) * (1 + s));
-		(*e.dN)[i](2, 3) = 0.125 * (-(1 - r) * (1 + s));
-		(*e.dN)[i](2, 4) = 0.125 * ( (1 - r) * (1 - s));
-		(*e.dN)[i](2, 5) = 0.125 * ( (1 + r) * (1 - s));
-		(*e.dN)[i](2, 6) = 0.125 * ( (1 + r) * (1 + s));
-		(*e.dN)[i](2, 7) = 0.125 * ( (1 - r) * (1 + s));
+		(*dN)[i](2, 0) = 0.125 * (-(1 - r) * (1 - s));
+		(*dN)[i](2, 1) = 0.125 * (-(1 + r) * (1 - s));
+		(*dN)[i](2, 2) = 0.125 * (-(1 + r) * (1 + s));
+		(*dN)[i](2, 3) = 0.125 * (-(1 - r) * (1 + s));
+		(*dN)[i](2, 4) = 0.125 * ( (1 - r) * (1 - s));
+		(*dN)[i](2, 5) = 0.125 * ( (1 + r) * (1 - s));
+		(*dN)[i](2, 6) = 0.125 * ( (1 + r) * (1 + s));
+		(*dN)[i](2, 7) = 0.125 * ( (1 - r) * (1 + s));
 	}
-
-	return e;
 }
 
 

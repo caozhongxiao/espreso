@@ -67,15 +67,15 @@ struct Element {
 
 	serializededata<int, int> *triangles;
 
-	Element(TYPE type, CODE code, int nodes, int coarseNodes, int nCommonFace, int nCommonEdge)
-	: type(type), code(code), nodes(nodes), coarseNodes(coarseNodes), nCommonFace(nCommonFace), nCommonEdge(nCommonEdge),
-	  N(NULL), dN(NULL), weighFactor(NULL),
-	  faces(NULL), edges(NULL), facepointers(NULL), edgepointers(NULL), triangles(NULL) {}
-
 	Element()
 	: type(TYPE::POINT), code(CODE::POINT1), nodes(1), coarseNodes(1), nCommonFace(1), nCommonEdge(1),
 	  N(NULL), dN(NULL), weighFactor(NULL),
 	  faces(NULL), edges(NULL), facepointers(NULL), edgepointers(NULL), triangles(NULL) {}
+
+	~Element();
+
+	template<CODE c>
+	void set();
 };
 
 }

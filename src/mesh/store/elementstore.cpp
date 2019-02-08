@@ -15,7 +15,7 @@
 
 using namespace espreso;
 
-ElementStore::ElementStore(std::vector<Element*> &eclasses)
+ElementStore::ElementStore()
 : dimension(3),
   size(0),
   distribution({0, 0}),
@@ -37,9 +37,7 @@ ElementStore::ElementStore(std::vector<Element*> &eclasses)
   nclusters(1),
 
   regionMaskSize(1),
-  ecounters(static_cast<int>(Element::CODE::SIZE)),
-
-  _eclasses(eclasses)
+  ecounters(static_cast<int>(Element::CODE::SIZE))
 {
 
 }
@@ -82,7 +80,7 @@ void ElementStore::pack(char* &p) const
 		size_t threads = info::env::OMP_NUM_THREADS;
 		for (size_t t = 0; t < threads; t++) {
 			for (size_t i = this->distribution[t]; i < this->distribution[t + 1]; ++i) {
-				eindices.push_back(epointers->datatarray()[i] - _eclasses[t]);
+				eindices.push_back(epointers->datatarray()[i] - Mesh::edata);
 			}
 		}
 		Esutils::pack(eindices, p);
@@ -129,7 +127,7 @@ void ElementStore::unpack(const char* &p)
 		}
 		epointers = new serializededata<esint, Element*>(1, tarray<Element*>(1, size));
 		for (esint i = 0; i < size; ++i) {
-			epointers->datatarray()[i] = &_eclasses[0][eindices[i]];
+			epointers->datatarray()[i] = Mesh::edata + eindices[i];
 		}
 	}
 	Esutils::unpack(firstDomain, p);
@@ -224,28 +222,7 @@ void ElementStore::permute(const std::vector<esint> &permutation, const std::vec
 	if (material != NULL) { material->permute(permutation, distribution); }
 	if (regions != NULL) { regions->permute(permutation, distribution); }
 
-	if (epointers != NULL) {
-		size_t threads = info::env::OMP_NUM_THREADS;
-		if (threads > 1) {
-			#pragma omp parallel for
-			for (size_t t = 0; t < threads; t++) {
-				for (size_t i = epointers->datatarray().distribution()[t]; i < epointers->datatarray().distribution()[t + 1]; ++i) {
-					epointers->datatarray()[i] = _eclasses[0] + (epointers->datatarray()[i] - _eclasses[t]);
-				}
-			}
-
-			epointers->permute(permutation, distribution);
-
-			#pragma omp parallel for
-			for (size_t t = 0; t < threads; t++) {
-				for (size_t i = this->distribution[t]; i < this->distribution[t + 1]; ++i) {
-					epointers->datatarray()[i] = _eclasses[t] + (epointers->datatarray()[i] - _eclasses[0]);
-				}
-			}
-		} else {
-			epointers->permute(permutation, distribution);
-		}
-	}
+	if (epointers != NULL) { epointers->permute(permutation, distribution); }
 
 	if (neighbors != NULL) { neighbors->permute(permutation, distribution); }
 

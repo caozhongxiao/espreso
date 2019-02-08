@@ -383,7 +383,7 @@ void MeshPreprocessing::exchangeHalo()
 				hid[t].push_back(rBuffer[n][(4 + rsize) * e + 0]);
 				hbody[t].push_back(rBuffer[n][(4 + rsize) * e + 1]);
 				hmaterial[t].push_back(rBuffer[n][(4 + rsize) * e + 2]);
-				hcode[t].push_back(_mesh->_eclasses[t] + rBuffer[n][(4 + rsize) * e + 3]);
+				hcode[t].push_back(_mesh->edata + rBuffer[n][(4 + rsize) * e + 3]);
 				hregions[t].insert(hregions[t].end(), rBuffer[n].data() + (4 + rsize) * e + 4, rBuffer[n].data() + (4 + rsize) * e + 4 + rsize);
 			}
 		}

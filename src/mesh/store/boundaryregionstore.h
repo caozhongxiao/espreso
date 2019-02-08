@@ -46,19 +46,16 @@ struct BoundaryRegionStore {
 	void permute(const std::vector<esint> &permutation) { permute(permutation, distribution); }
 	void permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution);
 
-	BoundaryRegionStore(const std::string &name, std::vector<Element*> &eclasses);
+	BoundaryRegionStore(const std::string &name);
 	~BoundaryRegionStore();
-
-private:
-	std::vector<Element*> &_eclasses;
 };
 
 struct BoundaryRegionsIntersectionStore: public BoundaryRegionStore {
 
 	std::vector<BoundaryRegionStore*> regions;
 
-	BoundaryRegionsIntersectionStore(const std::string &name, std::vector<Element*> &eclasses)
-	: BoundaryRegionStore(name, eclasses) {}
+	BoundaryRegionsIntersectionStore(const std::string &name)
+	: BoundaryRegionStore(name) {}
 };
 
 }

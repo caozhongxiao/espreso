@@ -1,16 +1,25 @@
 
-#include "prisma6.h"
+#include "mesh/elements/element.h"
+#include "mesh/mesh.h"
 
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/denseMatrix.h"
 
 using namespace espreso;
 
-Element Prisma6::fill(Element e, Element* begin)
+template<>
+void Element::set<Element::CODE::PRISMA6>()
 {
-	std::vector<Element*> facepointers;
-	facepointers.resize(3, begin + static_cast<int>(Element::CODE::SQUARE4));
-	facepointers.resize(5, begin + static_cast<int>(Element::CODE::TRIANGLE3));
+	type = Element::TYPE::VOLUME;
+	code = Element::CODE::PRISMA6;
+	nodes = 6;
+	coarseNodes = 6;
+	nCommonFace = 3;
+	nCommonEdge = 2;
+
+	std::vector<Element*> fpointers;
+	fpointers.resize(3, &Mesh::edata[static_cast<int>(Element::CODE::SQUARE4)]);
+	fpointers.resize(5, &Mesh::edata[static_cast<int>(Element::CODE::TRIANGLE3)]);
 
 	std::vector<int> dist = { 0, 4, 8, 12, 15, 18 };
 	std::vector<int> data = {
@@ -21,14 +30,14 @@ Element Prisma6::fill(Element e, Element* begin)
 		3, 4, 5,
 	};
 
-	e.faces = new serializededata<int, int>(dist, data);
-	e.facepointers = new serializededata<int, Element*>(1, facepointers);
+	faces = new serializededata<int, int>(dist, data);
+	facepointers = new serializededata<int, Element*>(1, fpointers);
 
 	size_t GPCount = 9, nodeCount = 6;
 
-	e.N = new std::vector<DenseMatrix>(GPCount, DenseMatrix(1, nodeCount));
-	e.dN = new std::vector<DenseMatrix>(GPCount, DenseMatrix(3, nodeCount));
-	e.weighFactor = new std::vector<double>(GPCount, 1);
+	N = new std::vector<DenseMatrix>(GPCount, DenseMatrix(1, nodeCount));
+	dN = new std::vector<DenseMatrix>(GPCount, DenseMatrix(3, nodeCount));
+	weighFactor = new std::vector<double>(GPCount, 1);
 
 	std::vector< std::vector<double> > rst(3, std::vector<double>(GPCount));
 
@@ -48,7 +57,7 @@ Element Prisma6::fill(Element e, Element* begin)
 	}
 
 	for (unsigned int i = 0; i < GPCount; i++) {
-		DenseMatrix &m = (*e.N)[i];
+		DenseMatrix &m = (*N)[i];
 
 		double r = rst[0][i];
 		double s = rst[1][i];
@@ -65,7 +74,7 @@ Element Prisma6::fill(Element e, Element* begin)
 
 	for (unsigned int i = 0; i < GPCount; i++) {
 		///dN contains [dNr, dNs, dNt]
-		DenseMatrix &m = (*e.dN)[i];
+		DenseMatrix &m = (*dN)[i];
 
 		double r = rst[0][i];
 		double s = rst[1][i];
@@ -100,14 +109,12 @@ Element Prisma6::fill(Element e, Element* begin)
 	case 9: {
 		double v1 = 5.0 / 54.0;
 		double v2 = 8.0 / 54.0;
-		(*e.weighFactor) = { v1, v1, v1, v2, v2, v2, v1, v1, v1 };
+		(*weighFactor) = { v1, v1, v1, v2, v2, v2, v1, v1, v1 };
 		break;
 	}
 	default:
 		exit(1);
 	}
-
-	return e;
 }
 
 

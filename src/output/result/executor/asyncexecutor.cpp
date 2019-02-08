@@ -147,7 +147,7 @@ void AsyncExecutor::exec(const async::ExecInfo &info, const ExecParameters &para
 		int bufferid = AsyncBufferManager::buffer(AsyncBufferManager::BOUNDARYREGIONS);
 		_buffer = static_cast<const char*>(info.buffer(bufferid));
 		while (_buffer < static_cast<const char*>(info.buffer(bufferid)) + info.bufferSize(bufferid)) {
-			_mesh.boundaryRegions.push_back(new BoundaryRegionStore("", _mesh._eclasses));
+			_mesh.boundaryRegions.push_back(new BoundaryRegionStore(""));
 			_mesh.boundaryRegions.back()->unpack(_buffer);
 		}
 	}

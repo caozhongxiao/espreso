@@ -1077,7 +1077,7 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = 0; e < ecode[t].size(); e++) {
-			epointers[t].push_back(&_mesh->_eclasses[t][ecode[t][e]]);
+			epointers[t].push_back(Mesh::edata + ecode[t][e]);
 		}
 	}
 

@@ -22,6 +22,7 @@ int main(int argc, char **argv)
 
 	info::system::setSignals();
 	Logging::init();
+	Mesh::init();
 	info::env::set();
 	info::mpi::set();
 
@@ -44,6 +45,7 @@ int main(int argc, char **argv)
 	}
 
 	ResultStore::destroyAsynchronizedStore();
+	Mesh::destroy();
 	delete info::ecf;
 	delete info::mesh;
 
