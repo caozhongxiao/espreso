@@ -93,10 +93,10 @@ ECFMetaData::ECFMetaData(ECFMetaData &&other)
   datatype(std::move(other.datatype)), pattern(std::move(other.pattern)),
   options(std::move(other.options)), variables(std::move(other.variables)),
   tensor(std::move(other.tensor)),
-  unit(std::move(other.unit)), condition(other.condition->copy()),
+  unit(std::move(other.unit)), condition(other.condition),
   isallowed(std::move(other.isallowed)), ismandatory(std::move(other.ismandatory))
 {
-
+	other.condition = NULL;
 }
 
 ECFMetaData& ECFMetaData::operator=(const ECFMetaData &other)
@@ -112,6 +112,9 @@ ECFMetaData& ECFMetaData::operator=(const ECFMetaData &other)
 		unit = other.unit;
 		isallowed = other.isallowed;
 		ismandatory = other.ismandatory;
+		if (condition != NULL) {
+			delete condition;
+		}
 		condition = other.condition->copy();
 	}
 	return *this;
@@ -119,6 +122,8 @@ ECFMetaData& ECFMetaData::operator=(const ECFMetaData &other)
 
 ECFMetaData::~ECFMetaData()
 {
-	delete condition;
+	if (condition != NULL) {
+		delete condition;
+	}
 }
 

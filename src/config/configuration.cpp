@@ -145,7 +145,7 @@ void ECFObject::dropParameter(ECFParameter *parameter)
 
 void ECFObject::dropAllParameters()
 {
-    parameters.clear();
+	parameters.clear();
 }
 
 ECFParameter* ECFObject::addSeparator()
