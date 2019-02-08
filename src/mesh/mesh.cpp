@@ -101,6 +101,20 @@ Mesh::~Mesh()
 	if (domainsSurface != NULL) { delete domainsSurface; }
 	if (contacts != NULL) { delete contacts; }
 	if (preprocessing != NULL) { delete preprocessing; }
+
+	for (size_t i = 0; i < boundaryRegions.size(); ++i) {
+		delete boundaryRegions[i];
+	}
+	for (size_t i = 0; i < elementsRegions.size(); ++i) {
+		delete elementsRegions[i];
+	}
+
+	for (size_t i = 0; i < boundaryRegionsIntersections.size(); ++i) {
+		delete boundaryRegionsIntersections[i];
+	}
+	for (size_t i = 0; i < elementsRegionsIntersections.size(); ++i) {
+		delete elementsRegionsIntersections[i];
+	}
 }
 
 ElementsRegionStore* Mesh::eregion(const std::string &name)

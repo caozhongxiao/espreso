@@ -179,17 +179,17 @@ void ElementStore::unpackData(const char* &p)
 
 ElementStore::~ElementStore()
 {
-	if (IDs == NULL) { delete IDs; }
-	if (procNodes == NULL) { delete procNodes; }
-	if (domainNodes == NULL) { delete domainNodes; }
-	if (centers == NULL) { delete centers; }
+	if (IDs != NULL) { delete IDs; }
+	if (procNodes != NULL) { delete procNodes; }
+	if (domainNodes != NULL) { delete domainNodes; }
+	if (centers != NULL) { delete centers; }
 
-	if (body == NULL) { delete body; }
-	if (material == NULL) { delete material; }
-	if (regions == NULL) { delete regions; }
-	if (epointers == NULL) { delete epointers; }
+	if (body != NULL) { delete body; }
+	if (material != NULL) { delete material; }
+	if (regions != NULL) { delete regions; }
+	if (epointers != NULL) { delete epointers; }
 
-	if (neighbors == NULL) { delete neighbors; }
+	if (neighbors != NULL) { delete neighbors; }
 }
 
 void ElementStore::store(const std::string &file)
@@ -311,7 +311,7 @@ void ElementData::statistics(const tarray<esint> &elements, esint totalsize, Sta
 	}
 
 	std::vector<Statistics> global(names.size());
-	MPI_Allreduce(statistics, global.data(), sizeof(Statistics) * names.size(), MPI_BYTE, MPITools::operations().mergeStatistics, info::mpi::comm);
+	MPI_Allreduce(statistics, global.data(), sizeof(Statistics) * names.size(), MPI_BYTE, MPITools::operations->mergeStatistics, info::mpi::comm);
 	memcpy(statistics, global.data(), sizeof(Statistics) * names.size());
 
 	for (size_t i = 0; i < names.size(); i++) {

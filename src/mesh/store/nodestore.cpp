@@ -160,16 +160,15 @@ void NodeStore::unpackData(const char* &p)
 
 NodeStore::~NodeStore()
 {
-	if (IDs == NULL) { delete IDs; }
-	if (elements == NULL) { delete elements; }
+	if (IDs != NULL) { delete IDs; }
+	if (elements != NULL) { delete elements; }
 
-	printf("COORDINATES %p\n", coordinates);
-	if (originCoordinates == NULL) { delete originCoordinates; }
-	if (coordinates == NULL) { delete coordinates; }
-	if (ranks == NULL) { delete ranks; }
+	if (originCoordinates != NULL) { delete originCoordinates; }
+	if (coordinates != NULL) { delete coordinates; }
+	if (ranks != NULL) { delete ranks; }
 
-	if (idomains == NULL) { delete idomains; }
-	if (iranks == NULL) { delete iranks; }
+	if (idomains != NULL) { delete idomains; }
+	if (iranks != NULL) { delete iranks; }
 }
 
 void NodeStore::store(const std::string &file)
@@ -262,7 +261,7 @@ void NodeData::statistics(const tarray<esint> &nodes, esint totalsize, Statistic
 	}
 
 	std::vector<Statistics> global(names.size());
-	MPI_Allreduce(statistics, global.data(), sizeof(Statistics) * names.size(), MPI_BYTE, MPITools::operations().mergeStatistics, info::mpi::comm);
+	MPI_Allreduce(statistics, global.data(), sizeof(Statistics) * names.size(), MPI_BYTE, MPITools::operations->mergeStatistics, info::mpi::comm);
 	memcpy(statistics, global.data(), sizeof(Statistics) * names.size());
 
 	for (size_t i = 0; i < names.size(); i++) {

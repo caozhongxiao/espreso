@@ -686,9 +686,9 @@ void MeshPreprocessing::arrangeRegions()
 		_mesh->elementsRegions.push_back(new ElementsRegionStore("NAMELESS_ELEMENT_SET"));
 		_mesh->elementsRegions.back()->ecounters = nameless->ecounters;
 		_mesh->elementsRegions.back()->eintervals = nameless->ueintervals;
-		_mesh->elementsRegions.back()->elements = nameless->uniqueElements;
-		_mesh->elementsRegions.back()->uniqueElements = nameless->uniqueElements;
-		_mesh->elementsRegions.back()->nodes = nameless->nodes;
+		_mesh->elementsRegions.back()->elements = new serializededata<esint, esint>(*nameless->uniqueElements);
+		_mesh->elementsRegions.back()->uniqueElements = _mesh->elementsRegions.back()->elements;
+		_mesh->elementsRegions.back()->nodes = new serializededata<esint, esint>(*nameless->nodes);
 		_mesh->elementsRegions.back()->uniqueOffset = nameless->uniqueOffset;
 		_mesh->elementsRegions.back()->uniqueSize = nameless->uniqueSize;
 		_mesh->elementsRegions.back()->uniqueTotalSize = nameless->uniqueTotalSize;

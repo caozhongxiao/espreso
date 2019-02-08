@@ -32,13 +32,12 @@ ElementsRegionStore::ElementsRegionStore(const std::string &name)
 
 ElementsRegionStore::~ElementsRegionStore()
 {
-	if (elements == NULL) { delete elements; }
 	if (uniqueElements != NULL && uniqueElements != elements) {
 		delete uniqueElements;
 	}
-	if (surface != NULL) {
-		delete surface;
-	}
+	if (elements != NULL) { delete elements; }
+	if (nodes != NULL) { delete nodes; }
+	if (surface != NULL) { delete surface; }
 }
 
 size_t ElementsRegionStore::packedSize() const

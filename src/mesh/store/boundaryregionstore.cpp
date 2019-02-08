@@ -31,11 +31,11 @@ BoundaryRegionStore::BoundaryRegionStore(const std::string &name)
 
 BoundaryRegionStore::~BoundaryRegionStore()
 {
-	if (procNodes == NULL) { delete procNodes; }
+	if (procNodes != NULL) { delete procNodes; }
 	if (triangles != NULL && triangles != procNodes) { delete triangles; }
-	if (nodes == NULL) { delete nodes; }
+	if (nodes != NULL) { delete nodes; }
 
-	if (epointers == NULL) { delete epointers; }
+	if (epointers != NULL) { delete epointers; }
 }
 
 void BoundaryRegionStore::permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution)
@@ -44,6 +44,10 @@ void BoundaryRegionStore::permute(const std::vector<esint> &permutation, const s
 
 	if (procNodes != NULL) {
 		procNodes->permute(permutation, distribution);
+	}
+
+	if (nodes != NULL) {
+		nodes->permute(permutation, distribution);
 	}
 
 	if (epointers != NULL) {
