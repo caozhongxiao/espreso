@@ -22,11 +22,12 @@ int main(int argc, char **argv)
 	MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
 
 	info::system::setSignals();
+	info::env::set();
+	info::mpi::set();
+
 	Logging::init();
 	Mesh::init();
 	MPITools::init();
-	info::env::set();
-	info::mpi::set();
 
 	info::ecf = new ECFRoot(&argc, &argv);
 	info::mesh = new Mesh();

@@ -46,10 +46,6 @@ void BoundaryRegionStore::permute(const std::vector<esint> &permutation, const s
 		procNodes->permute(permutation, distribution);
 	}
 
-	if (nodes != NULL) {
-		nodes->permute(permutation, distribution);
-	}
-
 	if (epointers != NULL) {
 		epointers->permute(permutation, distribution);
 	}
