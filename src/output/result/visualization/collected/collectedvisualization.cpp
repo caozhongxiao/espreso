@@ -20,6 +20,7 @@ CollectedVisualization::~CollectedVisualization()
 	MPI_Comm_free(&_storeCommunicator);
 	for (size_t i = 0; i < _datatypes.size(); i++) {
 		MPI_Type_free(_datatypes[i]);
+		delete _datatypes[i];
 	}
 }
 
