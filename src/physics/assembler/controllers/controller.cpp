@@ -143,9 +143,6 @@ void Controller::updateBRegions(
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
 
-	parameter.data = new serializededata<esint, double>(1, distribution);
-	parameter.isConts = expression.evaluator->isConstant();
-
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		cbegin += distribution[t] * csize;

@@ -131,16 +131,24 @@ void HeatTransfer2DController::initData()
 
 			auto flow = _configuration.heat_flow.find(region->name);
 			if (flow != _configuration.heat_flow.end()) {
+				_boundaries[r].heatFlow.data = new serializededata<esint, double>(1, distribution);
+				_boundaries[r].heatFlow.isConts = flow->second.evaluator->isConstant();
 				updateBRegions(flow->second, _boundaries[r].heatFlow, distribution, 2, cbegin, tbegin, time);
 				_boundaries[r].regionArea = info::mesh->boundaryRegions[r]->area;
 			}
 			auto flux = _configuration.heat_flux.find(region->name);
 			if (flux != _configuration.heat_flux.end()) {
+				_boundaries[r].heatFlux.data = new serializededata<esint, double>(1, distribution);
+				_boundaries[r].heatFlux.isConts = flux->second.evaluator->isConstant();
 				updateBRegions(flux->second, _boundaries[r].heatFlux, distribution, 2, cbegin, tbegin, time);
 			}
 
 			auto radiation = _configuration.diffuse_radiation.find(region->name);
 			if (radiation != _configuration.diffuse_radiation.end()) {
+				_boundaries[r].emissivity.data = new serializededata<esint, double>(1, distribution);
+				_boundaries[r].emissivity.isConts = radiation->second.emissivity.evaluator->isConstant();
+				_boundaries[r].externalTemperature.data = new serializededata<esint, double>(1, distribution);
+				_boundaries[r].externalTemperature.isConts = radiation->second.external_temperature.evaluator->isConstant();
 				updateBRegions(radiation->second.emissivity, _boundaries[r].emissivity, distribution, 2, cbegin, tbegin, time);
 				updateBRegions(radiation->second.external_temperature, _boundaries[r].externalTemperature, distribution, 2, cbegin, tbegin, time);
 			}
@@ -148,6 +156,8 @@ void HeatTransfer2DController::initData()
 			auto convection = _configuration.convection.find(region->name);
 			if (convection != _configuration.convection.end()) {
 				if (_boundaries[r].externalTemperature.data == NULL) {
+					_boundaries[r].externalTemperature.data = new serializededata<esint, double>(1, distribution);
+					_boundaries[r].externalTemperature.isConts = convection->second.external_temperature.evaluator->isConstant();
 					updateBRegions(convection->second.external_temperature, _boundaries[r].externalTemperature, distribution, 2, cbegin, tbegin, time);
 				}
 				_boundaries[r].htc.data = new serializededata<esint, double>(1, distribution);

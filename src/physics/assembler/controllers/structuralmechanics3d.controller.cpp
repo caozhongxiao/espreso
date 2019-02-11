@@ -150,6 +150,8 @@ void StructuralMechanics3DController::initData()
 
 			auto pressure = _configuration.normal_pressure.find(region->name);
 			if (pressure != _configuration.normal_pressure.end()) {
+				_boundaries[r].normalPressure.data = new serializededata<esint, double>(1, distribution);
+				_boundaries[r].normalPressure.isConts = pressure->second.evaluator->isConstant();
 				updateBRegions(pressure->second, _boundaries[r].normalPressure, distribution, 3, cbegin, tbegin, time);
 			}
 		}
