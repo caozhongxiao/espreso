@@ -30,21 +30,6 @@ Composer::~Composer()
 	delete data;
 }
 
-void Composer::initData()
-{
-	_controler.initData();
-}
-
-void Composer::nextTime()
-{
-	_controler.nextTime();
-}
-
-void Composer::parametersChanged()
-{
-	_controler.parametersChanged();
-}
-
 void Composer::processSolution()
 {
 	_controler.processSolution();
@@ -180,7 +165,7 @@ double Composer::lineSearch(NodeData *U, const SolverParameters &parameters)
 	for (size_t i = 0; i < 6; i++) {
 		sum(&solution, 1, U, alpha, &delta);
 		solution.data.swap(_controler.solution()->data);
-		parametersChanged();
+		_controler.parametersChanged();
 		assemble(Matrices::R, parameters);
 		solution.data.swap(_controler.solution()->data);
 

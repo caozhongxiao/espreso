@@ -32,6 +32,7 @@ struct HeatTransfer2DKernel: public HeatTransferKernel
 		  temperature(NULL), coordinates(NULL),
 		  gradient(NULL), motion(NULL), heat(NULL), thickness(NULL),
 		  material(NULL) {}
+
 	};
 
 	struct SolutionIterator: public ElementIterator {

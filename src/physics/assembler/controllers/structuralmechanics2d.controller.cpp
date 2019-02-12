@@ -17,38 +17,55 @@
 
 using namespace espreso;
 
-StructuralMechanics2DController::StructuralMechanics2DController(StructuralMechanicsLoadStepConfiguration &configuration)
-: StructuralMechanicsController(configuration)
+StructuralMechanics2DController::StructuralMechanics2DController(StructuralMechanics2DController *previous, StructuralMechanicsLoadStepConfiguration &configuration)
+: StructuralMechanicsController(2, previous, configuration), _kernel(new StructuralMechanics2DKernel())
 {
-	_kernel = new StructuralMechanics2DKernel();
+	if (previous) {
+		takeKernelParam(_kcoordinate, previous->_kcoordinate);
+		takeKernelParam(_kinitialTemperature, previous->_kinitialTemperature);
+		takeKernelParam(_kthickness, previous->_kthickness);
+	} else {
+		_ndisplacement = info::mesh->nodes->appendData(2, { "DISPLACEMENT", "DISPLACEMENT_X", "DISPLACEMENT_Y" });
+		if (info::ecf->output.results_selection.thickness) {
+			_ethickness = info::mesh->elements->appendData(1, { "THICKNESS" });
+		}
 
-	double defaultTemperature = 0;
-	double defaultThickness = 1;
+		setCoordinates(_kcoordinate);
+		initKernelParam(_kinitialTemperature, info::ecf->structural_mechanics_2d.initial_temperature, 0);
+		initKernelParam(_kthickness, info::ecf->structural_mechanics_2d.thickness, 1);
 
-	_ncoordinate.data = new serializededata<esint, double>(2, _nDistribution);
-	_ntemperature.data = new serializededata<esint, double>(1, _nDistribution);
+		if (!_kinitialTemperature.isConts) {
+			updateKernelParam(_kinitialTemperature, info::ecf->structural_mechanics_2d.initial_temperature, _kcoordinate.data->datatarray().data(), NULL);
+		}
+		if (_ethickness && _kthickness.isConts) {
+			kernelToElements(_kthickness, _ethickness->data);
+		}
+	}
 
-	_nInitialTemperature.isConts = setDefault(info::ecf->structural_mechanics_2d.initial_temperature, defaultTemperature);
-	_nInitialTemperature.data = new serializededata<esint, double>(1, _nDistribution, defaultTemperature);
+	initKernelParam(_ktemperature, configuration.temperature, 0);
+	initKernelParam(_kacceleration, configuration.acceleration, 0);
+	initKernelParam(_kangularVelocity, configuration.angular_velocity, 0);
 
-	_nacceleration.isConts = false;
-	_nacceleration.data = new serializededata<esint, double>(2, _nDistribution);
+	_boundaries.resize(info::mesh->boundaryRegions.size(), BoundaryParameters(2));
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
+		BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
+		if (region->dimension == 1) {
+			setCoordinates(_boundaries[r].coordinate, region->procNodes);
+			initKernelParam(_boundaries[r].thickness, info::ecf->structural_mechanics_2d.thickness, 1, region);
 
-	_nangularVelocity.isConts = false;
-	_nangularVelocity.data = new serializededata<esint, double>(3, _nDistribution);
-
-	_nthickness.isConts = setDefault(info::ecf->structural_mechanics_2d.thickness, defaultThickness);
-	_nthickness.data = new serializededata<esint, double>(1, _nDistribution, defaultThickness);
-
-	_displacement = info::mesh->nodes->appendData(2, { "DISPLACEMENT", "DISPLACEMENT_X", "DISPLACEMENT_Y" });
-	_avgThickness = info::mesh->nodes->appendData(1, { }); // printed on elements
-
-	_boundaries.resize(info::mesh->boundaryRegions.size());
+			auto pressure = _configuration.normal_pressure.find(region->name);
+			if (pressure != _configuration.normal_pressure.end()) {
+				initKernelParam(_boundaries[r].normalPressure, pressure->second, 0, region);
+			}
+		}
+	}
 }
 
 StructuralMechanics2DController::~StructuralMechanics2DController()
 {
-	delete _kernel;
+	if (_kernel) {
+		delete _kernel;
+	}
 }
 
 const PhysicsConfiguration& StructuralMechanics2DController::configuration() const
@@ -104,104 +121,45 @@ void StructuralMechanics2DController::dirichletValues(std::vector<double> &value
 	}
 }
 
-void StructuralMechanics2DController::initData()
-{
-	size_t threads = info::env::OMP_NUM_THREADS;
-
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		auto c = _ncoordinate.data->begin(t);
-		for (auto n = info::mesh->elements->procNodes->datatarray().begin(t); n != info::mesh->elements->procNodes->datatarray().end(t); ++n, ++c) {
-			c->at(0) = info::mesh->nodes->coordinates->datatarray()[*n].x;
-			c->at(1) = info::mesh->nodes->coordinates->datatarray()[*n].y;
-		}
-	}
-
-	double *cbegin = _ncoordinate.data->datatarray().data();
-	double *tbegin = NULL;
-	double time = time::current;
-
-	updateERegions(info::ecf->structural_mechanics_2d.initial_temperature, _nInitialTemperature.data->datatarray(), 1, cbegin, tbegin, time);
-	updateERegions(info::ecf->structural_mechanics_2d.thickness, _nthickness.data->datatarray(), 1, cbegin, tbegin, time);
-	updateERegions(_configuration.acceleration, _nacceleration.data->datatarray(), 2, cbegin, tbegin, time);
-	updateERegions(_configuration.angular_velocity, _nangularVelocity.data->datatarray(), 2, cbegin, tbegin, time);
-
-	averageNodeInitilization(_nthickness.data->datatarray(), _avgThickness->data);
-
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-		BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
-		if (region->dimension == 1) {
-
-			auto &distribution = region->procNodes->datatarray().distribution();
-
-			_boundaries[r].coordinate.data = new serializededata<esint, double>(2, distribution);
-			_boundaries[r].thickness.data = new serializededata<esint, double>(1, distribution);
-
-			#pragma omp parallel for
-			for (size_t t = 0; t < threads; t++) {
-				auto c = _boundaries[r].coordinate.data->begin(t);
-				auto thick = _boundaries[r].thickness.data->begin(t);
-				for (auto n = region->procNodes->datatarray().begin(t); n != region->procNodes->datatarray().end(t); ++n, ++c, ++thick) {
-					c->at(0) = info::mesh->nodes->coordinates->datatarray()[*n].x;
-					c->at(1) = info::mesh->nodes->coordinates->datatarray()[*n].y;
-					thick->at(0) = _avgThickness->data[*n];
-				}
-			}
-
-			cbegin = _boundaries[r].coordinate.data->datatarray().begin();
-
-			auto pressure = _configuration.normal_pressure.find(region->name);
-			if (pressure != _configuration.normal_pressure.end()) {
-				_boundaries[r].normalPressure.data = new serializededata<esint, double>(1, distribution);
-				_boundaries[r].normalPressure.isConts = pressure->second.evaluator->isConstant();
-				updateBRegions(pressure->second, _boundaries[r].normalPressure, distribution, 2, cbegin, tbegin, time);
-			}
-		}
-	}
-}
-
 void StructuralMechanics2DController::nextTime()
 {
-	if (time::isInitial()) {
-		return;
-	}
-
 	parametersChanged();
 }
 
 void StructuralMechanics2DController::parametersChanged()
 {
-	size_t threads = info::env::OMP_NUM_THREADS;
+	double *cbegin = _kcoordinate.data->datatarray().data();
+	double *tbegin = _ktemperature.data->datatarray().data();
 
-	double *cbegin = _ncoordinate.data->datatarray().data();
-	double *tbegin = NULL;
-	double time = time::current;
-
-	updateERegions(info::ecf->structural_mechanics_2d.thickness, _nthickness.data->datatarray(), 2, cbegin, tbegin, time);
-	updateERegions(_configuration.acceleration, _nacceleration.data->datatarray(), 2, cbegin, tbegin, time);
-	updateERegions(_configuration.angular_velocity, _nangularVelocity.data->datatarray(), 2, cbegin, tbegin, time);
-
-	averageNodeInitilization(_nthickness.data->datatarray(), _avgThickness->data);
+	if (!_ktemperature.isConts) {
+		updateKernelParam(_ktemperature, _configuration.temperature, cbegin, NULL);
+	}
+	if (!_kthickness.isConts) {
+		updateKernelParam(_kthickness, info::ecf->structural_mechanics_2d.thickness, cbegin, tbegin);
+		if (_ethickness) {
+			kernelToElements(_kthickness, _ethickness->data);
+		}
+	}
+	if (!_kacceleration.isConts) {
+		updateKernelParam(_kacceleration, _configuration.acceleration, cbegin, tbegin);
+	}
+	if (!_kangularVelocity.isConts) {
+		updateKernelParam(_kangularVelocity, _configuration.angular_velocity, cbegin, tbegin);
+	}
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
 		BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		if (region->dimension == 1) {
-
-			auto &distribution = region->procNodes->datatarray().distribution();
-
-			#pragma omp parallel for
-			for (size_t t = 0; t < threads; t++) {
-				auto thick = _boundaries[r].thickness.data->begin(t);
-				for (auto n = region->procNodes->datatarray().begin(t); n != region->procNodes->datatarray().end(t); ++n, ++thick) {
-					thick->at(0) = _avgThickness->data[*n];
-				}
-			}
-
 			cbegin = _boundaries[r].coordinate.data->datatarray().begin();
+			if (!_boundaries[r].thickness.isConts) {
+				kernelToBoundary(_kthickness, _boundaries[r].thickness, region);
+			}
 
 			auto pressure = _configuration.normal_pressure.find(region->name);
 			if (pressure != _configuration.normal_pressure.end()) {
-				updateBRegions(pressure->second, _boundaries[r].normalPressure, distribution, 2, cbegin, tbegin, time);
+				if (!_boundaries[r].normalPressure.isConts) {
+					updateKernelParam(_boundaries[r].normalPressure, pressure->second, cbegin, NULL, region);
+				}
 			}
 		}
 	}
@@ -213,13 +171,12 @@ void StructuralMechanics2DController::processElements(Matrices matrices, const S
 	StructuralMechanics2DKernel::ElementIterator iterator;
 
 	size_t noffset = enodes->begin() - info::mesh->elements->procNodes->datatarray().begin();
-	iterator.temperature        = _ntemperature.data->datatarray().begin() + noffset;
-	iterator.initialTemperature = _nInitialTemperature.data->datatarray().begin() + noffset;
-	iterator.coordinates        = _ncoordinate.data->datatarray().begin() + noffset * 2;
-	iterator.acceleration       = _nacceleration.data->datatarray().begin() + noffset * 2;
-	iterator.angularVelocity    = _nangularVelocity.data->datatarray().begin() + noffset * 3;
-	iterator.thickness          = _nthickness.data->datatarray().begin() + noffset;
-
+	iterator.temperature        = _ktemperature.data->datatarray().begin() + noffset;
+	iterator.initialTemperature = _kinitialTemperature.data->datatarray().begin() + noffset;
+	iterator.coordinates        = _kcoordinate.data->datatarray().begin() + noffset * 2;
+	iterator.acceleration       = _kacceleration.data->datatarray().begin() + noffset * 2;
+	iterator.angularVelocity    = _kangularVelocity.data->datatarray().begin() + noffset * 3;
+	iterator.thickness          = _kthickness.data->datatarray().begin() + noffset;
 
 	for (esint e = filler.begin; e < filler.end; ++e, ++enodes) {
 		iterator.element = info::mesh->elements->epointers->datatarray()[e];
@@ -276,9 +233,9 @@ void StructuralMechanics2DController::processSolution()
 		auto enodes = info::mesh->elements->procNodes->cbegin(t);
 		StructuralMechanics2DKernel::SolutionIterator iterator;
 
-		iterator.temperature = _ntemperature.data->datatarray().begin(t);
-		iterator.coordinates = _ncoordinate.data->datatarray().begin(t);
-		iterator.thickness   = _nthickness.data->datatarray().begin(t);
+		iterator.temperature = _ktemperature.data->datatarray().begin(t);
+		iterator.coordinates = _kcoordinate.data->datatarray().begin(t);
+		iterator.thickness   = _kthickness.data->datatarray().begin(t);
 
 		for (size_t e = info::mesh->elements->distribution[t]; e < info::mesh->elements->distribution[t + 1]; ++e, ++enodes) {
 			iterator.element = info::mesh->elements->epointers->datatarray()[e];

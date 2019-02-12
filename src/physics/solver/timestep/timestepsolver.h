@@ -6,6 +6,7 @@
 
 namespace espreso {
 
+struct LoadStepConfiguration;
 class LoadStepSolver;
 class Assembler;
 
@@ -17,6 +18,7 @@ public:
 	TimeStepSolver(Assembler &assembler): _assembler(assembler) {}
 	virtual ~TimeStepSolver() {}
 
+	virtual bool hasSameMode(const LoadStepConfiguration &configuration) const =0;
 	virtual void solve(LoadStepSolver &loadStepSolver) =0;
 	virtual std::string name() =0;
 

@@ -16,6 +16,7 @@ struct Point;
 class ECFExpression;
 class ECFExpressionVector;
 enum Matrices: int;
+struct BoundaryRegionStore;
 struct NodeData;
 enum EvaluatorParameters: int;
 template <typename TEBoundaries, typename TEData> class serializededata;
@@ -36,7 +37,6 @@ public:
 	virtual NodeData* solution() = 0;
 	virtual const PhysicsConfiguration& configuration() const =0;
 
-	virtual void initData() = 0;
 	virtual void processSolution() = 0;
 
 	virtual void nextTime() = 0;
@@ -53,36 +53,41 @@ public:
 
 	virtual ~Controller() {}
 protected:
-	Controller();
+	Controller(int dimension);
 
 	struct Parameter {
 		serializededata<esint, double> *data;
+		int dimension;
 		bool isConts;
 
-		Parameter(): data(NULL), isConts(false) {}
+		Parameter(int dimension): data(NULL), dimension(dimension), isConts(false) {}
 		~Parameter();
 	};
 
-	bool setDefault(const std::map<std::string, ECFExpression> &values, double &defaultValue);
-	bool setDefault(const std::map<std::string, ECFExpressionVector> &values, Point &defaultValue);
+	void setCoordinates(Parameter &coordinates, serializededata<esint, esint> *procNodes = NULL);
+	void setDirichlet(std::vector<double> &solution);
 
-	void updateERegions(
-			const std::map<std::string, ECFExpression> &settings, tarray<double> &data,
-			esint csize, double *cbegin, double *tbegin, double time,
-			EvaluatorParameters updatedParams = static_cast<EvaluatorParameters>(0));
-	void updateERegions(
-			const std::map<std::string, ECFExpressionVector> &settings, tarray<double> &data,
-			esint csize, double *cbegin, double *tbegin, double time,
-			EvaluatorParameters updatedParams = static_cast<EvaluatorParameters>(0));
-	void updateBRegions(
-			const ECFExpression &expression, Parameter &parameter, const std::vector<size_t> &distribution,
-			esint csize, double *cbegin, double *tbegin, double time,
-			EvaluatorParameters updatedParams = static_cast<EvaluatorParameters>(0));
+	void takeKernelParam(Parameter &parameter, Parameter &previous);
 
-	void initDirichletData(tarray<double> &initData);
-	void averageNodeInitilization(tarray<double> &initData, std::vector<double> &averagedData);
-	void nodeValuesToElements(int dimension, tarray<double> &nodeData, std::vector<double> &elementData);
 
+	void initKernelParam(Parameter &parameter, const std::map<std::string, ECFExpressionVector> &values, double defaultValue);
+	void initKernelParam(Parameter &parameter, const std::map<std::string, ECFExpression> &values, double defaultValue);
+	void initKernelParam(Parameter &parameter, const std::map<std::string, ECFExpression> &values, double defaultValue,
+			BoundaryRegionStore *region);
+	void initKernelParam(Parameter &parameter, const ECFExpression &value, double defaultValue,
+			BoundaryRegionStore *region);
+
+	void updateKernelParam(Parameter &parameter, const std::map<std::string, ECFExpression> &values, double *cbegin, double *tbegin);
+	void updateKernelParam(Parameter &parameter, const std::map<std::string, ECFExpressionVector> &values, double *cbegin, double *tbegin);
+	void updateKernelParam(Parameter &parameter, const ECFExpression &value, double *cbegin, double *tbegin,
+			BoundaryRegionStore *region);
+
+	void kernelToBoundary(Parameter &parameter, Parameter &boundary, BoundaryRegionStore *region);
+	void kernelToNodes(Parameter &kvalues, std::vector<double> &nvalues);
+	void kernelToElements(Parameter &kvalues, std::vector<double> &evalues);
+	void nodesToKernels(std::vector<double> &nvalues, Parameter &kvalues, serializededata<esint, esint> *procNodes = NULL);
+
+	int _dimension;
 	size_t _dirichletSize;
 	std::vector<size_t> _nDistribution;
 };

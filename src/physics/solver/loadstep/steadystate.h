@@ -9,8 +9,9 @@ namespace espreso {
 class SteadyStateSolver: public LoadStepSolver {
 
 public:
-	SteadyStateSolver(Assembler &assembler, TimeStepSolver &timeStepSolver, double duration);
+	SteadyStateSolver(SteadyStateSolver *previous, Assembler &assembler, TimeStepSolver &timeStepSolver, double duration);
 
+	bool hasSameType(const LoadStepConfiguration &configuration) const;
 	std::string name();
 
 	Matrices updateStructuralMatrices(Matrices matrices);

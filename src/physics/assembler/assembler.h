@@ -63,8 +63,8 @@ template <typename TController, typename TComposer, typename TProvider, typename
 struct AssemblerInstance: public Assembler, public TController, public TComposer, public TProvider {
 
 	template <typename TPhysics>
-	AssemblerInstance(TPhysics &loadStep, HypreConfiguration &solver, int DOFs)
-	: TController(loadStep),
+	AssemblerInstance(Assembler *previous, TPhysics &loadStep, HypreConfiguration &solver, int DOFs)
+	: TController(dynamic_cast<TController*>(previous), loadStep),
 	  TComposer(*this, *this, DOFs),
 	  TProvider(TComposer::data, loadStep)
 	{
@@ -72,8 +72,8 @@ struct AssemblerInstance: public Assembler, public TController, public TComposer
 	}
 
 	template <typename TPhysics>
-	AssemblerInstance(TPhysics &loadStep, FETISolverConfiguration &solver, int DOFs)
-	: TController(loadStep),
+	AssemblerInstance(Assembler *previous, TPhysics &loadStep, FETISolverConfiguration &solver, int DOFs)
+	: TController(dynamic_cast<TController*>(previous), loadStep),
 	  TComposer(*this, *this, solver, DOFs),
 	  TProvider(TComposer::data, loadStep)
 	{
@@ -100,8 +100,6 @@ struct AssemblerInstance: public Assembler, public TController, public TComposer
 		if (TProvider::needMatrixVectorProduct()) {
 			TComposer::buildMVData();
 		}
-
-		TController::initData();
 	}
 
 	void nextTime()

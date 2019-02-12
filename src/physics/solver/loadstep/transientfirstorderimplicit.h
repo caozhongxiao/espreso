@@ -12,8 +12,9 @@ class TransientSolverConfiguration;
 class TransientFirstOrderImplicit: public LoadStepSolver {
 
 public:
-	TransientFirstOrderImplicit(Assembler &assembler, TimeStepSolver &timeStepSolver, TransientSolverConfiguration &configuration, double duration);
+	TransientFirstOrderImplicit(TransientFirstOrderImplicit *previous, Assembler &assembler, TimeStepSolver &timeStepSolver, TransientSolverConfiguration &configuration, double duration);
 
+	bool hasSameType(const LoadStepConfiguration &configuration) const;
 	std::string name();
 
 	Matrices updateStructuralMatrices(Matrices matrices);

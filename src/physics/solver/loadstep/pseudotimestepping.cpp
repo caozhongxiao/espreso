@@ -7,13 +7,21 @@
 #include "physics/assembler/assembler.h"
 
 #include "config/ecf/physics/physicssolver/nonlinearsolver.h"
+#include "config/ecf/physics/physicssolver/loadstep.h"
 
 using namespace espreso;
 
-PseudoTimeStepping::PseudoTimeStepping(Assembler &assembler, TimeStepSolver &timeStepSolver, NonLinearSolverConfiguration &configuration, double duration)
+PseudoTimeStepping::PseudoTimeStepping(PseudoTimeStepping *previous, Assembler &assembler, TimeStepSolver &timeStepSolver, NonLinearSolverConfiguration &configuration, double duration)
 : LoadStepSolver(assembler, timeStepSolver, duration), _configuration(configuration)
 {
 
+}
+
+bool PseudoTimeStepping::hasSameType(const LoadStepConfiguration &configuration) const
+{
+	return
+			configuration.type == LoadStepConfiguration::TYPE::STEADY_STATE &&
+			configuration.mode == LoadStepConfiguration::MODE::NONLINEAR;
 }
 
 std::string PseudoTimeStepping::name()

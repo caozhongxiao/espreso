@@ -6,12 +6,19 @@
 
 #include "linearsolver/linearsolver.h"
 
+#include "config/ecf/physics/physicssolver/loadstep.h"
+
 using namespace espreso;
 
-LinearTimeStep::LinearTimeStep(Assembler &assembler)
+LinearTimeStep::LinearTimeStep(LinearTimeStep *previous, Assembler &assembler)
 : TimeStepSolver(assembler)
 {
 
+}
+
+bool LinearTimeStep::hasSameMode(const LoadStepConfiguration &configuration) const
+{
+	return configuration.mode == LoadStepConfiguration::MODE::LINEAR;
 }
 
 std::string LinearTimeStep::name()

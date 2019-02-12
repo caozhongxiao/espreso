@@ -6,13 +6,21 @@
 #include "physics/solver/timestep/timestepsolver.h"
 #include "physics/assembler/assembler.h"
 
+#include "config/ecf/physics/physicssolver/loadstep.h"
 
 using namespace espreso;
 
-SteadyStateSolver::SteadyStateSolver(Assembler &assembler, TimeStepSolver &timeStepSolver, double duration)
+SteadyStateSolver::SteadyStateSolver(SteadyStateSolver *previous, Assembler &assembler, TimeStepSolver &timeStepSolver, double duration)
 : LoadStepSolver(assembler, timeStepSolver, duration)
 {
 
+}
+
+bool SteadyStateSolver::hasSameType(const LoadStepConfiguration &configuration) const
+{
+	return
+			configuration.type == LoadStepConfiguration::TYPE::STEADY_STATE &&
+			configuration.mode == LoadStepConfiguration::MODE::LINEAR;
 }
 
 std::string SteadyStateSolver::name()

@@ -17,25 +17,27 @@ public:
 	NodeData* solution();
 
 protected:
-	StructuralMechanicsController(StructuralMechanicsLoadStepConfiguration &configuration)
-
-	: Controller(),
-	  _configuration(configuration),
-	  _displacement(NULL), _avgThickness(NULL),
-	  _thickness(NULL) {}
+	StructuralMechanicsController(int dimension, StructuralMechanicsController *previous, StructuralMechanicsLoadStepConfiguration &configuration);
 
 	StructuralMechanicsLoadStepConfiguration &_configuration;
 
 	struct BoundaryParameters {
 		Parameter coordinate, thickness;
 		Parameter normalPressure;
+
+		BoundaryParameters(int dimension)
+		: coordinate(dimension), thickness(1),
+		  normalPressure(1)
+		{
+
+		}
 	};
 
-	Parameter _ncoordinate, _ntemperature, _nInitialTemperature, _nacceleration, _nangularVelocity, _nthickness;
+	Parameter _kcoordinate, _ktemperature, _kinitialTemperature, _kacceleration, _kangularVelocity, _kthickness;
 	std::vector<BoundaryParameters> _boundaries;
 
-	NodeData *_displacement, *_avgThickness;
-	ElementData *_thickness;
+	NodeData *_ndisplacement;
+	ElementData *_ethickness;
 };
 
 }

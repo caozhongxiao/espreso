@@ -21,12 +21,7 @@ public:
 	NodeData* solution();
 
 protected:
-	HeatTransferController(HeatTransferLoadStepConfiguration &configuration)
-	: Controller(),
-	  _configuration(configuration),
-	  _temperature(NULL), _avgThickness(NULL),
-	  _gradient(NULL), _flux(NULL), _motion(NULL), _thickness(NULL),
-	  _phaseChange(NULL), _latentHeat(NULL){}
+	HeatTransferController(int dimension, HeatTransferController *previous, HeatTransferLoadStepConfiguration &configuration);
 
 	HeatTransferLoadStepConfiguration &_configuration;
 
@@ -35,13 +30,21 @@ protected:
 		Parameter htc, emissivity, externalTemperature, heatFlow, heatFlux;
 
 		double regionArea;
+
+		BoundaryParameters(int dimension)
+		: temperature(1), coordinate(dimension), thickness(1),
+		  htc(1), emissivity(1), externalTemperature(1), heatFlow(1), heatFlux(1),
+		  regionArea(0)
+		{
+
+		}
 	};
 
-	Parameter _ntemperature, _ncoordinate, _nmotion, _nheat, _nthickness;
+	Parameter _ktemperature, _kcoordinate, _kmotion, _kheat, _kthickness;
 	std::vector<BoundaryParameters> _boundaries;
 
-	NodeData *_temperature, *_avgThickness;
-	ElementData *_gradient, *_flux, *_motion, *_thickness, *_phaseChange, *_latentHeat;
+	NodeData *_ntemperature;
+	ElementData *_egradient, *_eflux, *_emotion, *_ethickness, *_ephaseChange, *_elatentHeat;
 };
 
 }

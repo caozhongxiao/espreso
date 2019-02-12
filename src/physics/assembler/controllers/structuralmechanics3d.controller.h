@@ -12,7 +12,7 @@ class StructuralMechanics3DController: public StructuralMechanicsController
 {
 
 public:
-	StructuralMechanics3DController(StructuralMechanicsLoadStepConfiguration &configuration);
+	StructuralMechanics3DController(StructuralMechanics3DController *previous, StructuralMechanicsLoadStepConfiguration &configuration);
 	~StructuralMechanics3DController();
 
 	const PhysicsConfiguration& configuration() const;
@@ -20,7 +20,6 @@ public:
 	void dirichletIndices(std::vector<std::vector<esint> > &indices);
 	void dirichletValues(std::vector<double> &values);
 
-	void initData();
 	void processSolution();
 
 	void nextTime();

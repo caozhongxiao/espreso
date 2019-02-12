@@ -22,44 +22,86 @@
 
 using namespace espreso;
 
-HeatTransfer3DController::HeatTransfer3DController(HeatTransferLoadStepConfiguration &configuration)
-: HeatTransferController(configuration), _bem(info::mesh->elements->ndomains, NULL)
+HeatTransfer3DController::HeatTransfer3DController(HeatTransfer3DController* previous, HeatTransferLoadStepConfiguration &configuration)
+: HeatTransferController(3, previous, configuration), _kernel(new HeatTransfer3DKernel()), _bem(info::mesh->elements->ndomains, NULL)
 {
-	// TODO: optimize controllel when only BEM is needed
+	// TODO: optimize controller when only BEM is needed
 
-	_kernel = new HeatTransfer3DKernel();
+	if (previous) {
+		takeKernelParam(_kcoordinate, previous->_kcoordinate);
+		takeKernelParam(_ktemperature, previous->_ktemperature);
+	} else {
+		_ntemperature = info::mesh->nodes->appendData(1, { "TEMPERATURE" });
+		if (info::mesh->hasPhaseChange()) {
+			_ephaseChange = info::mesh->elements->appendData(1, { "PHASE" });
+			_elatentHeat = info::mesh->elements->appendData(1, { "LATENT_HEAT" });
+		}
 
-	Point defaultMotion(0, 0, 0);
-	double defaultHeat = 0; //273.15;
+		if (info::ecf->output.results_selection.translation_motions) {
+			for (auto it = info::ecf->heat_transfer_3d.load_steps_settings.begin(); it != info::ecf->heat_transfer_3d.load_steps_settings.end(); ++it) {
+				if (it->second.translation_motions.size()) {
+					_emotion = info::mesh->elements->appendData(3, { "TRANSLATION_MOTION", "TRANSLATION_MOTION_X", "TRANSLATION_MOTION_Y", "TRANSLATION_MOTION_Z" });
+					break;
+				}
+			}
+		}
 
-	_ntemperature.data = new serializededata<esint, double>(1, _nDistribution);
-	_ncoordinate.data = new serializededata<esint, double>(3, _nDistribution);
+		if (info::ecf->output.results_selection.gradient || info::ecf->heat_transfer_3d.diffusion_split) {
+			_egradient = info::mesh->elements->appendData(3, { "GRADIENT", "GRADIENT_X", "GRADIENT_Y", "GRADIENT_Z" });
+		}
 
-	_nmotion.isConts = setDefault(_configuration.translation_motions, defaultMotion) && defaultMotion.x == defaultMotion.y && defaultMotion.x == defaultMotion.z;
-	_nmotion.data = new serializededata<esint, double>(3, _nDistribution, defaultMotion.x);
+		if (info::ecf->output.results_selection.flux) {
+			_eflux = info::mesh->elements->appendData(3, { "FLUX", "FLUX_X", "FLUX_Y", "FLUX_Z" });
+		}
 
-	_nheat.isConts = setDefault(_configuration.heat_source, defaultHeat);
-	_nheat.data = new serializededata<esint, double>(1, _nDistribution, defaultHeat);
+		setCoordinates(_kcoordinate);
+		initKernelParam(_ktemperature, info::ecf->heat_transfer_3d.initial_temperature, 0);
 
-	_temperature = info::mesh->nodes->appendData(1, { "TEMPERATURE" });
-	if (info::mesh->hasPhaseChange()) {
-		_phaseChange = info::mesh->elements->appendData(1, { "PHASE" });
-		_latentHeat = info::mesh->elements->appendData(1, { "LATENT_HEAT" });
+		// initial temperature is defined for element regions -> set for elements, average and set dirichlet
+		if (!_ktemperature.isConts) {
+			updateKernelParam(_ktemperature, info::ecf->heat_transfer_3d.initial_temperature, _kcoordinate.data->datatarray().data(), NULL);
+		}
+		kernelToNodes(_ktemperature, _ntemperature->data);
+		if (info::ecf->heat_transfer_3d.init_temp_respect_bc) {
+			setDirichlet(_ntemperature->data);
+		}
 	}
 
-	if (info::ecf->output.results_selection.translation_motions && _configuration.translation_motions.size()) {
-		_motion = info::mesh->elements->appendData(3, { "TRANSLATION_MOTION", "TRANSLATION_MOTION_X", "TRANSLATION_MOTION_Y", "TRANSLATION_MOTION_Z" });
-	}
+	initKernelParam(_kmotion, configuration.translation_motions, 0);
+	initKernelParam(_kheat, configuration.heat_source, 0);
 
-	if (info::ecf->output.results_selection.gradient || info::ecf->heat_transfer_3d.diffusion_split) {
-		_gradient = info::mesh->elements->appendData(3, { "GRADIENT", "GRADIENT_X", "GRADIENT_Y", "GRADIENT_Z" });
-	}
+	_boundaries.resize(info::mesh->boundaryRegions.size(), BoundaryParameters(3));
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
+		BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
+		if (region->dimension == 2) {
+			_boundaries[r].regionArea = info::mesh->boundaryRegions[r]->area;
+			setCoordinates(_boundaries[r].coordinate, region->procNodes);
+			initKernelParam(_boundaries[r].temperature, info::ecf->heat_transfer_3d.initial_temperature, 0, region);
 
-	if (info::ecf->output.results_selection.flux) {
-		_flux = info::mesh->elements->appendData(3, { "FLUX", "FLUX_X", "FLUX_Y", "FLUX_Z" });
-	}
+			auto heatFlow = _configuration.heat_flow.find(region->name);
+			if (heatFlow != _configuration.heat_flow.end()) {
+				initKernelParam(_boundaries[r].heatFlow, heatFlow->second, 0, region);
+			}
+			auto heatFlux = _configuration.heat_flux.find(region->name);
+			if (heatFlux != _configuration.heat_flux.end()) {
+				initKernelParam(_boundaries[r].heatFlux, heatFlux->second, 0, region);
+			}
 
-	_boundaries.resize(info::mesh->boundaryRegions.size());
+			auto radiation = _configuration.diffuse_radiation.find(region->name);
+			if (radiation != _configuration.diffuse_radiation.end()) {
+				initKernelParam(_boundaries[r].emissivity, radiation->second.emissivity, 0, region);
+				initKernelParam(_boundaries[r].externalTemperature, radiation->second.external_temperature, 0, region);
+			}
+
+			auto convection = _configuration.convection.find(region->name);
+			if (convection != _configuration.convection.end()) {
+				if (_boundaries[r].externalTemperature.data == NULL) {
+					initKernelParam(_boundaries[r].externalTemperature, convection->second.external_temperature, 0, region);
+				}
+				initKernelParam(_boundaries[r].htc, convection->second.heat_transfer_coefficient, 0, region);
+			}
+		}
+	}
 }
 
 HeatTransfer3DController::~HeatTransfer3DController()
@@ -77,184 +119,75 @@ const PhysicsConfiguration& HeatTransfer3DController::configuration() const
 	return info::ecf->heat_transfer_3d;
 }
 
-void HeatTransfer3DController::initData()
-{
-	size_t threads = info::env::OMP_NUM_THREADS;
-
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		auto c = _ncoordinate.data->begin(t);
-		for (auto n = info::mesh->elements->procNodes->datatarray().begin(t); n != info::mesh->elements->procNodes->datatarray().end(t); ++n, ++c) {
-			c->at(0) = info::mesh->nodes->coordinates->datatarray()[*n].x;
-			c->at(1) = info::mesh->nodes->coordinates->datatarray()[*n].y;
-			c->at(2) = info::mesh->nodes->coordinates->datatarray()[*n].z;
-		}
-	}
-
-	double *cbegin = _ncoordinate.data->datatarray().data();
-	double *tbegin = NULL;
-	double time = time::current;
-
-	updateERegions(info::ecf->heat_transfer_3d.initial_temperature, _ntemperature.data->datatarray(), 3, cbegin, tbegin, time);
-	updateERegions(_configuration.heat_source, _nheat.data->datatarray(), 3, cbegin, tbegin, time);
-	updateERegions(_configuration.translation_motions, _nmotion.data->datatarray(), 3, cbegin, tbegin, time);
-
-	if (info::ecf->heat_transfer_2d.init_temp_respect_bc) {
-		initDirichletData(_ntemperature.data->datatarray());
-	}
-	averageNodeInitilization(_ntemperature.data->datatarray(), _temperature->data);
-
-	if (_motion != NULL) {
-		nodeValuesToElements(3, _nmotion.data->datatarray(), _motion->data);
-	}
-
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-		BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
-		if (region->dimension == 2) { // TODO: implement edge processing
-
-			auto &distribution = region->procNodes->datatarray().distribution();
-
-			_boundaries[r].coordinate.data = new serializededata<esint, double>(3, distribution);
-			_boundaries[r].temperature.data = new serializededata<esint, double>(1, distribution);
-
-			#pragma omp parallel for
-			for (size_t t = 0; t < threads; t++) {
-				auto c = _boundaries[r].coordinate.data->begin(t);
-				auto temp = _boundaries[r].temperature.data->begin(t);
-				for (auto n = region->procNodes->datatarray().begin(t); n != region->procNodes->datatarray().end(t); ++n, ++c, ++temp) {
-					c->at(0) = info::mesh->nodes->coordinates->datatarray()[*n].x;
-					c->at(1) = info::mesh->nodes->coordinates->datatarray()[*n].y;
-					c->at(2) = info::mesh->nodes->coordinates->datatarray()[*n].z;
-					temp->at(0) = _temperature->data[*n];
-				}
-			}
-
-			cbegin = _boundaries[r].coordinate.data->datatarray().begin();
-			tbegin = _boundaries[r].temperature.data->datatarray().begin();
-
-			auto flow = _configuration.heat_flow.find(region->name);
-			if (flow != _configuration.heat_flow.end()) {
-				_boundaries[r].heatFlow.data = new serializededata<esint, double>(1, distribution);
-				_boundaries[r].heatFlow.isConts = flow->second.evaluator->isConstant();
-				updateBRegions(flow->second, _boundaries[r].heatFlow, distribution, 3, cbegin, tbegin, time);
-				_boundaries[r].regionArea = info::mesh->boundaryRegions[r]->area;
-			}
-			auto flux = _configuration.heat_flux.find(region->name);
-			if (flux != _configuration.heat_flux.end()) {
-				_boundaries[r].heatFlux.data = new serializededata<esint, double>(1, distribution);
-				_boundaries[r].heatFlux.isConts = flux->second.evaluator->isConstant();
-				updateBRegions(flux->second, _boundaries[r].heatFlux, distribution, 3, cbegin, tbegin, time);
-			}
-
-			auto radiation = _configuration.diffuse_radiation.find(region->name);
-			if (radiation != _configuration.diffuse_radiation.end()) {
-				_boundaries[r].emissivity.data = new serializededata<esint, double>(1, distribution);
-				_boundaries[r].emissivity.isConts = radiation->second.emissivity.evaluator->isConstant();
-				_boundaries[r].externalTemperature.data = new serializededata<esint, double>(1, distribution);
-				_boundaries[r].externalTemperature.isConts = radiation->second.external_temperature.evaluator->isConstant();
-				updateBRegions(radiation->second.emissivity, _boundaries[r].emissivity, distribution, 3, cbegin, tbegin, time);
-				updateBRegions(radiation->second.external_temperature, _boundaries[r].externalTemperature, distribution, 3, cbegin, tbegin, time);
-			}
-
-			auto convection = _configuration.convection.find(region->name);
-			if (convection != _configuration.convection.end()) {
-				if (_boundaries[r].externalTemperature.data == NULL) {
-					_boundaries[r].externalTemperature.data = new serializededata<esint, double>(1, distribution);
-					_boundaries[r].externalTemperature.isConts = convection->second.external_temperature.evaluator->isConstant();
-					updateBRegions(convection->second.external_temperature, _boundaries[r].externalTemperature, distribution, 3, cbegin, tbegin, time);
-				}
-				_boundaries[r].htc.data = new serializededata<esint, double>(1, distribution);
-
-				#pragma omp parallel for
-				for (size_t t = 0; t < threads; t++) {
-					for (size_t i = distribution[t]; i < distribution[t + 1]; ++i) {
-						_boundaries[r].htc.data->datatarray()[i] = _kernel->convectionHTC(convection->second, 3, cbegin + i * 3, time, *(tbegin + i));
-					}
-				}
-			}
-		}
-	}
-}
-
 void HeatTransfer3DController::nextTime()
 {
-	if (time::isInitial()) {
-		return;
-	}
-
 	parametersChanged();
 }
 
 void HeatTransfer3DController::parametersChanged()
 {
-	size_t threads = info::env::OMP_NUM_THREADS;
+	nodesToKernels(_ntemperature->data, _ktemperature);
 
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		auto temp = _ntemperature.data->datatarray().begin(t);
-		for (auto n = info::mesh->elements->procNodes->datatarray().cbegin(t); n != info::mesh->elements->procNodes->datatarray().cend(t); ++n, ++temp) {
-			*temp = _temperature->data[*n];
-		}
+	double *cbegin = _kcoordinate.data->datatarray().data();
+	double *tbegin = _ktemperature.data->datatarray().data();
+
+	if (!_kheat.isConts) {
+		updateKernelParam(_kheat, _configuration.heat_source, cbegin, tbegin);
 	}
-
-	double *cbegin = _ncoordinate.data->datatarray().data();
-	double *tbegin = NULL;
-	double time = time::current;
-
-	updateERegions(_configuration.heat_source, _nheat.data->datatarray(), 3, cbegin, tbegin, time);
-	updateERegions(_configuration.translation_motions, _nmotion.data->datatarray(), 3, cbegin, tbegin, time);
-
-	if (_motion != NULL) {
-		nodeValuesToElements(3, _nmotion.data->datatarray(), _motion->data);
+	if (!_kmotion.isConts) {
+		updateKernelParam(_kmotion, _configuration.translation_motions, cbegin, tbegin);
+		kernelToElements(_kmotion, _emotion->data);
 	}
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
 		BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		if (region->dimension == 2) {
 
-			auto &distribution = region->procNodes->datatarray().distribution();
-
-			#pragma omp parallel for
-			for (size_t t = 0; t < threads; t++) {
-				auto temp = _boundaries[r].temperature.data->begin(t);
-				for (auto n = region->procNodes->datatarray().begin(t); n != region->procNodes->datatarray().end(t); ++n, ++temp) {
-					temp->at(0) = _temperature->data[*n];
-				}
-			}
+			nodesToKernels(_ntemperature->data, _boundaries[r].temperature, region->procNodes);
 
 			cbegin = _boundaries[r].coordinate.data->datatarray().begin();
 			tbegin = _boundaries[r].temperature.data->datatarray().begin();
 
-			auto flow = _configuration.heat_flow.find(region->name);
-			if (flow != _configuration.heat_flow.end()) {
-				updateBRegions(flow->second, _boundaries[r].heatFlow, distribution, 3, cbegin, tbegin, time);
+			auto heatFlow = _configuration.heat_flow.find(region->name);
+			if (heatFlow != _configuration.heat_flow.end()) {
+				if (!_boundaries[r].heatFlow.isConts) {
+					updateKernelParam(_boundaries[r].heatFlow, heatFlow->second, cbegin, tbegin, region);
+				}
 			}
-			auto flux = _configuration.heat_flux.find(region->name);
-			if (flux != _configuration.heat_flux.end()) {
-				updateBRegions(flux->second, _boundaries[r].heatFlux, distribution, 3, cbegin, tbegin, time);
+			auto heatFlux = _configuration.heat_flux.find(region->name);
+			if (heatFlux != _configuration.heat_flux.end()) {
+				if (!_boundaries[r].heatFlux.isConts) {
+					updateKernelParam(_boundaries[r].heatFlux, heatFlux->second, cbegin, tbegin, region);
+				}
 			}
 
 			auto radiation = _configuration.diffuse_radiation.find(region->name);
 			if (radiation != _configuration.diffuse_radiation.end()) {
-				updateBRegions(radiation->second.emissivity, _boundaries[r].emissivity, distribution, 3, cbegin, tbegin, time);
-				updateBRegions(radiation->second.external_temperature, _boundaries[r].externalTemperature, distribution, 3, cbegin, tbegin, time);
+				if (!_boundaries[r].emissivity.isConts) {
+					updateKernelParam(_boundaries[r].emissivity, radiation->second.emissivity, cbegin, tbegin, region);
+				}
+				if (!_boundaries[r].externalTemperature.isConts) {
+					updateKernelParam(_boundaries[r].externalTemperature, radiation->second.external_temperature, cbegin, tbegin, region);
+				}
 			}
 
 			auto convection = _configuration.convection.find(region->name);
 			if (convection != _configuration.convection.end()) {
-				if (_boundaries[r].externalTemperature.data == NULL) {
-					updateBRegions(convection->second.external_temperature, _boundaries[r].externalTemperature, distribution, 3, cbegin, tbegin, time);
+				if (!_boundaries[r].externalTemperature.isConts) {
+					updateKernelParam(_boundaries[r].externalTemperature, convection->second.external_temperature, cbegin, tbegin, region);
 				}
-				_boundaries[r].htc.data = new serializededata<esint, double>(1, distribution);
-
 				#pragma omp parallel for
-				for (size_t t = 0; t < threads; t++) {
-					for (size_t i = distribution[t]; i < distribution[t + 1]; ++i) {
-						_boundaries[r].htc.data->datatarray()[i] = _kernel->convectionHTC(convection->second, 3, cbegin + i * 3, time, *(tbegin + i));
+				for (int t = 0; t < info::env::OMP_NUM_THREADS; t++) {
+					for (size_t i = region->distribution[t]; i < region->distribution[t + 1]; ++i) {
+						_boundaries[r].htc.data->datatarray()[i] = _kernel->convectionHTC(convection->second, 3, cbegin + i * 3, time::current, *(tbegin + i));
 					}
 				}
 			}
 		}
+	}
+
+	if (info::ecf->heat_transfer_3d.diffusion_split) {
+		processSolution(); // compute gradient
 	}
 }
 
@@ -309,10 +242,10 @@ void HeatTransfer3DController::processElements(Matrices matrices, const SolverPa
 	HeatTransfer3DKernel::ElementIterator iterator;
 
 	size_t noffset = enodes->begin() - info::mesh->elements->procNodes->datatarray().begin();
-	iterator.temperature = _ntemperature.data->datatarray().begin() + noffset;
-	iterator.coordinates = _ncoordinate.data->datatarray().begin() + noffset * 3;
-	iterator.motion      = _nmotion.data->datatarray().begin() + noffset * 3;
-	iterator.heat        = _nheat.data->datatarray().begin() + noffset;
+	iterator.temperature = _ktemperature.data->datatarray().begin() + noffset;
+	iterator.coordinates = _kcoordinate.data->datatarray().begin() + noffset * 3;
+	iterator.motion      = _kmotion.data->datatarray().begin() + noffset * 3;
+	iterator.heat        = _kheat.data->datatarray().begin() + noffset;
 
 	for (esint e = filler.begin; e < filler.end; ++e, ++enodes) {
 		iterator.element = info::mesh->elements->epointers->datatarray()[e];
@@ -386,21 +319,21 @@ void HeatTransfer3DController::processSolution()
 		auto enodes = info::mesh->elements->procNodes->cbegin(t);
 		HeatTransfer3DKernel::SolutionIterator iterator;
 
-		iterator.temperature = _ntemperature.data->datatarray().begin(t);
-		iterator.coordinates = _ncoordinate.data->datatarray().begin(t);
-		iterator.motion      = _nmotion.data->datatarray().begin(t);
-		iterator.heat        = _nheat.data->datatarray().begin(t);
+		iterator.temperature = _ktemperature.data->datatarray().begin(t);
+		iterator.coordinates = _kcoordinate.data->datatarray().begin(t);
+		iterator.motion      = _kmotion.data->datatarray().begin(t);
+		iterator.heat        = _kheat.data->datatarray().begin(t);
 
 		if (info::mesh->hasPhaseChange()) {
-			iterator.phase = _phaseChange->data.data() + info::mesh->elements->distribution[t];
-			iterator.latentHeat = _latentHeat->data.data() + info::mesh->elements->distribution[t];
+			iterator.phase = _ephaseChange->data.data() + info::mesh->elements->distribution[t];
+			iterator.latentHeat = _elatentHeat->data.data() + info::mesh->elements->distribution[t];
 		}
 
 		if (info::ecf->output.results_selection.gradient) {
-			iterator.gradient = _gradient->data.data() + info::mesh->elements->distribution[t] * 3;
+			iterator.gradient = _egradient->data.data() + info::mesh->elements->distribution[t] * 3;
 		}
 		if (info::ecf->output.results_selection.flux) {
-			iterator.flux = _flux->data.data() + info::mesh->elements->distribution[t] * 3;
+			iterator.flux = _eflux->data.data() + info::mesh->elements->distribution[t] * 3;
 		}
 
 		for (size_t e = info::mesh->elements->distribution[t]; e < info::mesh->elements->distribution[t + 1]; ++e, ++enodes) {

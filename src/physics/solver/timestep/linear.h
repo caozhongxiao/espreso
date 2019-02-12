@@ -9,7 +9,8 @@ namespace espreso {
 class LinearTimeStep: public TimeStepSolver {
 
 public:
-	LinearTimeStep(Assembler &assembler);
+	LinearTimeStep(LinearTimeStep *previous, Assembler &assembler);
+	bool hasSameMode(const LoadStepConfiguration &configuration) const;
 
 	void solve(LoadStepSolver &loadStepSolver);
 	std::string name();

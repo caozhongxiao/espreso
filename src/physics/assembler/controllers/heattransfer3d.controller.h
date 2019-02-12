@@ -13,12 +13,11 @@ class HeatTransfer3DController: public HeatTransferController
 {
 
 public:
-	HeatTransfer3DController(HeatTransferLoadStepConfiguration &configuration);
+	HeatTransfer3DController(HeatTransfer3DController* previous, HeatTransferLoadStepConfiguration &configuration);
 	~HeatTransfer3DController();
 
 	const PhysicsConfiguration& configuration() const;
 
-	void initData();
 	void processSolution();
 
 	void nextTime();

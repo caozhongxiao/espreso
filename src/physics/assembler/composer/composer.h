@@ -45,12 +45,8 @@ public:
 	virtual void buildDirichlet() = 0;
 	virtual void buildMVData() = 0;
 
-	virtual void initData();
 	virtual void assemble(Matrices matrices, const SolverParameters &parameters) = 0;
 	virtual void setDirichlet(Matrices matrices, double reduction, const std::vector<double> &subtraction) = 0;
-
-	virtual void nextTime();
-	virtual void parametersChanged();
 
 	virtual void fillSolution() = 0;
 	virtual void computeReactionForces() = 0;

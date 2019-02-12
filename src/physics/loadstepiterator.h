@@ -24,7 +24,6 @@ protected:
 	LoadStepSolver *_loadStepSolver;
 	TimeStepSolver *_timeStepSolver;
 	Assembler *_assembler;
-	LinearSolver * _linearSolver;
 };
 
 }

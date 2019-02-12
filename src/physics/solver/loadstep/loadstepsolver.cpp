@@ -9,7 +9,7 @@ using namespace espreso;
 
 LoadStepSolver::LoadStepSolver(Assembler &assembler, TimeStepSolver &timeStepSolver, double duration)
 : _assembler(assembler), _timeStepSolver(timeStepSolver), _duration(duration),
-  _startTime(0), _precision(1e-8)
+  _startTime(time::current), _precision(1e-8)
 {
 
 }

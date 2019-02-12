@@ -6,6 +6,7 @@
 
 namespace espreso {
 
+struct LoadStepConfiguration;
 class TimeStepSolver;
 class Assembler;
 enum Matrices: int;
@@ -13,12 +14,12 @@ enum Matrices: int;
 class LoadStepSolver {
 
 public:
-
 	LoadStepSolver(Assembler &assembler, TimeStepSolver &timeStepSolver, double duration);
 	virtual ~LoadStepSolver() {}
 
 	void run();
 
+	virtual bool hasSameType(const LoadStepConfiguration &configuration) const =0;
 	virtual std::string name() =0;
 
 	virtual Matrices updateStructuralMatrices(Matrices matrices) =0;

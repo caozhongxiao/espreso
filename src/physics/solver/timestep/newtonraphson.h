@@ -13,7 +13,8 @@ struct NodeData;
 class NewtonRaphson: public TimeStepSolver {
 
 public:
-	NewtonRaphson(Assembler &assembler, NonLinearSolverConfiguration &configuration);
+	NewtonRaphson(NewtonRaphson *previous, Assembler &assembler, NonLinearSolverConfiguration &configuration);
+	bool hasSameMode(const LoadStepConfiguration &configuration) const;
 
 	void solve(LoadStepSolver &loadStepSolver);
 	std::string name();

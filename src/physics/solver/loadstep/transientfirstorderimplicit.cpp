@@ -14,25 +14,41 @@
 
 #include "basis/logging/logging.h"
 #include "config/ecf/physics/physicssolver/transientsolver.h"
+#include "config/ecf/physics/physicssolver/loadstep.h"
 
 #include <cmath>
 
 using namespace espreso;
 
-TransientFirstOrderImplicit::TransientFirstOrderImplicit(Assembler &assembler, TimeStepSolver &timeStepSolver, TransientSolverConfiguration &configuration, double duration)
+TransientFirstOrderImplicit::TransientFirstOrderImplicit(TransientFirstOrderImplicit *previous, Assembler &assembler, TimeStepSolver &timeStepSolver, TransientSolverConfiguration &configuration, double duration)
 : LoadStepSolver(assembler, timeStepSolver, duration), _configuration(configuration), _alpha(0), _nTimeShift(_configuration.time_step)
 {
 	if (configuration.time_step < 1e-7) {
 		ESINFO(GLOBAL_ERROR) << "Set time step for TRANSIENT solver greater than 1e-7.";
 	}
 
-	U = info::mesh->nodes->appendData(1, {});
-	dU = info::mesh->nodes->appendData(1, {});
-	V = info::mesh->nodes->appendData(1, {});
-	X = info::mesh->nodes->appendData(1, {});
-	Y = info::mesh->nodes->appendData(1, {});
-	dTK = info::mesh->nodes->appendData(1, {});
-	dTM = info::mesh->nodes->appendData(1, {});
+	if (previous) {
+		U = previous->U;
+		dU = previous->dU;
+		V = previous->V;
+		X = previous->X;
+		Y = previous->Y;
+		dTK = previous->dTK;
+		dTM = previous->dTM;
+	} else {
+		U = info::mesh->nodes->appendData(1, {});
+		dU = info::mesh->nodes->appendData(1, {});
+		V = info::mesh->nodes->appendData(1, {});
+		X = info::mesh->nodes->appendData(1, {});
+		Y = info::mesh->nodes->appendData(1, {});
+		dTK = info::mesh->nodes->appendData(1, {});
+		dTM = info::mesh->nodes->appendData(1, {});
+	}
+}
+
+bool TransientFirstOrderImplicit::hasSameType(const LoadStepConfiguration &configuration) const
+{
+	return configuration.type == LoadStepConfiguration::TYPE::TRANSIENT;
 }
 
 std::string TransientFirstOrderImplicit::name()

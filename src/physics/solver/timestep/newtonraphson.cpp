@@ -18,12 +18,23 @@
 #include "mesh/store/statisticsstore.h"
 #include "linearsolver/linearsolver.h"
 
+#include "config/ecf/physics/physicssolver/loadstep.h"
+
 using namespace espreso;
 
-NewtonRaphson::NewtonRaphson(Assembler &assembler, NonLinearSolverConfiguration &configuration)
+NewtonRaphson::NewtonRaphson(NewtonRaphson *previous, Assembler &assembler, NonLinearSolverConfiguration &configuration)
 : TimeStepSolver(assembler), _configuration(configuration)
 {
-	_solution = info::mesh->nodes->appendData(_assembler.controller()->solution()->dimension, {});
+	if (previous) {
+		_solution = previous->_solution;
+	} else {
+		_solution = info::mesh->nodes->appendData(_assembler.controller()->solution()->dimension, {});
+	}
+}
+
+bool NewtonRaphson::hasSameMode(const LoadStepConfiguration &configuration) const
+{
+	return configuration.mode == LoadStepConfiguration::MODE::NONLINEAR;
 }
 
 std::string NewtonRaphson::name()

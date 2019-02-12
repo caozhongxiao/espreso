@@ -18,9 +18,28 @@
 
 using namespace espreso;
 
+HeatTransferController::HeatTransferController(int dimension, HeatTransferController *previous, HeatTransferLoadStepConfiguration &configuration)
+: Controller(dimension),
+  _configuration(configuration),
+  _ktemperature(1), _kcoordinate(dimension), _kmotion(dimension), _kheat(1), _kthickness(1),
+  _ntemperature(NULL),
+  _egradient(NULL), _eflux(NULL), _emotion(NULL), _ethickness(NULL),
+  _ephaseChange(NULL), _elatentHeat(NULL)
+{
+	if (previous) {
+		_ntemperature = previous->_ntemperature;
+		_egradient = previous->_egradient;
+		_eflux = previous->_eflux;
+		_emotion = previous->_emotion;
+		_ethickness = previous->_ethickness;
+		_ephaseChange = previous->_ephaseChange;
+		_elatentHeat = previous->_elatentHeat;
+	}
+}
+
 NodeData* HeatTransferController::solution()
 {
-	return _temperature;
+	return _ntemperature;
 }
 
 void HeatTransferController::dirichletIndices(std::vector<std::vector<esint> > &indices)

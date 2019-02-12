@@ -36,7 +36,7 @@ protected:
 
 	int _variableCounter;
 
-	const EnsightASCIIWriter _writer;
+	const EnsightBinaryWriter _writer;
 };
 
 struct EnSightWithDecomposition: public virtual EnSight {
