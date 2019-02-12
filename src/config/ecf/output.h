@@ -36,13 +36,17 @@ struct ResultsSelectionConfiguration: public HeatTransferOutputSettings, public 
 	{
 		HeatTransferOutputSettings::basic();
 		StructuralMechanicsOutputSettings::basic();
+		thickness = false;
 	}
 
 	void all()
 	{
 		HeatTransferOutputSettings::all();
 		StructuralMechanicsOutputSettings::all();
+		thickness = true;
 	}
+
+	bool thickness;
 
 	ResultsSelectionConfiguration(const PHYSICS &physics);
 protected:

@@ -70,6 +70,10 @@ espreso::ResultsSelectionConfiguration::ResultsSelectionConfiguration(const PHYS
 		return _physics == PHYSICS::STRUCTURAL_MECHANICS_2D || _physics == PHYSICS::STRUCTURAL_MECHANICS_3D;
 	};
 
+	auto D2 = [&] () {
+		return _physics == PHYSICS::HEAT_TRANSFER_2D || _physics == PHYSICS::STRUCTURAL_MECHANICS_2D;
+	};
+
 	REGISTER(temperature, ECFMetaData()
 			.setdescription({ "Temperature." })
 			.setdatatype({ ECFDataType::BOOL })
@@ -100,6 +104,11 @@ espreso::ResultsSelectionConfiguration::ResultsSelectionConfiguration(const PHYS
 			.setdescription({ "Displacement." })
 			.setdatatype({ ECFDataType::BOOL })
 			.allowonly(structuralMechanics));
+
+	REGISTER(thickness, ECFMetaData()
+			.setdescription({ "Element thickness." })
+			.setdatatype({ ECFDataType::BOOL })
+			.allowonly(D2));
 }
 
 espreso::OutputConfiguration::OutputConfiguration(const PHYSICS &physics)
