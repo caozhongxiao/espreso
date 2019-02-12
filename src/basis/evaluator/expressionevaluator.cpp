@@ -25,6 +25,15 @@ ExpressionEvaluator::ExpressionEvaluator(const std::string &expression)
 	_temperatureDependency = StringCompare::contains(expression, { "TEMPERATURE" });
 }
 
+ExpressionEvaluator::~ExpressionEvaluator()
+{
+	size_t threads = info::env::OMP_NUM_THREADS;
+
+	for (size_t t = 0; t < threads; t++) {
+		delete _expressions[t];
+	}
+}
+
 ExpressionEvaluator::ExpressionEvaluator(const ExpressionEvaluator &other)
 {
 	size_t threads = info::env::OMP_NUM_THREADS;

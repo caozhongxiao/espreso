@@ -22,6 +22,7 @@ public:
 
 	ExpressionEvaluator(const std::string &expression);
 	ExpressionEvaluator(const ExpressionEvaluator &other);
+	~ExpressionEvaluator();
 
 	Type type() { return Type::EXPRESSION; }
 	virtual Evaluator* copy() const { return new ExpressionEvaluator(*this); }
