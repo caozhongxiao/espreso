@@ -19,10 +19,6 @@ public:
 	void solve();
 	void finalize();
 
-	bool glueDomainsByLagrangeMultipliers() const { return false; }
-	bool applyB1Scaling() const {return false;}
-	bool applyB1LagrangeRedundancy()const { return false;}
-
 	double& precision();
 
 protected:

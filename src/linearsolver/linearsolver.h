@@ -14,10 +14,6 @@ public:
 
 	void solve(Matrices matrices);
 
-	virtual bool glueDomainsByLagrangeMultipliers() const =0;
-	virtual bool applyB1Scaling() const =0;
-	virtual bool applyB1LagrangeRedundancy() const =0;
-
 	virtual double& precision() =0;
 
 	virtual ~LinearSolver() {}

@@ -28,10 +28,6 @@ public:
 	void update(Matrices matrices);
 	void solve();
 
-	bool glueDomainsByLagrangeMultipliers() const { return true; }
-	bool applyB1Scaling() const { return configuration.scaling; }
-	bool applyB1LagrangeRedundancy() const { return configuration.redundant_lagrange; }
-
 	double& precision() { return configuration.precision; }
 
 	virtual ~FETISolver();

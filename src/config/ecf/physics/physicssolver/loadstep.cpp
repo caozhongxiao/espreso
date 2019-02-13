@@ -29,7 +29,8 @@ espreso::LoadStepConfiguration::LoadStepConfiguration(const std::string &firstRe
 			.setdescription({ "Linear solver" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("FETI").setdescription("Use ESPRESO as linear solver."))
-			.addoption(ECFOption().setname("HYPRE").setdescription("Use hypre library.")));
+			.addoption(ECFOption().setname("HYPRE").setdescription("Use hypre library."))
+			.addoption(ECFOption().setname("DIRECT").setdescription("Use parallel direct solver from MKL.")));
 
 	REGISTER(nonlinear_solver, ECFMetaData()
 			.setdescription({ "Non-linear physics solver settings" })

@@ -80,6 +80,15 @@ struct AssemblerInstance: public Assembler, public TController, public TComposer
 		_solver = new TSolver(TComposer::data, solver);
 	}
 
+	template <typename TPhysics>
+	AssemblerInstance(Assembler *previous, TPhysics &loadStep, int DOFs)
+	: TController(dynamic_cast<TController*>(previous), loadStep),
+	  TComposer(*this, *this, DOFs),
+	  TProvider(TComposer::data, loadStep)
+	{
+		_solver = new TSolver(TComposer::data);
+	}
+
 	~AssemblerInstance()
 	{
 		if (_solver != NULL) {

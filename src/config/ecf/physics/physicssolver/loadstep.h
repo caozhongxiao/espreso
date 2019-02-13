@@ -23,7 +23,8 @@ struct LoadStepConfiguration: public ECFDescription {
 
 	enum class SOLVER {
 		FETI,
-		HYPRE
+		HYPRE,
+		DIRECT
 	};
 
 	double duration_time;

@@ -19,9 +19,6 @@ public:
 	double& solutionPrecision();
 };
 
-
 }
-
-
 
 #endif /* SRC_PHYSICS_ASSEMBLER_PROVIDER_HYPRE_HYPREPROVIDER_H_ */
