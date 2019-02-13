@@ -338,7 +338,7 @@ void Controller::nodesToKernels(std::vector<double> &nvalues, Parameter &kvalues
 		auto i = kvalues.data->datatarray().begin(t);
 		for (auto n = procNodes->datatarray().cbegin(t); n != procNodes->datatarray().cend(t); ++n, ++i) {
 			for (int d = 0; d < kvalues.dimension; d++) {
-				*i += nvalues[*n];
+				*i = nvalues[*n];
 			}
 		}
 	}
