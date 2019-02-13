@@ -44,6 +44,8 @@ void PseudoTimeStepping::runNextTimeStep()
 		time::current = _startTime + _duration;
 	}
 	time::shift = time::current - last;
+	_assembler.nextTime();
+
 	processTimeStep();
 }
 
