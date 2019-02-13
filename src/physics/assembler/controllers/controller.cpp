@@ -217,10 +217,13 @@ void Controller::updateKernelParam(Parameter &parameter, const ECFExpression &va
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
+		size_t offset = parameter.data->datatarray().distribution()[t];
+		double *_cbegin = cbegin != NULL ? cbegin + _dimension * offset : NULL;
+		double *_tbegin = tbegin != NULL ? tbegin + offset : NULL;
 		value.evaluator->evalVector(
 				parameter.data->datatarray().size(t),
-				_dimension, cbegin, tbegin, time::current,
-				parameter.data->datatarray().data()
+				_dimension, _cbegin, _tbegin, time::current,
+				parameter.data->datatarray().data() + parameter.dimension * offset
 		);
 	}
 }

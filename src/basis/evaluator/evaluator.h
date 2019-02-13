@@ -66,7 +66,7 @@ public:
 	virtual void evalSelected(esint size, esint increment, esint *selection, int csize, const double* cbegin, const double* tbegin, double time, double *results) const
 	{
 		for (esint i = 0; i < size; ++i) {
-			results[i] = 0;
+			results[i * increment] = 0;
 		}
 	}
 
