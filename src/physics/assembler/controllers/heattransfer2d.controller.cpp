@@ -74,7 +74,7 @@ HeatTransfer2DController::HeatTransfer2DController(HeatTransfer2DController* pre
 	initKernelParam(_kmotion, configuration.translation_motions, 0);
 	initKernelParam(_kheat, configuration.heat_source, 0);
 
-	if (_kmotion.isConts) {
+	if (_emotion && _kmotion.isConts) {
 		kernelToElements(_kmotion, _emotion->data);
 	}
 
@@ -148,7 +148,9 @@ void HeatTransfer2DController::parametersChanged()
 	}
 	if (!_kmotion.isConts) {
 		updateKernelParam(_kmotion, _configuration.translation_motions, cbegin, tbegin);
-		kernelToElements(_kmotion, _emotion->data);
+		if (_emotion) {
+			kernelToElements(_kmotion, _emotion->data);
+		}
 	}
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {

@@ -306,13 +306,13 @@ void Controller::kernelToNodes(Parameter &kvalues, std::vector<double> &nvalues)
 void Controller::kernelToElements(Parameter &kvalues, std::vector<double> &evalues)
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
-	serializededata<esint, esint> *procNodes = info::mesh->elements->procNodes;
+	auto elements = info::mesh->elements;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		size_t noffset = procNodes->datatarray().distribution()[t];
-		size_t eoffset = procNodes->boundarytarray().distribution()[t];
-		for (auto enodes = procNodes->cbegin(t); enodes != procNodes->cend(t); ++enodes, ++eoffset) {
+		size_t noffset = elements->procNodes->datatarray().distribution()[t];
+		size_t eoffset = elements->distribution[t];
+		for (auto enodes = elements->procNodes->cbegin(t); enodes != elements->procNodes->cend(t); ++enodes, ++eoffset) {
 			for (int d = 0; d < kvalues.dimension; d++) {
 				double sum = 0;
 				for (auto n = enodes->begin(); n != enodes->end(); ++n, ++noffset) {
