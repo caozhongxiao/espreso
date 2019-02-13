@@ -1,7 +1,5 @@
 # ESPRESO Configuration File
 
-#BENCHMARK ARG0 [ TETRA4, PYRAMID5, PRISMA6, HEXA8 ]
-
 DEFAULT_ARGS {
   0       HEXA8;
 
@@ -16,6 +14,8 @@ DEFAULT_ARGS {
   7           4;
   8           6;
   9           4;
+
+  10       FETI;
 }
 
 INPUT            GENERATOR;
@@ -104,7 +104,7 @@ HEAT_TRANSFER_3D {
       DURATION_TIME     1;
       TYPE   STEADY_STATE;
       MODE         LINEAR;
-      SOLVER         FETI;
+      SOLVER      [ARG10];
 
       FETI {
         METHOD          TOTAL_FETI;
@@ -113,6 +113,23 @@ HEAT_TRANSFER_3D {
         ITERATIVE_SOLVER     GMRES;
         REGULARIZATION   ALGEBRAIC;
         MAX_ITERATIONS        1000;
+      }
+
+      HYPRE {
+        SOLVER_TYPE  FLEXGMRES;
+
+        FLEXGMRES {
+          RELATIVE_CONV_TOL    1E-06;
+          ABSOLUTE_CONV_TOL        0;
+          MAX_ITERATIONS       10000;
+          RESTARTS               100;
+          PRECONDITIONER        NONE;
+          SOLVER_INFO                        NO_INFO;
+
+          BOOMERAMG {
+            CONVERGENCE_TOLERANCE                1E-10;
+          }
+        }
       }
 
       TRANSLATION_MOTIONS {

@@ -16,6 +16,8 @@ DEFAULT_ARGS {
   7           4;
   8           3;
   9           4;
+
+  10       FETI;
 }
 
 INPUT            GENERATOR;
@@ -98,7 +100,7 @@ HEAT_TRANSFER_3D {
       DURATION_TIME    .5;
       TYPE      TRANSIENT;
       MODE         LINEAR;
-      SOLVER         FETI;
+      SOLVER      [ARG10];
 
       TRANSIENT_SOLVER {
         METHOD   CRANK_NICOLSON;

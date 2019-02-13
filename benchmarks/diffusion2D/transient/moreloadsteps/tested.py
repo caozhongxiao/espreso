@@ -6,13 +6,18 @@ from estest import ESPRESOTest
 
 def setup():
     ESPRESOTest.path = os.path.dirname(__file__)
-    ESPRESOTest.args = []
+    ESPRESOTest.args = [ 2, 2, 3, 2, 10, 15, "solver" ]
 
 def teardown():
     ESPRESOTest.clean()
 
 @istest
-def defaults():
+def by():
+    for solver in [ "FETI", "HYPRE" ]:
+        yield run, solver
+
+def run(solver):
+    ESPRESOTest.args[6] = solver
     ESPRESOTest.run()
     ESPRESOTest.compare("espreso.emr")
     ESPRESOTest.report("espreso.time.xml")

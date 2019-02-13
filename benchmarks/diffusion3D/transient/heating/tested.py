@@ -6,7 +6,7 @@ from estest import ESPRESOTest
 
 def setup():
     ESPRESOTest.path = os.path.dirname(__file__)
-    ESPRESOTest.args = [ "etype", 2, 2, 1, 1, 2, 2, 4, 3, 4 ]
+    ESPRESOTest.args = [ "etype", 2, 2, 1, 1, 2, 2, 4, 3, 4, "solver" ]
 
 def teardown():
     ESPRESOTest.clean()
@@ -14,10 +14,12 @@ def teardown():
 @istest
 def by():
     for etype in [ "HEXA8", "TETRA4", "PRISMA6", "PYRAMID5" ]:
-        yield run, etype
+        for solver in [ "FETI", "HYPRE" ]:
+            yield run, etype, solver
 
-def run(etype):
+def run(etype, solver):
     ESPRESOTest.args[0] = etype
+    ESPRESOTest.args[10] = solver
     ESPRESOTest.run()
     ESPRESOTest.compare(".".join([etype, "emr"]))
     ESPRESOTest.report("espreso.time.xml")
