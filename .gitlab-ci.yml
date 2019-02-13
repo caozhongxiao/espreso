@@ -6,26 +6,15 @@ stages:
 before_script:
   - export SPACK_ROOT=/opt/spack
   - . $SPACK_ROOT/share/spack/setup-env.sh
-  - . env/paths.default
-  - ml gcc openmpi intel-mkl cmake
-  - cp install/build.config.gcc build.config
+  - ml gcc openmpi intel-mkl hypre parmetis
 
 MKL32:
   stage: benchmarks
   only:
     - triggers
   script:
-    - ./waf configure --SOLVER=MKL --INT_WIDTH=32
-    - ./waf install -j8
-    - nosetests -v
-
-MKL64:
-  stage: benchmarks
-  only:
-    - triggers
-  script:
-    - ./waf configure --SOLVER=MKL --INT_WIDTH=64
-    - ./waf install -j8
+    - ./waf configure
+    - ./waf -j8
     - nosetests -v
 
 GITHUB:
