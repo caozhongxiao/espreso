@@ -13,7 +13,7 @@ class GlobalComposer: public Composer {
 public:
 
 	GlobalComposer(Controller &controler, Provider &provider)
-	: Composer(controler), _provider(provider), _localKOffset(0), _localRHSOffset(0) {}
+	: Composer(controler), _provider(provider), _localKOffset(0), _localRHSOffset(0), _MVValuesOffset(0) {}
 
 	void KplusAlfaM(double alfa);
 	void enrichRHS(double alfa, NodeData* x);
@@ -39,9 +39,11 @@ protected:
 	std::vector<esint> _nDistribution;
 
 	// data for Mat-Vec product
-	std::vector<esint> _MVCols;
+	esint _MVValuesOffset;
+	std::vector<esint> _MVRows, _MVCols;
 	std::vector<double> _MVVec;
 	std::vector<std::vector<esint> > _MVSend, _MVRecv;
+	std::vector<int> _MVNeighbours;
 
 	// data for dirichlet
 	std::vector<double> _KDirichletValues;

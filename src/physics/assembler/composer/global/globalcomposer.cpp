@@ -25,14 +25,12 @@ void GlobalComposer::KplusAlfaM(double alfa)
 
 void GlobalComposer::apply(std::vector<SparseMatrix> &matrices, std::vector<double> &result, std::vector<double> &x)
 {
-	// halo rows cannot be used since MKL does not accept it
-	esint rows = data->K.front().rows;// - data->K.front().haloRows;
+	esint rows = data->K.front().rows - data->K.front().haloRows;
 	esint cols = data->K.front().maxCol - data->K.front().minCol + 1;
-	std::vector<esint> &ROWS = matrices.front().CSR_I_row_indices;
 	std::vector<double> &VALS = matrices.front().CSR_V_values;
 
-	std::vector<std::vector<double> > sBuffer(info::mesh->neighbours.size()), rBuffer(info::mesh->neighbours.size());
-	for (size_t n = 0; n < info::mesh->neighbours.size(); ++n) {
+	std::vector<std::vector<double> > sBuffer(_MVNeighbours.size()), rBuffer(_MVNeighbours.size());
+	for (size_t n = 0; n < _MVNeighbours.size(); ++n) {
 		rBuffer[n].resize(_MVRecv[n].size());
 		sBuffer[n].reserve(_MVSend[n].size());
 		for (size_t i = 0; i < _MVSend[n].size(); ++i) {
@@ -40,24 +38,23 @@ void GlobalComposer::apply(std::vector<SparseMatrix> &matrices, std::vector<doub
 		}
 	}
 
-	if (!Communication::exchangeKnownSize(sBuffer, rBuffer, info::mesh->neighbours)) {
+	if (!Communication::exchangeKnownSize(sBuffer, rBuffer, _MVNeighbours)) {
 		ESINFO(ERROR) << "ESPRESO internal error: exchange MV data.";
 	}
 
-	for (size_t n = 0; n < info::mesh->neighbours.size(); ++n) {
+	for (size_t n = 0; n < _MVNeighbours.size(); ++n) {
 		for (size_t i = 0; i < rBuffer[n].size(); ++i) {
 			_MVVec[_MVRecv[n][i]] = rBuffer[n][i];
 		}
 	}
 	std::copy(x.begin() + _foreignDOFs, x.end(), _MVVec.begin() + _nDistribution[info::mpi::rank] - data->K.front().minCol + 1);
-	for (size_t n = 0; n < info::mesh->neighbours.size(); ++n) {
+	for (size_t n = 0; n < _MVNeighbours.size(); ++n) {
 		for (size_t i = 0; i < rBuffer[n].size(); ++i) {
 			_MVVec[_MVRecv[n][i]] = rBuffer[n][i];
 		}
 	}
 
-	result.resize(_MVVec.size());
-	MATH::CSRMatVecProduct(rows, cols, ROWS.data(), _MVCols.data(), VALS.data(), _MVVec.data(), result.data());
+	MATH::CSRMatVecProduct(rows, cols, _MVRows.data(), _MVCols.data(), VALS.data() + _MVValuesOffset, _MVVec.data(), result.data() + data->K.front().haloRows);
 
 	gather(result);
 }

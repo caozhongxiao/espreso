@@ -374,25 +374,55 @@ void UniformNodesComposer::buildMVData()
 	std::vector<esint> &ROWS = data->K.front().CSR_I_row_indices;
 	std::vector<esint> &COLS = data->K.front().CSR_J_col_indices;
 
-	_MVCols = COLS;
-	_MVSend.resize(info::mesh->neighbours.size());
-	_MVRecv.resize(info::mesh->neighbours.size());
-	const auto &DOF = _DOFMap->datatarray();
-	for (esint r = 0; r < data->K.front().rows; ++r) {
-		if (_nDistribution[info::mpi::rank] <= DOF[r] && DOF[r] < _nDistribution[info::mpi::rank + 1]) {
-			for (esint c = ROWS[r] - 1; c < ROWS[r + 1] - 1; ++c) {
-				if (COLS[c] - 1 < _nDistribution[info::mpi::rank] || _nDistribution[info::mpi::rank + 1] <= COLS[c] - 1) {
-					esint target = std::lower_bound(_nDistribution.begin(), _nDistribution.end(), COLS[c]) - _nDistribution.begin() - 1;
-					esint noffset = std::lower_bound(info::mesh->neighbours.begin(), info::mesh->neighbours.end(), target) - info::mesh->neighbours.begin();
-					_MVSend[noffset].push_back(r);
-					_MVRecv[noffset].push_back(COLS[c] - data->K.front().minCol);
-				}
-				_MVCols[c] -= data->K.front().minCol - 1;
+	std::vector<IJ> synchronization;
+
+	_MVRows.push_back(1);
+	for (esint r = data->K.front().haloRows; r < data->K.front().rows; ++r) {
+		for (esint c = ROWS[r] - 1; c < ROWS[r + 1] - 1; ++c) {
+			_MVCols.push_back(COLS[c] - data->K.front().minCol + 1);
+
+			esint cindex = COLS[c] - 1;
+			if (cindex < _nDistribution[info::mpi::rank] || _nDistribution[info::mpi::rank + 1] <= cindex) {
+				synchronization.push_back({r, COLS[c] - 1});
 			}
 		}
+		_MVRows.push_back(_MVCols.size() + 1);
 	}
+	_MVValuesOffset = ROWS[data->K.front().haloRows] - 1;
 	_MVVec.resize(data->K.front().maxCol - data->K.front().minCol + 1);
-	for (size_t n = 0; n < info::mesh->neighbours.size(); n++) {
+
+	std::sort(synchronization.begin(), synchronization.end(), [] (const IJ &i, const IJ &j) {
+		if (i.column == j.column) {
+			return i.row < j.row;
+		}
+		return i.column < j.column;
+	});
+
+	_MVNeighbours = info::mesh->neighbours;
+	auto sbegin = synchronization.begin();
+	while (sbegin != synchronization.end()) {
+		int neighbor = std::lower_bound(_nDistribution.begin(), _nDistribution.end(), sbegin->column + 1) - _nDistribution.begin() - 1;
+		if (neighbor != info::mpi::rank) {
+			_MVNeighbours.push_back(neighbor);
+		}
+		sbegin = std::lower_bound(sbegin, synchronization.end(), _nDistribution[neighbor + 1], [] (const IJ &index, esint value) {
+			return index.column < value;
+		});
+	}
+	Esutils::sortAndRemoveDuplicity(_MVNeighbours);
+
+	_MVSend.resize(_MVNeighbours.size());
+	_MVRecv.resize(_MVNeighbours.size());
+
+	for (size_t n = 0, i = 0; n < _MVNeighbours.size(); n++) {
+		while (i < synchronization.size() && synchronization[i].column < _nDistribution[_MVNeighbours[n] + 1]) {
+			_MVSend[n].push_back(synchronization[i].row);
+			_MVRecv[n].push_back(synchronization[i].column - data->K.front().minCol + 1);
+			++i;
+		}
+	}
+
+	for (size_t n = 0; n < _MVNeighbours.size(); n++) {
 		Esutils::sortAndRemoveDuplicity(_MVSend[n]);
 		Esutils::sortAndRemoveDuplicity(_MVRecv[n]);
 	}
