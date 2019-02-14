@@ -30,7 +30,7 @@ espreso::LoadStepConfiguration::LoadStepConfiguration(const std::string &firstRe
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("FETI").setdescription("Use ESPRESO as linear solver."))
 			.addoption(ECFOption().setname("HYPRE").setdescription("Use hypre library."))
-			.addoption(ECFOption().setname("DIRECT").setdescription("Use parallel direct solver from MKL.")));
+			.addoption(ECFOption().setname("MKLPDSS").setdescription("Use parallel direct sparse solver from MKL.")));
 
 	REGISTER(nonlinear_solver, ECFMetaData()
 			.setdescription({ "Non-linear physics solver settings" })
@@ -45,6 +45,9 @@ espreso::LoadStepConfiguration::LoadStepConfiguration(const std::string &firstRe
 	REGISTER(hypre, ECFMetaData()
 			.setdescription({ "HYPRE multigrid solver settings" })
 			.allowonly([&] () { return solver == SOLVER::HYPRE; }));
+	REGISTER(mklpdss, ECFMetaData()
+			.setdescription({ "MKL parallel direct sparse solver" })
+			.allowonly([&] () { return solver == SOLVER::MKLPDSS; }));
 }
 
 

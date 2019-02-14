@@ -6,6 +6,7 @@
 #include "nonlinearsolver.h"
 #include "config/ecf/linearsolver/feti.h"
 #include "config/ecf/linearsolver/hypre/hypre.h"
+#include "config/ecf/linearsolver/mklpdss.h"
 
 namespace espreso {
 
@@ -24,7 +25,7 @@ struct LoadStepConfiguration: public ECFDescription {
 	enum class SOLVER {
 		FETI,
 		HYPRE,
-		DIRECT
+		MKLPDSS
 	};
 
 	double duration_time;
@@ -38,6 +39,7 @@ struct LoadStepConfiguration: public ECFDescription {
 
 	FETISolverConfiguration feti;
 	HypreConfiguration hypre;
+	MKLPDSSConfiguration mklpdss;
 
 	LoadStepConfiguration(const std::string &firstResidualName, const std::string &secondResidualName);
 };

@@ -15,7 +15,6 @@
 namespace espreso {
 
 size_t Info::outputLevel = 0;
-size_t Info::testLevel = 0;
 size_t Measure::outputLevel = 0;
 
 std::string Logging::path = ".";

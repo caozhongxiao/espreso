@@ -5,10 +5,9 @@
 namespace espreso {
 
 struct HypreConfiguration;
-struct HYPREData;
+struct HYPREDataHolder;
 
 class HypreData {
-	friend class HYPRE;
 public:
 	HypreData(esint nrows);
 
@@ -16,19 +15,18 @@ public:
 	void insertIJV(esint nrows, esint offset, esint size, esint *rowIndices, esint *colIndices, double *values, double *rhsValues);
 	void finalizePattern();
 
+	void solve(const HypreConfiguration &configuration, esint nrows, double *solution);
+
 	~HypreData();
 
 protected:
 	esint _roffset, _nrows;
 
-	HYPREData *_data;
+	HYPREDataHolder *_data;
 
 	bool _finalized;
 };
 
-struct HYPRE {
-	static void solve(const HypreConfiguration &configuration, HypreData &data, esint nrows, double *solution);
-};
-
 }
+
 #endif /* SRC_WRAPPERS_HYPRE_HYPREWRAPPER_H_ */

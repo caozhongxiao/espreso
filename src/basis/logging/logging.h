@@ -64,18 +64,8 @@ public:
 		BLUE
 	};
 
-	Info(InfoEvent event): event(event), color(TextColor::WHITE), _plain(false)
-	{
-		if (testLevel) {
-			switch (event) {
-			case CONVERGENCE:
-				os << "CONVERGENCE: ";
-				break;
-			default:
-				break;
-			}
-		}
-	};
+	Info(InfoEvent event)
+	: event(event), color(TextColor::WHITE), _plain(false) { }
 	~Info();
 
 	enum InfoMode { FORMATTED, PLAIN };
@@ -121,7 +111,6 @@ public:
 
 protected:
 	static size_t outputLevel;
-	static size_t testLevel;
 
 	std::ostringstream os;
 	InfoEvent event;

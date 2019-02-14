@@ -169,7 +169,8 @@ void UniformNodesComposer::buildDirichlet()
 void UniformNodesComposer::buildPatterns()
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
-	MatrixType mtype = _provider.getMatrixType();
+//	MatrixType mtype = _provider.getMatrixType();
+	MatrixType mtype = MatrixType::REAL_UNSYMMETRIC; // TODO: set dirichlet in symmetric matrices
 
 	_nDistribution = info::mesh->nodes->gatherUniqueNodeDistribution();
 	for (size_t n = 0; n < _nDistribution.size(); ++n) {
@@ -356,8 +357,8 @@ void UniformNodesComposer::buildPatterns()
 	data->K.front().minCol = mincol;
 	data->K.front().maxCol = maxcol;
 	data->K.front().nnz = COL.size();
-	data->K.front().mtype = mtype;
-	switch (mtype) {
+	data->K.front().mtype = _provider.getMatrixType();
+	switch (data->K.front().mtype) {
 	case MatrixType::REAL_UNSYMMETRIC: data->K.front().type = 'G'; break;
 	default: data->K.front().type = 'S';
 	}
@@ -405,7 +406,8 @@ void UniformNodesComposer::assemble(Matrices matrices, const SolverParameters &p
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
-	MatrixType mtype = _provider.getMatrixType();
+//	MatrixType mtype = _provider.getMatrixType();
+	MatrixType mtype = MatrixType::REAL_UNSYMMETRIC; // TODO: set dirichlet in symmetric matrix
 
 	clearMatrices(matrices, 0);
 

@@ -86,8 +86,10 @@ def set_mkl(ctx):
     libs.append("mkl_core")
     if ctx.options.cxx == "icpc":
         libs.append("mkl_intel_thread")
+        libs.append("mkl_blacs_intelmpi_lp64")
     if ctx.options.cxx == "g++":
         libs.append("mkl_gnu_thread")
+        libs.append("mkl_blacs_openmpi_lp64")
 
     ctx.check_cxx(
         header_name="mkl.h", lib=libs, uselib_store="MKL",
@@ -205,6 +207,7 @@ def build(ctx):
     ctx.objects(source=ctx.path.ant_glob('src/linearsolver/**/*.cpp'),target="linearsolver")
     ctx.objects(source=ctx.path.ant_glob('src/wrappers/metis/**/*.cpp'),target="metis",use="METIS")
     ctx.objects(source=ctx.path.ant_glob('src/wrappers/math/**/*.cpp'),target="math",use="MKL")
+    ctx.objects(source=ctx.path.ant_glob('src/wrappers/mklpdss/**/*.cpp'),target="mklpdss",use="MKL")
     ctx.objects(source=ctx.path.ant_glob('src/wrappers/hypre/**/*.cpp'),target="hypre",use="HYPRE")
     ctx.objects(source=ctx.path.ant_glob('src/wrappers/bem/**/*.cpp'),target="bem",use="BEM")
     ctx.objects(source=ctx.path.ant_glob('src/wrappers/catalyst/**/*.cpp'),target="catalyst",use="CATALYST")
@@ -212,7 +215,7 @@ def build(ctx):
 
     ctx.program(
         source="src/app/espreso.cpp",target="espreso",
-        use="config basis esinfo mesh input output physics feti linearsolver math hypre catalyst metis bem",
+        use="config basis esinfo mesh input output physics feti linearsolver math mklpdss hypre catalyst metis bem",
     )
 
 def options(opt):

@@ -20,7 +20,7 @@
 #include "HYPRE_parcsr_ls.h"
 
 namespace espreso {
-struct HYPREData {
+struct HYPREDataHolder {
 	HYPRE_IJMatrix K;
 	HYPRE_IJVector f, x;
 };
@@ -34,7 +34,7 @@ HypreData::HypreData(esint nrows)
 : _roffset(nrows), _nrows(nrows), _data(NULL), _finalized(false)
 {
 #ifdef HAVE_HYPRE
-	_data = new HYPREData();
+	_data = new HYPREDataHolder();
 
 	Communication::exscan(_roffset);
 	HYPRE_IJMatrixCreate(info::mpi::comm, _roffset + 1, _roffset + _nrows, _roffset + 1, _roffset + _nrows, &_data->K);
@@ -522,11 +522,11 @@ static void setPilutPreconditioner(HYPRE_Solver &pilut, const HYPREPilutConfigur
 }
 #endif
 
-void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, esint nrows, double *solution)
+void HypreData::solve(const HypreConfiguration &configuration, esint nrows, double *solution)
 {
 #ifdef HAVE_HYPRE
-	if (!data._finalized) {
-		data.finalizePattern();
+	if (!_finalized) {
+		finalizePattern();
 	}
 
 	esint iterations;
@@ -534,9 +534,9 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, esin
 
 	HYPRE_ParCSRMatrix K;
 	HYPRE_ParVector f, x;
-	HYPRE_IJMatrixGetObject(data._data->K, (void**) &K);
-	HYPRE_IJVectorGetObject(data._data->f, (void**) &f);
-	HYPRE_IJVectorGetObject(data._data->x, (void**) &x);
+	HYPRE_IJMatrixGetObject(_data->K, (void**) &K);
+	HYPRE_IJVectorGetObject(_data->f, (void**) &f);
+	HYPRE_IJVectorGetObject(_data->x, (void**) &x);
 
 	HYPRE_Solver solver;
 	HYPRE_Solver preconditioner;
@@ -1028,20 +1028,20 @@ void HYPRE::solve(const HypreConfiguration &configuration, HypreData &data, esin
 		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "STORE HYPRE SYSTEM";
 		{
 			std::string prefix = Logging::prepareFile("HYPRE.K");
-			HYPRE_IJMatrixPrint(data._data->K, prefix.c_str());
+			HYPRE_IJMatrixPrint(_data->K, prefix.c_str());
 		}
 		{
 			std::string prefix = Logging::prepareFile("HYPRE.f");
-			HYPRE_IJVectorPrint(data._data->f, prefix.c_str());
+			HYPRE_IJVectorPrint(_data->f, prefix.c_str());
 		}
 		{
 			std::string prefix = Logging::prepareFile("HYPRE.x");
-			HYPRE_IJVectorPrint(data._data->x, prefix.c_str());
+			HYPRE_IJVectorPrint(_data->x, prefix.c_str());
 		}
 	}
 
 	std::vector<esint> rows(nrows);
-	std::iota(rows.begin(), rows.end(), data._roffset + 1);
-	HYPRE_IJVectorGetValues(data._data->x, data._nrows, rows.data(), solution);
+	std::iota(rows.begin(), rows.end(), _roffset + 1);
+	HYPRE_IJVectorGetValues(_data->x, _nrows, rows.data(), solution);
 #endif
 }

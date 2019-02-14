@@ -60,7 +60,7 @@ void HYPRESolver::update(Matrices matrices)
 // run solver and store primal and dual solution
 void HYPRESolver::solve()
 {
-	HYPRE::solve(_configuration, *_hypreData,
+	_hypreData->solve(_configuration,
 			_data->K[0].rows - _data->K[0].haloRows,
 			_data->primalSolution[0].data() + _data->K[0].haloRows);
 }

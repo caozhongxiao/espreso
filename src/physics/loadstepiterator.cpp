@@ -1,4 +1,5 @@
 
+#include <linearsolver/mklpdss/mklpdsssolver.h>
 #include "physics/assembler/dataholder.h"
 #include "loadstepiterator.h"
 #include "esinfo/time.h"
@@ -19,17 +20,16 @@
 #include "assembler/composer/global/uniformnodescomposer.h"
 #include "assembler/composer/feti/uniformnodesfeticomposer.h"
 
+#include "assembler/provider/mklpdss/heattransfer.mklpdssprovider.h"
+#include "assembler/provider/mklpdss/structuralmechanics.mklpdssprovider.h"
 #include "assembler/provider/hypre/heattransfer.hypreprovider.h"
 #include "assembler/provider/hypre/structuralmechanics.hypreprovider.h"
 #include "assembler/provider/feti/heattransfer.fetiprovider.h"
 #include "assembler/provider/feti/structuralmechanics2d.fetiprovider.h"
 #include "assembler/provider/feti/structuralmechanics3d.fetiprovider.h"
-#include "assembler/provider/direct/directprovider.h"
-
 #include "basis/logging/logging.h"
 
 #include "linearsolver/hypre/hypresolver.h"
-#include "linearsolver/direct/directsolver.h"
 #include "solver/generic/FETISolver.h"
 
 
@@ -52,10 +52,10 @@ static Assembler* getAssembler(Assembler *previous, HeatTransferLoadStepConfigur
 		case DIMENSION::D3: current = new AssemblerInstance<HeatTransfer3DController, UniformNodesComposer, HeatTransferHYPREProvider, HYPRESolver>(previous, loadStep, loadStep.hypre, 1); break;
 		default: break;
 		} break;
-	case LoadStepConfiguration::SOLVER::DIRECT:
+	case LoadStepConfiguration::SOLVER::MKLPDSS:
 		switch (dimension) {
-		case DIMENSION::D2: current = new AssemblerInstance<HeatTransfer2DController, UniformNodesComposer, DirectProvider, DirectSolver>(previous, loadStep, 1); break;
-		case DIMENSION::D3: current = new AssemblerInstance<HeatTransfer3DController, UniformNodesComposer, DirectProvider, DirectSolver>(previous, loadStep, 1); break;
+		case DIMENSION::D2: current = new AssemblerInstance<HeatTransfer2DController, UniformNodesComposer, HeatTransferMKLPDSSProvider, MKLPDSSSolver>(previous, loadStep, loadStep.mklpdss, 1); break;
+		case DIMENSION::D3: current = new AssemblerInstance<HeatTransfer3DController, UniformNodesComposer, HeatTransferMKLPDSSProvider, MKLPDSSSolver>(previous, loadStep, loadStep.mklpdss, 1); break;
 		default: break;
 		} break;
 	default:
@@ -83,10 +83,10 @@ static Assembler* getAssembler(Assembler *previous, StructuralMechanicsLoadStepC
 		case DIMENSION::D3: current = new AssemblerInstance<StructuralMechanics3DController, UniformNodesComposer, StructuralMechanicsHYPREProvider, HYPRESolver>(previous, loadStep, loadStep.hypre, 3); break;
 		default: break;
 		} break;
-	case LoadStepConfiguration::SOLVER::DIRECT:
+	case LoadStepConfiguration::SOLVER::MKLPDSS:
 		switch (dimension) {
-		case DIMENSION::D2: current = new AssemblerInstance<StructuralMechanics2DController, UniformNodesComposer, DirectProvider, DirectSolver>(previous, loadStep, 1); break;
-		case DIMENSION::D3: current = new AssemblerInstance<StructuralMechanics3DController, UniformNodesComposer, DirectProvider, DirectSolver>(previous, loadStep, 1); break;
+		case DIMENSION::D2: current = new AssemblerInstance<StructuralMechanics2DController, UniformNodesComposer, StructuralMechanicsMKLPDSSProvider, MKLPDSSSolver>(previous, loadStep, loadStep.mklpdss, 1); break;
+		case DIMENSION::D3: current = new AssemblerInstance<StructuralMechanics3DController, UniformNodesComposer, StructuralMechanicsMKLPDSSProvider, MKLPDSSSolver>(previous, loadStep, loadStep.mklpdss, 1); break;
 		default: break;
 		} break;
 	default:
