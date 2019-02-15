@@ -666,88 +666,6 @@ void UniformNodesFETIComposer::buildB1Pattern()
 }
 
 
-void UniformNodesFETIComposer::assemble(Matrices matrices, const SolverParameters &parameters)
-{
-	if (!(matrices & (Matrices::K | Matrices::M | Matrices::R | Matrices::f))) {
-		return;
-	}
-
-	#pragma omp parallel for
-	for  (esint d = 0; d < info::mesh->elements->ndomains; d++) {
-
-		size_t KIndex = 0, RHSIndex = 0;
-		double KReduction = parameters.timeIntegrationConstantK, RHSReduction = parameters.internalForceReduction;
-		Controller::InstanceFiller filler;
-
-		switch (_provider.getMatrixType(d)) {
-		case MatrixType::REAL_UNSYMMETRIC:
-			filler.insert = [&] (size_t size) {
-				for (size_t r = 0; r < size; ++r, ++RHSIndex) {
-					if ((matrices & Matrices::f) && filler.fe.rows()) {
-						data->f[d][_RHSPermutation[d][RHSIndex]] += RHSReduction * filler.fe(r, 0);
-					}
-					if ((matrices & Matrices::R) && filler.Re.rows()) {
-						data->R[d][_RHSPermutation[d][RHSIndex]] += filler.Re(r, 0);
-					}
-
-					for (size_t c = 0; c < size; ++c, ++KIndex) {
-						if ((matrices & Matrices::K) && filler.Ke.rows()) {
-							data->K[d].CSR_V_values[_KPermutation[d][KIndex]] += KReduction * filler.Ke(r, c);
-						}
-						if ((matrices & Matrices::M) && filler.Me.rows()) {
-							data->M[d].CSR_V_values[_KPermutation[d][KIndex]] += filler.Me(r, c);
-						}
-					}
-				}
-			}; break;
-		default:
-			filler.insert = [&] (size_t size) {
-				for (size_t r = 0; r < size; ++r, ++RHSIndex) {
-					if ((matrices & Matrices::f) && filler.fe.rows()) {
-						data->f[d][_RHSPermutation[d][RHSIndex]] += RHSReduction * filler.fe(r, 0);
-					}
-					if ((matrices & Matrices::R) && filler.Re.rows()) {
-						data->R[d][_RHSPermutation[d][RHSIndex]] += filler.Re(r, 0);
-					}
-
-					for (size_t c = r; c < size; ++c, ++KIndex) {
-						if ((matrices & Matrices::K) && filler.Ke.rows()) {
-							data->K[d].CSR_V_values[_KPermutation[d][KIndex]] += KReduction * filler.Ke(r, c);
-						}
-						if ((matrices & Matrices::M) && filler.Me.rows()) {
-							data->M[d].CSR_V_values[_KPermutation[d][KIndex]] += filler.Me(r, c);
-						}
-					}
-				}
-			}; break;
-		}
-
-		clearMatrices(matrices, d);
-		filler.begin = info::mesh->elements->elementsDistribution[d];
-		filler.end = info::mesh->elements->elementsDistribution[d + 1];
-
-		if (_BEMDomain[d]) {
-			_controler.processBEMdomain(d, data->K[d].CSR_V_values.data());
-		} else {
-			_controler.processElements(matrices, parameters, filler);
-		}
-
-		KReduction = parameters.internalForceReduction;
-		filler.Me.resize(0, 0);
-		filler.Re.resize(0, 0);
-
-		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-			if (info::mesh->boundaryRegions[r]->distribution.size()) {
-				if (info::mesh->boundaryRegions[r]->eintervalsDistribution[d] < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]) {
-					filler.begin = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[d]].begin;
-					filler.end = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1] - 1].end;
-					_controler.processBoundary(matrices, parameters, r, filler);
-				}
-			}
-		}
-	};
-}
-
 void UniformNodesFETIComposer::setDirichlet(Matrices matrices, double reduction, const std::vector<double> &subtraction)
 {
 	std::vector<double> values(_dirichletMap.size());
@@ -884,17 +802,6 @@ void UniformNodesFETIComposer::updateDuplicity()
 			}
 		}
 	}
-}
-
-void UniformNodesFETIComposer::fillSolution()
-{
-	for (size_t i = 0; i < _BEMDomain.size(); i++) {
-		if (_BEMDomain[i]) {
-			data->primalSolution[i].resize(_domainDOFsSize[i]);
-			_controler.fillBEMInterior(i, data->primalSolution[i].data());
-		}
-	}
-	avgGather(_controler.solution()->data, data->primalSolution);
 }
 
 void UniformNodesFETIComposer::_divide(std::vector<double> &in, std::vector<std::vector<double> > &out, bool split)

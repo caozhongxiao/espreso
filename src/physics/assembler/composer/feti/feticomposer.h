@@ -19,6 +19,10 @@ class FETIComposer: public Composer {
 public:
 	FETIComposer(Controller &controler, FETIProvider &provider, FETISolverConfiguration &configuration);
 
+	void buildMVData() {} // no data are needed
+	void assemble(Matrices matrices, const SolverParameters &parameters);
+	void fillSolution();
+
 	void KplusAlfaM(double alfa);
 	void enrichRHS(double alfa, NodeData* x);
 	void computeReactionForces() {} // returned by FETI solver

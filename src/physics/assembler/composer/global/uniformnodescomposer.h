@@ -15,16 +15,9 @@ public:
 	void initDOFs();
 	void buildDirichlet();
 	void buildPatterns();
-	void buildMVData();
-
-	void assemble(Matrices matrices, const SolverParameters &parameters);
-	void setDirichlet(Matrices matrices, double reduction, const std::vector<double> &subtraction);
-
-	void fillSolution();
 
 protected:
 	void synchronize(Matrices matrices);
-
 	void gather(std::vector<double> &data);
 
 	int _DOFs;

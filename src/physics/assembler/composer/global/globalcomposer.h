@@ -15,6 +15,11 @@ public:
 	GlobalComposer(Controller &controler, Provider &provider)
 	: Composer(controler), _provider(provider), _localKOffset(0), _localRHSOffset(0), _MVValuesOffset(0) {}
 
+	void buildMVData();
+	void assemble(Matrices matrices, const SolverParameters &parameters);
+	void setDirichlet(Matrices matrices, double reduction, const std::vector<double> &subtraction);
+	void fillSolution();
+
 	void KplusAlfaM(double alfa);
 	void enrichRHS(double alfa, NodeData* x);
 	void computeReactionForces();
@@ -22,6 +27,7 @@ public:
 	double residualNormDenominator();
 
 protected:
+	virtual void synchronize(Matrices matrices) =0;
 	void apply(std::vector<SparseMatrix> &matrices, std::vector<double> &result, std::vector<double> &x);
 	virtual void gather(std::vector<double> &data) =0;
 	void gather(std::vector<double> &out, std::vector<std::vector<double> > &in)
