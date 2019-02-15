@@ -2,7 +2,8 @@
 #include "hypreprovider.h"
 
 #include "basis/matrices/matrixtype.h"
-#include "config/ecf/physics/structuralmechanics.h"
+#include "basis/logging/logging.h"
+#include "config/ecf/physics/physicssolver/loadstep.h"
 
 using namespace espreso;
 
@@ -30,8 +31,25 @@ bool HYPREProvider::needOriginalStiffnessMatrices()
 
 double& HYPREProvider::solutionPrecision()
 {
-	// TODO: other solvers
-	return _configuration.hypre.boomeramg.convergence_tolerance;
+	switch (_configuration.hypre.solver_type) {
+	case HypreConfiguration::SOLVER_TYPE::BiCGSTAB:
+		return _configuration.hypre.bicgstab.relative_conv_tol;
+	case HypreConfiguration::SOLVER_TYPE::BoomerAMG:
+		return _configuration.hypre.boomeramg.convergence_tolerance;
+	case HypreConfiguration::SOLVER_TYPE::CGNR:
+		return _configuration.hypre.cgnr.relative_conv_tol;
+	case HypreConfiguration::SOLVER_TYPE::FlexGMRES:
+		return _configuration.hypre.flexgmres.relative_conv_tol;
+	case HypreConfiguration::SOLVER_TYPE::GMRES:
+		return _configuration.hypre.gmres.relative_conv_tol;
+	case HypreConfiguration::SOLVER_TYPE::LGMRES:
+		return _configuration.hypre.lgmres.relative_conv_tol;
+	case HypreConfiguration::SOLVER_TYPE::PCG:
+		return _configuration.hypre.pcg.relative_conv_tol;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Required precision of unknown solver.";
+		exit(0);
+	}
 }
 
 

@@ -71,29 +71,6 @@ void HypreData::insertCSR(esint nrows, esint offset, esint *rowPrts, esint *colI
 #endif
 }
 
-void HypreData::insertIJV(esint nrows, esint offset, esint size, esint *rowIndices, esint *colIndices, double *values, double *rhsValues)
-{
-#ifdef HAVE_HYPRE
-	std::vector<esint> ncols, rows;
-	ncols.reserve(nrows);
-	rows.reserve(nrows);
-	for (esint i = 0; i < size; i++) {
-		if (ncols.size() == 0 || ncols.back() != colIndices[i]) {
-			ncols.push_back(1);
-		} else {
-			++ncols.back();
-		}
-		rows.push_back(_roffset + offset + rowIndices[i]);
-	}
-	std::vector<double> x(nrows);
-
-	HYPRE_IJMatrixSetValues(_data->K, nrows, ncols.data(), rows.data(), colIndices, values);
-	HYPRE_IJVectorSetValues(_data->f, nrows, rows.data(), rhsValues);
-	HYPRE_IJVectorSetValues(_data->x, nrows, rows.data(), x.data());
-	_finalized = false;
-#endif
-}
-
 void HypreData::finalizePattern()
 {
 #ifdef HAVE_HYPRE

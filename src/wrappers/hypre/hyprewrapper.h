@@ -12,7 +12,6 @@ public:
 	HypreData(esint nrows);
 
 	void insertCSR(esint nrows, esint offset, esint *rowPrts, esint *colIndices, double *values, double *rhsValues);
-	void insertIJV(esint nrows, esint offset, esint size, esint *rowIndices, esint *colIndices, double *values, double *rhsValues);
 	void finalizePattern();
 
 	void solve(const HypreConfiguration &configuration, esint nrows, double *solution);

@@ -2,6 +2,7 @@
 #include "hypresolver.h"
 #include "physics/assembler/dataholder.h"
 
+#include "basis/logging/logging.h"
 #include "basis/utilities/utils.h"
 #include "config/ecf/linearsolver/hypre/hypre.h"
 
@@ -25,7 +26,25 @@ HYPRESolver::~HYPRESolver()
 
 double& HYPRESolver::precision()
 {
-	return _configuration.pcg.relative_conv_tol;
+	switch (_configuration.solver_type) {
+	case HypreConfiguration::SOLVER_TYPE::BiCGSTAB:
+		return _configuration.bicgstab.relative_conv_tol;
+	case HypreConfiguration::SOLVER_TYPE::BoomerAMG:
+		return _configuration.boomeramg.convergence_tolerance;
+	case HypreConfiguration::SOLVER_TYPE::CGNR:
+		return _configuration.cgnr.relative_conv_tol;
+	case HypreConfiguration::SOLVER_TYPE::FlexGMRES:
+		return _configuration.flexgmres.relative_conv_tol;
+	case HypreConfiguration::SOLVER_TYPE::GMRES:
+		return _configuration.gmres.relative_conv_tol;
+	case HypreConfiguration::SOLVER_TYPE::LGMRES:
+		return _configuration.lgmres.relative_conv_tol;
+	case HypreConfiguration::SOLVER_TYPE::PCG:
+		return _configuration.pcg.relative_conv_tol;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Required precision of unknown solver.";
+		exit(0);
+	}
 }
 
 void HYPRESolver::update(Matrices matrices)
@@ -34,7 +53,7 @@ void HYPRESolver::update(Matrices matrices)
 		_hypreData = new HypreData(_data->K[0].rows - _data->K[0].haloRows);
 	}
 
-	if (matrices & Matrices::K) {
+	if (matrices & (Matrices::K | Matrices::f)) {
 		size_t prefix = _data->K[0].CSR_I_row_indices[_data->K[0].haloRows] - 1;
 		_hypreData->insertCSR(
 				_data->K[0].rows - _data->K[0].haloRows, 0,
@@ -42,19 +61,8 @@ void HYPRESolver::update(Matrices matrices)
 				_data->K[0].CSR_J_col_indices.data() + prefix,
 				_data->K[0].CSR_V_values.data() + prefix,
 				_data->f[0].data() + _data->K[0].haloRows);
+		_hypreData->finalizePattern();
 	}
-
-//	if (matrices & Matrices::B1) {
-//		_hypreData->insertIJV(
-//				_instance->B1[0].rows, _instance->K[0].rows,
-//				_instance->B1[0].nnz,
-//				_instance->B1[0].I_row_indices.data(),
-//				_instance->B1[0].J_col_indices.data(),
-//				_instance->B1[0].V_values.data(),
-//				_instance->B1c[0].data());
-//	}
-
-	_hypreData->finalizePattern();
 }
 
 // run solver and store primal and dual solution
