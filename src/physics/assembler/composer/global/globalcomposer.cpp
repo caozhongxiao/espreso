@@ -54,6 +54,7 @@ void GlobalComposer::apply(std::vector<SparseMatrix> &matrices, std::vector<doub
 		}
 	}
 
+	result.resize(data->K.front().rows);
 	MATH::CSRMatVecProduct(rows, cols, _MVRows.data(), _MVCols.data(), VALS.data() + _MVValuesOffset, _MVVec.data(), result.data() + data->K.front().haloRows);
 
 	gather(result);
