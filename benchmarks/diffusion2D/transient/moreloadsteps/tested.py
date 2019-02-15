@@ -13,7 +13,7 @@ def teardown():
 
 @istest
 def by():
-    for solver in [ "FETI", "HYPRE" ]:
+    for solver in [ "FETI", "HYPRE", "MKLPDSS" ]:
         yield run, solver
 
 def run(solver):

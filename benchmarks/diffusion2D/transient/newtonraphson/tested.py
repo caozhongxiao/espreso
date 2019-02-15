@@ -14,7 +14,7 @@ def teardown():
 @istest
 def by():
     for etype in [ "SQUARE8", "TRIANGLE6" ]:
-        for solver in [ "FETI", "HYPRE" ]:
+        for solver in [ "FETI", "HYPRE", "MKLPDSS" ]:
             yield run, etype, solver
 
 def run(etype, solver):
