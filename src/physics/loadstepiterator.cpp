@@ -85,8 +85,8 @@ static Assembler* getAssembler(Assembler *previous, StructuralMechanicsLoadStepC
 		} break;
 	case LoadStepConfiguration::SOLVER::MKLPDSS:
 		switch (dimension) {
-		case DIMENSION::D2: current = new AssemblerInstance<StructuralMechanics2DController, UniformNodesComposer, StructuralMechanicsMKLPDSSProvider, MKLPDSSSolver>(previous, loadStep, loadStep.mklpdss, 1); break;
-		case DIMENSION::D3: current = new AssemblerInstance<StructuralMechanics3DController, UniformNodesComposer, StructuralMechanicsMKLPDSSProvider, MKLPDSSSolver>(previous, loadStep, loadStep.mklpdss, 1); break;
+		case DIMENSION::D2: current = new AssemblerInstance<StructuralMechanics2DController, UniformNodesComposer, StructuralMechanicsMKLPDSSProvider, MKLPDSSSolver>(previous, loadStep, loadStep.mklpdss, 2); break;
+		case DIMENSION::D3: current = new AssemblerInstance<StructuralMechanics3DController, UniformNodesComposer, StructuralMechanicsMKLPDSSProvider, MKLPDSSSolver>(previous, loadStep, loadStep.mklpdss, 3); break;
 		default: break;
 		} break;
 	default:
