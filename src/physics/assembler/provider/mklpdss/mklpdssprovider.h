@@ -11,6 +11,9 @@ class MKLPDSSProvider: public Provider {
 public:
 	MKLPDSSProvider(DataHolder *data, LoadStepConfiguration &configuration);
 
+	virtual bool needMatrixVectorProduct();
+	virtual bool needOriginalStiffnessMatrices();
+
 	double& solutionPrecision() { return _precision; }
 
 protected:
