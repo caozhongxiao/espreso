@@ -70,13 +70,12 @@ MKLPDSSData::MKLPDSSData(esint nrows)
 MKLPDSSData::~MKLPDSSData()
 {
 #ifdef HAVE_MKL
-	_data->phase = -1;
-	call();
+	call(-1);
 	delete _data;
 #endif
 }
 
-void MKLPDSSData::insertCSR(MatrixType mtype, esint *rowPtrs, esint *colIndices, double *values, double *rhsValues)
+void MKLPDSSData::insertK(MatrixType mtype, esint *rowPtrs, esint *colIndices, double *values)
 {
 #ifdef HAVE_MKL
 	switch (mtype) {
@@ -88,14 +87,17 @@ void MKLPDSSData::insertCSR(MatrixType mtype, esint *rowPtrs, esint *colIndices,
 		_data->mtype = 1; break;
 	}
 
+	const bool fillStructure = !_data->colData.size();
+
 	// pick only upper triangle (since composer does not set correct dirichlet in symmetric matrices)
 	if (mtype == MatrixType::REAL_SYMMETRIC_INDEFINITE || mtype == MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
-		const bool fillStructure = !_data->colData.size();
 		if (fillStructure) {
-			_data->valData.clear();
+			_data->rowData.clear();
+			_data->colData.clear();
 			_data->rowData.reserve(_nrows + 1);
 			_data->rowData.push_back(1);
 		}
+		_data->valData.clear();
 		for (esint i = 0; i < _nrows; i++) {
 			for (esint c = rowPtrs[i] - rowPtrs[0]; c < rowPtrs[i + 1] - rowPtrs[0]; c++) {
 				if (_roffset + i <= colIndices[c] - 1) {
@@ -124,6 +126,18 @@ void MKLPDSSData::insertCSR(MatrixType mtype, esint *rowPtrs, esint *colIndices,
 	}
 
 	_data->rowPtrs = _data->rowData.data();
+
+	if (fillStructure) {
+		call(12);
+	} else {
+		call(22);
+	}
+#endif
+}
+
+void MKLPDSSData::insertRHS(double *rhsValues)
+{
+#ifdef HAVE_MKL
 	_data->rhsValues = rhsValues;
 #endif
 }
@@ -132,17 +146,15 @@ void MKLPDSSData::solve(const MKLPDSSConfiguration &configuration, double *solut
 {
 #ifdef HAVE_MKL
 	_data->solution = solution;
-
-	// TODO: optimize phase calling
-	_data->phase = 13;
-	call(); // solve at once
+	call(33); // solve at once
 	ESINFO(CONVERGENCE) << "MKL PDSS: Solved";
 #endif
 }
 
-void MKLPDSSData::call()
+void MKLPDSSData::call(esint phase)
 {
 #ifdef HAVE_MKL
+	_data->phase = phase;
 	cluster_sparse_solver(
 			_data->pt, &_data->maxfct, &_data->mnum,
 			&_data->mtype,

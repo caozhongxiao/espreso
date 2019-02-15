@@ -29,12 +29,14 @@ void MKLPDSSSolver::update(Matrices matrices)
 	}
 	if (matrices & Matrices::K) {
 		size_t prefix = _data->K[0].CSR_I_row_indices[_data->K[0].haloRows] - 1;
-		_mklpdssData->insertCSR(
+		_mklpdssData->insertK(
 				_data->K[0].mtype,
 				_data->K[0].CSR_I_row_indices.data() + _data->K[0].haloRows,
 				_data->K[0].CSR_J_col_indices.data() + prefix,
-				_data->K[0].CSR_V_values.data() + prefix,
-				_data->f[0].data() + _data->K[0].haloRows);
+				_data->K[0].CSR_V_values.data() + prefix);
+	}
+	if (matrices & Matrices::f) {
+		_mklpdssData->insertRHS(_data->f[0].data() + _data->K[0].haloRows);
 	}
 }
 

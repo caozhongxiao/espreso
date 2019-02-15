@@ -12,14 +12,15 @@ class MKLPDSSData {
 public:
 	MKLPDSSData(esint nrows);
 
-	void insertCSR(MatrixType mtype, esint *rowPtrs, esint *colIndices, double *values, double *rhsValues);
+	void insertK(MatrixType mtype, esint *rowPtrs, esint *colIndices, double *values);
+	void insertRHS(double *rhsValues);
 
 	void solve(const MKLPDSSConfiguration &configuration, double *solution);
 
 	~MKLPDSSData();
 
 protected:
-	void call();
+	void call(esint phase);
 
 	esint _roffset, _nrows;
 
