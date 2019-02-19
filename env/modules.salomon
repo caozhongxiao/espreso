@@ -6,6 +6,5 @@
 #module load zlib/1.2.8-intel-2016.01
 #module load CMake/3.3.1-intel-2016.01
 
-ml load CMake
 ml load intel/2017a
-ml load Qt5/5.8.0-intel-2017a
+ml load ParMETIS/4.0.3-intel-2017a
