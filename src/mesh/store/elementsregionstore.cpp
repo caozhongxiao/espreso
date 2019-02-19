@@ -6,8 +6,7 @@
 #include "mesh/elements/element.h"
 
 #include "basis/containers/serializededata.h"
-#include "basis/utilities/parser.h"
-#include "basis/utilities/utils.h"
+#include "basis/utilities/packing.h"
 
 using namespace espreso;
 
@@ -46,14 +45,14 @@ size_t ElementsRegionStore::packedSize() const
 		return 0;
 	}
 	return
-			Esutils::packedSize(name) +
-			Esutils::packedSize(uniqueOffset) +
-			Esutils::packedSize(uniqueSize) +
-			Esutils::packedSize(uniqueTotalSize) +
-			elements->packedSize() + Esutils::packedSize(eintervals) +
+			utils::packedSize(name) +
+			utils::packedSize(uniqueOffset) +
+			utils::packedSize(uniqueSize) +
+			utils::packedSize(uniqueTotalSize) +
+			elements->packedSize() + utils::packedSize(eintervals) +
 			nodes->packedSize() +
-			Esutils::packedSize(nintervals) +
-			Esutils::packedSize(ecounters);
+			utils::packedSize(nintervals) +
+			utils::packedSize(ecounters);
 }
 
 void ElementsRegionStore::pack(char* &p) const
@@ -61,33 +60,33 @@ void ElementsRegionStore::pack(char* &p) const
 	if (elements == NULL) {
 		return;
 	}
-	Esutils::pack(name, p);
-	Esutils::pack(uniqueOffset, p);
-	Esutils::pack(uniqueSize, p);
-	Esutils::pack(uniqueTotalSize, p);
+	utils::pack(name, p);
+	utils::pack(uniqueOffset, p);
+	utils::pack(uniqueSize, p);
+	utils::pack(uniqueTotalSize, p);
 	elements->pack(p);
-	Esutils::pack(eintervals, p);
+	utils::pack(eintervals, p);
 	nodes->pack(p);
-	Esutils::pack(nintervals, p);
-	Esutils::pack(ecounters, p);
+	utils::pack(nintervals, p);
+	utils::pack(ecounters, p);
 }
 
 void ElementsRegionStore::unpack(const char* &p)
 {
-	Esutils::unpack(name, p);
-	Esutils::unpack(uniqueOffset, p);
-	Esutils::unpack(uniqueSize, p);
-	Esutils::unpack(uniqueTotalSize, p);
+	utils::unpack(name, p);
+	utils::unpack(uniqueOffset, p);
+	utils::unpack(uniqueSize, p);
+	utils::unpack(uniqueTotalSize, p);
 	if (elements == NULL) {
 		elements = new serializededata<esint, esint>(1, tarray<esint>(1, 0));
 	}
 	elements->unpack(p);
-	Esutils::unpack(eintervals, p);
+	utils::unpack(eintervals, p);
 	if (nodes == NULL) {
 		nodes = new serializededata<esint, esint>(1, tarray<esint>(1, 0));
 	}
 	nodes->unpack(p);
-	Esutils::unpack(nintervals, p);
-	Esutils::unpack(ecounters, p);
+	utils::unpack(nintervals, p);
+	utils::unpack(ecounters, p);
 }
 

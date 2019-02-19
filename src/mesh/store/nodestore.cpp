@@ -9,8 +9,7 @@
 #include "esinfo/mpiinfo.h"
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
-#include "basis/utilities/utils.h"
-#include "basis/utilities/communication.h"
+#include "basis/utilities/packing.h"
 
 using namespace espreso;
 
@@ -44,40 +43,40 @@ size_t NodeStore::packedSize() const
 	size_t datasize = sizeof(size_t);
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {
-			datasize += sizeof(int) + Esutils::packedSize(data[i]->names);
+			datasize += sizeof(int) + utils::packedSize(data[i]->names);
 		}
 	}
 
 	return
-			Esutils::packedSize(size) +
-			Esutils::packedSize(uniqueOffset) +
-			Esutils::packedSize(uniqueSize) +
-			Esutils::packedSize(uniqueTotalSize) +
+			utils::packedSize(size) +
+			utils::packedSize(uniqueOffset) +
+			utils::packedSize(uniqueSize) +
+			utils::packedSize(uniqueTotalSize) +
 			IDs->packedSize() +
 			coordinates->packedSize() +
 			idomains->packedSize() +
-			Esutils::packedSize(externalIntervals) +
-			Esutils::packedSize(pintervals) +
-			Esutils::packedSize(dintervals) +
+			utils::packedSize(externalIntervals) +
+			utils::packedSize(pintervals) +
+			utils::packedSize(dintervals) +
 			datasize +
-			Esutils::packedSize(dcenter) +
-			Esutils::packedSize(center);
+			utils::packedSize(dcenter) +
+			utils::packedSize(center);
 }
 
 void NodeStore::pack(char* &p) const
 {
-	Esutils::pack(size, p);
-	Esutils::pack(uniqueOffset, p);
-	Esutils::pack(uniqueSize, p);
-	Esutils::pack(uniqueTotalSize, p);
+	utils::pack(size, p);
+	utils::pack(uniqueOffset, p);
+	utils::pack(uniqueSize, p);
+	utils::pack(uniqueTotalSize, p);
 	IDs->pack(p);
 	coordinates->pack(p);
 	idomains->pack(p);
-	Esutils::pack(externalIntervals, p);
-	Esutils::pack(pintervals, p);
-	Esutils::pack(dintervals, p);
-	Esutils::pack(dcenter, p);
-	Esutils::pack(center, p);
+	utils::pack(externalIntervals, p);
+	utils::pack(pintervals, p);
+	utils::pack(dintervals, p);
+	utils::pack(dcenter, p);
+	utils::pack(center, p);
 
 	size_t size = 0;
 	for (size_t i = 0; i < data.size(); i++) {
@@ -85,11 +84,11 @@ void NodeStore::pack(char* &p) const
 			size += 1;
 		}
 	}
-	Esutils::pack(size, p);
+	utils::pack(size, p);
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {
-			Esutils::pack(data[i]->dimension, p);
-			Esutils::pack(data[i]->names, p);
+			utils::pack(data[i]->dimension, p);
+			utils::pack(data[i]->names, p);
 		}
 	}
 }
@@ -106,28 +105,28 @@ void NodeStore::unpack(const char* &p)
 		idomains = new serializededata<esint, esint>(tarray<esint>(1, 0), tarray<esint>(1, 0));
 	}
 
-	Esutils::unpack(size, p);
-	Esutils::unpack(uniqueOffset, p);
-	Esutils::unpack(uniqueSize, p);
-	Esutils::unpack(uniqueTotalSize, p);
+	utils::unpack(size, p);
+	utils::unpack(uniqueOffset, p);
+	utils::unpack(uniqueSize, p);
+	utils::unpack(uniqueTotalSize, p);
 	IDs->unpack(p);
 	coordinates->unpack(p);
 	idomains->unpack(p);
-	Esutils::unpack(externalIntervals, p);
-	Esutils::unpack(pintervals, p);
-	Esutils::unpack(dintervals, p);
-	Esutils::unpack(dcenter, p);
-	Esutils::unpack(center, p);
+	utils::unpack(externalIntervals, p);
+	utils::unpack(pintervals, p);
+	utils::unpack(dintervals, p);
+	utils::unpack(dcenter, p);
+	utils::unpack(center, p);
 
 	int dimension;
 	size_t datasize;
-	Esutils::unpack(datasize, p);
+	utils::unpack(datasize, p);
 	for (size_t i = 0; i < datasize; i++) {
 		if (i >= data.size()) {
-			Esutils::unpack(dimension, p);
+			utils::unpack(dimension, p);
 			data.push_back(new NodeData(dimension, {}));
 		}
-		Esutils::unpack(data[i]->names, p);
+		utils::unpack(data[i]->names, p);
 	}
 }
 
@@ -136,7 +135,7 @@ size_t NodeStore::packedDataSize() const
 	size_t size = 0;
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {
-			size += Esutils::packedSize(data[i]->data);
+			size += utils::packedSize(data[i]->data);
 		}
 	}
 	return size;
@@ -146,7 +145,7 @@ void NodeStore::packData(char* &p) const
 {
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {
-			Esutils::pack(data[i]->data, p);
+			utils::pack(data[i]->data, p);
 		}
 	}
 }
@@ -154,7 +153,7 @@ void NodeStore::packData(char* &p) const
 void NodeStore::unpackData(const char* &p)
 {
 	for (size_t i = 0; i < data.size(); i++) {
-		Esutils::unpack(data[i]->data, p);
+		utils::unpack(data[i]->data, p);
 	}
 }
 

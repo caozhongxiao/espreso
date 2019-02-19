@@ -11,6 +11,7 @@
 
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
+#include "basis/utilities/packing.h"
 
 
 using namespace espreso;
@@ -51,27 +52,27 @@ size_t ElementStore::packedSize() const
 	size_t datasize = sizeof(size_t);
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {
-			datasize += sizeof(int) + Esutils::packedSize(data[i]->names);
+			datasize += sizeof(int) + utils::packedSize(data[i]->names);
 		}
 	}
 
 	return
-			Esutils::packedSize(size) +
+			utils::packedSize(size) +
 			procNodes->packedSize() +
 			sizeof(size_t) + epointers->datatarray().size() * sizeof(int) +
-			Esutils::packedSize(firstDomain) +
-			Esutils::packedSize(ndomains) +
-			Esutils::packedSize(nclusters) +
-			Esutils::packedSize(clusters) +
-			Esutils::packedSize(elementsDistribution) +
-			Esutils::packedSize(ecounters) +
-			Esutils::packedSize(eintervals) +
+			utils::packedSize(firstDomain) +
+			utils::packedSize(ndomains) +
+			utils::packedSize(nclusters) +
+			utils::packedSize(clusters) +
+			utils::packedSize(elementsDistribution) +
+			utils::packedSize(ecounters) +
+			utils::packedSize(eintervals) +
 			datasize;
 }
 
 void ElementStore::pack(char* &p) const
 {
-	Esutils::pack(size, p);
+	utils::pack(size, p);
 	procNodes->pack(p);
 	if (epointers != NULL) {
 		std::vector<int> eindices;
@@ -83,15 +84,15 @@ void ElementStore::pack(char* &p) const
 				eindices.push_back(epointers->datatarray()[i] - Mesh::edata);
 			}
 		}
-		Esutils::pack(eindices, p);
+		utils::pack(eindices, p);
 	}
-	Esutils::pack(firstDomain, p);
-	Esutils::pack(ndomains, p);
-	Esutils::pack(nclusters, p);
-	Esutils::pack(clusters, p);
-	Esutils::pack(elementsDistribution, p);
-	Esutils::pack(ecounters, p);
-	Esutils::pack(eintervals, p);
+	utils::pack(firstDomain, p);
+	utils::pack(ndomains, p);
+	utils::pack(nclusters, p);
+	utils::pack(clusters, p);
+	utils::pack(elementsDistribution, p);
+	utils::pack(ecounters, p);
+	utils::pack(eintervals, p);
 
 	size_t size = 0;
 	for (size_t i = 0; i < data.size(); i++) {
@@ -99,11 +100,11 @@ void ElementStore::pack(char* &p) const
 			size += 1;
 		}
 	}
-	Esutils::pack(size, p);
+	utils::pack(size, p);
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {
-			Esutils::pack(data[i]->dimension, p);
-			Esutils::pack(data[i]->names, p);
+			utils::pack(data[i]->dimension, p);
+			utils::pack(data[i]->names, p);
 		}
 	}
 }
@@ -117,11 +118,11 @@ void ElementStore::unpack(const char* &p)
 		epointers = new serializededata<esint, Element*>(1, tarray<Element*>(1, 0));
 	}
 
-	Esutils::unpack(size, p);
+	utils::unpack(size, p);
 	procNodes->unpack(p);
 	if (epointers != NULL) {
 		std::vector<int> eindices;
-		Esutils::unpack(eindices, p);
+		utils::unpack(eindices, p);
 		if (epointers != NULL) {
 			delete epointers;
 		}
@@ -130,23 +131,23 @@ void ElementStore::unpack(const char* &p)
 			epointers->datatarray()[i] = Mesh::edata + eindices[i];
 		}
 	}
-	Esutils::unpack(firstDomain, p);
-	Esutils::unpack(ndomains, p);
-	Esutils::unpack(nclusters, p);
-	Esutils::unpack(clusters, p);
-	Esutils::unpack(elementsDistribution, p);
-	Esutils::unpack(ecounters, p);
-	Esutils::unpack(eintervals, p);
+	utils::unpack(firstDomain, p);
+	utils::unpack(ndomains, p);
+	utils::unpack(nclusters, p);
+	utils::unpack(clusters, p);
+	utils::unpack(elementsDistribution, p);
+	utils::unpack(ecounters, p);
+	utils::unpack(eintervals, p);
 
 	int dimension;
 	size_t datasize;
-	Esutils::unpack(datasize, p);
+	utils::unpack(datasize, p);
 	for (size_t i = 0; i < datasize; i++) {
 		if (i >= data.size()) {
-			Esutils::unpack(dimension, p);
+			utils::unpack(dimension, p);
 			data.push_back(new ElementData(dimension, {}));
 		}
-		Esutils::unpack(data[i]->names, p);
+		utils::unpack(data[i]->names, p);
 	}
 }
 
@@ -155,7 +156,7 @@ size_t ElementStore::packedDataSize() const
 	size_t size = 1;
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {
-			size += Esutils::packedSize(data[i]->data);
+			size += utils::packedSize(data[i]->data);
 		}
 	}
 	return size;
@@ -165,7 +166,7 @@ void ElementStore::packData(char* &p) const
 {
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {
-			Esutils::pack(data[i]->data, p);
+			utils::pack(data[i]->data, p);
 		}
 	}
 }
@@ -173,7 +174,7 @@ void ElementStore::packData(char* &p) const
 void ElementStore::unpackData(const char* &p)
 {
 	for (size_t i = 0; i < data.size(); i++) {
-		Esutils::unpack(data[i]->data, p);
+		utils::unpack(data[i]->data, p);
 	}
 }
 

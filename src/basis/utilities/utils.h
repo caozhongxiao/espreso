@@ -76,24 +76,6 @@ struct Esutils
 	static typename std::vector<Ttype>::const_iterator max_element(const std::vector<Ttype> &elements);
 
 	static std::string createDirectory(const std::vector<std::string> &path);
-
-	template<typename Ttype>
-	static size_t packedSize(const Ttype &data);
-
-	template<typename Ttype>
-	static size_t packedSize(const std::vector<Ttype> &data);
-
-	template<typename Ttype>
-	static void pack(const Ttype &data, char* &p);
-
-	template<typename Ttype>
-	static void pack(const std::vector<Ttype> &data, char* &p);
-
-	template<typename Ttype>
-	static void unpack(Ttype &data, const char* &p);
-
-	template<typename Ttype>
-	static void unpack(std::vector<Ttype> &data, const char* &p);
 };
 
 
