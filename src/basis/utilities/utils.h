@@ -11,13 +11,6 @@ namespace espreso {
 
 struct Esutils
 {
-
-	template<typename Ttype>
-	static Ttype getEnv(const std::string &name);
-
-	template<typename Ttype>
-	static void setFromEnv(Ttype &value, const std::string &name);
-
 	template<typename Ttype>
 	static Ttype sizesToOffsets(std::vector<Ttype> &sizes);
 

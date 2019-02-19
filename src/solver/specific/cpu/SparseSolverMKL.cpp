@@ -860,7 +860,7 @@ void SparseSolverMKL::SolveMatF( espreso::SparseMatrix & A_in, espreso::SparseMa
 
 	if (isThreaded) {
 		/* Numbers of processors, value of OMP_NUM_THREADS */
-		int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
+		int num_procs = info::env::SOLVER_NUM_THREADS;
 	    iparm[2] = num_procs;
 	} else {
 		iparm[2] = 1;
@@ -1277,7 +1277,7 @@ void SparseSolverMKL::Create_SC_w_Mat( espreso::SparseMatrix & K_in, espreso::Sp
 	/* Numbers of processors, value of OMP_NUM_THREADS */
 	if (isThreaded) {
 		/* Numbers of processors, value of OMP_NUM_THREADS */
-		MKL_INT num_procs = Esutils::getEnv<MKL_INT>("SOLVER_NUM_THREADS");
+		MKL_INT num_procs = info::env::SOLVER_NUM_THREADS;
 	    iparm[2] = num_procs;
 	} else {
 		iparm[2] = 1;
@@ -1531,7 +1531,7 @@ void SparseSolverMKL::Create_non_sym_SC_w_Mat( espreso::SparseMatrix & K_in, esp
 	/* Numbers of processors, value of OMP_NUM_THREADS */
 	if (isThreaded) {
 		/* Numbers of processors, value of OMP_NUM_THREADS */
-		int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
+		int num_procs = info::env::SOLVER_NUM_THREADS;
 	    iparm[2] = num_procs;
 	} else {
 		iparm[2] = 1;

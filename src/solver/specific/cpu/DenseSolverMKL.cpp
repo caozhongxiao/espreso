@@ -112,7 +112,7 @@ void DenseSolverMKL::ImportMatrix_wo_Copy(espreso::SparseMatrix & A) {
 void DenseSolverMKL::SetThreaded() {
 
 	/* Numbers of processors, value of OMP_NUM_THREADS */
-	int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
+	int num_procs = info::env::SOLVER_NUM_THREADS;
 
     iparm[2]  = num_procs;
 }

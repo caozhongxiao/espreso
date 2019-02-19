@@ -9,26 +9,6 @@
 namespace espreso {
 
 template<typename Ttype>
-Ttype Esutils::getEnv(const std::string &name)
-{
-	Ttype value;
-	setFromEnv(value, name);
-	return value;
-}
-
-template<typename Ttype>
-void Esutils::setFromEnv(Ttype &value, const std::string &name)
-{
-	char *var = getenv(name.c_str());
-	if (var != NULL) {
-		std::stringstream ss(var);
-		ss >> value;
-	} else {
-		ESINFO(ERROR) << "Set environment variable " << name;
-	}
-}
-
-template<typename Ttype>
 Ttype Esutils::sizesToOffsets(std::vector<Ttype> &sizes)
 {
 	Ttype sum = 0;
