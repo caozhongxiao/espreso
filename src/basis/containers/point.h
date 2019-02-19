@@ -1,8 +1,7 @@
 #ifndef POINT3D_H_
 #define POINT3D_H_
 
-#include <math.h>
-#include <iostream>
+#include <cmath>
 
 namespace espreso {
 
@@ -144,11 +143,6 @@ inline bool operator>(const Point &p1, const Point &p2) {
 
 inline bool operator==(const Point &p1, const Point &p2) {
 	return !((p1 < p2) || (p2 < p1));
-}
-
-inline std::ostream& operator<<(std::ostream& os, const Point &p) {
-	os << p.x << " " << p.y << " " << p.z;
-	return os;
 }
 
 }

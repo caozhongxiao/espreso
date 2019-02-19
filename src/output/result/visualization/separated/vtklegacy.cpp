@@ -8,6 +8,7 @@
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/utils.h"
+#include "basis/utilities/print.h"
 #include "basis/utilities/communication.h"
 
 #include "esinfo/mpiinfo.h"

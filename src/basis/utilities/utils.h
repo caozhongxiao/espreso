@@ -2,10 +2,8 @@
 #ifndef BASIS_UTILITIES_UTILS_H_
 #define BASIS_UTILITIES_UTILS_H_
 
-#include <stdlib.h>
 #include <vector>
 #include <string>
-#include <ostream>
 
 namespace espreso {
 
@@ -70,24 +68,6 @@ struct Esutils
 
 	static std::string createDirectory(const std::vector<std::string> &path);
 };
-
-
-template<typename T1, typename T2>
-std::ostream& operator<< (std::ostream& os, const std::pair<T1, T2> &v)
-{
-	os << "<" << v.first << ":" << v.second << ">";
-	return os;
-}
-
-template<typename T>
-std::ostream& operator<< (std::ostream& os, const std::vector<T> &v)
-{
-	for(size_t i = 0; i < v.size(); ++i) {
-		os << v[i] << " ";
-	}
-	os << "\n";
-	return os;
-}
 
 }
 

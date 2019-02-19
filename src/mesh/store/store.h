@@ -8,6 +8,7 @@
 #include <fstream>
 
 #include "esinfo/mpiinfo.h"
+#include "basis/containers/point.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
 
@@ -31,6 +32,24 @@ struct Store {
 			os << "[ ";
 			for (auto i = elem->begin(); i != elem->end(); ++i) {
 				os << (int)(*i)->code << " ";
+			}
+			os << "]\n";
+		}
+		os << "\n";
+	}
+
+	template <typename TBoundaries>
+	static void storedata(std::ofstream &os, const std::string &head, const serializededata<TBoundaries, Point> *data)
+	{
+		if (data == NULL) {
+			return;
+		}
+
+		os << head << "\n";
+		for (auto elem = data->begin(); elem != data->end(); ++elem) {
+			os << "[ ";
+			for (auto i = elem->begin(); i != elem->end(); ++i) {
+				os << "<" << i->x << " " << i->y << " " << i->z << "> ";
 			}
 			os << "]\n";
 		}

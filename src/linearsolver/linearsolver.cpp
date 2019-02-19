@@ -4,6 +4,7 @@
 
 #include "basis/logging/logging.h"
 #include "basis/utilities/utils.h"
+#include "basis/utilities/print.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/mpiinfo.h"
 
