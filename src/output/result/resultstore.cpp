@@ -5,7 +5,7 @@
 #include "esinfo/mpiinfo.h"
 #include "config/ecf/output.h"
 #include "basis/logging/logging.h"
-#include "basis/utilities/utils.h"
+#include "basis/utilities/sysutils.h"
 
 #include "executor/asyncexecutor.h"
 #include "executor/directexecutor.h"
@@ -30,7 +30,7 @@ ResultStoreBase::ResultStoreBase(const Mesh &mesh): _mesh(mesh), _directory("PRE
 
 void ResultStoreBase::createOutputDirectory()
 {
-	Esutils::createDirectory({ Logging::outputRoot(), _directory });
+	utils::createDirectory({ Logging::outputRoot(), _directory });
 }
 
 ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh)

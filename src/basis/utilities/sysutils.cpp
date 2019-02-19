@@ -1,12 +1,14 @@
 
-#include "utils.h"
+#include <basis/utilities/sysutils.h>
+#include "basis/logging/logging.h"
 
 #include <fstream>
 #include <algorithm>
 
-using namespace espreso;
+namespace espreso {
+namespace utils {
 
-std::string Esutils::createDirectory(const std::vector<std::string> &path)
+std::string createDirectory(const std::vector<std::string> &path)
 {
 	std::stringstream prefix;
 	std::for_each(path.begin(), path.end(), [&] (const std::string &dir) { prefix << dir << "/"; });
@@ -16,5 +18,11 @@ std::string Esutils::createDirectory(const std::vector<std::string> &path)
 	}
 	return prefix.str();
 }
+
+}
+}
+
+
+
 
 

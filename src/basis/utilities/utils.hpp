@@ -237,17 +237,4 @@ void Esutils::mergeAppendedData(std::vector<Ttype> &data, const std::vector<size
 			data.data() + _distribution.back());
 }
 
-template<typename Ttype>
-typename std::vector<Ttype>::const_iterator Esutils::max_element(const std::vector<Ttype> &elements)
-{
-	auto max = elements.begin();
-	for (size_t i = 1; i < elements.size(); i++) {
-		if (*max < elements[i]) {
-			max = elements.begin() + i;
-		}
-	}
-	return max;
-}
-
-
 }

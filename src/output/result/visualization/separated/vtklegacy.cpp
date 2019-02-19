@@ -7,7 +7,9 @@
 
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
+#include "basis/logging/logging.h"
 #include "basis/utilities/utils.h"
+#include "basis/utilities/sysutils.h"
 #include "basis/utilities/print.h"
 #include "basis/utilities/communication.h"
 
@@ -40,7 +42,7 @@ double VTKLegacy::domainShrinkRatio = 0.9;
 VTKLegacyDebugInfo::VTKLegacyDebugInfo(const Mesh &mesh)
 : VTKLegacy(mesh)
 {
-	_path = Esutils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" });
+	_path = utils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" });
 }
 
 VTKLegacy::VTKLegacy(const Mesh &mesh)
@@ -1025,7 +1027,7 @@ void VTKLegacy::neighbors(const std::string &name)
 
 void VTKLegacyDebugInfo::dirichlet(const Mesh &mesh, const DataHolder &instance)
 {
-	std::ofstream os(Esutils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" }) + "DIRICHLET" + std::to_string(info::mpi::rank) + ".vtk");
+	std::ofstream os(utils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" }) + "DIRICHLET" + std::to_string(info::mpi::rank) + ".vtk");
 
 	os << "# vtk DataFile Version 2.0\n";
 	os << "EXAMPLE\n";
@@ -1125,7 +1127,7 @@ void VTKLegacyDebugInfo::gluing(const Mesh &mesh, const DataHolder &instance)
 		}
 	}
 
-	std::ofstream os(Esutils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" }) + "GLUING" + std::to_string(info::mpi::rank) + ".vtk");
+	std::ofstream os(utils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" }) + "GLUING" + std::to_string(info::mpi::rank) + ".vtk");
 
 	os << "# vtk DataFile Version 2.0\n";
 	os << "EXAMPLE\n";
@@ -1202,7 +1204,7 @@ void VTKLegacyDebugInfo::gluing(const Mesh &mesh, const DataHolder &instance)
 
 void VTKLegacyDebugInfo::spaceFillingCurve(const SpaceFillingCurve &sfc, const std::vector<uint> &bucketsBorders)
 {
-	std::ofstream os(Esutils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" }) + "SFC.vtk");
+	std::ofstream os(utils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" }) + "SFC.vtk");
 	os << "# vtk DataFile Version 2.0\n";
 	os << "EXAMPLE\n";
 	os << "ASCII\n";
