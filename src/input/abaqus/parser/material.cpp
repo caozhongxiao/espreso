@@ -4,7 +4,6 @@
 #include "basis/containers/point.h"
 #include "basis/containers/tarray.h"
 #include "basis/utilities/parser.h"
-#include "basis/utilities/utils.h"
 
 using namespace espreso;
 

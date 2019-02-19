@@ -21,8 +21,8 @@
 #include "input/meshgenerator/elements/3D/hexahedron20.h"
 
 #include "basis/containers/point.h"
-#include "basis/logging/logging.h"
 #include "basis/utilities/utils.h"
+#include "esinfo/eslog.hpp"
 #include "config/ecf/input/block.h"
 #include "config/ecf/input/generatorelements.h"
 
@@ -72,7 +72,7 @@ BlockGenerator::BlockGenerator(const BlockGeneratorConfiguration &configuration,
 		_element = new Hexahedron20Generator();
 		break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Invalid element type.";
+		eslog::globalerror("Invalid element type.\n");
 	}
 }
 
@@ -302,19 +302,19 @@ void BlockGenerator::nodesRegion(const BlockBorder &border, std::vector<esint> &
 	case 1:
 		edge = intersection.getEdge(_block);
 		forEachElement(ebegin, eend, pushEdge, restriction);
-		Esutils::sortAndRemoveDuplicity(nodes);
+		utils::sortAndRemoveDuplicity(nodes);
 		break;
 	case 2:
 		face = intersection.getFace(_block);
 		forEachElement(ebegin, eend, pushFace, restriction);
-		Esutils::sortAndRemoveDuplicity(nodes);
+		utils::sortAndRemoveDuplicity(nodes);
 		break;
 
 	case 0:
 		// NOT INTERSECTED IN THIS PROCESS
 		break;
 	case 3:
-		ESINFO(ERROR) << "Implement a selection of nodes inside 3D interval.";
+		eslog::globalerror("Implement a selection of nodes inside 3D interval.\n");
 		break;
 	default:
 		break;
@@ -348,10 +348,10 @@ void BlockGenerator::edgesRegion(const BlockBorder &border, PlainMeshData &mesh,
 		// NOT INTERSECTED IN THIS PROCESS
 		break;
 	case 2:
-		ESINFO(ERROR) << "Implement a selection of edges inside 2D interval.";
+		eslog::globalerror("Implement a selection of edges inside 2D interval.\n");
 		break;
 	case 3:
-		ESINFO(ERROR) << "Implement a selection of edges inside 3D interval.";
+		eslog::globalerror("Implement a selection of edges inside 3D interval.\n");
 		break;
 		break;
 	}
@@ -388,7 +388,7 @@ void BlockGenerator::facesRegion(const BlockBorder &border, PlainMeshData &mesh,
 		// NOT INTERSECTED IN THIS PROCESS
 		break;
 	case 3:
-		ESINFO(ERROR) << "Implement a selection of faces inside 3D interval.";
+		eslog::globalerror("Implement a selection of faces inside 3D interval.\n");
 		break;
 		break;
 	}

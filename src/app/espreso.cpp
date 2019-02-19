@@ -1,11 +1,12 @@
 
+#include "esinfo/eslog.hpp"
+#include "esinfo/timeinfo.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/systeminfo.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
 #include "basis/utilities/communication.h"
-#include "basis/logging/logging.h"
 
 #include "config/ecf/root.h"
 #include "physics/loadstepiterator.h"
@@ -18,6 +19,8 @@ using namespace espreso;
 
 int main(int argc, char **argv)
 {
+	eslog::create();
+
 	int provided;
 	MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
 
@@ -25,7 +28,13 @@ int main(int argc, char **argv)
 	info::env::set();
 	info::mpi::set();
 
-	Logging::init();
+	eslog::init(&argc, &argv);
+
+	eslog::start("ESPRESO: STARTED");
+	eslog::param("MPI", info::mpi::size);
+	eslog::param("OMP/MPI", info::env::OMP_NUM_THREADS);
+	eslog::ln();
+
 	Mesh::init();
 	MPITools::init();
 
@@ -33,23 +42,38 @@ int main(int argc, char **argv)
 	info::mesh = new Mesh();
 	info::mesh->store = ResultStore::createAsynchronizedStore(*info::mesh);
 
-	ESINFO(OVERVIEW) <<
-			"Starting ESPRESO, " <<
-			"MPI: " << info::mpi::size << ", "
-			"OMP/MPI: " << info::env::OMP_NUM_THREADS;
+	eslog::checkpoint("ESPRESO: CONFIGURED");
+	eslog::param("ecf", info::ecf->ecffile.c_str());
+	eslog::ln();
 
 	if (ResultStore::isComputeNode()) {
 		if (Input::load(*info::ecf, *info::mesh)) {
+			eslog::checkpoint("ESPRESO: MESH PREPARED");
+			eslog::param("database", Input::inputFile(*info::ecf));
+			eslog::ln();
+			info::mesh->printMeshStatistics();
+
 			LoadStepIterator steps;
-			while (steps.next());
+			while (steps.next()) {
+				eslog::checkpoint("ESPRESO: SOLVED");
+				eslog::param("LOADSTEP", time::step);
+				eslog::ln();
+			}
+			eslog::end("ESPRESO: SOLVED");
+			eslog::param("LOADSTEP", time::step);
+			eslog::ln();
 		} else {
+			eslog::checkpointln("ESPRESO: MESH LOADED");
 			info::mesh->storeMesh();
+			eslog::endln("ESPRESO: MESH STORED");
 		}
 	}
 
+	eslog::finish();
 	ResultStore::destroyAsynchronizedStore();
 	Mesh::destroy();
 	MPITools::destroy();
+
 	delete info::ecf;
 	delete info::mesh;
 

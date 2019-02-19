@@ -2,7 +2,6 @@
 #include "mpi.h"
 
 #include "config/reader/reader.h"
-#include "basis/logging/logging.h"
 
 #include <iostream>
 #include <fstream>

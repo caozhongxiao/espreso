@@ -2,11 +2,10 @@
 #include "generatedinput.h"
 
 #include "basis/containers/serializededata.h"
-#include "basis/logging/logging.h"
-#include "basis/logging/timeeval.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/eslog.hpp"
 
 #include "mesh/mesh.h"
 #include "mesh/store/nodestore.h"
@@ -25,57 +24,38 @@ void GeneratedInput::buildMesh(PlainMeshData &meshData, Mesh &mesh, bool needSyn
 GeneratedInput::GeneratedInput(PlainMeshData &meshData, Mesh &mesh, bool needSynchronization)
 : Input(meshData, mesh)
 {
-	ESINFO(OVERVIEW) << "Build mesh from generated data.";
-	TimeEval timing("Load generated mesh");
-	timing.totalTime.startWithBarrier();
+	eslog::startln("MESIO: BUILD GENERATED MESH");
 
-	TimeEvent tdangling("remove dangling nodes"); tdangling.start();
 	removeDanglingNodes();
-	tdangling.end(); timing.addEvent(tdangling);
-	ESINFO(PROGRESS2) << "Generated data loader:: dangling nodes removed.";
+	eslog::checkpointln("MESIO: DANGLING NODES REMOVED");
 
-	TimeEvent tneighs("fill neighbors"); tneighs.start();
 	fillNeighbors();
-	tneighs.end(); timing.addEvent(tneighs);
-	ESINFO(PROGRESS2) << "Generated data loader:: neighbors filled.";
+	eslog::checkpointln("MESIO: NEIGHBOURS FILLED");
 
 	if (needSynchronization) {
-		TimeEvent tsync("synchronize global indices"); tsync.start();
 		synchronizeGlobalIndices();
-		tsync.end(); timing.addEvent(tsync);
-		ESINFO(PROGRESS2) << "Generated data loader:: global indices synchronized.";
+		eslog::checkpointln("MESIO: NODES INDICES SYNCHRONIZED");
 
-		TimeEvent tnsort("sort nodes"); tnsort.start();
 		sortNodes(true);
-		tnsort.end(); timing.addEvent(tnsort);
-		ESINFO(PROGRESS2) << "Generated data loader:: nodes sorted.";
+		eslog::checkpointln("MESIO: NODES SORTED");
 	}
 
-	TimeEvent tnodes("fill nodes"); tnodes.start();
 	fillNodes();
-	tnodes.end(); timing.addEvent(tnodes);
-	ESINFO(PROGRESS2) << "Generated data loader:: nodes filled.";
+	eslog::checkpointln("MESIO: NODES FILLED");
 
-	TimeEvent telements("fill elements"); telements.start();
 	fillElements();
-	telements.end(); timing.addEvent(telements);
-	ESINFO(PROGRESS2) << "Generated data loader:: elements filled.";
+	eslog::checkpointln("MESIO: ELEMENTS FILLED");
 
-	TimeEvent tregions("fill regions"); tregions.start();
 	fillElementRegions();
 	fillBoundaryRegions();
 	fillNodeRegions();
-	tregions.end(); timing.addEvent(tregions);
-	ESINFO(PROGRESS2) << "Generated data loader:: elements filled.";
-
-	timing.totalTime.endWithBarrier();
-	timing.printStatsMPI();
+	eslog::endln("MESIO: REGIONS FILLED");
 }
 
 void GeneratedInput::removeDanglingNodes()
 {
 	std::vector<esint> usedNodes = _meshData.enodes;
-	Esutils::sortAndRemoveDuplicity(usedNodes);
+	utils::sortAndRemoveDuplicity(usedNodes);
 
 	std::vector<Point> coordinates;
 	std::vector<esint> nIDs, ndist, noffset(_meshData.nIDs.size());
@@ -163,7 +143,7 @@ void GeneratedInput::synchronizeGlobalIndices()
 	}
 
 	if (!Communication::receiveLowerKnownSize(sBuffer, rBuffer, _mesh.neighbours)) {
-		ESINFO(ERROR) << "problem while synchronization of global indices.";
+		eslog::error("problem while synchronization of global indices.\n");
 	}
 
 	for (size_t n = 0; n < _mesh.neighbours.size(); n++) {
@@ -173,7 +153,7 @@ void GeneratedInput::synchronizeGlobalIndices()
 				if (*it == rBuffer[n][p]) {
 					_meshData.nIDs[it->id] = rBuffer[n][p].id;
 				} else {
-					ESINFO(ERROR) << "Internal ERROR while synchronization global indices: " << _mesh.neighbours[n] << " on " << info::mpi::rank;
+					eslog::error("Internal ERROR while synchronization global indices.\n");
 				}
 			}
 		}

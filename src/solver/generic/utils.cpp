@@ -1,6 +1,7 @@
 #include "utils.h"
 
 #include "esinfo/mpiinfo.h"
+#include "esinfo/eslog.hpp"
 #include "basis/utilities/utils.h"
 
 using std::endl; 
@@ -58,8 +59,8 @@ esint SaveBinVectorDouble(SEQ_VECTOR <double> & Vector, string filename) {
 		return 0; 
 
 	} else {
+		eslog::error("File not found.\n");
 
-		ESINFO(ERROR) << "File " << filename << " not found ! ";
 
 		return -1; 
 
@@ -109,7 +110,7 @@ esint LoadBinVectorInt(SEQ_VECTOR <esint> & Vector, string filename) {
 
 		return 0; 
 	} else {
-		ESINFO(ERROR) << "File " << filename << " not found ! ";
+		eslog::error("File not found.\n");
 		return -1; 
 	}
 }
@@ -144,7 +145,7 @@ esint LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <esint> > & outputVecVec, string file
 
 		return 0; 
 	} else {
-		ESINFO(ERROR) << "File " << filename << " not found ! ";
+		eslog::error("File not found.\n");
 		return -1; 
 	}
 }
@@ -179,7 +180,7 @@ esint LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <double> > & outputVecVec, string fil
 
 		return 0; 
 	} else {
-		ESINFO(ERROR) << "File " << filename << " not found ! ";
+		eslog::error("File not found.\n");
 		return -1; 
 	}
 }
@@ -210,10 +211,10 @@ void PrintVecND(SEQ_VECTOR <T> vec, string name) {
 #pragma omp critical 
 #endif
 	{
-		ESINFO(ALWAYS_ON_ROOT) << "Thread " << omp_get_thread_num() << " - Printing vector : " << name;
-		for (esint i = 0; i < vec.size(); i++) {
-			ESINFO(ALWAYS_ON_ROOT) << vec[i];
-		}
+//		ESINFO(ALWAYS_ON_ROOT) << "Thread " << omp_get_thread_num() << " - Printing vector : " << name;
+//		for (esint i = 0; i < vec.size(); i++) {
+//			ESINFO(ALWAYS_ON_ROOT) << vec[i];
+//		}
 	}
 }
 
@@ -228,21 +229,21 @@ static esint parseLine_u(char* line){
 void GetProcessMemoryStat_u ( ) {
 
 #ifndef WIN32
+//
+//	FILE* file = fopen("/proc/self/status", "r");
+//	esint result = -1;
+//	char line[128];
+//
+//
+//	while (fgets(line, 128, file) != NULL){
+//		if (strncmp(line, "VmRSS:", 6) == 0){
+//			result = parseLine_u(line);
+//			break;
+//		}
+//	}
+//	fclose(file);
 
-	FILE* file = fopen("/proc/self/status", "r");
-	esint result = -1;
-	char line[128];
-
-
-	while (fgets(line, 128, file) != NULL){
-		if (strncmp(line, "VmRSS:", 6) == 0){
-			result = parseLine_u(line);
-			break;
-		}
-	}
-	fclose(file);
-
-	ESLOG(MEMORY) << " - Memory used by process " << info::mpi::rank << " : " << result / 1024.0 << " MB";
+//	ESLOG(MEMORY) << " - Memory used by process " << info::mpi::rank << " : " << result / 1024.0 << " MB";
 
 
 #endif
@@ -267,7 +268,7 @@ void GetMemoryStat_u( )
 	//Multiply in next statement to avoid int overflow on right hand side...
 	physMemUsed *= memInfo.mem_unit;
 
-	ESLOG(MEMORY) << " - Total used RAM : " << 100.0 * (double)physMemUsed/(double)totalPhysMem<< " %  - " << physMemUsed/1024/1024 << " MB of " << totalPhysMem/1024/1024 << " MB";
+//	ESLOG(MEMORY) << " - Total used RAM : " << 100.0 * (double)physMemUsed/(double)totalPhysMem<< " %  - " << physMemUsed/1024/1024 << " MB of " << totalPhysMem/1024/1024 << " MB";
 #endif
 }
 

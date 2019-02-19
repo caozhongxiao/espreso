@@ -1,7 +1,6 @@
 #ifndef MATRIX_H_
 #define MATRIX_H_
 
-#include <iostream>
 #include <cmath>
 #include <cstddef>
 
@@ -57,8 +56,6 @@ public:
 	virtual size_t nonZeroValues() const = 0;
 
 	virtual ~Matrix() { };
-
-	friend std::ostream& operator<<(std::ostream& os, const Matrix &m);
 
 protected:
 

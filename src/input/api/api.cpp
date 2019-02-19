@@ -16,7 +16,6 @@
 //#include "old/mesh/structures/coordinates.h"
 //#include "old/mesh/structures/region.h"
 //
-//#include "basis/logging/logging.hpp"
 //#include "basis/utilities/utils.h"
 //#include "config/ecf/environment.h"
 //#include "config/ecf/input/input.h"

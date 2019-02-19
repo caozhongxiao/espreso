@@ -3,7 +3,6 @@
 #define SRC_INPUT_MESHGENERATOR_ELEMENTS_ELEMENT_H_
 
 #include "mesh/elements/element.h"
-#include <array>
 #include <vector>
 
 namespace espreso {

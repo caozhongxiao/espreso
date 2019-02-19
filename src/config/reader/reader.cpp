@@ -13,9 +13,10 @@
 #include "tokenizer.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/ecfinfo.h"
+#include "esinfo/eslog.hpp"
 #include "config/ecf/output.h"
 #include "config/configuration.h"
-#include "basis/logging/logging.h"
+#include "basis/logging/verbosity.h"
 #include "basis/utilities/utils.h"
 #include "basis/utilities/parser.h"
 
@@ -34,6 +35,7 @@ std::ostream& operator<< (std::ostream& os, const std::vector<T> &v)
 }
 
 std::string ECFReader::configurationFile = "espreso.ecf";
+std::vector<VerboseArg*> ECFReader::verbosity;
 
 static struct option long_options[] = {
 		{"config",  required_argument, 0, 'c'},
@@ -87,15 +89,14 @@ ECFRedParameters ECFReader::_read(
 	size_t helpVerboseLevel = 0;
 
 	std::string confFile = "espreso.ecf";
-	if (StringCompare::caseSensitiveSuffix(std::string(*argv[0]), "espreso")) {
-		confFile = "espreso.ecf";
-	}
-	if (StringCompare::caseSensitiveSuffix(std::string(*argv[0]), "decomposer")) {
-		confFile = "decomposer.ecf";
+	std::string sopts = "c:d::h";
+
+	for (size_t i = 0; i < verbosity.size(); i++) {
+		sopts.append({ verbosity[i]->argflag });
 	}
 
 	optind = 0;
-	while ((option = getopt_long(*argc, *argv, "c:d::hvtm", opts.data(), &option_index)) != -1) {
+	while ((option = getopt_long(*argc, *argv, sopts.c_str(), opts.data(), &option_index)) != -1) {
 		switch (option) {
 		case 'p':
 			// parameters will be read after configuration file
@@ -147,62 +148,32 @@ ECFRedParameters ECFReader::_read(
 	while (optind < *argc) {
 		nameless.push_back(std::string((*argv)[optind++]));
 	}
-
-	size_t start = confFile.find_last_of("/") + 1;
-	size_t end   = confFile.find_last_of(".");
-	Logging::name = confFile.substr(start, end - start);
 	configurationFile = confFile;
 
 	ECFRedParameters redParameters = _read(configuration, confFile, nameless, defaultArgs, variables);
 
 	optind = 0;
-	while ((option = getopt_long(*argc, *argv, "c:dhvtm", opts.data(), &option_index)) != -1) {
+	while ((option = getopt_long(*argc, *argv, sopts.c_str(), opts.data(), &option_index)) != -1) {
 		switch (option) {
 		case 'p':
 			if (!parameters[option_index].second->setValue(optarg)) {
-				ESINFO(GLOBAL_ERROR) << "Parameter '" << parameters[option_index].first << "' has wrong value '" << optarg << "'";
+				eslog::globalerror("Parameter '%s' has wrong value '%s'\n", parameters[option_index].first, optarg);
 			}
 			break;
-		case 'v':
-			info::ecf->output.verbose_level++;
-			break;
-		case 'm':
-			info::ecf->output.measure_level++;
-			break;
+		case 'h':
+		case 'd':
+		case 'c': break;
+		default:
+			for (size_t i = 0; i < verbosity.size(); i++) {
+				if (verbosity[i]->argflag == option) {
+					++verbosity[i]->verbosity;
+					break;
+				}
+			}
 		}
 	}
 
 	return redParameters;
-}
-
-void ECFReader::copyInputData()
-{
-	if (info::mpi::rank) {
-		MPI_Barrier(info::mpi::comm);
-		Logging::log.open(Logging::outputRoot() + "/" + Logging::name + ".log", std::ofstream::app);
-		return;
-	} else {
-		if (Logging::path.compare(".")) {
-			system(("rm -fr " + Logging::path).c_str());
-		}
-		if (system(("mkdir -p " + Logging::outputRoot()).c_str())) {
-			ESINFO(ERROR) << "Cannot create output directory\n";
-		}
-		MPI_Barrier(info::mpi::comm);
-	}
-
-	Logging::log.open(Logging::outputRoot() + "/" + Logging::name + ".log", std::ofstream::app);
-
-	int error = remove(std::string(Logging::path + "/" + "last").c_str());
-	error = symlink(("../" + Logging::outputRoot()).c_str(), std::string(Logging::path + "/" + "last").c_str());
-	if (error) {
-		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW << "Something wrong happens with creating link to last output directory.";
-	}
-
-	std::ifstream src(configurationFile.c_str(), std::ios::binary);
-	std::ofstream dst((Logging::outputRoot() + "/" + configurationFile.substr(configurationFile.find_last_of("/") + 1)).c_str(), std::ios::binary);
-
-	dst << src.rdbuf();
 }
 
 ECFRedParameters ECFReader::_read(
@@ -246,7 +217,7 @@ ECFRedParameters ECFReader::_read(
 		case Tokenizer::Token::STRING:
 			values.push_back(tokenStack.top()->value());
 			if (unfinishedLine && confStack.top()->getParameter(values.back()) != NULL) {
-				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Expected ';' before " << values.back() << "\n" << tokenStack.top()->lastLines(2);
+				eslog::globalerror("PARSE ERROR: Expected ';' before '%s'\n%s", values.back().c_str(), tokenStack.top()->lastLines(2).c_str());
 			}
 			break;
 		case Tokenizer::Token::LINK:
@@ -274,7 +245,7 @@ ECFRedParameters ECFReader::_read(
 					arguments[index].push_back(parameter + values.front());
 				} else {
 					if (index < args.size()) {
-						ESINFO(GLOBAL_ERROR) << "Invalid argument '" << value << "'";
+						eslog::globalerror("Invalid argument '%s'\n", value.c_str());
 					} else {
 						auto ait = defaultArgs.find(index);
 						if (ait != defaultArgs.end()) {
@@ -286,7 +257,7 @@ ECFRedParameters ECFReader::_read(
 								std::for_each(prefix.begin(), prefix.end(), [&] (const std::string &s) { parameter += s + "::"; });
 								arguments[index].push_back(parameter + values.front());
 							} else {
-								ESINFO(GLOBAL_ERROR) << "parameter cannot be the [ARG].\n" << tokenStack.top()->lastLines(2);
+								eslog::globalerror("Parameter cannot be the [ARG].\n", tokenStack.top()->lastLines(2).c_str());
 							}
 						}
 					}
@@ -309,7 +280,7 @@ ECFRedParameters ECFReader::_read(
 					case Tokenizer::Token::EXPRESSION_END:
 						break;
 					default:
-						ESINFO(GLOBAL_ERROR) << "Error while reading file '" << value << "'";
+						eslog::globalerror("Error while reading file '%s'\n", value.c_str());
 					}
 				}
 				break;
@@ -324,18 +295,18 @@ ECFRedParameters ECFReader::_read(
 		}
 		case Tokenizer::Token::OBJECT_OPEN:
 			if (values.size() == 0) {
-				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Opening of an unnamed region is not allowed.\n" << tokenStack.top()->lastLines(2);
+				eslog::globalerror("PARSE ERROR: Opening of an unnamed region is not allowed.\n%s", tokenStack.top()->lastLines(2).c_str());
 			}
 			if (values.size() > 1) {
-				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Multiple names for a region are not allowed.\n" << tokenStack.top()->lastLines(2);
+				eslog::globalerror("PARSE ERROR: Multiple names for a region are not allowed.\n%s", tokenStack.top()->lastLines(2).c_str());
 			}
 			prefix.push_back(values[0]);
 			parameter = confStack.top()->getParameter(values[0]);
 			if (parameter == NULL) {
-				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Unexpected parameter '" << prefix << "'\n" << tokenStack.top()->lastLines(2);
+				eslog::globalerror("PARSE ERROR: Unexpected parameter '%s'\n%s", prefix, tokenStack.top()->lastLines(2).c_str());
 			}
 			if (!parameter->isObject()) {
-				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Expected parameter instead of object '" << prefix << "'\n" << tokenStack.top()->lastLines(2);
+				eslog::globalerror("PARSE ERROR: Expected parameter instead of object '%s'.\n%s", prefix, tokenStack.top()->lastLines(2).c_str());
 			}
 			redParameters.parameters.push_back(parameter);
 			confStack.push(dynamic_cast<ECFObject*>(parameter));
@@ -343,7 +314,7 @@ ECFRedParameters ECFReader::_read(
 			break;
 		case Tokenizer::Token::OBJECT_CLOSE:
 			if (!confStack.size() || !prefix.size()) {
-				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Unexpected region end.\n" << tokenStack.top()->lastLines(2);
+				eslog::globalerror("PARSE ERROR: Unexpected region end.\n%s", tokenStack.top()->lastLines(2).c_str());
 			}
 			prefix.pop_back();
 			confStack.pop();
@@ -368,7 +339,9 @@ ECFRedParameters ECFReader::_read(
 				values.push_back("");
 			}
 			if (values.size() < 2) {
-				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Incorrect assignment format on line " << tokenStack.top()->line() << ". Use 'PARAMETER' 'VALUE';\n" << tokenStack.top()->lastLines(2);
+				eslog::globalerror(
+						"PARSE ERROR: Incorrect assignment format on line %ld. Use 'PARAMETER' 'VALUE';\n%s",
+						tokenStack.top()->line(), tokenStack.top()->lastLines(2).c_str());
 			}
 			std::stringstream ss;
 			ss << values[1];
@@ -378,13 +351,16 @@ ECFRedParameters ECFReader::_read(
 			parameter = confStack.top()->getParameter(values[0]);
 			if (parameter == NULL) {
 				prefix.push_back(values[0]);
-				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Unexpected parameter '" << prefix << "'\n" << tokenStack.top()->lastLines(2);
+				std::stringstream ssp; ssp << prefix;
+				eslog::globalerror("PARSE ERROR: Unexpected parameter '%s'\n%s", ssp.str().c_str(), tokenStack.top()->lastLines(2).c_str());
 			}
 			if (parameter->isObject()) {
-				ESINFO(GLOBAL_ERROR) << "Invalid ECF configuration. Parameter '" << prefix << "::" << parameter->name << "' is an object. Expected '{' instead of '" << ss.str() << "'";
+				std::stringstream ssp; ssp << prefix;
+				eslog::globalerror("Invalid ECF configuration. Parameter '%s::%s' is an object. Expected '{' instead of '%s'\n",
+						ssp.str().c_str(), parameter->name.c_str(), tokenStack.top()->lastLines(2).c_str(), ss.str().c_str());
 			}
 			if (!parameter->setValue(ss.str())) {
-				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Parameter '" << values[0] << "' has wrong value '" << ss.str() << "'";
+				eslog::globalerror("PARSE ERROR: Parameter '%s' has wrong value '%s'\n", values[0].c_str(), ss.str().c_str());
 			}
 			redParameters.parameters.push_back(parameter);
 			if (link.size()) {
@@ -400,11 +376,11 @@ ECFRedParameters ECFReader::_read(
 			}
 			break;
 		default:
-			ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Unknown token in configuration file";
+			eslog::globalerror("PARSE ERROR: Unknown token in configuration file.");
 		}
 	}
 	if (confStack.size() != 1) {
-		ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Unexpected EOF before close all regions.";
+		eslog::globalerror("PARSE ERROR: Unexpected EOF before close all regions.");
 	}
 
 	if (!correctlyLoaded) {
@@ -425,19 +401,9 @@ ECFRedParameters ECFReader::_read(
 			}
 			error += " }\n";
 		}
-		ESINFO(GLOBAL_ERROR) << error;
+		eslog::globalerror(error.c_str());
 	}
 	return redParameters;
-}
-
-void ECFReader::set(const OutputConfiguration &output)
-{
-	Info::setLevel(output.verbose_level);
-	Measure::setLevel(output.measure_level);
-	Logging::path = output.path;
-	Logging::debug = output.log_dir;
-	Logging::rank = info::mpi::rank;
-	copyInputData();
 }
 
 static void printECF(const ECFObject &configuration, std::ostream &os, size_t indent, bool hasDataType, bool onlyAllowed, bool printPatterns, bool pattern, const ECFRedParameters &parameters)

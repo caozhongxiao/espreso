@@ -4,11 +4,11 @@
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/utils.h"
 #include "basis/utilities/communication.h"
-#include "basis/logging/timeeval.h"
 
 #include "config/ecf/root.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
+#include "esinfo/eslog.hpp"
 
 #include "mesh/mesh.h"
 #include "mesh/preprocessing/meshpreprocessing.h"
@@ -20,7 +20,6 @@
 
 #include <numeric>
 #include <algorithm>
-#include <fstream>
 
 using namespace espreso;
 
@@ -32,43 +31,26 @@ void SortedInput::buildMesh(PlainMeshData &meshData, Mesh &mesh)
 SortedInput::SortedInput(PlainMeshData &meshData, Mesh &mesh)
 : Input(meshData, mesh)
 {
-	ESINFO(OVERVIEW) << "Build mesh from sorted elements.";
-	TimeEval timing("Load distributed mesh");
-	timing.totalTime.startWithBarrier();
+	eslog::startln("MESIO: BUILD CLUSTTERED MESH");
 
-	TimeEvent tdistribution("distribute mesh across processes"); tdistribution.start();
 	balance();
 	checkERegions();
-	tdistribution.end(); timing.addEvent(tdistribution);
-	ESINFO(PROGRESS2) << "Distributed loader:: data balanced.";
+	eslog::startln("MESIO: BALANCE DATA");
 
-	TimeEvent telements("fill elements"); telements.start();
 	fillElements();
-	telements.end(); timing.addEvent(telements);
-	ESINFO(PROGRESS2) << "Distributed loader:: elements filled.";
+	eslog::startln("MESIO: ELEMENTS FILLED");
 
-	TimeEvent tcoordinates("fill coordinates"); tcoordinates.start();
 	fillCoordinates();
-	tcoordinates.end(); timing.addEvent(tcoordinates);
-	ESINFO(PROGRESS2) << "Distributed loader:: coordinates filled.";
+	eslog::startln("MESIO: NODES FILLED");
 
-	TimeEvent tnregions("fill node regions"); tnregions.start();
 	addNodeRegions();
-	tnregions.end(); timing.addEvent(tnregions);
-	ESINFO(PROGRESS2) << "Distributed loader:: node regions filled.";
+	eslog::startln("MESIO: NODES REGIONS FILLED");
 
-	TimeEvent tbregions("fill boundary regions"); tbregions.start();
 	addBoundaryRegions();
-	tbregions.end(); timing.addEvent(tbregions);
-	ESINFO(PROGRESS2) << "Distributed loader:: boundary regions filled.";
+	eslog::startln("MESIO: BOUNDARY REGIONS FILLED");
 
-	TimeEvent teregions("fill element regions"); teregions.start();
 	addElementRegions();
-	teregions.end(); timing.addEvent(teregions);
-	ESINFO(PROGRESS2) << "Distributed loader:: elements regions filled.";
-
-	timing.totalTime.endWithBarrier();
-	timing.printStatsMPI();
+	eslog::startln("MESIO: ELEMENTS REGIONS FILLED");
 }
 
 void SortedInput::checkERegions()
@@ -198,23 +180,15 @@ void SortedInput::fillCoordinates()
 		return;
 	}
 
-	TimeEval timing("FILL COORDINATES");
-	timing.totalTime.startWithBarrier();
-
-	TimeEvent e1("FC SORT ENODES"); e1.start();
 	std::vector<std::vector<esint> > nodes(threads);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<esint> tnodes(_mesh.elements->procNodes->datatarray().begin(t), _mesh.elements->procNodes->datatarray().end(t));
-		Esutils::sortAndRemoveDuplicity(tnodes);
+		utils::sortAndRemoveDuplicity(tnodes);
 		nodes[t].swap(tnodes);
 	}
-	Esutils::inplaceMerge(nodes);
-	Esutils::removeDuplicity(nodes[0]);
-
-	e1.end(); timing.addEvent(e1);
-
-	TimeEvent e2("FC SBUFFER"); e2.start();
+	utils::inplaceMerge(nodes);
+	utils::removeDuplicity(nodes[0]);
 
 	std::vector<std::vector<esint> > sBuffer;
 	std::vector<int> sRanks;
@@ -230,17 +204,10 @@ void SortedInput::fillCoordinates()
 		ssize[t] = end - begin;
 	}
 
-	e2.end(); timing.addEvent(e2);
-
 	////////
 
 	std::vector<esint> rrIDs;
-
-	TimeEvent ee2("FCXX GET RBUFFER SIZES"); ee2.start();
-
 	MPI_Alltoall(ssize.data(), 1, MPI_INT, rsize.data(), 1, MPI_INT, info::mpi::comm);
-
-	ee2.end(); timing.addEvent(ee2);
 
 	size_t rrsize = 0;
 	for (int t = 0; t < info::mpi::size; t++) {
@@ -248,56 +215,20 @@ void SortedInput::fillCoordinates()
 	}
 	rrIDs.resize(rrsize);
 
-	TimeEvent ee3("FCXX GET DATA"); ee3.start();
-
 	Communication::allToAllV(nodes[0], rrIDs, ssize, rsize);
 
-	ee3.end(); timing.addEvent(ee3);
-
-	////////
-
-	int avgneighs = 0, nneighs = sRanks.size();
-	double allavgsize = 0, avgsize = 0;
-
-	for (size_t i = 0; i < sRanks.size(); i++) {
-		avgsize += sBuffer[i].size();
-	}
-	avgsize /= nneighs;
-
-	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_SUM, 0, info::mpi::comm);
-	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_SUM, 0, info::mpi::comm);
-
-	ESINFO(PROGRESS1) << "FC AVGNEIGHS: " << (double)avgneighs / info::mpi::size << ", AVGSIZE: " << allavgsize / info::mpi::size;
-
-	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MIN, 0, info::mpi::comm);
-	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MIN, 0, info::mpi::comm);
-
-	ESINFO(PROGRESS1) << "FC MINNEIGHS: " << avgneighs << ", MINSIZE: " << allavgsize;
-
-	MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MAX, 0, info::mpi::comm);
-	MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MAX, 0, info::mpi::comm);
-
-	ESINFO(PROGRESS1) << "FC MAXNEIGHS: " << avgneighs << ", MAXSIZE: " << allavgsize;
-
-	TimeEvent e3("FC EXCHANGE"); e3.start();
-
 	if (!Communication::sendVariousTargets(sBuffer, _rankNodeMap, sRanks, _targetRanks)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange neighbors.";
+		eslog::error("ESPRESO internal error: exchange neighbors.\n");
 	}
-
-	e3.end(); timing.addEvent(e3);
-
 	{
 		size_t rnodesize = 0;
 		for (size_t t = 0; t < _targetRanks.size(); t++) {
 			rnodesize += _rankNodeMap[t].size();
 		}
 		if (rnodesize != rrIDs.size()) {
-			ESINFO(ERROR) << "INVALID ALL TO ALL EXCHANGE";
+			eslog::error("INVALID ALL TO ALL EXCHANGE.\n");
 		}
 	}
-
-	TimeEvent e4("FC COMPUTE BACKED"); e4.start();
 
 	std::vector<esint> ndistribution = tarray<esint>::distribute(threads, _meshData.coordinates.size());
 	std::vector<std::vector<std::vector<esint> > > backedData(threads, std::vector<std::vector<esint> >(_targetRanks.size()));
@@ -330,16 +261,12 @@ void SortedInput::fillCoordinates()
 		backedData[t].swap(tbackedData);
 	}
 
-	e4.end(); timing.addEvent(e4);
-
 	#pragma omp parallel for
 	for (size_t r = 0; r < _targetRanks.size(); r++) {
 		for (size_t t = 1; t < threads; t++) {
 			backedData[0][r].insert(backedData[0][r].end(), backedData[t][r].begin(), backedData[t][r].end());
 		}
 	}
-
-	TimeEvent e5("FC COMPUTE BACKED COORDINATES"); e5.start();
 
 	std::vector<std::vector<Point> > backedCoordinates(_targetRanks.size());
 	#pragma omp parallel for
@@ -357,23 +284,15 @@ void SortedInput::fillCoordinates()
 		}
 	}
 
-	e5.end(); timing.addEvent(e5);
-
-	TimeEvent e6("FC RETURN BACKED"); e6.start();
-
 	std::vector<std::vector<esint> > nodeRanks(sRanks.size()), allnodes(threads);
 	std::vector<std::vector<Point> > coordinates(sRanks.size());
 
 	if (!Communication::sendVariousTargets(backedData[0], nodeRanks, _targetRanks)) {
-		ESINFO(ERROR) << "ESPRESO internal error: return node ranks.";
+		eslog::error("ESPRESO internal error: return node ranks.\n");
 	}
 	if (!Communication::sendVariousTargets(backedCoordinates, coordinates, _targetRanks)) {
-		ESINFO(ERROR) << "ESPRESO internal error: return coordinates.";
+		eslog::error("ESPRESO internal error: return coordinates.\n");
 	}
-
-	e6.end(); timing.addEvent(e6);
-
-	TimeEvent e7("FC RANK DATA"); e7.start();
 
 	size_t csize = 0;
 	for (size_t i = 0; i < coordinates.size(); i++) {
@@ -401,7 +320,7 @@ void SortedInput::fillCoordinates()
 		rankData[r].swap(trankData);
 	}
 
-	Esutils::threadDistributionToFullDistribution(rankDistribution);
+	utils::threadDistributionToFullDistribution(rankDistribution);
 
 	for (size_t i = threads; i < sRanks.size(); i++) {
 		coordinates[threads - 1].insert(coordinates[threads - 1].end(), coordinates[i].begin(), coordinates[i].end());
@@ -420,26 +339,17 @@ void SortedInput::fillCoordinates()
 	serializededata<esint, esint>::balance(1, sBuffer, &distribution);
 	serializededata<esint, int>::balance(rankDistribution, rankData, &distribution);
 
-
-	e7.end(); timing.addEvent(e7);
-
-	TimeEvent e8("FC BUILD TARRRAY"); e8.start();
-
 	_mesh.nodes->size = distribution.back();
 	_mesh.nodes->distribution = distribution;
 	_mesh.nodes->IDs = new serializededata<esint, esint>(1, sBuffer);
 	_mesh.nodes->coordinates = new serializededata<esint, Point>(1, coordinates);
 	_mesh.nodes->ranks = new serializededata<esint, int>(rankDistribution, rankData);
 
-	e8.end(); timing.addEvent(e8);
-
-	TimeEvent e9("FC NEIGHBORS"); e9.start();
-
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		allnodes[t].resize(distribution[t + 1] - distribution[t]);
 		std::iota(allnodes[t].begin(), allnodes[t].end(), distribution[t]);
-		Esutils::sortAndRemoveDuplicity(rankData[t]);
+		utils::sortAndRemoveDuplicity(rankData[t]);
 	}
 
 	_mesh.boundaryRegions.push_back(new BoundaryRegionStore("ALL_NODES"));
@@ -448,7 +358,7 @@ void SortedInput::fillCoordinates()
 	for (size_t t = 0; t < threads; t++) {
 		_mesh.neighboursWithMe.insert(_mesh.neighboursWithMe.end(), rankData[t].begin(), rankData[t].end());
 	}
-	Esutils::sortAndRemoveDuplicity(_mesh.neighboursWithMe);
+	utils::sortAndRemoveDuplicity(_mesh.neighboursWithMe);
 
 	for (size_t n = 0; n < _mesh.neighboursWithMe.size(); n++) {
 		if (_mesh.neighboursWithMe[n] != info::mpi::rank) {
@@ -456,21 +366,12 @@ void SortedInput::fillCoordinates()
 		}
 	}
 
-	e9.end(); timing.addEvent(e9);
-
-	TimeEvent e10("FC REINDEX"); e10.start();
-
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (auto n = _mesh.elements->procNodes->begin(t)->begin(); n != _mesh.elements->procNodes->end(t)->begin(); ++n) {
 			*n = std::lower_bound(_mesh.nodes->IDs->datatarray().begin(), _mesh.nodes->IDs->datatarray().end(), *n) - _mesh.nodes->IDs->datatarray().begin();
 		}
 	}
-
-	e10.end(); timing.addEvent(e10);
-
-	timing.totalTime.endWithBarrier();
-	timing.printStatsMPI();
 }
 
 void SortedInput::addNodeRegions()
@@ -492,7 +393,7 @@ void SortedInput::addNodeRegions()
 		}
 
 		if (!Communication::sendVariousTargets(sBuffer, rBuffer, sRanks)) {
-			ESINFO(ERROR) << "ESPRESO internal error: exchange node region.";
+			eslog::error("ESPRESO internal error: exchange node region.\n");
 		}
 
 		sBuffer.clear();
@@ -522,7 +423,7 @@ void SortedInput::addNodeRegions()
 
 		rBuffer.clear();
 		if (!Communication::sendVariousTargets(sBuffer, rBuffer, tRanks)) {
-			ESINFO(ERROR) << "ESPRESO internal error: exchange node region to targets.";
+			eslog::error("ESPRESO internal error: exchange node region to targets.\n");
 		}
 
 		for (size_t t = threads; t < rBuffer.size(); t++) {
@@ -569,7 +470,7 @@ void SortedInput::addBoundaryRegions()
 //				}
 //			}
 //
-//			Esutils::threadDistributionToFullDistribution(tedist);
+//			utils::threadDistributionToFullDistribution(tedist);
 //
 //			_mesh.boundaryRegions.push_back(new BoundaryRegionStore(_meshData.bregions[i].name, _mesh._eclasses));
 //			_mesh.boundaryRegions.back()->distribution = tarray<esint>::distribute(threads, epointers.front().size());
@@ -880,7 +781,7 @@ void SortedInput::addBoundaryRegions()
 //
 //		TimeEvent e10("BR CREATE ARRAYS"); e10.start();
 //
-//		Esutils::threadDistributionToFullDistribution(tedist);
+//		utils::threadDistributionToFullDistribution(tedist);
 //
 //		serializededata<esint, esint>::balance(tedist, tnodes);
 //		serializededata<esint, Element*>::balance(1, epointers);

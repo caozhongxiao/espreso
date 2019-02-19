@@ -13,7 +13,6 @@
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/packing.h"
 
-
 using namespace espreso;
 
 ElementStore::ElementStore()
@@ -45,10 +44,6 @@ ElementStore::ElementStore()
 
 size_t ElementStore::packedSize() const
 {
-	if (procNodes == NULL || epointers == NULL) {
-		ESINFO(ERROR) << "ESPRESO internal error: invalid request for packedSize.";
-	}
-
 	size_t datasize = sizeof(size_t);
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {

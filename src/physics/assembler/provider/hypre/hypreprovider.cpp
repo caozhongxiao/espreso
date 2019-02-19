@@ -2,7 +2,7 @@
 #include "hypreprovider.h"
 
 #include "basis/matrices/matrixtype.h"
-#include "basis/logging/logging.h"
+#include "esinfo/eslog.hpp"
 #include "config/ecf/physics/physicssolver/loadstep.h"
 
 using namespace espreso;
@@ -47,7 +47,7 @@ double& HYPREProvider::solutionPrecision()
 	case HypreConfiguration::SOLVER_TYPE::PCG:
 		return _configuration.hypre.pcg.relative_conv_tol;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Required precision of unknown solver.";
+		eslog::globalerror("Required precision of unknown solver.\n");
 		exit(0);
 	}
 }

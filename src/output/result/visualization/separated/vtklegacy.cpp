@@ -7,7 +7,6 @@
 
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
-#include "basis/logging/logging.h"
 #include "basis/utilities/utils.h"
 #include "basis/utilities/sysutils.h"
 #include "basis/utilities/print.h"
@@ -15,6 +14,7 @@
 
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
+#include "esinfo/eslog.hpp"
 #include "config/ecf/output.h"
 
 #include "mesh/mesh.h"
@@ -42,7 +42,7 @@ double VTKLegacy::domainShrinkRatio = 0.9;
 VTKLegacyDebugInfo::VTKLegacyDebugInfo(const Mesh &mesh)
 : VTKLegacy(mesh)
 {
-	_path = utils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" });
+	_path = utils::createDirectory({ std::string(eslog::path()), "VTKLEGACY_DEBUG_OUTPUT" });
 }
 
 VTKLegacy::VTKLegacy(const Mesh &mesh)
@@ -381,7 +381,7 @@ void VTKLegacy::surface(const std::string &name)
 		os << "DATASET UNSTRUCTURED_GRID\n\n";
 
 		std::vector<esint> nodes(elements->datatarray().begin(), elements->datatarray().end());
-		Esutils::sortAndRemoveDuplicity(nodes);
+		utils::sortAndRemoveDuplicity(nodes);
 
 		os << "POINTS " << nodes.size() << " float\n";
 		for (size_t n = 0; n < nodes.size(); ++n) {
@@ -1027,7 +1027,7 @@ void VTKLegacy::neighbors(const std::string &name)
 
 void VTKLegacyDebugInfo::dirichlet(const Mesh &mesh, const DataHolder &instance)
 {
-	std::ofstream os(utils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" }) + "DIRICHLET" + std::to_string(info::mpi::rank) + ".vtk");
+	std::ofstream os(utils::createDirectory({ std::string(eslog::path()), "VTKLEGACY_DEBUG_OUTPUT" }) + "DIRICHLET" + std::to_string(info::mpi::rank) + ".vtk");
 
 	os << "# vtk DataFile Version 2.0\n";
 	os << "EXAMPLE\n";
@@ -1116,18 +1116,18 @@ void VTKLegacyDebugInfo::gluing(const Mesh &mesh, const DataHolder &instance)
 	}
 
 	if (!Communication::exchangeUnknownSize(sLambdas, rLambdas, neighbours)) {
-		ESINFO(ERROR) << "problem while exchanging Lambdas in storeLambdas.";
+		eslog::error("problem while exchanging Lambdas in storeLambdas.\n");
 	}
 	if (!Communication::exchangeUnknownSize(sPoints, rPoints, neighbours)) {
-		ESINFO(ERROR) << "problem while exchanging Points in storeLambdas.";
+		eslog::error("problem while exchanging Points in storeLambdas.\n");
 	}
 	for (int i = 0; i < info::mpi::size; i++) {
 		if (sLambdas[i].size() != rLambdas[i].size() || sPoints[i].size() != rPoints[i].size()) {
-			ESINFO(ERROR) << "Lambda indices do not match.";
+			eslog::error("Lambda indices do not match.\n");
 		}
 	}
 
-	std::ofstream os(utils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" }) + "GLUING" + std::to_string(info::mpi::rank) + ".vtk");
+	std::ofstream os(utils::createDirectory({ std::string(eslog::path()), "VTKLEGACY_DEBUG_OUTPUT" }) + "GLUING" + std::to_string(info::mpi::rank) + ".vtk");
 
 	os << "# vtk DataFile Version 2.0\n";
 	os << "EXAMPLE\n";
@@ -1155,7 +1155,7 @@ void VTKLegacyDebugInfo::gluing(const Mesh &mesh, const DataHolder &instance)
 			if (cmapit->size() == 3) {
 				size_t index = std::find(rLambdas[(*cmapit)[2]].begin(), rLambdas[(*cmapit)[2]].end(), cmapit->front()) - rLambdas[(*cmapit)[2]].begin();
 				if (index == rLambdas[(*cmapit)[2]].size() || rLambdas[(*cmapit)[2]][index] != cmapit->front()) {
-					ESINFO(ERROR) << "Different Lambdas on neighbour clusters.";
+					eslog::error("Different Lambdas on neighbour clusters.\n");
 				}
 				ptarget = rPoints[(*cmapit)[2]][index];
 			} else {
@@ -1164,7 +1164,7 @@ void VTKLegacyDebugInfo::gluing(const Mesh &mesh, const DataHolder &instance)
 					index = std::find(rLambdas[(*cmapit)[1]].begin() + offset + 1, rLambdas[(*cmapit)[1]].end(), cmapit->front()) - rLambdas[(*cmapit)[1]].begin();
 				}
 				if (index == (esint)rLambdas[(*cmapit)[1]].size() || rLambdas[(*cmapit)[1]][index] != cmapit->front()) {
-					ESINFO(ERROR) << "Different Lambdas on neighbour clusters.";
+					eslog::error("Different Lambdas on neighbour clusters.\n");
 				}
 				ptarget = rPoints[(*cmapit)[1]][index];
 			}
@@ -1204,7 +1204,7 @@ void VTKLegacyDebugInfo::gluing(const Mesh &mesh, const DataHolder &instance)
 
 void VTKLegacyDebugInfo::spaceFillingCurve(const SpaceFillingCurve &sfc, const std::vector<uint> &bucketsBorders)
 {
-	std::ofstream os(utils::createDirectory({ Logging::outputRoot(), "VTKLEGACY_DEBUG_OUTPUT" }) + "SFC.vtk");
+	std::ofstream os(utils::createDirectory({ std::string(eslog::path()), "VTKLEGACY_DEBUG_OUTPUT" }) + "SFC.vtk");
 	os << "# vtk DataFile Version 2.0\n";
 	os << "EXAMPLE\n";
 	os << "ASCII\n";

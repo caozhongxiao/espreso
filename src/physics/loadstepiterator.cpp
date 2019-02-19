@@ -1,17 +1,19 @@
 
-#include <linearsolver/mklpdss/mklpdsssolver.h>
-#include "physics/assembler/dataholder.h"
 #include "loadstepiterator.h"
-#include "esinfo/time.h"
-#include "esinfo/ecfinfo.h"
 
-#include "assembler/assembler.h"
+#include "esinfo/timeinfo.h"
+#include "esinfo/ecfinfo.h"
+#include "esinfo/eslog.hpp"
+
 #include "solver/timestep/linear.h"
 #include "solver/timestep/newtonraphson.h"
 #include "solver/loadstep/steadystate.h"
 #include "solver/loadstep/pseudotimestepping.h"
 #include "solver/loadstep/transientfirstorderimplicit.h"
 
+#include "physics/assembler/dataholder.h"
+
+#include "assembler/assembler.h"
 #include "assembler/controllers/heattransfer2d.controller.h"
 #include "assembler/controllers/heattransfer3d.controller.h"
 #include "assembler/controllers/structuralmechanics2d.controller.h"
@@ -27,12 +29,10 @@
 #include "assembler/provider/feti/heattransfer.fetiprovider.h"
 #include "assembler/provider/feti/structuralmechanics2d.fetiprovider.h"
 #include "assembler/provider/feti/structuralmechanics3d.fetiprovider.h"
-#include "basis/logging/logging.h"
 
 #include "linearsolver/hypre/hypresolver.h"
+#include "linearsolver/mklpdss/mklpdsssolver.h"
 #include "solver/generic/FETISolver.h"
-
-
 
 using namespace espreso;
 
@@ -59,7 +59,7 @@ static Assembler* getAssembler(Assembler *previous, HeatTransferLoadStepConfigur
 		default: break;
 		} break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented assembler.";
+		eslog::globalerror("Not implemented assembler.\n");
 	}
 	if (previous) {
 		delete previous;
@@ -90,7 +90,7 @@ static Assembler* getAssembler(Assembler *previous, StructuralMechanicsLoadStepC
 		default: break;
 		} break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented assembler.";
+		eslog::globalerror("Not implemented assembler.\n");
 	}
 	if (previous) {
 		delete previous;
@@ -109,7 +109,7 @@ static TimeStepSolver* getTimeStepSolver(TimeStepSolver *previous, LoadStepConfi
 	case LoadStepConfiguration::MODE::LINEAR: current = new LinearTimeStep(dynamic_cast<LinearTimeStep*>(previous), assembler); break;
 	case LoadStepConfiguration::MODE::NONLINEAR: current = new NewtonRaphson(dynamic_cast<NewtonRaphson*>(previous), assembler, loadStep.nonlinear_solver); break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
+		eslog::globalerror("Not implemented solver.\n");
 	}
 	if (previous) {
 		delete previous;
@@ -132,7 +132,7 @@ static LoadStepSolver* getLoadStepSolver(LoadStepSolver *previous, HeatTransferL
 		} break;
 	case LoadStepConfiguration::TYPE::TRANSIENT: current = new TransientFirstOrderImplicit(dynamic_cast<TransientFirstOrderImplicit*>(previous), assembler, timeStepSolver, loadStep.transient_solver, loadStep.duration_time); break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
+		eslog::globalerror("Not implemented solver.\n");
 	}
 	if (previous) {
 		delete previous;
@@ -156,7 +156,7 @@ static LoadStepSolver* getLoadStepSolver(LoadStepSolver *previous, StructuralMec
 	case LoadStepConfiguration::TYPE::TRANSIENT: break;
 //		return new TransientFirstOrderImplicit(assembler, timeStepSolver, loadStep.transient_solver, loadStep.duration_time);
 	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented requested SOLVER.";
+		eslog::globalerror("Not implemented solver.\n");
 	}
 	if (previous) {
 		delete previous;
@@ -190,7 +190,7 @@ bool LoadStepIterator::next()
 	case PHYSICS::STRUCTURAL_MECHANICS_3D:
 		return next(info::ecf->structural_mechanics_3d);
 	default:
-		ESINFO(GLOBAL_ERROR) << "Unknown physics.";
+		eslog::globalerror("Unknown physics.\n");
 	}
 
 	return false;

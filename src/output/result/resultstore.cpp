@@ -3,8 +3,8 @@
 
 #include "esinfo/ecfinfo.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/eslog.hpp"
 #include "config/ecf/output.h"
-#include "basis/logging/logging.h"
 #include "basis/utilities/sysutils.h"
 
 #include "executor/asyncexecutor.h"
@@ -17,6 +17,7 @@
 #include "visualization/separated/insitu.h"
 #include "visualization/separated/vtklegacy.h"
 
+#include <string>
 
 using namespace espreso;
 
@@ -25,18 +26,17 @@ async::Dispatcher* ResultStore::_dispatcher = NULL;
 
 ResultStoreBase::ResultStoreBase(const Mesh &mesh): _mesh(mesh), _directory("PREPOSTDATA/")
 {
-
 }
 
 void ResultStoreBase::createOutputDirectory()
 {
-	utils::createDirectory({ Logging::outputRoot(), _directory });
+	utils::createDirectory({ std::string(eslog::path()), _directory });
 }
 
 ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh)
 {
 	if (_asyncStore != NULL) {
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: try to create multiple ASYNC instances.";
+		eslog::globalerror("ESPRESO internal error: try to create multiple ASYNC instances.\n");
 	}
 
 
@@ -77,13 +77,13 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh)
 	if (info::ecf->output.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
 		switch (info::ecf->output.format) {
 		case OutputConfiguration::FORMAT::ENSIGHT:
-			executor->addResultStore(new EnSightWithDecomposition(Logging::name, executor->mesh()));
+			executor->addResultStore(new EnSightWithDecomposition(std::string(eslog::name()), executor->mesh()));
 			break;
 		case OutputConfiguration::FORMAT::STL_SURFACE:
-			executor->addResultStore(new STL(Logging::name, mesh));
+			executor->addResultStore(new STL(std::string(eslog::name()), mesh));
 			break;
 		default:
-			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement the selected output format.";
+			eslog::globalerror("ESPRESO internal error: implement the selected output format.\n");
 		}
 
 	}

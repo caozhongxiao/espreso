@@ -1,7 +1,7 @@
 
 #include "Domain.h"
-#include "basis/logging/logging.h"
 #include "esinfo/ecfinfo.h"
+#include "esinfo/eslog.hpp"
 
 #include <cmath>
 
@@ -14,11 +14,11 @@ using namespace espreso;
 void storeData(SparseMatrix matrices, const std::string &name, const std::string &description, int d)
 {
 	if (info::ecf->output.print_matrices) {
-		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "Storing " << description;
+		eslog::debug("STORING '%s'.\n", description);
 		//for (size_t d = 0; d < matrices.size(); d++) {
-			std::ofstream os(Logging::prepareFile(d, name));
-			os << matrices;
-			os.close();
+//			std::ofstream os(Logging::prepareFile(d, name));
+//			os << matrices;
+//			os.close();
 		//}
 	}
 }
@@ -26,13 +26,13 @@ void storeData(SparseMatrix matrices, const std::string &name, const std::string
 void storeData(vector<double> vectors, const std::string &name, const std::string &description, int d)
 {
 	if (info::ecf->output.print_matrices) {
-		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "Storing " << description;
+		eslog::debug("STORING '%s'.\n", description);
 		//for (size_t d = 0; d < vectors.size(); d++) {
-			std::ofstream os(Logging::prepareFile(d, name));
-			for (size_t i = 0; i < vectors.size(); i++) {
-				os << vectors[i] << std::endl;
-			}
-			os.close();
+//			std::ofstream os(Logging::prepareFile(d, name));
+//			for (size_t i = 0; i < vectors.size(); i++) {
+//				os << vectors[i] << std::endl;
+//			}
+//			os.close();
 		//}
 	}
 }
@@ -291,8 +291,6 @@ void Domain::multKplusLocalCore(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> 
 		SEQ_VECTOR<double> r (Kplus.m_Kplus_size, 0.0);
 		SEQ_VECTOR<double> z (Kplus.m_Kplus_size, 0.0);
 
-		bool success = false;
-
 		Kplus.Solve(x_in, x, 0, 0);
 		if (enable_SP_refinement) {
 			for (size_t step = 0; step <= configuration.Ksolver_max_iterations; step++) {
@@ -314,15 +312,9 @@ void Domain::multKplusLocalCore(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> 
 				norm = sqrt(norm);
 
 				if (norm < configuration.Ksolver_precision) {
-					ESINFO(PROGRESS3) << " " << step;
-					success = true;
 					break;
 				}
 			}
-		}
-
-		if (!success) {
-			ESINFO(PROGRESS3) << "FAILED";
 		}
 
 		for (size_t i = 0; i < r.size(); i++) {
@@ -336,7 +328,7 @@ void Domain::multKplusLocalCore(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> 
 //		Kplus.SolveCG(K, x_in, y_out, x);
 //		break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Invalid KSOLVER value.";
+		eslog::globalerror("Invalid KSOLVER value.\n");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -351,8 +343,6 @@ void Domain::multKplusLocalCore(SEQ_VECTOR <double> & x_in_y_out) {
 		Kplus.Solve(x_in_y_out);
 		break;
 	case FETI_KSOLVER::DIRECT_MP: {
-		bool success = false;
-
 		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
 		SEQ_VECTOR<double> r (Kplus.m_Kplus_size, 0.0);
 		SEQ_VECTOR<double> z (Kplus.m_Kplus_size, 0.0);
@@ -378,15 +368,10 @@ void Domain::multKplusLocalCore(SEQ_VECTOR <double> & x_in_y_out) {
 				norm = sqrt(norm);
 
 				if (norm < configuration.Ksolver_precision) {
-					ESINFO(PROGRESS3) << " " << step;
 					break;
 				}
 
 			}
-		}
-
-		if (!success) {
-			ESINFO(PROGRESS3) << "FAILED";
 		}
 
 		for (size_t i = 0; i < r.size(); i++) {
@@ -412,7 +397,7 @@ void Domain::multKplusLocalCore(SEQ_VECTOR <double> & x_in_y_out) {
 		Kplus.SolveCG(K, x_in_y_out);
 		break;
 	default:
-		ESINFO(ERROR) << "Invalid KSOLVER value.";
+		eslog::globalerror("Invalid KSOLVER value.\n");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -425,7 +410,7 @@ void Domain::multKplusLocalCore(SEQ_VECTOR <double> & x_in_y_out) {
 
 void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, esint x_in_vector_start_index, esint y_out_vector_start_index) {
 
-	ESINFO(GLOBAL_ERROR) << "MultKplus-local with 4 parameters - currently dissabled";
+	eslog::globalerror("MultKplus-local with 4 parameters - currently dissabled.\n");
 
 	switch (configuration.Ksolver) {
 	case FETI_KSOLVER::DIRECT_DP:
@@ -435,7 +420,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 		Kplus.Solve(x_in, y_out, x_in_vector_start_index, y_out_vector_start_index);
 		break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Invalid KSOLVER value.";
+		eslog::globalerror("Invalid KSOLVER value.\n");
 		exit(EXIT_FAILURE);
 	}
 

@@ -2,8 +2,8 @@
 #include "parmetis.h"
 
 #include "parmetiswrapper.h"
-#include "basis/logging/logging.h"
 #include "basis/utilities/communication.h"
+#include "esinfo/eslog.hpp"
 
 using namespace espreso;
 
@@ -103,7 +103,7 @@ esint ParMETIS::call(
 					&edgecut, partition,
 					&subset.across.communicator)) {
 
-				ESINFO(ERROR) << "PARMETIS_ERROR while partitiate mesh to MPI processes by KWay utilizing coordinates.";
+				eslog::error("PARMETIS_ERROR while partitiate mesh to MPI processes by KWay utilizing coordinates.\n");
 			}
 		} else {
 			if (METIS_OK != ParMETIS_V3_PartKway(
@@ -116,7 +116,7 @@ esint ParMETIS::call(
 					&edgecut, partition,
 					&subset.across.communicator)) {
 
-				ESINFO(ERROR) << "PARMETIS_ERROR while partitiate mesh to MPI processes by KWay utilizing coordinates.";
+				eslog::error("PARMETIS_ERROR while partitiate mesh to MPI processes by KWay utilizing coordinates.\n");
 			}
 		}
 		break;
@@ -132,7 +132,7 @@ esint ParMETIS::call(
 				&edgecut, partition,
 				&subset.across.communicator)) {
 
-			ESINFO(ERROR) << "PARMETIS_ERROR while refine mesh partition to MPI processes by KWay.";
+			eslog::error("PARMETIS_ERROR while refine mesh partition to MPI processes by KWay.\n");
 		}
 		break;
 
@@ -147,13 +147,13 @@ esint ParMETIS::call(
 				&edgecut, partition,
 				&subset.across.communicator)) {
 
-			ESINFO(ERROR) << "PARMETIS_ERROR while adaptive repartition mesh to MPI processes by KWay.";
+			eslog::error("PARMETIS_ERROR while adaptive repartition mesh to MPI processes by KWay.\n");
 		}
 		break;
 
 	case ParMETIS::METHOD::ParMETIS_V3_PartGeom:
 		if (coordinates == NULL) {
-			ESINFO(ERROR) << "PARMETIS_ERROR:: PartGeom needs coordinates.";
+			eslog::error("PARMETIS_ERROR:: PartGeom needs coordinates.\n");
 		}
 		if (METIS_OK != ParMETIS_V3_PartGeom(
 				edistribution,
@@ -161,7 +161,7 @@ esint ParMETIS::call(
 				partition,
 				&subset.across.communicator)) {
 
-			ESINFO(ERROR) << "PARMETIS_ERROR while refine mesh partition to MPI processes by KWay.";
+			eslog::error("PARMETIS_ERROR while refine mesh partition to MPI processes by KWay.\n");
 		}
 
 	}

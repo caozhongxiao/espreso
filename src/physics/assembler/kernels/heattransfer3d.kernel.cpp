@@ -1,11 +1,11 @@
 
+#include "esinfo/timeinfo.h"
 #include "physics/assembler/dataholder.h"
-#include "esinfo/time.h"
 #include "esinfo/ecfinfo.h"
+#include "esinfo/eslog.hpp"
 #include "heattransfer3d.kernel.h"
 
 #include "physics/assembler/assembler.h"
-#include "basis/logging/logging.h"
 #include "basis/containers/point.h"
 #include "basis/matrices/denseMatrix.h"
 #include "basis/evaluator/evaluator.h"
@@ -168,7 +168,7 @@ void HeatTransfer3DKernel::assembleMaterialMatrix(esint node, double *coordinate
 		}
 		break;
 	default:
-		ESINFO(ERROR) << "Advection diffusion 3D not supports set material model";
+		eslog::error("Advection diffusion 3D not supports set material model.\n");
 	}
 
 	TCT.multiply(T, C * T, 1, 0, true, false);

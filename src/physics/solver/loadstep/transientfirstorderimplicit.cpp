@@ -1,18 +1,19 @@
 
-#include "physics/assembler/dataholder.h"
-#include "esinfo/time.h"
-#include "esinfo/meshinfo.h"
 #include "transientfirstorderimplicit.h"
-#include "physics/solver/timestep/timestepsolver.h"
 
+#include "esinfo/meshinfo.h"
+#include "esinfo/timeinfo.h"
+#include "esinfo/eslog.hpp"
+
+#include "physics/assembler/dataholder.h"
 #include "physics/assembler/assembler.h"
 #include "physics/assembler/composer/composer.h"
 #include "physics/assembler/controllers/controller.h"
+#include "physics/solver/timestep/timestepsolver.h"
 
 #include "mesh/mesh.h"
 #include "mesh/store/nodestore.h"
 
-#include "basis/logging/logging.h"
 #include "config/ecf/physics/physicssolver/transientsolver.h"
 #include "config/ecf/physics/physicssolver/loadstep.h"
 
@@ -24,7 +25,7 @@ TransientFirstOrderImplicit::TransientFirstOrderImplicit(TransientFirstOrderImpl
 : LoadStepSolver(assembler, timeStepSolver, duration), _configuration(configuration), _alpha(0), _nTimeShift(_configuration.time_step)
 {
 	if (configuration.time_step < 1e-7) {
-		ESINFO(GLOBAL_ERROR) << "Set time step for TRANSIENT solver greater than 1e-7.";
+		eslog::globalerror("Set time step for TRANSIENT solver greater than 1e-7.\n");
 	}
 
 	if (previous) {
@@ -89,11 +90,11 @@ void TransientFirstOrderImplicit::initLoadStep()
 	case TransientSolverConfiguration::METHOD::USER:
 		_alpha = _configuration.alpha;
 		if (_alpha <= 0 || _alpha > 1) {
-			ESINFO(GLOBAL_ERROR) << "Alpha has to be from interval (0, 1>.";
+			eslog::globalerror("Alpha has to be from interval (0, 1>.\n");
 		}
 		break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Not supported first order implicit solver method.";
+		eslog::globalerror("Not supported first order implicit solver method.\n");
 	}
 
 	U->data = _assembler.controller()->solution()->data;
@@ -146,13 +147,17 @@ void TransientFirstOrderImplicit::processTimeStep()
 				}
 			}
 
-			ESINFO(CONVERGENCE) << "AUTOMATIC TIME STEPPING INFO: RESPONSE EIGENVALUE(" << resFreq << "), OSCILLATION LIMIT(" << oscilationLimit << ")";
+			eslog::solver("AUTOMATIC TIME STEPPING INFO: RESPONSE EIGENVALUE(%e), OSCILLATION LIMIT(%e)\n", resFreq, oscilationLimit);
 		}
 
 		if (std::fabs(time::shift - _nTimeShift) / time::shift < _precision) {
-			ESINFO(CONVERGENCE) << "TIME STEP UNCHANGED (" << _nTimeShift << ")";
+			eslog::solver("TIME STEP UNCHANGED (%5.3f)\n", _nTimeShift);
 		} else {
-			ESINFO(CONVERGENCE) << "NEW TIME STEP " << (time::shift < _nTimeShift ? "INCREASED " : "DECREASED ") << "TO VALUE: " << _nTimeShift;
+			if (time::shift < _nTimeShift) {
+				eslog::solver("INCREASE TIME STEP (%5.3f)\n", _nTimeShift);
+			} else {
+				eslog::solver("DECREASE TIME STEP (%5.3f)\n", _nTimeShift);
+			}
 		}
 	}
 

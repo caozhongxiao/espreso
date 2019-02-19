@@ -5,7 +5,6 @@
 #include "holders/objectholder.h"
 #include "holders/valueholder.h"
 #include <type_traits>
-#include <iostream>
 
 #include "configuration.h"
 

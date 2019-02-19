@@ -1,10 +1,9 @@
 
 #include "expression.h"
 #include "config/configuration.hpp"
-
+#include "esinfo/eslog.hpp"
 #include "basis/utilities/parser.h"
 #include "basis/utilities/utils.h"
-#include "basis/logging/logging.h"
 #include "basis/expression/expression.h"
 #include "basis/evaluator/constevaluator.h"
 #include "basis/evaluator/expressionevaluator.h"
@@ -121,7 +120,7 @@ bool ECFExpression::createEvaluator()
 			}
 			std::vector<std::string> line = Parser::split(lines[i], ",");
 			if (line.size() != 2) {
-				ESINFO(GLOBAL_ERROR) << "Invalid TABULAR data: " << value;
+				eslog::globalerror("Invalid TABULAR data: %s\n", value.c_str());
 			}
 			table.push_back(std::make_pair(std::stod(line[0]), std::stod(line[1])));
 		}

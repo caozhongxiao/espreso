@@ -9,11 +9,6 @@
 
 namespace espreso {
 
-#define VERBOSITY(level) level == 0 ? PROGRESS2 : PROGRESS3
-
-class TimeEval;
-class TimeEvent;
-
 class Mesh;
 struct Element;
 struct NodeData;
@@ -66,20 +61,12 @@ public:
 
 	void morphRBF(const std::string &name, const RBFTargetConfiguration &configuration, int dimension);
 
-	void startPreprocessing();
-	void finishPreprocessing();
-
 protected:
-	static size_t level;
-
 	MeshPreprocessing(Mesh *mesh);
 	~MeshPreprocessing();
 	Mesh *_mesh;
 
 	NodeData* _morphing;
-
-	TimeEval *_timeStatistics;
-	std::map<std::string, TimeEvent*> _timeEvents;
 
 private:
 	void permuteElements(const std::vector<esint> &permutation, const std::vector<size_t> &distribution);
@@ -92,10 +79,6 @@ private:
 
 	void synchronizeRegionNodes(const std::string &name, serializededata<esint, esint>* &rnodes, std::vector<ProcessInterval> &nintervals);
 	void computeIntervalOffsets(std::vector<ProcessInterval> &intervals, esint &uniqueOffset, esint &uniqueSize, esint &uniqueTotalSize);
-
-	void start(const std::string &message);
-	void skip(const std::string &message);
-	void finish(const std::string &message);
 
 	void processMorpher(const RBFTargetTransformationConfiguration &target, int dimension,
 		std::vector<Point> &sPoints, esint startPoint, std::vector<double> &sDisplacement);

@@ -1,7 +1,7 @@
 
 #include "catalyst.h"
 
-#include "basis/logging/logging.h"
+#include <cstddef>
 
 #ifdef CATALYST
 #include "vtkNew.h"
@@ -67,8 +67,6 @@ Catalyst::Catalyst()
 
 	_dataDescription->GetInputDescriptionByName("input")->SetGrid(_VTKGrid);
 	_processor->CoProcess(_dataDescription);
-#else
-	ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW << "ESPRESO was built without Catalyst.";
 #endif
 }
 

@@ -29,9 +29,9 @@ using std::make_pair;
 #include "esinfo/meshinfo.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/eslog.hpp"
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
-#include "basis/logging/logging.h"
 #include "solver/generic/SparseMatrix.h"
 #include "sparsesolvers.h"
 #include "clusters.h"
@@ -103,7 +103,7 @@ public:
 			USE_HFETI = true;
 			break;
 		default:
-			ESINFO(GLOBAL_ERROR) << "Unsupported FETI METHOD";
+			eslog::error("Unsupported FETI METHOD.\n");
 		}
 
 		USE_KINV 			= configuration.use_schur_complement ? 1 : 0;
@@ -137,7 +137,7 @@ public:
 			SYMMETRIC_SYSTEM = false;
 			break;
 		default:
-			ESINFO(GLOBAL_ERROR) << "Unknown matrix type";
+			eslog::error("Unknown matrix type.\n");
 		}
 
 
@@ -176,7 +176,7 @@ public:
 				clusters[c].SYMMETRIC_SYSTEM = false;
 				break;
 			default:
-				ESINFO(GLOBAL_ERROR) << "Unknown matrix type";
+				eslog::error("Unknown matrix type.\n");
 			}
 
 			// Init all compute clusters - communication layer and respective buffers are not allocated
@@ -205,7 +205,7 @@ public:
 
 	void SetClusterHFETI() {
 
-		ESINFO(PROGRESS3) << "HFETI preprocessing start";
+		eslog::checkpointln("HFETI preprocessing start.");
 
 //		for (esint c = 0; c < clusters.size(); c++) {
 //			clusters[c].SetClusterHFETI();
@@ -364,9 +364,9 @@ public:
 		//// *** Detection of affinity of lag. multipliers to specific subdomains **************
 		//// *** - will be used to compress vectors and matrices for higher efficiency
 
-		ESLOG(MEMORY) << "Setting vectors for lambdas";
-		ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
-		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//		ESLOG(MEMORY) << "Setting vectors for lambdas";
+//		ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
+//		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		my_lamdas_indices.resize( lambda_map_sub.size() );
 		for (size_t i = 0; i < lambda_map_sub.size(); i++)
@@ -389,9 +389,9 @@ public:
 			}
 		}
 
-		ESLOG(MEMORY) << "Setting vectors for lambdas communicators";
-		ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
-		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//		ESLOG(MEMORY) << "Setting vectors for lambdas communicators";
+//		ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
+//		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		my_comm_lambdas_indices .resize(my_neighs.size());
 		my_comm_lambdas			.resize(my_neighs.size());

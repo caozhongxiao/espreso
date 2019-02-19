@@ -1,7 +1,7 @@
 
 #include "tableinterpolationevaluator.h"
 
-#include "basis/logging/logging.h"
+#include "esinfo/eslog.hpp"
 
 using namespace espreso;
 
@@ -9,7 +9,7 @@ TableInterpolationEvaluator::TableInterpolationEvaluator(const std::vector<std::
 : _table(table)
 {
 	if (!table.size()) {
-		ESINFO(GLOBAL_ERROR) << "Interpolation table with zero size.";
+		eslog::globalerror("Interpolation table with zero size.\n");
 	}
 }
 

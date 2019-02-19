@@ -8,8 +8,8 @@
 #include "esinfo/meshinfo.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
+#include "esinfo/eslog.hpp"
 #include "basis/containers/serializededata.h"
-#include "basis/logging/logging.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
 
@@ -64,7 +64,7 @@ void GlobalComposer::buildMVData()
 			return index.column < value;
 		});
 	}
-	Esutils::sortAndRemoveDuplicity(_MVNeighbours);
+	utils::sortAndRemoveDuplicity(_MVNeighbours);
 
 	_MVSend.resize(_MVNeighbours.size());
 	_MVRecv.resize(_MVNeighbours.size());
@@ -78,8 +78,8 @@ void GlobalComposer::buildMVData()
 	}
 
 	for (size_t n = 0; n < _MVNeighbours.size(); n++) {
-		Esutils::sortAndRemoveDuplicity(_MVSend[n]);
-		Esutils::sortAndRemoveDuplicity(_MVRecv[n]);
+		utils::sortAndRemoveDuplicity(_MVSend[n]);
+		utils::sortAndRemoveDuplicity(_MVRecv[n]);
 	}
 }
 
@@ -258,7 +258,7 @@ void GlobalComposer::setDirichlet(Matrices matrices, double reduction, const std
 	}
 
 	if (!Communication::receiveUpperUnknownSize(sBuffer, rBuffer, info::mesh->neighbours)) {
-		ESINFO(ERROR) << "ESPRESO internal error: synchronize dirichlet data.";
+		eslog::error("ESPRESO internal error: synchronize dirichlet data.\n");
 	}
 
 	for (size_t n = 0; n < info::mesh->neighbours.size(); n++) {
@@ -304,7 +304,7 @@ void GlobalComposer::apply(std::vector<SparseMatrix> &matrices, std::vector<doub
 	}
 
 	if (!Communication::exchangeKnownSize(sBuffer, rBuffer, _MVNeighbours)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange MV data.";
+		eslog::error("ESPRESO internal error: exchange MV data.\n");
 	}
 
 	for (size_t n = 0; n < _MVNeighbours.size(); ++n) {

@@ -3,7 +3,7 @@
 
 #include "config/ecf/input/grid.h"
 #include "config/ecf/input/sphere.h"
-#include "basis/logging/logging.h"
+#include "esinfo/eslog.hpp"
 
 using namespace espreso;
 
@@ -16,7 +16,7 @@ GridSettings::GridSettings(const GridGeneratorConfiguration &configuration)
 
 	for (auto it = configuration.blocks.begin(); it != configuration.blocks.end(); ++it) {
 		if (it->first >= nonempty.size()) {
-			ESINFO(GLOBAL_ERROR) << "Block index is out of range.";
+			eslog::globalerror("Block index is out of range.\n");
 		}
 		nonempty[it->first] = it->second;
 	}

@@ -1,4 +1,5 @@
 
+#include "esinfo/timeinfo.h"
 #include "controller.h"
 
 #include "config/holders/expression.h"
@@ -6,11 +7,9 @@
 #include "esinfo/meshinfo.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
-#include "esinfo/time.h"
-
+#include "esinfo/eslog.hpp"
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
-#include "basis/logging/logging.h"
 #include "basis/utilities/communication.h"
 #include "basis/evaluator/evaluator.h"
 #include "mesh/store/nodestore.h"
@@ -230,17 +229,17 @@ void Controller::updateKernelParam(Parameter &parameter, const ECFExpression &va
 
 void Controller::processBEMdomain(esint domain, double *values)
 {
-	ESINFO(ERROR) << "ESPRESO internal error: BEM is not implemented for the requested physics.";
+	eslog::error("ESPRESO internal error: BEM is not implemented for the requested physics.\n");
 }
 
 void Controller::fillBEMInterior(esint domain, double *values)
 {
-	ESINFO(ERROR) << "ESPRESO internal error: BEM is not implemented for the requested physics.";
+	eslog::error("ESPRESO internal error: BEM is not implemented for the requested physics.\n");
 }
 
 void Controller::kernelToBoundary(Parameter &parameter, Parameter &boundary, BoundaryRegionStore *region)
 {
-	ESINFO(ERROR) << "ESPRESO internal error: kernelToBoundary";
+	eslog::error("ESPRESO internal error: kernelToBoundary.\n");
 }
 
 void Controller::kernelToNodes(Parameter &kvalues, std::vector<double> &nvalues)
@@ -284,7 +283,7 @@ void Controller::kernelToNodes(Parameter &kvalues, std::vector<double> &nvalues)
 	}
 
 	if (!Communication::exchangeKnownSize(sBuffer, rBuffer, info::mesh->neighbours)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange diagonal values";
+		eslog::error("ESPRESO internal error: exchange diagonal values.\n");
 	}
 
 	nranks = info::mesh->nodes->ranks->begin();

@@ -12,14 +12,11 @@
 #include "parser/nset.h"
 
 #include "basis/containers/tarray.h"
-#include "basis/logging/logging.h"
-#include "basis/logging/timeeval.h"
-#include "basis/utilities/communication.h"
-#include "basis/utilities/utils.h"
 #include "config/ecf/input/input.h"
 
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/eslog.hpp"
 
 #include "input/randominput.h"
 #include "input/sequentialinput.h"
@@ -38,42 +35,23 @@ void AbaqusLoader::load(const InputConfiguration &configuration, Mesh &mesh)
 AbaqusLoader::AbaqusLoader(const InputConfiguration &configuration, Mesh &mesh)
 : _configuration(configuration), _pfile(MAX_LINE_STEP * MAX_LINE_SIZE)
 {
-	TimeEval timing("Parsing Workbench data");
-	timing.totalTime.startWithBarrier();
-	ESINFO(OVERVIEW) << "Load Abaqus data from '" << _configuration.path << "'.";
+	eslog::start("MESIO: LOAD ABAQUS");
+	eslog::param("database", _configuration.path.c_str());
+	eslog::ln();
 
-	TimeEvent tread("read data from file"); tread.start();
 	readData();
-	tread.end(); timing.addEvent(tread);
-	ESINFO(PROGRESS2) << "Abaqus:: data copied from file.";
+	eslog::checkpointln("MESIO: DATA READ");
 
-	TimeEvent tprepare("prepare data for parsing"); tprepare.start();
 	prepareData();
-	tprepare.end(); timing.addEvent(tprepare);
-	ESINFO(PROGRESS2) << "Abaqus:: data prepared for parsing.";
-
+	eslog::checkpointln("MESIO: DATA PREPARED");
 
 	PlainAbaqusData meshData;
-	TimeEvent tparse("parsing data"); tparse.start();
 	parseData(meshData);
-	tparse.end(); timing.addEvent(tparse);
-	ESINFO(PROGRESS2) << "Abaqus:: data parsed.";
-
-	timing.totalTime.endWithBarrier();
-	timing.printStatsMPI();
+	eslog::checkpointln("MESIO: DATA PARSED");
 
 	if (!_configuration.keep_material_sets) {
 		std::fill(meshData.material.begin(), meshData.material.end(), 0);
 	}
-
-//	Communication::serialize([&] () {
-//		std::cout << info::mpi::rank << "\n";
-//		std::cout << "nIDs: " << meshData.nIDs;
-//		std::cout << "coordinates: " << meshData.coordinates;
-//		std::cout << "eIDs: " << meshData.eIDs;
-//		std::cout << "esize: " << meshData.esize;
-//		std::cout << "enodes: " << meshData.enodes;
-//	});
 
 	meshData.eregions.clear();
 	meshData.nregions.clear();
@@ -83,40 +61,24 @@ AbaqusLoader::AbaqusLoader(const InputConfiguration &configuration, Mesh &mesh)
 	} else {
 		SequentialInput::buildMesh(meshData, mesh);
 	}
+
+	eslog::endln("MESIO: MESH BUILT");
 }
 
 void AbaqusLoader::readData()
 {
-	TimeEval timing("Read data from file");
-	timing.totalTime.startWithBarrier();
-
 	MPISubset loaders(_configuration, *MPITools::procs);
-
-	TimeEvent e1("FILE OPEN");
-	e1.start();
 
 	MPI_File MPIFile;
 	if (loaders.within.rank == 0) {
 		if (!MPILoader::open(loaders.across, MPIFile, _configuration.path)) {
-			ESINFO(ERROR) << "MPI cannot load file '" << _configuration.path << "'";
+			eslog::error("MPI cannot load file '%s'\n", _configuration.path.c_str());
 		}
 	}
-
-	e1.end();
-	timing.addEvent(e1);
-
-	TimeEvent e2("FILE READ");
-	e2.start();
 
 	if (loaders.within.rank == 0) {
 		MPILoader::read(loaders.across, MPIFile, _pfile);
 	}
-
-	e2.end();
-	timing.addEvent(e2);
-
-	TimeEvent e3("FILE SCATTER");
-	e3.start();
 
 	MPILoader::scatter(loaders.within, _pfile);
 	MPILoader::align(*MPITools::procs, _pfile, MAX_LINE_STEP);
@@ -124,12 +86,6 @@ void AbaqusLoader::readData()
 	AbaqusParser::offset = _pfile.offsets[info::mpi::rank];
 	AbaqusParser::begin = _pfile.begin;
 	AbaqusParser::end = _pfile.end;
-
-	e3.end();
-	timing.addEvent(e3);
-
-	timing.totalTime.endWithBarrier();
-	timing.printStatsMPI();
 }
 
 void AbaqusLoader::prepareData()
@@ -235,7 +191,7 @@ void AbaqusLoader::prepareData()
 	}
 
 	if (!Communication::allGatherUnknownSize(_blockFinishs)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench block ends.";
+		eslog::error("ESPRESO internal error: exchange ABAQUS block ends.\n");
 	}
 
 	for (size_t i = 0; i < _NLists.size(); i++) {
@@ -255,19 +211,19 @@ void AbaqusLoader::prepareData()
 	}
 
 	if (!Communication::allGatherUnknownSize(_NLists)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench NBblocks.";
+		eslog::error("ESPRESO internal error: exchange ABAQUS NLists.\n");
 	}
 
 	if (!Communication::allGatherUnknownSize(_ELists)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench EBlocks.";
+		eslog::error("ESPRESO internal error: exchange ABAQUS ELists.\n");
 	}
 
 	if (!Communication::allGatherUnknownSize(_Esets)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench EBlocks.";
+		eslog::error("ESPRESO internal error: exchange ABAQUS ESets.\n");
 	}
 
 	if (!Communication::allGatherUnknownSize(_Nsets)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench EBlocks.";
+		eslog::error("ESPRESO internal error: exchange ABAQUS NSets.\n");
 	}
 
 	// fix distribution if EBlocks are across more processes and elements data have more lines
@@ -291,25 +247,25 @@ void AbaqusLoader::parseData(PlainAbaqusData &meshData)
 
 	for (size_t i = 0; i < 1;i++){   //_NLists.size(); i++) {
 		if (!_NLists[i].readData(meshData.nIDs, meshData.coordinates, _configuration.scale_factor)) {
-			ESINFO(ERROR) << "Abaqus parser: something wrong happens while read NList.";
+			eslog::error("ABAQUS parser: something wrong happens while read NList.\n");
 		}
 	}
 
 	for (size_t i = 0; i < _ELists.size(); i++) {
 		if (!_ELists[i].readData( meshData)) {
-			ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
+			eslog::error("ABAQUS parser: something wrong happens while read EList.\n");
 		}
 	}
 
 	for (size_t i = 0; i < _Esets.size(); i++) {
 		if (!_Esets[i].readData( meshData.eregions[_Esets[i].NAME])) {
-			ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
+			eslog::error("ABAQUS parser: something wrong happens while read ESets.\n");
 		}
 	}
 
 	for (size_t i = 0; i < _Nsets.size(); i++) {
 		if (!_Nsets[i].readData( meshData.nregions[_Nsets[i].NAME])) {
-			ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
+			eslog::error("ABAQUS parser: something wrong happens while read NSets.\n");
 		}
 	}
 //	for (size_t i = 0; i < 1; i++) {

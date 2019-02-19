@@ -2,8 +2,7 @@
 #include "hypresolver.h"
 #include "physics/assembler/dataholder.h"
 
-#include "basis/logging/logging.h"
-#include "basis/utilities/utils.h"
+#include "esinfo/eslog.hpp"
 #include "config/ecf/linearsolver/hypre/hypre.h"
 
 #include "solver/generic/SparseMatrix.h"
@@ -42,7 +41,7 @@ double& HYPRESolver::precision()
 	case HypreConfiguration::SOLVER_TYPE::PCG:
 		return _configuration.pcg.relative_conv_tol;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Required precision of unknown solver.";
+		eslog::globalerror("Required precision of unknown solver.\n");
 		exit(0);
 	}
 }
@@ -71,9 +70,4 @@ void HYPRESolver::solve()
 	_hypreData->solve(_configuration,
 			_data->K[0].rows - _data->K[0].haloRows,
 			_data->primalSolution[0].data() + _data->K[0].haloRows);
-}
-
-void HYPRESolver::finalize()
-{
-
 }

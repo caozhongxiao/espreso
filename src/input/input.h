@@ -17,6 +17,7 @@ class Input {
 
 public:
 	static bool load(const ECFRoot &configuration, Mesh &mesh);
+	static const char* inputFile(const ECFRoot &configuration);
 
 protected:
 	Input(PlainMeshData &meshData, Mesh &mesh)

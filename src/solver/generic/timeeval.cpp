@@ -3,13 +3,14 @@
 
 #include <iomanip>
 #include <cmath>
+#include <sstream>
 
 #include "mpi.h"
 #include "omp.h"
 
 #include "esinfo/mpiinfo.h"
 #include "esinfo/ecfinfo.h"
-#include "logging.h"
+#include "esinfo/eslog.hpp"
 
 using namespace espreso;
 
@@ -218,26 +219,28 @@ void TimeEvent::evaluateMPI() {
 void TimeEvent::printStat(double totalTime) {
 	evaluate();
 
-	ESLOG(SUMMARY)
-		<< std::setw(name_length) << std::left << eventName
+	std::stringstream ss;
+	ss	<< std::setw(name_length) << std::left << eventName
 		<< " avg.: " << std::fixed << std::setw(val_length) << avgTime
 		<< " min.: " << std::setw(val_length) << minTime
 		<< " max.: " << std::setw(val_length) << maxTime
 		<< " % of avg tot: " << std::setw(val_length)
 		<< (totalTime != 0 ? 100.0 * avgTime / totalTime : INFINITY);
+	eslog::duration("%s\n", ss.str().c_str());
 }
 
 
 void TimeEvent::printLastStat(double totalTime) {
 	avgTime = eventTime.back();
 
-	ESLOG(SUMMARY)
-		<< std::setw(name_length) << std::left << eventName
+	std::stringstream ss;
+	ss	<< std::setw(name_length) << std::left << eventName
 		<< " avg.: " << std::fixed << std::setw(val_length) << avgTime
 		<< " min.: " << std::setw(val_length) << " -- "
 		<< " max.: " << std::setw(val_length) << " -- "
 		<< " % of avg tot: " << std::setw(val_length)
 		<< (totalTime != 0 ? 100.0 * avgTime / totalTime : INFINITY);
+	eslog::duration("%s\n", ss.str().c_str());
 }
 
 double TimeEvent::getLastStat(double totalTime) {
@@ -247,8 +250,8 @@ double TimeEvent::getLastStat(double totalTime) {
 
 void TimeEvent::printStatMPI(double totalTime) {
 	evaluateMPI();
-	ESLOG(SUMMARY)
-		<< std::setw(name_length) << std::left << eventName
+	std::stringstream ss;
+	ss	<< std::setw(name_length) << std::left << eventName
 		<< " avg.: " << std::setw(val_length) << std::fixed << g_avgTime
 		<< " min.: " << std::setw(val_length) << g_minTime
 		<< " max.: " << std::setw(val_length) << g_maxTime
@@ -256,6 +259,7 @@ void TimeEvent::printStatMPI(double totalTime) {
 		<< " count: " << std::setw(val_length) << eventCount
 		<< " % of avg tot: " << std::setw(val_length)
 		<< (totalTime != 0 ? 100.0 * g_avgTime / totalTime : INFINITY);
+	eslog::duration("%s\n", ss.str().c_str());
 }
 
 
@@ -271,13 +275,14 @@ void TimeEvent::printLastStatMPI(double totalTime) {
 	MPI_Reduce(&d_time, &g_minTime, 1, MPI_DOUBLE, MPI_MIN, 0, info::mpi::comm);
 	MPI_Reduce(&d_time, &g_maxTime, 1, MPI_DOUBLE, MPI_MAX, 0, info::mpi::comm);
 
-	ESLOG(SUMMARY)
-		<< std::setw(name_length) << std::left << eventName
+	std::stringstream ss;
+	ss	<< std::setw(name_length) << std::left << eventName
 		<< " last: " << std::fixed << std::setw(val_length) << g_avgTime
 		<< " min.: " << std::setw(val_length) << g_minTime
 		<< " max.: " << std::setw(val_length) << g_maxTime
 		<< " % of avg tot: " << std::setw(val_length)
 		<< (totalTime != 0 ? 100.0 * g_avgTime / totalTime : INFINITY);
+	eslog::duration("%s\n", ss.str().c_str());
 }
 
 
@@ -300,24 +305,26 @@ void TimeEvent::printLastStatMPIPerNode(double totalTime)
 	MPI_Reduce(&d_time, &g_minTime, 1, MPI_DOUBLE, MPI_MIN, 0, info::mpi::comm);
 	MPI_Reduce(&d_time, &g_maxTime, 1, MPI_DOUBLE, MPI_MAX, 0, info::mpi::comm);
 
-	ESLOG(SUMMARY)
-		<< std::setw(name_length) << std::left << eventName
+	std::stringstream ss;
+	ss	<< std::setw(name_length) << std::left << eventName
 		<< " last: " << std::fixed << std::setw(val_length) << g_avgTime
 		<< " min.: " << std::setw(val_length) << g_minTime
 		<< " max.: " << std::setw(val_length) << g_maxTime
 		<< " % of avg tot: " << std::setw(val_length)
 		<< (totalTime != 0 ? 100.0 * g_avgTime / totalTime : INFINITY);
+	eslog::duration("%s\n", ss.str().c_str());
 
-	std::stringstream ss;
+
+	ss.clear();
 	for (esint i = 0; i < info::mpi::size; i++) {
 		ss << std::fixed << std::setw(3) << "R: " << std::setw(5) << i << std::setw(15) << d_all_times[i];
 
 		if ((i + 1) % 10 == 0) {
-			ESLOG(SUMMARY) << ss.str();
+			eslog::duration("%s\n", ss.str().c_str());
 			ss.clear();
 		}
 	}
-	ESLOG(SUMMARY) << ss.str();
+	eslog::duration("%s\n", ss.str().c_str());
 }
 
 
@@ -361,9 +368,11 @@ void TimeEval::printStatsMPI() {
 
 	int separator_size = 80;
 
-	ESLOG(SUMMARY) << separator(separator_size, '*');
-	ESLOG(SUMMARY) << "        " << evalName << "         ";
-	ESLOG(SUMMARY) << separator(separator_size, '*');
+	std::stringstream ss;
+	ss << separator(separator_size, '*') << "\n";
+	ss << "        " << evalName << "         \n";
+	ss << separator(separator_size, '*') << "\n";
+	eslog::duration("%s", ss.str().c_str());
 	totalTime.evaluateMPI();
 
 	for (size_t i = 0; i < timeEvents.size(); i++) {
@@ -376,11 +385,19 @@ void TimeEval::printStatsMPI() {
 		sum_avg_time += ptimeEvents[i]->avgTime;
 	}
 
-	ESLOG(SUMMARY) << separator(separator_size, '-');
+	{
+		std::stringstream sss;
+		sss << separator(separator_size, '-');
+		eslog::duration("%s\n", sss.str().c_str());
+	}
 
 	totalTime.printStatMPI(totalTime.g_avgTime);
 
-	ESLOG(SUMMARY) << separator(separator_size, '*');
+	{
+		std::stringstream sss;
+		sss << separator(separator_size, '*');
+		eslog::duration("%s\n", ss.str().c_str());
+	}
 }
 
 #endif

@@ -5,9 +5,9 @@
 #include "itersolver.h"
 
 #include "basis/utilities/utils.h"
-#include "basis/logging/logging.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
+#include "esinfo/eslog.hpp"
 
 using namespace espreso;
 
@@ -83,7 +83,7 @@ void IterSolverBase::Preprocessing ( SuperCluster & cluster )
 		else
 			CreateGGt_Inv( cluster );
 	} else {
-		ESINFO(GLOBAL_ERROR) << "Only Inverse of GGT is supported for Projector";
+		eslog::error("Only Inverse of GGT is supported for Projector.\n");
 		// CreateGGt    ( cluster );
 	}
 
@@ -131,11 +131,11 @@ void IterSolverBase::Solve ( SuperCluster & cluster,
 		Solve_full_ortho_CG_singular_dom_geneo(cluster, in_right_hand_side_primal);
 		break;
 	case FETI_ITERATIVE_SOLVER::PCG_CP:
-		ESINFO(GLOBAL_ERROR) << "Regular CG with conjugate projector not implemented yet";
+		eslog::error("Regular CG with conjugate projector not implemented yet.\n");
 		break;
 
 	default:
-		ESINFO(GLOBAL_ERROR) << "Unknown CG solver";
+		eslog::error("Unknown CG solver.\n");
 	}
 
 	 postproc_timing.totalTime.start();
@@ -345,20 +345,13 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( SuperCluster & clus
 		parallel_norm_compressed(cluster, Bn_l);
 		norm_Bn_lLambda = parallel_norm_compressed(cluster, Bn_lLambda);
 
-
-
-		ESINFO(CONVERGENCE) << " **** Karush-Kuhn-Tucker-conditions ****     ";
-
-
-		ESINFO(CONVERGENCE) << " Solution norm: norm(K*u - f + Bt*Lambda) =      				" << std::setw(6) << (KKT1_norm_cluster_global2 ? KKT1_norm_cluster_global / KKT1_norm_cluster_global2 :KKT1_norm_cluster_global);
-
-		ESINFO(CONVERGENCE) << " Equality constraints: norm(Be*u - ce) =					" << std::setw(6) << norm_Beu / norm_ce;
-
+		eslog::solver(" **** Karush-Kuhn-Tucker-conditions ****\n");
+		eslog::solver(" Solution norm: norm(K*u - f + Bt*Lambda)                     = % e\n", (KKT1_norm_cluster_global2 ? KKT1_norm_cluster_global / KKT1_norm_cluster_global2 :KKT1_norm_cluster_global));
+		eslog::solver(" Equality constraints: norm(Be*u - ce)                        = % e\n", norm_Beu / norm_ce);
 		// KKT3
-		ESINFO(CONVERGENCE) << " Inequality constraints: norm(max(Bn*u - cn,0)) =				" << std::setw(6) << max_Bn_l_g / norm_cn;
-		ESINFO(CONVERGENCE) << " Check Multipliers positiveness: norm(max(-Lambda_N,0) =			" << std::setw(6) << lambda_n_max_2_g / lambda_n_max_g;
-		ESINFO(CONVERGENCE) << " Check norm of Normal Multipliers: norm((Be*u - ce)*Lambda_N) =			" << std::setw(6) << norm_Bn_lLambda / ( norm_cn * lambda_n_max_g );
-
+		eslog::solver(" Inequality constraints: norm(max(Bn*u - cn,0))               = % e\n", max_Bn_l_g / norm_cn);
+		eslog::solver(" Check Multipliers positiveness: norm(max(-Lambda_N,0)        = % e\n", lambda_n_max_2_g / lambda_n_max_g);
+		eslog::solver(" Check norm of Normal Multipliers: norm((Be*u - ce)*Lambda_N) = % e\n", norm_Bn_lLambda / ( norm_cn * lambda_n_max_g ));
 //		switch (configuration.solver) {
 //		case FETI_ITERATIVE_SOLVER::QPCE:
 //			Solve_QPCE_singular_dom(cluster, in_right_hand_side_primal );
@@ -883,13 +876,8 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 
 				break;
 			default:
-				ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+				eslog::error("Not implemented preconditioner.\n");
 			}
-
-
-
-
-
 
 
 
@@ -917,18 +905,14 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 
 	double mchange = 0.0;
 
-
-	ESINFO(CONVERGENCE) << "===================================================================================================";
-	ESINFO(CONVERGENCE) << "	QUADRATIC PROGRAMMING WITH SIMPLE BOUNDS AND EQUALITY CONSTRAINTS (QPCE)";
-	ESINFO(CONVERGENCE) << "===================================================================================================";
-	//ESINFO(CONVERGENCE) << "'Variables/equality constraints: n/m = %d/%d\n',n,m);
-	ESINFO(CONVERGENCE) << "	Terminating tolerance: precision = "<< tol*maxeig ;
-	//ESINFO(CONVERGENCE) << "Parameter settings:\n'); disp(options);
-	ESINFO(CONVERGENCE) << "---------------------------------------------------------------------------------------------------";
-	ESINFO(CONVERGENCE) << "Out_it   L(x,mu,rho)   ||~g(x)||       ||Cx||       Exp  Prop  Cgm   No_A      rho              M";
-	ESINFO(CONVERGENCE) << "---------------------------------------------------------------------------------------------------";
-
-	ESINFO(CONVERGENCE)<< std::setw(3) << output_n_it << std::setw(16) << lag1 << std::setw(15) << norm_test_vec*maxeig << std::setw(15)  <<normCx_x << std::setw(6)  <<  output_n_exp <<  std::setw(6) <<  output_n_prop <<  std::setw(6)  <<  output_n_cg <<  std::setw(6)  <<  output_n_hess <<  std::setw(15) <<  rho << std::setw(10) <<  _M ;
+	eslog::solver("===================================================================================================\n");
+	eslog::solver("    QUADRATIC PROGRAMMING WITH SIMPLE BOUNDS AND EQUALITY CONSTRAINTS (QPCE)\n");
+	eslog::solver("===================================================================================================\n");
+	eslog::solver("    Terminating tolerance: precision = %f\n", tol*maxeig);
+	eslog::solver("---------------------------------------------------------------------------------------------------");
+	eslog::solver("Out_it   L(x,mu,rho)   ||~g(x)||       ||Cx||       Exp  Prop  Cgm   No_A      rho              M");
+	eslog::solver("---------------------------------------------------------------------------------------------------");
+	eslog::solver("%d %15.5f %14.5f %14.5f %d %d %d %d %14.5f %9.5f\n",output_n_it, lag1, norm_test_vec*maxeig, normCx_x, output_n_exp, output_n_prop, output_n_cg, output_n_hess, rho, _M);
 
 	esint stop = 0;
 	//for (esint i=0; i < _maxit; i++){
@@ -1060,7 +1044,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 
 								break;
 							default:
-								ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+								eslog::error("Not implemented preconditioner.\n");
 							}
 
 
@@ -1281,7 +1265,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 			normCx_x = normCx/normx_l;
 		}
 
-		ESINFO(CONVERGENCE)<< std::setw(3) << output_n_it << std::setw(16) << lag1 << std::setw(15) << norm_test_vec*maxeig << std::setw(15)  <<normCx_x << std::setw(6)  <<  output_n_exp <<  std::setw(6) <<  output_n_prop <<  std::setw(6)  <<  output_n_cg <<  std::setw(6)  <<  output_n_hess <<  std::setw(15) <<  rho << std::setw(10) <<  _M ;
+		eslog::solver("%d %15.5f %14.5f %14.5f %d %d %d %d %14.5f %9.5f\n",output_n_it, lag1, norm_test_vec*maxeig, normCx_x, output_n_exp, output_n_prop, output_n_cg, output_n_hess, rho, _M);
 
 
 		for (size_t k = 0; k < tmp.size(); k++) {
@@ -1389,17 +1373,14 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 //	MPI_Allreduce(&dnt_l, &dnt, 1, MPI_INT, MPI_SUM, info::mpi::MPICommunicator);
 
 
-	ESINFO(CONVERGENCE) << "---------------------------------------------------------------------------------------------------";
-	//ESINFO(CONVERGENCE) << " Active/Free: " <<  std::setw(12) << cnt <<"/" << std::setw(12)  <<  dnt;
-	ESINFO(CONVERGENCE) << " Expansion steps:            " << std::setw(6) << sum_output_n_exp;
-	ESINFO(CONVERGENCE) << " Proportioning steps:        " << std::setw(6) << sum_output_n_prop;
-	ESINFO(CONVERGENCE) << " CG steps:                   " << std::setw(6) << sum_output_n_cg;
-//	ESINFO(CONVERGENCE) << " Balancing ratio updates:  %d\n', round(log(M/options.M)/log(options.beta)))";
-	ESINFO(CONVERGENCE) << " Multiplications by Hessian: " << std::setw(6) << sum_output_n_hess;
-	ESINFO(CONVERGENCE) << "===================================================================================================";
-	ESINFO(CONVERGENCE) << "	END QPCE";
-	ESINFO(CONVERGENCE) << "===================================================================================================";
-
+	eslog::solver("---------------------------------------------------------------------------------------------------\n");
+	eslog::solver(" Expansion steps:            %d\n", sum_output_n_exp);
+	eslog::solver(" Proportioning steps:        %d\n", sum_output_n_prop);
+	eslog::solver(" CG steps:                   %d\n", sum_output_n_cg);
+	eslog::solver(" Multiplications by Hessian: %d\n", sum_output_n_hess);
+	eslog::solver("===================================================================================================\n");
+	eslog::solver(" END QPCE \n");
+	eslog::solver("===================================================================================================\n");
 }
 
 
@@ -1509,28 +1490,29 @@ void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 
 
 
-	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
-	int iterationWidth = ceil(log(CG_max_iter) / log(10));
-	std::string indent = "   ";
-
-	auto spaces = [] (int count) {
-		std::stringstream ss;
-		for (int i = 0; i < count; i++) {
-			ss << " ";
-		}
-		return ss.str();
-	};
+//	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
+//	// int iterationWidth = ceil(log(CG_max_iter) / log(10));
+//	// std::string indent = "   ";
+//
+//	auto spaces = [] (int count) {
+//		std::stringstream ss;
+//		for (int i = 0; i < count; i++) {
+//			ss << " ";
+//		}
+//		return ss.str();
+//	};
 
 //	double min_tol = 1e-12;
 //	if (tol < min_tol) {
 //		ESINFO(CONVERGENCE) << Info::TextColor::RED << "The NORM is fulfilled.";
 //	} else {
-		ESINFO(CONVERGENCE)
-			<< spaces(indent.size() + iterationWidth - 4) << "iter"
-			<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
-			<< spaces(indent.size() + 4) << "r" << spaces(4)
-			<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
-			<< spaces(indent.size()) << "time[s]";
+		eslog::solver("   iter     |r|          r        e    time[s]\n");
+//		ESINFO(CONVERGENCE)
+//			<< spaces(indent.size() + iterationWidth - 4) << "iter"
+//			<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
+//			<< spaces(indent.size() + 4) << "r" << spaces(4)
+//			<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
+//			<< spaces(indent.size()) << "time[s]";
 //	}
 
 	// *** Start the CG iteration loop ********************************************
@@ -1588,7 +1570,7 @@ void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 
 			break;
 		default:
-			ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+			eslog::error("Not implemented preconditioner.\n");
 		}
 
 
@@ -1670,14 +1652,15 @@ for (size_t i = 0; i < p_l.size(); i++)
 		norm_l = parallel_norm_compressed(cluster, w_l);
 		 norm_time.end();
 
-		 timing.totalTime.end();
+		timing.totalTime.end();
 
-		ESINFO(CONVERGENCE)
-			<< indent << std::setw(iterationWidth) << iter + 1
-			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
-			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
-			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
+		eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
+//		ESINFO(CONVERGENCE)
+//			<< indent << std::setw(iterationWidth) << iter + 1
+//			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
+//			<< indent << std::scientific << std::setprecision(3) << norm_l
+//			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
+//			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 		// *** Stop condition ******************************************************************
 		if (norm_l < tol)
@@ -1714,7 +1697,7 @@ for (size_t i = 0; i < p_l.size(); i++)
 		timing.addEvent(proj_time);
 		break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+		eslog::error("Not implemented preconditioner.\n");
 	}
 
 	timing.addEvent(appA_time );
@@ -1833,28 +1816,29 @@ void IterSolverBase::Solve_RegCG_ConjProj ( SuperCluster & cluster,
 
 
 
-	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
-	int iterationWidth = ceil(log(CG_max_iter) / log(10));
-	std::string indent = "   ";
+	// int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
+	// int iterationWidth = ceil(log(CG_max_iter) / log(10));
+	// std::string indent = "   ";
 
-	auto spaces = [] (int count) {
-		std::stringstream ss;
-		for (int i = 0; i < count; i++) {
-			ss << " ";
-		}
-		return ss.str();
-	};
+//	auto spaces = [] (int count) {
+//		std::stringstream ss;
+//		for (int i = 0; i < count; i++) {
+//			ss << " ";
+//		}
+//		return ss.str();
+//	};
 
 //	double min_tol = 1e-12;
 //	if (tol < min_tol) {
 //		ESINFO(CONVERGENCE) << Info::TextColor::RED << "The NORM is fulfilled.";
 //	} else {
-		ESINFO(CONVERGENCE)
-			<< spaces(indent.size() + iterationWidth - 4) << "iter"
-			<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
-			<< spaces(indent.size() + 4) << "r" << spaces(4)
-			<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
-			<< spaces(indent.size()) << "time[s]";
+	eslog::solver("   iter     |r|          r        e    time[s]\n");
+//		ESINFO(CONVERGENCE)
+//			<< spaces(indent.size() + iterationWidth - 4) << "iter"
+//			<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
+//			<< spaces(indent.size() + 4) << "r" << spaces(4)
+//			<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
+//			<< spaces(indent.size()) << "time[s]";
 //	}
 
 	// *** Start the CG iteration loop ********************************************
@@ -1912,7 +1896,7 @@ void IterSolverBase::Solve_RegCG_ConjProj ( SuperCluster & cluster,
 
 			break;
 		default:
-			ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+			eslog::error("Not implemented preconditioner.\n");
 		}
 
 
@@ -1996,12 +1980,13 @@ for (size_t i = 0; i < p_l.size(); i++)
 
 		 timing.totalTime.end();
 
-		ESINFO(CONVERGENCE)
-			<< indent << std::setw(iterationWidth) << iter + 1
-			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
-			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
-			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
+		eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
+//		ESINFO(CONVERGENCE)
+//			<< indent << std::setw(iterationWidth) << iter + 1
+//			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
+//			<< indent << std::scientific << std::setprecision(3) << norm_l
+//			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
+//			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 		// *** Stop condition ******************************************************************
 		if (norm_l < tol)
@@ -2038,7 +2023,7 @@ for (size_t i = 0; i < p_l.size(); i++)
 		timing.addEvent(proj_time);
 		break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+		eslog::error("Not implemented preconditioner.\n");
 	}
 
 	timing.addEvent(appA_time );
@@ -2129,24 +2114,25 @@ for (size_t i = 0; i < g_l.size(); i++){
 	// *** Calculate the stop condition *******************************************
 	tol = precision * parallel_norm_compressed(cluster, Pg_l);
 
-	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
-	int iterationWidth = ceil(log(CG_max_iter) / log(10));
-	std::string indent = "   ";
+	// int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
+	// int iterationWidth = ceil(log(CG_max_iter) / log(10));
+	// std::string indent = "   ";
 
-	auto spaces = [] (int count) {
-		std::stringstream ss;
-		for (int i = 0; i < count; i++) {
-			ss << " ";
-		}
-		return ss.str();
-	};
+//	auto spaces = [] (int count) {
+//		std::stringstream ss;
+//		for (int i = 0; i < count; i++) {
+//			ss << " ";
+//		}
+//		return ss.str();
+//	};
 
-	ESINFO(CONVERGENCE)
-		<< spaces(indent.size() + iterationWidth - 4) << "iter"
-		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
-		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
-		<< spaces(indent.size()) << "time[s]";
+	eslog::solver("   iter      |r|       r      e      time[s]\n");
+//	ESINFO(CONVERGENCE)
+//		<< spaces(indent.size() + iterationWidth - 4) << "iter"
+//		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
+//		<< spaces(indent.size() + 4) << "r" << spaces(4)
+//		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
+//		<< spaces(indent.size()) << "time[s]";
 
 	// *** Start the CG iteration loop ********************************************
 	for (int iter = -1; iter < CG_max_iter; iter++) {
@@ -2214,7 +2200,7 @@ for (size_t i = 0; i < x_l.size(); i++) {
       proj_time.end();
       break;
     default:
-      ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+    	eslog::error("Not implemented preconditioner.\n");
     }
 
     ztg = parallel_ddot_compressed(cluster, z_l, g_l);
@@ -2239,12 +2225,13 @@ for (size_t i = 0; i < w_l.size(); i++){
 
 		timing.totalTime.end();
 
-		ESINFO(CONVERGENCE)
-			<< indent << std::setw(iterationWidth) << iter + 1
-			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
-			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
-			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
+		eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
+//		ESINFO(CONVERGENCE)
+//			<< indent << std::setw(iterationWidth) << iter + 1
+//			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
+//			<< indent << std::scientific << std::setprecision(3) << norm_l
+//			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
+//			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 		// *** Stop condition ******************************************************************
 		if (norm_l < tol)
@@ -2292,7 +2279,7 @@ for (size_t i = 0; i < x_l.size(); i++) {
 		timing.addEvent(proj_time);
 		break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+		eslog::error("Not implemented preconditioner.\n");
 	}
 
 	timing.addEvent(appA_time );
@@ -2436,24 +2423,24 @@ if (
 	// *** Calculate the stop condition *******************************************
 	tol = precision * parallel_norm_compressed(cluster, Pg_l);
 
-	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
-	int iterationWidth = ceil(log(CG_max_iter) / log(10));
-	std::string indent = "   ";
+	// int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
+	// int iterationWidth = ceil(log(CG_max_iter) / log(10));
+	// std::string indent = "   ";
 
-	auto spaces = [] (int count) {
-		std::stringstream ss;
-		for (int i = 0; i < count; i++) {
-			ss << " ";
-		}
-		return ss.str();
-	};
-
-	ESINFO(CONVERGENCE)
-		<< spaces(indent.size() + iterationWidth - 4) << "iter"
-		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
-		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
-		<< spaces(indent.size()) << "time[s]";
+//	auto spaces = [] (int count) {
+//		std::stringstream ss;
+//		for (int i = 0; i < count; i++) {
+//			ss << " ";
+//		}
+//		return ss.str();
+//	};
+	eslog::solver("   iter      |r|       r      e      time[s]\n");
+//	ESINFO(CONVERGENCE)
+//		<< spaces(indent.size() + iterationWidth - 4) << "iter"
+//		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
+//		<< spaces(indent.size() + 4) << "r" << spaces(4)
+//		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
+//		<< spaces(indent.size()) << "time[s]";
 
 	// *** Start the CG iteration loop ********************************************
 	for (int iter = 0; iter < CG_max_iter; iter++) {
@@ -2590,7 +2577,7 @@ for (size_t i = 0; i < x_l.size(); i++) {
 
 
     default:
-      ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+    	eslog::error("Not implemented preconditioner.\n");
     }
 
     if (iter > 0) {
@@ -2630,12 +2617,13 @@ for (size_t i = 0; i < w_l.size(); i++){
 
 		timing.totalTime.end();
 
-		ESINFO(CONVERGENCE)
-			<< indent << std::setw(iterationWidth) << iter + 1
-			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
-			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
-			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
+		eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
+//		ESINFO(CONVERGENCE)
+//			<< indent << std::setw(iterationWidth) << iter + 1
+//			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
+//			<< indent << std::scientific << std::setprecision(3) << norm_l
+//			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
+//			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 		// *** Stop condition ******************************************************************
 		if (norm_l < tol)
@@ -2653,7 +2641,7 @@ for (size_t i = 0; i < w_l.size(); i++){
     double *Z = new double[cnt_iter];
     esint ldz = cnt_iter;
     LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt_iter, &d_H[0], &e_H[0], Z, ldz);
-    ESINFO(DETAILS) << "cond(P*F*P) = " << d_H[0]/d_H[cnt_iter-1]  ;
+//    ESINFO(DETAILS) << "cond(P*F*P) = " << d_H[0]/d_H[cnt_iter-1]  ;
     delete [] Z;
   }
 
@@ -2708,7 +2696,7 @@ for (size_t i = 0; i < x_l.size(); i++) {
 		timing.addEvent(proj_time);
 		break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+		eslog::error("Not implemented preconditioner.\n");
 	}
 
 	timing.addEvent(appA_time );
@@ -2864,7 +2852,7 @@ for (size_t i = 0; i < g_l.size(); i++){
     proj_time.end();
     break;
   default:
-    ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+	  eslog::error("Not implemented preconditioner.\n");
   }
 
 
@@ -2874,35 +2862,37 @@ for (size_t i = 0; i < g_l.size(); i++){
   norm_l = parallel_norm_compressed(cluster, z_l);
 	tol = precision * norm_l;
 
-	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
-	int iterationWidth = ceil(log(CG_max_iter) / log(10));
-	std::string indent = "   ";
+	// int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
+	// int iterationWidth = ceil(log(CG_max_iter) / log(10));
+	// std::string indent = "   ";
 
-	auto spaces = [] (int count) {
-		std::stringstream ss;
-		for (int i = 0; i < count; i++) {
-			ss << " ";
-		}
-		return ss.str();
-	};
+//	auto spaces = [] (int count) {
+//		std::stringstream ss;
+//		for (int i = 0; i < count; i++) {
+//			ss << " ";
+//		}
+//		return ss.str();
+//	};
 
-	ESINFO(CONVERGENCE)
-		<< spaces(indent.size() + iterationWidth - 4) << "iter"
-		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
-		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
-		<< spaces(indent.size()) << "time[s]";
+	eslog::solver("   iter      |r|       r      e      time[s]\n");
+//	ESINFO(CONVERGENCE)
+//		<< spaces(indent.size() + iterationWidth - 4) << "iter"
+//		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
+//		<< spaces(indent.size() + 4) << "r" << spaces(4)
+//		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
+//		<< spaces(indent.size()) << "time[s]";
 
 
 
 	//norm_l = parallel_norm_compressed(cluster, Pg_l);
 
-  ESINFO(CONVERGENCE)
-  	<< indent << std::setw(iterationWidth) << 1
-  	<< indent << std::fixed << std::setprecision(precisionWidth) <<  1.0000000
-  	<< indent << std::scientific << std::setprecision(3) << norm_l
-  	<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
-  	<< indent << std::fixed << std::setprecision(5) ;
+//  ESINFO(CONVERGENCE)
+//  	<< indent << std::setw(iterationWidth) << 1
+//  	<< indent << std::fixed << std::setprecision(precisionWidth) <<  1.0000000
+//  	<< indent << std::scientific << std::setprecision(3) << norm_l
+//  	<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
+//  	<< indent << std::fixed << std::setprecision(5) ;
+  eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", 1, 1.0, norm_l, precision, 0);
 
 
 
@@ -2977,7 +2967,7 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
       proj_time.end();
       break;
     default:
-      ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+    	eslog::error("Not implemented preconditioner.\n");
     }
 //
 //  Modified Gram-Schmidt
@@ -3065,12 +3055,13 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
 
 		timing.totalTime.end();
 
-		ESINFO(CONVERGENCE)
-			<< indent << std::setw(iterationWidth) << iter + 2
-			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
-			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
-			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
+		eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 2, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
+//		ESINFO(CONVERGENCE)
+//			<< indent << std::setw(iterationWidth) << iter + 2
+//			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
+//			<< indent << std::scientific << std::setprecision(3) << norm_l
+//			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
+//			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 
 
@@ -3158,7 +3149,7 @@ for (size_t i = 0; i < g_l.size(); i++){
 		timing.addEvent(proj_time);
 		break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+		eslog::error("Not implemented preconditioner.\n");
 	}
 
 	timing.addEvent(appA_time );
@@ -3277,7 +3268,7 @@ for (size_t i = 0; i < g_l.size(); i++){
     proj_time.end();
     break;
   default:
-    ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+    eslog::error("Not implemented preconditioner.\n");
   }
 
 
@@ -3289,35 +3280,37 @@ for (size_t i = 0; i < g_l.size(); i++){
 
 	tol = precision * norm_l;
 
-	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
-	int iterationWidth = ceil(log(CG_max_iter) / log(10));
-	std::string indent = "   ";
+	// int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
+	// int iterationWidth = ceil(log(CG_max_iter) / log(10));
+	// std::string indent = "   ";
 
-	auto spaces = [] (int count) {
-		std::stringstream ss;
-		for (int i = 0; i < count; i++) {
-			ss << " ";
-		}
-		return ss.str();
-	};
+//	auto spaces = [] (int count) {
+//		std::stringstream ss;
+//		for (int i = 0; i < count; i++) {
+//			ss << " ";
+//		}
+//		return ss.str();
+//	};
 
-	ESINFO(CONVERGENCE)
-		<< spaces(indent.size() + iterationWidth - 4) << "iter"
-		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
-		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
-		<< spaces(indent.size()) << "time[s]";
+	eslog::solver("   iter      |r|       r      e      time[s]\n");
+//	ESINFO(CONVERGENCE)
+//		<< spaces(indent.size() + iterationWidth - 4) << "iter"
+//		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
+//		<< spaces(indent.size() + 4) << "r" << spaces(4)
+//		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
+//		<< spaces(indent.size()) << "time[s]";
 
 
 
 	//norm_l = parallel_norm_compressed(cluster, Pg_l);
 
-  ESINFO(CONVERGENCE)
-  	<< indent << std::setw(iterationWidth) << 1
-  	<< indent << std::fixed << std::setprecision(precisionWidth) <<  1.0000000
-  	<< indent << std::scientific << std::setprecision(3) << norm_l
-  	<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
-  	<< indent << std::fixed << std::setprecision(5) ;
+	eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", 1, 1., norm_l, precision, 0);
+//  ESINFO(CONVERGENCE)
+//  	<< indent << std::setw(iterationWidth) << 1
+//  	<< indent << std::fixed << std::setprecision(precisionWidth) <<  1.0000000
+//  	<< indent << std::scientific << std::setprecision(3) << norm_l
+//  	<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
+//  	<< indent << std::fixed << std::setprecision(5) ;
 
   ztld_l = z_l;
 
@@ -3390,7 +3383,7 @@ for (size_t i = 0; i < w_l.size(); i++) {
       proj_time.end();
       break;
     default:
-      ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+      eslog::error("Not implemented preconditioner.\n");
     }
 
 		timing.totalTime.end();
@@ -3460,7 +3453,7 @@ for (size_t i = 0; i < x_l.size(); i++) {
       proj_time.end();
       break;
     default:
-      ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+      eslog::error("Not implemented preconditioner.\n");
     }
 
 
@@ -3476,13 +3469,13 @@ for (size_t i = 0; i < x_l.size(); i++) {
     norm_l = parallel_norm_compressed(cluster, z_l);
 
 
-
-		ESINFO(CONVERGENCE)
-			<< indent << std::setw(iterationWidth) << iter + 2
-			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
-			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
-			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
+    eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 2, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
+//		ESINFO(CONVERGENCE)
+//			<< indent << std::setw(iterationWidth) << iter + 2
+//			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
+//			<< indent << std::scientific << std::setprecision(3) << norm_l
+//			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
+//			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 
     
@@ -3505,7 +3498,7 @@ for (size_t i = 0; i < x_l.size(); i++) {
   }
 
 
-  ESINFO(CONVERGENCE)  << "FLAG_SOLUTION = " << FLAG_SOLUTION;
+  eslog::solver("FLAG_SOLUTION = %d\n", FLAG_SOLUTION);
   
 
 
@@ -3558,7 +3551,7 @@ for (size_t i = 0; i < g_l.size(); i++){
 		timing.addEvent(proj_time);
 		break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+		eslog::error("Not implemented preconditioner.\n");
 	}
 
 	timing.addEvent(appA_time );
@@ -3692,28 +3685,29 @@ for (size_t i = 0; i < r_l.size(); i++) {
 		apply_A_l_comp_dom_B(timeEvalAppa, cluster, u_l, w_l); 	//apply_A_l_compB(timeEvalAppa, cluster, u_l, w_l);
 		break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+		eslog::error("Not implemented preconditioner.\n");
 	}
 
 
-	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
-	int iterationWidth = ceil(log(CG_max_iter) / log(10));
-	std::string indent = "   ";
+	// int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
+	// int iterationWidth = ceil(log(CG_max_iter) / log(10));
+	// std::string indent = "   ";
 
-	auto spaces = [] (int count) {
-		std::stringstream ss;
-		for (int i = 0; i < count; i++) {
-			ss << " ";
-		}
-		return ss.str();
-	};
+//	auto spaces = [] (int count) {
+//		std::stringstream ss;
+//		for (int i = 0; i < count; i++) {
+//			ss << " ";
+//		}
+//		return ss.str();
+//	};
 
-	ESINFO(CONVERGENCE)
-		<< spaces(indent.size() + iterationWidth - 4) << "iter"
-		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
-		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
-		<< spaces(indent.size()) << "time[s]";
+	eslog::solver("   iter      |r|       r      e      time[s]\n");
+//	ESINFO(CONVERGENCE)
+//		<< spaces(indent.size() + iterationWidth - 4) << "iter"
+//		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
+//		<< spaces(indent.size() + 4) << "r" << spaces(4)
+//		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
+//		<< spaces(indent.size()) << "time[s]";
 
 	// *** Start the CG iteration loop ********************************************
 	for (esint iter = 0; iter < CG_max_iter; iter++) {
@@ -3784,7 +3778,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 			appA_time.end();
 			break;
 		default:
-			ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+			eslog::error("Not implemented preconditioner.\n");
 		}
 
 #ifndef WIN32
@@ -3796,12 +3790,13 @@ for (size_t i = 0; i < r_l.size(); i++) {
 		norm_l  = sqrt(reduction_tmp[2]);
 		if (norm_l < tol) {
 			timing.totalTime.end();
-			ESINFO(CONVERGENCE)
-				<< indent << std::setw(iterationWidth) << iter + 1
-				<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
-				<< indent << std::scientific << std::setprecision(3) << norm_l
-				<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
-				<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
+			eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
+//			ESINFO(CONVERGENCE)
+//				<< indent << std::setw(iterationWidth) << iter + 1
+//				<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
+//				<< indent << std::scientific << std::setprecision(3) << norm_l
+//				<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
+//				<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 			break;
 		}
 
@@ -3836,13 +3831,13 @@ for (size_t i = 0; i < r_l.size(); i++) {
 
 		 timing.totalTime.end();
 
-
-		ESINFO(CONVERGENCE)
-			<< indent << std::setw(iterationWidth) << iter + 1
-			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
-			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
-			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
+		 eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 2, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
+//		ESINFO(CONVERGENCE)
+//			<< indent << std::setw(iterationWidth) << iter + 1
+//			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
+//			<< indent << std::scientific << std::setprecision(3) << norm_l
+//			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
+//			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 	} // END of CG loop
 
@@ -3885,7 +3880,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 		timing.addEvent(proj_time);
 		break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+		eslog::error("Not implemented preconditioner.\n");
 	}
 
 	timing.addEvent(appA_time);
@@ -4019,7 +4014,7 @@ void IterSolverBase::CreateConjProjector(Cluster & cluster) {
 
 		B1tfull.ConvertToCSR(1);
 		B1tfull.MatTranspose();
-		Esutils::removeDuplicity(B1tfull.CSR_I_row_indices);
+		utils::removeDuplicity(B1tfull.CSR_I_row_indices);
 		B1tfull.rows = B1tfull.CSR_I_row_indices.size() - 1;
 
 		B1full = B1tfull;
@@ -4439,7 +4434,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 		break;
 
 	default:
-		ESINFO(GLOBAL_ERROR) << "FETI Geneo requires dirichlet preconditioner.";
+		eslog::error("FETI Geneo requires dirichlet preconditioner.\n");
 	}
 
 
@@ -4462,24 +4457,25 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 	else
 		tol = tol2;
 
-	int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
-	int iterationWidth = ceil(log(CG_max_iter) / log(10));
-	std::string indent = "   ";
+	// int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
+	// int iterationWidth = ceil(log(CG_max_iter) / log(10));
+	// std::string indent = "   ";
 
-	auto spaces = [] (int count) {
-		std::stringstream ss;
-		for (int i = 0; i < count; i++) {
-			ss << " ";
-		}
-		return ss.str();
-	};
+//	auto spaces = [] (int count) {
+//		std::stringstream ss;
+//		for (int i = 0; i < count; i++) {
+//			ss << " ";
+//		}
+//		return ss.str();
+//	};
 
-	ESINFO(CONVERGENCE)
-		<< spaces(indent.size() + iterationWidth - 4) << "iter"
-		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
-		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
-		<< spaces(indent.size()) << "time[s]";
+	eslog::solver("   iter      |r|       r      e      time[s]\n");
+//	ESINFO(CONVERGENCE)
+//		<< spaces(indent.size() + iterationWidth - 4) << "iter"
+//		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
+//		<< spaces(indent.size() + 4) << "r" << spaces(4)
+//		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
+//		<< spaces(indent.size()) << "time[s]";
 
 	// *** END - Calculate the stop condition *******************************************
 
@@ -4548,7 +4544,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 			break;
 
 		default:
-			ESINFO(GLOBAL_ERROR) << "FETI Geneo requires dirichlet preconditioner.";
+			eslog::error("FETI Geneo requires dirichlet preconditioner.\n");
 		}
 
 
@@ -4611,7 +4607,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 			restart_num += 1;
 
 
-			ESINFO(CONVERGENCE) << "Restarting orthogonalization ... ";
+			eslog::solver("Restarting orthogonalization ... \n");
 
 			// Restart W_l
 			W_l.dense_values.clear();
@@ -4671,7 +4667,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 				break;
 
 			default:
-				ESINFO(GLOBAL_ERROR) << "FETI Geneo requires dirichlet preconditioner.";
+				eslog::error("FETI Geneo requires dirichlet preconditioner.\n");
 			}
 
 			W_l.dense_values.insert(W_l.dense_values.end(), w_l.begin(), w_l.end());
@@ -4696,12 +4692,13 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 
 		timing.totalTime.end();
 
-		ESINFO(CONVERGENCE)
-		<< indent << std::setw(iterationWidth) << iter
-		<< indent << std::fixed << std::setprecision(precisionWidth) 	<< norm_l / tol * precision
-		<< indent << std::scientific << std::setprecision(3) 		<< norm_l
-		<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
-		<< indent << std::fixed << std::setprecision(5) 			<< timing.totalTime.getLastStat();
+		eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
+//		ESINFO(CONVERGENCE)
+//		<< indent << std::setw(iterationWidth) << iter
+//		<< indent << std::fixed << std::setprecision(precisionWidth) 	<< norm_l / tol * precision
+//		<< indent << std::scientific << std::setprecision(3) 		<< norm_l
+//		<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
+//		<< indent << std::fixed << std::setprecision(5) 			<< timing.totalTime.getLastStat();
 
 		// *** Stop condition ******************************************************************
 		if (norm_l < tol)
@@ -4709,7 +4706,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 
 	} // end of CG iterations
 
-	ESINFO(CONVERGENCE) << "FULL CG Stop after " << N_ITER << " Ïterations";
+	eslog::solver("FULL CG Stop after %d Ïterations.\n", N_ITER);
 	// *** save solution - in dual and amplitudes *********************************************
 
 //	if (configuration.conjugate_projector == FETI_CONJ_PROJECTOR::GENEO) {
@@ -4757,7 +4754,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 		timing.addEvent(proj_time);
 		break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+		eslog::error("Not implemented preconditioner.\n");
 	}
 
 	timing.addEvent(appA_time );
@@ -4791,7 +4788,7 @@ void IterSolverBase::CreateGGt( SuperCluster & cluster )
 
 {
 
-	ESINFO(GLOBAL_ERROR) << "Projector with factorized GGt matrix is not supported in current version";
+	eslog::error("Projector with factorized GGt matrix is not supported in current version.\n");
 
 	// TODO: Obsolete code - must be updated before used with current version
     // Code is commented
@@ -5051,19 +5048,19 @@ void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 
 		GGt_l.Clear();
 		count_cv_l += mpi_size/li;
-		ESINFO(PROGRESS3) << "Collecting matrices G : " << count_cv_l <<" of " << mpi_size;
+//		ESINFO(PROGRESS3) << "Collecting matrices G : " << count_cv_l <<" of " << mpi_size;
 	}
 	 collectGGt_time.end(); collectGGt_time.printStatMPI(); preproc_timing.addEvent(collectGGt_time);
 
 	if (mpi_rank == 0 && cluster.SYMMETRIC_SYSTEM)  {
-		ESINFO(EXHAUSTIVE) << "Creating symmetric Coarse problem (GGt) matrix";
+//		ESINFO(EXHAUSTIVE) << "Creating symmetric Coarse problem (GGt) matrix";
 		GGt_Mat_tmp.RemoveLower();
 	} else {
-		ESINFO(EXHAUSTIVE) << "Creating non-symmetric Coarse problem (GGt) matrix";
+//		ESINFO(EXHAUSTIVE) << "Creating non-symmetric Coarse problem (GGt) matrix";
 	}
 
 	//Show GGt matrix structure in the solver LOG
-	ESINFO(EXHAUSTIVE) << GGt_Mat_tmp.SpyText();
+//	ESINFO(EXHAUSTIVE) << GGt_Mat_tmp.SpyText();
 
 	// Entering data parallel region for single, in this case GGt matrix, we want MKL/Solver to run multi-threaded
 	MKL_Set_Num_Threads(PAR_NUM_THREADS);
@@ -5076,7 +5073,7 @@ void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 	// *** Calculating inverse GGt matrix in distributed fashion ***********************************************************
 	// Create Sparse Direct solver for GGt
 	if (mpi_rank == mpi_root) {
-		GGt_tmp.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+		GGt_tmp.msglvl = 0;
 	}
 
 	 TimeEvent importGGt_time("Time to import GGt matrix into solver"); importGGt_time.start();
@@ -5148,8 +5145,8 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
  		neighs_of_neighs.insert(neighs_of_neighs.begin(), neighs_neighs[neigh_i].begin(), neighs_neighs[neigh_i].end());
  	}
  	sort(neighs_of_neighs.begin(), neighs_of_neighs.end());
-	Esutils::removeDuplicity(neighs_of_neighs);
-	//neighs_of_neighs.erase( Esutils:: unique( neighs_of_neighs.begin(), neighs_of_neighs.end() ), neighs_of_neighs.end() );
+	utils::removeDuplicity(neighs_of_neighs);
+	//neighs_of_neighs.erase( utils:: unique( neighs_of_neighs.begin(), neighs_of_neighs.end() ), neighs_of_neighs.end() );
 	 ExNN1.end(); ExNN1.printStatMPI(); preproc_timing.addEvent(ExNN1);
 
 
@@ -5273,7 +5270,7 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 
 		GKpluGt_l.Clear();
 		count_cv_l += mpi_size/li;
-		ESINFO(PROGRESS3) << "Collecting matrices GK+Gt : " << count_cv_l <<" of " << mpi_size;
+//		ESINFO(PROGRESS3) << "Collecting matrices GK+Gt : " << count_cv_l <<" of " << mpi_size;
 	}
 	 collectGGt_time.end(); collectGGt_time.printStatMPI(); preproc_timing.addEvent(collectGGt_time);
 
@@ -5282,7 +5279,7 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 	}
 
 	GGt_Mat_tmp.RemoveLower();
-	ESINFO(EXHAUSTIVE) << GGt_Mat_tmp.SpyText();
+//	ESINFO(EXHAUSTIVE) << GGt_Mat_tmp.SpyText();
 
 	// Entering data parallel region for single, in this case GGt matrix, we want MKL/Solver to run multi-threaded
 	MKL_Set_Num_Threads(PAR_NUM_THREADS);
@@ -5295,7 +5292,7 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 	// *** Calculating inverse GGt matrix in distributed fashion ***********************************************************
 	// Create Sparse Direct solver for GGt
 	if (mpi_rank == mpi_root) {
-		GGt_tmp.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+		GGt_tmp.msglvl = 0;
 	}
 
 	 TimeEvent importGGt_time("Time to import GGt matrix into solver"); importGGt_time.start();
@@ -5346,7 +5343,7 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 void IterSolverBase::Projector (TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, esint output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // esint mpi_rank, SparseSolverCPU & GGt,
 {
 
-	ESINFO(GLOBAL_ERROR) << "Projector with factorized GGt matrix is not supported in current version";
+	eslog::error("Projector with factorized GGt matrix is not supported in current version.\n");
 
 	// TODO: Obsolete code - must be updated before used with current version
     // Code is commented
@@ -5437,7 +5434,7 @@ void IterSolverBase::Projector_l_inv_compG ( TimeEval & time_eval, Cluster & clu
 */
 void IterSolverBase::apply_A_l_Mat( TimeEval & time_eval, SuperCluster & cluster, SparseMatrix       & X_in, SparseMatrix       & Y_out) {
 
-	ESINFO(PROGRESS3) << "Processing ApplyA on full matrix";
+	eslog::checkpointln("Processing ApplyA on full matrix.");
 
 	Y_out.Clear();
 	Y_out.type = 'G';
@@ -5452,20 +5449,20 @@ void IterSolverBase::apply_A_l_Mat( TimeEval & time_eval, SuperCluster & cluster
 
 		apply_A_l_comp_dom_B_P(timeEvalAppa, cluster, tmp_pr_in, tmp_pr_out);
 
-		if (i % 10 == 0) {
-			ESINFO(PROGRESS3) << "\r" << i + 1 << " out of " << X_in.cols << " columns processed" <<Info::plain();
-		}
+//		if (i % 10 == 0) {
+//			ESINFO(PROGRESS3) << "\r" << i + 1 << " out of " << X_in.cols << " columns processed" <<Info::plain();
+//		}
 
 		Y_out.dense_values.insert(Y_out.dense_values.end(), tmp_pr_out.begin(), tmp_pr_out.end());
 	}
 
-	ESINFO(PROGRESS3) << "";
+//	ESINFO(PROGRESS3) << "";
 
 }
 
 void IterSolverBase::apply_A_l_Mat_local( TimeEval & time_eval, SuperCluster & cluster, SparseMatrix       & X_in, SparseMatrix       & Y_out) {
 
-	ESINFO(PROGRESS3) << "Processing ApplyA on sparse TRANSPOSED matrix";
+	eslog::checkpointln("Processing ApplyA on sparse TRANSPOSED matrix.");
 
 	Y_out.Clear();
 	Y_out.type = 'G';
@@ -5480,21 +5477,21 @@ void IterSolverBase::apply_A_l_Mat_local( TimeEval & time_eval, SuperCluster & c
 
 		apply_A_l_comp_dom_B_P_local(timeEvalAppa, cluster, tmp_pr_in, tmp_pr_out);
 
-		if (i % 10 == 0) {
-			ESINFO(PROGRESS3) << "\r" << i + 1 << " out of " << X_in.cols << " columns processed" <<Info::plain();
-		}
+//		if (i % 10 == 0) {
+//			ESINFO(PROGRESS3) << "\r" << i + 1 << " out of " << X_in.cols << " columns processed" <<Info::plain();
+//		}
 
 		Y_out.dense_values.insert(Y_out.dense_values.end(), tmp_pr_out.begin(), tmp_pr_out.end());
 	}
 
-	ESINFO(PROGRESS3) << "";
+//	ESINFO(PROGRESS3) << "";
 
 }
 
 
 void IterSolverBase::apply_A_l_Mat_local_sparse( TimeEval & time_eval, SuperCluster & cluster, SparseMatrix       & X_in, SparseMatrix       & Y_out) {
 
-	//ESINFO(PROGRESS3) << "Processing ApplyA on SPARSE matrix";
+	eslog::checkpointln("Processing ApplyA on SPARSE matrix.\n");
 
 	Y_out.Clear();
 	Y_out.type = 'G';
@@ -5527,16 +5524,16 @@ void IterSolverBase::apply_A_l_Mat_local_sparse( TimeEval & time_eval, SuperClus
 
 		Y_out.CSR_I_row_indices.push_back(Y_out.CSR_J_col_indices.size() + 1);
 
-		if (i % 1 == 0) {
-			ESINFO(PROGRESS3) << "\r" << "Processing ApplyA on SPARSE matrix: " << i+1 << " out of " << X_in.rows << " columns processed" <<Info::plain();
-		}
+//		if (i % 1 == 0) {
+//			ESINFO(PROGRESS3) << "\r" << "Processing ApplyA on SPARSE matrix: " << i+1 << " out of " << X_in.rows << " columns processed" <<Info::plain();
+//		}
 
 
 	}
 
 	Y_out.nnz = Y_out.CSR_J_col_indices.size();
 
-	ESINFO(PROGRESS3) << "";
+//	ESINFO(PROGRESS3) << "";
 
 }
 

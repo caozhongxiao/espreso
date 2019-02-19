@@ -4,10 +4,11 @@
 #include "basis/containers/point.h"
 #include "basis/containers/tarray.h"
 #include "basis/utilities/parser.h"
-#include "basis/utilities/utils.h"
 
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
+
+#include <algorithm>
 
 using namespace espreso;
 
@@ -25,10 +26,6 @@ Eset::Eset()
 
 Eset& Eset::parse(const char* begin)
 {
-	auto error = [&] (std::string &line) {
-		ESINFO(ERROR) << "Abaqus parse error: unknown format of NBLOCK: " << line;
-	};
-
 	std::string commandLine = Parser::getLine(begin);
 
 	std::vector<std::string> command = Parser::split(commandLine, ",", false);

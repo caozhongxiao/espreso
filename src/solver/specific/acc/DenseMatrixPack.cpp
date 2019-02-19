@@ -1,7 +1,5 @@
 #include "DenseMatrixPack.h"
 
-#include "basis/logging/logging.h"
-
 namespace espreso {
 
     DenseMatrixPack::DenseMatrixPack(const FETISolverConfiguration &configuration)
@@ -271,11 +269,11 @@ namespace espreso {
             size = ( ( 1.0 + ( double ) nRows ) * ( ( double ) nRows ) / 2.0 );
         }
 
-        if ( i > maxNMatrices ) {
-            ESINFO(ERROR) << "Could not add matrix. Maximum number of matrices stored.";
-        } else if ( size > freeSpace ) {
-            ESINFO(ERROR) << "Could not add matrix. Not enough allocated memory.";
-        }
+//        if ( i > maxNMatrices ) {
+//            ESINFO(ERROR) << "Could not add matrix. Maximum number of matrices stored.";
+//        } else if ( size > freeSpace ) {
+//            ESINFO(ERROR) << "Could not add matrix. Not enough allocated memory.";
+//        }
 
         this->packed[ i ] = isPacked;
         this->rows[ i ] = nRows;
@@ -299,7 +297,7 @@ namespace espreso {
             ) {
 
         if ( i >= nMatrices ) {
-            ESINFO(ERROR) << "Could not add matrix. Maximum number of matrices stored.";
+//            ESINFO(ERROR) << "Could not add matrix. Maximum number of matrices stored.";
             return;
         }
         long size = this->lengths[i];
@@ -357,7 +355,7 @@ namespace espreso {
                 }
             }
         } else {
-            ESINFO(ERROR) << "Could not copy vector. Vector not yet allocated.";
+//            ESINFO(ERROR) << "Could not copy vector. Vector not yet allocated.";
         }
     }
 

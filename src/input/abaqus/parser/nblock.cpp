@@ -4,7 +4,6 @@
 #include "basis/containers/point.h"
 #include "basis/containers/tarray.h"
 #include "basis/utilities/parser.h"
-#include "basis/utilities/utils.h"
 
 #include "esinfo/envinfo.h"
 
@@ -112,8 +111,6 @@ bool NList::index_solid_line_x_y_z(std::vector<esint> &nIDs, std::vector<Point> 
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		const char *data_end =  first + lineSize * tdistribution[t + 1];
-
 		esint i = 0;
 		double x, y, z;
 		for (auto data = first + lineSize * tdistribution[t]; data < first + lineSize * tdistribution[t + 1]; ++i) {

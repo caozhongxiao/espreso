@@ -1,12 +1,12 @@
 
 #include "esinfo/meshinfo.h"
+#include "esinfo/eslog.hpp"
 #include "physics/assembler/dataholder.h"
 #include "physics/assembler/composer/composer.h"
 #include "structuralmechanics3d.fetiprovider.h"
 
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/matrixtype.h"
-#include "basis/logging/logging.h"
 #include "config/ecf/physics/structuralmechanics.h"
 
 #include "mesh/mesh.h"
@@ -28,7 +28,7 @@ StructuralMechanics3DFETIProvider::StructuralMechanics3DFETIProvider(DataHolder 
 void StructuralMechanics3DFETIProvider::analyticRegularization(esint domain, bool ortogonalCluster)
 {
 	if (_data->K[domain].mtype != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
-		ESINFO(ERROR) << "Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set FETI_REGULARIZATION = ALGEBRAIC";
+		eslog::error("Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set FETI_REGULARIZATION = ALGEBRAIC.\n");
 	}
 
 	Point center = _dCenter[domain], norm = _dNorm[domain];

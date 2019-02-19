@@ -1,8 +1,7 @@
 
 #include "metadata.h"
 #include "conditions.h"
-
-#include "basis/logging/logging.h"
+#include "esinfo/eslog.hpp"
 
 using namespace espreso;
 
@@ -28,21 +27,21 @@ std::string SIUnit::unit() const
 void ECFMetaData::checkdescription(const std::string &name, size_t size) const
 {
 	if (description.size() != size) {
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: " << name << " has incorrect number of descriptions.";
+		eslog::globalerror("ESPRESO internal error: '%s' has incorrect number of descriptions.\n", name.c_str());
 	}
 }
 
 void ECFMetaData::checkdatatype(const std::string &name, size_t size) const
 {
 	if (datatype.size() != size) {
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: " << name << " has incorrect number of datatypes.";
+		eslog::globalerror("ESPRESO internal error: '%s' has incorrect number of datatypes.\n", name.c_str());
 	}
 }
 
 void ECFMetaData::checkpattern(const std::string &name, size_t size) const
 {
 	if (pattern.size() != size) {
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: " << name << " has incorrect number of pattern values.";
+		eslog::globalerror("ESPRESO internal error: '%s' has incorrect number of pattern values.\n", name.c_str());
 	}
 }
 

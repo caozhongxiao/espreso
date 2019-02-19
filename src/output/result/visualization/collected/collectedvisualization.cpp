@@ -1,10 +1,10 @@
 
 #include "collectedvisualization.h"
 
-#include "basis/logging/logging.h"
 #include "basis/utilities/communication.h"
 
 #include "esinfo/mpiinfo.h"
+#include "esinfo/eslog.hpp"
 
 using namespace espreso;
 
@@ -55,7 +55,7 @@ void CollectedVisualization::storeIntervals(const std::string &name, const std::
 	MPI_File MPIfile;
 
 	if (MPI_File_open(_storeCommunicator, name.c_str(), MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &MPIfile)) {
-		ESINFO(ERROR) << "MPI cannot create file '" << name << "'";
+		eslog::error("MPI cannot create file '%s'\n", name.c_str());
 	} else {
 		MPI_File_set_view(MPIfile, 0, MPI_BYTE, *datatype, "native", MPI_INFO_NULL);
 		MPI_File_write_all(MPIfile, data.c_str(), data.size(), MPI_BYTE, MPI_STATUS_IGNORE);

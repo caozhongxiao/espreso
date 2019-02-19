@@ -1,6 +1,9 @@
 
-#include "config/configuration.hpp"
 #include "root.h"
+
+#include "config/configuration.hpp"
+#include "esinfo/eslog.hpp"
+
 
 espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfiguration(ECFRoot *ECFRoot)
 : offset(ECFMetaData::getboundaryconditionvariables()),
@@ -51,7 +54,7 @@ espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfigurat
 			translation.dimension = DIMENSION::D3;
 			break;
 		default:
-			ESINFO(GLOBAL_ERROR) << "ESPREOS internal error: unknown physics while set RBFTargetTransformation.";
+			eslog::globalerror("ESPRESO internal error: unknown physics while set RBFTargetTransformation.");
 		}
 	});
 }

@@ -6,7 +6,6 @@
 
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/matrixtype.h"
-#include "basis/logging/logging.h"
 #include "config/ecf/physics/structuralmechanics.h"
 
 #include "mesh/mesh.h"

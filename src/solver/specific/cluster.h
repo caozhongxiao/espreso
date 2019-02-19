@@ -25,7 +25,7 @@ using std::make_pair;
 #include "solver/generic/Domain.h"
 #include "densesolvers.h"
 
-#include "basis/logging/timeeval.h"
+#include "solver/generic/timeeval.h"
 #include "solver/generic/utils.h"
 //#include "assembler/physics/assembler.h"
 

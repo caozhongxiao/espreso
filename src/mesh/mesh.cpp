@@ -5,7 +5,13 @@
 #include "esinfo/meshinfo.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/eslog.hpp"
 
+#include "basis/containers/serializededata.h"
+#include "basis/utilities/parser.h"
+
+#include "elements/element.h"
+#include "preprocessing/meshpreprocessing.h"
 #include "store/statisticsstore.h"
 #include "store/elementstore.h"
 #include "store/nodestore.h"
@@ -16,22 +22,6 @@
 #include "store/fetidatastore.h"
 
 #include "output/result/resultstore.h"
-
-#include "preprocessing/meshpreprocessing.h"
-
-#include "elements/element.h"
-
-#include "basis/utilities/utils.h"
-#include "basis/utilities/communication.h"
-#include "basis/utilities/parser.h"
-
-#include <iostream>
-#include <vector>
-#include <numeric>
-#include <algorithm>
-
-#include "basis/containers/serializededata.h"
-#include "basis/containers/tarray.h"
 
 using namespace espreso;
 
@@ -124,7 +114,7 @@ ElementsRegionStore* Mesh::eregion(const std::string &name)
 			return elementsRegions[r];
 		}
 	}
-	ESINFO(ERROR) << "Unknown region of elements with '" << name << "'.";
+	eslog::error("Unknown region of elements with '%s'\n.", name.c_str());
 	return NULL;
 }
 
@@ -135,7 +125,7 @@ ElementsRegionsIntersectionStore* Mesh::ieregion(const std::string &name)
 			return elementsRegionsIntersections[r];
 		}
 	}
-	ESINFO(ERROR) << "ESPRESO internal error: request for unknown intersection of element regions '" << name << "'.";
+	eslog::error("ESPRESO internal error: request for unknown intersection of element regions '%s'\n.", name.c_str());
 	return NULL;
 }
 
@@ -146,7 +136,7 @@ BoundaryRegionStore* Mesh::bregion(const std::string &name)
 			return boundaryRegions[r];
 		}
 	}
-	ESINFO(ERROR) << "Unknown boundary region '" << name << "'.";
+	eslog::error("Unknown boundary region '%s'\n.", name.c_str());
 	return NULL;
 }
 
@@ -157,7 +147,7 @@ BoundaryRegionsIntersectionStore* Mesh::ibregion(const std::string &name)
 			return boundaryRegionsIntersections[r];
 		}
 	}
-	ESINFO(ERROR) << "ESPRESO internal error: request for unknown intersection of boundary regions '" << name << "'.";
+	eslog::error("ESPRESO internal error: request for unknown intersection of boundary regions '%s'\n.", name.c_str());
 	return NULL;
 }
 
@@ -195,7 +185,7 @@ void Mesh::update()
 
 	MPI_Allreduce(&isEmpty, &quit, 1, MPI_INT, MPI_MAX, info::mpi::comm);
 	if (quit) {
-		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW << "ESPRESO quit computation. There is a process with no elements.";
+		eslog::warning("ESPRESO quit computation. There is a process with no elements.\n.");
 		MPI_Barrier(info::mpi::comm);
 		exit(EXIT_SUCCESS);
 	}
@@ -220,7 +210,7 @@ void Mesh::update()
 		case PHYSICS::STRUCTURAL_MECHANICS_3D:
 			return info::ecf->structural_mechanics_3d;
 		default:
-			ESINFO(GLOBAL_ERROR) << "Not implemented physics.";
+			eslog::globalerror("Not implemented physics.\n");
 			exit(0);
 		}
 	};
@@ -236,7 +226,7 @@ void Mesh::update()
 		case PHYSICS::STRUCTURAL_MECHANICS_3D:
 			return true;
 		default:
-			ESINFO(GLOBAL_ERROR) << "Not implemented physics.";
+			eslog::globalerror("Not implemented physics.\n");
 			exit(0);
 		}
 	};
@@ -265,7 +255,7 @@ void Mesh::update()
 			}
 			break;
 		default:
-			ESINFO(GLOBAL_ERROR) << "Not implemented physics.";
+			eslog::globalerror("Not implemented physics.\n");
 			exit(0);
 		}
 		return ret;
@@ -278,9 +268,7 @@ void Mesh::update()
 		}
 	};
 
-	preprocessing->startPreprocessing();
-
-	ESINFO(OVERVIEW) << "Preprocess mesh data.";
+	eslog::startln("MESH: PREPROCESSING STARTED");
 	materials.clear();
 	std::map<std::string, int> matindex;
 	for (auto mat = info::ecf->getPhysics()->materials.begin(); mat != info::ecf->getPhysics()->materials.end(); ++mat) {
@@ -291,13 +279,15 @@ void Mesh::update()
 	for (auto mat = info::ecf->getPhysics()->material_set.begin(); mat != info::ecf->getPhysics()->material_set.end(); ++mat) {
 		ElementsRegionStore *region = eregion(mat->first);
 		if (matindex.find(mat->second) == matindex.end()) {
-			ESINFO(GLOBAL_ERROR) << "Unknown material '" << mat->second << "'.";
+			eslog::globalerror("Unknown material '%s'.\n", mat->second.c_str());
 		}
 		int material = matindex.find(mat->second)->second;
 		for (auto e = region->elements->datatarray().cbegin(); e != region->elements->datatarray().cend(); ++e) {
 			elements->material->datatarray()[*e] = material;
 		}
 	}
+
+	eslog::checkpointln("MESH: MATERIALS FILLED");
 
 	if (hasBEM(getPhysics())) {
 		// TODO: BEM does not always need reparate regions
@@ -318,6 +308,8 @@ void Mesh::update()
 	}
 
 	preprocessing->partitiate(preferedDomains, uniformDecomposition);
+
+	eslog::checkpointln("MESH: DOMAIN DECOMPOSITION COMPUTED");
 
 	if (info::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_2D || info::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {
 		const StructuralMechanicsConfiguration *sm;
@@ -366,18 +358,24 @@ void Mesh::update()
 		}
 	}
 
+	eslog::checkpointln("MESH: BOUNDARY REGIONS COMPOSED");
+
 	preprocessing->arrangeRegions();
+
+	eslog::checkpointln("MESH: REGIONS ARRANGED");
 
 	if (forEachSteps([] (const LoadStepConfiguration &step) {
 		return step.solver == LoadStepConfiguration::SOLVER::FETI;
 	})) {
 
 		preprocessing->computeLocalIndices();
+		eslog::checkpointln("MESH: ELEMENTS DOMAIN INDICES COMPUTED");
 	}
 
 	if (is3D() && (hasBEM(getPhysics()))) {
 		preprocessing->computeDomainsSurface();
 		preprocessing->triangularizeDomainSurface();
+		eslog::checkpointln("MESH: DOMAIN SURFACE COMPUTED");
 	}
 
 	if (is3D() && _withGUI) {
@@ -388,11 +386,13 @@ void Mesh::update()
 		for (size_t r = 0; r < boundaryRegions.size(); r++) {
 			preprocessing->triangularizeBoundary(boundaryRegions[r]);
 		}
+		eslog::checkpointln("MESH: REGION SURFACE COMPUTED");
 	}
 
 	if (is3D() && info::ecf->output.format == OutputConfiguration::FORMAT::STL_SURFACE) {
 		preprocessing->computeBodiesSurface();
 		preprocessing->triangularizeSurface(surface);
+		eslog::checkpointln("MESH: BODIES SURFACE COMPUTED");
 	}
 
 	if (forEachSteps([] (const LoadStepConfiguration &step) {
@@ -400,6 +400,7 @@ void Mesh::update()
 	})) {
 
 		preprocessing->computeSharedFaceNodes();
+		eslog::checkpointln("MESH: SHARED FACES COMPUTED");
 	}
 
 	if (forEachSteps([] (const LoadStepConfiguration &step) {
@@ -407,6 +408,7 @@ void Mesh::update()
 	})) {
 
 		preprocessing->computeCornerNodes();
+		eslog::checkpointln("MESH: CORNER NODES COMPUTED");
 	}
 
 	if (info::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_2D || info::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {
@@ -418,6 +420,7 @@ void Mesh::update()
 			if (hasBEM(getPhysics())) {
 				preprocessing->computeFixPointsOnSurface();
 			}
+			eslog::checkpointln("MESH: FIX POINTS COMPUTED");
 		}
 	}
 
@@ -437,10 +440,11 @@ void Mesh::update()
 				preprocessing->morphRBF(it->first, it->second, 3);
 				break;
 			default:
-				ESINFO(GLOBAL_ERROR) << "Not implemented physics.";
+				eslog::globalerror("Not implemented physics.\n");
 				exit(0);
 			}
 		}
+		eslog::checkpointln("MESH: COORDINATES MORPHED");
 	}
 
 	if (getPhysics().contact_interfaces) {
@@ -448,14 +452,15 @@ void Mesh::update()
 		contacts = new ContactStore(surface);
 		preprocessing->computeSurfaceLocations();
 		preprocessing->searchContactInterfaces();
+		eslog::checkpointln("MESH: CONTACT INTERFACE COMPUTED");
 	}
 
-	if (info::ecf->output.verbose_level > 0) {
-		printMeshStatistics();
-	}
+//	printMeshStatistics();
 	if (info::ecf->output.verbose_level > 1) {
 		printDecompositionStatistics();
 	}
+
+	eslog::endln("MESH: PREPROCESSING FINISHED");
 }
 
 void Mesh::printMeshStatistics()
@@ -500,14 +505,14 @@ void Mesh::printMeshStatistics()
 		case Element::CODE::HEXA20: return "HEXA20";
 
 		default:
-			ESINFO(ERROR) << "ESPRESO internal error: unknown element code.";
+			eslog::error("ESPRESO internal error: unknown element code.\n");
 			return "";
 		}
 	};
 
 	auto esize = [&] (int code) {;
 		if (elements->ecounters[code]) {
-			ESINFO(OVERVIEW) << std::string(namesize - ename(code).size(), ' ') << ename(code) << " : " << elements->ecounters[code];
+			eslog::info("%*s : %d\n", namesize, ename(code).c_str(), elements->ecounters[code]);
 		}
 	};
 
@@ -519,308 +524,302 @@ void Mesh::printMeshStatistics()
 		return size;
 	};
 
-	auto header = [&] (const std::string &name) {
-		return name + std::string(namesize - name.size(), ' ') + " : ";
-	};
+	eslog::info(" ============ MESH STATISTICS ============== \n");
 
-	ESINFO(OVERVIEW) << "============= Mesh statistics ==============";
+	eslog::info(" %s%*s : %d\n", "NUMBER OF NODES", namesize - 16, " ", nodes->uniqueTotalSize);
+	eslog::info(" %s%*s : %d\n", "NUMBER OF ELEMENTS", namesize - 19, " ", totalesize(elements->ecounters));
 
-	ESINFO(OVERVIEW) << header(" Number of nodes") << nodes->uniqueTotalSize;
-
-	ESINFO(OVERVIEW) << header(" Number of elements") << totalesize(elements->ecounters);
 	for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
 		esize(etype);
 	}
 
-	ESINFO(OVERVIEW);
+	eslog::info(" -  -  -  -  -  -  -  -  -  -  -  -  -  -  - \n");
 
-	ESINFO(OVERVIEW) << header(" Element regions size");
+	eslog::info(" %s%*s :\n", "ELEMENTS REGIONS SIZES", namesize - 23, " ");
 	for (size_t r = 0; r < elementsRegions.size(); r++) {
 		if (StringCompare::caseInsensitiveEq(elementsRegions[r]->name, "NAMELESS_ELEMENT_SET")) {
-			ESINFO(OVERVIEW) << Info::TextColor::YELLOW
-					<< std::string(namesize - elementsRegions[r]->name.size(), ' ') << elementsRegions[r]->name << " : " << totalesize(elementsRegions[r]->ecounters);
+			eslog::warning("%*s : %d\n", namesize, elementsRegions[r]->name.c_str(), totalesize(elementsRegions[r]->ecounters));
 		} else if (StringCompare::caseInsensitiveEq(elementsRegions[r]->name, "ALL_ELEMENTS")) {
-			ESINFO(OVERVIEW) << std::string(namesize - elementsRegions[r]->name.size(), ' ') << elementsRegions[r]->name << " : " << totalesize(elements->ecounters);
+			eslog::info("%*s : %d\n", namesize, elementsRegions[r]->name.c_str(), totalesize(elements->ecounters));
 		} else {
-			ESINFO(OVERVIEW) << std::string(namesize - elementsRegions[r]->name.size(), ' ') << elementsRegions[r]->name << " : " << totalesize(elementsRegions[r]->ecounters);
+			eslog::info("%*s : %d\n", namesize, elementsRegions[r]->name.c_str(), totalesize(elementsRegions[r]->ecounters));
 		}
 	}
-	ESINFO(OVERVIEW) << header(" Face regions size");
+	eslog::info(" %s%*s :\n", "FACE REGIONS SIZES", namesize - 19, " ");
 	for (size_t r = 0; r < boundaryRegions.size(); r++) {
 		if (boundaryRegions[r]->dimension == 2) {
-			ESINFO(OVERVIEW) << std::string(namesize - boundaryRegions[r]->name.size(), ' ') << boundaryRegions[r]->name << " : " << totalesize(boundaryRegions[r]->ecounters);
+			eslog::info("%*s : %d\n", namesize, boundaryRegions[r]->name.c_str(), totalesize(boundaryRegions[r]->ecounters));
 		}
 	}
-	ESINFO(OVERVIEW) << header(" Edge regions size");
+	eslog::info(" %s%*s :\n", "EDGE REGIONS SIZES", namesize - 19, " ");
 	for (size_t r = 0; r < boundaryRegions.size(); r++) {
 		if (boundaryRegions[r]->dimension == 1) {
-			ESINFO(OVERVIEW) << std::string(namesize - boundaryRegions[r]->name.size(), ' ') << boundaryRegions[r]->name << " : " << totalesize(boundaryRegions[r]->ecounters);
+			eslog::info("%*s : %d\n", namesize, boundaryRegions[r]->name.c_str(), totalesize(boundaryRegions[r]->ecounters));
 		}
 	}
-	ESINFO(OVERVIEW) << header(" Node regions size");
+	eslog::info(" %s%*s :\n", "NODE REGIONS SIZES", namesize - 19, " ");
 	for (size_t r = 0; r < boundaryRegions.size(); r++) {
 		if (boundaryRegions[r]->dimension == 0) {
-			ESINFO(OVERVIEW) << std::string(namesize - boundaryRegions[r]->name.size(), ' ') << boundaryRegions[r]->name << " : " << boundaryRegions[r]->uniqueTotalSize;
+			eslog::info("%*s : %d\n", namesize, boundaryRegions[r]->name.c_str(), boundaryRegions[r]->uniqueTotalSize);
 		}
 	}
-
-	ESINFO(OVERVIEW) << "============================================\n";
+	eslog::info(" =========================================== \n");
 }
 
 void Mesh::printDecompositionStatistics()
 {
-	size_t namesize = 25;
-
-	auto header = [&] (const std::string &name) {
-		return name + std::string(namesize - name.size(), ' ') + " : ";
-	};
-
-	ESINFO(DETAILS) << "========= Decomposition statistics =========";
-
-	ESINFO(DETAILS) << header(" NUMBER OF PROCESSES") << info::mpi::size;
-
-	ESINFO(DETAILS);
-
-	esint totalNeighbors = 0, minNeighbors = 0, maxNeighbors = 0, neighbors = neighbours.size();
-	MPI_Reduce(&neighbors, &minNeighbors, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::comm);
-	MPI_Reduce(&neighbors, &totalNeighbors, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
-	MPI_Reduce(&neighbors, &maxNeighbors, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
-	ESINFO(DETAILS) << header(" NUMBER OF NEIGHBORS") << totalNeighbors;
-	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
-			<< minNeighbors << ", " << maxNeighbors << " (" << totalNeighbors / (double)info::mpi::size << ")";
-	ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNeighbors / (double)minNeighbors;
-
-	ESINFO(DETAILS);
-
-	esint totalClusters = 0, minClusters = 0, maxClusters = 0, clusters = elements->nclusters;
-	MPI_Reduce(&clusters, &minClusters, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::comm);
-	MPI_Reduce(&clusters, &totalClusters, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
-	MPI_Reduce(&clusters, &maxClusters, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
-	ESINFO(DETAILS) << header(" NUMBER OF CLUSTERS") << totalClusters;
-	ESINFO(DETAILS) << header(" clusters per MPI");
-	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
-			<< minClusters << ", " << maxClusters << " (" << totalClusters / (double)info::mpi::size << ")";
-	ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxClusters / (double)minClusters;
-
-	ESINFO(DETAILS);
-
-	esint totalDomains = 0, minDomains = 0, maxDomains = 0, domains = elements->ndomains;
-	MPI_Reduce(&domains, &minDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::comm);
-	MPI_Reduce(&domains, &totalDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
-	MPI_Reduce(&domains, &maxDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
-	ESINFO(DETAILS) << header(" NUMBER OF DOMAINS") << totalDomains;
-	ESINFO(DETAILS) << header(" domains per MPI");
-	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
-			<< minDomains << ", " << maxDomains << " (" << totalDomains / (double)info::mpi::size << ")";
-	if (maxDomains / (double)minDomains > 3) {
-		ESINFO(DETAILS) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxDomains / (double)minDomains;
-	} else {
-		ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxDomains / (double)minDomains;
-	}
-
-	ESINFO(DETAILS) << header(" domains per cluster");
-
-	esint cdomains = elements->ndomains;
-	for (esint c = 0; c < elements->nclusters; c++) {
-		domains = 0;
-		for (esint d = 0; d < elements->ndomains; d++) {
-			if (elements->clusters[d] == c) {
-				++domains;
-			}
-		}
-		cdomains = std::min(domains, cdomains);
-	}
-	MPI_Reduce(&domains, &minDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::comm);
-	for (esint c = 0; c < elements->nclusters; c++) {
-		domains = 0;
-		for (esint d = 0; d < elements->ndomains; d++) {
-			if (elements->clusters[d] == c) {
-				++domains;
-			}
-		}
-		cdomains = std::max(domains, cdomains);
-	}
-	MPI_Reduce(&domains, &maxDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
-
-	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
-			<< minDomains << ", " << maxDomains << " (" << totalDomains / (double)totalClusters << ")";
-	if (maxDomains / (double)minDomains > 3) {
-		ESINFO(DETAILS) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxDomains / (double)minDomains;
-	} else {
-		ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxDomains / (double)minDomains;
-	}
-
-	ESINFO(DETAILS);
-
-	esint totalElements = 0, minElements = 0, maxElements = 0;
-	esint minelements = elements->elementsDistribution[1], maxelements = 0, avgelements = elements->size;
-	MPI_Reduce(&avgelements, &minElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::comm);
-	MPI_Reduce(&avgelements, &totalElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
-	MPI_Reduce(&avgelements, &maxElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
-	ESINFO(DETAILS) << header(" NUMBER OF ELEMENTS") << totalElements;
-	ESINFO(DETAILS) << header(" elements per MPI");
-	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
-			<< minElements << ", " << maxElements << " (" << totalElements / (double)info::mpi::size << ")";
-	if (maxElements / (double)minElements > 1.5) {
-		ESINFO(DETAILS) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
-	} else {
-		ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
-	}
-
-
-	ESINFO(DETAILS) << header(" elements per cluster");
-
-	esint coffset = elements->gatherClustersDistribution()[info::mpi::rank];
-
-	esint celements = elements->size;
-	esint mincindex, gmincindex;
-	for (esint c = 0; c < elements->nclusters; c++) {
-		avgelements = 0;
-		for (esint d = 0; d < elements->ndomains; d++) {
-			if (elements->clusters[d] == c) {
-				avgelements += elements->elementsDistribution[d + 1] - elements->elementsDistribution[d];
-			}
-		}
-		celements = std::min(avgelements, celements);
-		if (avgelements == celements) {
-			mincindex = coffset + c;
-		}
-	}
-	MPI_Allreduce(&celements, &minElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, info::mpi::comm);
-	if (minElements != celements) {
-		mincindex = 0;
-	}
-	MPI_Reduce(&mincindex, &gmincindex, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
-	for (esint c = 0; c < elements->nclusters; c++) {
-		avgelements = 0;
-		for (esint d = 0; d < elements->ndomains; d++) {
-			if (elements->clusters[d] == c) {
-				avgelements += elements->elementsDistribution[d + 1] - elements->elementsDistribution[d];
-			}
-		}
-		celements = std::max(avgelements, celements);
-	}
-	MPI_Reduce(&celements, &maxelements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
-	ESINFO(DETAILS) << std::string(namesize - 18, ' ') << "MIN[#n], MAX (AVG)" << " : "
-			<< minElements << "[" << gmincindex << "], " << maxElements << " (" << totalElements / (double)totalClusters << ")";
-
-	if (maxElements / (double)minElements > 2) {
-		ESINFO(DETAILS) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
-	} else {
-		ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
-	}
-
-	ESINFO(DETAILS) << header(" elements per domain");
-
-	minelements = maxelements = elements->elementsDistribution[1];
-	avgelements = 0;
-	for (esint d = 0; d < elements->ndomains; d++) {
-		minelements = std::min(minelements, elements->elementsDistribution[d + 1] - elements->elementsDistribution[d]);
-		maxelements = std::max(maxelements, elements->elementsDistribution[d + 1] - elements->elementsDistribution[d]);
-		avgelements += elements->elementsDistribution[d + 1] - elements->elementsDistribution[d];
-	}
-	MPI_Reduce(&minelements, &minElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::comm);
-	MPI_Reduce(&avgelements, &totalElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
-	MPI_Reduce(&maxelements, &maxElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
-	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
-			<< minElements << ", " << maxElements << " (" << totalElements / (double)totalDomains << ")";
-
-	if (maxElements / (double)minElements > 1.5) {
-		ESINFO(DETAILS) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
-	} else {
-		ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
-	}
-
-	esint totalNodes = 0, minNodes = 0, maxNodes = 0;
-	esint minnodes = nodes->size, maxnodes = nodes->size, avgnodes = nodes->size;
-	MPI_Reduce(&minnodes, &minNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::comm);
-	MPI_Reduce(&avgnodes, &totalNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
-	MPI_Reduce(&maxnodes, &maxNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
-
-	ESINFO(DETAILS);
-
-	ESINFO(DETAILS) << header(" NUMBER OF NODES") << nodes->uniqueTotalSize;
-	ESINFO(DETAILS) << header(" nodes per MPI") << totalNodes;
-	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
-			<< minNodes << ", " << maxNodes << " (" << totalNodes / (double)info::mpi::size << ")";
-	ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNodes / (double)minNodes;
-	if (maxNodes / (double)minNodes > 1.5) {
-		ESINFO(DETAILS) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNodes / (double)minNodes;
-	} else {
-		ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNodes / (double)minNodes;
-	}
-
-
-	minnodes = maxnodes = avgnodes = nodes->dintervals[0].back().DOFOffset + nodes->dintervals[0].back().end - nodes->dintervals[0].back().begin;
-	for (esint d = 1; d < elements->ndomains; d++) {
-		minnodes = std::min(minnodes, nodes->dintervals[d].back().DOFOffset + nodes->dintervals[d].back().end - nodes->dintervals[d].back().begin);
-		maxnodes = std::max(maxnodes, nodes->dintervals[d].back().DOFOffset + nodes->dintervals[d].back().end - nodes->dintervals[d].back().begin);
-		avgnodes += nodes->dintervals[d].back().DOFOffset + nodes->dintervals[d].back().end - nodes->dintervals[d].back().begin;
-	}
-	MPI_Reduce(&minnodes, &minNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::comm);
-	MPI_Reduce(&avgnodes, &totalNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
-	MPI_Reduce(&maxnodes, &maxNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
-
-	ESINFO(DETAILS) << header(" nodes per domain") << totalNodes;
-	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
-			<< minNodes << ", " << maxNodes << " (" << totalNodes / (double)totalDomains << ")";
-	if (maxNodes / (double)minNodes > 1.5) {
-		ESINFO(DETAILS) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNodes / (double)minNodes;
-	} else {
-		ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNodes / (double)minNodes;
-	}
-
-	esint minUnique = 0, maxUnique = 0;
-	MPI_Reduce(&nodes->uniqueSize, &minUnique, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::comm);
-	MPI_Reduce(&nodes->uniqueSize, &maxUnique, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
-
-	ESINFO(DETAILS) << header(" unique nodes per MPI");
-	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
-			<< minUnique << ", " << maxUnique << " (" << maxUnique / (double)nodes->uniqueTotalSize << ")";
-	ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxUnique / (double)minUnique;
-
-
-	ESINFO(DETAILS);
-
-	esint maxduplicity = 0, maxDuplicity = 0;
-	for (auto d = nodes->idomains->cbegin(); d != nodes->idomains->cend(); ++d) {
-		maxduplicity = std::max(maxduplicity, (esint)d->size());
-	}
-
-	MPI_Reduce(&maxduplicity, &maxDuplicity, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
-	ESINFO(DETAILS) << header(" MAX NODE DUPLICITY") << maxDuplicity;
-
-	ESINFO(DETAILS) << header(" COMMUNICATION VOLUME") << "BOUNDARY, INNER (RATIO)";
-	esint inner = 0, boundary = 0, totalInner = 0, totalBoundary = 0;
-	auto iranks = nodes->iranks->cbegin();
-	for (size_t i = 0; i < nodes->pintervals.size(); ++i, ++iranks) {
-		if (iranks->front() != info::mpi::rank || iranks->back() != info::mpi::rank) {
-			if (nodes->pintervals[i].sourceProcess == info::mpi::rank)
-			boundary += nodes->pintervals[i].end - nodes->pintervals[i].begin;
-		} else {
-			inner += nodes->pintervals[i].end - nodes->pintervals[i].begin;
-		}
-	}
-	MPI_Reduce(&inner, &totalInner, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
-	MPI_Reduce(&boundary, &totalBoundary, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
-	ESINFO(DETAILS) << std::string(namesize - 7, ' ') << "per MPI : " << totalBoundary << ", " << totalInner << " (" << totalBoundary / (double)totalInner << ")";
-
-	inner = 0, boundary = 0, totalInner = 0, totalBoundary = 0;
-	for (esint d = 0; d < elements->ndomains; d++) {
-		for (size_t i = 0; i < nodes->dintervals[d].size(); i++) {
-			if ((nodes->idomains->cbegin() + nodes->dintervals[d][i].pindex)->size() > 1) {
-				if ((nodes->idomains->cbegin() + nodes->dintervals[d][i].pindex)->front() == d + elements->firstDomain) {
-					boundary += nodes->dintervals[d][i].end - nodes->dintervals[d][i].begin;
-				}
-			} else {
-				inner += nodes->dintervals[d][i].end - nodes->dintervals[d][i].begin;
-			}
-		}
-	}
-	MPI_Reduce(&inner, &totalInner, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
-	MPI_Reduce(&boundary, &totalBoundary, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
-	ESINFO(DETAILS) << std::string(namesize - 10, ' ') << "per domain : " << totalBoundary << ", " << totalInner << " (" << totalBoundary / (double)totalInner << ")";
-
-	ESINFO(DETAILS) << "============================================\n";
+//	size_t namesize = 25;
+//
+//	auto header = [&] (const std::string &name) {
+//		return name + std::string(namesize - name.size(), ' ') + " : ";
+//	};
+//
+//	ESINFO(DETAILS) << "========= Decomposition statistics =========";
+//
+//	ESINFO(DETAILS) << header(" NUMBER OF PROCESSES") << info::mpi::size;
+//
+//	ESINFO(DETAILS);
+//
+//	esint totalNeighbors = 0, minNeighbors = 0, maxNeighbors = 0, neighbors = neighbours.size();
+//	MPI_Reduce(&neighbors, &minNeighbors, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::comm);
+//	MPI_Reduce(&neighbors, &totalNeighbors, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
+//	MPI_Reduce(&neighbors, &maxNeighbors, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
+//	ESINFO(DETAILS) << header(" NUMBER OF NEIGHBORS") << totalNeighbors;
+//	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
+//			<< minNeighbors << ", " << maxNeighbors << " (" << totalNeighbors / (double)info::mpi::size << ")";
+//	ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNeighbors / (double)minNeighbors;
+//
+//	ESINFO(DETAILS);
+//
+//	esint totalClusters = 0, minClusters = 0, maxClusters = 0, clusters = elements->nclusters;
+//	MPI_Reduce(&clusters, &minClusters, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::comm);
+//	MPI_Reduce(&clusters, &totalClusters, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
+//	MPI_Reduce(&clusters, &maxClusters, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
+//	ESINFO(DETAILS) << header(" NUMBER OF CLUSTERS") << totalClusters;
+//	ESINFO(DETAILS) << header(" clusters per MPI");
+//	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
+//			<< minClusters << ", " << maxClusters << " (" << totalClusters / (double)info::mpi::size << ")";
+//	ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxClusters / (double)minClusters;
+//
+//	ESINFO(DETAILS);
+//
+//	esint totalDomains = 0, minDomains = 0, maxDomains = 0, domains = elements->ndomains;
+//	MPI_Reduce(&domains, &minDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::comm);
+//	MPI_Reduce(&domains, &totalDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
+//	MPI_Reduce(&domains, &maxDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
+//	ESINFO(DETAILS) << header(" NUMBER OF DOMAINS") << totalDomains;
+//	ESINFO(DETAILS) << header(" domains per MPI");
+//	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
+//			<< minDomains << ", " << maxDomains << " (" << totalDomains / (double)info::mpi::size << ")";
+//	if (maxDomains / (double)minDomains > 3) {
+//		ESINFO(DETAILS) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxDomains / (double)minDomains;
+//	} else {
+//		ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxDomains / (double)minDomains;
+//	}
+//
+//	ESINFO(DETAILS) << header(" domains per cluster");
+//
+//	esint cdomains = elements->ndomains;
+//	for (esint c = 0; c < elements->nclusters; c++) {
+//		domains = 0;
+//		for (esint d = 0; d < elements->ndomains; d++) {
+//			if (elements->clusters[d] == c) {
+//				++domains;
+//			}
+//		}
+//		cdomains = std::min(domains, cdomains);
+//	}
+//	MPI_Reduce(&domains, &minDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::comm);
+//	for (esint c = 0; c < elements->nclusters; c++) {
+//		domains = 0;
+//		for (esint d = 0; d < elements->ndomains; d++) {
+//			if (elements->clusters[d] == c) {
+//				++domains;
+//			}
+//		}
+//		cdomains = std::max(domains, cdomains);
+//	}
+//	MPI_Reduce(&domains, &maxDomains, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
+//
+//	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
+//			<< minDomains << ", " << maxDomains << " (" << totalDomains / (double)totalClusters << ")";
+//	if (maxDomains / (double)minDomains > 3) {
+//		ESINFO(DETAILS) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxDomains / (double)minDomains;
+//	} else {
+//		ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxDomains / (double)minDomains;
+//	}
+//
+//	ESINFO(DETAILS);
+//
+//	esint totalElements = 0, minElements = 0, maxElements = 0;
+//	esint minelements = elements->elementsDistribution[1], maxelements = 0, avgelements = elements->size;
+//	MPI_Reduce(&avgelements, &minElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::comm);
+//	MPI_Reduce(&avgelements, &totalElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
+//	MPI_Reduce(&avgelements, &maxElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
+//	ESINFO(DETAILS) << header(" NUMBER OF ELEMENTS") << totalElements;
+//	ESINFO(DETAILS) << header(" elements per MPI");
+//	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
+//			<< minElements << ", " << maxElements << " (" << totalElements / (double)info::mpi::size << ")";
+//	if (maxElements / (double)minElements > 1.5) {
+//		ESINFO(DETAILS) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
+//	} else {
+//		ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
+//	}
+//
+//
+//	ESINFO(DETAILS) << header(" elements per cluster");
+//
+//	esint coffset = elements->gatherClustersDistribution()[info::mpi::rank];
+//
+//	esint celements = elements->size;
+//	esint mincindex, gmincindex;
+//	for (esint c = 0; c < elements->nclusters; c++) {
+//		avgelements = 0;
+//		for (esint d = 0; d < elements->ndomains; d++) {
+//			if (elements->clusters[d] == c) {
+//				avgelements += elements->elementsDistribution[d + 1] - elements->elementsDistribution[d];
+//			}
+//		}
+//		celements = std::min(avgelements, celements);
+//		if (avgelements == celements) {
+//			mincindex = coffset + c;
+//		}
+//	}
+//	MPI_Allreduce(&celements, &minElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, info::mpi::comm);
+//	if (minElements != celements) {
+//		mincindex = 0;
+//	}
+//	MPI_Reduce(&mincindex, &gmincindex, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
+//	for (esint c = 0; c < elements->nclusters; c++) {
+//		avgelements = 0;
+//		for (esint d = 0; d < elements->ndomains; d++) {
+//			if (elements->clusters[d] == c) {
+//				avgelements += elements->elementsDistribution[d + 1] - elements->elementsDistribution[d];
+//			}
+//		}
+//		celements = std::max(avgelements, celements);
+//	}
+//	MPI_Reduce(&celements, &maxelements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
+//	ESINFO(DETAILS) << std::string(namesize - 18, ' ') << "MIN[#n], MAX (AVG)" << " : "
+//			<< minElements << "[" << gmincindex << "], " << maxElements << " (" << totalElements / (double)totalClusters << ")";
+//
+//	if (maxElements / (double)minElements > 2) {
+//		ESINFO(DETAILS) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
+//	} else {
+//		ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
+//	}
+//
+//	ESINFO(DETAILS) << header(" elements per domain");
+//
+//	minelements = maxelements = elements->elementsDistribution[1];
+//	avgelements = 0;
+//	for (esint d = 0; d < elements->ndomains; d++) {
+//		minelements = std::min(minelements, elements->elementsDistribution[d + 1] - elements->elementsDistribution[d]);
+//		maxelements = std::max(maxelements, elements->elementsDistribution[d + 1] - elements->elementsDistribution[d]);
+//		avgelements += elements->elementsDistribution[d + 1] - elements->elementsDistribution[d];
+//	}
+//	MPI_Reduce(&minelements, &minElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::comm);
+//	MPI_Reduce(&avgelements, &totalElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
+//	MPI_Reduce(&maxelements, &maxElements, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
+//	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
+//			<< minElements << ", " << maxElements << " (" << totalElements / (double)totalDomains << ")";
+//
+//	if (maxElements / (double)minElements > 1.5) {
+//		ESINFO(DETAILS) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
+//	} else {
+//		ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxElements / (double)minElements;
+//	}
+//
+//	esint totalNodes = 0, minNodes = 0, maxNodes = 0;
+//	esint minnodes = nodes->size, maxnodes = nodes->size, avgnodes = nodes->size;
+//	MPI_Reduce(&minnodes, &minNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::comm);
+//	MPI_Reduce(&avgnodes, &totalNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
+//	MPI_Reduce(&maxnodes, &maxNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
+//
+//	ESINFO(DETAILS);
+//
+//	ESINFO(DETAILS) << header(" NUMBER OF NODES") << nodes->uniqueTotalSize;
+//	ESINFO(DETAILS) << header(" nodes per MPI") << totalNodes;
+//	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
+//			<< minNodes << ", " << maxNodes << " (" << totalNodes / (double)info::mpi::size << ")";
+//	ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNodes / (double)minNodes;
+//	if (maxNodes / (double)minNodes > 1.5) {
+//		ESINFO(DETAILS) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNodes / (double)minNodes;
+//	} else {
+//		ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNodes / (double)minNodes;
+//	}
+//
+//
+//	minnodes = maxnodes = avgnodes = nodes->dintervals[0].back().DOFOffset + nodes->dintervals[0].back().end - nodes->dintervals[0].back().begin;
+//	for (esint d = 1; d < elements->ndomains; d++) {
+//		minnodes = std::min(minnodes, nodes->dintervals[d].back().DOFOffset + nodes->dintervals[d].back().end - nodes->dintervals[d].back().begin);
+//		maxnodes = std::max(maxnodes, nodes->dintervals[d].back().DOFOffset + nodes->dintervals[d].back().end - nodes->dintervals[d].back().begin);
+//		avgnodes += nodes->dintervals[d].back().DOFOffset + nodes->dintervals[d].back().end - nodes->dintervals[d].back().begin;
+//	}
+//	MPI_Reduce(&minnodes, &minNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::comm);
+//	MPI_Reduce(&avgnodes, &totalNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
+//	MPI_Reduce(&maxnodes, &maxNodes, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
+//
+//	ESINFO(DETAILS) << header(" nodes per domain") << totalNodes;
+//	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
+//			<< minNodes << ", " << maxNodes << " (" << totalNodes / (double)totalDomains << ")";
+//	if (maxNodes / (double)minNodes > 1.5) {
+//		ESINFO(DETAILS) << Info::TextColor::YELLOW << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNodes / (double)minNodes;
+//	} else {
+//		ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxNodes / (double)minNodes;
+//	}
+//
+//	esint minUnique = 0, maxUnique = 0;
+//	MPI_Reduce(&nodes->uniqueSize, &minUnique, sizeof(esint), MPI_BYTE, MPITools::esintOperations().min, 0, info::mpi::comm);
+//	MPI_Reduce(&nodes->uniqueSize, &maxUnique, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
+//
+//	ESINFO(DETAILS) << header(" unique nodes per MPI");
+//	ESINFO(DETAILS) << std::string(namesize - 14, ' ') << "MIN, MAX (AVG)" << " : "
+//			<< minUnique << ", " << maxUnique << " (" << maxUnique / (double)nodes->uniqueTotalSize << ")";
+//	ESINFO(DETAILS) << std::string(namesize - 17, ' ') << "ratio (MAX / MIN)" << " : " << maxUnique / (double)minUnique;
+//
+//
+//	ESINFO(DETAILS);
+//
+//	esint maxduplicity = 0, maxDuplicity = 0;
+//	for (auto d = nodes->idomains->cbegin(); d != nodes->idomains->cend(); ++d) {
+//		maxduplicity = std::max(maxduplicity, (esint)d->size());
+//	}
+//
+//	MPI_Reduce(&maxduplicity, &maxDuplicity, sizeof(esint), MPI_BYTE, MPITools::esintOperations().max, 0, info::mpi::comm);
+//	ESINFO(DETAILS) << header(" MAX NODE DUPLICITY") << maxDuplicity;
+//
+//	ESINFO(DETAILS) << header(" COMMUNICATION VOLUME") << "BOUNDARY, INNER (RATIO)";
+//	esint inner = 0, boundary = 0, totalInner = 0, totalBoundary = 0;
+//	auto iranks = nodes->iranks->cbegin();
+//	for (size_t i = 0; i < nodes->pintervals.size(); ++i, ++iranks) {
+//		if (iranks->front() != info::mpi::rank || iranks->back() != info::mpi::rank) {
+//			if (nodes->pintervals[i].sourceProcess == info::mpi::rank)
+//			boundary += nodes->pintervals[i].end - nodes->pintervals[i].begin;
+//		} else {
+//			inner += nodes->pintervals[i].end - nodes->pintervals[i].begin;
+//		}
+//	}
+//	MPI_Reduce(&inner, &totalInner, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
+//	MPI_Reduce(&boundary, &totalBoundary, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
+//	ESINFO(DETAILS) << std::string(namesize - 7, ' ') << "per MPI : " << totalBoundary << ", " << totalInner << " (" << totalBoundary / (double)totalInner << ")";
+//
+//	inner = 0, boundary = 0, totalInner = 0, totalBoundary = 0;
+//	for (esint d = 0; d < elements->ndomains; d++) {
+//		for (size_t i = 0; i < nodes->dintervals[d].size(); i++) {
+//			if ((nodes->idomains->cbegin() + nodes->dintervals[d][i].pindex)->size() > 1) {
+//				if ((nodes->idomains->cbegin() + nodes->dintervals[d][i].pindex)->front() == d + elements->firstDomain) {
+//					boundary += nodes->dintervals[d][i].end - nodes->dintervals[d][i].begin;
+//				}
+//			} else {
+//				inner += nodes->dintervals[d][i].end - nodes->dintervals[d][i].begin;
+//			}
+//		}
+//	}
+//	MPI_Reduce(&inner, &totalInner, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
+//	MPI_Reduce(&boundary, &totalBoundary, sizeof(esint), MPI_BYTE, MPITools::esintOperations().sum, 0, info::mpi::comm);
+//	ESINFO(DETAILS) << std::string(namesize - 10, ' ') << "per domain : " << totalBoundary << ", " << totalInner << " (" << totalBoundary / (double)totalInner << ")";
+//
+//	ESINFO(DETAILS) << "============================================\n";
 }
 

@@ -44,8 +44,3 @@ void MKLPDSSSolver::solve()
 {
 	_mklpdssData->solve(_configuration, _data->primalSolution[0].data() + _data->K[0].haloRows);
 }
-
-void MKLPDSSSolver::finalize()
-{
-
-}

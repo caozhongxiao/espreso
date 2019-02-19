@@ -5,7 +5,6 @@
 #include "expression.h"
 #include "config/configuration.h"
 #include "basis/utilities/parser.h"
-#include "basis/logging/logging.h"
 #include <sstream>
 
 namespace espreso {
@@ -121,7 +120,6 @@ struct ECFEnumHolder: public ECFValue {
 			}
 			return flags;
 		}
-		ESINFO(ERROR) << "ESPRESO internal error: get value from ECFEnumHolder.";
 		return "";
 	}
 
@@ -169,7 +167,6 @@ struct ECFEnumHolder: public ECFValue {
 			this->value = static_cast<Ttype>(1 << index);
 			return true;
 		}
-		ESINFO(ERROR) << "ESPRESO internal error: set value to ECFEnumHolder.";
 		return false;
 	}
 

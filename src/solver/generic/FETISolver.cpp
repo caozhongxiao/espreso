@@ -8,6 +8,7 @@
 #include "esinfo/meshinfo.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
+#include "esinfo/eslog.hpp"
 #include "mesh/mesh.h"
 #include "basis/utilities/utils.h"
 #include "physics/assembler/dataholder.h"
@@ -28,6 +29,20 @@ FETISolver::FETISolver(DataHolder *instance, FETISolverConfiguration &configurat
 }
 
 FETISolver::~FETISolver() {
+
+	solver->preproc_timing.printStatsMPI();
+	solver->timing.printStatsMPI();
+	solver->postproc_timing.printStatsMPI();
+	solver->timeEvalAppa.printStatsMPI();
+	solver->timeEvalProj.printStatsMPI();
+
+	if ( solver->USE_PREC != FETI_PRECONDITIONER::NONE ) solver->timeEvalPrec.printStatsMPI();
+
+	//TODO: Fix timing:  if ( cluster->USE_HFETI == 1 ) cluster->ShowTiming();
+
+	 timeEvalMain.totalTime.endWithBarrier();
+	 timeEvalMain.printStatsMPI();
+
 
 	if (cluster != NULL) {
 		delete cluster;
@@ -64,6 +79,7 @@ void FETISolver::init()
 void FETISolver::update(Matrices matrices)
 {
 	// TODO update appropriate solver objects and stop steeling matrices! :)
+	eslog::startln("FETI: PREPROCESSING STARTED");
 
 	if (matrices & (Matrices::K | Matrices::N)) {
 		// factorization and preconditioners and HFETI preprocessing
@@ -111,6 +127,8 @@ void FETISolver::update(Matrices matrices)
 
 	}
 
+	eslog::endln("FETI: PREPROCESSING FINISHED");
+
 	// TODO: remove full re-initialization
 	//	delete cluster;
 	//	delete solver;
@@ -123,15 +141,17 @@ void FETISolver::update(Matrices matrices)
 // run solver and store primal and dual solution
 void FETISolver::solve()
 {
+	eslog::startln("FETI: SOLVER STARTED");
 	if (
 			std::any_of(instance->K.begin(), instance->K.end(), [] (const SparseMatrix &K) { return K.mtype == MatrixType::REAL_UNSYMMETRIC; }) &&
 			configuration.iterative_solver != FETI_ITERATIVE_SOLVER::GMRES &&
 			configuration.iterative_solver != FETI_ITERATIVE_SOLVER::BICGSTAB) {
 
-		ESINFO(ERROR) << "Invalid Linear Solver configuration: Only GMRES and BICGSTAB can solve unsymmetric system.";
+		eslog::error("Invalid Linear Solver configuration: Only GMRES and BICGSTAB can solve unsymmetric system.\n");
 	}
 
 	Solve(instance->f, instance->primalSolution, instance->dualSolution);
+	eslog::endln("FETI: SOLVED");
 }
 
 
@@ -147,8 +167,8 @@ void FETISolver::setup_HTFETI() {
 		 timeHFETIprec.endWithBarrier();
 		 timeEvalMain.addEvent(timeHFETIprec);
 
-		ESLOG(MEMORY) << "After HFETI preprocessing process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
-		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//		ESLOG(MEMORY) << "After HFETI preprocessing process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
+//		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 	}
 }
 
@@ -166,8 +186,8 @@ void FETISolver::setup_LocalSchurComplement() {
 		cluster->Create_SC_perDomain(USE_FLOAT);
 		 timeSolSC2.endWithBarrier(); timeEvalMain.addEvent(timeSolSC2);
 		 KSCMem.endWithoutBarrier(GetProcessMemory_u()); //KSCMem.printLastStatMPIPerNode();
-		 ESLOG(MEMORY) << "After K inv. process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
-		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//		 ESLOG(MEMORY) << "After K inv. process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
+//		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 	} else {
 		for (size_t d = 0; d < cluster->domains.size(); d++) {
 			cluster->domains[d]->isOnACC = 0;
@@ -522,18 +542,18 @@ void FETISolver::createCMat() {
 void FETISolver::setup_Preconditioner() {
 // Load Matrix K, Regularization
 		 TimeEvent timeRegKproc(string("Solver - Setup preconditioners")); timeRegKproc.start();
-		 ESLOG(MEMORY) << "Before - Setup preconditioners - process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
-		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//		 ESLOG(MEMORY) << "Before - Setup preconditioners - process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
+//		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		 TimeEvent KregMem(string("Solver - Setup preconditioners mem. [MB]")); KregMem.startWithoutBarrier(GetProcessMemory_u());
-		 ESINFO(PROGRESS3) << "Setup preconditioners";
+		 eslog::checkpointln("Setup preconditioners.");
 
 		cluster->SetupPreconditioner();
 
 		 KregMem.endWithoutBarrier(GetProcessMemory_u()); //KregMem.printLastStatMPIPerNode();
 
-		 ESLOG(MEMORY) << "After - Setup preconditioners " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
-		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//		 ESLOG(MEMORY) << "After - Setup preconditioners " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
+//		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 		 timeRegKproc.endWithBarrier();
 		 timeEvalMain.addEvent(timeRegKproc);
 }
@@ -542,13 +562,13 @@ void FETISolver::setup_FactorizationOfStiffnessMatrices() {
 // K Factorization
 		 TimeEvent timeSolKproc(string("Solver - K factorization")); timeSolKproc.start();
 		 TimeEvent KFactMem(string("Solver - K factorization mem. [MB]")); KFactMem.startWithoutBarrier(GetProcessMemory_u());
-		 ESINFO(PROGRESS3) << "Factorize K";
+		 eslog::checkpointln("Faktorize K.");
 
 		cluster->SetupKsolvers();
 
 		 KFactMem.endWithoutBarrier(GetProcessMemory_u()); //KFactMem.printLastStatMPIPerNode();
-		 ESLOG(MEMORY) << "After K solver setup process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
-		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//		 ESLOG(MEMORY) << "After K solver setup process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
+//		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 		 timeSolKproc.endWithBarrier();
 		 timeEvalMain.addEvent(timeSolKproc);
 }
@@ -574,9 +594,9 @@ void FETISolver::setup_CreateG_GGt_CompressG() {
 
 		 TimeEvent timeSolPrec(string("Solver - FETI Preprocessing")); timeSolPrec.start();
 
-		 ESLOG(MEMORY) << "Solver Preprocessing - HFETI with regularization from K matrix";
-		 ESLOG(MEMORY) << "process " << info::mpi::rank << " uses "<< Measure::processMemory() << " MB";
-		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//		 ESLOG(MEMORY) << "Solver Preprocessing - HFETI with regularization from K matrix";
+//		 ESLOG(MEMORY) << "process " << info::mpi::rank << " uses "<< Measure::processMemory() << " MB";
+//		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		 TimeEvent G1_perCluster_time("Setup G1 per Cluster time   - preprocessing"); G1_perCluster_time.start();
 
@@ -586,9 +606,9 @@ void FETISolver::setup_CreateG_GGt_CompressG() {
 		 G1_perCluster_time.end(); G1_perCluster_time.printStatMPI();
 		 G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
 
-		 ESLOG(MEMORY) << "Created G1 per cluster";
-		 ESLOG(MEMORY) << "Before HFETI create GGt process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
-		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//		 ESLOG(MEMORY) << "Created G1 per cluster";
+//		 ESLOG(MEMORY) << "Before HFETI create GGt process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
+//		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		 TimeEvent solver_Preprocessing_time("Setup GGt time   - preprocessing"); solver_Preprocessing_time.start();
 		 TimeEvent solver_Preprocessing_mem("Setup GGt memory - preprocessing"); solver_Preprocessing_mem.start();
@@ -598,9 +618,9 @@ void FETISolver::setup_CreateG_GGt_CompressG() {
 		 solver_Preprocessing_time.end(); solver_Preprocessing_time.printStatMPI();
 		 solver_Preprocessing_mem.end();  solver_Preprocessing_mem.printStatMPI();
 
-		 ESLOG(MEMORY) << "Create GGtInv";
-		 ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
-		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//		 ESLOG(MEMORY) << "Create GGtInv";
+//		 ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
+//		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		 TimeEvent solver_G1comp_time("Setup G1 compression time   - preprocessing"); solver_G1comp_time.start();
 		 TimeEvent solver_G1comp_mem("Setup G1 compression memory - preprocessing");  solver_G1comp_mem.start();
@@ -609,9 +629,9 @@ void FETISolver::setup_CreateG_GGt_CompressG() {
 
 		 solver_G1comp_time.end(); solver_G1comp_time.printStatMPI();
 		 solver_G1comp_mem.end();  solver_G1comp_mem.printStatMPI();
-		 ESLOG(MEMORY) << "G1 compression";
-		 ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
-		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//		 ESLOG(MEMORY) << "G1 compression";
+//		 ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
+//		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		 timeSolPrec.endWithBarrier(); timeEvalMain.addEvent(timeSolPrec);
 
@@ -644,7 +664,7 @@ void FETISolver::setup_InitClusterAndSolver( )
 		solver->USE_HFETI = true;
 		break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Unsupported FETI METHOD";
+		eslog::error("Unsupported FETI METHOD.\n");
 	}
 
 
@@ -715,8 +735,8 @@ void FETISolver::init(const std::vector<int> &neighbours)
 		cluster->domains[d]->B1.Clear();
 	}
 
-	ESLOG(MEMORY) << "End of preprocessing - process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
-	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//	ESLOG(MEMORY) << "End of preprocessing - process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
+//	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 }
 
@@ -749,18 +769,18 @@ void FETISolver::Postprocessing( ) {
 void FETISolver::finalize() {
 
 	// Show Linear Solver Runtime Evaluation
-	solver->preproc_timing.printStatsMPI();
-	solver->timing.printStatsMPI();
-	solver->postproc_timing.printStatsMPI();
-	solver->timeEvalAppa.printStatsMPI();
-	solver->timeEvalProj.printStatsMPI();
-
-	if ( solver->USE_PREC != FETI_PRECONDITIONER::NONE ) solver->timeEvalPrec.printStatsMPI();
-
-	//TODO: Fix timing:  if ( cluster->USE_HFETI == 1 ) cluster->ShowTiming();
-
-	 timeEvalMain.totalTime.endWithBarrier();
-	 timeEvalMain.printStatsMPI();
+//	solver->preproc_timing.printStatsMPI();
+//	solver->timing.printStatsMPI();
+//	solver->postproc_timing.printStatsMPI();
+//	solver->timeEvalAppa.printStatsMPI();
+//	solver->timeEvalProj.printStatsMPI();
+//
+//	if ( solver->USE_PREC != FETI_PRECONDITIONER::NONE ) solver->timeEvalPrec.printStatsMPI();
+//
+//	//TODO: Fix timing:  if ( cluster->USE_HFETI == 1 ) cluster->ShowTiming();
+//
+//	 timeEvalMain.totalTime.endWithBarrier();
+//	 timeEvalMain.printStatsMPI();
 }
 
 void FETISolver::CheckSolution( vector < vector < double > > & prim_solution ) {

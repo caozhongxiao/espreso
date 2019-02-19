@@ -1,15 +1,16 @@
 
-#include "esinfo/time.h"
+
 #include "ensight.h"
+
+#include "esinfo/timeinfo.h"
+#include "esinfo/mpiinfo.h"
+#include "esinfo/eslog.hpp"
 
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
-#include "basis/logging/logging.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
 #include "basis/utilities/parser.h"
-
-#include "esinfo/mpiinfo.h"
 
 #include "mesh/elements/element.h"
 #include "mesh/mesh.h"
@@ -26,7 +27,7 @@
 using namespace espreso;
 
 EnSight::EnSight(const std::string &name, const Mesh &mesh)
-: CollectedVisualization(mesh), _path(Logging::outputRoot() + "/"), _name(name), _variableCounter(0)
+: CollectedVisualization(mesh), _path(std::string(eslog::path()) + "/"), _name(name), _variableCounter(0)
 {
 	_caseheader << "#\n";
 	_caseheader << "# ESPRESO solution\n";
@@ -91,7 +92,7 @@ std::string EnSight::codetotype(int code)
 	case Element::CODE::HEXA20: return "hexa20";
 
 	default:
-		ESINFO(ERROR) << "ESPRESO internal error: unknown element code.";
+		eslog::error("ESPRESO internal error: unknown element code.\n");
 		return "";
 	}
 }

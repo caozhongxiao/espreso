@@ -2,8 +2,8 @@
 #include "metis.h"
 
 #include "metiswrapper.h"
-#include "basis/logging/logging.h"
 #include "config/ecf/decomposition.h"
+#include "esinfo/eslog.hpp"
 
 using namespace espreso;
 
@@ -29,7 +29,7 @@ esint METIS::call(
 		moptions[METIS_OPTION_OBJTYPE]   = METIS_OBJTYPE_CUT;
 		break;
 	default:
-		ESINFO(ERROR) << "METIS WRAPPER error: invalid objective type.";
+		eslog::error("METIS WRAPPER error: invalid objective type.\n");
 	}
 
 	moptions[METIS_OPTION_CTYPE]     = METIS_CTYPE_SHEM;
@@ -59,7 +59,7 @@ esint METIS::call(
 				&parts, NULL, NULL,
 				moptions, &edgecut, partition)) {
 
-			ESINFO(ERROR) << "METIS_ERROR while KWay decomposition.";
+			eslog::error("METIS_ERROR while KWay decomposition.\n");
 		}
 	} else {
 		std::fill(partition, partition + verticesCount, 0);

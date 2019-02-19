@@ -3,11 +3,10 @@
 #include "et.h"
 #include "basis/containers/tarray.h"
 #include "basis/utilities/parser.h"
-#include "basis/utilities/communication.h"
-#include "basis/utilities/utils.h"
 
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
+#include "esinfo/eslog.hpp"
 
 #include "mesh/elements/element.h"
 #include "input/workbench/workbench.h"
@@ -29,7 +28,7 @@ EBlock::EBlock()
 EBlock& EBlock::parse(const char* begin)
 {
 	auto error = [&] (std::string &line) {
-		ESINFO(ERROR) << "Workbench parse error: unknown format of EBLOCK: " << line;
+		eslog::error("Workbench parse error: unknown format of EBLOCK: %s\n", line);
 	};
 
 	std::string commandLine = Parser::getLine(begin);
@@ -294,7 +293,7 @@ bool EBlock::solid(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 				}
 				break;
 			default:
-				ESINFO(ERROR) << "ESPRESO Workbench parser: not implemented parsing of etype: " << type.back() << " = type " << et[type.back()].type;
+				eslog::error("ESPRESO Workbench parser: not implemented parsing of etype: %d = %d\n", type.back(), et[type.back()].type);
 			}
 		}
 		tIDs[t].swap(IDs);
@@ -333,7 +332,7 @@ bool EBlock::boundary(const std::vector<ET> &et, PlainWorkbenchData &mesh)
 	int enodes = valueSize - 5;
 
 	if (enodes != 4 && enodes != 8 && enodes != 2 && enodes != 3) {
-		ESINFO(ERROR) << "ESPRESO Workbench parser: uknown format of EBLOCK. Nodes = " << enodes;
+		eslog::error("ESPRESO Workbench parser: uknown format of EBLOCK. Nodes = %d\n", enodes);
 	}
 
 	#pragma omp parallel for

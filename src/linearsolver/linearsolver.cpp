@@ -2,11 +2,11 @@
 #include "physics/assembler/dataholder.h"
 #include "linearsolver.h"
 
-#include "basis/logging/logging.h"
 #include "basis/utilities/utils.h"
 #include "basis/utilities/print.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/eslog.hpp"
 
 #include "solver/generic/SparseMatrix.h"
 
@@ -15,10 +15,10 @@ using namespace espreso;
 template <typename TData>
 static void store(TData &data, size_t domain, const std::string &name) {
 	if (domain < data.size()) {
-		std::ofstream os(Logging::prepareFile(domain, name));
-		os.precision(10);
-		os << data[domain];
-		os.close();
+//		std::ofstream os(Logging::prepareFile(domain, name));
+//		os.precision(10);
+//		os << data[domain];
+//		os.close();
 	}
 };
 
@@ -28,12 +28,17 @@ LinearSolver::LinearSolver(DataHolder *data)
 
 }
 
+LinearSolver::~LinearSolver()
+{
+
+}
+
 void LinearSolver::solve(Matrices matrices)
 {
 	update(matrices);
 
 	if (info::ecf->output.print_matrices) {
-		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "STORE ASSEMBLED LINEAR SYSTEM";
+		eslog::debug("STORE ASSEMBLED SYSTEM LINEAR SYSTEM\n");
 		for (size_t d = 0; d < _data->K.size(); d++) {
 			store(_data->K, d, "K");
 			store(_data->N1, d, "N1");
@@ -71,7 +76,7 @@ void LinearSolver::solve(Matrices matrices)
 	}
 
 	if (info::ecf->output.print_matrices) {
-		ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::BLUE << "STORE ASSEMBLED SYSTEM SOLUTION";
+		eslog::debug("STORE ASSEMBLED SYSTEM SOLUTION\n");
 		for (size_t d = 0; d < _data->K.size(); d++) {
 			store(_data->primalSolution, d, "solution");
 			store(_data->dualSolution, d, "dualSolution");

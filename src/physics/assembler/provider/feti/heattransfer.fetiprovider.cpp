@@ -5,8 +5,8 @@
 #include "physics/assembler/composer/feti/feticomposer.h"
 
 #include "esinfo/meshinfo.h"
+#include "esinfo/eslog.hpp"
 
-#include "basis/logging/logging.h"
 #include "basis/matrices/matrixtype.h"
 #include "config/ecf/physics/heattransfer.h"
 
@@ -58,7 +58,7 @@ MatrixType HeatTransferFETIProvider::getMatrixType(esint domain) const
 void HeatTransferFETIProvider::analyticRegularization(esint domain, bool ortogonalCluster)
 {
 	if (_data->K[domain].mtype != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
-		ESINFO(ERROR) << "Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set FETI_REGULARIZATION = ALGEBRAIC";
+		eslog::error("Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set FETI_REGULARIZATION = ALGEBRAIC.\n");
 	}
 
 	if (

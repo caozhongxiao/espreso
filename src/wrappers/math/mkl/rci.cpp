@@ -1,8 +1,6 @@
 
 #include "wrappers/math/math.h"
-
-#include "basis/logging/logging.h"
-
+#include "esinfo/eslog.hpp"
 #include "mkl.h"
 
 #include <vector>
@@ -60,7 +58,7 @@ void GMRESolverInternal(SOLVER_INTERNAL_TYPE type,
 		//---------------------------------------------------------------------------
 		dfgmres_init(&ivar, results, rhsVals, &RCI_request, ipar, dpar, tmp.data());
 		if (RCI_request != 0) {
-			ESINFO(ERROR) << "Something wrong happens while 'dfgmres_init' in solver.";
+			eslog::error("Something wrong happens while 'dfgmres_init' in solver.\n");
 		}
 
 		//---------------------------------------------------------------------------
@@ -81,7 +79,7 @@ void GMRESolverInternal(SOLVER_INTERNAL_TYPE type,
 		//---------------------------------------------------------------------------
 		dfgmres_check(&ivar, results, rhsVals, &RCI_request, ipar, dpar,tmp.data());
 		if (RCI_request != 0) {
-			ESINFO(ERROR) << "Something wrong happens while 'dfgmres_check' in solver.";
+			eslog::error("Something wrong happens while 'dfgmres_check' in solver.\n");
 		}
 
 		//---------------------------------------------------------------------------
@@ -115,7 +113,7 @@ void GMRESolverInternal(SOLVER_INTERNAL_TYPE type,
 					}
 
 					default:
-						ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: no such internal solver.";
+						eslog::error("ESPRESO internal error: no such internal solver.\n");
 				}
 				continue;
 			}
@@ -135,7 +133,7 @@ void GMRESolverInternal(SOLVER_INTERNAL_TYPE type,
 		// Print solution vector: computed_solution[N] and the number of iterations: itercount
 		//---------------------------------------------------------------------------
 		if (RCI_request != 0) {
-			ESINFO(ERROR) << "Something wrong happens while 'dfgmres_get' in solver.";
+			eslog::error("Something wrong happens while 'dfgmres_get' in solver.\n");
 		}
 
 }

@@ -1,5 +1,5 @@
 
-#include "time.h"
+#include "timeinfo.h"
 
 int espreso::time::step = 0;
 int espreso::time::substep = 0;

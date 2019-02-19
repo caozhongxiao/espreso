@@ -2,11 +2,10 @@
 #ifndef SRC_BASIS_CONTAINERS_SERIALIZEDEDATA_H_
 #define SRC_BASIS_CONTAINERS_SERIALIZEDEDATA_H_
 
-#include <vector>
-#include <ostream>
-
 #include "edata.h"
 #include "tarray.h"
+
+#include <vector>
 
 namespace espreso {
 
@@ -397,15 +396,6 @@ private:
 	std::vector<iterator> _iterator;
 	std::vector<const_iterator> _constiterator;
 };
-
-template <typename TEBoundaries, typename TEData>
-std::ostream& operator<< (std::ostream& os, const serializededata<TEBoundaries, TEData> &data)
-{
-	for(auto e = data.cbegin(); e != data.cend(); ++e) {
-		os << *e;
-	}
-	return os;
-}
 
 }
 

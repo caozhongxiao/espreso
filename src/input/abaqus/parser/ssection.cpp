@@ -4,7 +4,6 @@
 #include "basis/containers/point.h"
 #include "basis/containers/tarray.h"
 #include "basis/utilities/parser.h"
-#include "basis/utilities/utils.h"
 
 #include "esinfo/envinfo.h"
 
@@ -22,14 +21,10 @@ SSection::SSection()
 
 SSection& SSection::parse(const char* begin)
 {
-	auto error = [&] (std::string &line) {
-		ESINFO(ERROR) << "Abaqus parse error: unknown format of NBLOCK: " << line;
-	};
-
 	std::string commandLine = Parser::getLine(begin);
 
 	std::vector<std::string> command = Parser::split(commandLine, ",", false);
-	for (int i=0; i<command.size();i++)
+	for (size_t i=0; i < command.size();i++)
 	{
 		std::vector<std::string> ssection_line = Parser::split(command[i], "=", false);
 		ssection_line[0] = Parser::strip(ssection_line[0]);

@@ -3,6 +3,7 @@
 
 #include "config/configuration.hpp"
 
+#include "esinfo/eslog.hpp"
 #include "basis/containers/point.h"
 #include "basis/evaluator/evaluator.h"
 #include "wrappers/math/math.h"
@@ -37,77 +38,77 @@ CoordinateSystemConfiguration::CoordinateSystemConfiguration()
 
 void CoordinateSystemConfiguration::createTranslationMatrix(std::vector<double> &m, double x, double y, double z) const {
 	switch (dimension) {
-			case DIMENSION::D3: {
-				m.resize(16,0);
-				m[0 *4 + 0] = 1;
-				m[1 *4 + 1] = 1;
-				m[2 *4 + 2] = 1;
-				m[3 *4 + 3] = 1;
-				m[0 *4 + 3] = x;
-				m[1 *4 + 3] = y;
-				m[2 *4 + 3] = z;
+	case DIMENSION::D3: {
+		m.resize(16,0);
+		m[0 *4 + 0] = 1;
+		m[1 *4 + 1] = 1;
+		m[2 *4 + 2] = 1;
+		m[3 *4 + 3] = 1;
+		m[0 *4 + 3] = x;
+		m[1 *4 + 3] = y;
+		m[2 *4 + 3] = z;
 
-			} break;
+	} break;
 
-			case DIMENSION::D2: {
-				m.resize(9,0);
-				m[0 *3 + 0] = 1;
-				m[1 *3 + 1] = 1;
-				m[2 *3 + 2] = 1;
-				m[0 *3 + 2] = x;
-				m[1 *3 + 2] = y;
+	case DIMENSION::D2: {
+		m.resize(9,0);
+		m[0 *3 + 0] = 1;
+		m[1 *3 + 1] = 1;
+		m[2 *3 + 2] = 1;
+		m[0 *3 + 2] = x;
+		m[1 *3 + 2] = y;
 
-			} break;
-			default:
-				ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: unsupported operation.";
-		}
+	} break;
+	default:
+		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
+	}
 }
 void CoordinateSystemConfiguration::createScalingMatrix(std::vector<double> &m, double x, double y, double z) const {
 	switch (dimension) {
-			case DIMENSION::D3: {
-				m.resize(16,0);
-				m[0 *4 + 0] = x;
-				m[1 *4 + 1] = y;
-				m[2 *4 + 2] = z;
-				m[3 *4 + 3] = 1;
+	case DIMENSION::D3: {
+		m.resize(16,0);
+		m[0 *4 + 0] = x;
+		m[1 *4 + 1] = y;
+		m[2 *4 + 2] = z;
+		m[3 *4 + 3] = 1;
 
-			} break;
+	} break;
 
-			case DIMENSION::D2: {
-				m.resize(9,0);
-				m[0 *3 + 0] = x;
-				m[1 *3 + 1] = y;
-				m[2 *3 + 2] = 1;
+	case DIMENSION::D2: {
+		m.resize(9,0);
+		m[0 *3 + 0] = x;
+		m[1 *3 + 1] = y;
+		m[2 *3 + 2] = 1;
 
-			} break;
-			default:
-				ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: unsupported operation.";
-		}
+	} break;
+	default:
+		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
+	}
 }
 void CoordinateSystemConfiguration::createTranslationMatrixToCenter(std::vector<double> &m) const {
 
 	switch (dimension) {
-		case DIMENSION::D3: {
-			double x,y,z;
+	case DIMENSION::D3: {
+		double x,y,z;
 
-			center.x.evaluator->evalVector(1, 0, NULL, NULL, 0, &x);
-			center.y.evaluator->evalVector(1, 0, NULL, NULL, 0, &y);
-			center.z.evaluator->evalVector(1, 0, NULL, NULL, 0, &z);
+		center.x.evaluator->evalVector(1, 0, NULL, NULL, 0, &x);
+		center.y.evaluator->evalVector(1, 0, NULL, NULL, 0, &y);
+		center.z.evaluator->evalVector(1, 0, NULL, NULL, 0, &z);
 
-			createTranslationMatrix(m,-x,-y,-z);
+		createTranslationMatrix(m,-x,-y,-z);
 
-		} break;
+	} break;
 
-		case DIMENSION::D2: {
-			double x,y;
+	case DIMENSION::D2: {
+		double x,y;
 
-			center.x.evaluator->evalVector(1, 0, NULL, NULL, 0, &x);
-			center.y.evaluator->evalVector(1, 0, NULL, NULL, 0, &y);
+		center.x.evaluator->evalVector(1, 0, NULL, NULL, 0, &x);
+		center.y.evaluator->evalVector(1, 0, NULL, NULL, 0, &y);
 
-			createTranslationMatrix(m,x,y,0);
-		} break;
-		default:
-			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: unsupported operation.";
+		createTranslationMatrix(m,x,y,0);
+	} break;
+	default:
+		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
 	}
 }
 
@@ -115,26 +116,26 @@ void CoordinateSystemConfiguration::createTranslationMatrixToCenter(std::vector<
 void CoordinateSystemConfiguration::createTranslationMatrixToZero(std::vector<double> &m) const{
 
 	switch (dimension) {
-		case DIMENSION::D3: {
-			double x,y,z;
+	case DIMENSION::D3: {
+		double x,y,z;
 
-			center.x.evaluator->evalVector(1, 0, NULL, NULL, 0, &x);
-			center.y.evaluator->evalVector(1, 0, NULL, NULL, 0, &y);
-			center.z.evaluator->evalVector(1, 0, NULL, NULL, 0, &z);
+		center.x.evaluator->evalVector(1, 0, NULL, NULL, 0, &x);
+		center.y.evaluator->evalVector(1, 0, NULL, NULL, 0, &y);
+		center.z.evaluator->evalVector(1, 0, NULL, NULL, 0, &z);
 
-			createTranslationMatrix(m,x,y,z);
-		} break;
+		createTranslationMatrix(m,x,y,z);
+	} break;
 
-		case DIMENSION::D2: {
-			double x,y;
+	case DIMENSION::D2: {
+		double x,y;
 
-			center.x.evaluator->evalVector(1, 0, NULL, NULL, 0, &x);
-			center.y.evaluator->evalVector(1, 0, NULL, NULL, 0, &y);
+		center.x.evaluator->evalVector(1, 0, NULL, NULL, 0, &x);
+		center.y.evaluator->evalVector(1, 0, NULL, NULL, 0, &y);
 
-			createTranslationMatrix(m,x,y,0);
-		} break;
-		default:
-			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: unsupported operation.";
+		createTranslationMatrix(m,x,y,0);
+	} break;
+	default:
+		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
 	}
 }
 
@@ -143,16 +144,16 @@ void CoordinateSystemConfiguration::multiplyTransformationMatrices(std::vector<d
 	right = result;
 	result.clear();
 	switch (dimension) {
-		case DIMENSION::D3: {
-			result.resize(16);
+	case DIMENSION::D3: {
+		result.resize(16);
 //			MATH::DenseMatDenseMatRowMajorProduct(1, false, 4, 4, left.data(), false, 4, right.data(), 0, result.data());
-		} break;
-		case DIMENSION::D2: {
-			result.resize(9);
+	} break;
+	case DIMENSION::D2: {
+		result.resize(9);
 //			MATH::DenseMatDenseMatRowMajorProduct(1, false, 3, 4, left.data(), false, 3, right.data(), 0, result.data());
-		} break;
-		default:
-			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: unsupported operation.";
+	} break;
+	default:
+		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
 	}
 }
 
@@ -160,21 +161,21 @@ Point CoordinateSystemConfiguration::applyTransformation(std::vector<double> &m,
 	Point result;
 
 	switch (dimension) {
-		case DIMENSION::D3: {
-			result.x = m[0*4 + 0] * p.x + m[0*4 + 1] * p.y + m[0*4 + 2] * p.z + m[0*4 + 3];
-			result.y = m[1*4 + 0] * p.x + m[1*4 + 1] * p.y + m[1*4 + 2] * p.z + m[1*4 + 3];
-			result.z = m[2*4 + 0] * p.x + m[2*4 + 1] * p.y + m[2*4 + 2] * p.z + m[2*4 + 3];
+	case DIMENSION::D3: {
+		result.x = m[0*4 + 0] * p.x + m[0*4 + 1] * p.y + m[0*4 + 2] * p.z + m[0*4 + 3];
+		result.y = m[1*4 + 0] * p.x + m[1*4 + 1] * p.y + m[1*4 + 2] * p.z + m[1*4 + 3];
+		result.z = m[2*4 + 0] * p.x + m[2*4 + 1] * p.y + m[2*4 + 2] * p.z + m[2*4 + 3];
 
-			result/=(m[3*4 + 0] * p.x + m[3*4 + 1] * p.y + m[3*4 + 2] * p.z + m[3*4 + 3]);
-		} break;
-		case DIMENSION::D2: {
-			result.x = m[0*3 + 0] * p.x + m[0*3 + 1] * p.y + m[0*3 + 2];
-			result.y = m[1*3 + 0] * p.x + m[1*3 + 1] * p.y + m[1*3 + 2];
+		result/=(m[3*4 + 0] * p.x + m[3*4 + 1] * p.y + m[3*4 + 2] * p.z + m[3*4 + 3]);
+	} break;
+	case DIMENSION::D2: {
+		result.x = m[0*3 + 0] * p.x + m[0*3 + 1] * p.y + m[0*3 + 2];
+		result.y = m[1*3 + 0] * p.x + m[1*3 + 1] * p.y + m[1*3 + 2];
 
-			result/=(m[2*3 + 0] * p.x + m[2*3 + 1] * p.y + m[2*3 + 2]);
-		} break;
-		default:
-			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: unsupported operation.";
+		result/=(m[2*3 + 0] * p.x + m[2*3 + 1] * p.y + m[2*3 + 2]);
+	} break;
+	default:
+		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
 	}
 	return result;
 }
@@ -186,18 +187,18 @@ void CoordinateSystemConfiguration::createRotationMatrix(std::vector<double> &m)
 	};
 	Point rPoint;
 	switch (dimension) {
-		case DIMENSION::D3: {
-			rotation.x.evaluator->evalVector(1, 0, NULL, NULL, 0, &(rPoint.x));
-			rotation.y.evaluator->evalVector(1, 0, NULL, NULL, 0, &(rPoint.y));
-			rotation.z.evaluator->evalVector(1, 0, NULL, NULL, 0, &(rPoint.z));
+	case DIMENSION::D3: {
+		rotation.x.evaluator->evalVector(1, 0, NULL, NULL, 0, &(rPoint.x));
+		rotation.y.evaluator->evalVector(1, 0, NULL, NULL, 0, &(rPoint.y));
+		rotation.z.evaluator->evalVector(1, 0, NULL, NULL, 0, &(rPoint.z));
 
-		} break;
-		case DIMENSION::Z:
-		case DIMENSION::D2: {
-			rotation.z.evaluator->evalVector(1, 0, NULL, NULL, 0, &(rPoint.z));
-		} break;
-		default:
-			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: unsupported operation.";
+	} break;
+	case DIMENSION::Z:
+	case DIMENSION::D2: {
+		rotation.z.evaluator->evalVector(1, 0, NULL, NULL, 0, &(rPoint.z));
+	} break;
+	default:
+		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
 	}
 
 	switch (dimension) {
@@ -206,18 +207,17 @@ void CoordinateSystemConfiguration::createRotationMatrix(std::vector<double> &m)
 			m.resize(16,0);
 			Point sin, cos;
 			switch (type) {
-				case CoordinateSystemConfiguration::TYPE::CARTESIAN:{
-					cos.x = std::cos(d2r(rPoint.x));
-					cos.y = std::cos(d2r(rPoint.y));
-					cos.z = std::cos(d2r(rPoint.z));
+			case CoordinateSystemConfiguration::TYPE::CARTESIAN:{
+				cos.x = std::cos(d2r(rPoint.x));
+				cos.y = std::cos(d2r(rPoint.y));
+				cos.z = std::cos(d2r(rPoint.z));
 
-					sin.x = std::sin(d2r(rPoint.x));
-					sin.y = std::sin(d2r(rPoint.y));
-					sin.z = std::sin(d2r(rPoint.z));
-				}break;
-				default:
-					ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: unsupported operation.";
-
+				sin.x = std::sin(d2r(rPoint.x));
+				sin.y = std::sin(d2r(rPoint.y));
+				sin.z = std::sin(d2r(rPoint.z));
+			}break;
+			default:
+				eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
 			}
 
 			m[0*4 + 0] = cos.y * cos.z;                      	m[0*4 + 1] = cos.y * sin.z;                         m[0*4 + 2] = -sin.y;
@@ -234,22 +234,20 @@ void CoordinateSystemConfiguration::createRotationMatrix(std::vector<double> &m)
 			m.resize(9,0);
 
 			switch (type) {
-
-				case CoordinateSystemConfiguration::TYPE::CARTESIAN: {
-					cos = std::cos(d2r(rPoint.z));
-					sin = std::sin(d2r(rPoint.z));
-				}break;
-
-				default:
-					ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: unsupported operation.";
+			case CoordinateSystemConfiguration::TYPE::CARTESIAN: {
+				cos = std::cos(d2r(rPoint.z));
+				sin = std::sin(d2r(rPoint.z));
+			} break;
+			default:
+				eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
 			}
 
 			m[0*3 + 0] =  cos; m[0*3 + 1] = sin;
 			m[1*3 + 0] = -sin; m[1*3 + 1] = cos;
 			m[2*3 + 2] = 1;
-		}
+		} break;
 		default:
-			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: unsupported operation.";
+			eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
 	}
 }
 

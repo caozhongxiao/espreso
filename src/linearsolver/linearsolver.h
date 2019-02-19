@@ -11,17 +11,15 @@ class LinearSolver {
 
 public:
 	LinearSolver(DataHolder *data);
+	virtual ~LinearSolver();
 
 	void solve(Matrices matrices);
 
 	virtual double& precision() =0;
 
-	virtual ~LinearSolver() {}
-
 protected:
 	virtual void update(Matrices matrices) =0;
 	virtual void solve() =0;
-	virtual void finalize() =0;
 
 	DataHolder *_data;
 };

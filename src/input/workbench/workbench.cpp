@@ -11,12 +11,11 @@
 #include "parser/blockend.h"
 
 #include "basis/containers/tarray.h"
-#include "basis/logging/logging.h"
-#include "basis/logging/timeeval.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
+#include "esinfo/eslog.hpp"
 #include "config/ecf/input/input.h"
 
 #include "input/randominput.h"
@@ -32,28 +31,19 @@ void WorkbenchLoader::load(const InputConfiguration &configuration, Mesh &mesh)
 WorkbenchLoader::WorkbenchLoader(const InputConfiguration &configuration, Mesh &mesh)
 : _configuration(configuration), _pfile(MAX_LINE_STEP * MAX_LINE_SIZE)
 {
-	TimeEval timing("Parsing Workbench data");
-	timing.totalTime.startWithBarrier();
-	ESINFO(OVERVIEW) << "Load ANSYS Workbench data from '" << _configuration.path << "'.";
+	eslog::start("MESIO: LOAD ANSYS CDB");
+	eslog::param("database", _configuration.path.c_str());
+	eslog::ln();
 
-	TimeEvent tread("read data from file"); tread.start();
 	readData();
-	tread.end(); timing.addEvent(tread);
-	ESINFO(PROGRESS2) << "Workbench:: data copied from file.";
+	eslog::checkpointln("MESIO: DATA READ");
 
-	TimeEvent tprepare("prepare data for parsing"); tprepare.start();
 	prepareData();
-	tprepare.end(); timing.addEvent(tprepare);
-	ESINFO(PROGRESS2) << "Workbench:: data prepared for parsing.";
+	eslog::checkpointln("MESIO: DATA PREPARED");
 
 	PlainWorkbenchData meshData;
-	TimeEvent tparse("parsing data"); tparse.start();
 	parseData(meshData);
-	tparse.end(); timing.addEvent(tparse);
-	ESINFO(PROGRESS2) << "Workbench:: data parsed.";
-
-	timing.totalTime.endWithBarrier();
-	timing.printStatsMPI();
+	eslog::checkpointln("MESIO: DATA PARSED");
 
 	if (!_configuration.keep_material_sets) {
 		std::fill(meshData.material.begin(), meshData.material.end(), 0);
@@ -64,40 +54,24 @@ WorkbenchLoader::WorkbenchLoader(const InputConfiguration &configuration, Mesh &
 	} else {
 		SequentialInput::buildMesh(meshData, mesh);
 	}
+
+	eslog::endln("MESIO: MESH BUILT");
 }
 
 void WorkbenchLoader::readData()
 {
-	TimeEval timing("Read data from file");
-	timing.totalTime.startWithBarrier();
-
 	MPISubset loaders(_configuration, *MPITools::procs);
-
-	TimeEvent e1("FILE OPEN");
-	e1.start();
 
 	MPI_File MPIFile;
 	if (loaders.within.rank == 0) {
 		if (!MPILoader::open(loaders.across, MPIFile, _configuration.path)) {
-			ESINFO(ERROR) << "MPI cannot load file '" << _configuration.path << "'";
+			eslog::globalerror("MPI cannot load file '%s'\n", _configuration.path.c_str());
 		}
 	}
-
-	e1.end();
-	timing.addEvent(e1);
-
-	TimeEvent e2("FILE READ");
-	e2.start();
 
 	if (loaders.within.rank == 0) {
 		MPILoader::read(loaders.across, MPIFile, _pfile);
 	}
-
-	e2.end();
-	timing.addEvent(e2);
-
-	TimeEvent e3("FILE SCATTER");
-	e3.start();
 
 	MPILoader::scatter(loaders.within, _pfile);
 	MPILoader::align(*MPITools::procs, _pfile, MAX_LINE_STEP);
@@ -105,12 +79,6 @@ void WorkbenchLoader::readData()
 	WorkbenchParser::offset = _pfile.offsets[info::mpi::rank];
 	WorkbenchParser::begin = _pfile.begin;
 	WorkbenchParser::end = _pfile.end;
-
-	e3.end();
-	timing.addEvent(e3);
-
-	timing.totalTime.endWithBarrier();
-	timing.printStatsMPI();
 }
 
 void WorkbenchLoader::prepareData()
@@ -214,7 +182,7 @@ void WorkbenchLoader::prepareData()
 	}
 
 	if (!Communication::allGatherUnknownSize(_blockEnds)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench block ends.";
+		eslog::globalerror("ESPRESO internal error: exchange Workbench block ends.\n");
 	}
 
 	for (size_t i = 0; i < _NBlocks.size(); i++) {
@@ -240,26 +208,26 @@ void WorkbenchLoader::prepareData()
 	}
 
 	if (!Communication::allGatherUnknownSize(_NBlocks)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench NBblocks.";
+		eslog::globalerror("ESPRESO internal error: exchange Workbench NBlocks.\n");
 	}
 	if (!Communication::allGatherUnknownSize(_EBlocks)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench EBlocks.";
+		eslog::globalerror("ESPRESO internal error: exchange Workbench EBlocks.\n");
 	}
 	if (!Communication::allGatherUnknownSize(_CMBlocks)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench CMBlocks.";
+		eslog::globalerror("ESPRESO internal error: exchange Workbench CMBlocks.\n");
 	}
 
 	if (!Communication::allGatherUnknownSize(_ET)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench ET.";
+		eslog::globalerror("ESPRESO internal error: exchange Workbench ET.\n");
 	}
 	if (!Communication::allGatherUnknownSize(_ESel)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench ESel.";
+		eslog::globalerror("ESPRESO internal error: exchange Workbench ESel.\n");
 	}
 	if (!Communication::allGatherUnknownSize(_NSel)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench NSel.";
+		eslog::globalerror("ESPRESO internal error: exchange Workbench NSel.\n");
 	}
 	if (!Communication::allGatherUnknownSize(_CM)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange Workbench CM.";
+		eslog::globalerror("ESPRESO internal error: exchange Workbench CM.\n");
 	}
 
 	// fix distribution if EBlocks are across more processes and elements data have more lines
@@ -295,13 +263,13 @@ void WorkbenchLoader::parseData(PlainWorkbenchData &meshData)
 
 	for (size_t i = 0; i < _NBlocks.size(); i++) {
 		if (!_NBlocks[i].readData(meshData.nIDs, meshData.coordinates, _configuration.scale_factor)) {
-			ESINFO(ERROR) << "Workbench parser: something wrong happens while read NBLOCK.";
+			eslog::globalerror("Workbench parser: something wrong happens while read NBLOCK.\n");
 		}
 	}
 
 	for (size_t i = 0; i < _EBlocks.size(); i++) {
 		if (!_EBlocks[i].readData(_ET, meshData)) {
-			ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
+			eslog::globalerror("Workbench parser: something wrong happens while read EBLOCK.\n");
 		}
 	}
 
@@ -309,16 +277,16 @@ void WorkbenchLoader::parseData(PlainWorkbenchData &meshData)
 		switch (_CMBlocks[i].entity) {
 		case CMBlock::Entity::NODE: {
 			if (!_CMBlocks[i].readData(meshData.nregions[_CMBlocks[i].name])) {
-				ESINFO(ERROR) << "Workbench parser: something wrong happens while read CMBLOCK.";
+				eslog::globalerror("Workbench parser: something wrong happens while read CMBLOCK.\n");
 			}
 		} break;
 		case CMBlock::Entity::ELEMENT: {
 			if (!_CMBlocks[i].readData(meshData.eregions[_CMBlocks[i].name])) {
-				ESINFO(ERROR) << "Workbench parser: something wrong happens while read CMBLOCK.";
+				eslog::globalerror("Workbench parser: something wrong happens while read CMBLOCK.\n");
 			}
 		} break;
 		default:
-			ESINFO(ERROR) << "ESPRESO Workbench parser: unknown CMBLOCK type.";
+			eslog::globalerror("ESPRESO Workbench parser: unknown CMBLOCK type.\n");
 		}
 	}
 

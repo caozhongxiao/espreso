@@ -2,7 +2,6 @@
 #include "clusteracc.h"
 
 #include "assembler/instance.h"
-#include "basis/logging/logging.h"
 
 using namespace espreso;
 

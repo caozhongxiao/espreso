@@ -6,10 +6,8 @@
 #include "input/plaindata.h"
 #include "input/generatedinput.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/eslog.hpp"
 #include "config/ecf/input/sphere.h"
-#include "basis/utilities/communication.h"
-#include "basis/utilities/utils.h"
-#include "basis/logging/logging.h"
 
 using namespace espreso;
 
@@ -31,7 +29,7 @@ SphereGenerator::SphereGenerator(const SphereGeneratorConfiguration &configurati
 : GridGenerator(configuration)
 {
 	if (info::mpi::size % 6 != 0) {
-		ESINFO(GLOBAL_ERROR) << "Number of MPI process should be 6 x clusters x clusters for sphere generator.";
+		eslog::globalerror("Number of MPI process should be 6 x clusters x clusters for sphere generator.\n");
 	}
 
 	// clusters.x == clusters.y

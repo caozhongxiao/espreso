@@ -2,8 +2,9 @@
 #include "root.h"
 
 #include "config/configuration.hpp"
+#include "config/reader/reader.h"
 
-#include "basis/logging/logging.h"
+#include "esinfo/eslog.hpp"
 #include "esinfo/ecfinfo.h"
 
 using namespace espreso;
@@ -22,7 +23,7 @@ const ECFDescription* ECFRoot::_getInput() const
 	case INPUT_FORMAT::ESDATA:
 		return &esdata;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Request for unknown input.";
+		eslog::globalerror("Request for unknown input.");
 		return NULL;
 	}
 }
@@ -39,7 +40,7 @@ const PhysicsConfiguration* ECFRoot::_getPhysics() const
 	case PHYSICS::STRUCTURAL_MECHANICS_3D:
 		return &structural_mechanics_3d;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Request for unknown physics.";
+		eslog::globalerror("Request for unknown physics.");
 		return NULL;
 	}
 }
@@ -137,7 +138,7 @@ ECFRoot::ECFRoot()
 	if (info::ecf == NULL) {
 		info::ecf = this;
 	} else {
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: cannot create more ECFRoot instances.";
+		eslog::globalerror("ESPRESO internal error: cannot create more ECFRoot instances.");
 	}
 	init();
 }
@@ -146,7 +147,7 @@ ECFRoot::ECFRoot(const std::string &file)
 : ECFRoot()
 {
 	if (!fill(file)) {
-		ESINFO(GLOBAL_ERROR) << "Cannot read ECF file '" << file << "'.";
+		eslog::globalerror("Cannot read ECF file '%s'.", file.c_str());
 	}
 }
 
@@ -154,16 +155,16 @@ ECFRoot::ECFRoot(int *argc, char ***argv)
 : ECFRoot()
 {
 	if (!fill(argc, argv)) {
-		ESINFO(GLOBAL_ERROR)
-				<< "Cannot read ECF file '" << ECFReader::configurationFile << "'.\n"
-				<< "Use default 'espreso.ecf' or set an arbitrary by 'espreso -c $ecfpath'.";
+		eslog::globalerror(
+				"Cannot read ECF file '%s'. Use default 'espreso.ecf' or set an arbitrary by 'espreso -c $ecfpath'.",
+				ECFReader::configurationFile.c_str());
 	}
 }
 
 bool ECFRoot::fill(const std::string &file)
 {
 	if (ECFReader::read(*this->ecfdescription, file, this->default_args, this->variables).hadValidECF) {
-		ECFReader::set(this->output);
+		ecffile = ECFReader::configurationFile;
 		return true;
 	}
 	return false;
@@ -172,7 +173,7 @@ bool ECFRoot::fill(const std::string &file)
 bool ECFRoot::fill(int *argc, char ***argv)
 {
 	if (ECFReader::read(*this->ecfdescription, argc, argv, this->default_args, this->variables).hadValidECF) {
-		ECFReader::set(this->output);
+		ecffile = ECFReader::configurationFile;
 		return true;
 	}
 	return false;

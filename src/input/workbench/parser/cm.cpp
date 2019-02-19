@@ -8,8 +8,8 @@
 
 #include "basis/containers/tarray.h"
 #include "basis/utilities/parser.h"
-#include "basis/logging/logging.h"
 #include "esinfo/envinfo.h"
+#include "esinfo/eslog.hpp"
 
 #include <cstring>
 #include <functional>
@@ -36,32 +36,32 @@ CM& CM::parse(const char* begin)
 	case 3:
 		if (StringCompare::caseInsensitiveEq("VOLU", command[2])) {
 			entity = Entity::VOLUME;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement cm, Entity='" << command[2] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement cm, Entity='%s'\n", command[2].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("AREA", command[2])) {
 			entity = Entity::AREA;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement cm, Entity='" << command[2] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement cm, Entity='%s'\n", command[2].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("LINE", command[2])) {
 			entity = Entity::LINE;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement cm, Entity='" << command[2] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement cm, Entity='%s'\n", command[2].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("KP", command[2])) {
 			entity = Entity::KP;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement cm, Entity='" << command[2] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement cm, Entity='%s'\n", command[2].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("ELEM", command[2])) {
 			entity = Entity::ELEMENTS;
 		}
 		if (StringCompare::caseInsensitiveEq("NODE", command[2])) {
 			entity = Entity::NODES;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement cm, Entity='" << command[2] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement cm, Entity='%s'\n", command[2].c_str());
 		}
 	case 2:
 		memcpy(name, command[1].data(), command[1].size() < MAX_NAME_SIZE ? command[1].size() : MAX_NAME_SIZE);
 		break;
 	default:
-		ESINFO(ERROR) << "ESPRESO Workbench parser error: unknown format of '" << commandLine << "'";
+		eslog::error("ESPRESO Workbench parser error: unknown format of '%s'\n", commandLine.c_str());
 	}
 
 	WorkbenchParser::fillIndices(begin, begin);
@@ -104,7 +104,7 @@ bool CM::addElementRegion(const PlainWorkbenchData &mesh, const std::vector<ESel
 			relevant.clear();
 			break;
 		default:
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: not implemented type of esel command '" << esel[i].command() << "'";
+			eslog::error("ESPRESO Workbench parser error: not implemented type of esel command '%s'\n", esel[i].command().c_str());
 		}
 	}
 
@@ -178,7 +178,7 @@ bool CM::addElementRegion(const PlainWorkbenchData &mesh, const std::vector<ESel
 			break;
 
 		default:
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: not implemented type of esel command '" << esel[i].command() << "'";
+			eslog::error("ESPRESO Workbench parser error: not implemented type of esel command '%s'\n", esel[i].command().c_str());
 		}
 	}
 

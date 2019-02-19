@@ -17,9 +17,6 @@
 #include "physics/heattransfer.h"
 #include "physics/structuralmechanics.h"
 
-#include "config/reader/reader.h"
-
-
 namespace espreso {
 
 struct ECFRoot: public ECFDescription {
@@ -52,6 +49,8 @@ struct ECFRoot: public ECFDescription {
 	StructuralMechanicsConfiguration structural_mechanics_3d;
 
 	OutputConfiguration output;
+
+	std::string ecffile;
 
 	ECFRoot();
 	ECFRoot(const std::string &file);

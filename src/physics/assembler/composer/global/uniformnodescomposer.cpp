@@ -4,6 +4,7 @@
 #include "esinfo/meshinfo.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/eslog.hpp"
 
 #include "physics/assembler/dataholder.h"
 #include "physics/assembler/controllers/controller.h"
@@ -58,9 +59,9 @@ void UniformNodesComposer::initDOFs()
 		roffset[t].swap(troffset);
 	}
 
-	esint goffset = Esutils::sizesToOffsets(doffset);
+	esint goffset = utils::sizesToOffsets(doffset);
 	Communication::exscan(goffset);
-	Esutils::sizesToOffsets(roffset);
+	utils::sizesToOffsets(roffset);
 
 	std::vector<std::vector<std::vector<esint> > > sBuffer(threads, std::vector<std::vector<esint> >(info::mesh->neighbours.size()));
 	std::vector<std::vector<esint> > rBuffer(info::mesh->neighbours.size());
@@ -93,7 +94,7 @@ void UniformNodesComposer::initDOFs()
 	}
 
 	if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, info::mesh->neighbours)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange uniform DOFs.";
+		eslog::error("ESPRESO internal error: exchange uniform DOFs.\n");
 	}
 
 	std::vector<std::vector<esint> > DOFDistribution(threads), DOFData(threads);
@@ -130,7 +131,7 @@ void UniformNodesComposer::initDOFs()
 		DOFData[t].swap(tdata);
 	}
 
-	Esutils::threadDistributionToFullDistribution(DOFDistribution);
+	utils::threadDistributionToFullDistribution(DOFDistribution);
 
 	_DOFMap = new serializededata<esint, esint>(DOFDistribution, DOFData);
 }
@@ -141,7 +142,7 @@ void UniformNodesComposer::buildDirichlet()
 	_controler.dirichletIndices(dIndices);
 
 	if (dIndices.size() != (size_t)_DOFs) {
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: invalid number of DOFs per node in Dirichlet.";
+		eslog::globalerror("ESPRESO internal error: invalid number of DOFs per node in Dirichlet.\n");
 	}
 
 	if (_DOFs > 1) {
@@ -201,8 +202,8 @@ void UniformNodesComposer::buildPatterns()
 		}
 	}
 
-	_localKOffset = Esutils::sizesToOffsets(_tKOffsets);
-	_localRHSOffset = Esutils::sizesToOffsets(_tRHSOffsets);
+	_localKOffset = utils::sizesToOffsets(_tKOffsets);
+	_localRHSOffset = utils::sizesToOffsets(_tRHSOffsets);
 
 	std::vector<IJ> KPattern(_localKOffset);
 	std::vector<esint> RHSPattern(_localRHSOffset);
@@ -270,10 +271,10 @@ void UniformNodesComposer::buildPatterns()
 	}
 
 	if (!Communication::receiveUpperUnknownSize(sKBuffer, rKBuffer, info::mesh->neighbours)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange K pattern.";
+		eslog::error("ESPRESO internal error: exchange K pattern.\n");
 	}
 	if (!Communication::receiveUpperUnknownSize(sRHSBuffer, rRHSBuffer, info::mesh->neighbours)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange RHS pattern.";
+		eslog::error("ESPRESO internal error: exchange RHS pattern.\n");
 	}
 
 	for (size_t i = 0; i < rKBuffer.size(); i++) {
@@ -440,7 +441,7 @@ void UniformNodesComposer::synchronize(Matrices matrices)
 
 
 	if (!Communication::receiveUpperUnknownSize(sBuffer, rBuffer, info::mesh->neighbours)) {
-		ESINFO(ERROR) << "ESPRESO internal error: synchronize assembled data.";
+		eslog::error("ESPRESO internal error: synchronize assembled data.\n");
 	}
 
 	size_t KIndex = _localKOffset, RHSIndex = _localRHSOffset;
@@ -492,7 +493,7 @@ void UniformNodesComposer::gather(std::vector<double> &data)
 	}
 
 	if (!Communication::receiveLowerKnownSize(sBuffer, rBuffer, info::mesh->neighbours)) {
-		ESINFO(ERROR) << "ESPRESO internal error: synchronize assembled data.";
+		eslog::error("ESPRESO internal error: synchronize assembled data.\n");
 	}
 
 	std::vector<esint> rIndices(info::mesh->neighbours.size());

@@ -52,7 +52,7 @@ const char* AbaqusParser::getLast() const
 
 void AbaqusParser::fillDistribution(std::vector<BlockFinish> &blocksFinishs, std::vector<size_t> &distribution)
 {
-	if (last == -1) {
+	if (last == (size_t)-1) {
 		last = std::lower_bound(blocksFinishs.begin(), blocksFinishs.end(), first, [] (BlockFinish &b, size_t first) { return b.first < first; })->first;
 	}
 

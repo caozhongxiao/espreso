@@ -2,7 +2,6 @@
 #ifndef SRC_INPUT_GENERATOR_PRIMITIVES_TRIPLE_H_
 #define SRC_INPUT_GENERATOR_PRIMITIVES_TRIPLE_H_
 
-#include <iostream>
 #include <cmath>
 
 namespace espreso {
@@ -86,13 +85,6 @@ struct Triple {
 	Triple<Ttype> toSize() const { return Triple<Ttype>(1, x, x * y); }
 	Triple<Ttype> steps() const { return Triple<Ttype>(x > 1 ? x - 1 : 1, y > 1 ? y - 1 : 1, z > 1 ? z - 1 : 1); }
 };
-
-template <typename Ttype>
-inline std::ostream& operator<<(std::ostream &os, const Triple<Ttype> &p)
-{
-	os << p.x << " " << p.y << " " << p.z;
-	return os;
-}
 
 }
 

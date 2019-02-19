@@ -1,7 +1,7 @@
 
 #include "denseMatrix.h"
 
-#include "basis/logging/logging.h"
+#include "esinfo/eslog.hpp"
 
 #include "mkl_cblas.h"
 
@@ -37,7 +37,7 @@ void DenseMatrix::multiply(
 		bool transposeA, bool transposeB)
 {
 	if ( (transposeA ? A.rows() : A.columns()) != (transposeB ? B.columns() : B.rows()) ) {
-		ESINFO(ERROR) << "Matrix multiplication: matrices have incorrect dimensions.";
+		eslog::error("Matrix multiplication: matrices have incorrect dimensions.\n");
 	}
 	resize(transposeA ? A.columns() : A.rows(), transposeB ? B.rows() : B.columns());
 

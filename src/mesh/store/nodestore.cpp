@@ -1,5 +1,4 @@
 
-#include "esinfo/meshinfo.h"
 #include "store.h"
 #include "nodestore.h"
 #include "statisticsstore.h"
@@ -7,6 +6,7 @@
 #include "mesh/mesh.h"
 
 #include "esinfo/mpiinfo.h"
+#include "esinfo/meshinfo.h"
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/packing.h"
@@ -36,10 +36,6 @@ NodeStore::NodeStore()
 
 size_t NodeStore::packedSize() const
 {
-	if (IDs == NULL || coordinates == NULL || idomains == NULL) {
-		ESINFO(ERROR) << "ESPRESO internal error: invalid request for packedSize.";
-	}
-
 	size_t datasize = sizeof(size_t);
 	for (size_t i = 0; i < data.size(); i++) {
 		if (data[i]->names.size()) {

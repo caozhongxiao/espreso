@@ -4,11 +4,11 @@
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/utils.h"
 #include "basis/utilities/communication.h"
-#include "basis/logging/timeeval.h"
 
 #include "config/ecf/root.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
+#include "esinfo/eslog.hpp"
 
 #include "mesh/mesh.h"
 #include "mesh/elements/element.h"
@@ -19,7 +19,6 @@
 
 #include <numeric>
 #include <algorithm>
-#include <fstream>
 
 using namespace espreso;
 
@@ -32,105 +31,66 @@ RandomInput::RandomInput(PlainMeshData &meshData, Mesh &mesh)
 : Input(meshData, mesh), _sfc(_mesh.dimension, SFCDEPTH, _meshData.coordinates)
 {
 	if (info::mpi::size == 1) {
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: use the sequential input for building mesh on 1 MPI process.";
+		eslog::globalerror("ESPRESO internal error: use the sequential input for building mesh on 1 MPI process.\n");
 	}
 
-	ESINFO(OVERVIEW) << "Build mesh from randomly distributed elements.";
-	TimeEval timing("Load distributed mesh");
-	timing.totalTime.startWithBarrier();
+	eslog::startln("MESIO: BUILD SCATTERED MESH");
 
-	TimeEvent tdistribution("distribute mesh across processes"); tdistribution.start();
 	balance();
-	tdistribution.end(); timing.addEvent(tdistribution);
-	ESINFO(PROGRESS2) << "Random data loader:: data balanced.";
+	eslog::checkpointln("MESIO: DATA BALANCED");
 
-	TimeEvent tregions("assign regions"); tregions.start();
 	assignRegions(_meshData.eregions, _meshData.eIDs, _eDistribution, _eregsize, _eregions);
 	assignRegions(_meshData.nregions, _meshData.nIDs, _nDistribution, _nregsize, _nregions);
-	tregions.end(); timing.addEvent(tregions);
-	ESINFO(PROGRESS2) << "Random data loader:: regions assigned.";
+	eslog::checkpointln("MESIO: REGION ASSIGNED");
 
-//	TimeEvent treindexregions("reindex regions"); treindexregions.start();
 //	reindexRegions();
-//	treindexregions.end(); timing.addEvent(treindexregions);
-//	ESINFO(PROGRESS2) << "Random data loader:: regions reindexed.";
 
-	TimeEvent tnbuckets("assign nodes to buckets"); tnbuckets.start();
 	assignNBuckets();
-	tnbuckets.end(); timing.addEvent(tnbuckets);
-	ESINFO(PROGRESS2) << "Random data loader:: nodes buckets assigned.";
+	eslog::checkpointln("MESIO: NODES BUCKETS COMPUTED");
 
-	TimeEvent tebuckets("assign elements to buckets"); tebuckets.start();
 	assignEBuckets();
-	tebuckets.end(); timing.addEvent(tebuckets);
-	ESINFO(PROGRESS2) << "Random data loader:: elements buckets assigned.";
+	eslog::checkpointln("MESIO: ELEMENTS BUCKETS ASSIGNED");
 
-	TimeEvent tclusterization("clusterization"); tclusterization.start();
 	clusterize();
-	tclusterization.end(); timing.addEvent(tclusterization);
-	ESINFO(PROGRESS2) << "Random data loader:: elements clusterized.";
+	eslog::checkpointln("MESIO: ELEMENTS CLUSTERED");
 
-	TimeEvent tesort("sort elements"); tesort.start();
 	sortElements();
-	tesort.end(); timing.addEvent(tesort);
-	ESINFO(PROGRESS2) << "Random data loader:: elements sorted.";
+	eslog::checkpointln("MESIO: ELEMENTS SORTED");
 
-	TimeEvent tlinkup("link together"); tlinkup.start();
 	linkup();
 	fillNeighbors();
-	tlinkup.end(); timing.addEvent(tlinkup);
-	ESINFO(PROGRESS2) << "Random data loader:: neighbors linked up.";
+	eslog::checkpointln("MESIO: NEIGHBORS COMPUTED");
 
-	TimeEvent tnsort("sort nodes"); tnsort.start();
 	sortNodes();
-	tnsort.end(); timing.addEvent(tnsort);
-	ESINFO(PROGRESS2) << "Random data loader:: nodes sorted.";
+	eslog::checkpointln("MESIO: NODES SORTED");
 
-	TimeEvent tnodes("fill nodes"); tnodes.start();
 	fillNodes();
-	tnodes.end(); timing.addEvent(tnodes);
-	ESINFO(PROGRESS2) << "Random data loader:: nodes filled.";
+	eslog::checkpointln("MESIO: NODES FILLED");
 
-	TimeEvent telements("fill elements"); telements.start();
 	fillElements();
-	telements.end(); timing.addEvent(telements);
-	ESINFO(PROGRESS2) << "Random data loader:: elements filled.";
+	eslog::checkpointln("MESIO: ELEMENTS SORTED");
 
-	TimeEvent treindex("reindex elements nodes"); treindex.start();
 	reindexElementNodes();
-	treindex.end(); timing.addEvent(treindex);
-	ESINFO(PROGRESS2) << "Random data loader:: elements nodes reindexed.";
+	eslog::checkpointln("MESIO: ELEMENTS NODES REINDEXED");
 
 	if (_mesh.nodes->elements == NULL) {
 		_mesh.preprocessing->linkNodesAndElements();
 	}
 
-	TimeEvent texchange("exchange boundary"); texchange.start();
 	exchangeBoundary();
-	texchange.end(); timing.addEvent(texchange);
-	ESINFO(PROGRESS2) << "Random data loader:: boundary exchanged.";
+	eslog::checkpointln("MESIO: BOUNDARY EXCHANGED");
 
-	TimeEvent tboundary("fill regions"); tboundary.start();
 	fillRegions(_meshData.eregions, _eregsize, _eregions);
 	fillRegions(_meshData.nregions, _nregsize, _nregions);
 	fillElementRegions();
 	fillBoundaryRegions();
 	fillNodeRegions();
-	tboundary.end(); timing.addEvent(tboundary);
-	ESINFO(PROGRESS2) << "Random data loader:: regions filled.";
+	eslog::checkpointln("MESIO: REGIONS FILLED");
 
-	TimeEvent treindexbondary("reindex boundary nodes"); treindexbondary.start();
 	reindexBoundaryNodes();
-	treindexbondary.end(); timing.addEvent(treindexbondary);
-	ESINFO(PROGRESS2) << "Random data loader:: boundary nodes reindexed.";
+	eslog::endln("MESIO: BOUNDARY NODES REINDEXED");
 
-//	TimeEvent tpolish("polish decomposition"); tpolish.start();
 //	polish();
-//	tpolish.end(); timing.addEvent(tpolish);
-//	ESINFO(PROGRESS2) << "Balanced loader:: decomposition polished.";
-
-	timing.totalTime.endWithBarrier();
-	timing.printStatsMPI();
 }
 
 void RandomInput::assignNBuckets()
@@ -152,12 +112,6 @@ void RandomInput::assignEBuckets()
 { // we needs to ask a neighbor process to get bucket of (arbitrary) node -- now the closest process is chosen
 
 	size_t threads = info::env::OMP_NUM_THREADS;
-
-	TimeEval timing("ASSIGN ELEMENTS BUCKETS");
-	timing.totalTime.startWithBarrier();
-
-	TimeEvent e1("AEB GET CLOSEST PROCESS");
-	e1.start();
 
 	std::vector<size_t> edistribution = tarray<size_t>::distribute(threads, _meshData.esize.size());
 
@@ -193,12 +147,6 @@ void RandomInput::assignEBuckets()
 		}
 	}
 
-	e1.end();
-	timing.addEvent(e1);
-
-	TimeEvent e2("AEB PREPARE SBUFFER");
-	e2.start();
-
 	std::vector<esint> permutation(_meshData.esize.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
 	std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) { return closest[i] < closest[j]; });
@@ -225,21 +173,9 @@ void RandomInput::assignEBuckets()
 		begin = n;
 	}
 
-	e2.end();
-	timing.addEvent(e2);
-
-	TimeEvent e3("AEB REQUEST NODES");
-	e3.start();
-
 	if (!Communication::allToAllWithDataSizeAndTarget(sNodes, rNodes)) {
-		ESINFO(ERROR) << "ESPRESO internal error: ask neighbors for nodes buckets.";
+		eslog::error("ESPRESO internal error: ask neighbors for nodes buckets.\n");
 	}
-
-	e3.end();
-	timing.addEvent(e3);
-
-	TimeEvent e4("AEB COMPUTE BUCKETS");
-	e4.start();
 
 	std::vector<esint> boundaries(info::mpi::size);
 	size_t offset = 0;
@@ -268,21 +204,9 @@ void RandomInput::assignEBuckets()
 		}
 	}
 
-	e4.end();
-	timing.addEvent(e4);
-
-	TimeEvent e5("AEB RETURN BUCKETS");
-	e5.start();
-
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuckets, rBuckets)) {
-		ESINFO(ERROR) << "ESPRESO internal error: return nodes buckets.";
+		eslog::error("ESPRESO internal error: return nodes buckets.\n");
 	}
-
-	e5.end();
-	timing.addEvent(e5);
-
-	TimeEvent e6("AEB STORE BUCKETS");
-	e6.start();
 
 	boundaries[0] = offset = 0;
 	for (int r = 1; r < info::mpi::size; r++, offset += rBuckets[offset]) {
@@ -303,23 +227,11 @@ void RandomInput::assignEBuckets()
 			_eBuckets[permutation[e++]] = rBuckets[offset];
 		}
 	}
-
-	e6.end();
-	timing.addEvent(e6);
-
-	timing.totalTime.end();
-	timing.printStatsMPI();
 }
 
 void RandomInput::clusterize()
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
-
-	TimeEval timing("CLUSTERIZE ELEMENTS");
-	timing.totalTime.startWithBarrier();
-
-	TimeEvent e1("CE PREPROCESS DATA");
-	e1.start();
 
 	esint esize = _meshData.eIDs.size();
 	esize = Communication::exscan(esize);
@@ -347,15 +259,9 @@ void RandomInput::clusterize()
 	std::iota(epermutation.begin(), epermutation.end(), 0);
 	std::sort(epermutation.begin(), epermutation.end(), [&] (esint i, esint j) { return _eBuckets[i] < _eBuckets[j]; });
 
-	e1.end();
-	timing.addEvent(e1);
-
 	// PREPROCESS BUCKET SIZES
 	size_t DEPTH = 2;
 	while (_sfc.buckets(DEPTH++) < (size_t)info::mpi::size);
-
-	TimeEvent e2("CE COMPUTE LOCAL HISTOGRAM");
-	e2.start();
 
 	size_t buckets = _sfc.buckets(DEPTH);
 	uint bstep = _sfc.buckets(_sfc.depth()) / buckets;
@@ -368,7 +274,7 @@ void RandomInput::clusterize()
 	for (auto e = _eBuckets.begin(); e != _eBuckets.end(); ++e) {
 		++bucketSum.back()[*e / bstep];
 	}
-	Esutils::sizesToOffsets(bucketSum.back());
+	utils::sizesToOffsets(bucketSum.back());
 
 	for (size_t d = DEPTH - 2; d < DEPTH; --d) {
 		for (size_t b = 0; b < bucketSum[d].size(); ++b) {
@@ -379,12 +285,6 @@ void RandomInput::clusterize()
 	std::vector<esint> scounts, rcounts;
 	_bucketsBorders.resize(info::mpi::size + 1, _sfc.buckets(_sfc.depth()));
 	_bucketsBorders.front() = 0;
-
-	e2.end();
-	timing.addEvent(e2);
-
-	TimeEvent e3("CE PREPROCESSED RECURSION");
-	e3.start();
 
 	size_t LEVEL = 0;
 	size_t bsize = _sfc.bucketSize();
@@ -421,12 +321,6 @@ void RandomInput::clusterize()
 		_sfc.finishLevel(LEVEL + 1);
 
 	} while (++LEVEL < DEPTH && _sfc.hasLevel(LEVEL));
-
-	e3.end();
-	timing.addEvent(e3);
-
-	TimeEvent e4("CE ADHOC RECURSION");
-	e4.start();
 
 	// Go deeper if needed
 	scounts.resize(_sfc.sfcRefined(LEVEL).size() * (bsize + 1));
@@ -472,7 +366,7 @@ void RandomInput::clusterize()
 			}
 		}
 		_sfc.finishLevel(++LEVEL);
-		Esutils::sortAndRemoveDuplicity(refinedindices);
+		utils::sortAndRemoveDuplicity(refinedindices);
 
 		rcounts.swap(scounts);
 		scounts.resize(_sfc.sfcRefined(LEVEL).size() * (bsize + 1));
@@ -483,12 +377,6 @@ void RandomInput::clusterize()
 		rcounts.resize(scounts.size());
 		refinedindices.clear();
 	}
-
-	e4.end();
-	timing.addEvent(e4);
-
-	TimeEvent e41("CE COMPUTE REGIONDATA");
-	e41.start();
 
 	_nregsize = _meshData.nregions.size() / (8 * sizeof(esint)) + 1;
 	_eregsize = _meshData.eregions.size() / (8 * sizeof(esint)) + 1;
@@ -522,12 +410,6 @@ void RandomInput::clusterize()
 			}
 		}
 	}
-
-	e41.end();
-	timing.addEvent(e41);
-
-	TimeEvent e5("CE COMPUTE SBUFFER");
-	e5.start();
 
 	std::vector<esint> sBuffer, rBuffer;
 	sBuffer.reserve(
@@ -575,21 +457,9 @@ void RandomInput::clusterize()
 		sBuffer[prevsize] = sBuffer.size() - prevsize;
 	}
 
-	e5.end();
-	timing.addEvent(e5);
-
-	TimeEvent e6("CE EXCHANGE DATA");
-	e6.start();
-
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
-		ESINFO(ERROR) << "ESPRESO internal error: distribute elements according to SFC.";
+		eslog::error("ESPRESO internal error: distribute elements according to SFC.\n");
 	}
-
-	e6.end();
-	timing.addEvent(e6);
-
-	TimeEvent e7("CE POST-PROCESS DATA");
-	e7.start();
 
 	_meshData.esize.clear();
 	_meshData.eIDs.clear();
@@ -636,7 +506,7 @@ void RandomInput::clusterize()
 	}
 
 	if (!_meshData.eIDs.size()) {
-		ESINFO(ERROR) << "ESPRESO internal error: a process without elements -- re-run with smaller number of MPI.";
+		eslog::error("ESPRESO internal error: a process without elements -- re-run with smaller number of MPI.\n");
 	}
 
 	auto back = _meshData.eIDs.back();
@@ -646,12 +516,6 @@ void RandomInput::clusterize()
 	}
 
 	sortNodes();
-
-	e7.end();
-	timing.addEvent(e7);
-
-	timing.totalTime.endWithBarrier();
-	timing.printStatsMPI();
 }
 
 void RandomInput::linkup()
@@ -661,29 +525,17 @@ void RandomInput::linkup()
 	// 4. Ask original coordinate holders for the rest nodes (for unknown nodes)
 	// 5. Compute nodes neighbors
 
-	TimeEval timing("LINK UP");
-	timing.totalTime.startWithBarrier();
-
-	TimeEvent e1("LU SFC to XYZ");
-	e1.start();
-
 	// 1. Compute neighbors buckets
 	_sfc.SCFToXYZ();
 
-	e1.end();
-	timing.addEvent(e1);
-
 //	VTKLegacyDebugInfo::spaceFillingCurve(_sfc, _bucketsBorders);
-
-	TimeEvent e2("LU GET NEIGHBORS");
-	e2.start();
 
 	std::vector<std::pair<size_t, size_t> > neighbors;
 
 	_sfc.iterateBuckets(_bucketsBorders[info::mpi::rank], _bucketsBorders[info::mpi::rank + 1], [&] (size_t depth, size_t index) {
 		_sfc.addSFCNeighbors(depth, index, neighbors);
 	});
-	Esutils::sortAndRemoveDuplicity(neighbors);
+	utils::sortAndRemoveDuplicity(neighbors);
 
 	for (size_t i = 0; i < neighbors.size(); i++) {
 		size_t bstep = _sfc.buckets(_sfc.depth()) / _sfc.buckets(neighbors[i].first);
@@ -720,13 +572,7 @@ void RandomInput::linkup()
 			}
 		}
 	}
-	Esutils::sortAndRemoveDuplicity(_sfcNeighbors);
-
-	e2.end();
-	timing.addEvent(e2);
-
-	TimeEvent e3("LU COMPUTE NODES FOR NEIGHBORS");
-	e3.start();
+	utils::sortAndRemoveDuplicity(_sfcNeighbors);
 
 	// 2. Exchange elements having only one node on here
 
@@ -743,7 +589,7 @@ void RandomInput::linkup()
 	}
 
 	std::vector<esint> enodes(_meshData.enodes.begin(), _meshData.enodes.begin() + enodesize);
-	Esutils::sortAndRemoveDuplicity(enodes);
+	utils::sortAndRemoveDuplicity(enodes);
 
 	for (size_t id = 0, node = 0; id < _meshData.nIDs.size() || node < enodes.size(); ++id) {
 		while (node < enodes.size() && (id == _meshData.nIDs.size() || enodes[node] < _meshData.nIDs[id])) {
@@ -758,21 +604,9 @@ void RandomInput::linkup()
 		sNodes[t] = sNodes[0];
 	}
 
-	e3.end();
-	timing.addEvent(e3);
-
-	TimeEvent e4("LU REQUEST NODES");
-	e4.start();
-
 	if (!Communication::exchangeUnknownSize(sNodes, rNodes, _sfcNeighbors)) {
-		ESINFO(ERROR) << "ESPRESO internal error: request for coordinates.";
+		eslog::error("ESPRESO internal error: request for coordinates.\n");
 	}
-
-	e4.end();
-	timing.addEvent(e4);
-
-	TimeEvent e5("LU GET COORDINATES");
-	e5.start();
 
 	for (size_t t = 0; t < _sfcNeighbors.size(); t++) {
 		auto node = _meshData.nIDs.begin();
@@ -788,27 +622,15 @@ void RandomInput::linkup()
 		}
 	}
 
-	e5.end();
-	timing.addEvent(e5);
-
-	TimeEvent e6("LU RETURN COORDINATES");
-	e6.start();
-
 	if (!Communication::exchangeUnknownSize(fNodes, rNodes, _sfcNeighbors)) {
-		ESINFO(ERROR) << "ESPRESO internal error: return requested IDs.";
+		eslog::error("ESPRESO internal error: return requested IDs.\n");
 	}
 	if (!Communication::exchangeUnknownSize(fRegions, rRegions, _sfcNeighbors)) {
-		ESINFO(ERROR) << "ESPRESO internal error: return requested node regions.";
+		eslog::error("ESPRESO internal error: return requested node regions.\n");
 	}
 	if (!Communication::exchangeUnknownSize(fCoords, rCoors, _sfcNeighbors)) {
-		ESINFO(ERROR) << "ESPRESO internal error: return requested coordinates.";
+		eslog::error("ESPRESO internal error: return requested coordinates.\n");
 	}
-
-	e6.end();
-	timing.addEvent(e6);
-
-	TimeEvent e7("LU REQUEST FOR UNKNOWN NODES");
-	e7.start();
 
 	// 3.1 Check if all nodes are found
 
@@ -833,7 +655,7 @@ void RandomInput::linkup()
 		for (size_t r = 0; r < _sfcNeighbors.size(); r++) {
 			found.insert(found.end(), rNodes[r].begin(), rNodes[r].end());
 		}
-		Esutils::sortAndRemoveDuplicity(found);
+		utils::sortAndRemoveDuplicity(found);
 
 		std::set_difference(sNodes.front().begin(), sNodes.front().end(), found.begin(), found.end(), unknown.begin());
 		sNodes.clear();
@@ -852,7 +674,7 @@ void RandomInput::linkup()
 	}
 
 	if (!Communication::sendVariousTargets(sNodes, uNodes, oTargets, oSources)) {
-		ESINFO(ERROR) << "ESPRESO internal error: request for unknown nodes.";
+		eslog::error("ESPRESO internal error: request for unknown nodes.\n");
 	}
 
 	sTargets.resize(oSources.size());
@@ -862,13 +684,13 @@ void RandomInput::linkup()
 			if (node != _nIDs.end() && *node == uNodes[t][n]) {
 				sTargets[t].push_back(std::lower_bound(_bucketsBorders.begin(), _bucketsBorders.end(), _nBuckets[node - _nIDs.begin()] + 1) - _bucketsBorders.begin() - 1);
 			} else {
-				ESINFO(ERROR) << "ESPRESO internal error: something wrong happen during link-up phase (request for unknown node).";
+				eslog::error("ESPRESO internal error: something wrong happen during link-up phase (request for unknown node).\n");
 			}
 		}
 	}
 
 	if (!Communication::sendVariousTargets(sTargets, rTargets, oSources)) {
-		ESINFO(ERROR) << "ESPRESO internal error: return requested unknown node targets.";
+		eslog::error("ESPRESO internal error: return requested unknown node targets.\n");
 	}
 
 	uNodes.clear();
@@ -903,7 +725,7 @@ void RandomInput::linkup()
 	sNodes.swap(uNodes);
 
 	if (!Communication::sendVariousTargets(sNodes, uNodes, oTargets, oSources)) {
-		ESINFO(ERROR) << "ESPRESO internal error: request for unknown nodes.";
+		eslog::error("ESPRESO internal error: request for unknown nodes.\n");
 	}
 
 	fCoords.clear();
@@ -917,16 +739,16 @@ void RandomInput::linkup()
 				fCoords[t].push_back(_meshData.coordinates[node - _meshData.nIDs.begin()]);
 				fRegions[t].insert(fRegions[t].end(), _nregions.begin() + _nregsize * (node - _meshData.nIDs.begin()), _nregions.begin() + _nregsize * (node - _meshData.nIDs.begin() + 1));
 			} else {
-				ESINFO(ERROR) << "ESPRESO internal error: something wrong happen during link-up phase.";
+				eslog::error("ESPRESO internal error: something wrong happen during link-up phase.\n");
 			}
 		}
 	}
 
 	if (!Communication::sendVariousTargets(fRegions, uRegions, oSources)) {
-		ESINFO(ERROR) << "ESPRESO internal error: return requested unknown node regions.";
+		eslog::error("ESPRESO internal error: return requested unknown node regions.\n");
 	}
 	if (!Communication::sendVariousTargets(fCoords, uCoords, oSources)) {
-		ESINFO(ERROR) << "ESPRESO internal error: return requested unknown coordinates.";
+		eslog::error("ESPRESO internal error: return requested unknown coordinates.\n");
 	}
 
 	// insert new neighbors to neighbors computed from SFC
@@ -956,12 +778,6 @@ void RandomInput::linkup()
 
 	_sfcNeighbors.push_back(info::mpi::rank);
 	std::sort(_sfcNeighbors.begin(), _sfcNeighbors.end());
-
-	e7.end();
-	timing.addEvent(e7);
-
-	TimeEvent e8("LU COMPUTE NODES TO RANK MAP");
-	e8.start();
 
 	// 5. Compute nodes neighbors
 	std::vector<std::vector<esint> > sRanks(_sfcNeighbors.size()), rRanks(_sfcNeighbors.size());
@@ -1025,21 +841,9 @@ void RandomInput::linkup()
 	_meshData.coordinates.resize(unique);
 	_nregions.resize(_nregsize * unique);
 
-	e8.end();
-	timing.addEvent(e8);
-
-	TimeEvent e9("LU EXCHANGE NODE TO RANK MAP");
-	e9.start();
-
 	if (!Communication::exchangeUnknownSize(sRanks, rRanks, _sfcNeighbors)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange ranks data.";
+		eslog::error("ESPRESO internal error: exchange ranks data.\n");
 	}
-
-	e9.end();
-	timing.addEvent(e9);
-
-	TimeEvent e10("LU POST-PROCESS DATA");
-	e10.start();
 
 	for (size_t t = 0, i = 0; t < _sfcNeighbors.size(); t++) {
 		if (_sfcNeighbors[t] != info::mpi::rank) {
@@ -1076,12 +880,6 @@ void RandomInput::linkup()
 			}
 		}
 	}
-
-	e10.end();
-	timing.addEvent(e10);
-
-	timing.totalTime.endWithBarrier();
-	timing.printStatsMPI();
 }
 
 void RandomInput::exchangeBoundary()
@@ -1173,14 +971,14 @@ void RandomInput::exchangeBoundary()
 		unodes[0].insert(unodes[0].end(), _meshData.enodes.begin() + edist[utargets[0][i]], _meshData.enodes.begin() + edist[utargets[0][i] + 1]);
 	}
 
-	Esutils::sortAndRemoveDuplicity(unodes[0]);
+	utils::sortAndRemoveDuplicity(unodes[0]);
 
 	for (size_t n = 1; n < _sfcNeighbors.size(); n++) {
 		unodes[n] = unodes[0];
 	}
 
 	if (!Communication::exchangeUnknownSize(unodes, rnodes, _sfcNeighbors)) {
-		ESINFO(ERROR) << "ESPRESO internal error: request for unknown boundary nodes.";
+		eslog::error("ESPRESO internal error: request for unknown boundary nodes.\n");
 	}
 
 	for (size_t t = 0; t < _sfcNeighbors.size(); t++) {
@@ -1201,7 +999,7 @@ void RandomInput::exchangeBoundary()
 	}
 
 	if (!Communication::exchangeUnknownSize(fLinks, rLinks, _sfcNeighbors)) {
-		ESINFO(ERROR) << "ESPRESO internal error: return ranks of unknown boundary nodes.";
+		eslog::error("ESPRESO internal error: return ranks of unknown boundary nodes.\n");
 	}
 
 	std::vector<esint> found(2 * unodes[0].size(), -1);
@@ -1222,9 +1020,9 @@ void RandomInput::exchangeBoundary()
 	}
 
 	if (!Communication::allGatherUnknownSize(uunodes)) {
-		ESINFO(ERROR) << "ESPRESO internal error: allgather unknown nodes.";
+		eslog::error("ESPRESO internal error: allgather unknown nodes.\n");
 	}
-	Esutils::sortAndRemoveDuplicity(uunodes);
+	utils::sortAndRemoveDuplicity(uunodes);
 
 	for (size_t i = 0; i < uunodes.size(); i++) {
 		auto node = std::lower_bound(_meshData.nIDs.begin(), _meshData.nIDs.end(), uunodes[i]);
@@ -1240,7 +1038,7 @@ void RandomInput::exchangeBoundary()
 	}
 
 	if (!Communication::allGatherUnknownSize(rrLinks)) {
-		ESINFO(ERROR) << "ESPRESO internal error: allgather unknown nodes links.";
+		eslog::error("ESPRESO internal error: allgather unknown nodes links.\n");
 	}
 
 	std::vector<esint> permutation(uunodes.size());
@@ -1308,7 +1106,7 @@ void RandomInput::exchangeBoundary()
 
 
 
-	Esutils::sortAndRemoveDuplicity(etargets[0]);
+	utils::sortAndRemoveDuplicity(etargets[0]);
 
 	std::vector<int> sRanks;
 	std::vector<std::vector<esint> > sBoundary, rBoundary;
@@ -1326,7 +1124,7 @@ void RandomInput::exchangeBoundary()
 	}
 
 	if (!Communication::sendVariousTargets(sBoundary, rBoundary, sRanks)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange boundary elements.";
+		eslog::error("ESPRESO internal error: exchange boundary elements.\n");
 	}
 
 	for (size_t r = 1; r < rBoundary.size(); r++) {

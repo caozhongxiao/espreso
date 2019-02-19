@@ -8,13 +8,13 @@
 
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/eslog.hpp"
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
 #include "basis/evaluator/evaluator.h"
 #include "basis/matrices/denseMatrix.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
-#include "basis/logging/logging.h"
 
 #include "config/ecf/meshmorphing.h"
 
@@ -98,8 +98,8 @@ void MeshPreprocessing::processMorpher(const RBFTargetTransformationConfiguratio
 				}
 			}
 		}break;
-	 	 default:
-	 		 ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement mesh morphing tranformation.";
+		default:
+			eslog::globalerror("ESPRESO internal error: implement mesh morphing tranformation.\n");
 	}
 }
 
@@ -175,7 +175,7 @@ void MeshPreprocessing::readExternalFile(
 	auto myExpectToken =
 			[] (Tokenizer &tokenizer, Tokenizer::Token real, Tokenizer::Token expected, const std::string &expectedToken) -> void {
 				if (real!=expected) {
-					ESINFO(GLOBAL_ERROR) << "Line: " << tokenizer.line() << ", unexpected symbol, was expecting "<<expectedToken;
+					eslog::error("ESPRESO internal error: mesh morphing.\n");
 				}
 			};
 	auto myConvert =
@@ -183,7 +183,7 @@ void MeshPreprocessing::readExternalFile(
 				size_t size;
 				double result = std::stod(tokenizer.value(), &size);
 				if (size != tokenizer.value().size()) {
-					ESINFO(GLOBAL_ERROR) << "Line: " << tokenizer.line() << ", error while converting "<<tokenizer.value()<<" into a number.";
+					eslog::error("ESPRESO internal error: mesh morphing.\n");
 				}
 				return result;
 			};
@@ -194,9 +194,7 @@ void MeshPreprocessing::readExternalFile(
 				" a region name.");
 		std::string name = tokenizer.value();
 		if (external_data.find(name) != external_data.end()) {
-			ESINFO(GLOBAL_ERROR) << "Line: " << tokenizer.line()
-					<< ", region " + tokenizer.value()
-					<< " defined multiple times in the external file.";
+			eslog::error("ESPRESO internal error: mesh morphing.\n");
 		}
 		token = myNextToken(tokenizer);
 		myExpectToken(tokenizer, token, Tokenizer::Token::OBJECT_OPEN,
@@ -244,9 +242,9 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 	size_t threads = info::env::OMP_NUM_THREADS;
 	MATH::setNumberOfThreads(threads);
 
-	start("processing morphing '" + name + "'");
-
-	start("preparing data for morphing '" + name + "'");
+	eslog::start("MESH: MORPH COORDINATES");
+	eslog::param("morpher", name.c_str());
+	eslog::ln();
 
 	if (_mesh->nodes->originCoordinates == NULL) {
 		_mesh->nodes->originCoordinates = new serializededata<esint, Point>(*_mesh->nodes->coordinates);
@@ -289,7 +287,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 			for(auto it = configuration.external_ffd.morphers.begin(); it != configuration.external_ffd.morphers.end(); ++it) {
 				size_t prevsize = sPoints.size();
 				if (external_data.find(it->first)==external_data.end()) {
-					ESINFO(GLOBAL_ERROR) << "Region " << it->first << " does not exist in external file: "<<configuration.external_ffd.path;
+					eslog::error("MORPHING error\n");
 				}
 
 				for (auto n = external_data[it->first].begin(); n != external_data[it->first].end(); ++n) {
@@ -299,24 +297,19 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 			}
 		}
 	}
-	finish("preparing data for morphing '" + name + "'");
 
-	start("transmitting data for morphing '" + name + "'");
 	if (!Communication::gatherUnknownSize(sPoints, rPoints)) {
-		ESINFO(ERROR) << "ESPRESO internal error: gather morphed points";
+		eslog::error("ESPRESO internal error: gather morphed points.\n");
 	}
 
 	if (!Communication::broadcastUnknownSize(rPoints)) {
-			ESINFO(ERROR) << "ESPRESO internal error: broadcast points.";
+		eslog::error("ESPRESO internal error: broadcast points.\n");
 	}
 
 	if (!Communication::gatherUnknownSize(sDisplacement, rDisplacement)) {
-		ESINFO(ERROR) << "ESPRESO internal error: gather morphed displacement";
+		eslog::error("ESPRESO internal error: gather morphed displacement.\n");
 	}
 
-	finish("transmitting data for morphing '" + name + "'");
-
-	start("solving data for morphing '" + name + "'");
 	std::vector<double> wq_values;
 
 	if (info::mpi::rank == 0 ||
@@ -331,7 +324,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		size_t realSize = prepareMatrixM(rPoints, rDisplacement, dimension, configuration, M_values);
 
 		if (realSize != M_size) {
-			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: error while building matrix M.";
+			eslog::error("ESPRESO internal error: error while building matrix M.\n");
 		}
 
 		switch (configuration.solver) {
@@ -519,7 +512,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 						dimension, &wq_values[0]);
 
 				if (result!=0) {
-					ESINFO(ERROR) << "ESPRESO error: Dense solver is unable to solve the system. Try iterative solver.";
+					eslog::error("ESPRESO error: Dense solver is unable to solve the system. Try iterative solver.\n");
 				}
 
 				auto insertRowInWQ =
@@ -540,20 +533,13 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		} break;
 
 		default:
-			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: implement mesh morphing solver.";
+			eslog::error("ESPRESO internal error: implement mesh morphing solver.\n");
 		}
 	}
 
-	finish("solving data for morphing '" + name + "'");
-
-	start("transmitting results for morphing '" + name + "'");
 	if (!Communication::broadcastUnknownSize(wq_values)) {
-		ESINFO(ERROR) << "ESPRESO internal error: broadcast WQ.";
+		eslog::error("ESPRESO internal error: broadcast WQ.\n");
 	}
-	finish("transmitting results for morphing '" + name + "'");
-
-
-	start("applying morphing '" + name + "'");
 
 	esint wq_points = wq_values.size()/dimension;
 	esint points_size = rPoints.size();
@@ -604,7 +590,6 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 
 		}
 	}
-	finish("applying morphing '" + name + "'");
 
 
 	if (_morphing == NULL) {
@@ -624,7 +609,9 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 		}
 	}
 
-	finish("processing morphing '" + name + "'");
+	eslog::end("MESH: COORDINATES MORPHED");
+	eslog::param("morpher", name.c_str());
+	eslog::ln();
 
 	MATH::setNumberOfThreads(1);
 }

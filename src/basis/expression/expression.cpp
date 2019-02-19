@@ -1,6 +1,6 @@
 
 #include "expression.h"
-#include "basis/logging/logging.h"
+#include "esinfo/eslog.hpp"
 
 #include "exprtk.hpp"
 
@@ -26,7 +26,7 @@ bool Expression::isValid(const std::string &str, std::vector<std::string> variab
 void Expression::parse()
 {
 	if (!isValid(_str, _variables)) {
-		ESINFO(GLOBAL_ERROR) << "Invalid expression: '" << _str << "'";
+		eslog::globalerror("Invalid expression: '%s'\n", _str.c_str());
 	}
 
 	values.resize(_variables.size());

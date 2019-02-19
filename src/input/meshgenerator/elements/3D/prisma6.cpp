@@ -1,6 +1,5 @@
 
 #include "prisma6.h"
-#include "basis/logging/logging.h"
 
 using namespace espreso;
 
@@ -42,7 +41,7 @@ void Prisma6Generator::pushNodes(std::vector<esint> &nodes, const std::vector<es
 		pushTriangleNodes(nodes, indices, face);
 		break;
 	default:
-		ESINFO(ERROR) << "Invalid face.";
+		break;
 	}
 }
 
@@ -65,6 +64,6 @@ void Prisma6Generator::pushFace(std::vector<esint> &elements, std::vector<esint>
 		etype.push_back((int)Element::CODE::TRIANGLE3);
 		break;
 	default:
-		ESINFO(ERROR) << "Invalid face.";
+		break;
 	}
 }

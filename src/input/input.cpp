@@ -6,8 +6,6 @@
 #include "meshgenerator/meshgenerator.h"
 
 #include "basis/containers/serializededata.h"
-#include "basis/logging/logging.h"
-#include "basis/logging/timeeval.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
 #include "basis/utilities/parser.h"
@@ -15,6 +13,7 @@
 #include "esinfo/ecfinfo.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
+#include "esinfo/eslog.hpp"
 #include "mesh/mesh.h"
 #include "mesh/elements/element.h"
 #include "mesh/store/nodestore.h"
@@ -27,6 +26,22 @@
 
 using namespace espreso;
 
+const char* Input::inputFile(const ECFRoot &configuration)
+{
+	switch (configuration.input) {
+	case INPUT_FORMAT::WORKBENCH:
+		return configuration.workbench.path.c_str();
+	case INPUT_FORMAT::ABAQUS:
+		return configuration.abaqus.path.c_str();
+	case INPUT_FORMAT::OPENFOAM:
+		return configuration.openfoam.path.c_str();
+	case INPUT_FORMAT::GENERATOR:
+		return "GENERATOR";
+	default:
+		return "???";
+	}
+}
+
 bool Input::load(const ECFRoot &configuration, Mesh &mesh)
 {
 	switch (configuration.input) {
@@ -35,7 +50,7 @@ bool Input::load(const ECFRoot &configuration, Mesh &mesh)
 		mesh.update();
 		return !configuration.workbench.convert_database;
 	case INPUT_FORMAT::ABAQUS:
-		AbaqusLoader::load(configuration.abaqus,mesh);
+		AbaqusLoader::load(configuration.abaqus, mesh);
 		mesh.update();
 		return !configuration.abaqus.convert_database;
 	case INPUT_FORMAT::OPENFOAM:
@@ -165,7 +180,7 @@ std::vector<esint> Input::getDistribution(const std::vector<esint> &IDs, const s
 				}
 			}
 		}
-		Esutils::sortAndRemoveDuplicity(torefine);
+		utils::sortAndRemoveDuplicity(torefine);
 
 		rcounts.swap(scounts);
 		refined.swap(torefine);
@@ -184,10 +199,10 @@ void Input::balanceNodes()
 	_nDistribution = tarray<esint>::distribute(info::mpi::size, cCurrent.back());
 
 	if (!Communication::balance(_meshData.nIDs, cCurrent, _nDistribution)) {
-		ESINFO(ERROR) << "ESPRESO internal error: balance node IDs.";
+		eslog::error("ESPRESO internal error: balance node IDs.\n");
 	}
 	if (!Communication::balance(_meshData.coordinates, cCurrent, _nDistribution)) {
-		ESINFO(ERROR) << "ESPRESO internal error: balance coordinates.";
+		eslog::error("ESPRESO internal error: balance coordinates.\n");
 	}
 
 	esint back = _meshData.nIDs.back();
@@ -199,13 +214,6 @@ void Input::balanceNodes()
 
 void Input::balancePermutedNodes()
 {
-	TimeEval time("BALANCE PERMUTED NODES");
-	time.totalTime.startWithBarrier();
-
-
-	TimeEvent e1("BPN PREPARE DATA");
-	e1.start();
-
 	std::vector<esint> permutation(_meshData.nIDs.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
 	std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) { return _meshData.nIDs[i] < _meshData.nIDs[j]; });
@@ -234,21 +242,9 @@ void Input::balancePermutedNodes()
 		sBuffer[prevsize] = sBuffer.size() - prevsize;
 	}
 
-	e1.end();
-	time.addEvent(e1);
-
-	TimeEvent e2("BPN EXCHANGE DATA");
-	e2.start();
-
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
-		ESINFO(ERROR) << "ESPRESO internal error: distribute permuted nodes.";
+		eslog::error("ESPRESO internal error: distribute permuted nodes.\n");
 	}
-
-	e2.end();
-	time.addEvent(e2);
-
-	TimeEvent e3("BPN POST PROCESS");
-	e3.start();
 
 	_meshData.nIDs.clear();
 	_meshData.coordinates.clear();
@@ -267,12 +263,6 @@ void Input::balancePermutedNodes()
 			offset += sizeof(Point) / sizeof(esint);
 		}
 	}
-
-	e3.end();
-	time.addEvent(e3);
-
-	time.totalTime.endWithBarrier();
-	time.printStatsMPI();
 }
 
 void Input::balanceElements()
@@ -300,22 +290,22 @@ void Input::balanceElements()
 	nTarget.resize(info::mpi::size + 1, nTarget.back());
 
 	if (!Communication::balance(_meshData.enodes, nCurrent, nTarget)) {
-		ESINFO(ERROR) << "ESPRESO internal error: balance element nodes.";
+		eslog::error("ESPRESO internal error: balance element nodes.\n");
 	}
 	if (!Communication::balance(_meshData.esize, eCurrent, _eDistribution)) {
-		ESINFO(ERROR) << "ESPRESO internal error: balance element sizes.";
+		eslog::error("ESPRESO internal error: balance element sizes.\n");
 	}
 	if (!Communication::balance(_meshData.eIDs, eCurrent, _eDistribution)) {
-		ESINFO(ERROR) << "ESPRESO internal error: balance element IDs.";
+		eslog::error("ESPRESO internal error: balance element IDs.\n");
 	}
 	if (!Communication::balance(_meshData.body, eCurrent, _eDistribution)) {
-		ESINFO(ERROR) << "ESPRESO internal error: balance element bodies.";
+		eslog::error("ESPRESO internal error: balance element bodies.\n");
 	}
 	if (!Communication::balance(_meshData.etype, eCurrent, _eDistribution)) {
-		ESINFO(ERROR) << "ESPRESO internal error: balance element types.";
+		eslog::error("ESPRESO internal error: balance element types.\n");
 	}
 	if (!Communication::balance(_meshData.material, eCurrent, _eDistribution)) {
-		ESINFO(ERROR) << "ESPRESO internal error: balance element material.";
+		eslog::error("ESPRESO internal error: balance element materials.\n");
 	}
 
 	auto back = _meshData.eIDs.back();
@@ -327,12 +317,6 @@ void Input::balanceElements()
 
 void Input::balancePermutedElements()
 {
-	TimeEval time("BALANCE PERMUTED ELEMENTS");
-	time.totalTime.startWithBarrier();
-
-	TimeEvent e1("BPE PREPROCESS");
-	e1.start();
-
 	std::vector<esint> permutation(_meshData.eIDs.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
 	std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) { return _meshData.eIDs[i] < _meshData.eIDs[j]; });
@@ -374,21 +358,9 @@ void Input::balancePermutedElements()
 		sBuffer[prevsize] = sBuffer.size() - prevsize;
 	}
 
-	e1.end();
-	time.addEvent(e1);
-
-	TimeEvent e2("BPE EXCHANGE");
-	e2.start();
-
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
-		ESINFO(ERROR) << "ESPRESO internal error: distribute permuted elements.";
+		eslog::error("ESPRESO internal error: distribute permuted elements.\n");
 	}
-
-	e2.end();
-	time.addEvent(e2);
-
-	TimeEvent e3("BPE POST PROCESS");
-	e3.start();
 
 	_meshData.esize.clear();
 	_meshData.eIDs.clear();
@@ -414,12 +386,6 @@ void Input::balancePermutedElements()
 			offset += _meshData.esize.back();
 		}
 	}
-
-	e3.end();
-	time.addEvent(e3);
-
-	time.totalTime.endWithBarrier();
-	time.printStatsMPI();
 }
 
 void Input::sortNodes(bool withElementNodes)
@@ -433,8 +399,8 @@ void Input::sortNodes(bool withElementNodes)
 	std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) { return _meshData.nIDs[i] < _meshData.nIDs[j]; });
 
 	std::sort(_meshData.nIDs.begin(), _meshData.nIDs.end());
-	Esutils::permute(_meshData.coordinates, permutation);
-	Esutils::permute(_nregions, permutation, _nregsize);
+	utils::permute(_meshData.coordinates, permutation);
+	utils::permute(_nregions, permutation, _nregsize);
 
 	if (_meshData._nranks.size()) {
 		std::vector<esint> npermutation(_meshData._nranks.size());
@@ -446,7 +412,7 @@ void Input::sortNodes(bool withElementNodes)
 			}
 		}
 
-		Esutils::permute(_meshData._nranks, npermutation);
+		utils::permute(_meshData._nranks, npermutation);
 	}
 
 	if (withElementNodes) {
@@ -496,12 +462,12 @@ void Input::sortElements(const std::vector<esint> &permutation)
 		}
 	}
 
-	Esutils::permute(_meshData.eIDs, permutation);
-	Esutils::permute(_meshData.esize, permutation);
-	Esutils::permute(_meshData.body, permutation);
-	Esutils::permute(_meshData.etype, permutation);
-	Esutils::permute(_meshData.material, permutation);
-	Esutils::permute(_eregions, permutation, _eregsize);
+	utils::permute(_meshData.eIDs, permutation);
+	utils::permute(_meshData.esize, permutation);
+	utils::permute(_meshData.body, permutation);
+	utils::permute(_meshData.etype, permutation);
+	utils::permute(_meshData.material, permutation);
+	utils::permute(_eregions, permutation, _eregsize);
 
 	std::vector<esint> npermutation(_meshData.enodes.size());
 	for (size_t i = 0, index = 0; i < permutation.size(); i++) {
@@ -510,7 +476,7 @@ void Input::sortElements(const std::vector<esint> &permutation)
 		}
 	}
 
-	Esutils::permute(_meshData.enodes, npermutation);
+	utils::permute(_meshData.enodes, npermutation);
 }
 
 void Input::assignRegions(
@@ -536,7 +502,7 @@ void Input::assignRegions(
 		}
 
 		if (!Communication::sendVariousTargets(sBuffer, rBuffer, sRanks)) {
-			ESINFO(ERROR) << "ESPRESO internal error: assign regions.";
+			eslog::error("ESPRESO internal error: assign regions.\n");
 		}
 
 		region->second.clear();
@@ -664,7 +630,7 @@ void Input::fillElements()
 void Input::fillNeighbors()
 {
 	std::vector<int> realnranks = _meshData._nranks;
-	Esutils::sortAndRemoveDuplicity(realnranks);
+	utils::sortAndRemoveDuplicity(realnranks);
 
 	_mesh.neighboursWithMe.clear();
 	_mesh.neighboursWithMe.insert(_mesh.neighboursWithMe.end(), realnranks.begin(), realnranks.end());
@@ -702,7 +668,7 @@ void Input::fillBoundaryRegions()
 				}
 			}
 		}
-		Esutils::sortAndRemoveDuplicity(named);
+		utils::sortAndRemoveDuplicity(named);
 		int hasunnamed = 0, add = 0;
 		if (named.size() < (size_t)(_etypeDistribution[i + 1] - _etypeDistribution[i])) {
 			hasunnamed = 1;

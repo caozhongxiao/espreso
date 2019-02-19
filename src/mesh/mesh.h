@@ -43,6 +43,8 @@ public:
 	Mesh();
 	~Mesh();
 	void update();
+	void printMeshStatistics();
+	void printDecompositionStatistics();
 
 	ElementsRegionStore* allElements()
 	{
@@ -98,10 +100,6 @@ public:
 	ResultStore *store;
 
 	bool _withGUI;
-
-private:
-	void printMeshStatistics();
-	void printDecompositionStatistics();
 };
 
 }

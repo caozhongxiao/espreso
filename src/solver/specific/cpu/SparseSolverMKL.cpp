@@ -4,6 +4,7 @@
 #include "basis/utilities/utils.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/eslog.hpp"
 
 using namespace espreso;
 
@@ -349,11 +350,11 @@ int SparseSolverMKL::Factorization(const std::string &str) {
 		s.CSR_J_col_indices = std::vector<esint>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
 		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
 
-		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
-		osK << s;
-		osK.close();
+//		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+//		osK << s;
+//		osK.close();
 
-		ESINFO(ERROR) << error << " during symbolic factorization";
+		eslog::error("error during symbolic factorization.\n");
 		exit (EXIT_FAILURE);
 	} else {
 		initialized = true;
@@ -384,11 +385,11 @@ int SparseSolverMKL::Factorization(const std::string &str) {
 		s.CSR_J_col_indices = std::vector<esint>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
 		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
 
-		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
-		osK << s;
-		osK.close();
+//		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+//		osK << s;
+//		osK.close();
 
-		ESINFO(ERROR) << error << " during numerical factorization";
+		eslog::error("error during numerical factorization.\n");
 		exit (EXIT_FAILURE);
 	} else {
 		m_factorized = 1;
@@ -451,11 +452,11 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		s.CSR_J_col_indices = std::vector<esint>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
 		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
 
-		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
-		osK << s;
-		osK.close();
+//		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+//		osK << s;
+//		osK.close();
 
-		ESINFO(ERROR) << "ERROR during solution: " << error;
+		eslog::error("error during solution.\n");
 		exit (3);
 	}
 
@@ -525,11 +526,11 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 		s.CSR_J_col_indices = std::vector<esint>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
 		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
 
-		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
-		osK << s;
-		osK.close();
+//		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+//		osK << s;
+//		osK.close();
 
-		ESINFO(ERROR) << "ERROR during solution: " << error;
+		eslog::error("error during solution.\n");
 		exit (3);
 	}
 
@@ -593,11 +594,11 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 		s.CSR_J_col_indices = std::vector<esint>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
 		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
 
-		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
-		osK << s;
-		osK.close();
+//		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+//		osK << s;
+//		osK.close();
 
-		ESINFO(ERROR) << "ERROR during solution: " << error;
+		eslog::error("error during solution.\n");
 		exit (3);
 	}
 
@@ -938,11 +939,11 @@ void SparseSolverMKL::SolveMatF( espreso::SparseMatrix & A_in, espreso::SparseMa
 		s.CSR_J_col_indices = std::vector<esint>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
 		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
 
-		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
-		osK << s;
-		osK.close();
+//		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+//		osK << s;
+//		osK.close();
 
-		ESINFO(ERROR) << "ERROR during the solution of the system: " << error;
+		eslog::error("ERROR during the solution of the system.\n");
 		exit (1);
 	} else {
 		initialized = true;
@@ -1155,11 +1156,11 @@ void SparseSolverMKL::Create_SC( espreso::SparseMatrix & SC_out, MKL_INT sc_size
 		s.CSR_J_col_indices = std::vector<esint>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
 		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
 
-		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
-		osK << s;
-		osK.close();
+//		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+//		osK << s;
+//		osK.close();
 
-		ESINFO(ERROR) << "ERROR during numerical factorization: " << error;
+		eslog::error("error during numerical factorization.\n");
 		exit (2);
 	} else {
 		initialized = true;
@@ -1195,9 +1196,9 @@ void SparseSolverMKL::Create_SC( espreso::SparseMatrix & SC_out, MKL_INT sc_size
       SC_out.type = 'S';
     }
 
-	if (msglvl) {
-		ESINFO(EXHAUSTIVE) << SC_out.SpyText();
-	}
+//	if (msglvl) {
+//		ESINFO(EXHAUSTIVE) << SC_out.SpyText();
+//	}
 
 //    if (generate_symmetric_sc_1_generate_general_sc_0 == 1) {
 //    	SC_out.RemoveLower();
@@ -1370,11 +1371,11 @@ void SparseSolverMKL::Create_SC_w_Mat( espreso::SparseMatrix & K_in, espreso::Sp
 
     if ( error != 0 )
 	{
-		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
-		osK << K_sc1;
-		osK.close();
+//		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+//		osK << K_sc1;
+//		osK.close();
 
-		ESINFO(ERROR) << "ERROR during numerical factorization: " << error;
+		eslog::error("error during numerical factorization.\n");
 		exit (2);
 	} else {
 		initialized = true;
@@ -1626,11 +1627,11 @@ void SparseSolverMKL::Create_non_sym_SC_w_Mat( espreso::SparseMatrix & K_in, esp
 
     if ( error != 0 )
 	{
-		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
-		osK << K_sc1;
-		osK.close();
+//		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+//		osK << K_sc1;
+//		osK.close();
 
-		ESINFO(ERROR) << "ERROR during numerical factorization: " << error;
+		eslog::error("error during numerical factorization.\n");
 		exit (2);
 	} else {
 		initialized = true;
@@ -1664,26 +1665,26 @@ void SparseSolverMKL::Create_non_sym_SC_w_Mat( espreso::SparseMatrix & K_in, esp
 
 void SparseSolverMKL::SaveMatrixInCSR(string filename) {
 
-	std::ofstream out(filename.c_str());
-
-	if ( out.is_open() ) {
-		out << "I\n";
-		for(esint i=0; i<CSR_I_row_indices_size; i++){
-			out << CSR_I_row_indices[i] << "\n";
-		}
-
-		out << "J\n";
-		for(esint i=0; i<CSR_J_col_indices_size; i++){
-			out << CSR_J_col_indices[i] << "\n";
-		}
-		out << "V\n";
-		for(esint i=0; i<CSR_V_values_size; i++){
-			out << CSR_V_values[i] << "\n";
-		}
-		out.close();
-	} else {
-		ESINFO(ERROR) << "Matrix file " << filename << " cannot be created ! ";
-	}
+//	std::ofstream out(filename.c_str());
+//
+//	if ( out.is_open() ) {
+//		out << "I\n";
+//		for(esint i=0; i<CSR_I_row_indices_size; i++){
+//			out << CSR_I_row_indices[i] << "\n";
+//		}
+//
+//		out << "J\n";
+//		for(esint i=0; i<CSR_J_col_indices_size; i++){
+//			out << CSR_J_col_indices[i] << "\n";
+//		}
+//		out << "V\n";
+//		for(esint i=0; i<CSR_V_values_size; i++){
+//			out << CSR_V_values[i] << "\n";
+//		}
+//		out.close();
+//	} else {
+//		ESINFO(ERROR) << "Matrix file " << filename << " cannot be created ! ";
+//	}
 }
 
 

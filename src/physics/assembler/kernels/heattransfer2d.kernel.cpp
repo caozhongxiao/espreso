@@ -1,11 +1,11 @@
 
+#include "esinfo/timeinfo.h"
 #include "physics/assembler/dataholder.h"
-#include "esinfo/time.h"
 #include "esinfo/ecfinfo.h"
+#include "esinfo/eslog.hpp"
 #include "heattransfer2d.kernel.h"
 
 #include "physics/assembler/assembler.h"
-#include "basis/logging/logging.h"
 #include "basis/containers/point.h"
 #include "basis/matrices/denseMatrix.h"
 #include "basis/evaluator/evaluator.h"
@@ -44,7 +44,7 @@ void HeatTransfer2DKernel::assembleMaterialMatrix(esint node, double *coordinate
 		break;
 	}
 	default:
-		ESINFO(ERROR) << "Invalid material type (SPHERICAL for 2D).";
+		eslog::error("Invalid material type (SPHERICAL for 2D).\n");
 	}
 
 	DenseMatrix TCT(2, 2), T(2, 2), C(2, 2), _CD, TCDT;
@@ -105,7 +105,7 @@ void HeatTransfer2DKernel::assembleMaterialMatrix(esint node, double *coordinate
 		}
 		break;
 	default:
-		ESINFO(ERROR) << "Advection diffusion 2D not supports set material model";
+		eslog::error("Advection diffusion 2D not supports set material model.\n");
 	}
 
 	if (tangentCorrection) {

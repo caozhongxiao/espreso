@@ -3,9 +3,11 @@
 #include "blockborder.h"
 #include "input/meshgenerator/meshgenerator.h"
 
-#include "basis/logging/logging.h"
 #include "basis/utilities/parser.h"
+#include "esinfo/eslog.hpp"
 #include "input/meshgenerator/primitives/blocksettings.h"
+
+#include <sstream>
 
 namespace espreso {
 
@@ -18,7 +20,7 @@ BlockBorder::BlockBorder(const std::string &interval)
 		size_t begin = str.find_first_of("<(");
 		size_t end   = str.find_first_of(">)");
 		if (end < begin) {
-			ESINFO(GLOBAL_ERROR) << "Cannot parse interval '" << str << "'. Wrong brackets.";
+			eslog::globalerror("Cannot parse interval '%s'. Wrong brackets.\n", str.c_str());
 		}
 		values.push_back(str.substr(begin, end + 1));
 		if (end + 1 == str.size()) {
@@ -33,17 +35,17 @@ BlockBorder::BlockBorder(const std::string &interval)
 		_excludeStart[i] = _excludeEnd[i] = false;
 		std::vector<std::string> bounds = Parser::split(Parser::strip(values[i]), ",;");
 		if (bounds.size() != 2) {
-			ESINFO(GLOBAL_ERROR) << "Cannot parse interval '" << values[i] << "'. Illegal delimiter.";
+			eslog::globalerror("Cannot parse interval '%s'. Illegal delimiter.\n", values[i].c_str());
 		}
 		if (bounds[0][0] == '(') {
 			_excludeStart[i] = true;
 		} else if (bounds[0][0] != '<') {
-			ESINFO(GLOBAL_ERROR) << "Cannot parse interval '" << values[i] << "'. Unknown bracer '" << bounds[0][0] << "'.";
+			eslog::globalerror("Cannot parse interval '%s'. Unknown bracer '%c'.\n", values[i].c_str(), bounds[0][0]);
 		}
 		if (bounds[1][bounds[1].size() - 1] == ')') {
 			_excludeEnd[i] = true;
 		} else if (bounds[1][bounds[1].size() - 1] != '>') {
-			ESINFO(GLOBAL_ERROR) << "Cannot parse interval '" << values[i] << "'. Unknown bracer '" << bounds[1][bounds[1].size() - 1] << "'.";
+			eslog::globalerror("Cannot parse interval '%s'. Unknown bracer '%c'.\n", values[i].c_str(), bounds[1][bounds[1].size() - 1]);
 		}
 
 		bounds[0].erase(bounds[0].begin());
@@ -109,13 +111,13 @@ CubeEdge BlockBorder::getEdge(const BlockSettings &block) const
 	}
 
 	if (fixed_z && !eq(block.start.z, start.z) && !eq(block.end.z, end.z)) {
-		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Warning: interval 'z' coordinate is inside a block. Region is skipped!";
+		eslog::warning("Warning: interval 'z' coordinate is inside a block. Region is skipped!\n");
 	}
 	if (fixed_y && !eq(block.start.y, start.y) && !eq(block.end.y, end.y)) {
-		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Warning: interval 'y' coordinate is inside a block. Region is skipped!";
+		eslog::warning("Warning: interval 'y' coordinate is inside a block. Region is skipped!\n");
 	}
 	if (fixed_x && !eq(block.start.x, start.x) && !eq(block.end.x, end.x)) {
-		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Warning: interval 'x' coordinate is inside a block. Region is skipped!";
+		eslog::warning("Warning: interval 'x' coordinate is inside a block. Region is skipped!\n");
 	}
 
 	if (fixed_z && fixed_y) {
@@ -181,13 +183,13 @@ CubeFace BlockBorder::getFace(const BlockSettings &block) const
 	}
 
 	if (fixed_z && !eq(block.start.z, start.z) && !eq(block.end.z, end.z)) {
-		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Warning: interval 'z' coordinate is inside a block. Region is skipped!";
+		eslog::warning("Warning: interval 'z' coordinate is inside a block. Region is skipped!\n");
 	}
 	if (fixed_y && !eq(block.start.y, start.y) && !eq(block.end.y, end.y)) {
-		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Warning: interval 'y' coordinate is inside a block. Region is skipped!";
+		eslog::warning("Warning: interval 'y' coordinate is inside a block. Region is skipped!\n");
 	}
 	if (fixed_x && !eq(block.start.x, start.x) && !eq(block.end.x, end.x)) {
-		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Warning: interval 'x' coordinate is inside a block. Region is skipped!";
+		eslog::warning("Warning: interval 'x' coordinate is inside a block. Region is skipped!\n");
 	}
 
 	if (fixed_x) {

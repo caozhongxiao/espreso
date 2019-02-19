@@ -2,9 +2,9 @@
 
 #include "solver/specific/sparsesolvers.h"
 
-#include "basis/logging/logging.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/ecfinfo.h"
+#include "esinfo/eslog.hpp"
 
 namespace espreso {
 
@@ -379,7 +379,7 @@ esint  SparseMatrix::SaveMatrixInCOO(string filename) {
 		out.close();
 		return 0;
 	} else {
-		ESINFO(ERROR) << "Matrix file " << filename << " cannot be created ! ";
+		eslog::error("Cannot create file.\n");
 		return -1;
 	}
 }
@@ -409,7 +409,7 @@ esint  SparseMatrix::SaveMatrixBinInCSR(string filename) {
 		return 0;
 
 	} else {
-		ESINFO(ERROR) << "Matrix file " << filename << " cannot be created ! ";
+		eslog::error("File cannot be created.\n");
 		return -1;
 	}
 
@@ -449,7 +449,7 @@ esint  SparseMatrix::SaveMatrixBinInCOO(string filename) {
 		return 0;
 
 	} else {
-		ESINFO(ERROR) << "Matrix file " << filename << " cannot be created ! ";
+		eslog::error("File cannot be created.\n");
 		return -1;
 	}
 
@@ -498,7 +498,7 @@ esint SparseMatrix::LoadMatrixBinInCOO(string filename, char matrix_type_G_for_g
 
 	} else {
 
-		ESINFO(ERROR) << "Matrix file " << filename << " not found ! ";
+		eslog::error("File not found.\n");
 		return -1;
 
 	}
@@ -547,7 +547,7 @@ esint SparseMatrix::LoadMatrixBinInCSR(string filename, char matrix_type_G_for_g
 
 	} else {
 
-		ESINFO(ERROR) << "Matrix file " << filename << " not found ! ";
+		eslog::error("File not found.\n");
 		return -1;
 
 	}
@@ -644,14 +644,14 @@ void SparseMatrix::PrintMatSize( string Matname ) {
 //	dense_values	  = A_in.dense_values;
 //	dense_values_fl   = A_in.dense_values_fl;
 
-	esint dense_size = dense_values.size() * sizeof(double);
-	esint CSR_size   = CSR_I_row_indices.size() * sizeof(esint) + CSR_J_col_indices.size() * sizeof(esint) + CSR_V_values.size() * sizeof(double);
-	esint IJV_size   = I_row_indices.size() * sizeof(esint) 	+ J_col_indices.size() * sizeof(esint) 	  + V_values.size() * sizeof(double);
-
-	ESINFO(ALWAYS_ON_ROOT) << "Matrix " << Matname << " sizes:";
-	ESINFO(ALWAYS_ON_ROOT) << "DNS size: " << dense_size << " B";
-	ESINFO(ALWAYS_ON_ROOT) << "CSR size: " << CSR_size << " B";
-	ESINFO(ALWAYS_ON_ROOT) << "IJV size: " << IJV_size << " B";
+//	esint dense_size = dense_values.size() * sizeof(double);
+//	esint CSR_size   = CSR_I_row_indices.size() * sizeof(esint) + CSR_J_col_indices.size() * sizeof(esint) + CSR_V_values.size() * sizeof(double);
+//	esint IJV_size   = I_row_indices.size() * sizeof(esint) 	+ J_col_indices.size() * sizeof(esint) 	  + V_values.size() * sizeof(double);
+//
+//	ESINFO(ALWAYS_ON_ROOT) << "Matrix " << Matname << " sizes:";
+//	ESINFO(ALWAYS_ON_ROOT) << "DNS size: " << dense_size << " B";
+//	ESINFO(ALWAYS_ON_ROOT) << "CSR size: " << CSR_size << " B";
+//	ESINFO(ALWAYS_ON_ROOT) << "IJV size: " << IJV_size << " B";
 }
 
 
@@ -1039,8 +1039,8 @@ void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> &
 
 	if (type == 'S') {
 		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
-                    ESINFO(ERROR) << "Transposition is not supported for packed symmetric matrices";
-                    return;
+				eslog::error("Transposition is not supported for packed symmetric matrices.\n");
+				return;
 		} else {
 
 			if (!USE_FLOAT) {
@@ -2351,18 +2351,18 @@ void SparseMatrix::getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_o
 }
 
 void SparseMatrix::printMatCSR(char *str0){
-	esint offset = CSR_I_row_indices[0] ? 1 : 0;
-	ESINFO(ALWAYS_ON_ROOT) << str0 << " = [ ...";
-
-	for (esint i = 0; i < rows; i++) {
-		for (esint j = CSR_I_row_indices[i]; j < CSR_I_row_indices[i + 1]; j++) {
-			ESINFO(ALWAYS_ON_ROOT) << i + 1 << " " << CSR_J_col_indices[j - offset] << " " << CSR_V_values[j - offset];
-		}
-	}
-	ESINFO(ALWAYS_ON_ROOT) << "];" << str0 << " = full(sparse(" << str0 << "(:,1)," << str0 << "(:,2)," << str0 << "(:,3)," << rows << "," << cols << "));";
-	if (type=='S'){
-		ESINFO(ALWAYS_ON_ROOT) << str0 << "=" << str0 << "+" << str0 << "'-diag(diag(" << str0 << "));";
-	}
+//	esint offset = CSR_I_row_indices[0] ? 1 : 0;
+//	ESINFO(ALWAYS_ON_ROOT) << str0 << " = [ ...";
+//
+//	for (esint i = 0; i < rows; i++) {
+//		for (esint j = CSR_I_row_indices[i]; j < CSR_I_row_indices[i + 1]; j++) {
+//			ESINFO(ALWAYS_ON_ROOT) << i + 1 << " " << CSR_J_col_indices[j - offset] << " " << CSR_V_values[j - offset];
+//		}
+//	}
+//	ESINFO(ALWAYS_ON_ROOT) << "];" << str0 << " = full(sparse(" << str0 << "(:,1)," << str0 << "(:,2)," << str0 << "(:,3)," << rows << "," << cols << "));";
+//	if (type=='S'){
+//		ESINFO(ALWAYS_ON_ROOT) << str0 << "=" << str0 << "+" << str0 << "'-diag(diag(" << str0 << "));";
+//	}
 }
 
 void SparseMatrix::printMatCSR2(char *str0){
@@ -2592,31 +2592,31 @@ double SparseMatrix::MatCondNumb( SparseMatrix & A_in, const std::string &str0, 
   }
 //
 	if (plot_a_and_b_defines_tridiag) {
-		ESINFO(DETAILS) << "alpha beta";
-		for (esint i = 0 ; i < cnt; i++) {
-			ESINFO(DETAILS) << alphaVec[i] << " " << betaVec[i];
-		}
+//		ESINFO(DETAILS) << "alpha beta";
+//		for (esint i = 0 ; i < cnt; i++) {
+//			ESINFO(DETAILS) << alphaVec[i] << " " << betaVec[i];
+//		}
 	}
   char JOBZ = 'N';
   double *Z = new double[cnt];
   esint ldz = cnt;
   LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt, alphaVec, betaVec, Z, ldz);
   estim_cond=fabs(alphaVec[cnt-1]/alphaVec[0]);
-	if (plot_n_first_n_last_eigenvalues > 0) {
-		ESINFO(DETAILS) << "conds(" << str0 << ") = " << estim_cond << "\tit: " << cnt;
-	}
+//	if (plot_n_first_n_last_eigenvalues > 0) {
+//		ESINFO(DETAILS) << "conds(" << str0 << ") = " << estim_cond << "\tit: " << cnt;
+//	}
   *maxEig = alphaVec[cnt-1];
 
 	if (plot_n_first_n_last_eigenvalues > 0) {
-		ESINFO(DETAILS)
-			<< "eigenvals of " << str0 << " d{1:" << plot_n_first_n_last_eigenvalues << "} and d{"
-			<< cnt-plot_n_first_n_last_eigenvalues+2 << ":\t" << cnt<< "}";
-
-		for (esint i = 0 ; i < cnt; i++) {
-			if (i < plot_n_first_n_last_eigenvalues || i > cnt-plot_n_first_n_last_eigenvalues) {
-				ESINFO(DETAILS) << i + 1 << ":" << alphaVec[i];
-			}
-		}
+//		ESINFO(DETAILS)
+//			<< "eigenvals of " << str0 << " d{1:" << plot_n_first_n_last_eigenvalues << "} and d{"
+//			<< cnt-plot_n_first_n_last_eigenvalues+2 << ":\t" << cnt<< "}";
+//
+//		for (esint i = 0 ; i < cnt; i++) {
+//			if (i < plot_n_first_n_last_eigenvalues || i > cnt-plot_n_first_n_last_eigenvalues) {
+//				ESINFO(DETAILS) << i + 1 << ":" << alphaVec[i];
+//			}
+//		}
 	}
 //
   delete [] s;
@@ -2677,12 +2677,12 @@ void SparseMatrix::MatAddInPlace(SparseMatrix & B_in, char MatB_T_for_transpose_
 
 
 		if (nnz == 0 && transa == 'T' && beta == 1.0) {
-			ESINFO(ERROR) << "Error in 'SparseMatrix::MatAddInPlace' - not implemented - " << "beta = " << beta << " Trans = " << transa;
+			eslog::error("Error in 'SparseMatrix::MatAddInPlace.\n");
 			return;
 		}
 
 		if (nnz == 0 && beta != 1.0) {
-			ESINFO(ERROR) << "Error in 'SparseMatrix::MatAddInPlace' - not implemented - " << "beta = " << beta << " Trans = " << transa;
+			eslog::error("Error in 'SparseMatrix::MatAddInPlace.\n");
 			return;
 		}
 
@@ -3004,7 +3004,7 @@ void SparseMatrix::RemoveLower() {
 	case MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		break;
 	default:
-		ESINFO(ERROR) << "Unknown mtype in remove lower";
+		eslog::error("Unknown mtype in remove lower.\n");
 	}
 
 
@@ -3767,7 +3767,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
       }
 #endif
     if (info){
-      ESINFO(DETAILS) << "info = " << info << " something wrong with Schur complement in SparseSolver::generalIinverse";
+      eslog::error("something wrong with Schur complement in SparseSolver::generalIinverse.\n");
     }
     delete [] WK_modif;
     delete [] ZK_modif;
@@ -3955,37 +3955,37 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 
       if (error_K_rr){
         // K  ------------------------------------------------------------------------
-        SparseMatrix se0 = K;
-        std::ofstream ose00(Logging::prepareFile(d_sub, "K_Err"));
-        ose00 << se0;
-        ose00.close();
-        // K_rr ----------------------------------------------------------------------
-        SparseMatrix se1 = K_rr;
-        std::ofstream ose0(Logging::prepareFile(d_sub, "K_rrErr"));
-        ose0 << se1;
-        ose0.close();
-        // K_rs ----------------------------------------------------------------------
-        SparseMatrix se2 = K_rs;
-        std::ofstream ose1(Logging::prepareFile(d_sub, "K_rsErr"));
-        ose1 << se2;
-        ose1.close();
-        // K_modif -------------------------------------------------------------------
-        SparseMatrix se3 = K_modif;
-        std::ofstream ose2(Logging::prepareFile(d_sub, "K_modifErr"));
-        ose2 << se3;
-        ose2.close();
-        // info file -----------------------------------------------------------------
-        if (d_sub!=-1){
-          std::ofstream ose3(Logging::prepareFile(d_sub, "permut_vectorErr"));
-          for (size_t i = 0;i<permVec.size();i++){
-            ose3 << permVec[i]+1 <<" ";
-          }
-          ose3.close();
-        }
+//        SparseMatrix se0 = K;
+//        std::ofstream ose00(Logging::prepareFile(d_sub, "K_Err"));
+//        ose00 << se0;
+//        ose00.close();
+//        // K_rr ----------------------------------------------------------------------
+//        SparseMatrix se1 = K_rr;
+//        std::ofstream ose0(Logging::prepareFile(d_sub, "K_rrErr"));
+//        ose0 << se1;
+//        ose0.close();
+//        // K_rs ----------------------------------------------------------------------
+//        SparseMatrix se2 = K_rs;
+//        std::ofstream ose1(Logging::prepareFile(d_sub, "K_rsErr"));
+//        ose1 << se2;
+//        ose1.close();
+//        // K_modif -------------------------------------------------------------------
+//        SparseMatrix se3 = K_modif;
+//        std::ofstream ose2(Logging::prepareFile(d_sub, "K_modifErr"));
+//        ose2 << se3;
+//        ose2.close();
+//        // info file -----------------------------------------------------------------
+//        if (d_sub!=-1){
+//          std::ofstream ose3(Logging::prepareFile(d_sub, "permut_vectorErr"));
+//          for (size_t i = 0;i<permVec.size();i++){
+//            ose3 << permVec[i]+1 <<" ";
+//          }
+//          ose3.close();
+//        }
 #if VERBOSE_KERNEL > 0
         os.close();
 #endif
-        ESINFO(ERROR) << "factorization of K_rr failed (1/2 factorization).";
+        eslog::error("factorization of K_rr failed (1/2 factorization).\n");
         exit(EXIT_FAILURE);
       }
       SparseMatrix invKrrKrs = K_rs;
@@ -4022,7 +4022,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   MKL_INT ldz = S.cols;
   info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ, UPLO, S.cols, &(S.dense_values[0]), W, Z, ldz);
   if (info){
-    ESINFO(DETAILS) <<"info = " << info << " something wrong with Schur complement in SparseSolverCPU::generalIinverse";
+	  eslog::error("something wrong with Schur complement in SparseSolverCPU::generalIinverse.\n");
   }
 #if VERBOSE_KERNEL>0
 //6 - Schur complement eigenvalues obtained
@@ -4780,7 +4780,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       }
 #endif
     if (info){
-      ESINFO(DETAILS) << "info = " << info << " something wrong with Schur complement in SparseSolver::generalIinverse";
+    	eslog::error("something wrong with Schur complement in SparseSolverCPU::generalIinverse.\n");
     }
     delete [] WK_modif;
     delete [] ZK_modif;
@@ -5001,37 +5001,37 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
       if (error_K_rr){
         // K  ------------------------------------------------------------------------
-        SparseMatrix se0 = K;
-        std::ofstream ose00(Logging::prepareFile(d_sub, "K_Err"));
-        ose00 << se0;
-        ose00.close();
-        // K_rr ----------------------------------------------------------------------
-        SparseMatrix se1 = K_rr;
-        std::ofstream ose0(Logging::prepareFile(d_sub, "K_rrErr"));
-        ose0 << se1;
-        ose0.close();
-        // K_rs ----------------------------------------------------------------------
-        SparseMatrix se2 = K_rs;
-        std::ofstream ose1(Logging::prepareFile(d_sub, "K_rsErr"));
-        ose1 << se2;
-        ose1.close();
-        // K_modif -------------------------------------------------------------------
-        SparseMatrix se3 = K_modif;
-        std::ofstream ose2(Logging::prepareFile(d_sub, "K_modifErr"));
-        ose2 << se3;
-        ose2.close();
-        // info file -----------------------------------------------------------------
-        if (d_sub!=-1){
-          std::ofstream ose3(Logging::prepareFile(d_sub, "permut_vectorErr"));
-          for (size_t i = 0;i<permVec.size();i++){
-            ose3 << permVec[i]+1 <<" ";
-          }
-          ose3.close();
-        }
+//        SparseMatrix se0 = K;
+//        std::ofstream ose00(Logging::prepareFile(d_sub, "K_Err"));
+//        ose00 << se0;
+//        ose00.close();
+//        // K_rr ----------------------------------------------------------------------
+//        SparseMatrix se1 = K_rr;
+//        std::ofstream ose0(Logging::prepareFile(d_sub, "K_rrErr"));
+//        ose0 << se1;
+//        ose0.close();
+//        // K_rs ----------------------------------------------------------------------
+//        SparseMatrix se2 = K_rs;
+//        std::ofstream ose1(Logging::prepareFile(d_sub, "K_rsErr"));
+//        ose1 << se2;
+//        ose1.close();
+//        // K_modif -------------------------------------------------------------------
+//        SparseMatrix se3 = K_modif;
+//        std::ofstream ose2(Logging::prepareFile(d_sub, "K_modifErr"));
+//        ose2 << se3;
+//        ose2.close();
+//        // info file -----------------------------------------------------------------
+//        if (d_sub!=-1){
+//          std::ofstream ose3(Logging::prepareFile(d_sub, "permut_vectorErr"));
+//          for (size_t i = 0;i<permVec.size();i++){
+//            ose3 << permVec[i]+1 <<" ";
+//          }
+//          ose3.close();
+//        }
 #if VERBOSE_KERNEL > 0
         os.close();
 #endif
-        ESINFO(ERROR) << "factorization of K_rr failed (1/2 factorization).";
+        eslog::error("factorization of K_rr failed (1/2 factorization).\n");
         exit(EXIT_FAILURE);
       }
       SparseMatrix invKrrKrs = K_rs;
@@ -5056,13 +5056,13 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
   S.type='G';
 
-  if (false){
-   SparseMatrix s2 = S;
-   //s2.ConvertDenseToCSR(1);
-   std::ofstream os2(Logging::prepareFile(0, "S"));
-   os2 << s2;
-   os2.close();
-   }
+//  if (false){
+//   SparseMatrix s2 = S;
+//   //s2.ConvertDenseToCSR(1);
+//   std::ofstream os2(Logging::prepareFile(0, "S"));
+//   os2 << s2;
+//   os2.close();
+//   }
 
 //  S.printMatCSR("S");
   S.ConvertCSRToDense(1);
@@ -5094,7 +5094,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 
   if (info){
-    ESINFO(DETAILS) <<"info = " << info << " something wrong with Schur complement in SparseSolverCPU::generalIinverse";
+    eslog::error("something wrong with Schur complement in SparseSolverCPU::generalIinverse.\n");
   }
 #if VERBOSE_KERNEL>0
 //6 - Schur complement eigenvalues obtained
@@ -5487,20 +5487,20 @@ if (defect_K_in == 0){
     }
 
 
-    {
-    	if (info::ecf->output.print_matrices) {
-    		std::ofstream osS(Logging::prepareFile(0, "N"));
-    		osS << N;
-    		osS.close();
-    	}
-    }
-    {
-    	if (info::ecf->output.print_matrices) {
-    		std::ofstream osS(Logging::prepareFile(0, "Nl"));
-    		osS << Nl;
-    		osS.close();
-    	}
-    }
+//    {
+//    	if (info::ecf->output.print_matrices) {
+//    		std::ofstream osS(Logging::prepareFile(0, "N"));
+//    		osS << N;
+//    		osS.close();
+//    	}
+//    }
+//    {
+//    	if (info::ecf->output.print_matrices) {
+//    		std::ofstream osS(Logging::prepareFile(0, "Nl"));
+//    		osS << Nl;
+//    		osS.close();
+//    	}
+//    }
 
 
 

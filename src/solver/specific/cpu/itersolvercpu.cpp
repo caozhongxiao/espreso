@@ -245,7 +245,7 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local( TimeEval & time_eval, SuperClu
 
     if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
 
-    	ESINFO(GLOBAL_ERROR) << "Hybrid FETI not supported in apply_A_l_comp_dom_B_P_local";
+    	eslog::error("Hybrid FETI not supported in apply_A_l_comp_dom_B_P_local.\n");
 
 //         time_eval.timeEvents[0].start();
 //        #pragma omp parallel for
@@ -284,7 +284,7 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local( TimeEval & time_eval, SuperClu
 //
     if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
 
-    	ESINFO(GLOBAL_ERROR) << "Local Schur Complement (LSC) method not supported in apply_A_l_comp_dom_B_P_local";
+    	eslog::error("Local Schur Complement (LSC) method not supported in apply_A_l_comp_dom_B_P_local.\n");
 
 //         time_eval.timeEvents[0].start();
 //         time_eval.timeEvents[0].end();
@@ -374,7 +374,7 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 
     if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
 
-    	ESINFO(GLOBAL_ERROR) << "Hybrid FETI not supported in apply_A_l_comp_dom_B_P_local_sparse";
+    	eslog::error("Hybrid FETI not supported in apply_A_l_comp_dom_B_P_local_sparse.\n");
 
 //         time_eval.timeEvents[0].start();
 //        #pragma omp parallel for
@@ -413,7 +413,7 @@ void IterSolverCPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 
     if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
 
-    	ESINFO(GLOBAL_ERROR) << "Local Schur Complement (LSC) method not supported in apply_A_l_comp_dom_B_P_local_sparse";
+    	eslog::error("Local Schur Complement (LSC) method not supported in apply_A_l_comp_dom_B_P_local_sparse.\n");
 
 //         time_eval.timeEvents[0].start();
 //         time_eval.timeEvents[0].end();
@@ -555,7 +555,7 @@ void IterSolverCPU::Apply_Prec( TimeEval & time_eval, SuperCluster & cluster, SE
 		case FETI_PRECONDITIONER::NONE:
 			break;
 		default:
-			ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+			eslog::error("Not implemented preconditioner.\n");
 		}
 
 	}
@@ -582,7 +582,7 @@ void IterSolverCPU::Apply_Prec( TimeEval & time_eval, SuperCluster & cluster, SE
 		case FETI_PRECONDITIONER::NONE:
 			break;
 		default:
-			ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+			eslog::error("Not implemented preconditioner.\n");
 		}
 
 

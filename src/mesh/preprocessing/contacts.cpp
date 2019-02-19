@@ -3,7 +3,6 @@
 
 #include "mesh/mesh.h"
 #include "mesh/elements/element.h"
-
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/surfacestore.h"
@@ -12,10 +11,10 @@
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
-#include "basis/logging/timeeval.h"
 
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
+#include "esinfo/eslog.hpp"
 
 #include <algorithm>
 #include <numeric>
@@ -29,7 +28,7 @@ void MeshPreprocessing::computeBodiesSurface()
 		this->computeElementsNeighbors();
 	}
 
-	start("computation surface");
+	eslog::startln("MESH: COMPUTE SURFACE");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -90,25 +89,19 @@ void MeshPreprocessing::computeBodiesSurface()
 		_mesh->surface->triangles = _mesh->surface->elements;
 		_mesh->surface->tdistribution = _mesh->surface->edistribution;
 	} else {
-		Esutils::threadDistributionToFullDistribution(facesDistribution);
+		utils::threadDistributionToFullDistribution(facesDistribution);
 		serializededata<esint, esint>::balance(facesDistribution, faces, &_mesh->surface->edistribution);
 		_mesh->surface->elements = new serializededata<esint, esint>(facesDistribution, faces);
 	}
 
-	finish("computation surface");
+	eslog::endln("MESH: SURFACE COMPUTED");
 }
 
 void MeshPreprocessing::computeSurfaceLocations()
 {
-	start("computation surface location");
+	eslog::startln("MESH: COMPUTE SURFACE LOCATIONS");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
-
-	TimeEval eval("SURFACE");
-	eval.totalTime.startWithBarrier();
-
-	TimeEvent event0("elements with coordinates");
-	event0.start();
 
 	std::vector<std::vector<Point> > points(threads);
 	#pragma omp parallel for
@@ -127,12 +120,6 @@ void MeshPreprocessing::computeSurfaceLocations()
 	} else {
 		_mesh->contacts->elements = new serializededata<esint, Point>(3, points);
 	}
-
-	event0.end();
-	eval.addEvent(event0);
-
-	TimeEvent event("bounding box");
-	event.start();
 
 	size_t precision = 0;
 	double epsilon = 1e-6;
@@ -215,12 +202,6 @@ void MeshPreprocessing::computeSurfaceLocations()
 	MPI_Allreduce(&_mesh->contacts->boundingBox[0], &_mesh->contacts->globalBox[0], 3, MPI_DOUBLE, MPI_MIN, info::mpi::comm);
 	MPI_Allreduce(&_mesh->contacts->boundingBox[1], &_mesh->contacts->globalBox[1], 3, MPI_DOUBLE, MPI_MAX, info::mpi::comm);
 
-	event.end();
-	eval.addEvent(event);
-
-	TimeEvent event2("grid");
-	event2.start();
-
 	std::vector<std::vector<std::pair<esint, esint> > > grids(threads);
 
 	double boxsize = _mesh->contacts->eps * _mesh->contacts->groupsize;
@@ -278,17 +259,11 @@ void MeshPreprocessing::computeSurfaceLocations()
 			grids[0].insert(grids[0].end(), grids[t].begin(), grids[t].end());
 			gdistribution.push_back(grids[0].size());
 		}
-		Esutils::sortWithInplaceMerge(grids[0], gdistribution);
+		utils::sortWithInplaceMerge(grids[0], gdistribution);
 	}
-
-	event2.end();
-	eval.addEvent(event2);
 
 	// 3. create sparse structure
 	///////////////////
-
-	TimeEvent event3("sparse structure");
-	event3.start();
 
 	std::vector<size_t> distribution = tarray<size_t>::distribute(threads, grids[0].size());
 
@@ -324,7 +299,7 @@ void MeshPreprocessing::computeSurfaceLocations()
 		gfilled[t].swap(filled);
 	}
 
-	Esutils::threadDistributionToFullDistribution(gdist);
+	utils::threadDistributionToFullDistribution(gdist);
 	for (size_t t = 1; t < threads; t++) {
 		gdist[0].insert(gdist[0].end(), gdist[t].begin(), gdist[t].end());
 		gdata[0].insert(gdata[0].end(), gdata[t].begin(), gdata[t].end());
@@ -338,18 +313,12 @@ void MeshPreprocessing::computeSurfaceLocations()
 	_mesh->contacts->filledCells.swap(gfilled[0]);
 	_mesh->contacts->grid = new serializededata<esint, esint>(gdist, gdata);
 
-	event3.end();
-	eval.addEvent(event3);
-
-	eval.totalTime.endWithBarrier();
-	eval.printStatsMPI();
-
-	finish("computation surface location");
+	eslog::endln("MESH: SURFACE LOCATIONS COMPUTED");
 }
 
 void MeshPreprocessing::searchContactInterfaces()
 {
-	start("search contact interfaces");
+	eslog::startln("MESH: SEARCH CONTACT INTERFACE");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 	double epsilon = 1e-6;
@@ -376,12 +345,6 @@ void MeshPreprocessing::searchContactInterfaces()
 		intersection[1].z = std::min(block1[1].z, block2[1].z);
 	};
 
-	TimeEval eval("CONTACT");
-	eval.totalTime.startWithBarrier();
-
-	TimeEvent event3("compute neighbors and group sizes");
-	event3.start();
-
 	std::vector<Point> boxes(2 * info::mpi::size);
 
 	MPI_Allgather(_mesh->contacts->boundingBox, 6, MPI_DOUBLE, boxes.data(), 6, MPI_DOUBLE, info::mpi::comm);
@@ -397,14 +360,8 @@ void MeshPreprocessing::searchContactInterfaces()
 	// EXCHANGE GROUP SIZES
 	std::vector<std::vector<size_t> > sGroupSize(_mesh->contacts->neighbors.size(), { _mesh->contacts->groupsize }), rGroupSize(_mesh->contacts->neighbors.size(), { 0 });
 	if (!Communication::exchangeKnownSize(sGroupSize, rGroupSize, _mesh->contacts->neighbors)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange group size.";
+		eslog::error("ESPRESO internal error: exchange group size.\n");
 	}
-
-	event3.end();
-	eval.addEvent(event3);
-
-	TimeEvent event("get filled data to neighbors");
-	event.start();
 
 	std::vector<std::vector<esint> > sFilled(_mesh->contacts->neighbors.size());
 	std::vector<std::vector<esint> > sBlock(_mesh->contacts->neighbors.size()), rBlock(_mesh->contacts->neighbors.size());
@@ -452,13 +409,8 @@ void MeshPreprocessing::searchContactInterfaces()
 		}
 	}
 
-	event.end();
-	eval.addEvent(event);
-
 	_mesh->contacts->nsurface.resize(_mesh->contacts->neighbors.size());
 
-	TimeEvent eventx("compose returned data");
-	eventx.start();
 	for (size_t n = 0; n < _mesh->contacts->neighbors.size(); n++) {
 		std::vector<size_t> distribution = tarray<size_t>::distribute(threads, sFilled[n].size());
 		sBlock[n].resize(sFilled[n].size() + 1);
@@ -483,7 +435,7 @@ void MeshPreprocessing::searchContactInterfaces()
 			}
 		}
 
-		Esutils::threadDistributionToFullDistribution(sBlock[n], distribution);
+		utils::threadDistributionToFullDistribution(sBlock[n], distribution);
 		for (size_t t = 0; t < threads; t++) {
 			distribution[t] = sIDs[0].size();
 			sIDs[n].insert(sIDs[n].end(), tIDs[t].begin(), tIDs[t].end());
@@ -492,13 +444,13 @@ void MeshPreprocessing::searchContactInterfaces()
 
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			Esutils::sortAndRemoveDuplicity(tIDs[t]);
+			utils::sortAndRemoveDuplicity(tIDs[t]);
 		}
 
 		for (size_t t = 1; t < threads; t++) {
 			tIDs[0].insert(tIDs[0].end(), tIDs[t].begin(), tIDs[t].end());
 		}
-		Esutils::sortAndRemoveDuplicity(tIDs[0]);
+		utils::sortAndRemoveDuplicity(tIDs[0]);
 		_mesh->contacts->nsurface[n].swap(tIDs[0]);
 
 		#pragma omp parallel for
@@ -535,7 +487,7 @@ void MeshPreprocessing::searchContactInterfaces()
 			dist[t].swap(tdist);
 			data[t].swap(tdata);
 		}
-		Esutils::threadDistributionToFullDistribution(dist);
+		utils::threadDistributionToFullDistribution(dist);
 
 		for (size_t t = 0; t < threads; t++) {
 			sDist[n].insert(sDist[n].end(), dist[t].begin(), dist[t].end());
@@ -548,31 +500,25 @@ void MeshPreprocessing::searchContactInterfaces()
 	_mesh->contacts->nelements.resize(_mesh->contacts->neighbors.size());
 
 	if (!Communication::exchangeUnknownSize(sFilled, _mesh->contacts->nfilled, _mesh->contacts->neighbors)) {
-		ESINFO(ERROR) << "ESPRESO internal error: contacts - filled boxed.";
+		eslog::error("ESPRESO internal error: contacts - filled boxed.\n");
 	}
 	if (!Communication::exchangeUnknownSize(sBlock, rBlock, _mesh->contacts->neighbors)) {
-		ESINFO(ERROR) << "ESPRESO internal error: contacts - blocks sizes.";
+		eslog::error("ESPRESO internal error: contacts - blocks sizes.\n");
 	}
 	if (!Communication::exchangeUnknownSize(sIDs, rIDs, _mesh->contacts->neighbors)) {
-		ESINFO(ERROR) << "ESPRESO internal error: contacts - IDs.";
+		eslog::error("ESPRESO internal error: contacts - IDs.\n");
 	}
 	if (!Communication::exchangeUnknownSize(sDist, rDist, _mesh->contacts->neighbors)) {
-		ESINFO(ERROR) << "ESPRESO internal error: contacts - faces distribution.";
+		eslog::error("ESPRESO internal error: contacts - faces distribution.\n");
 	}
 	if (!Communication::exchangeUnknownSize(sData, rData, _mesh->contacts->neighbors)) {
-		ESINFO(ERROR) << "ESPRESO internal error: contacts - faces data.";
+		eslog::error("ESPRESO internal error: contacts - faces data.\n");
 	}
 
 	for (size_t n = 0; n < _mesh->contacts->neighbors.size(); ++n) {
 		_mesh->contacts->ngrid[n] = new serializededata<esint, esint>(rBlock[n], rIDs[n]);
 		_mesh->contacts->nelements[n] = new serializededata<esint, Point>(rDist[n], rData[n]);
 	}
-
-	eventx.end();
-	eval.addEvent(eventx);
-
-	TimeEvent eventb("compute potential local contacts");
-	eventb.start();
 
 	std::vector<std::vector<esint> > closeElementsDist(threads), closeElementsData(threads);
 
@@ -634,7 +580,7 @@ void MeshPreprocessing::searchContactInterfaces()
 					}
 				}
 			}
-			Esutils::sortAndRemoveDuplicity(tcloseElementsData, prevsize);
+			utils::sortAndRemoveDuplicity(tcloseElementsData, prevsize);
 			tcloseElementsDist.push_back(tcloseElementsData.size());
 		}
 
@@ -642,16 +588,9 @@ void MeshPreprocessing::searchContactInterfaces()
 		closeElementsData[t].swap(tcloseElementsData);
 	}
 
-	Esutils::threadDistributionToFullDistribution(closeElementsDist);
+	utils::threadDistributionToFullDistribution(closeElementsDist);
 
 	_mesh->contacts->closeElements = new serializededata<esint, esint>(closeElementsDist, closeElementsData);
-
-	eventb.end();
-	eval.addEvent(eventb);
-
-	TimeEvent eventc("compute potential neighbors contacts");
-	eventc.start();
-
 	_mesh->contacts->ncloseElements.resize(_mesh->contacts->neighbors.size());
 	for (size_t n = 0; n < _mesh->contacts->neighbors.size(); n++) {
 		std::vector<size_t> distribution = tarray<size_t>::distribute(threads, _mesh->contacts->nsurface[n].size());
@@ -724,7 +663,7 @@ void MeshPreprocessing::searchContactInterfaces()
 							}
 						}
 					}
-					Esutils::sortAndRemoveDuplicity(tcloseElementsData, prevsize);
+					utils::sortAndRemoveDuplicity(tcloseElementsData, prevsize);
 					tcloseElementsDist.push_back(tcloseElementsData.size());
 				}
 			}
@@ -733,18 +672,12 @@ void MeshPreprocessing::searchContactInterfaces()
 			ncloseElementsData[t].swap(tcloseElementsData);
 		}
 
-		Esutils::threadDistributionToFullDistribution(ncloseElementsDist);
+		utils::threadDistributionToFullDistribution(ncloseElementsDist);
 
 		_mesh->contacts->ncloseElements[n] = new serializededata<esint, esint>(ncloseElementsDist, ncloseElementsData);
 	}
 
-	eventc.end();
-	eval.addEvent(eventc);
-
-	eval.totalTime.endWithBarrier();
-	eval.printStatsMPI();
-
-	finish("search contact interfaces");
+	eslog::endln("MESH: CONTACT INTERFACE SEARCHED");
 }
 
 

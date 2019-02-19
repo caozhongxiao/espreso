@@ -96,7 +96,7 @@ struct Store {
 		}
 		std::vector<TType> result;
 		Communication::gatherUnknownSize(odistribution, result);
-		Esutils::removeDuplicity(result);
+		utils::removeDuplicity(result);
 		Communication::broadcastUnknownSize(result);
 
 		return result;

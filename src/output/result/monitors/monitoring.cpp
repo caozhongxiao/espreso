@@ -1,13 +1,12 @@
 
-
 #include "monitoring.h"
 
-#include "esinfo/time.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/timeinfo.h"
+#include "esinfo/eslog.hpp"
 
 #include "basis/containers/serializededata.h"
-#include "basis/logging/logging.h"
 #include "basis/utilities/utils.h"
 #include "basis/utilities/parser.h"
 
@@ -20,6 +19,7 @@
 #include "mesh/store/elementsregionstore.h"
 
 #include <iomanip>
+#include <sstream>
 
 using namespace espreso;
 
@@ -74,7 +74,7 @@ void Monitoring::updateMesh()
 {
 	for (auto it = info::ecf->output.monitoring.begin(); it != info::ecf->output.monitoring.end(); ++it) {
 		if (it->first <= 0) {
-			ESINFO(GLOBAL_ERROR) << "Invalid column index in monitoring.";
+			eslog::globalerror("Invalid column index in monitoring.\n");
 		}
 		if (it->first > _monitors.size()) {
 			_monitors.resize(it->first);
@@ -96,7 +96,7 @@ void Monitoring::updateMesh()
 			}
 		}
 		if (regionNotFound) {
-			ESINFO(GLOBAL_ERROR) << "Monitoring contains unknown region '" << it->second.region << "'.";
+			eslog::globalerror("Monitoring contains unknown region '%s'.\n", it->second.region.c_str());
 		}
 
 		NodeData *ndata = NULL;
@@ -122,11 +122,11 @@ void Monitoring::updateMesh()
 			}
 		}
 		if (propertyNotFound) {
-			ESINFO(GLOBAL_ERROR) << "Monitoring contains unknown property '" << it->second.property << "'.";
+			eslog::globalerror("Monitoring contains unknown property '%s'.\n", it->second.property.c_str());
 		}
 
 		if (edata != NULL && bstore != NULL) {
-			ESINFO(GLOBAL_ERROR) << "Cannot monitor element property '" << it->second.property << "' on element region '" << it->second.region << "'.";
+			eslog::globalerror("Cannot monitor element property '%s' on element region '%s'.\n", it->second.property.c_str(), it->second.region.c_str());
 		}
 		if (edata != NULL && estore != NULL) {
 			for (size_t i = 0; i < _edata.size(); i++) {
@@ -229,10 +229,10 @@ void Monitoring::updateMesh()
 		}
 	}
 
-	_os.open(Logging::outputRoot() + "/" + Logging::name + ".emr");
+	_os.open(std::string(eslog::path()) + "/" + std::string(eslog::name()) + ".emr");
 
 	if (!_os.is_open()) {
-		ESINFO(GLOBAL_ERROR) << "Cannot open file for storing monitor report\n";
+		eslog::globalerror("Cannot open file for storing monitor report.\n");
 	}
 
 	_os << "\n";

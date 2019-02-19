@@ -1,7 +1,7 @@
 
+#include "esinfo/timeinfo.h"
 #include "visualization.h"
 
-#include "esinfo/time.h"
 #include "esinfo/ecfinfo.h"
 #include "config/ecf/output.h"
 

@@ -6,8 +6,8 @@
 #include "input/plaindata.h"
 #include "input/generatedinput.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/eslog.hpp"
 #include "config/ecf/input/gridtower.h"
-#include "basis/logging/logging.h"
 #include "basis/utilities/communication.h"
 
 using namespace espreso;
@@ -34,7 +34,7 @@ size_t GridTowerGenerator::gridIndex(const GridTowerGeneratorConfiguration &conf
 		int gclusters = maxclusters;
 		for (auto it = grid->second.blocks.begin(); it != grid->second.blocks.end(); ++it) {
 			if (it->first >= maxclusters) {
-				ESINFO(GLOBAL_ERROR) << "Block index is out of range.";
+				eslog::globalerror("Block index is out of range.\n");
 			}
 			if (!it->second) {
 				--gclusters;
@@ -126,7 +126,7 @@ void GridTowerGenerator::init(const GridTowerGeneratorConfiguration &configurati
 	_settings.body = _gridIndex;
 
 	if (cluster != info::mpi::size) {
-		ESINFO(GLOBAL_ERROR) << "Incorrect number of MPI processes (" << info::mpi::size << "). Should be " << cluster;
+		eslog::globalerror("Incorrect number of MPI processes (%d). Should be %d\n", info::mpi::size, cluster);
 	}
 }
 

@@ -13,6 +13,7 @@ struct ECFParameter;
 struct ECFObject;
 struct EnvironmentConfiguration;
 struct OutputConfiguration;
+struct VerboseArg;
 
 struct ECFRedParameters {
 	bool hadValidECF;
@@ -42,14 +43,12 @@ public:
 		return _read(configuration, argc, argv, defaultArgs, variables);
 	}
 
-	static void set(const OutputConfiguration &output);
-
 	static void store(const ECFObject &configuration, std::ostream &os, bool onlyAllowed = true, bool printPatterns = false, const ECFRedParameters &parameters = ECFRedParameters());
 
 	static std::string configurationFile;
+	static std::vector<VerboseArg*> verbosity;
 
 private:
-	static void copyInputData();
 	static ECFRedParameters _read(
 			ECFObject &configuration,
 			const std::string &file,

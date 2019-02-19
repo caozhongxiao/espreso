@@ -2,6 +2,7 @@
 #include "esinfo/meshinfo.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/eslog.hpp"
 #include "physics/assembler/dataholder.h"
 #include "uniformnodesfeticomposer.h"
 
@@ -11,7 +12,6 @@
 #include "physics/assembler/assembler.h"
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/denseMatrix.h"
-#include "basis/logging/logging.h"
 #include "basis/utilities/utils.h"
 #include "basis/utilities/communication.h"
 
@@ -50,7 +50,7 @@ void UniformNodesFETIComposer::initDOFs()
 					(info::mesh->elements->procNodes->begin() + info::mesh->elements->elementsDistribution[d])->begin(),
 					(info::mesh->elements->procNodes->begin() + info::mesh->elements->elementsDistribution[d + 1])->begin());
 
-			Esutils::sortAndRemoveDuplicity(dnodes);
+			utils::sortAndRemoveDuplicity(dnodes);
 			for (size_t i = 0; i < dnodes.size(); i++) {
 				tdata.push_back(std::pair<esint, esint>(dnodes[i], d));
 			}
@@ -89,7 +89,7 @@ void UniformNodesFETIComposer::initDOFs()
 		DOFs[t].swap(tDOFs);
 	}
 
-	Esutils::sizesToOffsets(DOFs);
+	utils::sizesToOffsets(DOFs);
 
 	std::vector<std::vector<std::vector<esint> > > sBuffer(threads);
 	std::vector<std::vector<esint> > rBuffer(info::mesh->neighboursWithMe.size());
@@ -137,7 +137,7 @@ void UniformNodesFETIComposer::initDOFs()
 	}
 
 	if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, info::mesh->neighboursWithMe)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange uniform DOFs.";
+		eslog::error("ESPRESO internal error: exchange uniform DOFs.\n");
 	}
 
 	// domain0, DOF0, DOF1, ..., DOFn, domain1, DOF0, DOF1, ..., DOFn, ...; domain0, ...
@@ -186,7 +186,7 @@ void UniformNodesFETIComposer::buildDirichlet()
 	_controler.dirichletIndices(dIndices);
 
 	if (dIndices.size() != (size_t)_DOFs) {
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: invalid number of DOFs per node in Dirichlet.";
+		eslog::globalerror("ESPRESO internal error: invalid number of DOFs per node in Dirichlet.\n");
 	}
 
 	if (_DOFs > 1) {
@@ -567,7 +567,7 @@ void UniformNodesFETIComposer::buildB1Pattern()
 	}
 
 	if (!Communication::receiveLowerUnknownSize(sBuffer, rBuffer, info::mesh->neighbours)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange gluing offsets";
+		eslog::error("ESPRESO internal error: exchange gluing offsets.\n");
 	}
 
 	std::vector<esint> dDistribution = info::mesh->elements->gatherDomainsProcDistribution();
@@ -745,7 +745,7 @@ void UniformNodesFETIComposer::updateDuplicity()
 	}
 
 	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighbours)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange diagonal values";
+		eslog::error("ESPRESO internal error: exchange diagonal values.\n");
 	}
 
 	dmap = _DOFMap->begin();
@@ -889,7 +889,7 @@ void UniformNodesFETIComposer::_gather(std::vector<double> &out, std::vector<std
 	}
 
 	if (!Communication::exchangeKnownSize(sBuffer[0], rBuffer, info::mesh->neighbours)) {
-		ESINFO(ERROR) << "ESPRESO internal error: synchronize solution.";
+		eslog::error("ESPRESO internal error: synchronize solution.\n");
 	}
 
 	std::vector<esint> roffset(info::mesh->neighbours.size());

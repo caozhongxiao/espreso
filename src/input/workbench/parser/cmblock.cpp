@@ -3,10 +3,10 @@
 
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
+#include "esinfo/eslog.hpp"
 
 #include "basis/containers/tarray.h"
 #include "basis/utilities/parser.h"
-#include "basis/logging/logging.h"
 
 #include <algorithm>
 
@@ -27,7 +27,7 @@ CMBlock::CMBlock()
 CMBlock& CMBlock::parse(const char* begin)
 {
 	auto error = [&] (std::string &line) {
-		ESINFO(ERROR) << "Workbench parse error: unknown format of CMBLOCK: " << line;
+		eslog::error("Workbench parse error: unknown format of CMBLOCK: %s\n", line);
 	};
 
 	std::string commandLine = Parser::getLine(begin);

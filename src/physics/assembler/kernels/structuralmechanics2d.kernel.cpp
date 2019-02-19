@@ -1,13 +1,13 @@
 
+#include "esinfo/timeinfo.h"
 #include "physics/assembler/dataholder.h"
-#include "esinfo/time.h"
 #include "esinfo/ecfinfo.h"
+#include "esinfo/eslog.hpp"
 #include "structuralmechanics2d.kernel.h"
 
 #include "basis/containers/point.h"
 #include "basis/matrices/denseMatrix.h"
 #include "basis/evaluator/evaluator.h"
-#include "basis/logging/logging.h"
 #include "config/ecf/root.h"
 #include "mesh/elements/element.h"
 
@@ -28,7 +28,7 @@ void StructuralMechanics2DKernel::assembleMaterialMatrix(esint node, double *coo
 		break;
 
 	case LinearElasticPropertiesConfiguration::MODEL::ANISOTROPIC:
-		ESINFO(ERROR) << "Implement ANISOTROPIC MATERIAL";
+		eslog::error("Implement ANISOTROPIC MATERIAL.\n");
 		break;
 
 	case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC:
@@ -38,7 +38,7 @@ void StructuralMechanics2DKernel::assembleMaterialMatrix(esint node, double *coo
 		break;
 
 	default:
-		ESINFO(ERROR) << "Linear elasticity 2D not supports set material model";
+		eslog::error("Linear elasticity 2D not supports set material model.\n");
 	}
 
 	switch (mat->linear_elastic_properties.model) {
@@ -109,18 +109,18 @@ void StructuralMechanics2DKernel::assembleMaterialMatrix(esint node, double *coo
 
 	case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC:
 	{
-		ESINFO(ERROR) << "IMPLEMENT: MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC";
+		eslog::error("IMPLEMENT: MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC.\n");
 		return;
 	}
 
 	case LinearElasticPropertiesConfiguration::MODEL::ANISOTROPIC:
 	{
-		ESINFO(ERROR) << "IMPLEMENT: MATERIAL_MODEL::LINEAR_ELASTIC_ANISOTROPIC";
+		eslog::error("IMPLEMENT: MATERIAL_MODEL::LINEAR_ELASTIC_ANISOTROPIC.\n");
 		return;
 	}
 
 	default:
-		ESINFO(ERROR) << "Structural mechanics 2D not supports set material model";
+		eslog::error("Structural mechanics 2D not supports set material model.\n");
 	}
 }
 
@@ -158,7 +158,7 @@ void StructuralMechanics2DKernel::processElement(Matrices matrices, const Solver
 			TE(n, 1) = (iterator.temperature[n] - iterator.initialTemperature[n]) * te;
 			break;
 		default:
-			ESINFO(GLOBAL_ERROR) << "Invalid LINEAR ELASTIC model.";
+			eslog::globalerror("Invalid LINEAR ELASTIC model.\n");
 		}
 		assembleMaterialMatrix(n, iterator.coordinates, iterator.material, time::current, iterator.temperature[n], K);
 	}

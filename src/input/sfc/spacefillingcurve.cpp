@@ -1,12 +1,11 @@
 
-#include "mpi.h"
 #include "spacefillingcurve.h"
 
 #include "basis/containers/tarray.h"
-#include "basis/logging/logging.h"
 #include "basis/utilities/utils.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
+#include "esinfo/eslog.hpp"
 
 #include <utility>
 #include <limits>
@@ -18,7 +17,7 @@ SpaceFillingCurve::SpaceFillingCurve(size_t dimension, size_t depth, std::vector
 : _dimension(dimension), _depth(depth), _n(1 << depth), _n2(_n * _n), _n3(_n * _n * _n), _refinedsfc(1, std::vector<size_t>(1))
 {
 	if (_dimension != 2 && _dimension != 3) {
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: incorrect mesh dimension ='" << _dimension << "'.";
+		eslog::globalerror("ESPRESO internal error: incorrect mesh dimension ='%ld'.\n", _dimension);
 	}
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -60,7 +59,7 @@ SpaceFillingCurve::SpaceFillingCurve(size_t dimension, size_t depth, std::vector
 
 void SpaceFillingCurve::finishLevel(size_t depth)
 {
-	Esutils::sortAndRemoveDuplicity(_refinedsfc[depth]);
+	utils::sortAndRemoveDuplicity(_refinedsfc[depth]);
 }
 
 void SpaceFillingCurve::SCFToXYZ()

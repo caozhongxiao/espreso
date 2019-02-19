@@ -8,7 +8,7 @@
 #include <fstream>
 
 #include "esinfo/mpiinfo.h"
-#include "basis/logging/logging.h"
+#include "esinfo/eslog.hpp"
 
 using namespace espreso;
 
@@ -17,7 +17,7 @@ FullFile::FullFile(const std::string &file): _p(0)
 	if (info::mpi::rank == 0) {
 		std::ifstream data(file, std::ifstream::in);
 		if (!data.good()) {
-			ESINFO(GLOBAL_ERROR) << "Cannot read file '" << file << "'";
+			eslog::globalerror("Cannot read file '%s'\n", file);
 		}
 
 		data.seekg(0, data.end);
@@ -216,7 +216,7 @@ Tokenizer::Token Tokenizer::_next()
 			size_t stacked = 0;
 			while(!isLinkEnd(_file.peek()) || stacked) {
 				if (_file.eof()) {
-					ESINFO(GLOBAL_ERROR) << "Configuration file error: missing link end character ']' for:\n " << std::string(_buffer.begin(), _buffer.begin() + 20);
+					eslog::globalerror("Configuration file error: missing link end symbol ']'");
 				}
 				if (isLinkStart(_file.peek())) {
 					stacked++;
@@ -238,7 +238,7 @@ Tokenizer::Token Tokenizer::_next()
 			}
 			while (!isStringEnd(_file.peek()) || stacked) {
 				if (_file.eof()) {
-					ESINFO(GLOBAL_ERROR) << "Configuration file error: missing string end character '\"' for:\n " << std::string(_buffer.begin(), _buffer.begin() + 20);
+					eslog::globalerror("Configuration file error: missing link end symbol '\"'");
 				}
 				if (isStringStart(_file.peek())) {
 					stacked++;

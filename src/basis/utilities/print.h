@@ -3,6 +3,7 @@
 #define SRC_BASIS_UTILITIES_PRINT_H_
 
 #include "basis/containers/point.h"
+#include "basis/containers/serializededata.h"
 
 #include <ostream>
 #include <vector>
@@ -28,6 +29,26 @@ std::ostream& operator<< (std::ostream& os, const std::vector<T> &v)
 		os << v[i] << " ";
 	}
 	os << "\n";
+	return os;
+}
+
+template <typename TData>
+std::ostream& operator<< (std::ostream& os, edata<TData> &data)
+{
+	os << "[ ";
+	for (auto i = data.begin(); i != data.end(); ++i) {
+		os << *i << " ";
+	}
+	os << "]";
+	return os;
+}
+
+template <typename TEBoundaries, typename TEData>
+std::ostream& operator<< (std::ostream& os, const serializededata<TEBoundaries, TEData> &data)
+{
+	for(auto e = data.cbegin(); e != data.cend(); ++e) {
+		os << *e;
+	}
 	return os;
 }
 

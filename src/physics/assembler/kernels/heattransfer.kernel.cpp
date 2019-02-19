@@ -1,8 +1,8 @@
 
 #include "heattransfer.kernel.h"
 
-#include "basis/logging/logging.h"
 #include "basis/evaluator/evaluator.h"
+#include "esinfo/eslog.hpp"
 #include "config/ecf/physics/heattransfer.h"
 
 #include <cmath>
@@ -220,7 +220,7 @@ static void convectionMaterialParameters(
 
 	}break;
 	default:
-		ESINFO(ERROR) << "Invalid convection fluid type.";
+		eslog::error("Invalid convection fluid type.");
 	}
 }
 
@@ -308,7 +308,7 @@ double HeatTransferKernel::convectionHTC(
 
 			if ( RaD > 10e12 ){
 				// warning!!!!
-				ESINFO(ERROR) << "Validated only for RaD <= 10e12 ";
+				eslog::error("Validated only for RaD <= 10e12.");
 			}
 			htc = thermalConductivity / diameter * pow( 0.6 + ( 0.387*pow(RaD,1.0/6.0)/ pow( 1 + pow( 0.559/Pr, 9.0/16.0), 8.0/27.0) ) ,2.0);
 
@@ -321,12 +321,12 @@ double HeatTransferKernel::convectionHTC(
 
 			if ( RaD > 10e11 || Pr < 0.7 ){
 				// warning!!!!
-				ESINFO(ERROR) << "Validated only for RaD <= 10e11 and Pr >= 0.7 ";
+				eslog::error("Validated only for RaD <= 10e11 and Pr >= 0.7.");
 			}
 			htc = thermalConductivity / diameter * pow(2.0 + ( 0.589*pow(RaD,0.25)/ pow( 1 + pow( 0.469/Pr, 9.0/16.0), 4.0/9.0) ) ,2.0);
 		} break;
 		default:
-			ESINFO(ERROR) << "Invalid convection variant for EXTERNAL_NATURAL.";
+			eslog::error("Invalid convection variant for EXTERNAL_NATURAL.");
 		}
 	} break;
 
@@ -381,7 +381,7 @@ double HeatTransferKernel::convectionHTC(
 
 		} break;
 		default:
-			ESINFO(ERROR) << "Invalid convection variant for INTERNAL_NATURAL.";
+			eslog::error("Invalid convection variant for INTERNAL_NATURAL.\n");
 		}
 	} break;
 
@@ -410,7 +410,7 @@ double HeatTransferKernel::convectionHTC(
 
 			} break;
 			default:
-				ESINFO(ERROR) << "Invalid convection variant for EXTERNAL_FORCED.";
+				eslog::error("Invalid convection variant for EXTERNAL_FORCED.\n");
 			}
 	} break;
 
@@ -438,12 +438,12 @@ double HeatTransferKernel::convectionHTC(
 				}
 			}break;
 			default:
-				ESINFO(ERROR) << "Invalid convection variant for EXTERNAL_FORCED.";
+				eslog::error("Invalid convection variant for EXTERNAL_FORCED.\n");
 			}
 	}break;
 
 	default:
-		ESINFO(ERROR) << "Invalid convection TYPE.";
+		eslog::error("Invalid convection TYPE.\n");
 	}
 
 	return htc;

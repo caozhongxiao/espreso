@@ -1,16 +1,17 @@
 
-#include "physics/assembler/dataholder.h"
-#include "esinfo/time.h"
-#include "esinfo/meshinfo.h"
 #include "newtonraphson.h"
-#include "physics/solver/loadstep/loadstepsolver.h"
 
+#include "esinfo/meshinfo.h"
+#include "esinfo/timeinfo.h"
+#include "esinfo/eslog.hpp"
+
+#include "physics/assembler/dataholder.h"
 #include "physics/assembler/assembler.h"
 #include "physics/assembler/composer/composer.h"
 #include "physics/assembler/controllers/controller.h"
+#include "physics/solver/loadstep/loadstepsolver.h"
 
 #include "config/ecf/physics/physicssolver/nonlinearsolver.h"
-#include "basis/logging/logging.h"
 #include "basis/containers/serializededata.h"
 
 #include "mesh/store/nodestore.h"
@@ -45,7 +46,7 @@ std::string NewtonRaphson::name()
 void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 {
 	if (!_configuration.check_first_residual && !_configuration.check_second_residual) {
-		ESINFO(GLOBAL_ERROR) << "Turn on at least one convergence parameter for NONLINEAR solver.";
+		eslog::globalerror("Turn on at least one convergence parameter for NONLINEAR solver.\n");
 	}
 
 	double &solutionPrecision = _assembler.solutionPrecision();
@@ -64,7 +65,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 	_assembler.parameters.tangentMatrixCorrection = _configuration.tangent_matrix_correction;
 	while (time::iteration++ < _configuration.max_iterations) {
 		if (!_configuration.check_second_residual) {
-			ESINFO(CONVERGENCE) << "\n >> EQUILIBRIUM ITERATION " << time::iteration + 1 << " IN SUBSTEP "  << time::substep + 1;
+			eslog::solver("EQUILIBRIUM ITERATION %d IN SUBSTEP %d\n", time::iteration + 1, time::substep + 1);
 		}
 
 		_solution->data = _assembler.controller()->solution()->data;
@@ -80,7 +81,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 			double residualNumerator = _assembler.composer()->residualNormNumerator();
 			double residualDenominator = std::max(_assembler.composer()->residualNormDenominator(), 1e-3);
 			if (residualNumerator / residualDenominator < _configuration.requested_second_residual && time::iteration > 1 ) {
-				ESINFO(CONVERGENCE) << "    HEAT_CONVERGENCE_VALUE =  " <<  residualNumerator << "  CRITERION_VALUE = " << residualDenominator * _configuration.requested_second_residual << " <<< CONVERGED >>>";
+				eslog::solver("HEAT_CONVERGENCE_VALUE = %.3e / *.3e <<< CONVERGED >>>\n", residualNumerator, residualDenominator * _configuration.requested_second_residual);
 				if (_configuration.check_first_residual) {
 					if (solutionNorm < _configuration.requested_first_residual) {
 						break;
@@ -89,8 +90,8 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 					break;
 				}
 			} else {
-				ESINFO(CONVERGENCE) << " >> EQUILIBRIUM ITERATION " << time::iteration + 1 << " IN SUBSTEP "  << time::substep + 1;
-				ESINFO(CONVERGENCE) << "    HEAT_CONVERGENCE_VALUE =  " <<  residualNumerator << "  CRITERION_VALUE = " << residualDenominator * _configuration.requested_second_residual;
+				eslog::solver("EQUILIBRIUM ITERATION %d IN SUBSTEP %d\n", time::iteration + 1, time::substep + 1);
+				eslog::solver("HEAT_CONVERGENCE_VALUE = %.3e / *.3e\n", residualNumerator, residualDenominator * _configuration.requested_second_residual);
 			}
 		}
 
@@ -102,16 +103,16 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 				solutionPrecisionError = solutionNumerator / solutionDenominator;
 				solutionPrecision = std::min(_configuration.r_tol * solutionPrecisionError, _configuration.c_fact * solutionPrecision);
 			}
-			ESINFO(CONVERGENCE) << "    ADAPTIVE PRECISION = " << solutionPrecision << " EPS_ERR = " << solutionPrecisionError;
+			eslog::solver("ADAPTIVE PRECISION = %.3e EPS_ERR = %.3e\n", solutionPrecision, solutionPrecisionError);
 		}
 
 		_assembler.solve(updatedMatrices | Matrices::Dirichlet);
-		ESINFO(CONVERGENCE) <<  "    LINEAR_SOLVER_OUTPUT: SOLVER = " << "PCG" <<   " N_MAX_ITERATIONS = " << "1" << "  " ;
+//		eslog::solver("LINEAR_SOLVER_OUTPUT: SOLVER = PCG, N_MAX_ITERATIONS = 1"\n);
 
 		if (_configuration.line_search) {
 			double maxSolutionValue = _assembler.controller()->solution()->maxabs();
 			double alpha = _assembler.composer()->lineSearch(_solution, _assembler.parameters);
-			ESINFO(CONVERGENCE) << "    LINE_SEARCH_OUTPUT: " << "PARAMETER = " << alpha << "  MAX_DOF_INCREMENT = " << maxSolutionValue << "  SCALED_MAX_INCREMENT = " << alpha * maxSolutionValue;
+			eslog::solver("LINE SEARCH OUTPUT: PARAMETER = %.3e, MAX DOF INCREMENT = %.3e, SCALED MAX INCREMENT = %.3e\n", alpha, maxSolutionValue, alpha * maxSolutionValue);
 		}
 
 		if (!_configuration.check_first_residual) {
@@ -125,9 +126,9 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 			solutionNorm = solutionNumerator / solutionDenominator;
 
 			if (solutionNorm > _configuration.requested_first_residual) {
-				ESINFO(CONVERGENCE) << "    TEMPERATURE_CONVERGENCE_VALUE =  " <<  solutionNumerator << "  CRITERION_VALUE = " << solutionDenominator * _configuration.requested_first_residual ;
+				eslog::solver("TEMPERATURE CONVERGENCE VALUE = %.3e, CRITERION VALUE = %.3e\n", solutionNumerator, solutionDenominator * _configuration.requested_first_residual);
 			} else {
-				ESINFO(CONVERGENCE) << "    TEMPERATURE_CONVERGENCE_VALUE =  " <<  solutionNumerator << "  CRITERION_VALUE = " << solutionDenominator * _configuration.requested_first_residual <<  " <<< CONVERGED >>>" ;
+				eslog::solver("TEMPERATURE CONVERGENCE VALUE = %.3e, CRITERION VALUE = %.3e <<<CONVERGED>>>\n", solutionNumerator, solutionDenominator * _configuration.requested_first_residual);
 				if (!_configuration.check_second_residual){
 					break;
 				}
@@ -136,9 +137,9 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 	}
 
 	if (_configuration.check_second_residual) {
-		ESINFO(CONVERGENCE) <<  " >> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION " << time::iteration;
+		eslog::solver(" >> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION %d\n", time::iteration);
 	} else {
-		ESINFO(CONVERGENCE) <<  " >> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION " << time::iteration + 1;
+		eslog::solver(" >> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION %d\n", time::iteration + 1);
 	}
 }
 

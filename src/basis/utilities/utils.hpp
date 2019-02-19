@@ -1,14 +1,13 @@
 
-#include "basis/logging/logging.h"
-#include <cmath>
-#include <algorithm>
-
 #include "utils.h"
 
+#include <algorithm>
+
 namespace espreso {
+namespace utils {
 
 template<typename Ttype>
-Ttype Esutils::sizesToOffsets(std::vector<Ttype> &sizes)
+Ttype sizesToOffsets(std::vector<Ttype> &sizes)
 {
 	Ttype sum = 0;
 	for (size_t i = 0; i < sizes.size(); i++) {
@@ -20,7 +19,7 @@ Ttype Esutils::sizesToOffsets(std::vector<Ttype> &sizes)
 }
 
 template<typename Ttype>
-std::vector<Ttype> Esutils::sizesToOffsets(std::vector<std::vector<Ttype> > &sizes, const std::vector<Ttype> &offsets)
+std::vector<Ttype> sizesToOffsets(std::vector<std::vector<Ttype> > &sizes, const std::vector<Ttype> &offsets)
 {
 	std::vector<Ttype> sum(offsets);
 	for (size_t i = 0; i < sizes.front().size(); i++) {
@@ -34,7 +33,7 @@ std::vector<Ttype> Esutils::sizesToOffsets(std::vector<std::vector<Ttype> > &siz
 }
 
 template<typename Ttype, typename Tpermutation>
-void Esutils::permute(std::vector<Ttype> &data, const std::vector<Tpermutation> &permutation, size_t elementsize)
+void permute(std::vector<Ttype> &data, const std::vector<Tpermutation> &permutation, size_t elementsize)
 {
 	std::vector<Ttype> _data(data.size());
 	_data.swap(data);
@@ -46,13 +45,13 @@ void Esutils::permute(std::vector<Ttype> &data, const std::vector<Tpermutation> 
 }
 
 template<typename Ttype>
-void Esutils::threadDistributionToFullDistribution(std::vector<std::vector<Ttype> > &distribution)
+void threadDistributionToFullDistribution(std::vector<std::vector<Ttype> > &distribution)
 {
 	std::vector<size_t> offsets;
 	for (size_t t = 0; t < distribution.size(); t++) {
 		offsets.push_back(distribution[t].size() ? distribution[t].back() : 0);
 	}
-	Esutils::sizesToOffsets(offsets);
+	sizesToOffsets(offsets);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < distribution.size(); t++) {
@@ -64,7 +63,7 @@ void Esutils::threadDistributionToFullDistribution(std::vector<std::vector<Ttype
 }
 
 template<typename Ttype>
-void Esutils::threadDistributionToFullDistribution(std::vector<Ttype> &data, const std::vector<size_t> &distribution)
+void threadDistributionToFullDistribution(std::vector<Ttype> &data, const std::vector<size_t> &distribution)
 {
 	size_t threads = distribution.size() - 1;
 	std::vector<size_t> offsets(distribution.size());
@@ -73,7 +72,7 @@ void Esutils::threadDistributionToFullDistribution(std::vector<Ttype> &data, con
 			offsets[t] = data[distribution[t + 1]];
 		}
 	}
-	Esutils::sizesToOffsets(offsets);
+	sizesToOffsets(offsets);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -85,7 +84,7 @@ void Esutils::threadDistributionToFullDistribution(std::vector<Ttype> &data, con
 }
 
 template<typename Ttype>
-void Esutils::removeDuplicity(std::vector<Ttype> &data, size_t begin)
+void removeDuplicity(std::vector<Ttype> &data, size_t begin)
 {
 	if (data.size() == begin) {
 		return;
@@ -101,14 +100,14 @@ void Esutils::removeDuplicity(std::vector<Ttype> &data, size_t begin)
 }
 
 template<typename Ttype>
-void Esutils::sortAndRemoveDuplicity(std::vector<Ttype> &data, size_t begin)
+void sortAndRemoveDuplicity(std::vector<Ttype> &data, size_t begin)
 {
 	std::sort(data.begin() + begin, data.end());
-	Esutils::removeDuplicity(data, begin);
+	removeDuplicity(data, begin);
 }
 
 template<typename Ttype>
-void Esutils::sortAndRemoveDuplicity(std::vector<std::vector<Ttype> > &data)
+void sortAndRemoveDuplicity(std::vector<std::vector<Ttype> > &data)
 {
 	for (size_t n = 0; n < data.size(); n++) {
 		sortAndRemoveDuplicity(data[n]);
@@ -116,7 +115,7 @@ void Esutils::sortAndRemoveDuplicity(std::vector<std::vector<Ttype> > &data)
 }
 
 template<typename Ttype>
-void Esutils::mergeThreadedUniqueData(std::vector<std::vector<Ttype> > &data)
+void mergeThreadedUniqueData(std::vector<std::vector<Ttype> > &data)
 {
 	for (size_t t = 1; t < data.size(); t++) {
 		data[0].insert(data[0].end(), data[t].begin(), data[t].end());
@@ -125,7 +124,7 @@ void Esutils::mergeThreadedUniqueData(std::vector<std::vector<Ttype> > &data)
 }
 
 template<typename Ttype>
-void Esutils::mergeThreadedUniqueData(std::vector<std::vector<std::vector<Ttype> > > &data)
+void mergeThreadedUniqueData(std::vector<std::vector<std::vector<Ttype> > > &data)
 {
 	#pragma omp parallel for
 	for (size_t n = 0; n < data[0].size(); n++) {
@@ -137,7 +136,7 @@ void Esutils::mergeThreadedUniqueData(std::vector<std::vector<std::vector<Ttype>
 }
 
 template<typename Ttype>
-void Esutils::inplaceMerge(std::vector<Ttype> &data, const std::vector<size_t> &distribution)
+void inplaceMerge(std::vector<Ttype> &data, const std::vector<size_t> &distribution)
 {
 	size_t size = distribution.size() - 1;
 
@@ -159,7 +158,7 @@ void Esutils::inplaceMerge(std::vector<Ttype> &data, const std::vector<size_t> &
 }
 
 template<typename Ttype>
-void Esutils::sortWithInplaceMerge(std::vector<Ttype> &data, const std::vector<size_t> &distribution)
+void sortWithInplaceMerge(std::vector<Ttype> &data, const std::vector<size_t> &distribution)
 {
 	size_t size = distribution.size() - 1;
 
@@ -170,49 +169,49 @@ void Esutils::sortWithInplaceMerge(std::vector<Ttype> &data, const std::vector<s
 				data.data() + distribution[t + 1]);
 	}
 
-	Esutils::inplaceMerge(data, distribution);
+	inplaceMerge(data, distribution);
 }
 
 template<typename Ttype>
-void Esutils::inplaceMerge(std::vector<std::vector<Ttype> > &data)
+void inplaceMerge(std::vector<std::vector<Ttype> > &data)
 {
 	std::vector<size_t> distribution = { 0, data[0].size() };
 	for (size_t t = 1; t < data.size(); t++) {
 		data[0].insert(data[0].end(), data[t].begin(), data[t].end());
 		distribution.push_back(data[0].size());
 	}
-	Esutils::inplaceMerge(data[0], distribution);
+	inplaceMerge(data[0], distribution);
 }
 
 template<typename Ttype>
-void Esutils::sortWithInplaceMerge(std::vector<std::vector<Ttype> > &data)
+void sortWithInplaceMerge(std::vector<std::vector<Ttype> > &data)
 {
 	std::vector<size_t> distribution = { 0, data[0].size() };
 	for (size_t t = 1; t < data.size(); t++) {
 		data[0].insert(data[0].end(), data[t].begin(), data[t].end());
 		distribution.push_back(data[0].size());
 	}
-	Esutils::sortWithInplaceMerge(data[0], distribution);
+	sortWithInplaceMerge(data[0], distribution);
 }
 
 template<typename Ttype>
-void Esutils::sortWithUniqueMerge(std::vector<std::vector<Ttype> > &data)
+void sortWithUniqueMerge(std::vector<std::vector<Ttype> > &data)
 {
 	#pragma omp parallel for
 	for (size_t t = 0; t < data.size(); t++) {
-		Esutils::sortAndRemoveDuplicity(data[t]);
+		sortAndRemoveDuplicity(data[t]);
 	}
 	std::vector<size_t> distribution = { 0, data[0].size() };
 	for (size_t t = 1; t < data.size(); t++) {
 		data[0].insert(data[0].end(), data[t].begin(), data[t].end());
 		distribution.push_back(data[0].size());
 	}
-	Esutils::inplaceMerge(data[0], distribution);
-	Esutils::sortAndRemoveDuplicity(data[0]);
+	inplaceMerge(data[0], distribution);
+	sortAndRemoveDuplicity(data[0]);
 }
 
 template<typename Ttype>
-void Esutils::mergeAppendedData(std::vector<Ttype> &data, const std::vector<size_t> &distribution)
+void mergeAppendedData(std::vector<Ttype> &data, const std::vector<size_t> &distribution)
 {
 	std::vector<size_t> _distribution(distribution.begin() + 1, distribution.end());
 
@@ -237,4 +236,5 @@ void Esutils::mergeAppendedData(std::vector<Ttype> &data, const std::vector<size
 			data.data() + _distribution.back());
 }
 
+}
 }

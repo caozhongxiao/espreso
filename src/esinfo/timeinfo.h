@@ -1,6 +1,6 @@
 
-#ifndef SRC_ESINFO_TIME_H_
-#define SRC_ESINFO_TIME_H_
+#ifndef SRC_ESINFO_TIMEINFO_H_
+#define SRC_ESINFO_TIMEINFO_H_
 
 namespace espreso {
 namespace time {
@@ -20,4 +20,4 @@ namespace time {
 }
 
 
-#endif /* SRC_ESINFO_TIME_H_ */
+#endif /* SRC_ESINFO_TIMEINFO_H_ */

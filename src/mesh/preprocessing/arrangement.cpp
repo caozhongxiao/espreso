@@ -3,27 +3,24 @@
 
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
+#include "esinfo/eslog.hpp"
 
 #include "mesh/mesh.h"
 
+#include "mesh/elements/element.h"
 #include "mesh/store/store.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "mesh/store/boundaryregionstore.h"
 
-#include "mesh/elements/element.h"
-
-#include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
 #include "basis/utilities/parser.h"
-#include "basis/logging/logging.h"
 
 #include <algorithm>
 #include <numeric>
-#include <cstring>
 
 #include "wrappers/metis/metiswrapper.h"
 #include "wrappers/metis/parmetiswrapper.h"
@@ -33,7 +30,6 @@ using namespace espreso;
 void MeshPreprocessing::arrangeNodes()
 {
 	if (_mesh->elements->domainDistribution.size() == 0) {
-		skip("arrange nodes");
 		return;
 	}
 
@@ -44,7 +40,7 @@ void MeshPreprocessing::arrangeNodes()
 	std::vector<esint> externalBoundary, internalBoundary;
 	this->computeBoundaryNodes(externalBoundary, internalBoundary);
 
-	start("arrange nodes");
+	eslog::startln("MESH: ARRANGE NODES");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -71,7 +67,7 @@ void MeshPreprocessing::arrangeNodes()
 			domainsDistribution[t].push_back(domainsData[t].size());
 		}
 	}
-	Esutils::threadDistributionToFullDistribution(domainsDistribution);
+	utils::threadDistributionToFullDistribution(domainsDistribution);
 
 	for (size_t t = 1; t < threads; t++) {
 		domainsDistribution[0].insert(domainsDistribution[0].end(), domainsDistribution[t].begin(), domainsDistribution[t].end());
@@ -147,7 +143,7 @@ void MeshPreprocessing::arrangeNodes()
 		iBoundary[0].push_back(externalBoundary.size() + internalBoundary.size());
 	}
 
-	Esutils::mergeThreadedUniqueData(iBoundary);
+	utils::mergeThreadedUniqueData(iBoundary);
 	if (iBoundary[0].back() == _mesh->nodes->size) {
 		iBoundary[0].pop_back();
 	}
@@ -264,7 +260,7 @@ void MeshPreprocessing::arrangeNodes()
 	}
 
 	if (!Communication::receiveLowerKnownSize(sOffset, rOffset, _mesh->neighbours)) {
-		ESINFO(ERROR) << "ESPRESO internal error: receive global offset of node intervals.";
+		eslog::error("ESPRESO internal error: receive global offset of node intervals.\n");
 	}
 
 	_mesh->nodes->uniqueSize = goffset;
@@ -375,24 +371,24 @@ void MeshPreprocessing::arrangeNodes()
 		}
 	}
 
-	finish("arrange nodes");
+	eslog::endln("MESH: NODES ARRANGED");
 }
 
 void MeshPreprocessing::arrangeElements()
 {
-	start("arrange elements");
+	eslog::startln("MESH: ARRANGE ELEMENTS");
 
 	std::vector<esint> permutation(_mesh->elements->size);
 	std::iota(permutation.begin(), permutation.end(), 0);
 	arrangeElementsPermutation(permutation);
 	permuteElements(permutation, _mesh->elements->distribution);
 
-	finish("arrange elements");
+	eslog::endln("MESH: ELEMENTS ARRANGED");
 }
 
 void MeshPreprocessing::arrangeElementsPermutation(std::vector<esint> &permutation)
 {
-	start("arrange elements permutation");
+	eslog::startln("MESH: ARRANGE ELEMENTS PERMUTATION");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -422,7 +418,7 @@ void MeshPreprocessing::arrangeElementsPermutation(std::vector<esint> &permutati
 			}
 		}
 	}
-	Esutils::mergeThreadedUniqueData(iboundaries);
+	utils::mergeThreadedUniqueData(iboundaries);
 
 	_mesh->elements->eintervals.push_back(ElementsInterval(0, 0));
 	_mesh->elements->eintervals.back().domain = _mesh->elements->firstDomain;
@@ -443,7 +439,7 @@ void MeshPreprocessing::arrangeElementsPermutation(std::vector<esint> &permutati
 
 	int elementstypes = static_cast<int>(Element::CODE::SIZE);
 	if (elementstypes > 32) {
-		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: increase elements-types synchronization buffer.";
+		eslog::error("ESPRESO internal error: increase elements-types synchronization buffer.\n");
 	}
 
 	int codes = 0;
@@ -461,7 +457,7 @@ void MeshPreprocessing::arrangeElementsPermutation(std::vector<esint> &permutati
 		}
 	}
 
-	finish("arrange elements permutation");
+	eslog::endln("MESH: ELEMENTS PERMUTATION ARRANGED");
 }
 
 
@@ -475,7 +471,7 @@ void MeshPreprocessing::arrangeRegions()
 		fillRegionMask();
 	}
 
-	start("arrange regions");
+	eslog::startln("MESH: ARRANGE REGIONS");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -554,9 +550,9 @@ void MeshPreprocessing::arrangeRegions()
 						}
 					}
 				}
-				Esutils::sortAndRemoveDuplicity(nodes[t]);
+				utils::sortAndRemoveDuplicity(nodes[t]);
 			}
-			Esutils::mergeThreadedUniqueData(nodes);
+			utils::mergeThreadedUniqueData(nodes);
 			nodes.resize(1);
 			nodes.resize(threads);
 			serializededata<esint, esint>::balance(1, nodes);
@@ -700,7 +696,7 @@ void MeshPreprocessing::arrangeRegions()
 		if (_mesh->boundaryRegions[r]->nodes == NULL) {
 			std::vector<std::vector<esint> > nodes(threads);
 			nodes[0] = std::vector<esint>(_mesh->boundaryRegions[r]->procNodes->datatarray().begin(), _mesh->boundaryRegions[r]->procNodes->datatarray().end());
-			Esutils::sortAndRemoveDuplicity(nodes[0]);
+			utils::sortAndRemoveDuplicity(nodes[0]);
 			serializededata<esint, esint>::balance(1, nodes);
 			_mesh->boundaryRegions[r]->nodes = new serializededata<esint, esint>(1, nodes);
 		}
@@ -790,7 +786,7 @@ void MeshPreprocessing::arrangeRegions()
 				}
 			}
 			iboundaries.back().push_back(edistribution.back());
-			Esutils::mergeThreadedUniqueData(iboundaries);
+			utils::mergeThreadedUniqueData(iboundaries);
 
 			store->eintervalsDistribution.push_back(0);
 			esint lastDomain = 0;
@@ -834,12 +830,12 @@ void MeshPreprocessing::arrangeRegions()
 		}
 	}
 
-	finish("arrange regions");
+	eslog::endln("MESH: REGIONS ARRANGED");
 }
 
 void MeshPreprocessing::fillRegionMask()
 {
-	start("fill region mask");
+	eslog::startln("MESH: FILL REGION MASK");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -868,12 +864,14 @@ void MeshPreprocessing::fillRegionMask()
 	_mesh->elements->regionMaskSize = regionsBitMaskSize;
 	_mesh->elements->regions = new serializededata<esint, esint>(regionsBitMaskSize, eregions);
 
-	finish("fill region mask");
+	eslog::endln("MESH: REGION MASK FILLED");
 }
 
 void MeshPreprocessing::synchronizeRegionNodes(const std::string &name, serializededata<esint, esint>* &rnodes, std::vector<ProcessInterval> &nintervals)
 {
-	start("synchronize region: " + name);
+	eslog::start("MESH: SYNCHRONIZE REGION");
+	eslog::param("REGION", name.c_str());
+	eslog::ln();
 
 	const auto &nodes = rnodes->datatarray();
 
@@ -905,7 +903,7 @@ void MeshPreprocessing::synchronizeRegionNodes(const std::string &name, serializ
 	}
 
 	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, _mesh->neighbours)) {
-		ESINFO(ERROR) << "ESPRESO internal error: exchange element region nodes.";
+		eslog::error("ESPRESO internal error: exchange element region nodes.\n");
 	}
 
 	std::vector<esint> nnodes;
@@ -928,7 +926,7 @@ void MeshPreprocessing::synchronizeRegionNodes(const std::string &name, serializ
 	}
 	if (nnodes.size()) {
 		nnodes.insert(nnodes.end(), nodes.begin(), nodes.end());
-		Esutils::sortAndRemoveDuplicity(nnodes);
+		utils::sortAndRemoveDuplicity(nnodes);
 		delete rnodes;
 		rnodes = new serializededata<esint, esint>(1, nnodes);
 
@@ -939,7 +937,9 @@ void MeshPreprocessing::synchronizeRegionNodes(const std::string &name, serializ
 		}
 	}
 
-	finish("synchronize region: " + name);
+	eslog::end("MESH: REGION SYNCHRONIZED");
+	eslog::param("REGION", name.c_str());
+	eslog::ln();
 }
 
 void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion, int elementDimension)
@@ -952,7 +952,9 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 		computeElementsNeighbors();
 	}
 
-	start("compute boundary elements from nodes of region '" + bregion->name + "'");
+	eslog::start("MESH: BOUNDARY FROM NODES");
+	eslog::param("BOUNDARY", bregion->name.c_str());
+	eslog::ln();
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -974,7 +976,7 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 		distribution.push_back(elements[0].size());
 	}
 
-	Esutils::sortWithInplaceMerge(elements[0], distribution);
+	utils::sortWithInplaceMerge(elements[0], distribution);
 
 	std::vector<esint> edistribution = _mesh->elements->gatherElementsProcDistribution();
 	esint ebegin = edistribution[info::mpi::rank];
@@ -1019,7 +1021,7 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 			if ((e + 1 == tdistribution[t + 1] || (begin + e + 1)->first != (begin + e)->first)) {
 
 				element = (begin + e)->first - ebegin;
-				Esutils::sortAndRemoveDuplicity(nodes);
+				utils::sortAndRemoveDuplicity(nodes);
 
 				enodes += element - prev;
 				neighbors += element - prev;
@@ -1073,7 +1075,7 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 		ecode[t].swap(tcode);
 	}
 
-	Esutils::threadDistributionToFullDistribution(edist);
+	utils::threadDistributionToFullDistribution(edist);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = 0; e < ecode[t].size(); e++) {
@@ -1085,7 +1087,9 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 	bregion->epointers = new serializededata<esint, Element*>(1, epointers);
 	bregion->dimension = elementDimension;
 
-	finish("compute boundary elements from nodes of region '" + bregion->name + "'");
+	eslog::end("MESH: BOUNDARY FROM NODES COMPUTED");
+	eslog::param("BOUNDARY", bregion->name.c_str());
+	eslog::ln();
 }
 
 void MeshPreprocessing::computeIntervalOffsets(std::vector<ProcessInterval> &intervals, esint &uniqueOffset, esint &uniqueSize, esint &uniqueTotalSize)
@@ -1112,7 +1116,7 @@ void MeshPreprocessing::computeIntervalOffsets(std::vector<ProcessInterval> &int
 	}
 
 	if (!Communication::receiveLowerKnownSize(sOffset, rOffset, _mesh->neighbours)) {
-		ESINFO(ERROR) << "ESPRESO internal error: receive global offset of intervals.";
+		eslog::error("ESPRESO internal error: receive global offset of intervals.\n");
 	}
 
 	uniqueSize = myoffset;

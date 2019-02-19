@@ -1,10 +1,8 @@
 
 #include "configuration.h"
 #include "conditions.h"
-
-#include "basis/logging/logging.h"
+#include "esinfo/eslog.hpp"
 #include "basis/utilities/parser.h"
-#include <iostream>
 #include <algorithm>
 
 using namespace espreso;
@@ -82,19 +80,19 @@ void ECFParameter::addListener(Event event, std::function<void(const std::string
 
 ECFParameter* ECFParameter::registerAdditionalParameter(ECFParameter* parameter)
 {
-	ESINFO(ERROR) << "ESPRESO internal error: parameter '" << name << "' cannot have additional parameters.";
+	eslog::globalerror("ESPRESO internal error: parameter '%s' cannot have additional parameters.\n", name.c_str());
 	return NULL;
 }
 
 std::string ECFObject::getValue() const
 {
-	ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: calling 'get' on ECFObject.";
+	eslog::globalerror("ESPRESO internal error: calling 'get' on ECFObject.\n");
 	return "";
 }
 
 bool ECFObject::_setValue(const std::string &value)
 {
-	ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: calling 'set' on ECFObject.";
+	eslog::globalerror("ESPRESO internal error: calling 'set' on ECFObject.\n");
 	return false;
 }
 
@@ -121,7 +119,7 @@ ECFParameter* ECFObject::_getParameter(const void* data)
 ECFParameter* ECFObject::getWithError(const std::string &name)
 {
 	if (_getParameter(name) == NULL) {
-		ESINFO(GLOBAL_ERROR) << "ECF ERROR: Object " << this->name << " has no parameter '" << name << "'";
+		eslog::globalerror("ECF ERROR: Object '%s' has no parameter '%s'.\n", this->name.c_str(), name.c_str());
 	}
 	return _getParameter(name);
 }
@@ -140,7 +138,7 @@ void ECFObject::dropParameter(ECFParameter *parameter)
 			return;
 		}
 	}
-	ESINFO(GLOBAL_ERROR) << "ECF ERROR: Object cannot drop parameter '" << parameter->name << "'";
+	eslog::globalerror("ECF ERROR: Object cannot drop parameter '%s'\n", parameter->name.c_str());
 }
 
 void ECFObject::dropAllParameters()

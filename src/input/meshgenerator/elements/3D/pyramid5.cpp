@@ -1,6 +1,5 @@
 
 #include "pyramid5.h"
-#include "basis/logging/logging.h"
 
 using namespace espreso;
 
@@ -98,7 +97,7 @@ void Pyramid5Generator::pushNodes(std::vector<esint> &nodes, const std::vector<e
 		nodes.push_back(indices[18]);
 		break;
 	default:
-		ESINFO(ERROR) << "Invalid face.";
+		break;
 	}
 }
 

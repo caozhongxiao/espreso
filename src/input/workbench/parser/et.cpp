@@ -2,7 +2,7 @@
 #include "et.h"
 
 #include "basis/utilities/parser.h"
-#include "basis/logging/logging.h"
+#include "esinfo/eslog.hpp"
 
 using namespace espreso;
 
@@ -22,7 +22,7 @@ ET& ET::parse(const char* begin)
 	std::vector<std::string> command = Parser::split(Parser::strip(commandLine), ",", false);
 
 	if (command.size() < 3) {
-		ESINFO(ERROR) << "ESPRESO Workbench parser error: unknown et format: " << commandLine;
+		eslog::error("ESPRESO Workbench parser error: unknown et format of '%s'\n", commandLine.c_str());
 	}
 
 	if (
@@ -36,7 +36,7 @@ ET& ET::parse(const char* begin)
 	WorkbenchParser::fillIndices(begin, begin);
 
 	if (id != -1 && etype() == ETYPE::UNKNOWN) {
-		ESINFO(ERROR) << "ESPRESO Workbench parser error: unknown et type: " << command[2];
+		eslog::error("ESPRESO Workbench parser error: unknown et type '%s'\n", command[2].c_str());
 	}
 
 	return *this;

@@ -3,9 +3,9 @@
 
 #include "esinfo/meshinfo.h"
 #include "esinfo/envinfo.h"
+#include "esinfo/eslog.hpp"
 #include "physics/assembler/dataholder.h"
 
-#include "basis/logging/logging.h"
 #include "basis/containers/serializededata.h"
 #include "config/ecf/linearsolver/feti.h"
 #include "config/ecf/physics/physicssolver/loadstep.h"
@@ -92,7 +92,7 @@ FETIProvider::FETIProvider(DataHolder *data, LoadStepConfiguration &configuratio
 			assembleB0FromKernels(kernels);
 			break;
 		default:
-			ESINFO(GLOBAL_ERROR) << "Unknown type of B0";
+			eslog::globalerror("Unknown type of B0.\n");
 		}
 	};
 }
@@ -112,9 +112,9 @@ void FETIProvider::makeStiffnessMatricesRegular(FETI_REGULARIZATION regularizati
 	#pragma omp parallel for
 	for (esint d = 0; d < info::mesh->elements->ndomains; d++) {
 		makeStiffnessMatrixRegular(regularization, scSize, d, ortogonalCluster);
-		ESINFO(PROGRESS3) << Info::plain() << ".";
+//		ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
-	ESINFO(PROGRESS3);
+//	ESINFO(PROGRESS3);
 }
 
 void FETIProvider::makeStiffnessMatrixRegular(FETI_REGULARIZATION regularization, int scSize, esint domain, bool ortogonalCluster)
@@ -142,7 +142,7 @@ void FETIProvider::makeStiffnessMatrixRegular(FETI_REGULARIZATION regularization
 			break;
 
 		default:
-			ESINFO(ERROR) << "Unknown matrix type for regularization.";
+			eslog::globalerror("Unknown matrix type for regularization.\n");
 		}
 		break;
 	}

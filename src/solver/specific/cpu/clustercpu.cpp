@@ -4,7 +4,7 @@
 #include "physics/assembler/dataholder.h"
 #include "clustercpu.h"
 
-#include "basis/logging/logging.h"
+#include "esinfo/eslog.hpp"
 #include "esinfo/ecfinfo.h"
 
 using namespace espreso;
@@ -16,13 +16,13 @@ void ClusterCPU::Create_SC_perDomain(bool USE_FLOAT) {
         domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
     }
 
-    ESINFO(PROGRESS3) << "Creating B1*K+*B1t : using Pardiso SC";
+    eslog::checkpointln("Creating B1*K+*B1t : using Pardiso SC");
 
     #pragma omp parallel for
     for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
         SparseSolverMKL tmpsps;
         if ( i == 0 && cluster_global_index == 1) {
-            tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+            tmpsps.msglvl = 0;
         }
         tmpsps.Create_SC_w_Mat( domains[i].K, domains[i].B1t_comp_dom, domains[i].B1Kplus, false, 1 );
 
@@ -30,9 +30,9 @@ void ClusterCPU::Create_SC_perDomain(bool USE_FLOAT) {
             domains[i].B1Kplus.ConvertDenseToDenseFloat( 1 );
             domains[i].B1Kplus.USE_FLOAT = true;
         }
-        ESINFO(PROGRESS3) << Info::plain() << ".";
+//        ESINFO(PROGRESS3) << Info::plain() << ".";
     }
-    ESINFO(PROGRESS3);
+//    ESINFO(PROGRESS3);
 
 
     #pragma omp parallel for
@@ -46,7 +46,7 @@ void ClusterCPU::Create_Kinv_perDomain() {
 	for (size_t i = 0; i < domains_in_global_index.size(); i++ )
         domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
 
-    ESINFO(PROGRESS3) << "Creating B1*K+*B1t";
+    eslog::checkpointln("Creating B1*K+*B1t");
 
     #pragma omp parallel for
     for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
@@ -54,7 +54,7 @@ void ClusterCPU::Create_Kinv_perDomain() {
         domains[i].KplusF.msglvl = 0;
 
         if ( i == 0 && cluster_global_index == 1) {
-            domains[i].KplusF.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+            domains[i].KplusF.msglvl = 0;
         }
 
         //SolveMatF is obsolete - use Schur complement instead
@@ -68,9 +68,9 @@ void ClusterCPU::Create_Kinv_perDomain() {
         domains[i].B1Kplus.MatMat(Btmp,'N', domains[i].B1t_comp_dom);
         domains[i].B1Kplus.ConvertCSRToDense(0);
         //domains[i].B1Kplus.ConvertDenseToDenseFloat(0);
-        ESINFO(PROGRESS3) << Info::plain() << ".";
+//        ESINFO(PROGRESS3) << Info::plain() << ".";
     }
-    ESINFO(PROGRESS3);
+//    ESINFO(PROGRESS3);
 
     #pragma omp parallel for
 	for (size_t i = 0; i < domains_in_global_index.size(); i++ )
@@ -232,13 +232,13 @@ for (size_t d = 0; d < domains.size(); d++) {
 		K_modif.J_col_indices[i] = J_col_indices_p[i];
 	}
 	K_modif.ConvertToCSRwithSort(1);
-	{
-		if (info::ecf->output.print_matrices) {
-			std::ofstream osS(Logging::prepareFile(d, "K_modif"));
-			osS << K_modif;
-			osS.close();
-		}
-	}
+//	{
+//		if (info::ecf->output.print_matrices) {
+//			std::ofstream osS(Logging::prepareFile(d, "K_modif"));
+//			osS << K_modif;
+//			osS.close();
+//		}
+//	}
 
 	// ------------------------------------------------------------------------------------------------------------------
 	bool diagonalized_K_rr = configuration.preconditioner == FETI_PRECONDITIONER::SUPER_DIRICHLET;
@@ -319,17 +319,17 @@ for (size_t d = 0; d < domains.size(); d++) {
 
 	}
 
-	if (info::ecf->output.print_matrices) {
-		std::ofstream osS(Logging::prepareFile(domains[d].domain_global_index, "S"));
-		SparseMatrix SC = domains[d].Prec;
-		if (configuration.preconditioner == FETI_PRECONDITIONER::DIRICHLET) {
-			SC.ConvertDenseToCSR(1);
-		}
-		osS << SC;
-		osS.close();
-	}
+//	if (info::ecf->output.print_matrices) {
+//		std::ofstream osS(Logging::prepareFile(domains[d].domain_global_index, "S"));
+//		SparseMatrix SC = domains[d].Prec;
+//		if (configuration.preconditioner == FETI_PRECONDITIONER::DIRICHLET) {
+//			SC.ConvertDenseToCSR(1);
+//		}
+//		osS << SC;
+//		osS.close();
+//	}
 
-	ESINFO(PROGRESS3) << Info::plain() << ".";
+//	ESINFO(PROGRESS3) << Info::plain() << ".";
 
 }
 }

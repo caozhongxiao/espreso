@@ -2,7 +2,6 @@
 #include "blocksettings.h"
 #include "input/meshgenerator/meshgenerator.h"
 
-#include "basis/logging/logging.h"
 #include "config/ecf/input/block.h"
 
 using namespace espreso;

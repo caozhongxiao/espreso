@@ -4,7 +4,6 @@
 
 #include "factory/factory.h"
 
-#include "basis/logging/logging.h"
 #include "basis/matrices/denseMatrix.h"
 #include "mesh/mesh.h"
 #include "assembler/step.h"

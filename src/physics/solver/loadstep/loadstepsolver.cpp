@@ -1,9 +1,9 @@
 
-#include "esinfo/time.h"
 #include "loadstepsolver.h"
-#include "physics/solver/timestep/timestepsolver.h"
+#include "esinfo/timeinfo.h"
+#include "esinfo/eslog.h"
 
-#include "basis/logging/logging.h"
+#include "physics/solver/timestep/timestepsolver.h"
 
 using namespace espreso;
 
@@ -31,7 +31,11 @@ void LoadStepSolver::finalizeLoadStep()
 
 void LoadStepSolver::run()
 {
-	ESINFO(PROGRESS1) << "LOAD STEP: " << time::step << ", TYPE: " << name() << ", MODE: " << _timeStepSolver.name();
+	eslog::checkpoint("SOLVER STARTED");
+	eslog::param("STEP", time::step + 1);
+	eslog::param("TYPE", name().c_str());
+	eslog::param("MODE", _timeStepSolver.name().c_str());
+	eslog::ln();
 
 	_startTime = time::current;
 	time::substep = 0;
@@ -40,7 +44,6 @@ void LoadStepSolver::run()
 	initLoadStep();
 	while (hasNextTimeStep()) {
 		runNextTimeStep();
-//		ESINFO(PROGRESS1) << description() << " SOLVER: load step " << time::step + 1 << ", time step " << time::substep + 1 << " [" << time::current << "s] finished.";
 		time::substep++;
 		time::iteration = 0;
 	}

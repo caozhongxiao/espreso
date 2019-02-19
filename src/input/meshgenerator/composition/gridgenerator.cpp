@@ -6,11 +6,10 @@
 #include "input/plaindata.h"
 #include "input/generatedinput.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/eslog.hpp"
 #include "config/ecf/input/grid.h"
 #include "config/ecf/input/sphere.h"
-#include "basis/utilities/communication.h"
 #include "basis/utilities/parser.h"
-#include "basis/logging/logging.h"
 
 using namespace espreso;
 
@@ -67,7 +66,7 @@ void GridGenerator::init()
 		}
 	}
 	if (cluster != info::mpi::size) {
-		ESINFO(GLOBAL_ERROR) << "Incorrect number of MPI processes (" << info::mpi::size << "). Should be " << cluster;
+		eslog::globalerror("Incorrect number of MPI processes (%d). Should be %d\n", info::mpi::size, cluster);
 	}
 }
 

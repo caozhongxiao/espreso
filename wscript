@@ -137,7 +137,9 @@ def set_variables(ctx):
     if ctx.options.intwidth == "64":
         ctx.env.append_unique("DEFINES", [ "esint=long", "esint_mpi=MPI_LONG" ])
 
-    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-Wall", "-Wno-deprecated-declarations" ])
+    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-Wall" ])
+    ctx.env.append_unique("CXXFLAGS", [ "-Wno-deprecated-declarations" ]) # MKL
+    ctx.env.append_unique("CXXFLAGS", [ "-Wno-format-security" ]) # loggers
     ctx.env.append_unique("CXXFLAGS", ctx.options.cxxflags.split())
     ctx.env.mode = ctx.options.mode
     if ctx.options.mode == "release":
@@ -186,6 +188,7 @@ fetisources= (
    "src/solver/generic/Domain.cpp",
    "src/solver/generic/SparseMatrix.cpp",
    "src/solver/generic/utils.cpp",
+   "src/solver/generic/timeeval.cpp",
    "src/solver/generic/FETISolver.cpp",
    "src/solver/specific/cluster.cpp",
    "src/solver/specific/itersolver.cpp",

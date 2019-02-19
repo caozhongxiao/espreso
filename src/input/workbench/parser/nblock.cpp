@@ -4,9 +4,9 @@
 #include "basis/containers/point.h"
 #include "basis/containers/tarray.h"
 #include "basis/utilities/parser.h"
-#include "basis/utilities/utils.h"
 
 #include "esinfo/envinfo.h"
+#include "esinfo/eslog.hpp"
 
 using namespace espreso;
 
@@ -25,7 +25,7 @@ NBlock::NBlock()
 NBlock& NBlock::parse(const char* begin)
 {
 	auto error = [&] (std::string &line) {
-		ESINFO(ERROR) << "Workbench parse error: unknown format of NBLOCK: " << line;
+		eslog::error("Workbench parse error: unknown format of NBLOCK: '%s'\n", line);
 	};
 
 	std::string commandLine = Parser::getLine(begin);

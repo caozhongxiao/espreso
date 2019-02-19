@@ -4,9 +4,8 @@
 #include "ssection.h"
 #include "material.h"
 
-#include "basis/logging/logging.h"
-
 #include "input/abaqus/abaqus.h"
+
 using namespace espreso;
 
 

@@ -6,7 +6,7 @@
 #include "composition/spheregenerator.h"
 
 #include "mesh/mesh.h"
-#include "basis/logging/logging.h"
+#include "esinfo/eslog.hpp"
 #include "config/ecf/input/generator.h"
 
 using namespace espreso;
@@ -15,6 +15,7 @@ double MeshGenerator::precision = 1e-4;
 
 void MeshGenerator::generate(const InputGeneratorConfiguration &configuration, Mesh &mesh)
 {
+	eslog::startln("MESIO: GENERATE MESH");
 	switch (configuration.shape) {
 	case INPUT_GENERATOR_SHAPE::GRID:
 		GridGenerator::generate(configuration.grid, mesh);
@@ -32,8 +33,9 @@ void MeshGenerator::generate(const InputGeneratorConfiguration &configuration, M
 		mesh.preferedDomains = BlockSettings::preferedDomains(configuration.sphere);
 		break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented mesh generator shape";
+		eslog::globalerror("Not implemented mesh generator shape.\n");
 	}
+	eslog::endln("MESIO: MESH GENERATED");
 }
 
 

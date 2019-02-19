@@ -5,6 +5,7 @@
 #include "mpi.h"
 
 #include <cstddef>
+#include <string>
 #include <vector>
 #include <functional>
 

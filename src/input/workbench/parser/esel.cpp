@@ -2,7 +2,7 @@
 #include "esel.h"
 
 #include "basis/utilities/parser.h"
-#include "basis/logging/logging.h"
+#include "esinfo/eslog.hpp"
 
 using namespace espreso;
 
@@ -35,7 +35,7 @@ ESel& ESel::parse(const char* begin)
 			size_t end;
 			VMAX = std::stoi(command[5], &end) - 1;
 			if (end != command[5].size()) {
-				ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, VMAX='" << command[5] << "'";
+				eslog::error("ESPRESO Workbench parser error: implement esel, VMAX='%s'\n", command[5].c_str());
 			}
 		}
 	case 5:
@@ -43,7 +43,7 @@ ESel& ESel::parse(const char* begin)
 			size_t end;
 			VMIN = std::stoi(command[4], &end) - 1;
 			if (end != command[4].size()) {
-				ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, VMIN='" << command[4] << "'";
+				eslog::error("ESPRESO Workbench parser error: implement esel, VMIN='%s'\n", command[4].c_str());
 			}
 		}
 		if (command.size() < 6 || command[5].size() == 0) {
@@ -51,7 +51,7 @@ ESel& ESel::parse(const char* begin)
 		}
 	case 4:
 		if (command[3].size()) {
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Comp='" << command[3] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement esel, Comp='%s'\n", command[3].c_str());
 		}
 	case 3:
 		if (StringCompare::caseInsensitiveEq("ELEM", command[2])) {
@@ -59,65 +59,65 @@ ESel& ESel::parse(const char* begin)
 		}
 		if (StringCompare::caseInsensitiveEq("ADJ", command[2])) {
 			item = Item::ADJ;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Item='" << command[2] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement esel, Item='%s'\n", command[2].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("CENT", command[2])) {
 			item = Item::CENT;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Item='" << command[2] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement esel, Item='%s'\n", command[2].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("TYPE", command[2])) {
 			item = Item::TYPE;
 		}
 		if (StringCompare::caseInsensitiveEq("ENAME", command[2])) {
 			item = Item::ENAME;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Item='" << command[2] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement esel, Item='%s'\n", command[2].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("MAT", command[2])) {
 			item = Item::MAT;
 		}
 		if (StringCompare::caseInsensitiveEq("REAL", command[2])) {
 			item = Item::REAL;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Item='" << command[2] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement esel, Item='%s'\n", command[2].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("ESYS", command[2])) {
 			item = Item::ESYS;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Item='" << command[2] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement esel, Item='%s'\n", command[2].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("PART", command[2])) {
 			item = Item::PART;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Item='" << command[2] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement esel, Item='%s'\n", command[2].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("LIVE", command[2])) {
 			item = Item::LIVE;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Item='" << command[2] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement esel, Item='%s'\n", command[2].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("LAYER", command[2])) {
 			item = Item::LAYER;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Item='" << command[2] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement esel, Item='%s'\n", command[2].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("SEC", command[2])) {
 			item = Item::SEC;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Item='" << command[2] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement esel, Item='%s'\n", command[2].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("STRA", command[2])) {
 			item = Item::STRA;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Item='" << command[2] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement esel, Item='%s'\n", command[2].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("SFE", command[2])) {
 			item = Item::SFE;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Item='" << command[2] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement esel, Item='%s'\n", command[2].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("BFE", command[2])) {
 			item = Item::BFE;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Item='" << command[2] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement esel, Item='%s'\n", command[2].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("PATH", command[2])) {
 			item = Item::PATH;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Item='" << command[2] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement esel, Item='%s'\n", command[2].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("ETAB", command[2])) {
 			item = Item::ETAB;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Item='" << command[2] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement esel, Item='%s'\n", command[2].c_str());
 		}
 	case 2:
 		if (StringCompare::caseInsensitiveEq("S", command[1])) {
@@ -125,14 +125,14 @@ ESel& ESel::parse(const char* begin)
 		}
 		if (StringCompare::caseInsensitiveEq("R", command[1])) {
 			type = Type::R;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Type='" << command[1] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement esel, Type='%s'\n", command[1].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("A", command[1])) {
 			type = Type::A;
 		}
 		if (StringCompare::caseInsensitiveEq("U", command[1])) {
 			type = Type::U;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Type='" << command[1] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement esel, Type='%s'\n", command[1].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("ALL", command[1])) {
 			type = Type::ALL;
@@ -142,22 +142,22 @@ ESel& ESel::parse(const char* begin)
 		}
 		if (StringCompare::caseInsensitiveEq("INVE", command[1])) {
 			type = Type::INVE;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Type='" << command[1] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement esel, Type='%s'\n", command[1].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("STAT", command[1])) {
 			type = Type::STAT;
-			ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel, Type='" << command[1] << "'";
+			eslog::error("ESPRESO Workbench parser error: implement esel, Type='%s'\n", command[1].c_str());
 		}
 		break;
 	default:
-		ESINFO(ERROR) << "ESPRESO Workbench parser error: unknown format of '" << commandLine << "'";
+		eslog::error("ESPRESO Workbench parser error: unknown format of '%s'\n", commandLine.c_str());
 	}
 
 	if (type == Type::UNKNOWN) {
-		ESINFO(ERROR) << "ESPRESO Workbench parser error: unknown esel Type='" << command[1] << "'";
+		eslog::error("ESPRESO Workbench parser error: implement esel, Type='%s'\n", command[1].c_str());
 	}
 	if (comp != Comp::UNKNOWN) {
-		ESINFO(ERROR) << "ESPRESO Workbench parser error: implement esel Comp='" << command[3] << "'";
+		eslog::error("ESPRESO Workbench parser error: implement esel, Comp='%s'\n", command[3].c_str());
 	}
 
 	WorkbenchParser::fillIndices(begin, begin);

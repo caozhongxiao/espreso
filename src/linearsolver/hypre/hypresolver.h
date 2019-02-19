@@ -17,7 +17,6 @@ public:
 
 	void update(Matrices matrices);
 	void solve();
-	void finalize();
 
 	double& precision();
 

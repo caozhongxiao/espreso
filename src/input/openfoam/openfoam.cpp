@@ -10,12 +10,10 @@
 #include "input/plaindata.h"
 #include "basis/containers/tarray.h"
 #include "basis/utilities/parser.h"
-#include "basis/logging/logging.h"
-#include "basis/logging/timeeval.h"
 #include "basis/utilities/utils.h"
-#include "basis/utilities/communication.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/eslog.hpp"
 #include "config/ecf/input/input.h"
 
 #include "mesh/elements/element.h"
@@ -36,44 +34,33 @@ OpenFOAMLoader::OpenFOAMLoader(const InputConfiguration &configuration, Mesh &me
 	_points(80), _faces(80), _owner(80), _neighbour(80), _boundary(80),
 	_pointZones(80), _faceZones(80), _cellZones(80)
 {
-	TimeEval timing("Parsing OpenFOAM data");
-	timing.totalTime.startWithBarrier();
-	ESINFO(OVERVIEW) << "Load OpenFOAM data from directory '" << _configuration.path << "'.";
+	eslog::start("MESIO: LOAD OpenFOAM");
+	eslog::param("database", _configuration.path.c_str());
+	eslog::ln();
 
-	TimeEvent tread("read data from file"); tread.start();
 	readData();
-	tread.end(); timing.addEvent(tread);
-	ESINFO(PROGRESS2) << "OpenFOAM:: data copied from file.";
+	eslog::checkpointln("MESIO: DATA READ");
 
 	PlainOpenFOAMData meshData;
-	TimeEvent tparse("parsing data"); tparse.start();
 	parseData(meshData);
-	tparse.end(); timing.addEvent(tparse);
-	ESINFO(PROGRESS2) << "OpenFOAM:: data parsed.";
+	eslog::checkpointln("MESIO: DATA PARSED");
 
-	TimeEvent tregions("build faces in regions"); tregions.start();
 	buildFaces(meshData);
-	tregions.end(); timing.addEvent(tregions);
-	ESINFO(PROGRESS2) << "OpenFOAM:: faces in region builded.";
+	eslog::checkpointln("MESIO: FACE BUILT");
 
-	TimeEvent tcollect("collection of faces"); tcollect.start();
 	collectFaces(meshData);
-	tcollect.end(); timing.addEvent(tcollect);
-	ESINFO(PROGRESS2) << "OpenFOAM:: faces collected.";
+	eslog::checkpointln("MESIO: FACE COLLECTED");
 
-	TimeEvent tbuild("building of elements"); tbuild.start();
 	buildElements(meshData);
-	tbuild.end(); timing.addEvent(tbuild);
-	ESINFO(PROGRESS2) << "OpenFOAM:: elements builded.";
-
-	timing.totalTime.endWithBarrier();
-	timing.printStatsMPI();
+	eslog::checkpointln("MESIO: ELEMENTS BUILT");
 
 	if (info::mpi::size > 1) {
 		RandomInput::buildMesh(meshData, mesh);
 	} else {
 		SequentialInput::buildMesh(meshData, mesh);
 	}
+
+	eslog::endln("MESIO: MESH BUILT");
 }
 
 void OpenFOAMLoader::distributedReader(const std::string &file, ParallelFile &pfile, bool isMandatory)
@@ -82,7 +69,7 @@ void OpenFOAMLoader::distributedReader(const std::string &file, ParallelFile &pf
 		MPI_File MPIFile;
 		if (!MPILoader::open(_loaders.across, MPIFile, _configuration.path + "/constant/polyMesh/" + file)) {
 			if (isMandatory) {
-				ESINFO(ERROR) << "MPI cannot load file '" << _configuration.path + "/constant/polyMesh/" + file << "'";
+				eslog::error("MPI cannot load file '%s/constant/polyMesh/%s'\n", _configuration.path.c_str(), file.c_str());
 			}
 		} else {
 			MPILoader::read(_loaders.across, MPIFile, pfile);
@@ -106,7 +93,7 @@ void OpenFOAMLoader::readData()
 		if (singleton.within.rank == 0) {
 			MPI_File MPIFile;
 			if (!MPILoader::open(singleton.across, MPIFile, _configuration.path + "/constant/polyMesh/" + file)) {
-				ESINFO(ERROR) << "MPI cannot load file '" << _configuration.path + "/constant/polyMesh/" + file << "'";
+				eslog::error("MPI cannot load file '%s/constant/polyMesh/%s'\n", _configuration.path.c_str(), file.c_str());
 			}
 			MPILoader::read(singleton.across, MPIFile, pfile);
 		}
@@ -139,32 +126,32 @@ void OpenFOAMLoader::readData()
 void OpenFOAMLoader::parseData(PlainOpenFOAMData &mesh)
 {
 	if (!OpenFOAMPoints(_points.begin, _points.end).readData(mesh.nIDs, mesh.coordinates, _configuration.scale_factor)) {
-		ESINFO(ERROR) << "OpenFOAM loader: cannot parse points.";
+		eslog::error("OpenFOAM loader: cannot parse points.\n");
 	}
 	if (!OpenFOAMFaces(_faces.begin, _faces.end).readFaces(mesh)) {
-		ESINFO(ERROR) << "OpenFOAM loader: cannot parse faces.";
+		eslog::error("OpenFOAM loader: cannot parse faces.\n");
 	}
 	if (!OpenFOAMFaces(_owner.begin, _owner.end).readParents(mesh.owner)) {
-		ESINFO(ERROR) << "OpenFOAM loader: cannot parse owner.";
+		eslog::error("OpenFOAM loader: cannot parse owners.\n");
 	}
 	if (!OpenFOAMFaces(_neighbour.begin, _neighbour.end).readParents(mesh.neighbour)) {
-		ESINFO(ERROR) << "OpenFOAM loader: cannot parse owner.";
+		eslog::error("OpenFOAM loader: cannot parse neighbours.\n");
 	}
 
 	if (!OpenFOAMBoundary(_boundary.begin, _boundary.end).readData(mesh)) {
-		ESINFO(ERROR) << "OpenFOAM loader: cannot parse boundary.";
+		eslog::error("OpenFOAM loader: cannot parse boundary.\n");
 	}
 
 	if (_pointZones.offsets.back() != 0 && !OpenFOAMZones(_pointZones).readPoints(mesh)) {
-		ESINFO(ERROR) << "OpenFOAM loader: cannot parse pointZones.";
+		eslog::error("OpenFOAM loader: cannot parse pointZones.\n");
 	}
 
 	if (_faceZones.offsets.back() != 0 && !OpenFOAMZones(_faceZones).readFaces(mesh)) {
-		ESINFO(ERROR) << "OpenFOAM loader: cannot parse faceZones.";
+		eslog::error("OpenFOAM loader: cannot parse faceZones.\n");
 	}
 
 	if (_cellZones.offsets.back() != 0 && !OpenFOAMZones(_cellZones).readCells(mesh)) {
-		ESINFO(ERROR) << "OpenFOAM loader: cannot parse cellZones.";
+		eslog::error("OpenFOAM loader: cannot parse cellZones.\n");
 	}
 }
 
@@ -226,21 +213,21 @@ void OpenFOAMLoader::buildFaces(PlainOpenFOAMData &mesh)
 			ParallelFile file(80);
 			distributedReader("/sets/" + name, file, true);
 			if (!OpenFOAMSets(file.begin, file.end).readData(_sets[i], mesh.eregions[mesh.elementprefix + name])) {
-				ESINFO(ERROR) << "OpenFOAM loader: cannot parse set '" << name << "'";
+				eslog::error("OpenFOAM loader: cannot parse set '%s'.\n", name.c_str());
 			}
 		} break;
 		case OpenFOAMSet::SetType::FACE_SET: {
 			ParallelFile file(80);
 			distributedReader("/sets/" + name, file, true);
 			if (!OpenFOAMSets(file.begin, file.end).readData(_sets[i], mesh.eregions[mesh.boundaryprefix + name])) {
-				ESINFO(ERROR) << "OpenFOAM loader: cannot parse set '" << name << "'";
+				eslog::error("OpenFOAM loader: cannot parse set '%s'.\n", name.c_str());
 			}
 		} break;
 		case OpenFOAMSet::SetType::POINT_SET: {
 			ParallelFile file(80);
 			distributedReader("/sets/" + name, file, true);
 			if (!OpenFOAMSets(file.begin, file.end).readData(_sets[i], mesh.nregions[name])) {
-				ESINFO(ERROR) << "OpenFOAM loader: cannot parse set '" << name << "'";
+				eslog::error("OpenFOAM loader: cannot parse set '%s'.\n", name.c_str());
 			}
 		} break;
 		}
@@ -273,7 +260,7 @@ void OpenFOAMLoader::buildFaces(PlainOpenFOAMData &mesh)
 	}
 
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
-		ESINFO(ERROR) << "ESPRESO internal error: distribute faces indices in regions.";
+		eslog::error("ESPRESO internal error: distribute faces indices in regions.\n");
 	}
 
 	for (auto it = mesh.eregions.begin(); it != mesh.eregions.end(); ++it) {
@@ -304,7 +291,7 @@ void OpenFOAMLoader::buildFaces(PlainOpenFOAMData &mesh)
 
 	// 4. Add used faces into elements
 
-	Esutils::sortAndRemoveDuplicity(usedfaces);
+	utils::sortAndRemoveDuplicity(usedfaces);
 
 	size_t foffset = usedfaces.size();
 	Communication::exscan(foffset);
@@ -352,7 +339,7 @@ void OpenFOAMLoader::collectFaces(PlainOpenFOAMData &mesh)
 	std::vector<size_t> target = Communication::getDistribution(mesh.fsize.size());
 
 	if (!Communication::balance(mesh.owner, ownersDist, target)) {
-		ESINFO(ERROR) << "ESPRESO internal error: balance faces owners.";
+		eslog::error("ESPRESO internal error: balance faces owners.\n");
 	}
 
 	for (size_t i = 0; i < target.size(); i++) {
@@ -362,7 +349,7 @@ void OpenFOAMLoader::collectFaces(PlainOpenFOAMData &mesh)
 	}
 
 	if (!Communication::balance(mesh.neighbour, neighborsDist, target)) {
-		ESINFO(ERROR) << "ESPRESO internal error: balance faces owners.";
+		eslog::error("ESPRESO internal error: balance faces neighbors.\n");
 	}
 
 	size_t firstID = Communication::getDistribution(mesh.fsize.size())[info::mpi::rank];
@@ -418,7 +405,7 @@ void OpenFOAMLoader::collectFaces(PlainOpenFOAMData &mesh)
 	}
 
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
-		ESINFO(ERROR) << "ESPRESO internal error: distribute permuted elements.";
+		eslog::error("ESPRESO internal error: distribute permuted elements.\n");
 	}
 
 	mesh.fIDs.clear();
@@ -744,7 +731,7 @@ void OpenFOAMLoader::buildElements(PlainOpenFOAMData &mesh)
 				}
 				continue;
 			}
-			ESINFO(ERROR) << "OpenFOAM parser: an unknown element type with " << triangles << " triangles and " << squares << " squares [ID=" << e << "].";
+			eslog::error("OpenFOAM parser: an unknown element type with '%ld' triangles and '%ld' squares [ID='%ld'].\n", triangles, squares, e);
 		}
 
 		esize[t].swap(tsize);

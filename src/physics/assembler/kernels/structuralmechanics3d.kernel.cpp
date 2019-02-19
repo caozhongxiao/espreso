@@ -1,12 +1,12 @@
 
+#include "esinfo/timeinfo.h"
+#include "esinfo/eslog.hpp"
 #include "physics/assembler/dataholder.h"
-#include "esinfo/time.h"
 #include "structuralmechanics3d.kernel.h"
 
 #include "basis/containers/point.h"
 #include "basis/matrices/denseMatrix.h"
 #include "basis/evaluator/evaluator.h"
-#include "basis/logging/logging.h"
 #include "config/ecf/physics/heattransfer.h"
 #include "mesh/elements/element.h"
 
@@ -173,7 +173,7 @@ void StructuralMechanics3DKernel::assembleMaterialMatrix(esint node, double *coo
 	} break;
 
 	default:
-		ESINFO(ERROR) << "Structural mechanics 3D not supports set material model";
+		eslog::error("Structural mechanics 3D not supports set material model.\n");
 	}
 }
 
@@ -214,7 +214,7 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Solver
 			TE(n, 2) = (iterator.temperature[n] - iterator.initialTemperature[n]) * te;
 			break;
 		default:
-			ESINFO(GLOBAL_ERROR) << "Invalid LINEAR ELASTIC model.";
+			eslog::error("Invalid LINEAR ELASTIC model..\n");
 		}
 		assembleMaterialMatrix(n, iterator.coordinates, iterator.material, time::current, iterator.temperature[n], K);
 	}
