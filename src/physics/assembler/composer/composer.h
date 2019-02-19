@@ -2,6 +2,7 @@
 #ifndef SRC_PHYSICS_ASSEMBLER_COMPOSER_COMPOSER_H_
 #define SRC_PHYSICS_ASSEMBLER_COMPOSER_COMPOSER_H_
 
+#include <cstddef>
 #include <vector>
 
 #include "basis/matrices/matrixtype.h"
