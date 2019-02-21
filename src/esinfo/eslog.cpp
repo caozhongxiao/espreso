@@ -106,9 +106,9 @@ void init(int *argc, char ***argv)
 		if (info::mpi::rank == 0) {
 			std::memcpy(dir, str.c_str(), str.size());
 		}
-		MPI_Bcast(dir, str.size(), MPI_CHAR, 0, info::mpi::comm);
+		MPI_Bcast(dir, ssize, MPI_CHAR, 0, info::mpi::comm);
 		str = std::string(dir, dir + ssize);
-		delete dir;
+		delete[] dir;
 	};
 
 	// synchronize data accross MPI ranks
@@ -123,7 +123,9 @@ void init(int *argc, char ***argv)
 	std::strftime(buf, 80, "%F-at-%Hh-%Mm-%Ss", timeinfo);
 	logger->outputDirectory = std::string(buf);
 	logger->outputPath = logger->outputRoot + "/" + logger->outputDirectory;
-	logger->name = logger->ecf.substr(logger->ecf.find_last_of("/") + 1, logger->ecf.find_last_of("."));
+	size_t namebegin = logger->ecf.find_last_of("/") + 1;
+	size_t nameend = logger->ecf.find_last_of(".");
+	logger->name = logger->ecf.substr(namebegin, nameend - namebegin);
 	logger->logFile = logger->outputPath + "/" + logger->name + ".log";
 
 	if (info::mpi::rank) {
@@ -141,7 +143,7 @@ void init(int *argc, char ***argv)
 		utils::remove(symlink);
 	}
 	utils::createSymlink(logger->outputDirectory, symlink);
-	utils::copyFile(logger->ecf, symlink + "/" + logger->ecf);
+	utils::copyFile(logger->ecf, symlink + "/" + logger->name + ".ecf");
 }
 
 void finish()
