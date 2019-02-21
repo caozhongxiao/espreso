@@ -125,15 +125,17 @@ public:
 	template <typename... Args>
 	void error(const char* format, Args... args)
 	{
-		printf(__ESLOG__COLOR__RED);
-		printf(format, args...);
-		printf(__ESLOG__COLOR__WHITE);
+		fprintf(stderr, __ESLOG__COLOR__RED);
+		fprintf(stderr, format, args...);
+		fprintf(stderr, __ESLOG__COLOR__WHITE);
 		fprintf(f, format, args...);
+		terminate();
 	}
 
 	ProgressLogger();
 	~ProgressLogger();
 	void setLogFile(const char* file);
+	void terminate();
 
 	int rank, size;
 	FILE *f;
