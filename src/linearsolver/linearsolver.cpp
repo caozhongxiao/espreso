@@ -6,7 +6,7 @@
 #include "basis/utilities/print.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/mpiinfo.h"
-#include "esinfo/eslog.hpp"
+#include "esinfo/eslog.h"
 
 #include "solver/generic/SparseMatrix.h"
 

@@ -1,6 +1,6 @@
 
 #include "systeminfo.h"
-#include "eslog.hpp"
+#include "eslog.h"
 
 #include <csignal>
 

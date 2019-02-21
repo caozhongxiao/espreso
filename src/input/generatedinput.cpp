@@ -5,7 +5,7 @@
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
 #include "esinfo/mpiinfo.h"
-#include "esinfo/eslog.hpp"
+#include "esinfo/eslog.h"
 
 #include "mesh/mesh.h"
 #include "mesh/store/nodestore.h"

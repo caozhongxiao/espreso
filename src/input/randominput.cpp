@@ -8,7 +8,7 @@
 #include "config/ecf/root.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
-#include "esinfo/eslog.hpp"
+#include "esinfo/eslog.h"
 
 #include "mesh/mesh.h"
 #include "mesh/elements/element.h"

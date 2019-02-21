@@ -3,7 +3,7 @@
 
 #include "config/ecf/input/grid.h"
 #include "config/ecf/input/sphere.h"
-#include "esinfo/eslog.hpp"
+#include "esinfo/eslog.h"
 
 using namespace espreso;
 

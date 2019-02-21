@@ -214,6 +214,45 @@ void param(const char* name, const char* value)
 	logger->param(name, value);
 }
 
+void info(const char* msg)
+{
+	logger->info(msg);
+}
+
+void solver(const char* msg)
+{
+	logger->info(msg);
+}
+
+void duration(const char* msg)
+{
+	if (printtime()) {
+		logger->info(msg);
+	}
+}
+
+void warning(const char* msg)
+{
+	logger->warning(msg);
+}
+
+void debug(const char* msg)
+{
+	logger->debug(msg);
+}
+
+void error(const char* msg)
+{
+	logger->error(msg);
+}
+
+void globalerror(const char* msg)
+{
+	if (logger->rank == 0) {
+		logger->error(msg);
+	}
+}
+
 ProgressLogger& progress()
 {
 	return *logger;

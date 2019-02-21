@@ -22,7 +22,7 @@
 
 #include "basis/containers/point.h"
 #include "basis/utilities/utils.h"
-#include "esinfo/eslog.hpp"
+#include "esinfo/eslog.h"
 #include "config/ecf/input/block.h"
 #include "config/ecf/input/generatorelements.h"
 

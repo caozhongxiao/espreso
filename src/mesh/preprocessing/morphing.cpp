@@ -8,7 +8,7 @@
 
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
-#include "esinfo/eslog.hpp"
+#include "esinfo/eslog.h"
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
 #include "basis/evaluator/evaluator.h"

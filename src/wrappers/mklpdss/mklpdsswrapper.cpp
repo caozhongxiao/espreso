@@ -5,7 +5,7 @@
 
 #include "basis/matrices/matrixtype.h"
 #include "basis/utilities/communication.h"
-#include "esinfo/eslog.hpp"
+#include "esinfo/eslog.h"
 
 #include <vector>
 

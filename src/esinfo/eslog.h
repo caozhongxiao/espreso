@@ -31,6 +31,14 @@ void param(const char* name, const long unsigned int &value);
 void param(const char* name, const double &value);
 void param(const char* name, const char* value);
 
+void info(const char* msg);
+void solver(const char* msg);
+void duration(const char* msg);
+void warning(const char* msg);
+void debug(const char* msg);
+void error(const char* msg);
+void globalerror(const char* msg);
+
 const char* path();
 const char* name();
 

@@ -6,7 +6,7 @@
 #include "composition/spheregenerator.h"
 
 #include "mesh/mesh.h"
-#include "esinfo/eslog.hpp"
+#include "esinfo/eslog.h"
 #include "config/ecf/input/generator.h"
 
 using namespace espreso;

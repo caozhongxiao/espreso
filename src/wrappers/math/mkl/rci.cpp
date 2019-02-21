@@ -1,6 +1,6 @@
 
 #include "wrappers/math/math.h"
-#include "esinfo/eslog.hpp"
+#include "esinfo/eslog.h"
 #include "mkl.h"
 
 #include <vector>

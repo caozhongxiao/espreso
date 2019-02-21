@@ -2,7 +2,7 @@
 #include "hypresolver.h"
 #include "physics/assembler/dataholder.h"
 
-#include "esinfo/eslog.hpp"
+#include "esinfo/eslog.h"
 #include "config/ecf/linearsolver/hypre/hypre.h"
 
 #include "solver/generic/SparseMatrix.h"

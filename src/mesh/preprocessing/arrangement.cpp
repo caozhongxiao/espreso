@@ -3,7 +3,7 @@
 
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
-#include "esinfo/eslog.hpp"
+#include "esinfo/eslog.h"
 
 #include "mesh/mesh.h"
 
