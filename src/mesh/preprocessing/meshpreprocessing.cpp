@@ -434,40 +434,38 @@ void MeshPreprocessing::computeElementsNeighbors()
 		auto nodes = _mesh->elements->procNodes->cbegin(t);
 		const auto &epointers = _mesh->elements->epointers->datatarray();
 
-		std::vector<esint> ndist = { 0 }, ndata, fdata, tdist, tdata;
+		std::vector<esint> tdist, tdata, intersection;
 		if (t == 0) {
 			tdist.push_back(0);
 		}
-		ndist.reserve(21); // hexa 20
-		ndata.reserve(300); // coarse estimation
-		fdata.reserve(100);
 
 		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++nodes) {
-			ndist.resize(1);
-			ndata.clear();
-			for (auto n = nodes->begin(); n != nodes->end(); ++n) {
-				auto elements = _mesh->nodes->elements->cbegin() + *n;
-				ndist.push_back(ndist.back() + elements->size());
-				ndata.insert(ndata.end(), elements->begin(), elements->end());
-			}
-
 			for (auto face = epointers[e]->faces->begin(); face != epointers[e]->faces->end(); ++face) {
-				fdata.clear();
-				for (auto n = face->begin(); n != face->end(); ++n) {
-					fdata.insert(fdata.end(), ndata.data() + ndist[*n], ndata.data() + ndist[*n + 1]);
-				}
-				std::sort(fdata.begin(), fdata.end());
-
-				tdata.push_back(-1);
-				auto begin = fdata.begin(), end = begin;
-				while (begin != fdata.end()) {
-					while (end != fdata.end() && *end == *begin) { ++end; }
-					if (*begin != IDs[e] && end - begin == (esint)face->size()) {
-						tdata.back() = *begin;
-						break;
+				auto nelements = _mesh->nodes->elements->cbegin() + nodes->at(*face->begin());
+				intersection.clear();
+				for (auto n = nelements->begin(); n != nelements->end(); ++n) {
+					if (*n != IDs[e]) {
+						intersection.push_back(*n);
 					}
-					begin = end;
 				}
+				for (auto n = face->begin() + 1; n != face->end() && intersection.size(); ++n) {
+					nelements = _mesh->nodes->elements->cbegin() + nodes->at(*n);
+					auto it1 = intersection.begin();
+					auto it2 = nelements->begin();
+					auto last = intersection.begin();
+					while (it1 != intersection.end()) {
+						while (it2 != nelements->end() && *it2 < *it1) {
+							++it2;
+						}
+						if (*it1 == *it2) {
+							*last++ = *it1++;
+						} else {
+							it1++;
+						}
+					}
+					intersection.resize(last - intersection.begin());
+				}
+				tdata.push_back(intersection.size() ? intersection.front() : -1);
 			}
 			tdist.push_back(tdata.size());
 		}
