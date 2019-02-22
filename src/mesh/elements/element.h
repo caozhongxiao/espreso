@@ -59,6 +59,9 @@ struct Element {
 	std::vector<DenseMatrix> *dN;
 	std::vector<double> *weighFactor;
 
+	std::vector<DenseMatrix> *nN;
+	std::vector<DenseMatrix> *ndN;
+
 	serializededata<int, int> *faces;
 	serializededata<int, int> *edges;
 
@@ -69,7 +72,7 @@ struct Element {
 
 	Element()
 	: type(TYPE::POINT), code(CODE::POINT1), nodes(1), coarseNodes(1), nCommonFace(1), nCommonEdge(1),
-	  N(NULL), dN(NULL), weighFactor(NULL),
+	  N(NULL), dN(NULL), weighFactor(NULL), nN(NULL), ndN(NULL),
 	  faces(NULL), edges(NULL), facepointers(NULL), edgepointers(NULL), triangles(NULL) {}
 
 	~Element();

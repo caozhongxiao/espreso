@@ -12,6 +12,9 @@ Element::~Element()
 	if (dN != NULL) { delete dN; }
 	if (weighFactor != NULL) { delete weighFactor; }
 
+	if (nN != NULL) { delete nN; }
+	if (ndN != NULL) { delete ndN; }
+
 	if (faces != NULL) { delete faces; }
 	if (edges != NULL) { delete edges; }
 	if (facepointers != NULL) { delete facepointers; }
