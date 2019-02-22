@@ -9,6 +9,7 @@
 #include "mesh/store/contactstore.h"
 
 #include "basis/containers/serializededata.h"
+#include "basis/matrices/denseMatrix.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
 
@@ -18,6 +19,8 @@
 
 #include <algorithm>
 #include <numeric>
+
+#include "basis/utilities/print.h"
 
 using namespace espreso;
 
@@ -314,6 +317,48 @@ void MeshPreprocessing::computeSurfaceLocations()
 	_mesh->contacts->grid = new serializededata<esint, esint>(gdist, gdata);
 
 	eslog::endln("MESH: SURFACE LOCATIONS COMPUTED");
+}
+
+void MeshPreprocessing::computeContactNormals()
+{
+	if (_mesh->contacts->elements == NULL) {
+		_mesh->preprocessing->computeSurfaceLocations();
+	}
+
+	eslog::startln("MESH: COMPUTE CONTACT NORMALS");
+
+	size_t threads = info::env::OMP_NUM_THREADS;
+
+	if (_mesh->contacts->enormals != NULL) {
+		delete _mesh->contacts->enormals;
+	}
+	_mesh->contacts->enormals = new serializededata<esint, Point>(*_mesh->contacts->elements);
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		const auto &epointers = _mesh->surface->epointers->datatarray();
+		auto element = _mesh->contacts->elements->begin(t);
+		auto normals = _mesh->contacts->enormals->begin(t);
+		DenseMatrix tangents(2, 3), coords(8, 3); // maximal size
+
+		for (auto e = _mesh->contacts->surface->edistribution[t]; e < _mesh->contacts->surface->edistribution[t + 1]; ++e, ++element, ++normals) {
+			coords.resize(epointers[e]->nodes, 3);
+			int cindex = 0;
+			for (auto n = element->begin(); n != element->end(); ++n, ++cindex) {
+				coords(cindex, 0) = n->x;
+				coords(cindex, 1) = n->y;
+				coords(cindex, 2) = n->z;
+			}
+			for (int n = 0; n < epointers[e]->nodes; n++) {
+				tangents.multiply((*epointers[e]->ndN)[n], coords);
+				Point t(tangents(0, 0), tangents(0, 1), tangents(0, 2));
+				Point s(tangents(1, 0), tangents(1, 1), tangents(1, 2));
+				normals->at(n) = Point::cross(t, s).normalize();
+			}
+		}
+	}
+
+	eslog::endln("MESH: CONTACT NORMALS COMPUTED");
 }
 
 void MeshPreprocessing::searchContactInterfaces()

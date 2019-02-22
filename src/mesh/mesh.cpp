@@ -450,6 +450,7 @@ void Mesh::update()
 	if (getPhysics().contact_interfaces) {
 		preprocessing->computeBodiesSurface();
 		contacts = new ContactStore(surface);
+		preprocessing->computeContactNormals();
 		preprocessing->computeSurfaceLocations();
 		preprocessing->searchContactInterfaces();
 		eslog::checkpointln("MESH: CONTACT INTERFACE COMPUTED");

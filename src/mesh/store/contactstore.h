@@ -19,6 +19,7 @@ struct ContactStore {
 
 	SurfaceStore *surface;
 	serializededata<esint, Point>* elements;
+	serializededata<esint, Point>* enormals;
 
 	serializededata<esint, esint>* closeElements;
 

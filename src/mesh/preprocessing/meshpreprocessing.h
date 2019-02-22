@@ -55,6 +55,7 @@ public:
 	void computeRegionsSurface();
 	void computeBodiesSurface();
 	void computeSurfaceLocations();
+	void computeContactNormals();
 	void searchContactInterfaces();
 
 	void computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion, int elementDimension);
