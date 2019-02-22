@@ -4,6 +4,7 @@
 
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
+#include "basis/matrices/denseMatrix.h"
 
 #include <ostream>
 #include <vector>
@@ -14,6 +15,19 @@ inline std::ostream& operator<<(std::ostream& os, const Point &p) {
 	os << p.x << " " << p.y << " " << p.z;
 	return os;
 }
+
+inline std::ostream& operator<<(std::ostream& os, const Matrix &m)
+{
+	for (size_t i = 0; i < m.rows(); i++) {
+		for (size_t j = 0; j < m.columns(); j++) {
+			os << m(i, j) << " ";
+		}
+		os << std::endl;
+	}
+	os << std::endl;
+	return os;
+}
+
 
 template<typename T1, typename T2>
 std::ostream& operator<< (std::ostream& os, const std::pair<T1, T2> &v)
