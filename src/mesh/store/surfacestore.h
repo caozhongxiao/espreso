@@ -16,11 +16,16 @@ struct SurfaceStore {
 	serializededata<esint, esint>* triangles;
 	serializededata<esint, esint>* elements;
 
+	serializededata<esint, esint>* nelements; // only for neighbors definition
+	serializededata<esint, esint>* IDs; // only for neighbors definition
+	serializededata<esint, esint>* neighbors;
+
 	serializededata<esint, esint>* nodes;
 	serializededata<esint, Point>* coordinates;
 
 	std::vector<size_t> tdistribution, edistribution, cdistribution;
 
+	esint eoffset;
 	serializededata<esint, Element*>* epointers;
 	std::vector<esint> ecounters;
 

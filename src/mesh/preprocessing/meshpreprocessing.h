@@ -55,6 +55,7 @@ public:
 	void computeRegionsSurface();
 	void computeBodiesSurface();
 	void computeSurfaceLocations();
+	void computeSurfaceElementNeighbors(SurfaceStore *surface);
 	void computeContactNormals();
 	void searchContactInterfaces();
 
@@ -70,6 +71,20 @@ protected:
 	NodeData* _morphing;
 
 private:
+	void linkNodesAndElements(
+			serializededata<esint, esint>* &nelements,
+			serializededata<esint, esint> *enodes,
+			serializededata<esint, esint> *eIDs,
+			std::vector<size_t> &edistribution);
+
+	void computeElementsNeighbors(
+			serializededata<esint, esint>* &nelements,
+			serializededata<esint, esint>* &eneighbors,
+			serializededata<esint, esint> *enodes,
+			serializededata<esint, esint> *eIDs,
+			serializededata<esint, Element*> *epointers,
+			std::vector<size_t> &edistribution);
+
 	void permuteElements(const std::vector<esint> &permutation, const std::vector<size_t> &distribution);
 	void arrangeElementsPermutation(std::vector<esint> &permutation);
 	void computeBoundaryNodes(std::vector<esint> &externalBoundary, std::vector<esint> &internalBoundary);

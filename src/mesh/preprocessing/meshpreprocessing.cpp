@@ -38,39 +38,56 @@ MeshPreprocessing::~MeshPreprocessing()
 
 void MeshPreprocessing::linkNodesAndElements()
 {
+	linkNodesAndElements(
+			_mesh->nodes->elements,
+			_mesh->elements->procNodes,
+			_mesh->elements->IDs,
+			_mesh->elements->distribution);
+}
+
+void MeshPreprocessing::linkNodesAndElements(
+		serializededata<esint, esint>* &nelements,
+		serializededata<esint, esint> *enodes,
+		serializededata<esint, esint> *eIDs,
+		std::vector<size_t> &edistribution)
+{
 	eslog::startln("MESH: LINK NODES AND ELEMENTS");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
+
+	serializededata<esint, esint> *nIDs = _mesh->nodes->IDs;
+	serializededata<esint, esint> *nranks = _mesh->nodes->ranks;
+	std::vector<size_t> &ndistribution = _mesh->nodes->distribution;
 
 	// thread x neighbor x vector(from, to)
 	std::vector<std::vector<std::vector<std::pair<esint, esint> > > > sBuffer(threads);
 	std::vector<std::vector<std::pair<esint, esint> > > rBuffer(_mesh->neighbours.size());
 	std::vector<std::pair<esint, esint> > localLinks;
 
-	localLinks.resize(_mesh->elements->procNodes->cend()->begin() - _mesh->elements->procNodes->cbegin()->begin());
+	localLinks.resize(enodes->cend()->begin() - enodes->cbegin()->begin());
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto tnodes = _mesh->elements->procNodes->cbegin(t);
-		size_t offset = _mesh->elements->procNodes->cbegin(t)->begin() - _mesh->elements->procNodes->cbegin()->begin();
+		auto tnodes = enodes->cbegin(t);
+		size_t offset = enodes->cbegin(t)->begin() - enodes->cbegin()->begin();
 
-		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++tnodes) {
+		for (size_t e = edistribution[t]; e < edistribution[t + 1]; ++e, ++tnodes) {
 			for (auto n = tnodes->begin(); n != tnodes->end(); ++n, ++offset) {
 				localLinks[offset].first = *n;
-				localLinks[offset].second = _mesh->elements->IDs->datatarray()[e];
+				localLinks[offset].second = eIDs->datatarray()[e];
 			}
 		}
 	}
 
-	utils::sortWithInplaceMerge(localLinks, _mesh->elements->procNodes->datatarray().distribution());
+	utils::sortWithInplaceMerge(localLinks, enodes->datatarray().distribution());
 
 	std::vector<size_t> tbegin(threads);
 	for (size_t t = 1; t < threads; t++) {
-		tbegin[t] = std::lower_bound(localLinks.begin() + tbegin[t - 1], localLinks.end(), _mesh->nodes->distribution[t], [] (std::pair<esint, esint> &p, esint n) { return p.first < n; }) - localLinks.begin();
+		tbegin[t] = std::lower_bound(localLinks.begin() + tbegin[t - 1], localLinks.end(), ndistribution[t], [] (std::pair<esint, esint> &p, esint n) { return p.first < n; }) - localLinks.begin();
 	}
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto ranks = _mesh->nodes->ranks->cbegin(t);
+		auto ranks = nranks->cbegin(t);
 		std::vector<std::vector<std::pair<esint, esint> > > tBuffer(_mesh->neighbours.size());
 
 		auto begin = localLinks.begin() + tbegin[t];
@@ -89,17 +106,14 @@ void MeshPreprocessing::linkNodesAndElements()
 			}
 		};
 
-		for (size_t n = _mesh->nodes->distribution[t]; n + 1 < _mesh->nodes->distribution[t + 1]; ++n, ++ranks) {
-			while (end->first == begin->first) ++end;
-			send(_mesh->nodes->IDs->datatarray()[n]);
-			begin = end;
-		}
-		if (t + 1 < threads) {
-			while (end != localLinks.end() && end->first == begin->first) ++end;
-			send(_mesh->nodes->IDs->datatarray()[_mesh->nodes->distribution[t + 1] - 1]);
-		} else {
-			end = localLinks.end();
-			send(_mesh->nodes->IDs->datatarray().back());
+		for (size_t n = ndistribution[t]; n < ndistribution[t + 1]; ++n, ++ranks) {
+			while (begin != localLinks.end() && begin->first < (esint)n) ++begin;
+			if (begin != localLinks.end() && begin->first == (esint)n) {
+				end = begin;
+				while (end != localLinks.end() && end->first == begin->first) ++end;
+				send(nIDs->datatarray()[n]);
+				begin = end;
+			}
 		}
 
 		sBuffer[t].swap(tBuffer);
@@ -128,8 +142,8 @@ void MeshPreprocessing::linkNodesAndElements()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		if (_mesh->nodes->distribution[t] != _mesh->nodes->distribution[t + 1]) {
-			auto llink = std::lower_bound(localLinks.begin(), localLinks.end(), _mesh->nodes->IDs->datatarray()[_mesh->nodes->distribution[t]], [] (std::pair<esint, esint> &p, esint n) { return p.first < n; });
+		if (ndistribution[t] != ndistribution[t + 1]) {
+			auto llink = std::lower_bound(localLinks.begin(), localLinks.end(), nIDs->datatarray()[ndistribution[t]], [] (std::pair<esint, esint> &p, esint n) { return p.first < n; });
 			esint current;
 
 			std::vector<esint> tBoundaries, tData;
@@ -137,34 +151,21 @@ void MeshPreprocessing::linkNodesAndElements()
 				tBoundaries.push_back(0);
 			}
 
-			for (size_t n = _mesh->nodes->distribution[t]; n + 1 < _mesh->nodes->distribution[t + 1]; ++n) {
-				current = llink->first;
-				while (current == llink->first) {
-					tData.push_back(llink->second);
-					++llink;
-				}
-				tBoundaries.push_back(llink - localLinks.begin());
-			}
-			if (t + 1 < threads) {
+			for (size_t n = ndistribution[t]; n < ndistribution[t + 1] && llink != localLinks.end(); ++n) {
 				current = llink->first;
 				while (llink != localLinks.end() && current == llink->first) {
 					tData.push_back(llink->second);
 					++llink;
 				}
-			} else {
-				while (llink != localLinks.end()) {
-					tData.push_back(llink->second);
-					++llink;
-				}
+				tBoundaries.push_back(llink - localLinks.begin());
 			}
-			tBoundaries.push_back(llink - localLinks.begin());
 
 			linksBoundaries[t].swap(tBoundaries);
 			linksData[t].swap(tData);
 		}
 	}
 
-	_mesh->nodes->elements = new serializededata<esint, esint>(linksBoundaries, linksData);
+	nelements = new serializededata<esint, esint>(linksBoundaries, linksData);
 
 	eslog::endln("MESH: NODES AND ELEMENTS LINKED");
 }
@@ -297,11 +298,27 @@ void MeshPreprocessing::exchangeHalo()
 	eslog::endln("MESH: HALO EXCHANGED");
 }
 
-
 void MeshPreprocessing::computeElementsNeighbors()
 {
-	if (_mesh->nodes->elements == NULL) {
-		this->linkNodesAndElements();
+	computeElementsNeighbors(
+			_mesh->nodes->elements,
+			_mesh->elements->neighbors,
+			_mesh->elements->procNodes,
+			_mesh->elements->IDs,
+			_mesh->elements->epointers,
+			_mesh->elements->distribution);
+}
+
+void MeshPreprocessing::computeElementsNeighbors(
+		serializededata<esint, esint>* &nelements,
+		serializededata<esint, esint>* &eneighbors,
+		serializededata<esint, esint> *enodes,
+		serializededata<esint, esint> *eIDs,
+		serializededata<esint, Element*> *epointers,
+		std::vector<size_t> &edistribution)
+{
+	if (nelements == NULL) {
+		this->linkNodesAndElements(nelements, enodes, eIDs, edistribution);
 	}
 
 	eslog::startln("MESH: COMPUTE ELEMENTS NEIGHBOURS");
@@ -313,32 +330,33 @@ void MeshPreprocessing::computeElementsNeighbors()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		const auto &IDs = _mesh->elements->IDs->datatarray();
-		auto nodes = _mesh->elements->procNodes->cbegin(t);
-		const auto &epointers = _mesh->elements->epointers->datatarray();
+		auto nodes = enodes->cbegin(t);
 
 		std::vector<esint> tdist, tdata, intersection;
 		if (t == 0) {
 			tdist.push_back(0);
 		}
 
-		for (size_t e = _mesh->elements->distribution[t]; e < _mesh->elements->distribution[t + 1]; ++e, ++nodes) {
-			for (auto face = epointers[e]->faces->begin(); face != epointers[e]->faces->end(); ++face) {
-				auto nelements = _mesh->nodes->elements->cbegin() + nodes->at(*face->begin());
+		for (size_t e = edistribution[t]; e < edistribution[t + 1]; ++e, ++nodes) {
+			for (auto face = epointers->datatarray()[e]->faces->begin(); face != epointers->datatarray()[e]->faces->end(); ++face) {
+				auto telements = nelements->cbegin() + nodes->at(*face->begin());
 				intersection.clear();
-				for (auto n = nelements->begin(); n != nelements->end(); ++n) {
-					if (*n != IDs[e]) {
+				for (auto n = telements->begin(); n != telements->end(); ++n) {
+					if (*n != eIDs->datatarray()[e]) {
 						intersection.push_back(*n);
 					}
 				}
 				for (auto n = face->begin() + 1; n != face->end() && intersection.size(); ++n) {
-					nelements = _mesh->nodes->elements->cbegin() + nodes->at(*n);
+					telements = nelements->cbegin() + nodes->at(*n);
 					auto it1 = intersection.begin();
-					auto it2 = nelements->begin();
+					auto it2 = telements->begin();
 					auto last = intersection.begin();
 					while (it1 != intersection.end()) {
-						while (it2 != nelements->end() && *it2 < *it1) {
+						while (it2 != telements->end() && *it2 < *it1) {
 							++it2;
+						}
+						if (it2 == telements->end()) {
+							break;
 						}
 						if (*it1 == *it2) {
 							*last++ = *it1++;
@@ -359,9 +377,24 @@ void MeshPreprocessing::computeElementsNeighbors()
 
 	utils::threadDistributionToFullDistribution(dualDistribution);
 
-	_mesh->elements->neighbors = new serializededata<esint, esint>(dualDistribution, dualData);
+	eneighbors = new serializededata<esint, esint>(dualDistribution, dualData);
 
 	eslog::endln("MESH: ELEMENTS NEIGHBOURS COMPUTED");
+}
+
+void MeshPreprocessing::computeSurfaceElementNeighbors(SurfaceStore *surface)
+{
+	surface->eoffset = surface->elements->structures();
+	surface->IDs = new serializededata<esint, esint>(1, tarray<esint>(info::env::OMP_NUM_THREADS, surface->eoffset));
+	Communication::exscan(surface->eoffset);
+	std::iota(surface->IDs->datatarray().begin(), surface->IDs->datatarray().end(), surface->eoffset);
+	computeElementsNeighbors(
+			surface->nelements,
+			surface->neighbors,
+			surface->elements,
+			surface->IDs,
+			surface->epointers,
+			surface->edistribution);
 }
 
 void MeshPreprocessing::computeElementsCenters()

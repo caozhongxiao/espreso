@@ -23,14 +23,14 @@ ContactStore::~ContactStore()
 	if (enormals != NULL) { delete enormals; }
 	if (closeElements != NULL) { delete closeElements; }
 
-	for (size_t i = 0; i < nelements.size(); i++) {
-		delete nelements[i];
+	for (size_t i = 0; i < gnelements.size(); i++) {
+		delete gnelements[i];
 	}
-	for (size_t i = 0; i < ngrid.size(); i++) {
-		delete ngrid[i];
+	for (size_t i = 0; i < gngrid.size(); i++) {
+		delete gngrid[i];
 	}
-	for (size_t i = 0; i < ncloseElements.size(); i++) {
-		delete ncloseElements[i];
+	for (size_t i = 0; i < gncloseElements.size(); i++) {
+		delete gncloseElements[i];
 	}
 }
 

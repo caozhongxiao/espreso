@@ -758,23 +758,23 @@ void VTKLegacy::contact(const std::string &name)
 		os << "ASCII\n";
 		os << "DATASET UNSTRUCTURED_GRID\n\n";
 
-		os << "POINTS " << _mesh.contacts->neighbors.size() + 1 << " float\n";
+		os << "POINTS " << _mesh.contacts->gneighbors.size() + 1 << " float\n";
 		os << center.x << " " << center.y << " " << center.z << "\n";
-		for (size_t i = 0; i < _mesh.contacts->neighbors.size(); ++i) {
-			Point &p = centers[_mesh.contacts->neighbors[i]];
+		for (size_t i = 0; i < _mesh.contacts->gneighbors.size(); ++i) {
+			Point &p = centers[_mesh.contacts->gneighbors[i]];
 			os << p.x << " " << p.y << " " << p.z << "\n";
 		}
 		os << "\n";
 
-		os << "CELLS " << _mesh.contacts->neighbors.size() << " " << 3 * _mesh.contacts->neighbors.size() << "\n";
-		for (size_t i = 0; i < _mesh.contacts->neighbors.size(); ++i) {
+		os << "CELLS " << _mesh.contacts->gneighbors.size() << " " << 3 * _mesh.contacts->gneighbors.size() << "\n";
+		for (size_t i = 0; i < _mesh.contacts->gneighbors.size(); ++i) {
 			os << "2 0 " << i + 1 << "\n";
 		}
 		os << "\n";
 
-		os << "CELL_TYPES " << _mesh.contacts->neighbors.size() << "\n";
+		os << "CELL_TYPES " << _mesh.contacts->gneighbors.size() << "\n";
 		Element::CODE code = Element::CODE::LINE2;
-		for (size_t i = 0; i < _mesh.contacts->neighbors.size(); ++i) {
+		for (size_t i = 0; i < _mesh.contacts->gneighbors.size(); ++i) {
 			os << VTKWritter::ecode(code) << "\n";
 		}
 		os << "\n";
@@ -797,8 +797,8 @@ void VTKLegacy::closeElements(const std::string &name)
 	os << "DATASET UNSTRUCTURED_GRID\n\n";
 
 	size_t points = _mesh.contacts->elements->structures() + _mesh.contacts->closeElements->datatarray().size();
-	for (size_t n = 0; n < _mesh.contacts->neighbors.size(); n++) {
-		points += _mesh.contacts->nsurface[n].size() + _mesh.contacts->ncloseElements[n]->datatarray().size();
+	for (size_t n = 0; n < _mesh.contacts->gneighbors.size(); n++) {
+		points += _mesh.contacts->gnsurface[n].size() + _mesh.contacts->gncloseElements[n]->datatarray().size();
 	}
 
 	std::vector<Point> centers(info::mpi::size);
@@ -830,10 +830,10 @@ void VTKLegacy::closeElements(const std::string &name)
 		}
 	}
 
-	for (size_t n = 0; n < _mesh.contacts->neighbors.size(); n++) {
-		auto closest = _mesh.contacts->ncloseElements[n]->cbegin();
-		for (size_t i = 0; i < _mesh.contacts->nsurface[n].size(); ++i, ++closest) {
-			auto e = _mesh.contacts->elements->cbegin() + _mesh.contacts->nsurface[n][i];
+	for (size_t n = 0; n < _mesh.contacts->gneighbors.size(); n++) {
+		auto closest = _mesh.contacts->gncloseElements[n]->cbegin();
+		for (size_t i = 0; i < _mesh.contacts->gnsurface[n].size(); ++i, ++closest) {
+			auto e = _mesh.contacts->elements->cbegin() + _mesh.contacts->gnsurface[n][i];
 			Point center;
 			for (auto nn = e->begin(); nn != e->end(); ++nn) {
 				center += *nn;
@@ -843,7 +843,7 @@ void VTKLegacy::closeElements(const std::string &name)
 			os << center.x << " " << center.y << " " << center.z << "\n";
 
 			for (auto ne = closest->begin(); ne != closest->end(); ++ne) {
-				auto ce = _mesh.contacts->nelements[n]->cbegin() + *ne;
+				auto ce = _mesh.contacts->gnelements[n]->cbegin() + *ne;
 
 				Point ncenter;
 				for (auto nn = ce->begin(); nn != ce->end(); ++nn) {
@@ -851,7 +851,7 @@ void VTKLegacy::closeElements(const std::string &name)
 				}
 				ncenter /= ce->size();
 
-				ncenter = shrink(ncenter, centers[_mesh.contacts->neighbors[n]], ncenter, clusterShrinkRatio, 1);
+				ncenter = shrink(ncenter, centers[_mesh.contacts->gneighbors[n]], ncenter, clusterShrinkRatio, 1);
 				ncenter = center + (ncenter - center) / 2;
 				os << ncenter.x << " " << ncenter.y << " " << ncenter.z << "\n";
 			}
@@ -861,8 +861,8 @@ void VTKLegacy::closeElements(const std::string &name)
 	os << "\n";
 
 	size_t cells = _mesh.contacts->closeElements->datatarray().size();
-	for (size_t n = 0; n < _mesh.contacts->neighbors.size(); n++) {
-		cells += _mesh.contacts->ncloseElements[n]->datatarray().size();
+	for (size_t n = 0; n < _mesh.contacts->gneighbors.size(); n++) {
+		cells += _mesh.contacts->gncloseElements[n]->datatarray().size();
 	}
 
 	os << "CELLS " << cells << " " << 3 * cells << "\n";
@@ -874,8 +874,8 @@ void VTKLegacy::closeElements(const std::string &name)
 		}
 		eindex += noffset;
 	}
-	for (size_t n = 0; n < _mesh.contacts->neighbors.size(); n++) {
-		for (auto e = _mesh.contacts->ncloseElements[n]->cbegin(); e != _mesh.contacts->ncloseElements[n]->cend(); ++e) {
+	for (size_t n = 0; n < _mesh.contacts->gneighbors.size(); n++) {
+		for (auto e = _mesh.contacts->gncloseElements[n]->cbegin(); e != _mesh.contacts->gncloseElements[n]->cend(); ++e) {
 			noffset = 1;
 			for (auto n = e->begin(); n != e->end(); ++n, ++noffset) {
 				os << "2 " << eindex << " " << eindex + noffset << "\n";
@@ -905,9 +905,9 @@ void VTKLegacy::closeElements(const std::string &name)
 			}
 		}
 	}
-	for (size_t n = 0; n < _mesh.contacts->neighbors.size(); n++) {
-		for (auto e = _mesh.contacts->ncloseElements[n]->cbegin(); e != _mesh.contacts->ncloseElements[n]->cend(); ++e, ++eindex) {
-			if (info::mpi::rank < _mesh.contacts->neighbors[n]) {
+	for (size_t n = 0; n < _mesh.contacts->gneighbors.size(); n++) {
+		for (auto e = _mesh.contacts->gncloseElements[n]->cbegin(); e != _mesh.contacts->gncloseElements[n]->cend(); ++e, ++eindex) {
+			if (info::mpi::rank < _mesh.contacts->gneighbors[n]) {
 				for (auto n = e->begin(); n != e->end(); ++n) {
 					os << "1\n";
 				}

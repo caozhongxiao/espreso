@@ -28,12 +28,14 @@ struct ContactStore {
 	std::vector<esint> filledCells;
 	serializededata<esint, esint>* grid;
 
-	std::vector<int> neighbors;
-	std::vector<std::vector<esint> > nsurface;
-	std::vector<serializededata<esint, Point>*> nelements;
-	std::vector<std::vector<esint> > nfilled;
-	std::vector<serializededata<esint, esint>*> ngrid;
-	std::vector<serializededata<esint, esint>*> ncloseElements;
+	// geometric
+	std::vector<int> gneighbors;
+	// neighbors
+	std::vector<std::vector<esint> > gnsurface;
+	std::vector<serializededata<esint, Point>*> gnelements;
+	std::vector<std::vector<esint> > gnfilled;
+	std::vector<serializededata<esint, esint>*> gngrid;
+	std::vector<serializededata<esint, esint>*> gncloseElements;
 
 	ContactStore(SurfaceStore *surface);
 	~ContactStore();
