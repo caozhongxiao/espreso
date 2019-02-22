@@ -17,12 +17,13 @@ public:
 		return sqrt(x * x + y * y + z * z);
 	}
 
-	void normalize()
+	Point& normalize()
 	{
 		double l = 1.0 / norm();
 		x *= l;
 		y *= l;
 		z *= l;
+		return *this;
 	}
 
 	double length() const
