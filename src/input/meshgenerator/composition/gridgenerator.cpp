@@ -116,6 +116,12 @@ void GridGenerator::neighbors(PlainMeshData &mesh)
 		}
 	}
 
+	for (size_t i = 0; i < map.size(); i++) {
+		if (map[i] >= info::mpi::size) {
+			map[i] = -1;
+		}
+	}
+
 	_block.neighbors(map, mesh);
 }
 
