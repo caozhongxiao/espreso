@@ -82,14 +82,14 @@ void Element::set<Element::CODE::SQUARE4>()
 		std::vector<double> s = { -CsQ_scale,  CsQ_scale,  CsQ_scale, -CsQ_scale };
 		std::vector<double> t = { -CsQ_scale, -CsQ_scale,  CsQ_scale,  CsQ_scale };
 
-		for (unsigned int i = 0; i < GPCount; i++) {
+		for (unsigned int i = 0; i < nodeCount; i++) {
 			(*nN)[i](0, 0) = 0.25 * (1 - s[i]) * (1 - t[i]);
 			(*nN)[i](0, 1) = 0.25 * (s[i] + 1) * (1 - t[i]);
 			(*nN)[i](0, 2) = 0.25 * (s[i] + 1) * (t[i] + 1);
 			(*nN)[i](0, 3) = 0.25 * (1 - s[i]) * (t[i] + 1);
 		}
 
-		for (unsigned int i = 0; i < GPCount; i++) {
+		for (unsigned int i = 0; i < nodeCount; i++) {
 			// node dNs - derivation of basis function
 			(*ndN)[i](0, 0) = 0.25 * ( t[i] - 1);
 			(*ndN)[i](0, 1) = 0.25 * (-t[i] + 1);
