@@ -31,7 +31,7 @@ void LoadStepSolver::finalizeLoadStep()
 
 void LoadStepSolver::run()
 {
-	eslog::checkpoint("SOLVER STARTED");
+	eslog::start("SOLVER STARTED");
 	eslog::param("STEP", time::step + 1);
 	eslog::param("TYPE", name().c_str());
 	eslog::param("MODE", _timeStepSolver.name().c_str());
@@ -48,4 +48,6 @@ void LoadStepSolver::run()
 		time::iteration = 0;
 	}
 	finalizeLoadStep();
+
+	eslog::endln("SOLVER FINISHED");
 }

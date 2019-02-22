@@ -8,6 +8,8 @@
 
 namespace espreso {
 
+class ProgressLogger;
+
 class TimeLogger: public Verbosity<TimeLogger, 't'> {
 
 	struct Event {
@@ -81,7 +83,7 @@ public:
 		_events.reserve(1000000);
 	}
 
-	void evaluate();
+	void evaluate(ProgressLogger &logger);
 
 protected:
 	double _init;

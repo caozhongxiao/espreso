@@ -2,6 +2,7 @@
 #include "eslog.hpp"
 #include "basis/logging/progressloggger.h"
 #include "basis/logging/timelogger.h"
+#include "basis/logging/oldtimelogger.h"
 #include "basis/utilities/parser.h"
 #include "basis/utilities/sysutils.h"
 #include "basis/utilities/communication.h"
@@ -30,7 +31,7 @@ struct LoggerData {
 	std::string logFile; // root/directory/name.log
 };
 
-struct Logger: public espreso::Logger<TimeLogger, ProgressLogger>, public LoggerData {};
+struct Logger: public espreso::Logger<OldTimeLogger, TimeLogger, ProgressLogger>, public LoggerData {};
 Logger *logger = NULL;
 
 const char* path()
@@ -45,7 +46,7 @@ const char* name()
 
 bool printtime()
 {
-	return logger->TimeLogger::verbosity > 1;
+	return logger->OldTimeLogger::verbosity > 1;
 }
 
 void create()
@@ -148,6 +149,7 @@ void init(int *argc, char ***argv)
 
 void finish()
 {
+	logger->evaluate(*logger);
 	if (logger) delete logger;
 }
 
