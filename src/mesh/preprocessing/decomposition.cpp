@@ -146,6 +146,7 @@ void MeshPreprocessing::reclusterize()
 	}
 
 	this->exchangeElements(partition);
+	eslog::endln("MESH: DIVIDED TO CLUSTERS");
 }
 
 void MeshPreprocessing::partitiate(esint parts, bool uniformDecomposition)

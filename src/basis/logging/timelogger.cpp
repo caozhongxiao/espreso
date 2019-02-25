@@ -2,6 +2,8 @@
 #include "timelogger.h"
 #include "progressloggger.h"
 
+#include "esinfo/mpiinfo.h"
+
 #include "omp.h"
 #include <cstdio>
 
@@ -47,6 +49,7 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 			break;
 		}
 	}
+	MPI_Barrier(info::mpi::comm);
 }
 
 
