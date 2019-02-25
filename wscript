@@ -1,8 +1,5 @@
 
-import commands
-import sys
-import os
-import logging
+import sys, os, logging, subprocess
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -141,7 +138,7 @@ def set_variables(ctx):
     ctx.env.append_unique("CXXFLAGS", [ "-Wno-deprecated-declarations" ]) # MKL
     ctx.env.append_unique("CXXFLAGS", [ "-Wno-format-security" ]) # loggers
     ctx.env.append_unique("CXXFLAGS", ctx.options.cxxflags.split())
-    ctx.env.mode = ctx.options.mode
+    ctx.env.append_unique("DEFINES", [ "__ESMODE__="+ctx.options.mode.upper() ])
     if ctx.options.mode == "release":
         ctx.env.append_unique("CXXFLAGS", [ "-O3" ])
         if ctx.options.debug:
@@ -199,9 +196,10 @@ fetisources= (
 )
 
 def build(ctx):
+    commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).rstrip()
 
     ctx.objects(source=ctx.path.ant_glob('src/basis/**/*.cpp'),target="basis")
-    ctx.objects(source=ctx.path.ant_glob('src/esinfo/**/*.cpp'),target="esinfo",defines="MODE="+ctx.env.mode.upper())
+    ctx.objects(source=ctx.path.ant_glob('src/esinfo/**/*.cpp'),target="esinfo",defines=[ '__ESCOMMIT__=\"{0}\"'.format(commit) ])
     ctx.objects(source=ctx.path.ant_glob('src/config/**/*.cpp'),target="config")
     ctx.objects(source=ctx.path.ant_glob('src/mesh/**/*.cpp'),target="mesh")
     ctx.objects(source=ctx.path.ant_glob('src/input/**/*.cpp'),target="input")
@@ -250,7 +248,7 @@ def options(opt):
         metavar="32,64",
         help="ESPRESO integer datatype width [default: %default]")
 
-    modes=["release", "devel", "debug"]
+    modes=["release", "measurement", "devel", "debug"]
     espreso.add_option("-m", "--mode",
         action="store",
         default="release",

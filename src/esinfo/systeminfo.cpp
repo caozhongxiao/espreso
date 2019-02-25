@@ -34,6 +34,12 @@ namespace espreso {
 namespace info {
 namespace system {
 
+#ifdef __ESCOMMIT__
+const char* commit = __ESCOMMIT__;
+#else
+const char* commit = "commit";
+#endif
+
 void setSignals()
 {
 	switch (build) {

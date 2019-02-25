@@ -3,6 +3,7 @@
 #include "progressloggger.h"
 
 #include "esinfo/mpiinfo.h"
+#include "esinfo/systeminfo.h"
 
 #include "omp.h"
 #include <cstdio>
@@ -16,8 +17,10 @@ double TimeLogger::time()
 
 void TimeLogger::evaluate(ProgressLogger &logger)
 {
-	logger.info("\n ============ TIME STATISTICS ============== \n");
-	int depth = 0, width = 45;
+	logger.info("\n ================ TIME STATISTICS ================== \n");
+	logger.info(" = commit=%s = \n", info::system::commit);
+	logger.info(" =================================================== \n");
+	int depth = 0, width = 42;
 	double prev = _init;
 	for (size_t i = 0; i < _events.size(); i++) {
 		switch (_events[i].type) {
@@ -49,6 +52,7 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 			break;
 		}
 	}
+	logger.info(" =================================================== \n");
 	MPI_Barrier(info::mpi::comm);
 }
 
