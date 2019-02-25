@@ -4,8 +4,9 @@
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/denseMatrix.h"
 
-using namespace espreso;
+//using namespace espreso;
 
+namespace espreso {
 template<>
 void Element::set<Element::CODE::LINE2>()
 {
@@ -37,6 +38,6 @@ void Element::set<Element::CODE::LINE2>()
 		m(0, 1) =  1 / 2.0;
 	}
 }
-
+}
 
 

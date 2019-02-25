@@ -5,7 +5,9 @@
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/denseMatrix.h"
 
-using namespace espreso;
+//using namespace espreso;
+
+namespace espreso {
 
 template<>
 void Element::set<Element::CODE::SQUARE8>()
@@ -95,7 +97,7 @@ void Element::set<Element::CODE::SQUARE8>()
 		m(1, 7) = t[i] * (s[i] - 1);
 	}
 }
-
+}
 
 
 

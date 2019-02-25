@@ -5,8 +5,9 @@
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/denseMatrix.h"
 
-using namespace espreso;
+//using namespace espreso;
 
+namespace espreso {
 template<>
 void Element::set<Element::CODE::PYRAMID13>()
 {
@@ -151,7 +152,7 @@ void Element::set<Element::CODE::PYRAMID13>()
 		exit(1);
 	}
 }
-
+}
 
 
 

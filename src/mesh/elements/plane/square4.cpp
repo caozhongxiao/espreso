@@ -5,7 +5,9 @@
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/denseMatrix.h"
 
-using namespace espreso;
+//using namespace espreso;
+
+namespace espreso {
 
 template<>
 void Element::set<Element::CODE::SQUARE4>()
@@ -69,6 +71,6 @@ void Element::set<Element::CODE::SQUARE4>()
 		(*dN)[i](1, 3) = 0.25 * (-s[i] + 1);
 	}
 }
-
+}
 
 

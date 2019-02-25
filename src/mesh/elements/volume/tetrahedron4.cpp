@@ -5,8 +5,9 @@
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/denseMatrix.h"
 
-using namespace espreso;
+//using namespace espreso;
 
+namespace espreso {
 template<>
 void Element::set<Element::CODE::TETRA4>()
 {
@@ -93,7 +94,7 @@ void Element::set<Element::CODE::TETRA4>()
 		exit(1);
 	}
 }
-
+}
 
 
 

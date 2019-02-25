@@ -5,7 +5,9 @@
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/denseMatrix.h"
 
-using namespace espreso;
+//using namespace espreso;
+
+namespace espreso {
 
 template<>
 void Element::set<Element::CODE::TRIANGLE6>()
@@ -93,4 +95,5 @@ void Element::set<Element::CODE::TRIANGLE6>()
 		m(1, 4) = 4.0 * s[i];
 		m(1, 5) = 4.0 - 4.0 * s[i] - 8.0 * t[i];
 	}
+}
 }

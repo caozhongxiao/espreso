@@ -5,8 +5,9 @@
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/denseMatrix.h"
 
-using namespace espreso;
+//using namespace espreso;
 
+namespace espreso {
 template<>
 void Element::set<Element::CODE::HEXA8>()
 {
@@ -91,7 +92,7 @@ void Element::set<Element::CODE::HEXA8>()
 		(*dN)[i](2, 7) = 0.125 * ( (1 - r) * (1 + s));
 	}
 }
-
+}
 
 
 

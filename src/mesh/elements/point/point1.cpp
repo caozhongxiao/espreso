@@ -4,8 +4,9 @@
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/denseMatrix.h"
 
-using namespace espreso;
+//using namespace espreso;
 
+namespace espreso {
 template<>
 void Element::set<Element::CODE::POINT1>()
 {
@@ -16,6 +17,6 @@ void Element::set<Element::CODE::POINT1>()
 	nCommonFace = 1;
 	nCommonEdge = 1;
 }
-
+}
 
 
