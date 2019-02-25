@@ -4,9 +4,8 @@
 #include "basis/containers/serializededata.h"
 #include "basis/matrices/denseMatrix.h"
 
-//using namespace espreso;
-
 namespace espreso {
+
 template<>
 void Element::set<Element::CODE::POINT1>()
 {
