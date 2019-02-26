@@ -4,27 +4,13 @@
 #include "solver/specific/sparsesolvers.h"
 #include "solver/specific/densesolvers.h"
 
-#include <omp.h>
-#include "mpi.h"
-#include "mkl.h"
-
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <vector>
-#include <fstream>
-#include <algorithm>
-#include <math.h>
-#include <iomanip>
 #include <map>
 
 using std::vector;
 using std::map;
-using std::make_pair;
 
 #include "solver/generic/utils.h"
 #include "physics/assembler/dataholder.h"
-
 
 #pragma once
 

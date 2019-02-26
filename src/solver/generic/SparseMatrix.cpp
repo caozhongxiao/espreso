@@ -6,6 +6,12 @@
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 
+#include <algorithm>
+#include <sstream>
+#include <fstream>
+
+#include "mkl.h"
+
 namespace espreso {
 
 std::ostream& operator<<(std::ostream& os, const SparseMatrix &m)
@@ -140,7 +146,7 @@ std::string SparseMatrix::SpyText()
 			ss << *i << ' ';
 		}
 
-		ss << "|" << endl;
+		ss << "|" << std::endl;
 	}
 
 	//SEQ_VECTOR<char> tmp (60,'-');
@@ -398,8 +404,8 @@ esint  SparseMatrix::SaveMatrixBinInCSR(string filename) {
 
 	if ( out.is_open() ) {
 		//write parameters
-		out << "%% rows;cols;nnz;type" << endl;
-		out << s.rows << ";" << s.cols << ";" << s.nnz << ";" << s.type << endl;
+		out << "%% rows;cols;nnz;type" << std::endl;
+		out << s.rows << ";" << s.cols << ";" << s.nnz << ";" << s.type << std::endl;
 
 		out.write((char*)&s.CSR_I_row_indices[0], s.CSR_I_row_indices.size() * sizeof(esint));
 		out.write((char*)&s.CSR_J_col_indices[0], s.CSR_J_col_indices.size() * sizeof(esint));
@@ -431,8 +437,8 @@ esint  SparseMatrix::SaveMatrixBinInCOO(string filename) {
 
 	if ( out.is_open() ) {
 		//write parameters
-		out << "%% rows;cols;nnz;type" << endl;
-		out << rows << ";" << cols << ";" << nnz << ";" << type << endl;
+		out << "%% rows;cols;nnz;type" << std::endl;
+		out << rows << ";" << cols << ";" << nnz << ";" << type << std::endl;
 
 		// Is not COO but CSR! Left for possible compatibility issues
 		out.write((char*)&CSR_I_row_indices[0], CSR_I_row_indices.size() * sizeof(esint));
@@ -440,7 +446,7 @@ esint  SparseMatrix::SaveMatrixBinInCOO(string filename) {
 		out.write((char*)&CSR_V_values[0], CSR_V_values.size() * sizeof(double));
 
 		// Prepared for fix
-//		out << s.rows << ";" << s.cols << ";" << s.nnz << ";" << s.type << endl;
+//		out << s.rows << ";" << s.cols << ";" << s.nnz << ";" << s.type << std::endl;
 //		out.write((char*)&s.I_row_indices[0], s.I_row_indices.size() * sizeof(esint));
 //		out.write((char*)&s.J_col_indices[0], s.J_col_indices.size() * sizeof(esint));
 //		out.write((char*)&s.V_values[0], s.V_values.size() * sizeof(double));
@@ -1110,7 +1116,7 @@ void SparseMatrix::DenseMatMat(SparseMatrix & A_in, char trans_A, SparseMatrix &
 	n = B_in.cols;
 
 //	if (A_in.cols != B_in.rows )
-//		std::cout << "GEMM error - matrix dimension mismatch" << std::endl;
+//		std::cout << "GEMM error - matrix dimension mismatch" << std::std::endl;
 
 	this->Clear();
 
@@ -3534,7 +3540,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 // testing last twenty eigenvalues of S to distinguish, if d-last ones are zero or not.
 //ESLOCAL TWENTY                                        = 20;
   esint twenty                                        = 20;
-  // twenty eigenvalues are ascendly ordered in d = d[0],d[1], ..., d[n-2],d[n-1]
+  // twenty eigenvalues are ascstd::endly ordered in d = d[0],d[1], ..., d[n-2],d[n-1]
 
 //    6) jump_in_eigenvalues_alerting_singularity
 // if d[i]/d[i+1]< jump_in_eigenvalues_alerting_singularity, d[i] is last nonzero eigenvalue
@@ -4494,7 +4500,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 // testing last twenty eigenvalues of S to distinguish, if d-last ones are zero or not.
 //ESLOCAL TWENTY                                        = 20;
   esint twenty                                        = 20;
-  // twenty eigenvalues are ascendly ordered in d = d[0],d[1], ..., d[n-2],d[n-1]
+  // twenty eigenvalues are ascstd::endly ordered in d = d[0],d[1], ..., d[n-2],d[n-1]
 
 //    6) jump_in_eigenvalues_alerting_singularity
 // if d[i]/d[i+1]< jump_in_eigenvalues_alerting_singularity, d[i] is last nonzero eigenvalue
@@ -4922,9 +4928,9 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
     K_rr.getSubDiagBlockmatrix(K_modif,K_rr,i_start, nonsing_size);
 
-//    std::cout<< "K_rr.size()="<<K_rr.rows << std::endl;
-//    std::cout<< "i_start="<<i_start << std::endl;
-//    std::cout<< "nonsing_size="<<nonsing_size<< std::endl;
+//    std::cout<< "K_rr.size()="<<K_rr.rows << std::std::endl;
+//    std::cout<< "i_start="<<i_start << std::std::endl;
+//    std::cout<< "nonsing_size="<<nonsing_size<< std::std::endl;
 //
 //    K_rr.printMatCSR("K_rr");
 

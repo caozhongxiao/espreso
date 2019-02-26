@@ -4,6 +4,11 @@
 #include "esinfo/eslog.hpp"
 #include "basis/utilities/utils.h"
 
+#include <sstream>
+#include <fstream>
+
+#include "mkl.h"
+
 using std::endl; 
 
 
@@ -254,19 +259,19 @@ void GetMemoryStat_u( )
 {
 #ifndef WIN32
 
-	struct sysinfo memInfo;
-	sysinfo (&memInfo);
-
-	long long totalPhysMem;
-	long long physMemUsed; 
-
-	totalPhysMem = memInfo.totalram;
-	//Multiply in next statement to avoid int overflow on right hand side...
-	totalPhysMem *= memInfo.mem_unit;
-
-	physMemUsed	= memInfo.totalram - memInfo.freeram;
-	//Multiply in next statement to avoid int overflow on right hand side...
-	physMemUsed *= memInfo.mem_unit;
+//	struct sysinfo memInfo;
+//	sysinfo (&memInfo);
+//
+//	long long totalPhysMem;
+//	long long physMemUsed;
+//
+//	totalPhysMem = memInfo.totalram;
+//	//Multiply in next statement to avoid int overflow on right hand side...
+//	totalPhysMem *= memInfo.mem_unit;
+//
+//	physMemUsed	= memInfo.totalram - memInfo.freeram;
+//	//Multiply in next statement to avoid int overflow on right hand side...
+//	physMemUsed *= memInfo.mem_unit;
 
 //	ESLOG(MEMORY) << " - Total used RAM : " << 100.0 * (double)physMemUsed/(double)totalPhysMem<< " %  - " << physMemUsed/1024/1024 << " MB of " << totalPhysMem/1024/1024 << " MB";
 #endif

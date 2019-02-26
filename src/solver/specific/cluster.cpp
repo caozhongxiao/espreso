@@ -8,6 +8,13 @@
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 
+#include <utility>
+#include <sstream>
+
+#include "mkl.h"
+
+using std::make_pair;
+
 //#define SPARSE_SA
 
 // *******************************************************************

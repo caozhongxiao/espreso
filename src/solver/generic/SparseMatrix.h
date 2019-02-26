@@ -14,7 +14,7 @@ using std::vector;
 using std::string;
 using std::ifstream;
 using std::stringstream;
-using std::endl;
+//using std::endl;
 using std::getline;
 using std::fill;
 

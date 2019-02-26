@@ -9,6 +9,11 @@
 #include "esinfo/envinfo.h"
 #include "esinfo/eslog.hpp"
 
+#include "mkl.h"
+
+#include <sstream>
+#include <cmath>
+
 using namespace espreso;
 
 IterSolverBase::IterSolverBase(FETISolverConfiguration &configuration):

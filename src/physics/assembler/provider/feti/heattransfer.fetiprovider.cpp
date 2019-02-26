@@ -16,7 +16,6 @@
 #include "mesh/store/boundaryregionstore.h"
 #include "solver/generic/SparseMatrix.h"
 
-
 using namespace espreso;
 
 

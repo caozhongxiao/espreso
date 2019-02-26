@@ -7,6 +7,8 @@
 #include "esinfo/eslog.hpp"
 #include "esinfo/ecfinfo.h"
 
+#include <algorithm>
+
 using namespace espreso;
 
 void ClusterCPU::Create_SC_perDomain(bool USE_FLOAT) {

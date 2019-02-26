@@ -15,6 +15,8 @@
 #include "solver/generic/SparseMatrix.h"
 #include "solver/specific/sparsesolvers.h"
 
+#include <algorithm>
+
 using namespace espreso;
 
 StructuralMechanicsFETIProvider::StructuralMechanicsFETIProvider(DataHolder *data, StructuralMechanicsLoadStepConfiguration &configuration)

@@ -17,6 +17,7 @@
 
 #include "solver/generic/SparseMatrix.h"
 
+#include <algorithm>
 
 using namespace espreso;
 

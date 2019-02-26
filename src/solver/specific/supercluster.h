@@ -8,22 +8,23 @@
 #ifndef SRC_SOLVER_SPECIFIC_SUPERCLUSTER_H_
 #define SRC_SOLVER_SPECIFIC_SUPERCLUSTER_H_
 
-#include <omp.h>
-#include "mpi.h"
-// #include "mkl.h"
-
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <vector>
-#include <fstream>
+//#include <omp.h>
+//#include "mpi.h"
+//// #include "mkl.h"
+//
+//#include <string>
+//#include <sstream>
+//#include <iostream>
+//#include <vector>
+//#include <fstream>
 #include <algorithm>
-#include <math.h>
-#include <iomanip>
-#include <map>
-
-using std::vector;
-using std::map;
+#include <utility>
+//#include <math.h>
+//#include <iomanip>
+//#include <map>
+//
+//using std::vector;
+//using std::map;
 using std::make_pair;
 
 #include "esinfo/meshinfo.h"

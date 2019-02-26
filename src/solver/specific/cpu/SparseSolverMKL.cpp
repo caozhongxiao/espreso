@@ -6,6 +6,10 @@
 #include "esinfo/mpiinfo.h"
 #include "esinfo/eslog.hpp"
 
+#include <sstream>
+
+#include "mkl.h"
+
 using namespace espreso;
 
 SparseSolverMKL::SparseSolverMKL(){

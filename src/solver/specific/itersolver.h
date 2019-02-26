@@ -2,23 +2,23 @@
 #ifndef SOLVER_SPECIFIC_ITERSOLVER_H_
 #define SOLVER_SPECIFIC_ITERSOLVER_H_
 
-#include <omp.h>
-#include "mpi.h"
-// #include "mkl.h"
-
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <vector>
-#include <fstream>
-#include <algorithm>
-#include <math.h>
-#include <iomanip>
-#include <map>
-
-using std::vector;
-using std::map;
-using std::make_pair;
+//#include <omp.h>
+//#include "mpi.h"
+//// #include "mkl.h"
+//
+//#include <string>
+//#include <sstream>
+//#include <iostream>
+//#include <vector>
+//#include <fstream>
+//#include <algorithm>
+//#include <math.h>
+//#include <iomanip>
+//#include <map>
+//
+//using std::vector;
+//using std::map;
+//using std::make_pair;
 
 //#include <cilk/cilk.h>
 //#include <cilk/cilk_api.h>
