@@ -180,6 +180,7 @@ LoadStepIterator::~LoadStepIterator()
 
 bool LoadStepIterator::next()
 {
+	eslog::nextStep(time::step + 1);
 	switch (info::ecf->physics) {
 	case PHYSICS::HEAT_TRANSFER_2D:
 		return next(info::ecf->heat_transfer_2d);

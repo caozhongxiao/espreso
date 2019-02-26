@@ -4,7 +4,9 @@
 
 #include "verbosity.h"
 
+#include "mpi.h"
 #include <vector>
+
 
 namespace espreso {
 
@@ -24,9 +26,17 @@ class TimeLogger: public Verbosity<TimeLogger, 't'> {
 		} data;
 
 		enum {
-			START, CHECKPOINT, END,
+			START, CHECKPOINT, END, LOADSTEP,
 			INT, LONG, SIZE, DOUBLE
 		} type;
+	};
+
+	struct EventStatistics: public Event {
+		Data min, max, avg;
+
+		EventStatistics(const Event &event)
+		: Event(event), min(event.data), max(event.data), avg(event.data)
+		{ }
 	};
 
 public:
@@ -77,6 +87,11 @@ public:
 		// do nothing
 	}
 
+	void nextLoadStep(int step)
+	{
+		_events.push_back(Event{ "NEXT STEP", Event::Data{ .ivalue = step }, Event::LOADSTEP });
+	}
+
 	TimeLogger()
 	{
 		_init = time();
@@ -86,6 +101,8 @@ public:
 	void evaluate(ProgressLogger &logger);
 
 protected:
+	static void mergeEvents(void *in, void *out, int *len, MPI_Datatype *datatype);
+
 	double _init;
 	std::vector<Event> _events;
 };

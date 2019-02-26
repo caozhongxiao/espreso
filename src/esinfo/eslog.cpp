@@ -173,6 +173,11 @@ void ln()
 	logger->ln();
 }
 
+void nextStep(int step)
+{
+	logger->nextLoadStep(step);
+}
+
 void startln(const char* name)
 {
 	start(name);

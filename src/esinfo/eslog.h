@@ -20,6 +20,7 @@ void start(const char* name);
 void checkpoint(const char* name);
 void end(const char* name);
 void ln();
+void nextStep(int step);
 
 void startln(const char* name);
 void checkpointln(const char* name);

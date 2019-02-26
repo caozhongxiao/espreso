@@ -104,10 +104,17 @@ public:
 		}
 	}
 
+	template<class Logger>
+	void nextLoadStep(int step)
+	{
+		Logger::nextLoadStep(step);
+	}
+
 	__ES__FORALL(start, const char* n, n);
 	__ES__FORALL(checkpoint, const char* n, n);
 	__ES__FORALL(end, const char* n, n);
 	__ES__FORALL(ln, , );
+	__ES__FORALL(nextLoadStep, int step, step);
 	__ES__FORALL(param, __ES__PACK(const char* n, const int &value), __ES__PACK(n, value));
 	__ES__FORALL(param, __ES__PACK(const char* n, const long &value), __ES__PACK(n, value));
 	__ES__FORALL(param, __ES__PACK(const char* n, const long unsigned int &value), __ES__PACK(n, value));

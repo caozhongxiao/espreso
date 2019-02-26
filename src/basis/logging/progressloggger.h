@@ -91,6 +91,11 @@ public:
 		}
 	}
 
+	void nextLoadStep(int step)
+	{
+		// do nothing
+	}
+
 	template <typename... Args>
 	void info(const char* format, Args... args)
 	{

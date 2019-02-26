@@ -8,6 +8,7 @@
 
 namespace espreso {
 
+// only for verbosity parameter -m
 class OldTimeLogger: public Verbosity<OldTimeLogger, 'm'> {
 
 public:
@@ -48,12 +49,17 @@ public:
 
 	void param(const char* name, const char* value)
 	{
-		// do nothing
+
 	}
 
 	void ln()
 	{
-		// do nothing
+
+	}
+
+	void nextLoadStep(int step)
+	{
+
 	}
 };
 
