@@ -42,14 +42,16 @@ void MeshPreprocessing::linkNodesAndElements()
 			_mesh->nodes->elements,
 			_mesh->elements->procNodes,
 			_mesh->elements->IDs,
-			_mesh->elements->distribution);
+			_mesh->elements->distribution,
+			true);
 }
 
 void MeshPreprocessing::linkNodesAndElements(
 		serializededata<esint, esint>* &nelements,
 		serializededata<esint, esint> *enodes,
 		serializededata<esint, esint> *eIDs,
-		std::vector<size_t> &edistribution)
+		std::vector<size_t> &edistribution,
+		bool sortedIDs)
 {
 	eslog::startln("MESH: LINK NODES AND ELEMENTS");
 
@@ -58,6 +60,15 @@ void MeshPreprocessing::linkNodesAndElements(
 	serializededata<esint, esint> *nIDs = _mesh->nodes->IDs;
 	serializededata<esint, esint> *nranks = _mesh->nodes->ranks;
 	std::vector<size_t> &ndistribution = _mesh->nodes->distribution;
+
+	std::vector<esint> npermutation;
+	if (!sortedIDs) {
+		npermutation.resize(nIDs->datatarray().size());
+		std::iota(npermutation.begin(), npermutation.end(), 0);
+		std::sort(npermutation.begin(), npermutation.end(), [&] (esint i, esint j) {
+			return nIDs->datatarray()[i] < nIDs->datatarray()[j];
+		});
+	}
 
 	// thread x neighbor x vector(from, to)
 	std::vector<std::vector<std::vector<std::pair<esint, esint> > > > sBuffer(threads);
@@ -93,25 +104,22 @@ void MeshPreprocessing::linkNodesAndElements(
 		auto begin = localLinks.begin() + tbegin[t];
 		auto end = begin;
 
-		auto send = [&] (esint id) {
-			for (auto it = begin; it != end; ++it) {
-				it->first = id;
-			}
-			size_t i = 0;
-			for (auto rank = ranks->begin(); rank != ranks->end(); ++rank) {
-				if (*rank != info::mpi::rank) {
-					while (_mesh->neighbours[i] < *rank) ++i;
-					tBuffer[i].insert(tBuffer[i].end(), begin, end);
-				}
-			}
-		};
-
 		for (size_t n = ndistribution[t]; n < ndistribution[t + 1]; ++n, ++ranks) {
 			while (begin != localLinks.end() && begin->first < (esint)n) ++begin;
 			if (begin != localLinks.end() && begin->first == (esint)n) {
 				end = begin;
 				while (end != localLinks.end() && end->first == begin->first) ++end;
-				send(nIDs->datatarray()[n]);
+				esint nID = nIDs->datatarray()[begin->first];
+				for (auto it = begin; it != end; ++it) {
+					it->first = nID;
+				}
+				size_t i = 0;
+				for (auto rank = ranks->begin(); rank != ranks->end(); ++rank) {
+					if (*rank != info::mpi::rank) {
+						while (_mesh->neighbours[i] < *rank) ++i;
+						tBuffer[i].insert(tBuffer[i].end(), begin, end);
+					}
+				}
 				begin = end;
 			}
 		}
@@ -125,6 +133,10 @@ void MeshPreprocessing::linkNodesAndElements(
 		}
 	}
 
+	if (!sortedIDs) {
+		std::sort(localLinks.begin(), localLinks.end());
+	}
+
 	if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, _mesh->neighbours)) {
 		eslog::error("ESPRESO internal error: addLinkFromTo - exchangeUnknownSize.\n");
 	}
@@ -136,6 +148,13 @@ void MeshPreprocessing::linkNodesAndElements(
 	}
 
 	utils::mergeAppendedData(localLinks, boundaries);
+	if (!sortedIDs) {
+		for (size_t i = 0, j = 0; i < localLinks.size(); i++) {
+			while (nIDs->datatarray()[npermutation[j]] < localLinks[i].first) ++j;
+			localLinks[i].first = npermutation[j];
+		}
+		std::sort(localLinks.begin(), localLinks.end());
+	}
 
 	std::vector<std::vector<esint> > linksBoundaries(threads);
 	std::vector<std::vector<esint> > linksData(threads);
@@ -143,7 +162,12 @@ void MeshPreprocessing::linkNodesAndElements(
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		if (ndistribution[t] != ndistribution[t + 1]) {
-			auto llink = std::lower_bound(localLinks.begin(), localLinks.end(), nIDs->datatarray()[ndistribution[t]], [] (std::pair<esint, esint> &p, esint n) { return p.first < n; });
+			auto llink = localLinks.begin();
+			if (sortedIDs) {
+				llink = std::lower_bound(localLinks.begin(), localLinks.end(), nIDs->datatarray()[ndistribution[t]], [] (std::pair<esint, esint> &p, esint n) { return p.first < n; });
+			} else {
+				llink = std::lower_bound(localLinks.begin(), localLinks.end(), ndistribution[t], [] (std::pair<esint, esint> &p, esint n) { return p.first < n; });
+			}
 			esint current;
 
 			std::vector<esint> tBoundaries, tData;
@@ -153,9 +177,14 @@ void MeshPreprocessing::linkNodesAndElements(
 
 			for (size_t n = ndistribution[t]; n < ndistribution[t + 1] && llink != localLinks.end(); ++n) {
 				current = llink->first;
-				while (llink != localLinks.end() && current == llink->first) {
-					tData.push_back(llink->second);
-					++llink;
+				if (
+						(sortedIDs && current == nIDs->datatarray()[n]) ||
+						(!sortedIDs && current == (esint)n)) {
+
+					while (llink != localLinks.end() && current == llink->first) {
+						tData.push_back(llink->second);
+						++llink;
+					}
 				}
 				tBoundaries.push_back(llink - localLinks.begin());
 			}
@@ -306,7 +335,8 @@ void MeshPreprocessing::computeElementsNeighbors()
 			_mesh->elements->procNodes,
 			_mesh->elements->IDs,
 			_mesh->elements->epointers,
-			_mesh->elements->distribution);
+			_mesh->elements->distribution,
+			true); // sorted nodes IDs
 }
 
 void MeshPreprocessing::computeElementsNeighbors(
@@ -315,10 +345,11 @@ void MeshPreprocessing::computeElementsNeighbors(
 		serializededata<esint, esint> *enodes,
 		serializededata<esint, esint> *eIDs,
 		serializededata<esint, Element*> *epointers,
-		std::vector<size_t> &edistribution)
+		std::vector<size_t> &edistribution,
+		bool sortedIDs)
 {
 	if (nelements == NULL) {
-		this->linkNodesAndElements(nelements, enodes, eIDs, edistribution);
+		this->linkNodesAndElements(nelements, enodes, eIDs, edistribution, sortedIDs);
 	}
 
 	eslog::startln("MESH: COMPUTE ELEMENTS NEIGHBOURS");
@@ -394,7 +425,8 @@ void MeshPreprocessing::computeSurfaceElementNeighbors(SurfaceStore *surface)
 			surface->elements,
 			surface->IDs,
 			surface->epointers,
-			surface->edistribution);
+			surface->edistribution,
+			false); // nodes IDs are not sorted
 }
 
 void MeshPreprocessing::computeElementsCenters()

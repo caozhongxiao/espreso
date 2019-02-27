@@ -75,7 +75,8 @@ private:
 			serializededata<esint, esint>* &nelements,
 			serializededata<esint, esint> *enodes,
 			serializededata<esint, esint> *eIDs,
-			std::vector<size_t> &edistribution);
+			std::vector<size_t> &edistribution,
+			bool sortedIDs);
 
 	void computeElementsNeighbors(
 			serializededata<esint, esint>* &nelements,
@@ -83,7 +84,8 @@ private:
 			serializededata<esint, esint> *enodes,
 			serializededata<esint, esint> *eIDs,
 			serializededata<esint, Element*> *epointers,
-			std::vector<size_t> &edistribution);
+			std::vector<size_t> &edistribution,
+			bool sortedIDs);
 
 	void permuteElements(const std::vector<esint> &permutation, const std::vector<size_t> &distribution);
 	void arrangeElementsPermutation(std::vector<esint> &permutation);
