@@ -34,12 +34,8 @@ def set_compiler(ctx):
     ctx.env.CXX = ctx.env.LINK_CXX = ctx.options.mpicxx
 
 def set_openmp(ctx):
-    if ctx.options.cxx == "icpc":
-        ctx.env.append_unique("CXXFLAGS", [ "-qopenmp" ])
-        ctx.env.append_unique("LINKFLAGS", [ "-qopenmp" ])
-    if ctx.options.cxx == "g++":
-        ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
-        ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
+    ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
+    ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
 
 def set_metis(ctx):
     includes = []
@@ -49,7 +45,7 @@ def set_metis(ctx):
         libpath = [ ctx.options.parmetis + "/lib" ]
 
     ctx.check_cxx(
-        header_name="metis.h parmetis.h", lib=["metis", "parmetis"], uselib_store="METIS",
+        header_name="metis.h parmetis.h", lib=["parmetis", "metis"], uselib_store="METIS",
         define_name="",
         defines=["HAVE_METIS", "IDXTYPEWIDTH=" + ctx.options.intwidth, "REALTYPEWIDTH=32"],
         includes=includes, libpath=libpath,
@@ -140,13 +136,9 @@ def set_variables(ctx):
     ctx.env.append_unique("CXXFLAGS", ctx.options.cxxflags.split())
     ctx.env.append_unique("DEFINES", [ "__ESMODE__="+ctx.options.mode.upper() ])
     if ctx.options.mode == "release":
-        ctx.env.append_unique("CXXFLAGS", [ "-O3" ])
-        if ctx.options.debug:
-            ctx.env.append_unique("CXXFLAGS", [ "-g" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-O3", "-g" ])
     if ctx.options.mode == "measurement":
-        ctx.env.append_unique("CXXFLAGS", [ "-O3" ])
-        if ctx.options.debug:
-            ctx.env.append_unique("CXXFLAGS", [ "-g" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-O3", "-g" ])
     if ctx.options.mode == "devel":
         ctx.env.append_unique("CXXFLAGS", [ "-O2", "-g" ])
     if ctx.options.mode == "debug":
@@ -198,25 +190,25 @@ fetisources= (
 def build(ctx):
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).rstrip()
 
-    ctx.objects(source=ctx.path.ant_glob('src/basis/**/*.cpp'),target="basis")
-    ctx.objects(source=ctx.path.ant_glob('src/esinfo/**/*.cpp'),target="esinfo",defines=[ '__ESCOMMIT__=\"{0}\"'.format(commit) ])
-    ctx.objects(source=ctx.path.ant_glob('src/config/**/*.cpp'),target="config")
-    ctx.objects(source=ctx.path.ant_glob('src/mesh/**/*.cpp'),target="mesh")
-    ctx.objects(source=ctx.path.ant_glob('src/input/**/*.cpp'),target="input")
-    ctx.objects(source=ctx.path.ant_glob('src/output/**/*.cpp'),target="output",includes="tools/ASYNC")
-    ctx.objects(source=ctx.path.ant_glob('src/physics/**/*.cpp'),target="physics",defines=["SOLVER_MKL"])
-    ctx.objects(source=ctx.path.ant_glob('src/linearsolver/**/*.cpp'),target="linearsolver")
-    ctx.objects(source=ctx.path.ant_glob('src/wrappers/metis/**/*.cpp'),target="metis",use="METIS")
-    ctx.objects(source=ctx.path.ant_glob('src/wrappers/math/**/*.cpp'),target="math",use="MKL")
-    ctx.objects(source=ctx.path.ant_glob('src/wrappers/mklpdss/**/*.cpp'),target="mklpdss",use="MKL")
-    ctx.objects(source=ctx.path.ant_glob('src/wrappers/hypre/**/*.cpp'),target="hypre",use="HYPRE")
-    ctx.objects(source=ctx.path.ant_glob('src/wrappers/bem/**/*.cpp'),target="bem",use="BEM")
-    ctx.objects(source=ctx.path.ant_glob('src/wrappers/catalyst/**/*.cpp'),target="catalyst",use="CATALYST")
-    ctx.objects(source=fetisources,target="feti",defines=["SOLVER_MKL"])
+    ctx.shlib(source=ctx.path.ant_glob('src/basis/**/*.cpp'),target="basis")
+    ctx.shlib(source=ctx.path.ant_glob('src/esinfo/**/*.cpp'),target="esinfo",defines=[ '__ESCOMMIT__=\"{0}\"'.format(commit) ])
+    ctx.shlib(source=ctx.path.ant_glob('src/config/**/*.cpp'),target="config")
+    ctx.shlib(source=ctx.path.ant_glob('src/mesh/**/*.cpp'),target="mesh")
+    ctx.shlib(source=ctx.path.ant_glob('src/input/**/*.cpp'),target="input")
+    ctx.shlib(source=ctx.path.ant_glob('src/output/**/*.cpp'),target="output",includes="tools/ASYNC")
+    ctx.shlib(source=ctx.path.ant_glob('src/physics/**/*.cpp'),target="physics",defines=["SOLVER_MKL"])
+    ctx.shlib(source=ctx.path.ant_glob('src/linearsolver/**/*.cpp'),target="linearsolver")
+    ctx.shlib(source=ctx.path.ant_glob('src/wrappers/metis/**/*.cpp'),target="wmetis",use="METIS")
+    ctx.shlib(source=ctx.path.ant_glob('src/wrappers/math/**/*.cpp'),target="wmath",use="MKL")
+    ctx.shlib(source=ctx.path.ant_glob('src/wrappers/mklpdss/**/*.cpp'),target="wmklpdss",use="MKL")
+    ctx.shlib(source=ctx.path.ant_glob('src/wrappers/hypre/**/*.cpp'),target="whypre",use="HYPRE")
+    ctx.shlib(source=ctx.path.ant_glob('src/wrappers/bem/**/*.cpp'),target="wbem",use="BEM")
+    ctx.shlib(source=ctx.path.ant_glob('src/wrappers/catalyst/**/*.cpp'),target="wcatalyst",use="CATALYST")
+    ctx.shlib(source=fetisources,target="feti",defines=["SOLVER_MKL"])
 
     ctx.program(
         source="src/app/espreso.cpp",target="espreso",
-        use="config basis esinfo mesh input output physics feti linearsolver math mklpdss hypre catalyst metis bem",
+        use="config basis esinfo mesh input output physics feti linearsolver wmath wmklpdss whypre wcatalyst wmetis wbem",
     )
 
 def options(opt):
@@ -254,11 +246,6 @@ def options(opt):
         default="release",
         choices=modes,
         help="ESPRESO build mode: " + ", ".join(modes) + " [default: %default]")
-
-    espreso.add_option("--debug",
-        action="store_true",
-        default=False,
-        help="Build with debug information independently on the mode.")
 
     solvers=["mkl"]
     espreso.add_option("--solver",
