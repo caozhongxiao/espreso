@@ -35,7 +35,11 @@ LinearSolver::~LinearSolver()
 
 void LinearSolver::solve(Matrices matrices)
 {
+	eslog::checkpoint("LINEAR SOLVER: DATA PREPARED");
+
 	update(matrices);
+
+	eslog::checkpoint("LINEAR SOLVER: DATA PREPROCESSED");
 
 	if (info::ecf->output.print_matrices) {
 		eslog::debug("STORE ASSEMBLED SYSTEM LINEAR SYSTEM\n");
@@ -55,6 +59,8 @@ void LinearSolver::solve(Matrices matrices)
 	}
 
 	solve();
+
+	eslog::checkpoint("LINEAR SOLVER: SOLVED");
 
 	double mmax = std::numeric_limits<double>::min(), gmax = std::numeric_limits<double>::min();
 	#pragma omp parallel for reduction(max:mmax)
