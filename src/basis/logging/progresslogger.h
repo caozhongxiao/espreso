@@ -23,6 +23,7 @@ public:
 		if (!rank) {
 			printf("%*s%s", level, " ", region);
 			fprintf(f, "%s", region);
+			fflush(f);
 		}
 	}
 
@@ -31,6 +32,7 @@ public:
 		if (!rank) {
 			printf("%*s%s", level, " ", region);
 			fprintf(f, "%s", region);
+			fflush(f);
 		}
 	}
 
@@ -39,6 +41,7 @@ public:
 		if (!rank) {
 			printf("%*s%s", level, " ", region);
 			fprintf(f, "%s", region);
+			fflush(f);
 		}
 	}
 
@@ -48,6 +51,7 @@ public:
 		if (!rank) {
 			printf(" [%s=%d]", name, value);
 			fprintf(f, " [%s=%d]", name, value);
+			fflush(f);
 		}
 	}
 
@@ -56,6 +60,7 @@ public:
 		if (!rank) {
 			printf(" [%s=%ld]", name, value);
 			fprintf(f, " [%s=%ld]", name, value);
+			fflush(f);
 		}
 	}
 
@@ -64,6 +69,7 @@ public:
 		if (!rank) {
 			printf(" [%s=%ld]", name, value);
 			fprintf(f, " [%s=%ld]", name, value);
+			fflush(f);
 		}
 	}
 
@@ -72,6 +78,7 @@ public:
 		if (!rank) {
 			printf(" [%s=%f]", name, value);
 			fprintf(f, " [%s=%f]", name, value);
+			fflush(f);
 		}
 	}
 
@@ -80,6 +87,7 @@ public:
 		if (!rank) {
 			printf(" [%s=%s]", name, value);
 			fprintf(f, " [%s=%s]", name, value);
+			fflush(f);
 		}
 	}
 
@@ -88,6 +96,7 @@ public:
 		if (!rank) {
 			printf("\n");
 			fprintf(f, "\n");
+			fflush(f);
 		}
 	}
 
@@ -102,6 +111,7 @@ public:
 		if (!rank) {
 			printf(format, args...);
 			fprintf(f, format, args...);
+			fflush(f);
 		}
 	}
 
@@ -113,6 +123,7 @@ public:
 			printf(format, args...);
 			printf(__ESLOG__COLOR__WHITE);
 			fprintf(f, format, args...);
+			fflush(f);
 		}
 	}
 
@@ -124,6 +135,7 @@ public:
 			printf(format, args...);
 			printf(__ESLOG__COLOR__WHITE);
 			fprintf(f, format, args...);
+			fflush(f);
 		}
 	}
 
@@ -134,6 +146,7 @@ public:
 		fprintf(stderr, format, args...);
 		fprintf(stderr, __ESLOG__COLOR__WHITE);
 		fprintf(f, format, args...);
+		fflush(f);
 		terminate();
 	}
 
