@@ -149,7 +149,7 @@ void MKLPDSSData::solve(const MKLPDSSConfiguration &configuration, double *solut
 #ifdef HAVE_MKL
 	_data->solution = solution;
 	call(33); // solve at once
-	eslog::solver("MKL PDSS: Solved");
+	eslog::solver("MKL PDSS: Solved\n");
 #endif
 }
 
