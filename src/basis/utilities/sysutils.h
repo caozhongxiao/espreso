@@ -15,7 +15,7 @@ void copyFile(const std::string &source, const std::string &destination);
 bool exists(const std::string &path);
 void remove(const std::string &path);
 
-void currentStack(std::vector<std::string> &stack);
+void printStack();
 
 }
 }

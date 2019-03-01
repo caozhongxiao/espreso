@@ -63,21 +63,11 @@ void copyFile(const std::string &source, const std::string &destination)
 	dst << src.rdbuf();
 }
 
-void currentStack(std::vector<std::string> &stack)
+void printStack()
 {
 	pid_t pid = getpid();
 	std::string pstack = "pstack " + std::to_string(pid);
-	FILE *in;
-	char buff[512];
-	if(!(in = popen(pstack.c_str(), "r"))){
-		return; // broken
-	}
-
-	std::string message;
-	while(fgets(buff, sizeof(buff), in) != NULL){
-		stack.push_back(buff);
-	}
-	pclose(in);
+	system(pstack.c_str());
 }
 
 }
