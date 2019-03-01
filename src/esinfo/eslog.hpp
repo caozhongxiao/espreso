@@ -3,7 +3,7 @@
 #define SRC_ESINFO_ESLOG_HPP_
 
 #include "eslog.h"
-#include "basis/logging/progressloggger.h"
+#include "basis/logging/progresslogger.h"
 
 namespace espreso {
 namespace eslog {

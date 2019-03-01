@@ -1,7 +1,6 @@
 
 #include "timelogger.h"
-#include "progressloggger.h"
-
+#include "progresslogger.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/systeminfo.h"
 #include "esinfo/envinfo.h"

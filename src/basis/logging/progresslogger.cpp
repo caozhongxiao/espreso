@@ -1,5 +1,5 @@
 
-#include "progressloggger.h"
+#include "basis/logging/progresslogger.h"
 #include "basis/utilities/sysutils.h"
 
 #include <cstdlib>

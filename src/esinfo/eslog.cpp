@@ -1,7 +1,7 @@
 
 #include "eslog.hpp"
-#include "basis/logging/progressloggger.h"
 #include "basis/logging/timelogger.h"
+#include "basis/logging/progresslogger.h"
 #include "basis/logging/oldtimelogger.h"
 #include "basis/utilities/parser.h"
 #include "basis/utilities/sysutils.h"
