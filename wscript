@@ -65,7 +65,7 @@ def set_mkl(ctx):
     includes = []
     libpath = []
     if ctx.options.mkl:
-        includes = [ ctx.options.mkl + "/includes" ]
+        includes = [ ctx.options.mkl + "/include" ]
         libpath = [ ctx.options.mkl + "/lib" ]
 
     defines = [ "HAVE_MKL" ]
@@ -95,7 +95,7 @@ def try_hypre(ctx):
     includes = []
     libpath = []
     if ctx.options.hypre:
-        includes = [ ctx.options.hypre + "/includes" ]
+        includes = [ ctx.options.hypre + "/include" ]
         libpath = [ ctx.options.hypre + "/lib" ]
 
     ctx.check_cxx(
@@ -148,12 +148,12 @@ def set_variables(ctx):
 
 def configure(ctx):
     set_compiler(ctx)
+    set_variables(ctx)
     set_openmp(ctx)
     set_mkl(ctx)
     set_metis(ctx)
     try_hypre(ctx)
     try_bem(ctx)
-    set_variables(ctx)
 
     ctx.msg("Setting compiler to", ctx.options.mpicxx)
     ctx.msg("Setting int width to", ctx.options.intwidth)
