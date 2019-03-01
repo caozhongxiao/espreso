@@ -1,4 +1,5 @@
 
-ml load OpenMPI/2.1.1-GCC-6.3.0-2.27
-ml load imkl/11.2.3.187
-ml load ParMETIS/4.0.3-gompi-2017c
+ml OpenMPI/2.1.1-GCC-6.3.0-2.27
+ml imkl/11.2.3.187
+ml ParMETIS/4.0.3-gompi-2017c
+ml Hypre/2.15.1-foss-2017b
