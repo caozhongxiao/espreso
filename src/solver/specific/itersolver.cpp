@@ -4309,10 +4309,10 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 //
 
 
-	std::cout << "\n\n Full orthogonal with restart and conjugate projector \n";
+	eslog::info("\n\n Full orthogonal with restart and conjugate projector \n");
 
 	if (configuration.conjugate_projector == FETI_CONJ_PROJECTOR::GENEO) {
-		std::cout << " - using GENEO \n";
+		eslog::info(" - using GENEO \n");
 	}
 
 	size_t dl_size = cluster.my_lamdas_indices.size();

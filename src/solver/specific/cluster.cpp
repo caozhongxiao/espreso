@@ -500,7 +500,7 @@ void ClusterBase::SetClusterHFETI () {
 		} else {
 
 			//ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW
-			std::cout << "Cluster " << cluster_global_index << " on MPI rank " << info::mpi::rank << " has only one domain -> Using TFETI" << std::endl;
+//			std::cout << "Cluster " << cluster_global_index << " on MPI rank " << info::mpi::rank << " has only one domain -> Using TFETI" << std::endl;
 			USE_HFETI = 0;
 
 		}

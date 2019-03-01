@@ -17,7 +17,7 @@ FullFile::FullFile(const std::string &file): _p(0)
 	if (info::mpi::rank == 0) {
 		std::ifstream data(file, std::ifstream::in);
 		if (!data.good()) {
-			eslog::globalerror("Cannot read file '%s'\n", file);
+			eslog::globalerror("Cannot read file '%s'\n", file.c_str());
 		}
 
 		data.seekg(0, data.end);

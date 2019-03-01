@@ -27,7 +27,7 @@ CMBlock::CMBlock()
 CMBlock& CMBlock::parse(const char* begin)
 {
 	auto error = [&] (std::string &line) {
-		eslog::error("Workbench parse error: unknown format of CMBLOCK: %s\n", line);
+		eslog::error("Workbench parse error: unknown format of CMBLOCK: %s\n", line.c_str());
 	};
 
 	std::string commandLine = Parser::getLine(begin);

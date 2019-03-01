@@ -4,9 +4,10 @@
 #include <getopt.h>
 #include <stack>
 #include <functional>
-#include <regex>
 #include <unistd.h>
 #include <fstream>
+#include <sstream>
+#include <iostream>
 
 #include "mpi.h"
 
@@ -157,7 +158,7 @@ ECFRedParameters ECFReader::_read(
 		switch (option) {
 		case 'p':
 			if (!parameters[option_index].second->setValue(optarg)) {
-				eslog::globalerror("Parameter '%s' has wrong value '%s'\n", parameters[option_index].first, optarg);
+				eslog::globalerror("Parameter '%s' has wrong value '%s'\n", parameters[option_index].first.c_str(), optarg);
 			}
 			break;
 		case 'h':
@@ -303,10 +304,14 @@ ECFRedParameters ECFReader::_read(
 			prefix.push_back(values[0]);
 			parameter = confStack.top()->getParameter(values[0]);
 			if (parameter == NULL) {
-				eslog::globalerror("PARSE ERROR: Unexpected parameter '%s'\n%s", prefix, tokenStack.top()->lastLines(2).c_str());
+				std::string prefixstr;
+				std::for_each(prefix.begin(), prefix.end(), [&] (const std::string &s) { prefixstr += s + "::"; });
+				eslog::globalerror("PARSE ERROR: Unexpected parameter '%s'\n%s", prefixstr.c_str(), tokenStack.top()->lastLines(2).c_str());
 			}
 			if (!parameter->isObject()) {
-				eslog::globalerror("PARSE ERROR: Expected parameter instead of object '%s'.\n%s", prefix, tokenStack.top()->lastLines(2).c_str());
+				std::string prefixstr;
+				std::for_each(prefix.begin(), prefix.end(), [&] (const std::string &s) { prefixstr += s + "::"; });
+				eslog::globalerror("PARSE ERROR: Expected parameter instead of object '%s'.\n%s", prefixstr.c_str(), tokenStack.top()->lastLines(2).c_str());
 			}
 			redParameters.parameters.push_back(parameter);
 			confStack.push(dynamic_cast<ECFObject*>(parameter));

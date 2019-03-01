@@ -14,7 +14,7 @@ using namespace espreso;
 void storeData(SparseMatrix matrices, const std::string &name, const std::string &description, int d)
 {
 	if (info::ecf->output.print_matrices) {
-		eslog::debug("STORING '%s'.\n", description);
+		eslog::debug("STORING '%s'.\n", description.c_str());
 		//for (size_t d = 0; d < matrices.size(); d++) {
 //			std::ofstream os(Logging::prepareFile(d, name));
 //			os << matrices;
@@ -26,7 +26,7 @@ void storeData(SparseMatrix matrices, const std::string &name, const std::string
 void storeData(vector<double> vectors, const std::string &name, const std::string &description, int d)
 {
 	if (info::ecf->output.print_matrices) {
-		eslog::debug("STORING '%s'.\n", description);
+		eslog::debug("STORING '%s'.\n", description.c_str());
 		//for (size_t d = 0; d < vectors.size(); d++) {
 //			std::ofstream os(Logging::prepareFile(d, name));
 //			for (size_t i = 0; i < vectors.size(); i++) {

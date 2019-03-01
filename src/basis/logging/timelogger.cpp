@@ -17,6 +17,7 @@
 
 #include "omp.h"
 #include <cstdio>
+#include <cstring>
 
 using namespace espreso;
 
