@@ -155,7 +155,7 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 				--namewidth;
 				if (depth == printeddepth) {
 					logger.info("  %-*s %f  <%f - %f> [-----] [%5.2f]\n",
-							namewidth, statistics[i].name,
+							namewidth, _events[i].name,
 							statistics[i].avg.time / info::mpi::size,
 							statistics[i].min.time, statistics[i].max.time,
 							statistics[i].max.time / statistics[i].min.time);
@@ -165,14 +165,14 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 				if (depth == printeddepth) {
 					if (loadstep > 0) {
 						logger.info("  %s [LOADSTEP:%2d] %*f  <%f - %f> [%5.2f] [%5.2f]\n",
-									statistics[i].name, loadstep, namewidth - 21,
+									_events[i].name, loadstep, namewidth - 21,
 									statistics[i].avg.time / info::mpi::size,
 									statistics[i].min.time, statistics[i].max.time,
 									100 * (statistics[i].avg.time / info::mpi::size) / duration,
 									statistics[i].max.time / statistics[i].min.time);
 					} else {
 						logger.info("  %-*s %f  <%f - %f> [%5.2f] [%5.2f]\n",
-									namewidth, statistics[i].name,
+									namewidth, _events[i].name,
 									statistics[i].avg.time / info::mpi::size,
 									statistics[i].min.time, statistics[i].max.time,
 									100 * (statistics[i].avg.time / info::mpi::size) / duration,
@@ -184,14 +184,14 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 				if (depth == printeddepth) {
 					if (loadstep > 0) {
 						logger.info("  %s [LOADSTEP:%2d] %*f  <%f - %f> [%5.2f] [%5.2f]\n",
-									statistics[i].name, loadstep, namewidth - 21,
+									_events[i].name, loadstep, namewidth - 21,
 									statistics[i].avg.time / info::mpi::size,
 									statistics[i].min.time, statistics[i].max.time,
 									100 * (statistics[i].avg.time / info::mpi::size) / duration,
 									statistics[i].max.time / statistics[i].min.time);
 					} else {
 						logger.info("  %-*s %f  <%f - %f> [%5.2f] [%5.2f]\n",
-									namewidth, statistics[i].name,
+									namewidth, _events[i].name,
 									statistics[i].avg.time / info::mpi::size,
 									statistics[i].min.time, statistics[i].max.time,
 									100 * (statistics[i].avg.time / info::mpi::size) / duration,
@@ -207,7 +207,7 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 			case Event::INT:
 				if (depth > 1 && depth == printeddepth) {
 					logger.info("    [param=%s] %*d  <%8d - %8d>         [%5.2f]\n",
-							statistics[i].name, namewidth - strlen(statistics[i].name) - 2,
+							_events[i].name, namewidth - strlen(_events[i].name) - 2,
 							statistics[i].avg.ivalue / info::mpi::size,
 							statistics[i].min.ivalue, statistics[i].max.ivalue,
 							(double)statistics[i].max.ivalue / statistics[i].min.ivalue);
@@ -216,7 +216,7 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 			case Event::LONG:
 				if (depth > 1 && depth == printeddepth) {
 					logger.info("    [param=%s] %*ld  <%8ld - %8ld>         [%5.2f]\n",
-							statistics[i].name, namewidth - strlen(statistics[i].name) - 2,
+							_events[i].name, namewidth - strlen(_events[i].name) - 2,
 							statistics[i].avg.lvalue / info::mpi::size,
 							statistics[i].min.lvalue, statistics[i].max.lvalue,
 							(double)statistics[i].max.lvalue / statistics[i].min.lvalue);
@@ -225,7 +225,7 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 			case Event::SIZE:
 				if (depth > 1 && depth == printeddepth) {
 					logger.info("    [param=%s] %*ld  <%8ld - %8ld>         [%5.2f]\n",
-							statistics[i].name, namewidth - strlen(statistics[i].name) - 2,
+							_events[i].name, namewidth - strlen(_events[i].name) - 2,
 							statistics[i].avg.svalue / info::mpi::size,
 							statistics[i].min.svalue, statistics[i].max.svalue,
 							(double)statistics[i].max.svalue / statistics[i].min.svalue);
@@ -234,7 +234,7 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 			case Event::DOUBLE:
 				if (depth > 1 && depth == printeddepth) {
 					logger.info("    [param=%s] %*f  <%*f - %*f>         [%5.2f]\n",
-							statistics[i].name, namewidth - strlen(statistics[i].name) - 2,
+							_events[i].name, namewidth - strlen(_events[i].name) - 2,
 							statistics[i].avg.dvalue / info::mpi::size, 8,
 							statistics[i].min.dvalue, 8, statistics[i].max.dvalue,
 							statistics[i].max.dvalue / statistics[i].min.dvalue);
@@ -260,6 +260,7 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 	logger.info(" == nodes regions    %*ld == \n", width - 8, nregs);
 	logger.info(" ============================================================================================= \n");
 
+	// WARNING: MPI sometimes copy name pointer from other process, hence use _events names
 	std::vector<size_t> begins;
 	int loadstep = 0;
 	for (size_t i = 0; i < statistics.size(); i++) {
@@ -280,7 +281,6 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 			}
 			break;
 		default:
-			namewidth = std::max(namewidth, strlen(_events[i].name) + 2);
 			break;
 		}
 	}
