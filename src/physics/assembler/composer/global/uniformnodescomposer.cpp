@@ -146,7 +146,8 @@ void UniformNodesComposer::buildDirichlet()
 	}
 
 	if (_DOFs > 1) {
-		#pragma omp parallel for
+//		ESBUG (if turn optimizations on, it causes the program fauilure in the next std::sort)
+//		#pragma omp parallel for
 		for (int dof = 0; dof < _DOFs; ++dof) {
 			for (size_t i = 0; i < dIndices[dof].size(); ++i) {
 				dIndices[dof][i] = _DOFs * dIndices[dof][i] + dof;
