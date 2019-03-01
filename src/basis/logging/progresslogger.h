@@ -22,6 +22,7 @@ public:
 	{
 		if (!rank) {
 			printf("%*s%s", level, " ", region);
+			fflush(stdout);
 			fprintf(f, "%s", region);
 			fflush(f);
 		}
@@ -31,6 +32,7 @@ public:
 	{
 		if (!rank) {
 			printf("%*s%s", level, " ", region);
+			fflush(stdout);
 			fprintf(f, "%s", region);
 			fflush(f);
 		}
@@ -40,6 +42,7 @@ public:
 	{
 		if (!rank) {
 			printf("%*s%s", level, " ", region);
+			fflush(stdout);
 			fprintf(f, "%s", region);
 			fflush(f);
 		}
@@ -50,6 +53,7 @@ public:
 	{
 		if (!rank) {
 			printf(" [%s=%d]", name, value);
+			fflush(stdout);
 			fprintf(f, " [%s=%d]", name, value);
 			fflush(f);
 		}
@@ -59,6 +63,7 @@ public:
 	{
 		if (!rank) {
 			printf(" [%s=%ld]", name, value);
+			fflush(stdout);
 			fprintf(f, " [%s=%ld]", name, value);
 			fflush(f);
 		}
@@ -68,6 +73,7 @@ public:
 	{
 		if (!rank) {
 			printf(" [%s=%ld]", name, value);
+			fflush(stdout);
 			fprintf(f, " [%s=%ld]", name, value);
 			fflush(f);
 		}
@@ -77,6 +83,7 @@ public:
 	{
 		if (!rank) {
 			printf(" [%s=%f]", name, value);
+			fflush(stdout);
 			fprintf(f, " [%s=%f]", name, value);
 			fflush(f);
 		}
@@ -86,6 +93,7 @@ public:
 	{
 		if (!rank) {
 			printf(" [%s=%s]", name, value);
+			fflush(stdout);
 			fprintf(f, " [%s=%s]", name, value);
 			fflush(f);
 		}
@@ -95,6 +103,7 @@ public:
 	{
 		if (!rank) {
 			printf("\n");
+			fflush(stdout);
 			fprintf(f, "\n");
 			fflush(f);
 		}
@@ -110,6 +119,7 @@ public:
 	{
 		if (!rank) {
 			printf(format, args...);
+			fflush(stdout);
 			fprintf(f, format, args...);
 			fflush(f);
 		}
@@ -119,9 +129,10 @@ public:
 	void warning(const char* format, Args... args)
 	{
 		if (!rank) {
-			printf(__ESLOG__COLOR__YELLOW);
-			printf(format, args...);
-			printf(__ESLOG__COLOR__WHITE);
+			char* colored = getColored(format, __ESLOG__COLOR__YELLOW);
+			printf(colored, args...);
+			fflush(stdout);
+			delete[] colored;
 			fprintf(f, format, args...);
 			fflush(f);
 		}
@@ -131,9 +142,10 @@ public:
 	void debug(const char* format, Args... args)
 	{
 		if (!rank) {
-			printf(__ESLOG__COLOR__BLUE);
-			printf(format, args...);
-			printf(__ESLOG__COLOR__WHITE);
+			char* colored = getColored(format, __ESLOG__COLOR__BLUE);
+			printf(colored, args...);
+			fflush(stdout);
+			delete[] colored;
 			fprintf(f, format, args...);
 			fflush(f);
 		}
@@ -142,13 +154,16 @@ public:
 	template <typename... Args>
 	void error(const char* format, Args... args)
 	{
-		fprintf(stderr, __ESLOG__COLOR__RED);
-		fprintf(stderr, format, args...);
-		fprintf(stderr, __ESLOG__COLOR__WHITE);
+		char* colored = getColored(format, __ESLOG__COLOR__RED);
+		printf(colored, args...);
+		fflush(stdout);
+		delete[] colored;
 		fprintf(f, format, args...);
 		fflush(f);
 		terminate();
 	}
+
+	char* getColored(const char* str, const char *color);
 
 	ProgressLogger();
 	~ProgressLogger();
