@@ -4,6 +4,7 @@
 
 #include "esinfo/mpiinfo.h"
 #include "esinfo/systeminfo.h"
+#include "esinfo/envinfo.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
 #include "basis/utilities/parser.h"
@@ -74,7 +75,7 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 	double duration = time() - _init;
 	std::vector<double> prev(10);
 
-	size_t namewidth = 43, width = 78;
+	size_t namewidth = 44, width = 78;
 
 	for (size_t i = 0; i < _events.size(); i++) {
 		switch (_events[i].type) {
@@ -144,7 +145,7 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 	}
 
 	auto print = [&] (size_t start, size_t end, int printeddepth, int loadstep) {
-		logger.info(" =========================================== avg. [s]  < min [s] -  max [s]> [  %%  ] [ imb ]   \n");
+		logger.info(" ============================================ avg. [s]  < min [s] -  max [s]> [  %%  ] [ imb ]   \n");
 		int depth = printeddepth - 1;
 		for (size_t i = start; i < end; i++) {
 			switch (statistics[i].type) {
@@ -248,6 +249,8 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 	logger.info(" ============================================================================================= \n");
 	logger.info(" == commit   %*s == \n", width, info::system::commit);
 	logger.info(" == ecf      %*s == \n", width, info::ecf->ecffile.c_str());
+	logger.info(" == MPI      %*d == \n", width, info::mpi::size);
+	logger.info(" == OMP      %*d == \n", width, info::env::OMP_NUM_THREADS);
 	logger.info(" == mesh     %*s == \n", width, Input::inputFile(*info::ecf));
 	logger.info(" == elements %*d == \n", width, totalesize(info::mesh->elements->ecounters));
 	logger.info(" == nodes    %*d == \n", width, info::mesh->nodes->uniqueTotalSize);
