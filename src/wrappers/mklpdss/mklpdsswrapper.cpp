@@ -168,17 +168,17 @@ void MKLPDSSData::call(esint phase)
 
 	switch (_data->error) {
 	case   0: break;
-	case  -1: eslog::error("MKL PDSS: input inconsistent."); break;
-	case  -2: eslog::error("MKL PDSS: not enough memory."); break;
-	case  -3: eslog::error("MKL PDSS: reordering problem."); break;
-	case  -4: eslog::error("MKL PDSS: zero pivot, numerical factorization or iterative refinement problem."); break;
-	case  -5: eslog::error("MKL PDSS: unclassified (internal) error."); break;
-	case  -6: eslog::error("MKL PDSS: reordering failed."); break;
-	case  -7: eslog::error("MKL PDSS: diagonal matrix is singular."); break;
-	case  -8: eslog::error("MKL PDSS: 32-bit integer overflow problem."); break;
-	case  -9: eslog::error("MKL PDSS: not enough memory for OOC."); break;
-	case -10: eslog::error("MKL PDSS: error opening OOC files."); break;
-	case -11: eslog::error("MKL PDSS: read/write error with OOC files."); break;
+	case  -1: eslog::error("MKL PDSS: input inconsistent.\n"); break;
+	case  -2: eslog::error("MKL PDSS: not enough memory.\n"); break;
+	case  -3: eslog::error("MKL PDSS: reordering problem.\n"); break;
+	case  -4: eslog::error("MKL PDSS: zero pivot, numerical factorization or iterative refinement problem.\n"); break;
+	case  -5: eslog::error("MKL PDSS: unclassified (internal) error.\n"); break;
+	case  -6: eslog::error("MKL PDSS: reordering failed.\n"); break;
+	case  -7: eslog::error("MKL PDSS: diagonal matrix is singular.\n"); break;
+	case  -8: eslog::error("MKL PDSS: 32-bit integer overflow problem.\n"); break;
+	case  -9: eslog::error("MKL PDSS: not enough memory for OOC.\n"); break;
+	case -10: eslog::error("MKL PDSS: error opening OOC files.\n"); break;
+	case -11: eslog::error("MKL PDSS: read/write error with OOC files.\n"); break;
 	}
 
 #endif
