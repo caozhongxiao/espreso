@@ -65,24 +65,11 @@ void copyFile(const std::string &source, const std::string &destination)
 
 void currentStack(std::vector<std::string> &stack)
 {
-	stack.reserve(30);
-	std::vector<void*> stackdata(30);
-	size_t size = backtrace(stackdata.data(), 30);
-	char** functions = backtrace_symbols(stackdata.data(), size);
-
-	std::stringstream command;
-	command << "addr2line -sipfC -e $(which espreso)";
-	for (size_t i = 0; i < size; i++) {
-		std::string function(functions[i]);
-		size_t begin = function.find_last_of('[') + 1;
-		size_t end = function.find_last_of(']');
-		command << " " << function.substr(begin, end - begin);
-	}
-	free(functions);
-
+	pid_t pid = getpid();
+	std::string pstack = "pstack " + std::to_string(pid);
 	FILE *in;
 	char buff[512];
-	if(!(in = popen(command.str().c_str(), "r"))){
+	if(!(in = popen(pstack.c_str(), "r"))){
 		return; // broken
 	}
 
