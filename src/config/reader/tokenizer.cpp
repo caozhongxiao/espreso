@@ -142,10 +142,10 @@ Tokenizer::Token Tokenizer::_next()
 	};
 
 	auto skipLine = [&] () {
-		while(_file.peek() != '\n' && _file.peek() != '\r') {
+		while (!_file.eof() && _file.peek() != '\n' && _file.peek() != '\r') {
 			_file.get();
 		}
-		while(_file.peek() == '\n' || _file.peek() == '\r') {
+		while (!_file.eof() && (_file.peek() == '\n' || _file.peek() == '\r')) {
 			if (isLineEnd(_file.peek())) {
 				_line++;
 			}
