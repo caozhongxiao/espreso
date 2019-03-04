@@ -2,23 +2,25 @@
 #include "physics/assembler/dataholder.h"
 #include "linearsolver.h"
 
-#include "basis/utilities/utils.h"
-#include "basis/utilities/print.h"
+#include "basis/utilities/sysutils.h"
+#include "basis/utilities/debugprint.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/eslog.h"
 
 #include "solver/generic/SparseMatrix.h"
 
+#include <fstream>
+
 using namespace espreso;
 
 template <typename TData>
 static void store(TData &data, size_t domain, const std::string &name) {
 	if (domain < data.size()) {
-//		std::ofstream os(Logging::prepareFile(domain, name));
-//		os.precision(10);
-//		os << data[domain];
-//		os.close();
+		std::ofstream os(utils::prepareFile(utils::debugDirectory(), name, domain));
+		os.precision(10);
+		os << data[domain];
+		os.close();
 	}
 };
 

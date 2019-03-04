@@ -29,13 +29,10 @@ class SparseMatrix
 public:
 
 	//Constructors
-	SparseMatrix(char matrix_type_G_for_general_S_for_symmetric, string filename);
+//	SparseMatrix(char matrix_type_G_for_general_S_for_symmetric, string filename);
 	SparseMatrix(char matrix_type_G_for_general_S_for_symmetric);
 	SparseMatrix();
 	SparseMatrix( const SparseMatrix &A_in);
-
-	friend std::ostream& operator<<(std::ostream& os, const SparseMatrix &m);
-
 
 	//Destructor
 	~SparseMatrix();
@@ -95,16 +92,16 @@ public:
 
 
 	//Members
-	esint  SaveMatrixInCOO(string filename);
-	esint  SaveMatrixBinInCOO(string filename);
-	esint  SaveMatrixBinInCSR(string filename);
+//	esint  SaveMatrixInCOO(string filename);
+//	esint  SaveMatrixBinInCOO(string filename);
+//	esint  SaveMatrixBinInCSR(string filename);
 
 	//void LoadMatrixInCOO(string filename, char matrix_type_G_for_general_S_for_symmetric);
-	//void LoadMatrix(string filename, char matrix_type_G_for_general_S_for_symmetric);
-	esint  LoadMatrixBin(string filename, char matrix_type_G_for_general_S_for_symmetric);
-	esint  LoadMatrixBin(string filename, char matrix_type_G_for_general_S_for_symmetric, esint clearCOO_1_keep_COO_0 );
-	esint  LoadMatrixBinInCOO(string filename, char matrix_type_G_for_general_S_for_symmetric);
-	esint  LoadMatrixBinInCSR(string filename, char matrix_type_G_for_general_S_for_symmetric);
+//	//void LoadMatrix(string filename, char matrix_type_G_for_general_S_for_symmetric);
+//	esint  LoadMatrixBin(string filename, char matrix_type_G_for_general_S_for_symmetric);
+//	esint  LoadMatrixBin(string filename, char matrix_type_G_for_general_S_for_symmetric, esint clearCOO_1_keep_COO_0 );
+//	esint  LoadMatrixBinInCOO(string filename, char matrix_type_G_for_general_S_for_symmetric);
+//	esint  LoadMatrixBinInCSR(string filename, char matrix_type_G_for_general_S_for_symmetric);
 
 	void ConvertToCSR();
 	void ConvertToCSR( esint clearCOO_1_keep_COO_0 );

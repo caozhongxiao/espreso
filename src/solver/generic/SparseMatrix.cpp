@@ -15,29 +15,6 @@
 
 namespace espreso {
 
-std::ostream& operator<<(std::ostream& os, const SparseMatrix &m)
-{
-	os << m.rows << " " << m.cols << " " << m.nnz << "\n";
-
-	os.precision(15);
-
-	SparseMatrix s = m;
-	if (s.CSR_J_col_indices.size()) {
-		s.ConvertToCOO(1);
-	}
-	if (s.dense_values.size()) {
-		s.ConvertDenseToCSR(0);
-		s.ConvertToCOO(1);
-	}
-
-	for (esint i = 0; i < s.nnz; i++) {
-		os << s.I_row_indices[i] << " ";
-		os << s.J_col_indices[i] << " ";
-		os << std::scientific << s.V_values[i] << "\n";
-	}
-	return os;
-}
-
 #define comp_x(_a,_b,_x,_p) (_a[_x]!=_a[_p] ? _a[_x]-_a[_p] : _b[_x]-_b[_p])
 
 static void q_sort_in(vector <esint>    & I_row_indices,
@@ -197,9 +174,9 @@ SparseMatrix::SparseMatrix() {
 
 }
 
-SparseMatrix::SparseMatrix(char matrix_type_G_for_general_S_for_symmetric, string filename) {
-	SparseMatrix::LoadMatrixBin(filename, matrix_type_G_for_general_S_for_symmetric);
-}
+//SparseMatrix::SparseMatrix(char matrix_type_G_for_general_S_for_symmetric, string filename) {
+//	SparseMatrix::LoadMatrixBin(filename, matrix_type_G_for_general_S_for_symmetric);
+//}
 
 SparseMatrix::SparseMatrix( const SparseMatrix &A_in) {
 
@@ -377,206 +354,206 @@ void SparseMatrix::Clear() {
 	//d_x_in		   = NULL:
 }
 
-esint  SparseMatrix::SaveMatrixInCOO(string filename) {
-
-	std::ofstream out(filename.c_str());
-
-	if ( out.is_open() ) {
-		out << *this;
-		out.close();
-		return 0;
-	} else {
-		eslog::error("Cannot create file.\n");
-		return -1;
-	}
-}
-
-esint  SparseMatrix::SaveMatrixBinInCSR(string filename) {
-
-	SparseMatrix s = *this;
-	if (s.J_col_indices.size()) {
-		s.ConvertToCSR(1);
-	}
-	if (s.dense_values.size()) {
-		s.ConvertDenseToCSR(1);
-	}
-
-	std::ofstream out (filename.c_str(), std::ios::out | std::ios::binary);
-
-	if ( out.is_open() ) {
-		//write parameters
-		out << "%% rows;cols;nnz;type" << std::endl;
-		out << s.rows << ";" << s.cols << ";" << s.nnz << ";" << s.type << std::endl;
-
-		out.write((char*)&s.CSR_I_row_indices[0], s.CSR_I_row_indices.size() * sizeof(esint));
-		out.write((char*)&s.CSR_J_col_indices[0], s.CSR_J_col_indices.size() * sizeof(esint));
-		out.write((char*)&s.CSR_V_values[0], s.CSR_V_values.size() * sizeof(double));
-
-		out.close();
-		return 0;
-
-	} else {
-		eslog::error("File cannot be created.\n");
-		return -1;
-	}
-
-}
-
-esint  SparseMatrix::SaveMatrixBinInCOO(string filename) {
-
-	// Prepared for fix
+//esint  SparseMatrix::SaveMatrixInCOO(string filename) {
+//
+//	std::ofstream out(filename.c_str());
+//
+//	if ( out.is_open() ) {
+//		out << *this;
+//		out.close();
+//		return 0;
+//	} else {
+//		eslog::error("Cannot create file.\n");
+//		return -1;
+//	}
+//}
+//
+//esint  SparseMatrix::SaveMatrixBinInCSR(string filename) {
+//
 //	SparseMatrix s = *this;
-//	if (s.CSR_J_col_indices.size()) {
-//		s.ConvertToCOO(1);
+//	if (s.J_col_indices.size()) {
+//		s.ConvertToCSR(1);
 //	}
 //	if (s.dense_values.size()) {
 //		s.ConvertDenseToCSR(1);
-//		s.ConvertToCOO(1);
 //	}
-
-	std::ofstream out (filename.c_str(), std::ios::out | std::ios::binary);
-
-	if ( out.is_open() ) {
-		//write parameters
-		out << "%% rows;cols;nnz;type" << std::endl;
-		out << rows << ";" << cols << ";" << nnz << ";" << type << std::endl;
-
-		// Is not COO but CSR! Left for possible compatibility issues
-		out.write((char*)&CSR_I_row_indices[0], CSR_I_row_indices.size() * sizeof(esint));
-		out.write((char*)&CSR_J_col_indices[0], CSR_J_col_indices.size() * sizeof(esint));
-		out.write((char*)&CSR_V_values[0], CSR_V_values.size() * sizeof(double));
-
-		// Prepared for fix
+//
+//	std::ofstream out (filename.c_str(), std::ios::out | std::ios::binary);
+//
+//	if ( out.is_open() ) {
+//		//write parameters
+//		out << "%% rows;cols;nnz;type" << std::endl;
 //		out << s.rows << ";" << s.cols << ";" << s.nnz << ";" << s.type << std::endl;
-//		out.write((char*)&s.I_row_indices[0], s.I_row_indices.size() * sizeof(esint));
-//		out.write((char*)&s.J_col_indices[0], s.J_col_indices.size() * sizeof(esint));
-//		out.write((char*)&s.V_values[0], s.V_values.size() * sizeof(double));
+//
+//		out.write((char*)&s.CSR_I_row_indices[0], s.CSR_I_row_indices.size() * sizeof(esint));
+//		out.write((char*)&s.CSR_J_col_indices[0], s.CSR_J_col_indices.size() * sizeof(esint));
+//		out.write((char*)&s.CSR_V_values[0], s.CSR_V_values.size() * sizeof(double));
+//
+//		out.close();
+//		return 0;
+//
+//	} else {
+//		eslog::error("File cannot be created.\n");
+//		return -1;
+//	}
+//
+//}
 
-		out.close();
-		return 0;
+//esint  SparseMatrix::SaveMatrixBinInCOO(string filename) {
+//
+//	// Prepared for fix
+////	SparseMatrix s = *this;
+////	if (s.CSR_J_col_indices.size()) {
+////		s.ConvertToCOO(1);
+////	}
+////	if (s.dense_values.size()) {
+////		s.ConvertDenseToCSR(1);
+////		s.ConvertToCOO(1);
+////	}
+//
+//	std::ofstream out (filename.c_str(), std::ios::out | std::ios::binary);
+//
+//	if ( out.is_open() ) {
+//		//write parameters
+//		out << "%% rows;cols;nnz;type" << std::endl;
+//		out << rows << ";" << cols << ";" << nnz << ";" << type << std::endl;
+//
+//		// Is not COO but CSR! Left for possible compatibility issues
+//		out.write((char*)&CSR_I_row_indices[0], CSR_I_row_indices.size() * sizeof(esint));
+//		out.write((char*)&CSR_J_col_indices[0], CSR_J_col_indices.size() * sizeof(esint));
+//		out.write((char*)&CSR_V_values[0], CSR_V_values.size() * sizeof(double));
+//
+//		// Prepared for fix
+////		out << s.rows << ";" << s.cols << ";" << s.nnz << ";" << s.type << std::endl;
+////		out.write((char*)&s.I_row_indices[0], s.I_row_indices.size() * sizeof(esint));
+////		out.write((char*)&s.J_col_indices[0], s.J_col_indices.size() * sizeof(esint));
+////		out.write((char*)&s.V_values[0], s.V_values.size() * sizeof(double));
+//
+//		out.close();
+//		return 0;
+//
+//	} else {
+//		eslog::error("File cannot be created.\n");
+//		return -1;
+//	}
+//
+//}
 
-	} else {
-		eslog::error("File cannot be created.\n");
-		return -1;
-	}
+//esint SparseMatrix::LoadMatrixBinInCOO(string filename, char matrix_type_G_for_general_S_for_symmetric) {
+//
+//	type = matrix_type_G_for_general_S_for_symmetric;
+//	mtype = MatrixType::REAL_UNSYMMETRIC;
+//
+//	ifstream in (filename.c_str(), std::ios::binary);
+//
+//	if ( in.is_open() ) {
+//
+//		char delim = ';';
+//		string line, field;
+//
+//		// Throw away the label "%% rows;cols;nnz;type"
+//		getline(in,line);
+//		// Get parameters
+//		getline(in,line);
+//		stringstream paramss(line);
+//
+//		getline(paramss,field,delim);
+//		rows = atoi(field.c_str());		// get num of rows
+//
+//		getline(paramss,field,delim);
+//		cols = atoi(field.c_str());		// get num of columns
+//
+//		getline(paramss,field,delim);
+//		nnz  = atoi(field.c_str());		// get num of non zero elements
+//
+//		// Get data
+//		I_row_indices.resize(nnz);
+//		in.read((char*) &I_row_indices[0], nnz*sizeof(esint));
+//
+//		J_col_indices.resize(nnz);
+//		in.read((char*) &J_col_indices[0], nnz*sizeof(esint));
+//
+//		V_values.resize(nnz);
+//		in.read((char*) &V_values[0], nnz*sizeof(double));
+//
+//		in.close();
+//
+//		return 0;
+//
+//	} else {
+//
+//		eslog::error("File not found.\n");
+//		return -1;
+//
+//	}
+//}
 
-}
+//esint SparseMatrix::LoadMatrixBinInCSR(string filename, char matrix_type_G_for_general_S_for_symmetric) {
+//
+//	type = matrix_type_G_for_general_S_for_symmetric;
+//	mtype = MatrixType::REAL_UNSYMMETRIC;
+//
+//	ifstream in (filename.c_str(), std::ios::binary);
+//
+//	if ( in.is_open() ) {
+//
+//		char delim = ';';
+//		string line, field;
+//
+//		// Throw away the label "%% rows;cols;nnz;type"
+//		getline(in,line);
+//		// Get parameters
+//		getline(in,line);
+//		stringstream paramss(line);
+//
+//		getline(paramss,field,delim);
+//		rows = atoi(field.c_str());		// get num of rows
+//
+//		getline(paramss,field,delim);
+//		cols = atoi(field.c_str());		// get num of columns
+//
+//		getline(paramss,field,delim);
+//		nnz  = atoi(field.c_str());		// get num of non zero elements
+//
+//		// Get data
+//		CSR_I_row_indices.resize(rows+1);
+//		in.read((char*) &CSR_I_row_indices[0], (rows+1)*sizeof(esint));
+//
+//		CSR_J_col_indices.resize(nnz);
+//		in.read((char*) &CSR_J_col_indices[0], nnz*sizeof(esint));
+//
+//		CSR_V_values.resize(nnz);
+//		in.read((char*) &CSR_V_values[0], nnz*sizeof(double));
+//
+//		in.close();
+//
+//		return 0;
+//
+//	} else {
+//
+//		eslog::error("File not found.\n");
+//		return -1;
+//
+//	}
+//}
 
-esint SparseMatrix::LoadMatrixBinInCOO(string filename, char matrix_type_G_for_general_S_for_symmetric) {
-
-	type = matrix_type_G_for_general_S_for_symmetric;
-	mtype = MatrixType::REAL_UNSYMMETRIC;
-
-	ifstream in (filename.c_str(), std::ios::binary);
-
-	if ( in.is_open() ) {
-
-		char delim = ';';
-		string line, field;
-
-		// Throw away the label "%% rows;cols;nnz;type"
-		getline(in,line);
-		// Get parameters
-		getline(in,line);
-		stringstream paramss(line);
-
-		getline(paramss,field,delim);
-		rows = atoi(field.c_str());		// get num of rows
-
-		getline(paramss,field,delim);
-		cols = atoi(field.c_str());		// get num of columns
-
-		getline(paramss,field,delim);
-		nnz  = atoi(field.c_str());		// get num of non zero elements
-
-		// Get data
-		I_row_indices.resize(nnz);
-		in.read((char*) &I_row_indices[0], nnz*sizeof(esint));
-
-		J_col_indices.resize(nnz);
-		in.read((char*) &J_col_indices[0], nnz*sizeof(esint));
-
-		V_values.resize(nnz);
-		in.read((char*) &V_values[0], nnz*sizeof(double));
-
-		in.close();
-
-		return 0;
-
-	} else {
-
-		eslog::error("File not found.\n");
-		return -1;
-
-	}
-}
-
-esint SparseMatrix::LoadMatrixBinInCSR(string filename, char matrix_type_G_for_general_S_for_symmetric) {
-
-	type = matrix_type_G_for_general_S_for_symmetric;
-	mtype = MatrixType::REAL_UNSYMMETRIC;
-
-	ifstream in (filename.c_str(), std::ios::binary);
-
-	if ( in.is_open() ) {
-
-		char delim = ';';
-		string line, field;
-
-		// Throw away the label "%% rows;cols;nnz;type"
-		getline(in,line);
-		// Get parameters
-		getline(in,line);
-		stringstream paramss(line);
-
-		getline(paramss,field,delim);
-		rows = atoi(field.c_str());		// get num of rows
-
-		getline(paramss,field,delim);
-		cols = atoi(field.c_str());		// get num of columns
-
-		getline(paramss,field,delim);
-		nnz  = atoi(field.c_str());		// get num of non zero elements
-
-		// Get data
-		CSR_I_row_indices.resize(rows+1);
-		in.read((char*) &CSR_I_row_indices[0], (rows+1)*sizeof(esint));
-
-		CSR_J_col_indices.resize(nnz);
-		in.read((char*) &CSR_J_col_indices[0], nnz*sizeof(esint));
-
-		CSR_V_values.resize(nnz);
-		in.read((char*) &CSR_V_values[0], nnz*sizeof(double));
-
-		in.close();
-
-		return 0;
-
-	} else {
-
-		eslog::error("File not found.\n");
-		return -1;
-
-	}
-}
-
-esint SparseMatrix::LoadMatrixBin(string filename, char matrix_type_G_for_general_S_for_symmetric) {
-	esint tmp = LoadMatrixBinInCOO(filename, matrix_type_G_for_general_S_for_symmetric);
-
-	if (tmp == 0)
-		ConvertToCSR( 1 );
-
-	return tmp;
-}
-
-esint SparseMatrix::LoadMatrixBin(string filename, char matrix_type_G_for_general_S_for_symmetric, esint clearCOO_1_keep_COO_0 ) {
-	esint tmp = LoadMatrixBinInCOO(filename, matrix_type_G_for_general_S_for_symmetric);
-
-	if (tmp == 0)
-		ConvertToCSR( clearCOO_1_keep_COO_0 );
-
-	return tmp;
-}
+//esint SparseMatrix::LoadMatrixBin(string filename, char matrix_type_G_for_general_S_for_symmetric) {
+//	esint tmp = LoadMatrixBinInCOO(filename, matrix_type_G_for_general_S_for_symmetric);
+//
+//	if (tmp == 0)
+//		ConvertToCSR( 1 );
+//
+//	return tmp;
+//}
+//
+//esint SparseMatrix::LoadMatrixBin(string filename, char matrix_type_G_for_general_S_for_symmetric, esint clearCOO_1_keep_COO_0 ) {
+//	esint tmp = LoadMatrixBinInCOO(filename, matrix_type_G_for_general_S_for_symmetric);
+//
+//	if (tmp == 0)
+//		ConvertToCSR( clearCOO_1_keep_COO_0 );
+//
+//	return tmp;
+//}
 
 //void SparseMatrix::LoadMatrixInCOO(string filename, char matrix_type_G_for_general_S_for_symmetric) {
 //

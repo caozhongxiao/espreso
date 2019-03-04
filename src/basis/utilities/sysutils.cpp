@@ -1,6 +1,8 @@
 
 #include "sysutils.h"
 
+#include "esinfo/mpiinfo.h"
+#include "esinfo/timeinfo.h"
 #include "esinfo/eslog.hpp"
 
 #include <execinfo.h>
@@ -18,9 +20,7 @@ std::string createDirectory(const std::vector<std::string> &path)
 	std::stringstream prefix;
 	std::for_each(path.begin(), path.end(), [&] (const std::string &dir) { prefix << dir << "/"; });
 
-	if (std::system(("mkdir -p " + prefix.str()).c_str())) {
-		eslog::error("Cannot create directory '%s'\n", prefix.str().c_str());
-	}
+	createDirectory(prefix.str());
 	return prefix.str();
 }
 
@@ -61,6 +61,27 @@ void copyFile(const std::string &source, const std::string &destination)
 		eslog::error("Cannot create file '%s'\n", destination.c_str());
 	}
 	dst << src.rdbuf();
+}
+
+std::string debugDirectory()
+{
+	std::stringstream path;
+	path << eslog::path() << "/DEBUG";
+	path << "/step" << time::step;
+	path << "/substep" << time::substep;
+	path << "/iteration" << time::iteration;
+	path << "/" << info::mpi::rank;
+	return path.str();
+}
+
+std::string prepareFile(const std::string &directory, const std::string &name, int domain)
+{
+	createDirectory(directory);
+	if (domain != -1) {
+		return std::string(directory + "/" + name + std::to_string(domain) + ".txt");
+	} else {
+		return std::string(directory + "/" + name + ".txt");
+	}
 }
 
 void printStack()
