@@ -6,8 +6,8 @@ stages:
 before_script:
   - export SPACK_ROOT=/opt/spack
   - . $SPACK_ROOT/share/spack/setup-env.sh
-  - export PATH=./build/:$PATH
-  - export LD_LIBRARY_PATH=./build/:$LD_LIBRARY_PATH 
+  - export PATH=$PWD/build/:$PATH
+  - export LD_LIBRARY_PATH=$PWD/build/:$LD_LIBRARY_PATH 
   - ml gcc openmpi intel-mkl hypre parmetis
 
 MKL32:
