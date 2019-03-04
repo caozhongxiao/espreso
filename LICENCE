@@ -14,9 +14,5 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” 
 Third party applications distributed with ESPRESO library
 ESPRESO repository contains following third party open-source applications
 
-MUMPS (http://mumps.enseeiht.fr) – CeCILL-C license
-METIS (http://glaros.dtc.umn.edu/gkhome/views/metis) – Apache License Version 2.0
-SCOTCH (http://scotch.gforge.inria.fr) – CeCILL-C license
-Eigen (http://eigen.tuxfamily.org/index.php?title=Main_Page) - MPL2 licence
 C++ Mathematical Expression Toolkit Library (http://www.partow.net/programming/exprtk) – Common Public License
-
+ASYNC (https://github.com/TUM-I5/ASYNC) - BSD
