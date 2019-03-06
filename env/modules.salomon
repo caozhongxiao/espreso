@@ -6,6 +6,6 @@
 #module load zlib/1.2.8-intel-2016.01
 #module load CMake/3.3.1-intel-2016.01
 
-ml intel/2017a
-ml ParMETIS/4.0.3-intel-2017a
-ml Hypre/2.15.1-intel-2017a
+ml intel/2018.04
+ml ParMETIS/4.0.3-intel-2018.04
+ml Hypre/2.15.1-intel-2018.04
