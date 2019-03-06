@@ -55,7 +55,8 @@ def set_metis(ctx):
     ctx.check_cxx(
         fragment='''
             #include <metis.h>
-            int main() {{ return IDXTYPEWIDTH != {0}; }}
+            #include "mpi.h"
+            int main(int argc, char** argv) {{ MPI_Init(&argc, &argv); return IDXTYPEWIDTH != {0}; MPI_Finalize(); }}
         '''.format(ctx.options.intwidth),
         execute=True,
         includes=includes, libpath=libpath,
