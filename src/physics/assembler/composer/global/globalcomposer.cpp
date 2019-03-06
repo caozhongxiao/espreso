@@ -120,9 +120,9 @@ void GlobalComposer::assemble(Matrices matrices, const SolverParameters &paramet
 							#pragma omp atomic
 							data->K[0].CSR_V_values[_KPermutation[KIndex]] += KReduction * filler.Ke(r, c);
 						}
-						if ((matrices & Matrices::M) && filler.Me.rows()) {
+						if ((matrices & Matrices::M) && filler.Me.rows() && r / filler.Me.rows() == c / filler.Me.rows()) {
 							#pragma omp atomic
-							data->M[0].CSR_V_values[_KPermutation[KIndex]] += filler.Me(r, c);
+							data->M[0].CSR_V_values[_KPermutation[KIndex]] += filler.Me(r % filler.Me.rows(), c % filler.Me.rows());
 						}
 					}
 				}
@@ -131,18 +131,22 @@ void GlobalComposer::assemble(Matrices matrices, const SolverParameters &paramet
 			filler.insert = [&] (size_t size) {
 				for (size_t r = 0; r < size; ++r, ++RHSIndex) {
 					if ((matrices & Matrices::f) && filler.fe.rows()) {
+						#pragma omp atomic
 						data->f[0][_RHSPermutation[RHSIndex]] += RHSReduction * filler.fe(r, 0);
 					}
 					if ((matrices & Matrices::R) && filler.Re.rows()) {
+						#pragma omp atomic
 						data->R[0][_RHSPermutation[RHSIndex]] += filler.Re(r, 0);
 					}
 
 					for (size_t c = r; c < size; ++c, ++KIndex) {
 						if ((matrices & Matrices::K) && filler.Ke.rows()) {
+							#pragma omp atomic
 							data->K[0].CSR_V_values[_KPermutation[KIndex]] += KReduction * filler.Ke(r, c);
 						}
-						if ((matrices & Matrices::M) && filler.Me.rows()) {
-							data->M[0].CSR_V_values[_KPermutation[KIndex]] += filler.Me(r, c);
+						if ((matrices & Matrices::M) && filler.Me.rows() && r / filler.Me.rows() == c / filler.Me.rows()) {
+							#pragma omp atomic
+							data->M[0].CSR_V_values[_KPermutation[KIndex]] += filler.Me(r % filler.Me.rows(), c % filler.Me.rows());
 						}
 					}
 				}

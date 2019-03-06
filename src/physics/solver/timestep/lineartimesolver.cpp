@@ -1,5 +1,6 @@
 
-#include "linear.h"
+#include "lineartimesolver.h"
+
 #include "physics/assembler/dataholder.h"
 #include "physics/assembler/assembler.h"
 #include "physics/solver/loadstep/loadstepsolver.h"

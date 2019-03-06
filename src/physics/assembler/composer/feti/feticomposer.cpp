@@ -59,8 +59,8 @@ void FETIComposer::assemble(Matrices matrices, const SolverParameters &parameter
 						if ((matrices & Matrices::K) && filler.Ke.rows()) {
 							data->K[d].CSR_V_values[_KPermutation[d][KIndex]] += KReduction * filler.Ke(r, c);
 						}
-						if ((matrices & Matrices::M) && filler.Me.rows()) {
-							data->M[d].CSR_V_values[_KPermutation[d][KIndex]] += filler.Me(r, c);
+						if ((matrices & Matrices::M) && filler.Me.rows() && r / filler.Me.rows() == c / filler.Me.rows()) {
+							data->M[d].CSR_V_values[_KPermutation[d][KIndex]] += filler.Me(r % filler.Me.rows(), c % filler.Me.rows());;
 						}
 					}
 				}
@@ -79,8 +79,8 @@ void FETIComposer::assemble(Matrices matrices, const SolverParameters &parameter
 						if ((matrices & Matrices::K) && filler.Ke.rows()) {
 							data->K[d].CSR_V_values[_KPermutation[d][KIndex]] += KReduction * filler.Ke(r, c);
 						}
-						if ((matrices & Matrices::M) && filler.Me.rows()) {
-							data->M[d].CSR_V_values[_KPermutation[d][KIndex]] += filler.Me(r, c);
+						if ((matrices & Matrices::M) && filler.Me.rows() && r / filler.Me.rows() == c / filler.Me.rows()) {
+							data->M[d].CSR_V_values[_KPermutation[d][KIndex]] += filler.Me(r % filler.Me.rows(), c % filler.Me.rows());;
 						}
 					}
 				}

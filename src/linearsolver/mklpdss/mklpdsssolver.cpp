@@ -15,6 +15,11 @@ MKLPDSSSolver::MKLPDSSSolver(DataHolder *data, MKLPDSSConfiguration &configurati
 
 }
 
+Matrices MKLPDSSSolver::usedMatrices()
+{
+	return Matrices::K | Matrices::f;
+}
+
 MKLPDSSSolver::~MKLPDSSSolver()
 {
 	if (_mklpdssData) {

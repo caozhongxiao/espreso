@@ -1,6 +1,6 @@
 
-#ifndef SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_TRANSIENTSOLVER_H_
-#define SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_TRANSIENTSOLVER_H_
+#ifndef SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_TRANSIENTFIRSTORDERIMPLICIT_H_
+#define SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_TRANSIENTFIRSTORDERIMPLICIT_H_
 
 #include "config/description.h"
 
@@ -13,12 +13,13 @@ struct AutoTimeSteppingConfiguration: public ECFDescription {
 	double min_time_step, max_time_step;
 
 	double oscilation_limit, IDFactor;
+	int points_per_period;
 
 	AutoTimeSteppingConfiguration();
 };
 
 
-struct TransientSolverConfiguration: public ECFDescription {
+struct TransientFirstOrderImplicitConfiguration: public ECFDescription {
 
 	enum class METHOD {
 		CRANK_NICOLSON,
@@ -32,11 +33,11 @@ struct TransientSolverConfiguration: public ECFDescription {
 	AutoTimeSteppingConfiguration auto_time_stepping;
 	double alpha, time_step;
 
-	TransientSolverConfiguration();
+	TransientFirstOrderImplicitConfiguration();
 };
 
 }
 
 
 
-#endif /* SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_TRANSIENTSOLVER_H_ */
+#endif /* SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_TRANSIENTFIRSTORDERIMPLICIT_H_ */

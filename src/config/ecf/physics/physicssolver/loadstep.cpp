@@ -38,6 +38,9 @@ espreso::LoadStepConfiguration::LoadStepConfiguration(const std::string &firstRe
 	REGISTER(transient_solver, ECFMetaData()
 			.setdescription({ "Transient physics solver settings" })
 			.allowonly([&] () { return type == TYPE::TRANSIENT; }));
+	REGISTER(sm_transient_solver, ECFMetaData()
+			.setdescription({ "Transient physics solver settings" })
+			.allowonly([&] () { return type == TYPE::TRANSIENT; }));
 
 	REGISTER(feti, ECFMetaData()
 			.setdescription({ "FETI solver settings" })

@@ -50,6 +50,7 @@ struct Assembler {
 	virtual Composer* composer() =0;
 	virtual Controller* controller() =0;
 	virtual Provider* provider() =0;
+	void store(const std::string &prefix, Matrices matrices);
 
 	virtual ~Assembler() {};
 
@@ -125,6 +126,7 @@ struct AssemblerInstance: public Assembler, public TController, public TComposer
 	void assemble(Matrices matrices)
 	{
 		TComposer::assemble(matrices, parameters);
+		store("assembler", matrices);
 		if ((matrices & Matrices::K) && TProvider::needOriginalStiffnessMatrices()) {
 			TComposer::keepK();
 		}
@@ -139,6 +141,7 @@ struct AssemblerInstance: public Assembler, public TController, public TComposer
 			TComposer::keepSolverK();
 		}
 		TComposer::setDirichlet(matrices, parameters.internalForceReduction, subtraction);
+		store("dirichlet", matrices);
 	}
 
 	void solve(Matrices matrices)
@@ -147,6 +150,7 @@ struct AssemblerInstance: public Assembler, public TController, public TComposer
 		TComposer::fillSolution();
 		if (TProvider::needReactionForces()) {
 			TComposer::computeReactionForces();
+			store("linsolver", Matrices::Reactions);
 		}
 	}
 

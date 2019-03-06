@@ -1,6 +1,5 @@
 
-#include "newtonraphson.h"
-
+#include "newtonraphsonsolver.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/timeinfo.h"
 #include "esinfo/eslog.hpp"

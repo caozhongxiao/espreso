@@ -21,6 +21,8 @@ protected:
 	virtual void update(Matrices matrices) =0;
 	virtual void solve() =0;
 
+	virtual Matrices usedMatrices() =0;
+
 	DataHolder *_data;
 };
 

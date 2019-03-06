@@ -2,7 +2,8 @@
 #ifndef SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_LOADSTEP_H_
 #define SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_LOADSTEP_H_
 
-#include "transientsolver.h"
+#include "transientfirstorderimplicit.h"
+#include "transientsecondorderimplicit.h"
 #include "nonlinearsolver.h"
 #include "config/ecf/linearsolver/feti.h"
 #include "config/ecf/linearsolver/hypre/hypre.h"
@@ -35,7 +36,8 @@ struct LoadStepConfiguration: public ECFDescription {
 	SOLVER solver;
 
 	NonLinearSolverConfiguration nonlinear_solver;
-	TransientSolverConfiguration transient_solver;
+	TransientFirstOrderImplicitConfiguration transient_solver;
+	TransientSecondOrderImplicitConfiguration sm_transient_solver;
 
 	FETISolverConfiguration feti;
 	HypreConfiguration hypre;

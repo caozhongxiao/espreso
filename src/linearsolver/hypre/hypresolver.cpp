@@ -16,6 +16,11 @@ HYPRESolver::HYPRESolver(DataHolder *data, HypreConfiguration &configuration)
 
 }
 
+Matrices HYPRESolver::usedMatrices()
+{
+	return Matrices::K | Matrices::f;
+}
+
 HYPRESolver::~HYPRESolver()
 {
 	if (_hypreData) {

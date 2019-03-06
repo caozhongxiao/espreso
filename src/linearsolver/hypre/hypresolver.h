@@ -18,6 +18,7 @@ public:
 	void update(Matrices matrices);
 	void solve();
 
+	Matrices usedMatrices();
 	double& precision();
 
 protected:

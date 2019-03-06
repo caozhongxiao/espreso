@@ -228,7 +228,7 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Solver
 		Ke = 0;
 	}
 	if (matrices & Matrices::M) {
-		Me.resize(3 * size, 3 * size);
+		Me.resize(size, size);
 		Me = 0;
 	}
 	if (matrices & Matrices::R) {

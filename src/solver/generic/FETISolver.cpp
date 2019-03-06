@@ -28,6 +28,11 @@ FETISolver::FETISolver(DataHolder *instance, FETISolverConfiguration &configurat
 
 }
 
+Matrices FETISolver::usedMatrices()
+{
+	return Matrices::K | Matrices::N | Matrices::Gluing | Matrices::f;
+}
+
 FETISolver::~FETISolver() {
 
 	solver->preproc_timing.printStatsMPI();

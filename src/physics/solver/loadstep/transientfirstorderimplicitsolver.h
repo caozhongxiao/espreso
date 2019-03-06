@@ -1,18 +1,18 @@
 
-#ifndef SRC_PHYSICS_SOLVER_LOADSTEP_TRANSIENTFIRSTORDERIMPLICIT_H_
-#define SRC_PHYSICS_SOLVER_LOADSTEP_TRANSIENTFIRSTORDERIMPLICIT_H_
+#ifndef SRC_PHYSICS_SOLVER_LOADSTEP_TRANSIENTFIRSTORDERIMPLICITSOLVER_H_
+#define SRC_PHYSICS_SOLVER_LOADSTEP_TRANSIENTFIRSTORDERIMPLICITSOLVER_H_
 
 #include "loadstepsolver.h"
 
 namespace espreso {
 
 class NodeData;
-class TransientSolverConfiguration;
+class TransientFirstOrderImplicitConfiguration;
 
 class TransientFirstOrderImplicit: public LoadStepSolver {
 
 public:
-	TransientFirstOrderImplicit(TransientFirstOrderImplicit *previous, Assembler &assembler, TimeStepSolver &timeStepSolver, TransientSolverConfiguration &configuration, double duration);
+	TransientFirstOrderImplicit(TransientFirstOrderImplicit *previous, Assembler &assembler, TimeStepSolver &timeStepSolver, TransientFirstOrderImplicitConfiguration &configuration, double duration);
 
 	bool hasSameType(const LoadStepConfiguration &configuration) const;
 	std::string name();
@@ -24,7 +24,7 @@ protected:
 	void runNextTimeStep();
 	void processTimeStep();
 
-	TransientSolverConfiguration &_configuration;
+	TransientFirstOrderImplicitConfiguration &_configuration;
 	double _alpha;
 	double _nTimeShift;
 
@@ -35,4 +35,4 @@ protected:
 
 
 
-#endif /* SRC_PHYSICS_SOLVER_LOADSTEP_TRANSIENTFIRSTORDERIMPLICIT_H_ */
+#endif /* SRC_PHYSICS_SOLVER_LOADSTEP_TRANSIENTFIRSTORDERIMPLICITSOLVER_H_ */

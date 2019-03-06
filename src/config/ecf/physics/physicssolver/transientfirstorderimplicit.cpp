@@ -1,5 +1,5 @@
 
-#include "transientsolver.h"
+#include "transientfirstorderimplicit.h"
 #include "config/configuration.hpp"
 
 espreso::AutoTimeSteppingConfiguration::AutoTimeSteppingConfiguration()
@@ -30,9 +30,14 @@ espreso::AutoTimeSteppingConfiguration::AutoTimeSteppingConfiguration()
 	REGISTER(IDFactor, ECFMetaData()
 			.setdescription({ "I/D factor" })
 			.setdatatype({ ECFDataType::FLOAT }));
+
+	points_per_period = 0;
+	REGISTER(points_per_period, ECFMetaData()
+			.setdescription({ "Minimal points per period" })
+			.setdatatype({ ECFDataType::INTEGER }));
 }
 
-espreso::TransientSolverConfiguration::TransientSolverConfiguration()
+espreso::TransientFirstOrderImplicitConfiguration::TransientFirstOrderImplicitConfiguration()
 {
 	method = METHOD::CRANK_NICOLSON;
 	REGISTER(method, ECFMetaData()

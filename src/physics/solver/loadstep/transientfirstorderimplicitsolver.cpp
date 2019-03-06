@@ -1,5 +1,5 @@
 
-#include "transientfirstorderimplicit.h"
+#include "transientfirstorderimplicitsolver.h"
 
 #include "esinfo/meshinfo.h"
 #include "esinfo/timeinfo.h"
@@ -14,14 +14,14 @@
 #include "mesh/mesh.h"
 #include "mesh/store/nodestore.h"
 
-#include "config/ecf/physics/physicssolver/transientsolver.h"
+#include "config/ecf/physics/physicssolver/transientfirstorderimplicit.h"
 #include "config/ecf/physics/physicssolver/loadstep.h"
 
 #include <cmath>
 
 using namespace espreso;
 
-TransientFirstOrderImplicit::TransientFirstOrderImplicit(TransientFirstOrderImplicit *previous, Assembler &assembler, TimeStepSolver &timeStepSolver, TransientSolverConfiguration &configuration, double duration)
+TransientFirstOrderImplicit::TransientFirstOrderImplicit(TransientFirstOrderImplicit *previous, Assembler &assembler, TimeStepSolver &timeStepSolver, TransientFirstOrderImplicitConfiguration &configuration, double duration)
 : LoadStepSolver(assembler, timeStepSolver, duration), _configuration(configuration), _alpha(0), _nTimeShift(_configuration.time_step)
 {
 	if (configuration.time_step < 1e-7) {
@@ -54,7 +54,7 @@ bool TransientFirstOrderImplicit::hasSameType(const LoadStepConfiguration &confi
 
 std::string TransientFirstOrderImplicit::name()
 {
-	return "TRANSIENT";
+	return "TRANSIENT FIRST ORDER IMPLICIT";
 }
 
 Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Matrices matrices)
@@ -78,16 +78,16 @@ void TransientFirstOrderImplicit::initLoadStep()
 	LoadStepSolver::initLoadStep();
 
 	switch (_configuration.method) {
-	case TransientSolverConfiguration::METHOD::CRANK_NICOLSON:
+	case TransientFirstOrderImplicitConfiguration::METHOD::CRANK_NICOLSON:
 		_alpha = 0.5;
 		break;
-	case TransientSolverConfiguration::METHOD::GALERKIN:
+	case TransientFirstOrderImplicitConfiguration::METHOD::GALERKIN:
 		_alpha = 2 / 3;
 		break;
-	case TransientSolverConfiguration::METHOD::BACKWARD_DIFF:
+	case TransientFirstOrderImplicitConfiguration::METHOD::BACKWARD_DIFF:
 		_alpha = 1;
 		break;
-	case TransientSolverConfiguration::METHOD::USER:
+	case TransientFirstOrderImplicitConfiguration::METHOD::USER:
 		_alpha = _configuration.alpha;
 		if (_alpha <= 0 || _alpha > 1) {
 			eslog::globalerror("Alpha has to be from interval (0, 1>.\n");
@@ -131,7 +131,7 @@ void TransientFirstOrderImplicit::processTimeStep()
 			_assembler.composer()->applyOriginalK(dTK, dU);
 			_assembler.composer()->applyM(dTM, dU);
 
-			double resFreq = std::sqrt(_assembler.composer()->mult(dU, dTK)) / std::sqrt(_assembler.composer()->mult(dU, dTM));
+			double resFreq = _assembler.composer()->mult(dU, dTK) / _assembler.composer()->mult(dU, dTM);
 			double oscilationLimit = time::shift * resFreq;
 			double t1 = _configuration.auto_time_stepping.oscilation_limit / resFreq;
 
@@ -167,6 +167,7 @@ void TransientFirstOrderImplicit::processTimeStep()
 		U->data = _assembler.controller()->solution()->data;
 		_assembler.postProcess();
 	} else {
+		_assembler.controller()->solution()->data = U->data;
 		time::current -= time::shift;
 		--time::substep;
 	}

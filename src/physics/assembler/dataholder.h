@@ -22,11 +22,15 @@ enum Matrices : int {
 	f           = 1 << 4, // Right-hand side
 	Dirichlet   = 1 << 5, // Dirichlet boundary condition
 	Gluing      = 1 << 6, // Contact boundary conditions
+	Solution    = 1 << 7, // Linear System Solution
+	Reactions   = 1 << 8, // Reaction forces
 };
 
 struct DataHolder {
 
 	DataHolder();
+
+	void store(const std::string &prefix, Matrices matrices);
 
 	void computeKernel(FETI_REGULARIZATION regularization, int scSize, esint domain, bool ortogonalCluster = false) { computeKernelCallback(regularization, scSize, domain, ortogonalCluster); }
 	void computeKernelFromOrigK(FETI_REGULARIZATION regularization, int scSize, esint domain, bool ortogonalCluster = false) { computeKernelFromOrigKCallback(regularization, scSize, domain, ortogonalCluster); }

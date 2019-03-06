@@ -5,13 +5,13 @@
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 
-#include "solver/timestep/linear.h"
-#include "solver/timestep/newtonraphson.h"
-#include "solver/loadstep/steadystate.h"
-#include "solver/loadstep/pseudotimestepping.h"
-#include "solver/loadstep/transientfirstorderimplicit.h"
-
-#include "physics/assembler/dataholder.h"
+#include "assembler/dataholder.h"
+#include "solver/loadstep/pseudotimesteppingsolver.h"
+#include "solver/loadstep/steadystatesolver.h"
+#include "solver/loadstep/transientfirstorderimplicitsolver.h"
+#include "solver/loadstep/transientsecondorderimplicitsolver.h"
+#include "solver/timestep/lineartimesolver.h"
+#include "solver/timestep/newtonraphsonsolver.h"
 
 #include "assembler/assembler.h"
 #include "assembler/controllers/heattransfer2d.controller.h"
@@ -153,8 +153,7 @@ static LoadStepSolver* getLoadStepSolver(LoadStepSolver *previous, StructuralMec
 		case LoadStepConfiguration::MODE::LINEAR: current = new SteadyStateSolver(dynamic_cast<SteadyStateSolver*>(previous), assembler, timeStepSolver, loadStep.duration_time); break;
 		case LoadStepConfiguration::MODE::NONLINEAR: current = new PseudoTimeStepping(dynamic_cast<PseudoTimeStepping*>(previous), assembler, timeStepSolver, loadStep.nonlinear_solver, loadStep.duration_time); break;
 		} break;
-	case LoadStepConfiguration::TYPE::TRANSIENT: break;
-//		return new TransientFirstOrderImplicit(assembler, timeStepSolver, loadStep.transient_solver, loadStep.duration_time);
+	case LoadStepConfiguration::TYPE::TRANSIENT: current = new TransientSecondOrderImplicit(dynamic_cast<TransientSecondOrderImplicit*>(previous), assembler, timeStepSolver, loadStep.sm_transient_solver, loadStep.duration_time); break;
 	default:
 		eslog::globalerror("Not implemented solver.\n");
 	}
