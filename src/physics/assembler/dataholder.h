@@ -16,14 +16,15 @@ enum class FETI_B0_TYPE;
 enum Matrices : int {
 	NONE        = 0,
 	K           = 1 << 0, // Stiffness matrix
-	N           = 1 << 1, // Null spaces (N1, N2)
-	M           = 1 << 2, // Mass matrix (only in assembler)
-	R           = 1 << 3, // Residual forces (only in assembler)
-	f           = 1 << 4, // Right-hand side
-	Dirichlet   = 1 << 5, // Dirichlet boundary condition
-	Gluing      = 1 << 6, // Contact boundary conditions
-	Solution    = 1 << 7, // Linear System Solution
-	Reactions   = 1 << 8, // Reaction forces
+	C           = 1 << 1, // Stiffness matrix
+	N           = 1 << 2, // Null spaces (N1, N2)
+	M           = 1 << 3, // Mass matrix (only in assembler)
+	R           = 1 << 4, // Residual forces (only in assembler)
+	f           = 1 << 5, // Right-hand side
+	Dirichlet   = 1 << 6, // Dirichlet boundary condition
+	Gluing      = 1 << 7, // Contact boundary conditions
+	Solution    = 1 << 8, // Linear System Solution
+	Reactions   = 1 << 10, // Reaction forces
 };
 
 struct DataHolder {
@@ -39,7 +40,7 @@ struct DataHolder {
 	void assembleB0(FETI_B0_TYPE type, const std::vector<SparseMatrix> &kernels) { assembleB0Callback(type, kernels); }
 
 	std::vector<SparseMatrix> origK, solverK, K, origKN1, origKN2, origRegMat, N1, N2, RegMat;
-	std::vector<SparseMatrix> M;
+	std::vector<SparseMatrix> M, C;
 	std::vector<std::vector<double> > R, f, origF, solverF;
 
 	// matrices for Hybrid FETI constraints

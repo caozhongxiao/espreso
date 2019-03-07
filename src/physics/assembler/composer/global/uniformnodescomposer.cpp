@@ -313,6 +313,7 @@ void UniformNodesComposer::buildPatterns()
 	_RHSPermutation.resize(RHSPattern.size());
 	data->K.resize(1);
 	data->M.resize(1);
+	data->C.resize(1);
 	data->f.resize(1);
 	data->R.resize(1);
 	data->primalSolution.resize(1);
@@ -368,6 +369,9 @@ void UniformNodesComposer::buildPatterns()
 	data->M.front() = data->K.front();
 	data->M.front().mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 	data->M.front().type = 'S';
+	data->C.front() = data->K.front();
+	data->C.front().mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+	data->C.front().type = 'S';
 }
 
 void UniformNodesComposer::synchronize(Matrices matrices)
@@ -378,6 +382,7 @@ void UniformNodesComposer::synchronize(Matrices matrices)
 		esint size = 0;
 		size += (matrices & Matrices::K) ? _nKSize[n] : 0;
 		size += (matrices & Matrices::M) ? _nKSize[n] : 0;
+		size += (matrices & Matrices::C) ? _nKSize[n] : 0;
 		size += (matrices & Matrices::R) ? _nRHSSize[n] : 0;
 		size += (matrices & Matrices::f) ? _nRHSSize[n] : 0;
 		if (info::mpi::rank < info::mesh->neighbours[n]) {
@@ -411,6 +416,19 @@ void UniformNodesComposer::synchronize(Matrices matrices)
 			auto begin = data->M.front().CSR_I_row_indices[DOFs->begin() - _DOFMap->datatarray().begin()] - 1;
 			auto end = data->M.front().CSR_I_row_indices[DOFs->end() - _DOFMap->datatarray().begin()] - 1;
 			sBuffer[r].insert(sBuffer[r].end(), data->M.front().CSR_V_values.begin() + begin, data->M.front().CSR_V_values.begin() + end);
+		}
+		nranks = info::mesh->nodes->ranks->begin();
+		DOFs = _DOFMap->begin();
+	}
+	if (matrices & Matrices::C) {
+		for (esint n = 0; n < info::mesh->nodes->size && DOFs->front() < _nDistribution[info::mpi::rank]; ++n, ++nranks, ++DOFs) {
+			esint r = 0;
+			while (info::mesh->neighbours[r] < nranks->front()) {
+				++r;
+			}
+			auto begin = data->C.front().CSR_I_row_indices[DOFs->begin() - _DOFMap->datatarray().begin()] - 1;
+			auto end = data->C.front().CSR_I_row_indices[DOFs->end() - _DOFMap->datatarray().begin()] - 1;
+			sBuffer[r].insert(sBuffer[r].end(), data->C.front().CSR_V_values.begin() + begin, data->C.front().CSR_V_values.begin() + end);
 		}
 		nranks = info::mesh->nodes->ranks->begin();
 		DOFs = _DOFMap->begin();
@@ -458,6 +476,12 @@ void UniformNodesComposer::synchronize(Matrices matrices)
 			if (matrices & Matrices::M) {
 				for (esint i = 0; i < _nKSize[n]; ++k, ++index, ++i) {
 					data->M.front().CSR_V_values[_KPermutation[k]] += rBuffer[n][index];
+				}
+			}
+			k = KIndex;
+			if (matrices & Matrices::C) {
+				for (esint i = 0; i < _nKSize[n]; ++k, ++index, ++i) {
+					data->C.front().CSR_V_values[_KPermutation[k]] += rBuffer[n][index];
 				}
 			}
 			KIndex += _nKSize[n];

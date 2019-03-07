@@ -25,10 +25,11 @@ protected:
 	void processTimeStep();
 
 	void updateConstants();
+	void updateDamping();
 
 	TransientSecondOrderImplicitConfiguration &_configuration;
 	double _alpha, _delta;
-	double _massDumping, _stiffnessDumping;
+	double _massDamping, _stiffnessDamping;
 	double _nTimeShift;
 	double _newmarkConsts[8];
 

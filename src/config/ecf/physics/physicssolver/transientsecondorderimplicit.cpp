@@ -4,6 +4,34 @@
 
 using namespace espreso;
 
+TransientSecondOrderImplicitDirectDampingConfiguration::TransientSecondOrderImplicitDirectDampingConfiguration()
+: mass({ "TIME" }), stiffness({ "TIME" })
+{
+	stiffness.value = "0";
+	REGISTER(stiffness, ECFMetaData()
+			.setdescription({ "Stiffnes Damping" })
+			.setdatatype({ ECFDataType::FLOAT }));
+
+	mass.value = "0";
+	REGISTER(mass, ECFMetaData()
+			.setdescription({ "Mass Damping" })
+			.setdatatype({ ECFDataType::FLOAT }));
+}
+
+TransientSecondOrderImplicitRatioDampingConfiguration::TransientSecondOrderImplicitRatioDampingConfiguration()
+: ratio({ "TIME" }), frequency({ "TIME" })
+{
+	ratio.value = "0";
+	REGISTER(ratio, ECFMetaData()
+			.setdescription({ "Damping Ratio" })
+			.setdatatype({ ECFDataType::FLOAT }));
+
+	frequency.value = "0";
+	REGISTER(frequency, ECFMetaData()
+			.setdescription({ "Damping frequency" })
+			.setdatatype({ ECFDataType::FLOAT }));
+}
+
 TransientSecondOrderImplicitConfiguration::TransientSecondOrderImplicitConfiguration()
 {
 	method = METHOD::NEWMARK;
@@ -22,40 +50,26 @@ TransientSecondOrderImplicitConfiguration::TransientSecondOrderImplicitConfigura
 			.setdescription({ "Delta" })
 			.setdatatype({ ECFDataType::FLOAT }));
 
-	numerical_dumping = 0;
-	REGISTER(numerical_dumping, ECFMetaData()
-			.setdescription({ "Numerical Dumping" })
+	numerical_damping = 0;
+	REGISTER(numerical_damping, ECFMetaData()
+			.setdescription({ "Numerical Damping" })
 			.setdatatype({ ECFDataType::FLOAT }));
 
 	ecfdescription->addSpace();
 
-	dumping = DUMPING::NONE;
-	REGISTER(method, ECFMetaData()
-			.setdescription({ "Dumping type" })
+	damping = DAMPING::NONE;
+	REGISTER(damping, ECFMetaData()
+			.setdescription({ "Damping type" })
 			.setdatatype({ ECFDataType::OPTION })
-			.addoption(ECFOption().setname("NONE").setdescription("Without dumping."))
+			.addoption(ECFOption().setname("NONE").setdescription("Without damping."))
 			.addoption(ECFOption().setname("DIRECT").setdescription("Direct."))
-			.addoption(ECFOption().setname("DUMPING_RATIO").setdescription("By ratio.")));
+			.addoption(ECFOption().setname("DAMPING_RATIO").setdescription("By ratio.")));
 
-	stiffness_dumping = 0;
-	REGISTER(stiffness_dumping, ECFMetaData()
-			.setdescription({ "Stiffnes Dumping" })
-			.setdatatype({ ECFDataType::FLOAT }));
+	REGISTER(direct_damping, ECFMetaData()
+			.setdescription({ "Direct damping stepping" }));
 
-	mass_dumping = 0;
-	REGISTER(mass_dumping, ECFMetaData()
-			.setdescription({ "Mass Dumping" })
-			.setdatatype({ ECFDataType::FLOAT }));
-
-	dumping_ratio = 0;
-	REGISTER(dumping_ratio, ECFMetaData()
-			.setdescription({ "Dumping Ratio" })
-			.setdatatype({ ECFDataType::FLOAT }));
-
-	frequency = 0;
-	REGISTER(frequency, ECFMetaData()
-			.setdescription({ "Dumping frequency" })
-			.setdatatype({ ECFDataType::FLOAT }));
+	REGISTER(ratio_damping, ECFMetaData()
+			.setdescription({ "Ratio damping stepping" }));
 
 	mass_matrix_type = MASS_MATRIX_TYPE::CONSISTENT;
 	REGISTER(method, ECFMetaData()

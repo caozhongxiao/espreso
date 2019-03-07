@@ -132,6 +132,15 @@ void FETIComposer::KplusAlfaM(double alfa)
 	}
 }
 
+void FETIComposer::alfaKplusBetaM(double alfa, double beta)
+{
+	#pragma omp parallel for
+	for (esint d = 0; d < info::mesh->elements->ndomains; d++) {
+		data->K[d].MatScale(alfa);
+		data->K[d].MatAddInPlace(data->M[d], 'N', alfa);
+	}
+}
+
 bool FETIComposer::isBEMDomain(esint domain)
 {
 	auto eregions = (info::mesh->elements->regions->begin() + info::mesh->elements->elementsDistribution[domain])->begin();

@@ -6,6 +6,8 @@
 #include "esinfo/timeinfo.h"
 #include "esinfo/eslog.hpp"
 
+#include "basis/evaluator/evaluator.h"
+
 #include "physics/assembler/dataholder.h"
 #include "physics/assembler/assembler.h"
 #include "physics/assembler/composer/composer.h"
@@ -26,7 +28,7 @@ TransientSecondOrderImplicit::TransientSecondOrderImplicit(TransientSecondOrderI
 : LoadStepSolver(assembler, timeStepSolver, duration),
   _configuration(configuration),
   _alpha(_configuration.alpha), _delta(_configuration.delta),
-  _massDumping(0), _stiffnessDumping(0),
+  _massDamping(0), _stiffnessDamping(0),
   _nTimeShift(_configuration.time_step)
 {
 	if (configuration.time_step < 1e-7) {
@@ -56,22 +58,10 @@ TransientSecondOrderImplicit::TransientSecondOrderImplicit(TransientSecondOrderI
 		dTM = info::mesh->nodes->appendData(dimension, {});
 	}
 
-	_alpha += _configuration.numerical_dumping;
-	_delta *= (1 + _configuration.numerical_dumping) * (1 + _configuration.numerical_dumping);
+	_alpha += _configuration.numerical_damping;
+	_delta *= (1 + _configuration.numerical_damping) * (1 + _configuration.numerical_damping);
 	updateConstants();
-
-	switch (_configuration.dumping) {
-		case TransientSecondOrderImplicitConfiguration::DUMPING::NONE:
-			break;
-		case TransientSecondOrderImplicitConfiguration::DUMPING::DIRECT:
-			_stiffnessDumping = _configuration.stiffness_dumping;
-			_massDumping = _configuration.mass_dumping;
-			break;
-		case TransientSecondOrderImplicitConfiguration::DUMPING::DUMPING_RATIO:
-			_stiffnessDumping = 2 * _configuration.dumping_ratio * 2 * M_PI * _configuration.frequency;
-			_massDumping = 2 * _configuration.dumping_ratio / (2 * M_PI * _configuration.frequency);
-			break;
-		}
+	updateDamping();
 }
 
 void TransientSecondOrderImplicit::updateConstants()
@@ -84,6 +74,25 @@ void TransientSecondOrderImplicit::updateConstants()
 	_newmarkConsts[5] = _nTimeShift / 2 * (_alpha / _delta - 2);
 	_newmarkConsts[6] = _nTimeShift * (1 - _alpha);
 	_newmarkConsts[7] = _nTimeShift * _alpha;
+}
+
+void TransientSecondOrderImplicit::updateDamping()
+{
+	switch (_configuration.damping) {
+	case TransientSecondOrderImplicitConfiguration::DAMPING::NONE:
+		break;
+	case TransientSecondOrderImplicitConfiguration::DAMPING::DIRECT:
+		_configuration.direct_damping.stiffness.evaluator->evalVector(1, 0, NULL, NULL, time::current, &_stiffnessDamping);
+		_configuration.direct_damping.mass.evaluator->evalVector(1, 0, NULL, NULL, time::current, &_massDamping);
+		break;
+	case TransientSecondOrderImplicitConfiguration::DAMPING::DAMPING_RATIO: {
+		double ratio, frequency;
+		_configuration.ratio_damping.ratio.evaluator->evalVector(1, 0, NULL, NULL, time::current, &ratio);
+		_configuration.ratio_damping.frequency.evaluator->evalVector(1, 0, NULL, NULL, time::current, &frequency);
+		_stiffnessDamping = 2 * ratio * 2 * M_PI * frequency;
+		_massDamping = 2 * ratio / (2 * M_PI * frequency);
+	} break;
+	}
 }
 
 bool TransientSecondOrderImplicit::hasSameType(const LoadStepConfiguration &configuration) const
@@ -99,27 +108,42 @@ std::string TransientSecondOrderImplicit::name()
 Matrices TransientSecondOrderImplicit::updateStructuralMatrices(Matrices matrices)
 {
 	_assembler.assemble(matrices);
-	if (matrices & (Matrices::K | Matrices::M)) {
-		// TODO: multiply also K
-		_assembler.composer()->KplusAlfaM(_newmarkConsts[0] + _newmarkConsts[1] * _configuration.mass_dumping);
-	}
 
-	if (matrices & (Matrices::K | Matrices::M | Matrices::f)) {
-		switch (_configuration.dumping) {
-		case TransientSecondOrderImplicitConfiguration::DUMPING::NONE:
+	switch (_configuration.damping) {
+	case TransientSecondOrderImplicitConfiguration::DAMPING::NONE:
+		if (matrices & (Matrices::K | Matrices::M)) {
+			_assembler.composer()->KplusAlfaM(_newmarkConsts[0] + _newmarkConsts[1] * _massDamping);
+		}
+		if (matrices & (Matrices::K | Matrices::M | Matrices::f)) {
 			_assembler.composer()->sum(X, _newmarkConsts[0], U, _newmarkConsts[2], V);
 			_assembler.composer()->sum(X, 1, X, _newmarkConsts[3], W);
 			_assembler.composer()->applyM(Y, X);
 			_assembler.composer()->enrichRHS(1, Y);
-			break;
-		case TransientSecondOrderImplicitConfiguration::DUMPING::DIRECT:
-		case TransientSecondOrderImplicitConfiguration::DUMPING::DUMPING_RATIO:
-			eslog::error("ESPRESO internal error: implement material dumping");
-			break;
 		}
-	}
-	_assembler.store("transient", matrices);
+		break;
+	case TransientSecondOrderImplicitConfiguration::DAMPING::DIRECT:
+	case TransientSecondOrderImplicitConfiguration::DAMPING::DAMPING_RATIO:
+		if (matrices & (Matrices::K | Matrices::M)) {
+			_assembler.composer()->alfaKplusBetaM(1 + _newmarkConsts[1] * _stiffnessDamping, _newmarkConsts[0] + _newmarkConsts[1] * _massDamping);
+		}
+		if (matrices & (Matrices::K | Matrices::M | Matrices::f)) {
+			_assembler.composer()->sum(X, _newmarkConsts[0], U, _newmarkConsts[2], V);
+			_assembler.composer()->sum(X, 1, X, _newmarkConsts[3], W);
+			_assembler.composer()->sum(X, 1, X, _massDamping * _newmarkConsts[1], U);
+			_assembler.composer()->sum(X, 1, X, _massDamping * _newmarkConsts[4], V);
+			_assembler.composer()->sum(X, 1, X, _massDamping * _newmarkConsts[5], W);
+			_assembler.composer()->applyM(Y, X);
+			_assembler.composer()->enrichRHS(1, Y);
 
+			_assembler.composer()->sum(X, _stiffnessDamping * _newmarkConsts[1], U, _stiffnessDamping * _newmarkConsts[4], V);
+			_assembler.composer()->sum(X, 1, X, _stiffnessDamping * _newmarkConsts[5], W);
+			_assembler.composer()->applyOriginalK(Y, X);
+			_assembler.composer()->enrichRHS(1, Y);
+		}
+		break;
+	}
+
+	_assembler.store("transient", matrices);
 	return matrices;
 }
 
@@ -145,9 +169,24 @@ void TransientSecondOrderImplicit::runNextTimeStep()
 
 void TransientSecondOrderImplicit::processTimeStep()
 {
+	switch (_configuration.damping) {
+	case TransientSecondOrderImplicitConfiguration::DAMPING::NONE:
+		break;
+	case TransientSecondOrderImplicitConfiguration::DAMPING::DIRECT:
+		if (_configuration.direct_damping.stiffness.evaluator->isTimeDependent() || _configuration.direct_damping.mass.evaluator->isTimeDependent()) {
+			updateDamping();
+		}
+		break;
+	case TransientSecondOrderImplicitConfiguration::DAMPING::DAMPING_RATIO:
+		if (_configuration.ratio_damping.ratio.evaluator->isTimeDependent() || _configuration.ratio_damping.frequency.evaluator->isTimeDependent()) {
+			updateDamping();
+		}
+		break;
+	}
+
 	_assembler.parameters.internalForceReduction = 1;
-	_assembler.parameters.timeIntegrationConstantK = 1; // TODO: multiply also K
-	_assembler.parameters.timeIntegrationConstantM = _newmarkConsts[0] + _newmarkConsts[1] * _configuration.mass_dumping;
+	_assembler.parameters.timeIntegrationConstantK = 1 + _newmarkConsts[1] * _stiffnessDamping;
+	_assembler.parameters.timeIntegrationConstantM = _newmarkConsts[0] + _newmarkConsts[1] * _massDamping;
 
 	_timeStepSolver.solve(*this);
 

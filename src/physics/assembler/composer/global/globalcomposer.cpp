@@ -124,6 +124,10 @@ void GlobalComposer::assemble(Matrices matrices, const SolverParameters &paramet
 							#pragma omp atomic
 							data->M[0].CSR_V_values[_KPermutation[KIndex]] += filler.Me(r % filler.Me.rows(), c % filler.Me.rows());
 						}
+						if ((matrices & Matrices::C) && filler.Ce.rows()) {
+							#pragma omp atomic
+							data->C[0].CSR_V_values[_KPermutation[KIndex]] += filler.Ce(r, c);
+						}
 					}
 				}
 			}; break;
@@ -147,6 +151,10 @@ void GlobalComposer::assemble(Matrices matrices, const SolverParameters &paramet
 						if ((matrices & Matrices::M) && filler.Me.rows() && r / filler.Me.rows() == c / filler.Me.rows()) {
 							#pragma omp atomic
 							data->M[0].CSR_V_values[_KPermutation[KIndex]] += filler.Me(r % filler.Me.rows(), c % filler.Me.rows());
+						}
+						if ((matrices & Matrices::C) && filler.Ce.rows()) {
+							#pragma omp atomic
+							data->C[0].CSR_V_values[_KPermutation[KIndex]] += filler.Ce(r, c);
 						}
 					}
 				}
@@ -290,6 +298,12 @@ void GlobalComposer::fillSolution()
 void GlobalComposer::KplusAlfaM(double alfa)
 {
 	data->K[0].MatAddInPlace(data->M[0], 'N', alfa);
+}
+
+void GlobalComposer::alfaKplusBetaM(double alfa, double beta)
+{
+	data->K[0].MatScale(alfa);
+	KplusAlfaM(beta);
 }
 
 void GlobalComposer::apply(std::vector<SparseMatrix> &matrices, std::vector<double> &result, std::vector<double> &x)

@@ -29,7 +29,7 @@ public:
 	struct InstanceFiller {
 		esint begin, end;
 
-		DenseMatrix Ke, Me, Re, fe;
+		DenseMatrix Ke, Me, Ce, Re, fe;
 
 		std::function<void(size_t)> insert;
 	};

@@ -21,6 +21,7 @@ public:
 	void fillSolution();
 
 	void KplusAlfaM(double alfa);
+	void alfaKplusBetaM(double alfa, double beta);
 	void enrichRHS(double alfa, NodeData* x);
 	void computeReactionForces();
 	double residualNormNumerator();

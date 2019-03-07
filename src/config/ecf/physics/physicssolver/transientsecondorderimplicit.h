@@ -2,9 +2,24 @@
 #ifndef SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_TRANSIENTSECONDORDERIMPLICIT_H_
 #define SRC_CONFIG_ECF_PHYSICS_PHYSICSSOLVER_TRANSIENTSECONDORDERIMPLICIT_H_
 
-#include <config/ecf/physics/physicssolver/transientfirstorderimplicit.h>
+#include "transientfirstorderimplicit.h"
+#include "config/holders/expression.h"
 
 namespace espreso {
+
+struct TransientSecondOrderImplicitDirectDampingConfiguration: public ECFDescription {
+
+	ECFExpression mass, stiffness;
+
+	TransientSecondOrderImplicitDirectDampingConfiguration();
+};
+
+struct TransientSecondOrderImplicitRatioDampingConfiguration: public ECFDescription {
+
+	ECFExpression ratio, frequency;
+
+	TransientSecondOrderImplicitRatioDampingConfiguration();
+};
 
 struct TransientSecondOrderImplicitConfiguration: public ECFDescription {
 
@@ -18,19 +33,20 @@ struct TransientSecondOrderImplicitConfiguration: public ECFDescription {
 		HRZDIAGONAL
 	};
 
-	enum class DUMPING {
+	enum class DAMPING {
 		NONE,
 		DIRECT,
-		DUMPING_RATIO
+		DAMPING_RATIO
 	};
 
 	METHOD method;
 	AutoTimeSteppingConfiguration auto_time_stepping;
-	double alpha, delta, numerical_dumping, time_step;
+	double alpha, delta, numerical_damping, time_step;
 
-	DUMPING dumping;
-	double mass_dumping, stiffness_dumping;
-	double dumping_ratio, frequency;
+	DAMPING damping;
+
+	TransientSecondOrderImplicitDirectDampingConfiguration direct_damping;
+	TransientSecondOrderImplicitRatioDampingConfiguration ratio_damping;
 
 	MASS_MATRIX_TYPE mass_matrix_type;
 
