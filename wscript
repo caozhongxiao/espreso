@@ -92,6 +92,15 @@ def set_mkl(ctx):
         msg="Checking for library MKL",
         errmsg="set 'mkl'.")
 
+def set_info(ctx):
+    ctx.env.append_unique("DEFINES_INFO", [ "__ESMODE__="+ctx.options.mode.upper() ])
+
+def set_async(ctx):
+    if ctx.options.without_async:
+        ctx.env.append_unique("DEFINES_ASYNC", [ "WITHOUT_ASYNC" ])
+    else:
+        ctx.env.append_unique("INCLUDES_ASYNC", [ "tools/ASYNC" ])
+
 def try_hypre(ctx):
     includes = []
     libpath = []
@@ -135,7 +144,6 @@ def set_variables(ctx):
     ctx.env.append_unique("CXXFLAGS", [ "-Wno-deprecated-declarations" ]) # MKL
     ctx.env.append_unique("CXXFLAGS", [ "-Wno-format-security" ]) # loggers
     ctx.env.append_unique("CXXFLAGS", ctx.options.cxxflags.split())
-    ctx.env.append_unique("DEFINES", [ "__ESMODE__="+ctx.options.mode.upper() ])
     if ctx.options.mode == "release":
         ctx.env.append_unique("CXXFLAGS", [ "-O3", "-g" ])
     if ctx.options.mode == "measurement":
@@ -153,6 +161,8 @@ def configure(ctx):
     set_openmp(ctx)
     set_mkl(ctx)
     set_metis(ctx)
+    set_async(ctx)
+    set_info(ctx)
     try_hypre(ctx)
     try_bem(ctx)
 
@@ -190,13 +200,14 @@ fetisources= (
 
 def build(ctx):
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).rstrip()
+    ctx.env.append_unique("DEFINES_INFO", [ '__ESCOMMIT__=\"{0}\"'.format(commit) ])
 
     ctx.shlib(source=ctx.path.ant_glob('src/basis/**/*.cpp'),target="basis")
-    ctx.shlib(source=ctx.path.ant_glob('src/esinfo/**/*.cpp'),target="esinfo",defines=[ '__ESCOMMIT__=\"{0}\"'.format(commit) ])
+    ctx.shlib(source=ctx.path.ant_glob('src/esinfo/**/*.cpp'),target="esinfo",use="INFO")
     ctx.shlib(source=ctx.path.ant_glob('src/config/**/*.cpp'),target="config")
     ctx.shlib(source=ctx.path.ant_glob('src/mesh/**/*.cpp'),target="mesh")
     ctx.shlib(source=ctx.path.ant_glob('src/input/**/*.cpp'),target="input")
-    ctx.shlib(source=ctx.path.ant_glob('src/output/**/*.cpp'),target="output",includes="tools/ASYNC")
+    ctx.shlib(source=ctx.path.ant_glob('src/output/**/*.cpp'),target="output",use="ASYNC")
     ctx.shlib(source=ctx.path.ant_glob('src/physics/**/*.cpp'),target="physics",defines=["SOLVER_MKL"])
     ctx.shlib(source=ctx.path.ant_glob('src/linearsolver/**/*.cpp'),target="linearsolver")
     ctx.shlib(source=ctx.path.ant_glob('src/wrappers/metis/**/*.cpp'),target="wmetis",use="METIS")
@@ -282,3 +293,8 @@ def options(opt):
         metavar="BEM4I_ROOT",
         default="",
         help="Path to BEM4I assembler.")
+
+    espreso.add_option("--without-async",
+        action="store_true",
+        default=False,
+        help="Build without asynchronous output.")

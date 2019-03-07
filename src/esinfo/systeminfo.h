@@ -22,18 +22,12 @@ namespace system {
 		DEBUG
 	};
 
-	constexpr OPERATIONSYSTEM os = OPERATIONSYSTEM::UNIX;
+	// dummy yet
+	OPERATIONSYSTEM os();
+	INSTRUCTIONSET instructionSet();
+	BUILD build();
 
-	constexpr INSTRUCTIONSET instructionSet = INSTRUCTIONSET::SSE;
-
-#ifdef __ESMODE__
-	constexpr BUILD build = BUILD::__ESMODE__;
-#else
-	constexpr BUILD build = BUILD::RELEASE;
-#endif
-
-
-	extern const char* commit;
+	const char* commit();
 
 	void setSignals();
 }

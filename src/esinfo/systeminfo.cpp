@@ -34,15 +34,37 @@ namespace espreso {
 namespace info {
 namespace system {
 
-#ifdef __ESCOMMIT__
-const char* commit = __ESCOMMIT__;
+OPERATIONSYSTEM os()
+{
+	return OPERATIONSYSTEM::UNIX;
+}
+
+INSTRUCTIONSET instructionSet()
+{
+	return INSTRUCTIONSET::SSE;
+}
+
+BUILD build()
+{
+#ifdef __ESMODE__
+	return BUILD::__ESMODE__;
 #else
-const char* commit = "commit";
+	return BUILD::RELEASE;
 #endif
+}
+
+const char* commit()
+{
+#ifdef __ESCOMMIT__
+	return __ESCOMMIT__;
+#else
+	return "undefined";
+#endif
+}
 
 void setSignals()
 {
-	switch (build) {
+	switch (build()) {
 	case BUILD::RELEASE:
 	case BUILD::MEASUREMENT:
 	case BUILD::DEVEL:

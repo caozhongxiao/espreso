@@ -4,12 +4,11 @@
 
 #include <string>
 
-namespace async { class Dispatcher; }
-
 namespace espreso {
 
 class Mesh;
 class ResultStoreExecutor;
+class Dispatcher;
 
 class ResultStoreBase {
 
@@ -60,7 +59,7 @@ protected:
 	ResultStoreExecutor *_direct;
 
 	static ResultStore *_asyncStore; // only one instance can be created
-	static async::Dispatcher *_dispatcher;
+	static Dispatcher *_dispatcher;
 };
 
 }

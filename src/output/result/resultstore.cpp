@@ -9,7 +9,6 @@
 
 #include "executor/asyncexecutor.h"
 #include "executor/directexecutor.h"
-#include "async/Dispatcher.h"
 
 #include "monitors/monitoring.h"
 #include "visualization/collected/ensight.h"
@@ -19,10 +18,26 @@
 
 #include <string>
 
+#ifdef WITHOUT_ASYNC
+struct espreso::Dispatcher {
+	void init() {}
+	void dispatch() {}
+	bool isExecutor() { return false; }
+	MPI_Comm commWorld() { return MPI_COMM_WORLD; }
+	void setThreadMode() {}
+};
+#else
+#include "async/Dispatcher.h"
+struct espreso::Dispatcher: public async::Dispatcher {
+void setThreadMode() { async::Config::setMode(async::THREAD); }
+};
+#endif /* WITHOUT_ASYNC */
+
+
 using namespace espreso;
 
 ResultStore* ResultStore::_asyncStore = NULL;
-async::Dispatcher* ResultStore::_dispatcher = NULL;
+Dispatcher* ResultStore::_dispatcher = NULL;
 
 ResultStoreBase::ResultStoreBase(const Mesh &mesh): _mesh(mesh), _directory("PREPOSTDATA/")
 {
@@ -51,9 +66,9 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh)
 	case OutputConfiguration::MODE::SYNC:
 		break;
 	case OutputConfiguration::MODE::THREAD:
-		_dispatcher = new async::Dispatcher();
+		_dispatcher = new Dispatcher();
 		_asyncStore->_async = new AsyncStore(mesh);
-		async::Config::setMode(async::THREAD);
+		_dispatcher->setThreadMode();
 		_asyncStore->storeThreads = 1;
 		executor = _asyncStore->_async;
 		break;

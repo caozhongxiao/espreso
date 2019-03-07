@@ -2,11 +2,22 @@
 #ifndef SRC_OUTPUT_RESULT_EXECUTOR_ASYNCEXECUTOR_H_
 #define SRC_OUTPUT_RESULT_EXECUTOR_ASYNCEXECUTOR_H_
 
+#include "directexecutor.h"
+
+#ifdef WITHOUT_ASYNC
+
+namespace espreso {
+struct AsyncStore: public DirectExecutor {
+	AsyncStore(const Mesh &mesh): DirectExecutor(mesh) {}
+};
+}
+
+#else
+
 #define USE_MPI
 #include "async/Module.h"
 
 #include "mesh/mesh.h"
-#include "directexecutor.h"
 
 namespace espreso {
 
@@ -90,6 +101,5 @@ protected:
 
 }
 
-
-
+#endif /* WITHOUT_ASYNC */
 #endif /* SRC_OUTPUT_RESULT_EXECUTOR_ASYNCEXECUTOR_H_ */

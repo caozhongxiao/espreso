@@ -247,7 +247,7 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 	};
 
 	logger.info(" ============================================================================================= \n");
-	logger.info(" == commit   %*s == \n", width, info::system::commit);
+	logger.info(" == commit   %*s == \n", width, info::system::commit());
 	logger.info(" == ecf      %*s == \n", width, info::ecf->ecffile.c_str());
 	logger.info(" == MPI      %*d == \n", width, info::mpi::size);
 	logger.info(" == OMP      %*d == \n", width, info::env::OMP_NUM_THREADS);

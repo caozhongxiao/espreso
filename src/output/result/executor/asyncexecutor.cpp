@@ -12,6 +12,8 @@
 
 using namespace espreso;
 
+#ifndef WITHOUT_ASYNC
+
 std::vector<int> AsyncBufferManager::_indices(Buffer::SIZE, -1);
 
 void AsyncStore::prepareBuffer(AsyncBufferManager::Buffer buffer, size_t size)
@@ -176,3 +178,5 @@ void AsyncExecutor::exec(const async::ExecInfo &info, const ExecParameters &para
 		updateSolution();
 	}
 }
+
+#endif /* WITHOUT ASYNC */
