@@ -21,10 +21,13 @@ struct StructuralMechanicsGlobalSettings {
 	std::map<std::string, ECFExpression> initial_temperature, thickness;
 };
 
-struct StructuralMechanicsStepSettings {
+struct StructuralMechanicsLoadStepConfiguration: public StructuralMechanicsLoadStepSolverConfiguration {
+
 	std::map<std::string, ECFExpression> temperature, normal_pressure;
 	std::map<std::string, ECFExpressionVector> angular_velocity, acceleration, normal_direction, obstacle;
 	std::map<std::string, ECFExpressionOptionalVector> displacement;
+
+	StructuralMechanicsLoadStepConfiguration(DIMENSION dimension);
 };
 
 struct StructuralMechanicsOutputSettings {
@@ -39,11 +42,6 @@ struct StructuralMechanicsOutputSettings {
 	}
 
 	StructuralMechanicsOutputSettings() { basic(); }
-};
-
-struct StructuralMechanicsLoadStepConfiguration: public LoadStepConfiguration, public StructuralMechanicsStepSettings {
-
-	StructuralMechanicsLoadStepConfiguration(DIMENSION dimension);
 };
 
 struct StructuralMechanicsConfiguration: public PhysicsConfiguration, public StructuralMechanicsGlobalSettings {

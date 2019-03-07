@@ -17,9 +17,9 @@ LinearTimeStep::LinearTimeStep(LinearTimeStep *previous, Assembler &assembler)
 
 }
 
-bool LinearTimeStep::hasSameMode(const LoadStepConfiguration &configuration) const
+bool LinearTimeStep::hasSameMode(const LoadStepSolverConfiguration &configuration) const
 {
-	return configuration.mode == LoadStepConfiguration::MODE::LINEAR;
+	return configuration.mode == LoadStepSolverConfiguration::MODE::LINEAR;
 }
 
 std::string LinearTimeStep::name()

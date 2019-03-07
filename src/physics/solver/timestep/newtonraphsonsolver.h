@@ -14,7 +14,7 @@ class NewtonRaphson: public TimeStepSolver {
 
 public:
 	NewtonRaphson(NewtonRaphson *previous, Assembler &assembler, NonLinearSolverConfiguration &configuration);
-	bool hasSameMode(const LoadStepConfiguration &configuration) const;
+	bool hasSameMode(const LoadStepSolverConfiguration &configuration) const;
 
 	void solve(LoadStepSolver &loadStepSolver);
 	std::string name();

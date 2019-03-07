@@ -16,11 +16,11 @@ SteadyStateSolver::SteadyStateSolver(SteadyStateSolver *previous, Assembler &ass
 
 }
 
-bool SteadyStateSolver::hasSameType(const LoadStepConfiguration &configuration) const
+bool SteadyStateSolver::hasSameType(const LoadStepSolverConfiguration &configuration) const
 {
 	return
-			configuration.type == LoadStepConfiguration::TYPE::STEADY_STATE &&
-			configuration.mode == LoadStepConfiguration::MODE::LINEAR;
+			configuration.type == LoadStepSolverConfiguration::TYPE::STEADY_STATE &&
+			configuration.mode == LoadStepSolverConfiguration::MODE::LINEAR;
 }
 
 std::string SteadyStateSolver::name()

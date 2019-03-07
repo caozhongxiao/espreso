@@ -37,7 +37,7 @@ espreso::AutoTimeSteppingConfiguration::AutoTimeSteppingConfiguration()
 			.setdatatype({ ECFDataType::INTEGER }));
 }
 
-espreso::TransientFirstOrderImplicitConfiguration::TransientFirstOrderImplicitConfiguration()
+espreso::TransientFirstOrderImplicitSolverConfiguration::TransientFirstOrderImplicitSolverConfiguration()
 {
 	method = METHOD::CRANK_NICOLSON;
 	REGISTER(method, ECFMetaData()

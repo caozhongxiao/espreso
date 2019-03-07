@@ -19,7 +19,7 @@ struct AutoTimeSteppingConfiguration: public ECFDescription {
 };
 
 
-struct TransientFirstOrderImplicitConfiguration: public ECFDescription {
+struct TransientFirstOrderImplicitSolverConfiguration: public ECFDescription {
 
 	enum class METHOD {
 		CRANK_NICOLSON,
@@ -33,7 +33,7 @@ struct TransientFirstOrderImplicitConfiguration: public ECFDescription {
 	AutoTimeSteppingConfiguration auto_time_stepping;
 	double alpha, time_step;
 
-	TransientFirstOrderImplicitConfiguration();
+	TransientFirstOrderImplicitSolverConfiguration();
 };
 
 }

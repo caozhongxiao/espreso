@@ -1,5 +1,5 @@
 
-#include "nonlinearsolver.h"
+#include "nonlinear.h"
 #include "config/configuration.hpp"
 
 espreso::NonLinearSolverConfiguration::NonLinearSolverConfiguration(const std::string &firstResidualName, const std::string &secondResidualName)

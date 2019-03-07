@@ -70,12 +70,14 @@ struct HeatTransferGlobalSettings {
 	std::map<std::string, ECFExpression> initial_temperature, thickness;
 };
 
-struct HeatTransferStepSettings {
+struct HeatTransferLoadStepConfiguration: public HeatTransferLoadStepSolverConfiguration {
 
 	std::map<std::string, ECFExpression> temperature, heat_source, heat_flux, heat_flow;
 	std::map<std::string, ECFExpressionVector> translation_motions;
 	std::map<std::string, ConvectionConfiguration> convection;
 	std::map<std::string, RadiationConfiguration> diffuse_radiation;
+
+	HeatTransferLoadStepConfiguration(DIMENSION dimension);
 };
 
 struct HeatTransferOutputSettings {
@@ -91,11 +93,6 @@ struct HeatTransferOutputSettings {
 	}
 
 	HeatTransferOutputSettings() { basic(); }
-};
-
-struct HeatTransferLoadStepConfiguration: public LoadStepConfiguration, public HeatTransferStepSettings {
-
-	HeatTransferLoadStepConfiguration(DIMENSION dimension);
 };
 
 struct HeatTransferConfiguration: public PhysicsConfiguration, public HeatTransferGlobalSettings {

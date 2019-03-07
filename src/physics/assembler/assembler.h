@@ -7,7 +7,7 @@
 
 namespace espreso {
 
-struct HeatTransferLoadStepConfiguration;
+//struct HeatTransferLoadStepConfiguration;
 struct FETISolverConfiguration;
 struct HypreConfiguration;
 struct MKLPDSSConfiguration;

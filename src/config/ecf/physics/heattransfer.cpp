@@ -81,10 +81,10 @@ espreso::ConvectionConfiguration::ConvectionConfiguration()
 			.setdescription({ "Length" })
 			.setdatatype({ ECFDataType::EXPRESSION }));
 	REGISTER(experimental_constant, ECFMetaData()
-            .setdescription({ "Experimental constant" })
+			.setdescription({ "Experimental constant" })
 			.setdatatype({ ECFDataType::EXPRESSION }));
 	REGISTER(volume_fraction, ECFMetaData()
-            .setdescription({ "Warer volume fraction" })
+			.setdescription({ "Warer volume fraction" })
 			.setdatatype({ ECFDataType::EXPRESSION }));
 	REGISTER(absolute_pressure, ECFMetaData()
 			.setdescription({ "Absolute pressure" })
@@ -104,7 +104,6 @@ espreso::RadiationConfiguration::RadiationConfiguration()
 }
 
 espreso::HeatTransferLoadStepConfiguration::HeatTransferLoadStepConfiguration(DIMENSION dimension)
-: LoadStepConfiguration("temperature", "heat")
 {
 	REGISTER(temperature, ECFMetaData()
 			.setdescription({ "The name of a region.", "Temperature" })

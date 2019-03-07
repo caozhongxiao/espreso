@@ -1,4 +1,5 @@
 
+#include <config/ecf/physics/physicssolver/nonlinear.h>
 #include "newtonraphsonsolver.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/timeinfo.h"
@@ -10,7 +11,6 @@
 #include "physics/assembler/controllers/controller.h"
 #include "physics/solver/loadstep/loadstepsolver.h"
 
-#include "config/ecf/physics/physicssolver/nonlinearsolver.h"
 #include "basis/containers/serializededata.h"
 
 #include "mesh/store/nodestore.h"
@@ -32,9 +32,9 @@ NewtonRaphson::NewtonRaphson(NewtonRaphson *previous, Assembler &assembler, NonL
 	}
 }
 
-bool NewtonRaphson::hasSameMode(const LoadStepConfiguration &configuration) const
+bool NewtonRaphson::hasSameMode(const LoadStepSolverConfiguration &configuration) const
 {
-	return configuration.mode == LoadStepConfiguration::MODE::NONLINEAR;
+	return configuration.mode == LoadStepSolverConfiguration::MODE::NONLINEAR;
 }
 
 std::string NewtonRaphson::name()

@@ -26,7 +26,7 @@ int main(int argc, char **argv)
 		});
 	};
 
-	auto loadStepProperties = [&] (LoadStepConfiguration &loadstep) {
+	auto loadStepProperties = [&] (LoadStepSolverConfiguration &loadstep) {
 		redParameters.parameters.push_back(loadstep.getParameter(&loadstep.nonlinear_solver));
 		redParameters.parameters.push_back(loadstep.getParameter(&loadstep.transient_solver));
 		redParameters.parameters.push_back(loadstep.getParameter(&loadstep.duration_time));
@@ -79,7 +79,7 @@ int main(int argc, char **argv)
 			if (step->second.translation_motions.size()) {
 				withDensity = withCP = true;
 			}
-			if (step->second.type == LoadStepConfiguration::TYPE::TRANSIENT) {
+			if (step->second.type == LoadStepSolverConfiguration::TYPE::TRANSIENT) {
 				withDensity = withCP = true;
 			}
 		}
@@ -92,7 +92,7 @@ int main(int argc, char **argv)
 		bool withDensity = false, withCP = false;
 		for (auto step = configuration.load_steps_settings.begin(); step != configuration.load_steps_settings.end(); ++step) {
 			loadStepProperties(step->second);
-			if (step->second.type == LoadStepConfiguration::TYPE::TRANSIENT) {
+			if (step->second.type == LoadStepSolverConfiguration::TYPE::TRANSIENT) {
 				withDensity = withCP = true;
 			}
 		}

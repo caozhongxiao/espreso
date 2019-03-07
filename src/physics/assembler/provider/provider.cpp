@@ -5,7 +5,7 @@
 
 using namespace espreso;
 
-Provider::Provider(DataHolder *data, LoadStepConfiguration &configuration)
+Provider::Provider(DataHolder *data, LoadStepSolverConfiguration &configuration)
 : _data(data), _configuration(configuration)
 {
 
@@ -13,12 +13,12 @@ Provider::Provider(DataHolder *data, LoadStepConfiguration &configuration)
 
 bool Provider::needMatrixVectorProduct()
 {
-	return _configuration.type == LoadStepConfiguration::TYPE::TRANSIENT;
+	return _configuration.type == LoadStepSolverConfiguration::TYPE::TRANSIENT;
 }
 
 bool Provider::needOriginalStiffnessMatrices()
 {
-	return _configuration.type == LoadStepConfiguration::TYPE::TRANSIENT;
+	return _configuration.type == LoadStepSolverConfiguration::TYPE::TRANSIENT;
 }
 
 bool Provider::needSolverStiffnessMatrices()
@@ -28,7 +28,7 @@ bool Provider::needSolverStiffnessMatrices()
 
 bool Provider::needReactionForces()
 {
-	return _configuration.mode == LoadStepConfiguration::MODE::NONLINEAR;
+	return _configuration.mode == LoadStepSolverConfiguration::MODE::NONLINEAR;
 }
 
 bool Provider::needSolverRHS()

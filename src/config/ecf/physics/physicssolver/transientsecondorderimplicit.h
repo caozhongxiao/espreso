@@ -21,7 +21,7 @@ struct TransientSecondOrderImplicitRatioDampingConfiguration: public ECFDescript
 	TransientSecondOrderImplicitRatioDampingConfiguration();
 };
 
-struct TransientSecondOrderImplicitConfiguration: public ECFDescription {
+struct TransientSecondOrderImplicitSolverConfiguration: public ECFDescription {
 
 	enum class METHOD {
 		NEWMARK
@@ -50,7 +50,7 @@ struct TransientSecondOrderImplicitConfiguration: public ECFDescription {
 
 	MASS_MATRIX_TYPE mass_matrix_type;
 
-	TransientSecondOrderImplicitConfiguration();
+	TransientSecondOrderImplicitSolverConfiguration();
 };
 
 }

@@ -24,7 +24,7 @@
 
 using namespace espreso;
 
-TransientSecondOrderImplicit::TransientSecondOrderImplicit(TransientSecondOrderImplicit *previous, Assembler &assembler, TimeStepSolver &timeStepSolver, TransientSecondOrderImplicitConfiguration &configuration, double duration)
+TransientSecondOrderImplicit::TransientSecondOrderImplicit(TransientSecondOrderImplicit *previous, Assembler &assembler, TimeStepSolver &timeStepSolver, TransientSecondOrderImplicitSolverConfiguration &configuration, double duration)
 : LoadStepSolver(assembler, timeStepSolver, duration),
   _configuration(configuration),
   _alpha(_configuration.alpha), _delta(_configuration.delta),
@@ -79,13 +79,13 @@ void TransientSecondOrderImplicit::updateConstants()
 void TransientSecondOrderImplicit::updateDamping()
 {
 	switch (_configuration.damping) {
-	case TransientSecondOrderImplicitConfiguration::DAMPING::NONE:
+	case TransientSecondOrderImplicitSolverConfiguration::DAMPING::NONE:
 		break;
-	case TransientSecondOrderImplicitConfiguration::DAMPING::DIRECT:
+	case TransientSecondOrderImplicitSolverConfiguration::DAMPING::DIRECT:
 		_configuration.direct_damping.stiffness.evaluator->evalVector(1, 0, NULL, NULL, time::current, &_stiffnessDamping);
 		_configuration.direct_damping.mass.evaluator->evalVector(1, 0, NULL, NULL, time::current, &_massDamping);
 		break;
-	case TransientSecondOrderImplicitConfiguration::DAMPING::DAMPING_RATIO: {
+	case TransientSecondOrderImplicitSolverConfiguration::DAMPING::DAMPING_RATIO: {
 		double ratio, frequency;
 		_configuration.ratio_damping.ratio.evaluator->evalVector(1, 0, NULL, NULL, time::current, &ratio);
 		_configuration.ratio_damping.frequency.evaluator->evalVector(1, 0, NULL, NULL, time::current, &frequency);
@@ -95,9 +95,9 @@ void TransientSecondOrderImplicit::updateDamping()
 	}
 }
 
-bool TransientSecondOrderImplicit::hasSameType(const LoadStepConfiguration &configuration) const
+bool TransientSecondOrderImplicit::hasSameType(const LoadStepSolverConfiguration &configuration) const
 {
-	return configuration.type == LoadStepConfiguration::TYPE::TRANSIENT;
+	return configuration.type == LoadStepSolverConfiguration::TYPE::TRANSIENT;
 }
 
 std::string TransientSecondOrderImplicit::name()
@@ -110,7 +110,7 @@ Matrices TransientSecondOrderImplicit::updateStructuralMatrices(Matrices matrice
 	_assembler.assemble(matrices);
 
 	switch (_configuration.damping) {
-	case TransientSecondOrderImplicitConfiguration::DAMPING::NONE:
+	case TransientSecondOrderImplicitSolverConfiguration::DAMPING::NONE:
 		if (matrices & (Matrices::K | Matrices::M)) {
 			_assembler.composer()->KplusAlfaM(_newmarkConsts[0] + _newmarkConsts[1] * _massDamping);
 		}
@@ -121,8 +121,8 @@ Matrices TransientSecondOrderImplicit::updateStructuralMatrices(Matrices matrice
 			_assembler.composer()->enrichRHS(1, Y);
 		}
 		break;
-	case TransientSecondOrderImplicitConfiguration::DAMPING::DIRECT:
-	case TransientSecondOrderImplicitConfiguration::DAMPING::DAMPING_RATIO:
+	case TransientSecondOrderImplicitSolverConfiguration::DAMPING::DIRECT:
+	case TransientSecondOrderImplicitSolverConfiguration::DAMPING::DAMPING_RATIO:
 		if (matrices & (Matrices::K | Matrices::M)) {
 			_assembler.composer()->alfaKplusBetaM(1 + _newmarkConsts[1] * _stiffnessDamping, _newmarkConsts[0] + _newmarkConsts[1] * _massDamping);
 		}
@@ -170,14 +170,14 @@ void TransientSecondOrderImplicit::runNextTimeStep()
 void TransientSecondOrderImplicit::processTimeStep()
 {
 	switch (_configuration.damping) {
-	case TransientSecondOrderImplicitConfiguration::DAMPING::NONE:
+	case TransientSecondOrderImplicitSolverConfiguration::DAMPING::NONE:
 		break;
-	case TransientSecondOrderImplicitConfiguration::DAMPING::DIRECT:
+	case TransientSecondOrderImplicitSolverConfiguration::DAMPING::DIRECT:
 		if (_configuration.direct_damping.stiffness.evaluator->isTimeDependent() || _configuration.direct_damping.mass.evaluator->isTimeDependent()) {
 			updateDamping();
 		}
 		break;
-	case TransientSecondOrderImplicitConfiguration::DAMPING::DAMPING_RATIO:
+	case TransientSecondOrderImplicitSolverConfiguration::DAMPING::DAMPING_RATIO:
 		if (_configuration.ratio_damping.ratio.evaluator->isTimeDependent() || _configuration.ratio_damping.frequency.evaluator->isTimeDependent()) {
 			updateDamping();
 		}

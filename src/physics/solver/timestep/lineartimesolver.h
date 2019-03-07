@@ -10,7 +10,7 @@ class LinearTimeStep: public TimeStepSolver {
 
 public:
 	LinearTimeStep(LinearTimeStep *previous, Assembler &assembler);
-	bool hasSameMode(const LoadStepConfiguration &configuration) const;
+	bool hasSameMode(const LoadStepSolverConfiguration &configuration) const;
 
 	void solve(LoadStepSolver &loadStepSolver);
 	std::string name();

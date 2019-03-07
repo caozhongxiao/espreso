@@ -7,14 +7,14 @@
 namespace espreso {
 
 class NodeData;
-class TransientSecondOrderImplicitConfiguration;
+class TransientSecondOrderImplicitSolverConfiguration;
 
 class TransientSecondOrderImplicit: public LoadStepSolver {
 
 public:
-	TransientSecondOrderImplicit(TransientSecondOrderImplicit *previous, Assembler &assembler, TimeStepSolver &timeStepSolver, TransientSecondOrderImplicitConfiguration &configuration, double duration);
+	TransientSecondOrderImplicit(TransientSecondOrderImplicit *previous, Assembler &assembler, TimeStepSolver &timeStepSolver, TransientSecondOrderImplicitSolverConfiguration &configuration, double duration);
 
-	bool hasSameType(const LoadStepConfiguration &configuration) const;
+	bool hasSameType(const LoadStepSolverConfiguration &configuration) const;
 	std::string name();
 
 	Matrices updateStructuralMatrices(Matrices matrices);
@@ -27,7 +27,7 @@ protected:
 	void updateConstants();
 	void updateDamping();
 
-	TransientSecondOrderImplicitConfiguration &_configuration;
+	TransientSecondOrderImplicitSolverConfiguration &_configuration;
 	double _alpha, _delta;
 	double _massDamping, _stiffnessDamping;
 	double _nTimeShift;

@@ -9,7 +9,7 @@ namespace espreso {
 class MKLPDSSProvider: public Provider {
 
 public:
-	MKLPDSSProvider(DataHolder *data, LoadStepConfiguration &configuration);
+	MKLPDSSProvider(DataHolder *data, LoadStepSolverConfiguration &configuration);
 
 	virtual bool needMatrixVectorProduct();
 	virtual bool needOriginalStiffnessMatrices();

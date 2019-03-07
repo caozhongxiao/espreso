@@ -32,7 +32,7 @@ TransientSecondOrderImplicitRatioDampingConfiguration::TransientSecondOrderImpli
 			.setdatatype({ ECFDataType::FLOAT }));
 }
 
-TransientSecondOrderImplicitConfiguration::TransientSecondOrderImplicitConfiguration()
+TransientSecondOrderImplicitSolverConfiguration::TransientSecondOrderImplicitSolverConfiguration()
 {
 	method = METHOD::NEWMARK;
 	REGISTER(method, ECFMetaData()

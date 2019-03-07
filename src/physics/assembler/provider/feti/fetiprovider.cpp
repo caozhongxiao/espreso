@@ -21,7 +21,7 @@
 
 using namespace espreso;
 
-FETIProvider::FETIProvider(DataHolder *data, LoadStepConfiguration &configuration)
+FETIProvider::FETIProvider(DataHolder *data, LoadStepSolverConfiguration &configuration)
 : Provider(data, configuration)
 {
 	_data->N1.clear();
@@ -38,7 +38,7 @@ FETIProvider::FETIProvider(DataHolder *data, LoadStepConfiguration &configuratio
 	_data->B0.resize(info::mesh->elements->ndomains);
 	_data->B0subdomainsMap.resize(info::mesh->elements->ndomains);
 
-	if (_configuration.type == LoadStepConfiguration::TYPE::TRANSIENT) {
+	if (_configuration.type == LoadStepSolverConfiguration::TYPE::TRANSIENT) {
 		_data->computeKernelCallback = [&] (FETI_REGULARIZATION regularization, int scSize, esint domain, bool ortogonalCluster) {};
 		_data->computeKernelsCallback = [&] (FETI_REGULARIZATION regularization, int scSize, bool ortogonalCluster) {};
 

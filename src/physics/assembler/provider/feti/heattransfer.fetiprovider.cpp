@@ -28,7 +28,7 @@ HeatTransferFETIProvider::HeatTransferFETIProvider(DataHolder *data, HeatTransfe
 MatrixType HeatTransferFETIProvider::getMatrixType() const
 {
 	if (	(_configuration.translation_motions.size()) ||
-			(_configuration.mode == LoadStepConfiguration::MODE::NONLINEAR && _configuration.nonlinear_solver.tangent_matrix_correction)) {
+			(_configuration.mode == LoadStepSolverConfiguration::MODE::NONLINEAR && _configuration.nonlinear_solver.tangent_matrix_correction)) {
 
 		return MatrixType::REAL_UNSYMMETRIC;
 	}
@@ -37,7 +37,7 @@ MatrixType HeatTransferFETIProvider::getMatrixType() const
 
 MatrixType HeatTransferFETIProvider::getMatrixType(esint domain) const
 {
-	if (_configuration.mode == LoadStepConfiguration::MODE::NONLINEAR && _configuration.nonlinear_solver.tangent_matrix_correction) {
+	if (_configuration.mode == LoadStepSolverConfiguration::MODE::NONLINEAR && _configuration.nonlinear_solver.tangent_matrix_correction) {
 		return MatrixType::REAL_UNSYMMETRIC;
 	}
 
@@ -63,7 +63,7 @@ void HeatTransferFETIProvider::analyticRegularization(esint domain, bool ortogon
 	if (
 			(_configuration.feti.conjugate_projector != FETI_CONJ_PROJECTOR::CONJ_R &&
 			_configuration.feti.conjugate_projector != FETI_CONJ_PROJECTOR::CONJ_K) ||
-			_configuration.type != LoadStepConfiguration::TYPE::TRANSIENT) {
+			_configuration.type != LoadStepSolverConfiguration::TYPE::TRANSIENT) {
 
 		if (_configuration.convection.size()) {
 			for (auto it = _configuration.convection.begin(); it != _configuration.convection.end(); ++it) {

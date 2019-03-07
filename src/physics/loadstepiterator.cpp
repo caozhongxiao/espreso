@@ -40,19 +40,19 @@ static Assembler* getAssembler(Assembler *previous, HeatTransferLoadStepConfigur
 {
 	Assembler *current = NULL;
 	switch (loadStep.solver) {
-	case LoadStepConfiguration::SOLVER::FETI:
+	case LoadStepSolverConfiguration::SOLVER::FETI:
 		switch (dimension) {
 		case DIMENSION::D2: current = new AssemblerInstance<HeatTransfer2DController, UniformNodesFETIComposer, HeatTransferFETIProvider, FETISolver>(previous, loadStep, loadStep.feti, 1); break;
 		case DIMENSION::D3: current = new AssemblerInstance<HeatTransfer3DController, UniformNodesFETIComposer, HeatTransferFETIProvider, FETISolver>(previous, loadStep, loadStep.feti, 1); break;
 		default: break;
 		} break;
-	case LoadStepConfiguration::SOLVER::HYPRE:
+	case LoadStepSolverConfiguration::SOLVER::HYPRE:
 		switch (dimension) {
 		case DIMENSION::D2: current = new AssemblerInstance<HeatTransfer2DController, UniformNodesComposer, HeatTransferHYPREProvider, HYPRESolver>(previous, loadStep, loadStep.hypre, 1); break;
 		case DIMENSION::D3: current = new AssemblerInstance<HeatTransfer3DController, UniformNodesComposer, HeatTransferHYPREProvider, HYPRESolver>(previous, loadStep, loadStep.hypre, 1); break;
 		default: break;
 		} break;
-	case LoadStepConfiguration::SOLVER::MKLPDSS:
+	case LoadStepSolverConfiguration::SOLVER::MKLPDSS:
 		switch (dimension) {
 		case DIMENSION::D2: current = new AssemblerInstance<HeatTransfer2DController, UniformNodesComposer, HeatTransferMKLPDSSProvider, MKLPDSSSolver>(previous, loadStep, loadStep.mklpdss, 1); break;
 		case DIMENSION::D3: current = new AssemblerInstance<HeatTransfer3DController, UniformNodesComposer, HeatTransferMKLPDSSProvider, MKLPDSSSolver>(previous, loadStep, loadStep.mklpdss, 1); break;
@@ -71,19 +71,19 @@ static Assembler* getAssembler(Assembler *previous, StructuralMechanicsLoadStepC
 {
 	Assembler *current = NULL;
 	switch (loadStep.solver) {
-	case LoadStepConfiguration::SOLVER::FETI:
+	case LoadStepSolverConfiguration::SOLVER::FETI:
 		switch (dimension) {
 		case DIMENSION::D2: current = new AssemblerInstance<StructuralMechanics2DController, UniformNodesFETIComposer, StructuralMechanics2DFETIProvider, FETISolver>(previous, loadStep, loadStep.feti, 2); break;
 		case DIMENSION::D3: current = new AssemblerInstance<StructuralMechanics3DController, UniformNodesFETIComposer, StructuralMechanics3DFETIProvider, FETISolver>(previous, loadStep, loadStep.feti, 3); break;
 		default: break;
 		} break;
-	case LoadStepConfiguration::SOLVER::HYPRE:
+	case LoadStepSolverConfiguration::SOLVER::HYPRE:
 		switch (dimension) {
 		case DIMENSION::D2: current = new AssemblerInstance<StructuralMechanics2DController, UniformNodesComposer, StructuralMechanicsHYPREProvider, HYPRESolver>(previous, loadStep, loadStep.hypre, 2); break;
 		case DIMENSION::D3: current = new AssemblerInstance<StructuralMechanics3DController, UniformNodesComposer, StructuralMechanicsHYPREProvider, HYPRESolver>(previous, loadStep, loadStep.hypre, 3); break;
 		default: break;
 		} break;
-	case LoadStepConfiguration::SOLVER::MKLPDSS:
+	case LoadStepSolverConfiguration::SOLVER::MKLPDSS:
 		switch (dimension) {
 		case DIMENSION::D2: current = new AssemblerInstance<StructuralMechanics2DController, UniformNodesComposer, StructuralMechanicsMKLPDSSProvider, MKLPDSSSolver>(previous, loadStep, loadStep.mklpdss, 2); break;
 		case DIMENSION::D3: current = new AssemblerInstance<StructuralMechanics3DController, UniformNodesComposer, StructuralMechanicsMKLPDSSProvider, MKLPDSSSolver>(previous, loadStep, loadStep.mklpdss, 3); break;
@@ -98,7 +98,7 @@ static Assembler* getAssembler(Assembler *previous, StructuralMechanicsLoadStepC
 	return current;
 }
 
-static TimeStepSolver* getTimeStepSolver(TimeStepSolver *previous, LoadStepConfiguration &loadStep, Assembler &assembler)
+static TimeStepSolver* getTimeStepSolver(TimeStepSolver *previous, HeatTransferLoadStepSolverConfiguration &loadStep, Assembler &assembler)
 {
 	TimeStepSolver* current = NULL;
 	if (previous != NULL && !previous->hasSameMode(loadStep)) {
@@ -106,8 +106,27 @@ static TimeStepSolver* getTimeStepSolver(TimeStepSolver *previous, LoadStepConfi
 		previous = NULL;
 	}
 	switch (loadStep.mode) {
-	case LoadStepConfiguration::MODE::LINEAR: current = new LinearTimeStep(dynamic_cast<LinearTimeStep*>(previous), assembler); break;
-	case LoadStepConfiguration::MODE::NONLINEAR: current = new NewtonRaphson(dynamic_cast<NewtonRaphson*>(previous), assembler, loadStep.nonlinear_solver); break;
+	case LoadStepSolverConfiguration::MODE::LINEAR: current = new LinearTimeStep(dynamic_cast<LinearTimeStep*>(previous), assembler); break;
+	case LoadStepSolverConfiguration::MODE::NONLINEAR: current = new NewtonRaphson(dynamic_cast<NewtonRaphson*>(previous), assembler, loadStep.nonlinear_solver); break;
+	default:
+		eslog::globalerror("Not implemented solver.\n");
+	}
+	if (previous) {
+		delete previous;
+	}
+	return current;
+}
+
+static TimeStepSolver* getTimeStepSolver(TimeStepSolver *previous, StructuralMechanicsLoadStepSolverConfiguration &loadStep, Assembler &assembler)
+{
+	TimeStepSolver* current = NULL;
+	if (previous != NULL && !previous->hasSameMode(loadStep)) {
+		delete previous;
+		previous = NULL;
+	}
+	switch (loadStep.mode) {
+	case LoadStepSolverConfiguration::MODE::LINEAR: current = new LinearTimeStep(dynamic_cast<LinearTimeStep*>(previous), assembler); break;
+	case LoadStepSolverConfiguration::MODE::NONLINEAR: current = new NewtonRaphson(dynamic_cast<NewtonRaphson*>(previous), assembler, loadStep.nonlinear_solver); break;
 	default:
 		eslog::globalerror("Not implemented solver.\n");
 	}
@@ -125,12 +144,12 @@ static LoadStepSolver* getLoadStepSolver(LoadStepSolver *previous, HeatTransferL
 		previous = NULL;
 	}
 	switch (loadStep.type) {
-	case LoadStepConfiguration::TYPE::STEADY_STATE:
+	case LoadStepSolverConfiguration::TYPE::STEADY_STATE:
 		switch (loadStep.mode){
-		case LoadStepConfiguration::MODE::LINEAR: current = new SteadyStateSolver(dynamic_cast<SteadyStateSolver*>(previous), assembler, timeStepSolver, loadStep.duration_time); break;
-		case LoadStepConfiguration::MODE::NONLINEAR: current = new PseudoTimeStepping(dynamic_cast<PseudoTimeStepping*>(previous), assembler, timeStepSolver, loadStep.nonlinear_solver, loadStep.duration_time); break;
+		case LoadStepSolverConfiguration::MODE::LINEAR: current = new SteadyStateSolver(dynamic_cast<SteadyStateSolver*>(previous), assembler, timeStepSolver, loadStep.duration_time); break;
+		case LoadStepSolverConfiguration::MODE::NONLINEAR: current = new PseudoTimeStepping(dynamic_cast<PseudoTimeStepping*>(previous), assembler, timeStepSolver, loadStep.nonlinear_solver, loadStep.duration_time); break;
 		} break;
-	case LoadStepConfiguration::TYPE::TRANSIENT: current = new TransientFirstOrderImplicit(dynamic_cast<TransientFirstOrderImplicit*>(previous), assembler, timeStepSolver, loadStep.transient_solver, loadStep.duration_time); break;
+	case LoadStepSolverConfiguration::TYPE::TRANSIENT: current = new TransientFirstOrderImplicit(dynamic_cast<TransientFirstOrderImplicit*>(previous), assembler, timeStepSolver, loadStep.transient_solver, loadStep.duration_time); break;
 	default:
 		eslog::globalerror("Not implemented solver.\n");
 	}
@@ -148,12 +167,12 @@ static LoadStepSolver* getLoadStepSolver(LoadStepSolver *previous, StructuralMec
 		previous = NULL;
 	}
 	switch (loadStep.type) {
-	case LoadStepConfiguration::TYPE::STEADY_STATE:
+	case LoadStepSolverConfiguration::TYPE::STEADY_STATE:
 		switch (loadStep.mode){
-		case LoadStepConfiguration::MODE::LINEAR: current = new SteadyStateSolver(dynamic_cast<SteadyStateSolver*>(previous), assembler, timeStepSolver, loadStep.duration_time); break;
-		case LoadStepConfiguration::MODE::NONLINEAR: current = new PseudoTimeStepping(dynamic_cast<PseudoTimeStepping*>(previous), assembler, timeStepSolver, loadStep.nonlinear_solver, loadStep.duration_time); break;
+		case LoadStepSolverConfiguration::MODE::LINEAR: current = new SteadyStateSolver(dynamic_cast<SteadyStateSolver*>(previous), assembler, timeStepSolver, loadStep.duration_time); break;
+		case LoadStepSolverConfiguration::MODE::NONLINEAR: current = new PseudoTimeStepping(dynamic_cast<PseudoTimeStepping*>(previous), assembler, timeStepSolver, loadStep.nonlinear_solver, loadStep.duration_time); break;
 		} break;
-	case LoadStepConfiguration::TYPE::TRANSIENT: current = new TransientSecondOrderImplicit(dynamic_cast<TransientSecondOrderImplicit*>(previous), assembler, timeStepSolver, loadStep.sm_transient_solver, loadStep.duration_time); break;
+	case LoadStepSolverConfiguration::TYPE::TRANSIENT: current = new TransientSecondOrderImplicit(dynamic_cast<TransientSecondOrderImplicit*>(previous), assembler, timeStepSolver, loadStep.transient_solver, loadStep.duration_time); break;
 	default:
 		eslog::globalerror("Not implemented solver.\n");
 	}

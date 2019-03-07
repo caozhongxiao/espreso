@@ -177,7 +177,7 @@ void StructuralMechanics3DKernel::assembleMaterialMatrix(esint node, double *coo
 	}
 }
 
-void StructuralMechanics3DKernel::processElement(Matrices matrices, const SolverParameters &parameters, const ElementIterator &iterator, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe) const
+void StructuralMechanics3DKernel::processElement(Matrices matrices, const SolverParameters &parameters, const ElementIterator &iterator, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Ce, DenseMatrix &Re, DenseMatrix &fe) const
 {
 	esint size = iterator.element->nodes;
 
@@ -185,7 +185,7 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Solver
 	const std::vector<DenseMatrix> &dN = *(iterator.element->dN);
 	const std::vector<double> &weighFactor = *(iterator.element->weighFactor);
 
-	DenseMatrix Ce(6, 6), coordinates(size, 3), J, invJ(3, 3), dND, B, precision, rhsT;
+	DenseMatrix C(6, 6), coordinates(size, 3), J, invJ(3, 3), dND, B, precision, rhsT;
 	DenseMatrix K(size, 36), TE(size, 3), inertia(size, 3), dens(size, 1);
 	DenseMatrix gpK(size, 36), gpTE(1, 3), gpInertia(1, 3), gpDens(1, 1);
 	double detJ, CP = 1, te;
@@ -258,37 +258,37 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Solver
 			Me.multiply(N[gp], N[gp], gpDens(0, 0) * detJ * weighFactor[gp] * CP, 1, true);
 		}
 
-		Ce.resize(6, 6);
+		C.resize(6, 6);
 		size_t k = 0;
 		for (size_t i = 0; i < 6; i++) {
-			Ce(i, i) = gpK(0, k++);
+			C(i, i) = gpK(0, k++);
 		}
 		for (size_t i = 0; i < 6; i++) {
 			for (size_t j = i + 1; j < 6; j++) {
-				Ce(i, j) = gpK(0, k++);
+				C(i, j) = gpK(0, k++);
 			}
 		}
 		for (size_t i = 0; i < 6; i++) {
 			for (size_t j = 0; j < i; j++) {
-				Ce(i, j) = gpK(0, k++);
+				C(i, j) = gpK(0, k++);
 			}
 		}
 
-		B.resize(Ce.rows(), 3 * size);
+		B.resize(C.rows(), 3 * size);
 		distribute6x3(B.values(), dND.values(), dND.rows(), dND.columns());
 
 		if (matrices & Matrices::K) {
-			Ke.multiply(B, Ce * B, detJ * weighFactor[gp], 1, true);
+			Ke.multiply(B, C * B, detJ * weighFactor[gp], 1, true);
 		}
 
 		if (matrices & Matrices::f) {
-			precision.resize(Ce.rows(), 1);
+			precision.resize(C.rows(), 1);
 			precision(0, 0) = gpTE(0, 0);
 			precision(1, 0) = gpTE(0, 1);
 			precision(2, 0) = gpTE(0, 2);
 			precision(3, 0) = precision(4, 0) = precision(5, 0) = 0;
 
-			rhsT.multiply(B, Ce * precision, detJ * weighFactor[gp], 0, true, false);
+			rhsT.multiply(B, C * precision, detJ * weighFactor[gp], 0, true, false);
 			for (esint i = 0; i < 3 * size; i++) {
 				fe(i, 0) += gpDens(0, 0) * detJ * weighFactor[gp] * N[gp](0, i % size) * gpInertia(0, i / size);
 				fe(i, 0) += rhsT(i, 0);

@@ -231,7 +231,7 @@ void Mesh::update()
 		}
 	};
 
-	auto forEachSteps = [&] (std::function<bool(const LoadStepConfiguration &)> fnc) {
+	auto forEachSteps = [&] (std::function<bool(const LoadStepSolverConfiguration &)> fnc) {
 		bool ret = false;
 		switch (info::ecf->physics) {
 		case PHYSICS::HEAT_TRANSFER_2D:
@@ -364,8 +364,8 @@ void Mesh::update()
 
 	eslog::checkpointln("MESH: REGIONS ARRANGED");
 
-	if (forEachSteps([] (const LoadStepConfiguration &step) {
-		return step.solver == LoadStepConfiguration::SOLVER::FETI;
+	if (forEachSteps([] (const LoadStepSolverConfiguration &step) {
+		return step.solver == LoadStepSolverConfiguration::SOLVER::FETI;
 	})) {
 
 		preprocessing->computeLocalIndices();
@@ -395,16 +395,16 @@ void Mesh::update()
 		eslog::checkpointln("MESH: BODIES SURFACE COMPUTED");
 	}
 
-	if (forEachSteps([] (const LoadStepConfiguration &step) {
-		return step.solver == LoadStepConfiguration::SOLVER::FETI && step.feti.method == FETI_METHOD::HYBRID_FETI && step.feti.B0_type == FETI_B0_TYPE::KERNELS;
+	if (forEachSteps([] (const LoadStepSolverConfiguration &step) {
+		return step.solver == LoadStepSolverConfiguration::SOLVER::FETI && step.feti.method == FETI_METHOD::HYBRID_FETI && step.feti.B0_type == FETI_B0_TYPE::KERNELS;
 	})) {
 
 		preprocessing->computeSharedFaceNodes();
 		eslog::checkpointln("MESH: SHARED FACES COMPUTED");
 	}
 
-	if (forEachSteps([] (const LoadStepConfiguration &step) {
-		return step.solver == LoadStepConfiguration::SOLVER::FETI && step.feti.method == FETI_METHOD::HYBRID_FETI && step.feti.B0_type == FETI_B0_TYPE::CORNERS;
+	if (forEachSteps([] (const LoadStepSolverConfiguration &step) {
+		return step.solver == LoadStepSolverConfiguration::SOLVER::FETI && step.feti.method == FETI_METHOD::HYBRID_FETI && step.feti.B0_type == FETI_B0_TYPE::CORNERS;
 	})) {
 
 		preprocessing->computeCornerNodes();
@@ -412,8 +412,8 @@ void Mesh::update()
 	}
 
 	if (info::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_2D || info::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {
-		if (forEachSteps([] (const LoadStepConfiguration &step) {
-			return step.solver == LoadStepConfiguration::SOLVER::FETI && step.feti.regularization == FETI_REGULARIZATION::ANALYTIC;
+		if (forEachSteps([] (const LoadStepSolverConfiguration &step) {
+			return step.solver == LoadStepSolverConfiguration::SOLVER::FETI && step.feti.regularization == FETI_REGULARIZATION::ANALYTIC;
 		})) {
 
 			preprocessing->computeFixPoints();

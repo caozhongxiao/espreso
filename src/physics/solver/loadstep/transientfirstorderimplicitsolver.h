@@ -7,14 +7,14 @@
 namespace espreso {
 
 class NodeData;
-class TransientFirstOrderImplicitConfiguration;
+class TransientFirstOrderImplicitSolverConfiguration;
 
 class TransientFirstOrderImplicit: public LoadStepSolver {
 
 public:
-	TransientFirstOrderImplicit(TransientFirstOrderImplicit *previous, Assembler &assembler, TimeStepSolver &timeStepSolver, TransientFirstOrderImplicitConfiguration &configuration, double duration);
+	TransientFirstOrderImplicit(TransientFirstOrderImplicit *previous, Assembler &assembler, TimeStepSolver &timeStepSolver, TransientFirstOrderImplicitSolverConfiguration &configuration, double duration);
 
-	bool hasSameType(const LoadStepConfiguration &configuration) const;
+	bool hasSameType(const LoadStepSolverConfiguration &configuration) const;
 	std::string name();
 
 	Matrices updateStructuralMatrices(Matrices matrices);
@@ -24,7 +24,7 @@ protected:
 	void runNextTimeStep();
 	void processTimeStep();
 
-	TransientFirstOrderImplicitConfiguration &_configuration;
+	TransientFirstOrderImplicitSolverConfiguration &_configuration;
 	double _alpha;
 	double _nTimeShift;
 

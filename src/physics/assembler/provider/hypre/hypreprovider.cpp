@@ -7,7 +7,7 @@
 
 using namespace espreso;
 
-HYPREProvider::HYPREProvider(DataHolder *data, LoadStepConfiguration &configuration)
+HYPREProvider::HYPREProvider(DataHolder *data, LoadStepSolverConfiguration &configuration)
 : Provider(data, configuration)
 {
 
@@ -20,7 +20,7 @@ MatrixType HYPREProvider::getMatrixType() const
 
 bool HYPREProvider::needMatrixVectorProduct()
 {
-	return Provider::needMatrixVectorProduct() || _configuration.mode == LoadStepConfiguration::MODE::NONLINEAR;
+	return Provider::needMatrixVectorProduct() || _configuration.mode == LoadStepSolverConfiguration::MODE::NONLINEAR;
 }
 
 bool HYPREProvider::needOriginalStiffnessMatrices()

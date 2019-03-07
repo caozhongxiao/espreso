@@ -3,7 +3,6 @@
 #include "config/configuration.hpp"
 
 espreso::StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfiguration(DIMENSION dimension)
-: LoadStepConfiguration("displacement", "forces")
 {
 	REGISTER(temperature, ECFMetaData()
 			.setdescription({ "The name of a region.", "Temperature of a given region." })

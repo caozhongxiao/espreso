@@ -172,7 +172,7 @@ void StructuralMechanics3DController::processElements(Matrices matrices, const S
 		iterator.element = info::mesh->elements->epointers->datatarray()[e];
 		iterator.material = info::mesh->materials[info::mesh->elements->material->datatarray()[e]];
 
-		_kernel->processElement(matrices, parameters, iterator, filler.Ke, filler.Me, filler.Re, filler.fe);
+		_kernel->processElement(matrices, parameters, iterator, filler.Ke, filler.Me, filler.Ce, filler.Re, filler.fe);
 		filler.insert(3 * enodes->size());
 
 		iterator.temperature        += enodes->size();

@@ -2,8 +2,7 @@
 #include "loadstep.h"
 #include "config/configuration.hpp"
 
-espreso::LoadStepConfiguration::LoadStepConfiguration(const std::string &firstResidualName, const std::string &secondResidualName)
-: nonlinear_solver(firstResidualName, secondResidualName)
+espreso::LoadStepSolverConfiguration::LoadStepSolverConfiguration()
 {
 	duration_time = 1;
 	REGISTER(duration_time, ECFMetaData()
@@ -32,15 +31,6 @@ espreso::LoadStepConfiguration::LoadStepConfiguration(const std::string &firstRe
 			.addoption(ECFOption().setname("HYPRE").setdescription("Use hypre library."))
 			.addoption(ECFOption().setname("MKLPDSS").setdescription("Use parallel direct sparse solver from MKL.")));
 
-	REGISTER(nonlinear_solver, ECFMetaData()
-			.setdescription({ "Non-linear physics solver settings" })
-			.allowonly([&] () { return mode == MODE::NONLINEAR; }));
-	REGISTER(transient_solver, ECFMetaData()
-			.setdescription({ "Transient physics solver settings" })
-			.allowonly([&] () { return type == TYPE::TRANSIENT; }));
-	REGISTER(sm_transient_solver, ECFMetaData()
-			.setdescription({ "Transient physics solver settings" })
-			.allowonly([&] () { return type == TYPE::TRANSIENT; }));
 
 	REGISTER(feti, ECFMetaData()
 			.setdescription({ "FETI solver settings" })
@@ -51,6 +41,30 @@ espreso::LoadStepConfiguration::LoadStepConfiguration(const std::string &firstRe
 	REGISTER(mklpdss, ECFMetaData()
 			.setdescription({ "MKL parallel direct sparse solver" })
 			.allowonly([&] () { return solver == SOLVER::MKLPDSS; }));
+}
+
+espreso::HeatTransferLoadStepSolverConfiguration::HeatTransferLoadStepSolverConfiguration()
+: nonlinear_solver("temperature", "heat")
+{
+	REGISTER(nonlinear_solver, ECFMetaData()
+			.setdescription({ "Non-linear physics solver settings" })
+			.allowonly([&] () { return mode == MODE::NONLINEAR; }));
+
+	REGISTER(transient_solver, ECFMetaData()
+			.setdescription({ "Transient physics solver settings" })
+			.allowonly([&] () { return type == TYPE::TRANSIENT; }));
+}
+
+espreso::StructuralMechanicsLoadStepSolverConfiguration::StructuralMechanicsLoadStepSolverConfiguration()
+: nonlinear_solver("displacement", "forces")
+{
+	REGISTER(nonlinear_solver, ECFMetaData()
+			.setdescription({ "Non-linear physics solver settings" })
+			.allowonly([&] () { return mode == MODE::NONLINEAR; }));
+
+	REGISTER(transient_solver, ECFMetaData()
+			.setdescription({ "Transient physics solver settings" })
+			.allowonly([&] () { return type == TYPE::TRANSIENT; }));
 }
 
 

@@ -21,7 +21,7 @@
 
 using namespace espreso;
 
-TransientFirstOrderImplicit::TransientFirstOrderImplicit(TransientFirstOrderImplicit *previous, Assembler &assembler, TimeStepSolver &timeStepSolver, TransientFirstOrderImplicitConfiguration &configuration, double duration)
+TransientFirstOrderImplicit::TransientFirstOrderImplicit(TransientFirstOrderImplicit *previous, Assembler &assembler, TimeStepSolver &timeStepSolver, TransientFirstOrderImplicitSolverConfiguration &configuration, double duration)
 : LoadStepSolver(assembler, timeStepSolver, duration), _configuration(configuration), _alpha(0), _nTimeShift(_configuration.time_step)
 {
 	if (configuration.time_step < 1e-7) {
@@ -47,9 +47,9 @@ TransientFirstOrderImplicit::TransientFirstOrderImplicit(TransientFirstOrderImpl
 	}
 }
 
-bool TransientFirstOrderImplicit::hasSameType(const LoadStepConfiguration &configuration) const
+bool TransientFirstOrderImplicit::hasSameType(const LoadStepSolverConfiguration &configuration) const
 {
-	return configuration.type == LoadStepConfiguration::TYPE::TRANSIENT;
+	return configuration.type == LoadStepSolverConfiguration::TYPE::TRANSIENT;
 }
 
 std::string TransientFirstOrderImplicit::name()
@@ -78,16 +78,16 @@ void TransientFirstOrderImplicit::initLoadStep()
 	LoadStepSolver::initLoadStep();
 
 	switch (_configuration.method) {
-	case TransientFirstOrderImplicitConfiguration::METHOD::CRANK_NICOLSON:
+	case TransientFirstOrderImplicitSolverConfiguration::METHOD::CRANK_NICOLSON:
 		_alpha = 0.5;
 		break;
-	case TransientFirstOrderImplicitConfiguration::METHOD::GALERKIN:
+	case TransientFirstOrderImplicitSolverConfiguration::METHOD::GALERKIN:
 		_alpha = 2 / 3;
 		break;
-	case TransientFirstOrderImplicitConfiguration::METHOD::BACKWARD_DIFF:
+	case TransientFirstOrderImplicitSolverConfiguration::METHOD::BACKWARD_DIFF:
 		_alpha = 1;
 		break;
-	case TransientFirstOrderImplicitConfiguration::METHOD::USER:
+	case TransientFirstOrderImplicitSolverConfiguration::METHOD::USER:
 		_alpha = _configuration.alpha;
 		if (_alpha <= 0 || _alpha > 1) {
 			eslog::globalerror("Alpha has to be from interval (0, 1>.\n");

@@ -6,12 +6,12 @@ namespace espreso {
 
 enum class MatrixType;
 struct DataHolder;
-struct LoadStepConfiguration;
+struct LoadStepSolverConfiguration;
 
 class Provider {
 
 public:
-	Provider(DataHolder *data, LoadStepConfiguration &configuration);
+	Provider(DataHolder *data, LoadStepSolverConfiguration &configuration);
 	virtual ~Provider() {}
 
 	virtual MatrixType getMatrixType() const =0;
@@ -25,7 +25,7 @@ public:
 
 protected:
 	DataHolder *_data;
-	LoadStepConfiguration &_configuration;
+	LoadStepSolverConfiguration &_configuration;
 };
 
 

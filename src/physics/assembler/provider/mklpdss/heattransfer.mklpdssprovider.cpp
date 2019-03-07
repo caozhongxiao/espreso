@@ -15,7 +15,7 @@ HeatTransferMKLPDSSProvider::HeatTransferMKLPDSSProvider(DataHolder *data, HeatT
 MatrixType HeatTransferMKLPDSSProvider::getMatrixType() const
 {
 	if (	(_configuration.translation_motions.size()) ||
-			(_configuration.mode == LoadStepConfiguration::MODE::NONLINEAR && _configuration.nonlinear_solver.tangent_matrix_correction)) {
+			(_configuration.mode == LoadStepSolverConfiguration::MODE::NONLINEAR && _configuration.nonlinear_solver.tangent_matrix_correction)) {
 
 		return MatrixType::REAL_UNSYMMETRIC;
 	}

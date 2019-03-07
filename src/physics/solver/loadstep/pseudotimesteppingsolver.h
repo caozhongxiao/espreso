@@ -13,7 +13,7 @@ class PseudoTimeStepping: public LoadStepSolver {
 public:
 	PseudoTimeStepping(PseudoTimeStepping *previous, Assembler &assembler, TimeStepSolver &timeStepSolver, NonLinearSolverConfiguration &configuration, double duration);
 
-	bool hasSameType(const LoadStepConfiguration &configuration) const;
+	bool hasSameType(const LoadStepSolverConfiguration &configuration) const;
 	std::string name();
 
 	Matrices updateStructuralMatrices(Matrices matrices);

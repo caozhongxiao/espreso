@@ -11,7 +11,7 @@ class SteadyStateSolver: public LoadStepSolver {
 public:
 	SteadyStateSolver(SteadyStateSolver *previous, Assembler &assembler, TimeStepSolver &timeStepSolver, double duration);
 
-	bool hasSameType(const LoadStepConfiguration &configuration) const;
+	bool hasSameType(const LoadStepSolverConfiguration &configuration) const;
 	std::string name();
 
 	Matrices updateStructuralMatrices(Matrices matrices);
