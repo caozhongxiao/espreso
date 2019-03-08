@@ -11,15 +11,13 @@ class ESPRESOTest:
 
     root = os.path.dirname(os.path.dirname(__file__))
     espreso = os.path.join(root, "build", "espreso")
-    mpirun = [ "mpirun", "--map-by", "socket:pe=2", "--bind-to", "core", "-n" ]
+    mpirun = [ "mpirun", "-n" ]
 
     env = dict(os.environ)
     env["MKL_NUM_THREADS"] = "1"
-    env["CILK_NWORKERS"] = "1"
     env["OMP_NUM_THREADS"] = "4"
     env["SOLVER_NUM_THREADS"] = "4"
     env["PAR_NUM_THREADS"] = "4"
-    env["OMP_PROC_BIND"] = "TRUE"
 
     path = ""
     ecf = "espreso.ecf"
