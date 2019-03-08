@@ -4,6 +4,11 @@
 
 espreso::StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfiguration(DIMENSION dimension)
 {
+	large_displacement = false;
+	REGISTER(large_displacement, ECFMetaData()
+			.setdescription({ "Turn on large displacement." })
+			.setdatatype({ ECFDataType::BOOL }));
+
 	REGISTER(temperature, ECFMetaData()
 			.setdescription({ "The name of a region.", "Temperature of a given region." })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
@@ -48,13 +53,13 @@ espreso::StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepCo
 }
 
 espreso::StructuralMechanicsConfiguration::StructuralMechanicsConfiguration(DIMENSION dimension)
-: PhysicsConfiguration(dimension, MaterialConfiguration::PHYSICAL_MODEL::LINEAR_ELASTIC)
+: PhysicsConfiguration(dimension, MaterialConfiguration::PHYSICAL_MODEL::STRUCTURAL_MECHANICS)
 {
 	REGISTER(materials, ECFMetaData()
 				.setdescription({ "The name of a material.", "Material description." })
 				.setdatatype({ ECFDataType::STRING })
 				.setpattern({ "MY_MATERIAL" }),
-				dimension, MaterialConfiguration::PHYSICAL_MODEL::LINEAR_ELASTIC);
+				dimension, MaterialConfiguration::PHYSICAL_MODEL::STRUCTURAL_MECHANICS);
 	ecfdescription->moveLastBefore(PNAME(material_set));
 
 	element_behaviour = ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS;

@@ -6,7 +6,8 @@
 using namespace espreso;
 
 MaterialBaseConfiguration::MaterialBaseConfiguration()
-: density(ECFMetaData::getmaterialvariables()), heat_capacity(ECFMetaData::getmaterialvariables()), _phase_change(NULL), _physical_model(NULL)
+: density(ECFMetaData::getmaterialvariables()), heat_capacity(ECFMetaData::getmaterialvariables()),
+  _phase_change(NULL), _physical_model(NULL), _material_model(NULL)
 {
 	REGISTER(coordinate_system, ECFMetaData()
 			.setdescription({ "Coordinate system" })
@@ -33,18 +34,29 @@ MaterialBaseConfiguration::MaterialBaseConfiguration()
 
 	REGISTER(linear_elastic_properties, ECFMetaData()
 			.setdescription({ "Linear elasticity" })
-			.allowonly([&] () { return (_phase_change == NULL || !*_phase_change) && (*_physical_model & PHYSICAL_MODEL::LINEAR_ELASTIC); }));
+			.allowonly([&] () { return
+					(_phase_change == NULL || !*_phase_change) &&
+					(*_physical_model & PHYSICAL_MODEL::STRUCTURAL_MECHANICS) &&
+					(*_material_model == MATERIAL_MODEL::LINEAR_ELASTIC); }));
+
+	REGISTER(hyper_elastic_properties, ECFMetaData()
+			.setdescription({ "Hyper elasticity" })
+			.allowonly([&] () { return
+					(_phase_change == NULL || !*_phase_change) &&
+					(*_physical_model & PHYSICAL_MODEL::STRUCTURAL_MECHANICS) &&
+					(*_material_model == MATERIAL_MODEL::HYPER_ELASTIC); }));
 }
 
-MaterialBaseConfiguration::MaterialBaseConfiguration(bool *phase_change, PHYSICAL_MODEL *physicalModel)
+MaterialBaseConfiguration::MaterialBaseConfiguration(bool *phase_change, PHYSICAL_MODEL *physicalModel, MATERIAL_MODEL *materialModel)
 : MaterialBaseConfiguration()
 {
 	_phase_change = phase_change;
 	_physical_model = physicalModel;
+	_material_model = materialModel;
 }
 
-MaterialBaseConfiguration::MaterialBaseConfiguration(bool *phase_change, PHYSICAL_MODEL *physicalModel, DIMENSION *dimension)
-: MaterialBaseConfiguration(phase_change, physicalModel)
+MaterialBaseConfiguration::MaterialBaseConfiguration(bool *phase_change, PHYSICAL_MODEL *physicalModel, MATERIAL_MODEL *materialModel, DIMENSION *dimension)
+: MaterialBaseConfiguration(phase_change, physicalModel, materialModel)
 {
 	coordinate_system.dimension = *dimension;
 	thermal_conductivity.dimension = *dimension;
@@ -61,9 +73,10 @@ MaterialBaseConfiguration::MaterialBaseConfiguration(bool *phase_change, PHYSICA
 }
 
 MaterialConfiguration::MaterialConfiguration()
-: MaterialBaseConfiguration(&phase_change, &physical_model),
+: MaterialBaseConfiguration(&phase_change, &physical_model, &material_model),
   dimension(DIMENSION::D3),
   physical_model(static_cast<PHYSICAL_MODEL>(~0)),
+  material_model(MATERIAL_MODEL::LINEAR_ELASTIC),
   phase_change(false),
   _allowed_physical_models(static_cast<PHYSICAL_MODEL>(~0))
 {
@@ -85,8 +98,16 @@ MaterialConfiguration::MaterialConfiguration()
 			.setdatatype({ ECFDataType::ENUM_FLAGS })
 			.addoption(ECFOption().setname("THERMAL").setdescription("Model used by HEAT TRANSFER.")
 					.allowonly([&] () { return _allowed_physical_models & PHYSICAL_MODEL::THERMAL; }))
-			.addoption(ECFOption().setname("LINEAR_ELASTIC").setdescription("One of models used by STRUCTURAL MECHANICS.")
-					.allowonly([&] () { return _allowed_physical_models & PHYSICAL_MODEL::LINEAR_ELASTIC; })));
+			.addoption(ECFOption().setname("STRUCTURAL_MECHANICS").setdescription("One of models used by STRUCTURAL MECHANICS.")
+					.allowonly([&] () { return _allowed_physical_models & PHYSICAL_MODEL::STRUCTURAL_MECHANICS; })));
+
+	REGISTER(material_model, ECFMetaData()
+			.setdescription({ "Material model" })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("LINEAR_ELASTIC").setdescription("Linear elastic model.")
+					.allowonly([&] () { return _allowed_physical_models & PHYSICAL_MODEL::STRUCTURAL_MECHANICS; }))
+			.addoption(ECFOption().setname("HYPRE_ELASTIC").setdescription("Hyper elastic model.")
+					.allowonly([&] () { return _allowed_physical_models & PHYSICAL_MODEL::STRUCTURAL_MECHANICS; })));
 
 	REGISTER(phase_change, ECFMetaData()
 			.setdescription({ "Phase change" })
@@ -126,7 +147,7 @@ MaterialConfiguration::MaterialConfiguration()
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER })
 			.setpattern({ "1" })
 			.allowonly([&] () { return phase_change; }),
-			static_cast<bool*>(NULL), &physical_model, &dimension);
+			static_cast<bool*>(NULL), &physical_model, &material_model, &dimension);
 
 	ecfdescription->getParameter(&phases)->getParameter("1");
 	ecfdescription->getParameter(&phases)->getParameter("2");
