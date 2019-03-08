@@ -23,11 +23,13 @@ StructuralMechanics3DController::StructuralMechanics3DController(StructuralMecha
 {
 	if (previous) {
 		takeKernelParam(_kcoordinate, previous->_kcoordinate);
+		takeKernelParam(_kdisplacement, previous->_kdisplacement);
 		takeKernelParam(_kinitialTemperature, previous->_kinitialTemperature);
 	} else {
 		_ndisplacement = info::mesh->nodes->appendData(3, { "DISPLACEMENT", "DISPLACEMENT_X", "DISPLACEMENT_Y", "DISPLACEMENT_Z" });
 
 		setCoordinates(_kcoordinate);
+		initKernelParam(_kdisplacement);
 		initKernelParam(_kinitialTemperature, info::ecf->structural_mechanics_3d.initial_temperature, 0);
 		initKernelParam(_kthickness, info::ecf->structural_mechanics_3d.thickness, 1);
 
@@ -130,6 +132,8 @@ void StructuralMechanics3DController::parametersChanged()
 	double *cbegin = _kcoordinate.data->datatarray().data();
 	double *tbegin = _ktemperature.data->datatarray().data();
 
+	nodesToKernels(_ndisplacement->data, _kdisplacement);
+
 	if (!_ktemperature.isConts) {
 		updateKernelParam(_ktemperature, _configuration.temperature, cbegin, NULL);
 	}
@@ -164,6 +168,7 @@ void StructuralMechanics3DController::processElements(Matrices matrices, const S
 	iterator.temperature        = _ktemperature.data->datatarray().begin() + noffset;
 	iterator.initialTemperature = _kinitialTemperature.data->datatarray().begin() + noffset;
 	iterator.coordinates        = _kcoordinate.data->datatarray().begin() + noffset * 3;
+	iterator.displacement       = _kdisplacement.data->datatarray().begin() + noffset * 3;
 	iterator.acceleration       = _kacceleration.data->datatarray().begin() + noffset * 3;
 	iterator.angularVelocity    = _kangularVelocity.data->datatarray().begin() + noffset * 3;
 
@@ -178,6 +183,7 @@ void StructuralMechanics3DController::processElements(Matrices matrices, const S
 		iterator.temperature        += enodes->size();
 		iterator.initialTemperature += enodes->size();
 		iterator.coordinates        += enodes->size() * 3;
+		iterator.displacement       += enodes->size() * 3;
 		iterator.acceleration       += enodes->size() * 3;
 		iterator.angularVelocity    += enodes->size() * 3;
 	}
@@ -220,8 +226,10 @@ void StructuralMechanics3DController::processSolution()
 		StructuralMechanics3DKernel::SolutionIterator iterator;
 
 		size_t noffset = enodes->begin() - info::mesh->elements->procNodes->datatarray().begin(t);
-		iterator.temperature = _ktemperature.data->datatarray().begin(t) + noffset;
-		iterator.coordinates = _kcoordinate.data->datatarray().begin(t) + noffset * 3;
+		iterator.temperature  = _ktemperature.data->datatarray().begin(t) + noffset;
+		iterator.coordinates  = _kcoordinate.data->datatarray().begin(t) + noffset * 3;
+		iterator.displacement = _kdisplacement.data->datatarray().begin(t) + noffset * 3;
+		iterator.largeDisplacement = _configuration.large_displacement;
 
 		for (size_t e = info::mesh->elements->distribution[t]; e < info::mesh->elements->distribution[t + 1]; ++e, ++enodes) {
 			iterator.element = info::mesh->elements->epointers->datatarray()[e];
@@ -229,8 +237,9 @@ void StructuralMechanics3DController::processSolution()
 
 			_kernel->processSolution(iterator);
 
-			iterator.temperature += enodes->size();
-			iterator.coordinates += enodes->size() * 3;
+			iterator.temperature  += enodes->size();
+			iterator.coordinates  += enodes->size() * 3;
+			iterator.displacement += enodes->size() * 3;
 		}
 	}
 }

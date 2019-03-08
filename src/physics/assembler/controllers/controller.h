@@ -70,6 +70,7 @@ protected:
 	void takeKernelParam(Parameter &parameter, Parameter &previous);
 
 
+	void initKernelParam(Parameter &parameter);
 	void initKernelParam(Parameter &parameter, const std::map<std::string, ECFExpressionVector> &values, double defaultValue);
 	void initKernelParam(Parameter &parameter, const std::map<std::string, ECFExpression> &values, double defaultValue);
 	void initKernelParam(Parameter &parameter, const std::map<std::string, ECFExpression> &values, double defaultValue,

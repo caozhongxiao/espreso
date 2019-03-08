@@ -78,6 +78,12 @@ void Controller::setDirichlet(std::vector<double> &solution)
 	}
 }
 
+void Controller::initKernelParam(Parameter &parameter)
+{
+	parameter.isConts = false;
+	parameter.data = new serializededata<esint, double>(parameter.dimension, info::mesh->elements->procNodes->datatarray().distribution());
+}
+
 void Controller::initKernelParam(Parameter &parameter, const std::map<std::string, ECFExpressionVector> &values, double defaultValue)
 {
 	if (values.size() == 0) { // surely constant
@@ -112,8 +118,7 @@ void Controller::initKernelParam(Parameter &parameter, const std::map<std::strin
 	parameter.data = new serializededata<esint, double>(parameter.dimension, info::mesh->elements->procNodes->datatarray().distribution());
 }
 
-void Controller::initKernelParam(Parameter &parameter, const std::map<std::string, ECFExpression> &values, double defaultValue,
-			BoundaryRegionStore *region)
+void Controller::initKernelParam(Parameter &parameter, const std::map<std::string, ECFExpression> &values, double defaultValue, BoundaryRegionStore *region)
 {
 	// TODO: improve (we need to find all ememberships)
 	if (values.size() == 0) { // surely constant
@@ -132,8 +137,7 @@ void Controller::initKernelParam(Parameter &parameter, const std::map<std::strin
 	parameter.data = new serializededata<esint, double>(parameter.dimension, region->procNodes->datatarray().distribution());
 }
 
-void Controller::initKernelParam(Parameter &parameter, const ECFExpression &value, double defaultValue,
-		BoundaryRegionStore *region)
+void Controller::initKernelParam(Parameter &parameter, const ECFExpression &value, double defaultValue, BoundaryRegionStore *region)
 {
 	if (value.evaluator->isConstant()) {
 		parameter.isConts = true;

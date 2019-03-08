@@ -19,6 +19,7 @@ struct StructuralMechanics3DKernel: public StructuralMechanicsKernel
 		Element *element;
 
 		double *coordinates;
+		double *displacement;
 		double *acceleration;
 		double *angularVelocity;
 		double *initialTemperature;
@@ -26,13 +27,17 @@ struct StructuralMechanics3DKernel: public StructuralMechanicsKernel
 
 		const MaterialConfiguration *material;
 
+		bool largeDisplacement;
+
 		ElementIterator()
 		: element(NULL),
 		  coordinates(NULL),
+		  displacement(NULL),
 		  acceleration(NULL),
 		  angularVelocity(NULL),
 		  initialTemperature(NULL), temperature(NULL),
-		  material(NULL) {}
+		  material(NULL),
+		  largeDisplacement(NULL) {}
 	};
 
 	struct SolutionIterator: public ElementIterator {
@@ -60,8 +65,7 @@ struct StructuralMechanics3DKernel: public StructuralMechanicsKernel
 	void processSolution(const SolutionIterator &iterator);
 
 protected:
-	void assembleMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, DenseMatrix &K) const;
-
+	void assembleLinearElasticMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, DenseMatrix &K) const;
 };
 
 }

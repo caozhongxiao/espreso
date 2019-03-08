@@ -225,9 +225,9 @@ void TransientSecondOrderImplicit::processTimeStep()
 			eslog::solver("TIME STEP UNCHANGED (%e)\n", _nTimeShift);
 		} else {
 			if (time::shift - _precision < _nTimeShift) {
-				eslog::solver("INCREASE TIME STEP (%e) %e\n", _nTimeShift, time::current);
+				eslog::solver("INCREASE TIME STEP (%e)\n", _nTimeShift);
 			} else {
-				eslog::solver("DECREASE TIME STEP (%e) %e\n", _nTimeShift, time::current);
+				eslog::solver("DECREASE TIME STEP (%e)\n", _nTimeShift);
 			}
 			changeConstants = true;
 		}

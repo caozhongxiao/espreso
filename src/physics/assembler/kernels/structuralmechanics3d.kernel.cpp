@@ -14,7 +14,7 @@ using namespace espreso;
 
 using namespace espreso;
 
-void StructuralMechanics3DKernel::assembleMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, DenseMatrix &K) const
+void StructuralMechanics3DKernel::assembleLinearElasticMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, DenseMatrix &K) const
 {
 	double Ex, Ey, Ez, miXY, miXZ, miYZ, Gx, Gy, Gz;
 	Point p(coordinates[0], coordinates[1], coordinates[2]);
@@ -185,7 +185,8 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Solver
 	const std::vector<DenseMatrix> &dN = *(iterator.element->dN);
 	const std::vector<double> &weighFactor = *(iterator.element->weighFactor);
 
-	DenseMatrix C(6, 6), coordinates(size, 3), J, invJ(3, 3), dND, B, precision, rhsT;
+	DenseMatrix C(6, 6), initCoordinates(size, 3), coordinates(size, 3), F(3, 3), Kc, J, JC, invJ(3, 3), dND, B, precision, rhsT;
+	DenseMatrix eHat(3, 3);
 	DenseMatrix K(size, 36), TE(size, 3), inertia(size, 3), dens(size, 1);
 	DenseMatrix gpK(size, 36), gpTE(1, 3), gpInertia(1, 3), gpDens(1, 1);
 	double detJ, CP = 1, te;
@@ -194,9 +195,12 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Solver
 		inertia(n, 0) = iterator.acceleration[3 * n + 0];
 		inertia(n, 1) = iterator.acceleration[3 * n + 1];
 		inertia(n, 2) = iterator.acceleration[3 * n + 2];
-		coordinates(n, 0) = iterator.coordinates[3 * n + 0];
-		coordinates(n, 1) = iterator.coordinates[3 * n + 1];
-		coordinates(n, 2) = iterator.coordinates[3 * n + 2];
+		initCoordinates(n, 0) = iterator.coordinates[3 * n + 0];
+		initCoordinates(n, 1) = iterator.coordinates[3 * n + 1];
+		initCoordinates(n, 2) = iterator.coordinates[3 * n + 2];
+		coordinates(n, 0) = initCoordinates(n, 0) + iterator.displacement[3 * n + 0];
+		coordinates(n, 1) = initCoordinates(n, 1) + iterator.displacement[3 * n + 1];
+		coordinates(n, 2) = initCoordinates(n, 2) + iterator.displacement[3 * n + 2];
 		iterator.material->density.evaluator->evalVector(1, 3, iterator.coordinates + 3 * n, iterator.temperature + n, time::current, &dens(n, 0));
 
 		switch (iterator.material->linear_elastic_properties.model) {
@@ -216,7 +220,9 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Solver
 		default:
 			eslog::error("Invalid LINEAR ELASTIC model..\n");
 		}
-		assembleMaterialMatrix(n, iterator.coordinates, iterator.material, time::current, iterator.temperature[n], K);
+		if (true) { // case LINEAR ELASTIC MODEL
+			assembleLinearElasticMaterialMatrix(n, iterator.coordinates, iterator.material, time::current, iterator.temperature[n], K);
+		}
 	}
 
 	Ke.resize(0, 0);
@@ -226,6 +232,8 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Solver
 	if (matrices & (Matrices::K | Matrices::R)) {
 		Ke.resize(3 * size, 3 * size);
 		Ke = 0;
+		Kc.resize(3 * size, 3 * size);
+		Kc = 0;
 	}
 	if (matrices & Matrices::M) {
 		Me.resize(size, size);
@@ -241,7 +249,8 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Solver
 	}
 
 	for (size_t gp = 0; gp < N.size(); gp++) {
-		J.multiply(dN[gp], coordinates);
+		J.multiply(dN[gp], initCoordinates);
+
 		detJ = determinant3x3(J.values());
 		inverse3x3(J.values(), invJ.values(), detJ);
 
@@ -258,7 +267,6 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Solver
 			Me.multiply(N[gp], N[gp], gpDens(0, 0) * detJ * weighFactor[gp] * CP, 1, true);
 		}
 
-		C.resize(6, 6);
 		size_t k = 0;
 		for (size_t i = 0; i < 6; i++) {
 			C(i, i) = gpK(0, k++);
@@ -271,6 +279,18 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Solver
 		for (size_t i = 0; i < 6; i++) {
 			for (size_t j = 0; j < i; j++) {
 				C(i, j) = gpK(0, k++);
+			}
+		}
+
+		if (iterator.largeDisplacement) {
+			JC.multiply(dN[gp], coordinates);
+			F.multiply(JC, invJ);
+
+			if (true) { // case LINEAR ELASTIC MODEL
+				eHat.multiply(F, F, .5, 1, true, false);
+				eHat(0, 0) -= .5;
+				eHat(1, 1) -= .5;
+				eHat(2, 2) -= .5;
 			}
 		}
 

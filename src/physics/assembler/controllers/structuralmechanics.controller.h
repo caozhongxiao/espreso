@@ -33,7 +33,7 @@ protected:
 		}
 	};
 
-	Parameter _kcoordinate, _ktemperature, _kinitialTemperature, _kacceleration, _kangularVelocity, _kthickness;
+	Parameter _kcoordinate, _kdisplacement, _ktemperature, _kinitialTemperature, _kacceleration, _kangularVelocity, _kthickness;
 	std::vector<BoundaryParameters> _boundaries;
 
 	NodeData *_ndisplacement;
