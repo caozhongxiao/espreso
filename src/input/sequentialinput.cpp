@@ -20,7 +20,7 @@ void SequentialInput::buildMesh(PlainMeshData &meshData, Mesh &mesh)
 SequentialInput::SequentialInput(PlainMeshData &meshData, Mesh &mesh)
 : Input(meshData, mesh)
 {
-	eslog::startln("MESIO: BUILD MESH SEQUENTIALLY");
+	eslog::startln("MESIO: BUILD MESH SEQUENTIALLY", "MESIO");
 
 	_nDistribution = { 0, (esint)_meshData.nIDs.size() };
 	sortNodes();

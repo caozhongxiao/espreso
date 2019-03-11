@@ -27,11 +27,11 @@ class Logger: public Loggers... {
 
 public:
 	template<class Logger>
-	void start(const char* n)
+	void start(const char* n, const char* section)
 	{
 		++Logger::level;
 		if (Logger::isAllowed()) {
-			Logger::start(n);
+			Logger::start(n, section);
 		}
 	}
 
@@ -110,7 +110,7 @@ public:
 		Logger::nextLoadStep(step);
 	}
 
-	__ES__FORALL(start, const char* n, n);
+	__ES__FORALL(start, __ES__PACK(const char* n, const char* section), __ES__PACK(n, section));
 	__ES__FORALL(checkpoint, const char* n, n);
 	__ES__FORALL(end, const char* n, n);
 	__ES__FORALL(ln, , );

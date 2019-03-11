@@ -18,7 +18,7 @@ class ProgressLogger: public Verbosity<ProgressLogger, 'v'> {
 #define __ESLOG__COLOR__CYAN    "\x1b[36m"
 
 public:
-	void start(const char* region)
+	void start(const char* region, const char* section)
 	{
 		if (!rank) {
 			printf("%*s%s", level, " ", region);

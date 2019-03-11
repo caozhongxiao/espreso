@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 
 	eslog::init(&argc, &argv);
 
-	eslog::start("ESPRESO: STARTED");
+	eslog::start("ESPRESO: STARTED", "ESPRESO");
 	eslog::param("MPI", info::mpi::size);
 	eslog::param("OMP/MPI", info::env::OMP_NUM_THREADS);
 	eslog::ln();

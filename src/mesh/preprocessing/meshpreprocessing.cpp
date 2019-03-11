@@ -53,7 +53,7 @@ void MeshPreprocessing::linkNodesAndElements(
 		std::vector<size_t> &edistribution,
 		bool sortedIDs)
 {
-	eslog::startln("MESH: LINK NODES AND ELEMENTS");
+	eslog::startln("MESH: LINK NODES AND ELEMENTS", "LINK NODES AND ELEMENTS");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -197,6 +197,7 @@ void MeshPreprocessing::linkNodesAndElements(
 	nelements = new serializededata<esint, esint>(linksBoundaries, linksData);
 
 	eslog::endln("MESH: NODES AND ELEMENTS LINKED");
+	eslog::checkpointln("MESH: NODES AND ELEMENTS LINKED");
 }
 
 void MeshPreprocessing::exchangeHalo()
@@ -210,7 +211,7 @@ void MeshPreprocessing::exchangeHalo()
 		fillRegionMask();
 	}
 
-	eslog::startln("MESH: EXCHANGE HALO");
+	eslog::startln("MESH: EXCHANGE HALO", "EXCHANGE HALO");
 
 	std::vector<esint> eDistribution = _mesh->elements->gatherElementsProcDistribution();
 
@@ -325,6 +326,7 @@ void MeshPreprocessing::exchangeHalo()
 	_mesh->halo->permute(permutation);
 
 	eslog::endln("MESH: HALO EXCHANGED");
+	eslog::checkpointln("MESH: HALO EXCHANGED");
 }
 
 void MeshPreprocessing::computeElementsNeighbors()
@@ -352,7 +354,7 @@ void MeshPreprocessing::computeElementsNeighbors(
 		this->linkNodesAndElements(nelements, enodes, eIDs, edistribution, sortedIDs);
 	}
 
-	eslog::startln("MESH: COMPUTE ELEMENTS NEIGHBOURS");
+	eslog::startln("MESH: COMPUTE ELEMENTS NEIGHBOURS", "ELEMENTS NEIGHBOURS");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -411,6 +413,7 @@ void MeshPreprocessing::computeElementsNeighbors(
 	eneighbors = new serializededata<esint, esint>(dualDistribution, dualData);
 
 	eslog::endln("MESH: ELEMENTS NEIGHBOURS COMPUTED");
+	eslog::checkpointln("MESH: ELEMENTS NEIGHBOURS COMPUTED");
 }
 
 void MeshPreprocessing::computeSurfaceElementNeighbors(SurfaceStore *surface)
@@ -431,7 +434,7 @@ void MeshPreprocessing::computeSurfaceElementNeighbors(SurfaceStore *surface)
 
 void MeshPreprocessing::computeElementsCenters()
 {
-	eslog::startln("MESH: COMPUTE ELEMENTS CENTERS");
+	eslog::startln("MESH: COMPUTE ELEMENTS CENTERS", "ELEMENTS CENTERS");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -455,6 +458,7 @@ void MeshPreprocessing::computeElementsCenters()
 		}
 	}
 	eslog::endln("MESH: ELEMENTS CENTERS COMPUTED");
+	eslog::checkpointln("MESH: ELEMENTS CENTERS COMPUTED");
 }
 
 void MeshPreprocessing::computeDecomposedDual(std::vector<esint> &dualDist, std::vector<esint> &dualData)
@@ -471,7 +475,7 @@ void MeshPreprocessing::computeDecomposedDual(std::vector<esint> &dualDist, std:
 		this->fillRegionMask();
 	}
 
-	eslog::startln("MESH: COMPUTE LOCAL DUAL GRAPH");
+	eslog::startln("MESH: COMPUTE LOCAL DUAL GRAPH", "LOCAL DUAL GRAPH");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 	esint eBegin = _mesh->elements->gatherElementsProcDistribution()[info::mpi::rank];
@@ -522,6 +526,7 @@ void MeshPreprocessing::computeDecomposedDual(std::vector<esint> &dualDist, std:
 	dualData.swap(dData[0]);
 
 	eslog::endln("MESH: LOCAL DUAL GRAPH COMPUTED");
+	eslog::checkpointln("MESH: LOCAL DUAL GRAPH COMPUTED");
 }
 
 void MeshPreprocessing::computeRegionsSurface()
@@ -533,7 +538,7 @@ void MeshPreprocessing::computeRegionsSurface()
 		this->exchangeHalo();
 	}
 
-	eslog::startln("MESH: COMPUTE REGION SURFACE");
+	eslog::startln("MESH: COMPUTE REGION SURFACE", "REGION SURFACE");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 	esint eBegin = _mesh->elements->gatherElementsProcDistribution()[info::mpi::rank];
@@ -624,6 +629,7 @@ void MeshPreprocessing::computeRegionsSurface()
 	}
 
 	eslog::endln("MESH: REGION SURFACE COMPUTED");
+	eslog::checkpointln("MESH: REGION SURFACE COMPUTED");
 }
 
 void MeshPreprocessing::triangularizeSurface(SurfaceStore *surface)
@@ -632,7 +638,7 @@ void MeshPreprocessing::triangularizeSurface(SurfaceStore *surface)
 		return;
 	}
 
-	eslog::startln("MESH: TRIANGULARIZE SURFACE");
+	eslog::startln("MESH: TRIANGULARIZE SURFACE", "TRIANGULARIZE SURFACE");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -672,11 +678,12 @@ void MeshPreprocessing::triangularizeSurface(SurfaceStore *surface)
 	}
 
 	eslog::endln("MESH: SURFACE TRIANGULARIZED");
+	eslog::checkpointln("MESH: SURFACE TRIANGULARIZED");
 }
 
 void MeshPreprocessing::triangularizeBoundary(BoundaryRegionStore *boundary)
 {
-	eslog::startln("MESH: TRIANGULARIZE BOUNDARY");
+	eslog::startln("MESH: TRIANGULARIZE BOUNDARY", "TRIANGULARIZE BOUNDARY");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -715,6 +722,7 @@ void MeshPreprocessing::triangularizeBoundary(BoundaryRegionStore *boundary)
 	}
 
 	eslog::endln("MESH: BOUNDARY TRIANGULARIZED");
+	eslog::checkpointln("MESH: BOUNDARY TRIANGULARIZED");
 }
 
 void MeshPreprocessing::computeBoundaryNodes(std::vector<esint> &externalBoundary, std::vector<esint> &internalBoundary)
@@ -723,7 +731,7 @@ void MeshPreprocessing::computeBoundaryNodes(std::vector<esint> &externalBoundar
 		this->computeElementsNeighbors();
 	}
 
-	eslog::startln("MESH: COMPUTE BOUNDARY NODES");
+	eslog::startln("MESH: COMPUTE BOUNDARY NODES", "COMPUTE BOUNDARY NODES");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -822,6 +830,7 @@ void MeshPreprocessing::computeBoundaryNodes(std::vector<esint> &externalBoundar
 	internalBoundary.resize(std::set_difference(internal[0].begin(), internal[0].end(), externalBoundary.begin(), externalBoundary.end(), internalBoundary.begin()) - internalBoundary.begin());
 
 	eslog::endln("MESH: BOUNDARY NODES COMPUTED");
+	eslog::checkpointln("MESH: BOUNDARY NODES COMPUTED");
 }
 
 void MeshPreprocessing::computeRegionArea(BoundaryRegionStore *store)

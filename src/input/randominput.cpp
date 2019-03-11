@@ -34,7 +34,7 @@ RandomInput::RandomInput(PlainMeshData &meshData, Mesh &mesh)
 		eslog::globalerror("ESPRESO internal error: use the sequential input for building mesh on 1 MPI process.\n");
 	}
 
-	eslog::startln("MESIO: BUILD SCATTERED MESH");
+	eslog::startln("MESIO: BUILD SCATTERED MESH", "MESIO");
 
 	balance();
 	eslog::checkpointln("MESIO: DATA BALANCED");

@@ -24,7 +24,7 @@ void GeneratedInput::buildMesh(PlainMeshData &meshData, Mesh &mesh, bool needSyn
 GeneratedInput::GeneratedInput(PlainMeshData &meshData, Mesh &mesh, bool needSynchronization)
 : Input(meshData, mesh)
 {
-	eslog::startln("MESIO: BUILD GENERATED MESH");
+	eslog::startln("MESIO: BUILD GENERATED MESH", "MESIO");
 
 	removeDanglingNodes();
 	eslog::checkpointln("MESIO: DANGLING NODES REMOVED");

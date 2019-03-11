@@ -16,13 +16,13 @@ void init(int *argc, char ***argv);
 // print the overall statistics and destroy the logger
 void finish();
 
-void start(const char* name);
+void start(const char* name, const char* section = "");
 void checkpoint(const char* name);
 void end(const char* name);
 void ln();
 void nextStep(int step);
 
-void startln(const char* name);
+void startln(const char* name, const char* section = "");
 void checkpointln(const char* name);
 void endln(const char* name);
 

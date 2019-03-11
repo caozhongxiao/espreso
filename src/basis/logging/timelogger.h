@@ -42,7 +42,7 @@ class TimeLogger: public Verbosity<TimeLogger, 't'> {
 public:
 	static double time();
 
-	void start(const char* region)
+	void start(const char* region, const char* section)
 	{
 		_events.push_back(Event{ region, Event::Data{ .time = time() }, Event::START });
 	}

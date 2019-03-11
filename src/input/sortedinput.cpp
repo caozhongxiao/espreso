@@ -31,26 +31,26 @@ void SortedInput::buildMesh(PlainMeshData &meshData, Mesh &mesh)
 SortedInput::SortedInput(PlainMeshData &meshData, Mesh &mesh)
 : Input(meshData, mesh)
 {
-	eslog::startln("MESIO: BUILD CLUSTTERED MESH");
+	eslog::startln("MESIO: BUILD CLUSTTERED MESH", "MESIO");
 
 	balance();
 	checkERegions();
-	eslog::startln("MESIO: BALANCE DATA");
+	eslog::checkpointln("MESIO: BALANCE DATA");
 
 	fillElements();
-	eslog::startln("MESIO: ELEMENTS FILLED");
+	eslog::checkpointln("MESIO: ELEMENTS FILLED");
 
 	fillCoordinates();
-	eslog::startln("MESIO: NODES FILLED");
+	eslog::checkpointln("MESIO: NODES FILLED");
 
 	addNodeRegions();
-	eslog::startln("MESIO: NODES REGIONS FILLED");
+	eslog::checkpointln("MESIO: NODES REGIONS FILLED");
 
 	addBoundaryRegions();
-	eslog::startln("MESIO: BOUNDARY REGIONS FILLED");
+	eslog::checkpointln("MESIO: BOUNDARY REGIONS FILLED");
 
 	addElementRegions();
-	eslog::startln("MESIO: ELEMENTS REGIONS FILLED");
+	eslog::endln("MESIO: ELEMENTS REGIONS FILLED");
 }
 
 void SortedInput::checkERegions()

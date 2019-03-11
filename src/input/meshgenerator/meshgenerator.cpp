@@ -15,7 +15,7 @@ double MeshGenerator::precision = 1e-4;
 
 void MeshGenerator::generate(const InputGeneratorConfiguration &configuration, Mesh &mesh)
 {
-	eslog::startln("MESIO: GENERATE MESH");
+	eslog::startln("MESIO: GENERATE MESH", "MESIO");
 	switch (configuration.shape) {
 	case INPUT_GENERATOR_SHAPE::GRID:
 		GridGenerator::generate(configuration.grid, mesh);

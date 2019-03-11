@@ -268,7 +268,7 @@ void Mesh::update()
 		}
 	};
 
-	eslog::startln("MESH: PREPROCESSING STARTED");
+	eslog::startln("MESH: PREPROCESSING STARTED", "MESH");
 	materials.clear();
 	std::map<std::string, int> matindex;
 	for (auto mat = info::ecf->getPhysics()->materials.begin(); mat != info::ecf->getPhysics()->materials.end(); ++mat) {

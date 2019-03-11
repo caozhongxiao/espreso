@@ -242,7 +242,7 @@ void MeshPreprocessing::morphRBF(const std::string &name, const RBFTargetConfigu
 	size_t threads = info::env::OMP_NUM_THREADS;
 	MATH::setNumberOfThreads(threads);
 
-	eslog::start("MESH: MORPH COORDINATES");
+	eslog::start("MESH: MORPH COORDINATES", "MORPHING");
 	eslog::param("morpher", name.c_str());
 	eslog::ln();
 

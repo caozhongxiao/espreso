@@ -7,6 +7,7 @@
 #include "basis/matrices/denseMatrix.h"
 #include "solver/generic/SparseMatrix.h"
 
+#include <iostream>
 #include <ostream>
 #include <vector>
 

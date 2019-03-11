@@ -28,7 +28,7 @@ using namespace espreso;
 
 void MeshPreprocessing::computeLocalIndices()
 {
-	eslog::startln("MESH: COMPUTE LOCAL INDICES");
+	eslog::startln("MESH: COMPUTE LOCAL INDICES", "LOCAL INDICES");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -49,6 +49,7 @@ void MeshPreprocessing::computeLocalIndices()
 	}
 
 	eslog::endln("MESH: LOCAL INDICES COMPUTED");
+	eslog::checkpointln("MESH: LOCAL INDICES COMPUTED");
 }
 
 void MeshPreprocessing::computeSharedFaceNodes()
@@ -57,7 +58,7 @@ void MeshPreprocessing::computeSharedFaceNodes()
 		linkNodesAndElements();
 	}
 
-	eslog::startln("MESH: COMPUTE SHARED FACE NODES");
+	eslog::startln("MESH: COMPUTE SHARED FACE NODES", "SHARED FACE NODES");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 	esint eoffset = _mesh->elements->IDs->datatarray().front();
@@ -160,11 +161,12 @@ void MeshPreprocessing::computeSharedFaceNodes()
 	_mesh->FETIData->inodesDomains = inodesDomains[0];
 
 	eslog::endln("MESH: SHARED FACE NODES COMPUTED");
+	eslog::checkpointln("MESH: SHARED FACE NODES COMPUTED");
 }
 
 void MeshPreprocessing::computeCornerNodes()
 {
-	eslog::startln("MESH: COMPUTE CORNER NODES");
+	eslog::startln("MESH: COMPUTE CORNER NODES", "CORNER NODES");
 
 	if (_mesh->FETIData == NULL) {
 		_mesh->FETIData = new FETIDataStore();
@@ -204,6 +206,7 @@ void MeshPreprocessing::computeCornerNodes()
 	_mesh->FETIData->cornerDomains = new serializededata<esint, esint>(domainDistribution, domainData);
 
 	eslog::endln("MESH: CORNER NODES COMPUTED");
+	eslog::checkpointln("MESH: CORNER NODES COMPUTED");
 }
 
 void MeshPreprocessing::addFixPoints(const serializededata<esint, esint>* elements, esint begin, esint end, const serializededata<esint, Element*>* epointers, std::vector<esint> &fixPoints)
@@ -355,7 +358,7 @@ void MeshPreprocessing::addFixPoints(const serializededata<esint, esint>* elemen
 
 void MeshPreprocessing::computeFixPoints()
 {
-	eslog::startln("MESH: COMPUTE FIX POINTS");
+	eslog::startln("MESH: COMPUTE FIX POINTS", "FIX POINTS");
 
 	if (_mesh->FETIData == NULL) {
 		_mesh->FETIData = new FETIDataStore();
@@ -385,6 +388,7 @@ void MeshPreprocessing::computeFixPoints()
 	}
 
 	eslog::endln("MESH: FIX POINTS COMPUTED");
+	eslog::checkpointln("MESH: FIX POINTS COMPUTED");
 }
 
 void MeshPreprocessing::computeFixPointsOnSurface()
@@ -393,7 +397,7 @@ void MeshPreprocessing::computeFixPointsOnSurface()
 		computeDomainsSurface();
 	}
 
-	eslog::startln("MESH: COMPUTE FIX POINTS ON SURFACE");
+	eslog::startln("MESH: COMPUTE FIX POINTS ON SURFACE", "SURFACE FIX POINTS");
 
 	if (_mesh->FETIData == NULL) {
 		_mesh->FETIData = new FETIDataStore();
@@ -423,6 +427,7 @@ void MeshPreprocessing::computeFixPointsOnSurface()
 	}
 
 	eslog::endln("MESH: FIX POINTS ON DOMAIN COMPUTED");
+	eslog::checkpointln("MESH: FIX POINTS ON DOMAIN COMPUTED");
 }
 
 void MeshPreprocessing::computeDomainsSurface()
@@ -431,7 +436,7 @@ void MeshPreprocessing::computeDomainsSurface()
 		this->computeElementsNeighbors();
 	}
 
-	eslog::startln("MESH: COMPUTE DOMAIN SURFACE");
+	eslog::startln("MESH: COMPUTE DOMAIN SURFACE", "DOMAIN SURFACE");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -611,6 +616,7 @@ void MeshPreprocessing::computeDomainsSurface()
 	_mesh->domainsSurface->cdistribution = cdistribution[0];
 
 	eslog::endln("MESH: DOMAIN SURFACE COMPUTED");
+	eslog::checkpointln("MESH: DOMAIN SURFACE COMPUTED");
 }
 
 void MeshPreprocessing::triangularizeDomainSurface()
@@ -619,7 +625,7 @@ void MeshPreprocessing::triangularizeDomainSurface()
 		computeDomainsSurface();
 	}
 
-	eslog::startln("MESH: TRIANGULARIZE DOMAIN SURFACE");
+	eslog::startln("MESH: TRIANGULARIZE DOMAIN SURFACE", "TRIANGULARICE DOMAIN SURFACE");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -652,5 +658,6 @@ void MeshPreprocessing::triangularizeDomainSurface()
 	}
 
 	eslog::endln("MESH: DOMAIN SURFACE TRIANGULARIZED");
+	eslog::checkpointln("MESH: DOMAIN SURFACE TRIANGULARIZED");
 }
 

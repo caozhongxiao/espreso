@@ -31,7 +31,7 @@ void LoadStepSolver::finalizeLoadStep()
 
 void LoadStepSolver::run()
 {
-	eslog::start("SOLVER STARTED");
+	eslog::start("SOLVER STARTED", "PHYSICS SOLVER");
 	eslog::param("STEP", time::step + 1);
 	eslog::param("TYPE", name().c_str());
 	eslog::param("MODE", _timeStepSolver.name().c_str());

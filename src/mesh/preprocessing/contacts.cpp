@@ -31,7 +31,7 @@ void MeshPreprocessing::computeBodiesSurface()
 		this->computeElementsNeighbors();
 	}
 
-	eslog::startln("MESH: COMPUTE SURFACE");
+	eslog::startln("MESH: COMPUTE BIDY SURFACE", "BODY SURFACE");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -97,12 +97,13 @@ void MeshPreprocessing::computeBodiesSurface()
 		_mesh->surface->elements = new serializededata<esint, esint>(facesDistribution, faces);
 	}
 
-	eslog::endln("MESH: SURFACE COMPUTED");
+	eslog::endln("MESH: BODY SURFACE COMPUTED");
+	eslog::checkpointln("MESH: BODY SURFACE COMPUTED");
 }
 
 void MeshPreprocessing::computeSurfaceLocations()
 {
-	eslog::startln("MESH: COMPUTE SURFACE LOCATIONS");
+	eslog::startln("MESH: COMPUTE SURFACE LOCATIONS", "SURFACE LOCATIONS");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -317,6 +318,7 @@ void MeshPreprocessing::computeSurfaceLocations()
 	_mesh->contacts->grid = new serializededata<esint, esint>(gdist, gdata);
 
 	eslog::endln("MESH: SURFACE LOCATIONS COMPUTED");
+	eslog::checkpointln("MESH: SURFACE LOCATIONS COMPUTED");
 }
 
 void MeshPreprocessing::computeContactNormals()
@@ -325,7 +327,7 @@ void MeshPreprocessing::computeContactNormals()
 		_mesh->preprocessing->computeSurfaceLocations();
 	}
 
-	eslog::startln("MESH: COMPUTE CONTACT NORMALS");
+	eslog::startln("MESH: COMPUTE CONTACT NORMALS", "NORMAL CONTANT");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -359,11 +361,12 @@ void MeshPreprocessing::computeContactNormals()
 	}
 
 	eslog::endln("MESH: CONTACT NORMALS COMPUTED");
+	eslog::checkpointln("MESH: CONTACT NORMALS COMPUTED");
 }
 
 void MeshPreprocessing::searchContactInterfaces()
 {
-	eslog::startln("MESH: SEARCH CONTACT INTERFACE");
+	eslog::startln("MESH: SEARCH CONTACT INTERFACE", "CONTACT INTERFACE");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 	double epsilon = 1e-6;
@@ -723,6 +726,7 @@ void MeshPreprocessing::searchContactInterfaces()
 	}
 
 	eslog::endln("MESH: CONTACT INTERFACE SEARCHED");
+	eslog::checkpointln("MESH: CONTACT INTERFACE SEARCHED");
 }
 
 

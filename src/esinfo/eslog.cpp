@@ -153,9 +153,9 @@ void finish()
 	if (logger) delete logger;
 }
 
-void start(const char* name)
+void start(const char* name, const char* section)
 {
-	logger->start(name);
+	logger->start(name, section);
 }
 
 void checkpoint(const char* name)
@@ -178,9 +178,9 @@ void nextStep(int step)
 	logger->nextLoadStep(step);
 }
 
-void startln(const char* name)
+void startln(const char* name, const char* section)
 {
-	start(name);
+	start(name, section);
 	ln();
 }
 

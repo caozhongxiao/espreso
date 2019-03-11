@@ -47,8 +47,8 @@ void MeshPreprocessing::reclusterize()
 //		computeElementsCenters();
 //	}
 
-	eslog::startln("MESH: RECLUSTERIZATION");
-	eslog::startln("MESH: COMPUTE DUAL GRAPH");
+	eslog::startln("MESH: RECLUSTERIZATION", "RECLUSTERIZATION");
+	eslog::startln("MESH: COMPUTE DUAL GRAPH", "DUAL GRAPH");
 
 	bool separateRegions = info::ecf->decomposition.separate_regions;
 	bool separateMaterials = info::ecf->decomposition.separate_materials;
@@ -125,15 +125,16 @@ void MeshPreprocessing::reclusterize()
 
 	MPISubset subset(info::ecf->decomposition.metis_options, *MPITools::procs);
 
-	eslog::startln("PARMETIS: KWAY");
+	eslog::startln("PARMETIS: KWAY", "PARMETIS: KWAY");
 	esint edgecut = ParMETIS::call(
 			ParMETIS::METHOD::ParMETIS_V3_PartKway, subset,
 			dDistribution, dData.front(), partition
 	);
 	eslog::endln("PARMETIS: KWAYED");
+	eslog::checkpointln("PARMETIS: KWAYED");
 
 	if (info::ecf->decomposition.metis_options.refinement) {
-		eslog::startln("PARMETIS: ADAPTIVE REPART");
+		eslog::startln("PARMETIS: ADAPTIVE REPART", "PARMETIS: REPARTITION");
 		esint prev = 2 * edgecut;
 		while (1.01 * edgecut < prev) {
 			prev = edgecut;
@@ -143,6 +144,7 @@ void MeshPreprocessing::reclusterize()
 			);
 		}
 		eslog::endln("PARMETIS: ADAPTIVE REPARTED");
+		eslog::checkpointln("PARMETIS: ADAPTIVE REPARTED");
 	}
 
 	this->exchangeElements(partition);
@@ -151,12 +153,12 @@ void MeshPreprocessing::reclusterize()
 
 void MeshPreprocessing::partitiate(esint parts, bool uniformDecomposition)
 {
-	eslog::startln("MESH: COMPUTE DOMAIN DECOMPOSITION");
+	eslog::startln("MESH: COMPUTE DOMAIN DECOMPOSITION", "DOMAIN DECOMPOSITION");
 
 	std::vector<esint> dualDist, dualData;
 	this->computeDecomposedDual(dualDist, dualData);
 
-	eslog::startln("MESH: CHECK CLUSTER CONTINUITY");
+	eslog::startln("MESH: CHECK CLUSTER CONTINUITY", "CLUSTER CONTINUITY CHECKING");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -188,8 +190,9 @@ void MeshPreprocessing::partitiate(esint parts, bool uniformDecomposition)
 	eslog::endln("MESH: CLUSTER NONCONTINUITY CHECKED");
 
 	if (nextID == 1) {
-		eslog::startln("MESH: PROCESS NONCONTINUITY");
+		eslog::startln("MESH: PROCESS NONCONTINUITY", "MAKE CONTINUOUS");
 		eslog::endln("MESH: NONCONTINUITY PROCESSED");
+		eslog::checkpointln("MESH: NONCONTINUITY PROCESSED");
 
 		if (uniformDecomposition) {
 			esint psize = _mesh->elements->size / parts;
@@ -197,7 +200,7 @@ void MeshPreprocessing::partitiate(esint parts, bool uniformDecomposition)
 				std::fill(partition.begin() + offset, partition.begin() + offset + psize, p);
 			}
 		} else {
-			eslog::startln("METIS: KWAY");
+			eslog::startln("METIS: KWAY", "METIS: KWAY");
 			METIS::call(
 					info::ecf->decomposition.metis_options,
 					_mesh->elements->size,
@@ -206,14 +209,15 @@ void MeshPreprocessing::partitiate(esint parts, bool uniformDecomposition)
 					parts, partition.data());
 			eslog::endln("METIS: KWAYED");
 
-			eslog::startln("MESH: REINDEX METIS");
+			eslog::startln("MESH: REINDEX METIS", "METIS REINDEX");
 			eslog::endln("MESH: METIS REINDEXED");
+			eslog::checkpointln("MESH: METIS");
 		}
 		clusters.resize(parts, 0);
 		_mesh->elements->nclusters = 1;
 
 	} else { // non-continuous dual graph
-		eslog::startln("MESH: PROCESS NONCONTINUITY");
+		eslog::startln("MESH: PROCESS NONCONTINUITY", "MAKE CONTINUOUS");
 
 		// thread x part x elements
 		std::vector<std::vector<std::vector<esint> > > tdecomposition(threads, std::vector<std::vector<esint> >(nextID));
@@ -288,7 +292,7 @@ void MeshPreprocessing::partitiate(esint parts, bool uniformDecomposition)
 
 		eslog::endln("MESH: NONCONTINUITY PROCESSED");
 
-		eslog::startln("METIS: KWAY");
+		eslog::startln("METIS: KWAY", "METIS: KWAY");
 		#pragma omp parallel for
 		for (int p = 0; p < nextID; p++) {
 			METIS::call(
@@ -300,7 +304,7 @@ void MeshPreprocessing::partitiate(esint parts, bool uniformDecomposition)
 		}
 		eslog::endln("METIS: KWAYED");
 
-		eslog::startln("MESH: REINDEX METIS");
+		eslog::startln("MESH: REINDEX METIS", "METIS REINDEX");
 
 		std::vector<esint> ppartition = partition;
 		nextID = 0;
@@ -312,9 +316,10 @@ void MeshPreprocessing::partitiate(esint parts, bool uniformDecomposition)
 		}
 
 		eslog::endln("MESH: METIS REINDEXED");
+		eslog::checkpointln("MESH: METIS");
 	}
 
-	eslog::startln("MESH: ARRANGE ELEMENTS TO DOMAINS");
+	eslog::startln("MESH: ARRANGE ELEMENTS TO DOMAINS", "ARRANGE ELEMENTS");
 
 	std::vector<esint> permutation(partition.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
@@ -408,6 +413,7 @@ void MeshPreprocessing::partitiate(esint parts, bool uniformDecomposition)
 	}
 
 	eslog::endln("MESH: ELEMENTS ARRANGED IN DOMAINS");
+	eslog::checkpointln("MESH: ELEMENTS ARRANGED IN DOMAINS");
 
 	arrangeElementsPermutation(permutation);
 	this->permuteElements(permutation, tdistribution);
@@ -415,6 +421,7 @@ void MeshPreprocessing::partitiate(esint parts, bool uniformDecomposition)
 	arrangeNodes();
 
 	eslog::endln("MESH: DOMAIN DECOMPOSITION COMPUTED");
+	eslog::checkpointln("MESH: DOMAIN DECOMPOSITION COMPUTED");
 }
 
 void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
@@ -428,7 +435,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 		this->computeElementsNeighbors();
 	}
 
-	eslog::startln("MESH: EXCHANGE ELEMENTS");
+	eslog::startln("MESH: EXCHANGE ELEMENTS", "EXCHANGE ELEMENTS");
 
 	// 0. Compute targets
 	// 1. Serialize element data
@@ -1383,6 +1390,7 @@ void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)
 	delete nodes;
 
 	eslog::endln("MESH: ELEMENTS EXCHANGED");
+	eslog::checkpointln("MESH: ELEMENTS EXCHANGED");
 }
 
 void MeshPreprocessing::permuteElements(const std::vector<esint> &permutation, const std::vector<size_t> &distribution)
@@ -1391,7 +1399,7 @@ void MeshPreprocessing::permuteElements(const std::vector<esint> &permutation, c
 		this->linkNodesAndElements();
 	}
 
-	eslog::startln("MESH: PERMUTE ELEMENTS");
+	eslog::startln("MESH: PERMUTE ELEMENTS", "PERMUTE ELEMENTS");
 
 	std::vector<esint> backpermutation(permutation.size());
 	std::iota(backpermutation.begin(), backpermutation.end(), 0);
@@ -1481,4 +1489,5 @@ void MeshPreprocessing::permuteElements(const std::vector<esint> &permutation, c
 	}
 
 	eslog::endln("MESH: ELEMENTS PERMUTED");
+	eslog::checkpointln("MESH: ELEMENTS PERMUTED");
 }

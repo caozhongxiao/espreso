@@ -40,7 +40,7 @@ void MeshPreprocessing::arrangeNodes()
 	std::vector<esint> externalBoundary, internalBoundary;
 	this->computeBoundaryNodes(externalBoundary, internalBoundary);
 
-	eslog::startln("MESH: ARRANGE NODES");
+	eslog::startln("MESH: ARRANGE NODES", "ARRANGE NODES");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -372,11 +372,12 @@ void MeshPreprocessing::arrangeNodes()
 	}
 
 	eslog::endln("MESH: NODES ARRANGED");
+	eslog::checkpointln("MESH: NODES ARRANGED");
 }
 
 void MeshPreprocessing::arrangeElements()
 {
-	eslog::startln("MESH: ARRANGE ELEMENTS");
+	eslog::startln("MESH: ARRANGE ELEMENTS", "ARRANGE ELEMENTS");
 
 	std::vector<esint> permutation(_mesh->elements->size);
 	std::iota(permutation.begin(), permutation.end(), 0);
@@ -384,11 +385,12 @@ void MeshPreprocessing::arrangeElements()
 	permuteElements(permutation, _mesh->elements->distribution);
 
 	eslog::endln("MESH: ELEMENTS ARRANGED");
+	eslog::checkpointln("MESH: ELEMENTS ARRANGED");
 }
 
 void MeshPreprocessing::arrangeElementsPermutation(std::vector<esint> &permutation)
 {
-	eslog::startln("MESH: ARRANGE ELEMENTS PERMUTATION");
+	eslog::startln("MESH: ARRANGE ELEMENTS PERMUTATION", "ARRANGE ELEMENTS PERMUTATION");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -458,6 +460,7 @@ void MeshPreprocessing::arrangeElementsPermutation(std::vector<esint> &permutati
 	}
 
 	eslog::endln("MESH: ELEMENTS PERMUTATION ARRANGED");
+	eslog::checkpointln("MESH: ELEMENTS PERMUTATION ARRANGED");
 }
 
 
@@ -471,7 +474,7 @@ void MeshPreprocessing::arrangeRegions()
 		fillRegionMask();
 	}
 
-	eslog::startln("MESH: ARRANGE REGIONS");
+	eslog::startln("MESH: ARRANGE REGIONS", "ARRANGE REGIONS");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -831,11 +834,12 @@ void MeshPreprocessing::arrangeRegions()
 	}
 
 	eslog::endln("MESH: REGIONS ARRANGED");
+	eslog::checkpointln("MESH: REGIONS ARRANGED");
 }
 
 void MeshPreprocessing::fillRegionMask()
 {
-	eslog::startln("MESH: FILL REGION MASK");
+	eslog::startln("MESH: FILL REGION MASK", "FILL REGIONS MASKS");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -865,11 +869,12 @@ void MeshPreprocessing::fillRegionMask()
 	_mesh->elements->regions = new serializededata<esint, esint>(regionsBitMaskSize, eregions);
 
 	eslog::endln("MESH: REGION MASK FILLED");
+	eslog::checkpointln("MESH: REGION MASK FILLED");
 }
 
 void MeshPreprocessing::synchronizeRegionNodes(const std::string &name, serializededata<esint, esint>* &rnodes, std::vector<ProcessInterval> &nintervals)
 {
-	eslog::start("MESH: SYNCHRONIZE REGION");
+	eslog::start("MESH: SYNCHRONIZE REGION", "REGION SYNCHRONIZATION");
 	eslog::param("REGION", name.c_str());
 	eslog::ln();
 
@@ -952,7 +957,7 @@ void MeshPreprocessing::computeBoundaryElementsFromNodes(BoundaryRegionStore *br
 		computeElementsNeighbors();
 	}
 
-	eslog::start("MESH: BOUNDARY FROM NODES");
+	eslog::start("MESH: BOUNDARY FROM NODES", "BOUNDARY FROM NODES");
 	eslog::param("BOUNDARY", bregion->name.c_str());
 	eslog::ln();
 

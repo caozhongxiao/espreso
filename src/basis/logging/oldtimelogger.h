@@ -12,7 +12,7 @@ namespace espreso {
 class OldTimeLogger: public Verbosity<OldTimeLogger, 'm'> {
 
 public:
-	void start(const char* region)
+	void start(const char* region, const char* section)
 	{
 
 	}
