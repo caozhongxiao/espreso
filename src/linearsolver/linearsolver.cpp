@@ -26,15 +26,15 @@ LinearSolver::~LinearSolver()
 
 void LinearSolver::solve(Matrices matrices)
 {
-	eslog::checkpoint("LINEAR SOLVER: DATA PREPARED\n");
+	eslog::checkpointln("LINEAR SOLVER: DATA PREPARED");
 
 	update(matrices);
 
-	eslog::checkpoint("LINEAR SOLVER: DATA PREPROCESSED\n");
+	eslog::checkpointln("LINEAR SOLVER: DATA PREPROCESSED");
 
 	solve();
 
-	eslog::checkpoint("LINEAR SOLVER: SOLVED\n");
+	eslog::checkpointln("LINEAR SOLVER: SOLVED");
 
 	double mmax = std::numeric_limits<double>::min(), gmax = std::numeric_limits<double>::min();
 	#pragma omp parallel for reduction(max:mmax)
