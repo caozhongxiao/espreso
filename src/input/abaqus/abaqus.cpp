@@ -35,7 +35,7 @@ void AbaqusLoader::load(const InputConfiguration &configuration, Mesh &mesh)
 AbaqusLoader::AbaqusLoader(const InputConfiguration &configuration, Mesh &mesh)
 : _configuration(configuration), _pfile(MAX_LINE_STEP * MAX_LINE_SIZE)
 {
-	eslog::start("MESIO: LOAD ABAQUS");
+	eslog::start("MESIO: LOAD ABAQUS", "MESIO");
 	eslog::param("database", _configuration.path.c_str());
 	eslog::ln();
 

@@ -31,7 +31,7 @@ void WorkbenchLoader::load(const InputConfiguration &configuration, Mesh &mesh)
 WorkbenchLoader::WorkbenchLoader(const InputConfiguration &configuration, Mesh &mesh)
 : _configuration(configuration), _pfile(MAX_LINE_STEP * MAX_LINE_SIZE)
 {
-	eslog::start("MESIO: LOAD ANSYS CDB");
+	eslog::start("MESIO: LOAD ANSYS CDB", "MESIO");
 	eslog::param("database", _configuration.path.c_str());
 	eslog::ln();
 

@@ -34,7 +34,7 @@ OpenFOAMLoader::OpenFOAMLoader(const InputConfiguration &configuration, Mesh &me
 	_points(80), _faces(80), _owner(80), _neighbour(80), _boundary(80),
 	_pointZones(80), _faceZones(80), _cellZones(80)
 {
-	eslog::start("MESIO: LOAD OpenFOAM");
+	eslog::start("MESIO: LOAD OpenFOAM", "MESIO");
 	eslog::param("database", _configuration.path.c_str());
 	eslog::ln();
 

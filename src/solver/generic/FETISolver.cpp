@@ -84,7 +84,7 @@ void FETISolver::init()
 void FETISolver::update(Matrices matrices)
 {
 	// TODO update appropriate solver objects and stop steeling matrices! :)
-	eslog::startln("FETI: PREPROCESSING STARTED");
+	eslog::startln("FETI: PREPROCESSING STARTED", "FETI SOLVER");
 
 	if (matrices & (Matrices::K | Matrices::N)) {
 		// factorization and preconditioners and HFETI preprocessing
@@ -146,7 +146,7 @@ void FETISolver::update(Matrices matrices)
 // run solver and store primal and dual solution
 void FETISolver::solve()
 {
-	eslog::startln("FETI: SOLVER STARTED");
+	eslog::startln("FETI: SOLVER STARTED", "FETI SOLVER");
 	if (
 			std::any_of(instance->K.begin(), instance->K.end(), [] (const SparseMatrix &K) { return K.mtype == MatrixType::REAL_UNSYMMETRIC; }) &&
 			configuration.iterative_solver != FETI_ITERATIVE_SOLVER::GMRES &&
