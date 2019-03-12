@@ -146,19 +146,17 @@ void StructuralMechanics2DKernel::processElement(Matrices matrices, const Solver
 		iterator.material->density.evaluator->evalVector(1, 2, iterator.coordinates + 2 * n, iterator.temperature + n, time::current, &dens(n, 0));
 
 		thickness(n, 0) = iterator.thickness[n];
-		switch (iterator.material->linear_elastic_properties.model) {
-		case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
-			iterator.material->linear_elastic_properties.thermal_expansion.get(0, 0).evaluator->evalVector(1, 2, iterator.coordinates, iterator.temperature, time::current, &te);
+		switch (iterator.material->thermal_expansion.model) {
+		case ThermalExpansionConfiguration::MODEL::ISOTROPIC:
+			iterator.material->thermal_expansion.thermal_expansion.get(0, 0).evaluator->evalVector(1, 2, iterator.coordinates, iterator.temperature, time::current, &te);
 			TE(n, 0) = TE(n, 1) = (iterator.temperature[n] - iterator.initialTemperature[n]) * te;
 			break;
-		case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC:
-			iterator.material->linear_elastic_properties.thermal_expansion.get(0, 0).evaluator->evalVector(1, 2, iterator.coordinates, iterator.temperature, time::current, &te);
+		case ThermalExpansionConfiguration::MODEL::ORTHOTROPIC:
+			iterator.material->thermal_expansion.thermal_expansion.get(0, 0).evaluator->evalVector(1, 2, iterator.coordinates, iterator.temperature, time::current, &te);
 			TE(n, 0) = (iterator.temperature[n] - iterator.initialTemperature[n]) * te;
-			iterator.material->linear_elastic_properties.thermal_expansion.get(1, 1).evaluator->evalVector(1, 2, iterator.coordinates, iterator.temperature, time::current, &te);
+			iterator.material->thermal_expansion.thermal_expansion.get(1, 1).evaluator->evalVector(1, 2, iterator.coordinates, iterator.temperature, time::current, &te);
 			TE(n, 1) = (iterator.temperature[n] - iterator.initialTemperature[n]) * te;
 			break;
-		default:
-			eslog::globalerror("Invalid LINEAR ELASTIC model.\n");
 		}
 		assembleMaterialMatrix(n, iterator.coordinates, iterator.material, time::current, iterator.temperature[n], K);
 	}

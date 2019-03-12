@@ -10,6 +10,8 @@
 #include "config/ecf/physics/heattransfer.h"
 #include "mesh/elements/element.h"
 
+#include "basis/utilities/print.h"
+
 using namespace espreso;
 
 using namespace espreso;
@@ -177,21 +179,26 @@ void StructuralMechanics3DKernel::assembleLinearElasticMaterialMatrix(esint node
 	}
 }
 
+void StructuralMechanics3DKernel::assembleHyperElasticMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, DenseMatrix &K) const
+{
+
+}
+
 void StructuralMechanics3DKernel::processElement(Matrices matrices, const SolverParameters &parameters, const ElementIterator &iterator, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Ce, DenseMatrix &Re, DenseMatrix &fe) const
 {
-	esint size = iterator.element->nodes;
+	int size = iterator.element->nodes;
 
 	const std::vector<DenseMatrix> &N = *(iterator.element->N);
 	const std::vector<DenseMatrix> &dN = *(iterator.element->dN);
 	const std::vector<double> &weighFactor = *(iterator.element->weighFactor);
 
-	DenseMatrix C(6, 6), initCoordinates(size, 3), coordinates(size, 3), F(3, 3), Kc, J, JC, invJ(3, 3), dND, B, precision, rhsT;
-	DenseMatrix eHat(3, 3);
+	DenseMatrix C(6, 6), initCoordinates(size, 3), coordinates(size, 3), F(3, 3), J, JC, invJ(3, 3), dND, B, precision, rhsT;
+	DenseMatrix eHat(3, 3), eVec(6, 1), sVec, S(9, 9), BL(6, 3 * size), GL(9, 3 * size);
 	DenseMatrix K(size, 36), TE(size, 3), inertia(size, 3), dens(size, 1);
 	DenseMatrix gpK(size, 36), gpTE(1, 3), gpInertia(1, 3), gpDens(1, 1);
 	double detJ, CP = 1, te;
 
-	for (esint n = 0; n < size; n++) {
+	for (int n = 0; n < size; n++) {
 		inertia(n, 0) = iterator.acceleration[3 * n + 0];
 		inertia(n, 1) = iterator.acceleration[3 * n + 1];
 		inertia(n, 2) = iterator.acceleration[3 * n + 2];
@@ -203,25 +210,28 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Solver
 		coordinates(n, 2) = initCoordinates(n, 2) + iterator.displacement[3 * n + 2];
 		iterator.material->density.evaluator->evalVector(1, 3, iterator.coordinates + 3 * n, iterator.temperature + n, time::current, &dens(n, 0));
 
-		switch (iterator.material->linear_elastic_properties.model) {
-		case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
-			iterator.material->linear_elastic_properties.thermal_expansion.get(0, 0).evaluator->evalVector(1, 3, iterator.coordinates, iterator.temperature, time::current, &te);
-			TE(n, 0) = TE(n, 1) = (iterator.temperature[n] - iterator.initialTemperature[n]) * te;
+		switch (iterator.material->thermal_expansion.model) {
+		case ThermalExpansionConfiguration::MODEL::ISOTROPIC:
+			iterator.material->thermal_expansion.thermal_expansion.get(0, 0).evaluator->evalVector(1, 3, iterator.coordinates, iterator.temperature, time::current, &te);
+			TE(n, 0) = TE(n, 1) = TE(n, 2) = (iterator.temperature[n] - iterator.initialTemperature[n]) * te;
 			break;
-		case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC:
-		case LinearElasticPropertiesConfiguration::MODEL::ANISOTROPIC:
-			iterator.material->linear_elastic_properties.thermal_expansion.get(0, 0).evaluator->evalVector(1, 3, iterator.coordinates, iterator.temperature, time::current, &te);
+		case ThermalExpansionConfiguration::MODEL::ORTHOTROPIC:
+			iterator.material->thermal_expansion.thermal_expansion.get(0, 0).evaluator->evalVector(1, 3, iterator.coordinates, iterator.temperature, time::current, &te);
 			TE(n, 0) = (iterator.temperature[n] - iterator.initialTemperature[n]) * te;
-			iterator.material->linear_elastic_properties.thermal_expansion.get(1, 1).evaluator->evalVector(1, 3, iterator.coordinates, iterator.temperature, time::current, &te);
+			iterator.material->thermal_expansion.thermal_expansion.get(1, 1).evaluator->evalVector(1, 3, iterator.coordinates, iterator.temperature, time::current, &te);
 			TE(n, 1) = (iterator.temperature[n] - iterator.initialTemperature[n]) * te;
-			iterator.material->linear_elastic_properties.thermal_expansion.get(2, 2).evaluator->evalVector(1, 3, iterator.coordinates, iterator.temperature, time::current, &te);
+			iterator.material->thermal_expansion.thermal_expansion.get(2, 2).evaluator->evalVector(1, 3, iterator.coordinates, iterator.temperature, time::current, &te);
 			TE(n, 2) = (iterator.temperature[n] - iterator.initialTemperature[n]) * te;
 			break;
-		default:
-			eslog::error("Invalid LINEAR ELASTIC model..\n");
 		}
-		if (true) { // case LINEAR ELASTIC MODEL
+
+		switch (iterator.material->material_model) {
+		case MaterialBaseConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC:
 			assembleLinearElasticMaterialMatrix(n, iterator.coordinates, iterator.material, time::current, iterator.temperature[n], K);
+			break;
+		case MaterialBaseConfiguration::MATERIAL_MODEL::HYPER_ELASTIC:
+			assembleHyperElasticMaterialMatrix(n, iterator.coordinates, iterator.material, time::current, iterator.temperature[n], K);
+			break;
 		}
 	}
 
@@ -231,9 +241,6 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Solver
 	fe.resize(0, 0);
 	if (matrices & (Matrices::K | Matrices::R)) {
 		Ke.resize(3 * size, 3 * size);
-		Ke = 0;
-		Kc.resize(3 * size, 3 * size);
-		Kc = 0;
 	}
 	if (matrices & Matrices::M) {
 		Me.resize(size, size);
@@ -282,37 +289,73 @@ void StructuralMechanics3DKernel::processElement(Matrices matrices, const Solver
 			}
 		}
 
-		if (iterator.largeDisplacement) {
+		if (iterator.largeDisplacement && (matrices & Matrices::R)) {
 			JC.multiply(dN[gp], coordinates);
-			F.multiply(JC, invJ);
+			F.multiply(JC, invJ, 1, 0, true);
 
 			if (true) { // case LINEAR ELASTIC MODEL
-				eHat.multiply(F, F, .5, 1, true, false);
+				eHat.multiply(F, F, .5, 0, true, false);
 				eHat(0, 0) -= .5;
 				eHat(1, 1) -= .5;
 				eHat(2, 2) -= .5;
+				eVec(0, 0) = eHat(0, 0);
+				eVec(1, 0) = eHat(1, 1);
+				eVec(2, 0) = eHat(2, 2);
+				eVec(3, 0) = 2 * eHat(0, 1);
+				eVec(4, 0) = 2 * eHat(1, 2);
+				eVec(5, 0) = 2 * eHat(0, 2);
+				sVec.multiply(C, eVec);
+				for (int i = 0; i < 3; i++) {
+					S(0 + i * 3, 0 + i * 3) = sVec(0, 0);
+					S(1 + i * 3, 1 + i * 3) = sVec(1, 0);
+					S(2 + i * 3, 2 + i * 3) = sVec(2, 0);
+					S(0 + i * 3, 1 + i * 3) = sVec(3, 0);
+					S(1 + i * 3, 0 + i * 3) = sVec(3, 0);
+					S(0 + i * 3, 2 + i * 3) = sVec(5, 0);
+					S(2 + i * 3, 0 + i * 3) = sVec(5, 0);
+					S(1 + i * 3, 2 + i * 3) = sVec(4, 0);
+					S(2 + i * 3, 1 + i * 3) = sVec(4, 0);
+				}
+				distribute9x3(GL.values(), dND.values(), dND.rows(), dND.columns());
+				for (int i = 0; i < size; i++) {
+					for (int j = 0; j < 3; j++) {
+						BL(0, i + j * size) = F(j, 0) * dND(0, i);
+						BL(1, i + j * size) = F(j, 1) * dND(1, i);
+						BL(2, i + j * size) = F(j, 2) * dND(2, i);
+						BL(3, i + j * size) = F(j, 0) * dND(1, i) + F(j, 1) * dND(0, i);
+						BL(4, i + j * size) = F(j, 1) * dND(2, i) + F(j, 2) * dND(1, i);
+						BL(5, i + j * size) = F(j, 0) * dND(2, i) + F(j, 2) * dND(0, i);
+					}
+				}
+			}
+			if (matrices & Matrices::K) {
+				Ke.multiply(BL, C * BL, detJ * weighFactor[gp], 1, true);
+				Ke.multiply(GL, S * GL, detJ * weighFactor[gp], 1, true);
+			}
+			Re.multiply(BL, sVec, detJ * weighFactor[gp], 1, true);
+		} else {
+			B.resize(C.rows(), 3 * size);
+			distribute6x3(B.values(), dND.values(), dND.rows(), dND.columns());
+			if (matrices & Matrices::K) {
+				Ke.multiply(B, C * B, detJ * weighFactor[gp], 1, true);
+			}
+
+			if (matrices & Matrices::f) {
+				precision.resize(C.rows(), 1);
+				precision(0, 0) = gpTE(0, 0);
+				precision(1, 0) = gpTE(0, 1);
+				precision(2, 0) = gpTE(0, 2);
+				precision(3, 0) = precision(4, 0) = precision(5, 0) = 0;
+
+				rhsT.multiply(B, C * precision, detJ * weighFactor[gp], 0, true, false);
+				for (esint i = 0; i < 3 * size; i++) {
+					fe(i, 0) += rhsT(i, 0);
+				}
 			}
 		}
 
-		B.resize(C.rows(), 3 * size);
-		distribute6x3(B.values(), dND.values(), dND.rows(), dND.columns());
-
-		if (matrices & Matrices::K) {
-			Ke.multiply(B, C * B, detJ * weighFactor[gp], 1, true);
-		}
-
-		if (matrices & Matrices::f) {
-			precision.resize(C.rows(), 1);
-			precision(0, 0) = gpTE(0, 0);
-			precision(1, 0) = gpTE(0, 1);
-			precision(2, 0) = gpTE(0, 2);
-			precision(3, 0) = precision(4, 0) = precision(5, 0) = 0;
-
-			rhsT.multiply(B, C * precision, detJ * weighFactor[gp], 0, true, false);
-			for (esint i = 0; i < 3 * size; i++) {
-				fe(i, 0) += gpDens(0, 0) * detJ * weighFactor[gp] * N[gp](0, i % size) * gpInertia(0, i / size);
-				fe(i, 0) += rhsT(i, 0);
-			}
+		for (esint i = 0; i < 3 * size; i++) {
+			fe(i, 0) += gpDens(0, 0) * detJ * weighFactor[gp] * N[gp](0, i % size) * gpInertia(0, i / size);
 		}
 	}
 }

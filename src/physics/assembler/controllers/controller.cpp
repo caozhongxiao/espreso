@@ -342,9 +342,9 @@ void Controller::nodesToKernels(std::vector<double> &nvalues, Parameter &kvalues
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		auto i = kvalues.data->datatarray().begin(t);
-		for (auto n = procNodes->datatarray().cbegin(t); n != procNodes->datatarray().cend(t); ++n, ++i) {
-			for (int d = 0; d < kvalues.dimension; d++) {
-				*i = nvalues[*n];
+		for (auto n = procNodes->datatarray().cbegin(t); n != procNodes->datatarray().cend(t); ++n) {
+			for (int d = 0; d < kvalues.dimension; ++d, ++i) {
+				*i = nvalues[kvalues.dimension * *n + d];
 			}
 		}
 	}

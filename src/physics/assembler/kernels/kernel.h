@@ -108,6 +108,37 @@ struct Kernel {
 		memcpy(target + 4 * rows * columns +     columns, dNDz, sizeof(double) * columns);
 		memcpy(target + 5 * rows * columns              , dNDz, sizeof(double) * columns);
 	}
+
+	// source dX, dY, dZ
+
+	// target::
+	// dX   0   0
+	// dY   0   0
+	// dZ   0   0
+	//  0  dX   0
+	//  0  dY   0
+	//  0  dZ   0
+	//  0   0  dX
+	//  0   0  dY
+	//  0   0  dZ
+	void distribute9x3(double *target, const double *source, size_t rows, size_t columns) const
+	{
+		const double *dNDx = source;
+		const double *dNDy = source + columns;
+		const double *dNDz = source + 2 * columns;
+
+		memcpy(target                                   , dNDx, sizeof(double) * columns);
+		memcpy(target + 3 * rows * columns + 1 * columns, dNDx, sizeof(double) * columns);
+		memcpy(target + 6 * rows * columns + 2 * columns, dNDx, sizeof(double) * columns);
+
+		memcpy(target + 1 * rows * columns              , dNDy, sizeof(double) * columns);
+		memcpy(target + 4 * rows * columns + 1 * columns, dNDy, sizeof(double) * columns);
+		memcpy(target + 7 * rows * columns + 2 * columns, dNDy, sizeof(double) * columns);
+
+		memcpy(target + 2 * rows * columns              , dNDz, sizeof(double) * columns);
+		memcpy(target + 5 * rows * columns + 1 * columns, dNDz, sizeof(double) * columns);
+		memcpy(target + 8 * rows * columns + 2 * columns, dNDz, sizeof(double) * columns);
+	}
 };
 
 }

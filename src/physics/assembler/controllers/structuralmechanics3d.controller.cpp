@@ -165,6 +165,7 @@ void StructuralMechanics3DController::processElements(Matrices matrices, const S
 	StructuralMechanics3DKernel::ElementIterator iterator;
 
 	size_t noffset = enodes->begin() - info::mesh->elements->procNodes->datatarray().begin();
+	iterator.largeDisplacement  = _configuration.large_displacement;
 	iterator.temperature        = _ktemperature.data->datatarray().begin() + noffset;
 	iterator.initialTemperature = _kinitialTemperature.data->datatarray().begin() + noffset;
 	iterator.coordinates        = _kcoordinate.data->datatarray().begin() + noffset * 3;
@@ -226,10 +227,10 @@ void StructuralMechanics3DController::processSolution()
 		StructuralMechanics3DKernel::SolutionIterator iterator;
 
 		size_t noffset = enodes->begin() - info::mesh->elements->procNodes->datatarray().begin(t);
+		iterator.largeDisplacement = _configuration.large_displacement;
 		iterator.temperature  = _ktemperature.data->datatarray().begin(t) + noffset;
 		iterator.coordinates  = _kcoordinate.data->datatarray().begin(t) + noffset * 3;
 		iterator.displacement = _kdisplacement.data->datatarray().begin(t) + noffset * 3;
-		iterator.largeDisplacement = _configuration.large_displacement;
 
 		for (size_t e = info::mesh->elements->distribution[t]; e < info::mesh->elements->distribution[t + 1]; ++e, ++enodes) {
 			iterator.element = info::mesh->elements->epointers->datatarray()[e];

@@ -66,6 +66,7 @@ struct StructuralMechanics3DKernel: public StructuralMechanicsKernel
 
 protected:
 	void assembleLinearElasticMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, DenseMatrix &K) const;
+	void assembleHyperElasticMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, DenseMatrix &K) const;
 };
 
 }
