@@ -147,16 +147,16 @@ void TransientFirstOrderImplicit::processTimeStep()
 				}
 			}
 
-			eslog::solver("AUTOMATIC TIME STEPPING INFO: RESPONSE EIGENVALUE(%e), OSCILLATION LIMIT(%e)\n", resFreq, oscilationLimit);
+			eslog::linearsolver("AUTOMATIC TIME STEPPING INFO: RESPONSE EIGENVALUE(%e), OSCILLATION LIMIT(%e)\n", resFreq, oscilationLimit);
 		}
 
 		if (std::fabs(time::shift - _nTimeShift) / time::shift < _precision) {
-			eslog::solver("TIME STEP UNCHANGED (%5.3f)\n", _nTimeShift);
+			eslog::linearsolver("TIME STEP UNCHANGED (%5.3f)\n", _nTimeShift);
 		} else {
 			if (time::shift < _nTimeShift) {
-				eslog::solver("INCREASE TIME STEP (%5.3f)\n", _nTimeShift);
+				eslog::linearsolver("INCREASE TIME STEP (%5.3f)\n", _nTimeShift);
 			} else {
-				eslog::solver("DECREASE TIME STEP (%5.3f)\n", _nTimeShift);
+				eslog::linearsolver("DECREASE TIME STEP (%5.3f)\n", _nTimeShift);
 			}
 		}
 	}

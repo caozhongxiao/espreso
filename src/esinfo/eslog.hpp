@@ -17,7 +17,7 @@ void info(const char* format, Args... args)
 }
 
 template <typename... Args>
-void solver(const char* format, Args... args)
+void linearsolver(const char* format, Args... args)
 {
 	progress().info(format, args...);
 }

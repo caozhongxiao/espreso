@@ -218,16 +218,16 @@ void TransientSecondOrderImplicit::processTimeStep()
 				}
 			}
 
-			eslog::solver("AUTOMATIC TIME STEPPING INFO: RESPONSE FREQUENCY(%e), POINTS PER PERIOD(%e)\n", resFreq, resPeriod / time::shift);
+			eslog::linearsolver("AUTOMATIC TIME STEPPING INFO: RESPONSE FREQUENCY(%e), POINTS PER PERIOD(%e)\n", resFreq, resPeriod / time::shift);
 		}
 
 		if (std::fabs(time::shift - _nTimeShift) / time::shift < _precision) {
-			eslog::solver("TIME STEP UNCHANGED (%e)\n", _nTimeShift);
+			eslog::linearsolver("TIME STEP UNCHANGED (%e)\n", _nTimeShift);
 		} else {
 			if (time::shift - _precision < _nTimeShift) {
-				eslog::solver("INCREASE TIME STEP (%e)\n", _nTimeShift);
+				eslog::linearsolver("INCREASE TIME STEP (%e)\n", _nTimeShift);
 			} else {
-				eslog::solver("DECREASE TIME STEP (%e)\n", _nTimeShift);
+				eslog::linearsolver("DECREASE TIME STEP (%e)\n", _nTimeShift);
 			}
 			changeConstants = true;
 		}

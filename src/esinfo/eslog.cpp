@@ -226,7 +226,7 @@ void info(const char* msg)
 	logger->info(msg);
 }
 
-void solver(const char* msg)
+void linearsolver(const char* msg)
 {
 	logger->info(msg);
 }

@@ -350,13 +350,13 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( SuperCluster & clus
 		parallel_norm_compressed(cluster, Bn_l);
 		norm_Bn_lLambda = parallel_norm_compressed(cluster, Bn_lLambda);
 
-		eslog::solver(" **** Karush-Kuhn-Tucker-conditions ****\n");
-		eslog::solver(" Solution norm: norm(K*u - f + Bt*Lambda)                     = % e\n", (KKT1_norm_cluster_global2 ? KKT1_norm_cluster_global / KKT1_norm_cluster_global2 :KKT1_norm_cluster_global));
-		eslog::solver(" Equality constraints: norm(Be*u - ce)                        = % e\n", norm_Beu / norm_ce);
+		eslog::linearsolver(" **** Karush-Kuhn-Tucker-conditions ****\n");
+		eslog::linearsolver(" Solution norm: norm(K*u - f + Bt*Lambda)                     = % e\n", (KKT1_norm_cluster_global2 ? KKT1_norm_cluster_global / KKT1_norm_cluster_global2 :KKT1_norm_cluster_global));
+		eslog::linearsolver(" Equality constraints: norm(Be*u - ce)                        = % e\n", norm_Beu / norm_ce);
 		// KKT3
-		eslog::solver(" Inequality constraints: norm(max(Bn*u - cn,0))               = % e\n", max_Bn_l_g / norm_cn);
-		eslog::solver(" Check Multipliers positiveness: norm(max(-Lambda_N,0)        = % e\n", lambda_n_max_2_g / lambda_n_max_g);
-		eslog::solver(" Check norm of Normal Multipliers: norm((Be*u - ce)*Lambda_N) = % e\n", norm_Bn_lLambda / ( norm_cn * lambda_n_max_g ));
+		eslog::linearsolver(" Inequality constraints: norm(max(Bn*u - cn,0))               = % e\n", max_Bn_l_g / norm_cn);
+		eslog::linearsolver(" Check Multipliers positiveness: norm(max(-Lambda_N,0)        = % e\n", lambda_n_max_2_g / lambda_n_max_g);
+		eslog::linearsolver(" Check norm of Normal Multipliers: norm((Be*u - ce)*Lambda_N) = % e\n", norm_Bn_lLambda / ( norm_cn * lambda_n_max_g ));
 //		switch (configuration.solver) {
 //		case FETI_ITERATIVE_SOLVER::QPCE:
 //			Solve_QPCE_singular_dom(cluster, in_right_hand_side_primal );
@@ -910,14 +910,14 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 
 	double mchange = 0.0;
 
-	eslog::solver("===================================================================================================\n");
-	eslog::solver("    QUADRATIC PROGRAMMING WITH SIMPLE BOUNDS AND EQUALITY CONSTRAINTS (QPCE)\n");
-	eslog::solver("===================================================================================================\n");
-	eslog::solver("    Terminating tolerance: precision = %f\n", tol*maxeig);
-	eslog::solver("---------------------------------------------------------------------------------------------------");
-	eslog::solver("Out_it   L(x,mu,rho)   ||~g(x)||       ||Cx||       Exp  Prop  Cgm   No_A      rho              M");
-	eslog::solver("---------------------------------------------------------------------------------------------------");
-	eslog::solver("%d %15.5f %14.5f %14.5f %d %d %d %d %14.5f %9.5f\n",output_n_it, lag1, norm_test_vec*maxeig, normCx_x, output_n_exp, output_n_prop, output_n_cg, output_n_hess, rho, _M);
+	eslog::linearsolver("===================================================================================================\n");
+	eslog::linearsolver("    QUADRATIC PROGRAMMING WITH SIMPLE BOUNDS AND EQUALITY CONSTRAINTS (QPCE)\n");
+	eslog::linearsolver("===================================================================================================\n");
+	eslog::linearsolver("    Terminating tolerance: precision = %f\n", tol*maxeig);
+	eslog::linearsolver("---------------------------------------------------------------------------------------------------");
+	eslog::linearsolver("Out_it   L(x,mu,rho)   ||~g(x)||       ||Cx||       Exp  Prop  Cgm   No_A      rho              M");
+	eslog::linearsolver("---------------------------------------------------------------------------------------------------");
+	eslog::linearsolver("%d %15.5f %14.5f %14.5f %d %d %d %d %14.5f %9.5f\n",output_n_it, lag1, norm_test_vec*maxeig, normCx_x, output_n_exp, output_n_prop, output_n_cg, output_n_hess, rho, _M);
 
 	esint stop = 0;
 	//for (esint i=0; i < _maxit; i++){
@@ -1270,7 +1270,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 			normCx_x = normCx/normx_l;
 		}
 
-		eslog::solver("%d %15.5f %14.5f %14.5f %d %d %d %d %14.5f %9.5f\n",output_n_it, lag1, norm_test_vec*maxeig, normCx_x, output_n_exp, output_n_prop, output_n_cg, output_n_hess, rho, _M);
+		eslog::linearsolver("%d %15.5f %14.5f %14.5f %d %d %d %d %14.5f %9.5f\n",output_n_it, lag1, norm_test_vec*maxeig, normCx_x, output_n_exp, output_n_prop, output_n_cg, output_n_hess, rho, _M);
 
 
 		for (size_t k = 0; k < tmp.size(); k++) {
@@ -1378,14 +1378,14 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 //	MPI_Allreduce(&dnt_l, &dnt, 1, MPI_INT, MPI_SUM, info::mpi::MPICommunicator);
 
 
-	eslog::solver("---------------------------------------------------------------------------------------------------\n");
-	eslog::solver(" Expansion steps:            %d\n", sum_output_n_exp);
-	eslog::solver(" Proportioning steps:        %d\n", sum_output_n_prop);
-	eslog::solver(" CG steps:                   %d\n", sum_output_n_cg);
-	eslog::solver(" Multiplications by Hessian: %d\n", sum_output_n_hess);
-	eslog::solver("===================================================================================================\n");
-	eslog::solver(" END QPCE \n");
-	eslog::solver("===================================================================================================\n");
+	eslog::linearsolver("---------------------------------------------------------------------------------------------------\n");
+	eslog::linearsolver(" Expansion steps:            %d\n", sum_output_n_exp);
+	eslog::linearsolver(" Proportioning steps:        %d\n", sum_output_n_prop);
+	eslog::linearsolver(" CG steps:                   %d\n", sum_output_n_cg);
+	eslog::linearsolver(" Multiplications by Hessian: %d\n", sum_output_n_hess);
+	eslog::linearsolver("===================================================================================================\n");
+	eslog::linearsolver(" END QPCE \n");
+	eslog::linearsolver("===================================================================================================\n");
 }
 
 
@@ -1511,7 +1511,7 @@ void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 //	if (tol < min_tol) {
 //		ESINFO(CONVERGENCE) << Info::TextColor::RED << "The NORM is fulfilled.";
 //	} else {
-		eslog::solver("   iter     |r|          r        e    time[s]\n");
+		eslog::linearsolver("   iter     |r|          r        e    time[s]\n");
 //		ESINFO(CONVERGENCE)
 //			<< spaces(indent.size() + iterationWidth - 4) << "iter"
 //			<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
@@ -1659,7 +1659,7 @@ for (size_t i = 0; i < p_l.size(); i++)
 
 		timing.totalTime.end();
 
-		eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
+		eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
 //		ESINFO(CONVERGENCE)
 //			<< indent << std::setw(iterationWidth) << iter + 1
 //			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
@@ -1837,7 +1837,7 @@ void IterSolverBase::Solve_RegCG_ConjProj ( SuperCluster & cluster,
 //	if (tol < min_tol) {
 //		ESINFO(CONVERGENCE) << Info::TextColor::RED << "The NORM is fulfilled.";
 //	} else {
-	eslog::solver("   iter     |r|          r        e    time[s]\n");
+	eslog::linearsolver("   iter     |r|          r        e    time[s]\n");
 //		ESINFO(CONVERGENCE)
 //			<< spaces(indent.size() + iterationWidth - 4) << "iter"
 //			<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
@@ -1985,7 +1985,7 @@ for (size_t i = 0; i < p_l.size(); i++)
 
 		 timing.totalTime.end();
 
-		eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
+		eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
 //		ESINFO(CONVERGENCE)
 //			<< indent << std::setw(iterationWidth) << iter + 1
 //			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
@@ -2131,7 +2131,7 @@ for (size_t i = 0; i < g_l.size(); i++){
 //		return ss.str();
 //	};
 
-	eslog::solver("   iter      |r|       r      e      time[s]\n");
+	eslog::linearsolver("   iter      |r|       r      e      time[s]\n");
 //	ESINFO(CONVERGENCE)
 //		<< spaces(indent.size() + iterationWidth - 4) << "iter"
 //		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
@@ -2230,7 +2230,7 @@ for (size_t i = 0; i < w_l.size(); i++){
 
 		timing.totalTime.end();
 
-		eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
+		eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
 //		ESINFO(CONVERGENCE)
 //			<< indent << std::setw(iterationWidth) << iter + 1
 //			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
@@ -2439,7 +2439,7 @@ if (
 //		}
 //		return ss.str();
 //	};
-	eslog::solver("   iter      |r|       r      e      time[s]\n");
+	eslog::linearsolver("   iter      |r|       r      e      time[s]\n");
 //	ESINFO(CONVERGENCE)
 //		<< spaces(indent.size() + iterationWidth - 4) << "iter"
 //		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
@@ -2622,7 +2622,7 @@ for (size_t i = 0; i < w_l.size(); i++){
 
 		timing.totalTime.end();
 
-		eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
+		eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
 //		ESINFO(CONVERGENCE)
 //			<< indent << std::setw(iterationWidth) << iter + 1
 //			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
@@ -2879,7 +2879,7 @@ for (size_t i = 0; i < g_l.size(); i++){
 //		return ss.str();
 //	};
 
-	eslog::solver("   iter      |r|       r      e      time[s]\n");
+	eslog::linearsolver("   iter      |r|       r      e      time[s]\n");
 //	ESINFO(CONVERGENCE)
 //		<< spaces(indent.size() + iterationWidth - 4) << "iter"
 //		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
@@ -2897,7 +2897,7 @@ for (size_t i = 0; i < g_l.size(); i++){
 //  	<< indent << std::scientific << std::setprecision(3) << norm_l
 //  	<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
 //  	<< indent << std::fixed << std::setprecision(5) ;
-  eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", 1, 1.0, norm_l, precision, 0);
+  eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", 1, 1.0, norm_l, precision, 0);
 
 
 
@@ -3060,7 +3060,7 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
 
 		timing.totalTime.end();
 
-		eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 2, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
+		eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 2, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
 //		ESINFO(CONVERGENCE)
 //			<< indent << std::setw(iterationWidth) << iter + 2
 //			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
@@ -3297,7 +3297,7 @@ for (size_t i = 0; i < g_l.size(); i++){
 //		return ss.str();
 //	};
 
-	eslog::solver("   iter      |r|       r      e      time[s]\n");
+	eslog::linearsolver("   iter      |r|       r      e      time[s]\n");
 //	ESINFO(CONVERGENCE)
 //		<< spaces(indent.size() + iterationWidth - 4) << "iter"
 //		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
@@ -3309,7 +3309,7 @@ for (size_t i = 0; i < g_l.size(); i++){
 
 	//norm_l = parallel_norm_compressed(cluster, Pg_l);
 
-	eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", 1, 1., norm_l, precision, 0);
+	eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", 1, 1., norm_l, precision, 0);
 //  ESINFO(CONVERGENCE)
 //  	<< indent << std::setw(iterationWidth) << 1
 //  	<< indent << std::fixed << std::setprecision(precisionWidth) <<  1.0000000
@@ -3474,7 +3474,7 @@ for (size_t i = 0; i < x_l.size(); i++) {
     norm_l = parallel_norm_compressed(cluster, z_l);
 
 
-    eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 2, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
+    eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 2, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
 //		ESINFO(CONVERGENCE)
 //			<< indent << std::setw(iterationWidth) << iter + 2
 //			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
@@ -3503,7 +3503,7 @@ for (size_t i = 0; i < x_l.size(); i++) {
   }
 
 
-  eslog::solver("FLAG_SOLUTION = %d\n", FLAG_SOLUTION);
+  eslog::linearsolver("FLAG_SOLUTION = %d\n", FLAG_SOLUTION);
   
 
 
@@ -3706,7 +3706,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 //		return ss.str();
 //	};
 
-	eslog::solver("   iter      |r|       r      e      time[s]\n");
+	eslog::linearsolver("   iter      |r|       r      e      time[s]\n");
 //	ESINFO(CONVERGENCE)
 //		<< spaces(indent.size() + iterationWidth - 4) << "iter"
 //		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
@@ -3795,7 +3795,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 		norm_l  = sqrt(reduction_tmp[2]);
 		if (norm_l < tol) {
 			timing.totalTime.end();
-			eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
+			eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
 //			ESINFO(CONVERGENCE)
 //				<< indent << std::setw(iterationWidth) << iter + 1
 //				<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
@@ -3836,7 +3836,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 
 		 timing.totalTime.end();
 
-		 eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 2, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
+		 eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 2, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
 //		ESINFO(CONVERGENCE)
 //			<< indent << std::setw(iterationWidth) << iter + 1
 //			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
@@ -4474,7 +4474,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 //		return ss.str();
 //	};
 
-	eslog::solver("   iter      |r|       r      e      time[s]\n");
+	eslog::linearsolver("   iter      |r|       r      e      time[s]\n");
 //	ESINFO(CONVERGENCE)
 //		<< spaces(indent.size() + iterationWidth - 4) << "iter"
 //		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
@@ -4612,7 +4612,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 			restart_num += 1;
 
 
-			eslog::solver("Restarting orthogonalization ... \n");
+			eslog::linearsolver("Restarting orthogonalization ... \n");
 
 			// Restart W_l
 			W_l.dense_values.clear();
@@ -4697,7 +4697,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 
 		timing.totalTime.end();
 
-		eslog::solver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
+		eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
 //		ESINFO(CONVERGENCE)
 //		<< indent << std::setw(iterationWidth) << iter
 //		<< indent << std::fixed << std::setprecision(precisionWidth) 	<< norm_l / tol * precision
@@ -4711,7 +4711,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 
 	} // end of CG iterations
 
-	eslog::solver("FULL CG Stop after %d Ïterations.\n", N_ITER);
+	eslog::linearsolver("FULL CG Stop after %d Ïterations.\n", N_ITER);
 	// *** save solution - in dual and amplitudes *********************************************
 
 //	if (configuration.conjugate_projector == FETI_CONJ_PROJECTOR::GENEO) {
