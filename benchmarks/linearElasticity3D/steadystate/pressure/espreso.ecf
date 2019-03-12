@@ -79,6 +79,9 @@ STRUCTURAL_MECHANICS_3D {
 
         MIXY          0.3;
         EX         2.1E11;
+      }
+
+      THERMAL_EXPANSION {
         TEX             0;
       }
     }

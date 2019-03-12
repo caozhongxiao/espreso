@@ -103,7 +103,7 @@ espreso::RadiationConfiguration::RadiationConfiguration()
 			.setdatatype({ ECFDataType::EXPRESSION }));
 }
 
-espreso::HeatTransferLoadStepConfiguration::HeatTransferLoadStepConfiguration(DIMENSION dimension)
+espreso::HeatTransferLoadStepConfiguration::HeatTransferLoadStepConfiguration(DIMENSION *D)
 {
 	REGISTER(temperature, ECFMetaData()
 			.setdescription({ "The name of a region.", "Temperature" })
@@ -119,7 +119,7 @@ espreso::HeatTransferLoadStepConfiguration::HeatTransferLoadStepConfiguration(DI
 			.setdescription({ "The name of a region.", "Translation motion" })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION })
 			.setpattern({ "MY_REGION" }),
-			dimension, ECFMetaData::getboundaryconditionvariables(), "0");
+			D, ECFMetaData::getboundaryconditionvariables(), "0");
 
 	REGISTER(heat_flux, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat flux" })
@@ -142,14 +142,14 @@ espreso::HeatTransferLoadStepConfiguration::HeatTransferLoadStepConfiguration(DI
 			.setpattern({ "MY_REGION" }));
 }
 
-espreso::HeatTransferConfiguration::HeatTransferConfiguration(DIMENSION dimension)
-: PhysicsConfiguration(dimension, MaterialConfiguration::PHYSICAL_MODEL::THERMAL)
+espreso::HeatTransferConfiguration::HeatTransferConfiguration(DIMENSION D)
+: PhysicsConfiguration(D, MaterialConfiguration::PHYSICAL_MODEL::THERMAL)
 {
 	REGISTER(materials, ECFMetaData()
 			.setdescription({ "The name of a material.", "Material description" })
 			.setdatatype({ ECFDataType::STRING })
 			.setpattern({ "MY_MATERIAL" }),
-			dimension, MaterialConfiguration::PHYSICAL_MODEL::THERMAL);
+			&dimension, MaterialConfiguration::PHYSICAL_MODEL::THERMAL);
 	ecfdescription->moveLastBefore(PNAME(material_set));
 
 	stabilization = STABILIZATION::SUPG;
@@ -192,7 +192,7 @@ espreso::HeatTransferConfiguration::HeatTransferConfiguration(DIMENSION dimensio
 			.setdescription({ "Settings for each load step", "LoadStep" })
 			.setdatatype({ ECFDataType::LOAD_STEP })
 			.setpattern({ "1" }),
-			dimension);
+			&dimension);
 }
 
 

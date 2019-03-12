@@ -29,7 +29,7 @@ struct StructuralMechanicsLoadStepConfiguration: public StructuralMechanicsLoadS
 	std::map<std::string, ECFExpressionVector> angular_velocity, acceleration, normal_direction, obstacle;
 	std::map<std::string, ECFExpressionOptionalVector> displacement;
 
-	StructuralMechanicsLoadStepConfiguration(DIMENSION dimension);
+	StructuralMechanicsLoadStepConfiguration(DIMENSION *D);
 };
 
 struct StructuralMechanicsOutputSettings {
@@ -50,7 +50,7 @@ struct StructuralMechanicsConfiguration: public PhysicsConfiguration, public Str
 
 	std::map<size_t, StructuralMechanicsLoadStepConfiguration> load_steps_settings;
 
-	StructuralMechanicsConfiguration(DIMENSION dimension);
+	StructuralMechanicsConfiguration(DIMENSION D);
 };
 
 }

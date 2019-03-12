@@ -6,9 +6,12 @@
 
 
 espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfiguration(ECFRoot *ECFRoot)
-: offset(ECFMetaData::getboundaryconditionvariables()),
-  scaling(DIMENSION::D3, { "TIME" }, "100"),
-  translation(DIMENSION::D3, ECFMetaData::getboundaryconditionvariables(), "0"),
+: dimension(DIMENSION::D3),
+  offset(ECFMetaData::getboundaryconditionvariables()),
+  scaling(&dimension, { "TIME" }, "100"),
+  translation(&dimension, ECFMetaData::getboundaryconditionvariables(), "0"),
+  coordinate_system(&dimension),
+  override(true),
   _ECFRoot(ECFRoot)
 {
 	transformation = MORPHING_TRANSFORMATION::TRANSLATION;
@@ -47,11 +50,11 @@ espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfigurat
 		switch (ECFRoot->physics) {
 		case PHYSICS::HEAT_TRANSFER_2D:
 		case PHYSICS::STRUCTURAL_MECHANICS_2D:
-			translation.dimension = DIMENSION::D2;
+			*translation.dimension = DIMENSION::D2;
 			break;
 		case PHYSICS::HEAT_TRANSFER_3D:
 		case PHYSICS::STRUCTURAL_MECHANICS_3D:
-			translation.dimension = DIMENSION::D3;
+			*translation.dimension = DIMENSION::D3;
 			break;
 		default:
 			eslog::globalerror("ESPRESO internal error: unknown physics while set RBFTargetTransformation.");

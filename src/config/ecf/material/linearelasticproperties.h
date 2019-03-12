@@ -16,15 +16,14 @@ struct LinearElasticPropertiesConfiguration: public ECFDescription {
 	};
 
 	MODEL model;
-	DIMENSION dimension;
+	DIMENSION *dimension;
 
 	TensorConfiguration poisson_ratio;
 	TensorConfiguration young_modulus;
-	TensorConfiguration thermal_expansion;
 	TensorConfiguration shear_modulus;
 	TensorConfiguration anisotropic;
 
-	LinearElasticPropertiesConfiguration();
+	LinearElasticPropertiesConfiguration(DIMENSION *D);
 };
 
 }

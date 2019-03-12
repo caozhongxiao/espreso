@@ -2,7 +2,7 @@
 #include "structuralmechanics.h"
 #include "config/configuration.hpp"
 
-espreso::StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfiguration(DIMENSION dimension)
+espreso::StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfiguration(DIMENSION *dimension)
 {
 	large_displacement = false;
 	REGISTER(large_displacement, ECFMetaData()
@@ -52,14 +52,14 @@ espreso::StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepCo
 			dimension, ECFMetaData::getboundaryconditionvariables());
 }
 
-espreso::StructuralMechanicsConfiguration::StructuralMechanicsConfiguration(DIMENSION dimension)
-: PhysicsConfiguration(dimension, MaterialConfiguration::PHYSICAL_MODEL::STRUCTURAL_MECHANICS)
+espreso::StructuralMechanicsConfiguration::StructuralMechanicsConfiguration(DIMENSION D)
+: PhysicsConfiguration(D, MaterialConfiguration::PHYSICAL_MODEL::STRUCTURAL_MECHANICS)
 {
 	REGISTER(materials, ECFMetaData()
 				.setdescription({ "The name of a material.", "Material description." })
 				.setdatatype({ ECFDataType::STRING })
 				.setpattern({ "MY_MATERIAL" }),
-				dimension, MaterialConfiguration::PHYSICAL_MODEL::STRUCTURAL_MECHANICS);
+				&dimension, MaterialConfiguration::PHYSICAL_MODEL::STRUCTURAL_MECHANICS);
 	ecfdescription->moveLastBefore(PNAME(material_set));
 
 	element_behaviour = ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS;
@@ -91,7 +91,7 @@ espreso::StructuralMechanicsConfiguration::StructuralMechanicsConfiguration(DIME
 			.setdescription({ "Settings for each load step.", "Load step index." })
 			.setdatatype({ ECFDataType::LOAD_STEP })
 			.setpattern({ "1" }),
-			dimension);
+			&dimension);
 }
 
 

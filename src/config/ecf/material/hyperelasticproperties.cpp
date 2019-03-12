@@ -2,9 +2,9 @@
 #include "hyperelasticproperties.h"
 #include "config/configuration.hpp"
 
-espreso::HyperElasticPropertiesConfiguration::HyperElasticPropertiesConfiguration()
+espreso::HyperElasticPropertiesConfiguration::HyperElasticPropertiesConfiguration(DIMENSION *D)
 : model(MODEL::NEO_HOOKEN),
-  dimension(DIMENSION::D3),
+  dimension(D),
   mu(ECFMetaData::getmaterialvariables()),
   d(ECFMetaData::getmaterialvariables()),
   C10(ECFMetaData::getmaterialvariables()),
@@ -33,76 +33,75 @@ espreso::HyperElasticPropertiesConfiguration::HyperElasticPropertiesConfiguratio
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.allowonly([&] () { return model == MODEL::NEO_HOOKEN; }));
 
-	auto isMR2 = [&] () {
-		return
-				model == MODEL::MOONEY_RIVLIN_2PARAMS ||
-				model == MODEL::MOONEY_RIVLIN_3PARAMS ||
-				model == MODEL::MOONEY_RIVLIN_5PARAMS ||
-				model == MODEL::MOONEY_RIVLIN_9PARAMS;
-	};
-
-	auto isMR3 = [&] () {
-		return
-				model == MODEL::MOONEY_RIVLIN_3PARAMS ||
-				model == MODEL::MOONEY_RIVLIN_5PARAMS ||
-				model == MODEL::MOONEY_RIVLIN_9PARAMS;
-	};
-
-	auto isMR5 = [&] () {
-		return
-				model == MODEL::MOONEY_RIVLIN_5PARAMS ||
-				model == MODEL::MOONEY_RIVLIN_9PARAMS;
-	};
-
-	auto isMR9 = [&] () {
-		return
-				model == MODEL::MOONEY_RIVLIN_9PARAMS;
-	};
+	REGISTER(C01, ECFMetaData()
+			.setdescription({ "Material constant." })
+			.setdatatype({ ECFDataType::EXPRESSION })
+			.allowonly([&] () {
+				return
+						model == MODEL::MOONEY_RIVLIN_2PARAMS ||
+						model == MODEL::MOONEY_RIVLIN_3PARAMS ||
+						model == MODEL::MOONEY_RIVLIN_5PARAMS ||
+						model == MODEL::MOONEY_RIVLIN_9PARAMS;;
+			}));
 
 	REGISTER(C01, ECFMetaData()
 			.setdescription({ "Material constant." })
 			.setdatatype({ ECFDataType::EXPRESSION })
-			.allowonly([&] () { return isMR2(); }));
-
-	REGISTER(C01, ECFMetaData()
-			.setdescription({ "Material constant." })
-			.setdatatype({ ECFDataType::EXPRESSION })
-			.allowonly([&] () { return isMR2(); }));
+			.allowonly([&] () {
+				return
+						model == MODEL::MOONEY_RIVLIN_2PARAMS ||
+						model == MODEL::MOONEY_RIVLIN_3PARAMS ||
+						model == MODEL::MOONEY_RIVLIN_5PARAMS ||
+						model == MODEL::MOONEY_RIVLIN_9PARAMS;
+			}));
 
 	REGISTER(C11, ECFMetaData()
 			.setdescription({ "Material constant." })
 			.setdatatype({ ECFDataType::EXPRESSION })
-			.allowonly([&] () { return isMR3(); }));
+			.allowonly([&] () {
+				return
+						model == MODEL::MOONEY_RIVLIN_3PARAMS ||
+						model == MODEL::MOONEY_RIVLIN_5PARAMS ||
+						model == MODEL::MOONEY_RIVLIN_9PARAMS;;
+			}));
 
 	REGISTER(C02, ECFMetaData()
 			.setdescription({ "Material constant." })
 			.setdatatype({ ECFDataType::EXPRESSION })
-			.allowonly([&] () { return isMR5(); }));
+			.allowonly([&] () {
+				return
+					model == MODEL::MOONEY_RIVLIN_5PARAMS ||
+					model == MODEL::MOONEY_RIVLIN_9PARAMS;;
+			}));
 
 	REGISTER(C20, ECFMetaData()
 			.setdescription({ "Material constant." })
 			.setdatatype({ ECFDataType::EXPRESSION })
-			.allowonly([&] () { return isMR5(); }));
+			.allowonly([&] () {
+				return
+					model == MODEL::MOONEY_RIVLIN_5PARAMS ||
+					model == MODEL::MOONEY_RIVLIN_9PARAMS;;
+			}));
 
 	REGISTER(C30, ECFMetaData()
 			.setdescription({ "Material constant." })
 			.setdatatype({ ECFDataType::EXPRESSION })
-			.allowonly([&] () { return isMR9(); }));
+			.allowonly([&] () { return model == MODEL::MOONEY_RIVLIN_9PARAMS; }));
 
 	REGISTER(C21, ECFMetaData()
 			.setdescription({ "Material constant." })
 			.setdatatype({ ECFDataType::EXPRESSION })
-			.allowonly([&] () { return isMR9(); }));
+			.allowonly([&] () { return model == MODEL::MOONEY_RIVLIN_9PARAMS; }));
 
 	REGISTER(C12, ECFMetaData()
 			.setdescription({ "Material constant." })
 			.setdatatype({ ECFDataType::EXPRESSION })
-			.allowonly([&] () { return isMR9(); }));
+			.allowonly([&] () { return model == MODEL::MOONEY_RIVLIN_9PARAMS; }));
 
 	REGISTER(C03, ECFMetaData()
 			.setdescription({ "Material constant." })
 			.setdatatype({ ECFDataType::EXPRESSION })
-			.allowonly([&] () { return isMR9(); }));
+			.allowonly([&] () { return model == MODEL::MOONEY_RIVLIN_9PARAMS; }));
 
 	REGISTER(d, ECFMetaData()
 			.setdescription({ "Incompressibility parameter." })

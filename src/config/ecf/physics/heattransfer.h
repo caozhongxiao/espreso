@@ -77,7 +77,7 @@ struct HeatTransferLoadStepConfiguration: public HeatTransferLoadStepSolverConfi
 	std::map<std::string, ConvectionConfiguration> convection;
 	std::map<std::string, RadiationConfiguration> diffuse_radiation;
 
-	HeatTransferLoadStepConfiguration(DIMENSION dimension);
+	HeatTransferLoadStepConfiguration(DIMENSION *D);
 };
 
 struct HeatTransferOutputSettings {
@@ -99,7 +99,7 @@ struct HeatTransferConfiguration: public PhysicsConfiguration, public HeatTransf
 
 	std::map<size_t, HeatTransferLoadStepConfiguration> load_steps_settings;
 
-	HeatTransferConfiguration(DIMENSION dimension);
+	HeatTransferConfiguration(DIMENSION D);
 };
 
 }

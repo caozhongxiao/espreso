@@ -17,11 +17,11 @@ struct ThermalConductivityConfiguration: public ECFDescription {
 	};
 
 	MODEL model;
-	DIMENSION dimension;
+	DIMENSION *dimension;
 
 	TensorConfiguration values;
 
-	ThermalConductivityConfiguration();
+	ThermalConductivityConfiguration(DIMENSION *D);
 };
 
 }

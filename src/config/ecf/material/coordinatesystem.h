@@ -18,12 +18,12 @@ struct CoordinateSystemConfiguration: public ECFDescription {
 	};
 
 	TYPE type;
-	DIMENSION dimension;
+	DIMENSION *dimension;
 
 	ECFExpressionVector rotation;
 	ECFExpressionVector center;
 
-	CoordinateSystemConfiguration();
+	CoordinateSystemConfiguration(DIMENSION *D);
 
 	void createScalingMatrix(std::vector<double> &m, double x, double y, double z=0) const;
 

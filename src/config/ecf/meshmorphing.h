@@ -31,6 +31,7 @@ enum class MORPHING_TRANSFORMATION {
 struct RBFTargetTransformationConfiguration: public ECFDescription {
 
 	MORPHING_TRANSFORMATION transformation;
+	DIMENSION dimension;
 
 	ECFExpression offset;
 	ECFExpressionVector scaling, translation;

@@ -3,9 +3,9 @@
 #include "config/conditions.h"
 #include "thermalconductivity.h"
 
-espreso::ThermalConductivityConfiguration::ThermalConductivityConfiguration()
+espreso::ThermalConductivityConfiguration::ThermalConductivityConfiguration(DIMENSION *D)
 : model(MODEL::ISOTROPIC),
-  dimension(DIMENSION::D3),
+  dimension(D),
   values(3)
 {
 	REGISTER(model, ECFMetaData()
@@ -14,7 +14,7 @@ espreso::ThermalConductivityConfiguration::ThermalConductivityConfiguration()
 			.addoption(ECFOption().setname("ISOTROPIC").setdescription("Isotropic model."))
 			.addoption(ECFOption().setname("DIAGONAL").setdescription("Orthotropic model."))
 			.addoption(ECFOption().setname("SYMMETRIC").setdescription("Symmetric model."))
-			.addoption(ECFOption().setname("ANISOTROPIC").setdescription("Anisotropic model.").allowonly([&] () { return dimension == DIMENSION::D3; })));
+			.addoption(ECFOption().setname("ANISOTROPIC").setdescription("Anisotropic model.").allowonly([&] () { return *dimension == DIMENSION::D3; })));
 
 	ecfdescription->addSeparator();
 
@@ -32,7 +32,7 @@ espreso::ThermalConductivityConfiguration::ThermalConductivityConfiguration()
 			.setdescription({ "KZZ" })
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.settensor(values)
-			.allowonly([&] () { return model != MODEL::ISOTROPIC && dimension == DIMENSION::D3; }));
+			.allowonly([&] () { return model != MODEL::ISOTROPIC && *dimension == DIMENSION::D3; }));
 
 	ecfdescription->registerParameter("KXY", values.get(0, 1), ECFMetaData()
 			.setdescription({ "KXY" })
@@ -43,12 +43,12 @@ espreso::ThermalConductivityConfiguration::ThermalConductivityConfiguration()
 			.setdescription({ "KXZ" })
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.settensor(values)
-			.allowonly([&] () { return (model == MODEL::SYMMETRIC || model == MODEL::ANISOTROPIC) && dimension == DIMENSION::D3; }));
+			.allowonly([&] () { return (model == MODEL::SYMMETRIC || model == MODEL::ANISOTROPIC) && *dimension == DIMENSION::D3; }));
 	ecfdescription->registerParameter("KYZ", values.get(1, 2), ECFMetaData()
 			.setdescription({ "KYZ" })
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.settensor(values)
-			.allowonly([&] () { return (model == MODEL::SYMMETRIC || model == MODEL::ANISOTROPIC)  && dimension == DIMENSION::D3; }));
+			.allowonly([&] () { return (model == MODEL::SYMMETRIC || model == MODEL::ANISOTROPIC)  && *dimension == DIMENSION::D3; }));
 
 	ecfdescription->registerParameter("KYX", values.get(1, 0), ECFMetaData()
 			.setdescription({ "KYX" })
@@ -59,10 +59,10 @@ espreso::ThermalConductivityConfiguration::ThermalConductivityConfiguration()
 			.setdescription({ "KZX" })
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.settensor(values)
-			.allowonly([&] () { return model == MODEL::ANISOTROPIC && dimension == DIMENSION::D3; }));
+			.allowonly([&] () { return model == MODEL::ANISOTROPIC && *dimension == DIMENSION::D3; }));
 	ecfdescription->registerParameter("KZY", values.get(2, 1), ECFMetaData()
 			.setdescription({ "KZY" })
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.settensor(values)
-			.allowonly([&] () { return model == MODEL::ANISOTROPIC && dimension == DIMENSION::D3; }));
+			.allowonly([&] () { return model == MODEL::ANISOTROPIC && *dimension == DIMENSION::D3; }));
 }

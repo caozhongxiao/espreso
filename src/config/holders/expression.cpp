@@ -149,15 +149,15 @@ void ECFExpressionVector::init()
 	REGISTER(x, ECFMetaData()
 			.setdescription({ "x-direction." })
 			.setdatatype({ ECFDataType::EXPRESSION })
-			.allowonly([&] () { return dimension != DIMENSION::Z; }));
+			.allowonly([&] () { return *dimension != DIMENSION::Z; }));
 	REGISTER(y, ECFMetaData()
 			.setdescription({ "y-direction." })
 			.setdatatype({ ECFDataType::EXPRESSION })
-			.allowonly([&] () { return dimension == DIMENSION::D2 || dimension == DIMENSION::D3; }));
+			.allowonly([&] () { return *dimension == DIMENSION::D2 || *dimension == DIMENSION::D3; }));
 	REGISTER(z, ECFMetaData()
 			.setdescription({ "z-direction." })
 			.setdatatype({ ECFDataType::EXPRESSION })
-			.allowonly([&] () { return dimension == DIMENSION::Z || dimension == DIMENSION::D3; }));
+			.allowonly([&] () { return *dimension == DIMENSION::Z || *dimension == DIMENSION::D3; }));
 }
 
 ECFExpressionVector::ECFExpressionVector(const ECFExpressionVector &other)
@@ -177,13 +177,13 @@ ECFExpressionVector& ECFExpressionVector::operator=(const ECFExpressionVector &o
 	return *this;
 }
 
-ECFExpressionVector::ECFExpressionVector(DIMENSION dimension, const std::vector<std::string> &variables)
+ECFExpressionVector::ECFExpressionVector(DIMENSION *dimension, const std::vector<std::string> &variables)
 : data{variables, variables, variables}, dimension(dimension)
 {
 	init();
 }
 
-ECFExpressionVector::ECFExpressionVector(DIMENSION dimension, const std::vector<std::string> &variables, const std::string &initialValue)
+ECFExpressionVector::ECFExpressionVector(DIMENSION *dimension, const std::vector<std::string> &variables, const std::string &initialValue)
 : data{ {variables,initialValue}, {variables,initialValue}, {variables,initialValue}}, dimension(dimension)
 {
 	init();
@@ -209,7 +209,7 @@ ECFExpressionVector::ECFExpressionVector(DIMENSION dimension, const std::vector<
 //	init();
 //}
 
-ECFExpressionOptionalVector::ECFExpressionOptionalVector(DIMENSION dimension, const std::vector<std::string> &variables)
+ECFExpressionOptionalVector::ECFExpressionOptionalVector(DIMENSION *dimension, const std::vector<std::string> &variables)
 : ECFExpressionVector(dimension, variables), all(variables)
 {
 	REGISTER(all, ECFMetaData()

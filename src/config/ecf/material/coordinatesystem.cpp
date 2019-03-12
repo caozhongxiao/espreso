@@ -10,12 +10,10 @@
 
 #include <cmath>
 
-//#include "mkl.h"
-
 using namespace espreso;
 
-CoordinateSystemConfiguration::CoordinateSystemConfiguration()
-: dimension(DIMENSION::D3), rotation(dimension, ECFMetaData::getcoordinatevariables(), "0"), center(dimension, ECFMetaData::getcoordinatevariables(), "0")
+CoordinateSystemConfiguration::CoordinateSystemConfiguration(DIMENSION *D)
+: dimension(D), rotation(dimension, ECFMetaData::getcoordinatevariables(), "0"), center(dimension, ECFMetaData::getcoordinatevariables(), "0")
 {
 	type = TYPE::CARTESIAN;
 
@@ -24,7 +22,7 @@ CoordinateSystemConfiguration::CoordinateSystemConfiguration()
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("CARTESIAN").setdescription("Cartesian system."))
 			.addoption(ECFOption().setname("CYLINDRICAL").setdescription("Cylindrical system."))
-			.addoption(ECFOption().setname("SPHERICAL").setdescription("Spherical system.").allowonly([&] () { return dimension == DIMENSION::D3; })));
+			.addoption(ECFOption().setname("SPHERICAL").setdescription("Spherical system.").allowonly([&] () { return *dimension == DIMENSION::D3; })));
 
 	REGISTER(rotation, ECFMetaData()
 			.setdescription({ "A rotation of the material." })
@@ -37,7 +35,7 @@ CoordinateSystemConfiguration::CoordinateSystemConfiguration()
 
 
 void CoordinateSystemConfiguration::createTranslationMatrix(std::vector<double> &m, double x, double y, double z) const {
-	switch (dimension) {
+	switch (*dimension) {
 	case DIMENSION::D3: {
 		m.resize(16,0);
 		m[0 *4 + 0] = 1;
@@ -64,7 +62,7 @@ void CoordinateSystemConfiguration::createTranslationMatrix(std::vector<double> 
 	}
 }
 void CoordinateSystemConfiguration::createScalingMatrix(std::vector<double> &m, double x, double y, double z) const {
-	switch (dimension) {
+	switch (*dimension) {
 	case DIMENSION::D3: {
 		m.resize(16,0);
 		m[0 *4 + 0] = x;
@@ -87,7 +85,7 @@ void CoordinateSystemConfiguration::createScalingMatrix(std::vector<double> &m, 
 }
 void CoordinateSystemConfiguration::createTranslationMatrixToCenter(std::vector<double> &m) const {
 
-	switch (dimension) {
+	switch (*dimension) {
 	case DIMENSION::D3: {
 		double x,y,z;
 
@@ -115,7 +113,7 @@ void CoordinateSystemConfiguration::createTranslationMatrixToCenter(std::vector<
 
 void CoordinateSystemConfiguration::createTranslationMatrixToZero(std::vector<double> &m) const{
 
-	switch (dimension) {
+	switch (*dimension) {
 	case DIMENSION::D3: {
 		double x,y,z;
 
@@ -143,7 +141,7 @@ void CoordinateSystemConfiguration::multiplyTransformationMatrices(std::vector<d
 	std::vector<double> right;
 	right = result;
 	result.clear();
-	switch (dimension) {
+	switch (*dimension) {
 	case DIMENSION::D3: {
 		result.resize(16);
 //			MATH::DenseMatDenseMatRowMajorProduct(1, false, 4, 4, left.data(), false, 4, right.data(), 0, result.data());
@@ -160,7 +158,7 @@ void CoordinateSystemConfiguration::multiplyTransformationMatrices(std::vector<d
 Point CoordinateSystemConfiguration::applyTransformation(std::vector<double> &m, const Point &p) const{
 	Point result;
 
-	switch (dimension) {
+	switch (*dimension) {
 	case DIMENSION::D3: {
 		result.x = m[0*4 + 0] * p.x + m[0*4 + 1] * p.y + m[0*4 + 2] * p.z + m[0*4 + 3];
 		result.y = m[1*4 + 0] * p.x + m[1*4 + 1] * p.y + m[1*4 + 2] * p.z + m[1*4 + 3];
@@ -186,7 +184,7 @@ void CoordinateSystemConfiguration::createRotationMatrix(std::vector<double> &m)
 			return M_PI * degree / 180;
 	};
 	Point rPoint;
-	switch (dimension) {
+	switch (*dimension) {
 	case DIMENSION::D3: {
 		rotation.x.evaluator->evalVector(1, 0, NULL, NULL, 0, &(rPoint.x));
 		rotation.y.evaluator->evalVector(1, 0, NULL, NULL, 0, &(rPoint.y));
@@ -201,7 +199,7 @@ void CoordinateSystemConfiguration::createRotationMatrix(std::vector<double> &m)
 		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
 	}
 
-	switch (dimension) {
+	switch (*dimension) {
 		case DIMENSION::D3: {
 			m.clear();
 			m.resize(16,0);
