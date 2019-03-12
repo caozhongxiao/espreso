@@ -1,6 +1,7 @@
 
 #include "lineartimesolver.h"
 
+#include "esinfo/eslog.h"
 #include "physics/assembler/dataholder.h"
 #include "physics/assembler/assembler.h"
 #include "physics/solver/loadstep/loadstepsolver.h"
@@ -27,12 +28,19 @@ std::string LinearTimeStep::name()
 	return "LINEAR";
 }
 
+void LinearTimeStep::setSolverParams()
+{
+
+}
+
 void LinearTimeStep::solve(LoadStepSolver &loadStepSolver)
 {
 	Matrices updatedMatrices = loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f);
 	_assembler.setDirichlet(updatedMatrices);
 	_assembler.solve(updatedMatrices | Matrices::Dirichlet);
 	_assembler.parametersChanged();
+
+	eslog::printsolver();
 }
 
 

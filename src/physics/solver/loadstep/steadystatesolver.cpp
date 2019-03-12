@@ -1,8 +1,9 @@
 
 #include "steadystatesolver.h"
 #include "esinfo/timeinfo.h"
-#include "physics/assembler/dataholder.h"
 #include "esinfo/meshinfo.h"
+#include "esinfo/eslog.h"
+#include "physics/assembler/dataholder.h"
 #include "physics/solver/timestep/timestepsolver.h"
 #include "physics/assembler/assembler.h"
 
@@ -28,6 +29,11 @@ std::string SteadyStateSolver::name()
 	return "STEADY STATE";
 }
 
+void SteadyStateSolver::setSolverParams()
+{
+
+}
+
 Matrices SteadyStateSolver::updateStructuralMatrices(Matrices matrices)
 {
 	matrices &= (Matrices::K | Matrices::f | Matrices::R);
@@ -42,6 +48,8 @@ void SteadyStateSolver::runNextTimeStep()
 	_assembler.nextTime();
 
 	processTimeStep();
+
+	eslog::printsolver();
 }
 
 void SteadyStateSolver::processTimeStep()

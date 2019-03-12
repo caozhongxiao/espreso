@@ -21,6 +21,7 @@ public:
 
 	virtual bool hasSameType(const LoadStepSolverConfiguration &configuration) const =0;
 	virtual std::string name() =0;
+	virtual void setSolverParams() =0;
 
 	virtual Matrices updateStructuralMatrices(Matrices matrices) =0;
 

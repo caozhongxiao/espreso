@@ -2,6 +2,7 @@
 #include <config/ecf/physics/physicssolver/nonlinear.h>
 #include "pseudotimesteppingsolver.h"
 #include "esinfo/timeinfo.h"
+#include "esinfo/eslog.h"
 #include "physics/assembler/dataholder.h"
 #include "physics/solver/timestep/timestepsolver.h"
 
@@ -27,6 +28,11 @@ bool PseudoTimeStepping::hasSameType(const LoadStepSolverConfiguration &configur
 std::string PseudoTimeStepping::name()
 {
 	return "PSEUDO TIME STEPPING";
+}
+
+void PseudoTimeStepping::setSolverParams()
+{
+	eslog::addsolverparam("TIME STEP", time::substep);
 }
 
 Matrices PseudoTimeStepping::updateStructuralMatrices(Matrices matrices)
@@ -57,6 +63,8 @@ void PseudoTimeStepping::processTimeStep()
 
 	_timeStepSolver.solve(*this);
 	_assembler.postProcess();
+
+	eslog::printsolver();
 }
 
 

@@ -63,6 +63,22 @@ TransientSecondOrderImplicit::TransientSecondOrderImplicit(TransientSecondOrderI
 	updateConstants();
 	updateDamping();
 }
+bool TransientSecondOrderImplicit::hasSameType(const LoadStepSolverConfiguration &configuration) const
+{
+	return configuration.type == LoadStepSolverConfiguration::TYPE::TRANSIENT;
+}
+
+std::string TransientSecondOrderImplicit::name()
+{
+	return "TRANSIENT SECOND ORDER IMPLICIT";
+}
+
+void TransientSecondOrderImplicit::setSolverParams()
+{
+	eslog::addsolverparam("TIME STEP", time::substep);
+	eslog::addsolverparam("TIME", time::current);
+	eslog::addsolverparam("SHIFT", time::shift);
+}
 
 void TransientSecondOrderImplicit::updateConstants()
 {
@@ -93,16 +109,6 @@ void TransientSecondOrderImplicit::updateDamping()
 		_massDamping = 2 * ratio / (2 * M_PI * frequency);
 	} break;
 	}
-}
-
-bool TransientSecondOrderImplicit::hasSameType(const LoadStepSolverConfiguration &configuration) const
-{
-	return configuration.type == LoadStepSolverConfiguration::TYPE::TRANSIENT;
-}
-
-std::string TransientSecondOrderImplicit::name()
-{
-	return "TRANSIENT SECOND ORDER IMPLICIT";
 }
 
 Matrices TransientSecondOrderImplicit::updateStructuralMatrices(Matrices matrices)
@@ -251,6 +257,8 @@ void TransientSecondOrderImplicit::processTimeStep()
 	if (changeConstants) {
 		updateConstants();
 	}
+
+	eslog::printsolver();
 }
 
 

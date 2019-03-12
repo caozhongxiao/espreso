@@ -21,6 +21,7 @@ public:
 	virtual bool hasSameMode(const LoadStepSolverConfiguration &configuration) const =0;
 	virtual void solve(LoadStepSolver &loadStepSolver) =0;
 	virtual std::string name() =0;
+	virtual void setSolverParams() =0;
 
 protected:
 	Assembler &_assembler;

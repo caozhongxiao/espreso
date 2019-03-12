@@ -14,6 +14,7 @@ public:
 
 	void solve(LoadStepSolver &loadStepSolver);
 	std::string name();
+	void setSolverParams();
 
 };
 

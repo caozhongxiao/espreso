@@ -2,6 +2,7 @@
 #include "eslog.hpp"
 #include "basis/logging/timelogger.h"
 #include "basis/logging/progresslogger.h"
+#include "basis/logging/solverlogger.h"
 #include "basis/logging/oldtimelogger.h"
 #include "basis/utilities/parser.h"
 #include "basis/utilities/sysutils.h"
@@ -31,7 +32,7 @@ struct LoggerData {
 	std::string logFile; // root/directory/name.log
 };
 
-struct Logger: public espreso::Logger<OldTimeLogger, TimeLogger, ProgressLogger>, public LoggerData {};
+struct Logger: public espreso::Logger<OldTimeLogger, TimeLogger, ProgressLogger>, public LoggerData, public SolverLogger {};
 Logger *logger = NULL;
 
 const char* path()
@@ -216,6 +217,41 @@ void param(const char* name, const double &value)
 	logger->param(name, value);
 }
 
+void addsolverparam(const char* name, int &value)
+{
+	logger->addparam(name, value);
+}
+
+void addsolverparam(const char* name, long &value)
+{
+	logger->addparam(name, value);
+}
+
+void addsolverparam(const char* name, long unsigned int &value)
+{
+	logger->addparam(name, value);
+}
+
+void addsolverparam(const char* name, double &value)
+{
+	logger->addparam(name, value);
+}
+
+void addsolverparam(const char* name, bool &value)
+{
+	logger->addparam(name, value);
+}
+
+void printsolverheader()
+{
+	logger->printheader(progress());
+}
+
+void printsolver()
+{
+	logger->print(progress());
+}
+
 void param(const char* name, const char* value)
 {
 	logger->param(name, value);
@@ -228,7 +264,9 @@ void info(const char* msg)
 
 void linearsolver(const char* msg)
 {
-	logger->info(msg);
+	if (progress().verbosity > 2) {
+		logger->info(msg);
+	}
 }
 
 void duration(const char* msg)

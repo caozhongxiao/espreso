@@ -13,6 +13,7 @@ public:
 
 	bool hasSameType(const LoadStepSolverConfiguration &configuration) const;
 	std::string name();
+	void setSolverParams();
 
 	Matrices updateStructuralMatrices(Matrices matrices);
 

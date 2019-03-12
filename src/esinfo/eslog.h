@@ -32,6 +32,14 @@ void param(const char* name, const long unsigned int &value);
 void param(const char* name, const double &value);
 void param(const char* name, const char* value);
 
+void addsolverparam(const char* name, int &value);
+void addsolverparam(const char* name, long &value);
+void addsolverparam(const char* name, long unsigned int &value);
+void addsolverparam(const char* name, double &value);
+void addsolverparam(const char* name, bool &value);
+void printsolverheader();
+void printsolver();
+
 void info(const char* msg);
 void linearsolver(const char* msg);
 void duration(const char* msg);

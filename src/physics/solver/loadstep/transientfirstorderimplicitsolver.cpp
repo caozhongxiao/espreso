@@ -57,6 +57,13 @@ std::string TransientFirstOrderImplicit::name()
 	return "TRANSIENT FIRST ORDER IMPLICIT";
 }
 
+void TransientFirstOrderImplicit::setSolverParams()
+{
+	eslog::addsolverparam("TIME STEP", time::substep);
+	eslog::addsolverparam("TIME", time::current);
+	eslog::addsolverparam("SHIFT", time::shift);
+}
+
 Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Matrices matrices)
 {
 	_assembler.assemble(matrices);
@@ -171,6 +178,8 @@ void TransientFirstOrderImplicit::processTimeStep()
 		time::current -= time::shift;
 		--time::substep;
 	}
+
+	eslog::printsolver();
 }
 
 

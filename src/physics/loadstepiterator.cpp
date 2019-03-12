@@ -222,6 +222,10 @@ bool LoadStepIterator::next(TPhysics &configuration)
 	_timeStepSolver = getTimeStepSolver(_timeStepSolver, configuration.load_steps_settings.at(time::step + 1), *_assembler);
 	_loadStepSolver = getLoadStepSolver(_loadStepSolver, configuration.load_steps_settings.at(time::step + 1), *_assembler, *_timeStepSolver);
 
+	eslog::addsolverparam("LOAD STEP", time::step);
+	_loadStepSolver->setSolverParams();
+	_timeStepSolver->setSolverParams();
+
 	_assembler->init();
 	if (time::isInitial()) {
 		info::mesh->storeMesh();

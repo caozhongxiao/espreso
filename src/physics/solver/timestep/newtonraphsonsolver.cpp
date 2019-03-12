@@ -42,6 +42,11 @@ std::string NewtonRaphson::name()
 	return "NEWTON RAPHSON";
 }
 
+void NewtonRaphson::setSolverParams()
+{
+	eslog::addsolverparam("ITERATION", time::iteration);
+}
+
 void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 {
 	if (!_configuration.check_first_residual && !_configuration.check_second_residual) {
@@ -133,6 +138,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 				}
 			}
 		}
+		eslog::printsolver();
 	}
 
 	if (_configuration.check_second_residual) {
@@ -140,6 +146,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 	} else {
 		eslog::linearsolver(" >> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION %d\n", time::iteration + 1);
 	}
+	eslog::printsolver();
 }
 
 
