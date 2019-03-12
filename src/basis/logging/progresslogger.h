@@ -155,8 +155,8 @@ public:
 	void error(const char* format, Args... args)
 	{
 		char* colored = getColored(format, __ESLOG__COLOR__RED);
-		printf(colored, args...);
-		fflush(stdout);
+		fprintf(stderr, colored, args...);
+		fflush(stderr);
 		delete[] colored;
 		fprintf(f, format, args...);
 		fflush(f);
