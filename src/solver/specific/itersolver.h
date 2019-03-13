@@ -196,17 +196,17 @@ public:
 
 
 
-	void Solve_QPCE_singular_dom  ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	int Solve_QPCE_singular_dom  ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
 
 	// *** CG solvers
-	void Solve_RegCG  ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
-	void Solve_RegCG_ConjProj  ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
-	void Solve_full_ortho_CG_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
-	void Solve_GMRES_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
-	void Solve_BICGSTAB_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
-	void Solve_new_CG_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
-	void Solve_PipeCG_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
-	void Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal);
+	int Solve_RegCG  ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	int Solve_RegCG_ConjProj  ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	int Solve_full_ortho_CG_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	int Solve_GMRES_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	int Solve_BICGSTAB_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	int Solve_new_CG_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	int Solve_PipeCG_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	int Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal);
 
 //	// *** Dynamic solvers
 //	void Solve_RegCG_nonsingular  ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel);
@@ -218,7 +218,7 @@ public:
 	void GetResiduum_Dual_singular_parallel ( SuperCluster & cluster, SEQ_VECTOR <double> & dual_residuum_out );
 
 	void MakeSolution_Primal_singular_parallel ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out );
-	void GetSolution_Primal_singular_parallel  ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out, SEQ_VECTOR < SEQ_VECTOR <double> > & dual_solution_out );
+	void GetSolution_Primal_singular_parallel  ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out, SEQ_VECTOR < SEQ_VECTOR <double> > & dual_solution_out, int iters);
 
 };
 

@@ -20,9 +20,16 @@
 
 using namespace espreso;
 
+double TimeLogger::init = TimeLogger::time();
+
 double TimeLogger::time()
 {
 	return omp_get_wtime();
+}
+
+double TimeLogger::duration()
+{
+	return omp_get_wtime() - init;
 }
 
 void TimeLogger::mergeEvents(void *in, void *out, int *len, MPI_Datatype *datatype)
@@ -72,7 +79,7 @@ void TimeLogger::mergeEvents(void *in, void *out, int *len, MPI_Datatype *dataty
 
 void TimeLogger::evaluate(ProgressLogger &logger)
 {
-	double duration = time() - _init;
+	double duration = TimeLogger::duration();
 	std::vector<double> prev(10);
 
 	size_t namewidth = 43, width = 78;
@@ -81,7 +88,7 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 		switch (_events[i].type) {
 		case Event::START:
 			prev.push_back(_events[i].data.time);
-			_events[i].data.time -= _init;
+			_events[i].data.time -= init;
 			break;
 		case Event::CHECKPOINT:
 			_events[i].data.time -= prev.back();
@@ -111,9 +118,7 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 			MPI_Reduce(events.data(), statistics.data(), sizeof(EventStatistics) * events.size(), MPI_BYTE, reduce, 0, info::mpi::comm);
 			MPI_Op_free(&reduce);
 		} else {
-			if (info::mpi::rank == 0) {
-				logger.warning("Various number of time events (only root data are printed)\n");
-			}
+			logger.warning("Various number of time events (only root data are printed)\n");
 		}
 	}
 
@@ -144,7 +149,7 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 		}
 	}
 
-	auto statwithloadstep = [&] (const char* name, int loadstep, double avg, double min, double max) {
+	auto statwithloadstep = [&] (const char* name, int loadstep, double avg, double min, double max, double sectiontime) {
 		std::string smin = std::to_string(min);
 		std::string smax = std::to_string(max);
 		smin[8] = smax[8] = '\0';
@@ -153,7 +158,7 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 					avg, smin.c_str(), smax.c_str(), 100 * avg / duration, max / min);
 	};
 
-	auto statwithoutloadstep = [&] (const char* name, double avg, double min, double max) {
+	auto statwithoutloadstep = [&] (const char* name, double avg, double min, double max, double sectiontime) {
 		std::string smin = std::to_string(min);
 		std::string smax = std::to_string(max);
 		smin[8] = smax[8] = '\0';
@@ -166,16 +171,18 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 		logger.info(" ============================================ avg. [s]  < min [s] -  max [s]> [  %%  ] [ imb ]   \n");
 		int depth = printeddepth - 1;
 		std::vector<const char*> printed;
+		double sectiontime = statistics[end - 1].data.time - statistics[start].data.time;
 		for (size_t i = start; i < end; i++) {
 			switch (statistics[i].type) {
 			case Event::START:
 				++depth;
 				if (depth == printeddepth) {
+					std::string name = std::string(_events[i].name) + " STARTED AT ::";
 					std::string min = std::to_string(statistics[i].min.time);
 					std::string max = std::to_string(statistics[i].max.time);
 					min[8] = max[8] = '\0';
-					logger.info("  %-*s %f  <%s - %s> [-----] [%5.2f]\n",
-							namewidth, _events[i].name,
+					logger.info("  :: %-*s %f  <%s - %s> [-----] [%5.2f]\n",
+							namewidth - 3, name.c_str(),
 							statistics[i].avg.time / info::mpi::size,
 							min.c_str(), max.c_str(),
 							statistics[i].max.time / statistics[i].min.time);
@@ -188,11 +195,13 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 						if (loadstep > 0) {
 							statwithloadstep(_events[i].name, loadstep,
 									statistics[i].avg.time / info::mpi::size,
-									statistics[i].min.time, statistics[i].max.time);
+									statistics[i].min.time, statistics[i].max.time,
+									sectiontime);
 						} else {
 							statwithoutloadstep(_events[i].name,
 									statistics[i].avg.time / info::mpi::size,
-									statistics[i].min.time, statistics[i].max.time);
+									statistics[i].min.time, statistics[i].max.time,
+									sectiontime);
 						}
 					} else {
 						if (std::find(printed.begin(), printed.end(), _events[i].name) == printed.end()) {
@@ -212,8 +221,9 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 							logger.info("  %s [%dx]\n", _events[i].name, count);
 							statwithoutloadstep("  [run=FIRST]",
 									statistics[i].avg.time / info::mpi::size,
-									statistics[i].min.time, statistics[i].max.time);
-							statwithoutloadstep("  [run=REST]", avg / (count - 1), min, max);
+									statistics[i].min.time, statistics[i].max.time,
+									sectiontime);
+							statwithoutloadstep("  [run=REST]", avg / (count - 1), min, max, sectiontime);
 						}
 					}
 				}
@@ -223,11 +233,13 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 					if (loadstep > 0) {
 						statwithloadstep(_events[i].name, loadstep,
 								statistics[i].avg.time / info::mpi::size,
-								statistics[i].min.time, statistics[i].max.time);
+								statistics[i].min.time, statistics[i].max.time,
+								sectiontime);
 					} else {
 						statwithoutloadstep(_events[i].name,
 								statistics[i].avg.time / info::mpi::size,
-								statistics[i].min.time, statistics[i].max.time);
+								statistics[i].min.time, statistics[i].max.time,
+								sectiontime);
 					}
 				}
 				--depth;

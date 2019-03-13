@@ -222,7 +222,7 @@ bool LoadStepIterator::next(TPhysics &configuration)
 	_timeStepSolver = getTimeStepSolver(_timeStepSolver, configuration.load_steps_settings.at(time::step + 1), *_assembler);
 	_loadStepSolver = getLoadStepSolver(_loadStepSolver, configuration.load_steps_settings.at(time::step + 1), *_assembler, *_timeStepSolver);
 
-	eslog::addsolverparam("LOAD STEP", time::step);
+	eslog::addsolverparam("LOAD STEP [LS] -- the current LOAD STEP number", "LS", "%2d", time::step);
 	_loadStepSolver->setSolverParams();
 	_timeStepSolver->setSolverParams();
 

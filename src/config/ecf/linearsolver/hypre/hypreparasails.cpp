@@ -16,7 +16,7 @@ HYPREParaSailsConfiguration::HYPREParaSailsConfiguration()
 			.setdescription({ "Set the levels parameter for the ParaSails preconditioner" })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
-  	filter = 0.1;
+	filter = 0.1;
 	REGISTER(filter, ECFMetaData()
 			.setdescription({ "Set the filter parameter for the ParaSails preconditioner" })
 			.setdatatype({ ECFDataType::FLOAT }));
@@ -29,7 +29,7 @@ HYPREParaSailsConfiguration::HYPREParaSailsConfiguration()
 			.addoption(ECFOption().setname("SPD").setdescription("SPD problem, and SPD (factored) preconditioner"))
 			.addoption(ECFOption().setname("NON_DEF_SPD").setdescription("nonsymmetric, definite problem, and SPD (factored) preconditioner")));
 
-  	loadbal = 0.0;
+	loadbal = 0.0;
 	REGISTER(loadbal, ECFMetaData()
 			.setdescription({ "Set the load balance parameter for the ParaSails preconditioner" })
 			.setdatatype({ ECFDataType::FLOAT }));

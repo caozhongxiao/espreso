@@ -17,6 +17,12 @@ void info(const char* format, Args... args)
 }
 
 template <typename... Args>
+void solver(const char* format, Args... args)
+{
+	progress().info(format, args...);
+}
+
+template <typename... Args>
 void linearsolver(const char* format, Args... args)
 {
 	if (progress().verbosity > 2) {

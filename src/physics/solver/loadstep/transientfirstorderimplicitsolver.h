@@ -21,6 +21,7 @@ public:
 	Matrices updateStructuralMatrices(Matrices matrices);
 
 protected:
+	static const char *statusINCR, *statusDECR, *statusUNCH;
 	void initLoadStep();
 	void runNextTimeStep();
 	void processTimeStep();
@@ -30,6 +31,10 @@ protected:
 	double _nTimeShift;
 
 	NodeData *U, *dU, *V, *X, *Y, *dTK, *dTM;
+
+	double _resFreq, _oscilationLimit;
+	const char *_status;
+
 };
 
 }

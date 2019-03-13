@@ -75,9 +75,9 @@ std::string TransientSecondOrderImplicit::name()
 
 void TransientSecondOrderImplicit::setSolverParams()
 {
-	eslog::addsolverparam("TIME STEP", time::substep);
-	eslog::addsolverparam("TIME", time::current);
-	eslog::addsolverparam("SHIFT", time::shift);
+	eslog::addsolverparam("TIME STEP", "  TS", "%4d", time::substep);
+	eslog::addsolverparam("TIME", "  T [s]", "%7.5f", time::current);
+	eslog::addsolverparam("SHIFT", "  S [s]", "%7.5f", time::shift);
 }
 
 void TransientSecondOrderImplicit::updateConstants()
@@ -194,6 +194,16 @@ void TransientSecondOrderImplicit::processTimeStep()
 	_assembler.parameters.timeIntegrationConstantK = 1 + _newmarkConsts[1] * _stiffnessDamping;
 	_assembler.parameters.timeIntegrationConstantM = _newmarkConsts[0] + _newmarkConsts[1] * _massDamping;
 
+	switch (_configuration.method) {
+	case TransientSecondOrderImplicitSolverConfiguration::METHOD::NEWMARK:
+		eslog::solver("\n = ============================ NEWMARK ============================ =\n");
+		break;
+	default:
+		eslog::globalerror("Not supported first order implicit solver method.\n");
+	}
+	eslog::solver(" =  LOAD STEP %2d, SUBSTEP %4d, TIME %10.6f, TIME STEP %8.6f  =\n", time::step + 1, time::substep + 1, time::current, time::shift);
+	eslog::solver(" = ----------------------------------------------------------------- =\n");
+
 	_timeStepSolver.solve(*this);
 
 	_assembler.composer()->sum(dU, 1, _assembler.controller()->solution(), -1, U);
@@ -202,6 +212,7 @@ void TransientSecondOrderImplicit::processTimeStep()
 	bool changeConstants = false;
 
 	if (_configuration.auto_time_stepping.allowed && time::current < _startTime + _duration) {
+		eslog::solver(" = -------------------- AUTOMATIC TIME STEPPING -------------------- =\n");
 		if (false && dU->norm() / U->norm() < 1e-5) {
 			_nTimeShift = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * time::shift);
 		} else {
@@ -224,20 +235,23 @@ void TransientSecondOrderImplicit::processTimeStep()
 				}
 			}
 
-			eslog::linearsolver("AUTOMATIC TIME STEPPING INFO: RESPONSE FREQUENCY(%e), POINTS PER PERIOD(%e)\n", resFreq, resPeriod / time::shift);
+			eslog::solver(" = RESPONSE FREQUENCY, POINTS PER PERIOD         %.5e, %6.2f =\n", resFreq, resPeriod / time::shift);
 		}
 
 		if (std::fabs(time::shift - _nTimeShift) / time::shift < _precision) {
-			eslog::linearsolver("TIME STEP UNCHANGED (%e)\n", _nTimeShift);
+			eslog::solver(" = TIME STEP UNCHANGED                                               =\n");
 		} else {
 			if (time::shift - _precision < _nTimeShift) {
-				eslog::linearsolver("INCREASE TIME STEP (%e)\n", _nTimeShift);
+				eslog::solver(" = TIME STEP INCREASED                                      %8.6f =\n", _nTimeShift);
 			} else {
-				eslog::linearsolver("DECREASE TIME STEP (%e)\n", _nTimeShift);
+				eslog::solver(" = TIME STEP DECREASED                                      %8.6f =\n", _nTimeShift);
 			}
+			eslog::solver(" = INCREASE FACTOR                                             %5.2f =\n", _nTimeShift / time::shift);
 			changeConstants = true;
 		}
 	}
+	eslog::solver(" = ================================================================= =\n");
+	eslog::solver("                                             run time %12.3f s =\n\n", eslog::duration());
 
 	if (time::shift - _precision < _nTimeShift) {
 		_assembler.composer()->sum(Z, _newmarkConsts[0], dU, -_newmarkConsts[2], V);
@@ -257,8 +271,6 @@ void TransientSecondOrderImplicit::processTimeStep()
 	if (changeConstants) {
 		updateConstants();
 	}
-
-	eslog::printsolver();
 }
 
 

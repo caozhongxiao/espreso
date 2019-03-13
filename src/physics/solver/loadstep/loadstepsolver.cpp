@@ -37,8 +37,6 @@ void LoadStepSolver::run()
 	eslog::param("MODE", _timeStepSolver.name().c_str());
 	eslog::ln();
 
-	eslog::printsolverheader();
-
 	_startTime = time::current;
 	time::substep = 0;
 	time::iteration = 0;

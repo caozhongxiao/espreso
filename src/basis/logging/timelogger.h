@@ -41,10 +41,11 @@ class TimeLogger: public Verbosity<TimeLogger, 't'> {
 
 public:
 	static double time();
+	static double duration();
 
 	void start(const char* region, const char* section)
 	{
-		_events.push_back(Event{ region, Event::Data{ .time = time() }, Event::START });
+		_events.push_back(Event{ section, Event::Data{ .time = time() }, Event::START });
 	}
 
 	void checkpoint(const char* region)
@@ -94,7 +95,6 @@ public:
 
 	TimeLogger()
 	{
-		_init = time();
 		_events.reserve(1000000);
 	}
 
@@ -103,7 +103,7 @@ public:
 protected:
 	static void mergeEvents(void *in, void *out, int *len, MPI_Datatype *datatype);
 
-	double _init;
+	static double init;
 	std::vector<Event> _events;
 };
 

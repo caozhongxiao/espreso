@@ -32,15 +32,17 @@ void param(const char* name, const long unsigned int &value);
 void param(const char* name, const double &value);
 void param(const char* name, const char* value);
 
-void addsolverparam(const char* name, int &value);
-void addsolverparam(const char* name, long &value);
-void addsolverparam(const char* name, long unsigned int &value);
-void addsolverparam(const char* name, double &value);
-void addsolverparam(const char* name, bool &value);
+void addsolverparam(const char* name, const char* shortcut, const char* format, int &value);
+void addsolverparam(const char* name, const char* shortcut, const char* format, long &value);
+void addsolverparam(const char* name, const char* shortcut, const char* format, long unsigned int &value);
+void addsolverparam(const char* name, const char* shortcut, const char* format, double &value);
+void addsolverparam(const char* name, const char* shortcut, const char* format, const char* &value);
+void addsolverparam(const char* name, const char* shortcut, const char* format, bool &value);
 void printsolverheader();
 void printsolver();
 
 void info(const char* msg);
+void solver(const char* msg);
 void linearsolver(const char* msg);
 void duration(const char* msg);
 void warning(const char* msg);
@@ -50,6 +52,8 @@ void globalerror(const char* msg);
 
 const char* path();
 const char* name();
+double time();
+double duration();
 
 bool printtime();
 

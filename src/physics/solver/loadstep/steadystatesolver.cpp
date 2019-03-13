@@ -2,7 +2,7 @@
 #include "steadystatesolver.h"
 #include "esinfo/timeinfo.h"
 #include "esinfo/meshinfo.h"
-#include "esinfo/eslog.h"
+#include "esinfo/eslog.hpp"
 #include "physics/assembler/dataholder.h"
 #include "physics/solver/timestep/timestepsolver.h"
 #include "physics/assembler/assembler.h"
@@ -48,8 +48,6 @@ void SteadyStateSolver::runNextTimeStep()
 	_assembler.nextTime();
 
 	processTimeStep();
-
-	eslog::printsolver();
 }
 
 void SteadyStateSolver::processTimeStep()
@@ -58,7 +56,14 @@ void SteadyStateSolver::processTimeStep()
 	_assembler.parameters.timeIntegrationConstantK = 1;
 	_assembler.parameters.timeIntegrationConstantM = 0;
 
+	eslog::solver("\n = ====================== STEADY STATE SOLVER ====================== =\n");
+	eslog::solver(" =  LOAD STEP %2d, SUBSTEP %4d, TIME %10.6f, TIME STEP %8.6f  =\n", time::step + 1, time::substep + 1, time::current, time::shift);
+	eslog::solver(" = ----------------------------------------------------------------- =\n");
+
 	_timeStepSolver.solve(*this);
 	_assembler.postProcess();
+
+	eslog::solver(" = ================================================================= =\n");
+	eslog::solver("                                             run time %12.3f s =\n\n", eslog::duration());
 }
 

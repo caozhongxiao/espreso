@@ -362,7 +362,7 @@ HYPREBoomerAMGConfiguration::HYPREBoomerAMGConfiguration()
 
 
 
-	solver_info = SOLVER_INFO::SOLVE_INFO;
+	solver_info = SOLVER_INFO::NO_INFO;
 	REGISTER(solver_info, ECFMetaData()
 			.setdescription({ "Print solver info" })
 			.setdatatype({ ECFDataType::OPTION })

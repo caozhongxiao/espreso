@@ -5,7 +5,7 @@
 
 #include "basis/matrices/matrixtype.h"
 #include "basis/utilities/communication.h"
-#include "esinfo/eslog.h"
+#include "esinfo/eslog.hpp"
 
 #include <vector>
 
@@ -148,8 +148,13 @@ void MKLPDSSData::solve(const MKLPDSSConfiguration &configuration, double *solut
 {
 #ifdef HAVE_MKL
 	_data->solution = solution;
+
+	eslog::solver("     ---- LINEAR SOLVER ------------------------------------------\n");
+	eslog::solver("    | SOLVER ::     MKL     TYPE :: PARALLEL DIRECT SPARSE SOLVER |\n");
+	double start = eslog::time();
 	call(33); // solve at once
-	eslog::linearsolver("MKL PDSS: Solved\n");
+	eslog::solver("    | SOLVER TIME                                      %8.3f s |\n", eslog::time() - start);
+	eslog::solver("     -------------------------------------------------------------\n");
 #endif
 }
 

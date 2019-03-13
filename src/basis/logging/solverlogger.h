@@ -13,53 +13,60 @@ class SolverLogger {
 
 	struct Parameter {
 		const char* name;
+		const char* shortcut;
+		const char* format;
+		char* csv;
 
 		union Data {
-			int    *ivalue;
-			long   *lvalue;
-			size_t *svalue;
-			double *dvalue;
-			bool   *bvalue;
+			int         *ivalue;
+			long        *lvalue;
+			size_t      *svalue;
+			double      *dvalue;
+			const char* *cvalue;
+			bool        *bvalue;
 		} data;
 
 		enum {
-			INT, LONG, SIZE, DOUBLE, BOOL
+			INT, LONG, SIZE, DOUBLE, STRING, BOOL
 		} type;
 	};
 
 public:
-	void addparam(const char* name, int &value)
+	void addparam(const char* name, const char* shortcut, const char* format, int &value)
 	{
-		_parameters.push_back(Parameter{ name, Parameter::Data{ .ivalue = &value }, Parameter::INT });
+		_parameters.push_back(Parameter{ name, shortcut, format, NULL, Parameter::Data{ .ivalue = &value }, Parameter::INT });
 	}
 
-	void addparam(const char* name, long &value)
+	void addparam(const char* name, const char* shortcut, const char* format, long &value)
 	{
-		_parameters.push_back(Parameter{ name, Parameter::Data{ .lvalue = &value }, Parameter::LONG });
+		_parameters.push_back(Parameter{ name, shortcut, format, NULL, Parameter::Data{ .lvalue = &value }, Parameter::LONG });
 	}
 
-	void addparam(const char* name, long unsigned int &value)
+	void addparam(const char* name, const char* shortcut, const char* format, long unsigned int &value)
 	{
-		_parameters.push_back(Parameter{ name, Parameter::Data{ .svalue = &value }, Parameter::SIZE });
+		_parameters.push_back(Parameter{ name, shortcut, format, NULL, Parameter::Data{ .svalue = &value }, Parameter::SIZE });
 	}
 
-	void addparam(const char* name, double &value)
+	void addparam(const char* name, const char* shortcut, const char* format, double &value)
 	{
-		_parameters.push_back(Parameter{ name, Parameter::Data{ .dvalue = &value }, Parameter::DOUBLE });
+		_parameters.push_back(Parameter{ name, shortcut, format, NULL, Parameter::Data{ .dvalue = &value }, Parameter::DOUBLE });
 	}
 
-	void addparam(const char* name, bool &value)
+	void addparam(const char* name, const char* shortcut, const char* format, const char* &value)
 	{
-		_parameters.push_back(Parameter{ name, Parameter::Data{ .bvalue = &value }, Parameter::BOOL });
+		_parameters.push_back(Parameter{ name, shortcut, format, NULL, Parameter::Data{ .cvalue = &value }, Parameter::STRING });
+	}
+
+	void addparam(const char* name, const char* shortcut, bool &value)
+	{
+		_parameters.push_back(Parameter{ name, shortcut, NULL, NULL, Parameter::Data{ .bvalue = &value }, Parameter::BOOL });
 	}
 
 	void printheader(ProgressLogger &logger);
 	void print(ProgressLogger &logger);
 
-	SolverLogger()
-	{
-		_parameters.reserve(50);
-	}
+	SolverLogger();
+	~SolverLogger();
 
 protected:
 	std::vector<Parameter> _parameters;

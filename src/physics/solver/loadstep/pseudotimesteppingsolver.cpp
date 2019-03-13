@@ -32,7 +32,7 @@ std::string PseudoTimeStepping::name()
 
 void PseudoTimeStepping::setSolverParams()
 {
-	eslog::addsolverparam("TIME STEP", time::substep);
+	eslog::addsolverparam("TIME STEP", "TS", "%4d", time::substep);
 }
 
 Matrices PseudoTimeStepping::updateStructuralMatrices(Matrices matrices)
@@ -63,8 +63,6 @@ void PseudoTimeStepping::processTimeStep()
 
 	_timeStepSolver.solve(*this);
 	_assembler.postProcess();
-
-	eslog::printsolver();
 }
 
 

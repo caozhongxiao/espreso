@@ -155,7 +155,72 @@ void FETISolver::solve()
 		eslog::error("Invalid Linear Solver configuration: Only GMRES and BICGSTAB can solve unsymmetric system.\n");
 	}
 
+	std::string type;
+	switch (configuration.method) {
+	case FETI_METHOD::TOTAL_FETI:
+		type = "FETI, ";
+		break;
+	case FETI_METHOD::HYBRID_FETI:
+		type = "HFETI, ";
+		break;
+	}
+	switch (configuration.iterative_solver) {
+	case FETI_ITERATIVE_SOLVER::PCG:
+		type += "PCG, ";
+		break;
+	case FETI_ITERATIVE_SOLVER::orthogonalPCG:
+		type += "ORTL PCG, ";
+		break;
+	case FETI_ITERATIVE_SOLVER::pipePCG:
+		type += "PIPE PCG, ";
+		break;
+	case FETI_ITERATIVE_SOLVER::GMRES:
+		type += "GMRES, ";
+		break;
+	case FETI_ITERATIVE_SOLVER::BICGSTAB:
+		type += "BICGSTAB, ";
+		break;
+	case FETI_ITERATIVE_SOLVER::QPCE:
+		type += "QPCE, ";
+		break;
+	case FETI_ITERATIVE_SOLVER::PCG_CP:
+		type += "PCG CP, ";
+		break;
+	case FETI_ITERATIVE_SOLVER::orthogonalPCG_CP:
+		type += "ORT PCG CP, ";
+		break;
+	}
+	switch (configuration.preconditioner) {
+	case FETI_PRECONDITIONER::NONE:
+		type += "NONE";
+		break;
+	case FETI_PRECONDITIONER::WEIGHT_FUNCTION:
+		type += "WEIGHTS";
+		break;
+	case FETI_PRECONDITIONER::LUMPED:
+		type += "LUMPED";
+		break;
+	case FETI_PRECONDITIONER::DIRICHLET:
+		type += "DIRICHLET";
+		break;
+	case FETI_PRECONDITIONER::SUPER_DIRICHLET:
+		type += "SDIRICHLET";
+		break;
+	case FETI_PRECONDITIONER::MAGIC:
+		type += "MAGIC";
+		break;
+	}
+
+	double start = eslog::time();
+	eslog::solver("     ---- LINEAR SOLVER ------------------------------------------\n");
+	eslog::solver("    | SOLVER :: ESPRESO     TYPE :: %29s |\n", type.c_str());
+	eslog::solver("    | REQUESTED STOPPING CRITERIA                    %e |\n", configuration.precision);
+
 	Solve(instance->f, instance->primalSolution, instance->dualSolution);
+
+	eslog::solver("    | SOLVER TIME                                      %8.3f s |\n", eslog::time() - start);
+	eslog::solver("     -------------------------------------------------------------\n");
+
 	eslog::endln("FETI: SOLVED");
 }
 

@@ -108,32 +108,33 @@ void IterSolverBase::Solve ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_dual_solution_parallel)
 {
 
+	int iters = 0;
 	switch (configuration.iterative_solver) {
 	case FETI_ITERATIVE_SOLVER::PCG:
 		if (
 				configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ_R ||
 				configuration.conjugate_projector == FETI_CONJ_PROJECTOR::CONJ_K)
-			Solve_RegCG_ConjProj( cluster, in_right_hand_side_primal );
+			iters = Solve_RegCG_ConjProj( cluster, in_right_hand_side_primal );
 		else
-			Solve_RegCG ( cluster, in_right_hand_side_primal );
+			iters = Solve_RegCG ( cluster, in_right_hand_side_primal );
 		break;
 	case FETI_ITERATIVE_SOLVER::pipePCG:
-		Solve_PipeCG_singular_dom( cluster, in_right_hand_side_primal );
+		iters = Solve_PipeCG_singular_dom( cluster, in_right_hand_side_primal );
 		break;
 	case FETI_ITERATIVE_SOLVER::orthogonalPCG:
-		Solve_full_ortho_CG_singular_dom (cluster, in_right_hand_side_primal );
+		iters = Solve_full_ortho_CG_singular_dom (cluster, in_right_hand_side_primal );
 		break;
 	case FETI_ITERATIVE_SOLVER::GMRES:
-		Solve_GMRES_singular_dom (cluster, in_right_hand_side_primal );
+		iters = Solve_GMRES_singular_dom (cluster, in_right_hand_side_primal );
 		break;
 	case FETI_ITERATIVE_SOLVER::BICGSTAB:
-		Solve_BICGSTAB_singular_dom(cluster, in_right_hand_side_primal );
+		iters = Solve_BICGSTAB_singular_dom(cluster, in_right_hand_side_primal );
 		break;
 	case FETI_ITERATIVE_SOLVER::QPCE:
-		Solve_QPCE_singular_dom(cluster, in_right_hand_side_primal );
+		iters = Solve_QPCE_singular_dom(cluster, in_right_hand_side_primal );
 		break;
 	case FETI_ITERATIVE_SOLVER::orthogonalPCG_CP:
-		Solve_full_ortho_CG_singular_dom_geneo(cluster, in_right_hand_side_primal);
+		iters = Solve_full_ortho_CG_singular_dom_geneo(cluster, in_right_hand_side_primal);
 		break;
 	case FETI_ITERATIVE_SOLVER::PCG_CP:
 		eslog::error("Regular CG with conjugate projector not implemented yet.\n");
@@ -147,7 +148,7 @@ void IterSolverBase::Solve ( SuperCluster & cluster,
 
 	 TimeEvent timeGetSol(string("Solver - Get Primal Solution"));
 	 timeGetSol.start();
-	GetSolution_Primal_singular_parallel( cluster, in_right_hand_side_primal, out_primal_solution_parallel, out_dual_solution_parallel );
+	GetSolution_Primal_singular_parallel( cluster, in_right_hand_side_primal, out_primal_solution_parallel, out_dual_solution_parallel, iters );
 	 timeGetSol.endWithBarrier();
 	 postproc_timing.addEvent(timeGetSol);
 
@@ -178,7 +179,8 @@ void IterSolverBase::GetSolution_Dual_singular_parallel    ( SuperCluster & clus
 void IterSolverBase::GetSolution_Primal_singular_parallel  ( SuperCluster & cluster,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out,
-		SEQ_VECTOR < SEQ_VECTOR <double> > & dual_solution_out) {
+		SEQ_VECTOR < SEQ_VECTOR <double> > & dual_solution_out,
+		int iters) {
 
 	MakeSolution_Primal_singular_parallel(cluster, in_right_hand_side_primal, primal_solution_out );
 
@@ -350,13 +352,19 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( SuperCluster & clus
 		parallel_norm_compressed(cluster, Bn_l);
 		norm_Bn_lLambda = parallel_norm_compressed(cluster, Bn_lLambda);
 
+		double norm = (KKT1_norm_cluster_global2 ? KKT1_norm_cluster_global / KKT1_norm_cluster_global2 : KKT1_norm_cluster_global);
 		eslog::linearsolver(" **** Karush-Kuhn-Tucker-conditions ****\n");
-		eslog::linearsolver(" Solution norm: norm(K*u - f + Bt*Lambda)                     = % e\n", (KKT1_norm_cluster_global2 ? KKT1_norm_cluster_global / KKT1_norm_cluster_global2 :KKT1_norm_cluster_global));
+		eslog::linearsolver(" Solution norm: norm(K*u - f + Bt*Lambda)                     = % e\n", norm);
 		eslog::linearsolver(" Equality constraints: norm(Be*u - ce)                        = % e\n", norm_Beu / norm_ce);
 		// KKT3
 		eslog::linearsolver(" Inequality constraints: norm(max(Bn*u - cn,0))               = % e\n", max_Bn_l_g / norm_cn);
 		eslog::linearsolver(" Check Multipliers positiveness: norm(max(-Lambda_N,0)        = % e\n", lambda_n_max_2_g / lambda_n_max_g);
 		eslog::linearsolver(" Check norm of Normal Multipliers: norm((Be*u - ce)*Lambda_N) = % e\n", norm_Bn_lLambda / ( norm_cn * lambda_n_max_g ));
+		eslog::solver("    | SOLUTION RESIDUAL NORM                         %e |\n", norm);
+		eslog::solver("    | ITERATIONS TO CONVERGENCE                          %8d |\n", iters);
+		if (norm > configuration.precision) {
+			eslog::warning("    |              >>> SOLVER DOES NOT CONVERGED <<<              |\n");
+		}
 //		switch (configuration.solver) {
 //		case FETI_ITERATIVE_SOLVER::QPCE:
 //			Solve_QPCE_singular_dom(cluster, in_right_hand_side_primal );
@@ -615,7 +623,7 @@ void IterSolverBase::proj_gradient ( SEQ_VECTOR <double> & x,
 
 
 // QPCE is a variant of the algorithm SMALBE   (SemiMonotonous Augmented Lagrangians with Bound and Equality constraints)
-void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
+int IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 
@@ -1386,12 +1394,13 @@ void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 	eslog::linearsolver("===================================================================================================\n");
 	eslog::linearsolver(" END QPCE \n");
 	eslog::linearsolver("===================================================================================================\n");
+	return output_n_it + 1;
 }
 
 
 
 
-void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
+int IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 
@@ -1523,7 +1532,8 @@ void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 	// *** Start the CG iteration loop ********************************************
 
 	//for (int iter = 0; tol > min_tol && iter < CG_max_iter; iter++) {
-	for (int iter = 0; iter < CG_max_iter; iter++) {
+	int iter = 0;
+	for (; iter < CG_max_iter; iter++) {
 		timing.totalTime.start();
 
 		#pragma omp parallel for
@@ -1673,7 +1683,6 @@ for (size_t i = 0; i < p_l.size(); i++)
 
 	} // end of CG iterations
 
-
 	// *** save solution - in dual and amplitudes *********************************************
 	dual_soultion_compressed_parallel   = x_l;
 	dual_residuum_compressed_parallel   = r_l;
@@ -1709,13 +1718,14 @@ for (size_t i = 0; i < p_l.size(); i++)
 	timing.addEvent(ddot_beta);
 	timing.addEvent(ddot_alpha);
 
+	return iter + 1;
 	// *** END - Presint out the timing for the iteration loop ***********************************
 
 }
 
 
 
-void IterSolverBase::Solve_RegCG_ConjProj ( SuperCluster & cluster,
+int IterSolverBase::Solve_RegCG_ConjProj ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 
@@ -1849,7 +1859,8 @@ void IterSolverBase::Solve_RegCG_ConjProj ( SuperCluster & cluster,
 	// *** Start the CG iteration loop ********************************************
 
 	//for (int iter = 0; tol > min_tol && iter < CG_max_iter; iter++) {
-	for (int iter = 0; iter < CG_max_iter; iter++) {
+	int iter = 0;
+	for (; iter < CG_max_iter; iter++) {
 		timing.totalTime.start();
 
 		#pragma omp parallel for
@@ -2037,9 +2048,10 @@ for (size_t i = 0; i < p_l.size(); i++)
 
 	// *** END - Presint out the timing for the iteration loop ***********************************
 
+	return iter + 1;
 }
 
-void IterSolverBase::Solve_new_CG_singular_dom ( SuperCluster & cluster,
+int IterSolverBase::Solve_new_CG_singular_dom ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 /*####################################################################################################
@@ -2140,7 +2152,8 @@ for (size_t i = 0; i < g_l.size(); i++){
 //		<< spaces(indent.size()) << "time[s]";
 
 	// *** Start the CG iteration loop ********************************************
-	for (int iter = -1; iter < CG_max_iter; iter++) {
+	int iter = -1;
+	for (; iter < CG_max_iter; iter++) {
 
 		timing.totalTime.start();
 
@@ -2292,10 +2305,10 @@ for (size_t i = 0; i < x_l.size(); i++) {
 	timing.addEvent(ddot_alpha);
 
 	// *** END - Presint out the timing for the iteration loop ***********************************
-
+	return iter + 1;
 }
 
-void IterSolverBase::Solve_full_ortho_CG_singular_dom ( SuperCluster & cluster,
+int IterSolverBase::Solve_full_ortho_CG_singular_dom ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 /*####################################################################################################
@@ -2448,7 +2461,8 @@ if (
 //		<< spaces(indent.size()) << "time[s]";
 
 	// *** Start the CG iteration loop ********************************************
-	for (int iter = 0; iter < CG_max_iter; iter++) {
+	int iter = 0;
+	for (; iter < CG_max_iter; iter++) {
 
 		timing.totalTime.start();
 
@@ -2709,10 +2723,10 @@ for (size_t i = 0; i < x_l.size(); i++) {
 	timing.addEvent(ddot_alpha);
 
 	// *** END - Presint out the timing for the iteration loop ***********************************
-
+	return iter + 1;
 }
 
-void IterSolverBase::Solve_GMRES_singular_dom ( SuperCluster & cluster,
+int IterSolverBase::Solve_GMRES_singular_dom ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 /*####################################################################################################
@@ -2926,7 +2940,8 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
    { return ii + n_mat*jj; };
   //
 	// *** Start the CG iteration loop ********************************************
-	for (int iter = 0; iter < CG_max_iter; iter++) {
+  int iter = 0;
+	for (; iter < CG_max_iter; iter++) {
 
 		timing.totalTime.start();
 
@@ -3163,9 +3178,10 @@ for (size_t i = 0; i < g_l.size(); i++){
 
 	// *** END - Presint out the timing for the iteration loop ***********************************
 
+	return iter + 1;
 } //  Solve_GMRES_singular_dom
 //
-void IterSolverBase::Solve_BICGSTAB_singular_dom ( SuperCluster & cluster,
+int IterSolverBase::Solve_BICGSTAB_singular_dom ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 /*####################################################################################################
@@ -3564,12 +3580,12 @@ for (size_t i = 0; i < g_l.size(); i++){
 	timing.addEvent(ddot_alpha);
 
 	// *** END - Presint out the timing for the iteration loop ***********************************
-
+	return iter + 1;
 } //  Solve_BICGSTAB_singular_dom
 
 
 
-void IterSolverBase::Solve_PipeCG_singular_dom ( SuperCluster & cluster,
+int IterSolverBase::Solve_PipeCG_singular_dom ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 
@@ -3715,7 +3731,8 @@ for (size_t i = 0; i < r_l.size(); i++) {
 //		<< spaces(indent.size()) << "time[s]";
 
 	// *** Start the CG iteration loop ********************************************
-	for (esint iter = 0; iter < CG_max_iter; iter++) {
+	esint iter = 0;
+	for (; iter < CG_max_iter; iter++) {
 
 		timing.totalTime.start();
 
@@ -3891,6 +3908,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 	timing.addEvent(appA_time);
 	timing.addEvent(vec_time );
 
+	return iter + 1;
 }
 
 void IterSolverBase::CreateConjProjector(Cluster & cluster) {
@@ -4300,7 +4318,7 @@ void IterSolverBase::ConjProj_lambda0(  Cluster & cluster, SEQ_VECTOR<double> & 
 
 
 
-void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & cluster,
+int IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 /*####################################################################################################
@@ -4493,7 +4511,8 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 	size_t iter = 0;
 
 	// *** Start the CG iteration loop ********************************************
-	for (int t_iter = 0; t_iter < CG_max_iter; t_iter++) {
+	int t_iter = 0;
+	for (; t_iter < CG_max_iter; t_iter++) {
 
 		timing.totalTime.start();
 
@@ -4767,7 +4786,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 	timing.addEvent(ddot_alpha);
 
 	// *** END - Presint out the timing for the iteration loop ***********************************
-
+	return iter + 1;
 }
 
 

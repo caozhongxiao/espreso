@@ -45,6 +45,16 @@ const char* name()
 	return logger->name.c_str();
 }
 
+double time()
+{
+	return logger->time();
+}
+
+double duration()
+{
+	return logger->duration();
+}
+
 bool printtime()
 {
 	return logger->OldTimeLogger::verbosity > 1;
@@ -217,29 +227,34 @@ void param(const char* name, const double &value)
 	logger->param(name, value);
 }
 
-void addsolverparam(const char* name, int &value)
+void addsolverparam(const char* name, const char* shortcut, const char* format, int &value)
 {
-	logger->addparam(name, value);
+	logger->addparam(name, shortcut, format, value);
 }
 
-void addsolverparam(const char* name, long &value)
+void addsolverparam(const char* name, const char* shortcut, const char* format, long &value)
 {
-	logger->addparam(name, value);
+	logger->addparam(name, shortcut, format, value);
 }
 
-void addsolverparam(const char* name, long unsigned int &value)
+void addsolverparam(const char* name, const char* shortcut, const char* format, long unsigned int &value)
 {
-	logger->addparam(name, value);
+	logger->addparam(name, shortcut, format, value);
 }
 
-void addsolverparam(const char* name, double &value)
+void addsolverparam(const char* name, const char* shortcut, const char* format, double &value)
 {
-	logger->addparam(name, value);
+	logger->addparam(name, shortcut, format, value);
 }
 
-void addsolverparam(const char* name, bool &value)
+void addsolverparam(const char* name, const char* shortcut, const char* format, const char* &value)
 {
-	logger->addparam(name, value);
+	logger->addparam(name, shortcut, format, value);
+}
+
+void addsolverparam(const char* name, const char* shortcut, bool &value)
+{
+	logger->addparam(name, shortcut, value);
 }
 
 void printsolverheader()
@@ -258,6 +273,11 @@ void param(const char* name, const char* value)
 }
 
 void info(const char* msg)
+{
+	logger->info(msg);
+}
+
+void solver(const char* msg)
 {
 	logger->info(msg);
 }
