@@ -23,6 +23,7 @@ struct METISConfiguration: public ProcessesReduction, public ECFDescription {
 
 struct DecompositionConfiguration: public ECFDescription {
 
+	int mesh_duplication;
 	int domains;
 	bool balance_clusters;
 	bool separate_materials, separate_regions, separate_etypes;

@@ -41,6 +41,11 @@ espreso::METISConfiguration::METISConfiguration()
 
 espreso::DecompositionConfiguration::DecompositionConfiguration()
 {
+	mesh_duplication = 1;
+	REGISTER(mesh_duplication, ECFMetaData()
+			.setdescription({ "The number of parallel mesh instances (usefull etc. for harmonic solvers)." })
+			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
+
 	REGISTER(domains, ECFMetaData()
 			.setdescription({ "Number of domains for each cluster (Keep 0 for automatic decomposition)." })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
