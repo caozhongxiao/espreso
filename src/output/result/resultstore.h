@@ -40,8 +40,6 @@ public:
 	static bool isStoreNode();
 	static bool isComputeNode();
 
-	bool isCollected();
-	bool isSeparated();
 	bool storeStep();
 
 	void updateMesh();
@@ -49,10 +47,6 @@ public:
 
 	ResultStore();
 	~ResultStore();
-
-	int storeThreads;
-	int storeProcesses;
-	int computeProcesses;
 
 protected:
 	ResultStoreExecutor *_async;

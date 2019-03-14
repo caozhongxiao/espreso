@@ -56,9 +56,6 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh)
 
 
 	_asyncStore = new ResultStore();
-	_asyncStore->storeThreads = 0;
-	_asyncStore->storeProcesses = 0;
-	_asyncStore->computeProcesses = info::mpi::size;
 
 	_asyncStore->_direct = new DirectExecutor(mesh);
 	ResultStoreExecutor *executor = _asyncStore->_direct;
@@ -69,7 +66,6 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh)
 		_dispatcher = new Dispatcher();
 		_asyncStore->_async = new AsyncStore(mesh);
 		_dispatcher->setThreadMode();
-		_asyncStore->storeThreads = 1;
 		executor = _asyncStore->_async;
 		break;
 //	case OutputConfiguration::MODE::MPI:
@@ -164,22 +160,6 @@ bool ResultStore::isStoreNode()
 bool ResultStore::isComputeNode()
 {
 	return !isStoreNode();
-}
-
-bool ResultStore::isCollected()
-{
-	bool store = false;
-	if (_async) store |= _async->isCollected();
-	if (_direct) store |= _direct->isCollected();
-	return store;
-}
-
-bool ResultStore::isSeparated()
-{
-	bool store = false;
-	if (_async) store |= _async->isSeparated();
-	if (_direct) store |= _direct->isSeparated();
-	return store;
 }
 
 bool ResultStore::storeStep()
