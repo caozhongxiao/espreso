@@ -41,18 +41,6 @@ espreso::METISConfiguration::METISConfiguration()
 
 espreso::DecompositionConfiguration::DecompositionConfiguration()
 {
-	path = "EBF";
-	REGISTER(path, ECFMetaData()
-			.setdescription({ "Path to store preprocessed mesh in ESPRESO binary format (*.ebf)." })
-			.setdatatype({ ECFDataType::STRING }));
-
-	ecfdescription->addSpace();
-
-	mpi_procs = 0;
-	domains = 0;
-	REGISTER(mpi_procs, ECFMetaData()
-			.setdescription({ "Number of MPI processes of *.ebf data." })
-			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 	REGISTER(domains, ECFMetaData()
 			.setdescription({ "Number of domains for each cluster (Keep 0 for automatic decomposition)." })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));

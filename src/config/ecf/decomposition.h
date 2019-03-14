@@ -23,14 +23,9 @@ struct METISConfiguration: public ProcessesReduction, public ECFDescription {
 
 struct DecompositionConfiguration: public ECFDescription {
 
-	std::string path;
-
-	int mpi_procs, domains;
-
+	int domains;
 	bool balance_clusters;
-
 	bool separate_materials, separate_regions, separate_etypes;
-
 	METISConfiguration metis_options;
 
 	DecompositionConfiguration();
