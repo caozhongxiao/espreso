@@ -35,7 +35,7 @@ void MeshGenerator::generate(const InputGeneratorConfiguration &configuration, M
 	default:
 		eslog::globalerror("Not implemented mesh generator shape.\n");
 	}
-	eslog::endln("MESIO: MESH GENERATED");
+	eslog::endln("MESIO: MESH BUILT");
 }
 
 

@@ -421,7 +421,6 @@ void MeshPreprocessing::partitiate(esint parts, bool uniformDecomposition)
 	arrangeNodes();
 
 	eslog::endln("MESH: DOMAIN DECOMPOSITION COMPUTED");
-	eslog::checkpointln("MESH: DOMAIN DECOMPOSITION COMPUTED");
 }
 
 void MeshPreprocessing::exchangeElements(const std::vector<esint> &partition)

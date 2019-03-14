@@ -309,7 +309,7 @@ void Mesh::update()
 
 	preprocessing->partitiate(preferedDomains, uniformDecomposition);
 
-	eslog::checkpointln("MESH: DOMAIN DECOMPOSITION COMPUTED");
+	eslog::checkpointln("MESH: MESH DECOMPOSED");
 
 	if (info::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_2D || info::ecf->physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {
 		const StructuralMechanicsConfiguration *sm;
@@ -342,23 +342,30 @@ void Mesh::update()
 			dimension = 2;
 		}
 
+		bool composeregion = false;
 		for (auto ls = ht->load_steps_settings.begin(); ls != ht->load_steps_settings.end(); ++ls) {
 			for (auto bc = ls->second.heat_flow.begin(); bc != ls->second.heat_flow.end(); ++bc) {
+				composeregion = true;
 				ntob(bc->first, dimension);
 			}
 			for (auto bc = ls->second.heat_flux.begin(); bc != ls->second.heat_flux.end(); ++bc) {
+				composeregion = true;
 				ntob(bc->first, dimension);
 			}
 			for (auto bc = ls->second.convection.begin(); bc != ls->second.convection.end(); ++bc) {
+				composeregion = true;
 				ntob(bc->first, dimension);
 			}
 			for (auto bc = ls->second.diffuse_radiation.begin(); bc != ls->second.diffuse_radiation.end(); ++bc) {
+				composeregion = true;
 				ntob(bc->first, dimension);
 			}
 		}
-	}
 
-	eslog::checkpointln("MESH: BOUNDARY REGIONS COMPOSED");
+		if (composeregion) {
+			eslog::checkpointln("MESH: BOUNDARY REGIONS COMPOSED");
+		}
+	}
 
 	preprocessing->arrangeRegions();
 

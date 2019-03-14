@@ -834,7 +834,6 @@ void MeshPreprocessing::arrangeRegions()
 	}
 
 	eslog::endln("MESH: REGIONS ARRANGED");
-	eslog::checkpointln("MESH: REGIONS ARRANGED");
 }
 
 void MeshPreprocessing::fillRegionMask()
@@ -869,7 +868,6 @@ void MeshPreprocessing::fillRegionMask()
 	_mesh->elements->regions = new serializededata<esint, esint>(regionsBitMaskSize, eregions);
 
 	eslog::endln("MESH: REGION MASK FILLED");
-	eslog::checkpointln("MESH: REGION MASK FILLED");
 }
 
 void MeshPreprocessing::synchronizeRegionNodes(const std::string &name, serializededata<esint, esint>* &rnodes, std::vector<ProcessInterval> &nintervals)

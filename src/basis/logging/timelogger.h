@@ -33,9 +33,12 @@ class TimeLogger: public Verbosity<TimeLogger, 't'> {
 
 	struct EventStatistics: public Event {
 		Data min, max, avg;
+		Data duration, dmin, dmax, davg;
 
 		EventStatistics(const Event &event)
-		: Event(event), min(event.data), max(event.data), avg(event.data)
+		: Event(event),
+		  min(event.data), max(event.data), avg(event.data),
+		  duration(event.data), dmin(event.data), dmax(event.data), davg(event.data)
 		{ }
 	};
 

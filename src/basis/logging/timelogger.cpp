@@ -6,6 +6,7 @@
 #include "esinfo/envinfo.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
+#include "esinfo/timeinfo.h"
 #include "basis/utilities/parser.h"
 #include "basis/utilities/communication.h"
 #include "input/input.h"
@@ -39,9 +40,15 @@ void TimeLogger::mergeEvents(void *in, void *out, int *len, MPI_Datatype *dataty
 		Event::Data &inmin = (static_cast<TimeLogger::EventStatistics*>(in) + i)->min;
 		Event::Data &inmax = (static_cast<TimeLogger::EventStatistics*>(in) + i)->max;
 		Event::Data &inavg = (static_cast<TimeLogger::EventStatistics*>(in) + i)->avg;
+		Event::Data &indmin = (static_cast<TimeLogger::EventStatistics*>(in) + i)->dmin;
+		Event::Data &indmax = (static_cast<TimeLogger::EventStatistics*>(in) + i)->dmax;
+		Event::Data &indavg = (static_cast<TimeLogger::EventStatistics*>(in) + i)->davg;
 		Event::Data &outmin = (static_cast<TimeLogger::EventStatistics*>(out) + i)->min;
 		Event::Data &outmax = (static_cast<TimeLogger::EventStatistics*>(out) + i)->max;
 		Event::Data &outavg = (static_cast<TimeLogger::EventStatistics*>(out) + i)->avg;
+		Event::Data &outdmin = (static_cast<TimeLogger::EventStatistics*>(out) + i)->dmin;
+		Event::Data &outdmax = (static_cast<TimeLogger::EventStatistics*>(out) + i)->dmax;
+		Event::Data &outdavg = (static_cast<TimeLogger::EventStatistics*>(out) + i)->davg;
 
 		switch ((static_cast<TimeLogger::EventStatistics*>(out) + i)->type) {
 		case Event::START:
@@ -50,6 +57,9 @@ void TimeLogger::mergeEvents(void *in, void *out, int *len, MPI_Datatype *dataty
 			outmin.time = std::min(outmin.time, inmin.time);
 			outmax.time = std::max(outmax.time, inmax.time);
 			outavg.time += inavg.time;
+			outdmin.time = std::min(outdmin.time, indmin.time);
+			outdmax.time = std::max(outdmax.time, indmax.time);
+			outdavg.time += indavg.time;
 			break;
 		case Event::INT:
 			outmin.ivalue = std::min(outmin.ivalue, inmin.ivalue);
@@ -77,35 +87,60 @@ void TimeLogger::mergeEvents(void *in, void *out, int *len, MPI_Datatype *dataty
 	}
 }
 
+static void printdata(
+		ProgressLogger &logger,
+		const char* format, const char* name, const char* suffix,
+		double avg, double min, double max, double sectiontime)
+{
+	std::string fullname = std::string(name) + std::string(suffix);
+	avg /= info::mpi::size;
+	std::string smin = std::to_string(min);
+	std::string smax = std::to_string(max);
+	smin[8] = smax[8] = '\0';
+	logger.info(format, fullname.c_str(), avg, smin.c_str(), smax.c_str(), 100 * avg / sectiontime, max / min);
+}
+
 void TimeLogger::evaluate(ProgressLogger &logger)
 {
 	double duration = TimeLogger::duration();
-	std::vector<double> prev(10);
+	std::vector<EventStatistics> events(_events.begin(), _events.end());
+	std::vector<double> prev(10), begin(10);
 
 	size_t namewidth = 43, width = 78;
 
-	for (size_t i = 0; i < _events.size(); i++) {
-		switch (_events[i].type) {
+	for (size_t i = 0; i < events.size(); i++) {
+		switch (events[i].type) {
 		case Event::START:
-			prev.push_back(_events[i].data.time);
-			_events[i].data.time -= init;
+			prev.push_back(events[i].data.time);
+			begin.push_back(events[i].data.time);
+			events[i].data.time -= init;
+			events[i].duration.time = 0;
 			break;
 		case Event::CHECKPOINT:
-			_events[i].data.time -= prev.back();
-			prev.back() += _events[i].data.time;
-			namewidth = std::max(namewidth, strlen(_events[i].name));
+			events[i].data.time -= prev.back();
+			events[i].duration.time -= begin.back();
+			prev.back() += events[i].data.time;
+			namewidth = std::max(namewidth, strlen(events[i].name));
 			break;
 		case Event::END:
-			_events[i].data.time -= prev.back();
+			events[i].data.time -= prev.back();
+			events[i].duration.time -= begin.back();
 			prev.pop_back();
-			namewidth = std::max(namewidth, strlen(_events[i].name));
+			begin.pop_back();
+			namewidth = std::max(namewidth, strlen(events[i].name));
 			break;
 		default:
-			namewidth = std::max(namewidth, strlen(_events[i].name) + 2);
+			namewidth = std::max(namewidth, strlen(events[i].name) + 2);
 			break;
 		}
+		events[i].min = events[i].data;
+		events[i].max = events[i].data;
+		events[i].avg = events[i].data;
+		events[i].dmin = events[i].duration;
+		events[i].dmax = events[i].duration;
+		events[i].davg = events[i].duration;
 	}
-	std::vector<EventStatistics> events(_events.begin(), _events.end());
+
 	std::vector<EventStatistics> statistics(events);
 
 	{ // synchroniza across processes
@@ -127,6 +162,7 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 		return;
 	}
 
+	// print coarse run and mesh statistics
 	auto totalesize = [] (std::vector<esint> &ecounters) {
 		esint size = 0;
 		for (size_t etype = 0; etype < ecounters.size(); etype++) {
@@ -149,147 +185,6 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 		}
 	}
 
-	auto statwithloadstep = [&] (const char* name, int loadstep, double avg, double min, double max, double sectiontime) {
-		std::string smin = std::to_string(min);
-		std::string smax = std::to_string(max);
-		smin[8] = smax[8] = '\0';
-		logger.info("  %s [LOADSTEP:%2d] %*f  <%s - %s> [%5.2f] [%5.2f]\n",
-					name, loadstep, namewidth - 21,
-					avg, smin.c_str(), smax.c_str(), 100 * avg / duration, max / min);
-	};
-
-	auto statwithoutloadstep = [&] (const char* name, double avg, double min, double max, double sectiontime) {
-		std::string smin = std::to_string(min);
-		std::string smax = std::to_string(max);
-		smin[8] = smax[8] = '\0';
-		logger.info("  %-*s %f  <%s - %s> [%5.2f] [%5.2f]\n",
-					namewidth, name,
-					avg, smin.c_str(), smax.c_str(), 100 * avg / duration, max / min);
-	};
-
-	auto print = [&] (size_t start, size_t end, int printeddepth, int loadstep, const std::vector<const char*> &duplicities) {
-		logger.info(" ============================================ avg. [s]  < min [s] -  max [s]> [  %%  ] [ imb ]   \n");
-		int depth = printeddepth - 1;
-		std::vector<const char*> printed;
-		double sectiontime = statistics[end - 1].data.time - statistics[start].data.time;
-		for (size_t i = start; i < end; i++) {
-			switch (statistics[i].type) {
-			case Event::START:
-				++depth;
-				if (depth == printeddepth) {
-					std::string name = std::string(_events[i].name) + " STARTED AT ::";
-					std::string min = std::to_string(statistics[i].min.time);
-					std::string max = std::to_string(statistics[i].max.time);
-					min[8] = max[8] = '\0';
-					logger.info("  :: %-*s %f  <%s - %s> [-----] [%5.2f]\n",
-							namewidth - 3, name.c_str(),
-							statistics[i].avg.time / info::mpi::size,
-							min.c_str(), max.c_str(),
-							statistics[i].max.time / statistics[i].min.time);
-				}
-				break;
-			case Event::CHECKPOINT:
-				if (depth == printeddepth) {
-					auto it = std::find(duplicities.begin(), duplicities.end(), _events[i].name);
-					if (it == duplicities.end()) {
-						if (loadstep > 0) {
-							statwithloadstep(_events[i].name, loadstep,
-									statistics[i].avg.time / info::mpi::size,
-									statistics[i].min.time, statistics[i].max.time,
-									sectiontime);
-						} else {
-							statwithoutloadstep(_events[i].name,
-									statistics[i].avg.time / info::mpi::size,
-									statistics[i].min.time, statistics[i].max.time,
-									sectiontime);
-						}
-					} else {
-						if (std::find(printed.begin(), printed.end(), _events[i].name) == printed.end()) {
-							printed.push_back(_events[i].name);
-							int count = 0;
-							double avg = 0, min = duration, max = 0;
-							for (size_t j = start; j < end; j++) {
-								if (_events[i].name == _events[j].name) {
-									if (count) {
-										min = std::min(min, statistics[j].min.time);
-										max = std::max(max, statistics[j].max.time);
-										avg += statistics[j].avg.time / info::mpi::size;
-									}
-									++count;
-								}
-							}
-							logger.info("  %s [%dx]\n", _events[i].name, count);
-							statwithoutloadstep("  [run=FIRST]",
-									statistics[i].avg.time / info::mpi::size,
-									statistics[i].min.time, statistics[i].max.time,
-									sectiontime);
-							statwithoutloadstep("  [run=REST]", avg / (count - 1), min, max, sectiontime);
-						}
-					}
-				}
-				break;
-			case Event::END:
-				if (depth == printeddepth) {
-					if (loadstep > 0) {
-						statwithloadstep(_events[i].name, loadstep,
-								statistics[i].avg.time / info::mpi::size,
-								statistics[i].min.time, statistics[i].max.time,
-								sectiontime);
-					} else {
-						statwithoutloadstep(_events[i].name,
-								statistics[i].avg.time / info::mpi::size,
-								statistics[i].min.time, statistics[i].max.time,
-								sectiontime);
-					}
-				}
-				--depth;
-				break;
-			case Event::LOADSTEP:
-				++loadstep;
-				break;
-			case Event::INT:
-				if (depth > 1 && depth == printeddepth) {
-					logger.info("    [param=%s] %*d  <%8d - %8d>         [%5.2f]\n",
-							_events[i].name, namewidth - strlen(_events[i].name) - 2,
-							statistics[i].avg.ivalue / info::mpi::size,
-							statistics[i].min.ivalue, statistics[i].max.ivalue,
-							(double)statistics[i].max.ivalue / statistics[i].min.ivalue);
-				}
-				break;
-			case Event::LONG:
-				if (depth > 1 && depth == printeddepth) {
-					logger.info("    [param=%s] %*ld  <%8ld - %8ld>         [%5.2f]\n",
-							_events[i].name, namewidth - strlen(_events[i].name) - 2,
-							statistics[i].avg.lvalue / info::mpi::size,
-							statistics[i].min.lvalue, statistics[i].max.lvalue,
-							(double)statistics[i].max.lvalue / statistics[i].min.lvalue);
-				}
-				break;
-			case Event::SIZE:
-				if (depth > 1 && depth == printeddepth) {
-					logger.info("    [param=%s] %*ld  <%8ld - %8ld>         [%5.2f]\n",
-							_events[i].name, namewidth - strlen(_events[i].name) - 2,
-							statistics[i].avg.svalue / info::mpi::size,
-							statistics[i].min.svalue, statistics[i].max.svalue,
-							(double)statistics[i].max.svalue / statistics[i].min.svalue);
-				}
-				break;
-			case Event::DOUBLE:
-				if (depth > 1 && depth == printeddepth) {
-					logger.info("    [param=%s] %*f  <%*f - %*f>         [%5.2f]\n",
-							_events[i].name, namewidth - strlen(_events[i].name) - 2,
-							statistics[i].avg.dvalue / info::mpi::size, 8,
-							statistics[i].min.dvalue, 8, statistics[i].max.dvalue,
-							statistics[i].max.dvalue / statistics[i].min.dvalue);
-				}
-				break;
-			default:
-				break;
-			}
-		}
-		logger.info(" ============================================================================================= \n");
-	};
-
 	logger.info(" ============================================================================================= \n");
 	logger.info(" == commit   %*s == \n", width, info::system::commit());
 	logger.info(" == ecf      %*s == \n", width, info::ecf->ecffile.c_str());
@@ -303,10 +198,120 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 	logger.info(" == nodes regions    %*ld == \n", width - 8, nregs);
 	logger.info(" ============================================================================================= \n");
 
+	const char* headformat = " %-44s %f  <%s - %s> [%5.2f] [%5.2f]\n";
+	const char* dataformat = "  %-43s %f  <%s - %s> [%5.2f] [%5.2f]\n";
+
+	auto print = [&] (size_t start, size_t end, int printeddepth, const std::vector<const char*> &duplicities) {
+		logger.info(" ============================================ avg. [s]  < min [s] -  max [s]> [  %%  ] [ imb ]   \n");
+		int depth = printeddepth - 1;
+		std::vector<const char*> printed;
+		for (size_t i = start; i <= end; i++) {
+			switch (statistics[i].type) {
+			case Event::START:
+				++depth;
+				if (depth == printeddepth) {
+					printdata(logger, headformat, events[i].name, " START AT",
+							statistics[i].avg.time, statistics[i].min.time, statistics[i].max.time, duration);
+				}
+				break;
+			case Event::CHECKPOINT:
+				if (depth == printeddepth) {
+					auto it = std::find(duplicities.begin(), duplicities.end(), events[i].name);
+					if (it == duplicities.end()) {
+						printdata(logger, dataformat, events[i].name, "",
+								statistics[i].avg.time, statistics[i].min.time, statistics[i].max.time, statistics[end].duration.time);
+					} else {
+						if (std::find(printed.begin(), printed.end(), events[i].name) == printed.end()) {
+							printed.push_back(events[i].name);
+							int count = 0;
+							double avg = 0, min = duration, max = 0;
+							for (size_t j = start; j <= end; j++) {
+								if (events[i].name == events[j].name) {
+									if (count) {
+										min = std::min(min, statistics[j].min.time);
+										max = std::max(max, statistics[j].max.time);
+										avg += statistics[j].avg.time / info::mpi::size;
+									}
+									++count;
+								}
+							}
+							logger.info("  %s [%dx]\n", events[i].name, count);
+							printdata(logger, dataformat, "  [run=FIRST]", "", statistics[i].avg.time, statistics[i].min.time, statistics[i].max.time, statistics[end].duration.time);
+							printdata(logger, dataformat, "  [run=REST]", "", avg / (count - 1), min, max, statistics[end].duration.time);
+						}
+					}
+				}
+				break;
+			case Event::END:
+				if (depth == printeddepth) {
+					printdata(logger, dataformat, events[i].name, "",
+							statistics[i].avg.time, statistics[i].min.time, statistics[i].max.time, statistics[end].duration.time);
+					printdata(logger, headformat, events[start].name, " TOTAL DURATION",
+							statistics[i].davg.time, statistics[i].dmin.time, statistics[i].dmax.time, duration);
+				}
+				--depth;
+				break;
+			case Event::INT:
+				if (depth > 1 && depth == printeddepth) {
+					logger.info("    [param=%s] %*d  <%8d - %8d>         [%5.2f]\n",
+							events[i].name, namewidth - strlen(events[i].name) - 2,
+							statistics[i].avg.ivalue / info::mpi::size,
+							statistics[i].min.ivalue, statistics[i].max.ivalue,
+							(double)statistics[i].max.ivalue / statistics[i].min.ivalue);
+				}
+				break;
+			case Event::LONG:
+				if (depth > 1 && depth == printeddepth) {
+					logger.info("    [param=%s] %*ld  <%8ld - %8ld>         [%5.2f]\n",
+							events[i].name, namewidth - strlen(events[i].name) - 2,
+							statistics[i].avg.lvalue / info::mpi::size,
+							statistics[i].min.lvalue, statistics[i].max.lvalue,
+							(double)statistics[i].max.lvalue / statistics[i].min.lvalue);
+				}
+				break;
+			case Event::SIZE:
+				if (depth > 1 && depth == printeddepth) {
+					logger.info("    [param=%s] %*ld  <%8ld - %8ld>         [%5.2f]\n",
+							events[i].name, namewidth - strlen(events[i].name) - 2,
+							statistics[i].avg.svalue / info::mpi::size,
+							statistics[i].min.svalue, statistics[i].max.svalue,
+							(double)statistics[i].max.svalue / statistics[i].min.svalue);
+				}
+				break;
+			case Event::DOUBLE:
+				if (depth > 1 && depth == printeddepth) {
+					logger.info("    [param=%s] %*f  <%*f - %*f>         [%5.2f]\n",
+							events[i].name, namewidth - strlen(events[i].name) - 2,
+							statistics[i].avg.dvalue / info::mpi::size, 8,
+							statistics[i].min.dvalue, 8, statistics[i].max.dvalue,
+							statistics[i].max.dvalue / statistics[i].min.dvalue);
+				}
+				break;
+			default:
+				break;
+			}
+		}
+		logger.info(" ============================================================================================= \n");
+	};
+
 	// WARNING: MPI sometimes copy name pointer from other process, hence use _events names
 	std::vector<size_t> begins;
 	std::vector<std::vector<const char*> > uniques, duplicities;
+	std::vector<std::string> solvers(time::step + 1);
 	int loadstep = 0;
+	size_t lastend = 0;
+
+	auto addloadstep = [&] (size_t i) {
+		if (begins.size() == 1 && strcmp(events[i].name, "ESPRESO: SOLVED") == 0) {
+			if (loadstep > 9) {
+				solvers[loadstep] = "ESPRESO: SOLVED [LOADSTEP " + std::to_string(loadstep) + "]";
+			} else {
+				solvers[loadstep] = "ESPRESO: SOLVED [LOADSTEP  " + std::to_string(loadstep) + "]";
+			}
+			events[i].name = solvers[loadstep].c_str();
+		}
+	};
+
 	for (size_t i = 0; i < statistics.size(); i++) {
 		switch (statistics[i].type) {
 		case Event::START:
@@ -315,21 +320,24 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 			duplicities.push_back({});
 			break;
 		case Event::CHECKPOINT:
-			if (std::find(uniques.back().begin(), uniques.back().end(), _events[i].name) == uniques.back().end()) {
-				uniques.back().push_back(_events[i].name);
+			addloadstep(i);
+			if (std::find(uniques.back().begin(), uniques.back().end(), events[i].name) == uniques.back().end()) {
+				uniques.back().push_back(events[i].name);
 			} else {
-				if (std::find(duplicities.back().begin(), duplicities.back().end(), _events[i].name) == duplicities.back().end()) {
-					duplicities.back().push_back(_events[i].name);
+				if (std::find(duplicities.back().begin(), duplicities.back().end(), events[i].name) == duplicities.back().end()) {
+					duplicities.back().push_back(events[i].name);
 				}
 			}
 			break;
 		case Event::END:
 			if (begins.size() > 1) {
-				print(begins.back(), i + 1, begins.size() + 1, -100, duplicities.back()); // do not print loadsteps
+				print(begins.back(), i, begins.size() + 1, duplicities.back()); // do not print loadsteps
 			}
+			addloadstep(i);
 			begins.pop_back();
 			uniques.pop_back();
 			duplicities.pop_back();
+			lastend = i;
 			break;
 		case Event::LOADSTEP:
 			++loadstep;
@@ -343,7 +351,7 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 	}
 
 	logger.info(" == OVERALL TIME ============================================================================= \n");
-	print(0, statistics.size(), 0, 0, {});
+	print(0, lastend, 0, {});
 	MPI_Barrier(info::mpi::comm);
 }
 
