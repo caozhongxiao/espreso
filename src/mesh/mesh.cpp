@@ -98,13 +98,6 @@ Mesh::~Mesh()
 	for (size_t i = 0; i < elementsRegions.size(); ++i) {
 		delete elementsRegions[i];
 	}
-
-	for (size_t i = 0; i < boundaryRegionsIntersections.size(); ++i) {
-		delete boundaryRegionsIntersections[i];
-	}
-	for (size_t i = 0; i < elementsRegionsIntersections.size(); ++i) {
-		delete elementsRegionsIntersections[i];
-	}
 }
 
 ElementsRegionStore* Mesh::eregion(const std::string &name)
@@ -118,17 +111,6 @@ ElementsRegionStore* Mesh::eregion(const std::string &name)
 	return NULL;
 }
 
-ElementsRegionsIntersectionStore* Mesh::ieregion(const std::string &name)
-{
-	for (size_t r = 0; r < elementsRegionsIntersections.size(); r++) {
-		if (StringCompare::caseSensitiveEq(elementsRegionsIntersections[r]->name, name)) {
-			return elementsRegionsIntersections[r];
-		}
-	}
-	eslog::error("ESPRESO internal error: request for unknown intersection of element regions '%s'\n.", name.c_str());
-	return NULL;
-}
-
 BoundaryRegionStore* Mesh::bregion(const std::string &name)
 {
 	for (size_t r = 0; r < boundaryRegions.size(); r++) {
@@ -137,17 +119,6 @@ BoundaryRegionStore* Mesh::bregion(const std::string &name)
 		}
 	}
 	eslog::error("Unknown boundary region '%s'\n.", name.c_str());
-	return NULL;
-}
-
-BoundaryRegionsIntersectionStore* Mesh::ibregion(const std::string &name)
-{
-	for (size_t r = 0; r < boundaryRegionsIntersections.size(); r++) {
-		if (StringCompare::caseSensitiveEq(boundaryRegionsIntersections[r]->name, name)) {
-			return boundaryRegionsIntersections[r];
-		}
-	}
-	eslog::error("ESPRESO internal error: request for unknown intersection of boundary regions '%s'\n.", name.c_str());
 	return NULL;
 }
 

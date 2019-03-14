@@ -50,14 +50,6 @@ struct BoundaryRegionStore {
 	~BoundaryRegionStore();
 };
 
-struct BoundaryRegionsIntersectionStore: public BoundaryRegionStore {
-
-	std::vector<BoundaryRegionStore*> regions;
-
-	BoundaryRegionsIntersectionStore(const std::string &name)
-	: BoundaryRegionStore(name) {}
-};
-
 }
 
 

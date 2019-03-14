@@ -57,9 +57,7 @@ public:
 	}
 
 	ElementsRegionStore* eregion(const std::string &name);
-	ElementsRegionsIntersectionStore* ieregion(const std::string &name);
 	BoundaryRegionStore* bregion(const std::string &name);
-	BoundaryRegionsIntersectionStore* ibregion(const std::string &name);
 
 	bool onAllElements(const std::string &eregion) const;
 
@@ -77,9 +75,6 @@ public:
 
 	std::vector<ElementsRegionStore*> elementsRegions;
 	std::vector<BoundaryRegionStore*> boundaryRegions;
-
-	std::vector<ElementsRegionsIntersectionStore*> elementsRegionsIntersections;
-	std::vector<BoundaryRegionsIntersectionStore*> boundaryRegionsIntersections;
 
 	FETIDataStore *FETIData;
 
