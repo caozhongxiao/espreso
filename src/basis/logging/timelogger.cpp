@@ -102,7 +102,6 @@ static void printdata(
 
 void TimeLogger::evaluate(ProgressLogger &logger)
 {
-	double duration = TimeLogger::duration();
 	std::vector<EventStatistics> events(_events.begin(), _events.end());
 	std::vector<double> prev(10), begin(10);
 
@@ -198,6 +197,7 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 	logger.info(" == nodes regions    %*ld == \n", width - 8, nregs);
 	logger.info(" ============================================================================================= \n");
 
+	double duration = TimeLogger::duration();
 	const char* headformat = " %-44s %f  <%s - %s> [%5.2f] [%5.2f]\n";
 	const char* dataformat = "  %-43s %f  <%s - %s> [%5.2f] [%5.2f]\n";
 
