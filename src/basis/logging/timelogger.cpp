@@ -94,10 +94,11 @@ static void printdata(
 {
 	std::string fullname = std::string(name) + std::string(suffix);
 	avg /= info::mpi::size;
+	std::string savg = std::to_string(avg);
 	std::string smin = std::to_string(min);
 	std::string smax = std::to_string(max);
-	smin[8] = smax[8] = '\0';
-	logger.info(format, fullname.c_str(), avg, smin.c_str(), smax.c_str(), 100 * avg / sectiontime, max / min);
+	savg[8] = smin[8] = smax[8] = '\0';
+	logger.info(format, fullname.c_str(), savg.c_str(), smin.c_str(), smax.c_str(), 100 * avg / sectiontime, max / min);
 }
 
 void TimeLogger::evaluate(ProgressLogger &logger)
@@ -198,8 +199,8 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 	logger.info(" ============================================================================================= \n");
 
 	double duration = TimeLogger::duration();
-	const char* headformat = " %-44s %f  <%s - %s> [%5.2f] [%5.2f]\n";
-	const char* dataformat = "  %-43s %f  <%s - %s> [%5.2f] [%5.2f]\n";
+	const char* headformat = " %-44s %s  <%s - %s> [%5.2f] [%5.2f]\n";
+	const char* dataformat = "  %-43s %s  <%s - %s> [%5.2f] [%5.2f]\n";
 
 	auto print = [&] (size_t start, size_t end, int printeddepth, const std::vector<const char*> &duplicities) {
 		logger.info(" ============================================ avg. [s]  < min [s] -  max [s]> [  %%  ] [ imb ]   \n");
@@ -230,7 +231,7 @@ void TimeLogger::evaluate(ProgressLogger &logger)
 									if (count) {
 										min = std::min(min, statistics[j].min.time);
 										max = std::max(max, statistics[j].max.time);
-										avg += statistics[j].avg.time / info::mpi::size;
+										avg += statistics[j].avg.time;
 									}
 									++count;
 								}
