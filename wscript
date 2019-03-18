@@ -13,7 +13,7 @@ class ShowConfiguration(BuildContext):
 def set_compiler(ctx):
     def trycompiler():
         try:
-            ctx.find_program(ctx.options.mpicxx)
+            ctx.find_program(ctx.options.mpicxx, var="MPI_CXX")
         except ctx.errors.ConfigurationError:
             return False
         return True
@@ -31,7 +31,7 @@ def set_compiler(ctx):
     if ctx.options.mpicxx == "mpic++":
         ctx.options.cxx = "g++"
     ctx.load(ctx.options.cxx)
-    ctx.env.CXX = ctx.env.LINK_CXX = ctx.options.mpicxx
+    ctx.env.CXX = ctx.env.LINK_CXX = ctx.env.MPI_CXX
 
 def set_openmp(ctx):
     ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
@@ -175,7 +175,7 @@ def show(ctx):
     ctx.logger = logging.getLogger('show')
     ctx.logger.handlers = Logs.log_handler()
 
-    ctx.msg("CXX", ctx.env.CXX)
+    ctx.msg("CXX", " ".join(ctx.env.CXX))
     ctx.msg("MODE", ctx.env.mode)
     ctx.msg("DEFINES", " ".join(ctx.env.DEFINES))
     ctx.msg("CXXFLAGS", " ".join(ctx.env.CXXFLAGS))
