@@ -149,12 +149,12 @@ void MKLPDSSData::solve(const MKLPDSSConfiguration &configuration, double *solut
 #ifdef HAVE_MKL
 	_data->solution = solution;
 
-	eslog::solver("     ---- LINEAR SOLVER ------------------------------------------\n");
-	eslog::solver("    | SOLVER ::     MKL     TYPE :: PARALLEL DIRECT SPARSE SOLVER |\n");
+	eslog::solver("   - ---- LINEAR SOLVER ------------------------------------------ -\n");
+	eslog::solver("   - | SOLVER ::     MKL   TYPE :: PARALLEL DIRECT SPARSE SOLVER | -\n");
 	double start = eslog::time();
 	call(33); // solve at once
-	eslog::solver("    | SOLVER TIME                                      %8.3f s |\n", eslog::time() - start);
-	eslog::solver("     -------------------------------------------------------------\n");
+	eslog::solver("   - | SOLVER TIME                                    %8.3f s | -\n", eslog::time() - start);
+	eslog::solver("   - ------------------------------------------------------------- -\n");
 #endif
 }
 

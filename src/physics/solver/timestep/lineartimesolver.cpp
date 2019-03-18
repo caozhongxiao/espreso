@@ -38,7 +38,7 @@ void LinearTimeStep::solve(LoadStepSolver &loadStepSolver)
 	Matrices updatedMatrices = loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f);
 	_assembler.setDirichlet(updatedMatrices);
 
-	eslog::solver("  > LINEAR TIME STEP          REASSEMBLED MATRICES :: %c, %c, %c, %c, %c <\n",
+	eslog::solver("   - LINEAR TIME STEP        REASSEMBLED MATRICES :: %c, %c, %c, %c, %c -\n",
 			(updatedMatrices & Matrices::K) ? 'K' : ' ',
 			(updatedMatrices & Matrices::M) ? 'M' : ' ',
 			(updatedMatrices & Matrices::C) ? 'C' : ' ',

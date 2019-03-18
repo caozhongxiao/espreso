@@ -212,14 +212,14 @@ void FETISolver::solve()
 	}
 
 	double start = eslog::time();
-	eslog::solver("     ---- LINEAR SOLVER ------------------------------------------\n");
-	eslog::solver("    | SOLVER :: ESPRESO     TYPE :: %29s |\n", type.c_str());
-	eslog::solver("    | REQUESTED STOPPING CRITERIA                    %e |\n", configuration.precision);
+	eslog::solver("   - ---- LINEAR SOLVER ------------------------------------------ -\n");
+	eslog::solver("   - | SOLVER :: ESPRESO   TYPE :: %29s | -\n", type.c_str());
+	eslog::solver("   - | REQUESTED STOPPING CRITERIA                  %e | -\n", configuration.precision);
 
 	Solve(instance->f, instance->primalSolution, instance->dualSolution);
 
-	eslog::solver("    | SOLVER TIME                                      %8.3f s |\n", eslog::time() - start);
-	eslog::solver("     -------------------------------------------------------------\n");
+	eslog::solver("   - | SOLVER TIME                                    %8.3f s | -\n", eslog::time() - start);
+	eslog::solver("   - ------------------------------------------------------------- -\n");
 
 	eslog::endln("FETI: SOLVED");
 }

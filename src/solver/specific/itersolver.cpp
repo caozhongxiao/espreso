@@ -360,10 +360,10 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( SuperCluster & clus
 		eslog::linearsolver(" Inequality constraints: norm(max(Bn*u - cn,0))               = % e\n", max_Bn_l_g / norm_cn);
 		eslog::linearsolver(" Check Multipliers positiveness: norm(max(-Lambda_N,0)        = % e\n", lambda_n_max_2_g / lambda_n_max_g);
 		eslog::linearsolver(" Check norm of Normal Multipliers: norm((Be*u - ce)*Lambda_N) = % e\n", norm_Bn_lLambda / ( norm_cn * lambda_n_max_g ));
-		eslog::solver("    | SOLUTION RESIDUAL NORM                         %e |\n", norm);
-		eslog::solver("    | ITERATIONS TO CONVERGENCE                          %8d |\n", iters);
+		eslog::solver("   - | SOLUTION RESIDUAL NORM                       %e | -\n", norm);
+		eslog::solver("   - | ITERATIONS TO CONVERGENCE                        %8d | -\n", iters);
 		if (norm > configuration.precision) {
-			eslog::warning("    |              >>> SOLVER DOES NOT CONVERGED <<<              |\n");
+			eslog::warning("   - |             >>> SOLVER DOES NOT CONVERGED <<<             | -\n");
 		}
 //		switch (configuration.solver) {
 //		case FETI_ITERATIVE_SOLVER::QPCE:

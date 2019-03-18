@@ -76,10 +76,10 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 
 	switch (_configuration.method) {
 	case NonLinearSolverConfiguration::METHOD::NEWTON_RAPHSON:
-		eslog::solver("  > ----------------------- NEWTON  RAPHSON ----------------------- <\n");
+		eslog::solver("   - ---------------------- NEWTON  RAPHSON ---------------------- -\n");
 		break;
 	case NonLinearSolverConfiguration::METHOD::MODIFIED_NEWTON_RAPHSON:
-		eslog::solver("  > ------------------- MODIFIED NEWTON RAPHSON ------------------- <\n");
+		eslog::solver("   - ------------------ MODIFIED NEWTON RAPHSON ------------------ -\n");
 		break;
 	}
 
@@ -102,7 +102,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 	Matrices updatedMatrices = loadStepSolver.updateStructuralMatrices(Matrices::K | Matrices::M | Matrices::f);
 	_assembler.setDirichlet(updatedMatrices);
 
-	eslog::solver("  > INITIAL STEP              REASSEMBLED MATRICES :: %c, %c, %c, %c, %c <\n",
+	eslog::solver("   - INITIAL STEP            REASSEMBLED MATRICES :: %c, %c, %c, %c, %c -\n",
 			(updatedMatrices & Matrices::K) ? 'K' : ' ',
 			(updatedMatrices & Matrices::M) ? 'M' : ' ',
 			(updatedMatrices & Matrices::C) ? 'C' : ' ',
@@ -129,7 +129,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 			_secondConvergenceValue = residualNumerator;
 			_secondCriterionValue = residualDenominator * _configuration.requested_second_residual;
 			if (residualNumerator / residualDenominator < _configuration.requested_second_residual && time::iteration > 1 ) {
-				eslog::solver("  > HEAT NORM, CRITERIA          %.5e, %.5e CONVERGED <\n", residualNumerator, residualDenominator * _configuration.requested_second_residual);
+				eslog::solver("   - HEAT NORM, CRITERIA        %.5e, %.5e CONVERGED -\n", residualNumerator, residualDenominator * _configuration.requested_second_residual);
 				if (_configuration.check_first_residual) {
 					if (solutionNorm < _configuration.requested_first_residual) {
 						_status = statusYES;
@@ -140,7 +140,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 					break;
 				}
 			} else {
-				eslog::solver("  > HEAT NORM, CRITERIA          %.5e, %.5e           <\n", residualNumerator, residualDenominator * _configuration.requested_second_residual);
+				eslog::solver("   - HEAT NORM, CRITERIA        %.5e, %.5e           -\n", residualNumerator, residualDenominator * _configuration.requested_second_residual);
 			}
 		}
 
@@ -152,10 +152,10 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 				solutionPrecisionError = solutionNumerator / solutionDenominator;
 				solutionPrecision = std::min(_configuration.r_tol * solutionPrecisionError, _configuration.c_fact * solutionPrecision);
 			}
-			eslog::solver("  > ADAPTIVE PRECISION, EPS ERROR         %.5e / %.5e <\n", solutionPrecision, solutionPrecisionError);
+			eslog::solver("   - ADAPTIVE PRECISION, EPS ERROR       %.5e / %.5e -\n", solutionPrecision, solutionPrecisionError);
 		}
 
-		eslog::solver("\n  > EQUIL. ITERATION :: %3d   REASSEMBLED MATRICES :: %c, %c, %c, %c, %c <\n",
+		eslog::solver("\n   - EQUIL. ITERATION :: %3d REASSEMBLED MATRICES :: %c, %c, %c, %c, %c -\n",
 				time::iteration,
 				(updatedMatrices & Matrices::K) ? 'K' : ' ',
 				(updatedMatrices & Matrices::M) ? 'M' : ' ',
@@ -168,7 +168,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 			_lsInc = _assembler.controller()->solution()->maxabs();
 			_lsAlpha = _assembler.composer()->lineSearch(_solution, _assembler.parameters);
 			_lsSInc = _lsAlpha * _lsInc;
-			eslog::solver("  > LINE SEARCH, MAX DOF INCREMENT             %.5f, %.5e <\n", _lsAlpha, _lsInc);
+			eslog::solver("   - LINE SEARCH, MAX DOF INCREMENT           %.5f, %.5e -\n", _lsAlpha, _lsInc);
 		}
 
 		if (!_configuration.check_first_residual) {
@@ -185,10 +185,10 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 			_firstCriterionValue = solutionDenominator * _configuration.requested_first_residual;
 			if (solutionNorm > _configuration.requested_first_residual) {
 				_status = statusNOT;
-				eslog::solver("  > TEMPERATURE NORM, CRITERIA  %.5e / %.5e           <\n", solutionNumerator, solutionDenominator * _configuration.requested_first_residual);
+				eslog::solver("   - TEMP. NORM, CRITERIA      %.5e / %.5e           -\n", solutionNumerator, solutionDenominator * _configuration.requested_first_residual);
 			} else {
 				_status = statusYES;
-				eslog::solver("  > TEMPERATURE NORM, CRITERIA  %.5e / %.5e CONVERGED <\n", solutionNumerator, solutionDenominator * _configuration.requested_first_residual);
+				eslog::solver("   - TEMP. NORM, CRITERIA      %.5e / %.5e CONVERGED -\n", solutionNumerator, solutionDenominator * _configuration.requested_first_residual);
 				if (!_configuration.check_second_residual) {
 					break;
 				}
@@ -196,7 +196,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 		}
 	}
 
-	eslog::solver("  > --------------------------------------------------------------- <\n");
+	eslog::solver("   - ------------------------------------------------------------- -\n");
 }
 
 

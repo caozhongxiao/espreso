@@ -504,7 +504,7 @@ void HypreData::solve(const HypreConfiguration &configuration, esint nrows, doub
 		finalizePattern();
 	}
 
-	eslog::solver("     ---- LINEAR SOLVER ------------------------------------------\n");
+	eslog::solver("   - ---- LINEAR SOLVER ------------------------------------------ -\n");
 	double start = eslog::time();
 
 	esint iterations;
@@ -540,21 +540,21 @@ void HypreData::solve(const HypreConfiguration &configuration, esint nrows, doub
 			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver options.\n");
 		}
 
-		eslog::solver("    | SOLVER ::   HYPRE     TYPE ::                     BOOMERAMG |\n");
-		eslog::solver("    | REQUESTED STOPPING CRITERIA                    %e |\n", configuration.boomeramg.convergence_tolerance);
+		eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::                     BOOMERAMG | -\n");
+		eslog::solver("   - | REQUESTED STOPPING CRITERIA                  %e | -\n", configuration.boomeramg.convergence_tolerance);
 		HYPRE_BoomerAMGSetup(solver, K, f, x);
 		HYPRE_BoomerAMGSolve(solver, K, f, x);
 
 		HYPRE_BoomerAMGGetNumIterations(solver, &iterations);
 		HYPRE_BoomerAMGGetFinalRelativeResidualNorm(solver, &norm);
 
-		eslog::solver("    | SOLUTION RESIDUAL NORM                         %e |\n", norm);
-		eslog::solver("    | ITERATIONS TO CONVERGENCE                          %8d |\n", iterations);
+		eslog::solver("   - | SOLUTION RESIDUAL NORM                       %e | -\n", norm);
+		eslog::solver("   - | ITERATIONS TO CONVERGENCE                        %8d | -\n", iterations);
 		if (norm > configuration.boomeramg.convergence_tolerance) {
-			eslog::warning("    |              >>> SOLVER DOES NOT CONVERGED <<<              |\n");
+			eslog::warning("   - |             >>> SOLVER DOES NOT CONVERGED <<<             | -\n");
 		}
-		eslog::solver("    | SOLVER TIME                                      %8.3f s |\n", eslog::time() - start);
-		eslog::solver("     -------------------------------------------------------------\n");
+		eslog::solver("   - | SOLVER TIME                                    %8.3f s | -\n", eslog::time() - start);
+		eslog::solver("   - ------------------------------------------------------------- -\n");
 
 		HYPRE_BoomerAMGDestroy(solver);
 
@@ -591,24 +591,24 @@ void HypreData::solve(const HypreConfiguration &configuration, esint nrows, doub
 
 		switch (configuration.pcg.preconditioner) {
 		case HYPREPCGConfiguration::PRECONDITIONER::BoomerAMG:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::                PCG, BOOMERAMG |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::                PCG, BOOMERAMG | -\n");
 			setBoomerAMGPreconditioner(preconditioner, configuration.pcg.boomeramg);
 			HYPRE_PCGSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSolve, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSetup, preconditioner);
 			break;
 		case HYPREPCGConfiguration::PRECONDITIONER::ParaSails:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::                PCG, PARASAILS |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::                PCG, PARASAILS | -\n");
 			HYPRE_ParaSailsCreate(info::mpi::comm, &preconditioner);
 			setParaSailsPreconditioner(preconditioner, configuration.pcg.parasails);
 			HYPRE_PCGSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSetup, preconditioner);
 			break;
 		case HYPREPCGConfiguration::PRECONDITIONER::Euclid:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::                   PCG, EUCLID |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::                   PCG, EUCLID | -\n");
 			HYPRE_EuclidCreate(info::mpi::comm, &preconditioner);
 			setEuclidPreconditioner(preconditioner, configuration.pcg.euclid);
 			HYPRE_PCGSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSolve, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSetup, preconditioner);
 			break;
 		case HYPREPCGConfiguration::PRECONDITIONER::Pilut:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::                    PCG, PILUT |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::                    PCG, PILUT | -\n");
 			HYPRE_ParCSRPilutCreate(info::mpi::comm, &preconditioner);
 			setPilutPreconditioner(preconditioner, configuration.pcg.pilut);
 			HYPRE_PCGSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSetup, preconditioner);
@@ -619,18 +619,18 @@ void HypreData::solve(const HypreConfiguration &configuration, esint nrows, doub
 			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
 		}
 
-		eslog::solver("    | REQUESTED STOPPING CRITERIA                    %e |\n", configuration.pcg.relative_conv_tol);
+		eslog::solver("   - | REQUESTED STOPPING CRITERIA                  %e | -\n", configuration.pcg.relative_conv_tol);
 		HYPRE_ParCSRPCGSetup(solver, K, f, x);
 		HYPRE_ParCSRPCGSolve(solver, K, f, x);
 
 		HYPRE_PCGGetNumIterations(solver, &iterations);
 		HYPRE_PCGGetFinalRelativeResidualNorm(solver, &norm);
-		eslog::solver("    | SOLUTION RESIDUAL NORM                         %e |\n", norm);
-		eslog::solver("    | ITERATIONS TO CONVERGENCE                          %8d |\n", iterations);
+		eslog::solver("   - | SOLUTION RESIDUAL NORM                       %e | -\n", norm);
+		eslog::solver("   - | ITERATIONS TO CONVERGENCE                        %8d | -\n", iterations);
 		if (norm > configuration.pcg.relative_conv_tol) {
-			eslog::warning("    |              >>> SOLVER DOES NOT CONVERGED <<<              |\n");
+			eslog::warning("   - |             >>> SOLVER DOES NOT CONVERGED <<<             | -\n");
 		}
-		eslog::solver("    | SOLVER TIME                                      %8.3f s |\n", eslog::time() - start);
+		eslog::solver("   - | SOLVER TIME                                    %8.3f s | -\n", eslog::time() - start);
 		eslog::solver("     -------------------------------------------------------------\n");
 
 		HYPRE_ParCSRPCGDestroy(solver);
@@ -684,24 +684,24 @@ void HypreData::solve(const HypreConfiguration &configuration, esint nrows, doub
 
 		switch (configuration.gmres.preconditioner) {
 		case HYPREGMRESConfiguration::PRECONDITIONER::BoomerAMG:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::              GMRES, BOOMERAMG |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::              GMRES, BOOMERAMG | -\n");
 			setBoomerAMGPreconditioner(preconditioner, configuration.gmres.boomeramg);
 			HYPRE_GMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSolve, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSetup, preconditioner);
 			break;
 		case HYPREGMRESConfiguration::PRECONDITIONER::ParaSails:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::              GMRES, PARASAILS |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::              GMRES, PARASAILS | -\n");
 			HYPRE_ParaSailsCreate(info::mpi::comm, &preconditioner);
 			setParaSailsPreconditioner(preconditioner, configuration.gmres.parasails);
 			HYPRE_GMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSetup, preconditioner);
 			break;
 		case HYPREGMRESConfiguration::PRECONDITIONER::Euclid:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::                 GMRES, EUCLID |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::                 GMRES, EUCLID | -\n");
 			HYPRE_EuclidCreate(info::mpi::comm, &preconditioner);
 			setEuclidPreconditioner(preconditioner, configuration.gmres.euclid);
 			HYPRE_GMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSolve, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSetup, preconditioner);
 			break;
 		case HYPREGMRESConfiguration::PRECONDITIONER::Pilut:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::                  GMRES, PILUT |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::                  GMRES, PILUT | -\n");
 			HYPRE_ParCSRPilutCreate(info::mpi::comm, &preconditioner);
 			setPilutPreconditioner(preconditioner, configuration.pcg.pilut);
 			HYPRE_GMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSetup, preconditioner);
@@ -711,18 +711,18 @@ void HypreData::solve(const HypreConfiguration &configuration, esint nrows, doub
 			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
 		}
 
-		eslog::solver("    | REQUESTED STOPPING CRITERIA                    %e |\n", configuration.gmres.relative_conv_tol);
+		eslog::solver("   - | REQUESTED STOPPING CRITERIA                  %e | -\n", configuration.gmres.relative_conv_tol);
 		HYPRE_ParCSRGMRESSetup(solver, K, f, x);
 		HYPRE_ParCSRGMRESSolve(solver, K, f, x);
 
 		HYPRE_GMRESGetNumIterations(solver, &iterations);
 		HYPRE_GMRESGetFinalRelativeResidualNorm(solver, &norm);
-		eslog::solver("    | SOLUTION RESIDUAL NORM                         %e |\n", norm);
-		eslog::solver("    | ITERATIONS TO CONVERGENCE                          %8d |\n", iterations);
+		eslog::solver("   - | SOLUTION RESIDUAL NORM                       %e | -\n", norm);
+		eslog::solver("   - | ITERATIONS TO CONVERGENCE                        %8d | -\n", iterations);
 		if (norm > configuration.gmres.relative_conv_tol) {
-			eslog::warning("    |              >>> SOLVER DOES NOT CONVERGED <<<              |\n");
+			eslog::warning("   - |             >>> SOLVER DOES NOT CONVERGED <<<             | -\n");
 		}
-		eslog::solver("    | SOLVER TIME                                      %8.3f s |\n", eslog::time() - start);
+		eslog::solver("   - | SOLVER TIME                                    %8.3f s | -\n", eslog::time() - start);
 		eslog::solver("     -------------------------------------------------------------\n");
 
 		HYPRE_ParCSRGMRESDestroy(solver);
@@ -775,24 +775,24 @@ void HypreData::solve(const HypreConfiguration &configuration, esint nrows, doub
 
 		switch (configuration.flexgmres.preconditioner) {
 		case HYPREFlexGMRESConfiguration::PRECONDITIONER::BoomerAMG:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::          FLEXGMRES, BOOMERAMG |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::          FLEXGMRES, BOOMERAMG | -\n");
 			setBoomerAMGPreconditioner(preconditioner, configuration.flexgmres.boomeramg);
 			HYPRE_FlexGMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSolve, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSetup, preconditioner);
 			break;
 		case HYPREFlexGMRESConfiguration::PRECONDITIONER::ParaSails:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::          FLEXGMRES, PARASAILS |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::          FLEXGMRES, PARASAILS | -\n");
 			HYPRE_ParaSailsCreate(info::mpi::comm, &preconditioner);
 			setParaSailsPreconditioner(preconditioner, configuration.flexgmres.parasails);
 			HYPRE_FlexGMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSetup, preconditioner);
 			break;
 		case HYPREFlexGMRESConfiguration::PRECONDITIONER::Euclid:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::             FLEXGMRES, EUCLID |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::             FLEXGMRES, EUCLID | -\n");
 			HYPRE_EuclidCreate(info::mpi::comm, &preconditioner);
 			setEuclidPreconditioner(preconditioner, configuration.flexgmres.euclid);
 			HYPRE_FlexGMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSolve, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSetup, preconditioner);
 			break;		
 		case HYPREFlexGMRESConfiguration::PRECONDITIONER::Pilut:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::              FLEXGMRES, PILUT |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::              FLEXGMRES, PILUT | -\n");
 			HYPRE_ParCSRPilutCreate(info::mpi::comm, &preconditioner);
 			setPilutPreconditioner(preconditioner, configuration.pcg.pilut);
 			HYPRE_FlexGMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSetup, preconditioner);
@@ -803,18 +803,18 @@ void HypreData::solve(const HypreConfiguration &configuration, esint nrows, doub
 			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
 		}
 
-		eslog::solver("    | REQUESTED STOPPING CRITERIA                    %e |\n", configuration.flexgmres.relative_conv_tol);
+		eslog::solver("   - | REQUESTED STOPPING CRITERIA                  %e | -\n", configuration.flexgmres.relative_conv_tol);
 		HYPRE_ParCSRFlexGMRESSetup(solver, K, f, x);
 		HYPRE_ParCSRFlexGMRESSolve(solver, K, f, x);
 
 		HYPRE_FlexGMRESGetNumIterations(solver, &iterations);
 		HYPRE_FlexGMRESGetFinalRelativeResidualNorm(solver, &norm);
-		eslog::solver("    | SOLUTION RESIDUAL NORM                         %e |\n", norm);
-		eslog::solver("    | ITERATIONS TO CONVERGENCE                          %8d |\n", iterations);
+		eslog::solver("   - | SOLUTION RESIDUAL NORM                       %e | -\n", norm);
+		eslog::solver("   - | ITERATIONS TO CONVERGENCE                        %8d | -\n", iterations);
 		if (norm > configuration.flexgmres.relative_conv_tol) {
-			eslog::warning("    |              >>> SOLVER DOES NOT CONVERGED <<<              |\n");
+			eslog::warning("   - |             >>> SOLVER DOES NOT CONVERGED <<<             | -\n");
 		}
-		eslog::solver("    | SOLVER TIME                                      %8.3f s |\n", eslog::time() - start);
+		eslog::solver("   - | SOLVER TIME                                    %8.3f s | -\n", eslog::time() - start);
 		eslog::solver("     -------------------------------------------------------------\n");
 
 		HYPRE_ParCSRFlexGMRESDestroy(solver);
@@ -867,24 +867,24 @@ void HypreData::solve(const HypreConfiguration &configuration, esint nrows, doub
 
 		switch (configuration.lgmres.preconditioner) {
 		case HYPRELGMRESConfiguration::PRECONDITIONER::BoomerAMG:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::             LGMRES, BOOMERAMG |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::             LGMRES, BOOMERAMG | -\n");
 			setBoomerAMGPreconditioner(preconditioner, configuration.lgmres.boomeramg);
 			HYPRE_LGMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSolve, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSetup, preconditioner);
 			break;
 		case HYPRELGMRESConfiguration::PRECONDITIONER::ParaSails:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::             LGMRES, PARASAILS |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::             LGMRES, PARASAILS | -\n");
 			HYPRE_ParaSailsCreate(info::mpi::comm, &preconditioner);
 			setParaSailsPreconditioner(preconditioner, configuration.lgmres.parasails);
 			HYPRE_LGMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSetup, preconditioner);
 			break;
 		case HYPRELGMRESConfiguration::PRECONDITIONER::Euclid:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::                LGMRES, EUCLID |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::                LGMRES, EUCLID | -\n");
 			HYPRE_EuclidCreate(info::mpi::comm, &preconditioner);
 			setEuclidPreconditioner(preconditioner, configuration.lgmres.euclid);
 			HYPRE_LGMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSolve, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSetup, preconditioner);
 			break;
 		case HYPRELGMRESConfiguration::PRECONDITIONER::Pilut:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::                 LGMRES, PILUT |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::                 LGMRES, PILUT | -\n");
 			HYPRE_ParCSRPilutCreate(info::mpi::comm, &preconditioner);
 			setPilutPreconditioner(preconditioner, configuration.pcg.pilut);
 			HYPRE_LGMRESSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSetup, preconditioner);
@@ -894,18 +894,18 @@ void HypreData::solve(const HypreConfiguration &configuration, esint nrows, doub
 			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
 		}
 
-		eslog::solver("    | REQUESTED STOPPING CRITERIA                    %e |\n", configuration.lgmres.relative_conv_tol);
+		eslog::solver("   - | REQUESTED STOPPING CRITERIA                  %e | -\n", configuration.lgmres.relative_conv_tol);
 		HYPRE_ParCSRLGMRESSetup(solver, K, f, x);
 		HYPRE_ParCSRLGMRESSolve(solver, K, f, x);
 
 		HYPRE_LGMRESGetNumIterations(solver, &iterations);
 		HYPRE_LGMRESGetFinalRelativeResidualNorm(solver, &norm);
-		eslog::solver("    | SOLUTION RESIDUAL NORM                         %e |\n", norm);
-		eslog::solver("    | ITERATIONS TO CONVERGENCE                          %8d |\n", iterations);
+		eslog::solver("   - | SOLUTION RESIDUAL NORM                       %e | -\n", norm);
+		eslog::solver("   - | ITERATIONS TO CONVERGENCE                        %8d | -\n", iterations);
 		if (norm > configuration.lgmres.relative_conv_tol) {
-			eslog::warning("    |              >>> SOLVER DOES NOT CONVERGED <<<              |\n");
+			eslog::warning("   - |             >>> SOLVER DOES NOT CONVERGED <<<             | -\n");
 		}
-		eslog::solver("    | SOLVER TIME                                      %8.3f s |\n", eslog::time() - start);
+		eslog::solver("   - | SOLVER TIME                                    %8.3f s | -\n", eslog::time() - start);
 		eslog::solver("     -------------------------------------------------------------\n");
 
 		HYPRE_ParCSRLGMRESDestroy(solver);
@@ -956,24 +956,24 @@ void HypreData::solve(const HypreConfiguration &configuration, esint nrows, doub
 
 		switch (configuration.bicgstab.preconditioner) {
 		case HYPREBiCGSTABConfiguration::PRECONDITIONER::BoomerAMG:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::           BICGSTAB, BOOMERAMG |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::           BICGSTAB, BOOMERAMG | -\n");
 			setBoomerAMGPreconditioner(preconditioner, configuration.bicgstab.boomeramg);
 			HYPRE_BiCGSTABSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSolve, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSetup, preconditioner);
 			break;
 		case HYPREBiCGSTABConfiguration::PRECONDITIONER::ParaSails:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::           BICGSTAB, PARASAILS |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::           BICGSTAB, PARASAILS | -\n");
 			HYPRE_ParaSailsCreate(info::mpi::comm, &preconditioner);
 			setParaSailsPreconditioner(preconditioner, configuration.bicgstab.parasails);
 			HYPRE_BiCGSTABSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParaSailsSetup, preconditioner);
 			break;
 		case HYPREBiCGSTABConfiguration::PRECONDITIONER::Euclid:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::              BICGSTAB, EUCLID |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::              BICGSTAB, EUCLID | -\n");
 			HYPRE_EuclidCreate(info::mpi::comm, &preconditioner);
 			setEuclidPreconditioner(preconditioner, configuration.bicgstab.euclid);
 			HYPRE_BiCGSTABSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSolve, (HYPRE_PtrToSolverFcn) HYPRE_EuclidSetup, preconditioner);
 			break;
 		case HYPREBiCGSTABConfiguration::PRECONDITIONER::Pilut:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::               BICGSTAB, PILUT |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::               BICGSTAB, PILUT | -\n");
 			HYPRE_ParCSRPilutCreate(info::mpi::comm, &preconditioner);
 			setPilutPreconditioner(preconditioner, configuration.pcg.pilut);
 			HYPRE_BiCGSTABSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSolve, (HYPRE_PtrToSolverFcn) HYPRE_ParCSRPilutSetup, preconditioner);
@@ -984,18 +984,18 @@ void HypreData::solve(const HypreConfiguration &configuration, esint nrows, doub
 			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
 		}
 
-		eslog::solver("    | REQUESTED STOPPING CRITERIA                    %e |\n", configuration.bicgstab.relative_conv_tol);
+		eslog::solver("   - | REQUESTED STOPPING CRITERIA                  %e | -\n", configuration.bicgstab.relative_conv_tol);
 		HYPRE_ParCSRBiCGSTABSetup(solver, K, f, x);
 		HYPRE_ParCSRBiCGSTABSolve(solver, K, f, x);
 
 		HYPRE_BiCGSTABGetNumIterations(solver, &iterations);
 		HYPRE_BiCGSTABGetFinalRelativeResidualNorm(solver, &norm);
-		eslog::solver("    | SOLUTION RESIDUAL NORM                         %e |\n", norm);
-		eslog::solver("    | ITERATIONS TO CONVERGENCE                          %8d |\n", iterations);
+		eslog::solver("   - | SOLUTION RESIDUAL NORM                       %e | -\n", norm);
+		eslog::solver("   - | ITERATIONS TO CONVERGENCE                        %8d | -\n", iterations);
 		if (norm > configuration.bicgstab.relative_conv_tol) {
-			eslog::warning("    |              >>> SOLVER DOES NOT CONVERGED <<<              |\n");
+			eslog::warning("   - |             >>> SOLVER DOES NOT CONVERGED <<<             | -\n");
 		}
-		eslog::solver("    | SOLVER TIME                                      %8.3f s |\n", eslog::time() - start);
+		eslog::solver("   - | SOLVER TIME                                    %8.3f s | -\n", eslog::time() - start);
 		eslog::solver("     -------------------------------------------------------------\n");
 
 		HYPRE_ParCSRBiCGSTABDestroy(solver);
@@ -1027,7 +1027,7 @@ void HypreData::solve(const HypreConfiguration &configuration, esint nrows, doub
 
 		switch (configuration.cgnr.preconditioner) {
 		case HYPRECGNRConfiguration::PRECONDITIONER::BoomerAMG:
-			eslog::solver("    | SOLVER ::   HYPRE     TYPE ::              CGNR, BOOMERAMG |\n");
+			eslog::solver("   - | SOLVER ::   HYPRE   TYPE ::              CGNR, BOOMERAMG | -\n");
 			setBoomerAMGPreconditioner(preconditioner, configuration.cgnr.boomeramg);
 		//	HYPRE_CGNRSetPrecond(solver, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSolve, (HYPRE_PtrToSolverFcn) HYPRE_BoomerAMGSetup, preconditioner);
 			break;
@@ -1037,18 +1037,18 @@ void HypreData::solve(const HypreConfiguration &configuration, esint nrows, doub
 			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
 		}
 
-		eslog::solver("    | REQUESTED STOPPING CRITERIA                    %e |\n", configuration.cgnr.relative_conv_tol);
+		eslog::solver("   - | REQUESTED STOPPING CRITERIA                  %e | -\n", configuration.cgnr.relative_conv_tol);
 		HYPRE_ParCSRCGNRSetup(solver, K, f, x);
 		HYPRE_ParCSRCGNRSolve(solver, K, f, x);
 
 		HYPRE_CGNRGetNumIterations(solver, &iterations);
 		HYPRE_CGNRGetFinalRelativeResidualNorm(solver, &norm);
-		eslog::solver("    | SOLUTION RESIDUAL NORM                         %e |\n", norm);
-		eslog::solver("    | ITERATIONS TO CONVERGENCE                          %8d |\n", iterations);
+		eslog::solver("   - | SOLUTION RESIDUAL NORM                       %e | -\n", norm);
+		eslog::solver("   - | ITERATIONS TO CONVERGENCE                        %8d | -\n", iterations);
 		if (norm > configuration.cgnr.relative_conv_tol) {
-			eslog::warning("    |              >>> SOLVER DOES NOT CONVERGED <<<              |\n");
+			eslog::warning("   - |             >>> SOLVER DOES NOT CONVERGED <<<             | -\n");
 		}
-		eslog::solver("    | SOLVER TIME                                      %8.3f s |\n", eslog::time() - start);
+		eslog::solver("   - | SOLVER TIME                                    %8.3f s | -\n", eslog::time() - start);
 		eslog::solver("     -------------------------------------------------------------\n");
 
 		HYPRE_ParCSRCGNRDestroy(solver);
