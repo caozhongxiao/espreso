@@ -42,26 +42,37 @@ const char* Input::inputFile(const ECFRoot &configuration)
 	}
 }
 
-bool Input::load(const ECFRoot &configuration, Mesh &mesh)
+void Input::load(const ECFRoot &configuration, Mesh &mesh)
 {
 	switch (configuration.input) {
 	case INPUT_FORMAT::WORKBENCH:
 		WorkbenchLoader::load(configuration.workbench, mesh);
-		mesh.update();
-		return !configuration.workbench.convert_database;
+		break;
 	case INPUT_FORMAT::ABAQUS:
 		AbaqusLoader::load(configuration.abaqus, mesh);
-		mesh.update();
-		return !configuration.abaqus.convert_database;
+		break;
 	case INPUT_FORMAT::OPENFOAM:
 		OpenFOAMLoader::load(configuration.openfoam, mesh);
-		mesh.update();
-		return !configuration.openfoam.convert_database;
+		break;
 	case INPUT_FORMAT::GENERATOR:
 	default:
 		MeshGenerator::generate(configuration.generator, mesh);
-		mesh.update();
-		return true;
+		break;
+	}
+}
+
+bool Input::convertDatabase(const ECFRoot &configuration)
+{
+	switch (configuration.input) {
+	case INPUT_FORMAT::WORKBENCH:
+		return configuration.workbench.convert_database;
+	case INPUT_FORMAT::ABAQUS:
+		return configuration.abaqus.convert_database;
+	case INPUT_FORMAT::OPENFOAM:
+		return configuration.openfoam.convert_database;
+	case INPUT_FORMAT::GENERATOR:
+	default:
+		return false;
 	}
 }
 

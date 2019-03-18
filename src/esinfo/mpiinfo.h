@@ -7,11 +7,24 @@
 namespace espreso {
 namespace info {
 namespace mpi {
+	// instance MPI communication settings
 	extern int rank;
 	extern int size;
 	extern MPI_Comm comm;
 
+	// inter-instances MPI communication settings
+	extern int irank;
+	extern int isize;
+	extern MPI_Comm icomm;
+
+	// global MPI communication settings
+	extern int grank;
+	extern int gsize;
+	extern MPI_Comm gcomm;
+
 	void set();
+	void divide(int instances);
+	void finish();
 }
 }
 }

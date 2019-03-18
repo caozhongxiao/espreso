@@ -36,10 +36,13 @@ int main(int argc, char **argv)
 	eslog::ln();
 
 	Mesh::init();
-	MPITools::init();
 
 	info::ecf = new ECFRoot(&argc, &argv);
 	info::mesh = new Mesh();
+
+	info::mpi::divide(info::ecf->decomposition.mesh_duplication);
+	MPITools::init();
+
 	info::mesh->store = ResultStore::createAsynchronizedStore(*info::mesh);
 
 	eslog::checkpoint("ESPRESO: CONFIGURED");
@@ -47,25 +50,34 @@ int main(int argc, char **argv)
 	eslog::ln();
 
 	if (ResultStore::isComputeNode()) {
-		if (Input::load(*info::ecf, *info::mesh)) {
-			eslog::checkpoint("ESPRESO: MESH PREPARED");
-			eslog::param("database", Input::inputFile(*info::ecf));
-			eslog::ln();
+		Input::load(*info::ecf, *info::mesh);
+		eslog::checkpoint("ESPRESO: MESH LOADED");
+		eslog::param("database", Input::inputFile(*info::ecf));
+		eslog::ln();
+		if (info::mpi::irank == 0) {
+			info::mesh->preprocess();
+			eslog::checkpointln("ESPRESO: MESH PREPROCESSED");
 			info::mesh->printMeshStatistics();
+		}
+		if (info::mpi::isize > 1) {
+			eslog::checkpointln("ESPRESO:: MESH DUPLICATED");
+		}
 
-			LoadStepIterator steps;
-			while (steps.next()) {
-				eslog::checkpoint("ESPRESO: SOLVED");
+		if (info::mpi::irank == 0) { // TODO:: remove
+			if (Input::convertDatabase(*info::ecf)) {
+				info::mesh->storeMesh();
+				eslog::endln("ESPRESO: MESH STORED");
+			} else {
+				LoadStepIterator steps;
+				while (steps.next()) {
+					eslog::checkpoint("ESPRESO: SOLVED");
+					eslog::param("LOADSTEP", time::step);
+					eslog::ln();
+				}
+				eslog::end("ESPRESO: SOLVED");
 				eslog::param("LOADSTEP", time::step);
 				eslog::ln();
 			}
-			eslog::end("ESPRESO: SOLVED");
-			eslog::param("LOADSTEP", time::step);
-			eslog::ln();
-		} else {
-			eslog::checkpointln("ESPRESO: MESH LOADED");
-			info::mesh->storeMesh();
-			eslog::endln("ESPRESO: MESH STORED");
 		}
 	}
 
@@ -73,6 +85,7 @@ int main(int argc, char **argv)
 	ResultStore::destroyAsynchronizedStore();
 	Mesh::destroy();
 	MPITools::destroy();
+	info::mpi::finish();
 
 	delete info::ecf;
 	delete info::mesh;

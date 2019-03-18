@@ -147,7 +147,7 @@ void Mesh::storeSolution()
 	store->updateSolution();
 }
 
-void Mesh::update()
+void Mesh::preprocess()
 {
 	int isEmpty = 0, quit;
 	if (elements->size == 0) {

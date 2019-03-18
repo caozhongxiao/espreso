@@ -42,7 +42,7 @@ public:
 
 	Mesh();
 	~Mesh();
-	void update();
+	void preprocess();
 	void printMeshStatistics();
 	void printDecompositionStatistics();
 
