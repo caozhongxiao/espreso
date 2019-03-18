@@ -279,7 +279,7 @@ void EnSight::storeDecomposition()
 {
 	_casevariables << "scalar per element:\tDOMAINS\t\t" << _directory << "DOMAINS" << "\n";
 	_casevariables << "scalar per element:\tCLUSTERS\t" << _directory << "CLUSTERS" << "\n";
-	_casevariables << "scalar per element:\tMPI\t" << _directory << "MPI" << "\n";
+	_casevariables << "scalar per element:\tMPI\t\t" << _directory << "MPI" << "\n";
 
 	auto iterateElements = [&] (std::stringstream &os, const std::vector<ElementsInterval> &intervals, const std::vector<esint> &ecounters, std::function<double(esint domain)> fnc) {
 		for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
