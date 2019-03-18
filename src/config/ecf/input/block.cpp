@@ -5,7 +5,7 @@
 
 espreso::BlockGeneratorConfiguration::BlockGeneratorConfiguration()
 {
-	uniform_decomposition = true;
+	uniform_decomposition = false;
 
 	element_type = GENERATOR_ELEMENT_TYPE::HEXA8;
 	start_x = start_y = start_z = 0;
