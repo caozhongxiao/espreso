@@ -23,7 +23,6 @@ struct espreso::Dispatcher {
 	void init() {}
 	void dispatch() {}
 	bool isExecutor() { return false; }
-	MPI_Comm commWorld() { return MPI_COMM_WORLD; }
 	void setThreadMode() {}
 };
 #else
@@ -130,10 +129,10 @@ ResultStore* ResultStore::createAsynchronizedStore(const Mesh &mesh)
 //			_asyncStore->computeProcesses = computeSize;
 //			_asyncStore->storeProcesses = info::mpi::MPIsize - computeSize;
 //		}
-
-		info::mpi::comm = _dispatcher->commWorld();
-		MPI_Comm_rank(info::mpi::comm, &info::mpi::rank);
-		MPI_Comm_size(info::mpi::comm, &info::mpi::size);
+//
+//		info::mpi::comm = _dispatcher->commWorld();
+//		MPI_Comm_rank(info::mpi::comm, &info::mpi::rank);
+//		MPI_Comm_size(info::mpi::comm, &info::mpi::size);
 	}
 
 	return _asyncStore;

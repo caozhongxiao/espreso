@@ -14,7 +14,7 @@ struct AsyncStore: public DirectExecutor {
 
 #else
 
-#define USE_MPI
+//#define USE_MPI
 #include "async/Module.h"
 
 #include "mesh/mesh.h"
