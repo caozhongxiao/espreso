@@ -43,7 +43,7 @@ public:
 	Mesh();
 	~Mesh();
 	void preprocess();
-	void duply();
+	void duplicate();
 	void setMaterials();
 	void printMeshStatistics();
 	void printDecompositionStatistics();

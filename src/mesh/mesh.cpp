@@ -447,7 +447,7 @@ void Mesh::preprocess()
 	eslog::endln("MESH: PREPROCESSING FINISHED");
 }
 
-void Mesh::duply()
+void Mesh::duplicate()
 {
 	eslog::startln("MESH: CREATE DUPLICIT INSTANCES", "DUPLICATION");
 

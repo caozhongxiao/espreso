@@ -67,7 +67,7 @@ int main(int argc, char **argv)
 			info::mesh->printMeshStatistics();
 		}
 		if (info::mpi::isize > 1) {
-			info::mesh->duply();
+			info::mesh->duplicate();
 			eslog::checkpoint("ESPRESO: MESH DUPLICATED");
 			eslog::param("COPY", info::mpi::irank);
 			eslog::ln();
