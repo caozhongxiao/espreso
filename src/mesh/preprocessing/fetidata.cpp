@@ -152,10 +152,6 @@ void MeshPreprocessing::computeSharedFaceNodes()
 	utils::mergeThreadedUniqueData(inodesDistribution);
 	utils::mergeThreadedUniqueData(inodesDomains);
 
-	if (_mesh->FETIData == NULL) {
-		_mesh->FETIData = new FETIDataStore();
-	}
-
 	_mesh->FETIData->interfaceNodes = new serializededata<esint, esint>(1, inodes);
 	_mesh->FETIData->inodesDistribution = inodesDistribution[0];
 	_mesh->FETIData->inodesDomains = inodesDomains[0];
@@ -167,10 +163,6 @@ void MeshPreprocessing::computeSharedFaceNodes()
 void MeshPreprocessing::computeCornerNodes()
 {
 	eslog::startln("MESH: COMPUTE CORNER NODES", "CORNER NODES");
-
-	if (_mesh->FETIData == NULL) {
-		_mesh->FETIData = new FETIDataStore();
-	}
 
 	std::vector<esint> domainDistribution = { 0 };
 	std::vector<esint> domainData;
@@ -360,10 +352,6 @@ void MeshPreprocessing::computeFixPoints()
 {
 	eslog::startln("MESH: COMPUTE FIX POINTS", "FIX POINTS");
 
-	if (_mesh->FETIData == NULL) {
-		_mesh->FETIData = new FETIDataStore();
-	}
-
 	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<std::vector<esint> > fixPoints(threads), fixPointsDist(threads);
@@ -398,10 +386,6 @@ void MeshPreprocessing::computeFixPointsOnSurface()
 	}
 
 	eslog::startln("MESH: COMPUTE FIX POINTS ON SURFACE", "SURFACE FIX POINTS");
-
-	if (_mesh->FETIData == NULL) {
-		_mesh->FETIData = new FETIDataStore();
-	}
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -486,10 +470,6 @@ void MeshPreprocessing::computeDomainsSurface()
 		fpointer[t].swap(tfpointer);
 		ecounter[t].swap(tecounter);
 		intervals[t].swap(tintervals);
-	}
-
-	if (_mesh->domainsSurface == NULL) {
-		_mesh->domainsSurface = new SurfaceStore();
 	}
 
 	for (size_t t = 1; t < threads; t++) {

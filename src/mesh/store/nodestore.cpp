@@ -34,6 +34,113 @@ NodeStore::NodeStore()
 
 }
 
+size_t NodeStore::packedFullSize() const
+{
+	size_t packedSize = 0;
+
+	packedSize += utils::packedSize(size);
+	packedSize += utils::packedSize(uniqueOffset);
+	packedSize += utils::packedSize(uniqueSize);
+	packedSize += utils::packedSize(uniqueTotalSize);
+	packedSize += utils::packedSize(distribution);
+
+	packedSize += utils::packedSize(IDs);
+	packedSize += utils::packedSize(elements);
+	packedSize += utils::packedSize(originCoordinates);
+	packedSize += utils::packedSize(coordinates);
+	packedSize += utils::packedSize(ranks);
+
+	packedSize += utils::packedSize(externalIntervals);
+	packedSize += utils::packedSize(pintervals);
+	packedSize += utils::packedSize(dintervals);
+
+	packedSize += utils::packedSize(idomains);
+	packedSize += utils::packedSize(iranks);
+
+	packedSize += utils::packedSize(center);
+	packedSize += utils::packedSize(dcenter);
+	packedSize += utils::packedSize(min);
+	packedSize += utils::packedSize(max);
+	packedSize += utils::packedSize(lmin);
+	packedSize += utils::packedSize(lmax);
+
+	packedSize += utils::packedSize(data.size());
+	for (size_t i = 0; i < data.size(); i++) {
+		packedSize += data[i]->packedSize();
+	}
+
+	return packedSize;
+}
+
+void NodeStore::packFull(char* &p) const
+{
+	utils::pack(size, p);
+	utils::pack(uniqueOffset, p);
+	utils::pack(uniqueSize, p);
+	utils::pack(uniqueTotalSize, p);
+	utils::pack(distribution, p);
+
+	utils::pack(IDs, p);
+	utils::pack(elements, p);
+	utils::pack(originCoordinates, p);
+	utils::pack(coordinates, p);
+	utils::pack(ranks, p);
+
+	utils::pack(externalIntervals, p);
+	utils::pack(pintervals, p);
+	utils::pack(dintervals, p);
+
+	utils::pack(idomains, p);
+	utils::pack(iranks, p);
+
+	utils::pack(center, p);
+	utils::pack(dcenter, p);
+	utils::pack(min, p);
+	utils::pack(max, p);
+	utils::pack(lmin, p);
+	utils::pack(lmax, p);
+
+	utils::pack(data.size(), p);
+	for (size_t i = 0; i < data.size(); i++) {
+		data[i]->pack(p);
+	}
+}
+
+void NodeStore::unpackFull(const char* &p)
+{
+	utils::unpack(size, p);
+	utils::unpack(uniqueOffset, p);
+	utils::unpack(uniqueSize, p);
+	utils::unpack(uniqueTotalSize, p);
+	utils::unpack(distribution, p);
+
+	utils::unpack(IDs, p);
+	utils::unpack(elements, p);
+	utils::unpack(originCoordinates, p);
+	utils::unpack(coordinates, p);
+	utils::unpack(ranks, p);
+
+	utils::unpack(externalIntervals, p);
+	utils::unpack(pintervals, p);
+	utils::unpack(dintervals, p);
+
+	utils::unpack(idomains, p);
+	utils::unpack(iranks, p);
+
+	utils::unpack(center, p);
+	utils::unpack(dcenter, p);
+	utils::unpack(min, p);
+	utils::unpack(max, p);
+	utils::unpack(lmin, p);
+	utils::unpack(lmax, p);
+
+	size_t size;
+	utils::unpack(size, p);
+	for (size_t i = 0; i < size; i++) {
+		data.push_back(new NodeData(p));
+	}
+}
+
 size_t NodeStore::packedSize() const
 {
 	size_t datasize = sizeof(size_t);
@@ -217,6 +324,29 @@ NodeData::NodeData(int dimension, const std::vector<std::string> &names)
 : dimension(dimension), names(names)
 {
 
+}
+
+NodeData::NodeData(const char* &packedData)
+{
+	utils::unpack(dimension, packedData);
+	utils::unpack(names, packedData);
+	utils::unpack(data, packedData);
+}
+
+size_t NodeData::packedSize()
+{
+	size_t packetSize = 0;
+	packetSize += utils::packedSize(dimension);
+	packetSize += utils::packedSize(names);
+	packetSize += utils::packedSize(data);
+	return packetSize;
+}
+
+void NodeData::pack(char *&p)
+{
+	utils::pack(dimension, p);
+	utils::pack(names, p);
+	utils::pack(data, p);
 }
 
 void NodeData::statistics(const tarray<esint> &nodes, esint totalsize, Statistics *statistics) const

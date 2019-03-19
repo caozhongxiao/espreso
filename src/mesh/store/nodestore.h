@@ -27,6 +27,10 @@ struct NodeData {
 	std::vector<double> data;
 
 	NodeData(int dimension, const std::vector<std::string> &names);
+	NodeData(const char* &packedData);
+
+	size_t packedSize();
+	void pack(char *&p);
 
 	void statistics(const tarray<esint> &nodes, esint totalsize, Statistics *statistics) const;
 	double norm() const;
@@ -70,6 +74,10 @@ struct NodeStore {
 	Point min, max, lmin, lmax;
 
 	std::vector<NodeData*> data;
+
+	size_t packedFullSize() const;
+	void packFull(char* &p) const;
+	void unpackFull(const char* &p);
 
 	size_t packedSize() const;
 	void pack(char* &p) const;

@@ -9,6 +9,7 @@
 
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/parser.h"
+#include "basis/utilities/packing.h"
 
 #include "elements/element.h"
 #include "preprocessing/meshpreprocessing.h"
@@ -55,10 +56,10 @@ void Mesh::destroy()
 
 Mesh::Mesh()
 : elements(new ElementStore()), nodes(new NodeStore()),
-  FETIData(NULL),
+  FETIData(new FETIDataStore()),
   halo(new ElementStore()),
-  surface(NULL), domainsSurface(NULL),
-  contacts(NULL),
+  surface(new SurfaceStore()), domainsSurface(new SurfaceStore()),
+  contacts(new ContactStore(surface)),
   preprocessing(new MeshPreprocessing(this)),
 
   store(NULL),
@@ -83,14 +84,14 @@ Mesh::Mesh()
 
 Mesh::~Mesh()
 {
-	if (elements != NULL) { delete elements; }
-	if (nodes != NULL) { delete nodes; }
-	if (FETIData != NULL) { delete FETIData; }
-	if (halo != NULL) { delete halo; }
-	if (surface != NULL) { delete surface; }
-	if (domainsSurface != NULL) { delete domainsSurface; }
-	if (contacts != NULL) { delete contacts; }
-	if (preprocessing != NULL) { delete preprocessing; }
+	delete elements;
+	delete nodes;
+	delete FETIData;
+	delete halo;
+	delete surface;
+	delete domainsSurface;
+	delete contacts;
+	delete preprocessing;
 
 	for (size_t i = 0; i < boundaryRegions.size(); ++i) {
 		delete boundaryRegions[i];
@@ -145,6 +146,27 @@ void Mesh::storeMesh()
 void Mesh::storeSolution()
 {
 	store->updateSolution();
+}
+
+void Mesh::setMaterials()
+{
+	materials.clear();
+	std::map<std::string, int> matindex;
+	for (auto mat = info::ecf->getPhysics()->materials.begin(); mat != info::ecf->getPhysics()->materials.end(); ++mat) {
+		materials.push_back(&mat->second);
+		matindex[mat->first] = materials.size() - 1;
+	}
+
+	for (auto mat = info::ecf->getPhysics()->material_set.begin(); mat != info::ecf->getPhysics()->material_set.end(); ++mat) {
+		ElementsRegionStore *region = eregion(mat->first);
+		if (matindex.find(mat->second) == matindex.end()) {
+			eslog::globalerror("Unknown material '%s'.\n", mat->second.c_str());
+		}
+		int material = matindex.find(mat->second)->second;
+		for (auto e = region->elements->datatarray().cbegin(); e != region->elements->datatarray().cend(); ++e) {
+			elements->material->datatarray()[*e] = material;
+		}
+	}
 }
 
 void Mesh::preprocess()
@@ -240,24 +262,7 @@ void Mesh::preprocess()
 	};
 
 	eslog::startln("MESH: PREPROCESSING STARTED", "MESH");
-	materials.clear();
-	std::map<std::string, int> matindex;
-	for (auto mat = info::ecf->getPhysics()->materials.begin(); mat != info::ecf->getPhysics()->materials.end(); ++mat) {
-		materials.push_back(&mat->second);
-		matindex[mat->first] = materials.size() - 1;
-	}
-
-	for (auto mat = info::ecf->getPhysics()->material_set.begin(); mat != info::ecf->getPhysics()->material_set.end(); ++mat) {
-		ElementsRegionStore *region = eregion(mat->first);
-		if (matindex.find(mat->second) == matindex.end()) {
-			eslog::globalerror("Unknown material '%s'.\n", mat->second.c_str());
-		}
-		int material = matindex.find(mat->second)->second;
-		for (auto e = region->elements->datatarray().cbegin(); e != region->elements->datatarray().cend(); ++e) {
-			elements->material->datatarray()[*e] = material;
-		}
-	}
-
+	setMaterials();
 	eslog::checkpointln("MESH: MATERIALS FILLED");
 
 	if (hasBEM(getPhysics())) {
@@ -427,7 +432,6 @@ void Mesh::preprocess()
 
 	if (getPhysics().contact_interfaces) {
 		preprocessing->computeBodiesSurface();
-		contacts = new ContactStore(surface);
 		preprocessing->computeSurfaceElementNeighbors(surface);
 		preprocessing->computeContactNormals();
 		preprocessing->computeSurfaceLocations();
@@ -441,6 +445,129 @@ void Mesh::preprocess()
 	}
 
 	eslog::endln("MESH: PREPROCESSING FINISHED");
+}
+
+void Mesh::duply()
+{
+	eslog::startln("MESH: CREATE DUPLICIT INSTANCES", "DUPLICATION");
+
+	size_t packedSize = 0;
+
+	if (info::mpi::irank == 0) {
+		packedSize += utils::packedSize(dimension);
+		packedSize += utils::packedSize(preferedDomains);
+		packedSize += utils::packedSize(uniformDecomposition);
+
+		packedSize += elements->packedFullSize();
+		packedSize += nodes->packedFullSize();
+
+		packedSize += utils::packedSize(elementsRegions.size());
+		for (size_t i = 0; i < elementsRegions.size(); i++) {
+			packedSize += elementsRegions[i]->packedFullSize();
+		}
+		packedSize += utils::packedSize(boundaryRegions.size());
+		for (size_t i = 0; i < boundaryRegions.size(); i++) {
+			packedSize += boundaryRegions[i]->packedFullSize();
+		}
+
+		packedSize += FETIData->packedFullSize();
+		packedSize += halo->packedFullSize();
+
+		packedSize += surface->packedFullSize();
+		packedSize += domainsSurface->packedFullSize();
+		packedSize += contacts->packedFullSize();
+
+		packedSize += utils::packedSize(neighbours);
+		packedSize += utils::packedSize(neighboursWithMe);
+		packedSize += utils::packedSize(_withGUI);
+	}
+
+	MPI_Bcast(&packedSize, sizeof(size_t), MPI_BYTE, 0, info::mpi::icomm);
+	char *buffer = new char[packedSize];
+
+	if (info::mpi::irank == 0) {
+		char *p = buffer;
+		utils::pack(dimension, p);
+		utils::pack(preferedDomains, p);
+		utils::pack(uniformDecomposition, p);
+
+		elements->packFull(p);
+		nodes->packFull(p);
+
+		utils::pack(elementsRegions.size(), p);
+		for (size_t i = 0; i < elementsRegions.size(); i++) {
+			elementsRegions[i]->packFull(p);
+		}
+		utils::pack(boundaryRegions.size(), p);
+		for (size_t i = 0; i < boundaryRegions.size(); i++) {
+			boundaryRegions[i]->packFull(p);
+		}
+
+		FETIData->packFull(p);
+		halo->packFull(p);
+
+		surface->packFull(p);
+		domainsSurface->packFull(p);
+		contacts->packFull(p);
+
+		utils::pack(neighbours, p);
+		utils::pack(neighboursWithMe, p);
+		utils::pack(_withGUI, p);
+	}
+
+	eslog::checkpoint("MESH: MESH PACKED");
+	eslog::param("size[MB]", packedSize);
+	eslog::ln();
+
+	MPI_Bcast(buffer, packedSize, MPI_CHAR, 0, info::mpi::icomm);
+
+	eslog::checkpointln("MESH: PACKED DATA BROADCASTED");
+
+	if (info::mpi::irank != 0) {
+		for (size_t i = 0; i < elementsRegions.size(); i++) {
+			delete elementsRegions[i];
+		}
+		elementsRegions.clear();
+		for (size_t i = 0; i < boundaryRegions.size(); i++) {
+			delete boundaryRegions[i];
+		}
+		boundaryRegions.clear();
+
+		const char *p = buffer;
+		utils::unpack(dimension, p);
+		utils::unpack(preferedDomains, p);
+		utils::unpack(uniformDecomposition, p);
+
+		elements->unpackFull(p);
+		nodes->unpackFull(p);
+
+		size_t size;
+		utils::unpack(size, p);
+		for (size_t i = 0; i < size; i++) {
+			elementsRegions.push_back(new ElementsRegionStore(p));
+		}
+		utils::unpack(size, p);
+		for (size_t i = 0; i < size; i++) {
+			boundaryRegions.push_back(new BoundaryRegionStore(p));
+		}
+
+		FETIData->unpackFull(p);
+		halo->unpackFull(p);
+
+		surface->unpackFull(p);
+		domainsSurface->unpackFull(p);
+		contacts->unpackFull(p);
+
+		utils::unpack(neighbours, p);
+		utils::unpack(neighboursWithMe, p);
+		utils::unpack(_withGUI, p);
+
+		setMaterials();
+	}
+
+	delete[] buffer;
+
+	eslog::endln("MESH: DUPLICATION FINISHED");
 }
 
 void Mesh::printMeshStatistics()

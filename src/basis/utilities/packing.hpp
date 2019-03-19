@@ -36,6 +36,15 @@ inline size_t packedSize(const std::vector<Ttype> &data)
 	return size;
 }
 
+template <typename TEBoundaries, typename TEData>
+inline size_t packedSize(serializededata<TEBoundaries, TEData> *data)
+{
+	if (data != NULL) {
+		return data->packedSize() + 1 + 3 * sizeof(size_t);
+	}
+	return 1;
+}
+
 template<>
 inline void pack(const std::string &data, char* &p)
 {
@@ -76,6 +85,18 @@ inline void pack(const std::vector<Ttype> &data, char* &p)
 
 	for (size_t i = 0; i < data.size(); i++) {
 		pack(data[i], p);
+	}
+}
+
+template <typename TEBoundaries, typename TEData>
+inline void pack(serializededata<TEBoundaries, TEData> *data, char* &p)
+{
+	pack(data != NULL, p);
+	if (data != NULL) {
+		pack(data->threads(), p);
+		pack(data->boundarytarray().size(), p);
+		pack(data->datatarray().size(), p);
+		data->pack(p);
 	}
 }
 
@@ -121,6 +142,26 @@ inline void unpack(std::vector<Ttype> &data, const char* &p)
 	data.resize(size);
 	for (size_t i = 0; i < data.size(); i++) {
 		unpack(data[i], p);
+	}
+}
+
+template <typename TEBoundaries, typename TEData>
+inline void unpack(serializededata<TEBoundaries, TEData> *&data, const char* &p)
+{
+	if (data != NULL) {
+		delete data;
+		data = NULL;
+	}
+
+	bool notnull;
+	unpack(notnull, p);
+	if (notnull) {
+		size_t threads, bsize, dsize;
+		unpack(threads, p);
+		unpack(bsize, p);
+		unpack(dsize, p);
+		data = new serializededata<TEBoundaries, TEData>(tarray<TEBoundaries>(threads, bsize), tarray<TEData>(threads, dsize));
+		data->unpack(p);
 	}
 }
 

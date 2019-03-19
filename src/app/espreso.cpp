@@ -60,7 +60,8 @@ int main(int argc, char **argv)
 			info::mesh->printMeshStatistics();
 		}
 		if (info::mpi::isize > 1) {
-			eslog::checkpointln("ESPRESO:: MESH DUPLICATED");
+			info::mesh->duply();
+			eslog::checkpointln("ESPRESO: MESH DUPLICATED");
 		}
 
 		if (info::mpi::irank == 0) { // TODO:: remove

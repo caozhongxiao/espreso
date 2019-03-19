@@ -597,10 +597,6 @@ void MeshPreprocessing::computeRegionsSurface()
 			ecounters[t].swap(ecounter);
 		}
 
-		if (_mesh->elementsRegions[r]->surface == NULL) {
-			_mesh->elementsRegions[r]->surface = new SurfaceStore();
-		}
-
 		for (size_t t = 1; t < threads; t++) {
 			for (size_t e = 0; e < ecounters[0].size(); e++) {
 				ecounters[0][e] += ecounters[t][e];

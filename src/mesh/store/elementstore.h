@@ -23,6 +23,10 @@ struct ElementData {
 	std::vector<double> data;
 
 	ElementData(int dimension, const std::vector<std::string> &names);
+	ElementData(const char* &packedData);
+
+	size_t packedSize();
+	void pack(char *&p);
 
 	void statistics(const tarray<esint> &elements, esint totalsize, Statistics *statistics);
 };
@@ -75,6 +79,10 @@ struct ElementStore {
 	std::vector<esint> eintervalsDistribution;
 
 	std::vector<ElementData*> data;
+
+	size_t packedFullSize() const;
+	void packFull(char* &p) const;
+	void unpackFull(const char* &p);
 
 	size_t packedSize() const;
 	void pack(char* &p) const;

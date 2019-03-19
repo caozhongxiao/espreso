@@ -39,6 +39,10 @@ struct BoundaryRegionStore {
 
 	std::vector<esint> ecounters;
 
+	size_t packedFullSize() const;
+	void packFull(char* &p) const;
+	void unpackFull(const char* &p);
+
 	size_t packedSize() const;
 	void pack(char* &p) const;
 	void unpack(const char* &p);
@@ -47,6 +51,7 @@ struct BoundaryRegionStore {
 	void permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution);
 
 	BoundaryRegionStore(const std::string &name);
+	BoundaryRegionStore(const char* &packedData);
 	~BoundaryRegionStore();
 };
 

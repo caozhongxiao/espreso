@@ -34,4 +34,19 @@ ContactStore::~ContactStore()
 	}
 }
 
+size_t ContactStore::packedFullSize() const
+{
+	size_t packedSize = 0;
+	return packedSize;
+}
+
+void ContactStore::packFull(char* &p) const
+{
+
+}
+
+void ContactStore::unpackFull(const char* &p)
+{
+
+}
 

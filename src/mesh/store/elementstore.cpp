@@ -42,6 +42,139 @@ ElementStore::ElementStore()
 
 }
 
+size_t ElementStore::packedFullSize() const
+{
+	size_t packedSize = 0;
+
+	packedSize += utils::packedSize(dimension);
+	packedSize += utils::packedSize(size);
+	packedSize += utils::packedSize(distribution);
+
+	packedSize += utils::packedSize(IDs);
+	packedSize += utils::packedSize(procNodes);
+	packedSize += utils::packedSize(domainNodes);
+	packedSize += utils::packedSize(centers);
+	packedSize += utils::packedSize(body);
+	packedSize += utils::packedSize(material);
+	packedSize += utils::packedSize(regions);
+	packedSize += utils::packedSize(neighbors);
+
+	packedSize += 1;
+	if (epointers != NULL) {
+		packedSize += sizeof(size_t) + epointers->datatarray().size() * sizeof(int);
+	}
+
+	packedSize += utils::packedSize(firstDomain);
+	packedSize += utils::packedSize(ndomains);
+	packedSize += utils::packedSize(domainDistribution);
+	packedSize += utils::packedSize(elementsDistribution);
+	packedSize += utils::packedSize(clusters);
+	packedSize += utils::packedSize(nclusters);
+
+	packedSize += utils::packedSize(regionMaskSize);
+	packedSize += utils::packedSize(ecounters);
+	packedSize += utils::packedSize(eintervals);
+	packedSize += utils::packedSize(eintervalsDistribution);
+
+	packedSize += utils::packedSize(data.size());
+	for (size_t i = 0; i < data.size(); i++) {
+		packedSize += data[i]->packedSize();
+	}
+
+	return packedSize;
+}
+
+void ElementStore::packFull(char* &p) const
+{
+	utils::pack(dimension, p);
+	utils::pack(size, p);
+	utils::pack(distribution, p);
+
+	utils::pack(IDs, p);
+	utils::pack(procNodes, p);
+	utils::pack(domainNodes, p);
+	utils::pack(centers, p);
+	utils::pack(body, p);
+	utils::pack(material, p);
+	utils::pack(regions, p);
+	utils::pack(neighbors, p);
+
+	utils::pack(epointers != NULL, p);
+	if (epointers != NULL) {
+		std::vector<int> eindices;
+		eindices.reserve(epointers->datatarray().size());
+		for (size_t i = 0; i < epointers->datatarray().size(); ++i) {
+			eindices.push_back(epointers->datatarray()[i] - Mesh::edata);
+		}
+		utils::pack(eindices, p);
+	}
+
+	utils::pack(firstDomain, p);
+	utils::pack(ndomains, p);
+	utils::pack(domainDistribution, p);
+	utils::pack(elementsDistribution, p);
+	utils::pack(clusters, p);
+	utils::pack(nclusters, p);
+
+	utils::pack(regionMaskSize, p);
+	utils::pack(ecounters, p);
+	utils::pack(eintervals, p);
+	utils::pack(eintervalsDistribution, p);
+
+	utils::pack(data.size(), p);
+	for (size_t i = 0; i < data.size(); i++) {
+		data[i]->pack(p);
+	}
+}
+
+void ElementStore::unpackFull(const char* &p)
+{
+	utils::unpack(dimension, p);
+	utils::unpack(size, p);
+	utils::unpack(distribution, p);
+
+	utils::unpack(IDs, p);
+	utils::unpack(procNodes, p);
+	utils::unpack(domainNodes, p);
+	utils::unpack(centers, p);
+	utils::unpack(body, p);
+	utils::unpack(material, p);
+	utils::unpack(regions, p);
+	utils::unpack(neighbors, p);
+
+	bool notnull;
+	utils::unpack(notnull, p);
+	if (notnull) {
+		std::vector<int> eindices;
+		utils::unpack(eindices, p);
+		if (epointers != NULL) {
+			delete epointers;
+		}
+		epointers = new serializededata<esint, Element*>(1, tarray<Element*>(info::env::OMP_NUM_THREADS, size));
+		for (esint i = 0; i < size; ++i) {
+			epointers->datatarray()[i] = Mesh::edata + eindices[i];
+		}
+	}
+
+	utils::unpack(firstDomain, p);
+	utils::unpack(ndomains, p);
+	utils::unpack(domainDistribution, p);
+	utils::unpack(elementsDistribution, p);
+	utils::unpack(clusters, p);
+	utils::unpack(nclusters, p);
+
+	utils::unpack(regionMaskSize, p);
+	utils::unpack(ecounters, p);
+	utils::unpack(eintervals, p);
+	utils::unpack(eintervalsDistribution, p);
+
+	size_t size;
+	utils::unpack(size, p);
+	for (size_t i = 0; i < size; i++) {
+		data.push_back(new ElementData(p));
+	}
+}
+
 size_t ElementStore::packedSize() const
 {
 	size_t datasize = sizeof(size_t);
@@ -277,6 +410,29 @@ ElementData::ElementData(int dimension, const std::vector<std::string> &names)
 : dimension(dimension), names(names)
 {
 
+}
+
+ElementData::ElementData(const char* &packedData)
+{
+	utils::unpack(dimension, packedData);
+	utils::unpack(names, packedData);
+	utils::unpack(data, packedData);
+}
+
+size_t ElementData::packedSize()
+{
+	size_t packetSize = 0;
+	packetSize += utils::packedSize(dimension);
+	packetSize += utils::packedSize(names);
+	packetSize += utils::packedSize(data);
+	return packetSize;
+}
+
+void ElementData::pack(char *&p)
+{
+	utils::pack(dimension, p);
+	utils::pack(names, p);
+	utils::pack(data, p);
 }
 
 void ElementData::statistics(const tarray<esint> &elements, esint totalsize, Statistics *statistics)

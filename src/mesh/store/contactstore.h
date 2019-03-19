@@ -39,6 +39,10 @@ struct ContactStore {
 
 	ContactStore(SurfaceStore *surface);
 	~ContactStore();
+
+	size_t packedFullSize() const;
+	void packFull(char* &p) const;
+	void unpackFull(const char* &p);
 };
 
 }

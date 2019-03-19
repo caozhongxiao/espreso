@@ -24,9 +24,15 @@ ElementsRegionStore::ElementsRegionStore(const std::string &name)
 
   ecounters(static_cast<int>(Element::CODE::SIZE)),
 
-  surface(NULL)
+  surface(new SurfaceStore())
 {
 
+}
+
+ElementsRegionStore::ElementsRegionStore(const char* &packedData)
+: ElementsRegionStore("")
+{
+	unpackFull(packedData);
 }
 
 ElementsRegionStore::~ElementsRegionStore()
@@ -36,7 +42,68 @@ ElementsRegionStore::~ElementsRegionStore()
 	}
 	if (elements != NULL) { delete elements; }
 	if (nodes != NULL) { delete nodes; }
-	if (surface != NULL) { delete surface; }
+	delete surface;
+}
+
+size_t ElementsRegionStore::packedFullSize() const
+{
+	size_t packedSize = 0;
+
+	packedSize += utils::packedSize(name);
+
+	packedSize += utils::packedSize(elements);
+	packedSize += utils::packedSize(uniqueElements);
+	packedSize += utils::packedSize(nodes);
+
+	packedSize += utils::packedSize(eintervals);
+	packedSize += utils::packedSize(ueintervals);
+	packedSize += utils::packedSize(nintervals);
+
+	packedSize += utils::packedSize(uniqueOffset);
+	packedSize += utils::packedSize(uniqueSize);
+	packedSize += utils::packedSize(uniqueTotalSize);
+
+	packedSize += utils::packedSize(ecounters);
+
+	return packedSize;
+}
+
+void ElementsRegionStore::packFull(char* &p) const
+{
+	utils::pack(name, p);
+
+	utils::pack(elements, p);
+	utils::pack(uniqueElements, p);
+	utils::pack(nodes, p);
+
+	utils::pack(eintervals, p);
+	utils::pack(ueintervals, p);
+	utils::pack(nintervals, p);
+
+	utils::pack(uniqueOffset, p);
+	utils::pack(uniqueSize, p);
+	utils::pack(uniqueTotalSize, p);
+
+	utils::pack(ecounters, p);
+}
+
+void ElementsRegionStore::unpackFull(const char* &p)
+{
+	utils::unpack(name, p);
+
+	utils::unpack(elements, p);
+	utils::unpack(uniqueElements, p);
+	utils::unpack(nodes, p);
+
+	utils::unpack(eintervals, p);
+	utils::unpack(ueintervals, p);
+	utils::unpack(nintervals, p);
+
+	utils::unpack(uniqueOffset, p);
+	utils::unpack(uniqueSize, p);
+	utils::unpack(uniqueTotalSize, p);
+
+	utils::unpack(ecounters, p);
 }
 
 size_t ElementsRegionStore::packedSize() const
