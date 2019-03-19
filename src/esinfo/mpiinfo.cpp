@@ -28,10 +28,6 @@ void mpi::set()
 		MPI_Comm_size(mpi::comm, &mpi::size);
 	}
 
-	mpi::irank = mpi::rank;
-	mpi::isize = mpi::size;
-	mpi::icomm = mpi::comm;
-
 	mpi::grank = mpi::rank;
 	mpi::gsize = mpi::size;
 	mpi::gcomm = mpi::comm;
