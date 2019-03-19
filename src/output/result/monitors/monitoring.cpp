@@ -229,31 +229,42 @@ void Monitoring::updateMesh()
 		}
 	}
 
-	_os.open(std::string(eslog::path()) + "/" + std::string(eslog::name()) + ".emr");
+	if (info::mpi::rank == 0) {
+		_os.open(std::string(eslog::path()) + "/" + std::string(eslog::name()) + ".emr");
 
-	if (!_os.is_open()) {
-		eslog::globalerror("Cannot open file for storing monitor report.\n");
-	}
+		if (!_os.is_open()) {
+			eslog::globalerror("Cannot open file for storing monitor report.\n");
+		}
 
-	_os << "\n";
-	_os << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter;
-	for (size_t i = 0; i < _monitors.size(); i++) {
-		_os << center(_monitors[i].name, _monitors[i].printSize) << delimiter;
-	}
-	_os << "\n";
+		_os << "\n";
+		_os << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter;
+		for (size_t i = 0; i < _monitors.size(); i++) {
+			_os << center(_monitors[i].name, _monitors[i].printSize) << delimiter;
+		}
+		_os << "\n";
 
-	_os << right("step ", 9) << delimiter << right("substep ", 9) << delimiter << right("time ", 9) << delimiter;
-	for (size_t i = 0; i < _monitors.size(); i++) {
-		_os << center(_monitors[i].property, _monitors[i].printSize) << delimiter;
-	}
-	_os << "\n";
+		_os << right("step ", 9) << delimiter << right("substep ", 9) << delimiter << right("time ", 9) << delimiter;
+		for (size_t i = 0; i < _monitors.size(); i++) {
+			_os << center(_monitors[i].property, _monitors[i].printSize) << delimiter;
+		}
+		_os << "\n";
 
-	_os << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter;
-	for (size_t i = 0; i < _monitors.size(); i++) {
-		_os << center(_monitors[i].stats, _monitors[i].printSize) << delimiter;
+		_os << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter;
+		for (size_t i = 0; i < _monitors.size(); i++) {
+			_os << center(_monitors[i].stats, _monitors[i].printSize) << delimiter;
+		}
+		_os << "\n\n";
+
+		for (int i = 0; i < _offset; i++) {
+			_os << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter;
+			for (size_t i = 0; i < _monitors.size(); i++) {
+				_os << std::string(_monitors[i].printSize, ' ') << delimiter;
+			}
+			_os << "\n";
+		}
+
+		_os.flush();
 	}
-	_os << "\n\n";
-	_os.flush();
 }
 
 void Monitoring::updateSolution()
