@@ -23,7 +23,7 @@ public:
 		if (!rank) {
 			printf("%*s%s", level, " ", region);
 			fflush(stdout);
-			fprintf(f, "%s", region);
+			fprintf(f, "%*s%s", level, " ", region);
 			fflush(f);
 		}
 	}
@@ -33,7 +33,7 @@ public:
 		if (!rank) {
 			printf("%*s%s", level, " ", region);
 			fflush(stdout);
-			fprintf(f, "%s", region);
+			fprintf(f, "%*s%s", level, " ", region);
 			fflush(f);
 		}
 	}
@@ -43,7 +43,7 @@ public:
 		if (!rank) {
 			printf("%*s%s", level, " ", region);
 			fflush(stdout);
-			fprintf(f, "%s", region);
+			fprintf(f, "%*s%s", level, " ", region);
 			fflush(f);
 		}
 	}
@@ -72,9 +72,9 @@ public:
 	void param(const char* name, const long unsigned int &value)
 	{
 		if (!rank) {
-			printf(" [%s=%ld]", name, value);
+			printf(" [%s=%lu]", name, value);
 			fflush(stdout);
-			fprintf(f, " [%s=%ld]", name, value);
+			fprintf(f, " [%s=%lu]", name, value);
 			fflush(f);
 		}
 	}

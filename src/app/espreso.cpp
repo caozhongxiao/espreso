@@ -9,6 +9,7 @@
 #include "basis/utilities/communication.h"
 
 #include "config/ecf/root.h"
+#include "config/reader/reader.h"
 #include "physics/loadstepiterator.h"
 
 #include "mesh/mesh.h"
@@ -19,8 +20,6 @@ using namespace espreso;
 
 int main(int argc, char **argv)
 {
-	eslog::create();
-
 	int provided;
 	MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
 
@@ -28,11 +27,20 @@ int main(int argc, char **argv)
 	info::env::set();
 	info::mpi::set();
 
-	eslog::init(&argc, &argv);
+	ECFReader ecf(argc, argv);
+
+	bool divided = info::mpi::divide(ecf.meshDuplication); // we cannot print error before initialization of the logger
+	eslog::init(ecf.ecf.c_str(), ecf.outputPath.c_str(), ecf.meshDuplication);
+	if (!divided) {
+		eslog::globalerror("Cannot set MESH DUPLICATION: the number of MPI processes is not divisible by %d\n", ecf.meshDuplication);
+	}
 
 	eslog::start("ESPRESO: STARTED", "ESPRESO");
 	eslog::param("MPI", info::mpi::size);
 	eslog::param("OMP/MPI", info::env::OMP_NUM_THREADS);
+	if (ecf.meshDuplication > 1) {
+		eslog::param("MESH DUPLICATION", ecf.meshDuplication);
+	}
 	eslog::ln();
 
 	Mesh::init();
@@ -40,7 +48,6 @@ int main(int argc, char **argv)
 	info::ecf = new ECFRoot(&argc, &argv);
 	info::mesh = new Mesh();
 
-	info::mpi::divide(info::ecf->decomposition.mesh_duplication);
 	MPITools::init();
 
 	info::mesh->store = ResultStore::createAsynchronizedStore(*info::mesh);
@@ -64,21 +71,19 @@ int main(int argc, char **argv)
 			eslog::checkpointln("ESPRESO: MESH DUPLICATED");
 		}
 
-		if (info::mpi::irank == 0) { // TODO:: remove
-			if (Input::convertDatabase(*info::ecf)) {
-				info::mesh->storeMesh();
-				eslog::endln("ESPRESO: MESH STORED");
-			} else {
-				LoadStepIterator steps;
-				while (steps.next()) {
-					eslog::checkpoint("ESPRESO: SOLVED");
-					eslog::param("LOADSTEP", time::step);
-					eslog::ln();
-				}
-				eslog::end("ESPRESO: SOLVED");
+		if (Input::convertDatabase(*info::ecf)) {
+			info::mesh->storeMesh();
+			eslog::endln("ESPRESO: MESH STORED");
+		} else {
+			LoadStepIterator steps;
+			while (steps.next()) {
+				eslog::checkpoint("ESPRESO: SOLVED");
 				eslog::param("LOADSTEP", time::step);
 				eslog::ln();
 			}
+			eslog::end("ESPRESO: SOLVED");
+			eslog::param("LOADSTEP", time::step);
+			eslog::ln();
 		}
 	}
 

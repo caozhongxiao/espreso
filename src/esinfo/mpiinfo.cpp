@@ -27,23 +27,27 @@ void mpi::set()
 		MPI_Comm_rank(mpi::comm, &mpi::rank);
 		MPI_Comm_size(mpi::comm, &mpi::size);
 	}
-}
 
-void mpi::divide(int instances)
-{
-	if (instances == 1) {
-		return;
-	}
-
-	if (espreso::info::mpi::size % instances != 0) {
-		eslog::globalerror("Cannot set MESH DUPLICATION: the number of MPI processes is not divisible by %d\n", instances);
-	}
+	mpi::irank = mpi::rank;
+	mpi::isize = mpi::size;
+	mpi::icomm = mpi::comm;
 
 	mpi::grank = mpi::rank;
 	mpi::gsize = mpi::size;
 	mpi::gcomm = mpi::comm;
+}
 
-	int color = mpi::rank / (mpi::size / instances);
+bool mpi::divide(int meshDuplication)
+{
+	if (meshDuplication == 1) {
+		return true;
+	}
+
+	if (espreso::info::mpi::size % meshDuplication != 0) {
+		return false;
+	}
+
+	int color = mpi::rank / (mpi::size / meshDuplication);
 
 	MPI_Comm_split(mpi::gcomm, color, mpi::grank, &mpi::comm);
 	MPI_Comm_rank(mpi::comm, &mpi::rank);
@@ -52,6 +56,8 @@ void mpi::divide(int instances)
 	MPI_Comm_split(mpi::gcomm, mpi::rank, mpi::grank, &mpi::icomm);
 	MPI_Comm_rank(mpi::icomm, &mpi::irank);
 	MPI_Comm_size(mpi::icomm, &mpi::isize);
+
+	return true;
 }
 
 void mpi::finish()

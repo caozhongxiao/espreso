@@ -1,5 +1,17 @@
 
 #include "reader.h"
+#include "tokenizer.h"
+#include "esinfo/mpiinfo.h"
+#include "esinfo/ecfinfo.h"
+#include "esinfo/eslog.hpp"
+#include "config/ecf/output.h"
+#include "config/configuration.h"
+#include "config/holders/valueholder.h"
+#include "basis/logging/verbosity.h"
+#include "basis/utilities/utils.h"
+#include "basis/utilities/parser.h"
+
+#include "mpi.h"
 
 #include <getopt.h>
 #include <stack>
@@ -8,18 +20,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-
-#include "mpi.h"
-
-#include "tokenizer.h"
-#include "esinfo/mpiinfo.h"
-#include "esinfo/ecfinfo.h"
-#include "esinfo/eslog.hpp"
-#include "config/ecf/output.h"
-#include "config/configuration.h"
-#include "basis/logging/verbosity.h"
-#include "basis/utilities/utils.h"
-#include "basis/utilities/parser.h"
+#include <cstring>
 
 using namespace espreso;
 
@@ -44,6 +45,87 @@ static struct option long_options[] = {
 		{"help",  no_argument, 0, 'h'},
 		{0, 0, 0, 0}
 };
+
+ECFReader::ECFReader(int argc, char **argv)
+: ecf("espreso.ecf"), outputPath("results"), meshDuplication(1)
+{
+	if (info::mpi::rank == 0) {
+		int option;
+		while ((option = getopt(argc, argv, ":c:")) != -1) {
+			if (option == 'c') {
+				ecf = optarg;
+				if (std::ifstream(optarg).good()) {
+					Tokenizer tok(ecf);
+					bool output = false, path = false, inoutput = false, read = true;
+					bool decomposition = false, duplication = false, indecomposition = false;
+					while (read) {
+						switch (tok.next()) {
+						case Tokenizer::Token::STRING:
+							if (path) {
+								outputPath = tok.value();
+								path = false;
+							}
+							if (duplication) {
+								ECFValueHolder<int> dup(meshDuplication);
+								if (!dup.setValue(tok.value())) {
+									eslog::error("Invalid duplication value (not int).\n");
+								}
+								duplication = false;
+							}
+							if (!output) {
+								output = StringCompare::caseInsensitiveEq(tok.value(), "OUTPUT");
+							} else {
+								if (inoutput) {
+									path = StringCompare::caseInsensitiveEq(tok.value(), "PATH");
+								}
+							}
+							if (!decomposition) {
+								decomposition = StringCompare::caseInsensitiveEq(tok.value(), "DECOMPOSITION");
+							} else {
+								if (indecomposition) {
+									duplication = StringCompare::caseInsensitiveEq(tok.value(), "MESH_DUPLICATION");
+								}
+							}
+							break;
+						case Tokenizer::Token::OBJECT_OPEN:
+							inoutput = output;
+							indecomposition = decomposition;
+							break;
+						case Tokenizer::Token::END:
+							read = false;
+							break;
+						default:
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	auto synchronize = [] (std::string &str) {
+		size_t ssize = str.size();
+		MPI_Bcast(&ssize, sizeof(size_t), MPI_BYTE, 0, info::mpi::comm);
+		char* dir = new char[ssize];
+		if (info::mpi::rank == 0) {
+			std::memcpy(dir, str.c_str(), str.size());
+		}
+		MPI_Bcast(dir, ssize, MPI_CHAR, 0, info::mpi::comm);
+		str = std::string(dir, dir + ssize);
+		delete[] dir;
+	};
+
+	// synchronize data accross MPI ranks
+	MPI_Bcast(&meshDuplication, sizeof(int), MPI_BYTE, 0, info::mpi::comm);
+	synchronize(ecf);
+	synchronize(outputPath);
+}
+
+ECFReader::ECFReader(const std::string &file)
+: ecf(file), outputPath("results"), meshDuplication(1)
+{
+
+}
 
 ECFRedParameters ECFReader::_read(
 		ECFObject &configuration,

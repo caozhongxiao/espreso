@@ -7,13 +7,7 @@ namespace eslog {
 
 class Logger;
 
-// the constructor of the logger
-// it allows to compute time to initialization
-void create();
-// it allows calling of the rest methods
-// we have to get output directory from configuration file!!!
-void init(int *argc, char ***argv);
-// print the overall statistics and destroy the logger
+void init(const char* ecf, const char* outputPath, int duplication);
 void finish();
 
 void start(const char* name, const char* section);

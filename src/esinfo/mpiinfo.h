@@ -23,7 +23,7 @@ namespace mpi {
 	extern MPI_Comm gcomm;
 
 	void set();
-	void divide(int instances);
+	bool divide(int meshDuplication);
 	void finish();
 }
 }

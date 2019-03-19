@@ -24,6 +24,13 @@ struct ECFRedParameters {
 class ECFReader {
 
 public:
+	ECFReader(int argc, char **argv);
+	ECFReader(const std::string &file);
+
+	std::string ecf;
+	std::string outputPath;
+	int meshDuplication;
+
 	static ECFRedParameters read(
 			ECFObject &configuration,
 			const std::string &file,

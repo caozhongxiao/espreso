@@ -8,6 +8,7 @@
 #include "basis/utilities/sysutils.h"
 #include "basis/utilities/communication.h"
 #include "config/reader/tokenizer.h"
+#include "config/holders/valueholder.h"
 
 #include "esinfo/mpiinfo.h"
 #include "basis/logging/logger.h"
@@ -23,6 +24,7 @@ namespace eslog {
 
 struct LoggerData {
 	time_t initTime;
+	int duplication;
 	std::string ecf;
 	std::string outputRoot;
 	std::string outputDirectory; // datetime
@@ -60,73 +62,20 @@ bool printtime()
 	return logger->OldTimeLogger::verbosity > 1;
 }
 
-void create()
+void init(const char* ecf, const char* outputPath, int duplication)
 {
 	logger = new Logger();
 	logger->initTime = std::time(NULL);
-	logger->ecf = "espreso.ecf";
-	logger->outputRoot = "results";
-}
 
-void init(int *argc, char ***argv)
-{
-	logger->rank = info::mpi::rank;
-	logger->size = info::mpi::size;
+	logger->rank = info::mpi::grank;
+	logger->size = info::mpi::gsize;
+	logger->duplication = duplication;
 
-	if (info::mpi::rank == 0) {
-		int option;
-		while ((option = getopt(*argc, *argv, ":c:")) != -1) {
-			if (option == 'c') {
-				logger->ecf = optarg;
-				if (std::ifstream(optarg).good()) {
-					Tokenizer tok(logger->ecf);
-					bool output = false, path = false, inoutput = false, read = true;
-					while (read) {
-						switch (tok.next()) {
-						case Tokenizer::Token::STRING:
-							if (path) {
-								logger->outputRoot = tok.value();
-								read = false;
-							}
-							if (!output) {
-								output = StringCompare::caseInsensitiveEq(tok.value(), "OUTPUT");
-							} else {
-								if (inoutput) {
-									path = StringCompare::caseInsensitiveEq(tok.value(), "PATH");
-								}
-							}
-							break;
-						case Tokenizer::Token::OBJECT_OPEN:
-							inoutput = output;
-							break;
-						case Tokenizer::Token::END:
-							read = false;
-							break;
-						default:
-							break;
-						}
-					}
-				}
-			}
-		}
-	}
-
-	auto synchronize = [] (std::string &str) {
-		size_t ssize = str.size();
-		MPI_Bcast(&ssize, sizeof(size_t), MPI_BYTE, 0, info::mpi::comm);
-		char* dir = new char[ssize];
-		if (info::mpi::rank == 0) {
-			std::memcpy(dir, str.c_str(), str.size());
-		}
-		MPI_Bcast(dir, ssize, MPI_CHAR, 0, info::mpi::comm);
-		str = std::string(dir, dir + ssize);
-		delete[] dir;
-	};
+	logger->ecf = std::string(ecf);
+	logger->outputRoot = std::string(outputPath);
 
 	// synchronize data accross MPI ranks
-	MPI_Bcast(&logger->initTime, sizeof(time_t), MPI_BYTE, 0, info::mpi::comm);
-	synchronize(logger->ecf);
-	synchronize(logger->outputRoot);
+	MPI_Bcast(&logger->initTime, sizeof(time_t), MPI_BYTE, 0, info::mpi::gcomm);
 
 	// compute output directory (path + datatime)
 	struct tm *timeinfo;
@@ -140,14 +89,14 @@ void init(int *argc, char ***argv)
 	logger->name = logger->ecf.substr(namebegin, nameend - namebegin);
 	logger->logFile = logger->outputPath + "/" + logger->name + ".log";
 
-	if (info::mpi::rank) {
-		MPI_Barrier(info::mpi::comm);
+	if (info::mpi::grank) {
+		MPI_Barrier(info::mpi::gcomm);
 		logger->setLogFile(logger->logFile.c_str());
 		return;
 	} else {
 		utils::createDirectory(logger->outputPath);
 		logger->setLogFile(logger->logFile.c_str());
-		MPI_Barrier(info::mpi::comm);
+		MPI_Barrier(info::mpi::gcomm);
 	}
 
 	std::string symlink = logger->outputRoot + "/last";
