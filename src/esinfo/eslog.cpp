@@ -67,8 +67,10 @@ void init(const char* ecf, const char* outputPath, int duplication)
 	logger = new Logger();
 	logger->initTime = std::time(NULL);
 
-	logger->rank = info::mpi::grank;
-	logger->size = info::mpi::gsize;
+	logger->rank = info::mpi::rank;
+	logger->size = info::mpi::size;
+	logger->grank = info::mpi::grank;
+	logger->gsize = info::mpi::gsize;
 	logger->duplication = duplication;
 
 	logger->ecf = std::string(ecf);
@@ -87,7 +89,11 @@ void init(const char* ecf, const char* outputPath, int duplication)
 	size_t namebegin = logger->ecf.find_last_of("/") + 1;
 	size_t nameend = logger->ecf.find_last_of(".");
 	logger->name = logger->ecf.substr(namebegin, nameend - namebegin);
-	logger->logFile = logger->outputPath + "/" + logger->name + ".log";
+	if (duplication == 1) {
+		logger->logFile = logger->outputPath + "/" + logger->name + ".log";
+	} else {
+		logger->logFile = logger->outputPath + "/" + logger->name + "." + std::to_string(info::mpi::irank) + ".log";
+	}
 
 	if (info::mpi::grank) {
 		MPI_Barrier(info::mpi::gcomm);

@@ -20,9 +20,11 @@ class ProgressLogger: public Verbosity<ProgressLogger, 'v'> {
 public:
 	void start(const char* region, const char* section)
 	{
-		if (!rank) {
+		if (!grank) {
 			printf("%*s%s", level, " ", region);
 			fflush(stdout);
+		}
+		if (!rank) {
 			fprintf(f, "%*s%s", level, " ", region);
 			fflush(f);
 		}
@@ -30,9 +32,11 @@ public:
 
 	void checkpoint(const char* region)
 	{
-		if (!rank) {
+		if (!grank) {
 			printf("%*s%s", level, " ", region);
 			fflush(stdout);
+		}
+		if (!rank) {
 			fprintf(f, "%*s%s", level, " ", region);
 			fflush(f);
 		}
@@ -40,9 +44,11 @@ public:
 
 	void end(const char* region)
 	{
-		if (!rank) {
+		if (!grank) {
 			printf("%*s%s", level, " ", region);
 			fflush(stdout);
+		}
+		if (!rank) {
 			fprintf(f, "%*s%s", level, " ", region);
 			fflush(f);
 		}
@@ -51,9 +57,11 @@ public:
 
 	void param(const char* name, const int &value)
 	{
-		if (!rank) {
+		if (!grank) {
 			printf(" [%s=%d]", name, value);
 			fflush(stdout);
+		}
+		if (!rank) {
 			fprintf(f, " [%s=%d]", name, value);
 			fflush(f);
 		}
@@ -61,9 +69,11 @@ public:
 
 	void param(const char* name, const long &value)
 	{
-		if (!rank) {
+		if (!grank) {
 			printf(" [%s=%ld]", name, value);
 			fflush(stdout);
+		}
+		if (!rank) {
 			fprintf(f, " [%s=%ld]", name, value);
 			fflush(f);
 		}
@@ -71,9 +81,11 @@ public:
 
 	void param(const char* name, const long unsigned int &value)
 	{
-		if (!rank) {
+		if (!grank) {
 			printf(" [%s=%lu]", name, value);
 			fflush(stdout);
+		}
+		if (!rank) {
 			fprintf(f, " [%s=%lu]", name, value);
 			fflush(f);
 		}
@@ -81,9 +93,11 @@ public:
 
 	void param(const char* name, const double &value)
 	{
-		if (!rank) {
+		if (!grank) {
 			printf(" [%s=%f]", name, value);
 			fflush(stdout);
+		}
+		if (!rank) {
 			fprintf(f, " [%s=%f]", name, value);
 			fflush(f);
 		}
@@ -91,9 +105,11 @@ public:
 
 	void param(const char* name, const char* value)
 	{
-		if (!rank) {
+		if (!grank) {
 			printf(" [%s=%s]", name, value);
 			fflush(stdout);
+		}
+		if (!rank) {
 			fprintf(f, " [%s=%s]", name, value);
 			fflush(f);
 		}
@@ -101,9 +117,11 @@ public:
 
 	void ln()
 	{
-		if (!rank) {
+		if (!grank) {
 			printf("\n");
 			fflush(stdout);
+		}
+		if (!rank) {
 			fprintf(f, "\n");
 			fflush(f);
 		}
@@ -117,9 +135,11 @@ public:
 	template <typename... Args>
 	void info(const char* format, Args... args)
 	{
-		if (!rank) {
+		if (!grank) {
 			printf(format, args...);
 			fflush(stdout);
+		}
+		if (!rank) {
 			fprintf(f, format, args...);
 			fflush(f);
 		}
@@ -128,11 +148,13 @@ public:
 	template <typename... Args>
 	void warning(const char* format, Args... args)
 	{
-		if (!rank) {
+		if (!grank) {
 			char* colored = getColored(format, __ESLOG__COLOR__YELLOW);
 			printf(colored, args...);
 			fflush(stdout);
 			delete[] colored;
+		}
+		if (!rank) {
 			fprintf(f, format, args...);
 			fflush(f);
 		}
@@ -141,11 +163,13 @@ public:
 	template <typename... Args>
 	void debug(const char* format, Args... args)
 	{
-		if (!rank) {
+		if (!grank) {
 			char* colored = getColored(format, __ESLOG__COLOR__BLUE);
 			printf(colored, args...);
 			fflush(stdout);
 			delete[] colored;
+		}
+		if (!rank) {
 			fprintf(f, format, args...);
 			fflush(f);
 		}
@@ -171,6 +195,7 @@ public:
 	void terminate();
 
 	int rank, size;
+	int grank, gsize;
 	FILE *f;
 };
 

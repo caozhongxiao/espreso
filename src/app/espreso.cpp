@@ -68,7 +68,9 @@ int main(int argc, char **argv)
 		}
 		if (info::mpi::isize > 1) {
 			info::mesh->duply();
-			eslog::checkpointln("ESPRESO: MESH DUPLICATED");
+			eslog::checkpoint("ESPRESO: MESH DUPLICATED");
+			eslog::param("COPY", info::mpi::irank);
+			eslog::ln();
 		}
 
 		if (Input::convertDatabase(*info::ecf)) {

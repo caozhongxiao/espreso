@@ -8,7 +8,9 @@
 using namespace espreso;
 
 ProgressLogger::ProgressLogger()
-: rank(0), size(1), f(NULL)
+: rank(0), size(1),
+  grank(0), gsize(1),
+  f(NULL)
 {
 
 }
