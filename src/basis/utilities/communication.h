@@ -45,6 +45,7 @@ struct MPIGroup {
 	int rank, size;
 
 	MPIGroup();
+	MPIGroup(MPI_Comm &comm);
 	~MPIGroup();
 };
 
@@ -70,7 +71,8 @@ class MPITools
 public:
 	static MPIOperations *operations;
 	static MPIGroup *procs;
-//	static MPIGroup *nodes;
+	static MPIGroup *instances;
+	static MPIGroup *global;
 
 	template <typename Ttype>
 	static MPIType getType();

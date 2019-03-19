@@ -46,5 +46,3 @@ bool ResultStoreExecutor::storeStep()
 }
 
 
-
-

@@ -14,6 +14,8 @@ using namespace espreso;
 
 MPIOperations* MPITools::operations = NULL;
 MPIGroup* MPITools::procs = NULL;
+MPIGroup* MPITools::instances = NULL;
+MPIGroup* MPITools::global = NULL;
 int MPISubset::nodeRank = -1;
 
 template<typename Ttype>
@@ -110,6 +112,13 @@ MPIGroup::MPIGroup()
 	size = info::mpi::size;
 }
 
+MPIGroup::MPIGroup(MPI_Comm &comm)
+{
+	MPI_Comm_dup(comm, &communicator);
+	MPI_Comm_rank(communicator, &rank);
+	MPI_Comm_size(communicator, &size);
+}
+
 MPIGroup::~MPIGroup()
 {
 	MPI_Comm_free(&communicator);
@@ -183,6 +192,8 @@ void MPITools::init()
 {
 	operations = new MPIOperations();
 	procs = new MPIGroup();
+	instances = new MPIGroup(info::mpi::icomm);
+	global = new MPIGroup(info::mpi::gcomm);
 
 //	ProcessesReduction reduction;
 //	reduction.granularity = ProcessesReduction::Granularity::NODES;
@@ -199,6 +210,12 @@ void MPITools::destroy()
 	}
 	if (procs) {
 		delete procs;
+	}
+	if (instances) {
+		delete instances;
+	}
+	if (global) {
+		delete global;
 	}
 }
 

@@ -48,7 +48,7 @@ EnSight::~EnSight()
 
 void EnSight::storecasefile()
 {
-	if (info::mpi::rank == 0) {
+	if (!_isParallel && info::mpi::grank == 0) {
 		std::ofstream os(_path + _name + ".case");
 		os << _caseheader.str() << "\n";
 		os << _casegeometry.str() << "\n";
@@ -62,6 +62,33 @@ void EnSight::storecasefile()
 			os << "filename increment:    1\n";
 			os << "time values:           " << _casetime.str() << "\n";
 		}
+	}
+}
+
+void EnSight::storefixedcasefile()
+{
+	if (_isParallel && info::mpi::grank == 0) {
+		// TODO: improve for non-uniform steps
+		for (int i = 0; i < _totalSize; i++) {
+			_casetime << _initTime + i * _timeStep;
+			if ((i + 1) % 10 == 0) {
+				_casetime << "\n                       ";
+			} else {
+				_casetime << " ";
+			}
+		}
+
+		std::ofstream os(_path + _name + ".case");
+		os << _caseheader.str() << "\n";
+		os << _casegeometry.str() << "\n";
+		os << _casevariables.str() << "\n";
+
+		os << "TIME\n\n";
+		os << "time set:              1\n";
+		os << "number of steps:       " << _totalSize << "\n";
+		os << "filename start number: 1\n";
+		os << "filename increment:    1\n";
+		os << "time values:           " << _casetime.str() << "\n";
 	}
 }
 
@@ -100,6 +127,10 @@ std::string EnSight::codetotype(int code)
 void EnSight::updateMesh()
 {
 	_casegeometry << "model:\t" << _directory << _name << ".geo\n\n";
+
+	if (info::mpi::irank != 0) {
+		return; // geometry is stored only by the first instance
+	}
 
 	std::string name = _path + _directory + _name + ".geo";
 	int part = 1;
@@ -281,6 +312,10 @@ void EnSight::storeDecomposition()
 	_casevariables << "scalar per element:\tCLUSTERS\t" << _directory << "CLUSTERS" << "\n";
 	_casevariables << "scalar per element:\tMPI\t\t" << _directory << "MPI" << "\n";
 
+	if (info::mpi::irank != 0) {
+		return; // geometry is stored only by the first instance
+	}
+
 	auto iterateElements = [&] (std::stringstream &os, const std::vector<ElementsInterval> &intervals, const std::vector<esint> &ecounters, std::function<double(esint domain)> fnc) {
 		for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
 			if (ecounters[etype]) {
@@ -385,6 +420,9 @@ void EnSight::updateSolution()
 
 	if (_variableCounter == 0) {
 		setvariables();
+		if (_isParallel) {
+			storefixedcasefile();
+		}
 	}
 
 	_casetime << time::current;
@@ -398,14 +436,11 @@ void EnSight::updateSolution()
 		if (_mesh.nodes->data[di]->names.size() == 0) {
 			continue;
 		}
-//		Communication::serialize([&] () {
-//			std::cout << _mesh.nodes->data[di]->data;
-//		});
 		esint size = _mesh.nodes->data[di]->dimension;
 
 		std::string filename = _directory + _mesh.nodes->data[di]->names.front();
 		std::stringstream name;
-		name << _path + filename + "." << std::setw(4) << std::setfill('0') << _variableCounter;
+		name << _path + filename + "." << std::setw(4) << std::setfill('0') << _variableCounter + _offset;
 
 		std::stringstream os;
 		os << std::showpos << std::scientific << std::setprecision(5);

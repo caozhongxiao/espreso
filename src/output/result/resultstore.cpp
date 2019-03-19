@@ -6,6 +6,7 @@
 #include "esinfo/eslog.hpp"
 #include "config/ecf/output.h"
 #include "basis/utilities/sysutils.h"
+#include "basis/utilities/communication.h"
 
 #include "executor/asyncexecutor.h"
 #include "executor/directexecutor.h"
@@ -38,8 +39,22 @@ using namespace espreso;
 ResultStore* ResultStore::_asyncStore = NULL;
 Dispatcher* ResultStore::_dispatcher = NULL;
 
-ResultStoreBase::ResultStoreBase(const Mesh &mesh): _mesh(mesh), _directory("PREPOSTDATA/")
+ResultStoreBase::ResultStoreBase(const Mesh &mesh)
+: _mesh(mesh), _directory("PREPOSTDATA/"),
+  _isParallel(false), _offset(0), _size(0), _totalSize(0),
+  _initTime(0), _timeStep(0)
 {
+
+}
+
+void ResultStoreBase::setParallelStoring(int size, double init, double step)
+{
+	_isParallel = true;
+	_size = size;
+	_initTime = init;
+	_timeStep = step;
+	_offset = size;
+	_totalSize = Communication::exscan(_offset, MPITools::instances);
 }
 
 void ResultStoreBase::createOutputDirectory()
@@ -159,6 +174,12 @@ bool ResultStore::isStoreNode()
 bool ResultStore::isComputeNode()
 {
 	return !isStoreNode();
+}
+
+void ResultStore::setParallelStoring(int size, double init, double step)
+{
+	if (_async) _async->setParallelStoring(size, init, step);
+	if (_direct) _direct->setParallelStoring(size, init, step);
 }
 
 bool ResultStore::storeStep()

@@ -23,6 +23,13 @@ public:
 		}
 	}
 
+	void setParallelStoring(int size, double init, double step)
+	{
+		for (size_t i = 0; i < _resultStore.size(); i++) {
+			_resultStore[i]->setParallelStoring(size, init, step);
+		}
+	}
+
 	DirectExecutor(const Mesh &mesh): ResultStoreExecutor(mesh) {}
 };
 

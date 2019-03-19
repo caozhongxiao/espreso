@@ -18,6 +18,7 @@ public:
 
 	virtual void updateMesh() =0;
 	virtual void updateSolution() =0;
+	virtual void setParallelStoring(int size, double init, double step);
 
 	virtual const Mesh& mesh() const { return _mesh; }
 
@@ -30,6 +31,10 @@ protected:
 
 	const Mesh &_mesh;
 	std::string _directory;
+
+	bool _isParallel;
+	int _offset, _size, _totalSize;
+	double _initTime, _timeStep;
 };
 
 class ResultStore {
@@ -39,6 +44,8 @@ public:
 	static void destroyAsynchronizedStore();
 	static bool isStoreNode();
 	static bool isComputeNode();
+
+	void setParallelStoring(int size, double init, double step);
 
 	bool storeStep();
 

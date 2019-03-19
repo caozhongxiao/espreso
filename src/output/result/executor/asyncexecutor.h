@@ -88,6 +88,7 @@ public:
 
 	void updateMesh();
 	void updateSolution();
+	void setParallelStoring(int size, double init, double step);
 
 protected:
 	void init();

@@ -30,6 +30,8 @@
 #include "assembler/provider/feti/structuralmechanics2d.fetiprovider.h"
 #include "assembler/provider/feti/structuralmechanics3d.fetiprovider.h"
 
+#include "output/result/resultstore.h"
+
 #include "linearsolver/hypre/hypresolver.h"
 #include "linearsolver/mklpdss/mklpdsssolver.h"
 #include "solver/generic/FETISolver.h"
@@ -228,6 +230,7 @@ bool LoadStepIterator::next(TPhysics &configuration)
 
 	_assembler->init();
 	if (time::isInitial()) {
+		info::mesh->store->setParallelStoring(1, 1, 1);
 		info::mesh->storeMesh();
 	}
 

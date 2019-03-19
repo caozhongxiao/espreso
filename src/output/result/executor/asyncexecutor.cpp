@@ -82,6 +82,11 @@ void AsyncStore::updateSolution()
 	call(ExecParameters(AsyncBufferManager::NODEDATA, AsyncBufferManager::ELEMENTDATA));
 }
 
+void AsyncStore::setParallelStoring(int size, double init, double step)
+{
+	_executor.setParallelStoring(size, init, step);
+}
+
 AsyncStore::AsyncStore(const Mesh &mesh)
 : ResultStoreExecutor(mesh), _executor(mesh.store), _buffer(NULL)
 {
