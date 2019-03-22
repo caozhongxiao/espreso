@@ -230,7 +230,9 @@ bool LoadStepIterator::next(TPhysics &configuration)
 
 	_assembler->init();
 	if (time::isInitial()) {
-		info::mesh->store->setParallelStoring(1, 1, 1);
+		if (info::mpi::isize > 1) {
+			info::mesh->store->setParallelStoring(1, 1, 1);
+		}
 		info::mesh->storeMesh();
 	}
 
