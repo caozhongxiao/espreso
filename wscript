@@ -176,7 +176,7 @@ def show(ctx):
     ctx.logger.handlers = Logs.log_handler()
 
     ctx.msg("CXX", " ".join(ctx.env.CXX))
-    ctx.msg("MODE", ctx.env.mode)
+    ctx.msg("INFO", " ".join(ctx.env.DEFINES_INFO))
     ctx.msg("DEFINES", " ".join(ctx.env.DEFINES))
     ctx.msg("CXXFLAGS", " ".join(ctx.env.CXXFLAGS))
     ctx.msg("MKL", "HAVE_MKL" in ctx.env.DEFINES_MKL)
